@@ -2,27 +2,21 @@ r"""文档守卫 —— 让文档里的话有人守。
 
 为什么必须有它
 --------------
-本项目踩过两次同类事故，都是"文档说了一件事、而没人守它"：
+本项目反复踩过同类事故：文档复制了实现数字、阶段或旧架构结论，却没有任何东西守住它。
 
     1. 卡里写"秒级 / 零模型"，实际是 0.06s。数字当时是对的，但**没有任何东西守着它** ——
        下一次改动会让它变成错话，而错话被人当成事实使用。
-    2. README 里写着 `python -m src.schema  # → OK: 7 slots, 6 renderers registered`。
-       如果坑位表加了一格而这句话没跟着改，读者拿到的就是一份**看起来可信的假情报** ——
-       与 v1 那个"写着 no_watermark 却从未实现"同型：声明了却不生效，比没有声明更糟。
+    2. README 曾复制固定七坑位表、回归项数、探针方向数和“下一任务”。这些值即使写下时正确，
+       也会随代码和 state 变化，最终让实现入口同时扮演历史档案、进度表和产品说明。
 
 参考库里对应的是 `evals` 的 L1 断言：**"文档里的命令必须真能跑"。** 本文件就是这条断言。
 
 受管范围（这条边界是刻意的）
 --------------------------
-    受管内容 = README.md（入口）+ docs/cards/*.md（交付单元）
-              —— 管"文档里的话对不对"：命令能不能跑、数字对不对、表与 registry 一致
-    受管登记 = 仓库里**每一份** *.md（含 docs/ 下那 9 份横切面）
+    受管内容 = README.md（当前实现入口）+ docs/cards/*.md（legacy 生成产物）
+              —— README 只保留真实启动、已实现边界和历史回归入口；卡片逐字对齐生成器
+    受管登记 = 仓库里**每一份** *.md（根目录 + docs/ + _working/）
               —— 管"哪一份有效"：状态必须是闭集合里的一个（见 _check_docs_index）
-
-为什么「内容」不管那 9 份、而「登记」要管：它们是**待删**（README §11 记录在案）。
-在要拆的房子上刷漆是本项目一贯拒绝的那类工作。但**登记是另一件事** ——
-守的不是房子的内容，是**拆迁清单的准确性**：一份没人知道该不该信的文档留在仓库里，
-比一份明写着 `to-delete` 的文档危险得多。等它们消掉之后，受管范围自然覆盖全部。
 
 两类失败必须分开报（这是本守卫最有用的一处设计）
 ----------------------------------------------
@@ -34,14 +28,13 @@ r"""文档守卫 —— 让文档里的话有人守。
     混报的后果很具体：人看到一屏红会以为文档烂了，而实际上九成是"该跑生成器了"。
     分开之后，"跑一下生成器"与"去改句子"变成两个不同的动作。
 
-八项检查
+十项检查
 --------
     ① 卡与 gen_slot_cards.build() 逐字一致                → stale
     ② 幽灵卡（目录里有、表里已无对应坑位）                 → stale
     ③ 卡数 = 坑位数、每卡 ≤ 行数上限                       → problems
-    ④ README 的"七坑位表"与 slots.yaml + registry 一致      → problems
-       —— 那张表是**手写的副本**，是这里真实会漂的地方
-    ⑤ README 里抄下来的数字必须等于**真实的值**             → problems
+    ④ README 明确默认 V2 已实现边界与 V1 回归边界            → problems
+    ⑤ README 不复制 next_action、任务 ID 或固定七坑位表       → problems
     ⑥ 受管文档 bash 围栏里的 python 命令**真跑**，rc 必须 0  → problems
     ⑦ 仓库里每一份 *.md 都在 docs/INDEX.md 里登记、管辖事实与状态都是闭集合之一；
        非生成文档顶部的 CONTROL-STATUS 必须与 INDEX 相同 → problems
@@ -54,6 +47,18 @@ r"""文档守卫 —— 让文档里的话有人守。
        —— 这不是风格问题，是**换台机器就废**：README 曾经写着
           PY="C:/Users/31368/.workbuddy/.../python.exe"，那是开发机的一次快照，
           却被放在「怎么跑」的位置上。见 _check_no_abs_interpreter。
+
+    ⑨ 选型门禁有落点、依赖有登记，且登记表与 requirements.txt / vendor 目录
+       双向一致 → problems
+       —— 前八项管不住「实现之前有没有先找现成能力」。句子拦不住重复造轮子，
+          登记 + 双向比对能：新增依赖必须同时改 requirements.txt 与项目上下文 §4，
+           少一处就报红。见 _check_reuse_first_gate。
+
+    ⑩ 外部模板（docs/standards-template/）的每份文件都在 AGENTS.md 的采纳映射
+       章节里有落点 → problems
+       —— 模板是整目录重新同步的（07 就是后加的一份）。映射表说「已按模板适配」
+          而少了行时，没有任何东西能证伪。本项只做存在性比对：宁可粗，也不能沉默。
+          见 _check_standards_mapping。
 
 另有一项铁律检查由守卫自己实现、**不 exec 外部命令**（见 _check_orchestrator_rule）：
 
@@ -455,6 +460,36 @@ def _check_numbers(rep: Report, cfg: dict) -> None:
                         f"{got} 向 —— 这个数字是人抄的，探针加了方向它不会自己跟着改。")
 
 
+def _check_readme_scope(rep: Report) -> None:
+    """④⑤ README 只投影当前实现，不再兼任 state、计划或 legacy 控制表。
+
+    旧守卫试图让 README 里的每一份复制值都同步；更稳的修复是消除这些副本。legacy 卡片继续
+    由生成器逐字守住，当前阶段与下一动作只允许从 state 读取。
+    """
+    text = README.read_text(encoding="utf-8")
+    required = (
+        "默认入口现在提供 Product V2 的浏览器本地项目外壳",
+        "当前默认页面**还不能**",
+        "python app\\server.py --legacy-v1 --check",
+        "docs/INDEX.md",
+        "IndexedDB",
+    )
+    for marker in required:
+        if marker not in text:
+            rep.problem(f"README 缺少当前实现边界标记：{marker!r}")
+
+    forbidden = {
+        r"next_action_task": "README 不得复制 state 的 next_action 字段",
+        r"下一任务": "README 不得发布会漂移的下一任务",
+        r"\bV2\.\d+\.\d+\b": "README 不得复制 Product V2 任务进度 ID",
+        r"^##\s*\d*\.?\s*七坑位表": "固定七坑位表属于 legacy，不得继续占据当前实现入口",
+        r"跑全套回归（\d+\s*项": "README 不得手抄会漂移的回归项数",
+    }
+    for pattern, message in forbidden.items():
+        if re.search(pattern, text, re.M):
+            rep.problem(message)
+
+
 # ---------------------------------------------------------------- README 七坑位表
 
 def _check_readme_slot_table(rep: Report, cfg: dict) -> None:
@@ -587,6 +622,7 @@ DOC_KINDS = {
     "实现": "代码**当前真做什么**",
     "产品目标": "要做到什么、什么算完成",
     "执行状态": "当前推进到哪、下一步做什么",
+    "项目规则": "Agent 与协作者必须遵守的工作规则（选型门禁、依赖登记）",
     "架构设计": "目标架构与技术选型",
     "设计草案": "未进控制面的设计前沿",
     "历史证据": "保留作证据，不据以行事",
@@ -599,7 +635,7 @@ DOC_KINDS = {
 # 「README 说 v2 是当前实现」与「v2 架构文档写着已被 v4 取代」——
 # 它们其实回答的是不同的问题。写出管辖事实之后，那是分工；
 # 而同一个问题上出现两个出处，就是这里要报的红。
-SINGLETON_KINDS = ("实现", "产品目标", "执行状态")
+SINGLETON_KINDS = ("实现", "产品目标", "执行状态", "项目规则")
 CONTROL_STATUS_RE = re.compile(
     r"CONTROL-STATUS:\s*(current|generated|draft|superseded|to-delete)\b")
 
@@ -686,7 +722,11 @@ def _check_docs_index(rep: Report) -> None:
         if not note:
             rep.problem(f"docs/INDEX.md 里 {path} 的说明列为空 —— 状态是 {state!r} 时，"
                         f"说明必须写明「{DOC_STATES.get(state, '为什么是这个状态')}」。")
-        if path in actual and state != "generated":
+#      `docs/standards-template/**` 是**外部课程模板的原样副本**，会被整目录重新同步：
+#      给它加我们的 CONTROL-STATUS 会让下一次同步丢标记，也会把一份参考模板伪装成项目文档。
+#      它的身份与状态只由 INDEX 这一处登记；被本项目采纳的结论写进 AGENTS.md 的 Standards Mapping。
+        imported_reference = path.startswith("docs/standards-template/")
+        if path in actual and state != "generated" and not imported_reference:
             head = "\n".join((ROOT / path).read_text(encoding="utf-8").splitlines()[:12])
             marker = CONTROL_STATUS_RE.search(head)
             if not marker:
@@ -715,6 +755,156 @@ def _check_docs_index(rep: Report) -> None:
 
 # ------------------------------------------- 受管文档不得写死解释器路径
 
+# ------------------------------------------- 选型门禁与依赖登记
+#
+# 为什么单独立这一项：文档守卫前八项管的是「文档里的话对不对」和「哪份文档有效」，
+# 没有一项管「实现之前有没有先找过现成能力」。而这个仓库真实发生过：语义适配器
+# 先手写了几百行传输与错误分类，之后才有人问『为什么不用现成库』。
+# 句子拦不住这件事，只有登记 + 双向比对能拦住：新增依赖必须同时改
+# requirements.txt 与项目上下文的依赖登记表，少一处就报红。
+
+AGENTS_FILE = ROOT / "AGENTS.md"
+REQUIREMENTS_FILE = ROOT / "requirements.txt"
+CONTEXT_FILE = ROOT / "docs" / "product-v2-project-context.md"
+VENDOR_DIR = ROOT / "app" / "product_v2" / "vendor"
+
+REUSE_BEGIN = "<!-- reuse-first:begin -->"
+REUSE_END = "<!-- reuse-first:end -->"
+DEP_BEGIN = "<!-- dependency-registry:begin -->"
+DEP_END = "<!-- dependency-registry:end -->"
+VENDOR_BEGIN = "<!-- vendor-registry:begin -->"
+VENDOR_END = "<!-- vendor-registry:end -->"
+
+# 本项目用 requirements.txt 锁依赖，没有 pyproject：一旦根目录出现 uv 的脚手架文件，
+# `uv run`（无 --no-project）会拿一个**空依赖**的项目环境去跑，静默改变运行环境。
+# 2026-09-29 同一天里这套文件出现过两次，所以让它出声音，而不是加进 .gitignore 盖住。
+STRAY_PROJECT_FILES = ("pyproject.toml", "uv.lock", "main.py", ".python-version")
+
+REUSE_REQUIRED_TOKENS = (
+    "复用 > 配置 > 集成 > 扩展 > 自研",
+    "选型报告",
+    "选型四问",
+    "禁止自造",
+    "复访条件",
+    "requirements.txt",
+)
+
+
+def _norm_pkg(name: str) -> str:
+    return re.sub(r"[-_.]+", "-", name.strip().lower())
+
+
+def _requirements_pins() -> dict[str, str]:
+    """requirements.txt 的 {包: 锁定版本}；未锁版本记作 ""（模板 07 §6 禁止浮动版本）。"""
+    pins: dict[str, str] = {}
+    if not REQUIREMENTS_FILE.exists():
+        return pins
+    for line in REQUIREMENTS_FILE.read_text(encoding="utf-8").splitlines():
+        ln = line.split("#", 1)[0].strip()
+        if not ln or ln.startswith("-"):
+            continue
+        name = re.split(r"[<>=!~\[\s;]", ln, maxsplit=1)[0]
+        if not name:
+            continue
+        match = re.search(r"==\s*([^\s,;]+)", ln)
+        pins[_norm_pkg(name)] = match.group(1) if match else ""
+    return pins
+
+
+def _marked_rows(text: str, begin: str, end: str) -> list[list[str]] | None:
+    """取出标记块里的 Markdown 表格行（跳过表头与分隔行）；没有标记块返回 None。"""
+    if begin not in text or end not in text:
+        return None
+    block = text.split(begin, 1)[1].split(end, 1)[0]
+    rows: list[list[str]] = []
+    for raw in block.splitlines():
+        ln = raw.strip()
+        if not ln.startswith("|") or not ln.endswith("|"):
+            continue
+        cells = [c.strip().strip("`").strip() for c in ln.strip("|").split("|")]
+        if cells and all(set(c) <= set("-: ") for c in cells):
+            continue
+        rows.append(cells)
+    return rows[1:] if rows else []
+
+
+def _check_reuse_first_gate(rep: Report) -> None:
+    """⑨ 选型门禁有落点、依赖有登记，且登记表与 requirements.txt / vendor 双向一致。"""
+    for name in STRAY_PROJECT_FILES:
+        if (ROOT / name).exists():
+            rep.problem(f"根目录出现 {name} —— 本项目用 requirements.txt 锁依赖、不用 pyproject；"
+                        "这类 uv 脚手架会让 `uv run` 拿到一个空依赖的项目环境。删掉它；"
+                        "若确实要改成项目化打包，先补一条 SEL 选型记录再改守卫。")
+    if not AGENTS_FILE.exists():
+        rep.problem("AGENTS.md 不存在 —— 选型门禁（Reuse-first）没有任何仓库级落点，"
+                    "下一个 Agent 会继续『需求 → 直接实现』。")
+    else:
+        agents = AGENTS_FILE.read_text(encoding="utf-8")
+        if REUSE_BEGIN not in agents or REUSE_END not in agents:
+            rep.problem("AGENTS.md 缺少 reuse-first 标记块（" + REUSE_BEGIN + " / "
+                        + REUSE_END + "）—— 门禁正文必须可被机器定位。")
+        else:
+            block = agents.split(REUSE_BEGIN, 1)[1].split(REUSE_END, 1)[0]
+            for token in REUSE_REQUIRED_TOKENS:
+                if token not in block:
+                    rep.problem(f"AGENTS.md 的选型门禁缺少必需内容：{token!r} —— "
+                                "门禁被删成一句话就不再是门禁；必需内容只认复用阶梯标记块内部，"
+                                "正文别处提到不算。")
+
+    if not CONTEXT_FILE.exists():
+        rep.problem("docs/product-v2-project-context.md 不存在 —— 选型决策与依赖登记"
+                    "没有权威落点。")
+        return
+    context = CONTEXT_FILE.read_text(encoding="utf-8")
+
+    actual_pins = _requirements_pins()
+    dep_rows = _marked_rows(context, DEP_BEGIN, DEP_END)
+    if dep_rows is None:
+        rep.problem("项目上下文缺少 dependency-registry 登记块（" + DEP_BEGIN + " / "
+                    + DEP_END + "）—— 新增依赖就没有第二个地方需要改，也就没有门。")
+    else:
+        declared_pins = {
+            _norm_pkg(row[0]): (row[1].strip() if len(row) > 1 else "")
+            for row in dep_rows if row and row[0]
+        }
+        missing = sorted(set(actual_pins) - set(declared_pins))
+        ghost = sorted(set(declared_pins) - set(actual_pins))
+        if missing:
+            rep.problem("requirements.txt 里这些包没登记进项目上下文 §4：" + "、".join(missing)
+                        + " —— 引入依赖要先写选型报告与登记，再改 requirements.txt。")
+        if ghost:
+            rep.problem("项目上下文登记了、requirements.txt 里却没有：" + "、".join(ghost)
+                        + " —— 登记表开始说谎了（依赖被移除时要同时删登记）。")
+        mismatch = sorted(name for name in set(actual_pins) & set(declared_pins)
+                          if actual_pins[name] != declared_pins[name])
+        if mismatch:
+            detail = "、".join(f"{name}：登记 {declared_pins[name] or '空'} / 锁定 "
+                               f"{actual_pins[name] or '未锁'}" for name in mismatch)
+            rep.problem("依赖版本与 requirements.txt 不一致（" + detail + "）—— "
+                        "版本是依赖合同的一部分，锁定值必须两处相同。")
+        unpinned = sorted(name for name, version in actual_pins.items() if not version)
+        if unpinned:
+            rep.problem("requirements.txt 里这些包没有锁定版本：" + "、".join(unpinned)
+                        + " —— 生产依赖必须用 ==")
+        locked = len(actual_pins) - len(unpinned)
+        rep.note(f"依赖登记：requirements.txt {len(actual_pins)} 个包（锁定 {locked}）"
+                 f"↔ 登记表 {len(declared_pins)} 行")
+
+    vendor_rows = _marked_rows(context, VENDOR_BEGIN, VENDOR_END)
+    vendor_actual = ({p.name for p in VENDOR_DIR.glob("*") if p.is_file()}
+                     if VENDOR_DIR.exists() else set())
+    if vendor_rows is None:
+        rep.problem("项目上下文缺少 vendor-registry 登记块（" + VENDOR_BEGIN + " / "
+                    + VENDOR_END + "）—— 浏览器端引入第三方库就没有登记处。")
+    else:
+        vendor_set = {row[0] for row in vendor_rows if row and row[0]}
+        missing_vendor = sorted(vendor_actual - vendor_set)
+        ghost_vendor = sorted(vendor_set - vendor_actual)
+        if missing_vendor:
+            rep.problem("app/product_v2/vendor/ 里这些文件没有登记：" + "、".join(missing_vendor))
+        if ghost_vendor:
+            rep.problem("vendor 登记了、目录里却没有这些文件：" + "、".join(ghost_vendor))
+
 ABS_INTERP = re.compile(r"[A-Za-z]:[\\/][^\s\"'`|<>]*pythonw?\.exe", re.I)
 
 
@@ -742,6 +932,43 @@ def _check_no_abs_interpreter(rep: Report) -> None:
                             f"准备动作放 text 围栏。")
 
 
+# ---------------------------------------------------------------- ⑩ 模板映射
+
+STANDARDS_DIR = ROOT / "docs" / "standards-template"
+STANDARDS_SECTION_RE = re.compile(
+    r"^## Standards Mapping \(standards-template\)\s*$(.*?)^## ", re.S | re.M)
+
+
+def _check_standards_mapping(rep: Report) -> None:
+    """⑩ 外部模板的每份文件都必须在 AGENTS.md 的采纳映射里有落点。
+
+    为什么单列：`docs/standards-template/` 会被整目录重新同步（07 就是后加的
+    一份）。模板新增规范而映射表没跟上时，「已按模板适配」这句话无从证伪 ——
+    本项把它变成双向可比对的事实：模板多一份、映射少一行，直接报红。
+    只做存在性比对（文件名必须出现在映射章节里），不解析落点列：宁可粗，
+    也不能沉默。
+    """
+    if not STANDARDS_DIR.exists():
+        rep.problem("docs/standards-template/ 不存在 —— 采纳映射失去比对对象；"
+                    "模板被移动或删除时，必须同步本项与 AGENTS.md 的映射章节。")
+        return
+    text = AGENTS_FILE.read_text(encoding="utf-8") if AGENTS_FILE.exists() else ""
+    m = STANDARDS_SECTION_RE.search(text)
+    if not m:
+        rep.problem("AGENTS.md 缺少 `## Standards Mapping (standards-template)` 章节"
+                    "（或它后面没有下一个 `##` 标题）—— 模板的采纳判定没有机器可定位的落点。")
+        return
+    section = m.group(1)
+    files = sorted(STANDARDS_DIR.rglob("*.md"))
+    unmapped = [p.relative_to(STANDARDS_DIR).as_posix() for p in files if p.name not in section]
+    if unmapped:
+        rep.problem("docs/standards-template/ 里这些文件没有在 AGENTS.md 的映射章节出现："
+                    + "、".join(unmapped) + " —— 模板新增/改名后，采纳映射必须补行；"
+                    "否则「照着模板做」这句话没有任何东西能证伪。")
+    rep.note(f"模板映射：standards-template {len(files)} 份，映射章节覆盖 "
+             f"{len(files) - len(unmapped)} 份")
+
+
 # ---------------------------------------------------------------- 入口
 
 def main(argv: list[str] | None = None) -> int:
@@ -756,10 +983,11 @@ def main(argv: list[str] | None = None) -> int:
     cfg = schema.assert_valid()
 
     _check_cards(rep, cfg)
-    _check_readme_slot_table(rep, cfg)
-    _check_numbers(rep, cfg)
+    _check_readme_scope(rep)
     _check_orchestrator_rule(rep)
     _check_docs_index(rep)
+    _check_reuse_first_gate(rep)
+    _check_standards_mapping(rep)
     _check_no_abs_interpreter(rep)
     if not args.no_run:
         _check_commands(rep)
@@ -767,10 +995,14 @@ def main(argv: list[str] | None = None) -> int:
     print("=" * 72)
     print("文档守卫")
     print("=" * 72)
-    print(f"受管：README.md + docs/cards/ 下 {len(MANAGED_GEN)} 份卡"
-          f"（命令真跑 / 数字对齐 / 七坑位表与 registry 一致）")
+    print(f"受管：README.md + docs/cards/ 下 {len(MANAGED_GEN)} 份 legacy 生成卡"
+          f"（当前实现边界 / 命令入口 / 生成产物一致性）")
     print("　　　+ 文档权威登记（docs/INDEX.md：双向比对 + 管辖事实唯一）"
           "—— 回答「哪一份有效」和「哪一类事实归谁」")
+    print("　　　+ 选型门禁（AGENTS.md ↔ 项目上下文 §4 依赖/vendor 登记）"
+          "—— 回答「实现之前先找过现成能力没有」")
+    print("　　　+ 模板映射（AGENTS.md §Standards Mapping ↔ docs/standards-template/）"
+          "—— 回答「外部模板的每份规范有没有采纳落点」")
     print(f"表：{len(cfg['slots'])} 个坑位 · {len(registry.known())} 个渲染器")
     print()
 

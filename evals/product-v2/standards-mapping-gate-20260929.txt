@@ -1,0 +1,68 @@
+NOT-AUTHORITY —— 时点证据：记录 2026-09-29 控制面校准的检查与反向探针，不发布当前状态、规范或计划。
+
+# standards-template 采纳映射与第⑩项守卫
+
+起因（用户质疑）：「所有的文档，readme.md 难道就不算吗」「你好像没照着 standards-template 做呀」。
+审计结论：
+
+1. README.md 已在 `docs/INDEX.md` 登记表第一行（管辖事实=实现、状态=current），顶部带
+   CONTROL-STATUS；受管范围=根目录 + `docs/` + `_working/` 全部 .md，守卫做双向比对
+   （登记 53 份 / 实际 53 份）。「README 不算文档」的担心不成立——原文在此。
+2. 「没照着做」有一半成立：AGENTS.md 的采纳映射有两处不实或互相矛盾：
+   - `07-dependency-standards` 行声称「禁止自造清单」已适配，但正文里根本没有这份清单；
+   - `06-ai-collab-protocol` 行写「六步确认门映射为…」，而项目上下文 §2 写「不采纳课堂式确认门」。
+3. 本轮修复：
+   - §Selection Gate 落地「选型四问」与「禁止自造清单」（模板 07 §2/§3 的原文要求）；
+   - 映射表补齐到 14 份模板文件（含 templates/* 逐文件落点），并新增「未采纳清单（含复访条件）」；
+   - 项目上下文 §2 的口径改为指向 AGENTS.md 映射表一处（政出一门）；
+   - `tools/check_docs.py` 新增第⑩项：模板文件 ↔ 映射章节双向核验；
+   - 必需词比对收紧到 reuse-first 标记块内部（正文别处提到不算）。
+
+## 反向探针（新增/加强的守卫必须能判红）
+
+命令（每次都跑同一入口）：
+    $env:UV_CACHE_DIR=<repo>\.uv-cache
+    uv run --no-project --with-requirements requirements.txt python tools/check_docs.py --no-run
+
+### A. 模板多一份、映射少一行 → 判红
+夹具：新增 `docs/standards-template/08-probe-unmapped.md`（运行后即删）。
+实测原文（rc=1）：
+  ✗ docs/INDEX.md 里没登记这几份 Markdown：docs/standards-template/08-probe-unmapped.md —— 新增文档要先登记、再写文件。
+  ✗ docs/standards-template/ 里这些文件没有在 AGENTS.md 的映射章节出现：08-probe-unmapped.md —— 模板新增/改名后，采纳映射必须补行；否则「照着模板做」这句话没有任何东西能证伪。
+恢复：删除夹具；模板目录 14 份逐文件 `git hash-object` 与 HEAD 一致（mismatch 0）。
+
+### B. 映射行改名（模板文件失去落点）→ 判红
+手法：把映射行里的 `07-dependency-standards.md` 临时改成 `07-dependency-standards-XX.md`。
+实测原文（rc=1）：
+  ✗ docs/standards-template/ 里这些文件没有在 AGENTS.md 的映射章节出现：07-dependency-standards.md —— 模板新增/改名后，采纳映射必须补行；否则「照着模板做」这句话没有任何东西能证伪。
+恢复：改回原文，守卫重新全绿。
+
+### C. 删掉必需词 → 第一轮没响，修复后才判红
+手法：把标记块里的「选型四问」临时改成「选型提问」。
+第一轮实测 rc=0（全过）——原因：必需词原先在整份 AGENTS.md 上比对，而映射表里也写着「选型四问」。
+修复：`_check_reuse_first_gate` 改为只在 `<!-- reuse-first:begin --> … end -->` 块内比对必需词。
+第二轮实测原文（rc=1）：
+  ✗ AGENTS.md 的选型门禁缺少必需内容：'选型四问' —— 门禁被删成一句话就不再是门禁；必需内容只认复用阶梯标记块内部，正文别处提到不算。
+恢复：改回原文，守卫重新全绿。
+
+## 工作区异常（同轮记录）
+执行期间发现 `docs/standards-template/` 被整体删除、根目录再次出现 uv 脚手架
+（`pyproject.toml`、`uv.lock`、`main.py`、`.python-version`，时间戳 2026-09-29 22:11）。
+处置：模板从 HEAD 原样恢复（14 份，逐文件哈希一致）；脚手架移到
+`_stage-amz-control/uv-scaffolding-20260929-2213/`（未提交、未销毁，确认无用后可删）。
+这不是本轮的推断或设计——是工作区里实际发生的第三方写入；来源未确认。
+
+## 最终状态（本证据对应的时点）
+  · 文档登记：53 份 / 实际 53 份
+  · 依赖登记：requirements.txt 6 包（锁定 6）↔ 登记表 6 行
+  · 模板映射：standards-template 14 份，映射章节覆盖 14 份
+  · 退出码 0（`--no-run`：本次不执行文档里的命令）
+
+## 复现边界（谁验的）
+本文件的三类探针由**实施者本人**在同一棵树上跑出（第一手，但不是独立复现）。
+同一时点尝试请独立子代理复现三次（22:2x），子代理每轮只收到空载荷、回复「没有收到任务」——
+**独立复现未完成**，原因是协作消息通道丢载荷，不是探针被证伪。
+下一步：由独立会话或用户按上面的命令再跑一次 A/C 两探针即可闭环。
+
+本证据不证明：产品行为、真实模型调用、首次使用者走查；也不证明模板内容本身正确
+（它是外部课程模板的原样副本，权威身份见 docs/INDEX.md）。

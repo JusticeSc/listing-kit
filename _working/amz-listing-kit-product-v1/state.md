@@ -120,8 +120,6 @@ tasks:
     evidence:
       - evals/phase0_regress_fresh.txt
       - evals/last_regress.txt
-      - out/B0FULLSET01_20260923-125218-258886/plan.json
-      - out/B0FULLSET01_20260923-125218-258886/run.jsonl
   - id: P0.4
     status: done
     depends_on:
@@ -130,7 +128,6 @@ tasks:
       - README.md
       - docs/product-v1-goal-and-implementation-plan.md
       - tools/check_docs.py
-      - evals/probes/docs_index.py
   - id: P0.5
     status: done
     depends_on:

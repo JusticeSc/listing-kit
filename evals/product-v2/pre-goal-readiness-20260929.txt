@@ -1,0 +1,45 @@
+amz-listing-kit Product V2 pre-goal readiness audit
+NOT-AUTHORITY: point-in-time verification evidence only
+observed_at: 2026-09-29T19:58:57+08:00
+branch: docs/product-v2-control-plane
+status: passed
+scope: formal Product V2 execution prerequisites; no Product V2 runtime feature claim
+
+AUTHORITIES
+- System Goal ID: 01a0ca17-2179-7eb0-969a-af9c79c4d8ca
+- System Goal status observed: paused
+- System Goal objective and plan section 2: exact text match (1372 characters each)
+- Product plan: docs/product-v2-goal-and-implementation-plan.md
+- Project context: docs/product-v2-project-context.md
+- Execution state: _working/amz-listing-kit-product-v2/state.md
+- Exact resumable next action: V2.1.1
+
+READINESS DECISIONS
+- Product V1 remains the runnable regression baseline; Product V2 implementation has not started.
+- Product V2 execution stays paused until the Goal is resumed; Phase 1 is pending, not falsely active.
+- Browser IndexedDB owns Product V2 user state; the Python service owns no user workspace or recent-project index.
+- Product V2 uses DASHSCOPE_API_KEY for the Bailian-hosted semantic and image providers.
+- SEMANTIC_MODEL defaults to deepseek-v4.1-flash; IMAGE_MODEL defaults to qwen-image-3.0.
+- The exact VLM model remains intentionally deferred to V2.5.2 and does not block V2.1.1.
+- No real paid model request was made during this readiness audit.
+
+FRESH VERIFICATION
+- tools/check_docs.py: rc=0; 49 registered Markdown files matched 49 actual files; 11 deduplicated embedded commands passed.
+- tools/check_project_state.py: rc=0; four state records; current Product V2 state, Goal binding, phase order, dependencies and next action passed.
+- evals/probes/project_state.py: rc=0; 19/19 baseline and negative cases matched expected J0-J10 behavior; current state restored byte-for-byte.
+- app/server.py --check: rc=0; Product V1 HTTP baseline ran 6/6 tests successfully without a paid model call.
+- Playwright import/runtime check: rc=0; local Chromium executable resolved.
+- Environment preflight: Python 3.13.11; Git 2.48.1.windows.1; DASHSCOPE_API_KEY configured; no separate DEEPSEEK_API_KEY required by the selected Bailian route.
+- Python compilation: rc=0 for tools/check_project_state.py and evals/probes/project_state.py.
+- git diff --check: rc=0.
+
+GIT / RECOVERY
+- Product V1 source baseline: c9786fb (tag product-v1-d4.12-baseline).
+- Product V2 control work branch: docs/product-v2-control-plane.
+- Authoritative rollback: Git tag product-v1-d4.12-baseline plus the Product V2 control-plane commit.
+- evals/probes/project_state.py is explicitly versioned; generated probe outputs remain ignored.
+
+BOUNDARY
+- This proves that the formal Goal, authorities, task graph, environment, rollback point and verification entrypoints are ready for execution.
+- It does not prove IndexedDB, DeepSeek adaptation, stateless generation, VLM review, browser export or first-user acceptance; those remain V2.1.1 through V2.7.4.
+- The Goal must remain paused and incomplete until execution resumes and C1-C15 are proven.
