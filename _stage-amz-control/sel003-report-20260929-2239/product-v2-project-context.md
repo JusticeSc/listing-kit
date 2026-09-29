@@ -95,7 +95,7 @@ Python 无状态 AI 服务
 | SEL-000 | 依赖政策 | 分层：Python 侧允许登记过的 pinned 依赖；浏览器侧保持无构建步骤，只允许 vendor 单文件库；业务语义层自研 | 全层放开 npm 构建链；全零新增依赖 | 前端需要组件框架或状态管理，或离线安装条件变化 |
 | SEL-001 | 编排层 | 暂不引入 LangGraph / LangChain：业务状态权威是浏览器 IndexedDB，服务端无状态，不设第二个权威 | LangGraph checkpointer + 服务端状态 | 出现服务端自主多步编排，或需要跨进程恢复的长任务 |
 | SEL-002 | 服务端 HTTP | 暂保留 stdlib `http.server`（零运行时依赖、端点少、单进程） | Flask / FastAPI + uvicorn | V2.4 图片上传/下载需要 multipart 与流式响应时重开 |
-| SEL-003 | 语义/视觉调用传输层 | 待用户确认：推荐 `openai` SDK（3.20.0，Apache-2.0）；依赖实测与 PoC 选型报告见 `evals/product-v2/sel003-transport-selection-20260929.txt` | litellm（59 包，拖入 AWS/HF 栈）；requests 手写（命中禁止自造清单） | 确认后定稿并登记依赖；PoC 已发现：`deepseek-v4.1-flash` 需给 reasoning 留预算 |
+| SEL-003 | 语义/视觉调用传输层 | 待决：`openai` SDK（推荐）/ litellm / 继续 requests —— 讨论中 | — | 定稿后补全决策与被拒理由 |
 | SEL-004 | 项目管理规范 | 采纳 `docs/standards-template/` 的**要求**，落进现有五份权威（映射见 `AGENTS.md` §Standards Mapping），不新建 `standards/` 平行目录 | 复制模板另立一套 standards/（会与计划/state 形成双权威） | 需要对外交付独立规范包时重开 |
 | SEL-005 | 持续集成 | 不引入 CI/CD：本机与内网使用，门禁由 `tools/` 守卫脚本承担并写进提交纪律 | GitHub Actions + CD 自动部署 | 出现多人协作、远端仓库或部署目标时重开 |
 

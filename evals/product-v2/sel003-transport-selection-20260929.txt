@@ -1,0 +1,75 @@
+NOT-AUTHORITY —— 时点证据 + 待确认的选型报告（SEL-003）。结论待用户确认；确认前不得据此改依赖。
+
+# SEL-003 选型报告：语义/视觉调用传输层
+
+按 `docs/standards-template/templates/TECH_SELECTION.md` 的字段走一遍（SEL-004 映射：报告不另立
+文件，结论落点是项目上下文 §4.1 的 SEL-003 行）。本文件回答：之前 SEL-003 一直「讨论中」，
+但报告、依赖实测和 PoC 从未真正跑过——本文件把它补齐。
+
+## 1. 问题
+语义（`deepseek-v4.1-flash`）与视觉校验（VLM，模型 ID 待 V2.5.2 定）需要一条稳定的调用传输层：
+超时、错误分类、重试边界、结构化输出解析。当前 V2 适配器草案用 `requests` 手写这一层。
+
+## 2. 约束
+- 技术栈：Python 3.13；服务端 stdlib `http.server`（SEL-002），不设第二个状态权威（SEL-001）
+- 端点：阿里云百炼 OpenAI 兼容模式 `https://dashscope.aliyuncs.com/compatible-mode/v1`
+- 依赖纪律：新增依赖必须锁定版本 + 许可证登记，`tools/check_docs.py` 双向比对
+- 体积：本机/内网小规模使用，但依赖必须可解释、可移除
+
+## 3. 已有能力盘点（复用阶梯）
+- 仓库内：`src/providers/` 已有 requests 实现（V1 基线）
+- 现有依赖：`requests==2.34.2`（Apache-2.0），无模型 SDK
+- 标准库：`urllib.request`（无连接池、无重试、无类型化响应）
+
+## 4. 候选
+- A：`openai` SDK（实测解析到 3.20.0）
+- B：`litellm`（实测解析到 1.103.0）
+- C：继续 `requests` 手写传输层（对照组）
+- （附测）`langchain-core`：用户此前问到的第三选项，一并实测依赖规模
+
+## 5. 权衡（2026-09-29 实测，干净 venv + `uv pip install --dry-run`）
+| 候选 | 新增包数 | 许可证 | 关键观察 |
+|---|---|---|---|
+| A `openai` 3.20.0 | **14** | Apache-2.0（PyPI 元数据） | anyio/httpx2/pydantic/jiter 等；协议正是兼容模式协议 |
+| B `litellm` 1.103.0 | **59** | MIT | 额外拖入 boto3/botocore、huggingface-hub、tokenizers、aiohttp、tiktoken、tqdm；为多供应商路由付 4 倍依赖 |
+| C `requests` 手写 | 0 新增（已有） | Apache-2.0 | 超时/重试/流式/错误分类需自己维护——命中模板 07 §2 禁止自造清单「HTTP 客户端 / 重试与退避」 |
+| 附测 `langchain-core` | **33** | MIT | 解决的是编排/抽象问题；SEL-001 已裁定不引入编排层 |
+
+## 6. 推荐与否决
+- **推荐 A（openai SDK）**：14 包、Apache-2.0、类型化响应、超时/重试开箱即用；移除成本小（只在适配器 import 处）
+- 否决 B（litellm）：59 包，且本项目不需要多供应商路由
+- 否决 C（requests 手写）：省包不省维护，违反选型门禁的自造清单
+- 否决 `langchain-core`：33 包且与 SEL-001 冲突
+
+## 7. PoC（真实调用，共 4 次最小探针；命令：`uv run --no-project --with openai --python 3.13 python -c <脚本>`）
+```
+调用1/2: {"model":"deepseek-v4.1-flash","latency_s":1.39,"usage":{"prompt":35,"completion":16,"total":51},"text_len":0}
+调用3:   max_tokens=64 → completion=64 全计入、可见文本仍为空；message 暴露 reasoning_content 字段
+调用4:   max_tokens=512 → completion=129，reasoning_len=175，可见文本 44 字（中文）→ 通过
+```
+结论：传输层可用。**`deepseek-v4.1-flash` 是推理型输出**——max_tokens 太小会把预算全花在 reasoning 上、
+可见内容为空。适配器必须给 reasoning 预留预算，这条写入 V2.2.2 验收条件。
+（探针终端对中文输出有一次编码显示失真；字段与长度正常，属终端显示问题，不影响 SDK 结论。）
+
+## 8. 原始输出（截取）
+```
+---- openai dry-run ----
+Resolved 14 packages in 1.05s
+Would install 14 packages
+ + annotated-types==0.8.0 / anyio==4.15.1 / h11==0.16.0 / httpcore2==2.13.1 / httpx2==2.13.1
+ + idna==3.20 / jiter==0.17.0 / openai==3.20.0 / pydantic==2.13.5 / pydantic-core==2.46.5
+ + sniffio==1.3.1 / truststore==0.10.4 / typing-extensions==4.16.0 / typing-inspection==0.4.4
+---- litellm dry-run ----
+Would install 59 packages（aiohttp、boto3、botocore、huggingface-hub、tokenizers、tiktoken、jsonschema…）
+---- langchain-core dry-run ----
+Resolved 33 packages in 3.08s / Would install 33 packages
+---- requests==2.34.2 dry-run ----
+Would install 5 packages（certifi、charset-normalizer、idna、requests、urllib3）
+```
+
+## 9. 状态与下一步
+待用户确认（模板 06 的 ✋ 确认门 2.5）。确认后：SEL-003 行定稿（决策/被拒方案/复访条件）、
+`requirements.txt` 与项目上下文 §4.2 登记 `openai` 的锁定版本与许可证，随后解冻 V2.2.2 的 5 个文件。
+
+本证据不证明：VLM 侧（模型 ID 未定）的行为；也不证明 openai SDK 在流式/图片输入路径的表现——
+那是 V2.2.2 与 V2.5.2 的验收范围。
