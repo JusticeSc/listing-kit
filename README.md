@@ -10,7 +10,7 @@
 
 > **当前正式入口是 Product V2：**`python app/server.py`（默认 8780）只提供 V2 静态产品与 `/api/health`；项目、图片和历史全部保存在浏览器 IndexedDB，服务器不读写工作空间或最近项目索引。
 > **Product V1 历史入口：**`python app/server.py --legacy-v1`（同一默认端口），支持本机文件夹工作空间、商品理解、套图、真实生成、审核、单图返工、选择和导出；其证据边界见被取代的 Product V1 计划与 state。
-> **Product V2 当前状态：**系统 Goal 已绑定并恢复执行；`V2.1.1` 浏览器存储层、`V2.1.2` 空白项目首页、`V2.1.3` 项目 ZIP 导入/导出、`V2.1.4` 无状态正式入口均已完成并有新鲜证据（`evals/product-v2/v2.1.1-indexeddb-20260929-203229-after-v213.txt`、`v2.1.2-project-home-20260929-203233-after-v213.txt`、`v2.1.3-project-package-20260929-203215.txt`、`v2.1.4-formal-entry-20260929-204134.txt`，均在同一目录下），Phase 1 / Gate G1 达成，下一任务是 `V2.2.1` 商品理解契约。商品理解与出图流程尚未实现，Product V2 还不能按目标流程实际使用。
+> **Product V2 当前状态：**系统 Goal 已绑定并恢复执行；`V2.1.1` 浏览器存储层、`V2.1.2` 空白项目首页、`V2.1.3` 项目 ZIP 导入/导出、`V2.1.4` 无状态正式入口、`V2.2.1` 商品理解领域契约（FactSlot / ProductInput / ProductBrief / 失效图，含权限矩阵、状态转换与过期判定）均已完成并有新鲜证据（`evals/product-v2/` 下的 `v2.1.1-*`、`v2.1.2-*`、`v2.1.3-project-package-20260929-203215.txt`、`v2.1.4-formal-entry-20260929-204134.txt`、`v2.2.1-product-contracts-20260929-211211.txt`），Phase 1 / Gate G1 达成，下一任务是 `V2.2.2` `deepseek-v4.1-flash` 语义适配器。商品资料页、套图规划与出图流程尚未实现，Product V2 还不能按目标流程实际使用。
 > legacy v2 / Product V1 / Mock / tracer 只作为实现和回归基线；下面历史章节里的旧产品主张不得覆盖顶部这份当前实现边界。
 
 ---
@@ -205,7 +205,7 @@ amz-listing-kit/
 ├─ app/                     默认 Product V2 正式入口；V1 与旧 Mock 测试台作为回归入口保留
 │  ├─ server.py             ★ 正式入口：默认无状态 Product V2；`--legacy-v1` 回 V1；`--offline-fixture` 旧 Mock；`--check` / `--doctor`
 │  ├─ product_v2_server.py  ★ Product V2 无状态 HTTP 适配器：只服务 app/product_v2/ 静态产品 + `/api/health`，没有 directory/工作空间参数
-│  ├─ product_v2/           ★ Product V2 产品前端：index.html + styles.css + app.js + storage/（IndexedDB schema/迁移/repository/项目包）
+│  ├─ product_v2/           ★ Product V2 产品前端：index.html + styles.css + app.js + storage/（IndexedDB schema/迁移/repository/项目包）+ domain/（FactSlot/ProductInput/ProductBrief/失效图契约）
 │  ├─ product_v1_server.py  Product V1 历史实现：文件夹工作空间 + WorkspaceStore + 最近项目索引（`--legacy-v1`）
 │  ├─ product_v1/           Product V1 页面资源（index.html + styles.css + product.js）
 │  ├─ static/               旧 Mock 单页工作台：index.html + styles.css + workbench.js + service.js / mock-service.js

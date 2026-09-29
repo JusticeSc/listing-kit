@@ -81,7 +81,7 @@ amz-listing-kit/
 │  ├─ server.py                         # 正式服务入口：默认 V2；--legacy-v1 回 V1；--offline-fixture 旧 Mock
 │  ├─ product_v1_server.py              # Product V1 历史实现，迁移期保留（--legacy-v1）
 │  ├─ product_v2_server.py              # V2 无状态 HTTP 适配器（已落地，V2.1.4）
-│  └─ product_v2/                       # V2 前端静态资源；storage/、项目首页、项目包与正式入口均已落地
+│  └─ product_v2/                       # V2 前端静态资源；storage/、domain/ 契约、项目首页、项目包与正式入口均已落地
 ├─ src/
 │  ├─ product_v2_contracts.py           # 领域与 API 契约（目标）
 │  ├─ providers/                        # DeepSeek、Qwen、VLM 适配器（目标）
