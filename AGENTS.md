@@ -24,30 +24,29 @@
 | 模板 | 本项目落点 | 适配差异 |
 |---|---|---|
 | `README.md` | 本表；进入项目的读取顺序以 `docs/INDEX.md` §1 为准 | 不复制 `standards/` 目录（未采纳清单） |
-| `00-project-context.md` | `docs/product-v2-project-context.md`（§3.3 运行取值、§4.1 选型、§4.2 依赖、§5 目录地图、§7 质量门槛） | CI/CD 与 SSH 取值写“无”，理由 SEL-005 |
+| `00-project-context.md` | `docs/product-v2-project-context.md`（§3.3 运行取值、§4.1 选型、§4.2 依赖、§5 目录地图、§7 质量门槛） | Docker、GitHub Actions 与 SSH 取值由 SEL-005 固定 |
 | `01-requirements.md` | Product V2 计划（§3 产品合同、§10.1 任务表、§11 证据矩阵） | 需求以任务卡呈现（含验收条件），不另起 PRD |
 | `PROGRESS.md` | `_working/amz-listing-kit-product-v2/state.md` + 项目上下文 §4.1 | state 只存进度/证据/下一动作；决策（含被拒方案与复访条件）在 §4.1，故障在证据文件 |
 | `02-coding-standards.md` | 本文件 Coding Style | 未采用 ruff（无格式化工具链，理由在项目上下文 §7）；命名/注释/错误处理/提交前自检按本文件 |
 | `03-testing-standards.md` | 本文件 Testing Guidelines + 计划 §12 | 用例 AAA/Given-When-Then；偶发失败必须根治；不设覆盖率阈值 |
-| `04-git-workflow.md` | 本文件 Commit & Pull Request Guidelines | 无远端、无 Issue/PR 流程：分支命名 `<类型>/<短描述>` + 提交前缀 + 守卫替代三道闸 |
-| `05-cicd-standards.md` | 不适用（SEL-005）；替代物是 `tools/` 守卫（串行跑） | 无 CI、无 Docker、无服务器部署 |
-| `06-ai-collab-protocol.md` | ②.5 选型门 = 本文件 §Selection Gate（机器可查）；确认门 = 推进到 state 唯一下一动作后等用户确认；故障反哺 = 证据写 `evals/` + 守卫固化 | GitHub 六步（建仓/Secrets/PR/CI/CD）不适用，见未采纳清单 |
+| `04-git-workflow.md` | 本文件 Commit & Pull Request Guidelines + GitHub 分支/PR | 分支命名 `<类型>/<短描述>`；PR 先过 `.github/workflows/ci-cd.yml` 再人工合并 `main` |
+| `05-cicd-standards.md` | `.github/workflows/ci-cd.yml`、`Dockerfile`、README 部署说明（SEL-005） | CI 校验控制面、浏览器合同和镜像；`main` 通过 SSH 传镜像、健康检查并失败回滚 |
+| `06-ai-collab-protocol.md` | ②.5 选型门 = 本文件 §Selection Gate（机器可查）；确认门 = 推进到 state 唯一下一动作后等用户确认；故障反哺 = 证据写 `evals/` + 守卫固化 | 建仓/Secrets/PR/CI/CD 已落地；业务确认仍由 state 唯一下一动作控制 |
 | `07-dependency-standards.md` | §Selection Gate（复用阶梯、选型四问、禁止自造清单）+ 项目上下文 §4.2（版本锁定、许可证、移除成本） | 漏洞扫描周期未启用，见未采纳清单 |
 | `templates/TECH_SELECTION.md` | §Selection Gate 的报告字段（约束/已有能力/候选/权衡/推荐/被拒/复访条件/PoC 判定） | 不单独立文件 |
 | `templates/ADR_TEMPLATE.md` | 项目上下文 §4.1 的 SEL 行（含被拒方案与复访条件） | 不建 `docs/adr/` |
 | `templates/ISSUE_TEMPLATE.md` | 未启用（无 Issue 流程）；任务以计划任务卡的验收条件为准 | 复访：启用 GitHub Issue 时 |
-| `templates/PR_TEMPLATE.md` | 未启用（无 PR 流程）；提交自检见本文件 Commit & Pull Request Guidelines | 复访：出现远端仓库与 PR 时 |
+| `templates/PR_TEMPLATE.md` | 暂不复制模板；PR 的最小内容与门禁见本文件 Commit & Pull Request Guidelines | 复访：多人协作需要结构化表单时 |
 
 **未采纳清单**（模板有、本项目明确不做；每项带复访条件）：
 
 | 未采纳 | 理由 | 复访条件 |
 |---|---|---|
 | `standards/` 物理目录 | 与计划/state/context 形成双权威（SEL-004） | 需要对外交付独立规范包 |
-| 建仓、Secrets、`gh pr`、CI runner、Docker、SSH 部署 | 本机/内网单机使用，无远端与部署目标（SEL-005） | 多人协作、远端仓库或部署目标出现 |
 | ruff / 格式化工具链 | 无构建步骤；引入需先过选型门（项目上下文 §7） | 引入第一个格式化/lint 工具 |
 | 覆盖率阈值（≥80%） | 判据是“证据能判红”而非行覆盖率（项目上下文 §7） | 引入覆盖率工具并立 SEL 决策 |
 | 依赖漏洞扫描周期（`07` §6） | 依赖少而锁定，尚无扫描工具 | 新增依赖或准备对外交付时执行并记录 |
-| Issue 编号分支与 PR 三道闸 | 单人本机开发，无 Issue/PR 流程 | 出现第二位协作者 |
+| Issue 编号分支 | 当前任务权威在 Product V2 计划/state，另建 Issue 会重复任务状态 | 出现第二位协作者或需要公开排期 |
 
 ## Build, Test, and Development Commands
 
@@ -61,7 +60,8 @@ uv run --no-project --with-requirements requirements.txt python evals/probes/pro
 ```
 
 浏览器证据用 `--with playwright python tools/verify_<task>.py`。**守卫串行跑**：文档守卫会调用
-反向探针，而探针会临时改写 state，并行会踩出假红。
+反向探针，而探针会临时改写 state，并行会踩出假红。Docker 构建、容器健康检查和远程部署由
+`.github/workflows/ci-cd.yml` 执行，本机不是正式容器宿主。
 
 ## Coding Style & Naming Conventions
 
@@ -87,9 +87,9 @@ ASCII。前端是原生 ESM，**无构建步骤**；DOM 只做投影，业务状
 ## Commit & Pull Request Guidelines
 
 提交信息用 `feat(v2): …`、`docs(control): …`、`evidence(vX.Y.Z): …` 前缀，正文写任务 ID 与证据路径；
-一次提交只做一件事。提交前跑文档守卫与状态守卫，红了先修再走。本仓库没有 PR/CI 流程：完成一个任务
-就更新 state 的 `task_progress` 与 `next_action`。改权威文档前先留快照到
-`_stage-amz-control/<用途>-<时间戳>/`，并把前后哈希写进证据。
+一次提交只做一件事。提交前跑文档守卫与状态守卫，红了先修再走。功能分支推送后创建 PR；说明必须写
+结果、验证证据、已知边界和回退方式，CI 全绿后才人工合并 `main`。`main` 的 CD 自动部署 Docker 镜像，
+不在 PR 阶段部署。改权威文档前先留快照到 `_stage-amz-control/<用途>-<时间戳>/`，并把前后哈希写进证据。
 
 ## Security & Configuration Tips
 

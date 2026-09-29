@@ -400,6 +400,7 @@ PromptContext
 | V2.0.1 | Product V2 权威地图、项目上下文、详细计划与 Goal 绑定 | — | 新旧世代、事实所有者、非目标和系统 Goal 身份明确 | INDEX、上下文、计划 diff、Goal 读数 | 回退控制面提交，不改实现 |
 | V2.0.2 | Product V2 state 与守卫适配 | V2.0.1 | 唯一 active state、唯一 next action、旧 state 可保留为 superseded | `check_docs`、`check_project_state` 和反向探针 | 回退守卫和 state，不降低门槛 |
 | V2.0.3 | Product V1 冻结基线与迁移边界 | V2.0.2 | 旧 D4.12 证据可定位；旧正式入口未被本次文档切换破坏 | git diff、旧回归报告、`product-v1-d4.12-baseline` 标签 | 从 Git 标签恢复 |
+| V2.CI.1 | GitHub Actions CI 与 Docker CD | V2.1.4 | PR/push 校验控制面、正式入口、浏览器合同并构建健康镜像；仅 `main` SSH 部署 SHA 镜像；健康失败自动恢复上一容器且不删除其他应用 | 本地静态/容器验证、PR Action run、main 部署日志与 `/api/health` | PR 不部署；CD 失败保留或恢复上一容器，必要时暂停 workflow |
 | V2.1.1 | IndexedDB schema、repository、migration 与事务测试 | G0 | JSON/Blob 版本、当前指针、事务和迁移契约可执行 | 单元测试、schema 反向探针 | feature flag 回退旧入口 |
 | V2.1.2 | 空白项目首页与项目 CRUD | V2.1.1 | 新建、打开、重命名、复制、删除只影响当前浏览器 | Playwright + IndexedDB 后置条件 | 保留旧 Product V1 路由 |
 | V2.1.3 | 完整项目 ZIP 导入/导出 | V2.1.1 | 往返后对象、Blob 和 hash 一致；损坏包被拒绝且不污染现有项目 | round-trip、篡改包测试 | 导入先 staging，失败不 commit |

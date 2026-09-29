@@ -82,6 +82,17 @@ uv run --no-project --with-requirements requirements.txt python evals\probes\pro
 `--no-run` 只检查文档结构与登记关系，不证明 README 中的命令已执行。产品完成声明还需要浏览器、
 IndexedDB、API、真实 Provider 和首次使用者证据，具体门槛由产品计划定义。
 
+## CI/CD
+
+`.github/workflows/ci-cd.yml` 在 PR 和 push 上执行控制面守卫、当前 Product V2 浏览器验证、Docker 构建和
+容器健康检查。本机不承担正式容器运行。只有 `main` push 会部署：Actions 使用仓库中的 `SSH_HOST`、
+`SSH_USER`、`SSH_PRIVATE_KEY`，把以 Git SHA 标记的镜像传到远程服务器，再由远程 Docker 替换同名容器。
+新容器健康失败时恢复上一容器；PR 不部署。服务器可选将运行时变量放在
+`$HOME/.config/amz-listing-kit/app.env`。
+
+这套流程存在不等于已经部署成功；是否真实上线必须以对应的 GitHub Actions run 和目标机
+`GET /api/health` 为证据。
+
 ## 历史 Product V1
 
 旧 Product V1 仍作为回归基线保留，拥有服务器文件夹工作空间、商品资料、提示词、真实图片生成、候选、

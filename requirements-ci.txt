@@ -1,0 +1,2 @@
+# CI-only browser driver. Runtime image deliberately installs no Python packages.
+playwright==1.63.0

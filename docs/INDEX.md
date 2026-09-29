@@ -75,13 +75,13 @@
 | `docs/standards-template/01-requirements.md` | 外部参考模板 | `设计草案` | `draft` | 活 PRD 与验收写法模板；对应权威为 Product V2 计划 §3 产品合同 + §10.1 任务表 + §11 证据矩阵 |
 | `docs/standards-template/02-coding-standards.md` | 外部参考模板 | `设计草案` | `draft` | 编码标准；已适配进 `AGENTS.md` 的 Coding Style；未采用 ruff，理由与替代写在项目上下文 §7 质量门槛 |
 | `docs/standards-template/03-testing-standards.md` | 外部参考模板 | `设计草案` | `draft` | 测试标准；已适配进计划 §12 与 `AGENTS.md` 的 Testing Guidelines；覆盖率为“暂无阈值 + 理由” |
-| `docs/standards-template/04-git-workflow.md` | 外部参考模板 | `设计草案` | `draft` | Git/PR 流程模板；本仓库无远端与 PR 流程，差异与替代（提交纪律 + 守卫）记在 `AGENTS.md` §Standards Mapping |
-| `docs/standards-template/05-cicd-standards.md` | 外部参考模板 | `设计草案` | `draft` | CI/CD 标准；本仓库不适用（无 CI、无 Docker、无服务器部署），不适用的条件写进 `AGENTS.md` §Standards Mapping |
+| `docs/standards-template/04-git-workflow.md` | 外部参考模板 | `设计草案` | `draft` | Git/PR 流程模板；当前 GitHub 分支、PR 与人工合并规则映射在 `AGENTS.md` §Standards Mapping |
+| `docs/standards-template/05-cicd-standards.md` | 外部参考模板 | `设计草案` | `draft` | CI/CD 标准；Docker + GitHub Actions + SSH 部署的采纳差异与 SEL-005 映射在 `AGENTS.md` §Standards Mapping |
 | `docs/standards-template/06-ai-collab-protocol.md` | 外部参考模板 | `设计草案` | `draft` | AI 协作协议；主干已适配：选型门 = `AGENTS.md` §Selection Gate，确认门 = state 唯一下一动作 + 用户确认 |
 | `docs/standards-template/07-dependency-standards.md` | 外部参考模板 | `设计草案` | `draft` | 依赖与复用阶梯；已适配进 `AGENTS.md` §Selection Gate 与项目上下文 §4.2 依赖登记（版本锁定 + 许可证） |
 | `docs/standards-template/PROGRESS.md` | 外部参考模板 | `设计草案` | `draft` | 状态机与决策记录模板；对应权威为 `_working/amz-listing-kit-product-v2/state.md`，决策在项目上下文 §4.1 |
 | `docs/standards-template/templates/ISSUE_TEMPLATE.md` | 外部参考模板 | `设计草案` | `draft` | 未启用（本仓库无 Issue 流程）；任务描述以计划任务卡的“验收条件”为准 |
-| `docs/standards-template/templates/PR_TEMPLATE.md` | 外部参考模板 | `设计草案` | `draft` | 未启用（本仓库无 PR 流程）；提交信息与自检清单见 `AGENTS.md` 的 Commit & Pull Request Guidelines |
+| `docs/standards-template/templates/PR_TEMPLATE.md` | 外部参考模板 | `设计草案` | `draft` | 暂不复制模板；当前 PR 最小内容与 CI 门禁见 `AGENTS.md` 的 Commit & Pull Request Guidelines |
 | `docs/standards-template/templates/TECH_SELECTION.md` | 外部参考模板 | `设计草案` | `draft` | 选型报告模板；本项目用 `AGENTS.md` 的字段清单 + 项目上下文 §4.1 决策行承载，不单独立文件 |
 | `docs/standards-template/templates/ADR_TEMPLATE.md` | 外部参考模板 | `设计草案` | `draft` | ADR 模板；本项目以项目上下文 §4.1 的 SEL 行（含复访条件）代替独立 `docs/adr/` 目录 |
 

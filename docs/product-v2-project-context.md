@@ -66,9 +66,9 @@ Python 无状态 AI 服务
 | 入口 | `python app/server.py` | 默认启动 Product V2 无状态服务；`--legacy-v1` 回 V1 回归入口 |
 | 端口 | `8780`（默认） | 可用启动参数覆盖；内网穿透与否由使用者自行控制 |
 | 健康检查 | `GET /api/health` | 返回 `product=v2`、`server_state=none` |
-| 宿主 | 本机 / 内网 | 默认绑定回环地址；不承诺公网部署 |
-| 部署目录 | 无 | 不部署到服务器，不写系统服务，不建部署账号 |
-| 容器 | 无 | 不提供 Dockerfile；引入需先补 SEL 决策（SEL-005） |
+| 宿主 | 本机 Python 开发入口；远程服务器 Docker 正式运行 | 默认 Python 启动仍绑定回环地址；远程容器固定监听 `0.0.0.0:8780`，暴露范围由服务器和使用者控制 |
+| 部署方式 | GitHub Actions → SSH → Docker | PR/push 先跑 CI；只有 `main` push 才传输已验证镜像并替换同名容器 |
+| 容器 | `amz-listing-kit:<git-sha>` | 镜像只包含 Product V2 正式入口；健康失败恢复上一容器，不清理其他应用 |
 | 密钥来源 | 环境变量 | `DASHSCOPE_API_KEY` 等；变量清单见 `.env.example` 与本文件 §4.2 |
 
 ## 4. 技术栈与可替换边界
@@ -83,6 +83,7 @@ Python 无状态 AI 服务
 | 视觉校验 | 可替换 VLM Provider | 只提出分级问题与证据；具体模型 ID 在 V2.5.2 实现时按可用配置确定 |
 | 确定性规则 | 版本化平台、文件、槽位依赖与状态规则 | 不把审美或模型自评伪装成硬规则 |
 | 服务端数据库 | 无 | Product V2 不引入数据库、账户、租户或服务器项目索引 |
+| 交付运行时 | Docker + GitHub Actions | CI 构建不可变 SHA 镜像；服务器只负责加载与运行，不在远端重新构建源码 |
 
 首版语义与图片模型均通过阿里云百炼调用，统一从环境变量读取 `DASHSCOPE_API_KEY`；不要求额外的 `DEEPSEEK_API_KEY`。模型名称分别由 `SEMANTIC_MODEL`、`IMAGE_MODEL` 配置，VLM 名称留到 V2.5.2 选择后再写入 `VLM_MODEL`。密钥不得进入浏览器状态、项目包、日志、证据或 Git。
 
@@ -98,7 +99,7 @@ Python 无状态 AI 服务
 | SEL-002 | 服务端 HTTP | 暂保留 stdlib `http.server`（零运行时依赖、端点少、单进程） | Flask / FastAPI + uvicorn | V2.4 图片上传/下载需要 multipart 与流式响应时重开 |
 | SEL-003 | 语义/视觉调用传输层 | **待用户确认**：推荐 `openai` SDK（3.20.0，Apache-2.0）；依赖实测与 PoC 选型报告见 `evals/product-v2/sel003-transport-selection-20260929.txt` | litellm（59 包，拖入 AWS/HF 栈）；requests 手写（命中禁止自造清单） | 用户确认后定稿并登记依赖；PoC 已发现：`deepseek-v4.1-flash` 需给 reasoning 留预算 |
 | SEL-004 | 项目管理规范 | 采纳 `docs/standards-template/` 的**要求**，落进现有五份权威（映射见 `AGENTS.md` §Standards Mapping），不新建 `standards/` 平行目录 | 复制模板另立一套 standards/（会与计划/state 形成双权威） | 需要对外交付独立规范包时重开 |
-| SEL-005 | 持续集成 | 不引入 CI/CD：本机与内网使用，门禁由 `tools/` 守卫脚本承担并写进提交纪律 | GitHub Actions + CD 自动部署 | 出现多人协作、远端仓库或部署目标时重开 |
+| SEL-005 | 持续交付 | 采用 GitHub Actions + Docker：PR/push 串行执行控制面、正式入口、浏览器合同和容器健康检查；仅 `main` 通过现有 SSH Secrets 传输 SHA 镜像，固定 `8780` 端口，失败恢复上一容器 | 继续只靠本机守卫；服务器拉源码后现场构建；引入镜像仓库或编排平台 | 需要多主机、零停机、镜像签名/制品留存或固定端口无法满足时重开 |
 
 状态：SEL-000、SEL-001、SEL-002、SEL-004、SEL-005 已体现在当前实现或控制面，按已生效决策执行；
 只有 SEL-003 未定。SEL-003 确认前不得新增依赖，也不得把工作区中的适配器草案写成已实现能力。
@@ -118,6 +119,9 @@ Python 无状态 AI 服务
 | python-dotenv | 1.2.3 | BSD-3-Clause | 本地 `.env` 加载（`run.py`） | V1 基线已锁版本 | 小：入口一处 |
 | jsonschema | 4.26.0 | MIT | 结构契约校验（Draft 2020-12） | V1 基线已锁版本；V2 提案校验继续使用 | 小：契约校验集中 |
 <!-- dependency-registry:end -->
+
+CI 工具单独锁在 `requirements-ci.txt`，不进入生产镜像：`playwright==1.63.0`（Apache-2.0）用于浏览器
+合同回归。GitHub Actions 复用官方 `actions/checkout@v6`、`actions/setup-python@v6`；SEL-005 是引入依据。
 
 <!-- vendor-registry:begin -->
 | 文件 | 版本/来源 | 用途 | 引入决策 |
@@ -150,6 +154,8 @@ amz-listing-kit/
 ├─ _working/amz-listing-kit-product-v2/
 │  └─ state.md                          # 唯一执行状态
 ├─ evals/product-v2/                    # V2 验证证据（目标）
+├─ .github/workflows/ci-cd.yml           # PR/push CI；main Docker CD
+├─ Dockerfile                            # 只打包 Product V2 正式运行入口
 └─ tools/                               # 控制面、契约、浏览器和回归验证入口
 ```
 
@@ -183,7 +189,8 @@ amz-listing-kit/
 | 静态检查 | 暂无静态检查器；等价手段是守卫脚本（`tools/check_*.py`）与 `node --check` 语法门 | 同上 |
 | 单元测试 | 以验证入口（`tools/verify_*.py`）与反向探针为主，不以 pytest 收集为门槛 | 证据要求见计划 §12 与 `AGENTS.md` |
 | 覆盖率 | 暂不设阈值：本项目的判据是“证据能判红”，不是行覆盖率 | 若引入覆盖率门槛，先立 SEL 决策并说明理由 |
-| 构建 | 无构建产物：Python 直接运行 + 浏览器原生 ESM | `python app/server.py --check` |
+| 应用构建 | 前端无需编译；Python 可直接运行；正式交付物是 CI 构建的 Docker 镜像 | `python app/server.py --check`、`docker build` |
+| 容器交付 | 镜像只含正式 V2 运行资源；健康检查通过；部署失败可恢复上一容器 | `docker build`、容器 `/api/health`、GitHub Actions run 与部署日志 |
 
 ## 8. 上下文读取与写入路由
 
