@@ -6,10 +6,10 @@
 > [`docs/product-v2-goal-and-implementation-plan.md`](docs/product-v2-goal-and-implementation-plan.md)，当前执行位置只看
 > [`_working/amz-listing-kit-product-v2/state.md`](_working/amz-listing-kit-product-v2/state.md)。
 
-本 README 的主体记录**已经实现的 legacy v2 与 Product V1**。Product V2 已完成控制面和详细计划切换，但浏览器 IndexedDB 权威状态、无状态 AI 服务、DeepSeek 新适配、VLM 校验和新正式前端尚未实现。不能把 Product V1 的文件夹工作空间或既有回归结果写成 Product V2 已完成能力。
+本 README 的主体记录**已经实现的 legacy v2 与 Product V1**。Product V2 已完成控制面、详细计划和浏览器存储层（IndexedDB schema、迁移、项目/文档/资产 repository、事务与指针契约）；无状态 AI 服务、DeepSeek 新适配、VLM 校验和新正式前端尚未实现。不能把 Product V1 的文件夹工作空间或既有回归结果写成 Product V2 已完成能力。
 
 > **当前可运行入口仍是 Product V1：**`python app/server.py`（默认 8780），支持本机文件夹工作空间、商品理解、套图、真实生成、审核、单图返工、选择和导出；其证据边界见被取代的 Product V1 计划与 state。
-> **Product V2 当前状态：**系统 Goal 已绑定但目前暂停；控制面与实施计划已经落盘，恢复后的唯一下一任务是 `V2.1.1` 浏览器 IndexedDB 项目仓库。Product V2 尚不能按目标流程实际使用。
+> **Product V2 当前状态：**系统 Goal 已绑定并恢复执行；`V2.1.1` 浏览器存储层已完成并有契约证据（`evals/product-v2/v2.1.1-indexeddb-20260929-201212.txt`），下一任务是 `V2.1.2` 空白项目首页与项目 CRUD。Product V2 尚不能按目标流程实际使用。
 > legacy v2 / Product V1 / Mock / tracer 只作为实现和回归基线；下面历史章节里的旧产品主张不得覆盖顶部这份当前实现边界。
 
 ---
