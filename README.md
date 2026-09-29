@@ -6,11 +6,11 @@
 > [`docs/product-v2-goal-and-implementation-plan.md`](docs/product-v2-goal-and-implementation-plan.md)，当前执行位置只看
 > [`_working/amz-listing-kit-product-v2/state.md`](_working/amz-listing-kit-product-v2/state.md)。
 
-本 README 的主体记录**已经实现的 legacy v2 与 Product V1**。Product V2 已完成控制面、详细计划和浏览器存储层（IndexedDB schema、迁移、项目/文档/资产 repository、事务与指针契约），以及空白项目首页的本机项目 CRUD（新建、打开、重命名、复制、删除；含 390px 与跨配置文件隔离证据）；无状态 AI 服务、DeepSeek 新适配、VLM 校验和商品资料之后的业务前端尚未实现。不能把 Product V1 的文件夹工作空间或既有回归结果写成 Product V2 已完成能力。
+本 README 的主体记录**已经实现的 legacy v2 与 Product V1**。Product V2 已完成控制面、详细计划、浏览器存储层（IndexedDB schema、迁移、项目/文档/资产 repository、事务与指针契约）、空白项目首页的本机项目 CRUD（新建、打开、重命名、复制、删除；含 390px 与跨配置文件隔离证据）、完整项目 ZIP 导入/导出，以及无状态正式入口（默认 `python app/server.py` 只提供静态产品与 `/api/health`；Product V1 退到 `--legacy-v1`）。商品理解、DeepSeek 新适配、VLM 校验和商品资料之后的业务前端尚未实现。不能把 Product V1 的文件夹工作空间或既有回归结果写成 Product V2 已完成能力。
 
-> **当前可运行入口仍是 Product V1：**`python app/server.py`（默认 8780），支持本机文件夹工作空间、商品理解、套图、真实生成、审核、单图返工、选择和导出；其证据边界见被取代的 Product V1 计划与 state。
-> **Product V2 当前状态：**系统 Goal 已绑定并恢复执行；`V2.1.1` 浏览器存储层与 `V2.1.2` 空白项目首页（本机项目 CRUD）已完成并有契约证据（`evals/product-v2/v2.1.1-indexeddb-20260929-202249-repro-v212.txt`、`evals/product-v2/v2.1.2-project-home-20260929-202403-repro2.txt`），下一任务是 `V2.1.3` 完整项目 ZIP 导入/导出。Product V2 尚不能按目标流程实际使用。
-> Product V2 页面目前由验证装置 `tools/v2_test_server.py` 挂载后验证（命令见 `tools/verify_v2_1_2_project_home.py` 顶部）；在 `V2.1.4` 落地正式入口前，`python app/server.py` 仍是 Product V1 入口。
+> **当前正式入口是 Product V2：**`python app/server.py`（默认 8780）只提供 V2 静态产品与 `/api/health`；项目、图片和历史全部保存在浏览器 IndexedDB，服务器不读写工作空间或最近项目索引。
+> **Product V1 历史入口：**`python app/server.py --legacy-v1`（同一默认端口），支持本机文件夹工作空间、商品理解、套图、真实生成、审核、单图返工、选择和导出；其证据边界见被取代的 Product V1 计划与 state。
+> **Product V2 当前状态：**系统 Goal 已绑定并恢复执行；`V2.1.1` 浏览器存储层、`V2.1.2` 空白项目首页、`V2.1.3` 项目 ZIP 导入/导出、`V2.1.4` 无状态正式入口均已完成并有新鲜证据（`evals/product-v2/v2.1.1-indexeddb-20260929-203229-after-v213.txt`、`v2.1.2-project-home-20260929-203233-after-v213.txt`、`v2.1.3-project-package-20260929-203215.txt`、`v2.1.4-formal-entry-20260929-204134.txt`，均在同一目录下），Phase 1 / Gate G1 达成，下一任务是 `V2.2.1` 商品理解契约。商品理解与出图流程尚未实现，Product V2 还不能按目标流程实际使用。
 > legacy v2 / Product V1 / Mock / tracer 只作为实现和回归基线；下面历史章节里的旧产品主张不得覆盖顶部这份当前实现边界。
 
 ---
@@ -202,9 +202,13 @@ amz-listing-kit/
 │  ├─ server.py             薄后端（标准库，零依赖）
 │  ├─ index.html            审核台（单文件原生 JS，零依赖）
 │  └─ design-v2.html        形态定稿参照（保留，不参与运行）
-├─ app/                     v1.20 Mock 工程测试台；service/state 可复用，当前界面已 superseded
-│  ├─ server.py             薄入口：`/` 单页工作台 + `/static`、`/media` 只读白名单 + `/legacy` 旧 tracer + `--check` 自检
-│  ├─ static/               单页工作台：index.html + styles.css + workbench.js（界面）+ service.js / mock-service.js（统一 service 接口）
+├─ app/                     默认 Product V2 正式入口；V1 与旧 Mock 测试台作为回归入口保留
+│  ├─ server.py             ★ 正式入口：默认无状态 Product V2；`--legacy-v1` 回 V1；`--offline-fixture` 旧 Mock；`--check` / `--doctor`
+│  ├─ product_v2_server.py  ★ Product V2 无状态 HTTP 适配器：只服务 app/product_v2/ 静态产品 + `/api/health`，没有 directory/工作空间参数
+│  ├─ product_v2/           ★ Product V2 产品前端：index.html + styles.css + app.js + storage/（IndexedDB schema/迁移/repository/项目包）
+│  ├─ product_v1_server.py  Product V1 历史实现：文件夹工作空间 + WorkspaceStore + 最近项目索引（`--legacy-v1`）
+│  ├─ product_v1/           Product V1 页面资源（index.html + styles.css + product.js）
+│  ├─ static/               旧 Mock 单页工作台：index.html + styles.css + workbench.js + service.js / mock-service.js
 │  ├─ offline.py            离线只读数据源：按商品包装配一次走查会话（状态只在内存）
 │  └─ views.py              旧八页 tracer（在 `/legacy` 等路由）：只渲染权威状态；保留作回归证据，不是产品界面
 ├─ tools/
@@ -340,6 +344,8 @@ $PY tools/gen_slot_cards.py --check   # 卡与表是否同步（不一致 → 2�
 $PY tools/check_docs.py               # 文档守卫：README + 卡（命令真跑 / 数字对齐）+ 全域文档登记 + 管辖事实唯一
 $PY tools/check_project_state.py      # 项目状态守卫：Goal 绑定 / 状态 ID 引用计划 / 阶段门证据 / 按计划核依赖 / 唯一下一动作
 $PY app/server.py --offline-fixture demo/fixture/aster-01 --check   # v1.20 测试台自检：目录没被动过 / 零联网 / 单页五区 + service 接口 + 固定 Mock 边界 / Mock 轨迹可复位（退出码 0 过 / 1 自检不通过 / 2 缺料装不起来 / 3 端口用不了）
+$PY app/server.py --check             # Product V2 正式入口自检：产品资源可取 / `/api/health` / 拒绝 V1 工作空间 API 与目录逃逸（13/13，零模型调用）
+$PY app/server.py --legacy-v1 --check # Product V1 历史入口回归：文件夹工作空间 HTTP 闭环 6/6
 $PY tools/check_pilot_ready.py       # G1 门禁：试点样本现在够不够（1 = 样本或素材还没到位；2 = 写错了或与真实输入对不上）
 $PY tools/check_dataset_ready.py     # G1 门禁：数据集现在够不够（红 = 真实样本或标签人没齐；退出码 2 = 数据集写错了）
 $PY tools/fill_pilot_registry.py --check  # 试点登记表补齐：只读复核有没有跟上素材（0 = 同步 / 1 = 素材还没到位 / 2 = 不一致，跑一次不带 --check 即可）

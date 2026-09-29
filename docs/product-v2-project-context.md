@@ -64,7 +64,7 @@ Python 无状态 AI 服务
 |---|---|---|
 | 前端 | 原生 HTML、CSS、JavaScript | 延续现有低依赖路线；业务状态通过 repository/service 接口访问，不让 DOM 成为状态源 |
 | 浏览器持久化 | IndexedDB + Blob；localStorage 只放轻量指针 | 需要 schema migration、事务、容量提示、项目导入/导出；不把图片 Base64 塞进 localStorage |
-| 服务端 | Python，正式入口仍从 `app/server.py` 路由 | 服务方法无用户工作空间参数；请求进、模型响应出 |
+| 服务端 | Python；正式入口 `app/server.py` 默认启动 Product V2 无状态适配器（`--legacy-v1` 回 V1） | 服务方法无用户工作空间参数；请求进、模型响应出；正式入口不读写工作空间或最近项目索引 |
 | 语义模型 | `deepseek-v4.1-flash`，经 SemanticProvider 适配 | 输出必须通过结构契约；模型可替换，领域对象不绑定模型文本 |
 | 图片模型 | 阿里云百炼 `qwen-image-3.0`，经 ImageProvider 适配 | 直接使用参考图；主流程不抠图、不部署本地分割模型 |
 | 视觉校验 | 可替换 VLM Provider | 只提出分级问题与证据；具体模型 ID 在 V2.5.2 实现时按可用配置确定 |
@@ -78,10 +78,10 @@ Python 无状态 AI 服务
 ```text
 amz-listing-kit/
 ├─ app/
-│  ├─ server.py                         # 正式服务入口
-│  ├─ product_v1_server.py              # Product V1 历史实现，迁移期保留
-│  ├─ product_v2_server.py              # V2 无状态 HTTP 适配器（目标）
-│  └─ product_v2/                       # V2 前端静态资源；storage/ 与项目首页已落地，正式服务适配待建
+│  ├─ server.py                         # 正式服务入口：默认 V2；--legacy-v1 回 V1；--offline-fixture 旧 Mock
+│  ├─ product_v1_server.py              # Product V1 历史实现，迁移期保留（--legacy-v1）
+│  ├─ product_v2_server.py              # V2 无状态 HTTP 适配器（已落地，V2.1.4）
+│  └─ product_v2/                       # V2 前端静态资源；storage/、项目首页、项目包与正式入口均已落地
 ├─ src/
 │  ├─ product_v2_contracts.py           # 领域与 API 契约（目标）
 │  ├─ providers/                        # DeepSeek、Qwen、VLM 适配器（目标）

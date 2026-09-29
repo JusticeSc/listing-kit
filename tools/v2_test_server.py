@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 """V2 验证用的最小静态服务器：把产品静态资源和测试装置挂到同一 origin。
 
-只为 tools/verify_v2_*.py 服务，不进产品入口；V2.1.4 会单独验证正式入口。
+只为 tools/verify_v2_*.py 的契约套件服务，不进产品入口。
+正式入口（V2.1.4 起）是 `python app/server.py`：app/product_v2_server.py 只挂产品静态资源，
+不挂本文件的 /harness/ 映射；正式入口的证据见 tools/verify_v2_1_4_formal_entry.py。
 路径映射：
   /storage/*  → app/product_v2/storage/*
   /harness/*  → evals/product-v2/harness/*

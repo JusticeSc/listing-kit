@@ -1,14 +1,23 @@
 # -*- coding: utf-8 -*-
-r"""本地启动入口：默认启动 Product V1；保留旧离线 Mock 回归入口。
+r"""本地启动入口：默认启动 Product V2 正式入口；V1 与旧 Mock 作为回归入口保留。
 
 常用命令
 --------
     python app/server.py --open
     python app/server.py --check
 
-默认工作台支持本地新建/打开工作空间、商品资料录入、参考图保存与重开恢复、商品理解、
-套图方案、提示词编辑、真实图片生成、单张返工、候选选择与导出，默认端口 8780。
-所有业务记录写入 WorkspaceStore；图片生成走 config/product-v1/providers.json 注册的图片模型。
+Product V2（默认，端口 8780）：无状态服务器只提供页面与静态资源；项目、图片和历史全部保存在
+浏览器 IndexedDB 中。服务器不保存工作空间、不保存最近项目，也没有 directory 之类的本机路径
+参数。自检见 `python app/server.py --check`。
+
+历史入口（回归用，不进 V2 导航）
+--------------------------------
+    python app/server.py --legacy-v1 --open
+    python app/server.py --legacy-v1 --check
+
+Product V1 支持本地文件夹工作空间、商品资料录入、参考图保存与重开恢复、商品理解、套图方案、
+提示词编辑、真实图片生成、单张返工、候选选择与导出；业务记录写入 WorkspaceStore，图片生成走
+config/product-v1/providers.json 注册的图片模型。
 
 旧回归入口
 ----------
@@ -39,6 +48,13 @@ from pathlib import Path     # noqa: E402
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
+
+try:  # 控制台编码归一（项目约定：每个入口自己保证中文输出不炸）
+    from src.console import enable_utf8
+
+    enable_utf8()
+except Exception:  # 归一化失败不该让入口起不来
+    pass
 
 MIME = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
         ".webp": "image/webp", ".html": "text/html; charset=utf-8",
@@ -547,14 +563,15 @@ def serve_blocked(args, reason: str) -> int:
     return 2
 
 
-def run_doctor(host: str, port: int) -> int:
-    """Check this machine can run the product; never starts a server or writes business files."""
+def run_doctor(host: str, port: int, legacy_v1: bool = False) -> int:
+    """Check this machine can run the product; never starts a server or writes business files.
+
+    默认检查 Product V2 正式入口；legacy_v1=True 时检查 Product V1 历史入口。
+    """
     import importlib
     import json
     import os
     import tempfile
-
-    from app.product_v1_server import _default_recent_index_path
 
     results: list[tuple[str, str, str, str]] = []
 
@@ -571,20 +588,32 @@ def run_doctor(host: str, port: int) -> int:
             "--with-requirements requirements.txt python app/server.py --doctor",
         )
 
-    required_files = [
-        ROOT / "app" / "server.py",
-        ROOT / "app" / "product_v1_server.py",
-        ROOT / "src" / "product_prompt.py",
-        ROOT / "config" / "product-v1" / "providers.json",
-    ]
+    if legacy_v1:
+        required_files = [
+            ROOT / "app" / "server.py",
+            ROOT / "app" / "product_v1_server.py",
+            ROOT / "src" / "product_prompt.py",
+            ROOT / "config" / "product-v1" / "providers.json",
+        ]
+    else:
+        required_files = [
+            ROOT / "app" / "server.py",
+            ROOT / "app" / "product_v2_server.py",
+            ROOT / "app" / "product_v2" / "index.html",
+            ROOT / "app" / "product_v2" / "app.js",
+            ROOT / "app" / "product_v2" / "styles.css",
+            ROOT / "app" / "product_v2" / "storage" / "index.js",
+        ]
     missing = [str(item.relative_to(ROOT)) for item in required_files if not item.is_file()]
     if missing:
         add(
             "fail", "项目文件", "缺少：" + "、".join(missing),
             "在完整项目目录中运行（不要只拷走单个文件）",
         )
-    else:
+    elif legacy_v1:
         add("pass", "项目文件", "入口、服务与 provider 注册表齐全")
+    else:
+        add("pass", "项目文件", "入口、无状态适配器与 V2 产品资源齐全")
 
     missing_modules = []
     for module in ("PIL", "requests"):
@@ -602,39 +631,44 @@ def run_doctor(host: str, port: int) -> int:
         add("pass", "运行依赖", "Pillow 与 requests 可用")
 
     image_provider: dict | None = None
-    registry_path = ROOT / "config" / "product-v1" / "providers.json"
-    if registry_path.is_file():
-        try:
-            registry = json.loads(registry_path.read_text(encoding="utf-8"))
-        except Exception as exc:
-            add("fail", "Provider 注册表", f"无法解析：{type(exc).__name__}",
-                "修复 config/product-v1/providers.json 的 JSON 语法")
-        else:
-            providers = {item.get("id"): item for item in registry.get("providers") or []}
-            image_id = registry.get("default_image_provider_id")
-            semantic_id = registry.get("default_semantic_provider_id")
-            image_provider = providers.get(image_id)
-            semantic_provider = providers.get(semantic_id)
-            if (image_provider is None or image_provider.get("role") != "image"
-                    or not image_provider.get("model_id")):
-                add("fail", "Provider 注册表",
-                    f"默认图片 provider {image_id!r} 未注册或缺少 model_id",
-                    "在 providers.json 中登记图片 provider（默认 qwen-image-3.0）")
-            elif semantic_provider is None or semantic_provider.get("role") != "semantic":
-                add("fail", "Provider 注册表", f"默认语义 provider {semantic_id!r} 未注册",
-                    "在 providers.json 中登记语义 provider")
+    if legacy_v1:
+        registry_path = ROOT / "config" / "product-v1" / "providers.json"
+        if registry_path.is_file():
+            try:
+                registry = json.loads(registry_path.read_text(encoding="utf-8"))
+            except Exception as exc:
+                add("fail", "Provider 注册表", f"无法解析：{type(exc).__name__}",
+                    "修复 config/product-v1/providers.json 的 JSON 语法")
             else:
-                add("pass", "Provider 注册表",
-                    f"图片 {image_id} / {image_provider.get('model_id')}；"
-                    f"语义 {semantic_id} / {semantic_provider.get('model_id')}")
+                providers = {item.get("id"): item for item in registry.get("providers") or []}
+                image_id = registry.get("default_image_provider_id")
+                semantic_id = registry.get("default_semantic_provider_id")
+                image_provider = providers.get(image_id)
+                semantic_provider = providers.get(semantic_id)
+                if (image_provider is None or image_provider.get("role") != "image"
+                        or not image_provider.get("model_id")):
+                    add("fail", "Provider 注册表",
+                        f"默认图片 provider {image_id!r} 未注册或缺少 model_id",
+                        "在 providers.json 中登记图片 provider（默认 qwen-image-3.0）")
+                elif semantic_provider is None or semantic_provider.get("role") != "semantic":
+                    add("fail", "Provider 注册表", f"默认语义 provider {semantic_id!r} 未注册",
+                        "在 providers.json 中登记语义 provider")
+                else:
+                    add("pass", "Provider 注册表",
+                        f"图片 {image_id} / {image_provider.get('model_id')}；"
+                        f"语义 {semantic_id} / {semantic_provider.get('model_id')}")
 
-    key_env = (image_provider or {}).get("api_key_env") or "DASHSCOPE_API_KEY"
-    if os.environ.get(key_env):
-        add("pass", "模型凭据", f"已设置 {key_env}")
+        key_env = (image_provider or {}).get("api_key_env") or "DASHSCOPE_API_KEY"
+        if os.environ.get(key_env):
+            add("pass", "模型凭据", f"已设置 {key_env}")
+        else:
+            add("warn", "模型凭据",
+                f"未设置 {key_env}；页面能打开、方案能生成，但一键出图会失败",
+                f'设置后重开终端：setx {key_env} "sk-..."')
     else:
-        add("warn", "模型凭据",
-            f"未设置 {key_env}；页面能打开、方案能生成，但一键出图会失败",
-            f'设置后重开终端：setx {key_env} "sk-..."')
+        add("pass", "模型接入",
+            "Product V2.1 不调用模型；语义与图片提供方在 V2.2 / V2.4 接入，"
+            "到那一步才需要 DASHSCOPE_API_KEY")
 
     import socket as _socket
     with _socket.socket(_socket.AF_INET, _socket.SOCK_STREAM) as probe:
@@ -646,23 +680,31 @@ def run_doctor(host: str, port: int) -> int:
     else:
         add("pass", "端口", f"{host}:{port} 可用")
 
-    index_dir = _default_recent_index_path().parent
-    base = index_dir if index_dir.exists() else index_dir.parent
-    writable = False
-    try:
-        with tempfile.NamedTemporaryFile(dir=base, prefix="amz-doctor-", delete=True):
-            writable = True
-    except Exception:
+    if legacy_v1:
+        from app.product_v1_server import _default_recent_index_path
+
+        index_dir = _default_recent_index_path().parent
+        base = index_dir if index_dir.exists() else index_dir.parent
         writable = False
-    if writable:
-        add("pass", "工作空间索引目录",
-            f"{index_dir} 可写" if index_dir.exists() else f"{index_dir} 将在首次使用时创建")
+        try:
+            with tempfile.NamedTemporaryFile(dir=base, prefix="amz-doctor-", delete=True):
+                writable = True
+        except Exception:
+            writable = False
+        if writable:
+            add("pass", "工作空间索引目录",
+                f"{index_dir} 可写" if index_dir.exists() else f"{index_dir} 将在首次使用时创建")
+        else:
+            add("fail", "工作空间索引目录", f"{index_dir} 不可写",
+                "检查目录权限；产品仍可运行，但最近工作空间列表无法保存")
     else:
-        add("fail", "工作空间索引目录", f"{index_dir} 不可写",
-            "检查目录权限；产品仍可运行，但最近工作空间列表无法保存")
+        add("pass", "用户数据位置",
+            "Product V2 的项目与图片保存在浏览器 IndexedDB；服务器没有工作空间目录，"
+            "也不写最近项目索引")
 
     print("=" * 72)
-    print("AMZ Listing Kit doctor（只检查，不修改任何业务文件）")
+    product_label = "Product V1 历史入口" if legacy_v1 else "Product V2 正式入口"
+    print(f"AMZ Listing Kit doctor（{product_label}；只检查，不修改任何业务文件）")
     print("=" * 72)
     labels = {"pass": "通过", "warn": "注意", "fail": "未通过"}
     for status, name, detail, fix in results:
@@ -692,6 +734,48 @@ def check_product_v1() -> int:
     return subprocess.run(
         [sys.executable, "-B", str(check_script)], cwd=str(ROOT), check=False,
     ).returncode
+
+
+def check_product_v2() -> int:
+    """Run the Product V2 formal-entry self-check; no model call, no file writes."""
+    from app.product_v2_server import run_self_check
+
+    print("Product V2 自检：无状态正式入口")
+    return run_self_check()
+
+
+def serve_product_v2(args) -> int:
+    """Start the default Product V2 entry: static product shell, browser-owned state."""
+    from app.product_v2_server import create_product_v2_server
+
+    try:
+        httpd = create_product_v2_server(args.host, args.port)
+    except OSError as exc:
+        detail = str(exc.strerror or exc).strip().rstrip("。.")
+        print(f"端口 {args.port} 用不了：{detail}。")
+        print(f"换一个端口再启动，例如：python app/server.py --port {args.port + 1}")
+        return 3
+
+    url = f"http://{args.host}:{args.port}/"
+    print("本地商品套图工作台（Product V2）：" + url)
+    if args.host in {"0.0.0.0", "::"}:
+        try:
+            lan = socket.gethostbyname(socket.gethostname())
+            print(f"局域网/内网穿透访问：http://{lan}:{args.port}/")
+        except OSError:
+            pass
+    print("项目与历史保存在这台浏览器里；服务器不保存工作空间，也不保存最近项目记录。")
+    print("当前版本（V2.1）提供本机项目管理与项目包导入/导出；商品资料与出图流程随后续版本接入。")
+    print("按 Ctrl+C 停止。")
+    if args.open:
+        webbrowser.open(url)
+    try:
+        httpd.serve_forever()
+    except KeyboardInterrupt:
+        print("\n已停止。")
+    finally:
+        httpd.server_close()
+    return 0
 
 
 def _load_offline_stack() -> None:
@@ -737,8 +821,11 @@ def serve_product_v1(args) -> int:
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(
-        description="本地商品套图工作台（默认 Product V1；--offline-fixture 保留旧 Mock 回归）"
+        description="本地商品套图工作台（默认 Product V2 无状态入口；"
+                    "--legacy-v1 回 Product V1；--offline-fixture 保留旧 Mock 回归）"
     )
+    ap.add_argument("--legacy-v1", action="store_true",
+                    help="启动 Product V1 历史入口（文件夹工作空间 + 最近项目索引）")
     ap.add_argument("--offline-fixture", default=None,
                     help="启动旧离线 Mock 回归页面，例如 demo/fixture/<包名>")
     ap.add_argument("--project", default=str(ROOT))
@@ -754,9 +841,13 @@ def main(argv=None) -> int:
     if args.port is None:
         args.port = 8778 if args.offline_fixture else 8780
     if not args.offline_fixture:
+        if args.legacy_v1:
+            if args.doctor:
+                return run_doctor(args.host, args.port, legacy_v1=True)
+            return check_product_v1() if args.check else serve_product_v1(args)
         if args.doctor:
             return run_doctor(args.host, args.port)
-        return check_product_v1() if args.check else serve_product_v1(args)
+        return check_product_v2() if args.check else serve_product_v2(args)
 
     _load_offline_stack()
     project = Path(args.project).resolve()
