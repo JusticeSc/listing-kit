@@ -1,15 +1,16 @@
 # amz-listing-kit
 
 > CONTROL-STATUS: current · AUTHORITY: implemented-behavior  
-> 项目上下文从 [`docs/INDEX.md`](docs/INDEX.md) 进入；当前产品目标见
-> [`docs/product-demo-goal-and-implementation-plan.md`](docs/product-demo-goal-and-implementation-plan.md)，
-> 当前执行位置只看 [`_working/amz-listing-kit-product-demo/state.md`](_working/amz-listing-kit-product-demo/state.md)。
+> 项目上下文从 [`docs/INDEX.md`](docs/INDEX.md) 进入；Product V2 的项目身份见
+> [`docs/product-v2-project-context.md`](docs/product-v2-project-context.md)，目标与实施计划见
+> [`docs/product-v2-goal-and-implementation-plan.md`](docs/product-v2-goal-and-implementation-plan.md)，当前执行位置只看
+> [`_working/amz-listing-kit-product-v2/state.md`](_working/amz-listing-kit-product-v2/state.md)。
 
-本 README 的主体继续记录**已经实现的 legacy v2**；当前默认启动入口已切换到 Product V1 的本地商品资料工作台。它们是两条不同产品线，不能把 v2 的七图实现或旧 Mock 当作 Product V1 已接通的生成能力。
+本 README 的主体记录**已经实现的 legacy v2 与 Product V1**。Product V2 已完成控制面和详细计划切换，但浏览器 IndexedDB 权威状态、无状态 AI 服务、DeepSeek 新适配、VLM 校验和新正式前端尚未实现。不能把 Product V1 的文件夹工作空间或既有回归结果写成 Product V2 已完成能力。
 
-> **Product V1 当前可用范围：**新建/打开商品工作空间、最近使用、录入商品资料与 1–3 张参考图、保存并从文件夹恢复。默认入口为 `python app/server.py`（8780）；`python app/server.py --check` 跑本地 HTTP 闭环检查。
-> **尚未接入：**动态方案编译、Prompt 生成、百炼 `qwen-image-3.0` 真实参考图生成、候选审核、定向返工与导出。当前完整目标和阶段以 [`docs/product-demo-goal-and-implementation-plan.md`](docs/product-demo-goal-and-implementation-plan.md) 为准，执行进度只看 [`_working/amz-listing-kit-product-demo/state.md`](_working/amz-listing-kit-product-demo/state.md)。
-> 旧 v2 / Mock / tracer 只作为回归与历史证据；本 README 中与 Product V1 启动方式不符的旧命令，不代表默认入口。
+> **当前可运行入口仍是 Product V1：**`python app/server.py`（默认 8780），支持本机文件夹工作空间、商品理解、套图、真实生成、审核、单图返工、选择和导出；其证据边界见被取代的 Product V1 计划与 state。
+> **Product V2 当前状态：**系统 Goal 已绑定但目前暂停；控制面与实施计划已经落盘，恢复后的唯一下一任务是 `V2.1.1` 浏览器 IndexedDB 项目仓库。Product V2 尚不能按目标流程实际使用。
+> legacy v2 / Product V1 / Mock / tracer 只作为实现和回归基线；下面历史章节里的旧产品主张不得覆盖顶部这份当前实现边界。
 
 ---
 

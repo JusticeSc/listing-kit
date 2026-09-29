@@ -83,8 +83,10 @@ V2_ALLOWED_KEYS = {
 
 PHASE_HEAD = re.compile(r"^###\s+Phase\s+(-?\d+(?:\.\d+)?)\s*[：:]", re.M)
 GATE_DECL = re.compile(r"^\*\*Gate\s+(G-?\d+(?:\.\d+)?)\s*[：:]", re.M)
-TASK_ID_RE = re.compile(r"^D[-0-9A-Za-z.]+$")
-DEP_TOKEN_RE = re.compile(r"(?<![A-Za-z0-9_.-])(D[-0-9A-Za-z.]+|G-?\d+(?:\.\d+)?)(?![A-Za-z0-9_.-])")
+TASK_ID_RE = re.compile(r"^(?:D[-0-9A-Za-z.]+|V2\.[0-9A-Za-z.-]+)$")
+DEP_TOKEN_RE = re.compile(
+    r"(?<![A-Za-z0-9_.-])(D[-0-9A-Za-z.]+|V2\.[0-9A-Za-z.-]+|G-?\d+(?:\.\d+)?)(?![A-Za-z0-9_.-])"
+)
 YAML_BLOCK = re.compile(r"```yaml\r?\n(.*?)```", re.S)
 GOAL_ID_RE = re.compile(r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-"
                         r"[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
@@ -270,20 +272,23 @@ def _check_v2(rep: Report, rel: str, d: dict, plan_text: str,
             if undone:
                 rep.problem(f"[J6] {rel} 任务 {tid} 已推进，但计划依赖 {undone} 未完成。")
 
-    na = d.get("next_action_task")
-    if not na:
-        rep.problem(f"[J7] {rel} 没有 next_action_task。")
-    elif str(na) not in plan_tasks:
-        rep.problem(f"[J7] {rel} 的 next_action_task={na!r} 不在计划任务表。")
-    else:
-        nst = task_status.get(str(na), "pending")
-        if nst not in ("pending", "active"):
-            rep.problem(f"[J7] {rel} 的 next_action_task={na!r} 当前是 {nst}。")
-        undone = [dep for dep in task_deps.get(str(na), []) if not dep_done(dep)]
-        if undone:
-            rep.problem(f"[J7] {rel} 的 next_action_task={na!r} 依赖 {undone} 未完成。")
-
     record_status = d.get("status")
+    # Superseded/completed records are evidence snapshots, not resumable work.  Requiring a
+    # next action there would force a false instruction into history just to satisfy J7.
+    if record_status in ("active", "paused"):
+        na = d.get("next_action_task")
+        if not na:
+            rep.problem(f"[J7] {rel} 没有 next_action_task。")
+        elif str(na) not in plan_tasks:
+            rep.problem(f"[J7] {rel} 的 next_action_task={na!r} 不在计划任务表。")
+        else:
+            nst = task_status.get(str(na), "pending")
+            if nst not in ("pending", "active"):
+                rep.problem(f"[J7] {rel} 的 next_action_task={na!r} 当前是 {nst}。")
+            undone = [dep for dep in task_deps.get(str(na), []) if not dep_done(dep)]
+            if undone:
+                rep.problem(f"[J7] {rel} 的 next_action_task={na!r} 依赖 {undone} 未完成。")
+
     observed = d.get("system_goal_observed_status")
     allowed_observed = {"active": {"active"}, "paused": {"paused", "blocked"}}.get(record_status)
     if allowed_observed is not None and observed not in allowed_observed:

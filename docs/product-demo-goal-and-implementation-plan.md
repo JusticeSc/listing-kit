@@ -1,11 +1,12 @@
 # amz-listing-kit Product V1 Goal 与详细实施计划
 
-> CONTROL-STATUS: current · AUTHORITY: product-contract-and-task-graph  
+> CONTROL-STATUS: superseded · AUTHORITY: historical-product-contract-and-task-graph
+> 已被 `docs/product-v2-goal-and-implementation-plan.md` 取代；本文件只保留 Product V1 的设计与完成证据，不再驱动 D4.13/D4.14。
 > 本文件唯一管辖产品目标、完成合同、目标架构、阶段、Gate、任务定义与依赖；执行进度、证据和唯一下一动作只在 current state 维护。
 
 版本：v2.6  
 日期：2026-09-29  
-状态：当前唯一权威产品合同与实施任务图；Goal 生命周期、执行进度和唯一下一动作只以 current state 为准
+状态：历史 Product V1 产品合同与实施任务图；当前 Product V2 只以新计划与新 state 为准
 
 本次修订：在 D4.4/D4.5 完成后冻结正式开工前的剩余产品决定。补充参考图增删/排序和主参考语义；规定每个新纵向切片必须替换正式导航中的旧对应路径；把 S1 的“一键整套”固定为后端单一幂等编排命令；记录现行 API 到目标合同的迁移所有者；规定发起返工后旧选择只保留为历史、当前 Shot 必须重新确认才可导出。同步精炼系统 Goal objective 与 C1–C13 通过线，不改变 Windows 本地、单商品、Amazon US、真实模型、人工最终选择和陌生人走查的完成门槛。
 

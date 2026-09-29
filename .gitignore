@@ -33,7 +33,8 @@ _working/**
 
 # Keep text evidence, exclude heavyweight generated artifacts
 evals/.tmp/
-evals/probes/
+evals/probes/*
+!evals/probes/project_state.py
 evals/**/*.png
 evals/**/*.jpg
 evals/**/*.jpeg
@@ -49,4 +50,3 @@ evals/**/*.log
 Thumbs.db
 Desktop.ini
 .DS_Store
-

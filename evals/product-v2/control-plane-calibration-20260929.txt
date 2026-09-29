@@ -1,0 +1,43 @@
+amz-listing-kit Product V2 control-plane calibration
+observed_at: 2026-09-29T19:42:00+08:00
+branch: docs/product-v2-control-plane
+status: passed
+scope: authority routing, Product V2 context/plan/state, legacy supersession, control guards
+
+DECISIONS
+- Browser IndexedDB owns user project state; localStorage stores only lightweight pointers.
+- Python service is stateless with respect to user projects.
+- Product V1 is a frozen regression baseline and no longer owns the current goal or next action.
+- standards-template is registered as draft external reference; its classroom confirmation gates and CI/CD defaults are not project instructions.
+- Product V2 system Goal text is proposed, not applied. The new state therefore uses goal_binding=optional.
+
+VERIFICATION
+- tools/check_docs.py: rc=0; 49 registered Markdown files matched 49 files; single authorities passed; 11 deduplicated commands passed.
+- tools/check_project_state.py: rc=0; 4 state records; one active Product V2 record; phase/task/next-action/Goal-read rules passed.
+- evals/probes/project_state.py: rc=0; 19/19 baseline and negative probes matched expected J0-J10 tags and restored the state byte-for-byte.
+- python -m py_compile tools/check_project_state.py evals/probes/project_state.py: rc=0.
+- git diff --check: rc=0 after removing introduced trailing whitespace.
+
+PRE-CHANGE SNAPSHOT
+_stage-amz-control/product-v2-control-before-20260929-193515
+- README.md 5c526e28c935e667ebc2914b7ac27596dac235337b3c56911078f18034d1de97
+- docs/INDEX.md 0cab4e456d05bb58768f5284222ef0b9d12f3a0473e8e5f9b60658cb0494cfd7
+- docs/product-demo-goal-and-implementation-plan.md 3288a1936b779d942415391fa3aed197df3b11d06d2b190d94c3186bb53756be
+- _working/amz-listing-kit-product-demo/state.md 2dc1d6b1d064501acd4049667df1209d511e9c14900ed49d291de45221fe4b37
+- tools/check_project_state.py 85b07ac00b4df9a4dd0fe790cb80dc25f2cab447e50d45639173e829eeea7f53
+
+POST-CHANGE AUTHORITY HASHES
+- README.md aa718fbde34376ba9cdcacd572f632f4eb2e3860eb9fb8b1b7eaf4e050ae8f3b
+- docs/INDEX.md 8733919e2d5554e1c2936489a0babed6ef9f6124a37fde13a5593e574e0ac54a
+- docs/product-demo-goal-and-implementation-plan.md 65a027ef37e21b13f2ad8ceb95c61632968bb14009adb6b631394ed27a5a5297
+- docs/product-v2-project-context.md d887257b2bbfc8f5329c19fa9b7ddc0ffc39ddd677651ad70a1ba7d55fe29493
+- docs/product-v2-goal-and-implementation-plan.md 35713c23fe908346e25e80f64ad79c236f3061bbc0645e26f0ec5fe6ccc3ac1a
+- _working/amz-listing-kit-product-demo/state.md 1e0ef9e3f6b227c14ecb8a2f6759e4ea4718a1fd189bc8408fd16eb68fc72a77
+- _working/amz-listing-kit-product-v2/state.md 59eea6c885d564ded082e3c8198917833be7a37aa5276053fd04bd49ab3561b0
+- tools/check_project_state.py dee12cc3bbd21ac349b4f72120c13a80bdb127f482cf9b02978c89ba7383f9d4
+- evals/probes/project_state.py 56948ad9824b7b48dddf60f10a643ae013251daa91b9d721efd5e217fc918405
+
+BOUNDARY
+- This evidence proves the control-plane documents and guards are internally consistent.
+- It does not prove any Product V2 runtime feature has been implemented.
+- Exact next action: V2.1.1 IndexedDB schema, repository, migration, and transaction tests.
