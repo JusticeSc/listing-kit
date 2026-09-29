@@ -1,0 +1,30 @@
+NOT-AUTHORITY —— 时点证据：2026-09-29 上下文路由收敛与 SEL 状态行补全；不发布当前状态或规范。
+
+# 项目上下文：路由单点化 + SEL 状态行补全
+
+对象：`docs/product-v2-project-context.md`
+
+改动 1（路由单点化）：
+  问题：读取顺序与写入路由各有两个出处 —— `docs/INDEX.md` §1/§5 与项目上下文 §8。
+  两处当时内容一致，但同属一类事实；按「政出一门」，一致的双写仍会各自漂移，
+  且读者不知道该信哪一份。
+  处置：路由只保留在 `docs/INDEX.md`（本文件的自我定位就是路由与身份登记）；项目上下文 §8
+  改为指针，不再复制两张表。
+
+改动 2（SEL 状态行）：
+  问题：§4.1 表里有 SEL-004、SEL-005 两行决策，但尾行状态只写了 SEL-000/001/002/003。
+  处置：尾行补上 SEL-004/SEL-005 为「当前工作决策，用户确认后转正式」，并指向
+  `AGENTS.md` §Standards Mapping 的落点与未采纳清单。
+
+快照与前后哈希（SHA-256）：
+  改前：`_stage-amz-control/context-routing-20260929-2235/product-v2-project-context.md`
+        097AE689401F05B638016678208B1113AF30DC75CB02D1F7ED3AC319592AAA64
+  改后：`docs/product-v2-project-context.md`
+        61E315E1C0A4A34C6246B2CC60F579D85230D567A1AD223C50BAA84F56B77F25
+
+验证（同次运行）：
+  · tools/check_docs.py --no-run → rc=0（登记 53/53、依赖 6/6、模板映射 14/14）
+  · tools/check_project_state.py → rc=0
+
+本证据不证明：产品行为；也不覆盖改动之后的进一步变化。独立复现未做
+（协作通道此前三次丢载荷，见 standards-mapping-gate-20260929.txt 的复现边界）。

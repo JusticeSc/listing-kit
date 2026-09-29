@@ -99,8 +99,7 @@ Python 无状态 AI 服务
 | SEL-004 | 项目管理规范 | 采纳 `docs/standards-template/` 的**要求**，落进现有五份权威（映射见 `AGENTS.md` §Standards Mapping），不新建 `standards/` 平行目录 | 复制模板另立一套 standards/（会与计划/state 形成双权威） | 需要对外交付独立规范包时重开 |
 | SEL-005 | 持续集成 | 不引入 CI/CD：本机与内网使用，门禁由 `tools/` 守卫脚本承担并写进提交纪律 | GitHub Actions + CD 自动部署 | 出现多人协作、远端仓库或部署目标时重开 |
 
-状态：SEL-000 已写入 `AGENTS.md`；SEL-001、SEL-002、SEL-004、SEL-005 是当前工作决策，
-用户确认后转正式（SEL-004/SEL-005 的落点与未采纳清单见 `AGENTS.md` §Standards Mapping）；
+状态：SEL-000 已写入 `AGENTS.md`；SEL-001、SEL-002 是当前工作决策，用户确认后转正式；
 SEL-003 未定——未定之前不新增依赖。
 
 ### 4.2 依赖与 vendor 登记
@@ -187,7 +186,21 @@ amz-listing-kit/
 
 ## 8. 上下文读取与写入路由
 
-读取顺序与写入路由的**唯一权威**在 [`docs/INDEX.md`](INDEX.md)（§1 的恢复读取顺序、§5 的
-「写入路由：改哪里，不改哪里」）。本节不再复制这两张表：两处都写、内容一致时它们仍会
-各自漂移，读者也不知道该信哪一份。本文件回到自己的问题——项目是什么、怎样运行、
-数据归谁、目录与质量门槛是什么。
+读取顺序：
+
+```text
+docs/INDEX.md
+→ 本文件
+→ _working/amz-listing-kit-product-v2/state.md
+→ 当前计划中 next_action 对应任务
+→ 该任务证据与相关代码
+```
+
+写入规则：
+
+- 项目身份、技术栈、运行边界、目录所有权变化：只改本文件。
+- 目标、需求、状态机、任务、Gate、完成判据变化：只改 Product V2 计划。
+- 当前进度、证据、阻塞、未知、下一动作变化：只改 Product V2 state。
+- 当前已经实现的行为变化：改代码、测试，并更新 README 的实现说明。
+- 一次验证发生了什么：写入 `evals/product-v2/`，由 state 只引用。
+- 文档身份变化：改 `docs/INDEX.md`，并同步文档顶部 CONTROL-STATUS。
