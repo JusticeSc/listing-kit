@@ -67,7 +67,7 @@ Python 无状态 AI 服务
 | 端口 | `8780`（默认） | 可用启动参数覆盖；内网穿透与否由使用者自行控制 |
 | 健康检查 | `GET /api/health` | 返回 `product=v2`、`server_state=none` |
 | 宿主 | 本机 Python 开发入口；远程服务器 Docker 正式运行 | 默认 Python 启动仍绑定回环地址；远程容器固定监听 `0.0.0.0:8780`，暴露范围由服务器和使用者控制 |
-| 部署方式 | GitHub Actions → SSH → Docker | PR/push 先跑 CI；只有 `main` push 才传输已验证镜像并替换同名容器 |
+| 部署方式 | GitHub Actions → SSH → 远程 Docker | PR/push 先跑 CI；只有 `main` push 才传最小构建上下文，由远程 Docker 构建 SHA 镜像并替换同名容器 |
 | 容器 | `amz-listing-kit:<git-sha>` | 镜像只包含 Product V2 正式入口；健康失败恢复上一容器，不清理其他应用 |
 | 密钥来源 | 环境变量 | `DASHSCOPE_API_KEY` 等；变量清单见 `.env.example` 与本文件 §4.2 |
 
@@ -83,7 +83,7 @@ Python 无状态 AI 服务
 | 视觉校验 | 可替换 VLM Provider | 只提出分级问题与证据；具体模型 ID 在 V2.5.2 实现时按可用配置确定 |
 | 确定性规则 | 版本化平台、文件、槽位依赖与状态规则 | 不把审美或模型自评伪装成硬规则 |
 | 服务端数据库 | 无 | Product V2 不引入数据库、账户、租户或服务器项目索引 |
-| 交付运行时 | Docker + GitHub Actions | CI 构建不可变 SHA 镜像；服务器只负责加载与运行，不在远端重新构建源码 |
+| 交付运行时 | Docker + GitHub Actions | CI 先验证同一 Dockerfile；远程服务器 Docker 从该提交的最小上下文构建 SHA 镜像并运行 |
 
 首版语义与图片模型均通过阿里云百炼调用，统一从环境变量读取 `DASHSCOPE_API_KEY`；不要求额外的 `DEEPSEEK_API_KEY`。模型名称分别由 `SEMANTIC_MODEL`、`IMAGE_MODEL` 配置，VLM 名称留到 V2.5.2 选择后再写入 `VLM_MODEL`。密钥不得进入浏览器状态、项目包、日志、证据或 Git。
 
@@ -99,7 +99,7 @@ Python 无状态 AI 服务
 | SEL-002 | 服务端 HTTP | 暂保留 stdlib `http.server`（零运行时依赖、端点少、单进程） | Flask / FastAPI + uvicorn | V2.4 图片上传/下载需要 multipart 与流式响应时重开 |
 | SEL-003 | 语义/视觉调用传输层 | **待用户确认**：推荐 `openai` SDK（3.20.0，Apache-2.0）；依赖实测与 PoC 选型报告见 `evals/product-v2/sel003-transport-selection-20260929.txt` | litellm（59 包，拖入 AWS/HF 栈）；requests 手写（命中禁止自造清单） | 用户确认后定稿并登记依赖；PoC 已发现：`deepseek-v4.1-flash` 需给 reasoning 留预算 |
 | SEL-004 | 项目管理规范 | 采纳 `docs/standards-template/` 的**要求**，落进现有五份权威（映射见 `AGENTS.md` §Standards Mapping），不新建 `standards/` 平行目录 | 复制模板另立一套 standards/（会与计划/state 形成双权威） | 需要对外交付独立规范包时重开 |
-| SEL-005 | 持续交付 | 采用 GitHub Actions + Docker：PR/push 串行执行控制面、正式入口、浏览器合同和容器健康检查；仅 `main` 通过现有 SSH Secrets 传输 SHA 镜像，固定 `8780` 端口，失败恢复上一容器 | 继续只靠本机守卫；服务器拉源码后现场构建；引入镜像仓库或编排平台 | 需要多主机、零停机、镜像签名/制品留存或固定端口无法满足时重开 |
+| SEL-005 | 持续交付 | 采用 GitHub Actions + Docker：PR/push 串行执行控制面、正式入口、浏览器合同和容器健康检查；仅 `main` 传最小 Product V2 构建上下文，由远程 Docker 构建 SHA 镜像，固定 `8780` 端口，失败恢复上一容器 | 继续只靠本机守卫；每次跨网传完整基础镜像；服务器拉整个 Git 仓库；引入镜像仓库或编排平台 | 需要多主机、零停机、镜像签名/制品留存或固定端口无法满足时重开 |
 
 状态：SEL-000、SEL-001、SEL-002、SEL-004、SEL-005 已体现在当前实现或控制面，按已生效决策执行；
 只有 SEL-003 未定。SEL-003 确认前不得新增依赖，也不得把工作区中的适配器草案写成已实现能力。

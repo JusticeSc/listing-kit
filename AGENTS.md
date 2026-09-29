@@ -30,7 +30,7 @@
 | `02-coding-standards.md` | 本文件 Coding Style | 未采用 ruff（无格式化工具链，理由在项目上下文 §7）；命名/注释/错误处理/提交前自检按本文件 |
 | `03-testing-standards.md` | 本文件 Testing Guidelines + 计划 §12 | 用例 AAA/Given-When-Then；偶发失败必须根治；不设覆盖率阈值 |
 | `04-git-workflow.md` | 本文件 Commit & Pull Request Guidelines + GitHub 分支/PR | 分支命名 `<类型>/<短描述>`；PR 先过 `.github/workflows/ci-cd.yml` 再人工合并 `main` |
-| `05-cicd-standards.md` | `.github/workflows/ci-cd.yml`、`Dockerfile`、README 部署说明（SEL-005） | CI 校验控制面、浏览器合同和镜像；`main` 通过 SSH 传镜像、健康检查并失败回滚 |
+| `05-cicd-standards.md` | `.github/workflows/ci-cd.yml`、`Dockerfile`、README 部署说明（SEL-005） | CI 校验控制面、浏览器合同和镜像；`main` 传最小构建上下文，由远程 Docker 构建、健康检查并失败回滚 |
 | `06-ai-collab-protocol.md` | ②.5 选型门 = 本文件 §Selection Gate（机器可查）；确认门 = 推进到 state 唯一下一动作后等用户确认；故障反哺 = 证据写 `evals/` + 守卫固化 | 建仓/Secrets/PR/CI/CD 已落地；业务确认仍由 state 唯一下一动作控制 |
 | `07-dependency-standards.md` | §Selection Gate（复用阶梯、选型四问、禁止自造清单）+ 项目上下文 §4.2（版本锁定、许可证、移除成本） | 漏洞扫描周期未启用，见未采纳清单 |
 | `templates/TECH_SELECTION.md` | §Selection Gate 的报告字段（约束/已有能力/候选/权衡/推荐/被拒/复访条件/PoC 判定） | 不单独立文件 |
