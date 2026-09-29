@@ -28,6 +28,7 @@
 | 路径 | 世代 | 管辖事实 | 状态 | 说明 |
 |---|---|---|---|---|
 | `README.md` | v2 | `实现` | `current` | 当前实现的人读入口，只描述已落地 v2 与明确的新 demo 代码；项目目标和状态分别链接到各自权威 |
+| `AGENTS.md` | Product V2 | `项目规则` | `current` | Agent 工作规则与选型门禁（Reuse-first）的唯一权威；目标、技术栈、状态分别链接到各自权威，不复制正文 |
 | `docs/product-v1-goal-and-implementation-plan.md` | Product V1 | `历史证据` | `superseded` | 被 `docs/product-demo-goal-and-implementation-plan.md` 取代；真实试点假设不再作为当前完成标准 |
 | `_working/amz-listing-kit-product-v1/state.md` | Product V1 | `历史证据` | `superseded` | 被 `_working/amz-listing-kit-product-demo/state.md` 取代；保留上一轮执行位置，不据以继续开工 |
 | `docs/drafts/requirements-analysis-2026-09-24.md` | 演示产品需求发现 | `历史证据` | `superseded` | 结论已并入 `docs/product-demo-goal-and-implementation-plan.md`；保留面试证据、推导过程与未知项来源 |

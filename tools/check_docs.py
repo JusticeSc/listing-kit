@@ -34,7 +34,7 @@ r"""文档守卫 —— 让文档里的话有人守。
     混报的后果很具体：人看到一屏红会以为文档烂了，而实际上九成是"该跑生成器了"。
     分开之后，"跑一下生成器"与"去改句子"变成两个不同的动作。
 
-八项检查
+九项检查
 --------
     ① 卡与 gen_slot_cards.build() 逐字一致                → stale
     ② 幽灵卡（目录里有、表里已无对应坑位）                 → stale
@@ -54,6 +54,12 @@ r"""文档守卫 —— 让文档里的话有人守。
        —— 这不是风格问题，是**换台机器就废**：README 曾经写着
           PY="C:/Users/31368/.workbuddy/.../python.exe"，那是开发机的一次快照，
           却被放在「怎么跑」的位置上。见 _check_no_abs_interpreter。
+
+    ⑨ 选型门禁有落点、依赖有登记，且登记表与 requirements.txt / vendor 目录
+       双向一致 → problems
+       —— 前八项管不住「实现之前有没有先找现成能力」。句子拦不住重复造轮子，
+          登记 + 双向比对能：新增依赖必须同时改 requirements.txt 与项目上下文 §4，
+          少一处就报红。见 _check_reuse_first_gate。
 
 另有一项铁律检查由守卫自己实现、**不 exec 外部命令**（见 _check_orchestrator_rule）：
 
@@ -587,6 +593,7 @@ DOC_KINDS = {
     "实现": "代码**当前真做什么**",
     "产品目标": "要做到什么、什么算完成",
     "执行状态": "当前推进到哪、下一步做什么",
+    "项目规则": "Agent 与协作者必须遵守的工作规则（选型门禁、依赖登记）",
     "架构设计": "目标架构与技术选型",
     "设计草案": "未进控制面的设计前沿",
     "历史证据": "保留作证据，不据以行事",
@@ -599,7 +606,7 @@ DOC_KINDS = {
 # 「README 说 v2 是当前实现」与「v2 架构文档写着已被 v4 取代」——
 # 它们其实回答的是不同的问题。写出管辖事实之后，那是分工；
 # 而同一个问题上出现两个出处，就是这里要报的红。
-SINGLETON_KINDS = ("实现", "产品目标", "执行状态")
+SINGLETON_KINDS = ("实现", "产品目标", "执行状态", "项目规则")
 CONTROL_STATUS_RE = re.compile(
     r"CONTROL-STATUS:\s*(current|generated|draft|superseded|to-delete)\b")
 
@@ -715,6 +722,123 @@ def _check_docs_index(rep: Report) -> None:
 
 # ------------------------------------------- 受管文档不得写死解释器路径
 
+# ------------------------------------------- 选型门禁与依赖登记
+#
+# 为什么单独立这一项：文档守卫前八项管的是「文档里的话对不对」和「哪份文档有效」，
+# 没有一项管「实现之前有没有先找过现成能力」。而这个仓库真实发生过：语义适配器
+# 先手写了几百行传输与错误分类，之后才有人问『为什么不用现成库』。
+# 句子拦不住这件事，只有登记 + 双向比对能拦住：新增依赖必须同时改
+# requirements.txt 与项目上下文的依赖登记表，少一处就报红。
+
+AGENTS_FILE = ROOT / "AGENTS.md"
+REQUIREMENTS_FILE = ROOT / "requirements.txt"
+CONTEXT_FILE = ROOT / "docs" / "product-v2-project-context.md"
+VENDOR_DIR = ROOT / "app" / "product_v2" / "vendor"
+
+REUSE_BEGIN = "<!-- reuse-first:begin -->"
+REUSE_END = "<!-- reuse-first:end -->"
+DEP_BEGIN = "<!-- dependency-registry:begin -->"
+DEP_END = "<!-- dependency-registry:end -->"
+VENDOR_BEGIN = "<!-- vendor-registry:begin -->"
+VENDOR_END = "<!-- vendor-registry:end -->"
+
+REUSE_REQUIRED_TOKENS = (
+    "复用 > 配置 > 集成 > 扩展 > 自研",
+    "选型报告",
+    "复访条件",
+    "requirements.txt",
+)
+
+
+def _norm_pkg(name: str) -> str:
+    return re.sub(r"[-_.]+", "-", name.strip().lower())
+
+
+def _requirements_names() -> set[str]:
+    names: set[str] = set()
+    if not REQUIREMENTS_FILE.exists():
+        return names
+    for line in REQUIREMENTS_FILE.read_text(encoding="utf-8").splitlines():
+        ln = line.split("#", 1)[0].strip()
+        if not ln or ln.startswith("-"):
+            continue
+        name = re.split(r"[<>=!~\[\s;]", ln, maxsplit=1)[0]
+        if name:
+            names.add(_norm_pkg(name))
+    return names
+
+
+def _marked_rows(text: str, begin: str, end: str) -> list[str] | None:
+    """取出标记块里的 Markdown 表格首列（跳过表头与分隔行）；没有标记块返回 None。"""
+    if begin not in text or end not in text:
+        return None
+    block = text.split(begin, 1)[1].split(end, 1)[0]
+    rows: list[str] = []
+    for raw in block.splitlines():
+        ln = raw.strip()
+        if not ln.startswith("|") or not ln.endswith("|"):
+            continue
+        cells = [c.strip().strip("`").strip() for c in ln.strip("|").split("|")]
+        if cells and all(set(c) <= set("-: ") for c in cells):
+            continue
+        rows.append(cells[0] if cells else "")
+    return rows[1:] if rows else []
+
+
+def _check_reuse_first_gate(rep: Report) -> None:
+    """⑨ 选型门禁有落点、依赖有登记，且登记表与 requirements.txt / vendor 双向一致。"""
+    if not AGENTS_FILE.exists():
+        rep.problem("AGENTS.md 不存在 —— 选型门禁（Reuse-first）没有任何仓库级落点，"
+                    "下一个 Agent 会继续『需求 → 直接实现』。")
+    else:
+        agents = AGENTS_FILE.read_text(encoding="utf-8")
+        if REUSE_BEGIN not in agents or REUSE_END not in agents:
+            rep.problem("AGENTS.md 缺少 reuse-first 标记块（" + REUSE_BEGIN + " / "
+                        + REUSE_END + "）—— 门禁正文必须可被机器定位。")
+        else:
+            for token in REUSE_REQUIRED_TOKENS:
+                if token not in agents:
+                    rep.problem(f"AGENTS.md 的选型门禁缺少必需内容：{token!r} —— "
+                                "门禁被删成一句话就不再是门禁。")
+
+    if not CONTEXT_FILE.exists():
+        rep.problem("docs/product-v2-project-context.md 不存在 —— 选型决策与依赖登记"
+                    "没有权威落点。")
+        return
+    context = CONTEXT_FILE.read_text(encoding="utf-8")
+
+    actual = _requirements_names()
+    declared = _marked_rows(context, DEP_BEGIN, DEP_END)
+    if declared is None:
+        rep.problem("项目上下文缺少 dependency-registry 登记块（" + DEP_BEGIN + " / "
+                    + DEP_END + "）—— 新增依赖就没有第二个地方需要改，也就没有门。")
+    else:
+        declared_set = {_norm_pkg(item) for item in declared if item}
+        missing = sorted(actual - declared_set)
+        ghost = sorted(declared_set - actual)
+        if missing:
+            rep.problem("requirements.txt 里这些包没登记进项目上下文 §4：" + "、".join(missing)
+                        + " —— 引入依赖要先写选型报告与登记，再改 requirements.txt。")
+        if ghost:
+            rep.problem("项目上下文登记了、requirements.txt 里却没有：" + "、".join(ghost)
+                        + " —— 登记表开始说谎了（依赖被移除时要同时删登记）。")
+        rep.note(f"依赖登记：requirements.txt {len(actual)} 个包 ↔ 登记表 {len(declared_set)} 行")
+
+    vendor_declared = _marked_rows(context, VENDOR_BEGIN, VENDOR_END)
+    vendor_actual = ({p.name for p in VENDOR_DIR.glob("*") if p.is_file()}
+                     if VENDOR_DIR.exists() else set())
+    if vendor_declared is None:
+        rep.problem("项目上下文缺少 vendor-registry 登记块（" + VENDOR_BEGIN + " / "
+                    + VENDOR_END + "）—— 浏览器端引入第三方库就没有登记处。")
+    else:
+        vendor_set = {item for item in vendor_declared if item}
+        missing_vendor = sorted(vendor_actual - vendor_set)
+        ghost_vendor = sorted(vendor_set - vendor_actual)
+        if missing_vendor:
+            rep.problem("app/product_v2/vendor/ 里这些文件没有登记：" + "、".join(missing_vendor))
+        if ghost_vendor:
+            rep.problem("vendor 登记了、目录里却没有这些文件：" + "、".join(ghost_vendor))
+
 ABS_INTERP = re.compile(r"[A-Za-z]:[\\/][^\s\"'`|<>]*pythonw?\.exe", re.I)
 
 
@@ -760,6 +884,7 @@ def main(argv: list[str] | None = None) -> int:
     _check_numbers(rep, cfg)
     _check_orchestrator_rule(rep)
     _check_docs_index(rep)
+    _check_reuse_first_gate(rep)
     _check_no_abs_interpreter(rep)
     if not args.no_run:
         _check_commands(rep)
@@ -771,6 +896,8 @@ def main(argv: list[str] | None = None) -> int:
           f"（命令真跑 / 数字对齐 / 七坑位表与 registry 一致）")
     print("　　　+ 文档权威登记（docs/INDEX.md：双向比对 + 管辖事实唯一）"
           "—— 回答「哪一份有效」和「哪一类事实归谁」")
+    print("　　　+ 选型门禁（AGENTS.md ↔ 项目上下文 §4 依赖/vendor 登记）"
+          "—— 回答「实现之前先找过现成能力没有」")
     print(f"表：{len(cfg['slots'])} 个坑位 · {len(registry.known())} 个渲染器")
     print()
 

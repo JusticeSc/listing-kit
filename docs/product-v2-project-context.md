@@ -73,6 +73,45 @@ Python 无状态 AI 服务
 
 首版语义与图片模型均通过阿里云百炼调用，统一从环境变量读取 `DASHSCOPE_API_KEY`；不要求额外的 `DEEPSEEK_API_KEY`。模型名称分别由 `SEMANTIC_MODEL`、`IMAGE_MODEL` 配置，VLM 名称留到 V2.5.2 选择后再写入 `VLM_MODEL`。密钥不得进入浏览器状态、项目包、日志、证据或 Git。
 
+### 4.1 选型记录
+
+选型门禁的规则正文在仓库根 `AGENTS.md`；本节是**结论的唯一落点**：每条选型决策留一行，
+写清约束、被拒方案与复访条件，避免下一个 Agent 重新讨论、重新实现已经决定过的问题。
+
+| ID | 范围 | 决策 | 被拒方案 | 复访条件 |
+|---|---|---|---|---|
+| SEL-000 | 依赖政策 | 分层：Python 侧允许登记过的 pinned 依赖；浏览器侧保持无构建步骤，只允许 vendor 单文件库；业务语义层自研 | 全层放开 npm 构建链；全零新增依赖 | 前端需要组件框架或状态管理，或离线安装条件变化 |
+| SEL-001 | 编排层 | 暂不引入 LangGraph / LangChain：业务状态权威是浏览器 IndexedDB，服务端无状态，不设第二个权威 | LangGraph checkpointer + 服务端状态 | 出现服务端自主多步编排，或需要跨进程恢复的长任务 |
+| SEL-002 | 服务端 HTTP | 暂保留 stdlib `http.server`（零运行时依赖、端点少、单进程） | Flask / FastAPI + uvicorn | V2.4 图片上传/下载需要 multipart 与流式响应时重开 |
+| SEL-003 | 语义/视觉调用传输层 | 待决：`openai` SDK（推荐）/ litellm / 继续 requests —— 讨论中 | — | 定稿后补全决策与被拒理由 |
+
+状态：SEL-000 已写入 `AGENTS.md`；SEL-001、SEL-002 是当前工作决策，用户确认后转正式；
+SEL-003 未定——未定之前不新增依赖。
+
+### 4.2 依赖与 vendor 登记
+
+`tools/check_docs.py` 会把下面两张表与 `requirements.txt`、`app/product_v2/vendor/`
+做双向比对：新增依赖必须同时改登记表与 `requirements.txt`，移除依赖必须两处同删。
+
+<!-- dependency-registry:begin -->
+| 包 | 用途 | 引入决策 | 移除成本 |
+|---|---|---|---|
+| pillow | 图像读写、尺寸与白底检查 | V1 基线已锁版本；V2 图像链路继续使用 | 中：校验与导出依赖它 |
+| numpy | 像素与数组运算（V1 合成、白底统计） | V1 基线已锁版本 | 中：V1 图像链路依赖它 |
+| requests | 外部模型 HTTP 调用（V1 适配器与 V2.2 语义适配器） | V1 基线；SEL-003 讨论中可能被模型 SDK 取代 | 小：集中在 `src/providers/` |
+| PyYAML | 读取 `slots.yaml`、平台与品类配置 | V1 基线已锁版本 | 小：配置读取集中 |
+| python-dotenv | 本地 `.env` 加载（`run.py`） | V1 基线已锁版本 | 小：入口一处 |
+| jsonschema | 结构契约校验（Draft 2020-12） | V1 基线已锁版本；V2 提案校验继续使用 | 小：契约校验集中 |
+<!-- dependency-registry:end -->
+
+<!-- vendor-registry:begin -->
+| 文件 | 版本/来源 | 用途 | 引入决策 |
+|---|---|---|---|
+<!-- vendor-registry:end -->
+
+当前 `app/product_v2/vendor/` 不存在——浏览器端零第三方库。引入第一个 vendor 库前先补
+SEL 决策，再建目录、再登记。
+
 ## 5. 目标目录地图
 
 ```text

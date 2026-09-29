@@ -1,0 +1,26 @@
+amz-listing-kit Product V2 reuse-first gate negative probe
+NOT-AUTHORITY: point-in-time verification evidence only
+observed_at: 2026-09-29T21:41:58+08:00
+status: passed (the gate can go red)
+target: tools/check_docs.py ⑨ _check_reuse_first_gate
+
+PROBE
+- Mutation A: append `litellm==1.0.0` to requirements.txt without registering it.
+- Mutation B: create app/product_v2/vendor/fflate.js without registering it.
+- Command: uv run --no-project --with-requirements requirements.txt python tools/check_docs.py --no-run
+- Observed: rc=1, with exactly these two problems (and nothing else):
+    没有登记进项目上下文 §4：litellm
+    app/product_v2/vendor/ 里这些文件没有登记：fflate.js
+- Side note: the probe ran with the mutated requirements.txt, so uv installed the probe
+  package into its throw-away environment. No product code path ran and no model call was made.
+
+RESTORATION
+- requirements.txt sha256 before: 2b4efcd17347ad0e75f46f12ae77142976a6d4daa8fd7bdc9b73f69d5db6bb4c
+- requirements.txt sha256 after:  2b4efcd17347ad0e75f46f12ae77142976a6d4daa8fd7bdc9b73f69d5db6bb4c (identical)
+- app/product_v2/vendor/ was confirmed empty and removed; git status shows no vendor entry.
+- Guard re-run after restoration: rc=0（全过）。
+
+BOUNDARY
+- Proves the new gate is falsifiable and that restoration is byte-exact.
+- Does not prove the policy is followed in practice; that is a human decision recorded in
+  AGENTS.md and docs/product-v2-project-context.md §4.

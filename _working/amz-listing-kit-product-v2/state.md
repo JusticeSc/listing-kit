@@ -33,6 +33,8 @@ phase_progress:
       - evals/product-v2/v2.1.4-formal-entry-20260929-205919-pre-goal-verify.txt
   "2":
     status: active
+    evidence:
+      - evals/product-v2/reuse-gate-negative-probe-20260929.txt
 
 task_progress:
   V2.0.1:
