@@ -35,3 +35,14 @@ PROBE B (added the same day, after the gate gained a third check)
 - Why this check exists: that scaffolding appeared twice in one day. With an empty-dependency
   pyproject on disk, `uv run` without --no-project silently runs in an environment that lacks
   the pinned requirements, which is a reproducibility failure the project forbids.
+
+PROBE C (added the same day, after the registry check became version-aware)
+- Mutation: change the registered version of pillow from 12.3.0 to 12.3.9 while
+  requirements.txt still pins 12.3.0.
+- Command: uv run --no-project --with-requirements requirements.txt python tools/check_docs.py --no-run
+- Observed: rc=1 with exactly one problem:
+    依赖版本与 requirements.txt 不一致（pillow：登记 12.3.9 / 锁定 12.3.0）——
+    版本是依赖合同的一部分，锁定值必须两处相同。
+- Restored: the row was restored to 12.3.0; the guard re-ran with rc=0.
+- Also enforced now: any requirement line without a `==` pin is reported
+  (standards-template 07 §6 forbids floating versions).

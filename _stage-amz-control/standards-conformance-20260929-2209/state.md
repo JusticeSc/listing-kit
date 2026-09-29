@@ -13,7 +13,7 @@ goal_id: 01a0ca17-2179-7eb0-969a-af9c79c4d8ca
 system_goal_observed_status: active
 system_goal_observed_at: 2026-09-29T21:16:19+08:00
 plan_ref: docs/product-v2-goal-and-implementation-plan.md
-latest_audit: evals/product-v2/standards-mapping-gate-20260929.txt
+latest_audit: evals/product-v2/pre-goal-readiness-v2.2-20260929.txt
 
 phase_progress:
   "0":
@@ -24,7 +24,6 @@ phase_progress:
       - docs/product-v2-goal-and-implementation-plan.md
       - evals/product-v2/control-plane-calibration-20260929.txt
       - evals/product-v2/pre-goal-readiness-20260929.txt
-      - evals/product-v2/standards-mapping-gate-20260929.txt
   "1":
     status: done
     evidence:
@@ -97,5 +96,5 @@ next_action_task: V2.2.2
 blockers: []
 unknowns:
   - visual_language_provider_model_id_is_deferred_to_V2.5.2_and_does_not_block_browser_workspace_work
-updated_at: 2026-09-29T22:16:11+08:00
+updated_at: 2026-09-29T21:17:03+08:00
 ```

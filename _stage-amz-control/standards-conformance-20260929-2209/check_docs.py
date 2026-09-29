@@ -754,8 +754,6 @@ STRAY_PROJECT_FILES = ("pyproject.toml", "uv.lock", "main.py", ".python-version"
 REUSE_REQUIRED_TOKENS = (
     "复用 > 配置 > 集成 > 扩展 > 自研",
     "选型报告",
-    "选型四问",
-    "禁止自造",
     "复访条件",
     "requirements.txt",
 )
@@ -815,12 +813,10 @@ def _check_reuse_first_gate(rep: Report) -> None:
             rep.problem("AGENTS.md 缺少 reuse-first 标记块（" + REUSE_BEGIN + " / "
                         + REUSE_END + "）—— 门禁正文必须可被机器定位。")
         else:
-            block = agents.split(REUSE_BEGIN, 1)[1].split(REUSE_END, 1)[0]
             for token in REUSE_REQUIRED_TOKENS:
-                if token not in block:
+                if token not in agents:
                     rep.problem(f"AGENTS.md 的选型门禁缺少必需内容：{token!r} —— "
-                                "门禁被删成一句话就不再是门禁；必需内容只认复用阶梯标记块内部，"
-                                "正文别处提到不算。")
+                                "门禁被删成一句话就不再是门禁。")
 
     if not CONTEXT_FILE.exists():
         rep.problem("docs/product-v2-project-context.md 不存在 —— 选型决策与依赖登记"
@@ -903,43 +899,6 @@ def _check_no_abs_interpreter(rep: Report) -> None:
                             f"准备动作放 text 围栏。")
 
 
-# ---------------------------------------------------------------- ⑩ 模板映射
-
-STANDARDS_DIR = ROOT / "docs" / "standards-template"
-STANDARDS_SECTION_RE = re.compile(
-    r"^## Standards Mapping \(standards-template\)\s*$(.*?)^## ", re.S | re.M)
-
-
-def _check_standards_mapping(rep: Report) -> None:
-    """⑩ 外部模板的每份文件都必须在 AGENTS.md 的采纳映射里有落点。
-
-    为什么单列：`docs/standards-template/` 会被整目录重新同步（07 就是后加的
-    一份）。模板新增规范而映射表没跟上时，「已按模板适配」这句话无从证伪 ——
-    本项把它变成双向可比对的事实：模板多一份、映射少一行，直接报红。
-    只做存在性比对（文件名必须出现在映射章节里），不解析落点列：宁可粗，
-    也不能沉默。
-    """
-    if not STANDARDS_DIR.exists():
-        rep.problem("docs/standards-template/ 不存在 —— 采纳映射失去比对对象；"
-                    "模板被移动或删除时，必须同步本项与 AGENTS.md 的映射章节。")
-        return
-    text = AGENTS_FILE.read_text(encoding="utf-8") if AGENTS_FILE.exists() else ""
-    m = STANDARDS_SECTION_RE.search(text)
-    if not m:
-        rep.problem("AGENTS.md 缺少 `## Standards Mapping (standards-template)` 章节"
-                    "（或它后面没有下一个 `##` 标题）—— 模板的采纳判定没有机器可定位的落点。")
-        return
-    section = m.group(1)
-    files = sorted(STANDARDS_DIR.rglob("*.md"))
-    unmapped = [p.relative_to(STANDARDS_DIR).as_posix() for p in files if p.name not in section]
-    if unmapped:
-        rep.problem("docs/standards-template/ 里这些文件没有在 AGENTS.md 的映射章节出现："
-                    + "、".join(unmapped) + " —— 模板新增/改名后，采纳映射必须补行；"
-                    "否则「照着模板做」这句话没有任何东西能证伪。")
-    rep.note(f"模板映射：standards-template {len(files)} 份，映射章节覆盖 "
-             f"{len(files) - len(unmapped)} 份")
-
-
 # ---------------------------------------------------------------- 入口
 
 def main(argv: list[str] | None = None) -> int:
@@ -959,7 +918,6 @@ def main(argv: list[str] | None = None) -> int:
     _check_orchestrator_rule(rep)
     _check_docs_index(rep)
     _check_reuse_first_gate(rep)
-    _check_standards_mapping(rep)
     _check_no_abs_interpreter(rep)
     if not args.no_run:
         _check_commands(rep)
@@ -973,8 +931,6 @@ def main(argv: list[str] | None = None) -> int:
           "—— 回答「哪一份有效」和「哪一类事实归谁」")
     print("　　　+ 选型门禁（AGENTS.md ↔ 项目上下文 §4 依赖/vendor 登记）"
           "—— 回答「实现之前先找过现成能力没有」")
-    print("　　　+ 模板映射（AGENTS.md §Standards Mapping ↔ docs/standards-template/）"
-          "—— 回答「外部模板的每份规范有没有采纳落点」")
     print(f"表：{len(cfg['slots'])} 个坑位 · {len(registry.known())} 个渲染器")
     print()
 

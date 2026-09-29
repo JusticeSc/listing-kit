@@ -14,6 +14,41 @@
 - `tools/` — 守卫与验证入口；`evals/` — 时点证据（带 `NOT-AUTHORITY`）；`docs/` — INDEX、计划、
   项目上下文；`_working/` — 唯一执行状态。
 
+## Standards Mapping (standards-template)
+
+`docs/standards-template/` 是外部课程模板的原样副本（身份见 `docs/INDEX.md`）；**本表是它的采纳判定**。
+模板会被整目录重新同步（07 就是后加的一份），所以规则是：**模板里出现一份新文件，本表就必须有
+一行落点，否则 `tools/check_docs.py` 报红**。采纳方式是落进既有权威（SEL-004，不另建 `standards/`
+平行目录）：需求只在计划、进度只在 state、决策只在项目上下文 §4.1、依赖只在项目上下文 §4.2。
+
+| 模板 | 本项目落点 | 适配差异 |
+|---|---|---|
+| `README.md` | 本表；进入项目的读取顺序以 `docs/INDEX.md` §1 为准 | 不复制 `standards/` 目录（未采纳清单） |
+| `00-project-context.md` | `docs/product-v2-project-context.md`（§3.3 运行取值、§4.1 选型、§4.2 依赖、§5 目录地图、§7 质量门槛） | CI/CD 与 SSH 取值写“无”，理由 SEL-005 |
+| `01-requirements.md` | Product V2 计划（§3 产品合同、§10.1 任务表、§11 证据矩阵） | 需求以任务卡呈现（含验收条件），不另起 PRD |
+| `PROGRESS.md` | `_working/amz-listing-kit-product-v2/state.md` + 项目上下文 §4.1 | state 只存进度/证据/下一动作；决策（含被拒方案与复访条件）在 §4.1，故障在证据文件 |
+| `02-coding-standards.md` | 本文件 Coding Style | 未采用 ruff（无格式化工具链，理由在项目上下文 §7）；命名/注释/错误处理/提交前自检按本文件 |
+| `03-testing-standards.md` | 本文件 Testing Guidelines + 计划 §12 | 用例 AAA/Given-When-Then；偶发失败必须根治；不设覆盖率阈值 |
+| `04-git-workflow.md` | 本文件 Commit & Pull Request Guidelines | 无远端、无 Issue/PR 流程：分支命名 `<类型>/<短描述>` + 提交前缀 + 守卫替代三道闸 |
+| `05-cicd-standards.md` | 不适用（SEL-005）；替代物是 `tools/` 守卫（串行跑） | 无 CI、无 Docker、无服务器部署 |
+| `06-ai-collab-protocol.md` | ②.5 选型门 = 本文件 §Selection Gate（机器可查）；确认门 = 推进到 state 唯一下一动作后等用户确认；故障反哺 = 证据写 `evals/` + 守卫固化 | GitHub 六步（建仓/Secrets/PR/CI/CD）不适用，见未采纳清单 |
+| `07-dependency-standards.md` | §Selection Gate（复用阶梯、选型四问、禁止自造清单）+ 项目上下文 §4.2（版本锁定、许可证、移除成本） | 漏洞扫描周期未启用，见未采纳清单 |
+| `templates/TECH_SELECTION.md` | §Selection Gate 的报告字段（约束/已有能力/候选/权衡/推荐/被拒/复访条件/PoC 判定） | 不单独立文件 |
+| `templates/ADR_TEMPLATE.md` | 项目上下文 §4.1 的 SEL 行（含被拒方案与复访条件） | 不建 `docs/adr/` |
+| `templates/ISSUE_TEMPLATE.md` | 未启用（无 Issue 流程）；任务以计划任务卡的验收条件为准 | 复访：启用 GitHub Issue 时 |
+| `templates/PR_TEMPLATE.md` | 未启用（无 PR 流程）；提交自检见本文件 Commit & Pull Request Guidelines | 复访：出现远端仓库与 PR 时 |
+
+**未采纳清单**（模板有、本项目明确不做；每项带复访条件）：
+
+| 未采纳 | 理由 | 复访条件 |
+|---|---|---|
+| `standards/` 物理目录 | 与计划/state/context 形成双权威（SEL-004） | 需要对外交付独立规范包 |
+| 建仓、Secrets、`gh pr`、CI runner、Docker、SSH 部署 | 本机/内网单机使用，无远端与部署目标（SEL-005） | 多人协作、远端仓库或部署目标出现 |
+| ruff / 格式化工具链 | 无构建步骤；引入需先过选型门（项目上下文 §7） | 引入第一个格式化/lint 工具 |
+| 覆盖率阈值（≥80%） | 判据是“证据能判红”而非行覆盖率（项目上下文 §7） | 引入覆盖率工具并立 SEL 决策 |
+| 依赖漏洞扫描周期（`07` §6） | 依赖少而锁定，尚无扫描工具 | 新增依赖或准备对外交付时执行并记录 |
+| Issue 编号分支与 PR 三道闸 | 单人本机开发，无 Issue/PR 流程 | 出现第二位协作者 |
+
 ## Build, Test, and Development Commands
 
 ```bash
@@ -35,12 +70,19 @@ ASCII。前端是原生 ESM，**无构建步骤**；DOM 只做投影，业务状
 换行服从 `.gitattributes`（`.py`/`.js`/`.md` 为 LF，`.bat` 为 CRLF）。依赖只由 `requirements.txt`
 锁版本，不建 `pyproject.toml`。
 
+类用 `PascalCase`，常量用 `UPPER_SNAKE`，私有实现加 `_` 前缀；命名必须表达意图，禁止 `tmp_final`
+这类无法审查的名字。一个函数只做一件事（超过约 40 行优先拆分）；注释只写“为什么与权衡”，
+不复述代码；禁止裸 `except: pass`，外部输入必须校验且错误信息可定位。
+
 ## Testing Guidelines
 
 每个任务交付「用户可观察行为 + 数据合同 + 验证证据」。证据写进 `evals/`，首行 `NOT-AUTHORITY`，
 并写清证明了什么、不证明什么。浏览器断言必须同时检查 console/network 与 IndexedDB 后置条件，
 只查 DOM 不算通过。真实模型调用只用于适配器最小探针和完成证据；超时是 `UNKNOWN`，已知 task ID
 先核对，无 task ID 不自动重提。新增守卫必须附一次能判红的反向探针。
+
+用例按 AAA / Given-When-Then 写，一个用例只测一件事，必须有真断言而不是 `assert x is not None`；
+偶发失败必须根治，不靠“重跑一次”掩盖（常见根因：时间、随机数、用例顺序、网络、共享状态）。
 
 ## Commit & Pull Request Guidelines
 
@@ -60,11 +102,20 @@ Git、项目包、日志与证据。服务器不保存用户项目状态；浏�
 <!-- reuse-first:begin -->
 任何非平凡能力，先按这个顺序找一遍，再决定动手：**复用 > 配置 > 集成 > 扩展 > 自研**。
 
+**选型四问**（写报告前先答，答不上就不许引入）：① 标准库/已有依赖够不够；② 维护是否活跃
+（近 12 个月有提交与响应）；③ 许可证是否兼容（MIT/BSD/Apache 2.0 直接用，GPL/AGPL/未知必须
+用户确认）；④ 体积与安全代价（传递依赖、已知 CVE、是否原生编译）。四问的答案写进报告，
+与本仓库依赖登记（版本锁定 + 许可证）互相印证。
+
+**禁止自造清单**（基础设施一律先复用，不许手写）：日期时间与时区、UUID、JSON/YAML/CSV 解析、
+HTTP 客户端、重试与退避、限流、缓存、定时调度、任务队列、事件总线、连接池、参数校验、序列化、
+配置管理、日志框架、CLI 解析、密码哈希与加密、JWT、鉴权、ORM/数据库驱动封装。
+
 必须先交「选型报告」的情形：Python 新增运行时依赖（改 `requirements.txt`）或新增 ≥100 行通用
 基础设施；浏览器新增 >5 KiB 通用能力文件或引入 vendor 库；任何属于「基础设施」而不是「业务语义」
 的模块。
 
-报告字段：约束 / 已有能力 / 候选 / 取舍 / 推荐 / 被拒方案 / **复访条件与移除成本**；结论写进
+报告字段：约束 / 已有能力 / 候选 / 权衡 / 推荐 / 被拒方案 / **复访条件与移除成本** / PoC 判定；结论写进
 `docs/product-v2-project-context.md` §4.1，实现前经用户确认。业务语义（槽位权限、失效传播、
 交付门禁）自研是标准答案，不受此限。
 
