@@ -1,0 +1,23 @@
+{
+  "note": "人工改写：细节图标题与任务描述了参考图没有的门襟/纽扣，按参考图为准改写成参考图确实可见的内容。",
+  "shots": [
+    {
+      "shot_id": "shot_4871f74c64f94c0e",
+      "reason": "参考图是圆领套头、无门襟纽扣；把细节图标题与任务改成参考图确实可见的领口与针织纹理。",
+      "replace": [
+        [
+          "细节图：领口与门襟工艺",
+          "细节图：领口与针织纹理"
+        ],
+        [
+          "Use a macro lens for a close-up distance on the collar and placket to present the knit texture and natural drape",
+          "Use a macro lens for a close-up distance on the collar and the visible knit surface to present the knit texture and natural drape"
+        ],
+        [
+          "Do not fail to execute the changes of macro shooting the collar, buttons, or edge stitching details, and do not fail to highlight the 3D texture quality.",
+          "Do not require, add, or invent any part (closure, buttons, pockets, markings) that is not clearly visible in the reference image; do not fail to highlight the 3D texture quality."
+        ]
+      ]
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "stamp": "20260929-135852",
+  "partial_selection": 2,
+  "blocked_message": "「日常通勤」还没有选定图片；采用一张候选后才能交付。\n\n返回审核",
+  "selected_items": 3,
+  "hard_checks": "全部确定性硬检查通过（1/1 项）。",
+  "exports_after_export": 1,
+  "summary": "导出目录：exports/export_d858efcc9d4a4705\n\nexports/export_d858efcc9d4a4705/images/01_hero.png · sha256 c5d047949b59…\nexports/export_d858efcc9d4a4705/images/02_feature.png · sha256 5d17e840db47…\nexports/export_d858efcc9d4a4705/images/03_lifestyle.png · sha256 eadfef8e3e4a…\namazon-us.main_image.size：通过 · 1600px 长边\n\n追溯清单：exports/export_d858efcc9d4a4705/manifest.json",
+  "status": "已导出：图片组与追溯清单都在导出目录中。",
+  "revealed": [
+    "C:\\Users\\31368\\AppData\\Local\\Temp\\amz-product-v1-image-generation-pxmoy4pa\\workspace\\exports\\export_d858efcc9d4a4705"
+  ],
+  "external_requests": [],
+  "failures": [],
+  "passed": true
+}

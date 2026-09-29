@@ -1,0 +1,38 @@
+Phase 0 / Gate G0 完成证据审计
+========================================================================
+审计时间：2026-09-23T13:13:00+08:00
+判定：PASS —— Phase 0 可关闭，Phase 1 可开始；这不是 Product V1 Goal 完成证明。
+
+条件 | 权威证据 | 当前结果 | 状态
+------------------------------------------------------------------------
+P0.1 空环境安装与入口 | evals/phase0_foundation_calibration.txt | 2026-09-23 13:08 从空目录建环境；锁定依赖安装、schema、CLI dry-run、Web HTTP 200 均 rc=0 | proven
+P0.2 默认 Windows 编码 | evals/control_plane_calibration.txt | 显式移除 PYTHONUTF8 / PYTHONIOENCODING；两道守卫与两组故障注入均 rc=0 | proven
+P0.2 可选抠图缓存 | evals/phase0_foundation_calibration.txt + evals/last_regress.txt | NUMBA_CACHE_DIR 未预设时落到项目 .cache/numba；真实 rembg 与失败重试分支均通过 M6 | proven
+P0.3 新鲜完整回归 | evals/last_regress.txt | --fresh；run B0FULLSET01_20260923-125218-258886；18 通过、0 环境拦下、0 未通过 | proven
+P0.4 文档权威一致 | tools/check_docs.py + evals/probes/docs_index.py + evals/control_plane_calibration.txt | 文档守卫 rc=0；12 向故障注入全部按预期变红；README 当前数为 16 项验收，--fresh 共 18 步 | proven
+P0.5 v2 基线快照 | evals/v2_baseline_manifest.json + evals/v2_baseline_snapshot.txt | 输入、27 个 run 产物、依赖、代码树与回归报告均有 SHA-256；--check rc=0 | proven
+执行状态推进 | _working/amz-listing-kit-product-v1/state.md + evals/control_plane_calibration.txt | 记录保持 paused，Phase 0=done，Phase 1=pending，next_action=P1.1；正式恢复 Goal 后即可开工 | proven
+
+变更与回退边界
+------------------------------------------------------------------------
+- 未删除 v2 确定性路线，未修改七坑位或渲染器语义。
+- --fresh 将上一轮 run 以重命名方式保留在 out_prev/，未删除旧产物。
+- 本轮源码修改前备份位于：
+  E:\gitee_repository\vison\_stage-amz-control\backup-20260923-124551-p03-cache
+- 项目本身不是 Git 仓库；v2 版本身份使用 manifest 内的 content-tree-sha256，不能把备份当成 Git 历史。
+
+未被 G0 证明、继续保留的边界
+------------------------------------------------------------------------
+- 尚未证明 20 个真实 SKU、2 个品类、2 名操作员的产品验收。
+- 尚未批准真实参考图 provider allowlist，也未冻结前 5 个 SKU 的成本/时间上限。
+- 数据授权、预算硬门、幂等、Unknown 核对属于后续阶段，不能由本次工程基线替代。
+- 系统字体为自动探测，plan.json 明示商用授权未确认。
+
+
+证据管理修正（2026-09-23T15:24:09+08:00）
+------------------------------------------------------------------------
+上表 P0.3 引用的 `--fresh` 报告已另存为 `evals/phase0_regress_fresh.txt`。
+`evals/last_regress.txt` 是**滚动**的最新回归（每次重跑都会覆盖），拿它当冻结
+证据会在下一次回归时静默失效 —— 这是本表原先的一个隐患，已按此修正。
+本轮另跑了一次 16 项离线完整回归（不含 `--fresh` 的全链路真跑，未产生模型
+调用）；G0 的结论仍以上面那份 `--fresh` 报告为准。

@@ -1,0 +1,225 @@
+{
+  "schema": "amz-listing-kit/front-contracts-verification@1",
+  "plan_version": "v1.14",
+  "cases": 17,
+  "passed": 17,
+  "failed": 0,
+  "rows": [
+    {
+      "case": "G0",
+      "name": "黄金前半链（PC-01…PC-07）",
+      "contract": "G0",
+      "expect": "accepted",
+      "actual": "accepted",
+      "ok": true,
+      "notes": [],
+      "failed_checks": [],
+      "detail": {
+        "plan_version": "605e06b29cf00277db14df022bc82fc7668f8ea930d6139e7561a1e510efeb69",
+        "prompt_sha256": "d339c104b20a02c7a0ea624e6a95d307f3e6363499b0e766dcde3c1581938178",
+        "prompt_sha256_matches_record": true,
+        "action_id": "b0c9c907f875b918",
+        "candidate_sha256": "9e184c5c153ad39fc6474157494a1c769319b7d6d6daa054d9317462ef3a50be",
+        "input_image_count": 1,
+        "candidate": "C:\\Users\\31368\\AppData\\Local\\Temp\\d1p2-golden-7cktfd36\\attempts\\b0c9c907f875b918\\raw.png"
+      }
+    },
+    {
+      "case": "R1",
+      "name": "素材缺一个视图文件",
+      "contract": "PC-01",
+      "expect": "business_reject",
+      "actual": "business_reject",
+      "ok": true,
+      "notes": [
+        "参考包未通过齐套检查（缺文件或哈希漂移）；补齐或恢复原文件后才能继续，不许就地改写素材来过检"
+      ],
+      "failed_checks": []
+    },
+    {
+      "case": "R2",
+      "name": "素材哈希漂移（PNG 尾部多一个字节）",
+      "contract": "PC-01",
+      "expect": "business_reject",
+      "actual": "business_reject",
+      "ok": true,
+      "notes": [
+        "参考包未通过齐套检查（缺文件或哈希漂移）；补齐或恢复原文件后才能继续，不许就地改写素材来过检"
+      ],
+      "failed_checks": []
+    },
+    {
+      "case": "R3",
+      "name": "用机器模态断言未确认字段（容量）",
+      "contract": "PC-02",
+      "expect": "business_reject",
+      "actual": "business_reject",
+      "ok": true,
+      "notes": [
+        "事实层不通过：F9: 用 machine 模态断言了未确认字段 ['容量'] —— 机器证据只能覆盖看得见的性质（材质/容量/保温性能必须保持 Unknown）"
+      ],
+      "failed_checks": []
+    },
+    {
+      "case": "R4",
+      "name": "既无机器判据也无人确认的断言",
+      "contract": "PC-02",
+      "expect": "business_reject",
+      "actual": "business_reject",
+      "ok": true,
+      "notes": [
+        "事实层不通过：F9: 既没有 machine_checks 也没有 human_note —— 这是一条无依据断言"
+      ],
+      "failed_checks": []
+    },
+    {
+      "case": "R5",
+      "name": "事实卡丢掉全部 Unknown 登记",
+      "contract": "PC-02",
+      "expect": "business_reject",
+      "actual": "business_reject",
+      "ok": true,
+      "notes": [
+        "事实层不通过：事实卡没有登记任何 Unknown 字段 —— 未声明的字段会以「已确认」的姿态流进计划和提示词"
+      ],
+      "failed_checks": []
+    },
+    {
+      "case": "R6",
+      "name": "计划里出现无事实来源的卖点",
+      "contract": "PC-03",
+      "expect": "business_reject",
+      "actual": "business_reject",
+      "ok": true,
+      "notes": [
+        "计划不通过：卖点「容量 500 毫升大容量」落在未确认字段 ['容量'] 上 —— 没有事实来源的卖点不许进计划；卖点「容量 500 毫升大容量」没有指向任何已确认事实"
+      ],
+      "failed_checks": []
+    },
+    {
+      "case": "R7",
+      "name": "计划未经用户确认就要往下走",
+      "contract": "PC-03",
+      "expect": "business_reject",
+      "actual": "business_reject",
+      "ok": true,
+      "notes": [
+        "计划已生成但未经用户确认；确认前不冻结、不进入提示词编译"
+      ],
+      "failed_checks": []
+    },
+    {
+      "case": "R8",
+      "name": "风格变量试图改杯体表面（事实锁）",
+      "contract": "PC-04",
+      "expect": "business_reject",
+      "actual": "business_reject",
+      "ok": true,
+      "notes": [
+        "风格变量里有不允许改的项：body_finish（属于事实锁前缀）。可变项是白名单 ['background_material', 'camera_angle', 'composition', 'lighting', 'prop_free', 'scene']，其余一律视为事实锁。"
+      ],
+      "failed_checks": []
+    },
+    {
+      "case": "R9",
+      "name": "结构化编辑（只追加允许方向）",
+      "contract": "PC-05",
+      "expect": "accepted",
+      "actual": "accepted",
+      "ok": true,
+      "notes": [
+        "新版本 f6d28fd919cb…；父版本 e794d3f4f549… 保持不变"
+      ],
+      "failed_checks": []
+    },
+    {
+      "case": "R10",
+      "name": "原始文本编辑删掉 F8 锁定段",
+      "contract": "PC-05",
+      "expect": "business_reject",
+      "actual": "business_reject",
+      "ok": true,
+      "notes": [
+        "编辑删除了锁定事实段：BLANK SURFACE（锁 ['F8']）。这些段落承载商品事实，删除等于把事实锁悄悄拿掉。"
+      ],
+      "failed_checks": []
+    },
+    {
+      "case": "R11",
+      "name": "同一请求重复提交",
+      "contract": "PC-06",
+      "expect": "business_reject",
+      "actual": "business_reject",
+      "ok": true,
+      "notes": [
+        "没有产生新的付费动作（SKIPPED_HAS_RESULT）"
+      ],
+      "failed_checks": []
+    },
+    {
+      "case": "R12",
+      "name": "轮询超时进 Unknown 且不重发",
+      "contract": "PC-06",
+      "expect": "unknown",
+      "actual": "unknown",
+      "ok": true,
+      "notes": [
+        "提交结果未知：先按 action id / task id 核对原任务，核对清楚之前不得重发"
+      ],
+      "failed_checks": []
+    },
+    {
+      "case": "R13",
+      "name": "请求体里没有参考图时守卫拒绝",
+      "contract": "PC-06",
+      "expect": "business_reject",
+      "actual": "business_reject",
+      "ok": true,
+      "notes": [
+        "守卫在发请求前拒绝了不带参考图的请求体"
+      ],
+      "failed_checks": []
+    },
+    {
+      "case": "R14",
+      "name": "超出硬预算时拒绝提交",
+      "contract": "PC-06",
+      "expect": "business_reject",
+      "actual": "business_reject",
+      "ok": true,
+      "notes": [
+        "预算已用 0/0，不再提交；扩大预算需要新的授权"
+      ],
+      "failed_checks": []
+    },
+    {
+      "case": "R15",
+      "name": "PC-07 用原 task 核对出候选",
+      "contract": "PC-07",
+      "expect": "accepted",
+      "actual": "accepted",
+      "ok": true,
+      "notes": [
+        "原 task 终态为成功，候选文件与哈希已登记"
+      ],
+      "failed_checks": []
+    },
+    {
+      "case": "R16",
+      "name": "实现不许自造合同没声明的状态",
+      "contract": "PC-04",
+      "expect": "needs_human",
+      "actual": "needs_human",
+      "ok": true,
+      "notes": [
+        "需要用户确认视觉方向"
+      ],
+      "failed_checks": []
+    }
+  ],
+  "does_not_prove": [
+    "没有调用任何真实模型：PC-06/PC-07 用的是离线替身传输，只证明状态机与守卫成立",
+    "没有证明候选图片通过 F1–F8：那属于 D1.R1–D1.R3",
+    "没有证明跨商品通用：全部用例只跑内置虚构商品 Aster 01"
+  ]
+}

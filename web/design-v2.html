@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>设计演示 v2 · 坑位表驱动</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#FBFAF7;color:#1F1E1C;
+  font:13px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
+.bar{padding:13px 24px;border-bottom:.5px solid #E6E3DA;background:#fff}
+.bar-t{font-size:15px;font-weight:500}
+.bar-s{font-size:12px;color:#8A8880;margin-top:2px}
+.steps{display:flex;gap:4px;padding:10px 24px;border-bottom:.5px solid #E6E3DA;background:#fff;
+  position:sticky;top:0;z-index:20;flex-wrap:wrap}
+.step{display:flex;align-items:center;gap:7px;padding:6px 12px;border-radius:8px;font-size:12.5px;
+  color:#5F5E5A;cursor:pointer;border:.5px solid transparent;user-select:none}
+.step:hover{background:#F4F2EC}
+.step.on{background:#E1F5EE;border-color:#9FE1CB;color:#04342C}
+.step .n{width:18px;height:18px;border-radius:50%;background:#EDEBE4;color:#5F5E5A;font-size:11px;
+  display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.step.on .n{background:#1D9E75;color:#fff}
+main{padding:22px 24px 60px;max-width:1150px;margin:0 auto}
+h1{font-size:17px;font-weight:500;margin:0}
+h2{font-size:13.5px;font-weight:500;margin:0}
+.sub{font-size:12.5px;color:#8A8880;margin-top:3px}
+.head{display:flex;align-items:flex-start;gap:14px;margin-bottom:16px;flex-wrap:wrap}
+.grow{flex:1 1 auto;min-width:200px}
+.card{background:#fff;border:.5px solid #E6E3DA;border-radius:12px}
+.pad{padding:16px}
+.mt8{margin-top:8px}.mt12{margin-top:12px}.mt16{margin-top:16px}.mt24{margin-top:24px}
+.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.dim{color:#8A8880}.tiny{font-size:11.5px}.small{font-size:12.5px}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11.5px}
+.note{background:#F4F2EC;border:.5px solid #E6E3DA;border-radius:10px;padding:11px 14px;font-size:12.5px;color:#5F5E5A}
+.note.ok{background:#E1F5EE;border-color:#9FE1CB;color:#085041}
+.note.warn{background:#FAEEDA;border-color:#FAC775;color:#633806}
+.btn{border:.5px solid #D8D5CC;background:#fff;color:#1F1E1C;border-radius:8px;padding:6px 13px;
+  font-size:12.5px;cursor:pointer;font-family:inherit}
+.btn:hover{background:#F4F2EC}
+.btn.primary{background:#0F6E56;border-color:#0F6E56;color:#fff}
+.btn.primary:hover{background:#0B5A46}
+.btn.sm{padding:4px 10px;font-size:12px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.chip{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:1px 9px;font-size:11.5px;
+  border:.5px solid #E6E3DA;background:#F4F2EC;color:#5F5E5A;white-space:nowrap}
+.chip.teal{background:#E1F5EE;border-color:#9FE1CB;color:#085041}
+.chip.amber{background:#FAEEDA;border-color:#FAC775;color:#633806}
+.chip.red{background:#FCEBEB;border-color:#F7C1C1;color:#791F1F}
+.chip.blue{background:#E6F1FB;border-color:#B5D4F4;color:#0C447C}
+.chip.plain{background:#fff}
+.sw{width:34px;height:19px;border-radius:999px;background:#DCD9D0;position:relative;cursor:pointer;
+  flex:0 0 auto;transition:background .15s}
+.sw i{position:absolute;top:2px;left:2px;width:15px;height:15px;border-radius:50%;background:#fff;
+  transition:left .15s;box-shadow:0 1px 2px rgba(0,0,0,.14)}
+.sw.on{background:#1D9E75}
+.sw.on i{left:17px}
+.sw.lock{background:#C9E8DC;cursor:not-allowed;opacity:.75}
+.matrow{display:flex;align-items:center;gap:11px;padding:9px 0;border-bottom:.5px solid #F1EFE8}
+.matrow:last-child{border-bottom:0}
+.grp{font-size:11.5px;color:#A9A79F;letter-spacing:.04em;margin:2px 0 2px}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-weight:500;font-size:11.5px;color:#8A8880;padding:9px 10px;border-bottom:.5px solid #E6E3DA}
+td{padding:10px;border-bottom:.5px solid #F1EFE8;vertical-align:middle;font-size:12.5px}
+tr:last-child td{border-bottom:0}
+tr.off td{opacity:.42}
+tr.off td.keep{opacity:1}
+.sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(184px,1fr));gap:12px}
+.scard{background:#fff;border:.5px solid #E6E3DA;border-radius:12px;overflow:hidden;position:relative}
+.scard.off{opacity:.45}
+.scard.pend{opacity:.6}
+.shd{display:flex;align-items:center;gap:6px;padding:8px 10px;border-bottom:.5px solid #F1EFE8}
+.shd .no{font-family:ui-monospace,monospace;font-size:11px;color:#A9A79F}
+.shd .nm{font-size:12.5px;font-weight:500}
+.thumb{aspect-ratio:1/1;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.thumb .sub{position:absolute;border-radius:6px;background:linear-gradient(160deg,#C9C5BA,#A8A49A);
+  box-shadow:0 6px 14px rgba(0,0,0,.16)}
+.thumb .tx{position:absolute;left:9%;right:9%;border-radius:3px;background:rgba(30,28,24,.72)}
+.thumb .cap{position:absolute;left:8px;bottom:7px;font-size:10.5px;color:#fff;background:rgba(0,0,0,.42);
+  padding:1px 6px;border-radius:4px}
+.sft{display:flex;gap:6px;padding:9px 10px;border-top:.5px solid #F1EFE8}
+.sft .btn{flex:1;text-align:center}
+.opt{display:flex;align-items:center;gap:12px;border:.5px solid #E6E3DA;border-radius:10px;padding:11px 13px;
+  cursor:pointer;background:#fff}
+.opt:hover{background:#F9F8F4;border-color:#D8D5CC}
+.opt.hi{border-color:#FAC775;background:#FAEEDA}
+.ot{font-size:12.5px;font-weight:500}
+.od{font-size:11.5px;color:#8A8880;margin-top:2px}
+.oc{font-size:11.5px;white-space:nowrap;padding:2px 8px;border-radius:999px}
+.oc.free{background:#E1F5EE;color:#085041}
+.oc.cost{background:#FAEEDA;color:#633806}
+.overlay{position:fixed;inset:0;background:rgba(28,26,22,.42);display:flex;align-items:center;
+  justify-content:center;padding:22px;z-index:60}
+.modal{background:#fff;border-radius:14px;padding:18px;width:min(520px,94vw);max-height:88vh;overflow:auto}
+.kv{display:flex;gap:10px;padding:4px 0;font-size:12.5px}
+.kv .k{width:88px;color:#8A8880;flex:0 0 auto}
+.kv .v{flex:1 1 auto}
+.bar-track{height:6px;background:#EDEBE4;border-radius:999px;overflow:hidden}
+.bar-fill{height:100%;width:0;border-radius:999px;transition:width .12s linear}
+.prrow{display:grid;grid-template-columns:70px 1fr 78px;gap:12px;align-items:center;padding:7px 0}
+.pbox{padding:3px 6px;border-radius:5px;font-size:11px;text-align:center}
+.tag{font-family:ui-monospace,monospace;font-size:10.5px;color:#5F5E5A;background:#F4F2EC;
+  border:.5px solid #E6E3DA;border-radius:5px;padding:1px 6px}
+.seam{border-left:2px solid #1D9E75;padding-left:9px}
+.seam.amber{border-color:#EF9F27}
+.seam.gray{border-color:#B4B2A9}
+#toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:#1F1E1C;color:#fff;
+  padding:9px 17px;border-radius:9px;font-size:12.5px;z-index:200;max-width:min(620px,88vw);
+  line-height:1.5;opacity:0;transition:opacity .16s;pointer-events:none}
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <div class="bar-t">设计演示 v2 · 坑位表驱动</div>
+  <div class="bar-s">数据为示例，不含真实模型调用。本页用于确认界面形态与流程，不作为实现依据。</div>
+</div>
+
+<nav class="steps" id="steps"></nav>
+<main id="view"></main>
+<div id="modal-root"></div>
+<div id="toast"></div>
+
+<script>
+/* ============================================================ 数据 */
+const MAT = {
+  front:      { name:"正面原片",   grp:"影像素材", req:true,  note:"主体唯一事实来源；主图 / 卖点 / 规格 / 场景 都要它" },
+  closeup:    { name:"特写原片",   grp:"影像素材", note:"细节图必需 —— 螺纹 / 接缝 / 材质" },
+  contents:   { name:"内容物原片", grp:"影像素材", note:"内容物图必需 —— 包装盒 + 配件" },
+  competitor: { name:"竞品图",     grp:"影像素材", note:"对比图必需；不得让模型画一个" },
+  specs:      { name:"规格参数",   grp:"事实字段", note:"容量 / 尺寸 / 材质 —— 规格图数字的唯一来源" },
+  bullets:    { name:"卖点文案",   grp:"事实字段", note:"卖家写的断言，工具不代写" },
+  font:       { name:"字体授权",   grp:"资产",     note:"未授权字体的成品图，合规上不可用" },
+};
+
+const SLOT0 = [
+  { id:1, name:"主图",   r:"compose_white",    needs:["front"],              model:false, must:true,
+    why:"平台强制：纯白底、无字、占比 ≥85%、容错为零" },
+  { id:2, name:"卖点",   r:"flat_overlay",     needs:["front","bullets"],    model:false,
+    why:"纯色底 + 叠字；底色从场景图提主色，六张共用色系" },
+  { id:3, name:"规格",   r:"flat_overlay",     needs:["front","specs"],      model:false,
+    why:"纯色底 + 标注线；数字来自规格参数，不涉画面" },
+  { id:4, name:"场景",   r:"gen_bg_paste",     needs:["front"],              model:true,
+    why:"★ 全链路唯一调用模型处：只画空背景，主体事后确定性贴入" },
+  { id:5, name:"细节",   r:"closeup_crop",     needs:["closeup"],            model:false,
+    why:"必须来自特写原片；把正面图放大裁切只会得到缩小版正面" },
+  { id:6, name:"内容物", r:"contents_compose", needs:["contents"],           model:false,
+    why:"正面图里没有包装盒与配件，缺就是缺" },
+  { id:7, name:"对比",   r:"compare_side",     needs:["competitor"],         model:false,
+    why:"竞品图不在手上，模型也没资格替它编" },
+];
+
+const SRC = {
+  compose_white:    [["主体","teal"],["纯色底","blue"]],
+  flat_overlay:     [["主体","teal"],["纯色底","blue"],["文字",""]],
+  gen_bg_paste:     [["主体","teal"],["环境","amber"],["文字",""]],
+  closeup_crop:     [["特写原片","red"],["文字",""]],
+  contents_compose: [["内容物原片","red"],["纯色底","blue"],["文字",""]],
+  compare_side:     [["竞品图","red"],["主体","teal"],["文字",""]],
+};
+
+const PRODUCT = {
+  upc:"B0DEMO1234", title:"真空保温杯 500ml", cat:"家居厨具", site:"US",
+  bullets:["12 小时保温","防漏杯盖","适配车载杯架"],
+};
+
+const S = {
+  step:1,
+  mat:{ front:true, closeup:false, contents:false, competitor:false, specs:true, bullets:true, font:true },
+  on:{},            // 坑位开关
+  slots: SLOT0.map(s=>({...s})),
+  phase:"idle",     // idle | running | done
+  redoFor:null, detailFor:null, flash:null,
+};
+
+/* ============================================================ 计算（派生，不是配置） */
+const ok = s => s.needs.every(k => S.mat[k]);
+const miss = s => s.needs.filter(k => !S.mat[k]);
+const avail = () => S.slots.filter(ok);
+const picked = () => avail().filter(s => S.on[s.id] !== false);
+const stepDone = () => S.phase === "done";
+
+/* ============================================================ 工具 */
+const esc = s => String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const chip = (t,c) => `<span class="chip ${c||""}">${esc(t)}</span>`;
+
+function toast(m){
+  const e = document.getElementById("toast");
+  e.textContent = m; e.style.opacity = "1";
+  clearTimeout(toast._t); toast._t = setTimeout(()=>e.style.opacity="0",3400);
+}
+
+function thumb(s){
+  const bg = { compose_white:"#fff", flat_overlay:"#F2F0EA", gen_bg_paste:"#EFE1D2",
+               closeup_crop:"#DDD7CC", contents_compose:"#fff", compare_side:"#F7F5F0" }[s.r];
+  let inner = "";
+  if (s.r === "closeup_crop") {
+    inner = `<div class="sub" style="width:74%;height:74%;border-radius:10px;transform:rotate(-8deg)"></div>`;
+  } else if (s.r === "compare_side") {
+    inner = `<div class="sub" style="width:30%;height:52%;left:13%"></div>
+             <div class="sub" style="width:30%;height:44%;right:13%;opacity:.6"></div>`;
+  } else if (s.r === "contents_compose") {
+    inner = `<div class="sub" style="width:26%;height:34%;left:12%;bottom:14%;opacity:.8"></div>
+             <div class="sub" style="width:40%;height:52%;right:14%"></div>`;
+  } else {
+    const w = s.r === "compose_white" ? 52 : 40;
+    inner = `<div class="sub" style="width:${w}%;height:${w*1.28}%;left:${(100-w)/2}%"></div>`;
+  }
+  const tx = s.id === 1 ? "" :
+    `<div class="tx" style="top:9%;height:11px"></div>
+     <div class="tx" style="top:20%;width:52%;height:8px;opacity:.7"></div>`;
+  const cap = { compose_white:"纯白底 · 禁文字", flat_overlay:"纯色底 + 叠字", gen_bg_paste:"生成背景 + 贴主体",
+                closeup_crop:"特写裁切", contents_compose:"白底合成", compare_side:"并排合成" }[s.r];
+  return `<div class="thumb" style="background:${bg}">${inner}${tx}
+    <span class="cap">${esc(s.id===1?"纯白底 · 禁文字":cap)}</span></div>`;
+}
+
+/* ============================================================ 步骤条 */
+const STEPS = [
+  [1,"收件"],
+  [2,"齐套判定"],
+  [3,"生成"],
+  [4,"审核台"],
+  [5,"控制面"],
+];
+
+function vSteps(){
+  document.getElementById("steps").innerHTML = STEPS.map(([n,t]) =>
+    `<div class="step ${S.step===n?"on":""}" data-act="step" data-n="${n}">
+       <span class="n">${n}</span>${t}</div>`).join("") +
+    `<span class="grow"></span>
+     <span class="tiny dim" style="padding:6px 2px">可做 ${avail().length} 张 · 本次将生成 ${picked().length} 张 · 模型调用 ${picked().some(s=>s.model)?1:0} 次</span>`;
+}
+
+/* ============================================================ 第 1 步 · 收件 */
+function v1(){
+  const groups = {};
+  Object.entries(MAT).forEach(([k,v])=>{(groups[v.grp]=groups[v.grp]||[]).push([k,v])});
+  const matHtml = Object.entries(groups).map(([g,list]) => `
+    <div class="grp">${esc(g)}</div>
+    ${list.map(([k,v])=>{
+      const has = !!S.mat[k];
+      const lock = v.req && !has;
+      return `<div class="matrow">
+        <div class="sw ${has?"on":""} ${v.req?"lock":""}" ${v.req?"":`data-act="mat" data-k="${k}"`}><i></i></div>
+        <div class="grow">
+          <div class="small">${esc(v.name)} ${v.req?chip("必选","teal"):""}</div>
+          <div class="tiny dim">${esc(v.note)}</div>
+        </div>
+        ${has?chip("已在手","teal"):chip("缺","red")}
+      </div>`}).join("")}
+  `).join("");
+
+  const blocked = S.slots.filter(s=>!ok(s));
+  return `
+  <div class="head">
+    <div class="grow">
+      <h1>第 1 步 · 收件</h1>
+      <div class="sub">一个商品 = 一个包。<b style="font-weight:500">包里有几张原片，直接决定最后能出几张图</b> —— 这是整条链路上最靠前的一个约束。</div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:16px;align-items:start">
+    <div class="card pad">
+      <h2>商品包</h2>
+      <div class="mt12">
+        <div class="kv"><span class="k">UPC</span><span class="v mono">${esc(PRODUCT.upc)}</span></div>
+        <div class="kv"><span class="k">标题</span><span class="v">${esc(PRODUCT.title)}</span></div>
+        <div class="kv"><span class="k">类目 / 站点</span><span class="v">${esc(PRODUCT.cat)} · ${esc(PRODUCT.site)}</span></div>
+      </div>
+      <div class="mt16" style="border-top:.5px solid #F1EFE8;padding-top:10px">${matHtml}</div>
+    </div>
+
+    <div>
+      <div class="card pad">
+        <h2>实时结论</h2>
+        <div class="mt12" style="display:flex;gap:22px;flex-wrap:wrap">
+          <div>
+            <div class="tiny dim">坑位表</div>
+            <div style="font-size:22px;font-weight:500">${S.slots.length}<small style="font-size:12px;color:#8A8880"> 个</small></div>
+          </div>
+          <div>
+            <div class="tiny dim">素材齐套 → 可做</div>
+            <div style="font-size:22px;font-weight:500;color:#0F6E56">${avail().length}<small style="font-size:12px;color:#8A8880"> 张</small></div>
+          </div>
+          <div>
+            <div class="tiny dim">缺料跳过</div>
+            <div style="font-size:22px;font-weight:500;color:${blocked.length?"#A32D2D":"#8A8880"}">${blocked.length}<small style="font-size:12px;color:#8A8880"> 张</small></div>
+          </div>
+        </div>
+        <div class="note mt16">张数是<b style="font-weight:500">算出来的</b>，不是配置项 —— 它 = 坑位表 ∩ 素材齐套。你手上的素材变了，这个数就变。</div>
+      </div>
+
+      <div class="card pad mt16">
+        <h2>${blocked.length?"缺料导致跳过的坑位":"素材齐套，无跳过"}</h2>
+        <div class="mt12">
+          ${blocked.length ? blocked.map(s=>`
+            <div class="row" style="padding:8px 0;border-bottom:.5px solid #F1EFE8">
+              <span class="mono dim">0${s.id}</span>
+              <span class="small" style="width:52px">${esc(s.name)}</span>
+              <span class="grow tiny dim">需要：${miss(s).map(k=>esc(MAT[k].name)).join(" + ")}</span>
+              ${chip("跳过 · 缺料","red")}
+            </div>`).join("") : `<div class="tiny dim">全部 ${S.slots.length} 个坑位都有素材支撑。</div>`}
+        </div>
+        <div class="note warn mt16">
+          <b style="font-weight:500">没有"让模型凑一张"这个选项。</b>
+          细节的特写、内容物的包装、对比的竞品 —— 这三样都是<b style="font-weight:500">事实</b>，
+          缺了就是缺了，只能补拍或跳过。凑一张假图比缺图更贵，它花的是信任。
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ============================================================ 第 2 步 · 齐套判定 */
+function v2(){
+  const rows = S.slots.map(s=>{
+    const has = ok(s), on = S.on[s.id] !== false;
+    const srcs = SRC[s.r].map(([t,c])=>chip(t,c)).join(" ");
+    return `<tr class="${has&&on?"":"off"}">
+      <td class="keep mono dim">0${s.id}</td>
+      <td class="keep"><div class="small">${esc(s.name)}</div>
+        <div class="tiny dim" style="max-width:300px">${esc(s.why)}</div></td>
+      <td class="keep">${srcs}</td>
+      <td class="keep">${s.needs.map(k=>chip(MAT[k].name, S.mat[k]?"teal":"red")).join(" ")}</td>
+      <td class="keep">${s.model?chip("调模型","amber"):chip("零调用","")}</td>
+      <td class="keep">${!has?chip("跳过 · 缺料","red"):(!on?chip("本次不做",""):chip("要生成","teal"))}</td>
+    </tr>`;
+  }).join("");
+
+  return `
+  <div class="head">
+    <div class="grow">
+      <h1>第 2 步 · 齐套判定</h1>
+      <div class="sub">每个坑位先声明"我要什么像素"，再拿商品包逐个对。<b style="font-weight:500">决策在这里发生，生成只是执行。</b></div>
+    </div>
+  </div>
+
+  <div class="note ok">
+    结论：${S.slots.length} 个坑位里 <b style="font-weight:500">${avail().length} 个可做</b>
+    （其中 <b style="font-weight:500">${avail().filter(s=>s.model).length} 个调模型</b>），
+    ${S.slots.length-avail().length} 个因缺料跳过。
+  </div>
+
+  <div class="card mt16" style="overflow:hidden">
+    <table>
+      <thead><tr>
+        <th style="width:44px">#</th><th style="width:290px">用途</th><th style="width:200px">像素来源</th>
+        <th style="width:170px">需要素材</th><th style="width:88px">成本</th><th>本次状态</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>
+
+  <div class="mt16" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px">
+    <div class="card pad">
+      <div class="seam"><h2>接缝 ③ · 坑位表</h2>
+      <div class="tiny dim mt8">加一个坑位 = 表里加一行。<b style="font-weight:500">执行器代码不动。</b>上面这张表本身就是配置面。</div></div>
+    </div>
+    <div class="card pad">
+      <div class="seam"><h2>接缝 ② · renderer 注册表</h2>
+      <div class="tiny dim mt8">"像素来源"那一列填的是 renderer 名。换做法 = 加一个文件 + 登记一个键。</div></div>
+    </div>
+    <div class="card pad">
+      <div class="seam gray"><h2>不变骨架</h2>
+      <div class="tiny dim mt8">遍历表 → 齐套校验 → 按 renderer 分派 → 扇出。<b style="font-weight:500">这里没有 <span class="mono">if slot == 4</span>。</b></div></div>
+    </div>
+  </div>`;
+}
+
+/* ============================================================ 第 3 步 · 生成 */
+function v3(){
+  const cards = S.slots.map(s=>{
+    const has = ok(s), on = S.on[s.id] !== false;
+    const off = !has || !on;
+    return `<div class="scard ${off?"off":""}">
+      <div class="shd">
+        <span class="no">0${s.id}</span><span class="nm">${esc(s.name)}</span>
+        <span class="grow"></span>
+        <span class="sw ${on&&has?"on":""} ${s.must?"lock":""}"
+          ${s.must||!has?"":`data-act="pick" data-id="${s.id}"`}><i></i></span>
+      </div>
+      ${thumb(s)}
+      <div class="sft">
+        ${!has ? `<span class="tiny dim" style="padding:4px 0">缺 ${esc(miss(s).map(k=>MAT[k].name).join("、"))}</span>`
+          : s.must ? `<span class="tiny dim" style="padding:4px 0">平台强制项 · 不可关</span>`
+          : `<span class="tiny dim" style="padding:4px 0">${on?"计入本次":"本次不做"}</span>`}
+      </div>
+    </div>`;
+  }).join("");
+
+  const run = picked();
+  const pr = run.map(s=>`
+    <div class="prrow">
+      <span class="mono dim">0${s.id} ${esc(s.name)}</span>
+      <div class="bar-track"><div class="bar-fill" data-bar="${s.id}"
+        style="background:${s.model?"#EF9F27":"#1D9E75"}"></div></div>
+      <span class="tiny dim" data-pst="${s.id}" style="text-align:right">${S.phase==="idle"?"待运行":"排队"}</span>
+    </div>`).join("");
+
+  return `
+  <div class="head">
+    <div class="grow">
+      <h1>第 3 步 · 生成</h1>
+      <div class="sub">默认是<b style="font-weight:500">推荐全集</b> —— 系统先摆出最优解，你只做"减"。不从空表开始勾。</div>
+    </div>
+    <button class="btn primary" data-act="run" ${S.phase==="running"?"disabled":""}>
+      ${S.phase==="idle"?"开始生成":S.phase==="running"?"生成中…":"重新生成"}</button>
+  </div>
+
+  <div class="sgrid">${cards}</div>
+
+  <div class="card pad mt24">
+    <div class="row">
+      <div class="grow">
+        <h2>本次将生成 ${run.length} 张 · 模型调用 ${run.some(s=>s.model)?1:0} 次 · 预计约 ${run.some(s=>s.model)?75:"3"} 秒</h2>
+        <div class="tiny dim mt8">
+          ${run.some(s=>s.model)
+            ? "七格里只有位置 4 真正调模型。其余全是秒级确定性合成 —— 所以把套装从两张扩到七张，调用费不变。"
+            : "本次没有任何坑位需要调模型 —— 全部是确定性合成，几秒钟。"}
+        </div>
+      </div>
+      ${S.phase!=="idle"?`<div style="text-align:right">
+        <div class="tiny dim">已用</div>
+        <div id="elapsed" style="font-size:20px;font-weight:500">0.0 s</div></div>`:""}
+    </div>
+    <div class="mt16">${pr || `<div class="tiny dim">没有选中任何坑位。</div>`}</div>
+    ${S.phase==="running"?`<div class="note mt16">演示把 70 秒压缩成约 3 秒。真实运行里橙色那条会独自走满全程，其余六条一瞬间就完。</div>`:""}
+    ${S.phase==="done"?`<div class="note ok mt16">完成。橙色那一条占了全程 ${"70"} 秒里的绝大部分 —— 它是唯一没有确定性控制的地方。</div>`:""}
+  </div>`;
+}
+
+/* ============================================================ 第 4 步 · 审核台 */
+function v4(){
+  if (S.phase !== "done") {
+    return `<div class="head"><div class="grow"><h1>第 4 步 · 审核台</h1>
+      <div class="sub">先跑一次生成，这里才会有候选图。</div></div></div>
+      <div class="card pad"><div class="tiny dim">当前还没有产出。回到第 3 步点"开始生成"。</div></div>`;
+  }
+  const cards = picked().map(s=>`
+    <div class="scard">
+      <div class="shd"><span class="no">0${s.id}</span><span class="nm">${esc(s.name)}</span>
+        <span class="grow"></span>${s.model?chip("调模型","amber"):chip("零调用","")}</div>
+      <div data-act="detail" data-id="${s.id}" style="cursor:pointer">${thumb(s)}</div>
+      <div class="sft">
+        <button class="btn sm" data-act="redo" data-id="${s.id}">重做</button>
+        <button class="btn sm primary" data-act="accept" data-id="${s.id}">采纳</button>
+      </div>
+    </div>`).join("");
+
+  return `
+  <div class="head">
+    <div class="grow"><h1>第 4 步 · 审核台</h1>
+    <div class="sub">一屏看完 —— 成套是否同源，只有并排才判断得出来。</div></div>
+  </div>
+  <div class="sgrid">${cards}</div>
+  <div class="note mt16">
+    <b style="font-weight:500">重做粒度跟着"层"走</b>：文案错 → 0.1 秒免费；位置错 → 1 秒免费；背景错 → 约 70 秒计费。
+    强制三选一，等于零成本的归因数据。
+  </div>`;
+}
+
+/* ============================================================ 第 5 步 · 控制面 */
+function v5(){
+  const rows = S.slots.map(s=>`
+    <tr>
+      <td class="mono dim">0${s.id}</td>
+      <td class="small">${esc(s.name)}</td>
+      <td><span class="tag">${esc(s.r)}</span></td>
+      <td>${s.needs.map(k=>chip(MAT[k].name)).join(" ")}</td>
+      <td>${s.model?chip("调模型","amber"):chip("零调用","")}</td>
+      <td>${s.must?chip("必选","teal"):chip("可关","")}</td>
+      <td class="dim tiny">缺料 → 跳过</td>
+      <td style="text-align:right">
+        <button class="btn sm" data-act="del" data-id="${s.id}" ${s.must||S.slots.length<=1?"disabled":""}>删除</button>
+      </td>
+    </tr>`).join("");
+
+  return `
+  <div class="head">
+    <div class="grow"><h1>第 5 步 · 控制面</h1>
+    <div class="sub">这张表是唯一数据源。改它，上面三步全部跟着变 —— 因为"要几张"是算出来的，不是写死的。</div></div>
+    <button class="btn primary" data-act="add">加一个坑位</button>
+  </div>
+
+  <div class="card" style="overflow:hidden">
+    <table>
+      <thead><tr>
+        <th style="width:44px">#</th><th style="width:90px">用途</th><th style="width:150px">renderer</th>
+        <th style="width:230px">需要素材</th><th style="width:88px">成本</th><th style="width:80px">可否关</th>
+        <th></th><th style="width:80px"></th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>
+
+  <div class="mt16" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px">
+    <div class="card pad"><div class="seam"><h2>接缝 ③ · 这张表</h2>
+      <div class="tiny dim mt8">业务变了加一行。<b style="font-weight:500">不碰代码。</b></div></div></div>
+    <div class="card pad"><div class="seam"><h2>接缝 ② · renderer 名</h2>
+      <div class="tiny dim mt8">新做法要新 renderer。已登记的可直接引用。</div></div></div>
+    <div class="card pad"><div class="seam amber"><h2>接缝 ① · 调用层</h2>
+      <div class="tiny dim mt8">只有 <span class="mono">gen_bg_paste</span> 这一个 renderer 会碰它。换厂商只换这里。</div></div></div>
+  </div>
+
+  <div class="note mt16">
+    <b style="font-weight:500">注意：这里没有"输出 7 张"这个设置项。</b>
+    7 是这张表在当前素材下的一个结果。想改张数，改的是表或素材，不是某个数字。
+  </div>`;
+}
+
+/* ============================================================ 弹层 */
+function renderModal(){
+  const root = document.getElementById("modal-root");
+  let h = "";
+
+  if (S.detailFor) {
+    const s = S.slots.find(x=>x.id===S.detailFor);
+    if (s) h = `<div class="overlay" data-act="close"><div class="modal" onclick="event.stopPropagation()">
+      <div class="row"><div class="grow">
+        <b style="font-size:15px;font-weight:500">0${s.id} ${esc(s.name)}</b>
+        <div class="tiny dim" style="margin-top:2px">${esc(s.why)}</div></div>
+        <button class="btn sm" data-act="close">关闭</button></div>
+      <div class="mt16">${thumb(s)}</div>
+      <div class="mt16">
+        <div class="tiny dim">像素来源</div>
+        <div class="mt8">${SRC[s.r].map(([t,c])=>chip(t,c)).join(" ")}</div>
+      </div>
+      <div class="mt16">
+        <div class="tiny dim">生成参数</div>
+        <div class="kv"><span class="k">renderer</span><span class="v mono">${esc(s.r)}</span></div>
+        <div class="kv"><span class="k">模型</span><span class="v mono">${s.model?"qwen-image-3.0":"—（确定性，零调用）"}</span></div>
+        <div class="kv"><span class="k">耗时</span><span class="v">${s.model?"约 70 秒":"< 1 秒"}</span></div>
+        <div class="kv"><span class="k">成本</span><span class="v">${s.model?"计费 1 次":"免费"}</span></div>
+        <div class="kv"><span class="k">主体哈希</span><span class="v mono">a91f3c…${s.id}e</span></div>
+      </div>
+      <div class="mt16">
+        <div class="tiny dim">校验（只能验确定性那部分）</div>
+        <div class="mt8 row" style="gap:6px">
+          ${chip("1600×1600 通过","teal")}${chip("命名含 UPC","teal")}
+          ${s.id===1?chip("白底纯度 通过","teal"):""}${s.id===1?chip("主体占比 86%","teal"):""}
+          ${chip("文字正确性 未验","")}
+        </div>
+      </div>
+      </div></div>`;
+  }
+
+  if (S.redoFor) {
+    const s = S.slots.find(x=>x.id===S.redoFor);
+    if (s) {
+      const opts = [];
+      if (s.id !== 1) opts.push({k:"text",t:"文案不对",d:"只重画文字层，背景与主体不动",c:"0.1 秒 · 免费",free:true});
+      opts.push({k:"placement",t:s.id===5?"裁切范围不对":"位置或大小不对",
+                 d:s.id===5?"只改裁切窗口":"只调落点与缩放",c:"1 秒 · 免费",free:true});
+      if (s.id === 1) opts.push({k:"cutout",t:"边缘抠得不干净",d:"本地重新抠图，不联网",c:"约 6 秒 · 免费",free:true});
+      if (s.model) opts.push({k:"bg",t:"背景不对",d:"重新生成空背景，主体与文字原样贴回",c:"约 70 秒 · 1 次调用",free:false});
+
+      h = `<div class="overlay" data-act="close"><div class="modal" onclick="event.stopPropagation()">
+        <div class="row"><div class="grow">
+          <b style="font-size:15px;font-weight:500">重做 0${s.id} ${esc(s.name)}</b>
+          <div class="tiny dim" style="margin-top:2px">哪儿不对？它决定重出哪一层，也决定这次花多少。</div></div>
+          <button class="btn sm" data-act="close">取消</button></div>
+        <div class="mt12" style="display:flex;flex-direction:column;gap:8px">
+          ${opts.map(o=>`<div class="opt ${o.free?"":"hi"}" data-act="pick-redo" data-k="${o.k}" data-id="${s.id}">
+            <div class="grow"><div class="ot">${esc(o.t)}</div><div class="od">${esc(o.d)}</div></div>
+            <div class="oc ${o.free?"free":"cost"}">${esc(o.c)}</div></div>`).join("")}
+        </div>
+        <div class="note mt16">
+          ${s.model
+            ? "只有位置 4 有第三档（重生成背景）—— 七格里只有它调模型，也只有它可能出现接缝不融。"
+            : `位置 0${s.id} 是确定性链路，不调用生成模型，所以只有免费档 —— 它坏了只会是抠图 / 裁切 / 落点的问题。`}
+        </div>
+        <div class="mt16" style="padding-top:12px;border-top:.5px solid #E6E7E2">
+          <div class="small">若 3 张以上都要换背景 → <b style="font-weight:500">问题在坑位表或提示词，不在这一张</b></div>
+          <div class="tiny dim mt8">这次选择会写入运行日志，用于统计采纳率与归因。</div>
+        </div>
+      </div></div>`;
+    }
+  }
+
+  root.innerHTML = h;
+}
+
+/* ============================================================ 运行模拟 */
+let runTimer = null;
+function startRun(){
+  const list = picked();
+  S.phase = "running";
+  render();
+  const t0 = Date.now();
+  const SCALE = 23.4;            // 3.2 秒真实 → 约 75 秒模拟
+  clearInterval(runTimer);
+  runTimer = setInterval(()=>{
+    const el = (Date.now()-t0)/1000 * SCALE;
+    list.forEach(s=>{
+      const dur = s.model ? 70 : 1.2;
+      const pct = Math.min(1, el/dur);
+      const b = document.querySelector(`[data-bar="${s.id}"]`);
+      if (b) b.style.width = (pct*100)+"%";
+      const st = document.querySelector(`[data-pst="${s.id}"]`);
+      if (st) st.textContent = pct>=1 ? "完成" : (s.model?"生成中…":"合成中…");
+    });
+    const et = document.getElementById("elapsed");
+    if (et) et.textContent = el.toFixed(1)+" s";
+    if (el >= 70) { clearInterval(runTimer); S.phase = "done"; render(); }
+  }, 90);
+}
+
+/* ============================================================ 渲染 */
+function render(){
+  vSteps();
+  const v = {1:v1,2:v2,3:v3,4:v4,5:v5}[S.step];
+  document.getElementById("view").innerHTML = v();
+  renderModal();
+}
+
+/* ============================================================ 事件 */
+document.addEventListener("click", e=>{
+  const el = e.target.closest("[data-act]");
+  if (!el) return;
+  const a = el.dataset.act, id = Number(el.dataset.id);
+
+  if (a === "step") { S.step = Number(el.dataset.n); window.scrollTo(0,0); render(); return; }
+  if (a === "close") { S.detailFor = null; S.redoFor = null; renderModal(); return; }
+
+  if (a === "mat") {
+    const k = el.dataset.k;
+    S.mat[k] = !S.mat[k];
+    if (!S.mat[k] && k === "front") S.mat[k] = true;   // 必选不可关
+    render(); return;
+  }
+  if (a === "pick")  { S.on[id] = S.on[id] === false ? true : false; render(); return; }
+  if (a === "run")   { startRun(); return; }
+  if (a === "detail"){ S.detailFor = id; renderModal(); return; }
+  if (a === "redo")  { S.redoFor = id; renderModal(); return; }
+
+  if (a === "pick-redo") {
+    const k = el.dataset.k;
+    const label = { text:"重画文字层", placement:"重调落点 / 裁切", cutout:"本地重新抠图", bg:"重新生成背景" }[k];
+    S.redoFor = null; renderModal();
+    toast(`本次操作：${label}。演示环境不真实调用模型。该选择会写入运行日志用于归因。`);
+    return;
+  }
+
+  if (a === "accept") { toast("已采纳。演示环境仅改变界面状态，刷新即还原。"); return; }
+
+  if (a === "add") {
+    const next = Math.max(...S.slots.map(s=>s.id)) + 1;
+    S.slots.push({ id:next, name:"赠品展示", r:"flat_overlay", needs:["front"], model:false,
+      why:"示例新增：纯色底 + 赠品说明叠字（复用已登记的 renderer）" });
+    S.on[next] = true;
+    toast("坑位表加了一行 —— 没有改任何执行器代码。回到第 2、3 步会看到它已经参与。");
+    render(); return;
+  }
+  if (a === "del") {
+    S.slots = S.slots.filter(s=>s.id !== id);
+    delete S.on[id];
+    toast("删除了一行。可做张数已经跟着变了。");
+    render(); return;
+  }
+});
+
+window.addEventListener("hashchange", ()=>{});
+render();
+</script>
+</body>
+</html>

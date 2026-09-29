@@ -1,0 +1,32 @@
+{
+  "why": "requirements §17.6：临时授权 URL 不写入普通日志",
+  "at": "2026-09-24T14:33:13+08:00",
+  "files": [
+    "A/response-task.json",
+    "B/response-task.json",
+    "C/response-task.json"
+  ],
+  "urls": {
+    "A": [
+      {
+        "host": "dashscope-a717.oss-accelerate.aliyuncs.com",
+        "url_sha256": "28f6d59848d98cb7822d0cb726cae6cfdaa0f63da29b8eb86f530bcd5b852c0a",
+        "path_prefix": "/1d/8d/20260924/5f326ce3"
+      }
+    ],
+    "B": [
+      {
+        "host": "dashscope-a717.oss-accelerate.aliyuncs.com",
+        "url_sha256": "1378a01c662217a12d9df7d916f28340ab2355ce7b331730a0bd30ba1bc47dd6",
+        "path_prefix": "/1d/f2/20260924/5f326ce3"
+      }
+    ],
+    "C": [
+      {
+        "host": "dashscope-a717.oss-accelerate.aliyuncs.com",
+        "url_sha256": "0223732a3660d91cdbd7b9d0aded4db1506562f28d3dbcc1b0c41364b6559f82",
+        "path_prefix": "/1d/a3/20260924/5f326ce3"
+      }
+    ]
+  }
+}

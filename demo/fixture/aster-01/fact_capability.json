@@ -1,0 +1,567 @@
+{
+  "schema": "demo-fact-capability/1",
+  "sku": "demo-tumbler-aster-01",
+  "facts_version": "2026-09-25.1",
+  "metric_profile": "cylinder-v1",
+  "status": "rebaselined_in_D1_R1",
+  "fact_card": "demo/fixture/aster-01/product.json",
+  "authority_note": "登记每条事实「谁能判、凭什么、边界在哪」。不改事实卡，也不替代 demo/contract/ 的环节身份权威；D1.R3 据此实现并冻结验证器注册表，D1.R2 负责给模型路线补对照证据。",
+  "verdict_domain": ["pass", "manual", "fail", "unknown", "not_applicable", "risk", "needs_human"],
+  "input_paths": {
+    "human_fact_review": "human_fact_review.json",
+    "human_visual_review": "human_visual_review.json",
+    "verifier_plan": "verifier_plan.json",
+    "threshold_derivation": "threshold-derivation.json"
+  },
+  "input_paths_note": "相对商品包目录 demo/fixture/<sku>/ 解析；D1.P4 步骤 0 起不再散落在 demo/core/ 且不带 SKU 后缀。",
+  "applicability_probe": {
+    "id": "controlled_backdrop",
+    "implemented_in": "demo/core/back_chain.py::backdrop_probe（复用 demo/fixture/measure_cylinder.py::build_mask，不是第二份掩膜）",
+    "question": "纯背景列里被判成主体的像素占比，是否低到让阈值掩膜在这张图上成立",
+    "params": {"band": 0.18, "max_share": 0.02},
+    "recomputed_at": "2026-09-26（D1.R1 本轮复算，读数与 D1.P3 逐值相同）",
+    "readings": [
+      {"image": "fixture-design/pack/01-front-full.png", "sha256_head": "e1b1c5de1ee6b50a", "subject_share_in_band": 0.0, "mask_share": 0.191, "verdict": "applicable"},
+      {"image": "first-round F-01", "sha256_head": "95db1ad085d068c4", "subject_share_in_band": 0.2063, "mask_share": 0.2502, "verdict": "not_applicable"},
+      {"image": "first-round F-02", "sha256_head": "1cdf146ba17c3dd6", "subject_share_in_band": 0.3921, "mask_share": 0.2838, "verdict": "not_applicable"},
+      {"image": "first-round F-03", "sha256_head": "b09fd5a9e5af91e3", "subject_share_in_band": 0.1584, "mask_share": 0.2246, "verdict": "not_applicable"},
+      {"image": "first-round F-04", "sha256_head": "80ec57b21bdbd0cf", "subject_share_in_band": 0.4163, "mask_share": 0.2725, "verdict": "not_applicable"}
+    ],
+    "threshold_sensitivity": "阈值在 0.005、0.02、0.05、0.10 四档任取，五张图的适用/不适用分类都不变",
+    "boundary": "探针只回答「这把尺子在这张图上能不能用」，不回答商品对不对，也不证明分割是唯一路线"
+  },
+  "facts": [    {
+      "id": "F1",
+      "claim": "单个高直筒杯体，高宽视觉比例约 3.1:1，主体侧壁近乎平直",
+      "card_modality": "mixed",
+      "capabilities": [
+        {
+          "id": "cylinder-v1",
+          "kind": "deterministic",
+          "decides": "aspect_h_over_w",
+          "applies_when": {"probe": "controlled_backdrop", "band": 0.18, "max_share": 0.02},
+          "on_not_applicable": "next_router",
+          "verdict_domain": ["pass", "manual", "fail", "unknown", "not_applicable"],
+          "calibration": {
+            "state": "acceptance_grade_only",
+            "source": "evals/product-demo/fixture-design/d0-1-selection.md §6「F1 高宽比」行",
+            "pass": {"min": 2.6, "max": 3.6},
+            "manual": {"min": 2.3, "max": 3.9},
+            "sample_n": 3,
+            "sample": {"A": 2.688, "B": 2.886, "C": 3.182},
+            "statistical_claim": "n=3，只能作为下一轮验收档使用，不能当统计结论",
+            "expires_when": "生成模型、量测实现或调色板分类权重变化时须重新校准"
+          },
+          "applies_on": {"controlled_backdrop_fixture": true, "first_round_scene_candidates": false},
+          "can_prove": "前提成立时，整体高宽比是否落在验收档 2.6–3.6",
+          "cannot_prove": "侧壁是否弯曲或收腰；事实卡 human_note 明确留给人工，机器只给整体比例"
+        },
+        {
+          "id": "human",
+          "kind": "human",
+          "decides": "侧壁是否近垂直、是否收腰或呈锥形",
+          "source": "human_fact_review",
+          "requires_explicit_signature": true,
+          "can_prove": "在虚构演示范围内，由具名审阅者对具体 {事实, 候选} 逐条确认",
+          "cannot_prove": "第三方或真实运营的复核；审阅者身份是 not_independent_third_party"
+        },
+        {
+          "id": "refcond-vlm",
+          "kind": "model",
+          "model": "qwen-vl-max",
+          "decides": "该事实是否与参考图一致（参考图与候选一起交给模型，逐事实问一次）",
+          "status": "declared_not_run",
+          "why": "D1.P3 与 D1.R1 均为离线零付费任务；模型路线的对照属于 D1.R2/D1.R3",
+          "can_prove": "尚无证据：未运行，不得计入任何结论",
+          "cannot_prove": "未完成对照校准前不得 hard pass/fail，默认只报 risk/needs-human"
+        }
+      ],
+      "current_verdict": {
+        "for_candidates": ["F-01", "F-02", "F-03", "F-04"],
+        "decided_by": "human",
+        "verdicts": {"pass": 4},
+        "machine_passed": false,
+        "reviewer": "project-operator",
+        "reviewer_kind": "not_independent_third_party",
+        "note": "确定性路线在场景候选上不适用、模型路线未运行，结论全部由显式人工签字承担（D1.P3 的 route_summary 为 {human: 8}）"
+      },
+      "gaps": [],
+      "boundary": [
+        "适用性只对「低饱和中性底衬」成立：本轮实测棚拍夹具 0.0、四张场景候选 0.1584–0.4163，相差两个数量级",
+        "阈值来自 n=3 的夹具样本，属验收档而非统计结论"
+      ]
+    },    {
+      "id": "F2",
+      "claim": "上部约 72% 为哑光深青绿 #0F6B66",
+      "card_modality": "mixed",
+      "capabilities": [
+        {
+          "id": "cylinder-v1",
+          "kind": "deterministic",
+          "decides": "body_upper_share",
+          "applies_when": {"probe": "controlled_backdrop", "band": 0.18, "max_share": 0.02},
+          "on_not_applicable": "next_router",
+          "verdict_domain": ["pass", "manual", "fail", "unknown", "not_applicable"],
+          "calibration": {
+            "state": "acceptance_grade_only",
+            "source": "evals/product-demo/fixture-design/d0-1-selection.md §6「F2/F3 上段占杯体」行",
+            "pass": {"min": 0.58, "max": 0.80},
+            "manual": {"min": 0.50, "max": 0.88},
+            "hard_fail": "小于 0.50",
+            "sample_n": 3,
+            "sample": {"A": 0.6555, "B": 0.6673, "C": 0.6479},
+            "statistical_claim": "n=3，只能作为下一轮验收档使用，不能当统计结论",
+            "expires_when": "生成模型、量测实现或调色板分类权重变化时须重新校准"
+          },
+          "applies_on": {"controlled_backdrop_fixture": true, "first_round_scene_candidates": false},
+          "can_prove": "前提成立时，上段占杯体比例是否落在验收档 0.58–0.80",
+          "cannot_prove": "色值本身是否等于 #0F6B66（按裁定不逐像素判），以及是否出现第三种主色、渐变或图案"
+        },
+        {
+          "id": "human",
+          "kind": "human",
+          "decides": "是否出现第三种主色、渐变或图案",
+          "source": "human_fact_review",
+          "requires_explicit_signature": true,
+          "can_prove": "具名审阅者对具体 {事实, 候选} 的目视结论",
+          "cannot_prove": "第三方复核；也无法给出可复现的色值判据"
+        },
+        {
+          "id": "refcond-vlm",
+          "kind": "model",
+          "model": "qwen-vl-max",
+          "decides": "该事实是否与参考图一致（参考图与候选一起交给模型，逐事实问一次）",
+          "status": "declared_not_run",
+          "why": "离线零付费任务；模型对照属于 D1.R2/D1.R3",
+          "can_prove": "尚无证据：未运行，不得计入任何结论",
+          "cannot_prove": "未完成对照校准前不得 hard pass/fail，默认只报 risk/needs-human"
+        }
+      ],
+      "registered_readings": [
+        {"metric": "upper_color_delta_e", "gating": false, "sample": {"A": 11.75, "B": 11.88, "C": 13.66},
+         "why": "D0.1 §3 裁定十六进制只用于生成提示词与目视对照；v1 的 pass max 12.0 没有派生来源，已降级为登记读数，不参与判定"}
+      ],
+      "current_verdict": {
+        "for_candidates": ["F-01", "F-02", "F-03", "F-04"],
+        "decided_by": "human",
+        "verdicts": {"pass": 4},
+        "machine_passed": false,
+        "reviewer": "project-operator",
+        "reviewer_kind": "not_independent_third_party",
+        "note": "同 F1：场景候选上确定性路线不适用、模型路线未运行"
+      },
+      "gaps": [],
+      "boundary": [
+        "「改色会被拦」成立，但拦它的不是颜色判据：neg-01 的硬失败来自分带断裂，连带 rib_count=0 与 bottom_ring_present=0",
+        "「机器认得出第三种主色」不成立；机器侧只有未归类像素占比（extra_area_share）这一条间接覆盖"
+      ]
+    },
+    {
+      "id": "F3",
+      "claim": "下部约 28% 为深炭灰 #252A2A 防滑套，带三条浅水平筋",
+      "card_modality": "mixed",
+      "capabilities": [
+        {
+          "id": "cylinder-v1",
+          "kind": "deterministic",
+          "decides": "body_lower_share, rib_count",
+          "applies_when": {"probe": "controlled_backdrop", "band": 0.18, "max_share": 0.02},
+          "on_not_applicable": "next_router",
+          "verdict_domain": ["pass", "manual", "fail", "unknown", "not_applicable"],
+          "calibration": {
+            "state": "acceptance_grade_only",
+            "source": "evals/product-demo/fixture-design/d0-1-selection.md §6「F2/F3 上段占杯体」行与「F3 筋条」行",
+            "metrics": {
+              "body_lower_share": {
+                "pass": {"min": 0.20, "max": 0.42},
+                "manual": {"min": 0.12, "max": 0.50},
+                "rule": "杯体只分上段与下段，故通过档 = 1 − 上段通过档；这是派生规则，不是独立实测",
+                "sample": {"A": 0.3445, "B": 0.3327, "C": 0.3521}
+              },
+              "rib_count": {
+                "pass": {"min": 3, "max": 3},
+                "manual": {"min": 2, "max": 4},
+                "rule": "设计值为 3；0 条或 ≥6 条属硬失败",
+                "sample": {"A": 4, "B": 3, "C": 3},
+                "note": "母本 A 实测 4 条、落人工档 —— 那是真报不是误报（control-A 的 manual 结果）"
+              }
+            },
+            "sample_n": 3,
+            "statistical_claim": "n=3，只能作为下一轮验收档使用，不能当统计结论",
+            "expires_when": "生成模型、量测实现或调色板分类权重变化时须重新校准"
+          },
+          "applies_on": {"controlled_backdrop_fixture": true, "first_round_scene_candidates": false},
+          "can_prove": "前提成立时，下段占比与筋条数量是否落在验收档",
+          "cannot_prove": "筋条行距是否均匀（事实卡 human_note 留给人工）"
+        },
+        {
+          "id": "human",
+          "kind": "human",
+          "decides": "筋条行距是否均匀、防滑套形态是否合理",
+          "source": "human_fact_review",
+          "requires_explicit_signature": true,
+          "can_prove": "具名审阅者对具体 {事实, 候选} 的目视结论",
+          "cannot_prove": "第三方复核"
+        },
+        {
+          "id": "refcond-vlm",
+          "kind": "model",
+          "model": "qwen-vl-max",
+          "decides": "该事实是否与参考图一致（参考图与候选一起交给模型，逐事实问一次）",
+          "status": "declared_not_run",
+          "why": "离线零付费任务；模型对照属于 D1.R2/D1.R3",
+          "can_prove": "尚无证据：未运行，不得计入任何结论",
+          "cannot_prove": "未完成对照校准前不得 hard pass/fail"
+        }
+      ],
+      "current_verdict": {
+        "for_candidates": ["F-01", "F-02", "F-03", "F-04"],
+        "decided_by": "human",
+        "verdicts": {"pass": 4},
+        "machine_passed": false,
+        "reviewer": "project-operator",
+        "reviewer_kind": "not_independent_third_party",
+        "note": "同 F1"
+      },
+      "gaps": [],
+      "boundary": [
+        "结构变异会级联：neg-03 加把手除命中 body_protrusion 外，还把上/下段占比打红（0.4186 / 0.5814），因为按颜色分的带被凸出物切断",
+        "因此不能拿单条红项反推「最初改了什么」"
+      ]
+    },    {
+      "id": "F4",
+      "claim": "杯盖为低矮深炭灰结构，具有两层清楚可见的同心阶梯环",
+      "card_modality": "mixed",
+      "capabilities": [
+        {
+          "id": "cylinder-v1",
+          "kind": "deterministic",
+          "decides": "lid_share",
+          "applies_when": {"probe": "controlled_backdrop", "band": 0.18, "max_share": 0.02},
+          "on_not_applicable": "next_router",
+          "verdict_domain": ["pass", "manual", "fail", "unknown", "not_applicable"],
+          "calibration": {
+            "state": "partial_only",
+            "source": "evals/product-demo/fixture-design/d0-1-selection.md §6「F4 杯盖」行",
+            "pass": {"max": 0.20},
+            "sample_n": 3,
+            "sample": {"A": 0.100, "B": 0.131, "C": 0.1259},
+            "covered": "只保证杯盖低矮",
+            "not_covered": "阶梯级数与盖顶开口；事实卡 machine_check_gaps 记为 open，维持人工",
+            "statistical_claim": "n=3，只能作为下一轮验收档使用，不能当统计结论",
+            "expires_when": "生成模型、量测实现或调色板分类权重变化时须重新校准"
+          },
+          "applies_on": {"controlled_backdrop_fixture": true, "first_round_scene_candidates": false},
+          "can_prove": "前提成立时，杯盖高度占比 ≤0.20",
+          "cannot_prove": "恰好两级同心台阶、盖顶无开口、是否存在第二只盖子或翻盖"
+        },
+        {
+          "id": "human",
+          "kind": "human",
+          "decides": "恰好两级同心台阶、盖顶无开口、无第二只盖子或翻盖",
+          "source": "human_fact_review",
+          "requires_explicit_signature": true,
+          "can_prove": "具名审阅者对具体 {事实, 候选} 的目视结论（事实卡 human_only_checks 的三项）",
+          "cannot_prove": "第三方复核"
+        },
+        {
+          "id": "refcond-vlm",
+          "kind": "model",
+          "model": "qwen-vl-max",
+          "decides": "该事实是否与参考图一致（参考图与候选一起交给模型，逐事实问一次）",
+          "status": "declared_not_run",
+          "why": "离线零付费任务；模型对照属于 D1.R2/D1.R3",
+          "can_prove": "尚无证据：未运行，不得计入任何结论",
+          "cannot_prove": "未完成对照校准前不得 hard pass/fail"
+        }
+      ],
+      "current_verdict": {
+        "for_candidates": ["F-01", "F-02", "F-03", "F-04"],
+        "decided_by": "human",
+        "verdicts": {"pass": 4},
+        "machine_passed": false,
+        "reviewer": "project-operator",
+        "reviewer_kind": "not_independent_third_party",
+        "note": "阶梯级数与盖顶开口只有人工结论；机器只保证杯盖低矮"
+      },
+      "gaps": [
+        {"missing": "阶梯级数与盖顶开口", "status": "open", "assigned_to": "维持人工判定"}
+      ],
+      "boundary": [
+        "漏报是事先声明的：neg-07 把两级阶梯抹平，机器整体仍判 pass —— 套件对这一例的要求是「不得硬失败」，不是「必须拦下」",
+        "机器若在 neg-07 上报硬失败，说明代码把代理当判据，那才是缺陷"
+      ]
+    },
+    {
+      "id": "F5",
+      "claim": "杯盖与杯体之间有一圈窄陶土橙 #D97A45 装饰环",
+      "card_modality": "machine",
+      "card_modality_correction": "事实卡写 modality=machine。结合适用性探针，准确说法是「在 controlled_backdrop 适用域内由确定性判据承担、不需人工」；离开该域则整条路线不适用。此更正不改事实卡，只作为能力矩阵的边界记录。",
+      "capabilities": [
+        {
+          "id": "cylinder-v1",
+          "kind": "deterministic",
+          "decides": "trim_span_count, trim_share, trim_top_position",
+          "applies_when": {"probe": "controlled_backdrop", "band": 0.18, "max_share": 0.02},
+          "on_not_applicable": "next_router",
+          "verdict_domain": ["pass", "manual", "fail", "unknown", "not_applicable"],
+          "calibration": {
+            "state": "acceptance_grade_only",
+            "source": "evals/product-demo/fixture-design/d0-1-selection.md §6「F5 橙环」行",
+            "metrics": {
+              "trim_span_count": {"pass": {"min": 1, "max": 1}, "rule": "设计为单条窄环；≥2 段或缺失属硬失败", "sample": {"A": 1, "B": 1, "C": 1}},
+              "trim_share": {"pass": {"max": 0.03}, "manual": {"max": 0.05}, "sample": {"A": 0.0127, "B": 0.0138, "C": 0.0136}},
+              "trim_top_position": {"pass": {"max": 0.25}, "sample": {"A": 0.100, "B": 0.131, "C": 0.1259},
+                "note": "与 F4/lid_share 的样本逐值相同：橙环位于盖体接缝，其到顶端的归一化距离本来就等于杯盖高度占比。两组读数因此不互相独立 —— 掩膜若把杯盖定位错，两条一起动"}
+            },
+            "sample_n": 3,
+            "statistical_claim": "n=3，只能作为下一轮验收档使用，不能当统计结论",
+            "expires_when": "生成模型、量测实现或调色板分类权重变化时须重新校准"
+          },
+          "applies_on": {"controlled_backdrop_fixture": true, "first_round_scene_candidates": false},
+          "can_prove": "前提成立时，橙环段数=1、占比 ≤0.03、位于对象顶部 25% 内",
+          "cannot_prove": "橙环颜色是否真的等于 #D97A45（按裁定不逐像素判）；在场景候选上整条路线不适用"
+        },
+        {
+          "id": "human",
+          "kind": "human",
+          "decides": "橙环是否存在、是否位于盖体接缝",
+          "source": "human_fact_review",
+          "requires_explicit_signature": true,
+          "can_prove": "具名审阅者对具体 {事实, 候选} 的目视结论",
+          "cannot_prove": "第三方复核"
+        },
+        {
+          "id": "refcond-vlm",
+          "kind": "model",
+          "model": "qwen-vl-max",
+          "decides": "该事实是否与参考图一致（参考图与候选一起交给模型，逐事实问一次）",
+          "status": "declared_not_run",
+          "why": "离线零付费任务；模型对照属于 D1.R2/D1.R3",
+          "can_prove": "尚无证据：未运行，不得计入任何结论",
+          "cannot_prove": "未完成对照校准前不得 hard pass/fail"
+        }
+      ],
+      "current_verdict": {
+        "for_candidates": ["F-01", "F-02", "F-03", "F-04"],
+        "decided_by": "human",
+        "verdicts": {"pass": 4},
+        "machine_passed": false,
+        "reviewer": "project-operator",
+        "reviewer_kind": "not_independent_third_party",
+        "note": "场景候选上机器路线不适用；三条机器判据本轮一次都没有在候选上生效"
+      },
+      "gaps": [],
+      "boundary": [
+        "「modality=machine」曾被读成「任何图上机器可判」；正确读法是「适用域内不需人工」",
+        "neg-04（去盖）命中 trim_span_count，是适用域内的真实拦截；不适用于场景候选"
+      ]
+    },    {
+      "id": "F6",
+      "claim": "平底，底部有窄深灰防滑圈",
+      "card_modality": "mixed",
+      "capabilities": [
+        {
+          "id": "cylinder-v1",
+          "kind": "deterministic",
+          "decides": "bottom_spread_share, bottom_ring_present",
+          "applies_when": {"probe": "controlled_backdrop", "band": 0.18, "max_share": 0.02},
+          "on_not_applicable": "next_router",
+          "verdict_domain": ["pass", "manual", "fail", "unknown", "not_applicable"],
+          "calibration": {
+            "state": "acceptance_grade_only",
+            "source": "evals/product-demo/fixture-design/d0-1-selection.md §6「F6 平底」行",
+            "metrics": {
+              "bottom_spread_share": {"pass": {"max": 0.05}, "manual": {"max": 0.08}, "sample": {"A": 0.0387, "B": 0.0323, "C": 0.0259}},
+              "bottom_ring_present": {"pass": {"min": 1, "max": 1}, "rule": "检出/未检出，不是连续量", "sample": {"A": 1, "B": 1, "C": 1},
+                "note": "与 F5/trim_span_count 的样本逐值相同（都是检出=1）；两条同为二值检出，判别力有限，不构成两份独立证据"}
+            },
+            "sample_n": 3,
+            "statistical_claim": "n=3，只能作为下一轮验收档使用，不能当统计结论",
+            "expires_when": "生成模型、量测实现或调色板分类权重变化时须重新校准"
+          },
+          "applies_on": {"controlled_backdrop_fixture": true, "first_round_scene_candidates": false},
+          "can_prove": "前提成立时，底部外扩占比与底圈检出",
+          "cannot_prove": "是否悬浮或与台面穿插（事实卡 human_note 留给人工）"
+        },
+        {
+          "id": "human",
+          "kind": "human",
+          "decides": "是否悬浮、是否与台面穿插",
+          "source": "human_fact_review",
+          "requires_explicit_signature": true,
+          "can_prove": "具名审阅者对具体 {事实, 候选} 的目视结论",
+          "cannot_prove": "第三方复核"
+        },
+        {
+          "id": "refcond-vlm",
+          "kind": "model",
+          "model": "qwen-vl-max",
+          "decides": "该事实是否与参考图一致（参考图与候选一起交给模型，逐事实问一次）",
+          "status": "declared_not_run",
+          "why": "离线零付费任务；模型对照属于 D1.R2/D1.R3",
+          "can_prove": "尚无证据：未运行，不得计入任何结论",
+          "cannot_prove": "未完成对照校准前不得 hard pass/fail"
+        }
+      ],
+      "current_verdict": {
+        "for_candidates": ["F-01", "F-02", "F-03", "F-04"],
+        "decided_by": "human",
+        "verdicts": {"pass": 4},
+        "machine_passed": false,
+        "reviewer": "project-operator",
+        "reviewer_kind": "not_independent_third_party",
+        "note": "同 F1"
+      },
+      "gaps": [],
+      "boundary": [
+        "neg-01 与 neg-03 里 bottom_ring_present 是级联红项，不是被直接改动的那一条",
+        "该判据只在适用域内有效，不能用来证明场景候选的底面"
+      ]
+    },
+    {
+      "id": "F7",
+      "claim": "无把手、无侧握、无提带、无吸管、无杯嘴",
+      "card_modality": "mixed",
+      "capabilities": [
+        {
+          "id": "cylinder-v1",
+          "kind": "deterministic",
+          "decides": "body_protrusion, extra_area_share",
+          "applies_when": {"probe": "controlled_backdrop", "band": 0.18, "max_share": 0.02},
+          "on_not_applicable": "next_router",
+          "verdict_domain": ["pass", "manual", "fail", "unknown", "not_applicable"],
+          "calibration": {
+            "state": "acceptance_grade_only",
+            "source": "evals/product-demo/fixture-design/d0-1-selection.md §6「F7 无凸出部件」行",
+            "metrics": {
+              "body_protrusion": {"pass": {"max": 0.08}, "manual": {"max": 0.12}, "sample": {"A": 0.0581, "B": 0.0447, "C": 0.0242}},
+              "extra_area_share": {"pass": {"max": 0.01}, "sample": {"A": 0.0, "B": 0.0, "C": 0.0007},
+                "note": "事实卡把它挂在 F7，machine_check_gaps 却声明它同时覆盖 F2/F3 的「第三种主色」；同一读数服务两条事实，归属要在 D1.R3 定清，避免同一读数被两条事实各记一次"}
+            },
+            "sample_n": 3,
+            "statistical_claim": "n=3，只能作为下一轮验收档使用，不能当统计结论",
+            "expires_when": "生成模型、量测实现或调色板分类权重变化时须重新校准"
+          },
+          "applies_on": {"controlled_backdrop_fixture": true, "first_round_scene_candidates": false},
+          "can_prove": "前提成立时，凸出量与主体外像素占比",
+          "cannot_prove": "凸出物的语义：是把手、提带还是吸管，机器不判（事实卡 machine_check_gaps 记为 open）"
+        },
+        {
+          "id": "human",
+          "kind": "human",
+          "decides": "凸出物的语义是否属于把手、侧握、提带、吸管或杯嘴",
+          "source": "human_fact_review",
+          "requires_explicit_signature": true,
+          "can_prove": "具名审阅者对具体 {事实, 候选} 的目视结论",
+          "cannot_prove": "第三方复核"
+        },
+        {
+          "id": "refcond-vlm",
+          "kind": "model",
+          "model": "qwen-vl-max",
+          "decides": "该事实是否与参考图一致（参考图与候选一起交给模型，逐事实问一次）",
+          "status": "declared_not_run",
+          "why": "离线零付费任务；模型对照属于 D1.R2/D1.R3",
+          "can_prove": "尚无证据：未运行，不得计入任何结论",
+          "cannot_prove": "未完成对照校准前不得 hard pass/fail"
+        }
+      ],
+      "current_verdict": {
+        "for_candidates": ["F-01", "F-02", "F-03", "F-04"],
+        "decided_by": "human",
+        "verdicts": {"pass": 4},
+        "machine_passed": false,
+        "reviewer": "project-operator",
+        "reviewer_kind": "not_independent_third_party",
+        "note": "同 F1"
+      },
+      "gaps": [
+        {"missing": "凸出物是否为把手、提带或吸管", "status": "open", "assigned_to": "维持人工判定"}
+      ],
+      "boundary": [
+        "neg-03（加把手）在适用域内命中 body_protrusion=0.2447，是有效拦截",
+        "同一变异还连带打红上/下段占比，说明结构变异会级联"
+      ]
+    },    {
+      "id": "F8",
+      "claim": "外表无文字、数字、Logo、标签和水印",
+      "card_modality": "human",
+      "capabilities": [
+        {
+          "id": "human",
+          "kind": "human",
+          "decides": "商品外表是否有文字、数字、Logo、标签或水印",
+          "source": "human_fact_review",
+          "requires_explicit_signature": true,
+          "can_prove": "具名审阅者对具体 {事实, 候选} 的目视结论",
+          "cannot_prove": "第三方复核；也不覆盖图片后期添加的说明文字（那属于参考板/版式层，不属于商品外表）"
+        }
+      ],
+      "disproven": [
+        {
+          "id": "text_proxy_blobs",
+          "kind": "deterministic",
+          "status": "disproven",
+          "why": "高梯度小块数只是形态代理，会把筋条边缘误报为候选（fixture-design/d0-1-selection.md §7），事实卡里已明确不计入判定",
+          "evidence": "evals/product-demo/d0-6-negative-2026-09-25.md §4：neg-02 在杯身写入 750ML 与 ACME 后，代理从 53 升到 62，机器整体仍判 pass"
+        }
+      ],
+      "current_verdict": {
+        "for_candidates": ["F-01", "F-02", "F-03", "F-04"],
+        "decided_by": "human",
+        "verdicts": {"pass": 4},
+        "machine_passed": false,
+        "reviewer": "project-operator",
+        "reviewer_kind": "not_independent_third_party",
+        "note": "F8 从来只有人工档；机器代理已被证伪，不得复用作判据"
+      },
+      "gaps": [
+        {"missing": "文字与伪标签", "status": "open", "assigned_to": "维持人工判定"}
+      ],
+      "boundary": [
+        "neg-02（加字）是事先声明的漏报：套件对它只要求「不得硬失败」，因为机器不许假装拦得住",
+        "人工签字只承担「谁给的结论」，不承担独立复核"
+      ]
+    }
+  ],
+  "historical_corrections": [
+    {
+      "id": "P1",
+      "original_claim": "换商品不改变流程（D0.8 记为 proven）",
+      "evidence_then": "Bex 02 只证明同一横向色带协议可配置 —— 同源规格的循环验证",
+      "corrected": "它是「流程与配置解耦」的间接证据，不是跨品类通用证明。本轮补上可证伪判据：模块常量里不得出现商品身份（rg 零命中），并以 demo/**.py 哈希清单作为换商品探针；同时查明四份逐商品数据仍住在 demo/core（D1.P4 步骤 0 收拢）",
+      "status": "downgraded_to_indirect"
+    },
+    {
+      "id": "P2",
+      "original_claim": "门禁会拒绝已知坏图（D0.8 记为 proven）",
+      "evidence_then": "七例确定性合成变异 + 3 个对照",
+      "corrected": "只覆盖合成变异，不代表真实模型失败分布；两处漏报（F8 文字、F4 阶梯级数）是事先写进预期的边界，不是意外。对照组只有 3 个，0/3 误报率没有统计意义",
+      "status": "scoped_to_synthetic"
+    },
+    {
+      "id": "F8-machine-proxy",
+      "original_claim": "文字可由 text_proxy_blobs 作为机器代理",
+      "evidence_then": "无 —— 这是设计阶段的设想",
+      "corrected": "已证伪：neg-02 加字后机器仍判 pass。F8 维持纯人工档，机器不得复用作判据",
+      "status": "disproven_machine_proxy"
+    },
+    {
+      "id": "F5-modality",
+      "original_claim": "事实卡 F5 的 modality=machine",
+      "evidence_then": "事实卡字段本身",
+      "corrected": "准确读法是「在 controlled_backdrop 适用域内由确定性判据承担、不需人工」；离开该域整条路线不适用。该更正只写入能力矩阵，不改事实卡",
+      "status": "boundary_corrected"
+    }
+  ],
+  "summary": {
+    "facts": 8,
+    "deterministic_routes_applicable_on_first_round_candidates": 0,
+    "model_routes_run": 0,
+    "human_signed_records": 32,
+    "open_gaps": 3,
+    "facts_without_any_capability": 0,
+    "note": "四张冻结候选上，事实结论全部由显式人工签字承担；这不是缺陷，是当前能力边界，D1.R2/R3 负责给出机器路线的对照证据"
+  }
+}

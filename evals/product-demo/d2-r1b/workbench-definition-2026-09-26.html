@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Aster 01 商品套图工作台 · 前端定义稿</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: "Segoe UI", "Microsoft YaHei UI", system-ui, sans-serif;
+      color: #101828;
+      background: #f4f5f7;
+      --page: #f4f5f7;
+      --surface: #ffffff;
+      --text: #101828;
+      --muted: #667085;
+      --border: #d0d5dd;
+      --primary: #2457d6;
+      --primary-soft: #eef4ff;
+      --success: #18794e;
+      --success-soft: #ecfdf3;
+      --warning: #b54708;
+      --warning-soft: #fffaeb;
+      --danger: #b42318;
+      --danger-soft: #fef3f2;
+      --unknown: #6941c6;
+      --unknown-soft: #f4f3ff;
+      --radius: .75rem;
+      --shadow: 0 1px 2px rgb(16 24 40 / .06);
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 20rem; background: var(--page); line-height: 1.5; }
+    button, input, textarea, select { font: inherit; }
+    button, select, input[type="text"], textarea { min-height: 3rem; }
+    button { border: 1px solid var(--border); border-radius: .55rem; padding: .68rem 1rem; background: #fff; color: var(--text); font-weight: 650; cursor: pointer; }
+    button:hover { border-color: #98a2b3; }
+    button.primary { border-color: var(--primary); background: var(--primary); color: #fff; }
+    button.ghost { background: transparent; }
+    button.danger { color: var(--danger); }
+    button:disabled { cursor: not-allowed; opacity: .55; }
+    :focus-visible { outline: 3px solid #84adff; outline-offset: 2px; }
+    label { display: block; color: #344054; font-weight: 650; }
+    input[type="text"], textarea, select { width: 100%; border: 1px solid var(--border); border-radius: .5rem; background: #fff; padding: .68rem .75rem; color: var(--text); }
+    textarea { min-height: 10rem; resize: vertical; line-height: 1.55; }
+    fieldset { margin: 0; padding: 0; border: 0; }
+    legend { margin-block-end: .5rem; color: #344054; font-weight: 700; }
+    h1, h2, h3, p { margin-block-start: 0; }
+    h1 { margin-block-end: .2rem; font-size: 1.18rem; }
+    h2 { margin-block-end: .85rem; font-size: 1rem; }
+    h3 { margin-block-end: .35rem; font-size: .94rem; }
+    .muted { color: var(--muted); }
+    .small { font-size: .84rem; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+    .review-bar { display: flex; align-items: center; gap: .75rem; min-height: 3.5rem; padding: .45rem 1rem; background: #172b4d; color: #fff; }
+    .review-bar strong { margin-inline-end: auto; }
+    .review-bar label { color: #fff; font-size: .86rem; }
+    .review-bar select { min-height: 2.5rem; width: auto; min-width: 16rem; }
+    .review-bar button { min-height: 2.5rem; padding-block: .45rem; border-color: #90a4c4; background: transparent; color: #fff; }
+    .app-header { display: flex; align-items: center; gap: 1rem; min-height: 4rem; padding: .65rem 1rem; border-block-end: 1px solid var(--border); background: var(--surface); }
+    .title-block { min-width: 15rem; }
+    .title-meta { display: flex; flex-wrap: wrap; gap: .35rem .65rem; align-items: center; color: var(--muted); font-size: .82rem; }
+    .badge { display: inline-flex; align-items: center; min-height: 1.65rem; padding: .15rem .48rem; border: 1px solid var(--border); border-radius: 999px; background: #fff; color: #344054; font-size: .76rem; font-weight: 700; }
+    .badge.mock { border-color: #fdb022; background: var(--warning-soft); color: #7a2e0e; }
+    .progress-summary { display: flex; align-items: center; gap: .65rem; margin-inline-start: auto; color: #344054; }
+    .progress-track { width: clamp(7rem, 13vw, 13rem); height: .45rem; overflow: hidden; border-radius: 999px; background: #eaecf0; }
+    .progress-fill { width: 0%; height: 100%; border-radius: inherit; background: var(--primary); transition: width .16s ease; }
+    .workspace { display: grid; grid-template-columns: 18rem minmax(30rem, 1fr) 23rem; gap: 1rem; max-width: 100rem; margin: 0 auto; padding: 1rem 1rem 5.4rem; }
+    .panel { min-width: 0; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow); }
+    .panel-section { padding: 1rem; border-block-end: 1px solid #eaecf0; }
+    .panel-section:last-child { border-block-end: 0; }
+    .section-head { display: flex; align-items: center; gap: .6rem; }
+    .section-head h2 { margin-inline-end: auto; margin-block-end: 0; }
+    .source-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: .45rem; margin-block: .75rem; }
+    .source-grid figure { margin: 0; }
+    .source-grid img { display: block; width: 100%; aspect-ratio: 1; object-fit: contain; border: 1px solid var(--border); border-radius: .45rem; background: #f9fafb; }
+    .source-grid figcaption { margin-block-start: .22rem; overflow: hidden; color: var(--muted); font-size: .72rem; text-overflow: ellipsis; white-space: nowrap; }
+    .field { margin-block-start: .8rem; }
+    .field label { margin-block-end: .28rem; font-size: .86rem; }
+    .hint { margin-block-start: .3rem; color: var(--muted); font-size: .78rem; }
+    .facts-line { display: flex; flex-wrap: wrap; gap: .4rem; margin-block-start: .7rem; }
+    .status { display: inline-flex; align-items: center; gap: .3rem; min-height: 1.7rem; padding: .15rem .45rem; border-radius: 999px; font-size: .75rem; font-weight: 700; }
+    .status::before { content: ""; width: .43rem; height: .43rem; border-radius: 50%; background: currentColor; }
+    .status.ready, .status.selected { background: var(--success-soft); color: var(--success); }
+    .status.planned { background: var(--primary-soft); color: var(--primary); }
+    .status.waiting { background: #f2f4f7; color: #475467; }
+    .status.running { background: var(--primary-soft); color: var(--primary); }
+    .status.failed { background: var(--danger-soft); color: var(--danger); }
+    .status.unknown { background: var(--unknown-soft); color: var(--unknown); }
+    .status.stale { background: var(--warning-soft); color: var(--warning); }
+    .shot-list { display: grid; gap: .55rem; margin-block-start: .75rem; }
+    .shot-card { display: grid; grid-template-columns: 2rem 1fr auto; gap: .5rem; align-items: start; width: 100%; min-height: 5.2rem; padding: .65rem; border: 1px solid var(--border); border-radius: .6rem; background: #fff; text-align: start; }
+    .shot-card[aria-current="true"] { border-color: var(--primary); box-shadow: 0 0 0 2px #d6e4ff; }
+    .shot-index { display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: .45rem; background: #f2f4f7; color: #344054; font-weight: 800; }
+    .shot-card p { margin: .22rem 0 0; color: var(--muted); font-size: .78rem; }
+    .shot-actions { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; margin-block-start: .75rem; }
+    .canvas-panel { display: flex; min-height: 45rem; flex-direction: column; }
+    .canvas-head { display: flex; align-items: flex-start; gap: .8rem; padding: 1rem; border-block-end: 1px solid #eaecf0; }
+    .canvas-head > div:first-child { margin-inline-end: auto; }
+    .canvas-head h2 { margin-block-end: .15rem; }
+    .candidate-stage { display: grid; flex: 1; place-items: center; min-height: 31rem; padding: 1rem; background-color: #eef0f3; background-image: linear-gradient(45deg,#e3e6ea 25%,transparent 25%),linear-gradient(-45deg,#e3e6ea 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#e3e6ea 75%),linear-gradient(-45deg,transparent 75%,#e3e6ea 75%); background-position: 0 0,0 .75rem,.75rem -.75rem,-.75rem 0; background-size: 1.5rem 1.5rem; }
+    .candidate-stage img { display: block; width: min(100%, 43rem); aspect-ratio: 1; object-fit: contain; border-radius: .4rem; background: #fff; box-shadow: 0 8px 24px rgb(16 24 40 / .10); }
+    .empty-canvas { display: none; max-width: 28rem; padding: 2rem; border: 1px dashed #98a2b3; border-radius: .75rem; background: rgb(255 255 255 / .84); text-align: center; }
+    .candidate-picker { padding: .85rem 1rem 1rem; border-block-start: 1px solid var(--border); }
+    .candidate-options { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .6rem; }
+    .candidate-option { position: relative; min-width: 0; }
+    .candidate-option input { position: absolute; inset: .45rem auto auto .45rem; z-index: 1; width: 1.1rem; height: 1.1rem; accent-color: var(--primary); }
+    .candidate-option label { display: block; height: 100%; padding: .35rem; border: 2px solid transparent; border-radius: .55rem; background: #f9fafb; cursor: pointer; }
+    .candidate-option input:checked + label { border-color: var(--primary); background: var(--primary-soft); }
+    .candidate-option img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: .35rem; }
+    .candidate-option span { display: block; margin-block-start: .3rem; overflow: hidden; font-size: .75rem; text-overflow: ellipsis; white-space: nowrap; }
+    .inspector { align-self: start; }
+    details { border-block-start: 1px solid #eaecf0; }
+    details:first-of-type { border-block-start: 0; }
+    summary { min-height: 3rem; padding: .78rem 1rem; color: #344054; font-weight: 750; cursor: pointer; }
+    .details-body { padding: 0 1rem 1rem; }
+    .requirement-list { display: grid; gap: .45rem; margin: 0; padding: 0; list-style: none; color: #344054; font-size: .86rem; }
+    .requirement-list li::before { content: "✓"; margin-inline-end: .45rem; color: var(--success); font-weight: 800; }
+    .version-line { display: flex; align-items: center; gap: .4rem; margin-block-end: .5rem; }
+    .review-list { display: grid; gap: .7rem; }
+    .review-item { padding: .65rem; border: 1px solid var(--border); border-radius: .55rem; }
+    .review-item p { margin-block-end: .45rem; font-size: .83rem; }
+    .inline-options { display: flex; flex-wrap: wrap; gap: .6rem; }
+    .inline-options label { display: inline-flex; align-items: center; gap: .28rem; min-height: 2.5rem; font-size: .8rem; font-weight: 600; }
+    input[type="radio"], input[type="checkbox"] { accent-color: var(--primary); }
+    .action-row { display: flex; flex-wrap: wrap; gap: .55rem; margin-block-start: .75rem; }
+    .callout { margin-block-start: .7rem; padding: .65rem .75rem; border-inline-start: 3px solid var(--warning); border-radius: .25rem; background: var(--warning-soft); color: #7a2e0e; font-size: .8rem; }
+    .delivery { position: fixed; z-index: 10; inset: auto 0 0; display: flex; align-items: center; gap: 1rem; min-height: 4.4rem; padding: .65rem 1rem; border-block-start: 1px solid var(--border); background: rgb(255 255 255 / .96); box-shadow: 0 -4px 16px rgb(16 24 40 / .08); backdrop-filter: blur(8px); }
+    .delivery strong { display: block; }
+    .delivery .blockers { margin-inline-end: auto; color: var(--muted); font-size: .82rem; }
+    .delivery .export-path { display: none; color: var(--success); font-size: .82rem; }
+    .state-note { display: none; margin-block-start: .45rem; color: var(--danger); font-size: .8rem; font-weight: 650; }
+    body[data-state="1"] .plan-section, body[data-state="1"] .candidate-content, body[data-state="1"] .inspector,
+    body[data-state="2"] .plan-section, body[data-state="2"] .candidate-content, body[data-state="2"] .inspector { opacity: .36; pointer-events: none; }
+    body[data-state="1"] .empty-canvas, body[data-state="2"] .empty-canvas { display: block; }
+    body[data-state="1"] .candidate-main, body[data-state="2"] .candidate-main { display: none; }
+    body[data-state="4"] .shot-card, body[data-state="8"] .shot-card[aria-current="true"] { background: var(--primary-soft); }
+    body[data-state="5"] .canvas-problem { display: block; }
+    body[data-state="9"] .export-path { display: block; }
+    body.wireframe * { box-shadow: none !important; }
+    body.wireframe { --page: #fff; --surface: #fff; --text: #111; --muted: #555; --border: #777; --primary: #333; --primary-soft: #eee; }
+    body.wireframe img { filter: grayscale(1); opacity: .55; }
+    body.wireframe .candidate-stage { background: #eee; }
+    body.wireframe .badge, body.wireframe .status { border: 1px solid #777; background: #fff; color: #222; }
+    @media (max-width: 68.75rem) {
+      .workspace { grid-template-columns: 17rem minmax(28rem,1fr); }
+      .inspector { grid-column: 2; }
+    }
+    @media (max-width: 47.5rem) {
+      .review-bar, .app-header, .delivery { align-items: stretch; flex-direction: column; }
+      .review-bar select { min-width: 0; }
+      .progress-summary { width: 100%; margin-inline-start: 0; }
+      .progress-track { flex: 1; }
+      .workspace { display: block; padding-block-end: 1rem; }
+      .panel { margin-block-end: 1rem; }
+      .delivery { position: static; }
+      .candidate-options { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; } }
+  </style>
+</head>
+<body data-state="3">
+  <div class="review-bar" role="region" aria-label="设计审阅工具">
+    <strong>FE-03 / FE-04 审阅稿 <span class="small">（不是可用产品，不调用模型）</span></strong>
+    <label for="state-picker">界面状态</label>
+    <select id="state-picker" name="review_state">
+      <option value="1">1 · 初始输入不齐</option>
+      <option value="2">2 · 输入齐全</option>
+      <option value="3" selected>3 · 方案草案</option>
+      <option value="4">4 · 整套生成中</option>
+      <option value="5">5 · 部分失败 / Unknown</option>
+      <option value="6">6 · 候选待选择</option>
+      <option value="7">7 · Prompt 新版本</option>
+      <option value="8">8 · 单图返工中</option>
+      <option value="9">9 · 可导出 / 已导出</option>
+    </select>
+    <button id="wireframe-toggle" type="button" aria-pressed="false">切换线框</button>
+  </div>
+
+  <header class="app-header">
+    <div class="title-block">
+      <h1>Aster 01 商品套图</h1>
+      <div class="title-meta"><span>Amazon US</span><span>虚构演示商品</span><span class="badge mock">离线 Mock · 不调用模型</span></div>
+    </div>
+    <div class="progress-summary" aria-label="任务进度">
+      <span id="progress-label">方案待确认 · 0/4 已选</span>
+      <div class="progress-track" aria-hidden="true"><div id="progress-fill" class="progress-fill"></div></div>
+    </div>
+    <button id="header-action" class="primary" type="button">一键生成套图</button>
+  </header>
+
+  <main>
+  <form id="workbench-form" class="workspace" action="#" method="post">
+    <aside class="panel" aria-label="商品资料与套图方案">
+      <section class="panel-section input-section">
+        <div class="section-head"><h2>商品资料</h2><span class="status ready">资料可用</span></div>
+        <div class="source-grid">
+          <figure><img src="../fixture-design/pack/01-front-full.png" width="720" height="720" alt="Aster 01 正面完整参考图"><figcaption>正面完整</figcaption></figure>
+          <figure><img src="../fixture-design/pack/02-upper-closeup.png" width="720" height="720" alt="Aster 01 杯盖和装饰环特写参考图" loading="lazy"><figcaption>杯盖特写</figcaption></figure>
+          <figure><img src="../fixture-design/pack/03-lower-detail.png" width="720" height="720" alt="Aster 01 防滑套和底部参考图" loading="lazy"><figcaption>底部细节</figcaption></figure>
+        </div>
+        <div class="field">
+          <label for="selling-points">卖点与画面重点</label>
+          <textarea id="selling-points" name="selling_points" rows="3" required>深青绿与炭灰双色外观；窄陶土橙装饰环；下段三条防滑筋。</textarea>
+        </div>
+        <div class="field">
+          <label for="reference-link">视觉参考链接（可选）</label>
+          <input id="reference-link" name="reference_link" type="url" value="" placeholder="只影响风格，不作为商品事实">
+        </div>
+        <div class="facts-line"><span class="badge">3 张参考图</span><span class="badge">8 项外观事实</span><span class="badge">4 项 Unknown</span></div>
+        <p id="input-error" class="state-note">还缺卖点或参考商品图，无法生成方案。</p>
+      </section>
+
+      <section class="panel-section plan-section">
+        <div class="section-head"><h2>套图方案</h2><span class="small muted">4 张 · 可调整</span></div>
+        <div class="field">
+          <label for="style-direction">共享视觉方向</label>
+          <select id="style-direction" name="style_direction"><option>简洁高端 · 中性冷光 · 商品优先</option><option>温暖生活方式 · 柔和窗光</option></select>
+        </div>
+        <div class="shot-list" aria-label="计划图片">
+          <button class="shot-card" type="button"><span class="shot-index">1</span><span><strong>纯白主图</strong><p>完整商品、无文字、平台首图</p></span><span class="status planned">计划中</span></button>
+          <button class="shot-card" type="button" aria-current="true"><span class="shot-index">2</span><span><strong>厨房场景图</strong><p>石材台面、左上窗光、无人物</p></span><span id="active-shot-status" class="status planned">计划中</span></button>
+          <button class="shot-card" type="button"><span class="shot-index">3</span><span><strong>杯盖细节图</strong><p>双阶杯盖与橙色装饰环</p></span><span class="status planned">计划中</span></button>
+          <button class="shot-card" type="button"><span class="shot-index">4</span><span><strong>防滑套细节图</strong><p>三条筋与底部防滑圈</p></span><span class="status planned">计划中</span></button>
+        </div>
+        <div class="shot-actions"><button type="button">＋ 添加一张</button><button class="danger" type="button">移除可选图</button></div>
+      </section>
+    </aside>
+
+    <section class="panel canvas-panel" aria-labelledby="canvas-title">
+      <div class="canvas-head">
+        <div><h2 id="canvas-title">2 · 厨房场景图</h2><p class="muted small">保持商品外观，只改变场景、构图与光线。</p><p class="state-note canvas-problem">S3 生成失败；S4 状态未知，核对完成前不会重复提交。</p></div>
+        <span id="canvas-status" class="status planned">方案草案</span>
+      </div>
+      <div class="candidate-stage candidate-content">
+        <div class="empty-canvas"><strong id="empty-title">先完成商品资料</strong><p id="empty-copy" class="muted">资料齐全后，系统才能提出整套图片方案。</p></div>
+        <img id="candidate-main" class="candidate-main" src="../first-round/attempts/45ef384cb14bafbe/raw.png" width="1024" height="1024" fetchpriority="high" alt="Aster 01 保温杯位于浅色石材台面的厨房场景候选图">
+      </div>
+      <fieldset class="candidate-picker candidate-content">
+        <legend>候选图片</legend>
+        <div class="candidate-options">
+          <div class="candidate-option"><input id="candidate-1" name="candidate" type="radio" value="F-01"><label for="candidate-1"><img src="../first-round/attempts/b0c9c907f875b918/raw.png" width="1024" height="1024" alt="场景候选一缩略图" loading="lazy"><span>候选 1 · Prompt v1</span></label></div>
+          <div class="candidate-option"><input id="candidate-2" name="candidate" type="radio" value="F-02"><label for="candidate-2"><img src="../first-round/attempts/723ab2a69e19571d/raw.png" width="1024" height="1024" alt="场景候选二缩略图" loading="lazy"><span>候选 2 · Prompt v1</span></label></div>
+          <div class="candidate-option"><input id="candidate-3" name="candidate" type="radio" value="F-03"><label for="candidate-3"><img src="../first-round/attempts/c75a6d09d6ea00df/raw.png" width="1024" height="1024" alt="场景候选三缩略图" loading="lazy"><span>候选 3 · Prompt v1</span></label></div>
+          <div class="candidate-option"><input id="candidate-4" name="candidate" type="radio" value="F-04" checked><label for="candidate-4"><img src="../first-round/attempts/45ef384cb14bafbe/raw.png" width="1024" height="1024" alt="场景候选四缩略图" loading="lazy"><span>候选 4 · 当前候选</span></label></div>
+        </div>
+      </fieldset>
+    </section>
+
+    <aside class="panel inspector" aria-label="当前图片检查与返工">
+      <details open>
+        <summary>画面要求</summary>
+        <div class="details-body"><ul class="requirement-list"><li>石材台面与中性墙面</li><li>左上方柔和窗光</li><li>没有人物和遮挡商品的道具</li><li>商品外观严格保持参考图</li></ul></div>
+      </details>
+      <details>
+        <summary>完整提示词</summary>
+        <div class="details-body">
+          <div class="version-line"><span class="badge">Prompt v1</span><span class="small muted">当前候选使用</span></div>
+          <label class="sr-only" for="prompt-text">实际发送给模型的完整提示词</label>
+          <textarea id="prompt-text" name="prompt_text">Photograph of the exact same product as in the reference image. Keep the same design, colours, proportions and number of parts. Scene for an Amazon US listing lifestyle image: the tumbler stands on a clean matte light stone kitchen counter next to a smooth neutral wall; a single soft window light comes from the upper left; nothing else is in the frame.</textarea>
+          <div class="action-row"><button type="button">保存提示词新版本</button><button class="ghost" type="button">恢复推荐提示词</button></div>
+        </div>
+      </details>
+      <details open>
+        <summary>商品核对</summary>
+        <div class="details-body review-list">
+          <fieldset class="review-item"><legend>杯盖仍是低矮双阶结构，且没有开口？</legend><div class="inline-options"><label><input type="radio" name="fact-f4" value="yes"> 是</label><label><input type="radio" name="fact-f4" value="no"> 否</label><label><input type="radio" name="fact-f4" value="unknown"> 看不清</label></div></fieldset>
+          <fieldset class="review-item"><legend>没有把手、提带、吸管或杯嘴？</legend><div class="inline-options"><label><input type="radio" name="fact-f7" value="yes"> 是</label><label><input type="radio" name="fact-f7" value="no"> 否</label><label><input type="radio" name="fact-f7" value="unknown"> 看不清</label></div></fieldset>
+          <fieldset class="review-item"><legend>商品表面没有文字、Logo、数字或水印？</legend><div class="inline-options"><label><input type="radio" name="fact-f8" value="yes"> 是</label><label><input type="radio" name="fact-f8" value="no"> 否</label><label><input type="radio" name="fact-f8" value="unknown"> 看不清</label></div></fieldset>
+          <div class="action-row"><button class="primary" type="button">选为成品</button></div>
+        </div>
+      </details>
+      <details>
+        <summary>不满意，重做这张</summary>
+        <div class="details-body">
+          <fieldset><legend>主要问题</legend><div class="review-list"><label><input type="radio" name="redo-reason" value="scene"> 场景、构图或光线</label><label><input type="radio" name="redo-reason" value="identity"> 商品不像或结构错误</label><label><input type="radio" name="redo-reason" value="technical"> 尺寸、比例或格式</label><label><input type="radio" name="redo-reason" value="copy"> 精确文案或排版</label></div></fieldset>
+          <div class="callout"><strong>先选原因。</strong> 系统会说明将改变什么；身份错误不会只靠追加提示词重试。</div>
+          <div class="action-row"><button type="button">重做这张</button></div>
+        </div>
+      </details>
+    </aside>
+  </form>
+  </main>
+
+  <footer class="delivery" aria-label="交付状态">
+    <div><strong id="delivery-count">已选 0 / 4</strong><span id="delivery-detail" class="blockers">4 张必需图尚未选定，暂不能导出。</span><span class="export-path">已导出到 exports/Aster-01/，追溯清单 manifest.json 已生成。</span></div>
+    <button id="export-action" class="primary" type="button" disabled aria-describedby="delivery-detail">导出套图</button>
+  </footer>
+  <div id="announcer" class="sr-only" aria-live="polite"></div>
+
+  <script type="module">
+    const body = document.body;
+    const picker = document.querySelector('#state-picker');
+    const headerAction = document.querySelector('#header-action');
+    const progressLabel = document.querySelector('#progress-label');
+    const progressFill = document.querySelector('#progress-fill');
+    const activeShotStatus = document.querySelector('#active-shot-status');
+    const canvasStatus = document.querySelector('#canvas-status');
+    const exportAction = document.querySelector('#export-action');
+    const deliveryCount = document.querySelector('#delivery-count');
+    const deliveryDetail = document.querySelector('#delivery-detail');
+    const emptyTitle = document.querySelector('#empty-title');
+    const emptyCopy = document.querySelector('#empty-copy');
+    const inputError = document.querySelector('#input-error');
+    const announcer = document.querySelector('#announcer');
+    const stateMap = {
+      1: {action:'生成推荐方案',progress:'资料不完整',fill:0,shot:'等待资料',canvas:'等待资料',delivery:'尚无方案',detail:'补齐商品资料后才能形成套图方案。',disabled:true,empty:'先完成商品资料',copy:'卖点或参考图缺失时，系统不会猜测并生成方案。'},
+      2: {action:'生成推荐方案',progress:'资料已就绪',fill:8,shot:'等待方案',canvas:'可生成方案',delivery:'尚无方案',detail:'资料齐全，可以生成推荐方案。',disabled:true,empty:'资料已经齐全',copy:'点击“生成推荐方案”查看整套图片计划。'},
+      3: {action:'一键生成套图',progress:'方案待确认 · 0/4 已选',fill:18,shot:'计划中',canvas:'方案草案',delivery:'已选 0 / 4',detail:'方案可调整；生成前不会调用模型。',disabled:true},
+      4: {action:'整套生成中…',progress:'2/4 已生成 · 0/4 已选',fill:40,shot:'生成中',canvas:'候选陆续返回',delivery:'已选 0 / 4',detail:'生成中；成功图会保留，输入与方案暂时锁定。',disabled:true},
+      5: {action:'查看问题图片',progress:'2 成功 · 1 失败 · 1 未知',fill:50,shot:'状态未知',canvas:'部分结果可用',delivery:'已选 0 / 4',detail:'S3 失败；S4 结果未知。已成功结果仍然保留。',disabled:true},
+      6: {action:'审核下一张',progress:'4/4 有候选 · 1/4 已选',fill:62,shot:'待审核',canvas:'候选待选择',delivery:'已选 1 / 4',detail:'还需完成 3 张商品核对并选择候选。',disabled:true},
+      7: {action:'重做这张',progress:'Prompt v2 · 当前图待重生',fill:55,shot:'待重生',canvas:'旧候选来自 v1',delivery:'已选 0 / 4',detail:'S2 的旧选择不再匹配当前 Prompt v2。',disabled:true},
+      8: {action:'当前图生成中…',progress:'S2 返工中 · 其他图不变',fill:70,shot:'返工中',canvas:'保留旧候选',delivery:'已选 3 / 4',detail:'只等待 S2 新候选，其他 3 张选择仍有效。',disabled:true},
+      9: {action:'已完成',progress:'4/4 已选 · 可导出',fill:100,shot:'已选定',canvas:'最终候选',delivery:'已选 4 / 4',detail:'全部必需图已选并通过最终复检。',disabled:false}
+    };
+    function statusClass(state) {
+      return state === '状态未知' ? 'unknown' : state.includes('失败') ? 'failed' : state.includes('待重生') ? 'stale' : state.includes('生成') || state.includes('返工') ? 'running' : state.includes('已选') ? 'selected' : state.includes('待审核') ? 'ready' : 'planned';
+    }
+    function renderState(value) {
+      const state = stateMap[value];
+      body.dataset.state = value;
+      headerAction.textContent = state.action;
+      headerAction.disabled = ['1','4','8','9'].includes(value);
+      progressLabel.textContent = state.progress;
+      progressFill.style.width = `${state.fill}%`;
+      activeShotStatus.textContent = state.shot;
+      activeShotStatus.className = `status ${statusClass(state.shot)}`;
+      canvasStatus.textContent = state.canvas;
+      canvasStatus.className = `status ${statusClass(state.canvas)}`;
+      deliveryCount.textContent = state.delivery;
+      deliveryDetail.textContent = state.detail;
+      exportAction.disabled = state.disabled;
+      emptyTitle.textContent = state.empty || '方案与候选将在这里出现';
+      emptyCopy.textContent = state.copy || '当前状态已有可查看的画面内容。';
+      inputError.style.display = value === '1' ? 'block' : '';
+      announcer.textContent = `已切换到状态：${picker.options[picker.selectedIndex].text}`;
+    }
+    picker.addEventListener('change', event => renderState(event.target.value));
+    document.querySelector('#wireframe-toggle').addEventListener('click', event => {
+      const pressed = event.currentTarget.getAttribute('aria-pressed') === 'true';
+      event.currentTarget.setAttribute('aria-pressed', String(!pressed));
+      event.currentTarget.textContent = pressed ? '切换线框' : '切换视觉稿';
+      body.classList.toggle('wireframe', !pressed);
+    });
+    document.querySelectorAll('form').forEach(form => form.addEventListener('submit', event => event.preventDefault()));
+    document.querySelector('#prompt-text').addEventListener('keydown', event => {
+      if (event.key === 'Enter' && event.isComposing) event.stopPropagation();
+    });
+    document.querySelectorAll('input[name="candidate"]').forEach(input => input.addEventListener('change', event => {
+      const labelImage = event.target.nextElementSibling.querySelector('img');
+      const main = document.querySelector('#candidate-main');
+      main.src = labelImage.src;
+      main.alt = labelImage.alt.replace('缩略图', '大图');
+    }));
+    renderState(picker.value);
+  </script>
+</body>
+</html>

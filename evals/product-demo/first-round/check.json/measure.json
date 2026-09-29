@@ -1,0 +1,966 @@
+[
+  {
+    "image": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\evals\\product-demo\\first-round\\attempts\\b0c9c907f875b918\\raw.png",
+    "read_at": "2026-09-26T00:15:41+08:00",
+    "metric_profile": "cylinder-v1",
+    "image_size": [
+      1344,
+      1344
+    ],
+    "metrics": {
+      "aspect_h_over_w": 1.4,
+      "body_upper_share": 0.3235,
+      "body_lower_share": 0.6765,
+      "upper_color_delta_e": 15.65,
+      "rib_count": 3,
+      "lid_share": 0.1281,
+      "trim_span_count": 1,
+      "trim_share": 0.0142,
+      "trim_top_position": 0.1281,
+      "bottom_spread_share": 0.0672,
+      "bottom_ring_present": 1,
+      "body_protrusion": 1.3899,
+      "extra_area_share": 0.1554,
+      "text_proxy_blobs": 46
+    },
+    "measured_colors": {
+      "body_upper": "#235055",
+      "body_lower": "#313333",
+      "trim": "#A15233"
+    },
+    "declared_colors": {
+      "body_upper": "#0F6B66",
+      "body_lower": "#252A2A",
+      "trim": "#D97A45"
+    },
+    "geometry": {
+      "origin": [
+        504,
+        136
+      ],
+      "body_rows": 1124,
+      "upper_rows": 164,
+      "sleeve_rows": 343,
+      "lid_rows": 144,
+      "sleeve_seam_row": 778,
+      "rib_ridges": [
+        [
+          850,
+          856
+        ],
+        [
+          906,
+          912
+        ],
+        [
+          960,
+          966
+        ]
+      ],
+      "rib_grooves": 7,
+      "bottom_ring_rows": [
+        [
+          1097,
+          1115
+        ]
+      ],
+      "bottom_spread_px": 54,
+      "body_protrusion": 1.3899,
+      "lid_overhang": 0.0625,
+      "text_proxy_blobs": 46
+    },
+    "verdict": "hard_fail",
+    "facts": [
+      {
+        "id": "F1",
+        "claim": "单个高直筒杯体，高宽视觉比例约 3.1:1，主体侧壁近乎平直",
+        "modality": "mixed",
+        "verdict": "hard_fail",
+        "machine_checks": [
+          {
+            "metric": "aspect_h_over_w",
+            "declared": 3.1,
+            "value": 1.4,
+            "verdict": "hard_fail",
+            "why": "超出人工档：{\"min\": 2.3, \"max\": 3.9}"
+          }
+        ],
+        "human_only_checks": [],
+        "human_note": "侧壁是否弯曲或收腰由人确认；机器只给整体高宽比"
+      },
+      {
+        "id": "F2",
+        "claim": "上部约 72% 为哑光深青绿 #0F6B66",
+        "modality": "mixed",
+        "verdict": "hard_fail",
+        "machine_checks": [
+          {
+            "metric": "body_upper_share",
+            "declared": 0.72,
+            "value": 0.3235,
+            "verdict": "hard_fail",
+            "why": "超出人工档：{\"min\": 0.5, \"max\": 0.88}"
+          }
+        ],
+        "human_only_checks": [],
+        "human_note": "是否出现第三种主色、渐变或图案由人确认"
+      },
+      {
+        "id": "F3",
+        "claim": "下部约 28% 为深炭灰 #252A2A 防滑套，带三条浅水平筋",
+        "modality": "mixed",
+        "verdict": "hard_fail",
+        "machine_checks": [
+          {
+            "metric": "body_lower_share",
+            "declared": 0.28,
+            "value": 0.6765,
+            "verdict": "hard_fail",
+            "why": "超出人工档：{\"min\": 0.12, \"max\": 0.5}"
+          },
+          {
+            "metric": "rib_count",
+            "declared": 3,
+            "value": 3,
+            "verdict": "pass",
+            "why": ""
+          }
+        ],
+        "human_only_checks": [],
+        "human_note": "筋条行距是否均匀由人确认"
+      },
+      {
+        "id": "F4",
+        "claim": "杯盖为低矮深炭灰结构，具有两层清楚可见的同心阶梯环",
+        "modality": "mixed",
+        "verdict": "pass",
+        "machine_checks": [
+          {
+            "metric": "lid_share",
+            "declared": 0.2,
+            "value": 0.1281,
+            "verdict": "pass",
+            "why": ""
+          }
+        ],
+        "human_only_checks": [
+          "恰好两级同心台阶",
+          "盖顶无开口",
+          "无第二只盖子或翻盖"
+        ],
+        "human_note": "阶梯级数与开口有无，机器尚不判定；机器只保证杯盖低矮"
+      },
+      {
+        "id": "F5",
+        "claim": "杯盖与杯体之间有一圈窄陶土橙 #D97A45 装饰环",
+        "modality": "machine",
+        "verdict": "pass",
+        "machine_checks": [
+          {
+            "metric": "trim_span_count",
+            "declared": 1,
+            "value": 1,
+            "verdict": "pass",
+            "why": ""
+          },
+          {
+            "metric": "trim_share",
+            "declared": 0.0,
+            "value": 0.0142,
+            "verdict": "pass",
+            "why": ""
+          },
+          {
+            "metric": "trim_top_position",
+            "declared": 0.0,
+            "value": 0.1281,
+            "verdict": "pass",
+            "why": ""
+          }
+        ],
+        "human_only_checks": [],
+        "human_note": null
+      },
+      {
+        "id": "F6",
+        "claim": "平底，底部有窄深灰防滑圈",
+        "modality": "mixed",
+        "verdict": "manual",
+        "machine_checks": [
+          {
+            "metric": "bottom_spread_share",
+            "declared": 0.0,
+            "value": 0.0672,
+            "verdict": "manual",
+            "why": "落在人工档：{\"max\": 0.05}"
+          },
+          {
+            "metric": "bottom_ring_present",
+            "declared": 1,
+            "value": 1,
+            "verdict": "pass",
+            "why": ""
+          }
+        ],
+        "human_only_checks": [],
+        "human_note": "是否悬浮或与台面穿插由人确认"
+      },
+      {
+        "id": "F7",
+        "claim": "无把手、无侧握、无提带、无吸管、无杯嘴",
+        "modality": "mixed",
+        "verdict": "hard_fail",
+        "machine_checks": [
+          {
+            "metric": "body_protrusion",
+            "declared": 0.0,
+            "value": 1.3899,
+            "verdict": "hard_fail",
+            "why": "超出人工档：{\"max\": 0.12}"
+          },
+          {
+            "metric": "extra_area_share",
+            "declared": 0.0,
+            "value": 0.1554,
+            "verdict": "hard_fail",
+            "why": "超出人工档：{\"max\": 0.01}"
+          }
+        ],
+        "human_only_checks": [],
+        "human_note": "凸出的是什么由人确认；机器只报凸出量与主体外像素，不判它是不是把手"
+      },
+      {
+        "id": "F8",
+        "claim": "外表无文字、数字、Logo、标签和水印",
+        "modality": "human",
+        "verdict": "human",
+        "machine_checks": [],
+        "human_only_checks": [],
+        "human_note": "文字只能靠人核对；本卡不假装机器能判"
+      }
+    ]
+  },
+  {
+    "image": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\evals\\product-demo\\first-round\\attempts\\723ab2a69e19571d\\raw.png",
+    "read_at": "2026-09-26T00:15:41+08:00",
+    "metric_profile": "cylinder-v1",
+    "image_size": [
+      1344,
+      1344
+    ],
+    "metrics": {
+      "aspect_h_over_w": 2.459,
+      "body_upper_share": 0.6308,
+      "body_lower_share": 0.3692,
+      "upper_color_delta_e": 15.04,
+      "rib_count": 3,
+      "lid_share": 0.1313,
+      "trim_span_count": 1,
+      "trim_share": 0.0145,
+      "trim_top_position": 0.1313,
+      "bottom_spread_share": 0.0178,
+      "bottom_ring_present": 1,
+      "body_protrusion": 0.3731,
+      "extra_area_share": 0.3403,
+      "text_proxy_blobs": 42
+    },
+    "measured_colors": {
+      "body_upper": "#245155",
+      "body_lower": "#323232",
+      "trim": "#A85D3C"
+    },
+    "declared_colors": {
+      "body_upper": "#0F6B66",
+      "body_lower": "#252A2A",
+      "trim": "#D97A45"
+    },
+    "geometry": {
+      "origin": [
+        496,
+        140
+      ],
+      "body_rows": 1104,
+      "upper_rows": 574,
+      "sleeve_rows": 336,
+      "lid_rows": 145,
+      "sleeve_seam_row": 768,
+      "rib_ridges": [
+        [
+          835,
+          843
+        ],
+        [
+          891,
+          898
+        ],
+        [
+          945,
+          952
+        ]
+      ],
+      "rib_grooves": 3,
+      "bottom_ring_rows": [
+        [
+          1080,
+          1103
+        ]
+      ],
+      "bottom_spread_px": 8,
+      "body_protrusion": 0.3731,
+      "lid_overhang": 0.0581,
+      "text_proxy_blobs": 42
+    },
+    "verdict": "hard_fail",
+    "facts": [
+      {
+        "id": "F1",
+        "claim": "单个高直筒杯体，高宽视觉比例约 3.1:1，主体侧壁近乎平直",
+        "modality": "mixed",
+        "verdict": "manual",
+        "machine_checks": [
+          {
+            "metric": "aspect_h_over_w",
+            "declared": 3.1,
+            "value": 2.459,
+            "verdict": "manual",
+            "why": "落在人工档：{\"min\": 2.6, \"max\": 3.6}"
+          }
+        ],
+        "human_only_checks": [],
+        "human_note": "侧壁是否弯曲或收腰由人确认；机器只给整体高宽比"
+      },
+      {
+        "id": "F2",
+        "claim": "上部约 72% 为哑光深青绿 #0F6B66",
+        "modality": "mixed",
+        "verdict": "pass",
+        "machine_checks": [
+          {
+            "metric": "body_upper_share",
+            "declared": 0.72,
+            "value": 0.6308,
+            "verdict": "pass",
+            "why": ""
+          }
+        ],
+        "human_only_checks": [],
+        "human_note": "是否出现第三种主色、渐变或图案由人确认"
+      },
+      {
+        "id": "F3",
+        "claim": "下部约 28% 为深炭灰 #252A2A 防滑套，带三条浅水平筋",
+        "modality": "mixed",
+        "verdict": "pass",
+        "machine_checks": [
+          {
+            "metric": "body_lower_share",
+            "declared": 0.28,
+            "value": 0.3692,
+            "verdict": "pass",
+            "why": ""
+          },
+          {
+            "metric": "rib_count",
+            "declared": 3,
+            "value": 3,
+            "verdict": "pass",
+            "why": ""
+          }
+        ],
+        "human_only_checks": [],
+        "human_note": "筋条行距是否均匀由人确认"
+      },
+      {
+        "id": "F4",
+        "claim": "杯盖为低矮深炭灰结构，具有两层清楚可见的同心阶梯环",
+        "modality": "mixed",
+        "verdict": "pass",
+        "machine_checks": [
+          {
+            "metric": "lid_share",
+            "declared": 0.2,
+            "value": 0.1313,
+            "verdict": "pass",
+            "why": ""
+          }
+        ],
+        "human_only_checks": [
+          "恰好两级同心台阶",
+          "盖顶无开口",
+          "无第二只盖子或翻盖"
+        ],
+        "human_note": "阶梯级数与开口有无，机器尚不判定；机器只保证杯盖低矮"
+      },
+      {
+        "id": "F5",
+        "claim": "杯盖与杯体之间有一圈窄陶土橙 #D97A45 装饰环",
+        "modality": "machine",
+        "verdict": "pass",
+        "machine_checks": [
+          {
+            "metric": "trim_span_count",
+            "declared": 1,
+            "value": 1,
+            "verdict": "pass",
+            "why": ""
+          },
+          {
+            "metric": "trim_share",
+            "declared": 0.0,
+            "value": 0.0145,
+            "verdict": "pass",
+            "why": ""
+          },
+          {
+            "metric": "trim_top_position",
+            "declared": 0.0,
+            "value": 0.1313,
+            "verdict": "pass",
+            "why": ""
+          }
+        ],
+        "human_only_checks": [],
+        "human_note": null
+      },
+      {
+        "id": "F6",
+        "claim": "平底，底部有窄深灰防滑圈",
+        "modality": "mixed",
+        "verdict": "pass",
+        "machine_checks": [
+          {
+            "metric": "bottom_spread_share",
+            "declared": 0.0,
+            "value": 0.0178,
+            "verdict": "pass",
+            "why": ""
+          },
+          {
+            "metric": "bottom_ring_present",
+            "declared": 1,
+            "value": 1,
+            "verdict": "pass",
+            "why": ""
+          }
+        ],
+        "human_only_checks": [],
+        "human_note": "是否悬浮或与台面穿插由人确认"
+      },
+      {
+        "id": "F7",
+        "claim": "无把手、无侧握、无提带、无吸管、无杯嘴",
+        "modality": "mixed",
+        "verdict": "hard_fail",
+        "machine_checks": [
+          {
+            "metric": "body_protrusion",
+            "declared": 0.0,
+            "value": 0.3731,
+            "verdict": "hard_fail",
+            "why": "超出人工档：{\"max\": 0.12}"
+          },
+          {
+            "metric": "extra_area_share",
+            "declared": 0.0,
+            "value": 0.3403,
+            "verdict": "hard_fail",
+            "why": "超出人工档：{\"max\": 0.01}"
+          }
+        ],
+        "human_only_checks": [],
+        "human_note": "凸出的是什么由人确认；机器只报凸出量与主体外像素，不判它是不是把手"
+      },
+      {
+        "id": "F8",
+        "claim": "外表无文字、数字、Logo、标签和水印",
+        "modality": "human",
+        "verdict": "human",
+        "machine_checks": [],
+        "human_only_checks": [],
+        "human_note": "文字只能靠人核对；本卡不假装机器能判"
+      }
+    ]
+  },
+  {
+    "image": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\evals\\product-demo\\first-round\\attempts\\c75a6d09d6ea00df\\raw.png",
+    "read_at": "2026-09-26T00:15:42+08:00",
+    "metric_profile": "cylinder-v1",
+    "image_size": [
+      1344,
+      1344
+    ],
+    "metrics": {
+      "aspect_h_over_w": 1.327,
+      "body_upper_share": 0.4733,
+      "body_lower_share": 0.5267,
+      "upper_color_delta_e": 15.87,
+      "rib_count": 3,
+      "lid_share": 0.1264,
+      "trim_span_count": 1,
+      "trim_share": 0.0138,
+      "trim_top_position": 0.1264,
+      "bottom_spread_share": 0.1028,
+      "bottom_ring_present": 1,
+      "body_protrusion": 1.4388,
+      "extra_area_share": 0.1329,
+      "text_proxy_blobs": 35
+    },
+    "measured_colors": {
+      "body_upper": "#225056",
+      "body_lower": "#313334",
+      "trim": "#A25438"
+    },
+    "declared_colors": {
+      "body_upper": "#0F6B66",
+      "body_lower": "#252A2A",
+      "trim": "#D97A45"
+    },
+    "geometry": {
+      "origin": [
+        496,
+        152
+      ],
+      "body_rows": 1084,
+      "upper_rows": 310,
+      "sleeve_rows": 345,
+      "lid_rows": 137,
+      "sleeve_seam_row": 737,
+      "rib_ridges": [
+        [
+          812,
+          819
+        ],
+        [
+          869,
+          876
+        ],
+        [
+          922,
+          930
+        ]
+      ],
+      "rib_grooves": 4,
+      "bottom_ring_rows": [
+        [
+          1059,
+          1076
+        ]
+      ],
+      "bottom_spread_px": 84,
+      "body_protrusion": 1.4388,
+      "lid_overhang": 0.0537,
+      "text_proxy_blobs": 35
+    },
+    "verdict": "hard_fail",
+    "facts": [
+      {
+        "id": "F1",
+        "claim": "单个高直筒杯体，高宽视觉比例约 3.1:1，主体侧壁近乎平直",
+        "modality": "mixed",
+        "verdict": "hard_fail",
+        "machine_checks": [
+          {
+            "metric": "aspect_h_over_w",
+            "declared": 3.1,
+            "value": 1.327,
+            "verdict": "hard_fail",
+            "why": "超出人工档：{\"min\": 2.3, \"max\": 3.9}"
+          }
+        ],
+        "human_only_checks": [],
+        "human_note": "侧壁是否弯曲或收腰由人确认；机器只给整体高宽比"
+      },
+      {
+        "id": "F2",
+        "claim": "上部约 72% 为哑光深青绿 #0F6B66",
+        "modality": "mixed",
+        "verdict": "hard_fail",
+        "machine_checks": [
+          {
+            "metric": "body_upper_share",
+            "declared": 0.72,
+            "value": 0.4733,
+            "verdict": "hard_fail",
+            "why": "超出人工档：{\"min\": 0.5, \"max\": 0.88}"
+          }
+        ],
+        "human_only_checks": [],
+        "human_note": "是否出现第三种主色、渐变或图案由人确认"
+      },
+      {
+        "id": "F3",
+        "claim": "下部约 28% 为深炭灰 #252A2A 防滑套，带三条浅水平筋",
+        "modality": "mixed",
+        "verdict": "hard_fail",
+        "machine_checks": [
+          {
+            "metric": "body_lower_share",
+            "declared": 0.28,
+            "value": 0.5267,
+            "verdict": "hard_fail",
+            "why": "超出人工档：{\"min\": 0.12, \"max\": 0.5}"
+          },
+          {
+            "metric": "rib_count",
+            "declared": 3,
+            "value": 3,
+            "verdict": "pass",
+            "why": ""
+          }
+        ],
+        "human_only_checks": [],
+        "human_note": "筋条行距是否均匀由人确认"
+      },
+      {
+        "id": "F4",
+        "claim": "杯盖为低矮深炭灰结构，具有两层清楚可见的同心阶梯环",
+        "modality": "mixed",
+        "verdict": "pass",
+        "machine_checks": [
+          {
+            "metric": "lid_share",
+            "declared": 0.2,
+            "value": 0.1264,
+            "verdict": "pass",
+            "why": ""
+          }
+        ],
+        "human_only_checks": [
+          "恰好两级同心台阶",
+          "盖顶无开口",
+          "无第二只盖子或翻盖"
+        ],
+        "human_note": "阶梯级数与开口有无，机器尚不判定；机器只保证杯盖低矮"
+      },
+      {
+        "id": "F5",
+        "claim": "杯盖与杯体之间有一圈窄陶土橙 #D97A45 装饰环",
+        "modality": "machine",
+        "verdict": "pass",
+        "machine_checks": [
+          {
+            "metric": "trim_span_count",
+            "declared": 1,
+            "value": 1,
+            "verdict": "pass",
+            "why": ""
+          },
+          {
+            "metric": "trim_share",
+            "declared": 0.0,
+            "value": 0.0138,
+            "verdict": "pass",
+            "why": ""
+          },
+          {
+            "metric": "trim_top_position",
+            "declared": 0.0,
+            "value": 0.1264,
+            "verdict": "pass",
+            "why": ""
+          }
+        ],
+        "human_only_checks": [],
+        "human_note": null
+      },
+      {
+        "id": "F6",
+        "claim": "平底，底部有窄深灰防滑圈",
+        "modality": "mixed",
+        "verdict": "hard_fail",
+        "machine_checks": [
+          {
+            "metric": "bottom_spread_share",
+            "declared": 0.0,
+            "value": 0.1028,
+            "verdict": "hard_fail",
+            "why": "超出人工档：{\"max\": 0.08}"
+          },
+          {
+            "metric": "bottom_ring_present",
+            "declared": 1,
+            "value": 1,
+            "verdict": "pass",
+            "why": ""
+          }
+        ],
+        "human_only_checks": [],
+        "human_note": "是否悬浮或与台面穿插由人确认"
+      },
+      {
+        "id": "F7",
+        "claim": "无把手、无侧握、无提带、无吸管、无杯嘴",
+        "modality": "mixed",
+        "verdict": "hard_fail",
+        "machine_checks": [
+          {
+            "metric": "body_protrusion",
+            "declared": 0.0,
+            "value": 1.4388,
+            "verdict": "hard_fail",
+            "why": "超出人工档：{\"max\": 0.12}"
+          },
+          {
+            "metric": "extra_area_share",
+            "declared": 0.0,
+            "value": 0.1329,
+            "verdict": "hard_fail",
+            "why": "超出人工档：{\"max\": 0.01}"
+          }
+        ],
+        "human_only_checks": [],
+        "human_note": "凸出的是什么由人确认；机器只报凸出量与主体外像素，不判它是不是把手"
+      },
+      {
+        "id": "F8",
+        "claim": "外表无文字、数字、Logo、标签和水印",
+        "modality": "human",
+        "verdict": "human",
+        "machine_checks": [],
+        "human_only_checks": [],
+        "human_note": "文字只能靠人核对；本卡不假装机器能判"
+      }
+    ]
+  },
+  {
+    "image": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\evals\\product-demo\\first-round\\attempts\\45ef384cb14bafbe\\raw.png",
+    "read_at": "2026-09-26T00:15:42+08:00",
+    "metric_profile": "cylinder-v1",
+    "image_size": [
+      1344,
+      1344
+    ],
+    "metrics": {
+      "aspect_h_over_w": 3.099,
+      "body_upper_share": 0.6487,
+      "body_lower_share": 0.3513,
+      "upper_color_delta_e": 14.76,
+      "rib_count": 3,
+      "lid_share": 0.1227,
+      "trim_span_count": 1,
+      "trim_share": 0.0136,
+      "trim_top_position": 0.1227,
+      "bottom_spread_share": 0.0282,
+      "bottom_ring_present": 1,
+      "body_protrusion": 0.0237,
+      "extra_area_share": 0.311,
+      "text_proxy_blobs": 38
+    },
+    "measured_colors": {
+      "body_upper": "#1F5054",
+      "body_lower": "#313132",
+      "trim": "#A55838"
+    },
+    "declared_colors": {
+      "body_upper": "#0F6B66",
+      "body_lower": "#252A2A",
+      "trim": "#D97A45"
+    },
+    "geometry": {
+      "origin": [
+        492,
+        148
+      ],
+      "body_rows": 1100,
+      "upper_rows": 613,
+      "sleeve_rows": 332,
+      "lid_rows": 135,
+      "sleeve_seam_row": 767,
+      "rib_ridges": [
+        [
+          830,
+          837
+        ],
+        [
+          887,
+          894
+        ],
+        [
+          940,
+          947
+        ]
+      ],
+      "rib_grooves": 4,
+      "bottom_ring_rows": [
+        [
+          1076,
+          1097
+        ]
+      ],
+      "bottom_spread_px": 10,
+      "body_protrusion": 0.0237,
+      "lid_overhang": 0.0503,
+      "text_proxy_blobs": 38
+    },
+    "verdict": "hard_fail",
+    "facts": [
+      {
+        "id": "F1",
+        "claim": "单个高直筒杯体，高宽视觉比例约 3.1:1，主体侧壁近乎平直",
+        "modality": "mixed",
+        "verdict": "pass",
+        "machine_checks": [
+          {
+            "metric": "aspect_h_over_w",
+            "declared": 3.1,
+            "value": 3.099,
+            "verdict": "pass",
+            "why": ""
+          }
+        ],
+        "human_only_checks": [],
+        "human_note": "侧壁是否弯曲或收腰由人确认；机器只给整体高宽比"
+      },
+      {
+        "id": "F2",
+        "claim": "上部约 72% 为哑光深青绿 #0F6B66",
+        "modality": "mixed",
+        "verdict": "pass",
+        "machine_checks": [
+          {
+            "metric": "body_upper_share",
+            "declared": 0.72,
+            "value": 0.6487,
+            "verdict": "pass",
+            "why": ""
+          }
+        ],
+        "human_only_checks": [],
+        "human_note": "是否出现第三种主色、渐变或图案由人确认"
+      },
+      {
+        "id": "F3",
+        "claim": "下部约 28% 为深炭灰 #252A2A 防滑套，带三条浅水平筋",
+        "modality": "mixed",
+        "verdict": "pass",
+        "machine_checks": [
+          {
+            "metric": "body_lower_share",
+            "declared": 0.28,
+            "value": 0.3513,
+            "verdict": "pass",
+            "why": ""
+          },
+          {
+            "metric": "rib_count",
+            "declared": 3,
+            "value": 3,
+            "verdict": "pass",
+            "why": ""
+          }
+        ],
+        "human_only_checks": [],
+        "human_note": "筋条行距是否均匀由人确认"
+      },
+      {
+        "id": "F4",
+        "claim": "杯盖为低矮深炭灰结构，具有两层清楚可见的同心阶梯环",
+        "modality": "mixed",
+        "verdict": "pass",
+        "machine_checks": [
+          {
+            "metric": "lid_share",
+            "declared": 0.2,
+            "value": 0.1227,
+            "verdict": "pass",
+            "why": ""
+          }
+        ],
+        "human_only_checks": [
+          "恰好两级同心台阶",
+          "盖顶无开口",
+          "无第二只盖子或翻盖"
+        ],
+        "human_note": "阶梯级数与开口有无，机器尚不判定；机器只保证杯盖低矮"
+      },
+      {
+        "id": "F5",
+        "claim": "杯盖与杯体之间有一圈窄陶土橙 #D97A45 装饰环",
+        "modality": "machine",
+        "verdict": "pass",
+        "machine_checks": [
+          {
+            "metric": "trim_span_count",
+            "declared": 1,
+            "value": 1,
+            "verdict": "pass",
+            "why": ""
+          },
+          {
+            "metric": "trim_share",
+            "declared": 0.0,
+            "value": 0.0136,
+            "verdict": "pass",
+            "why": ""
+          },
+          {
+            "metric": "trim_top_position",
+            "declared": 0.0,
+            "value": 0.1227,
+            "verdict": "pass",
+            "why": ""
+          }
+        ],
+        "human_only_checks": [],
+        "human_note": null
+      },
+      {
+        "id": "F6",
+        "claim": "平底，底部有窄深灰防滑圈",
+        "modality": "mixed",
+        "verdict": "pass",
+        "machine_checks": [
+          {
+            "metric": "bottom_spread_share",
+            "declared": 0.0,
+            "value": 0.0282,
+            "verdict": "pass",
+            "why": ""
+          },
+          {
+            "metric": "bottom_ring_present",
+            "declared": 1,
+            "value": 1,
+            "verdict": "pass",
+            "why": ""
+          }
+        ],
+        "human_only_checks": [],
+        "human_note": "是否悬浮或与台面穿插由人确认"
+      },
+      {
+        "id": "F7",
+        "claim": "无把手、无侧握、无提带、无吸管、无杯嘴",
+        "modality": "mixed",
+        "verdict": "hard_fail",
+        "machine_checks": [
+          {
+            "metric": "body_protrusion",
+            "declared": 0.0,
+            "value": 0.0237,
+            "verdict": "pass",
+            "why": ""
+          },
+          {
+            "metric": "extra_area_share",
+            "declared": 0.0,
+            "value": 0.311,
+            "verdict": "hard_fail",
+            "why": "超出人工档：{\"max\": 0.01}"
+          }
+        ],
+        "human_only_checks": [],
+        "human_note": "凸出的是什么由人确认；机器只报凸出量与主体外像素，不判它是不是把手"
+      },
+      {
+        "id": "F8",
+        "claim": "外表无文字、数字、Logo、标签和水印",
+        "modality": "human",
+        "verdict": "human",
+        "machine_checks": [],
+        "human_only_checks": [],
+        "human_note": "文字只能靠人核对；本卡不假装机器能判"
+      }
+    ]
+  }
+]

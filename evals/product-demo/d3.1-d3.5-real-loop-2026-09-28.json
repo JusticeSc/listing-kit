@@ -1,0 +1,398 @@
+{
+  "run": "D3.1-D3.5 real closed loop",
+  "started_at": "2026-09-28T21:56:38",
+  "duration_seconds": 2.5,
+  "workspace": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\_working\\amz-listing-kit-product-demo\\real-run-01\\workspace",
+  "rework_targets": [
+    "lifestyle",
+    "detail"
+  ],
+  "steps": [
+    {
+      "id": "D3.1",
+      "action": "save_selection",
+      "selection_id": "selection_2d95ed3fce594990",
+      "version": 15,
+      "chosen": {
+        "shot_8da99ec158494b15": "5e4a59fb6826a2e0386ca5f5172a8f2987a1d3e553ccfc07748aea8e5b3a64e3",
+        "shot_402eb7e6bdf14c44": "bdc0207c05eb3e7beeed794b8f4b235d1995fd679537af329b51ea69ae537b29",
+        "shot_1ce3ff4b08624310": "1adf763b36c7e4759b06337631f83d923d609394830afaa3e7c071461496d9bc",
+        "shot_6c2e823812a04aa4": "07f23324eefb4eebbc3d5c9790f2f485d4413d8bc45b31cff9d08485055ef672",
+        "shot_4871f74c64f94c0e": "2f0ce61151cb197b207abef40ac91468d61d4f50687c18fd61dc513efda13d1e"
+      }
+    },
+    {
+      "id": "D3.2",
+      "action": "already fixed - no new provider call",
+      "archetype": "lifestyle",
+      "result": {
+        "shot_id": "shot_6c2e823812a04aa4",
+        "archetype_id": "lifestyle",
+        "prompt_version_before": 1,
+        "prompt_version_after": 2,
+        "attempts": [
+          {
+            "action_id": "act_851322201267723f618926df86f3abf627f31e92",
+            "provider_task_id": null,
+            "status": "ABANDONED",
+            "error": "用户确认放弃这次未确认的提交：D2.5 探针：已在服务端核对，这次提交没有任务编号，确认放弃后重发。"
+          },
+          {
+            "action_id": "act_93ed49c57a47db35abfa5653f461f727440252af",
+            "provider_task_id": null,
+            "status": "REJECTED",
+            "error": "UPSTREAM_REJECTED: 百炼拒绝了图像提交请求（HTTP 429）（服务码 Throttling.RateQuota）。"
+          },
+          {
+            "action_id": "act_c96d1cf792d94caca28c7a4b6c4e16a8c246b8ff",
+            "provider_task_id": "5df8d1ff-481f-4000-9248-5dea7b4f9430",
+            "status": "SUCCEEDED",
+            "error": null
+          },
+          {
+            "action_id": "act_5e3205d3280f48fe35ded637ecb749e13c1eb96f",
+            "provider_task_id": "52cd9b52-6b0d-4a8a-9971-0b160c2052ef",
+            "status": "SUCCEEDED",
+            "error": null
+          }
+        ],
+        "candidates_before": null,
+        "candidates_after": 2,
+        "old_candidate_kept": true,
+        "new_candidate": "07f23324eefb4eebbc3d5c9790f2f485d4413d8bc45b31cff9d08485055ef672",
+        "source": "workspace state at this run"
+      }
+    },
+    {
+      "id": "D3.2",
+      "action": "already fixed - no new provider call",
+      "archetype": "detail",
+      "result": {
+        "shot_id": "shot_4871f74c64f94c0e",
+        "archetype_id": "detail",
+        "prompt_version_before": 2,
+        "prompt_version_after": 3,
+        "attempts": [
+          {
+            "action_id": "act_aaaf6ae0c9ce00d4bc549d212a01389bfa111184",
+            "provider_task_id": "4fe50781-3edf-4906-8ad9-348d75a9acf6",
+            "status": "SUCCEEDED",
+            "error": null
+          }
+        ],
+        "candidates_before": 2,
+        "candidates_after": 3,
+        "old_candidate_kept": true,
+        "new_candidate": "2f0ce61151cb197b207abef40ac91468d61d4f50687c18fd61dc513efda13d1e",
+        "source": "recorded rework from 2026-09-28T21:56:17"
+      }
+    },
+    {
+      "id": "D3.1b",
+      "action": "save_selection",
+      "selection_id": "selection_2d95ed3fce594990",
+      "version": 16,
+      "chosen": {
+        "shot_8da99ec158494b15": "5e4a59fb6826a2e0386ca5f5172a8f2987a1d3e553ccfc07748aea8e5b3a64e3",
+        "shot_402eb7e6bdf14c44": "bdc0207c05eb3e7beeed794b8f4b235d1995fd679537af329b51ea69ae537b29",
+        "shot_1ce3ff4b08624310": "1adf763b36c7e4759b06337631f83d923d609394830afaa3e7c071461496d9bc",
+        "shot_6c2e823812a04aa4": "07f23324eefb4eebbc3d5c9790f2f485d4413d8bc45b31cff9d08485055ef672",
+        "shot_4871f74c64f94c0e": "2f0ce61151cb197b207abef40ac91468d61d4f50687c18fd61dc513efda13d1e"
+      }
+    },
+    {
+      "id": "D3.3",
+      "action": "run_export_checks",
+      "profile_id": "amazon-us",
+      "hard_failures": [],
+      "checks": [
+        {
+          "rule_id": "file_format_accepted",
+          "rule_version": "amazon-us@1",
+          "passed": true,
+          "detail": "实测格式 PNG（image/png）；规则允许 ['gif', 'jpeg', 'png', 'tiff']；来源 https://sellercentral.amazon.com/help/hub/reference/external/G1881",
+          "shot_id": "shot_8da99ec158494b15",
+          "shot_title": "主图：粗棒针织开衫毛衣",
+          "archetype_id": "hero",
+          "width": 1344,
+          "height": 1344
+        },
+        {
+          "rule_id": "long_side_min_px",
+          "rule_version": "amazon-us@1",
+          "passed": true,
+          "detail": "实测长边 1344px，下限 500px；来源 https://sellercentral.amazon.com/help/hub/reference/external/G1881",
+          "shot_id": "shot_8da99ec158494b15",
+          "shot_title": "主图：粗棒针织开衫毛衣",
+          "archetype_id": "hero",
+          "width": 1344,
+          "height": 1344
+        },
+        {
+          "rule_id": "long_side_max_px",
+          "rule_version": "amazon-us@1",
+          "passed": true,
+          "detail": "实测长边 1344px，上限 10000px；来源 https://sellercentral.amazon.com/help/hub/reference/external/G1881",
+          "shot_id": "shot_8da99ec158494b15",
+          "shot_title": "主图：粗棒针织开衫毛衣",
+          "archetype_id": "hero",
+          "width": 1344,
+          "height": 1344
+        },
+        {
+          "rule_id": "main_image_border_whiteness_measured",
+          "rule_version": "amazon-us@1",
+          "passed": true,
+          "detail": "实测主图外边框纯白占比 100%；本项只测外边框像素，不代替 Amazon 主图对占比、构图与语义的全部要求，异常时需人工核对。",
+          "shot_id": "shot_8da99ec158494b15",
+          "shot_title": "主图：粗棒针织开衫毛衣",
+          "archetype_id": "hero",
+          "width": 1344,
+          "height": 1344
+        },
+        {
+          "rule_id": "file_format_accepted",
+          "rule_version": "amazon-us@1",
+          "passed": true,
+          "detail": "实测格式 PNG（image/png）；规则允许 ['gif', 'jpeg', 'png', 'tiff']；来源 https://sellercentral.amazon.com/help/hub/reference/external/G1881",
+          "shot_id": "shot_402eb7e6bdf14c44",
+          "shot_title": "卖点图：粗棒针立体纹理",
+          "archetype_id": "feature",
+          "width": 1344,
+          "height": 1344
+        },
+        {
+          "rule_id": "long_side_min_px",
+          "rule_version": "amazon-us@1",
+          "passed": true,
+          "detail": "实测长边 1344px，下限 500px；来源 https://sellercentral.amazon.com/help/hub/reference/external/G1881",
+          "shot_id": "shot_402eb7e6bdf14c44",
+          "shot_title": "卖点图：粗棒针立体纹理",
+          "archetype_id": "feature",
+          "width": 1344,
+          "height": 1344
+        },
+        {
+          "rule_id": "long_side_max_px",
+          "rule_version": "amazon-us@1",
+          "passed": true,
+          "detail": "实测长边 1344px，上限 10000px；来源 https://sellercentral.amazon.com/help/hub/reference/external/G1881",
+          "shot_id": "shot_402eb7e6bdf14c44",
+          "shot_title": "卖点图：粗棒针立体纹理",
+          "archetype_id": "feature",
+          "width": 1344,
+          "height": 1344
+        },
+        {
+          "rule_id": "file_format_accepted",
+          "rule_version": "amazon-us@1",
+          "passed": true,
+          "detail": "实测格式 PNG（image/png）；规则允许 ['gif', 'jpeg', 'png', 'tiff']；来源 https://sellercentral.amazon.com/help/hub/reference/external/G1881",
+          "shot_id": "shot_1ce3ff4b08624310",
+          "shot_title": "卖点图：宽松落肩版型",
+          "archetype_id": "feature",
+          "width": 1344,
+          "height": 1344
+        },
+        {
+          "rule_id": "long_side_min_px",
+          "rule_version": "amazon-us@1",
+          "passed": true,
+          "detail": "实测长边 1344px，下限 500px；来源 https://sellercentral.amazon.com/help/hub/reference/external/G1881",
+          "shot_id": "shot_1ce3ff4b08624310",
+          "shot_title": "卖点图：宽松落肩版型",
+          "archetype_id": "feature",
+          "width": 1344,
+          "height": 1344
+        },
+        {
+          "rule_id": "long_side_max_px",
+          "rule_version": "amazon-us@1",
+          "passed": true,
+          "detail": "实测长边 1344px，上限 10000px；来源 https://sellercentral.amazon.com/help/hub/reference/external/G1881",
+          "shot_id": "shot_1ce3ff4b08624310",
+          "shot_title": "卖点图：宽松落肩版型",
+          "archetype_id": "feature",
+          "width": 1344,
+          "height": 1344
+        },
+        {
+          "rule_id": "file_format_accepted",
+          "rule_version": "amazon-us@1",
+          "passed": true,
+          "detail": "实测格式 PNG（image/png）；规则允许 ['gif', 'jpeg', 'png', 'tiff']；来源 https://sellercentral.amazon.com/help/hub/reference/external/G1881",
+          "shot_id": "shot_6c2e823812a04aa4",
+          "shot_title": "场景图：自然垂感与日常穿搭",
+          "archetype_id": "lifestyle",
+          "width": 1344,
+          "height": 1344
+        },
+        {
+          "rule_id": "long_side_min_px",
+          "rule_version": "amazon-us@1",
+          "passed": true,
+          "detail": "实测长边 1344px，下限 500px；来源 https://sellercentral.amazon.com/help/hub/reference/external/G1881",
+          "shot_id": "shot_6c2e823812a04aa4",
+          "shot_title": "场景图：自然垂感与日常穿搭",
+          "archetype_id": "lifestyle",
+          "width": 1344,
+          "height": 1344
+        },
+        {
+          "rule_id": "long_side_max_px",
+          "rule_version": "amazon-us@1",
+          "passed": true,
+          "detail": "实测长边 1344px，上限 10000px；来源 https://sellercentral.amazon.com/help/hub/reference/external/G1881",
+          "shot_id": "shot_6c2e823812a04aa4",
+          "shot_title": "场景图：自然垂感与日常穿搭",
+          "archetype_id": "lifestyle",
+          "width": 1344,
+          "height": 1344
+        },
+        {
+          "rule_id": "file_format_accepted",
+          "rule_version": "amazon-us@1",
+          "passed": true,
+          "detail": "实测格式 PNG（image/png）；规则允许 ['gif', 'jpeg', 'png', 'tiff']；来源 https://sellercentral.amazon.com/help/hub/reference/external/G1881",
+          "shot_id": "shot_4871f74c64f94c0e",
+          "shot_title": "细节图：领口与门襟工艺",
+          "archetype_id": "detail",
+          "width": 1344,
+          "height": 1344
+        },
+        {
+          "rule_id": "long_side_min_px",
+          "rule_version": "amazon-us@1",
+          "passed": true,
+          "detail": "实测长边 1344px，下限 500px；来源 https://sellercentral.amazon.com/help/hub/reference/external/G1881",
+          "shot_id": "shot_4871f74c64f94c0e",
+          "shot_title": "细节图：领口与门襟工艺",
+          "archetype_id": "detail",
+          "width": 1344,
+          "height": 1344
+        },
+        {
+          "rule_id": "long_side_max_px",
+          "rule_version": "amazon-us@1",
+          "passed": true,
+          "detail": "实测长边 1344px，上限 10000px；来源 https://sellercentral.amazon.com/help/hub/reference/external/G1881",
+          "shot_id": "shot_4871f74c64f94c0e",
+          "shot_title": "细节图：领口与门襟工艺",
+          "archetype_id": "detail",
+          "width": 1344,
+          "height": 1344
+        }
+      ],
+      "manual_notes": [
+        {
+          "rule_id": "main_image_human_review",
+          "shot_id": null,
+          "detail": "主图背景 RGB(255, 255, 255)、商品占比 ≥85%、不得叠加文字或水印（该配置自述 verification=human_review）；这些项目前只能由人工核对，系统不宣称已自动验证。"
+        },
+        {
+          "rule_id": "aesthetic_human_review",
+          "shot_id": null,
+          "detail": "画面观感、卖点表达是否准确属于人工判断，系统只提供测量值与追溯清单。"
+        }
+      ]
+    },
+    {
+      "id": "D3.4",
+      "action": "export_selection",
+      "export_id": "export_d9d2a63c75fc4ee0",
+      "export_version": 7,
+      "relative_path": "exports/export_d9d2a63c75fc4ee0",
+      "manifest": "exports/export_d9d2a63c75fc4ee0/manifest.json",
+      "readme": "exports\\export_d9d2a63c75fc4ee0\\README.md",
+      "files": [
+        {
+          "relative_path": "exports/export_d9d2a63c75fc4ee0/images/01_hero.png",
+          "byte_size": 1798120,
+          "sha256_matches_candidate": true
+        },
+        {
+          "relative_path": "exports/export_d9d2a63c75fc4ee0/images/02_feature.png",
+          "byte_size": 2504066,
+          "sha256_matches_candidate": true
+        },
+        {
+          "relative_path": "exports/export_d9d2a63c75fc4ee0/images/03_feature.png",
+          "byte_size": 1711470,
+          "sha256_matches_candidate": true
+        },
+        {
+          "relative_path": "exports/export_d9d2a63c75fc4ee0/images/04_lifestyle.png",
+          "byte_size": 2281294,
+          "sha256_matches_candidate": true
+        },
+        {
+          "relative_path": "exports/export_d9d2a63c75fc4ee0/images/05_detail.png",
+          "byte_size": 2780508,
+          "sha256_matches_candidate": true
+        }
+      ]
+    }
+  ],
+  "reworked": [
+    {
+      "shot_id": "shot_6c2e823812a04aa4",
+      "archetype_id": "lifestyle",
+      "prompt_version_before": 1,
+      "prompt_version_after": 2,
+      "attempts": [
+        {
+          "action_id": "act_851322201267723f618926df86f3abf627f31e92",
+          "provider_task_id": null,
+          "status": "ABANDONED",
+          "error": "用户确认放弃这次未确认的提交：D2.5 探针：已在服务端核对，这次提交没有任务编号，确认放弃后重发。"
+        },
+        {
+          "action_id": "act_93ed49c57a47db35abfa5653f461f727440252af",
+          "provider_task_id": null,
+          "status": "REJECTED",
+          "error": "UPSTREAM_REJECTED: 百炼拒绝了图像提交请求（HTTP 429）（服务码 Throttling.RateQuota）。"
+        },
+        {
+          "action_id": "act_c96d1cf792d94caca28c7a4b6c4e16a8c246b8ff",
+          "provider_task_id": "5df8d1ff-481f-4000-9248-5dea7b4f9430",
+          "status": "SUCCEEDED",
+          "error": null
+        },
+        {
+          "action_id": "act_5e3205d3280f48fe35ded637ecb749e13c1eb96f",
+          "provider_task_id": "52cd9b52-6b0d-4a8a-9971-0b160c2052ef",
+          "status": "SUCCEEDED",
+          "error": null
+        }
+      ],
+      "candidates_before": null,
+      "candidates_after": 2,
+      "old_candidate_kept": true,
+      "new_candidate": "07f23324eefb4eebbc3d5c9790f2f485d4413d8bc45b31cff9d08485055ef672",
+      "source": "workspace state at this run"
+    },
+    {
+      "shot_id": "shot_4871f74c64f94c0e",
+      "archetype_id": "detail",
+      "prompt_version_before": 2,
+      "prompt_version_after": 3,
+      "attempts": [
+        {
+          "action_id": "act_aaaf6ae0c9ce00d4bc549d212a01389bfa111184",
+          "provider_task_id": "4fe50781-3edf-4906-8ad9-348d75a9acf6",
+          "status": "SUCCEEDED",
+          "error": null
+        }
+      ],
+      "candidates_before": 2,
+      "candidates_after": 3,
+      "old_candidate_kept": true,
+      "new_candidate": "2f0ce61151cb197b207abef40ac91468d61d4f50687c18fd61dc513efda13d1e",
+      "source": "recorded rework from 2026-09-28T21:56:17"
+    }
+  ],
+  "unrelated_shots_untouched": true,
+  "provider_calls": [],
+  "provider_call_count": 0,
+  "reconcile_log": []
+}

@@ -1,0 +1,106 @@
+{
+  "schema": "demo-first-round-plan/1",
+  "experiment": "Phase 1 / D1.4 首轮四候选",
+  "prompt_version": {
+    "schema": "demo-prompt-version/1",
+    "prompt_text": "Photograph of the exact same product as in the reference image. The product must stay exactly the same design, the same colours, the same proportions and the same number of parts as in the reference image: exactly one single tall straight-walled insulated tumbler with its screw-on lid closed; the upper roughly 72 percent of the body is matte deep teal green (about #0F6B66) with a matte finish, no gradient and no printed pattern; the lower roughly 28 percent is a dark charcoal gray (about #252A2A) grip sleeve carrying exactly three raised horizontal ribs; the lid is a low profile dark charcoal lid whose top shows exactly two clearly visible concentric stepped rings, with no opening on the lid top; one narrow terracotta orange ring (about #D97A45) sits in the seam between the lid and the body, evenly thick all the way around; the bottom is flat with a narrow dark gray non-slip ring, and the tumbler rests flat and grounded on its surface.\n\nEvery outer surface of the product stays completely blank: no text, no numbers, no letters, no words, no logo, no brand mark, no label, no sticker, no watermark, no capacity marking and no decorative symbol anywhere on the product.\n\nNot tapered, not waisted, not a mug, not bottle shaped, and with no handle, no side grip, no strap, no straw, no drinking spout, no flip top, no dome lid, no second cup and no second lid.\n\nScene for an Amazon US listing lifestyle image: the tumbler stands on a clean matte light stone kitchen counter next to a smooth neutral wall; a single soft window light comes from the upper left; nothing else is in the frame, and no prop overlaps or touches the product; no hands and no people.\n\nEye level three quarter front view, the whole product including the lid visible inside the frame with clear margins, product centred and occupying most of the frame height, soft natural contact shadow under the base, sharp focus on the product, photorealistic e-commerce product photography, square 1:1 composition.",
+    "prompt_sha256": "d339c104b20a02c7a0ea624e6a95d307f3e6363499b0e766dcde3c1581938178",
+    "negative_prompt": "different product, different colour, different proportions, extra object, second cup, handle, side handle, strap, straw, drinking spout, flip top, dome lid, open lid, text, letters, words, numbers, logo, brand mark, watermark, label, sticker, typography, pattern, gradient, glossy metallic body, cropped product, floating object, cluttered background, props overlapping the product, hands, people, blurry, low resolution",
+    "negative_prompt_sha256": "dfe46ec8b532f17f2fdd5d0f462de0db8d8629c61e3170c761496038d71bf132",
+    "blocks": [
+      {
+        "block": "PRODUCT LOCK",
+        "locks": [
+          "F1",
+          "F2",
+          "F3",
+          "F4",
+          "F5",
+          "F6",
+          "F7"
+        ],
+        "text": "Photograph of the exact same product as in the reference image. The product must stay exactly the same design, the same colours, the same proportions and the same number of parts as in the reference image: exactly one single tall straight-walled insulated tumbler with its screw-on lid closed; the upper roughly 72 percent of the body is matte deep teal green (about #0F6B66) with a matte finish, no gradient and no printed pattern; the lower roughly 28 percent is a dark charcoal gray (about #252A2A) grip sleeve carrying exactly three raised horizontal ribs; the lid is a low profile dark charcoal lid whose top shows exactly two clearly visible concentric stepped rings, with no opening on the lid top; one narrow terracotta orange ring (about #D97A45) sits in the seam between the lid and the body, evenly thick all the way around; the bottom is flat with a narrow dark gray non-slip ring, and the tumbler rests flat and grounded on its surface."
+      },
+      {
+        "block": "BLANK SURFACE",
+        "locks": [
+          "F8"
+        ],
+        "text": "Every outer surface of the product stays completely blank: no text, no numbers, no letters, no words, no logo, no brand mark, no label, no sticker, no watermark, no capacity marking and no decorative symbol anywhere on the product."
+      },
+      {
+        "block": "NEGATIVE SHAPE",
+        "locks": [
+          "F1",
+          "F4",
+          "F7"
+        ],
+        "text": "Not tapered, not waisted, not a mug, not bottle shaped, and with no handle, no side grip, no strap, no straw, no drinking spout, no flip top, no dome lid, no second cup and no second lid."
+      },
+      {
+        "block": "SCENE",
+        "locks": [],
+        "text": "Scene for an Amazon US listing lifestyle image: the tumbler stands on a clean matte light stone kitchen counter next to a smooth neutral wall; a single soft window light comes from the upper left; nothing else is in the frame, and no prop overlaps or touches the product; no hands and no people."
+      },
+      {
+        "block": "COMPOSITION",
+        "locks": [],
+        "text": "Eye level three quarter front view, the whole product including the lid visible inside the frame with clear margins, product centred and occupying most of the frame height, soft natural contact shadow under the base, sharp focus on the product, photorealistic e-commerce product photography, square 1:1 composition."
+      }
+    ],
+    "locks_facts": [
+      "F1",
+      "F2",
+      "F3",
+      "F4",
+      "F5",
+      "F6",
+      "F7",
+      "F8"
+    ],
+    "parent_version": null,
+    "origin": "D1.4 实验用固定提示词（Phase 3 统一编译器接管前的前身）",
+    "profile_version": "2026-09-26.1",
+    "shot_id": "S2-exp",
+    "style_id": "d1.4-fixed",
+    "scene_id": "kitchen-lifestyle",
+    "composition_id": "three-quarter-hero",
+    "fact_card_sha256": "3c59995edff0c9be83c6849da333e143128189383beb075c2b0566633a12495f",
+    "fact_card_version": "2026-09-25.1",
+    "version_id": "2267ed3623a9e27b48f366f220593ece88c1436d3df30ccc7526e5fab38e31b5"
+  },
+  "reference_set": {
+    "manifest_version": "2026-09-25.2",
+    "manifest_sha256": "529c1c3b98420b66e1db947ac3445406cb05e4c1a9b840df45ddf5b645008502",
+    "pack_dir": "evals/product-demo/fixture-design/pack",
+    "pack_version": "2026-09-25.1",
+    "views_used": [
+      {
+        "view_id": "front-full",
+        "role": "正面闭盖全身（F1/F2/F6 主证据）",
+        "file": "evals/product-demo/fixture-design/pack/01-front-full.png",
+        "sha256": "e1b1c5de1ee6b50a69fb8e431f1140d8c21a689f4fe3316461c02745139d03f6"
+      }
+    ]
+  },
+  "reference_files": [
+    "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\evals\\product-demo\\fixture-design\\pack\\01-front-full.png"
+  ],
+  "seeds": [
+    2026092601,
+    2026092602,
+    2026092603,
+    2026092604
+  ],
+  "size": "1344*1344",
+  "n": 1,
+  "prompt_extend": false,
+  "watermark": false,
+  "budget": {
+    "charged_before": 4,
+    "planned": 4,
+    "budget_total": 8
+  },
+  "retest": false,
+  "mode": "plan-only（未提交、未花钱）"
+}

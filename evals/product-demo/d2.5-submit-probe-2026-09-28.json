@@ -1,0 +1,70 @@
+{
+  "probe": "D2.5 submit-path probe",
+  "started_at": "2026-09-28T21:16:15",
+  "submit_elapsed_s": 0.7,
+  "timeout_s": 180.0,
+  "reference_image": {
+    "path": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\ecommerce-skills-main\\docs\\batch-image\\sku-a-sweater.jpg",
+    "sha256": "5c5e0fdde80847dc140af37778678f3e9b3fb7962bba70360e62630501a85629",
+    "bytes": 133949
+  },
+  "prompt_record": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\_working\\amz-listing-kit-product-demo\\real-run-01\\workspace\\shots\\shot_1ce3ff4b08624310\\prompts\\prompt-v001.json",
+  "prompt_sha256": "0de1cfe0ae7f5be64b645b956da613c0553eebe23debdcc61e27b1fac6d624f4",
+  "outcome": {
+    "provider": "dashscope-qwen-image",
+    "model": "qwen-image-3.0",
+    "status": "PENDING",
+    "task_id": "89bde960-28f4-4126-acce-e6b0ab451930",
+    "request_id": "e7030663-8c4c-97f0-8ea0-7b4bb3f8f636",
+    "error": null,
+    "result_urls": []
+  },
+  "first_query": {
+    "status": "RUNNING",
+    "task_id": "89bde960-28f4-4126-acce-e6b0ab451930",
+    "error": null,
+    "result_urls": [],
+    "request_id": "5a4f7fbe-3a04-9ed0-b581-a4bf474f5979"
+  },
+  "provider_calls": [
+    {
+      "method": "POST",
+      "url_path": "https://dashscope.aliyuncs.com/api/v1/services/aigc/image-generation/generation",
+      "requested_timeout_s": 180.0,
+      "payload": {
+        "model": "qwen-image-3.0",
+        "size": "1344*1344",
+        "n": 1,
+        "prompt_extend": false,
+        "watermark": false,
+        "reference_images": 1,
+        "reference_bytes": 178623,
+        "prompt_sha256": "0de1cfe0ae7f5be64b645b956da613c0553eebe23debdcc61e27b1fac6d624f4",
+        "prompt_chars": 1787
+      },
+      "elapsed_s": 0.7,
+      "status_code": 200,
+      "response_headers": {
+        "content-type": "application/json",
+        "x-request-id": "e7030663-8c4c-97f0-8ea0-7b4bb3f8f636",
+        "date": "Mon, 28 Sep 2026 13:16:16 GMT",
+        "server": "istio-envoy"
+      },
+      "response_body": "{\"request_id\":\"e7030663-8c4c-97f0-8ea0-7b4bb3f8f636\",\"output\":{\"task_id\":\"89bde960-28f4-4126-acce-e6b0ab451930\",\"task_status\":\"PENDING\"}}"
+    },
+    {
+      "method": "GET",
+      "url_path": "https://dashscope.aliyuncs.com/api/v1/tasks/89bde960-28f4-4126-acce-e6b0ab451930",
+      "requested_timeout_s": 180.0,
+      "payload": null,
+      "elapsed_s": 0.2,
+      "status_code": 200,
+      "response_headers": {
+        "server": "istio-envoy",
+        "date": "Mon, 28 Sep 2026 13:16:20 GMT",
+        "content-type": "application/json;charset=UTF-8"
+      },
+      "response_body": "{\"request_id\":\"5a4f7fbe-3a04-9ed0-b581-a4bf474f5979\",\"output\":{\"task_id\":\"89bde960-28f4-4126-acce-e6b0ab451930\",\"task_status\":\"RUNNING\",\"submit_time\":\"2026-09-28 21:16:17.003\",\"scheduled_time\":\"2026-09-28 21:16:17.063\"}}"
+    }
+  ]
+}

@@ -1,0 +1,220 @@
+{
+  "schema": "demo-negative-cases/1",
+  "generated_at": "2026-09-25T23:17:44+08:00",
+  "source": "evals/product-demo/fixture-design/C/raw.png",
+  "source_sha256": "e1b1c5de1ee6b50a69fb8e431f1140d8c21a689f4fe3316461c02745139d03f6",
+  "model_calls": 0,
+  "cases": [
+    {
+      "case_id": "neg-01-recolor-upper",
+      "mutation_class": "改色",
+      "description": "把主体内颜色接近声明锚点 body_upper 的像素整片换成卡里没有的第三种主色 #6A2FA8",
+      "source": "evals/product-demo/fixture-design/C/raw.png",
+      "source_sha256": "e1b1c5de1ee6b50a69fb8e431f1140d8c21a689f4fe3316461c02745139d03f6",
+      "output": "negative-cases/neg-01-recolor-upper/raw.png",
+      "output_sha256": "b7aaa1b4f3c0865f7e90232c94e889f56823328f96d40f172da2756983dd7806",
+      "output_bytes": 1022270,
+      "image_size": [
+        1344,
+        1344
+      ],
+      "changed_pixels": 199229,
+      "params": {
+        "declared_anchor": "#0F6B66",
+        "replacement_hex": "#6A2FA8",
+        "replacement_rgb": [
+          106,
+          47,
+          168
+        ],
+        "recolored_pixels": 199229
+      },
+      "generated_at": "2026-09-25T23:17:42+08:00",
+      "model_calls": 0
+    },
+    {
+      "case_id": "neg-02-add-text",
+      "mutation_class": "加字",
+      "description": "在杯身上绘制两行白字（容量字样与伪品牌字），不改轮廓与配色",
+      "source": "evals/product-demo/fixture-design/C/raw.png",
+      "source_sha256": "e1b1c5de1ee6b50a69fb8e431f1140d8c21a689f4fe3316461c02745139d03f6",
+      "output": "negative-cases/neg-02-add-text/raw.png",
+      "output_sha256": "b18a28e7cb15e145a46ba956e0b214b720070c5d4e1184aa3c95779c78ffaebc",
+      "output_bytes": 1159782,
+      "image_size": [
+        1344,
+        1344
+      ],
+      "changed_pixels": 3016,
+      "params": {
+        "strings": [
+          {
+            "text": "750ML",
+            "xy": [
+              609,
+              431
+            ]
+          },
+          {
+            "text": "ACME",
+            "xy": [
+              611,
+              564
+            ]
+          }
+        ],
+        "font": "C:/Windows/Fonts/arial.ttf",
+        "font_size": 40,
+        "fill_rgb": [
+          250,
+          250,
+          250
+        ]
+      },
+      "generated_at": "2026-09-25T23:17:43+08:00",
+      "model_calls": 0
+    },
+    {
+      "case_id": "neg-03-add-handle",
+      "mutation_class": "改结构",
+      "description": "在杯身右侧贴一个同色系方形凸出物（把手），轮廓改变、配色不变",
+      "source": "evals/product-demo/fixture-design/C/raw.png",
+      "source_sha256": "e1b1c5de1ee6b50a69fb8e431f1140d8c21a689f4fe3316461c02745139d03f6",
+      "output": "negative-cases/neg-03-add-handle/raw.png",
+      "output_sha256": "3f5f25dfce75298ef38e931d2076b51093c8a2824e7d84f08df28d3228cf0be5",
+      "output_bytes": 1147751,
+      "image_size": [
+        1344,
+        1344
+      ],
+      "changed_pixels": 14200,
+      "params": {
+        "protrusion_px": 70,
+        "rows": [
+          541,
+          740
+        ],
+        "fill_rgb": [
+          37,
+          42,
+          42
+        ],
+        "expected_width_gain_share": 0.2011
+      },
+      "generated_at": "2026-09-25T23:17:43+08:00",
+      "model_calls": 0
+    },
+    {
+      "case_id": "neg-04-lidless",
+      "mutation_class": "改结构",
+      "description": "抹掉杯盖与接缝橙环，用背景色填掉对象顶部，留下一个开口的杯体",
+      "source": "evals/product-demo/fixture-design/C/raw.png",
+      "source_sha256": "e1b1c5de1ee6b50a69fb8e431f1140d8c21a689f4fe3316461c02745139d03f6",
+      "output": "negative-cases/neg-04-lidless/raw.png",
+      "output_sha256": "41f38d27050b1feb879dd863f52d1378e6f07ef4e2fd80a8a4b2c5f3cdef6a66",
+      "output_bytes": 1095901,
+      "image_size": [
+        1344,
+        1344
+      ],
+      "changed_pixels": 61635,
+      "params": {
+        "painted_rows": 180,
+        "lid_rows": 139,
+        "trim_rows": 17,
+        "up_pad_rows": 24,
+        "bg_sample_x": 456,
+        "fill": "逐行取该行主体左侧的背景中位数（跟随背景竖向渐变）"
+      },
+      "generated_at": "2026-09-25T23:17:43+08:00",
+      "model_calls": 0
+    },
+    {
+      "case_id": "neg-05-extra-ribs",
+      "mutation_class": "改数量",
+      "description": "在防滑套上另画两道亮凸脊，筋条数量由 3 变 5",
+      "source": "evals/product-demo/fixture-design/C/raw.png",
+      "source_sha256": "e1b1c5de1ee6b50a69fb8e431f1140d8c21a689f4fe3316461c02745139d03f6",
+      "output": "negative-cases/neg-05-extra-ribs/raw.png",
+      "output_sha256": "ff726a05cd7621b8d69dfcbd56eb0d34e3996b314453693bdbaf3598703d253e",
+      "output_bytes": 1151292,
+      "image_size": [
+        1344,
+        1344
+      ],
+      "changed_pixels": 5038,
+      "params": {
+        "bands_crop_rows": [
+          [
+            982,
+            989
+          ],
+          [
+            1008,
+            1015
+          ]
+        ],
+        "rib_window": [
+          782,
+          1042
+        ],
+        "fill_rgb": [
+          70,
+          70,
+          70
+        ],
+        "painted_pixels": 5040
+      },
+      "generated_at": "2026-09-25T23:17:44+08:00",
+      "model_calls": 0
+    },
+    {
+      "case_id": "neg-06-second-cup",
+      "mutation_class": "改数量",
+      "description": "把主体像素整体复制一份平移到右侧，画面里出现两个杯体",
+      "source": "evals/product-demo/fixture-design/C/raw.png",
+      "source_sha256": "e1b1c5de1ee6b50a69fb8e431f1140d8c21a689f4fe3316461c02745139d03f6",
+      "output": "negative-cases/neg-06-second-cup/raw.png",
+      "output_sha256": "f17cf721a89ba268773c4f4c58893ad40201f1f734459b2ebfb2e9a785a64333",
+      "output_bytes": 983409,
+      "image_size": [
+        1344,
+        1344
+      ],
+      "changed_pixels": 352624,
+      "params": {
+        "shift_px": 428,
+        "gap_px": 80,
+        "copied_pixels": 352624
+      },
+      "generated_at": "2026-09-25T23:17:44+08:00",
+      "model_calls": 0
+    },
+    {
+      "case_id": "neg-07-flat-lid",
+      "mutation_class": "改结构",
+      "description": "把杯盖顶部的两级阶梯抹平成一个平顶，盖高与配色都不变",
+      "source": "evals/product-demo/fixture-design/C/raw.png",
+      "source_sha256": "e1b1c5de1ee6b50a69fb8e431f1140d8c21a689f4fe3316461c02745139d03f6",
+      "output": "negative-cases/neg-07-flat-lid/raw.png",
+      "output_sha256": "fdc2674c0e1125bb2ff09792201ac8e48f5529715d2367ccd0dd12c30f1a915b",
+      "output_bytes": 1139616,
+      "image_size": [
+        1344,
+        1344
+      ],
+      "changed_pixels": 15111,
+      "params": {
+        "flattened_rows": 63,
+        "lid_rows": 139,
+        "fill_rgb": [
+          58,
+          61,
+          63
+        ]
+      },
+      "generated_at": "2026-09-25T23:17:44+08:00",
+      "model_calls": 0
+    }
+  ]
+}

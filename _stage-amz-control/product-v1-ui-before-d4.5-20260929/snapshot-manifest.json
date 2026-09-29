@@ -1,0 +1,24 @@
+{
+  "schema": "amz-listing-kit/static-ui-snapshot@1",
+  "created_at": "2026-09-29T10:07:47+08:00",
+  "reason": "Rollback snapshot before D4.5 formal workspace-shell migration",
+  "authority": "not-authority",
+  "restore_scope": "app/product_v1 static files only; never overwrite workspace data",
+  "files": [
+    {
+      "source": "app/product_v1/index.html",
+      "snapshot": "index.html",
+      "sha256": "0b784ac3c12626a3ac0ff77d718424aaf75578b0ea215f10a9e7173a16cf6e0e"
+    },
+    {
+      "source": "app/product_v1/product.js",
+      "snapshot": "product.js",
+      "sha256": "0c8db2b0b626afc92af547c4a4023ef18ed35999ebd727bb4782ff4a5b52abd3"
+    },
+    {
+      "source": "app/product_v1/styles.css",
+      "snapshot": "styles.css",
+      "sha256": "200dfd7a856a21fc91467b0d02f36a137157a208b5deae94d52d0109929e9a61"
+    }
+  ]
+}

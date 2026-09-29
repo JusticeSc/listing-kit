@@ -1,0 +1,132 @@
+{
+  "stamp": "20260929-142411",
+  "checks": [
+    {
+      "id": "mixed-trace-rendered",
+      "ok": true,
+      "detail": [
+        "生成中",
+        "生成失败",
+        "结果待核对"
+      ]
+    },
+    {
+      "id": "failed-shot-offers-retry",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "id": "unknown-shows-reconcile-button",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "id": "unknown-hint-mentions-reconcile",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "id": "auto-polling-observed-without-clicks",
+      "ok": true,
+      "detail": 1
+    },
+    {
+      "id": "running-shot-completed-by-polling-only",
+      "ok": true,
+      "detail": 3
+    },
+    {
+      "id": "unknown-reconciled-without-resubmit",
+      "ok": true,
+      "detail": 3
+    },
+    {
+      "id": "arrears-guidance-visible",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "id": "retry-shot-completed",
+      "ok": true,
+      "detail": {
+        "states": [
+          "已完成",
+          "已完成",
+          "已完成"
+        ],
+        "shot2_attempts": [
+          {
+            "status": "FAILED",
+            "created_at": "2026-09-29T06:24:14Z",
+            "error": null
+          },
+          {
+            "status": "FAILED",
+            "created_at": "2026-09-29T06:24:23Z",
+            "error": "UPSTREAM_ACCOUNT_ARREARS: 账户余额不足，请充值后重试。"
+          },
+          {
+            "status": "SUCCEEDED",
+            "created_at": "2026-09-29T06:24:24Z",
+            "error": null
+          }
+        ],
+        "shot2_candidates": [
+          "002d689cc5092abc2b91a1986a151c68d2928ff434f3ab4b8c0e765d472e5755"
+        ]
+      }
+    },
+    {
+      "id": "retry-submitted-exactly-once-more",
+      "ok": true,
+      "detail": 5
+    },
+    {
+      "id": "unrelated-shots-unchanged",
+      "ok": true,
+      "detail": [
+        [
+          [
+            1,
+            [
+              "8cc05243f1df6a2d1800ffc1f7c3e7aade5a3b0c1fac7f0d6c78c26d8ba05dec"
+            ]
+          ],
+          [
+            1,
+            [
+              "3f1c87f82c3534488ef91699c163c842e3ecd9e2c92e27d232bcd7b01d9b4a4a"
+            ]
+          ]
+        ],
+        [
+          [
+            1,
+            [
+              "8cc05243f1df6a2d1800ffc1f7c3e7aade5a3b0c1fac7f0d6c78c26d8ba05dec"
+            ]
+          ],
+          [
+            1,
+            [
+              "3f1c87f82c3534488ef91699c163c842e3ecd9e2c92e27d232bcd7b01d9b4a4a"
+            ]
+          ]
+        ]
+      ]
+    },
+    {
+      "id": "reload-restores-without-resubmit",
+      "ok": true,
+      "detail": 5
+    },
+    {
+      "id": "restart-restores-without-resubmit",
+      "ok": true,
+      "detail": 5
+    }
+  ],
+  "failures": [],
+  "passed": true,
+  "workspace": "temp (deleted)"
+}

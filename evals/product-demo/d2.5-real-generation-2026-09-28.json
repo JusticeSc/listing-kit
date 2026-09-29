@@ -1,0 +1,416 @@
+{
+  "run": "D2.5 real whole-set generation",
+  "started_at": "2026-09-28T21:32:41",
+  "duration_seconds": 0.2,
+  "workspace": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\_working\\amz-listing-kit-product-demo\\real-run-01\\workspace",
+  "mode": "verify-only",
+  "complete": true,
+  "shots": [
+    {
+      "shot_id": "shot_8da99ec158494b15",
+      "title": "主图：粗棒针织开衫毛衣",
+      "archetype_id": "hero",
+      "prompt_full_text": "Use the supplied reference image(s) as the sole authority for the product's visual identity. Preserve the exact visible silhouette, proportions, colors, markings, closure, surface appearance, and existing parts. Do not add, remove, duplicate, recolor, or redesign product features. Preserve these user-facing boundaries: 粗棒针立体纹理; 宽松落肩版型. If any product statement is added to the image, use only these user-confirmed statements, verbatim: 粗棒针织开衫毛衣. Do not imply additional specifications or benefits.\n\ndirection: Clean, cozy, and elegant. Emphasize the natural drape and 3D texture of the chunky knit without looking bulky.; palette: #FFFFFF, #F5F5F5, #A9A9A9, #8FBC8F; lighting: Soft, diffused natural lighting to highlight the 3D texture and natural drape, avoiding harsh shadows that might make the knit look bulky.; background: Pure white (#FFFFFF) for the hero image; soft, warm, and minimalist neutral tones for lifestyle and detail shots.; continuity: Maintain consistent soft lighting across all shots to emphasize the yarn texture.; Ensure the drop-shoulder silhouette is clearly visible and not distorted.; Avoid heavy or stiff posing in lifestyle shots to reinforce the natural drape user intent.\nClean, cozy, and elegant visual direction. Soft, diffused natural lighting to highlight the 3D texture and natural drape, avoiding harsh shadows that might make the knit look bulky. Pure white (#FFFFFF) background.\n\n主图：粗棒针织开衫毛衣. Show the actual sellable product as the primary listing image. Frame the garment centrally with a medium-close shot to emphasize the natural drape and chunky knit texture.\n\nCreate a clear, compliant product-listing image for amazon.com. Main image: use a pure white RGB(255, 255, 255) background; aim for product occupancy of at least 85%; do not add text overlays or watermarks.\n\nDo not lose or alter the 粗棒针立体纹理 and 宽松落肩版型. Do not include any non-product elements, shadows, or backgrounds other than pure white. Do not let the product occupy less than 85% of the frame.",
+      "attempts": [
+        {
+          "action_id": "act_1779d0b5dcfe4ac27083d5da0aa7dbeb641f2192",
+          "provider_id": "dashscope-qwen-image",
+          "model_id": "qwen-image-3.0",
+          "provider_task_id": null,
+          "status": "ABANDONED",
+          "request_sha256": "1da80f749f6022cec8f4a5bb0f29b87d31e622af53b3d6b75b3154820dad8e40",
+          "reference_asset_sha256": [
+            "5c5e0fdde80847dc140af37778678f3e9b3fb7962bba70360e62630501a85629"
+          ],
+          "created_at": "2026-09-28T13:09:14Z",
+          "updated_at": "2026-09-28T13:26:32Z",
+          "error": "用户确认放弃这次未确认的提交：D2.5 探针：已在服务端核对，这次提交没有任务编号，确认放弃后重发。"
+        },
+        {
+          "action_id": "act_13de199edf316b21d7d08514d2084c19c5b1bc50",
+          "provider_id": "dashscope-qwen-image",
+          "model_id": "qwen-image-3.0",
+          "provider_task_id": "ae4c435e-3357-4ee1-a67b-28204c600e70",
+          "status": "SUCCEEDED",
+          "request_sha256": "1da80f749f6022cec8f4a5bb0f29b87d31e622af53b3d6b75b3154820dad8e40",
+          "reference_asset_sha256": [
+            "5c5e0fdde80847dc140af37778678f3e9b3fb7962bba70360e62630501a85629"
+          ],
+          "created_at": "2026-09-28T13:26:56Z",
+          "updated_at": "2026-09-28T13:27:24Z",
+          "error": null
+        }
+      ],
+      "candidates": [
+        {
+          "candidate_id": "5e4a59fb6826a2e0386ca5f5172a8f2987a1d3e553ccfc07748aea8e5b3a64e3",
+          "relative_path": "shots/shot_8da99ec158494b15/candidates/5e4a59fb6826a2e0386ca5f5172a8f2987a1d3e553ccfc07748aea8e5b3a64e3.png",
+          "byte_size": 1798120,
+          "width": 1344,
+          "height": 1344,
+          "sha256_verified": true
+        }
+      ]
+    },
+    {
+      "shot_id": "shot_402eb7e6bdf14c44",
+      "title": "卖点图：粗棒针立体纹理",
+      "archetype_id": "feature",
+      "prompt_full_text": "Use the supplied reference image(s) as the sole authority for the product's visual identity. Preserve the exact visible silhouette, proportions, colors, markings, closure, surface appearance, and existing parts. Do not add, remove, duplicate, recolor, or redesign product features. Preserve these user-facing boundaries: 粗棒针立体纹理. If any product statement is added to the image, use only these user-confirmed statements, verbatim: 粗棒针立体纹理. Do not imply additional specifications or benefits.\n\ndirection: Clean, cozy, and elegant. Emphasize the natural drape and 3D texture of the chunky knit without looking bulky.; palette: #FFFFFF, #F5F5F5, #A9A9A9, #8FBC8F; lighting: Soft, diffused natural lighting to highlight the 3D texture and natural drape, avoiding harsh shadows that might make the knit look bulky.; background: Pure white (#FFFFFF) for the hero image; soft, warm, and minimalist neutral tones for lifestyle and detail shots.; continuity: Maintain consistent soft lighting across all shots to emphasize the yarn texture.; Ensure the drop-shoulder silhouette is clearly visible and not distorted.; Avoid heavy or stiff posing in lifestyle shots to reinforce the natural drape user intent.\nClean, cozy, and elegant visual direction. Soft, diffused natural lighting to highlight the 3D texture and natural drape, avoiding harsh shadows. Background uses soft, warm, and minimalist neutral tones. Maintain consistent soft lighting to emphasize the yarn texture and ensure the silhouette is clearly visible and not distorted.\n\nFeature shot titled '卖点图：粗棒针立体纹理' to explain the user-relevant feature supported by confirmed product information. Close-up composition with visual guiding lines or local magnification to highlight the 3D texture, while capturing the natural drape of the garment.\n\nCreate a clear, compliant product-listing image for amazon.com.\n\nDo not compromise the preserved chunky cable knit 3D texture. Avoid changes that lead to a bulky appearance; do not add stiff posing or harsh lighting that ruins the natural drape.",
+      "attempts": [
+        {
+          "action_id": "act_b2d4a0141e1c9aaab937246672992e4502ab9f36",
+          "provider_id": "dashscope-qwen-image",
+          "model_id": "qwen-image-3.0",
+          "provider_task_id": null,
+          "status": "ABANDONED",
+          "request_sha256": "7351070d7231c127795504121dad62239c900b377ea4708c63a7fd55da8f4675",
+          "reference_asset_sha256": [
+            "5c5e0fdde80847dc140af37778678f3e9b3fb7962bba70360e62630501a85629"
+          ],
+          "created_at": "2026-09-28T13:09:14Z",
+          "updated_at": "2026-09-28T13:26:33Z",
+          "error": "用户确认放弃这次未确认的提交：D2.5 探针：已在服务端核对，这次提交没有任务编号，确认放弃后重发。"
+        },
+        {
+          "action_id": "act_c67442bd3e4eae48dfb186cf8e152f67b687ae9b",
+          "provider_id": "dashscope-qwen-image",
+          "model_id": "qwen-image-3.0",
+          "provider_task_id": "06bd13aa-d432-449d-b0df-17dd1c0694dc",
+          "status": "SUCCEEDED",
+          "request_sha256": "7351070d7231c127795504121dad62239c900b377ea4708c63a7fd55da8f4675",
+          "reference_asset_sha256": [
+            "5c5e0fdde80847dc140af37778678f3e9b3fb7962bba70360e62630501a85629"
+          ],
+          "created_at": "2026-09-28T13:26:56Z",
+          "updated_at": "2026-09-28T13:27:25Z",
+          "error": null
+        }
+      ],
+      "candidates": [
+        {
+          "candidate_id": "bdc0207c05eb3e7beeed794b8f4b235d1995fd679537af329b51ea69ae537b29",
+          "relative_path": "shots/shot_402eb7e6bdf14c44/candidates/bdc0207c05eb3e7beeed794b8f4b235d1995fd679537af329b51ea69ae537b29.png",
+          "byte_size": 2504066,
+          "width": 1344,
+          "height": 1344,
+          "sha256_verified": true
+        }
+      ]
+    },
+    {
+      "shot_id": "shot_1ce3ff4b08624310",
+      "title": "卖点图：宽松落肩版型",
+      "archetype_id": "feature",
+      "prompt_full_text": "Use the supplied reference image(s) as the sole authority for the product's visual identity. Preserve the exact visible silhouette, proportions, colors, markings, closure, surface appearance, and existing parts. Do not add, remove, duplicate, recolor, or redesign product features. Preserve these user-facing boundaries: 宽松落肩版型; 针织纹理与自然垂感. If any product statement is added to the image, use only these user-confirmed statements, verbatim: 宽松落肩版型. Do not imply additional specifications or benefits.\n\ndirection: Clean, cozy, and elegant. Emphasize the natural drape and 3D texture of the chunky knit without looking bulky.; palette: #FFFFFF, #F5F5F5, #A9A9A9, #8FBC8F; lighting: Soft, diffused natural lighting to highlight the 3D texture and natural drape, avoiding harsh shadows that might make the knit look bulky.; background: Pure white (#FFFFFF) for the hero image; soft, warm, and minimalist neutral tones for lifestyle and detail shots.; continuity: Maintain consistent soft lighting across all shots to emphasize the yarn texture.; Ensure the drop-shoulder silhouette is clearly visible and not distorted.; Avoid heavy or stiff posing in lifestyle shots to reinforce the natural drape user intent.\nClean, cozy, and elegant visual direction. Soft, diffused natural lighting to highlight 3D texture and natural drape, avoiding harsh shadows. Pure white background. Maintain consistent soft lighting to emphasize yarn texture, ensuring the drop-shoulder silhouette is clearly visible and not distorted.\n\n卖点图：宽松落肩版型。Explain a user-relevant feature that is supported by confirmed product information. 构图聚焦肩部线条与整体廓形，使用中景镜头距离清晰呈现宽松落肩版型，结合柔和光影体现针织纹理的自然垂感。\n\nCreate a clear, compliant product-listing image for amazon.com.\n\n禁止改变或破坏宽松落肩版型，禁止掩盖针织纹理与自然垂感。禁止使用生硬光影导致肩部线条和整体廓形失真，禁止呈现厚重臃肿的视觉效果。",
+      "attempts": [
+        {
+          "action_id": "act_1e3f274be1e707929c06dceade5360dd2fba0c4f",
+          "provider_id": "dashscope-qwen-image",
+          "model_id": "qwen-image-3.0",
+          "provider_task_id": null,
+          "status": "ABANDONED",
+          "request_sha256": "86360f963d36e86907c9915ab89318a820bc8247f2167fd503dbd3483194467d",
+          "reference_asset_sha256": [
+            "5c5e0fdde80847dc140af37778678f3e9b3fb7962bba70360e62630501a85629"
+          ],
+          "created_at": "2026-09-28T13:09:14Z",
+          "updated_at": "2026-09-28T13:26:33Z",
+          "error": "用户确认放弃这次未确认的提交：D2.5 探针：已在服务端核对，这次提交没有任务编号，确认放弃后重发。"
+        },
+        {
+          "action_id": "act_17d89d6811609c2f27ef68f8e71aea3c9dd73a9f",
+          "provider_id": "dashscope-qwen-image",
+          "model_id": "qwen-image-3.0",
+          "provider_task_id": "c7577983-d5b8-455e-a617-099573160d09",
+          "status": "SUCCEEDED",
+          "request_sha256": "86360f963d36e86907c9915ab89318a820bc8247f2167fd503dbd3483194467d",
+          "reference_asset_sha256": [
+            "5c5e0fdde80847dc140af37778678f3e9b3fb7962bba70360e62630501a85629"
+          ],
+          "created_at": "2026-09-28T13:26:56Z",
+          "updated_at": "2026-09-28T13:27:34Z",
+          "error": null
+        }
+      ],
+      "candidates": [
+        {
+          "candidate_id": "1adf763b36c7e4759b06337631f83d923d609394830afaa3e7c071461496d9bc",
+          "relative_path": "shots/shot_1ce3ff4b08624310/candidates/1adf763b36c7e4759b06337631f83d923d609394830afaa3e7c071461496d9bc.png",
+          "byte_size": 1711470,
+          "width": 1344,
+          "height": 1344,
+          "sha256_verified": true
+        }
+      ]
+    },
+    {
+      "shot_id": "shot_6c2e823812a04aa4",
+      "title": "场景图：自然垂感与日常穿搭",
+      "archetype_id": "lifestyle",
+      "prompt_full_text": "Use the supplied reference image(s) as the sole authority for the product's visual identity. Preserve the exact visible silhouette, proportions, colors, markings, closure, surface appearance, and existing parts. Do not add, remove, duplicate, recolor, or redesign product features. Preserve these user-facing boundaries: 针织纹理与自然垂感; 宽松落肩版型. Do not add product claims, specifications, badges, or on-image text.\n\ndirection: Clean, cozy, and elegant. Emphasize the natural drape and 3D texture of the chunky knit without looking bulky.; palette: #FFFFFF, #F5F5F5, #A9A9A9, #8FBC8F; lighting: Soft, diffused natural lighting to highlight the 3D texture and natural drape, avoiding harsh shadows that might make the knit look bulky.; background: Pure white (#FFFFFF) for the hero image; soft, warm, and minimalist neutral tones for lifestyle and detail shots.; continuity: Maintain consistent soft lighting across all shots to emphasize the yarn texture.; Ensure the drop-shoulder silhouette is clearly visible and not distorted.; Avoid heavy or stiff posing in lifestyle shots to reinforce the natural drape user intent.\nClean, cozy, and elegant visual direction. Soft, diffused natural lighting to highlight the 3D texture and natural drape, avoiding harsh shadows. Background uses soft, warm, and minimalist neutral tones. Maintain consistent soft lighting to emphasize yarn texture, ensuring the drop-shoulder silhouette is clearly visible and not distorted.\n\n场景图：自然垂感与日常穿搭。Place the product in a use context that helps the buyer understand its role. 构图上展示模特穿着动态行走或自然垂落的姿态，背景布置为简约温馨的室内或咖啡馆环境，镜头保持中景以呈现整体穿搭效果。\n\nCreate a clear, compliant product-listing image for amazon.com.\n\n避免破坏针织纹理与自然垂感，避免改变宽松落肩版型。避免模特呈现僵硬或厚重的姿态，避免背景设置为非简约温馨的杂乱环境。",
+      "attempts": [
+        {
+          "action_id": "act_851322201267723f618926df86f3abf627f31e92",
+          "provider_id": "dashscope-qwen-image",
+          "model_id": "qwen-image-3.0",
+          "provider_task_id": null,
+          "status": "ABANDONED",
+          "request_sha256": "211388071fc569b2db96e7ff598feffbe80f11d978a4a7f9d8833bce996276c9",
+          "reference_asset_sha256": [
+            "5c5e0fdde80847dc140af37778678f3e9b3fb7962bba70360e62630501a85629"
+          ],
+          "created_at": "2026-09-28T13:09:14Z",
+          "updated_at": "2026-09-28T13:26:33Z",
+          "error": "用户确认放弃这次未确认的提交：D2.5 探针：已在服务端核对，这次提交没有任务编号，确认放弃后重发。"
+        },
+        {
+          "action_id": "act_93ed49c57a47db35abfa5653f461f727440252af",
+          "provider_id": "dashscope-qwen-image",
+          "model_id": "qwen-image-3.0",
+          "provider_task_id": null,
+          "status": "REJECTED",
+          "request_sha256": "211388071fc569b2db96e7ff598feffbe80f11d978a4a7f9d8833bce996276c9",
+          "reference_asset_sha256": [
+            "5c5e0fdde80847dc140af37778678f3e9b3fb7962bba70360e62630501a85629"
+          ],
+          "created_at": "2026-09-28T13:26:56Z",
+          "updated_at": "2026-09-28T13:27:12Z",
+          "error": "UPSTREAM_REJECTED: 百炼拒绝了图像提交请求（HTTP 429）（服务码 Throttling.RateQuota）。"
+        },
+        {
+          "action_id": "act_c96d1cf792d94caca28c7a4b6c4e16a8c246b8ff",
+          "provider_id": "dashscope-qwen-image",
+          "model_id": "qwen-image-3.0",
+          "provider_task_id": "5df8d1ff-481f-4000-9248-5dea7b4f9430",
+          "status": "SUCCEEDED",
+          "request_sha256": "211388071fc569b2db96e7ff598feffbe80f11d978a4a7f9d8833bce996276c9",
+          "reference_asset_sha256": [
+            "5c5e0fdde80847dc140af37778678f3e9b3fb7962bba70360e62630501a85629"
+          ],
+          "created_at": "2026-09-28T13:29:41Z",
+          "updated_at": "2026-09-28T13:30:00Z",
+          "error": null
+        }
+      ],
+      "candidates": [
+        {
+          "candidate_id": "c02cebf2643e86ba2cf6d86ff3c388d66e5a3cc2d24863a5ae17c2eb0f4ac99f",
+          "relative_path": "shots/shot_6c2e823812a04aa4/candidates/c02cebf2643e86ba2cf6d86ff3c388d66e5a3cc2d24863a5ae17c2eb0f4ac99f.png",
+          "byte_size": 1977394,
+          "width": 1344,
+          "height": 1344,
+          "sha256_verified": true
+        }
+      ]
+    },
+    {
+      "shot_id": "shot_4871f74c64f94c0e",
+      "title": "细节图：领口与门襟工艺",
+      "archetype_id": "detail",
+      "prompt_full_text": "Use the supplied reference image(s) as the sole authority for the product's visual identity. Preserve the exact visible silhouette, proportions, colors, markings, closure, surface appearance, and existing parts. Do not add, remove, duplicate, recolor, or redesign product features. Preserve these user-facing boundaries: 粗棒针立体纹理. Do not add product claims, specifications, badges, or on-image text.\n\ndirection: Clean, cozy, and elegant. Emphasize the natural drape and 3D texture of the chunky knit without looking bulky.; palette: #FFFFFF, #F5F5F5, #A9A9A9, #8FBC8F; lighting: Soft, diffused natural lighting to highlight the 3D texture and natural drape, avoiding harsh shadows that might make the knit look bulky.; background: Pure white (#FFFFFF) for the hero image; soft, warm, and minimalist neutral tones for lifestyle and detail shots.; continuity: Maintain consistent soft lighting across all shots to emphasize the yarn texture.; Ensure the drop-shoulder silhouette is clearly visible and not distorted.; Avoid heavy or stiff posing in lifestyle shots to reinforce the natural drape user intent.\nBackground uses soft, warm, and minimalist neutral tones. Lighting is soft, diffused natural lighting to highlight the 3D texture and natural drape, avoiding harsh shadows. The overall direction is clean, cozy, and elegant, emphasizing the natural drape and 3D texture without looking bulky.\n\nShow a useful close-up or construction detail visible in the supplied references, fulfilling the purpose of the shot titled '细节图：领口与门襟工艺'. Use a macro lens for a close-up distance on the collar and placket to present the knit texture and natural drape, avoiding a heavy or bulky visual effect.\n\nCreate a clear, compliant product-listing image for amazon.com.\n\nDo not lose or distort the preserved chunky knit 3D texture. Do not fail to execute the changes of macro shooting the collar, buttons, or edge stitching details, and do not fail to highlight the 3D texture quality. Avoid harsh shadows that might make the knit look bulky.",
+      "attempts": [
+        {
+          "action_id": "act_c72605aa2ab05bfde78a2275fa86e18369386716",
+          "provider_id": "dashscope-qwen-image",
+          "model_id": "qwen-image-3.0",
+          "provider_task_id": null,
+          "status": "ABANDONED",
+          "request_sha256": "735940e36ae0e400f2ae10c084414b961e1f3d433ba3f8c176bd978ef054154b",
+          "reference_asset_sha256": [
+            "5c5e0fdde80847dc140af37778678f3e9b3fb7962bba70360e62630501a85629"
+          ],
+          "created_at": "2026-09-28T13:09:14Z",
+          "updated_at": "2026-09-28T13:26:33Z",
+          "error": "用户确认放弃这次未确认的提交：D2.5 探针：已在服务端核对，这次提交没有任务编号，确认放弃后重发。"
+        },
+        {
+          "action_id": "act_0cc11c9aa0b44ed89193cc0411ef5d01331d3dd1",
+          "provider_id": "dashscope-qwen-image",
+          "model_id": "qwen-image-3.0",
+          "provider_task_id": null,
+          "status": "REJECTED",
+          "request_sha256": "735940e36ae0e400f2ae10c084414b961e1f3d433ba3f8c176bd978ef054154b",
+          "reference_asset_sha256": [
+            "5c5e0fdde80847dc140af37778678f3e9b3fb7962bba70360e62630501a85629"
+          ],
+          "created_at": "2026-09-28T13:26:56Z",
+          "updated_at": "2026-09-28T13:27:15Z",
+          "error": "UPSTREAM_REJECTED: 百炼拒绝了图像提交请求（HTTP 429）（服务码 Throttling.RateQuota）。"
+        },
+        {
+          "action_id": "act_7055d0ad5254ac075cea31ff125b9efd9e98fa29",
+          "provider_id": "dashscope-qwen-image",
+          "model_id": "qwen-image-3.0",
+          "provider_task_id": "19f5dcc0-9c01-49e3-a6b0-9650812cfa16",
+          "status": "SUCCEEDED",
+          "request_sha256": "735940e36ae0e400f2ae10c084414b961e1f3d433ba3f8c176bd978ef054154b",
+          "reference_asset_sha256": [
+            "5c5e0fdde80847dc140af37778678f3e9b3fb7962bba70360e62630501a85629"
+          ],
+          "created_at": "2026-09-28T13:30:30Z",
+          "updated_at": "2026-09-28T13:30:48Z",
+          "error": null
+        }
+      ],
+      "candidates": [
+        {
+          "candidate_id": "d3a28a1ea8214c004d1bd1a52ee66f6149016f5105f03f331782ef6b4272fc32",
+          "relative_path": "shots/shot_4871f74c64f94c0e/candidates/d3a28a1ea8214c004d1bd1a52ee66f6149016f5105f03f331782ef6b4272fc32.png",
+          "byte_size": 2847189,
+          "width": 1344,
+          "height": 1344,
+          "sha256_verified": true
+        }
+      ]
+    }
+  ],
+  "polls": [
+    {
+      "at": "2026-09-28T21:29:51",
+      "queried": [
+        "act_c96d1cf792d94caca28c7a4b6c4e16a8c246b8ff"
+      ],
+      "statuses": {
+        "act_1779d0b5dcfe4ac27083d5da0aa7dbeb641f2192": "ABANDONED",
+        "act_13de199edf316b21d7d08514d2084c19c5b1bc50": "SUCCEEDED",
+        "act_b2d4a0141e1c9aaab937246672992e4502ab9f36": "ABANDONED",
+        "act_c67442bd3e4eae48dfb186cf8e152f67b687ae9b": "SUCCEEDED",
+        "act_1e3f274be1e707929c06dceade5360dd2fba0c4f": "ABANDONED",
+        "act_17d89d6811609c2f27ef68f8e71aea3c9dd73a9f": "SUCCEEDED",
+        "act_851322201267723f618926df86f3abf627f31e92": "ABANDONED",
+        "act_93ed49c57a47db35abfa5653f461f727440252af": "REJECTED",
+        "act_c96d1cf792d94caca28c7a4b6c4e16a8c246b8ff": "RUNNING",
+        "act_c72605aa2ab05bfde78a2275fa86e18369386716": "ABANDONED",
+        "act_0cc11c9aa0b44ed89193cc0411ef5d01331d3dd1": "REJECTED"
+      }
+    },
+    {
+      "at": "2026-09-28T21:30:00",
+      "queried": [
+        "act_c96d1cf792d94caca28c7a4b6c4e16a8c246b8ff"
+      ],
+      "statuses": {
+        "act_1779d0b5dcfe4ac27083d5da0aa7dbeb641f2192": "ABANDONED",
+        "act_13de199edf316b21d7d08514d2084c19c5b1bc50": "SUCCEEDED",
+        "act_b2d4a0141e1c9aaab937246672992e4502ab9f36": "ABANDONED",
+        "act_c67442bd3e4eae48dfb186cf8e152f67b687ae9b": "SUCCEEDED",
+        "act_1e3f274be1e707929c06dceade5360dd2fba0c4f": "ABANDONED",
+        "act_17d89d6811609c2f27ef68f8e71aea3c9dd73a9f": "SUCCEEDED",
+        "act_851322201267723f618926df86f3abf627f31e92": "ABANDONED",
+        "act_93ed49c57a47db35abfa5653f461f727440252af": "REJECTED",
+        "act_c96d1cf792d94caca28c7a4b6c4e16a8c246b8ff": "SUCCEEDED",
+        "act_c72605aa2ab05bfde78a2275fa86e18369386716": "ABANDONED",
+        "act_0cc11c9aa0b44ed89193cc0411ef5d01331d3dd1": "REJECTED"
+      }
+    },
+    {
+      "at": "2026-09-28T21:30:39",
+      "queried": [
+        "act_7055d0ad5254ac075cea31ff125b9efd9e98fa29"
+      ],
+      "statuses": {
+        "act_1779d0b5dcfe4ac27083d5da0aa7dbeb641f2192": "ABANDONED",
+        "act_13de199edf316b21d7d08514d2084c19c5b1bc50": "SUCCEEDED",
+        "act_b2d4a0141e1c9aaab937246672992e4502ab9f36": "ABANDONED",
+        "act_c67442bd3e4eae48dfb186cf8e152f67b687ae9b": "SUCCEEDED",
+        "act_1e3f274be1e707929c06dceade5360dd2fba0c4f": "ABANDONED",
+        "act_17d89d6811609c2f27ef68f8e71aea3c9dd73a9f": "SUCCEEDED",
+        "act_851322201267723f618926df86f3abf627f31e92": "ABANDONED",
+        "act_93ed49c57a47db35abfa5653f461f727440252af": "REJECTED",
+        "act_c96d1cf792d94caca28c7a4b6c4e16a8c246b8ff": "SUCCEEDED",
+        "act_c72605aa2ab05bfde78a2275fa86e18369386716": "ABANDONED",
+        "act_0cc11c9aa0b44ed89193cc0411ef5d01331d3dd1": "REJECTED",
+        "act_7055d0ad5254ac075cea31ff125b9efd9e98fa29": "RUNNING"
+      }
+    },
+    {
+      "at": "2026-09-28T21:30:48",
+      "queried": [
+        "act_7055d0ad5254ac075cea31ff125b9efd9e98fa29"
+      ],
+      "statuses": {
+        "act_1779d0b5dcfe4ac27083d5da0aa7dbeb641f2192": "ABANDONED",
+        "act_13de199edf316b21d7d08514d2084c19c5b1bc50": "SUCCEEDED",
+        "act_b2d4a0141e1c9aaab937246672992e4502ab9f36": "ABANDONED",
+        "act_c67442bd3e4eae48dfb186cf8e152f67b687ae9b": "SUCCEEDED",
+        "act_1e3f274be1e707929c06dceade5360dd2fba0c4f": "ABANDONED",
+        "act_17d89d6811609c2f27ef68f8e71aea3c9dd73a9f": "SUCCEEDED",
+        "act_851322201267723f618926df86f3abf627f31e92": "ABANDONED",
+        "act_93ed49c57a47db35abfa5653f461f727440252af": "REJECTED",
+        "act_c96d1cf792d94caca28c7a4b6c4e16a8c246b8ff": "SUCCEEDED",
+        "act_c72605aa2ab05bfde78a2275fa86e18369386716": "ABANDONED",
+        "act_0cc11c9aa0b44ed89193cc0411ef5d01331d3dd1": "REJECTED",
+        "act_7055d0ad5254ac075cea31ff125b9efd9e98fa29": "SUCCEEDED"
+      }
+    }
+  ],
+  "provider_calls": [
+    {
+      "method": "POST",
+      "url_path": "https://dashscope.aliyuncs.com/api/v1/services/aigc/image-generation/generation",
+      "payload": {
+        "model": "qwen-image-3.0",
+        "size": "1344*1344",
+        "n": 1,
+        "reference_images": 1,
+        "reference_bytes": 178623,
+        "prompt_sha256": "a56e9efa3bfe888e73816645f61f3828e834ea3c7722f85166e2644593f19071",
+        "prompt_chars": 1731
+      },
+      "status_code": 200
+    },
+    {
+      "method": "GET",
+      "url_path": "https://dashscope.aliyuncs.com/api/v1/tasks/5df8d1ff-481f-4000-9248-5dea7b4f9430",
+      "payload": null,
+      "status_code": 200
+    },
+    {
+      "method": "GET",
+      "url_path": "https://dashscope.aliyuncs.com/api/v1/tasks/5df8d1ff-481f-4000-9248-5dea7b4f9430",
+      "payload": null,
+      "status_code": 200
+    },
+    {
+      "method": "GET",
+      "url_path": "https://dashscope-a717.oss-accelerate.aliyuncs.com/1d/20/20260928/5f326ce3/5df8d1ff-481f-4000-9248-5dea7b4f9430_qwen_image3_serving_output_0.png",
+      "payload": null,
+      "status_code": 200
+    },
+    {
+      "method": "POST",
+      "url_path": "https://dashscope.aliyuncs.com/api/v1/services/aigc/image-generation/generation",
+      "payload": {
+        "model": "qwen-image-3.0",
+        "size": "1344*1344",
+        "n": 1,
+        "reference_images": 1,
+        "reference_bytes": 178623,
+        "prompt_sha256": "34290a21ace52e576b4fd977bab6e71351a166b0e0d0e4d2e1bd37d8141f025b",
+        "prompt_chars": 2030
+      },
+      "status_code": 200
+    },
+    {
+      "method": "GET",
+      "url_path": "https://dashscope.aliyuncs.com/api/v1/tasks/19f5dcc0-9c01-49e3-a6b0-9650812cfa16",
+      "payload": null,
+      "status_code": 200
+    },
+    {
+      "method": "GET",
+      "url_path": "https://dashscope.aliyuncs.com/api/v1/tasks/19f5dcc0-9c01-49e3-a6b0-9650812cfa16",
+      "payload": null,
+      "status_code": 200
+    },
+    {
+      "method": "GET",
+      "url_path": "https://dashscope-a717.oss-accelerate.aliyuncs.com/1d/6b/20260928/5f326ce3/19f5dcc0-9c01-49e3-a6b0-9650812cfa16_qwen_image3_serving_output_0.png",
+      "payload": null,
+      "status_code": 200
+    }
+  ],
+  "provider_calls_measured_this_run": 0,
+  "provider_calls_inherited_from": "2026-09-28T21:29:40"
+}

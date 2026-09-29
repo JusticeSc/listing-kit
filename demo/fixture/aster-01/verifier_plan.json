@@ -1,0 +1,252 @@
+{
+  "schema": "demo-verifier-plan/1",
+  "sku": "demo-tumbler-aster-01",
+  "facts_version": "2026-09-25.1",
+  "status": "proposed",
+  "authority_note": "这是路由形态的数据声明：D1.R1 建能力矩阵，D1.R2 做路线对照，D1.R3 实现并冻结注册表。source 与文件名一律相对商品包目录解析。",
+  "unknown_policy": "block_selection_on_required_fact",
+  "routes": [
+    {
+      "fact": "F1",
+      "routers": [
+        {
+          "id": "cylinder-v1",
+          "kind": "deterministic",
+          "metric_profile": "cylinder-v1",
+          "applies_when": {
+            "probe": "controlled_backdrop",
+            "params": {
+              "band": 0.18
+            },
+            "max_share": 0.02
+          },
+          "on_not_applicable": "next_router"
+        },
+        {
+          "id": "refcond-vlm",
+          "kind": "model",
+          "model": "qwen-vl-max",
+          "prompt_profile": "fact-<fact_id>",
+          "default_verdict": "risk",
+          "status": "declared_not_run_in_D1_P3",
+          "why_not_run": "D1.P3 是离线零付费任务；模型路线的对照与校准属于 D1.R2/R3"
+        },
+        {
+          "id": "human",
+          "kind": "human",
+          "source": "human_fact_review.json",
+          "requires_explicit_signature": true
+        }
+      ]
+    },
+    {
+      "fact": "F2",
+      "routers": [
+        {
+          "id": "cylinder-v1",
+          "kind": "deterministic",
+          "metric_profile": "cylinder-v1",
+          "applies_when": {
+            "probe": "controlled_backdrop",
+            "params": {
+              "band": 0.18
+            },
+            "max_share": 0.02
+          },
+          "on_not_applicable": "next_router"
+        },
+        {
+          "id": "refcond-vlm",
+          "kind": "model",
+          "model": "qwen-vl-max",
+          "prompt_profile": "fact-<fact_id>",
+          "default_verdict": "risk",
+          "status": "declared_not_run_in_D1_P3",
+          "why_not_run": "D1.P3 是离线零付费任务；模型路线的对照与校准属于 D1.R2/R3"
+        },
+        {
+          "id": "human",
+          "kind": "human",
+          "source": "human_fact_review.json",
+          "requires_explicit_signature": true
+        }
+      ]
+    },
+    {
+      "fact": "F3",
+      "routers": [
+        {
+          "id": "cylinder-v1",
+          "kind": "deterministic",
+          "metric_profile": "cylinder-v1",
+          "applies_when": {
+            "probe": "controlled_backdrop",
+            "params": {
+              "band": 0.18
+            },
+            "max_share": 0.02
+          },
+          "on_not_applicable": "next_router"
+        },
+        {
+          "id": "refcond-vlm",
+          "kind": "model",
+          "model": "qwen-vl-max",
+          "prompt_profile": "fact-<fact_id>",
+          "default_verdict": "risk",
+          "status": "declared_not_run_in_D1_P3",
+          "why_not_run": "D1.P3 是离线零付费任务；模型路线的对照与校准属于 D1.R2/R3"
+        },
+        {
+          "id": "human",
+          "kind": "human",
+          "source": "human_fact_review.json",
+          "requires_explicit_signature": true
+        }
+      ]
+    },
+    {
+      "fact": "F4",
+      "routers": [
+        {
+          "id": "cylinder-v1",
+          "kind": "deterministic",
+          "metric_profile": "cylinder-v1",
+          "applies_when": {
+            "probe": "controlled_backdrop",
+            "params": {
+              "band": 0.18
+            },
+            "max_share": 0.02
+          },
+          "on_not_applicable": "next_router"
+        },
+        {
+          "id": "refcond-vlm",
+          "kind": "model",
+          "model": "qwen-vl-max",
+          "prompt_profile": "fact-<fact_id>",
+          "default_verdict": "risk",
+          "status": "declared_not_run_in_D1_P3",
+          "why_not_run": "D1.P3 是离线零付费任务；模型路线的对照与校准属于 D1.R2/R3"
+        },
+        {
+          "id": "human",
+          "kind": "human",
+          "source": "human_fact_review.json",
+          "requires_explicit_signature": true
+        }
+      ]
+    },
+    {
+      "fact": "F5",
+      "routers": [
+        {
+          "id": "cylinder-v1",
+          "kind": "deterministic",
+          "metric_profile": "cylinder-v1",
+          "applies_when": {
+            "probe": "controlled_backdrop",
+            "params": {
+              "band": 0.18
+            },
+            "max_share": 0.02
+          },
+          "on_not_applicable": "next_router"
+        },
+        {
+          "id": "refcond-vlm",
+          "kind": "model",
+          "model": "qwen-vl-max",
+          "prompt_profile": "fact-<fact_id>",
+          "default_verdict": "risk",
+          "status": "declared_not_run_in_D1_P3",
+          "why_not_run": "D1.P3 是离线零付费任务；模型路线的对照与校准属于 D1.R2/R3"
+        },
+        {
+          "id": "human",
+          "kind": "human",
+          "source": "human_fact_review.json",
+          "requires_explicit_signature": true
+        }
+      ]
+    },
+    {
+      "fact": "F6",
+      "routers": [
+        {
+          "id": "cylinder-v1",
+          "kind": "deterministic",
+          "metric_profile": "cylinder-v1",
+          "applies_when": {
+            "probe": "controlled_backdrop",
+            "params": {
+              "band": 0.18
+            },
+            "max_share": 0.02
+          },
+          "on_not_applicable": "next_router"
+        },
+        {
+          "id": "refcond-vlm",
+          "kind": "model",
+          "model": "qwen-vl-max",
+          "prompt_profile": "fact-<fact_id>",
+          "default_verdict": "risk",
+          "status": "declared_not_run_in_D1_P3",
+          "why_not_run": "D1.P3 是离线零付费任务；模型路线的对照与校准属于 D1.R2/R3"
+        },
+        {
+          "id": "human",
+          "kind": "human",
+          "source": "human_fact_review.json",
+          "requires_explicit_signature": true
+        }
+      ]
+    },
+    {
+      "fact": "F7",
+      "routers": [
+        {
+          "id": "cylinder-v1",
+          "kind": "deterministic",
+          "metric_profile": "cylinder-v1",
+          "applies_when": {
+            "probe": "controlled_backdrop",
+            "params": {
+              "band": 0.18
+            },
+            "max_share": 0.02
+          },
+          "on_not_applicable": "next_router"
+        },
+        {
+          "id": "refcond-vlm",
+          "kind": "model",
+          "model": "qwen-vl-max",
+          "prompt_profile": "fact-<fact_id>",
+          "default_verdict": "risk",
+          "status": "declared_not_run_in_D1_P3",
+          "why_not_run": "D1.P3 是离线零付费任务；模型路线的对照与校准属于 D1.R2/R3"
+        },
+        {
+          "id": "human",
+          "kind": "human",
+          "source": "human_fact_review.json",
+          "requires_explicit_signature": true
+        }
+      ]
+    },
+    {
+      "fact": "F8",
+      "routers": [
+        {
+          "id": "human",
+          "kind": "human",
+          "source": "human_fact_review.json",
+          "requires_explicit_signature": true
+        }
+      ]
+    }
+  ]
+}

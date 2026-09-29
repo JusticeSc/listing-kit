@@ -1,0 +1,45 @@
+{
+  "checked_at": "2026-09-28T23:36:55",
+  "shot_with_candidate": "shot_a01723121e784a42",
+  "shot_without_candidate": "shot_4c42b251bac94547",
+  "retry_button_visible": true,
+  "retry_button_hidden_for_generated_shot": true,
+  "before": {
+    "ok": {
+      "candidates": [
+        "37c9519f4a6205a7341d61fa869e2657dfcb7e9e45bbabe0a0d1b746f2134596"
+      ],
+      "attempts": [
+        "SUCCEEDED"
+      ]
+    },
+    "empty": {
+      "candidates": [],
+      "attempts": [
+        "FAILED"
+      ]
+    }
+  },
+  "after": {
+    "ok": {
+      "candidates": [
+        "37c9519f4a6205a7341d61fa869e2657dfcb7e9e45bbabe0a0d1b746f2134596"
+      ],
+      "attempts": [
+        "SUCCEEDED"
+      ]
+    },
+    "empty": {
+      "candidates": [
+        "504034e9da532cc22b0db917d9d63b389d7591cd9de442ffe85fb14bef437b37"
+      ],
+      "attempts": [
+        "FAILED",
+        "SUCCEEDED"
+      ]
+    }
+  },
+  "provider_submissions_after_click": 1,
+  "failures": [],
+  "ok": true
+}

@@ -1,0 +1,294 @@
+[
+  {
+    "file": "evals\\product-demo\\fixture-design\\A\\raw.png",
+    "read_at": "2026-09-24T17:35:41+08:00",
+    "image_size": [
+      1344,
+      1344
+    ],
+    "diagnostics": {
+      "bg_rgb": [
+        217.0,
+        216.0,
+        215.0
+      ],
+      "bg_lum": 216.2,
+      "mask_area_share": 0.262
+    },
+    "metrics": {
+      "aspect_h_over_w": 2.688,
+      "body_upper_share": 0.6555,
+      "body_lower_share": 0.3445,
+      "upper_color_delta_e": 11.75,
+      "rib_count": 4,
+      "lid_share": 0.1,
+      "trim_span_count": 1,
+      "trim_share": 0.0127,
+      "trim_top_position": 0.1,
+      "bottom_spread_share": 0.0387,
+      "bottom_ring_present": 1,
+      "body_protrusion": 0.0581,
+      "extra_area_share": 0.0,
+      "text_proxy_blobs": 35
+    },
+    "object_size": [
+      439,
+      1180
+    ],
+    "F1_ratio": 0.372,
+    "F1_ratio_h_over_w": 2.688,
+    "F1_target": 3.1,
+    "F2F3_teal_share": 0.6555,
+    "F2F3_sleeve_share": 0.3445,
+    "F2F3_target_teal": 0.72,
+    "F3_rib_ridges_below_seam": 4,
+    "F3_rib_ridge_rows": [
+      [
+        871,
+        881
+      ],
+      [
+        896,
+        907
+      ],
+      [
+        921,
+        930
+      ],
+      [
+        945,
+        955
+      ]
+    ],
+    "F3_grooves_below_seam": 5,
+    "F3_sleeve_seam_row": 820,
+    "F3_bottom_ring_rows": [
+      [
+        1161,
+        1178
+      ]
+    ],
+    "F4_lid_share": 0.1,
+    "F4_limit": 0.2,
+    "F5_orange_share": 0.0127,
+    "F5_orange_top_share": 0.1,
+    "F5_orange_span_count": 1,
+    "F5_limit": 0.03,
+    "F6_bottom_spread_px": 17,
+    "F6_bottom_spread_share": 0.0387,
+    "F7_body_protrusion": 0.0581,
+    "F7_lid_overhang": 0.063,
+    "F7_extra_area_share": 0.0,
+    "F8_text_proxy_blobs": 35,
+    "measured_colors": {
+      "teal": "#2A5B5E",
+      "sleeve": "#38393A",
+      "orange": "#BB6948"
+    },
+    "design_colors": {
+      "teal": "#0F6B66",
+      "sleeve": "#252A2A",
+      "orange": "#D97A45"
+    },
+    "rows": {
+      "total": 1180,
+      "lid": 118,
+      "teal": 683,
+      "sleeve": 359,
+      "origin_y": 92,
+      "origin_x": 448
+    }
+  },
+  {
+    "file": "evals\\product-demo\\fixture-design\\B\\raw.png",
+    "read_at": "2026-09-24T17:35:41+08:00",
+    "image_size": [
+      1344,
+      1344
+    ],
+    "diagnostics": {
+      "bg_rgb": [
+        215.0,
+        213.0,
+        211.0
+      ],
+      "bg_lum": 213.4,
+      "mask_area_share": 0.2339
+    },
+    "metrics": {
+      "aspect_h_over_w": 2.886,
+      "body_upper_share": 0.6673,
+      "body_lower_share": 0.3327,
+      "upper_color_delta_e": 11.88,
+      "rib_count": 3,
+      "lid_share": 0.131,
+      "trim_span_count": 1,
+      "trim_share": 0.0138,
+      "trim_top_position": 0.131,
+      "bottom_spread_share": 0.0323,
+      "bottom_ring_present": 1,
+      "body_protrusion": 0.0447,
+      "extra_area_share": 0.0,
+      "text_proxy_blobs": 58
+    },
+    "object_size": [
+      402,
+      1160
+    ],
+    "F1_ratio": 0.347,
+    "F1_ratio_h_over_w": 2.886,
+    "F1_target": 3.1,
+    "F2F3_teal_share": 0.6673,
+    "F2F3_sleeve_share": 0.3327,
+    "F2F3_target_teal": 0.72,
+    "F3_rib_ridges_below_seam": 3,
+    "F3_rib_ridge_rows": [
+      [
+        892,
+        901
+      ],
+      [
+        943,
+        953
+      ],
+      [
+        974,
+        995
+      ]
+    ],
+    "F3_grooves_below_seam": 5,
+    "F3_sleeve_seam_row": 831,
+    "F3_bottom_ring_rows": [
+      [
+        1141,
+        1154
+      ]
+    ],
+    "F4_lid_share": 0.131,
+    "F4_limit": 0.2,
+    "F5_orange_share": 0.0138,
+    "F5_orange_top_share": 0.131,
+    "F5_orange_span_count": 1,
+    "F5_limit": 0.03,
+    "F6_bottom_spread_px": 13,
+    "F6_bottom_spread_share": 0.0323,
+    "F7_body_protrusion": 0.0447,
+    "F7_lid_overhang": 0.0579,
+    "F7_extra_area_share": 0.0,
+    "F8_text_proxy_blobs": 58,
+    "measured_colors": {
+      "teal": "#285859",
+      "sleeve": "#363636",
+      "orange": "#B96742"
+    },
+    "design_colors": {
+      "teal": "#0F6B66",
+      "sleeve": "#252A2A",
+      "orange": "#D97A45"
+    },
+    "rows": {
+      "total": 1160,
+      "lid": 152,
+      "teal": 656,
+      "sleeve": 327,
+      "origin_y": 108,
+      "origin_x": 468
+    }
+  },
+  {
+    "file": "evals\\product-demo\\fixture-design\\C\\raw.png",
+    "read_at": "2026-09-24T17:35:42+08:00",
+    "image_size": [
+      1344,
+      1344
+    ],
+    "diagnostics": {
+      "bg_rgb": [
+        210.0,
+        209.0,
+        206.0
+      ],
+      "bg_lum": 209.0,
+      "mask_area_share": 0.191
+    },
+    "metrics": {
+      "aspect_h_over_w": 3.182,
+      "body_upper_share": 0.6479,
+      "body_lower_share": 0.3521,
+      "upper_color_delta_e": 13.66,
+      "rib_count": 3,
+      "lid_share": 0.1259,
+      "trim_span_count": 1,
+      "trim_share": 0.0136,
+      "trim_top_position": 0.1259,
+      "bottom_spread_share": 0.0259,
+      "bottom_ring_present": 1,
+      "body_protrusion": 0.0242,
+      "extra_area_share": 0.0007,
+      "text_proxy_blobs": 53
+    },
+    "object_size": [
+      347,
+      1104
+    ],
+    "F1_ratio": 0.314,
+    "F1_ratio_h_over_w": 3.182,
+    "F1_target": 3.1,
+    "F2F3_teal_share": 0.6479,
+    "F2F3_sleeve_share": 0.3521,
+    "F2F3_target_teal": 0.72,
+    "F3_rib_ridges_below_seam": 3,
+    "F3_rib_ridge_rows": [
+      [
+        833,
+        841
+      ],
+      [
+        890,
+        897
+      ],
+      [
+        944,
+        951
+      ]
+    ],
+    "F3_grooves_below_seam": 4,
+    "F3_sleeve_seam_row": 770,
+    "F3_bottom_ring_rows": [
+      [
+        1079,
+        1098
+      ]
+    ],
+    "F4_lid_share": 0.1259,
+    "F4_limit": 0.2,
+    "F5_orange_share": 0.0136,
+    "F5_orange_top_share": 0.1259,
+    "F5_orange_span_count": 1,
+    "F5_limit": 0.03,
+    "F6_bottom_spread_px": 9,
+    "F6_bottom_spread_share": 0.0259,
+    "F7_body_protrusion": 0.0242,
+    "F7_lid_overhang": 0.0483,
+    "F7_extra_area_share": 0.0007,
+    "F8_text_proxy_blobs": 53,
+    "measured_colors": {
+      "teal": "#23555A",
+      "sleeve": "#353636",
+      "orange": "#A85B3B"
+    },
+    "design_colors": {
+      "teal": "#0F6B66",
+      "sleeve": "#252A2A",
+      "orange": "#D97A45"
+    },
+    "rows": {
+      "total": 1104,
+      "lid": 139,
+      "teal": 611,
+      "sleeve": 332,
+      "origin_y": 144,
+      "origin_x": 496
+    }
+  }
+]

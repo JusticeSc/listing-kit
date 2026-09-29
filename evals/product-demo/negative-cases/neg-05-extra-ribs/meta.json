@@ -1,0 +1,39 @@
+{
+  "case_id": "neg-05-extra-ribs",
+  "mutation_class": "改数量",
+  "description": "在防滑套上另画两道亮凸脊，筋条数量由 3 变 5",
+  "source": "evals/product-demo/fixture-design/C/raw.png",
+  "source_sha256": "e1b1c5de1ee6b50a69fb8e431f1140d8c21a689f4fe3316461c02745139d03f6",
+  "output": "negative-cases/neg-05-extra-ribs/raw.png",
+  "output_sha256": "ff726a05cd7621b8d69dfcbd56eb0d34e3996b314453693bdbaf3598703d253e",
+  "output_bytes": 1151292,
+  "image_size": [
+    1344,
+    1344
+  ],
+  "changed_pixels": 5038,
+  "params": {
+    "bands_crop_rows": [
+      [
+        982,
+        989
+      ],
+      [
+        1008,
+        1015
+      ]
+    ],
+    "rib_window": [
+      782,
+      1042
+    ],
+    "fill_rgb": [
+      70,
+      70,
+      70
+    ],
+    "painted_pixels": 5040
+  },
+  "generated_at": "2026-09-25T23:17:44+08:00",
+  "model_calls": 0
+}

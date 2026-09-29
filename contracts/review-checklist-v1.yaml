@@ -1,0 +1,160 @@
+# =============================================================================
+# 人工事实清单（Review Checklist V1）
+#
+# 这份文件回答的是：**这张候选图，人要看哪几件事、每件事要看到什么才算有依据。**
+#
+# 三个分栏不是排版，是**后果不同**：
+#   critical_fact      错了就是错 —— 计划 §3.1 列的七类关键错误（除平台那条）
+#   platform_hard_rule 平台硬线（主图背景、主体占比、图上禁用内容……）
+#   aesthetic          只影响排序与返工建议
+# 前两栏是 blocking（fail / unknown / 没判 → 不许接受），第三栏**永远不阻断接受**。
+# 「审美高分不能抵消事实失败」就是靠这个分栏落地的，不是靠某处写一句提醒。
+#
+# 这份文件**不另写规则**：平台栏每一条都指向已有的权威 ——
+#   rule_ref   → src/validators.py 的 KNOWN_RULES（已实现的确定性校验）
+#   config_ref → config/brand.json 的键
+#   attest_ref → src/intake.py 的 ATTEST_ITEMS 与两个条件签字项
+# 指向不存在的规则名，校验会直接报错：这正是本项目踩过的「声明了校验但静默跳过」。
+# KNOWN_RULES 里新增一条而没有在这里落项（或没写进 rule_exclusions 说明为什么不落），
+# 同样会报错 —— 让"新加校验忘了配人工清单"变成红灯，而不是一句口头约定。
+#
+# 版本号由内容算出（`rcv1-<前 12 位>`），见 `src/review_contract.py`；不手写。
+# =============================================================================
+schema: review-checklist/v1
+updated_at: 2026-09-23
+
+sections:
+  critical_fact:
+    label: 关键事实
+    blocks_accept: true
+    why: 计划 §3.1 的关键商品事实错误 —— 不能被审美分抵消
+  platform_hard_rule:
+    label: 平台硬违规
+    blocks_accept: true
+    why: 平台硬线 + 图上禁用内容；机器能判的给机器判据，机器判不了的走签字项
+  aesthetic:
+    label: 审美偏好
+    blocks_accept: false
+    why: 只影响排序与返工建议；审美满分不能抵消事实失败，审美不过也不阻断接受
+
+# 每项的结论取值域
+outcomes: [pass, fail, unknown, not_applicable]
+
+evidence_kinds:
+  authority_facts: 权威商品事实（src/product_facts.py 的 ProductFacts）
+  candidate_image: 候选图本身（人看图）
+  deterministic_check: 已实现的确定性校验结果（src/validators.py 的 KNOWN_RULES）
+  attest_item: 已登记的人工签字项（src/intake.py）
+  brand_config: 品牌配置（config/brand.json）
+  human_judgement: 人的审美判断
+
+# 规则名全覆盖检查时，哪些确定性规则**故意**不落人工项。有理由的排除不是漏项。
+rule_exclusions:
+  text_present: 确认叠字确实渲染上去了 —— 这是渲染器自检，不是平台硬线
+  file_size: 交付包体积上限，归导出阶段
+  filename_has_upc: 文件命名，归导出阶段
+
+items:
+  # ---------------------------- 关键事实（计划 §3.1 第 1–5、7 条）----------------------------
+  - id: cf.structure
+    section: critical_fact
+    plan_refs: ["§3.1-1"]
+    question: 商品轮廓 / 部件 / 开口 / 盖子 / 手柄 / 接口等结构与权威资料一致吗
+    evidence: [authority_facts, candidate_image]
+  - id: cf.quantity
+    section: critical_fact
+    plan_refs: ["§3.1-2"]
+    question: 数量、套装构成、配件与权威资料一致吗
+    evidence: [authority_facts, candidate_image]
+  - id: cf.appearance
+    section: critical_fact
+    plan_refs: ["§3.1-3"]
+    question: 主色、图案、Logo、标签和包装文字与权威资料一致吗
+    evidence: [authority_facts, candidate_image]
+  - id: cf.spec_claim
+    section: critical_fact
+    plan_refs: ["§3.1-4"]
+    question: 尺寸 / 容量 / 材质 / 兼容性等事实性表达有出处吗
+    evidence: [authority_facts, candidate_image]
+  - id: cf.composition
+    section: critical_fact
+    plan_refs: ["§3.1-5"]
+    question: 有没有凭空增加、删除或替换商品组成
+    evidence: [authority_facts, candidate_image]
+  - id: cf.claim_truth
+    section: critical_fact
+    plan_refs: ["§3.1-7"]
+    question: 画面或文字里有没有 ProductFacts 中不存在的卖点或承诺
+    evidence: [authority_facts, candidate_image]
+
+  # ---------------------------- 平台硬违规（计划 §3.1 第 6 条）----------------------------
+  - id: pr.white_bg
+    section: platform_hard_rule
+    plan_refs: ["§3.1-6"]
+    question: 主图背景是否纯白
+    evidence: [deterministic_check, candidate_image]
+    rule_ref: white_bg_purity
+  - id: pr.product_fill
+    section: platform_hard_rule
+    plan_refs: ["§3.1-6"]
+    question: 主体占画面比例是否达到类目要求
+    evidence: [deterministic_check, candidate_image]
+    rule_ref: product_fill
+  - id: pr.no_text_or_mark
+    section: platform_hard_rule
+    plan_refs: ["§3.1-6"]
+    question: 主图边缘带是否没有文字 / 水印 / 角标
+    evidence: [deterministic_check, candidate_image]
+    rule_ref: has_text_block
+  - id: pr.edge_clean
+    section: platform_hard_rule
+    plan_refs: ["§3.1-6"]
+    question: 边缘带是否干净（贴边水印、边框）
+    evidence: [deterministic_check, candidate_image]
+    rule_ref: edge_clean
+  - id: pr.aspect_ratio
+    section: platform_hard_rule
+    plan_refs: ["§3.1-6"]
+    question: 是否 1:1（平台主图要求）
+    evidence: [deterministic_check]
+    rule_ref: aspect_ratio
+  - id: pr.long_side
+    section: platform_hard_rule
+    plan_refs: ["§3.1-6"]
+    question: 最长边是否达到平台下限（放大后可读）
+    evidence: [deterministic_check]
+    rule_ref: long_side_px
+  - id: pr.forbidden_on_image
+    section: platform_hard_rule
+    plan_refs: ["§3.1-6"]
+    question: 图上有没有出现 forbidden_on_image 里的内容（品牌词 / 价格 / 二维码 / 站外链接……）
+    evidence: [brand_config, candidate_image]
+    config_ref: forbidden_on_image
+  - id: pr.source_watermark
+    section: platform_hard_rule
+    plan_refs: ["§3.1-6"]
+    question: 原片有没有水印 / 平台标识 / 用户 ID（机器判不了，靠签字）
+    evidence: [attest_item]
+    attest_ref: no_watermark
+  - id: pr.competitor_clean
+    section: platform_hard_rule
+    plan_refs: ["§3.1-6"]
+    question: 并排的竞品图里有没有竞品品牌名 / logo / 水印（只有位置 7 把那图派上用场时才适用）
+    evidence: [attest_item]
+    attest_ref: competitor_clean
+    conditional: true
+    na_allowed: true
+
+  # ---------------------------- 审美偏好（不阻断接受）----------------------------
+  - id: ae.composition
+    section: aesthetic
+    question: 构图是否舒服（主体位置、留白、视觉重心）
+    evidence: [candidate_image, human_judgement]
+  - id: ae.lighting
+    section: aesthetic
+    question: 光影与材质质感是否可信、好看
+    evidence: [candidate_image, human_judgement]
+  - id: ae.category_fit
+    section: aesthetic
+    question: 风格是否贴合该品类的调性
+    evidence: [candidate_image, human_judgement]

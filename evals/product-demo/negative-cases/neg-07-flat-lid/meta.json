@@ -1,0 +1,26 @@
+{
+  "case_id": "neg-07-flat-lid",
+  "mutation_class": "改结构",
+  "description": "把杯盖顶部的两级阶梯抹平成一个平顶，盖高与配色都不变",
+  "source": "evals/product-demo/fixture-design/C/raw.png",
+  "source_sha256": "e1b1c5de1ee6b50a69fb8e431f1140d8c21a689f4fe3316461c02745139d03f6",
+  "output": "negative-cases/neg-07-flat-lid/raw.png",
+  "output_sha256": "fdc2674c0e1125bb2ff09792201ac8e48f5529715d2367ccd0dd12c30f1a915b",
+  "output_bytes": 1139616,
+  "image_size": [
+    1344,
+    1344
+  ],
+  "changed_pixels": 15111,
+  "params": {
+    "flattened_rows": 63,
+    "lid_rows": 139,
+    "fill_rgb": [
+      58,
+      61,
+      63
+    ]
+  },
+  "generated_at": "2026-09-25T23:17:44+08:00",
+  "model_calls": 0
+}

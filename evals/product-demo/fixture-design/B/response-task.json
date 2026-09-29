@@ -1,0 +1,33 @@
+{
+  "request_id": "f37d6e7e-5a85-99d6-890c-86dbe01fc877",
+  "output": {
+    "task_id": "e91b8a7f-6ca5-4e53-922f-251ecb740dd1",
+    "task_status": "SUCCEEDED",
+    "submit_time": "2026-09-24 13:16:05.316",
+    "scheduled_time": "2026-09-24 13:16:05.410",
+    "end_time": "2026-09-24 13:16:12.067",
+    "rewrite_status": "not_use",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "message": {
+          "role": "assistant",
+          "content": [
+            {
+              "image": "https://dashscope-a717.oss-accelerate.aliyuncs.com/<redacted-path>?<redacted-query>",
+              "type": "image"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "usage": {
+    "output_width": 1344,
+    "input_image_count": 0,
+    "input_image_type": "qima_input_1k",
+    "output_image_count": 1,
+    "output_image_type": "qima_output_1k",
+    "output_height": 1344
+  }
+}

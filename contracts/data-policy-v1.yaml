@@ -1,0 +1,71 @@
+# =============================================================================
+# 数据外发政策（Data Policy V1）
+#
+# 这份文件回答一个问题：**这一份素材，能不能发给这个供应商、这个模型、做这件事。**
+#
+# 它是「外发授权语义」的唯一权威。别的文件（product.json 的 attest、计划、README、
+# 状态记录）只许**引用**它，不许各写一份 —— 授权语义有两份，就有两份会各自漂。
+#
+# 为什么默认是 unapproved / denied，而不是 allowed：
+#   默认允许意味着"忘了写就等于批准"。外发动作一旦发出去就收不回来，
+#   所以这里 fail-closed：没有命中一条**写死的规则**，就不许发。
+#
+# 为什么密钥不在这里：
+#   这份文件会进版本库、还要进交付包的追溯清单。API key 一律走环境变量；
+#   `src/data_policy.py` 的校验只要看到 key / secret / token / password 这类键，
+#   或看起来像密钥的值，就直接报错、拒绝加载。
+#
+# 版本号在哪：
+#   `policy_version`（形如 dpv1-xxxxxxxxxxxx）由**文件内容**算出，不手写 ——
+#   手写的版本号迟早会和内容对不上。取法见 `src/data_policy.py`；
+#   每次决策都会带上它，所以"当时批的是哪一版"能事后对回来。
+#   但光有版本号不够：「当时批的原文是什么」得有地方存。所以每一版的内容归档在
+#   `contracts/data-policy-versions/<版本号>.yaml`；把归档重新算一遍必须得出同一个
+#   版本号。签署与归档的入口是 `tools/sign_allowlist.py`，
+#   判据在 `tools/verify_p1_2_policy.py` 的 I 段。
+# 和计划 §7.2 的关系：
+#   真实 provider 首次启用前，除了这份 allowlist，还要按计划 §7.2 登记「外部动作权限卡」。
+#   卡里的 allowed_data_classes / approver_or_policy 两项，出处就是本文件的 asset_class 与 rules；
+#   其余字段（幂等键、超时含义、重试上限、成本上限、对账方式、回滚）归 Phase 2 —— 不在这里造。
+#
+# 这份文件怎么改（正文由 `tools/sign_allowlist.py` 维护，所以说明只写在头部）：
+#   签署      `signed_by` / `signed_at` 由签署动作写。**未签（null）时，下面规则表里写的
+#             allowed 一条都不生效** —— 全部按 unapproved 处理。这不是装饰：计划 P1.2 的
+#             完成证据就是"用户签署 allowlist"，那一次签字落在这里。
+#   素材类别  闭集，`default` 只许写 unapproved 或 denied —— 写 allowed 会被校验拦下：
+#             默认放行等于这道门不存在。人像 / 竞品图属于 V1 范围外（计划 §1.3），默认
+#             denied，而且**必须逐条单独授权**：规则键要写死到具体 provider + model，
+#             所以"一条规则把它们捎带放行"在结构上写不出来。
+#   用途      闭集（`purposes`）：同一份素材，做不同的事，授权是两件事。
+#   规则表    `rules` 空表 = 一条外发都不允许。一条规则就是一句"谁、哪天、批准了谁，
+#             对哪类素材做哪件事，到哪天为止，怎么删"。键 = 素材类别 × provider ×
+#             model × 用途，四个字段**都要写具体值**：不允许 "*" 这类通配 —— 通配会让
+#             "哪一条说了算"变成运气，也让"单独授权"变成一句空话。
+#             字段：id（唯一短名，审计记录引它）/ asset_class / purpose / provider /
+#             model / decision（allowed·denied·unapproved）/ approver（allowed 必填）/
+#             approved_at（allowed 必填，YYYY-MM-DD）/ expires_at（可选，过期即按
+#             unapproved 处理）/ retention（保留删除约束原文，必填）/ notes。
+#   正文里写的注释会被重写吃掉，所以话都写在头部。
+# =============================================================================
+schema: data-policy/v1
+updated_at: 2026-09-23
+signed_by: null
+signed_at: null
+asset_classes:
+  product_reference:
+    label: 商品参考图（front / closeup / contents 等原图）
+    default: unapproved
+  candidate:
+    label: 系统产出的候选图（送去外部做风险复核）
+    default: unapproved
+  portrait:
+    label: 人像 / 人物模特图（V1 范围外，需单独授权才允许）
+    default: denied
+  competitor:
+    label: 竞品图（V1 范围外，需单独授权才允许）
+    default: denied
+purposes:
+  reference_image_generation: 用商品参考图做图生图（生成优先路线的首个用途）
+  candidate_review: 把候选图送去外部做风险复核
+  source_image_upload: 把原始素材上传到供应商做处理
+rules: []

@@ -1,0 +1,12 @@
+{
+  "schema": "amz-listing-kit/eval-dataset@1",
+  "updated_at": "2026-09-23",
+  "labelers": [],
+  "active_label_version": null,
+  "label_versions": {},
+  "notes": [
+    "labelers 为空 = 现在还没有人对这套样本负责判定。空着是实话，填样例是假话。",
+    "标签文件只新增版本、不就地改：跑 tools/freeze_dataset_labels.py 冻版本，版本号由内容算出（gcv1-<前 12 位>）。",
+    "只有 source_kind=pilot 的样本进 G1 覆盖统计 —— 样例可以进数据集，但不能拿来证明产品在真实样本上可用。"
+  ]
+}

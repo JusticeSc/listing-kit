@@ -1,0 +1,16 @@
+{
+  "stamp": "20260929-142330",
+  "source_hits": {
+    "index.html": [],
+    "product.js": [],
+    "styles.css": [],
+    "product_v1_server.py": []
+  },
+  "frontend_legacy_endpoint_calls": [],
+  "launcher_uses_formal_entry": true,
+  "served_mismatches": [],
+  "missing_screen_ids": [],
+  "external_offline_requests": [],
+  "failures": [],
+  "passed": true
+}

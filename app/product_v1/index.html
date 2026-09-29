@@ -1,0 +1,409 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f8f9f7">
+  <title>商品套图工作台</title>
+  <link rel="stylesheet" href="/product-assets/styles.css">
+  <script src="/product-assets/product.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <button id="brand-home" class="brand" type="button" aria-label="返回工作空间首页">Listing Studio</button>
+    <div class="top-actions">
+      <span class="local-status"><span class="status-dot" aria-hidden="true"></span>本机工作空间</span>
+      <button id="top-open-workspace" class="button button-secondary button-compact" type="button">打开工作空间</button>
+      <button id="top-create-workspace" class="button button-primary button-compact" type="button">新建套图</button>
+    </div>
+  </header>
+
+  <main class="app-main">
+    <div id="app-notice" class="notice" role="status" aria-live="polite" hidden></div>
+
+    <section id="home-screen" class="home-screen" aria-labelledby="home-title">
+      <div class="home-heading">
+        <p class="eyebrow">商品图片生产工作空间</p>
+        <h1 id="home-title" tabindex="-1">从商品资料，到一套可交付的图片</h1>
+        <p class="home-lede">系统先准备完整方案和默认设置；你只在需要时调整某张图。</p>
+      </div>
+
+      <div class="home-actions" aria-label="工作空间操作">
+        <button id="create-workspace" class="button button-primary" type="button">
+          新建商品套图
+        </button>
+        <button id="open-workspace" class="button button-secondary" type="button">打开已有工作空间</button>
+      </div>
+
+      <section class="recent-section" aria-labelledby="recent-title">
+        <div class="section-title-row">
+          <div>
+            <p class="eyebrow">最近使用</p>
+            <h2 id="recent-title">继续上次工作</h2>
+          </div>
+          <span id="recent-count" class="muted-count"></span>
+        </div>
+        <div id="recent-list" class="recent-list" aria-live="polite" aria-busy="true">
+          <p class="empty-recent">正在读取最近工作空间…</p>
+        </div>
+      </section>
+    </section>
+
+    <section id="intake-screen" class="intake-screen" aria-labelledby="intake-title" hidden>
+      <div class="workspace-head">
+        <button id="back-home" class="back-button" type="button" aria-label="返回所有工作空间">←</button>
+        <div class="workspace-identity">
+          <p id="workspace-status" class="workspace-status">新工作空间</p>
+          <h1 id="workspace-name" class="workspace-name" tabindex="-1">未命名商品</h1>
+        </div>
+        <nav id="workspace-stage" class="stage-nav" aria-label="当前任务阶段">
+          <span class="stage current" data-stage="intake">1 商品资料</span>
+          <span class="stage-divider" aria-hidden="true">—</span>
+          <span class="stage" data-stage="plan">2 套图方案</span>
+          <span class="stage-divider" aria-hidden="true">—</span>
+          <span class="stage" data-stage="review">3 选图导出</span>
+        </nav>
+        <span class="market-badge"><span>目标站点</span>Amazon US</span>
+      </div>
+
+      <div class="intake-heading">
+        <div class="step-number" aria-hidden="true">01</div>
+        <div>
+          <p class="eyebrow">PRODUCT INPUT</p>
+          <h2 id="intake-title">商品资料</h2>
+          <p class="intake-lede">先放入商品图和已确认的信息。</p>
+        </div>
+      </div>
+
+        <form id="product-intake-form" class="intake-form" action="/api/intake" method="post" enctype="multipart/form-data" novalidate>
+        <input type="hidden" id="workspace-directory" name="directory">
+        <input type="hidden" id="workspace-revision" name="expected_etag">
+
+        <div class="form-grid">
+          <fieldset class="image-fieldset">
+            <legend>商品参考图 <span class="required-tag">必填 · 1–3 张</span></legend>
+            <p id="image-help" class="field-help">第一张是主要参考，用来保持商品身份；其余补充角度或细节。</p>
+            <div id="saved-images" class="saved-images" aria-live="polite"></div>
+            <label id="upload-zone" class="upload-zone" for="reference-images">
+              <span class="upload-icon" aria-hidden="true">＋</span>
+              <span class="upload-title">添加图片</span>
+              <span class="upload-subtitle">JPG、PNG、TIFF 或 GIF，最多 3 张</span>
+            </label>
+            <input id="reference-images" class="visually-hidden" type="file" name="reference_images"
+                   accept="image/jpeg,image/png,image/tiff,image/gif" multiple
+                   aria-describedby="image-help image-selection image-error">
+            <p id="image-selection" class="image-selection" aria-live="polite"></p>
+            <p id="image-error" class="field-error" role="alert" hidden></p>
+          </fieldset>
+
+          <div class="details-column">
+            <div class="field-group">
+              <label for="product-name">商品名称 <span class="required-tag">必填</span></label>
+              <input id="product-name" name="product_name" type="text" maxlength="160" required
+                     autocomplete="off" aria-describedby="product-name-help product-name-error">
+              <p id="product-name-help" class="field-help">用你平时识别这个商品的名称即可。</p>
+              <p id="product-name-error" class="field-error" role="alert" hidden></p>
+            </div>
+
+            <div class="field-group">
+              <label for="product-description">商品介绍 <span class="optional-tag">选填</span></label>
+              <textarea id="product-description" name="description" rows="4" maxlength="4000"
+                        aria-describedby="description-help"></textarea>
+              <p id="description-help" class="field-help">补充材质、规格、用途等已知信息。</p>
+            </div>
+
+            <div class="field-group">
+              <label for="selling-points">真实卖点 <span class="optional-tag">选填</span></label>
+              <textarea id="selling-points" name="selling_points" rows="4" maxlength="3000"
+                        aria-describedby="selling-points-help"></textarea>
+              <p id="selling-points-help" class="field-help">每行写一条；只填有依据、可确认的内容。</p>
+            </div>
+
+            <div class="field-group field-group-last">
+              <label for="user-intent">本次重点 <span class="optional-tag">选填</span></label>
+              <textarea id="user-intent" name="user_intent" rows="3" maxlength="1500"
+                        aria-describedby="user-intent-help"></textarea>
+              <p id="user-intent-help" class="field-help">例如：想突出轻便，避免出现户外场景。</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-footer">
+          <p id="save-state" class="save-state" role="status" aria-live="polite">资料会随动作一起保存到工作空间文件夹。</p>
+          <div class="form-actions">
+            <button id="preview-plan" class="button button-secondary" type="button">先看方案</button>
+            <button id="generate-suite" class="button button-primary save-button" type="submit">生成整套图片</button>
+          </div>
+        </div>
+      </form>
+
+      <section id="brief-workspace" class="brief-workspace" aria-labelledby="brief-title" aria-busy="false" hidden>
+        <div class="brief-heading">
+          <div class="step-number" aria-hidden="true">02</div>
+          <div>
+            <p class="eyebrow">PRODUCT BRIEF</p>
+            <h2 id="brief-title">核对商品理解</h2>
+            <p class="intake-lede">检查商品事实和画面边界；修正后保存为新版本。</p>
+          </div>
+        </div>
+
+        <p id="brief-status" class="brief-status" role="status" aria-live="polite" hidden></p>
+        <p id="brief-provenance" class="brief-provenance" hidden></p>
+        <p id="brief-interpretation-help" class="brief-notice">模型推断先待核对；只有你明确确认后才会成为已确认事实。</p>
+
+        <form id="product-brief-form" class="brief-form" action="/api/product-brief" method="post" hidden>
+          <input type="hidden" id="brief-category-confidence" name="category_confidence">
+          <input type="hidden" id="brief-category-source" name="category_source">
+          <fieldset class="brief-category">
+            <legend>商品类别</legend>
+            <label for="brief-category">模型建议，可修改</label>
+            <input id="brief-category" name="category_label" type="text" maxlength="160" autocomplete="off"
+                   aria-describedby="brief-category-origin brief-interpretation-help">
+            <p id="brief-category-origin" class="source-label" aria-live="polite"></p>
+          </fieldset>
+
+          <fieldset class="brief-facts-fieldset">
+            <legend>商品事实</legend>
+            <div id="brief-facts" class="brief-facts"></div>
+          </fieldset>
+
+          <div class="brief-rules-grid">
+            <fieldset class="brief-rule">
+              <legend><label for="brief-must-preserve">必须保持</label></legend>
+              <textarea id="brief-must-preserve" name="must_preserve" rows="3" aria-describedby="brief-list-help"></textarea>
+            </fieldset>
+            <fieldset class="brief-rule">
+              <legend><label for="brief-may-change">允许调整</label></legend>
+              <textarea id="brief-may-change" name="may_change" rows="3" aria-describedby="brief-list-help"></textarea>
+            </fieldset>
+            <fieldset class="brief-rule">
+              <legend><label for="brief-unknowns">待确认</label></legend>
+              <textarea id="brief-unknowns" name="unknowns" rows="3" aria-describedby="brief-list-help"></textarea>
+            </fieldset>
+          </div>
+          <p id="brief-list-help" class="field-help">每行一项；不确定的商品信息留在“待确认”，不要猜填。</p>
+
+          <div class="form-footer brief-footer">
+            <p id="brief-save-state" class="save-state" role="status" aria-live="polite">保存后会保留旧版本。</p>
+            <button id="save-brief" class="button button-primary" type="submit">保存商品理解</button>
+          </div>
+        </form>
+      </section>
+
+      <section id="plan-workspace" class="plan-workspace" aria-labelledby="plan-title" hidden>
+        <div class="plan-heading">
+          <div class="step-number" aria-hidden="true">03</div>
+          <div>
+            <p class="eyebrow">IMAGE SET</p>
+            <h2 id="plan-title">套图方案</h2>
+            <p id="plan-summary" class="intake-lede">根据已保存的商品理解生成。</p>
+          </div>
+        </div>
+
+        <p id="plan-status" class="plan-status" role="status" aria-live="polite" hidden></p>
+        <section id="plan-style" class="plan-style" aria-labelledby="plan-style-title" hidden>
+          <div class="plan-style-heading">
+            <h3 id="plan-style-title">整组视觉方向</h3>
+            <span id="plan-version" class="version-chip"></span>
+          </div>
+          <div id="plan-style-content" class="plan-style-content"></div>
+        </section>
+
+        <form id="plan-adjustment-form" class="plan-adjustment-form" action="/api/plan" method="post" hidden>
+          <div id="plan-shots" class="plan-shots"></div>
+        </form>
+
+        <div class="form-footer plan-footer">
+          <p id="plan-save-state" class="save-state" role="status" aria-live="polite">默认方案可以直接使用；只有需要时再调整。</p>
+          <div class="form-actions">
+            <button id="save-plan" class="button button-secondary" type="submit" form="plan-adjustment-form" disabled>保存方案调整</button>
+            <button id="generate-from-plan" class="button button-primary" type="button">按此方案生成</button>
+          </div>
+        </div>
+
+        <section id="generation-workspace" class="generation-workspace" aria-labelledby="generation-title" aria-busy="false" hidden>
+          <div class="generation-heading">
+            <div>
+              <h3 id="generation-title">生成结果</h3>
+              <p class="generation-lede">生成整套图片后，这里会逐张显示进度和结果。</p>
+            </div>
+            <div class="generation-actions">
+              <button id="reconcile-generation" class="button button-secondary" type="button" hidden>核对当前生成状态</button>
+              <button id="refresh-generation" class="button button-secondary" type="button" hidden>重新载入状态</button>
+            </div>
+          </div>
+          <p id="generation-hint" class="generation-hint" hidden></p>
+          <p id="generation-status" class="generation-status" role="status" aria-live="polite" hidden></p>
+          <div id="review-workbench" class="review-workbench" hidden>
+            <div id="generation-shots" class="review-strip" role="tablist"
+                 aria-label="套图缩略条"></div>
+            <div class="review-stage">
+              <figure class="review-canvas">
+                <img id="review-image" alt="" hidden>
+                <p id="review-empty" class="review-empty">生成整套图片后，这里会显示当前图片的大图。</p>
+                <figcaption id="review-caption" class="review-caption"></figcaption>
+              </figure>
+              <aside class="review-decision" aria-label="当前图片的决定">
+                <header class="review-decision-header">
+                  <h4 id="review-shot-title">尚未生成</h4>
+                  <span id="review-shot-state" class="generation-state"></span>
+                </header>
+                <div id="review-candidates" class="review-candidates"></div>
+                <p id="review-error" class="generation-error" hidden></p>
+                <div class="review-actions">
+                  <button id="review-adopt" class="button button-primary" type="button" disabled>采用此图</button>
+                  <button id="review-rework" class="button button-secondary generation-rework"
+                          type="button" hidden>重做这张</button>
+                  <button id="review-retry" class="button button-secondary generation-retry"
+                          type="button" hidden>重新生成这张</button>
+                  <button id="review-prompt" class="button button-secondary" type="button" hidden>查看和编辑完整提示词</button>
+                </div>
+                <details id="review-records" class="review-records" hidden>
+                  <summary>查看生成记录</summary>
+                  <ol id="review-attempts" class="generation-attempts"></ol>
+                </details>
+              </aside>
+            </div>
+          </div>
+
+          <section id="selection-panel" class="selection-panel" aria-labelledby="selection-title" hidden>
+            <div class="section-title-row">
+              <h3 id="selection-title">成品与导出</h3>
+              <span id="selection-progress" class="muted-count"></span>
+            </div>
+            <p id="selection-hint" class="field-help"></p>
+            <div class="generation-actions selection-actions">
+              <button id="export-selection" class="button button-primary" type="button" disabled>检查并导出</button>
+            </div>
+            <p id="selection-status" class="generation-status" role="status" aria-live="polite" hidden></p>
+          </section>
+        </section>
+      </section>
+    </section>
+
+    <section id="delivery-screen" class="delivery-screen" aria-labelledby="delivery-title" hidden>
+      <header class="delivery-header">
+        <div>
+          <p class="eyebrow">DELIVERY CHECK</p>
+          <h2 id="delivery-title" tabindex="-1">交付检查</h2>
+          <p class="delivery-lede">只显示会影响交付的检查和最终内容；导出会生成新的版本，不覆盖旧交付包。</p>
+        </div>
+        <button id="delivery-back" class="button button-secondary" type="button">返回审核</button>
+      </header>
+      <p id="delivery-status" class="generation-status" role="status" aria-live="polite" hidden></p>
+      <section id="delivery-blockers" class="delivery-section" aria-labelledby="delivery-blockers-title" hidden>
+        <h3 id="delivery-blockers-title">还不能导出</h3>
+        <ul id="delivery-blocker-list" class="delivery-issues"></ul>
+      </section>
+      <section id="delivery-consistency" class="delivery-section" aria-labelledby="delivery-consistency-title" hidden>
+        <h3 id="delivery-consistency-title">一致性问题</h3>
+        <ul id="delivery-consistency-list" class="delivery-issues"></ul>
+        <label class="delivery-ack">
+          <input id="delivery-ack" type="checkbox">
+          我已知悉：README 与追溯清单会记录以上不一致，仍按当前选择导出。
+        </label>
+      </section>
+      <section class="delivery-section" aria-labelledby="delivery-selected-title">
+        <h3 id="delivery-selected-title">已选图片</h3>
+        <p id="delivery-selected-empty" class="field-help" hidden>还没有选定任何图片；返回审核后逐张采用候选。</p>
+        <ul id="delivery-selected" class="delivery-selected"></ul>
+      </section>
+      <section class="delivery-section" aria-labelledby="delivery-hard-title">
+        <h3 id="delivery-hard-title">硬检查</h3>
+        <ul id="delivery-hard-list" class="delivery-issues"></ul>
+      </section>
+      <section id="delivery-notes" class="delivery-section" aria-labelledby="delivery-notes-title" hidden>
+        <h3 id="delivery-notes-title">需人工确认（非硬性规则）</h3>
+        <ul id="delivery-notes-list" class="delivery-issues"></ul>
+      </section>
+      <section class="delivery-section" aria-labelledby="delivery-manifest-title">
+        <h3 id="delivery-manifest-title">追溯清单与导出位置</h3>
+        <p id="delivery-manifest" class="delivery-manifest"></p>
+        <p id="delivery-location" class="delivery-location"></p>
+      </section>
+      <div class="generation-actions delivery-actions">
+        <button id="export-delivery" class="button button-primary" type="button" disabled>导出交付包</button>
+        <button id="reveal-export" class="button button-secondary" type="button" hidden>打开文件夹</button>
+      </div>
+      <div id="export-summary" class="export-summary" hidden></div>
+    </section>
+  </main>
+
+  <dialog id="rework-dialog" class="prompt-dialog rework-dialog" aria-labelledby="rework-dialog-title">
+    <header class="prompt-dialog-header">
+      <div>
+        <p class="eyebrow">REWORK ONE IMAGE</p>
+        <h2 id="rework-dialog-title">重做这张</h2>
+        <p id="rework-dialog-meta" class="prompt-meta"></p>
+      </div>
+      <form method="dialog">
+        <button class="icon-button" type="submit" value="close" aria-label="关闭返工">×</button>
+      </form>
+    </header>
+    <div id="rework-form">
+      <fieldset id="rework-reasons" class="rework-reasons">
+        <legend>哪里不满意（可多选）</legend>
+        <label><input type="checkbox" name="rework-reason" value="product-fidelity"> 商品不像原图</label>
+        <label><input type="checkbox" name="rework-reason" value="scene-background"> 场景/背景不合适</label>
+        <label><input type="checkbox" name="rework-reason" value="composition-size"> 构图或产品大小不合适</label>
+        <label><input type="checkbox" name="rework-reason" value="light-color"> 光线/颜色不合适</label>
+        <label><input type="checkbox" name="rework-reason" value="copy-text"> 文字或信息有问题</label>
+      </fieldset>
+      <label for="rework-direction">还想怎么改（选填，最多 500 字）</label>
+      <textarea id="rework-direction" rows="3" maxlength="500"
+                placeholder="例如：换成带窗边的浅色木桌，商品保持在画面中央"></textarea>
+      <div id="rework-preview" class="rework-preview" hidden>
+        <div class="rework-preview-columns">
+          <div>
+            <h3>保持</h3>
+            <ul id="rework-keep"></ul>
+          </div>
+          <div>
+            <h3>改变</h3>
+            <ul id="rework-change"></ul>
+          </div>
+        </div>
+        <p id="rework-result" class="rework-result"></p>
+        <details class="prompt-provenance">
+          <summary>查看提示词差异</summary>
+          <div id="rework-diff" class="rework-diff"></div>
+        </details>
+      </div>
+      <p id="rework-status" class="prompt-status" role="status" aria-live="polite" hidden></p>
+    </div>
+    <div class="prompt-dialog-actions">
+      <button id="rework-preview-button" class="button button-secondary" type="button">生成返工方案</button>
+      <button id="rework-confirm" class="button button-primary" type="button" disabled>确认并重做这张</button>
+    </div>
+  </dialog>
+
+  <dialog id="prompt-dialog" class="prompt-dialog" aria-labelledby="prompt-dialog-title">
+    <header class="prompt-dialog-header">
+      <div>
+        <p class="eyebrow">IMAGE PROMPT</p>
+        <h2 id="prompt-dialog-title">图片提示词</h2>
+        <p id="prompt-dialog-meta" class="prompt-meta"></p>
+      </div>
+      <form method="dialog">
+        <button class="icon-button" type="submit" value="close" aria-label="关闭提示词">×</button>
+      </form>
+    </header>
+    <form id="prompt-editor-form" action="/api/prompt" method="post">
+      <input type="hidden" id="prompt-shot-id" name="shot_id">
+      <input type="hidden" id="prompt-version" name="expected_prompt_version">
+      <label for="prompt-full-text">完整提示词</label>
+      <textarea id="prompt-full-text" name="full_text" rows="18" required maxlength="20000"
+                aria-describedby="prompt-edit-help"></textarea>
+      <p id="prompt-edit-help" class="field-help">默认提示词由商品资料、Amazon US 规则和这张图的任务方向共同生成；你可以直接修改。保存会创建新的提示词版本，这张图需要重新生成并重新采用后才能导出。</p>
+      <details class="prompt-provenance">
+        <summary>查看提示词组成与来源</summary>
+        <div id="prompt-blocks" class="prompt-blocks"></div>
+      </details>
+      <p id="prompt-status" class="prompt-status" role="status" aria-live="polite" hidden></p>
+    </form>
+    <div class="prompt-dialog-actions">
+      <button id="save-prompt" class="button button-primary" type="submit" form="prompt-editor-form" disabled>保存修改</button>
+    </div>
+  </dialog>
+</body>
+</html>

@@ -1,0 +1,101 @@
+{
+  "stamp": "20260929-142123",
+  "checks": [
+    {
+      "id": "workbench-visible",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "id": "strip-and-stage",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "id": "legacy-choice-entry-gone",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "id": "no-auto-selection",
+      "ok": true,
+      "detail": {
+        "progress": "0/3 张已选"
+      }
+    },
+    {
+      "id": "rework-confirm-gated",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "id": "rework-preview-shows-keep-change",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "id": "history-candidate-visible",
+      "ok": true,
+      "detail": [
+        "历史候选",
+        "本轮候选"
+      ]
+    },
+    {
+      "id": "candidate-switch-changes-preview",
+      "ok": true,
+      "detail": {
+        "first": true,
+        "second": true
+      }
+    },
+    {
+      "id": "candidate-switch-keeps-adoption",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "id": "adoption-persisted-per-shot",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "id": "shot-switch-keeps-adoption",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "id": "reload-restores-adoption",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "id": "broken-candidate-not-selectable",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "id": "broken-candidate-record-kept",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "id": "can-still-pick-intact-candidate",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "id": "selection-write-migration",
+      "ok": true,
+      "detail": {
+        "writes": 3,
+        "methods": [
+          "PUT"
+        ]
+      }
+    }
+  ],
+  "failures": [],
+  "passed": true,
+  "workspace": "temp (deleted)"
+}

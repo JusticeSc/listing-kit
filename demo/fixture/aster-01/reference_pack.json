@@ -1,0 +1,12 @@
+{
+  "schema": "amz-listing-kit/reference-pack-ref@1",
+  "sku": "demo-tumbler-aster-01",
+  "pack_dir": "evals/product-demo/fixture-design/pack",
+  "manifest": "reference-manifest.json",
+  "provenance": "pack-provenance.json",
+  "preview": "preview.html",
+  "primary_view": "front-full",
+  "second_view": "upper-closeup",
+  "why_primary": "一张正面全身图就覆盖 F1/F2/F5/F6 的主要外观，也是 Phase 0 唯一实测过的图生图输入",
+  "boundary": "多张参考图（2-3 张）是契约允许、本项目尚未实测的分支：second_view 只是受控复验的候选变量，不是默认路线"
+}

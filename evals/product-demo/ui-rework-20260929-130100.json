@@ -1,0 +1,60 @@
+{
+  "reason": "袖口结构和参考图不一致，重拍一张",
+  "before": {
+    "attempts": {
+      "shot_6b6a1d83673a48e6": [
+        "act_c137afdbe5a852d26bfe158dbaad569c99253846"
+      ],
+      "shot_9ffb3bedef5e4428": [
+        "act_e1a3441decb61fdca81d983956bb8865d56b0c7a"
+      ],
+      "shot_14187fe9a7f64108": [
+        "act_026358d70e51f4d1c3e0e8481edfe18362bd67be"
+      ]
+    },
+    "candidates": {
+      "shot_6b6a1d83673a48e6": [
+        "c5d047949b5926e39885bd075d4bae138ad5572baebd5fff61daf10f19c778ea"
+      ],
+      "shot_9ffb3bedef5e4428": [
+        "5d17e840db472f1773a79ef3d9b408657c8e10268aaa43994963d816555c53ce"
+      ],
+      "shot_14187fe9a7f64108": [
+        "eadfef8e3e4ae7bb376937e628224118fdf36e2843caa4d83451acd6e4ac0541"
+      ]
+    }
+  },
+  "rework_button_count": 1,
+  "edited_prompt_tail": "返工重点：袖口结构与参考图保持一致，不要改变颜色与版型。",
+  "after": {
+    "attempts": {
+      "shot_6b6a1d83673a48e6": 1,
+      "shot_9ffb3bedef5e4428": 2,
+      "shot_14187fe9a7f64108": 1
+    },
+    "candidates": {
+      "shot_6b6a1d83673a48e6": [
+        "c5d047949b5926e39885bd075d4bae138ad5572baebd5fff61daf10f19c778ea"
+      ],
+      "shot_9ffb3bedef5e4428": [
+        "5d17e840db472f1773a79ef3d9b408657c8e10268aaa43994963d816555c53ce",
+        "56bb1532d2cfde2158fa17ad15e5d83f92c1efc6106e3c9eb5931475c56e9ab1"
+      ],
+      "shot_14187fe9a7f64108": [
+        "eadfef8e3e4ae7bb376937e628224118fdf36e2843caa4d83451acd6e4ac0541"
+      ]
+    }
+  },
+  "prompt_version": 2,
+  "prompt_edit_mode": "manual",
+  "prompt_edit_reason": "袖口结构和参考图不一致，重拍一张",
+  "provider_submit_calls": 4,
+  "rendered_candidates": 2,
+  "candidate_labels": [
+    "历史候选",
+    "本轮候选"
+  ],
+  "external_requests": [],
+  "failures": [],
+  "passed": true
+}

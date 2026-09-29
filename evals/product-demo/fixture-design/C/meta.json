@@ -1,0 +1,38 @@
+{
+  "candidate_id": "C",
+  "candidate_name": "proportion-robust",
+  "why": "高宽比略收到 3.0:1、筋条更突出，验证「比例容差更大」是否让 F1/F3 在重绘中更稳。",
+  "action_id": "302d9276523afbd9",
+  "model": "qwen-image-3.0",
+  "endpoint": "https://dashscope.aliyuncs.com/api/v1/services/aigc/image-generation/generation",
+  "mode": "text_to_image",
+  "size_requested": "1344*1344",
+  "size_used": "1344*1344",
+  "seed": 2026092403,
+  "prompt_extend": false,
+  "watermark": false,
+  "n": 1,
+  "prompt": "Studio product photograph for an e-commerce reference sheet: exactly one single tall straight-walled insulated travel tumbler, standing perfectly upright with its lid screwed shut, full body visible, centered with small even margins, on a seamless plain light neutral gray backdrop, soft even studio light from the upper left, soft natural contact shadow under the base, no props, no extra objects, sharp focus, photographic realism.\n\nDesign specification that must be followed exactly:\n- Body: one tall cylinder with near-vertical straight side walls; no taper, no waist, no curve, no handle, no side grip, no strap, no straw, no spout, no second cup. Overall body height-to-width ratio about 3.0 to 1, still a distinctly tall slim tumbler.\n- Colour blocking: the upper roughly 72 percent of the body height is matte deep teal green (about hex #0F6B66); matte finish, not glossy, no gradient, no printed pattern.\n- The lower roughly 28 percent of the body height is a dark charcoal gray (about hex #252A2A) silicone grip sleeve. The sleeve has exactly three horizontal ribs wrapping around it, raised and clearly separated so the rib count stays countable at a small scale.\n- Lid: low profile dark charcoal gray lid, clearly shorter than one fifth of the total height. The lid top has exactly two clearly visible concentric stepped rings stacked one above the other, a smaller ring sitting on a wider one, with a crisp visible step edge between them so both steps stay readable at a small scale. No flip top, no drinking spout, no dome, no second lid.\n- A single narrow terracotta orange ring (about hex #D97A45) sits in the seam between the lid and the body; keep it clearly visible and evenly thick all the way around the circle, still thin relative to the body height.\n- Base: flat bottom with a narrow dark gray non-slip ring at the very bottom edge; the tumbler rests flat and grounded on the surface.\n- The entire outer surface is completely blank: no text, no numbers, no letters, no words, no logo, no brand mark, no label, no sticker, no watermark, no decorative symbol, no capacity marking.\n\nFraming: straight-on front view, the whole tumbler including the lid inside the frame, square 1:1 composition, clean commercial catalogue look.",
+  "prompt_sha256": "720cd85d34f5f94ae4429b529d08fee2cff992383f41fb7cd576bfb16f688c74",
+  "negative_prompt_sha256": "ee11f0990221cbe82d6361fd0254273c350b76c865d3ae8d8b5ba373b97df398",
+  "task_id": "dd46e490-beea-42c6-bcd7-263c316d17d4",
+  "submitted_at": "2026-09-24T13:16:15+08:00",
+  "finished_at": "2026-09-24T13:16:24+08:00",
+  "poll_elapsed_s": 8.6,
+  "usage": {
+    "output_width": 1344,
+    "input_image_count": 0,
+    "input_image_type": "qima_input_1k",
+    "output_image_count": 1,
+    "output_image_type": "qima_output_1k",
+    "output_height": 1344
+  },
+  "image_sha256": "e1b1c5de1ee6b50a69fb8e431f1140d8c21a689f4fe3316461c02745139d03f6",
+  "image_bytes": 1163000,
+  "image_format": "PNG",
+  "image_size": [
+    1344,
+    1344
+  ],
+  "size_fallback_tried": []
+}

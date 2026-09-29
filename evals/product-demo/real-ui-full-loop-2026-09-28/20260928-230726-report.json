@@ -1,0 +1,190 @@
+{
+  "run": "real full loop through the product UI",
+  "started_at": "2026-09-28T23:07:26",
+  "base": "http://127.0.0.1:8787",
+  "workspace": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\_working\\amz-listing-kit-product-demo\\real-ui-run-04\\workspace",
+  "reference_image": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\ecommerce-skills-main\\docs\\batch-image\\sku-a-sweater.jpg",
+  "steps": [
+    {
+      "step": "create workspace",
+      "status": "NEW"
+    },
+    {
+      "step": "save intake",
+      "product_name": "粗棒针织套头毛衣",
+      "reference_images": [
+        "sku-a-sweater.jpg"
+      ]
+    },
+    {
+      "step": "product brief",
+      "category": "毛衣/针织衫",
+      "facts": [
+        {
+          "key": "product_name",
+          "state": "confirmed",
+          "source": "user_input"
+        },
+        {
+          "key": "selling_point_1",
+          "state": "confirmed",
+          "source": "user_input"
+        },
+        {
+          "key": "selling_point_2",
+          "state": "confirmed",
+          "source": "user_input"
+        },
+        {
+          "key": "款式",
+          "state": "inferred",
+          "source": "model_inference"
+        },
+        {
+          "key": "领型",
+          "state": "inferred",
+          "source": "model_inference"
+        },
+        {
+          "key": "袖长",
+          "state": "inferred",
+          "source": "model_inference"
+        },
+        {
+          "key": "版型",
+          "state": "inferred",
+          "source": "model_inference"
+        },
+        {
+          "key": "纹理",
+          "state": "inferred",
+          "source": "model_inference"
+        },
+        {
+          "key": "颜色",
+          "state": "inferred",
+          "source": "reference_image"
+        },
+        {
+          "key": "适用季节",
+          "state": "inferred",
+          "source": "model_inference"
+        },
+        {
+          "key": "穿着场景",
+          "state": "inferred",
+          "source": "model_inference"
+        },
+        {
+          "key": "袖口与下摆",
+          "state": "inferred",
+          "source": "reference_image"
+        }
+      ]
+    },
+    {
+      "step": "plan",
+      "shot_count": 5,
+      "shots": [
+        {
+          "title": "粗棒针织套头毛衣主图",
+          "archetype": "hero"
+        },
+        {
+          "title": "粗棒针立体纹理展示",
+          "archetype": "feature"
+        },
+        {
+          "title": "宽松落肩版型展示",
+          "archetype": "feature"
+        },
+        {
+          "title": "参考图中可见的细节/工艺展示",
+          "archetype": "detail"
+        },
+        {
+          "title": "春秋通勤内搭场景展示",
+          "archetype": "lifestyle"
+        }
+      ]
+    },
+    {
+      "step": "submit whole set",
+      "http_status": 202,
+      "ok": true,
+      "message": null
+    },
+    {
+      "step": "retry round 1",
+      "still_empty": [
+        "春秋通勤内搭场景展示"
+      ]
+    },
+    {
+      "step": "retry round 2",
+      "still_empty": [
+        "春秋通勤内搭场景展示"
+      ]
+    },
+    {
+      "step": "retry round 3",
+      "still_empty": [
+        "春秋通勤内搭场景展示"
+      ]
+    },
+    {
+      "step": "generate whole set",
+      "shots": [
+        {
+          "title": "粗棒针织套头毛衣主图",
+          "attempts": [
+            "SUCCEEDED"
+          ],
+          "tasks": [
+            "eba50f05-c2ff-4193-a0d3-d38fc9c06ba3"
+          ],
+          "candidates": 1
+        },
+        {
+          "title": "粗棒针立体纹理展示",
+          "attempts": [
+            "SUCCEEDED"
+          ],
+          "tasks": [
+            "d3fa7b3a-a17a-4881-b056-5c6a504e5672"
+          ],
+          "candidates": 1
+        },
+        {
+          "title": "宽松落肩版型展示",
+          "attempts": [
+            "SUCCEEDED"
+          ],
+          "tasks": [
+            "f2ebc7ff-b8d0-4ac4-a08a-ea11558a6e4f"
+          ],
+          "candidates": 1
+        },
+        {
+          "title": "参考图中可见的细节/工艺展示",
+          "attempts": [
+            "SUCCEEDED"
+          ],
+          "tasks": [
+            "95643099-c784-4267-96a9-9aae55ed6ad0"
+          ],
+          "candidates": 1
+        },
+        {
+          "title": "春秋通勤内搭场景展示",
+          "attempts": [],
+          "tasks": [],
+          "candidates": 0
+        }
+      ],
+      "empty_shots": [
+        "春秋通勤内搭场景展示"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "stamp": "20260929-141609",
+  "label": "smoke4-",
+  "requested_passes": 1,
+  "suites": [
+    "entry-audit",
+    "guard-docs"
+  ],
+  "passes": [
+    {
+      "pass_index": 1,
+      "passed": true,
+      "fingerprint_id": "5810659c7e9361375508f6e0c667cbaea1c3ccdcfe298525734dbcf3719a91bf",
+      "failed": []
+    }
+  ],
+  "fingerprints_consistent": true,
+  "all_passed": true,
+  "verdict": "通过：全部套件连续两轮全绿，代码/静态资源指纹一致",
+  "report_path": "evals/product-demo/d4.12-regression-smoke4-20260929-141609.json"
+}

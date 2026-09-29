@@ -1,0 +1,216 @@
+{
+  "schema": "amz-listing-kit/processing-contracts@1",
+  "authority_doc": "docs/product-demo-goal-and-implementation-plan.md",
+  "authority_section": "4.4",
+  "plan_version": "v1.19",
+  "frozen_at": "2026-09-26",
+  "why": "把计划 §4.4 的散文合同变成可核对的身份契约：不复制正文，只核对 ID、名称、权威引用、输出对象、证据类型与结果取值。正文仍以计划为唯一权威。",
+  "outcome_vocabulary": {
+    "accepted": "本环节产出可进入下一环节的合法输入",
+    "business_reject": "输入不满足业务前提，必须让用户补齐或改写；不是技术故障",
+    "technical_fail": "机制或外部依赖出错，可重试或修复，业务前提不变",
+    "unknown": "在既有前提内无法得出结论（provider 终态不明、验证器不适用等）。必须路由或转人工，既不许当失败蒙过去，也不许当通过",
+    "needs_human": "结论只能由人给出，系统不得代判"
+  },
+  "contracts": [
+    {
+      "id": "PC-01",
+      "name": "素材接入",
+      "inputs": [
+        {"authority": "A-ASSET", "as": "manifest 和文件哈希是资产身份权威"}
+      ],
+      "preconditions": [
+        {"authority": "A-POLICY", "as": "外发政策"}
+      ],
+      "mechanism": "只读校验存在性、格式、尺寸、哈希、角色；不为通过而改写原图或清单",
+      "output_objects": ["ReferencePackVersion", "齐套报告"],
+      "outcomes": ["accepted", "business_reject", "technical_fail", "unknown"],
+      "human_takeover_required": true,
+      "human_takeover_when": "参考图角色或外发范围无法从商品包本身确定时，由用户确认后才能继续",
+      "evidence_kinds": ["正反夹具", "哈希报告", "无写入证明"]
+    },
+    {
+      "id": "PC-02",
+      "name": "ProductFacts",
+      "inputs": [
+        {"authority": "A-SPEC", "as": "用户/规格文件是非视觉事实权威"},
+        {"authority": "A-REFIMG", "as": "参考图只证明可见事实"}
+      ],
+      "mechanism": "抽取候选事实并逐项标注 source/evidence/confidence/confirmed_by；材质、容量、功能不得仅凭看图定论",
+      "output_objects": ["FactsVersion"],
+      "outcomes": ["accepted", "business_reject", "unknown", "needs_human"],
+      "human_takeover_required": true,
+      "human_takeover_when": "关键事实（材质、容量、结构、认证）来源冲突或无法证实，必须逐项人工确认或保留 Unknown",
+      "evidence_kinds": ["schema", "冲突样例", "事实来源链"]
+    },
+    {
+      "id": "PC-03",
+      "name": "图片计划",
+      "inputs": [
+        {"authority": "A-FACTS", "as": "FactsVersion"},
+        {"authority": "A-PLATFORM", "as": "平台规则"},
+        {"authority": "A-USERGOAL", "as": "用户目标"},
+        {"authority": "A-REFERENCE", "as": "范例仅供提案"}
+      ],
+      "mechanism": "模型或规则提案 ShotSpec；确定性校验必需图、无依据卖点、参考图需求与预算；提案不生效，用户确认后才冻结",
+      "output_objects": ["PlanVersion", "每张图的目的和理由"],
+      "outcomes": ["accepted", "business_reject", "technical_fail"],
+      "human_takeover_required": true,
+      "human_takeover_when": "计划包含无事实依据的卖点、或必需图信息不足时，由用户补料、删图或改写后才可确认",
+      "evidence_kinds": ["同输入稳定性", "无依据声明反例", "用户确认记录"]
+    },
+    {
+      "id": "PC-04",
+      "name": "视觉方向",
+      "inputs": [
+        {"authority": "A-FACTS", "as": "已确认事实"},
+        {"authority": "A-USERPREF", "as": "用户偏好"},
+        {"authority": "A-REFERENCE", "as": "参考范例是风格证据而非商品事实"}
+      ],
+      "mechanism": "形成共享 StyleSpec，把可变审美与不可变 FactLocks 分开；用户可接受默认或逐项调整",
+      "output_objects": ["StyleSpec", "适用 Shot 集合"],
+      "outcomes": ["accepted", "business_reject", "needs_human"],
+      "human_takeover_required": true,
+      "human_takeover_when": "风格与商品事实或平台规则冲突时拒绝；偏好不明可用默认，但必须标注可改并允许用户调整",
+      "evidence_kinds": ["风格差异", "冲突反例", "版本哈希"]
+    },
+    {
+      "id": "PC-05",
+      "name": "提示词",
+      "inputs": [
+        {"authority": "A-SHOTSPEC", "as": "ShotSpec"},
+        {"authority": "A-STYLE", "as": "StyleSpec"},
+        {"authority": "A-FACTLOCK", "as": "FactLocks"},
+        {"authority": "A-PROVIDER", "as": "provider capability"}
+      ],
+      "mechanism": "确定性编译固定事实块与可变镜头块；界面上展示的完整文本就是实际发送文本；编辑产生新版本而非覆盖",
+      "output_objects": ["PromptVersion", "编译输入哈希", "diff"],
+      "outcomes": ["accepted", "business_reject", "technical_fail"],
+      "human_takeover_required": true,
+      "human_takeover_when": "用户编辑删除了硬事实锁时阻断并显式确认；提示词措辞本身不得被当成保真保证",
+      "evidence_kinds": ["黄金编译测试", "编辑/撤销", "发送体比对"]
+    },
+    {
+      "id": "PC-06",
+      "name": "生成提交",
+      "inputs": [
+        {"authority": "A-PROMPT", "as": "PromptVersion"},
+        {"authority": "A-REFIMG", "as": "有序参考图"},
+        {"authority": "A-MODELCFG", "as": "模型配置"},
+        {"authority": "A-BUDGET", "as": "预算与外发许可"}
+      ],
+      "mechanism": "请求前校验 I2I 端点、图像字段/顺序/哈希、action id、重复与预算；只允许正式 adapter 提交，无 mock 分支",
+      "output_objects": ["GenerationAttempt", "原始请求证据"],
+      "outcomes": ["accepted", "business_reject", "technical_fail", "unknown"],
+      "human_takeover_required": false,
+      "human_takeover_when": "",
+      "evidence_kinds": ["请求哈希", "provider task id", "账本", "守卫反例"]
+    },
+    {
+      "id": "PC-07",
+      "name": "结果核对",
+      "inputs": [
+        {"authority": "A-RUN", "as": "Attempt 身份和 provider task id"}
+      ],
+      "mechanism": "只轮询原任务；核对响应归属、下载文件、哈希与可解码性；先落原始响应再晋级状态",
+      "output_objects": ["Candidate", "SUCCEEDED"],
+      "outcomes": ["accepted", "technical_fail", "unknown"],
+      "human_takeover_required": false,
+      "human_takeover_when": "",
+      "evidence_kinds": ["超时/响应丢失/重启轨迹", "同 action 不重复 submit"]
+    },
+    {
+      "id": "PC-08",
+      "name": "技术检查",
+      "inputs": [
+        {"authority": "A-CANDIDATE", "as": "Candidate 原文件"},
+        {"authority": "A-PLATFORM", "as": "平台配置"}
+      ],
+      "mechanism": "确定性检查解码、尺寸、格式、色彩、文件大小以及适用的平台形态；规则不适用时返回 Unknown",
+      "output_objects": ["VerificationResult"],
+      "outcomes": ["accepted", "technical_fail", "unknown"],
+      "human_takeover_required": false,
+      "human_takeover_when": "",
+      "evidence_kinds": ["边界值和反向样例", "可重复结果"]
+    },
+    {
+      "id": "PC-09",
+      "name": "商品事实验证",
+      "inputs": [
+        {"authority": "A-CANDIDATE", "as": "Candidate"},
+        {"authority": "A-REFIMG", "as": "参考图"},
+        {"authority": "A-FACTS", "as": "FactsVersion"},
+        {"authority": "A-CAPABILITY", "as": "逐事实 capability contract"}
+      ],
+      "mechanism": "逐事实选择规则、参考图条件视觉判断、可选分割/检测/局部匹配或人工；分割只定位，不证明同一 SKU，位置与类别形状只作弱先验",
+      "output_objects": ["逐事实 pass/fail/unknown", "证据与责任者"],
+      "outcomes": ["accepted", "business_reject", "technical_fail", "unknown", "needs_human"],
+      "human_takeover_required": true,
+      "human_takeover_when": "模型判断未经对照校准一律默认 risk/needs-human；关键事实为 Unknown 时必须人工确认或阻止选择",
+      "evidence_kinds": ["冻结正负样本对照", "误报漏报与 Unknown", "人工签字"]
+    },
+    {
+      "id": "PC-10",
+      "name": "审美审核",
+      "inputs": [
+        {"authority": "A-CANDIDATE", "as": "Candidate"},
+        {"authority": "A-SHOTSPEC", "as": "ShotSpec"}
+      ],
+      "mechanism": "人比较候选，从构图、主体层级、光线融合、材质真实感、背景干扰与商业完成度给出具体理由；不生成总分",
+      "output_objects": ["VisualReview"],
+      "outcomes": ["accepted", "business_reject", "needs_human"],
+      "human_takeover_required": true,
+      "human_takeover_when": "审美结论只能由人给出；且审美 keep 不能覆盖事实 fail 或未知",
+      "evidence_kinds": ["多候选对照与理由记录"]
+    },
+    {
+      "id": "PC-11",
+      "name": "返工路由",
+      "inputs": [
+        {"authority": "A-VERIFICATION", "as": "VerificationResult"},
+        {"authority": "A-VISUALREVIEW", "as": "VisualReview"},
+        {"authority": "A-SHOTSPEC", "as": "ShotSpec"},
+        {"authority": "A-PROMPT", "as": "Prompt"},
+        {"authority": "A-REFIMG", "as": "参考图"},
+        {"authority": "A-CANDIDATE", "as": "旧候选"}
+      ],
+      "mechanism": "先分类原因，再只改对应变量：技术形态改确定性处理；场景/构图/光线改 ShotSpec/Prompt；身份结构改参考图/模型或编辑路线；精确文字下沉到版式层；归不了类交人工",
+      "output_objects": ["新 ShotSpec/Prompt/Attempt 或确定性修复版本", "旧候选保留"],
+      "outcomes": ["accepted", "business_reject", "needs_human"],
+      "human_takeover_required": true,
+      "human_takeover_when": "原因无法归类、或已超过预算上限时阻断并交人工，不做无界自动重试",
+      "evidence_kinds": ["单变量 diff", "未受影响 Shot 哈希与 submit=0"]
+    },
+    {
+      "id": "PC-12",
+      "name": "选择与精确合成",
+      "inputs": [
+        {"authority": "A-SELECTION", "as": "人工 Selection"},
+        {"authority": "A-COPY", "as": "已确认文案"},
+        {"authority": "A-LAYOUT", "as": "版式规格"},
+        {"authority": "A-CANDIDATE", "as": "已选 Candidate"}
+      ],
+      "mechanism": "用户显式选择；精确文案与标注由确定性排版合成，不交给生图模型拼字；无文案时也记录恒等合成",
+      "output_objects": ["Selection", "CompositionVersion"],
+      "outcomes": ["accepted", "business_reject", "technical_fail"],
+      "human_takeover_required": true,
+      "human_takeover_when": "事实硬失败或关键 Unknown 的候选不可选；排版溢出或字体缺失时失败并交人处理，不自动换候选",
+      "evidence_kinds": ["选择事件", "像素/资源哈希", "长文与溢出反例"]
+    },
+    {
+      "id": "PC-13",
+      "name": "最终复检与导出",
+      "inputs": [
+        {"authority": "A-COMPOSITION", "as": "CompositionVersion"},
+        {"authority": "A-PLAN", "as": "PlanVersion"},
+        {"authority": "A-EXPORT", "as": "平台与导出规则"}
+      ],
+      "mechanism": "对最终文件而非中间候选重跑适用的技术/平台检查；核对计划覆盖、选择唯一性、manifest 与免责声明",
+      "output_objects": ["OutputVersion", "人读说明", "机器清单"],
+      "outcomes": ["accepted", "business_reject", "technical_fail"],
+      "human_takeover_required": false,
+      "human_takeover_when": "",
+      "evidence_kinds": ["换目录 verify", "篡改反向测试", "完整清单"]
+    }
+  ]
+}

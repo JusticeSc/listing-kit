@@ -1,0 +1,42 @@
+[
+  {
+    "task_id": "138b20cd-d8fe-4f5d-8f37-c2de481b10a1",
+    "label": "qwen-image (text only)",
+    "status": "FAILED",
+    "error": "图像生成任务失败。",
+    "request_id": "6031138f-919b-9df3-8f97-3b9847945c39",
+    "result_urls": 0
+  },
+  {
+    "task_id": "eae90f35-5565-49f5-882a-20e47fa12e83",
+    "label": "qwen-image-plus (text only)",
+    "status": "FAILED",
+    "error": "图像生成任务失败。",
+    "request_id": "49707314-a1a4-9b05-beed-f931846b6e3f",
+    "result_urls": 0
+  },
+  {
+    "task_id": "6d5b423e-a7d7-4681-93f8-70064e453d91",
+    "label": "qwen-image-3.0 (text only)",
+    "status": "SUCCEEDED",
+    "error": null,
+    "request_id": "57a36800-aafd-9a0e-a96a-21a0bbebcadf",
+    "result_urls": 1,
+    "file": "6d5b423e-a7d7-4681-93f8-70064e453d91.png",
+    "bytes": 3004361,
+    "sha256": "9cfdbcb8faed43a2a29a496fc9a27b694b89f4a3fbd35531d80ae9e50b205e0e",
+    "media_type": "image/png"
+  },
+  {
+    "task_id": "96853a96-7bff-4881-a6c5-c90bcbc31b68",
+    "label": "qwen-image-3.0 (hero prompt + real reference image)",
+    "status": "SUCCEEDED",
+    "error": null,
+    "request_id": "ab223994-e233-9b2a-831b-ea4329d7924e",
+    "result_urls": 1,
+    "file": "96853a96-7bff-4881-a6c5-c90bcbc31b68.png",
+    "bytes": 1796933,
+    "sha256": "caade77955afb6e2f5994f4ca4f8dfc30ac776621b36545e622dc797a95d046a",
+    "media_type": "image/png"
+  }
+]

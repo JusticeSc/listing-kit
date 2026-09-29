@@ -1,0 +1,27 @@
+{
+  "schema": "amz-listing-kit/control-snapshot@1",
+  "created_at": "2026-09-29T10:30:03+08:00",
+  "reason": "Authority snapshot before Product V1 v2.6 pre-Goal calibration",
+  "authority": "not-authority",
+  "restore_scope": "control documents only; never overwrite workspace business data",
+  "files": [
+    {
+      "source": "docs/product-demo-goal-and-implementation-plan.md",
+      "snapshot": "product-demo-goal-and-implementation-plan.md",
+      "before_sha256": "bad13c4016c1c067c0608526b1d4e2ad9ffbe07c13c7befbb9e51132f5c10cb4",
+      "after_sha256": "3288a1936b779d942415391fa3aed197df3b11d06d2b190d94c3186bb53756be"
+    },
+    {
+      "source": "docs/INDEX.md",
+      "snapshot": "INDEX.md",
+      "before_sha256": "fe0323e037503db940072ccca0661d06576fb0b6850b1e8c310d8d27db82baca",
+      "after_sha256": "22b0cfb9aeb4fb569236935bd51443df298cdcb89d04550281375383a2d67834"
+    },
+    {
+      "source": "_working/amz-listing-kit-product-demo/state.md",
+      "snapshot": "state.md",
+      "before_sha256": "a4a7a0081ec31feb034133d0689babd479a6cc4452aa3a1a06cf0f92511a481c",
+      "after_sha256": "c6691d98307db03d5f085363112d67c245cb052164968f17ca0df24031708059"
+    }
+  ]
+}

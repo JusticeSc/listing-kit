@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Aster 01 商品套图工作台</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main-workbench">跳到工作区</a>
+
+  <header class="app-header" aria-labelledby="page-title">
+    <div class="brand-block">
+      <p class="eyebrow">Amazon US Listing · 单人工作台</p>
+      <h1 id="page-title">Aster 01 商品套图</h1>
+    </div>
+    <div class="header-actions">
+      <span class="status-pill" id="stage-chip">阶段：待确认资料</span>
+      <span class="boundary-badge" id="mock-badge">离线 Mock · 不调用模型</span>
+      <button class="button button-quiet" type="button" id="reset-workbench">重置演示</button>
+    </div>
+  </header>
+
+  <aside class="mock-strip" aria-label="演示边界">
+    <p><strong>Aster 01 是虚构商品。</strong> 当前页面完整模拟业务状态，但不会调用百炼，也不会写出交付文件。</p>
+    <details class="scenario-control">
+      <summary>切换演示情形</summary>
+      <fieldset>
+        <legend>生成结果</legend>
+        <label><input type="radio" name="scenario" value="normal" checked> 正常</label>
+        <label><input type="radio" name="scenario" value="partial"> 部分失败</label>
+        <label><input type="radio" name="scenario" value="unknown"> Unknown</label>
+      </fieldset>
+    </details>
+  </aside>
+
+  <main id="main-workbench" class="workbench" tabindex="-1">
+    <section class="panel input-panel" aria-labelledby="input-heading">
+      <div class="panel-heading">
+        <div>
+          <p class="step-label">01 · 商品资料</p>
+          <h2 id="input-heading">确认生成依据</h2>
+        </div>
+        <span class="status-pill" id="input-status">待确认</span>
+      </div>
+      <div id="input-view"></div>
+    </section>
+
+    <section class="panel plan-panel" aria-labelledby="plan-heading">
+      <div class="panel-heading">
+        <div>
+          <p class="step-label">02 · 套图方案</p>
+          <h2 id="plan-heading">安排整套图片</h2>
+        </div>
+        <span class="status-pill" id="plan-status">未生成</span>
+      </div>
+      <div id="plan-view" aria-live="polite"></div>
+    </section>
+
+    <section class="panel inspector-panel" aria-labelledby="inspector-heading">
+      <div class="panel-heading">
+        <div>
+          <p class="step-label">03 · 单图检查</p>
+          <h2 id="inspector-heading">比较、核对与返工</h2>
+        </div>
+        <span class="status-pill" id="inspector-status">等待候选</span>
+      </div>
+      <div id="inspector-view"></div>
+    </section>
+  </main>
+
+  <footer class="delivery-bar" aria-labelledby="delivery-heading">
+    <div>
+      <p class="step-label">04 · 交付</p>
+      <h2 id="delivery-heading">套图导出</h2>
+    </div>
+    <div id="delivery-view" class="delivery-content"></div>
+  </footer>
+
+  <dialog id="export-dialog" aria-labelledby="export-dialog-title">
+    <div class="dialog-heading">
+      <div>
+        <p class="step-label">Mock 导出预览</p>
+        <h2 id="export-dialog-title">交付清单</h2>
+      </div>
+      <button class="icon-button" type="button" data-action="close-export" aria-label="关闭导出预览">×</button>
+    </div>
+    <div id="export-dialog-body"></div>
+  </dialog>
+
+  <div class="live-region" id="live-status" role="status" aria-live="polite" aria-atomic="true"></div>
+  <div class="live-region" id="live-error" role="alert" aria-live="assertive" aria-atomic="true"></div>
+
+  <script type="module" src="/static/workbench.js"></script>
+</body>
+</html>

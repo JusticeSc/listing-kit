@@ -1,0 +1,77 @@
+{
+  "direction": "商品占比放大，保持商品轮廓与颜色不变",
+  "before": {
+    "attempts": {
+      "shot_34ff305360414b0e": [
+        "act_304e4715c48350dbd345bbf30ba3bd2682398db9"
+      ],
+      "shot_a2766c3d37c04e17": [
+        "act_03993649f44a13ad0884d410c61e9825b9c74971"
+      ],
+      "shot_ac6a34c7bdf94cf6": [
+        "act_d0bc1574fd4a4eede3d76b12bab8d23935c31044"
+      ]
+    },
+    "candidates": {
+      "shot_34ff305360414b0e": [
+        "c5d047949b5926e39885bd075d4bae138ad5572baebd5fff61daf10f19c778ea"
+      ],
+      "shot_a2766c3d37c04e17": [
+        "5d17e840db472f1773a79ef3d9b408657c8e10268aaa43994963d816555c53ce"
+      ],
+      "shot_ac6a34c7bdf94cf6": [
+        "eadfef8e3e4ae7bb376937e628224118fdf36e2843caa4d83451acd6e4ac0541"
+      ]
+    }
+  },
+  "selection_before": "3/3 张已选",
+  "rework_button_count": 1,
+  "preview_submit_calls": 3,
+  "attempts_after_preview": 1,
+  "preview": {
+    "keep": [
+      "商品身份",
+      "已确认事实",
+      "整套 Style Lock",
+      "非目标 Shot"
+    ],
+    "change": [
+      "商品不像原图",
+      "按用户指出的问题调整这一张的构图与环境"
+    ],
+    "result": "只重做当前这一张；保持商品与整组风格不变。",
+    "diff_rows": 1
+  },
+  "after": {
+    "attempts": {
+      "shot_34ff305360414b0e": 1,
+      "shot_a2766c3d37c04e17": 2,
+      "shot_ac6a34c7bdf94cf6": 1
+    },
+    "candidates": {
+      "shot_34ff305360414b0e": [
+        "c5d047949b5926e39885bd075d4bae138ad5572baebd5fff61daf10f19c778ea"
+      ],
+      "shot_a2766c3d37c04e17": [
+        "5d17e840db472f1773a79ef3d9b408657c8e10268aaa43994963d816555c53ce",
+        "56bb1532d2cfde2158fa17ad15e5d83f92c1efc6106e3c9eb5931475c56e9ab1"
+      ],
+      "shot_ac6a34c7bdf94cf6": [
+        "eadfef8e3e4ae7bb376937e628224118fdf36e2843caa4d83451acd6e4ac0541"
+      ]
+    }
+  },
+  "prompt_version": 2,
+  "prompt_edit_mode": "rework",
+  "prompt_edit_reason": "商品占比放大，保持商品轮廓与颜色不变",
+  "selection_after_confirm": "2/3 张已选",
+  "rendered_candidates": 2,
+  "candidate_labels": [
+    "历史候选",
+    "本轮候选"
+  ],
+  "selection_after_readopt": "3/3 张已选",
+  "external_requests": [],
+  "failures": [],
+  "passed": true
+}

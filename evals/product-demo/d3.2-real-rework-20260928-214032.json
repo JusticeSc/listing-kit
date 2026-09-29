@@ -1,0 +1,277 @@
+{
+  "run": "real rework of listed shots",
+  "started_at": "20260928-214032",
+  "workspace": "_working\\amz-listing-kit-product-demo\\real-run-02\\workspace",
+  "targets": [
+    "shot_39da45cdc6ad4df8"
+  ],
+  "submits": [
+    {
+      "shot_id": "shot_39da45cdc6ad4df8",
+      "idempotency_key": "rework-20260928-214032-1",
+      "elapsed_s": 1.01
+    }
+  ],
+  "abandoned": [],
+  "polls": [
+    {
+      "at": "2026-09-28T21:40:42",
+      "queried": [
+        "act_d9d909093a7b9a6e15183161d2971ef7f80370c4"
+      ]
+    },
+    {
+      "at": "2026-09-28T21:40:50",
+      "queried": [
+        "act_d9d909093a7b9a6e15183161d2971ef7f80370c4"
+      ]
+    },
+    {
+      "at": "2026-09-28T21:40:59",
+      "queried": [
+        "act_d9d909093a7b9a6e15183161d2971ef7f80370c4"
+      ]
+    }
+  ],
+  "checks": {
+    "target:shot_39da45cdc6ad4df8": {
+      "passed": true,
+      "new_attempts": [
+        {
+          "action_id": "act_d9d909093a7b9a6e15183161d2971ef7f80370c4",
+          "status": "SUCCEEDED",
+          "provider_task_id": "13acd1b7-448d-4886-9fab-a67faa51c951"
+        }
+      ],
+      "new_candidates": [
+        {
+          "candidate_id": "f1e728e8f1d6c0d59477687012e2ebae872700a7a7cdbc231c5316891b381496",
+          "relative_path": "shots/shot_39da45cdc6ad4df8/candidates/f1e728e8f1d6c0d59477687012e2ebae872700a7a7cdbc231c5316891b381496.png",
+          "file_sha256": "f1e728e8f1d6c0d59477687012e2ebae872700a7a7cdbc231c5316891b381496",
+          "bytes_sha256": "f1e728e8f1d6c0d59477687012e2ebae872700a7a7cdbc231c5316891b381496"
+        }
+      ],
+      "latest_status": "SUCCEEDED"
+    },
+    "untouched_shots_unchanged": {
+      "passed": true,
+      "detail": {
+        "shot_822fac866ad7471e": true,
+        "shot_16d72348dcdb4e7f": true,
+        "shot_8925effb3d264383": true
+      }
+    }
+  },
+  "before": {
+    "shot_822fac866ad7471e": {
+      "title": "主图：粗棒针织开衫毛衣",
+      "attempts": [
+        {
+          "action_id": "act_b5bf55ca2bf819d67db52c6fd114a955c3ae2dbf",
+          "status": "SUCCEEDED",
+          "provider_task_id": "da0a454e-095d-40f7-8ea3-1512b3a5fa86"
+        }
+      ],
+      "candidates": [
+        {
+          "candidate_id": "b38e72e892c4e15159ef76a726731220243a8411b0df3708888e7b0b8f3e0281",
+          "relative_path": "shots/shot_822fac866ad7471e/candidates/b38e72e892c4e15159ef76a726731220243a8411b0df3708888e7b0b8f3e0281.png",
+          "file_sha256": "b38e72e892c4e15159ef76a726731220243a8411b0df3708888e7b0b8f3e0281",
+          "bytes_sha256": "b38e72e892c4e15159ef76a726731220243a8411b0df3708888e7b0b8f3e0281"
+        }
+      ]
+    },
+    "shot_16d72348dcdb4e7f": {
+      "title": "卖点图：粗棒针立体纹理",
+      "attempts": [
+        {
+          "action_id": "act_e8c4b183f1ee941442d32595feeef73bd80028ea",
+          "status": "SUCCEEDED",
+          "provider_task_id": "b97bcde1-a78d-4cc5-8274-460f28c09a92"
+        }
+      ],
+      "candidates": [
+        {
+          "candidate_id": "437bc8ac4ab9ad1a648354475658728c11f74b30c01c0567781d2fd09235693b",
+          "relative_path": "shots/shot_16d72348dcdb4e7f/candidates/437bc8ac4ab9ad1a648354475658728c11f74b30c01c0567781d2fd09235693b.png",
+          "file_sha256": "437bc8ac4ab9ad1a648354475658728c11f74b30c01c0567781d2fd09235693b",
+          "bytes_sha256": "437bc8ac4ab9ad1a648354475658728c11f74b30c01c0567781d2fd09235693b"
+        }
+      ]
+    },
+    "shot_39da45cdc6ad4df8": {
+      "title": "视觉意图图：自然垂感与轻盈版型",
+      "attempts": [
+        {
+          "action_id": "act_7b5922bd058fdf84c8882d4d16bdb78a95d51bc2",
+          "status": "REJECTED",
+          "provider_task_id": null
+        },
+        {
+          "action_id": "act_2a1406843eebf9b20106d5d1d3331bf7e3189bc9",
+          "status": "ABANDONED",
+          "provider_task_id": null
+        }
+      ],
+      "candidates": []
+    },
+    "shot_8925effb3d264383": {
+      "title": "场景图：春秋日常穿搭",
+      "attempts": [
+        {
+          "action_id": "act_419ca5c042a21952e11d2bad9cae6c54db79d8e4",
+          "status": "REJECTED",
+          "provider_task_id": null
+        },
+        {
+          "action_id": "act_743d9ef8a4b79be7e53a308e181c5bb95ec1f3f1",
+          "status": "SUCCEEDED",
+          "provider_task_id": "f45e0f85-578f-47c4-adce-8c3ee7ba4a8c"
+        }
+      ],
+      "candidates": [
+        {
+          "candidate_id": "e09a19c13e698ae9fe600ccf6965f910d2dc4fed12539c6635852167f82d59f6",
+          "relative_path": "shots/shot_8925effb3d264383/candidates/e09a19c13e698ae9fe600ccf6965f910d2dc4fed12539c6635852167f82d59f6.png",
+          "file_sha256": "e09a19c13e698ae9fe600ccf6965f910d2dc4fed12539c6635852167f82d59f6",
+          "bytes_sha256": "e09a19c13e698ae9fe600ccf6965f910d2dc4fed12539c6635852167f82d59f6"
+        }
+      ]
+    }
+  },
+  "after": {
+    "shot_822fac866ad7471e": {
+      "title": "主图：粗棒针织开衫毛衣",
+      "attempts": [
+        {
+          "action_id": "act_b5bf55ca2bf819d67db52c6fd114a955c3ae2dbf",
+          "status": "SUCCEEDED",
+          "provider_task_id": "da0a454e-095d-40f7-8ea3-1512b3a5fa86"
+        }
+      ],
+      "candidates": [
+        {
+          "candidate_id": "b38e72e892c4e15159ef76a726731220243a8411b0df3708888e7b0b8f3e0281",
+          "relative_path": "shots/shot_822fac866ad7471e/candidates/b38e72e892c4e15159ef76a726731220243a8411b0df3708888e7b0b8f3e0281.png",
+          "file_sha256": "b38e72e892c4e15159ef76a726731220243a8411b0df3708888e7b0b8f3e0281",
+          "bytes_sha256": "b38e72e892c4e15159ef76a726731220243a8411b0df3708888e7b0b8f3e0281"
+        }
+      ]
+    },
+    "shot_16d72348dcdb4e7f": {
+      "title": "卖点图：粗棒针立体纹理",
+      "attempts": [
+        {
+          "action_id": "act_e8c4b183f1ee941442d32595feeef73bd80028ea",
+          "status": "SUCCEEDED",
+          "provider_task_id": "b97bcde1-a78d-4cc5-8274-460f28c09a92"
+        }
+      ],
+      "candidates": [
+        {
+          "candidate_id": "437bc8ac4ab9ad1a648354475658728c11f74b30c01c0567781d2fd09235693b",
+          "relative_path": "shots/shot_16d72348dcdb4e7f/candidates/437bc8ac4ab9ad1a648354475658728c11f74b30c01c0567781d2fd09235693b.png",
+          "file_sha256": "437bc8ac4ab9ad1a648354475658728c11f74b30c01c0567781d2fd09235693b",
+          "bytes_sha256": "437bc8ac4ab9ad1a648354475658728c11f74b30c01c0567781d2fd09235693b"
+        }
+      ]
+    },
+    "shot_39da45cdc6ad4df8": {
+      "title": "视觉意图图：自然垂感与轻盈版型",
+      "attempts": [
+        {
+          "action_id": "act_7b5922bd058fdf84c8882d4d16bdb78a95d51bc2",
+          "status": "REJECTED",
+          "provider_task_id": null
+        },
+        {
+          "action_id": "act_2a1406843eebf9b20106d5d1d3331bf7e3189bc9",
+          "status": "ABANDONED",
+          "provider_task_id": null
+        },
+        {
+          "action_id": "act_d9d909093a7b9a6e15183161d2971ef7f80370c4",
+          "status": "SUCCEEDED",
+          "provider_task_id": "13acd1b7-448d-4886-9fab-a67faa51c951"
+        }
+      ],
+      "candidates": [
+        {
+          "candidate_id": "f1e728e8f1d6c0d59477687012e2ebae872700a7a7cdbc231c5316891b381496",
+          "relative_path": "shots/shot_39da45cdc6ad4df8/candidates/f1e728e8f1d6c0d59477687012e2ebae872700a7a7cdbc231c5316891b381496.png",
+          "file_sha256": "f1e728e8f1d6c0d59477687012e2ebae872700a7a7cdbc231c5316891b381496",
+          "bytes_sha256": "f1e728e8f1d6c0d59477687012e2ebae872700a7a7cdbc231c5316891b381496"
+        }
+      ]
+    },
+    "shot_8925effb3d264383": {
+      "title": "场景图：春秋日常穿搭",
+      "attempts": [
+        {
+          "action_id": "act_419ca5c042a21952e11d2bad9cae6c54db79d8e4",
+          "status": "REJECTED",
+          "provider_task_id": null
+        },
+        {
+          "action_id": "act_743d9ef8a4b79be7e53a308e181c5bb95ec1f3f1",
+          "status": "SUCCEEDED",
+          "provider_task_id": "f45e0f85-578f-47c4-adce-8c3ee7ba4a8c"
+        }
+      ],
+      "candidates": [
+        {
+          "candidate_id": "e09a19c13e698ae9fe600ccf6965f910d2dc4fed12539c6635852167f82d59f6",
+          "relative_path": "shots/shot_8925effb3d264383/candidates/e09a19c13e698ae9fe600ccf6965f910d2dc4fed12539c6635852167f82d59f6.png",
+          "file_sha256": "e09a19c13e698ae9fe600ccf6965f910d2dc4fed12539c6635852167f82d59f6",
+          "bytes_sha256": "e09a19c13e698ae9fe600ccf6965f910d2dc4fed12539c6635852167f82d59f6"
+        }
+      ]
+    }
+  },
+  "provider_calls": [
+    {
+      "method": "POST",
+      "url_path": "https://dashscope.aliyuncs.com/api/v1/services/aigc/image-generation/generation",
+      "payload": {
+        "model": "qwen-image-3.0",
+        "size": "1344*1344",
+        "n": 1,
+        "reference_images": 1,
+        "reference_bytes": 178623,
+        "prompt_sha256": "56d3b395741edb76a99f77601f457ac3fb5f38f6dfcd1d1067f9a58c606b97cf",
+        "prompt_chars": 2178
+      },
+      "elapsed_s": 0.71,
+      "status_code": 200
+    },
+    {
+      "method": "GET",
+      "url_path": "https://dashscope.aliyuncs.com/api/v1/tasks/13acd1b7-448d-4886-9fab-a67faa51c951",
+      "payload": null,
+      "elapsed_s": 0.44,
+      "status_code": 200
+    },
+    {
+      "method": "GET",
+      "url_path": "https://dashscope.aliyuncs.com/api/v1/tasks/13acd1b7-448d-4886-9fab-a67faa51c951",
+      "payload": null,
+      "elapsed_s": 0.17,
+      "status_code": 200
+    },
+    {
+      "method": "GET",
+      "url_path": "https://dashscope.aliyuncs.com/api/v1/tasks/13acd1b7-448d-4886-9fab-a67faa51c951",
+      "payload": null,
+      "elapsed_s": 0.2,
+      "status_code": 200
+    },
+    {
+      "method": "GET",
+      "url_path": "https://dashscope-a717.oss-accelerate.aliyuncs.com/1d/ad/20260928/5f326ce3/13acd1b7-448d-4886-9fab-a67faa51c951_qwen_image3_serving_output_0.png",
+      "payload": null,
+      "elapsed_s": 0.35,
+      "status_code": 200
+    }
+  ],
+  "passed": true
+}

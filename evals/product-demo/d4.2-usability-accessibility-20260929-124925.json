@@ -1,0 +1,522 @@
+{
+  "stamp": "20260929-124925",
+  "port": 8791,
+  "zoom_limitation": "200% 缩放用等价 CSS 视口模拟（1440x1000 -> 720x500）：能覆盖布局溢出与按钮可达性，不能覆盖真实缩放下的字号放大与图片缩放。",
+  "checks": [
+    {
+      "id": "blank.keyboard_space",
+      "title": "空白形态：Space 可触发主流程动作（打开工作空间）",
+      "ok": true,
+      "detail": {
+        "focused": "open-workspace",
+        "opened": true
+      }
+    },
+    {
+      "id": "blank.tab_reach",
+      "title": "空白形态：Tab 可达全部可见控件",
+      "ok": true,
+      "detail": {
+        "focusable": [
+          "button#brand-home.brand:button",
+          "button#top-open-workspace.button.button-secondary.button-compact:button",
+          "button#top-create-workspace.button.button-primary.button-compact:button",
+          "button#back-home.back-button:button",
+          "input#reference-images.visually-hidden:file",
+          "input#product-name:text",
+          "textarea#product-description",
+          "textarea#selling-points",
+          "textarea#user-intent",
+          "button#preview-plan.button.button-secondary:button",
+          "button#generate-suite.button.button-primary.save-button:submit"
+        ],
+        "reached": [
+          "button#brand-home.brand:button",
+          "button#top-open-workspace.button.button-secondary.button-compact:button",
+          "button#top-create-workspace.button.button-primary.button-compact:button",
+          "button#back-home.back-button:button",
+          "input#reference-images.visually-hidden:file",
+          "input#product-name:text",
+          "textarea#product-description",
+          "textarea#selling-points",
+          "textarea#user-intent",
+          "button#preview-plan.button.button-secondary:button",
+          "button#generate-suite.button.button-primary.save-button:submit"
+        ],
+        "missing": [],
+        "home_tab_stops": [
+          "button#brand-home.brand:button",
+          "button#top-open-workspace.button.button-secondary.button-compact:button",
+          "button#top-create-workspace.button.button-primary.button-compact:button",
+          "button#create-workspace.button.button-primary:button",
+          "button#open-workspace.button.button-secondary:button"
+        ]
+      }
+    },
+    {
+      "id": "blank.focus_indicator",
+      "title": "空白形态：键盘焦点可见（控件样式随焦点变化）",
+      "ok": true,
+      "detail": {
+        "per_control": {
+          "#create-workspace": "changed",
+          "#open-workspace": "changed",
+          "#back-home": "changed",
+          "#reference-images": "changed",
+          "#product-name": "changed",
+          "#product-description": "changed",
+          "#selling-points": "changed",
+          "#user-intent": "changed",
+          "#generate-suite": "changed"
+        },
+        "without_visible_change": [],
+        "home": {
+          "#create-workspace": "changed",
+          "#open-workspace": "changed"
+        }
+      }
+    },
+    {
+      "id": "blank.label_association",
+      "title": "空白形态：label 与 aria-describedby 关联完整",
+      "ok": true,
+      "detail": {
+        "controls": {
+          "product-name": {
+            "found": true,
+            "labels": [
+              "商品名称\n必填"
+            ],
+            "ariaLabel": "",
+            "placeholder": "",
+            "describedBy": [
+              {
+                "id": "product-name-help",
+                "exists": true,
+                "text": "用你平时识别这个商品的名称即可。",
+                "live": false
+              },
+              {
+                "id": "product-name-error",
+                "exists": true,
+                "text": "",
+                "live": true
+              }
+            ]
+          },
+          "product-description": {
+            "found": true,
+            "labels": [
+              "商品介绍\n选填"
+            ],
+            "ariaLabel": "",
+            "placeholder": "",
+            "describedBy": [
+              {
+                "id": "description-help",
+                "exists": true,
+                "text": "补充材质、规格、用途等已知信息。",
+                "live": false
+              }
+            ]
+          },
+          "selling-points": {
+            "found": true,
+            "labels": [
+              "真实卖点\n选填"
+            ],
+            "ariaLabel": "",
+            "placeholder": "",
+            "describedBy": [
+              {
+                "id": "selling-points-help",
+                "exists": true,
+                "text": "每行写一条；只填有依据、可确认的内容。",
+                "live": false
+              }
+            ]
+          },
+          "user-intent": {
+            "found": true,
+            "labels": [
+              "本次重点\n选填"
+            ],
+            "ariaLabel": "",
+            "placeholder": "",
+            "describedBy": [
+              {
+                "id": "user-intent-help",
+                "exists": true,
+                "text": "例如：想突出轻便，避免出现户外场景。",
+                "live": false
+              }
+            ]
+          },
+          "reference-images": {
+            "found": true,
+            "labels": [
+              "＋\n添加图片\nJPG、PNG、TIFF 或 GIF，最多 3 张"
+            ],
+            "ariaLabel": "",
+            "placeholder": "",
+            "describedBy": [
+              {
+                "id": "image-help",
+                "exists": true,
+                "text": "第一张是主要参考，用来保持商品身份；其余补充角度或细节。",
+                "live": false
+              },
+              {
+                "id": "image-selection",
+                "exists": true,
+                "text": "",
+                "live": true
+              },
+              {
+                "id": "image-error",
+                "exists": true,
+                "text": "",
+                "live": true
+              }
+            ]
+          }
+        },
+        "problems": []
+      }
+    },
+    {
+      "id": "blank.error_association",
+      "title": "空白形态：错误提示与输入框关联（role=alert + aria-describedby）",
+      "ok": true,
+      "detail": {
+        "pairs": [
+          {
+            "input": "product-name",
+            "error": "product-name-error",
+            "found": true,
+            "role": "alert",
+            "referenced": true
+          },
+          {
+            "input": "reference-images",
+            "error": "image-error",
+            "found": true,
+            "role": "alert",
+            "referenced": true
+          }
+        ],
+        "problems": []
+      }
+    },
+    {
+      "id": "responsive.390_blank",
+      "title": "空白形态：390px 视口无横向溢出",
+      "ok": true,
+      "detail": {
+        "scrollWidth": 390,
+        "bodyScrollWidth": 390,
+        "innerWidth": 390
+      }
+    },
+    {
+      "id": "data.shots_state_text",
+      "title": "有数据形态：每张图卡片都有文字状态（不只靠颜色）",
+      "ok": true,
+      "detail": {
+        "cards": 4,
+        "cards_without_state": [],
+        "sample": "粗棒针织套头毛衣主图\n已完成\n已采用"
+      }
+    },
+    {
+      "id": "data.live_regions",
+      "title": "有数据形态：状态区域有 role/aria-live 且可见时有文字",
+      "ok": true,
+      "detail": {
+        "regions": [
+          {
+            "id": "app-notice",
+            "found": true,
+            "role": "status",
+            "live": "polite",
+            "hidden": true,
+            "text": ""
+          },
+          {
+            "id": "generation-status",
+            "found": true,
+            "role": "status",
+            "live": "polite",
+            "hidden": true,
+            "text": ""
+          },
+          {
+            "id": "selection-status",
+            "found": true,
+            "role": "status",
+            "live": "polite",
+            "hidden": true,
+            "text": ""
+          },
+          {
+            "id": "save-state",
+            "found": true,
+            "role": "status",
+            "live": "polite",
+            "hidden": false,
+            "text": "商品资料已保存。"
+          },
+          {
+            "id": "plan-status",
+            "found": true,
+            "role": "status",
+            "live": "polite",
+            "hidden": true,
+            "text": ""
+          },
+          {
+            "id": "brief-status",
+            "found": true,
+            "role": "status",
+            "live": "polite",
+            "hidden": true,
+            "text": ""
+          }
+        ],
+        "problems": []
+      }
+    },
+    {
+      "id": "data.aria_busy",
+      "title": "有数据形态：loading 用 aria-busy 表达",
+      "ok": true,
+      "detail": {
+        "sections": [
+          {
+            "id": "generation-workspace",
+            "found": true,
+            "busy": "false"
+          },
+          {
+            "id": "brief-workspace",
+            "found": true,
+            "busy": "false"
+          }
+        ],
+        "problems": []
+      }
+    },
+    {
+      "id": "data.disabled_reason",
+      "title": "有数据形态：禁用按钮的原因可被发现",
+      "ok": true,
+      "detail": {
+        "buttons": [
+          {
+            "selector": "#generate-from-plan",
+            "info": {
+              "found": true,
+              "disabled": false,
+              "reasons": []
+            }
+          },
+          {
+            "selector": "#save-plan",
+            "info": {
+              "found": true,
+              "disabled": true,
+              "reasons": [
+                "visible-text:selection-hint",
+                "visible-text:plan-save-state",
+                "visible-text:save-state",
+                "visible-text:prompt-edit-help",
+                "visible-text:brief-save-state"
+              ]
+            }
+          },
+          {
+            "selector": "#save-selection",
+            "info": {
+              "found": true,
+              "disabled": true,
+              "reasons": [
+                "visible-text:selection-hint",
+                "visible-text:plan-save-state",
+                "visible-text:save-state",
+                "visible-text:prompt-edit-help",
+                "visible-text:brief-save-state"
+              ]
+            }
+          },
+          {
+            "selector": "#export-selection",
+            "info": {
+              "found": true,
+              "disabled": false,
+              "reasons": []
+            }
+          },
+          {
+            "selector": "#save-brief",
+            "info": {
+              "found": true,
+              "disabled": true,
+              "reasons": [
+                "visible-text:selection-hint",
+                "visible-text:plan-save-state",
+                "visible-text:save-state",
+                "visible-text:prompt-edit-help",
+                "visible-text:brief-save-state"
+              ]
+            }
+          },
+          {
+            "selector": "#save-prompt",
+            "info": {
+              "found": true,
+              "disabled": true,
+              "reasons": [
+                "visible-text:selection-hint",
+                "visible-text:plan-save-state",
+                "visible-text:save-state",
+                "visible-text:prompt-edit-help",
+                "visible-text:brief-save-state"
+              ]
+            }
+          }
+        ],
+        "without_reason": []
+      }
+    },
+    {
+      "id": "responsive.390_data",
+      "title": "有数据形态：390px 视口无横向溢出",
+      "ok": true,
+      "detail": {
+        "scrollWidth": 390,
+        "bodyScrollWidth": 390,
+        "innerWidth": 390
+      }
+    },
+    {
+      "id": "zoom.200_data",
+      "title": "200% 缩放（等价 720x500 视口）：主流程按钮可见可点、无溢出",
+      "ok": true,
+      "detail": {
+        "limitation": "200% 缩放用等价 CSS 视口模拟（1440x1000 -> 720x500）：能覆盖布局溢出与按钮可达性，不能覆盖真实缩放下的字号放大与图片缩放。",
+        "overflow": {
+          "scrollWidth": 720,
+          "bodyScrollWidth": 720,
+          "innerWidth": 720
+        },
+        "buttons": {
+          "#generate-from-plan": {
+            "found": true,
+            "width": 124,
+            "height": 48,
+            "insideViewport": true,
+            "hit": true,
+            "hitTag": "button#generate-from-plan.button.button-primary:button"
+          },
+          "#export-selection": {
+            "found": true,
+            "width": 96,
+            "height": 44,
+            "insideViewport": true,
+            "hit": true,
+            "hitTag": "button#export-selection.button.button-primary:button"
+          },
+          "#back-home": {
+            "found": true,
+            "width": 44,
+            "height": 44,
+            "insideViewport": true,
+            "hit": true,
+            "hitTag": "button#back-home.back-button:button"
+          }
+        },
+        "problems": []
+      }
+    },
+    {
+      "id": "data.empty_state",
+      "title": "有数据形态：未生成状态有文字状态与可操作入口",
+      "ok": true,
+      "detail": {
+        "cards": 3,
+        "start": {
+          "text": "按此方案生成",
+          "disabled": false
+        },
+        "problems": [],
+        "sample": "01\nAmazon US 主图\n尚未生成"
+      }
+    },
+    {
+      "id": "data.error_state",
+      "title": "有数据形态：打开失败给出文字错误提示（不只靠颜色）",
+      "ok": true,
+      "detail": {
+        "hidden": false,
+        "display": "block",
+        "text": "此文件夹中没有可打开的商品工作空间。",
+        "tone": "error",
+        "role": "status",
+        "live": "polite",
+        "home_visible": true
+      }
+    },
+    {
+      "id": "data.loading_state",
+      "title": "有数据形态：生成中的 loading 有 aria-busy 或文字状态",
+      "ok": true,
+      "detail": {
+        "observations": [
+          {
+            "busy": "true",
+            "start_label": "按此方案生成",
+            "cards": [
+              "01\nAmazon US 主图\n尚未生成",
+              "02\n第一卖点\n尚未生成",
+              "03\n通勤情境\n尚未生成"
+            ]
+          }
+        ],
+        "hint": ""
+      }
+    },
+    {
+      "id": "keyboard.start_generation",
+      "title": "键盘：Tab 到「开始生成」并用 Enter 触发（产生候选）",
+      "ok": true,
+      "detail": {
+        "active_after_tab": "generate-from-plan",
+        "tab_stops": 37,
+        "provider_submissions": 3,
+        "candidates_rendered": 1,
+        "loading_seen": true
+      }
+    },
+    {
+      "id": "safety.real_workspace_unchanged",
+      "title": "真实工作空间只读（逐文件 sha256 比对）",
+      "ok": true,
+      "detail": {
+        "files": 47,
+        "changed": [],
+        "added": [],
+        "removed": []
+      }
+    },
+    {
+      "id": "safety.no_external_requests",
+      "title": "浏览器没有访问产品以外的地址",
+      "ok": true,
+      "detail": {
+        "external": []
+      }
+    }
+  ],
+  "failures": [],
+  "passed": true
+}

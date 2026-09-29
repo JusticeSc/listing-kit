@@ -1,0 +1,34 @@
+{
+  "F1": {
+    "verdict": "same",
+    "why": "杯体高直筒，侧壁平直，比例约3.1:1"
+  },
+  "F2": {
+    "verdict": "same",
+    "why": "上部为哑光深青绿，颜色一致"
+  },
+  "F3": {
+    "verdict": "same",
+    "why": "下部深炭灰防滑套带三条水平筋"
+  },
+  "F4": {
+    "verdict": "different",
+    "why": "无杯盖，缺少同心阶梯环"
+  },
+  "F5": {
+    "verdict": "different",
+    "why": "无陶土橙装饰环"
+  },
+  "F6": {
+    "verdict": "uncertain",
+    "why": "底部细节不可见，无法确认防滑圈"
+  },
+  "F7": {
+    "verdict": "same",
+    "why": "无把手、侧握、提带、吸管、杯嘴"
+  },
+  "F8": {
+    "verdict": "same",
+    "why": "外表无文字、数字、Logo、标签"
+  }
+}

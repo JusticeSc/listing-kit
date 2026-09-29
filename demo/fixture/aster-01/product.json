@@ -1,0 +1,154 @@
+{
+  "schema": "demo-fact-card/1",
+  "sku": "demo-tumbler-aster-01",
+  "display_name": "Aster 01 保温杯",
+  "fixture": true,
+  "fact_source": "demo_fixture",
+  "metric_profile": "cylinder-v1",
+  "version": "2026-09-25.1",
+  "created_at": "2026-09-24T19:40:00+08:00",
+  "threshold_derivation": "threshold-derivation.json",
+  "product_class": "insulated tumbler，单个圆柱形杯体 + 旋盖",
+  "disclaimers": [
+    "虚构演示商品，不对应任何真实品牌、商标或在售产品。",
+    "仅用于本项目的功能演示与验证，不得用于真实上架、对外宣传或平台审核。",
+    "全部外观事实由本项目自行设计与生成，不是从任何真实商品资料提取的。"
+  ],
+  "identity": {
+    "form": "单个圆柱形杯体 + 旋盖，侧壁近垂直",
+    "usage": "保温随行杯"
+  },
+  "palette": {
+    "space": "srgb",
+    "max_delta_e": 26.0,
+    "roles": [
+      {"role": "teal", "slot": "body_upper", "hex": "#0F6B66", "desc": "杯体上段主色（哑光深青绿）"},
+      {"role": "dark", "slot": "body_lower", "hex": "#252A2A", "desc": "杯盖、下段防滑套、底部防滑圈（同族深炭灰）"},
+      {"role": "orange", "slot": "trim", "hex": "#D97A45", "desc": "杯盖与杯体接缝处的窄装饰环（陶土橙）"}
+    ]
+  },
+  "facts": [
+    {
+      "id": "F1",
+      "claim": "单个高直筒杯体，高宽视觉比例约 3.1:1，主体侧壁近乎平直",
+      "modality": "mixed",
+      "machine_checks": [
+        {"metric": "aspect_h_over_w", "declared": 3.1,
+         "pass": {"min": 2.6, "max": 3.6},
+         "manual": {"min": 2.3, "max": 3.9}}
+      ],
+      "human_note": "侧壁是否弯曲或收腰由人确认；机器只给整体高宽比",
+      "violation": "变成矮胖杯、锥形杯、马克杯或瓶状收腰"
+    },
+    {
+      "id": "F2",
+      "claim": "上部约 72% 为哑光深青绿 #0F6B66",
+      "modality": "mixed",
+      "machine_checks": [
+        {"metric": "body_upper_share", "declared": 0.72,
+         "pass": {"min": 0.58, "max": 0.80},
+         "manual": {"min": 0.50, "max": 0.88}}
+      ],
+      "diagnostics": [
+        {"metric": "upper_color_delta_e", "gating": false, "declared": 0.0,
+         "why_not_gating": "D0.1 §3 已裁定：十六进制值只用于生成提示词与目视对照，不作为逐像素判据。v1 写的 pass max 12.0 没有派生来源，还把人工选定的 C 判成 manual，与选型结论矛盾，故降级为登记读数。"}
+      ],
+      "human_note": "是否出现第三种主色、渐变或图案由人确认",
+      "violation": "改成其他主色、金属裸色、渐变或图案"
+    },
+    {
+      "id": "F3",
+      "claim": "下部约 28% 为深炭灰 #252A2A 防滑套，带三条浅水平筋",
+      "modality": "mixed",
+      "machine_checks": [
+        {"metric": "body_lower_share", "declared": 0.28,
+         "pass": {"min": 0.20, "max": 0.42},
+         "manual": {"min": 0.12, "max": 0.50}},
+        {"metric": "rib_count", "declared": 3,
+         "pass": {"min": 3, "max": 3},
+         "manual": {"min": 2, "max": 4}}
+      ],
+      "human_note": "筋条行距是否均匀由人确认",
+      "violation": "防滑套消失、变色、改变高度或筋条数量明显错误"
+    },
+    {
+      "id": "F4",
+      "claim": "杯盖为低矮深炭灰结构，具有两层清楚可见的同心阶梯环",
+      "modality": "mixed",
+      "machine_checks": [
+        {"metric": "lid_share", "declared": 0.20, "pass": {"max": 0.20}}
+      ],
+      "human_only_checks": ["恰好两级同心台阶", "盖顶无开口", "无第二只盖子或翻盖"],
+      "human_note": "阶梯级数与开口有无，机器尚不判定；机器只保证杯盖低矮",
+      "violation": "杯盖被简化成单层、增加翻盖、吸嘴或第二只盖子"
+    },
+    {
+      "id": "F5",
+      "claim": "杯盖与杯体之间有一圈窄陶土橙 #D97A45 装饰环",
+      "modality": "machine",
+      "machine_checks": [
+        {"metric": "trim_span_count", "declared": 1, "pass": {"min": 1, "max": 1}},
+        {"metric": "trim_share", "declared": 0.0, "pass": {"max": 0.03}, "manual": {"max": 0.05}},
+        {"metric": "trim_top_position", "declared": 0.0, "pass": {"max": 0.25}}
+      ],
+      "violation": "装饰环缺失、变宽或出现在杯体其他位置"
+    },
+    {
+      "id": "F6",
+      "claim": "平底，底部有窄深灰防滑圈",
+      "modality": "mixed",
+      "machine_checks": [
+        {"metric": "bottom_spread_share", "declared": 0.0,
+         "pass": {"max": 0.05}, "manual": {"max": 0.08}},
+        {"metric": "bottom_ring_present", "declared": 1, "pass": {"min": 1, "max": 1}}
+      ],
+      "human_note": "是否悬浮或与台面穿插由人确认",
+      "violation": "增加支脚、尖底或明显悬浮"
+    },
+    {
+      "id": "F7",
+      "claim": "无把手、无侧握、无提带、无吸管、无杯嘴",
+      "modality": "mixed",
+      "machine_checks": [
+        {"metric": "body_protrusion", "declared": 0.0,
+         "pass": {"max": 0.08}, "manual": {"max": 0.12}},
+        {"metric": "extra_area_share", "declared": 0.0, "pass": {"max": 0.01}}
+      ],
+      "human_note": "凸出的是什么由人确认；机器只报凸出量与主体外像素，不判它是不是把手",
+      "violation": "新增把手、侧握、提带、吸管、杯嘴，或多个杯体"
+    },
+    {
+      "id": "F8",
+      "claim": "外表无文字、数字、Logo、标签和水印",
+      "modality": "human",
+      "machine_proxy": {
+        "metric": "text_proxy_blobs",
+        "note": "高梯度小块数只是形态代理，实测会把筋条边缘误报为候选（见 d0-1-selection.md §7），因此不计入机器判定。"
+      },
+      "human_note": "文字只能靠人核对；本卡不假装机器能判",
+      "violation": "生成品牌字、伪标签、容量字样或装饰符号"
+    }
+  ],
+  "machine_check_gaps": [
+    {"fact": "F2/F3", "missing": "第三种主色、渐变或图案", "status": "closed_in_D0.5",
+     "why": "D0.1 §3 已裁定颜色不能按逐像素十六进制判；D0.5 改为基于调色板未归类像素占比的 extra_area_share ≤0.01 谓词"},
+    {"fact": "F4", "missing": "阶梯级数与盖顶开口", "status": "open", "assigned_to": "维持人工判定",
+     "why": "D0.5 未实现阶梯级数与盖顶开口的机器判据；级数与开口语义仍需人看"},
+    {"fact": "F7", "missing": "凸出物是否为把手、提带或吸管", "status": "open", "assigned_to": "维持人工判定",
+     "why": "机器只报凸出量与主体外像素，不判凸出物的语义"},
+    {"fact": "F8", "missing": "文字与伪标签", "status": "open", "assigned_to": "维持人工判定",
+     "why": "机器代理已证不成立，见 evals/product-demo/fixture-design/d0-1-selection.md §3"}
+  ],
+  "unknowns": [
+    {"field": "材质", "value": "Unknown", "why": "虚构演示商品，未声明"},
+    {"field": "容量", "value": "Unknown", "why": "未声明；图上也不得出现容量字样"},
+    {"field": "保温性能", "value": "Unknown", "why": "未声明，且不属于图片可验证范围"},
+    {"field": "品牌与 Logo", "value": "Unknown", "why": "无品牌；F8 要求外表完全无标记"}
+  ],
+  "capability_binding": {
+    "measured_with": "阿里云百炼 qwen-image-3.0",
+    "measured_at": "2026-09-24",
+    "evidence": "evals/product-demo/fixture-design/d0-1-selection.md",
+    "expires_when": "该模型版本或生成端点变化时，本卡的实测阈值与部件可读性结论须重新校准"
+  }
+}

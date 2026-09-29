@@ -1,0 +1,56 @@
+{
+  "schema": "demo-human-visual-review/1",
+  "shot_id": "S2",
+  "source": "evals/product-demo/d1-4-first-round-2026-09-26.md#4",
+  "reason_vocabulary": [
+    "构图",
+    "主体层级",
+    "光线融合",
+    "材质真实感",
+    "背景干扰",
+    "商业完成度"
+  ],
+  "no_composite_score": true,
+  "reviews": {
+    "F-01": {
+      "verdict": "keep",
+      "reasons": [
+        "构图",
+        "主体层级",
+        "光线融合",
+        "商业完成度"
+      ],
+      "notes": "主体居中、层级清楚、光线融合自然；左墙阴影面积偏大，仍在商业可接受范围"
+    },
+    "F-02": {
+      "verdict": "keep",
+      "reasons": [
+        "背景干扰",
+        "主体层级"
+      ],
+      "notes": "上左出现窗形亮块（背景干扰），主体略小；事实与画面均无问题"
+    },
+    "F-03": {
+      "verdict": "keep",
+      "reasons": [
+        "光线融合",
+        "材质真实感",
+        "构图",
+        "主体层级"
+      ],
+      "notes": "窗光斜条与地面质感最好；主体饱满、居中；材质哑光真实；背景干扰小"
+    },
+    "F-04": {
+      "verdict": "keep",
+      "reasons": [
+        "背景干扰",
+        "构图"
+      ],
+      "notes": "背景最干净；主体略偏左，防滑套在画面中占比略大"
+    }
+  },
+  "reviewer": "project-operator",
+  "reviewer_kind": "not_independent_third_party",
+  "reviewed_at": "2026-09-26T00:40:00+08:00",
+  "boundary": "审美结论只由人给；本文件不提供任何客观总分，也不承担第三方评审。"
+}

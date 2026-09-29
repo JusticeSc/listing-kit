@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "amz-listing-kit/contracts/product-facts-v1.schema.json",
+  "title": "ProductFacts v1",
+  "description": "商品事实的唯一权威结构。设计口径：数值与单位分开存并归一到 (value, unit)；每条事实带 source 与 confirmer，confirmer=null 表示还没人确认；同一个 id 从两处得到不同值时必须 conflicted 且 value=null，不许被最后一个值覆盖。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "facts_version", "facts_hash", "source", "facts", "data_policy_version", "confirmer_note"],
+  "properties": {
+    "schema": { "const": "amz-listing-kit/product-facts@1" },
+    "facts_version": { "type": "string", "pattern": "^pfv1-[0-9a-f]{12}$" },
+    "facts_hash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "upc", "claimed_attest"],
+      "properties": {
+        "path": { "type": "string" },
+        "upc": { "type": ["string", "null"] },
+        "claimed_attest": {
+          "type": ["object", "null"],
+          "description": "原件里的整单签字。它签的是素材条件（no_watermark / no_props / single_subject / angle_ok / font_license / competitor_clean），不是商品事实 —— 只做追溯，绝不充当事实确认者。"
+        }
+      }
+    },
+    "facts": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/fact" },
+      "description": "按 id 排序。同一 id 只允许出现一次 —— 冲突在合并时就被折叠成一条 conflicted。"
+    },
+    "data_policy_version": {
+      "type": ["string", "null"],
+      "description": "引用 P1.2 的 data-policy 版本；授权语义只有那一处权威，这里不内嵌。"
+    },
+    "confirmer_note": { "type": "string" }
+  },
+  "$defs": {
+    "fact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "value", "unit", "raw", "source", "confirmer", "state", "allowed_on_image", "conflicts"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^(spec|claim|extra)\\.\\S+$",
+          "description": "spec.* 来自闭集 specs；extra.* 是闭集之外的键；claim.* 来自 title / bullets。"
+        },
+        "kind": { "enum": ["quantity", "text", "claim"] },
+        "value": {
+          "type": ["number", "string", "null"],
+          "description": "quantity 是归一后的数值；text / claim 是原串；conflicted 必须为 null。"
+        },
+        "unit": {
+          "type": ["string", "null"],
+          "description": "quantity 归一到 ml / g / cm；text、claim、extra 一律 null。"
+        },
+        "raw": { "type": ["string", "null"] },
+        "source": { "type": "string", "description": "形如 examples/product_fullset.json#specs.容量 —— 这条事实是从哪一行来的。" },
+        "confirmer": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": ["by", "date", "basis"],
+          "properties": {
+            "by": { "type": "string" },
+            "date": { "type": "string" },
+            "basis": { "type": "string" }
+          },
+          "description": "null = 还没人确认这条事实。素材签字（attest）不得填在这里。"
+        },
+        "state": { "enum": ["unconfirmed", "confirmed", "missing", "unknown", "conflicted"] },
+        "allowed_on_image": { "enum": ["yes", "no", "unjudged"] },
+        "forbidden_hits": {
+          "type": "array",
+          "items": { "type": "object", "additionalProperties": false, "required": ["word", "list"], "properties": { "word": { "type": "string" }, "list": { "enum": ["forbidden_words", "forbidden_on_image"] } } }
+        },
+        "sources_all": { "type": "array", "items": { "type": "string" }, "description": "多来源合并后值一致时，值相同的每个来源都留在这里。" },
+        "conflicts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["source", "value", "unit", "raw", "state"],
+            "properties": {
+              "source": { "type": "string" },
+              "value": { "type": ["number", "string", "null"] },
+              "unit": { "type": ["string", "null"] },
+              "raw": { "type": ["string", "null"] },
+              "state": { "type": "string" }
+            }
+          },
+          "description": "state=conflicted 时非空：每个来源各留一条原始记录，下游只能拒，不能挑一个。"
+        }
+      }
+    }
+  }
+}

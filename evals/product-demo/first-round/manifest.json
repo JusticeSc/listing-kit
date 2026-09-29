@@ -1,0 +1,239 @@
+{
+  "schema": "demo-first-round-manifest/1",
+  "experiment": "Phase 1 / D1.4 首轮四候选",
+  "ran_at": "2026-09-26T00:15:15+08:00",
+  "prompt_version": {
+    "schema": "demo-prompt-version/1",
+    "prompt_text": "Photograph of the exact same product as in the reference image. The product must stay exactly the same design, the same colours, the same proportions and the same number of parts as in the reference image: exactly one single tall straight-walled insulated tumbler with its screw-on lid closed; the upper roughly 72 percent of the body is matte deep teal green (about #0F6B66) with a matte finish, no gradient and no printed pattern; the lower roughly 28 percent is a dark charcoal gray (about #252A2A) grip sleeve carrying exactly three raised horizontal ribs; the lid is a low profile dark charcoal lid whose top shows exactly two clearly visible concentric stepped rings, with no opening on the lid top; one narrow terracotta orange ring (about #D97A45) sits in the seam between the lid and the body, evenly thick all the way around; the bottom is flat with a narrow dark gray non-slip ring, and the tumbler rests flat and grounded on its surface.\n\nEvery outer surface of the product stays completely blank: no text, no numbers, no letters, no words, no logo, no brand mark, no label, no sticker, no watermark, no capacity marking and no decorative symbol anywhere on the product.\n\nNot tapered, not waisted, not a mug, not bottle shaped, and with no handle, no side grip, no strap, no straw, no drinking spout, no flip top, no dome lid, no second cup and no second lid.\n\nScene for an Amazon US listing lifestyle image: the tumbler stands on a clean matte light stone kitchen counter next to a smooth neutral wall; a single soft window light comes from the upper left; nothing else is in the frame, and no prop overlaps or touches the product; no hands and no people.\n\nEye level three quarter front view, the whole product including the lid visible inside the frame with clear margins, product centred and occupying most of the frame height, soft natural contact shadow under the base, sharp focus on the product, photorealistic e-commerce product photography, square 1:1 composition.",
+    "prompt_sha256": "d339c104b20a02c7a0ea624e6a95d307f3e6363499b0e766dcde3c1581938178",
+    "negative_prompt": "different product, different colour, different proportions, extra object, second cup, handle, side handle, strap, straw, drinking spout, flip top, dome lid, open lid, text, letters, words, numbers, logo, brand mark, watermark, label, sticker, typography, pattern, gradient, glossy metallic body, cropped product, floating object, cluttered background, props overlapping the product, hands, people, blurry, low resolution",
+    "negative_prompt_sha256": "dfe46ec8b532f17f2fdd5d0f462de0db8d8629c61e3170c761496038d71bf132",
+    "blocks": [
+      {
+        "block": "PRODUCT LOCK",
+        "locks": [
+          "F1",
+          "F2",
+          "F3",
+          "F4",
+          "F5",
+          "F6",
+          "F7"
+        ],
+        "text": "Photograph of the exact same product as in the reference image. The product must stay exactly the same design, the same colours, the same proportions and the same number of parts as in the reference image: exactly one single tall straight-walled insulated tumbler with its screw-on lid closed; the upper roughly 72 percent of the body is matte deep teal green (about #0F6B66) with a matte finish, no gradient and no printed pattern; the lower roughly 28 percent is a dark charcoal gray (about #252A2A) grip sleeve carrying exactly three raised horizontal ribs; the lid is a low profile dark charcoal lid whose top shows exactly two clearly visible concentric stepped rings, with no opening on the lid top; one narrow terracotta orange ring (about #D97A45) sits in the seam between the lid and the body, evenly thick all the way around; the bottom is flat with a narrow dark gray non-slip ring, and the tumbler rests flat and grounded on its surface."
+      },
+      {
+        "block": "BLANK SURFACE",
+        "locks": [
+          "F8"
+        ],
+        "text": "Every outer surface of the product stays completely blank: no text, no numbers, no letters, no words, no logo, no brand mark, no label, no sticker, no watermark, no capacity marking and no decorative symbol anywhere on the product."
+      },
+      {
+        "block": "NEGATIVE SHAPE",
+        "locks": [
+          "F1",
+          "F4",
+          "F7"
+        ],
+        "text": "Not tapered, not waisted, not a mug, not bottle shaped, and with no handle, no side grip, no strap, no straw, no drinking spout, no flip top, no dome lid, no second cup and no second lid."
+      },
+      {
+        "block": "SCENE",
+        "locks": [],
+        "text": "Scene for an Amazon US listing lifestyle image: the tumbler stands on a clean matte light stone kitchen counter next to a smooth neutral wall; a single soft window light comes from the upper left; nothing else is in the frame, and no prop overlaps or touches the product; no hands and no people."
+      },
+      {
+        "block": "COMPOSITION",
+        "locks": [],
+        "text": "Eye level three quarter front view, the whole product including the lid visible inside the frame with clear margins, product centred and occupying most of the frame height, soft natural contact shadow under the base, sharp focus on the product, photorealistic e-commerce product photography, square 1:1 composition."
+      }
+    ],
+    "locks_facts": [
+      "F1",
+      "F2",
+      "F3",
+      "F4",
+      "F5",
+      "F6",
+      "F7",
+      "F8"
+    ],
+    "parent_version": null,
+    "origin": "D1.4 实验用固定提示词（Phase 3 统一编译器接管前的前身）",
+    "fact_card_sha256": "3c59995edff0c9be83c6849da333e143128189383beb075c2b0566633a12495f",
+    "fact_card_version": "2026-09-25.1"
+  },
+  "reference_set": {
+    "manifest_version": "2026-09-25.2",
+    "manifest_sha256": "529c1c3b98420b66e1db947ac3445406cb05e4c1a9b840df45ddf5b645008502",
+    "pack_dir": "evals/product-demo/fixture-design/pack",
+    "pack_version": "2026-09-25.1",
+    "views_used": [
+      {
+        "view_id": "front-full",
+        "role": "正面闭盖全身（F1/F2/F6 主证据）",
+        "file": "evals/product-demo/fixture-design/pack/01-front-full.png",
+        "sha256": "e1b1c5de1ee6b50a69fb8e431f1140d8c21a689f4fe3316461c02745139d03f6"
+      }
+    ]
+  },
+  "reference_files": [
+    "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\evals\\product-demo\\fixture-design\\pack\\01-front-full.png"
+  ],
+  "seeds": [
+    2026092601,
+    2026092602,
+    2026092603,
+    2026092604
+  ],
+  "size": "1344*1344",
+  "n": 1,
+  "prompt_extend": false,
+  "watermark": false,
+  "retest": null,
+  "budget": {
+    "charged_before": 0,
+    "planned": 4,
+    "budget_total": 8,
+    "charged_after": 4
+  },
+  "candidates": [
+    {
+      "candidate_id": "F-01",
+      "action_id": "b0c9c907f875b918",
+      "status": "SUCCEEDED",
+      "seed": 2026092601,
+      "size": "1344*1344",
+      "prompt_sha256": "d339c104b20a02c7a0ea624e6a95d307f3e6363499b0e766dcde3c1581938178",
+      "request_sha256": "7b978afe27526c1dde7d74512bfba8981f5b812fda600995797224b1759c8b9c",
+      "reference_sha256": [
+        "e1b1c5de1ee6b50a69fb8e431f1140d8c21a689f4fe3316461c02745139d03f6"
+      ],
+      "task_id": "a4243965-e600-4169-9445-3df92b803926",
+      "image_path": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\evals\\product-demo\\first-round\\attempts\\b0c9c907f875b918\\raw.png",
+      "image_sha256": "95db1ad085d068c4469aa34ce1d759bc35ce14671e023531587eabfc450176df",
+      "image_bytes": 1398436,
+      "input_image_count": 1,
+      "rewrite_status": "not_use",
+      "usage": {
+        "output_width": 1344,
+        "input_image_count": 1,
+        "input_image_type": "qima_input_1k",
+        "output_image_count": 1,
+        "output_image_type": "qima_output_1k",
+        "output_height": 1344
+      },
+      "reason": null,
+      "intent_json": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\evals\\product-demo\\first-round\\attempts\\b0c9c907f875b918\\intent.json",
+      "request_json": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\evals\\product-demo\\first-round\\attempts\\b0c9c907f875b918\\request.json",
+      "response_create_json": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\evals\\product-demo\\first-round\\attempts\\b0c9c907f875b918\\response-create.json",
+      "response_task_json": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\evals\\product-demo\\first-round\\attempts\\b0c9c907f875b918\\response-task.json"
+    },
+    {
+      "candidate_id": "F-02",
+      "action_id": "723ab2a69e19571d",
+      "status": "SUCCEEDED",
+      "seed": 2026092602,
+      "size": "1344*1344",
+      "prompt_sha256": "d339c104b20a02c7a0ea624e6a95d307f3e6363499b0e766dcde3c1581938178",
+      "request_sha256": "5eb5d174ff2fbc4f814dd77422e46d6fda83208324aca4431b1df73f381886f3",
+      "reference_sha256": [
+        "e1b1c5de1ee6b50a69fb8e431f1140d8c21a689f4fe3316461c02745139d03f6"
+      ],
+      "task_id": "d58a195a-2026-405b-9813-599008f20f79",
+      "image_path": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\evals\\product-demo\\first-round\\attempts\\723ab2a69e19571d\\raw.png",
+      "image_sha256": "1cdf146ba17c3dd685bbbae927c5ec3bca2f8d52e31c80fa9ed237fa1e1e6beb",
+      "image_bytes": 1411729,
+      "input_image_count": 1,
+      "rewrite_status": "not_use",
+      "usage": {
+        "output_width": 1344,
+        "input_image_count": 1,
+        "input_image_type": "qima_input_1k",
+        "output_image_count": 1,
+        "output_image_type": "qima_output_1k",
+        "output_height": 1344
+      },
+      "reason": null,
+      "intent_json": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\evals\\product-demo\\first-round\\attempts\\723ab2a69e19571d\\intent.json",
+      "request_json": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\evals\\product-demo\\first-round\\attempts\\723ab2a69e19571d\\request.json",
+      "response_create_json": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\evals\\product-demo\\first-round\\attempts\\723ab2a69e19571d\\response-create.json",
+      "response_task_json": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\evals\\product-demo\\first-round\\attempts\\723ab2a69e19571d\\response-task.json"
+    },
+    {
+      "candidate_id": "F-03",
+      "action_id": "c75a6d09d6ea00df",
+      "status": "SUCCEEDED",
+      "seed": 2026092603,
+      "size": "1344*1344",
+      "prompt_sha256": "d339c104b20a02c7a0ea624e6a95d307f3e6363499b0e766dcde3c1581938178",
+      "request_sha256": "7e0aaf931be42646911568fe589978f21edfe7d4554871d7f72b24eb9ff04ea3",
+      "reference_sha256": [
+        "e1b1c5de1ee6b50a69fb8e431f1140d8c21a689f4fe3316461c02745139d03f6"
+      ],
+      "task_id": "15f7458b-22d0-4e5c-b795-101cb87cd3dd",
+      "image_path": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\evals\\product-demo\\first-round\\attempts\\c75a6d09d6ea00df\\raw.png",
+      "image_sha256": "b09fd5a9e5af91e3d6231526c1022a718a27db67077a4323d31f24178b9e6546",
+      "image_bytes": 1456632,
+      "input_image_count": 1,
+      "rewrite_status": "not_use",
+      "usage": {
+        "output_width": 1344,
+        "input_image_count": 1,
+        "input_image_type": "qima_input_1k",
+        "output_image_count": 1,
+        "output_image_type": "qima_output_1k",
+        "output_height": 1344
+      },
+      "reason": null,
+      "intent_json": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\evals\\product-demo\\first-round\\attempts\\c75a6d09d6ea00df\\intent.json",
+      "request_json": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\evals\\product-demo\\first-round\\attempts\\c75a6d09d6ea00df\\request.json",
+      "response_create_json": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\evals\\product-demo\\first-round\\attempts\\c75a6d09d6ea00df\\response-create.json",
+      "response_task_json": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\evals\\product-demo\\first-round\\attempts\\c75a6d09d6ea00df\\response-task.json"
+    },
+    {
+      "candidate_id": "F-04",
+      "action_id": "45ef384cb14bafbe",
+      "status": "SUCCEEDED",
+      "seed": 2026092604,
+      "size": "1344*1344",
+      "prompt_sha256": "d339c104b20a02c7a0ea624e6a95d307f3e6363499b0e766dcde3c1581938178",
+      "request_sha256": "114caa02afb29c438cb2487c4bdeb6bfefdc14283884520da095a7bf7d962f3d",
+      "reference_sha256": [
+        "e1b1c5de1ee6b50a69fb8e431f1140d8c21a689f4fe3316461c02745139d03f6"
+      ],
+      "task_id": "c31fc87c-7d07-492d-a6a2-25437c567c92",
+      "image_path": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\evals\\product-demo\\first-round\\attempts\\45ef384cb14bafbe\\raw.png",
+      "image_sha256": "80ec57b21bdbd0cfd49d3917a8d2049123b0862556f9cac5ce8033f5aca1a875",
+      "image_bytes": 1384743,
+      "input_image_count": 1,
+      "rewrite_status": "not_use",
+      "usage": {
+        "output_width": 1344,
+        "input_image_count": 1,
+        "input_image_type": "qima_input_1k",
+        "output_image_count": 1,
+        "output_image_type": "qima_output_1k",
+        "output_height": 1344
+      },
+      "reason": null,
+      "intent_json": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\evals\\product-demo\\first-round\\attempts\\45ef384cb14bafbe\\intent.json",
+      "request_json": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\evals\\product-demo\\first-round\\attempts\\45ef384cb14bafbe\\request.json",
+      "response_create_json": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\evals\\product-demo\\first-round\\attempts\\45ef384cb14bafbe\\response-create.json",
+      "response_task_json": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\evals\\product-demo\\first-round\\attempts\\45ef384cb14bafbe\\response-task.json"
+    }
+  ],
+  "checks": {
+    "billable_calls_this_document": 4,
+    "ledger_rows_chargeable": 4,
+    "every_success_carried_reference": true,
+    "prompt_extend_false": true,
+    "providers_are_real": "usage.input_image_count 来自服务端回执，不是本地声明"
+  },
+  "does_not_prove": [
+    "不证明 F1-F8 通过（那是 D1.5 的人工与机器裁决）",
+    "不证明其他商品、其他品类或真实运营提效",
+    "不证明多张参考图分支（本轮只用 1 张）"
+  ]
+}

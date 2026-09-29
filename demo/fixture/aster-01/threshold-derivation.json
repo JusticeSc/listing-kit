@@ -1,0 +1,428 @@
+{
+  "schema": "demo-threshold-derivation/1",
+  "version": "2026-09-25.1",
+  "generated_at": "2026-09-25T22:50:39+08:00",
+  "fact_card": "demo/fixture/aster-01/product.json",
+  "fact_card_sha256": "3c59995edff0c9be83c6849da333e143128189383beb075c2b0566633a12495f",
+  "metric_profile": "cylinder-v1",
+  "measurement_impl": "cylinder-v1 · demo/fixture/measure_cylinder.py",
+  "supersedes_measurement_impl": "demo/fixture/measure_f1_f8.py（旧适配器：报告标题自称 v2、docstring 自称 v3；本项目不再给它叠加版本号，保留作历史与证据链，不再驱动判定）",
+  "entries": [
+    {
+      "fact": "F1",
+      "metric": "aspect_h_over_w",
+      "gating": true,
+      "declared": 3.1,
+      "pass": {
+        "min": 2.6,
+        "max": 3.6
+      },
+      "manual": {
+        "min": 2.3,
+        "max": 3.9
+      },
+      "source": "evals/product-demo/fixture-design/d0-1-selection.md §6「F1 高宽比」行",
+      "rule": "通过档 2.6–3.6、人工档 2.3–3.9 直接取自该表的实测区间 2.69–3.18 外扩；声明值 3.1 来自设计规格",
+      "sample": {
+        "A": 2.688,
+        "B": 2.886,
+        "C": 3.182
+      },
+      "sample_source": "D0.5 现场量测：cylinder-v1 · demo/fixture/measure_cylinder.py",
+      "measurement_impl": "cylinder-v1 · demo/fixture/measure_cylinder.py",
+      "sample_n": 3,
+      "statistical_claim": "n=3，只能作为下一轮验收档使用，不能当统计结论",
+      "version": "2026-09-25.1",
+      "expires_when": "生成模型、量测实现或调色板分类权重变化时须重新校准",
+      "sample_prev_impl": {
+        "A": 2.688,
+        "B": 2.886,
+        "C": 3.182
+      },
+      "drift_note": "v2 采样键 F1_ratio_h_over_w；漂移只出现在按调色板分类的色带/色环读数上，几何读数逐值相同"
+    },
+    {
+      "fact": "F2",
+      "metric": "body_upper_share",
+      "gating": true,
+      "declared": 0.72,
+      "pass": {
+        "min": 0.58,
+        "max": 0.8
+      },
+      "manual": {
+        "min": 0.5,
+        "max": 0.88
+      },
+      "source": "d0-1-selection.md §6「F2/F3 上段占杯体」行",
+      "rule": "通过档 0.58–0.80、人工档 0.50–0.88 取自实测 0.654–0.682 外扩；硬失败 <0.50",
+      "sample": {
+        "A": 0.6555,
+        "B": 0.6673,
+        "C": 0.6479
+      },
+      "sample_source": "D0.5 现场量测：cylinder-v1 · demo/fixture/measure_cylinder.py",
+      "measurement_impl": "cylinder-v1 · demo/fixture/measure_cylinder.py",
+      "sample_n": 3,
+      "statistical_claim": "n=3，只能作为下一轮验收档使用，不能当统计结论",
+      "version": "2026-09-25.1",
+      "expires_when": "生成模型、量测实现或调色板分类权重变化时须重新校准",
+      "sample_prev_impl": {
+        "A": 0.6603,
+        "B": 0.6819,
+        "C": 0.6543
+      },
+      "drift_note": "v2 采样键 F2F3_teal_share；漂移只出现在按调色板分类的色带/色环读数上，几何读数逐值相同"
+    },
+    {
+      "fact": "F2",
+      "metric": "upper_color_delta_e",
+      "gating": false,
+      "declared": 0.0,
+      "pass": null,
+      "manual": null,
+      "source": "D0.1 §3 的裁定 + d0-1-selection.md §3 的实测色偏",
+      "rule": "不作为判据。D0.1 §3 明确「十六进制值只用于生成提示词与目视对照，不作为逐像素判据」；v1 写的 pass max 12.0 没有派生来源，并把人工选定的 C 判成 manual，与选型结论直接矛盾。现降级为登记读数。",
+      "sample": {
+        "A": 11.75,
+        "B": 11.88,
+        "C": 13.66
+      },
+      "sample_source": "D0.5 现场量测：cylinder-v1 · demo/fixture/measure_cylinder.py",
+      "measurement_impl": "cylinder-v1 · demo/fixture/measure_cylinder.py",
+      "sample_n": 3,
+      "statistical_claim": "不参与判定",
+      "version": "2026-09-25.1",
+      "expires_when": "不适用（非判据）"
+    },
+    {
+      "fact": "F3",
+      "metric": "body_lower_share",
+      "gating": true,
+      "declared": 0.28,
+      "pass": {
+        "min": 0.2,
+        "max": 0.42
+      },
+      "manual": {
+        "min": 0.12,
+        "max": 0.5
+      },
+      "source": "d0-1-selection.md §6「F2/F3 上段占杯体」行（下段是它的补）",
+      "rule": "杯体只分上段与下段，故通过档 = 1 − 上段通过档 = 0.20–0.42，人工档 0.12–0.50；这是一条派生规则，不是独立实测",
+      "sample": {
+        "A": 0.3445,
+        "B": 0.3327,
+        "C": 0.3521
+      },
+      "sample_source": "D0.5 现场量测：cylinder-v1 · demo/fixture/measure_cylinder.py",
+      "measurement_impl": "cylinder-v1 · demo/fixture/measure_cylinder.py",
+      "sample_n": 3,
+      "statistical_claim": "n=3，只能作为下一轮验收档使用，不能当统计结论",
+      "version": "2026-09-25.1",
+      "expires_when": "生成模型、量测实现或调色板分类权重变化时须重新校准",
+      "sample_prev_impl": {
+        "A": 0.3397,
+        "B": 0.3181,
+        "C": 0.3457
+      },
+      "drift_note": "v2 采样键 F2F3_sleeve_share；漂移只出现在按调色板分类的色带/色环读数上，几何读数逐值相同"
+    },
+    {
+      "fact": "F3",
+      "metric": "rib_count",
+      "gating": true,
+      "declared": 3,
+      "pass": {
+        "min": 3,
+        "max": 3
+      },
+      "manual": {
+        "min": 2,
+        "max": 4
+      },
+      "source": "d0-1-selection.md §6「F3 筋条」行",
+      "rule": "设计值为 3；通过档写死为恰好 3，人工档 2–4 且要求行距均匀；0 条或 ≥6 条属硬失败",
+      "sample": {
+        "A": 4,
+        "B": 3,
+        "C": 3
+      },
+      "sample_source": "D0.5 现场量测：cylinder-v1 · demo/fixture/measure_cylinder.py",
+      "measurement_impl": "cylinder-v1 · demo/fixture/measure_cylinder.py",
+      "sample_n": 3,
+      "statistical_claim": "n=3，只能作为下一轮验收档使用，不能当统计结论",
+      "version": "2026-09-25.1",
+      "expires_when": "生成模型、量测实现或调色板分类权重变化时须重新校准",
+      "sample_prev_impl": {
+        "A": 4,
+        "B": 3,
+        "C": 3
+      },
+      "drift_note": "v2 采样键 F3_rib_ridges_below_seam；漂移只出现在按调色板分类的色带/色环读数上，几何读数逐值相同"
+    },
+    {
+      "fact": "F4",
+      "metric": "lid_share",
+      "gating": true,
+      "declared": 0.2,
+      "pass": {
+        "max": 0.2
+      },
+      "manual": null,
+      "source": "d0-1-selection.md §6「F4 杯盖」行",
+      "rule": "通过档 ≤0.20 取自该表；实测 0.100–0.131。阶梯级数与盖顶开口不在机器判定内（见 machine_check_gaps）",
+      "sample": {
+        "A": 0.1,
+        "B": 0.131,
+        "C": 0.1259
+      },
+      "sample_source": "D0.5 现场量测：cylinder-v1 · demo/fixture/measure_cylinder.py",
+      "measurement_impl": "cylinder-v1 · demo/fixture/measure_cylinder.py",
+      "sample_n": 3,
+      "statistical_claim": "n=3，只能作为下一轮验收档使用，不能当统计结论",
+      "version": "2026-09-25.1",
+      "expires_when": "生成模型、量测实现或调色板分类权重变化时须重新校准",
+      "sample_prev_impl": {
+        "A": 0.1,
+        "B": 0.131,
+        "C": 0.125
+      },
+      "drift_note": "v2 采样键 F4_lid_share；漂移只出现在按调色板分类的色带/色环读数上，几何读数逐值相同"
+    },
+    {
+      "fact": "F5",
+      "metric": "trim_span_count",
+      "gating": true,
+      "declared": 1,
+      "pass": {
+        "min": 1,
+        "max": 1
+      },
+      "manual": null,
+      "source": "d0-1-selection.md §6「F5 橙环」行",
+      "rule": "设计为单条窄环，通过档写死为恰好 1 段；≥2 段或缺失属硬失败",
+      "sample": {
+        "A": 1,
+        "B": 1,
+        "C": 1
+      },
+      "sample_source": "D0.5 现场量测：cylinder-v1 · demo/fixture/measure_cylinder.py",
+      "measurement_impl": "cylinder-v1 · demo/fixture/measure_cylinder.py",
+      "sample_n": 3,
+      "statistical_claim": "n=3，只能作为下一轮验收档使用，不能当统计结论",
+      "version": "2026-09-25.1",
+      "expires_when": "生成模型、量测实现或调色板分类权重变化时须重新校准",
+      "sample_prev_impl": {
+        "A": 1,
+        "B": 1,
+        "C": 1
+      },
+      "drift_note": "v2 采样键 F5_orange_span_count；漂移只出现在按调色板分类的色带/色环读数上，几何读数逐值相同"
+    },
+    {
+      "fact": "F5",
+      "metric": "trim_share",
+      "gating": true,
+      "declared": 0.0,
+      "pass": {
+        "max": 0.03
+      },
+      "manual": {
+        "max": 0.05
+      },
+      "source": "d0-1-selection.md §6「F5 橙环」行",
+      "rule": "通过档 ≤0.03、人工档 ≤0.05 取自该表；实测 0.0127–0.0154",
+      "sample": {
+        "A": 0.0127,
+        "B": 0.0138,
+        "C": 0.0136
+      },
+      "sample_source": "D0.5 现场量测：cylinder-v1 · demo/fixture/measure_cylinder.py",
+      "measurement_impl": "cylinder-v1 · demo/fixture/measure_cylinder.py",
+      "sample_n": 3,
+      "statistical_claim": "n=3，只能作为下一轮验收档使用，不能当统计结论",
+      "version": "2026-09-25.1",
+      "expires_when": "生成模型、量测实现或调色板分类权重变化时须重新校准",
+      "sample_prev_impl": {
+        "A": 0.0127,
+        "B": 0.0147,
+        "C": 0.0154
+      },
+      "drift_note": "v2 采样键 F5_orange_share；漂移只出现在按调色板分类的色带/色环读数上，几何读数逐值相同"
+    },
+    {
+      "fact": "F5",
+      "metric": "trim_top_position",
+      "gating": true,
+      "declared": 0.0,
+      "pass": {
+        "max": 0.25
+      },
+      "manual": null,
+      "source": "d0-1-selection.md §6「F5 橙环」行",
+      "rule": "该行要求「位于对象顶部 25% 内」⇒ 通过档 ≤0.25；实测 0.100–0.131",
+      "sample": {
+        "A": 0.1,
+        "B": 0.131,
+        "C": 0.1259
+      },
+      "sample_source": "D0.5 现场量测：cylinder-v1 · demo/fixture/measure_cylinder.py",
+      "measurement_impl": "cylinder-v1 · demo/fixture/measure_cylinder.py",
+      "sample_n": 3,
+      "statistical_claim": "n=3，只能作为下一轮验收档使用，不能当统计结论",
+      "version": "2026-09-25.1",
+      "expires_when": "生成模型、量测实现或调色板分类权重变化时须重新校准",
+      "sample_prev_impl": {
+        "A": 0.1,
+        "B": 0.131,
+        "C": 0.125
+      },
+      "drift_note": "v2 采样键 F5_orange_top_share；漂移只出现在按调色板分类的色带/色环读数上，几何读数逐值相同"
+    },
+    {
+      "fact": "F6",
+      "metric": "bottom_spread_share",
+      "gating": true,
+      "declared": 0.0,
+      "pass": {
+        "max": 0.05
+      },
+      "manual": {
+        "max": 0.08
+      },
+      "source": "d0-1-selection.md §6「F6 平底」行",
+      "rule": "通过档 ≤0.05、人工档 ≤0.08 取自该表；实测 0.0259–0.0387",
+      "sample": {
+        "A": 0.0387,
+        "B": 0.0323,
+        "C": 0.0259
+      },
+      "sample_source": "D0.5 现场量测：cylinder-v1 · demo/fixture/measure_cylinder.py",
+      "measurement_impl": "cylinder-v1 · demo/fixture/measure_cylinder.py",
+      "sample_n": 3,
+      "statistical_claim": "n=3，只能作为下一轮验收档使用，不能当统计结论",
+      "version": "2026-09-25.1",
+      "expires_when": "生成模型、量测实现或调色板分类权重变化时须重新校准",
+      "sample_prev_impl": {
+        "A": 0.0387,
+        "B": 0.0323,
+        "C": 0.0259
+      },
+      "drift_note": "v2 采样键 F6_bottom_spread_share；漂移只出现在按调色板分类的色带/色环读数上，几何读数逐值相同"
+    },
+    {
+      "fact": "F6",
+      "metric": "bottom_ring_present",
+      "gating": true,
+      "declared": 1,
+      "pass": {
+        "min": 1,
+        "max": 1
+      },
+      "manual": null,
+      "source": "d0-1-selection.md §6「F6 平底」行",
+      "rule": "该表要求「检出底圈」⇒ 通过档必须为 1；这是检出/未检出，不是连续量",
+      "sample": {
+        "A": 1,
+        "B": 1,
+        "C": 1
+      },
+      "sample_source": "D0.5 现场量测：cylinder-v1 · demo/fixture/measure_cylinder.py",
+      "measurement_impl": "cylinder-v1 · demo/fixture/measure_cylinder.py",
+      "sample_n": 3,
+      "statistical_claim": "n=3，只能作为下一轮验收档使用，不能当统计结论",
+      "version": "2026-09-25.1",
+      "expires_when": "生成模型、量测实现或调色板分类权重变化时须重新校准"
+    },
+    {
+      "fact": "F7",
+      "metric": "body_protrusion",
+      "gating": true,
+      "declared": 0.0,
+      "pass": {
+        "max": 0.08
+      },
+      "manual": {
+        "max": 0.12
+      },
+      "source": "d0-1-selection.md §6「F7 无凸出部件」行",
+      "rule": "通过档 ≤0.08、人工档 ≤0.12 取自该表；实测 0.0242–0.0581",
+      "sample": {
+        "A": 0.0581,
+        "B": 0.0447,
+        "C": 0.0242
+      },
+      "sample_source": "D0.5 现场量测：cylinder-v1 · demo/fixture/measure_cylinder.py",
+      "measurement_impl": "cylinder-v1 · demo/fixture/measure_cylinder.py",
+      "sample_n": 3,
+      "statistical_claim": "n=3，只能作为下一轮验收档使用，不能当统计结论",
+      "version": "2026-09-25.1",
+      "expires_when": "生成模型、量测实现或调色板分类权重变化时须重新校准",
+      "sample_prev_impl": {
+        "A": 0.0581,
+        "B": 0.0447,
+        "C": 0.0242
+      },
+      "drift_note": "v2 采样键 F7_body_protrusion；漂移只出现在按调色板分类的色带/色环读数上，几何读数逐值相同"
+    },
+    {
+      "fact": "F7",
+      "metric": "extra_area_share",
+      "gating": true,
+      "declared": 0.0,
+      "pass": {
+        "max": 0.01
+      },
+      "manual": null,
+      "source": "d0-1-selection.md §6「F7 无凸出部件」行",
+      "rule": "该行要求「主体外像素 ≤0.01」⇒ 通过档 ≤0.01，无人工档",
+      "sample": {
+        "A": 0.0,
+        "B": 0.0,
+        "C": 0.0007
+      },
+      "sample_source": "D0.5 现场量测：cylinder-v1 · demo/fixture/measure_cylinder.py",
+      "measurement_impl": "cylinder-v1 · demo/fixture/measure_cylinder.py",
+      "sample_n": 3,
+      "statistical_claim": "n=3，只能作为下一轮验收档使用，不能当统计结论",
+      "version": "2026-09-25.1",
+      "expires_when": "生成模型、量测实现或调色板分类权重变化时须重新校准",
+      "sample_prev_impl": {
+        "A": 0.0,
+        "B": 0.0,
+        "C": 0.0007
+      },
+      "drift_note": "v2 采样键 F7_extra_area_share；漂移只出现在按调色板分类的色带/色环读数上，几何读数逐值相同"
+    }
+  ],
+  "gaps": [
+    {
+      "fact": "F2/F3",
+      "missing": "第三种主色、渐变或图案",
+      "status": "closed_in_D0.5",
+      "why": "D0.1 §3 已裁定颜色不能按逐像素十六进制判；D0.5 改为基于调色板未归类像素占比的 extra_area_share ≤0.01 谓词"
+    },
+    {
+      "fact": "F4",
+      "missing": "阶梯级数与盖顶开口",
+      "status": "open",
+      "assigned_to": "维持人工判定",
+      "why": "D0.5 未实现阶梯级数与盖顶开口的机器判据；级数与开口语义仍需人看"
+    },
+    {
+      "fact": "F7",
+      "missing": "凸出物是否为把手、提带或吸管",
+      "status": "open",
+      "assigned_to": "维持人工判定",
+      "why": "机器只报凸出量与主体外像素，不判凸出物的语义"
+    },
+    {
+      "fact": "F8",
+      "missing": "文字与伪标签",
+      "status": "open",
+      "assigned_to": "维持人工判定",
+      "why": "机器代理已证不成立，见 evals/product-demo/fixture-design/d0-1-selection.md §3"
+    }
+  ]
+}

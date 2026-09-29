@@ -1,0 +1,330 @@
+{
+  "schema": "demo-human-fact-review/1",
+  "sku": "demo-tumbler-aster-01",
+  "facts_version": "2026-09-25.1",
+  "source": "evals/product-demo/d1-4-first-round-2026-09-26.md#4",
+  "how_recorded": "从 D1.5 的人工裁决表逐格录入：每条记录是一个 {事实, 候选} 的显式结论。不从「四张都 keep」这类聚合结论反推，也不允许缺格时按多数补全。",
+  "boundary": "审阅者是本项目操作者，不是独立第三方，也不是真实运营；所以这份签字能承担「谁给的结论」，不能承担「第三方复核」。",
+  "records": [
+    {
+      "fact_id": "F1",
+      "candidate_id": "F-01",
+      "verdict": "pass",
+      "source": "evals/product-demo/d1-4-first-round-2026-09-26.md#4",
+      "reviewer": "project-operator",
+      "reviewer_kind": "not_independent_third_party",
+      "reviewed_at": "2026-09-26T00:40:00+08:00",
+      "notes": "逐图对照事实卡 claim、human_note 与全分辨率原图（含掩膜叠加图）后确认"
+    },
+    {
+      "fact_id": "F2",
+      "candidate_id": "F-01",
+      "verdict": "pass",
+      "source": "evals/product-demo/d1-4-first-round-2026-09-26.md#4",
+      "reviewer": "project-operator",
+      "reviewer_kind": "not_independent_third_party",
+      "reviewed_at": "2026-09-26T00:40:00+08:00",
+      "notes": "逐图对照事实卡 claim、human_note 与全分辨率原图（含掩膜叠加图）后确认"
+    },
+    {
+      "fact_id": "F3",
+      "candidate_id": "F-01",
+      "verdict": "pass",
+      "source": "evals/product-demo/d1-4-first-round-2026-09-26.md#4",
+      "reviewer": "project-operator",
+      "reviewer_kind": "not_independent_third_party",
+      "reviewed_at": "2026-09-26T00:40:00+08:00",
+      "notes": "逐图对照事实卡 claim、human_note 与全分辨率原图（含掩膜叠加图）后确认"
+    },
+    {
+      "fact_id": "F4",
+      "candidate_id": "F-01",
+      "verdict": "pass",
+      "source": "evals/product-demo/d1-4-first-round-2026-09-26.md#4",
+      "reviewer": "project-operator",
+      "reviewer_kind": "not_independent_third_party",
+      "reviewed_at": "2026-09-26T00:40:00+08:00",
+      "notes": "逐图对照事实卡 claim、human_note 与全分辨率原图（含掩膜叠加图）后确认"
+    },
+    {
+      "fact_id": "F5",
+      "candidate_id": "F-01",
+      "verdict": "pass",
+      "source": "evals/product-demo/d1-4-first-round-2026-09-26.md#4",
+      "reviewer": "project-operator",
+      "reviewer_kind": "not_independent_third_party",
+      "reviewed_at": "2026-09-26T00:40:00+08:00",
+      "notes": "逐图对照事实卡 claim、human_note 与全分辨率原图（含掩膜叠加图）后确认"
+    },
+    {
+      "fact_id": "F6",
+      "candidate_id": "F-01",
+      "verdict": "pass",
+      "source": "evals/product-demo/d1-4-first-round-2026-09-26.md#4",
+      "reviewer": "project-operator",
+      "reviewer_kind": "not_independent_third_party",
+      "reviewed_at": "2026-09-26T00:40:00+08:00",
+      "notes": "逐图对照事实卡 claim、human_note 与全分辨率原图（含掩膜叠加图）后确认"
+    },
+    {
+      "fact_id": "F7",
+      "candidate_id": "F-01",
+      "verdict": "pass",
+      "source": "evals/product-demo/d1-4-first-round-2026-09-26.md#4",
+      "reviewer": "project-operator",
+      "reviewer_kind": "not_independent_third_party",
+      "reviewed_at": "2026-09-26T00:40:00+08:00",
+      "notes": "逐图对照事实卡 claim、human_note 与全分辨率原图（含掩膜叠加图）后确认"
+    },
+    {
+      "fact_id": "F8",
+      "candidate_id": "F-01",
+      "verdict": "pass",
+      "source": "evals/product-demo/d1-4-first-round-2026-09-26.md#4",
+      "reviewer": "project-operator",
+      "reviewer_kind": "not_independent_third_party",
+      "reviewed_at": "2026-09-26T00:40:00+08:00",
+      "notes": "逐图对照事实卡 claim、human_note 与全分辨率原图（含掩膜叠加图）后确认"
+    },
+    {
+      "fact_id": "F1",
+      "candidate_id": "F-02",
+      "verdict": "pass",
+      "source": "evals/product-demo/d1-4-first-round-2026-09-26.md#4",
+      "reviewer": "project-operator",
+      "reviewer_kind": "not_independent_third_party",
+      "reviewed_at": "2026-09-26T00:40:00+08:00",
+      "notes": "逐图对照事实卡 claim、human_note 与全分辨率原图（含掩膜叠加图）后确认"
+    },
+    {
+      "fact_id": "F2",
+      "candidate_id": "F-02",
+      "verdict": "pass",
+      "source": "evals/product-demo/d1-4-first-round-2026-09-26.md#4",
+      "reviewer": "project-operator",
+      "reviewer_kind": "not_independent_third_party",
+      "reviewed_at": "2026-09-26T00:40:00+08:00",
+      "notes": "逐图对照事实卡 claim、human_note 与全分辨率原图（含掩膜叠加图）后确认"
+    },
+    {
+      "fact_id": "F3",
+      "candidate_id": "F-02",
+      "verdict": "pass",
+      "source": "evals/product-demo/d1-4-first-round-2026-09-26.md#4",
+      "reviewer": "project-operator",
+      "reviewer_kind": "not_independent_third_party",
+      "reviewed_at": "2026-09-26T00:40:00+08:00",
+      "notes": "逐图对照事实卡 claim、human_note 与全分辨率原图（含掩膜叠加图）后确认"
+    },
+    {
+      "fact_id": "F4",
+      "candidate_id": "F-02",
+      "verdict": "pass",
+      "source": "evals/product-demo/d1-4-first-round-2026-09-26.md#4",
+      "reviewer": "project-operator",
+      "reviewer_kind": "not_independent_third_party",
+      "reviewed_at": "2026-09-26T00:40:00+08:00",
+      "notes": "逐图对照事实卡 claim、human_note 与全分辨率原图（含掩膜叠加图）后确认"
+    },
+    {
+      "fact_id": "F5",
+      "candidate_id": "F-02",
+      "verdict": "pass",
+      "source": "evals/product-demo/d1-4-first-round-2026-09-26.md#4",
+      "reviewer": "project-operator",
+      "reviewer_kind": "not_independent_third_party",
+      "reviewed_at": "2026-09-26T00:40:00+08:00",
+      "notes": "逐图对照事实卡 claim、human_note 与全分辨率原图（含掩膜叠加图）后确认"
+    },
+    {
+      "fact_id": "F6",
+      "candidate_id": "F-02",
+      "verdict": "pass",
+      "source": "evals/product-demo/d1-4-first-round-2026-09-26.md#4",
+      "reviewer": "project-operator",
+      "reviewer_kind": "not_independent_third_party",
+      "reviewed_at": "2026-09-26T00:40:00+08:00",
+      "notes": "逐图对照事实卡 claim、human_note 与全分辨率原图（含掩膜叠加图）后确认"
+    },
+    {
+      "fact_id": "F7",
+      "candidate_id": "F-02",
+      "verdict": "pass",
+      "source": "evals/product-demo/d1-4-first-round-2026-09-26.md#4",
+      "reviewer": "project-operator",
+      "reviewer_kind": "not_independent_third_party",
+      "reviewed_at": "2026-09-26T00:40:00+08:00",
+      "notes": "逐图对照事实卡 claim、human_note 与全分辨率原图（含掩膜叠加图）后确认"
+    },
+    {
+      "fact_id": "F8",
+      "candidate_id": "F-02",
+      "verdict": "pass",
+      "source": "evals/product-demo/d1-4-first-round-2026-09-26.md#4",
+      "reviewer": "project-operator",
+      "reviewer_kind": "not_independent_third_party",
+      "reviewed_at": "2026-09-26T00:40:00+08:00",
+      "notes": "逐图对照事实卡 claim、human_note 与全分辨率原图（含掩膜叠加图）后确认"
+    },
+    {
+      "fact_id": "F1",
+      "candidate_id": "F-03",
+      "verdict": "pass",
+      "source": "evals/product-demo/d1-4-first-round-2026-09-26.md#4",
+      "reviewer": "project-operator",
+      "reviewer_kind": "not_independent_third_party",
+      "reviewed_at": "2026-09-26T00:40:00+08:00",
+      "notes": "逐图对照事实卡 claim、human_note 与全分辨率原图（含掩膜叠加图）后确认"
+    },
+    {
+      "fact_id": "F2",
+      "candidate_id": "F-03",
+      "verdict": "pass",
+      "source": "evals/product-demo/d1-4-first-round-2026-09-26.md#4",
+      "reviewer": "project-operator",
+      "reviewer_kind": "not_independent_third_party",
+      "reviewed_at": "2026-09-26T00:40:00+08:00",
+      "notes": "逐图对照事实卡 claim、human_note 与全分辨率原图（含掩膜叠加图）后确认"
+    },
+    {
+      "fact_id": "F3",
+      "candidate_id": "F-03",
+      "verdict": "pass",
+      "source": "evals/product-demo/d1-4-first-round-2026-09-26.md#4",
+      "reviewer": "project-operator",
+      "reviewer_kind": "not_independent_third_party",
+      "reviewed_at": "2026-09-26T00:40:00+08:00",
+      "notes": "逐图对照事实卡 claim、human_note 与全分辨率原图（含掩膜叠加图）后确认"
+    },
+    {
+      "fact_id": "F4",
+      "candidate_id": "F-03",
+      "verdict": "pass",
+      "source": "evals/product-demo/d1-4-first-round-2026-09-26.md#4",
+      "reviewer": "project-operator",
+      "reviewer_kind": "not_independent_third_party",
+      "reviewed_at": "2026-09-26T00:40:00+08:00",
+      "notes": "逐图对照事实卡 claim、human_note 与全分辨率原图（含掩膜叠加图）后确认"
+    },
+    {
+      "fact_id": "F5",
+      "candidate_id": "F-03",
+      "verdict": "pass",
+      "source": "evals/product-demo/d1-4-first-round-2026-09-26.md#4",
+      "reviewer": "project-operator",
+      "reviewer_kind": "not_independent_third_party",
+      "reviewed_at": "2026-09-26T00:40:00+08:00",
+      "notes": "逐图对照事实卡 claim、human_note 与全分辨率原图（含掩膜叠加图）后确认"
+    },
+    {
+      "fact_id": "F6",
+      "candidate_id": "F-03",
+      "verdict": "pass",
+      "source": "evals/product-demo/d1-4-first-round-2026-09-26.md#4",
+      "reviewer": "project-operator",
+      "reviewer_kind": "not_independent_third_party",
+      "reviewed_at": "2026-09-26T00:40:00+08:00",
+      "notes": "逐图对照事实卡 claim、human_note 与全分辨率原图（含掩膜叠加图）后确认"
+    },
+    {
+      "fact_id": "F7",
+      "candidate_id": "F-03",
+      "verdict": "pass",
+      "source": "evals/product-demo/d1-4-first-round-2026-09-26.md#4",
+      "reviewer": "project-operator",
+      "reviewer_kind": "not_independent_third_party",
+      "reviewed_at": "2026-09-26T00:40:00+08:00",
+      "notes": "逐图对照事实卡 claim、human_note 与全分辨率原图（含掩膜叠加图）后确认"
+    },
+    {
+      "fact_id": "F8",
+      "candidate_id": "F-03",
+      "verdict": "pass",
+      "source": "evals/product-demo/d1-4-first-round-2026-09-26.md#4",
+      "reviewer": "project-operator",
+      "reviewer_kind": "not_independent_third_party",
+      "reviewed_at": "2026-09-26T00:40:00+08:00",
+      "notes": "逐图对照事实卡 claim、human_note 与全分辨率原图（含掩膜叠加图）后确认"
+    },
+    {
+      "fact_id": "F1",
+      "candidate_id": "F-04",
+      "verdict": "pass",
+      "source": "evals/product-demo/d1-4-first-round-2026-09-26.md#4",
+      "reviewer": "project-operator",
+      "reviewer_kind": "not_independent_third_party",
+      "reviewed_at": "2026-09-26T00:40:00+08:00",
+      "notes": "逐图对照事实卡 claim、human_note 与全分辨率原图（含掩膜叠加图）后确认"
+    },
+    {
+      "fact_id": "F2",
+      "candidate_id": "F-04",
+      "verdict": "pass",
+      "source": "evals/product-demo/d1-4-first-round-2026-09-26.md#4",
+      "reviewer": "project-operator",
+      "reviewer_kind": "not_independent_third_party",
+      "reviewed_at": "2026-09-26T00:40:00+08:00",
+      "notes": "逐图对照事实卡 claim、human_note 与全分辨率原图（含掩膜叠加图）后确认"
+    },
+    {
+      "fact_id": "F3",
+      "candidate_id": "F-04",
+      "verdict": "pass",
+      "source": "evals/product-demo/d1-4-first-round-2026-09-26.md#4",
+      "reviewer": "project-operator",
+      "reviewer_kind": "not_independent_third_party",
+      "reviewed_at": "2026-09-26T00:40:00+08:00",
+      "notes": "逐图对照事实卡 claim、human_note 与全分辨率原图（含掩膜叠加图）后确认"
+    },
+    {
+      "fact_id": "F4",
+      "candidate_id": "F-04",
+      "verdict": "pass",
+      "source": "evals/product-demo/d1-4-first-round-2026-09-26.md#4",
+      "reviewer": "project-operator",
+      "reviewer_kind": "not_independent_third_party",
+      "reviewed_at": "2026-09-26T00:40:00+08:00",
+      "notes": "逐图对照事实卡 claim、human_note 与全分辨率原图（含掩膜叠加图）后确认"
+    },
+    {
+      "fact_id": "F5",
+      "candidate_id": "F-04",
+      "verdict": "pass",
+      "source": "evals/product-demo/d1-4-first-round-2026-09-26.md#4",
+      "reviewer": "project-operator",
+      "reviewer_kind": "not_independent_third_party",
+      "reviewed_at": "2026-09-26T00:40:00+08:00",
+      "notes": "逐图对照事实卡 claim、human_note 与全分辨率原图（含掩膜叠加图）后确认"
+    },
+    {
+      "fact_id": "F6",
+      "candidate_id": "F-04",
+      "verdict": "pass",
+      "source": "evals/product-demo/d1-4-first-round-2026-09-26.md#4",
+      "reviewer": "project-operator",
+      "reviewer_kind": "not_independent_third_party",
+      "reviewed_at": "2026-09-26T00:40:00+08:00",
+      "notes": "逐图对照事实卡 claim、human_note 与全分辨率原图（含掩膜叠加图）后确认"
+    },
+    {
+      "fact_id": "F7",
+      "candidate_id": "F-04",
+      "verdict": "pass",
+      "source": "evals/product-demo/d1-4-first-round-2026-09-26.md#4",
+      "reviewer": "project-operator",
+      "reviewer_kind": "not_independent_third_party",
+      "reviewed_at": "2026-09-26T00:40:00+08:00",
+      "notes": "逐图对照事实卡 claim、human_note 与全分辨率原图（含掩膜叠加图）后确认"
+    },
+    {
+      "fact_id": "F8",
+      "candidate_id": "F-04",
+      "verdict": "pass",
+      "source": "evals/product-demo/d1-4-first-round-2026-09-26.md#4",
+      "reviewer": "project-operator",
+      "reviewer_kind": "not_independent_third_party",
+      "reviewed_at": "2026-09-26T00:40:00+08:00",
+      "notes": "逐图对照事实卡 claim、human_note 与全分辨率原图（含掩膜叠加图）后确认"
+    }
+  ]
+}

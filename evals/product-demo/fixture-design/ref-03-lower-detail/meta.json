@@ -1,0 +1,38 @@
+{
+  "view_id": "ref-03-lower-detail",
+  "role": "防滑套与底部近景（F3/F6 主证据）",
+  "action_id": "c291bafafbe23a66",
+  "model": "qwen-image-3.0",
+  "mode": "image_to_image",
+  "endpoint": "https://dashscope.aliyuncs.com/api/v1/services/aigc/image-generation/generation",
+  "reference_file": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\evals\\product-demo\\fixture-design\\C\\raw.png",
+  "reference_sha256": "e1b1c5de1ee6b50a69fb8e431f1140d8c21a689f4fe3316461c02745139d03f6",
+  "seed": 2026092416,
+  "size_used": "1344*1344",
+  "prompt_extend": false,
+  "watermark": false,
+  "n": 1,
+  "prompt": "Close-up photograph of the lower part of the exact same product as in the reference image: the dark charcoal grip sleeve and the base fill the frame. The sleeve must show exactly three raised horizontal ribs running evenly around it with clearly separated spacing, and the flat bottom must show its narrow dark gray non-slip ring along the bottom edge. Same soft even studio light from the upper left, same seamless plain light neutral gray backdrop. Keep the exact same product as in the reference image: same design, same colours, same proportions, same number of parts. Upper body matte deep teal green; lower grip sleeve dark charcoal with exactly three raised horizontal ribs; low profile dark charcoal lid with two concentric stepped rings; one narrow terracotta orange ring at the seam between lid and body; flat base with a narrow dark non-slip ring. No handle, no side grip, no strap, no straw, no drinking spout, no second cup, no flip top, no dome lid, no pattern. Every surface stays completely blank: no text, no numbers, no letters, no logo, no brand mark, no label, no sticker, no watermark, no decorative symbol. Photorealistic e-commerce product photography, square 1:1 composition.",
+  "prompt_sha256": "788610502f938838a7cc1713d7c093953dafe5d25c5553719e520d1264dface3",
+  "task_id": "2a8c634f-0e07-4098-9d96-09229a658dc7",
+  "submitted_at": "2026-09-24T16:35:31+08:00",
+  "finished_at": "2026-09-24T16:35:46+08:00",
+  "poll_elapsed_s": 14.0,
+  "usage": {
+    "output_width": 1344,
+    "input_image_count": 1,
+    "input_image_type": "qima_input_1k",
+    "output_image_count": 1,
+    "output_image_type": "qima_output_1k",
+    "output_height": 1344
+  },
+  "input_image_count": 1,
+  "rewrite_status": "not_use",
+  "image_sha256": "27828bd947bcfda651af445824a2eabbee992a4d243ea7984aa6cefd89cfb16d",
+  "image_bytes": 1312990,
+  "image_format": "PNG",
+  "image_size": [
+    1344,
+    1344
+  ]
+}

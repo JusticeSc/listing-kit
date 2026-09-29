@@ -1,0 +1,57 @@
+{
+  "stamp": "20260929-141908",
+  "label": "",
+  "requested_passes": 2,
+  "suites": [
+    "node-check-ui",
+    "py-compile",
+    "contracts",
+    "bootstrap",
+    "application-service",
+    "workspace-store",
+    "workspace-store-concurrency",
+    "semantic-provider",
+    "dashscope-image-provider",
+    "plan",
+    "prompt",
+    "plan-edit",
+    "image-generation",
+    "generation-isolation",
+    "suite-command",
+    "http",
+    "selection-rework-export",
+    "delivery-checks",
+    "conflict-guard",
+    "entry-audit",
+    "workspace-relocation",
+    "ui",
+    "ui-shot-retry",
+    "ui-rework",
+    "suite-command-ui",
+    "generation-recovery-ui",
+    "review-workbench-ui",
+    "delivery-ui",
+    "usability-accessibility",
+    "export-wording-drift",
+    "guard-project-state",
+    "guard-docs"
+  ],
+  "passes": [
+    {
+      "pass_index": 1,
+      "passed": true,
+      "fingerprint_id": "5810659c7e9361375508f6e0c667cbaea1c3ccdcfe298525734dbcf3719a91bf",
+      "failed": []
+    },
+    {
+      "pass_index": 2,
+      "passed": true,
+      "fingerprint_id": "5810659c7e9361375508f6e0c667cbaea1c3ccdcfe298525734dbcf3719a91bf",
+      "failed": []
+    }
+  ],
+  "fingerprints_consistent": true,
+  "all_passed": true,
+  "verdict": "通过：全部套件连续两轮全绿，代码/静态资源指纹一致",
+  "report_path": "evals/product-demo/d4.12-regression-20260929-141908.json"
+}

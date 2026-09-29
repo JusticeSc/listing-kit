@@ -1,0 +1,220 @@
+{
+  "run": "real full loop through the product UI",
+  "started_at": "2026-09-28T23:19:18",
+  "base": "http://127.0.0.1:8787",
+  "workspace": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\_working\\amz-listing-kit-product-demo\\real-ui-run-05\\workspace",
+  "reference_image": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\ecommerce-skills-main\\docs\\batch-image\\sku-a-sweater.jpg",
+  "steps": [
+    {
+      "step": "create workspace",
+      "status": "NEW"
+    },
+    {
+      "step": "save intake",
+      "product_name": "粗棒针织套头毛衣",
+      "reference_images": [
+        "sku-a-sweater.jpg"
+      ]
+    },
+    {
+      "step": "product brief",
+      "category": "套头毛衣",
+      "facts": [
+        {
+          "key": "product_name",
+          "state": "confirmed",
+          "source": "user_input"
+        },
+        {
+          "key": "selling_point_1",
+          "state": "confirmed",
+          "source": "user_input"
+        },
+        {
+          "key": "selling_point_2",
+          "state": "confirmed",
+          "source": "user_input"
+        },
+        {
+          "key": "领型",
+          "state": "inferred",
+          "source": "model_inference"
+        },
+        {
+          "key": "袖长",
+          "state": "inferred",
+          "source": "model_inference"
+        },
+        {
+          "key": "版型",
+          "state": "inferred",
+          "source": "model_inference"
+        },
+        {
+          "key": "纹理工艺",
+          "state": "inferred",
+          "source": "model_inference"
+        },
+        {
+          "key": "颜色",
+          "state": "inferred",
+          "source": "reference_image"
+        },
+        {
+          "key": "下摆与袖口",
+          "state": "inferred",
+          "source": "reference_image"
+        },
+        {
+          "key": "适用季节",
+          "state": "inferred",
+          "source": "model_inference"
+        }
+      ]
+    },
+    {
+      "step": "plan",
+      "shot_count": 4,
+      "shots": [
+        {
+          "title": "粗棒针织套头毛衣主图",
+          "archetype": "hero"
+        },
+        {
+          "title": "粗棒针立体纹理特写",
+          "archetype": "detail"
+        },
+        {
+          "title": "宽松落肩与自然垂感展示",
+          "archetype": "custom"
+        },
+        {
+          "title": "春秋日常穿着场景",
+          "archetype": "lifestyle"
+        }
+      ]
+    },
+    {
+      "step": "submit whole set",
+      "http_status": 202,
+      "ok": true,
+      "message": null
+    },
+    {
+      "step": "retry round 1",
+      "attempted": [
+        "粗棒针立体纹理特写",
+        "宽松落肩与自然垂感展示"
+      ],
+      "errors": [],
+      "still_empty": []
+    },
+    {
+      "step": "generate whole set",
+      "shots": [
+        {
+          "title": "粗棒针织套头毛衣主图",
+          "attempts": [
+            "SUCCEEDED"
+          ],
+          "tasks": [
+            "df3d52e6-21f8-47d5-bb6c-6f1398c5605e"
+          ],
+          "candidates": 1
+        },
+        {
+          "title": "粗棒针立体纹理特写",
+          "attempts": [
+            "FAILED",
+            "SUCCEEDED"
+          ],
+          "tasks": [
+            "20909656-4d01-472d-a8c8-a5269dab8453",
+            "603832f3-1218-40fe-95a2-85727fd5397c"
+          ],
+          "candidates": 1
+        },
+        {
+          "title": "宽松落肩与自然垂感展示",
+          "attempts": [
+            "FAILED",
+            "SUCCEEDED"
+          ],
+          "tasks": [
+            null,
+            "c5b95ae2-e0e2-4e5d-aee5-69fc442f5da3"
+          ],
+          "candidates": 1
+        },
+        {
+          "title": "春秋日常穿着场景",
+          "attempts": [
+            "SUCCEEDED"
+          ],
+          "tasks": [
+            "35e4d8c0-9cf7-4b75-8fc4-deed0115bd6e"
+          ],
+          "candidates": 1
+        }
+      ],
+      "empty_shots": []
+    },
+    {
+      "step": "single-shot rework",
+      "before": {
+        "shot_id": "shot_2280121299b74ba9",
+        "title": "春秋日常穿着场景",
+        "attempts": 1,
+        "candidates": 1,
+        "prompt_version": 1
+      },
+      "after": {
+        "attempts": 2,
+        "candidates": 2,
+        "prompt_version": 2,
+        "edit_reason": "场景太杂，换一个更中性的背景；商品本身保持不变。",
+        "tasks": [
+          "35e4d8c0-9cf7-4b75-8fc4-deed0115bd6e",
+          "1a194088-a927-44ed-88c6-e00a3521b1bd"
+        ],
+        "old_candidate_kept": true
+      },
+      "unrelated_shots_untouched": true
+    },
+    {
+      "step": "selection",
+      "selection_version": 1,
+      "choices": 4
+    },
+    {
+      "step": "export",
+      "export_id": "export_d4d91e65511e4695",
+      "export_version": 1,
+      "relative_path": "exports/export_d4d91e65511e4695",
+      "files": [
+        {
+          "relative_path": "exports/export_d4d91e65511e4695/images/01_hero.png",
+          "byte_size": 1513980,
+          "sha256_matches_manifest": true
+        },
+        {
+          "relative_path": "exports/export_d4d91e65511e4695/images/02_detail.png",
+          "byte_size": 2530278,
+          "sha256_matches_manifest": true
+        },
+        {
+          "relative_path": "exports/export_d4d91e65511e4695/images/03_custom.png",
+          "byte_size": 2041943,
+          "sha256_matches_manifest": true
+        },
+        {
+          "relative_path": "exports/export_d4d91e65511e4695/images/04_lifestyle.png",
+          "byte_size": 2598260,
+          "sha256_matches_manifest": true
+        }
+      ]
+    }
+  ],
+  "duration_seconds": 443.1,
+  "ok": true
+}

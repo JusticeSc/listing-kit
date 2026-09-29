@@ -1,0 +1,37 @@
+{
+  "upc": "B0DEMO1234",
+  "title": "316不锈钢真空保温杯 500ml 家用办公便携水杯",
+  "bullets": [
+    "24小时长效保温，早上装的热水到晚上还烫口",
+    "316食品级不锈钢内胆，不残留异味",
+    "一键弹盖单手开，开车办公都方便",
+    "硅胶密封圈倒置不漏水",
+    "杯身防滑喷涂，湿手握持也不打滑",
+    "全网最低价，绝对是最好的杯子"
+  ],
+  "specs": {
+    "容量": "500ml",
+    "材质": "316不锈钢",
+    "重量": "320g",
+    "高度": "22 cm",
+    "宽度": "7 cm"
+  },
+  "assets": {
+    "front": "input/cup_source.jpg",
+    "closeup": null,
+    "contents": null,
+    "competitor": null
+  },
+  "images": ["input/cup_source.jpg"],
+  "attest": {
+    "by": "运营 A",
+    "date": "2026-09-20",
+    "confirmed": [
+      "no_watermark",
+      "no_props",
+      "single_subject",
+      "angle_ok",
+      "font_license"
+    ]
+  }
+}

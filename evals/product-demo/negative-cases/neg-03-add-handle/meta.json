@@ -1,0 +1,30 @@
+{
+  "case_id": "neg-03-add-handle",
+  "mutation_class": "改结构",
+  "description": "在杯身右侧贴一个同色系方形凸出物（把手），轮廓改变、配色不变",
+  "source": "evals/product-demo/fixture-design/C/raw.png",
+  "source_sha256": "e1b1c5de1ee6b50a69fb8e431f1140d8c21a689f4fe3316461c02745139d03f6",
+  "output": "negative-cases/neg-03-add-handle/raw.png",
+  "output_sha256": "3f5f25dfce75298ef38e931d2076b51093c8a2824e7d84f08df28d3228cf0be5",
+  "output_bytes": 1147751,
+  "image_size": [
+    1344,
+    1344
+  ],
+  "changed_pixels": 14200,
+  "params": {
+    "protrusion_px": 70,
+    "rows": [
+      541,
+      740
+    ],
+    "fill_rgb": [
+      37,
+      42,
+      42
+    ],
+    "expected_width_gain_share": 0.2011
+  },
+  "generated_at": "2026-09-25T23:17:43+08:00",
+  "model_calls": 0
+}

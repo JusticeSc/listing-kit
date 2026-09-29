@@ -1,0 +1,290 @@
+{
+  "schema": "demo-fact-card/1",
+  "sku": "demo-box-bex-02",
+  "display_name": "Bex 02 方形随行瓶",
+  "fixture": true,
+  "fact_source": "demo_fixture",
+  "metric_profile": "cylinder-v1",
+  "metric_profile_note": "值只能写 cylinder-v1：这是量测协议的键，不是形状的名字。该协议按横向色带工作，本商品按同一条协议量测；换一个色带结构不同的品类需要新协议，那就是改代码。",
+  "version": "2026-09-25.1",
+  "created_at": "2026-09-25T23:17:50+08:00",
+  "threshold_derivation": "threshold-derivation.json",
+  "product_class": "方形硬盒随行瓶：单一直立方体 + 顶盖 + 下段深色底带",
+  "disclaimers": [
+    "虚构演示商品，不对应任何真实品牌、商标或在售产品。",
+    "仅用于本项目的功能演示与验证，不得用于真实上架、对外宣传或平台审核。",
+    "本商品的图由 demo/fixture/design_second_product.py 合成，不是模型产出，也不是实物照片。"
+  ],
+  "identity": {
+    "form": "单一直立方体，四角小圆角，截面从上到下等宽；无把手、无侧握、无提带、无吸管",
+    "usage": "保温随行瓶（方形）"
+  },
+  "palette": {
+    "space": "srgb",
+    "max_delta_e": 26.0,
+    "roles": [
+      {
+        "role": "slate",
+        "slot": "body_upper",
+        "hex": "#3A5A78",
+        "desc": "瓶体主色（板岩蓝）"
+      },
+      {
+        "role": "graphite",
+        "slot": "body_lower",
+        "hex": "#2B2B30",
+        "desc": "顶盖与下段底带（石墨黑，同族）"
+      },
+      {
+        "role": "sand",
+        "slot": "trim",
+        "hex": "#C9A227",
+        "desc": "顶盖与瓶体之间的窄饰环（沙金）"
+      }
+    ]
+  },
+  "facts": [
+    {
+      "id": "F1",
+      "claim": "整体高宽比约 2.38：1，仍是细长方体",
+      "modality": "machine",
+      "machine_checks": [
+        {
+          "metric": "aspect_h_over_w",
+          "declared": 2.38,
+          "pass": {
+            "min": 2.2,
+            "max": 2.6
+          },
+          "manual": {
+            "min": 2.05,
+            "max": 2.75
+          }
+        }
+      ]
+    },
+    {
+      "id": "F2",
+      "claim": "瓶体主色板岩蓝占据主体上段主要高度",
+      "modality": "machine",
+      "machine_checks": [
+        {
+          "metric": "body_upper_share",
+          "declared": 0.7193,
+          "pass": {
+            "min": 0.62,
+            "max": 0.8
+          },
+          "manual": {
+            "min": 0.55,
+            "max": 0.85
+          }
+        }
+      ]
+    },
+    {
+      "id": "F3",
+      "claim": "下段深色底带无横向凸脊（本商品没有筋条结构）",
+      "modality": "mixed",
+      "machine_checks": [
+        {
+          "metric": "body_lower_share",
+          "declared": 0.2807,
+          "pass": {
+            "min": 0.2,
+            "max": 0.38
+          },
+          "manual": {
+            "min": 0.15,
+            "max": 0.45
+          }
+        },
+        {
+          "metric": "rib_count",
+          "declared": 0,
+          "pass": {
+            "min": 0,
+            "max": 0
+          }
+        }
+      ],
+      "human_note": "凸脊数由机器数；「这条脊是什么」仍由人看"
+    },
+    {
+      "id": "F4",
+      "claim": "顶盖低矮（不超过整器高的 20%）且为平顶",
+      "modality": "mixed",
+      "machine_checks": [
+        {
+          "metric": "lid_share",
+          "declared": 0.142,
+          "pass": {
+            "max": 0.2
+          },
+          "manual": {
+            "max": 0.26
+          }
+        }
+      ],
+      "human_note": "顶面结构与开口不在机器判定内（见 machine_check_gaps）"
+    },
+    {
+      "id": "F5",
+      "claim": "顶盖下方有一条窄饰环，仅一条且位于顶部 25% 内",
+      "modality": "machine",
+      "machine_checks": [
+        {
+          "metric": "trim_span_count",
+          "declared": 1,
+          "pass": {
+            "min": 1,
+            "max": 1
+          }
+        },
+        {
+          "metric": "trim_share",
+          "declared": 0.01,
+          "pass": {
+            "max": 0.03
+          },
+          "manual": {
+            "max": 0.05
+          }
+        },
+        {
+          "metric": "trim_top_position",
+          "declared": 0.142,
+          "pass": {
+            "max": 0.25
+          }
+        }
+      ]
+    },
+    {
+      "id": "F6",
+      "claim": "平底，无独立底圈",
+      "modality": "machine",
+      "machine_checks": [
+        {
+          "metric": "bottom_spread_share",
+          "declared": 0.0,
+          "pass": {
+            "max": 0.05
+          },
+          "manual": {
+            "max": 0.08
+          }
+        },
+        {
+          "metric": "bottom_ring_present",
+          "declared": 0,
+          "pass": {
+            "min": 0,
+            "max": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "F7",
+      "claim": "无把手、无侧握、无提带、无吸管；主体外无多余物",
+      "modality": "mixed",
+      "machine_checks": [
+        {
+          "metric": "body_protrusion",
+          "declared": 0.0,
+          "pass": {
+            "max": 0.08
+          },
+          "manual": {
+            "max": 0.12
+          }
+        },
+        {
+          "metric": "extra_area_share",
+          "declared": 0.0,
+          "pass": {
+            "max": 0.01
+          }
+        }
+      ],
+      "human_note": "凸出的是什么由人确认；机器只报凸出量与主体外像素",
+      "violation": "新增把手、侧握、提带、吸管、壶嘴，或出现第二个瓶体"
+    },
+    {
+      "id": "F8",
+      "claim": "外表无文字、数字、Logo、标签和水印",
+      "modality": "human",
+      "machine_proxy": {
+        "metric": "text_proxy_blobs",
+        "note": "高梯度小块数只是形态代理；方体的棱边本就会产生这类小块，它不参与判定。"
+      },
+      "human_note": "文字只能靠人核对；本卡不假装机器能判",
+      "violation": "写出品牌字、伪标签、容量字样或装饰符号"
+    },
+    {
+      "id": "F2diag",
+      "claim": "（登记读数，不参与判定）主色与声明锚点的色偏",
+      "modality": "none",
+      "diagnostics": [
+        {
+          "metric": "upper_color_delta_e",
+          "declared": 0.0,
+          "gating": false,
+          "why_not_gating": "与 Aster 01 同一条裁定：十六进制只用于生成与目视对照，不作为逐像素判据。"
+        }
+      ]
+    }
+  ],
+  "machine_check_gaps": [
+    {
+      "fact": "F4",
+      "missing": "顶面结构与开口",
+      "status": "open",
+      "assigned_to": "维持人工判定",
+      "why": "协议的机器判据只有「盖占高度」，看不见顶面是平顶还是有凹槽"
+    },
+    {
+      "fact": "F7",
+      "missing": "凸出物是否为把手、提带或吸管",
+      "status": "open",
+      "assigned_to": "维持人工判定",
+      "why": "机器只报凸出量与主体外像素，不判凸出物的语义"
+    },
+    {
+      "fact": "F8",
+      "missing": "文字与伪标签",
+      "status": "open",
+      "assigned_to": "维持人工判定",
+      "why": "文字只能靠人核对"
+    }
+  ],
+  "unknowns": [
+    {
+      "field": "材质",
+      "value": "Unknown",
+      "why": "虚构演示商品，未声明"
+    },
+    {
+      "field": "容量",
+      "value": "Unknown",
+      "why": "未声明；图上也不得出现容量字样"
+    },
+    {
+      "field": "保温性能",
+      "value": "Unknown",
+      "why": "未声明，且不属于图片可验证范围"
+    },
+    {
+      "field": "品牌与 Logo",
+      "value": "Unknown",
+      "why": "无品牌；F8 要求外表完全无标记"
+    }
+  ],
+  "capability_binding": {
+    "measured_with": "demo/fixture/measure_cylinder.py（metric_profile=cylinder-v1）",
+    "measured_at": "2026-09-25.1",
+    "evidence": "evals/product-demo/d0-7-second-product-2026-09-25.md",
+    "expires_when": "量测实现或调色板分类权重变化时须重新校准"
+  }
+}

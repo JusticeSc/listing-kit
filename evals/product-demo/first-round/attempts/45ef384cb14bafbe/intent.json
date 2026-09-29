@@ -1,0 +1,22 @@
+{
+  "action_id": "45ef384cb14bafbe",
+  "mode": "image_to_image",
+  "model": "qwen-image-3.0",
+  "seed": 2026092604,
+  "size": "1344*1344",
+  "n": 1,
+  "prompt_extend": false,
+  "prompt_sha256": "d339c104b20a02c7a0ea624e6a95d307f3e6363499b0e766dcde3c1581938178",
+  "request_sha256": "114caa02afb29c438cb2487c4bdeb6bfefdc14283884520da095a7bf7d962f3d",
+  "reference_sha256": [
+    "e1b1c5de1ee6b50a69fb8e431f1140d8c21a689f4fe3316461c02745139d03f6"
+  ],
+  "reference_count": 1,
+  "reference_files": [
+    "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\evals\\product-demo\\fixture-design\\pack\\01-front-full.png"
+  ],
+  "status": "completed",
+  "submitted_at": "2026-09-26T00:14:58+08:00",
+  "task_id": "c31fc87c-7d07-492d-a6a2-25437c567c92",
+  "image_sha256": "80ec57b21bdbd0cfd49d3917a8d2049123b0862556f9cac5ce8033f5aca1a875"
+}

@@ -1,0 +1,52 @@
+# Local credentials and machine-specific overrides
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+
+# Python caches and local tooling
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.uv-cache/
+.cache/
+
+# Product/runtime outputs that must not become source
+out/
+out_prev/
+out_verify_m7/
+_trash/
+
+# Working records are versioned; generated workspaces and run logs are not
+_working/**
+!_working/*/
+!_working/*/state.md
+!_working/*/tasks/
+!_working/*/tasks/**/*.md
+!_working/amz-listing-kit-product-demo/implementation-plan-2026-09-26.md
+
+# Keep text evidence, exclude heavyweight generated artifacts
+evals/.tmp/
+evals/probes/
+evals/**/*.png
+evals/**/*.jpg
+evals/**/*.jpeg
+evals/**/*.webp
+evals/**/*.gif
+evals/**/*.mp4
+evals/**/*.zip
+evals/**/*.log
+
+# Editors and operating systems
+.vscode/
+.idea/
+Thumbs.db
+Desktop.ini
+.DS_Store
+

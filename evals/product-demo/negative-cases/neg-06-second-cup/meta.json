@@ -1,0 +1,22 @@
+{
+  "case_id": "neg-06-second-cup",
+  "mutation_class": "改数量",
+  "description": "把主体像素整体复制一份平移到右侧，画面里出现两个杯体",
+  "source": "evals/product-demo/fixture-design/C/raw.png",
+  "source_sha256": "e1b1c5de1ee6b50a69fb8e431f1140d8c21a689f4fe3316461c02745139d03f6",
+  "output": "negative-cases/neg-06-second-cup/raw.png",
+  "output_sha256": "f17cf721a89ba268773c4f4c58893ad40201f1f734459b2ebfb2e9a785a64333",
+  "output_bytes": 983409,
+  "image_size": [
+    1344,
+    1344
+  ],
+  "changed_pixels": 352624,
+  "params": {
+    "shift_px": 428,
+    "gap_px": 80,
+    "copied_pixels": 352624
+  },
+  "generated_at": "2026-09-25T23:17:44+08:00",
+  "model_calls": 0
+}

@@ -1,0 +1,3934 @@
+{
+  "F-01": {
+    "route": "A",
+    "status": "ok",
+    "segmentation": {
+      "status": "ok",
+      "session": "birefnet-general-lite",
+      "home": "E:\\model_repository\\model_scope\\rembg",
+      "elapsed_s": 9.0,
+      "alpha_coverage": 0.2089,
+      "bbox": [
+        507,
+        128,
+        862,
+        1256
+      ],
+      "subject_size": [
+        356,
+        1129
+      ],
+      "canvas_size": [
+        428,
+        1355
+      ],
+      "pad": [
+        36,
+        113
+      ],
+      "touch_border": false,
+      "fill_rgb": [
+        180,
+        180,
+        180
+      ]
+    },
+    "precondition": {
+      "probe": "controlled_backdrop",
+      "source": "原图（不是制造出来的底衬）",
+      "measured_share": 0.2063,
+      "max_share": 0.02,
+      "max_share_source": "demo/fixture/aster-01/verifier_plan.json",
+      "applicable": false,
+      "why": "原图纯背景列里有 0.2063 的像素被判成主体（上限 0.02），这不是受控底衬"
+    },
+    "canvas_probe": {
+      "band": 0.18,
+      "band_columns": 77,
+      "subject_share_in_band": 0.2611,
+      "mask_share": 0.6091,
+      "mask_definition": "saturation>0.12 或 lum<0.45*bg（与 cylinder-v1 同一份实现）",
+      "role": "self_referential_canvas_hygiene_only",
+      "why": "画布是我们自己铺的中性底衬，探它不构成对原图的适用性证据"
+    },
+    "applicable": false,
+    "verdict_scope": "counterfactual_only",
+    "scope_why": "原图不是受控底衬；画布上的量测只记录，不参与事实判定",
+    "overall": "hard_fail",
+    "isolated_facts": {
+      "F1": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "aspect_h_over_w",
+            "value": 3.175,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F2": {
+        "verdict": "hard_fail",
+        "checks": [
+          {
+            "metric": "body_upper_share",
+            "value": 0.2559,
+            "verdict": "hard_fail"
+          }
+        ]
+      },
+      "F3": {
+        "verdict": "hard_fail",
+        "checks": [
+          {
+            "metric": "body_lower_share",
+            "value": 0.7441,
+            "verdict": "hard_fail"
+          },
+          {
+            "metric": "rib_count",
+            "value": 3,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F4": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "lid_share",
+            "value": 0.129,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F5": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "trim_span_count",
+            "value": 1,
+            "verdict": "pass"
+          },
+          {
+            "metric": "trim_share",
+            "value": 0.0142,
+            "verdict": "pass"
+          },
+          {
+            "metric": "trim_top_position",
+            "value": 0.129,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F6": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "bottom_spread_share",
+            "value": 0.0311,
+            "verdict": "pass"
+          },
+          {
+            "metric": "bottom_ring_present",
+            "value": 1,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F7": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "body_protrusion",
+            "value": 0.0629,
+            "verdict": "pass"
+          },
+          {
+            "metric": "extra_area_share",
+            "value": 0.0035,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F8": {
+        "verdict": "human",
+        "checks": []
+      }
+    },
+    "facts": {
+      "F1": {
+        "verdict": "unknown",
+        "checks": [
+          {
+            "metric": "aspect_h_over_w",
+            "value": 3.175,
+            "verdict": "pass"
+          }
+        ],
+        "why": "路线 A 的适用前提在原图上不成立，反事实画布的读数不作证据"
+      },
+      "F2": {
+        "verdict": "unknown",
+        "checks": [
+          {
+            "metric": "body_upper_share",
+            "value": 0.2559,
+            "verdict": "hard_fail"
+          }
+        ],
+        "why": "路线 A 的适用前提在原图上不成立，反事实画布的读数不作证据"
+      },
+      "F3": {
+        "verdict": "unknown",
+        "checks": [
+          {
+            "metric": "body_lower_share",
+            "value": 0.7441,
+            "verdict": "hard_fail"
+          },
+          {
+            "metric": "rib_count",
+            "value": 3,
+            "verdict": "pass"
+          }
+        ],
+        "why": "路线 A 的适用前提在原图上不成立，反事实画布的读数不作证据"
+      },
+      "F4": {
+        "verdict": "unknown",
+        "checks": [
+          {
+            "metric": "lid_share",
+            "value": 0.129,
+            "verdict": "pass"
+          }
+        ],
+        "why": "路线 A 的适用前提在原图上不成立，反事实画布的读数不作证据"
+      },
+      "F5": {
+        "verdict": "unknown",
+        "checks": [
+          {
+            "metric": "trim_span_count",
+            "value": 1,
+            "verdict": "pass"
+          },
+          {
+            "metric": "trim_share",
+            "value": 0.0142,
+            "verdict": "pass"
+          },
+          {
+            "metric": "trim_top_position",
+            "value": 0.129,
+            "verdict": "pass"
+          }
+        ],
+        "why": "路线 A 的适用前提在原图上不成立，反事实画布的读数不作证据"
+      },
+      "F6": {
+        "verdict": "unknown",
+        "checks": [
+          {
+            "metric": "bottom_spread_share",
+            "value": 0.0311,
+            "verdict": "pass"
+          },
+          {
+            "metric": "bottom_ring_present",
+            "value": 1,
+            "verdict": "pass"
+          }
+        ],
+        "why": "路线 A 的适用前提在原图上不成立，反事实画布的读数不作证据"
+      },
+      "F7": {
+        "verdict": "unknown",
+        "checks": [
+          {
+            "metric": "body_protrusion",
+            "value": 0.0629,
+            "verdict": "pass"
+          },
+          {
+            "metric": "extra_area_share",
+            "value": 0.0035,
+            "verdict": "pass"
+          }
+        ],
+        "why": "路线 A 的适用前提在原图上不成立，反事实画布的读数不作证据"
+      },
+      "F8": {
+        "verdict": "unknown",
+        "checks": [],
+        "why": "路线 A 的适用前提在原图上不成立，反事实画布的读数不作证据"
+      }
+    },
+    "isolated": "evals\\product-demo\\d1-r2\\isolated\\F-01.png"
+  },
+  "F-02": {
+    "route": "A",
+    "status": "ok",
+    "segmentation": {
+      "status": "ok",
+      "session": "birefnet-general-lite",
+      "home": "E:\\model_repository\\model_scope\\rembg",
+      "elapsed_s": 23.44,
+      "alpha_coverage": 0.198,
+      "bbox": [
+        501,
+        134,
+        843,
+        1243
+      ],
+      "subject_size": [
+        343,
+        1110
+      ],
+      "canvas_size": [
+        411,
+        1332
+      ],
+      "pad": [
+        34,
+        111
+      ],
+      "touch_border": false,
+      "fill_rgb": [
+        180,
+        180,
+        180
+      ]
+    },
+    "precondition": {
+      "probe": "controlled_backdrop",
+      "source": "原图（不是制造出来的底衬）",
+      "measured_share": 0.3921,
+      "max_share": 0.02,
+      "max_share_source": "demo/fixture/aster-01/verifier_plan.json",
+      "applicable": false,
+      "why": "原图纯背景列里有 0.3921 的像素被判成主体（上限 0.02），这不是受控底衬"
+    },
+    "canvas_probe": {
+      "band": 0.18,
+      "band_columns": 73,
+      "subject_share_in_band": 0.2497,
+      "mask_share": 0.6093,
+      "mask_definition": "saturation>0.12 或 lum<0.45*bg（与 cylinder-v1 同一份实现）",
+      "role": "self_referential_canvas_hygiene_only",
+      "why": "画布是我们自己铺的中性底衬，探它不构成对原图的适用性证据"
+    },
+    "applicable": false,
+    "verdict_scope": "counterfactual_only",
+    "scope_why": "原图不是受控底衬；画布上的量测只记录，不参与事实判定",
+    "overall": "manual",
+    "isolated_facts": {
+      "F1": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "aspect_h_over_w",
+            "value": 3.207,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F2": {
+        "verdict": "manual",
+        "checks": [
+          {
+            "metric": "body_upper_share",
+            "value": 0.5015,
+            "verdict": "manual"
+          }
+        ]
+      },
+      "F3": {
+        "verdict": "manual",
+        "checks": [
+          {
+            "metric": "body_lower_share",
+            "value": 0.4985,
+            "verdict": "manual"
+          },
+          {
+            "metric": "rib_count",
+            "value": 3,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F4": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "lid_share",
+            "value": 0.1291,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F5": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "trim_span_count",
+            "value": 1,
+            "verdict": "pass"
+          },
+          {
+            "metric": "trim_share",
+            "value": 0.0145,
+            "verdict": "pass"
+          },
+          {
+            "metric": "trim_top_position",
+            "value": 0.1291,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F6": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "bottom_spread_share",
+            "value": 0.0292,
+            "verdict": "pass"
+          },
+          {
+            "metric": "bottom_ring_present",
+            "value": 1,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F7": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "body_protrusion",
+            "value": 0.0425,
+            "verdict": "pass"
+          },
+          {
+            "metric": "extra_area_share",
+            "value": 0.0023,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F8": {
+        "verdict": "human",
+        "checks": []
+      }
+    },
+    "facts": {
+      "F1": {
+        "verdict": "unknown",
+        "checks": [
+          {
+            "metric": "aspect_h_over_w",
+            "value": 3.207,
+            "verdict": "pass"
+          }
+        ],
+        "why": "路线 A 的适用前提在原图上不成立，反事实画布的读数不作证据"
+      },
+      "F2": {
+        "verdict": "unknown",
+        "checks": [
+          {
+            "metric": "body_upper_share",
+            "value": 0.5015,
+            "verdict": "manual"
+          }
+        ],
+        "why": "路线 A 的适用前提在原图上不成立，反事实画布的读数不作证据"
+      },
+      "F3": {
+        "verdict": "unknown",
+        "checks": [
+          {
+            "metric": "body_lower_share",
+            "value": 0.4985,
+            "verdict": "manual"
+          },
+          {
+            "metric": "rib_count",
+            "value": 3,
+            "verdict": "pass"
+          }
+        ],
+        "why": "路线 A 的适用前提在原图上不成立，反事实画布的读数不作证据"
+      },
+      "F4": {
+        "verdict": "unknown",
+        "checks": [
+          {
+            "metric": "lid_share",
+            "value": 0.1291,
+            "verdict": "pass"
+          }
+        ],
+        "why": "路线 A 的适用前提在原图上不成立，反事实画布的读数不作证据"
+      },
+      "F5": {
+        "verdict": "unknown",
+        "checks": [
+          {
+            "metric": "trim_span_count",
+            "value": 1,
+            "verdict": "pass"
+          },
+          {
+            "metric": "trim_share",
+            "value": 0.0145,
+            "verdict": "pass"
+          },
+          {
+            "metric": "trim_top_position",
+            "value": 0.1291,
+            "verdict": "pass"
+          }
+        ],
+        "why": "路线 A 的适用前提在原图上不成立，反事实画布的读数不作证据"
+      },
+      "F6": {
+        "verdict": "unknown",
+        "checks": [
+          {
+            "metric": "bottom_spread_share",
+            "value": 0.0292,
+            "verdict": "pass"
+          },
+          {
+            "metric": "bottom_ring_present",
+            "value": 1,
+            "verdict": "pass"
+          }
+        ],
+        "why": "路线 A 的适用前提在原图上不成立，反事实画布的读数不作证据"
+      },
+      "F7": {
+        "verdict": "unknown",
+        "checks": [
+          {
+            "metric": "body_protrusion",
+            "value": 0.0425,
+            "verdict": "pass"
+          },
+          {
+            "metric": "extra_area_share",
+            "value": 0.0023,
+            "verdict": "pass"
+          }
+        ],
+        "why": "路线 A 的适用前提在原图上不成立，反事实画布的读数不作证据"
+      },
+      "F8": {
+        "verdict": "unknown",
+        "checks": [],
+        "why": "路线 A 的适用前提在原图上不成立，反事实画布的读数不作证据"
+      }
+    },
+    "isolated": "evals\\product-demo\\d1-r2\\isolated\\F-02.png"
+  },
+  "F-03": {
+    "route": "A",
+    "status": "ok",
+    "segmentation": {
+      "status": "ok",
+      "session": "birefnet-general-lite",
+      "home": "E:\\model_repository\\model_scope\\rembg",
+      "elapsed_s": 9.78,
+      "alpha_coverage": 0.1994,
+      "bbox": [
+        500,
+        143,
+        851,
+        1233
+      ],
+      "subject_size": [
+        352,
+        1091
+      ],
+      "canvas_size": [
+        422,
+        1309
+      ],
+      "pad": [
+        35,
+        109
+      ],
+      "touch_border": false,
+      "fill_rgb": [
+        180,
+        180,
+        180
+      ]
+    },
+    "precondition": {
+      "probe": "controlled_backdrop",
+      "source": "原图（不是制造出来的底衬）",
+      "measured_share": 0.1584,
+      "max_share": 0.02,
+      "max_share_source": "demo/fixture/aster-01/verifier_plan.json",
+      "applicable": false,
+      "why": "原图纯背景列里有 0.1584 的像素被判成主体（上限 0.02），这不是受控底衬"
+    },
+    "canvas_probe": {
+      "band": 0.18,
+      "band_columns": 75,
+      "subject_share_in_band": 0.233,
+      "mask_share": 0.5993,
+      "mask_definition": "saturation>0.12 或 lum<0.45*bg（与 cylinder-v1 同一份实现）",
+      "role": "self_referential_canvas_hygiene_only",
+      "why": "画布是我们自己铺的中性底衬，探它不构成对原图的适用性证据"
+    },
+    "applicable": false,
+    "verdict_scope": "counterfactual_only",
+    "scope_why": "原图不是受控底衬；画布上的量测只记录，不参与事实判定",
+    "overall": "hard_fail",
+    "isolated_facts": {
+      "F1": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "aspect_h_over_w",
+            "value": 3.077,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F2": {
+        "verdict": "hard_fail",
+        "checks": [
+          {
+            "metric": "body_upper_share",
+            "value": 0.3937,
+            "verdict": "hard_fail"
+          }
+        ]
+      },
+      "F3": {
+        "verdict": "hard_fail",
+        "checks": [
+          {
+            "metric": "body_lower_share",
+            "value": 0.6063,
+            "verdict": "hard_fail"
+          },
+          {
+            "metric": "rib_count",
+            "value": 3,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F4": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "lid_share",
+            "value": 0.1259,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F5": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "trim_span_count",
+            "value": 1,
+            "verdict": "pass"
+          },
+          {
+            "metric": "trim_share",
+            "value": 0.012,
+            "verdict": "pass"
+          },
+          {
+            "metric": "trim_top_position",
+            "value": 0.1259,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F6": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "bottom_spread_share",
+            "value": 0.0313,
+            "verdict": "pass"
+          },
+          {
+            "metric": "bottom_ring_present",
+            "value": 1,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F7": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "body_protrusion",
+            "value": 0.0732,
+            "verdict": "pass"
+          },
+          {
+            "metric": "extra_area_share",
+            "value": 0.0006,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F8": {
+        "verdict": "human",
+        "checks": []
+      }
+    },
+    "facts": {
+      "F1": {
+        "verdict": "unknown",
+        "checks": [
+          {
+            "metric": "aspect_h_over_w",
+            "value": 3.077,
+            "verdict": "pass"
+          }
+        ],
+        "why": "路线 A 的适用前提在原图上不成立，反事实画布的读数不作证据"
+      },
+      "F2": {
+        "verdict": "unknown",
+        "checks": [
+          {
+            "metric": "body_upper_share",
+            "value": 0.3937,
+            "verdict": "hard_fail"
+          }
+        ],
+        "why": "路线 A 的适用前提在原图上不成立，反事实画布的读数不作证据"
+      },
+      "F3": {
+        "verdict": "unknown",
+        "checks": [
+          {
+            "metric": "body_lower_share",
+            "value": 0.6063,
+            "verdict": "hard_fail"
+          },
+          {
+            "metric": "rib_count",
+            "value": 3,
+            "verdict": "pass"
+          }
+        ],
+        "why": "路线 A 的适用前提在原图上不成立，反事实画布的读数不作证据"
+      },
+      "F4": {
+        "verdict": "unknown",
+        "checks": [
+          {
+            "metric": "lid_share",
+            "value": 0.1259,
+            "verdict": "pass"
+          }
+        ],
+        "why": "路线 A 的适用前提在原图上不成立，反事实画布的读数不作证据"
+      },
+      "F5": {
+        "verdict": "unknown",
+        "checks": [
+          {
+            "metric": "trim_span_count",
+            "value": 1,
+            "verdict": "pass"
+          },
+          {
+            "metric": "trim_share",
+            "value": 0.012,
+            "verdict": "pass"
+          },
+          {
+            "metric": "trim_top_position",
+            "value": 0.1259,
+            "verdict": "pass"
+          }
+        ],
+        "why": "路线 A 的适用前提在原图上不成立，反事实画布的读数不作证据"
+      },
+      "F6": {
+        "verdict": "unknown",
+        "checks": [
+          {
+            "metric": "bottom_spread_share",
+            "value": 0.0313,
+            "verdict": "pass"
+          },
+          {
+            "metric": "bottom_ring_present",
+            "value": 1,
+            "verdict": "pass"
+          }
+        ],
+        "why": "路线 A 的适用前提在原图上不成立，反事实画布的读数不作证据"
+      },
+      "F7": {
+        "verdict": "unknown",
+        "checks": [
+          {
+            "metric": "body_protrusion",
+            "value": 0.0732,
+            "verdict": "pass"
+          },
+          {
+            "metric": "extra_area_share",
+            "value": 0.0006,
+            "verdict": "pass"
+          }
+        ],
+        "why": "路线 A 的适用前提在原图上不成立，反事实画布的读数不作证据"
+      },
+      "F8": {
+        "verdict": "unknown",
+        "checks": [],
+        "why": "路线 A 的适用前提在原图上不成立，反事实画布的读数不作证据"
+      }
+    },
+    "isolated": "evals\\product-demo\\d1-r2\\isolated\\F-03.png"
+  },
+  "F-04": {
+    "route": "A",
+    "status": "ok",
+    "segmentation": {
+      "status": "ok",
+      "session": "birefnet-general-lite",
+      "home": "E:\\model_repository\\model_scope\\rembg",
+      "elapsed_s": 8.48,
+      "alpha_coverage": 0.2037,
+      "bbox": [
+        496,
+        139,
+        848,
+        1246
+      ],
+      "subject_size": [
+        353,
+        1108
+      ],
+      "canvas_size": [
+        423,
+        1330
+      ],
+      "pad": [
+        35,
+        111
+      ],
+      "touch_border": false,
+      "fill_rgb": [
+        180,
+        180,
+        180
+      ]
+    },
+    "precondition": {
+      "probe": "controlled_backdrop",
+      "source": "原图（不是制造出来的底衬）",
+      "measured_share": 0.4163,
+      "max_share": 0.02,
+      "max_share_source": "demo/fixture/aster-01/verifier_plan.json",
+      "applicable": false,
+      "why": "原图纯背景列里有 0.4163 的像素被判成主体（上限 0.02），这不是受控底衬"
+    },
+    "canvas_probe": {
+      "band": 0.18,
+      "band_columns": 76,
+      "subject_share_in_band": 0.248,
+      "mask_share": 0.6047,
+      "mask_definition": "saturation>0.12 或 lum<0.45*bg（与 cylinder-v1 同一份实现）",
+      "role": "self_referential_canvas_hygiene_only",
+      "why": "画布是我们自己铺的中性底衬，探它不构成对原图的适用性证据"
+    },
+    "applicable": false,
+    "verdict_scope": "counterfactual_only",
+    "scope_why": "原图不是受控底衬；画布上的量测只记录，不参与事实判定",
+    "overall": "pass",
+    "isolated_facts": {
+      "F1": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "aspect_h_over_w",
+            "value": 3.116,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F2": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "body_upper_share",
+            "value": 0.6487,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F3": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "body_lower_share",
+            "value": 0.3513,
+            "verdict": "pass"
+          },
+          {
+            "metric": "rib_count",
+            "value": 3,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F4": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "lid_share",
+            "value": 0.1227,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F5": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "trim_span_count",
+            "value": 1,
+            "verdict": "pass"
+          },
+          {
+            "metric": "trim_share",
+            "value": 0.0136,
+            "verdict": "pass"
+          },
+          {
+            "metric": "trim_top_position",
+            "value": 0.1227,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F6": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "bottom_spread_share",
+            "value": 0.0283,
+            "verdict": "pass"
+          },
+          {
+            "metric": "bottom_ring_present",
+            "value": 1,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F7": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "body_protrusion",
+            "value": 0.0207,
+            "verdict": "pass"
+          },
+          {
+            "metric": "extra_area_share",
+            "value": 0.0001,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F8": {
+        "verdict": "human",
+        "checks": []
+      }
+    },
+    "facts": {
+      "F1": {
+        "verdict": "unknown",
+        "checks": [
+          {
+            "metric": "aspect_h_over_w",
+            "value": 3.116,
+            "verdict": "pass"
+          }
+        ],
+        "why": "路线 A 的适用前提在原图上不成立，反事实画布的读数不作证据"
+      },
+      "F2": {
+        "verdict": "unknown",
+        "checks": [
+          {
+            "metric": "body_upper_share",
+            "value": 0.6487,
+            "verdict": "pass"
+          }
+        ],
+        "why": "路线 A 的适用前提在原图上不成立，反事实画布的读数不作证据"
+      },
+      "F3": {
+        "verdict": "unknown",
+        "checks": [
+          {
+            "metric": "body_lower_share",
+            "value": 0.3513,
+            "verdict": "pass"
+          },
+          {
+            "metric": "rib_count",
+            "value": 3,
+            "verdict": "pass"
+          }
+        ],
+        "why": "路线 A 的适用前提在原图上不成立，反事实画布的读数不作证据"
+      },
+      "F4": {
+        "verdict": "unknown",
+        "checks": [
+          {
+            "metric": "lid_share",
+            "value": 0.1227,
+            "verdict": "pass"
+          }
+        ],
+        "why": "路线 A 的适用前提在原图上不成立，反事实画布的读数不作证据"
+      },
+      "F5": {
+        "verdict": "unknown",
+        "checks": [
+          {
+            "metric": "trim_span_count",
+            "value": 1,
+            "verdict": "pass"
+          },
+          {
+            "metric": "trim_share",
+            "value": 0.0136,
+            "verdict": "pass"
+          },
+          {
+            "metric": "trim_top_position",
+            "value": 0.1227,
+            "verdict": "pass"
+          }
+        ],
+        "why": "路线 A 的适用前提在原图上不成立，反事实画布的读数不作证据"
+      },
+      "F6": {
+        "verdict": "unknown",
+        "checks": [
+          {
+            "metric": "bottom_spread_share",
+            "value": 0.0283,
+            "verdict": "pass"
+          },
+          {
+            "metric": "bottom_ring_present",
+            "value": 1,
+            "verdict": "pass"
+          }
+        ],
+        "why": "路线 A 的适用前提在原图上不成立，反事实画布的读数不作证据"
+      },
+      "F7": {
+        "verdict": "unknown",
+        "checks": [
+          {
+            "metric": "body_protrusion",
+            "value": 0.0207,
+            "verdict": "pass"
+          },
+          {
+            "metric": "extra_area_share",
+            "value": 0.0001,
+            "verdict": "pass"
+          }
+        ],
+        "why": "路线 A 的适用前提在原图上不成立，反事实画布的读数不作证据"
+      },
+      "F8": {
+        "verdict": "unknown",
+        "checks": [],
+        "why": "路线 A 的适用前提在原图上不成立，反事实画布的读数不作证据"
+      }
+    },
+    "isolated": "evals\\product-demo\\d1-r2\\isolated\\F-04.png"
+  },
+  "neg-01-recolor-upper": {
+    "route": "A",
+    "status": "ok",
+    "segmentation": {
+      "status": "ok",
+      "session": "birefnet-general-lite",
+      "home": "E:\\model_repository\\model_scope\\rembg",
+      "elapsed_s": 8.45,
+      "alpha_coverage": 0.2006,
+      "bbox": [
+        498,
+        135,
+        843,
+        1246
+      ],
+      "subject_size": [
+        346,
+        1112
+      ],
+      "canvas_size": [
+        416,
+        1334
+      ],
+      "pad": [
+        35,
+        111
+      ],
+      "touch_border": false,
+      "fill_rgb": [
+        180,
+        180,
+        180
+      ]
+    },
+    "precondition": {
+      "probe": "controlled_backdrop",
+      "source": "原图（不是制造出来的底衬）",
+      "measured_share": 0.0,
+      "max_share": 0.02,
+      "max_share_source": "demo/fixture/aster-01/verifier_plan.json",
+      "applicable": true,
+      "why": "原图纯背景列里的主体像素占比 0.0 不大于 0.02"
+    },
+    "canvas_probe": {
+      "band": 0.18,
+      "band_columns": 74,
+      "subject_share_in_band": 0.2236,
+      "mask_share": 0.5919,
+      "mask_definition": "saturation>0.12 或 lum<0.45*bg（与 cylinder-v1 同一份实现）",
+      "role": "self_referential_canvas_hygiene_only",
+      "why": "画布是我们自己铺的中性底衬，探它不构成对原图的适用性证据"
+    },
+    "applicable": true,
+    "verdict_scope": "evidence_on_isolated_subject",
+    "scope_why": "原图满足路线 A 的适用前提，量测在抠出的主体上完成；它判的是尺寸与颜色类事实，不证明主体就是同一 SKU（§4.5）",
+    "overall": "hard_fail",
+    "isolated_facts": {
+      "F1": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "aspect_h_over_w",
+            "value": 3.2,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F2": {
+        "verdict": "unknown",
+        "checks": [
+          {
+            "metric": "body_upper_share",
+            "value": null,
+            "verdict": "unknown"
+          }
+        ]
+      },
+      "F3": {
+        "verdict": "hard_fail",
+        "checks": [
+          {
+            "metric": "body_lower_share",
+            "value": null,
+            "verdict": "unknown"
+          },
+          {
+            "metric": "rib_count",
+            "value": 0,
+            "verdict": "hard_fail"
+          }
+        ]
+      },
+      "F4": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "lid_share",
+            "value": 0.1259,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F5": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "trim_span_count",
+            "value": 1,
+            "verdict": "pass"
+          },
+          {
+            "metric": "trim_share",
+            "value": 0.0136,
+            "verdict": "pass"
+          },
+          {
+            "metric": "trim_top_position",
+            "value": 0.1259,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F6": {
+        "verdict": "hard_fail",
+        "checks": [
+          {
+            "metric": "bottom_spread_share",
+            "value": 0.029,
+            "verdict": "pass"
+          },
+          {
+            "metric": "bottom_ring_present",
+            "value": 0,
+            "verdict": "hard_fail"
+          }
+        ]
+      },
+      "F7": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "body_protrusion",
+            "value": 0.0486,
+            "verdict": "pass"
+          },
+          {
+            "metric": "extra_area_share",
+            "value": 0.0,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F8": {
+        "verdict": "human",
+        "checks": []
+      }
+    },
+    "facts": {
+      "F1": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "aspect_h_over_w",
+            "value": 3.2,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F2": {
+        "verdict": "unknown",
+        "checks": [
+          {
+            "metric": "body_upper_share",
+            "value": null,
+            "verdict": "unknown"
+          }
+        ]
+      },
+      "F3": {
+        "verdict": "hard_fail",
+        "checks": [
+          {
+            "metric": "body_lower_share",
+            "value": null,
+            "verdict": "unknown"
+          },
+          {
+            "metric": "rib_count",
+            "value": 0,
+            "verdict": "hard_fail"
+          }
+        ]
+      },
+      "F4": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "lid_share",
+            "value": 0.1259,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F5": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "trim_span_count",
+            "value": 1,
+            "verdict": "pass"
+          },
+          {
+            "metric": "trim_share",
+            "value": 0.0136,
+            "verdict": "pass"
+          },
+          {
+            "metric": "trim_top_position",
+            "value": 0.1259,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F6": {
+        "verdict": "hard_fail",
+        "checks": [
+          {
+            "metric": "bottom_spread_share",
+            "value": 0.029,
+            "verdict": "pass"
+          },
+          {
+            "metric": "bottom_ring_present",
+            "value": 0,
+            "verdict": "hard_fail"
+          }
+        ]
+      },
+      "F7": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "body_protrusion",
+            "value": 0.0486,
+            "verdict": "pass"
+          },
+          {
+            "metric": "extra_area_share",
+            "value": 0.0,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F8": {
+        "verdict": "human",
+        "checks": []
+      }
+    },
+    "isolated": "evals\\product-demo\\d1-r2\\isolated\\neg-01-recolor-upper.png"
+  },
+  "neg-02-add-text": {
+    "route": "A",
+    "status": "ok",
+    "segmentation": {
+      "status": "ok",
+      "session": "birefnet-general-lite",
+      "home": "E:\\model_repository\\model_scope\\rembg",
+      "elapsed_s": 8.38,
+      "alpha_coverage": 0.2007,
+      "bbox": [
+        498,
+        134,
+        843,
+        1246
+      ],
+      "subject_size": [
+        346,
+        1113
+      ],
+      "canvas_size": [
+        416,
+        1335
+      ],
+      "pad": [
+        35,
+        111
+      ],
+      "touch_border": false,
+      "fill_rgb": [
+        180,
+        180,
+        180
+      ]
+    },
+    "precondition": {
+      "probe": "controlled_backdrop",
+      "source": "原图（不是制造出来的底衬）",
+      "measured_share": 0.0,
+      "max_share": 0.02,
+      "max_share_source": "demo/fixture/aster-01/verifier_plan.json",
+      "applicable": true,
+      "why": "原图纯背景列里的主体像素占比 0.0 不大于 0.02"
+    },
+    "canvas_probe": {
+      "band": 0.18,
+      "band_columns": 74,
+      "subject_share_in_band": 0.2232,
+      "mask_share": 0.5877,
+      "mask_definition": "saturation>0.12 或 lum<0.45*bg（与 cylinder-v1 同一份实现）",
+      "role": "self_referential_canvas_hygiene_only",
+      "why": "画布是我们自己铺的中性底衬，探它不构成对原图的适用性证据"
+    },
+    "applicable": true,
+    "verdict_scope": "evidence_on_isolated_subject",
+    "scope_why": "原图满足路线 A 的适用前提，量测在抠出的主体上完成；它判的是尺寸与颜色类事实，不证明主体就是同一 SKU（§4.5）",
+    "overall": "pass",
+    "isolated_facts": {
+      "F1": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "aspect_h_over_w",
+            "value": 3.2,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F2": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "body_upper_share",
+            "value": 0.6479,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F3": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "body_lower_share",
+            "value": 0.3521,
+            "verdict": "pass"
+          },
+          {
+            "metric": "rib_count",
+            "value": 3,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F4": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "lid_share",
+            "value": 0.1268,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F5": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "trim_span_count",
+            "value": 1,
+            "verdict": "pass"
+          },
+          {
+            "metric": "trim_share",
+            "value": 0.0136,
+            "verdict": "pass"
+          },
+          {
+            "metric": "trim_top_position",
+            "value": 0.1268,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F6": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "bottom_spread_share",
+            "value": 0.029,
+            "verdict": "pass"
+          },
+          {
+            "metric": "bottom_ring_present",
+            "value": 1,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F7": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "body_protrusion",
+            "value": 0.0211,
+            "verdict": "pass"
+          },
+          {
+            "metric": "extra_area_share",
+            "value": 0.0,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F8": {
+        "verdict": "human",
+        "checks": []
+      }
+    },
+    "facts": {
+      "F1": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "aspect_h_over_w",
+            "value": 3.2,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F2": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "body_upper_share",
+            "value": 0.6479,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F3": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "body_lower_share",
+            "value": 0.3521,
+            "verdict": "pass"
+          },
+          {
+            "metric": "rib_count",
+            "value": 3,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F4": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "lid_share",
+            "value": 0.1268,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F5": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "trim_span_count",
+            "value": 1,
+            "verdict": "pass"
+          },
+          {
+            "metric": "trim_share",
+            "value": 0.0136,
+            "verdict": "pass"
+          },
+          {
+            "metric": "trim_top_position",
+            "value": 0.1268,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F6": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "bottom_spread_share",
+            "value": 0.029,
+            "verdict": "pass"
+          },
+          {
+            "metric": "bottom_ring_present",
+            "value": 1,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F7": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "body_protrusion",
+            "value": 0.0211,
+            "verdict": "pass"
+          },
+          {
+            "metric": "extra_area_share",
+            "value": 0.0,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F8": {
+        "verdict": "human",
+        "checks": []
+      }
+    },
+    "isolated": "evals\\product-demo\\d1-r2\\isolated\\neg-02-add-text.png"
+  },
+  "neg-03-add-handle": {
+    "route": "A",
+    "status": "ok",
+    "segmentation": {
+      "status": "ok",
+      "session": "birefnet-general-lite",
+      "home": "E:\\model_repository\\model_scope\\rembg",
+      "elapsed_s": 8.32,
+      "alpha_coverage": 0.2091,
+      "bbox": [
+        498,
+        135,
+        914,
+        1246
+      ],
+      "subject_size": [
+        417,
+        1112
+      ],
+      "canvas_size": [
+        501,
+        1334
+      ],
+      "pad": [
+        42,
+        111
+      ],
+      "touch_border": false,
+      "fill_rgb": [
+        180,
+        180,
+        180
+      ]
+    },
+    "precondition": {
+      "probe": "controlled_backdrop",
+      "source": "原图（不是制造出来的底衬）",
+      "measured_share": 0.0,
+      "max_share": 0.02,
+      "max_share_source": "demo/fixture/aster-01/verifier_plan.json",
+      "applicable": true,
+      "why": "原图纯背景列里的主体像素占比 0.0 不大于 0.02"
+    },
+    "canvas_probe": {
+      "band": 0.18,
+      "band_columns": 90,
+      "subject_share_in_band": 0.2449,
+      "mask_share": 0.5127,
+      "mask_definition": "saturation>0.12 或 lum<0.45*bg（与 cylinder-v1 同一份实现）",
+      "role": "self_referential_canvas_hygiene_only",
+      "why": "画布是我们自己铺的中性底衬，探它不构成对原图的适用性证据"
+    },
+    "applicable": true,
+    "verdict_scope": "evidence_on_isolated_subject",
+    "scope_why": "原图满足路线 A 的适用前提，量测在抠出的主体上完成；它判的是尺寸与颜色类事实，不证明主体就是同一 SKU（§4.5）",
+    "overall": "hard_fail",
+    "isolated_facts": {
+      "F1": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "aspect_h_over_w",
+            "value": 2.686,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F2": {
+        "verdict": "hard_fail",
+        "checks": [
+          {
+            "metric": "body_upper_share",
+            "value": 0.4175,
+            "verdict": "hard_fail"
+          }
+        ]
+      },
+      "F3": {
+        "verdict": "hard_fail",
+        "checks": [
+          {
+            "metric": "body_lower_share",
+            "value": 0.5825,
+            "verdict": "hard_fail"
+          },
+          {
+            "metric": "rib_count",
+            "value": 3,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F4": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "lid_share",
+            "value": 0.1259,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F5": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "trim_span_count",
+            "value": 1,
+            "verdict": "pass"
+          },
+          {
+            "metric": "trim_share",
+            "value": 0.0136,
+            "verdict": "pass"
+          },
+          {
+            "metric": "trim_top_position",
+            "value": 0.1259,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F6": {
+        "verdict": "manual",
+        "checks": [
+          {
+            "metric": "bottom_spread_share",
+            "value": 0.073,
+            "verdict": "manual"
+          },
+          {
+            "metric": "bottom_ring_present",
+            "value": 1,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F7": {
+        "verdict": "hard_fail",
+        "checks": [
+          {
+            "metric": "body_protrusion",
+            "value": 0.2417,
+            "verdict": "hard_fail"
+          },
+          {
+            "metric": "extra_area_share",
+            "value": 0.0,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F8": {
+        "verdict": "human",
+        "checks": []
+      }
+    },
+    "facts": {
+      "F1": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "aspect_h_over_w",
+            "value": 2.686,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F2": {
+        "verdict": "hard_fail",
+        "checks": [
+          {
+            "metric": "body_upper_share",
+            "value": 0.4175,
+            "verdict": "hard_fail"
+          }
+        ]
+      },
+      "F3": {
+        "verdict": "hard_fail",
+        "checks": [
+          {
+            "metric": "body_lower_share",
+            "value": 0.5825,
+            "verdict": "hard_fail"
+          },
+          {
+            "metric": "rib_count",
+            "value": 3,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F4": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "lid_share",
+            "value": 0.1259,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F5": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "trim_span_count",
+            "value": 1,
+            "verdict": "pass"
+          },
+          {
+            "metric": "trim_share",
+            "value": 0.0136,
+            "verdict": "pass"
+          },
+          {
+            "metric": "trim_top_position",
+            "value": 0.1259,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F6": {
+        "verdict": "manual",
+        "checks": [
+          {
+            "metric": "bottom_spread_share",
+            "value": 0.073,
+            "verdict": "manual"
+          },
+          {
+            "metric": "bottom_ring_present",
+            "value": 1,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F7": {
+        "verdict": "hard_fail",
+        "checks": [
+          {
+            "metric": "body_protrusion",
+            "value": 0.2417,
+            "verdict": "hard_fail"
+          },
+          {
+            "metric": "extra_area_share",
+            "value": 0.0,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F8": {
+        "verdict": "human",
+        "checks": []
+      }
+    },
+    "isolated": "evals\\product-demo\\d1-r2\\isolated\\neg-03-add-handle.png"
+  },
+  "neg-04-lidless": {
+    "route": "A",
+    "status": "ok",
+    "segmentation": {
+      "status": "ok",
+      "session": "birefnet-general-lite",
+      "home": "E:\\model_repository\\model_scope\\rembg",
+      "elapsed_s": 8.37,
+      "alpha_coverage": 0.2062,
+      "bbox": [
+        495,
+        120,
+        844,
+        1246
+      ],
+      "subject_size": [
+        350,
+        1127
+      ],
+      "canvas_size": [
+        420,
+        1353
+      ],
+      "pad": [
+        35,
+        113
+      ],
+      "touch_border": false,
+      "fill_rgb": [
+        180,
+        180,
+        180
+      ]
+    },
+    "precondition": {
+      "probe": "controlled_backdrop",
+      "source": "原图（不是制造出来的底衬）",
+      "measured_share": 0.0,
+      "max_share": 0.02,
+      "max_share_source": "demo/fixture/aster-01/verifier_plan.json",
+      "applicable": true,
+      "why": "原图纯背景列里的主体像素占比 0.0 不大于 0.02"
+    },
+    "canvas_probe": {
+      "band": 0.18,
+      "band_columns": 75,
+      "subject_share_in_band": 0.1944,
+      "mask_share": 0.5214,
+      "mask_definition": "saturation>0.12 或 lum<0.45*bg（与 cylinder-v1 同一份实现）",
+      "role": "self_referential_canvas_hygiene_only",
+      "why": "画布是我们自己铺的中性底衬，探它不构成对原图的适用性证据"
+    },
+    "applicable": true,
+    "verdict_scope": "evidence_on_isolated_subject",
+    "scope_why": "原图满足路线 A 的适用前提，量测在抠出的主体上完成；它判的是尺寸与颜色类事实，不证明主体就是同一 SKU（§4.5）",
+    "overall": "hard_fail",
+    "isolated_facts": {
+      "F1": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "aspect_h_over_w",
+            "value": 2.796,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F2": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "body_upper_share",
+            "value": 0.6479,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F3": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "body_lower_share",
+            "value": 0.3521,
+            "verdict": "pass"
+          },
+          {
+            "metric": "rib_count",
+            "value": 3,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F4": {
+        "verdict": "unknown",
+        "checks": [
+          {
+            "metric": "lid_share",
+            "value": null,
+            "verdict": "unknown"
+          }
+        ]
+      },
+      "F5": {
+        "verdict": "hard_fail",
+        "checks": [
+          {
+            "metric": "trim_span_count",
+            "value": 0,
+            "verdict": "hard_fail"
+          },
+          {
+            "metric": "trim_share",
+            "value": null,
+            "verdict": "unknown"
+          },
+          {
+            "metric": "trim_top_position",
+            "value": null,
+            "verdict": "unknown"
+          }
+        ]
+      },
+      "F6": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "bottom_spread_share",
+            "value": 0.0265,
+            "verdict": "pass"
+          },
+          {
+            "metric": "bottom_ring_present",
+            "value": 1,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F7": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "body_protrusion",
+            "value": 0.0211,
+            "verdict": "pass"
+          },
+          {
+            "metric": "extra_area_share",
+            "value": 0.0,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F8": {
+        "verdict": "human",
+        "checks": []
+      }
+    },
+    "facts": {
+      "F1": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "aspect_h_over_w",
+            "value": 2.796,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F2": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "body_upper_share",
+            "value": 0.6479,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F3": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "body_lower_share",
+            "value": 0.3521,
+            "verdict": "pass"
+          },
+          {
+            "metric": "rib_count",
+            "value": 3,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F4": {
+        "verdict": "unknown",
+        "checks": [
+          {
+            "metric": "lid_share",
+            "value": null,
+            "verdict": "unknown"
+          }
+        ]
+      },
+      "F5": {
+        "verdict": "hard_fail",
+        "checks": [
+          {
+            "metric": "trim_span_count",
+            "value": 0,
+            "verdict": "hard_fail"
+          },
+          {
+            "metric": "trim_share",
+            "value": null,
+            "verdict": "unknown"
+          },
+          {
+            "metric": "trim_top_position",
+            "value": null,
+            "verdict": "unknown"
+          }
+        ]
+      },
+      "F6": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "bottom_spread_share",
+            "value": 0.0265,
+            "verdict": "pass"
+          },
+          {
+            "metric": "bottom_ring_present",
+            "value": 1,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F7": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "body_protrusion",
+            "value": 0.0211,
+            "verdict": "pass"
+          },
+          {
+            "metric": "extra_area_share",
+            "value": 0.0,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F8": {
+        "verdict": "human",
+        "checks": []
+      }
+    },
+    "isolated": "evals\\product-demo\\d1-r2\\isolated\\neg-04-lidless.png"
+  },
+  "neg-05-extra-ribs": {
+    "route": "A",
+    "status": "ok",
+    "segmentation": {
+      "status": "ok",
+      "session": "birefnet-general-lite",
+      "home": "E:\\model_repository\\model_scope\\rembg",
+      "elapsed_s": 8.64,
+      "alpha_coverage": 0.2006,
+      "bbox": [
+        498,
+        135,
+        843,
+        1246
+      ],
+      "subject_size": [
+        346,
+        1112
+      ],
+      "canvas_size": [
+        416,
+        1334
+      ],
+      "pad": [
+        35,
+        111
+      ],
+      "touch_border": false,
+      "fill_rgb": [
+        180,
+        180,
+        180
+      ]
+    },
+    "precondition": {
+      "probe": "controlled_backdrop",
+      "source": "原图（不是制造出来的底衬）",
+      "measured_share": 0.0,
+      "max_share": 0.02,
+      "max_share_source": "demo/fixture/aster-01/verifier_plan.json",
+      "applicable": true,
+      "why": "原图纯背景列里的主体像素占比 0.0 不大于 0.02"
+    },
+    "canvas_probe": {
+      "band": 0.18,
+      "band_columns": 74,
+      "subject_share_in_band": 0.2261,
+      "mask_share": 0.5927,
+      "mask_definition": "saturation>0.12 或 lum<0.45*bg（与 cylinder-v1 同一份实现）",
+      "role": "self_referential_canvas_hygiene_only",
+      "why": "画布是我们自己铺的中性底衬，探它不构成对原图的适用性证据"
+    },
+    "applicable": true,
+    "verdict_scope": "evidence_on_isolated_subject",
+    "scope_why": "原图满足路线 A 的适用前提，量测在抠出的主体上完成；它判的是尺寸与颜色类事实，不证明主体就是同一 SKU（§4.5）",
+    "overall": "hard_fail",
+    "isolated_facts": {
+      "F1": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "aspect_h_over_w",
+            "value": 3.2,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F2": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "body_upper_share",
+            "value": 0.6479,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F3": {
+        "verdict": "hard_fail",
+        "checks": [
+          {
+            "metric": "body_lower_share",
+            "value": 0.3521,
+            "verdict": "pass"
+          },
+          {
+            "metric": "rib_count",
+            "value": 5,
+            "verdict": "hard_fail"
+          }
+        ]
+      },
+      "F4": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "lid_share",
+            "value": 0.1259,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F5": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "trim_span_count",
+            "value": 1,
+            "verdict": "pass"
+          },
+          {
+            "metric": "trim_share",
+            "value": 0.0136,
+            "verdict": "pass"
+          },
+          {
+            "metric": "trim_top_position",
+            "value": 0.1259,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F6": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "bottom_spread_share",
+            "value": 0.029,
+            "verdict": "pass"
+          },
+          {
+            "metric": "bottom_ring_present",
+            "value": 1,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F7": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "body_protrusion",
+            "value": 0.0211,
+            "verdict": "pass"
+          },
+          {
+            "metric": "extra_area_share",
+            "value": 0.0,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F8": {
+        "verdict": "human",
+        "checks": []
+      }
+    },
+    "facts": {
+      "F1": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "aspect_h_over_w",
+            "value": 3.2,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F2": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "body_upper_share",
+            "value": 0.6479,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F3": {
+        "verdict": "hard_fail",
+        "checks": [
+          {
+            "metric": "body_lower_share",
+            "value": 0.3521,
+            "verdict": "pass"
+          },
+          {
+            "metric": "rib_count",
+            "value": 5,
+            "verdict": "hard_fail"
+          }
+        ]
+      },
+      "F4": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "lid_share",
+            "value": 0.1259,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F5": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "trim_span_count",
+            "value": 1,
+            "verdict": "pass"
+          },
+          {
+            "metric": "trim_share",
+            "value": 0.0136,
+            "verdict": "pass"
+          },
+          {
+            "metric": "trim_top_position",
+            "value": 0.1259,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F6": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "bottom_spread_share",
+            "value": 0.029,
+            "verdict": "pass"
+          },
+          {
+            "metric": "bottom_ring_present",
+            "value": 1,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F7": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "body_protrusion",
+            "value": 0.0211,
+            "verdict": "pass"
+          },
+          {
+            "metric": "extra_area_share",
+            "value": 0.0,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F8": {
+        "verdict": "human",
+        "checks": []
+      }
+    },
+    "isolated": "evals\\product-demo\\d1-r2\\isolated\\neg-05-extra-ribs.png"
+  },
+  "neg-06-second-cup": {
+    "route": "A",
+    "status": "ok",
+    "segmentation": {
+      "status": "ok",
+      "session": "birefnet-general-lite",
+      "home": "E:\\model_repository\\model_scope\\rembg",
+      "elapsed_s": 8.74,
+      "alpha_coverage": 0.3977,
+      "bbox": [
+        498,
+        134,
+        1271,
+        1246
+      ],
+      "subject_size": [
+        774,
+        1113
+      ],
+      "canvas_size": [
+        928,
+        1335
+      ],
+      "pad": [
+        77,
+        111
+      ],
+      "touch_border": false,
+      "fill_rgb": [
+        180,
+        180,
+        180
+      ]
+    },
+    "precondition": {
+      "probe": "controlled_backdrop",
+      "source": "原图（不是制造出来的底衬）",
+      "measured_share": 0.0,
+      "max_share": 0.02,
+      "max_share_source": "demo/fixture/aster-01/verifier_plan.json",
+      "applicable": true,
+      "why": "原图纯背景列里的主体像素占比 0.0 不大于 0.02"
+    },
+    "canvas_probe": {
+      "band": 0.18,
+      "band_columns": 167,
+      "subject_share_in_band": 0.3047,
+      "mask_share": 0.5304,
+      "mask_definition": "saturation>0.12 或 lum<0.45*bg（与 cylinder-v1 同一份实现）",
+      "role": "self_referential_canvas_hygiene_only",
+      "why": "画布是我们自己铺的中性底衬，探它不构成对原图的适用性证据"
+    },
+    "applicable": true,
+    "verdict_scope": "evidence_on_isolated_subject",
+    "scope_why": "原图满足路线 A 的适用前提，量测在抠出的主体上完成；它判的是尺寸与颜色类事实，不证明主体就是同一 SKU（§4.5）",
+    "overall": "hard_fail",
+    "isolated_facts": {
+      "F1": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "aspect_h_over_w",
+            "value": 3.2,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F2": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "body_upper_share",
+            "value": 0.6479,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F3": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "body_lower_share",
+            "value": 0.3521,
+            "verdict": "pass"
+          },
+          {
+            "metric": "rib_count",
+            "value": 3,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F4": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "lid_share",
+            "value": 0.1268,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F5": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "trim_span_count",
+            "value": 1,
+            "verdict": "pass"
+          },
+          {
+            "metric": "trim_share",
+            "value": 0.0136,
+            "verdict": "pass"
+          },
+          {
+            "metric": "trim_top_position",
+            "value": 0.1268,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F6": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "bottom_spread_share",
+            "value": 0.0261,
+            "verdict": "pass"
+          },
+          {
+            "metric": "bottom_ring_present",
+            "value": 1,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F7": {
+        "verdict": "hard_fail",
+        "checks": [
+          {
+            "metric": "body_protrusion",
+            "value": 0.0211,
+            "verdict": "pass"
+          },
+          {
+            "metric": "extra_area_share",
+            "value": 0.4999,
+            "verdict": "hard_fail"
+          }
+        ]
+      },
+      "F8": {
+        "verdict": "human",
+        "checks": []
+      }
+    },
+    "facts": {
+      "F1": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "aspect_h_over_w",
+            "value": 3.2,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F2": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "body_upper_share",
+            "value": 0.6479,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F3": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "body_lower_share",
+            "value": 0.3521,
+            "verdict": "pass"
+          },
+          {
+            "metric": "rib_count",
+            "value": 3,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F4": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "lid_share",
+            "value": 0.1268,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F5": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "trim_span_count",
+            "value": 1,
+            "verdict": "pass"
+          },
+          {
+            "metric": "trim_share",
+            "value": 0.0136,
+            "verdict": "pass"
+          },
+          {
+            "metric": "trim_top_position",
+            "value": 0.1268,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F6": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "bottom_spread_share",
+            "value": 0.0261,
+            "verdict": "pass"
+          },
+          {
+            "metric": "bottom_ring_present",
+            "value": 1,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F7": {
+        "verdict": "hard_fail",
+        "checks": [
+          {
+            "metric": "body_protrusion",
+            "value": 0.0211,
+            "verdict": "pass"
+          },
+          {
+            "metric": "extra_area_share",
+            "value": 0.4999,
+            "verdict": "hard_fail"
+          }
+        ]
+      },
+      "F8": {
+        "verdict": "human",
+        "checks": []
+      }
+    },
+    "isolated": "evals\\product-demo\\d1-r2\\isolated\\neg-06-second-cup.png"
+  },
+  "neg-07-flat-lid": {
+    "route": "A",
+    "status": "ok",
+    "segmentation": {
+      "status": "ok",
+      "session": "birefnet-general-lite",
+      "home": "E:\\model_repository\\model_scope\\rembg",
+      "elapsed_s": 8.68,
+      "alpha_coverage": 0.2006,
+      "bbox": [
+        498,
+        135,
+        843,
+        1246
+      ],
+      "subject_size": [
+        346,
+        1112
+      ],
+      "canvas_size": [
+        416,
+        1334
+      ],
+      "pad": [
+        35,
+        111
+      ],
+      "touch_border": false,
+      "fill_rgb": [
+        180,
+        180,
+        180
+      ]
+    },
+    "precondition": {
+      "probe": "controlled_backdrop",
+      "source": "原图（不是制造出来的底衬）",
+      "measured_share": 0.0,
+      "max_share": 0.02,
+      "max_share_source": "demo/fixture/aster-01/verifier_plan.json",
+      "applicable": true,
+      "why": "原图纯背景列里的主体像素占比 0.0 不大于 0.02"
+    },
+    "canvas_probe": {
+      "band": 0.18,
+      "band_columns": 74,
+      "subject_share_in_band": 0.223,
+      "mask_share": 0.6022,
+      "mask_definition": "saturation>0.12 或 lum<0.45*bg（与 cylinder-v1 同一份实现）",
+      "role": "self_referential_canvas_hygiene_only",
+      "why": "画布是我们自己铺的中性底衬，探它不构成对原图的适用性证据"
+    },
+    "applicable": true,
+    "verdict_scope": "evidence_on_isolated_subject",
+    "scope_why": "原图满足路线 A 的适用前提，量测在抠出的主体上完成；它判的是尺寸与颜色类事实，不证明主体就是同一 SKU（§4.5）",
+    "overall": "pass",
+    "isolated_facts": {
+      "F1": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "aspect_h_over_w",
+            "value": 3.2,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F2": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "body_upper_share",
+            "value": 0.6479,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F3": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "body_lower_share",
+            "value": 0.3521,
+            "verdict": "pass"
+          },
+          {
+            "metric": "rib_count",
+            "value": 3,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F4": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "lid_share",
+            "value": 0.1259,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F5": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "trim_span_count",
+            "value": 1,
+            "verdict": "pass"
+          },
+          {
+            "metric": "trim_share",
+            "value": 0.0136,
+            "verdict": "pass"
+          },
+          {
+            "metric": "trim_top_position",
+            "value": 0.1259,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F6": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "bottom_spread_share",
+            "value": 0.029,
+            "verdict": "pass"
+          },
+          {
+            "metric": "bottom_ring_present",
+            "value": 1,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F7": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "body_protrusion",
+            "value": 0.0211,
+            "verdict": "pass"
+          },
+          {
+            "metric": "extra_area_share",
+            "value": 0.0,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F8": {
+        "verdict": "human",
+        "checks": []
+      }
+    },
+    "facts": {
+      "F1": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "aspect_h_over_w",
+            "value": 3.2,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F2": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "body_upper_share",
+            "value": 0.6479,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F3": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "body_lower_share",
+            "value": 0.3521,
+            "verdict": "pass"
+          },
+          {
+            "metric": "rib_count",
+            "value": 3,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F4": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "lid_share",
+            "value": 0.1259,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F5": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "trim_span_count",
+            "value": 1,
+            "verdict": "pass"
+          },
+          {
+            "metric": "trim_share",
+            "value": 0.0136,
+            "verdict": "pass"
+          },
+          {
+            "metric": "trim_top_position",
+            "value": 0.1259,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F6": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "bottom_spread_share",
+            "value": 0.029,
+            "verdict": "pass"
+          },
+          {
+            "metric": "bottom_ring_present",
+            "value": 1,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F7": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "body_protrusion",
+            "value": 0.0211,
+            "verdict": "pass"
+          },
+          {
+            "metric": "extra_area_share",
+            "value": 0.0,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F8": {
+        "verdict": "human",
+        "checks": []
+      }
+    },
+    "isolated": "evals\\product-demo\\d1-r2\\isolated\\neg-07-flat-lid.png"
+  },
+  "control-A": {
+    "route": "A",
+    "status": "ok",
+    "segmentation": {
+      "status": "ok",
+      "session": "birefnet-general-lite",
+      "home": "E:\\model_repository\\model_scope\\rembg",
+      "elapsed_s": 8.73,
+      "alpha_coverage": 0.2683,
+      "bbox": [
+        448,
+        76,
+        886,
+        1269
+      ],
+      "subject_size": [
+        439,
+        1194
+      ],
+      "canvas_size": [
+        527,
+        1432
+      ],
+      "pad": [
+        44,
+        119
+      ],
+      "touch_border": false,
+      "fill_rgb": [
+        180,
+        180,
+        180
+      ]
+    },
+    "precondition": {
+      "probe": "controlled_backdrop",
+      "source": "原图（不是制造出来的底衬）",
+      "measured_share": 0.0,
+      "max_share": 0.02,
+      "max_share_source": "demo/fixture/aster-01/verifier_plan.json",
+      "applicable": true,
+      "why": "原图纯背景列里的主体像素占比 0.0 不大于 0.02"
+    },
+    "canvas_probe": {
+      "band": 0.18,
+      "band_columns": 94,
+      "subject_share_in_band": 0.2554,
+      "mask_share": 0.607,
+      "mask_definition": "saturation>0.12 或 lum<0.45*bg（与 cylinder-v1 同一份实现）",
+      "role": "self_referential_canvas_hygiene_only",
+      "why": "画布是我们自己铺的中性底衬，探它不构成对原图的适用性证据"
+    },
+    "applicable": true,
+    "verdict_scope": "evidence_on_isolated_subject",
+    "scope_why": "原图满足路线 A 的适用前提，量测在抠出的主体上完成；它判的是尺寸与颜色类事实，不证明主体就是同一 SKU（§4.5）",
+    "overall": "manual",
+    "isolated_facts": {
+      "F1": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "aspect_h_over_w",
+            "value": 2.688,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F2": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "body_upper_share",
+            "value": 0.6551,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F3": {
+        "verdict": "manual",
+        "checks": [
+          {
+            "metric": "body_lower_share",
+            "value": 0.3449,
+            "verdict": "pass"
+          },
+          {
+            "metric": "rib_count",
+            "value": 4,
+            "verdict": "manual"
+          }
+        ]
+      },
+      "F4": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "lid_share",
+            "value": 0.0992,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F5": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "trim_span_count",
+            "value": 1,
+            "verdict": "pass"
+          },
+          {
+            "metric": "trim_share",
+            "value": 0.0127,
+            "verdict": "pass"
+          },
+          {
+            "metric": "trim_top_position",
+            "value": 0.0992,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F6": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "bottom_spread_share",
+            "value": 0.0387,
+            "verdict": "pass"
+          },
+          {
+            "metric": "bottom_ring_present",
+            "value": 1,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F7": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "body_protrusion",
+            "value": 0.0581,
+            "verdict": "pass"
+          },
+          {
+            "metric": "extra_area_share",
+            "value": 0.0,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F8": {
+        "verdict": "human",
+        "checks": []
+      }
+    },
+    "facts": {
+      "F1": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "aspect_h_over_w",
+            "value": 2.688,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F2": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "body_upper_share",
+            "value": 0.6551,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F3": {
+        "verdict": "manual",
+        "checks": [
+          {
+            "metric": "body_lower_share",
+            "value": 0.3449,
+            "verdict": "pass"
+          },
+          {
+            "metric": "rib_count",
+            "value": 4,
+            "verdict": "manual"
+          }
+        ]
+      },
+      "F4": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "lid_share",
+            "value": 0.0992,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F5": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "trim_span_count",
+            "value": 1,
+            "verdict": "pass"
+          },
+          {
+            "metric": "trim_share",
+            "value": 0.0127,
+            "verdict": "pass"
+          },
+          {
+            "metric": "trim_top_position",
+            "value": 0.0992,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F6": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "bottom_spread_share",
+            "value": 0.0387,
+            "verdict": "pass"
+          },
+          {
+            "metric": "bottom_ring_present",
+            "value": 1,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F7": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "body_protrusion",
+            "value": 0.0581,
+            "verdict": "pass"
+          },
+          {
+            "metric": "extra_area_share",
+            "value": 0.0,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F8": {
+        "verdict": "human",
+        "checks": []
+      }
+    },
+    "isolated": "evals\\product-demo\\d1-r2\\isolated\\control-A.png"
+  },
+  "control-B": {
+    "route": "A",
+    "status": "ok",
+    "segmentation": {
+      "status": "ok",
+      "session": "birefnet-general-lite",
+      "home": "E:\\model_repository\\model_scope\\rembg",
+      "elapsed_s": 8.53,
+      "alpha_coverage": 0.2396,
+      "bbox": [
+        470,
+        107,
+        869,
+        1266
+      ],
+      "subject_size": [
+        400,
+        1160
+      ],
+      "canvas_size": [
+        480,
+        1392
+      ],
+      "pad": [
+        40,
+        116
+      ],
+      "touch_border": false,
+      "fill_rgb": [
+        180,
+        180,
+        180
+      ]
+    },
+    "precondition": {
+      "probe": "controlled_backdrop",
+      "source": "原图（不是制造出来的底衬）",
+      "measured_share": 0.0,
+      "max_share": 0.02,
+      "max_share_source": "demo/fixture/aster-01/verifier_plan.json",
+      "applicable": true,
+      "why": "原图纯背景列里的主体像素占比 0.0 不大于 0.02"
+    },
+    "canvas_probe": {
+      "band": 0.18,
+      "band_columns": 86,
+      "subject_share_in_band": 0.2964,
+      "mask_share": 0.6106,
+      "mask_definition": "saturation>0.12 或 lum<0.45*bg（与 cylinder-v1 同一份实现）",
+      "role": "self_referential_canvas_hygiene_only",
+      "why": "画布是我们自己铺的中性底衬，探它不构成对原图的适用性证据"
+    },
+    "applicable": true,
+    "verdict_scope": "evidence_on_isolated_subject",
+    "scope_why": "原图满足路线 A 的适用前提，量测在抠出的主体上完成；它判的是尺寸与颜色类事实，不证明主体就是同一 SKU（§4.5）",
+    "overall": "manual",
+    "isolated_facts": {
+      "F1": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "aspect_h_over_w",
+            "value": 2.87,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F2": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "body_upper_share",
+            "value": 0.6677,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F3": {
+        "verdict": "manual",
+        "checks": [
+          {
+            "metric": "body_lower_share",
+            "value": 0.3323,
+            "verdict": "pass"
+          },
+          {
+            "metric": "rib_count",
+            "value": 2,
+            "verdict": "manual"
+          }
+        ]
+      },
+      "F4": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "lid_share",
+            "value": 0.1228,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F5": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "trim_span_count",
+            "value": 1,
+            "verdict": "pass"
+          },
+          {
+            "metric": "trim_share",
+            "value": 0.0139,
+            "verdict": "pass"
+          },
+          {
+            "metric": "trim_top_position",
+            "value": 0.1228,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F6": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "bottom_spread_share",
+            "value": 0.03,
+            "verdict": "pass"
+          },
+          {
+            "metric": "bottom_ring_present",
+            "value": 1,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F7": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "body_protrusion",
+            "value": 0.0503,
+            "verdict": "pass"
+          },
+          {
+            "metric": "extra_area_share",
+            "value": 0.0019,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F8": {
+        "verdict": "human",
+        "checks": []
+      }
+    },
+    "facts": {
+      "F1": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "aspect_h_over_w",
+            "value": 2.87,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F2": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "body_upper_share",
+            "value": 0.6677,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F3": {
+        "verdict": "manual",
+        "checks": [
+          {
+            "metric": "body_lower_share",
+            "value": 0.3323,
+            "verdict": "pass"
+          },
+          {
+            "metric": "rib_count",
+            "value": 2,
+            "verdict": "manual"
+          }
+        ]
+      },
+      "F4": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "lid_share",
+            "value": 0.1228,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F5": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "trim_span_count",
+            "value": 1,
+            "verdict": "pass"
+          },
+          {
+            "metric": "trim_share",
+            "value": 0.0139,
+            "verdict": "pass"
+          },
+          {
+            "metric": "trim_top_position",
+            "value": 0.1228,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F6": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "bottom_spread_share",
+            "value": 0.03,
+            "verdict": "pass"
+          },
+          {
+            "metric": "bottom_ring_present",
+            "value": 1,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F7": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "body_protrusion",
+            "value": 0.0503,
+            "verdict": "pass"
+          },
+          {
+            "metric": "extra_area_share",
+            "value": 0.0019,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F8": {
+        "verdict": "human",
+        "checks": []
+      }
+    },
+    "isolated": "evals\\product-demo\\d1-r2\\isolated\\control-B.png"
+  },
+  "control-C": {
+    "route": "A",
+    "status": "ok",
+    "segmentation": {
+      "status": "ok",
+      "session": "birefnet-general-lite",
+      "home": "E:\\model_repository\\model_scope\\rembg",
+      "elapsed_s": 8.62,
+      "alpha_coverage": 0.2006,
+      "bbox": [
+        498,
+        135,
+        843,
+        1246
+      ],
+      "subject_size": [
+        346,
+        1112
+      ],
+      "canvas_size": [
+        416,
+        1334
+      ],
+      "pad": [
+        35,
+        111
+      ],
+      "touch_border": false,
+      "fill_rgb": [
+        180,
+        180,
+        180
+      ]
+    },
+    "precondition": {
+      "probe": "controlled_backdrop",
+      "source": "原图（不是制造出来的底衬）",
+      "measured_share": 0.0,
+      "max_share": 0.02,
+      "max_share_source": "demo/fixture/aster-01/verifier_plan.json",
+      "applicable": true,
+      "why": "原图纯背景列里的主体像素占比 0.0 不大于 0.02"
+    },
+    "canvas_probe": {
+      "band": 0.18,
+      "band_columns": 74,
+      "subject_share_in_band": 0.2229,
+      "mask_share": 0.5919,
+      "mask_definition": "saturation>0.12 或 lum<0.45*bg（与 cylinder-v1 同一份实现）",
+      "role": "self_referential_canvas_hygiene_only",
+      "why": "画布是我们自己铺的中性底衬，探它不构成对原图的适用性证据"
+    },
+    "applicable": true,
+    "verdict_scope": "evidence_on_isolated_subject",
+    "scope_why": "原图满足路线 A 的适用前提，量测在抠出的主体上完成；它判的是尺寸与颜色类事实，不证明主体就是同一 SKU（§4.5）",
+    "overall": "pass",
+    "isolated_facts": {
+      "F1": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "aspect_h_over_w",
+            "value": 3.2,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F2": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "body_upper_share",
+            "value": 0.6479,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F3": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "body_lower_share",
+            "value": 0.3521,
+            "verdict": "pass"
+          },
+          {
+            "metric": "rib_count",
+            "value": 3,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F4": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "lid_share",
+            "value": 0.1259,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F5": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "trim_span_count",
+            "value": 1,
+            "verdict": "pass"
+          },
+          {
+            "metric": "trim_share",
+            "value": 0.0136,
+            "verdict": "pass"
+          },
+          {
+            "metric": "trim_top_position",
+            "value": 0.1259,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F6": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "bottom_spread_share",
+            "value": 0.029,
+            "verdict": "pass"
+          },
+          {
+            "metric": "bottom_ring_present",
+            "value": 1,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F7": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "body_protrusion",
+            "value": 0.0211,
+            "verdict": "pass"
+          },
+          {
+            "metric": "extra_area_share",
+            "value": 0.0,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F8": {
+        "verdict": "human",
+        "checks": []
+      }
+    },
+    "facts": {
+      "F1": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "aspect_h_over_w",
+            "value": 3.2,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F2": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "body_upper_share",
+            "value": 0.6479,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F3": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "body_lower_share",
+            "value": 0.3521,
+            "verdict": "pass"
+          },
+          {
+            "metric": "rib_count",
+            "value": 3,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F4": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "lid_share",
+            "value": 0.1259,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F5": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "trim_span_count",
+            "value": 1,
+            "verdict": "pass"
+          },
+          {
+            "metric": "trim_share",
+            "value": 0.0136,
+            "verdict": "pass"
+          },
+          {
+            "metric": "trim_top_position",
+            "value": 0.1259,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F6": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "bottom_spread_share",
+            "value": 0.029,
+            "verdict": "pass"
+          },
+          {
+            "metric": "bottom_ring_present",
+            "value": 1,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F7": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "body_protrusion",
+            "value": 0.0211,
+            "verdict": "pass"
+          },
+          {
+            "metric": "extra_area_share",
+            "value": 0.0,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F8": {
+        "verdict": "human",
+        "checks": []
+      }
+    },
+    "isolated": "evals\\product-demo\\d1-r2\\isolated\\control-C.png"
+  },
+  "bex-02": {
+    "route": "A",
+    "status": "ok",
+    "segmentation": {
+      "status": "ok",
+      "session": "birefnet-general-lite",
+      "home": "E:\\model_repository\\model_scope\\rembg",
+      "elapsed_s": 8.66,
+      "alpha_coverage": 0.2325,
+      "bbox": [
+        462,
+        172,
+        881,
+        1171
+      ],
+      "subject_size": [
+        420,
+        1000
+      ],
+      "canvas_size": [
+        504,
+        1200
+      ],
+      "pad": [
+        42,
+        100
+      ],
+      "touch_border": false,
+      "fill_rgb": [
+        180,
+        180,
+        180
+      ]
+    },
+    "precondition": {
+      "probe": "controlled_backdrop",
+      "source": "原图（不是制造出来的底衬）",
+      "measured_share": 0.0,
+      "max_share": 0.02,
+      "max_share_source": "demo/fixture/aster-01/verifier_plan.json",
+      "applicable": true,
+      "why": "原图纯背景列里的主体像素占比 0.0 不大于 0.02"
+    },
+    "canvas_probe": {
+      "band": 0.18,
+      "band_columns": 90,
+      "subject_share_in_band": 0.444,
+      "mask_share": 0.6943,
+      "mask_definition": "saturation>0.12 或 lum<0.45*bg（与 cylinder-v1 同一份实现）",
+      "role": "self_referential_canvas_hygiene_only",
+      "why": "画布是我们自己铺的中性底衬，探它不构成对原图的适用性证据"
+    },
+    "applicable": true,
+    "verdict_scope": "evidence_on_isolated_subject",
+    "scope_why": "原图满足路线 A 的适用前提，量测在抠出的主体上完成；它判的是尺寸与颜色类事实，不证明主体就是同一 SKU（§4.5）",
+    "overall": "hard_fail",
+    "isolated_facts": {
+      "F1": {
+        "verdict": "manual",
+        "checks": [
+          {
+            "metric": "aspect_h_over_w",
+            "value": 2.381,
+            "verdict": "manual"
+          }
+        ]
+      },
+      "F2": {
+        "verdict": "unknown",
+        "checks": [
+          {
+            "metric": "body_upper_share",
+            "value": null,
+            "verdict": "unknown"
+          }
+        ]
+      },
+      "F3": {
+        "verdict": "hard_fail",
+        "checks": [
+          {
+            "metric": "body_lower_share",
+            "value": null,
+            "verdict": "unknown"
+          },
+          {
+            "metric": "rib_count",
+            "value": 0,
+            "verdict": "hard_fail"
+          }
+        ]
+      },
+      "F4": {
+        "verdict": "unknown",
+        "checks": [
+          {
+            "metric": "lid_share",
+            "value": null,
+            "verdict": "unknown"
+          }
+        ]
+      },
+      "F5": {
+        "verdict": "hard_fail",
+        "checks": [
+          {
+            "metric": "trim_span_count",
+            "value": 0,
+            "verdict": "hard_fail"
+          },
+          {
+            "metric": "trim_share",
+            "value": null,
+            "verdict": "unknown"
+          },
+          {
+            "metric": "trim_top_position",
+            "value": null,
+            "verdict": "unknown"
+          }
+        ]
+      },
+      "F6": {
+        "verdict": "hard_fail",
+        "checks": [
+          {
+            "metric": "bottom_spread_share",
+            "value": 0.0,
+            "verdict": "pass"
+          },
+          {
+            "metric": "bottom_ring_present",
+            "value": 0,
+            "verdict": "hard_fail"
+          }
+        ]
+      },
+      "F7": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "body_protrusion",
+            "value": 0.0,
+            "verdict": "pass"
+          },
+          {
+            "metric": "extra_area_share",
+            "value": 0.0,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F8": {
+        "verdict": "human",
+        "checks": []
+      }
+    },
+    "facts": {
+      "F1": {
+        "verdict": "manual",
+        "checks": [
+          {
+            "metric": "aspect_h_over_w",
+            "value": 2.381,
+            "verdict": "manual"
+          }
+        ]
+      },
+      "F2": {
+        "verdict": "unknown",
+        "checks": [
+          {
+            "metric": "body_upper_share",
+            "value": null,
+            "verdict": "unknown"
+          }
+        ]
+      },
+      "F3": {
+        "verdict": "hard_fail",
+        "checks": [
+          {
+            "metric": "body_lower_share",
+            "value": null,
+            "verdict": "unknown"
+          },
+          {
+            "metric": "rib_count",
+            "value": 0,
+            "verdict": "hard_fail"
+          }
+        ]
+      },
+      "F4": {
+        "verdict": "unknown",
+        "checks": [
+          {
+            "metric": "lid_share",
+            "value": null,
+            "verdict": "unknown"
+          }
+        ]
+      },
+      "F5": {
+        "verdict": "hard_fail",
+        "checks": [
+          {
+            "metric": "trim_span_count",
+            "value": 0,
+            "verdict": "hard_fail"
+          },
+          {
+            "metric": "trim_share",
+            "value": null,
+            "verdict": "unknown"
+          },
+          {
+            "metric": "trim_top_position",
+            "value": null,
+            "verdict": "unknown"
+          }
+        ]
+      },
+      "F6": {
+        "verdict": "hard_fail",
+        "checks": [
+          {
+            "metric": "bottom_spread_share",
+            "value": 0.0,
+            "verdict": "pass"
+          },
+          {
+            "metric": "bottom_ring_present",
+            "value": 0,
+            "verdict": "hard_fail"
+          }
+        ]
+      },
+      "F7": {
+        "verdict": "pass",
+        "checks": [
+          {
+            "metric": "body_protrusion",
+            "value": 0.0,
+            "verdict": "pass"
+          },
+          {
+            "metric": "extra_area_share",
+            "value": 0.0,
+            "verdict": "pass"
+          }
+        ]
+      },
+      "F8": {
+        "verdict": "human",
+        "checks": []
+      }
+    },
+    "isolated": "evals\\product-demo\\d1-r2\\isolated\\bex-02.png"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "case_id": "neg-01-recolor-upper",
+  "mutation_class": "改色",
+  "description": "把主体内颜色接近声明锚点 body_upper 的像素整片换成卡里没有的第三种主色 #6A2FA8",
+  "source": "evals/product-demo/fixture-design/C/raw.png",
+  "source_sha256": "e1b1c5de1ee6b50a69fb8e431f1140d8c21a689f4fe3316461c02745139d03f6",
+  "output": "negative-cases/neg-01-recolor-upper/raw.png",
+  "output_sha256": "b7aaa1b4f3c0865f7e90232c94e889f56823328f96d40f172da2756983dd7806",
+  "output_bytes": 1022270,
+  "image_size": [
+    1344,
+    1344
+  ],
+  "changed_pixels": 199229,
+  "params": {
+    "declared_anchor": "#0F6B66",
+    "replacement_hex": "#6A2FA8",
+    "replacement_rgb": [
+      106,
+      47,
+      168
+    ],
+    "recolored_pixels": 199229
+  },
+  "generated_at": "2026-09-25T23:17:42+08:00",
+  "model_calls": 0
+}

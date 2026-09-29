@@ -1,0 +1,48 @@
+{
+  "note": "位置 4 的冻结快照。由 evals/run_golden.py 生成。它是**唯一一格**会调模型的坑位 —— 别处用性质断言，这里用逐值快照。改了位置 4 的任何东西（提示词 / 取景池 / 几何 / 抠图参数）都要跑一次它，并**确认变化是有意的**。",
+  "product": "examples/product_fullset.json",
+  "args": [
+    "--only",
+    "4",
+    "--cutout",
+    "floodfill"
+  ],
+  "expect": {
+    "renderer": "gen_bg_paste",
+    "renderer_in_plan": "gen_bg_paste",
+    "text": "none",
+    "text_in_table": "none",
+    "product_fill_pct": 46,
+    "model_calls_planned": 1,
+    "placeholder": true,
+    "generation_mode": "mock",
+    "hint": "简洁的办公室桌面一角，浅灰墙面，柔和自然光，画面中央干净无物",
+    "prompt": "简洁的办公室桌面一角，浅灰墙面，柔和自然光，画面中央干净无物，中央大面积空置简洁，四周环境自然延展，正方形构图，画面为空场景背景，不要出现任何产品、商品、容器、杯、瓶、包装盒、logo 或其局部，画面中不要出现任何文字、字母、数字、汉字、水印、标志、logo、签名、价格标签、促销角标、边框，高清，专业摄影布光",
+    "negative_prompt": "product, products, merchandise, item, container, cup, mug, bottle, packaging, package, box, logo, brand, text, watermark, people, hands, 文字, 字母, 数字, 水印, 标志, logo, 签名, 标签, 价格, 边框, 低质量, 模糊, 畸变, 多余的手指, 重复的物体, amazon、prime、best seller、amazon's choice、amazon choice、价格、￥、$、折扣、联系方式、二维码、站外链接、微信号、评价、五星、好评、竞品品牌名",
+    "negative_prompt_len": 303,
+    "cover_scale": 1.0,
+    "cover_scaled": [
+      1600,
+      1600
+    ],
+    "cover_crop": [
+      0,
+      0,
+      1600,
+      1600
+    ],
+    "paste_box": [
+      439,
+      432,
+      722,
+      736
+    ],
+    "subject_sha256": "b920d321f742af6e58fbcc379c2787d6fbe2b26f011a4f5e69c80b40456ee71a",
+    "subject_sha256_run": "b920d321f742af6e58fbcc379c2787d6fbe2b26f011a4f5e69c80b40456ee71a",
+    "request_image_fields": [],
+    "subject_excluded_from_model": null,
+    "image_inputs_in_signature": [],
+    "validation_passed": true,
+    "validation_failed": []
+  }
+}

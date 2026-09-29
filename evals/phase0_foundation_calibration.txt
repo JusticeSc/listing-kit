@@ -1,0 +1,119 @@
+Phase 0 基础校准（P0.1 / P0.2，G0 关闭前复验）
+生成时间：2026-09-23T13:08:53+08:00
+运行边界：本机从空目录创建虚拟环境；显式移除 PYTHONUTF8、PYTHONIOENCODING 与 NUMBA_CACHE_DIR。
+声明边界：证明当前核心依赖安装、CLI dry-run、schema、项目内缓存配置与 Web 启动；可选 rembg 的真实分支由同轮 P0.3 完整回归证明。
+
+==========================================================================
+[创建干净虚拟环境] rc=0
+
+
+==========================================================================
+[安装核心锁定依赖] rc=0
+Collecting pillow==12.3.0 (from -r E:\workbuddy_workspace\2026-09-20-16-38-19\amz-listing-kit\requirements.txt (line 9))
+  Downloading pillow-12.3.0-cp313-cp313-win_amd64.whl.metadata (9.3 kB)
+Collecting numpy==2.4.6 (from -r E:\workbuddy_workspace\2026-09-20-16-38-19\amz-listing-kit\requirements.txt (line 10))
+  Downloading numpy-2.4.6-cp313-cp313-win_amd64.whl.metadata (6.6 kB)
+Collecting requests==2.34.2 (from -r E:\workbuddy_workspace\2026-09-20-16-38-19\amz-listing-kit\requirements.txt (line 11))
+  Downloading requests-2.34.2-py3-none-any.whl.metadata (4.8 kB)
+Collecting PyYAML==6.0.3 (from -r E:\workbuddy_workspace\2026-09-20-16-38-19\amz-listing-kit\requirements.txt (line 12))
+  Downloading pyyaml-6.0.3-cp313-cp313-win_amd64.whl.metadata (2.4 kB)
+Collecting python-dotenv==1.2.3 (from -r E:\workbuddy_workspace\2026-09-20-16-38-19\amz-listing-kit\requirements.txt (line 13))
+  Downloading python_dotenv-1.2.3-py3-none-any.whl.metadata (29 kB)
+Collecting charset_normalizer<4,>=2 (from requests==2.34.2->-r E:\workbuddy_workspace\2026-09-20-16-38-19\amz-listing-kit\requirements.txt (line 11))
+  Downloading charset_normalizer-3.5.1-cp313-cp313-win_amd64.whl.metadata (46 kB)
+Collecting idna<4,>=2.5 (from requests==2.34.2->-r E:\workbuddy_workspace\2026-09-20-16-38-19\amz-listing-kit\requirements.txt (line 11))
+  Downloading idna-3.20-py3-none-any.whl.metadata (7.2 kB)
+Collecting urllib3<3,>=1.26 (from requests==2.34.2->-r E:\workbuddy_workspace\2026-09-20-16-38-19\amz-listing-kit\requirements.txt (line 11))
+  Downloading urllib3-2.8.0-py3-none-any.whl.metadata (7.4 kB)
+Collecting certifi>=2023.5.7 (from requests==2.34.2->-r E:\workbuddy_workspace\2026-09-20-16-38-19\amz-listing-kit\requirements.txt (line 11))
+  Downloading certifi-2026.7.22-py3-none-any.whl.metadata (2.5 kB)
+Downloading pillow-12.3.0-cp313-cp313-win_amd64.whl (7.2 MB)
+   ---------------------------------------- 7.2/7.2 MB 1.8 MB/s  0:00:06
+Downloading numpy-2.4.6-cp313-cp313-win_amd64.whl (12.3 MB)
+   ---------------------------------------- 12.3/12.3 MB 988.1 kB/s  0:00:12
+Downloading requests-2.34.2-py3-none-any.whl (73 kB)
+Downloading pyyaml-6.0.3-cp313-cp313-win_amd64.whl (154 kB)
+Downloading python_dotenv-1.2.3-py3-none-any.whl (22 kB)
+Downloading charset_normalizer-3.5.1-cp313-cp313-win_amd64.whl (199 kB)
+Downloading idna-3.20-py3-none-any.whl (69 kB)
+Downloading urllib3-2.8.0-py3-none-any.whl (135 kB)
+Downloading certifi-2026.7.22-py3-none-any.whl (136 kB)
+Installing collected packages: urllib3, PyYAML, python-dotenv, pillow, numpy, idna, charset_normalizer, certifi, requests
+
+Successfully installed PyYAML-6.0.3 certifi-2026.7.22 charset_normalizer-3.5.1 idna-3.20 numpy-2.4.6 pillow-12.3.0 python-dotenv-1.2.3 requests-2.34.2 urllib3-2.8.0
+
+==========================================================================
+[schema 入口] rc=0
+OK: 7 slots, 6 renderers registered
+
+  坑  renderer          text     调模型    needs                     校验
+  1  compose_white     none     否      front                     strict
+  2  flat_overlay      overlay  否      front,bullets             medium
+  3  flat_overlay      overlay  否      front,specs               medium
+  4  gen_bg_paste      none     是      front                     loose
+  5  closeup_crop      overlay  否      closeup                   loose
+  6  contents_compose  overlay  否      contents                  loose
+  7  compare_side      overlay  否      front,competitor          medium
+
+  调模型的路数：1 / 7   （其余全是确定性合成）
+
+==========================================================================
+[CLI dry-run 入口] rc=0
+========================================================================
+UPC B0DEMO1234    表 config/slots.yaml    类目 家居厨具
+========================================================================
+表内 7 · 齐套可做 4 · 本次生成 4 · 模型调用 1
+
+E0 体检（在抠图之前、在任何模型调用之前）
+  ✓ front      1024×1024  RGB  最长边 1024
+  · 字体        C:/Windows/Fonts/msyhbd.ttc（系统字体自动探测（⚠️ 商用授权未确认））
+  提醒  front 短边 1024px < 出图边长 1600px → 会被放大，细节会软
+  人工确认（工具判不了这些，须有人签字）· 签字人 运营 A 2026-09-20
+    ✓ no_watermark    原片不含水印 / 平台标识 / 用户 ID
+    ✓ no_props        原片不含道具（手、硬币、参照物、其它商品）
+    ✓ single_subject  画面只有这一件主体，且完整、未被裁切
+    ✓ angle_ok        角度与清晰度满足该坑位用途
+    ✓ font_license    所用字体已获商用授权（系统自带字体通常不含商品图商用权）
+
+素材齐套
+  ✓ front      E:\workbuddy_workspace\2026-09-20-16-38-19\amz-listing-kit\examples\input\cup_source.jpg
+  ✗ closeup    （未提供） → 跳过坑位 [5]
+  ✗ contents   （未提供） → 跳过坑位 [6]
+  ✗ competitor （未提供） → 跳过坑位 [7]
+  ✓ bullets    6 条
+  ✓ specs      5 项
+
+坑位处置（像素来源由 renderer 声明，不由编排器判断）
+  [1] → 做    compose_white     none     零模型    subject.png → 纯白画布居中
+  [2] → 做    flat_overlay      overlay  零模型    subject.png → 色板底 → 叠字（可选标注线）
+  [3] → 做    flat_overlay      overlay  零模型    subject.png → 色板底 → 叠字（可选标注线）
+  [4] → 做    gen_bg_paste      none     调模型    模型只画空背景 → 主体确定性贴入（★唯一调模型）
+  [5] × 跳过   closeup_crop      overlay  零模型    特写原片裁切 → 叠字  缺：closeup
+  [6] × 跳过   contents_compose  overlay  零模型    内容物原片（已抠）→ 铺白底 → 叠字  缺：contents
+  [7] × 跳过   compare_side      overlay  零模型    自家主体 + 竞品图（已抠）并排 → 叠字  缺：competitor
+
+主体产出  1 次本地抠图（auto（本地 rembg 优先 → floodfill 降级））→ 4 个坑位共用同一份 subject.png（不变量 A）· 不联网、零 API 成本
+
+输出目录 E:\workbuddy_workspace\2026-09-20-16-38-19\amz-listing-kit\out\B0DEMO1234_20260923-130852-109229
+干跑完成：未写任何文件、未调用任何模型。
+========================================================================
+
+==========================================================================
+[项目内 Numba 缓存配置] rc=0
+E:\workbuddy_workspace\2026-09-20-16-38-19\amz-listing-kit\.cache\numba
+
+==========================================================================
+[依赖版本快照] rc=0
+certifi==2026.7.22
+charset-normalizer==3.5.1
+idna==3.20
+numpy==2.4.6
+pillow==12.3.0
+python-dotenv==1.2.3
+PyYAML==6.0.3
+requests==2.34.2
+urllib3==2.8.0
+
+==========================================================================
+[Web HTTP 冒烟] rc=0
+HTTP 200; body_bytes=58438; port=27463

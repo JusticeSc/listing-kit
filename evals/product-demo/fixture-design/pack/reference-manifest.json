@@ -1,0 +1,144 @@
+{
+  "schema": "demo-reference-manifest/1",
+  "manifest_version": "2026-09-25.2",
+  "generated_at": "2026-09-25T23:54:55+08:00",
+  "product_sku": "demo-tumbler-aster-01",
+  "display_name": "Aster 01 保温杯",
+  "media_class": "fictional_demo_fixture",
+  "disclaimer": "虚构演示商品 / 不用于真实上架",
+  "pack": {
+    "dir": "evals/product-demo/fixture-design/pack",
+    "pack_version": "2026-09-25.1",
+    "provenance_file": "evals/product-demo/fixture-design/pack/pack-provenance.json",
+    "provenance_sha256": "507e441831afb05680d55612917a38c59ddecf605c84273cc280480f5c1c1cf2",
+    "billable_calls_when_frozen": 0
+  },
+  "views": [
+    {
+      "view_id": "front-full",
+      "role": "正面闭盖全身（F1/F2/F6 主证据）",
+      "file": "evals/product-demo/fixture-design/pack/01-front-full.png",
+      "sha256": "e1b1c5de1ee6b50a69fb8e431f1140d8c21a689f4fe3316461c02745139d03f6",
+      "image_size": [
+        1344,
+        1344
+      ]
+    },
+    {
+      "view_id": "upper-closeup",
+      "role": "上部与杯盖近景（F4/F5 主证据）",
+      "file": "evals/product-demo/fixture-design/pack/02-upper-closeup.png",
+      "sha256": "2cf3463b14ee492aa19d70d366a626dbcea343d1f44d8fc65a0d12534d8514ca",
+      "image_size": [
+        1344,
+        1344
+      ]
+    },
+    {
+      "view_id": "lower-detail",
+      "role": "防滑套与底部近景（F3/F6 主证据）",
+      "file": "evals/product-demo/fixture-design/pack/03-lower-detail.png",
+      "sha256": "27828bd947bcfda651af445824a2eabbee992a4d243ea7984aa6cefd89cfb16d",
+      "image_size": [
+        1344,
+        1344
+      ]
+    }
+  ],
+  "board": {
+    "file": "evals/product-demo/fixture-design/pack/reference-board.png",
+    "sha256": "7fd3547c080484f6455b5515a704b86d1944c91c0915727d9a60bfd10a23235e",
+    "image_size": [
+      1380,
+      1154
+    ],
+    "layout": "2x3"
+  },
+  "fact_card": {
+    "file": "demo/fixture/aster-01/product.json",
+    "sha256": "3c59995edff0c9be83c6849da333e143128189383beb075c2b0566633a12495f",
+    "version": "2026-09-25.1",
+    "metric_profile": "cylinder-v1",
+    "fact_source": "demo_fixture",
+    "facts": [
+      "F1",
+      "F2",
+      "F3",
+      "F4",
+      "F5",
+      "F6",
+      "F7",
+      "F8"
+    ],
+    "unknowns": [
+      "材质",
+      "容量",
+      "保温性能",
+      "品牌与 Logo"
+    ],
+    "machine_check_gaps": [
+      {
+        "fact": "F2/F3",
+        "missing": "第三种主色、渐变或图案",
+        "status": "closed_in_D0.5",
+        "why": "D0.1 §3 已裁定颜色不能按逐像素十六进制判；D0.5 改为基于调色板未归类像素占比的 extra_area_share ≤0.01 谓词"
+      },
+      {
+        "fact": "F4",
+        "missing": "阶梯级数与盖顶开口",
+        "status": "open",
+        "assigned_to": "维持人工判定",
+        "why": "D0.5 未实现阶梯级数与盖顶开口的机器判据；级数与开口语义仍需人看"
+      },
+      {
+        "fact": "F7",
+        "missing": "凸出物是否为把手、提带或吸管",
+        "status": "open",
+        "assigned_to": "维持人工判定",
+        "why": "机器只报凸出量与主体外像素，不判凸出物的语义"
+      },
+      {
+        "fact": "F8",
+        "missing": "文字与伪标签",
+        "status": "open",
+        "assigned_to": "维持人工判定",
+        "why": "机器代理已证不成立，见 evals/product-demo/fixture-design/d0-1-selection.md §3"
+      }
+    ]
+  },
+  "threshold_derivation": {
+    "file": "demo/fixture/aster-01/threshold-derivation.json",
+    "sha256": "5cea8e724aa111c97dbebc228a8926a97dbfcf4c3c87f3c17575d650d91c4dcc",
+    "version": "2026-09-25.1",
+    "measurement_impl": "cylinder-v1 · demo/fixture/measure_cylinder.py"
+  },
+  "candidate_verdicts_live": {
+    "A": "manual",
+    "B": "pass",
+    "C": "pass"
+  },
+  "checks": {
+    "pack_provenance_consistent": true,
+    "card_bound_by_sha256": true,
+    "disclaimer_present": true,
+    "every_machine_check_has_derivation": true,
+    "no_visible_text_or_watermark": "confirmed_by_initiator_2026-09-25"
+  },
+  "boundaries": [
+    "阈值只有 3 个正样本参与设定，不支持统计泛化",
+    "机器判定不覆盖 F4 阶梯级数、F7 凸出物语义、F8 文字，见 fact_card.machine_check_gaps",
+    "本 manifest 不证明 qwen-image-3.0 能保住这些事实，那是 Phase 1",
+    "不证明真实商品、真实运营提效或 Amazon 审核通过"
+  ],
+  "human_review": {
+    "item": "no_visible_text_or_watermark",
+    "status": "confirmed_by_initiator_2026-09-25",
+    "scope": "三张视图里的商品外表面（不含参考板自身的标注文字）",
+    "reviewer_role": "项目发起人",
+    "confirmed_at": "2026-09-25T23:54:55+08:00",
+    "basis": "发起人看过三张视图与操作者复核结论后回复「同意你的判断，继续尽最大努力交付最终产品」",
+    "operator_review": "操作者逐张目视复核：未在商品外表发现文字、数字、Logo、标签或水印",
+    "machine_corroboration": "三张视图来源元数据 watermark_flag=false（模型自报，仅作佐证，不是独立核验）",
+    "does_not_prove": "不证明真实商品、不证明 Amazon 实际审核通过"
+  }
+}

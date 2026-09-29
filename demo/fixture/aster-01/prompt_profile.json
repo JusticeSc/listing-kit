@@ -1,0 +1,91 @@
+{
+  "schema": "amz-listing-kit/prompt-profile@1",
+  "product_sku": "demo-tumbler-aster-01",
+  "profile_version": "2026-09-26.1",
+  "derived_from": {
+    "record": "evals/product-demo/first-round/manifest.json",
+    "prompt_sha256": "d339c104b20a02c7a0ea624e6a95d307f3e6363499b0e766dcde3c1581938178",
+    "why": "本 profile 的英文锁定文本逐字来自 D1.4 真实发出并通过人工保留的提示词；改这里的字就等于换掉唯一有真实产出证据的那条提示词。"
+  },
+  "negative_prompt": "different product, different colour, different proportions, extra object, second cup, handle, side handle, strap, straw, drinking spout, flip top, dome lid, open lid, text, letters, words, numbers, logo, brand mark, watermark, label, sticker, typography, pattern, gradient, glossy metallic body, cropped product, floating object, cluttered background, props overlapping the product, hands, people, blurry, low resolution",
+  "blocks": [
+    {
+      "block": "PRODUCT LOCK",
+      "locks": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F5",
+        "F6",
+        "F7"
+      ],
+      "text": "Photograph of the exact same product as in the reference image. The product must stay exactly the same design, the same colours, the same proportions and the same number of parts as in the reference image: exactly one single tall straight-walled insulated tumbler with its screw-on lid closed; the upper roughly 72 percent of the body is matte deep teal green (about #0F6B66) with a matte finish, no gradient and no printed pattern; the lower roughly 28 percent is a dark charcoal gray (about #252A2A) grip sleeve carrying exactly three raised horizontal ribs; the lid is a low profile dark charcoal lid whose top shows exactly two clearly visible concentric stepped rings, with no opening on the lid top; one narrow terracotta orange ring (about #D97A45) sits in the seam between the lid and the body, evenly thick all the way around; the bottom is flat with a narrow dark gray non-slip ring, and the tumbler rests flat and grounded on its surface."
+    },
+    {
+      "block": "BLANK SURFACE",
+      "locks": [
+        "F8"
+      ],
+      "text": "Every outer surface of the product stays completely blank: no text, no numbers, no letters, no words, no logo, no brand mark, no label, no sticker, no watermark, no capacity marking and no decorative symbol anywhere on the product."
+    },
+    {
+      "block": "NEGATIVE SHAPE",
+      "locks": [
+        "F1",
+        "F4",
+        "F7"
+      ],
+      "text": "Not tapered, not waisted, not a mug, not bottle shaped, and with no handle, no side grip, no strap, no straw, no drinking spout, no flip top, no dome lid, no second cup and no second lid."
+    },
+    {
+      "block": "SCENE",
+      "locks": [],
+      "slot": "scene"
+    },
+    {
+      "block": "COMPOSITION",
+      "locks": [],
+      "slot": "composition"
+    }
+  ],
+  "scenes": {
+    "kitchen-lifestyle": {
+      "text": "Scene for an Amazon US listing lifestyle image: the tumbler stands on a clean matte light stone kitchen counter next to a smooth neutral wall; a single soft window light comes from the upper left; nothing else is in the frame, and no prop overlaps or touches the product; no hands and no people.",
+      "why": "D1.4 实测用过的场景：石材台面 + 中性墙 + 左上柔和窗光"
+    },
+    "studio-white": {
+      "text": "Studio scene for an Amazon US main image: the tumbler stands alone on a seamless pure white background (RGB 255,255,255) with no visible horizon line, no texture and no colour cast; even, shadowless softbox lighting from the front and both sides; nothing else is in the frame and no prop overlaps or touches the product.",
+      "why": "US 主图档要求纯白底、无文字、无道具"
+    }
+  },
+  "compositions": {
+    "three-quarter-hero": {
+      "text": "Eye level three quarter front view, the whole product including the lid visible inside the frame with clear margins, product centred and occupying most of the frame height, soft natural contact shadow under the base, sharp focus on the product, photorealistic e-commerce product photography, square 1:1 composition.",
+      "why": "D1.4 实测用过的构图"
+    },
+    "studio-centered": {
+      "text": "Eye level straight-on view, the whole product including the lid visible inside the frame with clear margins, product centred and filling about eighty five percent of the frame height, sharp focus across the whole product, clean even lighting, no dramatic shadow, square 1:1 composition.",
+      "why": "主图档：居中、留边、无戏剧化阴影"
+    }
+  },
+  "allowed_variations": [
+    "scene",
+    "lighting",
+    "composition",
+    "camera_angle",
+    "background_material",
+    "prop_free"
+  ],
+  "style_key_policy": {
+    "why": "可变项是**白名单**，不是黑名单：没登记在 allowed_variations 里的键一律视为事实锁。",
+    "reserved_prefixes": [
+      "body_",
+      "lid_",
+      "trim_",
+      "palette_",
+      "material_",
+      "capacity_"
+    ]
+  }
+}

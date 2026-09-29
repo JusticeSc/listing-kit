@@ -1,0 +1,23 @@
+{
+  "model": "qwen-image-3.0",
+  "input": {
+    "messages": [
+      {
+        "role": "user",
+        "content": [
+          {
+            "text": "Studio product photograph for an e-commerce reference sheet: exactly one single tall straight-walled insulated travel tumbler, standing perfectly upright with its lid screwed shut, full body visible, centered with small even margins, on a seamless plain light neutral gray backdrop, soft even studio light from the upper left, soft natural contact shadow under the base, no props, no extra objects, sharp focus, photographic realism.\n\nDesign specification that must be followed exactly:\n- Body: one tall cylinder with near-vertical straight side walls; no taper, no waist, no curve, no handle, no side grip, no strap, no straw, no spout, no second cup. Overall body height-to-width ratio about 3.1 to 1.\n- Colour blocking: the upper roughly 72 percent of the body height is matte deep teal green (about hex #0F6B66); matte finish, not glossy, no gradient, no printed pattern.\n- The lower roughly 28 percent of the body height is a dark charcoal gray (about hex #252A2A) silicone grip sleeve. The sleeve has exactly three horizontal ribs wrapping around it, raised and clearly separated so the rib count stays countable at a small scale.\n- Lid: low profile dark charcoal gray lid, clearly shorter than one fifth of the total height. The lid top has exactly two clearly visible concentric stepped rings stacked one above the other, a smaller ring sitting on a wider one, with a crisp visible step edge between them so both steps stay readable at a small scale. No flip top, no drinking spout, no dome, no second lid.\n- A single narrow terracotta orange ring (about hex #D97A45) sits in the seam between the lid and the body; keep it clearly visible and evenly thick all the way around the circle, still thin relative to the body height.\n- Base: flat bottom with a narrow dark gray non-slip ring at the very bottom edge; the tumbler rests flat and grounded on the surface.\n- The entire outer surface is completely blank: no text, no numbers, no letters, no words, no logo, no brand mark, no label, no sticker, no watermark, no decorative symbol, no capacity marking.\n\nFraming: straight-on front view, the whole tumbler including the lid inside the frame, square 1:1 composition, clean commercial catalogue look."
+          }
+        ]
+      }
+    ]
+  },
+  "parameters": {
+    "negative_prompt": "text, letters, words, numbers, logo, brand mark, watermark, label, sticker, signature, typography, caption, poster, packaging, handle, side handle, strap, straw, drinking spout, flip top, dome lid, second cup, mug handle, tapered waist, cone shape, glossy metallic body, gradient, floral pattern, printed pattern, multiple tumblers, reflection of another object, floating object, cropped product, distorted proportions, low resolution, blurry, cluttered background",
+    "prompt_extend": false,
+    "watermark": false,
+    "size": "1344*1344",
+    "n": 1,
+    "seed": 2026092402
+  }
+}

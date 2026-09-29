@@ -1,0 +1,947 @@
+{
+  "F-01": {
+    "route": "B",
+    "status": "ok",
+    "parse_error": null,
+    "action_id": "ef84a4d481b01b2a",
+    "model": "qwen-vl-max",
+    "usage": {
+      "prompt_tokens": 2794,
+      "completion_tokens": 283,
+      "total_tokens": 3077,
+      "completion_tokens_details": {
+        "text_tokens": 283
+      },
+      "prompt_tokens_details": {
+        "image_tokens": 2454,
+        "text_tokens": 340,
+        "cached_tokens": 0
+      }
+    },
+    "elapsed_s": 26.36,
+    "facts": {
+      "F1": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "杯体高直筒，侧壁平直，比例符合"
+      },
+      "F2": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "上部为哑光深青绿，占比约72%"
+      },
+      "F3": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "下部深炭灰防滑套，有三条浅水平筋"
+      },
+      "F4": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "杯盖为低矮深炭灰，两层同心阶梯环"
+      },
+      "F5": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "杯盖与杯体间有窄陶土橙装饰环"
+      },
+      "F6": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "平底，底部有窄深灰防滑圈"
+      },
+      "F7": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "无把手、侧握、提带、吸管、杯嘴"
+      },
+      "F8": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "外表无文字、数字、Logo、标签、水印"
+      }
+    }
+  },
+  "F-02": {
+    "route": "B",
+    "status": "ok",
+    "parse_error": null,
+    "action_id": "86be2cb15bacb197",
+    "model": "qwen-vl-max",
+    "usage": {
+      "prompt_tokens": 2794,
+      "completion_tokens": 229,
+      "total_tokens": 3023,
+      "completion_tokens_details": {
+        "text_tokens": 229
+      },
+      "prompt_tokens_details": {
+        "image_tokens": 2454,
+        "text_tokens": 340,
+        "cached_tokens": 0
+      }
+    },
+    "elapsed_s": 17.58,
+    "facts": {
+      "F1": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "杯体高直筒，侧壁平直，比例符合"
+      },
+      "F2": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "上部为哑光深青绿，颜色一致"
+      },
+      "F3": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "下部深炭灰防滑套，有三条浅水平筋"
+      },
+      "F4": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "杯盖低矮深炭灰，两层同心阶梯环清晰"
+      },
+      "F5": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "杯盖与杯体间有窄陶土橙装饰环"
+      },
+      "F6": {
+        "verdict": "unknown",
+        "raw_verdict": "uncertain",
+        "why": "底部细节不清晰，无法确认防滑圈"
+      },
+      "F7": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "无把手、侧握、提带、吸管、杯嘴"
+      },
+      "F8": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "外表无文字、数字、Logo、标签"
+      }
+    }
+  },
+  "F-03": {
+    "route": "B",
+    "status": "ok",
+    "parse_error": null,
+    "action_id": "18aa616248c70bfc",
+    "model": "qwen-vl-max",
+    "usage": {
+      "prompt_tokens": 2794,
+      "completion_tokens": 247,
+      "total_tokens": 3041,
+      "completion_tokens_details": {
+        "text_tokens": 247
+      },
+      "prompt_tokens_details": {
+        "image_tokens": 2454,
+        "text_tokens": 340,
+        "cached_tokens": 0
+      }
+    },
+    "elapsed_s": 21.48,
+    "facts": {
+      "F1": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "杯体高直筒，比例约3.1:1，侧壁平直"
+      },
+      "F2": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "上部72%为哑光深青绿#0F6B66"
+      },
+      "F3": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "下部28%为深炭灰防滑套，有三条浅水平筋"
+      },
+      "F4": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "杯盖为低矮深炭灰，两层同心阶梯环"
+      },
+      "F5": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "杯盖与杯体间有窄陶土橙装饰环"
+      },
+      "F6": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "平底，底部有窄深灰防滑圈"
+      },
+      "F7": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "无把手、侧握、提带、吸管、杯嘴"
+      },
+      "F8": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "外表无文字、数字、Logo、标签和水印"
+      }
+    }
+  },
+  "F-04": {
+    "route": "B",
+    "status": "ok",
+    "parse_error": null,
+    "action_id": "ee9adb76ffa0d468",
+    "model": "qwen-vl-max",
+    "usage": {
+      "prompt_tokens": 2794,
+      "completion_tokens": 276,
+      "total_tokens": 3070,
+      "completion_tokens_details": {
+        "text_tokens": 276
+      },
+      "prompt_tokens_details": {
+        "image_tokens": 2454,
+        "text_tokens": 340,
+        "cached_tokens": 0
+      }
+    },
+    "elapsed_s": 18.11,
+    "facts": {
+      "F1": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "杯体高直筒，侧壁平直，比例符合"
+      },
+      "F2": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "上部为哑光深青绿，占比约72%"
+      },
+      "F3": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "下部深炭灰防滑套，有三条水平筋"
+      },
+      "F4": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "杯盖低矮，有两层同心阶梯环"
+      },
+      "F5": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "杯盖与杯体间有窄陶土橙装饰环"
+      },
+      "F6": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "平底，底部有窄深灰防滑圈"
+      },
+      "F7": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "无把手、握把、提带、吸管、杯嘴"
+      },
+      "F8": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "外表无文字、数字、Logo、标签"
+      }
+    }
+  },
+  "neg-01-recolor-upper": {
+    "route": "B",
+    "status": "ok",
+    "parse_error": null,
+    "action_id": "3aff246afa046355",
+    "model": "qwen-vl-max",
+    "usage": {
+      "prompt_tokens": 2794,
+      "completion_tokens": 188,
+      "total_tokens": 2982,
+      "completion_tokens_details": {
+        "text_tokens": 188
+      },
+      "prompt_tokens_details": {
+        "image_tokens": 2454,
+        "text_tokens": 340,
+        "cached_tokens": 0
+      }
+    },
+    "elapsed_s": 13.49,
+    "facts": {
+      "F1": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "杯体高直筒，侧壁平直"
+      },
+      "F2": {
+        "verdict": "risk",
+        "raw_verdict": "different",
+        "why": "上部颜色非深青绿"
+      },
+      "F3": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "下部有三条浅水平筋"
+      },
+      "F4": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "杯盖有两层同心阶梯环"
+      },
+      "F5": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "有窄陶土橙装饰环"
+      },
+      "F6": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "平底带深灰防滑圈"
+      },
+      "F7": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "无把手、吸管等附件"
+      },
+      "F8": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "外表无文字或标识"
+      }
+    }
+  },
+  "neg-02-add-text": {
+    "route": "B",
+    "status": "ok",
+    "parse_error": null,
+    "action_id": "a6ce70fa5d76c4f2",
+    "model": "qwen-vl-max",
+    "usage": {
+      "prompt_tokens": 2794,
+      "completion_tokens": 231,
+      "total_tokens": 3025,
+      "completion_tokens_details": {
+        "text_tokens": 231
+      },
+      "prompt_tokens_details": {
+        "image_tokens": 2454,
+        "text_tokens": 340,
+        "cached_tokens": 0
+      }
+    },
+    "elapsed_s": 17.64,
+    "facts": {
+      "F1": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "杯体高直筒，侧壁平直，比例符合"
+      },
+      "F2": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "上部为哑光深青绿，颜色一致"
+      },
+      "F3": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "下部深炭灰防滑套，有三条水平筋"
+      },
+      "F4": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "杯盖低矮，有两层同心阶梯环"
+      },
+      "F5": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "杯盖与杯体间有窄陶土橙装饰环"
+      },
+      "F6": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "平底，底部有窄深灰防滑圈"
+      },
+      "F7": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "无把手、侧握、提带、吸管、杯嘴"
+      },
+      "F8": {
+        "verdict": "risk",
+        "raw_verdict": "different",
+        "why": "杯身有文字和Logo"
+      }
+    }
+  },
+  "neg-03-add-handle": {
+    "route": "B",
+    "status": "ok",
+    "parse_error": null,
+    "action_id": "b82562d277f1cd7d",
+    "model": "qwen-vl-max",
+    "usage": {
+      "prompt_tokens": 2794,
+      "completion_tokens": 248,
+      "total_tokens": 3042,
+      "completion_tokens_details": {
+        "text_tokens": 248
+      },
+      "prompt_tokens_details": {
+        "image_tokens": 2454,
+        "text_tokens": 340,
+        "cached_tokens": 0
+      }
+    },
+    "elapsed_s": 21.39,
+    "facts": {
+      "F1": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "杯体高直筒，侧壁平直"
+      },
+      "F2": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "上部为哑光深青绿"
+      },
+      "F3": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "下部有深炭灰防滑套带三筋"
+      },
+      "F4": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "杯盖有两层同心阶梯环"
+      },
+      "F5": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "杯盖与杯体间有陶土橙环"
+      },
+      "F6": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "平底带窄深灰防滑圈"
+      },
+      "F7": {
+        "verdict": "risk",
+        "raw_verdict": "different",
+        "why": "右侧有黑色矩形把手"
+      },
+      "F8": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "外表无文字或标识"
+      }
+    }
+  },
+  "neg-04-lidless": {
+    "route": "B",
+    "status": "ok",
+    "parse_error": null,
+    "action_id": "f5fda94e612a3cfb",
+    "model": "qwen-vl-max",
+    "usage": {
+      "prompt_tokens": 2794,
+      "completion_tokens": 268,
+      "total_tokens": 3062,
+      "completion_tokens_details": {
+        "text_tokens": 268
+      },
+      "prompt_tokens_details": {
+        "image_tokens": 2454,
+        "text_tokens": 340,
+        "cached_tokens": 0
+      }
+    },
+    "elapsed_s": 18.07,
+    "facts": {
+      "F1": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "杯体高直筒，侧壁平直，比例约3.1:1"
+      },
+      "F2": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "上部为哑光深青绿，颜色一致"
+      },
+      "F3": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "下部深炭灰防滑套带三条水平筋"
+      },
+      "F4": {
+        "verdict": "risk",
+        "raw_verdict": "different",
+        "why": "无杯盖，缺少同心阶梯环"
+      },
+      "F5": {
+        "verdict": "risk",
+        "raw_verdict": "different",
+        "why": "无陶土橙装饰环"
+      },
+      "F6": {
+        "verdict": "unknown",
+        "raw_verdict": "uncertain",
+        "why": "底部细节不可见，无法确认防滑圈"
+      },
+      "F7": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "无把手、侧握、提带、吸管、杯嘴"
+      },
+      "F8": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "外表无文字、数字、Logo、标签"
+      }
+    }
+  },
+  "neg-05-extra-ribs": {
+    "route": "B",
+    "status": "ok",
+    "parse_error": null,
+    "action_id": "83534cc985475f99",
+    "model": "qwen-vl-max",
+    "usage": {
+      "prompt_tokens": 2794,
+      "completion_tokens": 272,
+      "total_tokens": 3066,
+      "completion_tokens_details": {
+        "text_tokens": 272
+      },
+      "prompt_tokens_details": {
+        "image_tokens": 2454,
+        "text_tokens": 340,
+        "cached_tokens": 1408
+      }
+    },
+    "elapsed_s": 19.92,
+    "facts": {
+      "F1": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "杯体高直筒，侧壁平直，比例符合"
+      },
+      "F2": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "上部为哑光深青绿，占比约72%"
+      },
+      "F3": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "下部深炭灰防滑套，有三条水平筋"
+      },
+      "F4": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "杯盖有两层同心阶梯环"
+      },
+      "F5": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "杯盖与杯体间有窄陶土橙环"
+      },
+      "F6": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "平底，底部有窄深灰防滑圈"
+      },
+      "F7": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "无把手、侧握、提带、吸管、杯嘴"
+      },
+      "F8": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "外表无文字、数字、Logo、标签"
+      }
+    }
+  },
+  "neg-06-second-cup": {
+    "route": "B",
+    "status": "ok",
+    "parse_error": null,
+    "action_id": "8191bfabd42b2bb4",
+    "model": "qwen-vl-max",
+    "usage": {
+      "prompt_tokens": 2794,
+      "completion_tokens": 226,
+      "total_tokens": 3020,
+      "completion_tokens_details": {
+        "text_tokens": 226
+      },
+      "prompt_tokens_details": {
+        "image_tokens": 2454,
+        "text_tokens": 340,
+        "cached_tokens": 0
+      }
+    },
+    "elapsed_s": 16.09,
+    "facts": {
+      "F1": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "杯体高直筒，侧壁平直，比例符合"
+      },
+      "F2": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "上部为哑光深青绿，占比约72%"
+      },
+      "F3": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "下部深炭灰防滑套，有三条浅水平筋"
+      },
+      "F4": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "杯盖有两层同心阶梯环"
+      },
+      "F5": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "杯盖与杯体间有窄陶土橙装饰环"
+      },
+      "F6": {
+        "verdict": "unknown",
+        "raw_verdict": "uncertain",
+        "why": "底部细节不清晰，无法确认防滑圈"
+      },
+      "F7": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "无把手、侧握、提带、吸管、杯嘴"
+      },
+      "F8": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "外表无文字、数字、Logo、标签"
+      }
+    }
+  },
+  "neg-07-flat-lid": {
+    "route": "B",
+    "status": "ok",
+    "parse_error": null,
+    "action_id": "a0028d68d748cc88",
+    "model": "qwen-vl-max",
+    "usage": {
+      "prompt_tokens": 2794,
+      "completion_tokens": 279,
+      "total_tokens": 3073,
+      "completion_tokens_details": {
+        "text_tokens": 279
+      },
+      "prompt_tokens_details": {
+        "image_tokens": 2454,
+        "text_tokens": 340,
+        "cached_tokens": 0
+      }
+    },
+    "elapsed_s": 19.16,
+    "facts": {
+      "F1": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "杯体高直筒，侧壁平直，比例符合"
+      },
+      "F2": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "上部为哑光深青绿，占比约72%"
+      },
+      "F3": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "下部深炭灰防滑套，有三条水平筋"
+      },
+      "F4": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "杯盖有两层同心阶梯环，结构清晰"
+      },
+      "F5": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "杯盖与杯体间有窄陶土橙装饰环"
+      },
+      "F6": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "平底，底部有窄深灰防滑圈"
+      },
+      "F7": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "无把手、侧握、提带、吸管、杯嘴"
+      },
+      "F8": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "外表无文字、数字、Logo、标签、水印"
+      }
+    }
+  },
+  "control-A": {
+    "route": "B",
+    "status": "ok",
+    "parse_error": null,
+    "action_id": "73365746ef4cee25",
+    "model": "qwen-vl-max",
+    "usage": {
+      "prompt_tokens": 2794,
+      "completion_tokens": 248,
+      "total_tokens": 3042,
+      "completion_tokens_details": {
+        "text_tokens": 248
+      },
+      "prompt_tokens_details": {
+        "image_tokens": 2454,
+        "text_tokens": 340,
+        "cached_tokens": 1408
+      }
+    },
+    "elapsed_s": 17.92,
+    "facts": {
+      "F1": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "杯体高直筒，侧壁平直，比例约3.1:1"
+      },
+      "F2": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "上部72%为哑光深青绿#0F6B66"
+      },
+      "F3": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "下部28%为深炭灰防滑套，有三条浅水平筋"
+      },
+      "F4": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "杯盖为低矮深炭灰，有两层同心阶梯环"
+      },
+      "F5": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "杯盖与杯体间有窄陶土橙装饰环"
+      },
+      "F6": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "平底，底部有窄深灰防滑圈"
+      },
+      "F7": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "无把手、侧握、提带、吸管、杯嘴"
+      },
+      "F8": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "外表无文字、数字、Logo、标签和水印"
+      }
+    }
+  },
+  "control-B": {
+    "route": "B",
+    "status": "ok",
+    "parse_error": null,
+    "action_id": "578a030f33984a09",
+    "model": "qwen-vl-max",
+    "usage": {
+      "prompt_tokens": 2794,
+      "completion_tokens": 224,
+      "total_tokens": 3018,
+      "completion_tokens_details": {
+        "text_tokens": 224
+      },
+      "prompt_tokens_details": {
+        "image_tokens": 2454,
+        "text_tokens": 340,
+        "cached_tokens": 0
+      }
+    },
+    "elapsed_s": 14.79,
+    "facts": {
+      "F1": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "杯体高直筒，侧壁平直，比例符合"
+      },
+      "F2": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "上部为哑光深青绿，占比约72%"
+      },
+      "F3": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "下部深炭灰防滑套，有三条水平筋"
+      },
+      "F4": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "杯盖有两层同心阶梯环"
+      },
+      "F5": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "杯盖与杯体间有窄陶土橙环"
+      },
+      "F6": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "平底，底部有窄深灰防滑圈"
+      },
+      "F7": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "无把手、侧握、提带、吸管、杯嘴"
+      },
+      "F8": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "外表无文字、数字、Logo、标签"
+      }
+    }
+  },
+  "control-C": {
+    "route": "B",
+    "status": "ok",
+    "parse_error": null,
+    "action_id": "977aad3740341c86",
+    "model": "qwen-vl-max",
+    "usage": {
+      "prompt_tokens": 2794,
+      "completion_tokens": 234,
+      "total_tokens": 3028,
+      "completion_tokens_details": {
+        "text_tokens": 234
+      },
+      "prompt_tokens_details": {
+        "image_tokens": 2454,
+        "text_tokens": 340,
+        "cached_tokens": 0
+      }
+    },
+    "elapsed_s": 16.74,
+    "facts": {
+      "F1": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "杯体高直筒，侧壁平直，比例符合"
+      },
+      "F2": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "上部为哑光深青绿，占比约72%"
+      },
+      "F3": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "下部深炭灰防滑套，有三条浅水平筋"
+      },
+      "F4": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "杯盖低矮深炭灰，有两层同心阶梯环"
+      },
+      "F5": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "杯盖与杯体间有窄陶土橙装饰环"
+      },
+      "F6": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "平底，底部有窄深灰防滑圈"
+      },
+      "F7": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "无把手、侧握、提带、吸管、杯嘴"
+      },
+      "F8": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "外表无文字、数字、Logo、标签和水印"
+      }
+    }
+  },
+  "bex-02": {
+    "route": "B",
+    "status": "ok",
+    "parse_error": null,
+    "action_id": "afe2b4c2c9f4b2a0",
+    "model": "qwen-vl-max",
+    "usage": {
+      "prompt_tokens": 2794,
+      "completion_tokens": 182,
+      "total_tokens": 2976,
+      "completion_tokens_details": {
+        "text_tokens": 182
+      },
+      "prompt_tokens_details": {
+        "image_tokens": 2454,
+        "text_tokens": 340,
+        "cached_tokens": 0
+      }
+    },
+    "elapsed_s": 8.79,
+    "facts": {
+      "F1": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "杯体高直筒，侧壁平直"
+      },
+      "F2": {
+        "verdict": "risk",
+        "raw_verdict": "different",
+        "why": "颜色非深青绿#0F6B66"
+      },
+      "F3": {
+        "verdict": "risk",
+        "raw_verdict": "different",
+        "why": "无水平筋，底部为纯色"
+      },
+      "F4": {
+        "verdict": "risk",
+        "raw_verdict": "different",
+        "why": "盖无阶梯环"
+      },
+      "F5": {
+        "verdict": "risk",
+        "raw_verdict": "different",
+        "why": "装饰环非陶土橙"
+      },
+      "F6": {
+        "verdict": "unknown",
+        "raw_verdict": "uncertain",
+        "why": "底部细节不可见"
+      },
+      "F7": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "无附加部件"
+      },
+      "F8": {
+        "verdict": "keep",
+        "raw_verdict": "same",
+        "why": "外表无文字或标识"
+      }
+    }
+  }
+}

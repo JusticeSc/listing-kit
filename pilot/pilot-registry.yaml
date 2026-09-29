@@ -1,0 +1,66 @@
+# =============================================================================
+# 20-SKU 试点登记（Pilot Registry）
+#
+# 这份文件回答：**用哪些真实 SKU、哪些品类、哪些操作员，来证明这个产品可用。**
+# 它是「试点样本」的唯一权威 —— 计划 §3 的品类覆盖、双操作员、首 5 个校准集，
+# 全部从这里算。别处再抄一份样本清单，就有两份会各自漂。
+#
+# 五条硬规矩（都由 `src/pilot_registry.py` 机器校验，不是提醒）：
+#   ① 总数 20 条**真实** SKU（`sample: true` 的条目不计数）—— 样例永远不能拿来凑数。
+#   ② 至少 2 个品类、每类至少 5 个；2 名操作员各分到至少 5 个。
+#   ③ 缺事实版本 / 缺授权版本 / 素材不全 → 该条自动是 `not-ready`。
+#      **状态是算出来的，写不了**：想让它 ready，只有把缺的东西补上。
+#   ④ order 1–5 是校准集（`batch: calibration`），6–20 是正式批（`batch: official`）。
+#      校准集的作用是**测量并冻结成本/时间上限**（计划 §3.2），不是完成证据。
+#   ⑤ 版本与素材**现场核**：`facts_version` / `data_policy_version` / `assets[].sha256`
+#      写对格式不算数 —— 门会把它们重新算一遍。编一个格式合法的版本号凑够 20 条，
+#      在这里只会得到「对不上」（退出码 2），不会变绿。
+#
+# 东西放哪（`src/pilot_registry.py` 的约定，不是新字段）：
+#   素材   materials/<SKU 匿名编号>/<kind>.<ext>      例：materials/SKU-01/front.jpg
+#   事实   materials/<SKU 匿名编号>/product.json     —— 这个 SKU 的 ProductFacts 输入；
+#          `facts_version` 就是照着它现场算出来的，所以这个文件不在 → 该条 not-ready。
+#
+# 哪些东西**不放**这里：
+#   原图 —— `assets[].path` 只留受控素材目录下的相对路径 + sha256，原图不入库。
+#   商品身份 —— id 用匿名编号（SKU-01…）；不写 UPC / ASIN / 标题 / 价格 / 链接。
+#   姓名与工号 —— 操作员用匿名编号（OP-A…），真实身份留在受控名单里。
+#
+# 当前状态：**0 / 20 条**。这不是遗漏，是还没拿到真实样本 ——
+# 谁也不许为了让门变绿而往这里填样例数据。
+#
+# 这份文件怎么填（正文由 `tools/fill_pilot_registry.py` 重写，所以说明只写在头部）：
+#   人写四列 —— order（第几个做）、id（SKU-01…）、category（品类）、operator（OP-A…）。
+#              `batch` 不用写：它由 order 推出来（1–5 = calibration，其余 = official）。
+#   机器补三列 —— `facts_version`、`data_policy_version`、`assets[{kind,path,sha256}]`。
+#              跑 `python tools/fill_pilot_registry.py` 补齐；
+#              跑 `python tools/fill_pilot_registry.py --check` 只读复核有没有跟上素材。
+#   没放的东西不会被编出来 —— 素材或事实来源不在，那几列就留空并明说是哪一份缺。
+#   写在正文里的注释会被重写吃掉，所以话都写在头部。
+#
+# 正文形状（照这个写，四个字段之外先空着就行）：
+#   schema: pilot-registry/v1
+#   updated_at: 2026-09-23
+#   operators:
+#     - id: OP-A
+#       tasks_target: 10          # 可选：预分配目标数
+#     - id: OP-B
+#       tasks_target: 10
+#   entries:
+#     - order: 1
+#       id: SKU-01                # 匿名编号，不是 UPC / ASIN
+#       category: home_kitchen    # 至少 2 个品类、每类至少 5 个
+#       operator: OP-A
+#     - order: 2
+#       id: SKU-02
+#       category: home_kitchen
+#       operator: OP-B
+#
+# 门禁入口：`python tools/check_pilot_ready.py`
+#   0 = 齐了、而且是核过的 · 1 = 样本或素材还没到位（红是实话）· 2 = 写错了或与真实输入对不上
+# =============================================================================
+
+schema: pilot-registry/v1
+updated_at: 2026-09-23
+operators: []
+entries: []

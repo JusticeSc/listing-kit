@@ -1,0 +1,173 @@
+{
+  "run": "real full loop through the product UI",
+  "started_at": "2026-09-28T22:51:37",
+  "base": "http://127.0.0.1:8787",
+  "workspace": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\_working\\amz-listing-kit-product-demo\\real-ui-run-03\\workspace",
+  "reference_image": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\ecommerce-skills-main\\docs\\batch-image\\sku-a-sweater.jpg",
+  "steps": [
+    {
+      "step": "create workspace",
+      "status": "NEW"
+    },
+    {
+      "step": "save intake",
+      "product_name": "粗棒针织套头毛衣",
+      "reference_images": [
+        "sku-a-sweater.jpg"
+      ]
+    },
+    {
+      "step": "product brief",
+      "category": "针织毛衣",
+      "facts": [
+        {
+          "key": "product_name",
+          "state": "confirmed",
+          "source": "user_input"
+        },
+        {
+          "key": "selling_point_1",
+          "state": "confirmed",
+          "source": "user_input"
+        },
+        {
+          "key": "selling_point_2",
+          "state": "confirmed",
+          "source": "user_input"
+        },
+        {
+          "key": "款式",
+          "state": "inferred",
+          "source": "model_inference"
+        },
+        {
+          "key": "领型",
+          "state": "inferred",
+          "source": "model_inference"
+        },
+        {
+          "key": "袖长",
+          "state": "inferred",
+          "source": "model_inference"
+        },
+        {
+          "key": "版型",
+          "state": "inferred",
+          "source": "model_inference"
+        },
+        {
+          "key": "纹理特征",
+          "state": "inferred",
+          "source": "model_inference"
+        },
+        {
+          "key": "适用季节",
+          "state": "inferred",
+          "source": "model_inference"
+        },
+        {
+          "key": "颜色",
+          "state": "inferred",
+          "source": "reference_image"
+        },
+        {
+          "key": "袖口与下摆",
+          "state": "inferred",
+          "source": "reference_image"
+        }
+      ]
+    },
+    {
+      "step": "plan",
+      "shot_count": 4,
+      "shots": [
+        {
+          "title": "粗棒针织套头毛衣主图",
+          "archetype": "hero"
+        },
+        {
+          "title": "粗棒针立体纹理与宽松落肩版型",
+          "archetype": "feature"
+        },
+        {
+          "title": "参考图中可见的细节与工艺",
+          "archetype": "detail"
+        },
+        {
+          "title": "春秋季节日常穿搭场景",
+          "archetype": "lifestyle"
+        }
+      ]
+    },
+    {
+      "step": "submit whole set",
+      "http_status": 502,
+      "ok": false,
+      "message": "模型提示词提到了当前 Shot 未授权的商品事实“颜色”，本版本未保存。"
+    },
+    {
+      "step": "retry round 1",
+      "still_empty": [
+        "粗棒针立体纹理与宽松落肩版型",
+        "参考图中可见的细节与工艺",
+        "春秋季节日常穿搭场景"
+      ]
+    },
+    {
+      "step": "retry round 2",
+      "still_empty": [
+        "粗棒针立体纹理与宽松落肩版型",
+        "参考图中可见的细节与工艺",
+        "春秋季节日常穿搭场景"
+      ]
+    },
+    {
+      "step": "retry round 3",
+      "still_empty": [
+        "粗棒针立体纹理与宽松落肩版型",
+        "参考图中可见的细节与工艺"
+      ]
+    },
+    {
+      "step": "generate whole set",
+      "shots": [
+        {
+          "title": "粗棒针织套头毛衣主图",
+          "attempts": [
+            "SUCCEEDED"
+          ],
+          "tasks": [
+            "1239f7d1-2a25-4973-8072-dd3026d0d6b1"
+          ],
+          "candidates": 1
+        },
+        {
+          "title": "粗棒针立体纹理与宽松落肩版型",
+          "attempts": [],
+          "tasks": [],
+          "candidates": 0
+        },
+        {
+          "title": "参考图中可见的细节与工艺",
+          "attempts": [],
+          "tasks": [],
+          "candidates": 0
+        },
+        {
+          "title": "春秋季节日常穿搭场景",
+          "attempts": [
+            "SUCCEEDED"
+          ],
+          "tasks": [
+            "c23010c3-c1fe-4862-800b-e87283bb287e"
+          ],
+          "candidates": 1
+        }
+      ],
+      "empty_shots": [
+        "粗棒针立体纹理与宽松落肩版型",
+        "参考图中可见的细节与工艺"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "upc": "B0FULLSET01",
+  "title": "316不锈钢真空保温杯 500ml 家用办公便携水杯",
+  "bullets": [
+    "24小时长效保温，早上装的热水到晚上还烫口",
+    "316食品级不锈钢内胆，不残留异味",
+    "一键弹盖单手开，开车办公都方便",
+    "硅胶密封圈倒置不漏水",
+    "杯身防滑喷涂，湿手握持也不打滑",
+    "全网最低价，绝对是最好的杯子"
+  ],
+  "specs": {
+    "容量": "500ml",
+    "材质": "316不锈钢",
+    "重量": "320g",
+    "高度": "22 cm",
+    "宽度": "7 cm"
+  },
+  "assets": {
+    "front": "input/cup_source.jpg",
+    "closeup": "input/cup_closeup.jpg",
+    "contents": "input/cup_contents.jpg",
+    "competitor": "input/competitor.jpg"
+  },
+  "attest": {
+    "by": "运营 A",
+    "date": "2026-09-21",
+    "confirmed": [
+      "no_watermark",
+      "no_props",
+      "single_subject",
+      "angle_ok",
+      "font_license",
+      "competitor_clean"
+    ]
+  },
+  "notes": [
+    "满素材样例：七张图全部可做。素材由 tools/make_fixtures.py 生成（可复现）。",
+    "competitor_clean 是条件签字项 —— 只有位置 7 真要出图时才要求（见 src/intake.py）。",
+    "attest 里的每一条都是工具判不了的东西：签字落进 plan.json / run.jsonl，可事后审计。"
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "view_id": "ref-02-three-quarter",
+  "role": "30° 斜侧闭盖全身",
+  "action_id": "724c9be1cfb42b27",
+  "model": "qwen-image-3.0",
+  "mode": "image_to_image",
+  "endpoint": "https://dashscope.aliyuncs.com/api/v1/services/aigc/image-generation/generation",
+  "reference_file": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\evals\\product-demo\\fixture-design\\C\\raw.png",
+  "reference_sha256": "e1b1c5de1ee6b50a69fb8e431f1140d8c21a689f4fe3316461c02745139d03f6",
+  "seed": 2026092411,
+  "size_used": "1344*1344",
+  "prompt_extend": false,
+  "watermark": false,
+  "n": 1,
+  "prompt": "Photograph of the exact same product as in the reference image, from a 30 degree three-quarter view (rotated about 30 degrees to its right so both the front and the right side are partly visible), lid screwed shut, whole body fully visible with small even margins, standing upright on the same seamless plain light neutral gray backdrop, same soft even studio light from the upper left, same soft natural contact shadow. Keep the exact same product as in the reference image: same design, same colours, same proportions, same number of parts. Upper body matte deep teal green; lower grip sleeve dark charcoal with exactly three raised horizontal ribs; low profile dark charcoal lid with two concentric stepped rings; one narrow terracotta orange ring at the seam between lid and body; flat base with a narrow dark non-slip ring. No handle, no side grip, no strap, no straw, no drinking spout, no second cup, no flip top, no dome lid, no pattern. Every surface stays completely blank: no text, no numbers, no letters, no logo, no brand mark, no label, no sticker, no watermark, no decorative symbol. Photorealistic e-commerce product photography, square 1:1 composition.",
+  "prompt_sha256": "b1f4595ac85b03ed35873a0c98f16a213874ecd6252832ea99bd8f2b1f9e49bc",
+  "task_id": "7f7e5714-f952-4c75-9e1d-23a31b3f59a0",
+  "submitted_at": "2026-09-24T14:59:14+08:00",
+  "finished_at": "2026-09-24T14:59:28+08:00",
+  "poll_elapsed_s": 13.1,
+  "usage": {
+    "output_width": 1344,
+    "input_image_count": 1,
+    "input_image_type": "qima_input_1k",
+    "output_image_count": 1,
+    "output_image_type": "qima_output_1k",
+    "output_height": 1344
+  },
+  "input_image_count": 1,
+  "rewrite_status": "not_use",
+  "image_sha256": "05b9b60af8173e18676ea0930b3ffd18fe65e9a5f48090069be918060d48d419",
+  "image_bytes": 1226160,
+  "image_format": "PNG",
+  "image_size": [
+    1344,
+    1344
+  ]
+}

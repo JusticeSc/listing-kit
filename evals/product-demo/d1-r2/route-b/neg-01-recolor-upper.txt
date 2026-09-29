@@ -1,0 +1,1 @@
+{"F1": {"verdict": "same", "why": "杯体高直筒，侧壁平直"}, "F2": {"verdict": "different", "why": "上部颜色非深青绿"}, "F3": {"verdict": "same", "why": "下部有三条浅水平筋"}, "F4": {"verdict": "same", "why": "杯盖有两层同心阶梯环"}, "F5": {"verdict": "same", "why": "有窄陶土橙装饰环"}, "F6": {"verdict": "same", "why": "平底带深灰防滑圈"}, "F7": {"verdict": "same", "why": "无把手、吸管等附件"}, "F8": {"verdict": "same", "why": "外表无文字或标识"}}

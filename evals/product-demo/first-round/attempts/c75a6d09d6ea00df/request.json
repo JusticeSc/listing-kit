@@ -1,0 +1,26 @@
+{
+  "model": "qwen-image-3.0",
+  "input": {
+    "messages": [
+      {
+        "role": "user",
+        "content": [
+          {
+            "image": "<data-uri of reference #1, sha256=e1b1c5de1ee6b50a69fb8e431f1140d8c21a689f4fe3316461c02745139d03f6, bytes=1163000>"
+          },
+          {
+            "text": "Photograph of the exact same product as in the reference image. The product must stay exactly the same design, the same colours, the same proportions and the same number of parts as in the reference image: exactly one single tall straight-walled insulated tumbler with its screw-on lid closed; the upper roughly 72 percent of the body is matte deep teal green (about #0F6B66) with a matte finish, no gradient and no printed pattern; the lower roughly 28 percent is a dark charcoal gray (about #252A2A) grip sleeve carrying exactly three raised horizontal ribs; the lid is a low profile dark charcoal lid whose top shows exactly two clearly visible concentric stepped rings, with no opening on the lid top; one narrow terracotta orange ring (about #D97A45) sits in the seam between the lid and the body, evenly thick all the way around; the bottom is flat with a narrow dark gray non-slip ring, and the tumbler rests flat and grounded on its surface.\n\nEvery outer surface of the product stays completely blank: no text, no numbers, no letters, no words, no logo, no brand mark, no label, no sticker, no watermark, no capacity marking and no decorative symbol anywhere on the product.\n\nNot tapered, not waisted, not a mug, not bottle shaped, and with no handle, no side grip, no strap, no straw, no drinking spout, no flip top, no dome lid, no second cup and no second lid.\n\nScene for an Amazon US listing lifestyle image: the tumbler stands on a clean matte light stone kitchen counter next to a smooth neutral wall; a single soft window light comes from the upper left; nothing else is in the frame, and no prop overlaps or touches the product; no hands and no people.\n\nEye level three quarter front view, the whole product including the lid visible inside the frame with clear margins, product centred and occupying most of the frame height, soft natural contact shadow under the base, sharp focus on the product, photorealistic e-commerce product photography, square 1:1 composition."
+          }
+        ]
+      }
+    ]
+  },
+  "parameters": {
+    "negative_prompt": "different product, different colour, different proportions, extra object, second cup, handle, side handle, strap, straw, drinking spout, flip top, dome lid, open lid, text, letters, words, numbers, logo, brand mark, watermark, label, sticker, typography, pattern, gradient, glossy metallic body, cropped product, floating object, cluttered background, props overlapping the product, hands, people, blurry, low resolution",
+    "prompt_extend": false,
+    "watermark": false,
+    "size": "1344*1344",
+    "n": 1,
+    "seed": 2026092603
+  }
+}

@@ -1,0 +1,249 @@
+{
+  "blank_home": true,
+  "home_keyboard_focus": [
+    "brand-home",
+    "top-open-workspace",
+    "top-create-workspace",
+    "create-workspace",
+    "open-workspace"
+  ],
+  "home_viewports": [
+    {
+      "width": 1280,
+      "client": 1280,
+      "scroll": 1280
+    },
+    {
+      "width": 390,
+      "client": 390,
+      "scroll": 390
+    }
+  ],
+  "focus_after_create": "reference-images",
+  "form_keyboard_focus": [
+    "product-name",
+    "product-description",
+    "selling-points"
+  ],
+  "intake_390px": {
+    "width": 390,
+    "client": 390,
+    "scroll": 390
+  },
+  "intake_tiles_after_upload": {
+    "names": [
+      "reference-a.png",
+      "reference-b.png",
+      "reference-c.png"
+    ],
+    "primary_badges": 1,
+    "primary_on_first": true,
+    "first_tile_buttons": [
+      "移除"
+    ],
+    "selection_note": "共 3 张参考图；第 1 张为主要参考。"
+  },
+  "intake_tiles_after_reorder": [
+    "reference-a.png",
+    "reference-c.png",
+    "reference-b.png"
+  ],
+  "intake_tiles_overflow": {
+    "count": 3,
+    "error": "最多 3 张参考图。"
+  },
+  "selling_points_after_save": "双层结构\n防滑杯底",
+  "saved_reference_names": [
+    "reference-a.png",
+    "reference-c.png"
+  ],
+  "reference_sha256": [
+    "d723d9501c7d7fab431639d795d1cf3a128ad1c2d6152f3fe1656e532b4cca6d",
+    "9c16ccdfa7e63cdffc34f0830899ad8893302f970e36f0a8b5d8e39c385be53e"
+  ],
+  "brief_draft": {
+    "category": "保温随行杯",
+    "category_source": "来源：模型推断",
+    "model_claim_matching_description": {
+      "value": "适合户外露营",
+      "state": "inferred",
+      "source": "来源：模型推断"
+    }
+  },
+  "model_claims": [
+    {
+      "key": "材质",
+      "value": "双层不锈钢结构",
+      "state": "inferred",
+      "source": "来源：模型推断"
+    },
+    {
+      "key": "防漏能力",
+      "value": "100% 不漏水",
+      "state": "inferred",
+      "source": "来源：模型推断"
+    },
+    {
+      "key": "保冷时长",
+      "value": "保冷 24 小时",
+      "state": "inferred",
+      "source": "来源：模型推断"
+    },
+    {
+      "key": "容量",
+      "value": "1.2 L",
+      "state": "inferred",
+      "source": "来源：模型参考图判断"
+    }
+  ],
+  "draft_is_unpersisted": true,
+  "brief_versions": {
+    "v1_hash": "c7f16fcd2600fd15259c2dd6b525dac1d68dc58ca622144b7ca722d94a7e166f",
+    "v2_hash": "8775e2b0a151f6ef90318ce00209b7abb5f1995b7feab9e45a489b7f3b2a641e",
+    "v1_material": {
+      "confidence": 0.82,
+      "key": "材质",
+      "source": "model_inference",
+      "source_refs": [
+        "semantic:test-fake-semantic:explicit-test-fixture"
+      ],
+      "state": "inferred",
+      "value": "双层不锈钢结构"
+    },
+    "v2_material": {
+      "confidence": 0.82,
+      "key": "材质",
+      "source": "user_override",
+      "source_refs": [
+        "semantic:test-fake-semantic:explicit-test-fixture",
+        "user_override"
+      ],
+      "state": "confirmed",
+      "value": "双层不锈钢结构（用户补充确认）"
+    },
+    "immutable_history_and_confirmation": true
+  },
+  "selling_points_unchanged": [
+    "双层结构",
+    "防滑杯底"
+  ],
+  "plan_workspace": {
+    "version": 1,
+    "shot_titles": [
+      "Amazon US 主图",
+      "第一卖点",
+      "第二卖点",
+      "通勤情境"
+    ],
+    "visible_cards": 4,
+    "product_facts_rendered": 3
+  },
+  "prompt_editor": {
+    "compiled_text_matches_workspace": true,
+    "initial_version": 1,
+    "traceable_blocks": 5,
+    "saved_version": 2,
+    "manual_text_round_trip": true
+  },
+  "plan_edit": {
+    "version": 2,
+    "shot_ids": [
+      "shot_5bd58202e54341d6",
+      "shot_bf13b5cb547e4eca",
+      "shot_1c060711b78b4fde"
+    ],
+    "shot_titles": [
+      "Amazon US 主图",
+      "第一卖点",
+      "通勤情境"
+    ],
+    "edited_purpose": "清楚呈现已确认的双层结构卖点，突出商品主体。",
+    "all_current_prompts_invalidated": true
+  },
+  "generation_first_set": {
+    "shots": 3,
+    "submissions": 3,
+    "candidate_rendered": true,
+    "candidate_sha_matches_url": true
+  },
+  "generation_reference_order": [
+    [
+      "d723d9501c7d7fab431639d795d1cf3a128ad1c2d6152f3fe1656e532b4cca6d",
+      "9c16ccdfa7e63cdffc34f0830899ad8893302f970e36f0a8b5d8e39c385be53e"
+    ],
+    [
+      "d723d9501c7d7fab431639d795d1cf3a128ad1c2d6152f3fe1656e532b4cca6d",
+      "9c16ccdfa7e63cdffc34f0830899ad8893302f970e36f0a8b5d8e39c385be53e"
+    ],
+    [
+      "d723d9501c7d7fab431639d795d1cf3a128ad1c2d6152f3fe1656e532b4cca6d",
+      "9c16ccdfa7e63cdffc34f0830899ad8893302f970e36f0a8b5d8e39c385be53e"
+    ]
+  ],
+  "generation_reconcile": {
+    "queries": [
+      "ui-retry-1"
+    ],
+    "submissions_after_reconcile": 6
+  },
+  "brief_390px": {
+    "width": 390,
+    "client": 390,
+    "scroll": 390
+  },
+  "plan_390px": {
+    "width": 390,
+    "client": 390,
+    "scroll": 390
+  },
+  "recent_items_after_save": 1,
+  "restored_after_restart": {
+    "product_name": "测试商品-橙色随行杯",
+    "description": "双层不锈钢结构；不适合户外露营，适合日常通勤使用。",
+    "selling_points": "双层结构\n防滑杯底",
+    "user_intent": "突出便携，不出现户外场景。",
+    "reference_images": 2,
+    "reference_names": [
+      "reference-a.png",
+      "reference-c.png"
+    ],
+    "status": "资料已保存"
+  },
+  "restored_brief_after_restart": {
+    "version": "已保存版本 v2",
+    "material": "双层不锈钢结构（用户补充确认）",
+    "state": "confirmed",
+    "source": "来源：你手动修改"
+  },
+  "plan_after_restart": {
+    "version": 2,
+    "shot_ids": [
+      "shot_5bd58202e54341d6",
+      "shot_bf13b5cb547e4eca",
+      "shot_1c060711b78b4fde"
+    ],
+    "shot_titles": [
+      "Amazon US 主图",
+      "第一卖点",
+      "通勤情境"
+    ]
+  },
+  "generation_after_restart": {
+    "attempts": [
+      2,
+      2,
+      2
+    ],
+    "candidates": [
+      2,
+      2,
+      2
+    ]
+  },
+  "damaged_workspace_feedback": {
+    "message": "工作空间文件损坏或相互不一致；原文件未被改动。",
+    "remains_on_home": true,
+    "source_still_damaged": true
+  },
+  "external_requests": []
+}

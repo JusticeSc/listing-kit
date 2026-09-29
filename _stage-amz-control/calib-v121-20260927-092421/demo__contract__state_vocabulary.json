@@ -1,0 +1,30 @@
+{
+  "schema": "amz-listing-kit/state-vocabulary@1",
+  "authority_doc": "docs/product-demo-goal-and-implementation-plan.md",
+  "authority_section": "4.2",
+  "plan_version": "v1.20",
+  "frozen_at": "2026-09-26",
+  "why": "状态取值必须来自计划 §4.2，而不是实现里现编。这里只登记取值域与终局语义，不定义转换规则 —— 转换由实现与测试负责。",
+  "machines": {
+    "Task": {
+      "states": ["DRAFT", "READY", "RUNNING", "REVIEW", "COMPLETE", "BLOCKED", "FAILED"],
+      "terminal": ["COMPLETE", "FAILED"],
+      "note": "BLOCKED 不是终局：它是等外部条件（缺料、等授权、等核对），可以回到 READY"
+    },
+    "Attempt": {
+      "states": ["PREPARED", "SUBMITTING", "SUBMITTED", "RUNNING", "SUCCEEDED", "FAILED", "UNKNOWN"],
+      "terminal": ["SUCCEEDED", "FAILED", "UNKNOWN"],
+      "note": "UNKNOWN 不是失败。原调用身份没有核对前，不得创建相同请求的新 Attempt"
+    },
+    "Candidate": {
+      "states": ["CREATED", "CHECKED", "KEEP", "REDO", "REJECT"],
+      "terminal": ["KEEP", "REDO", "REJECT"],
+      "note": "KEEP 仍不等于已选：选择是独立的 Selection 事件，不改写 Candidate"
+    },
+    "Shot": {
+      "states": ["PLANNED", "GENERATING", "REVIEWABLE", "SELECTED", "STALE"],
+      "terminal": ["SELECTED", "STALE"],
+      "note": "依赖变化后转 STALE，不删除历史；STALE 的 Shot 必须重生成或重新确认才能再被选择"
+    }
+  }
+}

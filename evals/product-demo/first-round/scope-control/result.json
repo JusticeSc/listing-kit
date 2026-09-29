@@ -1,0 +1,275 @@
+{
+  "probe": "D1.5 事实门适用范围对照",
+  "question": "cylinder-v1 在场景图上的判定，是不是商品的函数？",
+  "design": "商品像素逐字节不变，只替换商品分量之外的底衬；三臂底衬条件递增",
+  "flat_tone_rgb": [
+    180.0,
+    174.0,
+    165.0
+  ],
+  "flat_tone_saturation": 0.0833,
+  "floor_patch_from": {
+    "image": "evals/product-demo/first-round/attempts/b0c9c907f875b918/raw.png",
+    "box": [
+      60,
+      1120,
+      460,
+      1330
+    ]
+  },
+  "arms": [
+    {
+      "image": "evals/product-demo/fixture-design/pack/01-front-full.png",
+      "verdict": "pass",
+      "aspect_h_over_w": 3.182,
+      "body_upper_share": 0.6479,
+      "body_lower_share": 0.3521,
+      "extra_area_share": 0.0007,
+      "body_protrusion": 0.0242,
+      "trim_span_count": 1,
+      "border_bg_rgb": [
+        210.0,
+        209.0,
+        206.0
+      ],
+      "border_bg_saturation": 0.019,
+      "v1_mask_share": 0.191,
+      "mask_share_left_18pct": 0.0,
+      "main_component_bbox": [
+        496,
+        144,
+        843,
+        1247
+      ],
+      "main_component_size": [
+        348,
+        1104
+      ],
+      "failed_facts": [],
+      "arm": "fixture-plain-gray"
+    },
+    {
+      "image": "evals/product-demo/first-round/scope-control/A1-flat-tone.png",
+      "verdict": "pass",
+      "aspect_h_over_w": 3.182,
+      "body_upper_share": 0.6482,
+      "body_lower_share": 0.3518,
+      "extra_area_share": 0.0,
+      "body_protrusion": 0.0242,
+      "trim_span_count": 1,
+      "border_bg_rgb": [
+        180.0,
+        174.0,
+        165.0
+      ],
+      "border_bg_saturation": 0.0833,
+      "v1_mask_share": 0.1799,
+      "mask_share_left_18pct": 0.0,
+      "main_component_bbox": [
+        496,
+        144,
+        843,
+        1247
+      ],
+      "main_component_size": [
+        348,
+        1104
+      ],
+      "failed_facts": [],
+      "arm": "A1-flat-tone"
+    },
+    {
+      "image": "evals/product-demo/first-round/scope-control/A2-flat-tone-light-patch.png",
+      "verdict": "pass",
+      "aspect_h_over_w": 3.182,
+      "body_upper_share": 0.649,
+      "body_lower_share": 0.351,
+      "extra_area_share": 0.0,
+      "body_protrusion": 0.0242,
+      "trim_span_count": 1,
+      "border_bg_rgb": [
+        184.0,
+        178.0,
+        169.0
+      ],
+      "border_bg_saturation": 0.0815,
+      "v1_mask_share": 0.1817,
+      "mask_share_left_18pct": 0.0,
+      "main_component_bbox": [
+        496,
+        144,
+        843,
+        1247
+      ],
+      "main_component_size": [
+        348,
+        1104
+      ],
+      "failed_facts": [],
+      "arm": "A2-flat-tone-light-patch"
+    },
+    {
+      "image": "evals/product-demo/first-round/scope-control/A3-real-floor-texture.png",
+      "verdict": "pass",
+      "aspect_h_over_w": 3.182,
+      "body_upper_share": 0.6472,
+      "body_lower_share": 0.3528,
+      "extra_area_share": 0.0,
+      "body_protrusion": 0.0242,
+      "trim_span_count": 1,
+      "border_bg_rgb": [
+        223.0,
+        217.0,
+        211.0
+      ],
+      "border_bg_saturation": 0.0538,
+      "v1_mask_share": 0.1924,
+      "mask_share_left_18pct": 0.0,
+      "main_component_bbox": [
+        496,
+        144,
+        843,
+        1247
+      ],
+      "main_component_size": [
+        348,
+        1104
+      ],
+      "failed_facts": [],
+      "arm": "A3-real-floor-texture"
+    }
+  ],
+  "candidates": [
+    {
+      "image": "evals/product-demo/first-round/attempts/b0c9c907f875b918/raw.png",
+      "verdict": "hard_fail",
+      "aspect_h_over_w": 1.4,
+      "body_upper_share": 0.3235,
+      "body_lower_share": 0.6765,
+      "extra_area_share": 0.1554,
+      "body_protrusion": 1.3899,
+      "trim_span_count": 1,
+      "border_bg_rgb": [
+        180.0,
+        174.0,
+        165.0
+      ],
+      "border_bg_saturation": 0.0833,
+      "v1_mask_share": 0.2502,
+      "mask_share_left_18pct": 0.2063,
+      "main_component_bbox": [
+        504,
+        136,
+        1343,
+        1259
+      ],
+      "main_component_size": [
+        840,
+        1124
+      ],
+      "failed_facts": [
+        "F1",
+        "F2",
+        "F3",
+        "F7"
+      ]
+    },
+    {
+      "image": "evals/product-demo/first-round/attempts/723ab2a69e19571d/raw.png",
+      "verdict": "hard_fail",
+      "aspect_h_over_w": 2.459,
+      "body_upper_share": 0.6308,
+      "body_lower_share": 0.3692,
+      "extra_area_share": 0.3403,
+      "body_protrusion": 0.3731,
+      "trim_span_count": 1,
+      "border_bg_rgb": [
+        185.0,
+        179.0,
+        171.0
+      ],
+      "border_bg_saturation": 0.0757,
+      "v1_mask_share": 0.2838,
+      "mask_share_left_18pct": 0.3921,
+      "main_component_bbox": [
+        496,
+        140,
+        979,
+        1243
+      ],
+      "main_component_size": [
+        484,
+        1104
+      ],
+      "failed_facts": [
+        "F7"
+      ]
+    },
+    {
+      "image": "evals/product-demo/first-round/attempts/c75a6d09d6ea00df/raw.png",
+      "verdict": "hard_fail",
+      "aspect_h_over_w": 1.327,
+      "body_upper_share": 0.4733,
+      "body_lower_share": 0.5267,
+      "extra_area_share": 0.1329,
+      "body_protrusion": 1.4388,
+      "trim_span_count": 1,
+      "border_bg_rgb": [
+        181.0,
+        177.0,
+        169.0
+      ],
+      "border_bg_saturation": 0.0663,
+      "v1_mask_share": 0.2246,
+      "mask_share_left_18pct": 0.1584,
+      "main_component_bbox": [
+        496,
+        152,
+        1343,
+        1235
+      ],
+      "main_component_size": [
+        848,
+        1084
+      ],
+      "failed_facts": [
+        "F1",
+        "F2",
+        "F3",
+        "F6",
+        "F7"
+      ]
+    },
+    {
+      "image": "evals/product-demo/first-round/attempts/45ef384cb14bafbe/raw.png",
+      "verdict": "hard_fail",
+      "aspect_h_over_w": 3.099,
+      "body_upper_share": 0.6487,
+      "body_lower_share": 0.3513,
+      "extra_area_share": 0.311,
+      "body_protrusion": 0.0237,
+      "trim_span_count": 1,
+      "border_bg_rgb": [
+        181.0,
+        175.0,
+        168.0
+      ],
+      "border_bg_saturation": 0.0718,
+      "v1_mask_share": 0.2725,
+      "mask_share_left_18pct": 0.4163,
+      "main_component_bbox": [
+        492,
+        148,
+        851,
+        1247
+      ],
+      "main_component_size": [
+        360,
+        1100
+      ],
+      "failed_facts": [
+        "F7"
+      ]
+    }
+  ]
+}

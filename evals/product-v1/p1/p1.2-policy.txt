@@ -1,0 +1,86 @@
+P1.2 验收：素材与外发授权
+========================================================================
+时间：2026-09-26
+本次切片的七项声明（计划 §7.1）：
+  用户可见行为  无（这一层还不接管线；只把『能不能发』变成一个可判的结论）
+  不变量        A 主体只有一份 / B 生成层看不见主体 / C 文字层不画字 / D 位置 1 零模型 全部未触碰
+  允许改的模块  contracts/data-policy-v1.yaml 与 src/data_policy.py 新增、tools/sign_allowlist.py 新增、contracts/data-policy-versions/ 新增；examples/ 只读
+  新增身份      policy_version = dpv1-<内容哈希前 12 位>（每次决策都带上它）；每一版的原文存成 contracts/data-policy-versions/<版本号>.yaml
+  拒绝路径      未签署 / 未批准 / 过期 / 用途不符 / 人像与竞品图 → 一律不给 allowed
+  判据          本文件 A–I；反向样本见 B/C/D/E/G/I；正向对照见 C/D/E/F/I
+  迁移与回退    纯加法：v2 planner 与确定性路径未改；无授权时只允许本地路线（H 条为运行时证据）
+
+A 基线（未签署）
+  [OK  ] 结构校验通过（不合法会直接抛）　类别 4 个 · 用途 3 个 · 规则 0 条
+  [OK  ] allowlist 还没被签署（signed_by=null）
+  [OK  ] 规则表是空的 —— 现在一条外发都不允许
+  [OK  ] 未签署时全部 unapproved（人像与竞品图也一样）　查了 12 种组合
+  [OK  ] 版本由内容算出且可重复　policy_version=dpv1-33ffd76b51f9
+  [OK  ] P1.1 的 data_policy_version 引用的是同一个版本号（授权语义只有一份）
+
+B 零调用（未签署时，假执行器一次都不许真的调用）
+  [OK  ] 真的调用 0 次　请求 24 次，全部被拦
+  [OK  ] 每一次请求都留下了一条决策记录（不是静默丢弃）　blocked=24
+  [OK  ] 零调用的原因是『没签署』，不是『崩了』　reasons=['policy_not_signed']
+
+C 过期（同一条规则，只改 now）
+  [OK  ] 到期前：allowed　reason=rule_allowed
+  [OK  ] 到期日当天仍有效（到期日算最后一天）
+  [OK  ] 到期次日：unapproved / expired　reason=expired
+  [OK  ] 过期之后那次没有真的调用　calls=1
+
+D 用途不符（批了做图，不等于批了复核）
+  [OK  ] 被批准的那个用途：allowed
+  [OK  ] 另一个用途：不命中 → unapproved　reason=no_matching_rule
+  [OK  ] 另一个用途没有真的调用　calls=1
+
+E 人像 / 竞品图（V1 范围外：默认不批，单独授权才放行）
+  [OK  ] 人像与竞品图默认 denied（不是 unapproved：它们不是『还没批』，是『不许』）　portrait=denied / competitor=denied
+  [OK  ] 同一份签署清单下，商品参考图默认是 unapproved　reason=no_matching_rule
+  [OK  ] 逐条单独授权之后：allowed（范围外不是永远不能做，是要有人签字）　approver=运营负责人
+
+F 版本可追溯
+  [OK  ] 决策指回了具体规则　rule_id=f-ref-gen
+  [OK  ] 决策带上批准人 / 批准日 / 有效期 / 保留约束
+  [OK  ] 决策带上版本号（事后能对回是哪一版授权）　policy_version=dpv1-d2c3ede4d622
+  [OK  ] 同一条规则、字段顺序变了 → 版本不变（版本算的是语义）
+  [OK  ] 多一条规则 → 版本变了（改授权就是改版本）
+  [OK  ] 查询很多次之后，政策文件本身没被写回（只读）
+  [OK  ] 决策可直接作为审计记录的一行　字段 12 个
+
+G 文件层拒绝（这些根本不该被加载进来）
+  [OK  ] 默认值是 allowed → 加载报错　报错含『default』
+  [OK  ] 键里用通配 * → 加载报错　报错含『通配』
+  [OK  ] allowed 却没有批准人 → 加载报错　报错含『approver』
+  [OK  ] 键名像密钥（api_key）→ 加载报错　报错含『密钥』
+  [OK  ] 值看起来像 API key → 加载报错　报错含『密钥』
+  [OK  ] 值里带 PEM 私钥头 → 加载报错　报错含『PEM』
+
+H 本地/确定性路线不受这道门影响
+  [OK  ] 未签署时 v2 的 assets.collect 结果完全一致（本地路线照跑）
+  [OK  ] 被拦的只有外发；本地一次都没被这道门挡住　拦下 12 次外发
+
+I 签署入口：签的是范围，版本原文要存得下来
+  [OK  ] --list 能打印闭集与现状
+  [OK  ] --dry-run 试算成功
+  [OK  ] --dry-run 既不写政策也不建存档（试算不是偷偷落盘）
+  [OK  ] 签署并追加规则：成功
+  [OK  ] signed_by / signed_at 落盘，规则进表　signed_by=运营负责人 · rules=1
+  [OK  ] 版本随内容变　dpv1-33ffd76b51f9 → dpv1-38a82a98366c
+  [OK  ] 改动前后两版都存档了　['dpv1-33ffd76b51f9', 'dpv1-38a82a98366c']
+  [OK  ] 把存档重新算一遍得出同一个版本号（存档没被就地改过）　{'dpv1-33ffd76b51f9': 'dpv1-33ffd76b51f9', 'dpv1-38a82a98366c': 'dpv1-38a82a98366c'}
+  [OK  ] 撤销规则：成功
+  [OK  ] 三版齐全 —— 『当时批的是哪一版』答得出来　['dpv1-33ffd76b51f9', 'dpv1-38a82a98366c', 'dpv1-4b1ee8a4898f']
+  [OK  ] 旧版原文还在：能读出当时是谁签的、批了什么
+  [OK  ] 缺 --by → 2（批准人是人给的，工具不填默认值）
+  [OK  ] 同一 id 追加两次 → 第二次 2（同一个 id 只能有一条）
+  [OK  ] 撤销一个不存在的规则 → 2
+  [OK  ] 整段测试没碰真政策文件（一个字节都没变）
+
+========================================================================
+结论：全部通过
+边界：本报告只证明『未批准 / 过期 / 用途不符 / 范围外素材』不会被发送，
+      以及授权记录可追溯（每一版的原文都存得下来、重算得出同一个版本号）；
+      不证明用户已经签署 allowlist（现在还没签），也不证明任何一次真实外发合规。
+
+报告：E:\workbuddy_workspace\2026-09-20-16-38-19\amz-listing-kit\evals\product-v1\p1\p1.2-policy.txt

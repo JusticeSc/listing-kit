@@ -1,0 +1,17 @@
+{
+  "upc": "B0FULLSET01",
+  "title": "316不锈钢真空保温杯 500ml 家用办公便携水杯",
+  "bullets": [],
+  "specs": {
+    "容量": "0.5L",
+    "重量": "350g",
+    "高度": "22 centimeters",
+    "宽度": "7 cm"
+  },
+  "assets": {},
+  "notes": [
+    "数据集样本（不是商品资料）：与 examples/product_fullset.json 同一个 UPC。",
+    "容量 0.5L 与 500ml 归一后同值（不冲突，只多一个来源）；重量 350g 与 320g 归一后仍不同 → spec.weight 是 conflicted。",
+    "高度写成 22 centimeters：单位别名认不出来 → 合并时它与 22cm 判成 conflicted，不冒充成 22cm。"
+  ]
+}

@@ -1,0 +1,221 @@
+{
+  "schema": "amz-listing-kit/provider-contract@1",
+  "provider": "aliyun-bailian-dashscope",
+  "frozen_at": "2026-09-26T00:01:53+08:00",
+  "frozen_by": "D1.1",
+  "release_policy": {
+    "unknown_is_unsupported": true,
+    "status_values": [
+      "proven_by_our_call",
+      "official_doc",
+      "unknown"
+    ],
+    "how_to_read": "proven_by_our_call = 本项目自己真跑过并留下了请求/响应；official_doc = 官方文档写明；unknown = 没查到。unknown 一律按「不支持」处理，不许当能力用。",
+    "no_inference_from_reference_libraries": "不从范例库（ecom* 三个 skill）推定官方能力；它们只作结构与假设来源，能力以官方文档或本项目实测为准。",
+    "verified_on": "2026-09-26"
+  },
+  "model": {
+    "name": "qwen-image-3.0",
+    "sibling": "qwen-image-3.0-pro",
+    "family_note": "3.0 系列（pro 与标准）同时支持文生图 T2I 与图生图/图像编辑 I2I",
+    "modes": [
+      "text_to_image",
+      "image_to_image"
+    ],
+    "status": "official_doc",
+    "also_proven_by_our_call": true,
+    "source": "https://help.aliyun.com/zh/model-studio/qwen-image-generation-and-editing-api-reference",
+    "retrieved_at": "2026-09-26T00:00:00+08:00"
+  },
+  "region": {
+    "declared": "cn-beijing",
+    "rule": "模型、endpoint URL 与 API Key 必须属于同一地域；跨地域调用会鉴权失败或服务报错",
+    "legacy_hosts": {
+      "cn-beijing": "dashscope.aliyuncs.com",
+      "ap-southeast-1": "dashscope-intl.aliyuncs.com"
+    },
+    "recommended_hosts": {
+      "cn-beijing": "{WorkspaceId}.cn-beijing.maas.aliyuncs.com",
+      "ap-southeast-1": "{WorkspaceId}.ap-southeast-1.maas.aliyuncs.com"
+    },
+    "other_regions_in_doc": [
+      "cn-hongkong",
+      "ap-northeast-1",
+      "eu-central-1",
+      "us-east-1"
+    ],
+    "note": "业务空间专属域名为推荐迁移目标；旧域名仍可用。本项目当前用 legacy 域名 dashscope.aliyuncs.com（华北2 北京）",
+    "status": "official_doc",
+    "also_proven_by_our_call": true,
+    "source": "https://help.aliyun.com/zh/model-studio/qwen-image-generation-and-editing-api-reference"
+  },
+  "auth": {
+    "env_var": "DASHSCOPE_API_KEY",
+    "header": "Authorization: Bearer <key>",
+    "create_header_extra": {
+      "Content-Type": "application/json",
+      "X-DashScope-Async": "enable"
+    },
+    "missing_async_header_error": "current user api does not support synchronous calls",
+    "status": "official_doc",
+    "also_proven_by_our_call": true
+  },
+  "endpoints": {
+    "create_async": "https://dashscope.aliyuncs.com/api/v1/services/aigc/image-generation/generation",
+    "query_task": "https://dashscope.aliyuncs.com/api/v1/tasks/{task_id}",
+    "sdk_sync_variant": "https://{WorkspaceId}.cn-beijing.maas.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation",
+    "openai_compatible": "https://{WorkspaceId}.cn-beijing.maas.aliyuncs.com/compatible-mode/v1/images/generations",
+    "used_by_this_project": [
+      "create_async",
+      "query_task"
+    ],
+    "not_used": [
+      "sdk_sync_variant",
+      "openai_compatible"
+    ],
+    "status": "official_doc",
+    "also_proven_by_our_call": true,
+    "source": "https://help.aliyun.com/zh/model-studio/qwen-image-generation-and-editing-api-reference"
+  },
+  "capabilities": [
+    {
+      "id": "reference_image_count",
+      "item": "图生图可用的参考图数量",
+      "value": "1-3 张；单张传字符串，多张传字符串数组（按数组顺序定义图像顺序）；不能传 null 或空数组，否则 400",
+      "status": "official_doc",
+      "also_proven_by_our_call": "只实测过 1 张",
+      "source": "https://help.aliyun.com/zh/model-studio/qwen-image-generation-and-editing-api-reference"
+    },
+    {
+      "id": "input_image_requirements",
+      "item": "输入图像要求",
+      "value": "格式 JPG/JPEG/PNG/BMP/TIFF/WEBP/GIF；建议每边 384-2048 px；单张不超过 10MB；支持公网 URL 或 data:{MIME};base64,{data}",
+      "status": "official_doc",
+      "also_proven_by_our_call": "base64 data URI 实测可用",
+      "source": "https://help.aliyun.com/zh/model-studio/qwen-image-generation-and-editing-api-reference"
+    },
+    {
+      "id": "output_format",
+      "item": "输出图像格式",
+      "value": "PNG",
+      "status": "official_doc",
+      "also_proven_by_our_call": true,
+      "evidence": [
+        "evals/product-demo/fixture-design/pack/01-front-full.png",
+        "evals/product-demo/fixture-design/pack/02-upper-closeup.png",
+        "evals/product-demo/fixture-design/pack/03-lower-detail.png"
+      ],
+      "source": "https://help.aliyun.com/zh/model-studio/qwen-image-generation-and-editing-api-reference"
+    },
+    {
+      "id": "size",
+      "item": "输出分辨率",
+      "value": "DashScope 协议用 宽*高，OpenAI 协议用 宽x高；T2I 与 I2I 均为像素面积 512x512 至 2048x2048、宽高比 1:8 至 8:1；可传 auto；不指定时由模型按提示词自动推荐",
+      "status": "official_doc",
+      "also_proven_by_our_call": "实测 size=1344*1344 成功，输出 usage.output_width/height 均为 1344",
+      "source": "https://help.aliyun.com/zh/model-studio/qwen-image-generation-and-editing-api-reference"
+    },
+    {
+      "id": "seed",
+      "item": "随机种子",
+      "value": "整数，取值 [0,2147483647]；不传由服务随机选；固定种子可使结果相对稳定，但不保证每次完全一致",
+      "status": "official_doc",
+      "also_proven_by_our_call": "四次调用均显式传 seed 并落盘",
+      "source": "https://help.aliyun.com/zh/model-studio/qwen-image-generation-and-editing-api-reference"
+    },
+    {
+      "id": "prompt_extend",
+      "item": "提示词智能改写",
+      "value": "boolean，3.0 系列默认 true（文档建议开启）；另有 prompt_extend_mode：direct（DPE，T2I 与 I2I 都支持）与 agent（APE，仅 T2I）",
+      "status": "official_doc",
+      "also_proven_by_our_call": "实测 prompt_extend=false 被接受，响应 rewrite_status=not_use",
+      "source": "https://help.aliyun.com/zh/model-studio/qwen-image-generation-and-editing-api-reference",
+      "product_note": "本项目要求「查看并版本化编辑实际发送给模型的完整提示词」：prompt_extend=false 时发出的提示词就是实际提示词，不需要再取回改写结果"
+    },
+    {
+      "id": "actual_prompt_echo",
+      "item": "实际提示词是否可从响应取回",
+      "value": "官方文档写明「当前仅异步接口返回实际提示词」",
+      "status": "official_doc",
+      "also_proven_by_our_call": "本次四次调用的响应里未见提示词回显（因 prompt_extend=false，rewrite_status=not_use）",
+      "source": "https://help.aliyun.com/zh/model-studio/qwen-image-api",
+      "boundary": "该条只在一份文档里见到，未在 3.0 API 参考页复核到同一句话；Phase 3 真正依赖它之前应再确认"
+    },
+    {
+      "id": "watermark",
+      "item": "水印开关",
+      "value": "boolean，默认 false（在图像右下角添加 Qwen-Image 水印）",
+      "status": "official_doc",
+      "also_proven_by_our_call": "实测 watermark=false 且产物未见水印",
+      "source": "https://help.aliyun.com/zh/model-studio/qwen-image-generation-and-editing-api-reference"
+    },
+    {
+      "id": "n",
+      "item": "单次生成的图像张数",
+      "value": "整数 1-6，默认 1；必须传整数，传字符串（如 \"1\"）会 400",
+      "status": "official_doc",
+      "also_proven_by_our_call": "实测 n=1",
+      "source": "https://help.aliyun.com/zh/model-studio/qwen-image-generation-and-editing-api-reference"
+    },
+    {
+      "id": "async_query",
+      "item": "异步提交与查询",
+      "value": "创建任务返回 task_id 与 task_status；用 GET /api/v1/tasks/{task_id} 轮询；状态枚举 PENDING/RUNNING/SUCCEEDED/FAILED/CANCELED/UNKNOWN；请求头必须带 X-DashScope-Async: enable",
+      "status": "official_doc",
+      "also_proven_by_our_call": true,
+      "evidence": [
+        "evals/product-demo/fixture-design/C/response-create.json",
+        "evals/product-demo/fixture-design/C/response-task.json"
+      ],
+      "source": "https://help.aliyun.com/zh/model-studio/qwen-image-generation-and-editing-api-reference"
+    },
+    {
+      "id": "task_id_validity",
+      "item": "task_id 查询有效期",
+      "value": "24 小时；请勿重复创建任务，轮询即可",
+      "status": "official_doc",
+      "source": "https://help.aliyun.com/zh/model-studio/qwen-image-generation-and-editing-api-reference"
+    },
+    {
+      "id": "result_url_validity",
+      "item": "结果图 URL 有效期",
+      "value": "24 小时，需及时下载保存",
+      "status": "official_doc",
+      "also_proven_by_our_call": true,
+      "source": "https://help.aliyun.com/zh/model-studio/qwen-image-generation-and-editing-api-reference",
+      "product_note": "这条直接决定「候选必须立刻落盘」：本项目每次拿到 URL 就下载并存成原始 PNG"
+    },
+    {
+      "id": "usage_fields",
+      "item": "计量/回执字段",
+      "value": "usage.output_width / output_height / input_image_count / input_image_type / output_image_count / output_image_type；input_image_count 在 T2I 为 0、I2I 按实际输入图片数返回",
+      "status": "official_doc",
+      "also_proven_by_our_call": true,
+      "source": "https://help.aliyun.com/zh/model-studio/qwen-image-generation-and-editing-api-reference",
+      "product_note": "「模型请求确实携带参考图并非 mock」这条判据可以用 input_image_count 直接核验"
+    },
+    {
+      "id": "negative_prompt",
+      "item": "反向提示词",
+      "value": "支持 negative_prompt（≤500 字符，超出截断）",
+      "status": "official_doc",
+      "source": "https://help.aliyun.com/zh/model-studio/qwen-image-api"
+    },
+    {
+      "id": "model_expiry",
+      "item": "模型下线/过期日期",
+      "value": null,
+      "status": "unknown",
+      "why": "两份官方页面（qwen-image-api 与 qwen-image-generation-and-editing-api-reference）都未给出该模型的下线或过期日期，也没有生命周期条款",
+      "how_to_obtain": "百炼控制台的模型列表 / 模型下线公告页",
+      "consequence": "按 release_policy.unknown_is_unsupported，本项目不得把「该模型长期可用」当作已证明的假设；doctor 会把它列为未解项"
+    }
+  ],
+  "not_supported_by_design": [
+    {
+      "item": "OpenAI 兼容模式下的异步调用、流式输出、partial image、/images/edits、multipart、mask",
+      "why": "官方文档明确这些在 OpenAI 兼容模式暂不支持",
+      "status": "official_doc"
+    }
+  ]
+}

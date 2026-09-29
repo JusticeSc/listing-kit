@@ -1,0 +1,97 @@
+{
+  "schema": "demo-negative-expectations/1",
+  "declared_before_run": true,
+  "declared_at": "2026-09-25T23:05:00+08:00",
+  "how_to_read": [
+    "本文件在跑之前写下：每一例「改动是什么」由 mutate_negative.py 决定，这里只写「谁应该把它拦下、用哪条判据」。",
+    "must_be 是必须成立的结论，不写我没有依据的档位：not_pass=不得判通过；not_hard_fail=不得硬失败；pass=必须判通过。",
+    "must_flag_any_of 列表里至少一条必须落到非通过；它是「命中预期谓词」的可核对形式。",
+    "hypothesis 只记我的预期档位，不作为判据 —— 猜错档位是写预期的人错了，不是门禁坏了。",
+    "human_required=true 表示这一例按设计就该由人拦下：机器若假装判了，反而是问题。"
+  ],
+  "cases": [
+    {
+      "case_id": "neg-01-recolor-upper",
+      "mutation_class": "改色",
+      "must_be": "not_pass",
+      "must_flag_any_of": ["rib_count", "bottom_ring_present", "body_upper_share", "body_lower_share"],
+      "hypothesis": "hard_fail",
+      "human_required": false,
+      "rationale": "卡里没有「第三种主色」的专门谓词。变的是颜色，但打断的是按颜色分的上段/下段带 —— 所以预期它经由 F3/F6 的几何判据被拦下，而不是被某条颜色判据拦下。这一例要证明的是「改色会被拦」，不是「颜色谓词存在」。"
+    },
+    {
+      "case_id": "neg-02-add-text",
+      "mutation_class": "加字",
+      "must_be": "not_hard_fail",
+      "must_flag_any_of": [],
+      "hypothesis": "pass 或 manual",
+      "human_required": true,
+      "rationale": "F8「外表无文字、数字、Logo、水印」在事实卡里是 human 档，机器代理 text_proxy_blobs 明确不参与判定。所以这一例**预期机器抓不到**，必须由人拦下，并且报告里必须出现 F8 是人工事实。如果机器把它判成硬失败，说明代码在拿代理当判据 —— 那才是缺陷。"
+    },
+    {
+      "case_id": "neg-03-add-handle",
+      "mutation_class": "改结构",
+      "must_be": "not_pass",
+      "must_flag_any_of": ["body_protrusion"],
+      "hypothesis": "hard_fail",
+      "human_required": false,
+      "rationale": "F7 的 body_protrusion 就是为「主体上多出一块」设的：把手让某几行的宽度比中位宽多出约 20%，超过人工档上限 0.12。"
+    },
+    {
+      "case_id": "neg-04-lidless",
+      "mutation_class": "改结构",
+      "must_be": "not_pass",
+      "must_flag_any_of": ["trim_span_count"],
+      "hypothesis": "hard_fail",
+      "human_required": false,
+      "rationale": "F5 卡片写明「≥2 段或缺失属硬失败」。抹掉杯盖与橙环后 trim_span_count=0，必须命中这一条；同时 F4 的 lid_share 预期变成 Unknown（没有橙环就定位不到盖下沿）。"
+    },
+    {
+      "case_id": "neg-05-extra-ribs",
+      "mutation_class": "改数量",
+      "must_be": "not_pass",
+      "must_flag_any_of": ["rib_count"],
+      "hypothesis": "hard_fail",
+      "human_required": false,
+      "rationale": "设计筋条数写死为 3，人工档 2–4。另加两道凸脊后应是 5 条，超出人工档。"
+    },
+    {
+      "case_id": "neg-06-second-cup",
+      "mutation_class": "改数量",
+      "must_be": "not_pass",
+      "must_flag_any_of": ["extra_area_share"],
+      "hypothesis": "hard_fail",
+      "human_required": false,
+      "rationale": "F7 的 extra_area_share 是「最大连通域之外的像素占比」。复制一个杯体后，第二个杯体整个落在最大连通域之外，占比远高于 0.01。"
+    },
+    {
+      "case_id": "neg-07-flat-lid",
+      "mutation_class": "改结构",
+      "must_be": "pass",
+      "must_flag_any_of": [],
+      "hypothesis": "pass",
+      "human_required": true,
+      "rationale": "**这是预期内的漏报，故意做进来。** F4 的机器判据只有 lid_share（盖占高度），事实卡的 machine_check_gaps 已经登记「阶梯级数与盖顶开口不在机器判定内」。把盖顶抹平不改变盖高，所以预期机器仍判 pass —— 若机器反而拦下了，说明有别的谓词被意外触发，要查。这一例证明的是边界，不是能力。"
+    }
+  ],
+  "controls": [
+    {
+      "case_id": "control-A",
+      "file": "evals/product-demo/fixture-design/A/raw.png",
+      "must_be": "not_hard_fail",
+      "rationale": "未变异对照。A 被判 manual 是预期的真报（实测 4 条筋，与设计 3 条不符），不是误报。"
+    },
+    {
+      "case_id": "control-B",
+      "file": "evals/product-demo/fixture-design/B/raw.png",
+      "must_be": "not_hard_fail",
+      "rationale": "未变异对照。B 机器整体 pass；它在 D0.1 是因人工看出「顶面暗凹像开口」才被排除 —— 那属于机器不覆盖的范围。"
+    },
+    {
+      "case_id": "control-C",
+      "file": "evals/product-demo/fixture-design/C/raw.png",
+      "must_be": "not_hard_fail",
+      "rationale": "未变异对照，也是全部负样本的母本。它必须仍是 pass，否则负样本的「变化」无法归因。"
+    }
+  ]
+}

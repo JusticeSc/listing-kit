@@ -1,0 +1,42 @@
+{
+  "case_id": "neg-02-add-text",
+  "mutation_class": "加字",
+  "description": "在杯身上绘制两行白字（容量字样与伪品牌字），不改轮廓与配色",
+  "source": "evals/product-demo/fixture-design/C/raw.png",
+  "source_sha256": "e1b1c5de1ee6b50a69fb8e431f1140d8c21a689f4fe3316461c02745139d03f6",
+  "output": "negative-cases/neg-02-add-text/raw.png",
+  "output_sha256": "b18a28e7cb15e145a46ba956e0b214b720070c5d4e1184aa3c95779c78ffaebc",
+  "output_bytes": 1159782,
+  "image_size": [
+    1344,
+    1344
+  ],
+  "changed_pixels": 3016,
+  "params": {
+    "strings": [
+      {
+        "text": "750ML",
+        "xy": [
+          609,
+          431
+        ]
+      },
+      {
+        "text": "ACME",
+        "xy": [
+          611,
+          564
+        ]
+      }
+    ],
+    "font": "C:/Windows/Fonts/arial.ttf",
+    "font_size": 40,
+    "fill_rgb": [
+      250,
+      250,
+      250
+    ]
+  },
+  "generated_at": "2026-09-25T23:17:43+08:00",
+  "model_calls": 0
+}

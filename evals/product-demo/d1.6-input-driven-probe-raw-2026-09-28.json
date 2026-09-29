@@ -1,0 +1,623 @@
+[
+  {
+    "key": "sweater",
+    "product_name": "粗棒针织开衫毛衣",
+    "reference_image": {
+      "path": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\ecommerce-skills-main\\docs\\batch-image\\sku-a-sweater.jpg",
+      "sha256": "5c5e0fdde80847dc140af37778678f3e9b3fb7962bba70360e62630501a85629",
+      "bytes": 133949
+    },
+    "semantic_provider": {
+      "brief": null,
+      "plan": {
+        "provider_id": "dashscope-qwen-semantic",
+        "model_id": "qwen3.7-plus",
+        "request_id": "e75c2403-d0ab-9b44-b3a7-d6b23dddd460",
+        "schema_mode": "json_schema"
+      },
+      "prompts": [
+        {
+          "shot_id": "shot_898c696b93774396",
+          "semantic_provider": {
+            "provider_id": "dashscope-qwen-semantic",
+            "model_id": "qwen3.7-plus",
+            "request_id": "4b7f13fd-b6f6-9791-8f78-aca209833ba2",
+            "schema_mode": "json_schema"
+          }
+        },
+        {
+          "shot_id": "shot_cdf45170b25a4c53",
+          "semantic_provider": {
+            "provider_id": "dashscope-qwen-semantic",
+            "model_id": "qwen3.7-plus",
+            "request_id": "62a80f9e-cae4-9bbe-bd27-f70196357e31",
+            "schema_mode": "json_schema"
+          }
+        },
+        {
+          "shot_id": "shot_1fc0fa0c65ac41e0",
+          "semantic_provider": {
+            "provider_id": "dashscope-qwen-semantic",
+            "model_id": "qwen3.7-plus",
+            "request_id": "10a4c5d9-c1dd-9f4f-a925-138ed556070c",
+            "schema_mode": "json_schema"
+          }
+        },
+        {
+          "shot_id": "shot_d04bd4cd52014478",
+          "semantic_provider": {
+            "provider_id": "dashscope-qwen-semantic",
+            "model_id": "qwen3.7-plus",
+            "request_id": "09016688-babb-941d-ae78-4e78e650f48e",
+            "schema_mode": "json_schema"
+          }
+        }
+      ]
+    },
+    "brief": {
+      "category": {
+        "confidence": 1,
+        "label": "针织毛衣",
+        "source": "model_inference"
+      },
+      "content_hash": "9765100eae23fac510c08c09e629819fa566957874ea6f8d0fccc99eead1667c",
+      "created_at": "2026-09-28T13:18:15Z",
+      "facts": [
+        {
+          "confidence": 1.0,
+          "key": "product_name",
+          "source": "user_input",
+          "source_refs": [
+            "product_input:input_44c539786a2d4c84@v1"
+          ],
+          "state": "confirmed",
+          "value": "粗棒针织开衫毛衣"
+        },
+        {
+          "confidence": 1.0,
+          "key": "selling_point_1",
+          "source": "user_input",
+          "source_refs": [
+            "product_input:input_44c539786a2d4c84@v1"
+          ],
+          "state": "confirmed",
+          "value": "粗棒针立体纹理"
+        },
+        {
+          "confidence": 1.0,
+          "key": "selling_point_2",
+          "source": "user_input",
+          "source_refs": [
+            "product_input:input_44c539786a2d4c84@v1"
+          ],
+          "state": "confirmed",
+          "value": "宽松落肩版型"
+        },
+        {
+          "confidence": 0.5,
+          "key": "款式",
+          "source": "model_inference",
+          "source_refs": [
+            "semantic:dashscope-qwen-semantic:qwen3.7-plus:request:28a78b1e-02cd-9cfd-bda7-4395a13a3503"
+          ],
+          "state": "conflicted",
+          "value": "文字描述为V领单排扣开衫，图片显示为圆领套头衫"
+        },
+        {
+          "confidence": 1,
+          "key": "纹理",
+          "source": "model_inference",
+          "source_refs": [
+            "semantic:dashscope-qwen-semantic:qwen3.7-plus:request:28a78b1e-02cd-9cfd-bda7-4395a13a3503"
+          ],
+          "state": "inferred",
+          "value": "粗棒针立体纹理"
+        },
+        {
+          "confidence": 1,
+          "key": "版型",
+          "source": "model_inference",
+          "source_refs": [
+            "semantic:dashscope-qwen-semantic:qwen3.7-plus:request:28a78b1e-02cd-9cfd-bda7-4395a13a3503"
+          ],
+          "state": "inferred",
+          "value": "宽松落肩"
+        },
+        {
+          "confidence": 0.9,
+          "key": "颜色",
+          "source": "reference_image",
+          "source_refs": [
+            "semantic:dashscope-qwen-semantic:qwen3.7-plus:request:28a78b1e-02cd-9cfd-bda7-4395a13a3503",
+            "reference_image:5c5e0fdde80847dc140af37778678f3e9b3fb7962bba70360e62630501a85629"
+          ],
+          "state": "inferred",
+          "value": "深绿色"
+        },
+        {
+          "confidence": 1,
+          "key": "适用季节",
+          "source": "model_inference",
+          "source_refs": [
+            "semantic:dashscope-qwen-semantic:qwen3.7-plus:request:28a78b1e-02cd-9cfd-bda7-4395a13a3503"
+          ],
+          "state": "inferred",
+          "value": "春秋"
+        }
+      ],
+      "id": "brief_e0f9a8bbd58b4e63",
+      "may_change": [
+        "领型设计",
+        "开衫或套头款式",
+        "颜色"
+      ],
+      "must_preserve": [
+        "粗棒针立体纹理",
+        "宽松落肩版型",
+        "针织纹理与自然垂感"
+      ],
+      "schema": "amz-listing-kit/product-brief@1",
+      "source_input": {
+        "id": "input_44c539786a2d4c84",
+        "kind": "product_input",
+        "version": 1
+      },
+      "unknowns": [
+        "材质成分",
+        "具体尺寸",
+        "洗涤说明"
+      ],
+      "version": 1,
+      "workspace_id": "ws_0bbf0d8492bf4a86"
+    },
+    "compile_warnings": [],
+    "shots": [
+      {
+        "id": "shot_898c696b93774396",
+        "title": "主图：粗棒针织开衫毛衣",
+        "archetype_id": "hero",
+        "purpose": "Show the actual sellable product as the primary listing image.",
+        "required": true,
+        "preserve": [
+          "粗棒针立体纹理",
+          "宽松落肩版型",
+          "针织纹理与自然垂感"
+        ],
+        "change": [
+          "背景设为纯白",
+          "去除任何文字或水印",
+          "调整产品占比至85%以上"
+        ],
+        "prompt_version": 1,
+        "prompt_full_text": "Use the supplied reference image(s) as the sole authority for the product's visual identity. Preserve the exact visible silhouette, proportions, colors, markings, closure, surface appearance, and existing parts. Do not add, remove, duplicate, recolor, or redesign product features. Preserve these user-facing boundaries: 粗棒针立体纹理; 宽松落肩版型; 针织纹理与自然垂感. If any product statement is added to the image, use only these user-confirmed statements, verbatim: 粗棒针织开衫毛衣. Do not imply additional specifications or benefits.\n\ndirection: Clean, modern, and elegant, emphasizing the natural drape and 3D knit texture without looking bulky.; palette: #FFFFFF, #2E4A3D, #F5F5F5, #E0E0E0; lighting: Soft, diffused natural lighting to highlight the 3D texture and natural drape without harsh shadows.; background: Pure white for hero; soft, neutral, and minimalist for lifestyle and feature shots.; continuity: Maintain consistent soft lighting across all shots to emphasize the knit texture.; Ensure the deep green color remains consistent and true to life.; Keep the styling elegant to avoid a bulky appearance.\nClean, modern, and elegant direction emphasizing natural drape and 3D knit texture. Soft, diffused natural lighting to highlight texture without harsh shadows. Pure white background for hero shot. Palette: #FFFFFF, #2E4A3D, #F5F5F5, #E0E0E0. Maintain consistent soft lighting, ensure deep green color consistency, and keep styling elegant to avoid bulky appearance.\n\n主图：粗棒针织开衫毛衣。Show the actual sellable product as the primary listing image. 呈现毛衣的针织纹理与自然垂感，避免厚重臃肿效果。Frontal medium shot, soft diffused lighting to emphasize the 3D knit texture and natural drape.\n\nCreate a clear, compliant product-listing image for amazon.com. Main image: use a pure white RGB(255, 255, 255) background; aim for product occupancy of at least 85%; do not add text overlays or watermarks.\n\nDo not alter or lose the chunky knit 3D texture, relaxed drop-shoulder fit, or natural drape. No non-pure-white backgrounds, no text or watermarks, and product occupancy must not be less than 85%.",
+        "product_fidelity_block": "Use the supplied reference image(s) as the sole authority for the product's visual identity. Preserve the exact visible silhouette, proportions, colors, markings, closure, surface appearance, and existing parts. Do not add, remove, duplicate, recolor, or redesign product features. Preserve these user-facing boundaries: 粗棒针立体纹理; 宽松落肩版型; 针织纹理与自然垂感. If any product statement is added to the image, use only these user-confirmed statements, verbatim: 粗棒针织开衫毛衣. Do not imply additional specifications or benefits.",
+        "source_refs": [
+          "product_input.reference_asset_sha256",
+          "shot_spec.preserve",
+          "product_brief.fact:product_name",
+          "plan.style_lock",
+          "shot_spec.title",
+          "shot_spec.purpose",
+          "product_input.user_intent",
+          "platform_profile:amazon-us@1",
+          "shot_spec.preserve",
+          "shot_spec.change"
+        ]
+      },
+      {
+        "id": "shot_cdf45170b25a4c53",
+        "title": "卖点图：粗棒针立体纹理",
+        "archetype_id": "feature",
+        "purpose": "Explain a user-relevant feature that is supported by confirmed product information.",
+        "required": false,
+        "preserve": [
+          "粗棒针立体纹理",
+          "针织纹理与自然垂感"
+        ],
+        "change": [
+          "局部放大展示纹理细节",
+          "添加简洁的排版说明"
+        ],
+        "prompt_version": 1,
+        "prompt_full_text": "Use the supplied reference image(s) as the sole authority for the product's visual identity. Preserve the exact visible silhouette, proportions, colors, markings, closure, surface appearance, and existing parts. Do not add, remove, duplicate, recolor, or redesign product features. Preserve these user-facing boundaries: 粗棒针立体纹理; 针织纹理与自然垂感. If any product statement is added to the image, use only these user-confirmed statements, verbatim: 粗棒针立体纹理. Do not imply additional specifications or benefits.\n\ndirection: Clean, modern, and elegant, emphasizing the natural drape and 3D knit texture without looking bulky.; palette: #FFFFFF, #2E4A3D, #F5F5F5, #E0E0E0; lighting: Soft, diffused natural lighting to highlight the 3D texture and natural drape without harsh shadows.; background: Pure white for hero; soft, neutral, and minimalist for lifestyle and feature shots.; continuity: Maintain consistent soft lighting across all shots to emphasize the knit texture.; Ensure the deep green color remains consistent and true to life.; Keep the styling elegant to avoid a bulky appearance.\nClean, modern, and elegant direction. Soft, diffused natural lighting to highlight the 3D texture and natural drape without harsh shadows. Soft, neutral, and minimalist background. Maintain consistent soft lighting, ensure deep green color remains consistent and true to life, and keep styling elegant to avoid a bulky appearance.\n\n卖点图：粗棒针立体纹理。Explain a user-relevant feature that is supported by confirmed product information. 局部放大展示纹理细节，呈现针织纹理与自然垂感。\n\nCreate a clear, compliant product-listing image for amazon.com.\n\nDo not compromise the preserved 粗棒针立体纹理 and 针织纹理与自然垂感. Do not alter the required changes of 局部放大展示纹理细节 and 添加简洁的排版说明.",
+        "product_fidelity_block": "Use the supplied reference image(s) as the sole authority for the product's visual identity. Preserve the exact visible silhouette, proportions, colors, markings, closure, surface appearance, and existing parts. Do not add, remove, duplicate, recolor, or redesign product features. Preserve these user-facing boundaries: 粗棒针立体纹理; 针织纹理与自然垂感. If any product statement is added to the image, use only these user-confirmed statements, verbatim: 粗棒针立体纹理. Do not imply additional specifications or benefits.",
+        "source_refs": [
+          "product_input.reference_asset_sha256",
+          "shot_spec.preserve",
+          "product_brief.fact:selling_point_1",
+          "plan.style_lock",
+          "shot_spec.title",
+          "shot_spec.purpose",
+          "product_input.user_intent",
+          "product_brief.fact:selling_point_1",
+          "platform_profile:amazon-us@1",
+          "shot_spec.preserve",
+          "shot_spec.change"
+        ]
+      },
+      {
+        "id": "shot_1fc0fa0c65ac41e0",
+        "title": "卖点图：宽松落肩版型",
+        "archetype_id": "feature",
+        "purpose": "Explain a user-relevant feature that is supported by confirmed product information.",
+        "required": false,
+        "preserve": [
+          "宽松落肩版型",
+          "针织纹理与自然垂感"
+        ],
+        "change": [
+          "展示肩部线条和整体垂坠感",
+          "避免厚重臃肿的视觉效果"
+        ],
+        "prompt_version": 1,
+        "prompt_full_text": "Use the supplied reference image(s) as the sole authority for the product's visual identity. Preserve the exact visible silhouette, proportions, colors, markings, closure, surface appearance, and existing parts. Do not add, remove, duplicate, recolor, or redesign product features. Preserve these user-facing boundaries: 宽松落肩版型; 针织纹理与自然垂感. If any product statement is added to the image, use only these user-confirmed statements, verbatim: 宽松落肩版型. Do not imply additional specifications or benefits.\n\ndirection: Clean, modern, and elegant, emphasizing the natural drape and 3D knit texture without looking bulky.; palette: #FFFFFF, #2E4A3D, #F5F5F5, #E0E0E0; lighting: Soft, diffused natural lighting to highlight the 3D texture and natural drape without harsh shadows.; background: Pure white for hero; soft, neutral, and minimalist for lifestyle and feature shots.; continuity: Maintain consistent soft lighting across all shots to emphasize the knit texture.; Ensure the deep green color remains consistent and true to life.; Keep the styling elegant to avoid a bulky appearance.\nClean, modern, and elegant direction. Soft, diffused natural lighting to highlight the 3D texture and natural drape without harsh shadows. Soft, neutral, and minimalist background for feature shots. Palette includes #FFFFFF, #2E4A3D, #F5F5F5, #E0E0E0. Maintain consistent soft lighting, ensure deep green color remains consistent, keep styling elegant.\n\nFeature shot titled '卖点图：宽松落肩版型'. Purpose: Explain a user-relevant feature that is supported by confirmed product information. Visual direction: Medium shot focusing on the shoulder and upper body to show the drape and knit texture. Soft lighting to emphasize the 3D texture.\n\nCreate a clear, compliant product-listing image for amazon.com.\n\nPreserve: 宽松落肩版型, 针织纹理与自然垂感. Change: 展示肩部线条和整体垂坠感, 避免厚重臃肿的视觉效果. Visual negative: Do not alter the relaxed drop-shoulder silhouette. Do not obscure the knit texture or natural drape. Do not create a heavy or bulky visual effect. Do not hide the shoulder lines or overall drape.",
+        "product_fidelity_block": "Use the supplied reference image(s) as the sole authority for the product's visual identity. Preserve the exact visible silhouette, proportions, colors, markings, closure, surface appearance, and existing parts. Do not add, remove, duplicate, recolor, or redesign product features. Preserve these user-facing boundaries: 宽松落肩版型; 针织纹理与自然垂感. If any product statement is added to the image, use only these user-confirmed statements, verbatim: 宽松落肩版型. Do not imply additional specifications or benefits.",
+        "source_refs": [
+          "product_input.reference_asset_sha256",
+          "shot_spec.preserve",
+          "product_brief.fact:selling_point_2",
+          "plan.style_lock",
+          "shot_spec.title",
+          "shot_spec.purpose",
+          "platform_profile:amazon-us@1",
+          "shot_spec.preserve",
+          "shot_spec.change"
+        ]
+      },
+      {
+        "id": "shot_d04bd4cd52014478",
+        "title": "场景图：自然垂感与穿着效果",
+        "archetype_id": "lifestyle",
+        "purpose": "Place the product in a use context that helps the buyer understand its role.",
+        "required": false,
+        "preserve": [
+          "针织纹理与自然垂感",
+          "宽松落肩版型"
+        ],
+        "change": [
+          "模特穿着展示自然垂坠感",
+          "背景为简约春秋季节场景"
+        ],
+        "prompt_version": 1,
+        "prompt_full_text": "Use the supplied reference image(s) as the sole authority for the product's visual identity. Preserve the exact visible silhouette, proportions, colors, markings, closure, surface appearance, and existing parts. Do not add, remove, duplicate, recolor, or redesign product features. Preserve these user-facing boundaries: 针织纹理与自然垂感; 宽松落肩版型. Do not add product claims, specifications, badges, or on-image text.\n\ndirection: Clean, modern, and elegant, emphasizing the natural drape and 3D knit texture without looking bulky.; palette: #FFFFFF, #2E4A3D, #F5F5F5, #E0E0E0; lighting: Soft, diffused natural lighting to highlight the 3D texture and natural drape without harsh shadows.; background: Pure white for hero; soft, neutral, and minimalist for lifestyle and feature shots.; continuity: Maintain consistent soft lighting across all shots to emphasize the knit texture.; Ensure the deep green color remains consistent and true to life.; Keep the styling elegant to avoid a bulky appearance.\nClean, modern, and elegant direction emphasizing natural drape and 3D knit texture. Soft, diffused natural lighting to highlight texture without harsh shadows. Soft, neutral, and minimalist background for lifestyle shots. Maintain consistent soft lighting and elegant styling to avoid a bulky appearance.\n\nScene: Natural drape and wearing effect. Purpose: Place the product in a use context that helps the buyer understand its role. Composition: Medium shot of a model wearing the garment to showcase the relaxed drop-shoulder fit and natural drape. Camera distance: Medium-close to capture the knit texture and fabric flow. Background: Minimalist soft neutral setting suggesting a spring or autumn context.\n\nCreate a clear, compliant product-listing image for amazon.com.\n\nPreserve: Do not alter or compromise the knit texture and natural drape. Do not change the relaxed drop-shoulder silhouette. Change: Do not make the garment look bulky or heavy. Avoid harsh lighting that creates deep shadows. Do not add, remove, or modify any garment components.",
+        "product_fidelity_block": "Use the supplied reference image(s) as the sole authority for the product's visual identity. Preserve the exact visible silhouette, proportions, colors, markings, closure, surface appearance, and existing parts. Do not add, remove, duplicate, recolor, or redesign product features. Preserve these user-facing boundaries: 针织纹理与自然垂感; 宽松落肩版型. Do not add product claims, specifications, badges, or on-image text.",
+        "source_refs": [
+          "product_input.reference_asset_sha256",
+          "shot_spec.preserve",
+          "plan.style_lock",
+          "shot_spec.title",
+          "shot_spec.purpose",
+          "platform_profile:amazon-us@1",
+          "shot_spec.preserve",
+          "shot_spec.change"
+        ]
+      }
+    ]
+  },
+  {
+    "key": "watch",
+    "product_name": "简约石英腕表",
+    "reference_image": {
+      "path": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\ecommerce-skills-main\\docs\\fission-pattern\\product-watch.jpg",
+      "sha256": "17fa2d6847fafd12eaa63897888f7e9a4dbb4e52446e889a2cca7375acc74cc5",
+      "bytes": 96586
+    },
+    "semantic_provider": {
+      "brief": null,
+      "plan": {
+        "provider_id": "dashscope-qwen-semantic",
+        "model_id": "qwen3.7-plus",
+        "request_id": "6cd55b8a-22c3-95ee-872d-326b8df93e0a",
+        "schema_mode": "json_schema"
+      },
+      "prompts": [
+        {
+          "shot_id": "shot_60563ea932fc44d5",
+          "semantic_provider": {
+            "provider_id": "dashscope-qwen-semantic",
+            "model_id": "qwen3.7-plus",
+            "request_id": "ee9226f3-aace-934d-9e3c-d6ddc2cd08ea",
+            "schema_mode": "json_schema"
+          }
+        },
+        {
+          "shot_id": "shot_56bb2c43fa85411d",
+          "semantic_provider": {
+            "provider_id": "dashscope-qwen-semantic",
+            "model_id": "qwen3.7-plus",
+            "request_id": "4d76ca4b-cf6e-9a97-8c48-ef0d8e6ae85f",
+            "schema_mode": "json_schema"
+          }
+        },
+        {
+          "shot_id": "shot_6c987d91ef614771",
+          "semantic_provider": {
+            "provider_id": "dashscope-qwen-semantic",
+            "model_id": "qwen3.7-plus",
+            "request_id": "9fc18cab-3e9a-9621-9254-cf35295a8da0",
+            "schema_mode": "json_schema"
+          }
+        },
+        {
+          "shot_id": "shot_0306dbb8c3de4621",
+          "semantic_provider": {
+            "provider_id": "dashscope-qwen-semantic",
+            "model_id": "qwen3.7-plus",
+            "request_id": "b01330ba-f157-9069-90a7-7b8675bbf526",
+            "schema_mode": "json_schema"
+          }
+        }
+      ]
+    },
+    "brief": {
+      "category": {
+        "confidence": 0.95,
+        "label": "石英腕表",
+        "source": "model_inference"
+      },
+      "content_hash": "7308bbe36b2eaf756811fef84b65ea4e41772fcabf2d4940389a1a9767b6380b",
+      "created_at": "2026-09-28T13:23:09Z",
+      "facts": [
+        {
+          "confidence": 1.0,
+          "key": "product_name",
+          "source": "user_input",
+          "source_refs": [
+            "product_input:input_9727adda3b6743a0@v1"
+          ],
+          "state": "confirmed",
+          "value": "简约石英腕表"
+        },
+        {
+          "confidence": 1.0,
+          "key": "selling_point_1",
+          "source": "user_input",
+          "source_refs": [
+            "product_input:input_9727adda3b6743a0@v1"
+          ],
+          "state": "confirmed",
+          "value": "矿物强化玻璃镜面"
+        },
+        {
+          "confidence": 1.0,
+          "key": "selling_point_2",
+          "source": "user_input",
+          "source_refs": [
+            "product_input:input_9727adda3b6743a0@v1"
+          ],
+          "state": "confirmed",
+          "value": "细表带轻佩戴"
+        },
+        {
+          "confidence": 1.0,
+          "key": "表盘形状",
+          "source": "model_inference",
+          "source_refs": [
+            "semantic:dashscope-qwen-semantic:qwen3.7-plus:request:05fcea6f-003a-96cf-bb98-141323d72ce6"
+          ],
+          "state": "inferred",
+          "value": "圆形"
+        },
+        {
+          "confidence": 1.0,
+          "key": "机芯类型",
+          "source": "model_inference",
+          "source_refs": [
+            "semantic:dashscope-qwen-semantic:qwen3.7-plus:request:05fcea6f-003a-96cf-bb98-141323d72ce6"
+          ],
+          "state": "inferred",
+          "value": "石英"
+        },
+        {
+          "confidence": 1.0,
+          "key": "表壳材质",
+          "source": "model_inference",
+          "source_refs": [
+            "semantic:dashscope-qwen-semantic:qwen3.7-plus:request:05fcea6f-003a-96cf-bb98-141323d72ce6"
+          ],
+          "state": "inferred",
+          "value": "不锈钢"
+        },
+        {
+          "confidence": 1.0,
+          "key": "镜面材质",
+          "source": "model_inference",
+          "source_refs": [
+            "semantic:dashscope-qwen-semantic:qwen3.7-plus:request:05fcea6f-003a-96cf-bb98-141323d72ce6"
+          ],
+          "state": "inferred",
+          "value": "矿物强化玻璃"
+        },
+        {
+          "confidence": 1.0,
+          "key": "表带特点",
+          "source": "model_inference",
+          "source_refs": [
+            "semantic:dashscope-qwen-semantic:qwen3.7-plus:request:05fcea6f-003a-96cf-bb98-141323d72ce6"
+          ],
+          "state": "inferred",
+          "value": "细表带"
+        },
+        {
+          "confidence": 1.0,
+          "key": "适用风格",
+          "source": "model_inference",
+          "source_refs": [
+            "semantic:dashscope-qwen-semantic:qwen3.7-plus:request:05fcea6f-003a-96cf-bb98-141323d72ce6"
+          ],
+          "state": "inferred",
+          "value": "日常通勤"
+        },
+        {
+          "confidence": 0.9,
+          "key": "表盘颜色",
+          "source": "reference_image",
+          "source_refs": [
+            "semantic:dashscope-qwen-semantic:qwen3.7-plus:request:05fcea6f-003a-96cf-bb98-141323d72ce6",
+            "reference_image:17fa2d6847fafd12eaa63897888f7e9a4dbb4e52446e889a2cca7375acc74cc5"
+          ],
+          "state": "inferred",
+          "value": "银色/白色"
+        },
+        {
+          "confidence": 0.95,
+          "key": "表带颜色",
+          "source": "reference_image",
+          "source_refs": [
+            "semantic:dashscope-qwen-semantic:qwen3.7-plus:request:05fcea6f-003a-96cf-bb98-141323d72ce6",
+            "reference_image:17fa2d6847fafd12eaa63897888f7e9a4dbb4e52446e889a2cca7375acc74cc5"
+          ],
+          "state": "inferred",
+          "value": "黑色"
+        }
+      ],
+      "id": "brief_26999b35a7ce4371",
+      "may_change": [
+        "表盘具体颜色描述"
+      ],
+      "must_preserve": [
+        "矿物强化玻璃镜面",
+        "细表带轻佩戴",
+        "日常通勤风格",
+        "避免运动或潜水场景"
+      ],
+      "schema": "amz-listing-kit/product-brief@1",
+      "source_input": {
+        "id": "input_9727adda3b6743a0",
+        "kind": "product_input",
+        "version": 1
+      },
+      "unknowns": [
+        "具体尺寸（表径、表带宽度）",
+        "防水深度",
+        "表带具体材质（真皮或人造革）"
+      ],
+      "version": 1,
+      "workspace_id": "ws_768054d9c4074404"
+    },
+    "compile_warnings": [],
+    "shots": [
+      {
+        "id": "shot_60563ea932fc44d5",
+        "title": "主图：简约石英腕表纯白背景展示",
+        "archetype_id": "hero",
+        "purpose": "Show the actual sellable product as the primary listing image.",
+        "required": true,
+        "preserve": [
+          "矿物强化玻璃镜面",
+          "细表带轻佩戴",
+          "日常通勤风格"
+        ],
+        "change": [
+          "背景设为纯白",
+          "去除所有文字和水印",
+          "产品占比大于85%"
+        ],
+        "prompt_version": 1,
+        "prompt_full_text": "Use the supplied reference image(s) as the sole authority for the product's visual identity. Preserve the exact visible silhouette, proportions, colors, markings, closure, surface appearance, and existing parts. Do not add, remove, duplicate, recolor, or redesign product features. Preserve these user-facing boundaries: 矿物强化玻璃镜面; 细表带轻佩戴; 日常通勤风格. If any product statement is added to the image, use only these user-confirmed statements, verbatim: 简约石英腕表. Do not imply additional specifications or benefits.\n\ndirection: Minimalist, elegant, and professional daily commute style.; palette: #FFFFFF, #000000, #C0C0C0, #808080; lighting: Soft, diffused studio lighting to highlight the metallic and glass textures without harsh shadows.; background: Pure white for main image; clean, elegant office or commute environment for lifestyle shots.; continuity: Maintain consistent lighting and color grading across all images.; Ensure the watch face and strap colors match the reference exactly.; Avoid any sports, outdoor, or diving contexts as per user intent.\nMinimalist, elegant, and professional daily commute style. Pure white background for the main image. Soft, diffused studio lighting to highlight the metallic and glass textures without harsh shadows. Color palette restricted to white, black, silver, and gray.\n\nMain image showing the actual sellable product as the primary listing image. The product must occupy more than 85% of the frame against a pure white background. Close-up shot focusing on the dial texture and the visual lightness of the strap.\n\nCreate a clear, compliant product-listing image for amazon.com. Main image: use a pure white RGB(255, 255, 255) background; aim for product occupancy of at least 85%; do not add text overlays or watermarks.\n\nDo not include any text or watermarks. Do not alter the mineral reinforced glass crystal, the thin strap, or the daily commute style. Do not depict sports, outdoor, or diving contexts.",
+        "product_fidelity_block": "Use the supplied reference image(s) as the sole authority for the product's visual identity. Preserve the exact visible silhouette, proportions, colors, markings, closure, surface appearance, and existing parts. Do not add, remove, duplicate, recolor, or redesign product features. Preserve these user-facing boundaries: 矿物强化玻璃镜面; 细表带轻佩戴; 日常通勤风格. If any product statement is added to the image, use only these user-confirmed statements, verbatim: 简约石英腕表. Do not imply additional specifications or benefits.",
+        "source_refs": [
+          "product_input.reference_asset_sha256",
+          "shot_spec.preserve",
+          "product_brief.fact:product_name",
+          "plan.style_lock",
+          "shot_spec.title",
+          "shot_spec.purpose",
+          "platform_profile:amazon-us@1",
+          "shot_spec.change",
+          "shot_spec.preserve"
+        ]
+      },
+      {
+        "id": "shot_56bb2c43fa85411d",
+        "title": "卖点图：矿物强化玻璃镜面展示",
+        "archetype_id": "feature",
+        "purpose": "Explain a user-relevant feature that is supported by confirmed product information.",
+        "required": false,
+        "preserve": [
+          "矿物强化玻璃镜面"
+        ],
+        "change": [
+          "添加镜面反光或质感特写",
+          "添加说明文字指出矿物强化玻璃"
+        ],
+        "prompt_version": 1,
+        "prompt_full_text": "Use the supplied reference image(s) as the sole authority for the product's visual identity. Preserve the exact visible silhouette, proportions, colors, markings, closure, surface appearance, and existing parts. Do not add, remove, duplicate, recolor, or redesign product features. Preserve these user-facing boundaries: 矿物强化玻璃镜面. If any product statement is added to the image, use only these user-confirmed statements, verbatim: 矿物强化玻璃镜面. Do not imply additional specifications or benefits.\n\ndirection: Minimalist, elegant, and professional daily commute style.; palette: #FFFFFF, #000000, #C0C0C0, #808080; lighting: Soft, diffused studio lighting to highlight the metallic and glass textures without harsh shadows.; background: Pure white for main image; clean, elegant office or commute environment for lifestyle shots.; continuity: Maintain consistent lighting and color grading across all images.; Ensure the watch face and strap colors match the reference exactly.; Avoid any sports, outdoor, or diving contexts as per user intent.\nMinimalist, elegant, and professional daily commute style. Soft, diffused studio lighting to highlight metallic and glass textures without harsh shadows. Pure white background. Maintain consistent lighting and color grading, ensuring watch face and strap colors match the reference exactly.\n\n卖点图：矿物强化玻璃镜面展示。Explain a user-relevant feature that is supported by confirmed product information. 采用微距特写镜头，聚焦表盘镜面区域，通过光影对比展现玻璃材质的通透感与光泽，突出表盘质感。\n\nCreate a clear, compliant product-listing image for amazon.com.\n\nPreserve: 矿物强化玻璃镜面。Change: 添加镜面反光或质感特写。禁止改变或补造商品部件，禁止添加运动、户外或潜水场景元素，避免破坏轻薄佩戴感的视觉呈现。",
+        "product_fidelity_block": "Use the supplied reference image(s) as the sole authority for the product's visual identity. Preserve the exact visible silhouette, proportions, colors, markings, closure, surface appearance, and existing parts. Do not add, remove, duplicate, recolor, or redesign product features. Preserve these user-facing boundaries: 矿物强化玻璃镜面. If any product statement is added to the image, use only these user-confirmed statements, verbatim: 矿物强化玻璃镜面. Do not imply additional specifications or benefits.",
+        "source_refs": [
+          "product_input.reference_asset_sha256",
+          "shot_spec.preserve",
+          "product_brief.fact:selling_point_1",
+          "plan.style_lock",
+          "shot_spec.title",
+          "shot_spec.purpose",
+          "platform_profile:amazon-us@1",
+          "shot_spec.preserve",
+          "shot_spec.change"
+        ]
+      },
+      {
+        "id": "shot_6c987d91ef614771",
+        "title": "场景图：日常通勤轻薄佩戴展示",
+        "archetype_id": "lifestyle",
+        "purpose": "Place the product in a use context that helps the buyer understand its role.",
+        "required": false,
+        "preserve": [
+          "细表带轻佩戴",
+          "日常通勤风格",
+          "避免运动或潜水场景"
+        ],
+        "change": [
+          "模特穿着通勤服装",
+          "展示手腕佩戴效果",
+          "突出细表带的轻盈感"
+        ],
+        "prompt_version": 1,
+        "prompt_full_text": "Use the supplied reference image(s) as the sole authority for the product's visual identity. Preserve the exact visible silhouette, proportions, colors, markings, closure, surface appearance, and existing parts. Do not add, remove, duplicate, recolor, or redesign product features. Preserve these user-facing boundaries: 细表带轻佩戴; 日常通勤风格; 避免运动或潜水场景. If any product statement is added to the image, use only these user-confirmed statements, verbatim: 细表带轻佩戴. Do not imply additional specifications or benefits.\n\ndirection: Minimalist, elegant, and professional daily commute style.; palette: #FFFFFF, #000000, #C0C0C0, #808080; lighting: Soft, diffused studio lighting to highlight the metallic and glass textures without harsh shadows.; background: Pure white for main image; clean, elegant office or commute environment for lifestyle shots.; continuity: Maintain consistent lighting and color grading across all images.; Ensure the watch face and strap colors match the reference exactly.; Avoid any sports, outdoor, or diving contexts as per user intent.\nMinimalist, elegant, and professional daily commute style. Soft, diffused studio lighting to highlight metallic and glass textures without harsh shadows. Clean, elegant office or commute environment background. Color palette restricted to #FFFFFF, #000000, #C0C0C0, #808080.\n\n场景图：日常通勤轻薄佩戴展示。Place the product in a use context that helps the buyer understand its role. Visual task: Medium close-up shot of the wrist wearing the product, model in commute attire, focusing on the delicate strap and dial texture to convey a lightweight wearing experience.\n\nCreate a clear, compliant product-listing image for amazon.com.\n\nDo not include sports, outdoor, or diving contexts. Do not deviate from the daily commute style. Do not alter the visual presentation of the lightweight delicate strap. Do not add or modify any product components.",
+        "product_fidelity_block": "Use the supplied reference image(s) as the sole authority for the product's visual identity. Preserve the exact visible silhouette, proportions, colors, markings, closure, surface appearance, and existing parts. Do not add, remove, duplicate, recolor, or redesign product features. Preserve these user-facing boundaries: 细表带轻佩戴; 日常通勤风格; 避免运动或潜水场景. If any product statement is added to the image, use only these user-confirmed statements, verbatim: 细表带轻佩戴. Do not imply additional specifications or benefits.",
+        "source_refs": [
+          "product_input.reference_asset_sha256",
+          "shot_spec.preserve",
+          "product_brief.fact:selling_point_2",
+          "plan.style_lock",
+          "shot_spec.title",
+          "shot_spec.purpose",
+          "product_input.user_intent",
+          "product_brief.fact:selling_point_2",
+          "platform_profile:amazon-us@1",
+          "shot_spec.preserve",
+          "shot_spec.change"
+        ]
+      },
+      {
+        "id": "shot_0306dbb8c3de4621",
+        "title": "细节图：表盘与表带材质细节",
+        "archetype_id": "detail",
+        "purpose": "Show a useful close-up or construction detail visible in the supplied references.",
+        "required": false,
+        "preserve": [
+          "矿物强化玻璃镜面",
+          "细表带轻佩戴"
+        ],
+        "change": [
+          "微距拍摄表盘纹理和表带细节",
+          "展示不锈钢表壳质感"
+        ],
+        "prompt_version": 1,
+        "prompt_full_text": "Use the supplied reference image(s) as the sole authority for the product's visual identity. Preserve the exact visible silhouette, proportions, colors, markings, closure, surface appearance, and existing parts. Do not add, remove, duplicate, recolor, or redesign product features. Preserve these user-facing boundaries: 矿物强化玻璃镜面; 细表带轻佩戴. Do not add product claims, specifications, badges, or on-image text.\n\ndirection: Minimalist, elegant, and professional daily commute style.; palette: #FFFFFF, #000000, #C0C0C0, #808080; lighting: Soft, diffused studio lighting to highlight the metallic and glass textures without harsh shadows.; background: Pure white for main image; clean, elegant office or commute environment for lifestyle shots.; continuity: Maintain consistent lighting and color grading across all images.; Ensure the watch face and strap colors match the reference exactly.; Avoid any sports, outdoor, or diving contexts as per user intent.\nMinimalist, elegant, and professional daily commute style. Soft, diffused studio lighting to highlight metallic and glass textures without harsh shadows. Pure white background. Maintain consistent lighting and color grading, ensuring watch face and strap colors match reference exactly.\n\nClose-up macro shot focusing on the watch dial texture and strap details, visually presenting the stainless steel case texture. Show a useful close-up or construction detail visible in the supplied references. Visually emphasize the dial texture and lightweight wearing feel through macro framing and soft lighting.\n\nCreate a clear, compliant product-listing image for amazon.com.\n\nDo not alter the mineral reinforced glass mirror or the fine strap lightweight wearing feel. Do not modify the macro focus on dial texture and strap details, nor the visual presentation of the stainless steel case texture.",
+        "product_fidelity_block": "Use the supplied reference image(s) as the sole authority for the product's visual identity. Preserve the exact visible silhouette, proportions, colors, markings, closure, surface appearance, and existing parts. Do not add, remove, duplicate, recolor, or redesign product features. Preserve these user-facing boundaries: 矿物强化玻璃镜面; 细表带轻佩戴. Do not add product claims, specifications, badges, or on-image text.",
+        "source_refs": [
+          "product_input.reference_asset_sha256",
+          "shot_spec.preserve",
+          "plan.style_lock",
+          "shot_spec.title",
+          "shot_spec.purpose",
+          "product_input.user_intent",
+          "platform_profile:amazon-us@1",
+          "shot_spec.preserve",
+          "shot_spec.change"
+        ]
+      }
+    ]
+  }
+]

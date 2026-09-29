@@ -1,0 +1,1932 @@
+{
+  "schema": "demo-route-comparison/1",
+  "rows": [
+    {
+      "id": "F-01",
+      "role": "scene_candidate",
+      "expect": "pass",
+      "expect_source": "human_fact_review（D1.5 人工裁决，32 条全 pass）",
+      "human_required": null,
+      "sha256": "95db1ad085d068c4469aa34ce1d759bc35ce14671e023531587eabfc450176df",
+      "A": {
+        "status": "ok",
+        "overall": "hard_fail",
+        "applicable": false,
+        "verdict_scope": "counterfactual_only",
+        "probe_share": 0.2063,
+        "probe_source": "原图（不是制造出来的底衬）",
+        "probe_max_share": 0.02,
+        "canvas_probe_share": 0.2611,
+        "facts": {
+          "F1": "unknown",
+          "F2": "unknown",
+          "F3": "unknown",
+          "F4": "unknown",
+          "F5": "unknown",
+          "F6": "unknown",
+          "F7": "unknown",
+          "F8": "unknown"
+        },
+        "isolated_facts": {
+          "F1": "pass",
+          "F2": "hard_fail",
+          "F3": "hard_fail",
+          "F4": "pass",
+          "F5": "pass",
+          "F6": "pass",
+          "F7": "pass",
+          "F8": "human"
+        },
+        "comparison": {
+          "signal": false,
+          "flagged_facts": [],
+          "unknown_facts": [
+            "F1",
+            "F2",
+            "F3",
+            "F4",
+            "F5",
+            "F6",
+            "F7",
+            "F8"
+          ],
+          "machine_facts": 0,
+          "detected": false,
+          "missed": false,
+          "false_alarm": false,
+          "no_signal_on_good": true,
+          "risk_on_human_only_case": false,
+          "expect": "pass",
+          "verdicts": [
+            "unknown",
+            "unknown",
+            "unknown",
+            "unknown",
+            "unknown",
+            "unknown",
+            "unknown",
+            "unknown"
+          ]
+        },
+        "error": null
+      },
+      "B": {
+        "status": "ok",
+        "model": "qwen-vl-max",
+        "usage": {
+          "prompt_tokens": 2794,
+          "completion_tokens": 283,
+          "total_tokens": 3077,
+          "completion_tokens_details": {
+            "text_tokens": 283
+          },
+          "prompt_tokens_details": {
+            "image_tokens": 2454,
+            "text_tokens": 340,
+            "cached_tokens": 0
+          }
+        },
+        "facts": {
+          "F1": "keep",
+          "F2": "keep",
+          "F3": "keep",
+          "F4": "keep",
+          "F5": "keep",
+          "F6": "keep",
+          "F7": "keep",
+          "F8": "keep"
+        },
+        "raw": {
+          "F1": "same",
+          "F2": "same",
+          "F3": "same",
+          "F4": "same",
+          "F5": "same",
+          "F6": "same",
+          "F7": "same",
+          "F8": "same"
+        },
+        "comparison": {
+          "signal": false,
+          "flagged_facts": [],
+          "unknown_facts": [],
+          "machine_facts": 8,
+          "detected": false,
+          "missed": false,
+          "false_alarm": false,
+          "no_signal_on_good": true,
+          "risk_on_human_only_case": false,
+          "expect": "pass",
+          "verdicts": [
+            "keep",
+            "keep",
+            "keep",
+            "keep",
+            "keep",
+            "keep",
+            "keep",
+            "keep"
+          ]
+        },
+        "error": null
+      }
+    },
+    {
+      "id": "F-02",
+      "role": "scene_candidate",
+      "expect": "pass",
+      "expect_source": "human_fact_review（D1.5 人工裁决，32 条全 pass）",
+      "human_required": null,
+      "sha256": "1cdf146ba17c3dd685bbbae927c5ec3bca2f8d52e31c80fa9ed237fa1e1e6beb",
+      "A": {
+        "status": "ok",
+        "overall": "manual",
+        "applicable": false,
+        "verdict_scope": "counterfactual_only",
+        "probe_share": 0.3921,
+        "probe_source": "原图（不是制造出来的底衬）",
+        "probe_max_share": 0.02,
+        "canvas_probe_share": 0.2497,
+        "facts": {
+          "F1": "unknown",
+          "F2": "unknown",
+          "F3": "unknown",
+          "F4": "unknown",
+          "F5": "unknown",
+          "F6": "unknown",
+          "F7": "unknown",
+          "F8": "unknown"
+        },
+        "isolated_facts": {
+          "F1": "pass",
+          "F2": "manual",
+          "F3": "manual",
+          "F4": "pass",
+          "F5": "pass",
+          "F6": "pass",
+          "F7": "pass",
+          "F8": "human"
+        },
+        "comparison": {
+          "signal": false,
+          "flagged_facts": [],
+          "unknown_facts": [
+            "F1",
+            "F2",
+            "F3",
+            "F4",
+            "F5",
+            "F6",
+            "F7",
+            "F8"
+          ],
+          "machine_facts": 0,
+          "detected": false,
+          "missed": false,
+          "false_alarm": false,
+          "no_signal_on_good": true,
+          "risk_on_human_only_case": false,
+          "expect": "pass",
+          "verdicts": [
+            "unknown",
+            "unknown",
+            "unknown",
+            "unknown",
+            "unknown",
+            "unknown",
+            "unknown",
+            "unknown"
+          ]
+        },
+        "error": null
+      },
+      "B": {
+        "status": "ok",
+        "model": "qwen-vl-max",
+        "usage": {
+          "prompt_tokens": 2794,
+          "completion_tokens": 229,
+          "total_tokens": 3023,
+          "completion_tokens_details": {
+            "text_tokens": 229
+          },
+          "prompt_tokens_details": {
+            "image_tokens": 2454,
+            "text_tokens": 340,
+            "cached_tokens": 0
+          }
+        },
+        "facts": {
+          "F1": "keep",
+          "F2": "keep",
+          "F3": "keep",
+          "F4": "keep",
+          "F5": "keep",
+          "F6": "unknown",
+          "F7": "keep",
+          "F8": "keep"
+        },
+        "raw": {
+          "F1": "same",
+          "F2": "same",
+          "F3": "same",
+          "F4": "same",
+          "F5": "same",
+          "F6": "uncertain",
+          "F7": "same",
+          "F8": "same"
+        },
+        "comparison": {
+          "signal": false,
+          "flagged_facts": [],
+          "unknown_facts": [
+            "F6"
+          ],
+          "machine_facts": 8,
+          "detected": false,
+          "missed": false,
+          "false_alarm": false,
+          "no_signal_on_good": true,
+          "risk_on_human_only_case": false,
+          "expect": "pass",
+          "verdicts": [
+            "keep",
+            "keep",
+            "keep",
+            "keep",
+            "keep",
+            "unknown",
+            "keep",
+            "keep"
+          ]
+        },
+        "error": null
+      }
+    },
+    {
+      "id": "F-03",
+      "role": "scene_candidate",
+      "expect": "pass",
+      "expect_source": "human_fact_review（D1.5 人工裁决，32 条全 pass）",
+      "human_required": null,
+      "sha256": "b09fd5a9e5af91e3d6231526c1022a718a27db67077a4323d31f24178b9e6546",
+      "A": {
+        "status": "ok",
+        "overall": "hard_fail",
+        "applicable": false,
+        "verdict_scope": "counterfactual_only",
+        "probe_share": 0.1584,
+        "probe_source": "原图（不是制造出来的底衬）",
+        "probe_max_share": 0.02,
+        "canvas_probe_share": 0.233,
+        "facts": {
+          "F1": "unknown",
+          "F2": "unknown",
+          "F3": "unknown",
+          "F4": "unknown",
+          "F5": "unknown",
+          "F6": "unknown",
+          "F7": "unknown",
+          "F8": "unknown"
+        },
+        "isolated_facts": {
+          "F1": "pass",
+          "F2": "hard_fail",
+          "F3": "hard_fail",
+          "F4": "pass",
+          "F5": "pass",
+          "F6": "pass",
+          "F7": "pass",
+          "F8": "human"
+        },
+        "comparison": {
+          "signal": false,
+          "flagged_facts": [],
+          "unknown_facts": [
+            "F1",
+            "F2",
+            "F3",
+            "F4",
+            "F5",
+            "F6",
+            "F7",
+            "F8"
+          ],
+          "machine_facts": 0,
+          "detected": false,
+          "missed": false,
+          "false_alarm": false,
+          "no_signal_on_good": true,
+          "risk_on_human_only_case": false,
+          "expect": "pass",
+          "verdicts": [
+            "unknown",
+            "unknown",
+            "unknown",
+            "unknown",
+            "unknown",
+            "unknown",
+            "unknown",
+            "unknown"
+          ]
+        },
+        "error": null
+      },
+      "B": {
+        "status": "ok",
+        "model": "qwen-vl-max",
+        "usage": {
+          "prompt_tokens": 2794,
+          "completion_tokens": 247,
+          "total_tokens": 3041,
+          "completion_tokens_details": {
+            "text_tokens": 247
+          },
+          "prompt_tokens_details": {
+            "image_tokens": 2454,
+            "text_tokens": 340,
+            "cached_tokens": 0
+          }
+        },
+        "facts": {
+          "F1": "keep",
+          "F2": "keep",
+          "F3": "keep",
+          "F4": "keep",
+          "F5": "keep",
+          "F6": "keep",
+          "F7": "keep",
+          "F8": "keep"
+        },
+        "raw": {
+          "F1": "same",
+          "F2": "same",
+          "F3": "same",
+          "F4": "same",
+          "F5": "same",
+          "F6": "same",
+          "F7": "same",
+          "F8": "same"
+        },
+        "comparison": {
+          "signal": false,
+          "flagged_facts": [],
+          "unknown_facts": [],
+          "machine_facts": 8,
+          "detected": false,
+          "missed": false,
+          "false_alarm": false,
+          "no_signal_on_good": true,
+          "risk_on_human_only_case": false,
+          "expect": "pass",
+          "verdicts": [
+            "keep",
+            "keep",
+            "keep",
+            "keep",
+            "keep",
+            "keep",
+            "keep",
+            "keep"
+          ]
+        },
+        "error": null
+      }
+    },
+    {
+      "id": "F-04",
+      "role": "scene_candidate",
+      "expect": "pass",
+      "expect_source": "human_fact_review（D1.5 人工裁决，32 条全 pass）",
+      "human_required": null,
+      "sha256": "80ec57b21bdbd0cfd49d3917a8d2049123b0862556f9cac5ce8033f5aca1a875",
+      "A": {
+        "status": "ok",
+        "overall": "pass",
+        "applicable": false,
+        "verdict_scope": "counterfactual_only",
+        "probe_share": 0.4163,
+        "probe_source": "原图（不是制造出来的底衬）",
+        "probe_max_share": 0.02,
+        "canvas_probe_share": 0.248,
+        "facts": {
+          "F1": "unknown",
+          "F2": "unknown",
+          "F3": "unknown",
+          "F4": "unknown",
+          "F5": "unknown",
+          "F6": "unknown",
+          "F7": "unknown",
+          "F8": "unknown"
+        },
+        "isolated_facts": {
+          "F1": "pass",
+          "F2": "pass",
+          "F3": "pass",
+          "F4": "pass",
+          "F5": "pass",
+          "F6": "pass",
+          "F7": "pass",
+          "F8": "human"
+        },
+        "comparison": {
+          "signal": false,
+          "flagged_facts": [],
+          "unknown_facts": [
+            "F1",
+            "F2",
+            "F3",
+            "F4",
+            "F5",
+            "F6",
+            "F7",
+            "F8"
+          ],
+          "machine_facts": 0,
+          "detected": false,
+          "missed": false,
+          "false_alarm": false,
+          "no_signal_on_good": true,
+          "risk_on_human_only_case": false,
+          "expect": "pass",
+          "verdicts": [
+            "unknown",
+            "unknown",
+            "unknown",
+            "unknown",
+            "unknown",
+            "unknown",
+            "unknown",
+            "unknown"
+          ]
+        },
+        "error": null
+      },
+      "B": {
+        "status": "ok",
+        "model": "qwen-vl-max",
+        "usage": {
+          "prompt_tokens": 2794,
+          "completion_tokens": 276,
+          "total_tokens": 3070,
+          "completion_tokens_details": {
+            "text_tokens": 276
+          },
+          "prompt_tokens_details": {
+            "image_tokens": 2454,
+            "text_tokens": 340,
+            "cached_tokens": 0
+          }
+        },
+        "facts": {
+          "F1": "keep",
+          "F2": "keep",
+          "F3": "keep",
+          "F4": "keep",
+          "F5": "keep",
+          "F6": "keep",
+          "F7": "keep",
+          "F8": "keep"
+        },
+        "raw": {
+          "F1": "same",
+          "F2": "same",
+          "F3": "same",
+          "F4": "same",
+          "F5": "same",
+          "F6": "same",
+          "F7": "same",
+          "F8": "same"
+        },
+        "comparison": {
+          "signal": false,
+          "flagged_facts": [],
+          "unknown_facts": [],
+          "machine_facts": 8,
+          "detected": false,
+          "missed": false,
+          "false_alarm": false,
+          "no_signal_on_good": true,
+          "risk_on_human_only_case": false,
+          "expect": "pass",
+          "verdicts": [
+            "keep",
+            "keep",
+            "keep",
+            "keep",
+            "keep",
+            "keep",
+            "keep",
+            "keep"
+          ]
+        },
+        "error": null
+      }
+    },
+    {
+      "id": "neg-01-recolor-upper",
+      "role": "negative",
+      "expect": "not_pass",
+      "expect_source": "negative-cases/expectations.json（事先声明）",
+      "human_required": false,
+      "sha256": "b7aaa1b4f3c0865f7e90232c94e889f56823328f96d40f172da2756983dd7806",
+      "A": {
+        "status": "ok",
+        "overall": "hard_fail",
+        "applicable": true,
+        "verdict_scope": "evidence_on_isolated_subject",
+        "probe_share": 0.0,
+        "probe_source": "原图（不是制造出来的底衬）",
+        "probe_max_share": 0.02,
+        "canvas_probe_share": 0.2236,
+        "facts": {
+          "F1": "pass",
+          "F2": "unknown",
+          "F3": "hard_fail",
+          "F4": "pass",
+          "F5": "pass",
+          "F6": "hard_fail",
+          "F7": "pass",
+          "F8": "human"
+        },
+        "isolated_facts": {
+          "F1": "pass",
+          "F2": "unknown",
+          "F3": "hard_fail",
+          "F4": "pass",
+          "F5": "pass",
+          "F6": "hard_fail",
+          "F7": "pass",
+          "F8": "human"
+        },
+        "comparison": {
+          "signal": true,
+          "flagged_facts": [
+            "F3",
+            "F6"
+          ],
+          "unknown_facts": [
+            "F2"
+          ],
+          "machine_facts": 6,
+          "detected": true,
+          "missed": false,
+          "false_alarm": false,
+          "no_signal_on_good": false,
+          "risk_on_human_only_case": false,
+          "expect": "not_pass",
+          "verdicts": [
+            "pass",
+            "unknown",
+            "hard_fail",
+            "pass",
+            "pass",
+            "hard_fail",
+            "pass",
+            "human"
+          ]
+        },
+        "error": null
+      },
+      "B": {
+        "status": "ok",
+        "model": "qwen-vl-max",
+        "usage": {
+          "prompt_tokens": 2794,
+          "completion_tokens": 188,
+          "total_tokens": 2982,
+          "completion_tokens_details": {
+            "text_tokens": 188
+          },
+          "prompt_tokens_details": {
+            "image_tokens": 2454,
+            "text_tokens": 340,
+            "cached_tokens": 0
+          }
+        },
+        "facts": {
+          "F1": "keep",
+          "F2": "risk",
+          "F3": "keep",
+          "F4": "keep",
+          "F5": "keep",
+          "F6": "keep",
+          "F7": "keep",
+          "F8": "keep"
+        },
+        "raw": {
+          "F1": "same",
+          "F2": "different",
+          "F3": "same",
+          "F4": "same",
+          "F5": "same",
+          "F6": "same",
+          "F7": "same",
+          "F8": "same"
+        },
+        "comparison": {
+          "signal": true,
+          "flagged_facts": [
+            "F2"
+          ],
+          "unknown_facts": [],
+          "machine_facts": 8,
+          "detected": true,
+          "missed": false,
+          "false_alarm": false,
+          "no_signal_on_good": false,
+          "risk_on_human_only_case": false,
+          "expect": "not_pass",
+          "verdicts": [
+            "keep",
+            "risk",
+            "keep",
+            "keep",
+            "keep",
+            "keep",
+            "keep",
+            "keep"
+          ]
+        },
+        "error": null
+      }
+    },
+    {
+      "id": "neg-02-add-text",
+      "role": "negative",
+      "expect": "not_hard_fail",
+      "expect_source": "negative-cases/expectations.json（事先声明）",
+      "human_required": true,
+      "sha256": "b18a28e7cb15e145a46ba956e0b214b720070c5d4e1184aa3c95779c78ffaebc",
+      "A": {
+        "status": "ok",
+        "overall": "pass",
+        "applicable": true,
+        "verdict_scope": "evidence_on_isolated_subject",
+        "probe_share": 0.0,
+        "probe_source": "原图（不是制造出来的底衬）",
+        "probe_max_share": 0.02,
+        "canvas_probe_share": 0.2232,
+        "facts": {
+          "F1": "pass",
+          "F2": "pass",
+          "F3": "pass",
+          "F4": "pass",
+          "F5": "pass",
+          "F6": "pass",
+          "F7": "pass",
+          "F8": "human"
+        },
+        "isolated_facts": {
+          "F1": "pass",
+          "F2": "pass",
+          "F3": "pass",
+          "F4": "pass",
+          "F5": "pass",
+          "F6": "pass",
+          "F7": "pass",
+          "F8": "human"
+        },
+        "comparison": {
+          "signal": false,
+          "flagged_facts": [],
+          "unknown_facts": [],
+          "machine_facts": 7,
+          "detected": false,
+          "missed": false,
+          "false_alarm": false,
+          "no_signal_on_good": false,
+          "risk_on_human_only_case": false,
+          "expect": "not_hard_fail",
+          "verdicts": [
+            "pass",
+            "pass",
+            "pass",
+            "pass",
+            "pass",
+            "pass",
+            "pass",
+            "human"
+          ]
+        },
+        "error": null
+      },
+      "B": {
+        "status": "ok",
+        "model": "qwen-vl-max",
+        "usage": {
+          "prompt_tokens": 2794,
+          "completion_tokens": 231,
+          "total_tokens": 3025,
+          "completion_tokens_details": {
+            "text_tokens": 231
+          },
+          "prompt_tokens_details": {
+            "image_tokens": 2454,
+            "text_tokens": 340,
+            "cached_tokens": 0
+          }
+        },
+        "facts": {
+          "F1": "keep",
+          "F2": "keep",
+          "F3": "keep",
+          "F4": "keep",
+          "F5": "keep",
+          "F6": "keep",
+          "F7": "keep",
+          "F8": "risk"
+        },
+        "raw": {
+          "F1": "same",
+          "F2": "same",
+          "F3": "same",
+          "F4": "same",
+          "F5": "same",
+          "F6": "same",
+          "F7": "same",
+          "F8": "different"
+        },
+        "comparison": {
+          "signal": true,
+          "flagged_facts": [
+            "F8"
+          ],
+          "unknown_facts": [],
+          "machine_facts": 8,
+          "detected": false,
+          "missed": false,
+          "false_alarm": false,
+          "no_signal_on_good": false,
+          "risk_on_human_only_case": true,
+          "expect": "not_hard_fail",
+          "verdicts": [
+            "keep",
+            "keep",
+            "keep",
+            "keep",
+            "keep",
+            "keep",
+            "keep",
+            "risk"
+          ]
+        },
+        "error": null
+      }
+    },
+    {
+      "id": "neg-03-add-handle",
+      "role": "negative",
+      "expect": "not_pass",
+      "expect_source": "negative-cases/expectations.json（事先声明）",
+      "human_required": false,
+      "sha256": "3f5f25dfce75298ef38e931d2076b51093c8a2824e7d84f08df28d3228cf0be5",
+      "A": {
+        "status": "ok",
+        "overall": "hard_fail",
+        "applicable": true,
+        "verdict_scope": "evidence_on_isolated_subject",
+        "probe_share": 0.0,
+        "probe_source": "原图（不是制造出来的底衬）",
+        "probe_max_share": 0.02,
+        "canvas_probe_share": 0.2449,
+        "facts": {
+          "F1": "pass",
+          "F2": "hard_fail",
+          "F3": "hard_fail",
+          "F4": "pass",
+          "F5": "pass",
+          "F6": "manual",
+          "F7": "hard_fail",
+          "F8": "human"
+        },
+        "isolated_facts": {
+          "F1": "pass",
+          "F2": "hard_fail",
+          "F3": "hard_fail",
+          "F4": "pass",
+          "F5": "pass",
+          "F6": "manual",
+          "F7": "hard_fail",
+          "F8": "human"
+        },
+        "comparison": {
+          "signal": true,
+          "flagged_facts": [
+            "F2",
+            "F3",
+            "F7"
+          ],
+          "unknown_facts": [],
+          "machine_facts": 6,
+          "detected": true,
+          "missed": false,
+          "false_alarm": false,
+          "no_signal_on_good": false,
+          "risk_on_human_only_case": false,
+          "expect": "not_pass",
+          "verdicts": [
+            "pass",
+            "hard_fail",
+            "hard_fail",
+            "pass",
+            "pass",
+            "manual",
+            "hard_fail",
+            "human"
+          ]
+        },
+        "error": null
+      },
+      "B": {
+        "status": "ok",
+        "model": "qwen-vl-max",
+        "usage": {
+          "prompt_tokens": 2794,
+          "completion_tokens": 248,
+          "total_tokens": 3042,
+          "completion_tokens_details": {
+            "text_tokens": 248
+          },
+          "prompt_tokens_details": {
+            "image_tokens": 2454,
+            "text_tokens": 340,
+            "cached_tokens": 0
+          }
+        },
+        "facts": {
+          "F1": "keep",
+          "F2": "keep",
+          "F3": "keep",
+          "F4": "keep",
+          "F5": "keep",
+          "F6": "keep",
+          "F7": "risk",
+          "F8": "keep"
+        },
+        "raw": {
+          "F1": "same",
+          "F2": "same",
+          "F3": "same",
+          "F4": "same",
+          "F5": "same",
+          "F6": "same",
+          "F7": "different",
+          "F8": "same"
+        },
+        "comparison": {
+          "signal": true,
+          "flagged_facts": [
+            "F7"
+          ],
+          "unknown_facts": [],
+          "machine_facts": 8,
+          "detected": true,
+          "missed": false,
+          "false_alarm": false,
+          "no_signal_on_good": false,
+          "risk_on_human_only_case": false,
+          "expect": "not_pass",
+          "verdicts": [
+            "keep",
+            "keep",
+            "keep",
+            "keep",
+            "keep",
+            "keep",
+            "risk",
+            "keep"
+          ]
+        },
+        "error": null
+      }
+    },
+    {
+      "id": "neg-04-lidless",
+      "role": "negative",
+      "expect": "not_pass",
+      "expect_source": "negative-cases/expectations.json（事先声明）",
+      "human_required": false,
+      "sha256": "41f38d27050b1feb879dd863f52d1378e6f07ef4e2fd80a8a4b2c5f3cdef6a66",
+      "A": {
+        "status": "ok",
+        "overall": "hard_fail",
+        "applicable": true,
+        "verdict_scope": "evidence_on_isolated_subject",
+        "probe_share": 0.0,
+        "probe_source": "原图（不是制造出来的底衬）",
+        "probe_max_share": 0.02,
+        "canvas_probe_share": 0.1944,
+        "facts": {
+          "F1": "pass",
+          "F2": "pass",
+          "F3": "pass",
+          "F4": "unknown",
+          "F5": "hard_fail",
+          "F6": "pass",
+          "F7": "pass",
+          "F8": "human"
+        },
+        "isolated_facts": {
+          "F1": "pass",
+          "F2": "pass",
+          "F3": "pass",
+          "F4": "unknown",
+          "F5": "hard_fail",
+          "F6": "pass",
+          "F7": "pass",
+          "F8": "human"
+        },
+        "comparison": {
+          "signal": true,
+          "flagged_facts": [
+            "F5"
+          ],
+          "unknown_facts": [
+            "F4"
+          ],
+          "machine_facts": 6,
+          "detected": true,
+          "missed": false,
+          "false_alarm": false,
+          "no_signal_on_good": false,
+          "risk_on_human_only_case": false,
+          "expect": "not_pass",
+          "verdicts": [
+            "pass",
+            "pass",
+            "pass",
+            "unknown",
+            "hard_fail",
+            "pass",
+            "pass",
+            "human"
+          ]
+        },
+        "error": null
+      },
+      "B": {
+        "status": "ok",
+        "model": "qwen-vl-max",
+        "usage": {
+          "prompt_tokens": 2794,
+          "completion_tokens": 268,
+          "total_tokens": 3062,
+          "completion_tokens_details": {
+            "text_tokens": 268
+          },
+          "prompt_tokens_details": {
+            "image_tokens": 2454,
+            "text_tokens": 340,
+            "cached_tokens": 0
+          }
+        },
+        "facts": {
+          "F1": "keep",
+          "F2": "keep",
+          "F3": "keep",
+          "F4": "risk",
+          "F5": "risk",
+          "F6": "unknown",
+          "F7": "keep",
+          "F8": "keep"
+        },
+        "raw": {
+          "F1": "same",
+          "F2": "same",
+          "F3": "same",
+          "F4": "different",
+          "F5": "different",
+          "F6": "uncertain",
+          "F7": "same",
+          "F8": "same"
+        },
+        "comparison": {
+          "signal": true,
+          "flagged_facts": [
+            "F4",
+            "F5"
+          ],
+          "unknown_facts": [
+            "F6"
+          ],
+          "machine_facts": 8,
+          "detected": true,
+          "missed": false,
+          "false_alarm": false,
+          "no_signal_on_good": false,
+          "risk_on_human_only_case": false,
+          "expect": "not_pass",
+          "verdicts": [
+            "keep",
+            "keep",
+            "keep",
+            "risk",
+            "risk",
+            "unknown",
+            "keep",
+            "keep"
+          ]
+        },
+        "error": null
+      }
+    },
+    {
+      "id": "neg-05-extra-ribs",
+      "role": "negative",
+      "expect": "not_pass",
+      "expect_source": "negative-cases/expectations.json（事先声明）",
+      "human_required": false,
+      "sha256": "ff726a05cd7621b8d69dfcbd56eb0d34e3996b314453693bdbaf3598703d253e",
+      "A": {
+        "status": "ok",
+        "overall": "hard_fail",
+        "applicable": true,
+        "verdict_scope": "evidence_on_isolated_subject",
+        "probe_share": 0.0,
+        "probe_source": "原图（不是制造出来的底衬）",
+        "probe_max_share": 0.02,
+        "canvas_probe_share": 0.2261,
+        "facts": {
+          "F1": "pass",
+          "F2": "pass",
+          "F3": "hard_fail",
+          "F4": "pass",
+          "F5": "pass",
+          "F6": "pass",
+          "F7": "pass",
+          "F8": "human"
+        },
+        "isolated_facts": {
+          "F1": "pass",
+          "F2": "pass",
+          "F3": "hard_fail",
+          "F4": "pass",
+          "F5": "pass",
+          "F6": "pass",
+          "F7": "pass",
+          "F8": "human"
+        },
+        "comparison": {
+          "signal": true,
+          "flagged_facts": [
+            "F3"
+          ],
+          "unknown_facts": [],
+          "machine_facts": 7,
+          "detected": true,
+          "missed": false,
+          "false_alarm": false,
+          "no_signal_on_good": false,
+          "risk_on_human_only_case": false,
+          "expect": "not_pass",
+          "verdicts": [
+            "pass",
+            "pass",
+            "hard_fail",
+            "pass",
+            "pass",
+            "pass",
+            "pass",
+            "human"
+          ]
+        },
+        "error": null
+      },
+      "B": {
+        "status": "ok",
+        "model": "qwen-vl-max",
+        "usage": {
+          "prompt_tokens": 2794,
+          "completion_tokens": 272,
+          "total_tokens": 3066,
+          "completion_tokens_details": {
+            "text_tokens": 272
+          },
+          "prompt_tokens_details": {
+            "image_tokens": 2454,
+            "text_tokens": 340,
+            "cached_tokens": 1408
+          }
+        },
+        "facts": {
+          "F1": "keep",
+          "F2": "keep",
+          "F3": "keep",
+          "F4": "keep",
+          "F5": "keep",
+          "F6": "keep",
+          "F7": "keep",
+          "F8": "keep"
+        },
+        "raw": {
+          "F1": "same",
+          "F2": "same",
+          "F3": "same",
+          "F4": "same",
+          "F5": "same",
+          "F6": "same",
+          "F7": "same",
+          "F8": "same"
+        },
+        "comparison": {
+          "signal": false,
+          "flagged_facts": [],
+          "unknown_facts": [],
+          "machine_facts": 8,
+          "detected": false,
+          "missed": true,
+          "false_alarm": false,
+          "no_signal_on_good": false,
+          "risk_on_human_only_case": false,
+          "expect": "not_pass",
+          "verdicts": [
+            "keep",
+            "keep",
+            "keep",
+            "keep",
+            "keep",
+            "keep",
+            "keep",
+            "keep"
+          ]
+        },
+        "error": null
+      }
+    },
+    {
+      "id": "neg-06-second-cup",
+      "role": "negative",
+      "expect": "not_pass",
+      "expect_source": "negative-cases/expectations.json（事先声明）",
+      "human_required": false,
+      "sha256": "f17cf721a89ba268773c4f4c58893ad40201f1f734459b2ebfb2e9a785a64333",
+      "A": {
+        "status": "ok",
+        "overall": "hard_fail",
+        "applicable": true,
+        "verdict_scope": "evidence_on_isolated_subject",
+        "probe_share": 0.0,
+        "probe_source": "原图（不是制造出来的底衬）",
+        "probe_max_share": 0.02,
+        "canvas_probe_share": 0.3047,
+        "facts": {
+          "F1": "pass",
+          "F2": "pass",
+          "F3": "pass",
+          "F4": "pass",
+          "F5": "pass",
+          "F6": "pass",
+          "F7": "hard_fail",
+          "F8": "human"
+        },
+        "isolated_facts": {
+          "F1": "pass",
+          "F2": "pass",
+          "F3": "pass",
+          "F4": "pass",
+          "F5": "pass",
+          "F6": "pass",
+          "F7": "hard_fail",
+          "F8": "human"
+        },
+        "comparison": {
+          "signal": true,
+          "flagged_facts": [
+            "F7"
+          ],
+          "unknown_facts": [],
+          "machine_facts": 7,
+          "detected": true,
+          "missed": false,
+          "false_alarm": false,
+          "no_signal_on_good": false,
+          "risk_on_human_only_case": false,
+          "expect": "not_pass",
+          "verdicts": [
+            "pass",
+            "pass",
+            "pass",
+            "pass",
+            "pass",
+            "pass",
+            "hard_fail",
+            "human"
+          ]
+        },
+        "error": null
+      },
+      "B": {
+        "status": "ok",
+        "model": "qwen-vl-max",
+        "usage": {
+          "prompt_tokens": 2794,
+          "completion_tokens": 226,
+          "total_tokens": 3020,
+          "completion_tokens_details": {
+            "text_tokens": 226
+          },
+          "prompt_tokens_details": {
+            "image_tokens": 2454,
+            "text_tokens": 340,
+            "cached_tokens": 0
+          }
+        },
+        "facts": {
+          "F1": "keep",
+          "F2": "keep",
+          "F3": "keep",
+          "F4": "keep",
+          "F5": "keep",
+          "F6": "unknown",
+          "F7": "keep",
+          "F8": "keep"
+        },
+        "raw": {
+          "F1": "same",
+          "F2": "same",
+          "F3": "same",
+          "F4": "same",
+          "F5": "same",
+          "F6": "uncertain",
+          "F7": "same",
+          "F8": "same"
+        },
+        "comparison": {
+          "signal": false,
+          "flagged_facts": [],
+          "unknown_facts": [
+            "F6"
+          ],
+          "machine_facts": 8,
+          "detected": false,
+          "missed": true,
+          "false_alarm": false,
+          "no_signal_on_good": false,
+          "risk_on_human_only_case": false,
+          "expect": "not_pass",
+          "verdicts": [
+            "keep",
+            "keep",
+            "keep",
+            "keep",
+            "keep",
+            "unknown",
+            "keep",
+            "keep"
+          ]
+        },
+        "error": null
+      }
+    },
+    {
+      "id": "neg-07-flat-lid",
+      "role": "negative",
+      "expect": "pass",
+      "expect_source": "negative-cases/expectations.json（事先声明）",
+      "human_required": true,
+      "sha256": "fdc2674c0e1125bb2ff09792201ac8e48f5529715d2367ccd0dd12c30f1a915b",
+      "A": {
+        "status": "ok",
+        "overall": "pass",
+        "applicable": true,
+        "verdict_scope": "evidence_on_isolated_subject",
+        "probe_share": 0.0,
+        "probe_source": "原图（不是制造出来的底衬）",
+        "probe_max_share": 0.02,
+        "canvas_probe_share": 0.223,
+        "facts": {
+          "F1": "pass",
+          "F2": "pass",
+          "F3": "pass",
+          "F4": "pass",
+          "F5": "pass",
+          "F6": "pass",
+          "F7": "pass",
+          "F8": "human"
+        },
+        "isolated_facts": {
+          "F1": "pass",
+          "F2": "pass",
+          "F3": "pass",
+          "F4": "pass",
+          "F5": "pass",
+          "F6": "pass",
+          "F7": "pass",
+          "F8": "human"
+        },
+        "comparison": {
+          "signal": false,
+          "flagged_facts": [],
+          "unknown_facts": [],
+          "machine_facts": 7,
+          "detected": false,
+          "missed": false,
+          "false_alarm": false,
+          "no_signal_on_good": true,
+          "risk_on_human_only_case": false,
+          "expect": "pass",
+          "verdicts": [
+            "pass",
+            "pass",
+            "pass",
+            "pass",
+            "pass",
+            "pass",
+            "pass",
+            "human"
+          ]
+        },
+        "error": null
+      },
+      "B": {
+        "status": "ok",
+        "model": "qwen-vl-max",
+        "usage": {
+          "prompt_tokens": 2794,
+          "completion_tokens": 279,
+          "total_tokens": 3073,
+          "completion_tokens_details": {
+            "text_tokens": 279
+          },
+          "prompt_tokens_details": {
+            "image_tokens": 2454,
+            "text_tokens": 340,
+            "cached_tokens": 0
+          }
+        },
+        "facts": {
+          "F1": "keep",
+          "F2": "keep",
+          "F3": "keep",
+          "F4": "keep",
+          "F5": "keep",
+          "F6": "keep",
+          "F7": "keep",
+          "F8": "keep"
+        },
+        "raw": {
+          "F1": "same",
+          "F2": "same",
+          "F3": "same",
+          "F4": "same",
+          "F5": "same",
+          "F6": "same",
+          "F7": "same",
+          "F8": "same"
+        },
+        "comparison": {
+          "signal": false,
+          "flagged_facts": [],
+          "unknown_facts": [],
+          "machine_facts": 8,
+          "detected": false,
+          "missed": false,
+          "false_alarm": false,
+          "no_signal_on_good": true,
+          "risk_on_human_only_case": false,
+          "expect": "pass",
+          "verdicts": [
+            "keep",
+            "keep",
+            "keep",
+            "keep",
+            "keep",
+            "keep",
+            "keep",
+            "keep"
+          ]
+        },
+        "error": null
+      }
+    },
+    {
+      "id": "control-A",
+      "role": "control",
+      "expect": "not_hard_fail",
+      "expect_source": "negative-cases/expectations.json（事先声明）",
+      "human_required": null,
+      "sha256": "9b93615e8ca7ff126be6926a0116dced9852e33a016e2ed60fd2e2f944b1940f",
+      "A": {
+        "status": "ok",
+        "overall": "manual",
+        "applicable": true,
+        "verdict_scope": "evidence_on_isolated_subject",
+        "probe_share": 0.0,
+        "probe_source": "原图（不是制造出来的底衬）",
+        "probe_max_share": 0.02,
+        "canvas_probe_share": 0.2554,
+        "facts": {
+          "F1": "pass",
+          "F2": "pass",
+          "F3": "manual",
+          "F4": "pass",
+          "F5": "pass",
+          "F6": "pass",
+          "F7": "pass",
+          "F8": "human"
+        },
+        "isolated_facts": {
+          "F1": "pass",
+          "F2": "pass",
+          "F3": "manual",
+          "F4": "pass",
+          "F5": "pass",
+          "F6": "pass",
+          "F7": "pass",
+          "F8": "human"
+        },
+        "comparison": {
+          "signal": false,
+          "flagged_facts": [],
+          "unknown_facts": [],
+          "machine_facts": 6,
+          "detected": false,
+          "missed": false,
+          "false_alarm": false,
+          "no_signal_on_good": false,
+          "risk_on_human_only_case": false,
+          "expect": "not_hard_fail",
+          "verdicts": [
+            "pass",
+            "pass",
+            "manual",
+            "pass",
+            "pass",
+            "pass",
+            "pass",
+            "human"
+          ]
+        },
+        "error": null
+      },
+      "B": {
+        "status": "ok",
+        "model": "qwen-vl-max",
+        "usage": {
+          "prompt_tokens": 2794,
+          "completion_tokens": 248,
+          "total_tokens": 3042,
+          "completion_tokens_details": {
+            "text_tokens": 248
+          },
+          "prompt_tokens_details": {
+            "image_tokens": 2454,
+            "text_tokens": 340,
+            "cached_tokens": 1408
+          }
+        },
+        "facts": {
+          "F1": "keep",
+          "F2": "keep",
+          "F3": "keep",
+          "F4": "keep",
+          "F5": "keep",
+          "F6": "keep",
+          "F7": "keep",
+          "F8": "keep"
+        },
+        "raw": {
+          "F1": "same",
+          "F2": "same",
+          "F3": "same",
+          "F4": "same",
+          "F5": "same",
+          "F6": "same",
+          "F7": "same",
+          "F8": "same"
+        },
+        "comparison": {
+          "signal": false,
+          "flagged_facts": [],
+          "unknown_facts": [],
+          "machine_facts": 8,
+          "detected": false,
+          "missed": false,
+          "false_alarm": false,
+          "no_signal_on_good": false,
+          "risk_on_human_only_case": false,
+          "expect": "not_hard_fail",
+          "verdicts": [
+            "keep",
+            "keep",
+            "keep",
+            "keep",
+            "keep",
+            "keep",
+            "keep",
+            "keep"
+          ]
+        },
+        "error": null
+      }
+    },
+    {
+      "id": "control-B",
+      "role": "control",
+      "expect": "not_hard_fail",
+      "expect_source": "negative-cases/expectations.json（事先声明）",
+      "human_required": null,
+      "sha256": "0a553141d70de89382aad2b3372b685610a97505d3aab8ee7b8b68fb8549e16e",
+      "A": {
+        "status": "ok",
+        "overall": "manual",
+        "applicable": true,
+        "verdict_scope": "evidence_on_isolated_subject",
+        "probe_share": 0.0,
+        "probe_source": "原图（不是制造出来的底衬）",
+        "probe_max_share": 0.02,
+        "canvas_probe_share": 0.2964,
+        "facts": {
+          "F1": "pass",
+          "F2": "pass",
+          "F3": "manual",
+          "F4": "pass",
+          "F5": "pass",
+          "F6": "pass",
+          "F7": "pass",
+          "F8": "human"
+        },
+        "isolated_facts": {
+          "F1": "pass",
+          "F2": "pass",
+          "F3": "manual",
+          "F4": "pass",
+          "F5": "pass",
+          "F6": "pass",
+          "F7": "pass",
+          "F8": "human"
+        },
+        "comparison": {
+          "signal": false,
+          "flagged_facts": [],
+          "unknown_facts": [],
+          "machine_facts": 6,
+          "detected": false,
+          "missed": false,
+          "false_alarm": false,
+          "no_signal_on_good": false,
+          "risk_on_human_only_case": false,
+          "expect": "not_hard_fail",
+          "verdicts": [
+            "pass",
+            "pass",
+            "manual",
+            "pass",
+            "pass",
+            "pass",
+            "pass",
+            "human"
+          ]
+        },
+        "error": null
+      },
+      "B": {
+        "status": "ok",
+        "model": "qwen-vl-max",
+        "usage": {
+          "prompt_tokens": 2794,
+          "completion_tokens": 224,
+          "total_tokens": 3018,
+          "completion_tokens_details": {
+            "text_tokens": 224
+          },
+          "prompt_tokens_details": {
+            "image_tokens": 2454,
+            "text_tokens": 340,
+            "cached_tokens": 0
+          }
+        },
+        "facts": {
+          "F1": "keep",
+          "F2": "keep",
+          "F3": "keep",
+          "F4": "keep",
+          "F5": "keep",
+          "F6": "keep",
+          "F7": "keep",
+          "F8": "keep"
+        },
+        "raw": {
+          "F1": "same",
+          "F2": "same",
+          "F3": "same",
+          "F4": "same",
+          "F5": "same",
+          "F6": "same",
+          "F7": "same",
+          "F8": "same"
+        },
+        "comparison": {
+          "signal": false,
+          "flagged_facts": [],
+          "unknown_facts": [],
+          "machine_facts": 8,
+          "detected": false,
+          "missed": false,
+          "false_alarm": false,
+          "no_signal_on_good": false,
+          "risk_on_human_only_case": false,
+          "expect": "not_hard_fail",
+          "verdicts": [
+            "keep",
+            "keep",
+            "keep",
+            "keep",
+            "keep",
+            "keep",
+            "keep",
+            "keep"
+          ]
+        },
+        "error": null
+      }
+    },
+    {
+      "id": "control-C",
+      "role": "control",
+      "expect": "not_hard_fail",
+      "expect_source": "negative-cases/expectations.json（事先声明）",
+      "human_required": null,
+      "sha256": "e1b1c5de1ee6b50a69fb8e431f1140d8c21a689f4fe3316461c02745139d03f6",
+      "A": {
+        "status": "ok",
+        "overall": "pass",
+        "applicable": true,
+        "verdict_scope": "evidence_on_isolated_subject",
+        "probe_share": 0.0,
+        "probe_source": "原图（不是制造出来的底衬）",
+        "probe_max_share": 0.02,
+        "canvas_probe_share": 0.2229,
+        "facts": {
+          "F1": "pass",
+          "F2": "pass",
+          "F3": "pass",
+          "F4": "pass",
+          "F5": "pass",
+          "F6": "pass",
+          "F7": "pass",
+          "F8": "human"
+        },
+        "isolated_facts": {
+          "F1": "pass",
+          "F2": "pass",
+          "F3": "pass",
+          "F4": "pass",
+          "F5": "pass",
+          "F6": "pass",
+          "F7": "pass",
+          "F8": "human"
+        },
+        "comparison": {
+          "signal": false,
+          "flagged_facts": [],
+          "unknown_facts": [],
+          "machine_facts": 7,
+          "detected": false,
+          "missed": false,
+          "false_alarm": false,
+          "no_signal_on_good": false,
+          "risk_on_human_only_case": false,
+          "expect": "not_hard_fail",
+          "verdicts": [
+            "pass",
+            "pass",
+            "pass",
+            "pass",
+            "pass",
+            "pass",
+            "pass",
+            "human"
+          ]
+        },
+        "error": null
+      },
+      "B": {
+        "status": "ok",
+        "model": "qwen-vl-max",
+        "usage": {
+          "prompt_tokens": 2794,
+          "completion_tokens": 234,
+          "total_tokens": 3028,
+          "completion_tokens_details": {
+            "text_tokens": 234
+          },
+          "prompt_tokens_details": {
+            "image_tokens": 2454,
+            "text_tokens": 340,
+            "cached_tokens": 0
+          }
+        },
+        "facts": {
+          "F1": "keep",
+          "F2": "keep",
+          "F3": "keep",
+          "F4": "keep",
+          "F5": "keep",
+          "F6": "keep",
+          "F7": "keep",
+          "F8": "keep"
+        },
+        "raw": {
+          "F1": "same",
+          "F2": "same",
+          "F3": "same",
+          "F4": "same",
+          "F5": "same",
+          "F6": "same",
+          "F7": "same",
+          "F8": "same"
+        },
+        "comparison": {
+          "signal": false,
+          "flagged_facts": [],
+          "unknown_facts": [],
+          "machine_facts": 8,
+          "detected": false,
+          "missed": false,
+          "false_alarm": false,
+          "no_signal_on_good": false,
+          "risk_on_human_only_case": false,
+          "expect": "not_hard_fail",
+          "verdicts": [
+            "keep",
+            "keep",
+            "keep",
+            "keep",
+            "keep",
+            "keep",
+            "keep",
+            "keep"
+          ]
+        },
+        "error": null
+      }
+    },
+    {
+      "id": "bex-02",
+      "role": "boundary_other_product",
+      "expect": "not_pass",
+      "expect_source": "D0.7 第二商品；量的是别的商品，理应不通过",
+      "human_required": null,
+      "sha256": "a5aed23f1b96748998e5a9b1bf1cdc2db8ce433c8ff6aa6fe607cb8f9828ed27",
+      "A": {
+        "status": "ok",
+        "overall": "hard_fail",
+        "applicable": true,
+        "verdict_scope": "evidence_on_isolated_subject",
+        "probe_share": 0.0,
+        "probe_source": "原图（不是制造出来的底衬）",
+        "probe_max_share": 0.02,
+        "canvas_probe_share": 0.444,
+        "facts": {
+          "F1": "manual",
+          "F2": "unknown",
+          "F3": "hard_fail",
+          "F4": "unknown",
+          "F5": "hard_fail",
+          "F6": "hard_fail",
+          "F7": "pass",
+          "F8": "human"
+        },
+        "isolated_facts": {
+          "F1": "manual",
+          "F2": "unknown",
+          "F3": "hard_fail",
+          "F4": "unknown",
+          "F5": "hard_fail",
+          "F6": "hard_fail",
+          "F7": "pass",
+          "F8": "human"
+        },
+        "comparison": {
+          "signal": true,
+          "flagged_facts": [
+            "F3",
+            "F5",
+            "F6"
+          ],
+          "unknown_facts": [
+            "F2",
+            "F4"
+          ],
+          "machine_facts": 4,
+          "detected": true,
+          "missed": false,
+          "false_alarm": false,
+          "no_signal_on_good": false,
+          "risk_on_human_only_case": false,
+          "expect": "not_pass",
+          "verdicts": [
+            "manual",
+            "unknown",
+            "hard_fail",
+            "unknown",
+            "hard_fail",
+            "hard_fail",
+            "pass",
+            "human"
+          ]
+        },
+        "error": null
+      },
+      "B": {
+        "status": "ok",
+        "model": "qwen-vl-max",
+        "usage": {
+          "prompt_tokens": 2794,
+          "completion_tokens": 182,
+          "total_tokens": 2976,
+          "completion_tokens_details": {
+            "text_tokens": 182
+          },
+          "prompt_tokens_details": {
+            "image_tokens": 2454,
+            "text_tokens": 340,
+            "cached_tokens": 0
+          }
+        },
+        "facts": {
+          "F1": "keep",
+          "F2": "risk",
+          "F3": "risk",
+          "F4": "risk",
+          "F5": "risk",
+          "F6": "unknown",
+          "F7": "keep",
+          "F8": "keep"
+        },
+        "raw": {
+          "F1": "same",
+          "F2": "different",
+          "F3": "different",
+          "F4": "different",
+          "F5": "different",
+          "F6": "uncertain",
+          "F7": "same",
+          "F8": "same"
+        },
+        "comparison": {
+          "signal": true,
+          "flagged_facts": [
+            "F2",
+            "F3",
+            "F4",
+            "F5"
+          ],
+          "unknown_facts": [
+            "F6"
+          ],
+          "machine_facts": 8,
+          "detected": true,
+          "missed": false,
+          "false_alarm": false,
+          "no_signal_on_good": false,
+          "risk_on_human_only_case": false,
+          "expect": "not_pass",
+          "verdicts": [
+            "keep",
+            "risk",
+            "risk",
+            "risk",
+            "risk",
+            "unknown",
+            "keep",
+            "keep"
+          ]
+        },
+        "error": null
+      }
+    }
+  ],
+  "summary": {
+    "A": {
+      "detected": 6,
+      "missed": 0,
+      "false_alarm": 0,
+      "no_signal_on_good": 5,
+      "risk_on_human_only_case": 0,
+      "unknown_facts": 36,
+      "ran": 15,
+      "failed": 0
+    },
+    "B": {
+      "detected": 4,
+      "missed": 2,
+      "false_alarm": 0,
+      "no_signal_on_good": 5,
+      "risk_on_human_only_case": 1,
+      "unknown_facts": 4,
+      "ran": 15,
+      "failed": 0
+    }
+  },
+  "change_cost": {
+    "A": "换商品要新 metric profile + 阈值派生记录（代码级配置，见 §4.6 硬规矩 1）",
+    "B": "换商品只改事实卡与提示词模板（数据级）",
+    "C": "A 的配置成本 + B 的调用成本"
+  },
+  "ran_at": "2026-09-26T13:22:00+0800",
+  "fact_card": "demo\\fixture\\aster-01\\product.json",
+  "reference": "evals/product-demo/fixture-design/pack/01-front-full.png"
+}

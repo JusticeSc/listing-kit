@@ -1,0 +1,10 @@
+{
+  "schema": "amz-listing-kit/runs-ref@1",
+  "sku": "demo-tumbler-aster-01",
+  "candidates_dir": "evals/product-demo/first-round",
+  "manifest": "manifest.json",
+  "ledger": "ledger.jsonl",
+  "attempts": "attempts",
+  "how_written": "由 demo/provider/run_first_round.py 在第一次付费提交时写入；本文件只声明位置，不复制内容",
+  "boundary": "候选身份权威是候选目录里的 manifest.json；本文件不含任何候选取值，也不含人工裁决"
+}

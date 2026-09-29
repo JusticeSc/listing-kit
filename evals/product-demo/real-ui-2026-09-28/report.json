@@ -1,0 +1,92 @@
+{
+  "base": "http://127.0.0.1:8787",
+  "workspace": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\_working\\amz-listing-kit-product-demo\\real-run-02\\ui-walkthrough\\workspace",
+  "steps": [
+    {
+      "step": "open_workspace",
+      "result": {
+        "ok": true,
+        "error": null
+      }
+    },
+    {
+      "step": "shots_rendered",
+      "count": 4
+    },
+    {
+      "step": "choose_candidates",
+      "detail": [
+        {
+          "shot_index": 0,
+          "candidate_buttons": 2,
+          "clicked": true,
+          "button_index": 1
+        },
+        {
+          "shot_index": 1,
+          "candidate_buttons": 1,
+          "clicked": false,
+          "note": "already chosen"
+        },
+        {
+          "shot_index": 2,
+          "candidate_buttons": 1,
+          "clicked": false,
+          "note": "already chosen"
+        },
+        {
+          "shot_index": 3,
+          "candidate_buttons": 1,
+          "clicked": false,
+          "note": "already chosen"
+        }
+      ]
+    },
+    {
+      "step": "selection_progress",
+      "text": "4/4 张已选"
+    },
+    {
+      "step": "save_selection",
+      "clicked": true,
+      "status": "正在保存选择…"
+    },
+    {
+      "step": "selection_status",
+      "text": "选择已保存。"
+    },
+    {
+      "step": "export",
+      "summary": "导出目录：exports/export_ee3e81e8e5b641b1\n\nexports/export_ee3e81e8e5b641b1/images/01_hero.png · sha256 8b739be8c518…\nexports/export_ee3e81e8e5b641b1/images/02_feature.png · sha256 437bc8ac4ab9…\nexports/export_ee3e81e8e5b641b1/images/03_custom.png · sha256 f1e728e8f1d6…\nexports/export_ee3e81e8e5b641b1/images/04_lifestyle.png · sha256 e09a19c13e69…\nfile_format_accepted：通过 · 实测格式 PNG（image/png）；规则允许 ['gif', 'jpeg', 'png', 'tiff']；来源 https://sellercentral.amazon.com/help/hub/reference/external/G1881\nlong_side_min_px：通过 · 实测长边 1344px，下限 500px；来源 https://sellercentral.amazon.com/help/hub/reference/external/G1881\nlong_side_max_px：通过 · 实测长边 1344px，上限 10000px；来源 https://sellercentral.amazon.com/help/hub/reference/external/G1881\nmain_image_border_whiteness_measured：未通过 · 实测主图外边框纯白占比 0%；本项只测外边框像素，不代替 Amazon 主图对占比、构图与语义的全部要求，异常时需人工核对。\nfile_format_accepted：通过 · 实测格式 PNG（image/png）；规则允许 ['gif', 'jpeg', 'png', 'tiff']；来源 https://sellercentral.amazon.com/help/hub/reference/external/G1881\nlong_side_min_px：通过 · 实测长边 1344px，下限 500px；来源 https://sellercentral.amazon.com/help/hub/reference/external/G1881\nlong_side_max_px：通过 · 实测长边 1344px，上限 10000px；来源 https://sellercentral.amazon.com/help/hub/reference/external/G1881\nfile_format_accepted：通过 · 实测格式 PNG（image/png）；规则允许 ['gif', 'jpeg', 'png', 'tiff']；来源 https://sellercentral.amazon.com/help/hub/reference/external/G1881\nlong_side_min_px：通过 · 实测长边 1344px，下限 500px；来源 https://sellercentral.amazon.com/help/hub/reference/external/G1881\nlong_side_max_px：通过 · 实测长边 1344px，上限 10000px；来源 https://sellercentral.amazon.com/help/hub/reference/external/G1881\nfile_format_accepted：通过 · 实测格式 PNG（image/png）；规则允许 ['gif', 'jpeg', 'png', 'tiff']；来源 https://sellercentral.amazon.com/help/hub/reference/external/G1881\nlong_side_min_px：通过 · 实测长边 1344px，下限 500px；来源 https://sellercentral.amazon.com/help/hub/reference/external/G1881\nlong_side_max_px：通过 · 实测长边 1344px，上限 10000px；来源 https://sellercentral.amazon.com/help/hub/reference/external/G1881\n\n追溯清单：exports/export_ee3e81e8e5b641b1/manifest.json"
+    },
+    {
+      "step": "export_files_over_http",
+      "detail": [
+        {
+          "index": 0,
+          "status": 200,
+          "bytes": 2454961,
+          "type": "image/png"
+        },
+        {
+          "index": 1,
+          "status": 200,
+          "bytes": 2284034,
+          "type": "image/png"
+        },
+        {
+          "index": 2,
+          "status": 200,
+          "bytes": 2271205,
+          "type": "image/png"
+        },
+        {
+          "index": 3,
+          "status": 200,
+          "bytes": 2384486,
+          "type": "image/png"
+        }
+      ]
+    }
+  ]
+}

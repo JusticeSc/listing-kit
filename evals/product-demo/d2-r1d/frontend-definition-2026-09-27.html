@@ -1,0 +1,593 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>D2.R1d · 生产形态前端：线框与视觉稿（评审候选）</title>
+<style>
+*{box-sizing:border-box}
+:root{--page:#F4F5F7;--surface:#fff;--ink:#101828;--ink2:#667085;--ink3:#98A2B3;--border:#D0D5DD;--pri:#2457D6;--ok:#18794E;--warn:#B54708;--bad:#B42318;--unk:#6941C6;--okbg:#ECFDF3;--warnbg:#FFFAEB;--badbg:#FEF3F2;--unkbg:#F4F3FF;--pribg:#EFF4FF}
+body{margin:0;background:var(--page);color:var(--ink);font:16px/1.55 "Segoe UI",system-ui,-apple-system,"Microsoft YaHei",sans-serif}
+.wrap{max-width:1440px;margin:0 auto;padding:36px 28px 96px}
+.doc-head{background:#fff;border:1px solid var(--border);border-radius:16px;padding:30px 34px}
+.kicker{font-size:13px;letter-spacing:.06em;color:var(--pri);font-weight:600;margin-bottom:6px}
+.doc-head h1{margin:0 0 10px;font-size:28px;line-height:1.25}
+.doc-sub{margin:0 0 18px;color:var(--ink2);max-width:980px}
+.review-strip{display:flex;flex-wrap:wrap;gap:8px}
+.rchip{font-size:13px;color:var(--ink);background:var(--page);border:1px solid var(--border);border-radius:999px;padding:6px 12px}
+.card{background:#fff;border:1px solid var(--border);border-radius:16px;padding:28px 32px;margin:26px 0}
+.card h2{margin:0 0 6px;font-size:21px}
+.card .note{margin:0 0 20px;color:var(--ink2);font-size:14.5px}
+.flow{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.step{border:1px solid var(--border);border-radius:12px;padding:14px 16px;background:#FCFCFD}
+.step b{display:block;font-size:15px;margin-bottom:4px}
+.step span{color:var(--ink2);font-size:13.5px}
+.step.cur{border-color:var(--pri);background:var(--pribg)}
+.wf{border:2px solid #98A2B3;border-radius:10px;background:#FCFCFD;margin:22px 0;overflow:hidden}
+.wf-bar{display:flex;justify-content:space-between;align-items:center;gap:12px;background:#F2F4F7;border-bottom:2px solid #98A2B3;padding:9px 14px;font-size:13.5px;color:#344054;font-weight:600}
+.wf-bar em{font-style:normal;font-weight:400;color:#475467}
+.wf-body{padding:16px;display:grid;gap:10px}
+.bk{border:1.5px dashed #98A2B3;background:#EAECF0;border-radius:8px;color:#344054;font-size:13px;display:flex;align-items:center;gap:8px;padding:10px 12px;min-height:40px}
+.bk.center{justify-content:center;text-align:center}
+.bk.sm{min-height:30px;font-size:12.5px;padding:6px 10px}
+.row{display:grid;gap:10px}
+.row.c2{grid-template-columns:1fr 1fr}
+.row.c3{grid-template-columns:1fr 1fr 1fr}
+.row.c4{grid-template-columns:1.2fr 1fr 1fr .7fr}
+.row.c6{grid-template-columns:repeat(6,1fr)}
+.row.hd{grid-template-columns:auto 1fr auto auto auto}
+.wf-legend{padding:0 16px 16px;display:grid;grid-template-columns:1fr 1fr;gap:6px 22px;font-size:13px;color:#475467}
+.n{display:inline-flex;width:20px;height:20px;border-radius:50%;background:#101828;color:#fff;font-size:12px;align-items:center;justify-content:center;flex:none;font-weight:600}
+.n.g{background:#475467}
+.states{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.st{border:1px solid var(--border);border-radius:12px;background:#fff;padding:12px;display:flex;flex-direction:column;gap:8px}
+.st h3{margin:0;font-size:14px;display:flex;align-items:center;gap:8px}
+.mini{border:2px solid #98A2B3;border-radius:6px;background:#FCFCFD;padding:6px;display:flex;flex-direction:column;gap:4px;min-height:118px}
+.mini .mb{background:#EAECF0;border:1px dashed #98A2B3;border-radius:4px;font-size:10.5px;color:#475467;display:flex;align-items:center;justify-content:center;padding:2px;min-height:16px;text-align:center}
+.mini .mb.h{justify-content:flex-start;padding-left:6px;background:#F2F4F7}
+.mini .mb.done{background:#E7F6EE;border-color:#A6D9BE}
+.mini .mb.bad{background:#FEF3F2;border-color:#E4A5A0}
+.mini .mb.run{background:#EFF4FF;border-color:#A9BEF3}
+.st .cap{font-size:12.5px;color:var(--ink2);display:grid;gap:2px}
+.st .cap b{color:var(--ink);font-weight:600}
+table.tb{width:100%;border-collapse:collapse;font-size:13.5px}
+.tb th,.tb td{border:1px solid var(--border);padding:9px 11px;text-align:left;vertical-align:top}
+.tb th{background:#F9FAFB;font-weight:600;color:#344054}
+.tb td b{font-weight:600}
+.hf{background:var(--page);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin:20px 0}
+.appbar{display:flex;align-items:center;gap:12px;background:#fff;border-bottom:1px solid var(--border);padding:10px 16px;font-size:13.5px;flex-wrap:wrap}
+.appbar .back{color:var(--ink2)}
+.appbar .pid{font-weight:600}
+.appbar .stage{background:var(--pribg);color:var(--pri);border-radius:999px;padding:3px 10px;font-size:12.5px}
+.appbar .env{background:#F2F4F7;color:var(--ink2);border:1px dashed var(--border);border-radius:999px;padding:3px 10px;font-size:12px}
+.grow{flex:1}
+.btn{display:inline-flex;align-items:center;justify-content:center;border-radius:10px;font-size:13.5px;padding:8px 16px;border:1px solid transparent;min-height:38px;white-space:nowrap}
+.btn-pri{background:var(--pri);color:#fff;font-weight:600}
+.btn-sec{background:#fff;color:var(--ink);border-color:var(--border);font-weight:600}
+.btn-dis{background:#E4E7EC;color:#98A2B3;font-weight:600}
+.btn-ghost{color:var(--pri);background:transparent;padding:6px 10px}
+.hf-body{padding:18px;display:grid;gap:14px;background:var(--page)}
+.panel{background:#fff;border:1px solid var(--border);border-radius:12px;padding:14px 16px}
+.panel-h{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.muted{color:var(--ink2);font-size:12.5px}
+.thumbs{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.thumb{margin:0;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:#fff}
+.thumb img{width:100%;height:120px;object-fit:cover;display:block;background:#F2F4F7}
+.thumb figcaption{font-size:12.5px;padding:6px 8px 0;font-weight:600}
+.thumb .tiny{font-size:11.5px;color:var(--ink2);padding:0 8px 8px}
+.thumb.add{border-style:dashed;display:flex;align-items:center;justify-content:center;color:var(--ink2);font-size:13px;min-height:150px}
+.pts{margin:0;padding-left:20px;color:var(--ink);font-size:13.5px;display:grid;gap:4px}
+.input{border:1px solid var(--border);border-radius:10px;padding:9px 12px;font-size:13.5px;background:#fff}
+.input.placeholder{color:var(--ink3)}
+.panel label{display:block;font-size:12.5px;color:var(--ink2);margin-bottom:4px}
+.checkline{font-size:13px;border-radius:10px;padding:9px 12px}
+.checkline.ok{background:var(--okbg);color:#085D3A;border:1px solid #A6D9BE}
+.cap{font-size:13px;color:var(--ink2);margin:6px 2px 26px}
+.panel.two{display:grid;grid-template-columns:240px 1fr;gap:14px}
+.sumrow{display:flex;gap:10px;align-items:center;background:#fff;border:1px solid var(--border);border-radius:10px;padding:9px 14px;font-size:13px;color:var(--ink2);flex-wrap:wrap}
+.oktick{color:var(--ok);font-weight:700}
+.shots{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.shot{background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px 14px;display:grid;gap:8px;align-content:start}
+.shot h4{margin:0;font-size:14.5px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.shot p{margin:0;font-size:13px;color:var(--ink2)}
+.shot .links{display:flex;gap:14px;font-size:12.5px;color:var(--pri)}
+.tag{font-size:11.5px;border-radius:999px;padding:2px 9px;border:1px solid var(--border);color:var(--ink2)}
+.tag.req{background:var(--pribg);color:var(--pri);border-color:#B9CBF5}
+.shot .ref{display:flex;gap:8px;align-items:center;font-size:12px;color:var(--ink2)}
+.shot .ref img{width:44px;height:44px;object-fit:cover;border-radius:8px;border:1px solid var(--border)}
+.shot.add{border-style:dashed;display:flex;align-items:center;justify-content:center;color:var(--ink2);min-height:110px}
+.bottombar{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-size:13px;color:var(--ink2);flex-wrap:wrap}
+.review{display:grid;grid-template-columns:120px 1fr 300px;gap:14px;padding:16px;background:var(--page)}
+.rail{display:grid;gap:8px;align-content:start}
+.railitem{border:1px solid var(--border);border-radius:10px;background:#fff;padding:6px;font-size:11.5px;display:grid;gap:4px;color:var(--ink2)}
+.railitem img{width:100%;height:52px;object-fit:cover;border-radius:6px}
+.railitem.sel{border-color:var(--pri);box-shadow:0 0 0 2px var(--pribg)}
+.bigimg{border:1px solid var(--border);border-radius:12px;background:#fff;padding:10px}
+.bigimg img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:8px;background:#F2F4F7}
+.candrow{display:flex;gap:8px;margin-top:8px}
+.candrow img{width:52px;height:52px;border-radius:8px;border:2px solid var(--border);object-fit:cover}
+.candrow img.sel{border-color:var(--pri)}
+.ctx{display:grid;gap:10px;align-content:start}
+.riskcard{border-radius:12px;padding:12px;font-size:13px}
+.riskcard.ok{background:var(--okbg);border:1px solid #A6D9BE;color:#085D3A}
+.ctx .btn-pri,.ctx .btn-sec{width:100%}
+.adv{border-top:1px dashed var(--border);padding-top:10px;font-size:12.5px;color:var(--pri)}
+.hist{font-size:12px;color:var(--ink2)}
+.popover{border:1px solid var(--border);border-radius:12px;background:#fff;padding:14px;box-shadow:0 8px 24px rgba(16,24,40,.10);display:grid;gap:8px}
+.opt{display:flex;gap:8px;align-items:flex-start;font-size:13px}
+.rd{width:16px;height:16px;border-radius:50%;border:2px solid var(--pri);flex:none;margin-top:2px}
+.rd.off{border-color:var(--ink3)}
+.impact{background:#F9FAFB;border:1px dashed var(--border);border-radius:10px;padding:10px;font-size:12.5px;color:var(--ink2)}
+.adopted{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.adopted .a{display:flex;gap:8px;align-items:center;border:1px solid var(--border);border-radius:10px;padding:8px;background:#fff;font-size:12.5px}
+.adopted .a img{width:44px;height:44px;object-fit:cover;border-radius:8px}
+.manifest{background:#fff;border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.mocknote{background:var(--warnbg);border:1px solid #F5D9A8;color:#7A3E00;border-radius:10px;padding:9px 12px;font-size:12.5px}
+.cg{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.cgi{border:1px solid var(--border);border-radius:12px;padding:12px;background:#fff;display:grid;gap:8px;align-content:start}
+.cgi h4{margin:0;font-size:13.5px;color:#344054}
+.chip{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:3px 10px;font-size:12px;border:1px solid var(--border)}
+.chip.ok{background:var(--okbg);color:var(--ok);border-color:#A6D9BE}
+.chip.warn{background:var(--warnbg);color:var(--warn);border-color:#F5D9A8}
+.chip.bad{background:var(--badbg);color:var(--bad);border-color:#E4A5A0}
+.chip.unk{background:var(--unkbg);color:var(--unk);border-color:#C7C2EA}
+.minidemo{border:1px dashed var(--border);border-radius:10px;padding:10px;display:grid;gap:8px;background:#FCFCFD}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="doc-head">
+  <div class="kicker">amz-listing-kit · D2.R1d 评审候选 · 尚未实现</div>
+  <h1>生产形态前端：线框与视觉稿</h1>
+  <p class="doc-sub">依据计划 v1.21 §4.7（FE-01～FE-04 合同）。同一个页面内，任务按 <b>资料接入 → 套图方案 → 审核返工 → 交付</b> 渐进推进；当前阶段占主区，完成后折叠成可返回的摘要。本页只是设计与界面候选，不接后端、不调用模型、不写文件；确认后进入 D2.R1e 实现。</p>
+  <div class="review-strip">
+    <span class="rchip">评审 ① 资料怎么进入任务</span>
+    <span class="rchip">评审 ② 默认方案与一键生成</span>
+    <span class="rchip">评审 ③ 审核只处理问题 + 按方向返工</span>
+    <span class="rchip">评审 ④ 交付条件与文件清单</span>
+  </div>
+</header>
+
+<section class="card" id="flow">
+  <h2>阶段总览</h2>
+  <p class="note">单页、单人自签。不是向导：上一阶段随时可返回，下一阶段不提前占据页面。</p>
+  <div class="flow">
+    <div class="step"><b>INTAKE · 资料接入</b><span>商品图、卖点、平台、可选参考。资料不齐就不给开始。</span></div>
+    <div class="step"><b>PLAN · 套图方案</b><span>系统给默认方案与默认提示词；可调整，然后一键生成整套。</span></div>
+    <div class="step"><b>REVIEW · 审核与返工</b><span>逐图看结果：可采用，或选一个方向只重做当前这张。</span></div>
+    <div class="step"><b>DELIVERY · 交付</b><span>全部必需图已采用且复检通过，才可导出图片组与清单。</span></div>
+  </div>
+</section>
+
+<section class="card" id="wireframes">
+  <h2>一、线框（低保真）</h2>
+  <p class="note">先看结构和操作理由，不看视觉。每个编号在框下有解释；尺寸按 1440 桌面的比例示意。</p>
+
+  <div class="wf" id="wf-intake">
+    <div class="wf-bar"><span>线框 1 · INTAKE 资料接入（桌面）</span><em>主动作：生成推荐方案</em></div>
+    <div class="wf-body">
+      <div class="row hd">
+        <div class="bk sm">← 商品套图</div>
+        <div class="bk sm"><span class="n">1</span>商品名 · 平台（Aster 01 保温杯 · Amazon US）</div>
+        <div class="bk sm">阶段：资料接入</div>
+        <div class="bk sm">演示环境</div>
+        <div class="bk sm center">生成推荐方案</div>
+      </div>
+      <div class="bk"><span class="n">2</span>商品参考图：上传 / 替换 / 排序；每张标注用途（正面全身 · 杯盖细节 · 下部细节）</div>
+      <div class="row c3">
+        <div class="bk center sm">正面全身</div>
+        <div class="bk center sm">杯盖细节</div>
+        <div class="bk center sm">下部细节</div>
+      </div>
+      <div class="bk"><span class="n">3</span>卖点（3 条，可直接改）——系统从这里做默认增强</div>
+      <div class="row c2">
+        <div class="bk sm">平台：Amazon US</div>
+        <div class="bk sm">视觉参考链接（可选）</div>
+      </div>
+      <div class="bk sm"><span class="n">4</span>资料检查：缺料 / 冲突就近提示；不齐时「生成推荐方案」不可用并写明缺什么</div>
+      <div class="bk sm center" style="border-style:dashed">加载示例资料（虚构 Aster 01）——只填入同一张表单，不是另一条产品路径</div>
+    </div>
+    <div class="wf-legend">
+      <div><span class="n g">1</span>任务头只保留：返回、商品身份、当前阶段、演示标记、当前唯一主动作</div>
+      <div><span class="n g">2</span>图片来自用户真实上传，可替换、可排序；不是“系统内置一个杯子”</div>
+      <div><span class="n g">3</span>卖点是资料的一部分，不是提示词；用户不需要会写提示词</div>
+      <div><span class="n g">4</span>缺料就地说明，不用弹窗、不让用户猜</div>
+    </div>
+  </div>
+
+  <div class="wf" id="wf-plan">
+    <div class="wf-bar"><span>线框 2 · PLAN 套图方案（桌面）</span><em>主动作：一键生成套图</em></div>
+    <div class="wf-body">
+      <div class="row hd">
+        <div class="bk sm">← 商品套图</div>
+        <div class="bk sm"><span class="n">1</span>✓ 商品资料摘要（3 张图 · 3 条卖点）→ 展开可返回修改</div>
+        <div class="bk sm">阶段：套图方案</div>
+        <div class="bk sm">演示环境</div>
+        <div class="bk sm center">一键生成套图</div>
+      </div>
+      <div class="bk"><span class="n">2</span>共享视觉方向：干净居家场景 · 自然侧光 · 哑光质感［调整］</div>
+      <div class="row c2">
+        <div class="bk">图卡 1 · 白底主图（必需）｜方向｜提示词 ▾</div>
+        <div class="bk">图卡 2 · 场景图（必需）｜方向｜参考视图｜提示词 ▾</div>
+        <div class="bk">图卡 3 · 杯盖细节（必需）｜方向｜参考视图｜提示词 ▾</div>
+        <div class="bk">图卡 4 · 防滑套细节（可选）｜方向｜提示词 ▾</div>
+        <div class="bk">图卡 5 · 尺寸信息图（可选）｜文字由排版层合成</div>
+        <div class="bk"><span class="n">3</span>+ 添加一张（可选图）</div>
+      </div>
+      <div class="row c4">
+        <div class="bk sm">共 6 张 · 必需 3 张 · 可选 3 张</div>
+        <div class="bk sm">排序 / 改方向 / 增删可选图</div>
+        <div class="bk sm">必需平台图不可移除</div>
+        <div class="bk sm center"><span class="n">4</span>一键生成套图</div>
+      </div>
+    </div>
+    <div class="wf-legend">
+      <div><span class="n g">1</span>完成的阶段折叠成摘要，一点就回去；页面不堆向导步骤条</div>
+      <div><span class="n g">2</span>系统先给方案和默认方向，用户可接受也可调整——降低门槛，不是取消控制</div>
+      <div><span class="n g">3</span>张数由用途推导（3 必需 + 可选），不是固定七张</div>
+      <div><span class="n g">4</span>整套生成是主路径：一次确认，逐张执行；不是让用户逐张手点</div>
+    </div>
+  </div>
+
+  <div class="wf" id="wf-review">
+    <div class="wf-bar"><span>线框 3 · REVIEW 审核与定向返工（桌面）</span><em>逐图决策：采用这张 / 重做这张</em></div>
+    <div class="wf-body">
+      <div class="row hd">
+        <div class="bk sm">← 商品套图</div>
+        <div class="bk sm"><span class="n">1</span>✓ 资料 ｜ ✓ 方案 v1（6 张）｜ 已采用 2/6</div>
+        <div class="bk sm">阶段：审核与返工</div>
+        <div class="bk sm">演示环境</div>
+        <div class="bk sm center">进度代替全局主按钮</div>
+      </div>
+      <div class="row" style="grid-template-columns:110px 1fr 300px">
+        <div class="bk center">当前图导航：6 张缩略图 + 状态（已采用 / 待审核 / 生成中 / 失败）</div>
+        <div class="bk center" style="min-height:240px">当前候选大图 · 候选切换 1–4［旧候选保留可切换］</div>
+        <div class="bk" style="align-items:flex-start;flex-direction:column">风险摘要：可采用 / 需确认 / 已阻止<br><br>［采用这张］（主）<br>［重做这张 ▾］（先选方向）<br><br>高级：完整提示词 + 逐项检查证据 ▾</div>
+      </div>
+    </div>
+    <div class="wf-legend">
+      <div><span class="n g">1</span>上一阶段折叠摘要保留返回路径；所有必需图的状态在同一导航条里</div>
+      <div><span class="n g">2</span>没风险时一次采用；有风险时只把需要人判断的具体问题交给人</div>
+      <div><span class="n g">3</span>“采用 / 重做”贴着当前候选；重做先选方向，并显示将改变 / 不会改变</div>
+      <div><span class="n g">4</span>F1–F8 与责任信息默认收起，不变成用户逐项打勾的表</div>
+    </div>
+  </div>
+
+  <div class="wf" id="wf-delivery">
+    <div class="wf-bar"><span>线框 4 · DELIVERY 交付（桌面）</span><em>主动作：导出套图</em></div>
+    <div class="wf-body">
+      <div class="row hd">
+        <div class="bk sm">← 商品套图</div>
+        <div class="bk sm"><span class="n">1</span>✓ 资料 ｜ ✓ 方案 v1 ｜ ✓ 审核 6/6 已采用 ｜ ✓ 最终复检通过</div>
+        <div class="bk sm">阶段：交付</div>
+        <div class="bk sm">演示环境</div>
+        <div class="bk sm center">导出套图</div>
+      </div>
+      <div class="row c2">
+        <div class="bk"><span class="n">2</span>已采用清单：每张的来源（图位 · 提示词版本）</div>
+        <div class="bk"><span class="n">3</span>阻塞项（没有阻塞时显示 0；有则点进目标图）</div>
+      </div>
+      <div class="bk"><span class="n">4</span>文件清单预览：文件名 / 用途 / 来源 / 规格 —— 未满足条件不允许导出</div>
+    </div>
+    <div class="wf-legend">
+      <div><span class="n g">1</span>交付条件一键可读：谁已采用，什么还阻塞</div>
+      <div><span class="n g">2</span>每张图可回溯到图位与提示词版本——这是“可交付”的一部分</div>
+      <div><span class="n g">3</span>不满足时列出原因并可跳回去处理，不是只把按钮变灰</div>
+      <div><span class="n g">4</span>导出 = 图片组 + 清单；Mock 时明确是清单预览，不假装写了文件</div>
+    </div>
+  </div>
+
+  <div class="wf" id="wf-narrow">
+    <div class="wf-bar"><span>线框 5 · REVIEW 窄屏（单列）</span><em>视觉顺序 = 键盘顺序，不藏业务动作</em></div>
+    <div class="wf-body" style="max-width:420px">
+      <div class="bk sm">← 商品套图 · Aster 01 · 已采用 2/6</div>
+      <div class="row c6">
+        <div class="bk center sm">1</div><div class="bk center sm">2</div><div class="bk center sm">3</div><div class="bk center sm">4</div><div class="bk center sm">5</div><div class="bk center sm">6</div>
+      </div>
+      <div class="bk center" style="min-height:180px">当前候选大图</div>
+      <div class="bk sm">风险摘要：可采用</div>
+      <div class="bk sm center">采用这张</div>
+      <div class="bk sm center">重做这张（先选方向）</div>
+      <div class="bk sm">高级：提示词与证据 ▾</div>
+    </div>
+    <div class="wf-legend">
+      <div><span class="n g">1</span>导航 → 候选 → 操作，单列排列，不横向滚动隐藏动作</div>
+      <div><span class="n g">2</span>200% 缩放下仍可完成任务；不因窄屏丢掉返工或采用入口</div>
+    </div>
+  </div>
+</section>
+
+<section class="card" id="states">
+  <h2>二、九个关键状态（自动轨迹覆盖，页面上没有“切换状态”按钮）</h2>
+  <p class="note">状态覆盖属于测试矩阵；业务页面只按真实状态自动呈现，开发者场景控制不进页面。</p>
+  <div class="states">
+    <div class="st"><h3>1 · 新任务 / 资料不齐</h3>
+      <div class="mini"><div class="mb h">任务头 · 资料接入</div><div class="mb bad">缺：商品参考图</div><div class="mb bad">卖点：空</div><div class="mb">［生成推荐方案］不可用</div></div>
+      <div class="cap"><span><b>主动作</b> 补齐资料</span><span><b>后置</b> 候选画布、返工表、导出栏</span></div></div>
+    <div class="st"><h3>2 · 资料齐全</h3>
+      <div class="mini"><div class="mb h">任务头 · 资料接入</div><div class="mb done">3 张参考图 · 3 条卖点 · 无冲突</div><div class="mb run">［生成推荐方案］可用</div><div class="mb">加载示例资料</div></div>
+      <div class="cap"><span><b>主动作</b> 生成套图方案</span><span><b>后置</b> F1–F8、提示词、场景控制</span></div></div>
+    <div class="st"><h3>3 · 方案草案</h3>
+      <div class="mini"><div class="mb h">任务头 · 套图方案</div><div class="mb">共享视觉方向 + 6 张图卡</div><div class="mb">改方向 / 增删可选图 / 排序</div><div class="mb run">［一键生成套图］</div></div>
+      <div class="cap"><span><b>主动作</b> 一键生成套图</span><span><b>后置</b> 候选审核表；提示词只在图卡高级里</span></div></div>
+    <div class="st"><h3>4 · 整套生成中</h3>
+      <div class="mini"><div class="mb h">任务头 · 生成中</div><div class="mb done">图 1 完成</div><div class="mb done">图 2 完成</div><div class="mb run">图 3 生成中…</div><div class="mb">图 4–6 排队</div></div>
+      <div class="cap"><span><b>主动作</b> 查看已完成图</span><span><b>后置</b> 未产生候选的返工入口、假百分比</span></div></div>
+    <div class="st"><h3>5 · 部分失败 / Unknown</h3>
+      <div class="mini"><div class="mb done">图 1–4 已保留</div><div class="mb bad">图 5 失败：连接中断 · ［重试这张］</div><div class="mb">图 6 核对中（Unknown，禁止重复提交）</div></div>
+      <div class="cap"><span><b>主动作</b> 处理问题图</span><span><b>后置</b> Unknown 直接重提、整套清空</span></div></div>
+    <div class="st"><h3>6 · 候选待选择</h3>
+      <div class="mini"><div class="mb h">任务头 · 审核 2/6</div><div class="mb">图导航 ｜ 候选大图 ｜ 候选切换</div><div class="mb">风险摘要：可采用 / 需确认 / 已阻止</div><div class="mb run">［采用这张］［重做这张］</div></div>
+      <div class="cap"><span><b>主动作</b> 采用这张 / 重做这张</span><span><b>后置</b> 例行 F1–F8 打勾、工程身份</span></div></div>
+    <div class="st"><h3>7 · 提示词新版本</h3>
+      <div class="mini"><div class="mb h">当前图 · 高级</div><div class="mb">提示词 v4（已修改）已保存</div><div class="mb bad">旧候选标记：来自旧版本 · 需重新生成</div><div class="mb run">［重做这张］</div></div>
+      <div class="cap"><span><b>主动作</b> 重做这张</span><span><b>后置</b> 旧候选删除、旧选择继续算有效</span></div></div>
+    <div class="st"><h3>8 · 单图返工中</h3>
+      <div class="mini"><div class="mb h">任务头 · 审核</div><div class="mb">其他图状态不变</div><div class="mb run">目标图：重做中（新候选即将追加）</div><div class="mb">旧候选保留</div></div>
+      <div class="cap"><span><b>主动作</b> 查看新候选</span><span><b>后置</b> 整套重跑、无关图 loading</span></div></div>
+    <div class="st"><h3>9 · 可导出 / 已导出</h3>
+      <div class="mini"><div class="mb h">任务头 · 交付</div><div class="mb done">6/6 已采用 · 最终复检通过</div><div class="mb run">［导出套图］</div><div class="mb">已导出：清单就绪（Mock 为预览）</div></div>
+      <div class="cap"><span><b>主动作</b> 导出套图 / 查看清单</span><span><b>后置</b> 未满足条件的假成功、Mock 下真实文件位置</span></div></div>
+  </div>
+</section>
+
+<section class="card" id="controls">
+  <h2>三、控件清单：每个控件为什么存在</h2>
+  <p class="note">与计划 §4.7.5 动作矩阵一一对应。“去掉它会失去什么”回答的是存在理由，不是实现细节。</p>
+  <table class="tb">
+    <tr><th>控件</th><th>对象</th><th>出现 / 可用条件</th><th>业务结果</th><th>去掉它会失去什么</th></tr>
+    <tr><td><b>加载示例资料</b></td><td>商品资料</td><td>新任务、资料可编辑</td><td>用虚构 Aster 01 填满同一张表单</td><td>只是演示准备慢一点；它不是另一种产品路径</td></tr>
+    <tr><td><b>添加 / 替换商品图</b></td><td>商品资料</td><td>资料可编辑</td><td>真实图片进入任务，可排序、标注用途</td><td>退化成“系统内置一个杯子”，资料接入不成立</td></tr>
+    <tr><td><b>生成推荐方案</b></td><td>商品资料</td><td>最低资料齐全且无冲突</td><td>得到可编辑方案与默认提示词</td><td>用户要自己写方案和提示词，门槛回到旧流程</td></tr>
+    <tr><td><b>添加一张</b></td><td>套图方案</td><td>草案阶段、未开始生成</td><td>增加可选图位</td><td>非常规商品无法覆盖</td></tr>
+    <tr><td><b>移除可选图</b></td><td>套图方案</td><td>目标为可选且无运行中生成</td><td>从新草案移除</td><td>方案无法裁剪；必需平台图仍不可移除</td></tr>
+    <tr><td><b>排序 / 修改计划</b></td><td>套图方案</td><td>草案可编辑</td><td>改用途与画面方向；生成时固化新 PlanVersion</td><td>默认方案变成强迫；系统推荐失去“可调整”的承诺</td></tr>
+    <tr><td><b>一键生成套图</b></td><td>套图方案</td><td>草案有效、无运行中整套生成、预算允许</td><td>原子确认方案并逐张执行</td><td>退回逐张手点——正是要降低的复杂度</td></tr>
+    <tr><td><b>保存提示词新版本</b></td><td>当前图（高级）</td><td>文本已改且通过事实锁</td><td>新版本与后续结果绑定；当前图标记需重新生成</td><td>高级用户无法真正控制实际发送内容</td></tr>
+    <tr><td><b>采用这张</b></td><td>当前候选</td><td>无未处理硬失败；需要人的风险已处理</td><td>该图成为当前选择</td><td>无法完成交付；事实底线先于审美这一条也失去落点</td></tr>
+    <tr><td><b>重做这张</b></td><td>当前候选</td><td>已选封闭原因、无运行中、预算允许</td><td>只让目标图产生新候选，旧候选保留</td><td>只能整套重跑或接受不满意的图</td></tr>
+    <tr><td><b>导出套图</b></td><td>交付</td><td>全部必需图有效采用且最终复检通过</td><td>写出图片组与清单（Mock 为清单预览）</td><td>前面的工作没有交付出口</td></tr>
+  </table>
+</section>
+
+<section class="card" id="visual">
+  <h2>四、视觉稿（高保真）</h2>
+  <p class="note">真实素材：商品图来自冻结参考包；审核页候选来自首轮真实 I2I 输出（本页仅作设计示例，不是新生成结果）。配色与组件遵循计划 §4.7.8。</p>
+
+  <div class="hf" id="visual-in">
+    <div class="appbar">
+      <span class="back">← 商品套图</span>
+      <span class="pid">Aster 01 保温杯 · Amazon US</span>
+      <span class="stage">资料接入</span>
+      <span class="env">演示环境</span>
+      <span class="grow"></span>
+      <span class="btn btn-pri">生成推荐方案</span>
+    </div>
+    <div class="hf-body">
+      <div class="panel">
+        <div class="panel-h"><b>商品参考图</b><span class="muted">拖动排序 · 每张标注用途</span><span class="grow"></span><span class="btn btn-ghost">加载示例资料（虚构）</span></div>
+        <div class="thumbs">
+          <figure class="thumb"><img src="../fixture-design/pack/01-front-full.png" alt="正面全身"><figcaption>正面全身</figcaption><div class="tiny">替换 · 移除</div></figure>
+          <figure class="thumb"><img src="../fixture-design/pack/02-upper-closeup.png" alt="杯盖细节"><figcaption>杯盖细节</figcaption><div class="tiny">替换 · 移除</div></figure>
+          <figure class="thumb"><img src="../fixture-design/pack/03-lower-detail.png" alt="下部细节"><figcaption>下部细节</figcaption><div class="tiny">替换 · 移除</div></figure>
+          <div class="thumb add">+ 添加图片</div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-h"><b>卖点</b><span class="muted">系统默认增强为画面方向；不需要写提示词</span></div>
+        <ul class="pts">
+          <li>哑光直筒杯身，上部为均匀深青绿色，无渐变、无图案</li>
+          <li>杯盖为两层同心阶梯环；杯口与杯身之间有一圈窄橘色密封环</li>
+          <li>下部约三成为深炭灰防滑套，带三条水平筋</li>
+        </ul>
+      </div>
+      <div class="panel two">
+        <div><label>平台</label><div class="input">Amazon US ▾</div></div>
+        <div><label>视觉参考链接（可选）</label><div class="input placeholder">粘贴参考图片或链接</div></div>
+      </div>
+      <div class="checkline ok">资料检查：3 张参考图可用 · 3 条卖点 · 未发现冲突</div>
+    </div>
+  </div>
+  <p class="cap">对应线框 1。缺料时原因就地列出、主按钮不可用；「加载示例资料」只在准备阶段出现，填入同一张表单。</p>
+
+  <div class="hf" id="visual-plan">
+    <div class="appbar">
+      <span class="back">← 商品套图</span>
+      <span class="pid">Aster 01 保温杯 · Amazon US</span>
+      <span class="stage">套图方案</span>
+      <span class="env">演示环境</span>
+      <span class="grow"></span>
+      <span class="btn btn-pri">一键生成套图</span>
+    </div>
+    <div class="hf-body">
+      <div class="sumrow"><span class="oktick">✓</span> 商品资料：3 张参考图 · 3 条卖点 · Amazon US<span class="grow"></span><a href="#visual-in">返回修改</a></div>
+      <div class="panel">
+        <div class="panel-h"><b>共享视觉方向</b><span class="grow"></span><span class="btn btn-ghost">调整</span></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap"><span class="tag">干净居家场景</span><span class="tag">自然侧光</span><span class="tag">哑光质感</span><span class="tag">产品占画面主体</span></div>
+      </div>
+      <div class="shots">
+        <div class="shot"><h4>1 · 白底主图 <span class="tag req">必需</span></h4><p>纯白背景、正面全身、产品居中；用于列表首图。</p><div class="ref"><img src="../fixture-design/pack/01-front-full.png" alt="">参考：正面全身</div><div class="links"><span>提示词 ▾</span><span>调整方向</span></div></div>
+        <div class="shot"><h4>2 · 场景图 <span class="tag req">必需</span></h4><p>厨房台面自然光场景；无道具遮挡，模型直接参考商品图生成。</p><div class="ref"><img src="../fixture-design/pack/01-front-full.png" alt="">参考：正面全身</div><div class="links"><span>提示词 ▾</span><span>调整方向</span></div></div>
+        <div class="shot"><h4>3 · 杯盖细节 <span class="tag req">必需</span></h4><p>近景展示双层阶梯环与橘色密封环，45° 俯视。</p><div class="ref"><img src="../fixture-design/pack/02-upper-closeup.png" alt="">参考：杯盖细节</div><div class="links"><span>提示词 ▾</span><span>调整方向</span></div></div>
+        <div class="shot"><h4>4 · 防滑套细节 <span class="tag">可选</span></h4><p>下部三条水平筋与材质质感特写。</p><div class="ref"><img src="../fixture-design/pack/03-lower-detail.png" alt="">参考：下部细节</div><div class="links"><span>提示词 ▾</span><span>调整方向</span></div></div>
+        <div class="shot"><h4>5 · 尺寸信息图 <span class="tag">可选</span></h4><p>标注高度、直径与结构；精确文字由排版层合成，模型只出底图。</p><div class="links"><span>提示词 ▾</span><span>调整方向</span></div></div>
+        <div class="shot"><h4>6 · 桌面办公场景 <span class="tag">可选</span></h4><p>办公室桌面氛围的第二生活场景。</p><div class="links"><span>提示词 ▾</span><span>调整方向</span></div></div>
+        <div class="shot add">+ 添加一张（可选图）</div>
+      </div>
+      <div class="bottombar">共 6 张 · 必需 3 张 · 可选 3 张<span class="grow"></span><span class="muted">张数由用途推导，不固定七张；生成时固化这一版方案</span></div>
+    </div>
+  </div>
+  <p class="cap">对应线框 2–3。默认方案可直接一键生成；调整只改草案。提示词在图卡高级里默认收起——普通用户不需要打开它。</p>
+
+  <div class="hf" id="visual-review">
+    <div class="appbar">
+      <span class="back">← 商品套图</span>
+      <span class="pid">Aster 01 保温杯 · Amazon US</span>
+      <span class="stage">审核与返工 · 已采用 2/6</span>
+      <span class="env">演示环境</span>
+      <span class="grow"></span>
+      <span class="muted">决策属于当前图片，按钮贴着候选</span>
+    </div>
+    <div class="hf-body">
+      <div class="sumrow"><span class="oktick">✓</span> 商品资料：3 张图 · 3 条卖点<span class="grow"></span><span class="oktick">✓</span> 套图方案 v1：6 张（3 必需）</div>
+      <div class="review">
+        <div class="rail">
+          <div class="railitem"><img src="../fixture-design/pack/01-front-full.png" alt=""><span>1 白底主图</span><span class="oktick">已采用</span></div>
+          <div class="railitem sel"><img src="../first-round/attempts/c75a6d09d6ea00df/raw.png" alt=""><span>2 场景图</span><span>当前</span></div>
+          <div class="railitem"><img src="../fixture-design/pack/02-upper-closeup.png" alt=""><span>3 杯盖细节</span><span>待审核</span></div>
+          <div class="railitem"><img src="../fixture-design/pack/03-lower-detail.png" alt=""><span>4 防滑套细节</span><span>待审核</span></div>
+          <div class="railitem"><div style="height:52px;border-radius:6px;background:#EFF4FF;border:1px dashed #A9BEF3;display:flex;align-items:center;justify-content:center;font-size:11px;color:#2457D6">生成中</div><span>5 尺寸信息图</span></div>
+          <div class="railitem"><div style="height:52px;border-radius:6px;background:#EAECF0;border:1px dashed #98A2B3;display:flex;align-items:center;justify-content:center;font-size:11px">待生成</div><span>6 桌面场景</span></div>
+        </div>
+        <div class="bigimg">
+          <img src="../first-round/attempts/c75a6d09d6ea00df/raw.png" alt="场景图候选">
+          <div style="display:flex;gap:10px;align-items:center;margin-top:8px;font-size:12.5px;color:#667085;flex-wrap:wrap">
+            <span>场景图 · 候选 4/4</span><span>来源：真实生成（直接参考商品图）</span><span>2026-09-26</span>
+          </div>
+          <div class="candrow">
+            <img src="../first-round/attempts/b0c9c907f875b918/raw.png" alt="候选 1">
+            <img src="../first-round/attempts/723ab2a69e19571d/raw.png" alt="候选 2">
+            <img class="sel" src="../first-round/attempts/c75a6d09d6ea00df/raw.png" alt="候选 3">
+            <img src="../first-round/attempts/45ef384cb14bafbe/raw.png" alt="候选 4">
+          </div>
+        </div>
+        <div class="ctx">
+          <div class="riskcard ok"><b>可采用</b> · 未发现阻塞<br><span style="font-size:12px;opacity:.85">事实核对与形态检查未发现阻塞；逐项证据在高级详情</span></div>
+          <span class="btn btn-pri">采用这张</span>
+          <span class="btn btn-sec">重做这张 ▾</span>
+          <div class="adv">查看完整提示词（v3）与检查证据 ▾</div>
+          <div class="hist">历史候选：1–3（点击比较 · 不删除）</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="cap">对应线框 3、状态 6。审核阶段任务头显示进度而不是全局按钮：采用 / 重做是对当前候选的决策，与候选同处一个上下文。</p>
+
+  <div class="hf" id="visual-rework">
+    <div class="appbar">
+      <span class="back">← 商品套图</span>
+      <span class="pid">Aster 01 保温杯 · Amazon US</span>
+      <span class="stage">审核与返工 · 已采用 2/6</span>
+      <span class="env">演示环境</span>
+    </div>
+    <div class="hf-body">
+      <div class="sumrow"><span class="oktick">✓</span> 商品资料<span class="grow"></span><span class="oktick">✓</span> 套图方案 v1：6 张</div>
+      <div class="review">
+        <div class="rail">
+          <div class="railitem"><img src="../fixture-design/pack/01-front-full.png" alt=""><span>1 白底主图</span><span class="oktick">已采用</span></div>
+          <div class="railitem sel"><img src="../first-round/attempts/c75a6d09d6ea00df/raw.png" alt=""><span>2 场景图</span><span>当前</span></div>
+          <div class="railitem"><img src="../fixture-design/pack/02-upper-closeup.png" alt=""><span>3 杯盖细节</span><span>待审核</span></div>
+          <div class="railitem"><img src="../fixture-design/pack/03-lower-detail.png" alt=""><span>4 防滑套细节</span><span>待审核</span></div>
+        </div>
+        <div class="bigimg">
+          <img src="../first-round/attempts/c75a6d09d6ea00df/raw.png" alt="场景图候选">
+        </div>
+        <div class="ctx">
+          <div class="popover">
+            <b>重做这张 · 场景图</b>
+            <div class="opt"><span class="rd"></span><span><b>场景不合适 / 构图弱 / 光线不自然 / 背景干扰</b><br><span class="muted">场景类：改当前图的场景、构图、光线与提示词可变段</span></span></div>
+            <div class="opt"><span class="rd off"></span><span><b>商品不像 / 颜色结构不对 / 多了部件</b><br><span class="muted">商品身份类：需要新证据或换路线；缺证据时先阻塞，不硬试</span></span></div>
+            <div class="opt"><span class="rd off"></span><span><b>尺寸、比例、格式问题</b><br><span class="muted">技术类：确定性修复，不调用生图模型</span></span></div>
+            <div class="opt"><span class="rd off"></span><span><b>精确文字或排版错误</b><br><span class="muted">排版层处理：确定性合成，不重绘图片</span></span></div>
+            <div class="opt"><span class="rd off"></span><span><b>其他</b><br><span class="muted">不自动改变，转人工处理</span></span></div>
+            <div class="impact"><b>将改变</b>：当前图的场景 / 构图 / 光线 / 提示词可变段<br><b>不会改变</b>：商品事实锁、其他 5 张图、旧候选（保留可比较）</div>
+            <span class="btn btn-pri">提交返工</span>
+            <span class="btn btn-sec">取消</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="cap">对应状态 7–8。返工先选原因，再看“会改变 / 不会改变”；只动目标图，旧候选保留。</p>
+
+  <div class="hf" id="visual-delivery">
+    <div class="appbar">
+      <span class="back">← 商品套图</span>
+      <span class="pid">Aster 01 保温杯 · Amazon US</span>
+      <span class="stage">交付</span>
+      <span class="env">演示环境</span>
+      <span class="grow"></span>
+      <span class="btn btn-pri">导出套图</span>
+    </div>
+    <div class="hf-body">
+      <div class="sumrow"><span class="oktick">✓</span> 资料<span class="grow"></span><span class="oktick">✓</span> 方案 v1<span class="grow"></span><span class="oktick">✓</span> 审核 6/6 已采用<span class="grow"></span><span class="oktick">✓</span> 最终复检通过</div>
+      <div class="adopted">
+        <div class="a"><img src="../fixture-design/pack/01-front-full.png" alt=""><span>1 白底主图<br><span class="muted">提示词 v2</span></span></div>
+        <div class="a"><img src="../first-round/attempts/c75a6d09d6ea00df/raw.png" alt=""><span>2 场景图<br><span class="muted">提示词 v3</span></span></div>
+        <div class="a"><img src="../fixture-design/pack/02-upper-closeup.png" alt=""><span>3 杯盖细节<br><span class="muted">提示词 v2</span></span></div>
+        <div class="a"><img src="../fixture-design/pack/03-lower-detail.png" alt=""><span>4 防滑套细节<br><span class="muted">提示词 v2</span></span></div>
+        <div class="a"><div style="width:44px;height:44px;border-radius:8px;background:#EFF4FF;border:1px dashed #A9BEF3"></div><span>5 尺寸信息图<br><span class="muted">排版合成</span></span></div>
+        <div class="a"><div style="width:44px;height:44px;border-radius:8px;background:#EAECF0;border:1px dashed #98A2B3"></div><span>6 桌面办公场景<br><span class="muted">提示词 v2</span></span></div>
+      </div>
+      <div class="mocknote">离线演示：以下为清单预览，未写出任何文件；正式执行会写出这些图片与追溯清单。</div>
+      <div class="manifest">
+        <table class="tb">
+          <tr><th>文件名</th><th>用途</th><th>来源</th><th>规格</th></tr>
+          <tr><td>01-hero-white.png</td><td>白底主图</td><td>图位 S1 · 提示词 v2 · 已采用候选</td><td>2048×2048 · PNG</td></tr>
+          <tr><td>02-scene-kitchen.png</td><td>场景图</td><td>图位 S2 · 提示词 v3 · 已采用候选</td><td>2048×2048 · PNG</td></tr>
+          <tr><td>03-lid-detail.png</td><td>杯盖细节</td><td>图位 S3 · 提示词 v2 · 已采用候选</td><td>2048×2048 · PNG</td></tr>
+          <tr><td>04-grip-detail.png</td><td>防滑套细节</td><td>图位 S4 · 提示词 v2 · 已采用候选</td><td>2048×2048 · PNG</td></tr>
+          <tr><td>05-size-spec.png</td><td>尺寸信息图</td><td>图位 S5 · 排版合成（基础候选 + 确定性文字）</td><td>2048×2048 · PNG</td></tr>
+          <tr><td>06-desk-scene.png</td><td>桌面办公场景</td><td>图位 S6 · 提示词 v2 · 已采用候选</td><td>2048×2048 · PNG</td></tr>
+          <tr><td>manifest.json</td><td>追溯清单</td><td>全部图位的选择与版本来源</td><td>JSON</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+  <p class="cap">对应线框 4、状态 9。未满足条件时导出不可用并列出原因；Mock 只替换“写文件”这一步。</p>
+</section>
+
+<section class="card" id="components">
+  <h2>五、组件与状态规范（实现依据）</h2>
+  <p class="note">状态从不只靠颜色；控件使用原生元素，键盘顺序与视觉顺序一致。</p>
+  <div class="cg">
+    <div class="cgi"><h4>按钮</h4>
+      <span class="btn btn-pri">主按钮 · 可用</span>
+      <span class="btn btn-dis">主按钮 · 不可用（就地给原因）</span>
+      <span class="btn btn-sec">次按钮 · 重做这张 / 重试这张</span>
+      <span class="btn btn-ghost">文本按钮 · 调整 / 替换 / 移除</span>
+    </div>
+    <div class="cgi"><h4>风险与状态</h4>
+      <span class="chip ok">可采用</span>
+      <span class="chip warn">需确认：具体问题</span>
+      <span class="chip bad">已阻止：事实失败</span>
+      <span class="chip unk">核对中（Unknown）</span>
+    </div>
+    <div class="cgi"><h4>候选</h4>
+      <div class="minidemo"><span class="chip ok">当前候选</span><span class="muted">来源：真实生成 · 参考商品图</span></div>
+      <div class="minidemo"><span class="chip">旧候选（保留）</span><span class="muted">绑定旧提示词版本，可比较 / 可恢复</span></div>
+      <div class="minidemo"><span class="chip unk">生成中</span><span class="muted">逐张状态，不伪造整套百分比</span></div>
+    </div>
+    <div class="cgi"><h4>空态与失败</h4>
+      <div class="minidemo"><span class="muted">尚未生成：不渲染返工表单</span></div>
+      <div class="minidemo"><span class="chip bad">失败：连接中断</span><span class="btn btn-sec">重试这张</span></div>
+      <div class="minidemo"><span class="chip unk">核对中：上次结果未确认</span><span class="muted">禁止重复提交</span></div>
+    </div>
+    <div class="cgi"><h4>表单与可达性</h4>
+      <div class="minidemo"><span class="muted">错误贴近字段；提交时聚焦问题摘要</span></div>
+      <div class="minidemo"><span class="muted">中文输入法 composition 期间 Enter 不提交</span></div>
+      <div class="minidemo"><span class="muted">200% 缩放与窄屏单列可用</span></div>
+    </div>
+    <div class="cgi"><h4>提示词（高级）</h4>
+      <div class="minidemo"><span class="muted">默认折叠；展开显示实际发送文本、版本与绑定候选</span></div>
+      <div class="minidemo"><span class="muted">保存失败不丢文本；“恢复推荐”建立新版本，不删历史</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="card" id="boundary">
+  <h2>六、边界与下一步</h2>
+  <p class="note">本页是 D2.R1d 的评审候选：证明“设计长什么样”，不证明任何功能已实现。</p>
+  <ul style="margin:0;padding-left:20px;display:grid;gap:8px;font-size:14px">
+    <li>素材说明：商品图与候选图都是项目既有冻结素材；本页零网络、零模型调用、零文件写出。</li>
+    <li>实现边界：Mock 只替换后端执行；页面上的状态、动作与反馈按真实业务转换编写，开发者场景控制不进业务界面。</li>
+    <li>确认后进入 D2.R1e：改造 <code>app/static/</code> 接通统一 service 与可复位 Mock 轨迹；随后由产品发起人复验（D2.R1f）。</li>
+  </ul>
+</section>
+
+<footer style="color:#98A2B3;font-size:12.5px;margin-top:26px">D2.R1d · frontend-definition-2026-09-27.html · 依据 docs/product-demo-goal-and-implementation-plan.md v1.21 §4.7 · 生成于 2026-09-27</footer>
+
+</div>
+</body>
+</html>

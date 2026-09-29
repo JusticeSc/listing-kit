@@ -1,0 +1,315 @@
+{
+  "schema": "demo-threshold-derivation/1",
+  "version": "2026-09-25.1",
+  "generated_at": "2026-09-25T23:17:50+08:00",
+  "fact_card": "demo/fixture/bex-02/product.json",
+  "metric_profile": "cylinder-v1",
+  "measurement_impl": "cylinder-v1 · demo/fixture/measure_cylinder.py",
+  "entries": [
+    {
+      "fact": "F1",
+      "metric": "aspect_h_over_w",
+      "gating": true,
+      "declared": 2.38,
+      "pass": {
+        "min": 2.2,
+        "max": 2.6
+      },
+      "manual": {
+        "min": 2.05,
+        "max": 2.75
+      },
+      "source": "设计规格：瓶体高 1000 px、宽 420 px",
+      "rule": "通过档 2.2–2.6、人工档 2.05–2.75 由规格值 2.381 外扩；这是设计意图，不是从样本统计出来的",
+      "sample": {
+        "Bex02": 2.381
+      },
+      "sample_source": "D0.7 现场量测：cylinder-v1 · demo/fixture/measure_cylinder.py，样本 1 张",
+      "sample_n": 1,
+      "statistical_claim": "n=1：这一步只证明协议可配置，不构成任何验收档的统计依据",
+      "version": "2026-09-25.1",
+      "expires_when": "量测实现或调色板分类权重变化时须重新校准"
+    },
+    {
+      "fact": "F2",
+      "metric": "body_upper_share",
+      "gating": true,
+      "declared": 0.7193,
+      "pass": {
+        "min": 0.62,
+        "max": 0.8
+      },
+      "manual": {
+        "min": 0.55,
+        "max": 0.85
+      },
+      "source": "设计规格：上段 610 px、下段 238 px",
+      "rule": "通过档 0.62–0.80、人工档 0.55–0.85 由规格占比 0.7193 外扩",
+      "sample": {
+        "Bex02": 0.7193
+      },
+      "sample_source": "D0.7 现场量测：cylinder-v1 · demo/fixture/measure_cylinder.py，样本 1 张",
+      "sample_n": 1,
+      "statistical_claim": "n=1：这一步只证明协议可配置，不构成任何验收档的统计依据",
+      "version": "2026-09-25.1",
+      "expires_when": "量测实现或调色板分类权重变化时须重新校准"
+    },
+    {
+      "fact": "F3",
+      "metric": "body_lower_share",
+      "gating": true,
+      "declared": 0.2807,
+      "pass": {
+        "min": 0.2,
+        "max": 0.38
+      },
+      "manual": {
+        "min": 0.15,
+        "max": 0.45
+      },
+      "source": "设计规格：下段 238 px",
+      "rule": "下段是上段的补，通过档 = 1 − 上段通过档 = 0.20–0.38；这是一条派生规则",
+      "sample": {
+        "Bex02": 0.2807
+      },
+      "sample_source": "D0.7 现场量测：cylinder-v1 · demo/fixture/measure_cylinder.py，样本 1 张",
+      "sample_n": 1,
+      "statistical_claim": "n=1：这一步只证明协议可配置，不构成任何验收档的统计依据",
+      "version": "2026-09-25.1",
+      "expires_when": "量测实现或调色板分类权重变化时须重新校准"
+    },
+    {
+      "fact": "F3",
+      "metric": "rib_count",
+      "gating": true,
+      "declared": 0,
+      "pass": {
+        "min": 0,
+        "max": 0
+      },
+      "manual": null,
+      "source": "设计规格：下段为光面底带，无横向凸脊",
+      "rule": "通过档写死为恰好 0；出现任何凸脊即失败 —— 本商品的规格里没有筋条结构",
+      "sample": {
+        "Bex02": 0
+      },
+      "sample_source": "D0.7 现场量测：cylinder-v1 · demo/fixture/measure_cylinder.py，样本 1 张",
+      "sample_n": 1,
+      "statistical_claim": "n=1：这一步只证明协议可配置，不构成任何验收档的统计依据",
+      "version": "2026-09-25.1",
+      "expires_when": "量测实现或调色板分类权重变化时须重新校准"
+    },
+    {
+      "fact": "F4",
+      "metric": "lid_share",
+      "gating": true,
+      "declared": 0.142,
+      "pass": {
+        "max": 0.2
+      },
+      "manual": {
+        "max": 0.26
+      },
+      "source": "设计规格：顶盖 142 px",
+      "rule": "通过档 ≤0.20 取「低矮盖」这一设计声明；实测 0.142",
+      "sample": {
+        "Bex02": 0.142
+      },
+      "sample_source": "D0.7 现场量测：cylinder-v1 · demo/fixture/measure_cylinder.py，样本 1 张",
+      "sample_n": 1,
+      "statistical_claim": "n=1：这一步只证明协议可配置，不构成任何验收档的统计依据",
+      "version": "2026-09-25.1",
+      "expires_when": "量测实现或调色板分类权重变化时须重新校准"
+    },
+    {
+      "fact": "F5",
+      "metric": "trim_span_count",
+      "gating": true,
+      "declared": 1,
+      "pass": {
+        "min": 1,
+        "max": 1
+      },
+      "manual": null,
+      "source": "设计规格：单条 10 px 饰环",
+      "rule": "通过档写死为恰好 1 段；缺失或出现第二段即失败",
+      "sample": {
+        "Bex02": 1
+      },
+      "sample_source": "D0.7 现场量测：cylinder-v1 · demo/fixture/measure_cylinder.py，样本 1 张",
+      "sample_n": 1,
+      "statistical_claim": "n=1：这一步只证明协议可配置，不构成任何验收档的统计依据",
+      "version": "2026-09-25.1",
+      "expires_when": "量测实现或调色板分类权重变化时须重新校准"
+    },
+    {
+      "fact": "F5",
+      "metric": "trim_share",
+      "gating": true,
+      "declared": 0.01,
+      "pass": {
+        "max": 0.03
+      },
+      "manual": {
+        "max": 0.05
+      },
+      "source": "设计规格：饰环 10 px",
+      "rule": "通过档 ≤0.03、人工档 ≤0.05；实测 0.010",
+      "sample": {
+        "Bex02": 0.01
+      },
+      "sample_source": "D0.7 现场量测：cylinder-v1 · demo/fixture/measure_cylinder.py，样本 1 张",
+      "sample_n": 1,
+      "statistical_claim": "n=1：这一步只证明协议可配置，不构成任何验收档的统计依据",
+      "version": "2026-09-25.1",
+      "expires_when": "量测实现或调色板分类权重变化时须重新校准"
+    },
+    {
+      "fact": "F5",
+      "metric": "trim_top_position",
+      "gating": true,
+      "declared": 0.142,
+      "pass": {
+        "max": 0.25
+      },
+      "manual": null,
+      "source": "设计规格：饰环紧贴顶盖下沿",
+      "rule": "要求位于整器高顶部 25% 内 ⇒ 通过档 ≤0.25；实测 0.142",
+      "sample": {
+        "Bex02": 0.142
+      },
+      "sample_source": "D0.7 现场量测：cylinder-v1 · demo/fixture/measure_cylinder.py，样本 1 张",
+      "sample_n": 1,
+      "statistical_claim": "n=1：这一步只证明协议可配置，不构成任何验收档的统计依据",
+      "version": "2026-09-25.1",
+      "expires_when": "量测实现或调色板分类权重变化时须重新校准"
+    },
+    {
+      "fact": "F6",
+      "metric": "bottom_spread_share",
+      "gating": true,
+      "declared": 0.0,
+      "pass": {
+        "max": 0.05
+      },
+      "manual": {
+        "max": 0.08
+      },
+      "source": "设计规格：直角平底",
+      "rule": "通过档 ≤0.05、人工档 ≤0.08；实测 0.0",
+      "sample": {
+        "Bex02": 0.0
+      },
+      "sample_source": "D0.7 现场量测：cylinder-v1 · demo/fixture/measure_cylinder.py，样本 1 张",
+      "sample_n": 1,
+      "statistical_claim": "n=1：这一步只证明协议可配置，不构成任何验收档的统计依据",
+      "version": "2026-09-25.1",
+      "expires_when": "量测实现或调色板分类权重变化时须重新校准"
+    },
+    {
+      "fact": "F6",
+      "metric": "bottom_ring_present",
+      "gating": true,
+      "declared": 0,
+      "pass": {
+        "min": 0,
+        "max": 0
+      },
+      "manual": null,
+      "source": "设计规格：无独立底圈",
+      "rule": "通过档写死为 0；检出底圈反而与本商品规格不符",
+      "sample": {
+        "Bex02": 0
+      },
+      "sample_source": "D0.7 现场量测：cylinder-v1 · demo/fixture/measure_cylinder.py，样本 1 张",
+      "sample_n": 1,
+      "statistical_claim": "n=1：这一步只证明协议可配置，不构成任何验收档的统计依据",
+      "version": "2026-09-25.1",
+      "expires_when": "量测实现或调色板分类权重变化时须重新校准"
+    },
+    {
+      "fact": "F7",
+      "metric": "body_protrusion",
+      "gating": true,
+      "declared": 0.0,
+      "pass": {
+        "max": 0.08
+      },
+      "manual": {
+        "max": 0.12
+      },
+      "source": "设计规格：等宽方体，无把手",
+      "rule": "通过档 ≤0.08、人工档 ≤0.12；实测 0.0",
+      "sample": {
+        "Bex02": 0.0
+      },
+      "sample_source": "D0.7 现场量测：cylinder-v1 · demo/fixture/measure_cylinder.py，样本 1 张",
+      "sample_n": 1,
+      "statistical_claim": "n=1：这一步只证明协议可配置，不构成任何验收档的统计依据",
+      "version": "2026-09-25.1",
+      "expires_when": "量测实现或调色板分类权重变化时须重新校准"
+    },
+    {
+      "fact": "F7",
+      "metric": "extra_area_share",
+      "gating": true,
+      "declared": 0.0,
+      "pass": {
+        "max": 0.01
+      },
+      "manual": null,
+      "source": "设计规格：画面内只有一个瓶体",
+      "rule": "通过档 ≤0.01，无人工档",
+      "sample": {
+        "Bex02": 0.0
+      },
+      "sample_source": "D0.7 现场量测：cylinder-v1 · demo/fixture/measure_cylinder.py，样本 1 张",
+      "sample_n": 1,
+      "statistical_claim": "n=1：这一步只证明协议可配置，不构成任何验收档的统计依据",
+      "version": "2026-09-25.1",
+      "expires_when": "量测实现或调色板分类权重变化时须重新校准"
+    },
+    {
+      "fact": "F2diag",
+      "metric": "upper_color_delta_e",
+      "gating": false,
+      "declared": 0.0,
+      "pass": null,
+      "manual": null,
+      "source": "与 Aster 01 同一条裁定（D0.1 §3）",
+      "rule": "不作为判据，只登记读数。十六进制用于生成提示词与目视对照。",
+      "sample": {
+        "Bex02": 0.0
+      },
+      "sample_source": "D0.7 现场量测：cylinder-v1 · demo/fixture/measure_cylinder.py，样本 1 张",
+      "sample_n": 1,
+      "statistical_claim": "不参与判定",
+      "version": "2026-09-25.1",
+      "expires_when": "不适用（非判据）"
+    }
+  ],
+  "gaps": [
+    {
+      "fact": "F4",
+      "missing": "顶面结构与开口",
+      "status": "open",
+      "assigned_to": "维持人工判定",
+      "why": "协议的机器判据只有「盖占高度」，看不见顶面是平顶还是有凹槽"
+    },
+    {
+      "fact": "F7",
+      "missing": "凸出物是否为把手、提带或吸管",
+      "status": "open",
+      "assigned_to": "维持人工判定",
+      "why": "机器只报凸出量与主体外像素，不判凸出物的语义"
+    },
+    {
+      "fact": "F8",
+      "missing": "文字与伪标签",
+      "status": "open",
+      "assigned_to": "维持人工判定",
+      "why": "文字只能靠人核对"
+    }
+  ],
+  "boundary": "本商品的阈值来自设计规格（由生成器声明），样本只有 1 张；它证明协议可配置，不证明任何品类的泛化能力。"
+}

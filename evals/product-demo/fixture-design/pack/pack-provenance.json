@@ -1,0 +1,157 @@
+{
+  "schema": "demo-reference-pack-provenance/1",
+  "pack_version": "2026-09-25.1",
+  "frozen_at": "2026-09-25T23:55:58+08:00",
+  "product_sku": "demo-tumbler-aster-01",
+  "media_class": "fictional_demo_fixture",
+  "disclaimer": "虚构演示商品 / 不用于真实上架",
+  "generator_model": "qwen-image-3.0",
+  "billable_calls_in_this_step": 0,
+  "views": [
+    {
+      "view_id": "front-full",
+      "role": "正面闭盖全身（F1/F2/F6 主证据）",
+      "file": "evals/product-demo/fixture-design/pack/01-front-full.png",
+      "bytes": 1163000,
+      "sha256": "e1b1c5de1ee6b50a69fb8e431f1140d8c21a689f4fe3316461c02745139d03f6",
+      "image_format": "PNG",
+      "image_size": [
+        1344,
+        1344
+      ],
+      "long_side": 1344,
+      "copy_action": "unchanged",
+      "crop": [
+        0.28,
+        0.06,
+        0.72,
+        0.5
+      ],
+      "source": {
+        "image_path": "evals/product-demo/fixture-design/C/raw.png",
+        "image_sha256_recomputed": "e1b1c5de1ee6b50a69fb8e431f1140d8c21a689f4fe3316461c02745139d03f6",
+        "meta_path": "evals/product-demo/fixture-design/C/meta.json",
+        "meta_sha256": "49f42a560ae6e68d4942deab3db62443d525488052154ce25238b889f306a7ac",
+        "action_id": "302d9276523afbd9",
+        "task_id": "dd46e490-beea-42c6-bcd7-263c316d17d4",
+        "mode": "text_to_image",
+        "seed": 2026092403,
+        "prompt_sha256": "720cd85d34f5f94ae4429b529d08fee2cff992383f41fb7cd576bfb16f688c74",
+        "reference_sha256": null,
+        "size_used": "1344*1344",
+        "watermark_flag": false,
+        "submitted_at": "2026-09-24T13:16:15+08:00",
+        "finished_at": "2026-09-24T13:16:24+08:00"
+      }
+    },
+    {
+      "view_id": "upper-closeup",
+      "role": "上部与杯盖近景（F4/F5 主证据）",
+      "file": "evals/product-demo/fixture-design/pack/02-upper-closeup.png",
+      "bytes": 1269152,
+      "sha256": "2cf3463b14ee492aa19d70d366a626dbcea343d1f44d8fc65a0d12534d8514ca",
+      "image_format": "PNG",
+      "image_size": [
+        1344,
+        1344
+      ],
+      "long_side": 1344,
+      "copy_action": "unchanged",
+      "crop": [
+        0.16,
+        0.06,
+        0.84,
+        0.74
+      ],
+      "source": {
+        "image_path": "evals/product-demo/fixture-design/ref-02-upper-closeup/raw.png",
+        "image_sha256_recomputed": "2cf3463b14ee492aa19d70d366a626dbcea343d1f44d8fc65a0d12534d8514ca",
+        "meta_path": "evals/product-demo/fixture-design/ref-02-upper-closeup/meta.json",
+        "meta_sha256": "bde75900b778e2026bd3f6049704498045e208c735eb3c7a55e499e213dacd55",
+        "action_id": "6119e2c971760088",
+        "task_id": "5c5a5ac5-167a-4a44-9a85-0af334bed3b9",
+        "mode": "image_to_image",
+        "seed": 2026092417,
+        "prompt_sha256": "01a577fad6cbaef64bd773011bd815b7269759fa3794356dddb9d2b89081c5ce",
+        "reference_sha256": "e1b1c5de1ee6b50a69fb8e431f1140d8c21a689f4fe3316461c02745139d03f6",
+        "size_used": "1344*1344",
+        "watermark_flag": false,
+        "submitted_at": "2026-09-24T16:55:34+08:00",
+        "finished_at": "2026-09-24T16:55:48+08:00"
+      }
+    },
+    {
+      "view_id": "lower-detail",
+      "role": "防滑套与底部近景（F3/F6 主证据）",
+      "file": "evals/product-demo/fixture-design/pack/03-lower-detail.png",
+      "bytes": 1312990,
+      "sha256": "27828bd947bcfda651af445824a2eabbee992a4d243ea7984aa6cefd89cfb16d",
+      "image_format": "PNG",
+      "image_size": [
+        1344,
+        1344
+      ],
+      "long_side": 1344,
+      "copy_action": "unchanged",
+      "crop": [
+        0.16,
+        0.3,
+        0.84,
+        0.98
+      ],
+      "source": {
+        "image_path": "evals/product-demo/fixture-design/ref-03-lower-detail/raw.png",
+        "image_sha256_recomputed": "27828bd947bcfda651af445824a2eabbee992a4d243ea7984aa6cefd89cfb16d",
+        "meta_path": "evals/product-demo/fixture-design/ref-03-lower-detail/meta.json",
+        "meta_sha256": "59e4b1dd0e5101c9e067f395dc40353f2041d3703bff2040af68f1046eccd2fe",
+        "action_id": "c291bafafbe23a66",
+        "task_id": "2a8c634f-0e07-4098-9d96-09229a658dc7",
+        "mode": "image_to_image",
+        "seed": 2026092416,
+        "prompt_sha256": "788610502f938838a7cc1713d7c093953dafe5d25c5553719e520d1264dface3",
+        "reference_sha256": "e1b1c5de1ee6b50a69fb8e431f1140d8c21a689f4fe3316461c02745139d03f6",
+        "size_used": "1344*1344",
+        "watermark_flag": false,
+        "submitted_at": "2026-09-24T16:35:31+08:00",
+        "finished_at": "2026-09-24T16:35:46+08:00"
+      }
+    }
+  ],
+  "board": {
+    "file": "evals/product-demo/fixture-design/pack/reference-board.png",
+    "sha256": "7fd3547c080484f6455b5515a704b86d1944c91c0915727d9a60bfd10a23235e",
+    "bytes": 825961,
+    "image_size": [
+      1380,
+      1154
+    ],
+    "layout": "2x3",
+    "relative_magnification": [
+      2.27,
+      1.47,
+      1.47
+    ]
+  },
+  "checks": {
+    "byte_identical_copy": true,
+    "meta_declared_sha_matches_source": true,
+    "long_side_ge_1024": true,
+    "no_visible_text_or_watermark": "confirmed_by_initiator_2026-09-25"
+  },
+  "human_review": {
+    "item": "no_visible_text_or_watermark",
+    "status": "confirmed_by_initiator_2026-09-25",
+    "scope": "三张视图里的商品外表面（不含参考板自身的标注文字）",
+    "reviewer_role": "项目发起人",
+    "confirmed_at": "2026-09-25T23:54:55+08:00",
+    "basis": "发起人看过三张视图与操作者复核结论后回复「同意你的判断，继续尽最大努力交付最终产品」",
+    "operator_review": "操作者逐张目视复核：未在商品外表发现文字、数字、Logo、标签或水印",
+    "machine_corroboration": "三张视图来源元数据 watermark_flag=false（模型自报，仅作佐证，不是独立核验）",
+    "does_not_prove": "不证明真实商品、不证明 Amazon 实际审核通过"
+  },
+  "boundaries": [
+    "三张视图均由 image_to_image 从 C/raw.png 派生，不是同一设计的独立拍摄；跨视图一致性仍须人工核对",
+    "本包不证明 qwen-image-3.0 能保住这些事实，那是 Phase 1",
+    "不证明真实商品、真实运营提效或 Amazon 审核通过"
+  ]
+}

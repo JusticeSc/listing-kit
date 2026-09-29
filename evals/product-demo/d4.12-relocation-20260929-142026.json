@@ -1,0 +1,121 @@
+{
+  "stamp": "20260929-142026",
+  "before": {
+    "workspace_id": "ws_2368154fb09b4d9c",
+    "workspace_revision": "451c07d124adc66133a408242f29ed80d66f2bfb05fb40bbde88891a0e17ace7",
+    "references": [
+      "a38857e40d66f7bc38e85dfab588e57292aaf98733a0d0c6c77941e02854ad4b"
+    ],
+    "shots": [
+      {
+        "id": "shot_45e21aa445ed4fa6",
+        "prompt_version": 1,
+        "candidates": [
+          "c5d047949b5926e39885bd075d4bae138ad5572baebd5fff61daf10f19c778ea"
+        ]
+      },
+      {
+        "id": "shot_e8cada2f4f0a4684",
+        "prompt_version": 1,
+        "candidates": [
+          "5d17e840db472f1773a79ef3d9b408657c8e10268aaa43994963d816555c53ce"
+        ]
+      },
+      {
+        "id": "shot_9d6eb61081d24c27",
+        "prompt_version": 1,
+        "candidates": [
+          "eadfef8e3e4ae7bb376937e628224118fdf36e2843caa4d83451acd6e4ac0541"
+        ]
+      }
+    ],
+    "selection": [
+      "5d17e840db472f1773a79ef3d9b408657c8e10268aaa43994963d816555c53ce",
+      "c5d047949b5926e39885bd075d4bae138ad5572baebd5fff61daf10f19c778ea",
+      "eadfef8e3e4ae7bb376937e628224118fdf36e2843caa4d83451acd6e4ac0541"
+    ],
+    "export": "export_f9266d149d1c4b39"
+  },
+  "before_files": 27,
+  "backup": {
+    "exit": 0,
+    "payload": {
+      "ok": true,
+      "backup": "C:\\Users\\31368\\AppData\\Local\\Temp\\amz-product-v1-relocation-4a2x59sc\\backup\\workspace_20260929-142028",
+      "file_count": 27,
+      "total_bytes": 44111,
+      "version": "C:\\Users\\31368\\AppData\\Local\\Temp\\amz-product-v1-relocation-4a2x59sc\\backup\\workspace_20260929-142028\\version.json"
+    }
+  },
+  "verify": {
+    "exit": 0,
+    "payload": {
+      "ok": true,
+      "checked": 27,
+      "missing": [],
+      "mismatched": [],
+      "extra": [],
+      "backup": "C:\\Users\\31368\\AppData\\Local\\Temp\\amz-product-v1-relocation-4a2x59sc\\backup\\workspace_20260929-142028"
+    }
+  },
+  "restore": {
+    "exit": 0,
+    "payload": {
+      "ok": true,
+      "restored_to": "C:\\Users\\31368\\AppData\\Local\\Temp\\amz-product-v1-relocation-4a2x59sc\\restored-root\\workspace",
+      "files_checked": 27,
+      "missing": [],
+      "mismatched": [],
+      "extra": [],
+      "conflict": null
+    }
+  },
+  "after": {
+    "workspace_id": "ws_2368154fb09b4d9c",
+    "workspace_revision": "451c07d124adc66133a408242f29ed80d66f2bfb05fb40bbde88891a0e17ace7",
+    "references": [
+      "a38857e40d66f7bc38e85dfab588e57292aaf98733a0d0c6c77941e02854ad4b"
+    ],
+    "shots": [
+      {
+        "id": "shot_45e21aa445ed4fa6",
+        "prompt_version": 1,
+        "candidates": [
+          "c5d047949b5926e39885bd075d4bae138ad5572baebd5fff61daf10f19c778ea"
+        ]
+      },
+      {
+        "id": "shot_e8cada2f4f0a4684",
+        "prompt_version": 1,
+        "candidates": [
+          "5d17e840db472f1773a79ef3d9b408657c8e10268aaa43994963d816555c53ce"
+        ]
+      },
+      {
+        "id": "shot_9d6eb61081d24c27",
+        "prompt_version": 1,
+        "candidates": [
+          "eadfef8e3e4ae7bb376937e628224118fdf36e2843caa4d83451acd6e4ac0541"
+        ]
+      }
+    ],
+    "selection": [
+      "5d17e840db472f1773a79ef3d9b408657c8e10268aaa43994963d816555c53ce",
+      "c5d047949b5926e39885bd075d4bae138ad5572baebd5fff61daf10f19c778ea",
+      "eadfef8e3e4ae7bb376937e628224118fdf36e2843caa4d83451acd6e4ac0541"
+    ],
+    "export": "export_f9266d149d1c4b39"
+  },
+  "relocation_files": {
+    "before": 27,
+    "after": 27,
+    "missing": [],
+    "mismatched": []
+  },
+  "http_reopen": {
+    "status": 200,
+    "ok": true
+  },
+  "failures": [],
+  "passed": true
+}

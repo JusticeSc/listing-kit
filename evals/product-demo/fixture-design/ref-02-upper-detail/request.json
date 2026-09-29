@@ -1,0 +1,26 @@
+{
+  "model": "qwen-image-3.0",
+  "input": {
+    "messages": [
+      {
+        "role": "user",
+        "content": [
+          {
+            "image": "<data-uri of reference, sha256=e1b1c5de1ee6b50a69fb8e431f1140d8c21a689f4fe3316461c02745139d03f6, bytes=1163000>"
+          },
+          {
+            "text": "Close-up photograph of the upper part of the exact same product as in the reference image: the lid and the top third of the body fill the frame. The lid top must clearly show two concentric stepped rings, a smaller ring sitting on a wider ring, with a crisp visible step edge; the single narrow terracotta orange ring must run evenly around the seam between lid and body. Same soft even studio light from the upper left, same seamless plain light neutral gray backdrop. Keep the exact same product as in the reference image: same design, same colours, same proportions, same number of parts. Upper body matte deep teal green; lower grip sleeve dark charcoal with exactly three raised horizontal ribs; low profile dark charcoal lid with two concentric stepped rings; one narrow terracotta orange ring at the seam between lid and body; flat base with a narrow dark non-slip ring. No handle, no side grip, no strap, no straw, no drinking spout, no second cup, no flip top, no dome lid, no pattern. Every surface stays completely blank: no text, no numbers, no letters, no logo, no brand mark, no label, no sticker, no watermark, no decorative symbol. Photorealistic e-commerce product photography, square 1:1 composition."
+          }
+        ]
+      }
+    ]
+  },
+  "parameters": {
+    "negative_prompt": "different product, different colour, different proportions, extra object, second cup, handle, side handle, strap, straw, drinking spout, flip top, dome lid, open lid, text, letters, words, numbers, logo, brand mark, watermark, label, sticker, typography, pattern, gradient, glossy metallic body, cropped product, floating object, cluttered background, props, low resolution, blurry",
+    "prompt_extend": false,
+    "watermark": false,
+    "size": "1344*1344",
+    "n": 1,
+    "seed": 2026092412
+  }
+}

@@ -1,0 +1,5 @@
+{"entry_id": "GC-0001", "verdict": "accept", "failed_items": [], "labeler": null, "labeled_at": null, "proposed_by": "analysis", "note": "提议：正常样本，期望接受。等人确认（并补上真实候选图绑定）。"}
+{"entry_id": "GC-0002", "verdict": "accept", "failed_items": [], "labeler": null, "labeled_at": null, "proposed_by": "analysis", "note": "提议：边界样本，期望接受；competitor_clean 判 not_applicable。"}
+{"entry_id": "GC-0003", "verdict": "reject", "failed_items": ["pr.forbidden_on_image"], "labeler": null, "labeled_at": null, "proposed_by": "analysis", "note": "提议：若候选图叠上禁用词则拒绝；具体要看候选图，等人判。"}
+{"entry_id": "GC-0004", "verdict": "unknown", "failed_items": [], "labeler": null, "labeled_at": null, "proposed_by": "analysis", "note": "提议：竞品图并排的合规性未经人看之前只能 unknown。"}
+{"entry_id": "GC-0005", "verdict": "unknown", "failed_items": [], "labeler": null, "labeled_at": null, "proposed_by": "analysis", "note": "提议：事实来源冲突，判不了，等上游澄清。"}

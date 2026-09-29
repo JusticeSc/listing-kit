@@ -1,0 +1,64 @@
+{
+  "schema": "amz-listing-kit/authority-matrix@1",
+  "authority_doc": "docs/product-demo-goal-and-implementation-plan.md",
+  "authority_sections": ["4.4", "4.5", "9.1.1"],
+  "plan_version": "v1.18",
+  "frozen_at": "2026-09-26",
+  "why": "每类输入只有一个权威。`may_write` 说谁有权决定取值，`cannot_prove` 说这一项永远不能证明什么。模型只出现在 proposed_by 里，不出现在 may_write —— 提案与写入分离。",
+  "authorities": [
+    {"id": "A-ASSET", "name": "商品包 manifest 与文件哈希", "may_write": ["user"], "cannot_prove": ["包里的图片是否与实物一致", "材质、容量、功能与认证"]},
+    {"id": "A-POLICY", "name": "项目数据与外发政策", "may_write": ["user", "system.deterministic"], "cannot_prove": ["把参考图外发是否值得", "模型质量"]},
+    {"id": "A-SPEC", "name": "用户提供的规格与卖点资料", "may_write": ["user"], "cannot_prove": ["资料里没写的事实", "卖点是否被图片证实"]},
+    {"id": "A-REFIMG", "name": "参考商品图", "may_write": ["user"], "cannot_prove": ["材质、容量、功能、认证", "真实颜色与拍摄参数"]},
+    {"id": "A-FACTS", "name": "已确认的 FactsVersion", "may_write": ["user", "system.deterministic"], "cannot_prove": ["图片中未覆盖的隐含事实", "未确认字段"]},
+    {"id": "A-PLATFORM", "name": "Amazon US 平台规则与 slots 配置", "may_write": ["system.deterministic"], "cannot_prove": ["画面是否好看", "商品身份是否一致"]},
+    {"id": "A-USERGOAL", "name": "用户本次任务目标", "may_write": ["user"], "cannot_prove": ["技术可行性", "平台是否允许"]},
+    {"id": "A-REFERENCE", "name": "参考范例与风格样本", "may_write": ["user"], "cannot_prove": ["任何商品事实", "本商品的可用性"]},
+    {"id": "A-USERPREF", "name": "用户视觉偏好", "may_write": ["user"], "cannot_prove": ["商品事实", "平台合规"]},
+    {"id": "A-SHOTSPEC", "name": "ShotSpec（单张图的业务意图）", "may_write": ["user"], "proposed_by": ["system.model", "system.deterministic"], "cannot_prove": ["商品事实", "模型一定能生成出来"]},
+    {"id": "A-STYLE", "name": "StyleSpec（共享视觉方向）", "may_write": ["user"], "proposed_by": ["system.model", "system.deterministic"], "cannot_prove": ["商品事实", "身份保真"]},
+    {"id": "A-FACTLOCK", "name": "FactLocks（编译期固定事实块）", "may_write": ["system.deterministic"], "cannot_prove": ["写了锁就等于模型会遵守"]},
+    {"id": "A-PROVIDER", "name": "provider 能力契约", "may_write": ["external.provider"], "cannot_prove": ["契约没写的隐含能力", "输出质量"]},
+    {"id": "A-PROMPT", "name": "PromptVersion（实际发送文本）", "may_write": ["user", "system.deterministic"], "cannot_prove": ["保真", "模型是否照做"]},
+    {"id": "A-MODELCFG", "name": "模型与采样参数配置", "may_write": ["user", "system.deterministic"], "cannot_prove": ["输出质量", "商品身份"]},
+    {"id": "A-BUDGET", "name": "预算与外发授权", "may_write": ["user"], "cannot_prove": ["这笔花费是否值得"]},
+    {"id": "A-RUN", "name": "Attempt 身份与 provider task id", "may_write": ["system.deterministic", "external.provider"], "cannot_prove": ["图片内容是否正确", "商品事实"]},
+    {"id": "A-CANDIDATE", "name": "不可覆盖的候选文件", "may_write": ["system.deterministic"], "cannot_prove": ["商品身份", "平台合规", "是否好看"]},
+    {"id": "A-CAPABILITY", "name": "逐事实 capability contract", "may_write": ["system.deterministic"], "cannot_prove": ["未经对照校准的能力", "跨品类泛化"]},
+    {"id": "A-VERIFICATION", "name": "逐事实 VerificationResult", "may_write": ["system.deterministic", "system.model", "user"], "cannot_prove": ["商业审美", "结论前提之外的场景"]},
+    {"id": "A-VISUALREVIEW", "name": "人工 VisualReview", "may_write": ["user"], "cannot_prove": ["商品事实", "平台技术形态"]},
+    {"id": "A-SELECTION", "name": "人工 Selection 事件", "may_write": ["user"], "cannot_prove": ["候选质量", "最终导出是否通过复检"]},
+    {"id": "A-COPY", "name": "已确认文案", "may_write": ["user"], "cannot_prove": ["文案是否被平台允许", "商品事实"]},
+    {"id": "A-LAYOUT", "name": "版式规格", "may_write": ["user", "system.deterministic"], "cannot_prove": ["商品事实", "平台合规"]},
+    {"id": "A-COMPOSITION", "name": "CompositionVersion（确定性合成结果）", "may_write": ["system.deterministic"], "cannot_prove": ["商品事实", "审美好不好"]},
+    {"id": "A-PLAN", "name": "已确认的 PlanVersion", "may_write": ["user"], "proposed_by": ["system.model", "system.deterministic"], "cannot_prove": ["模型一定能产出该图"]},
+    {"id": "A-EXPORT", "name": "平台与导出规则", "may_write": ["system.deterministic"], "cannot_prove": ["Amazon 实际审核通过"]}
+  ],
+  "fact_class_responsibility": [
+    {
+      "fact_type": "文件、格式、哈希、尺寸和平台规则",
+      "verifier_kinds": ["deterministic_rule"],
+      "boundary": "可复现输入上可直接 pass/fail；换输入必须重跑，不能沿用上一次结论"
+    },
+    {
+      "fact_type": "文字、标识和水印",
+      "verifier_kinds": ["reference_conditioned_vision", "explicit_human_fact_confirmation"],
+      "boundary": "未经对照验证的模型只报风险或转人工；文字的措辞强度不构成保证"
+    },
+    {
+      "fact_type": "颜色、比例和轮廓",
+      "verifier_kinds": ["segmentation_or_local_match", "reference_conditioned_vision", "explicit_human_fact_confirmation"],
+      "boundary": "分割只定位不证明身份；位置、中心和类别形状只能作弱先验，前提不成立即 Unknown"
+    },
+    {
+      "fact_type": "部件、结构和相互关系",
+      "verifier_kinds": ["reference_conditioned_vision", "explicit_human_fact_confirmation"],
+      "boundary": "不能用单一阈值掩膜替代语义判断；结构类结论必须有人确认或明确 Unknown"
+    },
+    {
+      "fact_type": "构图、光线、材质感和商业完成度",
+      "verifier_kinds": ["human_visual_review"],
+      "boundary": "只输出 keep / redo / reject 及具体理由，不伪造客观总分，也不能覆盖事实失败"
+    }
+  ]
+}

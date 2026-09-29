@@ -1,0 +1,70 @@
+{
+  "stamp": "20260929-140628",
+  "before": {
+    "workspace_id": "ws_37d59589f67d4689",
+    "workspace_revision": "00cffc7edcf0ac742fd8469b021659e8e1d2eb75f2b26b86e4497e93c0c062c7",
+    "references": [
+      "a38857e40d66f7bc38e85dfab588e57292aaf98733a0d0c6c77941e02854ad4b"
+    ],
+    "shots": [
+      {
+        "id": "shot_096cec6c02e44c6f",
+        "prompt_version": 1,
+        "candidates": [
+          "c5d047949b5926e39885bd075d4bae138ad5572baebd5fff61daf10f19c778ea"
+        ]
+      },
+      {
+        "id": "shot_f7a2e9b431b84c3f",
+        "prompt_version": 1,
+        "candidates": [
+          "5d17e840db472f1773a79ef3d9b408657c8e10268aaa43994963d816555c53ce"
+        ]
+      },
+      {
+        "id": "shot_a7b408692b9e4f7a",
+        "prompt_version": 1,
+        "candidates": [
+          "eadfef8e3e4ae7bb376937e628224118fdf36e2843caa4d83451acd6e4ac0541"
+        ]
+      }
+    ],
+    "selection": [
+      "5d17e840db472f1773a79ef3d9b408657c8e10268aaa43994963d816555c53ce",
+      "c5d047949b5926e39885bd075d4bae138ad5572baebd5fff61daf10f19c778ea",
+      "eadfef8e3e4ae7bb376937e628224118fdf36e2843caa4d83451acd6e4ac0541"
+    ],
+    "export": "export_2827df0cde50466a"
+  },
+  "before_files": 27,
+  "backup": {
+    "exit": 0,
+    "payload": {
+      "ok": true,
+      "backup": "C:\\Users\\31368\\AppData\\Local\\Temp\\amz-product-v1-relocation-kc6gnwq8\\backup\\workspace_20260929-140630",
+      "file_count": 27,
+      "total_bytes": 44111,
+      "version": "C:\\Users\\31368\\AppData\\Local\\Temp\\amz-product-v1-relocation-kc6gnwq8\\backup\\workspace_20260929-140630\\version.json"
+    }
+  },
+  "verify": {
+    "exit": 2,
+    "payload": {
+      "ok": false,
+      "error": "备份缺少 manifest.json：C:\\Users\\31368\\AppData\\Local\\Temp\\amz-product-v1-relocation-kc6gnwq8\\backup"
+    }
+  },
+  "restore": {
+    "exit": 2,
+    "payload": {
+      "ok": false,
+      "error": "备份缺少 manifest.json：C:\\Users\\31368\\AppData\\Local\\Temp\\amz-product-v1-relocation-kc6gnwq8\\backup"
+    }
+  },
+  "failures": [
+    "备份校验没有通过：{'ok': False, 'error': '备份缺少 manifest.json：C:\\\\Users\\\\31368\\\\AppData\\\\Local\\\\Temp\\\\amz-product-v1-relocation-kc6gnwq8\\\\backup'}",
+    "恢复命令没有成功：{'ok': False, 'error': '备份缺少 manifest.json：C:\\\\Users\\\\31368\\\\AppData\\\\Local\\\\Temp\\\\amz-product-v1-relocation-kc6gnwq8\\\\backup'}",
+    "恢复目录不存在，无法重开"
+  ],
+  "passed": false
+}

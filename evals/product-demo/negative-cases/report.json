@@ -1,0 +1,504 @@
+{
+  "schema": "demo-negative-report/1",
+  "generated_at": "2026-09-25T23:17:44+08:00",
+  "model_calls": 0,
+  "card": {
+    "sku": "demo-tumbler-aster-01",
+    "version": "2026-09-25.1",
+    "metric_profile": "cylinder-v1"
+  },
+  "expectations_file": "evals/product-demo/negative-cases/expectations.json",
+  "declared_at": "2026-09-25T23:05:00+08:00",
+  "cases": [
+    {
+      "image": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\evals\\product-demo\\negative-cases\\neg-01-recolor-upper\\raw.png",
+      "overall": "hard_fail",
+      "exit": 4,
+      "flagged": [
+        {
+          "fact": "F2",
+          "metric": "body_upper_share",
+          "verdict": "unknown",
+          "value": null,
+          "why": "该项没有量测值（可能未检出对应部件），不推断"
+        },
+        {
+          "fact": "F3",
+          "metric": "body_lower_share",
+          "verdict": "unknown",
+          "value": null,
+          "why": "该项没有量测值（可能未检出对应部件），不推断"
+        },
+        {
+          "fact": "F3",
+          "metric": "rib_count",
+          "verdict": "hard_fail",
+          "value": 0,
+          "why": "超出人工档：{\"min\": 2, \"max\": 4}"
+        },
+        {
+          "fact": "F6",
+          "metric": "bottom_ring_present",
+          "verdict": "hard_fail",
+          "value": 0,
+          "why": "超出人工档：{\"min\": 1, \"max\": 1}"
+        }
+      ],
+      "human_facts": [
+        "F8"
+      ],
+      "metrics": {
+        "aspect_h_over_w": 3.182,
+        "body_upper_share": null,
+        "body_lower_share": null,
+        "upper_color_delta_e": null,
+        "rib_count": 0,
+        "lid_share": 0.1259,
+        "trim_span_count": 1,
+        "trim_share": 0.0136,
+        "trim_top_position": 0.1259,
+        "bottom_spread_share": 0.0259,
+        "bottom_ring_present": 0,
+        "body_protrusion": 0.0483,
+        "extra_area_share": 0.0007,
+        "text_proxy_blobs": 53
+      },
+      "label": "neg-01-recolor-upper",
+      "mutation_class": "改色",
+      "must_be": "not_pass",
+      "must_flag_any_of": [
+        "rib_count",
+        "bottom_ring_present",
+        "body_upper_share",
+        "body_lower_share"
+      ],
+      "human_required": false,
+      "hypothesis": "hard_fail",
+      "beat_ok": true,
+      "flag_hit": [
+        "body_lower_share",
+        "body_upper_share",
+        "bottom_ring_present",
+        "rib_count"
+      ],
+      "flag_ok": true,
+      "ok": true
+    },
+    {
+      "image": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\evals\\product-demo\\negative-cases\\neg-02-add-text\\raw.png",
+      "overall": "pass",
+      "exit": 0,
+      "flagged": [],
+      "human_facts": [
+        "F8"
+      ],
+      "metrics": {
+        "aspect_h_over_w": 3.182,
+        "body_upper_share": 0.6479,
+        "body_lower_share": 0.3521,
+        "upper_color_delta_e": 13.8,
+        "rib_count": 3,
+        "lid_share": 0.1259,
+        "trim_span_count": 1,
+        "trim_share": 0.0136,
+        "trim_top_position": 0.1259,
+        "bottom_spread_share": 0.0259,
+        "bottom_ring_present": 1,
+        "body_protrusion": 0.0242,
+        "extra_area_share": 0.0007,
+        "text_proxy_blobs": 62
+      },
+      "label": "neg-02-add-text",
+      "mutation_class": "加字",
+      "must_be": "not_hard_fail",
+      "must_flag_any_of": [],
+      "human_required": true,
+      "hypothesis": "pass 或 manual",
+      "beat_ok": true,
+      "flag_hit": [],
+      "flag_ok": true,
+      "ok": true
+    },
+    {
+      "image": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\evals\\product-demo\\negative-cases\\neg-03-add-handle\\raw.png",
+      "overall": "hard_fail",
+      "exit": 4,
+      "flagged": [
+        {
+          "fact": "F2",
+          "metric": "body_upper_share",
+          "verdict": "hard_fail",
+          "value": 0.4186,
+          "why": "超出人工档：{\"min\": 0.5, \"max\": 0.88}"
+        },
+        {
+          "fact": "F3",
+          "metric": "body_lower_share",
+          "verdict": "hard_fail",
+          "value": 0.5814,
+          "why": "超出人工档：{\"min\": 0.12, \"max\": 0.5}"
+        },
+        {
+          "fact": "F6",
+          "metric": "bottom_spread_share",
+          "verdict": "manual",
+          "value": 0.0728,
+          "why": "落在人工档：{\"max\": 0.05}"
+        },
+        {
+          "fact": "F7",
+          "metric": "body_protrusion",
+          "verdict": "hard_fail",
+          "value": 0.2447,
+          "why": "超出人工档：{\"max\": 0.12}"
+        }
+      ],
+      "human_facts": [
+        "F8"
+      ],
+      "metrics": {
+        "aspect_h_over_w": 2.68,
+        "body_upper_share": 0.4186,
+        "body_lower_share": 0.5814,
+        "upper_color_delta_e": 13.67,
+        "rib_count": 3,
+        "lid_share": 0.1259,
+        "trim_span_count": 1,
+        "trim_share": 0.0136,
+        "trim_top_position": 0.1259,
+        "bottom_spread_share": 0.0728,
+        "bottom_ring_present": 1,
+        "body_protrusion": 0.2447,
+        "extra_area_share": 0.0007,
+        "text_proxy_blobs": 55
+      },
+      "label": "neg-03-add-handle",
+      "mutation_class": "改结构",
+      "must_be": "not_pass",
+      "must_flag_any_of": [
+        "body_protrusion"
+      ],
+      "human_required": false,
+      "hypothesis": "hard_fail",
+      "beat_ok": true,
+      "flag_hit": [
+        "body_protrusion"
+      ],
+      "flag_ok": true,
+      "ok": true
+    },
+    {
+      "image": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\evals\\product-demo\\negative-cases\\neg-04-lidless\\raw.png",
+      "overall": "hard_fail",
+      "exit": 4,
+      "flagged": [
+        {
+          "fact": "F4",
+          "metric": "lid_share",
+          "verdict": "unknown",
+          "value": null,
+          "why": "该项没有量测值（可能未检出对应部件），不推断"
+        },
+        {
+          "fact": "F5",
+          "metric": "trim_span_count",
+          "verdict": "hard_fail",
+          "value": 0,
+          "why": "超出人工档：{\"min\": 1, \"max\": 1}"
+        },
+        {
+          "fact": "F5",
+          "metric": "trim_share",
+          "verdict": "unknown",
+          "value": null,
+          "why": "该项没有量测值（可能未检出对应部件），不推断"
+        },
+        {
+          "fact": "F5",
+          "metric": "trim_top_position",
+          "verdict": "unknown",
+          "value": null,
+          "why": "该项没有量测值（可能未检出对应部件），不推断"
+        }
+      ],
+      "human_facts": [
+        "F8"
+      ],
+      "metrics": {
+        "aspect_h_over_w": 2.796,
+        "body_upper_share": 0.6479,
+        "body_lower_share": 0.3521,
+        "upper_color_delta_e": 13.66,
+        "rib_count": 3,
+        "lid_share": null,
+        "trim_span_count": 0,
+        "trim_share": null,
+        "trim_top_position": null,
+        "bottom_spread_share": 0.0265,
+        "bottom_ring_present": 1,
+        "body_protrusion": 0.0242,
+        "extra_area_share": 0.0,
+        "text_proxy_blobs": 25
+      },
+      "label": "neg-04-lidless",
+      "mutation_class": "改结构",
+      "must_be": "not_pass",
+      "must_flag_any_of": [
+        "trim_span_count"
+      ],
+      "human_required": false,
+      "hypothesis": "hard_fail",
+      "beat_ok": true,
+      "flag_hit": [
+        "trim_span_count"
+      ],
+      "flag_ok": true,
+      "ok": true
+    },
+    {
+      "image": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\evals\\product-demo\\negative-cases\\neg-05-extra-ribs\\raw.png",
+      "overall": "hard_fail",
+      "exit": 4,
+      "flagged": [
+        {
+          "fact": "F3",
+          "metric": "rib_count",
+          "verdict": "hard_fail",
+          "value": 5,
+          "why": "超出人工档：{\"min\": 2, \"max\": 4}"
+        }
+      ],
+      "human_facts": [
+        "F8"
+      ],
+      "metrics": {
+        "aspect_h_over_w": 3.182,
+        "body_upper_share": 0.6479,
+        "body_lower_share": 0.3521,
+        "upper_color_delta_e": 13.66,
+        "rib_count": 5,
+        "lid_share": 0.1259,
+        "trim_span_count": 1,
+        "trim_share": 0.0136,
+        "trim_top_position": 0.1259,
+        "bottom_spread_share": 0.0259,
+        "bottom_ring_present": 1,
+        "body_protrusion": 0.0242,
+        "extra_area_share": 0.0007,
+        "text_proxy_blobs": 53
+      },
+      "label": "neg-05-extra-ribs",
+      "mutation_class": "改数量",
+      "must_be": "not_pass",
+      "must_flag_any_of": [
+        "rib_count"
+      ],
+      "human_required": false,
+      "hypothesis": "hard_fail",
+      "beat_ok": true,
+      "flag_hit": [
+        "rib_count"
+      ],
+      "flag_ok": true,
+      "ok": true
+    },
+    {
+      "image": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\evals\\product-demo\\negative-cases\\neg-06-second-cup\\raw.png",
+      "overall": "hard_fail",
+      "exit": 4,
+      "flagged": [
+        {
+          "fact": "F7",
+          "metric": "extra_area_share",
+          "verdict": "hard_fail",
+          "value": 0.5002,
+          "why": "超出人工档：{\"max\": 0.01}"
+        }
+      ],
+      "human_facts": [
+        "F8"
+      ],
+      "metrics": {
+        "aspect_h_over_w": 3.182,
+        "body_upper_share": 0.6479,
+        "body_lower_share": 0.3521,
+        "upper_color_delta_e": 13.66,
+        "rib_count": 3,
+        "lid_share": 0.1259,
+        "trim_span_count": 1,
+        "trim_share": 0.0136,
+        "trim_top_position": 0.1259,
+        "bottom_spread_share": 0.0259,
+        "bottom_ring_present": 1,
+        "body_protrusion": 0.0242,
+        "extra_area_share": 0.5002,
+        "text_proxy_blobs": 53
+      },
+      "label": "neg-06-second-cup",
+      "mutation_class": "改数量",
+      "must_be": "not_pass",
+      "must_flag_any_of": [
+        "extra_area_share"
+      ],
+      "human_required": false,
+      "hypothesis": "hard_fail",
+      "beat_ok": true,
+      "flag_hit": [
+        "extra_area_share"
+      ],
+      "flag_ok": true,
+      "ok": true
+    },
+    {
+      "image": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\evals\\product-demo\\negative-cases\\neg-07-flat-lid\\raw.png",
+      "overall": "pass",
+      "exit": 0,
+      "flagged": [],
+      "human_facts": [
+        "F8"
+      ],
+      "metrics": {
+        "aspect_h_over_w": 3.182,
+        "body_upper_share": 0.6479,
+        "body_lower_share": 0.3521,
+        "upper_color_delta_e": 13.66,
+        "rib_count": 3,
+        "lid_share": 0.1259,
+        "trim_span_count": 1,
+        "trim_share": 0.0136,
+        "trim_top_position": 0.1259,
+        "bottom_spread_share": 0.0259,
+        "bottom_ring_present": 1,
+        "body_protrusion": 0.0242,
+        "extra_area_share": 0.0007,
+        "text_proxy_blobs": 53
+      },
+      "label": "neg-07-flat-lid",
+      "mutation_class": "改结构",
+      "must_be": "pass",
+      "must_flag_any_of": [],
+      "human_required": true,
+      "hypothesis": "pass",
+      "beat_ok": true,
+      "flag_hit": [],
+      "flag_ok": true,
+      "ok": true
+    }
+  ],
+  "controls": [
+    {
+      "image": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\evals\\product-demo\\fixture-design\\A\\raw.png",
+      "overall": "manual",
+      "exit": 3,
+      "flagged": [
+        {
+          "fact": "F3",
+          "metric": "rib_count",
+          "verdict": "manual",
+          "value": 4,
+          "why": "落在人工档：{\"min\": 3, \"max\": 3}"
+        }
+      ],
+      "human_facts": [
+        "F8"
+      ],
+      "metrics": {
+        "aspect_h_over_w": 2.688,
+        "body_upper_share": 0.6555,
+        "body_lower_share": 0.3445,
+        "upper_color_delta_e": 11.75,
+        "rib_count": 4,
+        "lid_share": 0.1,
+        "trim_span_count": 1,
+        "trim_share": 0.0127,
+        "trim_top_position": 0.1,
+        "bottom_spread_share": 0.0387,
+        "bottom_ring_present": 1,
+        "body_protrusion": 0.0581,
+        "extra_area_share": 0.0,
+        "text_proxy_blobs": 35
+      },
+      "label": "control-A",
+      "must_be": "not_hard_fail",
+      "rationale": "未变异对照。A 被判 manual 是预期的真报（实测 4 条筋，与设计 3 条不符），不是误报。",
+      "ok": true
+    },
+    {
+      "image": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\evals\\product-demo\\fixture-design\\B\\raw.png",
+      "overall": "pass",
+      "exit": 0,
+      "flagged": [],
+      "human_facts": [
+        "F8"
+      ],
+      "metrics": {
+        "aspect_h_over_w": 2.886,
+        "body_upper_share": 0.6673,
+        "body_lower_share": 0.3327,
+        "upper_color_delta_e": 11.88,
+        "rib_count": 3,
+        "lid_share": 0.131,
+        "trim_span_count": 1,
+        "trim_share": 0.0138,
+        "trim_top_position": 0.131,
+        "bottom_spread_share": 0.0323,
+        "bottom_ring_present": 1,
+        "body_protrusion": 0.0447,
+        "extra_area_share": 0.0,
+        "text_proxy_blobs": 58
+      },
+      "label": "control-B",
+      "must_be": "not_hard_fail",
+      "rationale": "未变异对照。B 机器整体 pass；它在 D0.1 是因人工看出「顶面暗凹像开口」才被排除 —— 那属于机器不覆盖的范围。",
+      "ok": true
+    },
+    {
+      "image": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\evals\\product-demo\\fixture-design\\C\\raw.png",
+      "overall": "pass",
+      "exit": 0,
+      "flagged": [],
+      "human_facts": [
+        "F8"
+      ],
+      "metrics": {
+        "aspect_h_over_w": 3.182,
+        "body_upper_share": 0.6479,
+        "body_lower_share": 0.3521,
+        "upper_color_delta_e": 13.66,
+        "rib_count": 3,
+        "lid_share": 0.1259,
+        "trim_span_count": 1,
+        "trim_share": 0.0136,
+        "trim_top_position": 0.1259,
+        "bottom_spread_share": 0.0259,
+        "bottom_ring_present": 1,
+        "body_protrusion": 0.0242,
+        "extra_area_share": 0.0007,
+        "text_proxy_blobs": 53
+      },
+      "label": "control-C",
+      "must_be": "not_hard_fail",
+      "rationale": "未变异对照，也是全部负样本的母本。它必须仍是 pass，否则负样本的「变化」无法归因。",
+      "ok": true
+    }
+  ],
+  "false_positive": {
+    "controls": 3,
+    "hard_fail": 0,
+    "rate": 0.0,
+    "note": "误报只数硬失败：对照被判 manual 是预期内的真报，见 expectations.json"
+  },
+  "declared_misses": [
+    "neg-02-add-text",
+    "neg-07-flat-lid"
+  ],
+  "unexpected_misses": [],
+  "flagged_but_not_declared": [
+    "bottom_spread_share",
+    "lid_share",
+    "trim_share",
+    "trim_top_position"
+  ],
+  "ok": true,
+  "failed_cases": []
+}

@@ -1,0 +1,1358 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>商品套图工作台 · 第三版设计走查原型（离线演示）</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:#F6F7F9;color:#101828;font:14px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei","PingFang SC",sans-serif;-webkit-font-smoothing:antialiased}
+img{max-width:100%}
+/* ---------- 演示控制条（产品界面之外） ---------- */
+.demobar{display:flex;align-items:center;gap:14px;padding:7px 18px;background:#111827;color:#9CA3AF;font-size:12px;flex-wrap:wrap}
+.demobar .dtag{color:#F9FAFB;font-weight:600;letter-spacing:.02em}
+.demobar .dgroup{display:flex;align-items:center;gap:6px}
+.demobar .spacer{flex:1}
+.demobar button{font:inherit;color:#D1D5DB;background:transparent;border:1px solid #374151;border-radius:6px;padding:2px 10px;cursor:pointer}
+.demobar button:hover{border-color:#6B7280;color:#fff}
+.demobar button.on{background:#2457D6;border-color:#2457D6;color:#fff}
+/* ---------- 应用壳 ---------- */
+.app{max-width:1240px;margin:0 auto;padding:0 24px 120px}
+.taskbar{position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:18px;padding:12px 2px;background:#F6F7F9;border-bottom:1px solid #E4E7EC}
+.tb-id{display:flex;gap:10px;align-items:center;min-width:210px}
+.tb-thumb{width:38px;height:38px;border-radius:9px;background:#fff;border:1px solid #E4E7EC;overflow:hidden;display:flex;align-items:center;justify-content:center;flex:none}
+.tb-thumb img{width:100%;height:100%;object-fit:contain;background:#fff}
+.tb-thumb .ph-mini{font-size:10px;color:#98A2B3}
+.tb-name{font-weight:600;line-height:1.25}
+.tb-sub{font-size:12px;color:#667085;line-height:1.3}
+.stages{display:flex;gap:2px;flex:1;justify-content:center;flex-wrap:nowrap;overflow-x:auto}
+.stg{display:block;border:1px solid transparent;background:transparent;border-radius:9px;padding:4px 10px;font:inherit;text-align:left;color:#98A2B3;cursor:default;flex:none}
+.stg small{display:block;font-size:11px;color:#98A2B3;max-width:132px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.stg b{font-size:13px;font-weight:600;color:inherit}
+.stg.done{color:#344054;cursor:pointer}
+.stg.done:hover{background:#fff;border-color:#E4E7EC}
+.stg.done b{color:#18794E}
+.stg.cur{background:#EEF2FF;border-color:#C7D2FE;color:#2457D6}
+.stg.cur small{color:#4F5BD5}
+.tb-right{display:flex;align-items:center;gap:10px;flex:none}
+/* ---------- 通用组件 ---------- */
+.btn{font:inherit;font-size:13px;font-weight:500;border:1px solid #D0D5DD;background:#fff;color:#344054;border-radius:8px;padding:7px 14px;cursor:pointer;line-height:1.3}
+.btn:hover{border-color:#98A2B3}
+.btn:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-visible{outline:2px solid #2457D6;outline-offset:2px}
+.btn-primary{background:#2457D6;border-color:#2457D6;color:#fff}
+.btn-primary:hover{background:#1D4FC4;border-color:#1D4FC4}
+.btn-ghost{border-color:transparent;background:transparent;color:#2457D6;padding-left:8px;padding-right:8px}
+.btn-ghost:hover{background:#EEF2FF}
+.btn-sm{padding:4px 10px;font-size:12px}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.btn-primary[disabled]:hover{background:#2457D6;border-color:#2457D6}
+.chip{display:inline-flex;align-items:center;gap:4px;height:22px;padding:0 9px;border-radius:999px;font-size:12px;font-weight:500;white-space:nowrap}
+.chip-ok{background:#E7F6EC;color:#18794E}
+.chip-warn{background:#FEF0C7;color:#B54708}
+.chip-err{background:#FEE4E2;color:#B42318}
+.chip-info{background:#EEF2FF;color:#3538CD}
+.chip-muted{background:#F2F4F7;color:#475467}
+.card{background:#fff;border:1px solid #E4E7EC;border-radius:12px;padding:18px 20px}
+.card+.card{margin-top:14px}
+.card-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:12px}
+.h-title{font-size:16px;font-weight:600}
+.h-sub{font-size:12px;color:#667085;margin-top:2px}
+.muted{color:#667085}
+.small{font-size:12px}
+.actions{display:flex;gap:10px;align-items:center;justify-content:space-between;margin-top:18px;padding-top:14px;border-top:1px solid #EAECF0}
+.actions .right{display:flex;gap:10px;align-items:center}
+.actions .left{display:flex;gap:10px;align-items:center}
+input[type=text],input[type=url],input[type=number],select,textarea{font:inherit;font-size:13px;padding:8px 10px;border:1px solid #D0D5DD;border-radius:8px;background:#fff;color:#101828;width:100%}
+textarea{min-height:74px;resize:vertical}
+.field label{font-size:12px;color:#475467;display:block;margin-bottom:4px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.notice{font-size:13px;border-radius:10px;padding:10px 14px;display:flex;gap:8px;align-items:flex-start;line-height:1.5}
+.notice-info{background:#EEF2FF;color:#3538CD}
+.notice-warn{background:#FFFAEB;color:#B54708}
+.notice-err{background:#FEF3F2;color:#B42318}
+.notice-ok{background:#ECFDF3;color:#18794E}
+hr.sep{border:none;border-top:1px solid #EAECF0;margin:16px 0}
+</style>
+<style>
+/* ---------- 资料接入 ---------- */
+.sheet{max-width:940px;margin:26px auto 0}
+.refgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.ref{border:1px solid #E4E7EC;border-radius:10px;overflow:hidden;background:#fff;display:flex;flex-direction:column}
+.ref img{width:100%;aspect-ratio:1/1;object-fit:cover;display:block;background:#F2F4F7}
+.ref .rmeta{padding:8px 10px;font-size:12px;display:flex;flex-direction:column;gap:6px}
+.ref .rmeta .rrow{display:flex;gap:4px}
+.ref .rmeta button{font-size:11px;padding:2px 6px;border-radius:6px;border:1px solid #E4E7EC;background:#fff;color:#475467;cursor:pointer}
+.reffill{border:1.5px dashed #D0D5DD;border-radius:10px;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:150px;color:#667085;font-size:12px;cursor:pointer}
+.reffill:hover{border-color:#98A2B3;color:#344054}
+.points{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px}
+.points li{display:flex;gap:8px;align-items:center}
+.points .dot{width:6px;height:6px;border-radius:50%;background:#98A2B3;flex:none}
+.points input{flex:1}
+.checkline{display:flex;gap:8px;align-items:center;font-size:12px;color:#475467;background:#F9FAFB;border:1px dashed #E4E7EC;border-radius:8px;padding:9px 12px}
+.menu{position:relative;display:inline-block}
+.menu summary{list-style:none;cursor:pointer}
+.menu summary::-webkit-details-marker{display:none}
+.menu-pop{position:absolute;left:0;bottom:calc(100% + 8px);z-index:30;background:#fff;border:1px solid #E4E7EC;border-radius:10px;box-shadow:0 12px 24px rgba(16,24,40,.12);padding:6px;min-width:250px}
+.menu-pop button{display:block;width:100%;text-align:left;font:inherit;font-size:13px;background:none;border:none;border-radius:8px;padding:8px 10px;cursor:pointer;color:#344054}
+.menu-pop button:hover{background:#F2F4F7}
+.menu-pop small{display:block;color:#66798A;color:#667085;font-size:11px;margin-top:2px}
+/* ---------- 商品理解 ---------- */
+.briefgrid{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:14px;align-items:start}
+.sect{border:1px solid #E4E7EC;border-radius:12px;background:#fff;padding:14px 16px}
+.sect h3{margin:0 0 6px;font-size:13px;font-weight:600;color:#344054}
+.sect .src{font-size:11px;color:#98A2B3}
+.sect p{margin:0;font-size:13px;color:#101828;white-space:pre-wrap}
+.sect textarea{min-height:88px;margin-top:4px}
+.sect+.sect{margin-top:12px}
+.sidecol>.sect+.sect{margin-top:12px}
+/* ---------- 方案 ---------- */
+.stylebar{display:flex;gap:18px;align-items:center;flex-wrap:wrap;background:#fff;border:1px solid #E4E7EC;border-radius:12px;padding:12px 16px}
+.stylebar .kw{display:flex;flex-direction:column;gap:2px}
+.stylebar .kw b{font-size:12px;color:#667085;font-weight:500}
+.stylebar .kw span{font-size:13px}
+.stylebar .grow{flex:1}
+.shots{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+.shot{background:#fff;border:1px solid #E4E7EC;border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.shot .shead{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.shot .shead b{font-size:14px}
+.shot .srow{display:flex;gap:12px}
+.shot .srow img{width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid #E4E7EC;background:#F2F4F7;flex:none}
+.shot .srow .txt{font-size:12px;color:#475467;display:flex;flex-direction:column;gap:4px}
+.shot .srow .txt b{color:#344054;font-weight:600}
+.shotfoot{display:flex;gap:8px;align-items:center;padding-top:8px;border-top:1px solid #F2F4F7}
+.shotfoot .grow{flex:1}
+.shotadd{border:1.5px dashed #D0D5DD;border-radius:12px;background:transparent;display:flex;align-items:center;justify-content:center;min-height:180px;color:#667085;font-size:13px;cursor:pointer}
+.shotadd:hover{border-color:#98A2B3;color:#344054}
+details.peek{border-top:1px solid #F2F4F7;padding-top:8px}
+details.peek summary{font-size:12px;color:#2457D6;cursor:pointer}
+.blocks{margin-top:8px;display:flex;flex-direction:column;gap:8px}
+.blocks .blk{border:1px solid #EAECF0;border-radius:8px;padding:8px 10px;background:#FCFCFD}
+.blocks .blk b{display:block;font-size:11px;color:#667085;font-weight:600;margin-bottom:2px}
+.blocks .blk span{font-size:12px;color:#344054;display:block;white-space:pre-wrap}
+/* ---------- 生成中 ---------- */
+.gentiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:16px}
+.gt{background:#fff;border:1px solid #E4E7EC;border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px}
+.gt .ghead{display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:13px;font-weight:600}
+.gimg{aspect-ratio:1/1;border-radius:10px;background:#F2F4F7;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-direction:column;gap:8px;color:#667085;font-size:12px;border:1px solid #F2F4F7}
+.gimg img{width:100%;height:100%;object-fit:cover}
+.spin{width:18px;height:18px;border:2px solid #C7D2FE;border-top-color:#2457D6;border-radius:50%;animation:sp .9s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.gfoot{display:flex;gap:8px;align-items:center}
+/* ---------- 审核 ---------- */
+.review{display:grid;grid-template-columns:118px minmax(0,1fr) 330px;gap:16px;margin-top:18px;align-items:start}
+.rail{display:flex;flex-direction:column;gap:10px}
+.railbtn{display:block;width:100%;border:1px solid #E4E7EC;background:#fff;border-radius:10px;padding:6px;cursor:pointer;text-align:left;font:inherit;color:#344054}
+.railbtn img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:6px;display:block;background:#F2F4F7}
+.railbtn .rname{font-size:12px;font-weight:600;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.railbtn .rstate{font-size:11px;color:#667085}
+.railbtn.cur{border-color:#2457D6;box-shadow:0 0 0 3px #EEF2FF}
+.bigwrap{background:#fff;border:1px solid #E4E7EC;border-radius:12px;padding:12px}
+.bigimg{width:100%;aspect-ratio:1/1;max-height:58vh;object-fit:contain;background:#F2F4F7;border-radius:10px;display:block}
+.cands{display:flex;gap:10px;margin-top:12px;align-items:center;flex-wrap:wrap}
+.candbtn{position:relative;border:2px solid transparent;border-radius:9px;padding:0;background:none;cursor:pointer;line-height:0}
+.candbtn img{width:64px;height:64px;object-fit:cover;border-radius:7px;display:block;background:#F2F4F7}
+.candbtn.cur{border-color:#2457D6}
+.candbtn .nn{position:absolute;top:-7px;right:-7px;background:#6941C6;color:#fff;font-size:10px;border-radius:999px;padding:1px 6px;line-height:1.5}
+.meta-line{font-size:12px;color:#667085;margin-top:10px}
+.side{display:flex;flex-direction:column;gap:12px}
+.sidecard{background:#fff;border:1px solid #E4E7EC;border-radius:12px;padding:14px}
+.sidecard h3{margin:0 0 8px;font-size:13px;font-weight:600;color:#344054}
+.sidebtns{display:flex;flex-direction:column;gap:8px}
+.note{font-size:12px;color:#475467;background:#F9FAFB;border-radius:8px;padding:9px 11px;line-height:1.5}
+.note-warn{background:#FFFAEB;color:#B54708}
+.note-err{background:#FEF3F2;color:#B42318}
+.note-ok{background:#ECFDF3;color:#18794E}
+.phcard{aspect-ratio:1/1;width:100%;border:1.5px dashed #A4BCFD;border-radius:10px;background:#F5F8FF;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#3538CD;font-size:12px;text-align:center;padding:18px;line-height:1.6}
+.phcard b{font-size:13px}
+/* ---------- 交付 ---------- */
+.delivgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:14px}
+.dcard{background:#fff;border:1px solid #E4E7EC;border-radius:12px;overflow:hidden}
+.dcard img{width:100%;aspect-ratio:1/1;object-fit:cover;display:block;background:#F2F4F7}
+.dcard .dmeta{padding:10px 12px;font-size:12px;color:#475467;display:flex;flex-direction:column;gap:4px}
+.dcard .dmeta b{color:#101828;font-size:13px}
+.filelist{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px;font-size:13px}
+.filelist li{display:flex;gap:8px;align-items:center;padding:8px 10px;background:#F9FAFB;border:1px solid #EAECF0;border-radius:8px}
+.filelist .fname{font-weight:600;color:#344054}
+/* ---------- 对话框与提示 ---------- */
+dialog{border:none;border-radius:14px;padding:0;max-width:780px;width:calc(100vw - 40px);box-shadow:0 24px 48px rgba(16,24,40,.2)}
+dialog::backdrop{background:rgba(16,24,40,.45)}
+.dlg-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:15px 20px;border-bottom:1px solid #EAECF0}
+.dlg-head b{font-size:15px}
+.dlg-body{padding:16px 20px;max-height:66vh;overflow:auto}
+.dlg-foot{display:flex;justify-content:flex-end;gap:10px;padding:14px 20px;border-top:1px solid #EAECF0}
+.causes{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none}
+.causes label{display:flex;gap:10px;align-items:flex-start;border:1px solid #E4E7EC;border-radius:9px;padding:9px 12px;cursor:pointer;font-size:13px}
+.causes label:hover{border-color:#98A2B3}
+.causes input{margin-top:3px}
+.causes label.on{border-color:#2457D6;background:#F5F8FF}
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(12px);background:#101828;color:#F9FAFB;font-size:13px;padding:10px 18px;border-radius:10px;opacity:0;pointer-events:none;transition:opacity .16s,transform .16s;z-index:90;max-width:80vw}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+/* ---------- 响应式 ---------- */
+@media (max-width:1080px){.briefgrid{grid-template-columns:1fr}.review{grid-template-columns:104px minmax(0,1fr)}.review .side{grid-column:1/-1;flex-direction:row;flex-wrap:wrap}.review .side .sidecard{flex:1;min-width:260px}}
+@media (max-width:1023px){.review{grid-template-columns:1fr}.rail{flex-direction:row;overflow-x:auto;padding-bottom:4px}.railbtn{min-width:92px;flex:none}.stages{justify-content:flex-start}}
+@media (max-width:900px){.shots{grid-template-columns:1fr}.gentiles{grid-template-columns:1fr 1fr}.delivgrid{grid-template-columns:1fr 1fr}}
+@media (max-width:640px){.app{padding:0 14px 90px}.grid2,.grid3{grid-template-columns:1fr}.refgrid{grid-template-columns:1fr 1fr}.gentiles,.delivgrid{grid-template-columns:1fr}.taskbar{flex-wrap:wrap;gap:8px}.stages{order:3;width:100%}.tb-id{min-width:0}}
+@media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important}}
+</style>
+</head>
+<body>
+<div class="demobar" role="region" aria-label="演示控制（非产品界面）">
+  <span class="dtag">演示控制 · 非产品界面</span>
+  <div class="dgroup">情形注入（下次运行时生效）：
+    <button type="button" data-scn="normal" class="on">正常</button>
+    <button type="button" data-scn="partial">局部失败</button>
+    <button type="button" data-scn="unknown">结果未知</button>
+  </div>
+  <span class="spacer"></span>
+  <span id="demoHint">离线演示：不调用模型、不写文件；候选与提示词来自本地示例产物</span>
+  <button type="button" id="demoReset">复位到新建</button>
+</div>
+
+<div class="app">
+  <header class="taskbar">
+    <div class="tb-id">
+      <div class="tb-thumb" id="tbThumb"><span class="ph-mini">新任务</span></div>
+      <div>
+        <div class="tb-name" id="tbName">新建商品套图任务</div>
+        <div class="tb-sub" id="tbSub">离线演示环境 · Amazon US</div>
+      </div>
+    </div>
+    <nav class="stages" id="stages" aria-label="任务阶段"></nav>
+    <div class="tb-right">
+      <span class="chip chip-muted" id="envBadge">离线演示</span>
+    </div>
+  </header>
+  <main id="main"></main>
+</div>
+
+<dialog id="modal"></dialog>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>
+"use strict";
+var $ = function(id){ return document.getElementById(id); };
+var esc = function(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); };
+var timers = [];
+function later(fn, ms){ var t = setTimeout(fn, ms); timers.push(t); return t; }
+function clearTimers(){ for(var i=0;i<timers.length;i++){ clearTimeout(timers[i]); } timers = []; }
+
+/* =====================================================================
+   示例夹具（虚构商品，仅用于离线演示）
+   data → 理解/方案/提示词都从这些字段派生，机制代码里不出现商品常量
+   ===================================================================== */
+var FIX = {};
+
+FIX.aster = {
+  id:"aster",
+  name:"Aster 01 保温杯",
+  sku:"demo-tumbler-aster-01",
+  category:"保温杯（随行杯）",
+  platform:"Amazon US",
+  thumb:"../fixture-design/pack/01-front-full.png",
+  points:[
+    "哑光直筒杯身，上段为均匀深青绿色，无渐变、无图案",
+    "杯盖为两层同心阶梯环，杯口与杯身之间有一圈窄陶土橙饰环",
+    "下部约三成为深炭灰防滑套，带三条水平筋"
+  ],
+  refs:[
+    {role:"正面全身", img:"../fixture-design/pack/01-front-full.png"},
+    {role:"杯口细节", img:"../fixture-design/pack/02-upper-closeup.png"},
+    {role:"下部细节", img:"../fixture-design/pack/03-lower-detail.png"}
+  ],
+  brief:[
+    {k:"商品身份", src:"来自参考图", v:"单个高直筒杯体 + 旋拧杯盖；高宽视觉比例约 3.1 : 1，侧壁近乎平直；无把手、无侧握、无吸管。"},
+    {k:"颜色与分色", src:"来自参考图", v:"上段约 72% 为哑光深青绿（约 #0F6B66），无渐变、无图案；下段约 28% 为深炭灰防滑套（约 #252A2A），带三条水平筋；杯盖为低矮深炭灰，顶部可见两层同心阶梯；杯盖与杯体之间一圈窄陶土橙饰环（约 #D97A45）。"},
+    {k:"表面规则", src:"来自参考图", v:"外表面完全空白：无文字、数字、字母、Logo、标签、贴纸、水印与装饰符号。"},
+    {k:"Unknown", src:"资料未声明", v:"材质（未声明）\n容量（未声明，画面不得出现容量字样）\n保温性能（未声明，且不属于图片可验证范围）"},
+    {k:"可变化范围", src:"事实锁白名单", v:"场景、光线、构图、镜头角度、背景材质可以变化；商品身份、颜色分色、结构件与表面规则是事实锁，不可变化。"},
+    {k:"平台约束", src:"平台规则", v:"Amazon US：主图使用纯白背景、无文字、无道具、1:1；任何一张都不得出现第二件同类商品。"}
+  ],
+  style:{light:"soft natural light from the upper left with no hard shadows", tone:"neutral colour balance keeping the product colours true", mood:"clean lifestyle mood with no clutter", props:"no props, no hands, no people"},
+  shots:[
+    {id:"s1", purpose:"白底主图", direction:"纯白背景、正面略三分视角、整器入画、柔和落地影", refRole:"正面全身", why:"美国站主图要求纯白底、无文字、无道具；本品高瘦，需要完整留边", uses:["points","style"]},
+    {id:"s2", purpose:"生活场景图", direction:"浅色石面台面 + 中性墙，左上柔和窗光，台面无其他道具", refRole:"正面全身", why:"厨房台面与柔和窗光是与事实锁相容、且已有真实产出的场景组合", uses:["points","style"]},
+    {id:"s3", purpose:"细节特写图", direction:"杯口阶梯与饰环特写；下部防滑套与三条筋特写", refRole:"杯口细节、下部细节", why:"结构与质感是买家疑问点，特写不引入新事实", uses:["style"]}
+  ],
+  scenes:{
+    s1:"Studio scene for an Amazon US main image: the tumbler stands alone on a seamless pure white background (RGB 255,255,255) with no visible horizon line, no texture and no colour cast; even, shadowless softbox lighting from the front and both sides; nothing else is in the frame and no prop overlaps or touches the product.",
+    s2:"Scene for an Amazon US listing lifestyle image: the tumbler stands on a clean matte light stone kitchen counter next to a smooth neutral wall; a single soft window light comes from the upper left; nothing else is in the frame, and no prop overlaps or touches the product; no hands and no people.",
+    s3:"Detail scene for an Amazon US listing detail image: a tight inspection view of the tumbler on a smooth light neutral surface; soft directional studio light from the upper left to reveal the matte finish and the stepped lid; only the product is in the frame, no props, no hands and no people."
+  },
+  comps:{
+    s1:"Eye level straight-on view, the whole product including the lid visible inside the frame with clear margins, product centred and filling about eighty five percent of the frame height, sharp focus across the whole product, clean even lighting, no dramatic shadow, square 1:1 composition.",
+    s2:"Eye level three quarter front view, the whole product including the lid visible inside the frame with clear margins, product centred and occupying most of the frame height, soft natural contact shadow under the base, sharp focus on the product, photorealistic e-commerce product photography, square 1:1 composition.",
+    s3:"Close-up view framed on the upper half of the product so that the stepped lid, the seam ring and the upper body surface stay sharp and fully inside the frame with clear margins, shallow depth of field, photorealistic commercial detail photography, square 1:1 composition."
+  },
+  lock:"Photograph of the exact same product as in the reference image. The product must stay exactly the same design, the same colours, the same proportions and the same number of parts as in the reference image: exactly one single tall straight-walled insulated tumbler with its screw-on lid closed; the upper roughly 72 percent of the body is matte deep teal green (about #0F6B66) with a matte finish, no gradient and no printed pattern; the lower roughly 28 percent is a dark charcoal gray (about #252A2A) grip sleeve carrying exactly three raised horizontal ribs; the lid is a low profile dark charcoal lid whose top shows exactly two clearly visible concentric stepped rings, with no opening on the lid top; one narrow terracotta orange ring (about #D97A45) sits in the seam between the lid and the body, evenly thick all the way around; the bottom is flat with a narrow dark gray non-slip ring, and the tumbler rests flat and grounded on its surface.",
+  blank:"Every outer surface of the product stays completely blank: no text, no numbers, no letters, no words, no logo, no brand mark, no label, no sticker, no watermark, no capacity marking and no decorative symbol anywhere on the product.",
+  negshape:"Not tapered, not waisted, not a mug, not bottle shaped, and with no handle, no side grip, no strap, no straw, no drinking spout, no flip top, no dome lid, no second cup and no second lid.",
+  negative:"different product, different colour, different proportions, extra object, second cup, handle, side handle, strap, straw, drinking spout, flip top, dome lid, open lid, text, letters, words, numbers, logo, brand mark, watermark, label, sticker, typography, pattern, gradient, glossy metallic body, cropped product, floating object, cluttered background, props overlapping the product, hands, people, blurry, low resolution",
+  cands:{
+    s1:[
+      {id:"s1c1", img:"../fixture-design/pack/01-front-full.png", src:"参考包真实产物（qwen-image-3.0）", date:"2026-09-25", pv:1},
+      {id:"s1c2", img:"../fixture-design/A/raw.png", src:"参考包真实产物（qwen-image-3.0）", date:"2026-09-24", pv:1}
+    ],
+    s2:[
+      {id:"s2c1", img:"../first-round/attempts/b0c9c907f875b918/raw.png", src:"首轮真实产物（qwen-image-3.0 · 场景图）", date:"2026-09-26", pv:1},
+      {id:"s2c2", img:"../first-round/attempts/723ab2a69e19571d/raw.png", src:"首轮真实产物（qwen-image-3.0 · 场景图）", date:"2026-09-26", pv:1}
+    ],
+    s3:[
+      {id:"s3c1", img:"../fixture-design/pack/02-upper-closeup.png", src:"参考包局部（UI 夹具）", date:"2026-09-24", pv:1},
+      {id:"s3c2", img:"../fixture-design/pack/03-lower-detail.png", src:"参考包局部（UI 夹具）", date:"2026-09-24", pv:1}
+    ]
+  },
+  pool:{
+    s1:[
+      {img:"../fixture-design/B/raw.png", src:"模拟返工候选 · 复用同源产物"},
+      {img:"../fixture-design/ref-02-three-quarter/raw.png", src:"模拟返工候选 · 复用同源产物"}
+    ],
+    s2:[
+      {img:"../first-round/attempts/c75a6d09d6ea00df/raw.png", src:"模拟返工候选 · 复用同源产物"},
+      {img:"../first-round/attempts/45ef384cb14bafbe/raw.png", src:"模拟返工候选 · 复用同源产物"}
+    ],
+    s3:[]
+  }
+};
+
+FIX.bex = {
+  id:"bex",
+  name:"Bex 02 方形随行瓶",
+  sku:"demo-box-bex-02",
+  category:"保温随行瓶（方形）",
+  platform:"Amazon US",
+  thumb:"../product-2/bex-02/raw.png",
+  points:[
+    "单一直立方体结构，四角小圆角，截面从上到下等宽",
+    "顶盖低矮平顶，盖下有一圈窄沙金饰环",
+    "板岩蓝瓶体 + 石墨黑顶盖与下段底带，无任何外凸件"
+  ],
+  refs:[
+    {role:"正面全身", img:"../product-2/bex-02/raw.png"}
+  ],
+  brief:[
+    {k:"商品身份", src:"来自参考图", v:"单一直立方体 + 低矮平顶盖；四角小圆角，截面从上到下等宽；高宽比约 2.38 : 1；无把手、无侧握、无提带、无吸管。"},
+    {k:"颜色与分色", src:"来自参考图", v:"瓶体上段约 72% 为板岩蓝（约 #3A5A78）；顶盖与下段底带为石墨黑（约 #2B2B30）；顶盖下方一圈窄沙金饰环（约 #C9A227）；无横向筋条、无独立底圈。"},
+    {k:"表面规则", src:"来自参考图", v:"外表面完全空白：无文字、数字、字母、Logo、标签、贴纸、水印与装饰符号。"},
+    {k:"Unknown", src:"资料未声明", v:"材质（未声明）\n容量（未声明）\n保温性能（未声明）"},
+    {k:"可变化范围", src:"事实锁白名单", v:"场景、光线、构图、镜头角度、背景材质可以变化；方形结构、颜色分色与饰环位置是事实锁。"},
+    {k:"平台约束", src:"平台规则", v:"Amazon US：主图纯白背景、无文字、无道具、1:1。"}
+  ],
+  style:{light:"even softbox studio lighting from both sides", tone:"cool minimal tone", mood:"studio minimal mood with the structure as the hero", props:"no props, no hands, no people"},
+  shots:[
+    {id:"s1", purpose:"白底主图", direction:"纯白背景、正面平视、整器入画、柔和落地影", refRole:"正面全身", why:"平台主图规范；方形容器在正面平视下最能表达等宽截面", uses:["points","style"]},
+    {id:"s2", purpose:"结构角视图", direction:"45 度角、浅灰无缝背景、顶盖与沙金饰环保持清晰", refRole:"正面全身", why:"方形结构与低矮平顶是本品最强的差异点，需要一张专门表达", uses:["style"]}
+  ],
+  scenes:{
+    s1:"Studio scene for an Amazon US main image: the flask stands alone on a seamless pure white background (RGB 255,255,255) with no visible horizon line, no texture and no colour cast; even, shadowless softbox lighting from the front and both sides; nothing else is in the frame.",
+    s2:"Studio scene for an Amazon US listing structure image: the flask stands on a seamless light gray studio backdrop, three quarter angle, clean even softbox lighting, a soft contact shadow under the base, nothing else in the frame, no props."
+  },
+  comps:{
+    s1:"Eye level straight-on view, the whole product including the lid visible inside the frame with clear margins, product centred and filling about eighty five percent of the frame height, sharp focus across the whole product, square 1:1 composition.",
+    s2:"Three quarter front view at a forty five degree angle, the whole product visible inside the frame with clear margins, sharp focus on the lid, the sand-gold ring and the square body, photorealistic e-commerce product photography, square 1:1 composition."
+  },
+  lock:"Photograph of the exact same product as in the reference image. The product must stay exactly the same design, the same colours and the same proportions as in the reference image: exactly one single tall cube-shaped insulated flask with small rounded corners and a constant square cross-section from top to bottom; the body is slate blue (about #3A5A78) with a matte finish and no pattern; the low flat lid and the lower band are graphite black (about #2B2B30); one narrow sand-gold ring (about #C9A227) sits directly under the lid; the body carries no ribs and no separate bottom ring; there is no handle, no side grip, no strap, no straw and no second object; the flask rests flat and grounded on its surface.",
+  blank:"Every outer surface of the product stays completely blank: no text, no numbers, no letters, no words, no logo, no brand mark, no label, no sticker, no watermark, no capacity marking and no decorative symbol anywhere on the product.",
+  negshape:"Not a cylinder, not tapered, not waisted, not bottle shaped, and with no handle, no side grip, no strap, no straw, no drinking spout, no flip top, no dome lid, no second flask and no second lid.",
+  negative:"different product, different colour, different proportions, extra object, second flask, handle, side grip, strap, straw, drinking spout, flip top, dome lid, open lid, text, letters, words, numbers, logo, brand mark, watermark, label, sticker, typography, pattern, gradient, glossy metallic body, cropped product, floating object, cluttered background, props overlapping the product, hands, people, blurry, low resolution",
+  cands:{
+    s1:[
+      {id:"s1c1", img:"../product-2/bex-02/raw.png", src:"演示夹具 · 合成图（非模型产出）", date:"2026-09-25", pv:1}
+    ],
+    s2:[]
+  },
+  pool:{ s1:[], s2:[] }
+};
+
+/* 返工原因（封闭集）→ 修正句 → 追加到哪个提示词块 */
+var CORRECTIONS = [
+  {id:"shape",  label:"商品走形或变色",   block:"lock",   seg:"商品锁定", text:"Keep the product shape, the colours, the count of parts and the surface details exactly as in the reference image; do not alter any locked attribute."},
+  {id:"scene",  label:"背景或场景不合适", block:"scene",  seg:"场景",     text:"Simplify the scene: remove clutter and distracting objects, keep the surface neutral, and keep nothing overlapping the product."},
+  {id:"light",  label:"光线或色调不合适", block:"scene",  seg:"场景",     text:"Use soft natural light with a neutral colour balance; avoid strong colour casts and hard shadows."},
+  {id:"frame",  label:"构图或裁切",       block:"comp",   seg:"构图",     text:"Reframe so the whole product stays inside the frame with clear margins and stays centred."},
+  {id:"text",   label:"文字或水印问题",   block:"blank",  seg:"空白表面", text:"No text, letters, numbers, logo, label, sticker or watermark anywhere on the product or in the image."},
+  {id:"other",  label:"其他（在补充说明里写清楚）", block:"comp", seg:"构图", text:""}
+];
+
+/* 全组视觉选项（中文用于界面，英文进入提示词） */
+var STYLE_OPT = {
+  light:[
+    {k:"光线", zh:"柔和自然光（左上主光，无硬阴影）", en:"soft natural light from the upper left with no hard shadows"},
+    {k:"光线", zh:"中性棚拍光（左右对称软光）", en:"even softbox studio lighting from both sides"},
+    {k:"光线", zh:"暖色侧光（右下方低角度）", en:"warm directional light from the lower right"}
+  ],
+  tone:[
+    {k:"色调", zh:"中性原色（商品颜色保持真实）", en:"neutral colour balance keeping the product colours true"},
+    {k:"色调", zh:"冷调极简", en:"cool minimal tone"},
+    {k:"色调", zh:"暖调生活感", en:"warm inviting tone"}
+  ],
+  mood:[
+    {k:"氛围", zh:"干净生活感，画面无杂物", en:"clean lifestyle mood with no clutter"},
+    {k:"氛围", zh:"棚拍极简，结构优先", en:"studio minimal mood with the structure as the hero"},
+    {k:"氛围", zh:"户外自然", en:"natural outdoor mood"}
+  ],
+  props:[
+    {k:"道具", zh:"无道具、无手部、无人物", en:"no props, no hands, no people"},
+    {k:"道具", zh:"少量浅色道具，不遮挡商品", en:"a few light-toned props that never overlap the product"}
+  ]
+};
+function styleZh(key, en){
+  var arr = STYLE_OPT[key] || [];
+  for(var i=0;i<arr.length;i++){ if(arr[i].en===en) return arr[i].zh; }
+  return en;
+}
+function styleText(){
+  var st = curStyle();
+  if(!st) return "";
+  var s = "Shared visual style for the whole set: " + st.light + "; " + st.tone + "; " + st.mood + "; " + st.props + ".";
+  if(S.styleExtra){ s += " Additional note: " + S.styleExtra + "."; }
+  return s;
+}
+
+/* ---------------- 状态 ---------------- */
+var S = {
+  stage:"intake",
+  fixture:null,
+  scenario:"normal",
+  intake:{name:"",category:"",platform:"Amazon US",points:[],refs:[]},
+  brief:null,
+  briefEditing:false,
+  styleOverride:null,
+  styleEditing:false,
+  shots:null,
+  planDirty:false,
+  genState:{},
+  genReason:{},
+  genNew:{},
+  hasGenerated:false,
+  promptOv:{},
+  promptDirty:{},
+  stale:{},
+  adopted:{},
+  currentShot:null,
+  currentCand:{},
+  extraCands:{},
+  compare:false,
+  unsupported:false,
+  exported:false,
+  styleExtra:"",
+  reworking:{},
+  poolUse:{}
+};
+
+function fx(){ return S.fixture ? FIX[S.fixture] : null; }
+function curStyle(){ return S.styleOverride || (fx() ? fx().style : null); }
+function getShot(id){ if(!S.shots) return null; for(var i=0;i<S.shots.length;i++){ if(S.shots[i].id===id) return S.shots[i]; } return null; }
+function shotIndex(id){ for(var i=0;i<S.shots.length;i++){ if(S.shots[i].id===id) return i; } return -1; }
+function allCands(id){
+  var out = [];
+  var f = fx();
+  if(f && f.cands[id]) out = out.concat(f.cands[id]);
+  if(S.extraCands[id]) out = out.concat(S.extraCands[id]);
+  return out;
+}
+function candById(id){ var arr = S.shots ? allCands(id) : []; return null; }
+function findCand(shotId, candId){ var arr = allCands(shotId); for(var i=0;i<arr.length;i++){ if(arr[i].id===candId) return arr[i]; } return null; }
+function currentCandId(shotId){
+  var arr = allCands(shotId);
+  if(S.currentCand[shotId]){ var hit = findCand(shotId, S.currentCand[shotId]); if(hit) return hit.id; }
+  return arr.length ? arr[0].id : null;
+}
+function adoptedCand(shotId){ return S.adopted[shotId] ? findCand(shotId, S.adopted[shotId]) : null; }
+function adoptedCount(){ var n=0; var ids = S.shots ? S.shots.map(function(s){return s.id;}) : []; for(var i=0;i<ids.length;i++){ if(S.adopted[ids[i]]) n++; } return n; }
+function promptV(shotId){ return S.promptOv[shotId] ? S.promptOv[shotId].v : 1; }
+function blocksOf(shotId){
+  var f = fx(); var o = S.promptOv[shotId]; var shot = getShot(shotId);
+  if(o) return o;
+  return {
+    v:1,
+    lock:f.lock,
+    blank:f.blank,
+    negshape:f.negshape,
+    style:styleText(),
+    scene:f.scenes[shotId] || f.scenes.s2 || "",
+    comp:f.comps[shotId] || f.comps.s2 || "",
+    negative:f.negative
+  };
+}
+
+/* ---------------- 阶段与任务头 ---------------- */
+var ORDER = ["intake","brief","plan","generating","review","delivery"];
+var LABEL = {intake:"资料", brief:"理解", plan:"方案", generating:"生成", review:"审核", delivery:"交付"};
+
+function summaryOf(stage){
+  var t = [];
+  if(stage==="intake"){
+    if(S.intake.refs.length) t.push(S.intake.refs.length+" 张参考图");
+    if(S.intake.points.length) t.push(S.intake.points.length+" 条卖点");
+  }
+  if(stage==="brief" && S.brief){ t.push(S.brief.length+" 项已确认"); }
+  if(stage==="plan" && S.shots){ t.push(S.shots.length+" 张方案"); }
+  if(stage==="generating"){
+    var r=0, bad=0; for(var k in S.genState){ if(S.genState[k]==="ready") r++; if(S.genState[k]==="failed"||S.genState[k]==="unknown") bad++; }
+    t.push(r+" 张就绪"); if(bad) t.push(bad+" 张待处理");
+  }
+  if(stage==="review" && S.shots){ t.push("已采用 "+adoptedCount()+" / "+S.shots.length); }
+  if(stage==="delivery"){ t.push(S.shots ? (adoptedCount()+" 张已选") : ""); }
+  return t.filter(Boolean).join(" · ");
+}
+function renderTaskbar(){
+  var f = fx();
+  var name = f ? (S.intake.name || f.name) : "新建商品套图任务";
+  $("tbName").textContent = name;
+  var sub = [];
+  if(f) sub.push(f.sku);
+  sub.push("离线演示环境");
+  sub.push(S.intake.platform || "Amazon US");
+  $("tbSub").textContent = sub.join(" · ");
+  var thumb = $("tbThumb");
+  if(f){ thumb.innerHTML = '<img src="'+esc(f.thumb)+'" alt="商品缩略图">'; }
+  else { thumb.innerHTML = '<span class="ph-mini">新任务</span>'; }
+  $("envBadge").textContent = "离线演示";
+}
+function renderStages(){
+  var cur = ORDER.indexOf(S.stage);
+  var html = "";
+  for(var i=0;i<ORDER.length;i++){
+    var st = ORDER[i];
+    var cls = "stg";
+    if(i===cur) cls += " cur";
+    else if(i<cur) cls += " done";
+    var sm = "";
+    if(i<cur){ sm = summaryOf(st); }
+    else if(i===cur){ sm = "当前阶段"; }
+    else { sm = "未开始"; }
+    var label = (i<cur ? "✓ " : "") + LABEL[st];
+    var attrs = (i<cur) ? ' data-nav="'+st+'"' : '';
+    html += '<button type="button" class="'+cls+'"'+attrs+'><b>'+label+'</b><small>'+esc(sm)+'</small></button>';
+  }
+  $("stages").innerHTML = html;
+}
+function nav(stage){
+  if(ORDER.indexOf(stage) >= ORDER.indexOf(S.stage)) { return; }
+  S.stage = stage;
+  if(stage==="intake" || stage==="brief"){ S.compare = false; }
+  render();
+}
+function render(){
+  renderTaskbar();
+  renderStages();
+  var m = $("main");
+  if(S.stage==="intake") m.innerHTML = viewIntake();
+  else if(S.stage==="brief") m.innerHTML = viewBrief();
+  else if(S.stage==="plan") m.innerHTML = viewPlan();
+  else if(S.stage==="generating") m.innerHTML = viewGenerating();
+  else if(S.stage==="review") m.innerHTML = viewReview();
+  else m.innerHTML = viewDelivery();
+  window.scrollTo(0,0);
+}
+function toast(msg){
+  var t = $("toast"); t.textContent = msg; t.classList.add("on");
+  later(function(){ t.classList.remove("on"); }, 2600);
+}
+
+/* ---------------- 资料接入 ---------------- */
+function refsHtml(){
+  var html = "";
+  for(var i=0;i<S.intake.refs.length;i++){
+    var r = S.intake.refs[i];
+    html += '<div class="ref"><img src="'+esc(r.img)+'" alt="参考图：'+esc(r.role)+'">' +
+      '<div class="rmeta"><div><b>'+esc(r.role)+'</b></div>' +
+      '<div class="rrow"><button type="button" data-act="repRef" data-i="'+i+'">替换</button>' +
+      '<button type="button" data-act="rmRef" data-i="'+i+'">移除</button></div></div></div>';
+  }
+  html += '<button type="button" class="reffill" data-act="addRef">＋ 添加图片<span>建议含正面全身与关键细节</span></button>';
+  return html;
+}
+function pointsHtml(){
+  var html = "";
+  for(var i=0;i<S.intake.points.length;i++){
+    html += '<li><span class="dot" aria-hidden="true"></span><input type="text" data-pt="'+i+'" value="'+esc(S.intake.points[i])+'" aria-label="卖点 '+(i+1)+'">' +
+      '<button type="button" class="btn btn-sm" data-act="rmPoint" data-i="'+i+'">删除</button></li>';
+  }
+  html += '<li><button type="button" class="btn btn-sm" data-act="addPoint">＋ 添加一条卖点</button></li>';
+  return html;
+}
+function intakeMissing(){
+  var miss = [];
+  if(!String(S.intake.name||"").trim()) miss.push("商品名称");
+  if(!S.intake.category) miss.push("类目");
+  if(!S.intake.refs.length) miss.push("至少 1 张参考图");
+  if(!S.intake.points.length) miss.push("至少 1 条卖点");
+  return miss;
+}
+function viewIntake(){
+  var f = fx();
+  var miss = intakeMissing();
+  var ok = (miss.length===0);
+  var checkText = f
+    ? (miss.length===0 ? "资料检查：可用 · " + S.intake.refs.length + " 张参考图 · " + S.intake.points.length + " 条卖点 · 未发现冲突" : "资料检查：还差 " + miss.join("、"))
+    : "空任务：请先加载示例商品，或补齐资料后由系统校验（演示只接入两份示例商品）";
+  var notice = "";
+  if(S.unsupported){
+    notice = '<div class="notice notice-warn" role="alert"><b>未接入的输入：</b><span>当前离线演示只准备好两份示例商品（Aster 01 保温杯 / Bex 02 方形随行瓶）。其他商品可以填资料，但不会生成演示候选——请用「加载示例商品」开始一次完整走查。</span></div>';
+  }
+  return '<div class="sheet">' +
+    (notice ? '<div style="margin-bottom:12px">'+notice+'</div>' : '') +
+    '<div class="card">' +
+      '<div class="card-head"><div><div class="h-title">商品资料</div><div class="h-sub">这是成套图任务的唯一输入：系统用参考图建立事实锁，用卖点与平台规则编译提示词。</div></div>' +
+      (f ? '<span class="chip chip-info">示例商品（虚构）</span>' : '') + '</div>' +
+      '<div class="field"><label>商品参考图</label><div class="refgrid" id="refgrid">'+refsHtml()+'</div></div>' +
+      '<hr class="sep">' +
+      '<div class="grid3">' +
+        '<div class="field"><label for="inName">商品名称</label><input type="text" id="inName" data-k="name" value="'+esc(S.intake.name)+'" placeholder="例如：Aster 01 保温杯"></div>' +
+        '<div class="field"><label for="inCat">类目</label><input type="text" id="inCat" data-k="category" value="'+esc(S.intake.category)+'" placeholder="例如：保温杯（随行杯）"></div>' +
+        '<div class="field"><label for="inPlat">平台</label><select id="inPlat" data-k="platform"><option'+sel(S.intake.platform,"Amazon US")+'>Amazon US</option><option'+sel(S.intake.platform,"Amazon EU")+'>Amazon EU</option><option'+sel(S.intake.platform,"独立站")+'>独立站</option></select></div>' +
+      '</div>' +
+      '<hr class="sep">' +
+      '<div class="field"><label>卖点（用户声明；系统会区分「图上可见事实」与「无法验证的主张」）</label><ul class="points" id="points">'+pointsHtml()+'</ul></div>' +
+      '<div class="checkline" id="checkline">'+esc(checkText)+'</div>' +
+      '<div class="actions"><div class="left">' +
+        '<details class="menu"><summary class="btn">加载示例商品</summary><div class="menu-pop">' +
+          '<button type="button" data-act="load" data-val="aster">Aster 01 保温杯<small>保温杯 · 3 张参考图 · 3 条卖点</small></button>' +
+          '<button type="button" data-act="load" data-val="bex">Bex 02 方形随行瓶<small>对照商品 · 方形结构 · 2 张方案</small></button>' +
+        '</div></details>' +
+        '<span class="small muted">示例为虚构商品，仅用于功能演示</span>' +
+      '</div><div class="right">' +
+        '<button type="button" class="btn btn-primary" data-act="analyze"'+(ok?'':' disabled')+'>分析商品资料</button>' +
+      '</div></div>' +
+    '</div>' +
+  '</div>';
+}
+function sel(cur, val){ return cur===val ? " selected" : ""; }
+
+/* ---------------- 商品理解 ---------------- */
+function buildBrief(){
+  var f = fx();
+  var b = [];
+  for(var i=0;i<f.brief.length;i++){ b.push({k:f.brief[i].k, src:f.brief[i].src, v:f.brief[i].v}); }
+  var pts = S.intake.points.map(function(p,i){ return (i+1)+") "+p; }).join("\n");
+  b.splice(3, 0, {k:"卖点（用户声明）", src:"用户输入", v:pts});
+  return b;
+}
+function sectHtml(sec, i, editable){
+  return '<div class="sect">' +
+    '<div class="card-head" style="margin-bottom:6px"><h3>'+esc(sec.k)+'</h3><span class="src">来源：'+esc(sec.src)+'</span></div>' +
+    (editable ? '<textarea data-bs="'+i+'" aria-label="'+esc(sec.k)+'">'+esc(sec.v)+'</textarea>' : '<p>'+esc(sec.v)+'</p>') +
+  '</div>';
+}
+function viewBrief(){
+  var edit = S.briefEditing;
+  var mainIdx = [0,1,2,3];
+  var sideIdx = [4,5,6];
+  var mainHtml = "", sideHtml = "";
+  for(var i=0;i<S.brief.length;i++){
+    var html = sectHtml(S.brief[i], i, edit);
+    if(mainIdx.indexOf(i)>=0) mainHtml += html; else sideHtml += html;
+  }
+  var notice = edit
+    ? '<div class="notice notice-info" style="margin-bottom:12px">正在修正：只改重要错误和 Unknown；保存后受影响的图会标记「需更新」，已采用的候选不会丢失。</div>'
+    : '';
+  var actions = edit
+    ? '<div class="left"><button type="button" class="btn" data-act="cancelBrief">取消</button></div><div class="right"><button type="button" class="btn btn-primary" data-act="saveBrief">保存修正</button></div>'
+    : '<div class="left"><button type="button" class="btn" data-act="navBack" data-val="intake">返回资料</button><button type="button" class="btn" data-act="editBrief">修正理解</button></div><div class="right"><button type="button" class="btn btn-primary" data-act="confirmBrief">确认，生成套图方案</button></div>';
+  return '<div class="sheet" style="max-width:1040px">' +
+    notice +
+    '<div class="card">' +
+      '<div class="card-head"><div><div class="h-title">商品理解</div><div class="h-sub">系统从你的资料里读出的内容；事实与 Unknown 分列，每项带来源。确认后据此编译套图方案与提示词。</div></div>' +
+      '<span class="chip chip-info">'+(edit?"编辑中":"已就绪")+'</span></div>' +
+      '<div class="briefgrid"><div>'+mainHtml+'</div><div class="sidecol">'+sideHtml+'</div></div>' +
+      '<div class="actions">'+actions+'</div>' +
+    '</div>' +
+  '</div>';
+}
+
+/* ---------------- 套图方案 ---------------- */
+function kw(label, val){
+  return '<div class="kw"><b>'+esc(label)+'</b><span>'+esc(val)+'</span></div>';
+}
+function blocksHtml(shotId){
+  var b = blocksOf(shotId);
+  var rows = [
+    ["商品锁定", b.lock],
+    ["空白表面", b.blank],
+    ["形状否定", b.negshape],
+    ["全组视觉", b.style],
+    ["场景", b.scene],
+    ["构图", b.comp],
+    ["负向提示词", b.negative]
+  ];
+  var html = "";
+  for(var i=0;i<rows.length;i++){
+    html += '<div class="blk"><b>'+esc(rows[i][0])+'</b><span>'+esc(rows[i][1])+'</span></div>';
+  }
+  return html;
+}
+function shotCard(shot){
+  var f = fx();
+  var refImg = f.refs[0] ? f.refs[0].img : "";
+  for(var i=0;i<f.refs.length;i++){ if(f.refs[i].role.indexOf(shot.refRole)>=0){ refImg = f.refs[i].img; } }
+  var stale = S.stale[shot.id];
+  var idx = shotIndex(shot.id);
+  var gs = S.genState[shot.id];
+  var chip = '<span class="chip chip-muted">未生成</span>';
+  if(stale){ chip = '<span class="chip chip-warn">需更新</span>'; }
+  else if(gs==="ready"){ chip = '<span class="chip chip-ok">已就绪</span>'; }
+  else if(gs==="failed"){ chip = '<span class="chip chip-err">失败</span>'; }
+  else if(gs==="unknown"){ chip = '<span class="chip chip-warn">结果未知</span>'; }
+  else if(gs==="nocand"){ chip = '<span class="chip chip-muted">无演示候选</span>'; }
+  return '<div class="shot">' +
+    '<div class="shead"><b>S'+(idx+1)+' · '+esc(shot.purpose)+'</b>'+chip+'</div>' +
+    '<div class="srow"><img src="'+esc(refImg)+'" alt="参考图：'+esc(shot.refRole)+'">' +
+      '<div class="txt"><span><b>画面方向：</b>'+esc(shot.direction)+'</span>' +
+      '<span><b>参考图：</b>'+esc(shot.refRole)+'</span>' +
+      '<span><b>推荐理由：</b>'+esc(shot.why)+'</span></div></div>' +
+    '<details class="peek"><summary>默认提示词（6 个部分 · v'+promptV(shot.id)+'）</summary><div class="blocks">'+blocksHtml(shot.id)+'</div></details>' +
+    '<div class="shotfoot"><button type="button" class="btn btn-sm" data-act="shotAdj" data-id="'+shot.id+'">调整此张</button>' +
+    (S.stale[shot.id] && hasCands(shot.id) ? '<button type="button" class="btn btn-sm" data-act="updateShot" data-id="'+shot.id+'">更新此张</button>' : '') +
+    '<div class="grow"></div>' +
+    '<button type="button" class="btn btn-sm" data-act="shotDel" data-id="'+shot.id+'">删除</button></div>' +
+  '</div>';
+}
+function viewPlan(){
+  var st = curStyle();
+  var n = S.shots.length;
+  var staleCount = 0;
+  for(var k in S.stale){ if(S.stale[k]) staleCount++; }
+  var banner = "";
+  if(staleCount){
+    banner = '<div class="notice notice-warn" style="margin-bottom:12px"><b>全组或单张方向已更新：</b><span>'+staleCount+' 张图需要重新生成；已采用的候选仍保留，可在审核页逐张更新。</span></div>';
+  }
+  var cards = "";
+  for(var i=0;i<S.shots.length;i++){ cards += shotCard(S.shots[i]); }
+  cards += '<button type="button" class="shotadd" data-act="shotAdd">＋ 添加一张</button>';
+  var pending = pendingShots().length;
+  var genLabel = staleCount ? ("更新 " + staleCount + " 张待更新") : ("一键生成套图（" + n + " 张）");
+  var genBtn = pending ? '<button type="button" class="btn btn-primary" data-act="generate">'+genLabel+'</button>' : '<button type="button" class="btn btn-primary" disabled>全部已就绪</button>';
+  var toReview = (S.hasGenerated && readyCount()>0) ? '<button type="button" class="btn" data-act="gotoReview">去审核（'+readyCount()+' 张已就绪）</button>' : '';
+  return '<div class="sheet" style="max-width:1040px">' +
+    banner +
+    '<div class="stylebar">' +
+      kw("光线", styleZh("light", st.light)) + kw("色调", styleZh("tone", st.tone)) + kw("氛围", styleZh("mood", st.mood)) + kw("道具", styleZh("props", st.props)) +
+      '<div class="grow"></div>' +
+      '<span class="chip chip-muted">'+(S.styleOverride ? "用户已调整" : "系统默认")+'</span>' +
+      '<button type="button" class="btn btn-sm" data-act="styleEdit">调整全组视觉</button>' +
+    '</div>' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin:18px 2px 0"><div><span class="h-title">推荐套图 · '+n+' 张</span> <span class="small muted">每张默认生成 2 个候选；张数由类目 playbook 决定</span></div></div>' +
+    '<div class="shots">'+cards+'</div>' +
+    '<div class="card" style="margin-top:16px"><div class="actions" style="margin:0;padding:0;border:none">' +
+      '<div class="left"><button type="button" class="btn" data-act="navBack" data-val="brief">返回修正理解</button></div>' +
+      '<div class="right">'+toReview + genBtn+'</div>' +
+    '</div></div>' +
+  '</div>';
+}
+
+/* ---------------- 生成中 ---------------- */
+function hasCands(id){ return allCands(id).length > 0; }
+function gTile(shot){
+  var st = S.genState[shot.id] || "queued";
+  var body = "", foot = "";
+  if(st==="queued"){ body = '<div class="gimg"><span class="chip chip-muted">排队中</span></div>'; }
+  else if(st==="running"){ body = '<div class="gimg"><div class="spin" role="presentation"></div><span>生成中</span></div>'; }
+  else if(st==="ready"){ var c = allCands(shot.id)[0]; body = '<div class="gimg"><img src="'+esc(c?c.img:"")+'" alt="'+esc(shot.purpose)+'候选缩略图"></div>'; foot = '<div class="gfoot"><button type="button" class="btn btn-sm" data-act="openCand" data-id="'+shot.id+'">查看</button><span class="small muted">已就绪，可提前打开</span></div>'; }
+  else if(st==="failed"){ body = '<div class="gimg"><span class="chip chip-err">失败</span><span style="padding:0 10px;text-align:center">'+esc(S.genReason[shot.id]||"生成失败")+'</span></div>'; foot = '<div class="gfoot"><button type="button" class="btn btn-sm" data-act="retryShot" data-id="'+shot.id+'">重试此张</button></div>'; }
+  else if(st==="unknown"){ body = '<div class="gimg"><span class="chip chip-warn">结果未知</span><span style="padding:0 10px;text-align:center">'+esc(S.genReason[shot.id]||"请求超时")+'</span></div>'; foot = '<div class="gfoot"><button type="button" class="btn btn-sm" data-act="verifyShot" data-id="'+shot.id+'">查证</button><span class="small muted">先查证，再决定重试</span></div>'; }
+  else if(st==="verifying"){ body = '<div class="gimg"><div class="spin" role="presentation"></div><span>查证中…</span></div>'; }
+  else if(st==="nocand"){ body = '<div class="gimg"><span class="chip chip-muted">无演示候选</span><span style="padding:0 10px;text-align:center">离线演示没有为该张准备候选；正式版本会调用模型生成</span></div>'; }
+  return '<div class="gt"><div class="ghead"><span>'+esc(shot.purpose)+'</span><span class="small muted">S'+ (shotIndex(shot.id)+1) +'</span></div>'+body+foot+'</div>';
+}
+function viewGenerating(){
+  var tiles = "";
+  var ready=0, done=0, bad=0, running=0;
+  for(var i=0;i<S.shots.length;i++){
+    var st = S.genState[S.shots[i].id] || "queued";
+    if(st==="ready"||st==="nocand"){ ready++; done++; } 
+    if(st==="ready"||st==="nocand"||st==="failed"||st==="unknown") done++;
+    if(st==="failed"||st==="unknown") bad++;
+    if(st==="running"||st==="verifying") running++;
+    tiles += gTile(S.shots[i]);
+  }
+  var left = "";
+  if(ready>0){
+    left = '<button type="button" class="btn" data-act="gotoReview">'+(bad ? ("先审核已完成的 "+ready+" 张") : ("继续审核（"+ready+" 张已就绪）"))+'</button>';
+  }
+  return '<div class="sheet" style="max-width:1040px">' +
+    '<div class="card">' +
+      '<div class="card-head"><div><div class="h-title">正在生成套图</div><div class="h-sub">逐图状态；已就绪的图可以提前打开。单张失败或未知只影响本张，其余结果保留。</div></div>' +
+      '<span class="chip '+(bad?'chip-warn':'chip-info')+'">已完成 '+done+' / '+S.shots.length+'</span></div>' +
+      '<div class="gentiles">'+tiles+'</div>' +
+      '<div class="actions"><div class="left">'+left+'</div><div class="right">'+
+        (running ? '<span class="small muted">生成中…（离散状态，不用百分比）</span>' : (bad ? '<span class="small muted">其余张不受影响</span>' : '<span class="small muted">全部就绪后自动进入审核</span>'))+
+      '</div></div>' +
+    '</div>' +
+  '</div>';
+}
+function pendingShots(){
+  var out = [];
+  for(var i=0;i<S.shots.length;i++){
+    var id = S.shots[i].id;
+    if(S.genState[id]==="ready" && !S.stale[id]) continue;
+    out.push(id);
+  }
+  return out;
+}
+function readyCount(){
+  var n = 0;
+  for(var i=0;i<S.shots.length;i++){ if(S.genState[S.shots[i].id]==="ready") n++; }
+  return n;
+}
+function runBatch(){
+  S.hasGenerated = true;
+  S.stage = "generating";
+  var ids = pendingShots();
+  for(var q=0;q<ids.length;q++){ S.genState[ids[q]] = "queued"; }
+  render();
+  if(!ids.length){ finishBatch(); return; }
+  var k = 0;
+  function step(){
+    if(k >= ids.length){ finishBatch(); return; }
+    var shotId = ids[k];
+    var myK = k;
+    S.genState[shotId] = "running"; render();
+    later(function(){
+      var scn = S.scenario;
+      if(scn==="partial" && myK===1){ S.genState[shotId]="failed"; S.genReason[shotId]="模拟情形：生成服务返回超时，可安全重试；其余张不受影响。"; }
+      else if(scn==="unknown" && myK===0){ S.genState[shotId]="unknown"; S.genReason[shotId]="模拟情形：请求超过等待时间，结果未知，需要先查证。"; }
+      else if(hasCands(shotId)){ S.genState[shotId]="ready"; delete S.stale[shotId]; }
+      else { S.genState[shotId]="nocand"; }
+      render(); k = myK + 1; step();
+    }, 850 + myK*350);
+  }
+  step();
+}
+function finishBatch(){
+  var pending = 0;
+  for(var k in S.genState){ if(S.genState[k]!=="ready" && S.genState[k]!=="nocand") pending++; }
+  render();
+  if(pending===0){
+    later(function(){
+      S.stage = "review";
+      if(!S.currentShot){ S.currentShot = S.shots[0].id; }
+      render();
+      toast("套图已就绪：逐张选择或重做");
+    }, 650);
+  }
+}
+function updateShot(id){
+  S.genState[id] = "running";
+  S.stage = "generating";
+  render();
+  later(function(){
+    S.genState[id] = hasCands(id) ? "ready" : "nocand";
+    if(S.genState[id]==="ready"){ delete S.stale[id]; }
+    render();
+    toast("已按新方案更新这一张");
+  }, 1200);
+}
+function retryShot(id){
+  S.genState[id] = "running"; render();
+  later(function(){
+    S.genState[id] = hasCands(id) ? "ready" : "nocand";
+    S.genReason[id] = "";
+    finishBatch();
+  }, 1100);
+}
+function verifyShot(id){
+  S.genState[id] = "verifying"; render();
+  later(function(){
+    S.genState[id] = "failed";
+    S.genReason[id] = "查证结果：服务端确认未生成（无重复计费），可以安全重试。";
+    render();
+  }, 1000);
+}
+
+/* ---------------- 审核与定向返工 ---------------- */
+function railState(shot){
+  if(S.adopted[shot.id]) return {cls:"chip-ok", txt:"已采用"};
+  if(S.reworking && S.reworking[shot.id]) return {cls:"chip-info", txt:"生成中"};
+  var st = S.genState[shot.id];
+  if(st==="ready") return {cls:"chip-muted", txt:"待审核"};
+  if(st==="nocand") return {cls:"chip-muted", txt:"未就绪"};
+  if(st==="failed") return {cls:"chip-err", txt:"失败"};
+  if(st==="unknown") return {cls:"chip-warn", txt:"未知"};
+  return {cls:"chip-muted", txt:"未就绪"};
+}
+function railHtml(){
+  var html = "";
+  for(var i=0;i<S.shots.length;i++){
+    var s = S.shots[i];
+    var arr = allCands(s.id);
+    var cid = currentCandId(s.id);
+    var c = cid ? findCand(s.id, cid) : null;
+    var st = railState(s);
+    var img = (c && c.img) ? '<img src="'+esc(c.img)+'" alt="">' : '<div style="width:100%;aspect-ratio:1/1;border-radius:6px;background:#F2F4F7;border:1px dashed #D0D5DD"></div>';
+    html += '<button type="button" class="railbtn'+(s.id===S.currentShot?" cur":"")+'" data-act="pickShot" data-id="'+s.id+'">'+img+
+      '<div class="rname">S'+(i+1)+' '+esc(s.purpose)+'</div><div class="rstate"><span class="chip '+st.cls+'">'+esc(st.txt)+'</span></div></button>';
+  }
+  return html;
+}
+function candStrip(shotId){
+  var arr = allCands(shotId); var cur = currentCandId(shotId); var html = "";
+  for(var i=0;i<arr.length;i++){
+    var c = arr[i];
+    var inner = c.img ? '<img src="'+esc(c.img)+'" alt="候选 '+(i+1)+'">' : '<span style="display:flex;width:64px;height:64px;border-radius:7px;background:#F5F8FF;border:1px dashed #A4BCFD;align-items:center;justify-content:center;color:#3538CD;font-size:11px">模拟</span>';
+    html += '<button type="button" class="candbtn'+(c.id===cur?" cur":"")+'" data-act="pickCand" data-id="'+shotId+'" data-val="'+c.id+'" aria-label="候选 '+(i+1)+'">'+inner+(c.isNew?'<span class="nn">新</span>':'')+'</button>';
+  }
+  return html;
+}
+function bigImg(cand){
+  if(cand && cand.img){ return '<img class="bigimg" src="'+esc(cand.img)+'" alt="当前候选大图">'; }
+  return '<div class="phcard" style="aspect-ratio:auto;min-height:320px;max-width:520px;margin:0 auto;width:100%"><b>模拟返工候选</b><span>离线演示不调用模型，本张没有对应素材；<br>正式版本会在这里显示新生成的图。</span></div>';
+}
+function viewReview(){
+  if(!S.currentShot || !getShot(S.currentShot)){ S.currentShot = S.shots[0].id; }
+  var shot = getShot(S.currentShot);
+  var st = S.genState[shot.id];
+  var arr = allCands(shot.id);
+  var cid = currentCandId(shot.id);
+  var cand = cid ? findCand(shot.id, cid) : null;
+  var center = "";
+  if(st==="ready" || arr.length){
+    if(S.reworking && S.reworking[shot.id]){
+      center = '<div class="bigwrap"><div class="gimg" style="aspect-ratio:1/1;max-height:58vh"><div class="spin"></div><span>正在按你的方向重做这一张…其他张不受影响</span></div></div>';
+    } else if(S.compare && arr.length>1){
+      var a = arr[0], b = cand || arr[arr.length-1];
+      center = '<div class="bigwrap"><div class="grid2">' +
+        '<div><div class="small muted" style="margin-bottom:6px">候选 1（旧版）</div>'+bigImg(a)+'</div>' +
+        '<div><div class="small muted" style="margin-bottom:6px">当前候选</div>'+bigImg(b)+'</div>' +
+      '</div>' +
+      '<div class="meta-line">并排比较：左侧为旧候选，右侧为当前候选；采用其中一个不会删除另一个。</div>' +
+      '<div style="margin-top:8px"><button type="button" class="btn btn-sm" data-act="toggleCompare">退出比较</button></div></div>';
+    } else {
+      center = '<div class="bigwrap">'+bigImg(cand)+
+        '<div class="cands">'+candStrip(shot.id)+'<span class="small muted">'+arr.length+' 个候选 · 点击切换</span></div>' +
+        '<div class="meta-line">候选 '+(arr.indexOf(cand)+1)+' / '+arr.length+' · 来源：'+esc(cand?cand.src:"")+' · '+esc(cand?cand.date:"")+' · 提示词 v'+(cand&&cand.pv?cand.pv:promptV(shot.id))+
+        (cand && cand.isNew ? ' · <span class="chip chip-info">本次返工新增</span>' : '') + '</div>' +
+        (arr.length>1 ? '<div style="margin-top:8px"><button type="button" class="btn btn-sm" data-act="toggleCompare">并排比较旧版</button></div>' : '') +
+      '</div>';
+    }
+  } else {
+    center = '<div class="bigwrap"><div class="notice notice-warn"><b>该张还没有可用候选：</b><span>'+(st==="failed"||st==="unknown" ? "回到生成页处理失败或未知状态后，再回来审核。" : "离线演示没有为该张准备候选。")+'</span></div>' +
+      '<div style="margin-top:12px"><button type="button" class="btn" data-act="backToGen">回到生成处理</button>'+(st==="nocand" ? ' <button type="button" class="btn" data-act="shotDel" data-id="'+shot.id+'">删除此张继续</button>' : '')+'</div></div>';
+  }
+  var summary = "";
+  if(S.adopted[shot.id]){ summary = '<div class="note note-ok">已采用：候选 '+(arr.indexOf(adoptedCand(shot.id))+1)+'（提示词 v'+promptV(shot.id)+'）。可以继续重做或换候选。</div>'; }
+  else if(S.stale[shot.id]){ summary = '<div class="note note-warn">这一张的方向或提示词已更新：建议重做后再采用。</div>'; }
+  else { summary = '<div class="note">检查摘要：未发现阻塞；材质 / 容量保持 Unknown，画面不得声明。</div>'; }
+  var canAct = !!cand;
+  var side = '<div class="side">' +
+    '<div class="sidecard"><h3>当前这张</h3>' + summary +
+      '<div class="sidebtns" style="margin-top:10px">' +
+        '<button type="button" class="btn btn-primary" data-act="adopt" data-id="'+shot.id+'"'+(canAct?'':' disabled')+'>采用这张</button>' +
+        '<button type="button" class="btn" data-act="rework" data-id="'+shot.id+'"'+(canAct?'':' disabled')+'>重做这张</button>' +
+        '<button type="button" class="btn btn-ghost" data-act="openPrompt" data-id="'+shot.id+'">完整提示词（v'+promptV(shot.id)+'）</button>' +
+      '</div>' +
+    '</div>' +
+    '<div class="sidecard"><h3>整套进度</h3>' +
+      '<div class="note">已采用 '+adoptedCount()+' / '+S.shots.length+' 张</div>' +
+      '<div class="sidebtns" style="margin-top:10px">' +
+        '<button type="button" class="btn btn-primary" data-act="gotoDelivery"'+(adoptedCount()===S.shots.length?'':' disabled')+'>进入交付</button>' +
+        '<button type="button" class="btn" data-act="navBack" data-val="plan">返回方案调整</button>' +
+      '</div>' +
+    '</div>' +
+  '</div>';
+  return '<div class="review">' +
+    '<div class="rail">'+railHtml()+'</div>' +
+    '<div class="stagecenter">' +
+      '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px"><div><span class="h-title">S'+(shotIndex(shot.id)+1)+' · '+esc(shot.purpose)+'</span> <span class="small muted">'+esc(shot.direction)+'</span></div></div>' +
+      center +
+    '</div>' + side +
+  '</div>';
+}
+/* ---------------- 对话框 ---------------- */
+function openModal(html){
+  var d = $("modal");
+  d.innerHTML = html;
+  if(d.showModal) d.showModal(); else d.setAttribute("open","");
+}
+function closeModal(){ var d = $("modal"); if(d.close) d.close(); else d.removeAttribute("open"); }
+function dlgFrame(title, body, foot){
+  return '<div class="dlg-head"><b>'+esc(title)+'</b><button type="button" class="btn btn-sm" data-act="closeModal" aria-label="关闭">关闭</button></div>' +
+    '<div class="dlg-body">'+body+'</div>' +
+    '<div class="dlg-foot">'+foot+'</div>';
+}
+function openRework(shotId){
+  var shot = getShot(shotId);
+  var causes = "";
+  for(var i=0;i<CORRECTIONS.length;i++){
+    var c = CORRECTIONS[i];
+    causes += '<li><label data-causelab="'+c.id+'"><input type="radio" name="cause" value="'+c.id+'"'+(i===0?' checked':'')+'>' +
+      '<span><b>'+esc(c.label)+'</b><br><span class="small muted">修正句将追加到「'+esc(c.seg)+'」</span></span></label></li>';
+  }
+  var body = '<div class="small muted" style="margin-bottom:10px">'+esc(shot.purpose)+' · 只重新生成这一张；旧候选保留，其他张不动。</div>' +
+    '<ul class="causes" id="causes">'+causes+'</ul>' +
+    '<div class="field" style="margin-top:14px"><label for="rwNote">补充说明（可选）</label><textarea id="rwNote" placeholder="例如：背景太满，希望更干净；保留杯盖两层阶梯。"></textarea></div>' +
+    '<div class="note" style="margin-top:12px" id="corrPreview"></div>';
+  var foot = '<button type="button" class="btn" data-act="closeModal">取消</button>' +
+    '<button type="button" class="btn btn-primary" data-act="submitRework" data-id="'+shotId+'">开始重做</button>';
+  openModal(dlgFrame("重做这张：" + shot.purpose, body, foot));
+  updateCorrPreview();
+}
+function updateCorrPreview(){
+  var el = $("corrPreview"); if(!el) return;
+  var picked = document.querySelector('input[name="cause"]:checked');
+  var id = picked ? picked.value : "shape";
+  var c = null; for(var i=0;i<CORRECTIONS.length;i++){ if(CORRECTIONS[i].id===id) c = CORRECTIONS[i]; }
+  var txt = c.text ? c.text : "（使用你在补充说明里写的文字）";
+  el.innerHTML = '<b>将追加到「'+esc(c.seg)+'」：</b><br>' + esc(txt);
+}
+function openPrompt(shotId){
+  var shot = getShot(shotId);
+  var b = blocksOf(shotId);
+  var body = '<div class="small muted" style="margin-bottom:10px">提示词由事实锁 + 卖点 + 平台规则 + 全组视觉 + 本张方向编译；可直接编辑，保存后成为新版本。当前 v'+promptV(shotId)+'。</div>' +
+    '<div class="grid2">' +
+      '<div class="field"><label>商品锁定（事实锁，不允许卖点改写）</label><textarea id="pb_lock" style="min-height:150px">'+esc(b.lock)+'</textarea></div>' +
+      '<div class="field"><label>空白表面</label><textarea id="pb_blank" style="min-height:150px">'+esc(b.blank)+'</textarea></div>' +
+      '<div class="field"><label>形状否定</label><textarea id="pb_negshape" style="min-height:110px">'+esc(b.negshape)+'</textarea></div>' +
+      '<div class="field"><label>场景</label><textarea id="pb_scene" style="min-height:110px">'+esc(b.scene)+'</textarea></div>' +
+      '<div class="field" style="grid-column:1/-1"><label>全组视觉（Style Lock）</label><textarea id="pb_style">'+esc(b.style)+'</textarea></div>' +
+      '<div class="field" style="grid-column:1/-1"><label>构图</label><textarea id="pb_comp">'+esc(b.comp)+'</textarea></div>' +
+      '<div class="field" style="grid-column:1/-1"><label>负向提示词</label><textarea id="pb_negative">'+esc(b.negative)+'</textarea></div>' +
+    '</div>';
+  var foot = '<button type="button" class="btn" data-act="resetPrompt" data-id="'+shotId+'">恢复推荐提示词</button>' +
+    '<button type="button" class="btn btn-primary" data-act="savePrompt" data-id="'+shotId+'">保存为新版本</button>';
+  openModal(dlgFrame("完整提示词：" + shot.purpose, body, foot));
+}
+
+/* ---------------- 交付 ---------------- */
+function slugOf(purpose, i){
+  if(purpose.indexOf("主图")>=0) return "main";
+  if(purpose.indexOf("场景")>=0) return "lifestyle";
+  if(purpose.indexOf("细节")>=0) return "detail";
+  if(purpose.indexOf("结构")>=0) return "structure";
+  return "shot"+(i+1);
+}
+function fileList(){
+  var files = [];
+  for(var i=0;i<S.shots.length;i++){
+    var s = S.shots[i];
+    var c = adoptedCand(s.id);
+    files.push({name:"0"+(i+1)+"-"+slugOf(s.purpose,i)+".png", desc:"S"+(i+1)+" "+s.purpose+" · "+(c?("候选 "+ (allCands(s.id).indexOf(c)+1) +" · 提示词 v"+promptV(s.id)):"未选择")});
+  }
+  files.push({name:"manifest.json", desc:"用途、候选与提示词版本、平台规格、生成日期"});
+  return files;
+}
+function viewDelivery(){
+  var cards = "", missing = [];
+  for(var i=0;i<S.shots.length;i++){
+    var s = S.shots[i]; var c = adoptedCand(s.id);
+    if(!c){ missing.push("S"+(i+1)+" "+s.purpose); continue; }
+    var k = allCands(s.id).indexOf(c)+1;
+    var img = c.img ? '<img src="'+esc(c.img)+'" alt="'+esc(s.purpose)+'已选图">' : '<div class="phcard" style="border-radius:0;border:none;border-bottom:1px dashed #A4BCFD;min-height:160px"><b>模拟候选</b><span>离线演示无对应素材</span></div>';
+    cards += '<div class="dcard">'+img+'<div class="dmeta"><b>S'+(i+1)+' · '+esc(s.purpose)+'</b><span>候选 '+k+' · 提示词 v'+promptV(s.id)+'</span><span>'+esc(c.src)+'</span></div></div>';
+  }
+  var files = fileList();
+  var fileHtml = "";
+  for(var j=0;j<files.length;j++){ fileHtml += '<li><span class="fname">'+esc(files[j].name)+'</span><span class="small muted">'+esc(files[j].desc)+'</span></li>'; }
+  var missingHtml = missing.length ? '<div class="notice notice-warn" style="margin-bottom:12px"><b>还缺：</b><span>'+esc(missing.join("、"))+'；全部采用后才能导出。</span></div>' : '';
+  return '<div class="sheet" style="max-width:1040px">' +
+    '<div class="card">' +
+      '<div class="card-head"><div><div class="h-title">交付</div><div class="h-sub">已选套图与文件清单；离线演示只生成清单预览，不写文件。</div></div>' +
+      '<span class="chip '+(missing.length?"chip-warn":"chip-ok")+'">'+adoptedCount()+' / '+S.shots.length+' 张已选</span></div>' +
+      missingHtml +
+      '<div class="delivgrid">'+cards+'</div>' +
+      '<hr class="sep">' +
+      '<div class="h-title" style="font-size:14px;margin-bottom:8px">文件清单预览</div>' +
+      '<ul class="filelist">'+fileHtml+'</ul>' +
+      '<div class="actions"><div class="left"><button type="button" class="btn" data-act="navBack" data-val="review">返回审核</button><button type="button" class="btn" data-act="newTask">新建任务</button></div>' +
+      '<div class="right"><button type="button" class="btn btn-primary" data-act="export"'+(missing.length?' disabled':'')+'>导出套图</button></div></div>' +
+    '</div>' +
+  '</div>';
+}
+function openExport(){
+  var files = fileList(); var html = "";
+  for(var i=0;i<files.length;i++){ html += '<li><span class="fname">'+esc(files[i].name)+'</span><span class="small muted">'+esc(files[i].desc)+'</span></li>'; }
+  var body = '<div class="notice notice-info" style="margin-bottom:12px"><b>导出预览（离线演示：未写文件）</b><span>正式版本会把下列文件写入任务输出目录，并包含一份可追溯清单。</span></div>' +
+    '<ul class="filelist">'+html+'</ul>' +
+    '<div class="field" style="margin-top:14px"><label for="expNote">期望的输出位置（演示）</label><input type="text" id="expNote" value="outputs/&lt;任务ID&gt;/" readonly></div>';
+  openModal(dlgFrame("导出套图（预览）", body, '<button type="button" class="btn btn-primary" data-act="closeModal">知道了</button>'));
+}
+/* ---------------- 动作分发 ---------------- */
+function setScenario(scn){
+  S.scenario = scn;
+  var bs = document.querySelectorAll(".demobar [data-scn]");
+  for(var i=0;i<bs.length;i++){ bs[i].className = (bs[i].getAttribute("data-scn")===scn) ? "on" : ""; }
+  toast("情形已设为：" + ({normal:"正常", partial:"局部失败", unknown:"结果未知"}[scn]) + "（下次生成生效）");
+}
+function pickFile(repIdx){
+  var inp = document.createElement("input");
+  inp.type = "file"; inp.accept = "image/*";
+  inp.onchange = function(){
+    var f = inp.files && inp.files[0]; if(!f) return;
+    var url = URL.createObjectURL(f);
+    if(repIdx>=0 && S.intake.refs[repIdx]){ S.intake.refs[repIdx] = {role:S.intake.refs[repIdx].role, img:url}; }
+    else { S.intake.refs.push({role:"新参考图", img:url}); }
+    render();
+  };
+  inp.click();
+}
+function loadFixture(id){
+  clearTimers();
+  var f = FIX[id]; if(!f) return;
+  S.fixture = id; S.unsupported = false;
+  S.intake = {name:f.name, category:f.category, platform:f.platform, points:f.points.slice(), refs:f.refs.map(function(r){ return {role:r.role, img:r.img}; })};
+  S.brief = null; S.briefEditing = false; S.styleOverride = null;
+  S.shots = null; S.genState = {}; S.genReason = {}; S.hasGenerated = false;
+  S.promptOv = {}; S.promptDirty = {}; S.stale = {}; S.adopted = {};
+  S.currentShot = null; S.currentCand = {}; S.extraCands = {}; S.poolUse = {};
+  S.compare = false; S.exported = false; S.reworking = {};
+  S.stage = "intake";
+  render();
+  toast("已载入示例商品：" + f.name + "（虚构演示商品）");
+}
+function analyze(){
+  if(!S.fixture){ S.unsupported = true; render(); toast("当前离线演示只接入两份示例商品"); return; }
+  if(intakeMissing().length){ toast("还差：" + intakeMissing().join("、")); return; }
+  S.unsupported = false;
+  S.brief = buildBrief();
+  S.briefEditing = false;
+  S.stage = "brief";
+  render();
+  toast("已生成商品理解：请核对事实与 Unknown");
+}
+function saveBrief(){
+  var tas = document.querySelectorAll("textarea[data-bs]");
+  var changedPoints = false, changedOther = false;
+  for(var i=0;i<tas.length;i++){
+    var idx = parseInt(tas[i].getAttribute("data-bs"),10);
+    var nv = tas[i].value;
+    if(S.brief[idx] && nv !== S.brief[idx].v){
+      if(S.brief[idx].k.indexOf("卖点")>=0) changedPoints = true; else changedOther = true;
+      S.brief[idx].v = nv;
+    }
+  }
+  S.briefEditing = false;
+  var n = 0;
+  if(S.hasGenerated && (changedPoints || changedOther)){
+    for(var k=0;k<S.shots.length;k++){
+      var s = S.shots[k];
+      if(changedOther || s.uses.indexOf("points")>=0){ S.stale[s.id] = true; n++; }
+    }
+  }
+  render();
+  toast(n ? ("已保存修正：受影响 " + n + " 张标记为需更新") : "已保存修正");
+}
+function confirmBrief(){
+  S.stage = "plan";
+  if(!S.shots){ S.shots = fx().shots.map(function(s){ return {id:s.id, purpose:s.purpose, direction:s.direction, refRole:s.refRole, why:s.why, uses:s.uses.slice()}; }); }
+  render();
+  toast("方案已按资料编译：可调整方向或直接一键生成");
+}
+function openStyle(){
+  var st = curStyle();
+  var body = '<div class="small muted" style="margin-bottom:12px">全组视觉由整套图共享；调整后所有未定稿的图需要重新生成，已经采用的候选不会丢失。</div>';
+  for(var k in STYLE_OPT){
+    var opts = "";
+    for(var i=0;i<STYLE_OPT[k].length;i++){
+      var o = STYLE_OPT[k][i];
+      opts += '<option value="'+esc(o.en)+'"'+(o.en===st[k]?' selected':'')+'>'+esc(o.zh)+'</option>';
+    }
+    body += '<div class="field"><label>'+esc(STYLE_OPT[k][0].k)+'</label><select data-sk="'+esc(k)+'">'+opts+'</select></div>';
+  }
+  body += '<div class="field" style="margin-top:10px"><label for="styleExtra">附加要求（可选，直接进入提示词全组视觉段）</label><input type="text" id="styleExtra" value="'+esc(S.styleExtra||"")+'"></div>';
+  openModal(dlgFrame("调整全组视觉", body, '<button type="button" class="btn" data-act="closeModal">取消</button><button type="button" class="btn btn-primary" data-act="saveStyle">保存</button>'));
+}
+function saveStyle(){
+  var sel = document.querySelectorAll("select[data-sk]");
+  var st = {}; for(var i=0;i<sel.length;i++){ st[sel[i].getAttribute("data-sk")] = sel[i].value; }
+  S.styleOverride = st;
+  S.styleExtra = ($("styleExtra") && $("styleExtra").value) || "";
+  closeModal();
+  var n = 0;
+  if(S.hasGenerated){
+    for(var k=0;k<S.shots.length;k++){ S.stale[S.shots[k].id] = true; n++; }
+  }
+  render();
+  toast(n ? ("全组视觉已更新：" + n + " 张标记为待更新") : "全组视觉已更新");
+}
+function openShotAdj(id){
+  var s = getShot(id);
+  var body = '<div class="field"><label for="adjPurpose">用途</label><input type="text" id="adjPurpose" value="'+esc(s.purpose)+'"></div>' +
+    '<div class="field"><label for="adjDir">画面方向</label><textarea id="adjDir">'+esc(s.direction)+'</textarea></div>' +
+    '<div class="field"><label for="adjRef">参考图</label><input type="text" id="adjRef" value="'+esc(s.refRole)+'"></div>' +
+    '<div class="field"><label for="adjWhy">推荐理由</label><textarea id="adjWhy">'+esc(s.why)+'</textarea></div>' +
+    '<div class="note" style="margin-top:10px">只影响这一张：保存后该张提示词的场景与构图段按新方向重编译。</div>';
+  openModal(dlgFrame("调整此张：S"+(shotIndex(id)+1), body, '<button type="button" class="btn" data-act="closeModal">取消</button><button type="button" class="btn btn-primary" data-act="saveShotAdj" data-id="'+id+'">保存</button>'));
+}
+function saveShotAdj(id){
+  var s = getShot(id);
+  s.purpose = $("adjPurpose").value; s.direction = $("adjDir").value; s.refRole = $("adjRef").value; s.why = $("adjWhy").value;
+  closeModal();
+  if(S.hasGenerated){ S.stale[id] = true; }
+  render();
+  toast(S.hasGenerated ? "已更新该张：标记为需重新生成" : "已更新该张方向");
+}
+function shotAdd(){
+  var n = S.shots.length + 1;
+  var id = "x" + n;
+  S.shots.push({id:id, purpose:"补充图 "+n, direction:"按全组视觉编译的补充张（可在「调整此张」里改）", refRole:"正面全身", why:"由你新增：按全组视觉与事实锁编译", uses:["style"]});
+  render();
+  toast("已添加一张：提示词按当前全组视觉编译");
+}
+function shotDel(id){
+  if(S.shots.length<=1){ toast("至少要保留一张"); return; }
+  for(var i=0;i<S.shots.length;i++){ if(S.shots[i].id===id){ S.shots.splice(i,1); break; } }
+  if(S.currentShot===id){ S.currentShot = S.shots[0].id; }
+  render();
+  toast("已删除该张");
+}
+function savePrompt(id){
+  var b = blocksOf(id);
+  var nb = {v: promptV(id)+1, lock:$("pb_lock").value, blank:$("pb_blank").value, negshape:$("pb_negshape").value, scene:$("pb_scene").value, comp:$("pb_comp").value, style:$("pb_style").value, negative:$("pb_negative").value};
+  S.promptOv[id] = nb;
+  S.promptDirty[id] = true;
+  closeModal();
+  if(S.hasGenerated){ S.stale[id] = true; }
+  render();
+  toast("提示词已保存为 v"+nb.v+"：只影响这一张");
+}
+function resetPrompt(id){
+  delete S.promptOv[id]; delete S.promptDirty[id]; delete S.stale[id];
+  closeModal();
+  render();
+  toast("已恢复到推荐提示词（新版本指向推荐内容）");
+}
+function submitRework(id){
+  var picked = document.querySelector('input[name="cause"]:checked');
+  var reasonId = picked ? picked.value : "shape";
+  var c = null; for(var i=0;i<CORRECTIONS.length;i++){ if(CORRECTIONS[i].id===reasonId) c = CORRECTIONS[i]; }
+  var note = ($("rwNote") && $("rwNote").value) || "";
+  var b = blocksOf(id);
+  var nb = {v: promptV(id)+1, lock:b.lock, blank:b.blank, negshape:b.negshape, scene:b.scene, comp:b.comp, style:b.style, negative:b.negative};
+  var add = c.text || "";
+  if(note) add = (add ? add + " " : "") + note;
+  if(!add) add = "Additional requirement: keep the product unchanged and improve the framing.";
+  nb[c.block] = nb[c.block] + " " + add;
+  S.promptOv[id] = nb;
+  delete S.stale[id];
+  closeModal();
+  S.reworking = S.reworking || {}; S.reworking[id] = true;
+  S.compare = false;
+  render();
+  toast("已提交返工：只重新生成这一张");
+  later(function(){
+    var f = fx();
+    S.poolUse = S.poolUse || {};
+    var used = S.poolUse[id] || 0;
+    var pool = f.pool[id] || [];
+    var item = pool[used] || null;
+    S.poolUse[id] = used + 1;
+    S.extraCands[id] = S.extraCands[id] || [];
+    var newId = id + "-r" + (used+1);
+    if(item){
+      S.extraCands[id].push({id:newId, img:item.img, src:item.src + " · 按新提示词重跑（v"+nb.v+"）", date:"2026-09-28", pv:nb.v, isNew:true});
+    } else {
+      S.extraCands[id].push({id:newId, img:null, src:"模拟返工候选（离线演示：本张无对应素材）", date:"2026-09-28", pv:nb.v, isNew:true});
+    }
+    S.reworking[id] = false;
+    S.currentCand[id] = newId;
+    render();
+    toast("返工完成：只新增这张的候选，其他张版本不变");
+  }, 1500);
+}
+function adopt(id){
+  var cid = currentCandId(id);
+  if(!cid){ return; }
+  S.adopted[id] = cid;
+  for(var i=0;i<S.shots.length;i++){
+    var sid = S.shots[i].id;
+    if(!S.adopted[sid] && S.genState[sid]==="ready"){ S.currentShot = sid; break; }
+  }
+  render();
+  if(adoptedCount()===S.shots.length){ toast("全部已采用：可以进入交付"); }
+}
+function resetAll(){
+  clearTimers();
+  S.stage = "intake"; S.fixture = null; S.unsupported = false;
+  S.intake = {name:"", category:"", platform:"Amazon US", points:[], refs:[]};
+  S.brief = null; S.briefEditing = false; S.styleOverride = null; S.styleExtra = "";
+  S.shots = null; S.genState = {}; S.genReason = {}; S.hasGenerated = false;
+  S.promptOv = {}; S.promptDirty = {}; S.stale = {}; S.adopted = {};
+  S.currentShot = null; S.currentCand = {}; S.extraCands = {}; S.poolUse = {};
+  S.compare = false; S.exported = false; S.reworking = {};
+  render();
+  toast("已复位：空白任务（未加载任何商品）");
+}
+function handle(act, id, val, idx){
+  if(act==="load"){ loadFixture(val); return; }
+  if(act==="addRef"){ pickFile(-1); return; }
+  if(act==="repRef"){ pickFile(idx); return; }
+  if(act==="rmRef"){ S.intake.refs.splice(idx,1); render(); return; }
+  if(act==="addPoint"){ S.intake.points.push(""); render(); return; }
+  if(act==="rmPoint"){ S.intake.points.splice(idx,1); render(); return; }
+  if(act==="analyze"){ analyze(); return; }
+  if(act==="navBack"){ nav(val); return; }
+  if(act==="editBrief"){ S.briefEditing = true; render(); return; }
+  if(act==="cancelBrief"){ S.briefEditing = false; S.brief = buildBrief(); render(); return; }
+  if(act==="saveBrief"){ saveBrief(); return; }
+  if(act==="confirmBrief"){ confirmBrief(); return; }
+  if(act==="styleEdit"){ openStyle(); return; }
+  if(act==="saveStyle"){ saveStyle(); return; }
+  if(act==="shotAdj"){ openShotAdj(id); return; }
+  if(act==="saveShotAdj"){ saveShotAdj(id); return; }
+  if(act==="shotAdd"){ shotAdd(); return; }
+  if(act==="shotDel"){ shotDel(id); return; }
+  if(act==="generate"){ runBatch(); return; }
+  if(act==="retryShot"){ retryShot(id); return; }
+  if(act==="updateShot"){ updateShot(id); return; }
+  if(act==="verifyShot"){ verifyShot(id); return; }
+  if(act==="openCand"){ S.currentShot = id; S.stage = "review"; render(); return; }
+  if(act==="gotoReview"){ S.stage = "review"; if(!S.currentShot) S.currentShot = S.shots[0].id; render(); return; }
+  if(act==="pickShot"){ S.currentShot = id; S.compare = false; render(); return; }
+  if(act==="pickCand"){ S.currentCand[id] = val; render(); return; }
+  if(act==="adopt"){ adopt(id); return; }
+  if(act==="rework"){ openRework(id); return; }
+  if(act==="submitRework"){ submitRework(id); return; }
+  if(act==="toggleCompare"){ S.compare = !S.compare; render(); return; }
+  if(act==="openPrompt"){ openPrompt(id); return; }
+  if(act==="savePrompt"){ savePrompt(id); return; }
+  if(act==="resetPrompt"){ resetPrompt(id); return; }
+  if(act==="gotoDelivery"){ S.stage = "delivery"; render(); return; }
+  if(act==="backToGen"){ nav("generating"); return; }
+  if(act==="export"){ openExport(); return; }
+  if(act==="newTask"){ resetAll(); return; }
+  if(act==="closeModal"){ closeModal(); return; }
+}
+document.addEventListener("click", function(ev){
+  var t = ev.target;
+  while(t && t !== document && !(t.getAttribute && (t.getAttribute("data-act")||t.getAttribute("data-nav")||t.getAttribute("data-scn")||t.id==="demoReset"))){ t = t.parentNode; }
+  if(!t || t === document) return;
+  if(t.id === "demoReset"){ resetAll(); return; }
+  if(t.getAttribute("data-nav")){ nav(t.getAttribute("data-nav")); return; }
+  if(t.getAttribute("data-scn")){ setScenario(t.getAttribute("data-scn")); return; }
+  var act = t.getAttribute("data-act");
+  var id = t.getAttribute("data-id") || "";
+  var val = t.getAttribute("data-val") || "";
+  var idx = parseInt(t.getAttribute("data-i") || "-1", 10);
+  handle(act, id, val, idx);
+});
+document.addEventListener("input", function(ev){
+  var t = ev.target;
+  if(!t || !t.getAttribute) return;
+  var k = t.getAttribute("data-k");
+  if(k){ S.intake[k] = t.value; }
+  var pt = t.getAttribute("data-pt");
+  if(pt !== null){ S.intake.points[parseInt(pt,10)] = t.value; }
+});
+document.addEventListener("change", function(ev){
+  var t = ev.target;
+  if(!t || !t.getAttribute) return;
+  var k = t.getAttribute("data-k");
+  if(k){ S.intake[k] = t.value; }
+  if(t.name === "cause"){ updateCorrPreview(); }
+});
+document.addEventListener("click", function(ev){
+  var t = ev.target;
+  if(t && t.name === "cause"){ later(updateCorrPreview, 0); }
+});
+window.__ui = {
+  state:function(){
+    return {stage:S.stage, fixture:S.fixture, shots:S.shots?S.shots.length:0, gen:JSON.parse(JSON.stringify(S.genState)), adopted:adoptedCount(), scenario:S.scenario, stale:Object.keys(S.stale||{}).length, cands:S.shots?S.shots.map(function(s){return allCands(s.id).length;}):[]};
+  },
+  click:function(act, id, val){ handle(act, id||"", val||"", -1); },
+  setScenario:setScenario
+};
+render();
+</script>
+</body>
+</html>

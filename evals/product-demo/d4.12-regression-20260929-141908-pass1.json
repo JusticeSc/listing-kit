@@ -1,0 +1,631 @@
+{
+  "stamp": "20260929-141908",
+  "pass_index": 1,
+  "label": "",
+  "fingerprint_id_before": "5810659c7e9361375508f6e0c667cbaea1c3ccdcfe298525734dbcf3719a91bf",
+  "fingerprint_id_after": "5810659c7e9361375508f6e0c667cbaea1c3ccdcfe298525734dbcf3719a91bf",
+  "fingerprints_identical": true,
+  "fingerprints_before": {
+    "requirements.txt": "2b4efcd17347ad0e75f46f12ae77142976a6d4daa8fd7bdc9b73f69d5db6bb4c",
+    "app/server.py": "e7ab0d591f7f3190a01e7f4d69cfd072b239abd9644f7e24196ac1f25f3264f7",
+    "app/product_v1_server.py": "9c840a3bbf0323fcba3b2dc74875c5e9d73635646d92f3f86b0d4eb09d440f1c",
+    "app/product_v1/index.html": "232e455e3fe37b8bf6d6cdec5e53ee515e1b29caa1f8820897dc6bbce3e6722f",
+    "app/product_v1/product.js": "be1cb23b6ef64585e9037e24f983348c2643728273cb06d46c1800c3e87486ba",
+    "app/product_v1/styles.css": "f45ade900562452bcff433f796cc90af2c8caa8c0aefb2fe7cc8d7d9358f9808",
+    "src/application_service.py": "6583a622bcead343806328584749ddafa6873b8a687cc6a71674c93ac3c40026",
+    "src/assets.py": "09fcc7aa93259866fe69b29bd76ad8af9359fe4e1cf25cf53ed4ca755d00f4cb",
+    "src/console.py": "8b570661c3c6069d9b56d7827b54d597430620bb5c818e746a07b74e695c4eaf",
+    "src/cutouts.py": "2220b7477764913e5a1976748984c51507482375bf04a6ecb9e1c6442e053e09",
+    "src/data_policy.py": "6f350aa073c09899a2a293d016daf1a36f9ae968bedebd2322ef2817db475af0",
+    "src/eval_dataset.py": "c3d9d15ce579e2577de28c885616e244fbfdcbfb38b6fe82c9ad125e0b616304",
+    "src/fixers.py": "8df6b4016c5e7a9e89a87ec78e876c73ef2238fbe99935a6771596a4f9c6bc2d",
+    "src/imagegen.py": "0467f4c2f06c2f06d5b007d8c8321092e8dc61c0c7ff0cb0adc7f0a4ab1d1df0",
+    "src/intake.py": "37d09664c1cf3d6949a19502009bb8d42b5c7f74ee572d90a7b15e1480aa5637",
+    "src/kit_config.py": "115691419468f025228d7a3bdebf45b2865f053ea304ab7fadbf3122d1ca082b",
+    "src/orchestrator.py": "174ec7420fcc99927d52f284e7996f10d9f9b5e06c0cecfeea952e36333e0ce1",
+    "src/pilot_registry.py": "7284bdfead82d8c171e0ce0ed3108c6d3e553da4c0752fcc272abd4f6051d42b",
+    "src/placement.py": "a854309ba3744494fe00d2e60513ab5b82d3304ab60eee2559b9b8929a6916b1",
+    "src/planner.py": "5e876a76c12bca6c4d47213b4a27154848ef7936811662eb495d6f10edc2577d",
+    "src/platform_checks.py": "7f7b09983787b6e7de7b24dea92e6a70c9cc2c0afeae4c2e6fd18ee2c2c2595b",
+    "src/product_brief.py": "5776b921a33ab1a9a47f8d3e908d153be5f58626f809d9fa1da93793d3fcba9b",
+    "src/product_export.py": "33d3a976ca4aa22c827a022124733a3f7fb961a918e5bf90da26e196a93f8726",
+    "src/product_facts.py": "74371d47fe90fce3843bdd61abcaeb435d7a99ec2cb4a61f36b600cd06764961",
+    "src/product_plan.py": "5f49fdd88acb0b243b741567ce7c0427d114376747ea1f089bee3f9147e05079",
+    "src/product_prompt.py": "e107a3653cf422e6218378c04397d56d29c692f045c150590260f18fd06c555f",
+    "src/product_v1_contracts.py": "e20b730ee2f1cd3797e9d99da3cec3d056dbd3a0152d93b18a099cef29098e51",
+    "src/registry.py": "7ac699dd2a0611a97ee268ddc66ea62965187475ccfb91ab68f74924334a47ee",
+    "src/review_contract.py": "7f314da9d4d89d2b10598dd4ba03647717cffada9896046adfaf19903e2da179",
+    "src/schema.py": "5795fe06a441c242fb36b8adc432f55804020f5658b54911291a9995780707c0",
+    "src/semantic_drafts.py": "6c854b78ca2786dc760091571f91d4b43faa4fe51c45822d3dab8a8e8a7e0016",
+    "src/subject.py": "ac398967fa19b9d6d27e2f984d5273fa25505249f772ac155bde42de4fcee222",
+    "src/synth.py": "40678da71d9d7da5ca913e01df1dcb73d932275928aa751a4e12369788f96fc9",
+    "src/textlayer.py": "8d745167d3a11bb77dd611d87f1588e48068c8b871593e0446b51fb5cd7e30f3",
+    "src/validators.py": "000ba63ca7f1ffb3b96b4c8397e24b3f882269e2cb05f235ad619ddc548f9cd9",
+    "src/workspace_store.py": "2d82f46209be03cf4234d0d1708a9ac08c21c7665418508faed72c546ff49da4",
+    "src/providers/__init__.py": "3743463fc3f9994c6585d7159ddf00fc5305a5637e9b30e55f8d378c143f1b33",
+    "src/providers/dashscope_image.py": "40e6847abf20347738ca8ad445573cae6b4908620ff07432b8549d7d8bc56c9a",
+    "src/providers/dashscope_semantic.py": "7d106b60d17b6ba706a165588dbd554dd786bd1222ce9f98759b6ff2dd60d4b0",
+    "src/providers/fake_semantic.py": "c75ef15f3f9eea0afd36b208f3873f7293b0bc0711c263a657fe59e3f82e7106",
+    "src/providers/image.py": "b3fe1e1e49917283527cf5f0a0a2b43413dfafaa61a69e3630d8af7bfe5712a0",
+    "src/providers/semantic.py": "5105730865f147ecf64defb363360c4d15388fe7d179693aa032eb7d0b82202d",
+    "tools/add_dataset_sample.py": "b30dde982723e90c84bc579cf9044d496e0236699acd0b5e5b6bd9c23aca2889",
+    "tools/calibrate_subject_diff.py": "53118918a76b981661b16e3115b8755dba6ec1edeefde80d0a730540d5a8fd86",
+    "tools/check_cutout_stability.py": "ca1f45d227885b48c032e1c42a92ddde1aab223176e40942ef70200160ceeb60",
+    "tools/check_dataset_ready.py": "d7564c67c6ada425d72e6d5109344adf353e766f2807fc1fb35c135a7707cbe2",
+    "tools/check_docs.py": "d029b8eaa8467c09697f035674bb68186be39a9c8a2c2c9e3f8b6fca81d4c9b1",
+    "tools/check_forbidden_rules.py": "f4748fd5918a0ff17c1cf004cb2e47e5bdbdef8ddedfb722d5b3394764b5c439",
+    "tools/check_pilot_ready.py": "7dac63cb944f85be3ae2429bcfc2f093182c50fe84f6d802c08a43a491380d77",
+    "tools/check_project_state.py": "85b07ac00b4df9a4dd0fe790cb80dc25f2cab447e50d45639173e829eeea7f53",
+    "tools/check_table_guards.py": "54c2fd150d9069cdff76e389362a8c4b4f41710accf64f777c0292d38a66cdfe",
+    "tools/fill_pilot_registry.py": "e2350a7878f74899218483a5f88daec55fdff71808405b441afdf38afde62186",
+    "tools/freeze_dataset_labels.py": "bc9f3da8a62c5ce7832212a367e8aca0429ce50586e21264050b0a147632c301",
+    "tools/gen_slot_cards.py": "5df63657e8b830708938fac8be9d779339768f1a2733d4aa94f2027e29f2871c",
+    "tools/make_fixtures.py": "62f8bf08c13d60ac83cf676d9fb185df01a8455376c2ce356b796cb3cbcd2506",
+    "tools/probe_input_driven_plan.py": "af046f881a71457e2a060b642a55f94211f29d93968baf2089c1fcc62a9506f2",
+    "tools/probe_real_image_submit.py": "f9a4151d0fdd37903d2c2efb46a895f38416fc30d64d41b2db053477404c5b17",
+    "tools/regress_all.py": "9652454c824241c6adf8c89429d65b44a2ce517c7c8fb6681195dcad2e7ea5b5",
+    "tools/regress_product_v1.py": "b2bbc2f552a85c312689f61d237b6d1020c5f30e26352d7f3f943145dfe60467",
+    "tools/rework_real_shots.py": "56f18ffd6f54e3bcab85dd9cbfbf9284158e8a1cc297aae2b65964d5a4adc4f9",
+    "tools/run_c11_second_product.py": "b02bf007acc539ca94ab3f326aa2f130079f4183cc9122b9b35ae3af18b2cea9",
+    "tools/run_d2_5_real_generation.py": "37c1efc63ff2f1018b8e5f6b1603f5d0d576b6674a4b448e3f440582740ea9f8",
+    "tools/run_d3_real_loop.py": "af22f8a435afb12ae7639d9cb67b3190e7498991cb610925c1165269427297d2",
+    "tools/run_real_ui_full_loop.py": "c759c72f27939a2e56bbbcd72c6b6d4378032b2d682f82502bcc26e93de47021",
+    "tools/run_real_ui_selection_export.py": "9736a1f5d8013a1ce99c1f3f315d97ed71241432b6fb47ed424fb33d204dd17e",
+    "tools/sign_allowlist.py": "805e68e79918aa2e3a10d07013a4b7ce87a11d5fdfd8342f8b36e510273b0f16",
+    "tools/snapshot_v2_baseline.py": "6cff1f72de9c605cb5447f9dbc439272022b7b74cab17aec9b364c03a6fb9ecc",
+    "tools/verify_application_service.py": "de9ff15b8c39838cfe64159f43c8da7f2760e442cd1c6ec34f7392603040f511",
+    "tools/verify_dashscope_image_provider.py": "d0efe2282d3fa14af9b3d9fdcd667d410dad3b1632129a58b619e789246f2f13",
+    "tools/verify_m3.py": "a471fd748d277e156cc9b1c25c96d47205c90d2cb865b5b1236e5e115454e105",
+    "tools/verify_m4.py": "90c05ba724e19397913dbef60c17073f7f8b1139a0752bc5a95852741a453cef",
+    "tools/verify_m5.py": "971635a000492d0b5a21c8f7a8eac6497c6d84e81c0857fdfd6751845e9f9a73",
+    "tools/verify_m6.py": "aaa2a92d980c126c30c77d71abaa37cf0a48b2a018857578a148acf94b11cad5",
+    "tools/verify_m7.py": "b50f86d0a67f8d6de82067da95478b8dbcb08499b0a2230548a13ead06eb92bc",
+    "tools/verify_p1_1_contract.py": "bb639878744357a60bc67a3d96f433d780d2f5d3e0044aabe67ae2077b23e263",
+    "tools/verify_p1_2_policy.py": "6cf19cdc2f432bc277e1c758a0296ceac1895586c8f58be134eea4a36b4dc14c",
+    "tools/verify_p1_3_review.py": "b3eab850f56d4c9adc2d5acf6aaad4172104487fa5a09214b85dda55c96c2ca8",
+    "tools/verify_p1_4_registry.py": "572b9fb53db8536bcfeaa653d92121a0dcb288a6295ffed624dce9b747aa54b4",
+    "tools/verify_p1_5_dataset.py": "8907ecfb07be6c023746bffc4ff23884491b9c9440cb8fe01b630c15b9446734",
+    "tools/verify_product_v1_bootstrap.py": "8423ed4bb9ef6eed90a57a2ba958782b5ec25c1f1e53f8e07d35128254478c5c",
+    "tools/verify_product_v1_conflict_guard.py": "283d20dbe7a50cce83fca1b1fdfa4264c9fca2de8230e7e528d8a6602a43dfaf",
+    "tools/verify_product_v1_contracts.py": "e071d256072154461da649c26bf1250a09327181078137e22d5975584d813135",
+    "tools/verify_product_v1_delivery_checks.py": "6663af2d5c69a2075af2a103cb01ffb9bc5806d07aa3a9b185e893e17bec025b",
+    "tools/verify_product_v1_delivery_ui.py": "5417c3b48e8bcb24a4cac815aba96caa54cd6a3d1fda1902ef649968b0345572",
+    "tools/verify_product_v1_entry_audit.py": "969211d147af7af4e050ff5004280c73001e9ae2e436d3f1dd8c4a1a33cf5ceb",
+    "tools/verify_product_v1_export_wording_drift.py": "87a69dbbfc6c1decc97ca1ac7897a63c77154608c0c67e6390a4c48f83367796",
+    "tools/verify_product_v1_generation_isolation.py": "daa7dc0e5cbd2db213ce51f9e41e10f22845f038b44fb5d4232f93f5ac8347e4",
+    "tools/verify_product_v1_generation_recovery_ui.py": "636250f8372b01f1c19cbf6eaf57311bf6bf3af610d5e39ad6026e1a077c5547",
+    "tools/verify_product_v1_http.py": "089da0328f249f8fcf5dac91c17ebf5a671431f160d15c1b0473da87fdc1fcbe",
+    "tools/verify_product_v1_image_generation.py": "4f57c9346830db8d99d24c85be35b95785ed7c287ebb19bc4c0e73eca254a9fd",
+    "tools/verify_product_v1_plan.py": "b285b55578b8d7a8e5e67ad3a7e2c3dd4f8b0b81befc71f35ef0ef882b1cb89e",
+    "tools/verify_product_v1_plan_edit.py": "98636d49ffb9286773e66978f352cd19a2d055c35c79b97c4be9d5b18ae886a9",
+    "tools/verify_product_v1_prompt.py": "daf79502da62007cff0eab98586624bc13dce221f56026e5fe0fe0d518d1f9b1",
+    "tools/verify_product_v1_review_workbench_ui.py": "de1160bc6ae75325654dc2f5cb969adb93f6171379735e53efd66b8615f1ad85",
+    "tools/verify_product_v1_selection_rework_export.py": "1aa84893c3d3fbd41d9eaeff94d009b2e8fcd30888925ae398c2077034487386",
+    "tools/verify_product_v1_suite_command.py": "4ffbe965f0ca47dd27db7f069ec210a372c54983f6e05518ab42012e06235395",
+    "tools/verify_product_v1_suite_command_ui.py": "fac336bb1ed8bcbecb29ae4a22cb83e2fb4ae1c1c8bf5eca71ea7671cf835b83",
+    "tools/verify_product_v1_ui.py": "b300f78d88ae1954cf906b0fc389f9e0de66a5f4b9e646028e2a7ffeb97692da",
+    "tools/verify_product_v1_ui_rework.py": "4f823a2a782675abbbf8aacd4953944a4b6b040bec219bdcee2cd7a2a774aadf",
+    "tools/verify_product_v1_ui_shot_retry.py": "78d45fd5398f72b35416e754217b21fa57160b39f5ccd7bbd3efeb9c9cbddeb7",
+    "tools/verify_product_v1_usability_accessibility.py": "272b696be024857c4eae2586d96de112545ed4ca0d6be462fbc772fa30ad8527",
+    "tools/verify_product_v1_workspace_relocation.py": "af6e348aa844de95cd0bbb8a248d1637202878c101564872dffc92b5bcbb6d79",
+    "tools/verify_semantic_provider.py": "073450c06f102d6a5b104497dab658d98c6ffc4b1aa030813f738547e1455881",
+    "tools/verify_workspace_store.py": "047a16bfbe72450f04d8b0909487f2acf8f3c9b9b044bccf41ddd7650972dd92",
+    "tools/verify_workspace_store_concurrency.py": "3d79917528e15e7497b9bbfeea4d59f98ef70aac9e7b864ed31b577a3bc27024",
+    "tools/workspace_backup_restore.py": "b2d1f18030bd985a7cf77c3a0dd7f449094486e45a2a0effe13da23a42dc211b",
+    "config/brand.json": "742863ef6afdc90f76e16acb2998ba7529055b545380133b5fa61ab66a6cccf5",
+    "config/catalog/home_kitchen.yaml": "ecccc908976e56dc4a21a321f001b554e6c24d7cb9492cf7bb6e4566c8c9bf6c",
+    "config/product-v1/archetypes.json": "360bd19a7e282845c5a6700965f2f1c24948260b21de4a1335592cf49f4aa028",
+    "config/product-v1/platforms/amazon-us.json": "ad516171e1cb056388976940ed0509050bb634795c5f94539af25628b085f93e",
+    "config/product-v1/providers.json": "6dbe090ac654db2d51687ef7ebbf58259b34c180b996f0127968efe68d372913",
+    "config/slots.yaml": "2fcb787e1ffc83b4c4278c1705a19034e9224129fe3de2750dff8e57c76fc66c",
+    "start_product.bat": "73fb2ddb7f653f4e27c2d82531a0dd67dd7dea79099c98406fabecbb6058320c"
+  },
+  "fingerprints_after": {
+    "requirements.txt": "2b4efcd17347ad0e75f46f12ae77142976a6d4daa8fd7bdc9b73f69d5db6bb4c",
+    "app/server.py": "e7ab0d591f7f3190a01e7f4d69cfd072b239abd9644f7e24196ac1f25f3264f7",
+    "app/product_v1_server.py": "9c840a3bbf0323fcba3b2dc74875c5e9d73635646d92f3f86b0d4eb09d440f1c",
+    "app/product_v1/index.html": "232e455e3fe37b8bf6d6cdec5e53ee515e1b29caa1f8820897dc6bbce3e6722f",
+    "app/product_v1/product.js": "be1cb23b6ef64585e9037e24f983348c2643728273cb06d46c1800c3e87486ba",
+    "app/product_v1/styles.css": "f45ade900562452bcff433f796cc90af2c8caa8c0aefb2fe7cc8d7d9358f9808",
+    "src/application_service.py": "6583a622bcead343806328584749ddafa6873b8a687cc6a71674c93ac3c40026",
+    "src/assets.py": "09fcc7aa93259866fe69b29bd76ad8af9359fe4e1cf25cf53ed4ca755d00f4cb",
+    "src/console.py": "8b570661c3c6069d9b56d7827b54d597430620bb5c818e746a07b74e695c4eaf",
+    "src/cutouts.py": "2220b7477764913e5a1976748984c51507482375bf04a6ecb9e1c6442e053e09",
+    "src/data_policy.py": "6f350aa073c09899a2a293d016daf1a36f9ae968bedebd2322ef2817db475af0",
+    "src/eval_dataset.py": "c3d9d15ce579e2577de28c885616e244fbfdcbfb38b6fe82c9ad125e0b616304",
+    "src/fixers.py": "8df6b4016c5e7a9e89a87ec78e876c73ef2238fbe99935a6771596a4f9c6bc2d",
+    "src/imagegen.py": "0467f4c2f06c2f06d5b007d8c8321092e8dc61c0c7ff0cb0adc7f0a4ab1d1df0",
+    "src/intake.py": "37d09664c1cf3d6949a19502009bb8d42b5c7f74ee572d90a7b15e1480aa5637",
+    "src/kit_config.py": "115691419468f025228d7a3bdebf45b2865f053ea304ab7fadbf3122d1ca082b",
+    "src/orchestrator.py": "174ec7420fcc99927d52f284e7996f10d9f9b5e06c0cecfeea952e36333e0ce1",
+    "src/pilot_registry.py": "7284bdfead82d8c171e0ce0ed3108c6d3e553da4c0752fcc272abd4f6051d42b",
+    "src/placement.py": "a854309ba3744494fe00d2e60513ab5b82d3304ab60eee2559b9b8929a6916b1",
+    "src/planner.py": "5e876a76c12bca6c4d47213b4a27154848ef7936811662eb495d6f10edc2577d",
+    "src/platform_checks.py": "7f7b09983787b6e7de7b24dea92e6a70c9cc2c0afeae4c2e6fd18ee2c2c2595b",
+    "src/product_brief.py": "5776b921a33ab1a9a47f8d3e908d153be5f58626f809d9fa1da93793d3fcba9b",
+    "src/product_export.py": "33d3a976ca4aa22c827a022124733a3f7fb961a918e5bf90da26e196a93f8726",
+    "src/product_facts.py": "74371d47fe90fce3843bdd61abcaeb435d7a99ec2cb4a61f36b600cd06764961",
+    "src/product_plan.py": "5f49fdd88acb0b243b741567ce7c0427d114376747ea1f089bee3f9147e05079",
+    "src/product_prompt.py": "e107a3653cf422e6218378c04397d56d29c692f045c150590260f18fd06c555f",
+    "src/product_v1_contracts.py": "e20b730ee2f1cd3797e9d99da3cec3d056dbd3a0152d93b18a099cef29098e51",
+    "src/registry.py": "7ac699dd2a0611a97ee268ddc66ea62965187475ccfb91ab68f74924334a47ee",
+    "src/review_contract.py": "7f314da9d4d89d2b10598dd4ba03647717cffada9896046adfaf19903e2da179",
+    "src/schema.py": "5795fe06a441c242fb36b8adc432f55804020f5658b54911291a9995780707c0",
+    "src/semantic_drafts.py": "6c854b78ca2786dc760091571f91d4b43faa4fe51c45822d3dab8a8e8a7e0016",
+    "src/subject.py": "ac398967fa19b9d6d27e2f984d5273fa25505249f772ac155bde42de4fcee222",
+    "src/synth.py": "40678da71d9d7da5ca913e01df1dcb73d932275928aa751a4e12369788f96fc9",
+    "src/textlayer.py": "8d745167d3a11bb77dd611d87f1588e48068c8b871593e0446b51fb5cd7e30f3",
+    "src/validators.py": "000ba63ca7f1ffb3b96b4c8397e24b3f882269e2cb05f235ad619ddc548f9cd9",
+    "src/workspace_store.py": "2d82f46209be03cf4234d0d1708a9ac08c21c7665418508faed72c546ff49da4",
+    "src/providers/__init__.py": "3743463fc3f9994c6585d7159ddf00fc5305a5637e9b30e55f8d378c143f1b33",
+    "src/providers/dashscope_image.py": "40e6847abf20347738ca8ad445573cae6b4908620ff07432b8549d7d8bc56c9a",
+    "src/providers/dashscope_semantic.py": "7d106b60d17b6ba706a165588dbd554dd786bd1222ce9f98759b6ff2dd60d4b0",
+    "src/providers/fake_semantic.py": "c75ef15f3f9eea0afd36b208f3873f7293b0bc0711c263a657fe59e3f82e7106",
+    "src/providers/image.py": "b3fe1e1e49917283527cf5f0a0a2b43413dfafaa61a69e3630d8af7bfe5712a0",
+    "src/providers/semantic.py": "5105730865f147ecf64defb363360c4d15388fe7d179693aa032eb7d0b82202d",
+    "tools/add_dataset_sample.py": "b30dde982723e90c84bc579cf9044d496e0236699acd0b5e5b6bd9c23aca2889",
+    "tools/calibrate_subject_diff.py": "53118918a76b981661b16e3115b8755dba6ec1edeefde80d0a730540d5a8fd86",
+    "tools/check_cutout_stability.py": "ca1f45d227885b48c032e1c42a92ddde1aab223176e40942ef70200160ceeb60",
+    "tools/check_dataset_ready.py": "d7564c67c6ada425d72e6d5109344adf353e766f2807fc1fb35c135a7707cbe2",
+    "tools/check_docs.py": "d029b8eaa8467c09697f035674bb68186be39a9c8a2c2c9e3f8b6fca81d4c9b1",
+    "tools/check_forbidden_rules.py": "f4748fd5918a0ff17c1cf004cb2e47e5bdbdef8ddedfb722d5b3394764b5c439",
+    "tools/check_pilot_ready.py": "7dac63cb944f85be3ae2429bcfc2f093182c50fe84f6d802c08a43a491380d77",
+    "tools/check_project_state.py": "85b07ac00b4df9a4dd0fe790cb80dc25f2cab447e50d45639173e829eeea7f53",
+    "tools/check_table_guards.py": "54c2fd150d9069cdff76e389362a8c4b4f41710accf64f777c0292d38a66cdfe",
+    "tools/fill_pilot_registry.py": "e2350a7878f74899218483a5f88daec55fdff71808405b441afdf38afde62186",
+    "tools/freeze_dataset_labels.py": "bc9f3da8a62c5ce7832212a367e8aca0429ce50586e21264050b0a147632c301",
+    "tools/gen_slot_cards.py": "5df63657e8b830708938fac8be9d779339768f1a2733d4aa94f2027e29f2871c",
+    "tools/make_fixtures.py": "62f8bf08c13d60ac83cf676d9fb185df01a8455376c2ce356b796cb3cbcd2506",
+    "tools/probe_input_driven_plan.py": "af046f881a71457e2a060b642a55f94211f29d93968baf2089c1fcc62a9506f2",
+    "tools/probe_real_image_submit.py": "f9a4151d0fdd37903d2c2efb46a895f38416fc30d64d41b2db053477404c5b17",
+    "tools/regress_all.py": "9652454c824241c6adf8c89429d65b44a2ce517c7c8fb6681195dcad2e7ea5b5",
+    "tools/regress_product_v1.py": "b2bbc2f552a85c312689f61d237b6d1020c5f30e26352d7f3f943145dfe60467",
+    "tools/rework_real_shots.py": "56f18ffd6f54e3bcab85dd9cbfbf9284158e8a1cc297aae2b65964d5a4adc4f9",
+    "tools/run_c11_second_product.py": "b02bf007acc539ca94ab3f326aa2f130079f4183cc9122b9b35ae3af18b2cea9",
+    "tools/run_d2_5_real_generation.py": "37c1efc63ff2f1018b8e5f6b1603f5d0d576b6674a4b448e3f440582740ea9f8",
+    "tools/run_d3_real_loop.py": "af22f8a435afb12ae7639d9cb67b3190e7498991cb610925c1165269427297d2",
+    "tools/run_real_ui_full_loop.py": "c759c72f27939a2e56bbbcd72c6b6d4378032b2d682f82502bcc26e93de47021",
+    "tools/run_real_ui_selection_export.py": "9736a1f5d8013a1ce99c1f3f315d97ed71241432b6fb47ed424fb33d204dd17e",
+    "tools/sign_allowlist.py": "805e68e79918aa2e3a10d07013a4b7ce87a11d5fdfd8342f8b36e510273b0f16",
+    "tools/snapshot_v2_baseline.py": "6cff1f72de9c605cb5447f9dbc439272022b7b74cab17aec9b364c03a6fb9ecc",
+    "tools/verify_application_service.py": "de9ff15b8c39838cfe64159f43c8da7f2760e442cd1c6ec34f7392603040f511",
+    "tools/verify_dashscope_image_provider.py": "d0efe2282d3fa14af9b3d9fdcd667d410dad3b1632129a58b619e789246f2f13",
+    "tools/verify_m3.py": "a471fd748d277e156cc9b1c25c96d47205c90d2cb865b5b1236e5e115454e105",
+    "tools/verify_m4.py": "90c05ba724e19397913dbef60c17073f7f8b1139a0752bc5a95852741a453cef",
+    "tools/verify_m5.py": "971635a000492d0b5a21c8f7a8eac6497c6d84e81c0857fdfd6751845e9f9a73",
+    "tools/verify_m6.py": "aaa2a92d980c126c30c77d71abaa37cf0a48b2a018857578a148acf94b11cad5",
+    "tools/verify_m7.py": "b50f86d0a67f8d6de82067da95478b8dbcb08499b0a2230548a13ead06eb92bc",
+    "tools/verify_p1_1_contract.py": "bb639878744357a60bc67a3d96f433d780d2f5d3e0044aabe67ae2077b23e263",
+    "tools/verify_p1_2_policy.py": "6cf19cdc2f432bc277e1c758a0296ceac1895586c8f58be134eea4a36b4dc14c",
+    "tools/verify_p1_3_review.py": "b3eab850f56d4c9adc2d5acf6aaad4172104487fa5a09214b85dda55c96c2ca8",
+    "tools/verify_p1_4_registry.py": "572b9fb53db8536bcfeaa653d92121a0dcb288a6295ffed624dce9b747aa54b4",
+    "tools/verify_p1_5_dataset.py": "8907ecfb07be6c023746bffc4ff23884491b9c9440cb8fe01b630c15b9446734",
+    "tools/verify_product_v1_bootstrap.py": "8423ed4bb9ef6eed90a57a2ba958782b5ec25c1f1e53f8e07d35128254478c5c",
+    "tools/verify_product_v1_conflict_guard.py": "283d20dbe7a50cce83fca1b1fdfa4264c9fca2de8230e7e528d8a6602a43dfaf",
+    "tools/verify_product_v1_contracts.py": "e071d256072154461da649c26bf1250a09327181078137e22d5975584d813135",
+    "tools/verify_product_v1_delivery_checks.py": "6663af2d5c69a2075af2a103cb01ffb9bc5806d07aa3a9b185e893e17bec025b",
+    "tools/verify_product_v1_delivery_ui.py": "5417c3b48e8bcb24a4cac815aba96caa54cd6a3d1fda1902ef649968b0345572",
+    "tools/verify_product_v1_entry_audit.py": "969211d147af7af4e050ff5004280c73001e9ae2e436d3f1dd8c4a1a33cf5ceb",
+    "tools/verify_product_v1_export_wording_drift.py": "87a69dbbfc6c1decc97ca1ac7897a63c77154608c0c67e6390a4c48f83367796",
+    "tools/verify_product_v1_generation_isolation.py": "daa7dc0e5cbd2db213ce51f9e41e10f22845f038b44fb5d4232f93f5ac8347e4",
+    "tools/verify_product_v1_generation_recovery_ui.py": "636250f8372b01f1c19cbf6eaf57311bf6bf3af610d5e39ad6026e1a077c5547",
+    "tools/verify_product_v1_http.py": "089da0328f249f8fcf5dac91c17ebf5a671431f160d15c1b0473da87fdc1fcbe",
+    "tools/verify_product_v1_image_generation.py": "4f57c9346830db8d99d24c85be35b95785ed7c287ebb19bc4c0e73eca254a9fd",
+    "tools/verify_product_v1_plan.py": "b285b55578b8d7a8e5e67ad3a7e2c3dd4f8b0b81befc71f35ef0ef882b1cb89e",
+    "tools/verify_product_v1_plan_edit.py": "98636d49ffb9286773e66978f352cd19a2d055c35c79b97c4be9d5b18ae886a9",
+    "tools/verify_product_v1_prompt.py": "daf79502da62007cff0eab98586624bc13dce221f56026e5fe0fe0d518d1f9b1",
+    "tools/verify_product_v1_review_workbench_ui.py": "de1160bc6ae75325654dc2f5cb969adb93f6171379735e53efd66b8615f1ad85",
+    "tools/verify_product_v1_selection_rework_export.py": "1aa84893c3d3fbd41d9eaeff94d009b2e8fcd30888925ae398c2077034487386",
+    "tools/verify_product_v1_suite_command.py": "4ffbe965f0ca47dd27db7f069ec210a372c54983f6e05518ab42012e06235395",
+    "tools/verify_product_v1_suite_command_ui.py": "fac336bb1ed8bcbecb29ae4a22cb83e2fb4ae1c1c8bf5eca71ea7671cf835b83",
+    "tools/verify_product_v1_ui.py": "b300f78d88ae1954cf906b0fc389f9e0de66a5f4b9e646028e2a7ffeb97692da",
+    "tools/verify_product_v1_ui_rework.py": "4f823a2a782675abbbf8aacd4953944a4b6b040bec219bdcee2cd7a2a774aadf",
+    "tools/verify_product_v1_ui_shot_retry.py": "78d45fd5398f72b35416e754217b21fa57160b39f5ccd7bbd3efeb9c9cbddeb7",
+    "tools/verify_product_v1_usability_accessibility.py": "272b696be024857c4eae2586d96de112545ed4ca0d6be462fbc772fa30ad8527",
+    "tools/verify_product_v1_workspace_relocation.py": "af6e348aa844de95cd0bbb8a248d1637202878c101564872dffc92b5bcbb6d79",
+    "tools/verify_semantic_provider.py": "073450c06f102d6a5b104497dab658d98c6ffc4b1aa030813f738547e1455881",
+    "tools/verify_workspace_store.py": "047a16bfbe72450f04d8b0909487f2acf8f3c9b9b044bccf41ddd7650972dd92",
+    "tools/verify_workspace_store_concurrency.py": "3d79917528e15e7497b9bbfeea4d59f98ef70aac9e7b864ed31b577a3bc27024",
+    "tools/workspace_backup_restore.py": "b2d1f18030bd985a7cf77c3a0dd7f449094486e45a2a0effe13da23a42dc211b",
+    "config/brand.json": "742863ef6afdc90f76e16acb2998ba7529055b545380133b5fa61ab66a6cccf5",
+    "config/catalog/home_kitchen.yaml": "ecccc908976e56dc4a21a321f001b554e6c24d7cb9492cf7bb6e4566c8c9bf6c",
+    "config/product-v1/archetypes.json": "360bd19a7e282845c5a6700965f2f1c24948260b21de4a1335592cf49f4aa028",
+    "config/product-v1/platforms/amazon-us.json": "ad516171e1cb056388976940ed0509050bb634795c5f94539af25628b085f93e",
+    "config/product-v1/providers.json": "6dbe090ac654db2d51687ef7ebbf58259b34c180b996f0127968efe68d372913",
+    "config/slots.yaml": "2fcb787e1ffc83b4c4278c1705a19034e9224129fe3de2750dff8e57c76fc66c",
+    "start_product.bat": "73fb2ddb7f653f4e27c2d82531a0dd67dd7dea79099c98406fabecbb6058320c"
+  },
+  "suites": [
+    {
+      "name": "node-check-ui",
+      "command": [
+        "node",
+        "--check",
+        "app/product_v1/product.js"
+      ],
+      "rc": 0,
+      "seconds": 0.1,
+      "log_path": "_working/amz-listing-kit-product-demo/regression-20260929-141908-pass1/node-check-ui.log",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tail": ""
+    },
+    {
+      "name": "py-compile",
+      "command": [
+        "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\.uv-cache\\builds-v0\\.tmpvPVGeE\\Scripts\\python.exe",
+        "-m",
+        "py_compile",
+        "app/product_v1_server.py",
+        "src/application_service.py",
+        "src/workspace_store.py"
+      ],
+      "rc": 0,
+      "seconds": 0.2,
+      "log_path": "_working/amz-listing-kit-product-demo/regression-20260929-141908-pass1/py-compile.log",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tail": ""
+    },
+    {
+      "name": "contracts",
+      "command": [
+        "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\.uv-cache\\builds-v0\\.tmpvPVGeE\\Scripts\\python.exe",
+        "tools/verify_product_v1_contracts.py"
+      ],
+      "rc": 0,
+      "seconds": 0.4,
+      "log_path": "_working/amz-listing-kit-product-demo/regression-20260929-141908-pass1/contracts.log",
+      "log_sha256": "480f8e8255f2c39c6989d6d1002949b8ec361b474ade158f2ce901ba8761b94a",
+      "tail": "PASS schema meta-check\nPASS shipped configuration bundle\nPASS complete graph with partial review selection and custom ShotSpec\nPASS custom ShotSpec requires a task purpose with a localized path\nPASS unknown archetype id rejected\nPASS unknown field rejected and named\nPASS invalid record version rejected\nPASS invalid record schema version rejected\nPASS invalid enum rejected with a field path\nPASS malformed content hash rejected by shape\nPASS record content hash mismatch rejected\nPASS prompt text hash mismatch rejected\nPASS candidate identity must equal file hash\nPASS duplicate archetype id rejected\nPASS generic custom fallback must exist\nPASS platform archetype reference must resolve\nPASS default provider role must be image\nPASS default image provider must support reference images and task queries\nPASS provider max_attempts required with a field path\nPASS provider max_attempts range enforced with a field path\nPASS cross-workspace record rejected\nPASS dangling version reference rejected\nPASS attempt cannot pair another shot and prompt\nPASS selection permits at most one candidate per shot\nPASS export candidate set must match selection\nPASS export rejects a selection missing a required shot\nPASS unsafe candidate path rejected\nPASS absolute artifact path rejected\nPASS backslash artifact path rejected\nPASS unsafe source asset path rejected\n30 passed; 0 failed"
+    },
+    {
+      "name": "bootstrap",
+      "command": [
+        "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\.uv-cache\\builds-v0\\.tmpvPVGeE\\Scripts\\python.exe",
+        "tools/verify_product_v1_bootstrap.py"
+      ],
+      "rc": 0,
+      "seconds": 2.4,
+      "log_path": "_working/amz-listing-kit-product-demo/regression-20260929-141908-pass1/bootstrap.log",
+      "log_sha256": "68ee308999380313d96f60e3d36f4cf5e8a15c7fcb33e4e3450d0bdd3fff841b",
+      "tail": "Product V1 自检：工作空间 HTTP 闭环\nProduct V1 bootstrap 回归通过：--check 未导入旧 Mock 栈\ntest_bad_image_is_rejected_without_workspace_mutation (__main__.ProductV1HTTPChecks.test_bad_image_is_rejected_without_workspace_mutation) ... 127.0.0.1 - - [29/Sep/2026 14:19:10] \"POST /api/workspaces HTTP/1.1\" 201 -\n127.0.0.1 - - [29/Sep/2026 14:19:10] \"PUT /api/intake HTTP/1.1\" 422 -\n127.0.0.1 - - [29/Sep/2026 14:19:10] \"GET /api/workspace?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-product-v1-http-69rshvku%5Cbad-image HTTP/1.1\" 200 -\nok\ntest_competing_saves_reject_the_stale_revision (__main__.ProductV1HTTPChecks.test_competing_saves_reject_the_stale_revision) ... 127.0.0.1 - - [29/Sep/2026 14:19:10] \"POST /api/workspaces HTTP/1.1\" 201 -\n127.0.0.1 - - [29/Sep/2026 14:19:10] \"PUT /api/intake HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:19:10] \"PUT /api/intake HTTP/1.1\" 409 -\n127.0.0.1 - - [29/Sep/2026 14:19:10] \"GET /api/workspace?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-product-v1-http-69rshvku%5Cconcurrent-saves HTTP/1.1\" 200 -\nok\ntest_create_empty_workspace_and_list_recent (__main__.ProductV1HTTPChecks.test_create_empty_workspace_and_list_recent) ... 127.0.0.1 - - [29/Sep/2026 14:19:10] \"POST /api/workspaces HTTP/1.1\" 201 -\n127.0.0.1 - - [29/Sep/2026 14:19:10] \"GET /api/workspaces/recent HTTP/1.1\" 200 -\nok\ntest_file_path_is_rejected_as_workspace_directory (__main__.ProductV1HTTPChecks.test_file_path_is_rejected_as_workspace_directory) ... 127.0.0.1 - - [29/Sep/2026 14:19:10] \"POST /api/workspaces HTTP/1.1\" 422 -\nok\ntest_multipart_save_reopen_and_reference_preview (__main__.ProductV1HTTPChecks.test_multipart_save_reopen_and_reference_preview) ... 127.0.0.1 - - [29/Sep/2026 14:19:10] \"POST /api/workspaces HTTP/1.1\" 201 -\n127.0.0.1 - - [29/Sep/2026 14:19:10] \"PUT /api/intake HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:19:10] \"POST /api/workspaces/open HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:19:10] \"GET /api/workspace?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-product-v1-http-69rshvku%5Csave-and-reopen HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:19:10] \"GET /api/workspace/references/45d239d0c27bd6cc8c98b5239dc5535815df89cca50f2b8b59bbec99c6ee1da4?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-product-v1-http-69rshvku%5Csave-and-reopen HTTP/1.1\" 200 -\nok\ntest_ordered_reference_set_supports_reorder_insert_and_remove (__main__.ProductV1HTTPChecks.test_ordered_reference_set_supports_reorder_insert_and_remove) ... 127.0.0.1 - - [29/Sep/2026 14:19:10] \"POST /api/workspaces HTTP/1.1\" 201 -\n127.0.0.1 - - [29/Sep/2026 14:19:10] \"PUT /api/intake HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:19:10] \"PUT /api/intake HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:19:10] \"PUT /api/intake HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:19:11] \"PUT /api/intake HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:19:11] \"PUT /api/intake HTTP/1.1\" 422 -\n127.0.0.1 - - [29/Sep/2026 14:19:11] \"GET /api/workspace?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-product-v1-http-69rshvku%5Cordered-references HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:19:11] \"PUT /api/intake HTTP/1.1\" 422 -\n127.0.0.1 - - [29/Sep/2026 14:19:11] \"GET /api/workspace?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-product-v1-http-69rshvku%5Cordered-references HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:19:11] \"PUT /api/intake HTTP/1.1\" 422 -\n127.0.0.1 - - [29/Sep/2026 14:19:11] \"GET /api/workspace?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-product-v1-http-69rshvku%5Cordered-references HTTP/1.1\" 200 -\nok\n\n----------------------------------------------------------------------\nRan 6 tests in 1.506s\n\nOK"
+    },
+    {
+      "name": "application-service",
+      "command": [
+        "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\.uv-cache\\builds-v0\\.tmpvPVGeE\\Scripts\\python.exe",
+        "tools/verify_application_service.py"
+      ],
+      "rc": 0,
+      "seconds": 1.1,
+      "log_path": "_working/amz-listing-kit-product-demo/regression-20260929-141908-pass1/application-service.log",
+      "log_sha256": "2df1594b04c986fd931fc10df97c3aed1171b2669adf2bba92fb23816d709b8b",
+      "tail": "test_bad_directory_returns_stable_error_without_touching_file (__main__.ApplicationServiceChecks.test_bad_directory_returns_stable_error_without_touching_file) ... ok\ntest_create_returns_an_empty_intake_projection (__main__.ApplicationServiceChecks.test_create_returns_an_empty_intake_projection) ... ok\ntest_invalid_image_is_rejected_before_any_intake_file_is_written (__main__.ApplicationServiceChecks.test_invalid_image_is_rejected_before_any_intake_file_is_written) ... ok\ntest_missing_material_is_actionable_and_writes_nothing (__main__.ApplicationServiceChecks.test_missing_material_is_actionable_and_writes_nothing) ... ok\ntest_missing_revision_is_a_contract_error (__main__.ApplicationServiceChecks.test_missing_revision_is_a_contract_error) ... ok\ntest_ordered_references_support_reorder_insert_and_rejection (__main__.ApplicationServiceChecks.test_ordered_references_support_reorder_insert_and_rejection) ... ok\ntest_saved_intake_is_versioned_and_recovers_after_reopen (__main__.ApplicationServiceChecks.test_saved_intake_is_versioned_and_recovers_after_reopen) ... ok\ntest_stale_revision_does_not_create_an_orphan_asset_or_record (__main__.ApplicationServiceChecks.test_stale_revision_does_not_create_an_orphan_asset_or_record) ... ok\n\n----------------------------------------------------------------------\nRan 8 tests in 0.692s\n\nOK"
+    },
+    {
+      "name": "workspace-store",
+      "command": [
+        "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\.uv-cache\\builds-v0\\.tmpvPVGeE\\Scripts\\python.exe",
+        "tools/verify_workspace_store.py"
+      ],
+      "rc": 0,
+      "seconds": 1.6,
+      "log_path": "_working/amz-listing-kit-product-demo/regression-20260929-141908-pass1/workspace-store.log",
+      "log_sha256": "5d954b5d50ef19c07a97f05c44aab5dd73d014863b83697750da4785fdff875d",
+      "tail": "test_asset_and_versioned_records_are_immutable_and_versioned (__main__.WorkspaceStoreChecks.test_asset_and_versioned_records_are_immutable_and_versioned) ... ok\ntest_create_open_and_refuse_nonempty_target (__main__.WorkspaceStoreChecks.test_create_open_and_refuse_nonempty_target) ... ok\ntest_open_rejects_dangling_current_pointer (__main__.WorkspaceStoreChecks.test_open_rejects_dangling_current_pointer) ... ok\ntest_post_replace_failure_reopens_with_committed_pointer (__main__.WorkspaceStoreChecks.test_post_replace_failure_reopens_with_committed_pointer) ... ok\ntest_process_crash_after_replace_recovers_new_pointer (__main__.WorkspaceStoreChecks.test_process_crash_after_replace_recovers_new_pointer) ... ok\ntest_process_crash_before_replace_keeps_old_pointer_and_temp (__main__.WorkspaceStoreChecks.test_process_crash_before_replace_keeps_old_pointer_and_temp) ... ok\ntest_replace_failure_keeps_old_pointer_and_diagnostic_temp (__main__.WorkspaceStoreChecks.test_replace_failure_keeps_old_pointer_and_diagnostic_temp) ... ok\ntest_stale_workspace_etag_cannot_overwrite_newer_pointer (__main__.WorkspaceStoreChecks.test_stale_workspace_etag_cannot_overwrite_newer_pointer) ... ok\n\n----------------------------------------------------------------------\nRan 8 tests in 1.256s\n\nOK"
+    },
+    {
+      "name": "workspace-store-concurrency",
+      "command": [
+        "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\.uv-cache\\builds-v0\\.tmpvPVGeE\\Scripts\\python.exe",
+        "tools/verify_workspace_store_concurrency.py"
+      ],
+      "rc": 0,
+      "seconds": 1.1,
+      "log_path": "_working/amz-listing-kit-product-demo/regression-20260929-141908-pass1/workspace-store-concurrency.log",
+      "log_sha256": "c7f53fbc6fc8c2bb864bede81a02bf1d0c88b34869428b2005adceea6e3b9894",
+      "tail": "test_spawned_process_lock_excludes_other_process_until_release (__main__.WorkspaceStoreConcurrencyChecks.test_spawned_process_lock_excludes_other_process_until_release) ... ok\ntest_thread_contender_times_out_while_lock_is_held_and_recovers (__main__.WorkspaceStoreConcurrencyChecks.test_thread_contender_times_out_while_lock_is_held_and_recovers) ... ok\n\n----------------------------------------------------------------------\nRan 2 tests in 0.857s\n\nOK"
+    },
+    {
+      "name": "semantic-provider",
+      "command": [
+        "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\.uv-cache\\builds-v0\\.tmpvPVGeE\\Scripts\\python.exe",
+        "tools/verify_semantic_provider.py"
+      ],
+      "rc": 0,
+      "seconds": 0.5,
+      "log_path": "_working/amz-listing-kit-product-demo/regression-20260929-141908-pass1/semantic-provider.log",
+      "log_sha256": "dbbd8ef5eda1b530b8e997bc2ca4847f9ec2f79485507c996e9ab4ad1008ccb4",
+      "tail": "test_account_arrears_is_reported_with_an_actionable_message (__main__.SemanticProviderChecks.test_account_arrears_is_reported_with_an_actionable_message) ... ok\ntest_configured_default_resolves_model_and_environment_names (__main__.SemanticProviderChecks.test_configured_default_resolves_model_and_environment_names) ... ok\ntest_explicit_fake_provider_obeys_contract_without_defaulting_output (__main__.SemanticProviderChecks.test_explicit_fake_provider_obeys_contract_without_defaulting_output) ... ok\ntest_invalid_model_shape_is_rejected_without_exposing_response_text (__main__.SemanticProviderChecks.test_invalid_model_shape_is_rejected_without_exposing_response_text) ... ok\ntest_missing_key_blocks_before_transport_and_never_falls_back (__main__.SemanticProviderChecks.test_missing_key_blocks_before_transport_and_never_falls_back) ... ok\ntest_missing_region_endpoint_blocks_before_transport (__main__.SemanticProviderChecks.test_missing_region_endpoint_blocks_before_transport) ... ok\ntest_multimodal_brief_uses_json_object_and_local_schema_validation (__main__.SemanticProviderChecks.test_multimodal_brief_uses_json_object_and_local_schema_validation) ... ok\ntest_prompt_blocks_contract_is_validated (__main__.SemanticProviderChecks.test_prompt_blocks_contract_is_validated) ... ok\ntest_provider_error_keeps_only_redacted_summary (__main__.SemanticProviderChecks.test_provider_error_keeps_only_redacted_summary) ... ok\ntest_reference_hash_mismatch_blocks_external_request (__main__.SemanticProviderChecks.test_reference_hash_mismatch_blocks_external_request) ... ok\ntest_text_only_plan_uses_strict_schema_and_registry_model (__main__.SemanticProviderChecks.test_text_only_plan_uses_strict_schema_and_registry_model) ... ok\n\n----------------------------------------------------------------------\nRan 11 tests in 0.109s\n\nOK"
+    },
+    {
+      "name": "dashscope-image-provider",
+      "command": [
+        "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\.uv-cache\\builds-v0\\.tmpvPVGeE\\Scripts\\python.exe",
+        "tools/verify_dashscope_image_provider.py"
+      ],
+      "rc": 0,
+      "seconds": 0.3,
+      "log_path": "_working/amz-listing-kit-product-demo/regression-20260929-141908-pass1/dashscope-image-provider.log",
+      "log_sha256": "4695f8133db27e73a6cfc1119e402db3be73a5b0f152e375b3d30f69e5e8fc18",
+      "tail": "test_account_arrears_maps_to_actionable_failed_submit (__main__.DashScopeImageProviderChecks.test_account_arrears_maps_to_actionable_failed_submit) ... ok\ntest_default_and_callable_transports_are_both_wired (__main__.DashScopeImageProviderChecks.test_default_and_callable_transports_are_both_wired) ... ok\ntest_download_is_limited_to_signed_aliyun_png_and_maps_timeout_to_unknown (__main__.DashScopeImageProviderChecks.test_download_is_limited_to_signed_aliyun_png_and_maps_timeout_to_unknown) ... ok\ntest_http_error_does_not_copy_sensitive_provider_message (__main__.DashScopeImageProviderChecks.test_http_error_does_not_copy_sensitive_provider_message) ... ok\ntest_missing_key_bad_model_bad_reference_and_bad_size_never_call_transport (__main__.DashScopeImageProviderChecks.test_missing_key_bad_model_bad_reference_and_bad_size_never_call_transport) ... ok\ntest_query_returns_task_and_result_urls (__main__.DashScopeImageProviderChecks.test_query_returns_task_and_result_urls) ... ok\ntest_query_timeout_keeps_the_known_task_id_and_unknown_state (__main__.DashScopeImageProviderChecks.test_query_timeout_keeps_the_known_task_id_and_unknown_state) ... ok\ntest_submit_sends_exact_prompt_and_ordered_image_bytes_once (__main__.DashScopeImageProviderChecks.test_submit_sends_exact_prompt_and_ordered_image_bytes_once) ... ok\ntest_submit_timeout_is_unknown_with_no_id_and_no_retry (__main__.DashScopeImageProviderChecks.test_submit_timeout_is_unknown_with_no_id_and_no_retry) ... ok\ntest_provider_neutral_records_and_safe_error_contract (__main__.ImageProviderContractChecks.test_provider_neutral_records_and_safe_error_contract) ... ok\n\n----------------------------------------------------------------------\nRan 10 tests in 0.001s\n\nOK"
+    },
+    {
+      "name": "plan",
+      "command": [
+        "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\.uv-cache\\builds-v0\\.tmpvPVGeE\\Scripts\\python.exe",
+        "tools/verify_product_v1_plan.py"
+      ],
+      "rc": 0,
+      "seconds": 1.6,
+      "log_path": "_working/amz-listing-kit-product-demo/regression-20260929-141908-pass1/plan.log",
+      "log_sha256": "a186679816f40e58c757bc89b3d581f59fd4d7d5f0b4155bf07b173bc3af522c",
+      "tail": "{\n  \"dynamic_plan_http\": \"passed\",\n  \"shot_count\": 3,\n  \"omitted_unconfirmed_feature\": true,\n  \"required_hero_added\": true,\n  \"unknown_archetype_uses_custom\": true,\n  \"references_and_fact_evidence_validated\": true,\n  \"dependencies_mapped_to_shot_ids\": true,\n  \"dependency_title_whitespace_trimmed\": true,\n  \"model_required_field_rejected\": true,\n  \"shot_spec_created_at_omitted\": true,\n  \"plan_version_persisted_and_reopened\": true,\n  \"stale_revision_and_cycle_do_not_mutate\": true\n}\n127.0.0.1 - - [29/Sep/2026 14:19:17] \"POST /api/plan/generate HTTP/1.1\" 200 -"
+    },
+    {
+      "name": "prompt",
+      "command": [
+        "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\.uv-cache\\builds-v0\\.tmpvPVGeE\\Scripts\\python.exe",
+        "tools/verify_product_v1_prompt.py"
+      ],
+      "rc": 0,
+      "seconds": 2.1,
+      "log_path": "_working/amz-listing-kit-product-demo/regression-20260929-141908-pass1/prompt.log",
+      "log_sha256": "19fcc54f5c557b462621454d97fbf2694859edae52067cbf91d5035d08537cc0",
+      "tail": "{\n  \"prompt_block_kinds_are_scoped\": [\n    \"negative\",\n    \"shot_task\",\n    \"style_lock\"\n  ],\n  \"confirmed_selling_point_in_prompt\": true,\n  \"inferred_material_excluded_from_positive_prompt\": true,\n  \"compiled_text_and_hash_valid\": true,\n  \"two_shots_have_independent_prompt_versions\": true,\n  \"manual_v2_parent_diff_hash_valid\": true,\n  \"invalid_model_output_fails_without_mutation\": true,\n  \"stale_prompt_version_rejected_without_write\": true,\n  \"history_survives_service_reopen\": true\n}"
+    },
+    {
+      "name": "plan-edit",
+      "command": [
+        "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\.uv-cache\\builds-v0\\.tmpvPVGeE\\Scripts\\python.exe",
+        "tools/verify_product_v1_plan_edit.py"
+      ],
+      "rc": 0,
+      "seconds": 2.2,
+      "log_path": "_working/amz-listing-kit-product-demo/regression-20260929-141908-pass1/plan-edit.log",
+      "log_sha256": "8d1173d1aac31e230d6ed5d7e4c822759f0275176e3a6368d7574435e001a1d8",
+      "tail": "{\n  \"endpoint\": \"PUT /api/plan\",\n  \"edit_reorder_optional_delete\": \"passed\",\n  \"required_hero_protection\": \"passed\",\n  \"empty_and_cross_plan_shots_rejected\": \"passed\",\n  \"stale_revision_no_write\": \"passed\",\n  \"reopen_restore_and_immutable_prompt_history\": \"passed\",\n  \"workspace_graph\": \"passed\"\n}\n127.0.0.1 - - [29/Sep/2026 14:19:21] \"PUT /api/plan HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:19:21] \"PUT /api/plan HTTP/1.1\" 422 -\n127.0.0.1 - - [29/Sep/2026 14:19:21] \"PUT /api/plan HTTP/1.1\" 422 -\n127.0.0.1 - - [29/Sep/2026 14:19:21] \"PUT /api/plan HTTP/1.1\" 422 -\n127.0.0.1 - - [29/Sep/2026 14:19:21] \"PUT /api/plan HTTP/1.1\" 409 -"
+    },
+    {
+      "name": "image-generation",
+      "command": [
+        "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\.uv-cache\\builds-v0\\.tmpvPVGeE\\Scripts\\python.exe",
+        "tools/verify_product_v1_image_generation.py"
+      ],
+      "rc": 0,
+      "seconds": 10.8,
+      "log_path": "_working/amz-listing-kit-product-demo/regression-20260929-141908-pass1/image-generation.log",
+      "log_sha256": "7cafbb65b6b7c38a7a7bfb67de1bbf1c330b459b0393fd678e3b196df849d87d",
+      "tail": "test_start_and_candidate_routes_serve_real_bytes (__main__.GenerationHTTPChecks.test_start_and_candidate_routes_serve_real_bytes) ... 127.0.0.1 - - [29/Sep/2026 14:19:24] \"POST /api/generation/start HTTP/1.1\" 202 -\n127.0.0.1 - - [29/Sep/2026 14:19:24] \"GET /api/candidates/c5d047949b5926e39885bd075d4bae138ad5572baebd5fff61daf10f19c778ea?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-product-v1-image-generation-5bbw96mv%5Cworkspace HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:19:24] \"GET /api/candidates/c5d047949b5926e39885bd075d4bae138ad5572baebd5fff61daf10f19c778e0?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-product-v1-image-generation-5bbw96mv%5Cworkspace HTTP/1.1\" 404 -\n127.0.0.1 - - [29/Sep/2026 14:19:24] \"POST /api/generation/reconcile HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:19:24] \"POST /api/attempts/act_07c8bfb1e6664cc0794d2421f77b6a95067c5f1d/reconcile HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:19:24] \"POST /api/attempts/act_0000000000000000000000000000000000000000/reconcile HTTP/1.1\" 404 -\nok\ntest_download_unknown_keeps_task_id_and_completes_on_later_reconcile (__main__.WholeSetGenerationChecks.test_download_unknown_keeps_task_id_and_completes_on_later_reconcile) ... ok\ntest_full_set_submits_once_materializes_candidates_and_survives_reopen (__main__.WholeSetGenerationChecks.test_full_set_submits_once_materializes_candidates_and_survives_reopen) ... ok\ntest_rejected_submission_is_terminal_and_a_new_set_preserves_old_candidates (__main__.WholeSetGenerationChecks.test_rejected_submission_is_terminal_and_a_new_set_preserves_old_candidates) ... ok\ntest_unknown_is_reconciled_by_original_task_id_without_resubmitting (__main__.WholeSetGenerationChecks.test_unknown_is_reconciled_by_original_task_id_without_resubmitting) ... ok\n\n----------------------------------------------------------------------\nRan 5 tests in 10.357s\n\nOK"
+    },
+    {
+      "name": "generation-isolation",
+      "command": [
+        "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\.uv-cache\\builds-v0\\.tmpvPVGeE\\Scripts\\python.exe",
+        "tools/verify_product_v1_generation_isolation.py"
+      ],
+      "rc": 0,
+      "seconds": 2.6,
+      "log_path": "_working/amz-listing-kit-product-demo/regression-20260929-141908-pass1/generation-isolation.log",
+      "log_sha256": "5d9406e1ea6c407baa570bd3d223af8fa76668ef7a7f4ea2d8da43b2a3bcd5ec",
+      "tail": "ok   fixture has a multi-shot set\nok   target title is unique\nok   one blocked shot no longer aborts the whole set\nok   the blocked shot is reported with its error code\nok   every ready shot submitted and materialized a candidate\nok   the blocked shot holds no candidate\nok   missing etag answers 428 REVISION_REQUIRED\nok   stale revision answers 409 REVISION_CONFLICT\nok   unknown shot answers 404 SHOT_NOT_FOUND\nok   the blocked shot recovers through per-shot retry\nok   recovered shot now has a prompt and one candidate\nok   recovery submitted exactly one provider task\nok   recovery did not resubmit the ready shots\n13 passed; 0 failed"
+    },
+    {
+      "name": "suite-command",
+      "command": [
+        "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\.uv-cache\\builds-v0\\.tmpvPVGeE\\Scripts\\python.exe",
+        "tools/verify_product_v1_suite_command.py"
+      ],
+      "rc": 0,
+      "seconds": 7.2,
+      "log_path": "_working/amz-listing-kit-product-demo/regression-20260929-141908-pass1/suite-command.log",
+      "log_sha256": "a8c8255ba6aca553920aca3a3cea667b929ad07334cca1df421cdde74e53e5bc",
+      "tail": "ok   prepare persists one product brief\nok   prepare persists a dynamic plan\nok   prepare compiles one prompt per shot\nok   prepare never calls the image provider\nok   prepare creates no generation batch\nok   prepare keeps the workspace out of GENERATING\nok   prepare is idempotent for an already compiled suite\nok   one command creates exactly one batch\nok   the batch belongs to this command and its plan\nok   the batch covers every shot\nok   every shot got exactly one paid submission\nok   batch attempts resolve to the recorded attempts\nok   a completed batch reports COMPLETED\nok   candidates are materialized for review\nok   a repeated action id replays the batch\nok   a repeated action id submits nothing new\nok   a repeated action id keeps one batch\nok   an unresolved attempt refuses a new batch\nok   the refused command submitted nothing\nok   the refused command creates no second batch\nok   a semantic failure surfaces the provider error\nok   a semantic failure submits zero images\nok   a semantic failure creates no batch\nok   an invalid action id is a request error\nok   the command persists the form it received\nok   the same command compiled brief, plan, and prompt\nok   the same command created exactly one batch\nok   the inline command paid for one image per shot\nok   a repeated form adds no input version and no second batch\n{\"checks\": 29, \"failed\": 0}\nsuite command checks passed: 29"
+    },
+    {
+      "name": "http",
+      "command": [
+        "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\.uv-cache\\builds-v0\\.tmpvPVGeE\\Scripts\\python.exe",
+        "tools/verify_product_v1_http.py"
+      ],
+      "rc": 0,
+      "seconds": 2.1,
+      "log_path": "_working/amz-listing-kit-product-demo/regression-20260929-141908-pass1/http.log",
+      "log_sha256": "63a581baa9a612794df0d9428c343c59dbee40f72674615bad945d8673cd8fdc",
+      "tail": "test_bad_image_is_rejected_without_workspace_mutation (__main__.ProductV1HTTPChecks.test_bad_image_is_rejected_without_workspace_mutation) ... 127.0.0.1 - - [29/Sep/2026 14:19:43] \"POST /api/workspaces HTTP/1.1\" 201 -\n127.0.0.1 - - [29/Sep/2026 14:19:43] \"PUT /api/intake HTTP/1.1\" 422 -\n127.0.0.1 - - [29/Sep/2026 14:19:43] \"GET /api/workspace?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-product-v1-http-owiaba_o%5Cbad-image HTTP/1.1\" 200 -\nok\ntest_competing_saves_reject_the_stale_revision (__main__.ProductV1HTTPChecks.test_competing_saves_reject_the_stale_revision) ... 127.0.0.1 - - [29/Sep/2026 14:19:43] \"POST /api/workspaces HTTP/1.1\" 201 -\n127.0.0.1 - - [29/Sep/2026 14:19:43] \"PUT /api/intake HTTP/1.1\" 409 -\n127.0.0.1 - - [29/Sep/2026 14:19:43] \"PUT /api/intake HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:19:43] \"GET /api/workspace?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-product-v1-http-owiaba_o%5Cconcurrent-saves HTTP/1.1\" 200 -\nok\ntest_create_empty_workspace_and_list_recent (__main__.ProductV1HTTPChecks.test_create_empty_workspace_and_list_recent) ... 127.0.0.1 - - [29/Sep/2026 14:19:43] \"POST /api/workspaces HTTP/1.1\" 201 -\n127.0.0.1 - - [29/Sep/2026 14:19:43] \"GET /api/workspaces/recent HTTP/1.1\" 200 -\nok\ntest_file_path_is_rejected_as_workspace_directory (__main__.ProductV1HTTPChecks.test_file_path_is_rejected_as_workspace_directory) ... 127.0.0.1 - - [29/Sep/2026 14:19:43] \"POST /api/workspaces HTTP/1.1\" 422 -\nok\ntest_multipart_save_reopen_and_reference_preview (__main__.ProductV1HTTPChecks.test_multipart_save_reopen_and_reference_preview) ... 127.0.0.1 - - [29/Sep/2026 14:19:43] \"POST /api/workspaces HTTP/1.1\" 201 -\n127.0.0.1 - - [29/Sep/2026 14:19:43] \"PUT /api/intake HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:19:43] \"POST /api/workspaces/open HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:19:43] \"GET /api/workspace?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-product-v1-http-owiaba_o%5Csave-and-reopen HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:19:44] \"GET /api/workspace/references/45d239d0c27bd6cc8c98b5239dc5535815df89cca50f2b8b59bbec99c6ee1da4?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-product-v1-http-owiaba_o%5Csave-and-reopen HTTP/1.1\" 200 -\nok\ntest_ordered_reference_set_supports_reorder_insert_and_remove (__main__.ProductV1HTTPChecks.test_ordered_reference_set_supports_reorder_insert_and_remove) ... 127.0.0.1 - - [29/Sep/2026 14:19:44] \"POST /api/workspaces HTTP/1.1\" 201 -\n127.0.0.1 - - [29/Sep/2026 14:19:44] \"PUT /api/intake HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:19:44] \"PUT /api/intake HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:19:44] \"PUT /api/intake HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:19:44] \"PUT /api/intake HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:19:44] \"PUT /api/intake HTTP/1.1\" 422 -\n127.0.0.1 - - [29/Sep/2026 14:19:44] \"GET /api/workspace?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-product-v1-http-owiaba_o%5Cordered-references HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:19:44] \"PUT /api/intake HTTP/1.1\" 422 -\n127.0.0.1 - - [29/Sep/2026 14:19:44] \"GET /api/workspace?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-product-v1-http-owiaba_o%5Cordered-references HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:19:44] \"PUT /api/intake HTTP/1.1\" 422 -\n127.0.0.1 - - [29/Sep/2026 14:19:44] \"GET /api/workspace?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-product-v1-http-owiaba_o%5Cordered-references HTTP/1.1\" 200 -\nok\n\n----------------------------------------------------------------------\nRan 6 tests in 1.655s\n\nOK"
+    },
+    {
+      "name": "selection-rework-export",
+      "command": [
+        "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\.uv-cache\\builds-v0\\.tmpvPVGeE\\Scripts\\python.exe",
+        "tools/verify_product_v1_selection_rework_export.py"
+      ],
+      "rc": 0,
+      "seconds": 23.0,
+      "log_path": "_working/amz-listing-kit-product-demo/regression-20260929-141908-pass1/selection-rework-export.log",
+      "log_sha256": "4cececab1668546afbc9de3f56e09984da3c0f72e29c9d05c91cce8427866570",
+      "tail": "test_export_route_streams_file_and_reveal_opens_folder (__main__.ExportHTTPChecks.test_export_route_streams_file_and_reveal_opens_folder) ... 127.0.0.1 - - [29/Sep/2026 14:19:47] \"GET /api/exports/export_ada5a2abb37b401b/files/0?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-export-http-pdxevwqq%5Cworkspace HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:19:47] \"POST /api/export/reveal HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:19:47] \"GET /api/exports/export_ada5a2abb37b401b/files/9?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-export-http-pdxevwqq%5Cworkspace HTTP/1.1\" 404 -\nok\ntest_export_refuses_tampered_candidate_file (__main__.SelectionChecks.test_export_refuses_tampered_candidate_file) ... ok\ntest_export_refuses_when_hard_check_fails (__main__.SelectionChecks.test_export_refuses_when_hard_check_fails) ... ok\ntest_export_requires_selection_and_writes_deliverable (__main__.SelectionChecks.test_export_requires_selection_and_writes_deliverable) ... ok\ntest_prompt_save_marks_target_shot_stale (__main__.SelectionChecks.test_prompt_save_marks_target_shot_stale) ... ok\ntest_rework_only_touches_the_target_shot (__main__.SelectionChecks.test_rework_only_touches_the_target_shot) ... ok\ntest_selection_requires_every_shot_and_versions_are_immutable (__main__.SelectionChecks.test_selection_requires_every_shot_and_versions_are_immutable) ... ok\ntest_shot_selection_saves_incrementally_and_rejects_stale_etag (__main__.SelectionChecks.test_shot_selection_saves_incrementally_and_rejects_stale_etag) ... ok\ntest_two_phase_rework_preview_then_confirm_keeps_history (__main__.SelectionChecks.test_two_phase_rework_preview_then_confirm_keeps_history) ... ok\ntest_unconfirmed_submission_can_be_abandoned_then_resent (__main__.SelectionChecks.test_unconfirmed_submission_can_be_abandoned_then_resent) ... ok\n\n----------------------------------------------------------------------\nRan 10 tests in 22.555s\n\nOK"
+    },
+    {
+      "name": "delivery-checks",
+      "command": [
+        "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\.uv-cache\\builds-v0\\.tmpvPVGeE\\Scripts\\python.exe",
+        "tools/verify_product_v1_delivery_checks.py"
+      ],
+      "rc": 0,
+      "seconds": 14.7,
+      "log_path": "_working/amz-listing-kit-product-demo/regression-20260929-141908-pass1/delivery-checks.log",
+      "log_sha256": "3cd6768d0f012a9bad6c77826e979e0e41aa0d5c57c1f1188db2fc7e7a630067",
+      "tail": "test_clean_export_is_versioned_traceable_and_repeat_never_overwrites (__main__.DeliveryCheckTests.test_clean_export_is_versioned_traceable_and_repeat_never_overwrites) ... ok\ntest_hard_failure_blocks_preflight_and_export_without_writing (__main__.DeliveryCheckTests.test_hard_failure_blocks_preflight_and_export_without_writing) ... ok\ntest_http_routes_preflight_export_and_reveal (__main__.DeliveryCheckTests.test_http_routes_preflight_export_and_reveal) ... 127.0.0.1 - - [29/Sep/2026 14:20:14] \"POST /api/exports/preflight HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:15] \"POST /api/exports HTTP/1.1\" 201 -\n127.0.0.1 - - [29/Sep/2026 14:20:15] \"POST /api/export HTTP/1.1\" 201 -\n127.0.0.1 - - [29/Sep/2026 14:20:15] \"POST /api/exports/reveal HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:15] \"POST /api/exports/reveal HTTP/1.1\" 200 -\nok\ntest_preflight_blocks_a_workspace_without_a_plan (__main__.DeliveryCheckTests.test_preflight_blocks_a_workspace_without_a_plan) ... ok\ntest_preflight_is_read_only_and_reports_clean_state (__main__.DeliveryCheckTests.test_preflight_is_read_only_and_reports_clean_state) ... ok\ntest_preflight_lists_missing_shots_and_blocks_export (__main__.DeliveryCheckTests.test_preflight_lists_missing_shots_and_blocks_export) ... ok\ntest_wording_drift_requires_acknowledgment_and_is_recorded (__main__.DeliveryCheckTests.test_wording_drift_requires_acknowledgment_and_is_recorded) ... ok\n\n----------------------------------------------------------------------\nRan 7 tests in 14.231s\n\nOK"
+    },
+    {
+      "name": "conflict-guard",
+      "command": [
+        "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\.uv-cache\\builds-v0\\.tmpvPVGeE\\Scripts\\python.exe",
+        "tools/verify_product_v1_conflict_guard.py"
+      ],
+      "rc": 0,
+      "seconds": 2.4,
+      "log_path": "_working/amz-listing-kit-product-demo/regression-20260929-141908-pass1/conflict-guard.log",
+      "log_sha256": "cf6fb2157f0bc387383a28c069f67cd63dc028f1feef1639fcabe3b97249eb34",
+      "tail": "ok   conflicted wording is flagged and guarded\nok   clean brief has no guard\nok   user-authored wording does not trip the inferred-fact guard\nok   inferred wording absent from user text is still blocked\n4 passed; 0 failed"
+    },
+    {
+      "name": "entry-audit",
+      "command": [
+        "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\.uv-cache\\builds-v0\\.tmpvPVGeE\\Scripts\\python.exe",
+        "tools/verify_product_v1_entry_audit.py"
+      ],
+      "rc": 0,
+      "seconds": 1.0,
+      "log_path": "_working/amz-listing-kit-product-demo/regression-20260929-141908-pass1/entry-audit.log",
+      "log_sha256": "57388790584f718aeddd57eab09a5ad350df090998c3750a21924dafce99a5bc",
+      "tail": "{\n  \"stamp\": \"20260929-142025\",\n  \"source_hits\": {\n    \"index.html\": [],\n    \"product.js\": [],\n    \"styles.css\": [],\n    \"product_v1_server.py\": []\n  },\n  \"frontend_legacy_endpoint_calls\": [],\n  \"launcher_uses_formal_entry\": true,\n  \"served_mismatches\": [],\n  \"missing_screen_ids\": [],\n  \"external_offline_requests\": [],\n  \"failures\": [],\n  \"passed\": true\n}\n127.0.0.1 - - [29/Sep/2026 14:20:25] \"GET / HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:25] \"GET /product-assets/product.js HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:25] \"GET /product-assets/styles.css HTTP/1.1\" 200 -"
+    },
+    {
+      "name": "workspace-relocation",
+      "command": [
+        "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\.uv-cache\\builds-v0\\.tmpvPVGeE\\Scripts\\python.exe",
+        "tools/verify_product_v1_workspace_relocation.py"
+      ],
+      "rc": 0,
+      "seconds": 3.8,
+      "log_path": "_working/amz-listing-kit-product-demo/regression-20260929-141908-pass1/workspace-relocation.log",
+      "log_sha256": "b2cfd69590fc4fefc87ffbc233a61ad512b36d0d6527f1ea856a7d219e676eb1",
+      "tail": "{\n  \"ok\": true,\n  \"failures\": [],\n  \"report\": \"d4.12-relocation-20260929-142026.json\",\n  \"relocation_files\": {\n    \"before\": 27,\n    \"after\": 27,\n    \"missing\": [],\n    \"mismatched\": []\n  }\n}\n127.0.0.1 - - [29/Sep/2026 14:20:29] \"GET /api/workspace?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-product-v1-relocation-4a2x59sc%5Crestored-root%5Cworkspace HTTP/1.1\" 200 -"
+    },
+    {
+      "name": "ui",
+      "command": [
+        "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\.uv-cache\\builds-v0\\.tmpvPVGeE\\Scripts\\python.exe",
+        "tools/verify_product_v1_ui.py"
+      ],
+      "rc": 0,
+      "seconds": 16.6,
+      "log_path": "_working/amz-listing-kit-product-demo/regression-20260929-141908-pass1/ui.log",
+      "log_sha256": "a63b2e0934d2325db757aa5d6581019851154a194438aa36825702c11db2dc31",
+      "tail": "    ]\n  },\n  \"damaged_workspace_feedback\": {\n    \"message\": \"工作空间文件损坏或相互不一致；原文件未被改动。\",\n    \"remains_on_home\": true,\n    \"source_still_damaged\": true\n  },\n  \"external_requests\": [],\n  \"console_errors\": []\n}\nProduct V1 UI 纵向切片通过。\n127.0.0.1 - - [29/Sep/2026 14:20:31] \"GET / HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:31] \"GET /product-assets/styles.css HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:31] \"GET /product-assets/product.js HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:31] \"GET /api/workspaces/recent HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:31] \"POST /api/workspaces/select-folder HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:31] \"POST /api/workspaces HTTP/1.1\" 201 -\n127.0.0.1 - - [29/Sep/2026 14:20:31] \"GET /api/workspaces/recent HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:33] \"POST /api/plan/compile HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:33] \"GET /api/workspaces/recent HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:33] \"GET /api/workspace/references/d723d9501c7d7fab431639d795d1cf3a128ad1c2d6152f3fe1656e532b4cca6d?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-product-v1-ui-grrhznzo%5Cfirst-product HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:33] \"GET /api/workspace/references/9c16ccdfa7e63cdffc34f0830899ad8893302f970e36f0a8b5d8e39c385be53e?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-product-v1-ui-grrhznzo%5Cfirst-product HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:34] \"GET /api/workspace/references/d723d9501c7d7fab431639d795d1cf3a128ad1c2d6152f3fe1656e532b4cca6d?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-product-v1-ui-grrhznzo%5Cfirst-product HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:34] \"GET /api/workspace/references/9c16ccdfa7e63cdffc34f0830899ad8893302f970e36f0a8b5d8e39c385be53e?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-product-v1-ui-grrhznzo%5Cfirst-product HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:34] \"GET /api/workspace?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-product-v1-ui-grrhznzo%5Cfirst-product HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:34] \"PUT /api/product-brief HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:36] \"POST /api/plan/compile HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:36] \"GET /api/workspace?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-product-v1-ui-grrhznzo%5Cfirst-product HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:37] \"GET /api/workspace?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-product-v1-ui-grrhznzo%5Cfirst-product HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:37] \"PUT /api/prompt HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:38] \"GET /api/workspace?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-product-v1-ui-grrhznzo%5Cfirst-product HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:38] \"GET /api/workspace?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-product-v1-ui-grrhznzo%5Cfirst-product HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:38] \"PUT /api/plan HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:39] \"GET /api/workspace?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-product-v1-ui-grrhznzo%5Cfirst-product HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:39] \"GET /api/workspace?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-product-v1-ui-grrhznzo%5Cfirst-product HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:41] \"POST /api/generations HTTP/1.1\" 202 -\n127.0.0.1 - - [29/Sep/2026 14:20:41] \"GET /api/candidates/f0e4727271c71a8d27e2408c25d6d4bc64c481cf0141f10c122cd8e319e7dd25?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-product-v1-ui-grrhznzo%5Cfirst-product HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:41] \"GET /api/candidates/37c9519f4a6205a7341d61fa869e2657dfcb7e9e45bbabe0a0d1b746f2134596?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-product-v1-ui-grrhznzo%5Cfirst-product HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:42] \"GET /api/candidates/b313265b6c37b3acb28b85f675356efe4f775de17b38ce8b4d404617dec6d010?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-product-v1-ui-grrhznzo%5Cfirst-product HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:42] \"GET /api/candidates/37c9519f4a6205a7341d61fa869e2657dfcb7e9e45bbabe0a0d1b746f2134596?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-product-v1-ui-grrhznzo%5Cfirst-product HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:43] \"POST /api/generations HTTP/1.1\" 202 -\n127.0.0.1 - - [29/Sep/2026 14:20:43] \"GET /api/candidates/002d689cc5092abc2b91a1986a151c68d2928ff434f3ab4b8c0e765d472e5755?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-product-v1-ui-grrhznzo%5Cfirst-product HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:43] \"GET /api/candidates/f2433976bafd41c326fc1f83bb4029918241bcfa5031a52c1f1e8d44021192a8?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-product-v1-ui-grrhznzo%5Cfirst-product HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:43] \"POST /api/generation/reconcile HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:43] \"GET /api/candidates/58b9c0766b8ed9a5abcfa87405fca20dcefdc05202be913250802a82b4c40256?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-product-v1-ui-grrhznzo%5Cfirst-product HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:44] \"GET /api/workspace?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-product-v1-ui-grrhznzo%5Cfirst-product HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:44] \"GET /api/workspaces/recent HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:44] \"GET / HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:44] \"GET /product-assets/styles.css HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:44] \"GET /product-assets/product.js HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:44] \"GET /api/workspaces/recent HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:45] \"POST /api/workspaces/open HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:45] \"GET /api/workspaces/recent HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:45] \"GET /api/workspace/references/d723d9501c7d7fab431639d795d1cf3a128ad1c2d6152f3fe1656e532b4cca6d?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-product-v1-ui-grrhznzo%5Cfirst-product HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:45] \"GET /api/candidates/58b9c0766b8ed9a5abcfa87405fca20dcefdc05202be913250802a82b4c40256?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-product-v1-ui-grrhznzo%5Cfirst-product HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:45] \"GET /api/workspace/references/9c16ccdfa7e63cdffc34f0830899ad8893302f970e36f0a8b5d8e39c385be53e?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-product-v1-ui-grrhznzo%5Cfirst-product HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:45] \"GET /api/workspace?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-product-v1-ui-grrhznzo%5Cfirst-product HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:45] \"GET /api/workspace?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-product-v1-ui-grrhznzo%5Cfirst-product HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:45] \"GET /api/workspaces/recent HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:46] \"POST /api/workspaces/open HTTP/1.1\" 422 -"
+    },
+    {
+      "name": "ui-shot-retry",
+      "command": [
+        "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\.uv-cache\\builds-v0\\.tmpvPVGeE\\Scripts\\python.exe",
+        "tools/verify_product_v1_ui_shot_retry.py"
+      ],
+      "rc": 0,
+      "seconds": 4.6,
+      "log_path": "_working/amz-listing-kit-product-demo/regression-20260929-141908-pass1/ui-shot-retry.log",
+      "log_sha256": "8e758589e4c8c5c60901267d993fdd64981a2bc14e18bdc1597e9c932a67606c",
+      "tail": "{\n  \"ok\": true,\n  \"failures\": [],\n  \"evidence\": \"ui-shot-retry-2026-09-29.json\"\n}\n127.0.0.1 - - [29/Sep/2026 14:20:49] \"GET / HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:49] \"GET /product-assets/styles.css HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:49] \"GET /product-assets/product.js HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:49] \"GET /api/workspaces/recent HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:49] \"GET / HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:49] \"GET /product-assets/styles.css HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:49] \"GET /product-assets/product.js HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:49] \"GET /api/workspaces/recent HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:49] \"GET /api/workspace?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Ctmpg_1f4f2w%5Cworkspace HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:49] \"GET /api/workspace/references/d723d9501c7d7fab431639d795d1cf3a128ad1c2d6152f3fe1656e532b4cca6d?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Ctmpg_1f4f2w%5Cworkspace HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:49] \"GET /api/candidates/37c9519f4a6205a7341d61fa869e2657dfcb7e9e45bbabe0a0d1b746f2134596?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Ctmpg_1f4f2w%5Cworkspace HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:49] \"GET /api/candidates/f0e4727271c71a8d27e2408c25d6d4bc64c481cf0141f10c122cd8e319e7dd25?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Ctmpg_1f4f2w%5Cworkspace HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:49] \"GET /api/workspace?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Ctmpg_1f4f2w%5Cworkspace HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:49] \"GET /api/workspace?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Ctmpg_1f4f2w%5Cworkspace HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:50] \"POST /api/generation/rework HTTP/1.1\" 202 -\n127.0.0.1 - - [29/Sep/2026 14:20:50] \"GET /api/candidates/504034e9da532cc22b0db917d9d63b389d7591cd9de442ffe85fb14bef437b37?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Ctmpg_1f4f2w%5Cworkspace HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:50] \"GET /api/workspace?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Ctmpg_1f4f2w%5Cworkspace HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:50] \"GET /api/workspace?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Ctmpg_1f4f2w%5Cworkspace HTTP/1.1\" 200 -"
+    },
+    {
+      "name": "ui-rework",
+      "command": [
+        "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\.uv-cache\\builds-v0\\.tmpvPVGeE\\Scripts\\python.exe",
+        "tools/verify_product_v1_ui_rework.py"
+      ],
+      "rc": 0,
+      "seconds": 6.1,
+      "log_path": "_working/amz-listing-kit-product-demo/regression-20260929-141908-pass1/ui-rework.log",
+      "log_sha256": "6396c1becebaa8307aa6ffd10194182b004207df351b997328cf658c0844df3c",
+      "tail": "      \"非目标 Shot\"\n    ],\n    \"change\": [\n      \"商品不像原图\",\n      \"按用户指出的问题调整这一张的构图与环境\"\n    ],\n    \"result\": \"只重做当前这一张；保持商品与整组风格不变。\",\n    \"diff_rows\": 1\n  },\n  \"after\": {\n    \"attempts\": {\n      \"shot_abd1c9e514034729\": 1,\n      \"shot_a06008d344be4080\": 2,\n      \"shot_c40d6632069b4282\": 1\n    },\n    \"candidates\": {\n      \"shot_abd1c9e514034729\": [\n        \"c5d047949b5926e39885bd075d4bae138ad5572baebd5fff61daf10f19c778ea\"\n      ],\n      \"shot_a06008d344be4080\": [\n        \"5d17e840db472f1773a79ef3d9b408657c8e10268aaa43994963d816555c53ce\",\n        \"56bb1532d2cfde2158fa17ad15e5d83f92c1efc6106e3c9eb5931475c56e9ab1\"\n      ],\n      \"shot_c40d6632069b4282\": [\n        \"eadfef8e3e4ae7bb376937e628224118fdf36e2843caa4d83451acd6e4ac0541\"\n      ]\n    }\n  },\n  \"prompt_version\": 2,\n  \"prompt_edit_mode\": \"rework\",\n  \"prompt_edit_reason\": \"商品占比放大，保持商品轮廓与颜色不变\",\n  \"selection_after_confirm\": \"2/3 张已选\",\n  \"rendered_candidates\": 2,\n  \"candidate_labels\": [\n    \"历史候选\",\n    \"本轮候选\"\n  ],\n  \"selection_after_readopt\": \"3/3 张已选\",\n  \"external_requests\": [],\n  \"failures\": [],\n  \"passed\": true\n}\n127.0.0.1 - - [29/Sep/2026 14:20:54] \"GET / HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:54] \"GET /product-assets/product.js HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:54] \"GET /product-assets/styles.css HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:54] \"GET /api/workspaces/recent HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:54] \"POST /api/workspaces/open HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:54] \"GET / HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:54] \"GET /product-assets/styles.css HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:54] \"GET /product-assets/product.js HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:54] \"GET /api/workspaces/recent HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:54] \"GET /api/workspace?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-product-v1-image-generation-m9xezw_s%5Cworkspace HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:54] \"GET /api/workspace/references/a38857e40d66f7bc38e85dfab588e57292aaf98733a0d0c6c77941e02854ad4b?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-product-v1-image-generation-m9xezw_s%5Cworkspace HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:54] \"GET /api/candidates/c5d047949b5926e39885bd075d4bae138ad5572baebd5fff61daf10f19c778ea?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-product-v1-image-generation-m9xezw_s%5Cworkspace HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:55] \"GET /api/candidates/5d17e840db472f1773a79ef3d9b408657c8e10268aaa43994963d816555c53ce?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-product-v1-image-generation-m9xezw_s%5Cworkspace HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:55] \"GET /api/candidates/eadfef8e3e4ae7bb376937e628224118fdf36e2843caa4d83451acd6e4ac0541?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-product-v1-image-generation-m9xezw_s%5Cworkspace HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:55] \"POST /api/shots/shot_a06008d344be4080/rework-preview HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:56] \"POST /api/shots/shot_a06008d344be4080/rework HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:56] \"GET /api/candidates/56bb1532d2cfde2158fa17ad15e5d83f92c1efc6106e3c9eb5931475c56e9ab1?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-product-v1-image-generation-m9xezw_s%5Cworkspace HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:56] \"PUT /api/shots/shot_a06008d344be4080/selection HTTP/1.1\" 200 -"
+    },
+    {
+      "name": "suite-command-ui",
+      "command": [
+        "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\.uv-cache\\builds-v0\\.tmpvPVGeE\\Scripts\\python.exe",
+        "tools/verify_product_v1_suite_command_ui.py"
+      ],
+      "rc": 0,
+      "seconds": 8.2,
+      "log_path": "_working/amz-listing-kit-product-demo/regression-20260929-141908-pass1/suite-command-ui.log",
+      "log_sha256": "d9305f9e0b7a5aeb058c621e2760e760bbf8eb0c0c92d6a65e9761b7197014f0",
+      "tail": "        \"compile_posts\": 1\n      }\n    },\n    {\n      \"id\": \"preview-no-generation-post\",\n      \"ok\": true,\n      \"detail\": {\n        \"generations\": 0\n      }\n    },\n    {\n      \"id\": \"preview-no-image-submission\",\n      \"ok\": true,\n      \"detail\": {\n        \"submissions\": 0\n      }\n    },\n    {\n      \"id\": \"preview-persisted-everything\",\n      \"ok\": true,\n      \"detail\": {\n        \"shots\": 3\n      }\n    }\n  ],\n  \"failures\": [],\n  \"passed\": true,\n  \"workspaces\": \"temp (deleted)\"\n}\nD4.7 一键整套命令的浏览器级证据通过。\n127.0.0.1 - - [29/Sep/2026 14:20:58] \"GET / HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:58] \"GET /product-assets/styles.css HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:58] \"GET /product-assets/product.js HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:58] \"GET /api/workspaces/recent HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:58] \"POST /api/workspaces/select-folder HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:20:59] \"POST /api/workspaces HTTP/1.1\" 201 -\n127.0.0.1 - - [29/Sep/2026 14:20:59] \"GET /api/workspaces/recent HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:01] \"POST /api/generations HTTP/1.1\" 202 -\n127.0.0.1 - - [29/Sep/2026 14:21:01] \"GET /api/workspaces/recent HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:01] \"GET /api/workspace/references/d723d9501c7d7fab431639d795d1cf3a128ad1c2d6152f3fe1656e532b4cca6d?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-d47-suite-ui-jtlipydn%5Cdirect-suite HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:01] \"GET /api/workspace/references/9c16ccdfa7e63cdffc34f0830899ad8893302f970e36f0a8b5d8e39c385be53e?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-d47-suite-ui-jtlipydn%5Cdirect-suite HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:01] \"GET /api/candidates/37c9519f4a6205a7341d61fa869e2657dfcb7e9e45bbabe0a0d1b746f2134596?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-d47-suite-ui-jtlipydn%5Cdirect-suite HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:01] \"GET /api/workspace?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-d47-suite-ui-jtlipydn%5Cdirect-suite HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:01] \"GET / HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:01] \"GET /product-assets/styles.css HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:01] \"GET /product-assets/product.js HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:01] \"GET /api/workspaces/recent HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:02] \"GET /api/workspace?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-d47-suite-ui-jtlipydn%5Cdirect-suite HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:02] \"GET /api/workspace/references/d723d9501c7d7fab431639d795d1cf3a128ad1c2d6152f3fe1656e532b4cca6d?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-d47-suite-ui-jtlipydn%5Cdirect-suite HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:02] \"GET /api/workspace/references/9c16ccdfa7e63cdffc34f0830899ad8893302f970e36f0a8b5d8e39c385be53e?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-d47-suite-ui-jtlipydn%5Cdirect-suite HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:02] \"GET /api/candidates/37c9519f4a6205a7341d61fa869e2657dfcb7e9e45bbabe0a0d1b746f2134596?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-d47-suite-ui-jtlipydn%5Cdirect-suite HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:02] \"GET /api/workspaces/recent HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:02] \"POST /api/workspaces/select-folder HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:02] \"POST /api/workspaces HTTP/1.1\" 201 -\n127.0.0.1 - - [29/Sep/2026 14:21:02] \"GET /api/workspaces/recent HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:04] \"POST /api/plan/compile HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:04] \"GET /api/workspaces/recent HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:04] \"GET /api/workspace/references/d723d9501c7d7fab431639d795d1cf3a128ad1c2d6152f3fe1656e532b4cca6d?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-d47-suite-ui-jtlipydn%5Cpreview-plan HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:04] \"GET /api/workspace/references/9c16ccdfa7e63cdffc34f0830899ad8893302f970e36f0a8b5d8e39c385be53e?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-d47-suite-ui-jtlipydn%5Cpreview-plan HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:04] \"GET /api/workspace?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-d47-suite-ui-jtlipydn%5Cpreview-plan HTTP/1.1\" 200 -"
+    },
+    {
+      "name": "generation-recovery-ui",
+      "command": [
+        "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\.uv-cache\\builds-v0\\.tmpvPVGeE\\Scripts\\python.exe",
+        "tools/verify_product_v1_generation_recovery_ui.py"
+      ],
+      "rc": 0,
+      "seconds": 18.0,
+      "log_path": "_working/amz-listing-kit-product-demo/regression-20260929-141908-pass1/generation-recovery-ui.log",
+      "log_sha256": "9f5561cee6d2d3384e17dc884ad07dbbcadaeb48ac75d7ad4bc87ac02bc3445a",
+      "tail": "  File \"D:\\programfile64\\uv\\python\\cpython-3.13.11-windows-x86_64-none\\Lib\\socketserver.py\", line 697, in process_request_thread\n    self.finish_request(request, client_address)\n    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\programfile64\\uv\\python\\cpython-3.13.11-windows-x86_64-none\\Lib\\socketserver.py\", line 362, in finish_request\n    self.RequestHandlerClass(request, client_address, self)\n    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\programfile64\\uv\\python\\cpython-3.13.11-windows-x86_64-none\\Lib\\socketserver.py\", line 766, in __init__\n    self.handle()\n    ~~~~~~~~~~~^^\n  File \"D:\\programfile64\\uv\\python\\cpython-3.13.11-windows-x86_64-none\\Lib\\http\\server.py\", line 447, in handle\n    self.handle_one_request()\n    ~~~~~~~~~~~~~~~~~~~~~~~^^\n  File \"D:\\programfile64\\uv\\python\\cpython-3.13.11-windows-x86_64-none\\Lib\\http\\server.py\", line 435, in handle_one_request\n    method()\n    ~~~~~~^^\n  File \"E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\app\\product_v1_server.py\", line 729, in do_GET\n    self._send_bytes(200, content, media_type,\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^\n                     cache=\"private, max-age=31536000, immutable\")\n                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\app\\product_v1_server.py\", line 1275, in _send_bytes\n    self.wfile.write(payload)\n    ~~~~~~~~~~~~~~~~^^^^^^^^^\n  File \"D:\\programfile64\\uv\\python\\cpython-3.13.11-windows-x86_64-none\\Lib\\socketserver.py\", line 845, in write\n    self._sock.sendall(b)\n    ~~~~~~~~~~~~~~~~~~^^^\nConnectionAbortedError: [WinError 10053] 你的主机中的软件中止了一个已建立的连接。\n----------------------------------------\n127.0.0.1 - - [29/Sep/2026 14:21:22] \"GET /api/workspace/references/d723d9501c7d7fab431639d795d1cf3a128ad1c2d6152f3fe1656e532b4cca6d?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-d48-recovery-ui-82aijks1%5Crecovery-workspace HTTP/1.1\" 200 -\n----------------------------------------\nException occurred during processing of request from ('127.0.0.1', 30799)\nTraceback (most recent call last):\n  File \"D:\\programfile64\\uv\\python\\cpython-3.13.11-windows-x86_64-none\\Lib\\socketserver.py\", line 697, in process_request_thread\n    self.finish_request(request, client_address)\n    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\programfile64\\uv\\python\\cpython-3.13.11-windows-x86_64-none\\Lib\\socketserver.py\", line 362, in finish_request\n    self.RequestHandlerClass(request, client_address, self)\n    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\programfile64\\uv\\python\\cpython-3.13.11-windows-x86_64-none\\Lib\\socketserver.py\", line 766, in __init__\n    self.handle()\n    ~~~~~~~~~~~^^\n  File \"D:\\programfile64\\uv\\python\\cpython-3.13.11-windows-x86_64-none\\Lib\\http\\server.py\", line 447, in handle\n    self.handle_one_request()\n    ~~~~~~~~~~~~~~~~~~~~~~~^^\n  File \"D:\\programfile64\\uv\\python\\cpython-3.13.11-windows-x86_64-none\\Lib\\http\\server.py\", line 435, in handle_one_request\n    method()\n    ~~~~~~^^\n  File \"E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\app\\product_v1_server.py\", line 729, in do_GET\n    self._send_bytes(200, content, media_type,\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^\n                     cache=\"private, max-age=31536000, immutable\")\n                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\app\\product_v1_server.py\", line 1275, in _send_bytes\n    self.wfile.write(payload)\n    ~~~~~~~~~~~~~~~~^^^^^^^^^\n  File \"D:\\programfile64\\uv\\python\\cpython-3.13.11-windows-x86_64-none\\Lib\\socketserver.py\", line 845, in write\n    self._sock.sendall(b)\n    ~~~~~~~~~~~~~~~~~~^^^\nConnectionAbortedError: [WinError 10053] 你的主机中的软件中止了一个已建立的连接。\n----------------------------------------"
+    },
+    {
+      "name": "review-workbench-ui",
+      "command": [
+        "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\.uv-cache\\builds-v0\\.tmpvPVGeE\\Scripts\\python.exe",
+        "tools/verify_product_v1_review_workbench_ui.py"
+      ],
+      "rc": 0,
+      "seconds": 9.3,
+      "log_path": "_working/amz-listing-kit-product-demo/regression-20260929-141908-pass1/review-workbench-ui.log",
+      "log_sha256": "8ca330580e6895ef9eddba4cbc55ca116ae116ec7ebde009540c7c096373923e",
+      "tail": "      \"ok\": true,\n      \"detail\": null\n    },\n    {\n      \"id\": \"selection-write-migration\",\n      \"ok\": true,\n      \"detail\": {\n        \"writes\": 3,\n        \"methods\": [\n          \"PUT\"\n        ]\n      }\n    }\n  ],\n  \"failures\": [],\n  \"passed\": true,\n  \"workspace\": \"temp (deleted)\"\n}\nD4.9 图片优先审核工作台的浏览器证据通过。\n127.0.0.1 - - [29/Sep/2026 14:21:24] \"GET / HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:24] \"GET /product-assets/styles.css HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:24] \"GET /product-assets/product.js HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:24] \"GET /api/workspaces/recent HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:25] \"POST /api/workspaces/select-folder HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:25] \"POST /api/workspaces HTTP/1.1\" 201 -\n127.0.0.1 - - [29/Sep/2026 14:21:25] \"GET /api/workspaces/recent HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:27] \"POST /api/generations HTTP/1.1\" 202 -\n127.0.0.1 - - [29/Sep/2026 14:21:27] \"GET /api/workspaces/recent HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:27] \"GET /api/workspace/references/9c16ccdfa7e63cdffc34f0830899ad8893302f970e36f0a8b5d8e39c385be53e?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-d49-review-ui-2hdhaw7b%5Creview-workspace HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:27] \"GET /api/workspace/references/d723d9501c7d7fab431639d795d1cf3a128ad1c2d6152f3fe1656e532b4cca6d?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-d49-review-ui-2hdhaw7b%5Creview-workspace HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:27] \"GET /api/candidates/37c9519f4a6205a7341d61fa869e2657dfcb7e9e45bbabe0a0d1b746f2134596?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-d49-review-ui-2hdhaw7b%5Creview-workspace HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:27] \"GET /api/workspace?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-d49-review-ui-2hdhaw7b%5Creview-workspace HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:27] \"GET /api/candidates/f0e4727271c71a8d27e2408c25d6d4bc64c481cf0141f10c122cd8e319e7dd25?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-d49-review-ui-2hdhaw7b%5Creview-workspace HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:27] \"GET /api/candidates/b313265b6c37b3acb28b85f675356efe4f775de17b38ce8b4d404617dec6d010?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-d49-review-ui-2hdhaw7b%5Creview-workspace HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:28] \"POST /api/shots/shot_9e38605d9e53490f/rework-preview HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:28] \"POST /api/shots/shot_9e38605d9e53490f/rework HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:28] \"GET /api/candidates/a9049b0abd76d949d10408920c01c4ce90a46ee78c6f537011a577376823f432?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-d49-review-ui-2hdhaw7b%5Creview-workspace HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:29] \"PUT /api/shots/shot_422b0724533343d2/selection HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:29] \"PUT /api/shots/shot_1eef1644ffdb48a6/selection HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:29] \"PUT /api/shots/shot_9e38605d9e53490f/selection HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:30] \"GET /api/workspace?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-d49-review-ui-2hdhaw7b%5Creview-workspace HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:30] \"GET / HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:30] \"GET /product-assets/styles.css HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:30] \"GET /product-assets/product.js HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:30] \"GET /api/workspaces/recent HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:30] \"GET /api/workspace?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-d49-review-ui-2hdhaw7b%5Creview-workspace HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:31] \"GET /api/workspace?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-d49-review-ui-2hdhaw7b%5Creview-workspace HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:31] \"GET / HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:31] \"GET /product-assets/styles.css HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:31] \"GET /product-assets/product.js HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:31] \"GET /api/workspaces/recent HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:31] \"GET /api/workspace?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-d49-review-ui-2hdhaw7b%5Creview-workspace HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:31] \"GET /api/workspace/references/d723d9501c7d7fab431639d795d1cf3a128ad1c2d6152f3fe1656e532b4cca6d?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-d49-review-ui-2hdhaw7b%5Creview-workspace HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:31] \"GET /api/workspace/references/9c16ccdfa7e63cdffc34f0830899ad8893302f970e36f0a8b5d8e39c385be53e?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-d49-review-ui-2hdhaw7b%5Creview-workspace HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:31] \"GET /api/candidates/37c9519f4a6205a7341d61fa869e2657dfcb7e9e45bbabe0a0d1b746f2134596?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-d49-review-ui-2hdhaw7b%5Creview-workspace HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:31] \"GET /api/candidates/a9049b0abd76d949d10408920c01c4ce90a46ee78c6f537011a577376823f432?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-d49-review-ui-2hdhaw7b%5Creview-workspace HTTP/1.1\" 404 -\n127.0.0.1 - - [29/Sep/2026 14:21:31] \"GET /api/candidates/b313265b6c37b3acb28b85f675356efe4f775de17b38ce8b4d404617dec6d010?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-d49-review-ui-2hdhaw7b%5Creview-workspace HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:31] \"GET /api/candidates/f0e4727271c71a8d27e2408c25d6d4bc64c481cf0141f10c122cd8e319e7dd25?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-d49-review-ui-2hdhaw7b%5Creview-workspace HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:32] \"GET /api/workspace?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-d49-review-ui-2hdhaw7b%5Creview-workspace HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:32] \"GET /api/candidates/a9049b0abd76d949d10408920c01c4ce90a46ee78c6f537011a577376823f432?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-d49-review-ui-2hdhaw7b%5Creview-workspace HTTP/1.1\" 404 -"
+    },
+    {
+      "name": "delivery-ui",
+      "command": [
+        "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\.uv-cache\\builds-v0\\.tmpvPVGeE\\Scripts\\python.exe",
+        "tools/verify_product_v1_delivery_ui.py"
+      ],
+      "rc": 0,
+      "seconds": 6.5,
+      "log_path": "_working/amz-listing-kit-product-demo/regression-20260929-141908-pass1/delivery-ui.log",
+      "log_sha256": "3a58c03ff5f2c783b09ec38abe53cd834e254e2b0edb598f44e4dbc6d2d6a5c0",
+      "tail": "{\n  \"stamp\": \"20260929-142133\",\n  \"partial_selection\": 2,\n  \"blocked_message\": \"「日常通勤」还没有选定图片；采用一张候选后才能交付。\\n\\n返回审核\",\n  \"selected_items\": 3,\n  \"hard_checks\": \"全部确定性硬检查通过（1/1 项）。\",\n  \"delivery_390px\": {\n    \"scrollWidth\": 390,\n    \"innerWidth\": 390\n  },\n  \"delivery_zoom200\": [\n    {\n      \"selector\": \"#delivery-back\",\n      \"found\": true,\n      \"insideViewport\": true,\n      \"hittable\": true\n    },\n    {\n      \"selector\": \"#export-delivery\",\n      \"found\": true,\n      \"insideViewport\": true,\n      \"hittable\": true\n    }\n  ],\n  \"delivery_zoom200_overflow\": {\n    \"scrollWidth\": 720,\n    \"innerWidth\": 720\n  },\n  \"delivery_keyboard_focus_start\": \"focused\",\n  \"delivery_keyboard_reached_export\": true,\n  \"exports_after_export\": 1,\n  \"summary\": \"导出目录：exports/export_2016574009814d9a\\n\\nexports/export_2016574009814d9a/images/01_hero.png · sha256 c5d047949b59…\\nexports/export_2016574009814d9a/images/02_feature.png · sha256 5d17e840db47…\\nexports/export_2016574009814d9a/images/03_lifestyle.png · sha256 eadfef8e3e4a…\\namazon-us.main_image.size：通过 · 1600px 长边\\n\\n追溯清单：exports/export_2016574009814d9a/manifest.json\",\n  \"status\": \"已导出：图片组与追溯清单都在导出目录中。\",\n  \"revealed\": [\n    \"C:\\\\Users\\\\31368\\\\AppData\\\\Local\\\\Temp\\\\amz-product-v1-image-generation-e5s6fcoc\\\\workspace\\\\exports\\\\export_2016574009814d9a\"\n  ],\n  \"console_errors\": [],\n  \"external_requests\": [],\n  \"failures\": [],\n  \"passed\": true\n}\n127.0.0.1 - - [29/Sep/2026 14:21:35] \"GET / HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:35] \"GET /product-assets/styles.css HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:35] \"GET /product-assets/product.js HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:35] \"GET /api/workspaces/recent HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:35] \"GET / HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:35] \"GET /product-assets/styles.css HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:35] \"GET /product-assets/product.js HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:35] \"GET /api/workspaces/recent HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:36] \"GET /api/workspace?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-product-v1-image-generation-e5s6fcoc%5Cworkspace HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:36] \"GET /api/workspace/references/a38857e40d66f7bc38e85dfab588e57292aaf98733a0d0c6c77941e02854ad4b?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-product-v1-image-generation-e5s6fcoc%5Cworkspace HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:36] \"GET /api/candidates/c5d047949b5926e39885bd075d4bae138ad5572baebd5fff61daf10f19c778ea?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-product-v1-image-generation-e5s6fcoc%5Cworkspace HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:36] \"POST /api/exports/preflight HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:36] \"GET /api/candidates/5d17e840db472f1773a79ef3d9b408657c8e10268aaa43994963d816555c53ce?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-product-v1-image-generation-e5s6fcoc%5Cworkspace HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:36] \"GET /api/candidates/eadfef8e3e4ae7bb376937e628224118fdf36e2843caa4d83451acd6e4ac0541?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-product-v1-image-generation-e5s6fcoc%5Cworkspace HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:36] \"PUT /api/shots/shot_42df97d271c2471d/selection HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:36] \"POST /api/exports/preflight HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:38] \"POST /api/exports HTTP/1.1\" 201 -\n127.0.0.1 - - [29/Sep/2026 14:21:38] \"POST /api/exports/reveal HTTP/1.1\" 200 -"
+    },
+    {
+      "name": "usability-accessibility",
+      "command": [
+        "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\.uv-cache\\builds-v0\\.tmpvPVGeE\\Scripts\\python.exe",
+        "tools/verify_product_v1_usability_accessibility.py"
+      ],
+      "rc": 0,
+      "seconds": 13.5,
+      "log_path": "_working/amz-listing-kit-product-demo/regression-20260929-141908-pass1/usability-accessibility.log",
+      "log_sha256": "893dd2d5816c0d686154d2498b1d82a385e069853dbaf0c6297d3957269c92f7",
+      "tail": "  \"checks\": 18,\n  \"failed\": [],\n  \"report\": \"d4.2-usability-accessibility-20260929-142139.json\"\n}\n127.0.0.1 - - [29/Sep/2026 14:21:40] \"GET / HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:40] \"GET /product-assets/styles.css HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:40] \"GET /product-assets/product.js HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:40] \"GET /api/workspaces/recent HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:40] \"POST /api/workspaces/select-folder HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:40] \"POST /api/workspaces/open HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:40] \"GET /api/workspaces/recent HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:41] \"GET / HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:41] \"GET /product-assets/styles.css HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:41] \"GET /product-assets/product.js HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:41] \"GET /api/workspaces/recent HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:41] \"GET /api/workspace?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-d42-a11y-3z0jbd45%5Cblank-workspace HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:41] \"GET / HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:41] \"GET /product-assets/styles.css HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:41] \"GET /product-assets/product.js HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:42] \"GET /api/workspaces/recent HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:42] \"GET /api/workspace?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-d42-a11y-3z0jbd45%5Crun-05-copy HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:42] \"GET /api/workspace/references/5c5e0fdde80847dc140af37778678f3e9b3fb7962bba70360e62630501a85629?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-d42-a11y-3z0jbd45%5Crun-05-copy HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:42] \"GET /api/candidates/fbdb0e07bfd9e80c0593086689dbcb8a1ad52ce6a36849cda493ad6cf7e48e5e?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-d42-a11y-3z0jbd45%5Crun-05-copy HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:43] \"GET / HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:43] \"GET /product-assets/styles.css HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:43] \"GET /product-assets/product.js HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:43] \"GET /api/workspaces/recent HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:43] \"GET /api/workspace?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-d42-a11y-3z0jbd45%5Crun-05-copy HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:43] \"GET /api/candidates/ca4bbde8026ec965cc6e73c30676611a4d102444fbffbc681a0f7c305e4763e4?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-d42-a11y-3z0jbd45%5Crun-05-copy HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:43] \"GET /api/candidates/9c6ae289e07b2340f1837a2a0dd7ca18b8d93b0d82035112e98bd5e07af1337c?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-d42-a11y-3z0jbd45%5Crun-05-copy HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:43] \"GET /api/candidates/cc1522436895566b48a00bd6a1defd7f78db3a84c0159aea3a705ce3702ff116?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-d42-a11y-3z0jbd45%5Crun-05-copy HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:44] \"GET / HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:44] \"GET /product-assets/styles.css HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:44] \"GET /product-assets/product.js HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:44] \"GET /api/workspaces/recent HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:44] \"GET /api/workspace?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-d42-a11y-3z0jbd45%5Cplanned-workspace HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:44] \"GET /api/workspace/references/d723d9501c7d7fab431639d795d1cf3a128ad1c2d6152f3fe1656e532b4cca6d?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-d42-a11y-3z0jbd45%5Cplanned-workspace HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:44] \"GET / HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:44] \"GET /product-assets/styles.css HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:44] \"GET /product-assets/product.js HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:44] \"GET /api/workspaces/recent HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:44] \"GET /api/workspace?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-d42-a11y-3z0jbd45%5Cplanned-workspace HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:45] \"GET / HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:45] \"GET /product-assets/styles.css HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:45] \"GET /product-assets/product.js HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:45] \"GET /api/workspaces/recent HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:45] \"GET /api/workspace?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-d42-a11y-3z0jbd45%5Cmissing-workspace HTTP/1.1\" 404 -\n127.0.0.1 - - [29/Sep/2026 14:21:45] \"GET / HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:45] \"GET /product-assets/styles.css HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:45] \"GET /product-assets/product.js HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:45] \"GET /api/workspaces/recent HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:46] \"GET / HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:46] \"GET /product-assets/styles.css HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:46] \"GET /product-assets/product.js HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:46] \"GET /api/workspaces/recent HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:46] \"GET /api/workspace?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-d42-a11y-3z0jbd45%5Cplanned-workspace HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:51] \"POST /api/generations HTTP/1.1\" 202 -\n127.0.0.1 - - [29/Sep/2026 14:21:51] \"GET /api/candidates/fee4538069e80fb052c459b357fb7ba311747d34da0587dcf957e60caea3f49d?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-d42-a11y-3z0jbd45%5Cplanned-workspace HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:51] \"GET /api/candidates/cae79ded64a124d8c6032ca016774ef3f95c1bd62b91a1bd0a067858aa3cfec9?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-d42-a11y-3z0jbd45%5Cplanned-workspace HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:51] \"GET /api/candidates/28e28641fb3cdf4d5f02cae421fde8cef03efeeed185e1a2271d0646809a749a?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-d42-a11y-3z0jbd45%5Cplanned-workspace HTTP/1.1\" 200 -"
+    },
+    {
+      "name": "export-wording-drift",
+      "command": [
+        "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\.uv-cache\\builds-v0\\.tmpvPVGeE\\Scripts\\python.exe",
+        "tools/verify_product_v1_export_wording_drift.py"
+      ],
+      "rc": 0,
+      "seconds": 5.3,
+      "log_path": "_working/amz-listing-kit-product-demo/regression-20260929-141908-pass1/export-wording-drift.log",
+      "log_sha256": "5b8dfbade1871e38b07c1c2e2d1ee1b2e60fe0c92064f920ab5ba4e1977d65f8",
+      "tail": "ok   shot shot_a965cba8ffe143da has exactly one candidate\nok   shot shot_430b0f790e214369 has exactly one candidate\nok   shot shot_65629cb1899f440b has exactly one candidate\nok   clean export carries no wording warnings\nok   clean README has no drift note\nok   manual edit advanced only the target prompt\nok   prompt edit blocks export until the shot is re-adopted\nok   drifted export is refused until the operator acknowledges it\nok   acknowledgment request names exactly the edited shot\nok   drift export warns about exactly the edited shot\nok   warning names the delivered and latest prompt versions\nok   README carries the drift note for the edited shot\nok   manifest records the drift warnings\nok   S4 delivery check lists the drifted shot\nok   drifted export stays blocked until acknowledged\nok   opening S4 writes no export version\nok   acknowledging the drift enables the export button\nok   acknowledged export writes exactly one new package\nok   delivery status confirms the new export\nok   export summary exposes the reveal entry\n20 passed; 0 failed\n127.0.0.1 - - [29/Sep/2026 14:21:56] \"GET / HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:56] \"GET /product-assets/styles.css HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:56] \"GET /product-assets/product.js HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:56] \"GET /api/workspaces/recent HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:56] \"GET / HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:56] \"GET /product-assets/styles.css HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:56] \"GET /product-assets/product.js HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:56] \"GET /api/workspaces/recent HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:56] \"GET /api/workspace?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-product-v1-image-generation-vzsegci6%5Cworkspace HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:57] \"GET /api/workspace/references/a38857e40d66f7bc38e85dfab588e57292aaf98733a0d0c6c77941e02854ad4b?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-product-v1-image-generation-vzsegci6%5Cworkspace HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:57] \"GET /api/candidates/c5d047949b5926e39885bd075d4bae138ad5572baebd5fff61daf10f19c778ea?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-product-v1-image-generation-vzsegci6%5Cworkspace HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:57] \"GET /api/candidates/5d17e840db472f1773a79ef3d9b408657c8e10268aaa43994963d816555c53ce?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-product-v1-image-generation-vzsegci6%5Cworkspace HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:57] \"GET /api/candidates/eadfef8e3e4ae7bb376937e628224118fdf36e2843caa4d83451acd6e4ac0541?directory=C%3A%5CUsers%5C31368%5CAppData%5CLocal%5CTemp%5Camz-product-v1-image-generation-vzsegci6%5Cworkspace HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:57] \"POST /api/exports/preflight HTTP/1.1\" 200 -\n127.0.0.1 - - [29/Sep/2026 14:21:57] \"POST /api/exports HTTP/1.1\" 201 -"
+    },
+    {
+      "name": "guard-project-state",
+      "command": [
+        "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\.uv-cache\\builds-v0\\.tmpvPVGeE\\Scripts\\python.exe",
+        "tools/check_project_state.py"
+      ],
+      "rc": 0,
+      "seconds": 0.2,
+      "log_path": "_working/amz-listing-kit-product-demo/regression-20260929-141908-pass1/guard-project-state.log",
+      "log_sha256": "77d8af624296480446c1a4fafa0dad42a53231d0c6cf00d4de5185d1a2a8addc",
+      "tail": "========================================================================\n项目状态守卫\n========================================================================\n判据：J0 记录可读 / J1 活动记录唯一 / J2 取值闭集合 / J3 Goal 绑定\n      J4 状态 ID 引用计划 / J5 阶段门与顺序 / J6 任务进度与证据\n      J7 next_action 按计划可执行 / J8 单一权威不重抄 / J9 Goal 读数与记录一致\n      J10 updated_at 不许写在未来、不许缺时区\n\n  · 工作记录 3 份 · v2 状态从 plan_ref 读取阶段、任务与依赖，不在 state 重复定义\n结果：全过（退出码 0）。"
+    },
+    {
+      "name": "guard-docs",
+      "command": [
+        "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\.uv-cache\\builds-v0\\.tmpvPVGeE\\Scripts\\python.exe",
+        "tools/check_docs.py"
+      ],
+      "rc": 0,
+      "seconds": 15.5,
+      "log_path": "_working/amz-listing-kit-product-demo/regression-20260929-141908-pass1/guard-docs.log",
+      "log_sha256": "83f9a394140a299ad26d3929091a6aeafbb4ea2213fba3fa10d64ea6baf2aa94",
+      "tail": "========================================================================\n文档守卫\n========================================================================\n受管：README.md + docs/cards/ 下 8 份卡（命令真跑 / 数字对齐 / 七坑位表与 registry 一致）\n　　　+ 文档权威登记（docs/INDEX.md：双向比对 + 管辖事实唯一）—— 回答「哪一份有效」和「哪一类事实归谁」\n表：7 个坑位 · 6 个渲染器\n\n  · 文档登记：已登记 33 份，仓库里实际 33 份（产品目标 1、历史证据 14、实现 1、待处置 8、执行状态 1、生成产物 8）\n  · 真跑了 11 条去重后的命令，跳过 34 条（各有理由，见 --explain）\n  · 其中 1 条在文档里只有『会花钱』的形式，守卫补 --dry-run 后才执行 —— 验的是链路成立，不是替人花那笔钱\n\n结果：全过（退出码 0）。"
+    }
+  ],
+  "passed": true,
+  "report_path": "evals/product-demo/d4.12-regression-20260929-141908-pass1.json"
+}

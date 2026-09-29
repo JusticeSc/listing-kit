@@ -1,0 +1,143 @@
+{
+  "stamp": "20260929-142403",
+  "checks": [
+    {
+      "id": "double-click-one-write-attempt",
+      "ok": true,
+      "detail": {
+        "total": 1,
+        "aborted": 1,
+        "continued": 0,
+        "action_ids": [
+          "uimumajjysy57nb84w",
+          "uimumajjysy57nb84w"
+        ]
+      }
+    },
+    {
+      "id": "first-attempt-interrupted",
+      "ok": true,
+      "detail": {
+        "total": 1,
+        "aborted": 1,
+        "continued": 0,
+        "action_ids": [
+          "uimumajjysy57nb84w",
+          "uimumajjysy57nb84w"
+        ]
+      }
+    },
+    {
+      "id": "generation-materialized",
+      "ok": true,
+      "detail": {
+        "shots": 3
+      }
+    },
+    {
+      "id": "retry-reuses-one-action-id",
+      "ok": true,
+      "detail": {
+        "ids": [
+          "uimumajjysy57nb84w",
+          "uimumajjysy57nb84w"
+        ],
+        "total": 2,
+        "continued": 1,
+        "aborted": 1
+      }
+    },
+    {
+      "id": "one-attempt-reached-server",
+      "ok": true,
+      "detail": {
+        "ids": [
+          "uimumajjysy57nb84w",
+          "uimumajjysy57nb84w"
+        ],
+        "total": 2,
+        "continued": 1,
+        "aborted": 1
+      }
+    },
+    {
+      "id": "one-generation-batch",
+      "ok": true,
+      "detail": {
+        "batches": 1
+      }
+    },
+    {
+      "id": "one-attempt-per-shot",
+      "ok": true,
+      "detail": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "each-shot-has-candidate",
+      "ok": true,
+      "detail": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "paid-submissions-equal-shots",
+      "ok": true,
+      "detail": {
+        "submissions": 3,
+        "shots": 3
+      }
+    },
+    {
+      "id": "reload-does-not-resubmit",
+      "ok": true,
+      "detail": {
+        "before": 2,
+        "after": 2
+      }
+    },
+    {
+      "id": "reload-keeps-single-batch",
+      "ok": true,
+      "detail": {
+        "batches": 1
+      }
+    },
+    {
+      "id": "preview-compile-once",
+      "ok": true,
+      "detail": {
+        "compile_posts": 1
+      }
+    },
+    {
+      "id": "preview-no-generation-post",
+      "ok": true,
+      "detail": {
+        "generations": 0
+      }
+    },
+    {
+      "id": "preview-no-image-submission",
+      "ok": true,
+      "detail": {
+        "submissions": 0
+      }
+    },
+    {
+      "id": "preview-persisted-everything",
+      "ok": true,
+      "detail": {
+        "shots": 3
+      }
+    }
+  ],
+  "failures": [],
+  "passed": true,
+  "workspaces": "temp (deleted)"
+}

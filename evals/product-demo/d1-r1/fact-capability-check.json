@@ -1,0 +1,19 @@
+{
+  "schema": "demo-fact-capability-check/1",
+  "sku": "demo-tumbler-aster-01",
+  "card": "demo\\fixture\\aster-01\\product.json",
+  "matrix": "demo\\fixture\\aster-01\\fact_capability.json",
+  "rules": {
+    "C1_COVERAGE": 0,
+    "C2_KIND": 0,
+    "C3_PRECONDITION": 0,
+    "C4_DERIVATION": 0,
+    "C5_HUMAN_FACT": 0,
+    "C6_GAP_BACKSTOP": 0,
+    "C7_NO_FAKE_GREEN": 0,
+    "C8_UNKNOWN_BLOCKS": 0,
+    "C9_SKU_FREE_CODE": 0,
+    "C10_VERDICT_DOMAIN": 0
+  },
+  "problems": {}
+}

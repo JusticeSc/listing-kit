@@ -1,0 +1,25 @@
+{
+  "case_id": "neg-04-lidless",
+  "mutation_class": "改结构",
+  "description": "抹掉杯盖与接缝橙环，用背景色填掉对象顶部，留下一个开口的杯体",
+  "source": "evals/product-demo/fixture-design/C/raw.png",
+  "source_sha256": "e1b1c5de1ee6b50a69fb8e431f1140d8c21a689f4fe3316461c02745139d03f6",
+  "output": "negative-cases/neg-04-lidless/raw.png",
+  "output_sha256": "41f38d27050b1feb879dd863f52d1378e6f07ef4e2fd80a8a4b2c5f3cdef6a66",
+  "output_bytes": 1095901,
+  "image_size": [
+    1344,
+    1344
+  ],
+  "changed_pixels": 61635,
+  "params": {
+    "painted_rows": 180,
+    "lid_rows": 139,
+    "trim_rows": 17,
+    "up_pad_rows": 24,
+    "bg_sample_x": 456,
+    "fill": "逐行取该行主体左侧的背景中位数（跟随背景竖向渐变）"
+  },
+  "generated_at": "2026-09-25T23:17:43+08:00",
+  "model_calls": 0
+}

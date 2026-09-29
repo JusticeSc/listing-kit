@@ -1,0 +1,14 @@
+{
+  "action_id": "c291bafafbe23a66",
+  "model": "qwen-image-3.0",
+  "mode": "image_to_image",
+  "seed": 2026092416,
+  "size": "1344*1344",
+  "reference_sha256": "e1b1c5de1ee6b50a69fb8e431f1140d8c21a689f4fe3316461c02745139d03f6",
+  "prompt_sha256": "788610502f938838a7cc1713d7c093953dafe5d25c5553719e520d1264dface3",
+  "request_sha256": "dddf3ec4735a5d752b697a7ac705d2848d3aa90cc57c6e5e69c8a88ee48cadd5",
+  "submitted_at": "2026-09-24T16:35:00+08:00",
+  "status": "completed",
+  "task_id": "2a8c634f-0e07-4098-9d96-09229a658dc7",
+  "image_sha256": "27828bd947bcfda651af445824a2eabbee992a4d243ea7984aa6cefd89cfb16d"
+}

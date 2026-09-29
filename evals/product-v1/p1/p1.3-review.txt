@@ -1,0 +1,59 @@
+P1.3 验收：人工事实清单
+========================================================================
+本次切片的七项声明（计划 §7.1）：
+  用户可见行为  无（这一层还不接界面；只把清单与接受判据变成可执行对象）
+  不变量        A 主体只有一份 / B 生成层看不见主体 / C 文字层不画字 / D 位置 1 零模型 全部未触碰
+  允许改的模块  contracts/review-checklist-v1.yaml 与 src/review_contract.py 新增；config/ 与 examples/ 只读
+  新增身份      checklist_version=rcv1-<契约内容哈希>；instance_id=rvi1-<候选×事实版本×契约>；state_hash=rvh1-<结论状态>
+  拒绝路径      关键项 fail / unknown / 未判 → 不接受；不许 NA 的项标 NA → 拒绝；结论写第二次 → 拒绝
+  判据          本文件 A–H；反向样本见 C/D/E/H；正向对照见 A/F/G
+  迁移与回退    纯加法：只读契约与纯函数；v2 的 E0 体检与 validators 未改（B/H 条为交叉证据）
+
+A 基线（契约合法、指向真实权威、可重复生成）
+  [OK  ] 结构校验通过（不合法会直接抛）　分栏 3 个 · 清单项 18 条
+  [OK  ] 指向的规则名 / 签字项 / 配置键都真实存在，且已实现的规则没有漏配　KNOWN_RULES 9 条全部有落项或排除理由
+  [OK  ] 同一候选 + 同一 FactsVersion → 逐字节相同的清单　instance_id=rvi1-0a57d73dc67d
+  [OK  ] 新清单的每一项都是未判（不会默认 pass）
+
+B 分栏与覆盖（计划 §3.1 的每一条都要有人管）
+  [OK  ] 前两栏阻断接受、审美栏不阻断（后果写在契约里，不靠读的人猜）　{'critical_fact': True, 'platform_hard_rule': True, 'aesthetic': False}
+  [OK  ] 三栏都不是空的　条目数 {'critical_fact': 6, 'platform_hard_rule': 9, 'aesthetic': 3}
+  [OK  ] 计划 §3.1 的每一条都有清单项挂上　§3.1 共 7 条，清单覆盖 7 条
+  [OK  ] §3.1 第 6 条（平台禁止的主图元素）落在平台栏，不是混在关键事实里　实际落在 ['platform_hard_rule']
+
+C 关键项 fail → 不接受
+  [OK  ] 不接受，并指名是哪一条　reason=blocked_by_findings blockers=['cf.appearance']
+  [OK  ] 接受入口会抛，而不是返回一个布尔值　报错含『不接受』
+D 未判 / unknown → 同样不接受
+  [OK  ] 一条都没判：不接受　pending=15 条
+  [OK  ] 判成 unknown 也不接受（'没看'不等于'过了'）　reason=blocked_by_findings
+
+E 审美满分不能抵消事实失败
+  [OK  ] 三条审美全 pass，仍然不接受　aesthetic={'pass': 3} blockers=['cf.composition']
+
+F 审美不过也不阻断接受
+  [OK  ] 关键项全 pass + 审美项不过 → 可以接受　reason=ready_for_acceptance
+  [OK  ] 审美结论被记下来，但不参与能不能接受　aesthetic={'fail': 1, 'unknown': 1, 'unjudged': 1}
+
+G 同一输入同一清单；结论不许覆盖
+  [OK  ] 换候选、换 FactsVersion → 清单身份随之改变　rvi1-0a57d73dc67d / rvi1-652dbf33a3da / rvi1-b2fe8750d1ab
+  [OK  ] 记一条结论 → 修订号 +1、事件 +1、状态哈希改变　rvh1-27b9a6ca8879 → rvh1-61560a2477f8
+  [OK  ] 原来的清单对象没有被改（record_outcome 是纯函数）
+  [OK  ] 同一项写第二次 → 拒绝（不许把旧结论擦掉）　报错含『已经写过』
+
+H 证据与边界（这几条都是『静默少判』的典型入口）
+  [OK  ] fail 不写依据 → 拒绝　报错含『依据』
+  [OK  ] unknown 不写依据 → 拒绝　报错含『依据』
+  [OK  ] 不许 NA 的关键项标 NA → 拒绝（最难的那题不许自己消失）　报错含『不允许』
+  [OK  ] 条件项（位置 7 没出图时的竞品图签字）标 NA 是可以的　NA 不阻断
+  [OK  ] applicable 里打错规则名 → 拒绝（错一个字 = 少判一项）　报错含『不认识』
+  [OK  ] 已实现的规则从清单里被删掉（且没写排除理由）→ 报错　报错含『aspect_ratio』
+  [OK  ] 指向一个根本不存在的规则名 → 报错（'声明了但静默跳过'那一类）　报错含『KNOWN_RULES』
+  [OK  ] 排除项不写理由 → 报错（有理由的排除不是漏项）　报错含『理由』
+
+========================================================================
+结论：全部通过
+边界：本报告只证明清单可重复生成、接受判据按分栏生效、指向的权威真实存在；
+      不证明运营真的会逐项判、不证明界面已经接上（Phase 3/6），也不证明图片可用。
+
+报告：E:\workbuddy_workspace\2026-09-20-16-38-19\amz-listing-kit\evals\product-v1\p1\p1.3-review.txt

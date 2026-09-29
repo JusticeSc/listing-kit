@@ -1,0 +1,500 @@
+{
+  "schema": "amz-listing-kit/back-contracts-verification@1",
+  "plan_version": "v1.14",
+  "cases": 22,
+  "passed": 22,
+  "failed": 0,
+  "paid_calls": 0,
+  "rows": [
+    {
+      "case": "B0",
+      "name": "黄金后半链（PC-08…PC-13）",
+      "contract": "PC-13",
+      "expect": "accepted",
+      "actual": "accepted",
+      "ok": true,
+      "notes": [
+        "导出 1 个最终文件；每个都重新过检；包 860a4a4733bd 为不可变交付单元"
+      ],
+      "failed_checks": [],
+      "detail": {
+        "pc08": {
+          "F-01": "accepted",
+          "F-02": "accepted",
+          "F-03": "accepted",
+          "F-04": "accepted"
+        },
+        "pc09": {
+          "F-01": "accepted",
+          "F-02": "accepted",
+          "F-03": "accepted",
+          "F-04": "accepted"
+        },
+        "pc09_routes": {
+          "F-01": {
+            "human": 8
+          },
+          "F-02": {
+            "human": 8
+          },
+          "F-03": {
+            "human": 8
+          },
+          "F-04": {
+            "human": 8
+          }
+        },
+        "rework": {
+          "category": "scene_composition",
+          "new_prompt_version": "c1cbf4d7613ccb4adb9cff3aecbcb7bc13f2778e935bff4842db4e1810c5231c",
+          "untouched": [
+            "S1",
+            "S3"
+          ]
+        },
+        "per_candidate_path": {
+          "F-01": {
+            "facts": "accepted",
+            "select": "accepted",
+            "compose": "accepted",
+            "finalize": "accepted",
+            "verify_rc": 0
+          },
+          "F-02": {
+            "facts": "accepted",
+            "select": "accepted",
+            "compose": "accepted",
+            "finalize": "accepted",
+            "verify_rc": 0
+          },
+          "F-03": {
+            "facts": "accepted",
+            "select": "accepted",
+            "compose": "accepted",
+            "finalize": "accepted",
+            "verify_rc": 0
+          },
+          "F-04": {
+            "facts": "accepted",
+            "select": "accepted",
+            "compose": "accepted",
+            "finalize": "accepted",
+            "verify_rc": 0
+          }
+        },
+        "composition": {
+          "kind": "identity",
+          "sha256": "b09fd5a9e5af91e3d6231526c1022a718a27db67077a4323d31f24178b9e6546"
+        },
+        "package": "860a4a4733bd",
+        "verify": {
+          "package": "C:\\Users\\31368\\AppData\\Local\\Temp\\back-golden-cel9w9ji\\pkgs\\860a4a4733bd",
+          "problems": [],
+          "files": 1
+        },
+        "candidates_input_image_count": {
+          "F-01": 1,
+          "F-02": 1,
+          "F-03": 1,
+          "F-04": 1
+        }
+      }
+    },
+    {
+      "case": "B1",
+      "name": "场景候选上 cylinder-v1 必须判不适用而非失败",
+      "contract": "PC-09",
+      "expect": "accepted",
+      "actual": "accepted",
+      "ok": true,
+      "notes": [
+        "8 条事实全部由已声明责任者解析为 pass；责任分布 {'human': 8}"
+      ],
+      "failed_checks": [],
+      "detail": {
+        "F-01": {
+          "share": 0.2063,
+          "applicable": false
+        },
+        "F-02": {
+          "share": 0.3921,
+          "applicable": false
+        },
+        "F-03": {
+          "share": 0.1584,
+          "applicable": false
+        },
+        "F-04": {
+          "share": 0.4163,
+          "applicable": false
+        },
+        "fixture_front_full": {
+          "share": 0.0,
+          "applicable": true
+        }
+      }
+    },
+    {
+      "case": "B2",
+      "name": "缺人工签字的事实保持未决并阻断选择",
+      "contract": "PC-09",
+      "expect": "needs_human",
+      "actual": "needs_human",
+      "ok": true,
+      "notes": [
+        "需要人显式确认这些具体事实：F5"
+      ],
+      "failed_checks": [],
+      "detail": {
+        "records": 31,
+        "unresolved": [
+          "F5"
+        ]
+      }
+    },
+    {
+      "case": "B3",
+      "name": "人工标 unknown 的事实不得被当成通过",
+      "contract": "PC-09",
+      "expect": "needs_human",
+      "actual": "needs_human",
+      "ok": true,
+      "notes": [
+        "需要人显式确认这些具体事实：F2"
+      ],
+      "failed_checks": [],
+      "detail": {
+        "F2": "unknown"
+      }
+    },
+    {
+      "case": "B4",
+      "name": "人工判 fail 的事实让候选不可用",
+      "contract": "PC-09",
+      "expect": "business_reject",
+      "actual": "business_reject",
+      "ok": true,
+      "notes": [
+        "事实层硬失败：F2；该候选不可选，必须返工或换路线"
+      ],
+      "failed_checks": [],
+      "detail": {
+        "fails": [
+          "F2"
+        ],
+        "selection": "business_reject"
+      }
+    },
+    {
+      "case": "B5",
+      "name": "审美 keep 不能覆盖事实 fail",
+      "contract": "PC-12",
+      "expect": "business_reject",
+      "actual": "business_reject",
+      "ok": true,
+      "notes": [
+        "事实层没有通过（business_reject）：候选不可选"
+      ],
+      "failed_checks": [],
+      "detail": {
+        "visual": "keep",
+        "fact_outcome": "business_reject"
+      }
+    },
+    {
+      "case": "B6",
+      "name": "人工判 redo 的候选不可选",
+      "contract": "PC-12",
+      "expect": "business_reject",
+      "actual": "business_reject",
+      "ok": true,
+      "notes": [
+        "人工判定是 redo，不能作为最终选择"
+      ],
+      "failed_checks": [],
+      "detail": {
+        "visual": "redo"
+      }
+    },
+    {
+      "case": "B7",
+      "name": "归不了类的返工原因交人工，不自动重跑",
+      "contract": "PC-11",
+      "expect": "needs_human",
+      "actual": "needs_human",
+      "ok": true,
+      "notes": [
+        "原因 'mystery_reason' 归不了类；需要人来判断改什么，不做无界自动重试"
+      ],
+      "failed_checks": [],
+      "detail": {
+        "category": "unclassified"
+      }
+    },
+    {
+      "case": "B8",
+      "name": "单图返工不动其它 Shot（提交数与哈希都不变）",
+      "contract": "PC-11",
+      "expect": "accepted",
+      "actual": "accepted",
+      "ok": true,
+      "notes": [
+        "原因 lighting_harsh -> scene_composition；只改 这张图的场景设置（场景、构图、光线）、提示词里未锁住的那部分；旧候选保留"
+      ],
+      "failed_checks": [],
+      "detail": {
+        "untouched": [
+          {
+            "shot_id": "S1",
+            "candidate_sha256": [
+              "aaaaaaaa"
+            ],
+            "submit_count": 1
+          },
+          {
+            "shot_id": "S3",
+            "candidate_sha256": [
+              "bbbbbbbb"
+            ],
+            "submit_count": 1
+          }
+        ]
+      }
+    },
+    {
+      "case": "B9",
+      "name": "同一张图已有选择时不许后写覆盖",
+      "contract": "PC-12",
+      "expect": "business_reject",
+      "actual": "business_reject",
+      "ok": true,
+      "notes": [
+        "该图已经有 Selection；冲突要求刷新后重选，不后写覆盖前写"
+      ],
+      "failed_checks": [],
+      "detail": {
+        "first": "F-03"
+      }
+    },
+    {
+      "case": "B10",
+      "name": "排版溢出必须判失败且不产出文件",
+      "contract": "PC-12",
+      "expect": "technical_fail",
+      "actual": "technical_fail",
+      "ok": true,
+      "notes": [
+        "排版溢出：文字 516x20px 放不进 40x16px 的文本框；不缩小字体、不自动换候选"
+      ],
+      "failed_checks": [],
+      "detail": {
+        "text_px": [
+          516,
+          20
+        ],
+        "box": {
+          "x": 0,
+          "y": 0,
+          "w": 40,
+          "h": 16
+        }
+      }
+    },
+    {
+      "case": "B11",
+      "name": "字体缺失必须判失败，不自动换字体",
+      "contract": "PC-12",
+      "expect": "technical_fail",
+      "actual": "technical_fail",
+      "ok": true,
+      "notes": [
+        "字体缺失：cannot open resource；不自动换字体，交人处理"
+      ],
+      "failed_checks": [],
+      "detail": {
+        "font": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\demo\\core\\definitely-not-a-font.ttf"
+      }
+    },
+    {
+      "case": "B12",
+      "name": "最终文件不合格时不发布该版本",
+      "contract": "PC-13",
+      "expect": "technical_fail",
+      "actual": "technical_fail",
+      "ok": true,
+      "notes": [
+        "最终文件 S2_F-03.jpg 未通过最终复检（technical_fail）：该 OutputVersion 不发布"
+      ],
+      "failed_checks": [],
+      "detail": {
+        "composition_size": [
+          800,
+          800
+        ],
+        "candidate_ok": true
+      }
+    },
+    {
+      "case": "B13",
+      "name": "计划里的图没有全部选中时不许导出",
+      "contract": "PC-13",
+      "expect": "business_reject",
+      "actual": "business_reject",
+      "ok": true,
+      "notes": [
+        "计划覆盖不成立：缺 ['S1', 'S3', 'S4']"
+      ],
+      "failed_checks": [],
+      "detail": {
+        "missing": [
+          "S1",
+          "S3",
+          "S4"
+        ]
+      }
+    },
+    {
+      "case": "B14",
+      "name": "导出包被改写时换目录核验必须报红",
+      "contract": "PC-13",
+      "expect": "accepted",
+      "actual": "accepted",
+      "ok": true,
+      "notes": [
+        "导出 1 个最终文件；每个都重新过检；包 860a4a4733bd 为不可变交付单元"
+      ],
+      "failed_checks": [],
+      "detail": {
+        "verify_before": 0,
+        "verify_after": 1,
+        "problems": [
+          "S2_F-03.jpg 哈希与清单不一致（被改写）"
+        ]
+      }
+    },
+    {
+      "case": "B15",
+      "name": "重导创建新版本且不覆盖旧包",
+      "contract": "PC-13",
+      "expect": "accepted",
+      "actual": "accepted",
+      "ok": true,
+      "notes": [
+        "导出 1 个最终文件；每个都重新过检；包 pkg-test-r2 为不可变交付单元"
+      ],
+      "failed_checks": [],
+      "detail": {
+        "pkg1": "pkg-test",
+        "pkg2": "pkg-test-r2"
+      }
+    },
+    {
+      "case": "B16",
+      "name": "规则缺参数时判 unknown，不判失败",
+      "contract": "PC-08",
+      "expect": "unknown",
+      "actual": "unknown",
+      "ok": true,
+      "notes": [
+        "有规则缺参数，无法判定：min_long_side_px"
+      ],
+      "failed_checks": [],
+      "detail": {}
+    },
+    {
+      "case": "B17",
+      "name": "实现不许自造合同没声明的状态",
+      "contract": "PC-08",
+      "expect": "accepted",
+      "actual": "accepted",
+      "ok": true,
+      "notes": [
+        "5 条技术规则全部通过（candidate）"
+      ],
+      "failed_checks": [],
+      "detail": {}
+    },
+    {
+      "case": "B18",
+      "name": "未注册的责任者不得静默跳过或当成通过",
+      "contract": "PC-09",
+      "expect": "needs_human",
+      "actual": "needs_human",
+      "ok": true,
+      "notes": [
+        "需要人显式确认这些具体事实：F4"
+      ],
+      "failed_checks": [],
+      "detail": {
+        "trail": [
+          "unregistered_router"
+        ]
+      }
+    },
+    {
+      "case": "B19",
+      "name": "逐事实 ReviewItem 带责任者、证据指针与结论",
+      "contract": "PC-09",
+      "expect": "accepted",
+      "actual": "accepted",
+      "ok": true,
+      "notes": [
+        "8 条事实全部由已声明责任者解析为 pass；责任分布 {'human': 8}"
+      ],
+      "failed_checks": [],
+      "detail": {
+        "items": 8,
+        "human_evidence_shape": [
+          "reviewer",
+          "reviewer_kind",
+          "reviewed_at",
+          "source",
+          "verdict"
+        ]
+      }
+    },
+    {
+      "case": "B20",
+      "name": "聚合同意不是逐 {事实, 候选} 的签字",
+      "contract": "PC-09",
+      "expect": "needs_human",
+      "actual": "needs_human",
+      "ok": true,
+      "notes": [
+        "需要人显式确认这些具体事实：F1、F2、F3、F4、F5、F6、F7、F8"
+      ],
+      "failed_checks": [],
+      "detail": {
+        "per_item_records_replaced": 32
+      }
+    },
+    {
+      "case": "B21",
+      "name": "注册表守卫与真实商品包交叉核对",
+      "contract": "PC-09",
+      "expect": "accepted",
+      "actual": "accepted",
+      "ok": true,
+      "notes": [
+        "8 条事实全部由已声明责任者解析为 pass；责任分布 {'human': 8}"
+      ],
+      "failed_checks": [],
+      "detail": {
+        "rules": 9,
+        "verifiers": [
+          "cylinder-v1",
+          "human",
+          "refcond-vlm"
+        ],
+        "missing": []
+      }
+    }
+  ],
+  "does_not_prove": [
+    "没有调用任何真实模型：模型路线在本次全部记为 not_run（那是 D1.R2/R3 的事）",
+    "没有证明场景候选的 F1-F8 由自动路线判过：四张的事实结论全部由显式人工确认承担",
+    "没有证明跨商品通用：那属于 D1.P4",
+    "没有证明 Amazon 实际审核通过：本文件的规则来自 config/slots.yaml",
+    "本次没有产生付费调用，也没有改动冻结候选与账本"
+  ]
+}

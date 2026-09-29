@@ -1,0 +1,22 @@
+{
+  "stamp": "20260929-141429",
+  "label": "smoke2-",
+  "requested_passes": 1,
+  "suites": [
+    "node-check-ui",
+    "py-compile",
+    "entry-audit"
+  ],
+  "passes": [
+    {
+      "pass_index": 1,
+      "passed": true,
+      "fingerprint_id": "23103026b2c61a8d98c4d9ce09b3391ea061fda5ec1e686f8eefc8718b75cf98",
+      "failed": []
+    }
+  ],
+  "fingerprints_consistent": true,
+  "all_passed": true,
+  "verdict": "通过：全部套件连续两轮全绿，代码/静态资源指纹一致",
+  "report_path": "evals/product-demo/d4.12-regression-smoke2-20260929-141429.json"
+}

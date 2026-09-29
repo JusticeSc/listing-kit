@@ -1,0 +1,145 @@
+{
+  "ok": true,
+  "checks": [
+    {
+      "check": "label_association",
+      "ok": true,
+      "detail": {
+        "controls": [
+          {
+            "id": "reference-images",
+            "hasLabel": true
+          },
+          {
+            "id": "product-name",
+            "hasLabel": true
+          },
+          {
+            "id": "product-description",
+            "hasLabel": true
+          },
+          {
+            "id": "selling-points",
+            "hasLabel": true
+          },
+          {
+            "id": "user-intent",
+            "hasLabel": true
+          }
+        ],
+        "missing_label": []
+      }
+    },
+    {
+      "check": "keyboard_reachability_and_focus_visibility",
+      "ok": true,
+      "detail": {
+        "tabbed": [
+          {
+            "id": "product-name",
+            "outline": "solid 3px",
+            "visible": true
+          },
+          {
+            "id": "product-description",
+            "outline": "solid 3px",
+            "visible": true
+          },
+          {
+            "id": "selling-points",
+            "outline": "solid 3px",
+            "visible": true
+          },
+          {
+            "id": "user-intent",
+            "outline": "solid 3px",
+            "visible": true
+          }
+        ],
+        "unreachable": [],
+        "focus_not_visible": []
+      }
+    },
+    {
+      "check": "error_association",
+      "ok": true,
+      "detail": {
+        "text": "请先选择至少 1 张商品参考图。",
+        "role": "alert",
+        "hidden": false,
+        "ariaInvalid": "true",
+        "describedBy": "image-help image-selection image-error"
+      }
+    },
+    {
+      "check": "no_horizontal_overflow_390_intake",
+      "ok": true,
+      "detail": {
+        "width": 390,
+        "client": 390,
+        "scroll": 390
+      }
+    },
+    {
+      "check": "analyze_button_keyboard_reachable_after_save",
+      "ok": true,
+      "detail": {
+        "focused": true,
+        "disabled": false,
+        "outline": "solid 3px",
+        "visible": true
+      }
+    },
+    {
+      "check": "keyboard_activation",
+      "ok": true,
+      "detail": "焦点在“生成商品理解”，按 Enter 后草案表单出现"
+    },
+    {
+      "check": "loading_state_is_textual_or_aria",
+      "ok": true,
+      "detail": {
+        "seen": true,
+        "text": "aria-busy:brief-workspace"
+      }
+    },
+    {
+      "check": "disabled_state_reason_discoverable",
+      "ok": true,
+      "detail": {
+        "disabled": true,
+        "title": "",
+        "describedBy": "",
+        "describedText": "",
+        "visibleHint": true
+      }
+    },
+    {
+      "check": "no_horizontal_overflow_640_zoom200_proxy",
+      "ok": true,
+      "detail": {
+        "width": 640,
+        "client": 640,
+        "scroll": 640
+      }
+    },
+    {
+      "check": "css_zoom_200_no_overflow_auxiliary",
+      "ok": true,
+      "detail": {
+        "scroll": 1280,
+        "client": 1280
+      }
+    }
+  ],
+  "screenshots": [
+    "evals/product-demo/d4.2-keyboard-focus.png",
+    "evals/product-demo/d4.2-intake-390.png",
+    "evals/product-demo/d4.2-plan-workbench.png",
+    "evals/product-demo/d4.2-plan-640-zoom200-proxy.png"
+  ],
+  "limits": [
+    "200% 缩放用 1280→640 CSS 视口代理，并用 CSS zoom=2 作辅助；两者都不等于浏览器页面缩放的像素级行为。",
+    "loading 用 MutationObserver 观测真实 DOM，若整个请求在一帧内完成则可能观测不到（假 provider 很快）。"
+  ]
+}
