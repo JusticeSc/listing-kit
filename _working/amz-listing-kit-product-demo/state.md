@@ -262,8 +262,6 @@ task_progress:
     evidence:
       - evals/product-demo/d4.7-suite-command-2026-09-29.md
       - evals/product-demo/d4.7-suite-command-ui-20260929-115825.json
-      - evals/product-demo/d4.7-suite-command-ui-20260929-115825-generated.png
-      - evals/product-demo/d4.7-suite-command-ui-20260929-115825-plan.png
       - tools/verify_product_v1_suite_command.py
       - tools/verify_product_v1_suite_command_ui.py
       - tools/verify_product_v1_ui.py
@@ -273,8 +271,6 @@ task_progress:
     evidence:
       - evals/product-demo/d4.8-generation-recovery-2026-09-29.md
       - evals/product-demo/d4.8-generation-recovery-ui-20260929-124022.json
-      - evals/product-demo/d4.8-generation-recovery-ui-20260929-124022-mixed.png
-      - evals/product-demo/d4.8-generation-recovery-ui-20260929-124022-complete.png
       - tools/verify_product_v1_generation_recovery_ui.py
       - tools/verify_product_v1_image_generation.py
       - tools/verify_product_v1_ui.py
@@ -285,7 +281,6 @@ task_progress:
     evidence:
       - evals/product-demo/d4.9-review-workbench-2026-09-29.md
       - evals/product-demo/d4.9-review-workbench-20260929-130924.json
-      - evals/product-demo/d4.9-review-workbench-20260929-130924.png
       - tools/verify_product_v1_review_workbench_ui.py
       - tools/verify_product_v1_selection_rework_export.py
       - tools/verify_product_v1_usability_accessibility.py
@@ -294,8 +289,6 @@ task_progress:
     evidence:
       - evals/product-demo/d4.10-two-phase-rework-2026-09-29.md
       - evals/product-demo/ui-rework-20260929-133726.json
-      - evals/product-demo/ui-rework-20260929-133726-before.png
-      - evals/product-demo/ui-rework-20260929-133726-after.png
       - evals/product-demo/d4.9-review-workbench-20260929-133741.json
       - evals/product-demo/d4.2-usability-accessibility-20260929-133802.json
       - evals/product-demo/d4.7-suite-command-ui-20260929-133831.json
@@ -308,9 +301,6 @@ task_progress:
     evidence:
       - evals/product-demo/d4.11-delivery-checks-2026-09-29.md
       - evals/product-demo/ui-delivery-20260929-135852.json
-      - evals/product-demo/ui-delivery-20260929-135852-blocked.png
-      - evals/product-demo/ui-delivery-20260929-135852-ready.png
-      - evals/product-demo/ui-delivery-20260929-135852-exported.png
       - evals/product-demo/ui-rework-20260929-135915.json
       - evals/product-demo/d4.9-review-workbench-20260929-135948.json
       - evals/product-demo/d4.2-usability-accessibility-20260929-135948.json
