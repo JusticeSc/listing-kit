@@ -329,6 +329,19 @@ export function createRepository({
     return [...latest.values()].sort((left, right) => left.document_id.localeCompare(right.document_id));
   }
 
+  /** 一个项目的全部文档版本（含历史），按 kind/document_id/version 稳定排序；导出项目包用。 */
+  async function listAllDocuments(projectId) {
+    requireId(projectId, "project_id");
+    const all = await withTransaction(db, ["documents"], "readonly",
+      (tx) => requestToPromise(tx.objectStore("documents").index("by_project_kind")
+        .getAll(IDBKeyRange.bound([projectId], [projectId, []]))));
+    return all.sort((left, right) => {
+      if (left.kind !== right.kind) return left.kind.localeCompare(right.kind);
+      if (left.document_id !== right.document_id) return left.document_id.localeCompare(right.document_id);
+      return left.version - right.version;
+    });
+  }
+
   async function putAsset(projectId, {
     bytes = null,
     blob = null,
@@ -451,6 +464,7 @@ export function createRepository({
       listVersions: listDocumentVersions,
       getLatest: getLatestDocument,
       listLatest: listLatestDocuments,
+      listAll: listAllDocuments,
     },
     assets: {
       put: putAsset,

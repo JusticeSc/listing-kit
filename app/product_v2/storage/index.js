@@ -10,6 +10,9 @@ export * from "./db.js";
 export * from "./migrations.js";
 export * from "./pointer.js";
 export * from "./repository.js";
+export * from "./zip.js";
+export * from "./package.js";
+export * from "./transfer.js";
 
 import { openDatabase } from "./db.js";
 import { createRepository } from "./repository.js";

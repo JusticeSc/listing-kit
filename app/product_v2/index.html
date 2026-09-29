@@ -23,7 +23,13 @@
              placeholder="商品或任务名称，例如：蓝色保温杯 秋季主图">
       <button id="create-project" type="submit">新建项目</button>
     </form>
+    <div class="toolbar secondary">
+      <button id="import-trigger" type="button">导入项目包（.zip）</button>
+      <input id="import-file" type="file" accept=".zip,application/zip" hidden>
+      <span class="meta">项目包包含完整历史，可在另一台机器或另一个浏览器里恢复。</span>
+    </div>
     <p id="home-error" class="error" role="alert" hidden></p>
+    <p id="home-status" class="status" role="status" hidden></p>
     <p id="empty-state" class="empty" hidden>这台浏览器还没有项目。填写名称后点“新建项目”开始。</p>
     <ul id="project-list" class="project-list"></ul>
   </section>
@@ -51,6 +57,7 @@
       <button type="button" data-action="open">打开</button>
       <button type="button" data-action="rename">重命名</button>
       <button type="button" data-action="duplicate">复制</button>
+      <button type="button" data-action="export">导出项目包</button>
       <button type="button" data-action="delete" class="danger">删除</button>
     </div>
   </li>

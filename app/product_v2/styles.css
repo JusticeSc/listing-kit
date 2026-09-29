@@ -80,6 +80,18 @@ button.danger { color: var(--danger); border-color: #e3c3c1; }
 
 .empty { color: var(--muted); margin-top: 20px; }
 
+.status {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border: 1px solid #bcd2e8;
+  border-left: 4px solid var(--accent);
+  border-radius: 6px;
+  background: #f2f7fd;
+  color: #23415f;
+}
+
+.toolbar.secondary { margin-top: 10px; align-items: center; }
+
 .project-list { list-style: none; margin: 20px 0 0; padding: 0; display: grid; gap: 10px; }
 
 .project-row {

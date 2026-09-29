@@ -34,6 +34,11 @@ export function isNullableInteger(value) {
   return value === null || (Number.isInteger(value) && value >= 0);
 }
 
+/** null / undefined / 非负整数都算合法（width、height 这类可选测量值）。 */
+export function isNonNullableInteger(value) {
+  return value === null || value === undefined || (Number.isInteger(value) && value >= 0);
+}
+
 export function assertProjectRecord(record) {
   if (!record || typeof record !== "object") invalid("项目记录必须是对象。");
   if (!isNonEmptyString(record.project_id)) invalid("项目记录缺少 project_id。");
