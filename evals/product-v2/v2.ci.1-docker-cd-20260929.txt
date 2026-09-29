@@ -1,0 +1,63 @@
+NOT-AUTHORITY — V2.CI.1 GitHub Actions + remote Docker completion evidence
+
+Scope and result
+================
+- Repository: https://github.com/JusticeSc/listing-kit
+- Pull request #1: https://github.com/JusticeSc/listing-kit/pull/1
+- Pull request validation run: https://github.com/JusticeSc/listing-kit/actions/runs/36590471449
+  - clean-runner control plane and Product V2 verification: PASS
+  - Docker image build and temporary-container /api/health smoke test: PASS
+- First main run: https://github.com/JusticeSc/listing-kit/actions/runs/36590703883
+  - CI and runner-side Docker smoke test: PASS
+  - full-image SSH stream remained in the transfer command for more than ten minutes and was cancelled.
+  - the container replacement command followed that transfer command, so this run is not deployment evidence.
+- Corrective pull request #2: https://github.com/JusticeSc/listing-kit/pull/2
+  - changed CD to transfer only Dockerfile plus Product V2 runtime files and build with remote Docker.
+- Successful main run: https://github.com/JusticeSc/listing-kit/actions/runs/36592581245
+  - clean-runner control plane and Product V2 verification: PASS
+  - runner-side Docker image and /api/health smoke test: PASS
+  - remote Docker build: PASS
+  - deployed image: amz-listing-kit:91d93f6494723a905b91443515f5f7d75d41211b
+  - host port: 8780
+  - remote Docker health status: healthy
+
+Observed correction
+===================
+The initial design treated the CI runner as the image-transfer owner. That repeatedly moves the base image and did
+not match the requested remote-server Docker operating model. The accepted design sends a minimal, explicit build
+context; the remote Docker daemon builds a SHA-tagged image, reuses its layer cache, replaces only the named
+amz-listing-kit container, and restores the previous named container if health does not become healthy.
+
+Control-plane trace
+===================
+- Selection decision: docs/product-v2-project-context.md SEL-005
+- Task contract: docs/product-v2-goal-and-implementation-plan.md V2.CI.1
+- Runtime truth: README.md CI/CD
+- Workflow: .github/workflows/ci-cd.yml
+- Container recipe: Dockerfile and .dockerignore
+- Pre-change snapshots:
+  - _stage-amz-control/docker-cicd-20260929-231804/
+  - _stage-amz-control/clean-runner-evidence-20260929-232743/
+  - _stage-amz-control/remote-docker-build-20260929-234211/
+- Current SHA-256:
+  - AGENTS.md 4fbe083b9a0b11a6e452210ba8b4399f66a8241d19db695510f1e8bb0982e678
+  - README.md ab8b93a8edd8c1566c96af6cb5839c59fda12b710f999d03e6103bb1081f9ca0
+  - docs/INDEX.md 7f5a307424eb41aead4af0ac86d6f724ac30b698586fbae0d94f4068aa14c0d9
+  - docs/product-v2-project-context.md 02f1db6cf842698e55db0f89175cc53f52d45f6a02cdb25dde2794e7643c2076
+  - docs/product-v2-goal-and-implementation-plan.md b0eb021f2a8994f70df514b39f1871db6ef4c024837ecfde9b2da4754736631a
+  - .github/workflows/ci-cd.yml af63033bb78e5b77ec42e7a0770c2aba20cf048530cd7af181da0445fe017ca9
+  - Dockerfile a667b065eda6dc171d3d01551beb16b6ed5c56b6b46be63edd55b384d419dc0b
+
+What this proves
+================
+- A clean GitHub runner can validate the tracked repository and build/start the Product V2 image.
+- The configured SSH credentials can reach the target server and use its Docker daemon.
+- The target server built and started the named SHA image on host port 8780, and Docker reported healthy.
+- The workflow has an executable previous-container rollback path for failed health transitions.
+
+What this does not prove
+========================
+- It does not prove public or tunnel reachability from an end-user network; no public URL was observed.
+- It does not prove the rollback branch by deliberately deploying a bad image.
+- It does not prove future semantic/image/VLM providers, which are outside current Product V2 runtime behavior.
+- It does not prove the complete product goal; V2.2.2 and later product slices remain pending.
