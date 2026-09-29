@@ -24,3 +24,14 @@ BOUNDARY
 - Proves the new gate is falsifiable and that restoration is byte-exact.
 - Does not prove the policy is followed in practice; that is a human decision recorded in
   AGENTS.md and docs/product-v2-project-context.md §4.
+
+PROBE B (added the same day, after the gate gained a third check)
+- Mutation: create a root `pyproject.toml` with an empty dependency list (uv scaffolding shape).
+- Command: uv run --no-project --with-requirements requirements.txt python tools/check_docs.py --no-run
+- Observed: rc=1, exactly one problem:
+    根目录出现 pyproject.toml —— 本项目用 requirements.txt 锁依赖、不用 pyproject；这类 uv 脚手架
+    会让 `uv run` 拿到一个空依赖的项目环境。
+- Restored: the file was deleted; the guard re-ran with rc=0.
+- Why this check exists: that scaffolding appeared twice in one day. With an empty-dependency
+  pyproject on disk, `uv run` without --no-project silently runs in an environment that lacks
+  the pinned requirements, which is a reproducibility failure the project forbids.

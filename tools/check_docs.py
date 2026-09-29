@@ -742,6 +742,11 @@ DEP_END = "<!-- dependency-registry:end -->"
 VENDOR_BEGIN = "<!-- vendor-registry:begin -->"
 VENDOR_END = "<!-- vendor-registry:end -->"
 
+# 本项目用 requirements.txt 锁依赖，没有 pyproject：一旦根目录出现 uv 的脚手架文件，
+# `uv run`（无 --no-project）会拿一个**空依赖**的项目环境去跑，静默改变运行环境。
+# 2026-09-29 同一天里这套文件出现过两次，所以让它出声音，而不是加进 .gitignore 盖住。
+STRAY_PROJECT_FILES = ("pyproject.toml", "uv.lock", "main.py", ".python-version")
+
 REUSE_REQUIRED_TOKENS = (
     "复用 > 配置 > 集成 > 扩展 > 自研",
     "选型报告",
@@ -787,6 +792,11 @@ def _marked_rows(text: str, begin: str, end: str) -> list[str] | None:
 
 def _check_reuse_first_gate(rep: Report) -> None:
     """⑨ 选型门禁有落点、依赖有登记，且登记表与 requirements.txt / vendor 双向一致。"""
+    for name in STRAY_PROJECT_FILES:
+        if (ROOT / name).exists():
+            rep.problem(f"根目录出现 {name} —— 本项目用 requirements.txt 锁依赖、不用 pyproject；"
+                        "这类 uv 脚手架会让 `uv run` 拿到一个空依赖的项目环境。删掉它；"
+                        "若确实要改成项目化打包，先补一条 SEL 选型记录再改守卫。")
     if not AGENTS_FILE.exists():
         rep.problem("AGENTS.md 不存在 —— 选型门禁（Reuse-first）没有任何仓库级落点，"
                     "下一个 Agent 会继续『需求 → 直接实现』。")
