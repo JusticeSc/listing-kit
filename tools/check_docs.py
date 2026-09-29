@@ -2,27 +2,21 @@ r"""文档守卫 —— 让文档里的话有人守。
 
 为什么必须有它
 --------------
-本项目踩过两次同类事故，都是"文档说了一件事、而没人守它"：
+本项目反复踩过同类事故：文档复制了实现数字、阶段或旧架构结论，却没有任何东西守住它。
 
     1. 卡里写"秒级 / 零模型"，实际是 0.06s。数字当时是对的，但**没有任何东西守着它** ——
        下一次改动会让它变成错话，而错话被人当成事实使用。
-    2. README 里写着 `python -m src.schema  # → OK: 7 slots, 6 renderers registered`。
-       如果坑位表加了一格而这句话没跟着改，读者拿到的就是一份**看起来可信的假情报** ——
-       与 v1 那个"写着 no_watermark 却从未实现"同型：声明了却不生效，比没有声明更糟。
+    2. README 曾复制固定七坑位表、回归项数、探针方向数和“下一任务”。这些值即使写下时正确，
+       也会随代码和 state 变化，最终让实现入口同时扮演历史档案、进度表和产品说明。
 
 参考库里对应的是 `evals` 的 L1 断言：**"文档里的命令必须真能跑"。** 本文件就是这条断言。
 
 受管范围（这条边界是刻意的）
 --------------------------
-    受管内容 = README.md（入口）+ docs/cards/*.md（交付单元）
-              —— 管"文档里的话对不对"：命令能不能跑、数字对不对、表与 registry 一致
-    受管登记 = 仓库里**每一份** *.md（含 docs/ 下那 9 份横切面）
+    受管内容 = README.md（当前实现入口）+ docs/cards/*.md（legacy 生成产物）
+              —— README 只保留真实启动、已实现边界和历史回归入口；卡片逐字对齐生成器
+    受管登记 = 仓库里**每一份** *.md（根目录 + docs/ + _working/）
               —— 管"哪一份有效"：状态必须是闭集合里的一个（见 _check_docs_index）
-
-为什么「内容」不管那 9 份、而「登记」要管：它们是**待删**（README §11 记录在案）。
-在要拆的房子上刷漆是本项目一贯拒绝的那类工作。但**登记是另一件事** ——
-守的不是房子的内容，是**拆迁清单的准确性**：一份没人知道该不该信的文档留在仓库里，
-比一份明写着 `to-delete` 的文档危险得多。等它们消掉之后，受管范围自然覆盖全部。
 
 两类失败必须分开报（这是本守卫最有用的一处设计）
 ----------------------------------------------
@@ -39,9 +33,8 @@ r"""文档守卫 —— 让文档里的话有人守。
     ① 卡与 gen_slot_cards.build() 逐字一致                → stale
     ② 幽灵卡（目录里有、表里已无对应坑位）                 → stale
     ③ 卡数 = 坑位数、每卡 ≤ 行数上限                       → problems
-    ④ README 的"七坑位表"与 slots.yaml + registry 一致      → problems
-       —— 那张表是**手写的副本**，是这里真实会漂的地方
-    ⑤ README 里抄下来的数字必须等于**真实的值**             → problems
+    ④ README 明确默认 V2 已实现边界与 V1 回归边界            → problems
+    ⑤ README 不复制 next_action、任务 ID 或固定七坑位表       → problems
     ⑥ 受管文档 bash 围栏里的 python 命令**真跑**，rc 必须 0  → problems
     ⑦ 仓库里每一份 *.md 都在 docs/INDEX.md 里登记、管辖事实与状态都是闭集合之一；
        非生成文档顶部的 CONTROL-STATUS 必须与 INDEX 相同 → problems
@@ -465,6 +458,36 @@ def _check_numbers(rep: Report, cfg: dict) -> None:
         elif want != got:
             rep.problem(f"README 说 {rel} 有 {want} 向植入对照，而它现在真跑的是 "
                         f"{got} 向 —— 这个数字是人抄的，探针加了方向它不会自己跟着改。")
+
+
+def _check_readme_scope(rep: Report) -> None:
+    """④⑤ README 只投影当前实现，不再兼任 state、计划或 legacy 控制表。
+
+    旧守卫试图让 README 里的每一份复制值都同步；更稳的修复是消除这些副本。legacy 卡片继续
+    由生成器逐字守住，当前阶段与下一动作只允许从 state 读取。
+    """
+    text = README.read_text(encoding="utf-8")
+    required = (
+        "默认入口现在提供 Product V2 的浏览器本地项目外壳",
+        "当前默认页面**还不能**",
+        "python app\\server.py --legacy-v1 --check",
+        "docs/INDEX.md",
+        "IndexedDB",
+    )
+    for marker in required:
+        if marker not in text:
+            rep.problem(f"README 缺少当前实现边界标记：{marker!r}")
+
+    forbidden = {
+        r"next_action_task": "README 不得复制 state 的 next_action 字段",
+        r"下一任务": "README 不得发布会漂移的下一任务",
+        r"\bV2\.\d+\.\d+\b": "README 不得复制 Product V2 任务进度 ID",
+        r"^##\s*\d*\.?\s*七坑位表": "固定七坑位表属于 legacy，不得继续占据当前实现入口",
+        r"跑全套回归（\d+\s*项": "README 不得手抄会漂移的回归项数",
+    }
+    for pattern, message in forbidden.items():
+        if re.search(pattern, text, re.M):
+            rep.problem(message)
 
 
 # ---------------------------------------------------------------- README 七坑位表
@@ -960,8 +983,7 @@ def main(argv: list[str] | None = None) -> int:
     cfg = schema.assert_valid()
 
     _check_cards(rep, cfg)
-    _check_readme_slot_table(rep, cfg)
-    _check_numbers(rep, cfg)
+    _check_readme_scope(rep)
     _check_orchestrator_rule(rep)
     _check_docs_index(rep)
     _check_reuse_first_gate(rep)
@@ -973,8 +995,8 @@ def main(argv: list[str] | None = None) -> int:
     print("=" * 72)
     print("文档守卫")
     print("=" * 72)
-    print(f"受管：README.md + docs/cards/ 下 {len(MANAGED_GEN)} 份卡"
-          f"（命令真跑 / 数字对齐 / 七坑位表与 registry 一致）")
+    print(f"受管：README.md + docs/cards/ 下 {len(MANAGED_GEN)} 份 legacy 生成卡"
+          f"（当前实现边界 / 命令入口 / 生成产物一致性）")
     print("　　　+ 文档权威登记（docs/INDEX.md：双向比对 + 管辖事实唯一）"
           "—— 回答「哪一份有效」和「哪一类事实归谁」")
     print("　　　+ 选型门禁（AGENTS.md ↔ 项目上下文 §4 依赖/vendor 登记）"

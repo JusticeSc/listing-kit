@@ -1,6 +1,6 @@
 # AI 生图 · 可控性与验证设计
 
-> CONTROL-STATUS: to-delete · AUTHORITY: none  
+> CONTROL-STATUS: superseded · AUTHORITY: none
 > **历史 v2 横切面；当前 I2I 路线、事实门和模型预算只以完整演示产品计划为准。**
 
 > **本文只回答四件事**：① 商品图的要求到底是什么；② 用 AI 生成时能控什么；③ 一次运行怎么组织模板；④ 人在哪介入、生成后怎么验。

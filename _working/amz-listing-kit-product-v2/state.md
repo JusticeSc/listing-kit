@@ -13,7 +13,7 @@ goal_id: 01a0ca17-2179-7eb0-969a-af9c79c4d8ca
 system_goal_observed_status: active
 system_goal_observed_at: 2026-09-29T21:16:19+08:00
 plan_ref: docs/product-v2-goal-and-implementation-plan.md
-latest_audit: evals/product-v2/standards-mapping-gate-20260929.txt
+latest_audit: evals/product-v2/context-control-reorganization-20260929.txt
 
 phase_progress:
   "0":
@@ -64,6 +64,7 @@ task_progress:
       - evals/product-v2/v2.1.1-indexeddb-20260929-202722-final.txt
       - evals/product-v2/v2.1.1-indexeddb-20260929-204543-after-v214.txt
       - evals/product-v2/v2.1.1-indexeddb-20260929-205946-pre-goal-baseline.txt
+      - evals/product-v2/v2.1.1-indexeddb-20260929-225228.txt
   V2.1.2:
     status: done
     evidence:
@@ -72,6 +73,7 @@ task_progress:
       - evals/product-v2/v2.1.2-project-home-20260929-202728-final.txt
       - evals/product-v2/v2.1.2-project-home-20260929-204548-after-v214.txt
       - evals/product-v2/v2.1.2-project-home-20260929-205951-pre-goal-baseline.txt
+      - evals/product-v2/v2.1.2-project-home-20260929-225234.txt
   V2.1.3:
     status: done
     evidence:
@@ -81,21 +83,27 @@ task_progress:
       - evals/product-v2/v2.1.2-project-home-20260929-203233-after-v213.txt
       - evals/product-v2/v2.1.3-project-package-20260929-204555-after-v214.txt
       - evals/product-v2/v2.1.3-project-package-20260929-205957-pre-goal-baseline.txt
+      - evals/product-v2/v2.1.3-project-package-20260929-225243.txt
   V2.1.4:
     status: done
     evidence:
       - evals/product-v2/v2.1.4-formal-entry-20260929-204134.txt
       - evals/product-v2/v2.1.4-formal-entry-20260929-204134.json
       - evals/product-v2/v2.1.4-formal-entry-20260929-205919-pre-goal-verify.txt
+      - evals/product-v2/v2.1.4-formal-entry-20260929-225248.txt
   V2.2.1:
     status: done
     evidence:
       - evals/product-v2/v2.2.1-product-contracts-20260929-211211.txt
       - evals/product-v2/v2.2.1-product-contracts-20260929-211211.json
+      - evals/product-v2/v2.2.1-product-contracts-20260929-225304.txt
 
 next_action_task: V2.2.2
-blockers: []
+blockers:
+  - SEL-003_requires_user_confirmation_before_dependency_change_or_candidate_commit
+  - untracked_V2.2.2_candidate_files_are_frozen_and_are_not_current_implementation
 unknowns:
   - visual_language_provider_model_id_is_deferred_to_V2.5.2_and_does_not_block_browser_workspace_work
-updated_at: 2026-09-29T22:16:11+08:00
+  - quarantined_uv_scaffolding_origin_is_unknown_and_it_is_not_part_of_the_project
+updated_at: 2026-09-29T22:54:28+08:00
 ```

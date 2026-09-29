@@ -13,15 +13,16 @@
 - **产品价值**：降低复杂生图任务的使用门槛，同时让设计者能查看和修改事实、套图、单图规格、Prompt、校验与候选关系。
 - **当前平台边界**：Amazon US 通用图片要求；品类知识通过可扩展规则与动态槽位逐步增加，不假装已经覆盖全部品类。
 
-## 2. 当前事实基线
+## 2. 迁移基线与事实来源
 
-| 层 | 已实现事实 | Product V2 处理方式 |
+| 层 | 稳定边界 | 事实从哪里读 |
 |---|---|---|
-| Product V1 | 本机文件夹工作空间、版本记录、真实 `qwen-image-3.0` 调用、候选、Unknown、单图返工、选择和导出均已有实现与回归证据 | 冻结为历史基线，复用业务语义和测试案例，不继续扩展服务器文件夹工作空间 |
-| Product V2 | 已完成需求和架构重新裁定；浏览器存储层（IndexedDB schema、迁移、repository、事务与指针契约）与空白项目首页（本机项目 CRUD）已落地并有契约证据 | 商品资料、商品理解、套图、生成、审核与交付，以及无状态服务、DeepSeek 新适配和 VLM 校验尚未实现 |
-| 参考模板 | `docs/standards-template/` 提供项目身份、活需求、进度和规范分工方法 | 采纳其要求（复用阶梯与选型门、人工确认门、活记忆精简、一类事实一个权威）落进现有五权威；GitHub/CD/Docker 步骤与 `standards/` 目录不适用。采纳映射、未采纳项与复访条件只在 `AGENTS.md` §Standards Mapping |
+| Product V1 | 本机文件夹工作空间与旧完整生图闭环冻结为回归基线；只复用业务语义、Provider 经验和测试案例，不继续扩展服务器工作空间 | 当前仍可运行的行为见 `README.md` 的历史入口；设计与完成轨迹从 `docs/INDEX.md` 的 superseded 文档进入 |
+| Product V2 | 浏览器拥有用户项目，Python 服务无业务状态；所有新能力都必须在这一所有权边界内实现 | 已落地行为只看 `README.md` 与代码；当前进度和证据只看 Product V2 state；目标只看 Product V2 计划 |
+| 参考模板 | `docs/standards-template/` 是外部课程模板的原样副本，不是本项目运行规范 | 采纳映射、未采纳项与复访条件只在 `AGENTS.md` §Standards Mapping |
 
-旧 Product V1 的“完成”只证明旧架构下的能力，不证明 Product V2 已经完成。Product V2 的任何完成声明必须重新取得范围匹配的证据。
+旧 Product V1 的“完成”只证明旧架构下的能力，不证明 Product V2 已经完成；未提交文件和选型 PoC
+也只算候选或证据。任何“已实现”声明都必须由 README 指向的代码与范围匹配的验证证据支持。
 
 ## 3. 运行边界与数据所有权
 
@@ -95,13 +96,12 @@ Python 无状态 AI 服务
 | SEL-000 | 依赖政策 | 分层：Python 侧允许登记过的 pinned 依赖；浏览器侧保持无构建步骤，只允许 vendor 单文件库；业务语义层自研 | 全层放开 npm 构建链；全零新增依赖 | 前端需要组件框架或状态管理，或离线安装条件变化 |
 | SEL-001 | 编排层 | 暂不引入 LangGraph / LangChain：业务状态权威是浏览器 IndexedDB，服务端无状态，不设第二个权威 | LangGraph checkpointer + 服务端状态 | 出现服务端自主多步编排，或需要跨进程恢复的长任务 |
 | SEL-002 | 服务端 HTTP | 暂保留 stdlib `http.server`（零运行时依赖、端点少、单进程） | Flask / FastAPI + uvicorn | V2.4 图片上传/下载需要 multipart 与流式响应时重开 |
-| SEL-003 | 语义/视觉调用传输层 | 待用户确认：推荐 `openai` SDK（3.20.0，Apache-2.0）；依赖实测与 PoC 选型报告见 `evals/product-v2/sel003-transport-selection-20260929.txt` | litellm（59 包，拖入 AWS/HF 栈）；requests 手写（命中禁止自造清单） | 确认后定稿并登记依赖；PoC 已发现：`deepseek-v4.1-flash` 需给 reasoning 留预算 |
+| SEL-003 | 语义/视觉调用传输层 | **待用户确认**：推荐 `openai` SDK（3.20.0，Apache-2.0）；依赖实测与 PoC 选型报告见 `evals/product-v2/sel003-transport-selection-20260929.txt` | litellm（59 包，拖入 AWS/HF 栈）；requests 手写（命中禁止自造清单） | 用户确认后定稿并登记依赖；PoC 已发现：`deepseek-v4.1-flash` 需给 reasoning 留预算 |
 | SEL-004 | 项目管理规范 | 采纳 `docs/standards-template/` 的**要求**，落进现有五份权威（映射见 `AGENTS.md` §Standards Mapping），不新建 `standards/` 平行目录 | 复制模板另立一套 standards/（会与计划/state 形成双权威） | 需要对外交付独立规范包时重开 |
 | SEL-005 | 持续集成 | 不引入 CI/CD：本机与内网使用，门禁由 `tools/` 守卫脚本承担并写进提交纪律 | GitHub Actions + CD 自动部署 | 出现多人协作、远端仓库或部署目标时重开 |
 
-状态：SEL-000 已写入 `AGENTS.md`；SEL-001、SEL-002、SEL-004、SEL-005 是当前工作决策，
-用户确认后转正式（SEL-004/SEL-005 的落点与未采纳清单见 `AGENTS.md` §Standards Mapping）；
-SEL-003 未定——未定之前不新增依赖。
+状态：SEL-000、SEL-001、SEL-002、SEL-004、SEL-005 已体现在当前实现或控制面，按已生效决策执行；
+只有 SEL-003 未定。SEL-003 确认前不得新增依赖，也不得把工作区中的适配器草案写成已实现能力。
 
 ### 4.2 依赖与 vendor 登记
 
@@ -113,7 +113,7 @@ SEL-003 未定——未定之前不新增依赖。
 |---|---|---|---|---|---|
 | pillow | 12.3.0 | MIT-CMU | 图像读写、尺寸与白底检查 | V1 基线已锁版本；V2 图像链路继续使用 | 中：校验与导出依赖它 |
 | numpy | 2.4.6 | BSD-3-Clause（含 0BSD/MIT/Zlib/CC0 组件） | 像素与数组运算（V1 合成、白底统计） | V1 基线已锁版本 | 中：V1 图像链路依赖它 |
-| requests | 2.34.2 | Apache-2.0 | 外部模型 HTTP 调用（V1 适配器与 V2.2 语义适配器） | V1 基线；SEL-003 讨论中可能被模型 SDK 取代 | 小：集中在 `src/providers/` |
+| requests | 2.34.2 | Apache-2.0 | Product V1 外部模型 HTTP 调用 | V1 基线；SEL-003 尚未决定 V2 是否继续使用 | 小：集中在 `src/providers/` |
 | PyYAML | 6.0.3 | MIT | 读取 `slots.yaml`、平台与品类配置 | V1 基线已锁版本 | 小：配置读取集中 |
 | python-dotenv | 1.2.3 | BSD-3-Clause | 本地 `.env` 加载（`run.py`） | V1 基线已锁版本 | 小：入口一处 |
 | jsonschema | 4.26.0 | MIT | 结构契约校验（Draft 2020-12） | V1 基线已锁版本；V2 提案校验继续使用 | 小：契约校验集中 |

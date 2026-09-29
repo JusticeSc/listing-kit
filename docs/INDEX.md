@@ -31,7 +31,7 @@
 
 | 路径 | 世代 | 管辖事实 | 状态 | 说明 |
 |---|---|---|---|---|
-| `README.md` | v2 | `实现` | `current` | 当前实现的人读入口，只描述已落地 v2 与明确的新 demo 代码；项目目标和状态分别链接到各自权威 |
+| `README.md` | Product V2 + V1 回归入口 | `实现` | `current` | 当前实现的人读入口：默认 V2 的已落地边界、真实启动/验证方式及 V1 回归入口；不复制进度和下一任务 |
 | `AGENTS.md` | Product V2 | `项目规则` | `current` | Agent 工作规则与选型门禁（Reuse-first）的唯一权威；目标、技术栈、状态分别链接到各自权威，不复制正文 |
 | `docs/product-v1-goal-and-implementation-plan.md` | Product V1 | `历史证据` | `superseded` | 被 `docs/product-demo-goal-and-implementation-plan.md` 取代；真实试点假设不再作为当前完成标准 |
 | `_working/amz-listing-kit-product-v1/state.md` | Product V1 | `历史证据` | `superseded` | 被 `_working/amz-listing-kit-product-demo/state.md` 取代；保留上一轮执行位置，不据以继续开工 |
@@ -48,14 +48,14 @@
 | `_working/amz-listing-kit-product-demo/tasks/d4.14-completion-matrix-draft.md` | Product V1 D4.14 | `历史证据` | `superseded` | 被 Product V2 完成证据矩阵与 V2.7.4 发布审计取代；旧盘点不作当前完成依据 |
 | `_working/amz-listing-kit-product-demo/implementation-plan-2026-09-26.md` | 完整演示产品 v1.14 | `历史证据` | `superseded` | 旧执行细节快照；已被 Product V1 v2.3 工作空间与动态编译计划取代，不据此继续开工 |
 | `docs/架构设计.md` | v2 | `历史证据` | `superseded` | 被 `docs/product-demo-goal-and-implementation-plan.md` 的目标架构取代；当前 v2 实现以 README 和代码为准 |
-| `docs/系统设计方案.md` | v2 | `待处置` | `to-delete` | 横切面，待知识落点核对（见 §3） |
-| `docs/设计复审.md` | v2 | `待处置` | `to-delete` | 横切面，待知识落点核对 |
-| `docs/业务流程与提效设计.md` | v2 | `待处置` | `to-delete` | 横切面，待知识落点核对 |
-| `docs/AI生图可控性与验证设计.md` | v2 | `待处置` | `to-delete` | 横切面，待知识落点核对 |
-| `docs/实施计划.md` | v2 | `待处置` | `to-delete` | 横切面，待知识落点核对（663 行，这批里最大一份） |
-| `docs/最小可行设计.md` | v2 | `待处置` | `to-delete` | 横切面。**删之前必须先处置 §8「文案错 → 0.1s 免费」** —— 它随不变量 C 的删除失去实现（`slots-v4` §4.4 已记账），这行字目前是**唯一还写着旧口径**的地方 |
-| `docs/使用形态.md` | v2 | `待处置` | `to-delete` | 横切面，待知识落点核对 |
-| `docs/业务逻辑.md` | v2 | `待处置` | `to-delete` | 横切面，待知识落点核对 |
+| `docs/系统设计方案.md` | legacy renderer v2 | `历史证据` | `superseded` | 被 Product V2 计划取代；其中“主体抠图 + 固定图位 + 单格生成”只解释旧路线，不是当前架构 |
+| `docs/设计复审.md` | legacy renderer v2 | `历史证据` | `superseded` | 被 Product V2 计划取代；保留旧路线矛盾与收敛过程，不据此开工 |
+| `docs/业务流程与提效设计.md` | legacy renderer v2 | `历史证据` | `superseded` | 被 Product V2 产品合同与用户工作流取代；固定七图和单次模型调用不再有效 |
+| `docs/AI生图可控性与验证设计.md` | legacy renderer v2 | `历史证据` | `superseded` | 被 Product V2 Prompt、Provider 与分层校验合同取代；“模型只生成背景”不是当前边界 |
+| `docs/实施计划.md` | legacy renderer v2 | `历史证据` | `superseded` | M0–M7 是旧表驱动渲染器的已完成轨迹；当前施工只按 Product V2 唯一任务表 |
+| `docs/最小可行设计.md` | legacy renderer v2 | `历史证据` | `superseded` | 被 Product V2 计划取代；固定七坑位、主体抠图和旧返工成本口径均不再有效 |
+| `docs/使用形态.md` | legacy renderer v2 | `历史证据` | `superseded` | 被 Product V2 用户可见工作流取代；旧五步页只作历史交互证据 |
+| `docs/业务逻辑.md` | legacy renderer v2 | `历史证据` | `superseded` | 被 Product V2 对象、状态与人工采纳合同取代；旧坑位业务模型不再驱动当前产品 |
 | `docs/cards/README.md` | v2 | `生成产物` | `generated` | 生成器 `tools/gen_slot_cards.py`；七格共有规矩 + 该读哪一张 |
 | `docs/cards/slot-1.md` | v2 | `生成产物` | `generated` | 同上 |
 | `docs/cards/slot-2.md` | v2 | `生成产物` | `generated` | 同上 |
@@ -122,14 +122,9 @@
 是读者要据以行事的事实。它此前不在扫描范围里，于是"下一步做什么"
 没有任何机器可查的权威登记 —— 这正是本次校准要堵的洞。
 
-**"待删"的删除前置条件（README §11 的裁定，原文照抄，不另立）**：
-
-> 删的时机是"有人照着卡干过一次活之后"—— 先删再补，等于把知识一次抹掉两次。
-
-⚠ **这条前置条件目前不可判定**（"有人干过一次活"没有判据），所以 `to-delete` 那一批会一直停留在该状态
-（**不写份数** —— 理由见 §4：份数是本表的派生值，数表即得，写进正文就多一个没人守的声明）。
-把它写成可判定的形态是**另一个待办**（形态应为：逐份列出它的一级标题，标明每条在
-卡 / README / drafts 里的落点；全部有落点之后删除才是安全的）。本文只如实登记状态，不假装它已解决。
+旧横切文档不再处于无限期的“待删”状态：它们包含旧架构的第一手设计与故障轨迹，统一保留为
+`superseded / 历史证据`。读者默认不读；只有追溯 Product V1/legacy renderer 决策时才从本表进入。
+未来若要物理删除，删除本身另立任务并以 Git 历史或归档包为恢复手段，不把它混入当前产品开发。
 
 ---
 

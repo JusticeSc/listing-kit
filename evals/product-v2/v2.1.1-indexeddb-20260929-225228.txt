@@ -1,0 +1,47 @@
+amz-listing-kit Product V2 V2.1.1 IndexedDB storage contract
+NOT-AUTHORITY: point-in-time verification evidence only
+observed_at: 2026-09-29T22:52:33
+status: passed
+json: evals/product-v2/v2.1.1-indexeddb-20260929-225228.json
+
+CHECKS
+- [PASS] V2.1.1-00 storage 模块通过 node --check（ESM 语法门）
+- [PASS] V2.1.1-01 契约套件全部通过且用例清单完整
+- [PASS] V2.1.1-02 运行期无 console error / page error
+- [PASS] V2.1.1-03 默认库名与版本取自代码，结构为 projects/assets/documents
+- [PASS] V2.1.1-04 两个独立浏览器配置文件的项目列表互不可见
+- [PASS] V2.1.1-05 浏览器关闭重开后项目与当前指针仍在（IndexedDB 持久化）
+
+SUITE CASES
+- [PASS] S01 新建数据库的结构与 STORE_SPECS 一致，版本与代码一致
+- [PASS] S02 schema 漂移检测器能变红（缺失索引 / 幽灵对象仓）
+- [PASS] P01 空白新建项目只含身份字段，初始状态 EMPTY，无预填商品内容
+- [PASS] P02 空名称被拒绝：INVALID_ARGUMENT
+- [PASS] P03 项目列表按 updated_at 倒序
+- [PASS] P04 重命名递增 revision 并更新时间
+- [PASS] P05 过期 revision 的重命名被拒绝，且记录不被改动
+- [PASS] P06 非法项目状态被拒绝，状态保持原值
+- [PASS] P07 删除项目在同一事务里清掉它的文档与资产
+- [PASS] P08 重复 project_id 被拒绝：DUPLICATE_RECORD
+- [PASS] P09 复制项目：新 id 下复制文档与资产，原项目不受影响
+- [PASS] D01 文档 append-only：版本递增且旧版本仍可读
+- [PASS] D02 expectedVersion 不符：REVISION_CONFLICT，且不写新版本
+- [PASS] D03 非 JSON 载荷（函数 / Blob）被拒绝：SCHEMA_INVALID
+- [PASS] D04 超大 JSON 载荷被拒绝（图片必须进 assets）
+- [PASS] D05 不同 document_id / kind 互不影响
+- [PASS] A01 资产往返：sha256、字节数与 Blob 内容一致
+- [PASS] A02 同样字节重复写入只保留一份（内容寻址幂等）
+- [PASS] A03 相同字节在不同项目各自独立，删除互不影响
+- [PASS] T01 事务中抛错：同一事务的写入全部回滚
+- [PASS] T02 同一版本并发写：恰好一个成功，版本只加一
+- [PASS] L01 localStorage 只存当前项目指针，且不含业务数据
+- [PASS] L02 指针指向已删除项目：读取返回 null 并自愈清除
+- [PASS] L03 损坏指针：读取返回 null 并自愈清除，不抛错
+- [PASS] L04 把指针指向不存在的项目：NOT_FOUND 且不写指针
+- [PASS] L05 创建项目并设指针后可以按指针取回该项目
+- [PASS] M01 迁移 v1→v2：追加对象仓且旧数据保留
+- [PASS] M02 代码版本低于数据库版本：SCHEMA_TOO_NEW，且数据不丢
+- [PASS] M03 迁移抛错：升级事务回滚，不留下半个 schema
+
+BOUNDARY
+证明浏览器存储层：schema/迁移/事务/版本化 JSON/内容寻址 Blob/轻量指针/上下文隔离/重启恢复。不证明项目首页、导入导出、无状态服务、模型调用或首次使用者闭环。
