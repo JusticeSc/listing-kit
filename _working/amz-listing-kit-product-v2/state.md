@@ -13,7 +13,7 @@ goal_id: 01a0ca17-2179-7eb0-969a-af9c79c4d8ca
 system_goal_observed_status: active
 system_goal_observed_at: 2026-09-29T20:13:03+08:00
 plan_ref: docs/product-v2-goal-and-implementation-plan.md
-latest_audit: evals/product-v2/v2.1.3-project-package-20260929-203215.txt
+latest_audit: evals/product-v2/v2.1.4-formal-entry-20260929-205919-pre-goal-verify.txt
 
 phase_progress:
   "0":
@@ -25,12 +25,14 @@ phase_progress:
       - evals/product-v2/control-plane-calibration-20260929.txt
       - evals/product-v2/pre-goal-readiness-20260929.txt
   "1":
-    status: active
+    status: done
     evidence:
-      - evals/product-v2/pre-goal-readiness-20260929.txt
-      - evals/product-v2/v2.1.1-indexeddb-20260929-202722-final.txt
-      - evals/product-v2/v2.1.2-project-home-20260929-202728-final.txt
-      - evals/product-v2/v2.1.3-project-package-20260929-203215.txt
+      - evals/product-v2/v2.1.1-indexeddb-20260929-205946-pre-goal-baseline.txt
+      - evals/product-v2/v2.1.2-project-home-20260929-205951-pre-goal-baseline.txt
+      - evals/product-v2/v2.1.3-project-package-20260929-205957-pre-goal-baseline.txt
+      - evals/product-v2/v2.1.4-formal-entry-20260929-205919-pre-goal-verify.txt
+  "2":
+    status: active
 
 task_progress:
   V2.0.1:
@@ -57,12 +59,16 @@ task_progress:
       - evals/product-v2/v2.1.1-indexeddb-20260929-201212.txt
       - evals/product-v2/v2.1.1-indexeddb-20260929-201431-fresh-20260929.txt
       - evals/product-v2/v2.1.1-indexeddb-20260929-202722-final.txt
+      - evals/product-v2/v2.1.1-indexeddb-20260929-204543-after-v214.txt
+      - evals/product-v2/v2.1.1-indexeddb-20260929-205946-pre-goal-baseline.txt
   V2.1.2:
     status: done
     evidence:
       - evals/product-v2/v2.1.2-project-home-20260929-202041.txt
       - evals/product-v2/v2.1.2-project-home-20260929-202403-repro2.txt
       - evals/product-v2/v2.1.2-project-home-20260929-202728-final.txt
+      - evals/product-v2/v2.1.2-project-home-20260929-204548-after-v214.txt
+      - evals/product-v2/v2.1.2-project-home-20260929-205951-pre-goal-baseline.txt
   V2.1.3:
     status: done
     evidence:
@@ -70,10 +76,18 @@ task_progress:
       - evals/product-v2/v2.1.3-project-package-20260929-203215.json
       - evals/product-v2/v2.1.1-indexeddb-20260929-203229-after-v213.txt
       - evals/product-v2/v2.1.2-project-home-20260929-203233-after-v213.txt
+      - evals/product-v2/v2.1.3-project-package-20260929-204555-after-v214.txt
+      - evals/product-v2/v2.1.3-project-package-20260929-205957-pre-goal-baseline.txt
+  V2.1.4:
+    status: done
+    evidence:
+      - evals/product-v2/v2.1.4-formal-entry-20260929-204134.txt
+      - evals/product-v2/v2.1.4-formal-entry-20260929-204134.json
+      - evals/product-v2/v2.1.4-formal-entry-20260929-205919-pre-goal-verify.txt
 
-next_action_task: V2.1.4
+next_action_task: V2.2.1
 blockers: []
 unknowns:
   - visual_language_provider_model_id_is_deferred_to_V2.5.2_and_does_not_block_browser_workspace_work
-updated_at: 2026-09-29T20:32:49+08:00
+updated_at: 2026-09-29T21:01:30+08:00
 ```
