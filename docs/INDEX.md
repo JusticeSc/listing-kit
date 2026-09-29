@@ -66,17 +66,20 @@
 | `docs/drafts/ref-mining-ecom-2026-09-23.md` | Product V1 | `历史证据` | `superseded` | 已采纳内容进入完整演示产品计划；范例挖掘只保留为来源记录，不作判据或任务卡 |
 | `docs/drafts/devplan-v4.md` | v4 | `历史证据` | `superseded` | 早期由 Product V1 计划替代，最终由当前 `docs/product-demo-goal-and-implementation-plan.md` v2.6 接管；保留为生成优先路线的历史设计证据，不再作为开工顺序 |
 | `docs/drafts/slots-v3-proposal.md` | v3 | `历史证据` | `superseded` | 被 `docs/drafts/slots-v4-generation-first.md` 取代 |
-| `docs/standards-template/README.md` | 外部参考模板 | `设计草案` | `draft` | 仅用于提炼上下文分工与反臃肿思想；未经本项目适配不得成为项目规范或确认门 |
-| `docs/standards-template/00-project-context.md` | 外部参考模板 | `设计草案` | `draft` | 仅用于参考项目身份档案结构；真实 Product V2 上下文由 `docs/product-v2-project-context.md` 管辖 |
-| `docs/standards-template/01-requirements.md` | 外部参考模板 | `设计草案` | `draft` | 仅用于参考活需求和验收写法；真实需求与任务由 Product V2 计划管辖 |
-| `docs/standards-template/02-coding-standards.md` | 外部参考模板 | `设计草案` | `draft` | 仅作编码规范候选参考；未被整体采纳为当前项目约束 |
-| `docs/standards-template/03-testing-standards.md` | 外部参考模板 | `设计草案` | `draft` | 仅作分层验证参考；Product V2 证据标准由当前计划定义 |
-| `docs/standards-template/04-git-workflow.md` | 外部参考模板 | `设计草案` | `draft` | 仅作 Git 流程参考；其中课堂、GitHub 与人工合并指令不自动适用于本项目 |
-| `docs/standards-template/05-cicd-standards.md` | 外部参考模板 | `设计草案` | `draft` | 仅作 CI/CD 参考；本项目没有据此新增部署目标或 Secrets 要求 |
-| `docs/standards-template/06-ai-collab-protocol.md` | 外部参考模板 | `设计草案` | `draft` | 仅作上下文维护参考；其中六步确认门不自动成为本项目工作流 |
-| `docs/standards-template/PROGRESS.md` | 外部参考模板 | `设计草案` | `draft` | 仅作状态记录参考；当前执行状态仍只由 `_working/amz-listing-kit-product-v2/state.md` 管辖 |
-| `docs/standards-template/templates/ISSUE_TEMPLATE.md` | 外部参考模板 | `设计草案` | `draft` | 仅作任务描述格式参考；未启用为当前 Issue 模板 |
-| `docs/standards-template/templates/PR_TEMPLATE.md` | 外部参考模板 | `设计草案` | `draft` | 仅作变更说明格式参考；未启用为当前 PR 模板 |
+| `docs/standards-template/README.md` | 外部参考模板 | `设计草案` | `draft` | 外部课程模板原样副本；本项目按 `AGENTS.md` §Standards Mapping 适配其要求，模板自身只作参考 |
+| `docs/standards-template/00-project-context.md` | 外部参考模板 | `设计草案` | `draft` | 项目身份与技术栈模板；对应权威为 `docs/product-v2-project-context.md`（已含选型记录与依赖登记） |
+| `docs/standards-template/01-requirements.md` | 外部参考模板 | `设计草案` | `draft` | 活 PRD 与验收写法模板；对应权威为 Product V2 计划 §3 产品合同 + §10.1 任务表 + §11 证据矩阵 |
+| `docs/standards-template/02-coding-standards.md` | 外部参考模板 | `设计草案` | `draft` | 编码标准；已适配进 `AGENTS.md` 的 Coding Style；未采用 ruff，理由与替代写在项目上下文 §7 质量门槛 |
+| `docs/standards-template/03-testing-standards.md` | 外部参考模板 | `设计草案` | `draft` | 测试标准；已适配进计划 §12 与 `AGENTS.md` 的 Testing Guidelines；覆盖率为“暂无阈值 + 理由” |
+| `docs/standards-template/04-git-workflow.md` | 外部参考模板 | `设计草案` | `draft` | Git/PR 流程模板；本仓库无远端与 PR 流程，差异与替代（提交纪律 + 守卫）记在 `AGENTS.md` §Standards Mapping |
+| `docs/standards-template/05-cicd-standards.md` | 外部参考模板 | `设计草案` | `draft` | CI/CD 标准；本仓库不适用（无 CI、无 Docker、无服务器部署），不适用的条件写进 `AGENTS.md` §Standards Mapping |
+| `docs/standards-template/06-ai-collab-protocol.md` | 外部参考模板 | `设计草案` | `draft` | AI 协作协议；主干已适配：选型门 = `AGENTS.md` §Selection Gate，确认门 = state 唯一下一动作 + 用户确认 |
+| `docs/standards-template/07-dependency-standards.md` | 外部参考模板 | `设计草案` | `draft` | 依赖与复用阶梯；已适配进 `AGENTS.md` §Selection Gate 与项目上下文 §4.2 依赖登记（版本锁定 + 许可证） |
+| `docs/standards-template/PROGRESS.md` | 外部参考模板 | `设计草案` | `draft` | 状态机与决策记录模板；对应权威为 `_working/amz-listing-kit-product-v2/state.md`，决策在项目上下文 §4.1 |
+| `docs/standards-template/templates/ISSUE_TEMPLATE.md` | 外部参考模板 | `设计草案` | `draft` | 未启用（本仓库无 Issue 流程）；任务描述以计划任务卡的“验收条件”为准 |
+| `docs/standards-template/templates/PR_TEMPLATE.md` | 外部参考模板 | `设计草案` | `draft` | 未启用（本仓库无 PR 流程）；提交信息与自检清单见 `AGENTS.md` 的 Commit & Pull Request Guidelines |
+| `docs/standards-template/templates/TECH_SELECTION.md` | 外部参考模板 | `设计草案` | `draft` | 选型报告模板；本项目用 `AGENTS.md` 的字段清单 + 项目上下文 §4.1 决策行承载，不单独立文件 |
+| `docs/standards-template/templates/ADR_TEMPLATE.md` | 外部参考模板 | `设计草案` | `draft` | ADR 模板；本项目以项目上下文 §4.1 的 SEL 行（含复访条件）代替独立 `docs/adr/` 目录 |
 
 ---
 

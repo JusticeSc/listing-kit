@@ -1,8 +1,5 @@
 # Issue 模板
 
-> CONTROL-STATUS: draft · AUTHORITY: external-reference-template
-> 本文件未启用为 amz-listing-kit 的当前 Issue 模板。
-
 ## 类型
 
 - [ ] Feature 功能

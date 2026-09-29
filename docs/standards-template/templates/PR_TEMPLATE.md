@@ -1,8 +1,5 @@
 # Pull Request 模板
 
-> CONTROL-STATUS: draft · AUTHORITY: external-reference-template
-> 本文件未启用为 amz-listing-kit 的当前 PR 模板。
-
 ## What
 
 <这个 PR 做了什么>
@@ -31,6 +28,8 @@
 - [ ] commit message 符合规范
 - [ ] 已同步最新 main,无冲突
 - [ ] 已更新 standards/PROGRESS.md
+- [ ] 新增依赖已过 ②.5 选型门并登记(无新增则跳过)
+- [ ] 未自造通用基础设施(复用优先,见 07)
 
 ---
 

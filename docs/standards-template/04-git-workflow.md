@@ -1,8 +1,5 @@
 # 04 · Git 工作流与 PR/Review 标准
 
-> CONTROL-STATUS: draft · AUTHORITY: external-reference-template
-> 本文件只作方法参考；其中课堂、GitHub、PR 和人工合并规则不自动适用于本项目。
-
 > **目标**:定义代码如何从本地安全进入 `main`,并触发 CI/CD。课堂第一项功能必须完整演示本文件第 2 节。
 
 ---

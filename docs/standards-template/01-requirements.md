@@ -1,8 +1,5 @@
 # 01 · 需求 / 活 PRD 〔本项目活记忆 · AI 维护〕
 
-> CONTROL-STATUS: draft · AUTHORITY: external-reference-template
-> 本文件是参考模板，不是 amz-listing-kit 的当前需求权威。
-
 > **作用**:这是本项目唯一的需求文档。所有新功能、缺陷、技术债都追加到这里,不要另起多个 PRD 文件。
 > **更新时机**:每次有新需求、需求变更、验收标准变化时更新。
 

@@ -1,8 +1,5 @@
 # 05 · CI/CD 标准
 
-> CONTROL-STATUS: draft · AUTHORITY: external-reference-template
-> 本文件只作方法参考，不代表本项目已经采用其部署、Secrets、Docker 或 CD 方案。
-
 > **目标**:定义最小可复现 CI/CD。CI 管“代码是否可靠”,CD 管“可靠代码如何自动上线”。
 
 ---

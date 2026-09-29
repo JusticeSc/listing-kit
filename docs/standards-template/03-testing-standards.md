@@ -1,8 +1,5 @@
 # 03 · 测试标准
 
-> CONTROL-STATUS: draft · AUTHORITY: external-reference-template
-> 本文件只作候选规范参考，Product V2 的当前证据标准由其权威计划定义。
-
 > **目标**:定义“什么叫测够了”。开发自测是进入 CI 前的第一道防线。
 
 ---

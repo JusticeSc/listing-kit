@@ -693,7 +693,11 @@ def _check_docs_index(rep: Report) -> None:
         if not note:
             rep.problem(f"docs/INDEX.md 里 {path} 的说明列为空 —— 状态是 {state!r} 时，"
                         f"说明必须写明「{DOC_STATES.get(state, '为什么是这个状态')}」。")
-        if path in actual and state != "generated":
+#      `docs/standards-template/**` 是**外部课程模板的原样副本**，会被整目录重新同步：
+#      给它加我们的 CONTROL-STATUS 会让下一次同步丢标记，也会把一份参考模板伪装成项目文档。
+#      它的身份与状态只由 INDEX 这一处登记；被本项目采纳的结论写进 AGENTS.md 的 Standards Mapping。
+        imported_reference = path.startswith("docs/standards-template/")
+        if path in actual and state != "generated" and not imported_reference:
             head = "\n".join((ROOT / path).read_text(encoding="utf-8").splitlines()[:12])
             marker = CONTROL_STATUS_RE.search(head)
             if not marker:
