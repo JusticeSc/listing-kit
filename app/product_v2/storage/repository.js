@@ -185,6 +185,62 @@ export function createRepository({
     return true;
   }
 
+  /**
+   * 复制项目：同一事务里复制项目记录、全部文档版本与全部资产字节。
+   * 新项目用新的 project_id，因此资产键与文档键全部重写；原项目一个字节都不动。
+   * 复制失败时事务回滚，不产生半个副本。
+   */
+  async function duplicateProject(projectId, { name = null } = {}) {
+    requireId(projectId, "project_id");
+    const timestamp = now();
+    return withTransaction(db, ["projects", "documents", "assets"], "readwrite", async (tx) => {
+      const projects = tx.objectStore("projects");
+      const source = await requestToPromise(projects.get(projectId));
+      if (!source) {
+        throw new StorageError(STORAGE_ERROR_CODES.NOT_FOUND, "项目 " + projectId + " 不存在。");
+      }
+      const copyId = newId();
+      const copy = {
+        ...source,
+        project_id: copyId,
+        name: name ? normalizeName(name) : normalizeName(source.name + "（副本）"),
+        revision: 1,
+        created_at: timestamp,
+        updated_at: timestamp,
+      };
+      assertProjectRecord(copy);
+      await requestToPromise(projects.add(copy));
+
+      const documents = tx.objectStore("documents");
+      const sourceDocuments = await requestToPromise(
+        documents.index("by_project_kind")
+          .getAll(IDBKeyRange.bound([projectId], [projectId, []])));
+      for (const record of sourceDocuments) {
+        await requestToPromise(documents.add({
+          ...record,
+          document_key: documentKeyOf(copyId, record.kind, record.document_id, record.version),
+          project_id: copyId,
+        }));
+      }
+
+      const assets = tx.objectStore("assets");
+      const sourceAssets = await requestToPromise(
+        assets.index("by_project_id").getAll(IDBKeyRange.only(projectId)));
+      for (const record of sourceAssets) {
+        await requestToPromise(assets.add({
+          ...record,
+          asset_key: assetKeyOf(copyId, record.sha256),
+          project_id: copyId,
+        }));
+      }
+      return {
+        project: copy,
+        documents: sourceDocuments.length,
+        assets: sourceAssets.length,
+      };
+    });
+  }
+
   async function saveDocument(projectId, {
     kind,
     documentId,
@@ -387,6 +443,7 @@ export function createRepository({
       rename: renameProject,
       setState: updateProjectState,
       remove: deleteProject,
+      duplicate: duplicateProject,
     },
     documents: {
       save: saveDocument,

@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Amazon US 商品套图</title>
+<link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+<header class="topbar">
+  <h1>Amazon US 商品套图</h1>
+  <p class="subtitle">项目保存在这台浏览器里；服务器不保存你的项目，也不保存最近使用记录。</p>
+</header>
+
+<main>
+  <p id="boot-error" class="error" role="alert" hidden></p>
+
+  <section id="home-view" aria-labelledby="home-title">
+    <h2 id="home-title" class="section-title">本机项目</h2>
+    <form id="create-form" class="toolbar" autocomplete="off">
+      <label class="visually-hidden" for="new-project-name">新项目名称</label>
+      <input id="new-project-name" name="name" maxlength="120"
+             placeholder="商品或任务名称，例如：蓝色保温杯 秋季主图">
+      <button id="create-project" type="submit">新建项目</button>
+    </form>
+    <p id="home-error" class="error" role="alert" hidden></p>
+    <p id="empty-state" class="empty" hidden>这台浏览器还没有项目。填写名称后点“新建项目”开始。</p>
+    <ul id="project-list" class="project-list"></ul>
+  </section>
+
+  <section id="project-view" aria-labelledby="project-title" hidden>
+    <button id="back-home" class="link-button" type="button">← 返回项目列表</button>
+    <h2 id="project-title" class="section-title"></h2>
+    <dl class="facts">
+      <div><dt>状态</dt><dd id="project-state"></dd></div>
+      <div><dt>创建时间</dt><dd id="project-created"></dd></div>
+      <div><dt>最近更新</dt><dd id="project-updated"></dd></div>
+    </dl>
+    <p class="note">商品资料与套图流程尚未接入；当前版本只管理本机项目本身。</p>
+  </section>
+</main>
+
+<template id="project-row-template">
+  <li class="project-row">
+    <div class="row-main">
+      <span class="badge" data-role="state"></span>
+      <span class="name" data-role="name"></span>
+      <span class="meta" data-role="updated"></span>
+    </div>
+    <div class="row-actions" data-role="actions">
+      <button type="button" data-action="open">打开</button>
+      <button type="button" data-action="rename">重命名</button>
+      <button type="button" data-action="duplicate">复制</button>
+      <button type="button" data-action="delete" class="danger">删除</button>
+    </div>
+  </li>
+</template>
+
+<script type="module" src="./app.js"></script>
+</body>
+</html>

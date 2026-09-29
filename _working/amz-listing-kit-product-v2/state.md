@@ -13,7 +13,7 @@ goal_id: 01a0ca17-2179-7eb0-969a-af9c79c4d8ca
 system_goal_observed_status: active
 system_goal_observed_at: 2026-09-29T20:13:03+08:00
 plan_ref: docs/product-v2-goal-and-implementation-plan.md
-latest_audit: evals/product-v2/v2.1.1-indexeddb-20260929-201431-fresh-20260929.txt
+latest_audit: evals/product-v2/v2.1.2-project-home-20260929-202403-repro2.txt
 
 phase_progress:
   "0":
@@ -56,10 +56,17 @@ task_progress:
       - evals/product-v2/v2.1.1-indexeddb-20260929-201212.json
       - evals/product-v2/v2.1.1-indexeddb-20260929-201431-fresh-20260929.txt
       - evals/product-v2/v2.1.1-indexeddb-20260929-201431-fresh-20260929.json
+      - evals/product-v2/v2.1.1-indexeddb-20260929-202249-repro-v212.txt
+  V2.1.2:
+    status: done
+    evidence:
+      - evals/product-v2/v2.1.2-project-home-20260929-202041.txt
+      - evals/product-v2/v2.1.2-project-home-20260929-202300-repro.txt
+      - evals/product-v2/v2.1.2-project-home-20260929-202403-repro2.txt
 
-next_action_task: V2.1.2
+next_action_task: V2.1.3
 blockers: []
 unknowns:
   - visual_language_provider_model_id_is_deferred_to_V2.5.2_and_does_not_block_browser_workspace_work
-updated_at: 2026-09-29T20:16:10+08:00
+updated_at: 2026-09-29T20:24:50+08:00
 ```

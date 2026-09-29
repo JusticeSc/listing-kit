@@ -175,6 +175,34 @@ test("P08", "重复 project_id 被拒绝：DUPLICATE_RECORD", () => withRepo(asy
   return outcome;
 }));
 
+test("P09", "复制项目：新 id 下复制文档与资产，原项目不受影响", () => withRepo(async ({ repository }) => {
+  const source = await repository.projects.create({ name: "原项目" });
+  await repository.documents.save(source.project_id, {
+    kind: PROBE_DOC, documentId: "brief", payload: { note: "第一个版本" },
+  });
+  await repository.documents.save(source.project_id, {
+    kind: PROBE_DOC, documentId: "brief", payload: { note: "第二个版本" }, expectedVersion: 1,
+  });
+  const asset = await repository.assets.put(source.project_id, {
+    bytes: utf8Bytes("duplicate-source-bytes"), mediaType: "image/png", originalName: "ref.png",
+  });
+  const copy = await repository.projects.duplicate(source.project_id);
+  const copyId = copy.project.project_id;
+  expect(copyId !== source.project_id, "副本必须有新的 project_id");
+  expect(copy.project.name === "原项目（副本）", "默认名称应标记副本，实际 " + copy.project.name);
+  expect(copy.documents === 2 && copy.assets === 1, "复制数量不符：" + JSON.stringify(copy));
+  const copyHistory = await repository.documents.listVersions(copyId, PROBE_DOC, "brief");
+  expect(copyHistory.length === 2, "副本应保留两个文档版本，实际 " + copyHistory.length);
+  const copyAsset = await repository.assets.get(copyId, asset.sha256);
+  expect(copyAsset && copyAsset.asset_key !== asset.asset_key, "副本资产键必须重写");
+  const copyBytes = new Uint8Array(await copyAsset.blob.arrayBuffer());
+  expect(new TextDecoder().decode(copyBytes) === "duplicate-source-bytes", "副本字节应与原资产一致");
+  await repository.projects.remove(copyId);
+  const sourceAssets = await repository.assets.list(source.project_id);
+  expect(sourceAssets.length === 1, "删除副本不得影响原项目资产");
+  return { copy_id: copyId, documents: copy.documents, assets: copy.assets };
+}));
+
 /* ---------- 文档版本 ---------- */
 
 test("D01", "文档 append-only：版本递增且旧版本仍可读", () => withRepo(async ({ repository }) => {

@@ -6,10 +6,11 @@
 > [`docs/product-v2-goal-and-implementation-plan.md`](docs/product-v2-goal-and-implementation-plan.md)，当前执行位置只看
 > [`_working/amz-listing-kit-product-v2/state.md`](_working/amz-listing-kit-product-v2/state.md)。
 
-本 README 的主体记录**已经实现的 legacy v2 与 Product V1**。Product V2 已完成控制面、详细计划和浏览器存储层（IndexedDB schema、迁移、项目/文档/资产 repository、事务与指针契约）；无状态 AI 服务、DeepSeek 新适配、VLM 校验和新正式前端尚未实现。不能把 Product V1 的文件夹工作空间或既有回归结果写成 Product V2 已完成能力。
+本 README 的主体记录**已经实现的 legacy v2 与 Product V1**。Product V2 已完成控制面、详细计划和浏览器存储层（IndexedDB schema、迁移、项目/文档/资产 repository、事务与指针契约），以及空白项目首页的本机项目 CRUD（新建、打开、重命名、复制、删除；含 390px 与跨配置文件隔离证据）；无状态 AI 服务、DeepSeek 新适配、VLM 校验和商品资料之后的业务前端尚未实现。不能把 Product V1 的文件夹工作空间或既有回归结果写成 Product V2 已完成能力。
 
 > **当前可运行入口仍是 Product V1：**`python app/server.py`（默认 8780），支持本机文件夹工作空间、商品理解、套图、真实生成、审核、单图返工、选择和导出；其证据边界见被取代的 Product V1 计划与 state。
-> **Product V2 当前状态：**系统 Goal 已绑定并恢复执行；`V2.1.1` 浏览器存储层已完成并有契约证据（`evals/product-v2/v2.1.1-indexeddb-20260929-201212.txt`），下一任务是 `V2.1.2` 空白项目首页与项目 CRUD。Product V2 尚不能按目标流程实际使用。
+> **Product V2 当前状态：**系统 Goal 已绑定并恢复执行；`V2.1.1` 浏览器存储层与 `V2.1.2` 空白项目首页（本机项目 CRUD）已完成并有契约证据（`evals/product-v2/v2.1.1-indexeddb-20260929-202249-repro-v212.txt`、`evals/product-v2/v2.1.2-project-home-20260929-202403-repro2.txt`），下一任务是 `V2.1.3` 完整项目 ZIP 导入/导出。Product V2 尚不能按目标流程实际使用。
+> Product V2 页面目前由验证装置 `tools/v2_test_server.py` 挂载后验证（命令见 `tools/verify_v2_1_2_project_home.py` 顶部）；在 `V2.1.4` 落地正式入口前，`python app/server.py` 仍是 Product V1 入口。
 > legacy v2 / Product V1 / Mock / tracer 只作为实现和回归基线；下面历史章节里的旧产品主张不得覆盖顶部这份当前实现边界。
 
 ---

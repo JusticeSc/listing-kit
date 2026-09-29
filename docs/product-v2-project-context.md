@@ -18,7 +18,7 @@
 | 层 | 已实现事实 | Product V2 处理方式 |
 |---|---|---|
 | Product V1 | 本机文件夹工作空间、版本记录、真实 `qwen-image-3.0` 调用、候选、Unknown、单图返工、选择和导出均已有实现与回归证据 | 冻结为历史基线，复用业务语义和测试案例，不继续扩展服务器文件夹工作空间 |
-| Product V2 | 已完成需求和架构重新裁定；浏览器存储层（IndexedDB schema、迁移、repository、事务与指针契约）已落地并有契约证据 | 项目首页之后的业务链、无状态服务、DeepSeek 新适配、VLM 校验和新前端闭环尚未实现 |
+| Product V2 | 已完成需求和架构重新裁定；浏览器存储层（IndexedDB schema、迁移、repository、事务与指针契约）与空白项目首页（本机项目 CRUD）已落地并有契约证据 | 商品资料、商品理解、套图、生成、审核与交付，以及无状态服务、DeepSeek 新适配和 VLM 校验尚未实现 |
 | 参考模板 | `docs/standards-template/` 提供项目身份、活需求、进度和规范分工方法 | 只采纳“一类事实一个权威、活记忆精简、证据驱动”的思想；不采纳课堂式确认门、GitHub/CD 默认值或模板占位符 |
 
 旧 Product V1 的“完成”只证明旧架构下的能力，不证明 Product V2 已经完成。Product V2 的任何完成声明必须重新取得范围匹配的证据。
@@ -81,7 +81,7 @@ amz-listing-kit/
 │  ├─ server.py                         # 正式服务入口
 │  ├─ product_v1_server.py              # Product V1 历史实现，迁移期保留
 │  ├─ product_v2_server.py              # V2 无状态 HTTP 适配器（目标）
-│  └─ product_v2/                       # V2 前端静态资源；storage/ 已落地，页面与服务适配待建
+│  └─ product_v2/                       # V2 前端静态资源；storage/ 与项目首页已落地，正式服务适配待建
 ├─ src/
 │  ├─ product_v2_contracts.py           # 领域与 API 契约（目标）
 │  ├─ providers/                        # DeepSeek、Qwen、VLM 适配器（目标）
