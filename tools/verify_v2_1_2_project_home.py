@@ -205,7 +205,31 @@ def main() -> int:
                 expect(page.locator("#project-title")).to_have_text("蓝色保温杯 秋季主图")
                 opened_pointer = page.evaluate(POINTER_SNAPSHOT)
                 page.reload(wait_until="networkidle")
-                expect(page.locator("#project-view")).to_be_visible()
+                # 2026-10-01 V2.7.1 全回归第一轮的真实教训：机器满载时 boot() 可能超过
+                # Playwright 默认 5s 断言超时，界面停在「首页 + 空列表 + 控件未解锁」，
+                # 看起来像「刷新后项目丢了」，其实是"还没启动完"；同一份数据在第二轮
+                # 7s 内通过，单独重跑 8 次也全绿。这里先等"启动完成"（boot() 结束时
+                # 才会解锁新建控件），再断言刷新恢复 —— 等的是启动就绪，不是放宽
+                # 「刷新后仍在该项目」这条判据；失败时把诊断落盘，下一次不必再猜。
+                try:
+                    expect(page.locator("#create-project")).to_be_enabled(timeout=30_000)
+                    expect(page.locator("#project-view")).to_be_visible(timeout=15_000)
+                except AssertionError:
+                    diagnostics = page.evaluate(
+                        """async () => ({
+                             boot_error: (document.getElementById('boot-error') || {}).textContent || '',
+                             home_error: (document.getElementById('home-error') || {}).textContent || '',
+                             create_disabled: (document.getElementById('create-project') || {}).disabled,
+                             project_rows: document.querySelectorAll('#project-list .project-row').length,
+                             pointer_keys: Object.keys(localStorage).sort(),
+                             pointer: localStorage.getItem('amz-listing-kit-v2:current-project'),
+                           })""")
+                    diag_path = EVIDENCE_DIR / f"v2.1.2-reload-diagnostics-{stamp}.json"
+                    diag_path.write_text(json.dumps(diagnostics, ensure_ascii=False, indent=1),
+                                         encoding="utf-8")
+                    print("刷新后未恢复 —— 诊断：" + json.dumps(diagnostics, ensure_ascii=False))
+                    print("诊断落盘：" + diag_path.relative_to(ROOT).as_posix())
+                    raise
                 expect(page.locator("#project-title")).to_have_text("蓝色保温杯 秋季主图")
                 after_reload = page.evaluate(DB_SNAPSHOT)
                 check(

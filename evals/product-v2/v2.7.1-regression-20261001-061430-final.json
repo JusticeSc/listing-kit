@@ -1,0 +1,1280 @@
+{
+ "task": "V2.7.1",
+ "stamp": "20261001-061430",
+ "rounds": 2,
+ "checks": 32,
+ "fingerprints": [
+  "5d13b8068ac6f32c60f4d20fec080beb6948eab440a082d418f82d854f5f4405",
+  "cdb92954c5d4ec42fea706aa0d3ff045eea4b1fafcf4bf9b78972655a9a74bad"
+ ],
+ "problems": [
+  "第 1 轮 tools/verify_v2_1_2_project_home.py 退出码 1",
+  "两轮指纹不一致：5d13b8068ac6、cdb92954c5d4"
+ ],
+ "commands": [
+  [
+   "tools/check_docs.py",
+   [
+    "--no-run"
+   ],
+   0,
+   0.6,
+   [
+    "tail 结果：全过（退出码 #）。"
+   ],
+   "========================================================================\n文档守卫\n========================================================================\n受管：README.md + docs/cards/ 下 8 份 legacy 生成卡（当前实现边界 / 命令入口 / 生成产物一致性）\n　　　+ 文档权威登记（docs/INDEX.md：双向比对 + 管辖事实唯一）—— 回答「哪一份有效」和「哪一类事实归谁」\n　　　+ 选型门禁（AGENTS.md ↔ 项目上下文 §4 依赖/vendor 登记）—— 回答「实现之前先找过现成能力没有」\n　　　+ 模板映射（AGENTS.md §Standards Mapping ↔ docs/standards-template/）—— 回答「外部模板的每份规范有没有采纳落点」\n表：7 个坑位 · 6 个渲染器\n\n  · 文档登记：已登记 57 份，仓库里实际 57 份（产品目标 1、历史证据 26、实现 1、执行状态 1、架构设计 1、生成产物 8、设计草案 18、项目规则 1）\n  · 依赖登记：pyproject 直接依赖 11 个（锁定 11）↔ uv.lock 68 包 ↔ 登记表 13 行\n  · 模板映射：standards-template 14 份，映射章节覆盖 14 份\n\n注意：本次 --no-run，**命令执行未被验证** —— 文档里的命令这次没被真跑过，别把它当成『命令没问题』的证明。\n\n结果：全过（退出码 0）。\n"
+  ],
+  [
+   "tools/check_project_state.py",
+   [],
+   0,
+   0.3,
+   [
+    "tail 结果：全过（退出码 #）。"
+   ],
+   "========================================================================\n项目状态守卫\n========================================================================\n判据：J0 记录可读 / J1 活动记录唯一 / J2 取值闭集合 / J3 Goal 绑定\n      J4 状态 ID 引用计划 / J5 阶段门与顺序 / J6 任务进度与证据\n      J7 next_action 按计划可执行 / J8 单一权威不重抄 / J9 Goal 读数与记录一致\n      J10 updated_at 不许写在未来、不许缺时区\n\n  · 工作记录 4 份 · v2 状态从 plan_ref 读取阶段、任务与依赖，不在 state 重复定义\n结果：全过（退出码 0）。\n"
+  ],
+  [
+   "evals/probes/project_state.py",
+   [],
+   0,
+   5.1,
+   [
+    "tail OK：# 向全部与预期一致。"
+   ],
+   "[OK  ] A 基线 -> rc=0 tags=[]\n[OK  ] B 两份 active 记录 -> rc=1 tags=['J1']\n[OK  ] C 记录状态非法 -> rc=1 tags=['J2']\n[OK  ] D Goal 未绑定且无理由 -> rc=1 tags=['J3']\n[OK  ] E 状态引用不存在的阶段 -> rc=1 tags=['J4']\n[OK  ] F 阶段 done 但无证据 -> rc=1 tags=['J5']\n[OK  ] G 跳过未完成阶段直接激活后面的阶段 -> rc=1 tags=['J5']\n[OK  ] H 状态引用不存在的任务 -> rc=1 tags=['J6']\n[OK  ] I 任务 done 但无证据 -> rc=1 tags=['J6']\n[OK  ] J next_action 的计划依赖未完成 -> rc=1 tags=['J7']\n[OK  ] K next_action 不存在 -> rc=1 tags=['J7']\n[OK  ] L state 重抄 scope -> rc=1 tags=['J8']\n[OK  ] M YAML 读不出来 -> rc=1 tags=['J0']\n[OK  ] N 合法开工形态 -> rc=0 tags=[]\n[OK  ] O 记录 paused 但 Phase active -> rc=1 tags=['J9']\n[OK  ] P 记录 active 但无 active Phase -> rc=1 tags=['J9']\n[OK  ] Q 靠改记录宣布 completed -> rc=1 tags=['J9']\n[OK  ] R updated_at 写在两天以后 -> rc=1 tags=['J10']\n[OK  ] S updated_at 没有时区 -> rc=1 tags=['J10']\n已逐字节恢复 _working/amz-listing-kit-product-v2/state.md 并清理探针副本\nOK：19 向全部与预期一致。\n"
+  ],
+  [
+   "evals/probes/docs_index.py",
+   [],
+   0,
+   7.0,
+   [
+    "tail OK：# 向全部与预期一致，且每向只报该报的那一类。"
+   ],
+   "[OK  ] A 基线（不改）  → rc=0\n[OK  ] B 漏登记（抽掉一行）  → rc=1\n[OK  ] C 幽灵登记（加一行不存在的文件）  → rc=1\n[OK  ] D 非法状态（draft → done）  → rc=1\n[OK  ] E 空说明（说明列清空）  → rc=1\n[OK  ] G 非法管辖事实（设计草案 → 参考）  → rc=1\n[OK  ] H 双头权威（历史证据 → 项目规则）  → rc=1\n[OK  ] I 权威缺失（产品目标 → 历史证据）  → rc=1\n[OK  ] J 受管范围（执行状态行改指不存在的文件）  → rc=1\n[OK  ] K 写死解释器路径（README 塞回绝对路径）  → rc=1\n[OK  ] L vendor 未登记（丢一个文件进 vendor 目录）  → rc=1\n[OK  ] M README 抄探针方向数（写回 N 向植入对照）  → rc=1\n已还原 docs/INDEX.md / README.md / vendor 探针文件（字节一致）\n\nOK：12 向全部与预期一致，且每向只报该报的那一类。\n"
+  ],
+  [
+   "app/server.py",
+   [
+    "--check"
+   ],
+   0,
+   1.1,
+   [
+    "PASS capabilities",
+    "PASS capabilities",
+    "PASS provider",
+    "PASS provider",
+    "PASS capabilities",
+    "PASS capabilities"
+   ],
+   "Product V2 自检：无状态正式入口\n  PASS  首页可取且是 V2 产品页                                             status=200 type=text/html; charset=utf-8\n  PASS  产品资源 /app.js                                              status=200 type=text/javascript; charset=utf-8\n  PASS  产品资源 /styles.css                                          status=200 type=text/css; charset=utf-8\n  PASS  产品资源 /storage/index.js                                    status=200 type=text/javascript; charset=utf-8\n  PASS  健康检查表明服务器无业务状态                                            status=200 body={'app': 'amz-listing-kit', 'product': 'v2', 'server_state': 'none', 'user_data': 'browser-indexeddb'}\n  PASS  正式入口不外放：/harness/storage-contract.html                    status=404\n  PASS  正式入口不外放：/api/workspaces/recent                            status=404\n  PASS  正式入口不外放：/api/workspace?directory=C%3A%5CUsers             status=404\n  PASS  正式入口不外放：/evals/probes/project_state.py                    status=404\n  PASS  目录逃逸被拒：/../README.md                                      status=404\n  PASS  目录逃逸被拒：/%2e%2e/README.md                                  status=404\n  PASS  目录逃逸被拒：/storage/../../app/server.py                       status=404\n  PASS  不存在其它服务端写接口                                               status=404\n  PASS  capabilities 暴露 provider、analyze 字段与契约版本                  status=200 provider={'provider_id': 'fake-semantic', 'model_id': 'fake-deepseek-v4.1-flash', 'configured': True, 'capabilities': {'provider_id': 'fake-semantic', 'model_id': 'fake-deepseek-v4.1-flash', 'reference_images': False, 'structured_output': 'local', 'stateless': True, 'test_double': True, 'scenario': 'ok'}}\n  PASS  capabilities 暴露图像网关（合同、端点、provider 与参考图能力）                images={'provider_id': 'fake-qwen-image', 'model_id': 'qwen-image-3.0', 'configured': True, 'capabilities': {'contract': 'v2.4.1', 'reference_images': True, 'max_reference_images': 3, 'async_tasks': True, 'n_per_submit': 1, 'prompt_extend': False, 'watermark': False, 'stateless': True, 'test_double': True, 'upstream_provider_id': 'dashscope-qwen-image'}}\n  PASS  语义分析路由（fake provider）返回提案且标记 unknown=false                status=200 slots=5\n  PASS  非法 JSON 归 input_rejected/400                              status=400 error={'family': 'input_rejected', 'code': 'INPUT_INVALID', 'message': '请求体不是合法 JSON。', 'retry_policy': 'fatal', 'http_status': None, 'request_id': None, 'details': {'problems': None}}\n  PASS  超过字节上限的请求体被拒（400 input_rejected）                          status=400 bytes=262676\n  PASS  合法 JSON 但字段越界归 input_rejected/400（不调用模型）                  status=400 error={'family': 'input_rejected', 'code': 'INPUT_INVALID', 'message': '请求字段不符合语义请求契约；没有调用模型。', 'retry_policy': 'fatal', 'http_status': None, 'request_id': None, 'details': {'problems': [{'path': '$.product_name', 'message': 'Field required'}]}}\n  PASS  provider 不可用时 capabilities 仍 200 且 configured=false       status=200 unavailable={'kind': 'dependency', 'detail': 'RuntimeError: 自检：语义 provider 构造失败'}\n  PASS  provider 不可用时分析路由 503 且错误分类明确                             status=503 error={'family': 'internal', 'code': 'PROVIDER_NOT_CONFIGURED', 'message': '语义 provider 不可用：检查注册表、依赖与 DASHSCOPE_API_KEY。', 'retry_policy': 'fatal', 'http_status': 503, 'request_id': None, 'details': {'kind': 'dependency', 'detail': 'RuntimeError: 自检：语义 provider 构造失败'}}\n  PASS  未定义的无状态写路由保持 404                                          status=404\n  PASS  图像提交路由（假 provider）返回任务身份且不泄露结果地址                          status=200 task=fake-f7466ec9b0379339\n  PASS  图像状态查询路由返回成功状态与结果数量                                       status=200 task={'provider': {'provider_id': 'fake-qwen-image', 'model_id': 'qwen-image-3.0'}, 'task_id': 'fake-f7466ec9b0379339', 'status': 'SUCCEEDED', 'result_count': 1, 'error': None, 'request_id': None, 'unknown': False}\n  PASS  图像结果路由返回 PNG 字节（不是地址）                                     status=200 type=image/png bytes=179\n  PASS  图像提交拒绝目录字段与空参考图（input_rejected，不调用上游）                     status=400 error={'family': 'input_rejected', 'code': 'INPUT_INVALID', 'message': '请求字段不符合图像网关契约；没有调用模型。', 'retry_policy': 'fatal', 'http_status': None, 'request_id': None, 'details': {'problems': [{'path': 'references', 'message': 'Value error, 图生图至少需要一张参考图。'}, {'path': 'directory', 'message': 'Extra inputs are not permitted'}]}}\n  PASS  图像 provider 不可用时 capabilities 仍 200 且 configured=false    images={'kind': 'dependency', 'detail': 'RuntimeError: 自检：图像 provider 构造失败'}\n  PASS  图像 provider 不可用时提交路由 503 且错误分类明确                          status=503 error={'family': 'internal', 'code': 'PROVIDER_NOT_CONFIGURED', 'message': '图像 provider 不可用：检查注册表、依赖与 DASHSCOPE_API_KEY。', 'retry_policy': 'fatal', 'http_status': 503, 'request_id': None, 'details': {'kind': 'dependency', 'detail': 'RuntimeError: 自检：图像 provider 构造失败'}}\n  PASS  capabilities 暴露 VLM 复核（合同、端点、provider 与参考图能力）             review={'provider_id': 'fake-review', 'model_id': 'fake-qwen-vl-max', 'configured': True, 'capabilities': {'provider_id': 'fake-review', 'model_id': 'fake-qwen-vl-max', 'reference_images': True, 'structured_output': 'local', 'stateless': True, 'test_double': True, 'scenario': 'ok'}}\n  PASS  复核路由（fake provider）返回绑定候选 sha256 的发现且不含采纳结论               status=200 findings=2\n  PASS  capabilities 暴露整套复核（合同、端点、张数上限与 provider）                 suite_review={'provider_id': 'fake-suite-review', 'model_id': 'fake-qwen-vl-max', 'configured': True, 'capabilities': {'provider_id': 'fake-suite-review', 'model_id': 'fake-qwen-vl-max', 'suite_review_contract': 'v2.5.5', 'max_images': 8, 'reference_images': True, 'structured_output': 'local', 'stateless': True, 'test_double': True, 'scenario': 'ok'}}\n  PASS  整套复核路由（fake provider）只给送审集合内提示且不含严重度/采纳结论                 status=200 findings=0\n  PASS  整套复核图片哈希与字节不一致 → input_rejected/400（不调用模型）                status=400 error={'family': 'input_rejected', 'code': 'INPUT_INVALID', 'message': '第 2 张图（shot_b）的 sha256 与收到的字节不一致；拒绝把身份不明的图片送模型。', 'retry_policy': 'fatal', 'http_status': None, 'request_id': None, 'details': {'problems': [{'path': '$'}]}}\n  PASS  复核图片哈希与字节不一致 → input_rejected/400（不调用模型）                  status=400 error={'family': 'input_rejected', 'code': 'INPUT_INVALID', 'message': '候选图的 sha256 与收到的字节不一致；拒绝把身份不明的图片送模型。', 'retry_policy': 'fatal', 'http_status': None, 'request_id': None, 'details': {'problems': [{'path': '$'}]}}\n  PASS  复核 provider 不可用时 capabilities 仍 200 且 configured=false    review={'kind': 'dependency', 'detail': 'RuntimeError: 自检：复核 provider 构造失败'}\n  PASS  复核 provider 不可用时复核路由 503 且错误分类明确                          status=503 error={'family': 'internal', 'code': 'PROVIDER_NOT_CONFIGURED', 'message': '语义 provider 不可用：检查注册表、依赖与 DASHSCOPE_API_KEY。', 'retry_policy': 'fatal', 'http_status': 503, 'request_id': None, 'details': {'kind': 'dependency', 'detail': 'RuntimeError: 自检：复核 provider 构造失败'}}\n  PASS  整套复核 provider 不可用时 capabilities 仍 200 且 configured=false  suite_review={'kind': 'dependency', 'detail': 'RuntimeError: 自检：整套复核 provider 构造失败'}\n  PASS  整套复核 provider 不可用时路由 503 且错误分类明确                          status=503 error={'family': 'internal', 'code': 'PROVIDER_NOT_CONFIGURED', 'message': '语义 provider 不可用：检查注册表、依赖与 DASHSCOPE_API_KEY。', 'retry_policy': 'fatal', 'http_status': 503, 'request_id': None, 'details': {'kind': 'dependency', 'detail': 'RuntimeError: 自检：整套复核 provider 构造失败'}}\nV2 正式入口自检：38/38 通过。\n"
+  ],
+  [
+   "tools/verify_v2_1_1_indexeddb.py",
+   [],
+   0,
+   4.1,
+   [
+    "PASS V2.1.1-00",
+    "PASS V2.1.1-01",
+    "PASS V2.1.1-02",
+    "PASS V2.1.1-03",
+    "PASS V2.1.1-04",
+    "PASS V2.1.1-05"
+   ],
+   "========================================================================\nV2.1.1 IndexedDB 存储契约验证\n========================================================================\n  [PASS] V2.1.1-00 storage 模块通过 node --check（ESM 语法门）\n  [PASS] V2.1.1-01 契约套件全部通过且用例清单完整\n  [PASS] V2.1.1-02 运行期无 console error / page error\n  [PASS] V2.1.1-03 默认库名与版本取自代码，结构为 projects/assets/documents\n  [PASS] V2.1.1-04 两个独立浏览器配置文件的项目列表互不可见\n  [PASS] V2.1.1-05 浏览器关闭重开后项目与当前指针仍在（IndexedDB 持久化）\n套件用例：29 条，失败 0 条\n证据：evals/product-v2/v2.1.1-indexeddb-20261001-061444.txt\n结果：全过（退出码 0）\n"
+  ],
+  [
+   "tools/verify_v2_1_2_project_home.py",
+   [],
+   1,
+   7.7,
+   [
+    "tail - list"
+   ],
+   "Traceback (most recent call last):\n  File \"E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\tools\\verify_v2_1_2_project_home.py\", line 382, in <module>\n    sys.exit(main())\n             ~~~~^^\n  File \"E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\tools\\verify_v2_1_2_project_home.py\", line 208, in main\n    expect(page.locator(\"#project-view\")).to_be_visible()\n    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^\n  File \"E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\.venv\\Lib\\site-packages\\playwright\\sync_api\\_generated.py\", line 23501, in to_be_visible\n    self._sync(\n    ~~~~~~~~~~^\n        self._impl_obj.to_be_visible(\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n            visible=visible, timeout=to_milliseconds(timeout)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        )\n        ^\n    )\n    ^\n  File \"E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\.venv\\Lib\\site-packages\\playwright\\_impl\\_sync_base.py\", line 115, in _sync\n    return task.result()\n           ~~~~~~~~~~~^^\n  File \"E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\.venv\\Lib\\site-packages\\playwright\\_impl\\_assertions.py\", line 852, in to_be_visible\n    await self._expect_impl(\n    ...<5 lines>...\n    )\n  File \"E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\.venv\\Lib\\site-packages\\playwright\\_impl\\_assertions.py\", line 128, in _expect_impl\n    _record_soft_or_raise(\n    ~~~~~~~~~~~~~~~~~~~~~^\n        AssertionError(\n        ^^^^^^^^^^^^^^^\n    ...<2 lines>...\n        self._is_soft,\n        ^^^^^^^^^^^^^^\n    )\n    ^\n  File \"E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\.venv\\Lib\\site-packages\\playwright\\_impl\\_assertions.py\", line 60, in _record_soft_or_raise\n    raise error\nAssertionError: Locator expected to be visible\nActual value: hidden \nCall log:\n  - Expect \"to_be_visible\" locator(\"#project-view\") with timeout 5000ms\n  - waiting for locator(\"#project-view\")\n    14 × locator resolved to <section hidden=\"\" id=\"project-view\" class=\"workspace\">…</section>\n       - unexpected value \"hidden\"\n\nAria snapshot:\n- banner:\n  - heading \"Amazon US 商品套图\" [level=1]\n  - paragraph: 项目保存在这台浏览器；服务器不保存你的项目，也不保存最近使用记录。\n- main:\n  - region \"本机项目\":\n    - heading \"本机项目\" [level=2]\n    - paragraph: 从空白开始：给项目起个名字、上传商品参考图，其余交给系统。\n    - text: 新项目名称\n    - textbox \"新项目名称\":\n      - /placeholder: 商品或任务名称，例如：蓝色保温杯 秋季主图\n    - button \"新建项目\"\n    - button \"导入项目包（.zip）\"\n    - text: 项目包包含完整历史，可在另一台机器或另一个浏览器里恢复。\n    - list\n"
+  ],
+  [
+   "tools/verify_v2_1_3_project_package.py",
+   [],
+   0,
+   4.5,
+   [
+    "PASS V2.1.3-00",
+    "PASS V2.1.3-01",
+    "PASS V2.1.3-02",
+    "PASS V2.1.3-03",
+    "PASS V2.1.3-04",
+    "PASS V2.1.3-05",
+    "PASS V2.1.3-06",
+    "PASS V2.1.3-07"
+   ],
+   "========================================================================\nV2.1.3 项目包导入导出验证\n========================================================================\n  [PASS] V2.1.3-00 storage 模块与 app.js 通过 node --check\n  [PASS] V2.1.3-01 包契约套件全部通过且用例清单完整\n  [PASS] V2.1.3-02 界面导出产生下载文件且给出结果提示\n  [PASS] V2.1.3-03 导出包是标准 ZIP：CRC 全过、manifest 与资产哈希一致\n  [PASS] V2.1.3-04 清空状态后导入：业务记录、文档与资产哈希与导出前一致\n  [PASS] V2.1.3-05 重复导入分配新 project_id，两份内容一致且互不覆盖\n  [PASS] V2.1.3-06 损坏包被拒绝：界面报错且项目数量不变\n  [PASS] V2.1.3-07 全程无 console error / page error\n套件用例：9 条，失败 0 条\n证据：evals/product-v2/v2.1.3-project-package-20261001-061456.txt\n结果：全过（退出码 0）\n"
+  ],
+  [
+   "tools/verify_v2_1_4_formal_entry.py",
+   [],
+   0,
+   16.8,
+   [
+    "PASS V2.1.4-00",
+    "PASS V2.1.4-01",
+    "PASS V2.1.4-02",
+    "PASS V2.1.4-03",
+    "PASS V2.1.4-04",
+    "PASS V2.1.4-05",
+    "PASS V2.1.4-06",
+    "PASS V2.1.4-07",
+    "PASS V2.1.4-08",
+    "PASS V2.1.4-09",
+    "PASS V2.1.4-10",
+    "PASS V2.1.4-11",
+    "PASS V2.1.4-12"
+   ],
+   "========================================================================\nV2.1.4 正式入口验证\n========================================================================\n  [PASS] V2.1.4-00 server.py 与 product_v2_server.py 通过语法自检\n  [PASS] V2.1.4-01 正式入口自检全过（静态资源 / health / 无状态 API / 拒绝 V1 API 与目录逃逸）\n  [PASS] V2.1.4-02 Product V1 回归自检 6/6 保持（--legacy-v1）\n  [PASS] V2.1.4-03 V2 体检通过且声明服务器无用户状态\n  [PASS] V2.1.4-04 正式进程 HTTP 契约：产品资源可取，V1 工作空间 API / harness / 写接口不可达\n  [PASS] V2.1.4-05 正式入口空白启动：无项目、无指针、无预填内容\n  [PASS] V2.1.4-06 新建项目并写入文档与资产（正式入口下走产品 storage 代码）\n  [PASS] V2.1.4-07 关浏览器重开后项目与资产 hash 恢复（IndexedDB 持久化）\n  [PASS] V2.1.4-08 重启服务器后刷新：项目与资产 hash 仍一致\n  [PASS] V2.1.4-09 两个独立浏览器配置文件项目列表不同\n  [PASS] V2.1.4-10 网络审计：无 directory 参数、无 V1 工作空间 API、无 harness、全部同源\n  [PASS] V2.1.4-11 浏览器会话零 console error / page error\n  [PASS] V2.1.4-12 磁盘审计：正式进程 + 浏览器会话前后仓库与最近项目索引零差异\n证据：evals/product-v2/v2.1.4-formal-entry-20261001-061500.txt\n结果：全过（退出码 0）\n"
+  ],
+  [
+   "tools/verify_v2_2_1_product_contracts.py",
+   [],
+   0,
+   2.8,
+   [
+    "PASS V2.2.1-00",
+    "PASS V2.2.1-01",
+    "PASS V2.2.1-02",
+    "PASS V2.2.1-03",
+    "PASS V2.2.1-04",
+    "PASS V2.2.1-05"
+   ],
+   "========================================================================\nV2.2.1 商品理解契约验证\n========================================================================\n  [PASS] V2.2.1-00 domain 与 harness 模块通过 node --check（ESM 语法门）\n  [PASS] V2.2.1-01 契约套件全部通过且用例清单完整（C01..C37）\n  [PASS] V2.2.1-02 反向探针确实被执行（非法形状 / 模型确认 / 无值确认 / 环 / 越界失效 / brief 不一致）\n  [PASS] V2.2.1-03 驱动侧独立集成：资料/槽位/理解落库，槽位升级后 brief 过期且历史保留\n  [PASS] V2.2.1-04 浏览器会话零 console error / page error\n  [PASS] V2.2.1-05 正式入口自检仍全过（V2.2.1 不破坏 V2.1.4）\n套件用例：37 条，失败 0 条\n证据：evals/product-v2/v2.2.1-product-contracts-20261001-061517.txt\n结果：全过（退出码 0）\n"
+  ],
+  [
+   "tools/verify_v2_2_2_semantic_provider.py",
+   [],
+   0,
+   4.2,
+   [
+    "PASS V2.2.2-01",
+    "PASS V2.2.2-02",
+    "PASS V2.2.2-03",
+    "PASS V2.2.2-04",
+    "PASS V2.2.2-05",
+    "PASS V2.2.2-06",
+    "PASS V2.2.2-07",
+    "PASS V2.2.2-08",
+    "PASS V2.2.2-09",
+    "PASS V2.2.2-10"
+   ],
+   "========================================================================\nV2.2.2 语义 Provider 契约、装配与错误分类验证\n========================================================================\n  [PASS] V2.2.2-01 跨语言核心槽位注册表一致（8 项：slot_id/label/value_type/critical）\n  [PASS] V2.2.2-02 输入合同：合法投影通过；7 类越界全部 input_rejected / fatal 且不回显正文\n  [PASS] V2.2.2-03 装配与真实请求体：json_mode + extra_body.max_tokens + max_retries=0，单次调用\n  [PASS] V2.2.2-04 禁止的静默清洗：缺证据 / 非对象槽位 / 模型自称 confirmed / 超上限全部整包拒绝\n  [PASS] V2.2.2-05 截断 / 内容策略拒绝 / 空可见文本的归口与重试策略正确\n  [PASS] V2.2.2-06 SDK / 传输异常映射矩阵（12 类）符合计划 §9.1 归口表\n  [PASS] V2.2.2-07 错误消息与 capabilities 不回显密钥（按 *** 遮蔽）\n  [PASS] V2.2.2-08 fake provider 全部场景分类正确，且每次 analyze 只调用一次（无隐藏重提，UNKNOWN 不自动重提）\n  [PASS] V2.2.2-09 归一化输出形状正确；反向探针：模型自称 confirmed 被消费侧拒绝\n  [PASS] V2.2.2-10 provider 注册表与代码一致（默认 provider、模型、环境变量、归口、test_double）\n------------------------------------------------------------------------\n证据：evals/product-v2/v2.2.2-semantic-provider-20261001-061524.txt\n结果：10/10 通过；全过（退出码 0）\nlangchain-openai injected a custom httpx transport to apply `http_socket_options`, which disables httpx's proxy auto-detection (HTTP_PROXY, HTTPS_PROXY, http_proxy, https_proxy set in environment). Set `LANGCHAIN_OPENAI_TCP_KEEPALIVE=0` or pass `http_socket_options=()` to restore default proxy behavior, or supply `openai_proxy` / your own `http_client` / `http_async_client` to take full control.\n"
+  ],
+  [
+   "tools/verify_v2_3_1_suite_registry.py",
+   [],
+   0,
+   3.0,
+   [
+    "PASS V2.3.1-00",
+    "PASS V2.3.1-01",
+    "PASS V2.3.1-02",
+    "PASS V2.3.1-03",
+    "PASS V2.3.1-04",
+    "PASS V2.3.1-05"
+   ],
+   "========================================================================\nV2.3.1 套图注册表验证\n========================================================================\n  [PASS] V2.3.1-00 domain 与 harness 模块通过 node --check（ESM 语法门）\n  [PASS] V2.3.1-01 契约套件全部通过且用例清单完整（R01..R13）\n  [PASS] V2.3.1-02 反向探针与改数据探针确实被执行（R10 守卫变红 >= 20，R11 覆盖 16 个字段）\n  [PASS] V2.3.1-03 驱动侧独立集成：推荐计划阻断精确、补齐后解锁、自定义 Shot 合法\n  [PASS] V2.3.1-04 浏览器会话零 console error / page error\n  [PASS] V2.3.1-05 正式入口自检仍全过（V2.3.1 不破坏 V2.1.4）\n套件用例：13 条，失败 0 条\n证据：evals/product-v2/v2.3.1-suite-registry-20261001-061524.txt\n结果：全过（退出码 0）\n"
+  ],
+  [
+   "tools/verify_v2_3_2_suite_editor.py",
+   [],
+   0,
+   8.3,
+   [
+    "PASS V2.3.2-00",
+    "PASS V2.3.2-01",
+    "PASS V2.3.2-02",
+    "PASS V2.3.2-03",
+    "PASS V2.3.2-04",
+    "PASS V2.3.2-05",
+    "PASS V2.3.2-06",
+    "PASS V2.3.2-07",
+    "PASS V2.3.2-08",
+    "PASS V2.3.2-09",
+    "PASS V2.3.2-10"
+   ],
+   "========================================================================\nV2.3.2 套图编辑器验证\n========================================================================\n  [PASS] V2.3.2-00 domain / workspace / harness 通过 node --check（ESM 语法门）\n  [PASS] V2.3.2-01 契约套件全部通过且用例清单完整（E01..E12）\n  [PASS] V2.3.2-02 反向探针确实被执行（空计划 / 越界 / 最后必需图 / 边界排序 / 不变量 / 失败原子）\n  [PASS] V2.3.2-03 商品理解就绪后套图编辑器解锁，空方案状态明确\n  [PASS] V2.3.2-04 生成推荐方案：4 张按模板 order 落库，状态行与存储一致\n  [PASS] V2.3.2-05 复制 / 下移 / 删除副本：界面顺序与存储版本同步推进\n  [PASS] V2.3.2-06 删除最后一张必需图被拒：错误可见、行数与存储版本都不变\n  [PASS] V2.3.2-07 自定义图与「被阻断模板」都可以加入，阻断原因逐行可见\n  [PASS] V2.3.2-08 刷新恢复：行顺序、数量与存储版本原样恢复\n  [PASS] V2.3.2-09 契约会话与 UI 会话零 console error / page error\n  [PASS] V2.3.2-10 正式入口自检仍全过（V2.3.2 不破坏既有入口）\n套件用例：12 条，失败 0 条\n证据：evals/product-v2/v2.3.2-suite-editor-20261001-061527.txt\n结果：全过（退出码 0）\n"
+  ],
+  [
+   "tools/verify_v2_3_3_spec_versions.py",
+   [],
+   0,
+   8.4,
+   [
+    "PASS V2.3.3-00",
+    "PASS V2.3.3-01",
+    "PASS V2.3.3-02",
+    "PASS V2.3.3-03",
+    "PASS V2.3.3-04",
+    "PASS V2.3.3-05",
+    "PASS V2.3.3-06",
+    "PASS V2.3.3-07",
+    "PASS V2.3.3-08",
+    "PASS V2.3.3-09",
+    "PASS V2.3.3-10",
+    "PASS V2.3.3-11"
+   ],
+   "========================================================================\nV2.3.3 规格版本验证\n========================================================================\n  [PASS] V2.3.3-00 domain / workspace / harness 通过 node --check（ESM 语法门）\n  [PASS] V2.3.3-01 契约套件全部通过且用例清单完整（F01..F12）\n  [PASS] V2.3.3-02 反向探针确实被执行（风格/单图校验、缺失 shotId、非法版本号）\n  [PASS] V2.3.3-03 套图方案就绪后规格区解锁；保存前就说明影响范围\n  [PASS] V2.3.3-04 保存公共风格 v1：版本推进，全部图片的审核清单出现风格行\n  [PASS] V2.3.3-05 保存单图规格 v1：只有目标图变成 v1，其他图仍是默认\n  [PASS] V2.3.3-06 再次保存风格 v2：单图规格版本不受影响（两套文档彼此独立）\n  [PASS] V2.3.3-07 恢复风格上一版本：写为新版本 v3、内容回到 v1、历史只增不删\n  [PASS] V2.3.3-08 单图规格恢复：v3 payload 等于 v1，历史三条\n  [PASS] V2.3.3-09 刷新恢复：风格 v3、单图规格 v3、清单与历史原样\n  [PASS] V2.3.3-10 契约会话与 UI 会话零 console error / page error\n  [PASS] V2.3.3-11 正式入口自检仍全过（V2.3.3 不破坏既有入口）\n套件用例：12 条，失败 0 条\n证据：evals/product-v2/v2.3.3-spec-versions-20261001-061535.txt\n结果：全过（退出码 0）\n"
+  ],
+  [
+   "tools/verify_v2_3_4_prompt_compiler.py",
+   [],
+   0,
+   9.3,
+   [
+    "PASS V2.3.4-00",
+    "PASS V2.3.4-01",
+    "PASS V2.3.4-02",
+    "PASS V2.3.4-02b",
+    "PASS V2.3.4-03",
+    "PASS V2.3.4-04",
+    "PASS V2.3.4-05",
+    "PASS V2.3.4-06",
+    "PASS V2.3.4-07",
+    "PASS V2.3.4-08",
+    "PASS V2.3.4-09",
+    "PASS V2.3.4-10"
+   ],
+   "========================================================================\nV2.3.4 Prompt 编译器验证\n========================================================================\n  [PASS] V2.3.4-00 domain / workspace / harness 通过 node --check（ESM 语法门）\n  [PASS] V2.3.4-01 G01–G12 契约套件全过且用例齐全\n  [PASS] V2.3.4-02 反向探针确实执行（冲突、缺依据、泄漏、越界、过期等守卫）\n  [PASS] V2.3.4-02b 既有契约套件回归：规格 / 套图编辑器 / 套图注册表全过\n  [PASS] V2.3.4-03 套图就绪后 Prompt 区解锁；模板图按依赖自动绑定已确认事实\n  [PASS] V2.3.4-04 编译主图 v1：界面文本 = 记录文本 = 快照 prompt，hash 三者一致\n  [PASS] V2.3.4-05 卖点信息图：图中文案逐字来自已确认事实，语言警告可见\n  [PASS] V2.3.4-06 改风格使 Prompt 过期；重新编译写 v2、hash 变化、历史保留\n  [PASS] V2.3.4-07 冲突编译失败：给出精确原因，旧 v2 文本与版本号保留\n  [PASS] V2.3.4-08 刷新恢复：Prompt 文本 / hash / 版本与存储一致，其他图版本不变\n  [PASS] V2.3.4-09 契约会话与 UI 会话零 console error / page error\n  [PASS] V2.3.4-10 正式入口自检仍全过（V2.3.4 不破坏既有入口）\n套件用例：12 条，失败 0 条\n证据：evals/product-v2/v2.3.4-prompt-compiler-20261001-061544.txt\n结果：全过（退出码 0）\n"
+  ],
+  [
+   "tools/verify_v2_3_5_pre_generation_confirm.py",
+   [],
+   0,
+   11.1,
+   [
+    "PASS V2.3.5-00",
+    "PASS V2.3.5-01",
+    "PASS V2.3.5-02",
+    "PASS V2.3.5-02b",
+    "PASS V2.3.5-03",
+    "PASS V2.3.5-04",
+    "PASS V2.3.5-05",
+    "PASS V2.3.5-06",
+    "PASS V2.3.5-07",
+    "PASS V2.3.5-08",
+    "PASS V2.3.5-09",
+    "PASS V2.3.5-10",
+    "PASS V2.3.5-11",
+    "PASS V2.3.5-12",
+    "PASS V2.3.5-13"
+   ],
+   "========================================================================\nV2.3.5 生成前确认验证\n========================================================================\n  [PASS] V2.3.5-00 domain / workspace / harness 通过 node --check（ESM 语法门）\n  [PASS] V2.3.5-01 H01–H12 契约套件全过且用例齐全\n  [PASS] V2.3.5-02 反向探针确实执行（缺 Prompt / 过期 / 缺依赖 / 参数不符 / 越界 / 失效）\n  [PASS] V2.3.5-02b 既有契约套件回归：Prompt / 规格 / 套图编辑器全过\n  [PASS] V2.3.5-03 套图就绪后确认区解锁：4 张图因缺 Prompt 全部阻断并定位到 Prompt 区\n  [PASS] V2.3.5-04 缺依赖的对比图被精确阻断并定位到套图规划\n  [PASS] V2.3.5-05 编译主图后状态推进：就绪 1 / 阻断 3，外发摘要与记录一致\n  [PASS] V2.3.5-06 全部编译后可确认：按钮可用、无阻断、风险仍可见\n  [PASS] V2.3.5-07 点击确认写入 generation_confirm：指纹、记录与界面一致，状态前进\n  [PASS] V2.3.5-08 改公共风格使确认失效并回落 PLAN_REVIEW，界面给出原因\n  [PASS] V2.3.5-09 重新编译后再次可确认，Prompt 版本全部前进\n  [PASS] V2.3.5-10 再次确认写新版本且旧记录保留（append-only）\n  [PASS] V2.3.5-11 刷新恢复：确认记录、指纹、状态与存储一致\n  [PASS] V2.3.5-12 契约会话与 UI 会话零 console error / page error\n  [PASS] V2.3.5-13 正式入口自检仍全过（V2.3.5 不破坏既有入口）\n套件用例：12 条，失败 0 条\n证据：evals/product-v2/v2.3.5-pre-generation-confirm-20261001-061553.txt\n结果：全过（退出码 0）\n"
+  ],
+  [
+   "tools/verify_v2_3_6_prompt_manual_edit.py",
+   [],
+   0,
+   13.9,
+   [
+    "PASS V2.3.6-00",
+    "PASS V2.3.6-01",
+    "PASS V2.3.6-02",
+    "PASS V2.3.6-02b",
+    "PASS V2.3.6-03",
+    "PASS V2.3.6-04",
+    "PASS V2.3.6-05",
+    "PASS V2.3.6-06",
+    "PASS V2.3.6-07",
+    "PASS V2.3.6-08",
+    "PASS V2.3.6-09",
+    "PASS V2.3.6-10",
+    "PASS V2.3.6-11",
+    "PASS V2.3.6-12",
+    "PASS V2.3.6-13",
+    "PASS V2.3.6-14",
+    "PASS V2.3.6-15"
+   ],
+   "========================================================================\nV2.3.6 Prompt 人工编辑验证\n========================================================================\n  [PASS] V2.3.6-00 domain / workspace / harness 通过 node --check（ESM 语法门）\n  [PASS] V2.3.6-01 M01–M12 契约套件全过且用例齐全\n  [PASS] V2.3.6-02 反向探针确实执行（非法输入 / 未授权引用 / 平台文字 / 篡改 / 失效）\n  [PASS] V2.3.6-02b 既有契约套件回归：Prompt / 确认单 / 规格 / 套图编辑器全过\n  [PASS] V2.3.6-03 套图就绪后 Prompt 区解锁：4 张图未编译、确认被阻断\n  [PASS] V2.3.6-04 编译全部 4 张：可提交、编辑区与理由输入出现、尚无人工编辑标记\n  [PASS] V2.3.6-05 点击确认写入 generation_confirm v1，状态前进 READY_TO_GENERATE\n  [PASS] V2.3.6-06 人工编辑保存为 v2：逐字生效、hash 重算一致、旧版本保留、确认失效回落\n  [PASS] V2.3.6-07 空文本被拒：不产新版本、旧版本保留、错误可见\n  [PASS] V2.3.6-08 未授权引用被拒：提示指回商品理解、旧版本保留\n  [PASS] V2.3.6-09 主图新增文案被拒：平台文字规则、旧版本保留\n  [PASS] V2.3.6-10 编译另一张图触发重渲染后，未保存的草稿与理由仍在\n  [PASS] V2.3.6-11 链式编辑 v3：指向 v2、来源可追溯、hash 再次变化\n  [PASS] V2.3.6-12 重新确认写 v2：指纹变化、逐图版本同步、状态回到 READY_TO_GENERATE\n  [PASS] V2.3.6-13 刷新恢复：人工版本、理由、hash、状态与存储一致\n  [PASS] V2.3.6-14 契约会话与 UI 会话零 console error / page error\n  [PASS] V2.3.6-15 正式入口自检仍全过（V2.3.6 不破坏既有入口）\n套件用例：12 条，失败 0 条\n证据：evals/product-v2/v2.3.6-prompt-manual-edit-20261001-061604.txt\n结果：全过（退出码 0）\n"
+  ],
+  [
+   "tools/verify_v2_4_1_image_gateway.py",
+   [],
+   0,
+   106.3,
+   [
+    "PASS V2.4.1-01",
+    "PASS V2.4.1-02",
+    "PASS V2.4.1-03",
+    "PASS V2.4.1-04",
+    "PASS V2.4.1-05",
+    "PASS V2.4.1-06",
+    "PASS V2.4.1-07",
+    "PASS V2.4.1-08",
+    "PASS V2.4.1-09",
+    "PASS V2.4.1-10",
+    "PASS V2.4.1-11",
+    "PASS V2.4.1-12",
+    "PASS V2.4.1-13",
+    "PASS V2.4.1-14",
+    "PASS V2.4.1-15",
+    "PASS V2.4.1-16",
+    "PASS V2.4.1-17",
+    "PASS V2.4.1-18",
+    "PASS V2.4.1-19",
+    "PASS V2.4.1-20",
+    "PASS V2.4.1-21",
+    "PASS V2.4.1-22",
+    "PASS V2.4.1-24",
+    "PASS V2.4.1-23"
+   ],
+   "========================================================================\nV2.4.1 无状态图像网关验证\n========================================================================\n  [PASS] V2.4.1-01 capabilities 暴露图像网关：合同、端点、provider 与参考图能力\n  [PASS] V2.4.1-02 提交返回任务身份，且不把上游签名结果地址外发\n  [PASS] V2.4.1-03 取回结果不依赖先查询：PNG 字节与 hash / 身份响应头一致\n  [PASS] V2.4.1-04 查询返回权威状态与结果数量（仍然只有身份，没有地址）\n  [PASS] V2.4.1-05 确定性：同一 action_id 两次提交得到同一任务身份\n  [PASS] V2.4.1-06 输入拒绝矩阵：十个非法提交全部 400 input_rejected 且 unknown=false\n  [PASS] V2.4.1-07 目录 / 工作空间字段被拒，且哨兵目录未被读取或改写\n  [PASS] V2.4.1-08 超过字节上限的提交被拒（400 input_rejected，不调用上游）\n  [PASS] V2.4.1-09 提交未确认：504 + unknown=true + requires_review，且不伪造任务身份\n  [PASS] V2.4.1-10 查询未确认：504 + unknown=true（不猜结果、不落失败）\n  [PASS] V2.4.1-11 上游明确失败是数据：200 + status=FAILED + 错误说明，仍不返回地址\n  [PASS] V2.4.1-12 没有成功结果时取回被拒：502 + provider_failed(fatal)\n  [PASS] V2.4.1-13 结果下载失败可重试：502 + provider_failed(retryable)\n  [PASS] V2.4.1-14 真实适配器提交形状：异步头、模型、参考图 data URL、参数与任务身份\n  [PASS] V2.4.1-15 上游错误分类：401=fatal / 429 提交可重试 / 500 与超时=Unknown / 任务号不符=Unknown\n  [PASS] V2.4.1-16 非受信结果地址不下发下载请求（RESULT_URL_MISSING，只发生一次状态查询）\n  [PASS] V2.4.1-17 结果取回：先查权威状态再下载受信地址，返回 PNG 字节\n  [PASS] V2.4.1-18 非 PNG 结果进制失败（不做“就当它是图片”的宽容）\n  [PASS] V2.4.1-19 未配置密钥：capabilities 仍 200，图像 provider configured=false\n  [PASS] V2.4.1-20 未配置密钥时提交 503 PROVIDER_NOT_CONFIGURED（没有发图）\n  [PASS] V2.4.1-21 注册表选择：默认 dashscope-image、环境变量可切 fake-image，构造不联网\n  [PASS] V2.4.1-22 正式入口自检全过（包含图像路由：提交/查询/取回/拒绝/未配置）\n  [PASS] V2.4.1-24 默认 HTTP 传输是函数也能工作（真实提交不再 AttributeError 变 500）\n  [PASS] V2.4.1-23 磁盘不变量：整轮前后仓库 manifest 零差异（服务不落任何用户状态）\n证据：evals/product-v2/v2.4.1-image-gateway-20261001-061618.txt\n结果：全过（退出码 0）\n"
+  ],
+  [
+   "tools/verify_v2_4_2_generation_attempt.py",
+   [],
+   0,
+   14.7,
+   [
+    "tail - evals/product-v2/v2.#.#-generation-attempt-#-#.png"
+   ],
+   "amz-listing-kit Product V2 V2.4.2 浏览器 Attempt、action ID、task ID 与 Unknown 恢复\nNOT-AUTHORITY: point-in-time verification evidence only\nobserved_at: 2026-10-01T06:18:19\nstatus: passed\nmodel_calls: 0 · external_network_calls: 0 (fake image provider + 本机服务)\njson: evals/product-v2/v2.4.2-generation-attempt-20261001-061805.json\n\nCHECKS\n- [PASS] V2.4.2-00 domain / workspace / harness 通过 node --check（ESM 语法门）\n- [PASS] V2.4.2-01 A01–A13 契约套件全过且用例齐全\n- [PASS] V2.4.2-02 反向探针确实执行（非法输入 / 非法迁移 / 篡改 / 回退 / 无身份恢复）\n- [PASS] V2.4.2-02b 既有契约套件回归：确认单 / Prompt 编辑 / 套图编辑器全过\n- [PASS] V2.4.2-03 生成执行区就绪：4 张图待生成、provider 身份可见、锁定提示收起\n- [PASS] V2.4.2-04 提交前落库：服务端已收到提交时，IndexedDB 已是 pending_submit 且 Prompt 版本一致\n- [PASS] V2.4.2-05 双击只产生一条 Attempt：只发生一次提交，且迁移链只有一个 action id\n- [PASS] V2.4.2-06 提交信封 → submitted：task id 保存；请求里的 Prompt / 引用 / 尺寸与记录一致\n- [PASS] V2.4.2-07 按 task id 核对推进 succeeded：迁移链完整、没有重新提交\n- [PASS] V2.4.2-08 刷新恢复：succeeded 身份、task id 与 UI 徽标一致\n- [PASS] V2.4.2-09 服务端重启后按已保存 task id 核对成功（服务端无任务表）\n- [PASS] V2.4.2-10 Unknown 不自动重提：unknown / 无 task id / requires_review，界面只给显式新建\n- [PASS] V2.4.2-11 显式新建 action：新身份生效，旧 unknown 记录逐字保留\n- [PASS] V2.4.2-12 刷新打断提交：pending 身份保留、不自动重提、界面可显式新建 action\n- [PASS] V2.4.2-13 刷新后显式新建 action：旧 pending 记录原样保留、新身份可提交\n- [PASS] V2.4.2-14 Prompt 前进后旧 Attempt 标「基于旧版本 v1」，记录零改写\n- [PASS] V2.4.2-15 零意外 console error / page error（预期内的 504 与刷新中断除外）\n- [PASS] V2.4.2-16 正式入口自检仍全过（V2.4.2 不破坏既有入口）\n\nBOUNDARY\n证明「一次生成」在真实浏览器与真实 HTTP 上可核对：发起提交之前先把 pending_submit 身份写进 IndexedDB（服务端已收到请求时记录已在库里），双击与重入只产生一条 Attempt；提交信封按网关四类归口推进状态，task id / request id / 错误语义原样保存；核对只按已保存的 task id 查询，服务端重启（无任务表）后结论不变；没有 task id 的 Unknown 不允许自动重提，界面只提供显式新建 action，且旧记录逐字保留；刷新打断提交时 pending 身份仍在、不产生第二次提交；Prompt 前进后旧 Attempt 标「基于旧版本 v1」且记录零改写。请求体里的 Prompt 文本、参考图与尺寸与记录和页面一致。本批不保存候选字节（V2.4.4）、不做整套批量与部分失败（V2.4.3）、不做审核与返工（Phase 5）；全程 0 次真实模型调用、0 次外部网络；图像 provider 是注入的假替身，只证明身份与状态机，不证明真实出图质量。\n\n证据文件：\n - evals/product-v2/v2.4.2-generation-attempt-20261001-061805.json\n - evals/product-v2/v2.4.2-generation-attempt-20261001-061805.txt\n - evals/product-v2/v2.4.2-generation-attempt-20261001-061805.png\n"
+  ],
+  [
+   "tools/verify_v2_4_3_batch_execution.py",
+   [],
+   0,
+   29.2,
+   [
+    "tail - evals/product-v2/v2.#.#-batch-suite-#-#.png"
+   ],
+   "amz-listing-kit Product V2 V2.4.3 整套批次执行、逐图进度与部分失败\nNOT-AUTHORITY: point-in-time verification evidence only\nobserved_at: 2026-10-01T06:18:48\nstatus: passed\nmodel_calls: 0 · external_network_calls: 0 (fake image provider + 本机服务)\njson: evals/product-v2/v2.4.3-batch-suite-20261001-061819.json\n\nCHECKS\n- [PASS] V2.4.3-00 domain / workspace / harness 通过 node --check（ESM 语法门）\n- [PASS] V2.4.3-01 B01–B09 契约套件全过且用例齐全\n- [PASS] V2.4.3-02 反向探针确实执行（非法输入 / 无身份记录不许自动重提）\n- [PASS] V2.4.3-02b 既有契约套件回归：Attempt / 确认单 / Prompt 编辑 / 套图编辑器全过\n- [PASS] V2.4.3-03 批次条就绪：4 张待提交、整套生成按钮可见\n- [PASS] V2.4.3-04 正常批次：按套图顺序各提交一次，自动核对到全部成功，进度文本一致\n- [PASS] V2.4.3-05 部分失败：失败不阻塞批次（两张都提交）、成功结果保留、已完成的图零改写\n- [PASS] V2.4.3-06 失败重试：单张重试成功；旧失败记录与无关记录逐字保留；新 action 是新身份\n- [PASS] V2.4.3-07 未知：无任务编号、只提交一次、观察窗口内零改写、只提供显式新建 action\n- [PASS] V2.4.3-08 未知显式新建 action 后成功；旧未知记录逐字保留\n- [PASS] V2.4.3-09 停止：只提交了已开始的一张；停止后不再新增提交；已提交身份仍核对出结论\n- [PASS] V2.4.3-10 刷新恢复：被中断的提交保留身份、不自动重提；批次条按记录重算剩余\n- [PASS] V2.4.3-11 继续生成剩余：补交剩余图并核对在途身份，全部图（10 张）最终成功\n- [PASS] V2.4.3-12 零意外 console error / page error（预期内的 504 与刷新中断除外）\n- [PASS] V2.4.3-13 正式入口自检仍全过（V2.4.3 不破坏既有入口）\n\nBOUNDARY\n证明「整套生成」在真实浏览器与真实 HTTP 上是可停止、可恢复、可隔离的：批次按套图顺序逐张提交，每张先落 pending_submit、只提交一次；批次自动按已保存 task id 核对到终态；一张明确失败不阻塞其余图片，成功记录逐字保留；失败图可单独重试，旧失败记录与无关记录零改写；结果未知（无任务编号）不自动重提，只提供显式新建 action；停止只停新增提交，已提交身份仍核对出结论；批次中途刷新后身份保留、不产生第二次提交，剩余图片可继续生成。本批不保存候选字节（V2.4.4）、不做审核与返工（Phase 5）；全程 0 次真实模型调用、0 次外部网络；图像 provider 是注入的假替身（按 Prompt 标记决定场景），只证明批次与状态语义，不证明真实出图质量。\n\n证据文件：\n - evals/product-v2/v2.4.3-batch-suite-20261001-061819.json\n - evals/product-v2/v2.4.3-batch-suite-20261001-061819.txt\n - evals/product-v2/v2.4.3-batch-suite-20261001-061819.png\n"
+  ],
+  [
+   "tools/verify_v2_4_4_candidate_blob.py",
+   [],
+   0,
+   11.6,
+   [
+    "tail - evals/product-v2/v2.#.#-candidate-blob-#-#.png"
+   ],
+   "amz-listing-kit Product V2 V2.4.4 候选字节流、Blob 持久化与容量管理\nNOT-AUTHORITY: point-in-time verification evidence only\nobserved_at: 2026-10-01T06:19:00\nstatus: passed\nmodel_calls: 0 · external_network_calls: 0 (fake image provider + 本机服务)\njson: evals/product-v2/v2.4.4-candidate-blob-20261001-061848.json\n\nCHECKS\n- [PASS] V2.4.4-00 domain / workspace / harness 通过 node --check（ESM 语法门）\n- [PASS] V2.4.4-01 C01–C10 契约套件全过且用例齐全\n- [PASS] V2.4.4-02 反向探针确实执行（坏 PNG / 非法身份 / 兼容性参数）\n- [PASS] V2.4.4-02b 既有契约套件回归：Attempt / 批次 / 确认单 / Prompt 编辑 / 套图编辑器全过\n- [PASS] V2.4.4-03 就绪：4 张待提交、整套生成按钮可见、候选栏为空且只有参考图字节\n- [PASS] V2.4.4-04 单张成功：候选自动入库；记录 sha = 重算 sha = 响应头 sha；64×64 预览可见\n- [PASS] V2.4.4-05 刷新恢复：候选记录与字节保留、不重复保存、零新增取回请求、预览仍可见\n- [PASS] V2.4.4-06 取回失败一次：不产生半份记录、错误可恢复、重试成功且 sha 与响应头一致\n- [PASS] V2.4.4-07 配额异常：不留半份记录、错误给出可恢复指引；解除后同一 action 保存成功\n- [PASS] V2.4.4-08 整套批次：只提交剩余图一次；全部成功且候选全部入库；进度与提示一致\n- [PASS] V2.4.4-09 零意外 console error / page error（预期内的取回 502 与刷新中断除外）\n- [PASS] V2.4.4-10 正式入口自检仍全过（V2.4.4 不破坏既有入口）\n\nBOUNDARY\n证明候选字节在真实浏览器与真实 IndexedDB 上是可持久、可校验、可恢复的：成功结论在同一步把结果字节存进内容寻址的 assets 仓，候选记录的 sha256 与重算值、服务端 X-Image-Sha256 响应头三方一致；刷新后预览来自本地字节、零新增取回请求且不重复保存；取回失败一次不产生半份记录、错误可恢复、重试成功；IndexedDB 配额异常在协议层注入（产品代码无测试钩子），失败不留半份记录并给出「清理后重试」指引；整套批次只提交剩余图一次、全部成功且候选全部入库，进度不再显示待保存候选。本批不做审核、单图返工与导出（Phase 5）；0 次真实模型调用、0 次外部网络；图像 provider 是注入的假替身（按 Prompt 标记决定取回场景），只证明候选持久化语义，不证明真实出图质量。\n\n证据文件：\n - evals/product-v2/v2.4.4-candidate-blob-20261001-061848.json\n - evals/product-v2/v2.4.4-candidate-blob-20261001-061848.txt\n - evals/product-v2/v2.4.4-candidate-blob-20261001-061848.png\n"
+  ],
+  [
+   "tools/verify_v2_5_1_deterministic_review.py",
+   [],
+   0,
+   10.6,
+   [
+    "tail - evals/product-v2/evidence/v2.#.#-deterministic-review-#-#.png"
+   ],
+   "amz-listing-kit Product V2 V2.5.1 生成前、单图与导出的确定性验证器\nNOT-AUTHORITY: point-in-time verification evidence only\nobserved_at: 2026-10-01T06:19:10\nstatus: passed\nmodel_calls: 0 · external_network_calls: 0 (fake providers + 本机服务)\njson: evals/product-v2/v2.5.1-deterministic-review-20261001-061900.json\n\nCHECKS\n- [PASS] V2.5.1-00 domain / workspace / harness 通过 node --check（ESM 语法门）\n- [PASS] V2.5.1-01 R01–R13 契约套件全过且用例齐全\n- [PASS] V2.5.1-02 反向探针确实执行（坏注册表/低分辨率/透明/坏字节/未登记代码/过期报告/哈希篡改）\n- [PASS] V2.5.1-02b 既有契约套件回归全过（candidate / attempt / batch / confirm / prompt_edit / suite_editor）\n- [PASS] V2.5.1-03 候选保存后自动生成当前 ReviewReport（绑定身份 + 合同 v2.5.2），界面出现摘要行\n- [PASS] V2.5.1-04 刷新后报告与摘要仍在、候选链不变、review_report 文档不重复铺\n- [PASS] V2.5.1-05 零意外 console error / page error\n- [PASS] V2.5.1-06 正式入口自检仍全过（本批不破坏既有入口）\n\nBOUNDARY\n证明确定性验证器在真实浏览器上按规则版本工作：注册表对缺要素/重复 id/未知词表/无任务锚点的消费者/未被认领的确认单代码直接报错；单图检查只做可复现测量——PNG 合同、记录一致性、最小长边 1000px（阻断）、推荐 1600px、主图 1:1、透明通道（HIGH_RISK 人工确认）、像素位深；测量失败一律降为 UNKNOWN 且不阻断；生成前阻塞项从确认单一对一映射为 BLOCK、提示项映射为 WARNING；导出就绪检查覆盖选择完整性、报告当前性、报告无 BLOCK、选择链一致性与 WebCrypto sha256 复算。候选保存时自动生成绑定 candidate_id + review_contract_version + asset_sha256 的 ReviewReport 并投影到工作台摘要行，刷新后保留且不重复铺。本批不做 VLM 审核、比较界面与返工（V2.5.2+）；0 次真实模型调用、0 次外部网络；图像与语义 provider 都是注入的假替身，只证明确定性校验语义，不证明真实出图质量。\n\n证据文件：\n - evals/product-v2/v2.5.1-deterministic-review-20261001-061900.json\n - evals/product-v2/v2.5.1-deterministic-review-20261001-061900.txt\n - evals/product-v2/evidence/v2.5.1-deterministic-review-20261001-061900.png\n"
+  ],
+  [
+   "tools/verify_v2_5_2_vlm_review.py",
+   [],
+   0,
+   9.0,
+   [
+    "PASS V2.5.2-01",
+    "PASS V2.5.2-02",
+    "PASS V2.5.2-03",
+    "PASS V2.5.2-04",
+    "PASS V2.5.2-05",
+    "PASS V2.5.2-F01",
+    "PASS V2.5.2-F02",
+    "PASS V2.5.2-F03",
+    "PASS V2.5.2-F04",
+    "PASS V2.5.2-F05",
+    "PASS V2.5.2-06",
+    "PASS V2.5.2-07",
+    "PASS V2.5.2-08",
+    "PASS V2.5.2-09",
+    "PASS V2.5.2-10",
+    "PASS V2.5.2-11",
+    "PASS V2.5.2-12",
+    "PASS V2.5.2-13",
+    "PASS V2.5.2-14",
+    "PASS V2.5.2-15",
+    "PASS V2.5.2-16",
+    "PASS V2.5.2-17",
+    "PASS V2.5.2-18",
+    "PASS V2.5.2-19"
+   ],
+   "V2.5.2 可替换 VLM 复核 Provider 验证（fake 契约 + 已标样例 + 浏览器闭环）\nNOT-AUTHORITY: point-in-time verification evidence only\n============================================================================\n  [PASS] V2.5.2-01 综合语法门：新 provider / workspace / 两个 harness 通过 node --check 与 Python AST\n         {\"node_failed\": [], \"py_failed\": []}\n  [PASS] V2.5.2-02 跨语言一致：VLM check 词表与合同版本在服务端与浏览器侧完全一致\n         {\"js_checks\": [\"product_fidelity\", \"part_anomaly\", \"deformity\", \"clipping\", \"garbled_text\", \"goal_completion\", \"prohibited_content\"], \"py_checks\": [\"product_fidelity\", \"part_anomaly\", \"deformity\", \"clipping\", \"garbled_text\", \"goal_completion\", \"prohibited_content\"], \"js_version\": \"v2.5.2\", \"py_version\": \"v2.5.2\"}\n  [PASS] V2.5.2-03 不重复造轮子：复核 provider 复用 SEL-003 通道（ChatOpenAI + 共享错误映射），零自建传输\n         {\"forbidden_hits\": [], \"shared_model\": true, \"shared_errors\": true}\n  [PASS] V2.5.2-04 注册表与代码一致：review 角色、真实/假 adapter、模型环境变量与默认选择\n         {\"default\": \"dashscope-review\", \"real\": \"v2_dashscope_review\", \"fake\": \"v2_fake_review\"}\n  [PASS] V2.5.2-05 注册表构造：环境变量能选择 fake-review（场景 clean）且真实默认模型已登记\n         {\"provider\": \"fake-review\", \"scenario\": \"clean\", \"model\": \"qwen-vl-max\"}\n  [PASS] V2.5.2-F01 已标样例 bad-confidence-rejected：置信度越界（1.4）必须整包拒绝\n         {\"name\": \"bad-confidence-rejected\", \"kind\": \"parsed\", \"state\": \"rejected\", \"code\": \"INVALID_RESPONSE\", \"family\": \"provider_failed\", \"retry_policy\": \"retryable\"}\n  [PASS] V2.5.2-F02 已标样例 clean-no-findings：模型未报告问题\n         {\"name\": \"clean-no-findings\", \"kind\": \"parsed\", \"state\": \"findings\", \"checks\": [], \"candidate_sha256\": \"92a2334e03e0\", \"image_blocks\": 1}\n  [PASS] V2.5.2-F03 已标样例 ok-two-findings：结构合法的两条发现\n         {\"name\": \"ok-two-findings\", \"kind\": \"parsed\", \"state\": \"findings\", \"checks\": [\"deformity\", \"garbled_text\"], \"candidate_sha256\": \"92a2334e03e0\", \"image_blocks\": 1, \"data_url_prefix\": \"data:image/png;base64,iVBORw0K\"}\n  [PASS] V2.5.2-F04 已标样例 truncated-output：模型输出被 max_tokens 截断\n         {\"name\": \"truncated-output\", \"kind\": \"truncated\", \"state\": \"rejected\", \"code\": \"PROVIDER_OUTPUT_TRUNCATED\", \"family\": \"provider_failed\", \"retry_policy\": \"requires_review\"}\n  [PASS] V2.5.2-F05 已标样例 unknown-check-rejected：模型使用了词表外的 check（把审美判断塞进复核）\n         {\"name\": \"unknown-check-rejected\", \"kind\": \"parsed\", \"state\": \"rejected\", \"code\": \"INVALID_RESPONSE\", \"family\": \"provider_failed\", \"retry_policy\": \"retryable\"}\n  [PASS] V2.5.2-06 fake provider 场景矩阵：ok/clean 返回，其余 8 类按四归口分类，且每次只调用一次\n         {\"scenarios\": [{\"scenario\": \"ok\", \"family\": null, \"code\": null, \"retry_policy\": null, \"findings\": 2, \"calls\": 1}, {\"scenario\": \"clean\", \"family\": null, \"code\": null, \"retry_policy\": null, \"findings\": 0, \"calls\": 1}, {\"scenario\": \"auth_failed\", \"family\": \"provider_failed\", \"code\": \"PROVIDER_AUTH_FAILED\", \"retry_policy\": \"fatal\", \"findings\": null, \"calls\": 1},\n  [PASS] V2.5.2-07 capabilities 暴露 review：合同、端点、provider 身份与参考图能力\n         {\"provider_id\": \"fake-review\", \"model_id\": \"fake-qwen-vl-max\", \"configured\": true, \"capabilities\": {\"provider_id\": \"fake-review\", \"model_id\": \"fake-qwen-vl-max\", \"reference_images\": true, \"structured_output\": \"local\", \"stateless\": true, \"test_double\": true, \"scenario\": \"ok\"}}\n  [PASS] V2.5.2-08 复核路由（fake ok）：200 且发现绑定候选 sha256，不含任何采纳/选择字段\n         {\"status\": 200, \"findings\": 2}\n  [PASS] V2.5.2-09 图片哈希与字节不一致 → input_rejected/400（不调用模型）\n         {\"family\": \"input_rejected\", \"code\": \"INPUT_INVALID\", \"message\": \"候选图的 sha256 与收到的字节不一致；拒绝把身份不明的图片送模型。\", \"retry_policy\": \"fatal\", \"http_status\": null, \"request_id\": null, \"details\": {\"problems\": [{\"path\": \"$\"}]}}\n  [PASS] V2.5.2-10 超时/结果未知 → 504 + unknown=true + provider_unknown/requires_review\n         {\"status\": 504, \"error\": {\"family\": \"provider_unknown\", \"code\": \"PROVIDER_TIMEOUT\", \"message\": \"假复核 Provider：读取超时，无法确认结果。\", \"retry_policy\": \"requires_review\", \"http_status\": null, \"request_id\": null, \"details\": {}}}\n  [PASS] V2.5.2-11 非法模型输出 → 502 INVALID_RESPONSE（服务端 provider_failed，浏览器投影为 Unknown）\n         {\"status\": 502, \"error\": {\"family\": \"provider_failed\", \"code\": \"INVALID_RESPONSE\", \"message\": \"假复核 Provider：输出不符合结构契约；整包拒绝。\", \"retry_policy\": \"retryable\", \"http_status\": null, \"request_id\": null, \"details\": {}}}\n  [PASS] V2.5.2-12 R01–R13 旧套件回归：注册表升级到 v2.5.2 后全部通过\n         {\"status\": \"passed\", \"failed\": []}\n  [PASS] V2.5.2-13 R14–R21 复核契约套件：词表/映射/合并/Unknown/反向探针全部通过\n         {\"status\": \"passed\", \"failed\": [], \"cases\": 8}\n  [PASS] V2.5.2-14 工作台走查：点“自动复核（VLM）”后报告落 checked，VLM 发现与确定性层并存\n         {\"outcome\": \"checked\", \"vlm_findings\": [\"vlm.deformity\", \"vlm.garbled_text\"], \"deterministic\": 7}\n  [PASS] V2.5.2-15 不自动采纳：复核不改变候选字节身份与 Attempt 状态\n         {\"candidate\": \"[{\\\"payload\\\": {\\\"action_id\", \"state\": \"succeeded\"}\n  [PASS] V2.5.2-16 刷新持久化：复核块仍在、版本链不继续增长（重开项目不重复铺报告）\n         {\"docs_before\": 2, \"docs_after\": 2}\n  [PASS] V2.5.2-17 失败保留 Unknown：复核未完成不伪造 PASS，候选/Attempt 保持不变\n         {\"outcome\": \"unknown\", \"vlm_findings\": [\"vlm.inspection_unavailable:UNKNOWN\"]}\n  [PASS] V2.5.2-18 正式入口 --check 全过（含复核路由自检：路由、请求身份、provider 不可用分类）\n         {\"rc\": 0, \"tail\": [\"  PASS  整套复核 provider 不可用时 capabilities 仍 200 且 configured=false  suite_review={'kind': 'dependency', 'detail': 'RuntimeError: 自检：整套复核 provider 构造失败'}\", \"  PASS  整套复核 provider 不可用时路由 503 且错误分类明确                          status=503 error={'family': 'internal', 'code': 'PROVIDER_NOT_CONFIGURED', 'message': '语义 provider 不可用：检查注册表、依赖与 DASHSCO\n  [PASS] V2.5.2-19 零意外 console error / page error（唯一允许项：Unknown 路径的 504 资源日志）\n         {\"unexpected_console\": [], \"expected_unknown_path_504\": [\"Failed to load resource: the server responded with a status of 504 (Gateway Timeout)\"], \"page\": []}\n----------------------------------------------------------------------------\nobserved_at: 2026-10-01T06:19:19\nstatus: passed\ncontract: v2.5.2\nmodel_calls: 0 · external_network_calls: 0（fake providers + 本地静态服务器）\njson: evals/product-v2/v2.5.2-vlm-review-20261001-061911.json\n\n边界：本套件 0 次真实模型调用；fake provider 只证明契约、归因与工作台闭环，\n不证明真实 VLM 的检出质量。真实最小请求由 tools/probe_v2_5_2_review_live.py\n单独执行并把请求审计写进证据（计划 §12.2 的预算纪律）。\n\nCHECKS\n- [PASS] V2.5.2-01 综合语法门：新 provider / workspace / 两个 harness 通过 node --check 与 Python AST\n- [PASS] V2.5.2-02 跨语言一致：VLM check 词表与合同版本在服务端与浏览器侧完全一致\n- [PASS] V2.5.2-03 不重复造轮子：复核 provider 复用 SEL-003 通道（ChatOpenAI + 共享错误映射），零自建传输\n- [PASS] V2.5.2-04 注册表与代码一致：review 角色、真实/假 adapter、模型环境变量与默认选择\n- [PASS] V2.5.2-05 注册表构造：环境变量能选择 fake-review（场景 clean）且真实默认模型已登记\n- [PASS] V2.5.2-F01 已标样例 bad-confidence-rejected：置信度越界（1.4）必须整包拒绝\n- [PASS] V2.5.2-F02 已标样例 clean-no-findings：模型未报告问题\n- [PASS] V2.5.2-F03 已标样例 ok-two-findings：结构合法的两条发现\n- [PASS] V2.5.2-F04 已标样例 truncated-output：模型输出被 max_tokens 截断\n- [PASS] V2.5.2-F05 已标样例 unknown-check-rejected：模型使用了词表外的 check（把审美判断塞进复核）\n- [PASS] V2.5.2-06 fake provider 场景矩阵：ok/clean 返回，其余 8 类按四归口分类，且每次只调用一次\n- [PASS] V2.5.2-07 capabilities 暴露 review：合同、端点、provider 身份与参考图能力\n- [PASS] V2.5.2-08 复核路由（fake ok）：200 且发现绑定候选 sha256，不含任何采纳/选择字段\n- [PASS] V2.5.2-09 图片哈希与字节不一致 → input_rejected/400（不调用模型）\n- [PASS] V2.5.2-10 超时/结果未知 → 504 + unknown=true + provider_unknown/requires_review\n- [PASS] V2.5.2-11 非法模型输出 → 502 INVALID_RESPONSE（服务端 provider_failed，浏览器投影为 Unknown）\n- [PASS] V2.5.2-12 R01–R13 旧套件回归：注册表升级到 v2.5.2 后全部通过\n- [PASS] V2.5.2-13 R14–R21 复核契约套件：词表/映射/合并/Unknown/反向探针全部通过\n- [PASS] V2.5.2-14 工作台走查：点“自动复核（VLM）”后报告落 checked，VLM 发现与确定性层并存\n- [PASS] V2.5.2-15 不自动采纳：复核不改变候选字节身份与 Attempt 状态\n- [PASS] V2.5.2-16 刷新持久化：复核块仍在、版本链不继续增长（重开项目不重复铺报告）\n- [PASS] V2.5.2-17 失败保留 Unknown：复核未完成不伪造 PASS，候选/Attempt 保持不变\n- [PASS] V2.5.2-18 正式入口 --check 全过（含复核路由自检：路由、请求身份、provider 不可用分类）\n- [PASS] V2.5.2-19 零意外 console error / page error（唯一允许项：Unknown 路径的 504 资源日志）\n\n证据文件：\n - evals/product-v2/v2.5.2-vlm-review-20261001-061911.txt\n - evals/product-v2/v2.5.2-vlm-review-20261001-061911.json\n - evals/product-v2/evidence/v2.5.2-vlm-review-20261001-061911.png\n"
+  ],
+  [
+   "tools/verify_v2_5_3_compare_panel.py",
+   [],
+   0,
+   10.9,
+   [
+    "PASS V2.5.3-01",
+    "PASS V2.5.3-02",
+    "PASS V2.5.3-03",
+    "PASS V2.5.3-04",
+    "PASS V2.5.3-05",
+    "PASS V2.5.3-06",
+    "PASS V2.5.3-07",
+    "PASS V2.5.3-08",
+    "PASS V2.5.3-09",
+    "PASS V2.5.3-10",
+    "PASS V2.5.3-11",
+    "PASS V2.5.3-12",
+    "PASS V2.5.3-13",
+    "PASS V2.5.3-14",
+    "PASS V2.5.3-15",
+    "PASS V2.5.3-16",
+    "PASS V2.5.3-17",
+    "PASS V2.5.3-18",
+    "PASS V2.5.3-19"
+   ],
+   "V2.5.3 候选比较与审核清单面板验证（比较契约套件 + 真实工作台走查 + 视觉证据）\nNOT-AUTHORITY: point-in-time verification evidence only\n============================================================================\n  [PASS] V2.5.3-01 语法门：compare / review / workspace / 契约套件与本工具全部可解析\n         {\"files\": [{\"file\": \"app/product_v2/domain/compare.js\", \"rc\": 0, \"stderr\": \"\"}, {\"file\": \"app/product_v2/domain/review.js\", \"rc\": 0, \"stderr\": \"\"}, {\"file\": \"app/product_v2/domain/index.js\", \"rc\": 0, \"stderr\": \"\"}, {\"file\": \"app/product_v2/workspace.js\", \"rc\": 0, \"stderr\": \"\"}, {\"file\": \"evals/product-v2/harness/compare-panel.js\", \"rc\": 0, \"stderr\": \"\"}, {\"f\n  [PASS] V2.5.3-02 单一权威：先看顺序只在 domain/review.js 定义，比较模块与工作台只引用\n         {\"order_in_review\": true, \"duplicated_in\": []}\n  [PASS] V2.5.3-03 比较面板是纯投影：不写文档、不写资产、不产生选择\n         {\"forbidden_tokens\": [], \"section_chars\": 15940}\n  [PASS] V2.5.3-04 面板接线：HTML 的 tablist/tabpanel 与合同版本贯穿领域层与工作台\n         {\"panel\": true, \"tablist\": true, \"tabpanel\": true, \"contract_constant\": true, \"contract_used\": true, \"default_projection\": true}\n  [PASS] V2.5.3-05 CP-01–CP-15 比较契约套件：异常优先、默认目标、清单排序与反向探针全部通过\n         {\"status\": \"passed\", \"failed\": [], \"cases\": 15}\n  [PASS] V2.5.3-06 复核契约回归：R01–R13 与 R14–R21 在比较面板落地后仍全过\n         {\"review\": \"passed\", \"provider\": \"passed\", \"review_failed\": [], \"provider_failed\": []}\n  [PASS] V2.5.3-07 入口：每张有候选的图都有「比较候选」，点开即投影该图（无第二套状态）\n         {\"contract\": \"v2.5.3\", \"shot\": \"shot_main_clean\", \"subject\": \"主图·干净背景 · 候选 3 · 待处理 2\", \"visible\": true}\n  [PASS] V2.5.3-08 参考图栏 = 这张图实际发送的参考图（与提交选择一致，不是全部参考图）\n         {\"references\": [{\"sha256\": \"88bcc17af574e50d447d09bc06d9636033a215d738a8a13768ba63dd0d1a38d2\", \"has_image\": true, \"text\": \"商品主图技术详情sha256 88bcc17a…\"}], \"title\": \"这张图实际发送的参考图（1 张）\", \"expected_sha256\": \"88bcc17af574e50d\"}\n  [PASS] V2.5.3-09 候选卡与 IndexedDB 一致：两次生成 + 一个合规夹具 = 三张，按版本可追溯\n         {\"cards\": [[\"act-d20a0f5ceb5a469da4948f9a48804f46\", \"候选 v2\", \"pending\"], [\"act-00f3a3bd6e084178aa4fedaf1279258e\", \"候选 v1\", \"pending\"], [\"act-fixture-compliant\", \"候选 v3\", \"clean\"]], \"db_versions\": [1, 2, 3]}\n  [PASS] V2.5.3-10 异常优先：有阻断的两个候选排在无发现的夹具之前，默认看排在最前的那一个\n         {\"order\": [\"act-d20a0f5ceb5a469da4948f9a48804f46\", \"act-00f3a3bd6e084178aa4fedaf1279258e\", \"act-fixture-compliant\"], \"states\": [\"pending\", \"pending\", \"clean\"], \"selected\": \"act-d20a0f5ceb5a469da4948f9a48804f46\", \"fixture_severities\": [\"PASS\", \"PASS\", \"PASS\", \"PASS\", \"PASS\", \"PASS\", \"PASS\"]}\n  [PASS] V2.5.3-11 键盘路径：方向键/Home/End 在候选间移动并保持焦点，Escape 回到该图当前可见的比较入口\n         {\"right\": \"act-00f3a3bd6e084178aa4fedaf1279258e\", \"end\": \"act-fixture-compliant\", \"home\": \"act-d20a0f5ceb5a469da4948f9a48804f46\", \"escape_focus\": null, \"expected\": [\"act-d20a0f5ceb5a469da4948f9a48804f46\", \"act-00f3a3bd6e084178aa4fedaf1279258e\", \"act-fixture-compliant\"]}\n  [PASS] V2.5.3-12 完整报告按需展开：默认收起，展开后含合同版本、通过项与视觉复核状态\n         {\"collapsed\": false, \"summary\": \"完整报告（合同 v2.5.2 · 7 条）\", \"pass_rows\": 5, \"vlm\": \"视觉复核：未检查\", \"findings\": 9, \"criteria\": [\"目的：完整展示商品主体，背景干净，不添加资料里没有的部件\", \"必须保持：商品外观、颜色与比例；标识与文字\"]}\n  [PASS] V2.5.3-13 面板不改业务状态：候选字节、Attempt 与审核报告在交互前后完全一致\n         {\"candidates_first\": 3, \"reports_before\": 4, \"reports_after\": 4}\n  [PASS] V2.5.3-14 刷新后一致：候选、默认目标与清单来自 IndexedDB，不依赖内存状态\n         {\"order\": [\"act-d20a0f5ceb5a469da4948f9a48804f46\", \"act-00f3a3bd6e084178aa4fedaf1279258e\", \"act-fixture-compliant\"], \"selected\": \"act-d20a0f5ceb5a469da4948f9a48804f46\", \"contract\": \"v2.5.3\", \"references\": 1}\n  [PASS] V2.5.3-15 单候选回退与「下一个待处理」：一张图一个候选照常比较，跳转落到有问题的图\n         {\"second_shot\": \"shot_infographic_benefits\", \"cards\": 1, \"jump_target\": \"shot_main_clean\", \"landed\": \"shot_main_clean\", \"focus\": \"compare-tab-act-d20a0f5ceb5a469da4948f9a48804f46\"}\n  [PASS] V2.5.3-16 边界：面板不承担采纳与导出，只有比较所需的动作\n         {\"buttons\": [\"下一个待处理\", \"候选 v1待处理64×64 · 2026/10/1 06:19:26阻断 · 最小长边 1000px：最长边 64px 低于平台缩放下限 1000px，交付后无法启用缩放。\", \"候选 v1待处理64×64 · 2026/10/1 06:19:27阻断 · 最小长边 1000px：最长边 64px 低于平台缩放下限 1000px，交付后无法启用缩放。\", \"候选 v2待处理64×64 · 2026/10/1 06:19:26阻断 · 最小长边 1000px：最长边 64px 低于平台缩放下限 1000px，交付后无法启用缩放。\", \"候选 v3无发现1600×1600 · 2026/10/1 06:19:27自动检查没有发现问题（机器结论，人工确认仍然必要）。\",\n  [PASS] V2.5.3-17 视觉证据：面板在真实工作台里可见（整页 + 面板特写截图留档）\n         {\"evals/product-v2/evidence/v2.5.3-compare-panel-20261001-061920.png\": 150836, \"evals/product-v2/evidence/v2.5.3-compare-panel-20261001-061920-detail.png\": 77054}\n  [PASS] V2.5.3-18 正式入口 --check 全过（比较面板没有破坏既有自检）\n         {\"rc\": 0, \"tail\": [\"  PASS  整套复核 provider 不可用时 capabilities 仍 200 且 configured=false  suite_review={'kind': 'dependency', 'detail': 'RuntimeError: 自检：整套复核 provider 构造失败'}\", \"  PASS  整套复核 provider 不可用时路由 503 且错误分类明确                          status=503 error={'family': 'internal', 'code': 'PROVIDER_NOT_CONFIGURED', 'message': '语义 provider 不可用：检查注册表、依赖与 DASHSCO\n  [PASS] V2.5.3-19 零意外 console error / page error\n         {\"console_errors\": [], \"page_errors\": []}\n----------------------------------------------------------------------------\nobserved_at: 2026-10-01T06:19:30\nstatus: passed\ncontract: v2.5.3（面板）· v2.5.2（审核报告）\nmodel_calls: 0 · external_network_calls: 0（fake providers + 本地静态服务器）\njson: evals/product-v2/v2.5.3-compare-panel-20261001-061920.json\n\n边界：本套件 0 次真实模型调用；比较面板只消费既有候选与审核报告，\n不产生采纳（Selection 属 V2.6.1）、不写入任何业务记录。\n工作台走查里有一个合规夹具候选（1600×1600 PNG）用来制造「有问题的候选 vs 无发现的候选」，\n它由验证器通过 storage 契约写入浏览器库，不是产品界面里的假状态。\n\nCHECKS\n- [PASS] V2.5.3-01 语法门：compare / review / workspace / 契约套件与本工具全部可解析\n- [PASS] V2.5.3-02 单一权威：先看顺序只在 domain/review.js 定义，比较模块与工作台只引用\n- [PASS] V2.5.3-03 比较面板是纯投影：不写文档、不写资产、不产生选择\n- [PASS] V2.5.3-04 面板接线：HTML 的 tablist/tabpanel 与合同版本贯穿领域层与工作台\n- [PASS] V2.5.3-05 CP-01–CP-15 比较契约套件：异常优先、默认目标、清单排序与反向探针全部通过\n- [PASS] V2.5.3-06 复核契约回归：R01–R13 与 R14–R21 在比较面板落地后仍全过\n- [PASS] V2.5.3-07 入口：每张有候选的图都有「比较候选」，点开即投影该图（无第二套状态）\n- [PASS] V2.5.3-08 参考图栏 = 这张图实际发送的参考图（与提交选择一致，不是全部参考图）\n- [PASS] V2.5.3-09 候选卡与 IndexedDB 一致：两次生成 + 一个合规夹具 = 三张，按版本可追溯\n- [PASS] V2.5.3-10 异常优先：有阻断的两个候选排在无发现的夹具之前，默认看排在最前的那一个\n- [PASS] V2.5.3-11 键盘路径：方向键/Home/End 在候选间移动并保持焦点，Escape 回到该图当前可见的比较入口\n- [PASS] V2.5.3-12 完整报告按需展开：默认收起，展开后含合同版本、通过项与视觉复核状态\n- [PASS] V2.5.3-13 面板不改业务状态：候选字节、Attempt 与审核报告在交互前后完全一致\n- [PASS] V2.5.3-14 刷新后一致：候选、默认目标与清单来自 IndexedDB，不依赖内存状态\n- [PASS] V2.5.3-15 单候选回退与「下一个待处理」：一张图一个候选照常比较，跳转落到有问题的图\n- [PASS] V2.5.3-16 边界：面板不承担采纳与导出，只有比较所需的动作\n- [PASS] V2.5.3-17 视觉证据：面板在真实工作台里可见（整页 + 面板特写截图留档）\n- [PASS] V2.5.3-18 正式入口 --check 全过（比较面板没有破坏既有自检）\n- [PASS] V2.5.3-19 零意外 console error / page error\n\n证据文件：\n - evals/product-v2/v2.5.3-compare-panel-20261001-061920.txt\n - evals/product-v2/v2.5.3-compare-panel-20261001-061920.json\n - evals/product-v2/evidence/v2.5.3-compare-panel-20261001-061920.png\n"
+  ],
+  [
+   "tools/verify_v2_5_4_rework_loop.py",
+   [],
+   0,
+   11.2,
+   [
+    "PASS V2.5.4-01",
+    "PASS V2.5.4-02",
+    "PASS V2.5.4-03",
+    "PASS V2.5.4-04",
+    "PASS V2.5.4-05",
+    "PASS V2.5.4-06",
+    "PASS V2.5.4-07",
+    "PASS V2.5.4-08",
+    "PASS V2.5.4-09",
+    "PASS V2.5.4-10",
+    "PASS V2.5.4-11",
+    "PASS V2.5.4-12",
+    "PASS V2.5.4-13",
+    "PASS V2.5.4-14",
+    "PASS V2.5.4-15",
+    "PASS V2.5.4-16",
+    "PASS V2.5.4-17",
+    "PASS V2.5.4-18",
+    "PASS V2.5.4-19",
+    "PASS V2.5.4-20"
+   ],
+   "V2.5.4 问题分类、改进方向与单图返工闭环验证（返工契约套件 + 真实工作台走查 + 视觉证据）\nNOT-AUTHORITY: point-in-time verification evidence only\n============================================================================\n  [PASS] V2.5.4-01 语法门：rework / prompt / confirm / workspace / 返工契约套件与本工具全部可解析\n         {\"files\": [{\"file\": \"app/product_v2/domain/rework.js\", \"rc\": 0, \"stderr\": \"\"}, {\"file\": \"app/product_v2/domain/prompt.js\", \"rc\": 0, \"stderr\": \"\"}, {\"file\": \"app/product_v2/domain/confirm.js\", \"rc\": 0, \"stderr\": \"\"}, {\"file\": \"app/product_v2/workspace.js\", \"rc\": 0, \"stderr\": \"\"}, {\"file\": \"evals/product-v2/harness/rework-contract.js\", \"rc\": 0, \"stderr\": \"\"}, \n  [PASS] V2.5.4-02 单一权威：九类问题与返工合同版本只在 domain/rework.js 定义，工作台只引用\n         {\"duplicated_in_workspace\": [], \"local_definition\": false, \"imports_problems\": true}\n  [PASS] V2.5.4-03 界面责任：比较区只放入口，返工表单是相邻的独立 #rework-panel（fieldset + 预览框）\n         {\"entry_in_compare\": true, \"panel_sibling\": true, \"fieldset\": true, \"preview_box\": true, \"buttons\": true, \"entry_hands_sha\": true}\n  [PASS] V2.5.4-04 追溯链唯一：返工要求进同一份 PromptVersion，确认用 rework:<shot>，复用既有提交通道\n         {\"prompt_section\": true, \"record_keeps_rework\": true, \"compile_pure\": true, \"save_then_confirm\": true, \"reuses_attempt_channel\": true, \"no_direct_gateway\": true, \"scoped_confirm_prefix\": true}\n  [PASS] V2.5.4-05 不回退：比较区仍是纯投影（V2.5.3 判据原样保持，返工逻辑不在其中）\n         {\"forbidden_tokens\": [], \"section_chars\": 15940}\n  [PASS] V2.5.4-06 RW-01–RW-15 返工契约套件：空理由、未知分类、跨图候选、hash 不符与正反路径全部守住\n         {\"status\": \"passed\", \"failed\": [], \"cases\": 15}\n  [PASS] V2.5.4-07 既有套件回归：CP-01–CP-15、R01–R13、R14–R21 在返工闭环落地后仍全过\n         {\"compare\": \"passed\", \"review\": \"passed\", \"provider\": \"passed\"}\n  [PASS] V2.5.4-08 入口：比较区把当前候选（candidate_id + sha256）交给相邻的独立返工区\n         {\"in_compare\": true, \"disabled\": false, \"shot_id\": \"shot_main_clean\", \"candidate_id\": \"act-6bacdd8dc91140f1a213bce1509a1744\", \"candidate_sha256\": \"cc2be95bfff2fa91682331d57589cecfdddafbe418b63d9b8ff5234c449e5168\"}\n  [PASS] V2.5.4-09 返工表单：独立面板、九类问题 fieldset、显式 label、焦点从入口进入第一个问题\n         {\"contract\": \"v2.5.4\", \"problems\": 9, \"legend\": \"问题分类（可多选；至少要选一类或写一句方向）\", \"focus\": \"rework-problem-product_fidelity\"}\n  [PASS] V2.5.4-10 比较区保持只读：勾选、填写、取消全程业务记录逐字不变，焦点回到原候选\n         {\"checked\": [\"product_fidelity\", \"platform_risk\"], \"focus_after_cancel\": \"compare-tab-act-6bacdd8dc91140f1a213bce1509a1744\", \"expected_focus\": \"compare-tab-act-6bacdd8dc91140f1a213bce1509a1744\", \"records_unchanged\": true}\n  [PASS] V2.5.4-11 预览：显示将发送的全文（参考图 1 张）且不写任何记录；改动输入后必须重新预览\n         {\"preview_chars\": 540, \"meta\": \"将保存为 Prompt 新版本（旧版本保留）并只重新生成这张图 · 参考图 1 张 · 全文 540 字\", \"dirty\": {\"preview\": false, \"submit_disabled\": true}, \"records_unchanged\": true}\n  [PASS] V2.5.4-12 确认隔离：返工只写 scope=[目标图] 的单图确认，整套确认与无关图逐字不变\n         {\"rework_confirm_scope\": [\"shot_main_clean\"], \"suite_confirm_same\": true, \"second_untouched\": true}\n  [PASS] V2.5.4-13 成功链：入口预览的全文 == 真实发送的 prompt == 新 Prompt 版本；只给目标图新增 Attempt/Candidate/Review\n         {\"attempt_state\": \"succeeded\", \"prompt_version\": 2, \"prompt_hash_match\": true, \"wire_prompt_chars\": 540, \"preview_chars\": 540, \"candidates\": 2}\n  [PASS] V2.5.4-14 影响隔离：无关图的 Prompt/Attempt/Candidate/Blob 零变化；目标图的旧候选与旧 Blob 原样保留\n         {\"second_candidates_same\": true, \"old_candidate_kept\": true, \"old_blob\": {\"found\": true, \"hash_match\": true}, \"second_prompt_versions\": 1}\n  [PASS] V2.5.4-15 双击防护：连点「确认并生成这张图」只产生一条 Attempt、一次真实请求\n         {\"new_actions\": 1, \"new_versions\": 3, \"requests\": 1, \"action_id\": \"act-8af04e25dd1543fdbf38f425d1386d5d\"}\n  [PASS] V2.5.4-16 失败可恢复：明确失败只留失败 Attempt（不产生候选），旧候选与旧 Blob 保留，可再次发起返工\n         {\"state\": \"failed\", \"attempts\": 3, \"candidates_same\": true, \"row_state\": \"failed\", \"compare_status\": \"返工已提交（Prompt v3 · 已失败）；旧候选保留，只有这张图新增了版本。\", \"recovered\": true}\n  [PASS] V2.5.4-17 Unknown 不自动重提：只留一条无 task id 的未知 Attempt，旧数据与候选不动，界面提示先不重提\n         {\"state\": \"unknown\", \"task_id\": null, \"attempts\": 4, \"requests\": 1, \"row_state\": \"unknown\", \"error\": \"这条记录没有任务编号，无法核对；只能显式新建 action。\"}\n  [PASS] V2.5.4-18 刷新恢复：候选/Attempt/返工确认从 IndexedDB 恢复，面板可重开（整页 + 返工区截图留档）\n         {\"candidates\": 2, \"attempts\": 11, \"business_records_same\": true, \"screenshots\": {\"evals/product-v2/evidence/v2.5.4-rework-loop-20261001-061931.png\": 179471, \"evals/product-v2/evidence/v2.5.4-rework-loop-20261001-061931-detail.png\": 35890}, \"prompt_chars\": 531}\n  [PASS] V2.5.4-19 正式入口 --check 全过（返工闭环没有破坏既有自检）\n         {\"rc\": 0, \"tail\": [\"  PASS  整套复核 provider 不可用时 capabilities 仍 200 且 configured=false  suite_review={'kind': 'dependency', 'detail': 'RuntimeError: 自检：整套复核 provider 构造失败'}\", \"  PASS  整套复核 provider 不可用时路由 503 且错误分类明确                          status=503 error={'family': 'internal', 'code': 'PROVIDER_NOT_CONFIGURED', 'message': '语义 provider 不可用：检查注册表、依赖与 DASHSCO\n  [PASS] V2.5.4-20 零意外 console error / page error（唯一允许项：Unknown 路径的 504 资源日志）\n         {\"unexpected_console\": [], \"expected_unknown_path_504\": [\"[workbench] Failed to load resource: the server responded with a status of 504 (Gateway Timeout)\"], \"page_errors\": []}\n----------------------------------------------------------------------------\nobserved_at: 2026-10-01T06:19:41\nstatus: passed\ncontract: v2.5.4（返工）· v2.5.3（比较面板）· v2.5.2（复核报告）\nmodel_calls: 0 · external_network_calls: 0（fake providers + 本地静态服务器）\njson: evals/product-v2/v2.5.4-rework-loop-20261001-061931.json\n\n边界：本套件 0 次真实模型调用；比较区保持只读，返工只在独立 #rework-panel 里写\nPromptVersion + scope=[目标图] 的确认 + Attempt；候选采纳（Selection）属 V2.6.1，\n导出 zip 属 V2.6.2，本批不宣称已经具备。\n「与真实请求一致」由浏览器侧捕获的 /api/v2/images/submit 请求体逐字比对得出，\n发送目标是本地 fake 图像网关（不是阿里云百炼）。\n\nCHECKS\n- [PASS] V2.5.4-01 语法门：rework / prompt / confirm / workspace / 返工契约套件与本工具全部可解析\n- [PASS] V2.5.4-02 单一权威：九类问题与返工合同版本只在 domain/rework.js 定义，工作台只引用\n- [PASS] V2.5.4-03 界面责任：比较区只放入口，返工表单是相邻的独立 #rework-panel（fieldset + 预览框）\n- [PASS] V2.5.4-04 追溯链唯一：返工要求进同一份 PromptVersion，确认用 rework:<shot>，复用既有提交通道\n- [PASS] V2.5.4-05 不回退：比较区仍是纯投影（V2.5.3 判据原样保持，返工逻辑不在其中）\n- [PASS] V2.5.4-06 RW-01–RW-15 返工契约套件：空理由、未知分类、跨图候选、hash 不符与正反路径全部守住\n- [PASS] V2.5.4-07 既有套件回归：CP-01–CP-15、R01–R13、R14–R21 在返工闭环落地后仍全过\n- [PASS] V2.5.4-08 入口：比较区把当前候选（candidate_id + sha256）交给相邻的独立返工区\n- [PASS] V2.5.4-09 返工表单：独立面板、九类问题 fieldset、显式 label、焦点从入口进入第一个问题\n- [PASS] V2.5.4-10 比较区保持只读：勾选、填写、取消全程业务记录逐字不变，焦点回到原候选\n- [PASS] V2.5.4-11 预览：显示将发送的全文（参考图 1 张）且不写任何记录；改动输入后必须重新预览\n- [PASS] V2.5.4-12 确认隔离：返工只写 scope=[目标图] 的单图确认，整套确认与无关图逐字不变\n- [PASS] V2.5.4-13 成功链：入口预览的全文 == 真实发送的 prompt == 新 Prompt 版本；只给目标图新增 Attempt/Candidate/Review\n- [PASS] V2.5.4-14 影响隔离：无关图的 Prompt/Attempt/Candidate/Blob 零变化；目标图的旧候选与旧 Blob 原样保留\n- [PASS] V2.5.4-15 双击防护：连点「确认并生成这张图」只产生一条 Attempt、一次真实请求\n- [PASS] V2.5.4-16 失败可恢复：明确失败只留失败 Attempt（不产生候选），旧候选与旧 Blob 保留，可再次发起返工\n- [PASS] V2.5.4-17 Unknown 不自动重提：只留一条无 task id 的未知 Attempt，旧数据与候选不动，界面提示先不重提\n- [PASS] V2.5.4-18 刷新恢复：候选/Attempt/返工确认从 IndexedDB 恢复，面板可重开（整页 + 返工区截图留档）\n- [PASS] V2.5.4-19 正式入口 --check 全过（返工闭环没有破坏既有自检）\n- [PASS] V2.5.4-20 零意外 console error / page error（唯一允许项：Unknown 路径的 504 资源日志）\n\n证据文件：\n - evals/product-v2/v2.5.4-rework-loop-20261001-061931.txt\n - evals/product-v2/v2.5.4-rework-loop-20261001-061931.json\n - evals/product-v2/evidence/v2.5.4-rework-loop-20261001-061931.png\n"
+  ],
+  [
+   "tools/verify_v2_5_5_suite_review.py",
+   [],
+   0,
+   15.5,
+   [
+    "PASS V2.5.5-00",
+    "PASS V2.5.5-01",
+    "PASS V2.5.5-02",
+    "PASS V2.5.5-03",
+    "PASS V2.5.5-04",
+    "PASS V2.5.5-05",
+    "PASS V2.5.5-06",
+    "PASS V2.5.5-07",
+    "PASS V2.5.5-08",
+    "PASS V2.5.5-09",
+    "PASS V2.5.5-10",
+    "PASS V2.5.5-11"
+   ],
+   "  [PASS] V2.5.5-00 ESM 语法门（domain / workspace / harness）\n  [PASS] V2.5.5-01 服务端词表/合同版本/张数上限/端点与浏览器互为镜像\n  [PASS] V2.5.5-02 单一权威：复用既有测量；界面落点与文档种类已登记\n  [PASS] V2.5.5-03 契约套件 S01–S06 全过\n  [PASS] V2.5.5-04 工作台整套检查：报告当前、视觉已核对、发现可见\n  [PASS] V2.5.5-05 报告以 suite_review 文档写入 IndexedDB\n  [PASS] V2.5.5-06 发现可跳转到对应图行\n  [PASS] V2.5.5-07 方案变化后报告过期并可重算为当前\n  [PASS] V2.5.5-08 刷新后报告仍在且仍是当前\n  [PASS] V2.5.5-09 主链零意外 console / page / HTTP 错误\n  [PASS] V2.5.5-10 视觉通道失败：只落 UNKNOWN，确定性部分照常\n  [PASS] V2.5.5-11 正式入口自检全过且含整套复核路由\n       {\"rc\": 0, \"tail\": [\"  PASS  整套复核 provider 不可用时 capabilities 仍 200 且 configured=false  suite_review={'kind': 'dependency', 'detail': 'RuntimeError: 自检：整套复核 provider 构造失败'}\", \"  PASS  整套复核 provider 不可用时路由 503 且错误分类明确                          status=503 error={'family': 'internal', 'code': 'PROVIDER_NOT_CONFIGURED', 'message': '语义 provider 不可用：检查注册表、依赖与 DASHSCOPE_API_KEY。', 'retry_policy': 'fatal', 'http_status': 503, 'request_id': None, 'details': {'kind': 'dependency', 'detail': 'RuntimeError: 自检：整套复核 provider 构造失败'}}\", \"V2 正式入口自检：38/38 通过。\"]}\n\nSCREENSHOTS\n- evals/product-v2/evidence/v2.5.5-suite-review-20261001-061942-current.png\n- evals/product-v2/evidence/v2.5.5-suite-review-20261001-061942-rerun.png\n- evals/product-v2/evidence/v2.5.5-suite-review-20261001-061942-unknown.png\n证据：evals/product-v2/v2.5.5-suite-review-20261001-061942.txt\n"
+  ],
+  [
+   "tools/verify_v2_6_1_selection.py",
+   [],
+   0,
+   12.0,
+   [
+    "PASS V2.6.1-01",
+    "PASS V2.6.1-02",
+    "PASS V2.6.1-03",
+    "PASS V2.6.1-04",
+    "PASS V2.6.1-05",
+    "PASS V2.6.1-06",
+    "PASS V2.6.1-07",
+    "PASS V2.6.1-08",
+    "PASS V2.6.1-09",
+    "PASS V2.6.1-10",
+    "PASS V2.6.1-11",
+    "PASS V2.6.1-12",
+    "PASS V2.6.1-13",
+    "PASS V2.6.1-14",
+    "PASS V2.6.1-15",
+    "PASS V2.6.1-16",
+    "PASS V2.6.1-17",
+    "PASS V2.6.1-18",
+    "PASS V2.6.1-19",
+    "PASS V2.6.1-20",
+    "PASS V2.6.1-21",
+    "PASS V2.6.1-22",
+    "PASS V2.6.1-23"
+   ],
+   "V2.6.1 人工 Selection 与失效判断验证（选择契约套件 + 真实工作台走查 + 视觉证据）\nNOT-AUTHORITY: point-in-time verification evidence only\n============================================================================\n  [PASS] V2.6.1-01 语法门：selection / shared / workspace / 选择契约套件与本工具全部可解析\n         {\"files\": [{\"file\": \"app/product_v2/domain/selection.js\", \"rc\": 0, \"stderr\": \"\"}, {\"file\": \"app/product_v2/domain/shared.js\", \"rc\": 0, \"stderr\": \"\"}, {\"file\": \"app/product_v2/workspace.js\", \"rc\": 0, \"stderr\": \"\"}, {\"file\": \"evals/product-v2/harness/selection-contract.js\", \"rc\": 0, \"stderr\": \"\"}, {\"file\": \"tools/verify_v2_6_1_selection.py\", \"rc\": 0, \"stderr\":\n  [PASS] V2.6.1-02 单一权威：选择记录形状、词表与合同版本只在 domain/selection.js 定义，工作台只引用\n         {\"duplicated_in_workspace\": [], \"imports_contract\": true}\n  [PASS] V2.6.1-03 界面责任：比较区只放入口，采用面板是相邻的独立 #adopt-panel 并绑定候选身份\n         {\"entry_in_compare_head\": true, \"panel_sibling\": true, \"buttons\": true, \"panel_fields\": true, \"progress_line\": true, \"panel_binding\": true}\n  [PASS] V2.6.1-04 写路径唯一：采用只经仓储追加选择记录，先落盘再更新内存，失败走错误提示\n         {\"forbidden_tokens\": [], \"saves_selection\": true, \"memory_after_save\": true, \"error_path_kept\": true, \"no_auto_select\": true, \"negative_probe\": {\"selections_save_guard_red\": true, \"compare_purity_guard_red\": true, \"rework_purity_guard_red\": true, \"ok\": true}, \"section_chars\": 8749}\n  [PASS] V2.6.1-05 不回退：比较区仍是纯投影、返工区未被采用逻辑污染（V2.5.3 / V2.5.4 判据保持）\n         {\"compare_forbidden\": [], \"rework_forbidden\": []}\n  [PASS] V2.6.1-06 SL-01–SL-18 选择契约套件：跨图候选、缺身份、非法 sha、过高 schema 版本、过期投影全部守住\n         {\"status\": \"passed\", \"failed\": [], \"cases\": 18}\n  [PASS] V2.6.1-07 既有套件回归：RW-01–RW-15、CP-01–CP-15、R01–R13 与复核 provider 在采用落地后仍全过\n         {\"rework\": \"passed\", \"compare\": \"passed\", \"review\": \"passed\", \"provider\": \"passed\"}\n  [PASS] V2.6.1-08 自动审核只提供依据：种子阶段已有候选与报告，但没有任何选择记录，行内摘要仍是「尚未采用」\n         {\"selection_rows\": 0, \"progress\": {\"current\": 0, \"required\": 1, \"stale\": 0, \"missing\": 1}, \"candidates\": [\"act-4f41208a490849a0a1486b63943523bf\", \"act-82d6f4e20b354b789924d7754f1d8d42\"], \"row\": {\"shot_id\": \"shot_main_clean\", \"attempt_state\": \"succeeded\", \"selection_state\": \"none\", \"selection_text\": \"尚未采用候选：在候选比较里选一条，点「采用此候选」。\"}}\n  [PASS] V2.6.1-09 入口：比较区把「正看着的候选」交给采用面板，换卡后入口同步换身份\n         {\"default\": \"act-4f41208a490849a0a1486b63943523bf\", \"switched\": \"act-82d6f4e20b354b789924d7754f1d8d42\", \"entry\": {\"in_compare\": true, \"disabled\": false, \"shot_id\": \"shot_main_clean\", \"candidate_id\": \"act-82d6f4e20b354b789924d7754f1d8d42\", \"candidate_sha256\": \"abedc7aa394cfbd36f7344b6c9af22ecc236ca81d9465373fa2b0f29aa03ba61\"}, \"selected\": \"act-82d6f4e20b354b7\n  [PASS] V2.6.1-10 采用面板：独立面板绑定候选身份与合同版本，显示将绑定的当前审核报告与这套图的采用要求\n         {\"contract\": \"v2.6.1\", \"basis\": \"主图·干净背景 · 当前尚未采用候选 · 候选 v2\", \"fingerprint\": \"将绑定当前审核报告：自动检查 v2.5.2：阻断 1 · 高风险 0 · 提醒 1 · 未知 0 · VLM 未检查（审核合同 v2.5.2）\", \"readiness\": \"这张图是必需图：导出前必须有当前有效的选择。\", \"focus\": \"adopt-submit\"}\n  [PASS] V2.6.1-11 打开与关闭采用面板不写任何记录，关闭后焦点回到原候选卡\n         {\"focus_after_close\": \"compare-tab-act-82d6f4e20b354b789924d7754f1d8d42\", \"expected_focus\": \"compare-tab-act-82d6f4e20b354b789924d7754f1d8d42\", \"records_unchanged\": true}\n  [PASS] V2.6.1-12 采用：追加一条选择记录（绑定候选身份/版本/审核指纹），行摘要、候选徽标与整套进度同步更新\n         {\"selection\": {\"kind\": \"selection\", \"document_id\": \"shot_main_clean\", \"version\": 1, \"payload_sha256\": \"61cf9c452f609d0e8471ab298023a1110ae405a561f808c728343598b8224e30\", \"action\": \"select\", \"candidate_id\": \"act-82d6f4e20b354b789924d7754f1d8d42\", \"candidate_version\": 2, \"candidate_sha256\": \"abedc7aa394cfbd36f7344b6c9af22ecc236ca81d9465373fa2b0f29aa03ba61\", \"s\n  [PASS] V2.6.1-13 采用只写选择：Prompt/Attempt/Candidate/Review/确认与图片资产逐字不变，无关图零变化\n         {\"others_untouched\": true, \"second_shot_untouched\": true, \"assets\": 4}\n  [PASS] V2.6.1-14 改选：追加新版本而不是覆盖，旧记录逐字保留，徽标与摘要随之移动\n         {\"version\": 2, \"kept_prefix\": true, \"badges\": [{\"state\": \"current\", \"text\": \"已采用\", \"candidate_id\": \"act-4f41208a490849a0a1486b63943523bf\"}], \"progress\": {\"current\": 1, \"required\": 1, \"stale\": 0, \"missing\": 0}}\n  [PASS] V2.6.1-15 返工后失效：新的成功候选只把旧选择标成过期，不覆盖、不自动改选、不自动取消\n         {\"newest_candidate\": \"act-46040bc5bdaa4b55a72195e1031cdd8f\", \"row\": {\"shot_id\": \"shot_main_clean\", \"attempt_state\": \"succeeded\", \"selection_state\": \"stale\", \"selection_text\": \"已采用候选 v1（选择记录 act-3b86fd18f4794ec4b331fb1a7c31ee1d）；已过期：之后出现了新候选，请重新采用（新候选或旧候选都行）。\"}, \"progress\": {\"current\": 0, \"required\": 1, \"stale\": 1, \"missing\": 0}, \"badges\": {\"act-4f41208a49084\n  [PASS] V2.6.1-16 返工后重选旧候选：过期选择重新变 current，徽标回到旧候选，历史全部保留\n         {\"selection\": {\"kind\": \"selection\", \"document_id\": \"shot_main_clean\", \"version\": 3, \"payload_sha256\": \"2543dbdb1186083633fbc64b6891ad168c8b5db5d3fd86b1d38fe030e0ea2471\", \"action\": \"select\", \"candidate_id\": \"act-82d6f4e20b354b789924d7754f1d8d42\", \"candidate_version\": 2, \"candidate_sha256\": \"abedc7aa394cfbd36f7344b6c9af22ecc236ca81d9465373fa2b0f29aa03ba61\", \"s\n  [PASS] V2.6.1-17 写入失败不改旧选择：明确报错、不新增记录、旧选择与进度不变；恢复后重试能追加\n         {\"error\": \"注入的写入失败\", \"version_after_failure\": 3, \"recovered_version\": 4}\n  [PASS] V2.6.1-18 双击防护：连点「采用这条候选」只追加一条记录、一次版本推进\n         {\"selection_rows\": 5, \"version\": 5}\n  [PASS] V2.6.1-19 取消采用：追加一条不带候选身份的 clear 记录，摘要与进度回到缺选，历史 select 记录保留\n         {\"selection\": {\"kind\": \"selection\", \"document_id\": \"shot_main_clean\", \"version\": 6, \"payload_sha256\": \"bc3c18ad76e676436a9f0a30216f696d61c6bd117c69bf846241ee4cf2eb22c9\", \"action\": \"clear\", \"candidate_id\": null, \"candidate_version\": null, \"candidate_sha256\": null, \"selection_id\": \"act-7b79d41548004aa7a4244a6ce3b68c59\", \"has_fingerprint\": false, \"payload_keys\"\n  [PASS] V2.6.1-20 刷新恢复：选择状态、行摘要、整套进度与候选徽标从 IndexedDB 恢复，刷新不写任何记录\n         {\"records_same\": true, \"row\": {\"shot_id\": \"shot_main_clean\", \"attempt_state\": \"succeeded\", \"selection_state\": \"cleared\", \"selection_text\": \"已取消采用（历史保留）；可以重新采用任一候选。\"}, \"progress\": {\"current\": 0, \"required\": 1, \"stale\": 0, \"missing\": 1}}\n  [PASS] V2.6.1-21 视觉证据：整页与采用面板特写落盘；选择记录只引用内容寻址身份，不含图片字节\n         {\"screenshots\": {\"evals/product-v2/evidence/v2.6.1-selection-20261001-061957.png\": 191693, \"evals/product-v2/evidence/v2.6.1-selection-20261001-061957-detail.png\": 27763}, \"selection_payloads\": [{\"keys\": \"action,candidate_id,candidate_sha256,candidate_version,contract_version,created_at,review_fingerprint,schema_version,selection_id,shot_id\", \"chars\": 671}, \n  [PASS] V2.6.1-22 正式入口 --check 全过（采用闭环没有破坏既有自检）\n         {\"rc\": 0, \"tail\": [\"  PASS  整套复核 provider 不可用时 capabilities 仍 200 且 configured=false  suite_review={'kind': 'dependency', 'detail': 'RuntimeError: 自检：整套复核 provider 构造失败'}\", \"  PASS  整套复核 provider 不可用时路由 503 且错误分类明确                          status=503 error={'family': 'internal', 'code': 'PROVIDER_NOT_CONFIGURED', 'message': '语义 provider 不可用：检查注册表、依赖与 DASHSCO\n  [PASS] V2.6.1-23 零意外 console error / page error（唯一允许项：Unknown 路径的 504 资源日志）\n         {\"unexpected_console\": [], \"expected_unknown_path_504\": [], \"page_errors\": []}\n----------------------------------------------------------------------------\nobserved_at: 2026-10-01T06:20:09\nstatus: passed\ncontract: v2.6.1（人工选择）· v2.5.4（返工）· v2.5.3（比较）· v2.5.2（复核）\nmodel_calls: 0 · external_network_calls: 0（fake providers + 本地静态服务器）\njson: evals/product-v2/v2.6.1-selection-20261001-061957.json\n\n边界：本套件 0 次真实模型调用，采用过程不调用任何模型；写入失败用例是在浏览器侧\n对 IDBObjectStore.add 注入一次失败，验证「写失败不改旧 Selection」的错误路径，不代表\n真实磁盘写满或事务冲突下的表现。整套一致性报告属 V2.5.5、导出阻断与交付 zip 属 V2.6.2，\n本批不宣称已经具备；采用也不代表候选已通过导出硬门。\n\nCHECKS\n- [PASS] V2.6.1-01 语法门：selection / shared / workspace / 选择契约套件与本工具全部可解析\n- [PASS] V2.6.1-02 单一权威：选择记录形状、词表与合同版本只在 domain/selection.js 定义，工作台只引用\n- [PASS] V2.6.1-03 界面责任：比较区只放入口，采用面板是相邻的独立 #adopt-panel 并绑定候选身份\n- [PASS] V2.6.1-04 写路径唯一：采用只经仓储追加选择记录，先落盘再更新内存，失败走错误提示\n- [PASS] V2.6.1-05 不回退：比较区仍是纯投影、返工区未被采用逻辑污染（V2.5.3 / V2.5.4 判据保持）\n- [PASS] V2.6.1-06 SL-01–SL-18 选择契约套件：跨图候选、缺身份、非法 sha、过高 schema 版本、过期投影全部守住\n- [PASS] V2.6.1-07 既有套件回归：RW-01–RW-15、CP-01–CP-15、R01–R13 与复核 provider 在采用落地后仍全过\n- [PASS] V2.6.1-08 自动审核只提供依据：种子阶段已有候选与报告，但没有任何选择记录，行内摘要仍是「尚未采用」\n- [PASS] V2.6.1-09 入口：比较区把「正看着的候选」交给采用面板，换卡后入口同步换身份\n- [PASS] V2.6.1-10 采用面板：独立面板绑定候选身份与合同版本，显示将绑定的当前审核报告与这套图的采用要求\n- [PASS] V2.6.1-11 打开与关闭采用面板不写任何记录，关闭后焦点回到原候选卡\n- [PASS] V2.6.1-12 采用：追加一条选择记录（绑定候选身份/版本/审核指纹），行摘要、候选徽标与整套进度同步更新\n- [PASS] V2.6.1-13 采用只写选择：Prompt/Attempt/Candidate/Review/确认与图片资产逐字不变，无关图零变化\n- [PASS] V2.6.1-14 改选：追加新版本而不是覆盖，旧记录逐字保留，徽标与摘要随之移动\n- [PASS] V2.6.1-15 返工后失效：新的成功候选只把旧选择标成过期，不覆盖、不自动改选、不自动取消\n- [PASS] V2.6.1-16 返工后重选旧候选：过期选择重新变 current，徽标回到旧候选，历史全部保留\n- [PASS] V2.6.1-17 写入失败不改旧选择：明确报错、不新增记录、旧选择与进度不变；恢复后重试能追加\n- [PASS] V2.6.1-18 双击防护：连点「采用这条候选」只追加一条记录、一次版本推进\n- [PASS] V2.6.1-19 取消采用：追加一条不带候选身份的 clear 记录，摘要与进度回到缺选，历史 select 记录保留\n- [PASS] V2.6.1-20 刷新恢复：选择状态、行摘要、整套进度与候选徽标从 IndexedDB 恢复，刷新不写任何记录\n- [PASS] V2.6.1-21 视觉证据：整页与采用面板特写落盘；选择记录只引用内容寻址身份，不含图片字节\n- [PASS] V2.6.1-22 正式入口 --check 全过（采用闭环没有破坏既有自检）\n- [PASS] V2.6.1-23 零意外 console error / page error（唯一允许项：Unknown 路径的 504 资源日志）\n\n证据文件：\n - evals/product-v2/v2.6.1-selection-20261001-061957.txt\n - evals/product-v2/v2.6.1-selection-20261001-061957.json\n - evals/product-v2/evidence/v2.6.1-selection-20261001-061957.png\n"
+  ],
+  [
+   "tools/verify_v2_6_2_delivery.py",
+   [],
+   0,
+   19.3,
+   [
+    "PASS V2.6.2-00",
+    "PASS V2.6.2-01",
+    "PASS V2.6.2-02",
+    "PASS V2.6.2-03",
+    "PASS V2.6.2-04",
+    "PASS V2.6.2-05",
+    "PASS V2.6.2-06",
+    "PASS V2.6.2-07",
+    "PASS V2.6.2-08",
+    "PASS V2.6.2-09",
+    "PASS V2.6.2-10",
+    "PASS V2.6.2-11"
+   ],
+   "  [PASS] V2.6.2-00 ESM 语法门（domain / workspace / 契约套件）\n  [PASS] V2.6.2-01 单一权威：复用既有测量；界面落点与新文档种类已登记\n  [PASS] V2.6.2-02 契约套件 D01–D06 全过\n  [PASS] V2.6.2-03 工作台交付门禁：无阻断、按钮可用、逐图行完整\n  [PASS] V2.6.2-04 交付包下载成功，Python 独立核对 ZIP 内容与哈希\n  [PASS] V2.6.2-05 export_record 以 append-only 文档写入 IndexedDB\n  [PASS] V2.6.2-06 重复生成只追加：两条记录、document_id 与包哈希各自独立\n  [PASS] V2.6.2-07 刷新后：记录仍在、门禁仍无阻断、最近交付包可见\n  [PASS] V2.6.2-08 候选字节缺失：门禁阻断、按钮禁用、不产生新记录\n  [PASS] V2.6.2-09 主链零意外 console / page / HTTP 错误\n  [PASS] V2.6.2-10 Unknown 未确认不可导出；逐条确认后门禁通过并可交付\n  [PASS] V2.6.2-11 正式入口自检全过\nSCREENSHOTS\n- evals/product-v2/evidence/v2.6.2-delivery-20261001-062009-gate-pass.png\n- evals/product-v2/evidence/v2.6.2-delivery-20261001-062009-after-reload.png\n- evals/product-v2/evidence/v2.6.2-delivery-20261001-062009-hash-missing.png\n- evals/product-v2/evidence/v2.6.2-delivery-20261001-062009-unknown-blocked.png\n- evals/product-v2/evidence/v2.6.2-delivery-20261001-062009-unknown-confirmed.png\n证据：evals/product-v2/v2.6.2-delivery-20261001-062009.txt\n"
+  ],
+  [
+   "tools/verify_v2_6_3_project_transfer.py",
+   [],
+   0,
+   12.0,
+   [
+    "PASS V2.6.3-00",
+    "PASS V2.6.3-01",
+    "PASS V2.6.3-02",
+    "PASS V2.6.3-03",
+    "PASS V2.6.3-04",
+    "PASS V2.6.3-05",
+    "PASS V2.6.3-06",
+    "PASS V2.6.3-07",
+    "PASS V2.6.3-08",
+    "PASS V2.6.3-09",
+    "PASS V2.6.3-10",
+    "PASS V2.6.3-11",
+    "PASS V2.6.3-12"
+   ],
+   "  [PASS] V2.6.3-00 ESM 语法门（storage / workspace / app / 契约套件）\n  [PASS] V2.6.3-01 storage 镜像与 domain 现场一致（15 种文档、复核合同 v2.5.2、格式 2 支持 1）\n  [PASS] V2.6.3-02 导入导出界面落点与单一权威（迁移链不复制 ZIP/散列实现）\n  [PASS] V2.6.3-03 契约套件 P01–P07 全过（真实 Chromium）\n  [PASS] V2.6.3-04 A 导出项目包：格式 2、记录自描述、完整性计数与逐资产哈希（Python 独立核对）\n  [PASS] V2.6.3-05 B 全新 profile 导入：逐文档 payload 哈希与资产 sha256 与 A 包一致（crypto 独立重算）\n  [PASS] V2.6.3-06 B 导入后按问题返工：新增候选与 Attempt（迁移后的项目可继续生产）\n  [PASS] V2.6.3-07 B 返工后门禁重新就绪并生成交付包（迁移后的完整闭环）\n  [PASS] V2.6.3-08 B 再导出项目包：A 的记录逐条原样保留，新增返工/交付记录\n  [PASS] V2.6.3-09 格式 1 旧包 UI 导入：提示已升级、冲突分配新项目、迁移后项目可打开\n  [PASS] V2.6.3-10 浏览器 A 主链零意外 console / page / HTTP 错误\n  [PASS] V2.6.3-11 浏览器 B 主链零意外 console / page / HTTP 错误\n  [PASS] V2.6.3-12 正式入口自检全过\n- evals/product-v2/evidence/v2.6.3-transfer-20261001-062029-a-exported.png\n- evals/product-v2/evidence/v2.6.3-transfer-20261001-062029-b-imported.png\n- evals/product-v2/evidence/v2.6.3-transfer-20261001-062029-b-opened.png\n- evals/product-v2/evidence/v2.6.3-transfer-20261001-062029-b-rework-form.png\n- evals/product-v2/evidence/v2.6.3-transfer-20261001-062029-b-reworked.png\n- evals/product-v2/evidence/v2.6.3-transfer-20261001-062029-b-deliver.png\n证据：evals/product-v2/v2.6.3-transfer-20261001-062029.txt\n"
+  ],
+  [
+   "tools/verify_v2_6_4_accessibility.py",
+   [],
+   0,
+   19.7,
+   [
+    "PASS V2.6.4-00",
+    "PASS V2.6.4-01",
+    "PASS V2.6.4-02",
+    "PASS V2.6.4-03",
+    "PASS V2.6.4-04",
+    "PASS V2.6.4-05",
+    "PASS V2.6.4-06",
+    "PASS V2.6.4-07",
+    "PASS V2.6.4-17",
+    "PASS V2.6.4-18",
+    "PASS V2.6.4-08",
+    "PASS V2.6.4-09",
+    "PASS V2.6.4-10",
+    "PASS V2.6.4-16",
+    "PASS V2.6.4-11",
+    "PASS V2.6.4-12",
+    "PASS V2.6.4-13",
+    "PASS V2.6.4-14",
+    "PASS V2.6.4-15"
+   ],
+   "  [PASS] V2.6.4-00 ESM 语法门与 DOM 身份唯一（无重复 id / 元素键）\n  [PASS] V2.6.4-01 技术详情落点：统一 techDetails + 返工/采用面板 + 样式规则\n  [PASS] V2.6.4-02 axe-core vendor 文件完整性与登记一致（SEL-013）\n  [PASS] V2.6.4-03 空白首页 axe（WCAG 2.0/2.1 A/AA）0 violations\n  [PASS] V2.6.4-04 空白首页键盘路径：Tab 可达主操作且每步焦点可见\n  [PASS] V2.6.4-05 纯键盘创建并打开：Tab + 输入 + Enter 进入工作台\n  [PASS] V2.6.4-06 生成阶段四态之空/忙：未生成可见、整套生成中可观察\n  [PASS] V2.6.4-07 生成阶段技术详情：attempt 行默认收起且主行不含 sha256/action/task\n  [PASS] V2.6.4-17 审核卡片候选预览受限（宽 ≤460px、高 ≤480px）\n  [PASS] V2.6.4-18 390px 审核卡片：单列回退、预览受限、操作可见、无横向溢出\n  [PASS] V2.6.4-08 审核阶段：axe 0 violations、可见按钮都有可访问名、比较清单技术详情默认收起\n  [PASS] V2.6.4-09 交付阶段：axe 0 violations、交付结果技术详情默认收起\n  [PASS] V2.6.4-10 采用面板技术详情默认收起且主行不含 sha256\n  [PASS] V2.6.4-16 技术详情摘要全阶段横排可读（不竖排、不挤压）\n  [PASS] V2.6.4-11 390px 与 200% 等效视口：无横向溢出且当前阶段可见\n  [PASS] V2.6.4-12 主链零意外 console / page / HTTP 错误\n  [PASS] V2.6.4-13 演练三态：成功/失败/Unknown 可见且各有下一步动作，不自动重提\n  [PASS] V2.6.4-14 演练链：除剧本内的 504 明确失败外无意外 console / page / HTTP 错误\n  [PASS] V2.6.4-15 正式入口自检全过\n- evals/product-v2/evidence/v2.6.4-a11y-20261001-062041-review-390.png\n- evals/product-v2/evidence/v2.6.4-a11y-20261001-062041-review.png\n- evals/product-v2/evidence/v2.6.4-a11y-20261001-062041-deliver.png\n- evals/product-v2/evidence/v2.6.4-a11y-20261001-062041-narrow-390.png\n- evals/product-v2/evidence/v2.6.4-a11y-20261001-062041-zoom-200.png\n- evals/product-v2/evidence/v2.6.4-a11y-20261001-062041-drill.png\n证据：evals/product-v2/v2.6.4-a11y-20261001-062041.txt\n"
+  ],
+  [
+   "tools/verify_v2_ui_2_interaction_visual.py",
+   [],
+   0,
+   12.5,
+   [
+    "PASS UI2-01",
+    "PASS UI2-02",
+    "PASS UI2-03",
+    "PASS UI2-04",
+    "PASS UI2-05",
+    "PASS UI2-06",
+    "PASS UI2-07",
+    "PASS UI2-08",
+    "PASS UI2-09",
+    "PASS UI2-10",
+    "PASS UI2-11",
+    "PASS UI2-12",
+    "PASS UI2-13",
+    "PASS UI2-14",
+    "PASS UI2-15",
+    "PASS UI2-16",
+    "PASS UI2-17",
+    "PASS UI2-18",
+    "PASS UI2-19",
+    "PASS UI2-20",
+    "PASS UI2-21",
+    "PASS UI2-22"
+   ],
+   "V2.UI.2 六阶段交互与视觉基线验证（静态契约 + 真实工作台走查 + 响应式/键盘/视觉证据）\nNOT-AUTHORITY: point-in-time verification evidence only\n============================================================================\n  [PASS] UI2-01 信息架构唯一权威：六阶段导航与面板顺序、标签一致，面板标题是导航标签的完整表述，阶段条有导航语义与摘要输出位\n         {\"nav\": [\"intake\", \"understand\", \"plan\", \"generate\", \"review\", \"deliver\"], \"panels\": [\"intake\", \"understand\", \"plan\", \"generate\", \"review\", \"deliver\"], \"labels\": [\"资料\", \"理解\", \"方案\", \"生成\", \"审核返工\", \"交付\"], \"titles\": [\"商品资料\", \"商品理解\", \"套图方案\", \"生成\", \"审核与返工\", \"交付\"], \"title_ok\": true}\n  [PASS] UI2-02 空白首页紧凑：一个创建入口（primary）+ 一个次级导入，空态由状态驱动，不预填示例商品\n         {\"create_primary\": 1, \"import_ghost\": true, \"table_in_home\": false}\n  [PASS] UI2-03 外壳纯净：stage-shell 只做投影（无存储/网络/领域依赖），阶段定义顺序与产品合同一致，界面脚本语法通过\n         {\"forbidden_tokens\": [], \"definitions\": [\"intake\", \"understand\", \"plan\", \"generate\", \"review\", \"deliver\"], \"node_checks\": {\"app/product_v2/workspace.js\": 0, \"app/product_v2/app.js\": 0, \"app/product_v2/ui/stage-shell.js\": 0}}\n  [PASS] UI2-04 表现层 token 单源：styles.css 的 :root 提供颜色语义变量，组件用 var(--…) 取值，含 focus-visible 与小屏断点\n         {\"var_uses\": 171, \"missing_tokens\": [], \"important\": 2, \"media_queries\": [\"760\", \"760\"]}\n  [PASS] UI2-05 无内联样式、无外部资源、无新前端依赖：页面只引用本目录资源（data: 图标除外）\n         {\"inline_style\": 0, \"external\": [], \"non_relative\": []}\n  [PASS] UI2-06 渐进披露与阶段推进：项目元数据收进 details；四个阶段脚注各只有一个推进按钮与实际主操作分离\n         {\"project_scope_in_details\": true, \"stage_feet\": 4, \"buttons_per_foot\": [1, 1, 1, 1], \"primary_per_foot\": [1, 1, 0, 1]}\n  [PASS] UI2-07 空白首页：只突出一个创建入口，导入是次级动作，空态可见且没有预填商品\n         {\"home\": {\"empty_visible\": true, \"project_rows\": 0, \"visible_primary\": [\"create-project\"], \"import_class\": \"ghost\", \"name_value\": \"\", \"home_visible\": true}, \"screenshot\": \"evals/product-v2/evidence/v2.ui.2-home-20261001-062100.png\"}\n  [PASS] UI2-08 新建后默认停靠「资料」：唯一 current 阶段带 aria-current，其余阶段锁定且禁用\n         {\"keyboard_open\": true, \"keyboard_create\": true, \"stage\": {\"buttons\": [{\"id\": \"intake\", \"label\": \"资料\", \"number\": \"1\", \"disabled\": false, \"current\": true, \"complete\": false, \"locked\": false, \"aria\": \"step\"}, {\"id\": \"understand\", \"label\": \"理解\", \"number\": \"2\", \"disabled\": true, \"current\": false, \"complete\": false, \"locked\": true, \"aria\": null}, {\"id\": \"plan\", \"\n  [PASS] UI2-09 阶段可达性：锁定阶段点击不进面板；切换阶段不写任何 IndexedDB 记录\n         {\"locked_button\": {\"disabled\": true}, \"visible\": [\"intake\"], \"storage_unchanged\": true}\n  [PASS] UI2-10 资料阶段：缺输入时主操作禁用并在按钮旁说明缺什么；整屏只有一个可见主操作\n         {\"disabled\": true, \"gate\": \"还缺：商品名称必填。；至少需要一张参考图。\", \"visible_primary\": [\"analyze-run\"], \"ref_count\": 0}\n  [PASS] UI2-11 分析商品资料（键盘 Enter 触发）成功后自动推进到阶段二「理解」，槽位进入待处理列表\n         {\"keyboard_analyze\": true, \"stage\": {\"buttons\": [{\"id\": \"intake\", \"label\": \"资料\", \"number\": \"1\", \"disabled\": false, \"current\": false, \"complete\": true, \"locked\": false, \"aria\": null}, {\"id\": \"understand\", \"label\": \"理解\", \"number\": \"2\", \"disabled\": false, \"current\": true, \"complete\": false, \"locked\": false, \"aria\": \"step\"}, {\"id\": \"plan\", \"label\": \"方案\", \"number\n  [PASS] UI2-12 理解到方案：确认全部待处理槽位后可推进，推荐方案生成 1..N 张图片任务，阶段条随之前移\n         {\"shots\": [\"shot_main_clean\", \"shot_infographic_benefits\", \"shot_scene_lifestyle\", \"shot_detail_material\"], \"confirm_rounds\": 4, \"stage\": {\"buttons\": [{\"id\": \"intake\", \"label\": \"资料\", \"number\": \"1\", \"disabled\": false, \"current\": false, \"complete\": true, \"locked\": false, \"aria\": null}, {\"id\": \"understand\", \"label\": \"理解\", \"number\": \"2\", \"disabled\": false, \"curr\n  [PASS] UI2-13 生成阶段：整套生成后逐图进入成功态，并在阶段脚注开放「去审核与返工」入口\n         {\"attempt_rows\": 4, \"shots\": 4, \"summary\": \"4/4 张有候选\"}\n  [PASS] UI2-14 审核阶段以图片为中心：每张图一张审核卡（候选大图 + 采用状态 + 三个行内动作），「生成」转为已完成\n         {\"keyboard_stage_switch\": true, \"cards\": 4, \"images\": 4, \"screenshot\": \"evals/product-v2/evidence/v2.ui.2-review-20261001-062100.png\", \"summary\": \"已采用 0/4 · 必需图 0/1\"}\n  [PASS] UI2-15 逐图人工采用：每张图都能从审核卡进入采用面板并落一条当前选择，卡片徽标同步为已采用\n         {\"adopted\": [{\"shot_id\": \"shot_main_clean\", \"state\": \"current\", \"badge\": \"已采用\"}, {\"shot_id\": \"shot_infographic_benefits\", \"state\": \"current\", \"badge\": \"已采用\"}, {\"shot_id\": \"shot_scene_lifestyle\", \"state\": \"current\", \"badge\": \"已采用\"}, {\"shot_id\": \"shot_detail_material\", \"state\": \"current\", \"badge\": \"已采用\"}]}\n  [PASS] UI2-16 交付阶段：门禁清单逐图列出采用状态；有阻断（本流程未跑整套检查）时交付包按钮禁用并说明原因，项目包导出可用\n         {\"gate_rows\": 4, \"status\": \"交付门禁未通过：2 条阻断，逐条处理后才能生成。\", \"findings\": 7, \"blocking\": 2, \"screenshot\": \"evals/product-v2/evidence/v2.ui.2-deliver-20261001-062100.png\"}\n  [PASS] UI2-17 刷新恢复：重开页面落在最靠后的未完成阶段「交付」，项目与记录逐字不变\n         {\"visible\": [\"deliver\"], \"digest\": {\"db_exists\": true, \"projects\": 1, \"documents\": 48, \"assets\": 5, \"digest\": \"98bf21b6e19e37cf4f96f64f3a69755552a446ce31201a5bac7179f0dedda142\"}, \"complete\": [\"intake\", \"understand\", \"plan\", \"generate\", \"review\"]}\n  [PASS] UI2-18 390px：单列布局无横向溢出，阶段条可横向滚动且当前阶段保持在可视区内\n         {\"probe\": {\"document_scroll_width\": 390, \"document_client_width\": 390, \"body_scroll_width\": 390, \"nav_scrollable\": true, \"current_stage_visible\": true, \"current_stage\": \"deliver\", \"rects\": {\"create\": {\"x\": 0, \"y\": 0, \"width\": 0, \"height\": 0, \"visible\": false}, \"analyze\": {\"x\": 0, \"y\": 0, \"width\": 0, \"height\": 0, \"visible\": false}, \"nav\": {\"x\": 14, \"y\": 190, \n  [PASS] UI2-19 200% 缩放等价视口（1440 窗口缩到 720×450 CSS 像素）：无横向滚动条，阶段条可见\n         {\"probe\": {\"document_scroll_width\": 720, \"document_client_width\": 720, \"body_scroll_width\": 720, \"nav_scrollable\": false, \"current_stage_visible\": true, \"current_stage\": \"deliver\", \"rects\": {\"create\": {\"x\": 0, \"y\": 0, \"width\": 0, \"height\": 0, \"visible\": false}, \"analyze\": {\"x\": 0, \"y\": 0, \"width\": 0, \"height\": 0, \"visible\": false}, \"nav\": {\"x\": 14, \"y\": -7, \n  [PASS] UI2-20 键盘路径：新建、打开、分析、阶段推进与阶段切换五个关键动作都由键盘触发并断言焦点落点\n         {\"keyboard\": {\"create\": true, \"open\": true, \"analyze\": true, \"plan_to_generate\": true, \"stage_switch\": true}}\n  [PASS] UI2-21 正式入口 --check 全过（六阶段外壳没有破坏无状态自检）\n         {\"rc\": 0, \"retried_after_connection_reset\": false, \"tail\": [\"  PASS  整套复核 provider 不可用时 capabilities 仍 200 且 configured=false  suite_review={'kind': 'dependency', 'detail': 'RuntimeError: 自检：整套复核 provider 构造失败'}\", \"  PASS  整套复核 provider 不可用时路由 503 且错误分类明确                          status=503 error={'family': 'internal', 'code': 'PROVIDER_NOT_CONFIGURED', 'mes\n  [PASS] UI2-22 零意外 console error / page error（界面重写不得引入运行时错误）\n         {\"console_errors\": [], \"page_errors\": []}\n----------------------------------------------------------------------------\nobserved_at: 2026-10-01T06:21:12\nstatus: passed\ncontract: v2.ui.2（六阶段外壳 + 表现层基线）\nmodel_calls: 0 · external_network_calls: 0（fake providers + 本机服务器）\njson: evals/product-v2/v2.ui.2-interaction-visual-20261001-062100.json\n\n边界：本套件 0 次真实模型调用；它证明「六阶段外壳是界面投影、可达性规则成立、既有业务\n能力仍由真实状态驱动、既有回归不破」，不证明产品发起人走查已通过。V2.5.5 整套一致性与\nV2.6.2 交付包生成仍未接入，本批只证明界面没有伪造它们。\n\nCHECKS\n- [PASS] UI2-01 信息架构唯一权威：六阶段导航与面板顺序、标签一致，面板标题是导航标签的完整表述，阶段条有导航语义与摘要输出位\n- [PASS] UI2-02 空白首页紧凑：一个创建入口（primary）+ 一个次级导入，空态由状态驱动，不预填示例商品\n- [PASS] UI2-03 外壳纯净：stage-shell 只做投影（无存储/网络/领域依赖），阶段定义顺序与产品合同一致，界面脚本语法通过\n- [PASS] UI2-04 表现层 token 单源：styles.css 的 :root 提供颜色语义变量，组件用 var(--…) 取值，含 focus-visible 与小屏断点\n- [PASS] UI2-05 无内联样式、无外部资源、无新前端依赖：页面只引用本目录资源（data: 图标除外）\n- [PASS] UI2-06 渐进披露与阶段推进：项目元数据收进 details；四个阶段脚注各只有一个推进按钮与实际主操作分离\n- [PASS] UI2-07 空白首页：只突出一个创建入口，导入是次级动作，空态可见且没有预填商品\n- [PASS] UI2-08 新建后默认停靠「资料」：唯一 current 阶段带 aria-current，其余阶段锁定且禁用\n- [PASS] UI2-09 阶段可达性：锁定阶段点击不进面板；切换阶段不写任何 IndexedDB 记录\n- [PASS] UI2-10 资料阶段：缺输入时主操作禁用并在按钮旁说明缺什么；整屏只有一个可见主操作\n- [PASS] UI2-11 分析商品资料（键盘 Enter 触发）成功后自动推进到阶段二「理解」，槽位进入待处理列表\n- [PASS] UI2-12 理解到方案：确认全部待处理槽位后可推进，推荐方案生成 1..N 张图片任务，阶段条随之前移\n- [PASS] UI2-13 生成阶段：整套生成后逐图进入成功态，并在阶段脚注开放「去审核与返工」入口\n- [PASS] UI2-14 审核阶段以图片为中心：每张图一张审核卡（候选大图 + 采用状态 + 三个行内动作），「生成」转为已完成\n- [PASS] UI2-15 逐图人工采用：每张图都能从审核卡进入采用面板并落一条当前选择，卡片徽标同步为已采用\n- [PASS] UI2-16 交付阶段：门禁清单逐图列出采用状态；有阻断（本流程未跑整套检查）时交付包按钮禁用并说明原因，项目包导出可用\n- [PASS] UI2-17 刷新恢复：重开页面落在最靠后的未完成阶段「交付」，项目与记录逐字不变\n- [PASS] UI2-18 390px：单列布局无横向溢出，阶段条可横向滚动且当前阶段保持在可视区内\n- [PASS] UI2-19 200% 缩放等价视口（1440 窗口缩到 720×450 CSS 像素）：无横向滚动条，阶段条可见\n- [PASS] UI2-20 键盘路径：新建、打开、分析、阶段推进与阶段切换五个关键动作都由键盘触发并断言焦点落点\n- [PASS] UI2-21 正式入口 --check 全过（六阶段外壳没有破坏无状态自检）\n- [PASS] UI2-22 零意外 console error / page error（界面重写不得引入运行时错误）\n\n证据文件：\n - evals/product-v2/v2.ui.2-interaction-visual-20261001-062100.txt\n - evals/product-v2/v2.ui.2-interaction-visual-20261001-062100.json\n - evals/product-v2/evidence/v2.ui.2-home-20261001-062100.png\n - evals/product-v2/evidence/v2.ui.2-review-20261001-062100.png\n - evals/product-v2/evidence/v2.ui.2-deliver-20261001-062100.png\n - evals/product-v2/evidence/v2.ui.2-narrow-20261001-062100.png\n - evals/product-v2/evidence/v2.ui.2-zoom200-20261001-062100.png\n"
+  ],
+  [
+   "tools/verify_v2_ui_3_frontend.py",
+   [],
+   0,
+   17.6,
+   [
+    "PASS UI3-01",
+    "PASS UI3-02",
+    "PASS UI3-03",
+    "PASS UI3-04",
+    "PASS UI3-05",
+    "PASS UI3-06",
+    "PASS UI3-07",
+    "PASS UI3-08",
+    "PASS UI3-09",
+    "PASS UI3-10",
+    "PASS UI3-11",
+    "PASS UI3-12",
+    "PASS UI3-13",
+    "PASS UI3-14",
+    "PASS UI3-15",
+    "PASS UI3-16"
+   ],
+   "  [PASS] UI3-01 首页五态（空/列表/创建/导入/异常）与工作台摘要、全局保存状态在正式入口就位\n  [PASS] UI3-02 六阶段标题可聚焦（tabindex=-1）；外壳纯净（无存储/网络引用）；无内联样式与外部资源\n  [PASS] UI3-03 空白首页：无项目、无预填、唯一可见主操作为「新建项目」\n  [PASS] UI3-04 资料阶段：键盘创建/打开后停靠「资料」，资料齐备后分析可用\n  [PASS] UI3-05 分析完成：自动进入「理解」且焦点落到结果标题\n  [PASS] UI3-06 槽位确认后进入「方案」，焦点落到方案标题\n  [PASS] UI3-07 套图方案可人工增（复制）、删、排序，操作后回到原集合且顺序变化\n  [PASS] UI3-08 整套生成完成：全部终态、焦点落到第一个结果/问题行、全局保存状态可见\n  [PASS] UI3-09 逐图人工采用：每张图进入 current\n  [PASS] UI3-10 交付阶段：门禁逐图 current；交付包按 V2.6.2 待接入禁用；项目包可导出\n  [PASS] UI3-11 刷新恢复：阶段与逐图采用保持，IndexedDB 记录数前后一致\n  [PASS] UI3-12 390px 与 200% 等效视口：无横向溢出且当前阶段可见\n  [PASS] UI3-13 主链零意外 console / page / HTTP 错误\n  [PASS] UI3-14 演练：明确失败与 Unknown 都可见且有下一步动作（重试 / 核对任务）\n  [PASS] UI3-15 演练：等待 4 秒后 Attempt 行数不变（没有自动重提/静默重复提交）\n  [PASS] UI3-16 分析失败：错误摘要可见、包含分类与重试策略，焦点落到错误摘要\n\n证据：evals/product-v2/v2.ui.3-frontend-20261001-062113.txt\n结果：16/16 通过；全过\n"
+  ],
+  [
+   "tools/check_docs.py",
+   [
+    "--no-run"
+   ],
+   0,
+   0.6,
+   [
+    "tail 结果：全过（退出码 #）。"
+   ],
+   "========================================================================\n文档守卫\n========================================================================\n受管：README.md + docs/cards/ 下 8 份 legacy 生成卡（当前实现边界 / 命令入口 / 生成产物一致性）\n　　　+ 文档权威登记（docs/INDEX.md：双向比对 + 管辖事实唯一）—— 回答「哪一份有效」和「哪一类事实归谁」\n　　　+ 选型门禁（AGENTS.md ↔ 项目上下文 §4 依赖/vendor 登记）—— 回答「实现之前先找过现成能力没有」\n　　　+ 模板映射（AGENTS.md §Standards Mapping ↔ docs/standards-template/）—— 回答「外部模板的每份规范有没有采纳落点」\n表：7 个坑位 · 6 个渲染器\n\n  · 文档登记：已登记 57 份，仓库里实际 57 份（产品目标 1、历史证据 26、实现 1、执行状态 1、架构设计 1、生成产物 8、设计草案 18、项目规则 1）\n  · 依赖登记：pyproject 直接依赖 11 个（锁定 11）↔ uv.lock 68 包 ↔ 登记表 13 行\n  · 模板映射：standards-template 14 份，映射章节覆盖 14 份\n\n注意：本次 --no-run，**命令执行未被验证** —— 文档里的命令这次没被真跑过，别把它当成『命令没问题』的证明。\n\n结果：全过（退出码 0）。\n"
+  ],
+  [
+   "tools/check_project_state.py",
+   [],
+   0,
+   0.3,
+   [
+    "tail 结果：全过（退出码 #）。"
+   ],
+   "========================================================================\n项目状态守卫\n========================================================================\n判据：J0 记录可读 / J1 活动记录唯一 / J2 取值闭集合 / J3 Goal 绑定\n      J4 状态 ID 引用计划 / J5 阶段门与顺序 / J6 任务进度与证据\n      J7 next_action 按计划可执行 / J8 单一权威不重抄 / J9 Goal 读数与记录一致\n      J10 updated_at 不许写在未来、不许缺时区\n\n  · 工作记录 4 份 · v2 状态从 plan_ref 读取阶段、任务与依赖，不在 state 重复定义\n结果：全过（退出码 0）。\n"
+  ],
+  [
+   "evals/probes/project_state.py",
+   [],
+   0,
+   5.2,
+   [
+    "tail OK：# 向全部与预期一致。"
+   ],
+   "[OK  ] A 基线 -> rc=0 tags=[]\n[OK  ] B 两份 active 记录 -> rc=1 tags=['J1']\n[OK  ] C 记录状态非法 -> rc=1 tags=['J2']\n[OK  ] D Goal 未绑定且无理由 -> rc=1 tags=['J3']\n[OK  ] E 状态引用不存在的阶段 -> rc=1 tags=['J4']\n[OK  ] F 阶段 done 但无证据 -> rc=1 tags=['J5']\n[OK  ] G 跳过未完成阶段直接激活后面的阶段 -> rc=1 tags=['J5']\n[OK  ] H 状态引用不存在的任务 -> rc=1 tags=['J6']\n[OK  ] I 任务 done 但无证据 -> rc=1 tags=['J6']\n[OK  ] J next_action 的计划依赖未完成 -> rc=1 tags=['J7']\n[OK  ] K next_action 不存在 -> rc=1 tags=['J7']\n[OK  ] L state 重抄 scope -> rc=1 tags=['J8']\n[OK  ] M YAML 读不出来 -> rc=1 tags=['J0']\n[OK  ] N 合法开工形态 -> rc=0 tags=[]\n[OK  ] O 记录 paused 但 Phase active -> rc=1 tags=['J9']\n[OK  ] P 记录 active 但无 active Phase -> rc=1 tags=['J9']\n[OK  ] Q 靠改记录宣布 completed -> rc=1 tags=['J9']\n[OK  ] R updated_at 写在两天以后 -> rc=1 tags=['J10']\n[OK  ] S updated_at 没有时区 -> rc=1 tags=['J10']\n已逐字节恢复 _working/amz-listing-kit-product-v2/state.md 并清理探针副本\nOK：19 向全部与预期一致。\n"
+  ],
+  [
+   "evals/probes/docs_index.py",
+   [],
+   0,
+   7.0,
+   [
+    "tail OK：# 向全部与预期一致，且每向只报该报的那一类。"
+   ],
+   "[OK  ] A 基线（不改）  → rc=0\n[OK  ] B 漏登记（抽掉一行）  → rc=1\n[OK  ] C 幽灵登记（加一行不存在的文件）  → rc=1\n[OK  ] D 非法状态（draft → done）  → rc=1\n[OK  ] E 空说明（说明列清空）  → rc=1\n[OK  ] G 非法管辖事实（设计草案 → 参考）  → rc=1\n[OK  ] H 双头权威（历史证据 → 项目规则）  → rc=1\n[OK  ] I 权威缺失（产品目标 → 历史证据）  → rc=1\n[OK  ] J 受管范围（执行状态行改指不存在的文件）  → rc=1\n[OK  ] K 写死解释器路径（README 塞回绝对路径）  → rc=1\n[OK  ] L vendor 未登记（丢一个文件进 vendor 目录）  → rc=1\n[OK  ] M README 抄探针方向数（写回 N 向植入对照）  → rc=1\n已还原 docs/INDEX.md / README.md / vendor 探针文件（字节一致）\n\nOK：12 向全部与预期一致，且每向只报该报的那一类。\n"
+  ],
+  [
+   "app/server.py",
+   [
+    "--check"
+   ],
+   0,
+   1.3,
+   [
+    "PASS capabilities",
+    "PASS capabilities",
+    "PASS provider",
+    "PASS provider",
+    "PASS capabilities",
+    "PASS capabilities"
+   ],
+   "Product V2 自检：无状态正式入口\n  PASS  首页可取且是 V2 产品页                                             status=200 type=text/html; charset=utf-8\n  PASS  产品资源 /app.js                                              status=200 type=text/javascript; charset=utf-8\n  PASS  产品资源 /styles.css                                          status=200 type=text/css; charset=utf-8\n  PASS  产品资源 /storage/index.js                                    status=200 type=text/javascript; charset=utf-8\n  PASS  健康检查表明服务器无业务状态                                            status=200 body={'app': 'amz-listing-kit', 'product': 'v2', 'server_state': 'none', 'user_data': 'browser-indexeddb'}\n  PASS  正式入口不外放：/harness/storage-contract.html                    status=404\n  PASS  正式入口不外放：/api/workspaces/recent                            status=404\n  PASS  正式入口不外放：/api/workspace?directory=C%3A%5CUsers             status=404\n  PASS  正式入口不外放：/evals/probes/project_state.py                    status=404\n  PASS  目录逃逸被拒：/../README.md                                      status=404\n  PASS  目录逃逸被拒：/%2e%2e/README.md                                  status=404\n  PASS  目录逃逸被拒：/storage/../../app/server.py                       status=404\n  PASS  不存在其它服务端写接口                                               status=404\n  PASS  capabilities 暴露 provider、analyze 字段与契约版本                  status=200 provider={'provider_id': 'fake-semantic', 'model_id': 'fake-deepseek-v4.1-flash', 'configured': True, 'capabilities': {'provider_id': 'fake-semantic', 'model_id': 'fake-deepseek-v4.1-flash', 'reference_images': False, 'structured_output': 'local', 'stateless': True, 'test_double': True, 'scenario': 'ok'}}\n  PASS  capabilities 暴露图像网关（合同、端点、provider 与参考图能力）                images={'provider_id': 'fake-qwen-image', 'model_id': 'qwen-image-3.0', 'configured': True, 'capabilities': {'contract': 'v2.4.1', 'reference_images': True, 'max_reference_images': 3, 'async_tasks': True, 'n_per_submit': 1, 'prompt_extend': False, 'watermark': False, 'stateless': True, 'test_double': True, 'upstream_provider_id': 'dashscope-qwen-image'}}\n  PASS  语义分析路由（fake provider）返回提案且标记 unknown=false                status=200 slots=5\n  PASS  非法 JSON 归 input_rejected/400                              status=400 error={'family': 'input_rejected', 'code': 'INPUT_INVALID', 'message': '请求体不是合法 JSON。', 'retry_policy': 'fatal', 'http_status': None, 'request_id': None, 'details': {'problems': None}}\n  PASS  超过字节上限的请求体被拒（400 input_rejected）                          status=400 bytes=262676\n  PASS  合法 JSON 但字段越界归 input_rejected/400（不调用模型）                  status=400 error={'family': 'input_rejected', 'code': 'INPUT_INVALID', 'message': '请求字段不符合语义请求契约；没有调用模型。', 'retry_policy': 'fatal', 'http_status': None, 'request_id': None, 'details': {'problems': [{'path': '$.product_name', 'message': 'Field required'}]}}\n  PASS  provider 不可用时 capabilities 仍 200 且 configured=false       status=200 unavailable={'kind': 'dependency', 'detail': 'RuntimeError: 自检：语义 provider 构造失败'}\n  PASS  provider 不可用时分析路由 503 且错误分类明确                             status=503 error={'family': 'internal', 'code': 'PROVIDER_NOT_CONFIGURED', 'message': '语义 provider 不可用：检查注册表、依赖与 DASHSCOPE_API_KEY。', 'retry_policy': 'fatal', 'http_status': 503, 'request_id': None, 'details': {'kind': 'dependency', 'detail': 'RuntimeError: 自检：语义 provider 构造失败'}}\n  PASS  未定义的无状态写路由保持 404                                          status=404\n  PASS  图像提交路由（假 provider）返回任务身份且不泄露结果地址                          status=200 task=fake-f7466ec9b0379339\n  PASS  图像状态查询路由返回成功状态与结果数量                                       status=200 task={'provider': {'provider_id': 'fake-qwen-image', 'model_id': 'qwen-image-3.0'}, 'task_id': 'fake-f7466ec9b0379339', 'status': 'SUCCEEDED', 'result_count': 1, 'error': None, 'request_id': None, 'unknown': False}\n  PASS  图像结果路由返回 PNG 字节（不是地址）                                     status=200 type=image/png bytes=179\n  PASS  图像提交拒绝目录字段与空参考图（input_rejected，不调用上游）                     status=400 error={'family': 'input_rejected', 'code': 'INPUT_INVALID', 'message': '请求字段不符合图像网关契约；没有调用模型。', 'retry_policy': 'fatal', 'http_status': None, 'request_id': None, 'details': {'problems': [{'path': 'references', 'message': 'Value error, 图生图至少需要一张参考图。'}, {'path': 'directory', 'message': 'Extra inputs are not permitted'}]}}\n  PASS  图像 provider 不可用时 capabilities 仍 200 且 configured=false    images={'kind': 'dependency', 'detail': 'RuntimeError: 自检：图像 provider 构造失败'}\n  PASS  图像 provider 不可用时提交路由 503 且错误分类明确                          status=503 error={'family': 'internal', 'code': 'PROVIDER_NOT_CONFIGURED', 'message': '图像 provider 不可用：检查注册表、依赖与 DASHSCOPE_API_KEY。', 'retry_policy': 'fatal', 'http_status': 503, 'request_id': None, 'details': {'kind': 'dependency', 'detail': 'RuntimeError: 自检：图像 provider 构造失败'}}\n  PASS  capabilities 暴露 VLM 复核（合同、端点、provider 与参考图能力）             review={'provider_id': 'fake-review', 'model_id': 'fake-qwen-vl-max', 'configured': True, 'capabilities': {'provider_id': 'fake-review', 'model_id': 'fake-qwen-vl-max', 'reference_images': True, 'structured_output': 'local', 'stateless': True, 'test_double': True, 'scenario': 'ok'}}\n  PASS  复核路由（fake provider）返回绑定候选 sha256 的发现且不含采纳结论               status=200 findings=2\n  PASS  capabilities 暴露整套复核（合同、端点、张数上限与 provider）                 suite_review={'provider_id': 'fake-suite-review', 'model_id': 'fake-qwen-vl-max', 'configured': True, 'capabilities': {'provider_id': 'fake-suite-review', 'model_id': 'fake-qwen-vl-max', 'suite_review_contract': 'v2.5.5', 'max_images': 8, 'reference_images': True, 'structured_output': 'local', 'stateless': True, 'test_double': True, 'scenario': 'ok'}}\n  PASS  整套复核路由（fake provider）只给送审集合内提示且不含严重度/采纳结论                 status=200 findings=0\n  PASS  整套复核图片哈希与字节不一致 → input_rejected/400（不调用模型）                status=400 error={'family': 'input_rejected', 'code': 'INPUT_INVALID', 'message': '第 2 张图（shot_b）的 sha256 与收到的字节不一致；拒绝把身份不明的图片送模型。', 'retry_policy': 'fatal', 'http_status': None, 'request_id': None, 'details': {'problems': [{'path': '$'}]}}\n  PASS  复核图片哈希与字节不一致 → input_rejected/400（不调用模型）                  status=400 error={'family': 'input_rejected', 'code': 'INPUT_INVALID', 'message': '候选图的 sha256 与收到的字节不一致；拒绝把身份不明的图片送模型。', 'retry_policy': 'fatal', 'http_status': None, 'request_id': None, 'details': {'problems': [{'path': '$'}]}}\n  PASS  复核 provider 不可用时 capabilities 仍 200 且 configured=false    review={'kind': 'dependency', 'detail': 'RuntimeError: 自检：复核 provider 构造失败'}\n  PASS  复核 provider 不可用时复核路由 503 且错误分类明确                          status=503 error={'family': 'internal', 'code': 'PROVIDER_NOT_CONFIGURED', 'message': '语义 provider 不可用：检查注册表、依赖与 DASHSCOPE_API_KEY。', 'retry_policy': 'fatal', 'http_status': 503, 'request_id': None, 'details': {'kind': 'dependency', 'detail': 'RuntimeError: 自检：复核 provider 构造失败'}}\n  PASS  整套复核 provider 不可用时 capabilities 仍 200 且 configured=false  suite_review={'kind': 'dependency', 'detail': 'RuntimeError: 自检：整套复核 provider 构造失败'}\n  PASS  整套复核 provider 不可用时路由 503 且错误分类明确                          status=503 error={'family': 'internal', 'code': 'PROVIDER_NOT_CONFIGURED', 'message': '语义 provider 不可用：检查注册表、依赖与 DASHSCOPE_API_KEY。', 'retry_policy': 'fatal', 'http_status': 503, 'request_id': None, 'details': {'kind': 'dependency', 'detail': 'RuntimeError: 自检：整套复核 provider 构造失败'}}\nV2 正式入口自检：38/38 通过。\n"
+  ],
+  [
+   "tools/verify_v2_1_1_indexeddb.py",
+   [],
+   0,
+   4.1,
+   [
+    "PASS V2.1.1-00",
+    "PASS V2.1.1-01",
+    "PASS V2.1.1-02",
+    "PASS V2.1.1-03",
+    "PASS V2.1.1-04",
+    "PASS V2.1.1-05"
+   ],
+   "========================================================================\nV2.1.1 IndexedDB 存储契约验证\n========================================================================\n  [PASS] V2.1.1-00 storage 模块通过 node --check（ESM 语法门）\n  [PASS] V2.1.1-01 契约套件全部通过且用例清单完整\n  [PASS] V2.1.1-02 运行期无 console error / page error\n  [PASS] V2.1.1-03 默认库名与版本取自代码，结构为 projects/assets/documents\n  [PASS] V2.1.1-04 两个独立浏览器配置文件的项目列表互不可见\n  [PASS] V2.1.1-05 浏览器关闭重开后项目与当前指针仍在（IndexedDB 持久化）\n套件用例：29 条，失败 0 条\n证据：evals/product-v2/v2.1.1-indexeddb-20261001-062145.txt\n结果：全过（退出码 0）\n"
+  ],
+  [
+   "tools/verify_v2_1_2_project_home.py",
+   [],
+   0,
+   7.0,
+   [
+    "PASS V2.1.2-00",
+    "PASS V2.1.2-01",
+    "PASS V2.1.2-02",
+    "PASS V2.1.2-03",
+    "PASS V2.1.2-04",
+    "PASS V2.1.2-05",
+    "PASS V2.1.2-06",
+    "PASS V2.1.2-07",
+    "PASS V2.1.2-08",
+    "PASS V2.1.2-09",
+    "PASS V2.1.2-10"
+   ],
+   "========================================================================\nV2.1.2 项目首页验证\n========================================================================\n  [PASS] V2.1.2-00 app.js 通过 node --check\n  [PASS] V2.1.2-01 空白启动：无项目、无指针、无预填内容\n  [PASS] V2.1.2-02 新建：IndexedDB 恰有一条记录且 localStorage 仍为空\n  [PASS] V2.1.2-03 打开写入当前指针，刷新后仍在该项目且没有复制出第二个项目\n  [PASS] V2.1.2-04 重命名：界面与 IndexedDB 一致且 revision 递增\n  [PASS] V2.1.2-05 复制：文档版本与资产在新 project_id 下各一份，原项目不变\n  [PASS] V2.1.2-06 删除：记录、文档与资产一起消失，当前指针被清除\n  [PASS] V2.1.2-07 390px 视口无横向溢出\n  [PASS] V2.1.2-08 两个独立浏览器配置文件的项目列表互不可见\n  [PASS] V2.1.2-09 全程无 console error / page error\n  [PASS] V2.1.2-10 旧 Product V1 路由未被破坏：默认入口页面与静态资源仍可取\n证据：evals/product-v2/v2.1.2-project-home-20261001-062149.txt\n结果：全过（退出码 0）\n127.0.0.1 - - [01/Oct/2026 06:21:55] \"GET / HTTP/1.1\" 200 -\n127.0.0.1 - - [01/Oct/2026 06:21:55] \"GET /product-assets/product.js HTTP/1.1\" 200 -\n"
+  ],
+  [
+   "tools/verify_v2_1_3_project_package.py",
+   [],
+   0,
+   4.5,
+   [
+    "PASS V2.1.3-00",
+    "PASS V2.1.3-01",
+    "PASS V2.1.3-02",
+    "PASS V2.1.3-03",
+    "PASS V2.1.3-04",
+    "PASS V2.1.3-05",
+    "PASS V2.1.3-06",
+    "PASS V2.1.3-07"
+   ],
+   "========================================================================\nV2.1.3 项目包导入导出验证\n========================================================================\n  [PASS] V2.1.3-00 storage 模块与 app.js 通过 node --check\n  [PASS] V2.1.3-01 包契约套件全部通过且用例清单完整\n  [PASS] V2.1.3-02 界面导出产生下载文件且给出结果提示\n  [PASS] V2.1.3-03 导出包是标准 ZIP：CRC 全过、manifest 与资产哈希一致\n  [PASS] V2.1.3-04 清空状态后导入：业务记录、文档与资产哈希与导出前一致\n  [PASS] V2.1.3-05 重复导入分配新 project_id，两份内容一致且互不覆盖\n  [PASS] V2.1.3-06 损坏包被拒绝：界面报错且项目数量不变\n  [PASS] V2.1.3-07 全程无 console error / page error\n套件用例：9 条，失败 0 条\n证据：evals/product-v2/v2.1.3-project-package-20261001-062156.txt\n结果：全过（退出码 0）\n"
+  ],
+  [
+   "tools/verify_v2_1_4_formal_entry.py",
+   [],
+   0,
+   13.8,
+   [
+    "PASS V2.1.4-00",
+    "PASS V2.1.4-01",
+    "PASS V2.1.4-02",
+    "PASS V2.1.4-03",
+    "PASS V2.1.4-04",
+    "PASS V2.1.4-05",
+    "PASS V2.1.4-06",
+    "PASS V2.1.4-07",
+    "PASS V2.1.4-08",
+    "PASS V2.1.4-09",
+    "PASS V2.1.4-10",
+    "PASS V2.1.4-11",
+    "PASS V2.1.4-12"
+   ],
+   "========================================================================\nV2.1.4 正式入口验证\n========================================================================\n  [PASS] V2.1.4-00 server.py 与 product_v2_server.py 通过语法自检\n  [PASS] V2.1.4-01 正式入口自检全过（静态资源 / health / 无状态 API / 拒绝 V1 API 与目录逃逸）\n  [PASS] V2.1.4-02 Product V1 回归自检 6/6 保持（--legacy-v1）\n  [PASS] V2.1.4-03 V2 体检通过且声明服务器无用户状态\n  [PASS] V2.1.4-04 正式进程 HTTP 契约：产品资源可取，V1 工作空间 API / harness / 写接口不可达\n  [PASS] V2.1.4-05 正式入口空白启动：无项目、无指针、无预填内容\n  [PASS] V2.1.4-06 新建项目并写入文档与资产（正式入口下走产品 storage 代码）\n  [PASS] V2.1.4-07 关浏览器重开后项目与资产 hash 恢复（IndexedDB 持久化）\n  [PASS] V2.1.4-08 重启服务器后刷新：项目与资产 hash 仍一致\n  [PASS] V2.1.4-09 两个独立浏览器配置文件项目列表不同\n  [PASS] V2.1.4-10 网络审计：无 directory 参数、无 V1 工作空间 API、无 harness、全部同源\n  [PASS] V2.1.4-11 浏览器会话零 console error / page error\n  [PASS] V2.1.4-12 磁盘审计：正式进程 + 浏览器会话前后仓库与最近项目索引零差异\n证据：evals/product-v2/v2.1.4-formal-entry-20261001-062200.txt\n结果：全过（退出码 0）\n"
+  ],
+  [
+   "tools/verify_v2_2_1_product_contracts.py",
+   [],
+   0,
+   2.8,
+   [
+    "PASS V2.2.1-00",
+    "PASS V2.2.1-01",
+    "PASS V2.2.1-02",
+    "PASS V2.2.1-03",
+    "PASS V2.2.1-04",
+    "PASS V2.2.1-05"
+   ],
+   "========================================================================\nV2.2.1 商品理解契约验证\n========================================================================\n  [PASS] V2.2.1-00 domain 与 harness 模块通过 node --check（ESM 语法门）\n  [PASS] V2.2.1-01 契约套件全部通过且用例清单完整（C01..C37）\n  [PASS] V2.2.1-02 反向探针确实被执行（非法形状 / 模型确认 / 无值确认 / 环 / 越界失效 / brief 不一致）\n  [PASS] V2.2.1-03 驱动侧独立集成：资料/槽位/理解落库，槽位升级后 brief 过期且历史保留\n  [PASS] V2.2.1-04 浏览器会话零 console error / page error\n  [PASS] V2.2.1-05 正式入口自检仍全过（V2.2.1 不破坏 V2.1.4）\n套件用例：37 条，失败 0 条\n证据：evals/product-v2/v2.2.1-product-contracts-20261001-062214.txt\n结果：全过（退出码 0）\n"
+  ],
+  [
+   "tools/verify_v2_2_2_semantic_provider.py",
+   [],
+   0,
+   1.8,
+   [
+    "PASS V2.2.2-01",
+    "PASS V2.2.2-02",
+    "PASS V2.2.2-03",
+    "PASS V2.2.2-04",
+    "PASS V2.2.2-05",
+    "PASS V2.2.2-06",
+    "PASS V2.2.2-07",
+    "PASS V2.2.2-08",
+    "PASS V2.2.2-09",
+    "PASS V2.2.2-10"
+   ],
+   "========================================================================\nV2.2.2 语义 Provider 契约、装配与错误分类验证\n========================================================================\n  [PASS] V2.2.2-01 跨语言核心槽位注册表一致（8 项：slot_id/label/value_type/critical）\n  [PASS] V2.2.2-02 输入合同：合法投影通过；7 类越界全部 input_rejected / fatal 且不回显正文\n  [PASS] V2.2.2-03 装配与真实请求体：json_mode + extra_body.max_tokens + max_retries=0，单次调用\n  [PASS] V2.2.2-04 禁止的静默清洗：缺证据 / 非对象槽位 / 模型自称 confirmed / 超上限全部整包拒绝\n  [PASS] V2.2.2-05 截断 / 内容策略拒绝 / 空可见文本的归口与重试策略正确\n  [PASS] V2.2.2-06 SDK / 传输异常映射矩阵（12 类）符合计划 §9.1 归口表\n  [PASS] V2.2.2-07 错误消息与 capabilities 不回显密钥（按 *** 遮蔽）\n  [PASS] V2.2.2-08 fake provider 全部场景分类正确，且每次 analyze 只调用一次（无隐藏重提，UNKNOWN 不自动重提）\n  [PASS] V2.2.2-09 归一化输出形状正确；反向探针：模型自称 confirmed 被消费侧拒绝\n  [PASS] V2.2.2-10 provider 注册表与代码一致（默认 provider、模型、环境变量、归口、test_double）\n------------------------------------------------------------------------\n证据：evals/product-v2/v2.2.2-semantic-provider-20261001-062218.txt\n结果：10/10 通过；全过（退出码 0）\nlangchain-openai injected a custom httpx transport to apply `http_socket_options`, which disables httpx's proxy auto-detection (HTTP_PROXY, HTTPS_PROXY, http_proxy, https_proxy set in environment). Set `LANGCHAIN_OPENAI_TCP_KEEPALIVE=0` or pass `http_socket_options=()` to restore default proxy behavior, or supply `openai_proxy` / your own `http_client` / `http_async_client` to take full control.\n"
+  ],
+  [
+   "tools/verify_v2_3_1_suite_registry.py",
+   [],
+   0,
+   2.8,
+   [
+    "PASS V2.3.1-00",
+    "PASS V2.3.1-01",
+    "PASS V2.3.1-02",
+    "PASS V2.3.1-03",
+    "PASS V2.3.1-04",
+    "PASS V2.3.1-05"
+   ],
+   "========================================================================\nV2.3.1 套图注册表验证\n========================================================================\n  [PASS] V2.3.1-00 domain 与 harness 模块通过 node --check（ESM 语法门）\n  [PASS] V2.3.1-01 契约套件全部通过且用例清单完整（R01..R13）\n  [PASS] V2.3.1-02 反向探针与改数据探针确实被执行（R10 守卫变红 >= 20，R11 覆盖 16 个字段）\n  [PASS] V2.3.1-03 驱动侧独立集成：推荐计划阻断精确、补齐后解锁、自定义 Shot 合法\n  [PASS] V2.3.1-04 浏览器会话零 console error / page error\n  [PASS] V2.3.1-05 正式入口自检仍全过（V2.3.1 不破坏 V2.1.4）\n套件用例：13 条，失败 0 条\n证据：evals/product-v2/v2.3.1-suite-registry-20261001-062219.txt\n结果：全过（退出码 0）\n"
+  ],
+  [
+   "tools/verify_v2_3_2_suite_editor.py",
+   [],
+   0,
+   8.1,
+   [
+    "PASS V2.3.2-00",
+    "PASS V2.3.2-01",
+    "PASS V2.3.2-02",
+    "PASS V2.3.2-03",
+    "PASS V2.3.2-04",
+    "PASS V2.3.2-05",
+    "PASS V2.3.2-06",
+    "PASS V2.3.2-07",
+    "PASS V2.3.2-08",
+    "PASS V2.3.2-09",
+    "PASS V2.3.2-10"
+   ],
+   "========================================================================\nV2.3.2 套图编辑器验证\n========================================================================\n  [PASS] V2.3.2-00 domain / workspace / harness 通过 node --check（ESM 语法门）\n  [PASS] V2.3.2-01 契约套件全部通过且用例清单完整（E01..E12）\n  [PASS] V2.3.2-02 反向探针确实被执行（空计划 / 越界 / 最后必需图 / 边界排序 / 不变量 / 失败原子）\n  [PASS] V2.3.2-03 商品理解就绪后套图编辑器解锁，空方案状态明确\n  [PASS] V2.3.2-04 生成推荐方案：4 张按模板 order 落库，状态行与存储一致\n  [PASS] V2.3.2-05 复制 / 下移 / 删除副本：界面顺序与存储版本同步推进\n  [PASS] V2.3.2-06 删除最后一张必需图被拒：错误可见、行数与存储版本都不变\n  [PASS] V2.3.2-07 自定义图与「被阻断模板」都可以加入，阻断原因逐行可见\n  [PASS] V2.3.2-08 刷新恢复：行顺序、数量与存储版本原样恢复\n  [PASS] V2.3.2-09 契约会话与 UI 会话零 console error / page error\n  [PASS] V2.3.2-10 正式入口自检仍全过（V2.3.2 不破坏既有入口）\n套件用例：12 条，失败 0 条\n证据：evals/product-v2/v2.3.2-suite-editor-20261001-062221.txt\n结果：全过（退出码 0）\n"
+  ],
+  [
+   "tools/verify_v2_3_3_spec_versions.py",
+   [],
+   0,
+   8.3,
+   [
+    "PASS V2.3.3-00",
+    "PASS V2.3.3-01",
+    "PASS V2.3.3-02",
+    "PASS V2.3.3-03",
+    "PASS V2.3.3-04",
+    "PASS V2.3.3-05",
+    "PASS V2.3.3-06",
+    "PASS V2.3.3-07",
+    "PASS V2.3.3-08",
+    "PASS V2.3.3-09",
+    "PASS V2.3.3-10",
+    "PASS V2.3.3-11"
+   ],
+   "========================================================================\nV2.3.3 规格版本验证\n========================================================================\n  [PASS] V2.3.3-00 domain / workspace / harness 通过 node --check（ESM 语法门）\n  [PASS] V2.3.3-01 契约套件全部通过且用例清单完整（F01..F12）\n  [PASS] V2.3.3-02 反向探针确实被执行（风格/单图校验、缺失 shotId、非法版本号）\n  [PASS] V2.3.3-03 套图方案就绪后规格区解锁；保存前就说明影响范围\n  [PASS] V2.3.3-04 保存公共风格 v1：版本推进，全部图片的审核清单出现风格行\n  [PASS] V2.3.3-05 保存单图规格 v1：只有目标图变成 v1，其他图仍是默认\n  [PASS] V2.3.3-06 再次保存风格 v2：单图规格版本不受影响（两套文档彼此独立）\n  [PASS] V2.3.3-07 恢复风格上一版本：写为新版本 v3、内容回到 v1、历史只增不删\n  [PASS] V2.3.3-08 单图规格恢复：v3 payload 等于 v1，历史三条\n  [PASS] V2.3.3-09 刷新恢复：风格 v3、单图规格 v3、清单与历史原样\n  [PASS] V2.3.3-10 契约会话与 UI 会话零 console error / page error\n  [PASS] V2.3.3-11 正式入口自检仍全过（V2.3.3 不破坏既有入口）\n套件用例：12 条，失败 0 条\n证据：evals/product-v2/v2.3.3-spec-versions-20261001-062230.txt\n结果：全过（退出码 0）\n"
+  ],
+  [
+   "tools/verify_v2_3_4_prompt_compiler.py",
+   [],
+   0,
+   9.2,
+   [
+    "PASS V2.3.4-00",
+    "PASS V2.3.4-01",
+    "PASS V2.3.4-02",
+    "PASS V2.3.4-02b",
+    "PASS V2.3.4-03",
+    "PASS V2.3.4-04",
+    "PASS V2.3.4-05",
+    "PASS V2.3.4-06",
+    "PASS V2.3.4-07",
+    "PASS V2.3.4-08",
+    "PASS V2.3.4-09",
+    "PASS V2.3.4-10"
+   ],
+   "========================================================================\nV2.3.4 Prompt 编译器验证\n========================================================================\n  [PASS] V2.3.4-00 domain / workspace / harness 通过 node --check（ESM 语法门）\n  [PASS] V2.3.4-01 G01–G12 契约套件全过且用例齐全\n  [PASS] V2.3.4-02 反向探针确实执行（冲突、缺依据、泄漏、越界、过期等守卫）\n  [PASS] V2.3.4-02b 既有契约套件回归：规格 / 套图编辑器 / 套图注册表全过\n  [PASS] V2.3.4-03 套图就绪后 Prompt 区解锁；模板图按依赖自动绑定已确认事实\n  [PASS] V2.3.4-04 编译主图 v1：界面文本 = 记录文本 = 快照 prompt，hash 三者一致\n  [PASS] V2.3.4-05 卖点信息图：图中文案逐字来自已确认事实，语言警告可见\n  [PASS] V2.3.4-06 改风格使 Prompt 过期；重新编译写 v2、hash 变化、历史保留\n  [PASS] V2.3.4-07 冲突编译失败：给出精确原因，旧 v2 文本与版本号保留\n  [PASS] V2.3.4-08 刷新恢复：Prompt 文本 / hash / 版本与存储一致，其他图版本不变\n  [PASS] V2.3.4-09 契约会话与 UI 会话零 console error / page error\n  [PASS] V2.3.4-10 正式入口自检仍全过（V2.3.4 不破坏既有入口）\n套件用例：12 条，失败 0 条\n证据：evals/product-v2/v2.3.4-prompt-compiler-20261001-062238.txt\n结果：全过（退出码 0）\n"
+  ],
+  [
+   "tools/verify_v2_3_5_pre_generation_confirm.py",
+   [],
+   0,
+   11.2,
+   [
+    "PASS V2.3.5-00",
+    "PASS V2.3.5-01",
+    "PASS V2.3.5-02",
+    "PASS V2.3.5-02b",
+    "PASS V2.3.5-03",
+    "PASS V2.3.5-04",
+    "PASS V2.3.5-05",
+    "PASS V2.3.5-06",
+    "PASS V2.3.5-07",
+    "PASS V2.3.5-08",
+    "PASS V2.3.5-09",
+    "PASS V2.3.5-10",
+    "PASS V2.3.5-11",
+    "PASS V2.3.5-12",
+    "PASS V2.3.5-13"
+   ],
+   "========================================================================\nV2.3.5 生成前确认验证\n========================================================================\n  [PASS] V2.3.5-00 domain / workspace / harness 通过 node --check（ESM 语法门）\n  [PASS] V2.3.5-01 H01–H12 契约套件全过且用例齐全\n  [PASS] V2.3.5-02 反向探针确实执行（缺 Prompt / 过期 / 缺依赖 / 参数不符 / 越界 / 失效）\n  [PASS] V2.3.5-02b 既有契约套件回归：Prompt / 规格 / 套图编辑器全过\n  [PASS] V2.3.5-03 套图就绪后确认区解锁：4 张图因缺 Prompt 全部阻断并定位到 Prompt 区\n  [PASS] V2.3.5-04 缺依赖的对比图被精确阻断并定位到套图规划\n  [PASS] V2.3.5-05 编译主图后状态推进：就绪 1 / 阻断 3，外发摘要与记录一致\n  [PASS] V2.3.5-06 全部编译后可确认：按钮可用、无阻断、风险仍可见\n  [PASS] V2.3.5-07 点击确认写入 generation_confirm：指纹、记录与界面一致，状态前进\n  [PASS] V2.3.5-08 改公共风格使确认失效并回落 PLAN_REVIEW，界面给出原因\n  [PASS] V2.3.5-09 重新编译后再次可确认，Prompt 版本全部前进\n  [PASS] V2.3.5-10 再次确认写新版本且旧记录保留（append-only）\n  [PASS] V2.3.5-11 刷新恢复：确认记录、指纹、状态与存储一致\n  [PASS] V2.3.5-12 契约会话与 UI 会话零 console error / page error\n  [PASS] V2.3.5-13 正式入口自检仍全过（V2.3.5 不破坏既有入口）\n套件用例：12 条，失败 0 条\n证据：evals/product-v2/v2.3.5-pre-generation-confirm-20261001-062247.txt\n结果：全过（退出码 0）\n"
+  ],
+  [
+   "tools/verify_v2_3_6_prompt_manual_edit.py",
+   [],
+   0,
+   13.9,
+   [
+    "PASS V2.3.6-00",
+    "PASS V2.3.6-01",
+    "PASS V2.3.6-02",
+    "PASS V2.3.6-02b",
+    "PASS V2.3.6-03",
+    "PASS V2.3.6-04",
+    "PASS V2.3.6-05",
+    "PASS V2.3.6-06",
+    "PASS V2.3.6-07",
+    "PASS V2.3.6-08",
+    "PASS V2.3.6-09",
+    "PASS V2.3.6-10",
+    "PASS V2.3.6-11",
+    "PASS V2.3.6-12",
+    "PASS V2.3.6-13",
+    "PASS V2.3.6-14",
+    "PASS V2.3.6-15"
+   ],
+   "========================================================================\nV2.3.6 Prompt 人工编辑验证\n========================================================================\n  [PASS] V2.3.6-00 domain / workspace / harness 通过 node --check（ESM 语法门）\n  [PASS] V2.3.6-01 M01–M12 契约套件全过且用例齐全\n  [PASS] V2.3.6-02 反向探针确实执行（非法输入 / 未授权引用 / 平台文字 / 篡改 / 失效）\n  [PASS] V2.3.6-02b 既有契约套件回归：Prompt / 确认单 / 规格 / 套图编辑器全过\n  [PASS] V2.3.6-03 套图就绪后 Prompt 区解锁：4 张图未编译、确认被阻断\n  [PASS] V2.3.6-04 编译全部 4 张：可提交、编辑区与理由输入出现、尚无人工编辑标记\n  [PASS] V2.3.6-05 点击确认写入 generation_confirm v1，状态前进 READY_TO_GENERATE\n  [PASS] V2.3.6-06 人工编辑保存为 v2：逐字生效、hash 重算一致、旧版本保留、确认失效回落\n  [PASS] V2.3.6-07 空文本被拒：不产新版本、旧版本保留、错误可见\n  [PASS] V2.3.6-08 未授权引用被拒：提示指回商品理解、旧版本保留\n  [PASS] V2.3.6-09 主图新增文案被拒：平台文字规则、旧版本保留\n  [PASS] V2.3.6-10 编译另一张图触发重渲染后，未保存的草稿与理由仍在\n  [PASS] V2.3.6-11 链式编辑 v3：指向 v2、来源可追溯、hash 再次变化\n  [PASS] V2.3.6-12 重新确认写 v2：指纹变化、逐图版本同步、状态回到 READY_TO_GENERATE\n  [PASS] V2.3.6-13 刷新恢复：人工版本、理由、hash、状态与存储一致\n  [PASS] V2.3.6-14 契约会话与 UI 会话零 console error / page error\n  [PASS] V2.3.6-15 正式入口自检仍全过（V2.3.6 不破坏既有入口）\n套件用例：12 条，失败 0 条\n证据：evals/product-v2/v2.3.6-prompt-manual-edit-20261001-062258.txt\n结果：全过（退出码 0）\n"
+  ],
+  [
+   "tools/verify_v2_4_1_image_gateway.py",
+   [],
+   0,
+   23.0,
+   [
+    "PASS V2.4.1-01",
+    "PASS V2.4.1-02",
+    "PASS V2.4.1-03",
+    "PASS V2.4.1-04",
+    "PASS V2.4.1-05",
+    "PASS V2.4.1-06",
+    "PASS V2.4.1-07",
+    "PASS V2.4.1-08",
+    "PASS V2.4.1-09",
+    "PASS V2.4.1-10",
+    "PASS V2.4.1-11",
+    "PASS V2.4.1-12",
+    "PASS V2.4.1-13",
+    "PASS V2.4.1-14",
+    "PASS V2.4.1-15",
+    "PASS V2.4.1-16",
+    "PASS V2.4.1-17",
+    "PASS V2.4.1-18",
+    "PASS V2.4.1-19",
+    "PASS V2.4.1-20",
+    "PASS V2.4.1-21",
+    "PASS V2.4.1-22",
+    "PASS V2.4.1-24",
+    "PASS V2.4.1-23"
+   ],
+   "========================================================================\nV2.4.1 无状态图像网关验证\n========================================================================\n  [PASS] V2.4.1-01 capabilities 暴露图像网关：合同、端点、provider 与参考图能力\n  [PASS] V2.4.1-02 提交返回任务身份，且不把上游签名结果地址外发\n  [PASS] V2.4.1-03 取回结果不依赖先查询：PNG 字节与 hash / 身份响应头一致\n  [PASS] V2.4.1-04 查询返回权威状态与结果数量（仍然只有身份，没有地址）\n  [PASS] V2.4.1-05 确定性：同一 action_id 两次提交得到同一任务身份\n  [PASS] V2.4.1-06 输入拒绝矩阵：十个非法提交全部 400 input_rejected 且 unknown=false\n  [PASS] V2.4.1-07 目录 / 工作空间字段被拒，且哨兵目录未被读取或改写\n  [PASS] V2.4.1-08 超过字节上限的提交被拒（400 input_rejected，不调用上游）\n  [PASS] V2.4.1-09 提交未确认：504 + unknown=true + requires_review，且不伪造任务身份\n  [PASS] V2.4.1-10 查询未确认：504 + unknown=true（不猜结果、不落失败）\n  [PASS] V2.4.1-11 上游明确失败是数据：200 + status=FAILED + 错误说明，仍不返回地址\n  [PASS] V2.4.1-12 没有成功结果时取回被拒：502 + provider_failed(fatal)\n  [PASS] V2.4.1-13 结果下载失败可重试：502 + provider_failed(retryable)\n  [PASS] V2.4.1-14 真实适配器提交形状：异步头、模型、参考图 data URL、参数与任务身份\n  [PASS] V2.4.1-15 上游错误分类：401=fatal / 429 提交可重试 / 500 与超时=Unknown / 任务号不符=Unknown\n  [PASS] V2.4.1-16 非受信结果地址不下发下载请求（RESULT_URL_MISSING，只发生一次状态查询）\n  [PASS] V2.4.1-17 结果取回：先查权威状态再下载受信地址，返回 PNG 字节\n  [PASS] V2.4.1-18 非 PNG 结果进制失败（不做“就当它是图片”的宽容）\n  [PASS] V2.4.1-19 未配置密钥：capabilities 仍 200，图像 provider configured=false\n  [PASS] V2.4.1-20 未配置密钥时提交 503 PROVIDER_NOT_CONFIGURED（没有发图）\n  [PASS] V2.4.1-21 注册表选择：默认 dashscope-image、环境变量可切 fake-image，构造不联网\n  [PASS] V2.4.1-22 正式入口自检全过（包含图像路由：提交/查询/取回/拒绝/未配置）\n  [PASS] V2.4.1-24 默认 HTTP 传输是函数也能工作（真实提交不再 AttributeError 变 500）\n  [PASS] V2.4.1-23 磁盘不变量：整轮前后仓库 manifest 零差异（服务不落任何用户状态）\n证据：evals/product-v2/v2.4.1-image-gateway-20261001-062312.txt\n结果：全过（退出码 0）\n"
+  ],
+  [
+   "tools/verify_v2_4_2_generation_attempt.py",
+   [],
+   0,
+   14.6,
+   [
+    "tail - evals/product-v2/v2.#.#-generation-attempt-#-#.png"
+   ],
+   "amz-listing-kit Product V2 V2.4.2 浏览器 Attempt、action ID、task ID 与 Unknown 恢复\nNOT-AUTHORITY: point-in-time verification evidence only\nobserved_at: 2026-10-01T06:23:49\nstatus: passed\nmodel_calls: 0 · external_network_calls: 0 (fake image provider + 本机服务)\njson: evals/product-v2/v2.4.2-generation-attempt-20261001-062335.json\n\nCHECKS\n- [PASS] V2.4.2-00 domain / workspace / harness 通过 node --check（ESM 语法门）\n- [PASS] V2.4.2-01 A01–A13 契约套件全过且用例齐全\n- [PASS] V2.4.2-02 反向探针确实执行（非法输入 / 非法迁移 / 篡改 / 回退 / 无身份恢复）\n- [PASS] V2.4.2-02b 既有契约套件回归：确认单 / Prompt 编辑 / 套图编辑器全过\n- [PASS] V2.4.2-03 生成执行区就绪：4 张图待生成、provider 身份可见、锁定提示收起\n- [PASS] V2.4.2-04 提交前落库：服务端已收到提交时，IndexedDB 已是 pending_submit 且 Prompt 版本一致\n- [PASS] V2.4.2-05 双击只产生一条 Attempt：只发生一次提交，且迁移链只有一个 action id\n- [PASS] V2.4.2-06 提交信封 → submitted：task id 保存；请求里的 Prompt / 引用 / 尺寸与记录一致\n- [PASS] V2.4.2-07 按 task id 核对推进 succeeded：迁移链完整、没有重新提交\n- [PASS] V2.4.2-08 刷新恢复：succeeded 身份、task id 与 UI 徽标一致\n- [PASS] V2.4.2-09 服务端重启后按已保存 task id 核对成功（服务端无任务表）\n- [PASS] V2.4.2-10 Unknown 不自动重提：unknown / 无 task id / requires_review，界面只给显式新建\n- [PASS] V2.4.2-11 显式新建 action：新身份生效，旧 unknown 记录逐字保留\n- [PASS] V2.4.2-12 刷新打断提交：pending 身份保留、不自动重提、界面可显式新建 action\n- [PASS] V2.4.2-13 刷新后显式新建 action：旧 pending 记录原样保留、新身份可提交\n- [PASS] V2.4.2-14 Prompt 前进后旧 Attempt 标「基于旧版本 v1」，记录零改写\n- [PASS] V2.4.2-15 零意外 console error / page error（预期内的 504 与刷新中断除外）\n- [PASS] V2.4.2-16 正式入口自检仍全过（V2.4.2 不破坏既有入口）\n\nBOUNDARY\n证明「一次生成」在真实浏览器与真实 HTTP 上可核对：发起提交之前先把 pending_submit 身份写进 IndexedDB（服务端已收到请求时记录已在库里），双击与重入只产生一条 Attempt；提交信封按网关四类归口推进状态，task id / request id / 错误语义原样保存；核对只按已保存的 task id 查询，服务端重启（无任务表）后结论不变；没有 task id 的 Unknown 不允许自动重提，界面只提供显式新建 action，且旧记录逐字保留；刷新打断提交时 pending 身份仍在、不产生第二次提交；Prompt 前进后旧 Attempt 标「基于旧版本 v1」且记录零改写。请求体里的 Prompt 文本、参考图与尺寸与记录和页面一致。本批不保存候选字节（V2.4.4）、不做整套批量与部分失败（V2.4.3）、不做审核与返工（Phase 5）；全程 0 次真实模型调用、0 次外部网络；图像 provider 是注入的假替身，只证明身份与状态机，不证明真实出图质量。\n\n证据文件：\n - evals/product-v2/v2.4.2-generation-attempt-20261001-062335.json\n - evals/product-v2/v2.4.2-generation-attempt-20261001-062335.txt\n - evals/product-v2/v2.4.2-generation-attempt-20261001-062335.png\n"
+  ],
+  [
+   "tools/verify_v2_4_3_batch_execution.py",
+   [],
+   0,
+   28.9,
+   [
+    "tail - evals/product-v2/v2.#.#-batch-suite-#-#.png"
+   ],
+   "amz-listing-kit Product V2 V2.4.3 整套批次执行、逐图进度与部分失败\nNOT-AUTHORITY: point-in-time verification evidence only\nobserved_at: 2026-10-01T06:24:18\nstatus: passed\nmodel_calls: 0 · external_network_calls: 0 (fake image provider + 本机服务)\njson: evals/product-v2/v2.4.3-batch-suite-20261001-062350.json\n\nCHECKS\n- [PASS] V2.4.3-00 domain / workspace / harness 通过 node --check（ESM 语法门）\n- [PASS] V2.4.3-01 B01–B09 契约套件全过且用例齐全\n- [PASS] V2.4.3-02 反向探针确实执行（非法输入 / 无身份记录不许自动重提）\n- [PASS] V2.4.3-02b 既有契约套件回归：Attempt / 确认单 / Prompt 编辑 / 套图编辑器全过\n- [PASS] V2.4.3-03 批次条就绪：4 张待提交、整套生成按钮可见\n- [PASS] V2.4.3-04 正常批次：按套图顺序各提交一次，自动核对到全部成功，进度文本一致\n- [PASS] V2.4.3-05 部分失败：失败不阻塞批次（两张都提交）、成功结果保留、已完成的图零改写\n- [PASS] V2.4.3-06 失败重试：单张重试成功；旧失败记录与无关记录逐字保留；新 action 是新身份\n- [PASS] V2.4.3-07 未知：无任务编号、只提交一次、观察窗口内零改写、只提供显式新建 action\n- [PASS] V2.4.3-08 未知显式新建 action 后成功；旧未知记录逐字保留\n- [PASS] V2.4.3-09 停止：只提交了已开始的一张；停止后不再新增提交；已提交身份仍核对出结论\n- [PASS] V2.4.3-10 刷新恢复：被中断的提交保留身份、不自动重提；批次条按记录重算剩余\n- [PASS] V2.4.3-11 继续生成剩余：补交剩余图并核对在途身份，全部图（10 张）最终成功\n- [PASS] V2.4.3-12 零意外 console error / page error（预期内的 504 与刷新中断除外）\n- [PASS] V2.4.3-13 正式入口自检仍全过（V2.4.3 不破坏既有入口）\n\nBOUNDARY\n证明「整套生成」在真实浏览器与真实 HTTP 上是可停止、可恢复、可隔离的：批次按套图顺序逐张提交，每张先落 pending_submit、只提交一次；批次自动按已保存 task id 核对到终态；一张明确失败不阻塞其余图片，成功记录逐字保留；失败图可单独重试，旧失败记录与无关记录零改写；结果未知（无任务编号）不自动重提，只提供显式新建 action；停止只停新增提交，已提交身份仍核对出结论；批次中途刷新后身份保留、不产生第二次提交，剩余图片可继续生成。本批不保存候选字节（V2.4.4）、不做审核与返工（Phase 5）；全程 0 次真实模型调用、0 次外部网络；图像 provider 是注入的假替身（按 Prompt 标记决定场景），只证明批次与状态语义，不证明真实出图质量。\n\n证据文件：\n - evals/product-v2/v2.4.3-batch-suite-20261001-062350.json\n - evals/product-v2/v2.4.3-batch-suite-20261001-062350.txt\n - evals/product-v2/v2.4.3-batch-suite-20261001-062350.png\n"
+  ],
+  [
+   "tools/verify_v2_4_4_candidate_blob.py",
+   [],
+   0,
+   11.5,
+   [
+    "tail - evals/product-v2/v2.#.#-candidate-blob-#-#.png"
+   ],
+   "amz-listing-kit Product V2 V2.4.4 候选字节流、Blob 持久化与容量管理\nNOT-AUTHORITY: point-in-time verification evidence only\nobserved_at: 2026-10-01T06:24:30\nstatus: passed\nmodel_calls: 0 · external_network_calls: 0 (fake image provider + 本机服务)\njson: evals/product-v2/v2.4.4-candidate-blob-20261001-062419.json\n\nCHECKS\n- [PASS] V2.4.4-00 domain / workspace / harness 通过 node --check（ESM 语法门）\n- [PASS] V2.4.4-01 C01–C10 契约套件全过且用例齐全\n- [PASS] V2.4.4-02 反向探针确实执行（坏 PNG / 非法身份 / 兼容性参数）\n- [PASS] V2.4.4-02b 既有契约套件回归：Attempt / 批次 / 确认单 / Prompt 编辑 / 套图编辑器全过\n- [PASS] V2.4.4-03 就绪：4 张待提交、整套生成按钮可见、候选栏为空且只有参考图字节\n- [PASS] V2.4.4-04 单张成功：候选自动入库；记录 sha = 重算 sha = 响应头 sha；64×64 预览可见\n- [PASS] V2.4.4-05 刷新恢复：候选记录与字节保留、不重复保存、零新增取回请求、预览仍可见\n- [PASS] V2.4.4-06 取回失败一次：不产生半份记录、错误可恢复、重试成功且 sha 与响应头一致\n- [PASS] V2.4.4-07 配额异常：不留半份记录、错误给出可恢复指引；解除后同一 action 保存成功\n- [PASS] V2.4.4-08 整套批次：只提交剩余图一次；全部成功且候选全部入库；进度与提示一致\n- [PASS] V2.4.4-09 零意外 console error / page error（预期内的取回 502 与刷新中断除外）\n- [PASS] V2.4.4-10 正式入口自检仍全过（V2.4.4 不破坏既有入口）\n\nBOUNDARY\n证明候选字节在真实浏览器与真实 IndexedDB 上是可持久、可校验、可恢复的：成功结论在同一步把结果字节存进内容寻址的 assets 仓，候选记录的 sha256 与重算值、服务端 X-Image-Sha256 响应头三方一致；刷新后预览来自本地字节、零新增取回请求且不重复保存；取回失败一次不产生半份记录、错误可恢复、重试成功；IndexedDB 配额异常在协议层注入（产品代码无测试钩子），失败不留半份记录并给出「清理后重试」指引；整套批次只提交剩余图一次、全部成功且候选全部入库，进度不再显示待保存候选。本批不做审核、单图返工与导出（Phase 5）；0 次真实模型调用、0 次外部网络；图像 provider 是注入的假替身（按 Prompt 标记决定取回场景），只证明候选持久化语义，不证明真实出图质量。\n\n证据文件：\n - evals/product-v2/v2.4.4-candidate-blob-20261001-062419.json\n - evals/product-v2/v2.4.4-candidate-blob-20261001-062419.txt\n - evals/product-v2/v2.4.4-candidate-blob-20261001-062419.png\n"
+  ],
+  [
+   "tools/verify_v2_5_1_deterministic_review.py",
+   [],
+   0,
+   10.2,
+   [
+    "tail - evals/product-v2/evidence/v2.#.#-deterministic-review-#-#.png"
+   ],
+   "amz-listing-kit Product V2 V2.5.1 生成前、单图与导出的确定性验证器\nNOT-AUTHORITY: point-in-time verification evidence only\nobserved_at: 2026-10-01T06:24:40\nstatus: passed\nmodel_calls: 0 · external_network_calls: 0 (fake providers + 本机服务)\njson: evals/product-v2/v2.5.1-deterministic-review-20261001-062430.json\n\nCHECKS\n- [PASS] V2.5.1-00 domain / workspace / harness 通过 node --check（ESM 语法门）\n- [PASS] V2.5.1-01 R01–R13 契约套件全过且用例齐全\n- [PASS] V2.5.1-02 反向探针确实执行（坏注册表/低分辨率/透明/坏字节/未登记代码/过期报告/哈希篡改）\n- [PASS] V2.5.1-02b 既有契约套件回归全过（candidate / attempt / batch / confirm / prompt_edit / suite_editor）\n- [PASS] V2.5.1-03 候选保存后自动生成当前 ReviewReport（绑定身份 + 合同 v2.5.2），界面出现摘要行\n- [PASS] V2.5.1-04 刷新后报告与摘要仍在、候选链不变、review_report 文档不重复铺\n- [PASS] V2.5.1-05 零意外 console error / page error\n- [PASS] V2.5.1-06 正式入口自检仍全过（本批不破坏既有入口）\n\nBOUNDARY\n证明确定性验证器在真实浏览器上按规则版本工作：注册表对缺要素/重复 id/未知词表/无任务锚点的消费者/未被认领的确认单代码直接报错；单图检查只做可复现测量——PNG 合同、记录一致性、最小长边 1000px（阻断）、推荐 1600px、主图 1:1、透明通道（HIGH_RISK 人工确认）、像素位深；测量失败一律降为 UNKNOWN 且不阻断；生成前阻塞项从确认单一对一映射为 BLOCK、提示项映射为 WARNING；导出就绪检查覆盖选择完整性、报告当前性、报告无 BLOCK、选择链一致性与 WebCrypto sha256 复算。候选保存时自动生成绑定 candidate_id + review_contract_version + asset_sha256 的 ReviewReport 并投影到工作台摘要行，刷新后保留且不重复铺。本批不做 VLM 审核、比较界面与返工（V2.5.2+）；0 次真实模型调用、0 次外部网络；图像与语义 provider 都是注入的假替身，只证明确定性校验语义，不证明真实出图质量。\n\n证据文件：\n - evals/product-v2/v2.5.1-deterministic-review-20261001-062430.json\n - evals/product-v2/v2.5.1-deterministic-review-20261001-062430.txt\n - evals/product-v2/evidence/v2.5.1-deterministic-review-20261001-062430.png\n"
+  ],
+  [
+   "tools/verify_v2_5_2_vlm_review.py",
+   [],
+   0,
+   9.6,
+   [
+    "PASS V2.5.2-01",
+    "PASS V2.5.2-02",
+    "PASS V2.5.2-03",
+    "PASS V2.5.2-04",
+    "PASS V2.5.2-05",
+    "PASS V2.5.2-F01",
+    "PASS V2.5.2-F02",
+    "PASS V2.5.2-F03",
+    "PASS V2.5.2-F04",
+    "PASS V2.5.2-F05",
+    "PASS V2.5.2-06",
+    "PASS V2.5.2-07",
+    "PASS V2.5.2-08",
+    "PASS V2.5.2-09",
+    "PASS V2.5.2-10",
+    "PASS V2.5.2-11",
+    "PASS V2.5.2-12",
+    "PASS V2.5.2-13",
+    "PASS V2.5.2-14",
+    "PASS V2.5.2-15",
+    "PASS V2.5.2-16",
+    "PASS V2.5.2-17",
+    "PASS V2.5.2-18",
+    "PASS V2.5.2-19"
+   ],
+   "V2.5.2 可替换 VLM 复核 Provider 验证（fake 契约 + 已标样例 + 浏览器闭环）\nNOT-AUTHORITY: point-in-time verification evidence only\n============================================================================\n  [PASS] V2.5.2-01 综合语法门：新 provider / workspace / 两个 harness 通过 node --check 与 Python AST\n         {\"node_failed\": [], \"py_failed\": []}\n  [PASS] V2.5.2-02 跨语言一致：VLM check 词表与合同版本在服务端与浏览器侧完全一致\n         {\"js_checks\": [\"product_fidelity\", \"part_anomaly\", \"deformity\", \"clipping\", \"garbled_text\", \"goal_completion\", \"prohibited_content\"], \"py_checks\": [\"product_fidelity\", \"part_anomaly\", \"deformity\", \"clipping\", \"garbled_text\", \"goal_completion\", \"prohibited_content\"], \"js_version\": \"v2.5.2\", \"py_version\": \"v2.5.2\"}\n  [PASS] V2.5.2-03 不重复造轮子：复核 provider 复用 SEL-003 通道（ChatOpenAI + 共享错误映射），零自建传输\n         {\"forbidden_hits\": [], \"shared_model\": true, \"shared_errors\": true}\n  [PASS] V2.5.2-04 注册表与代码一致：review 角色、真实/假 adapter、模型环境变量与默认选择\n         {\"default\": \"dashscope-review\", \"real\": \"v2_dashscope_review\", \"fake\": \"v2_fake_review\"}\n  [PASS] V2.5.2-05 注册表构造：环境变量能选择 fake-review（场景 clean）且真实默认模型已登记\n         {\"provider\": \"fake-review\", \"scenario\": \"clean\", \"model\": \"qwen-vl-max\"}\n  [PASS] V2.5.2-F01 已标样例 bad-confidence-rejected：置信度越界（1.4）必须整包拒绝\n         {\"name\": \"bad-confidence-rejected\", \"kind\": \"parsed\", \"state\": \"rejected\", \"code\": \"INVALID_RESPONSE\", \"family\": \"provider_failed\", \"retry_policy\": \"retryable\"}\n  [PASS] V2.5.2-F02 已标样例 clean-no-findings：模型未报告问题\n         {\"name\": \"clean-no-findings\", \"kind\": \"parsed\", \"state\": \"findings\", \"checks\": [], \"candidate_sha256\": \"92a2334e03e0\", \"image_blocks\": 1}\n  [PASS] V2.5.2-F03 已标样例 ok-two-findings：结构合法的两条发现\n         {\"name\": \"ok-two-findings\", \"kind\": \"parsed\", \"state\": \"findings\", \"checks\": [\"deformity\", \"garbled_text\"], \"candidate_sha256\": \"92a2334e03e0\", \"image_blocks\": 1, \"data_url_prefix\": \"data:image/png;base64,iVBORw0K\"}\n  [PASS] V2.5.2-F04 已标样例 truncated-output：模型输出被 max_tokens 截断\n         {\"name\": \"truncated-output\", \"kind\": \"truncated\", \"state\": \"rejected\", \"code\": \"PROVIDER_OUTPUT_TRUNCATED\", \"family\": \"provider_failed\", \"retry_policy\": \"requires_review\"}\n  [PASS] V2.5.2-F05 已标样例 unknown-check-rejected：模型使用了词表外的 check（把审美判断塞进复核）\n         {\"name\": \"unknown-check-rejected\", \"kind\": \"parsed\", \"state\": \"rejected\", \"code\": \"INVALID_RESPONSE\", \"family\": \"provider_failed\", \"retry_policy\": \"retryable\"}\n  [PASS] V2.5.2-06 fake provider 场景矩阵：ok/clean 返回，其余 8 类按四归口分类，且每次只调用一次\n         {\"scenarios\": [{\"scenario\": \"ok\", \"family\": null, \"code\": null, \"retry_policy\": null, \"findings\": 2, \"calls\": 1}, {\"scenario\": \"clean\", \"family\": null, \"code\": null, \"retry_policy\": null, \"findings\": 0, \"calls\": 1}, {\"scenario\": \"auth_failed\", \"family\": \"provider_failed\", \"code\": \"PROVIDER_AUTH_FAILED\", \"retry_policy\": \"fatal\", \"findings\": null, \"calls\": 1},\n  [PASS] V2.5.2-07 capabilities 暴露 review：合同、端点、provider 身份与参考图能力\n         {\"provider_id\": \"fake-review\", \"model_id\": \"fake-qwen-vl-max\", \"configured\": true, \"capabilities\": {\"provider_id\": \"fake-review\", \"model_id\": \"fake-qwen-vl-max\", \"reference_images\": true, \"structured_output\": \"local\", \"stateless\": true, \"test_double\": true, \"scenario\": \"ok\"}}\n  [PASS] V2.5.2-08 复核路由（fake ok）：200 且发现绑定候选 sha256，不含任何采纳/选择字段\n         {\"status\": 200, \"findings\": 2}\n  [PASS] V2.5.2-09 图片哈希与字节不一致 → input_rejected/400（不调用模型）\n         {\"family\": \"input_rejected\", \"code\": \"INPUT_INVALID\", \"message\": \"候选图的 sha256 与收到的字节不一致；拒绝把身份不明的图片送模型。\", \"retry_policy\": \"fatal\", \"http_status\": null, \"request_id\": null, \"details\": {\"problems\": [{\"path\": \"$\"}]}}\n  [PASS] V2.5.2-10 超时/结果未知 → 504 + unknown=true + provider_unknown/requires_review\n         {\"status\": 504, \"error\": {\"family\": \"provider_unknown\", \"code\": \"PROVIDER_TIMEOUT\", \"message\": \"假复核 Provider：读取超时，无法确认结果。\", \"retry_policy\": \"requires_review\", \"http_status\": null, \"request_id\": null, \"details\": {}}}\n  [PASS] V2.5.2-11 非法模型输出 → 502 INVALID_RESPONSE（服务端 provider_failed，浏览器投影为 Unknown）\n         {\"status\": 502, \"error\": {\"family\": \"provider_failed\", \"code\": \"INVALID_RESPONSE\", \"message\": \"假复核 Provider：输出不符合结构契约；整包拒绝。\", \"retry_policy\": \"retryable\", \"http_status\": null, \"request_id\": null, \"details\": {}}}\n  [PASS] V2.5.2-12 R01–R13 旧套件回归：注册表升级到 v2.5.2 后全部通过\n         {\"status\": \"passed\", \"failed\": []}\n  [PASS] V2.5.2-13 R14–R21 复核契约套件：词表/映射/合并/Unknown/反向探针全部通过\n         {\"status\": \"passed\", \"failed\": [], \"cases\": 8}\n  [PASS] V2.5.2-14 工作台走查：点“自动复核（VLM）”后报告落 checked，VLM 发现与确定性层并存\n         {\"outcome\": \"checked\", \"vlm_findings\": [\"vlm.deformity\", \"vlm.garbled_text\"], \"deterministic\": 7}\n  [PASS] V2.5.2-15 不自动采纳：复核不改变候选字节身份与 Attempt 状态\n         {\"candidate\": \"[{\\\"payload\\\": {\\\"action_id\", \"state\": \"succeeded\"}\n  [PASS] V2.5.2-16 刷新持久化：复核块仍在、版本链不继续增长（重开项目不重复铺报告）\n         {\"docs_before\": 2, \"docs_after\": 2}\n  [PASS] V2.5.2-17 失败保留 Unknown：复核未完成不伪造 PASS，候选/Attempt 保持不变\n         {\"outcome\": \"unknown\", \"vlm_findings\": [\"vlm.inspection_unavailable:UNKNOWN\"]}\n  [PASS] V2.5.2-18 正式入口 --check 全过（含复核路由自检：路由、请求身份、provider 不可用分类）\n         {\"rc\": 0, \"tail\": [\"  PASS  整套复核 provider 不可用时 capabilities 仍 200 且 configured=false  suite_review={'kind': 'dependency', 'detail': 'RuntimeError: 自检：整套复核 provider 构造失败'}\", \"  PASS  整套复核 provider 不可用时路由 503 且错误分类明确                          status=503 error={'family': 'internal', 'code': 'PROVIDER_NOT_CONFIGURED', 'message': '语义 provider 不可用：检查注册表、依赖与 DASHSCO\n  [PASS] V2.5.2-19 零意外 console error / page error（唯一允许项：Unknown 路径的 504 资源日志）\n         {\"unexpected_console\": [], \"expected_unknown_path_504\": [\"Failed to load resource: the server responded with a status of 504 (Gateway Timeout)\"], \"page\": []}\n----------------------------------------------------------------------------\nobserved_at: 2026-10-01T06:24:50\nstatus: passed\ncontract: v2.5.2\nmodel_calls: 0 · external_network_calls: 0（fake providers + 本地静态服务器）\njson: evals/product-v2/v2.5.2-vlm-review-20261001-062441.json\n\n边界：本套件 0 次真实模型调用；fake provider 只证明契约、归因与工作台闭环，\n不证明真实 VLM 的检出质量。真实最小请求由 tools/probe_v2_5_2_review_live.py\n单独执行并把请求审计写进证据（计划 §12.2 的预算纪律）。\n\nCHECKS\n- [PASS] V2.5.2-01 综合语法门：新 provider / workspace / 两个 harness 通过 node --check 与 Python AST\n- [PASS] V2.5.2-02 跨语言一致：VLM check 词表与合同版本在服务端与浏览器侧完全一致\n- [PASS] V2.5.2-03 不重复造轮子：复核 provider 复用 SEL-003 通道（ChatOpenAI + 共享错误映射），零自建传输\n- [PASS] V2.5.2-04 注册表与代码一致：review 角色、真实/假 adapter、模型环境变量与默认选择\n- [PASS] V2.5.2-05 注册表构造：环境变量能选择 fake-review（场景 clean）且真实默认模型已登记\n- [PASS] V2.5.2-F01 已标样例 bad-confidence-rejected：置信度越界（1.4）必须整包拒绝\n- [PASS] V2.5.2-F02 已标样例 clean-no-findings：模型未报告问题\n- [PASS] V2.5.2-F03 已标样例 ok-two-findings：结构合法的两条发现\n- [PASS] V2.5.2-F04 已标样例 truncated-output：模型输出被 max_tokens 截断\n- [PASS] V2.5.2-F05 已标样例 unknown-check-rejected：模型使用了词表外的 check（把审美判断塞进复核）\n- [PASS] V2.5.2-06 fake provider 场景矩阵：ok/clean 返回，其余 8 类按四归口分类，且每次只调用一次\n- [PASS] V2.5.2-07 capabilities 暴露 review：合同、端点、provider 身份与参考图能力\n- [PASS] V2.5.2-08 复核路由（fake ok）：200 且发现绑定候选 sha256，不含任何采纳/选择字段\n- [PASS] V2.5.2-09 图片哈希与字节不一致 → input_rejected/400（不调用模型）\n- [PASS] V2.5.2-10 超时/结果未知 → 504 + unknown=true + provider_unknown/requires_review\n- [PASS] V2.5.2-11 非法模型输出 → 502 INVALID_RESPONSE（服务端 provider_failed，浏览器投影为 Unknown）\n- [PASS] V2.5.2-12 R01–R13 旧套件回归：注册表升级到 v2.5.2 后全部通过\n- [PASS] V2.5.2-13 R14–R21 复核契约套件：词表/映射/合并/Unknown/反向探针全部通过\n- [PASS] V2.5.2-14 工作台走查：点“自动复核（VLM）”后报告落 checked，VLM 发现与确定性层并存\n- [PASS] V2.5.2-15 不自动采纳：复核不改变候选字节身份与 Attempt 状态\n- [PASS] V2.5.2-16 刷新持久化：复核块仍在、版本链不继续增长（重开项目不重复铺报告）\n- [PASS] V2.5.2-17 失败保留 Unknown：复核未完成不伪造 PASS，候选/Attempt 保持不变\n- [PASS] V2.5.2-18 正式入口 --check 全过（含复核路由自检：路由、请求身份、provider 不可用分类）\n- [PASS] V2.5.2-19 零意外 console error / page error（唯一允许项：Unknown 路径的 504 资源日志）\n\n证据文件：\n - evals/product-v2/v2.5.2-vlm-review-20261001-062441.txt\n - evals/product-v2/v2.5.2-vlm-review-20261001-062441.json\n - evals/product-v2/evidence/v2.5.2-vlm-review-20261001-062441.png\n"
+  ],
+  [
+   "tools/verify_v2_5_3_compare_panel.py",
+   [],
+   0,
+   10.9,
+   [
+    "PASS V2.5.3-01",
+    "PASS V2.5.3-02",
+    "PASS V2.5.3-03",
+    "PASS V2.5.3-04",
+    "PASS V2.5.3-05",
+    "PASS V2.5.3-06",
+    "PASS V2.5.3-07",
+    "PASS V2.5.3-08",
+    "PASS V2.5.3-09",
+    "PASS V2.5.3-10",
+    "PASS V2.5.3-11",
+    "PASS V2.5.3-12",
+    "PASS V2.5.3-13",
+    "PASS V2.5.3-14",
+    "PASS V2.5.3-15",
+    "PASS V2.5.3-16",
+    "PASS V2.5.3-17",
+    "PASS V2.5.3-18",
+    "PASS V2.5.3-19"
+   ],
+   "V2.5.3 候选比较与审核清单面板验证（比较契约套件 + 真实工作台走查 + 视觉证据）\nNOT-AUTHORITY: point-in-time verification evidence only\n============================================================================\n  [PASS] V2.5.3-01 语法门：compare / review / workspace / 契约套件与本工具全部可解析\n         {\"files\": [{\"file\": \"app/product_v2/domain/compare.js\", \"rc\": 0, \"stderr\": \"\"}, {\"file\": \"app/product_v2/domain/review.js\", \"rc\": 0, \"stderr\": \"\"}, {\"file\": \"app/product_v2/domain/index.js\", \"rc\": 0, \"stderr\": \"\"}, {\"file\": \"app/product_v2/workspace.js\", \"rc\": 0, \"stderr\": \"\"}, {\"file\": \"evals/product-v2/harness/compare-panel.js\", \"rc\": 0, \"stderr\": \"\"}, {\"f\n  [PASS] V2.5.3-02 单一权威：先看顺序只在 domain/review.js 定义，比较模块与工作台只引用\n         {\"order_in_review\": true, \"duplicated_in\": []}\n  [PASS] V2.5.3-03 比较面板是纯投影：不写文档、不写资产、不产生选择\n         {\"forbidden_tokens\": [], \"section_chars\": 15940}\n  [PASS] V2.5.3-04 面板接线：HTML 的 tablist/tabpanel 与合同版本贯穿领域层与工作台\n         {\"panel\": true, \"tablist\": true, \"tabpanel\": true, \"contract_constant\": true, \"contract_used\": true, \"default_projection\": true}\n  [PASS] V2.5.3-05 CP-01–CP-15 比较契约套件：异常优先、默认目标、清单排序与反向探针全部通过\n         {\"status\": \"passed\", \"failed\": [], \"cases\": 15}\n  [PASS] V2.5.3-06 复核契约回归：R01–R13 与 R14–R21 在比较面板落地后仍全过\n         {\"review\": \"passed\", \"provider\": \"passed\", \"review_failed\": [], \"provider_failed\": []}\n  [PASS] V2.5.3-07 入口：每张有候选的图都有「比较候选」，点开即投影该图（无第二套状态）\n         {\"contract\": \"v2.5.3\", \"shot\": \"shot_main_clean\", \"subject\": \"主图·干净背景 · 候选 3 · 待处理 2\", \"visible\": true}\n  [PASS] V2.5.3-08 参考图栏 = 这张图实际发送的参考图（与提交选择一致，不是全部参考图）\n         {\"references\": [{\"sha256\": \"88bcc17af574e50d447d09bc06d9636033a215d738a8a13768ba63dd0d1a38d2\", \"has_image\": true, \"text\": \"商品主图技术详情sha256 88bcc17a…\"}], \"title\": \"这张图实际发送的参考图（1 张）\", \"expected_sha256\": \"88bcc17af574e50d\"}\n  [PASS] V2.5.3-09 候选卡与 IndexedDB 一致：两次生成 + 一个合规夹具 = 三张，按版本可追溯\n         {\"cards\": [[\"act-08b8ef8b636242ca94ea86c3e1412f6e\", \"候选 v2\", \"pending\"], [\"act-1a63c0e610c740ad91b25313f939da40\", \"候选 v1\", \"pending\"], [\"act-fixture-compliant\", \"候选 v3\", \"clean\"]], \"db_versions\": [1, 2, 3]}\n  [PASS] V2.5.3-10 异常优先：有阻断的两个候选排在无发现的夹具之前，默认看排在最前的那一个\n         {\"order\": [\"act-08b8ef8b636242ca94ea86c3e1412f6e\", \"act-1a63c0e610c740ad91b25313f939da40\", \"act-fixture-compliant\"], \"states\": [\"pending\", \"pending\", \"clean\"], \"selected\": \"act-08b8ef8b636242ca94ea86c3e1412f6e\", \"fixture_severities\": [\"PASS\", \"PASS\", \"PASS\", \"PASS\", \"PASS\", \"PASS\", \"PASS\"]}\n  [PASS] V2.5.3-11 键盘路径：方向键/Home/End 在候选间移动并保持焦点，Escape 回到该图当前可见的比较入口\n         {\"right\": \"act-1a63c0e610c740ad91b25313f939da40\", \"end\": \"act-fixture-compliant\", \"home\": \"act-08b8ef8b636242ca94ea86c3e1412f6e\", \"escape_focus\": null, \"expected\": [\"act-08b8ef8b636242ca94ea86c3e1412f6e\", \"act-1a63c0e610c740ad91b25313f939da40\", \"act-fixture-compliant\"]}\n  [PASS] V2.5.3-12 完整报告按需展开：默认收起，展开后含合同版本、通过项与视觉复核状态\n         {\"collapsed\": false, \"summary\": \"完整报告（合同 v2.5.2 · 7 条）\", \"pass_rows\": 5, \"vlm\": \"视觉复核：未检查\", \"findings\": 9, \"criteria\": [\"目的：完整展示商品主体，背景干净，不添加资料里没有的部件\", \"必须保持：商品外观、颜色与比例；标识与文字\"]}\n  [PASS] V2.5.3-13 面板不改业务状态：候选字节、Attempt 与审核报告在交互前后完全一致\n         {\"candidates_first\": 3, \"reports_before\": 4, \"reports_after\": 4}\n  [PASS] V2.5.3-14 刷新后一致：候选、默认目标与清单来自 IndexedDB，不依赖内存状态\n         {\"order\": [\"act-08b8ef8b636242ca94ea86c3e1412f6e\", \"act-1a63c0e610c740ad91b25313f939da40\", \"act-fixture-compliant\"], \"selected\": \"act-08b8ef8b636242ca94ea86c3e1412f6e\", \"contract\": \"v2.5.3\", \"references\": 1}\n  [PASS] V2.5.3-15 单候选回退与「下一个待处理」：一张图一个候选照常比较，跳转落到有问题的图\n         {\"second_shot\": \"shot_infographic_benefits\", \"cards\": 1, \"jump_target\": \"shot_main_clean\", \"landed\": \"shot_main_clean\", \"focus\": \"compare-tab-act-08b8ef8b636242ca94ea86c3e1412f6e\"}\n  [PASS] V2.5.3-16 边界：面板不承担采纳与导出，只有比较所需的动作\n         {\"buttons\": [\"下一个待处理\", \"候选 v1待处理64×64 · 2026/10/1 06:24:57阻断 · 最小长边 1000px：最长边 64px 低于平台缩放下限 1000px，交付后无法启用缩放。\", \"候选 v2待处理64×64 · 2026/10/1 06:24:57阻断 · 最小长边 1000px：最长边 64px 低于平台缩放下限 1000px，交付后无法启用缩放。\", \"候选 v3无发现1600×1600 · 2026/10/1 06:24:57自动检查没有发现问题（机器结论，人工确认仍然必要）。\", \"收起\", \"用此候选发起返工\", \"采用此候选\"], \"forbidden\": []}\n  [PASS] V2.5.3-17 视觉证据：面板在真实工作台里可见（整页 + 面板特写截图留档）\n         {\"evals/product-v2/evidence/v2.5.3-compare-panel-20261001-062450.png\": 150849, \"evals/product-v2/evidence/v2.5.3-compare-panel-20261001-062450-detail.png\": 77059}\n  [PASS] V2.5.3-18 正式入口 --check 全过（比较面板没有破坏既有自检）\n         {\"rc\": 0, \"tail\": [\"  PASS  整套复核 provider 不可用时 capabilities 仍 200 且 configured=false  suite_review={'kind': 'dependency', 'detail': 'RuntimeError: 自检：整套复核 provider 构造失败'}\", \"  PASS  整套复核 provider 不可用时路由 503 且错误分类明确                          status=503 error={'family': 'internal', 'code': 'PROVIDER_NOT_CONFIGURED', 'message': '语义 provider 不可用：检查注册表、依赖与 DASHSCO\n  [PASS] V2.5.3-19 零意外 console error / page error\n         {\"console_errors\": [], \"page_errors\": []}\n----------------------------------------------------------------------------\nobserved_at: 2026-10-01T06:25:01\nstatus: passed\ncontract: v2.5.3（面板）· v2.5.2（审核报告）\nmodel_calls: 0 · external_network_calls: 0（fake providers + 本地静态服务器）\njson: evals/product-v2/v2.5.3-compare-panel-20261001-062450.json\n\n边界：本套件 0 次真实模型调用；比较面板只消费既有候选与审核报告，\n不产生采纳（Selection 属 V2.6.1）、不写入任何业务记录。\n工作台走查里有一个合规夹具候选（1600×1600 PNG）用来制造「有问题的候选 vs 无发现的候选」，\n它由验证器通过 storage 契约写入浏览器库，不是产品界面里的假状态。\n\nCHECKS\n- [PASS] V2.5.3-01 语法门：compare / review / workspace / 契约套件与本工具全部可解析\n- [PASS] V2.5.3-02 单一权威：先看顺序只在 domain/review.js 定义，比较模块与工作台只引用\n- [PASS] V2.5.3-03 比较面板是纯投影：不写文档、不写资产、不产生选择\n- [PASS] V2.5.3-04 面板接线：HTML 的 tablist/tabpanel 与合同版本贯穿领域层与工作台\n- [PASS] V2.5.3-05 CP-01–CP-15 比较契约套件：异常优先、默认目标、清单排序与反向探针全部通过\n- [PASS] V2.5.3-06 复核契约回归：R01–R13 与 R14–R21 在比较面板落地后仍全过\n- [PASS] V2.5.3-07 入口：每张有候选的图都有「比较候选」，点开即投影该图（无第二套状态）\n- [PASS] V2.5.3-08 参考图栏 = 这张图实际发送的参考图（与提交选择一致，不是全部参考图）\n- [PASS] V2.5.3-09 候选卡与 IndexedDB 一致：两次生成 + 一个合规夹具 = 三张，按版本可追溯\n- [PASS] V2.5.3-10 异常优先：有阻断的两个候选排在无发现的夹具之前，默认看排在最前的那一个\n- [PASS] V2.5.3-11 键盘路径：方向键/Home/End 在候选间移动并保持焦点，Escape 回到该图当前可见的比较入口\n- [PASS] V2.5.3-12 完整报告按需展开：默认收起，展开后含合同版本、通过项与视觉复核状态\n- [PASS] V2.5.3-13 面板不改业务状态：候选字节、Attempt 与审核报告在交互前后完全一致\n- [PASS] V2.5.3-14 刷新后一致：候选、默认目标与清单来自 IndexedDB，不依赖内存状态\n- [PASS] V2.5.3-15 单候选回退与「下一个待处理」：一张图一个候选照常比较，跳转落到有问题的图\n- [PASS] V2.5.3-16 边界：面板不承担采纳与导出，只有比较所需的动作\n- [PASS] V2.5.3-17 视觉证据：面板在真实工作台里可见（整页 + 面板特写截图留档）\n- [PASS] V2.5.3-18 正式入口 --check 全过（比较面板没有破坏既有自检）\n- [PASS] V2.5.3-19 零意外 console error / page error\n\n证据文件：\n - evals/product-v2/v2.5.3-compare-panel-20261001-062450.txt\n - evals/product-v2/v2.5.3-compare-panel-20261001-062450.json\n - evals/product-v2/evidence/v2.5.3-compare-panel-20261001-062450.png\n"
+  ],
+  [
+   "tools/verify_v2_5_4_rework_loop.py",
+   [],
+   0,
+   11.0,
+   [
+    "PASS V2.5.4-01",
+    "PASS V2.5.4-02",
+    "PASS V2.5.4-03",
+    "PASS V2.5.4-04",
+    "PASS V2.5.4-05",
+    "PASS V2.5.4-06",
+    "PASS V2.5.4-07",
+    "PASS V2.5.4-08",
+    "PASS V2.5.4-09",
+    "PASS V2.5.4-10",
+    "PASS V2.5.4-11",
+    "PASS V2.5.4-12",
+    "PASS V2.5.4-13",
+    "PASS V2.5.4-14",
+    "PASS V2.5.4-15",
+    "PASS V2.5.4-16",
+    "PASS V2.5.4-17",
+    "PASS V2.5.4-18",
+    "PASS V2.5.4-19",
+    "PASS V2.5.4-20"
+   ],
+   "V2.5.4 问题分类、改进方向与单图返工闭环验证（返工契约套件 + 真实工作台走查 + 视觉证据）\nNOT-AUTHORITY: point-in-time verification evidence only\n============================================================================\n  [PASS] V2.5.4-01 语法门：rework / prompt / confirm / workspace / 返工契约套件与本工具全部可解析\n         {\"files\": [{\"file\": \"app/product_v2/domain/rework.js\", \"rc\": 0, \"stderr\": \"\"}, {\"file\": \"app/product_v2/domain/prompt.js\", \"rc\": 0, \"stderr\": \"\"}, {\"file\": \"app/product_v2/domain/confirm.js\", \"rc\": 0, \"stderr\": \"\"}, {\"file\": \"app/product_v2/workspace.js\", \"rc\": 0, \"stderr\": \"\"}, {\"file\": \"evals/product-v2/harness/rework-contract.js\", \"rc\": 0, \"stderr\": \"\"}, \n  [PASS] V2.5.4-02 单一权威：九类问题与返工合同版本只在 domain/rework.js 定义，工作台只引用\n         {\"duplicated_in_workspace\": [], \"local_definition\": false, \"imports_problems\": true}\n  [PASS] V2.5.4-03 界面责任：比较区只放入口，返工表单是相邻的独立 #rework-panel（fieldset + 预览框）\n         {\"entry_in_compare\": true, \"panel_sibling\": true, \"fieldset\": true, \"preview_box\": true, \"buttons\": true, \"entry_hands_sha\": true}\n  [PASS] V2.5.4-04 追溯链唯一：返工要求进同一份 PromptVersion，确认用 rework:<shot>，复用既有提交通道\n         {\"prompt_section\": true, \"record_keeps_rework\": true, \"compile_pure\": true, \"save_then_confirm\": true, \"reuses_attempt_channel\": true, \"no_direct_gateway\": true, \"scoped_confirm_prefix\": true}\n  [PASS] V2.5.4-05 不回退：比较区仍是纯投影（V2.5.3 判据原样保持，返工逻辑不在其中）\n         {\"forbidden_tokens\": [], \"section_chars\": 15940}\n  [PASS] V2.5.4-06 RW-01–RW-15 返工契约套件：空理由、未知分类、跨图候选、hash 不符与正反路径全部守住\n         {\"status\": \"passed\", \"failed\": [], \"cases\": 15}\n  [PASS] V2.5.4-07 既有套件回归：CP-01–CP-15、R01–R13、R14–R21 在返工闭环落地后仍全过\n         {\"compare\": \"passed\", \"review\": \"passed\", \"provider\": \"passed\"}\n  [PASS] V2.5.4-08 入口：比较区把当前候选（candidate_id + sha256）交给相邻的独立返工区\n         {\"in_compare\": true, \"disabled\": false, \"shot_id\": \"shot_main_clean\", \"candidate_id\": \"act-bc6d8e2a19d0489cb0d7b6c60bafc1f0\", \"candidate_sha256\": \"6e5e98f803b4269af5889982e37ddf9f9a048581281ada8801e36c63bc42c9da\"}\n  [PASS] V2.5.4-09 返工表单：独立面板、九类问题 fieldset、显式 label、焦点从入口进入第一个问题\n         {\"contract\": \"v2.5.4\", \"problems\": 9, \"legend\": \"问题分类（可多选；至少要选一类或写一句方向）\", \"focus\": \"rework-problem-product_fidelity\"}\n  [PASS] V2.5.4-10 比较区保持只读：勾选、填写、取消全程业务记录逐字不变，焦点回到原候选\n         {\"checked\": [\"product_fidelity\", \"platform_risk\"], \"focus_after_cancel\": \"compare-tab-act-bc6d8e2a19d0489cb0d7b6c60bafc1f0\", \"expected_focus\": \"compare-tab-act-bc6d8e2a19d0489cb0d7b6c60bafc1f0\", \"records_unchanged\": true}\n  [PASS] V2.5.4-11 预览：显示将发送的全文（参考图 1 张）且不写任何记录；改动输入后必须重新预览\n         {\"preview_chars\": 540, \"meta\": \"将保存为 Prompt 新版本（旧版本保留）并只重新生成这张图 · 参考图 1 张 · 全文 540 字\", \"dirty\": {\"preview\": false, \"submit_disabled\": true}, \"records_unchanged\": true}\n  [PASS] V2.5.4-12 确认隔离：返工只写 scope=[目标图] 的单图确认，整套确认与无关图逐字不变\n         {\"rework_confirm_scope\": [\"shot_main_clean\"], \"suite_confirm_same\": true, \"second_untouched\": true}\n  [PASS] V2.5.4-13 成功链：入口预览的全文 == 真实发送的 prompt == 新 Prompt 版本；只给目标图新增 Attempt/Candidate/Review\n         {\"attempt_state\": \"succeeded\", \"prompt_version\": 2, \"prompt_hash_match\": true, \"wire_prompt_chars\": 540, \"preview_chars\": 540, \"candidates\": 2}\n  [PASS] V2.5.4-14 影响隔离：无关图的 Prompt/Attempt/Candidate/Blob 零变化；目标图的旧候选与旧 Blob 原样保留\n         {\"second_candidates_same\": true, \"old_candidate_kept\": true, \"old_blob\": {\"found\": true, \"hash_match\": true}, \"second_prompt_versions\": 1}\n  [PASS] V2.5.4-15 双击防护：连点「确认并生成这张图」只产生一条 Attempt、一次真实请求\n         {\"new_actions\": 1, \"new_versions\": 3, \"requests\": 1, \"action_id\": \"act-95842e806ef44d6097494418783aadbe\"}\n  [PASS] V2.5.4-16 失败可恢复：明确失败只留失败 Attempt（不产生候选），旧候选与旧 Blob 保留，可再次发起返工\n         {\"state\": \"failed\", \"attempts\": 3, \"candidates_same\": true, \"row_state\": \"failed\", \"compare_status\": \"返工已提交（Prompt v3 · 已失败）；旧候选保留，只有这张图新增了版本。\", \"recovered\": true}\n  [PASS] V2.5.4-17 Unknown 不自动重提：只留一条无 task id 的未知 Attempt，旧数据与候选不动，界面提示先不重提\n         {\"state\": \"unknown\", \"task_id\": null, \"attempts\": 4, \"requests\": 1, \"row_state\": \"unknown\", \"error\": \"这条记录没有任务编号，无法核对；只能显式新建 action。\"}\n  [PASS] V2.5.4-18 刷新恢复：候选/Attempt/返工确认从 IndexedDB 恢复，面板可重开（整页 + 返工区截图留档）\n         {\"candidates\": 2, \"attempts\": 11, \"business_records_same\": true, \"screenshots\": {\"evals/product-v2/evidence/v2.5.4-rework-loop-20261001-062501.png\": 179688, \"evals/product-v2/evidence/v2.5.4-rework-loop-20261001-062501-detail.png\": 35890}, \"prompt_chars\": 531}\n  [PASS] V2.5.4-19 正式入口 --check 全过（返工闭环没有破坏既有自检）\n         {\"rc\": 0, \"tail\": [\"  PASS  整套复核 provider 不可用时 capabilities 仍 200 且 configured=false  suite_review={'kind': 'dependency', 'detail': 'RuntimeError: 自检：整套复核 provider 构造失败'}\", \"  PASS  整套复核 provider 不可用时路由 503 且错误分类明确                          status=503 error={'family': 'internal', 'code': 'PROVIDER_NOT_CONFIGURED', 'message': '语义 provider 不可用：检查注册表、依赖与 DASHSCO\n  [PASS] V2.5.4-20 零意外 console error / page error（唯一允许项：Unknown 路径的 504 资源日志）\n         {\"unexpected_console\": [], \"expected_unknown_path_504\": [\"[workbench] Failed to load resource: the server responded with a status of 504 (Gateway Timeout)\"], \"page_errors\": []}\n----------------------------------------------------------------------------\nobserved_at: 2026-10-01T06:25:12\nstatus: passed\ncontract: v2.5.4（返工）· v2.5.3（比较面板）· v2.5.2（复核报告）\nmodel_calls: 0 · external_network_calls: 0（fake providers + 本地静态服务器）\njson: evals/product-v2/v2.5.4-rework-loop-20261001-062501.json\n\n边界：本套件 0 次真实模型调用；比较区保持只读，返工只在独立 #rework-panel 里写\nPromptVersion + scope=[目标图] 的确认 + Attempt；候选采纳（Selection）属 V2.6.1，\n导出 zip 属 V2.6.2，本批不宣称已经具备。\n「与真实请求一致」由浏览器侧捕获的 /api/v2/images/submit 请求体逐字比对得出，\n发送目标是本地 fake 图像网关（不是阿里云百炼）。\n\nCHECKS\n- [PASS] V2.5.4-01 语法门：rework / prompt / confirm / workspace / 返工契约套件与本工具全部可解析\n- [PASS] V2.5.4-02 单一权威：九类问题与返工合同版本只在 domain/rework.js 定义，工作台只引用\n- [PASS] V2.5.4-03 界面责任：比较区只放入口，返工表单是相邻的独立 #rework-panel（fieldset + 预览框）\n- [PASS] V2.5.4-04 追溯链唯一：返工要求进同一份 PromptVersion，确认用 rework:<shot>，复用既有提交通道\n- [PASS] V2.5.4-05 不回退：比较区仍是纯投影（V2.5.3 判据原样保持，返工逻辑不在其中）\n- [PASS] V2.5.4-06 RW-01–RW-15 返工契约套件：空理由、未知分类、跨图候选、hash 不符与正反路径全部守住\n- [PASS] V2.5.4-07 既有套件回归：CP-01–CP-15、R01–R13、R14–R21 在返工闭环落地后仍全过\n- [PASS] V2.5.4-08 入口：比较区把当前候选（candidate_id + sha256）交给相邻的独立返工区\n- [PASS] V2.5.4-09 返工表单：独立面板、九类问题 fieldset、显式 label、焦点从入口进入第一个问题\n- [PASS] V2.5.4-10 比较区保持只读：勾选、填写、取消全程业务记录逐字不变，焦点回到原候选\n- [PASS] V2.5.4-11 预览：显示将发送的全文（参考图 1 张）且不写任何记录；改动输入后必须重新预览\n- [PASS] V2.5.4-12 确认隔离：返工只写 scope=[目标图] 的单图确认，整套确认与无关图逐字不变\n- [PASS] V2.5.4-13 成功链：入口预览的全文 == 真实发送的 prompt == 新 Prompt 版本；只给目标图新增 Attempt/Candidate/Review\n- [PASS] V2.5.4-14 影响隔离：无关图的 Prompt/Attempt/Candidate/Blob 零变化；目标图的旧候选与旧 Blob 原样保留\n- [PASS] V2.5.4-15 双击防护：连点「确认并生成这张图」只产生一条 Attempt、一次真实请求\n- [PASS] V2.5.4-16 失败可恢复：明确失败只留失败 Attempt（不产生候选），旧候选与旧 Blob 保留，可再次发起返工\n- [PASS] V2.5.4-17 Unknown 不自动重提：只留一条无 task id 的未知 Attempt，旧数据与候选不动，界面提示先不重提\n- [PASS] V2.5.4-18 刷新恢复：候选/Attempt/返工确认从 IndexedDB 恢复，面板可重开（整页 + 返工区截图留档）\n- [PASS] V2.5.4-19 正式入口 --check 全过（返工闭环没有破坏既有自检）\n- [PASS] V2.5.4-20 零意外 console error / page error（唯一允许项：Unknown 路径的 504 资源日志）\n\n证据文件：\n - evals/product-v2/v2.5.4-rework-loop-20261001-062501.txt\n - evals/product-v2/v2.5.4-rework-loop-20261001-062501.json\n - evals/product-v2/evidence/v2.5.4-rework-loop-20261001-062501.png\n"
+  ],
+  [
+   "tools/verify_v2_5_5_suite_review.py",
+   [],
+   0,
+   15.7,
+   [
+    "PASS V2.5.5-00",
+    "PASS V2.5.5-01",
+    "PASS V2.5.5-02",
+    "PASS V2.5.5-03",
+    "PASS V2.5.5-04",
+    "PASS V2.5.5-05",
+    "PASS V2.5.5-06",
+    "PASS V2.5.5-07",
+    "PASS V2.5.5-08",
+    "PASS V2.5.5-09",
+    "PASS V2.5.5-10",
+    "PASS V2.5.5-11"
+   ],
+   "  [PASS] V2.5.5-00 ESM 语法门（domain / workspace / harness）\n  [PASS] V2.5.5-01 服务端词表/合同版本/张数上限/端点与浏览器互为镜像\n  [PASS] V2.5.5-02 单一权威：复用既有测量；界面落点与文档种类已登记\n  [PASS] V2.5.5-03 契约套件 S01–S06 全过\n  [PASS] V2.5.5-04 工作台整套检查：报告当前、视觉已核对、发现可见\n  [PASS] V2.5.5-05 报告以 suite_review 文档写入 IndexedDB\n  [PASS] V2.5.5-06 发现可跳转到对应图行\n  [PASS] V2.5.5-07 方案变化后报告过期并可重算为当前\n  [PASS] V2.5.5-08 刷新后报告仍在且仍是当前\n  [PASS] V2.5.5-09 主链零意外 console / page / HTTP 错误\n  [PASS] V2.5.5-10 视觉通道失败：只落 UNKNOWN，确定性部分照常\n  [PASS] V2.5.5-11 正式入口自检全过且含整套复核路由\n       {\"rc\": 0, \"tail\": [\"  PASS  整套复核 provider 不可用时 capabilities 仍 200 且 configured=false  suite_review={'kind': 'dependency', 'detail': 'RuntimeError: 自检：整套复核 provider 构造失败'}\", \"  PASS  整套复核 provider 不可用时路由 503 且错误分类明确                          status=503 error={'family': 'internal', 'code': 'PROVIDER_NOT_CONFIGURED', 'message': '语义 provider 不可用：检查注册表、依赖与 DASHSCOPE_API_KEY。', 'retry_policy': 'fatal', 'http_status': 503, 'request_id': None, 'details': {'kind': 'dependency', 'detail': 'RuntimeError: 自检：整套复核 provider 构造失败'}}\", \"V2 正式入口自检：38/38 通过。\"]}\n\nSCREENSHOTS\n- evals/product-v2/evidence/v2.5.5-suite-review-20261001-062512-current.png\n- evals/product-v2/evidence/v2.5.5-suite-review-20261001-062512-rerun.png\n- evals/product-v2/evidence/v2.5.5-suite-review-20261001-062512-unknown.png\n证据：evals/product-v2/v2.5.5-suite-review-20261001-062512.txt\n"
+  ],
+  [
+   "tools/verify_v2_6_1_selection.py",
+   [],
+   0,
+   11.6,
+   [
+    "PASS V2.6.1-01",
+    "PASS V2.6.1-02",
+    "PASS V2.6.1-03",
+    "PASS V2.6.1-04",
+    "PASS V2.6.1-05",
+    "PASS V2.6.1-06",
+    "PASS V2.6.1-07",
+    "PASS V2.6.1-08",
+    "PASS V2.6.1-09",
+    "PASS V2.6.1-10",
+    "PASS V2.6.1-11",
+    "PASS V2.6.1-12",
+    "PASS V2.6.1-13",
+    "PASS V2.6.1-14",
+    "PASS V2.6.1-15",
+    "PASS V2.6.1-16",
+    "PASS V2.6.1-17",
+    "PASS V2.6.1-18",
+    "PASS V2.6.1-19",
+    "PASS V2.6.1-20",
+    "PASS V2.6.1-21",
+    "PASS V2.6.1-22",
+    "PASS V2.6.1-23"
+   ],
+   "V2.6.1 人工 Selection 与失效判断验证（选择契约套件 + 真实工作台走查 + 视觉证据）\nNOT-AUTHORITY: point-in-time verification evidence only\n============================================================================\n  [PASS] V2.6.1-01 语法门：selection / shared / workspace / 选择契约套件与本工具全部可解析\n         {\"files\": [{\"file\": \"app/product_v2/domain/selection.js\", \"rc\": 0, \"stderr\": \"\"}, {\"file\": \"app/product_v2/domain/shared.js\", \"rc\": 0, \"stderr\": \"\"}, {\"file\": \"app/product_v2/workspace.js\", \"rc\": 0, \"stderr\": \"\"}, {\"file\": \"evals/product-v2/harness/selection-contract.js\", \"rc\": 0, \"stderr\": \"\"}, {\"file\": \"tools/verify_v2_6_1_selection.py\", \"rc\": 0, \"stderr\":\n  [PASS] V2.6.1-02 单一权威：选择记录形状、词表与合同版本只在 domain/selection.js 定义，工作台只引用\n         {\"duplicated_in_workspace\": [], \"imports_contract\": true}\n  [PASS] V2.6.1-03 界面责任：比较区只放入口，采用面板是相邻的独立 #adopt-panel 并绑定候选身份\n         {\"entry_in_compare_head\": true, \"panel_sibling\": true, \"buttons\": true, \"panel_fields\": true, \"progress_line\": true, \"panel_binding\": true}\n  [PASS] V2.6.1-04 写路径唯一：采用只经仓储追加选择记录，先落盘再更新内存，失败走错误提示\n         {\"forbidden_tokens\": [], \"saves_selection\": true, \"memory_after_save\": true, \"error_path_kept\": true, \"no_auto_select\": true, \"negative_probe\": {\"selections_save_guard_red\": true, \"compare_purity_guard_red\": true, \"rework_purity_guard_red\": true, \"ok\": true}, \"section_chars\": 8749}\n  [PASS] V2.6.1-05 不回退：比较区仍是纯投影、返工区未被采用逻辑污染（V2.5.3 / V2.5.4 判据保持）\n         {\"compare_forbidden\": [], \"rework_forbidden\": []}\n  [PASS] V2.6.1-06 SL-01–SL-18 选择契约套件：跨图候选、缺身份、非法 sha、过高 schema 版本、过期投影全部守住\n         {\"status\": \"passed\", \"failed\": [], \"cases\": 18}\n  [PASS] V2.6.1-07 既有套件回归：RW-01–RW-15、CP-01–CP-15、R01–R13 与复核 provider 在采用落地后仍全过\n         {\"rework\": \"passed\", \"compare\": \"passed\", \"review\": \"passed\", \"provider\": \"passed\"}\n  [PASS] V2.6.1-08 自动审核只提供依据：种子阶段已有候选与报告，但没有任何选择记录，行内摘要仍是「尚未采用」\n         {\"selection_rows\": 0, \"progress\": {\"current\": 0, \"required\": 1, \"stale\": 0, \"missing\": 1}, \"candidates\": [\"act-e760ef342a864b8880c3c33d7d5aaa7c\", \"act-141f591fd0ab45e7af5494a573979630\"], \"row\": {\"shot_id\": \"shot_main_clean\", \"attempt_state\": \"succeeded\", \"selection_state\": \"none\", \"selection_text\": \"尚未采用候选：在候选比较里选一条，点「采用此候选」。\"}}\n  [PASS] V2.6.1-09 入口：比较区把「正看着的候选」交给采用面板，换卡后入口同步换身份\n         {\"default\": \"act-e760ef342a864b8880c3c33d7d5aaa7c\", \"switched\": \"act-141f591fd0ab45e7af5494a573979630\", \"entry\": {\"in_compare\": true, \"disabled\": false, \"shot_id\": \"shot_main_clean\", \"candidate_id\": \"act-141f591fd0ab45e7af5494a573979630\", \"candidate_sha256\": \"3741b7df046bdf90ada15b2423fe9a05c322a19b5e75cfbfc53b4b076592de17\"}, \"selected\": \"act-141f591fd0ab45e\n  [PASS] V2.6.1-10 采用面板：独立面板绑定候选身份与合同版本，显示将绑定的当前审核报告与这套图的采用要求\n         {\"contract\": \"v2.6.1\", \"basis\": \"主图·干净背景 · 当前尚未采用候选 · 候选 v2\", \"fingerprint\": \"将绑定当前审核报告：自动检查 v2.5.2：阻断 1 · 高风险 0 · 提醒 1 · 未知 0 · VLM 未检查（审核合同 v2.5.2）\", \"readiness\": \"这张图是必需图：导出前必须有当前有效的选择。\", \"focus\": \"adopt-submit\"}\n  [PASS] V2.6.1-11 打开与关闭采用面板不写任何记录，关闭后焦点回到原候选卡\n         {\"focus_after_close\": \"compare-tab-act-141f591fd0ab45e7af5494a573979630\", \"expected_focus\": \"compare-tab-act-141f591fd0ab45e7af5494a573979630\", \"records_unchanged\": true}\n  [PASS] V2.6.1-12 采用：追加一条选择记录（绑定候选身份/版本/审核指纹），行摘要、候选徽标与整套进度同步更新\n         {\"selection\": {\"kind\": \"selection\", \"document_id\": \"shot_main_clean\", \"version\": 1, \"payload_sha256\": \"557af82372783603537ecce19dfd29cacf03d34a0662dd1babe6cd3dc8d5f521\", \"action\": \"select\", \"candidate_id\": \"act-141f591fd0ab45e7af5494a573979630\", \"candidate_version\": 2, \"candidate_sha256\": \"3741b7df046bdf90ada15b2423fe9a05c322a19b5e75cfbfc53b4b076592de17\", \"s\n  [PASS] V2.6.1-13 采用只写选择：Prompt/Attempt/Candidate/Review/确认与图片资产逐字不变，无关图零变化\n         {\"others_untouched\": true, \"second_shot_untouched\": true, \"assets\": 4}\n  [PASS] V2.6.1-14 改选：追加新版本而不是覆盖，旧记录逐字保留，徽标与摘要随之移动\n         {\"version\": 2, \"kept_prefix\": true, \"badges\": [{\"state\": \"current\", \"text\": \"已采用\", \"candidate_id\": \"act-e760ef342a864b8880c3c33d7d5aaa7c\"}], \"progress\": {\"current\": 1, \"required\": 1, \"stale\": 0, \"missing\": 0}}\n  [PASS] V2.6.1-15 返工后失效：新的成功候选只把旧选择标成过期，不覆盖、不自动改选、不自动取消\n         {\"newest_candidate\": \"act-b97318078f064cd8adcbe160dbbd56b4\", \"row\": {\"shot_id\": \"shot_main_clean\", \"attempt_state\": \"succeeded\", \"selection_state\": \"stale\", \"selection_text\": \"已采用候选 v1（选择记录 act-1f6805eba8944526b521e5fa6ec43c84）；已过期：之后出现了新候选，请重新采用（新候选或旧候选都行）。\"}, \"progress\": {\"current\": 0, \"required\": 1, \"stale\": 1, \"missing\": 0}, \"badges\": {\"act-e760ef342a864\n  [PASS] V2.6.1-16 返工后重选旧候选：过期选择重新变 current，徽标回到旧候选，历史全部保留\n         {\"selection\": {\"kind\": \"selection\", \"document_id\": \"shot_main_clean\", \"version\": 3, \"payload_sha256\": \"13f102241257c5a54ec630c058df12689b987ef50af06407cfe2e24b4b33629a\", \"action\": \"select\", \"candidate_id\": \"act-141f591fd0ab45e7af5494a573979630\", \"candidate_version\": 2, \"candidate_sha256\": \"3741b7df046bdf90ada15b2423fe9a05c322a19b5e75cfbfc53b4b076592de17\", \"s\n  [PASS] V2.6.1-17 写入失败不改旧选择：明确报错、不新增记录、旧选择与进度不变；恢复后重试能追加\n         {\"error\": \"注入的写入失败\", \"version_after_failure\": 3, \"recovered_version\": 4}\n  [PASS] V2.6.1-18 双击防护：连点「采用这条候选」只追加一条记录、一次版本推进\n         {\"selection_rows\": 5, \"version\": 5}\n  [PASS] V2.6.1-19 取消采用：追加一条不带候选身份的 clear 记录，摘要与进度回到缺选，历史 select 记录保留\n         {\"selection\": {\"kind\": \"selection\", \"document_id\": \"shot_main_clean\", \"version\": 6, \"payload_sha256\": \"5ecd20441b31f6988620a9fe2fd1ec14471448fd84ae9c960b4c7b32d901f8b6\", \"action\": \"clear\", \"candidate_id\": null, \"candidate_version\": null, \"candidate_sha256\": null, \"selection_id\": \"act-76782445984f47d3b931e3b79db7259b\", \"has_fingerprint\": false, \"payload_keys\"\n  [PASS] V2.6.1-20 刷新恢复：选择状态、行摘要、整套进度与候选徽标从 IndexedDB 恢复，刷新不写任何记录\n         {\"records_same\": true, \"row\": {\"shot_id\": \"shot_main_clean\", \"attempt_state\": \"succeeded\", \"selection_state\": \"cleared\", \"selection_text\": \"已取消采用（历史保留）；可以重新采用任一候选。\"}, \"progress\": {\"current\": 0, \"required\": 1, \"stale\": 0, \"missing\": 1}}\n  [PASS] V2.6.1-21 视觉证据：整页与采用面板特写落盘；选择记录只引用内容寻址身份，不含图片字节\n         {\"screenshots\": {\"evals/product-v2/evidence/v2.6.1-selection-20261001-062528.png\": 191769, \"evals/product-v2/evidence/v2.6.1-selection-20261001-062528-detail.png\": 27556}, \"selection_payloads\": [{\"keys\": \"action,candidate_id,candidate_sha256,candidate_version,contract_version,created_at,review_fingerprint,schema_version,selection_id,shot_id\", \"chars\": 671}, \n  [PASS] V2.6.1-22 正式入口 --check 全过（采用闭环没有破坏既有自检）\n         {\"rc\": 0, \"tail\": [\"  PASS  整套复核 provider 不可用时 capabilities 仍 200 且 configured=false  suite_review={'kind': 'dependency', 'detail': 'RuntimeError: 自检：整套复核 provider 构造失败'}\", \"  PASS  整套复核 provider 不可用时路由 503 且错误分类明确                          status=503 error={'family': 'internal', 'code': 'PROVIDER_NOT_CONFIGURED', 'message': '语义 provider 不可用：检查注册表、依赖与 DASHSCO\n  [PASS] V2.6.1-23 零意外 console error / page error（唯一允许项：Unknown 路径的 504 资源日志）\n         {\"unexpected_console\": [], \"expected_unknown_path_504\": [], \"page_errors\": []}\n----------------------------------------------------------------------------\nobserved_at: 2026-10-01T06:25:39\nstatus: passed\ncontract: v2.6.1（人工选择）· v2.5.4（返工）· v2.5.3（比较）· v2.5.2（复核）\nmodel_calls: 0 · external_network_calls: 0（fake providers + 本地静态服务器）\njson: evals/product-v2/v2.6.1-selection-20261001-062528.json\n\n边界：本套件 0 次真实模型调用，采用过程不调用任何模型；写入失败用例是在浏览器侧\n对 IDBObjectStore.add 注入一次失败，验证「写失败不改旧 Selection」的错误路径，不代表\n真实磁盘写满或事务冲突下的表现。整套一致性报告属 V2.5.5、导出阻断与交付 zip 属 V2.6.2，\n本批不宣称已经具备；采用也不代表候选已通过导出硬门。\n\nCHECKS\n- [PASS] V2.6.1-01 语法门：selection / shared / workspace / 选择契约套件与本工具全部可解析\n- [PASS] V2.6.1-02 单一权威：选择记录形状、词表与合同版本只在 domain/selection.js 定义，工作台只引用\n- [PASS] V2.6.1-03 界面责任：比较区只放入口，采用面板是相邻的独立 #adopt-panel 并绑定候选身份\n- [PASS] V2.6.1-04 写路径唯一：采用只经仓储追加选择记录，先落盘再更新内存，失败走错误提示\n- [PASS] V2.6.1-05 不回退：比较区仍是纯投影、返工区未被采用逻辑污染（V2.5.3 / V2.5.4 判据保持）\n- [PASS] V2.6.1-06 SL-01–SL-18 选择契约套件：跨图候选、缺身份、非法 sha、过高 schema 版本、过期投影全部守住\n- [PASS] V2.6.1-07 既有套件回归：RW-01–RW-15、CP-01–CP-15、R01–R13 与复核 provider 在采用落地后仍全过\n- [PASS] V2.6.1-08 自动审核只提供依据：种子阶段已有候选与报告，但没有任何选择记录，行内摘要仍是「尚未采用」\n- [PASS] V2.6.1-09 入口：比较区把「正看着的候选」交给采用面板，换卡后入口同步换身份\n- [PASS] V2.6.1-10 采用面板：独立面板绑定候选身份与合同版本，显示将绑定的当前审核报告与这套图的采用要求\n- [PASS] V2.6.1-11 打开与关闭采用面板不写任何记录，关闭后焦点回到原候选卡\n- [PASS] V2.6.1-12 采用：追加一条选择记录（绑定候选身份/版本/审核指纹），行摘要、候选徽标与整套进度同步更新\n- [PASS] V2.6.1-13 采用只写选择：Prompt/Attempt/Candidate/Review/确认与图片资产逐字不变，无关图零变化\n- [PASS] V2.6.1-14 改选：追加新版本而不是覆盖，旧记录逐字保留，徽标与摘要随之移动\n- [PASS] V2.6.1-15 返工后失效：新的成功候选只把旧选择标成过期，不覆盖、不自动改选、不自动取消\n- [PASS] V2.6.1-16 返工后重选旧候选：过期选择重新变 current，徽标回到旧候选，历史全部保留\n- [PASS] V2.6.1-17 写入失败不改旧选择：明确报错、不新增记录、旧选择与进度不变；恢复后重试能追加\n- [PASS] V2.6.1-18 双击防护：连点「采用这条候选」只追加一条记录、一次版本推进\n- [PASS] V2.6.1-19 取消采用：追加一条不带候选身份的 clear 记录，摘要与进度回到缺选，历史 select 记录保留\n- [PASS] V2.6.1-20 刷新恢复：选择状态、行摘要、整套进度与候选徽标从 IndexedDB 恢复，刷新不写任何记录\n- [PASS] V2.6.1-21 视觉证据：整页与采用面板特写落盘；选择记录只引用内容寻址身份，不含图片字节\n- [PASS] V2.6.1-22 正式入口 --check 全过（采用闭环没有破坏既有自检）\n- [PASS] V2.6.1-23 零意外 console error / page error（唯一允许项：Unknown 路径的 504 资源日志）\n\n证据文件：\n - evals/product-v2/v2.6.1-selection-20261001-062528.txt\n - evals/product-v2/v2.6.1-selection-20261001-062528.json\n - evals/product-v2/evidence/v2.6.1-selection-20261001-062528.png\n"
+  ],
+  [
+   "tools/verify_v2_6_2_delivery.py",
+   [],
+   0,
+   19.4,
+   [
+    "PASS V2.6.2-00",
+    "PASS V2.6.2-01",
+    "PASS V2.6.2-02",
+    "PASS V2.6.2-03",
+    "PASS V2.6.2-04",
+    "PASS V2.6.2-05",
+    "PASS V2.6.2-06",
+    "PASS V2.6.2-07",
+    "PASS V2.6.2-08",
+    "PASS V2.6.2-09",
+    "PASS V2.6.2-10",
+    "PASS V2.6.2-11"
+   ],
+   "  [PASS] V2.6.2-00 ESM 语法门（domain / workspace / 契约套件）\n  [PASS] V2.6.2-01 单一权威：复用既有测量；界面落点与新文档种类已登记\n  [PASS] V2.6.2-02 契约套件 D01–D06 全过\n  [PASS] V2.6.2-03 工作台交付门禁：无阻断、按钮可用、逐图行完整\n  [PASS] V2.6.2-04 交付包下载成功，Python 独立核对 ZIP 内容与哈希\n  [PASS] V2.6.2-05 export_record 以 append-only 文档写入 IndexedDB\n  [PASS] V2.6.2-06 重复生成只追加：两条记录、document_id 与包哈希各自独立\n  [PASS] V2.6.2-07 刷新后：记录仍在、门禁仍无阻断、最近交付包可见\n  [PASS] V2.6.2-08 候选字节缺失：门禁阻断、按钮禁用、不产生新记录\n  [PASS] V2.6.2-09 主链零意外 console / page / HTTP 错误\n  [PASS] V2.6.2-10 Unknown 未确认不可导出；逐条确认后门禁通过并可交付\n  [PASS] V2.6.2-11 正式入口自检全过\nSCREENSHOTS\n- evals/product-v2/evidence/v2.6.2-delivery-20261001-062539-gate-pass.png\n- evals/product-v2/evidence/v2.6.2-delivery-20261001-062539-after-reload.png\n- evals/product-v2/evidence/v2.6.2-delivery-20261001-062539-hash-missing.png\n- evals/product-v2/evidence/v2.6.2-delivery-20261001-062539-unknown-blocked.png\n- evals/product-v2/evidence/v2.6.2-delivery-20261001-062539-unknown-confirmed.png\n证据：evals/product-v2/v2.6.2-delivery-20261001-062539.txt\n"
+  ],
+  [
+   "tools/verify_v2_6_3_project_transfer.py",
+   [],
+   0,
+   11.8,
+   [
+    "PASS V2.6.3-00",
+    "PASS V2.6.3-01",
+    "PASS V2.6.3-02",
+    "PASS V2.6.3-03",
+    "PASS V2.6.3-04",
+    "PASS V2.6.3-05",
+    "PASS V2.6.3-06",
+    "PASS V2.6.3-07",
+    "PASS V2.6.3-08",
+    "PASS V2.6.3-09",
+    "PASS V2.6.3-10",
+    "PASS V2.6.3-11",
+    "PASS V2.6.3-12"
+   ],
+   "  [PASS] V2.6.3-00 ESM 语法门（storage / workspace / app / 契约套件）\n  [PASS] V2.6.3-01 storage 镜像与 domain 现场一致（15 种文档、复核合同 v2.5.2、格式 2 支持 1）\n  [PASS] V2.6.3-02 导入导出界面落点与单一权威（迁移链不复制 ZIP/散列实现）\n  [PASS] V2.6.3-03 契约套件 P01–P07 全过（真实 Chromium）\n  [PASS] V2.6.3-04 A 导出项目包：格式 2、记录自描述、完整性计数与逐资产哈希（Python 独立核对）\n  [PASS] V2.6.3-05 B 全新 profile 导入：逐文档 payload 哈希与资产 sha256 与 A 包一致（crypto 独立重算）\n  [PASS] V2.6.3-06 B 导入后按问题返工：新增候选与 Attempt（迁移后的项目可继续生产）\n  [PASS] V2.6.3-07 B 返工后门禁重新就绪并生成交付包（迁移后的完整闭环）\n  [PASS] V2.6.3-08 B 再导出项目包：A 的记录逐条原样保留，新增返工/交付记录\n  [PASS] V2.6.3-09 格式 1 旧包 UI 导入：提示已升级、冲突分配新项目、迁移后项目可打开\n  [PASS] V2.6.3-10 浏览器 A 主链零意外 console / page / HTTP 错误\n  [PASS] V2.6.3-11 浏览器 B 主链零意外 console / page / HTTP 错误\n  [PASS] V2.6.3-12 正式入口自检全过\n- evals/product-v2/evidence/v2.6.3-transfer-20261001-062559-a-exported.png\n- evals/product-v2/evidence/v2.6.3-transfer-20261001-062559-b-imported.png\n- evals/product-v2/evidence/v2.6.3-transfer-20261001-062559-b-opened.png\n- evals/product-v2/evidence/v2.6.3-transfer-20261001-062559-b-rework-form.png\n- evals/product-v2/evidence/v2.6.3-transfer-20261001-062559-b-reworked.png\n- evals/product-v2/evidence/v2.6.3-transfer-20261001-062559-b-deliver.png\n证据：evals/product-v2/v2.6.3-transfer-20261001-062559.txt\n"
+  ],
+  [
+   "tools/verify_v2_6_4_accessibility.py",
+   [],
+   0,
+   19.7,
+   [
+    "PASS V2.6.4-00",
+    "PASS V2.6.4-01",
+    "PASS V2.6.4-02",
+    "PASS V2.6.4-03",
+    "PASS V2.6.4-04",
+    "PASS V2.6.4-05",
+    "PASS V2.6.4-06",
+    "PASS V2.6.4-07",
+    "PASS V2.6.4-17",
+    "PASS V2.6.4-18",
+    "PASS V2.6.4-08",
+    "PASS V2.6.4-09",
+    "PASS V2.6.4-10",
+    "PASS V2.6.4-16",
+    "PASS V2.6.4-11",
+    "PASS V2.6.4-12",
+    "PASS V2.6.4-13",
+    "PASS V2.6.4-14",
+    "PASS V2.6.4-15"
+   ],
+   "  [PASS] V2.6.4-00 ESM 语法门与 DOM 身份唯一（无重复 id / 元素键）\n  [PASS] V2.6.4-01 技术详情落点：统一 techDetails + 返工/采用面板 + 样式规则\n  [PASS] V2.6.4-02 axe-core vendor 文件完整性与登记一致（SEL-013）\n  [PASS] V2.6.4-03 空白首页 axe（WCAG 2.0/2.1 A/AA）0 violations\n  [PASS] V2.6.4-04 空白首页键盘路径：Tab 可达主操作且每步焦点可见\n  [PASS] V2.6.4-05 纯键盘创建并打开：Tab + 输入 + Enter 进入工作台\n  [PASS] V2.6.4-06 生成阶段四态之空/忙：未生成可见、整套生成中可观察\n  [PASS] V2.6.4-07 生成阶段技术详情：attempt 行默认收起且主行不含 sha256/action/task\n  [PASS] V2.6.4-17 审核卡片候选预览受限（宽 ≤460px、高 ≤480px）\n  [PASS] V2.6.4-18 390px 审核卡片：单列回退、预览受限、操作可见、无横向溢出\n  [PASS] V2.6.4-08 审核阶段：axe 0 violations、可见按钮都有可访问名、比较清单技术详情默认收起\n  [PASS] V2.6.4-09 交付阶段：axe 0 violations、交付结果技术详情默认收起\n  [PASS] V2.6.4-10 采用面板技术详情默认收起且主行不含 sha256\n  [PASS] V2.6.4-16 技术详情摘要全阶段横排可读（不竖排、不挤压）\n  [PASS] V2.6.4-11 390px 与 200% 等效视口：无横向溢出且当前阶段可见\n  [PASS] V2.6.4-12 主链零意外 console / page / HTTP 错误\n  [PASS] V2.6.4-13 演练三态：成功/失败/Unknown 可见且各有下一步动作，不自动重提\n  [PASS] V2.6.4-14 演练链：除剧本内的 504 明确失败外无意外 console / page / HTTP 错误\n  [PASS] V2.6.4-15 正式入口自检全过\n- evals/product-v2/evidence/v2.6.4-a11y-20261001-062611-review-390.png\n- evals/product-v2/evidence/v2.6.4-a11y-20261001-062611-review.png\n- evals/product-v2/evidence/v2.6.4-a11y-20261001-062611-deliver.png\n- evals/product-v2/evidence/v2.6.4-a11y-20261001-062611-narrow-390.png\n- evals/product-v2/evidence/v2.6.4-a11y-20261001-062611-zoom-200.png\n- evals/product-v2/evidence/v2.6.4-a11y-20261001-062611-drill.png\n证据：evals/product-v2/v2.6.4-a11y-20261001-062611.txt\n"
+  ],
+  [
+   "tools/verify_v2_ui_2_interaction_visual.py",
+   [],
+   0,
+   12.3,
+   [
+    "PASS UI2-01",
+    "PASS UI2-02",
+    "PASS UI2-03",
+    "PASS UI2-04",
+    "PASS UI2-05",
+    "PASS UI2-06",
+    "PASS UI2-07",
+    "PASS UI2-08",
+    "PASS UI2-09",
+    "PASS UI2-10",
+    "PASS UI2-11",
+    "PASS UI2-12",
+    "PASS UI2-13",
+    "PASS UI2-14",
+    "PASS UI2-15",
+    "PASS UI2-16",
+    "PASS UI2-17",
+    "PASS UI2-18",
+    "PASS UI2-19",
+    "PASS UI2-20",
+    "PASS UI2-21",
+    "PASS UI2-22"
+   ],
+   "V2.UI.2 六阶段交互与视觉基线验证（静态契约 + 真实工作台走查 + 响应式/键盘/视觉证据）\nNOT-AUTHORITY: point-in-time verification evidence only\n============================================================================\n  [PASS] UI2-01 信息架构唯一权威：六阶段导航与面板顺序、标签一致，面板标题是导航标签的完整表述，阶段条有导航语义与摘要输出位\n         {\"nav\": [\"intake\", \"understand\", \"plan\", \"generate\", \"review\", \"deliver\"], \"panels\": [\"intake\", \"understand\", \"plan\", \"generate\", \"review\", \"deliver\"], \"labels\": [\"资料\", \"理解\", \"方案\", \"生成\", \"审核返工\", \"交付\"], \"titles\": [\"商品资料\", \"商品理解\", \"套图方案\", \"生成\", \"审核与返工\", \"交付\"], \"title_ok\": true}\n  [PASS] UI2-02 空白首页紧凑：一个创建入口（primary）+ 一个次级导入，空态由状态驱动，不预填示例商品\n         {\"create_primary\": 1, \"import_ghost\": true, \"table_in_home\": false}\n  [PASS] UI2-03 外壳纯净：stage-shell 只做投影（无存储/网络/领域依赖），阶段定义顺序与产品合同一致，界面脚本语法通过\n         {\"forbidden_tokens\": [], \"definitions\": [\"intake\", \"understand\", \"plan\", \"generate\", \"review\", \"deliver\"], \"node_checks\": {\"app/product_v2/workspace.js\": 0, \"app/product_v2/app.js\": 0, \"app/product_v2/ui/stage-shell.js\": 0}}\n  [PASS] UI2-04 表现层 token 单源：styles.css 的 :root 提供颜色语义变量，组件用 var(--…) 取值，含 focus-visible 与小屏断点\n         {\"var_uses\": 171, \"missing_tokens\": [], \"important\": 2, \"media_queries\": [\"760\", \"760\"]}\n  [PASS] UI2-05 无内联样式、无外部资源、无新前端依赖：页面只引用本目录资源（data: 图标除外）\n         {\"inline_style\": 0, \"external\": [], \"non_relative\": []}\n  [PASS] UI2-06 渐进披露与阶段推进：项目元数据收进 details；四个阶段脚注各只有一个推进按钮与实际主操作分离\n         {\"project_scope_in_details\": true, \"stage_feet\": 4, \"buttons_per_foot\": [1, 1, 1, 1], \"primary_per_foot\": [1, 1, 0, 1]}\n  [PASS] UI2-07 空白首页：只突出一个创建入口，导入是次级动作，空态可见且没有预填商品\n         {\"home\": {\"empty_visible\": true, \"project_rows\": 0, \"visible_primary\": [\"create-project\"], \"import_class\": \"ghost\", \"name_value\": \"\", \"home_visible\": true}, \"screenshot\": \"evals/product-v2/evidence/v2.ui.2-home-20261001-062630.png\"}\n  [PASS] UI2-08 新建后默认停靠「资料」：唯一 current 阶段带 aria-current，其余阶段锁定且禁用\n         {\"keyboard_open\": true, \"keyboard_create\": true, \"stage\": {\"buttons\": [{\"id\": \"intake\", \"label\": \"资料\", \"number\": \"1\", \"disabled\": false, \"current\": true, \"complete\": false, \"locked\": false, \"aria\": \"step\"}, {\"id\": \"understand\", \"label\": \"理解\", \"number\": \"2\", \"disabled\": true, \"current\": false, \"complete\": false, \"locked\": true, \"aria\": null}, {\"id\": \"plan\", \"\n  [PASS] UI2-09 阶段可达性：锁定阶段点击不进面板；切换阶段不写任何 IndexedDB 记录\n         {\"locked_button\": {\"disabled\": true}, \"visible\": [\"intake\"], \"storage_unchanged\": true}\n  [PASS] UI2-10 资料阶段：缺输入时主操作禁用并在按钮旁说明缺什么；整屏只有一个可见主操作\n         {\"disabled\": true, \"gate\": \"还缺：商品名称必填。；至少需要一张参考图。\", \"visible_primary\": [\"analyze-run\"], \"ref_count\": 0}\n  [PASS] UI2-11 分析商品资料（键盘 Enter 触发）成功后自动推进到阶段二「理解」，槽位进入待处理列表\n         {\"keyboard_analyze\": true, \"stage\": {\"buttons\": [{\"id\": \"intake\", \"label\": \"资料\", \"number\": \"1\", \"disabled\": false, \"current\": false, \"complete\": true, \"locked\": false, \"aria\": null}, {\"id\": \"understand\", \"label\": \"理解\", \"number\": \"2\", \"disabled\": false, \"current\": true, \"complete\": false, \"locked\": false, \"aria\": \"step\"}, {\"id\": \"plan\", \"label\": \"方案\", \"number\n  [PASS] UI2-12 理解到方案：确认全部待处理槽位后可推进，推荐方案生成 1..N 张图片任务，阶段条随之前移\n         {\"shots\": [\"shot_main_clean\", \"shot_infographic_benefits\", \"shot_scene_lifestyle\", \"shot_detail_material\"], \"confirm_rounds\": 4, \"stage\": {\"buttons\": [{\"id\": \"intake\", \"label\": \"资料\", \"number\": \"1\", \"disabled\": false, \"current\": false, \"complete\": true, \"locked\": false, \"aria\": null}, {\"id\": \"understand\", \"label\": \"理解\", \"number\": \"2\", \"disabled\": false, \"curr\n  [PASS] UI2-13 生成阶段：整套生成后逐图进入成功态，并在阶段脚注开放「去审核与返工」入口\n         {\"attempt_rows\": 4, \"shots\": 4, \"summary\": \"4/4 张有候选\"}\n  [PASS] UI2-14 审核阶段以图片为中心：每张图一张审核卡（候选大图 + 采用状态 + 三个行内动作），「生成」转为已完成\n         {\"keyboard_stage_switch\": true, \"cards\": 4, \"images\": 4, \"screenshot\": \"evals/product-v2/evidence/v2.ui.2-review-20261001-062630.png\", \"summary\": \"已采用 0/4 · 必需图 0/1\"}\n  [PASS] UI2-15 逐图人工采用：每张图都能从审核卡进入采用面板并落一条当前选择，卡片徽标同步为已采用\n         {\"adopted\": [{\"shot_id\": \"shot_main_clean\", \"state\": \"current\", \"badge\": \"已采用\"}, {\"shot_id\": \"shot_infographic_benefits\", \"state\": \"current\", \"badge\": \"已采用\"}, {\"shot_id\": \"shot_scene_lifestyle\", \"state\": \"current\", \"badge\": \"已采用\"}, {\"shot_id\": \"shot_detail_material\", \"state\": \"current\", \"badge\": \"已采用\"}]}\n  [PASS] UI2-16 交付阶段：门禁清单逐图列出采用状态；有阻断（本流程未跑整套检查）时交付包按钮禁用并说明原因，项目包导出可用\n         {\"gate_rows\": 4, \"status\": \"交付门禁未通过：2 条阻断，逐条处理后才能生成。\", \"findings\": 7, \"blocking\": 2, \"screenshot\": \"evals/product-v2/evidence/v2.ui.2-deliver-20261001-062630.png\"}\n  [PASS] UI2-17 刷新恢复：重开页面落在最靠后的未完成阶段「交付」，项目与记录逐字不变\n         {\"visible\": [\"deliver\"], \"digest\": {\"db_exists\": true, \"projects\": 1, \"documents\": 48, \"assets\": 5, \"digest\": \"2101af89e1748a4c6fe0135585726c67d685cd92ae9e2aa24bf84ff23b1339ed\"}, \"complete\": [\"intake\", \"understand\", \"plan\", \"generate\", \"review\"]}\n  [PASS] UI2-18 390px：单列布局无横向溢出，阶段条可横向滚动且当前阶段保持在可视区内\n         {\"probe\": {\"document_scroll_width\": 390, \"document_client_width\": 390, \"body_scroll_width\": 390, \"nav_scrollable\": true, \"current_stage_visible\": true, \"current_stage\": \"deliver\", \"rects\": {\"create\": {\"x\": 0, \"y\": 0, \"width\": 0, \"height\": 0, \"visible\": false}, \"analyze\": {\"x\": 0, \"y\": 0, \"width\": 0, \"height\": 0, \"visible\": false}, \"nav\": {\"x\": 14, \"y\": 190, \n  [PASS] UI2-19 200% 缩放等价视口（1440 窗口缩到 720×450 CSS 像素）：无横向滚动条，阶段条可见\n         {\"probe\": {\"document_scroll_width\": 720, \"document_client_width\": 720, \"body_scroll_width\": 720, \"nav_scrollable\": false, \"current_stage_visible\": true, \"current_stage\": \"deliver\", \"rects\": {\"create\": {\"x\": 0, \"y\": 0, \"width\": 0, \"height\": 0, \"visible\": false}, \"analyze\": {\"x\": 0, \"y\": 0, \"width\": 0, \"height\": 0, \"visible\": false}, \"nav\": {\"x\": 14, \"y\": -7, \n  [PASS] UI2-20 键盘路径：新建、打开、分析、阶段推进与阶段切换五个关键动作都由键盘触发并断言焦点落点\n         {\"keyboard\": {\"create\": true, \"open\": true, \"analyze\": true, \"plan_to_generate\": true, \"stage_switch\": true}}\n  [PASS] UI2-21 正式入口 --check 全过（六阶段外壳没有破坏无状态自检）\n         {\"rc\": 0, \"retried_after_connection_reset\": false, \"tail\": [\"  PASS  整套复核 provider 不可用时 capabilities 仍 200 且 configured=false  suite_review={'kind': 'dependency', 'detail': 'RuntimeError: 自检：整套复核 provider 构造失败'}\", \"  PASS  整套复核 provider 不可用时路由 503 且错误分类明确                          status=503 error={'family': 'internal', 'code': 'PROVIDER_NOT_CONFIGURED', 'mes\n  [PASS] UI2-22 零意外 console error / page error（界面重写不得引入运行时错误）\n         {\"console_errors\": [], \"page_errors\": []}\n----------------------------------------------------------------------------\nobserved_at: 2026-10-01T06:26:42\nstatus: passed\ncontract: v2.ui.2（六阶段外壳 + 表现层基线）\nmodel_calls: 0 · external_network_calls: 0（fake providers + 本机服务器）\njson: evals/product-v2/v2.ui.2-interaction-visual-20261001-062630.json\n\n边界：本套件 0 次真实模型调用；它证明「六阶段外壳是界面投影、可达性规则成立、既有业务\n能力仍由真实状态驱动、既有回归不破」，不证明产品发起人走查已通过。V2.5.5 整套一致性与\nV2.6.2 交付包生成仍未接入，本批只证明界面没有伪造它们。\n\nCHECKS\n- [PASS] UI2-01 信息架构唯一权威：六阶段导航与面板顺序、标签一致，面板标题是导航标签的完整表述，阶段条有导航语义与摘要输出位\n- [PASS] UI2-02 空白首页紧凑：一个创建入口（primary）+ 一个次级导入，空态由状态驱动，不预填示例商品\n- [PASS] UI2-03 外壳纯净：stage-shell 只做投影（无存储/网络/领域依赖），阶段定义顺序与产品合同一致，界面脚本语法通过\n- [PASS] UI2-04 表现层 token 单源：styles.css 的 :root 提供颜色语义变量，组件用 var(--…) 取值，含 focus-visible 与小屏断点\n- [PASS] UI2-05 无内联样式、无外部资源、无新前端依赖：页面只引用本目录资源（data: 图标除外）\n- [PASS] UI2-06 渐进披露与阶段推进：项目元数据收进 details；四个阶段脚注各只有一个推进按钮与实际主操作分离\n- [PASS] UI2-07 空白首页：只突出一个创建入口，导入是次级动作，空态可见且没有预填商品\n- [PASS] UI2-08 新建后默认停靠「资料」：唯一 current 阶段带 aria-current，其余阶段锁定且禁用\n- [PASS] UI2-09 阶段可达性：锁定阶段点击不进面板；切换阶段不写任何 IndexedDB 记录\n- [PASS] UI2-10 资料阶段：缺输入时主操作禁用并在按钮旁说明缺什么；整屏只有一个可见主操作\n- [PASS] UI2-11 分析商品资料（键盘 Enter 触发）成功后自动推进到阶段二「理解」，槽位进入待处理列表\n- [PASS] UI2-12 理解到方案：确认全部待处理槽位后可推进，推荐方案生成 1..N 张图片任务，阶段条随之前移\n- [PASS] UI2-13 生成阶段：整套生成后逐图进入成功态，并在阶段脚注开放「去审核与返工」入口\n- [PASS] UI2-14 审核阶段以图片为中心：每张图一张审核卡（候选大图 + 采用状态 + 三个行内动作），「生成」转为已完成\n- [PASS] UI2-15 逐图人工采用：每张图都能从审核卡进入采用面板并落一条当前选择，卡片徽标同步为已采用\n- [PASS] UI2-16 交付阶段：门禁清单逐图列出采用状态；有阻断（本流程未跑整套检查）时交付包按钮禁用并说明原因，项目包导出可用\n- [PASS] UI2-17 刷新恢复：重开页面落在最靠后的未完成阶段「交付」，项目与记录逐字不变\n- [PASS] UI2-18 390px：单列布局无横向溢出，阶段条可横向滚动且当前阶段保持在可视区内\n- [PASS] UI2-19 200% 缩放等价视口（1440 窗口缩到 720×450 CSS 像素）：无横向滚动条，阶段条可见\n- [PASS] UI2-20 键盘路径：新建、打开、分析、阶段推进与阶段切换五个关键动作都由键盘触发并断言焦点落点\n- [PASS] UI2-21 正式入口 --check 全过（六阶段外壳没有破坏无状态自检）\n- [PASS] UI2-22 零意外 console error / page error（界面重写不得引入运行时错误）\n\n证据文件：\n - evals/product-v2/v2.ui.2-interaction-visual-20261001-062630.txt\n - evals/product-v2/v2.ui.2-interaction-visual-20261001-062630.json\n - evals/product-v2/evidence/v2.ui.2-home-20261001-062630.png\n - evals/product-v2/evidence/v2.ui.2-review-20261001-062630.png\n - evals/product-v2/evidence/v2.ui.2-deliver-20261001-062630.png\n - evals/product-v2/evidence/v2.ui.2-narrow-20261001-062630.png\n - evals/product-v2/evidence/v2.ui.2-zoom200-20261001-062630.png\n"
+  ],
+  [
+   "tools/verify_v2_ui_3_frontend.py",
+   [],
+   0,
+   17.8,
+   [
+    "PASS UI3-01",
+    "PASS UI3-02",
+    "PASS UI3-03",
+    "PASS UI3-04",
+    "PASS UI3-05",
+    "PASS UI3-06",
+    "PASS UI3-07",
+    "PASS UI3-08",
+    "PASS UI3-09",
+    "PASS UI3-10",
+    "PASS UI3-11",
+    "PASS UI3-12",
+    "PASS UI3-13",
+    "PASS UI3-14",
+    "PASS UI3-15",
+    "PASS UI3-16"
+   ],
+   "  [PASS] UI3-01 首页五态（空/列表/创建/导入/异常）与工作台摘要、全局保存状态在正式入口就位\n  [PASS] UI3-02 六阶段标题可聚焦（tabindex=-1）；外壳纯净（无存储/网络引用）；无内联样式与外部资源\n  [PASS] UI3-03 空白首页：无项目、无预填、唯一可见主操作为「新建项目」\n  [PASS] UI3-04 资料阶段：键盘创建/打开后停靠「资料」，资料齐备后分析可用\n  [PASS] UI3-05 分析完成：自动进入「理解」且焦点落到结果标题\n  [PASS] UI3-06 槽位确认后进入「方案」，焦点落到方案标题\n  [PASS] UI3-07 套图方案可人工增（复制）、删、排序，操作后回到原集合且顺序变化\n  [PASS] UI3-08 整套生成完成：全部终态、焦点落到第一个结果/问题行、全局保存状态可见\n  [PASS] UI3-09 逐图人工采用：每张图进入 current\n  [PASS] UI3-10 交付阶段：门禁逐图 current；交付包按 V2.6.2 待接入禁用；项目包可导出\n  [PASS] UI3-11 刷新恢复：阶段与逐图采用保持，IndexedDB 记录数前后一致\n  [PASS] UI3-12 390px 与 200% 等效视口：无横向溢出且当前阶段可见\n  [PASS] UI3-13 主链零意外 console / page / HTTP 错误\n  [PASS] UI3-14 演练：明确失败与 Unknown 都可见且有下一步动作（重试 / 核对任务）\n  [PASS] UI3-15 演练：等待 4 秒后 Attempt 行数不变（没有自动重提/静默重复提交）\n  [PASS] UI3-16 分析失败：错误摘要可见、包含分类与重试策略，焦点落到错误摘要\n\n证据：evals/product-v2/v2.ui.3-frontend-20261001-062643.txt\n结果：16/16 通过；全过\n"
+  ]
+ ]
+}
