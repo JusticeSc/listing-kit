@@ -68,9 +68,11 @@
 `evals/product-v2/v2.6.1-selection-*-final.*`；整套一致性报告见
 `evals/product-v2/v2.5.5-suite-review-*-final.*`，交付门禁与交付包（含 Unknown 逐条确认、哈希核对、
 Python 独立解包核对）见 `evals/product-v2/v2.6.2-delivery-*-final.*`。
-当前默认页面**还不能**做项目包的格式升级与迁移（只能按当前格式导入导出），也还没跑完渐进披露与
-可访问性终验；真实模型端到端与陌生人走查属于发布前人工门，不能因为旧 Product V1 已实现过就
-声称当前入口也已具备。
+项目包的格式升级与迁移已接通：导入旧格式包会按迁移链升级并提示，当前格式逐记录自描述、带完整性
+计数与逐资产哈希，跨浏览器往返后可在新浏览器继续返工与交付，证据见
+`evals/product-v2/v2.6.3-transfer-*-final.*`。
+当前默认页面**还不能**对外声明可用：真实模型端到端与陌生人走查属于发布前人工门（尚未执行），
+渐进披露与可访问性终验也尚未完成；不能因为旧 Product V1 已实现过就声称当前入口已具备这些。
 
 服务端语义链路已经接入正式入口：`src/providers/v2_semantic.py`（契约与错误分类）、
 `v2_dashscope_semantic.py`（DeepSeek 适配器）、`v2_fake_semantic.py`（测试替身）与

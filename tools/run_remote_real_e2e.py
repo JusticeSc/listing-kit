@@ -4,7 +4,8 @@
 对已部署的正式远程入口（默认 https://47.115.172.233:8080）用一个全新的浏览器配置文件
 （等价陌生人空白态）走完整链路：空白首页 → 新建 → 资料（真实参考图）→ 真实语义分析
 → 确认槽位 → 推荐套图（可删到 ≤5 张）→ 逐张编译 Prompt → 确认 → 整套生成（真实出图）
-→ 自动复核（VLM）→ 逐图采用 → 交付门禁与项目包导出 → 刷新恢复。
+→ 自动复核（VLM）→ 逐图采用 → 整套一致性（真实 VLM）→ 交付门禁与 Unknown 逐条确认
+→ 交付包（真实字节，Python 独立核对）→ 项目包导出 → 刷新恢复。
 
 边界（NOT-AUTHORITY）：单点时间证据；不替代产品发起人走查与陌生人验收，也不证明账户状态长期稳定。
 
@@ -15,10 +16,12 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sys
 import tempfile
 import time
+import zipfile
 from datetime import datetime
 from pathlib import Path
 
@@ -56,13 +59,46 @@ def attempt_states(page) -> dict:
              row.getAttribute('data-shot-id'), row.getAttribute('data-attempt-state')]))""")
 
 
+def inspect_delivery(path: Path) -> dict:
+    """Python 独立核对交付包（不依赖产品代码）：条目集合、CRC 与 manifest 哈希。"""
+    with zipfile.ZipFile(path) as archive:
+        names = sorted(archive.namelist())
+        manifest = json.loads(archive.read("manifest.json").decode("utf-8"))
+        checks = json.loads(archive.read("checks.json").decode("utf-8"))
+        entries = [item for item in names
+                   if item.startswith("images/")]
+        mismatches = []
+        for item in manifest.get("images", []):
+            digest = hashlib.sha256(archive.read(item["file"])).hexdigest()
+            if digest != item["asset_sha256"]:
+                mismatches.append(item["file"])
+        return {
+            "ok": archive.testzip() is None and not mismatches
+                  and sorted(entries + ["README.txt", "checks.json", "manifest.json"]) == names
+                  and len(manifest.get("images", [])) == len(entries)
+                  and checks.get("gate_status") == "ready",
+            "names": names, "images": len(entries), "mismatches": mismatches,
+            "gate_status": checks.get("gate_status"),
+            "acknowledgements": sorted({item.get("rule_id") for item in
+                                        checks.get("acknowledgements", [])}),
+        }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="远程真实链路 E2E 预演（真实模型）")
     parser.add_argument("--base", default="https://47.115.172.233:8080")
     parser.add_argument("--image", default=str(DEFAULT_IMAGE))
     parser.add_argument("--label", default="")
     parser.add_argument("--product-name", default="针织套头毛衣 · 远程真实链路预演")
+    parser.add_argument("--intake-name", default="粗棒针织套头毛衣")
+    parser.add_argument("--intake-description",
+                        default="墨绿色粗棒针织套头毛衣，圆领长袖，厚实保暖，罗纹袖口与下摆，"
+                                "左下摆有方形品牌织标。")
+    parser.add_argument("--selling-points",
+                        default="粗棒罗纹针织肌理\n宽松落肩版型\n罗纹收口不易变形")
+    parser.add_argument("--focus", default="突出面料肌理与宽松版型，颜色以墨绿为准")
     parser.add_argument("--generation-timeout", type=float, default=900.0)
+    parser.add_argument("--suite-timeout", type=float, default=600.0)
     args = parser.parse_args()
 
     reference = Path(args.image)
@@ -85,9 +121,16 @@ def main() -> int:
     shots: list[dict] = []
     reviews: list[dict] = []
     adopted: list[dict] = []
+    suite: dict = {}
     deliver: dict = {}
+    delivered: dict = {}
+    delivery_info: dict = {}
     package_info: dict = {}
     reload_state: dict = {}
+    states: dict = {}
+    home_blank: dict = {}
+    slot_count = 0
+    removed: list[str] = []
     screenshots: list[str] = []
     failure: str | None = None
 
@@ -150,12 +193,10 @@ def main() -> int:
             step = time.monotonic()
             page.set_input_files("#ref-file", str(reference))
             expect(page.locator("#ref-list .ref-row")).to_have_count(1)
-            page.fill("#intake-name", "粗棒针织套头毛衣")
-            page.fill("#intake-description",
-                      "墨绿色粗棒针织套头毛衣，圆领长袖，厚实保暖，罗纹袖口与下摆，"
-                      "左下摆有方形品牌织标。")
-            page.fill("#intake-selling-points", "粗棒罗纹针织肌理\n宽松落肩版型\n罗纹收口不易变形")
-            page.fill("#intake-focus", "突出面料肌理与宽松版型，颜色以墨绿为准")
+            page.fill("#intake-name", args.intake_name)
+            page.fill("#intake-description", args.intake_description)
+            page.fill("#intake-selling-points", args.selling_points)
+            page.fill("#intake-focus", args.focus)
             expect(page.locator("#analyze-run")).to_be_enabled(timeout=30_000)
             shot("intake")
             mark("intake", step)
@@ -305,18 +346,86 @@ def main() -> int:
                   {"adopted": adopted})
 
             step = time.monotonic()
+            page.click("#suite-review-run")
+            page.wait_for_function(
+                "() => document.getElementById('suite-review-status')"
+                ".textContent.indexOf('整套检查 v') >= 0",
+                timeout=args.suite_timeout * 1000)
+            page.wait_for_timeout(400)
+            suite = page.evaluate(
+                """() => ({ status: (document.getElementById('suite-review-status') || {})
+                     .textContent || '',
+                   note: (document.getElementById('suite-review-note') || {}).textContent || '',
+                   findings: [...document.querySelectorAll(
+                     '#suite-review-findings .suite-finding')].map((node) => ({
+                       rule: node.getAttribute('data-rule-id'),
+                       severity: node.getAttribute('data-severity') })) })""")
+            mark("suite_review", step)
+            shot("suite-review")
+            check("RR-07", "整套一致性（真实 qwen-vl-max）：报告对当前选择有效",
+                  "整套检查 v2.5.5" in suite["status"] and "已过期" not in suite["status"],
+                  {"suite": suite, "elapsed_s": timings["suite_review"]})
+
+            step = time.monotonic()
             page.click("#stage-next-deliver")
             expect(page.locator('[data-stage-panel="deliver"]')).to_be_visible()
-            page.wait_for_timeout(500)
+            page.wait_for_function(
+                "() => document.querySelectorAll('#delivery-gate .gate-finding').length > 0",
+                timeout=120_000)
+            acked = 0
+            guard = 0
+            while guard < 20:
+                pending = page.locator(
+                    "#delivery-unknowns .gate-unknown button:not([disabled])")
+                if pending.count() == 0:
+                    break
+                pending.first.click()
+                page.wait_for_timeout(600)
+                guard += 1
+                acked += 1
+            page.wait_for_timeout(600)
             deliver = page.evaluate(
                 """() => ({ status: (document.getElementById('deliver-status') || {}).textContent || '',
                      export_disabled: (document.getElementById('deliver-export') || {}).disabled,
                      package_disabled: (document.getElementById('deliver-project-package') || {}).disabled,
+                     findings: [...document.querySelectorAll('#delivery-gate .gate-finding')]
+                       .map((node) => ({ rule: node.getAttribute('data-rule-id'),
+                                         severity: node.getAttribute('data-severity') })),
                      gates: [...document.querySelectorAll('#delivery-gate .gate-row')].map((row) => ({
                        shot_id: row.getAttribute('data-shot-id'),
                        state: row.getAttribute('data-selection-state'),
                        badge: (row.querySelector('.badge') || {}).textContent || '' })) })""")
-            with page.expect_download(timeout=120_000) as download_info:
+            mark("delivery_gate", step)
+            shot("deliver")
+            blocking = [item for item in deliver["findings"] if item["severity"] == "BLOCK"]
+            check("RR-08", "交付门禁（真实链路）：逐图采用、无阻断、Unknown 已逐条确认后允许交付",
+                  bool(deliver["gates"]) and not blocking
+                  and deliver["export_disabled"] is False
+                  and deliver["package_disabled"] in (False, None),
+                  {"deliver": deliver, "acknowledged": acked})
+
+            step = time.monotonic()
+            with page.expect_download(timeout=300_000) as delivery_download:
+                page.click("#deliver-export")
+            zip_download = delivery_download.value
+            delivery_path = download_dir / (zip_download.suggested_filename or "delivery.zip")
+            zip_download.save_as(str(delivery_path))
+            delivered = inspect_delivery(delivery_path)
+            delivery_info = {
+                "filename": zip_download.suggested_filename,
+                "bytes": delivery_path.stat().st_size,
+                "sha256": hashlib.sha256(delivery_path.read_bytes()).hexdigest(),
+                "path": str(delivery_path),
+            }
+            mark("delivery_package", step)
+            shot("delivery-package")
+            check("RR-09", "交付包（真实字节）：Python 独立核对 ZIP 条目与 manifest 哈希逐条一致",
+                  delivered["ok"] and len(delivered["images"]) == len(shots)
+                  and delivery_info["bytes"] > 0,
+                  {"delivered": delivered, "package": delivery_info})
+
+            step = time.monotonic()
+            with page.expect_download(timeout=300_000) as download_info:
                 page.click("#deliver-project-package")
             download = download_info.value
             package_path = download_dir / (download.suggested_filename or "project.zip")
@@ -324,13 +433,9 @@ def main() -> int:
             package_info = {"filename": download.suggested_filename,
                             "bytes": package_path.stat().st_size,
                             "path": str(package_path)}
-            mark("deliver", step)
-            shot("deliver")
-            check("RR-07", "交付阶段：门禁逐图反映采用状态；项目包可下载（交付包按计划仍处于 V2.6.2 未接入状态）",
-                  bool(deliver["gates"]) and deliver["export_disabled"] is True
-                  and deliver["package_disabled"] in (False, None)
-                  and package_info.get("bytes", 0) > 0,
-                  {"deliver": deliver, "package": package_info})
+            mark("project_package", step)
+            check("RR-10", "项目包（完整历史）可下载",
+                  package_info.get("bytes", 0) > 0, {"package": package_info})
 
             step = time.monotonic()
             page.reload(wait_until="networkidle")
@@ -345,7 +450,7 @@ def main() -> int:
                        state: row.getAttribute('data-selection-state') })) })""")
             mark("reload", step)
             shot("after-reload")
-            check("RR-08", "刷新后项目从 IndexedDB 恢复：阶段与逐图采用状态不变",
+            check("RR-11", "刷新后项目从 IndexedDB 恢复：阶段与逐图采用状态不变",
                   reload_state.get("stage") == "deliver"
                   and len(reload_state.get("gates") or []) == len(shots)
                   and all(item["state"] == "current" for item in reload_state.get("gates") or []),
@@ -378,7 +483,10 @@ def main() -> int:
         "checks": checks,
         "reviews": reviews,
         "adopted": adopted,
+        "suite": suite,
         "deliver": deliver,
+        "delivered": delivered,
+        "delivery_package": delivery_info,
         "package": package_info,
         "reload": reload_state,
         "console_errors": console_errors[:40],
@@ -414,7 +522,7 @@ def main() -> int:
     lines += [f"- {item['id']} | {item['label']} | required={item['required']} "
               f"| blocked={item['blocked']}" for item in shots]
     lines += ["", "ATTEMPT_STATES"]
-    lines += [f"- {shot_id}: {state}" for shot_id, state in attempt_states.items()]
+    lines += [f"- {shot_id}: {state}" for shot_id, state in states.items()]
     lines += ["", "VLM_REVIEWS"]
     for item in reviews:
         lines.append(f"- {item['shot_id']}: before={item.get('before')}")
@@ -422,9 +530,12 @@ def main() -> int:
         if item.get("timeout"):
             lines.append(f"    hang_timeout={item['timeout']}")
     lines += ["", "DELIVERY"]
+    lines.append(f"- suite: {json.dumps(suite, ensure_ascii=False)}")
     lines.append(f"- status: {deliver.get('status')}")
     lines.append(f"- export_button_disabled: {deliver.get('export_disabled')}")
     lines.append(f"- package_button_disabled: {deliver.get('package_disabled')}")
+    lines.append(f"- delivery_package: {json.dumps(delivery_info, ensure_ascii=False)}")
+    lines.append(f"- delivered: {json.dumps(delivered, ensure_ascii=False)}")
     lines.append(f"- package: {json.dumps(package_info, ensure_ascii=False)}")
     lines += ["", "ERRORS"]
     lines.append(f"- console_errors: {len(console_errors)}")

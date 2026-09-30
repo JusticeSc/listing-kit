@@ -129,6 +129,10 @@ phase_progress:
       - evals/product-v2/evidence/v2.6.2-delivery-20261001-042122-final-gate-pass.png
       - evals/product-v2/evidence/v2.6.2-delivery-20261001-042122-final-unknown-blocked.png
       - tools/verify_v2_6_2_delivery.py
+      - evals/product-v2/v2.6.3-transfer-20261001-050133-final.txt
+      - evals/product-v2/v2.6.3-transfer-20261001-050133-final.json
+      - evals/product-v2/v2.1.3-project-package-20261001-050001.txt
+      - tools/verify_v2_6_3_project_transfer.py
 
 task_progress:
   V2.0.1:
@@ -702,11 +706,36 @@ task_progress:
       - app/product_v2/styles.css
       - src/providers/v2_fake_image.py
       - .github/workflows/ci-cd.yml
-next_action_task: V2.6.3
+  V2.6.3:
+    status: done
+    evidence:
+      - evals/product-v2/v2.6.3-transfer-20261001-050133-final.txt
+      - evals/product-v2/v2.6.3-transfer-20261001-050133-final.json
+      - evals/product-v2/evidence/v2.6.3-transfer-20261001-050133-final-a-exported.png
+      - evals/product-v2/evidence/v2.6.3-transfer-20261001-050133-final-b-imported.png
+      - evals/product-v2/evidence/v2.6.3-transfer-20261001-050133-final-b-opened.png
+      - evals/product-v2/evidence/v2.6.3-transfer-20261001-050133-final-b-rework-form.png
+      - evals/product-v2/evidence/v2.6.3-transfer-20261001-050133-final-b-reworked.png
+      - evals/product-v2/evidence/v2.6.3-transfer-20261001-050133-final-b-deliver.png
+      - tools/verify_v2_6_3_project_transfer.py
+      - evals/product-v2/harness/project-package-contract.js
+      - evals/product-v2/harness/project-package-contract.html
+      - app/product_v2/storage/package.js
+      - app/product_v2/storage/package-migrations.js
+      - app/product_v2/storage/transfer.js
+      - app/product_v2/storage/index.js
+      - app/product_v2/app.js
+      - tools/verify_v2_1_3_project_package.py
+      - evals/product-v2/v2.1.3-project-package-20261001-050001.txt
+      - .github/workflows/ci-cd.yml
+      - README.md
+next_action_task: V2.6.4
 blockers: []
 unknowns:
   - visual_language_review_detection_quality_is_uncalibrated_channels_and_binding_only_proven_in_V2.5.2
   - ui_information_hierarchy_primary_action_image_comparison_and_visual_direction_self_reviewed_20261001_owner_walkthrough_deferred_to_final_human_gate
-  - dashscope_balance_exhausted_20261001_remote_e2e_reviews_blocked_topup_needed
-updated_at: 2026-10-01T04:10:00+08:00
+  - dashscope_balance_arrears_20261001T0433_remote_real_e2e_blocked_at_semantic_step
+    upstream_account_arrears_evidence_evals_product_v2_evidence_remote-real-e2e-20261001-043317-lamp01-failure.png
+    retry_after_topup_before_claiming_v2_7_2_gate
+updated_at: 2026-10-01T05:05:00+08:00
 ```

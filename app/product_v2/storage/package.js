@@ -1,10 +1,14 @@
 /**
  * 项目包（完整历史 ZIP）的构建与解析。
  *
- * 包内结构：
- *   manifest.json          项目身份 + 文档元数据 + 资产元数据（唯一来源）
- *   documents/0000.json ... 每份文档版本一个文件，内容为 {payload}
+ * 包内结构（格式 2）：
+ *   manifest.json          项目身份 + 文档元数据 + 资产元数据 + 完整性计数（唯一来源）
+ *   documents/0000.json ... 每份文档版本一个自描述记录
+ *                           {schema_version, kind, document_id, version, payload}
  *   assets/<sha256>         原始资产字节，路径即内容哈希
+ *
+ * 格式 1 仍然可读：记录文件只有 {payload}，身份只来自清单；解析时按 package-migrations.js
+ * 升级到格式 2（不改写磁盘字节，只在解析结果上升级）。
  *
  * 解析时逐项校验：格式与版本、字段结构、文档载荷可 JSON 往返、资产 sha256 与字节数。
  * 任何一项不符都中止导入（调用方在单事务里 staging，不会留下半个项目）。
@@ -15,6 +19,11 @@ import { buildZip, readZip } from "./zip.js";
 import { sha256Hex } from "./db.js";
 import { PROJECT_STATES, DOCUMENT_KIND_PATTERN, RECORD_SCHEMA_VERSION } from "./schema.js";
 import {
+  assertPayloadSchemaSupported,
+  migratePackage,
+  migrateRecord,
+} from "./package-migrations.js";
+import {
   assertJsonSafePayload,
   isIsoTimestamp,
   isNonNullableInteger,
@@ -24,7 +33,8 @@ import {
 } from "./validate.js";
 
 export const PACKAGE_FORMAT = "amz-listing-kit-project";
-export const PACKAGE_FORMAT_VERSION = 1;
+export const PACKAGE_FORMAT_VERSION = 2;
+export const PACKAGE_FORMAT_VERSION_MIN_SUPPORTED = 1;
 
 const TEXT_ENCODER = new TextEncoder();
 const TEXT_DECODER = new TextDecoder();
@@ -50,6 +60,17 @@ function assetPath(sha256) {
   return "assets/" + sha256;
 }
 
+/** 格式 2 的记录文件：自描述身份 + payload（解析时与清单逐字比对）。 */
+function documentRecordBytes(record) {
+  return jsonBytes({
+    schema_version: record.schema_version || RECORD_SCHEMA_VERSION,
+    kind: record.kind,
+    document_id: record.document_id,
+    version: record.version,
+    payload: record.payload,
+  });
+}
+
 export function buildProjectPackage({ project, documents, assets, exportedAt = new Date().toISOString() }) {
   const sortedDocuments = [...documents].sort((left, right) => {
     if (left.kind !== right.kind) return left.kind.localeCompare(right.kind);
@@ -57,11 +78,13 @@ export function buildProjectPackage({ project, documents, assets, exportedAt = n
     return left.version - right.version;
   });
   const sortedAssets = [...assets].sort((left, right) => left.sha256.localeCompare(right.sha256));
+  const documentBytes = sortedDocuments.map((record) => documentRecordBytes(record));
 
   const manifest = {
     format: PACKAGE_FORMAT,
     format_version: PACKAGE_FORMAT_VERSION,
     exported_at: exportedAt,
+    record_schema_version: RECORD_SCHEMA_VERSION,
     project: {
       project_id: project.project_id,
       name: project.name,
@@ -92,11 +115,17 @@ export function buildProjectPackage({ project, documents, assets, exportedAt = n
       schema_version: record.schema_version || RECORD_SCHEMA_VERSION,
       created_at: record.created_at,
     })),
+    integrity: {
+      documents: sortedDocuments.length,
+      assets: sortedAssets.length,
+      document_bytes: documentBytes.reduce((sum, bytes) => sum + bytes.length, 0),
+      asset_bytes: sortedAssets.reduce((sum, record) => sum + record.bytes.length, 0),
+    },
   };
 
   const entries = [{ path: "manifest.json", bytes: jsonBytes(manifest) }];
   sortedDocuments.forEach((record, index) => {
-    entries.push({ path: documentPath(index), bytes: jsonBytes({ payload: record.payload }) });
+    entries.push({ path: documentPath(index), bytes: documentBytes[index] });
   });
   for (const record of sortedAssets) {
     entries.push({ path: assetPath(record.sha256), bytes: record.bytes });
@@ -127,6 +156,14 @@ export async function parseProjectPackage(bytes) {
       "项目包版本 " + manifest.format_version + " 高于当前支持的 " + PACKAGE_FORMAT_VERSION + "。",
     );
   }
+  if (manifest.format_version < PACKAGE_FORMAT_VERSION_MIN_SUPPORTED) {
+    throw new StorageError(
+      STORAGE_ERROR_CODES.PACKAGE_UNSUPPORTED_VERSION,
+      "项目包版本 " + manifest.format_version + " 低于仍然支持的 "
+        + PACKAGE_FORMAT_VERSION_MIN_SUPPORTED + "。",
+    );
+  }
+  const selfDescribing = manifest.format_version >= 2;
   const project = manifest.project;
   if (!project || typeof project !== "object") {
     throw new StorageError(STORAGE_ERROR_CODES.PACKAGE_INVALID, "manifest 缺少 project。");
@@ -163,6 +200,16 @@ export async function parseProjectPackage(bytes) {
       throw new StorageError(STORAGE_ERROR_CODES.PACKAGE_INVALID, "项目包缺少文档文件：" + String(meta.path));
     }
     const parsed = parseJson(payloadBytes, String(meta.path));
+    if (selfDescribing) {
+      const identity = [parsed.kind, parsed.document_id, parsed.version,
+        parsed.schema_version || RECORD_SCHEMA_VERSION].join("|");
+      const expected = [meta.kind, meta.document_id, meta.version,
+        meta.schema_version || RECORD_SCHEMA_VERSION].join("|");
+      if (identity !== expected) {
+        throw new StorageError(STORAGE_ERROR_CODES.PACKAGE_INVALID,
+          "记录文件与清单身份不一致：" + key + "（文件=" + identity + "，清单=" + expected + "）。");
+      }
+    }
     assertJsonSafePayload(parsed ? parsed.payload : undefined, { label: "文档 payload（" + key + "）" });
     documents.push({
       kind: meta.kind,
@@ -220,5 +267,30 @@ export async function parseProjectPackage(bytes) {
       bytes: assetBytes,
     });
   }
-  return { manifest, project, documents, assets };
+  if (selfDescribing && manifest.integrity) {
+    const integrity = manifest.integrity;
+    if (integrity.documents !== documents.length || integrity.assets !== assets.length) {
+      throw new StorageError(STORAGE_ERROR_CODES.PACKAGE_INVALID,
+        "项目包完整性计数与清单不符：文档 " + documents.length + "/" + String(integrity.documents)
+          + "，资产 " + assets.length + "/" + String(integrity.assets) + "。");
+    }
+  }
+
+  const migratedPackage = migratePackage({ manifest, project, documents, assets },
+    { targetVersion: PACKAGE_FORMAT_VERSION });
+  const migrationsApplied = [...migratedPackage.applied];
+  const migratedDocuments = [];
+  for (const record of migratedPackage.draft.documents) {
+    assertPayloadSchemaSupported(record);
+    const migrated = migrateRecord(record);
+    migrationsApplied.push(...migrated.applied);
+    migratedDocuments.push(migrated.record);
+  }
+  return {
+    manifest: migratedPackage.draft.manifest,
+    project: migratedPackage.draft.project,
+    documents: migratedDocuments,
+    assets: migratedPackage.draft.assets,
+    migrations_applied: migrationsApplied,
+  };
 }

@@ -1,0 +1,38 @@
+V2.6.3 项目包迁移与跨浏览器闭环验收 · 20261001-050133-final
+结果：13/13 通过
+
+[PASS] V2.6.3-00 ESM 语法门（storage / workspace / app / 契约套件）
+       [{"file": "app/product_v2/storage/package.js", "rc": 0, "stderr": ""}, {"file": "app/product_v2/storage/package-migrations.js", "rc": 0, "stderr": ""}, {"file": "app/product_v2/storage/transfer.js", "rc": 0, "stderr": ""}, {"file": "app/product_v2/storage/index.js", "rc": 0, "stderr": ""}, {"file": "app/product_v2/workspace.js", "rc": 0, "stderr": ""}, {"file": "app/product_v2/app.js", "rc": 0, "stderr": ""}, {"file": "evals/product-v2/harness/project-package-contract.js", "rc": 0, "stderr": ""}]
+[PASS] V2.6.3-01 storage 镜像与 domain 现场一致（15 种文档、复核合同 v2.5.2、格式 2 支持 1）
+       {"domain_kinds": ["candidate", "export_record", "fact_slot", "generation_attempt", "generation_confirm", "product_brief", "product_input", "prompt_version", "review_acknowledgement", "review_report", "selection", "shot_spec", "style_spec", "suite_plan", "suite_review"], "mirror_kinds": ["candidate", "export_record", "fact_slot", "generation_attempt", "generation_confirm", "product_brief", "product_input", "prompt_version", "review_acknowledgement", "review_report", "selection", "shot_spec", "style_spec", "suite_plan", "suite_review"], "domain_review": "v2.5.2", "mirror_review": "v2.5.2", "migr
+[PASS] V2.6.3-02 导入导出界面落点与单一权威（迁移链不复制 ZIP/散列实现）
+       {"landed": true, "duplicate_ids": [], "duplicate_element_keys": []}
+[PASS] V2.6.3-03 契约套件 P01–P07 全过（真实 Chromium）
+       {"status": "passed", "cases": ["P01", "P02", "P03", "P04", "P05", "P06", "P07"], "failed": []}
+[PASS] V2.6.3-04 A 导出项目包：格式 2、记录自描述、完整性计数与逐资产哈希（Python 独立核对）
+       {"format_version": 2, "integrity": {"documents": 50, "assets": 5, "document_bytes": 79623, "asset_bytes": 32435}, "documents": 50, "assets": 5, "kinds": ["candidate", "export_record", "fact_slot", "generation_attempt", "generation_confirm", "product_input", "prompt_version", "review_report", "selection", "suite_plan", "suite_review"], "records_self_described": true}
+[PASS] V2.6.3-05 B 全新 profile 导入：逐文档 payload 哈希与资产 sha256 与 A 包一致（crypto 独立重算）
+       {"status": "已导入「V263 迁移品」", "missing": [], "changed": [], "assets_a": 5, "assets_b": 5, "digests_ok": true}
+[PASS] V2.6.3-06 B 导入后按问题返工：新增候选与 Attempt（迁移后的项目可继续生产）
+       {"candidate_before": 4, "candidate_after": 5, "attempts": 15, "shots": 4}
+[PASS] V2.6.3-07 B 返工后门禁重新就绪并生成交付包（迁移后的完整闭环）
+       {"blocking": [], "status": "交付门禁通过：可以生成交付包（只包含已采用的候选）。", "delivery": {"filename": "V263-迁移品-交付包-20260930-2101.zip", "bytes": 48074, "sha256": "8418719cea6f8b704c7a1e33e40c36f3757a6c9dbf0afddd2e45fa20261a5c08"}, "images": 4}
+[PASS] V2.6.3-08 B 再导出项目包：A 的记录逐条原样保留，新增返工/交付记录
+       {"kept": true, "new_records": 10, "new_kinds": ["candidate", "export_record", "generation_attempt", "generation_confirm", "prompt_version", "review_report", "selection", "suite_review"], "documents": [50, 60], "assets": [5, 6]}
+[PASS] V2.6.3-09 格式 1 旧包 UI 导入：提示已升级、冲突分配新项目、迁移后项目可打开
+       {"status": "已导入「V263 迁移品」（同 id 项目已存在，已作为新项目导入） · 已升级：包格式 1 → 2：记录文件自描述（kind/document_id/version/schema_version）+ manifest 完整性计数", "rows": [1, 2], "candidates": [5, 9]}
+[PASS] V2.6.3-10 浏览器 A 主链零意外 console / page / HTTP 错误
+       {"console": [], "page": [], "http": []}
+[PASS] V2.6.3-11 浏览器 B 主链零意外 console / page / HTTP 错误
+       {"console": [], "page": [], "http": []}
+[PASS] V2.6.3-12 正式入口自检全过
+       {"rc": 0, "tail": ["  PASS  整套复核 provider 不可用时 capabilities 仍 200 且 configured=false  suite_review={'kind': 'dependency', 'detail': 'RuntimeError: 自检：整套复核 provider 构造失败'}", "  PASS  整套复核 provider 不可用时路由 503 且错误分类明确                          status=503 error={'family': 'internal', 'code': 'PROVIDER_NOT_CONFIGURED', 'message': '语义 provider 不可用：检查注册表、依赖与 DASHSCOPE_API_KEY。', 'retry_policy': 'fatal', 'http_status': 503, 'request_id': None, 'details': {'kind': 'dependency', 'detail': 'RuntimeError: 自检：整套复核 provider 构造失败'}}", "V2 正式入口自检：38/38 通过。"]}
+
+SCREENSHOTS
+- evals/product-v2/evidence/v2.6.3-transfer-20261001-050133-final-a-gate.png
+- evals/product-v2/evidence/v2.6.3-transfer-20261001-050133-final-a-exported.png
+- evals/product-v2/evidence/v2.6.3-transfer-20261001-050133-final-b-imported.png
+- evals/product-v2/evidence/v2.6.3-transfer-20261001-050133-final-b-opened.png
+- evals/product-v2/evidence/v2.6.3-transfer-20261001-050133-final-b-rework-form.png
+- evals/product-v2/evidence/v2.6.3-transfer-20261001-050133-final-b-reworked.png
+- evals/product-v2/evidence/v2.6.3-transfer-20261001-050133-final-b-deliver.png

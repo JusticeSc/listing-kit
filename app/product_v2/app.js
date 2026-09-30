@@ -310,6 +310,10 @@ async function refresh() {
 
 async function handleCreate(name) {
   clearError(elements.homeError);
+  if (!repository) {
+    showError(elements.homeError, "本地数据库还在初始化，请稍候再操作。");
+    return null;
+  }
   try {
     const project = await repository.projects.create({ name });
     elements.nameInput.value = "";
@@ -408,15 +412,23 @@ async function handleImport(file) {
   clearError(elements.homeError);
   clearStatus();
   if (!file) return;
+  if (!database || !repository) {
+    elements.importFile.value = "";
+    showError(elements.homeError, "本地数据库还在初始化，请稍候再导入。");
+    return;
+  }
   try {
     const bytes = new Uint8Array(await file.arrayBuffer());
     const result = await importProjectPackage(database, bytes);
     rowMode = { mode: "idle", projectId: null };
     await refresh();
     showStatus(
-      result.id_assigned
+      (result.id_assigned
         ? "已导入「" + result.project.name + "」（同 id 项目已存在，已作为新项目导入）"
-        : "已导入「" + result.project.name + "」",
+        : "已导入「" + result.project.name + "」")
+      + (Array.isArray(result.migrations_applied) && result.migrations_applied.length
+        ? " · 已升级：" + result.migrations_applied.join("；")
+        : ""),
     );
   } catch (error) {
     showError(elements.homeError, describeError(error));
@@ -467,6 +479,7 @@ elements.capabilityNotice.querySelector('[data-role="diag-retry"]').addEventList
 });
 
 async function boot() {
+  setHomeControlsBlocked(true);
   if (workspace) {
     workspace.close();
     workspace = null;
@@ -515,6 +528,7 @@ async function boot() {
       showHome();
     }
   } catch (error) {
+    setHomeControlsBlocked(false);
     showError(elements.bootError, describeError(error));
   }
 }

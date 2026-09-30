@@ -217,7 +217,9 @@ def main() -> int:
                 check("V2.1.3-03", "导出包是标准 ZIP：CRC 全过、manifest 与资产哈希一致",
                       inspected["bad_crc_entry"] is None
                       and inspected["format"] == "amz-listing-kit-project"
-                      and inspected["format_version"] == 1
+                      # 格式版本是编号正整数即可；当前版本号由 V2.6.3 契约锁定，这里不重复锁。
+                      and isinstance(inspected["format_version"], int)
+                      and inspected["format_version"] >= 1
                       and len(inspected["asset_checks"]) == 2
                       and all(item["ok"] for item in inspected["asset_checks"]),
                       inspected)

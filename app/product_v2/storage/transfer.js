@@ -107,6 +107,7 @@ export async function importProjectPackage(db, packageBytes, { now = nowIso, new
       documents: parsed.documents.length,
       assets: parsed.assets.length,
       manifest: parsed.manifest,
+      migrations_applied: parsed.migrations_applied || [],
     };
   });
 }

@@ -1297,6 +1297,15 @@ stale 而不是被覆盖；失败 Attempt 不影响已有选择。Selection 只�
 - 导入保持单 IndexedDB 事务（projects/documents/assets）且全量先校验后写入：任一记录非法整体回滚，不留半成品；导入为新 project_id 时保留完整历史（所有文档版本与资产字节），导入后可直接继续返工、选择与生成交付包。
 - 验证：`tools/verify_v2_6_3_project_transfer.py` + 双浏览器往返（导出 → 清空 → 导入 → 再导出逐哈希一致；导入后完成一次返工与一次交付包生成）+ 旧格式 fixture 升级路径。证据 `evals/product-v2/v2.6.3-transfer-*-final.*` + `evidence/v2.6.3-transfer-*.png`。
 
+**2026-10-01 修订（V2.6.3 自审通过）**：`tools/verify_v2_6_3_project_transfer.py` 13/13（契约套件 P01–P07、双浏览器闭环、格式 1 旧包 UI 导入、正式入口自检、两个浏览器零意外 console），自审改掉四处真实缺陷：
+
+- 迁移应用只推进了循环里的版本号，没有真正改写 `manifest.format_version`——格式 1 包升级后 manifest 仍标 1（与"升级到当前格式"的承诺矛盾）；现在升级步骤同时更新 manifest，并保留 `migrated_from_format` 作为来源。
+- `PAYLOAD_SCHEMA_VERSIONS` 与 domain 漂移：写成 `attempt` / `rework_directive`，而实际文档种类是 `generation_attempt`（`rework_directive` 只是 Prompt 分区键）——`generation_attempt` 的未来 schema 不受版本门保护；现在镜像与 `DOMAIN_DOCUMENT_KINDS` 现场逐条相等，由验证器持续锁定。
+- 主页在启动期（能力探测 + 打开 IndexedDB）完成的窗口内，导入/创建控件可点，命中 `database = null` 时把 `Cannot read properties of null` 抛给用户；现在启动期间禁用控件，未就绪时给可读提示，导入入口重置文件选择。
+- 契约套件夹具三处自相矛盾：`TextEncoder.decode` 不存在、格式 1 夹具资产的 sha256 与 "LEG" 字节不符（解析器拒绝是正确的）、`format_version = 0` 的错误码预期与"0 不是历史格式而是损坏声明"不符；`tools/verify_v2_1_3_project_package.py` 的 `format_version == 1` 硬编码按合法演进改为语义断言（版本号锁定由本任务负责）。
+
+跨浏览器语义：B 浏览器逐记录 payload 哈希与资产 sha256 必须与 A 包一致（浏览器 crypto 独立重算），返工新增 candidate/attempt/selection，交付新增 export_record，再导出包的 A 记录集合逐条原样保留；格式 1 旧包经 UI 导入时同 id 冲突分配新项目并提示"已升级：包格式 1 → 2"。
+
 ### 9.23 V2.6.4 渐进披露、空/忙/错/Unknown 与可访问性
 
 **落地契约（V2.6.4 实现层）：**

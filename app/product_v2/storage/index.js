@@ -13,6 +13,7 @@ export * from "./pointer.js";
 export * from "./repository.js";
 export * from "./zip.js";
 export * from "./package.js";
+export * from "./package-migrations.js";
 export * from "./transfer.js";
 
 import { openDatabase } from "./db.js";
