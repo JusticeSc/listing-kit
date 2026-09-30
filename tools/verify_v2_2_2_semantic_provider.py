@@ -340,6 +340,9 @@ def openai_error_cases() -> list[tuple[str, BaseException, str, str, str]]:
          "PROVIDER_RATE_LIMITED", "provider_failed", "retryable"),
         ("400 请求被拒", status_error(openai.BadRequestError, 400, "bad request"),
          "INPUT_REJECTED", "input_rejected", "fatal"),
+        ("400 账户欠费（Arrearage）",
+         status_error(openai.BadRequestError, 400, "account in bad standing", "Arrearage"),
+         "UPSTREAM_ACCOUNT_ARREARS", "provider_failed", "retryable"),
         ("422 请求被拒", status_error(openai.UnprocessableEntityError, 422, "unprocessable"),
          "INPUT_REJECTED", "input_rejected", "fatal"),
         ("500 服务错误", status_error(openai.InternalServerError, 500, "server error"),
@@ -368,7 +371,7 @@ def check_exception_mapping(check: Any) -> None:
         results.append({"case": title, "ok": good, "code": failure.code,
                         "family": failure.family, "retry_policy": failure.retry_policy,
                         "http_status": failure.http_status})
-    check("V2.2.2-06", "SDK / 传输异常映射矩阵（11 类）符合计划 §9.1 归口表", ok, results)
+    check("V2.2.2-06", "SDK / 传输异常映射矩阵（12 类）符合计划 §9.1 归口表", ok, results)
 
 
 def check_redaction(check: Any) -> None:

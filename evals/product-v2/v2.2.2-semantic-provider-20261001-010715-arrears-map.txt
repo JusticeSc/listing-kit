@@ -1,0 +1,21 @@
+amz-listing-kit Product V2 V2.2.2 semantic provider (deepseek-v4.1-flash)
+NOT-AUTHORITY: point-in-time verification evidence only
+observed_at: 2026-10-01T01:07:15
+status: passed
+live_requested: False
+json: evals/product-v2/v2.2.2-semantic-provider-20261001-010715-arrears-map.json
+
+CHECKS
+- [PASS] V2.2.2-01 跨语言核心槽位注册表一致（8 项：slot_id/label/value_type/critical）
+- [PASS] V2.2.2-02 输入合同：合法投影通过；7 类越界全部 input_rejected / fatal 且不回显正文
+- [PASS] V2.2.2-03 装配与真实请求体：json_mode + extra_body.max_tokens + max_retries=0，单次调用
+- [PASS] V2.2.2-04 禁止的静默清洗：缺证据 / 非对象槽位 / 模型自称 confirmed / 超上限全部整包拒绝
+- [PASS] V2.2.2-05 截断 / 内容策略拒绝 / 空可见文本的归口与重试策略正确
+- [PASS] V2.2.2-06 SDK / 传输异常映射矩阵（12 类）符合计划 §9.1 归口表
+- [PASS] V2.2.2-07 错误消息与 capabilities 不回显密钥（按 *** 遮蔽）
+- [PASS] V2.2.2-08 fake provider 全部场景分类正确，且每次 analyze 只调用一次（无隐藏重提，UNKNOWN 不自动重提）
+- [PASS] V2.2.2-09 归一化输出形状正确；反向探针：模型自称 confirmed 被消费侧拒绝
+- [PASS] V2.2.2-10 provider 注册表与代码一致（默认 provider、模型、环境变量、归口、test_double）
+
+BOUNDARY
+证明语义 Provider 的离线契约与装配：跨语言核心注册表一致、输入越界分类（input_rejected/fatal）、json_mode 与 extra_body.max_tokens 与 max_retries=0 的真实请求体、三条静默清洗负例（缺证据 / 非对象槽位 / 超上限不截断）、截断与内容策略拒绝与空可见文本的归口、SDK 异常映射矩阵、密钥遮蔽、fake 全场景与无隐藏重提、归一化形状与消费侧反向探针。--live 只证明 1 次真实正例与 1 次无效密钥负例；不证明模型输出质量、界面投影、套图规划、图片生成与交付闭环。

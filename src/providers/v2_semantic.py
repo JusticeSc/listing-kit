@@ -25,6 +25,7 @@ from typing import Any, Literal, Self
 from pydantic import (BaseModel, ConfigDict, Field, ValidationError, field_validator,
                       model_validator)
 
+from src.providers import is_arrears_provider_code
 from src.providers.v2_errors import ERROR_FAMILIES as _ERROR_FAMILIES
 from src.providers.v2_errors import RETRY_POLICIES as _RETRY_POLICIES
 
@@ -446,11 +447,34 @@ def _safe_text(value: object, limit: int) -> str:
     return value.strip()[:limit] if isinstance(value, str) else ""
 
 
+def provider_code_of(error: BaseException) -> str | None:
+    """取上游错误码：SDK 只读顶层 body['code']，DashScope 兼容模式常把码嵌在 body['error'] 里。"""
+
+    code = getattr(error, "code", None)
+    if isinstance(code, str) and code.strip():
+        return code.strip()
+    body = getattr(error, "body", None)
+    if isinstance(body, Mapping):
+        nested = body.get("error")
+        if isinstance(nested, Mapping):
+            for key in ("code", "type"):
+                candidate = nested.get(key)
+                if isinstance(candidate, str) and candidate.strip():
+                    return candidate.strip()
+    return None
+
+
 def classify_http_failure(status: int, provider_code: str | None, message: str, *,
                           request_id: str | None = None) -> SemanticFailure:
     """把 Provider 的 HTTP 响应映射成分类失败（计划 §9.1 的归口表）。"""
 
     safe_message = _safe_text(message, 300) or "Provider 返回错误。"
+    if is_arrears_provider_code(provider_code):
+        return SemanticFailure(
+            "provider_failed", "UPSTREAM_ACCOUNT_ARREARS",
+            f"阿里云百炼账户欠费（服务码 {provider_code}）；语义调用没有被受理，充值后重试。",
+            retry_policy="retryable", http_status=status, request_id=request_id,
+            details={"provider_code": provider_code})
     if status in (400, 404, 405, 413, 415, 422):
         return SemanticFailure("input_rejected", "INPUT_REJECTED", safe_message,
                                retry_policy="fatal", http_status=status, request_id=request_id,
@@ -531,7 +555,7 @@ def map_openai_exception(error: BaseException, *, redact: Callable[[str], str],
                                f"{context}出现未分类异常：{type(error).__name__}。",
                                retry_policy="requires_review")
     status = int(getattr(error, "status_code", 0) or 0)
-    code = getattr(error, "code", None)
+    code = provider_code_of(error)
     message = redact(str(error))
     if isinstance(error, openai.BadRequestError):
         if isinstance(error, ContextOverflowError):
