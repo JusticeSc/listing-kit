@@ -132,6 +132,41 @@ jobs:
           chmod 600 "$HOME/.ssh/id_ed25519"
           ssh-keyscan -H "$SSH_HOST" >> "$HOME/.ssh/known_hosts"
 
+      - name: Sync provider secrets to server env file
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          DASHSCOPE_API_KEY: ${{ secrets.DASHSCOPE_API_KEY }}
+        run: |
+          set -Eeuo pipefail
+          if [ -z "${DASHSCOPE_API_KEY:-}" ]; then
+            echo "DASHSCOPE_API_KEY 未配置：跳过同步，远程容器按未配置 provider 运行。" >&2
+            exit 0
+          fi
+          target="${SSH_USER}@${SSH_HOST}"
+          staging="$(mktemp)"
+          chmod 600 "$staging"
+          trap 'rm -f -- "$staging"' EXIT
+          printf 'DASHSCOPE_API_KEY=%s\n' "$DASHSCOPE_API_KEY" > "$staging"
+          scp -o ConnectTimeout=15 "$staging" "$target:/tmp/amz-listing-kit-secrets.env"
+          ssh -o ConnectTimeout=15 -o ServerAliveInterval=15 "$target" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          umask 077
+          staging="/tmp/amz-listing-kit-secrets.env"
+          file="$HOME/.config/amz-listing-kit/app.env"
+          install -d -m 700 "$HOME/.config/amz-listing-kit"
+          touch "$file"
+          tmp="$(mktemp)"
+          grep -v '^DASHSCOPE_API_KEY=' "$file" > "$tmp" || true
+          cat "$staging" >> "$tmp"
+          mv "$tmp" "$file"
+          chmod 600 "$file"
+          rm -f -- "$staging"
+          echo "app.env 已更新：$(wc -l < "$file") 行（密钥值不回显）"
+          REMOTE
+
       - name: Build on remote Docker and deploy with rollback
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         shell: bash
