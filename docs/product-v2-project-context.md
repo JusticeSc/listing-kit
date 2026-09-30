@@ -105,8 +105,9 @@ Python 无状态 AI 服务
 | SEL-008 | 浏览器 ZIP 能力 | 用户已定（2026-09-30）：vendor fflate 0.8.3（MIT）替换自研 ZIP 容器；vendored 单文件 = `esm/browser.js`（90,922B，自包含 ESM，上游 sha256 前 16 位 `B7CA4450B19559A1`），随附许可证文件并登记 vendor 表；`storage/zip.js` 退化为薄适配器：保持 buildZip/readZip 接口与我方错误码及上限检查，格式校验委托 fflate | 继续自研 ZIP 容器（8.7KB：CRC32 + 本地头/中央目录/EOCD）；minified UMD 33KB（全局脚本、非 ESM）；jszip（体积更大） | 上游发布修复版需升级时（重跑包合同与 V2.1.3 往返验证）；fflate 停更或许可变化时重选 |
 | SEL-009 | V1 日落 | 用户已定（2026-09-30）：V2.7.4 发布候选冻结后，专批删除 Product V1 代码与随之失效的依赖（含自造重试/退避/文件锁：`src/imagegen.py` `_retry`、`src/application_service.py` 限流退避、`src/workspace_store.py` 文件锁）；git 历史保留，V1 证据不删除 | 边跑边删 V1；把 V1 主路径保留到 V2 完成 | V2.7.4 冻结时执行 V2.7.5；届时逐项复核依赖与工具引用 |
 | SEL-010 | 图像网关传输层 | 复用 `requests`（V1 已在用的锁定直接依赖）+ 三条无状态路由（submit / status / result）；协议与错误映射按 §9.10 自写，但请求形状沿用 V1 冻结合同（`src/providers/dashscope_image.py`）；PoC 与依赖实测见 `evals/product-v2/sel010-image-gateway-transport-poc-20260930.txt` | 官方 `dashscope` SDK（0.27.x→1.27.7 实测解析 32 包，拖入 aiohttp / typer / websocket-client 等）；`httpx`（第二套 HTTP 客户端，无协议收益）；OpenAI 兼容图像端点（百炼图像合成不是该形状） | 需要批量并发、取消、多供应商路由或成本统计时重估 SDK；百炼改协议时按冻结合同重测并更新 §9.10 |
+| SEL-011 | 复核（VLM）通道与模型 | 用户已定（2026-09-30）：复核复用 SEL-003 的 langchain 通道（`ChatOpenAI` + json_mode 结构化输出 + `map_openai_exception` 四归口），默认模型 `qwen-vl-max`（`REVIEW_MODEL` 可覆盖，registry 条目 `dashscope-review`）；输入 = 候选 + ≤3 参考图 + ShotSpec 摘要 + 已确认事实；输出只允许 7 个 check + evidence + confidence；VLM 只提示、不得 BLOCK、失败落 Unknown、不产生采纳 | 新建第二套 HTTP 客户端/适配器层（重复造轮子）；官方 SDK（拖包）；让模型自带严重度或采纳结论；把审美判断升级为平台硬阻断 | 需要多模态模型路由/降级或成本统计；百炼模型命名/能力变化；检出质量校准需要模型对比时（后续任务） |
 
-状态：SEL-000 至 SEL-010 已定案（2026-09-30）。依赖权威已从 `requirements.txt` 迁移到
+状态：SEL-000 至 SEL-011 已定案（2026-09-30）。依赖权威已从 `requirements.txt` 迁移到
 `pyproject.toml` + `uv.lock`，守卫、CI、README 同步（证据见
 `evals/product-v2/dependency-authority-migration-20260930.txt`）；依赖按 SEL-003 引入
 （langchain-core / langchain-openai）；工作区中的 V2.2.2 适配器草案在任务完成前
@@ -162,11 +163,11 @@ amz-listing-kit/
 ├─ app/
 │  ├─ server.py                         # 正式服务入口：默认 V2；--legacy-v1 回 V1；--offline-fixture 旧 Mock
 │  ├─ product_v1_server.py              # Product V1 历史实现，迁移期保留（--legacy-v1）
-│  ├─ product_v2_server.py              # V2 无状态 HTTP 适配器：静态资源 + /api/health + capabilities + semantic/analyze
-│  └─ product_v2/                       # V2 前端静态资源；domain/prompt.js 是 Prompt 编译与人工编辑唯一权威（V2.3.4 / V2.3.6）、domain/confirm.js 是生成前确认唯一权威（V2.3.5）、domain/review.js 是确定性校验（规则注册表 / ReviewReport）唯一权威（V2.5.1）；vendor/ 已 vendored fflate 0.8.3（SEL-008）
+│  ├─ product_v2_server.py              # V2 无状态 HTTP 适配器：静态资源 + /api/health + capabilities + semantic/analyze + 图像网关 + review/candidate（V2.5.2）
+│  └─ product_v2/                       # V2 前端静态资源；domain/prompt.js 是 Prompt 编译与人工编辑唯一权威（V2.3.4 / V2.3.6）、domain/confirm.js 是生成前确认唯一权威（V2.3.5）、domain/review.js 是确定性校验与 VLM 复核映射（规则注册表 / ReviewReport）唯一权威（V2.5.1 / V2.5.2）；vendor/ 已 vendored fflate 0.8.3（SEL-008）
 ├─ src/
 │  ├─ product_v2_contracts.py           # 领域与 API 契约（目标）
-│  ├─ providers/                        # 语义链路已落地（v2_semantic / v2_dashscope_semantic / v2_fake_semantic）；图像网关已落地（v2_image / v2_dashscope_image / v2_fake_image）；错误词表唯一权威 = v2_errors.py；VLM ReviewProvider 仍是目标（V2.5.2，真实调用复用 SEL-003 的 langchain 通道）
+│  ├─ providers/                        # 语义链路已落地（v2_semantic / v2_dashscope_semantic / v2_fake_semantic）；图像网关已落地（v2_image / v2_dashscope_image / v2_fake_image）；复核链路已落地（v2_review / v2_dashscope_review / v2_fake_review，共享装配 v2_langchain_chat，SEL-011）；错误词表唯一权威 = v2_errors.py
 │  └─ validators/                       # 未启用：确定性校验的唯一落点是 app/product_v2/domain/review.js（V2.5.1），本目录不建第二份
 ├─ config/
 │  └─ product-v2/                       # provider 注册表（providers.json，已落地）；平台、模板与问题分类仍是目标

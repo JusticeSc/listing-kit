@@ -1041,6 +1041,51 @@ export 层由 V2.6.2 交付门禁消费（此前由探针证明）；generation 
 `tools/verify_v2_5_1_deterministic_review.py` 另跑既有套件回归与一次工作台闭环（候选保存后
 IndexedDB 出现当前报告、界面出现摘要行、刷新后仍在），证据落盘并纳入 CI。真实调用预算：0。
 
+### 9.16 V2.5.2 可替换 VLM 复核 Provider：单一通道、Unknown 不阻塞
+
+把 §8.2 第 5 层（单图 VLM 检查）落成一条与语义链路同构、但**只产生风险提示**的通道：候选与参考图
+经浏览器 → 无状态服务 → 百炼兼容端点（默认 `qwen-vl-max`，`REVIEW_MODEL` 可覆盖），输出结构化
+findings 再由浏览器侧映射进 ReviewReport；VLM 不产生采纳、不产生 BLOCK、失败一律落 Unknown。
+
+**服务端合同（唯一权威 = `src/providers/v2_review.py`）**：请求 = 候选图（sha256 + 严格 base64，
+服务端解码复算哈希；不一致即 input_rejected）+ 最多 3 张参考图 + ShotSpec 摘要
+（title/purpose/keep/allow_changes）+ 已确认事实 + 平台/语言；上限：候选 ≤4MB、单参考 ≤4MB、
+合计 ≤16MB。模型输出只允许 7 个 check（product_fidelity / part_anomaly / deformity / clipping /
+garbled_text / goal_completion / prohibited_content）+ evidence + confidence；未知 check、越界
+置信度、超长证据整包拒绝（INVALID_RESPONSE），max_tokens 截断归 PROVIDER_OUTPUT_TRUNCATED——
+不静默清洗。错误分类复用 `v2_errors.py` 四归口与 `v2_semantic.map_openai_exception`。
+
+**传输（SEL-003 复用，SEL-011 定案）**：`DashScopeReviewProvider` 复用
+`v2_langchain_chat` 的共享装配（ChatOpenAI：显式 timeout、max_retries=0）与
+`with_structured_output(..., method="json_mode", include_raw=True)`；多模态消息 = 一个文本块 +
+按顺序的候选/参考图 data URL 块。不新建 HTTP 客户端、重试层、JSON 修复或第二套错误词表；
+`tools/verify_v2_5_2_vlm_review.py` 用静态守卫证明这条边界（禁止 requests/httpx/urllib/openai 直连、
+禁止第二份 ChatOpenAI 装配）。`v2_fake_review` 按 10 类场景做测试替身；registry 新增
+`dashscope-review` / `fake-review` 两条 role=review 条目
+（`AMZ_V2_REVIEW_PROVIDER`、`REVIEW_MODEL`、`AMZ_V2_REVIEW_BASE_URL/TIMEOUT/MAX_TOKENS`）。
+
+**路由（无状态）**：`POST /api/v2/review/candidate` 是唯一放宽到 24MB 的路由（要携带图片 base64；
+其余路由保持 256KB 上限）。200 = `{ok, result:{contract_version, candidate_sha256,
+findings[{check,evidence,confidence}], provider/model/request_id/usage/latency}}`；失败沿用分类信封
+（provider_unknown/504、INVALID_RESPONSE/502、input_rejected/400）。服务器不保存图片、结果或
+工作空间；capabilities 新增 `review` 块（合同、端点、provider、参考图能力）。
+
+**浏览器（唯一规则权威 = `app/product_v2/domain/review.js`）**：`REVIEW_CONTRACT_VERSION` 升到
+`v2.5.2`；注册表新增 `vlm` 层 9 条规则（7 个 check + 完成/未完成标记），注册表自检禁止 vlm 层出现
+BLOCK（模型发现不能升级为平台硬阻断）。`buildVlmReview` 把服务端 check 映射到注册表规则并由注册表
+决定严重度（模型不能自带严重度）；`mergeVlmReview` 只替换 vlm 层、保留确定性 findings；成功且零发现
+落 `vlm.inspection_completed / PASS`（机器事实，不等于人工采纳）；任何失败（超时/非法/拒绝/传输）
+落 `vlm.inspection_unavailable / UNKNOWN`，人工审核不因此受阻。候选行新增「自动复核（VLM）」按钮
+（同一页面内一人操作；比较/审核清单面板是 V2.5.3）。重开项目发生报告重建时，同一候选字节上的
+vlm 块整体带过去；规则不再兼容则丢弃复核部分（回到「VLM 未检查」），不伪造结论；跨候选携带被拒绝。
+
+**验证与边界**：`evals/product-v2/harness/review-provider-contract.js`（R14–R21）在真实 Chromium
+覆盖词表映射、合并、Unknown、反向注入与跨候选携带；`tools/verify_v2_5_2_vlm_review.py` 另跑已标样例
+（`fixtures/v2.5.2/` 5 个契约级样例）、fake 场景矩阵、端点契约、工作台点击闭环（checked → 刷新 →
+unknown）、R01–R13 回归与正式入口自检；证据 `evals/product-v2/v2.5.2-vlm-review-*-final.*` + 截图。
+真实调用 1 次：`tools/probe_v2_5_2_review_live.py --live`（候选=参考=同一张真实商品照片），证明
+通道、结构化输出与候选绑定；**不评估检出质量**，检出质量校准留给后续任务。
+
 ## 10. 实施阶段、任务与 Gate
 
 任何时刻最多一个阶段 active。每个任务同时交付必要的数据合同、服务、界面和验证，不把“前端做完”“后端做完”当作用户可观察成果。

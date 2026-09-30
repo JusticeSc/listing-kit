@@ -13,7 +13,7 @@ goal_id: 01a0ca17-2179-7eb0-969a-af9c79c4d8ca
 system_goal_observed_status: active
 system_goal_observed_at: 2026-09-29T21:16:19+08:00
 plan_ref: docs/product-v2-goal-and-implementation-plan.md
-latest_audit: evals/product-v2/v2.5.1-deterministic-review-20260930-142836-final.txt
+latest_audit: evals/product-v2/v2.5.2-vlm-review-20260930-150502final.txt
 
 phase_progress:
   "0":
@@ -96,6 +96,11 @@ phase_progress:
   "5":
     status: active
     evidence:
+      - evals/product-v2/v2.5.2-vlm-review-20260930-150502final.txt
+      - evals/product-v2/v2.5.2-vlm-review-20260930-150502final.json
+      - evals/product-v2/evidence/v2.5.2-vlm-review-20260930-150502.png
+      - evals/product-v2/v2.5.2-review-live-20260930-150012final.txt
+      - evals/product-v2/v2.5.2-review-live-20260930-150012final.json
       - evals/product-v2/v2.5.1-deterministic-review-20260930-142836-final.txt
       - evals/product-v2/v2.5.1-deterministic-review-20260930-142836-final.json
       - evals/product-v2/evidence/v2.5.1-deterministic-review-20260930-142836.png
@@ -469,9 +474,36 @@ task_progress:
       - docs/product-v2-goal-and-implementation-plan.md
       - .github/workflows/ci-cd.yml
 
-next_action_task: V2.5.2
+  V2.5.2:
+    status: done
+    evidence:
+      - evals/product-v2/v2.5.2-vlm-review-20260930-150502final.txt
+      - evals/product-v2/v2.5.2-vlm-review-20260930-150502final.json
+      - evals/product-v2/evidence/v2.5.2-vlm-review-20260930-150502.png
+      - evals/product-v2/v2.5.2-review-live-20260930-150012final.txt
+      - evals/product-v2/v2.5.2-review-live-20260930-150012final.json
+      - tools/verify_v2_5_2_vlm_review.py
+      - tools/probe_v2_5_2_review_live.py
+      - src/providers/v2_review.py
+      - src/providers/v2_dashscope_review.py
+      - src/providers/v2_langchain_chat.py
+      - src/providers/v2_fake_review.py
+      - src/providers/v2_registry.py
+      - config/product-v2/providers.json
+      - app/product_v2_server.py
+      - app/product_v2/domain/review.js
+      - app/product_v2/workspace.js
+      - evals/product-v2/harness/review-provider-contract.js
+      - evals/product-v2/harness/review-provider-contract.html
+      - evals/product-v2/fixtures/v2.5.2/
+      - README.md
+      - docs/product-v2-project-context.md
+      - docs/product-v2-goal-and-implementation-plan.md
+      - .github/workflows/ci-cd.yml
+
+next_action_task: V2.5.3
 blockers: []
 unknowns:
-  - visual_language_provider_model_id_is_deferred_to_V2.5.2_and_does_not_block_browser_workspace_work
-updated_at: 2026-09-30T14:30:49+08:00
+  - visual_language_review_detection_quality_is_uncalibrated_channels_and_binding_only_proven_in_V2.5.2
+updated_at: 2026-09-30T15:03:00+08:00
 ```
