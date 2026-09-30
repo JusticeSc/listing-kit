@@ -59,6 +59,7 @@ phase_progress:
       - evals/product-v2/v2.2.2-semantic-provider-20260930-021554.txt
       - evals/product-v2/v2.2.1-product-contracts-20260930-021554.txt
       - evals/product-v2/v2.2.4-max-tokens-acceptance-20260930.txt
+      - evals/product-v2/v2.2.2-semantic-provider-20261001-010715-arrears-map.txt
   "3":
     status: done
     evidence:
@@ -636,5 +637,6 @@ blockers: []
 unknowns:
   - visual_language_review_detection_quality_is_uncalibrated_channels_and_binding_only_proven_in_V2.5.2
   - ui_information_hierarchy_primary_action_image_comparison_and_visual_direction_await_product_owner_walkthrough_V2.UI.2
-updated_at: 2026-09-30T23:21:00+08:00
+  - dashscope_account_arrears_20261001_blocks_real_semantic_and_image_calls_pending_account_recovery
+updated_at: 2026-10-01T01:11:00+08:00
 ```
