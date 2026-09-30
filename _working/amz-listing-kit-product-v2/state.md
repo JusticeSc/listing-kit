@@ -13,7 +13,7 @@ goal_id: 01a0ca17-2179-7eb0-969a-af9c79c4d8ca
 system_goal_observed_status: active
 system_goal_observed_at: 2026-09-29T21:16:19+08:00
 plan_ref: docs/product-v2-goal-and-implementation-plan.md
-latest_audit: evals/product-v2/v2.4.4-candidate-blob-20260930-131856-final.txt
+latest_audit: evals/product-v2/v2.4.5-live-reference-20260930-134540-final.txt
 
 phase_progress:
   "0":
@@ -75,7 +75,7 @@ phase_progress:
       - evals/product-v2/v2.3.2-suite-editor-20260930-035037-v236-regression.txt
       - evals/product-v2/v2.2.3-intake-understanding-20260930-035038-v236-regression.txt
   "4":
-    status: active
+    status: done
     evidence:
       - evals/product-v2/v2.4.1-image-gateway-20260930-091224-final.txt
       - evals/product-v2/v2.4.1-image-gateway-20260930-091224-final.json
@@ -88,6 +88,14 @@ phase_progress:
       - evals/product-v2/v2.4.4-candidate-blob-20260930-131856-final.txt
       - evals/product-v2/v2.4.4-candidate-blob-20260930-131856-final.json
       - evals/product-v2/evidence/v2.4.4-candidate-blob-20260930-131856.png
+      - evals/product-v2/v2.4.5-live-reference-20260930-134540-final.txt
+      - evals/product-v2/v2.4.5-live-reference-20260930-134540-final.json
+      - evals/product-v2/evidence/v2.4.5-live-reference-20260930-134540.png
+      - evals/product-v2/v2.4.1-image-gateway-20260930-134149-v245-transport-fix.txt
+
+  "5":
+    status: active
+    evidence: []
 
 task_progress:
   V2.0.1:
@@ -428,9 +436,20 @@ task_progress:
       - docs/product-v2-goal-and-implementation-plan.md
       - .github/workflows/ci-cd.yml
 
-next_action_task: V2.4.5
+  V2.4.5:
+    status: done
+    evidence:
+      - evals/product-v2/v2.4.5-live-reference-20260930-134540-final.txt
+      - evals/product-v2/v2.4.5-live-reference-20260930-134540-final.json
+      - evals/product-v2/evidence/v2.4.5-live-reference-20260930-134540.png
+      - tools/verify_v2_4_5_live_reference.py
+      - src/providers/v2_dashscope_image.py
+      - tools/verify_v2_4_1_image_gateway.py
+      - docs/product-v2-goal-and-implementation-plan.md
+
+next_action_task: V2.5.1
 blockers: []
 unknowns:
   - visual_language_provider_model_id_is_deferred_to_V2.5.2_and_does_not_block_browser_workspace_work
-updated_at: 2026-09-30T13:21:18+08:00
+updated_at: 2026-09-30T13:48:30+08:00
 ```

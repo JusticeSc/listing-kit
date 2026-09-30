@@ -979,6 +979,30 @@ Attempt / 批次 / 确认单 / Prompt 编辑 / 套图编辑器五个既有套件
 **边界**：候选是「字节 + 身份」，不是「选中的成品」；本批不做审核、比较与选择（V2.5.x）、不做单图返工与
 交付门禁（Phase 5 / 6），也不做容量统计与清理界面。
 
+### 9.14 V2.4.5 真实参考图最小闭环与默认传输缺陷
+
+本节把 Gate G4 的「真实参考图请求成功」从离线断言补成真证据，并记录首跑暴露的真实缺陷。
+
+**工具**：`tools/verify_v2_4_5_live_reference.py`。只在显式 `--live` 且环境里存在 `DASHSCOPE_API_KEY`
+时运行，默认不执行、不产生证据、不进 CI。预算按 §12.2：1 次 submit + 有界 status 轮询 + 1 次 result
+取回；语义槽位由验证器直接播种（0 次语义调用）；参考图用 Product V1 真实运行留下的商品原图，路径与
+sha256 写进证据。
+
+**首跑发现的缺陷（2026-09-30）**：默认 HTTP 传输是模块级函数（`_requests_transport`），而 `_call`
+按 Transport 协议调用 `self._transport.request(...)`；V2.4.1–V2.4.4 的全部离线验证都注入「对象式」
+假传输，这条接缝从未被真实走过，所以真实提交必然 500（`AttributeError` 被归口成 Unknown 而不是伪造
+成功——记录保持原样、不自动重提，行为本身符合合同）。修复：`src/providers/v2_dashscope_image.py`
+新增 `_as_transport`，把函数式与对象式传输都归一成带 `request` 的对象；`tools/verify_v2_4_1_image_gateway.py`
+新增 V2.4.1-24「默认传输离线回归」（monkeypatch `requests`，0 次网络），把这条缝永久纳入 CI。
+
+**结果**：真实闭环通过。1 次真实 submit（真实商品参考图 + 生产 Prompt 编译结果）→ 3 次状态查询到
+`succeeded`（task id `0a0d13c8-cb50-45dd-a15d-0533688b40a4`）→ 1 次结果取回：1344×1344 PNG、
+1,452,960 字节，存为浏览器 IndexedDB 里的 Blob，sha256 三方一致（候选记录 = 本机重算 =
+`X-Image-Sha256`），浏览器内可见预览。终版证据：`evals/product-v2/v2.4.5-live-reference-<stamp>-final.txt/.json`
+与 `evals/product-v2/evidence/v2.4.5-live-reference-<stamp>.png`。
+
+**边界**：不证明出图审美质量、跨品类通用性、审核与返工（Phase 5）；真实调用失败时保留证据、不循环重试。
+
 ## 10. 实施阶段、任务与 Gate
 
 任何时刻最多一个阶段 active。每个任务同时交付必要的数据合同、服务、界面和验证，不把“前端做完”“后端做完”当作用户可观察成果。
