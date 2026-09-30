@@ -29,6 +29,7 @@ import {
   PLATFORM_PROFILES,
   PROVIDER_PROFILES,
   REFERENCE_ROLES,
+  REVIEW_REPORT_DOCUMENT_KIND,
   SHOT_TEMPLATES,
   SUITE_PLAN_DOCUMENT_ID,
   STYLE_SPEC_DOCUMENT_ID,
@@ -51,6 +52,7 @@ import {
   buildEditedPromptRecord,
   buildPromptRecord,
   buildProductBrief,
+  buildReviewReport,
   canAddSlot,
   canConfirmSlot,
   canDeleteSlot,
@@ -70,6 +72,7 @@ import {
   emptyShotSpecFromShot,
   emptyStyleSpec,
   emptyProductInput,
+  evaluateCandidateFindings,
   intakeReadiness,
   moveShot,
   newActionId,
@@ -81,6 +84,8 @@ import {
   promptStaleness,
   recommendPlan,
   referenceFromAsset,
+  reviewIsCurrent,
+  reviewSummaryText,
   removeShot,
   requestSnapshotOf,
   selectReferences,
@@ -89,6 +94,7 @@ import {
   suitePlanSummary,
   suiteSpecDigest,
   styleSpecDiff,
+  topFinding,
   validateSuitePlan,
 } from "./domain/index.js";
 import { sha256Hex } from "./storage/db.js";
@@ -103,6 +109,7 @@ const PROMPT_KIND = DOMAIN_DOCUMENT_KINDS.prompt_version;
 const CONFIRM_KIND = DOMAIN_DOCUMENT_KINDS.generation_confirm;
 const ATTEMPT_KIND = ATTEMPT_DOCUMENT_KIND;
 const CANDIDATE_KIND = CANDIDATE_DOCUMENT_KIND;
+const REVIEW_KIND = REVIEW_REPORT_DOCUMENT_KIND;
 
 const CAPABILITIES_PATH = "/api/v2/capabilities";
 const ANALYZE_PATH = "/api/v2/semantic/analyze";
@@ -295,6 +302,7 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
   let attemptInFlight = new Set();
   let candidateChains = new Map();
   let candidateInFlight = new Set();
+  let reviewReports = new Map();
   let previewUrls = new Map();
   let batchState = null;
   let busy = false;
@@ -2165,6 +2173,42 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
   }
 
   /**
+   * 候选的确定性审核报告（V2.5.1）：绑定 candidate_id + 合同版本 + sha256；
+   * 评估或保存失败都不影响候选本身（界面显示报告缺失，下次打开项目会补建）。
+   */
+  async function ensureReviewReport(shotId, candidate, bytes) {
+    const existing = reviewReports.get(candidate.candidate_id);
+    if (existing && reviewIsCurrent(existing.report, candidate)) return existing;
+    let view = bytes || null;
+    if (!view) {
+      const asset = await repository.assets.get(projectId, candidate.asset_sha256);
+      if (asset && asset.blob instanceof Blob) {
+        view = new Uint8Array(await asset.blob.arrayBuffer());
+      }
+    }
+    const shot = (suitePlan && Array.isArray(suitePlan.shots) ? suitePlan.shots : [])
+      .find((item) => item && item.shot_id === shotId);
+    const findings = evaluateCandidateFindings({
+      candidate: candidate,
+      bytes: view,
+      roleId: shot ? shot.role_id : null,
+    });
+    const report = buildReviewReport({
+      candidate: candidate, findings: findings, at: new Date().toISOString(),
+    });
+    try {
+      const saved = await repository.documents.save(projectId, {
+        kind: REVIEW_KIND, documentId: candidate.candidate_id, payload: report,
+      });
+      reviewReports.set(candidate.candidate_id, { report: report, version: saved.version });
+    } catch (error) {
+      // 报告保存失败不改写候选：内存里保留这次评估，界面可见，下次打开项目重试。
+      reviewReports.set(candidate.candidate_id, { report: report, version: 0 });
+    }
+    return reviewReports.get(candidate.candidate_id);
+  }
+
+  /**
    * 候选保存核心：把一次成功的生成变成 IndexedDB 里的字节 + 元数据记录。
    * 幂等：同一 action 已有候选则跳过；字节走内容寻址，同 hash 只存一份。
    * 配额不足不产生半份记录：asset 事务失败就没有记录，界面给出可恢复指引。
@@ -2180,7 +2224,17 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
       const decision = candidateStoreDecision({
         attempt: record, candidates: candidateChainOf(shotId),
       });
-      if (!decision.needed) return { skipped: true, reason: decision.reason };
+      if (!decision.needed) {
+        if (decision.reason === "already_stored" && decision.candidate) {
+          const existing = decision.candidate.record || decision.candidate;
+          try {
+            await ensureReviewReport(shotId, existing, null);
+          } catch (error) {
+            // 旧候选的报告补建是尽力而为，不改变幂等语义。
+          }
+        }
+        return { skipped: true, reason: decision.reason };
+      }
       const fetched = await fetchImageResultBytes(record.task_id);
       if (!fetched.ok) {
         return { failed: true, reason: fetched.reason, message: fetched.message };
@@ -2200,6 +2254,7 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
           message: (error && error.message) || "结果不是可解析的 PNG，候选未保存。",
         };
       }
+      let reviewSummary = null;
       let asset;
       try {
         asset = await repository.assets.put(projectId, {
@@ -2223,6 +2278,13 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
           kind: CANDIDATE_KIND, documentId: shotId, payload: candidate,
         });
         rememberCandidate(shotId, { record: candidate, version: saved.version });
+        try {
+          const reviewEntry = await ensureReviewReport(shotId, candidate,
+            new Uint8Array(fetched.buffer));
+          reviewSummary = reviewEntry ? reviewSummaryText(reviewEntry.report) : null;
+        } catch (error) {
+          reviewSummary = null;
+        }
       } catch (error) {
         if (error && error.code === "QUOTA_EXCEEDED") {
           return {
@@ -2239,6 +2301,7 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
       return {
         stored: true, candidate_id: record.action_id, sha256: asset.sha256,
         width: dimensions.width, height: dimensions.height, byte_size: asset.byte_size,
+        review: reviewSummary,
       };
     } finally {
       candidateInFlight.delete(shotId);
@@ -2252,7 +2315,8 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     const result = await ensureCandidateStored(shotId);
     if (result.stored) {
       elements.attemptStatus.textContent = "候选已保存：sha256 " + result.sha256.slice(0, 12)
-        + "…（" + result.width + "×" + result.height + "）。";
+        + "…（" + result.width + "×" + result.height + "）。"
+        + (result.review ? " " + result.review : "");
     } else if (result.failed) {
       showError(elements.attemptError, result.message);
     } else if (result.reason === "already_stored") {
@@ -2369,6 +2433,26 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
                 + Math.max(1, Math.round(candidate.byte_size / 1024)) + " KB · sha256 "
                 + candidate.asset_sha256.slice(0, 12) + "…（预览来自 IndexedDB 里的字节）",
             }));
+            const reviewEntry = reviewReports.get(candidate.candidate_id);
+            if (reviewEntry && reviewIsCurrent(reviewEntry.report, candidate)) {
+              const top = topFinding(reviewEntry.report);
+              row.append(createElement("p", {
+                className: "meta attempt-review",
+                attrs: {
+                  "data-review-summary": reviewSummaryText(reviewEntry.report),
+                  "data-review-contract": reviewEntry.report.review_contract_version,
+                  "data-review-candidate": candidate.candidate_id,
+                },
+                text: reviewSummaryText(reviewEntry.report)
+                  + (top ? " · 先看：" + top.title + " — " + top.detail : " · 全部通过"),
+              }));
+            } else {
+              row.append(createElement("p", {
+                className: "meta attempt-review",
+                attrs: { "data-review-summary": "missing" },
+                text: "自动检查报告尚未生成（候选保存时自动生成；旧候选会在重新打开项目时补建）。",
+              }));
+            }
           } else if (stored) {
             row.append(createElement("p", {
               className: "meta attempt-note",
@@ -3118,6 +3202,7 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     attemptInFlight = new Set();
     candidateChains = new Map();
     candidateInFlight = new Set();
+    reviewReports = new Map();
     revokePreviewUrls();
     batchState = null;
     showAll = false;
@@ -3185,6 +3270,26 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
       if (token !== openToken) return;
       candidateChains.set(shot.shot_id, candidateDocs.slice().reverse()
         .map((record) => ({ record: record.payload, version: record.version })));
+    }
+    const reviewDocs = await repository.documents.listLatest(projectId, REVIEW_KIND);
+    if (token !== openToken) return;
+    for (const record of reviewDocs) {
+      if (record.payload && typeof record.payload === "object") {
+        reviewReports.set(record.document_id, { report: record.payload, version: record.version });
+      }
+    }
+    for (const shot of (suitePlan && Array.isArray(suitePlan.shots) ? suitePlan.shots : [])) {
+      const latest = latestStoredCandidateOf(shot.shot_id);
+      if (!latest) continue;
+      const candidate = latest.record;
+      const stored = reviewReports.get(candidate.candidate_id);
+      if (stored && reviewIsCurrent(stored.report, candidate)) continue;
+      try {
+        await ensureReviewReport(shot.shot_id, candidate, null);
+      } catch (error) {
+        // 打开项目时的报告补建是尽力而为；失败不阻塞工作区。
+      }
+      if (token !== openToken) return;
     }
     renderAll();
     await deriveAndApplyState();

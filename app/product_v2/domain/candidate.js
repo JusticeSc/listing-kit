@@ -25,8 +25,13 @@ export const MAX_CANDIDATE_BYTES = 24 * 1024 * 1024;
 
 const PNG_MAGIC = Object.freeze([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
-/** 从 PNG 字节头解析宽高；签名或 IHDR 不符时 invalid，不猜。 */
-export function parsePngDimensions(bytes) {
+/**
+ * 从 PNG 字节头解析尺寸与像素特征（V2.5.1 起是唯一解析器）：
+ * 宽高必须来自 IHDR 字节；颜色类型/位深在头部足够时一并读出；
+ * 透明通道 = 颜色类型 4/6，或块结构允许时扫到 tRNS。
+ * 签名 / IHDR / 宽高 / 颜色类型不合法一律 invalid，不猜；块结构不完整时透明判定返回 null（未知）。
+ */
+export function parsePngHeader(bytes) {
   const view = bytes instanceof Uint8Array ? bytes
     : bytes instanceof ArrayBuffer ? new Uint8Array(bytes)
       : null;
@@ -40,7 +45,47 @@ export function parsePngDimensions(bytes) {
   const width = (view[16] << 24 | view[17] << 16 | view[18] << 8 | view[19]) >>> 0;
   const height = (view[20] << 24 | view[21] << 16 | view[22] << 8 | view[23]) >>> 0;
   if (width < 1 || height < 1) invalid("PNG 宽高不合法：" + width + "×" + height + "。");
-  return { width: width, height: height };
+  let bitDepth = null;
+  let colorType = null;
+  if (view.byteLength >= 26) {
+    bitDepth = view[24];
+    colorType = view[25];
+    if (bitDepth < 1) invalid("PNG 位深不合法：" + bitDepth + "。");
+    if ([0, 2, 3, 4, 6].indexOf(colorType) === -1) {
+      invalid("PNG 颜色类型不合法：" + colorType + "。");
+    }
+  }
+  return {
+    width: width,
+    height: height,
+    bit_depth: bitDepth,
+    color_type: colorType,
+    has_transparency: pngTransparency(view, colorType),
+  };
+}
+
+/** 透明通道判定：颜色类型 4/6 直接为真；否则按块结构找 tRNS；结构不完整返回 null（未知，不猜）。 */
+function pngTransparency(view, colorType) {
+  if (colorType === 4 || colorType === 6) return true;
+  if (colorType === null) return null;
+  let offset = 8;
+  while (offset + 8 <= view.byteLength) {
+    const length = (view[offset] << 24 | view[offset + 1] << 16
+      | view[offset + 2] << 8 | view[offset + 3]) >>> 0;
+    const type = String.fromCharCode(view[offset + 4], view[offset + 5],
+      view[offset + 6], view[offset + 7]);
+    if (offset + 12 + length > view.byteLength) return null;
+    if (type === "tRNS") return true;
+    if (type === "IDAT" || type === "IEND") return false;
+    offset += length + 12;
+  }
+  return null;
+}
+
+/** 从 PNG 字节头解析宽高（V2.4.4 起的对外形状；解析权威是 parsePngHeader）。 */
+export function parsePngDimensions(bytes) {
+  const header = parsePngHeader(bytes);
+  return { width: header.width, height: header.height };
 }
 
 /** 构造候选记录；来源必须是已成功且有 task id 的 Attempt，所有身份字段必填。 */
