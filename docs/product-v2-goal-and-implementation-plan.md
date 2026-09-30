@@ -1281,6 +1281,14 @@ stale 而不是被覆盖；失败 Attempt 不影响已有选择。Selection 只�
 - 新文档种类 `export_record` 与 `review_acknowledgement` 登记进 shared.js `DOMAIN_DOCUMENT_KINDS`（唯一权威）。界面：交付分区含门禁清单（逐条 PASS/BLOCK 与定位）、「生成交付包」按钮、成功后的文件名/大小/sha256 与下载入口；不新增第二套状态。
 - 验证：`tools/verify_v2_6_2_delivery.py` + `delivery-gate-contract` 套件：正反门禁（缺选择、整套报告过期、未确认 Unknown、哈希不符）、ZIP 解包逐文件核对、manifest 反查输入到候选、失败不落记录、重复生成保留历史。证据 `evals/product-v2/v2.6.2-delivery-*-final.*` + `evidence/v2.6.2-delivery-*.png`。
 
+**2026-10-01 修订（V2.6.2 自审通过）**：`tools/verify_v2_6_2_delivery.py` 12/12（契约套件 D01–D06、工作台正/反向走查、Python `zipfile`/`hashlib` 独立核对交付包、IndexedDB 记录只追加、刷新恢复、失败不落记录、零意外 console），契约套件 `evals/product-v2/harness/delivery-gate-contract.{html,js}` 全过。自审改掉三处真实缺陷：
+
+- `finding()` 此前只能取注册严重度，导致 BLOCK 级规则在「通过」时仍被标成 BLOCK；现在通过分支显式传 `PASS`。
+- 既有测量（`makeFinding`）不带 `affected_shot_ids`，交付门禁现在只从 `measured` 投影受影响 Shot（认不出就不指），使阻断项能定位到图。
+- 导出记录 `document_id` 之前只有秒精度，同一秒内多次生成的排序会按哈希乱序；改为毫秒精度，并在恢复时按 `exported_at` 取最新。
+
+同时确认一个真实平台约束：假图 provider 默认 64×64，会被 `platform.min_long_side`（BLOCK，≥1000px）合法阻断交付；交付走查必须用达标尺寸（`FakeImageProvider(size=1200)`），这条路本身也是「门禁确实在拦」的证据。
+
 ### 9.22 V2.6.3 项目 ZIP 迁移与 schema 升级闭环
 
 **落地契约（V2.6.3 实现层）：**

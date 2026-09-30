@@ -558,6 +558,25 @@ input:disabled, textarea:disabled, select:disabled { background: var(--surface-s
   background: var(--surface-soft); padding: 10px 12px;
 }
 
+/* ------------------------------------------------- 交付门禁与交付包（V2.6.2） */
+
+.delivery-gate .gate-finding,
+.delivery-unknowns .gate-unknown {
+  display: grid; gap: 6px; justify-items: start;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--surface-soft); padding: 10px 12px;
+}
+.delivery-gate .gate-finding .name,
+.delivery-unknowns .gate-unknown .name { font-weight: 600; }
+.delivery-gate .gate-finding .meta,
+.delivery-unknowns .gate-unknown .meta { margin: 0; }
+.delivery-gate .gate-finding.is-pass {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 8px 12px;
+}
+.delivery-unknowns { display: grid; gap: 8px; margin-bottom: 12px; }
+.delivery-result { display: grid; gap: 6px; justify-items: start; margin-top: 10px; }
+.delivery-result .meta { margin: 0; }
+
 /* -------------------------------------------------------- 整套一致性（V2.5.5） */
 
 .suite-findings { display: grid; gap: 8px; margin-top: 10px; }

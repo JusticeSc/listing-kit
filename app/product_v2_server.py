@@ -744,15 +744,22 @@ def run_self_check() -> int:
     checks: list[tuple[str, bool, str]] = []
 
     def request(method: str, path: str, body: bytes | None = None) -> tuple[int, str, bytes]:
-        connection = http.client.HTTPConnection(host, port, timeout=20)
-        try:
-            headers = ({"Content-Type": "application/json; charset=utf-8"}
-                       if body is not None else {})
-            connection.request(method, path, body=body, headers=headers)
-            response = connection.getresponse()
-            return response.status, response.getheader("Content-Type") or "", response.read()
-        finally:
-            connection.close()
+        # 连续起停回环端口时，极少数情况下连接会在读响应时被重置（Windows 上观察到一次）。
+        # 自检是无状态、不落盘的，连接级错误重试一次；第二次仍失败才算真失败。
+        last_error: Exception | None = None
+        for _attempt in range(2):
+            connection = http.client.HTTPConnection(host, port, timeout=20)
+            try:
+                headers = ({"Content-Type": "application/json; charset=utf-8"}
+                           if body is not None else {})
+                connection.request(method, path, body=body, headers=headers)
+                response = connection.getresponse()
+                return response.status, response.getheader("Content-Type") or "", response.read()
+            except (ConnectionError, OSError) as error:
+                last_error = error
+            finally:
+                connection.close()
+        raise last_error if last_error else RuntimeError("自检请求失败。")
 
     def check(name: str, ok: bool, detail: str = "") -> None:
         checks.append((name, bool(ok), detail))

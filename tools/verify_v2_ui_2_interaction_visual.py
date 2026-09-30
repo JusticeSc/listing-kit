@@ -573,19 +573,25 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 page.wait_for_timeout(400)
                 gate_rows = page.locator("#delivery-gate .gate-row")
                 gate_badges = page.locator("#delivery-gate .gate-row .badge")
+                gate_findings = page.locator("#delivery-gate .gate-finding")
+                gate_blocking = page.locator('#delivery-gate .gate-finding[data-severity="BLOCK"]')
                 deliver_status = page.locator("#deliver-status").inner_text()
                 deliver_path = shot("deliver")
                 page.screenshot(path=str(ROOT / deliver_path), full_page=True)
                 checks.append({
                     "id": "UI2-16",
-                    "title": "交付阶段：门禁清单逐图列出采用状态，交付包按钮保持禁用并说明接入边界，项目包导出可用",
+                    "title": "交付阶段：门禁清单逐图列出采用状态；有阻断（本流程未跑整套检查）时交付包按钮禁用并说明原因，项目包导出可用",
                     "ok": gate_rows.count() == len(shots)
                           and all("已采用" in item for item in gate_badges.all_inner_texts())
+                          and gate_findings.count() >= 1
+                          and gate_blocking.count() >= 1
                           and page.locator("#deliver-export").is_disabled()
-                          and "尚未接入" in deliver_status
+                          and "未通过" in deliver_status
                           and not page.locator("#deliver-project-package").is_disabled()
                           and (ROOT / deliver_path).stat().st_size > 0,
                     "detail": {"gate_rows": gate_rows.count(), "status": deliver_status,
+                               "findings": gate_findings.count(),
+                               "blocking": gate_blocking.count(),
                                "screenshot": deliver_path},
                 })
 

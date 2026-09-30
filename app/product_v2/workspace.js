@@ -24,6 +24,7 @@ import {
   CONFIRM_DOCUMENT_ID,
   CORE_SLOT_REGISTRY,
   DOMAIN_DOCUMENT_KINDS,
+  EXPORT_GATE_CONTRACT_VERSION,
   FACT_SLOT_SCHEMA_VERSION,
   MAX_REFERENCES,
   MAX_CANDIDATE_BYTES,
@@ -40,6 +41,7 @@ import {
   SHOT_TEMPLATES,
   SUITE_PLAN_DOCUMENT_ID,
   STYLE_SPEC_DOCUMENT_ID,
+  acknowledgementDocumentIdOf,
   addCustomShotToPlan,
   addShotFromTemplate,
   applySlotAction,
@@ -56,9 +58,12 @@ import {
   buildAttemptRecord,
   buildCandidateRecord,
   briefReadiness,
+  buildAcknowledgement,
   buildConfirmationRecord,
   buildConfirmationSheet,
+  buildDeliveryEntries,
   buildEditedPromptRecord,
+  buildExportRecord,
   buildPromptRecord,
   buildProductBrief,
   buildReworkDirective,
@@ -84,12 +89,16 @@ import {
   copyShot,
   coreSlotDefinition,
   defaultCompareTargetId,
+  deliveryImagePathOf,
+  deliveryFileName,
   deriveBatchState,
   deriveSelectionState,
   emptyShotSpecFromShot,
   emptyStyleSpec,
   emptyProductInput,
   evaluateCandidateFindings,
+  evaluateDeliveryGate,
+  exportRecordDocumentIdOf,
   intakeReadiness,
   mergeVlmReview,
   moveShot,
@@ -132,7 +141,7 @@ import {
   validateSuitePlan,
 } from "./domain/index.js";
 import { sha256Hex } from "./storage/db.js";
-import { exportProjectPackage } from "./storage/index.js";
+import { buildZip, exportProjectPackage } from "./storage/index.js";
 import { createStageShell } from "./ui/stage-shell.js";
 
 const INTAKE_DOCUMENT_ID = "intake";
@@ -158,6 +167,8 @@ const SUITE_REVIEW_KIND = DOMAIN_DOCUMENT_KINDS.suite_review;
 const MAX_SUITE_IMAGE_BYTES = 4 * 1024 * 1024;
 const REWORK_CONFIRM_PREFIX = "rework:";
 const SELECTION_KIND = DOMAIN_DOCUMENT_KINDS.selection;
+const REVIEW_ACK_KIND = DOMAIN_DOCUMENT_KINDS.review_acknowledgement;
+const EXPORT_RECORD_KIND = DOMAIN_DOCUMENT_KINDS.export_record;
 
 const DRAFT_DEBOUNCE_MS = 600;
 const ANALYZE_MAX_SLOTS = 12;
@@ -386,9 +397,11 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     suiteReviewFindings: document.getElementById("suite-review-findings"),
     suiteReviewError: document.getElementById("suite-review-error"),
     deliveryGate: document.getElementById("delivery-gate"),
+    deliveryUnknowns: document.getElementById("delivery-unknowns"),
     deliverExport: document.getElementById("deliver-export"),
     deliverProjectPackage: document.getElementById("deliver-project-package"),
     deliverStatus: document.getElementById("deliver-status"),
+    deliverResult: document.getElementById("delivery-result"),
     deliverError: document.getElementById("deliver-error"),
   };
 
@@ -396,6 +409,7 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     nav: elements.stageNav,
     panelRoot: elements.stagePanels,
     summary: elements.stageSummary,
+    onSelect: (id) => { if (id === "deliver") requestDeliveryGateRefresh(); },
   });
 
   let project = null;
@@ -430,6 +444,12 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
   let reviewReports = new Map();
   let suiteReports = new Map();
   let suiteRunInFlight = false;
+  // V2.6.2：交付门禁结果与交付记录（记录只追加，不新增第二套状态）。
+  let deliveryGateState = null;
+  let deliveryGateTimer = null;
+  let deliveryInFlight = false;
+  let deliveryRecord = null;
+  let acknowledgements = new Map();
   let compareShotId = null;
   let compareCandidateId = null;
   let compareToken = 0;
@@ -4640,7 +4660,7 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
   function refreshDerived() {
     renderReviewList();
     renderSuitePanel();
-    renderDeliveryGate();
+    requestDeliveryGateRefresh();
     return refreshStageShell();
   }
 
@@ -4956,7 +4976,7 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     } finally {
       suiteRunInFlight = false;
       renderSuitePanel();
-      renderDeliveryGate();
+      requestDeliveryGateRefresh();
     }
   }
 
@@ -5043,7 +5063,188 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     }
   }
 
-  /** 交付阶段：只报告门禁状态；交付包生成属于 V2.6.2，不在这里伪造。 */
+  /* -------------------------------------------------- 交付门禁与交付包（V2.6.2） */
+
+  /** 读取已采用候选的字节（IndexedDB Blob → Uint8Array）；缺失返回 null。 */
+  async function readCandidateBytes(sha256) {
+    const asset = await repository.assets.get(projectId, sha256);
+    return asset && asset.blob instanceof Blob
+      ? new Uint8Array(await asset.blob.arrayBuffer()) : null;
+  }
+
+  /** 交付门禁的输入投影：与整套检查共用同一批只读投影，不重做第二套测量。 */
+  function deliveryGateInputs() {
+    const suiteEntry = suiteReportEntry();
+    return {
+      shots: shotSummariesNow().map((shot) => ({
+        shot_id: shot.shot_id, required: shot.required === true,
+      })),
+      selections: suiteSelectionMap(),
+      candidatesByShot: suiteCandidatesByShot(),
+      reportsByCandidate: suiteReportsByCandidate(),
+      attemptsByShot: suiteAttemptsByShot(),
+      suiteReport: suiteEntry ? suiteEntry.report : null,
+      suiteFingerprints: suiteFingerprintsNow(),
+      acknowledgements: [...acknowledgements.values()].map((entry) => entry.record),
+      readBytes: (sha) => readCandidateBytes(sha),
+      digest: sha256Hex,
+    };
+  }
+
+  /** 去抖重算：任何影响交付的写入之后都走这里；界面只能读 deliveryGateState。 */
+  function requestDeliveryGateRefresh() {
+    if (deliveryGateTimer !== null) clearTimeout(deliveryGateTimer);
+    deliveryGateTimer = setTimeout(() => {
+      deliveryGateTimer = null;
+      refreshDeliveryGate().catch(() => {});
+    }, 60);
+  }
+
+  /** 门禁结果只保存在内存里：检查失败不写任何存储，也不产生交付记录。 */
+  async function refreshDeliveryGate() {
+    if (!projectId) {
+      deliveryGateState = null;
+      renderDeliveryGate();
+      return;
+    }
+    const token = openToken;
+    let next = null;
+    let failure = null;
+    try {
+      next = await evaluateDeliveryGate(deliveryGateInputs());
+    } catch (error) {
+      failure = (error && error.message) || "交付门禁无法完成。";
+    }
+    if (token !== openToken || !projectId) return;
+    deliveryGateState = next
+      ? { ...next, failed: false, checked_at: new Date().toISOString() }
+      : { failed: true, message: failure, ready_to_export: false,
+          findings: [], blocking: [], unknowns: [], unresolved_unknowns: [] };
+    renderDeliveryGate();
+  }
+
+  /** 门禁展示顺序：阻断优先，PASS 收在最后；不改判定，只改阅读顺序。 */
+  const GATE_SEVERITY_RANK = Object.freeze({
+    BLOCK: 0, HIGH_RISK: 1, WARNING: 2, UNKNOWN: 3, PASS: 4,
+  });
+
+  /** 门禁逐条：严重度徽标 + 说明 + 受影响 Shot 的定位入口。 */
+  function renderDeliveryFindings() {
+    const state = deliveryGateState;
+    const findings = state && Array.isArray(state.findings) ? state.findings : [];
+    if (!findings.length) {
+      elements.deliveryGate.append(createElement("p", {
+        className: "meta",
+        text: state && state.failed
+          ? ("门禁检查失败：" + (state.message || "未知错误"))
+          : "正在核对交付门禁…",
+      }));
+      return;
+    }
+    const ordered = findings.slice().sort((left, right) =>
+      (GATE_SEVERITY_RANK[left.severity] === undefined ? 9 : GATE_SEVERITY_RANK[left.severity])
+      - (GATE_SEVERITY_RANK[right.severity] === undefined ? 9 : GATE_SEVERITY_RANK[right.severity]));
+    for (const item of ordered) {
+      const passed = item.severity === "PASS";
+      const row = createElement("div", {
+        className: "gate-finding" + (passed ? " is-pass" : ""),
+        attrs: { "data-rule-id": item.rule_id, "data-severity": item.severity },
+      });
+      row.append(createElement("span", {
+        className: "badge " + (SEVERITY_BADGE[item.severity] || "is-review-unknown"),
+        text: COMPARE_SEVERITY_TEXT[item.severity] || item.severity,
+      }));
+      row.append(createElement("span", { className: "name", text: String(item.title || item.rule_id) }));
+      // 通过项压成一行（信息不减、占位减半）；阻断项保留独立说明行便于逐条处理。
+      row.append(createElement(passed ? "span" : "p", {
+        className: "meta", text: String(item.detail || ""),
+      }));
+      // Unknown 的处置入口就是下面的「确认已知悉」；这里不再给会误导的跳图按钮。
+      const jumpable = !passed && item.rule_id !== "export.unknown_acknowledged";
+      for (const shotId of (jumpable && Array.isArray(item.affected_shot_ids)
+        ? item.affected_shot_ids : [])) {
+        const jump = createElement("button", {
+          text: "去处理", attrs: { type: "button", "data-shot-id": shotId },
+        });
+        jump.addEventListener("click", () => { jumpToReviewShot(shotId); });
+        row.append(jump);
+      }
+      elements.deliveryGate.append(row);
+    }
+  }
+
+  /** 待确认 Unknown：每条一个「确认已知悉」按钮；确认是 append-only 记录，不改写报告。 */
+  function renderDeliveryUnknowns() {
+    if (!elements.deliveryUnknowns) return;
+    elements.deliveryUnknowns.innerHTML = "";
+    const state = deliveryGateState;
+    const unknowns = state && Array.isArray(state.unknowns) ? state.unknowns : [];
+    if (!unknowns.length) return;
+    elements.deliveryUnknowns.append(createElement("p", {
+      className: "meta", text: "未知项（模型无法判定）：逐条确认已知悉后才允许交付。",
+    }));
+    for (const unknown of unknowns) {
+      const row = createElement("div", {
+        className: "gate-unknown",
+        attrs: { "data-rule-id": unknown.rule_id, "data-target-id": unknown.target_id },
+      });
+      row.append(createElement("span", { className: "name", text: String(unknown.title || unknown.rule_id) }));
+      row.append(createElement("p", { className: "meta", text: String(unknown.detail || "") }));
+      const button = createElement("button", {
+        text: unknown.acknowledged === true ? "已确认" : "确认已知悉", attrs: { type: "button" },
+      });
+      button.disabled = unknown.acknowledged === true;
+      button.addEventListener("click", () => { acknowledgeUnknown(unknown, button); });
+      row.append(button);
+      elements.deliveryUnknowns.append(row);
+    }
+  }
+
+  /** 确认只追加：document_id 由未知项身份派生，重复确认只新增版本。 */
+  async function acknowledgeUnknown(unknown, button) {
+    if (!projectId) return;
+    clearError(elements.deliverError);
+    button.disabled = true;
+    try {
+      const at = new Date().toISOString();
+      const record = buildAcknowledgement({ unknown: unknown, at: at });
+      const documentId = acknowledgementDocumentIdOf(record);
+      const saved = await repository.documents.save(projectId, {
+        kind: REVIEW_ACK_KIND, documentId: documentId, payload: record,
+      });
+      acknowledgements.set(documentId, { record: record, version: saved.version });
+      await refreshDeliveryGate();
+      elements.deliverStatus.textContent = "已记录「已知悉」（append-only，不作为通过证据）。";
+    } catch (error) {
+      button.disabled = false;
+      showError(elements.deliverError, (error && error.message) || "确认没有保存，请重试。");
+    }
+  }
+
+  /** 最近一次交付包结果：刷新后仍有记录（无 blob 时只显示身份，不伪装可下载）。 */
+  function renderDeliveryResult() {
+    if (!elements.deliverResult) return;
+    elements.deliverResult.innerHTML = "";
+    if (!deliveryRecord) {
+      elements.deliverResult.hidden = true;
+      return;
+    }
+    elements.deliverResult.hidden = false;
+    elements.deliverResult.append(createElement("p", {
+      className: "meta",
+      text: "最近一次交付包：" + deliveryRecord.file_name + "（"
+        + Math.round(deliveryRecord.byte_size / 1024) + " KB · sha256 "
+        + String(deliveryRecord.sha256).slice(0, 16) + "…）",
+    }));
+    if (deliveryRecord.url) {
+      elements.deliverResult.append(createElement("a", {
+        text: "下载交付包",
+        attrs: { href: deliveryRecord.url, download: deliveryRecord.file_name },
+      }));
+    }
+  }
+
+  /** 交付阶段：逐图采用状态 + 门禁清单 + Unknown 确认 + 生成交付包入口。 */
   function renderDeliveryGate() {
     if (!elements.deliveryGate) return;
     elements.deliveryGate.innerHTML = "";
@@ -5068,20 +5269,24 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
       }
       elements.deliveryGate.append(row);
     }
+    renderDeliveryFindings();
+    renderDeliveryUnknowns();
+    renderDeliveryResult();
     const requiredShots = shots.filter((shot) => shot.required === true);
     const pending = requiredShots.filter((shot) => selectionStateOf(shot.shot_id) !== "current");
-    const suiteEntry = suiteReportEntry();
-    const suiteCurrent = suiteEntry && projectId
-      ? suiteReviewIsCurrent(suiteEntry.report, suiteFingerprintsNow()) : false;
-    const suiteText = !suiteEntry
-      ? "整套一致性尚未检查"
-      : (suiteCurrent ? "整套一致性报告当前有效" : "整套一致性报告已过期");
-    elements.deliverExport.disabled = true;
+    const state = deliveryGateState;
+    elements.deliverExport.disabled = !(state && state.ready_to_export === true) || deliveryInFlight;
     elements.deliverStatus.textContent = !shots.length
       ? "还没有套图方案。"
-      : (pending.length
-        ? "还差 " + pending.length + " 张必需图没有当前有效的采用。"
-        : "人工采用已齐；" + suiteText + "。交付包生成尚未接入（V2.6.2），现在只能导出项目包。");
+      : (deliveryInFlight
+        ? "正在生成交付包…"
+        : (pending.length
+          ? "还差 " + pending.length + " 张必需图没有当前有效的采用。"
+          : (!state || state.failed || !state.findings.length
+            ? "正在核对交付门禁…"
+            : (state.ready_to_export
+              ? "交付门禁通过：可以生成交付包（只包含已采用的候选）。"
+              : "交付门禁未通过：" + state.blocking.length + " 条阻断，逐条处理后才能生成。"))));
   }
 
   function stageFileName(manifest) {
@@ -5110,6 +5315,223 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     } catch (error) {
       elements.deliverStatus.textContent = "";
       showError(elements.deliverError, (error && error.message) || "导出失败，请重试。");
+    }
+  }
+
+  /* ------------------------------------------------------ 交付包生成（V2.6.2） */
+
+  /** 交付包 manifest：选择与输入指纹 + 每图身份（含 PromptVersion 与 Attempt）。 */
+  function buildDeliveryManifest({ at, files, selectionFingerprint, inputsFingerprint }) {
+    return {
+      schema_version: 1,
+      contract_version: EXPORT_GATE_CONTRACT_VERSION,
+      project_id: projectId,
+      project_name: (project && project.name) || "",
+      exported_at: at,
+      selection_fingerprint: selectionFingerprint,
+      inputs_fingerprint: inputsFingerprint,
+      images: files.map((file) => ({
+        shot_id: file.shot_id,
+        shot_label: file.shot_label,
+        candidate_id: file.candidate_id,
+        attempt_action_id: file.attempt_action_id,
+        attempt_state: file.attempt_state,
+        asset_sha256: file.asset_sha256,
+        media_type: file.media_type,
+        byte_size: file.byte_size,
+        file: file.path,
+        prompt_version: file.prompt_version,
+        prompt_hash: file.prompt_hash,
+      })),
+    };
+  }
+
+  /** 交付包 checks：当前门禁发现 + 每张采用候选的单图报告投影 + Unknown 确认记录。 */
+  function buildDeliveryChecks({ at, gate, files }) {
+    const suiteEntry = suiteReportEntry();
+    const countsOf = (findings) => {
+      const counts = { block: 0, warning: 0, unknown: 0, pass: 0 };
+      findings.forEach((item) => {
+        if (!item || typeof item.severity !== "string") return;
+        const key = item.severity.toLowerCase();
+        if (Object.prototype.hasOwnProperty.call(counts, key)) counts[key] += 1;
+      });
+      return counts;
+    };
+    return {
+      schema_version: 1,
+      contract_version: EXPORT_GATE_CONTRACT_VERSION,
+      generated_at: at,
+      gate_status: gate.status,
+      findings: gate.findings.map((item) => ({
+        rule_id: item.rule_id, rule_version: item.rule_version, severity: item.severity,
+        title: item.title, detail: item.detail, measured: item.measured,
+        affected_shot_ids: [...item.affected_shot_ids],
+      })),
+      per_shot: files.map((file) => {
+        const entry = reviewReports.get(file.candidate_id);
+        const findings = entry && entry.report && Array.isArray(entry.report.findings)
+          ? entry.report.findings : [];
+        return {
+          shot_id: file.shot_id,
+          candidate_id: file.candidate_id,
+          report_version: entry ? entry.version : null,
+          counts: countsOf(findings),
+          findings: findings.filter((item) => item && item.severity !== "PASS").map((item) => ({
+            rule_id: item.rule_id, severity: item.severity,
+            title: item.title, detail: item.detail,
+          })),
+        };
+      }),
+      suite_review: suiteEntry ? {
+        document_id: SUITE_REVIEW_DOCUMENT_ID,
+        version: suiteEntry.version,
+        selection_fingerprint: suiteEntry.report.selection_fingerprint,
+        inputs_fingerprint: suiteEntry.report.inputs_fingerprint,
+        counts: countsOf(Array.isArray(suiteEntry.report.findings) ? suiteEntry.report.findings : []),
+      } : null,
+      acknowledgements: [...acknowledgements.values()].map((entry) => ({
+        document_id: entry.record.target_id,
+        rule_id: entry.record.rule_id,
+        target_kind: entry.record.target_kind,
+        shot_ids: Array.isArray(entry.record.shot_ids) ? [...entry.record.shot_ids] : [],
+        acknowledged_at: entry.record.acknowledged_at,
+      })),
+    };
+  }
+
+  /** 交付包 README：直接给人看的小抄（不替代 manifest/checks）。 */
+  function buildDeliveryReadme({ at, files }) {
+    const lines = [
+      "商品套图交付包",
+      "",
+      "项目：" + ((project && project.name) || "(未命名)"),
+      "生成时间：" + at,
+      "包含图片：" + files.length + " 张（每张一个已采用候选）",
+      "",
+      "清单：",
+    ];
+    files.forEach((file) => {
+      lines.push("- " + file.shot_label + "：" + file.path
+        + "（candidate " + file.candidate_id + " · sha256 "
+        + String(file.asset_sha256).slice(0, 12) + "…）");
+    });
+    lines.push("");
+    lines.push("manifest.json 记录每张图的来源与指纹；checks.json 记录门禁与审核发现。");
+    lines.push("本包只包含已采用的候选；未采用候选与完整历史请用「导出项目包」。");
+    return lines.join("\n");
+  }
+
+  /** 生成交付包：门禁通过才打包；任何一步失败都不写 export_record。 */
+  async function handleDeliverExport() {
+    if (!projectId || deliveryInFlight) return;
+    clearError(elements.deliverError);
+    deliveryInFlight = true;
+    renderDeliveryGate();
+    try {
+      await refreshDeliveryGate();
+      const state = deliveryGateState;
+      if (!state || state.failed || state.ready_to_export !== true) {
+        showError(elements.deliverError, state && state.failed
+          ? ("门禁检查失败：" + (state.message || "未知错误"))
+          : "交付门禁未通过：先处理阻断项并确认 Unknown。");
+        elements.deliverStatus.textContent = "交付门禁未通过，没有生成交付包。";
+        return;
+      }
+      const selectionMap = suiteSelectionMap();
+      const images = [];
+      const files = [];
+      for (const shot of shotSummariesNow()) {
+        const candidateId = selectionMap[shot.shot_id];
+        if (!candidateId) continue;
+        const candidate = candidatePayloadsOf(shot.shot_id)
+          .find((item) => item && item.candidate_id === candidateId) || null;
+        if (!candidate) {
+          showError(elements.deliverError, shot.label + " 的选择指向的候选不存在，不能打包。");
+          elements.deliverStatus.textContent = "交付包未生成。";
+          return;
+        }
+        const bytes = await readCandidateBytes(candidate.asset_sha256);
+        if (!bytes) {
+          showError(elements.deliverError, shot.label + " 的候选字节缺失，不能打包。");
+          elements.deliverStatus.textContent = "交付包未生成。";
+          return;
+        }
+        const mediaType = candidate.media_type || "image/png";
+        images.push({
+          shot_id: shot.shot_id, candidate_id: candidateId,
+          media_type: mediaType, bytes: bytes,
+        });
+        const attemptRecord = attemptChainOf(shot.shot_id)
+          .map((entry) => entry.record)
+          .find((item) => item && item.action_id === candidate.action_id) || null;
+        const prompt = promptRecordOf(shot.shot_id);
+        files.push({
+          shot_id: shot.shot_id, shot_label: shot.label,
+          candidate_id: candidateId, attempt_action_id: candidate.action_id,
+          attempt_state: attemptRecord ? attemptRecord.state : "",
+          asset_sha256: candidate.asset_sha256, media_type: mediaType,
+          byte_size: bytes.length,
+          path: deliveryImagePathOf({
+            shotId: shot.shot_id, candidateId: candidateId, mediaType: mediaType,
+          }),
+          prompt_version: prompt ? prompt.version : null,
+          prompt_hash: prompt ? prompt.record.hash : null,
+        });
+      }
+      if (!images.length) {
+        showError(elements.deliverError, "没有可交付的已采用候选。");
+        elements.deliverStatus.textContent = "交付包未生成。";
+        return;
+      }
+      const at = new Date().toISOString();
+      const fingerprints = suiteFingerprintsNow();
+      const manifest = buildDeliveryManifest({
+        at: at, files: files,
+        selectionFingerprint: fingerprints.selectionFingerprint,
+        inputsFingerprint: fingerprints.inputsFingerprint,
+      });
+      const checks = buildDeliveryChecks({ at: at, gate: state, files: files });
+      const readme = buildDeliveryReadme({ at: at, files: files });
+      const entries = buildDeliveryEntries({
+        images: images, manifest: manifest, checks: checks, readme: readme,
+      });
+      const zipBytes = buildZip(entries, { modifiedAt: new Date(at) });
+      const zipSha256 = await sha256Hex(zipBytes);
+      const projectName = (project && project.name) || "";
+      const record = buildExportRecord({
+        projectId: projectId, projectName: projectName,
+        zipSha256: zipSha256, zipBytes: zipBytes.length, entries: entries,
+        gate: state,
+        selectionFingerprint: fingerprints.selectionFingerprint,
+        inputsFingerprint: fingerprints.inputsFingerprint,
+        includedShotIds: images.map((item) => item.shot_id), at: at,
+      });
+      await repository.documents.save(projectId, {
+        kind: EXPORT_RECORD_KIND,
+        documentId: exportRecordDocumentIdOf({ at: at, zipSha256: zipSha256 }),
+        payload: record,
+      });
+      const url = URL.createObjectURL(new Blob([zipBytes], { type: "application/zip" }));
+      objectUrls.push(url);
+      deliveryRecord = {
+        file_name: deliveryFileName({ projectName: projectName, at: at }),
+        byte_size: zipBytes.length, sha256: zipSha256, at: at, url: url,
+      };
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = deliveryRecord.file_name;
+      document.body.append(anchor);
+      anchor.click();
+      anchor.remove();
+      elements.deliverStatus.textContent = "已生成交付包（" + images.length
+        + " 张图；记录已追加，不覆盖历史）。";
+    } catch (error) {
+      elements.deliverStatus.textContent = "交付包未生成。";
+      showError(elements.deliverError, (error && error.message) || "生成交付包失败，请重试。");
+    } finally {
+      deliveryInFlight = false;
+      renderDeliveryGate();
     }
   }
 
@@ -5254,6 +5676,7 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
       stageShell.select("deliver", { focusHeading: true });
     });
     elements.deliverProjectPackage.addEventListener("click", () => { handleExportFromWorkspace(); });
+    elements.deliverExport.addEventListener("click", () => { handleDeliverExport(); });
     if (elements.suiteReviewRun) {
       elements.suiteReviewRun.addEventListener("click", () => { runSuiteReview(); });
     }
@@ -5282,6 +5705,10 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     reviewReports = new Map();
     suiteReports = new Map();
     suiteRunInFlight = false;
+    deliveryGateState = null;
+    deliveryInFlight = false;
+    deliveryRecord = null;
+    acknowledgements = new Map();
     revokePreviewUrls();
     batchState = null;
     compareShotId = null;
@@ -5394,6 +5821,34 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
         suiteReports.set(SUITE_REVIEW_DOCUMENT_ID, {
           report: record.payload, version: record.version,
         });
+      }
+    }
+    const ackDocs = await repository.documents.listLatest(projectId, REVIEW_ACK_KIND);
+    if (token !== openToken) return;
+    for (const record of ackDocs) {
+      if (record.payload && typeof record.payload === "object") {
+        acknowledgements.set(record.document_id,
+          { record: record.payload, version: record.version });
+      }
+    }
+    const exportDocs = await repository.documents.listLatest(projectId, EXPORT_RECORD_KIND);
+    if (token !== openToken) return;
+    if (exportDocs.length) {
+      const payloads = exportDocs.map((item) => item.payload)
+        .filter((item) => item && typeof item === "object")
+        .sort((left, right) => String(left.exported_at || "")
+          .localeCompare(String(right.exported_at || "")));
+      const latest = payloads.length ? payloads[payloads.length - 1] : null;
+      if (latest && typeof latest === "object") {
+        deliveryRecord = {
+          file_name: deliveryFileName({
+            projectName: (project && project.name) || "", at: latest.exported_at,
+          }),
+          byte_size: Number(latest.zip_bytes) || 0,
+          sha256: String(latest.zip_sha256 || ""),
+          at: latest.exported_at || "",
+          url: null,
+        };
       }
     }
     for (const shot of (suitePlan && Array.isArray(suitePlan.shots) ? suitePlan.shots : [])) {

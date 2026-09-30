@@ -66,6 +66,7 @@ jobs:
           uv run python tools/verify_v2_5_4_rework_loop.py
           uv run python tools/verify_v2_5_5_suite_review.py
           uv run python tools/verify_v2_6_1_selection.py
+          uv run python tools/verify_v2_6_2_delivery.py
           uv run python tools/verify_v2_ui_2_interaction_visual.py
           uv run python tools/verify_v2_ui_3_frontend.py
 

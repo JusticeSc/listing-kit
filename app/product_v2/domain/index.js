@@ -24,3 +24,4 @@ export * from "./compare.js";
 export * from "./rework.js";
 export * from "./selection.js";
 export * from "./suite-review.js";
+export * from "./export-gate.js";

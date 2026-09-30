@@ -29,11 +29,15 @@ class FakeImageProvider:
     """确定性替身；``scenario`` 决定哪一步失败，默认整条链路成功。"""
 
     configured = True
+    DEFAULT_SIZE = 64
 
-    def __init__(self, scenario: str = "ok") -> None:
+    def __init__(self, scenario: str = "ok", *, size: int = DEFAULT_SIZE) -> None:
         if scenario not in FAKE_SCENARIOS:
             raise ValueError(f"未知的假 provider 场景：{scenario}")
         self.scenario = scenario
+        # 交付门禁有平台长边下限（platform.min_long_side = 1000），验证器需要能生成达标尺寸；
+        # 默认仍是 64×64，既有调用与断言不变。
+        self.size = max(8, int(size))
         self.provider_id = FAKE_PROVIDER_ID
         self.model_id = IMAGE_MODEL_ID
         self.calls: dict[str, int] = {"submit": 0, "status": 0, "result": 0}
@@ -62,12 +66,12 @@ class FakeImageProvider:
         return "fake-" + digest
 
     @staticmethod
-    def bytes_for(task_id: str) -> bytes:
+    def bytes_for(task_id: str, size: int = 64) -> bytes:
         """按 task id 派生的确定性 PNG（颜色随 id 变化，便于肉眼与 hash 双重核对）。"""
 
         digest = hashlib.sha256(("png:" + task_id).encode("utf-8")).digest()
         color = (digest[0], digest[1], digest[2])
-        width = height = 64
+        width = height = max(8, int(size))
         raw = b"".join(b"\x00" + bytes(color) * width for _ in range(height))
 
         def chunk(tag: bytes, payload: bytes) -> bytes:
@@ -122,4 +126,4 @@ class FakeImageProvider:
             raise ImageFailure(
                 "provider_failed", "RESULT_NOT_AVAILABLE",
                 "任务没有成功结果可下载。", retry_policy="fatal")
-        return self.bytes_for(request.task_id), "image/png"
+        return self.bytes_for(request.task_id, self.size), "image/png"

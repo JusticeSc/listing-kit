@@ -495,11 +495,13 @@
             <p class="meta">交付包只包含已采用的候选；整套一致性与确定性导出检查通过后才允许生成。</p>
           </div>
           <div id="delivery-gate" class="delivery-gate"></div>
+          <div id="delivery-unknowns" class="delivery-unknowns"></div>
           <div class="toolbar">
             <button id="deliver-export" class="primary" type="button" disabled>生成交付包（ZIP）</button>
             <button id="deliver-project-package" type="button">导出项目包（完整历史）</button>
             <span id="deliver-status" class="meta" role="status"></span>
           </div>
+          <div id="delivery-result" class="delivery-result" hidden></div>
           <p id="deliver-error" class="error" role="alert" hidden></p>
         </section>
       </section>
