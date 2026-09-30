@@ -372,6 +372,40 @@ def main() -> int:
                 # 审核阶段：比较面板 → axe → 技术详情 → 采用 → 整套检查
                 page.click("#stage-next-review")
                 first_shot = shots[0]
+                # V2.6.6：审核卡片此前完全没有样式，候选图被渲染成容器全宽
+                # （1440px 下一屏只看得见图的左上角）。这里量它是否受限。
+                page.wait_for_function(
+                    """() => { const img = document.querySelector(
+                         '#review-list .review-card .review-preview img');
+                       return img && img.src && img.naturalWidth > 0; }""", timeout=15_000)
+                review_preview = page.evaluate(
+                    """() => { const img = document.querySelector(
+                         '#review-list .review-card .review-preview img');
+                       const box = img.getBoundingClientRect();
+                       return {width: Math.round(box.width), height: Math.round(box.height),
+                               natural: img.naturalWidth}; }""")
+                check("V2.6.4-17", "审核卡片候选预览受限（宽 ≤460px、高 ≤480px）",
+                      bool(review_preview) and review_preview["width"] <= 460
+                      and review_preview["height"] <= 480, review_preview)
+                page.set_viewport_size({"width": 390, "height": 844})
+                page.wait_for_timeout(250)
+                review_narrow = page.evaluate(
+                    """() => { const img = document.querySelector(
+                         '#review-list .review-card .review-preview img');
+                       const actions = document.querySelector('#review-list .review-card-actions');
+                       const box = img ? img.getBoundingClientRect() : null;
+                       return {preview: box ? Math.round(box.width) : null,
+                               actions_visible: Boolean(actions && actions.offsetParent !== null),
+                               scroll: document.documentElement.scrollWidth,
+                               client: document.documentElement.clientWidth}; }""")
+                shot(page, "review-390")
+                check("V2.6.4-18", "390px 审核卡片：单列回退、预览受限、操作可见、无横向溢出",
+                      review_narrow["preview"] is not None and review_narrow["preview"] <= 380
+                      and review_narrow["actions_visible"]
+                      and review_narrow["scroll"] <= review_narrow["client"] + 1,
+                      review_narrow)
+                page.set_viewport_size({"width": 1440, "height": 950})
+                page.wait_for_timeout(250)
                 page.click(f'#review-list .review-card[data-shot-id="{first_shot}"] '
                            'button:has-text("比较候选")')
                 page.wait_for_selector("#compare-panel:not([hidden])", timeout=15_000)

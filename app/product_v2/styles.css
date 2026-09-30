@@ -507,6 +507,42 @@ input:disabled, textarea:disabled, select:disabled { background: var(--surface-s
 /* ---------------------------------------------------------------- 审核：比较 / 返工 / 采用 */
 
 .review-list { display: flex; flex-direction: column; gap: 12px; }
+/* V2.6.6：审核卡片此前**没有任何样式** —— 候选图按容器全宽渲染（1440px 实测
+   902×902），一屏只能看到左上角，「审核」这件人做的主要动作被图片顶出屏幕。
+   这里给它边框、受限预览（≤420px）与操作行；断言在
+   tools/verify_v2_6_4_accessibility.py 的 V2.6.4-17。 */
+.review-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  padding: 12px 14px;
+  display: grid;
+  grid-template-columns: minmax(0, 420px) minmax(0, 1fr);
+  gap: 10px 16px;
+  align-items: start;
+}
+.review-card-head { grid-column: 2; grid-row: 1; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.review-card-head .name { font-weight: 600; }
+.review-card .review-preview { grid-column: 1; grid-row: 1; max-width: 420px; }
+.review-card .review-preview img {
+  width: 100%;
+  height: auto;
+  max-height: 420px;
+  object-fit: contain;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+.review-card > .meta { grid-column: 2; grid-row: 2; }
+.review-card-actions { grid-column: 1; grid-row: 2; display: flex; gap: 8px; flex-wrap: wrap; align-self: start; }
+.review-card-actions button { padding: 6px 10px; font-size: 13px; }
+@media (max-width: 760px) {
+  .review-card { grid-template-columns: minmax(0, 1fr); }
+  .review-card-head, .review-card .review-preview, .review-card-actions, .review-card > .meta {
+    grid-column: 1;
+    grid-row: auto;
+  }
+}
 
 .compare-panel, .rework-panel, .adopt-panel {
   background: var(--surface);
