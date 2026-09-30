@@ -278,6 +278,30 @@
           <p id="batch-hint" class="meta" hidden></p>
         </div>
         <div id="attempt-list"></div>
+        <section id="compare-panel" class="compare-panel" hidden aria-labelledby="compare-title">
+          <div class="compare-head">
+            <h4 id="compare-title">候选比较与审核清单</h4>
+            <span id="compare-subject" class="meta"></span>
+            <span class="compare-head-actions">
+              <button id="compare-jump" type="button">下一个待处理</button>
+              <button id="compare-close" type="button">收起</button>
+            </span>
+          </div>
+          <div class="compare-basis">
+            <p class="meta" id="compare-basis-title"></p>
+            <ul id="compare-references" class="compare-references"></ul>
+          </div>
+          <div class="compare-body">
+            <div class="compare-column">
+              <p class="meta">候选（异常优先，同档新到旧）</p>
+              <div id="compare-candidates" class="compare-candidates" role="tablist" aria-label="候选"></div>
+            </div>
+            <div class="compare-column">
+              <div id="compare-checklist" role="tabpanel" tabindex="0" aria-label="审核清单"></div>
+            </div>
+          </div>
+          <p id="compare-status" class="meta" role="status"></p>
+        </section>
       </div>
       <p id="attempt-error" class="error" role="alert" hidden></p>
     </section>

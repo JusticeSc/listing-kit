@@ -18,6 +18,9 @@ import {
   ATTEMPT_RECONCILE_MODES,
   ATTEMPT_STATES,
   CANDIDATE_DOCUMENT_KIND,
+  COMPARE_CONTRACT_VERSION,
+  COMPARE_SEVERITY_TEXT,
+  COMPARE_STATE_TEXT,
   CONFIRM_DOCUMENT_ID,
   CORE_SLOT_REGISTRY,
   DOMAIN_DOCUMENT_KINDS,
@@ -63,11 +66,15 @@ import {
   checkConfirmationRecord,
   checkFactSlot,
   checkPromptRecord,
+  compareCounts,
+  compareRowHeadline,
+  compareRows,
   compilePrompt,
   confirmationSnapshot,
   confirmationStaleness,
   copyShot,
   coreSlotDefinition,
+  defaultCompareTargetId,
   deriveBatchState,
   emptyShotSpecFromShot,
   emptyStyleSpec,
@@ -79,12 +86,14 @@ import {
   newActionId,
   nextFromStatusEnvelope,
   nextFromSubmitEnvelope,
+  nextPendingShotId,
   parsePngDimensions,
   previousVersionOf,
   promptHash,
   promptStaleness,
   recommendPlan,
   referenceFromAsset,
+  reviewChecklist,
   reviewIsCurrent,
   reviewSummaryText,
   removeShot,
@@ -92,6 +101,7 @@ import {
   selectReferences,
   seedSuitePlan,
   specChangeProjection,
+  sortFindings,
   suitePlanSummary,
   suiteSpecDigest,
   styleSpecDiff,
@@ -146,6 +156,17 @@ const ROLE_TEXT = Object.freeze({
 
 const EVIDENCE_TEXT = Object.freeze({
   user: "用户输入", asset: "参考图", model: "模型", rule: "规则",
+});
+
+/** 严重度与复核状态 → 徽标样式；颜色只表达优先级，不改变任何规则判定。 */
+const SEVERITY_BADGE = Object.freeze({
+  BLOCK: "is-review-block", HIGH_RISK: "is-review-high", WARNING: "is-review-warn",
+  UNKNOWN: "is-review-unknown", PASS: "is-review-pass",
+});
+
+const COMPARE_STATE_BADGE = Object.freeze({
+  pending: "is-review-high", unknown: "is-review-unknown", clean: "is-review-pass",
+  unchecked: "is-review-unchecked",
 });
 
 /** 审核优先级：冲突 → 未知 → 缺失 → 未确认 → 已确认 → 已移除。 */
@@ -278,6 +299,15 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     batchHint: document.getElementById("batch-hint"),
     attemptList: document.getElementById("attempt-list"),
     attemptError: document.getElementById("attempt-error"),
+    comparePanel: document.getElementById("compare-panel"),
+    compareSubject: document.getElementById("compare-subject"),
+    compareJump: document.getElementById("compare-jump"),
+    compareClose: document.getElementById("compare-close"),
+    compareBasisTitle: document.getElementById("compare-basis-title"),
+    compareReferences: document.getElementById("compare-references"),
+    compareCandidates: document.getElementById("compare-candidates"),
+    compareChecklist: document.getElementById("compare-checklist"),
+    compareStatus: document.getElementById("compare-status"),
   };
 
   let project = null;
@@ -308,6 +338,9 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
   let candidateInFlight = new Set();
   let reviewInFlight = new Set();
   let reviewReports = new Map();
+  let compareShotId = null;
+  let compareCandidateId = null;
+  let compareToken = 0;
   let previewUrls = new Map();
   let batchState = null;
   let busy = false;
@@ -2504,12 +2537,342 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     return url;
   }
 
+  /* ------------------------------------------- 候选比较与审核清单（V2.5.3） */
+
+  /**
+   * 面板只是投影：候选、报告、参考图全部来自 IndexedDB 已经存在的事实，
+   * 排序与默认目标由 domain/compare.js 决定（唯一权威），这里不重算报告、不写任何记录。
+   */
+  function attemptsByActionId() {
+    const map = {};
+    for (const record of allAttemptRecords()) {
+      if (record && typeof record.action_id === "string") map[record.action_id] = record;
+    }
+    return map;
+  }
+
+  /** 每张图的候选行（异常优先）+ 计划顺序；报告只在 reviewIsCurrent 为真时参与。 */
+  function compareInventory() {
+    const shots = suitePlan ? suitePlanSummary(suitePlan, suiteContext()).shots : [];
+    const rowsByShotId = {};
+    const attempts = attemptsByActionId();
+    for (const item of shots) {
+      const chain = candidateChainOf(item.shot_id);
+      const reports = {};
+      for (const entry of chain) {
+        const candidate = entry && entry.record ? entry.record : entry;
+        if (!candidate || typeof candidate.candidate_id !== "string") continue;
+        const existing = reviewReports.get(candidate.candidate_id);
+        if (existing && reviewIsCurrent(existing.report, candidate)) {
+          reports[candidate.candidate_id] = existing.report;
+        }
+      }
+      rowsByShotId[item.shot_id] = compareRows({
+        candidates: chain, reportsByCandidateId: reports, attemptsByActionId: attempts,
+      });
+    }
+    return { shots, rowsByShotId };
+  }
+
+  function compareTabId(candidateId) {
+    return "compare-tab-" + String(candidateId).replace(/[^A-Za-z0-9_-]/g, "-");
+  }
+
+  function compareStateLabel(row) {
+    return COMPARE_STATE_TEXT[row.review_state] || row.review_state;
+  }
+
+  function openCompare(shotId, options = {}) {
+    compareShotId = shotId;
+    compareCandidateId = options.candidateId || null;
+    renderCompare();
+    if (options.focus === true) {
+      const active = elements.compareCandidates.querySelector('[role="tab"][aria-selected="true"]');
+      if (active) active.focus();
+    }
+  }
+
+  /** 切换查看目标：不改规则、不写存储，只换清单与 aria 选中态，避免重建列表时丢焦点。 */
+  function selectCompareCandidate(candidateId, options = {}) {
+    compareCandidateId = candidateId;
+    const tabs = elements.compareCandidates.querySelectorAll('[role="tab"]');
+    for (const tab of tabs) {
+      const selected = tab.dataset.candidateId === candidateId;
+      tab.setAttribute("aria-selected", selected ? "true" : "false");
+      tab.tabIndex = selected ? 0 : -1;
+      if (selected && options.focus === true) tab.focus();
+    }
+    const inventory = compareInventory();
+    const rows = inventory.rowsByShotId[compareShotId] || [];
+    const shot = ((suitePlan && suitePlan.shots) || [])
+      .find((item) => item && item.shot_id === compareShotId) || null;
+    renderCompareChecklist(shot, rows.find((row) => row.candidate_id === candidateId) || null);
+    elements.compareStatus.textContent = "";
+  }
+
+  function renderCompare() {
+    const ready = understandingReady && Boolean(suitePlan);
+    if (!ready || !compareShotId) {
+      elements.comparePanel.hidden = true;
+      elements.compareCandidates.innerHTML = "";
+      elements.compareChecklist.innerHTML = "";
+      elements.compareReferences.innerHTML = "";
+      elements.compareBasisTitle.textContent = "";
+      return;
+    }
+    const shot = ((suitePlan && suitePlan.shots) || [])
+      .find((item) => item && item.shot_id === compareShotId) || null;
+    if (!shot) {
+      compareShotId = null;
+      renderCompare();
+      return;
+    }
+    const inventory = compareInventory();
+    const rows = inventory.rowsByShotId[compareShotId] || [];
+    if (!rows.length) {
+      compareShotId = null;
+      renderCompare();
+      return;
+    }
+    const targetId = rows.some((row) => row.candidate_id === compareCandidateId)
+      ? compareCandidateId : defaultCompareTargetId(rows);
+    compareCandidateId = targetId;
+    elements.comparePanel.dataset.compareContract = COMPARE_CONTRACT_VERSION;
+    elements.comparePanel.dataset.shotId = compareShotId;
+    elements.comparePanel.hidden = false;
+    const counts = compareCounts(rows);
+    const parts = ["候选 " + counts.total];
+    if (counts.pending) parts.push("待处理 " + counts.pending);
+    if (counts.unknown) parts.push("未知 " + counts.unknown);
+    if (counts.unchecked) parts.push("未检查 " + counts.unchecked);
+    elements.compareSubject.textContent = shotLabelOf(compareShotId) + " · " + parts.join(" · ");
+    const nextShot = nextPendingShotId({
+      rowsByShotId: inventory.rowsByShotId,
+      shotOrder: inventory.shots.map((item) => item.shot_id),
+      currentShotId: compareShotId,
+    });
+    elements.compareJump.disabled = !nextShot;
+    elements.compareJump.dataset.targetShot = nextShot || "";
+    elements.compareStatus.textContent = "";
+    renderCompareCandidates(rows, targetId);
+    renderCompareChecklist(shot, rows.find((row) => row.candidate_id === targetId) || null);
+    refreshCompareReferences(shot).catch(handleInternalError);
+  }
+
+  function renderCompareCandidates(rows, targetId) {
+    const list = elements.compareCandidates;
+    list.innerHTML = "";
+    for (const row of rows) {
+      const item = createElement("li");
+      const card = createElement("button", {
+        className: "compare-card",
+        attrs: {
+          type: "button", role: "tab", id: compareTabId(row.candidate_id),
+          "aria-selected": row.candidate_id === targetId ? "true" : "false",
+          "aria-controls": "compare-checklist",
+          "data-candidate-id": row.candidate_id,
+          "data-review-state": row.review_state,
+          tabindex: row.candidate_id === targetId ? "0" : "-1",
+        },
+      });
+      const thumb = createElement("img", {
+        attrs: { alt: "候选 v" + (row.version || "?") + " 预览", loading: "lazy" },
+      });
+      ensurePreviewUrl(row.shot_id, row.candidate_id, row.asset_sha256).then((url) => {
+        if (url && card.isConnected) thumb.setAttribute("src", url);
+      }).catch(() => {});
+      card.append(thumb);
+      const main = createElement("div", { className: "compare-card-main" });
+      const head = createElement("div", { className: "compare-card-head" });
+      head.append(createElement("span", {
+        className: "name", text: "候选 v" + (row.version === null ? "?" : row.version),
+      }));
+      head.append(createElement("span", {
+        className: "badge " + (COMPARE_STATE_BADGE[row.review_state] || "is-review-unchecked"),
+        text: compareStateLabel(row),
+      }));
+      main.append(head);
+      const source = [];
+      if (row.task_id) source.push("task " + String(row.task_id).slice(0, 8));
+      else if (row.attempt_action_id) source.push("action " + String(row.attempt_action_id).slice(0, 8));
+      if (row.width && row.height) source.push(row.width + "×" + row.height);
+      if (row.created_at) source.push(shortTime(row.created_at));
+      source.push("sha256 " + String(row.asset_sha256).slice(0, 12) + "…");
+      main.append(createElement("span", { className: "meta", text: source.join(" · ") }));
+      main.append(createElement("p", { className: "compare-headline", text: compareRowHeadline(row) }));
+      card.append(main);
+      card.addEventListener("click", () => { selectCompareCandidate(row.candidate_id); });
+      item.append(card);
+      list.append(item);
+    }
+  }
+
+  function compareFindingRow(finding) {
+    const item = createElement("li", {
+      className: "compare-finding",
+      attrs: { "data-severity": finding.severity, "data-rule-id": finding.rule_id },
+    });
+    const head = createElement("div", { className: "compare-card-head" });
+    head.append(createElement("span", {
+      className: "badge " + (SEVERITY_BADGE[finding.severity] || "is-review-unknown"),
+      text: COMPARE_SEVERITY_TEXT[finding.severity] || finding.severity,
+    }));
+    head.append(createElement("span", { className: "name", text: finding.title }));
+    head.append(createElement("span", {
+      className: "meta", text: finding.rule_id + " · v" + finding.rule_version,
+    }));
+    item.append(head);
+    item.append(createElement("p", { className: "meta", text: finding.detail }));
+    if (finding.measured !== null && finding.measured !== undefined) {
+      item.append(createElement("p", {
+        className: "meta", text: "实测：" + JSON.stringify(finding.measured).slice(0, 160),
+      }));
+    }
+    return item;
+  }
+
+  /** 审核清单 = 当前候选的待处理发现（异常优先）+ 这张图的验收依据 + 按需展开的完整报告。 */
+  function renderCompareChecklist(shot, row) {
+    const box = elements.compareChecklist;
+    box.innerHTML = "";
+    box.setAttribute("aria-labelledby", row ? compareTabId(row.candidate_id) : "compare-title");
+    if (!row) {
+      box.append(createElement("p", { className: "meta", text: "先选择一个候选。" }));
+      return;
+    }
+    box.dataset.compareState = row.review_state;
+    box.dataset.candidateId = row.candidate_id;
+    const report = row.report;
+    if (report) {
+      const findings = sortFindings(report.findings);
+      const actionable = findings.filter((item) => item.severity !== "PASS");
+      if (actionable.length) {
+        box.append(createElement("h5", { text: "先看这些（" + actionable.length + "）" }));
+        const list = createElement("ul", { className: "compare-findings" });
+        for (const finding of actionable) list.append(compareFindingRow(finding));
+        box.append(list);
+      } else {
+        // 没有待处理项时，这里一句话说明状态就够；细节在完整报告里。
+        box.append(createElement("p", {
+          className: "meta", text: compareRowHeadline(row),
+        }));
+      }
+      const details = createElement("details", { className: "compare-report" });
+      details.append(createElement("summary", {
+        text: "完整报告（合同 " + report.review_contract_version + " · " + findings.length + " 条）",
+      }));
+      details.append(createElement("p", {
+        className: "compare-report-row",
+        text: "候选 sha256 " + String(row.asset_sha256).slice(0, 16) + "… · 报告生成 "
+          + shortTime(report.created_at),
+      }));
+      const vlm = report.vlm;
+      const vlmText = vlm
+        ? (vlm.outcome === "checked" ? "已完成" : "未完成（结果未知，不阻断人工审核）")
+        : "未检查";
+      details.append(createElement("p", {
+        className: "compare-report-row",
+        attrs: { "data-compare-vlm": vlm ? vlm.outcome : "absent" },
+        text: "视觉复核：" + vlmText + (vlm && vlm.model_id ? " · " + vlm.model_id : ""),
+      }));
+      const all = createElement("ul", { className: "compare-findings" });
+      for (const finding of findings) all.append(compareFindingRow(finding));
+      details.append(all);
+      box.append(details);
+    } else {
+      box.append(createElement("p", { className: "meta", text: compareRowHeadline(row) }));
+    }
+    box.append(createElement("h5", { text: "这张图的验收依据" }));
+    const specEntry = shotSpecEntry(shot.shot_id);
+    const checklist = reviewChecklist(shot, {
+      shotSpec: specEntry ? specEntry.spec : null, styleSpec: styleSpec,
+    });
+    const criteria = createElement("ul", { className: "compare-basis-list" });
+    criteria.append(createElement("li", { text: "目的：" + checklist.purpose }));
+    if (checklist.must_keep.length) {
+      criteria.append(createElement("li", { text: "必须保持：" + checklist.must_keep.join("；") }));
+    }
+    if (checklist.may_change.length) {
+      criteria.append(createElement("li", { text: "允许变化：" + checklist.may_change.join("；") }));
+    }
+    if (checklist.style_lines.length) {
+      criteria.append(createElement("li", { text: "公共风格：" + checklist.style_lines.join("；") }));
+    }
+    if (!checklist.saved) {
+      criteria.append(createElement("li", {
+        className: "meta", text: "单图规格尚未保存，这里用的是默认派生值。",
+      }));
+    }
+    box.append(criteria);
+  }
+
+  /** 这张图实际会发送的参考图（与提交时同一选择函数），用作比较的左边一栏。 */
+  async function refreshCompareReferences(shot) {
+    const token = ++compareToken;
+    const references = selectReferences(shot, (Array.isArray(intake.references) ? intake.references : [])
+      .map((item) => ({ role: item.role, sha256: item.asset_sha256 })));
+    const entries = [];
+    for (const reference of references) {
+      const asset = await repository.assets.get(projectId, reference.sha256);
+      entries.push({ reference, asset });
+    }
+    if (token !== compareToken) return;
+    const list = elements.compareReferences;
+    list.innerHTML = "";
+    if (!entries.length) {
+      elements.compareBasisTitle.textContent = "这张图没有可用参考图（现在提交会被拒绝）。";
+      return;
+    }
+    elements.compareBasisTitle.textContent = "这张图实际发送的参考图（" + entries.length + " 张）";
+    for (const entry of entries) {
+      const item = createElement("li", { attrs: { "data-reference-sha256": entry.reference.sha256 } });
+      const url = await ensurePreviewUrl("参考图", entry.reference.sha256, entry.reference.sha256);
+      if (token !== compareToken) return;
+      if (url) {
+        item.append(createElement("img", {
+          attrs: { src: url, alt: "参考图 " + entry.reference.role, loading: "lazy" },
+        }));
+      } else {
+        item.append(createElement("span", { className: "meta", text: "资产缺失" }));
+      }
+      item.append(createElement("span", {
+        className: "meta", text: (ROLE_TEXT[entry.reference.role] || entry.reference.role)
+          + " · " + String(entry.reference.sha256).slice(0, 8) + "…",
+      }));
+      list.append(item);
+    }
+  }
+
+  function handleCompareKeydown(event) {
+    const tabs = Array.from(elements.compareCandidates.querySelectorAll('[role="tab"]'));
+    if (!tabs.length) return;
+    const current = tabs.findIndex((tab) => tab.getAttribute("aria-selected") === "true");
+    const index = current === -1 ? 0 : current;
+    let next = null;
+    if (event.key === "ArrowRight" || event.key === "ArrowDown") next = (index + 1) % tabs.length;
+    else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+      next = (index - 1 + tabs.length) % tabs.length;
+    } else if (event.key === "Home") next = 0;
+    else if (event.key === "End") next = tabs.length - 1;
+    else if (event.key === "Escape") {
+      event.preventDefault();
+      const entry = elements.attemptList.querySelector(
+        'button[data-compare-action="' + compareShotId + '"]');
+      if (entry) entry.focus(); else elements.compareClose.focus();
+      return;
+    } else {
+      return;
+    }
+    event.preventDefault();
+    selectCompareCandidate(tabs[next].dataset.candidateId, { focus: true });
+  }
+
   function renderAttempts() {
     const ready = understandingReady && Boolean(suitePlan);
     elements.attemptLocked.hidden = ready;
     elements.attemptEditor.hidden = !ready;
     elements.attemptList.innerHTML = "";
-    if (!ready) { renderBatch(); return; }
+    if (!ready) { renderBatch(); renderCompare(); return; }
     const summary = suitePlanSummary(suitePlan, suiteContext());
     const confirmed = confirmationIsCurrent();
     const provider = imageProviderBlock();
@@ -2632,6 +2995,21 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
               }
             });
             row.append(reviewButton);
+            if (candidateChainOf(item.shot_id).length) {
+              const compareButton = createElement("button", {
+                text: "比较候选（" + candidateChainOf(item.shot_id).length + "）",
+                attrs: {
+                  type: "button",
+                  "data-compare-action": item.shot_id,
+                  "aria-expanded": String(compareShotId === item.shot_id),
+                  title: "对比这张图的参考图、历史候选与审核清单",
+                },
+              });
+              compareButton.addEventListener("click", (event) => {
+                openCompare(item.shot_id, { focus: event.detail === 0 });
+              });
+              row.append(compareButton);
+            }
           } else if (stored) {
             row.append(createElement("p", {
               className: "meta attempt-note",
@@ -2749,6 +3127,7 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
       + activeText + "已成功 " + counts.succeeded + " 张；结果未知 " + counts.unknown + " 张；失败 "
       + counts.failed + " 张。" + (confirmed ? "可以整套生成或逐张提交。" : "确认缺失或已过期，暂不能提交。");
     renderBatch();
+    renderCompare();
   }
 
   /**
@@ -3354,6 +3733,26 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     });
     elements.batchReconcile.addEventListener("click", () => { handleBatchReconcile(); });
     elements.batchRetry.addEventListener("click", () => { handleBatchRetry(); });
+    elements.compareJump.addEventListener("click", () => {
+      const target = elements.compareJump.dataset.targetShot;
+      if (!target) {
+        elements.compareStatus.textContent = "这套图没有待处理的候选。";
+        return;
+      }
+      openCompare(target, { focus: true });
+      const row = elements.attemptList.querySelector('.attempt-row[data-shot-id="' + target + '"]');
+      if (row) row.scrollIntoView({ block: "nearest" });
+    });
+    elements.compareClose.addEventListener("click", () => {
+      const previous = compareShotId;
+      compareShotId = null;
+      compareCandidateId = null;
+      renderCompare();
+      const entry = elements.attemptList.querySelector(
+        'button[data-compare-action="' + previous + '"]');
+      if (entry) entry.focus();
+    });
+    elements.compareCandidates.addEventListener("keydown", handleCompareKeydown);
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "hidden" && saveTimer !== null) {
         saveIntakeNow().catch(() => {});
@@ -3384,6 +3783,10 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     reviewReports = new Map();
     revokePreviewUrls();
     batchState = null;
+    compareShotId = null;
+    compareCandidateId = null;
+    compareToken += 1;
+    elements.comparePanel.hidden = true;
     showAll = false;
     interaction = { slotId: null, mode: null };
 

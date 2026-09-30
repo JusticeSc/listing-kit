@@ -26,6 +26,11 @@ export const REVIEW_REPORT_DOCUMENT_KIND = DOMAIN_DOCUMENT_KINDS.review_report;
 
 export const REVIEW_LAYERS = Object.freeze(["generation", "candidate", "export", "vlm"]);
 export const REVIEW_SEVERITIES = Object.freeze(["BLOCK", "HIGH_RISK", "WARNING", "PASS", "UNKNOWN"]);
+/**
+ * 人工先看顺序（唯一权威）：阻断 → 高风险 → 提醒 → 未知。
+ * PASS 只是完成标记，不参与排序；比较面板（domain/compare.js）与本文件的 topFinding 共用这一份。
+ */
+export const REVIEW_SEVERITY_ORDER = Object.freeze(["BLOCK", "HIGH_RISK", "WARNING", "UNKNOWN"]);
 export const VIOLATION_SEVERITIES = Object.freeze(["BLOCK", "HIGH_RISK", "WARNING"]);
 export const UNKNOWN_POLICIES = Object.freeze(["hint", "disable"]);
 export const VLM_OUTCOMES = Object.freeze(["checked", "unknown"]);
@@ -969,8 +974,7 @@ export function reviewIsCurrent(report, candidate) {
 /** 最需要人工先看的发现：BLOCK > HIGH_RISK > WARNING > UNKNOWN；全 PASS 返回 null。 */
 export function topFinding(report) {
   const findings = report && Array.isArray(report.findings) ? report.findings : [];
-  const order = ["BLOCK", "HIGH_RISK", "WARNING", "UNKNOWN"];
-  for (const severity of order) {
+  for (const severity of REVIEW_SEVERITY_ORDER) {
     const hit = findings.find((item) => item && item.severity === severity);
     if (hit) return hit;
   }

@@ -539,3 +539,154 @@ select:focus-visible, summary:focus-visible, .link-button:focus-visible {
 #batch-progress { margin: 0; }
 
 #batch-hint { margin: 0; color: #8a5a00; }
+
+/* 候选比较与审核清单（V2.5.3） */
+
+.compare-panel {
+  margin-top: 14px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfe;
+  display: grid;
+  gap: 10px;
+}
+
+.compare-head { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+
+.compare-head h4 { margin: 0; font-size: 15px; }
+
+.compare-head-actions { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
+
+.compare-head-actions button { padding: 6px 10px; font-size: 13px; }
+
+.compare-head-actions button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.compare-basis { display: grid; gap: 6px; }
+
+.compare-basis .meta { margin: 0; }
+
+.compare-references { list-style: none; margin: 0; padding: 0; display: flex; gap: 8px; flex-wrap: wrap; }
+
+.compare-references li { display: grid; gap: 4px; width: 108px; }
+
+.compare-references img {
+  width: 108px;
+  height: 108px;
+  object-fit: cover;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+}
+
+.compare-references .meta { font-size: 12px; overflow-wrap: anywhere; }
+
+.compare-body {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(220px, 320px) minmax(0, 1fr);
+}
+
+.compare-column { display: grid; gap: 6px; align-content: start; min-width: 0; }
+
+.compare-column > .meta { margin: 0; }
+
+.compare-candidates {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+  max-height: 440px;
+  overflow: auto;
+}
+
+.compare-card {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+  text-align: left;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.compare-card[aria-selected="true"] { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); }
+
+.compare-card img {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 4px;
+  background: #eef1f5;
+}
+
+.compare-card .meta { font-size: 12px; overflow-wrap: anywhere; }
+
+.compare-card-main { display: grid; gap: 3px; min-width: 0; }
+
+.compare-card-head { display: flex; gap: 6px; align-items: baseline; flex-wrap: wrap; }
+
+.compare-card .compare-headline { margin: 2px 0 0; font-size: 13px; overflow-wrap: anywhere; }
+
+.compare-checklist { display: grid; gap: 8px; min-width: 0; }
+
+.compare-checklist h5 { margin: 6px 0 0; font-size: 14px; }
+
+.compare-checklist > .meta { margin: 0; }
+
+.compare-findings { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+
+.compare-finding {
+  border: 1px solid var(--line);
+  border-left-width: 4px;
+  border-radius: 6px;
+  padding: 8px;
+  background: #fff;
+}
+
+.compare-finding[data-severity="BLOCK"] { border-left-color: var(--danger); background: #fdf6f5; }
+
+.compare-finding[data-severity="HIGH_RISK"] { border-left-color: #b8860b; background: #fdfaf0; }
+
+.compare-finding[data-severity="WARNING"] { border-left-color: #b8860b; }
+
+.compare-finding[data-severity="UNKNOWN"] { border-left-color: #8a8f98; background: #f7f8fa; }
+
+.compare-finding[data-severity="PASS"] { border-left-color: #2f7a4f; background: #f7fbf8; }
+
+.compare-finding .meta { margin: 2px 0 0; font-size: 12px; overflow-wrap: anywhere; }
+
+.compare-basis-list { margin: 0; padding-left: 18px; display: grid; gap: 2px; font-size: 13px; }
+
+.compare-report { margin-top: 4px; }
+
+.compare-report summary { cursor: pointer; color: var(--muted); font-size: 13px; }
+
+.compare-report .compare-report-row { margin: 4px 0 0; font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+
+.badge.is-review-block { background: #fbe6e4; color: #8a2420; }
+
+.badge.is-review-high { background: #f4e9cd; color: #6b4e07; }
+
+.badge.is-review-warn { background: #f4e9cd; color: #6b4e07; }
+
+.badge.is-review-unknown { background: #eceef2; color: #4b5563; }
+
+.badge.is-review-pass { background: #dcefe3; color: #215c3a; }
+
+.badge.is-review-unchecked { background: #eceef2; color: #4b5563; }
+
+@media (max-width: 900px) {
+  .compare-body { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 600px) {
+  .compare-references li,
+  .compare-references img { width: 84px; }
+  .compare-references img { height: 84px; }
+}
