@@ -1228,6 +1228,8 @@ stale 而不是被覆盖；失败 Attempt 不影响已有选择。Selection 只�
 
 **2026-10-01 修订（用户授权）**：用户授权执行者「全权自行负责自审自测自改」，V2.UI.2 以自审走查（自动化 E2E + 截图视觉复核）先行通过并继续 V2.UI.3；产品发起人走查与陌生人验收（C15/C17、V2.7.3）保留为发布前人工硬门，不得由自审替代。自审证据：`evals/product-v2/v2.ui.2-walkthrough-record.md` 自审节 + `evals/product-v2/remote-persistence-*` + `evals/product-v2/v2.7.2-remote-real-e2e-*`。
 
+**2026-10-01 修订（V2.UI.3 自审通过）**：同一授权下，V2.UI.3 以自审先行通过：`tools/verify_v2_ui_3_frontend.py` 16/16（空白创建→采用→交付门禁的 fake 主链、失败/Unknown 演练、焦点与保存状态、390px/200%、零意外 console），并按 CI 清单跑完 27 项既有回归；发现并修复「无任务编号的 Unknown 行缺少说明」与验收套件演练 provider 复用缺陷。证据：`evals/product-v2/v2.ui.3-frontend-20261001-025613-final.*`（+回归重跑 `-030253.*`）与 `evals/product-v2/evidence/v2.ui.3-frontend-*`。后续动作转 V2.5.5；产品发起人走查（C15/C17）仍是发布前人工硬门。
+
 **验收与证据**：用正式入口与 fake provider 产出 1440px 整页、关键区域特写、390px 和 200% 缩放证据；产品发起人在真实页面走查首页、资料、方案、生成、审核和错误状态，明确确认信息层级、主操作、图片比较与视觉方向。任何“需要旁边解释才知道点哪里”、工程字段压过业务信息、关键操作被遮挡或视觉仍像调试表单，都使本任务未通过。证据写 `evals/product-v2/v2.ui.2-interaction-visual-*-final.*`。
 
 **回退**：设计未确认时只改交互契约和表现层，不继续 V2.UI.3；现有业务代码和数据不动。

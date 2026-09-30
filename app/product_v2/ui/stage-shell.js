@@ -48,7 +48,7 @@ export function createStageShell({ nav, panelRoot, summary, onSelect = null }) {
     }
   }
 
-  function select(id) {
+  function select(id, { focusHeading = false } = {}) {
     if (!panels.has(id)) return;
     currentId = id;
     for (const [panelId, panel] of panels) panel.hidden = panelId !== id;
@@ -56,6 +56,10 @@ export function createStageShell({ nav, panelRoot, summary, onSelect = null }) {
     paintSummary();
     revealCurrent();
     if (onSelect) onSelect(id);
+    if (focusHeading) {
+      const heading = panels.get(id).querySelector("h3");
+      if (heading && typeof heading.focus === "function") heading.focus();
+    }
   }
 
   /** 窄屏下阶段条可横向滚动：把当前阶段带进可视区，避免主任务被滚出屏幕。 */

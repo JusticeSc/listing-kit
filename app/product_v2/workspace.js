@@ -394,6 +394,8 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
   let understandingError = null;
   let lastAnalyze = null;
   let analyzeProblems = [];
+  // UI.3：异步结束后的焦点落点（结果标题 / 首个问题 / 错误摘要）。
+  let pendingFocus = null;
   let showAll = false;
   let interaction = { slotId: null, mode: null };
   let suitePlan = null;
@@ -440,6 +442,23 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
   function clearError(element) {
     element.textContent = "";
     element.hidden = true;
+  }
+
+  function requestFocus(target) {
+    pendingFocus = target;
+  }
+
+  function flushPendingFocus() {
+    const target = pendingFocus;
+    pendingFocus = null;
+    if (!target) return;
+    const node = typeof target === "function" ? target() : target;
+    if (!node || typeof node.focus !== "function") return;
+    if (!node.hasAttribute("tabindex")
+        && !["BUTTON", "A", "INPUT", "TEXTAREA", "SELECT"].includes(node.tagName)) {
+      node.setAttribute("tabindex", "-1");
+    }
+    node.focus();
   }
 
   /** 生成与审核两个阶段都可能发起提交/核对：错误就近显示在对应阶段，两处同一份文本。 */
@@ -733,6 +752,7 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
       parts.push("服务端拒绝了这份请求；按提示修改资料后可以再试。");
     }
     showError(elements.analyzeError, parts.join(" "));
+    requestFocus(elements.analyzeError);
   }
 
   async function buildAnalyzeBody() {
@@ -865,6 +885,7 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
       const readiness = intakeReadiness(intake);
       if (!readiness.ready) {
         showError(elements.analyzeError, "商品资料还不完整：" + describeBlocking(readiness.blocking));
+        requestFocus(elements.analyzeError);
         return;
       }
       await ensureCoreSlots();
@@ -873,6 +894,7 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
         body = await buildAnalyzeBody();
       } catch (error) {
         showError(elements.analyzeError, "本地资料不完整：" + ((error && error.message) || "未知错误"));
+        requestFocus(elements.analyzeError);
         return;
       }
       let response;
@@ -886,6 +908,7 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
         showError(elements.analyzeError,
           "无法连接分析服务（本机服务是否在运行？）。这次调用可能已经发送，系统不会自动重试；"
           + "需要时请手动再次点击。");
+        requestFocus(elements.analyzeError);
         return;
       }
       let result = null;
@@ -913,6 +936,9 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
       if (Array.isArray(proposal.questions) && proposal.questions.length) {
         analyzeProblems.push("模型提出的问题：" + proposal.questions.join(" / "));
       }
+      requestFocus(analyzeProblems.length
+        ? () => elements.analyzeError
+        : () => document.getElementById("stage-understand-title"));
       stageShell.select("understand");
     } catch (error) {
       handleInternalError(error);
@@ -924,6 +950,7 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
         handleInternalError(error);
       }
       renderAll();
+      flushPendingFocus();
     }
   }
 
@@ -3089,7 +3116,8 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
 
       const row = createElement("div", {
         className: "attempt-row",
-        attrs: { "data-shot-id": item.shot_id, "data-attempt-state": state || "none" },
+        attrs: { "data-shot-id": item.shot_id, "data-attempt-state": state || "none",
+                 "tabindex": "-1" },
       });
       const head = createElement("div", { className: "attempt-head" });
       head.append(createElement("span", { className: "name", text: item.label }));
@@ -3227,7 +3255,8 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
             text: selectionSummaryText(selectionEntry ? selectionEntry.record : null, selectionState),
           }));
         }
-        if (state === ATTEMPT_STATES.pending_submit && !record.task_id) {
+        if ((state === ATTEMPT_STATES.pending_submit || state === ATTEMPT_STATES.unknown)
+            && !record.task_id) {
           row.append(createElement("p", {
             className: "meta attempt-note",
             text: "这次提交没有留下任务编号（可能已到达上游）。系统不会自动重提；可以显式新建 action，或先核对（若已有编号）。",
@@ -4088,6 +4117,13 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
       } else {
         elements.attemptStatus.textContent = "批次结束：" + batchProgressText(finalState);
       }
+      requestFocus(() => {
+        const rows = [...document.querySelectorAll("#attempt-list .attempt-row")];
+        const problem = rows.find((row) => ["failed", "unknown"].includes(
+          row.getAttribute("data-attempt-state")));
+        return problem || rows[0] || elements.attemptStatus;
+      });
+      flushPendingFocus();
     }
   }
 
@@ -4855,10 +4891,18 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
         saveIntakeNow().catch(() => {});
       }
     });
-    elements.stageNextUnderstand.addEventListener("click", () => { stageShell.select("plan"); });
-    elements.stageNextPlan.addEventListener("click", () => { stageShell.select("generate"); });
-    elements.stageNextReview.addEventListener("click", () => { stageShell.select("review"); });
-    elements.stageNextDeliver.addEventListener("click", () => { stageShell.select("deliver"); });
+    elements.stageNextUnderstand.addEventListener("click", () => {
+      stageShell.select("plan", { focusHeading: true });
+    });
+    elements.stageNextPlan.addEventListener("click", () => {
+      stageShell.select("generate", { focusHeading: true });
+    });
+    elements.stageNextReview.addEventListener("click", () => {
+      stageShell.select("review", { focusHeading: true });
+    });
+    elements.stageNextDeliver.addEventListener("click", () => {
+      stageShell.select("deliver", { focusHeading: true });
+    });
     elements.deliverProjectPackage.addEventListener("click", () => { handleExportFromWorkspace(); });
   }
 

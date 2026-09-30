@@ -201,6 +201,38 @@ function showHome() {
   elements.projectView.hidden = true;
 }
 
+/** UI.3：全局保存状态。工作台所有写入都走同一个 repository，这里单点投影到 #save-state。 */
+function instrumentSaveState(repo) {
+  const node = document.getElementById("save-state");
+  const mark = (text) => { if (node) node.textContent = text; };
+  const stamp = () => new Date().toLocaleTimeString("zh-CN", { hour12: false });
+  const wrap = (holder, key) => {
+    if (!holder || typeof holder[key] !== "function") return;
+    const original = holder[key].bind(holder);
+    holder[key] = async (...args) => {
+      try {
+        const result = await original(...args);
+        const version = result && typeof result.version === "number"
+          ? " · 版本 " + result.version
+          : "";
+        mark("已保存" + version + " · " + stamp());
+        return result;
+      } catch (error) {
+        mark("保存失败：" + ((error && error.message) || "未知错误")
+          + "（没有丢失输入，可重试）");
+        throw error;
+      }
+    };
+  };
+  wrap(repo.documents, "save");
+  wrap(repo.assets, "put");
+}
+
+function resetSaveState() {
+  const node = document.getElementById("save-state");
+  if (node) node.textContent = "";
+}
+
 function showProject(project) {
   elements.homeView.hidden = true;
   elements.projectView.hidden = false;
@@ -297,6 +329,7 @@ async function handleOpen(projectId) {
     currentProjectId = projectId;
     const project = await repository.projects.get(projectId);
     showProject(project);
+    resetSaveState();
     renderList();
     if (workspace) await workspace.open(project);
   } catch (error) {
@@ -458,6 +491,7 @@ async function boot() {
   try {
     const opened = await openStorage();
     repository = opened.repository;
+    instrumentSaveState(repository);
     database = opened.db;
     workspace = createWorkspace({
       repository,
@@ -475,6 +509,7 @@ async function boot() {
     }
     if (current) {
       showProject(current);
+      resetSaveState();
       await workspace.open(current);
     } else {
       showHome();

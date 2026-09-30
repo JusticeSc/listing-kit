@@ -1,0 +1,38 @@
+amz-listing-kit Product V2 V2.UI.3 前端验收（真实首页 + 六阶段同页工作台）
+NOT-AUTHORITY: point-in-time verification evidence only
+finished_at: 2026-10-01T03:03:10
+status: passed
+json: evals/product-v2/v2.ui.3-frontend-20261001-030253.json
+
+CHECKS
+- [PASS] UI3-01 首页五态（空/列表/创建/导入/异常）与工作台摘要、全局保存状态在正式入口就位
+- [PASS] UI3-02 六阶段标题可聚焦（tabindex=-1）；外壳纯净（无存储/网络引用）；无内联样式与外部资源
+- [PASS] UI3-03 空白首页：无项目、无预填、唯一可见主操作为「新建项目」
+- [PASS] UI3-04 资料阶段：键盘创建/打开后停靠「资料」，资料齐备后分析可用
+- [PASS] UI3-05 分析完成：自动进入「理解」且焦点落到结果标题
+- [PASS] UI3-06 槽位确认后进入「方案」，焦点落到方案标题
+- [PASS] UI3-07 套图方案可人工增（复制）、删、排序，操作后回到原集合且顺序变化
+- [PASS] UI3-08 整套生成完成：全部终态、焦点落到第一个结果/问题行、全局保存状态可见
+- [PASS] UI3-09 逐图人工采用：每张图进入 current
+- [PASS] UI3-10 交付阶段：门禁逐图 current；交付包按 V2.6.2 待接入禁用；项目包可导出
+- [PASS] UI3-11 刷新恢复：阶段与逐图采用保持，IndexedDB 记录数前后一致
+- [PASS] UI3-12 390px 与 200% 等效视口：无横向溢出且当前阶段可见
+- [PASS] UI3-13 主链零意外 console / page / HTTP 错误
+- [PASS] UI3-14 演练：明确失败与 Unknown 都可见且有下一步动作（重试 / 核对任务）
+- [PASS] UI3-15 演练：等待 4 秒后 Attempt 行数不变（没有自动重提/静默重复提交）
+- [PASS] UI3-16 分析失败：错误摘要可见、包含分类与重试策略，焦点落到错误摘要
+
+SCREENSHOTS
+- evals/product-v2/evidence/v2.ui.3-frontend-20261001-030253-home.png
+- evals/product-v2/evidence/v2.ui.3-frontend-20261001-030253-intake.png
+- evals/product-v2/evidence/v2.ui.3-frontend-20261001-030253-understand.png
+- evals/product-v2/evidence/v2.ui.3-frontend-20261001-030253-plan.png
+- evals/product-v2/evidence/v2.ui.3-frontend-20261001-030253-generate.png
+- evals/product-v2/evidence/v2.ui.3-frontend-20261001-030253-review.png
+- evals/product-v2/evidence/v2.ui.3-frontend-20261001-030253-deliver.png
+- evals/product-v2/evidence/v2.ui.3-frontend-20261001-030253-narrow.png
+- evals/product-v2/evidence/v2.ui.3-frontend-20261001-030253-zoom200.png
+- evals/product-v2/evidence/v2.ui.3-frontend-20261001-030253-drill.png
+
+BOUNDARY
+fake provider + 本机服务器；不证明真实模型质量、整套一致性（V2.5.5）与交付 ZIP（V2.6.2）；产品发起人走查与陌生人验收见 V2.7.3。

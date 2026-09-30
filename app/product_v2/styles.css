@@ -260,6 +260,7 @@ input:disabled, textarea:disabled, select:disabled { background: var(--surface-s
 }
 .workspace-title { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .workspace-title .section-title { font-size: 19px; }
+.save-state { color: var(--text-muted); }
 .project-meta { margin-left: auto; }
 .project-meta summary {
   cursor: pointer;
