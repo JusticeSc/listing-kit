@@ -203,10 +203,22 @@ def main() -> int:
 
             step = time.monotonic()
             page.click("#analyze-run")
-            page.wait_for_selector("#slot-list .slot-row", timeout=300_000)
+            # 成功（出现槽位）与明确失败（页面报错条）二者必居其一。旧实现只等槽位：
+            # 上游欠费时界面已经把原因写清楚了，脚本却空等 300 秒，再报一个不含
+            # 任何原因信息的 TimeoutError（2026-10-01 真实发生）。这里把「界面上的
+            # 原因」直接变成失败原因与证据 —— 省下 5 分钟，也不丢信息。
+            page.wait_for_selector(
+                "#slot-list .slot-row, #analyze-error:not([hidden])", timeout=300_000)
+            analyze_error = page.evaluate(
+                """() => { const node = document.getElementById('analyze-error');
+                     return node && !node.hidden ? (node.textContent || '').trim() : ''; }""")
+            mark("analyze", step)
+            if analyze_error:
+                check("RR-02", "真实语义分析（deepseek-v4.1-flash）返回槽位并进入理解阶段",
+                      False, {"error": analyze_error, "elapsed_s": timings["analyze"]})
+                raise RuntimeError("语义分析未被受理：" + analyze_error[:300])
             page.wait_for_timeout(500)
             slot_count = page.locator("#slot-list .slot-row").count()
-            mark("analyze", step)
             shot("understand")
             check("RR-02", "真实语义分析（deepseek-v4.1-flash）返回槽位并进入理解阶段",
                   slot_count > 0

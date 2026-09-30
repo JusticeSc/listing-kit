@@ -194,6 +194,7 @@ def main() -> int:
     lines += ["", "BOUNDARY",
               "不含任何模型调用；不替代 V2.7.2 真实模型闭环、V2.7.3 人工走查；"
               "上游账户与网络条件可能随时变化。"]
+    lines += ["", f"结果：{ok_count}/{len(checks)} 通过"]
     evidence.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
     payload = {"status": status, "finished_at": finished, "base": args.base,
                "reference": str(reference), "checks": checks, "screenshots": screenshots}

@@ -46,6 +46,7 @@
 | `_working/amz-listing-kit-product-v2/tasks/v255-server.md` | Product V2 V2.5.5 | `设计草案` | `draft` | V2.5.5 服务端施工任务书（与计划 §9.20 落地契约同批）；生效条件：V2.5.5 施工期间；任务在 state 置 done 后改登记为 `superseded` |
 | `_working/amz-listing-kit-product-v2/tasks/v255-verifier.md` | Product V2 V2.5.5 | `设计草案` | `draft` | V2.5.5 验证器施工任务书（与计划 §9.20 落地契约同批）；生效条件：V2.5.5 施工期间；任务在 state 置 done 后改登记为 `superseded` |
 | `_working/amz-listing-kit-product-v2/tasks/v2ui2-interaction-visual.md` | Product V2 V2.UI.2 | `设计草案` | `draft` | V2.UI.2 前端交互契约与视觉基线施工任务书（与计划 §9.19b 落地契约同批）；生效条件：V2.UI.2 施工期间；任务在 state 置 done 后改登记为 `superseded` |
+| `_working/amz-listing-kit-product-v2/tasks/v273-walkthrough-kit.md` | Product V2 V2.7.3 | `设计草案` | `draft` | V2.7.3 陌生人 / 产品发起人走查工具包（前置条件、任务脚本、观察表、归档要求）；生效条件：V2.7.3 走查期间；走查结论归档后改登记为 `superseded` |
 | `_working/amz-listing-kit-product-demo/tasks/brief-d42-usability-a11y.md` | Product V1 D4.2 | `历史证据` | `superseded` | D4.2 已完成；任务书只保留当时边界和执行约束，不再驱动当前施工 |
 | `_working/amz-listing-kit-product-demo/tasks/brief-d43-backup-restore.md` | Product V1 D4.3 | `历史证据` | `superseded` | D4.3 已完成；任务书只保留当时边界和执行约束，不再驱动当前施工 |
 | `_working/amz-listing-kit-product-demo/tasks/d4.13-first-user-walkthrough-kit.md` | Product V1 D4.13 | `历史证据` | `superseded` | 被 Product V2 的 V2.7.3 首次使用者走查取代；旧工具包只保留任务设计参考 |
