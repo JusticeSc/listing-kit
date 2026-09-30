@@ -43,6 +43,9 @@ IMAGE_SUBMIT_PATH = "/api/v2/images/submit"
 IMAGE_STATUS_PATH = "/api/v2/images/status"
 IMAGE_RESULT_PATH = "/api/v2/images/result"
 REVIEW_PATH = "/api/v2/review/candidate"
+# 整套复核一次最多 8 张 × 4MB，base64 后留 1.5 倍余量；只对这条路由放宽。
+MAX_SUITE_REVIEW_BODY_BYTES = 48 * 1024 * 1024
+SUITE_REVIEW_PATH = "/api/v2/review/suite"
 ANALYZE_FIELDS = ("product_name", "description", "selling_points", "focus", "references",
                   "locale", "platform", "max_slots", "existing_slot_ids")
 IMAGE_SUBMIT_FIELDS = ("action_id", "prompt", "references", "size", "seed", "model_id")
@@ -88,6 +91,14 @@ def default_review_provider_factory() -> Any:
     from src.providers.v2_registry import create_review_provider
 
     return create_review_provider()
+
+
+def default_suite_review_provider_factory() -> Any:
+    """默认整套复核 provider：与单图复核同一注册表条目与模型通道，只换适配器。"""
+
+    from src.providers.v2_registry import create_suite_review_provider
+
+    return create_suite_review_provider()
 
 
 def status_for_failure(failure: Any) -> int:
@@ -184,6 +195,11 @@ class ProductV2Handler(BaseHTTPRequestHandler):
     def review_provider_factory(self) -> Callable[[], Any]:
         factory = getattr(self.server, "review_provider_factory", None)
         return factory if callable(factory) else default_review_provider_factory
+
+    @property
+    def suite_review_provider_factory(self) -> Callable[[], Any]:
+        factory = getattr(self.server, "suite_review_provider_factory", None)
+        return factory if callable(factory) else default_suite_review_provider_factory
 
     def _send_bytes(self, code: int, payload: bytes, ctype: str) -> None:
         self.send_response(code)
@@ -286,6 +302,9 @@ class ProductV2Handler(BaseHTTPRequestHandler):
         if path == REVIEW_PATH:
             self._review()
             return
+        if path == SUITE_REVIEW_PATH:
+            self._suite_review()
+            return
         self._send_not_found(path)
 
     def _capabilities(self) -> None:
@@ -297,6 +316,7 @@ class ProductV2Handler(BaseHTTPRequestHandler):
             "analyze_fields": list(ANALYZE_FIELDS),
             "images": self._image_capabilities(),
             "review": self._review_capabilities(),
+            "suite_review": self._suite_review_capabilities(),
             "provider": {
                 "provider_id": None, "model_id": None,
                 "configured": False, "capabilities": {},
@@ -587,16 +607,100 @@ class ProductV2Handler(BaseHTTPRequestHandler):
             return
         self._send_json(200, {"ok": True, "unknown": False, "result": result.to_dict()})
 
+    # ---------------------------------------------------- 整套复核（V2.5.5，跨图）
+
+    def _suite_review_capabilities(self) -> dict[str, Any]:
+        from src.providers.v2_suite_review import MAX_SUITE_IMAGES, SUITE_REVIEW_CONTRACT_VERSION
+
+        block: dict[str, Any] = {
+            "contract": SUITE_REVIEW_CONTRACT_VERSION,
+            "endpoint": SUITE_REVIEW_PATH,
+            "max_images": MAX_SUITE_IMAGES,
+            "provider": {"provider_id": None, "model_id": None,
+                         "configured": False, "capabilities": {}},
+            "unavailable": None,
+        }
+        try:
+            provider = self.suite_review_provider_factory()
+        except Exception as error:  # noqa: BLE001 - 能力查询必须给出可用性而不是 5xx
+            block["unavailable"] = {
+                "kind": _provider_error_kind(error),
+                "detail": redact(type(error).__name__ + ": " + str(error)),
+            }
+            return block
+        block["provider"] = {
+            "provider_id": getattr(provider, "provider_id", None),
+            "model_id": getattr(provider, "model_id", None),
+            "configured": bool(getattr(provider, "configured", True)),
+            "capabilities": provider_capabilities(provider),
+        }
+        return block
+
+    def _suite_review(self) -> None:
+        """一次无状态整套复核：多张已采用图进 → 跨图提示出；服务器不保存图片、不保存结果。"""
+
+        from src.providers.v2_semantic import SemanticFailure, problems_from_parse_error
+        from src.providers.v2_suite_review import parse_suite_review_request
+
+        body, status, payload = self._read_body(MAX_SUITE_REVIEW_BODY_BYTES)
+        if payload is not None:
+            self._send_json(status, payload)
+            return
+        try:
+            decoded = json.loads(body.decode("utf-8"))
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            self._send_json(400, input_rejected_payload("请求体不是合法 JSON。"))
+            return
+        try:
+            request = parse_suite_review_request(decoded)
+        except SemanticFailure as failure:
+            self._send_json(status_for_failure(failure),
+                            {"ok": False, "unknown": False, "error": failure.to_dict()})
+            return
+        except Exception as error:  # noqa: BLE001 - 契约问题一律归 input_rejected
+            try:
+                problems = problems_from_parse_error(error)
+            except Exception:  # noqa: BLE001
+                problems = None
+            self._send_json(400, input_rejected_payload(
+                "整套复核请求字段不符合契约；没有调用模型。", problems))
+            return
+        try:
+            provider = self.suite_review_provider_factory()
+        except Exception as error:  # noqa: BLE001
+            self._send_json(503, provider_unavailable_payload(
+                _provider_error_kind(error),
+                redact(type(error).__name__ + ": " + str(error))))
+            return
+        try:
+            result = provider.review(request)
+        except SemanticFailure as failure:
+            self._send_json(status_for_failure(failure), {
+                "ok": False,
+                "unknown": getattr(failure, "family", None) == "provider_unknown",
+                "error": failure.to_dict(),
+            })
+            return
+        except Exception as error:  # noqa: BLE001 - 未分类异常不冒充 provider 结果
+            self._send_json(500, internal_error_payload(
+                redact(type(error).__name__ + ": " + str(error))))
+            return
+        self._send_json(200, {"ok": True, "unknown": False, "result": result.to_dict()})
+
 
 def create_product_v2_server(host: str = "127.0.0.1", port: int = 8780,
                              provider_factory: Callable[[], Any] | None = None,
                              image_provider_factory: Callable[[], Any] | None = None,
-                             review_provider_factory: Callable[[], Any] | None = None) -> ThreadingHTTPServer:
+                             review_provider_factory: Callable[[], Any] | None = None,
+                             suite_review_provider_factory: Callable[[], Any] | None = None,
+                             ) -> ThreadingHTTPServer:
     """建服务器但不启动；host 由调用方决定（本机默认回环，内网穿透时自行显式放开）。"""
     server = ThreadingHTTPServer((host, port), ProductV2Handler)
     server.provider_factory = provider_factory or default_provider_factory
     server.image_provider_factory = image_provider_factory or default_image_provider_factory
     server.review_provider_factory = review_provider_factory or default_review_provider_factory
+    server.suite_review_provider_factory = (suite_review_provider_factory
+                                            or default_suite_review_provider_factory)
     return server
 
 
@@ -606,6 +710,7 @@ def run_self_check() -> int:
 
     from src.providers.v2_fake_image import FakeImageProvider
     from src.providers.v2_fake_review import FakeReviewProvider
+    from src.providers.v2_fake_suite_review import FakeSuiteReviewProvider
     from src.providers.v2_fake_semantic import FakeSemanticProvider
 
     mode = {"value": "fake"}
@@ -625,9 +730,15 @@ def run_self_check() -> int:
             raise RuntimeError("自检：复核 provider 构造失败")
         return FakeReviewProvider(scenario="ok")
 
+    def suite_factory():
+        if mode["value"] == "broken":
+            raise RuntimeError("自检：整套复核 provider 构造失败")
+        return FakeSuiteReviewProvider(scenario="ok")
+
     server = create_product_v2_server("127.0.0.1", 0, provider_factory=factory,
                                       image_provider_factory=image_factory,
-                                      review_provider_factory=review_factory)
+                                      review_provider_factory=review_factory,
+                                      suite_review_provider_factory=suite_factory)
     threading.Thread(target=server.serve_forever, daemon=True).start()
     host, port = server.server_address[:2]
     checks: list[tuple[str, bool, str]] = []
@@ -780,6 +891,25 @@ def run_self_check() -> int:
             "platform": "amazon_us",
             "product_facts": [{"label": "材质", "value": "玻璃"}],
         }, ensure_ascii=False).encode("utf-8")
+        sample_b64 = base64.b64encode(sample_png).decode("ascii")
+        suite_body = json.dumps({
+            "platform": "amazon_us",
+            "locale": "zh-CN",
+            "style_summary": "自检公共风格：白底、柔和阴影。",
+            "product_facts": [{"label": "材质", "value": "玻璃"}],
+            "images": [
+                {"shot_id": "shot_a", "title": "自检主图", "purpose": "白底展示商品",
+                 "keep_items": ["商品外观"], "allow_changes": ["背景"],
+                 "image": {"media_type": "image/png",
+                           "sha256": hashlib.sha256(sample_png).hexdigest(),
+                           "data_base64": sample_b64}},
+                {"shot_id": "shot_b", "title": "自检场景图", "purpose": "生活场景",
+                 "keep_items": ["商品外观"], "allow_changes": ["背景"],
+                 "image": {"media_type": "image/png",
+                           "sha256": hashlib.sha256(sample_png).hexdigest(),
+                           "data_base64": sample_b64}},
+            ],
+        }, ensure_ascii=False).encode("utf-8")
         status, _, body = request("POST", IMAGE_SUBMIT_PATH, submit_body)
         payload = json_body(body)
         task_id = (payload.get("task") or {}).get("task_id")
@@ -853,6 +983,39 @@ def run_self_check() -> int:
               and "accept" not in json.dumps(result, ensure_ascii=False).lower(),
               f"status={status} findings={len(result.get('findings') or [])}")
 
+        status, _, body = request("GET", CAPABILITIES_PATH)
+        payload = json_body(body)
+        suite_block = payload.get("suite_review") or {}
+        check("capabilities 暴露整套复核（合同、端点、张数上限与 provider）",
+              payload.get("ok") is True
+              and suite_block.get("provider", {}).get("configured") is True
+              and suite_block.get("endpoint") == SUITE_REVIEW_PATH
+              and suite_block.get("max_images") == 8
+              and suite_block.get("provider", {}).get("model_id") == "fake-qwen-vl-max",
+              f"suite_review={suite_block.get('provider')}")
+
+        status, _, body = request("POST", SUITE_REVIEW_PATH, suite_body)
+        payload = json_body(body)
+        result = payload.get("result") or {}
+        sent = {"shot_a", "shot_b"}
+        check("整套复核路由（fake provider）只给送审集合内提示且不含严重度/采纳结论",
+              status == 200 and payload.get("ok") is True and payload.get("unknown") is False
+              and result.get("checked_shot_ids") == ["shot_a", "shot_b"]
+              and result.get("state") == "checked"
+              and all(set(item.get("shot_ids") or []) <= sent
+                      for item in (result.get("findings") or []))
+              and "block" not in json.dumps(result, ensure_ascii=False).lower(),
+              f"status={status} findings={len(result.get('findings') or [])}")
+
+        bad_suite = json.loads(suite_body.decode("utf-8"))
+        bad_suite["images"][1]["image"]["sha256"] = "0" * 64
+        status, _, body = request("POST", SUITE_REVIEW_PATH,
+                                  json.dumps(bad_suite, ensure_ascii=False).encode("utf-8"))
+        payload = json_body(body)
+        check("整套复核图片哈希与字节不一致 → input_rejected/400（不调用模型）",
+              status == 400 and payload.get("error", {}).get("family") == "input_rejected",
+              f"status={status} error={payload.get('error')}")
+
         bad_review = json.loads(review_body.decode("utf-8"))
         bad_review["candidate"]["sha256"] = "0" * 64
         status, _, body = request("POST", REVIEW_PATH,
@@ -874,6 +1037,20 @@ def run_self_check() -> int:
         status, _, body = request("POST", REVIEW_PATH, review_body)
         payload = json_body(body)
         check("复核 provider 不可用时复核路由 503 且错误分类明确",
+              status == 503 and payload.get("error", {}).get("code") == "PROVIDER_NOT_CONFIGURED"
+              and payload.get("unknown") is False,
+              f"status={status} error={payload.get('error')}")
+        status, _, body = request("GET", CAPABILITIES_PATH)
+        payload = json_body(body)
+        check("整套复核 provider 不可用时 capabilities 仍 200 且 configured=false",
+              status == 200
+              and (payload.get("suite_review") or {}).get("provider", {}).get("configured") is False
+              and (((payload.get("suite_review") or {}).get("unavailable") or {}).get("kind")
+                   in ("registry", "dependency")),
+              f"suite_review={(payload.get('suite_review') or {}).get('unavailable')}")
+        status, _, body = request("POST", SUITE_REVIEW_PATH, suite_body)
+        payload = json_body(body)
+        check("整套复核 provider 不可用时路由 503 且错误分类明确",
               status == 503 and payload.get("error", {}).get("code") == "PROVIDER_NOT_CONFIGURED"
               and payload.get("unknown") is False,
               f"status={status} error={payload.get('error')}")

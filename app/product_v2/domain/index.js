@@ -23,3 +23,4 @@ export * from "./review.js";
 export * from "./compare.js";
 export * from "./rework.js";
 export * from "./selection.js";
+export * from "./suite-review.js";

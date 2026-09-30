@@ -25,6 +25,9 @@ export const DOMAIN_DOCUMENT_KINDS = Object.freeze({
   candidate: "candidate",
   review_report: "review_report",
   selection: "selection",
+  suite_review: "suite_review",
+  export_record: "export_record",
+  review_acknowledgement: "review_acknowledgement",
 });
 
 export const MAX_TEXT_LENGTH = 500;

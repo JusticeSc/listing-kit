@@ -201,8 +201,9 @@ def check_static_guards() -> list[dict]:
     panel_ids = re.findall(r'data-stage-panel="([a-z]+)"', html)
     labels = [item.strip() for item in
               re.findall(r'<span class="stage-label">([^<]+)</span>', html)]
+    # 属性容错：标题可以带 tabindex/aria 等属性（V2.UI.3 焦点落点），但六个标题与文案必须原样存在。
     titles = [item.strip() for item in
-              re.findall(r'<h3 id="stage-[a-z]+-title">([^<]+)</h3>', html)]
+              re.findall(r'<h3\b[^>]*id="stage-[a-z]+-title"[^>]*>([^<]+)</h3>', html)]
     title_ok = len(titles) == len(STAGE_IDS) and all(
         all(keyword in titles[index] for keyword in STAGE_TITLE_KEYWORDS[stage_id])
         for index, stage_id in enumerate(STAGE_IDS))

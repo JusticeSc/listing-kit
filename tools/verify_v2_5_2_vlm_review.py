@@ -687,7 +687,9 @@ def main() -> int:
     checks.append({
         "id": "V2.5.2-18",
         "title": "正式入口 --check 全过（含复核路由自检：路由、请求身份、provider 不可用分类）",
-        "ok": entry["rc"] == 0 and any("33/33" in line for line in entry["tail"]),
+        # 自检条目会随批次增加（33 → 38 → …）：断言只看「全过」这一语义，不写死条数。
+        "ok": entry["rc"] == 0 and any(
+            re.search(r"V2 正式入口自检：\d+/\d+ 通过", line) for line in entry["tail"]),
         "detail": {"rc": entry["rc"], "tail": entry["tail"][-3:]},
     })
     expected_console = [item for item in console_errors if "status of 504" in item]

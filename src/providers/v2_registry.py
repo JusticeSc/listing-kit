@@ -199,3 +199,40 @@ def create_review_provider(*, registry: Mapping[str, Any] | None = None,
         scenario = environment.get(FAKE_REVIEW_SCENARIO_ENV) or "ok"
         return FakeReviewProvider(scenario)
     raise ProviderRegistryError(f"provider {chosen} 的复核 adapter 未登记：{adapter!r}。")
+
+
+def create_suite_review_provider(*, registry: Mapping[str, Any] | None = None,
+                                 registry_path: Path | str | None = None,
+                                 env: Mapping[str, str] | None = None,
+                                 provider_id: str | None = None) -> Any:
+    """整套复核 provider：复用复核 provider 的注册表条目与模型通道，只换适配器类。
+
+    这样一来「选哪个复核模型」只有一个权威（review 条目 + AMZ_V2_REVIEW_PROVIDER），
+    不会出现单图与整套各配一个模型而漂移的情况。
+    """
+
+    environment = os.environ if env is None else env
+    data = dict(registry) if registry is not None else load_registry(registry_path)
+    chosen = resolve_review_provider_id(data, env=environment, requested=provider_id)
+    entry = provider_entry(data, chosen)
+    if entry.get("role") not in (None, "review"):
+        raise ProviderRegistryError(f"provider {chosen} 的角色不是 review：{entry.get('role')!r}。")
+    adapter = entry.get("adapter")
+    if adapter == "v2_dashscope_review":
+        try:
+            from src.providers.v2_dashscope_suite_review import DashScopeSuiteReviewProvider
+        except Exception as error:  # 依赖缺失：说清是哪一个模块，不含密钥
+            raise ProviderRegistryError(
+                f"整套复核适配器不可用（{type(error).__name__}）：{error}") from None
+        model_env = entry.get("model_env") or ""
+        model_id = (environment.get(model_env) if model_env else None) or entry.get("model_id")
+        return DashScopeSuiteReviewProvider(model_id=model_id or None)
+    if adapter == "v2_fake_review":
+        try:
+            from src.providers.v2_fake_suite_review import FakeSuiteReviewProvider
+        except Exception as error:
+            raise ProviderRegistryError(
+                f"假整套复核 provider 不可用（{type(error).__name__}）：{error}") from None
+        scenario = environment.get(FAKE_REVIEW_SCENARIO_ENV) or "ok"
+        return FakeSuiteReviewProvider(scenario)
+    raise ProviderRegistryError(f"provider {chosen} 的整套复核 adapter 未登记：{adapter!r}。")

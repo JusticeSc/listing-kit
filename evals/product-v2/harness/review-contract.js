@@ -104,12 +104,31 @@ async function sha256Hex(bytes) {
     .map((byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
-test("R01", "注册表纪律：确定性三层 17 条 + VLM 层非阻断、零问题、版本与消费者齐备", async () => {
-  const deterministicLayers = ["generation", "candidate", "export"];
-  const deterministicCount = DETERMINISTIC_RULES
-    .filter((item) => deterministicLayers.includes(item.layer)).length;
-  expect(deterministicCount === 17, "确定性三层必须保持 17 条规则（现在是 "
-    + deterministicCount + "）");
+test("R01", "注册表纪律：必需规则集合齐备 + VLM 层非阻断、零问题、版本与消费者齐备", async () => {
+  // 语义断言（不写死条数）：新增规则是合法演进，缺一条必需规则或缺 BLOCK 覆盖才是回归。
+  const requiredRuleIds = [
+    "generation.prompt_current", "generation.dependency_satisfied",
+    "generation.platform_provider_match", "generation.references_valid",
+    "generation.risk_visible",
+    "candidate.png_contract", "candidate.record_consistent", "platform.min_long_side",
+    "platform.recommended_long_side", "platform.main_square", "platform.alpha_channel",
+    "candidate.pixel_depth",
+    "export.selection_complete", "export.report_current", "export.no_blocking_findings",
+    "export.chain_integrity", "export.asset_hash_matches",
+    "suite.selection_current", "suite.dependency_satisfied",
+    "export.suite_review_current", "export.unknown_acknowledged",
+  ];
+  const ids = new Set(DETERMINISTIC_RULES.map((item) => item.rule_id));
+  requiredRuleIds.forEach((id) => {
+    expect(ids.has(id), "缺少必需规则 " + id);
+  });
+  expect(ids.size === DETERMINISTIC_RULES.length, "注册表不得出现重复 rule_id");
+  ["generation", "candidate", "export"].forEach((layer) => {
+    const layerRules = DETERMINISTIC_RULES.filter((item) => item.layer === layer);
+    expect(layerRules.length > 0, layer + " 层必须登记规则");
+    expect(layerRules.some((item) => item.severity === "BLOCK"),
+      layer + " 层必须至少有一条 BLOCK 规则");
+  });
   const vlmRules = DETERMINISTIC_RULES.filter((item) => item.layer === "vlm");
   expect(vlmRules.length >= 9, "VLM 层必须登记 check 与完成性规则（现在是 "
     + vlmRules.length + " 条）");
@@ -118,7 +137,7 @@ test("R01", "注册表纪律：确定性三层 17 条 + VLM 层非阻断、零�
   });
   expect(checkRuleRegistry().length === 0, "正式注册表必须零问题");
   const layers = new Set(DETERMINISTIC_RULES.map((item) => item.layer));
-  ["generation", "candidate", "export", "vlm"].forEach((layer) => {
+  ["generation", "candidate", "export", "vlm", "suite"].forEach((layer) => {
     expect(layers.has(layer), "必须覆盖 " + layer + " 层");
   });
   DETERMINISTIC_RULES.forEach((item) => {

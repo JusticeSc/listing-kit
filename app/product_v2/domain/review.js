@@ -24,7 +24,7 @@ export const REVIEW_REPORT_SCHEMA_VERSION = 1;
 export const REVIEW_CONTRACT_VERSION = "v2.5.2";
 export const REVIEW_REPORT_DOCUMENT_KIND = DOMAIN_DOCUMENT_KINDS.review_report;
 
-export const REVIEW_LAYERS = Object.freeze(["generation", "candidate", "export", "vlm"]);
+export const REVIEW_LAYERS = Object.freeze(["generation", "candidate", "export", "vlm", "suite"]);
 export const REVIEW_SEVERITIES = Object.freeze(["BLOCK", "HIGH_RISK", "WARNING", "PASS", "UNKNOWN"]);
 /**
  * 人工先看顺序（唯一权威）：阻断 → 高风险 → 提醒 → 未知。
@@ -231,11 +231,94 @@ export const DETERMINISTIC_RULES = Object.freeze([
     measurement: "分类失败记录（family/code/retry_policy）与候选身份绑定",
     unknown_policy: "hint",
   }),
+  rule({
+    rule_id: "suite.selection_current", version: 1, layer: "suite", title: "必需图人工选择当前有效",
+    severity: "BLOCK", consumer: "export-gate@V2.6.2",
+    measurement: "SelectionSet 中必需条目的 state === current（selection.buildSelectionSet 为唯一测量）",
+    unknown_policy: "hint",
+  }),
+  rule({
+    rule_id: "suite.dependency_satisfied", version: 1, layer: "suite", title: "套图依据依赖",
+    severity: "BLOCK", consumer: "export-gate@V2.6.2",
+    measurement: "suitePlanSummary 的未满足 Shot（suite-plan.evaluateShot 为唯一测量）",
+    unknown_policy: "hint",
+  }),
+  rule({
+    rule_id: "suite.duplicates", version: 1, layer: "suite", title: "重复任务",
+    severity: "WARNING", consumer: "suite-panel@V2.5.5",
+    measurement: "同类模板（或自定义名）且绑定事实集合相同的 Shot 分组（每组至少 2 张）",
+    unknown_policy: "hint",
+  }),
+  rule({
+    rule_id: "suite.recommended_omissions", version: 1, layer: "suite", title: "推荐图未纳入",
+    severity: "WARNING", consumer: "suite-panel@V2.5.5",
+    measurement: "recommendPlan 中 satisfied 且非 required 的模板未被当前计划引用",
+    unknown_policy: "hint",
+  }),
+  rule({
+    rule_id: "suite.selling_point_coverage", version: 1, layer: "suite", title: "卖点覆盖",
+    severity: "WARNING", consumer: "suite-panel@V2.5.5",
+    measurement: "每个非空卖点出现在某张图所绑定事实的已确认值里",
+    unknown_policy: "hint",
+  }),
+  rule({
+    rule_id: "vlm.suite_product_consistency", version: 1, layer: "vlm", title: "跨图商品一致性",
+    severity: "HIGH_RISK", consumer: "suite-panel@V2.5.5",
+    measurement: "整套 VLM 发现（check=suite_product_consistency，shot_ids 必须是送审集合的子集）",
+    unknown_policy: "hint",
+  }),
+  rule({
+    rule_id: "vlm.suite_color_material_consistency", version: 1, layer: "vlm",
+    title: "跨图颜色材质一致性", severity: "HIGH_RISK", consumer: "suite-panel@V2.5.5",
+    measurement: "整套 VLM 发现（check=suite_color_material_consistency，shot_ids 必须是送审集合的子集）",
+    unknown_policy: "hint",
+  }),
+  rule({
+    rule_id: "vlm.suite_cross_image_anomaly", version: 1, layer: "vlm", title: "跨图低级异常",
+    severity: "HIGH_RISK", consumer: "suite-panel@V2.5.5",
+    measurement: "整套 VLM 发现（check=suite_cross_image_anomaly，shot_ids 必须是送审集合的子集）",
+    unknown_policy: "hint",
+  }),
+  rule({
+    rule_id: "vlm.suite_style_consistency", version: 1, layer: "vlm", title: "跨图风格一致性",
+    severity: "WARNING", consumer: "suite-panel@V2.5.5",
+    measurement: "整套 VLM 发现（check=suite_style_consistency，shot_ids 必须是送审集合的子集）",
+    unknown_policy: "hint",
+  }),
+  rule({
+    rule_id: "vlm.suite_inspection_completed", version: 1, layer: "vlm", title: "整套视觉复核完成",
+    severity: "WARNING", consumer: "suite-panel@V2.5.5",
+    measurement: "整套复核结果结构合法且 shot_ids 全部落在送审集合内（checked 且未报告问题 → PASS）",
+    unknown_policy: "hint",
+  }),
+  rule({
+    rule_id: "vlm.suite_inspection_unavailable", version: 1, layer: "vlm", title: "整套视觉复核未完成",
+    severity: "WARNING", consumer: "suite-panel@V2.5.5",
+    measurement: "未执行或失败原因（no_selection/over_limit/missing_bytes/transport/protocol 等）与送审集合绑定",
+    unknown_policy: "hint",
+  }),
+  rule({
+    rule_id: "export.suite_review_current", version: 1, layer: "export", title: "整套一致性报告当前",
+    severity: "BLOCK", consumer: "export-gate@V2.6.2",
+    measurement: "suiteReviewIsCurrent + checkSuiteReviewReport（suite-review.js 为唯一测量）",
+    unknown_policy: "hint",
+  }),
+  rule({
+    rule_id: "export.unknown_acknowledged", version: 1, layer: "export", title: "Unknown 已人工确认",
+    severity: "BLOCK", consumer: "export-gate@V2.6.2",
+    measurement: "review_acknowledgement 文档集覆盖当前单图与整套报告中的全部 UNKNOWN",
+    unknown_policy: "hint",
+  }),
 ]);
 const RULE_BY_ID = Object.freeze(DETERMINISTIC_RULES.reduce((table, entry) => {
   table[entry.rule_id] = entry;
   return table;
 }, {}));
+
+/** 已登记规则的只读查询：消费者用它取权威严重度，不复制注册表。 */
+export function registeredRule(ruleId) {
+  return RULE_BY_ID[ruleId] || null;
+}
 
 /** 注册表自检：缺要素、重复 id、未知词表、consumer 无任务锚点、确认单代码未被认领都报红。 */
 export function checkRuleRegistry(registry = DETERMINISTIC_RULES) {
@@ -321,7 +404,7 @@ export function checkRuleRegistry(registry = DETERMINISTIC_RULES) {
   });
   return problems;
 }
-function makeFinding(ruleId, severity, detail, measured) {
+export function makeFinding(ruleId, severity, detail, measured) {
   const entry = RULE_BY_ID[ruleId];
   if (!entry) invalid("发现引用了未登记的规则：" + String(ruleId));
   if (REVIEW_SEVERITIES.indexOf(severity) === -1) invalid("发现严重度不合法：" + String(severity));
