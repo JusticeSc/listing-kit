@@ -163,7 +163,12 @@ phase_progress:
 
   "7":
     status: active
-    evidence: []
+    evidence:
+      - evals/product-v2/v2.7.1-regression-20261001-0633-final.txt
+      - evals/product-v2/v2.7.1-regression-20261001-0633-final.json
+      - evals/product-v2/v2.7.1-regression-20261001-061430-final.txt
+      - tools/verify_v2_7_1_regression.py
+      - evals/probes/docs_index.py
 
 task_progress:
   V2.0.1:
@@ -804,7 +809,18 @@ task_progress:
       - evals/product-v2/evidence/v2.6.4-a11y-20261001-060920-v266-final4-review-390.png
       - tools/verify_v2_6_4_accessibility.py
       - app/product_v2/styles.css
-next_action_task: V2.7.1
+  V2.7.1:
+    status: done
+    evidence:
+      - evals/product-v2/v2.7.1-regression-20261001-0633-final.txt
+      - evals/product-v2/v2.7.1-regression-20261001-0633-final.json
+      - evals/product-v2/v2.7.1-regression-20261001-061430-final.txt
+      - evals/product-v2/v2.7.1-regression-20261001-061430-final.json
+      - tools/verify_v2_7_1_regression.py
+      - evals/probes/docs_index.py
+      - evals/probes/project_state.py
+      - tools/verify_v2_1_2_project_home.py
+next_action_task: V2.7.2
 blockers: []
 unknowns:
   - visual_language_review_detection_quality_is_uncalibrated_channels_and_binding_only_proven_in_V2.5.2
@@ -812,5 +828,5 @@ unknowns:
   - dashscope_balance_arrears_20261001T0433_remote_real_e2e_blocked_at_semantic_step
     upstream_account_arrears_evidence_evals_product_v2_evidence_remote-real-e2e-20261001-043317-lamp01-failure.png
     retry_after_topup_before_claiming_v2_7_2_gate
-updated_at: 2026-10-01T06:11:07+08:00
+updated_at: 2026-10-01T06:42:00+08:00
 ```
