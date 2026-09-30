@@ -8,7 +8,13 @@
  *   之后再写入会得到 TransactionInactiveError。需要哈希/编码时先算完再进事务。
  */
 
-import { STORAGE_ERROR_CODES, StorageError, toStorageError } from "./errors.js";
+import {
+  CAPABILITY_GAPS,
+  STORAGE_ERROR_CODES,
+  StorageError,
+  cryptoCapabilityError,
+  toStorageError,
+} from "./errors.js";
 import { DB_NAME } from "./schema.js";
 import { DEFAULT_MIGRATIONS } from "./migrations.js";
 
@@ -20,13 +26,13 @@ export function randomId() {
   if (globalThis.crypto && typeof globalThis.crypto.randomUUID === "function") {
     return globalThis.crypto.randomUUID();
   }
-  throw new StorageError(STORAGE_ERROR_CODES.UNSUPPORTED_BROWSER, "当前浏览器缺少 crypto.randomUUID。");
+  throw cryptoCapabilityError(CAPABILITY_GAPS.RANDOM_UUID, "缺少 crypto.randomUUID，无法生成项目与记录 ID。");
 }
 
 export async function sha256Hex(bytes) {
   const subtle = globalThis.crypto && globalThis.crypto.subtle;
-  if (!subtle) {
-    throw new StorageError(STORAGE_ERROR_CODES.UNSUPPORTED_BROWSER, "当前浏览器缺少 WebCrypto。");
+  if (!subtle || typeof subtle.digest !== "function") {
+    throw cryptoCapabilityError(CAPABILITY_GAPS.WEBCRYPTO, "缺少 crypto.subtle，无法计算 SHA-256。");
   }
   const view = bytes instanceof ArrayBuffer
     ? new Uint8Array(bytes)
@@ -120,6 +126,30 @@ export function schemaVersionOf(migrations = DEFAULT_MIGRATIONS) {
 }
 
 /**
+ * 目标库打不开时保留已知的特定原因（版本过高、配额、schema 损坏），
+ * 其余统一归为 DATABASE_OPEN_FAILED：界面据此把「存储被禁用/数据损坏」
+ * 与「代码太旧」「空间不足」分开处理。
+ */
+function wrapDatabaseOpenFailure(failure) {
+  if (failure instanceof StorageError) {
+    const keep = [
+      STORAGE_ERROR_CODES.SCHEMA_TOO_NEW,
+      STORAGE_ERROR_CODES.SCHEMA_INVALID,
+      STORAGE_ERROR_CODES.QUOTA_EXCEEDED,
+      STORAGE_ERROR_CODES.DUPLICATE_RECORD,
+    ];
+    if (keep.includes(failure.code)) {
+      return failure;
+    }
+  }
+  return new StorageError(
+    STORAGE_ERROR_CODES.DATABASE_OPEN_FAILED,
+    "打开本机项目数据库失败：" + (failure && failure.message ? failure.message : String(failure)),
+    { gap: CAPABILITY_GAPS.DATABASE_OPEN, cause_code: failure && failure.code ? failure.code : null },
+  );
+}
+
+/**
  * 打开（或创建）数据库并把所有缺失的迁移按版本顺序执行完。
  * 返回 IDBDatabase；调用方负责在不需要时 close()。
  */
@@ -128,9 +158,11 @@ export function openDatabase({
   migrations = DEFAULT_MIGRATIONS,
   idbFactory = globalThis.indexedDB,
 } = {}) {
-  if (!idbFactory) {
+  if (!idbFactory || typeof idbFactory.open !== "function") {
     return Promise.reject(new StorageError(
-      STORAGE_ERROR_CODES.UNSUPPORTED_BROWSER, "当前环境没有 IndexedDB。"));
+      STORAGE_ERROR_CODES.INDEXEDDB_UNAVAILABLE,
+      "当前环境没有 IndexedDB。",
+      { gap: CAPABILITY_GAPS.INDEXEDDB }));
   }
   const ordered = sortMigrations(migrations);
   const targetVersion = schemaVersionOf(ordered);
@@ -139,7 +171,7 @@ export function openDatabase({
     try {
       request = idbFactory.open(name, targetVersion);
     } catch (error) {
-      reject(toStorageError(error));
+      reject(wrapDatabaseOpenFailure(toStorageError(error)));
       return;
     }
     let upgradeError = null;
@@ -172,7 +204,12 @@ export function openDatabase({
       resolve(db);
     };
     request.onerror = () => {
-      reject(upgradeError || toStorageError(request.error));
+      if (upgradeError) {
+        // 迁移失败已有明确语义（事务回滚），不能被改写成能力缺口。
+        reject(upgradeError);
+        return;
+      }
+      reject(wrapDatabaseOpenFailure(toStorageError(request.error)));
     };
     request.onblocked = () => {
       // 另一个标签页占着旧版本连接；不静默重试，等它关闭。

@@ -7,6 +7,7 @@ export * from "./errors.js";
 export * from "./schema.js";
 export * from "./validate.js";
 export * from "./db.js";
+export * from "./capabilities.js";
 export * from "./migrations.js";
 export * from "./pointer.js";
 export * from "./repository.js";

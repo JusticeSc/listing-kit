@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Amazon US 商品套图</title>
+<link rel="icon" href="data:,">
 <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
@@ -14,6 +15,13 @@
 
 <main>
   <p id="boot-error" class="error" role="alert" hidden></p>
+  <section id="capability-notice" class="error diag" role="alert" hidden>
+    <p class="diag-title" data-role="diag-title"></p>
+    <p class="diag-detail" data-role="diag-detail"></p>
+    <p class="diag-meta">当前来源：<code data-role="diag-origin"></code></p>
+    <p class="diag-action" data-role="diag-action"></p>
+    <button type="button" data-role="diag-retry">重新检测</button>
+  </section>
 
   <section id="home-view" aria-labelledby="home-title">
     <h2 id="home-title" class="section-title">本机项目</h2>

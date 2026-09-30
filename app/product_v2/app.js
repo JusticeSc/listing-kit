@@ -6,7 +6,13 @@
  * 这里不提供示例商品、不预填数据、不读服务器最近项目。
  */
 
-import { openStorage, exportProjectPackage, importProjectPackage } from "./storage/index.js";
+import {
+  CAPABILITY_GAPS,
+  openStorage,
+  exportProjectPackage,
+  importProjectPackage,
+  probeBrowserCapabilities,
+} from "./storage/index.js";
 import { createWorkspace } from "./workspace.js";
 
 const STATE_LABELS = {
@@ -24,6 +30,11 @@ const STATE_LABELS = {
 const ERROR_MESSAGES = {
   SCHEMA_TOO_NEW: "本机数据库版本高于当前页面代码，请用较新的页面打开，不要降级覆盖。",
   UNSUPPORTED_BROWSER: "当前浏览器不支持本地项目存储（IndexedDB），请改用现代桌面浏览器。",
+  SECURE_CONTEXT_REQUIRED: "当前来源不是安全上下文（HTTP），浏览器禁用了 WebCrypto；请改用 HTTPS 正式入口。",
+  CRYPTO_UNAVAILABLE: "当前浏览器缺少所需的 WebCrypto 能力，请升级到当前稳定版桌面 Chrome 或 Edge。",
+  INDEXEDDB_UNAVAILABLE: "当前浏览器没有可用的 IndexedDB，请改用当前稳定版桌面 Chrome 或 Edge。",
+  DATABASE_OPEN_FAILED: "本机项目数据库打不开，请检查浏览器存储设置后重试。",
+  TRANSACTION_UNAVAILABLE: "本机项目数据库无法完成读写事务，请检查浏览器存储设置后重试。",
   QUOTA_EXCEEDED: "本机存储空间不足。请先复制或备份项目，再清理浏览器数据。",
   PACKAGE_INVALID: "这个文件不是有效的项目包（可能已损坏或被改动过），没有导入任何数据。",
   PACKAGE_UNSUPPORTED_VERSION: "项目包版本高于当前页面支持的版本，请用较新版本打开。",
@@ -33,11 +44,13 @@ const ERROR_MESSAGES = {
 
 const elements = {
   bootError: document.getElementById("boot-error"),
+  capabilityNotice: document.getElementById("capability-notice"),
   homeError: document.getElementById("home-error"),
   homeView: document.getElementById("home-view"),
   projectView: document.getElementById("project-view"),
   createForm: document.getElementById("create-form"),
   nameInput: document.getElementById("new-project-name"),
+  createSubmit: document.getElementById("create-project"),
   importTrigger: document.getElementById("import-trigger"),
   importFile: document.getElementById("import-file"),
   projectList: document.getElementById("project-list"),
@@ -94,6 +107,84 @@ function showStatus(message) {
 function clearStatus() {
   elements.homeStatus.textContent = "";
   elements.homeStatus.hidden = true;
+}
+
+/**
+ * 能力缺口 → 界面投影（V2.UI.1）。
+ * 每条都点名真实缺口与可执行动作；不得把 WebCrypto 缺失写成 IndexedDB 不支持。
+ * 正常可用时不渲染任何工程诊断。
+ */
+const CAPABILITY_DIAGNOSES = Object.freeze({
+  [CAPABILITY_GAPS.SECURE_CONTEXT]: {
+    code: "SECURE_CONTEXT_REQUIRED",
+    title: "当前来源不是安全上下文（HTTP）",
+    detail: "浏览器在非安全来源禁用 WebCrypto：crypto.randomUUID 与 crypto.subtle 不可用，"
+      + "因此无法新建项目、导入项目包或计算内容哈希。IndexedDB 本身可用，这不是 IndexedDB 缺失。",
+    action: "请改用部署者提供的 HTTPS 正式入口；本机开发可用 http://127.0.0.1 或 http://localhost。",
+  },
+  [CAPABILITY_GAPS.INDEXEDDB]: {
+    code: "INDEXEDDB_UNAVAILABLE",
+    title: "当前浏览器没有 IndexedDB",
+    detail: "项目保存在浏览器本地的 IndexedDB 里，这个浏览器没有暴露该能力。",
+    action: "请改用当前稳定版桌面 Chrome 或 Edge 打开。",
+  },
+  [CAPABILITY_GAPS.DATABASE_OPEN]: {
+    code: "DATABASE_OPEN_FAILED",
+    title: "本机项目数据库打不开",
+    detail: "浏览器拒绝打开或升级本机项目数据库；常见原因是本站存储被禁用、无痕模式限制或数据损坏。",
+    action: "允许本站使用存储后点“重新检测”；仍然失败就换一个浏览器配置文件再试。",
+  },
+  [CAPABILITY_GAPS.RANDOM_UUID]: {
+    code: "CRYPTO_UNAVAILABLE",
+    title: "当前浏览器缺少 crypto.randomUUID",
+    detail: "生成项目与记录 ID 需要 WebCrypto 随机 UUID，这个浏览器没有提供。",
+    action: "请升级到当前稳定版桌面 Chrome 或 Edge。",
+  },
+  [CAPABILITY_GAPS.WEBCRYPTO]: {
+    code: "CRYPTO_UNAVAILABLE",
+    title: "当前浏览器缺少 crypto.subtle",
+    detail: "计算内容哈希（SHA-256）需要 WebCrypto，这个浏览器没有提供。",
+    action: "请升级到当前稳定版桌面 Chrome 或 Edge。",
+  },
+  [CAPABILITY_GAPS.TRANSACTION]: {
+    code: "TRANSACTION_UNAVAILABLE",
+    title: "本机项目数据库无法完成读写事务",
+    detail: "数据库能打开，但一次最小读写事务没有成功；存储可能被浏览器限制或处于只读状态。",
+    action: "检查浏览器存储设置后点“重新检测”。",
+  },
+});
+
+function renderCapabilityDiagnosis(capabilities) {
+  const notice = elements.capabilityNotice;
+  const gap = capabilities.gaps.length > 0 ? capabilities.gaps[0] : null;
+  if (!gap) {
+    clearCapabilityDiagnosis();
+    return;
+  }
+  const diagnosis = CAPABILITY_DIAGNOSES[gap];
+  notice.hidden = false;
+  notice.dataset.errorCode = diagnosis.code;
+  notice.dataset.errorGap = gap;
+  notice.querySelector('[data-role="diag-title"]').textContent = diagnosis.title;
+  notice.querySelector('[data-role="diag-detail"]').textContent = diagnosis.detail;
+  notice.querySelector('[data-role="diag-origin"]').textContent = capabilities.origin || "（未知）";
+  notice.querySelector('[data-role="diag-action"]').textContent = diagnosis.action;
+}
+
+function clearCapabilityDiagnosis() {
+  const notice = elements.capabilityNotice;
+  notice.hidden = true;
+  delete notice.dataset.errorCode;
+  delete notice.dataset.errorGap;
+  for (const role of ["diag-title", "diag-detail", "diag-origin", "diag-action"]) {
+    notice.querySelector('[data-role="' + role + '"]').textContent = "";
+  }
+}
+
+function setHomeControlsBlocked(blocked) {
+  elements.createSubmit.disabled = blocked;
+  elements.nameInput.disabled = blocked;
+  elements.importTrigger.disabled = blocked;
 }
 
 function packageFileName(project, manifest) {
@@ -338,7 +429,32 @@ elements.backHome.addEventListener("click", () => {
   showHome();
 });
 
+elements.capabilityNotice.querySelector('[data-role="diag-retry"]').addEventListener("click", () => {
+  void boot();
+});
+
 async function boot() {
+  if (workspace) {
+    workspace.close();
+    workspace = null;
+  }
+  if (database) {
+    try {
+      database.close();
+    } catch (error) {
+      // 旧连接已经不可用；重新打开即可。
+    }
+    database = null;
+  }
+  repository = null;
+  clearError(elements.homeError);
+  clearError(elements.bootError);
+
+  const capabilities = await probeBrowserCapabilities();
+  renderCapabilityDiagnosis(capabilities);
+  const blocked = capabilities.gaps.length > 0;
+  setHomeControlsBlocked(blocked);
+
   try {
     const opened = await openStorage();
     repository = opened.repository;
@@ -353,6 +469,10 @@ async function boot() {
     const current = await repository.pointer.get();
     currentProjectId = current ? current.project_id : null;
     await refresh();
+    if (blocked) {
+      showHome();
+      return;
+    }
     if (current) {
       showProject(current);
       await workspace.open(current);
