@@ -17,12 +17,17 @@ import { isNonEmptyString, isPlainObject } from "./shared.js";
 
 export const BATCH_SCHEMA_VERSION = 1;
 
-/** 每张图在批次里的状态；前两个是「未提交」的两种原因，其余是 Attempt 状态的投影。 */
+/**
+ * 每张图在批次里的状态；前两个是「未提交」的两种原因，其余是 Attempt 状态的投影。
+ * V2.4.4 起多一种「已成功但候选字节还没进 IndexedDB」的投影（succeeded_unstored）——
+ * 只在调用方提供 candidateStored 时才会出现；不提供时行为与 V2.4.3 完全一致。
+ */
 export const BATCH_SHOT_STATES = Object.freeze({
   blocked_no_prompt: "blocked_no_prompt",
   ready: "ready",
   active: "active",
   succeeded: "succeeded",
+  succeeded_unstored: "succeeded_unstored",
   failed: "failed",
   unknown: "unknown",
 });
@@ -32,16 +37,18 @@ export const BATCH_SHOT_STATE_LABELS = Object.freeze({
   ready: "待提交",
   active: "处理中",
   succeeded: "已成功",
+  succeeded_unstored: "已生成，待保存候选",
   failed: "失败",
   unknown: "结果未知",
 });
 
-/** 下一步优先级：empty → submit → compile → wait → review → retry → done。 */
+/** 下一步优先级：empty → submit → compile → wait → fetch → review → retry → done。 */
 export const BATCH_NEXT_STEPS = Object.freeze({
   empty: "empty",
   submit: "submit",
   compile: "compile",
   wait: "wait",
+  fetch: "fetch",
   review: "review",
   retry: "retry",
   done: "done",
@@ -70,18 +77,25 @@ export function batchSubmitHalts(outcome) {
  *  - shots：套图顺序，[{shot_id, label}]（唯一权威是 suite plan，本层保持原顺序）；
  *  - latestAttempts：shot_id → 最新 Attempt 记录（或 null）；
  *  - promptReady：shot_id → 是否已有可提交的 Prompt 版本。
- * 输出：每张图的状态、计数、四个队列与下一步；同输入必须得到同输出。
+ * 输出：每张图的状态、计数、全部队列与下一步；同输入必须得到同输出。
  */
-export function deriveBatchState({ shots, latestAttempts = {}, promptReady = () => true } = {}) {
+export function deriveBatchState({
+  shots, latestAttempts = {}, promptReady = () => true, candidateStored = null,
+} = {}) {
   if (!Array.isArray(shots)) invalid("批次需要套图顺序（shots 必须是数组）");
   if (!isPlainObject(latestAttempts)) invalid("latestAttempts 必须是 shot_id 到记录的映射");
   if (typeof promptReady !== "function") invalid("promptReady 必须是函数");
+  if (candidateStored !== null && typeof candidateStored !== "function") {
+    invalid("candidateStored 必须是函数或 null（null = 不投影候选状态）");
+  }
   const counts = {
-    total: 0, ready: 0, active: 0, succeeded: 0, failed: 0, unknown: 0, blocked_no_prompt: 0,
+    total: 0, ready: 0, active: 0, succeeded: 0, unstored: 0, failed: 0, unknown: 0,
+    blocked_no_prompt: 0,
   };
   const rows = [];
   const queue = [];
   const reconcileQueue = [];
+  const fetchQueue = [];
   const retryQueue = [];
   const reviewQueue = [];
   let started = false;
@@ -93,11 +107,16 @@ export function deriveBatchState({ shots, latestAttempts = {}, promptReady = () 
     const record = isPlainObject(latestAttempts[shotId]) ? latestAttempts[shotId] : null;
     const hasPrompt = promptReady(shotId) === true;
     let state;
+    let candidateStoredFlag = null;
     if (!record) {
       state = hasPrompt ? BATCH_SHOT_STATES.ready : BATCH_SHOT_STATES.blocked_no_prompt;
     } else {
       started = true;
       state = record.state;
+      if (state === ATTEMPT_STATES.succeeded && candidateStored !== null) {
+        candidateStoredFlag = candidateStored(shotId) === true;
+        if (!candidateStoredFlag) state = BATCH_SHOT_STATES.succeeded_unstored;
+      }
     }
     counts.total += 1;
     if (state === BATCH_SHOT_STATES.ready) {
@@ -105,6 +124,9 @@ export function deriveBatchState({ shots, latestAttempts = {}, promptReady = () 
       queue.push(shotId);
     } else if (state === BATCH_SHOT_STATES.blocked_no_prompt) {
       counts.blocked_no_prompt += 1;
+    } else if (state === BATCH_SHOT_STATES.succeeded_unstored) {
+      counts.unstored += 1;
+      fetchQueue.push(shotId);
     } else if (state === ATTEMPT_STATES.succeeded) {
       counts.succeeded += 1;
     } else if (state === ATTEMPT_STATES.failed) {
@@ -130,16 +152,19 @@ export function deriveBatchState({ shots, latestAttempts = {}, promptReady = () 
       attempt_state: record ? record.state : null,
       action_id: record ? record.action_id : null,
       task_id: record ? record.task_id : null,
+      candidate_stored: candidateStoredFlag,
       reconcile_mode: record ? attemptReconcileMode(record) : ATTEMPT_RECONCILE_MODES.none,
     });
   }
-  const settled = counts.ready === 0 && counts.active === 0 && counts.blocked_no_prompt === 0;
+  const settled = counts.ready === 0 && counts.active === 0
+    && counts.blocked_no_prompt === 0 && counts.unstored === 0;
   const allSucceeded = counts.total > 0 && counts.succeeded === counts.total;
   let nextStep = BATCH_NEXT_STEPS.done;
   if (counts.total === 0) nextStep = BATCH_NEXT_STEPS.empty;
   else if (queue.length > 0) nextStep = BATCH_NEXT_STEPS.submit;
   else if (counts.blocked_no_prompt > 0) nextStep = BATCH_NEXT_STEPS.compile;
   else if (reconcileQueue.length > 0) nextStep = BATCH_NEXT_STEPS.wait;
+  else if (fetchQueue.length > 0) nextStep = BATCH_NEXT_STEPS.fetch;
   else if (reviewQueue.length > 0) nextStep = BATCH_NEXT_STEPS.review;
   else if (retryQueue.length > 0) nextStep = BATCH_NEXT_STEPS.retry;
   return {
@@ -148,6 +173,7 @@ export function deriveBatchState({ shots, latestAttempts = {}, promptReady = () 
     counts: counts,
     queue: queue,
     reconcile_queue: reconcileQueue,
+    fetch_queue: fetchQueue,
     retry_queue: retryQueue,
     review_queue: reviewQueue,
     started: started,
@@ -169,6 +195,7 @@ export function batchProgressText(state) {
   ];
   if (counts.failed > 0) parts.push("失败 " + counts.failed);
   if (counts.unknown > 0) parts.push("结果未知 " + counts.unknown);
+  if (counts.unstored > 0) parts.push("待保存候选 " + counts.unstored);
   if (counts.blocked_no_prompt > 0) parts.push("待编译 Prompt " + counts.blocked_no_prompt);
   return parts.join(" · ") + "。";
 }

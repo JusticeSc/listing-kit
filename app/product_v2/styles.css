@@ -489,6 +489,23 @@ select:focus-visible, summary:focus-visible, .link-button:focus-visible {
 
 .attempt-task { font-family: ui-monospace, Consolas, monospace; word-break: break-all; }
 
+.attempt-preview {
+  margin-top: 6px;
+  max-width: 240px;
+  border: 1px solid #d5dbe4;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #f2f5f9;
+}
+
+.attempt-preview img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.attempt-candidate { margin: 4px 0 0; color: #215c3a; }
+
 .attempt-history { margin-top: 6px; }
 
 .attempt-history summary { cursor: pointer; color: var(--muted); font-size: 13px; }

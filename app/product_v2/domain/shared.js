@@ -22,6 +22,7 @@ export const DOMAIN_DOCUMENT_KINDS = Object.freeze({
   prompt_version: "prompt_version",
   generation_confirm: "generation_confirm",
   generation_attempt: "generation_attempt",
+  candidate: "candidate",
 });
 
 export const MAX_TEXT_LENGTH = 500;

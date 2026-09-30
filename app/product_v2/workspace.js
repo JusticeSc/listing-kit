@@ -17,11 +17,13 @@ import {
   ATTEMPT_DOCUMENT_KIND,
   ATTEMPT_RECONCILE_MODES,
   ATTEMPT_STATES,
+  CANDIDATE_DOCUMENT_KIND,
   CONFIRM_DOCUMENT_ID,
   CORE_SLOT_REGISTRY,
   DOMAIN_DOCUMENT_KINDS,
   FACT_SLOT_SCHEMA_VERSION,
   MAX_REFERENCES,
+  MAX_CANDIDATE_BYTES,
   MANUAL_EDIT_REASON_MAX,
   PRODUCT_INPUT_SCHEMA_VERSION,
   PLATFORM_PROFILES,
@@ -42,6 +44,7 @@ import {
   batchSubmitHalts,
   blockingAttemptFor,
   buildAttemptRecord,
+  buildCandidateRecord,
   briefReadiness,
   buildConfirmationRecord,
   buildConfirmationSheet,
@@ -52,6 +55,9 @@ import {
   canConfirmSlot,
   canDeleteSlot,
   canEditValue,
+  candidateForAttempt,
+  candidateMatchesAttempt,
+  candidateStoreDecision,
   checkConfirmationRecord,
   checkFactSlot,
   checkPromptRecord,
@@ -69,6 +75,7 @@ import {
   newActionId,
   nextFromStatusEnvelope,
   nextFromSubmitEnvelope,
+  parsePngDimensions,
   previousVersionOf,
   promptHash,
   promptStaleness,
@@ -95,11 +102,13 @@ const SHOT_SPEC_KIND = DOMAIN_DOCUMENT_KINDS.shot_spec;
 const PROMPT_KIND = DOMAIN_DOCUMENT_KINDS.prompt_version;
 const CONFIRM_KIND = DOMAIN_DOCUMENT_KINDS.generation_confirm;
 const ATTEMPT_KIND = ATTEMPT_DOCUMENT_KIND;
+const CANDIDATE_KIND = CANDIDATE_DOCUMENT_KIND;
 
 const CAPABILITIES_PATH = "/api/v2/capabilities";
 const ANALYZE_PATH = "/api/v2/semantic/analyze";
 const IMAGE_SUBMIT_PATH = "/api/v2/images/submit";
 const IMAGE_STATUS_PATH = "/api/v2/images/status";
+const IMAGE_RESULT_PATH = "/api/v2/images/result";
 
 const DRAFT_DEBOUNCE_MS = 600;
 const ANALYZE_MAX_SLOTS = 12;
@@ -284,6 +293,9 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
   let confirmRecord = null;
   let attemptChains = new Map();
   let attemptInFlight = new Set();
+  let candidateChains = new Map();
+  let candidateInFlight = new Set();
+  let previewUrls = new Map();
   let batchState = null;
   let busy = false;
   let saveTimer = null;
@@ -305,6 +317,11 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
   function revokeObjectUrls() {
     for (const url of objectUrls) URL.revokeObjectURL(url);
     objectUrls = [];
+  }
+
+  function revokePreviewUrls() {
+    for (const url of previewUrls.values()) URL.revokeObjectURL(url);
+    previewUrls = new Map();
   }
 
   function currentIntakePayload() {
@@ -1948,6 +1965,29 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     attemptChains.set(shotId, chain);
   }
 
+  /** 每张图的候选版本链（按版本升序）；append-only，一条候选绑定一个来源 action。 */
+  function candidateChainOf(shotId) {
+    return candidateChains.get(shotId) || [];
+  }
+
+  function candidateForAttemptRecord(shotId, actionId) {
+    return candidateForAttempt(candidateChainOf(shotId), actionId);
+  }
+
+  function rememberCandidate(shotId, entry) {
+    const chain = candidateChainOf(shotId).filter((item) => item.version !== entry.version);
+    chain.push(entry);
+    chain.sort((left, right) => left.version - right.version);
+    candidateChains.set(shotId, chain);
+  }
+
+  /** 最新 Attempt 若是「已成功且有候选」，返回该候选；其它情况返回 null。 */
+  function latestStoredCandidateOf(shotId) {
+    const latest = latestAttemptOf(shotId);
+    if (!latest || latest.record.state !== ATTEMPT_STATES.succeeded) return null;
+    return candidateForAttemptRecord(shotId, latest.record.action_id);
+  }
+
   function currentPromptPointer(shotId) {
     const entry = promptRecordOf(shotId);
     return entry ? { version: entry.version, hash: entry.record.hash } : null;
@@ -2066,6 +2106,178 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     return { envelope: envelope, status: response.status, transport: false };
   }
 
+  /**
+   * 取回候选字节：POST /api/v2/images/result。
+   * 只接受 200 + image/png；服务端声明的 X-Image-Sha256 与本机重算的 sha256 必须一致，
+   * 不一致就不保存（宁可没有候选，也不存不可信字节）。
+   */
+  async function fetchImageResultBytes(taskId) {
+    let response;
+    try {
+      response = await fetch(IMAGE_RESULT_PATH, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ task_id: taskId }),
+      });
+    } catch (error) {
+      return {
+        ok: false, reason: "transport",
+        message: "取回候选时连接中断；记录保持原样，可以重试（不会重新生成）。",
+      };
+    }
+    if (!response.ok) {
+      let envelope = null;
+      try {
+        envelope = await response.json();
+      } catch (error) {
+        envelope = null;
+      }
+      const failure = envelope && envelope.error ? envelope.error : null;
+      return {
+        ok: false, reason: "http", status: response.status,
+        message: failure
+          ? "取回候选失败：" + failure.family + " / " + failure.code + "：" + failure.message
+          : "取回候选失败（HTTP " + response.status + "）；记录保持原样，可以重试。",
+      };
+    }
+    const mediaType = String(response.headers.get("content-type") || "");
+    if (!mediaType.includes("image/png")) {
+      return {
+        ok: false, reason: "bad_media",
+        message: "结果不是 PNG（" + (mediaType || "无类型") + "），候选未保存。",
+      };
+    }
+    const buffer = await response.arrayBuffer();
+    const sha = await sha256Hex(buffer);
+    const declared = String(response.headers.get("x-image-sha256") || "").toLowerCase();
+    if (declared && declared !== sha) {
+      return {
+        ok: false, reason: "hash_mismatch",
+        message: "下载字节的 sha256 与服务端声明不一致，候选未保存。",
+      };
+    }
+    return {
+      ok: true, buffer: buffer, sha256: sha, media_type: "image/png",
+      provider_id: response.headers.get("x-provider-id") || "",
+      model_id: response.headers.get("x-model-id") || "",
+      task_id: response.headers.get("x-task-id") || taskId,
+    };
+  }
+
+  /**
+   * 候选保存核心：把一次成功的生成变成 IndexedDB 里的字节 + 元数据记录。
+   * 幂等：同一 action 已有候选则跳过；字节走内容寻址，同 hash 只存一份。
+   * 配额不足不产生半份记录：asset 事务失败就没有记录，界面给出可恢复指引。
+   */
+  async function ensureCandidateStored(shotId, options = {}) {
+    if (!projectId) return { skipped: true, reason: "no_project" };
+    if (candidateInFlight.has(shotId)) return { skipped: true, reason: "in_flight" };
+    candidateInFlight.add(shotId);
+    try {
+      const latest = latestAttemptOf(shotId);
+      if (!latest) return { skipped: true, reason: "no_attempt" };
+      const record = latest.record;
+      const decision = candidateStoreDecision({
+        attempt: record, candidates: candidateChainOf(shotId),
+      });
+      if (!decision.needed) return { skipped: true, reason: decision.reason };
+      const fetched = await fetchImageResultBytes(record.task_id);
+      if (!fetched.ok) {
+        return { failed: true, reason: fetched.reason, message: fetched.message };
+      }
+      if (fetched.buffer.byteLength > MAX_CANDIDATE_BYTES) {
+        return {
+          failed: true, reason: "too_large",
+          message: "结果字节超过护栏上限（" + MAX_CANDIDATE_BYTES + " 字节），候选未保存。",
+        };
+      }
+      let dimensions;
+      try {
+        dimensions = parsePngDimensions(new Uint8Array(fetched.buffer));
+      } catch (error) {
+        return {
+          failed: true, reason: "bad_bytes",
+          message: (error && error.message) || "结果不是可解析的 PNG，候选未保存。",
+        };
+      }
+      let asset;
+      try {
+        asset = await repository.assets.put(projectId, {
+          bytes: fetched.buffer,
+          mediaType: "image/png",
+          originalName: shotId + "-" + record.action_id.slice(0, 8) + ".png",
+          role: "candidate",
+          width: dimensions.width,
+          height: dimensions.height,
+        });
+        const candidate = buildCandidateRecord({
+          shotId: shotId,
+          attempt: record,
+          assetSha256: asset.sha256,
+          byteSize: asset.byte_size,
+          width: dimensions.width,
+          height: dimensions.height,
+          at: new Date().toISOString(),
+        });
+        const saved = await repository.documents.save(projectId, {
+          kind: CANDIDATE_KIND, documentId: shotId, payload: candidate,
+        });
+        rememberCandidate(shotId, { record: candidate, version: saved.version });
+      } catch (error) {
+        if (error && error.code === "QUOTA_EXCEEDED") {
+          return {
+            failed: true, reason: "quota",
+            message: "浏览器存储空间不足，候选未保存（记录保持原样）。"
+              + "可以先导出项目或清理旧数据，再点「保存候选图片」重试。",
+          };
+        }
+        return {
+          failed: true, reason: "storage",
+          message: (error && error.message) || "候选保存失败；记录保持原样，可以重试。",
+        };
+      }
+      return {
+        stored: true, candidate_id: record.action_id, sha256: asset.sha256,
+        width: dimensions.width, height: dimensions.height, byte_size: asset.byte_size,
+      };
+    } finally {
+      candidateInFlight.delete(shotId);
+      if (!options.quiet) renderAttempts();
+    }
+  }
+
+  /** 单张「保存候选图片」按钮入口：只翻译结果，不做批次策略。 */
+  async function handleStoreCandidate(shotId) {
+    clearError(elements.attemptError);
+    const result = await ensureCandidateStored(shotId);
+    if (result.stored) {
+      elements.attemptStatus.textContent = "候选已保存：sha256 " + result.sha256.slice(0, 12)
+        + "…（" + result.width + "×" + result.height + "）。";
+    } else if (result.failed) {
+      showError(elements.attemptError, result.message);
+    } else if (result.reason === "already_stored") {
+      elements.attemptStatus.textContent = "这条记录的候选已在本地，无需重复保存。";
+    } else if (result.reason === "not_succeeded") {
+      showError(elements.attemptError, "这次生成还没有成功结论，暂不能保存候选。");
+    } else if (result.reason === "no_task_id") {
+      showError(elements.attemptError, "这条记录没有任务编号，无法取回候选。");
+    } else if (result.reason === "no_attempt") {
+      showError(elements.attemptError, "这张图还没有生成记录。");
+    }
+    return result;
+  }
+
+  /** 预览 URL 缓存：每个候选一个 object URL，关闭项目时统一撤销。 */
+  async function ensurePreviewUrl(shotId, actionId, assetSha256) {
+    const key = shotId + ":" + actionId;
+    if (previewUrls.has(key)) return previewUrls.get(key);
+    const asset = await repository.assets.get(projectId, assetSha256);
+    if (!asset || !(asset.blob instanceof Blob)) return null;
+    const url = URL.createObjectURL(asset.blob);
+    previewUrls.set(key, url);
+    return url;
+  }
+
   function renderAttempts() {
     const ready = understandingReady && Boolean(suitePlan);
     elements.attemptLocked.hidden = ready;
@@ -2136,10 +2348,38 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
           }));
         }
         if (state === ATTEMPT_STATES.succeeded) {
-          row.append(createElement("p", {
-            className: "meta attempt-note",
-            text: "上游已完成。候选图片的保存与预览属于下一批（本批只登记这次生成的身份与结果状态）。",
-          }));
+          const stored = candidateForAttemptRecord(item.shot_id, record.action_id);
+          if (stored && candidateMatchesAttempt(stored, record)) {
+            const candidate = stored.record;
+            const thumb = createElement("div", { className: "attempt-preview" });
+            const img = createElement("img", {
+              attrs: { alt: item.label + " 的候选", loading: "lazy" },
+            });
+            thumb.append(img);
+            row.append(thumb);
+            ensurePreviewUrl(item.shot_id, record.action_id, candidate.asset_sha256)
+              .then((url) => {
+                if (url && img.isConnected) img.src = url;
+              })
+              .catch(() => {});
+            row.append(createElement("p", {
+              className: "meta attempt-candidate",
+              text: "候选已保存到本地 · " + candidate.width + "×" + candidate.height + " · "
+                + candidate.media_type + " · "
+                + Math.max(1, Math.round(candidate.byte_size / 1024)) + " KB · sha256 "
+                + candidate.asset_sha256.slice(0, 12) + "…（预览来自 IndexedDB 里的字节）",
+            }));
+          } else if (stored) {
+            row.append(createElement("p", {
+              className: "meta attempt-note",
+              text: "候选记录与来源 Attempt 不一致：不显示预览（记录保留，等待复核）。",
+            }));
+          } else {
+            row.append(createElement("p", {
+              className: "meta attempt-note",
+              text: "上游已完成，候选字节尚未保存到本地。",
+            }));
+          }
         }
         if (state === ATTEMPT_STATES.pending_submit && !record.task_id) {
           row.append(createElement("p", {
@@ -2193,6 +2433,15 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
         });
         actions.append(button);
       } else if (state === ATTEMPT_STATES.succeeded) {
+        const stored = candidateForAttemptRecord(item.shot_id, record.action_id);
+        if (!stored) {
+          const save = createElement("button", {
+            className: "primary", text: "保存候选图片", attrs: { type: "button" },
+          });
+          save.disabled = inFlight || candidateInFlight.has(item.shot_id);
+          save.addEventListener("click", () => { handleStoreCandidate(item.shot_id); });
+          actions.append(save);
+        }
         const button = createElement("button", {
           text: "再生成一张（新建 action）", attrs: { type: "button" },
         });
@@ -2306,7 +2555,12 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
         kind: ATTEMPT_KIND, documentId: shotId, payload: outcome.record,
       });
       rememberAttempt(shotId, { record: outcome.record, version: savedNext.version });
-      return { ...outcome.outcome, record: outcome.record, submitted: true };
+      // 提交直接到终态（成功）时，同一步把候选字节存进 IndexedDB；失败不掩盖提交结论。
+      let candidate = null;
+      if (outcome.record.state === ATTEMPT_STATES.succeeded) {
+        candidate = await ensureCandidateStored(shotId, { quiet: true });
+      }
+      return { ...outcome.outcome, record: outcome.record, submitted: true, candidate: candidate };
     } catch (error) {
       return {
         thrown: true, state: null, error: null,
@@ -2356,6 +2610,12 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
       showError(elements.attemptError, "这次提交明确失败：" + record.error.message
         + "（重试策略 " + record.error.retry_policy + "）。");
     }
+    if (outcome.candidate && outcome.candidate.failed) {
+      showError(elements.attemptError, outcome.candidate.message);
+    } else if (outcome.candidate && outcome.candidate.stored) {
+      elements.attemptStatus.textContent += " 候选已保存到本地（sha256 "
+        + outcome.candidate.sha256.slice(0, 12) + "…）。";
+    }
     return outcome;
   }
 
@@ -2376,7 +2636,15 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
           kind: ATTEMPT_KIND, documentId: shotId, payload: outcome.record,
         });
         rememberAttempt(shotId, { record: outcome.record, version: saved.version });
-        return { advanced: true, task_id: latest.record.task_id, state: outcome.record.state };
+        // 核对推进到成功时，同一步把候选字节存进 IndexedDB；失败不掩盖核对结论。
+        let candidate = null;
+        if (outcome.record.state === ATTEMPT_STATES.succeeded) {
+          candidate = await ensureCandidateStored(shotId, { quiet: true });
+        }
+        return {
+          advanced: true, task_id: latest.record.task_id, state: outcome.record.state,
+          candidate: candidate,
+        };
       }
       return {
         advanced: false, task_id: latest.record.task_id, state: latest.record.state,
@@ -2410,6 +2678,12 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     if (result.advanced) {
       elements.attemptStatus.textContent = "已核对 task " + result.task_id + "："
         + attemptStateLabel(result.state) + "。";
+      if (result.candidate && result.candidate.failed) {
+        showError(elements.attemptError, result.candidate.message);
+      } else if (result.candidate && result.candidate.stored) {
+        elements.attemptStatus.textContent += " 候选已保存到本地（sha256 "
+          + result.candidate.sha256.slice(0, 12) + "…）。";
+      }
     } else {
       elements.attemptStatus.textContent = "已核对 task " + result.task_id + "：没有新结论（"
         + result.note + "）。";
@@ -2445,6 +2719,7 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
       shots: shots.map((item) => ({ shot_id: item.shot_id, label: item.label })),
       latestAttempts: latest,
       promptReady: (shotId) => Boolean(promptRecordOf(shotId)),
+      candidateStored: (shotId) => Boolean(latestStoredCandidateOf(shotId)),
     });
   }
 
@@ -2483,18 +2758,30 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
       hints.push("有 " + state.review_queue.length
         + " 张没有任务编号、无法核对：系统不会自动重提，需要显式新建 action。");
     }
+    if (state.fetch_queue.length > 0) {
+      hints.push("有 " + state.fetch_queue.length
+        + " 张已生成但候选还没保存到本地：可以点「保存候选图片」逐张保存，或点「保存候选」一次保存剩余。");
+    }
+    if (batchState && batchState.fetchBlocked) {
+      hints.push("候选保存受阻：" + batchState.fetchBlocked);
+    }
     elements.batchHint.textContent = hints.join(" ");
     elements.batchHint.hidden = hints.length === 0;
 
     elements.batchRun.hidden = running;
-    elements.batchRun.disabled = !confirmed || running || state.queue.length === 0;
-    if (state.queue.length === 0) {
-      elements.batchRun.textContent = state.counts.total > 0 && state.all_succeeded
-        ? "已全部生成" : "没有待生成的图";
-    } else {
+    const queueReady = state.queue.length > 0;
+    const fetchOnly = !queueReady && state.fetch_queue.length > 0;
+    elements.batchRun.disabled = running || (queueReady ? !confirmed : !fetchOnly);
+    if (queueReady) {
       elements.batchRun.textContent = state.started
         ? "继续生成剩余（" + state.queue.length + " 张）"
         : "整套生成（" + state.queue.length + " 张）";
+    } else if (fetchOnly) {
+      elements.batchRun.textContent = "保存候选（" + state.fetch_queue.length + " 张）";
+    } else if (state.counts.total > 0 && state.all_succeeded) {
+      elements.batchRun.textContent = "已全部生成";
+    } else {
+      elements.batchRun.textContent = "没有待生成的图";
     }
     elements.batchStop.hidden = !running;
     elements.batchReconcile.hidden = state.reconcile_queue.length === 0;
@@ -2512,18 +2799,18 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
   async function handleBatchRun() {
     if (!projectId || !suitePlan || (batchState && batchState.active)) return;
     clearError(elements.attemptError);
-    if (!confirmationIsCurrent()) {
+    const plan = deriveBatch();
+    if (plan.queue.length === 0 && plan.fetch_queue.length === 0) {
+      showError(elements.attemptError, "没有待提交的图；可以核对进行中、重试失败的图或保存候选。");
+      return;
+    }
+    if (plan.queue.length > 0 && !confirmationIsCurrent()) {
       showError(elements.attemptError,
         "生成前确认缺失或已过期：先回到「生成前确认」重新确认，再整套生成。");
       return;
     }
-    const plan = deriveBatch();
-    if (plan.queue.length === 0) {
-      showError(elements.attemptError, "没有待提交的图；可以核对进行中或重试失败的图。");
-      return;
-    }
     batchState = {
-      active: true, stopped: false, halted: false, haltReason: "",
+      active: true, stopped: false, halted: false, haltReason: "", fetchBlocked: "",
       currentShotId: null, phase: "submit",
     };
     renderAttempts();
@@ -2584,16 +2871,34 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     for (let round = 0; round < maxRounds; round += 1) {
       if (batchState && batchState.halted) return;
       const state = deriveBatch();
-      if (state.reconcile_queue.length === 0) return;
+      if (state.reconcile_queue.length === 0 && state.fetch_queue.length === 0) return;
       if (batchState) { batchState.phase = "poll"; renderBatch(); }
       for (const shotId of state.reconcile_queue) {
         if (batchState && batchState.halted) return;
         await performReconcileAttempt(shotId);
       }
+      // 候选保存：配额受阻时记录原因并停本轮保存；核对路径不受影响。
+      if (!(batchState && batchState.fetchBlocked)) {
+        const fetchState = deriveBatch();
+        for (const shotId of fetchState.fetch_queue) {
+          if (batchState) {
+            batchState.currentShotId = shotId;
+            batchState.phase = "fetch";
+            renderBatch();
+          }
+          const stored = await ensureCandidateStored(shotId);
+          if (stored && stored.failed && stored.reason === "quota") {
+            if (batchState) batchState.fetchBlocked = stored.message;
+            break;
+          }
+        }
+      }
       renderAttempts();
       if (once) return;
       // 停止只停新增提交：已提交的身份仍然各查一次，给出当前结论后不再轮询。
       if (batchState && batchState.stopped) return;
+      const after = deriveBatch();
+      if (after.reconcile_queue.length === 0 && after.fetch_queue.length === 0) return;
       if (round === maxRounds - 1 && batchState) {
         batchState.halted = true;
         batchState.haltReason = "上游长时间没有结论，已停止自动核对；记录仍在，可继续核对";
@@ -2637,7 +2942,7 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
       return;
     }
     batchState = {
-      active: true, stopped: false, halted: false, haltReason: "",
+      active: true, stopped: false, halted: false, haltReason: "", fetchBlocked: "",
       currentShotId: null, phase: "submit",
     };
     renderAttempts();
@@ -2811,6 +3116,9 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     confirmRecord = null;
     attemptChains = new Map();
     attemptInFlight = new Set();
+    candidateChains = new Map();
+    candidateInFlight = new Set();
+    revokePreviewUrls();
     batchState = null;
     showAll = false;
     interaction = { slotId: null, mode: null };
@@ -2872,6 +3180,12 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
       attemptChains.set(shot.shot_id, attemptDocs.slice().reverse()
         .map((record) => ({ record: record.payload, version: record.version })));
     }
+    for (const shot of (suitePlan && Array.isArray(suitePlan.shots) ? suitePlan.shots : [])) {
+      const candidateDocs = await repository.documents.listVersions(projectId, CANDIDATE_KIND, shot.shot_id);
+      if (token !== openToken) return;
+      candidateChains.set(shot.shot_id, candidateDocs.slice().reverse()
+        .map((record) => ({ record: record.payload, version: record.version })));
+    }
     renderAll();
     await deriveAndApplyState();
     renderAll();
@@ -2902,6 +3216,7 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
         }
       }
       revokeObjectUrls();
+      revokePreviewUrls();
       project = null;
       projectId = null;
     },
