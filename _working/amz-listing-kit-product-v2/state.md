@@ -153,6 +153,10 @@ phase_progress:
       - evals/product-v2/v2.6.4-a11y-20261001-052757-final.txt
       - evals/product-v2/v2.6.4-a11y-20261001-052757-final.json
       - tools/verify_v2_6_4_accessibility.py
+      - evals/product-v2/v2.6.4-a11y-20261001-055317-v265-final.txt
+      - evals/product-v2/v2.6.4-a11y-20261001-055317-v265-final.json
+      - evals/product-v2/v2.6.4-a11y-20261001-055253-red-proof-old-layout.txt
+      - evals/product-v2/evidence/v2.6.4-a11y-20261001-055317-v265-final-ref-card-1440.png
 
   "7":
     status: active
@@ -776,6 +780,16 @@ task_progress:
       - app/product_v2/styles.css
       - .github/workflows/ci-cd.yml
       - README.md
+  V2.6.5:
+    status: done
+    evidence:
+      - evals/product-v2/v2.6.4-a11y-20261001-055317-v265-final.txt
+      - evals/product-v2/v2.6.4-a11y-20261001-055317-v265-final.json
+      - evals/product-v2/v2.6.4-a11y-20261001-055253-red-proof-old-layout.txt
+      - evals/product-v2/evidence/v2.6.4-a11y-20261001-055317-v265-final-ref-card-1440.png
+      - evals/product-v2/evidence/remote-real-e2e-20261001-054352-v2.7.2-arrears-retry-failure.png
+      - tools/verify_v2_6_4_accessibility.py
+      - app/product_v2/styles.css
 next_action_task: V2.7.1
 blockers: []
 unknowns:
@@ -784,5 +798,5 @@ unknowns:
   - dashscope_balance_arrears_20261001T0433_remote_real_e2e_blocked_at_semantic_step
     upstream_account_arrears_evidence_evals_product_v2_evidence_remote-real-e2e-20261001-043317-lamp01-failure.png
     retry_after_topup_before_claiming_v2_7_2_gate
-updated_at: 2026-10-01T05:30:28+08:00
+updated_at: 2026-10-01T05:55:42+08:00
 ```

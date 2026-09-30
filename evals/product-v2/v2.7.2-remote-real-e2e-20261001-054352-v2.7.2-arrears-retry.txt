@@ -1,0 +1,45 @@
+amz-listing-kit Product V2 远程真实链路 E2E 预演（真实模型）
+NOT-AUTHORITY: point-in-time verification evidence only
+finished_at: 2026-10-01T05:48:58
+status: failed
+base: https://47.115.172.233:8080
+product_name: 落地灯 · 远程真实链路（V2.7.2）
+reference: _working\amz-listing-kit-product-demo\real-run-lamp\lamp-3m.jpg
+json: evals/product-v2/v2.7.2-remote-real-e2e-20261001-054352-v2.7.2-arrears-retry.json
+
+CHECKS
+- [PASS] RR-01 正式远程入口从空白浏览器配置文件启动：无项目、无预填商品
+
+TIMINGS_S
+- blank_home: 2.0
+- create_open: 0.1
+- intake: 0.3
+
+SHOTS
+
+ATTEMPT_STATES
+
+VLM_REVIEWS
+
+DELIVERY
+- suite: {}
+- status: None
+- export_button_disabled: None
+- package_button_disabled: None
+- delivery_package: {}
+- delivered: {}
+- package: {}
+
+ERRORS
+- console_errors: 1
+    Failed to load resource: the server responded with a status of 502 ()
+- http_errors: ['502 https://47.115.172.233:8080/api/v2/semantic/analyze']
+- page_errors: []
+
+SCREENSHOTS
+- evals/product-v2/evidence/remote-real-e2e-20261001-054352-v2.7.2-arrears-retry-home.png
+- evals/product-v2/evidence/remote-real-e2e-20261001-054352-v2.7.2-arrears-retry-intake.png
+- evals/product-v2/evidence/remote-real-e2e-20261001-054352-v2.7.2-arrears-retry-failure.png
+
+BOUNDARY
+单点时间证据；不替代产品发起人走查与陌生人验收；账户余额等外部前提可能随时变化。

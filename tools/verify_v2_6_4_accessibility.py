@@ -134,6 +134,25 @@ EMPTY_STATE = """() => {
   };
 }"""
 
+# V2.6.5 回归：窄格里的「技术详情」摘要被挤成一列一个字时，既不溢出、也不违反
+# 对比度 —— a11y 扫描与 390px 溢出检查都测不到，只有量它的盒子才知道。
+# 判据：可见摘要的宽度够 4 个字（≥40px）、且只占 1–2 行。
+TECH_SQUEEZE = """() => {
+  const out = [];
+  for (const sum of document.querySelectorAll('.tech-details > summary')) {
+    const box = sum.getBoundingClientRect();
+    if (box.width === 0 && box.height === 0) continue;   // 隐藏阶段的摘要不计
+    const line = parseFloat(getComputedStyle(sum).lineHeight) || 16;
+    out.push({
+      text: (sum.textContent || '').trim().slice(0, 8),
+      width: Math.round(box.width), height: Math.round(box.height),
+      lines: Math.round(box.height / line),
+    });
+  }
+  return out;
+}"""
+
+
 
 def sha256_of(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest().upper()
@@ -305,6 +324,9 @@ def main() -> int:
 
                 # 资料 → 分析 → 槽位 → 方案
                 ui3.fill_intake(page, reference, "V264 A11y")
+                squeeze: dict[str, list] = {}
+                squeeze["intake"] = page.evaluate(TECH_SQUEEZE)
+                shot(page, "ref-card-1440")
                 page.click("#analyze-run")
                 page.wait_for_selector("#slot-list .slot-row", timeout=30_000)
                 ui3.confirm_slots(page)
@@ -356,6 +378,7 @@ def main() -> int:
                 compare_tech = page.evaluate(TECH_PROBE, "#compare-checklist")
                 violations_review = axe_scan(page)
                 buttons_review = page.evaluate(BUTTON_NAMES, "#compare-panel")
+                squeeze["review"] = page.evaluate(TECH_SQUEEZE)
                 shot(page, "review")
                 check("V2.6.4-08", "审核阶段：axe 0 violations、可见按钮都有可访问名、比较清单技术详情默认收起",
                       violations_review == [] and buttons_review["unnamed"] == 0
@@ -373,6 +396,7 @@ def main() -> int:
                     page.wait_for_selector("#adopt-status:not([hidden])", timeout=15_000)
                     page.wait_for_timeout(120)
                 adopt_tech = page.evaluate(TECH_PROBE, "#adopt-panel")
+                squeeze["review-adopted"] = page.evaluate(TECH_SQUEEZE)
                 page.click("#suite-review-run")
                 page.wait_for_function(
                     "() => { const node = document.getElementById('suite-review-status');"
@@ -385,6 +409,7 @@ def main() -> int:
                 v262.download_delivery(page, temp_root / "delivery.zip")
                 page.wait_for_timeout(300)
                 deliver_tech = page.evaluate(TECH_PROBE, "#delivery-result")
+                squeeze["deliver"] = page.evaluate(TECH_SQUEEZE)
                 violations_deliver = axe_scan(page)
                 buttons_deliver = page.evaluate(BUTTON_NAMES, "#stage-panels")
                 shot(page, "deliver")
@@ -401,6 +426,13 @@ def main() -> int:
                       and adopt_tech["open"] == 0
                       and "sha256" not in (adopt_tech.get("main_text") or "").lower(),
                       {"tech": adopt_tech})
+                flat_tech = [item for items in squeeze.values() for item in items]
+                squeezed = [item for item in flat_tech
+                            if item["width"] < 40 or item["lines"] > 2]
+                check("V2.6.4-16", "技术详情摘要全阶段横排可读（不竖排、不挤压）",
+                      bool(flat_tech) and not squeezed,
+                      {"checked": len(flat_tech), "stages": sorted(squeeze),
+                       "bad": squeezed[:3], "samples": flat_tech[:4]})
 
                 # 390px 与 200% 等效视口
                 page.set_viewport_size({"width": 390, "height": 844})

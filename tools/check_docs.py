@@ -355,6 +355,13 @@ def _probe_count(rel: str) -> int | None:
 def _check_numbers(rep: Report, cfg: dict) -> None:
     """⑤ README 里抄下来的数字必须等于真实的值。
 
+    ★ 已退役（2026-10-01）：本函数**不在主清单里调用**。退役理由不是判据无效，而是
+    被测对象不存在了 —— Product V2 上下文重组后 README 只投影当前实现边界，那两句
+    「（N 项 / 可 --fresh…」与「probes/<x>.py … N 向植入对照」的副本都被删掉了，
+    没有副本就没有漂移（`_check_readme_scope()` 现在反向禁止这两类副本回流）。
+    谁要重新把运行结果抄进 README，就必须先把这个函数接回主清单 —— 否则
+    「没有人比对」这件事不会有人知道，而它上一次就是这样悄悄发生的。
+
     这条检查的形态值得说清：它不是"文档里的 1600 与表里的 1600 对齐"那种自我循环 ——
     它比对的是**文档抄下来的运行结果**与**现在真算出来的结果**。两者来源不同
     （一个是人上次抄的，一个是这次算的），所以它是能真的失败的。
@@ -484,6 +491,13 @@ def _check_readme_scope(rep: Report) -> None:
         r"\bV2\.\d+\.\d+\b": "README 不得复制 Product V2 任务进度 ID",
         r"^##\s*\d*\.?\s*七坑位表": "固定七坑位表属于 legacy，不得继续占据当前实现入口",
         r"跑全套回归（\d+\s*项": "README 不得手抄会漂移的回归项数",
+        # 2026-10-01：`_check_numbers()` 退役后（README 不再抄任何运行结果），
+        # 「抄进来的数字」没有守卫再比对。要么别抄，要么把 `_check_numbers()`
+        # 接回主清单再抄 —— 这条就是那个岔路口的红灯，防止判据被悄悄摘掉之后
+        # 副本又悄悄长回来。
+        r"\d+\s*向植入对照": "README 不得手抄探针方向数：方向数由探针 `--count` 给出，"
+                             "写进文档就得有守卫比对（`_check_numbers()` 已退役，"
+                             "重新抄之前先把它接回主清单）",
     }
     for pattern, message in forbidden.items():
         if re.search(pattern, text, re.M):

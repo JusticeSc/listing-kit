@@ -276,12 +276,13 @@ input:disabled, textarea:disabled, select:disabled { background: var(--surface-s
 .project-meta dd { margin: 0 0 4px; }
 
 /* V2.6.4 渐进披露：sha256 / action / task / 指纹等工程字段默认收起，展开后原文可复制。 */
-.tech-details { margin-top: 2px; }
+.tech-details { margin-top: 2px; min-width: 0; }
 .tech-details > summary {
   cursor: pointer;
   color: var(--text-muted);
   font-size: 12px;
   list-style: none;
+  white-space: nowrap;
 }
 .tech-details > summary::-webkit-details-marker { display: none; }
 .tech-details > summary::after { content: " ▾"; }
@@ -402,7 +403,13 @@ input:disabled, textarea:disabled, select:disabled { background: var(--surface-s
   flex-direction: column;
   gap: 8px;
 }
-.ref-row .ref-main { display: flex; gap: 10px; align-items: center; }
+/* V2.6.5：参考图卡片是 168px 起的窄格。主行原来是**横向** flex —— 文件名、媒体信息、
+   技术详情三份文本在同一行里互相挤压，首次自审截图里「技术详情」被压成一列一个字。
+   改成纵向堆叠，并让文件名可断行；摘要不换行（见 .tech-details > summary）。
+   宽度/行数断言在 tools/verify_v2_6_4_accessibility.py 的 V2.6.4-16。 */
+.ref-row .ref-main { display: flex; flex-direction: column; gap: 2px; align-items: flex-start; min-width: 0; }
+.ref-row .ref-main > * { max-width: 100%; }
+.ref-row .ref-main .name { overflow-wrap: anywhere; }
 .ref-row .ref-thumb { width: 56px; height: 56px; border-radius: var(--radius-sm); overflow: hidden; border: 1px solid var(--border); background: var(--surface); }
 .ref-row .ref-thumb img { width: 100%; height: 100%; object-fit: cover; }
 .ref-row .ref-actions { display: flex; gap: 6px; flex-wrap: wrap; }
