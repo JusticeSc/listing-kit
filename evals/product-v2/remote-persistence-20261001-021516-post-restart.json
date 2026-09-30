@@ -1,0 +1,63 @@
+{
+  "finished_at": "2026-10-01T02:15:23",
+  "base": "https://47.115.172.233:8080",
+  "profile": "C:\\Users\\31368\\AppData\\Local\\Temp\\amz-remote-e2e-me2g0y3f",
+  "opened_directly": true,
+  "projects": [
+    "针织套头毛衣 · 远程真实链路预演"
+  ],
+  "review_cards": 4,
+  "candidates": [
+    {
+      "shot_id": "shot_main_clean",
+      "sha256": "272e4475dc1f055569b8f575a0b626d18d71227fa8982df87a08879e52ceee00",
+      "bytes": 1543581
+    },
+    {
+      "shot_id": "shot_infographic_benefits",
+      "sha256": "3f5be47985e7ea374e9a1053c76b339f663f88613d700f8fb2454ef234eb5895",
+      "bytes": 1608618
+    },
+    {
+      "shot_id": "shot_scene_lifestyle",
+      "sha256": "a9acd7b8baffd38b01c95b3d462dab5b1c087571e59350e007687d7232f028a8",
+      "bytes": 1877029
+    },
+    {
+      "shot_id": "shot_detail_material",
+      "sha256": "f57e17b01af159df70a74f84314f22a912e3929fc14a79682ab1d53184d23aa5",
+      "bytes": 1988234
+    }
+  ],
+  "deliver": {
+    "gates": [
+      {
+        "shot_id": "shot_main_clean",
+        "state": "current"
+      },
+      {
+        "shot_id": "shot_infographic_benefits",
+        "state": "current"
+      },
+      {
+        "shot_id": "shot_scene_lifestyle",
+        "state": "current"
+      },
+      {
+        "shot_id": "shot_detail_material",
+        "state": "current"
+      }
+    ],
+    "status": "人工采用已齐；整套一致性检查与交付包生成尚未接入，现在只能导出项目包。",
+    "export_disabled": true
+  },
+  "isolated_profile_projects": [],
+  "console_errors": [],
+  "http_errors": [],
+  "comparison": {
+    "before": "evals/product-v2/remote-persistence-20261001-020726-pre-restart.json",
+    "projects_equal": true,
+    "candidate_hashes_equal": true,
+    "deliver_equal": true
+  }
+}
