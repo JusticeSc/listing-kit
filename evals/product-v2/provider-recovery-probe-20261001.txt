@@ -1,0 +1,22 @@
+Provider 恢复探测：GitHub secret 同步 + 账户状态（真实调用）
+日期：2026-10-01（+08:00）
+入口：本机 http://127.0.0.1:8782（干净检出 79ce9d4 + 真实 provider）与远程 https://47.115.172.233:8080
+部署核对：CI run 36749728154（ffb7833）verify 与 deploy 全绿，含「Sync provider secrets to server env file」。
+
+一、欠费期间（01:05–01:06，本机）
+
+- 语义 analyze：上游 HTTP 400、type=Arrearage → 修复前落成 input_rejected/INPUT_REJECTED（误导为「资料有问题」）。
+- 图像 submit：provider_failed/UPSTREAM_ACCOUNT_ARREARS（「账户欠费；提交图像任务没有被受理，充值后重试」）。
+
+二、恢复后（01:17–01:21，真实调用）
+
+- 远程语义 analyze：HTTP 200，deepseek-v4.1-flash，17.2s，返回 6 个 proposed 槽位，usage.total_tokens=2232。
+- 本机同一请求：HTTP 200（11s），同模型。
+- 远程图像：submit task=de2e647a-e1dc-4bcd-91b7-615d57c03e87 → 20s 后 SUCCEEDED（result_count=1）
+  → result HTTP 200，1,525,714 字节，PNG 魔数 89 50 4E 47；产物截图
+  evals/product-v2/evidence/provider-recovery-probe-20261001.png（参考图：real-run-01 原图，绿毛衣白底）。
+
+三、边界
+
+- 每通道各 1 次真实调用；不替代整套套图端到端与人工走查（后者见 V2.UI.2 走查记录）。
+- 账户计费状态是外部前提、随时可能变化；欠费时系统如实报 UPSTREAM_ACCOUNT_ARREARS（retryable），不伪装成功。
