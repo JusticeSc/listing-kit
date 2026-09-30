@@ -22,10 +22,10 @@ if defined DOCTOR_ONLY goto done
 goto done
 
 :use_uv
-uv run --no-project --with-requirements requirements.txt python app\server.py --doctor
+uv run --locked python app\server.py --doctor
 if errorlevel 1 goto blocked
 if defined DOCTOR_ONLY goto done
-uv run --no-project --with-requirements requirements.txt python app\server.py --open
+uv run --locked python app\server.py --open
 goto done
 
 :blocked
