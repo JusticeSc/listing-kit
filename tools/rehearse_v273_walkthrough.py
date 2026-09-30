@@ -53,6 +53,9 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="V2.7.3 走查内部预演")
     parser.add_argument("--label", default="lamp")
     parser.add_argument("--reference", default="")
+    parser.add_argument("--product-name", default="夹式 LED 阅读灯")
+    parser.add_argument("--description", default="三档色温夹式 LED 阅读灯，USB-C 供电，关节臂可调。")
+    parser.add_argument("--points", default="3 档色温|无级调光|USB-C 供电")
     args = parser.parse_args()
 
     reference = Path(args.reference) if args.reference else (
@@ -99,7 +102,7 @@ def main() -> int:
 
                 started = time.monotonic()
                 page.focus("#new-project-name")
-                page.keyboard.type("V273 落地灯")
+                page.keyboard.type("V273 " + args.product_name)
                 page.keyboard.press("Enter")
                 page.wait_for_selector("#project-list .project-row", timeout=15_000)
                 page.focus('#project-list .project-row button[data-action="open"]')
@@ -107,9 +110,9 @@ def main() -> int:
                 page.wait_for_selector("#project-view:not([hidden])", timeout=15_000)
                 page.set_input_files("#ref-file", str(reference))
                 page.wait_for_selector("#ref-list .ref-row", timeout=15_000)
-                page.fill("#intake-name", "夹式 LED 阅读灯")
-                page.fill("#intake-description", "三档色温夹式 LED 阅读灯，USB-C 供电，关节臂可调。")
-                page.fill("#intake-selling-points", "3 档色温\n无级调光\nUSB-C 供电")
+                page.fill("#intake-name", args.product_name)
+                page.fill("#intake-description", args.description)
+                page.fill("#intake-selling-points", args.points.replace("|", "\n"))
                 page.fill("#intake-focus", "夜间阅读")
                 page.wait_for_selector("#analyze-run:not([disabled])", timeout=15_000)
                 probes["intake_gate"] = page.locator("#analyze-gate").inner_text()
