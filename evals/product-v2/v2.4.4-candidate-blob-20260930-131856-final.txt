@@ -1,0 +1,23 @@
+amz-listing-kit Product V2 V2.4.4 候选字节流、Blob 持久化与容量管理
+NOT-AUTHORITY: point-in-time verification evidence only
+observed_at: 2026-09-30T13:19:08
+status: passed
+model_calls: 0 · external_network_calls: 0 (fake image provider + 本机服务)
+json: evals/product-v2/v2.4.4-candidate-blob-20260930-131856-final.json
+
+CHECKS
+- [PASS] V2.4.4-00 domain / workspace / harness 通过 node --check（ESM 语法门）
+- [PASS] V2.4.4-01 C01–C10 契约套件全过且用例齐全
+- [PASS] V2.4.4-02 反向探针确实执行（坏 PNG / 非法身份 / 兼容性参数）
+- [PASS] V2.4.4-02b 既有契约套件回归：Attempt / 批次 / 确认单 / Prompt 编辑 / 套图编辑器全过
+- [PASS] V2.4.4-03 就绪：4 张待提交、整套生成按钮可见、候选栏为空且只有参考图字节
+- [PASS] V2.4.4-04 单张成功：候选自动入库；记录 sha = 重算 sha = 响应头 sha；64×64 预览可见
+- [PASS] V2.4.4-05 刷新恢复：候选记录与字节保留、不重复保存、零新增取回请求、预览仍可见
+- [PASS] V2.4.4-06 取回失败一次：不产生半份记录、错误可恢复、重试成功且 sha 与响应头一致
+- [PASS] V2.4.4-07 配额异常：不留半份记录、错误给出可恢复指引；解除后同一 action 保存成功
+- [PASS] V2.4.4-08 整套批次：只提交剩余图一次；全部成功且候选全部入库；进度与提示一致
+- [PASS] V2.4.4-09 零意外 console error / page error（预期内的取回 502 与刷新中断除外）
+- [PASS] V2.4.4-10 正式入口自检仍全过（V2.4.4 不破坏既有入口）
+
+BOUNDARY
+证明候选字节在真实浏览器与真实 IndexedDB 上是可持久、可校验、可恢复的：成功结论在同一步把结果字节存进内容寻址的 assets 仓，候选记录的 sha256 与重算值、服务端 X-Image-Sha256 响应头三方一致；刷新后预览来自本地字节、零新增取回请求且不重复保存；取回失败一次不产生半份记录、错误可恢复、重试成功；IndexedDB 配额异常在协议层注入（产品代码无测试钩子），失败不留半份记录并给出「清理后重试」指引；整套批次只提交剩余图一次、全部成功且候选全部入库，进度不再显示待保存候选。本批不做审核、单图返工与导出（Phase 5）；0 次真实模型调用、0 次外部网络；图像 provider 是注入的假替身（按 Prompt 标记决定取回场景），只证明候选持久化语义，不证明真实出图质量。
