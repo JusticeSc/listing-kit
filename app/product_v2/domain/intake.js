@@ -20,7 +20,11 @@ import {
   pushProblem,
 } from "./shared.js";
 
-export const REFERENCE_ROLES = Object.freeze(["primary", "detail", "packaging", "other"]);
+// 与语义契约的 ReferencedAsset.role 逐字一致（V2.3.1：对比图依赖需要 competitor 角色；
+// 跨语言一致性由 tools/verify_v2_2_2_semantic_provider.py 的跨语言合同项守住）。
+export const REFERENCE_ROLES = Object.freeze([
+  "primary", "detail", "packaging", "scene", "competitor", "other",
+]);
 
 export function checkProductInput(input) {
   const problems = [];

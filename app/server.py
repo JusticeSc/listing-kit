@@ -584,8 +584,7 @@ def run_doctor(host: str, port: int, legacy_v1: bool = False) -> int:
     else:
         add(
             "fail", "Python", f"{version} 过低（需要 3.10 以上）",
-            "安装 Python 3.10+，或用 uv 启动：uv run --no-project "
-            "--with-requirements requirements.txt python app/server.py --doctor",
+            "安装 Python 3.10+；在项目根目录用 uv 启动：uv run --locked python app/server.py --doctor",
         )
 
     if legacy_v1:
@@ -624,8 +623,7 @@ def run_doctor(host: str, port: int, legacy_v1: bool = False) -> int:
     if missing_modules:
         add(
             "fail", "运行依赖", "缺少：" + "、".join(missing_modules),
-            "安装依赖：pip install -r requirements.txt（或 uv run --no-project "
-            "--with-requirements requirements.txt python app/server.py）",
+            "安装依赖：uv sync --locked（或在项目根目录 uv run --locked python app/server.py）",
         )
     else:
         add("pass", "运行依赖", "Pillow 与 requests 可用")

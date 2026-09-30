@@ -42,7 +42,235 @@
       <div><dt>创建时间</dt><dd id="project-created"></dd></div>
       <div><dt>最近更新</dt><dd id="project-updated"></dd></div>
     </dl>
-    <p class="note">商品资料与套图流程尚未接入；当前版本只管理本机项目本身。</p>
+    <p id="project-scope" class="note"></p>
+    <p id="workspace-error" class="error" role="alert" hidden></p>
+
+    <section class="card" aria-labelledby="refs-title">
+      <div class="card-head">
+        <h3 id="refs-title">参考图</h3>
+        <p class="meta">至少一张“商品主图（primary）”；内容相同的图不会重复登记；最多 20 张。</p>
+      </div>
+      <div class="toolbar">
+        <button id="ref-add" type="button">添加参考图…</button>
+        <input id="ref-file" type="file" accept="image/*" multiple hidden>
+        <span id="ref-count" class="meta"></span>
+      </div>
+      <p id="ref-error" class="error" role="alert" hidden></p>
+      <p id="ref-empty" class="empty" hidden>还没有参考图。</p>
+      <ul id="ref-list" class="ref-list"></ul>
+    </section>
+
+    <section class="card" aria-labelledby="intake-title">
+      <div class="card-head">
+        <h3 id="intake-title">商品资料</h3>
+        <p class="meta">只有你填写的内容进这里；模型推断写在“商品理解”，不覆盖这里。</p>
+      </div>
+      <div class="field">
+        <label for="intake-name">商品名称（必填）</label>
+        <input id="intake-name" maxlength="120" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="intake-description">商品介绍</label>
+        <textarea id="intake-description" rows="4" maxlength="2000"></textarea>
+      </div>
+      <div class="field">
+        <label for="intake-selling-points">卖点（一行一条）</label>
+        <textarea id="intake-selling-points" rows="4"></textarea>
+      </div>
+      <div class="field">
+        <label for="intake-focus">本次重点</label>
+        <input id="intake-focus" maxlength="500" autocomplete="off">
+      </div>
+      <div class="toolbar">
+        <button id="intake-save" type="button">保存草稿</button>
+        <span id="intake-draft" class="meta" role="status"></span>
+      </div>
+      <p id="intake-error" class="error" role="alert" hidden></p>
+    </section>
+
+    <section class="card" aria-labelledby="analyze-title">
+      <div class="card-head">
+        <h3 id="analyze-title">分析</h3>
+        <p class="meta">把上面的资料与参考图元数据发给语义模型；服务器不保存项目内容。</p>
+      </div>
+      <div class="toolbar">
+        <button id="analyze-run" class="primary" type="button">分析商品资料</button>
+        <span id="analyze-gate" class="meta" role="status"></span>
+      </div>
+      <p id="analyze-result" class="status" role="status" hidden></p>
+      <p id="analyze-error" class="error" role="alert" hidden></p>
+    </section>
+
+    <section class="card" aria-labelledby="slots-title">
+      <div class="card-head">
+        <h3 id="slots-title">商品理解</h3>
+        <p class="meta">先处理冲突、未知与必须确认的槽位；已确认的事实默认折叠。</p>
+      </div>
+      <div class="toolbar">
+        <span id="slots-progress" class="meta" role="status"></span>
+        <button id="slots-toggle" type="button" aria-expanded="false">显示全部事实</button>
+      </div>
+      <p id="slots-empty" class="empty" hidden>还没有槽位；先在“分析”里生成提案。</p>
+      <ul id="slot-list" class="slot-list"></ul>
+      <details id="slot-add" class="sub-panel">
+        <summary>新增自定义槽位</summary>
+        <div class="field">
+          <label for="slot-add-id">槽位标识（小写字母开头，2-48 位）</label>
+          <input id="slot-add-id" maxlength="48" placeholder="battery_life" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="slot-add-label">显示名称</label>
+          <input id="slot-add-label" maxlength="60" placeholder="电池续航" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="slot-add-type">值类型</label>
+          <select id="slot-add-type">
+            <option value="text">文本</option>
+            <option value="text_list">文本列表（一行一条）</option>
+            <option value="number">数字</option>
+            <option value="boolean">是 / 否</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="slot-add-value">值</label>
+          <textarea id="slot-add-value" rows="2"></textarea>
+        </div>
+        <label class="check"><input id="slot-add-allow-model" type="checkbox"> 允许模型之后对这个槽位提议</label>
+        <div class="toolbar">
+          <button id="slot-add-save" type="button">新增槽位</button>
+          <span id="slot-add-status" class="meta" role="status"></span>
+        </div>
+      </details>
+      <p id="slots-error" class="error" role="alert" hidden></p>
+    </section>
+
+    <section class="card" aria-labelledby="suite-title">
+      <div class="card-head">
+        <h3 id="suite-title">套图规划</h3>
+        <p class="meta">列表顺序就是最终顺序；至少保留一张必需图；每张图显示依据是否已满足。</p>
+      </div>
+      <p id="suite-locked" class="empty" hidden>完成商品理解（关键事实全部确认）后才能编辑套图规划。</p>
+      <div id="suite-editor" hidden>
+        <div class="toolbar">
+          <button id="suite-seed" class="primary" type="button">生成推荐方案</button>
+          <label class="visually-hidden" for="suite-template">图片模板</label>
+          <select id="suite-template"></select>
+          <button id="suite-add-template" type="button">添加模板图</button>
+        </div>
+        <p id="suite-template-hint" class="meta"></p>
+        <div class="toolbar secondary">
+          <button id="suite-custom-toggle" type="button" aria-expanded="false">添加自定义图</button>
+          <span id="suite-status" class="meta" role="status"></span>
+        </div>
+        <div id="suite-custom-panel" class="sub-panel" hidden>
+          <div class="field">
+            <label for="suite-custom-label">名称（必填）</label>
+            <input id="suite-custom-label" maxlength="60" autocomplete="off" placeholder="例如：赠品特写">
+          </div>
+          <div class="field">
+            <label for="suite-custom-intent">用途（可选）</label>
+            <input id="suite-custom-intent" maxlength="200" autocomplete="off">
+          </div>
+          <div class="toolbar">
+            <button id="suite-custom-save" type="button">添加</button>
+            <span id="suite-custom-status" class="meta" role="status"></span>
+          </div>
+        </div>
+        <p id="suite-empty" class="empty" hidden>还没有套图方案：点“生成推荐方案”，或从模板 / 自定义添加。</p>
+        <ol id="shot-list" class="shot-list"></ol>
+      </div>
+      <p id="suite-error" class="error" role="alert" hidden></p>
+    </section>
+
+    <section class="card" aria-labelledby="specs-title">
+      <div class="card-head">
+        <h3 id="specs-title">风格与单图规格</h3>
+        <p class="meta">公共风格影响整套；单图规格只影响目标图片；每次保存都是一个新版本，历史保留。</p>
+      </div>
+      <p id="specs-locked" class="empty" hidden>完成商品理解并生成套图方案后，才能编辑风格与规格。</p>
+      <div id="specs-editor" hidden>
+        <h4 class="sub-title">公共风格（全部图片）</h4>
+        <div class="field">
+          <label for="style-background">背景风格</label>
+          <input id="style-background" maxlength="200" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="style-lighting">光线</label>
+          <input id="style-lighting" maxlength="200" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="style-color-tone">色调</label>
+          <input id="style-color-tone" maxlength="200" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="style-composition">构图约定</label>
+          <input id="style-composition" maxlength="200" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="style-avoid">避免出现（一行一条）</label>
+          <textarea id="style-avoid" rows="2"></textarea>
+        </div>
+        <div class="toolbar">
+          <button id="style-save" class="primary" type="button">保存风格</button>
+          <button id="style-restore" type="button">恢复上一版本</button>
+          <span id="style-version" class="meta" role="status"></span>
+        </div>
+        <p id="style-effect" class="meta"></p>
+        <p id="style-status" class="status" role="status" hidden></p>
+        <p id="style-error" class="error" role="alert" hidden></p>
+        <h4 class="sub-title">单图规格与审核清单</h4>
+        <p id="shot-specs-empty" class="empty" hidden>套图方案里还没有图片。</p>
+        <div id="shot-spec-list"></div>
+      </div>
+      <p id="specs-error" class="error" role="alert" hidden></p>
+    </section>
+
+    <section class="card" aria-labelledby="prompt-title">
+      <div class="card-head">
+        <h3 id="prompt-title">Prompt 预览与版本</h3>
+        <p class="meta">每张图一个版本；界面文本、版本记录与请求快照逐字一致；失败时保留旧版本。可以人工编辑全文并保存为新版本（原版本保留）；人工编辑时语言策略降级为提示，未确认事实与平台文字规则仍然阻断。</p>
+      </div>
+      <p id="prompt-locked" class="empty" hidden>完成商品理解并生成套图方案后，才能编译 Prompt。</p>
+      <div id="prompt-editor" hidden>
+        <p id="prompt-status" class="meta" role="status"></p>
+        <div id="prompt-list"></div>
+      </div>
+      <p id="prompt-error" class="error" role="alert" hidden></p>
+    </section>
+
+    <section class="card" aria-labelledby="confirm-title">
+      <div class="card-head">
+        <h3 id="confirm-title">生成前确认</h3>
+        <p class="meta">提交前核对：张数、每图任务、将要发给外部模型的资料与未消除风险；过期或缺依据时不能提交。</p>
+      </div>
+      <p id="confirm-locked" class="empty" hidden>完成商品理解并生成套图方案后，才能做生成前确认。</p>
+      <div id="confirm-editor" hidden>
+        <p id="confirm-status" class="meta" role="status"></p>
+        <div id="confirm-summary"></div>
+        <div id="confirm-blockers"></div>
+        <div id="confirm-risks"></div>
+        <div id="confirm-list"></div>
+        <div class="toolbar">
+          <button id="confirm-action" class="primary" type="button">生成前确认</button>
+          <span id="confirm-record" class="meta" role="status"></span>
+        </div>
+      </div>
+      <p id="confirm-error" class="error" role="alert" hidden></p>
+    </section>
+
+    <section class="card" aria-labelledby="attempt-title">
+      <div class="card-head">
+        <h3 id="attempt-title">生成执行</h3>
+        <p class="meta">生成前确认通过后逐张提交。每次提交先登记这次生成（action id）与将发送的 Prompt 版本、参考图，再调用图像网关；拿到任务编号（task id）后可随时核对，刷新、换标签页或服务端重启都不影响结论。结果未知时不会自动重提，只提供「核对」与「新建 action」。</p>
+      </div>
+      <p id="attempt-locked" class="empty" hidden>完成商品理解、编译 Prompt 并通过“生成前确认”后，才能提交生成。</p>
+      <div id="attempt-editor" hidden>
+        <p id="attempt-status" class="meta" role="status"></p>
+        <p id="attempt-provider" class="meta"></p>
+        <div id="attempt-list"></div>
+      </div>
+      <p id="attempt-error" class="error" role="alert" hidden></p>
+    </section>
   </section>
 </main>
 

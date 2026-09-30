@@ -16,6 +16,12 @@ export const DOMAIN_DOCUMENT_KINDS = Object.freeze({
   product_input: "product_input",
   fact_slot: "fact_slot",
   product_brief: "product_brief",
+  suite_plan: "suite_plan",
+  style_spec: "style_spec",
+  shot_spec: "shot_spec",
+  prompt_version: "prompt_version",
+  generation_confirm: "generation_confirm",
+  generation_attempt: "generation_attempt",
 });
 
 export const MAX_TEXT_LENGTH = 500;
@@ -47,14 +53,6 @@ export function isIsoTimestamp(value) {
 
 export function pushProblem(problems, code, path, message) {
   problems.push({ code, path, message });
-}
-
-export function deepEqualJson(a, b) {
-  return JSON.stringify(a) === JSON.stringify(b);
-}
-
-export function cloneJson(value) {
-  return value === undefined ? undefined : JSON.parse(JSON.stringify(value));
 }
 
 /** 版本只向前；读到更高版本的对象必须显式拒绝，而不是猜着读。 */

@@ -7,6 +7,7 @@
  */
 
 import { openStorage, exportProjectPackage, importProjectPackage } from "./storage/index.js";
+import { createWorkspace } from "./workspace.js";
 
 const STATE_LABELS = {
   EMPTY: "空白",
@@ -52,6 +53,7 @@ const elements = {
 
 let repository = null;
 let database = null;
+let workspace = null;
 let projects = [];
 let currentProjectId = null;
 let rowMode = { mode: "idle", projectId: null };
@@ -102,6 +104,8 @@ function packageFileName(project, manifest) {
 }
 
 function showHome() {
+  if (workspace) workspace.close();
+  if (repository) void refresh();
   elements.homeView.hidden = false;
   elements.projectView.hidden = true;
 }
@@ -203,6 +207,7 @@ async function handleOpen(projectId) {
     const project = await repository.projects.get(projectId);
     showProject(project);
     renderList();
+    if (workspace) await workspace.open(project);
   } catch (error) {
     showError(elements.homeError, describeError(error));
   }
@@ -217,7 +222,10 @@ async function handleRename(projectId, name) {
     });
     rowMode = { mode: "idle", projectId: null };
     await refresh();
-    if (currentProjectId === projectId) showProject(updated);
+    if (currentProjectId === projectId) {
+      showProject(updated);
+      if (workspace) workspace.setProject(updated);
+    }
   } catch (error) {
     rowMode = { mode: "idle", projectId: null };
     await refresh();
@@ -335,11 +343,22 @@ async function boot() {
     const opened = await openStorage();
     repository = opened.repository;
     database = opened.db;
+    workspace = createWorkspace({
+      repository,
+      onProjectChanged(project) {
+        if (project && currentProjectId === project.project_id) showProject(project);
+        if (currentProjectId) void refresh();
+      },
+    });
     const current = await repository.pointer.get();
     currentProjectId = current ? current.project_id : null;
     await refresh();
-    if (current) showProject(current);
-    else showHome();
+    if (current) {
+      showProject(current);
+      await workspace.open(current);
+    } else {
+      showHome();
+    }
   } catch (error) {
     showError(elements.bootError, describeError(error));
   }

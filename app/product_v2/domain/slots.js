@@ -14,12 +14,22 @@ import {
   checkEvidenceList,
   checkSchemaVersion,
   checkValueShape,
-  cloneJson,
-  deepEqualJson,
   isNonEmptyString,
   isPlainObject,
   pushProblem,
 } from "./shared.js";
+
+/**
+ * 槽位值的领域相等：槽位值只可能是标量或标量数组（checkValueShape 保证），
+ * 所以用领域比较，不用 JSON 字符串比较——后者对键序敏感，还会把类型差异洗掉。
+ */
+export function slotValueEquals(a, b) {
+  if (Array.isArray(a) || Array.isArray(b)) {
+    return Array.isArray(a) && Array.isArray(b) && a.length === b.length
+      && a.every((item, index) => slotValueEquals(item, b[index]));
+  }
+  return a === b;
+}
 
 export const SLOT_AUTHORITIES = Object.freeze([
   "core_fixed",        // 系统契约定义，用户可改值，模型只能提议，不可删除
@@ -411,12 +421,12 @@ export function applySlotAction(slot, spec) {
     if (first.code === DOMAIN_ERROR_CODES.CONTRACT_TRANSITION_ILLEGAL) throw illegal(first.message, { problems });
     throw invalid(first.message, { problems });
   }
-  const next = cloneJson(slot);
-  const evidence = Array.isArray(spec.evidence) ? cloneJson(spec.evidence) : [];
+  const next = structuredClone(slot);
+  const evidence = Array.isArray(spec.evidence) ? structuredClone(spec.evidence) : [];
   const appendEvidence = () => { next.evidence = (next.evidence || []).concat(evidence); };
 
   if (spec.action === "propose") {
-    if (next.status === "confirmed" && deepEqualJson(next.value, spec.value)) {
+    if (next.status === "confirmed" && slotValueEquals(next.value, spec.value)) {
       appendEvidence();
     } else if (next.status === "confirmed") {
       const prior = Array.isArray(next.evidence) ? next.evidence : [];
@@ -429,21 +439,21 @@ export function applySlotAction(slot, spec) {
       next.confidence = null;
       next.source = "model_inference";
     } else {
-      next.value = cloneJson(spec.value);
+      next.value = structuredClone(spec.value);
       next.status = "proposed";
       next.source = "model_inference";
       next.confidence = spec.confidence;
       appendEvidence();
     }
   } else if (spec.action === "edit") {
-    next.value = cloneJson(spec.value);
+    next.value = structuredClone(spec.value);
     next.status = "confirmed";
     next.source = SLOT_SOURCES.includes(spec.source) ? spec.source : "user_input";
     next.confidence = null;
     appendEvidence();
   } else if (spec.action === "confirm") {
     if (spec.value !== null && spec.value !== undefined) {
-      next.value = cloneJson(spec.value);
+      next.value = structuredClone(spec.value);
       next.source = SLOT_SOURCES.includes(spec.source) ? spec.source : "user_input";
       next.confidence = null;
     }

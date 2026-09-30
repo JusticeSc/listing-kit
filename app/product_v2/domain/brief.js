@@ -11,13 +11,11 @@ import {
   PRODUCT_BRIEF_SCHEMA_VERSION,
   SLOT_ID_PATTERN,
   checkSchemaVersion,
-  cloneJson,
-  deepEqualJson,
   isNonEmptyString,
   isPlainObject,
   pushProblem,
 } from "./shared.js";
-import { SLOT_SOURCES, assertFactSlot } from "./slots.js";
+import { SLOT_SOURCES, assertFactSlot, slotValueEquals } from "./slots.js";
 
 const UNRESOLVED_STATUSES = Object.freeze(["proposed", "missing", "conflict", "unknown"]);
 
@@ -159,7 +157,7 @@ export function buildProductBrief(slotEntries) {
     if (slot.status === "confirmed") {
       confirmedFacts.push({
         slot_id: slot.slot_id, label: slot.label,
-        value: cloneJson(slot.value), source: slot.source,
+        value: structuredClone(slot.value), source: slot.source,
       });
       if (slot.slot_id === "product_category" && typeof slot.value === "string") {
         category = { slot_id: slot.slot_id, value: slot.value };
@@ -209,7 +207,7 @@ export function briefProblemsAgainstSlots(brief, slotEntries) {
     if (entry.slot.status !== "confirmed") {
       pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.confirmed_facts",
         "槽位 " + fact.slot_id + " 当前状态是 " + entry.slot.status + "，不能再作为已确认事实。");
-    } else if (!deepEqualJson(entry.slot.value, fact.value)) {
+    } else if (!slotValueEquals(entry.slot.value, fact.value)) {
       pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.confirmed_facts",
         "槽位 " + fact.slot_id + " 的值已改变，商品理解与事实不一致。");
     }

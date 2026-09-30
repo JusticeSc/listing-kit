@@ -152,3 +152,351 @@ button.danger { color: var(--danger); border-color: #e3c3c1; }
   .row-actions { width: 100%; }
   .row-actions button { flex: 1 1 auto; }
 }
+
+/* 项目工作区：参考图 → 商品资料 → 分析 → 商品理解 */
+
+.card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 16px;
+}
+
+.card-head h3 { margin: 0 0 4px; font-size: 16px; }
+
+.card-head .meta { margin: 0; }
+
+.sub-panel {
+  margin-top: 16px;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.sub-panel summary { cursor: pointer; font-weight: 600; }
+
+.field { margin-top: 12px; }
+
+.field label { display: block; margin-bottom: 4px; color: var(--muted); font-size: 13px; }
+
+.field input, .field textarea, .field select {
+  width: 100%;
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font: inherit;
+  background: #fff;
+  color: var(--ink);
+}
+
+.field textarea { resize: vertical; }
+
+.check { display: block; margin-top: 10px; color: var(--muted); font-size: 13px; }
+
+.card .toolbar { margin-top: 12px; align-items: center; }
+
+.ref-list { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 10px; }
+
+.ref-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px;
+  flex-wrap: wrap;
+}
+
+.ref-thumb {
+  width: 72px;
+  height: 72px;
+  border-radius: 6px;
+  background: #eef2f7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex: 0 0 auto;
+}
+
+.ref-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+.ref-main { flex: 1 1 220px; min-width: 0; display: grid; gap: 6px; }
+
+.ref-main .name { overflow-wrap: anywhere; }
+
+.ref-actions { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+
+.ref-actions select { padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; font: inherit; }
+
+.ref-actions button { padding: 6px 10px; font-size: 13px; }
+
+.slot-list { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 10px; }
+
+.slot-row {
+  border: 1px solid var(--line);
+  border-left-width: 4px;
+  border-radius: 8px;
+  padding: 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.slot-row[data-status="conflict"] { border-left-color: var(--danger); background: #fdf6f5; }
+.slot-row[data-status="unknown"] { border-left-color: #b8860b; background: #fdfaf0; }
+.slot-row[data-status="missing"] { border-left-color: #8a8f98; }
+.slot-row[data-status="proposed"] { border-left-color: var(--accent); background: #f6f9fd; }
+.slot-row[data-status="confirmed"] { border-left-color: #2f7a4f; }
+.slot-row[data-status="superseded"] { border-left-color: var(--line); color: var(--muted); }
+
+.slot-head { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+
+.badge.is-conflict { background: #f6dedc; color: #7d1f1b; }
+.badge.is-unknown { background: #f4e9cd; color: #6b4e07; }
+.badge.is-missing { background: #e8ebef; color: #4a5460; }
+.badge.is-proposed { background: #dfe9f7; color: #1c4f8f; }
+.badge.is-confirmed { background: #dcefe3; color: #215c3a; }
+.badge.is-critical { background: #fbe6e4; color: #8a2420; }
+
+.slot-value { overflow-wrap: anywhere; }
+
+.slot-value.is-empty { color: var(--muted); }
+
+.slot-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.slot-actions button { padding: 6px 10px; font-size: 13px; }
+
+.slot-editor { display: grid; gap: 8px; margin-top: 4px; }
+
+.slot-editor .field { margin-top: 0; }
+
+.evidence { margin: 0; padding-left: 18px; display: grid; gap: 2px; }
+
+.slot-detail summary { cursor: pointer; color: var(--muted); font-size: 13px; }
+
+.inline-list { margin: 6px 0 0; padding-left: 18px; }
+
+button:focus-visible, input:focus-visible, textarea:focus-visible,
+select:focus-visible, summary:focus-visible, .link-button:focus-visible {
+  outline: 3px solid #7aa7d9;
+  outline-offset: 1px;
+}
+
+@media (max-width: 600px) {
+  .ref-row { align-items: stretch; }
+  .ref-main { flex: 1 1 100%; }
+  .slot-actions button, .ref-actions button { flex: 1 1 auto; }
+}
+
+/* 套图规划：顺序即持久化顺序 */
+
+.shot-list { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 10px; }
+
+.shot-row {
+  border: 1px solid var(--line);
+  border-left-width: 4px;
+  border-left-color: var(--accent);
+  border-radius: 8px;
+  padding: 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.shot-row[data-blocked="true"] { border-left-color: #b8860b; background: #fdfaf0; }
+
+.shot-head { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+
+.shot-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.shot-actions button { padding: 6px 10px; font-size: 13px; }
+
+.shot-actions button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+@media (max-width: 600px) {
+  .shot-actions button { flex: 1 1 auto; }
+}
+
+/* 风格与单图规格 */
+
+.sub-title { margin: 18px 0 0; font-size: 14px; color: var(--muted); }
+
+.shot-spec {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 12px;
+  display: grid;
+  gap: 6px;
+}
+
+.shot-spec-head { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+
+.shot-spec .field { margin-top: 6px; }
+
+.shot-spec .toolbar { margin-top: 6px; }
+
+.shot-spec .toolbar button { padding: 6px 10px; font-size: 13px; }
+
+.shot-spec .toolbar button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.shot-spec .checklist { margin: 6px 0 0; padding-left: 18px; display: grid; gap: 4px; }
+
+.shot-spec .checklist .meta { display: block; }
+
+.shot-spec .status-line { margin: 4px 0 0; }
+
+/* Prompt 预览与版本 */
+
+.prompt-text {
+  margin: 6px 0 0;
+  padding: 10px;
+  background: #f8f8f8;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 280px;
+  overflow: auto;
+}
+
+.prompt-meta { margin: 4px 0 0; }
+
+.prompt-hash {
+  font-family: ui-monospace, Consolas, monospace;
+  word-break: break-all;
+}
+
+.prompt-warning { margin: 4px 0 0; color: #8a5a00; }
+
+/* Prompt 人工编辑 */
+
+.prompt-edit-block {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--line);
+}
+
+.prompt-edit-text {
+  width: 100%;
+  min-height: 120px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.prompt-edit-reason {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font: inherit;
+  font-size: 13px;
+}
+
+.prompt-edit-block button { justify-self: start; padding: 6px 10px; font-size: 13px; }
+
+/* 生成前确认 */
+
+.confirm-shot {
+  border: 1px solid var(--line);
+  border-left-width: 4px;
+  border-left-color: #2f7a4f;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-top: 10px;
+  display: grid;
+  gap: 4px;
+}
+
+.confirm-shot[data-blocked="true"] { border-left-color: #b8860b; background: #fdfaf0; }
+
+.confirm-shot-head { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+
+.confirm-blocker {
+  margin: 10px 0 0;
+  padding: 8px 10px;
+  border: 1px solid #e6b8b5;
+  border-left: 4px solid var(--danger);
+  border-radius: 6px;
+  background: #fdf3f2;
+  font-size: 13px;
+}
+
+.confirm-blocker .meta { display: block; margin-top: 2px; }
+
+.confirm-risk {
+  margin: 8px 0 0;
+  padding: 8px 10px;
+  border: 1px solid #e3d3a8;
+  border-left: 4px solid #b8860b;
+  border-radius: 6px;
+  background: #fdfaf0;
+  font-size: 13px;
+}
+
+.confirm-summary {
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #f8fafc;
+  font-size: 13px;
+}
+
+/* 生成执行（生成 Attempt） */
+
+.attempt-row {
+  border: 1px solid var(--line);
+  border-left-width: 4px;
+  border-left-color: #8a8f98;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-top: 10px;
+  display: grid;
+  gap: 4px;
+}
+
+.attempt-row[data-attempt-state="pending_submit"],
+.attempt-row[data-attempt-state="submitted"],
+.attempt-row[data-attempt-state="running"] { border-left-color: var(--accent); background: #f6f9fd; }
+
+.attempt-row[data-attempt-state="succeeded"] { border-left-color: #2f7a4f; }
+
+.attempt-row[data-attempt-state="failed"] { border-left-color: var(--danger); background: #fdf6f5; }
+
+.attempt-row[data-attempt-state="unknown"] { border-left-color: #b8860b; background: #fdfaf0; }
+
+.attempt-head { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+
+.attempt-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; align-items: center; }
+
+.attempt-actions button { padding: 6px 10px; font-size: 13px; }
+
+.attempt-actions button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.attempt-note { margin: 4px 0 0; color: #8a5a00; }
+
+.attempt-error-text { margin: 4px 0 0; color: #8a2420; }
+
+.attempt-task { font-family: ui-monospace, Consolas, monospace; word-break: break-all; }
+
+.attempt-history { margin-top: 6px; }
+
+.attempt-history summary { cursor: pointer; color: var(--muted); font-size: 13px; }
+
+.attempt-history .attempt-history-row { margin: 4px 0 0; font-size: 13px; color: var(--muted); }
+
+.badge.is-attempt-active { background: #dfe9f7; color: #1c4f8f; }
+.badge.is-attempt-done { background: #dcefe3; color: #215c3a; }
+.badge.is-attempt-failed { background: #fbe6e4; color: #8a2420; }
+.badge.is-attempt-unknown { background: #f4e9cd; color: #6b4e07; }
+.badge.is-attempt-stale { background: #efe6d5; color: #6b4e07; }

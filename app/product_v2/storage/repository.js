@@ -315,12 +315,13 @@ export function createRepository({
     return history.length ? history[0] : null;
   }
 
+  /** 指定 kind 下每个 document_id 的最新版本（kind 参与索引键，查询不许跨 kind 返回）。 */
   async function listLatestDocuments(projectId, kind) {
     requireId(projectId, "project_id");
     requireId(kind, "kind");
     const all = await withTransaction(db, ["documents"], "readonly",
       (tx) => requestToPromise(tx.objectStore("documents").index("by_project_kind")
-        .getAll(IDBKeyRange.bound([projectId], [projectId, []]))));
+        .getAll(IDBKeyRange.only([projectId, kind]))));
     const latest = new Map();
     for (const record of all) {
       const current = latest.get(record.document_id);
