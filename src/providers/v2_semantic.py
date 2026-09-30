@@ -18,7 +18,7 @@ from __future__ import annotations
 import json
 import math
 import re
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any, Literal, Self
 
@@ -512,6 +512,56 @@ def refused(message: str, *, request_id: str | None = None) -> SemanticFailure:
 def internal_failure(message: str, *, details: Mapping[str, Any] | None = None) -> SemanticFailure:
     return SemanticFailure("internal", "INTERNAL_ERROR", message,
                            retry_policy="requires_review", details=details)
+
+
+def map_openai_exception(error: BaseException, *, redact: Callable[[str], str],
+                         context: str = "模型调用",
+                         max_tokens: int | None = None) -> SemanticFailure:
+    """把 openai / langchain SDK 异常按计划 §9.1 的归口表映射成分类失败。
+
+    语义（deepseek-v4.1-flash）与复核（VLM）共用这一份映射：不建第二套错误词表，
+    也不把未分类异常伪装成 Provider 结果。``redact`` 由调用方注入（它持有自己的密钥）。
+    """
+
+    try:
+        import openai
+        from langchain_core.exceptions import ContextOverflowError
+    except Exception:  # pragma: no cover - 依赖缺失时退回未分类
+        return SemanticFailure("provider_unknown", "PROVIDER_UNKNOWN",
+                               f"{context}出现未分类异常：{type(error).__name__}。",
+                               retry_policy="requires_review")
+    status = int(getattr(error, "status_code", 0) or 0)
+    code = getattr(error, "code", None)
+    message = redact(str(error))
+    if isinstance(error, openai.BadRequestError):
+        if isinstance(error, ContextOverflowError):
+            return SemanticFailure("input_rejected", "INPUT_TOO_LONG",
+                                   f"{context}的输入超出模型上下文上限；请缩短后重试。",
+                                   retry_policy="fatal", http_status=status or 400,
+                                   details={"provider_code": code})
+        return classify_http_failure(status or 400, code, message)
+    if isinstance(error, (openai.AuthenticationError, openai.PermissionDeniedError)):
+        return classify_http_failure(status or 401, code, message)
+    if isinstance(error, openai.RateLimitError):
+        return classify_http_failure(status or 429, code, message)
+    if isinstance(error, openai.APITimeoutError):
+        return classify_transport_failure(
+            "timeout_after_send", f"{context}超时；无法确认请求是否已送达。", request_id=None)
+    if isinstance(error, openai.APIConnectionError):
+        return classify_transport_failure("unreachable", f"无法连接{context}使用的模型端点。")
+    if isinstance(error, openai.ContentFilterFinishReasonError):
+        return refused("模型拒绝分析该输入（内容策略）。")
+    if isinstance(error, openai.LengthFinishReasonError):
+        return output_truncated("模型输出被 max_tokens 截断。",
+                                details=({"max_tokens": max_tokens}
+                                         if max_tokens is not None else None))
+    if isinstance(error, openai.APIStatusError):
+        return classify_http_failure(status, code, message)
+    if isinstance(error, openai.OpenAIError):
+        return SemanticFailure("provider_unknown", "PROVIDER_UNKNOWN",
+                               f"{context}出现未知 Provider 异常。",
+                               retry_policy="requires_review")
+    return internal_failure(f"{context}出现未分类异常：{type(error).__name__}。")
 
 
 # ---------------------------------------------- 消费侧结构校验（FactSlot 形状）

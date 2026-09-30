@@ -74,6 +74,7 @@ import {
   emptyProductInput,
   evaluateCandidateFindings,
   intakeReadiness,
+  mergeVlmReview,
   moveShot,
   newActionId,
   nextFromStatusEnvelope,
@@ -116,9 +117,12 @@ const ANALYZE_PATH = "/api/v2/semantic/analyze";
 const IMAGE_SUBMIT_PATH = "/api/v2/images/submit";
 const IMAGE_STATUS_PATH = "/api/v2/images/status";
 const IMAGE_RESULT_PATH = "/api/v2/images/result";
+const REVIEW_PATH = "/api/v2/review/candidate";
 
 const DRAFT_DEBOUNCE_MS = 600;
 const ANALYZE_MAX_SLOTS = 12;
+const MAX_REVIEW_IMAGE_BYTES = 4 * 1024 * 1024;
+const MAX_REVIEW_REFERENCES = 3;
 const ANALYZE_LOCALE = "zh-CN";
 const ANALYZE_PLATFORM = "amazon_us";
 const DEFAULT_ANALYZE_FIELDS = Object.freeze([
@@ -302,6 +306,7 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
   let attemptInFlight = new Set();
   let candidateChains = new Map();
   let candidateInFlight = new Set();
+  let reviewInFlight = new Set();
   let reviewReports = new Map();
   let previewUrls = new Map();
   let batchState = null;
@@ -2188,14 +2193,35 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     }
     const shot = (suitePlan && Array.isArray(suitePlan.shots) ? suitePlan.shots : [])
       .find((item) => item && item.shot_id === shotId);
-    const findings = evaluateCandidateFindings({
+    const deterministic = evaluateCandidateFindings({
       candidate: candidate,
       bytes: view,
       roleId: shot ? shot.role_id : null,
     });
-    const report = buildReviewReport({
-      candidate: candidate, findings: findings, at: new Date().toISOString(),
-    });
+    // 合同版本或规则升级后重建报告：同一候选字节上的 VLM 复核块整体带过去；
+    // 旧规则与当前注册表不兼容时丢弃复核部分（回到「VLM 未检查」），不伪造结论。
+    const previous = existing && existing.report && existing.report.vlm
+      && existing.report.vlm.asset_sha256 === candidate.asset_sha256 ? existing.report : null;
+    const carried = previous
+      ? previous.findings.filter((item) => item && item.layer === "vlm") : [];
+    let report = null;
+    if (previous) {
+      try {
+        report = buildReviewReport({
+          candidate: candidate,
+          findings: deterministic.concat(carried),
+          vlm: previous.vlm,
+          at: new Date().toISOString(),
+        });
+      } catch (error) {
+        report = null;
+      }
+    }
+    if (!report) {
+      report = buildReviewReport({
+        candidate: candidate, findings: deterministic, at: new Date().toISOString(),
+      });
+    }
     try {
       const saved = await repository.documents.save(projectId, {
         kind: REVIEW_KIND, documentId: candidate.candidate_id, payload: report,
@@ -2206,6 +2232,142 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
       reviewReports.set(candidate.candidate_id, { report: report, version: 0 });
     }
     return reviewReports.get(candidate.candidate_id);
+  }
+
+  /**
+   * V2.5.2：把目标 Shot 的最新候选投影成一次复核请求。
+   * 图片字节只从 IndexedDB 读；资料缺失或超上限时抛错（调用方转为未完成，不送半份资料）。
+   */
+  async function buildReviewRequest(shotId, candidate) {
+    const asset = await repository.assets.get(projectId, candidate.asset_sha256);
+    if (!asset || !(asset.blob instanceof Blob)) {
+      throw new Error("候选字节缺失，无法复核；请重新生成或重新导入项目。");
+    }
+    if (asset.blob.size > MAX_REVIEW_IMAGE_BYTES) {
+      throw new Error("候选字节超过复核上限（" + MAX_REVIEW_IMAGE_BYTES + " 字节），未发起复核。");
+    }
+    const shot = (suitePlan && Array.isArray(suitePlan.shots) ? suitePlan.shots : [])
+      .find((item) => item && item.shot_id === shotId) || null;
+    const specEntry = shotSpecEntry(shotId);
+    const spec = specEntry ? specEntry.spec : (shot ? emptyShotSpecFromShot(shot) : null);
+    const references = shot
+      ? selectReferences(shot, (Array.isArray(intake.references) ? intake.references : [])
+          .map((item) => ({ role: item.role, sha256: item.asset_sha256 })))
+        .slice(0, MAX_REVIEW_REFERENCES)
+      : [];
+    const referencePayload = await buildSubmitReferences(references);
+    const facts = [];
+    for (const entry of slots.values()) {
+      const slot = entry && entry.slot ? entry.slot : null;
+      if (!slot || slot.status !== "confirmed") continue;
+      const value = Array.isArray(slot.value) ? slot.value.join("；") : String(slot.value);
+      facts.push({
+        label: String(slot.label || slot.slot_id).slice(0, 60),
+        value: value.slice(0, 200),
+      });
+      if (facts.length >= 20) break;
+    }
+    return {
+      candidate: {
+        media_type: candidate.media_type || "image/png",
+        sha256: candidate.asset_sha256,
+        data_base64: await blobToBase64(asset.blob),
+      },
+      references: referencePayload.map((item) => ({
+        media_type: item.media_type,
+        sha256: item.sha256,
+        data_base64: item.data_base64,
+      })),
+      shot: {
+        title: String((shot && (shot.role_label || shot.role_id)) || "图片任务").slice(0, 200),
+        purpose: spec ? String(spec.purpose || "").slice(0, 500) : "",
+        keep_items: spec ? spec.keep.slice(0, 8) : [],
+        allow_changes: spec ? spec.change_allowed.slice(0, 8) : [],
+      },
+      platform: ANALYZE_PLATFORM,
+      product_facts: facts,
+      locale: ANALYZE_LOCALE,
+    };
+  }
+
+  /**
+   * V2.5.2：对目标 Shot 的最新候选执行一次 VLM 复核。
+   * 失败信封与传输失败都投影成 Unknown（保留分类原因）；不自动采纳、不阻塞人工审核。
+   */
+  async function reviewCandidate(shotId) {
+    if (!projectId) return { skipped: true, reason: "no_project" };
+    if (reviewInFlight.has(shotId)) return { skipped: true, reason: "in_flight" };
+    reviewInFlight.add(shotId);
+    renderAttempts();
+    try {
+      const stored = latestStoredCandidateOf(shotId);
+      const candidate = stored && stored.record ? stored.record : stored;
+      if (!candidate) return { skipped: true, reason: "no_candidate" };
+      const current = reviewReports.get(candidate.candidate_id);
+      if (!current || !reviewIsCurrent(current.report, candidate)) {
+        await ensureReviewReport(shotId, candidate, null);
+      }
+      let request;
+      try {
+        request = await buildReviewRequest(shotId, candidate);
+      } catch (error) {
+        return {
+          failed: true, reason: "request_invalid",
+          message: (error && error.message) || "复核请求无法构建。",
+        };
+      }
+      let envelope = null;
+      try {
+        const response = await fetch(REVIEW_PATH, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(request),
+        });
+        envelope = await response.json().catch(() => null);
+      } catch (error) {
+        envelope = null;
+      }
+      if (!envelope || typeof envelope !== "object") {
+        envelope = {
+          ok: false, unknown: true,
+          error: {
+            family: "internal", code: "REVIEW_TRANSPORT",
+            message: "复核服务没有返回可解析的结果（服务可能未启动）。",
+            retry_policy: "requires_review",
+          },
+        };
+      }
+      const entry = reviewReports.get(candidate.candidate_id);
+      let merged = null;
+      try {
+        merged = mergeVlmReview({
+          report: entry.report, candidate: candidate, review: envelope,
+          at: new Date().toISOString(),
+        });
+      } catch (error) {
+        return {
+          failed: true, reason: "merge_invalid",
+          message: (error && error.message) || "复核结果无法合并进报告。",
+        };
+      }
+      try {
+        const saved = await repository.documents.save(projectId, {
+          kind: REVIEW_KIND, documentId: candidate.candidate_id, payload: merged,
+        });
+        reviewReports.set(candidate.candidate_id, { report: merged, version: saved.version });
+      } catch (error) {
+        reviewReports.set(candidate.candidate_id, { report: merged, version: 0 });
+      }
+      return {
+        ok: envelope.ok === true,
+        outcome: merged.vlm.outcome,
+        candidate_id: candidate.candidate_id,
+        summary: reviewSummaryText(merged),
+      };
+    } finally {
+      reviewInFlight.delete(shotId);
+      renderAttempts();
+    }
   }
 
   /**
@@ -2444,7 +2606,7 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
                   "data-review-candidate": candidate.candidate_id,
                 },
                 text: reviewSummaryText(reviewEntry.report)
-                  + (top ? " · 先看：" + top.title + " — " + top.detail : " · 全部通过"),
+                  + (top ? " · 先看：" + top.title + " — " + top.detail : " · 无待处理项"),
               }));
             } else {
               row.append(createElement("p", {
@@ -2453,6 +2615,23 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
                 text: "自动检查报告尚未生成（候选保存时自动生成；旧候选会在重新打开项目时补建）。",
               }));
             }
+            const reviewButton = createElement("button", {
+              text: reviewInFlight.has(item.shot_id) ? "复核中…" : "自动复核（VLM）",
+              attrs: {
+                type: "button",
+                "data-review-action": candidate.candidate_id,
+                title: "调用视觉语言模型找可疑问题；只提示，不自动采纳",
+              },
+            });
+            reviewButton.disabled = reviewInFlight.has(item.shot_id);
+            reviewButton.addEventListener("click", async () => {
+              const outcome = await reviewCandidate(item.shot_id);
+              if (outcome && outcome.failed) {
+                elements.attemptStatus.textContent = "复核未完成：" + outcome.message
+                  + "（候选与报告保持不变）";
+              }
+            });
+            row.append(reviewButton);
           } else if (stored) {
             row.append(createElement("p", {
               className: "meta attempt-note",
@@ -3330,6 +3509,9 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
         project = projectRecord;
         renderHeaderText(project);
       }
+    },
+    async reviewLatestCandidate(shotId) {
+      return reviewCandidate(shotId);
     },
   };
 }

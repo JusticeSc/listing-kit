@@ -14,7 +14,7 @@ import json
 import os
 import re
 import time
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Mapping
 from typing import Any
 
 from langchain_core.messages import HumanMessage, SystemMessage
@@ -27,16 +27,22 @@ from src.providers.v2_semantic import (
     SemanticProposal,
     SemanticRequest,
     assert_proposal_legal,
-    classify_http_failure,
-    classify_transport_failure,
     internal_failure,
     invalid_response,
+    map_openai_exception,
     output_truncated,
     parse_proposal,
     problems_from_parse_error,
     refused,
     to_fact_slots,
     validate_request,
+)
+from src.providers.v2_langchain_chat import (
+    default_chat_model,
+    response_finish_reason,
+    response_request_id,
+    response_usage,
+    visible_text,
 )
 
 DEFAULT_PROVIDER_ID = "dashscope-semantic"
@@ -112,78 +118,6 @@ def build_messages(request: SemanticRequest) -> list[Any]:
             HumanMessage(content="\n".join(user_parts))]
 
 
-def _default_chat_model(*, model_id: str, base_url: str, api_key: str | None,
-                        timeout: float) -> Any:
-    from langchain_openai import ChatOpenAI  # 延迟导入：离线路径不需要 SDK
-
-    return ChatOpenAI(model=model_id, base_url=base_url, api_key=api_key,
-                      timeout=timeout, max_retries=0)
-
-
-def visible_text(raw: Any) -> str:
-    """AIMessage 的可见文本；推理型模型可能只有 reasoning、没有可见文本。"""
-
-    content = getattr(raw, "content", None)
-    if isinstance(content, str):
-        return content
-    if isinstance(content, Sequence) and not isinstance(content, (str, bytes)):
-        parts: list[str] = []
-        for block in content:
-            if isinstance(block, Mapping):
-                text = block.get("text")
-                if isinstance(text, str):
-                    parts.append(text)
-            elif isinstance(block, str):
-                parts.append(block)
-        return "".join(parts)
-    return ""
-
-
-def response_finish_reason(raw: Any) -> str | None:
-    for holder in (getattr(raw, "response_metadata", None), getattr(raw, "additional_kwargs", None)):
-        if isinstance(holder, Mapping):
-            reason = holder.get("finish_reason")
-            if isinstance(reason, str) and reason:
-                return reason
-    return None
-
-
-def response_request_id(raw: Any) -> str | None:
-    metadata = getattr(raw, "response_metadata", None)
-    if not isinstance(metadata, Mapping):
-        return None
-    for key in ("id", "request_id"):
-        value = metadata.get(key)
-        if isinstance(value, str) and value.strip():
-            return value.strip()[:160]
-    headers = metadata.get("headers")
-    if isinstance(headers, Mapping):
-        for name, value in headers.items():
-            if str(name).lower() in {"x-request-id", "request-id", "x-dashscope-request-id"}:
-                if isinstance(value, str) and value.strip():
-                    return value.strip()[:160]
-    return None
-
-
-def response_usage(raw: Any) -> dict[str, int]:
-    usage: dict[str, int] = {}
-    metadata = getattr(raw, "usage_metadata", None)
-    if not isinstance(metadata, Mapping):
-        return usage
-    for source, target in (("input_tokens", "prompt_tokens"),
-                           ("output_tokens", "completion_tokens"),
-                           ("total_tokens", "total_tokens")):
-        value = metadata.get(source)
-        if isinstance(value, int) and not isinstance(value, bool):
-            usage[target] = value
-    details = metadata.get("output_token_details")
-    if isinstance(details, Mapping):
-        reasoning = details.get("reasoning")
-        if isinstance(reasoning, int) and not isinstance(reasoning, bool):
-            usage["reasoning_tokens"] = reasoning
-    return usage
-
-
 class DashScopeSemanticProvider:
     """``deepseek-v4.1-flash`` 适配器；``llm_factory`` 可注入，供离线契约测试走同一条装配路径。"""
 
@@ -211,8 +145,8 @@ class DashScopeSemanticProvider:
             if self._llm_factory is not None:
                 self._llm = self._llm_factory()
             else:
-                self._llm = _default_chat_model(model_id=self.model_id, base_url=self.base_url,
-                                                api_key=self.api_key, timeout=self.timeout)
+                self._llm = default_chat_model(model_id=self.model_id, base_url=self.base_url,
+                                               api_key=self.api_key, timeout=self.timeout)
         return self._llm
 
     def build_structured_model(self) -> Any:
@@ -316,41 +250,5 @@ class DashScopeSemanticProvider:
     def _map_exception(self, error: BaseException) -> SemanticFailure:
         """按计划 §9.1 的归口表把 SDK/传输异常映射成分类失败。"""
 
-        try:
-            import openai
-            from langchain_core.exceptions import ContextOverflowError
-        except Exception:  # pragma: no cover - 依赖缺失时退回未分类
-            return SemanticFailure("provider_unknown", "PROVIDER_UNKNOWN",
-                                   f"语义调用出现未分类异常：{type(error).__name__}。",
-                                   retry_policy="requires_review")
-        status = int(getattr(error, "status_code", 0) or 0)
-        code = getattr(error, "code", None)
-        message = self._redact(str(error))
-        if isinstance(error, openai.BadRequestError):
-            if isinstance(error, ContextOverflowError):
-                return SemanticFailure("input_rejected", "INPUT_TOO_LONG",
-                                       "商品资料超出模型上下文上限；请缩短资料后重试。",
-                                       retry_policy="fatal", http_status=status or 400,
-                                       details={"provider_code": code})
-            return classify_http_failure(status or 400, code, message)
-        if isinstance(error, (openai.AuthenticationError, openai.PermissionDeniedError)):
-            return classify_http_failure(status or 401, code, message)
-        if isinstance(error, openai.RateLimitError):
-            return classify_http_failure(status or 429, code, message)
-        if isinstance(error, openai.APITimeoutError):
-            return classify_transport_failure(
-                "timeout_after_send", "语义调用超时；无法确认请求是否已送达。", request_id=None)
-        if isinstance(error, openai.APIConnectionError):
-            return classify_transport_failure("unreachable", "无法连接语义模型端点。")
-        if isinstance(error, openai.ContentFilterFinishReasonError):
-            return refused("模型拒绝分析该输入（内容策略）。")
-        if isinstance(error, openai.LengthFinishReasonError):
-            return output_truncated("模型输出被 max_tokens 截断。",
-                                    details={"max_tokens": self.max_tokens})
-        if isinstance(error, openai.APIStatusError):
-            return classify_http_failure(status, code, message)
-        if isinstance(error, openai.OpenAIError):
-            return SemanticFailure("provider_unknown", "PROVIDER_UNKNOWN",
-                                   "语义调用出现未知 Provider 异常。",
-                                   retry_policy="requires_review")
-        return internal_failure(f"语义调用出现未分类异常：{type(error).__name__}。")
+        return map_openai_exception(error, redact=self._redact, context="语义调用",
+                                    max_tokens=self.max_tokens)

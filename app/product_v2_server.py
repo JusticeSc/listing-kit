@@ -2,8 +2,9 @@
 
 职责边界：
   - 只服务 ``app/product_v2/`` 下的产品静态资源，以及无状态 API：
-    ``GET /api/v2/capabilities``、``POST /api/v2/semantic/analyze``，以及图像网关三段
-    ``POST /api/v2/images/submit`` / ``POST /api/v2/images/status`` / ``POST /api/v2/images/result``。
+    ``GET /api/v2/capabilities``、``POST /api/v2/semantic/analyze``、图像网关三段
+    ``POST /api/v2/images/submit`` / ``POST /api/v2/images/status`` / ``POST /api/v2/images/result``，
+    以及 VLM 复核 ``POST /api/v2/review/candidate``（只产生风险提示，不产生人工采纳）。
   - 不接收、不保存任何用户工作空间路径；没有文件夹工作空间、没有最近项目索引，
     没有任何请求字段会被当作本机目录读取。
   - 用户项目、图片与历史全部由浏览器 IndexedDB 持有；本进程只读自己的安装目录。
@@ -33,12 +34,15 @@ if str(ROOT) not in sys.path:
 
 PRODUCT_DIR = (ROOT / "app" / "product_v2").resolve()
 MAX_BODY_BYTES = 256 * 1024
+# 复核要携带候选图与参考图的 base64；只对复核路由放宽上限，其余路由仍按 256KB 拒绝。
+MAX_REVIEW_BODY_BYTES = 24 * 1024 * 1024
 
 CAPABILITIES_PATH = "/api/v2/capabilities"
 ANALYZE_PATH = "/api/v2/semantic/analyze"
 IMAGE_SUBMIT_PATH = "/api/v2/images/submit"
 IMAGE_STATUS_PATH = "/api/v2/images/status"
 IMAGE_RESULT_PATH = "/api/v2/images/result"
+REVIEW_PATH = "/api/v2/review/candidate"
 ANALYZE_FIELDS = ("product_name", "description", "selling_points", "focus", "references",
                   "locale", "platform", "max_slots", "existing_slot_ids")
 IMAGE_SUBMIT_FIELDS = ("action_id", "prompt", "references", "size", "seed", "model_id")
@@ -76,6 +80,14 @@ def default_image_provider_factory() -> Any:
     from src.providers.v2_registry import create_image_provider
 
     return create_image_provider()
+
+
+def default_review_provider_factory() -> Any:
+    """默认复核 provider：注册表 + 环境变量（构造过程不联网、不发图）。"""
+
+    from src.providers.v2_registry import create_review_provider
+
+    return create_review_provider()
 
 
 def status_for_failure(failure: Any) -> int:
@@ -168,6 +180,11 @@ class ProductV2Handler(BaseHTTPRequestHandler):
         factory = getattr(self.server, "image_provider_factory", None)
         return factory if callable(factory) else default_image_provider_factory
 
+    @property
+    def review_provider_factory(self) -> Callable[[], Any]:
+        factory = getattr(self.server, "review_provider_factory", None)
+        return factory if callable(factory) else default_review_provider_factory
+
     def _send_bytes(self, code: int, payload: bytes, ctype: str) -> None:
         self.send_response(code)
         self.send_header("Content-Type", ctype)
@@ -202,7 +219,7 @@ class ProductV2Handler(BaseHTTPRequestHandler):
             return None
         return candidate
 
-    def _read_body(self) -> tuple[bytes | None, int, dict[str, Any] | None]:
+    def _read_body(self, max_bytes: int = MAX_BODY_BYTES) -> tuple[bytes | None, int, dict[str, Any] | None]:
         """返回 (body, status, payload)；payload 非空表示已经可以结束这个请求。"""
         raw_length = self.headers.get("Content-Length")
         if raw_length is None or not str(raw_length).strip().isdigit():
@@ -210,20 +227,20 @@ class ProductV2Handler(BaseHTTPRequestHandler):
         length = int(str(raw_length).strip())
         if length <= 0:
             return None, 400, input_rejected_payload("请求体为空。")
-        if length > MAX_BODY_BYTES:
+        if length > max_bytes:
             # 先把已声明的正文读完再回 400：直接关闭连接会在客户端仍在发送时触发
             # TCP RST（Windows 上表现为 ConnectionAbortedError），让自检与调用方
             # 拿不到「超限被拒」的明确响应。上限之外再荒谬的长度只读一个限额，
             # 避免被超大 Content-Length 拖住。
-            drain_budget = min(length, MAX_BODY_BYTES * 2)
+            drain_budget = min(length, max_bytes * 2)
             while drain_budget > 0:
                 chunk = self.rfile.read(min(65536, drain_budget))
                 if not chunk:
                     break
                 drain_budget -= len(chunk)
             return None, 400, input_rejected_payload(
-                f"请求体超过上限 {MAX_BODY_BYTES} 字节。",
-                {"content_length": length, "limit": MAX_BODY_BYTES})
+                f"请求体超过上限 {max_bytes} 字节。",
+                {"content_length": length, "limit": max_bytes})
         body = self.rfile.read(length)
         if len(body) != length:
             return None, 400, input_rejected_payload("请求体在读满之前就结束了。")
@@ -266,6 +283,9 @@ class ProductV2Handler(BaseHTTPRequestHandler):
         if path == IMAGE_RESULT_PATH:
             self._images_result()
             return
+        if path == REVIEW_PATH:
+            self._review()
+            return
         self._send_not_found(path)
 
     def _capabilities(self) -> None:
@@ -276,6 +296,7 @@ class ProductV2Handler(BaseHTTPRequestHandler):
             "semantic_contract": SEMANTIC_CONTRACT_VERSION,
             "analyze_fields": list(ANALYZE_FIELDS),
             "images": self._image_capabilities(),
+            "review": self._review_capabilities(),
             "provider": {
                 "provider_id": None, "model_id": None,
                 "configured": False, "capabilities": {},
@@ -487,14 +508,95 @@ class ProductV2Handler(BaseHTTPRequestHandler):
             return
         self._send_json(200, {"ok": True, "unknown": False, "proposal": proposal.to_dict()})
 
+    # ---------------------------------------------------------- VLM 复核（V2.5.2）
+
+    def _review_capabilities(self) -> dict[str, Any]:
+        from src.providers.v2_review import REVIEW_CONTRACT_VERSION
+
+        block: dict[str, Any] = {
+            "contract": REVIEW_CONTRACT_VERSION,
+            "endpoint": REVIEW_PATH,
+            "provider": {"provider_id": None, "model_id": None,
+                         "configured": False, "capabilities": {}},
+            "unavailable": None,
+        }
+        try:
+            provider = self.review_provider_factory()
+        except Exception as error:  # noqa: BLE001 - 能力查询必须给出可用性而不是 5xx
+            block["unavailable"] = {
+                "kind": _provider_error_kind(error),
+                "detail": redact(type(error).__name__ + ": " + str(error)),
+            }
+            return block
+        block["provider"] = {
+            "provider_id": getattr(provider, "provider_id", None),
+            "model_id": getattr(provider, "model_id", None),
+            "configured": bool(getattr(provider, "configured", True)),
+            "capabilities": provider_capabilities(provider),
+        }
+        return block
+
+    def _review(self) -> None:
+        """一次无状态复核：请求进 → 结构化风险提示出；服务器不保存图片、不保存结果。"""
+
+        from src.providers.v2_review import parse_review_request
+        from src.providers.v2_semantic import SemanticFailure, problems_from_parse_error
+
+        body, status, payload = self._read_body(MAX_REVIEW_BODY_BYTES)
+        if payload is not None:
+            self._send_json(status, payload)
+            return
+        try:
+            decoded = json.loads(body.decode("utf-8"))
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            self._send_json(400, input_rejected_payload("请求体不是合法 JSON。"))
+            return
+        try:
+            request = parse_review_request(decoded)
+        except SemanticFailure as failure:
+            self._send_json(status_for_failure(failure),
+                            {"ok": False, "unknown": False, "error": failure.to_dict()})
+            return
+        except Exception as error:  # noqa: BLE001 - 契约问题一律归 input_rejected
+            try:
+                problems = problems_from_parse_error(error)
+            except Exception:  # noqa: BLE001
+                problems = None
+            self._send_json(400, input_rejected_payload(
+                "复核请求字段不符合契约；没有调用模型。", problems))
+            return
+        try:
+            provider = self.review_provider_factory()
+        except Exception as error:  # noqa: BLE001
+            self._send_json(503, provider_unavailable_payload(
+                _provider_error_kind(error),
+                redact(type(error).__name__ + ": " + str(error))))
+            return
+        try:
+            result = provider.review(request)
+        except SemanticFailure as failure:
+            self._send_json(status_for_failure(failure), {
+                "ok": False,
+                "unknown": getattr(failure, "family", None) == "provider_unknown",
+                "error": failure.to_dict(),
+            })
+            return
+        except Exception as error:  # noqa: BLE001 - 未分类异常不冒充 provider 结果
+            self._send_json(500, internal_error_payload(
+                redact(type(error).__name__ + ": " + str(error))))
+            return
+        self._send_json(200, {"ok": True, "unknown": False, "result": result.to_dict()})
+
 
 def create_product_v2_server(host: str = "127.0.0.1", port: int = 8780,
                              provider_factory: Callable[[], Any] | None = None,
-                             image_provider_factory: Callable[[], Any] | None = None) -> ThreadingHTTPServer:
+                             image_provider_factory: Callable[[], Any] | None = None,
+                             review_provider_factory: Callable[[], Any] | None = None) -> ThreadingHTTPServer:
     """建服务器但不启动；host 由调用方决定（本机默认回环，内网穿透时自行显式放开）。"""
     server = ThreadingHTTPServer((host, port), ProductV2Handler)
     server.provider_factory = provider_factory or default_provider_factory
     server.image_provider_factory = image_provider_factory or default_image_provider_factory
+    server.review_provider_factory = review_provider_factory or default_review_provider_factory
     return server
 
 
@@ -503,6 +605,7 @@ def run_self_check() -> int:
     import http.client
 
     from src.providers.v2_fake_image import FakeImageProvider
+    from src.providers.v2_fake_review import FakeReviewProvider
     from src.providers.v2_fake_semantic import FakeSemanticProvider
 
     mode = {"value": "fake"}
@@ -517,8 +620,14 @@ def run_self_check() -> int:
             raise RuntimeError("自检：图像 provider 构造失败")
         return FakeImageProvider(scenario="ok")
 
+    def review_factory():
+        if mode["value"] == "broken":
+            raise RuntimeError("自检：复核 provider 构造失败")
+        return FakeReviewProvider(scenario="ok")
+
     server = create_product_v2_server("127.0.0.1", 0, provider_factory=factory,
-                                      image_provider_factory=image_factory)
+                                      image_provider_factory=image_factory,
+                                      review_provider_factory=review_factory)
     threading.Thread(target=server.serve_forever, daemon=True).start()
     host, port = server.server_address[:2]
     checks: list[tuple[str, bool, str]] = []
@@ -661,6 +770,16 @@ def run_self_check() -> int:
                             "sha256": hashlib.sha256(sample_png).hexdigest(),
                             "data_base64": base64.b64encode(sample_png).decode("ascii")}],
         }, ensure_ascii=False).encode("utf-8")
+        review_body = json.dumps({
+            "candidate": {"media_type": "image/png",
+                          "sha256": hashlib.sha256(sample_png).hexdigest(),
+                          "data_base64": base64.b64encode(sample_png).decode("ascii")},
+            "references": [],
+            "shot": {"title": "自检主图", "purpose": "白底展示商品",
+                     "keep_items": ["商品外观"], "allow_changes": ["背景"]},
+            "platform": "amazon_us",
+            "product_facts": [{"label": "材质", "value": "玻璃"}],
+        }, ensure_ascii=False).encode("utf-8")
         status, _, body = request("POST", IMAGE_SUBMIT_PATH, submit_body)
         payload = json_body(body)
         task_id = (payload.get("task") or {}).get("task_id")
@@ -707,6 +826,54 @@ def run_self_check() -> int:
         status, _, body = request("POST", IMAGE_SUBMIT_PATH, submit_body)
         payload = json_body(body)
         check("图像 provider 不可用时提交路由 503 且错误分类明确",
+              status == 503 and payload.get("error", {}).get("code") == "PROVIDER_NOT_CONFIGURED"
+              and payload.get("unknown") is False,
+              f"status={status} error={payload.get('error')}")
+        mode["value"] = "fake"
+
+        status, _, body = request("GET", CAPABILITIES_PATH)
+        payload = json_body(body)
+        review_block = payload.get("review") or {}
+        check("capabilities 暴露 VLM 复核（合同、端点、provider 与参考图能力）",
+              payload.get("ok") is True
+              and review_block.get("provider", {}).get("configured") is True
+              and review_block.get("provider", {}).get("model_id") == "fake-qwen-vl-max"
+              and review_block.get("endpoint") == REVIEW_PATH
+              and review_block.get("provider", {}).get("capabilities", {}).get("reference_images") is True,
+              f"review={review_block.get('provider')}")
+
+        status, _, body = request("POST", REVIEW_PATH, review_body)
+        payload = json_body(body)
+        result = payload.get("result") or {}
+        check("复核路由（fake provider）返回绑定候选 sha256 的发现且不含采纳结论",
+              status == 200 and payload.get("ok") is True and payload.get("unknown") is False
+              and result.get("candidate_sha256") == hashlib.sha256(sample_png).hexdigest()
+              and len(result.get("findings") or []) >= 1
+              and all(item.get("check") for item in result.get("findings") or [])
+              and "accept" not in json.dumps(result, ensure_ascii=False).lower(),
+              f"status={status} findings={len(result.get('findings') or [])}")
+
+        bad_review = json.loads(review_body.decode("utf-8"))
+        bad_review["candidate"]["sha256"] = "0" * 64
+        status, _, body = request("POST", REVIEW_PATH,
+                                  json.dumps(bad_review, ensure_ascii=False).encode("utf-8"))
+        payload = json_body(body)
+        check("复核图片哈希与字节不一致 → input_rejected/400（不调用模型）",
+              status == 400 and payload.get("error", {}).get("family") == "input_rejected",
+              f"status={status} error={payload.get('error')}")
+
+        mode["value"] = "broken"
+        status, _, body = request("GET", CAPABILITIES_PATH)
+        payload = json_body(body)
+        check("复核 provider 不可用时 capabilities 仍 200 且 configured=false",
+              status == 200
+              and (payload.get("review") or {}).get("provider", {}).get("configured") is False
+              and (((payload.get("review") or {}).get("unavailable") or {}).get("kind")
+                   in ("registry", "dependency")),
+              f"review={(payload.get('review') or {}).get('unavailable')}")
+        status, _, body = request("POST", REVIEW_PATH, review_body)
+        payload = json_body(body)
+        check("复核 provider 不可用时复核路由 503 且错误分类明确",
               status == 503 and payload.get("error", {}).get("code") == "PROVIDER_NOT_CONFIGURED"
               and payload.get("unknown") is False,
               f"status={status} error={payload.get('error')}")

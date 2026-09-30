@@ -21,13 +21,30 @@ import {
 } from "./shared.js";
 
 export const REVIEW_REPORT_SCHEMA_VERSION = 1;
-export const REVIEW_CONTRACT_VERSION = "v2.5.1";
+export const REVIEW_CONTRACT_VERSION = "v2.5.2";
 export const REVIEW_REPORT_DOCUMENT_KIND = DOMAIN_DOCUMENT_KINDS.review_report;
 
-export const REVIEW_LAYERS = Object.freeze(["generation", "candidate", "export"]);
+export const REVIEW_LAYERS = Object.freeze(["generation", "candidate", "export", "vlm"]);
 export const REVIEW_SEVERITIES = Object.freeze(["BLOCK", "HIGH_RISK", "WARNING", "PASS", "UNKNOWN"]);
 export const VIOLATION_SEVERITIES = Object.freeze(["BLOCK", "HIGH_RISK", "WARNING"]);
 export const UNKNOWN_POLICIES = Object.freeze(["hint", "disable"]);
+export const VLM_OUTCOMES = Object.freeze(["checked", "unknown"]);
+
+/**
+ * VLM check 词表：与服务端 src/providers/v2_review.py 的 VLM_CHECKS 键集合必须一致（跨语言镜像），
+ * 由 tools/verify_v2_5_2_vlm_review.py 比对；rule_id / 严重度 / 消费者的唯一权威仍是本文件注册表。
+ */
+export const VLM_CHECK_TO_RULE = Object.freeze({
+  product_fidelity: "vlm.product_fidelity",
+  part_anomaly: "vlm.part_anomaly",
+  deformity: "vlm.deformity",
+  clipping: "vlm.clipping",
+  garbled_text: "vlm.garbled_text",
+  goal_completion: "vlm.goal_completion",
+  prohibited_content: "vlm.prohibited_content",
+});
+export const VLM_MAX_FINDINGS = 12;
+export const VLM_MAX_EVIDENCE_LENGTH = 300;
 
 /** Amazon US 确定性阈值：<1000px 不能启用缩放（阻断）；≥1600px 是推荐值（提醒）。 */
 export const PLATFORM_MIN_LONG_SIDE = 1000;
@@ -155,6 +172,60 @@ export const DETERMINISTIC_RULES = Object.freeze([
     measurement: "对 Blob 字节重算 sha256（注入 digest）并与候选记录比对",
     unknown_policy: "hint",
   }),
+  rule({
+    rule_id: "vlm.product_fidelity", version: 1, layer: "vlm", title: "商品与参考不一致",
+    severity: "HIGH_RISK", consumer: "review-panel@V2.5.3",
+    measurement: "VLM 结构化发现（check=product_fidelity，绑定 provider/model/asset_sha256/at）",
+    unknown_policy: "hint",
+  }),
+  rule({
+    rule_id: "vlm.part_anomaly", version: 1, layer: "vlm", title: "部件异常",
+    severity: "HIGH_RISK", consumer: "review-panel@V2.5.3",
+    measurement: "VLM 结构化发现（check=part_anomaly，绑定 provider/model/asset_sha256/at）",
+    unknown_policy: "hint",
+  }),
+  rule({
+    rule_id: "vlm.deformity", version: 1, layer: "vlm", title: "明显畸形",
+    severity: "HIGH_RISK", consumer: "review-panel@V2.5.3",
+    measurement: "VLM 结构化发现（check=deformity，绑定 provider/model/asset_sha256/at）",
+    unknown_policy: "hint",
+  }),
+  rule({
+    rule_id: "vlm.clipping", version: 1, layer: "vlm", title: "穿模或拼接痕迹",
+    severity: "HIGH_RISK", consumer: "review-panel@V2.5.3",
+    measurement: "VLM 结构化发现（check=clipping，绑定 provider/model/asset_sha256/at）",
+    unknown_policy: "hint",
+  }),
+  rule({
+    rule_id: "vlm.garbled_text", version: 1, layer: "vlm", title: "文字乱码",
+    severity: "HIGH_RISK", consumer: "review-panel@V2.5.3",
+    measurement: "VLM 结构化发现（check=garbled_text，绑定 provider/model/asset_sha256/at）",
+    unknown_policy: "hint",
+  }),
+  rule({
+    rule_id: "vlm.goal_completion", version: 1, layer: "vlm", title: "目标完成度",
+    severity: "WARNING", consumer: "review-panel@V2.5.3",
+    measurement: "VLM 结构化发现（check=goal_completion，对照 ShotSpec.purpose）",
+    unknown_policy: "hint",
+  }),
+  rule({
+    rule_id: "vlm.prohibited_content", version: 1, layer: "vlm", title: "禁止内容",
+    severity: "HIGH_RISK", consumer: "review-panel@V2.5.3",
+    measurement: "VLM 结构化发现（check=prohibited_content，最终裁定仍在平台硬规则与人工）",
+    unknown_policy: "hint",
+  }),
+  rule({
+    rule_id: "vlm.inspection_completed", version: 1, layer: "vlm", title: "VLM 复核完成",
+    severity: "WARNING", consumer: "review-panel@V2.5.3",
+    measurement: "复核结果结构合法且绑定当前候选（checked 且未报告问题 → PASS 标记）",
+    unknown_policy: "hint",
+  }),
+  rule({
+    rule_id: "vlm.inspection_unavailable", version: 1, layer: "vlm", title: "VLM 复核未完成",
+    severity: "WARNING", consumer: "review-panel@V2.5.3",
+    measurement: "分类失败记录（family/code/retry_policy）与候选身份绑定",
+    unknown_policy: "hint",
+  }),
 ]);
 const RULE_BY_ID = Object.freeze(DETERMINISTIC_RULES.reduce((table, entry) => {
   table[entry.rule_id] = entry;
@@ -197,6 +268,10 @@ export function checkRuleRegistry(registry = DETERMINISTIC_RULES) {
     if (VIOLATION_SEVERITIES.indexOf(entry.severity) === -1) {
       pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, path + ".severity",
         "违规严重度必须是 BLOCK/HIGH_RISK/WARNING（PASS/UNKNOWN 不是规则严重度）。");
+    }
+    if (entry.layer === "vlm" && entry.severity === "BLOCK") {
+      pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, path + ".severity",
+        "VLM 层规则不得为 BLOCK：模型发现不能升级为平台硬阻断，采纳权只在人工。");
     }
     if (!isNonEmptyString(entry.consumer) || !CONSUMER_PATTERN.test(entry.consumer)) {
       pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, path + ".consumer",
@@ -606,11 +681,162 @@ export async function verifyAssetHashes({ selections, candidatesByShot, readByte
   });
 }
 
+/** VLM 复核块形状：绑定候选身份与合同版本；outcome 只有 checked / unknown。 */
+function checkVlmBlock(vlm, problems, path) {
+  if (!isPlainObject(vlm)) {
+    pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, path, "VLM 复核块必须是对象。");
+    return;
+  }
+  if (VLM_OUTCOMES.indexOf(vlm.outcome) === -1) {
+    pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, path + ".outcome",
+      "outcome 必须是 checked/unknown：" + String(vlm.outcome));
+  }
+  if (vlm.contract_version !== REVIEW_CONTRACT_VERSION) {
+    pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, path + ".contract_version",
+      "VLM 复核块必须绑定当前合同版本：" + String(vlm.contract_version));
+  }
+  if (!isSha256Hex(vlm.asset_sha256)) {
+    pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, path + ".asset_sha256",
+      "缺少候选字节身份（64 位 sha256）。");
+  }
+  if (!isIsoTimestamp(vlm.checked_at)) {
+    pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, path + ".checked_at",
+      "缺少 ISO 复核时间。");
+  }
+  ["provider_id", "model_id", "request_id", "summary"].forEach((key) => {
+    const value = vlm[key];
+    if (value !== null && value !== undefined && typeof value !== "string") {
+      pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, path + "." + key,
+        key + " 只允许字符串或 null。");
+    }
+  });
+}
+
+/**
+ * 一次复核信封 → VLM findings + 复核块。成功信封必须是 checked 结果且绑定当前候选；
+ * 失败信封一律投影为 UNKNOWN（不伪造 PASS、不阻塞人工），并保留分类原因。
+ */
+export function buildVlmReview({ candidate, review, at } = {}) {
+  if (!isPlainObject(candidate) || !isNonEmptyString(candidate.candidate_id)
+      || !isNonEmptyString(candidate.shot_id) || !isSha256Hex(candidate.asset_sha256)) {
+    invalid("VLM 复核需要候选身份（candidate_id / shot_id / asset_sha256）。");
+  }
+  if (!isIsoTimestamp(at)) invalid("VLM 复核需要 ISO 时间（at）。");
+  if (!isPlainObject(review) || typeof review.ok !== "boolean") {
+    invalid("VLM 复核需要服务端信封（ok 标记）。");
+  }
+  const findings = [];
+  let vlm = null;
+  if (review.ok === true) {
+    const result = review.result;
+    if (!isPlainObject(result)) invalid("复核成功信封缺少 result。");
+    if (result.contract_version !== REVIEW_CONTRACT_VERSION) {
+      invalid("复核结果的合同版本与当前规则不一致：" + String(result.contract_version));
+    }
+    if (result.candidate_sha256 !== candidate.asset_sha256) {
+      invalid("复核结果绑定的是另一个候选（sha256 不一致）。");
+    }
+    if (!Array.isArray(result.findings) || result.findings.length > VLM_MAX_FINDINGS) {
+      invalid("复核 findings 必须是数组且不超过 " + VLM_MAX_FINDINGS + " 条。");
+    }
+    result.findings.forEach((item) => {
+      if (!isPlainObject(item)) invalid("复核发现必须是对象。");
+      const ruleId = VLM_CHECK_TO_RULE[item.check];
+      if (!ruleId) invalid("复核发现引用了未登记的 check：" + String(item.check));
+      if (!isNonEmptyString(item.evidence) || item.evidence.length > VLM_MAX_EVIDENCE_LENGTH) {
+        invalid("复核证据必须是非空短文本（≤" + VLM_MAX_EVIDENCE_LENGTH + " 字符）。");
+      }
+      if (typeof item.confidence !== "number" || !Number.isFinite(item.confidence)
+          || item.confidence < 0 || item.confidence > 1) {
+        invalid("复核置信度必须在 0..1 之间。");
+      }
+      const entry = RULE_BY_ID[ruleId];
+      findings.push(makeFinding(ruleId, entry.severity, item.evidence, {
+        check: item.check,
+        confidence: item.confidence,
+        provider_id: result.provider_id || null,
+        model_id: result.model_id || null,
+        request_id: result.request_id || null,
+        checked_at: result.checked_at || at,
+        candidate_sha256: result.candidate_sha256,
+      }));
+    });
+    if (findings.length === 0) {
+      findings.push(makeFinding("vlm.inspection_completed", "PASS",
+        "VLM 复核完成，未报告问题（这只是机器事实，不等于人工采纳）。", {
+          provider_id: result.provider_id || null,
+          model_id: result.model_id || null,
+          request_id: result.request_id || null,
+          checked_at: result.checked_at || at,
+        }));
+    }
+    vlm = {
+      outcome: "checked",
+      contract_version: REVIEW_CONTRACT_VERSION,
+      asset_sha256: candidate.asset_sha256,
+      candidate_id: candidate.candidate_id,
+      shot_id: candidate.shot_id,
+      provider_id: result.provider_id || null,
+      model_id: result.model_id || null,
+      request_id: result.request_id || null,
+      checked_at: result.checked_at || at,
+      latency_ms: typeof result.latency_ms === "number" ? result.latency_ms : null,
+      summary: typeof result.summary === "string" ? result.summary.slice(0, 500) : "",
+    };
+  } else {
+    const error = isPlainObject(review.error) ? review.error : {};
+    const family = isNonEmptyString(error.family) ? error.family : "internal";
+    const code = isNonEmptyString(error.code) ? error.code : "REVIEW_FAILED";
+    const retry = isNonEmptyString(error.retry_policy) ? error.retry_policy : "requires_review";
+    const message = isNonEmptyString(error.message) ? error.message.slice(0, 300) : "复核未完成。";
+    findings.push(makeFinding("vlm.inspection_unavailable", "UNKNOWN",
+      "VLM 复核未完成（" + family + "/" + code + "）：" + message
+      + "；人工审核不因此受阻。", {
+        family: family, code: code, retry_policy: retry,
+        request_id: error.request_id || null, at: at,
+      }));
+    vlm = {
+      outcome: "unknown",
+      contract_version: REVIEW_CONTRACT_VERSION,
+      asset_sha256: candidate.asset_sha256,
+      candidate_id: candidate.candidate_id,
+      shot_id: candidate.shot_id,
+      provider_id: null,
+      model_id: null,
+      request_id: error.request_id || null,
+      checked_at: at,
+      latency_ms: null,
+      summary: "",
+    };
+  }
+  return Object.freeze({
+    outcome: vlm.outcome,
+    findings: Object.freeze(findings),
+    vlm: Object.freeze(vlm),
+  });
+}
+
+/** 把一次复核合并进当前报告：确定性 findings 保留，VLM 层整体替换，报告身份不变。 */
+export function mergeVlmReview({ report, candidate, review, at } = {}) {
+  if (!isPlainObject(report)) invalid("合并复核需要已有报告。");
+  if (!reviewIsCurrent(report, candidate)) {
+    invalid("合并复核要求报告对当前候选仍然有效（先重建确定性报告）。");
+  }
+  const deterministic = report.findings.filter((item) => item && item.layer !== "vlm");
+  const built = buildVlmReview({ candidate: candidate, review: review, at: at });
+  return buildReviewReport({
+    candidate: candidate,
+    findings: deterministic.concat(built.findings),
+    vlm: built.vlm,
+    at: at,
+  });
+}
+
 /**
  * ReviewReport：绑定 candidate_id + review_contract_version + asset_sha256 的不可变快照。
  * findings 只允许引用注册表里的规则；summary 是逐严重度计数（由本函数计算，不接受外部传入）。
  */
-export function buildReviewReport({ candidate, findings, at } = {}) {
+export function buildReviewReport({ candidate, findings, vlm, at } = {}) {
   if (!isPlainObject(candidate)) invalid("报告需要候选记录。");
   if (!isNonEmptyString(candidate.candidate_id) || !isNonEmptyString(candidate.shot_id)
       || !isSha256Hex(candidate.asset_sha256)) {
@@ -618,6 +844,14 @@ export function buildReviewReport({ candidate, findings, at } = {}) {
   }
   if (!isIsoTimestamp(at)) invalid("报告需要 ISO 时间（at）。");
   if (!Array.isArray(findings) || findings.length === 0) invalid("报告需要非空 findings 数组。");
+  if (vlm !== undefined && vlm !== null) {
+    const vlmProblems = [];
+    checkVlmBlock(vlm, vlmProblems, "$.vlm");
+    if (vlmProblems.length) invalid("VLM 复核块不合法：" + vlmProblems[0].message);
+    if (vlm.asset_sha256 !== candidate.asset_sha256) {
+      invalid("VLM 复核块必须绑定同一候选字节。");
+    }
+  }
   const normalized = findings.map((item) => {
     if (!isPlainObject(item)) invalid("发现必须是对象。");
     const entry = RULE_BY_ID[item.rule_id];
@@ -644,6 +878,7 @@ export function buildReviewReport({ candidate, findings, at } = {}) {
     candidate_id: candidate.candidate_id,
     shot_id: candidate.shot_id,
     asset_sha256: candidate.asset_sha256,
+    vlm: vlm === undefined || vlm === null ? null : Object.freeze({ ...vlm }),
     summary: Object.freeze(summary),
     findings: Object.freeze(normalized),
     created_at: at,
@@ -674,6 +909,13 @@ export function checkReviewReport(report) {
   }
   if (!isIsoTimestamp(report.created_at)) {
     pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.created_at", "缺少 ISO 时间。");
+  }
+  if (report.vlm !== undefined && report.vlm !== null) {
+    checkVlmBlock(report.vlm, problems, "$.vlm");
+    if (isPlainObject(report.vlm) && report.vlm.asset_sha256 !== report.asset_sha256) {
+      pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.vlm.asset_sha256",
+        "VLM 复核块必须绑定同一候选字节。");
+    }
   }
   if (!Array.isArray(report.findings) || report.findings.length === 0) {
     pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.findings",
@@ -738,9 +980,14 @@ export function topFinding(report) {
 /** 界面一行摘要：只报需要行动的数量，不重复全部细节。 */
 export function reviewSummaryText(report) {
   const summary = report && isPlainObject(report.summary) ? report.summary : {};
+  const vlm = report && isPlainObject(report.vlm) ? report.vlm : null;
+  const vlmText = vlm
+    ? (vlm.outcome === "checked" ? "VLM 已检查" : "VLM 未完成")
+    : "VLM 未检查";
   return "自动检查 " + String(report && report.review_contract_version)
     + "：阻断 " + Number(summary.BLOCK || 0)
     + " · 高风险 " + Number(summary.HIGH_RISK || 0)
     + " · 提醒 " + Number(summary.WARNING || 0)
-    + " · 未知 " + Number(summary.UNKNOWN || 0);
+    + " · 未知 " + Number(summary.UNKNOWN || 0)
+    + " · " + vlmText;
 }
