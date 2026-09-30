@@ -1,0 +1,264 @@
+{
+ "stamp": "20261001-052757",
+ "label": "final",
+ "checks": [
+  {
+   "id": "V2.6.4-00",
+   "title": "ESM 语法门与 DOM 身份唯一（无重复 id / 元素键）",
+   "ok": true,
+   "detail": {
+    "node": [
+     {
+      "file": "app/product_v2/workspace.js",
+      "rc": 0,
+      "stderr": ""
+     },
+     {
+      "file": "app/product_v2/app.js",
+      "rc": 0,
+      "stderr": ""
+     },
+     {
+      "file": "app/product_v2/ui/stage-shell.js",
+      "rc": 0,
+      "stderr": ""
+     }
+    ],
+    "duplicate_ids": [],
+    "duplicate_element_keys": []
+   }
+  },
+  {
+   "id": "V2.6.4-01",
+   "title": "技术详情落点：统一 techDetails + 返工/采用面板 + 样式规则",
+   "ok": true,
+   "detail": {
+    "techDetails_calls": 9,
+    "rework_tech": true,
+    "adopt_tech": true,
+    "css": true
+   }
+  },
+  {
+   "id": "V2.6.4-02",
+   "title": "axe-core vendor 文件完整性与登记一致（SEL-013）",
+   "ok": true,
+   "detail": {
+    "exists": true,
+    "bytes": 580491,
+    "sha_match": true,
+    "registry": true
+   }
+  },
+  {
+   "id": "V2.6.4-03",
+   "title": "空白首页 axe（WCAG 2.0/2.1 A/AA）0 violations",
+   "ok": true,
+   "detail": {
+    "violations": []
+   }
+  },
+  {
+   "id": "V2.6.4-04",
+   "title": "空白首页键盘路径：Tab 可达主操作且每步焦点可见",
+   "ok": true,
+   "detail": {
+    "path": [
+     "new-project-name"
+    ],
+    "all_visible": true,
+    "focus": {
+     "id": "new-project-name",
+     "tag": "INPUT",
+     "action": null,
+     "text": "",
+     "outline": "solid 2px",
+     "visible": true
+    }
+   }
+  },
+  {
+   "id": "V2.6.4-05",
+   "title": "纯键盘创建并打开：Tab + 输入 + Enter 进入工作台",
+   "ok": true,
+   "detail": {
+    "create_focus": {
+     "id": "create-project",
+     "tag": "BUTTON",
+     "action": null,
+     "text": "新建项目",
+     "outline": "solid 2px",
+     "visible": true
+    },
+    "open_focus": {
+     "id": null,
+     "tag": "BUTTON",
+     "action": "open",
+     "text": "打开",
+     "outline": "solid 2px",
+     "visible": true
+    }
+   }
+  },
+  {
+   "id": "V2.6.4-06",
+   "title": "生成阶段四态之空/忙：未生成可见、整套生成中可观察",
+   "ok": true,
+   "detail": {
+    "empty": {
+     "rows": 4,
+     "missing": 4,
+     "badge": "尚未生成"
+    },
+    "busy": {
+     "run_disabled": true,
+     "stop_visible": true,
+     "progress": "共 4 张 · 已成功 2 · 处理中 1 · 待提交 1。；批次进行中：正在按任务编号核对上游进度。"
+    }
+   }
+  },
+  {
+   "id": "V2.6.4-07",
+   "title": "生成阶段技术详情：attempt 行默认收起且主行不含 sha256/action/task",
+   "ok": true,
+   "detail": {
+    "total": 12,
+    "open": 0,
+    "shots": 4,
+    "summaries": [
+     "技术详情"
+    ],
+    "has_sha": false,
+    "has_action": false,
+    "main_tail": "0 · image/png · 7 KB（预览来自本地字节）自动检查 v2.5.2：阻断 0 · 高风险 0 · 提醒 1 · 未知 0 · VLM 未检查 · 先看：推荐长边 1600px — 最长边 1200px 低于推荐值 1600px（不阻断；需要最佳缩放时可提高生成尺寸）。自动复核（VLM）比较候选（1）尚未采用候选：在候选比较里选一条，点「采用此候选」。再生成一张（新建 action）",
+    "main_sample": "主图·干净背景已成功Prompt v1提交 2026/10/1 05:28:00 · 更新 2026/10/1 05:28:00最近一次变化：上游已完成候选已保存到本地 · 1200×1200 · image/png · 7 KB（预览来自本地字节）自动检查 v2.5.2：阻断 0 · 高风险 0 · 提醒 1 · 未"
+   }
+  },
+  {
+   "id": "V2.6.4-08",
+   "title": "审核阶段：axe 0 violations、可见按钮都有可访问名、比较清单技术详情默认收起",
+   "ok": true,
+   "detail": {
+    "violations": [],
+    "buttons": {
+     "total": 5,
+     "unnamed": 0
+    },
+    "tech": {
+     "total": 1,
+     "open": 0
+    }
+   }
+  },
+  {
+   "id": "V2.6.4-09",
+   "title": "交付阶段：axe 0 violations、交付结果技术详情默认收起",
+   "ok": true,
+   "detail": {
+    "violations": [],
+    "buttons": {
+     "total": 2,
+     "unnamed": 0
+    },
+    "tech": {
+     "total": 1,
+     "open": 0
+    }
+   }
+  },
+  {
+   "id": "V2.6.4-10",
+   "title": "采用面板技术详情默认收起且主行不含 sha256",
+   "ok": true,
+   "detail": {
+    "tech": {
+     "total": 1,
+     "open": 0,
+     "summaries": [
+      "技术详情"
+     ],
+     "main_text": "\n          \n            采用候选（人工选择）\n            细节图·材质工艺 · 当前已采用 · 候选 v1\n            \n              关闭\n            \n          \n          \n          已采用候选 v1（选择记录 act-88d8e835f4ed4d9aa5d182bdac39116d）；当前仍有效（自动审核只提供依据，选择由人做出）。\n          将绑定当前审核报告：自动检查 v2.5.2：阻断 0 · 高风险 0 · 提醒 1 · 未知 0 · VLM 未检查（审核合同 v2.5.2）\n          \n            已采用这条候选\n            取消采用\n          \n          这张图是可选图：采用后仍可改选或取消。\n          已采用候选 v1（选择记录 v1）。改选或取消采用只会追加新记录。\n          \n        "
+    }
+   }
+  },
+  {
+   "id": "V2.6.4-11",
+   "title": "390px 与 200% 等效视口：无横向溢出且当前阶段可见",
+   "ok": true,
+   "detail": {
+    "narrow": {
+     "scroll": 390,
+     "client": 390,
+     "current_visible": true
+    },
+    "zoom": {
+     "scroll": 720,
+     "client": 720,
+     "current_visible": true
+    }
+   }
+  },
+  {
+   "id": "V2.6.4-12",
+   "title": "主链零意外 console / page / HTTP 错误",
+   "ok": true,
+   "detail": {
+    "console": [],
+    "page": [],
+    "http": []
+   }
+  },
+  {
+   "id": "V2.6.4-13",
+   "title": "演练三态：成功/失败/Unknown 可见且各有下一步动作，不自动重提",
+   "ok": true,
+   "detail": {
+    "states": {
+     "shot_main_clean": "succeeded",
+     "shot_infographic_benefits": "failed",
+     "shot_scene_lifestyle": "unknown"
+    },
+    "failed_button": 1,
+    "unknown_button": 1,
+    "rows": 3
+   }
+  },
+  {
+   "id": "V2.6.4-14",
+   "title": "演练链：除剧本内的 504 明确失败外无意外 console / page / HTTP 错误",
+   "ok": true,
+   "detail": {
+    "console": [
+     "Failed to load resource: the server responded with a status of 504 (Gateway Timeout)"
+    ],
+    "page": [],
+    "http": [
+     "504 http://127.0.0.1:40694/api/v2/images/submit"
+    ]
+   }
+  },
+  {
+   "id": "V2.6.4-15",
+   "title": "正式入口自检全过",
+   "ok": true,
+   "detail": {
+    "rc": 0,
+    "tail": [
+     "  PASS  整套复核 provider 不可用时 capabilities 仍 200 且 configured=false  suite_review={'kind': 'dependency', 'detail': 'RuntimeError: 自检：整套复核 provider 构造失败'}",
+     "  PASS  整套复核 provider 不可用时路由 503 且错误分类明确                          status=503 error={'family': 'internal', 'code': 'PROVIDER_NOT_CONFIGURED', 'message': '语义 provider 不可用：检查注册表、依赖与 DASHSCOPE_API_KEY。', 'retry_policy': 'fatal', 'http_status': 503, 'request_id': None, 'details': {'kind': 'dependency', 'detail': 'RuntimeError: 自检：整套复核 provider 构造失败'}}",
+     "V2 正式入口自检：38/38 通过。"
+    ]
+   }
+  }
+ ],
+ "screenshots": [
+  "evals/product-v2/evidence/v2.6.4-a11y-20261001-052757-final-home.png",
+  "evals/product-v2/evidence/v2.6.4-a11y-20261001-052757-final-keyboard-created.png",
+  "evals/product-v2/evidence/v2.6.4-a11y-20261001-052757-final-busy.png",
+  "evals/product-v2/evidence/v2.6.4-a11y-20261001-052757-final-review.png",
+  "evals/product-v2/evidence/v2.6.4-a11y-20261001-052757-final-deliver.png",
+  "evals/product-v2/evidence/v2.6.4-a11y-20261001-052757-final-narrow-390.png",
+  "evals/product-v2/evidence/v2.6.4-a11y-20261001-052757-final-zoom-200.png",
+  "evals/product-v2/evidence/v2.6.4-a11y-20261001-052757-final-drill.png"
+ ]
+}

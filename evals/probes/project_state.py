@@ -156,24 +156,38 @@ def _pick_task_with_unmet_dep(data: dict) -> str:
 PLAN_PHASE_HEAD = re.compile(r"^###\s+Phase\s+(-?\d+(?:\.\d+)?)\s*[：:]", re.M)
 
 
-def _pick_skipped_phase(data: dict) -> str:
-    """挑一个「前置阶段还没完成却被激活」的阶段。
+def _pick_skipped_phase(data: dict) -> tuple[str, str]:
+    """挑一对「正在推进、它前面的阶段却没完成」的 (前置阶段, 推进阶段)。
 
     为什么不再写死 Phase 2：写死就等于假设「Phase 1 还没完成」。项目一旦推进到
     Phase 1 已完成，这条探针会变成空操作并报 rc=0 —— 判据会随进度失效。
-    这里改成从计划里推导：找第一个未完成阶段，再选一个在它之后的未完成阶段。
+    只往「后面再找一个未完成阶段去激活」也有同样的寿命问题：2026-10-01 项目
+    推进到计划里最后一个阶段 Phase 7 时，它后面不存在可激活的阶段，探针直接
+    构造不出来。J5 的判据本身是「已推进的阶段，前置必须 done」，两个方向等价，
+    所以这里从反方向构造：最后一个未完成阶段用来激活，它前面最后一个 done 阶段
+    退回 pending。这样无论进度停在哪一相，只要还有未完成阶段就构造得出来。
     """
     heads = PLAN_PHASE_HEAD.findall(PLAN_TEXT)
-    done = {pid for pid, row in (data.get("phase_progress") or {}).items()
-            if isinstance(row, dict) and row.get("status") == "done"}
-    open_idx = [i for i, pid in enumerate(heads) if pid not in done]
-    if not open_idx:
+    rows = data.get("phase_progress") or {}
+
+    def status(pid: str) -> str:
+        row = rows.get(pid) or {}
+        return row.get("status", "pending") if isinstance(row, dict) else "pending"
+
+    open_phases = [pid for pid in heads if status(pid) != "done"]
+    if not open_phases:
         raise RuntimeError("所有阶段都已完成，这条探针无法构造 —— 要更新探针，不是放宽判据")
-    first_open = open_idx[0]
-    later = [pid for pid in heads[first_open + 1:] if pid not in done]
-    if not later:
-        raise RuntimeError("第一个未完成阶段之后没有可激活的阶段，探针需要更新")
-    return later[-1]
+    tip = open_phases[-1]
+    # 退回 pending 的阶段不能是 next_action 依赖的 Gate：那是 J7 的地盘，
+    # 同一次注入里连带触发 J7 会让这一向失去「只报该报的」的证明力
+    # （2026-10-01 走到 Phase 7 时，next_action=V2.7.1 依赖 G6，退回 Phase 6
+    # 就同时打出了 J5+J7）。挑一个不被 next_action 依赖的 done 阶段。
+    na_deps = {d for d in (PLAN_DEPS.get(str(data.get("next_action_task") or "")) or [])}
+    done_before = [pid for pid in heads[:heads.index(tip)]
+                   if status(pid) == "done" and f"G{pid}" not in na_deps]
+    if not done_before:
+        raise RuntimeError("要推进的阶段之前没有可退回的 done 阶段（next_action 依赖的 Gate 除外），探针需要更新")
+    return done_before[-1], tip
 
 
 def _run_guard() -> tuple[int, str]:
@@ -217,8 +231,10 @@ def _mutate(case: str) -> tuple[list[str], bool]:
     elif case == "G":
         data["status"] = "active"
         data["system_goal_observed_status"] = "active"
-        skipped = _pick_skipped_phase(data)
-        data.setdefault("phase_progress", {})[skipped] = {"status": "active", "evidence": []}
+        prereq, advanced = _pick_skipped_phase(data)
+        phases = data.setdefault("phase_progress", {})
+        phases[prereq] = {"status": "pending", "evidence": []}
+        phases[advanced] = {"status": "active", "evidence": []}
     elif case == "H":
         data.setdefault("task_progress", {})["D999.1"] = {"status": "pending", "evidence": []}
     elif case == "I":

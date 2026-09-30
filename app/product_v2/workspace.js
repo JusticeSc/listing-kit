@@ -235,6 +235,20 @@ function splitLines(text) {
   return String(text || "").split("\n").map((item) => item.trim()).filter((item) => item.length > 0);
 }
 
+/**
+ * V2.6.4 渐进披露：工程字段（sha256 / action / task / 指纹）默认收进「技术详情」。
+ * 业务判读所需信息留在主行；技术字段不删除、展开即可见，也仍可从 dataset 读取。
+ */
+function techDetails(lines, label = "技术详情") {
+  const items = (Array.isArray(lines) ? lines : [lines]).filter(
+    (item) => typeof item === "string" && item.length > 0);
+  if (!items.length) return null;
+  const details = createElement("details", { className: "tech-details" });
+  details.append(createElement("summary", { text: label }));
+  details.append(createElement("p", { className: "meta tech-body", text: items.join(" · ") }));
+  return details;
+}
+
 function formatValue(slot) {
   const value = slot.value;
   if (value === null || value === undefined) return "";
@@ -362,6 +376,8 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     reworkPreviewBox: document.getElementById("rework-preview-box"),
     reworkPreviewMeta: document.getElementById("rework-preview-meta"),
     reworkPreviewText: document.getElementById("rework-preview-text"),
+    reworkTech: document.getElementById("rework-tech"),
+    reworkTechBody: document.getElementById("rework-tech-body"),
     reworkSummary: document.getElementById("rework-summary"),
     reworkStatus: document.getElementById("rework-status"),
     reworkError: document.getElementById("rework-error"),
@@ -371,6 +387,8 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     adoptCancel: document.getElementById("adopt-cancel"),
     adoptCurrent: document.getElementById("adopt-current"),
     adoptFingerprint: document.getElementById("adopt-fingerprint"),
+    adoptTech: document.getElementById("adopt-tech"),
+    adoptTechBody: document.getElementById("adopt-tech-body"),
     adoptSubmit: document.getElementById("adopt-submit"),
     adoptClear: document.getElementById("adopt-clear"),
     adoptReadiness: document.getElementById("adopt-readiness"),
@@ -584,10 +602,10 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
       }));
       const info = asset
         ? [asset.media_type, asset.byte_size + " 字节",
-           (asset.width && asset.height ? asset.width + "×" + asset.height : "尺寸未知"),
-           "sha256 " + entry.asset_sha256.slice(0, 12) + "…"].join(" · ")
-        : "资产记录缺失 · sha256 " + entry.asset_sha256.slice(0, 12) + "…";
+           (asset.width && asset.height ? asset.width + "×" + asset.height : "尺寸未知")].join(" · ")
+        : "资产记录缺失";
       main.append(createElement("span", { className: "meta", text: info }));
+      main.append(techDetails(["sha256 " + entry.asset_sha256.slice(0, 12) + "…"]));
 
       const actions = createElement("div", { className: "ref-actions" });
       const select = createElement("select", {
@@ -2143,9 +2161,12 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
       row.append(createElement("p", {
         className: "meta",
         text: "参考图 " + item.references.length + " 张（"
-          + (item.references.map((ref) => ref.role + " " + ref.sha256_prefix).join("、") || "无") + "）"
+          + (item.references.map((ref) => ROLE_TEXT[ref.role] || ref.role).join("、") || "无") + "）"
           + (item.prompt.chars === null ? "" : " · 提示词 " + item.prompt.chars + " 字"),
       }));
+      const referenceTech = techDetails(item.references.map(
+        (ref) => (ROLE_TEXT[ref.role] || ref.role) + " sha256 " + ref.sha256_prefix));
+      if (referenceTech) row.append(referenceTech);
       if (item.risks.length > 0) {
         row.append(createElement("p", {
           className: "meta prompt-warning",
@@ -2713,8 +2734,7 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     clearAttemptError();
     const result = await ensureCandidateStored(shotId);
     if (result.stored) {
-      elements.attemptStatus.textContent = "候选已保存：sha256 " + result.sha256.slice(0, 12)
-        + "…（" + result.width + "×" + result.height + "）。"
+      elements.attemptStatus.textContent = "候选已保存（" + result.width + "×" + result.height + "）。"
         + (result.review ? " " + result.review : "");
     } else if (result.failed) {
       showAttemptError( result.message);
@@ -2836,8 +2856,8 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     const rows = inventory.rowsByShotId[compareShotId] || [];
     const shot = ((suitePlan && suitePlan.shots) || [])
       .find((item) => item && item.shot_id === compareShotId) || null;
-    const row = rows.find((item) => item.candidate_id === candidateId) || null;
-    renderCompareChecklist(shot, row);
+      const row = rows.find((item) => item.candidate_id === candidateId) || null;
+      renderCompareChecklist(shot, row);
     updateReworkEntry(shot, row);
     updateAdoptEntry(shot, row);
     elements.compareStatus.textContent = "";
@@ -2903,7 +2923,6 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     const list = elements.compareCandidates;
     list.innerHTML = "";
     for (const row of rows) {
-      const item = createElement("li");
       const card = createElement("button", {
         className: "compare-card",
         attrs: {
@@ -2940,18 +2959,16 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
         }));
       }
       main.append(head);
-      const source = [];
-      if (row.task_id) source.push("task " + String(row.task_id).slice(0, 8));
-      else if (row.attempt_action_id) source.push("action " + String(row.attempt_action_id).slice(0, 8));
-      if (row.width && row.height) source.push(row.width + "×" + row.height);
-      if (row.created_at) source.push(shortTime(row.created_at));
-      source.push("sha256 " + String(row.asset_sha256).slice(0, 12) + "…");
-      main.append(createElement("span", { className: "meta", text: source.join(" · ") }));
+      const business = [];
+      if (row.width && row.height) business.push(row.width + "×" + row.height);
+      if (row.created_at) business.push(shortTime(row.created_at));
+      main.append(createElement("span", { className: "meta", text: business.join(" · ") }));
       main.append(createElement("p", { className: "compare-headline", text: compareRowHeadline(row) }));
       card.append(main);
       card.addEventListener("click", () => { selectCompareCandidate(row.candidate_id); });
-      item.append(card);
-      list.append(item);
+      // tablist 的直接子节点必须是 tab；技术详情放在右侧 tabpanel 的清单底部，
+      // 既不嵌套交互控件，也不破坏 tabs 语义。
+      list.append(card);
     }
   }
 
@@ -3052,6 +3069,14 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
       }));
     }
     box.append(criteria);
+    const techLines = [
+      "candidate " + String(row.candidate_id),
+      "sha256 " + String(row.asset_sha256).slice(0, 12) + "…",
+    ];
+    if (row.task_id) techLines.push("task " + String(row.task_id).slice(0, 8));
+    else if (row.attempt_action_id) techLines.push("action " + String(row.attempt_action_id).slice(0, 8));
+    const tech = techDetails(techLines);
+    if (tech) box.append(tech);
   }
 
   /** 这张图实际会发送的参考图（与提交时同一选择函数），用作比较的左边一栏。 */
@@ -3084,9 +3109,9 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
         item.append(createElement("span", { className: "meta", text: "资产缺失" }));
       }
       item.append(createElement("span", {
-        className: "meta", text: (ROLE_TEXT[entry.reference.role] || entry.reference.role)
-          + " · " + String(entry.reference.sha256).slice(0, 8) + "…",
+        className: "meta", text: ROLE_TEXT[entry.reference.role] || entry.reference.role,
       }));
+      item.append(techDetails(["sha256 " + String(entry.reference.sha256).slice(0, 8) + "…"]));
       list.append(item);
     }
   }
@@ -3155,9 +3180,7 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
       }));
       head.append(createElement("span", {
         className: "meta",
-        text: entry
-          ? "Prompt v" + entry.version + " · " + String(entry.record.hash).slice(0, 12) + "…"
-          : "未编译 Prompt",
+        text: entry ? "Prompt v" + entry.version : "未编译 Prompt",
       }));
       if (stale && stale.stale) {
         head.append(createElement("span", {
@@ -3166,12 +3189,17 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
         }));
       }
       row.append(head);
+      if (entry) {
+        const promptTech = techDetails(["hash " + String(entry.record.hash).slice(0, 12) + "…"]);
+        if (promptTech) row.append(promptTech);
+      }
       if (record) {
-        const parts = ["action " + record.action_id];
-        if (record.task_id) parts.push("task " + record.task_id);
-        parts.push("提交 " + shortTime(record.created_at));
+        const parts = ["提交 " + shortTime(record.created_at)];
         if (record.updated_at !== record.created_at) parts.push("更新 " + shortTime(record.updated_at));
         row.append(createElement("p", { className: "meta attempt-task", text: parts.join(" · ") }));
+        const attemptTech = ["action " + record.action_id];
+        if (record.task_id) attemptTech.push("task " + record.task_id);
+        row.append(techDetails(attemptTech));
         const note = record.change_log.length
           ? record.change_log[record.change_log.length - 1].note : null;
         if (note) row.append(createElement("p", { className: "meta", text: "最近一次变化：" + note }));
@@ -3202,9 +3230,9 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
               className: "meta attempt-candidate",
               text: "候选已保存到本地 · " + candidate.width + "×" + candidate.height + " · "
                 + candidate.media_type + " · "
-                + Math.max(1, Math.round(candidate.byte_size / 1024)) + " KB · sha256 "
-                + candidate.asset_sha256.slice(0, 12) + "…（预览来自 IndexedDB 里的字节）",
+                + Math.max(1, Math.round(candidate.byte_size / 1024)) + " KB（预览来自本地字节）",
             }));
+            row.append(techDetails(["sha256 " + candidate.asset_sha256.slice(0, 12) + "…"]));
             const reviewEntry = reviewReports.get(candidate.candidate_id);
             if (reviewEntry && reviewIsCurrent(reviewEntry.report, candidate)) {
               const top = topFinding(reviewEntry.report);
@@ -3725,11 +3753,15 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     panel.dataset.reworkContract = REWORK_CONTRACT_VERSION;
     panel.dataset.shotId = shotId;
     panel.dataset.candidateId = row.candidate_id;
-    const basis = ["返工依据：候选 v" + (reworkSource.version === null ? "?" : reworkSource.version),
-                   "sha256 " + String(reworkSource.asset_sha256).slice(0, 12) + "…"];
+    const basis = ["返工依据：候选 v" + (reworkSource.version === null ? "?" : reworkSource.version)];
     if (row.top_finding) basis.push("先看：" + row.top_finding.title);
     if (reworkConfirmationIsCurrent(shotId)) basis.push("这张图的返工确认仍然有效");
     elements.reworkBasis.textContent = basis.join(" · ");
+    if (elements.reworkTech && elements.reworkTechBody) {
+      elements.reworkTech.hidden = false;
+      elements.reworkTechBody.textContent = "sha256 "
+        + String(reworkSource.asset_sha256).slice(0, 12) + "… · candidate " + row.candidate_id;
+    }
     renderReworkProblems(shotId, draft);
     if (elements.reworkDirection.value !== draft.direction) {
       elements.reworkDirection.value = draft.direction;
@@ -4364,8 +4396,13 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     const summary = suitePlan ? suitePlanSummary(suitePlan, suiteContext()).shots
       .find((item) => item.shot_id === shotId) : null;
     elements.adoptBasis.textContent = shotLabelOf(shotId) + " · 当前" + selectionStateLabel(state)
-      + " · 候选 v" + source.version + " · sha256 "
-      + String(source.candidate.asset_sha256).slice(0, 12) + "…";
+      + " · 候选 v" + source.version;
+    if (elements.adoptTechBody) {
+      elements.adoptTechBody.textContent = "sha256 "
+        + String(source.candidate.asset_sha256).slice(0, 12) + "… · candidate "
+        + String(source.candidate.candidate_id);
+    }
+    if (elements.adoptTech) elements.adoptTech.hidden = false;
     elements.adoptCurrent.textContent = selectionTextOf(shotId);
     elements.adoptFingerprint.textContent = source.report
       ? "将绑定当前审核报告：" + reviewSummaryText(source.report)
@@ -5233,9 +5270,10 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     elements.deliverResult.append(createElement("p", {
       className: "meta",
       text: "最近一次交付包：" + deliveryRecord.file_name + "（"
-        + Math.round(deliveryRecord.byte_size / 1024) + " KB · sha256 "
-        + String(deliveryRecord.sha256).slice(0, 16) + "…）",
+        + Math.round(deliveryRecord.byte_size / 1024) + " KB）",
     }));
+    elements.deliverResult.append(techDetails(
+      ["sha256 " + String(deliveryRecord.sha256).slice(0, 16) + "…"]));
     if (deliveryRecord.url) {
       elements.deliverResult.append(createElement("a", {
         text: "下载交付包",

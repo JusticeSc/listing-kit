@@ -1314,6 +1314,15 @@ stale 而不是被覆盖；失败 Attempt 不影响已有选择。Selection 只�
 - 390px 宽度与 200% 缩放不遮挡关键操作、无横向溢出；完整任务路径可纯键盘走通（可见焦点、图标按钮有可访问名、异步完成后焦点落点明确）。
 - 验证：`tools/verify_v2_6_4_accessibility.py` = Playwright 390px/200% 截图 + 键盘脚本 + axe 扫描 + console/network 断言 + 真实入口走查。证据 `evals/product-v2/v2.6.4-a11y-*-final.*` + `evidence/v2.6.4-a11y-*.png`。
 
+**2026-10-01 修订（V2.6.4 自审通过）**：`tools/verify_v2_6_4_accessibility.py` 16/16（axe 扫描首页/审核/交付、空白首页键盘路径与焦点可见、纯键盘创建并打开、生成阶段空/忙/四态、技术详情默认收起、390px/200% 无溢出、演练三态与下一步、零意外 console），期间修复四个真实缺陷：
+
+- `--success` 在 `--success-soft` 上的对比度实测 4.47:1（axe `color-contrast` serious）→ 加深 token 为 `#15703f`（对软背景与白色背景均 ≥ 4.5）。
+- 比较候选的 `role=tablist` 直接子节点是 `li`（axe `aria-required-children`）且技术详情曾嵌在按钮卡片里（axe `nested-interactive`）→ tab 直接作为 tablist 子元素；技术详情移入右侧审核清单（tabpanel）底部，两处语义都回到标准模式。
+- sha256 / action / task / prompt hash / 指纹此前直接堆在各主行 → 统一 `techDetails` 折叠（8 处渲染 + 返工/采用面板），主行只留版本、尺寸、时间、状态与人工判读依据；数据属性（dataset）与逻辑读取路径不变。
+- 自审自身发现并修正一处「折叠即丢失」：compare 卡片重构过程中 task/action 曾变成未渲染的死代码，已并入清单技术详情。
+
+axe-core 以 SEL-013 以 vendor 单文件（MPL-2.0）落 `evals/product-v2/vendor/`，`tools/check_docs.py` 的 vendor 守卫从单目录扩展为「运行时 + 测试侧」双目录双向比对。边界：axe 覆盖 WCAG 2.0/2.1 A/AA 的自动化可检出子集；键盘路径覆盖创建/打开/焦点可见与关键动作可达，不宣称覆盖全部鼠标路径；产品发起人与陌生人走查仍是发布前人工门。
+
 ## 10. 实施阶段、任务与 Gate
 
 任何时刻最多一个阶段 active。每个任务同时交付必要的数据合同、服务、界面和验证，不把“前端做完”“后端做完”当作用户可观察成果。

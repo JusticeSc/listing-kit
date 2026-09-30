@@ -14,7 +14,7 @@
   --accent: #2456d6;
   --accent-strong: #1b46b8;
   --accent-soft: #eaf0fe;
-  --success: #1a7f4b;
+  --success: #15703f; /* V2.6.4：原 #1a7f4b 在 --success-soft 上对比度 4.47，axe 实测不足 4.5 */
   --success-soft: #e7f5ec;
   --warn: #a16207;
   --warn-soft: #fdf4e3;
@@ -274,6 +274,24 @@ input:disabled, textarea:disabled, select:disabled { background: var(--surface-s
 .project-meta .facts { display: grid; gap: 6px; margin-top: 8px; }
 .project-meta dt { color: var(--text-muted); font-size: 12px; }
 .project-meta dd { margin: 0 0 4px; }
+
+/* V2.6.4 渐进披露：sha256 / action / task / 指纹等工程字段默认收起，展开后原文可复制。 */
+.tech-details { margin-top: 2px; }
+.tech-details > summary {
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 12px;
+  list-style: none;
+}
+.tech-details > summary::-webkit-details-marker { display: none; }
+.tech-details > summary::after { content: " ▾"; }
+.tech-details[open] > summary::after { content: " ▴"; }
+.tech-details .tech-body {
+  margin: 2px 0 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  word-break: break-all;
+}
 
 .stage-nav {
   display: flex;

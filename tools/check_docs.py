@@ -767,7 +767,12 @@ AGENTS_FILE = ROOT / "AGENTS.md"
 PYPROJECT_FILE = ROOT / "pyproject.toml"
 UV_LOCK_FILE = ROOT / "uv.lock"
 CONTEXT_FILE = ROOT / "docs" / "product-v2-project-context.md"
-VENDOR_DIR = ROOT / "app" / "product_v2" / "vendor"
+# vendor 单文件库分两类：产品运行时（app/…）与测试/评估侧（evals/…）。
+# 两边都进同一个登记表，文件集合与 §4.2 双向比对。
+VENDOR_DIRS = (
+    ROOT / "app" / "product_v2" / "vendor",
+    ROOT / "evals" / "product-v2" / "vendor",
+)
 
 REUSE_BEGIN = "<!-- reuse-first:begin -->"
 REUSE_END = "<!-- reuse-first:end -->"
@@ -944,8 +949,10 @@ def _check_reuse_first_gate(rep: Report) -> None:
                      f"↔ uv.lock {len(locked)} 包 ↔ 登记表 {len(declared_pins)} 行")
 
     vendor_rows = _marked_rows(context, VENDOR_BEGIN, VENDOR_END)
-    vendor_actual = ({p.name for p in VENDOR_DIR.glob("*") if p.is_file()}
-                     if VENDOR_DIR.exists() else set())
+    vendor_actual: set[str] = set()
+    for vendor_dir in VENDOR_DIRS:
+        if vendor_dir.exists():
+            vendor_actual |= {p.name for p in vendor_dir.glob("*") if p.is_file()}
     if vendor_rows is None:
         rep.problem("项目上下文缺少 vendor-registry 登记块（" + VENDOR_BEGIN + " / "
                     + VENDOR_END + "）—— 浏览器端引入第三方库就没有登记处。")
@@ -954,7 +961,8 @@ def _check_reuse_first_gate(rep: Report) -> None:
         missing_vendor = sorted(vendor_actual - vendor_set)
         ghost_vendor = sorted(vendor_set - vendor_actual)
         if missing_vendor:
-            rep.problem("app/product_v2/vendor/ 里这些文件没有登记：" + "、".join(missing_vendor))
+            rep.problem("vendor 目录（app/product_v2/vendor/、evals/product-v2/vendor/）里"
+                        "这些文件没有登记：" + "、".join(missing_vendor))
         if ghost_vendor:
             rep.problem("vendor 登记了、目录里却没有这些文件：" + "、".join(ghost_vendor))
 

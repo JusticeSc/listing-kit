@@ -111,6 +111,7 @@ Python 无状态 AI 服务
 | SEL-010 | 图像网关传输层 | 复用 `requests`（V1 已在用的锁定直接依赖）+ 三条无状态路由（submit / status / result）；协议与错误映射按 §9.10 自写，但请求形状沿用 V1 冻结合同（`src/providers/dashscope_image.py`）；PoC 与依赖实测见 `evals/product-v2/sel010-image-gateway-transport-poc-20260930.txt` | 官方 `dashscope` SDK（0.27.x→1.27.7 实测解析 32 包，拖入 aiohttp / typer / websocket-client 等）；`httpx`（第二套 HTTP 客户端，无协议收益）；OpenAI 兼容图像端点（百炼图像合成不是该形状） | 需要批量并发、取消、多供应商路由或成本统计时重估 SDK；百炼改协议时按冻结合同重测并更新 §9.10 |
 | SEL-011 | 复核（VLM）通道与模型 | 用户已定（2026-09-30）：复核复用 SEL-003 的 langchain 通道（`ChatOpenAI` + json_mode 结构化输出 + `map_openai_exception` 四归口），默认模型 `qwen-vl-max`（`REVIEW_MODEL` 可覆盖，registry 条目 `dashscope-review`）；输入 = 候选 + ≤3 参考图 + ShotSpec 摘要 + 已确认事实；输出只允许 7 个 check + evidence + confidence；VLM 只提示、不得 BLOCK、失败落 Unknown、不产生采纳 | 新建第二套 HTTP 客户端/适配器层（重复造轮子）；官方 SDK（拖包）；让模型自带严重度或采纳结论；把审美判断升级为平台硬阻断 | 需要多模态模型路由/降级或成本统计；百炼模型命名/能力变化；检出质量校准需要模型对比时（后续任务） |
 | SEL-012 | 浏览器支持与安全 origin | 首版保证当前稳定版桌面 Chrome/Edge；远程正式入口必须是可信 HTTPS secure context，TLS 由现有穿透/反向代理终止，应用容器保持无状态 HTTP。保留 IndexedDB + 原生 WebCrypto；不为远程明文 HTTP 或嵌入式浏览器自研 UUID/SHA-256、引入浏览器密码学 polyfill或服务器项目存储。能力失败必须区分 IndexedDB、WebCrypto、schema、配额与事务并给恢复动作 | 在浏览器手写 UUID/SHA-256 降级；新增 hash/UUID 服务端接口；把项目迁回服务器；把所有宿主纳入保证范围 | 目标客户必须使用不可提供 secure context 的受控宿主，或 Chrome/Edge 支持策略发生业务变化时重开；先证明真实环境约束再选替代 |
+| SEL-013 | 可访问性扫描 | 用户已定（2026-10-01，自审授权范围内）：vendor axe-core 4.13.0（MPL-2.0）单文件到测试侧 `evals/product-v2/vendor/`，由 `tools/verify_v2_6_4_accessibility.py` 注入正式入口页面运行扫描；不新增构建链、不进产品运行时 | 运行时 CDN 引入（不可离线复现）；npm/pip 构建依赖（违反 SEL-000 无构建链）；自写规则引擎（重复造轮子） | axe 上游大版本升级（重跑可访问性终验）；MPL 许可变化；需要运行时无障碍报告时重估 |
 
 状态：SEL-000 至 SEL-011 已定案（2026-09-30）。依赖权威已从 `requirements.txt` 迁移到
 `pyproject.toml` + `uv.lock`，守卫、CI、README 同步（证据见
@@ -154,6 +155,8 @@ GitHub Actions 复用官方 `actions/checkout@v6`、`actions/setup-python@v6`，
 |---|---|---|---|
 | fflate.browser.js | fflate 0.8.3（npm `esm/browser.js`，自包含 ESM，90,922B，sha256 `B7CA4450B19559A1D50EB381ADCEE94B82449674BE4CD17789D9BEBA7E6122A1`） | 浏览器 ZIP 读写（项目包导入导出） | SEL-008（2026-09-30 定，同批落地）；MIT |
 | fflate.LICENSE.txt | fflate 0.8.3 MIT 许可证原文（1,069B，sha256 `0A1DF3A083D0C010560AA342E87959C8C1070E6FD54545741F083F22D0C8B551`） | 第三方许可证随附 | SEL-008；与库文件同批校验 |
+| axe-core.min.js | axe-core 4.13.0（npm `axe.min.js`，IIFE 单文件，580,491B，sha256 `C24F097BD2F451D4F933E8BC7D8D539F8672A2EBCB5CC9F9F3EEC8CA9470A0C1`） | 可访问性扫描（测试侧注入正式入口页面，不进产品运行时） | SEL-013（2026-10-01 定，同批落地）；MPL-2.0 |
+| axe-core.LICENSE.txt | axe-core 4.13.0 MPL-2.0 许可证原文（15,921B，sha256 `AF175B9D96EE93C21A036152E1B905B0B95304D4AE8C2C921C7609100BA8DF7E`） | 第三方许可证随附 | SEL-013；与库文件同批校验 |
 <!-- vendor-registry:end -->
 
 SEL-008 已落地（2026-09-30）：`storage/zip.js` 退化为薄适配器，结构解析与解压委托
