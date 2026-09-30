@@ -1,0 +1,11 @@
+{
+  "at": "2026-10-01T07:30:23",
+  "body_bytes": 1398345,
+  "server_default_limit_bytes": 262144,
+  "transport": "response",
+  "status": 400,
+  "family": "input_rejected",
+  "code": "INPUT_INVALID",
+  "unknown_flag": false,
+  "client_state_would_be": "failed(INPUT_INVALID)"
+}

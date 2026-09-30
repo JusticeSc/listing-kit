@@ -1,0 +1,89 @@
+{
+  "timeline": [
+    {
+      "node": "home",
+      "seconds": 0.3
+    },
+    {
+      "node": "intake",
+      "seconds": 0.4
+    },
+    {
+      "node": "understand",
+      "seconds": 0.6
+    },
+    {
+      "node": "plan",
+      "seconds": 1.7,
+      "confirm_rounds": 5
+    },
+    {
+      "node": "generate",
+      "seconds": 91.8
+    }
+  ],
+  "probes": {
+    "home_empty_text": "这台浏览器还没有项目。填写名称后点“新建项目”开始。",
+    "intake_gate": "资料已就绪。",
+    "slot_rows": 10,
+    "understand_panel_text": "商品理解\n\n先处理冲突、未知与必须确认的槽位；已确认的事实默认折叠。\n\n事实槽位\n\n模型只能提议；确认、修改、标未知与移除都由你决定，历史版本保留。\n\n必须确认的槽位 0 / 3 已确认 · 待处理 10 项 · 共 10 项 · 还缺：关键槽位 product_name 仍是 proposed。；关键槽位 product_category 仍是 proposed。；关键槽位 signature_features 仍是 proposed。；还没有任何已确认事实。\n显示全部事实\n缺失\n品牌\nbrand · 系统固定 · 版本 v1\n还没有值。\n填值并确认\n修改\n标记未知\n缺失\n颜色概览\ncolor_summary · 系统固定 · 版本 v1\n还没有值。\n填值并确认\n修改\n标记未知\n缺失\n主要材质\nkey_material · 系统固定 · 版本 v1\n还没有值。\n填值并确认\n修改\n标记未知\n缺失\n包装内容物\npackage_contents · 系统固定 · 版本 v1\n还没有值。\n填值并确认\n修改\n标记未知\n缺失\n尺寸概览\nsize_summary · 系统固定 · 版本 v1\n还没有值。\n填值并确认\n修改\n标记未知\n模型提案\n商品品类\n必须确认\nproduct_category · 系统固定 · 必须确认 · 置信 0.90 · 版本 v2\n通用品类（假数据）\n模型 · fake-deepseek-v4.1-flash：假 Provider 的品类占位，需人工确认。\n确认\n修改\n标记未知\n模型提案\n商品名称\n必须确认\nproduct_name · 系统固定 · 必须确认 ·",
+    "confirm_rounds": 5,
+    "plan_shots": [
+      "shot_main_clean",
+      "shot_infographic_benefits",
+      "shot_scene_lifestyle",
+      "shot_detail_material"
+    ],
+    "generate_terminal_ok": false,
+    "attempt_states": {
+      "shot_main_clean": "unknown",
+      "shot_infographic_benefits": "none",
+      "shot_scene_lifestyle": "none",
+      "shot_detail_material": "none"
+    },
+    "attempt_list_text": "主图·干净背景\n结果未知，需要核对\nPrompt v1\n技术详情\n\n提交 2026/10/1 07:20:40 · 更新 2026/10/1 07:20:40\n\n技术详情\n\n最近一次变化：没有拿到可用响应\n\n未知原因：provider_unknown / SUBMIT_OUTCOME_UNKNOWN：提交结果没有确认，无法判断上游是否受理；先核对，不要自动重提。（重试策略 requires_review）\n\n这次提交没有留下任务编号（可能已到达上游）。系统不会自动重提；可以显式新建 action，或先核对（若已有编号）。\n\n新建 action（放弃核对）\n历史 2 次提交（只追加，不覆盖）\n卖点信息图\n尚未生成\nPrompt v1\n技术详情\n生成这张图\n场景图·使用中\n尚未生成\nPrompt v1\n技术详情\n生成这张图\n细节图·材质工艺\n尚未生成\nPrompt v1\n技术详情\n生成这张图",
+    "batch_bar_text": "继续生成剩余（3 张）\n\n共 4 张 · 已成功 0 · 处理中 0 · 待提交 3 · 结果未知 1。。\n\n有 1 张没有任务编号、无法核对：系统不会自动重提，需要显式新建 action。",
+    "console_errors_dump": [
+      "Failed to load resource: net::ERR_CONNECTION_ABORTED"
+    ],
+    "http_errors_dump": [],
+    "review_next_disabled": true,
+    "review_next_note": "先产生至少一张候选。",
+    "attempt_rows": [
+      {
+        "shot": "shot_main_clean",
+        "state": "unknown",
+        "text": "主图·干净背景\n结果未知，需要核对\nPrompt v1\n技术详情\n\n提交 2026/10/1 07:20:40 · 更新 2026/10/1 07:20:40\n\n技术详情\n\n最近一次变化：没有拿到可用响应\n\n未知原因：provider_unknown / SUBMIT_OUTCOME_UNKNOWN：提交结果没有确认，"
+      },
+      {
+        "shot": "shot_infographic_benefits",
+        "state": "none",
+        "text": "卖点信息图\n尚未生成\nPrompt v1\n技术详情\n生成这张图"
+      },
+      {
+        "shot": "shot_scene_lifestyle",
+        "state": "none",
+        "text": "场景图·使用中\n尚未生成\nPrompt v1\n技术详情\n生成这张图"
+      },
+      {
+        "shot": "shot_detail_material",
+        "state": "none",
+        "text": "细节图·材质工艺\n尚未生成\nPrompt v1\n技术详情\n生成这张图"
+      }
+    ],
+    "crash": "TimeoutError: Page.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\"#stage-next-review\")\n    - locator resolved to <button disabled type=\"button\" id=\"stage-next-review\">去审核与返工</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not enabled\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not enabled\n    - retrying click action\n      - waiting 100ms\n    58 × waiting for element to be visible, enabled and stable\n       - element is no"
+  },
+  "screenshots": [
+    "v273-rehearsal-20261001-072035-home.png",
+    "v273-rehearsal-20261001-072035-intake.png",
+    "v273-rehearsal-20261001-072035-intake-full.png",
+    "v273-rehearsal-20261001-072035-understand.png",
+    "v273-rehearsal-20261001-072035-understand-full.png",
+    "v273-rehearsal-20261001-072035-plan.png",
+    "v273-rehearsal-20261001-072035-generate-confirm.png",
+    "v273-rehearsal-20261001-072035-generate-done.png",
+    "v273-rehearsal-20261001-072035-generate-done-full.png",
+    "v273-rehearsal-20261001-072035-crash.png"
+  ],
+  "crash": "TimeoutError: Page.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\"#stage-next-review\")\n    - locator resolved to <button disabled type=\"button\" id=\"stage-next-review\">去审核与返工</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not enabled\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not enabled\n    - retrying click action\n      - waiting 100ms\n    58 × waiting for element to be visible, enabled and stable\n       - element is no"
+}

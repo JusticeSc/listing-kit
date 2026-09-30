@@ -166,6 +166,12 @@ phase_progress:
       - evals/product-v2/v2.5.5-suite-review-20261001-065917-v267-red.txt
       - evals/product-v2/v2.5.5-suite-review-20261001-070024-v267-green.txt
       - evals/product-v2/v2.5.5-suite-review-20261001-070024-v267-green.json
+      - evals/product-v2/v2.4.1-large-ref-red-proof-20261001-073024.json
+      - evals/product-v2/v2.4.1-image-gateway-20261001-073247-v268-green.txt
+      - evals/product-v2/v2.4.1-image-gateway-20261001-073247-v268-green.json
+      - evals/product-v2/v273-rehearsal-20261001-072035-crash.json
+      - evals/product-v2/v273-rehearsal-20261001-073329.md
+      - evals/product-v2/v273-rehearsal-20261001-073329.json
 
   "7":
     status: active
@@ -829,6 +835,19 @@ task_progress:
       - app/product_v2/workspace.js
       - tools/verify_v2_ui_3_frontend.py
       - tools/verify_v2_5_5_suite_review.py
+  V2.6.8:
+    status: done
+    evidence:
+      - evals/product-v2/v2.4.1-large-ref-red-proof-20261001-073024.json
+      - evals/product-v2/v2.4.1-image-gateway-20261001-073247-v268-green.txt
+      - evals/product-v2/v2.4.1-image-gateway-20261001-073247-v268-green.json
+      - evals/product-v2/v273-rehearsal-20261001-072035-crash.json
+      - evals/product-v2/v273-rehearsal-20261001-073329.md
+      - evals/product-v2/v273-rehearsal-20261001-073329.json
+      - tools/rehearse_v273_walkthrough.py
+      - tools/verify_v2_4_1_image_gateway.py
+      - app/product_v2_server.py
+      - app/product_v2/workspace.js
   V2.7.1:
     status: done
     evidence:
@@ -848,5 +867,5 @@ unknowns:
   - dashscope_balance_arrears_20261001T0433_remote_real_e2e_blocked_at_semantic_step
     upstream_account_arrears_evidence_evals_product_v2_evidence_remote-real-e2e-20261001-043317-lamp01-failure.png
     retry_after_topup_before_claiming_v2_7_2_gate
-updated_at: 2026-10-01T07:03:30+08:00
+updated_at: 2026-10-01T07:35:30+08:00
 ```

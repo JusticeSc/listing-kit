@@ -174,6 +174,9 @@ const DRAFT_DEBOUNCE_MS = 600;
 const ANALYZE_MAX_SLOTS = 12;
 const MAX_REVIEW_IMAGE_BYTES = 4 * 1024 * 1024;
 const MAX_REVIEW_REFERENCES = 3;
+// 单张参考图上限：与图像提交体上限（48MB，3 张 base64 后 ≈40MB）配套；
+// 上游 qwen-image 对输入图也有约 10MB 的量级限制。
+const MAX_REFERENCE_IMAGE_BYTES = 10 * 1024 * 1024;
 const ANALYZE_LOCALE = "zh-CN";
 const ANALYZE_PLATFORM = "amazon_us";
 const DEFAULT_ANALYZE_FIELDS = Object.freeze([
@@ -665,6 +668,11 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
       if (intake.references.length >= MAX_REFERENCES) {
         showError(elements.refError, "参考图最多 " + MAX_REFERENCES + " 张，多出的文件没有加入。");
         break;
+      }
+      if (file.size > MAX_REFERENCE_IMAGE_BYTES) {
+        showError(elements.refError,
+          "“" + file.name + "”超过单张参考图上限 10MB，已跳过；请压缩后再上传。");
+        continue;
       }
       let width = null;
       let height = null;

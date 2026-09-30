@@ -284,12 +284,45 @@ def main() -> int:
                               if item["probe"] == "目录字段"), [])})
 
         oversized = (b'{"action_id":"verify-action-oversize","prompt":"'
-                     + b"x" * (256 * 1024 + 64) + b'","references":[]}')
-        status, _, _, raw = request(base, "POST", SUBMIT_PATH, oversized)
-        payload = json_of(raw)
-        check("V2.4.1-08", "超过字节上限的提交被拒（400 input_rejected，不调用上游）",
-              status == 400 and (payload.get("error") or {}).get("family") == "input_rejected",
-              {"status": status, "bytes": len(oversized)})
+                     + b"x" * (module.MAX_IMAGE_BODY_BYTES + 64)
+                     + b'","references":[]}')
+        try:
+            status, _, _, raw = request(base, "POST", SUBMIT_PATH, oversized)
+            payload = json_of(raw)
+            rejected = (status == 400
+                        and (payload.get("error") or {}).get("family") == "input_rejected")
+            detail = {"status": status, "bytes": len(oversized),
+                      "code": (payload.get("error") or {}).get("code")}
+        except Exception as error:  # noqa: BLE001 - 旧行为在提前断连时以异常呈现
+            rejected = False
+            detail = {"exception": type(error).__name__ + ": " + str(error)[:160],
+                      "bytes": len(oversized)}
+        check("V2.4.1-08", "超过图像提交字节上限的请求被拒（400 input_rejected，不调用上游）",
+              rejected, detail)
+
+        # 2026-10-01 走查预演发现：679KB 真实商品图被 256KB 上限挡下，且提前断连被客户端
+        # 误判为「结果未知」。这条正例锁住修复：真实商品图量级的提交必须被受理。
+        large_head = png_bytes("large-ref")  # 合法 PNG 前缀（签名校验只看开头）
+        large_bytes = large_head + os.urandom(1024 * 1024 - len(large_head))
+        large_reference = {"role": "primary", "media_type": "image/png",
+                           "sha256": hashlib.sha256(large_bytes).hexdigest(),
+                           "data_base64": base64.b64encode(large_bytes).decode("ascii")}
+        large_body = submit_body("verify-action-large-ref", references=[large_reference])
+        try:
+            status, _, _, raw = request(base, "POST", SUBMIT_PATH, large_body)
+            payload = json_of(raw)
+            accepted = (status == 200 and payload.get("ok") is True
+                        and payload.get("unknown") is False)
+            detail = {"status": status, "bytes": len(large_body),
+                      "task": (payload.get("task") or {}).get("task_id"),
+                      "error": (payload.get("error") or {}).get("code")}
+        except Exception as error:  # noqa: BLE001 - 旧行为红形态：服务器提前断连
+            accepted = False
+            detail = {"exception": type(error).__name__ + ": " + str(error)[:160],
+                      "bytes": len(large_body)}
+        check("V2.4.1-25",
+              "1MB 真实字节的参考图（base64≈1.4MB，真实商品图量级）提交被受理，不触字节上限",
+              accepted, detail)
     finally:
         server.shutdown()
         server.server_close()

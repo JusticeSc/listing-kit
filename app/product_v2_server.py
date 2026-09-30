@@ -34,8 +34,15 @@ if str(ROOT) not in sys.path:
 
 PRODUCT_DIR = (ROOT / "app" / "product_v2").resolve()
 MAX_BODY_BYTES = 256 * 1024
+# 超限请求在被拒前最多读完的正文长度：只有把声明长度读完再回 400，浏览器 fetch 才不会
+# 因连接被提前打断而丢掉这个 400（2026-10-01 走查预演在 679KB 参考图上实测为 unknown）。
+# 仅对超过这个荒谬长度的声明提前收手，避免被超大 Content-Length 拖住。
+DRAIN_ABSOLUTE_MAX = 128 * 1024 * 1024
 # 复核要携带候选图与参考图的 base64；只对复核路由放宽上限，其余路由仍按 256KB 拒绝。
 MAX_REVIEW_BODY_BYTES = 24 * 1024 * 1024
+# 提交要携带参考图 base64（客户端限单张 ≤10MB、单次最多 3 张 → base64 ≈40MB）；
+# 2026-10-01 走查预演发现 256KB 默认上限把 679KB 的真实商品图挡在门外。
+MAX_IMAGE_BODY_BYTES = 48 * 1024 * 1024
 
 CAPABILITIES_PATH = "/api/v2/capabilities"
 ANALYZE_PATH = "/api/v2/semantic/analyze"
@@ -244,11 +251,11 @@ class ProductV2Handler(BaseHTTPRequestHandler):
         if length <= 0:
             return None, 400, input_rejected_payload("请求体为空。")
         if length > max_bytes:
-            # 先把已声明的正文读完再回 400：直接关闭连接会在客户端仍在发送时触发
-            # TCP RST（Windows 上表现为 ConnectionAbortedError），让自检与调用方
-            # 拿不到「超限被拒」的明确响应。上限之外再荒谬的长度只读一个限额，
-            # 避免被超大 Content-Length 拖住。
-            drain_budget = min(length, max_bytes * 2)
+            # 先把已声明的正文读完再回 400：不读完就关闭连接会让浏览器 fetch 丢掉
+            # 已经写出的 400（表现为 network error → 客户端误判 unknown，2026-10-01
+            # 走查预演在 679KB 参考图上实测）。只有超过 DRAIN_ABSOLUTE_MAX 的荒谬
+            # 长度才提前收手，避免被超大 Content-Length 拖住。
+            drain_budget = min(length, DRAIN_ABSOLUTE_MAX)
             while drain_budget > 0:
                 chunk = self.rfile.read(min(65536, drain_budget))
                 if not chunk:
@@ -382,12 +389,13 @@ class ProductV2Handler(BaseHTTPRequestHandler):
                 details={"kind": _provider_error_kind(error),
                          "detail": redact(type(error).__name__ + ": " + str(error))}) from None
 
-    def _image_request(self, model: Any) -> tuple[Any, int, dict[str, Any] | None]:
+    def _image_request(self, model: Any, *,
+                       max_bytes: int = MAX_BODY_BYTES) -> tuple[Any, int, dict[str, Any] | None]:
         """读体 + 契约校验；返回 (request, status, error_payload)。错误时 request 为 None。"""
 
         from pydantic import ValidationError
 
-        body, status, payload = self._read_body()
+        body, status, payload = self._read_body(max_bytes)
         if payload is not None:
             return None, status, payload
         try:
@@ -413,7 +421,8 @@ class ProductV2Handler(BaseHTTPRequestHandler):
     def _images_submit(self) -> None:
         from src.providers.v2_image import ImageFailure, SubmitRequest
 
-        request, status, payload = self._image_request(SubmitRequest)
+        request, status, payload = self._image_request(
+            SubmitRequest, max_bytes=MAX_IMAGE_BODY_BYTES)
         if payload is not None:
             self._send_json(status, payload)
             return
