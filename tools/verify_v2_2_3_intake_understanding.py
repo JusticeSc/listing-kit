@@ -12,7 +12,7 @@
   8) 权限投影：系统固定槽位没有“删除”，自定义槽位有；派生权限不出现非法按钮。
   9) 重分析不静默覆盖：已确认值遇到不同提案变成 conflict，并保留两条以上证据。
  10) unknown 不自动重提：一次点击只产生一次 POST，等待期内不再发第二次。
- 11) 状态派生：EMPTY → INTAKE_READY → UNDERSTANDING_REVIEW → PLAN_REVIEW，并说明套图尚未接入。
+ 11) 状态派生：EMPTY → INTAKE_READY → UNDERSTANDING_REVIEW → PLAN_REVIEW，并如实说明当前边界。
  12) 390px 无横向溢出；关键控件在键盘 Tab 顺序内可达。
  13) 整个会话零 console error / page error；仓库与最近项目索引在会话前后零差异。
 
@@ -409,8 +409,9 @@ def main() -> int:
             state_now = resolved["projects"][0]["state"]
             scope_text = page.locator("#project-scope").inner_text()
             expect(page.locator("#project-state")).to_have_text("待确认套图")
-            check(f"{APP_NAME}-14", "状态派生到 PLAN_REVIEW，并明确说明套图规划与生成尚未接入",
-                  state_now == "PLAN_REVIEW" and "尚未接入" in scope_text,
+            check(f"{APP_NAME}-14", "状态派生到 PLAN_REVIEW，并如实说明套图可编辑、提交需确认",
+                  state_now == "PLAN_REVIEW" and "套图规划" in scope_text
+                  and "通过确认后才能提交生成" in scope_text,
                   {"state": state_now, "scope": scope_text,
                    "critical_confirmed": [item["slot_id"] for item in resolved["slots"]
                                           if item["critical"] and item["status"] == "confirmed"]})

@@ -1,0 +1,448 @@
+{
+  "task": "V2.2.3",
+  "suite": "v2.2.3-intake-understanding",
+  "status": "passed",
+  "finished_at": "2026-09-30T18:45:37",
+  "port": 17199,
+  "checks": [
+    {
+      "id": "V2.2.3-01",
+      "title": "正式入口自检全过（含 capabilities / analyze 与拒绝 V1 API、目录逃逸）",
+      "ok": true,
+      "detail": {
+        "args": [
+          "--check"
+        ],
+        "rc": 0,
+        "tail": [
+          "  PASS  图像 provider 不可用时 capabilities 仍 200 且 configured=false  images={'kind': 'dependency', 'detail': 'RuntimeError: 自检：图像 provider 构造失败'}",
+          "  PASS  图像 provider 不可用时提交路由 503 且错误分类明确                        status=503 error={'family': 'internal', 'code': 'PROVIDER_NOT_CONFIGURED', 'message': '图像 provider 不可用：检查注册表、依赖与 DASHSCOPE_API_KEY。', 'retry_policy': 'fatal', 'http_status': 503, 'request_id': None, 'details': {'kind': 'dependency', 'detail': 'RuntimeError: 自检：图像 provider 构造失败'}}",
+          "  PASS  capabilities 暴露 VLM 复核（合同、端点、provider 与参考图能力）           review={'provider_id': 'fake-review', 'model_id': 'fake-qwen-vl-max', 'configured': True, 'capabilities': {'provider_id': 'fake-review', 'model_id': 'fake-qwen-vl-max', 'reference_images': True, 'structured_output': 'local', 'stateless': True, 'test_double': True, 'scenario': 'ok'}}",
+          "  PASS  复核路由（fake provider）返回绑定候选 sha256 的发现且不含采纳结论             status=200 findings=2",
+          "  PASS  复核图片哈希与字节不一致 → input_rejected/400（不调用模型）                status=400 error={'family': 'input_rejected', 'code': 'INPUT_INVALID', 'message': '候选图的 sha256 与收到的字节不一致；拒绝把身份不明的图片送模型。', 'retry_policy': 'fatal', 'http_status': None, 'request_id': None, 'details': {'problems': [{'path': '$'}]}}",
+          "  PASS  复核 provider 不可用时 capabilities 仍 200 且 configured=false  review={'kind': 'dependency', 'detail': 'RuntimeError: 自检：复核 provider 构造失败'}",
+          "  PASS  复核 provider 不可用时复核路由 503 且错误分类明确                        status=503 error={'family': 'internal', 'code': 'PROVIDER_NOT_CONFIGURED', 'message': '语义 provider 不可用：检查注册表、依赖与 DASHSCOPE_API_KEY。', 'retry_policy': 'fatal', 'http_status': 503, 'request_id': None, 'details': {'kind': 'dependency', 'detail': 'RuntimeError: 自检：复核 provider 构造失败'}}",
+          "V2 正式入口自检：33/33 通过。"
+        ]
+      }
+    },
+    {
+      "id": "V2.2.3-02",
+      "title": "capabilities 返回 provider 身份、analyze 字段与契约版本",
+      "ok": true,
+      "detail": {
+        "ok": true,
+        "semantic_contract": "v2.2.2",
+        "analyze_fields": [
+          "product_name",
+          "description",
+          "selling_points",
+          "focus",
+          "references",
+          "locale",
+          "platform",
+          "max_slots",
+          "existing_slot_ids"
+        ],
+        "images": {
+          "contract": "v2.4.1",
+          "endpoints": [
+            "/api/v2/images/submit",
+            "/api/v2/images/status",
+            "/api/v2/images/result"
+          ],
+          "submit_fields": [
+            "action_id",
+            "prompt",
+            "references",
+            "size",
+            "seed",
+            "model_id"
+          ],
+          "provider": {
+            "provider_id": "dashscope-qwen-image",
+            "model_id": "qwen-image-3.0",
+            "configured": true,
+            "capabilities": {
+              "contract": "v2.4.1",
+              "reference_images": true,
+              "max_reference_images": 3,
+              "async_tasks": true,
+              "n_per_submit": 1,
+              "prompt_extend": false,
+              "watermark": false,
+              "stateless": true,
+              "test_double": false,
+              "size": "1344*1344"
+            }
+          },
+          "unavailable": null
+        },
+        "review": {
+          "contract": "v2.5.2",
+          "endpoint": "/api/v2/review/candidate",
+          "provider": {
+            "provider_id": "dashscope-review",
+            "model_id": "qwen-vl-max",
+            "configured": true,
+            "capabilities": {
+              "provider_id": "dashscope-review",
+              "model_id": "qwen-vl-max",
+              "review_contract": "v2.5.2",
+              "supports_reference_images": true,
+              "configured": true,
+              "endpoint_host": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+              "timeout_seconds": 60.0,
+              "max_tokens": 2000,
+              "structured_output": "json_mode",
+              "transport": "langchain-openai/ChatOpenAI"
+            }
+          },
+          "unavailable": null
+        },
+        "provider": {
+          "provider_id": "fake-semantic",
+          "model_id": "fake-deepseek-v4.1-flash",
+          "configured": true,
+          "capabilities": {
+            "provider_id": "fake-semantic",
+            "model_id": "fake-deepseek-v4.1-flash",
+            "reference_images": false,
+            "structured_output": "local",
+            "stateless": true,
+            "test_double": true,
+            "scenario": "ok"
+          }
+        },
+        "unavailable": null
+      }
+    },
+    {
+      "id": "V2.2.3-03",
+      "title": "空白起点：没有项目、没有预填商品或历史候选",
+      "ok": true,
+      "detail": {
+        "projects": [],
+        "documents": [],
+        "slots": [],
+        "assets": []
+      }
+    },
+    {
+      "id": "V2.2.3-04",
+      "title": "工作区空白形态：无参考图、资料为空、分析不可用并说明缺什么（EMPTY）",
+      "ok": true,
+      "detail": {
+        "gate": "还缺：商品名称必填。；至少需要一张参考图。",
+        "state": "EMPTY"
+      }
+    },
+    {
+      "id": "V2.2.3-05",
+      "title": "上传参考图：首张自动成为商品主图、同内容被跳过、资产与商品资料一起落盘",
+      "ok": true,
+      "detail": {
+        "roles": [
+          "primary",
+          "other"
+        ],
+        "assets": 2,
+        "duplicate": "“ref-one.png”与已有参考图内容相同，已跳过。",
+        "intake_version": 2
+      }
+    },
+    {
+      "id": "V2.2.3-06",
+      "title": "商品资料防抖写入（版本递增）并在刷新后原样恢复；状态推进到 INTAKE_READY",
+      "ok": true,
+      "detail": {
+        "version": 3,
+        "state": "INTAKE_READY"
+      }
+    },
+    {
+      "id": "V2.2.3-07",
+      "title": "分析：一次点击只发一次 POST，请求字段等于 capabilities.analyze_fields，existing_slot_ids 为空",
+      "ok": true,
+      "detail": {
+        "posts": 1,
+        "keys": [
+          "description",
+          "existing_slot_ids",
+          "focus",
+          "locale",
+          "max_slots",
+          "platform",
+          "product_name",
+          "references",
+          "selling_points"
+        ],
+        "expected": [
+          "description",
+          "existing_slot_ids",
+          "focus",
+          "locale",
+          "max_slots",
+          "platform",
+          "product_name",
+          "references",
+          "selling_points"
+        ]
+      }
+    },
+    {
+      "id": "V2.2.3-08",
+      "title": "入库：核心槽位先物化为 missing，模型提案只以 proposed 落库",
+      "ok": true,
+      "detail": {
+        "core": 8,
+        "slots": 10,
+        "proposed": 5
+      }
+    },
+    {
+      "id": "V2.2.3-09",
+      "title": "异常优先：默认列表按 冲突 → 未知 → 缺失 → 未确认 排序，已确认事实默认折叠",
+      "ok": true,
+      "detail": [
+        "missing",
+        "missing",
+        "missing",
+        "missing",
+        "missing",
+        "proposed",
+        "proposed",
+        "proposed",
+        "proposed",
+        "proposed"
+      ]
+    },
+    {
+      "id": "V2.2.3-10",
+      "title": "权限投影：系统固定槽位没有删除按钮，品类动态槽位有删除按钮",
+      "ok": true,
+      "detail": {
+        "core": [
+          "确认",
+          "修改",
+          "标记未知"
+        ],
+        "dynamic": [
+          "确认",
+          "修改",
+          "标记未知",
+          "删除（保留历史）"
+        ]
+      }
+    },
+    {
+      "id": "V2.2.3-11",
+      "title": "确认后的槽位离开待处理列表，展开后可见且状态为已确认",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "id": "V2.2.3-12",
+      "title": "重分析不静默覆盖：已确认值遇到不同提案变成 conflict，保留两条以上证据且不丢旧值",
+      "ok": true,
+      "detail": {
+        "before": {
+          "slot_id": "product_category",
+          "version": 3,
+          "status": "confirmed",
+          "value": "通用品类（假数据）",
+          "critical": true,
+          "authority": "core_fixed",
+          "evidence": 1,
+          "depends_on": []
+        },
+        "after": {
+          "slot_id": "product_category",
+          "version": 4,
+          "status": "conflict",
+          "value": null,
+          "critical": true,
+          "authority": "core_fixed",
+          "evidence": 4,
+          "depends_on": []
+        }
+      }
+    },
+    {
+      "id": "V2.2.3-13",
+      "title": "Unknown 不自动重提：一次点击只产生一次 POST，等待期内没有第二次调用",
+      "ok": true,
+      "detail": {
+        "posts_before": 2,
+        "posts_after": 3,
+        "message": "假 Provider：读取超时。 分类：provider_unknown / PROVIDER_TIMEOUT 重试策略：requires_review 结果未知：这次请求可能已经产生结果。系统不会自动重试，请确认后再手动点击“重新分析”。"
+      }
+    },
+    {
+      "id": "V2.2.3-14",
+      "title": "状态派生到 PLAN_REVIEW，并如实说明套图可编辑、提交需确认",
+      "ok": true,
+      "detail": {
+        "state": "PLAN_REVIEW",
+        "scope": "商品理解已就绪，可以编辑套图规划、规格、Prompt 与生成前确认；通过确认后才能提交生成。",
+        "critical_confirmed": [
+          "product_category",
+          "product_name",
+          "signature_features"
+        ]
+      }
+    },
+    {
+      "id": "V2.2.3-15",
+      "title": "390px 视口无横向溢出",
+      "ok": true,
+      "detail": {
+        "scroll": 390,
+        "client": 390
+      }
+    },
+    {
+      "id": "V2.2.3-16",
+      "title": "键盘可达：参考图、保存草稿、分析、槽位开关与新增槽位控件都在 Tab 顺序内",
+      "ok": true,
+      "detail": {
+        "visited": [
+          "slot-add-id",
+          "slot-add-label",
+          "slot-add-type",
+          "slot-add-value",
+          "slot-add-allow-model",
+          "slot-add-save",
+          "suite-seed",
+          "suite-template",
+          "suite-add-template",
+          "suite-custom-toggle",
+          "BODY",
+          "back-home",
+          "ref-add",
+          "SELECT",
+          "BUTTON",
+          "SELECT",
+          "BUTTON",
+          "intake-name",
+          "intake-description",
+          "intake-selling-points",
+          "intake-focus",
+          "intake-save",
+          "analyze-run",
+          "slots-toggle",
+          "BUTTON",
+          "BUTTON",
+          "BUTTON",
+          "BUTTON",
+          "BUTTON",
+          "BUTTON",
+          "BUTTON",
+          "BUTTON",
+          "BUTTON",
+          "BUTTON",
+          "BUTTON",
+          "BUTTON",
+          "BUTTON",
+          "BUTTON",
+          "BUTTON",
+          "BUTTON"
+        ]
+      }
+    },
+    {
+      "id": "V2.2.3-17",
+      "title": "除故意触发的 Unknown 504 外，浏览器会话零 console error / page error",
+      "ok": true,
+      "detail": {
+        "expected_504": [
+          "Failed to load resource: the server responded with a status of 504 (Gateway Timeout)"
+        ],
+        "unexpected": [],
+        "page": [],
+        "slots": 10
+      }
+    },
+    {
+      "id": "V2.2.3-18",
+      "title": "磁盘审计：正式入口 + 浏览器会话前后仓库与最近项目索引零差异",
+      "ok": true,
+      "detail": {
+        "added": [],
+        "removed": [],
+        "changed": [],
+        "recent_index_changed": false,
+        "clean": true
+      }
+    },
+    {
+      "id": "V2.2.3-19",
+      "title": "构建上下文（CI tar 列表）包含本版运行时依赖，且不含测试装置与工作记录",
+      "ok": true,
+      "detail": {
+        "tar_error": "",
+        "entries": 178,
+        "declares": true,
+        "missing": [],
+        "leaked": []
+      }
+    },
+    {
+      "id": "V2.2.3-20",
+      "title": "镜像按 uv.lock 安装运行时依赖并带上 src/config，入口与健康检查保持不变",
+      "ok": true,
+      "detail": {
+        "docker_lines": 34
+      }
+    },
+    {
+      "id": "V2.2.3-21",
+      "title": "默认 provider 下正式进程能起：health 与 capabilities 正常（缺密钥只表现为未配置）",
+      "ok": true,
+      "detail": {
+        "health": {
+          "app": "amz-listing-kit",
+          "product": "v2",
+          "server_state": "none",
+          "user_data": "browser-indexeddb"
+        },
+        "provider": {
+          "provider_id": "dashscope-semantic",
+          "model_id": "deepseek-v4.1-flash",
+          "configured": true,
+          "capabilities": {
+            "provider_id": "dashscope-semantic",
+            "model_id": "deepseek-v4.1-flash",
+            "semantic_contract": "v2.2.2",
+            "supports_images": false,
+            "configured": true,
+            "endpoint_host": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+            "timeout_seconds": 60.0,
+            "max_tokens": 5000,
+            "structured_output": "json_mode",
+            "transport": "langchain-openai/ChatOpenAI"
+          }
+        },
+        "unavailable": null,
+        "log_tail": []
+      }
+    }
+  ],
+  "console_errors": [
+    "Failed to load resource: the server responded with a status of 504 (Gateway Timeout)"
+  ],
+  "page_errors": [],
+  "analyze_posts": 3,
+  "screenshots": [
+    "evals/product-v2/v2.2.3-workspace-20260930-184523.png",
+    "evals/product-v2/v2.2.3-narrow-20260930-184523.png"
+  ],
+  "disk_diff": {
+    "added": [],
+    "removed": [],
+    "changed": [],
+    "recent_index_changed": false,
+    "clean": true
+  },
+  "boundary": "证明在真实正式入口（app/server.py 的 V2 静态服务 + 两个无状态 API）与 fake-semantic provider 下，真实浏览器能从空白项目完成：上传参考图 → 填商品资料（草稿防抖落盘）→ 一次无状态分析 → 槽位按领域契约入库 → 冲突/未知/缺失优先展示 → 人工确认推进到 PLAN_REVIEW；unknown 之后不自动重提，服务端与会话前后磁盘零差异。不证明：真实模型（deepseek-v4.1-flash / qwen-image）的理解与出图质量、套图规划与生成、审核与导出、跨机器迁移、以及未受训陌生试用者的可用性。"
+}
