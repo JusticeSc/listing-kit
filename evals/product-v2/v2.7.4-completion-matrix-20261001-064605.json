@@ -1,0 +1,403 @@
+{
+ "stamp": "20261001-064605",
+ "rows": [
+  {
+   "id": "C1",
+   "claim": "浏览器从空白状态启动（无服务器 recent、绝对路径、预填商品或历史候选）",
+   "evidence": [
+    {
+     "pattern": "evals/product-v2/v2.ui.1-remote-entry-*-final*.txt",
+     "found": true,
+     "file": "evals/product-v2/v2.ui.1-remote-entry-20260930-233302-post-ui2-deploy-final.txt",
+     "marker": null,
+     "marker_ok": true
+    },
+    {
+     "pattern": "evals/product-v2/remote-no-model-roundtrip-*.txt",
+     "found": true,
+     "file": "evals/product-v2/remote-no-model-roundtrip-20261001-064329-v265fix.txt",
+     "marker": "RN-01",
+     "marker_ok": true
+    }
+   ],
+   "evidence_present": true,
+   "state": "evidence_present",
+   "gates_open": []
+  },
+  {
+   "id": "C2",
+   "claim": "刷新、浏览器重开、服务器重启后业务对象和 Blob 恢复",
+   "evidence": [
+    {
+     "pattern": "evals/product-v2/remote-no-model-roundtrip-*.txt",
+     "found": true,
+     "file": "evals/product-v2/remote-no-model-roundtrip-20261001-064329-v265fix.txt",
+     "marker": "RN-08",
+     "marker_ok": true
+    },
+    {
+     "pattern": "evals/product-v2/v2.1.1-indexeddb-*.txt",
+     "found": true,
+     "file": "evals/product-v2/v2.1.1-indexeddb-20261001-063545.txt",
+     "marker": null,
+     "marker_ok": true
+    },
+    {
+     "pattern": "evals/product-v2/remote-persistence-*.txt",
+     "found": true,
+     "file": "evals/product-v2/remote-persistence-20261001-021516-post-restart.txt",
+     "marker": null,
+     "marker_ok": true
+    }
+   ],
+   "evidence_present": true,
+   "state": "evidence_present",
+   "gates_open": []
+  },
+  {
+   "id": "C3",
+   "claim": "两个独立浏览器配置文件项目列表和 IndexedDB 不互相出现",
+   "evidence": [
+    {
+     "pattern": "evals/product-v2/v2.1.2-project-home-*.txt",
+     "found": true,
+     "file": "evals/product-v2/v2.1.2-project-home-20261001-063550.txt",
+     "marker": "V2.1.2-08",
+     "marker_ok": true
+    },
+    {
+     "pattern": "evals/product-v2/v2.ui.1-remote-entry-*-final*.txt",
+     "found": true,
+     "file": "evals/product-v2/v2.ui.1-remote-entry-20260930-233302-post-ui2-deploy-final.txt",
+     "marker": "Edge",
+     "marker_ok": true
+    }
+   ],
+   "evidence_present": true,
+   "state": "evidence_present",
+   "gates_open": []
+  },
+  {
+   "id": "C4",
+   "claim": "项目 ZIP 导出、清空、导入后对象与 Blob hash 一致",
+   "evidence": [
+    {
+     "pattern": "evals/product-v2/v2.6.3-transfer-*-final*.txt",
+     "found": true,
+     "file": "evals/product-v2/v2.6.3-transfer-20261001-050133-final.txt",
+     "marker": null,
+     "marker_ok": true
+    },
+    {
+     "pattern": "evals/product-v2/remote-no-model-roundtrip-*.txt",
+     "found": true,
+     "file": "evals/product-v2/remote-no-model-roundtrip-20261001-064329-v265fix.txt",
+     "marker": "RN-07",
+     "marker_ok": true
+    }
+   ],
+   "evidence_present": true,
+   "state": "evidence_present",
+   "gates_open": []
+  },
+  {
+   "id": "C5",
+   "claim": "四类商品动态槽位和 Brief 有合理差异，无商品名/fixture 分支",
+   "evidence": [
+    {
+     "pattern": "evals/product-v2/v2.2.4-category-generality-*.txt",
+     "found": true,
+     "file": "evals/product-v2/v2.2.4-category-generality-20260930-231345.txt",
+     "marker": null,
+     "marker_ok": true
+    }
+   ],
+   "evidence_present": true,
+   "state": "evidence_present",
+   "gates_open": []
+  },
+  {
+   "id": "C6",
+   "claim": "来源、置信、确认与异常可见；模型提议不能自动提交为事实",
+   "evidence": [
+    {
+     "pattern": "evals/product-v2/v2.2.1-product-contracts-*.txt",
+     "found": true,
+     "file": "evals/product-v2/v2.2.1-product-contracts-20261001-063615.txt",
+     "marker": null,
+     "marker_ok": true
+    },
+    {
+     "pattern": "evals/product-v2/v2.2.3-intake-understanding-*.txt",
+     "found": true,
+     "file": "evals/product-v2/v2.2.3-intake-understanding-20261001-033600.txt",
+     "marker": null,
+     "marker_ok": true
+    }
+   ],
+   "evidence_present": true,
+   "state": "evidence_present",
+   "gates_open": []
+  },
+  {
+   "id": "C7",
+   "claim": "可新增、复制、删除、排序 Shot；条件依赖能精确阻断无依据任务",
+   "evidence": [
+    {
+     "pattern": "evals/product-v2/v2.3.1-suite-registry-*.txt",
+     "found": true,
+     "file": "evals/product-v2/v2.3.1-suite-registry-20261001-063619.txt",
+     "marker": null,
+     "marker_ok": true
+    },
+    {
+     "pattern": "evals/product-v2/v2.3.2-suite-editor-*.txt",
+     "found": true,
+     "file": "evals/product-v2/v2.3.2-suite-editor-20261001-063622.txt",
+     "marker": null,
+     "marker_ok": true
+    }
+   ],
+   "evidence_present": true,
+   "state": "evidence_present",
+   "gates_open": []
+  },
+  {
+   "id": "C8",
+   "claim": "UI、PromptVersion、请求快照文本 hash 一致；语言策略明确",
+   "evidence": [
+    {
+     "pattern": "evals/product-v2/v2.3.4-prompt-compiler-*-final*.txt",
+     "found": true,
+     "file": "evals/product-v2/v2.3.4-prompt-compiler-20260930-031626-final.txt",
+     "marker": null,
+     "marker_ok": true
+    },
+    {
+     "pattern": "evals/product-v2/v2.3.6-prompt-manual-edit-*-final*.txt",
+     "found": true,
+     "file": "evals/product-v2/v2.3.6-prompt-manual-edit-20260930-035000-final.txt",
+     "marker": null,
+     "marker_ok": true
+    }
+   ],
+   "evidence_present": true,
+   "state": "evidence_present",
+   "gates_open": []
+  },
+  {
+   "id": "C9",
+   "claim": "qwen 请求含真实参考图和 task ID；候选非 Mock 并存为浏览器 Blob",
+   "evidence": [
+    {
+     "pattern": "evals/product-v2/v2.4.5-live-reference-*-final*.txt",
+     "found": true,
+     "file": "evals/product-v2/v2.4.5-live-reference-20260930-134540-final.txt",
+     "marker": null,
+     "marker_ok": true
+    }
+   ],
+   "evidence_present": true,
+   "state": "evidence_present",
+   "gates_open": [
+    "external:V2.7.2 真实模型最小闭环（百炼账户 2026-10-01 欠费，语义步骤 502 UPSTREAM_ACCOUNT_ARREARS）"
+   ]
+  },
+  {
+   "id": "C10",
+   "claim": "双击、部分失败、刷新、服务重启、Unknown 不丢成功、不静默重复提交",
+   "evidence": [
+    {
+     "pattern": "evals/product-v2/v2.4.2-generation-attempt-*-final*.txt",
+     "found": true,
+     "file": "evals/product-v2/v2.4.2-generation-attempt-20260930-112423-final.txt",
+     "marker": null,
+     "marker_ok": true
+    },
+    {
+     "pattern": "evals/product-v2/v2.4.3-batch-suite-*-final*.txt",
+     "found": true,
+     "file": "evals/product-v2/v2.4.3-batch-suite-20260930-114918-final.txt",
+     "marker": null,
+     "marker_ok": true
+    },
+    {
+     "pattern": "evals/product-v2/v2.5.4-rework-loop-*final*.txt",
+     "found": true,
+     "file": "evals/product-v2/v2.5.4-rework-loop-20260930-183415-v261final.txt",
+     "marker": null,
+     "marker_ok": true
+    }
+   ],
+   "evidence_present": true,
+   "state": "evidence_present",
+   "gates_open": []
+  },
+  {
+   "id": "C11",
+   "claim": "每候选有当前报告；异常优先；VLM Unknown/误判不自动采纳或硬拒绝",
+   "evidence": [
+    {
+     "pattern": "evals/product-v2/v2.5.1-deterministic-review-*-final*.txt",
+     "found": true,
+     "file": "evals/product-v2/v2.5.1-deterministic-review-20260930-142836-final.txt",
+     "marker": null,
+     "marker_ok": true
+    },
+    {
+     "pattern": "evals/product-v2/v2.5.2-vlm-review-*final*.txt",
+     "found": true,
+     "file": "evals/product-v2/v2.5.2-vlm-review-20260930-150502final.txt",
+     "marker": null,
+     "marker_ok": true
+    }
+   ],
+   "evidence_present": true,
+   "state": "evidence_present",
+   "gates_open": []
+  },
+  {
+   "id": "C12",
+   "claim": "旧候选保留；只目标 Shot 新增版本；无关 Attempt/Blob hash 不变",
+   "evidence": [
+    {
+     "pattern": "evals/product-v2/v2.5.4-rework-loop-*final*.txt",
+     "found": true,
+     "file": "evals/product-v2/v2.5.4-rework-loop-20260930-183415-v261final.txt",
+     "marker": null,
+     "marker_ok": true
+    }
+   ],
+   "evidence_present": true,
+   "state": "evidence_present",
+   "gates_open": []
+  },
+  {
+   "id": "C13",
+   "claim": "全部必需 Shot 恰一选择；ZIP manifest 可反查输入到候选",
+   "evidence": [
+    {
+     "pattern": "evals/product-v2/v2.6.1-selection-*final*.txt",
+     "found": true,
+     "file": "evals/product-v2/v2.6.1-selection-20260930-183606final.txt",
+     "marker": null,
+     "marker_ok": true
+    },
+    {
+     "pattern": "evals/product-v2/v2.6.2-delivery-*-final*.txt",
+     "found": true,
+     "file": "evals/product-v2/v2.6.2-delivery-20261001-042122-final.txt",
+     "marker": null,
+     "marker_ok": true
+    }
+   ],
+   "evidence_present": true,
+   "state": "evidence_present",
+   "gates_open": []
+  },
+  {
+   "id": "C14",
+   "claim": "非内置商品无需修改代码或夹具完成任务",
+   "evidence": [
+    {
+     "pattern": "evals/product-v2/v2.2.4-category-generality-*.txt",
+     "found": true,
+     "file": "evals/product-v2/v2.2.4-category-generality-20260930-231345.txt",
+     "marker": null,
+     "marker_ok": true
+    }
+   ],
+   "evidence_present": true,
+   "state": "evidence_present",
+   "gates_open": [
+    "external:V2.7.2 用非内置商品（落地灯）跑真实闭环"
+   ]
+  },
+  {
+   "id": "C15",
+   "claim": "无命令行、JSON、开发者口授完成完整任务；介入为零",
+   "evidence": [],
+   "evidence_present": false,
+   "state": "human_pending",
+   "gates_open": [
+    "human:V2.7.3 陌生人走查（含观察表与录屏）"
+   ]
+  },
+  {
+   "id": "C16",
+   "claim": "可信 HTTPS origin；Chrome/Edge 空白创建、刷新、关页重开与服务重启后恢复",
+   "evidence": [
+    {
+     "pattern": "evals/product-v2/v2.ui.1-remote-entry-*-final*.txt",
+     "found": true,
+     "file": "evals/product-v2/v2.ui.1-remote-entry-20260930-233302-post-ui2-deploy-final.txt",
+     "marker": null,
+     "marker_ok": true
+    },
+    {
+     "pattern": "evals/product-v2/remote-no-model-roundtrip-*.txt",
+     "found": true,
+     "file": "evals/product-v2/remote-no-model-roundtrip-20261001-064329-v265fix.txt",
+     "marker": "RN-08",
+     "marker_ok": true
+    }
+   ],
+   "evidence_present": true,
+   "state": "evidence_present",
+   "gates_open": []
+  },
+  {
+   "id": "C17",
+   "claim": "首页与六阶段同页工作台通过产品发起人走查；图片优先、唯一主操作、渐进披露",
+   "evidence": [
+    {
+     "pattern": "evals/product-v2/v2.ui.2-interaction-visual-*final*.txt",
+     "found": true,
+     "file": "evals/product-v2/v2.ui.2-interaction-visual-20260930-232009final.txt",
+     "marker": null,
+     "marker_ok": true
+    },
+    {
+     "pattern": "evals/product-v2/v2.ui.3-frontend-*-final*.txt",
+     "found": true,
+     "file": "evals/product-v2/v2.ui.3-frontend-20261001-025613-final.txt",
+     "marker": null,
+     "marker_ok": true
+    },
+    {
+     "pattern": "evals/product-v2/v2.6.4-a11y-*-final*.txt",
+     "found": true,
+     "file": "evals/product-v2/v2.6.4-a11y-20261001-060920-v266-final4.txt",
+     "marker": null,
+     "marker_ok": true
+    }
+   ],
+   "evidence_present": true,
+   "state": "evidence_present",
+   "gates_open": [
+    "human:产品发起人走查（C17 的通过线里写明）"
+   ]
+  }
+ ],
+ "evidence_present": 16,
+ "closed": 13,
+ "total": 17,
+ "open_gates": [
+  [
+   "C9",
+   "external:V2.7.2 真实模型最小闭环（百炼账户 2026-10-01 欠费，语义步骤 502 UPSTREAM_ACCOUNT_ARREARS）"
+  ],
+  [
+   "C14",
+   "external:V2.7.2 用非内置商品（落地灯）跑真实闭环"
+  ],
+  [
+   "C15",
+   "human:V2.7.3 陌生人走查（含观察表与录屏）"
+  ],
+  [
+   "C17",
+   "human:产品发起人走查（C17 的通过线里写明）"
+  ]
+ ]
+}
