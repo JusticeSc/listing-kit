@@ -163,11 +163,11 @@ amz-listing-kit/
 │  ├─ server.py                         # 正式服务入口：默认 V2；--legacy-v1 回 V1；--offline-fixture 旧 Mock
 │  ├─ product_v1_server.py              # Product V1 历史实现，迁移期保留（--legacy-v1）
 │  ├─ product_v2_server.py              # V2 无状态 HTTP 适配器：静态资源 + /api/health + capabilities + semantic/analyze
-│  └─ product_v2/                       # V2 前端静态资源；domain/prompt.js 是 Prompt 编译与人工编辑唯一权威（V2.3.4 / V2.3.6）、domain/confirm.js 是生成前确认唯一权威（V2.3.5）；vendor/ 已 vendored fflate 0.8.3（SEL-008）
+│  └─ product_v2/                       # V2 前端静态资源；domain/prompt.js 是 Prompt 编译与人工编辑唯一权威（V2.3.4 / V2.3.6）、domain/confirm.js 是生成前确认唯一权威（V2.3.5）、domain/review.js 是确定性校验（规则注册表 / ReviewReport）唯一权威（V2.5.1）；vendor/ 已 vendored fflate 0.8.3（SEL-008）
 ├─ src/
 │  ├─ product_v2_contracts.py           # 领域与 API 契约（目标）
-│  ├─ providers/                        # 语义链路已落地（v2_semantic / v2_dashscope_semantic / v2_fake_semantic）；图像网关已落地（v2_image / v2_dashscope_image / v2_fake_image）；错误词表唯一权威 = v2_errors.py；VLM 适配器仍是目标
-│  └─ validators/                       # 确定性验证器（目标）
+│  ├─ providers/                        # 语义链路已落地（v2_semantic / v2_dashscope_semantic / v2_fake_semantic）；图像网关已落地（v2_image / v2_dashscope_image / v2_fake_image）；错误词表唯一权威 = v2_errors.py；VLM ReviewProvider 仍是目标（V2.5.2，真实调用复用 SEL-003 的 langchain 通道）
+│  └─ validators/                       # 未启用：确定性校验的唯一落点是 app/product_v2/domain/review.js（V2.5.1），本目录不建第二份
 ├─ config/
 │  └─ product-v2/                       # provider 注册表（providers.json，已落地）；平台、模板与问题分类仍是目标
 ├─ docs/

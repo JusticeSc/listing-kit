@@ -13,7 +13,7 @@ goal_id: 01a0ca17-2179-7eb0-969a-af9c79c4d8ca
 system_goal_observed_status: active
 system_goal_observed_at: 2026-09-29T21:16:19+08:00
 plan_ref: docs/product-v2-goal-and-implementation-plan.md
-latest_audit: evals/product-v2/v2.4.5-live-reference-20260930-134540-final.txt
+latest_audit: evals/product-v2/v2.5.1-deterministic-review-20260930-142836-final.txt
 
 phase_progress:
   "0":
@@ -95,7 +95,10 @@ phase_progress:
 
   "5":
     status: active
-    evidence: []
+    evidence:
+      - evals/product-v2/v2.5.1-deterministic-review-20260930-142836-final.txt
+      - evals/product-v2/v2.5.1-deterministic-review-20260930-142836-final.json
+      - evals/product-v2/evidence/v2.5.1-deterministic-review-20260930-142836.png
 
 task_progress:
   V2.0.1:
@@ -447,9 +450,28 @@ task_progress:
       - tools/verify_v2_4_1_image_gateway.py
       - docs/product-v2-goal-and-implementation-plan.md
 
-next_action_task: V2.5.1
+  V2.5.1:
+    status: done
+    evidence:
+      - evals/product-v2/v2.5.1-deterministic-review-20260930-142836-final.txt
+      - evals/product-v2/v2.5.1-deterministic-review-20260930-142836-final.json
+      - evals/product-v2/evidence/v2.5.1-deterministic-review-20260930-142836.png
+      - tools/verify_v2_5_1_deterministic_review.py
+      - app/product_v2/domain/review.js
+      - app/product_v2/domain/candidate.js
+      - app/product_v2/domain/shared.js
+      - app/product_v2/domain/index.js
+      - app/product_v2/workspace.js
+      - evals/product-v2/harness/review-contract.js
+      - evals/product-v2/harness/review-contract.html
+      - README.md
+      - docs/product-v2-project-context.md
+      - docs/product-v2-goal-and-implementation-plan.md
+      - .github/workflows/ci-cd.yml
+
+next_action_task: V2.5.2
 blockers: []
 unknowns:
   - visual_language_provider_model_id_is_deferred_to_V2.5.2_and_does_not_block_browser_workspace_work
-updated_at: 2026-09-30T13:48:30+08:00
+updated_at: 2026-09-30T14:30:49+08:00
 ```

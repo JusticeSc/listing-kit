@@ -1003,6 +1003,44 @@ sha256 写进证据。
 
 **边界**：不证明出图审美质量、跨品类通用性、审核与返工（Phase 5）；真实调用失败时保留证据、不循环重试。
 
+### 9.15 V2.5.1 确定性验证器：生成前、单图与导出
+
+把 §8.2 的第 1–4 与第 7 层校验落成一份带规则版本的确定性引擎：它只对可复现测量负责，不把审美
+判断写成硬门；VLM（第 5 层）与整套一致性（第 6 层）由 V2.5.2 / V2.5.5 接入同一套 ReviewReport 词汇。
+generation 层覆盖第 1–3 层（输入/计划/生成预检），消费「生成前确认单」这一个既有投影，不复制其计算。
+
+**规则注册表**（唯一权威 = `app/product_v2/domain/review.js`）：每条规则必须有
+`rule_id / version / layer / 违规严重度 / consumer / measurement / unknown_policy` 七要素；
+`measurement` 指向已有权威（确认单、PNG 头解析、选择链），`consumer` 写成「组件@任务号」；
+注册表自检（`checkRuleRegistry`）对缺要素、重复 id、未知词表直接失败。严重度语义：`BLOCK`
+机械阻断其消费者的门；`HIGH_RISK` 必须醒目提示但不自动拒绝；`WARNING` 只告知；`PASS` 是已测量
+通过的记录；`UNKNOWN` 只降级为提示、永不阻断（`unknown_policy = hint | disable`）。
+
+**三层规则**
+- generation（消费确认单）：Prompt 当前性、依据依赖、平台/Provider 匹配、参考图数量四组 blocker
+  映射为 BLOCK；确认单 risks 映射为 WARNING；输出供 V2.5.3 审核面板消费。
+- candidate（消费候选字节与记录）：PNG 合同与记录一致性 → BLOCK；最小长边 1000px（Amazon US
+  启用缩放的要求）→ BLOCK；推荐长边 1600px、像素位深 > 8、主图非 1:1 → WARNING；透明通道存在
+  （颜色类型 4/6 或 tRNS）→ HIGH_RISK（人工确认背景，不是自动拒绝）。所有宽高与颜色测量来自
+  同一份 PNG 头解析（`candidate.parsePngHeader`），不建第二个解析器。
+- export（纯函数 + 注入式字节读取）：全部必需 Shot 恰一条选择、所选候选报告为当前合同版本、
+  所选报告无 BLOCK、选择→候选→来源 Attempt 身份一致、Blob 重算 sha256 与候选记录一致 → BLOCK。
+
+**报告模型**：`buildReviewReport({candidate, findings, at})` 产出绑定
+`candidate_id + review_contract_version + asset_sha256` 的 ReviewReport（findings + 按严重度汇总）；
+`reviewIsCurrent(report, candidate)` 判当前性；报告以 `review_report` 文档写入 IndexedDB
+（documentId = candidate_id），在候选保存路径同步生成——每个存下的候选都有当前报告。
+`REVIEW_CONTRACT_VERSION` 随规则集语义上移（V2.5.2 接入 VLM 发现时同步处理），旧报告过期但
+不被静默沿用。本批报告的当前性 = 候选身份 + 合同版本；绑定 ShotSpec 版本的判定在 V2.5.2 与
+VLM 报告一并落地（失效表 `invalidation.js` 已把 review_reports 纳入）。
+
+**消费者与验证器**：candidate 层在候选入库时生成报告并在工作台投影一行摘要（V2.5.1 自身消费）；
+export 层由 V2.6.2 交付门禁消费（此前由探针证明）；generation 层由 V2.5.3 消费。
+`evals/product-v2/harness/review-contract.js`（R01–R13）在真实 Chromium 覆盖注册表纪律与反向注入、
+三层规则正反探针、未知降级不阻断、报告形状与当前性、哈希复算；
+`tools/verify_v2_5_1_deterministic_review.py` 另跑既有套件回归与一次工作台闭环（候选保存后
+IndexedDB 出现当前报告、界面出现摘要行、刷新后仍在），证据落盘并纳入 CI。真实调用预算：0。
+
 ## 10. 实施阶段、任务与 Gate
 
 任何时刻最多一个阶段 active。每个任务同时交付必要的数据合同、服务、界面和验证，不把“前端做完”“后端做完”当作用户可观察成果。
@@ -1088,7 +1126,7 @@ sha256 写进证据。
 | V2.4.4 | 候选字节流、Blob 持久化与容量管理 | V2.4.3 | 下载即存 IndexedDB；hash、媒体信息和来源 Attempt 一致；容量不足可恢复 | Blob hash、配额异常、刷新预览 | 不提交选择；提示导出/清理 |
 | V2.4.5 | 真实参考图最小闭环（一笔预算内的真实调用） | V2.4.4 | 真实 qwen-image 请求含真实参考图与真实 Prompt；候选非 Mock 并存为浏览器 Blob，task id 可追溯 | 真实请求审计 + 候选 hash + 状态轨迹 | 失败按分类保留证据、不循环重试；Unknown 只核对不重提 |
 | V2.5.1 | 生成前、单图和导出的确定性验证器 | G4 | 每条硬规则有版本、消费者和可复现测量；审美不冒充硬门 | 单元/反向探针 | 未知规则降为提示或禁用 |
-| V2.5.2 | 可替换 VLM ReviewProvider | V2.5.1 | 输出绑定 Candidate/ReviewContract；非法/超时保留 Unknown；不自动采纳 | fake provider、已标样例、最小真实请求 | 允许人工审核继续，不伪造 PASS |
+| V2.5.2 | 可替换 VLM ReviewProvider | V2.5.1 | 输出绑定 Candidate/ReviewContract；非法/超时保留 Unknown；不自动采纳；真实调用复用 SEL-003 的 langchain 通道，不新建 HTTP 客户端或适配器 | fake provider、已标样例、最小真实请求 | 允许人工审核继续，不伪造 PASS |
 | V2.5.3 | 参考图、旧候选、新候选和审核清单比较界面 | V2.5.2 | 比较直接，异常优先，完整报告按需展开 | Playwright、视觉证据、键盘路径 | 回退单候选视图但保留数据 |
 | V2.5.4 | 问题分类、改进方向和单图返工闭环 | V2.5.3 | 只目标 Shot 新建 Prompt/Attempt；旧候选保留；重新选择前不可导出 | 前后对象与 Blob hash diff | 返工失败仍保留旧可用候选 |
 | V2.5.5 | 整套风格、商品与覆盖一致性报告 | V2.5.4 | 报告可重算并绑定整套版本；问题能定位到 Shot | 已知一致/漂移套图探针、人工复核 | Unknown 交人工，不自动拒绝整套 |
