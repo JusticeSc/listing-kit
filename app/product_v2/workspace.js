@@ -1886,7 +1886,10 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
         }));
         card.append(createElement("p", { className: "meta prompt-hash", text: entry.record.hash }));
         for (const warning of entry.record.compiled.warnings || []) {
-          card.append(createElement("p", { className: "meta prompt-warning", text: "提示：" + warning.message }));
+          card.append(createElement("p", {
+            className: "meta prompt-warning",
+            text: "提示：" + localizeSlotTerms(warning.message),
+          }));
         }
         if (entry.record.origin === "manual_edit") {
           card.append(createElement("p", {
@@ -2157,7 +2160,7 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     for (const blocker of sheet.blockers) {
       const row = createElement("p", { className: "confirm-blocker" });
       row.append(createElement("span", { text: "#" + blocker.order + " " + blocker.label + " · " + blocker.code }));
-      row.append(createElement("span", { className: "meta", text: blocker.message }));
+      row.append(createElement("span", { className: "meta", text: localizeSlotTerms(blocker.message) }));
       row.append(createElement("span", {
         className: "meta", text: "返回：" + blocker.fix.region + " · " + blocker.fix.action,
       }));
@@ -2166,7 +2169,7 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     for (const risk of sheet.risks) {
       elements.confirmRisks.append(createElement("p", {
         className: "confirm-risk",
-        text: risk.label + " · " + risk.code + "：" + risk.message,
+        text: risk.label + " · " + risk.code + "：" + localizeSlotTerms(risk.message),
       }));
     }
     for (const item of sheet.shots) {
@@ -2204,7 +2207,9 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
       if (item.risks.length > 0) {
         row.append(createElement("p", {
           className: "meta prompt-warning",
-          text: "风险：" + item.risks.map((risk) => risk.code).join("、"),
+          attrs: { title: item.risks.map((risk) => risk.code).join("、") },
+          text: "风险：" + item.risks
+            .map((risk) => localizeSlotTerms(risk.message || risk.code)).join("；"),
         }));
       }
       elements.confirmList.append(row);

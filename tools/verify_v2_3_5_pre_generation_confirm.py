@@ -480,6 +480,21 @@ def main() -> int:
                   and ready["record"] is None,
                   {"status": ready["ui"]["status"], "risks": ready_risks})
 
+            shot_texts = " ".join(row["text"] for row in ready["ui"]["rows"])
+            prompt_warnings = page.evaluate(
+                """() => [...document.querySelectorAll('#prompt-list .prompt-warning')]
+                     .map((node) => node.textContent).join(" / ")""")
+            check("V2.3.5-14",
+                  "风险提示中文可读：逐图与 Prompt 卡不出现裸规则码，槽位 id 已本地化；"
+                  "规则码只留在汇总区与悬浮标题",
+                  "ON_IMAGE_TEXT_NOT_PLATFORM_LANGUAGE" not in shot_texts
+                  and "ON_IMAGE_TEXT_NOT_PLATFORM_LANGUAGE" not in prompt_warnings
+                  and "product_category" not in shot_texts
+                  and "product_category" not in prompt_warnings
+                  and "product_category" not in ready["ui"]["risks"]
+                  and ("请人工确认" in shot_texts or "文案不是" in shot_texts),
+                  {"prompt": prompt_warnings[:200], "risks": ready["ui"]["risks"][:200]})
+
             page.click("#confirm-action")
             expect(page.locator("#confirm-record")).to_contain_text("已确认 v1")
             confirmed = page.evaluate(CONFIRM_PROBE)

@@ -178,6 +178,11 @@ phase_progress:
       - evals/product-v2/v2.2.3-intake-understanding-20261001-073929-v269.txt
       - evals/product-v2/v2.6.4-a11y-20261001-073942-v269.txt
       - evals/product-v2/v273-rehearsal-20261001-074015.md
+      - evals/product-v2/v2.3.5-pre-generation-confirm-20261001-074628-v2610-red.txt
+      - evals/product-v2/v2.3.5-pre-generation-confirm-20261001-074714-v2610-green.txt
+      - evals/product-v2/v2.3.5-pre-generation-confirm-20261001-074714-v2610-green.json
+      - evals/product-v2/v2.ui.3-frontend-20261001-074726-v2610.txt
+      - evals/product-v2/v273-rehearsal-20261001-074743.md
 
   "7":
     status: active
@@ -870,6 +875,20 @@ task_progress:
       - evals/product-v2/v273-rehearsal-20261001-074015.json
       - app/product_v2/workspace.js
       - tools/verify_v2_ui_3_frontend.py
+  V2.6.10:
+    status: done
+    evidence:
+      - evals/product-v2/v2.3.5-pre-generation-confirm-20261001-074628-v2610-red.txt
+      - evals/product-v2/v2.3.5-pre-generation-confirm-20261001-074628-v2610-red.json
+      - evals/product-v2/v2.3.5-pre-generation-confirm-20261001-074714-v2610-green.txt
+      - evals/product-v2/v2.3.5-pre-generation-confirm-20261001-074714-v2610-green.json
+      - evals/product-v2/v2.ui.3-frontend-20261001-074726-v2610.txt
+      - evals/product-v2/v2.ui.3-frontend-20261001-074726-v2610.json
+      - evals/product-v2/v273-rehearsal-20261001-074743.md
+      - evals/product-v2/v273-rehearsal-20261001-074743.json
+      - evals/product-v2/evidence/v273-rehearsal-20261001-074743-generate-confirm.png
+      - app/product_v2/workspace.js
+      - tools/verify_v2_3_5_pre_generation_confirm.py
   V2.7.1:
     status: done
     evidence:
@@ -889,5 +908,5 @@ unknowns:
   - dashscope_balance_arrears_20261001T0433_remote_real_e2e_blocked_at_semantic_step
     upstream_account_arrears_evidence_evals_product_v2_evidence_remote-real-e2e-20261001-043317-lamp01-failure.png
     retry_after_topup_before_claiming_v2_7_2_gate
-updated_at: 2026-10-01T07:42:30+08:00
+updated_at: 2026-10-01T07:48:30+08:00
 ```
