@@ -11,7 +11,7 @@
   7. 刷新后采用状态与导出门禁从 Workspace 恢复。
 
 运行：
-  & "C:\\Users\\31368\\.local\\bin\\uv.exe" run --no-project --with-requirements requirements.txt --with playwright python tools/verify_product_v1_review_workbench_ui.py
+  uv run --locked python tools/verify_product_v1_review_workbench_ui.py
 """
 from __future__ import annotations
 

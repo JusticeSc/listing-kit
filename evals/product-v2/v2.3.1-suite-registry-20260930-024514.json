@@ -1,0 +1,464 @@
+{
+  "task": "V2.3.1",
+  "suite_id": "v2.3.1-suite-registry",
+  "status": "passed",
+  "finished_at": "2026-09-30T02:45:16",
+  "model_calls": 0,
+  "checks": [
+    {
+      "id": "V2.3.1-00",
+      "title": "domain 与 harness 模块通过 node --check（ESM 语法门）",
+      "ok": true,
+      "detail": {
+        "files": [
+          {
+            "file": "app/product_v2/domain/errors.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/domain/shared.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/domain/slots.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/domain/intake.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/domain/brief.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/domain/invalidation.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/domain/suite-plan.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/domain/index.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "evals/product-v2/harness/suite-plan-contract.js",
+            "rc": 0,
+            "stderr": ""
+          }
+        ],
+        "ok": true
+      }
+    },
+    {
+      "id": "V2.3.1-01",
+      "title": "契约套件全部通过且用例清单完整（R01..R13）",
+      "ok": true,
+      "detail": {
+        "status": "passed",
+        "cases": 13,
+        "missing": [],
+        "failed": [],
+        "errors": []
+      }
+    },
+    {
+      "id": "V2.3.1-02",
+      "title": "反向探针与改数据探针确实被执行（R10 守卫变红 >= 20，R11 覆盖 16 个字段）",
+      "ok": true,
+      "detail": {
+        "negative_cases": 8,
+        "r10_probes": 25,
+        "r10_boundary_depth": 3,
+        "r11_fields": 16,
+        "consumers": [
+          "describeRole",
+          "describeRole",
+          "describeRole",
+          "validateSuiteRegistry"
+        ]
+      }
+    },
+    {
+      "id": "V2.3.1-03",
+      "title": "驱动侧独立集成：推荐计划阻断精确、补齐后解锁、自定义 Shot 合法",
+      "ok": true,
+      "detail": {
+        "required_blocked": [],
+        "satisfiable": [
+          "main_clean",
+          "infographic_benefits",
+          "scene_lifestyle",
+          "detail_material"
+        ],
+        "blocked": [
+          "size_dimensions",
+          "comparison_competitor",
+          "ingredient_composition",
+          "packaging_contents"
+        ],
+        "size_blocked_reason": [
+          "以下任一条都不成立：事实 size_summary 缺失；该图还没有绑定已确认事实"
+        ],
+        "comparison_blocked_reason": [
+          "缺少 competitor 角色的参考图"
+        ],
+        "with_size_satisfiable": [
+          "main_clean",
+          "infographic_benefits",
+          "scene_lifestyle",
+          "detail_material",
+          "size_dimensions",
+          "comparison_competitor"
+        ],
+        "custom_draft_problems": 0,
+        "registry_problems": 0,
+        "template_count": 8,
+        "role_count": 9,
+        "role_labels_unique": true
+      }
+    },
+    {
+      "id": "V2.3.1-04",
+      "title": "浏览器会话零 console error / page error",
+      "ok": true,
+      "detail": {
+        "console": [],
+        "page": []
+      }
+    },
+    {
+      "id": "V2.3.1-05",
+      "title": "正式入口自检仍全过（V2.3.1 不破坏 V2.1.4）",
+      "ok": true,
+      "detail": {
+        "rc": 0,
+        "tail": [
+          "  PASS  provider 不可用时 capabilities 仍 200 且 configured=false  status=200 unavailable={'kind': 'dependency', 'detail': 'RuntimeError: 自检：语义 provider 构造失败'}",
+          "  PASS  provider 不可用时分析路由 503 且错误分类明确                        status=503 error={'family': 'internal', 'code': 'PROVIDER_NOT_CONFIGURED', 'message': '语义 provider 不可用：检查注册表、依赖与 DASHSCOPE_API_KEY。', 'retry_policy': 'fatal', 'http_status': 503, 'request_id': None, 'details': {'kind': 'dependency', 'detail': 'RuntimeError: 自检：语义 provider 构造失败'}}",
+          "  PASS  未定义的无状态写路由保持 404                                     status=404",
+          "V2 正式入口自检：21/21 通过。"
+        ],
+        "ok": true
+      }
+    }
+  ],
+  "suite": {
+    "suite": "v2.3.1-suite-registry",
+    "status": "passed",
+    "cases": [
+      {
+        "id": "R01",
+        "title": "内置注册表自检零问题；schema 与依赖词表齐全",
+        "ok": true,
+        "detail": {
+          "problems": 0,
+          "roles": 9,
+          "templates": 8
+        },
+        "ms": 1
+      },
+      {
+        "id": "R02",
+        "title": "参考图角色词表 6 项；模板用到的角色都在词表内",
+        "ok": true,
+        "detail": {
+          "roles": [
+            "primary",
+            "detail",
+            "packaging",
+            "scene",
+            "competitor",
+            "other"
+          ],
+          "asset_role_dependencies": [
+            {
+              "template": "main_clean",
+              "role": "primary"
+            },
+            {
+              "template": "scene_lifestyle",
+              "role": "primary"
+            },
+            {
+              "template": "comparison_competitor",
+              "role": "competitor"
+            }
+          ]
+        },
+        "ms": 0
+      },
+      {
+        "id": "R03",
+        "title": "每个模板都能完整投影：角色、名称、意图、依赖文案非空",
+        "ok": true,
+        "detail": {
+          "templates": 8,
+          "orders": [
+            10,
+            20,
+            30,
+            40,
+            50,
+            60,
+            70,
+            80
+          ]
+        },
+        "ms": 0
+      },
+      {
+        "id": "R04",
+        "title": "主图依赖主参考图：缺失阻断、补齐通过，原因精确到角色",
+        "ok": true,
+        "detail": {
+          "blocked_reason": "缺少 primary 角色的参考图"
+        },
+        "ms": 0
+      },
+      {
+        "id": "R05",
+        "title": "事实依赖只认 confirmed；其余每种状态都给出精确原因",
+        "ok": true,
+        "detail": {
+          "blocking_statuses": [
+            "proposed",
+            "missing",
+            "conflict",
+            "unknown",
+            "superseded"
+          ],
+          "absent_reason": "事实 signature_features 缺失"
+        },
+        "ms": 0
+      },
+      {
+        "id": "R06",
+        "title": "尺寸图双路径：核心 size_summary 或该图绑定的动态尺寸事实",
+        "ok": true,
+        "detail": {
+          "core_reason": "以下任一条都不成立：事实 size_summary 尚未确认（当前 proposed）；该图还没有绑定已确认事实"
+        },
+        "ms": 0
+      },
+      {
+        "id": "R07",
+        "title": "对比图要竞品参考图 + 已确认特征；两条都缺都要逐条说清",
+        "ok": true,
+        "detail": {
+          "blocking_kinds": [
+            "asset_role",
+            "fact"
+          ]
+        },
+        "ms": 0
+      },
+      {
+        "id": "R08",
+        "title": "成分图只认该图绑定的已确认事实；确认但未绑定不算数",
+        "ok": true,
+        "detail": {
+          "unbound_reason": "该图还没有绑定已确认事实"
+        },
+        "ms": 0
+      },
+      {
+        "id": "R09",
+        "title": "自定义 Shot 合法；未知角色、空名称、非法绑定逐项被拒",
+        "ok": true,
+        "detail": {
+          "invalid_label": "自定义图必须有名称。"
+        },
+        "ms": 1
+      },
+      {
+        "id": "R10",
+        "title": "反向探针：每条注册表守卫都必须能变红",
+        "ok": true,
+        "detail": {
+          "probes": [
+            "dup_role_id",
+            "role_id_invalid",
+            "role_label_missing",
+            "role_unused",
+            "custom_not_unique",
+            "dup_template_id",
+            "template_unknown_role",
+            "template_custom_role",
+            "template_label_missing",
+            "template_intent_missing",
+            "template_required_invalid",
+            "order_duplicate",
+            "order_nonpositive",
+            "order_fraction",
+            "unregistered_field",
+            "dependencies_not_array",
+            "dependency_not_object",
+            "dependency_unknown_kind",
+            "dependency_extra_param",
+            "asset_role_unknown",
+            "fact_not_core",
+            "fact_any_empty",
+            "fact_any_duplicate",
+            "fact_any_not_core",
+            "any_of_too_deep"
+          ],
+          "boundary_depth": 3
+        },
+        "ms": 4
+      },
+      {
+        "id": "R11",
+        "title": "改数据探针：每个登记字段都必须有消费者，改动必须让它变样",
+        "ok": true,
+        "detail": {
+          "fields": 16,
+          "consumers": [
+            {
+              "field": "role.role_id",
+              "consumer": "describeRole"
+            },
+            {
+              "field": "role.label",
+              "consumer": "describeRole"
+            },
+            {
+              "field": "role.purpose",
+              "consumer": "describeRole"
+            },
+            {
+              "field": "role.custom",
+              "consumer": "validateSuiteRegistry"
+            },
+            {
+              "field": "template.template_id",
+              "consumer": "describeTemplate"
+            },
+            {
+              "field": "template.role_id",
+              "consumer": "describeTemplate"
+            },
+            {
+              "field": "template.label",
+              "consumer": "describeTemplate"
+            },
+            {
+              "field": "template.intent",
+              "consumer": "describeTemplate"
+            },
+            {
+              "field": "template.required",
+              "consumer": "recommendPlan"
+            },
+            {
+              "field": "template.order",
+              "consumer": "recommendPlan"
+            },
+            {
+              "field": "template.dependencies",
+              "consumer": "evaluateDependencies"
+            },
+            {
+              "field": "dependency.kind",
+              "consumer": "evaluateDependencies"
+            },
+            {
+              "field": "dependency.role",
+              "consumer": "evaluateDependencies"
+            },
+            {
+              "field": "dependency.slot_id",
+              "consumer": "evaluateDependencies"
+            },
+            {
+              "field": "dependency.slot_ids",
+              "consumer": "evaluateDependencies"
+            },
+            {
+              "field": "dependency.of",
+              "consumer": "evaluateDependencies"
+            }
+          ]
+        },
+        "ms": 2
+      },
+      {
+        "id": "R12",
+        "title": "推荐计划按 order 有序；必需阻断保留在列表里并给原因",
+        "ok": true,
+        "detail": {
+          "required_blocked": [
+            "main_clean"
+          ],
+          "full_blocked": [
+            "ingredient_composition"
+          ]
+        },
+        "ms": 0
+      },
+      {
+        "id": "R13",
+        "title": "evaluateShot 用图自身绑定事实求值：绑定与模板依赖一起生效",
+        "ok": true,
+        "detail": {
+          "evaluated": [
+            "size_dimensions",
+            "custom",
+            "main_clean"
+          ]
+        },
+        "ms": 0
+      }
+    ],
+    "started_at": "2026-09-29T18:45:15.405Z",
+    "failed_ids": [],
+    "finished_at": "2026-09-29T18:45:15.414Z"
+  },
+  "driver_integration": {
+    "required_blocked": [],
+    "satisfiable": [
+      "main_clean",
+      "infographic_benefits",
+      "scene_lifestyle",
+      "detail_material"
+    ],
+    "blocked": [
+      "size_dimensions",
+      "comparison_competitor",
+      "ingredient_composition",
+      "packaging_contents"
+    ],
+    "size_blocked_reason": [
+      "以下任一条都不成立：事实 size_summary 缺失；该图还没有绑定已确认事实"
+    ],
+    "comparison_blocked_reason": [
+      "缺少 competitor 角色的参考图"
+    ],
+    "with_size_satisfiable": [
+      "main_clean",
+      "infographic_benefits",
+      "scene_lifestyle",
+      "detail_material",
+      "size_dimensions",
+      "comparison_competitor"
+    ],
+    "custom_draft_problems": 0,
+    "registry_problems": 0,
+    "template_count": 8,
+    "role_count": 9,
+    "role_labels_unique": true
+  },
+  "console_errors": [],
+  "page_errors": [],
+  "boundary": "证明套图注册表（角色 / 模板 / 五类依赖谓词 / 推荐计划 / 自定义 Shot / 草稿校验）在真实 Chromium 里可机检：内置注册表零问题、事实依赖只认 confirmed、阻断原因精确到缺失对象、必需模板被阻断也不丢项、字段没有消费者就报红；R10 反向探针保证 25 条守卫都能变红，R11 逐字段变异保证 16 个登记字段都有真实消费者。全程 0 次模型调用。不证明推荐组合的审美质量、Prompt 编译、真实生成与审核（V2.3.2 起），也不证明服务器侧对不信任输入的独立阻断（按计划 §9.4 需重开）。"
+}

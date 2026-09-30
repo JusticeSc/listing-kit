@@ -24,7 +24,7 @@ enable_utf8()
 DEFAULT_MANIFEST = ROOT / "evals" / "v2_baseline_manifest.json"
 DEFAULT_REPORT = ROOT / "evals" / "v2_baseline_snapshot.txt"
 SOURCE_ROOTS = ("config", "src", "tools", "web")
-SOURCE_FILES = ("run.py", "requirements.txt", "requirements-rembg.txt")
+SOURCE_FILES = ("run.py", "pyproject.toml", "uv.lock")
 PACKAGES = ("pillow", "numpy", "requests", "PyYAML", "python-dotenv", "rembg", "onnxruntime")
 
 

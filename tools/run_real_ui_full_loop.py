@@ -12,7 +12,7 @@ only non-UI call is the workspace-folder choice (an OS dialog in the desktop
 flow), which is posted exactly as the page does after that dialog returns.
 
 Usage:
-  uv run --no-project --with-requirements requirements.txt --with playwright python tools/run_real_ui_full_loop.py --base http://127.0.0.1:8787 --workspace-dir DIR --image PATH
+  uv run --locked python tools/run_real_ui_full_loop.py --base http://127.0.0.1:8787 --workspace-dir DIR --image PATH
 """
 from __future__ import annotations
 

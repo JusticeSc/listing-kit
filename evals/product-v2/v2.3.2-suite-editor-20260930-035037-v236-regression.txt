@@ -1,0 +1,37 @@
+amz-listing-kit Product V2 V2.3.2 suite editor
+NOT-AUTHORITY: point-in-time verification evidence only
+observed_at: 2026-09-30T03:50:45
+status: passed
+model_calls: 0 (offline domain + UI flow)
+json: evals/product-v2/v2.3.2-suite-editor-20260930-035037-v236-regression.json
+screenshot: evals/product-v2/v2.3.2-suite-editor-20260930-035037.png
+
+CHECKS
+- [PASS] V2.3.2-00 domain / workspace / harness 通过 node --check（ESM 语法门）
+- [PASS] V2.3.2-01 契约套件全部通过且用例清单完整（E01..E12）
+- [PASS] V2.3.2-02 反向探针确实被执行（空计划 / 越界 / 最后必需图 / 边界排序 / 不变量 / 失败原子）
+- [PASS] V2.3.2-03 商品理解就绪后套图编辑器解锁，空方案状态明确
+- [PASS] V2.3.2-04 生成推荐方案：4 张按模板 order 落库，状态行与存储一致
+- [PASS] V2.3.2-05 复制 / 下移 / 删除副本：界面顺序与存储版本同步推进
+- [PASS] V2.3.2-06 删除最后一张必需图被拒：错误可见、行数与存储版本都不变
+- [PASS] V2.3.2-07 自定义图与「被阻断模板」都可以加入，阻断原因逐行可见
+- [PASS] V2.3.2-08 刷新恢复：行顺序、数量与存储版本原样恢复
+- [PASS] V2.3.2-09 契约会话与 UI 会话零 console error / page error
+- [PASS] V2.3.2-10 正式入口自检仍全过（V2.3.2 不破坏既有入口）
+
+SUITE CASES
+- [PASS] E01 推荐播种：必需 + 依据已满足入选，被阻断可选带原因留下
+- [PASS] E02 空计划不是可保存方案：缺张数与缺必需图都要报
+- [PASS] E03 添加模板图：同一模板允许重复且 id 自动去重；被阻断模板可添加但显示原因
+- [PASS] E04 自定义图：新增合法、空名称被拒、可复制且仍是可选图
+- [PASS] E05 复制：新 id、副本可选、名称标记、原图不动
+- [PASS] E06 删除：可选可删；最后一张必需图与最后一张图都要被拒
+- [PASS] E07 排序：±1 换位、边界不动、非法 delta 被拒
+- [PASS] E08 不变量校验：六类越界都要报红（反向探针）
+- [PASS] E09 失败原子：被拒操作不得产生半成品，输入计划逐字不变
+- [PASS] E10 投影精确：缺竞品与缺主图都点名；补齐后逐图转满足
+- [PASS] E11 id 派生可复现：冲突时 _2、_3，已占用则跳过
+- [PASS] E12 操作返回新对象：数组不共享，输入顺序与内容不变
+
+BOUNDARY
+证明套图计划在真实浏览器里可增删复排并原样恢复：shots 数组即顺序、至少保留 1 张必需图、自定义图可选、失败操作不改旧计划与存储版本；E01–E12 覆盖操作语义、不变量反向探针与事务原子性，UI 流覆盖解锁、推荐播种、复制、下移、删除、被拒删除、自定义图、被阻断模板与刷新恢复。全程 0 次真实模型调用。不证明 StyleSpec/ShotSpec 版本与失效传播（V2.3.3）、Prompt 编译与真实请求（V2.3.4）、生成前确认（V2.3.5），也不证明陌生试用者的可理解性。

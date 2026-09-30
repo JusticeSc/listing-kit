@@ -48,10 +48,10 @@ r"""文档守卫 —— 让文档里的话有人守。
           PY="C:/Users/31368/.workbuddy/.../python.exe"，那是开发机的一次快照，
           却被放在「怎么跑」的位置上。见 _check_no_abs_interpreter。
 
-    ⑨ 选型门禁有落点、依赖有登记，且登记表与 requirements.txt / vendor 目录
+    ⑨ 选型门禁有落点、依赖有登记，且登记表与 pyproject.toml + uv.lock / vendor 目录
        双向一致 → problems
        —— 前八项管不住「实现之前有没有先找现成能力」。句子拦不住重复造轮子，
-          登记 + 双向比对能：新增依赖必须同时改 requirements.txt 与项目上下文 §4，
+          登记 + 双向比对能：新增依赖必须同时改 pyproject.toml（uv add 落锁）与项目上下文 §4，
            少一处就报红。见 _check_reuse_first_gate。
 
     ⑩ 外部模板（docs/standards-template/）的每份文件都在 AGENTS.md 的采纳映射
@@ -761,10 +761,11 @@ def _check_docs_index(rep: Report) -> None:
 # 没有一项管「实现之前有没有先找过现成能力」。而这个仓库真实发生过：语义适配器
 # 先手写了几百行传输与错误分类，之后才有人问『为什么不用现成库』。
 # 句子拦不住这件事，只有登记 + 双向比对能拦住：新增依赖必须同时改
-# requirements.txt 与项目上下文的依赖登记表，少一处就报红。
+# pyproject.toml（uv add 落锁）与项目上下文的依赖登记表，少一处就报红。
 
 AGENTS_FILE = ROOT / "AGENTS.md"
-REQUIREMENTS_FILE = ROOT / "requirements.txt"
+PYPROJECT_FILE = ROOT / "pyproject.toml"
+UV_LOCK_FILE = ROOT / "uv.lock"
 CONTEXT_FILE = ROOT / "docs" / "product-v2-project-context.md"
 VENDOR_DIR = ROOT / "app" / "product_v2" / "vendor"
 
@@ -775,10 +776,9 @@ DEP_END = "<!-- dependency-registry:end -->"
 VENDOR_BEGIN = "<!-- vendor-registry:begin -->"
 VENDOR_END = "<!-- vendor-registry:end -->"
 
-# 本项目用 requirements.txt 锁依赖，没有 pyproject：一旦根目录出现 uv 的脚手架文件，
-# `uv run`（无 --no-project）会拿一个**空依赖**的项目环境去跑，静默改变运行环境。
-# 2026-09-29 同一天里这套文件出现过两次，所以让它出声音，而不是加进 .gitignore 盖住。
-STRAY_PROJECT_FILES = ("pyproject.toml", "uv.lock", "main.py", ".python-version")
+# 依赖权威是 pyproject.toml + uv.lock（SEL-000 修订，2026-09-30）。`uv init` 的 main.py
+# 脚手架既不是业务代码也不该留在根目录；出现就报红，而不是加进 .gitignore 盖住。
+STRAY_PROJECT_FILES = ("main.py",)
 
 REUSE_REQUIRED_TOKENS = (
     "复用 > 配置 > 集成 > 扩展 > 自研",
@@ -786,7 +786,7 @@ REUSE_REQUIRED_TOKENS = (
     "选型四问",
     "禁止自造",
     "复访条件",
-    "requirements.txt",
+    "uv add",
 )
 
 
@@ -794,20 +794,54 @@ def _norm_pkg(name: str) -> str:
     return re.sub(r"[-_.]+", "-", name.strip().lower())
 
 
-def _requirements_pins() -> dict[str, str]:
-    """requirements.txt 的 {包: 锁定版本}；未锁版本记作 ""（模板 07 §6 禁止浮动版本）。"""
-    pins: dict[str, str] = {}
-    if not REQUIREMENTS_FILE.exists():
+def _direct_pins() -> dict[str, tuple[str, str]]:
+    """pyproject.toml 直接依赖 {包: (锁定版本, 分组)}；未锁版本记作 ""。"""
+    import tomllib
+
+    pins: dict[str, tuple[str, str]] = {}
+    if not PYPROJECT_FILE.exists():
         return pins
-    for line in REQUIREMENTS_FILE.read_text(encoding="utf-8").splitlines():
-        ln = line.split("#", 1)[0].strip()
-        if not ln or ln.startswith("-"):
-            continue
-        name = re.split(r"[<>=!~\[\s;]", ln, maxsplit=1)[0]
+    try:
+        doc = tomllib.loads(PYPROJECT_FILE.read_text(encoding="utf-8"))
+    except (OSError, tomllib.TOMLDecodeError):
+        return pins
+    project = doc.get("project") or {}
+
+    def _add(spec: object, group: str) -> None:
+        text = str(spec).strip()
+        name = re.split(r"[<>=!~\[\s;]", text, maxsplit=1)[0]
         if not name:
-            continue
-        match = re.search(r"==\s*([^\s,;]+)", ln)
-        pins[_norm_pkg(name)] = match.group(1) if match else ""
+            return
+        match = re.search(r"==\s*([^\s,;]+)", text)
+        pins[_norm_pkg(name)] = (match.group(1) if match else "", group)
+
+    for spec in project.get("dependencies") or []:
+        _add(spec, "runtime")
+    for group, specs in (project.get("optional-dependencies") or {}).items():
+        for spec in specs or []:
+            _add(spec, f"optional:{group}")
+    for group, specs in (doc.get("dependency-groups") or {}).items():
+        for spec in specs or []:
+            if isinstance(spec, str):
+                _add(spec, f"group:{group}")
+    return pins
+
+
+def _locked_pins() -> dict[str, str]:
+    """uv.lock 的 {包: 版本}（全部解析结果）；文件缺失或坏掉时返回空表。"""
+    import tomllib
+
+    pins: dict[str, str] = {}
+    if not UV_LOCK_FILE.exists():
+        return pins
+    try:
+        doc = tomllib.loads(UV_LOCK_FILE.read_text(encoding="utf-8"))
+    except (OSError, tomllib.TOMLDecodeError):
+        return pins
+    for pkg in doc.get("package") or []:
+        name = str(pkg.get("name") or "").strip()
+        if name:
+            pins[_norm_pkg(name)] = str(pkg.get("version") or "").strip()
     return pins
 
 
@@ -829,12 +863,11 @@ def _marked_rows(text: str, begin: str, end: str) -> list[list[str]] | None:
 
 
 def _check_reuse_first_gate(rep: Report) -> None:
-    """⑨ 选型门禁有落点、依赖有登记，且登记表与 requirements.txt / vendor 双向一致。"""
+    """⑨ 选型门禁有落点、依赖有登记，且登记表与 pyproject.toml + uv.lock / vendor 双向一致。"""
     for name in STRAY_PROJECT_FILES:
         if (ROOT / name).exists():
-            rep.problem(f"根目录出现 {name} —— 本项目用 requirements.txt 锁依赖、不用 pyproject；"
-                        "这类 uv 脚手架会让 `uv run` 拿到一个空依赖的项目环境。删掉它；"
-                        "若确实要改成项目化打包，先补一条 SEL 选型记录再改守卫。")
+            rep.problem(f"根目录出现 {name} —— 这属于 `uv init` 脚手架残留；"
+                        "依赖权威是 pyproject.toml + uv.lock（SEL-000），脚手架文件直接删掉。")
     if not AGENTS_FILE.exists():
         rep.problem("AGENTS.md 不存在 —— 选型门禁（Reuse-first）没有任何仓库级落点，"
                     "下一个 Agent 会继续『需求 → 直接实现』。")
@@ -857,38 +890,58 @@ def _check_reuse_first_gate(rep: Report) -> None:
         return
     context = CONTEXT_FILE.read_text(encoding="utf-8")
 
-    actual_pins = _requirements_pins()
-    dep_rows = _marked_rows(context, DEP_BEGIN, DEP_END)
-    if dep_rows is None:
-        rep.problem("项目上下文缺少 dependency-registry 登记块（" + DEP_BEGIN + " / "
-                    + DEP_END + "）—— 新增依赖就没有第二个地方需要改，也就没有门。")
+    if not PYPROJECT_FILE.exists() or not UV_LOCK_FILE.exists():
+        rep.problem("缺少 pyproject.toml 或 uv.lock —— 依赖权威文件必须同时在位"
+                    "（SEL-000 修订：pyproject.toml + uv.lock）。")
     else:
-        declared_pins = {
-            _norm_pkg(row[0]): (row[1].strip() if len(row) > 1 else "")
-            for row in dep_rows if row and row[0]
-        }
-        missing = sorted(set(actual_pins) - set(declared_pins))
-        ghost = sorted(set(declared_pins) - set(actual_pins))
-        if missing:
-            rep.problem("requirements.txt 里这些包没登记进项目上下文 §4：" + "、".join(missing)
-                        + " —— 引入依赖要先写选型报告与登记，再改 requirements.txt。")
-        if ghost:
-            rep.problem("项目上下文登记了、requirements.txt 里却没有：" + "、".join(ghost)
-                        + " —— 登记表开始说谎了（依赖被移除时要同时删登记）。")
-        mismatch = sorted(name for name in set(actual_pins) & set(declared_pins)
-                          if actual_pins[name] != declared_pins[name])
-        if mismatch:
-            detail = "、".join(f"{name}：登记 {declared_pins[name] or '空'} / 锁定 "
-                               f"{actual_pins[name] or '未锁'}" for name in mismatch)
-            rep.problem("依赖版本与 requirements.txt 不一致（" + detail + "）—— "
-                        "版本是依赖合同的一部分，锁定值必须两处相同。")
-        unpinned = sorted(name for name, version in actual_pins.items() if not version)
+        direct = _direct_pins()
+        locked = _locked_pins()
+        unpinned = sorted(name for name, (version, _group) in direct.items() if not version)
         if unpinned:
-            rep.problem("requirements.txt 里这些包没有锁定版本：" + "、".join(unpinned)
-                        + " —— 生产依赖必须用 ==")
-        locked = len(actual_pins) - len(unpinned)
-        rep.note(f"依赖登记：requirements.txt {len(actual_pins)} 个包（锁定 {locked}）"
-                 f"↔ 登记表 {len(declared_pins)} 行")
+            rep.problem("pyproject.toml 里这些直接依赖没有锁定版本（必须 == 精确版本）："
+                        + "、".join(unpinned))
+        unlocated = sorted(name for name in direct if name not in locked)
+        if unlocated:
+            rep.problem("pyproject.toml 里这些直接依赖在 uv.lock 中没有解析结果："
+                        + "、".join(unlocated) + " —— 跑 `uv lock` 再提交。")
+        drift = sorted(name for name in direct
+                       if direct[name][0] and direct[name][0] != locked.get(name))
+        if drift:
+            detail = "、".join(f"{name}：pyproject {direct[name][0]} / uv.lock "
+                               f"{locked.get(name) or '缺失'}" for name in drift)
+            rep.problem("直接依赖版本与 uv.lock 不一致（" + detail + "）—— 跑 `uv lock`。")
+        dep_rows = _marked_rows(context, DEP_BEGIN, DEP_END)
+        if dep_rows is None:
+            rep.problem("项目上下文缺少 dependency-registry 登记块（" + DEP_BEGIN + " / "
+                        + DEP_END + "）—— 新增依赖就没有第二个地方需要改，也就没有门。")
+        else:
+            declared_pins = {
+                _norm_pkg(row[0]): (row[1].strip() if len(row) > 1 else "")
+                for row in dep_rows if row and row[0]
+            }
+            missing = sorted(set(direct) - set(declared_pins))
+            ghost = sorted(name for name in declared_pins if name not in locked)
+            if missing:
+                rep.problem("pyproject.toml 里这些直接依赖没登记进项目上下文 §4.2："
+                            + "、".join(missing)
+                            + " —— 引入依赖要先写选型报告与登记，再 uv add。")
+            if ghost:
+                rep.problem("登记表里这些包不在 uv.lock 解析结果里：" + "、".join(ghost)
+                            + " —— 登记表开始说谎了（依赖被移除时要同时删登记）。")
+            mismatch = sorted(name for name in set(declared_pins) & set(locked)
+                              if declared_pins[name] != locked[name])
+            if mismatch:
+                detail = "、".join(f"{name}：登记 {declared_pins[name] or '空'} / uv.lock "
+                                   f"{locked[name] or '未锁'}" for name in mismatch)
+                rep.problem("依赖版本与 uv.lock 不一致（" + detail + "）—— 跑 `uv lock` 或改登记。")
+            direct_mismatch = sorted(name for name in set(declared_pins) & set(direct)
+                                     if declared_pins[name] != direct[name][0])
+            if direct_mismatch:
+                rep.problem("登记版本与 pyproject.toml 直接依赖不一致："
+                            + "、".join(direct_mismatch))
+            locked_count = len(direct) - len(unpinned)
+            rep.note(f"依赖登记：pyproject 直接依赖 {len(direct)} 个（锁定 {locked_count}）"
+                     f"↔ uv.lock {len(locked)} 包 ↔ 登记表 {len(declared_pins)} 行")
 
     vendor_rows = _marked_rows(context, VENDOR_BEGIN, VENDOR_END)
     vendor_actual = ({p.name for p in VENDOR_DIR.glob("*") if p.is_file()}

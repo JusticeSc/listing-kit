@@ -9,7 +9,7 @@
   5. 刷新页面与重启服务后状态从磁盘恢复，付费提交次数不变。
 
 运行：
-  & "C:\\Users\\31368\\.local\\bin\\uv.exe" run --no-project --with-requirements requirements.txt --with playwright python tools/verify_product_v1_generation_recovery_ui.py
+  uv run --locked python tools/verify_product_v1_generation_recovery_ui.py
 """
 from __future__ import annotations
 

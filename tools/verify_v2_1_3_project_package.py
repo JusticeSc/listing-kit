@@ -10,7 +10,7 @@
   6) 重复导入同一包：自动分配新 project_id，两份内容一致。
 
 运行：
-  & "C:\\Users\\31368\\.local\\bin\\uv.exe" run --no-project --with-requirements requirements.txt --with playwright python tools/verify_v2_1_3_project_package.py
+  uv run --locked python tools/verify_v2_1_3_project_package.py
 """
 from __future__ import annotations
 

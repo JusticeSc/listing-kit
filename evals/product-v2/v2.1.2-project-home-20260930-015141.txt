@@ -1,0 +1,26 @@
+amz-listing-kit Product V2 V2.1.2 project home contract
+NOT-AUTHORITY: point-in-time verification evidence only
+observed_at: 2026-09-30T01:51:48
+status: failed
+json: evals/product-v2/v2.1.2-project-home-20260930-015141.json
+
+CHECKS
+- [PASS] V2.1.2-00 app.js 通过 node --check
+- [PASS] V2.1.2-01 空白启动：无项目、无指针、无预填内容
+- [PASS] V2.1.2-02 新建：IndexedDB 恰有一条记录且 localStorage 仍为空
+- [PASS] V2.1.2-03 打开写入当前指针，刷新后仍在该项目且没有复制出第二个项目
+- [PASS] V2.1.2-04 重命名：界面与 IndexedDB 一致且 revision 递增
+- [PASS] V2.1.2-05 复制：文档版本与资产在新 project_id 下各一份，原项目不变
+- [PASS] V2.1.2-06 删除：记录、文档与资产一起消失，当前指针被清除
+- [PASS] V2.1.2-07 390px 视口无横向溢出
+- [PASS] V2.1.2-08 两个独立浏览器配置文件的项目列表互不可见
+- [FAIL] V2.1.2-09 全程无 console error / page error
+  detail: {"console_errors": ["Failed to load resource: the server responded with a status of 404 (Not Found)", "Failed to load resource: the server responded with a status of 404 (Not Found)", "Failed to load resource: the server responded with a status of 404 (Not Found)", "Failed to load resource: the server responded with a status of 404 (Not Found)"], "page_errors": []}
+- [PASS] V2.1.2-10 旧 Product V1 路由未被破坏：默认入口页面与静态资源仍可取
+
+SCREENSHOTS
+- evals/product-v2/v2.1.2-home-blank-20260930-015141.png
+- evals/product-v2/v2.1.2-home-list-20260930-015141.png
+
+BOUNDARY
+证明项目首页与本机项目 CRUD：空白启动、列表、新建、打开、重命名、复制、删除、跨配置文件隔离、IndexedDB 后置条件与旧 Product V1 路由未被破坏。不证明项目 ZIP 导入导出、正式入口、商品资料/理解/套图/生成/交付，也不证明首次使用者可用性。

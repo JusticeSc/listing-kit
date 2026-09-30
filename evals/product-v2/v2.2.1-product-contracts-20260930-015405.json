@@ -1,0 +1,491 @@
+{
+  "task": "V2.2.1",
+  "suite_id": "v2.2.1-product-contracts",
+  "status": "passed",
+  "finished_at": "2026-09-30T01:54:07",
+  "checks": [
+    {
+      "id": "V2.2.1-00",
+      "title": "domain 与 harness 模块通过 node --check（ESM 语法门）",
+      "ok": true,
+      "detail": {
+        "files": [
+          {
+            "file": "app/product_v2/domain/errors.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/domain/shared.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/domain/slots.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/domain/intake.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/domain/brief.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/domain/invalidation.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/domain/index.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "evals/product-v2/harness/brief-contract.js",
+            "rc": 0,
+            "stderr": ""
+          }
+        ],
+        "ok": true
+      }
+    },
+    {
+      "id": "V2.2.1-01",
+      "title": "契约套件全部通过且用例清单完整（C01..C37）",
+      "ok": true,
+      "detail": {
+        "status": "passed",
+        "cases": 37,
+        "missing": [],
+        "failed": [],
+        "errors": []
+      }
+    },
+    {
+      "id": "V2.2.1-02",
+      "title": "反向探针确实被执行（非法形状 / 模型确认 / 无值确认 / 环 / 越界失效 / brief 不一致）",
+      "ok": true,
+      "detail": {
+        "expected": 17,
+        "seen": 17
+      }
+    },
+    {
+      "id": "V2.2.1-03",
+      "title": "驱动侧独立集成：资料/槽位/理解落库，槽位升级后 brief 过期且历史保留",
+      "ok": true,
+      "detail": {
+        "problem_count": 0,
+        "intake_ready": true,
+        "input_version": 1,
+        "brief_version": 1,
+        "category_version": 2,
+        "stale": true,
+        "stale_reasons": [
+          {
+            "slot_id": "product_category",
+            "basis_version": 1,
+            "current_version": 2,
+            "reason": "槽位版本已前进"
+          }
+        ],
+        "readiness": true,
+        "document_versions": 5
+      }
+    },
+    {
+      "id": "V2.2.1-04",
+      "title": "浏览器会话零 console error / page error",
+      "ok": true,
+      "detail": {
+        "console": [],
+        "page": []
+      }
+    },
+    {
+      "id": "V2.2.1-05",
+      "title": "正式入口自检仍全过（V2.2.1 不破坏 V2.1.4）",
+      "ok": true,
+      "detail": {
+        "rc": 0,
+        "tail": [
+          "  PASS  provider 不可用时 capabilities 仍 200 且 configured=false  status=200 unavailable={'kind': 'dependency', 'detail': 'RuntimeError: 自检：语义 provider 构造失败'}",
+          "  PASS  provider 不可用时分析路由 503 且错误分类明确                        status=503 error={'family': 'internal', 'code': 'PROVIDER_NOT_CONFIGURED', 'message': '语义 provider 不可用：检查注册表、依赖与 DASHSCOPE_API_KEY。', 'retry_policy': 'fatal', 'http_status': 503, 'request_id': None, 'details': {'kind': 'dependency', 'detail': 'RuntimeError: 自检：语义 provider 构造失败'}}",
+          "  PASS  未定义的无状态写路由保持 404                                     status=404",
+          "V2 正式入口自检：21/21 通过。"
+        ],
+        "ok": true
+      }
+    }
+  ],
+  "suite": {
+    "suite": "v2.2.1-product-contracts",
+    "status": "passed",
+    "started_at": "2026-09-29T17:54:06.395Z",
+    "cases": [
+      {
+        "id": "C01",
+        "title": "词表与核心注册表冻结：权限与状态的取值域不由界面定义",
+        "ok": true,
+        "detail": {
+          "core_slots": 8,
+          "critical": 3
+        },
+        "ms": 0
+      },
+      {
+        "id": "C02",
+        "title": "核心槽位必须与注册表一致；未登记的自称 core_fixed 被拒",
+        "ok": true,
+        "detail": {
+          "blocked": 3
+        },
+        "ms": 1
+      },
+      {
+        "id": "C03",
+        "title": "商品资料正例：名称 + primary 参考图 → 资料就绪",
+        "ok": true,
+        "detail": {
+          "name": "蓝色保温杯"
+        },
+        "ms": 0
+      },
+      {
+        "id": "C04",
+        "title": "资料缺失被精确定位：名称、参考图、primary 三种",
+        "ok": true,
+        "detail": {
+          "blocked": 3
+        },
+        "ms": 0
+      },
+      {
+        "id": "C05",
+        "title": "参考图判据：sha 形状、重复登记、角色闭集",
+        "ok": true,
+        "detail": {
+          "blocked": 3
+        },
+        "ms": 0
+      },
+      {
+        "id": "C06",
+        "title": "长度上限：超长名称与超量卖点被拒",
+        "ok": true,
+        "detail": {
+          "blocked": 2
+        },
+        "ms": 0
+      },
+      {
+        "id": "C07",
+        "title": "FactSlot 正例：人工确认的核心槽位通过全部判据",
+        "ok": true,
+        "detail": {
+          "slot_id": "product_name"
+        },
+        "ms": 0
+      },
+      {
+        "id": "C08",
+        "title": "词表外取值被拒：authority / source / status / value_type",
+        "ok": true,
+        "detail": {
+          "blocked": 4
+        },
+        "ms": 0
+      },
+      {
+        "id": "C09",
+        "title": "置信规则：只有 model_inference 能带 confidence，且必须在 0..1",
+        "ok": true,
+        "detail": {
+          "blocked": 2
+        },
+        "ms": 0
+      },
+      {
+        "id": "C10",
+        "title": "值形状判据覆盖五种类型",
+        "ok": true,
+        "detail": {
+          "blocked": 7
+        },
+        "ms": 0
+      },
+      {
+        "id": "C11",
+        "title": "状态与值一一对应：该有值的有值，不该有的没有",
+        "ok": true,
+        "detail": {
+          "blocked": 5
+        },
+        "ms": 0
+      },
+      {
+        "id": "C12",
+        "title": "proposed 只能来自模型；人工确认模型提案必须保留置信读数",
+        "ok": true,
+        "detail": {
+          "blocked": 2
+        },
+        "ms": 0
+      },
+      {
+        "id": "C13",
+        "title": "派生槽位：来源必须是规则，且必须声明依赖",
+        "ok": true,
+        "detail": {
+          "blocked": 2
+        },
+        "ms": 0
+      },
+      {
+        "id": "C14",
+        "title": "自定义槽位：确认值只能来自用户或参考图观察",
+        "ok": true,
+        "detail": {
+          "blocked": 1
+        },
+        "ms": 0
+      },
+      {
+        "id": "C15",
+        "title": "槽位集合判据：重复 id、悬空依赖、自环、两节点环",
+        "ok": true,
+        "detail": {
+          "blocked": 4
+        },
+        "ms": 0
+      },
+      {
+        "id": "C16",
+        "title": "权限矩阵逐格：谁能改值由 authority 决定",
+        "ok": true,
+        "detail": {
+          "checked": 5
+        },
+        "ms": 0
+      },
+      {
+        "id": "C17",
+        "title": "增删权限：核心不可删、动态有依赖不可删、自定义自由、模型只能加动态",
+        "ok": true,
+        "detail": {
+          "checked": 9
+        },
+        "ms": 0
+      },
+      {
+        "id": "C18",
+        "title": "模型不能确认事实：propose 可以，confirm 必须被拒",
+        "ok": true,
+        "detail": {
+          "blocked": 1
+        },
+        "ms": 1
+      },
+      {
+        "id": "C19",
+        "title": "模型提案：proposed + 置信 + 证据，一律不许自动变 confirmed",
+        "ok": true,
+        "detail": {
+          "status": "proposed"
+        },
+        "ms": 0
+      },
+      {
+        "id": "C20",
+        "title": "模型提案与已确认值不同 → 冲突（不得静默覆盖人工事实）",
+        "ok": true,
+        "detail": {
+          "evidence": 3
+        },
+        "ms": 0
+      },
+      {
+        "id": "C21",
+        "title": "模型提案与已确认值相同 → 保持 confirmed，只留证据",
+        "ok": true,
+        "detail": {
+          "status": "confirmed"
+        },
+        "ms": 0
+      },
+      {
+        "id": "C22",
+        "title": "用户编辑：值变为人工事实，模型置信被清除",
+        "ok": true,
+        "detail": {
+          "value": "秋季上新"
+        },
+        "ms": 0
+      },
+      {
+        "id": "C23",
+        "title": "冲突确认必须带裁决值；无值确认被拒",
+        "ok": true,
+        "detail": {
+          "resolved": "autumn"
+        },
+        "ms": 0
+      },
+      {
+        "id": "C24",
+        "title": "派生槽位：用户不能直接改值，规则确认合法",
+        "ok": true,
+        "detail": {
+          "value": "保温 12 小时"
+        },
+        "ms": 0
+      },
+      {
+        "id": "C25",
+        "title": "supersede 是终态：不能再提案、无值确认被拒",
+        "ok": true,
+        "detail": {
+          "blocked": 3
+        },
+        "ms": 0
+      },
+      {
+        "id": "C26",
+        "title": "标记冲突：证据不足被拒，两条证据成立且清空单方值",
+        "ok": true,
+        "detail": {
+          "evidence": 2
+        },
+        "ms": 0
+      },
+      {
+        "id": "C27",
+        "title": "标记未知：清空值并保留槽位（Unknown 不许当成失败或成功）",
+        "ok": true,
+        "detail": {
+          "status": "unknown"
+        },
+        "ms": 0
+      },
+      {
+        "id": "C28",
+        "title": "失效图逐类匹配：失效集与保留集都必须完全一致",
+        "ok": true,
+        "detail": {
+          "kinds": 7
+        },
+        "ms": 0
+      },
+      {
+        "id": "C29",
+        "title": "定向失效：只失效引用该事实的 Shot，其余 Shot 必须保留",
+        "ok": true,
+        "detail": {
+          "invalidates": 4
+        },
+        "ms": 0
+      },
+      {
+        "id": "C30",
+        "title": "Shot 级失效必须带 shotId：没有目标就无法限制影响范围",
+        "ok": true,
+        "detail": {
+          "blocked": 3
+        },
+        "ms": 0
+      },
+      {
+        "id": "C31",
+        "title": "投影：已确认的进事实、未决的进待处理，basis 记录精确版本",
+        "ok": true,
+        "detail": {
+          "basis": 3
+        },
+        "ms": 0
+      },
+      {
+        "id": "C32",
+        "title": "brief 反向探针：引用不在 basis、重复状态、错误类别来源都被拒",
+        "ok": true,
+        "detail": {
+          "blocked": 4
+        },
+        "ms": 0
+      },
+      {
+        "id": "C33",
+        "title": "brief 与当前事实对照：版本落后、值被改、待处理已确认三类都报",
+        "ok": true,
+        "detail": {
+          "problem_kinds": 3
+        },
+        "ms": 0
+      },
+      {
+        "id": "C34",
+        "title": "过期是版本事实，不是界面判断：briefIsStale 给出可读原因",
+        "ok": true,
+        "detail": {
+          "reasons": 1
+        },
+        "ms": 0
+      },
+      {
+        "id": "C35",
+        "title": "就绪门：关键槽位未确认或没有任何事实时不许进入计划",
+        "ok": true,
+        "detail": {
+          "blocked": 2
+        },
+        "ms": 0
+      },
+      {
+        "id": "C36",
+        "title": "落库集成：资料/槽位/理解都是版本化文档；槽位升级后 brief 过期且历史保留",
+        "ok": true,
+        "detail": {
+          "documents": 5,
+          "stale_reasons": 1
+        },
+        "ms": 21
+      },
+      {
+        "id": "C37",
+        "title": "领域对象必须是可 JSON 往返的纯数据：Blob / 函数混入一律被拒",
+        "ok": true,
+        "detail": {
+          "blocked": 2
+        },
+        "ms": 1
+      }
+    ],
+    "failed_ids": [],
+    "finished_at": "2026-09-29T17:54:06.421Z"
+  },
+  "driver_integration": {
+    "problem_count": 0,
+    "intake_ready": true,
+    "input_version": 1,
+    "brief_version": 1,
+    "category_version": 2,
+    "stale": true,
+    "stale_reasons": [
+      {
+        "slot_id": "product_category",
+        "basis_version": 1,
+        "current_version": 2,
+        "reason": "槽位版本已前进"
+      }
+    ],
+    "readiness": true,
+    "document_versions": 5
+  },
+  "console_errors": [],
+  "page_errors": [],
+  "boundary": "证明商品理解领域契约可机检：固定/动态/自定义/派生四类槽位的权限矩阵、来源与确认状态、状态转换（模型只能提案、冲突不许静默覆盖、无值不许确认、派生不能直接改值）、失效图（失效集与保留集逐类匹配，历史与 Blob 永不失效，Shot 级失效必须带目标）、ProductBrief 的版本化投影、过期判定与就绪门，并在真实 IndexedDB 上完成资料/槽位/理解三仓落库与版本推进。不证明 DeepSeek 适配、界面投影、套图规划、生成、审核与交付。"
+}

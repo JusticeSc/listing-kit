@@ -1,0 +1,81 @@
+NOT-AUTHORITY · 本文件是 2026-09-30 依赖权威迁移（requirements*.txt → pyproject.toml + uv.lock）与
+产品控制面同步的时点证据，不是权威。权威在 docs/product-v2-project-context.md（§4.1/§4.2）与
+_working/amz-listing-kit-product-v2/state.md。它证明：这些文件在这些哈希下被改成了这些决定；
+不证明：V2.2.2 已实现、模型可用、CI 或远程部署已通过。
+
+范围（2026-09-30）
+- SEL-000 修订收尾：依赖权威 = pyproject.toml + uv.lock；新增一律 uv add；
+  tools/check_docs.py 改读 pyproject + uv.lock（直接依赖 ↔ uv.lock ↔ §4.2 登记表 三向比对）；
+  CI 改 uv sync --locked + uv run；README / AGENTS.md / start_product.bat 同步；
+  requirements.txt / requirements-ci.txt / requirements-rembg.txt 删除（删除的是声明文件，不是依赖：
+  pillow、numpy、requests、pyyaml、jsonschema、python-dotenv 仍是 pyproject 直接依赖；
+  cutout 组 rembg/onnxruntime 与 dev 组 playwright 保留）。
+- 记录用户决定：SEL-009（V1 在 V2.7.4 冻结后由 V2.7.5 专批日落）、Q4（真实调用验证 = 本地 --live
+  正例 1 次 + 无效 key 401 负例；CI 保持 fake）、db.js 薄封装入册（不开第 7 题）。
+- 第二轮审计结论：自造重试/退避/文件锁 3 处全在 V1 链路（src/imagegen.py _retry、
+  src/application_service.py 限流退避、src/workspace_store.py 文件锁），随 SEL-009 删除；
+  V2 前端 domain/shared.js 的 cloneJson/deepEqualJson 列入清理批次；V2.4.1 图像网关客户端与
+  V2.5.2 VLM 客户端留作未来选型触发点。
+
+快照
+- _stage-amz-control/sel009-depmig-sync-20260930-010414/（含 before-manifest.txt 与三份被删文件副本）
+
+哈希（sha256，改前/改后）
+- docs/product-v2-project-context.md
+  改前 4182d062502e3f60fb9e1dbc59b075d4f1a67a37a5cc540da6a57d588b21cca7
+  改后 ce1a984ff21aa901bfd05f51a3c6a8a466413c53465732669af6a5f9ae323bb3
+- docs/product-v2-goal-and-implementation-plan.md
+  改前 b0eb021f2a8994f70df514b39f1871db6ef4c024837ecfde9b2da4754736631a
+  改后 a11d28f7261bd8640d53badbc029607f1ff7b5568cd8b08e8d96a8504cbc6f1d
+- _working/amz-listing-kit-product-v2/state.md
+  改前 c6531bd106279219f836feeb6726ef453b543077be298c37d17f4235460f5da5
+  改后 4dd249efcd7ad9a45331b0e83ceb1c4955057619e723414b888ff89a3c70a8a1
+- _working/amz-listing-kit-product-v1/state.md
+  改前 n/a（本轮前为 git HEAD 干净版）
+  改后 04ad47b2c6e7093c8f28ff0681476e8f3d16ed972bb222ba9f9e88117dd4b624
+- AGENTS.md
+  改前 4fbe083b9a0b11a6e452210ba8b4399f66a8241d19db695510f1e8bb0982e678
+  改后 9b98a3d4d7c6d1afbad4ca264a9d4f49d1ab1ab16974010327a6b3f57b3fb738
+- tools/check_docs.py
+  改前 39f5afbef2e3cf4d4927cd631c5c790571cbfaba99d968f13ce80f7743a6fdf0
+  改后 2afda3200dde561fcacf14e8ad83166dcfcc7b53da7f96ca7a504bdf7bf9ec5e
+- tools/snapshot_v2_baseline.py
+  改前 n/a（本轮前为 git HEAD 干净版）
+  改后 5e9ded9a70daba65d33907c9cf5fc391d50910de9db284aab6a5f0994a9257ae
+- .github/workflows/ci-cd.yml
+  改前 af63033bb78e5b77ec42e7a0770c2aba20cf048530cd7af181da0445fe017ca9
+  改后 6ba476afe9007f6b26eaa6e3cca39d97e70b219c52ed0d6c327f93cc8cd58c1c
+- README.md
+  改前 ab8b93a8edd8c1566c96af6cb5839c59fda12b710f999d03e6103bb1081f9ca0
+  改后 b949f3ba37793f570fd8254651f5afa6a5f6d31285548deff25b3c093eb8fd56
+- start_product.bat
+  改前 n/a（本轮前为 git HEAD 干净版）
+  改后 7caae68777f458e01b2333d8b5dacd8bea096e006197c0856d53fac724326143
+- pyproject.toml（未改，权威文件）
+  改后 e4a95ac06dc4266a08c1be26a6114afbcac0ceabcf78e730d54892ee2034a378
+- uv.lock（未改，权威文件）
+  改后 a1bc8edb29c97ef3ef3e519f2bc8f8515bfb032f914458e7be0aec54308ee62a
+
+删除文件（快照保全）
+- requirements.txt 改前 2b4efcd17347ad0e75f46f12ae77142976a6d4daa8fd7bdc9b73f69d5db6bb4c → 已删除（快照保留）
+- requirements-ci.txt 改前 e1682e18830981a23b240d4dd9ebc0bfdb97084de15d2fa4900ce527a7dbf08c → 已删除（快照保留）
+- requirements-rembg.txt 改前 63d62ede837dc9889339a90b114959ba98fe54071828e04547b8abd18569e17b → 已删除（快照保留）
+
+守卫与命令证据（本机，2026-09-30；守卫串行执行）
+- uv sync --locked：Resolved 68 packages（cutout 组不默认安装，属预期）
+- uv run --locked python tools/check_docs.py --no-run：全过（退出码 0）
+  依赖登记：pyproject 直接依赖 11 个（锁定 11）↔ uv.lock 68 包 ↔ 登记表 13 行
+
+运行记录
+- uv run --locked python tools/check_project_state.py：全过（退出码 0）
+- uv run --locked python evals/probes/project_state.py：19 向全部与预期一致（退出码 0），并逐字节恢复 state
+- uv run --locked python app/server.py --check：V2 正式入口自检 13/13 通过（退出码 0）
+- uv run --locked python tools/verify_v2_2_1_product_contracts.py：37 条标准全过（退出码 0），
+  新证据：evals/product-v2/v2.2.1-product-contracts-20260930-011421.txt
+- 浏览器合同 v2_1_1..v2_1_4 未在本机重跑；它们由 CI（uv sync --locked + playwright）执行。
+
+限制
+- 本文件不证明 CI 绿、Docker 构建绿或远程部署成功；这些以 GitHub Actions run 记录为准。
+- cutout 组（rembg/onnxruntime）本机未安装、未验证；V2.2.2 语义调用（langchain-openai）尚未实现。
+- 文案同步补充：tools/ 下 14 个验证/回归脚本的旧命令示例与 app/server.py doctor 的两处提示已改为 uv 形式；
+  uv run --locked python app/server.py --doctor 复跑通过（0 条提醒）。

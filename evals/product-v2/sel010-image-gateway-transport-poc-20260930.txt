@@ -1,0 +1,27 @@
+NOT-AUTHORITY · 本文件是 2026-09-30 图像网关传输层选型 PoC 的时点证据，不是权威，也不是已确认决定。
+权威在 docs/product-v2-project-context.md：决定登记在 §4.1（用户确认后），依赖登记在 §4.2。
+它证明：在这条命令下解析出的依赖规模、仓库里既有实现的位置；不证明：网关已实现、百炼端点可用、出图质量。
+
+背景
+- Phase 3 已收口（Gate G3 证据见 _working/amz-listing-kit-product-v2/state.md），Phase 4 已激活。
+  V2.4.1 = 无状态 qwen-image-3.0 submit/status/result gateway，正是全量审计里列出的
+  「未来触发点 = V2.4.1 图像网关客户端」。
+- 现状：V2 运行时只需要 stdlib；pyproject 直接依赖里已有 requests==2.34.2（V1 在用，已锁定）。
+
+实测（本机，uv pip install --dry-run，2026-09-30）
+- 候选 A 官方 SDK dashscope==1.27.7：解析并安装 32 个包，额外拖入 aiohttp、attrs、
+  websocket-client、typer + shellingham、yarl、aiohappyeyeballs、annotated-doc 等。
+- 候选 B 复用 requests（已是直接依赖）：新增 0 个包；需要自己写 DashScope 异步提交 /
+  任务轮询 / 结果下载与错误映射。
+- 候选 C httpx 或 openai SDK 兼容端点：百炼图像合成不是 OpenAI 兼容图像接口，
+  httpx 只多出第二套 HTTP 客户端而没有协议收益，不作为候选。
+
+仓库内既有实现（可迁移，不属重复造轮子）
+- src/providers/dashscope_image.py（580 行）已用 requests 实现该协议：可注入 Transport、
+  request_id 校验、错误码提取、result URL 白名单、模型与尺寸校验。
+  V2.7.5 会删除 V1 链路，但协议知识在这一批迁到 V2 网关即可复用，不必为此引入 32 个包。
+
+推荐（等用户点头后才写进 §4.1）
+- 采用候选 B：V2.4.1 网关复用 requests，只写网关自己的职责——无状态 submit/status/result
+  三条路由、错误四类归口、磁盘 diff 证明不落用户状态、fake provider 回退路径。
+- 复访条件：需要批量并发、取消、多供应商路由或成本统计时，再评估 dashscope SDK 或 httpx。

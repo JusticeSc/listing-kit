@@ -1,0 +1,71 @@
+NOT-AUTHORITY · 本文件是 2026-09-30 控制面同步的时点证据，不是权威。权威在
+docs/product-v2-project-context.md（§4.1/§4.2）与 _working/amz-listing-kit-product-v2/state.md。
+它证明：这两个文件在这些哈希下被改成了这些决定；不证明：实现存在、守卫通过、模型可用。
+
+范围
+- 2026-09-30 用户确认 SEL-003：语义调用 = langchain-core + langchain-openai.ChatOpenAI
+  指向百炼 OpenAI 兼容端点（deepseek-v4.1-flash）；显式 timeout、max_retries=0；
+  失败映射进 v2_semantic 四类归口。
+- 同日确认依赖管理：pyproject.toml + uv.lock（uv add / uv sync --locked），SEL-000 修订。
+- grill-me 第 1 题确认：Python 侧契约表示权威 = Pydantic（SEL-006，锁定 2.13.5），
+  校验作用在模型原始输出；浏览器侧不消费 schema，留 V2.6.3 复访。
+
+快照与哈希
+- 改前快照：_stage-amz-control/uv-langchain-selection-20260930-001349/
+- docs/product-v2-project-context.md
+  改前 sha256 02f1db6cf842698e55db0f89175cc53f52d45f6a02cdb25dde2794e7643c2076
+  改后 sha256 1b78181b4292a78b35b331ce7bbcee276659459798616aa60c3a329198ba02af
+- _working/amz-listing-kit-product-v2/state.md
+  改前 sha256 76f41c209c91ff8c681bee3a4d641383e9ee4e0610d140078ae0edb34fce478c
+  改后 sha256 c3541e284ce9209b05b337aec26f7b19e57ea6899035f241ab5d68418b3d0e5a
+
+遗留（未完成，不得写成已做）
+- 迁移收尾：check_docs 守卫仍按 requirements.txt 读依赖（当前预期报红）；
+  requirements*.txt 未删；CI/README 未同步；依赖登记表未重登记。
+- grill-me 第 2–4 题未定：LangChain 使用边界、结构化输出、真实调用验证位置。
+
+追加（2026-09-30T00:43:40+08:00，第 2/3 题确认后）
+- 用户确认 SEL-007：LangChain 使用边界 = v1 直调 + with_structured_output(原始提案模型,
+  method="json_mode", include_raw=True)；LCEL 管道 / ChatPromptTemplate / Agent-Memory 不用；
+  json_schema 与 function_calling 为被拒方案（provider 支持未证实），百炼确认后可换 method。
+- docs/product-v2-project-context.md 本轮改前 1b78181b4292a78b35b331ce7bbcee276659459798616aa60c3a329198ba02af
+  改后 4011eeceb488523adb8fb2e3862d15a94e8ff27642bf27d3302e5bfc6e473bc7
+- _working/amz-listing-kit-product-v2/state.md 本轮改前 c3541e284ce9209b05b337aec26f7b19e57ea6899035f241ab5d68418b3d0e5a
+  改后 c6531bd106279219f836feeb6726ef453b543077be298c37d17f4235460f5da5
+- 剩余：grill-me 第 4 题（真实调用验证位置）未定。
+
+追加（2026-09-30T00:54:34+08:00，第 5 题确认后）
+- 用户决定：ZIP 走外部依赖 —— vendor fflate 0.8.3（MIT）替换自研 zip.js 容器实现。
+- 实测证据（本次从 registry.npmjs.org 与 unpkg 拉取）：esm/browser.js 90,922B，自包含
+  ESM（import 行 0），sha256 前 16 位 B7CA4450B19559A1；esm/index.mjs 91,765B；
+  umd/index.js 33,044B（压缩、非 ESM）；无 minified ESM；源码含 zip64 读取处理，
+  无加密支持。
+- docs/product-v2-project-context.md 本轮改前 4011eeceb488523adb8fb2e3862d15a94e8ff27642bf27d3302e5bfc6e473bc7
+  改后 4182d062502e3f60fb9e1dbc59b075d4f1a67a37a5cc540da6a57d588b21cca7
+- 遗留：SEL-008 实施（vendor 目录/文件/许可证/登记、zip.js 改薄适配器、重跑包合同与
+  V2.1.3、补反向互操作测试）；grill-me 第 4 题（真实调用验证位置）待最终点头；
+  grill-me 第 6 题（V1 去留）待定。
+
+追加（2026-09-30T01:14+08:00，第 4/6 题与边界裁定 + 依赖权威迁移收尾后）
+- 用户确认第 4 题（真实调用验证位置）：本地 --live 正例 1 次 + 无效 key 401 负例 1 次；
+  CI 保持 fake，不配置真实密钥。
+- 用户确认第 6 题（V1 去留）→ SEL-009：V2.7.4 发布候选冻结后由 V2.7.5 专批删除 V1 代码与
+  随之失效的依赖（含自造重试/退避/文件锁：src/imagegen.py _retry、application_service 限流
+  退避、workspace_store 文件锁）；git 历史与 V1 证据保留。
+- 用户裁定边界项（不新开第 7 题）：app/product_v2/storage/db.js 按“已接受的薄封装”入册；
+  复访条件 = 游标/索引需求扩张或封装超 200 行；候选 idb 仅在复访时评估。
+- 第二轮全量审计：真轮子 3 处（均在 V1 链路，随 SEL-009 删除）；半轮子 2 处（V2 前端
+  domain/shared.js deepEqualJson/cloneJson）列入清理批次（clone→structuredClone，
+  deepEqual→领域 slotValueEquals）；其余类别判定无新增轮子；未来触发点 = V2.4.1 图像网关
+  客户端、V2.5.2 VLM 客户端、V2.6.3 浏览器吃 schema。
+- 依赖权威迁移收尾：requirements*.txt 删除；pyproject.toml + uv.lock 为唯一权威；
+  tools/check_docs.py 改为三向比对（直接依赖 ↔ uv.lock ↔ §4.2 登记表）；CI = uv sync --locked
+  + uv run；README/AGENTS/start_product.bat 同步；Dockerfile 不变（V2 运行时只需 stdlib）。
+- 本轮哈希（改前→改后）：context 4182d062…→ce1a984f…；plan b0eb021f…→a11d28f7…；
+  state c6531bd1…→4dd249ef…；AGENTS 4fbe083b…→9b98a3d4…；check_docs 39f5afbe…→2afda320…；
+  CI af63033b…→6ba476af…；README ab8b93a8…→b949f3ba…；完整表见
+  evals/product-v2/dependency-authority-migration-20260930.txt。
+- 守卫（本机串行）：check_docs 全过；check_project_state 全过；probe 19/19；server --check
+  13/13；verify_v2_2_1 37/37（新证据 v2.2.1-product-contracts-20260930-011421.txt）。
+- 遗留：SEL-008 实施与前端清理批次未做；V2.2.2 设计要点与实现是 next_action；CI/Docker 远程
+  运行未在本机验证。

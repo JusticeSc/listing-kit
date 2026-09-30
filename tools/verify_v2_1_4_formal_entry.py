@@ -15,7 +15,7 @@
  10) 全程零 console error / page error；截图留证。
 
 运行：
-  & "C:\\Users\\31368\\.local\\bin\\uv.exe" run --no-project --with-requirements requirements.txt --with playwright python tools/verify_v2_1_4_formal_entry.py
+  uv run --locked python tools/verify_v2_1_4_formal_entry.py
 """
 from __future__ import annotations
 
@@ -267,8 +267,9 @@ def main() -> int:
 
     # --- 2/3/4. 入口自检与体检（都在磁盘审计开始前）---
     v2_check = run_entry(["--check"])
-    check(f"{APP_NAME}-01", "正式入口自检全过（静态资源 / health / 拒绝 V1 API 与目录逃逸）",
-          v2_check["rc"] == 0 and any("13/13" in line for line in v2_check["tail"]), v2_check)
+    check(f"{APP_NAME}-01", "正式入口自检全过（静态资源 / health / 无状态 API / 拒绝 V1 API 与目录逃逸）",
+          v2_check["rc"] == 0 and any("通过。" in line for line in v2_check["tail"])
+          and not any("FAIL" in line for line in v2_check["tail"]), v2_check)
 
     v1_check = run_entry(["--legacy-v1", "--check"])
     check(f"{APP_NAME}-02", "Product V1 回归自检 6/6 保持（--legacy-v1）",
@@ -397,8 +398,11 @@ def main() -> int:
                         if "directory" in url.lower() or "/api/workspaces" in url.lower()
                         or "/harness/" in url.lower()]
             api_calls = [url for url in request_urls if "/api/" in url]
+            allowed_api = {server.base_url + "/api/health",
+                           server.base_url + "/api/v2/capabilities",
+                           server.base_url + "/api/v2/semantic/analyze"}
             check(f"{APP_NAME}-10", "网络审计：无 directory 参数、无 V1 工作空间 API、无 harness、全部同源",
-                  same_origin and not bad_urls and set(api_calls) <= {server.base_url + "/api/health"},
+                  same_origin and not bad_urls and set(api_calls) <= allowed_api,
                   {"requests": len(request_urls), "bad": bad_urls, "api": sorted(set(api_calls)),
                    "sample": request_urls[:6]})
 

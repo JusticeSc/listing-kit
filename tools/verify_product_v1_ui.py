@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Browser verification of the Product V1 blank-intake vertical slice.
 
-Run with: uv run --no-project --with-requirements requirements.txt --with playwright python tools/verify_product_v1_ui.py
+Run with: uv run --locked python tools/verify_product_v1_ui.py
 The Windows picker is injected for deterministic testing; HTTP, WorkspaceStore,
 browser form submission, recent navigation, and server-instance restart recovery are real.
 """

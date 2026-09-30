@@ -7,7 +7,7 @@ per-shot entry point the only way forward is clicking "一键生成" again, whic
 resubmits every shot and pays again for the images that already succeeded.
 
 Run with:
-  uv run --no-project --with-requirements requirements.txt --with playwright python tools/verify_product_v1_ui_shot_retry.py
+  uv run --locked python tools/verify_product_v1_ui_shot_retry.py
 """
 from __future__ import annotations
 

@@ -1,0 +1,41 @@
+amz-listing-kit Product V2 V2.3.4 prompt compiler
+NOT-AUTHORITY: point-in-time verification evidence only
+observed_at: 2026-09-30T03:15:43
+status: passed
+model_calls: 0 (offline domain + UI flow)
+json: evals/product-v2/v2.3.4-prompt-compiler-20260930-031535.json
+screenshot: evals/product-v2/v2.3.4-prompt-compiler-20260930-031535.png
+
+CHECKS
+- [PASS] V2.3.4-00 domain / workspace / harness 通过 node --check（ESM 语法门）
+- [PASS] V2.3.4-01 G01–G12 契约套件全过且用例齐全
+- [PASS] V2.3.4-02 反向探针确实执行（冲突、缺依据、泄漏、越界、过期等守卫）
+- [PASS] V2.3.4-02b 既有契约套件回归：规格 / 套图编辑器 / 套图注册表全过
+- [PASS] V2.3.4-03 套图就绪后 Prompt 区解锁；模板图按依赖自动绑定已确认事实
+- [PASS] V2.3.4-04 编译主图 v1：界面文本 = 记录文本 = 快照 prompt，hash 三者一致
+- [PASS] V2.3.4-05 卖点信息图：图中文案逐字来自已确认事实，语言警告可见
+- [PASS] V2.3.4-06 改风格使 Prompt 过期；重新编译写 v2、hash 变化、历史保留
+- [PASS] V2.3.4-07 冲突编译失败：给出精确原因，旧 v2 文本与版本号保留
+- [PASS] V2.3.4-08 刷新恢复：Prompt 文本 / hash / 版本与存储一致，其他图版本不变
+- [PASS] V2.3.4-09 契约会话与 UI 会话零 console error / page error
+- [PASS] V2.3.4-10 正式入口自检仍全过（V2.3.4 不破坏既有入口）
+
+SUITE CASES
+- [PASS] G01 主图 golden：分段顺序固定，平台纯白/无文字规则进入正文
+- [PASS] G02 每个段落的来源都能解析到当前输入；来源并集与声明一致
+- [PASS] G03 hash 稳定：同输入同 hash；改一个字段即变化；不修改输入
+- [PASS] G04 语言策略：指令段无未引用英文；反向探针能变红
+- [PASS] G05 keep 与 avoid / change_allowed 冲突必须阻断编译
+- [PASS] G06 缺依据的图必须阻断编译并给出原因（复用依赖注册表）
+- [PASS] G07 绑定事实未确认必须阻断；编译失败不产半成品
+- [PASS] G08 未确认事实泄漏：裸文本出现即阻断；引用内不算；冲突值任何位置都阻断
+- [PASS] G09 主图平台覆盖与忽略警告：风格背景被覆盖、绑定事实不叠加
+- [PASS] G10 图中文字：逐字引用、语言警告、非逐字必被抓住
+- [PASS] G11 请求快照与版本记录：prompt 逐字一致、参考图越界报红、记录可机检
+- [PASS] G12 过期机检：版本前进即过期；一致则不过期；坏记录有明确原因
+- [PASS] 回归 specs (passed, failed=[])
+- [PASS] 回归 suite_editor (passed, failed=[])
+- [PASS] 回归 suite_plan (passed, failed=[])
+
+BOUNDARY
+证明 Prompt 编译器在真实浏览器里可追溯、可版本化、语言策略可机检：指令段中文且非中文原文必须引用；图中文案逐字等于已确认事实；主图平台规则覆盖风格并显式警告；keep/avoid 冲突、缺依据、未确认绑定、未确认事实泄漏都会阻断且不产半成品；hash 覆盖真实请求快照（model/size/parameters/参考图身份/prompt），界面、记录与快照逐字一致；版本 append-only，规格或槽位前进即标记过期。G01–G12 含 golden 与逐条反向探针，UI 流覆盖编译 v1/v2、过期、失败保留旧版本与刷新恢复。全程 0 次真实模型调用，不发图、不证明出图质量；生成前确认与外发资料摘要属于 V2.3.5，真实生成属于 Phase 4。

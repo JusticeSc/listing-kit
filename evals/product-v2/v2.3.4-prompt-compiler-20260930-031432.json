@@ -1,0 +1,1025 @@
+{
+  "task": "V2.3.4",
+  "suite_id": "v2.3.4-prompt",
+  "status": "failed",
+  "finished_at": "2026-09-30T03:14:42",
+  "model_calls": 0,
+  "checks": [
+    {
+      "id": "V2.3.4-00",
+      "title": "domain / workspace / harness 通过 node --check（ESM 语法门）",
+      "ok": true,
+      "detail": {
+        "files": [
+          {
+            "file": "app/product_v2/domain/shared.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/domain/errors.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/domain/slots.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/domain/intake.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/domain/brief.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/domain/invalidation.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/domain/suite-plan.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/domain/suite.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/domain/specs.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/domain/prompt.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/domain/index.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/workspace.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "evals/product-v2/harness/prompt-contract.js",
+            "rc": 0,
+            "stderr": ""
+          }
+        ],
+        "ok": true
+      }
+    },
+    {
+      "id": "V2.3.4-01",
+      "title": "G01–G12 契约套件全过且用例齐全",
+      "ok": true,
+      "detail": {
+        "status": "passed",
+        "missing": [],
+        "failed": []
+      }
+    },
+    {
+      "id": "V2.3.4-02",
+      "title": "反向探针确实执行（冲突、缺依据、泄漏、越界、过期等守卫）",
+      "ok": true,
+      "detail": {
+        "expected": [
+          "G04",
+          "G05",
+          "G06",
+          "G07",
+          "G08",
+          "G10",
+          "G11",
+          "G12"
+        ],
+        "seen": [
+          "G04",
+          "G05",
+          "G06",
+          "G07",
+          "G08",
+          "G10",
+          "G11",
+          "G12"
+        ]
+      }
+    },
+    {
+      "id": "V2.3.4-02b",
+      "title": "既有契约套件回归：规格 / 套图编辑器 / 套图注册表全过",
+      "ok": true,
+      "detail": {
+        "specs": {
+          "status": "passed",
+          "failed": []
+        },
+        "suite_editor": {
+          "status": "passed",
+          "failed": []
+        },
+        "suite_plan": {
+          "status": "passed",
+          "failed": []
+        }
+      }
+    },
+    {
+      "id": "V2.3.4-03",
+      "title": "套图就绪后 Prompt 区解锁；模板图按依赖自动绑定已确认事实",
+      "ok": false,
+      "detail": {
+        "info_bindings": [],
+        "cards": 4
+      }
+    },
+    {
+      "id": "V2.3.4-04",
+      "title": "编译主图 v1：界面文本 = 记录文本 = 快照 prompt，hash 三者一致",
+      "ok": true,
+      "detail": {
+        "version": 1,
+        "hash": "cfdb6e0294b110d6e32aa9aa2fb2a8ef509601840c481cca473442dd6f62e508",
+        "refs": [
+          {
+            "role": "primary",
+            "sha256": "da2135dab34fe7a1b499ec9119bf85f0cf9c4d1ad26ddda1a9f8b660090caf85"
+          }
+        ],
+        "length": 444
+      }
+    },
+    {
+      "id": "V2.3.4-05",
+      "title": "卖点信息图：图中文案逐字来自已确认事实，语言警告可见",
+      "ok": false,
+      "detail": {
+        "items": [],
+        "warnings": []
+      }
+    },
+    {
+      "id": "V2.3.4-06",
+      "title": "改风格使 Prompt 过期；重新编译写 v2、hash 变化、历史保留",
+      "ok": true,
+      "detail": {
+        "v1": "cfdb6e0294b110d6e32aa9aa2fb2a8ef509601840c481cca473442dd6f62e508",
+        "v2": "ac9c2afc0e0e99b71caf210a3ed46a715bc84c742c926ae02761455ff088664e"
+      }
+    },
+    {
+      "id": "V2.3.4-07",
+      "title": "冲突编译失败：给出精确原因，旧 v2 文本与版本号保留",
+      "ok": true,
+      "detail": {
+        "error": "Prompt 编译未通过：保持项与避免项冲突：柔光照明。（旧版本已保留）",
+        "version": 2
+      }
+    },
+    {
+      "id": "V2.3.4-08",
+      "title": "刷新恢复：Prompt 文本 / hash / 版本与存储一致，其他图版本不变",
+      "ok": true,
+      "detail": {
+        "main": 2,
+        "info": 1
+      }
+    },
+    {
+      "id": "V2.3.4-09",
+      "title": "契约会话与 UI 会话零 console error / page error",
+      "ok": true,
+      "detail": {
+        "console": [],
+        "page": []
+      }
+    },
+    {
+      "id": "V2.3.4-10",
+      "title": "正式入口自检仍全过（V2.3.4 不破坏既有入口）",
+      "ok": true,
+      "detail": {
+        "args": [
+          "--check"
+        ],
+        "rc": 0,
+        "tail": [
+          "  PASS  语义分析路由（fake provider）返回提案且标记 unknown=false           status=200 slots=5",
+          "  PASS  非法 JSON 归 input_rejected/400                         status=400 error={'family': 'input_rejected', 'code': 'INPUT_INVALID', 'message': '请求体不是合法 JSON。', 'retry_policy': 'fatal', 'http_status': None, 'request_id': None, 'details': {'problems': None}}",
+          "  PASS  超过字节上限的请求体被拒（400 input_rejected）                     status=400 bytes=262676",
+          "  PASS  合法 JSON 但字段越界归 input_rejected/400（不调用模型）             status=400 error={'family': 'input_rejected', 'code': 'INPUT_INVALID', 'message': '请求字段不符合语义请求契约；没有调用模型。', 'retry_policy': 'fatal', 'http_status': None, 'request_id': None, 'details': {'problems': [{'path': '$.product_name', 'message': 'Field required'}]}}",
+          "  PASS  provider 不可用时 capabilities 仍 200 且 configured=false  status=200 unavailable={'kind': 'dependency', 'detail': 'RuntimeError: 自检：语义 provider 构造失败'}",
+          "  PASS  provider 不可用时分析路由 503 且错误分类明确                        status=503 error={'family': 'internal', 'code': 'PROVIDER_NOT_CONFIGURED', 'message': '语义 provider 不可用：检查注册表、依赖与 DASHSCOPE_API_KEY。', 'retry_policy': 'fatal', 'http_status': 503, 'request_id': None, 'details': {'kind': 'dependency', 'detail': 'RuntimeError: 自检：语义 provider 构造失败'}}",
+          "  PASS  未定义的无状态写路由保持 404                                     status=404",
+          "V2 正式入口自检：21/21 通过。"
+        ]
+      }
+    }
+  ],
+  "suites": {
+    "prompt": {
+      "suite": "v2.3.4-prompt",
+      "status": "passed",
+      "cases": [
+        {
+          "id": "G01",
+          "title": "主图 golden：分段顺序固定，平台纯白/无文字规则进入正文",
+          "ok": true,
+          "detail": {
+            "golden_hash": "573675acca7b29d918a360c5f35d1dad73381290f16391a885fec7f851e324e8",
+            "text_length": 481
+          },
+          "ms": 3
+        },
+        {
+          "id": "G02",
+          "title": "每个段落的来源都能解析到当前输入；来源并集与声明一致",
+          "ok": true,
+          "detail": {
+            "refs": [
+              "intake.references",
+              "suite_plan.shot:shot_main_clean",
+              "suite_plan.shot:shot_main_clean.role",
+              "platform:amazon_us@1",
+              "style_spec.background",
+              "style_spec.lighting",
+              "style_spec.color_tone",
+              "style_spec.composition",
+              "shot_spec.purpose",
+              "shot_spec.keep",
+              "shot_spec.change_allowed",
+              "provider:qwen-image-3.0@1",
+              "style_spec.avoid"
+            ]
+          },
+          "ms": 0
+        },
+        {
+          "id": "G03",
+          "title": "hash 稳定：同输入同 hash；改一个字段即变化；不修改输入",
+          "ok": true,
+          "detail": {
+            "hash": "b391d7b7986c1ac51adcc954a1ef8fff3dc30492aa06d7f3f487fb872ec57d81",
+            "changed_hash": "e21a5a92cfd4dffb04311187ac9bc4f018b7dcd5c742151288f60223ae52c152"
+          },
+          "ms": 1
+        },
+        {
+          "id": "G04",
+          "title": "语言策略：指令段无未引用英文；反向探针能变红",
+          "ok": true,
+          "detail": {
+            "dirty_problem": "指令段出现未引用的非中文内容：cleanwhitebackground；请用「」逐字引用。"
+          },
+          "ms": 0
+        },
+        {
+          "id": "G05",
+          "title": "keep 与 avoid / change_allowed 冲突必须阻断编译",
+          "ok": true,
+          "detail": {
+            "messages": [
+              "Prompt 编译未通过：保持项与避免项冲突：商品居中。",
+              "Prompt 编译未通过：保持项与允许变化项冲突：商品居中。"
+            ]
+          },
+          "ms": 1
+        },
+        {
+          "id": "G06",
+          "title": "缺依据的图必须阻断编译并给出原因（复用依赖注册表）",
+          "ok": true,
+          "detail": {
+            "message": "Prompt 编译未通过：这张图的依据还没有满足：事实 signature_features 尚未确认（当前 proposed）。"
+          },
+          "ms": 0
+        },
+        {
+          "id": "G07",
+          "title": "绑定事实未确认必须阻断；编译失败不产半成品",
+          "ok": true,
+          "detail": {
+            "message": "Prompt 编译未通过：绑定的商品事实「key_material」还没有确认值，不能进入提示词。"
+          },
+          "ms": 0
+        },
+        {
+          "id": "G08",
+          "title": "未确认事实泄漏：裸文本出现即阻断；引用内不算；冲突值任何位置都阻断",
+          "ok": true,
+          "detail": {
+            "leak": "未确认的「key_material」值出现在提示词：陶瓷内胆。"
+          },
+          "ms": 0
+        },
+        {
+          "id": "G09",
+          "title": "主图平台覆盖与忽略警告：风格背景被覆盖、绑定事实不叠加",
+          "ok": true,
+          "detail": {
+            "warnings": [
+              "STYLE_OVERRIDDEN_BY_PLATFORM",
+              "ON_IMAGE_TEXT_NOT_PLATFORM_LANGUAGE",
+              "ON_IMAGE_TEXT_NOT_PLATFORM_LANGUAGE",
+              "MAIN_IMAGE_FACTS_IGNORED"
+            ]
+          },
+          "ms": 0
+        },
+        {
+          "id": "G10",
+          "title": "图中文字：逐字引用、语言警告、非逐字必被抓住",
+          "ok": true,
+          "detail": {
+            "items": [
+              {
+                "text": "「304不锈钢内胆」",
+                "language": "zh",
+                "source_ref": "product_brief.fact:signature_features"
+              },
+              {
+                "text": "「12小时保温」",
+                "language": "zh",
+                "source_ref": "product_brief.fact:signature_features"
+              }
+            ],
+            "warnings": [
+              "ON_IMAGE_TEXT_NOT_PLATFORM_LANGUAGE",
+              "ON_IMAGE_TEXT_NOT_PLATFORM_LANGUAGE"
+            ]
+          },
+          "ms": 0
+        },
+        {
+          "id": "G11",
+          "title": "请求快照与版本记录：prompt 逐字一致、参考图越界报红、记录可机检",
+          "ok": true,
+          "detail": {
+            "hash": "b391d7b7986c1ac51adcc954a1ef8fff3dc30492aa06d7f3f487fb872ec57d81",
+            "snapshot_size": "1344*1344"
+          },
+          "ms": 1
+        },
+        {
+          "id": "G12",
+          "title": "过期机检：版本前进即过期；一致则不过期；坏记录有明确原因",
+          "ok": true,
+          "detail": {
+            "style": [
+              {
+                "field": "style_version",
+                "stored": 1,
+                "current": 2,
+                "reason": "版本已前进"
+              }
+            ]
+          },
+          "ms": 1
+        }
+      ],
+      "started_at": "2026-09-29T19:14:33.434Z",
+      "failed_ids": [],
+      "finished_at": "2026-09-29T19:14:33.442Z"
+    },
+    "specs": {
+      "suite": "v2.3.3-specs",
+      "status": "passed",
+      "cases": [
+        {
+          "id": "F01",
+          "title": "空风格规格合法；投影只列有值字段",
+          "ok": true,
+          "detail": {
+            "summary": [
+              "背景风格：浅灰无缝背景",
+              "光线：柔和顶光",
+              "避免出现：文字水印"
+            ]
+          },
+          "ms": 0
+        },
+        {
+          "id": "F02",
+          "title": "风格校验反向探针：七类越界都要变红",
+          "ok": true,
+          "detail": {
+            "probes": [
+              "未知字段",
+              "文本字段类型错",
+              "文本超长",
+              "avoid 非列表",
+              "avoid 超条数",
+              "avoid 重复",
+              "avoid 空项"
+            ]
+          },
+          "ms": 0
+        },
+        {
+          "id": "F03",
+          "title": "风格差异只报告真正变化的字段",
+          "ok": true,
+          "detail": {
+            "diffs": [
+              "背景风格",
+              "避免出现"
+            ]
+          },
+          "ms": 0
+        },
+        {
+          "id": "F04",
+          "title": "单图默认值按角色派生：主图/场景/自定义各自不同",
+          "ok": true,
+          "detail": {
+            "main_keep": [
+              "商品外观、颜色与比例",
+              "标识与文字"
+            ],
+            "scene_change": [
+              "环境、道具与光线"
+            ]
+          },
+          "ms": 0
+        },
+        {
+          "id": "F05",
+          "title": "单图校验反向探针：九类越界都要变红",
+          "ok": true,
+          "detail": {
+            "probes": [
+              "空 purpose",
+              "purpose 超长",
+              "keep 非列表",
+              "keep 空列表",
+              "keep 超项数",
+              "单项超长",
+              "重复项",
+              "未知字段",
+              "notes 非文本"
+            ]
+          },
+          "ms": 0
+        },
+        {
+          "id": "F06",
+          "title": "单图差异：purpose 与 keep 各自成条，未变不报",
+          "ok": true,
+          "detail": {
+            "diffs": [
+              "目的",
+              "必须保持"
+            ]
+          },
+          "ms": 0
+        },
+        {
+          "id": "F07",
+          "title": "整套投影：风格改动影响全部图片并保留计划与商品理解",
+          "ok": true,
+          "detail": {
+            "affects": "全部 4 张图",
+            "invalidates": "Prompt 版本、审核报告、整套一致性报告"
+          },
+          "ms": 0
+        },
+        {
+          "id": "F08",
+          "title": "单图投影：只影响目标图且必须带 shotId",
+          "ok": true,
+          "detail": {
+            "affects": "只有「主图·干净背景」这一张",
+            "missing": "变化类型 shot_spec_changed 必须带 shotId，否则无法把影响限制在目标 Shot。",
+            "unknown": "未知变化类型 \"nonsense_changed\"。"
+          },
+          "ms": 0
+        },
+        {
+          "id": "F09",
+          "title": "回退选版：只选比当前小的最高版本；边界与非法输入都要说清",
+          "ok": true,
+          "detail": {
+            "invalid": "当前版本必须是正整数。"
+          },
+          "ms": 0
+        },
+        {
+          "id": "F10",
+          "title": "审核清单：默认规格标默认，保存规格标已保存，风格行随风格变化",
+          "ok": true,
+          "detail": {
+            "default_saved": false,
+            "sections": [
+              "purpose",
+              "keep",
+              "change",
+              "style"
+            ]
+          },
+          "ms": 0
+        },
+        {
+          "id": "F11",
+          "title": "聚合 digest：按计划顺序、默认/已保存计数、风格配置状态",
+          "ok": true,
+          "detail": {
+            "total": 2,
+            "saved": 1
+          },
+          "ms": 0
+        },
+        {
+          "id": "F12",
+          "title": "确定性：同输入两次投影一致；校验与差异不修改输入",
+          "ok": true,
+          "detail": {
+            "deterministic": true
+          },
+          "ms": 0
+        }
+      ],
+      "started_at": "2026-09-29T19:14:33.602Z",
+      "failed_ids": [],
+      "finished_at": "2026-09-29T19:14:33.605Z"
+    },
+    "suite_editor": {
+      "suite": "v2.3.2-suite-editor",
+      "status": "passed",
+      "cases": [
+        {
+          "id": "E01",
+          "title": "推荐播种：必需 + 依据已满足入选，被阻断可选带原因留下",
+          "ok": true,
+          "detail": {
+            "seeded": [
+              "shot_main_clean",
+              "shot_infographic_benefits",
+              "shot_scene_lifestyle",
+              "shot_detail_material"
+            ],
+            "skipped": [
+              "size_dimensions",
+              "comparison_competitor",
+              "ingredient_composition",
+              "packaging_contents"
+            ]
+          },
+          "ms": 2
+        },
+        {
+          "id": "E02",
+          "title": "空计划不是可保存方案：缺张数与缺必需图都要报",
+          "ok": true,
+          "detail": {
+            "problems": [
+              "套图至少要有 1 张图。",
+              "套图至少要有 1 张必需图。"
+            ]
+          },
+          "ms": 0
+        },
+        {
+          "id": "E03",
+          "title": "添加模板图：同一模板允许重复且 id 自动去重；被阻断模板可添加但显示原因",
+          "ok": true,
+          "detail": {
+            "ids": [
+              "shot_main_clean",
+              "shot_infographic_benefits",
+              "shot_scene_lifestyle",
+              "shot_detail_material",
+              "shot_scene_lifestyle_2",
+              "shot_comparison_competitor"
+            ],
+            "blocked": [
+              {
+                "kind": "asset_role",
+                "reason": "缺少 competitor 角色的参考图",
+                "missing": [
+                  "competitor"
+                ]
+              }
+            ]
+          },
+          "ms": 1
+        },
+        {
+          "id": "E04",
+          "title": "自定义图：新增合法、空名称被拒、可复制且仍是可选图",
+          "ok": true,
+          "detail": {
+            "invalid_label": "自定义图必须有名称。",
+            "copy_id": "shot_custom_copy"
+          },
+          "ms": 1
+        },
+        {
+          "id": "E05",
+          "title": "复制：新 id、副本可选、名称标记、原图不动",
+          "ok": true,
+          "detail": {
+            "copy_id": "shot_main_clean_copy"
+          },
+          "ms": 0
+        },
+        {
+          "id": "E06",
+          "title": "删除：可选可删；最后一张必需图与最后一张图都要被拒",
+          "ok": true,
+          "detail": {
+            "last_required": "这是最后一张必需图，不能删除；必需图至少保留 1 张。",
+            "last_shot": "套图至少保留 1 张。"
+          },
+          "ms": 0
+        },
+        {
+          "id": "E07",
+          "title": "排序：±1 换位、边界不动、非法 delta 被拒",
+          "ok": true,
+          "detail": {
+            "bad_delta": "只支持上移（-1）或下移（+1）。"
+          },
+          "ms": 0
+        },
+        {
+          "id": "E08",
+          "title": "不变量校验：六类越界都要报红（反向探针）",
+          "ok": true,
+          "detail": {
+            "probes": [
+              "shot_id 重复",
+              "未知角色",
+              "custom 图带 template_id",
+              "非自定义图未知模板",
+              "角色与模板不一致",
+              "自定义图被标必需",
+              "依赖与模板不一致",
+              "缺必需图"
+            ]
+          },
+          "ms": 1
+        },
+        {
+          "id": "E09",
+          "title": "失败原子：被拒操作不得产生半成品，输入计划逐字不变",
+          "ok": true,
+          "detail": {
+            "refused": [
+              "这是最后一张必需图，不能删除；必需图至少保留 1 张。",
+              "找不到要删除的图：shot_ghost",
+              "找不到要移动的图：shot_ghost",
+              "只支持上移（-1）或下移（+1）。",
+              "自定义图必须有名称。",
+              "找不到要复制的图：shot_ghost"
+            ]
+          },
+          "ms": 0
+        },
+        {
+          "id": "E10",
+          "title": "投影精确：缺竞品与缺主图都点名；补齐后逐图转满足",
+          "ok": true,
+          "detail": {
+            "required_blocked": [
+              "shot_main_clean"
+            ],
+            "total": 5
+          },
+          "ms": 0
+        },
+        {
+          "id": "E11",
+          "title": "id 派生可复现：冲突时 _2、_3，已占用则跳过",
+          "ok": true,
+          "detail": {
+            "ids": [
+              "shot_main_clean",
+              "shot_infographic_benefits",
+              "shot_scene_lifestyle",
+              "shot_detail_material",
+              "shot_scene_lifestyle_2",
+              "shot_scene_lifestyle_3"
+            ]
+          },
+          "ms": 0
+        },
+        {
+          "id": "E12",
+          "title": "操作返回新对象：数组不共享，输入顺序与内容不变",
+          "ok": true,
+          "detail": {
+            "moved": [
+              "shot_infographic_benefits",
+              "shot_main_clean"
+            ]
+          },
+          "ms": 0
+        }
+      ],
+      "started_at": "2026-09-29T19:14:33.795Z",
+      "failed_ids": [],
+      "finished_at": "2026-09-29T19:14:33.801Z"
+    },
+    "suite_plan": {
+      "suite": "v2.3.1-suite-registry",
+      "status": "passed",
+      "cases": [
+        {
+          "id": "R01",
+          "title": "内置注册表自检零问题；schema 与依赖词表齐全",
+          "ok": true,
+          "detail": {
+            "problems": 0,
+            "roles": 9,
+            "templates": 8
+          },
+          "ms": 1
+        },
+        {
+          "id": "R02",
+          "title": "参考图角色词表 6 项；模板用到的角色都在词表内",
+          "ok": true,
+          "detail": {
+            "roles": [
+              "primary",
+              "detail",
+              "packaging",
+              "scene",
+              "competitor",
+              "other"
+            ],
+            "asset_role_dependencies": [
+              {
+                "template": "main_clean",
+                "role": "primary"
+              },
+              {
+                "template": "scene_lifestyle",
+                "role": "primary"
+              },
+              {
+                "template": "comparison_competitor",
+                "role": "competitor"
+              }
+            ]
+          },
+          "ms": 0
+        },
+        {
+          "id": "R03",
+          "title": "每个模板都能完整投影：角色、名称、意图、依赖文案非空",
+          "ok": true,
+          "detail": {
+            "templates": 8,
+            "orders": [
+              10,
+              20,
+              30,
+              40,
+              50,
+              60,
+              70,
+              80
+            ]
+          },
+          "ms": 0
+        },
+        {
+          "id": "R04",
+          "title": "主图依赖主参考图：缺失阻断、补齐通过，原因精确到角色",
+          "ok": true,
+          "detail": {
+            "blocked_reason": "缺少 primary 角色的参考图"
+          },
+          "ms": 0
+        },
+        {
+          "id": "R05",
+          "title": "事实依赖只认 confirmed；其余每种状态都给出精确原因",
+          "ok": true,
+          "detail": {
+            "blocking_statuses": [
+              "proposed",
+              "missing",
+              "conflict",
+              "unknown",
+              "superseded"
+            ],
+            "absent_reason": "事实 signature_features 缺失"
+          },
+          "ms": 0
+        },
+        {
+          "id": "R06",
+          "title": "尺寸图双路径：核心 size_summary 或该图绑定的动态尺寸事实",
+          "ok": true,
+          "detail": {
+            "core_reason": "以下任一条都不成立：事实 size_summary 尚未确认（当前 proposed）；该图还没有绑定已确认事实"
+          },
+          "ms": 0
+        },
+        {
+          "id": "R07",
+          "title": "对比图要竞品参考图 + 已确认特征；两条都缺都要逐条说清",
+          "ok": true,
+          "detail": {
+            "blocking_kinds": [
+              "asset_role",
+              "fact"
+            ]
+          },
+          "ms": 0
+        },
+        {
+          "id": "R08",
+          "title": "成分图只认该图绑定的已确认事实；确认但未绑定不算数",
+          "ok": true,
+          "detail": {
+            "unbound_reason": "该图还没有绑定已确认事实"
+          },
+          "ms": 0
+        },
+        {
+          "id": "R09",
+          "title": "自定义 Shot 合法；未知角色、空名称、非法绑定逐项被拒",
+          "ok": true,
+          "detail": {
+            "invalid_label": "自定义图必须有名称。"
+          },
+          "ms": 1
+        },
+        {
+          "id": "R10",
+          "title": "反向探针：每条注册表守卫都必须能变红",
+          "ok": true,
+          "detail": {
+            "probes": [
+              "dup_role_id",
+              "role_id_invalid",
+              "role_label_missing",
+              "role_unused",
+              "custom_not_unique",
+              "dup_template_id",
+              "template_unknown_role",
+              "template_custom_role",
+              "template_label_missing",
+              "template_intent_missing",
+              "template_required_invalid",
+              "order_duplicate",
+              "order_nonpositive",
+              "order_fraction",
+              "unregistered_field",
+              "dependencies_not_array",
+              "dependency_not_object",
+              "dependency_unknown_kind",
+              "dependency_extra_param",
+              "asset_role_unknown",
+              "fact_not_core",
+              "fact_any_empty",
+              "fact_any_duplicate",
+              "fact_any_not_core",
+              "any_of_too_deep"
+            ],
+            "boundary_depth": 3
+          },
+          "ms": 4
+        },
+        {
+          "id": "R11",
+          "title": "改数据探针：每个登记字段都必须有消费者，改动必须让它变样",
+          "ok": true,
+          "detail": {
+            "fields": 16,
+            "consumers": [
+              {
+                "field": "role.role_id",
+                "consumer": "describeRole"
+              },
+              {
+                "field": "role.label",
+                "consumer": "describeRole"
+              },
+              {
+                "field": "role.purpose",
+                "consumer": "describeRole"
+              },
+              {
+                "field": "role.custom",
+                "consumer": "validateSuiteRegistry"
+              },
+              {
+                "field": "template.template_id",
+                "consumer": "describeTemplate"
+              },
+              {
+                "field": "template.role_id",
+                "consumer": "describeTemplate"
+              },
+              {
+                "field": "template.label",
+                "consumer": "describeTemplate"
+              },
+              {
+                "field": "template.intent",
+                "consumer": "describeTemplate"
+              },
+              {
+                "field": "template.required",
+                "consumer": "recommendPlan"
+              },
+              {
+                "field": "template.order",
+                "consumer": "recommendPlan"
+              },
+              {
+                "field": "template.dependencies",
+                "consumer": "evaluateDependencies"
+              },
+              {
+                "field": "dependency.kind",
+                "consumer": "evaluateDependencies"
+              },
+              {
+                "field": "dependency.role",
+                "consumer": "evaluateDependencies"
+              },
+              {
+                "field": "dependency.slot_id",
+                "consumer": "evaluateDependencies"
+              },
+              {
+                "field": "dependency.slot_ids",
+                "consumer": "evaluateDependencies"
+              },
+              {
+                "field": "dependency.of",
+                "consumer": "evaluateDependencies"
+              }
+            ]
+          },
+          "ms": 2
+        },
+        {
+          "id": "R12",
+          "title": "推荐计划按 order 有序；必需阻断保留在列表里并给原因",
+          "ok": true,
+          "detail": {
+            "required_blocked": [
+              "main_clean"
+            ],
+            "full_blocked": [
+              "ingredient_composition"
+            ]
+          },
+          "ms": 0
+        },
+        {
+          "id": "R13",
+          "title": "evaluateShot 用图自身绑定事实求值：绑定与模板依赖一起生效",
+          "ok": true,
+          "detail": {
+            "evaluated": [
+              "size_dimensions",
+              "custom",
+              "main_clean"
+            ]
+          },
+          "ms": 0
+        }
+      ],
+      "started_at": "2026-09-29T19:14:33.952Z",
+      "failed_ids": [],
+      "finished_at": "2026-09-29T19:14:33.961Z"
+    }
+  },
+  "ui_flow": {
+    "final": {
+      "main": {
+        "version": 2,
+        "hash": "ac9c2afc0e0e99b71caf210a3ed46a715bc84c742c926ae02761455ff088664e"
+      },
+      "info": {
+        "version": 1,
+        "hash": "f44356c3eea10b4d5380ad1a037f7c888782a5da03427f974528bd1237f12b5c"
+      }
+    }
+  },
+  "console_errors": [],
+  "page_errors": [],
+  "screenshots": [
+    "evals/product-v2/v2.3.4-prompt-compiler-20260930-031432.png"
+  ],
+  "boundary": "证明 Prompt 编译器在真实浏览器里可追溯、可版本化、语言策略可机检：指令段中文且非中文原文必须引用；图中文案逐字等于已确认事实；主图平台规则覆盖风格并显式警告；keep/avoid 冲突、缺依据、未确认绑定、未确认事实泄漏都会阻断且不产半成品；hash 覆盖真实请求快照（model/size/parameters/参考图身份/prompt），界面、记录与快照逐字一致；版本 append-only，规格或槽位前进即标记过期。G01–G12 含 golden 与逐条反向探针，UI 流覆盖编译 v1/v2、过期、失败保留旧版本与刷新恢复。全程 0 次真实模型调用，不发图、不证明出图质量；生成前确认与外发资料摘要属于 V2.3.5，真实生成属于 Phase 4。"
+}

@@ -1,0 +1,28 @@
+amz-listing-kit Product V2 V2.4.2 浏览器 Attempt、action ID、task ID 与 Unknown 恢复
+NOT-AUTHORITY: point-in-time verification evidence only
+observed_at: 2026-09-30T11:16:27
+status: failed
+model_calls: 0 · external_network_calls: 0 (fake image provider + 本机服务)
+json: evals/product-v2/v2.4.2-generation-attempt-20260930-111550-dev1.json
+
+CHECKS
+- [PASS] V2.4.2-00 domain / workspace / harness 通过 node --check（ESM 语法门）
+- [PASS] V2.4.2-01 A01–A13 契约套件全过且用例齐全
+- [PASS] V2.4.2-02 反向探针确实执行（非法输入 / 非法迁移 / 篡改 / 回退 / 无身份恢复）
+- [PASS] V2.4.2-02b 既有契约套件回归：确认单 / Prompt 编辑 / 套图编辑器全过
+- [PASS] V2.4.2-03 生成执行区就绪：4 张图待生成、provider 身份可见、锁定提示收起
+- [PASS] V2.4.2-04 提交前落库：服务端已收到提交时，IndexedDB 已是 pending_submit 且 Prompt 版本一致
+- [PASS] V2.4.2-05 双击只产生一条 Attempt：只发生一次提交，且迁移链只有一个 action id
+- [PASS] V2.4.2-06 提交信封 → submitted：task id 保存；请求里的 Prompt / 引用 / 尺寸与记录一致
+- [PASS] V2.4.2-07 按 task id 核对推进 succeeded：迁移链完整、没有重新提交
+- [PASS] V2.4.2-08 刷新恢复：succeeded 身份、task id 与 UI 徽标一致
+- [PASS] V2.4.2-09 服务端重启后按已保存 task id 核对成功（服务端无任务表）
+- [PASS] V2.4.2-10 Unknown 不自动重提：unknown / 无 task id / requires_review，界面只给显式新建
+- [FAIL] V2.4.2-11 显式新建 action：新身份生效，旧 unknown 记录逐字保留
+- [PASS] V2.4.2-12 刷新打断提交：pending 身份保留、不自动重提、界面可显式新建 action
+- [FAIL] V2.4.2-99 浏览器闭环在完成前中断
+- [FAIL] V2.4.2-15 全程零 console error / page error
+- [PASS] V2.4.2-16 正式入口自检仍全过（V2.4.2 不破坏既有入口）
+
+BOUNDARY
+证明「一次生成」在真实浏览器与真实 HTTP 上可核对：发起提交之前先把 pending_submit 身份写进 IndexedDB（服务端已收到请求时记录已在库里），双击与重入只产生一条 Attempt；提交信封按网关四类归口推进状态，task id / request id / 错误语义原样保存；核对只按已保存的 task id 查询，服务端重启（无任务表）后结论不变；没有 task id 的 Unknown 不允许自动重提，界面只提供显式新建 action，且旧记录逐字保留；刷新打断提交时 pending 身份仍在、不产生第二次提交；Prompt 前进后旧 Attempt 标「基于旧版本 v1」且记录零改写。请求体里的 Prompt 文本、参考图与尺寸与记录和页面一致。本批不保存候选字节（V2.4.4）、不做整套批量与部分失败（V2.4.3）、不做审核与返工（Phase 5）；全程 0 次真实模型调用、0 次外部网络；图像 provider 是注入的假替身，只证明身份与状态机，不证明真实出图质量。

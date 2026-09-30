@@ -1,0 +1,1931 @@
+{
+  "task": "V2.2.4",
+  "suite_id": "v2.2.4-category-generality",
+  "status": "passed",
+  "mode": "live",
+  "finished_at": "2026-09-30T02:17:09",
+  "policy": {
+    "live_budget_calls": 4,
+    "calls_used": 4,
+    "no_retry": true
+  },
+  "fixtures": [
+    {
+      "key": "brand_rigid",
+      "label": "品牌刚性商品",
+      "expect": "品牌 / 材质 / 性能参数类动态槽位",
+      "tokens": [
+        "NORDVAC",
+        "NV-700",
+        "真空保温壶",
+        "12 小时保温≥65°C"
+      ],
+      "fingerprint": "805d3718ed1b6942",
+      "projection": {
+        "product_name": "NORDVAC NV-700 真空保温壶",
+        "description_chars": 78,
+        "selling_points": 4,
+        "focus": "强调保温性能数字与品牌做工",
+        "references": 2,
+        "max_slots": 12,
+        "locale": "zh-CN",
+        "platform": "amazon_us"
+      }
+    },
+    {
+      "key": "apparel",
+      "label": "服装",
+      "expect": "面料 / 版型 / 尺码类动态槽位",
+      "tokens": [
+        "针织连衣裙",
+        "粘纤混纺垂感",
+        "直筒显瘦版型"
+      ],
+      "fingerprint": "6264529cdb805fae",
+      "projection": {
+        "product_name": "轻薄针织连衣裙",
+        "description_chars": 52,
+        "selling_points": 4,
+        "focus": "面料手感与版型呈现",
+        "references": 2,
+        "max_slots": 12,
+        "locale": "zh-CN",
+        "platform": "amazon_us"
+      }
+    },
+    {
+      "key": "packaged_food",
+      "label": "包装食品",
+      "expect": "配料 / 净含量 / 保质期类动态槽位",
+      "tokens": [
+        "每日坚果",
+        "巴旦木",
+        "净含量 750g",
+        "保质期 9 个月"
+      ],
+      "fingerprint": "2614d06ed3c91aef",
+      "projection": {
+        "product_name": "每日坚果混合装",
+        "description_chars": 57,
+        "selling_points": 4,
+        "focus": "配料表与净含量清晰",
+        "references": 2,
+        "max_slots": 12,
+        "locale": "zh-CN",
+        "platform": "amazon_us"
+      }
+    },
+    {
+      "key": "furniture",
+      "label": "家具",
+      "expect": "尺寸 / 承重 / 安装类动态槽位",
+      "tokens": [
+        "升降书桌",
+        "橡木饰面",
+        "承重 80kg",
+        "72–120cm"
+      ],
+      "fingerprint": "794ca4e6dffa54af",
+      "projection": {
+        "product_name": "电动升降书桌",
+        "description_chars": 63,
+        "selling_points": 4,
+        "focus": "尺寸、承重与安装信息",
+        "references": 2,
+        "max_slots": 12,
+        "locale": "zh-CN",
+        "platform": "amazon_us"
+      }
+    }
+  ],
+  "checks": [
+    {
+      "id": "V2.2.4-C1",
+      "title": "输入驱动：四个 fixture 通过 parse_request 且用户消息两两不同",
+      "ok": true,
+      "detail": {
+        "parse_problems": {},
+        "projections": {
+          "brand_rigid": {
+            "product_name": "NORDVAC NV-700 真空保温壶",
+            "description_chars": 78,
+            "selling_points": 4,
+            "focus": "强调保温性能数字与品牌做工",
+            "references": 2,
+            "max_slots": 12,
+            "locale": "zh-CN",
+            "platform": "amazon_us"
+          },
+          "apparel": {
+            "product_name": "轻薄针织连衣裙",
+            "description_chars": 52,
+            "selling_points": 4,
+            "focus": "面料手感与版型呈现",
+            "references": 2,
+            "max_slots": 12,
+            "locale": "zh-CN",
+            "platform": "amazon_us"
+          },
+          "packaged_food": {
+            "product_name": "每日坚果混合装",
+            "description_chars": 57,
+            "selling_points": 4,
+            "focus": "配料表与净含量清晰",
+            "references": 2,
+            "max_slots": 12,
+            "locale": "zh-CN",
+            "platform": "amazon_us"
+          },
+          "furniture": {
+            "product_name": "电动升降书桌",
+            "description_chars": 63,
+            "selling_points": 4,
+            "focus": "尺寸、承重与安装信息",
+            "references": 2,
+            "max_slots": 12,
+            "locale": "zh-CN",
+            "platform": "amazon_us"
+          }
+        },
+        "fingerprints": {
+          "brand_rigid": "805d3718ed1b6942",
+          "apparel": "6264529cdb805fae",
+          "packaged_food": "2614d06ed3c91aef",
+          "furniture": "794ca4e6dffa54af"
+        },
+        "distinct_user_messages": true
+      },
+      "mode": "offline"
+    },
+    {
+      "id": "V2.2.4-C5",
+      "title": "无常量泄漏：fixture 词不在 src/config/JS 里，系统提示无品类枚举",
+      "ok": true,
+      "detail": {
+        "leaks": [],
+        "category_enumeration_hits": [],
+        "scanned_tokens": [
+          "NORDVAC",
+          "NV-700",
+          "真空保温壶",
+          "12 小时保温≥65°C",
+          "针织连衣裙",
+          "粘纤混纺垂感",
+          "直筒显瘦版型",
+          "每日坚果",
+          "巴旦木",
+          "净含量 750g",
+          "保质期 9 个月",
+          "升降书桌",
+          "橡木饰面",
+          "承重 80kg",
+          "72–120cm"
+        ],
+        "scan_roots": [
+          "src",
+          "config",
+          "app/product_v2"
+        ]
+      },
+      "mode": "offline"
+    },
+    {
+      "id": "V2.2.4-L0",
+      "title": "真实调用前置：注册表 provider 已配置且一次一类",
+      "ok": true,
+      "detail": {
+        "calls_used": 4,
+        "budget": 4,
+        "provider": {
+          "provider_id": "dashscope-semantic",
+          "configured": true,
+          "model_id": "deepseek-v4.1-flash",
+          "structured_output": "json_mode",
+          "transport": "langchain-openai/ChatOpenAI"
+        }
+      },
+      "mode": "live"
+    },
+    {
+      "id": "V2.2.4-C2",
+      "title": "合法性：每个返回槽位都通过消费侧 check_proposal_slot",
+      "ok": true,
+      "detail": {
+        "problems": {
+          "brand_rigid": [],
+          "apparel": [],
+          "packaged_food": [],
+          "furniture": []
+        }
+      },
+      "mode": "live"
+    },
+    {
+      "id": "V2.2.4-C3",
+      "title": "结构差异：四类动态槽位集合两两不全等且至少两类有独有槽位",
+      "ok": true,
+      "detail": {
+        "complete": true,
+        "sets": {
+          "brand_rigid": [
+            "base_feature",
+            "capacity_ml",
+            "insulation_hot_12h_min_c",
+            "insulation_initial_temp_c",
+            "lid_construction",
+            "model_number",
+            "vacuum_structure"
+          ],
+          "apparel": [
+            "fabric_feel",
+            "fit_type",
+            "layering_supported",
+            "neckline",
+            "occasion",
+            "season"
+          ],
+          "packaged_food": [
+            "ingredient_list",
+            "net_weight_g",
+            "pack_count",
+            "packaging_type",
+            "shelf_life_months",
+            "single_pack_weight_g"
+          ],
+          "furniture": [
+            "desktop_size",
+            "height_adjustment_range",
+            "marketplace",
+            "max_load_kg",
+            "motor_count"
+          ]
+        },
+        "pairwise": [
+          {
+            "left": "apparel",
+            "right": "brand_rigid",
+            "equal": false
+          },
+          {
+            "left": "apparel",
+            "right": "furniture",
+            "equal": false
+          },
+          {
+            "left": "apparel",
+            "right": "packaged_food",
+            "equal": false
+          },
+          {
+            "left": "brand_rigid",
+            "right": "furniture",
+            "equal": false
+          },
+          {
+            "left": "brand_rigid",
+            "right": "packaged_food",
+            "equal": false
+          },
+          {
+            "left": "furniture",
+            "right": "packaged_food",
+            "equal": false
+          }
+        ],
+        "unique": {
+          "apparel": [
+            "fabric_feel",
+            "fit_type",
+            "layering_supported",
+            "neckline",
+            "occasion",
+            "season"
+          ],
+          "brand_rigid": [
+            "base_feature",
+            "capacity_ml",
+            "insulation_hot_12h_min_c",
+            "insulation_initial_temp_c",
+            "lid_construction",
+            "model_number",
+            "vacuum_structure"
+          ],
+          "furniture": [
+            "desktop_size",
+            "height_adjustment_range",
+            "marketplace",
+            "max_load_kg",
+            "motor_count"
+          ],
+          "packaged_food": [
+            "ingredient_list",
+            "net_weight_g",
+            "pack_count",
+            "packaging_type",
+            "shelf_life_months",
+            "single_pack_weight_g"
+          ]
+        },
+        "classes_with_unique": [
+          "apparel",
+          "brand_rigid",
+          "furniture",
+          "packaged_food"
+        ],
+        "no_equal_pair": true,
+        "unique_classes_ok": true
+      },
+      "mode": "live"
+    },
+    {
+      "id": "V2.2.4-C4",
+      "title": "可追溯：动态槽位 source/status/confidence/evidence 与 summary 合规",
+      "ok": true,
+      "detail": {
+        "brand_rigid": {
+          "ok": true,
+          "dynamic_count": 7,
+          "bad_slots": [],
+          "summary_ok": true
+        },
+        "apparel": {
+          "ok": true,
+          "dynamic_count": 6,
+          "bad_slots": [],
+          "summary_ok": true
+        },
+        "packaged_food": {
+          "ok": true,
+          "dynamic_count": 6,
+          "bad_slots": [],
+          "summary_ok": true
+        },
+        "furniture": {
+          "ok": true,
+          "dynamic_count": 5,
+          "bad_slots": [],
+          "summary_ok": true
+        }
+      },
+      "mode": "live"
+    }
+  ],
+  "provider": {
+    "provider_id": "dashscope-semantic",
+    "configured": true,
+    "model_id": "deepseek-v4.1-flash",
+    "structured_output": "json_mode",
+    "transport": "langchain-openai/ChatOpenAI"
+  },
+  "classes": {
+    "brand_rigid": {
+      "status": "proposed",
+      "proposal": {
+        "semantic_contract": "v2.2.2",
+        "slots": [
+          {
+            "schema_version": 1,
+            "slot_id": "product_name",
+            "label": "商品名称",
+            "authority": "core_fixed",
+            "value_type": "text",
+            "value": "NORDVAC NV-700 真空保温壶",
+            "source": "model_inference",
+            "status": "proposed",
+            "confidence": 0.95,
+            "evidence": [
+              {
+                "kind": "model",
+                "ref": "product_input",
+                "note": "商品名称字段直接给出"
+              }
+            ],
+            "depends_on": [],
+            "model_id": "deepseek-v4.1-flash",
+            "critical": true
+          },
+          {
+            "schema_version": 1,
+            "slot_id": "brand",
+            "label": "品牌",
+            "authority": "core_fixed",
+            "value_type": "text",
+            "value": "NORDVAC",
+            "source": "model_inference",
+            "status": "proposed",
+            "confidence": 0.9,
+            "evidence": [
+              {
+                "kind": "model",
+                "ref": "product_input",
+                "note": "名称与介绍均出现 NORDVAC"
+              }
+            ],
+            "depends_on": [],
+            "model_id": "deepseek-v4.1-flash",
+            "critical": false
+          },
+          {
+            "schema_version": 1,
+            "slot_id": "product_category",
+            "label": "商品品类",
+            "authority": "core_fixed",
+            "value_type": "text",
+            "value": "真空保温壶",
+            "source": "model_inference",
+            "status": "proposed",
+            "confidence": 0.85,
+            "evidence": [
+              {
+                "kind": "model",
+                "ref": "product_input",
+                "note": "名称含真空保温壶"
+              }
+            ],
+            "depends_on": [],
+            "model_id": "deepseek-v4.1-flash",
+            "critical": true
+          },
+          {
+            "schema_version": 1,
+            "slot_id": "signature_features",
+            "label": "必须保持的商品特征",
+            "authority": "core_fixed",
+            "value_type": "text_list",
+            "value": [
+              "12 小时保温≥65°C",
+              "18/8 不锈钢内胆",
+              "一体压铸壶盖",
+              "防滑硅胶底座"
+            ],
+            "source": "model_inference",
+            "status": "proposed",
+            "confidence": 0.9,
+            "evidence": [
+              {
+                "kind": "model",
+                "ref": "product_input",
+                "note": "真实卖点四项"
+              }
+            ],
+            "depends_on": [],
+            "model_id": "deepseek-v4.1-flash",
+            "critical": true
+          },
+          {
+            "schema_version": 1,
+            "slot_id": "key_material",
+            "label": "主要材质",
+            "authority": "core_fixed",
+            "value_type": "text",
+            "value": "18/8 不锈钢",
+            "source": "model_inference",
+            "status": "proposed",
+            "confidence": 0.8,
+            "evidence": [
+              {
+                "kind": "model",
+                "ref": "product_input",
+                "note": "介绍称内胆为 18/8 不锈钢"
+              }
+            ],
+            "depends_on": [],
+            "model_id": "deepseek-v4.1-flash",
+            "critical": false
+          },
+          {
+            "schema_version": 1,
+            "slot_id": "model_number",
+            "label": "型号",
+            "authority": "category_dynamic",
+            "value_type": "text",
+            "value": "NV-700",
+            "source": "model_inference",
+            "status": "proposed",
+            "confidence": 0.85,
+            "evidence": [
+              {
+                "kind": "model",
+                "ref": "product_input",
+                "note": "商品名称中含 NV-700"
+              }
+            ],
+            "depends_on": [],
+            "model_id": "deepseek-v4.1-flash"
+          },
+          {
+            "schema_version": 1,
+            "slot_id": "capacity_ml",
+            "label": "容量（毫升）",
+            "authority": "category_dynamic",
+            "value_type": "number",
+            "value": 700,
+            "source": "model_inference",
+            "status": "proposed",
+            "confidence": 0.3,
+            "evidence": [
+              {
+                "kind": "model",
+                "ref": "product_input",
+                "note": "由型号 NV-700 推测，资料未明示"
+              }
+            ],
+            "depends_on": [],
+            "model_id": "deepseek-v4.1-flash"
+          },
+          {
+            "schema_version": 1,
+            "slot_id": "insulation_hot_12h_min_c",
+            "label": "12小时保温最低温度（°C）",
+            "authority": "category_dynamic",
+            "value_type": "number",
+            "value": 65,
+            "source": "model_inference",
+            "status": "proposed",
+            "confidence": 0.85,
+            "evidence": [
+              {
+                "kind": "model",
+                "ref": "product_input",
+                "note": "标称 12 小时后不低于 65°C"
+              }
+            ],
+            "depends_on": [],
+            "model_id": "deepseek-v4.1-flash"
+          },
+          {
+            "schema_version": 1,
+            "slot_id": "insulation_initial_temp_c",
+            "label": "保温测试起始水温（°C）",
+            "authority": "category_dynamic",
+            "value_type": "number",
+            "value": 95,
+            "source": "model_inference",
+            "status": "proposed",
+            "confidence": 0.8,
+            "evidence": [
+              {
+                "kind": "model",
+                "ref": "product_input",
+                "note": "标称 95°C 热水测试"
+              }
+            ],
+            "depends_on": [],
+            "model_id": "deepseek-v4.1-flash"
+          },
+          {
+            "schema_version": 1,
+            "slot_id": "lid_construction",
+            "label": "壶盖结构",
+            "authority": "category_dynamic",
+            "value_type": "text",
+            "value": "壶盖与壶身一体压铸",
+            "source": "model_inference",
+            "status": "proposed",
+            "confidence": 0.8,
+            "evidence": [
+              {
+                "kind": "model",
+                "ref": "product_input",
+                "note": "介绍提到一体压铸壶盖"
+              }
+            ],
+            "depends_on": [],
+            "model_id": "deepseek-v4.1-flash"
+          },
+          {
+            "schema_version": 1,
+            "slot_id": "base_feature",
+            "label": "底座特征",
+            "authority": "category_dynamic",
+            "value_type": "text",
+            "value": "防滑硅胶底座",
+            "source": "model_inference",
+            "status": "proposed",
+            "confidence": 0.8,
+            "evidence": [
+              {
+                "kind": "model",
+                "ref": "product_input",
+                "note": "卖点含防滑硅胶底座"
+              }
+            ],
+            "depends_on": [],
+            "model_id": "deepseek-v4.1-flash"
+          },
+          {
+            "schema_version": 1,
+            "slot_id": "vacuum_structure",
+            "label": "真空结构",
+            "authority": "category_dynamic",
+            "value_type": "text",
+            "value": "双层真空结构",
+            "source": "model_inference",
+            "status": "proposed",
+            "confidence": 0.85,
+            "evidence": [
+              {
+                "kind": "model",
+                "ref": "product_input",
+                "note": "介绍称双层真空结构"
+              }
+            ],
+            "depends_on": [],
+            "model_id": "deepseek-v4.1-flash"
+          }
+        ],
+        "questions": [
+          "NV-700 中的“700”是否指容积 700 mL？请确认实际容量。",
+          "商品的颜色、尺寸与包装内容物资料未提供，是否需要补充？",
+          "“12 小时保温≥65°C”是否为官方实测口径，测试环境温度是多少？",
+          "参考图只有哈希元数据，无法核对外观与做工描述，是否需要上传实际图片？"
+        ],
+        "summary": "NORDVAC NV-700 真空保温壶资料：18/8 不锈钢双层真空结构，标称 95°C 热水 12 小时后≥65°C，一体压铸壶盖与防滑硅胶底座；参考图仅有元数据。",
+        "meta": {
+          "provider_id": "dashscope-semantic",
+          "model_id": "deepseek-v4.1-flash",
+          "request_id": "chatcmpl-117af5a6-3a3c-91c1-8540-e81873131dd2",
+          "usage": {
+            "prompt_tokens": 1320,
+            "completion_tokens": 1604,
+            "total_tokens": 2924,
+            "reasoning_tokens": 652
+          },
+          "latency_ms": 16301,
+          "inputs_used": [
+            "product_input",
+            "reference_metadata"
+          ],
+          "reference_images_sent": false,
+          "attempts": 1
+        }
+      },
+      "dynamic_slots": [
+        {
+          "slot_id": "model_number",
+          "label": "型号",
+          "value_type": "text",
+          "value": "NV-700",
+          "confidence": 0.85,
+          "evidence": 1,
+          "depends_on": []
+        },
+        {
+          "slot_id": "capacity_ml",
+          "label": "容量（毫升）",
+          "value_type": "number",
+          "value": "700",
+          "confidence": 0.3,
+          "evidence": 1,
+          "depends_on": []
+        },
+        {
+          "slot_id": "insulation_hot_12h_min_c",
+          "label": "12小时保温最低温度（°C）",
+          "value_type": "number",
+          "value": "65",
+          "confidence": 0.85,
+          "evidence": 1,
+          "depends_on": []
+        },
+        {
+          "slot_id": "insulation_initial_temp_c",
+          "label": "保温测试起始水温（°C）",
+          "value_type": "number",
+          "value": "95",
+          "confidence": 0.8,
+          "evidence": 1,
+          "depends_on": []
+        },
+        {
+          "slot_id": "lid_construction",
+          "label": "壶盖结构",
+          "value_type": "text",
+          "value": "壶盖与壶身一体压铸",
+          "confidence": 0.8,
+          "evidence": 1,
+          "depends_on": []
+        },
+        {
+          "slot_id": "base_feature",
+          "label": "底座特征",
+          "value_type": "text",
+          "value": "防滑硅胶底座",
+          "confidence": 0.8,
+          "evidence": 1,
+          "depends_on": []
+        },
+        {
+          "slot_id": "vacuum_structure",
+          "label": "真空结构",
+          "value_type": "text",
+          "value": "双层真空结构",
+          "confidence": 0.85,
+          "evidence": 1,
+          "depends_on": []
+        }
+      ],
+      "core_slots": [
+        {
+          "slot_id": "product_name",
+          "label": "商品名称",
+          "value_type": "text",
+          "value": "NORDVAC NV-700 真空保温壶",
+          "confidence": 0.95,
+          "evidence": 1,
+          "depends_on": []
+        },
+        {
+          "slot_id": "brand",
+          "label": "品牌",
+          "value_type": "text",
+          "value": "NORDVAC",
+          "confidence": 0.9,
+          "evidence": 1,
+          "depends_on": []
+        },
+        {
+          "slot_id": "product_category",
+          "label": "商品品类",
+          "value_type": "text",
+          "value": "真空保温壶",
+          "confidence": 0.85,
+          "evidence": 1,
+          "depends_on": []
+        },
+        {
+          "slot_id": "signature_features",
+          "label": "必须保持的商品特征",
+          "value_type": "text_list",
+          "value": "['12 小时保温≥65°C', '18/8 不锈钢内胆', '一体压铸壶盖', '防滑硅胶底座']",
+          "confidence": 0.9,
+          "evidence": 1,
+          "depends_on": []
+        },
+        {
+          "slot_id": "key_material",
+          "label": "主要材质",
+          "value_type": "text",
+          "value": "18/8 不锈钢",
+          "confidence": 0.8,
+          "evidence": 1,
+          "depends_on": []
+        }
+      ]
+    },
+    "apparel": {
+      "status": "proposed",
+      "proposal": {
+        "semantic_contract": "v2.2.2",
+        "slots": [
+          {
+            "schema_version": 1,
+            "slot_id": "product_name",
+            "label": "商品名称",
+            "authority": "core_fixed",
+            "value_type": "text",
+            "value": "轻薄针织连衣裙",
+            "source": "model_inference",
+            "status": "proposed",
+            "confidence": 0.95,
+            "evidence": [
+              {
+                "kind": "model",
+                "ref": "product_input",
+                "note": "资料首行给出商品名称"
+              }
+            ],
+            "depends_on": [],
+            "model_id": "deepseek-v4.1-flash",
+            "critical": true
+          },
+          {
+            "schema_version": 1,
+            "slot_id": "product_category",
+            "label": "商品品类",
+            "authority": "core_fixed",
+            "value_type": "text",
+            "value": "女装针织连衣裙",
+            "source": "model_inference",
+            "status": "proposed",
+            "confidence": 0.88,
+            "evidence": [
+              {
+                "kind": "model",
+                "ref": "product_input",
+                "note": "名称与介绍均指向针织连衣裙"
+              }
+            ],
+            "depends_on": [],
+            "model_id": "deepseek-v4.1-flash",
+            "critical": true
+          },
+          {
+            "schema_version": 1,
+            "slot_id": "signature_features",
+            "label": "必须保持的商品特征",
+            "authority": "core_fixed",
+            "value_type": "text_list",
+            "value": [
+              "粘纤混纺垂感面料",
+              "直筒显瘦版型",
+              "通勤与约会两用",
+              "春秋可单穿或叠穿"
+            ],
+            "source": "model_inference",
+            "status": "proposed",
+            "confidence": 0.9,
+            "evidence": [
+              {
+                "kind": "model",
+                "ref": "product_input",
+                "note": "真实卖点四条"
+              }
+            ],
+            "depends_on": [],
+            "model_id": "deepseek-v4.1-flash",
+            "critical": true
+          },
+          {
+            "schema_version": 1,
+            "slot_id": "key_material",
+            "label": "主要材质",
+            "authority": "core_fixed",
+            "value_type": "text",
+            "value": "95% 粘纤 + 5% 氨纶混纺针织面料",
+            "source": "model_inference",
+            "status": "proposed",
+            "confidence": 0.93,
+            "evidence": [
+              {
+                "kind": "model",
+                "ref": "product_input",
+                "note": "介绍中给出成分比例"
+              }
+            ],
+            "depends_on": [],
+            "model_id": "deepseek-v4.1-flash",
+            "critical": false
+          },
+          {
+            "schema_version": 1,
+            "slot_id": "neckline",
+            "label": "领型",
+            "authority": "category_dynamic",
+            "value_type": "text",
+            "value": "圆领",
+            "source": "model_inference",
+            "status": "proposed",
+            "confidence": 0.85,
+            "evidence": [
+              {
+                "kind": "model",
+                "ref": "product_input",
+                "note": "介绍称圆领针织连衣裙"
+              }
+            ],
+            "depends_on": [],
+            "model_id": "deepseek-v4.1-flash"
+          },
+          {
+            "schema_version": 1,
+            "slot_id": "fit_type",
+            "label": "版型",
+            "authority": "category_dynamic",
+            "value_type": "text",
+            "value": "直筒版型",
+            "source": "model_inference",
+            "status": "proposed",
+            "confidence": 0.88,
+            "evidence": [
+              {
+                "kind": "model",
+                "ref": "product_input",
+                "note": "介绍与卖点均提到直筒"
+              }
+            ],
+            "depends_on": [],
+            "model_id": "deepseek-v4.1-flash"
+          },
+          {
+            "schema_version": 1,
+            "slot_id": "fabric_feel",
+            "label": "面料手感",
+            "authority": "category_dynamic",
+            "value_type": "text",
+            "value": "垂感面料",
+            "source": "model_inference",
+            "status": "proposed",
+            "confidence": 0.8,
+            "evidence": [
+              {
+                "kind": "model",
+                "ref": "product_input",
+                "note": "介绍称垂感面料，本次重点为面料手感"
+              }
+            ],
+            "depends_on": [],
+            "model_id": "deepseek-v4.1-flash"
+          },
+          {
+            "schema_version": 1,
+            "slot_id": "season",
+            "label": "适穿季节",
+            "authority": "category_dynamic",
+            "value_type": "text_list",
+            "value": [
+              "春季",
+              "秋季"
+            ],
+            "source": "model_inference",
+            "status": "proposed",
+            "confidence": 0.82,
+            "evidence": [
+              {
+                "kind": "model",
+                "ref": "product_input",
+                "note": "介绍与卖点提到春秋"
+              }
+            ],
+            "depends_on": [],
+            "model_id": "deepseek-v4.1-flash"
+          },
+          {
+            "schema_version": 1,
+            "slot_id": "occasion",
+            "label": "适用场景",
+            "authority": "category_dynamic",
+            "value_type": "text_list",
+            "value": [
+              "通勤",
+              "约会"
+            ],
+            "source": "model_inference",
+            "status": "proposed",
+            "confidence": 0.82,
+            "evidence": [
+              {
+                "kind": "model",
+                "ref": "product_input",
+                "note": "介绍与卖点提到通勤约会两用"
+              }
+            ],
+            "depends_on": [],
+            "model_id": "deepseek-v4.1-flash"
+          },
+          {
+            "schema_version": 1,
+            "slot_id": "layering_supported",
+            "label": "是否支持叠穿",
+            "authority": "category_dynamic",
+            "value_type": "boolean",
+            "value": true,
+            "source": "model_inference",
+            "status": "proposed",
+            "confidence": 0.7,
+            "evidence": [
+              {
+                "kind": "model",
+                "ref": "product_input",
+                "note": "卖点称春秋单穿或叠穿"
+              }
+            ],
+            "depends_on": [],
+            "model_id": "deepseek-v4.1-flash"
+          }
+        ],
+        "questions": [
+          "商品的品牌（brand）是什么？资料中未提及。",
+          "可选颜色与颜色概览（color_summary）是什么？",
+          "尺码范围与尺寸概览（size_summary）是什么？是否有尺码表？",
+          "包装内容物（package_contents）包含哪些？是否含吊牌、防尘袋等？",
+          "面料克重、厚薄或手感描述（如亲肤、弹力）是否有可引用的官方说法？"
+        ],
+        "summary": "一款圆领针织连衣裙，粘纤/氨纶混纺垂感面料，直筒版型，主打通勤与约会、春秋单穿或叠穿；品牌、颜色、尺码与包装信息在资料中缺失。",
+        "meta": {
+          "provider_id": "dashscope-semantic",
+          "model_id": "deepseek-v4.1-flash",
+          "request_id": "chatcmpl-30890e60-ae08-9610-9a97-70fdaf5719db",
+          "usage": {
+            "prompt_tokens": 1298,
+            "completion_tokens": 1935,
+            "total_tokens": 3233,
+            "reasoning_tokens": 479
+          },
+          "latency_ms": 12795,
+          "inputs_used": [
+            "product_input",
+            "reference_metadata"
+          ],
+          "reference_images_sent": false,
+          "attempts": 1
+        }
+      },
+      "dynamic_slots": [
+        {
+          "slot_id": "neckline",
+          "label": "领型",
+          "value_type": "text",
+          "value": "圆领",
+          "confidence": 0.85,
+          "evidence": 1,
+          "depends_on": []
+        },
+        {
+          "slot_id": "fit_type",
+          "label": "版型",
+          "value_type": "text",
+          "value": "直筒版型",
+          "confidence": 0.88,
+          "evidence": 1,
+          "depends_on": []
+        },
+        {
+          "slot_id": "fabric_feel",
+          "label": "面料手感",
+          "value_type": "text",
+          "value": "垂感面料",
+          "confidence": 0.8,
+          "evidence": 1,
+          "depends_on": []
+        },
+        {
+          "slot_id": "season",
+          "label": "适穿季节",
+          "value_type": "text_list",
+          "value": "['春季', '秋季']",
+          "confidence": 0.82,
+          "evidence": 1,
+          "depends_on": []
+        },
+        {
+          "slot_id": "occasion",
+          "label": "适用场景",
+          "value_type": "text_list",
+          "value": "['通勤', '约会']",
+          "confidence": 0.82,
+          "evidence": 1,
+          "depends_on": []
+        },
+        {
+          "slot_id": "layering_supported",
+          "label": "是否支持叠穿",
+          "value_type": "boolean",
+          "value": "True",
+          "confidence": 0.7,
+          "evidence": 1,
+          "depends_on": []
+        }
+      ],
+      "core_slots": [
+        {
+          "slot_id": "product_name",
+          "label": "商品名称",
+          "value_type": "text",
+          "value": "轻薄针织连衣裙",
+          "confidence": 0.95,
+          "evidence": 1,
+          "depends_on": []
+        },
+        {
+          "slot_id": "product_category",
+          "label": "商品品类",
+          "value_type": "text",
+          "value": "女装针织连衣裙",
+          "confidence": 0.88,
+          "evidence": 1,
+          "depends_on": []
+        },
+        {
+          "slot_id": "signature_features",
+          "label": "必须保持的商品特征",
+          "value_type": "text_list",
+          "value": "['粘纤混纺垂感面料', '直筒显瘦版型', '通勤与约会两用', '春秋可单穿或叠穿']",
+          "confidence": 0.9,
+          "evidence": 1,
+          "depends_on": []
+        },
+        {
+          "slot_id": "key_material",
+          "label": "主要材质",
+          "value_type": "text",
+          "value": "95% 粘纤 + 5% 氨纶混纺针织面料",
+          "confidence": 0.93,
+          "evidence": 1,
+          "depends_on": []
+        }
+      ]
+    },
+    "packaged_food": {
+      "status": "proposed",
+      "proposal": {
+        "semantic_contract": "v2.2.2",
+        "slots": [
+          {
+            "schema_version": 1,
+            "slot_id": "product_name",
+            "label": "商品名称",
+            "authority": "core_fixed",
+            "value_type": "text",
+            "value": "每日坚果混合装",
+            "source": "model_inference",
+            "status": "proposed",
+            "confidence": 0.95,
+            "evidence": [
+              {
+                "kind": "model",
+                "ref": "product_input",
+                "note": "商品名称字段直接给出"
+              }
+            ],
+            "depends_on": [],
+            "model_id": "deepseek-v4.1-flash",
+            "critical": true
+          },
+          {
+            "schema_version": 1,
+            "slot_id": "product_category",
+            "label": "商品品类",
+            "authority": "core_fixed",
+            "value_type": "text",
+            "value": "混合坚果与果干零食（每日坚果）",
+            "source": "model_inference",
+            "status": "proposed",
+            "confidence": 0.85,
+            "evidence": [
+              {
+                "kind": "model",
+                "ref": "product_input",
+                "note": "由品名与配料推断"
+              }
+            ],
+            "depends_on": [],
+            "model_id": "deepseek-v4.1-flash",
+            "critical": true
+          },
+          {
+            "schema_version": 1,
+            "slot_id": "signature_features",
+            "label": "必须保持的商品特征",
+            "authority": "core_fixed",
+            "value_type": "text_list",
+            "value": [
+              "含巴旦木、腰果、蔓越莓干、蓝莓干四种配料",
+              "独立小袋 25g×30 袋",
+              "净含量 750g",
+              "保质期 9 个月"
+            ],
+            "source": "model_inference",
+            "status": "proposed",
+            "confidence": 0.9,
+            "evidence": [
+              {
+                "kind": "model",
+                "ref": "product_input",
+                "note": "商品介绍与真实卖点一致"
+              }
+            ],
+            "depends_on": [],
+            "model_id": "deepseek-v4.1-flash",
+            "critical": true
+          },
+          {
+            "schema_version": 1,
+            "slot_id": "key_material",
+            "label": "主要材质/原料",
+            "authority": "core_fixed",
+            "value_type": "text",
+            "value": "巴旦木、腰果、蔓越莓干、蓝莓干",
+            "source": "model_inference",
+            "status": "proposed",
+            "confidence": 0.8,
+            "evidence": [
+              {
+                "kind": "model",
+                "ref": "product_input",
+                "note": "商品介绍列出四种原料"
+              }
+            ],
+            "depends_on": [],
+            "model_id": "deepseek-v4.1-flash",
+            "critical": false
+          },
+          {
+            "schema_version": 1,
+            "slot_id": "size_summary",
+            "label": "尺寸/规格概览",
+            "authority": "core_fixed",
+            "value_type": "text",
+            "value": "单袋 25g，共 30 袋，净含量 750g",
+            "source": "model_inference",
+            "status": "proposed",
+            "confidence": 0.9,
+            "evidence": [
+              {
+                "kind": "model",
+                "ref": "product_input",
+                "note": "独立小袋 25g×30 袋、净含量 750g"
+              }
+            ],
+            "depends_on": [],
+            "model_id": "deepseek-v4.1-flash",
+            "critical": false
+          },
+          {
+            "schema_version": 1,
+            "slot_id": "package_contents",
+            "label": "包装内容物",
+            "authority": "core_fixed",
+            "value_type": "text_list",
+            "value": [
+              "25g 独立小袋×30 袋",
+              "总净含量 750g"
+            ],
+            "source": "model_inference",
+            "status": "proposed",
+            "confidence": 0.85,
+            "evidence": [
+              {
+                "kind": "model",
+                "ref": "product_input",
+                "note": "包装形式与净含量信息"
+              }
+            ],
+            "depends_on": [],
+            "model_id": "deepseek-v4.1-flash",
+            "critical": false
+          },
+          {
+            "schema_version": 1,
+            "slot_id": "ingredient_list",
+            "label": "配料表",
+            "authority": "category_dynamic",
+            "value_type": "text_list",
+            "value": [
+              "巴旦木",
+              "腰果",
+              "蔓越莓干",
+              "蓝莓干"
+            ],
+            "source": "model_inference",
+            "status": "proposed",
+            "confidence": 0.9,
+            "evidence": [
+              {
+                "kind": "model",
+                "ref": "product_input",
+                "note": "商品介绍列出的配料"
+              }
+            ],
+            "depends_on": [],
+            "model_id": "deepseek-v4.1-flash"
+          },
+          {
+            "schema_version": 1,
+            "slot_id": "net_weight_g",
+            "label": "净含量（克）",
+            "authority": "category_dynamic",
+            "value_type": "number",
+            "value": 750,
+            "source": "model_inference",
+            "status": "proposed",
+            "confidence": 0.9,
+            "evidence": [
+              {
+                "kind": "model",
+                "ref": "product_input",
+                "note": "标注净含量 750g"
+              }
+            ],
+            "depends_on": [],
+            "model_id": "deepseek-v4.1-flash"
+          },
+          {
+            "schema_version": 1,
+            "slot_id": "pack_count",
+            "label": "袋数",
+            "authority": "category_dynamic",
+            "value_type": "number",
+            "value": 30,
+            "source": "model_inference",
+            "status": "proposed",
+            "confidence": 0.9,
+            "evidence": [
+              {
+                "kind": "model",
+                "ref": "product_input",
+                "note": "25g×30 袋"
+              }
+            ],
+            "depends_on": [],
+            "model_id": "deepseek-v4.1-flash"
+          },
+          {
+            "schema_version": 1,
+            "slot_id": "single_pack_weight_g",
+            "label": "单袋重量（克）",
+            "authority": "category_dynamic",
+            "value_type": "number",
+            "value": 25,
+            "source": "model_inference",
+            "status": "proposed",
+            "confidence": 0.9,
+            "evidence": [
+              {
+                "kind": "model",
+                "ref": "product_input",
+                "note": "独立小袋 25g"
+              }
+            ],
+            "depends_on": [],
+            "model_id": "deepseek-v4.1-flash"
+          },
+          {
+            "schema_version": 1,
+            "slot_id": "shelf_life_months",
+            "label": "保质期（月）",
+            "authority": "category_dynamic",
+            "value_type": "number",
+            "value": 9,
+            "source": "model_inference",
+            "status": "proposed",
+            "confidence": 0.9,
+            "evidence": [
+              {
+                "kind": "model",
+                "ref": "product_input",
+                "note": "保质期 9 个月"
+              }
+            ],
+            "depends_on": [],
+            "model_id": "deepseek-v4.1-flash"
+          },
+          {
+            "schema_version": 1,
+            "slot_id": "packaging_type",
+            "label": "包装形式",
+            "authority": "category_dynamic",
+            "value_type": "text",
+            "value": "独立小袋装",
+            "source": "model_inference",
+            "status": "proposed",
+            "confidence": 0.8,
+            "evidence": [
+              {
+                "kind": "model",
+                "ref": "product_input",
+                "note": "独立小袋 25g×30 袋"
+              }
+            ],
+            "depends_on": [],
+            "model_id": "deepseek-v4.1-flash"
+          }
+        ],
+        "questions": [
+          "品牌名是什么（资料未给出，需确认是否做自有品牌或无品牌）？",
+          "配料表的完整顺序与各配料占比是多少？是否含糖、盐、油或其他添加剂？",
+          "净含量 750g 是标注净重还是含包装毛重？单袋 25g 是否含包装？",
+          "保质期 9 个月的起算方式与储存条件（常温/避光/开封后）如何？",
+          "是否含坚果/果干常见过敏原提示，以及原产国/生产地信息？",
+          "amazon_us 站点是否需要同步英文商品名与卖点文案？"
+        ],
+        "summary": "一款含巴旦木、腰果、蔓越莓干与蓝莓干的每日坚果混合装，25g×30 独立小袋、净含量 750g、保质期 9 个月；品牌、配料比例与储存/过敏原信息缺失。",
+        "meta": {
+          "provider_id": "dashscope-semantic",
+          "model_id": "deepseek-v4.1-flash",
+          "request_id": "chatcmpl-50078906-aac2-98ab-98dc-88d43101419f",
+          "usage": {
+            "prompt_tokens": 1311,
+            "completion_tokens": 2071,
+            "total_tokens": 3382,
+            "reasoning_tokens": 859
+          },
+          "latency_ms": 14401,
+          "inputs_used": [
+            "product_input",
+            "reference_metadata"
+          ],
+          "reference_images_sent": false,
+          "attempts": 1
+        }
+      },
+      "dynamic_slots": [
+        {
+          "slot_id": "ingredient_list",
+          "label": "配料表",
+          "value_type": "text_list",
+          "value": "['巴旦木', '腰果', '蔓越莓干', '蓝莓干']",
+          "confidence": 0.9,
+          "evidence": 1,
+          "depends_on": []
+        },
+        {
+          "slot_id": "net_weight_g",
+          "label": "净含量（克）",
+          "value_type": "number",
+          "value": "750",
+          "confidence": 0.9,
+          "evidence": 1,
+          "depends_on": []
+        },
+        {
+          "slot_id": "pack_count",
+          "label": "袋数",
+          "value_type": "number",
+          "value": "30",
+          "confidence": 0.9,
+          "evidence": 1,
+          "depends_on": []
+        },
+        {
+          "slot_id": "single_pack_weight_g",
+          "label": "单袋重量（克）",
+          "value_type": "number",
+          "value": "25",
+          "confidence": 0.9,
+          "evidence": 1,
+          "depends_on": []
+        },
+        {
+          "slot_id": "shelf_life_months",
+          "label": "保质期（月）",
+          "value_type": "number",
+          "value": "9",
+          "confidence": 0.9,
+          "evidence": 1,
+          "depends_on": []
+        },
+        {
+          "slot_id": "packaging_type",
+          "label": "包装形式",
+          "value_type": "text",
+          "value": "独立小袋装",
+          "confidence": 0.8,
+          "evidence": 1,
+          "depends_on": []
+        }
+      ],
+      "core_slots": [
+        {
+          "slot_id": "product_name",
+          "label": "商品名称",
+          "value_type": "text",
+          "value": "每日坚果混合装",
+          "confidence": 0.95,
+          "evidence": 1,
+          "depends_on": []
+        },
+        {
+          "slot_id": "product_category",
+          "label": "商品品类",
+          "value_type": "text",
+          "value": "混合坚果与果干零食（每日坚果）",
+          "confidence": 0.85,
+          "evidence": 1,
+          "depends_on": []
+        },
+        {
+          "slot_id": "signature_features",
+          "label": "必须保持的商品特征",
+          "value_type": "text_list",
+          "value": "['含巴旦木、腰果、蔓越莓干、蓝莓干四种配料', '独立小袋 25g×30 袋', '净含量 750g', '保质期 9 个月']",
+          "confidence": 0.9,
+          "evidence": 1,
+          "depends_on": []
+        },
+        {
+          "slot_id": "key_material",
+          "label": "主要材质/原料",
+          "value_type": "text",
+          "value": "巴旦木、腰果、蔓越莓干、蓝莓干",
+          "confidence": 0.8,
+          "evidence": 1,
+          "depends_on": []
+        },
+        {
+          "slot_id": "size_summary",
+          "label": "尺寸/规格概览",
+          "value_type": "text",
+          "value": "单袋 25g，共 30 袋，净含量 750g",
+          "confidence": 0.9,
+          "evidence": 1,
+          "depends_on": []
+        },
+        {
+          "slot_id": "package_contents",
+          "label": "包装内容物",
+          "value_type": "text_list",
+          "value": "['25g 独立小袋×30 袋', '总净含量 750g']",
+          "confidence": 0.85,
+          "evidence": 1,
+          "depends_on": []
+        }
+      ]
+    },
+    "furniture": {
+      "status": "proposed",
+      "proposal": {
+        "semantic_contract": "v2.2.2",
+        "slots": [
+          {
+            "schema_version": 1,
+            "slot_id": "product_name",
+            "label": "商品名称",
+            "authority": "core_fixed",
+            "value_type": "text",
+            "value": "电动升降书桌",
+            "source": "model_inference",
+            "status": "proposed",
+            "confidence": 0.95,
+            "evidence": [
+              {
+                "kind": "model",
+                "ref": "product_input",
+                "note": "资料首行给出商品名称"
+              }
+            ],
+            "depends_on": [],
+            "model_id": "deepseek-v4.1-flash",
+            "critical": true
+          },
+          {
+            "schema_version": 1,
+            "slot_id": "product_category",
+            "label": "商品品类",
+            "authority": "core_fixed",
+            "value_type": "text",
+            "value": "电动升降桌（办公家具）",
+            "source": "model_inference",
+            "status": "proposed",
+            "confidence": 0.85,
+            "evidence": [
+              {
+                "kind": "model",
+                "ref": "product_input",
+                "note": "名称与双电机升降描述指向升降桌"
+              }
+            ],
+            "depends_on": [],
+            "model_id": "deepseek-v4.1-flash",
+            "critical": true
+          },
+          {
+            "schema_version": 1,
+            "slot_id": "key_material",
+            "label": "主要材质",
+            "authority": "core_fixed",
+            "value_type": "text",
+            "value": "橡木饰面多层板",
+            "source": "model_inference",
+            "status": "proposed",
+            "confidence": 0.9,
+            "evidence": [
+              {
+                "kind": "model",
+                "ref": "product_input",
+                "note": "桌板材质写明橡木饰面多层板"
+              }
+            ],
+            "depends_on": [],
+            "model_id": "deepseek-v4.1-flash",
+            "critical": false
+          },
+          {
+            "schema_version": 1,
+            "slot_id": "color_summary",
+            "label": "颜色概览",
+            "authority": "core_fixed",
+            "value_type": "text",
+            "value": "橡木饰面色（原木色调）",
+            "source": "model_inference",
+            "status": "proposed",
+            "confidence": 0.4,
+            "evidence": [
+              {
+                "kind": "model",
+                "ref": "product_input",
+                "note": "仅有橡木饰面表述，未给具体色号"
+              }
+            ],
+            "depends_on": [],
+            "model_id": "deepseek-v4.1-flash",
+            "critical": false
+          },
+          {
+            "schema_version": 1,
+            "slot_id": "size_summary",
+            "label": "尺寸概览",
+            "authority": "core_fixed",
+            "value_type": "text",
+            "value": "桌板 140×70cm；升降高度范围 72–120cm",
+            "source": "model_inference",
+            "status": "proposed",
+            "confidence": 0.9,
+            "evidence": [
+              {
+                "kind": "model",
+                "ref": "product_input",
+                "note": "资料给出桌板尺寸与升降范围"
+              }
+            ],
+            "depends_on": [],
+            "model_id": "deepseek-v4.1-flash",
+            "critical": false
+          },
+          {
+            "schema_version": 1,
+            "slot_id": "signature_features",
+            "label": "必须保持的商品特征",
+            "authority": "core_fixed",
+            "value_type": "text_list",
+            "value": [
+              "140×70cm 橡木饰面桌板",
+              "双电机 72–120cm 升降",
+              "承重 80kg",
+              "含安装说明书与安装工具"
+            ],
+            "source": "model_inference",
+            "status": "proposed",
+            "confidence": 0.92,
+            "evidence": [
+              {
+                "kind": "model",
+                "ref": "product_input",
+                "note": "资料真实卖点四条"
+              }
+            ],
+            "depends_on": [],
+            "model_id": "deepseek-v4.1-flash",
+            "critical": true
+          },
+          {
+            "schema_version": 1,
+            "slot_id": "package_contents",
+            "label": "包装内容物",
+            "authority": "core_fixed",
+            "value_type": "text_list",
+            "value": [
+              "安装说明书",
+              "安装工具"
+            ],
+            "source": "model_inference",
+            "status": "proposed",
+            "confidence": 0.8,
+            "evidence": [
+              {
+                "kind": "model",
+                "ref": "product_input",
+                "note": "明确含说明书与工具，其余未列"
+              }
+            ],
+            "depends_on": [],
+            "model_id": "deepseek-v4.1-flash",
+            "critical": false
+          },
+          {
+            "schema_version": 1,
+            "slot_id": "max_load_kg",
+            "label": "承重（kg）",
+            "authority": "category_dynamic",
+            "value_type": "number",
+            "value": 80,
+            "source": "model_inference",
+            "status": "proposed",
+            "confidence": 0.9,
+            "evidence": [
+              {
+                "kind": "model",
+                "ref": "product_input",
+                "note": "资料写明承重 80kg"
+              }
+            ],
+            "depends_on": [],
+            "model_id": "deepseek-v4.1-flash"
+          },
+          {
+            "schema_version": 1,
+            "slot_id": "height_adjustment_range",
+            "label": "升降高度范围",
+            "authority": "category_dynamic",
+            "value_type": "text",
+            "value": "72–120cm",
+            "source": "model_inference",
+            "status": "proposed",
+            "confidence": 0.9,
+            "evidence": [
+              {
+                "kind": "model",
+                "ref": "product_input",
+                "note": "双电机升降范围 72–120cm"
+              }
+            ],
+            "depends_on": [],
+            "model_id": "deepseek-v4.1-flash"
+          },
+          {
+            "schema_version": 1,
+            "slot_id": "desktop_size",
+            "label": "桌板尺寸",
+            "authority": "category_dynamic",
+            "value_type": "text",
+            "value": "140×70cm",
+            "source": "model_inference",
+            "status": "proposed",
+            "confidence": 0.9,
+            "evidence": [
+              {
+                "kind": "model",
+                "ref": "product_input",
+                "note": "桌板尺寸 140×70cm"
+              }
+            ],
+            "depends_on": [],
+            "model_id": "deepseek-v4.1-flash"
+          },
+          {
+            "schema_version": 1,
+            "slot_id": "motor_count",
+            "label": "电机数量",
+            "authority": "category_dynamic",
+            "value_type": "number",
+            "value": 2,
+            "source": "model_inference",
+            "status": "proposed",
+            "confidence": 0.9,
+            "evidence": [
+              {
+                "kind": "model",
+                "ref": "product_input",
+                "note": "资料写明双电机"
+              }
+            ],
+            "depends_on": [],
+            "model_id": "deepseek-v4.1-flash"
+          },
+          {
+            "schema_version": 1,
+            "slot_id": "marketplace",
+            "label": "目标站点",
+            "authority": "category_dynamic",
+            "value_type": "enum",
+            "value": "amazon_us",
+            "source": "model_inference",
+            "status": "proposed",
+            "confidence": 0.95,
+            "evidence": [
+              {
+                "kind": "user",
+                "ref": "request_context",
+                "note": "请求标注站点/平台为 amazon_us"
+              }
+            ],
+            "depends_on": [],
+            "model_id": "deepseek-v4.1-flash",
+            "enum_values": [
+              "amazon_us"
+            ]
+          }
+        ],
+        "questions": [
+          "商品品牌与型号是什么？",
+          "桌面颜色/饰面色号如何描述（用于 Amazon US 上架）？",
+          "包装清单是否除说明书与工具外还包含桌板、桌腿/框架等部件？",
+          "桌腿/框架材质与升降速度、噪音等参数是否有官方数据？",
+          "是否需要用户自行组装，是否提供组装所需全部工具？"
+        ],
+        "summary": "资料描述一款电动升降书桌：橡木饰面多层板桌板 140×70cm，双电机升降 72–120cm，承重 80kg，含安装说明书与工具；品牌、颜色细节与完整包装清单未明确。",
+        "meta": {
+          "provider_id": "dashscope-semantic",
+          "model_id": "deepseek-v4.1-flash",
+          "request_id": "chatcmpl-9c0b21ca-5098-9b84-9517-8095510fc805",
+          "usage": {
+            "prompt_tokens": 1306,
+            "completion_tokens": 2804,
+            "total_tokens": 4110,
+            "reasoning_tokens": 1332
+          },
+          "latency_ms": 21898,
+          "inputs_used": [
+            "product_input",
+            "reference_metadata"
+          ],
+          "reference_images_sent": false,
+          "attempts": 1
+        }
+      },
+      "dynamic_slots": [
+        {
+          "slot_id": "max_load_kg",
+          "label": "承重（kg）",
+          "value_type": "number",
+          "value": "80",
+          "confidence": 0.9,
+          "evidence": 1,
+          "depends_on": []
+        },
+        {
+          "slot_id": "height_adjustment_range",
+          "label": "升降高度范围",
+          "value_type": "text",
+          "value": "72–120cm",
+          "confidence": 0.9,
+          "evidence": 1,
+          "depends_on": []
+        },
+        {
+          "slot_id": "desktop_size",
+          "label": "桌板尺寸",
+          "value_type": "text",
+          "value": "140×70cm",
+          "confidence": 0.9,
+          "evidence": 1,
+          "depends_on": []
+        },
+        {
+          "slot_id": "motor_count",
+          "label": "电机数量",
+          "value_type": "number",
+          "value": "2",
+          "confidence": 0.9,
+          "evidence": 1,
+          "depends_on": []
+        },
+        {
+          "slot_id": "marketplace",
+          "label": "目标站点",
+          "value_type": "enum",
+          "value": "amazon_us",
+          "confidence": 0.95,
+          "evidence": 1,
+          "depends_on": []
+        }
+      ],
+      "core_slots": [
+        {
+          "slot_id": "product_name",
+          "label": "商品名称",
+          "value_type": "text",
+          "value": "电动升降书桌",
+          "confidence": 0.95,
+          "evidence": 1,
+          "depends_on": []
+        },
+        {
+          "slot_id": "product_category",
+          "label": "商品品类",
+          "value_type": "text",
+          "value": "电动升降桌（办公家具）",
+          "confidence": 0.85,
+          "evidence": 1,
+          "depends_on": []
+        },
+        {
+          "slot_id": "key_material",
+          "label": "主要材质",
+          "value_type": "text",
+          "value": "橡木饰面多层板",
+          "confidence": 0.9,
+          "evidence": 1,
+          "depends_on": []
+        },
+        {
+          "slot_id": "color_summary",
+          "label": "颜色概览",
+          "value_type": "text",
+          "value": "橡木饰面色（原木色调）",
+          "confidence": 0.4,
+          "evidence": 1,
+          "depends_on": []
+        },
+        {
+          "slot_id": "size_summary",
+          "label": "尺寸概览",
+          "value_type": "text",
+          "value": "桌板 140×70cm；升降高度范围 72–120cm",
+          "confidence": 0.9,
+          "evidence": 1,
+          "depends_on": []
+        },
+        {
+          "slot_id": "signature_features",
+          "label": "必须保持的商品特征",
+          "value_type": "text_list",
+          "value": "['140×70cm 橡木饰面桌板', '双电机 72–120cm 升降', '承重 80kg', '含安装说明书与安装工具']",
+          "confidence": 0.92,
+          "evidence": 1,
+          "depends_on": []
+        },
+        {
+          "slot_id": "package_contents",
+          "label": "包装内容物",
+          "value_type": "text_list",
+          "value": "['安装说明书', '安装工具']",
+          "confidence": 0.8,
+          "evidence": 1,
+          "depends_on": []
+        }
+      ]
+    }
+  },
+  "boundary": "证明四类 fixture 的输入投影两两不同（C1）、实现里没有把 fixture 商品词或品类枚举写成常量（C5）；--live 另外证明每类一次真实调用返回的槽位合法（C2）、四类动态槽位结构两两不同且至少两类有独有槽位（C3）、来源/状态/置信度/证据/summary 可追溯（C4）。不证明：槽位语义是否覆盖该类真实卖点、界面投影是否好用、套图规划/生成/交付闭环，以及模型在别的输入上的稳定性。"
+}

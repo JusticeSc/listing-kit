@@ -13,7 +13,7 @@
   9) 旧 Product V1 路由回归：默认入口页面与其静态资源仍可取（V2.1.2 不得破坏旧入口）。
 
 运行：
-  & "C:\\Users\\31368\\.local\\bin\\uv.exe" run --no-project --with-requirements requirements.txt --with playwright python tools/verify_v2_1_2_project_home.py
+  uv run --locked python tools/verify_v2_1_2_project_home.py
 """
 from __future__ import annotations
 

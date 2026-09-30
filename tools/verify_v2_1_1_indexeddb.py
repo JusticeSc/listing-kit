@@ -10,7 +10,7 @@
   5) 默认库：正式库名与 schema 版本来自代码，不是测试里手抄的常量。
 
 运行（每次跑完把 JSON/TXT 写出到 evals/product-v2/）：
-  & "C:\\Users\\31368\\.local\\bin\\uv.exe" run --no-project --with-requirements requirements.txt --with playwright python tools/verify_v2_1_1_indexeddb.py
+  uv run --locked python tools/verify_v2_1_1_indexeddb.py
 """
 from __future__ import annotations
 
@@ -28,6 +28,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 STORAGE_DIR = ROOT / "app" / "product_v2" / "storage"
+VENDOR_DIR = ROOT / "app" / "product_v2" / "vendor"
 HARNESS_DIR = ROOT / "evals" / "product-v2" / "harness"
 EVIDENCE_DIR = ROOT / "evals" / "product-v2"
 
@@ -52,10 +53,15 @@ EXPECTED_CASE_IDS = [
 
 
 class StaticHandler(BaseHTTPRequestHandler):
-    """只服务测试需要的两类路径：/storage/* 与 /harness/*。"""
+    """只服务测试需要的三类路径：/storage/*、/vendor/* 与 /harness/*。
+
+    /vendor/* 是 SEL-008 之后 storage/zip.js 的新依赖（fflate）；
+    漏放行时表现为页面模块加载失败、套件结果永远不出现。
+    """
 
     roots = {
         "/storage/": STORAGE_DIR,
+        "/vendor/": VENDOR_DIR,
         "/harness/": HARNESS_DIR,
     }
 

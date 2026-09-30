@@ -1,0 +1,24 @@
+amz-listing-kit Product V2 V2.2.4 max_tokens 参数接受性探针
+NOT-AUTHORITY: point-in-time verification evidence only
+observed_at: 2026-09-30T02:16:00+08:00
+status: passed
+
+目的
+- V2.2.4 真实探针在默认预算 1400 与第一次修复值 3200 下都出现过 PROVIDER_OUTPUT_TRUNCATED
+  （见 v2.2.4-category-generality-20260930-021048.txt 与 -021404.txt）。修复方向是把默认
+  预算提到 5000；本探针只回答「端点是否接受 max_tokens=5000」，不评价输出质量。
+
+方法
+- GET https://dashscope.aliyuncs.com/compatible-mode/v1/models 列出可用模型。
+- POST https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions，模型
+  deepseek-v4.1-flash，单条 user 消息「只回复两个字符：OK」，max_tokens=5000，共 1 次调用。
+
+观察
+- models 列表包含 deepseek-v4.1-flash（另有 vanchin/deepseek-v4.1-flash）。
+- chat 调用正常返回：finish_reason=stop；usage：prompt_tokens=36、completion_tokens=20
+  （其中 reasoning_tokens=18、text_tokens=2）；没有 400 / invalid parameter。
+
+边界
+- 证明：该端点在 deepseek-v4.1-flash 上接受 max_tokens=5000；推理型输出会先消耗 reasoning tokens。
+- 不证明：5000 覆盖所有输入的输出长度（V2.2.4 的成功样本 completion 为 1604–2804），
+  也不证明大于 5000 的值是否可用。

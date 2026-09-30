@@ -9,7 +9,7 @@
      0 次图片提交，方案与 Prompt 全部落盘。
 
 运行：
-  & "C:\\Users\\31368\\.local\\bin\\uv.exe" run --no-project --with-requirements requirements.txt --with playwright python tools/verify_product_v1_suite_command_ui.py
+  uv run --locked python tools/verify_product_v1_suite_command_ui.py
 """
 from __future__ import annotations
 

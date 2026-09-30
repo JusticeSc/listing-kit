@@ -1,0 +1,38 @@
+amz-listing-kit Product V2 V2.3.3 spec versions
+NOT-AUTHORITY: point-in-time verification evidence only
+observed_at: 2026-09-30T03:17:56
+status: passed
+model_calls: 0 (offline domain + UI flow)
+json: evals/product-v2/v2.3.3-spec-versions-20260930-031748-v234-regression.json
+screenshot: evals/product-v2/v2.3.3-spec-versions-20260930-031748.png
+
+CHECKS
+- [PASS] V2.3.3-00 domain / workspace / harness 通过 node --check（ESM 语法门）
+- [PASS] V2.3.3-01 契约套件全部通过且用例清单完整（F01..F12）
+- [PASS] V2.3.3-02 反向探针确实被执行（风格/单图校验、缺失 shotId、非法版本号）
+- [PASS] V2.3.3-03 套图方案就绪后规格区解锁；保存前就说明影响范围
+- [PASS] V2.3.3-04 保存公共风格 v1：版本推进，全部图片的审核清单出现风格行
+- [PASS] V2.3.3-05 保存单图规格 v1：只有目标图变成 v1，其他图仍是默认
+- [PASS] V2.3.3-06 再次保存风格 v2：单图规格版本不受影响（两套文档彼此独立）
+- [PASS] V2.3.3-07 恢复风格上一版本：写为新版本 v3、内容回到 v1、历史只增不删
+- [PASS] V2.3.3-08 单图规格恢复：v3 payload 等于 v1，历史三条
+- [PASS] V2.3.3-09 刷新恢复：风格 v3、单图规格 v3、清单与历史原样
+- [PASS] V2.3.3-10 契约会话与 UI 会话零 console error / page error
+- [PASS] V2.3.3-11 正式入口自检仍全过（V2.3.3 不破坏既有入口）
+
+SUITE CASES
+- [PASS] F01 空风格规格合法；投影只列有值字段
+- [PASS] F02 风格校验反向探针：七类越界都要变红
+- [PASS] F03 风格差异只报告真正变化的字段
+- [PASS] F04 单图默认值按角色派生：主图/场景/自定义各自不同
+- [PASS] F05 单图校验反向探针：九类越界都要变红
+- [PASS] F06 单图差异：purpose 与 keep 各自成条，未变不报
+- [PASS] F07 整套投影：风格改动影响全部图片并保留计划与商品理解
+- [PASS] F08 单图投影：只影响目标图且必须带 shotId
+- [PASS] F09 回退选版：只选比当前小的最高版本；边界与非法输入都要说清
+- [PASS] F10 审核清单：默认规格标默认，保存规格标已保存，风格行随风格变化
+- [PASS] F11 聚合 digest：按计划顺序、默认/已保存计数、风格配置状态
+- [PASS] F12 确定性：同输入两次投影一致；校验与差异不修改输入
+
+BOUNDARY
+证明规格层在真实浏览器里可编辑、可回退、影响范围精确：StyleSpec 影响整套（Prompt 版本、审核报告、一致性报告失效；套图计划与商品理解保留），ShotSpec 只影响目标图（其他图片保留）；版本 append-only，恢复上一版本写成新版本；审核清单由规格确定性投影。F01–F12 覆盖默认值、两类校验反向探针、差异、失效投影与回退选版，UI 流覆盖保存 v1/v2、单图独立、回退成 v3 与刷新恢复。全程 0 次真实模型调用。不证明 Prompt 编译与请求一致性（V2.3.4）、生成前确认（V2.3.5）、真实生成与审核（Phase 4 起）。

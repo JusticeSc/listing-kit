@@ -1,0 +1,37 @@
+amz-listing-kit Product V2 V2.2.4 category generality probe (Gate G2 evidence)
+NOT-AUTHORITY: point-in-time verification evidence only
+observed_at: 2026-09-30T02:10:48
+status: failed
+mode: live
+json: evals/product-v2/v2.2.4-category-generality-20260930-021048.json
+policy: live_budget_calls=4 calls_used=4 no_retry=true
+
+CRITERIA
+- [PASS] V2.2.4-C1 输入驱动：四个 fixture 通过 parse_request 且用户消息两两不同
+- [PASS] V2.2.4-C5 无常量泄漏：fixture 词不在 src/config/JS 里，系统提示无品类枚举
+- [PASS] V2.2.4-L0 真实调用前置：注册表 provider 已配置且一次一类
+- [FAIL] V2.2.4-C2 合法性：每个返回槽位都通过消费侧 check_proposal_slot
+  detail: {"problems": {}}
+- [FAIL] V2.2.4-C3 结构差异：四类动态槽位集合两两不全等且至少两类有独有槽位
+  detail: {"complete": false, "sets": {"brand_rigid": [], "apparel": [], "packaged_food": [], "furniture": []}, "pairwise": [], "unique": {}, "classes_with_unique": [], "no_equal_pair": false, "unique_classes_ok": false}
+- [FAIL] V2.2.4-C4 可追溯：动态槽位 source/status/confidence/evidence 与 summary 合规
+  detail: {"brand_rigid": {"ok": false, "reason": "failed"}, "apparel": {"ok": false, "reason": "failed"}, "packaged_food": {"ok": false, "reason": "failed"}, "furniture": {"ok": false, "reason": "failed"}}
+
+FIXTURES
+- brand_rigid（品牌刚性商品）：期望 品牌 / 材质 / 性能参数类动态槽位；用户消息指纹 805d3718ed1b6942
+- apparel（服装）：期望 面料 / 版型 / 尺码类动态槽位；用户消息指纹 6264529cdb805fae
+- packaged_food（包装食品）：期望 配料 / 净含量 / 保质期类动态槽位；用户消息指纹 2614d06ed3c91aef
+- furniture（家具）：期望 尺寸 / 承重 / 安装类动态槽位；用户消息指纹 794ca4e6dffa54af
+
+CLASSES
+## brand_rigid（品牌刚性商品）status=failed
+- failure: {"family": "provider_failed", "code": "PROVIDER_OUTPUT_TRUNCATED", "message": "模型输出被 max_tokens 截断。", "retry_policy": "requires_review", "http_status": null, "request_id": null, "details": {"max_tokens": 1400}}
+## apparel（服装）status=failed
+- failure: {"family": "provider_failed", "code": "PROVIDER_OUTPUT_TRUNCATED", "message": "模型输出被 max_tokens 截断。", "retry_policy": "requires_review", "http_status": null, "request_id": null, "details": {"max_tokens": 1400}}
+## packaged_food（包装食品）status=failed
+- failure: {"family": "provider_failed", "code": "PROVIDER_OUTPUT_TRUNCATED", "message": "模型输出被 max_tokens 截断。", "retry_policy": "requires_review", "http_status": null, "request_id": null, "details": {"max_tokens": 1400}}
+## furniture（家具）status=failed
+- failure: {"family": "provider_failed", "code": "PROVIDER_OUTPUT_TRUNCATED", "message": "模型输出被 max_tokens 截断。", "retry_policy": "requires_review", "http_status": null, "request_id": null, "details": {"max_tokens": 1400}}
+
+BOUNDARY
+证明四类 fixture 的输入投影两两不同（C1）、实现里没有把 fixture 商品词或品类枚举写成常量（C5）；--live 另外证明每类一次真实调用返回的槽位合法（C2）、四类动态槽位结构两两不同且至少两类有独有槽位（C3）、来源/状态/置信度/证据/summary 可追溯（C4）。不证明：槽位语义是否覆盖该类真实卖点、界面投影是否好用、套图规划/生成/交付闭环，以及模型在别的输入上的稳定性。

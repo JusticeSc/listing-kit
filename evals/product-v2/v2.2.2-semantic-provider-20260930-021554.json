@@ -1,0 +1,649 @@
+{
+  "task": "V2.2.2",
+  "suite_id": "v2.2.2-semantic-provider",
+  "status": "passed",
+  "finished_at": "2026-09-30T02:15:54",
+  "live_requested": false,
+  "checks": [
+    {
+      "id": "V2.2.2-01",
+      "title": "跨语言核心槽位注册表一致（8 项：slot_id/label/value_type/critical）",
+      "ok": true,
+      "detail": {
+        "python": 8,
+        "js": 8,
+        "diff": []
+      }
+    },
+    {
+      "id": "V2.2.2-02",
+      "title": "输入合同：合法投影通过；7 类越界全部 input_rejected / fatal 且不回显正文",
+      "ok": true,
+      "detail": {
+        "valid_slots": 6,
+        "cases": [
+          {
+            "case": "空商品名",
+            "ok": true,
+            "failure": {
+              "family": "input_rejected",
+              "code": "INPUT_INVALID",
+              "message": "商品资料不满足语义分析的最小条件。",
+              "retry_policy": "fatal",
+              "http_status": null,
+              "request_id": null,
+              "details": {
+                "problems": [
+                  {
+                    "path": "$.product_name",
+                    "message": "String should have at least 1 character"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "case": "纯空白商品名",
+            "ok": true,
+            "failure": {
+              "family": "input_rejected",
+              "code": "INPUT_INVALID",
+              "message": "商品资料不满足语义分析的最小条件。",
+              "retry_policy": "fatal",
+              "http_status": null,
+              "request_id": null,
+              "details": {
+                "problems": [
+                  {
+                    "path": "$.product_name",
+                    "message": "Value error, 商品名称不能只有空白字符。"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "case": "没有参考图",
+            "ok": true,
+            "failure": {
+              "family": "input_rejected",
+              "code": "INPUT_INVALID",
+              "message": "商品资料不满足语义分析的最小条件。",
+              "retry_policy": "fatal",
+              "http_status": null,
+              "request_id": null,
+              "details": {
+                "problems": [
+                  {
+                    "path": "$.references",
+                    "message": "Tuple should have at least 1 item after validation, not 0"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "case": "参考图超过上限",
+            "ok": true,
+            "failure": {
+              "family": "input_rejected",
+              "code": "INPUT_INVALID",
+              "message": "商品资料不满足语义分析的最小条件。",
+              "retry_policy": "fatal",
+              "http_status": null,
+              "request_id": null,
+              "details": {
+                "problems": [
+                  {
+                    "path": "$.references",
+                    "message": "Tuple should have at most 20 items after validation, not 21"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "case": "参考图角色不在词表",
+            "ok": true,
+            "failure": {
+              "family": "input_rejected",
+              "code": "INPUT_INVALID",
+              "message": "商品资料不满足语义分析的最小条件。",
+              "retry_policy": "fatal",
+              "http_status": null,
+              "request_id": null,
+              "details": {
+                "problems": [
+                  {
+                    "path": "$.references[0].role",
+                    "message": "Input should be 'primary', 'detail', 'packaging', 'scene', 'competitor' or 'other'"
+                  },
+                  {
+                    "path": "$.references",
+                    "message": "Tuple should have at least 1 item after validation, not 0"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "case": "介绍超过长度上限",
+            "ok": true,
+            "failure": {
+              "family": "input_rejected",
+              "code": "INPUT_INVALID",
+              "message": "商品资料不满足语义分析的最小条件。",
+              "retry_policy": "fatal",
+              "http_status": null,
+              "request_id": null,
+              "details": {
+                "problems": [
+                  {
+                    "path": "$.description",
+                    "message": "String should have at most 2000 characters"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "case": "max_slots 越界",
+            "ok": true,
+            "failure": {
+              "family": "input_rejected",
+              "code": "INPUT_INVALID",
+              "message": "商品资料不满足语义分析的最小条件。",
+              "retry_policy": "fatal",
+              "http_status": null,
+              "request_id": null,
+              "details": {
+                "problems": [
+                  {
+                    "path": "$.max_slots",
+                    "message": "Input should be greater than or equal to 1"
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "V2.2.2-03",
+      "title": "装配与真实请求体：json_mode + extra_body.max_tokens + max_retries=0，单次调用",
+      "ok": true,
+      "detail": {
+        "payload_keys": [
+          "max_tokens",
+          "model",
+          "response_format",
+          "stream"
+        ],
+        "requests": 1,
+        "max_tokens": 5000,
+        "max_completion_tokens": null,
+        "response_format": {
+          "type": "json_object"
+        },
+        "system_has_schema": true,
+        "request_id": "rid-verify-1",
+        "usage": {
+          "prompt_tokens": 120,
+          "completion_tokens": 180,
+          "total_tokens": 300
+        },
+        "slots": [
+          "key_material"
+        ]
+      }
+    },
+    {
+      "id": "V2.2.2-04",
+      "title": "禁止的静默清洗：缺证据 / 非对象槽位 / 模型自称 confirmed / 超上限全部整包拒绝",
+      "ok": true,
+      "detail": [
+        {
+          "case": "缺 evidence（系统不代写）",
+          "ok": true,
+          "failure": {
+            "family": "provider_failed",
+            "code": "INVALID_RESPONSE",
+            "message": "模型输出无法按结构契约解析；整包拒绝。",
+            "retry_policy": "retryable",
+            "http_status": null,
+            "request_id": "rid-verify-1",
+            "details": {
+              "problems": [
+                {
+                  "path": "$.slots[0].evidence",
+                  "message": "Tuple should have at least 1 item after validation, not 0"
+                },
+                {
+                  "path": "$.slots",
+                  "message": "Tuple should have at least 1 item after validation, not 0"
+                }
+              ],
+              "error_type": "OutputParserException"
+            }
+          }
+        },
+        {
+          "case": "槽位不是对象（不丢弃）",
+          "ok": true,
+          "failure": {
+            "family": "provider_failed",
+            "code": "INVALID_RESPONSE",
+            "message": "模型输出无法按结构契约解析；整包拒绝。",
+            "retry_policy": "retryable",
+            "http_status": null,
+            "request_id": "rid-verify-1",
+            "details": {
+              "problems": [
+                {
+                  "path": "$.slots[0]",
+                  "message": "Input should be a valid dictionary or instance of RawSlot"
+                },
+                {
+                  "path": "$.slots",
+                  "message": "Tuple should have at least 1 item after validation, not 0"
+                }
+              ],
+              "error_type": "OutputParserException"
+            }
+          }
+        },
+        {
+          "case": "模型把 status 标成 confirmed",
+          "ok": true,
+          "failure": {
+            "family": "provider_failed",
+            "code": "INVALID_RESPONSE",
+            "message": "模型输出无法按结构契约解析；整包拒绝。",
+            "retry_policy": "retryable",
+            "http_status": null,
+            "request_id": "rid-verify-1",
+            "details": {
+              "problems": [
+                {
+                  "path": "$.slots[0].status",
+                  "message": "Extra inputs are not permitted"
+                },
+                {
+                  "path": "$.slots",
+                  "message": "Tuple should have at least 1 item after validation, not 0"
+                }
+              ],
+              "error_type": "OutputParserException"
+            }
+          }
+        },
+        {
+          "case": "超过本次 max_slots（不截断）",
+          "ok": true,
+          "failure": {
+            "family": "provider_failed",
+            "code": "INVALID_RESPONSE",
+            "message": "模型提案的槽位数超过本次上限；拒绝截断，整包拒绝。",
+            "retry_policy": "retryable",
+            "http_status": null,
+            "request_id": null,
+            "details": {
+              "count": 7,
+              "max_slots": 6
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "V2.2.2-05",
+      "title": "截断 / 内容策略拒绝 / 空可见文本的归口与重试策略正确",
+      "ok": true,
+      "detail": [
+        {
+          "case": "输出被 length 截断",
+          "ok": true,
+          "failure": {
+            "family": "provider_failed",
+            "code": "PROVIDER_OUTPUT_TRUNCATED",
+            "message": "模型输出被 max_tokens 截断。",
+            "retry_policy": "requires_review",
+            "http_status": null,
+            "request_id": null,
+            "details": {
+              "max_tokens": 5000
+            }
+          }
+        },
+        {
+          "case": "内容策略拒绝",
+          "ok": true,
+          "failure": {
+            "family": "provider_failed",
+            "code": "PROVIDER_REFUSED",
+            "message": "模型拒绝分析该输入（内容策略）。",
+            "retry_policy": "fatal",
+            "http_status": null,
+            "request_id": null,
+            "details": {}
+          }
+        },
+        {
+          "case": "可见文本为空（reasoning 耗尽）",
+          "ok": true,
+          "failure": {
+            "family": "provider_failed",
+            "code": "INVALID_RESPONSE",
+            "message": "模型没有产生可见文本；推理预算可能被 reasoning 耗尽（提高 max_tokens 后重试）。",
+            "retry_policy": "retryable",
+            "http_status": null,
+            "request_id": "rid-verify-1",
+            "details": {
+              "max_tokens": 5000,
+              "usage": {
+                "prompt_tokens": 120,
+                "completion_tokens": 64,
+                "total_tokens": 184
+              },
+              "visible_chars": 0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "V2.2.2-06",
+      "title": "SDK / 传输异常映射矩阵（11 类）符合计划 §9.1 归口表",
+      "ok": true,
+      "detail": [
+        {
+          "case": "401 鉴权失败",
+          "ok": true,
+          "code": "PROVIDER_AUTH_FAILED",
+          "family": "provider_failed",
+          "retry_policy": "fatal",
+          "http_status": 401
+        },
+        {
+          "case": "403 无权限",
+          "ok": true,
+          "code": "PROVIDER_AUTH_FAILED",
+          "family": "provider_failed",
+          "retry_policy": "fatal",
+          "http_status": 403
+        },
+        {
+          "case": "429 限流",
+          "ok": true,
+          "code": "PROVIDER_RATE_LIMITED",
+          "family": "provider_failed",
+          "retry_policy": "retryable",
+          "http_status": 429
+        },
+        {
+          "case": "400 请求被拒",
+          "ok": true,
+          "code": "INPUT_REJECTED",
+          "family": "input_rejected",
+          "retry_policy": "fatal",
+          "http_status": 400
+        },
+        {
+          "case": "422 请求被拒",
+          "ok": true,
+          "code": "INPUT_REJECTED",
+          "family": "input_rejected",
+          "retry_policy": "fatal",
+          "http_status": 422
+        },
+        {
+          "case": "500 服务错误",
+          "ok": true,
+          "code": "PROVIDER_HTTP_ERROR",
+          "family": "provider_failed",
+          "retry_policy": "retryable",
+          "http_status": 500
+        },
+        {
+          "case": "超时（无法确认是否送达）",
+          "ok": true,
+          "code": "PROVIDER_TIMEOUT",
+          "family": "provider_unknown",
+          "retry_policy": "requires_review",
+          "http_status": null
+        },
+        {
+          "case": "连接失败",
+          "ok": true,
+          "code": "PROVIDER_UNREACHABLE",
+          "family": "provider_failed",
+          "retry_policy": "retryable",
+          "http_status": null
+        },
+        {
+          "case": "内容策略拒绝",
+          "ok": true,
+          "code": "PROVIDER_REFUSED",
+          "family": "provider_failed",
+          "retry_policy": "fatal",
+          "http_status": null
+        },
+        {
+          "case": "输出截断",
+          "ok": true,
+          "code": "PROVIDER_OUTPUT_TRUNCATED",
+          "family": "provider_failed",
+          "retry_policy": "requires_review",
+          "http_status": null
+        },
+        {
+          "case": "未分类异常",
+          "ok": true,
+          "code": "INTERNAL_ERROR",
+          "family": "internal",
+          "retry_policy": "requires_review",
+          "http_status": null
+        }
+      ]
+    },
+    {
+      "id": "V2.2.2-07",
+      "title": "错误消息与 capabilities 不回显密钥（按 *** 遮蔽）",
+      "ok": true,
+      "detail": {
+        "blobs": [
+          "{\"family\": \"provider_failed\", \"code\": \"PROVIDER_HTTP_ERROR\", \"message\": \"Incorrect API key provided: ***. identifier sk-***\", \"retry_policy\": \"retryable\", \"http_status\": 500, \"request_id\": null, \"details\": {\"provider_code\": null}}",
+          "{\"family\": \"provider_failed\", \"code\": \"PROVIDER_AUTH_FAILED\", \"message\": \"语义模型鉴权失败：请检查 DASHSCOPE_API_KEY 是否有效。\", \"retry_policy\": \"fatal\", \"http_status\": 401, \"request_id\": null, \"details\": {\"provider_code\": null}}"
+        ],
+        "capabilities": "{\"provider_id\": \"dashscope-semantic\", \"model_id\": \"deepseek-v4.1-flash\", \"semantic_contract\": \"v2.2.2\", \"supports_images\": false, \"configured\": true, \"endpoint_host\": \"https://dashscope.aliyuncs.com/compatible-mode/v1\", \"timeout_seconds\": 60.0, \"max_tokens\": 5000, \"structured_output\": \"json_mode\", \"transport\": \"langchain-openai/ChatOpenAI\"}"
+      }
+    },
+    {
+      "id": "V2.2.2-08",
+      "title": "fake provider 全部场景分类正确，且每次 analyze 只调用一次（无隐藏重提，UNKNOWN 不自动重提）",
+      "ok": true,
+      "detail": [
+        {
+          "scenario": "ok",
+          "ok": true,
+          "outcome": "proposal:5"
+        },
+        {
+          "scenario": "low_confidence",
+          "ok": true,
+          "outcome": "proposal:5"
+        },
+        {
+          "scenario": "conflict",
+          "ok": true,
+          "outcome": "proposal:5"
+        },
+        {
+          "scenario": "refusal",
+          "ok": true,
+          "outcome": "PROVIDER_REFUSED/fatal"
+        },
+        {
+          "scenario": "invalid_json",
+          "ok": true,
+          "outcome": "INVALID_RESPONSE/retryable"
+        },
+        {
+          "scenario": "schema_violation",
+          "ok": true,
+          "outcome": "caller-rejected"
+        },
+        {
+          "scenario": "output_truncated",
+          "ok": true,
+          "outcome": "PROVIDER_OUTPUT_TRUNCATED/requires_review"
+        },
+        {
+          "scenario": "empty_output",
+          "ok": true,
+          "outcome": "INVALID_RESPONSE/retryable"
+        },
+        {
+          "scenario": "timeout_after_send",
+          "ok": true,
+          "outcome": "PROVIDER_TIMEOUT/requires_review"
+        },
+        {
+          "scenario": "timeout_before_send",
+          "ok": true,
+          "outcome": "PROVIDER_TIMEOUT/retryable"
+        },
+        {
+          "scenario": "unreachable",
+          "ok": true,
+          "outcome": "PROVIDER_UNREACHABLE/retryable"
+        },
+        {
+          "scenario": "rate_limited",
+          "ok": true,
+          "outcome": "PROVIDER_RATE_LIMITED/retryable"
+        },
+        {
+          "scenario": "http_error",
+          "ok": true,
+          "outcome": "PROVIDER_HTTP_ERROR/retryable"
+        },
+        {
+          "scenario": "auth_failed",
+          "ok": true,
+          "outcome": "PROVIDER_AUTH_FAILED/fatal"
+        },
+        {
+          "scenario": "internal_error",
+          "ok": true,
+          "outcome": "INTERNAL_ERROR/requires_review"
+        }
+      ]
+    },
+    {
+      "id": "V2.2.2-09",
+      "title": "归一化输出形状正确；反向探针：模型自称 confirmed 被消费侧拒绝",
+      "ok": true,
+      "detail": {
+        "fact": {
+          "schema_version": 1,
+          "slot_id": "key_material",
+          "label": "主要材质",
+          "authority": "core_fixed",
+          "value_type": "text",
+          "value": "316 不锈钢",
+          "source": "model_inference",
+          "status": "proposed",
+          "confidence": 0.8,
+          "evidence": [
+            {
+              "kind": "user",
+              "ref": "product_input",
+              "note": "来自商品介绍"
+            }
+          ],
+          "depends_on": [],
+          "model_id": "deepseek-v4.1-flash",
+          "critical": false
+        },
+        "meta": {
+          "provider_id": "dashscope-semantic",
+          "model_id": "deepseek-v4.1-flash",
+          "request_id": "rid-verify-1",
+          "usage": {
+            "prompt_tokens": 120,
+            "completion_tokens": 180,
+            "total_tokens": 300
+          },
+          "latency_ms": 8,
+          "inputs_used": [
+            "product_input",
+            "reference_metadata"
+          ],
+          "reference_images_sent": false,
+          "attempts": 1
+        },
+        "reverse": {
+          "ok": true,
+          "codes": [
+            "INVALID_RESPONSE"
+          ],
+          "failure": {
+            "family": "provider_failed",
+            "code": "INVALID_RESPONSE",
+            "message": "模型输出未通过结构校验；拒绝写入。",
+            "retry_policy": "retryable",
+            "http_status": null,
+            "request_id": null,
+            "details": {
+              "problems": [
+                {
+                  "path": "$.slots[0].status",
+                  "message": "模型提案的 status 只能是 proposed；确认权只属于人。"
+                }
+              ],
+              "count": 1
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "V2.2.2-10",
+      "title": "provider 注册表与代码一致（默认 provider、模型、环境变量、归口、test_double）",
+      "ok": true,
+      "detail": {
+        "observed": {
+          "default": "dashscope-semantic",
+          "model_id": "deepseek-v4.1-flash",
+          "adapter": "v2_dashscope_semantic",
+          "api_key_env": "DASHSCOPE_API_KEY",
+          "model_env": "SEMANTIC_MODEL",
+          "base_url_env": "AMZ_V2_SEMANTIC_BASE_URL",
+          "timeout_env": "AMZ_V2_SEMANTIC_TIMEOUT",
+          "max_tokens_env": "AMZ_V2_SEMANTIC_MAX_TOKENS",
+          "max_attempts": 1,
+          "structured_output": "json_mode",
+          "stateless": true,
+          "test_double": false,
+          "fake_adapter": "v2_fake_semantic",
+          "fake_test_double": true,
+          "families": [
+            "input_rejected",
+            "provider_failed",
+            "provider_unknown",
+            "internal"
+          ],
+          "retry_policies": [
+            "retryable",
+            "requires_review",
+            "fatal"
+          ]
+        },
+        "timeout_default": 60.0
+      }
+    }
+  ],
+  "boundary": "证明语义 Provider 的离线契约与装配：跨语言核心注册表一致、输入越界分类（input_rejected/fatal）、json_mode 与 extra_body.max_tokens 与 max_retries=0 的真实请求体、三条静默清洗负例（缺证据 / 非对象槽位 / 超上限不截断）、截断与内容策略拒绝与空可见文本的归口、SDK 异常映射矩阵、密钥遮蔽、fake 全场景与无隐藏重提、归一化形状与消费侧反向探针。--live 只证明 1 次真实正例与 1 次无效密钥负例；不证明模型输出质量、界面投影、套图规划、图片生成与交付闭环。"
+}

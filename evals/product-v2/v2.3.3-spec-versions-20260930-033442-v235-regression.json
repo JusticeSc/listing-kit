@@ -1,0 +1,405 @@
+{
+  "task": "V2.3.3",
+  "suite_id": "v2.3.3-specs",
+  "status": "passed",
+  "finished_at": "2026-09-30T03:34:50",
+  "model_calls": 0,
+  "checks": [
+    {
+      "id": "V2.3.3-00",
+      "title": "domain / workspace / harness 通过 node --check（ESM 语法门）",
+      "ok": true,
+      "detail": {
+        "files": [
+          {
+            "file": "app/product_v2/domain/shared.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/domain/errors.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/domain/slots.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/domain/intake.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/domain/brief.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/domain/invalidation.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/domain/suite-plan.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/domain/suite.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/domain/specs.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/domain/index.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/workspace.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "evals/product-v2/harness/specs-contract.js",
+            "rc": 0,
+            "stderr": ""
+          }
+        ],
+        "ok": true
+      }
+    },
+    {
+      "id": "V2.3.3-01",
+      "title": "契约套件全部通过且用例清单完整（F01..F12）",
+      "ok": true,
+      "detail": {
+        "status": "passed",
+        "cases": 12,
+        "missing": [],
+        "failed": [],
+        "errors": []
+      }
+    },
+    {
+      "id": "V2.3.3-02",
+      "title": "反向探针确实被执行（风格/单图校验、缺失 shotId、非法版本号）",
+      "ok": true,
+      "detail": {
+        "expected": [
+          "F02",
+          "F05",
+          "F08",
+          "F09"
+        ],
+        "seen": [
+          "F02",
+          "F05",
+          "F08",
+          "F09"
+        ]
+      }
+    },
+    {
+      "id": "V2.3.3-03",
+      "title": "套图方案就绪后规格区解锁；保存前就说明影响范围",
+      "ok": true,
+      "detail": {
+        "effect": "保存后影响：全部 4 张图；失效：Prompt 版本、审核报告、整套一致性报告；保留：项目历史、候选图片、商品理解、套图计划、参考图。",
+        "version": "尚未保存"
+      }
+    },
+    {
+      "id": "V2.3.3-04",
+      "title": "保存公共风格 v1：版本推进，全部图片的审核清单出现风格行",
+      "ok": true,
+      "detail": {
+        "style_version": 1,
+        "shot_meta": [
+          "默认（未保存）",
+          "默认（未保存）",
+          "默认（未保存）",
+          "默认（未保存）"
+        ]
+      }
+    },
+    {
+      "id": "V2.3.3-05",
+      "title": "保存单图规格 v1：只有目标图变成 v1，其他图仍是默认",
+      "ok": true,
+      "detail": {
+        "main": 1,
+        "other": "默认（未保存）"
+      }
+    },
+    {
+      "id": "V2.3.3-06",
+      "title": "再次保存风格 v2：单图规格版本不受影响（两套文档彼此独立）",
+      "ok": true,
+      "detail": {
+        "style": 2,
+        "shot": 1
+      }
+    },
+    {
+      "id": "V2.3.3-07",
+      "title": "恢复风格上一版本：写为新版本 v3、内容回到 v1、历史只增不删",
+      "ok": true,
+      "detail": {
+        "versions": [
+          3,
+          2,
+          1
+        ],
+        "background": "浅灰无缝背景"
+      }
+    },
+    {
+      "id": "V2.3.3-08",
+      "title": "单图规格恢复：v3 payload 等于 v1，历史三条",
+      "ok": true,
+      "detail": {
+        "versions": [
+          3,
+          2,
+          1
+        ],
+        "purpose": "主图：完整展示保温杯"
+      }
+    },
+    {
+      "id": "V2.3.3-09",
+      "title": "刷新恢复：风格 v3、单图规格 v3、清单与历史原样",
+      "ok": true,
+      "detail": {
+        "style_versions": [
+          3,
+          2,
+          1
+        ],
+        "shot_versions": [
+          3,
+          2,
+          1
+        ]
+      }
+    },
+    {
+      "id": "V2.3.3-10",
+      "title": "契约会话与 UI 会话零 console error / page error",
+      "ok": true,
+      "detail": {
+        "console": [],
+        "page": []
+      }
+    },
+    {
+      "id": "V2.3.3-11",
+      "title": "正式入口自检仍全过（V2.3.3 不破坏既有入口）",
+      "ok": true,
+      "detail": {
+        "args": [
+          "--check"
+        ],
+        "rc": 0,
+        "tail": [
+          "  PASS  语义分析路由（fake provider）返回提案且标记 unknown=false           status=200 slots=5",
+          "  PASS  非法 JSON 归 input_rejected/400                         status=400 error={'family': 'input_rejected', 'code': 'INPUT_INVALID', 'message': '请求体不是合法 JSON。', 'retry_policy': 'fatal', 'http_status': None, 'request_id': None, 'details': {'problems': None}}",
+          "  PASS  超过字节上限的请求体被拒（400 input_rejected）                     status=400 bytes=262676",
+          "  PASS  合法 JSON 但字段越界归 input_rejected/400（不调用模型）             status=400 error={'family': 'input_rejected', 'code': 'INPUT_INVALID', 'message': '请求字段不符合语义请求契约；没有调用模型。', 'retry_policy': 'fatal', 'http_status': None, 'request_id': None, 'details': {'problems': [{'path': '$.product_name', 'message': 'Field required'}]}}",
+          "  PASS  provider 不可用时 capabilities 仍 200 且 configured=false  status=200 unavailable={'kind': 'dependency', 'detail': 'RuntimeError: 自检：语义 provider 构造失败'}",
+          "  PASS  provider 不可用时分析路由 503 且错误分类明确                        status=503 error={'family': 'internal', 'code': 'PROVIDER_NOT_CONFIGURED', 'message': '语义 provider 不可用：检查注册表、依赖与 DASHSCOPE_API_KEY。', 'retry_policy': 'fatal', 'http_status': 503, 'request_id': None, 'details': {'kind': 'dependency', 'detail': 'RuntimeError: 自检：语义 provider 构造失败'}}",
+          "  PASS  未定义的无状态写路由保持 404                                     status=404",
+          "V2 正式入口自检：21/21 通过。"
+        ]
+      }
+    }
+  ],
+  "suite": {
+    "suite": "v2.3.3-specs",
+    "status": "passed",
+    "cases": [
+      {
+        "id": "F01",
+        "title": "空风格规格合法；投影只列有值字段",
+        "ok": true,
+        "detail": {
+          "summary": [
+            "背景风格：浅灰无缝背景",
+            "光线：柔和顶光",
+            "避免出现：文字水印"
+          ]
+        },
+        "ms": 1
+      },
+      {
+        "id": "F02",
+        "title": "风格校验反向探针：七类越界都要变红",
+        "ok": true,
+        "detail": {
+          "probes": [
+            "未知字段",
+            "文本字段类型错",
+            "文本超长",
+            "avoid 非列表",
+            "avoid 超条数",
+            "avoid 重复",
+            "avoid 空项"
+          ]
+        },
+        "ms": 1
+      },
+      {
+        "id": "F03",
+        "title": "风格差异只报告真正变化的字段",
+        "ok": true,
+        "detail": {
+          "diffs": [
+            "背景风格",
+            "避免出现"
+          ]
+        },
+        "ms": 0
+      },
+      {
+        "id": "F04",
+        "title": "单图默认值按角色派生：主图/场景/自定义各自不同",
+        "ok": true,
+        "detail": {
+          "main_keep": [
+            "商品外观、颜色与比例",
+            "标识与文字"
+          ],
+          "scene_change": [
+            "环境、道具与光线"
+          ]
+        },
+        "ms": 0
+      },
+      {
+        "id": "F05",
+        "title": "单图校验反向探针：九类越界都要变红",
+        "ok": true,
+        "detail": {
+          "probes": [
+            "空 purpose",
+            "purpose 超长",
+            "keep 非列表",
+            "keep 空列表",
+            "keep 超项数",
+            "单项超长",
+            "重复项",
+            "未知字段",
+            "notes 非文本"
+          ]
+        },
+        "ms": 0
+      },
+      {
+        "id": "F06",
+        "title": "单图差异：purpose 与 keep 各自成条，未变不报",
+        "ok": true,
+        "detail": {
+          "diffs": [
+            "目的",
+            "必须保持"
+          ]
+        },
+        "ms": 0
+      },
+      {
+        "id": "F07",
+        "title": "整套投影：风格改动影响全部图片并保留计划与商品理解",
+        "ok": true,
+        "detail": {
+          "affects": "全部 4 张图",
+          "invalidates": "Prompt 版本、审核报告、整套一致性报告"
+        },
+        "ms": 0
+      },
+      {
+        "id": "F08",
+        "title": "单图投影：只影响目标图且必须带 shotId",
+        "ok": true,
+        "detail": {
+          "affects": "只有「主图·干净背景」这一张",
+          "missing": "变化类型 shot_spec_changed 必须带 shotId，否则无法把影响限制在目标 Shot。",
+          "unknown": "未知变化类型 \"nonsense_changed\"。"
+        },
+        "ms": 0
+      },
+      {
+        "id": "F09",
+        "title": "回退选版：只选比当前小的最高版本；边界与非法输入都要说清",
+        "ok": true,
+        "detail": {
+          "invalid": "当前版本必须是正整数。"
+        },
+        "ms": 0
+      },
+      {
+        "id": "F10",
+        "title": "审核清单：默认规格标默认，保存规格标已保存，风格行随风格变化",
+        "ok": true,
+        "detail": {
+          "default_saved": false,
+          "sections": [
+            "purpose",
+            "keep",
+            "change",
+            "style"
+          ]
+        },
+        "ms": 0
+      },
+      {
+        "id": "F11",
+        "title": "聚合 digest：按计划顺序、默认/已保存计数、风格配置状态",
+        "ok": true,
+        "detail": {
+          "total": 2,
+          "saved": 1
+        },
+        "ms": 0
+      },
+      {
+        "id": "F12",
+        "title": "确定性：同输入两次投影一致；校验与差异不修改输入",
+        "ok": true,
+        "detail": {
+          "deterministic": true
+        },
+        "ms": 0
+      }
+    ],
+    "started_at": "2026-09-29T19:34:44.018Z",
+    "failed_ids": [],
+    "finished_at": "2026-09-29T19:34:44.022Z"
+  },
+  "ui_flow": {
+    "final": {
+      "style_versions": [
+        3,
+        2,
+        1
+      ],
+      "shot_versions": [
+        3,
+        2,
+        1
+      ]
+    }
+  },
+  "console_errors": [],
+  "page_errors": [],
+  "screenshots": [
+    "evals/product-v2/v2.3.3-spec-versions-20260930-033442.png"
+  ],
+  "boundary": "证明规格层在真实浏览器里可编辑、可回退、影响范围精确：StyleSpec 影响整套（Prompt 版本、审核报告、一致性报告失效；套图计划与商品理解保留），ShotSpec 只影响目标图（其他图片保留）；版本 append-only，恢复上一版本写成新版本；审核清单由规格确定性投影。F01–F12 覆盖默认值、两类校验反向探针、差异、失效投影与回退选版，UI 流覆盖保存 v1/v2、单图独立、回退成 v3 与刷新恢复。全程 0 次真实模型调用。不证明 Prompt 编译与请求一致性（V2.3.4）、生成前确认（V2.3.5）、真实生成与审核（Phase 4 起）。"
+}

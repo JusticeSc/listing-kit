@@ -1,0 +1,47 @@
+amz-listing-kit Product V2 V2.3.6 prompt manual edit
+NOT-AUTHORITY: point-in-time verification evidence only
+observed_at: 2026-09-30T09:12:19
+status: passed
+model_calls: 0 (offline domain + UI flow)
+json: evals/product-v2/v2.3.6-prompt-manual-edit-20260930-091203-v241-regression.json
+screenshot: evals/product-v2/v2.3.6-prompt-manual-edit-20260930-091203.png
+
+CHECKS
+- [PASS] V2.3.6-00 domain / workspace / harness 通过 node --check（ESM 语法门）
+- [PASS] V2.3.6-01 M01–M12 契约套件全过且用例齐全
+- [PASS] V2.3.6-02 反向探针确实执行（非法输入 / 未授权引用 / 平台文字 / 篡改 / 失效）
+- [PASS] V2.3.6-02b 既有契约套件回归：Prompt / 确认单 / 规格 / 套图编辑器全过
+- [PASS] V2.3.6-03 套图就绪后 Prompt 区解锁：4 张图未编译、确认被阻断
+- [PASS] V2.3.6-04 编译全部 4 张：可提交、编辑区与理由输入出现、尚无人工编辑标记
+- [PASS] V2.3.6-05 点击确认写入 generation_confirm v1，状态前进 READY_TO_GENERATE
+- [PASS] V2.3.6-06 人工编辑保存为 v2：逐字生效、hash 重算一致、旧版本保留、确认失效回落
+- [PASS] V2.3.6-07 空文本被拒：不产新版本、旧版本保留、错误可见
+- [PASS] V2.3.6-08 未授权引用被拒：提示指回商品理解、旧版本保留
+- [PASS] V2.3.6-09 主图新增文案被拒：平台文字规则、旧版本保留
+- [PASS] V2.3.6-10 编译另一张图触发重渲染后，未保存的草稿与理由仍在
+- [PASS] V2.3.6-11 链式编辑 v3：指向 v2、来源可追溯、hash 再次变化
+- [PASS] V2.3.6-12 重新确认写 v2：指纹变化、逐图版本同步、状态回到 READY_TO_GENERATE
+- [PASS] V2.3.6-13 刷新恢复：人工版本、理由、hash、状态与存储一致
+- [PASS] V2.3.6-14 契约会话与 UI 会话零 console error / page error
+- [PASS] V2.3.6-15 正式入口自检仍全过（V2.3.6 不破坏既有入口）
+
+SUITE CASES
+- [PASS] M01 正常编辑：新记录逐字等于全文，hash 覆盖请求快照，旧版本不动
+- [PASS] M02 链式编辑：再次编辑基于人工版本，版本链与来源引用可追溯
+- [PASS] M03 硬阻断：空文本 / 纯空白 / 超长 / 控制字符都不产记录
+- [PASS] M04 无变化编辑被拒：不产生无意义的新版本
+- [PASS] M05 未确认事实仍硬阻断：非引用与引用写法都不能保存
+- [PASS] M06 语言策略降级为提示：英文指令不再阻断保存，但必须可见
+- [PASS] M07 新增引用必须来自已确认事实：未授权引用阻断，已确认引用在文字角色上允许
+- [PASS] M08 平台文字规则仍然阻断：主图不能新增文案，文字角色可以
+- [PASS] M09 记录篡改必须变红：形状、来源、快照与失效投影都自检
+- [PASS] M10 失效投影精确：只失效目标图的提示词、审核与选择，不动上游与其他图
+- [PASS] M11 过期与确认联动：编辑不改依据，但改变确认指纹并让旧确认失效
+- [PASS] M12 反向探针：编译器仍严格，编辑入口的非法输入全部保留原因码
+- [PASS] 回归 prompt (passed, failed=[])
+- [PASS] 回归 confirm (passed, failed=[])
+- [PASS] 回归 specs (passed, failed=[])
+- [PASS] 回归 suite_editor (passed, failed=[])
+
+BOUNDARY
+证明提示词人工编辑在真实浏览器里可用且可核对：编辑以新版本追加，不覆盖被编辑版本；文本逐字等于记录与请求快照，hash 由快照重算；basis 逐字继承，编辑本身不造成过期，上游前进才过期；失效投影只指向目标 Shot 的提示词、审核与选择，保留商品理解、套图计划、单图规格与其他图片；旧确认因指纹变化失效并回落 PLAN_REVIEW，重新确认写新版本。只有语言策略降级为提示（可见警告），空文本、超长、控制字符、无变化、未确认事实（含引用写法）、未授权新引用与主图新增文案仍然硬阻断。全程 0 次真实模型调用，不发图、不生成候选、不证明出图质量；真实生成属于 Phase 4，审核与返工属于 Phase 5。

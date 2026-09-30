@@ -1,0 +1,32 @@
+amz-listing-kit Product V2 V2.3.1 suite registry contracts
+NOT-AUTHORITY: point-in-time verification evidence only
+observed_at: 2026-09-30T02:52:57
+status: passed
+model_calls: 0 (offline domain contracts)
+json: evals/product-v2/v2.3.1-suite-registry-20260930-025255.json
+
+CHECKS
+- [PASS] V2.3.1-00 domain 与 harness 模块通过 node --check（ESM 语法门）
+- [PASS] V2.3.1-01 契约套件全部通过且用例清单完整（R01..R13）
+- [PASS] V2.3.1-02 反向探针与改数据探针确实被执行（R10 守卫变红 >= 20，R11 覆盖 16 个字段）
+- [PASS] V2.3.1-03 驱动侧独立集成：推荐计划阻断精确、补齐后解锁、自定义 Shot 合法
+- [PASS] V2.3.1-04 浏览器会话零 console error / page error
+- [PASS] V2.3.1-05 正式入口自检仍全过（V2.3.1 不破坏 V2.1.4）
+
+SUITE CASES
+- [PASS] R01 内置注册表自检零问题；schema 与依赖词表齐全
+- [PASS] R02 参考图角色词表 6 项；模板用到的角色都在词表内
+- [PASS] R03 每个模板都能完整投影：角色、名称、意图、依赖文案非空
+- [PASS] R04 主图依赖主参考图：缺失阻断、补齐通过，原因精确到角色
+- [PASS] R05 事实依赖只认 confirmed；其余每种状态都给出精确原因
+- [PASS] R06 尺寸图双路径：核心 size_summary 或该图绑定的动态尺寸事实
+- [PASS] R07 对比图要竞品参考图 + 已确认特征；两条都缺都要逐条说清
+- [PASS] R08 成分图只认该图绑定的已确认事实；确认但未绑定不算数
+- [PASS] R09 自定义 Shot 合法；未知角色、空名称、非法绑定逐项被拒
+- [PASS] R10 反向探针：每条注册表守卫都必须能变红
+- [PASS] R11 改数据探针：每个登记字段都必须有消费者，改动必须让它变样
+- [PASS] R12 推荐计划按 order 有序；必需阻断保留在列表里并给原因
+- [PASS] R13 evaluateShot 用图自身绑定事实求值：绑定与模板依赖一起生效
+
+BOUNDARY
+证明套图注册表（角色 / 模板 / 五类依赖谓词 / 推荐计划 / 自定义 Shot / 草稿校验）在真实 Chromium 里可机检：内置注册表零问题、事实依赖只认 confirmed、阻断原因精确到缺失对象、必需模板被阻断也不丢项、字段没有消费者就报红；R10 反向探针保证 25 条守卫都能变红，R11 逐字段变异保证 16 个登记字段都有真实消费者。全程 0 次模型调用。不证明推荐组合的审美质量、Prompt 编译、真实生成与审核（V2.3.2 起），也不证明服务器侧对不信任输入的独立阻断（按计划 §9.4 需重开）。

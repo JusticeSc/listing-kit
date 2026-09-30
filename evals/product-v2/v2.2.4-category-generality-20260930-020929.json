@@ -1,0 +1,236 @@
+{
+  "task": "V2.2.4",
+  "suite_id": "v2.2.4-category-generality",
+  "status": "passed",
+  "mode": "offline",
+  "finished_at": "2026-09-30T02:09:29",
+  "policy": {
+    "live_budget_calls": 4,
+    "calls_used": 0,
+    "no_retry": true
+  },
+  "fixtures": [
+    {
+      "key": "brand_rigid",
+      "label": "品牌刚性商品",
+      "expect": "品牌 / 材质 / 性能参数类动态槽位",
+      "tokens": [
+        "NORDVAC",
+        "NV-700",
+        "真空保温壶",
+        "12 小时保温≥65°C"
+      ],
+      "fingerprint": "805d3718ed1b6942",
+      "projection": {
+        "product_name": "NORDVAC NV-700 真空保温壶",
+        "description_chars": 78,
+        "selling_points": 4,
+        "focus": "强调保温性能数字与品牌做工",
+        "references": 2,
+        "max_slots": 12,
+        "locale": "zh-CN",
+        "platform": "amazon_us"
+      }
+    },
+    {
+      "key": "apparel",
+      "label": "服装",
+      "expect": "面料 / 版型 / 尺码类动态槽位",
+      "tokens": [
+        "针织连衣裙",
+        "粘纤混纺垂感",
+        "直筒显瘦版型"
+      ],
+      "fingerprint": "6264529cdb805fae",
+      "projection": {
+        "product_name": "轻薄针织连衣裙",
+        "description_chars": 52,
+        "selling_points": 4,
+        "focus": "面料手感与版型呈现",
+        "references": 2,
+        "max_slots": 12,
+        "locale": "zh-CN",
+        "platform": "amazon_us"
+      }
+    },
+    {
+      "key": "packaged_food",
+      "label": "包装食品",
+      "expect": "配料 / 净含量 / 保质期类动态槽位",
+      "tokens": [
+        "每日坚果",
+        "巴旦木",
+        "净含量 750g",
+        "保质期 9 个月"
+      ],
+      "fingerprint": "2614d06ed3c91aef",
+      "projection": {
+        "product_name": "每日坚果混合装",
+        "description_chars": 57,
+        "selling_points": 4,
+        "focus": "配料表与净含量清晰",
+        "references": 2,
+        "max_slots": 12,
+        "locale": "zh-CN",
+        "platform": "amazon_us"
+      }
+    },
+    {
+      "key": "furniture",
+      "label": "家具",
+      "expect": "尺寸 / 承重 / 安装类动态槽位",
+      "tokens": [
+        "升降书桌",
+        "橡木饰面",
+        "承重 80kg",
+        "72–120cm"
+      ],
+      "fingerprint": "794ca4e6dffa54af",
+      "projection": {
+        "product_name": "电动升降书桌",
+        "description_chars": 63,
+        "selling_points": 4,
+        "focus": "尺寸、承重与安装信息",
+        "references": 2,
+        "max_slots": 12,
+        "locale": "zh-CN",
+        "platform": "amazon_us"
+      }
+    }
+  ],
+  "checks": [
+    {
+      "id": "V2.2.4-C1",
+      "title": "输入驱动：四个 fixture 通过 parse_request 且用户消息两两不同",
+      "ok": true,
+      "detail": {
+        "parse_problems": {},
+        "projections": {
+          "brand_rigid": {
+            "product_name": "NORDVAC NV-700 真空保温壶",
+            "description_chars": 78,
+            "selling_points": 4,
+            "focus": "强调保温性能数字与品牌做工",
+            "references": 2,
+            "max_slots": 12,
+            "locale": "zh-CN",
+            "platform": "amazon_us"
+          },
+          "apparel": {
+            "product_name": "轻薄针织连衣裙",
+            "description_chars": 52,
+            "selling_points": 4,
+            "focus": "面料手感与版型呈现",
+            "references": 2,
+            "max_slots": 12,
+            "locale": "zh-CN",
+            "platform": "amazon_us"
+          },
+          "packaged_food": {
+            "product_name": "每日坚果混合装",
+            "description_chars": 57,
+            "selling_points": 4,
+            "focus": "配料表与净含量清晰",
+            "references": 2,
+            "max_slots": 12,
+            "locale": "zh-CN",
+            "platform": "amazon_us"
+          },
+          "furniture": {
+            "product_name": "电动升降书桌",
+            "description_chars": 63,
+            "selling_points": 4,
+            "focus": "尺寸、承重与安装信息",
+            "references": 2,
+            "max_slots": 12,
+            "locale": "zh-CN",
+            "platform": "amazon_us"
+          }
+        },
+        "fingerprints": {
+          "brand_rigid": "805d3718ed1b6942",
+          "apparel": "6264529cdb805fae",
+          "packaged_food": "2614d06ed3c91aef",
+          "furniture": "794ca4e6dffa54af"
+        },
+        "distinct_user_messages": true
+      },
+      "mode": "offline"
+    },
+    {
+      "id": "V2.2.4-C5",
+      "title": "无常量泄漏：fixture 词不在 src/config/JS 里，系统提示无品类枚举",
+      "ok": true,
+      "detail": {
+        "leaks": [],
+        "category_enumeration_hits": [],
+        "scanned_tokens": [
+          "NORDVAC",
+          "NV-700",
+          "真空保温壶",
+          "12 小时保温≥65°C",
+          "针织连衣裙",
+          "粘纤混纺垂感",
+          "直筒显瘦版型",
+          "每日坚果",
+          "巴旦木",
+          "净含量 750g",
+          "保质期 9 个月",
+          "升降书桌",
+          "橡木饰面",
+          "承重 80kg",
+          "72–120cm"
+        ],
+        "scan_roots": [
+          "src",
+          "config",
+          "app/product_v2"
+        ]
+      },
+      "mode": "offline"
+    },
+    {
+      "id": "V2.2.4-C2",
+      "title": "合法性：每个返回槽位都通过消费侧 check_proposal_slot（需要 --live）",
+      "ok": null,
+      "detail": {
+        "reason": "offline 模式按计划 §9.3 只跑 C1 与 C5"
+      },
+      "mode": "live"
+    },
+    {
+      "id": "V2.2.4-C3",
+      "title": "结构差异：四类动态槽位集合两两不全等且至少两类有独有槽位（需要 --live）",
+      "ok": null,
+      "detail": {
+        "reason": "offline 模式按计划 §9.3 只跑 C1 与 C5"
+      },
+      "mode": "live"
+    },
+    {
+      "id": "V2.2.4-C4",
+      "title": "可追溯：动态槽位 source/status/confidence/evidence 与 summary 合规（需要 --live）",
+      "ok": null,
+      "detail": {
+        "reason": "offline 模式按计划 §9.3 只跑 C1 与 C5"
+      },
+      "mode": "live"
+    }
+  ],
+  "provider": {},
+  "classes": {
+    "brand_rigid": {
+      "status": "not_evaluated"
+    },
+    "apparel": {
+      "status": "not_evaluated"
+    },
+    "packaged_food": {
+      "status": "not_evaluated"
+    },
+    "furniture": {
+      "status": "not_evaluated"
+    }
+  },
+  "boundary": "证明四类 fixture 的输入投影两两不同（C1）、实现里没有把 fixture 商品词或品类枚举写成常量（C5）；--live 另外证明每类一次真实调用返回的槽位合法（C2）、四类动态槽位结构两两不同且至少两类有独有槽位（C3）、来源/状态/置信度/证据/summary 可追溯（C4）。不证明：槽位语义是否覆盖该类真实卖点、界面投影是否好用、套图规划/生成/交付闭环，以及模型在别的输入上的稳定性。"
+}

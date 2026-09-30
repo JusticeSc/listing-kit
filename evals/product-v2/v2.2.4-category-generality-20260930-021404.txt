@@ -1,0 +1,40 @@
+amz-listing-kit Product V2 V2.2.4 category generality probe (Gate G2 evidence)
+NOT-AUTHORITY: point-in-time verification evidence only
+observed_at: 2026-09-30T02:14:04
+status: failed
+mode: live
+json: evals/product-v2/v2.2.4-category-generality-20260930-021404.json
+policy: live_budget_calls=4 calls_used=4 no_retry=true
+
+CRITERIA
+- [PASS] V2.2.4-C1 输入驱动：四个 fixture 通过 parse_request 且用户消息两两不同
+- [PASS] V2.2.4-C5 无常量泄漏：fixture 词不在 src/config/JS 里，系统提示无品类枚举
+- [PASS] V2.2.4-L0 真实调用前置：注册表 provider 已配置且一次一类
+- [PASS] V2.2.4-C2 合法性：每个返回槽位都通过消费侧 check_proposal_slot
+- [FAIL] V2.2.4-C3 结构差异：四类动态槽位集合两两不全等且至少两类有独有槽位
+  detail: {"complete": false, "sets": {"brand_rigid": [], "apparel": [], "packaged_food": [], "furniture": ["assembly_required", "desktop_size", "height_range", "load_capacity_kg", "motor_type", "reference_image_set"]}, "pairwise": [], "unique": {"furniture": ["assembly_required", "desktop_size", "height_range", "load_capacity_kg", "motor_type", "reference_image_set"]}, "classes_with_unique": ["furniture"], "no_equal_pair": false, "unique_classes_ok": false}
+- [FAIL] V2.2.4-C4 可追溯：动态槽位 source/status/confidence/evidence 与 summary 合规
+  detail: {"brand_rigid": {"ok": false, "reason": "failed"}, "apparel": {"ok": false, "reason": "failed"}, "packaged_food": {"ok": false, "reason": "failed"}, "furniture": {"ok": true, "dynamic_count": 6, "bad_slots": [], "summary_ok": true}}
+
+FIXTURES
+- brand_rigid（品牌刚性商品）：期望 品牌 / 材质 / 性能参数类动态槽位；用户消息指纹 805d3718ed1b6942
+- apparel（服装）：期望 面料 / 版型 / 尺码类动态槽位；用户消息指纹 6264529cdb805fae
+- packaged_food（包装食品）：期望 配料 / 净含量 / 保质期类动态槽位；用户消息指纹 2614d06ed3c91aef
+- furniture（家具）：期望 尺寸 / 承重 / 安装类动态槽位；用户消息指纹 794ca4e6dffa54af
+
+CLASSES
+## brand_rigid（品牌刚性商品）status=failed
+- failure: {"family": "provider_failed", "code": "PROVIDER_OUTPUT_TRUNCATED", "message": "模型输出被 max_tokens 截断。", "retry_policy": "requires_review", "http_status": null, "request_id": null, "details": {"max_tokens": 3200}}
+## apparel（服装）status=failed
+- failure: {"family": "provider_failed", "code": "INVALID_RESPONSE", "message": "模型输出无法按结构契约解析；整包拒绝。", "retry_policy": "retryable", "http_status": null, "request_id": "chatcmpl-b97d8fc2-610a-9487-9952-8284e5d149a7", "details": {"problems": [{"path": "$.slots[0]", "message": "Value error, 核心槽位 critical 必须与注册表一致。"}, {"path": "$.slots[1]", "message": "Value error, 核心槽位 critical 必须与注册表一致。"}, {"path": "$.slots[3]", "message": "Value error, 核心槽位 critical 必须与注册表一致。"}], "error_type": "OutputParserException"}}
+## packaged_food（包装食品）status=failed
+- failure: {"family": "provider_failed", "code": "INVALID_RESPONSE", "message": "模型输出无法按结构契约解析；整包拒绝。", "retry_policy": "retryable", "http_status": null, "request_id": "chatcmpl-7822e84e-c150-9efb-9a58-22819c99ed70", "details": {"problems": [{"path": "$.slots[6]", "message": "Value error, category_dynamic 槽位不能声明 critical。"}, {"path": "$.slots[7]", "message": "Value error, category_dynamic 槽位不能声明 critical。"}], "error_type": "OutputParserException"}}
+## furniture（家具）status=proposed
+- summary: 一款面向 amazon_us 的电动升降书桌，橡木饰面多层板桌板 140×70cm，双电机升降 72–120cm，承重 80kg，随附安装说明书与工具。
+- questions: ["商品颜色/木色是否需要作为独立卖点写入 listing（资料仅提到「橡木饰面」，未给出具体颜色描述）？", "承重 80kg 是静态承重还是升降动态承重？是否需要标注测试标准？", "安装说明书与工具是否等同于「需自行组装（Assembly Required）」？", "升降范围 72–120cm 是否包含桌板厚度或脚垫高度？", "是否有电机电压、认证（如 UL/ETL）等美国站合规信息需要补充？"]
+- core_slots: [{"slot_id": "product_name", "label": "商品名称", "value_type": "text", "value": "电动升降书桌", "confidence": 0.9, "evidence": 1, "depends_on": []}, {"slot_id": "product_category", "label": "商品品类", "value_type": "text", "value": "电动升降办公桌（升降桌）", "confidence": 0.85, "evidence": 1, "depends_on": []}, {"slot_id": "signature_features", "label": "必须保持的商品特征", "value_type": "text_list", "value": "['140×70cm 橡木饰面桌板', '双电机升降范围 72–120cm', '承重 80kg', '含安装工具与说明']", "confidence": 0.9, "evidence": 1, "depends_on": []}, {"slot_id": "key_material", "label": "主要材质", "value_type": "text", "value": "橡木饰面多层板", "confidence": 0.85, "evidence": 1, "depends_on": []}, {"slot_id": "size_summary", "label": "尺寸概览", "value_type": "text", "value": "桌板 140×70cm；升降高度范围 72–120cm", "confidence": 0.8, "evidence": 1, "depends_on": ["desktop_size", "height_range"]}, {"slot_id": "package_contents", "label": "包装内容物", "value_type": "text_list", "value": "['电动升降书桌', '安装说明书', '安装工具']", "confidence": 0.7, "evidence": 1, "depends_on": []}]
+- dynamic_slots: [{"slot_id": "desktop_size", "label": "桌板尺寸", "value_type": "text", "value": "140×70cm", "confidence": 0.9, "evidence": 1, "depends_on": []}, {"slot_id": "height_range", "label": "升降高度范围", "value_type": "text", "value": "72–120cm", "confidence": 0.9, "evidence": 1, "depends_on": []}, {"slot_id": "load_capacity_kg", "label": "承重（kg）", "value_type": "number", "value": "80", "confidence": 0.85, "evidence": 1, "depends_on": []}, {"slot_id": "motor_type", "label": "电机配置", "value_type": "text", "value": "双电机", "confidence": 0.85, "evidence": 1, "depends_on": []}, {"slot_id": "assembly_required", "label": "是否需自行组装", "value_type": "boolean", "value": "True", "confidence": 0.55, "evidence": 1, "depends_on": []}, {"slot_id": "reference_image_set", "label": "参考图元数据", "value_type": "text_list", "value": "['primary 参考图：image/png（内容哈希 777777777777…）', 'scene 参考图：image/png（内容哈希 888888888888…）']", "confidence": 0.6, "evidence": 2, "depends_on": []}]
+- meta: {"provider_id": "dashscope-semantic", "model_id": "deepseek-v4.1-flash", "request_id": "chatcmpl-f5b00e30-5844-90a7-9a1e-843f5b61929c", "usage": {"prompt_tokens": 1232, "completion_tokens": 1734, "total_tokens": 2966, "reasoning_tokens": 547}, "latency_ms": 15641, "attempts": 1}
+
+BOUNDARY
+证明四类 fixture 的输入投影两两不同（C1）、实现里没有把 fixture 商品词或品类枚举写成常量（C5）；--live 另外证明每类一次真实调用返回的槽位合法（C2）、四类动态槽位结构两两不同且至少两类有独有槽位（C3）、来源/状态/置信度/证据/summary 可追溯（C4）。不证明：槽位语义是否覆盖该类真实卖点、界面投影是否好用、套图规划/生成/交付闭环，以及模型在别的输入上的稳定性。

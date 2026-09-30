@@ -1,0 +1,506 @@
+{
+  "task": "V2.1.1",
+  "suite": "v2.1.1-indexeddb-contract",
+  "status": "passed",
+  "finished_at": "2026-09-30T02:23:59",
+  "checks": [
+    {
+      "id": "V2.1.1-00",
+      "title": "storage 模块通过 node --check（ESM 语法门）",
+      "ok": true,
+      "detail": {
+        "files": [
+          {
+            "file": "app/product_v2/storage/db.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/storage/errors.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/storage/index.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/storage/migrations.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/storage/package.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/storage/pointer.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/storage/repository.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/storage/schema.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/storage/transfer.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/storage/validate.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/storage/zip.js",
+            "rc": 0,
+            "stderr": ""
+          }
+        ],
+        "ok": true
+      }
+    },
+    {
+      "id": "V2.1.1-01",
+      "title": "契约套件全部通过且用例清单完整",
+      "ok": true,
+      "detail": {
+        "status": "passed",
+        "cases": 29,
+        "failed": [],
+        "missing": []
+      }
+    },
+    {
+      "id": "V2.1.1-02",
+      "title": "运行期无 console error / page error",
+      "ok": true,
+      "detail": {
+        "console_errors": [],
+        "page_errors": []
+      }
+    },
+    {
+      "id": "V2.1.1-03",
+      "title": "默认库名与版本取自代码，结构为 projects/assets/documents",
+      "ok": true,
+      "detail": {
+        "db_name": "amz-listing-kit-v2",
+        "version": 1,
+        "expected_version": 1,
+        "stores": [
+          "assets",
+          "documents",
+          "projects"
+        ]
+      }
+    },
+    {
+      "id": "V2.1.1-04",
+      "title": "两个独立浏览器配置文件的项目列表互不可见",
+      "ok": true,
+      "detail": {
+        "context_a": {
+          "project_id": "f18d2874-ad46-4bf8-a120-0e7b19ac5503",
+          "count": 1,
+          "keys": [
+            "amz-listing-kit-v2:current-project"
+          ]
+        },
+        "context_b": {
+          "count": 0,
+          "current": null,
+          "keys": []
+        }
+      }
+    },
+    {
+      "id": "V2.1.1-05",
+      "title": "浏览器关闭重开后项目与当前指针仍在（IndexedDB 持久化）",
+      "ok": true,
+      "detail": {
+        "first": {
+          "project_id": "c37e3aa4-7f1a-46b7-87ec-3238e4fc0823"
+        },
+        "second": {
+          "names": [
+            "重启恢复验证"
+          ],
+          "current_id": "c37e3aa4-7f1a-46b7-87ec-3238e4fc0823"
+        }
+      }
+    }
+  ],
+  "suite_cases": [
+    {
+      "id": "S01",
+      "title": "新建数据库的结构与 STORE_SPECS 一致，版本与代码一致",
+      "ok": true,
+      "detail": {
+        "db_name": "amz-v2-contract-28bef077-e5de-452f-87bf-592ebfb30b6b",
+        "version": 1,
+        "stores": [
+          "assets",
+          "documents",
+          "projects"
+        ]
+      },
+      "ms": 15
+    },
+    {
+      "id": "S02",
+      "title": "schema 漂移检测器能变红（缺失索引 / 幽灵对象仓）",
+      "ok": true,
+      "detail": {
+        "missing_index": "对象仓 documents 多出未登记索引 by_project_document",
+        "ghost_store": "缺少对象仓 ghost_store"
+      },
+      "ms": 3
+    },
+    {
+      "id": "P01",
+      "title": "空白新建项目只含身份字段，初始状态 EMPTY，无预填商品内容",
+      "ok": true,
+      "detail": {
+        "project_id": "6eb2521f-8731-4b28-b8a5-4b6a9397b7f5",
+        "keys": [
+          "created_at",
+          "name",
+          "project_id",
+          "revision",
+          "schema_version",
+          "state",
+          "updated_at"
+        ]
+      },
+      "ms": 3
+    },
+    {
+      "id": "P02",
+      "title": "空名称被拒绝：INVALID_ARGUMENT",
+      "ok": true,
+      "detail": {
+        "code": "INVALID_ARGUMENT",
+        "message": "项目名称不能为空。"
+      },
+      "ms": 2
+    },
+    {
+      "id": "P03",
+      "title": "项目列表按 updated_at 倒序",
+      "ok": true,
+      "detail": {
+        "order": [
+          "后建",
+          "先建"
+        ]
+      },
+      "ms": 2
+    },
+    {
+      "id": "P04",
+      "title": "重命名递增 revision 并更新时间",
+      "ok": true,
+      "detail": {
+        "revision": 2
+      },
+      "ms": 2
+    },
+    {
+      "id": "P05",
+      "title": "过期 revision 的重命名被拒绝，且记录不被改动",
+      "ok": true,
+      "detail": {
+        "conflict": "REVISION_CONFLICT",
+        "name": "第一次改名",
+        "revision": 2
+      },
+      "ms": 3
+    },
+    {
+      "id": "P06",
+      "title": "非法项目状态被拒绝，状态保持原值",
+      "ok": true,
+      "detail": {
+        "state": "INTAKE_READY"
+      },
+      "ms": 2
+    },
+    {
+      "id": "P07",
+      "title": "删除项目在同一事务里清掉它的文档与资产",
+      "ok": true,
+      "detail": {
+        "leftovers": {
+          "projects": 0,
+          "documents": 0,
+          "assets": 0
+        }
+      },
+      "ms": 6
+    },
+    {
+      "id": "P08",
+      "title": "重复 project_id 被拒绝：DUPLICATE_RECORD",
+      "ok": true,
+      "detail": {
+        "code": "DUPLICATE_RECORD",
+        "message": "项目 4a93bc1f-3c1d-4781-9fec-084d44ed1d44 已存在。"
+      },
+      "ms": 2
+    },
+    {
+      "id": "P09",
+      "title": "复制项目：新 id 下复制文档与资产，原项目不受影响",
+      "ok": true,
+      "detail": {
+        "copy_id": "6a0fd5bb-1ab1-4f4a-b649-27057f89afa4",
+        "documents": 2,
+        "assets": 1
+      },
+      "ms": 6
+    },
+    {
+      "id": "D01",
+      "title": "文档 append-only：版本递增且旧版本仍可读",
+      "ok": true,
+      "detail": {
+        "versions": [
+          2,
+          1
+        ]
+      },
+      "ms": 3
+    },
+    {
+      "id": "D02",
+      "title": "expectedVersion 不符：REVISION_CONFLICT，且不写新版本",
+      "ok": true,
+      "detail": {
+        "conflict": "REVISION_CONFLICT",
+        "versions": [
+          1
+        ]
+      },
+      "ms": 3
+    },
+    {
+      "id": "D03",
+      "title": "非 JSON 载荷（函数 / Blob）被拒绝：SCHEMA_INVALID",
+      "ok": true,
+      "detail": {
+        "codes": [
+          "SCHEMA_INVALID",
+          "SCHEMA_INVALID",
+          "SCHEMA_INVALID"
+        ]
+      },
+      "ms": 2
+    },
+    {
+      "id": "D04",
+      "title": "超大 JSON 载荷被拒绝（图片必须进 assets）",
+      "ok": true,
+      "detail": {
+        "message": "文档 payload 超过 1000000 字节上限；图片必须存 assets，不能进 JSON 文档。"
+      },
+      "ms": 4
+    },
+    {
+      "id": "D05",
+      "title": "不同 document_id / kind 互不影响",
+      "ok": true,
+      "detail": {
+        "same_kind": [
+          "a",
+          "b"
+        ]
+      },
+      "ms": 4
+    },
+    {
+      "id": "A01",
+      "title": "资产往返：sha256、字节数与 Blob 内容一致",
+      "ok": true,
+      "detail": {
+        "sha256": "6e1434a51fec74a439f9458a4b9f97a1aa136cd93903f58673246803a68fd257",
+        "byte_size": 40,
+        "media_type": "image/png"
+      },
+      "ms": 3
+    },
+    {
+      "id": "A02",
+      "title": "同样字节重复写入只保留一份（内容寻址幂等）",
+      "ok": true,
+      "detail": {
+        "asset_key": "6b3c3481-e71b-45f3-ac5e-a669fa17cc06:7ad5509fac1a1be4a59ae87959468840d2808bab1b3cd5676733194aa82ef338",
+        "count": 1
+      },
+      "ms": 3
+    },
+    {
+      "id": "A03",
+      "title": "相同字节在不同项目各自独立，删除互不影响",
+      "ok": true,
+      "detail": {
+        "list_a": 0,
+        "list_b": 1
+      },
+      "ms": 4
+    },
+    {
+      "id": "T01",
+      "title": "事务中抛错：同一事务的写入全部回滚",
+      "ok": true,
+      "detail": {
+        "before": 0,
+        "after": 0,
+        "code": "TRANSACTION_ABORTED"
+      },
+      "ms": 2
+    },
+    {
+      "id": "T02",
+      "title": "同一版本并发写：恰好一个成功，版本只加一",
+      "ok": true,
+      "detail": {
+        "winners": 1,
+        "losers": [
+          "REVISION_CONFLICT"
+        ],
+        "versions": [
+          2,
+          1
+        ]
+      },
+      "ms": 3
+    },
+    {
+      "id": "L01",
+      "title": "localStorage 只存当前项目指针，且不含业务数据",
+      "ok": true,
+      "detail": {
+        "keys": [
+          "amz-listing-kit-v2:current-project"
+        ],
+        "pointer_bytes": 93
+      },
+      "ms": 3
+    },
+    {
+      "id": "L02",
+      "title": "指针指向已删除项目：读取返回 null 并自愈清除",
+      "ok": true,
+      "detail": {
+        "cleared": true
+      },
+      "ms": 1
+    },
+    {
+      "id": "L03",
+      "title": "损坏指针：读取返回 null 并自愈清除，不抛错",
+      "ok": true,
+      "detail": {
+        "cleared": true
+      },
+      "ms": 2
+    },
+    {
+      "id": "L04",
+      "title": "把指针指向不存在的项目：NOT_FOUND 且不写指针",
+      "ok": true,
+      "detail": {
+        "code": "NOT_FOUND"
+      },
+      "ms": 1
+    },
+    {
+      "id": "L05",
+      "title": "创建项目并设指针后可以按指针取回该项目",
+      "ok": true,
+      "detail": {
+        "project_id": "0a32a402-a48b-47e5-b2e4-2b9ef995dc21"
+      },
+      "ms": 2
+    },
+    {
+      "id": "M01",
+      "title": "迁移 v1→v2：追加对象仓且旧数据保留",
+      "ok": true,
+      "detail": {
+        "version": 2,
+        "stores": [
+          "items",
+          "notes"
+        ]
+      },
+      "ms": 2
+    },
+    {
+      "id": "M02",
+      "title": "代码版本低于数据库版本：SCHEMA_TOO_NEW，且数据不丢",
+      "ok": true,
+      "detail": {
+        "code": "SCHEMA_TOO_NEW",
+        "value": 42
+      },
+      "ms": 2
+    },
+    {
+      "id": "M03",
+      "title": "迁移抛错：升级事务回滚，不留下半个 schema",
+      "ok": true,
+      "detail": {
+        "code": "TRANSACTION_ABORTED",
+        "stores": [
+          "ok"
+        ]
+      },
+      "ms": 1
+    }
+  ],
+  "console_errors": [],
+  "page_errors": [],
+  "expected_case_ids": [
+    "S01",
+    "S02",
+    "P01",
+    "P02",
+    "P03",
+    "P04",
+    "P05",
+    "P06",
+    "P07",
+    "P08",
+    "P09",
+    "D01",
+    "D02",
+    "D03",
+    "D04",
+    "D05",
+    "A01",
+    "A02",
+    "A03",
+    "T01",
+    "T02",
+    "L01",
+    "L02",
+    "L03",
+    "L04",
+    "L05",
+    "M01",
+    "M02",
+    "M03"
+  ],
+  "boundary": "证明浏览器存储层：schema/迁移/事务/版本化 JSON/内容寻址 Blob/轻量指针/上下文隔离/重启恢复。不证明项目首页、导入导出、无状态服务、模型调用或首次使用者闭环。"
+}

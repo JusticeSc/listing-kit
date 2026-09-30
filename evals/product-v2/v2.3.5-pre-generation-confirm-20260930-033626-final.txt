@@ -1,0 +1,44 @@
+amz-listing-kit Product V2 V2.3.5 pre-generation confirm
+NOT-AUTHORITY: point-in-time verification evidence only
+observed_at: 2026-09-30T03:36:36
+status: passed
+model_calls: 0 (offline domain + UI flow)
+json: evals/product-v2/v2.3.5-pre-generation-confirm-20260930-033626-final.json
+screenshot: evals/product-v2/v2.3.5-pre-generation-confirm-20260930-033626.png
+
+CHECKS
+- [PASS] V2.3.5-00 domain / workspace / harness 通过 node --check（ESM 语法门）
+- [PASS] V2.3.5-01 H01–H12 契约套件全过且用例齐全
+- [PASS] V2.3.5-02 反向探针确实执行（缺 Prompt / 过期 / 缺依赖 / 参数不符 / 越界 / 失效）
+- [PASS] V2.3.5-02b 既有契约套件回归：Prompt / 规格 / 套图编辑器全过
+- [PASS] V2.3.5-03 套图就绪后确认区解锁：4 张图因缺 Prompt 全部阻断并定位到 Prompt 区
+- [PASS] V2.3.5-04 缺依赖的对比图被精确阻断并定位到套图规划
+- [PASS] V2.3.5-05 编译主图后状态推进：就绪 1 / 阻断 3，外发摘要与记录一致
+- [PASS] V2.3.5-06 全部编译后可确认：按钮可用、无阻断、风险仍可见
+- [PASS] V2.3.5-07 点击确认写入 generation_confirm：指纹、记录与界面一致，状态前进
+- [PASS] V2.3.5-08 改公共风格使确认失效并回落 PLAN_REVIEW，界面给出原因
+- [PASS] V2.3.5-09 重新编译后再次可确认，Prompt 版本全部前进
+- [PASS] V2.3.5-10 再次确认写新版本且旧记录保留（append-only）
+- [PASS] V2.3.5-11 刷新恢复：确认记录、指纹、状态与存储一致
+- [PASS] V2.3.5-12 契约会话与 UI 会话零 console error / page error
+- [PASS] V2.3.5-13 正式入口自检仍全过（V2.3.5 不破坏既有入口）
+
+SUITE CASES
+- [PASS] H01 全部就绪：can_submit、计数与外发摘要与请求快照一致
+- [PASS] H02 确定性：同一输入两次构建与键序变化产生相同指纹
+- [PASS] H03 缺 Prompt：阻断并定位到具体图片与 Prompt 区
+- [PASS] H04 Prompt 过期：风格前进后阻断并定位到风格区
+- [PASS] H05 缺依赖：对比图没有竞品素材时阻断并定位到套图规划
+- [PASS] H06 Provider 或平台不符：记录被改后不能提交
+- [PASS] H07 参考图越界：0 张与 4 张都不能提交
+- [PASS] H08 风险传播：编译警告进入确认单且带归口图片
+- [PASS] H09 外发摘要只列角色与 hash 前缀，且与每条请求快照一致
+- [PASS] H10 确认记录：只在可提交清单上建立，且形状可机检
+- [PASS] H11 确认失效：上游变化或 Prompt 前进后必须重新确认
+- [PASS] H12 反向探针：计数、fix、摘要与输入错误都必须变红
+- [PASS] 回归 prompt (passed, failed=[])
+- [PASS] 回归 specs (passed, failed=[])
+- [PASS] 回归 suite_editor (passed, failed=[])
+
+BOUNDARY
+证明生成前确认在真实浏览器里可核对、可定位、可失效：确认单由套图计划、每图 PromptVersion、参考图与平台/Provider 档确定性派生；缺 Prompt、记录非法、快照与文本不一致、平台/Provider 不符、参考图数量越界、依赖未满足与 Prompt 过期都会阻断并给出可操作位置（fix.region）；外发摘要只写真实会发送的模型参数与参考图角色 + sha256 前 12 位，不含图片字节；风险（语言不一致、平台覆盖、主图忽略文案）必须可见但允许确认；确认记录 append-only 并绑定指纹，上游或 Prompt 前进即失效、状态回落 PLAN_REVIEW，重新确认写新版本。全程 0 次真实模型调用，不发图、不生成候选、不证明出图质量；真实生成属于 Phase 4，审核与返工属于 Phase 5。

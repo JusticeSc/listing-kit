@@ -1,0 +1,155 @@
+{
+  "task": "V2.1.2",
+  "suite": "v2.1.2-project-home",
+  "status": "passed",
+  "finished_at": "2026-09-30T02:24:15",
+  "checks": [
+    {
+      "id": "V2.1.2-00",
+      "title": "app.js 通过 node --check",
+      "ok": true,
+      "detail": {
+        "file": "app/product_v2/app.js",
+        "rc": 0,
+        "stderr": ""
+      }
+    },
+    {
+      "id": "V2.1.2-01",
+      "title": "空白启动：无项目、无指针、无预填内容",
+      "ok": true,
+      "detail": {
+        "db": {
+          "projects": 0,
+          "documents": 0,
+          "assets": 0
+        },
+        "pointer_keys": []
+      }
+    },
+    {
+      "id": "V2.1.2-02",
+      "title": "新建：IndexedDB 恰有一条记录且 localStorage 仍为空",
+      "ok": true,
+      "detail": {
+        "counts": {
+          "projects": 1,
+          "documents": 0,
+          "assets": 0
+        },
+        "pointer_keys": []
+      }
+    },
+    {
+      "id": "V2.1.2-03",
+      "title": "打开写入当前指针，刷新后仍在该项目且没有复制出第二个项目",
+      "ok": true,
+      "detail": {
+        "pointer": "{\"project_id\":\"3620bf55-a053-4b26-93b5-d45a13637ac6\",\"updated_at\":\"2026-09-29T18:24:09.893Z\"}",
+        "counts": {
+          "projects": 1,
+          "documents": 0,
+          "assets": 0
+        }
+      }
+    },
+    {
+      "id": "V2.1.2-04",
+      "title": "重命名：界面与 IndexedDB 一致且 revision 递增",
+      "ok": true,
+      "detail": {
+        "project": {
+          "project_id": "3620bf55-a053-4b26-93b5-d45a13637ac6",
+          "name": "蓝色保温杯 主图套装",
+          "state": "EMPTY",
+          "revision": 2
+        }
+      }
+    },
+    {
+      "id": "V2.1.2-05",
+      "title": "复制：文档版本与资产在新 project_id 下各一份，原项目不变",
+      "ok": true,
+      "detail": {
+        "seed": {
+          "version": 1,
+          "sha256": "c557ae91c431f4d3eb91cdb56d6128df9d0b621c4a45ba3e85fe400d4481477e"
+        },
+        "copy_docs": [
+          {
+            "project_id": "92b10722-48fd-4ace-bdd6-847b297d90f0",
+            "kind": "product_input",
+            "document_id": "intake",
+            "version": 1
+          }
+        ],
+        "copy_assets": [
+          {
+            "project_id": "92b10722-48fd-4ace-bdd6-847b297d90f0",
+            "sha256": "c557ae91c431f4d3eb91cdb56d6128df9d0b621c4a45ba3e85fe400d4481477e",
+            "byte_size": 28
+          }
+        ],
+        "source_assets": 1
+      }
+    },
+    {
+      "id": "V2.1.2-06",
+      "title": "删除：记录、文档与资产一起消失，当前指针被清除",
+      "ok": true,
+      "detail": {
+        "counts": {
+          "projects": 1,
+          "documents": 1,
+          "assets": 1
+        },
+        "pointer_keys": []
+      }
+    },
+    {
+      "id": "V2.1.2-07",
+      "title": "390px 视口无横向溢出",
+      "ok": true,
+      "detail": {
+        "overflow_px": 0
+      }
+    },
+    {
+      "id": "V2.1.2-08",
+      "title": "两个独立浏览器配置文件的项目列表互不可见",
+      "ok": true,
+      "detail": {
+        "projects_in_b": 0,
+        "pointer_keys": []
+      }
+    },
+    {
+      "id": "V2.1.2-09",
+      "title": "全程无 console error / page error",
+      "ok": true,
+      "detail": {
+        "console_errors": [],
+        "page_errors": []
+      }
+    },
+    {
+      "id": "V2.1.2-10",
+      "title": "旧 Product V1 路由未被破坏：默认入口页面与静态资源仍可取",
+      "ok": true,
+      "detail": {
+        "ok": true,
+        "page_status": 200,
+        "asset_status": 200,
+        "page_type": "text/html; charset=utf-8",
+        "asset_type": "text/javascript; charset=utf-8"
+      }
+    }
+  ],
+  "screenshots": [
+    "evals/product-v2/v2.1.2-home-blank-20260930-022408.png",
+    "evals/product-v2/v2.1.2-home-list-20260930-022408.png"
+  ],
+  "console_errors": [],
+  "page_errors": [],
+  "boundary": "证明项目首页与本机项目 CRUD：空白启动、列表、新建、打开、重命名、复制、删除、跨配置文件隔离、IndexedDB 后置条件与旧 Product V1 路由未被破坏。不证明项目 ZIP 导入导出、正式入口、商品资料/理解/套图/生成/交付，也不证明首次使用者可用性。"
+}

@@ -1,0 +1,36 @@
+amz-listing-kit Product V2 V2.2.3 intake & exception-driven understanding (stateless server + fake provider)
+NOT-AUTHORITY: point-in-time verification evidence only
+observed_at: 2026-09-30T02:45:04
+status: passed
+json: evals/product-v2/v2.2.3-intake-understanding-20260930-024451.json
+port: 38973
+
+CHECKS
+- [PASS] V2.2.3-01 正式入口自检全过（含 capabilities / analyze 与拒绝 V1 API、目录逃逸）
+- [PASS] V2.2.3-02 capabilities 返回 provider 身份、analyze 字段与契约版本
+- [PASS] V2.2.3-03 空白起点：没有项目、没有预填商品或历史候选
+- [PASS] V2.2.3-04 工作区空白形态：无参考图、资料为空、分析不可用并说明缺什么（EMPTY）
+- [PASS] V2.2.3-05 上传参考图：首张自动成为商品主图、同内容被跳过、资产与商品资料一起落盘
+- [PASS] V2.2.3-06 商品资料防抖写入（版本递增）并在刷新后原样恢复；状态推进到 INTAKE_READY
+- [PASS] V2.2.3-07 分析：一次点击只发一次 POST，请求字段等于 capabilities.analyze_fields，existing_slot_ids 为空
+- [PASS] V2.2.3-08 入库：核心槽位先物化为 missing，模型提案只以 proposed 落库
+- [PASS] V2.2.3-09 异常优先：默认列表按 冲突 → 未知 → 缺失 → 未确认 排序，已确认事实默认折叠
+- [PASS] V2.2.3-10 权限投影：系统固定槽位没有删除按钮，品类动态槽位有删除按钮
+- [PASS] V2.2.3-11 确认后的槽位离开待处理列表，展开后可见且状态为已确认
+- [PASS] V2.2.3-12 重分析不静默覆盖：已确认值遇到不同提案变成 conflict，保留两条以上证据且不丢旧值
+- [PASS] V2.2.3-13 Unknown 不自动重提：一次点击只产生一次 POST，等待期内没有第二次调用
+- [PASS] V2.2.3-14 状态派生到 PLAN_REVIEW，并明确说明套图规划与生成尚未接入
+- [PASS] V2.2.3-15 390px 视口无横向溢出
+- [PASS] V2.2.3-16 键盘可达：参考图、保存草稿、分析、槽位开关与新增槽位控件都在 Tab 顺序内
+- [PASS] V2.2.3-17 除故意触发的 Unknown 504 外，浏览器会话零 console error / page error
+- [PASS] V2.2.3-18 磁盘审计：正式入口 + 浏览器会话前后仓库与最近项目索引零差异
+- [PASS] V2.2.3-19 构建上下文（CI tar 列表）包含本版运行时依赖，且不含测试装置与工作记录
+- [PASS] V2.2.3-20 镜像按 uv.lock 安装运行时依赖并带上 src/config，入口与健康检查保持不变
+- [PASS] V2.2.3-21 默认 provider 下正式进程能起：health 与 capabilities 正常（缺密钥只表现为未配置）
+
+SCREENSHOTS
+- evals/product-v2/v2.2.3-workspace-20260930-024451.png
+- evals/product-v2/v2.2.3-narrow-20260930-024451.png
+
+BOUNDARY
+证明在真实正式入口（app/server.py 的 V2 静态服务 + 两个无状态 API）与 fake-semantic provider 下，真实浏览器能从空白项目完成：上传参考图 → 填商品资料（草稿防抖落盘）→ 一次无状态分析 → 槽位按领域契约入库 → 冲突/未知/缺失优先展示 → 人工确认推进到 PLAN_REVIEW；unknown 之后不自动重提，服务端与会话前后磁盘零差异。不证明：真实模型（deepseek-v4.1-flash / qwen-image）的理解与出图质量、套图规划与生成、审核与导出、跨机器迁移、以及未受训陌生试用者的可用性。

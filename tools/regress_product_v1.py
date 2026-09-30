@@ -4,7 +4,7 @@
 用法（本机）：
 
     $env:UV_CACHE_DIR='E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\.uv-cache'
-    & 'C:\\Users\\31368\\.local\\bin\\uv.exe' run --no-project --with-requirements requirements.txt --with playwright python tools\\regress_product_v1.py --passes 2
+    uv run --locked python tools\\regress_product_v1.py --passes 2
 
 规则：
 - 套件顺序执行：并发会让两套 Playwright 同时写证据目录，也会掩盖端口/资源问题；

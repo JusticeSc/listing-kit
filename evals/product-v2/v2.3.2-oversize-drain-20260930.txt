@@ -1,0 +1,31 @@
+amz-listing-kit Product V2 V2.3.2 server oversize-drain hardening
+NOT-AUTHORITY: point-in-time verification evidence only
+observed_at: 2026-09-30T02:44:51+08:00
+status: passed
+
+SYMPTOM
+- V2.3.2 首次全量验证时 V2.3.2-10（app/server.py --check）出现一次失败：
+  run_self_check 的「超过字节上限的请求体被拒」探针在读取响应时抛
+  ConnectionAbortedError [WinError 10053]；服务端在客户端尚未发完正文时就关闭连接，
+  Windows 上触发 TCP RST，客户端拿不到 400 响应。
+- 同一命令随后单独重跑 3/3 通过，确认是竞态而非稳定缺陷；不修的代价是自检偶发红灯，
+  会污染所有以 `--check` 为前提的任务证据。
+
+FIX
+- app/product_v2_server.py `_read_body`：Content-Length 超过 MAX_BODY_BYTES 时，
+  先把已声明的正文读完（预算 min(length, MAX_BODY_BYTES*2)，每次 64KB）再返回
+  400 input_rejected；响应语义不变（error.family=input_rejected，附 content_length/limit）。
+
+PROBE（同一进程，连续 20 次超限请求直连）
+- 20/20 返回 (400, input_rejected)，零异常；见 V2.3.2 验证报告中 model_calls=0 的同一会话环境。
+
+REGRESSION（修复后重跑，全部 rc=0）
+- tools/verify_v2_1_4_formal_entry.py            → evals/product-v2/v2.1.4-formal-entry-20260930-024511.txt
+- tools/verify_v2_2_1_product_contracts.py       → evals/product-v2/v2.2.1-product-contracts-20260930-024511.txt
+- tools/verify_v2_2_3_intake_understanding.py    → evals/product-v2/v2.2.3-intake-understanding-20260930-024451.txt
+- tools/verify_v2_3_1_suite_registry.py          → evals/product-v2/v2.3.1-suite-registry-20260930-024514.txt
+- tools/verify_v2_3_2_suite_editor.py            → evals/product-v2/v2.3.2-suite-editor-20260930-024451.txt
+
+BOUNDARY
+只证明「超限请求会被明确拒绝且不再触发连接中止」这一条行为在 20 次连续探针与上述回归下稳定。
+不证明其他并发/慢速攻击面，也不证明负载下的时延表现。

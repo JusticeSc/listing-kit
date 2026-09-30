@@ -1,0 +1,34 @@
+NOT-AUTHORITY —— 时点证据：V2 前端领域原语去重批次（SEL-000 复用门 + 第三轮选型审计结论）。
+
+# 批次：V2 前端自造原语清理
+
+## 变更
+- `app/product_v2/domain/shared.js`：删除自造 `deepEqualJson`（JSON.stringify 比较）与
+  `cloneJson`（JSON 往返克隆）。
+- `app/product_v2/domain/slots.js`：新增领域相等 `slotValueEquals(a, b)`（标量或标量数组逐项比较，
+  不做 JSON 字符串比较）；`applySlotAction` 的克隆改用宿主 `structuredClone`，冲突判定改用
+  `slotValueEquals`。
+- `app/product_v2/domain/brief.js`：投影与一致性比对改用 `structuredClone` / `slotValueEquals`
+  （从 `./slots.js` 引入）。
+
+## 依据
+- SEL-000：通用原语优先复用（克隆用宿主 `structuredClone`，不再自造 JSON 往返）。
+- 第三轮技术选型审计（`evals/product-v2/sel-records-sync-20260930.txt` 与
+  `evals/product-v2/dependency-authority-migration-20260930.txt`）把这两个原语列入清理批次。
+
+## 本次新鲜验证（同一次会话内本机执行；命令为 uv run --locked）
+- `tools/verify_v2_2_1_product_contracts.py` → 全过，套件 37/37（覆盖 brief 合并、冲突与失效路径）
+  `evals/product-v2/v2.2.1-product-contracts-20260930-013422.txt`
+- `tools/verify_v2_1_1_indexeddb.py` → 全过，套件 29/29
+  `evals/product-v2/v2.1.1-indexeddb-20260930-013432.txt`
+- `tools/verify_v2_1_2_project_home.py` → 全过
+  `evals/product-v2/v2.1.2-project-home-20260930-013455.txt`
+- `tools/verify_v2_1_3_project_package.py` → 全过，套件 9/9
+  `evals/product-v2/v2.1.3-project-package-20260930-013442.txt`
+- `tools/verify_v2_1_4_formal_entry.py` → 全过，13/13
+  `evals/product-v2/v2.1.4-formal-entry-20260930-013509.txt`
+- `rg cloneJson|deepEqualJson`（排除 `evals/`）→ 无残留引用
+
+## 边界
+本证据只证明这三个领域文件在现有浏览器合同下仍全过，且自造 JSON 相等/克隆原语已移除。
+它不证明 SEL-008 的 fflate vendoring（该批次仍未落地），也不证明套图规划、图片生成、审核与交付闭环。

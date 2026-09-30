@@ -19,7 +19,7 @@ ZOOM_LIMITATION（200% 缩放的模拟局限，写在代码里以便复核）：
   「布局无横向溢出、主流程按钮仍可见可点」，不能证明真实缩放下的字号可读性。
 
 运行：
-  & "C:\\Users\\31368\\.local\\bin\\uv.exe" run --no-project --with-requirements requirements.txt --with playwright python tools/verify_product_v1_usability_accessibility.py
+  uv run --locked python tools/verify_product_v1_usability_accessibility.py
 """
 from __future__ import annotations
 

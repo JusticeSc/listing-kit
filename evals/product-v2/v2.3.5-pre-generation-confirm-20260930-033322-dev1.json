@@ -1,0 +1,969 @@
+{
+  "task": "V2.3.5",
+  "suite_id": "v2.3.5-confirm",
+  "status": "failed",
+  "finished_at": "2026-09-30T03:33:32",
+  "model_calls": 0,
+  "checks": [
+    {
+      "id": "V2.3.5-00",
+      "title": "domain / workspace / harness 通过 node --check（ESM 语法门）",
+      "ok": true,
+      "detail": {
+        "failed": []
+      }
+    },
+    {
+      "id": "V2.3.5-01",
+      "title": "H01–H12 契约套件全过且用例齐全",
+      "ok": false,
+      "detail": {
+        "status": "failed",
+        "missing": [],
+        "failed": [
+          {
+            "id": "H05",
+            "error": {
+              "name": "DomainError",
+              "code": "CONTRACT_INVALID",
+              "message": "Prompt 编译未通过：这张图的依据还没有满足：缺少 competitor 角色的参考图。",
+              "details": {
+                "problems": [
+                  {
+                    "code": "CONTRACT_INVALID",
+                    "path": "$.shot.dependencies",
+                    "message": "这张图的依据还没有满足：缺少 competitor 角色的参考图。"
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "V2.3.5-02",
+      "title": "反向探针确实执行（缺 Prompt / 过期 / 缺依赖 / 参数不符 / 越界 / 失效）",
+      "ok": false,
+      "detail": {
+        "expected": [
+          "H03",
+          "H04",
+          "H05",
+          "H06",
+          "H07",
+          "H08",
+          "H11",
+          "H12"
+        ],
+        "seen": [
+          "H03",
+          "H04",
+          "H05",
+          "H06",
+          "H07",
+          "H08",
+          "H11",
+          "H12"
+        ]
+      }
+    },
+    {
+      "id": "V2.3.5-02b",
+      "title": "既有契约套件回归：Prompt / 规格 / 套图编辑器全过",
+      "ok": true,
+      "detail": {
+        "prompt": {
+          "status": "passed",
+          "failed": []
+        },
+        "specs": {
+          "status": "passed",
+          "failed": []
+        },
+        "suite_editor": {
+          "status": "passed",
+          "failed": []
+        }
+      }
+    },
+    {
+      "id": "V2.3.5-03",
+      "title": "套图就绪后确认区解锁：4 张图因缺 Prompt 全部阻断并定位到 Prompt 区",
+      "ok": true,
+      "detail": {
+        "status": "共 4 张；就绪 0 张；阻断 4 张。",
+        "blocked": 4,
+        "summary": "生成时将向 qwen-image-3.0 发送 4 条提示词（合计 0 字）与 0 张参考图（角色：无）；参数 1344*1344 / n=1 / prompt_extend=false / watermark=false；图中文字语言 en。每张图发送自己的 Prompt 文本与上列参考图；不发送本地文件本身、历史候选或其他项目数据。"
+      }
+    },
+    {
+      "id": "V2.3.5-04",
+      "title": "缺依赖的对比图被精确阻断并定位到套图规划",
+      "ok": false,
+      "detail": {
+        "codes": [
+          "DEPENDENCY_UNSATISFIED",
+          "PROMPT_MISSING"
+        ],
+        "fix": {
+          "region": "suite",
+          "shot_id": "shot_comparison_competitor",
+          "label": "对比图·竞品同框",
+          "action": "到「套图规划」补齐依据（上传缺失素材或确认缺失事实），或删除、替换这张图。"
+        }
+      }
+    },
+    {
+      "id": "V2.3.5-05",
+      "title": "编译主图后状态推进：就绪 1 / 阻断 3，外发摘要与记录一致",
+      "ok": true,
+      "detail": {
+        "summary": "生成时将向 qwen-image-3.0 发送 4 条提示词（合计 444 字）与 1 张参考图（角色：primary）；参数 1344*1344 / n=1 / prompt_extend=false / watermark=false；图中文字语言 en。",
+        "hash": "cfdb6e0294b1"
+      }
+    },
+    {
+      "id": "V2.3.5-06",
+      "title": "全部编译后可确认：按钮可用、无阻断、风险仍可见",
+      "ok": true,
+      "detail": {
+        "status": "共 4 张；就绪 4 张；阻断 0 张；可以确认。",
+        "risks": [
+          "ON_IMAGE_TEXT_NOT_PLATFORM_LANGUAGE",
+          "ON_IMAGE_TEXT_NOT_PLATFORM_LANGUAGE",
+          "ON_IMAGE_TEXT_NOT_PLATFORM_LANGUAGE",
+          "ON_IMAGE_TEXT_NOT_PLATFORM_LANGUAGE",
+          "ON_IMAGE_TEXT_NOT_PLATFORM_LANGUAGE"
+        ]
+      }
+    },
+    {
+      "id": "V2.3.5-07",
+      "title": "点击确认写入 generation_confirm：指纹、记录与界面一致，状态前进",
+      "ok": true,
+      "detail": {
+        "state": "READY_TO_GENERATE",
+        "hash": "f9165c80ce6e"
+      }
+    },
+    {
+      "id": "V2.3.5-08",
+      "title": "改公共风格使确认失效并回落 PLAN_REVIEW，界面给出原因",
+      "ok": true,
+      "detail": {
+        "fields": [
+          "shots.shot_main_clean",
+          "shots.shot_infographic_benefits",
+          "shots.shot_scene_lifestyle",
+          "shots.shot_detail_material"
+        ],
+        "state": "PLAN_REVIEW"
+      }
+    },
+    {
+      "id": "V2.3.5-09",
+      "title": "重新编译后再次可确认，Prompt 版本全部前进",
+      "ok": false,
+      "detail": {
+        "versions": [
+          {
+            "shot_id": "shot_detail_material",
+            "version": 2,
+            "hash": "4a6661d1af29ffdd239291045485462203bf9accb46c39f1fb0e38fe9c644c56"
+          },
+          {
+            "shot_id": "shot_infographic_benefits",
+            "version": 2,
+            "hash": "af23851de2bf4a720f6f2f7595be2e5b9b6df2b283d059b3268523571265d2df"
+          },
+          {
+            "shot_id": "shot_main_clean",
+            "version": 3,
+            "hash": "cfdb6e0294b110d6e32aa9aa2fb2a8ef509601840c481cca473442dd6f62e508"
+          },
+          {
+            "shot_id": "shot_scene_lifestyle",
+            "version": 2,
+            "hash": "57436a529e1017a36de3d94b9ead03ef9c342a2b9ce4fae811f0c1ea5b0146b1"
+          }
+        ]
+      }
+    },
+    {
+      "id": "V2.3.5-10",
+      "title": "再次确认写新版本且旧记录保留（append-only）",
+      "ok": true,
+      "detail": {
+        "rows": [
+          {
+            "version": 1,
+            "hash": "f9165c80ce6e76bc1082c78bd49dc23e92fbd7966e1ae1c46c0be8e7f10fa0f5"
+          },
+          {
+            "version": 2,
+            "hash": "c6c28b5bf8fbd6d7b5170992dc9ab9fde16722984a9918f8b806678ac3ca0456"
+          }
+        ]
+      }
+    },
+    {
+      "id": "V2.3.5-11",
+      "title": "刷新恢复：确认记录、指纹、状态与存储一致",
+      "ok": true,
+      "detail": {
+        "state": "READY_TO_GENERATE",
+        "hash": "c6c28b5bf8fb"
+      }
+    },
+    {
+      "id": "V2.3.5-12",
+      "title": "契约会话与 UI 会话零 console error / page error",
+      "ok": true,
+      "detail": {
+        "console": [],
+        "page": []
+      }
+    },
+    {
+      "id": "V2.3.5-13",
+      "title": "正式入口自检仍全过（V2.3.5 不破坏既有入口）",
+      "ok": true,
+      "detail": {
+        "args": [
+          "--check"
+        ],
+        "rc": 0,
+        "tail": [
+          "  PASS  语义分析路由（fake provider）返回提案且标记 unknown=false           status=200 slots=5",
+          "  PASS  非法 JSON 归 input_rejected/400                         status=400 error={'family': 'input_rejected', 'code': 'INPUT_INVALID', 'message': '请求体不是合法 JSON。', 'retry_policy': 'fatal', 'http_status': None, 'request_id': None, 'details': {'problems': None}}",
+          "  PASS  超过字节上限的请求体被拒（400 input_rejected）                     status=400 bytes=262676",
+          "  PASS  合法 JSON 但字段越界归 input_rejected/400（不调用模型）             status=400 error={'family': 'input_rejected', 'code': 'INPUT_INVALID', 'message': '请求字段不符合语义请求契约；没有调用模型。', 'retry_policy': 'fatal', 'http_status': None, 'request_id': None, 'details': {'problems': [{'path': '$.product_name', 'message': 'Field required'}]}}",
+          "  PASS  provider 不可用时 capabilities 仍 200 且 configured=false  status=200 unavailable={'kind': 'dependency', 'detail': 'RuntimeError: 自检：语义 provider 构造失败'}",
+          "  PASS  provider 不可用时分析路由 503 且错误分类明确                        status=503 error={'family': 'internal', 'code': 'PROVIDER_NOT_CONFIGURED', 'message': '语义 provider 不可用：检查注册表、依赖与 DASHSCOPE_API_KEY。', 'retry_policy': 'fatal', 'http_status': 503, 'request_id': None, 'details': {'kind': 'dependency', 'detail': 'RuntimeError: 自检：语义 provider 构造失败'}}",
+          "  PASS  未定义的无状态写路由保持 404                                     status=404",
+          "V2 正式入口自检：21/21 通过。"
+        ]
+      }
+    }
+  ],
+  "suites": {
+    "confirm": {
+      "suite": "v2.3.5-confirm",
+      "status": "failed",
+      "cases": [
+        {
+          "id": "H01",
+          "title": "全部就绪：can_submit、计数与外发摘要与请求快照一致",
+          "ok": true,
+          "detail": {
+            "summary": {
+              "model": "qwen-image-3.0",
+              "size": "1344*1344",
+              "n": 1,
+              "prompt_extend": false,
+              "watermark": false,
+              "reference_count": 2,
+              "reference_roles": [
+                "primary"
+              ],
+              "prompt_chars": 933,
+              "on_image_text_language": "en",
+              "statement": "生成时将向 qwen-image-3.0 发送 2 条提示词（合计 933 字）与 2 张参考图（角色：primary）；参数 1344*1344 / n=1 / prompt_extend=false / watermark=false；图中文字语言 en。"
+            }
+          },
+          "ms": 4
+        },
+        {
+          "id": "H02",
+          "title": "确定性：同一输入两次构建与键序变化产生相同指纹",
+          "ok": true,
+          "detail": {
+            "hash": "1dfc98ef98e7a9948b7e7f249baf15d88148c8b3f13e03fdcba83762d4fba678"
+          },
+          "ms": 2
+        },
+        {
+          "id": "H03",
+          "title": "缺 Prompt：阻断并定位到具体图片与 Prompt 区",
+          "ok": true,
+          "detail": {
+            "blockers": [
+              "PROMPT_MISSING@shot_infographic_benefits"
+            ]
+          },
+          "ms": 1
+        },
+        {
+          "id": "H04",
+          "title": "Prompt 过期：风格前进后阻断并定位到风格区",
+          "ok": true,
+          "detail": {
+            "fix": {
+              "region": "style",
+              "shot_id": "shot_main_clean",
+              "label": "主图·干净背景",
+              "action": "到「风格与单图规格」复核公共风格，再重新编译这张图的 Prompt。"
+            }
+          },
+          "ms": 1
+        },
+        {
+          "id": "H05",
+          "title": "缺依赖：对比图没有竞品素材时阻断并定位到套图规划",
+          "ok": false,
+          "error": {
+            "name": "DomainError",
+            "code": "CONTRACT_INVALID",
+            "message": "Prompt 编译未通过：这张图的依据还没有满足：缺少 competitor 角色的参考图。",
+            "details": {
+              "problems": [
+                {
+                  "code": "CONTRACT_INVALID",
+                  "path": "$.shot.dependencies",
+                  "message": "这张图的依据还没有满足：缺少 competitor 角色的参考图。"
+                }
+              ]
+            }
+          },
+          "ms": 1
+        },
+        {
+          "id": "H06",
+          "title": "Provider 或平台不符：记录被改后不能提交",
+          "ok": true,
+          "detail": {
+            "provider": 1,
+            "platform": 1
+          },
+          "ms": 1
+        },
+        {
+          "id": "H07",
+          "title": "参考图越界：0 张与 4 张都不能提交",
+          "ok": true,
+          "detail": {
+            "empty": 1,
+            "many": 1
+          },
+          "ms": 1
+        },
+        {
+          "id": "H08",
+          "title": "风险传播：编译警告进入确认单且带归口图片",
+          "ok": true,
+          "detail": {
+            "risks": [
+              "STYLE_OVERRIDDEN_BY_PLATFORM@shot_main_clean",
+              "STYLE_OVERRIDDEN_BY_PLATFORM@shot_main_clean",
+              "ON_IMAGE_TEXT_NOT_PLATFORM_LANGUAGE@shot_infographic_benefits",
+              "ON_IMAGE_TEXT_NOT_PLATFORM_LANGUAGE@shot_infographic_benefits"
+            ]
+          },
+          "ms": 1
+        },
+        {
+          "id": "H09",
+          "title": "外发摘要只列角色与 hash 前缀，且与每条请求快照一致",
+          "ok": true,
+          "detail": {
+            "sha256_prefix": "aaaaaaaaaaaa",
+            "roles": [
+              "primary"
+            ]
+          },
+          "ms": 1
+        },
+        {
+          "id": "H10",
+          "title": "确认记录：只在可提交清单上建立，且形状可机检",
+          "ok": true,
+          "detail": {
+            "version": 1,
+            "hash": "1dfc98ef98e7a9948b7e7f249baf15d88148c8b3f13e03fdcba83762d4fba678"
+          },
+          "ms": 1
+        },
+        {
+          "id": "H11",
+          "title": "确认失效：上游变化或 Prompt 前进后必须重新确认",
+          "ok": true,
+          "detail": {
+            "fields": [
+              "shots.shot_main_clean",
+              "shots.shot_infographic_benefits",
+              "can_submit"
+            ]
+          },
+          "ms": 2
+        },
+        {
+          "id": "H12",
+          "title": "反向探针：计数、fix、摘要与输入错误都必须变红",
+          "ok": true,
+          "detail": {
+            "probes": 5
+          },
+          "ms": 1
+        }
+      ],
+      "started_at": "2026-09-29T19:33:23.482Z",
+      "failed_ids": [
+        "H05"
+      ],
+      "finished_at": "2026-09-29T19:33:23.499Z"
+    },
+    "prompt": {
+      "suite": "v2.3.4-prompt",
+      "status": "passed",
+      "cases": [
+        {
+          "id": "G01",
+          "title": "主图 golden：分段顺序固定，平台纯白/无文字规则进入正文",
+          "ok": true,
+          "detail": {
+            "golden_hash": "573675acca7b29d918a360c5f35d1dad73381290f16391a885fec7f851e324e8",
+            "text_length": 481
+          },
+          "ms": 2
+        },
+        {
+          "id": "G02",
+          "title": "每个段落的来源都能解析到当前输入；来源并集与声明一致",
+          "ok": true,
+          "detail": {
+            "refs": [
+              "intake.references",
+              "suite_plan.shot:shot_main_clean",
+              "suite_plan.shot:shot_main_clean.role",
+              "platform:amazon_us@1",
+              "style_spec.background",
+              "style_spec.lighting",
+              "style_spec.color_tone",
+              "style_spec.composition",
+              "shot_spec.purpose",
+              "shot_spec.keep",
+              "shot_spec.change_allowed",
+              "provider:qwen-image-3.0@1",
+              "style_spec.avoid"
+            ]
+          },
+          "ms": 1
+        },
+        {
+          "id": "G03",
+          "title": "hash 稳定：同输入同 hash；改一个字段即变化；不修改输入",
+          "ok": true,
+          "detail": {
+            "hash": "b391d7b7986c1ac51adcc954a1ef8fff3dc30492aa06d7f3f487fb872ec57d81",
+            "changed_hash": "e21a5a92cfd4dffb04311187ac9bc4f018b7dcd5c742151288f60223ae52c152"
+          },
+          "ms": 1
+        },
+        {
+          "id": "G04",
+          "title": "语言策略：指令段无未引用英文；反向探针能变红",
+          "ok": true,
+          "detail": {
+            "dirty_problem": "指令段出现未引用的非中文内容：cleanwhitebackground；请用「」逐字引用。"
+          },
+          "ms": 0
+        },
+        {
+          "id": "G05",
+          "title": "keep 与 avoid / change_allowed 冲突必须阻断编译",
+          "ok": true,
+          "detail": {
+            "messages": [
+              "Prompt 编译未通过：保持项与避免项冲突：商品居中。",
+              "Prompt 编译未通过：保持项与允许变化项冲突：商品居中。"
+            ]
+          },
+          "ms": 1
+        },
+        {
+          "id": "G06",
+          "title": "缺依据的图必须阻断编译并给出原因（复用依赖注册表）",
+          "ok": true,
+          "detail": {
+            "message": "Prompt 编译未通过：这张图的依据还没有满足：事实 signature_features 尚未确认（当前 proposed）。"
+          },
+          "ms": 0
+        },
+        {
+          "id": "G07",
+          "title": "绑定事实未确认必须阻断；编译失败不产半成品",
+          "ok": true,
+          "detail": {
+            "message": "Prompt 编译未通过：绑定的商品事实「key_material」还没有确认值，不能进入提示词。"
+          },
+          "ms": 0
+        },
+        {
+          "id": "G08",
+          "title": "未确认事实泄漏：裸文本出现即阻断；引用内不算；冲突值任何位置都阻断",
+          "ok": true,
+          "detail": {
+            "leak": "未确认的「key_material」值出现在提示词：陶瓷内胆。"
+          },
+          "ms": 0
+        },
+        {
+          "id": "G09",
+          "title": "主图平台覆盖与忽略警告：风格背景被覆盖、绑定事实不叠加",
+          "ok": true,
+          "detail": {
+            "warnings": [
+              "STYLE_OVERRIDDEN_BY_PLATFORM",
+              "ON_IMAGE_TEXT_NOT_PLATFORM_LANGUAGE",
+              "ON_IMAGE_TEXT_NOT_PLATFORM_LANGUAGE",
+              "MAIN_IMAGE_FACTS_IGNORED"
+            ]
+          },
+          "ms": 0
+        },
+        {
+          "id": "G10",
+          "title": "图中文字：逐字引用、语言警告、非逐字必被抓住",
+          "ok": true,
+          "detail": {
+            "items": [
+              {
+                "text": "「304不锈钢内胆」",
+                "language": "zh",
+                "source_ref": "product_brief.fact:signature_features"
+              },
+              {
+                "text": "「12小时保温」",
+                "language": "zh",
+                "source_ref": "product_brief.fact:signature_features"
+              }
+            ],
+            "warnings": [
+              "ON_IMAGE_TEXT_NOT_PLATFORM_LANGUAGE",
+              "ON_IMAGE_TEXT_NOT_PLATFORM_LANGUAGE"
+            ]
+          },
+          "ms": 0
+        },
+        {
+          "id": "G11",
+          "title": "请求快照与版本记录：prompt 逐字一致、参考图越界报红、记录可机检",
+          "ok": true,
+          "detail": {
+            "hash": "b391d7b7986c1ac51adcc954a1ef8fff3dc30492aa06d7f3f487fb872ec57d81",
+            "snapshot_size": "1344*1344"
+          },
+          "ms": 1
+        },
+        {
+          "id": "G12",
+          "title": "过期机检：版本前进即过期；一致则不过期；坏记录有明确原因",
+          "ok": true,
+          "detail": {
+            "style": [
+              {
+                "field": "style_version",
+                "stored": 1,
+                "current": 2,
+                "reason": "版本已前进"
+              }
+            ]
+          },
+          "ms": 1
+        }
+      ],
+      "started_at": "2026-09-29T19:33:23.660Z",
+      "failed_ids": [],
+      "finished_at": "2026-09-29T19:33:23.668Z"
+    },
+    "specs": {
+      "suite": "v2.3.3-specs",
+      "status": "passed",
+      "cases": [
+        {
+          "id": "F01",
+          "title": "空风格规格合法；投影只列有值字段",
+          "ok": true,
+          "detail": {
+            "summary": [
+              "背景风格：浅灰无缝背景",
+              "光线：柔和顶光",
+              "避免出现：文字水印"
+            ]
+          },
+          "ms": 0
+        },
+        {
+          "id": "F02",
+          "title": "风格校验反向探针：七类越界都要变红",
+          "ok": true,
+          "detail": {
+            "probes": [
+              "未知字段",
+              "文本字段类型错",
+              "文本超长",
+              "avoid 非列表",
+              "avoid 超条数",
+              "avoid 重复",
+              "avoid 空项"
+            ]
+          },
+          "ms": 0
+        },
+        {
+          "id": "F03",
+          "title": "风格差异只报告真正变化的字段",
+          "ok": true,
+          "detail": {
+            "diffs": [
+              "背景风格",
+              "避免出现"
+            ]
+          },
+          "ms": 0
+        },
+        {
+          "id": "F04",
+          "title": "单图默认值按角色派生：主图/场景/自定义各自不同",
+          "ok": true,
+          "detail": {
+            "main_keep": [
+              "商品外观、颜色与比例",
+              "标识与文字"
+            ],
+            "scene_change": [
+              "环境、道具与光线"
+            ]
+          },
+          "ms": 0
+        },
+        {
+          "id": "F05",
+          "title": "单图校验反向探针：九类越界都要变红",
+          "ok": true,
+          "detail": {
+            "probes": [
+              "空 purpose",
+              "purpose 超长",
+              "keep 非列表",
+              "keep 空列表",
+              "keep 超项数",
+              "单项超长",
+              "重复项",
+              "未知字段",
+              "notes 非文本"
+            ]
+          },
+          "ms": 0
+        },
+        {
+          "id": "F06",
+          "title": "单图差异：purpose 与 keep 各自成条，未变不报",
+          "ok": true,
+          "detail": {
+            "diffs": [
+              "目的",
+              "必须保持"
+            ]
+          },
+          "ms": 0
+        },
+        {
+          "id": "F07",
+          "title": "整套投影：风格改动影响全部图片并保留计划与商品理解",
+          "ok": true,
+          "detail": {
+            "affects": "全部 4 张图",
+            "invalidates": "Prompt 版本、审核报告、整套一致性报告"
+          },
+          "ms": 0
+        },
+        {
+          "id": "F08",
+          "title": "单图投影：只影响目标图且必须带 shotId",
+          "ok": true,
+          "detail": {
+            "affects": "只有「主图·干净背景」这一张",
+            "missing": "变化类型 shot_spec_changed 必须带 shotId，否则无法把影响限制在目标 Shot。",
+            "unknown": "未知变化类型 \"nonsense_changed\"。"
+          },
+          "ms": 0
+        },
+        {
+          "id": "F09",
+          "title": "回退选版：只选比当前小的最高版本；边界与非法输入都要说清",
+          "ok": true,
+          "detail": {
+            "invalid": "当前版本必须是正整数。"
+          },
+          "ms": 0
+        },
+        {
+          "id": "F10",
+          "title": "审核清单：默认规格标默认，保存规格标已保存，风格行随风格变化",
+          "ok": true,
+          "detail": {
+            "default_saved": false,
+            "sections": [
+              "purpose",
+              "keep",
+              "change",
+              "style"
+            ]
+          },
+          "ms": 0
+        },
+        {
+          "id": "F11",
+          "title": "聚合 digest：按计划顺序、默认/已保存计数、风格配置状态",
+          "ok": true,
+          "detail": {
+            "total": 2,
+            "saved": 1
+          },
+          "ms": 0
+        },
+        {
+          "id": "F12",
+          "title": "确定性：同输入两次投影一致；校验与差异不修改输入",
+          "ok": true,
+          "detail": {
+            "deterministic": true
+          },
+          "ms": 0
+        }
+      ],
+      "started_at": "2026-09-29T19:33:23.828Z",
+      "failed_ids": [],
+      "finished_at": "2026-09-29T19:33:23.831Z"
+    },
+    "suite_editor": {
+      "suite": "v2.3.2-suite-editor",
+      "status": "passed",
+      "cases": [
+        {
+          "id": "E01",
+          "title": "推荐播种：必需 + 依据已满足入选，被阻断可选带原因留下",
+          "ok": true,
+          "detail": {
+            "seeded": [
+              "shot_main_clean",
+              "shot_infographic_benefits",
+              "shot_scene_lifestyle",
+              "shot_detail_material"
+            ],
+            "skipped": [
+              "size_dimensions",
+              "comparison_competitor",
+              "ingredient_composition",
+              "packaging_contents"
+            ]
+          },
+          "ms": 2
+        },
+        {
+          "id": "E02",
+          "title": "空计划不是可保存方案：缺张数与缺必需图都要报",
+          "ok": true,
+          "detail": {
+            "problems": [
+              "套图至少要有 1 张图。",
+              "套图至少要有 1 张必需图。"
+            ]
+          },
+          "ms": 0
+        },
+        {
+          "id": "E03",
+          "title": "添加模板图：同一模板允许重复且 id 自动去重；被阻断模板可添加但显示原因",
+          "ok": true,
+          "detail": {
+            "ids": [
+              "shot_main_clean",
+              "shot_infographic_benefits",
+              "shot_scene_lifestyle",
+              "shot_detail_material",
+              "shot_scene_lifestyle_2",
+              "shot_comparison_competitor"
+            ],
+            "blocked": [
+              {
+                "kind": "asset_role",
+                "reason": "缺少 competitor 角色的参考图",
+                "missing": [
+                  "competitor"
+                ]
+              }
+            ]
+          },
+          "ms": 0
+        },
+        {
+          "id": "E04",
+          "title": "自定义图：新增合法、空名称被拒、可复制且仍是可选图",
+          "ok": true,
+          "detail": {
+            "invalid_label": "自定义图必须有名称。",
+            "copy_id": "shot_custom_copy"
+          },
+          "ms": 1
+        },
+        {
+          "id": "E05",
+          "title": "复制：新 id、副本可选、名称标记、原图不动",
+          "ok": true,
+          "detail": {
+            "copy_id": "shot_main_clean_copy"
+          },
+          "ms": 0
+        },
+        {
+          "id": "E06",
+          "title": "删除：可选可删；最后一张必需图与最后一张图都要被拒",
+          "ok": true,
+          "detail": {
+            "last_required": "这是最后一张必需图，不能删除；必需图至少保留 1 张。",
+            "last_shot": "套图至少保留 1 张。"
+          },
+          "ms": 0
+        },
+        {
+          "id": "E07",
+          "title": "排序：±1 换位、边界不动、非法 delta 被拒",
+          "ok": true,
+          "detail": {
+            "bad_delta": "只支持上移（-1）或下移（+1）。"
+          },
+          "ms": 0
+        },
+        {
+          "id": "E08",
+          "title": "不变量校验：六类越界都要报红（反向探针）",
+          "ok": true,
+          "detail": {
+            "probes": [
+              "shot_id 重复",
+              "未知角色",
+              "custom 图带 template_id",
+              "非自定义图未知模板",
+              "角色与模板不一致",
+              "自定义图被标必需",
+              "依赖与模板不一致",
+              "缺必需图"
+            ]
+          },
+          "ms": 1
+        },
+        {
+          "id": "E09",
+          "title": "失败原子：被拒操作不得产生半成品，输入计划逐字不变",
+          "ok": true,
+          "detail": {
+            "refused": [
+              "这是最后一张必需图，不能删除；必需图至少保留 1 张。",
+              "找不到要删除的图：shot_ghost",
+              "找不到要移动的图：shot_ghost",
+              "只支持上移（-1）或下移（+1）。",
+              "自定义图必须有名称。",
+              "找不到要复制的图：shot_ghost"
+            ]
+          },
+          "ms": 0
+        },
+        {
+          "id": "E10",
+          "title": "投影精确：缺竞品与缺主图都点名；补齐后逐图转满足",
+          "ok": true,
+          "detail": {
+            "required_blocked": [
+              "shot_main_clean"
+            ],
+            "total": 5
+          },
+          "ms": 0
+        },
+        {
+          "id": "E11",
+          "title": "id 派生可复现：冲突时 _2、_3，已占用则跳过",
+          "ok": true,
+          "detail": {
+            "ids": [
+              "shot_main_clean",
+              "shot_infographic_benefits",
+              "shot_scene_lifestyle",
+              "shot_detail_material",
+              "shot_scene_lifestyle_2",
+              "shot_scene_lifestyle_3"
+            ]
+          },
+          "ms": 0
+        },
+        {
+          "id": "E12",
+          "title": "操作返回新对象：数组不共享，输入顺序与内容不变",
+          "ok": true,
+          "detail": {
+            "moved": [
+              "shot_infographic_benefits",
+              "shot_main_clean"
+            ]
+          },
+          "ms": 0
+        }
+      ],
+      "started_at": "2026-09-29T19:33:23.980Z",
+      "failed_ids": [],
+      "finished_at": "2026-09-29T19:33:23.986Z"
+    }
+  },
+  "ui_flow": {
+    "final": {
+      "record_version": 2,
+      "fingerprint": "c6c28b5bf8fbd6d7b5170992dc9ab9fde16722984a9918f8b806678ac3ca0456",
+      "state": "READY_TO_GENERATE",
+      "external_summary": {
+        "model": "qwen-image-3.0",
+        "size": "1344*1344",
+        "n": 1,
+        "prompt_extend": false,
+        "watermark": false,
+        "reference_count": 4,
+        "reference_roles": [
+          "primary"
+        ],
+        "prompt_chars": 1600,
+        "on_image_text_language": "en",
+        "statement": "生成时将向 qwen-image-3.0 发送 4 条提示词（合计 1600 字）与 4 张参考图（角色：primary）；参数 1344*1344 / n=1 / prompt_extend=false / watermark=false；图中文字语言 en。"
+      },
+      "prompt_versions": [
+        {
+          "shot_id": "shot_detail_material",
+          "version": 2,
+          "hash": "4a6661d1af29ffdd239291045485462203bf9accb46c39f1fb0e38fe9c644c56"
+        },
+        {
+          "shot_id": "shot_infographic_benefits",
+          "version": 2,
+          "hash": "af23851de2bf4a720f6f2f7595be2e5b9b6df2b283d059b3268523571265d2df"
+        },
+        {
+          "shot_id": "shot_main_clean",
+          "version": 3,
+          "hash": "cfdb6e0294b110d6e32aa9aa2fb2a8ef509601840c481cca473442dd6f62e508"
+        },
+        {
+          "shot_id": "shot_scene_lifestyle",
+          "version": 2,
+          "hash": "57436a529e1017a36de3d94b9ead03ef9c342a2b9ce4fae811f0c1ea5b0146b1"
+        }
+      ]
+    }
+  },
+  "console_errors": [],
+  "page_errors": [],
+  "screenshots": [
+    "evals/product-v2/v2.3.5-pre-generation-confirm-20260930-033322.png"
+  ],
+  "boundary": "证明生成前确认在真实浏览器里可核对、可定位、可失效：确认单由套图计划、每图 PromptVersion、参考图与平台/Provider 档确定性派生；缺 Prompt、记录非法、快照与文本不一致、平台/Provider 不符、参考图数量越界、依赖未满足与 Prompt 过期都会阻断并给出可操作位置（fix.region）；外发摘要只写真实会发送的模型参数与参考图角色 + sha256 前 12 位，不含图片字节；风险（语言不一致、平台覆盖、主图忽略文案）必须可见但允许确认；确认记录 append-only 并绑定指纹，上游或 Prompt 前进即失效、状态回落 PLAN_REVIEW，重新确认写新版本。全程 0 次真实模型调用，不发图、不生成候选、不证明出图质量；真实生成属于 Phase 4，审核与返工属于 Phase 5。"
+}

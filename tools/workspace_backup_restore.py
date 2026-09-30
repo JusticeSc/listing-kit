@@ -26,7 +26,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 EXCLUDED_NAMES = {".workspace.lock"}
 CODE_FINGERPRINT_PATTERNS = (
-    "requirements.txt",
+    "pyproject.toml",
+    "uv.lock",
     "app/server.py",
     "app/product_v1_server.py",
     "app/product_v1/index.html",

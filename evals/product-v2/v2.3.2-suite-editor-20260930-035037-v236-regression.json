@@ -1,0 +1,413 @@
+{
+  "task": "V2.3.2",
+  "suite_id": "v2.3.2-suite-editor",
+  "status": "passed",
+  "finished_at": "2026-09-30T03:50:45",
+  "model_calls": 0,
+  "checks": [
+    {
+      "id": "V2.3.2-00",
+      "title": "domain / workspace / harness 通过 node --check（ESM 语法门）",
+      "ok": true,
+      "detail": {
+        "files": [
+          {
+            "file": "app/product_v2/domain/shared.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/domain/errors.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/domain/slots.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/domain/intake.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/domain/brief.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/domain/invalidation.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/domain/suite-plan.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/domain/suite.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/domain/index.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/workspace.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "evals/product-v2/harness/suite-editor-contract.js",
+            "rc": 0,
+            "stderr": ""
+          }
+        ],
+        "ok": true
+      }
+    },
+    {
+      "id": "V2.3.2-01",
+      "title": "契约套件全部通过且用例清单完整（E01..E12）",
+      "ok": true,
+      "detail": {
+        "status": "passed",
+        "cases": 12,
+        "missing": [],
+        "failed": [],
+        "errors": []
+      }
+    },
+    {
+      "id": "V2.3.2-02",
+      "title": "反向探针确实被执行（空计划 / 越界 / 最后必需图 / 边界排序 / 不变量 / 失败原子）",
+      "ok": true,
+      "detail": {
+        "expected": [
+          "E02",
+          "E04",
+          "E06",
+          "E07",
+          "E08",
+          "E09"
+        ],
+        "seen": [
+          "E02",
+          "E04",
+          "E06",
+          "E07",
+          "E08",
+          "E09"
+        ]
+      }
+    },
+    {
+      "id": "V2.3.2-03",
+      "title": "商品理解就绪后套图编辑器解锁，空方案状态明确",
+      "ok": true,
+      "detail": {
+        "state": "PLAN_REVIEW",
+        "empty": "还没有套图方案：点“生成推荐方案”，或从模板 / 自定义添加。"
+      }
+    },
+    {
+      "id": "V2.3.2-04",
+      "title": "生成推荐方案：4 张按模板 order 落库，状态行与存储一致",
+      "ok": true,
+      "detail": {
+        "ids": [
+          "shot_main_clean",
+          "shot_infographic_benefits",
+          "shot_scene_lifestyle",
+          "shot_detail_material"
+        ],
+        "status": "共 4 张，依据已满足 4 张",
+        "version": 1
+      }
+    },
+    {
+      "id": "V2.3.2-05",
+      "title": "复制 / 下移 / 删除副本：界面顺序与存储版本同步推进",
+      "ok": true,
+      "detail": {
+        "ids": [
+          "shot_infographic_benefits",
+          "shot_main_clean",
+          "shot_scene_lifestyle",
+          "shot_detail_material"
+        ],
+        "version": 4
+      }
+    },
+    {
+      "id": "V2.3.2-06",
+      "title": "删除最后一张必需图被拒：错误可见、行数与存储版本都不变",
+      "ok": true,
+      "detail": {
+        "error": "这是最后一张必需图，不能删除；必需图至少保留 1 张。",
+        "version": 4
+      }
+    },
+    {
+      "id": "V2.3.2-07",
+      "title": "自定义图与「被阻断模板」都可以加入，阻断原因逐行可见",
+      "ok": true,
+      "detail": {
+        "hint": "该模板暂时缺依据：缺少 competitor 角色的参考图",
+        "blocked": "6\n对比图·竞品同框\n可选\n\n暂时缺依据：缺少 competitor 角色的参考图\n\n上移\n下移\n复制\n删除"
+      }
+    },
+    {
+      "id": "V2.3.2-08",
+      "title": "刷新恢复：行顺序、数量与存储版本原样恢复",
+      "ok": true,
+      "detail": {
+        "ids": [
+          "shot_infographic_benefits",
+          "shot_main_clean",
+          "shot_scene_lifestyle",
+          "shot_detail_material",
+          "shot_custom",
+          "shot_comparison_competitor"
+        ],
+        "version": 6
+      }
+    },
+    {
+      "id": "V2.3.2-09",
+      "title": "契约会话与 UI 会话零 console error / page error",
+      "ok": true,
+      "detail": {
+        "console": [],
+        "page": []
+      }
+    },
+    {
+      "id": "V2.3.2-10",
+      "title": "正式入口自检仍全过（V2.3.2 不破坏既有入口）",
+      "ok": true,
+      "detail": {
+        "args": [
+          "--check"
+        ],
+        "rc": 0,
+        "tail": [
+          "  PASS  语义分析路由（fake provider）返回提案且标记 unknown=false           status=200 slots=5",
+          "  PASS  非法 JSON 归 input_rejected/400                         status=400 error={'family': 'input_rejected', 'code': 'INPUT_INVALID', 'message': '请求体不是合法 JSON。', 'retry_policy': 'fatal', 'http_status': None, 'request_id': None, 'details': {'problems': None}}",
+          "  PASS  超过字节上限的请求体被拒（400 input_rejected）                     status=400 bytes=262676",
+          "  PASS  合法 JSON 但字段越界归 input_rejected/400（不调用模型）             status=400 error={'family': 'input_rejected', 'code': 'INPUT_INVALID', 'message': '请求字段不符合语义请求契约；没有调用模型。', 'retry_policy': 'fatal', 'http_status': None, 'request_id': None, 'details': {'problems': [{'path': '$.product_name', 'message': 'Field required'}]}}",
+          "  PASS  provider 不可用时 capabilities 仍 200 且 configured=false  status=200 unavailable={'kind': 'dependency', 'detail': 'RuntimeError: 自检：语义 provider 构造失败'}",
+          "  PASS  provider 不可用时分析路由 503 且错误分类明确                        status=503 error={'family': 'internal', 'code': 'PROVIDER_NOT_CONFIGURED', 'message': '语义 provider 不可用：检查注册表、依赖与 DASHSCOPE_API_KEY。', 'retry_policy': 'fatal', 'http_status': 503, 'request_id': None, 'details': {'kind': 'dependency', 'detail': 'RuntimeError: 自检：语义 provider 构造失败'}}",
+          "  PASS  未定义的无状态写路由保持 404                                     status=404",
+          "V2 正式入口自检：21/21 通过。"
+        ]
+      }
+    }
+  ],
+  "suite": {
+    "suite": "v2.3.2-suite-editor",
+    "status": "passed",
+    "cases": [
+      {
+        "id": "E01",
+        "title": "推荐播种：必需 + 依据已满足入选，被阻断可选带原因留下",
+        "ok": true,
+        "detail": {
+          "seeded": [
+            "shot_main_clean",
+            "shot_infographic_benefits",
+            "shot_scene_lifestyle",
+            "shot_detail_material"
+          ],
+          "skipped": [
+            "size_dimensions",
+            "comparison_competitor",
+            "ingredient_composition",
+            "packaging_contents"
+          ]
+        },
+        "ms": 2
+      },
+      {
+        "id": "E02",
+        "title": "空计划不是可保存方案：缺张数与缺必需图都要报",
+        "ok": true,
+        "detail": {
+          "problems": [
+            "套图至少要有 1 张图。",
+            "套图至少要有 1 张必需图。"
+          ]
+        },
+        "ms": 0
+      },
+      {
+        "id": "E03",
+        "title": "添加模板图：同一模板允许重复且 id 自动去重；被阻断模板可添加但显示原因",
+        "ok": true,
+        "detail": {
+          "ids": [
+            "shot_main_clean",
+            "shot_infographic_benefits",
+            "shot_scene_lifestyle",
+            "shot_detail_material",
+            "shot_scene_lifestyle_2",
+            "shot_comparison_competitor"
+          ],
+          "blocked": [
+            {
+              "kind": "asset_role",
+              "reason": "缺少 competitor 角色的参考图",
+              "missing": [
+                "competitor"
+              ]
+            }
+          ]
+        },
+        "ms": 1
+      },
+      {
+        "id": "E04",
+        "title": "自定义图：新增合法、空名称被拒、可复制且仍是可选图",
+        "ok": true,
+        "detail": {
+          "invalid_label": "自定义图必须有名称。",
+          "copy_id": "shot_custom_copy"
+        },
+        "ms": 1
+      },
+      {
+        "id": "E05",
+        "title": "复制：新 id、副本可选、名称标记、原图不动",
+        "ok": true,
+        "detail": {
+          "copy_id": "shot_main_clean_copy"
+        },
+        "ms": 0
+      },
+      {
+        "id": "E06",
+        "title": "删除：可选可删；最后一张必需图与最后一张图都要被拒",
+        "ok": true,
+        "detail": {
+          "last_required": "这是最后一张必需图，不能删除；必需图至少保留 1 张。",
+          "last_shot": "套图至少保留 1 张。"
+        },
+        "ms": 0
+      },
+      {
+        "id": "E07",
+        "title": "排序：±1 换位、边界不动、非法 delta 被拒",
+        "ok": true,
+        "detail": {
+          "bad_delta": "只支持上移（-1）或下移（+1）。"
+        },
+        "ms": 0
+      },
+      {
+        "id": "E08",
+        "title": "不变量校验：六类越界都要报红（反向探针）",
+        "ok": true,
+        "detail": {
+          "probes": [
+            "shot_id 重复",
+            "未知角色",
+            "custom 图带 template_id",
+            "非自定义图未知模板",
+            "角色与模板不一致",
+            "自定义图被标必需",
+            "依赖与模板不一致",
+            "缺必需图"
+          ]
+        },
+        "ms": 1
+      },
+      {
+        "id": "E09",
+        "title": "失败原子：被拒操作不得产生半成品，输入计划逐字不变",
+        "ok": true,
+        "detail": {
+          "refused": [
+            "这是最后一张必需图，不能删除；必需图至少保留 1 张。",
+            "找不到要删除的图：shot_ghost",
+            "找不到要移动的图：shot_ghost",
+            "只支持上移（-1）或下移（+1）。",
+            "自定义图必须有名称。",
+            "找不到要复制的图：shot_ghost"
+          ]
+        },
+        "ms": 0
+      },
+      {
+        "id": "E10",
+        "title": "投影精确：缺竞品与缺主图都点名；补齐后逐图转满足",
+        "ok": true,
+        "detail": {
+          "required_blocked": [
+            "shot_main_clean"
+          ],
+          "total": 5
+        },
+        "ms": 0
+      },
+      {
+        "id": "E11",
+        "title": "id 派生可复现：冲突时 _2、_3，已占用则跳过",
+        "ok": true,
+        "detail": {
+          "ids": [
+            "shot_main_clean",
+            "shot_infographic_benefits",
+            "shot_scene_lifestyle",
+            "shot_detail_material",
+            "shot_scene_lifestyle_2",
+            "shot_scene_lifestyle_3"
+          ]
+        },
+        "ms": 0
+      },
+      {
+        "id": "E12",
+        "title": "操作返回新对象：数组不共享，输入顺序与内容不变",
+        "ok": true,
+        "detail": {
+          "moved": [
+            "shot_infographic_benefits",
+            "shot_main_clean"
+          ]
+        },
+        "ms": 0
+      }
+    ],
+    "started_at": "2026-09-29T19:50:38.897Z",
+    "failed_ids": [],
+    "finished_at": "2026-09-29T19:50:38.903Z"
+  },
+  "ui_flow": {
+    "seeded_slots": {
+      "slots": [
+        "product_name",
+        "product_category",
+        "signature_features"
+      ]
+    },
+    "ids_before_reload": [
+      "shot_infographic_benefits",
+      "shot_main_clean",
+      "shot_scene_lifestyle",
+      "shot_detail_material",
+      "shot_custom",
+      "shot_comparison_competitor"
+    ],
+    "version": 6
+  },
+  "console_errors": [],
+  "page_errors": [],
+  "screenshots": [
+    "evals/product-v2/v2.3.2-suite-editor-20260930-035037.png"
+  ],
+  "boundary": "证明套图计划在真实浏览器里可增删复排并原样恢复：shots 数组即顺序、至少保留 1 张必需图、自定义图可选、失败操作不改旧计划与存储版本；E01–E12 覆盖操作语义、不变量反向探针与事务原子性，UI 流覆盖解锁、推荐播种、复制、下移、删除、被拒删除、自定义图、被阻断模板与刷新恢复。全程 0 次真实模型调用。不证明 StyleSpec/ShotSpec 版本与失效传播（V2.3.3）、Prompt 编译与真实请求（V2.3.4）、生成前确认（V2.3.5），也不证明陌生试用者的可理解性。"
+}

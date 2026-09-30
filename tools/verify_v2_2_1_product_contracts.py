@@ -10,7 +10,7 @@
   6) 全程零 console error / page error。
 
 运行：
-  & "C:\\Users\\31368\\.local\\bin\\uv.exe" run --no-project --with-requirements requirements.txt --with playwright python tools/verify_v2_2_1_product_contracts.py
+  uv run --locked python tools/verify_v2_2_1_product_contracts.py
 """
 from __future__ import annotations
 
@@ -176,7 +176,8 @@ def run_entry_check() -> dict:
                                encoding="utf-8", errors="replace", check=False)
     tail = (completed.stdout + completed.stderr).strip().splitlines()[-4:]
     return {"rc": completed.returncode, "tail": tail,
-            "ok": completed.returncode == 0 and any("13/13" in line for line in tail)}
+            "ok": completed.returncode == 0 and any("通过。" in line for line in tail)
+            and not any("FAIL" in line for line in tail)}
 
 
 def main() -> int:
