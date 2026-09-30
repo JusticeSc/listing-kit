@@ -862,7 +862,8 @@ capabilities 仍 200 且 `configured=false`，提交返回 503 `PROVIDER_NOT_CON
 
 **边界与复访**：本批不生成候选、不写浏览器状态、不证明出图质量；浏览器侧 Attempt / action ID /
 Unknown 恢复属于 V2.4.2，批量与部分失败属于 V2.4.3，候选 Blob 属于 V2.4.4。真实调用只在
-V2.4.2 的闭环里按 §12.2 的成本纪律发生，网关本身可离线验证。
+V2.4.5 的真实参考图闭环里按 §12.2 的成本纪律发生（V2.4.1–V2.4.4 全部用假替身离线验证，
+所以 Gate G4 的「真实参考图请求成功」仍缺证据）。
 
 ### 9.11 V2.4.2 浏览器 Attempt、action ID、task ID 与 Unknown 恢复
 
@@ -943,6 +944,40 @@ Attempt + Prompt 就绪状态」即时推导（`deriveBatchState`，同输入必
 与 `evals/product-v2/evidence/v2.4.3-batch-suite-<stamp>.png`。
 
 **边界**：本批不保存候选字节（V2.4.4），不做审核、比较与返工（Phase 5），不做交付门禁（Phase 6）。
+
+### 9.13 V2.4.4 候选字节流、Blob 持久化与容量管理
+
+本节把「成功结论」变成可复看、可核对的本地字节。唯一权威是 `app/product_v2/domain/candidate.js`
+（纯函数：PNG 尺寸解析、候选记录构造与校验、与来源 Attempt 的身份匹配、入库判据）加上内容寻址的
+assets 仓；批次层只多一个投影值（见下），不新增批次实体。
+
+**身份与指针**。候选身份 = 来源 Attempt 的 `action_id`：同一 action 只允许一条候选记录，记录里只放
+`asset_sha256` 指针与冻结的媒体信息（宽、高、字节数、媒体类型），字节本体在 assets 仓按 sha256 内容
+寻址——同一份字节只存一份，导出与预览都读同一份字节。
+
+**下载即存**。终态成功的那一步（提交直接到终态或核对到成功）自动取回字节：`POST /api/v2/images/result`
+只接受 200 + `image/png`；服务端声明的 `X-Image-Sha256` 与本机重算的 sha256 必须一致，否则不保存
+（宁可没有候选，也不存不可信字节）。取回与保存失败不改变既有 Attempt 记录。
+
+**幂等与刷新**。已入库即跳过（`candidateStoreDecision`）：刷新、重开项目不重复保存、不新增取回请求；
+预览用 object URL（每个候选一个，关闭项目统一撤销），来源是 IndexedDB 里的字节，不是上游临时地址。
+
+**容量与半份记录**。assets 事务失败不产生半份记录：配额不足被翻译成可恢复指引（浏览器存储空间不足、
+先清理或导出再点「保存候选图片」重试），记录保持原样，重试走同一 action。
+
+**批次投影扩展**。批次每张图多一个状态 `succeeded_unstored`（已生成、待保存候选）与队列 `fetch_queue`；
+`settled` 要求未保存数为 0；下一步优先级 `empty → submit → compile → wait → fetch → review → retry → done`；
+只有待保存候选时按钮显示「保存候选（N 张）」，一次把剩余候选存完。
+
+**证据要求**（`tools/verify_v2_4_4_candidate_blob.py`，V2.4.4-00..10）：C01–C10 契约套件全过并回归
+Attempt / 批次 / 确认单 / Prompt 编辑 / 套图编辑器五个既有套件；单张成功自动入库且记录 sha = 重算 sha =
+响应头 sha、64×64 预览可见；刷新后候选保留、零新增取回请求、不重复保存；取回失败一次不留半份记录且
+可恢复；配额异常在 IndexedDB 协议层注入（产品代码无测试钩子）、失败可恢复；整套批次只提交剩余图一次、
+全部成功且候选全部入库。终版证据：`evals/product-v2/v2.4.4-candidate-blob-<stamp>-final.txt/.json`
+与 `evals/product-v2/evidence/v2.4.4-candidate-blob-<stamp>.png`。
+
+**边界**：候选是「字节 + 身份」，不是「选中的成品」；本批不做审核、比较与选择（V2.5.x）、不做单图返工与
+交付门禁（Phase 5 / 6），也不做容量统计与清理界面。
 
 ## 10. 实施阶段、任务与 Gate
 
@@ -1027,6 +1062,7 @@ Attempt + Prompt 就绪状态」即时推导（`deriveBatchState`，同输入必
 | V2.4.2 | 浏览器 Attempt、action ID、task ID 与 Unknown 恢复 | V2.4.1 | 提交前持久化身份；已知 task 可跨服务重启核对；无 task 的 Unknown 不自动重试 | 重启/超时/重复点击轨迹 | 用户显式创建新 action |
 | V2.4.3 | 整套批次执行和逐图进度 | V2.4.2 | 部分失败不丢成功；刷新恢复；失败 Shot 可单独重试 | fake 正常/partial/unknown E2E | 停止新增提交，保留已有结果 |
 | V2.4.4 | 候选字节流、Blob 持久化与容量管理 | V2.4.3 | 下载即存 IndexedDB；hash、媒体信息和来源 Attempt 一致；容量不足可恢复 | Blob hash、配额异常、刷新预览 | 不提交选择；提示导出/清理 |
+| V2.4.5 | 真实参考图最小闭环（一笔预算内的真实调用） | V2.4.4 | 真实 qwen-image 请求含真实参考图与真实 Prompt；候选非 Mock 并存为浏览器 Blob，task id 可追溯 | 真实请求审计 + 候选 hash + 状态轨迹 | 失败按分类保留证据、不循环重试；Unknown 只核对不重提 |
 | V2.5.1 | 生成前、单图和导出的确定性验证器 | G4 | 每条硬规则有版本、消费者和可复现测量；审美不冒充硬门 | 单元/反向探针 | 未知规则降为提示或禁用 |
 | V2.5.2 | 可替换 VLM ReviewProvider | V2.5.1 | 输出绑定 Candidate/ReviewContract；非法/超时保留 Unknown；不自动采纳 | fake provider、已标样例、最小真实请求 | 允许人工审核继续，不伪造 PASS |
 | V2.5.3 | 参考图、旧候选、新候选和审核清单比较界面 | V2.5.2 | 比较直接，异常优先，完整报告按需展开 | Playwright、视觉证据、键盘路径 | 回退单候选视图但保留数据 |

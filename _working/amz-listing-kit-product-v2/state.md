@@ -13,7 +13,7 @@ goal_id: 01a0ca17-2179-7eb0-969a-af9c79c4d8ca
 system_goal_observed_status: active
 system_goal_observed_at: 2026-09-29T21:16:19+08:00
 plan_ref: docs/product-v2-goal-and-implementation-plan.md
-latest_audit: evals/product-v2/v2.4.2-generation-attempt-20260930-112423-final.txt
+latest_audit: evals/product-v2/v2.4.4-candidate-blob-20260930-131856-final.txt
 
 phase_progress:
   "0":
@@ -85,6 +85,9 @@ phase_progress:
       - evals/product-v2/v2.4.3-batch-suite-20260930-114918-final.txt
       - evals/product-v2/v2.4.3-batch-suite-20260930-114918-final.json
       - evals/product-v2/evidence/v2.4.3-batch-suite-20260930-114918.png
+      - evals/product-v2/v2.4.4-candidate-blob-20260930-131856-final.txt
+      - evals/product-v2/v2.4.4-candidate-blob-20260930-131856-final.json
+      - evals/product-v2/evidence/v2.4.4-candidate-blob-20260930-131856.png
 
 task_progress:
   V2.0.1:
@@ -405,10 +408,29 @@ task_progress:
       - README.md
       - docs/product-v2-goal-and-implementation-plan.md
       - .github/workflows/ci-cd.yml
+  V2.4.4:
+    status: done
+    evidence:
+      - evals/product-v2/v2.4.4-candidate-blob-20260930-131856-final.txt
+      - evals/product-v2/v2.4.4-candidate-blob-20260930-131856-final.json
+      - evals/product-v2/evidence/v2.4.4-candidate-blob-20260930-131856.png
+      - tools/verify_v2_4_4_candidate_blob.py
+      - app/product_v2/domain/candidate.js
+      - app/product_v2/domain/batch.js
+      - app/product_v2/domain/shared.js
+      - app/product_v2/domain/index.js
+      - app/product_v2/workspace.js
+      - app/product_v2/index.html
+      - app/product_v2/styles.css
+      - evals/product-v2/harness/candidate-contract.js
+      - evals/product-v2/harness/candidate-contract.html
+      - README.md
+      - docs/product-v2-goal-and-implementation-plan.md
+      - .github/workflows/ci-cd.yml
 
-next_action_task: V2.4.4
+next_action_task: V2.4.5
 blockers: []
 unknowns:
   - visual_language_provider_model_id_is_deferred_to_V2.5.2_and_does_not_block_browser_workspace_work
-updated_at: 2026-09-30T11:56:10+08:00
+updated_at: 2026-09-30T13:21:18+08:00
 ```
