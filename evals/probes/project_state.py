@@ -103,19 +103,25 @@ def _write(data: dict) -> None:
     STATE.write_text(_serialize(data), encoding="utf-8", newline="\n")
 
 
-def _phase_for_task(task_id: str) -> str:
-    match = re.match(r"^(?:D(-?\d+)|V2\.(-?\d+))", task_id)
-    if not match:
-        raise RuntimeError(f"无法从任务 {task_id} 得到 Phase")
-    return match.group(1) or match.group(2)
-
-
 def _make_active(data: dict) -> dict:
+    """合法开工形态：记录 active，并给**最早未完成**的阶段开相。
+
+    2026-09-30 的教训：这里以前用 next_action 的 ID 前缀猜相位，前提是
+    「任务 ID 前缀 == 阶段」。计划把 V2.6.1（人工 Selection）排到 V2.5.5 之前，
+    两者都落在 Gate G5（Phase 5），且明确任务 ID 保留、顺序以依赖为准
+    （计划 §9.19 / §10.1）——前缀不再是相位。相位只从阶段推进里读：
+    最早未完成的阶段开相，前置阶段天然都已 done。
+    """
     result = copy.deepcopy(data)
     result["status"] = "active"
     result["system_goal_observed_status"] = "active"
-    phase = _phase_for_task(str(result["next_action_task"]))
-    result.setdefault("phase_progress", {})[phase] = {"status": "active", "evidence": []}
+    phases = result.setdefault("phase_progress", {})
+    heads = PLAN_PHASE_HEAD.findall(PLAN_TEXT)
+    open_phase = next((pid for pid in heads
+                       if (phases.get(pid) or {}).get("status") != "done"), None)
+    if open_phase is None:
+        raise RuntimeError("所有阶段都已完成，探针无法构造合法开工形态 —— 要更新探针，不是放宽判据")
+    phases[open_phase] = {"status": "active", "evidence": []}
     return result
 
 

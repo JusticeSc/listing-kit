@@ -1134,7 +1134,9 @@ V2.6.1 / V2.6.2 提交，不能在本批提前宣称已经阻止导出。
 资产、Attempt 或 Selection。返工是同一页面中与比较区相邻的独立 `#rework-panel`：入口「用此候选发起返工」
 把 `candidate_id + sha256` 交给返工表单；表单用原生 checkbox/fieldset 展示九类常见问题，允许自由改写方向，
 提供「预览返工 Prompt」「查看/编辑完整 Prompt」「确认并生成这张图」「取消」。输入均有显式 label，状态用
-克制的 polite/alert 反馈，键盘焦点从入口进入表单、完成或取消后回到原候选。
+克制的 polite/alert 反馈，键盘焦点从入口进入表单、完成或取消后回到原候选。预览只编译、不落盘：改动问题
+或方向后必须重新预览才能提交；返工入口不依赖最新一次 Attempt 的状态，失败或 Unknown 的图仍可对历史候选
+发起返工。
 
 **领域对象（唯一权威 = `app/product_v2/domain/rework.js`）**：`ReworkDirective` 保存
 `directive_id / shot_id / source candidate id+sha256 / source review contract+top finding /

@@ -7,11 +7,11 @@
 ```yaml
 state_schema: amz-project-state/v2
 task_id: amz-listing-kit-product-v2
-status: paused
+status: active
 goal_binding: required
 goal_id: 01a0ca17-2179-7eb0-969a-af9c79c4d8ca
-system_goal_observed_status: paused
-system_goal_observed_at: 2026-09-30T16:41:17+08:00
+system_goal_observed_status: active
+system_goal_observed_at: 2026-09-30T17:29:53+08:00
 plan_ref: docs/product-v2-goal-and-implementation-plan.md
 latest_audit: evals/product-v2/pre-goal-v2.5.4-readiness-20260930.txt
 
@@ -94,8 +94,12 @@ phase_progress:
       - evals/product-v2/v2.4.1-image-gateway-20260930-134149-v245-transport-fix.txt
 
   "5":
-    status: pending
+    status: active
     evidence:
+      - evals/product-v2/v2.5.4-rework-loop-20260930-172722final.txt
+      - evals/product-v2/v2.5.4-rework-loop-20260930-172722final.json
+      - evals/product-v2/evidence/v2.5.4-rework-loop-20260930-172722.png
+      - evals/product-v2/evidence/v2.5.4-rework-loop-20260930-172722-detail.png
       - evals/product-v2/v2.5.2-vlm-review-20260930-150502final.txt
       - evals/product-v2/v2.5.2-vlm-review-20260930-150502final.json
       - evals/product-v2/evidence/v2.5.2-vlm-review-20260930-150502.png
@@ -522,10 +526,33 @@ task_progress:
       - docs/product-v2-goal-and-implementation-plan.md
       - .github/workflows/ci-cd.yml
 
-next_action_task: V2.5.4
-blockers:
-  - system_goal_is_paused_resume_required_before_formal_execution
+  V2.5.4:
+    status: done
+    evidence:
+      - evals/product-v2/v2.5.4-rework-loop-20260930-172722final.txt
+      - evals/product-v2/v2.5.4-rework-loop-20260930-172722final.json
+      - evals/product-v2/evidence/v2.5.4-rework-loop-20260930-172722.png
+      - evals/product-v2/evidence/v2.5.4-rework-loop-20260930-172722-detail.png
+      - evals/product-v2/v2.5.3-compare-panel-20260930-170502-v254reorg.txt
+      - tools/verify_v2_5_4_rework_loop.py
+      - app/product_v2/domain/rework.js
+      - app/product_v2/domain/compare.js
+      - app/product_v2/domain/confirm.js
+      - app/product_v2/domain/prompt.js
+      - app/product_v2/domain/index.js
+      - app/product_v2/workspace.js
+      - app/product_v2/index.html
+      - app/product_v2/styles.css
+      - evals/product-v2/harness/rework-contract.js
+      - evals/product-v2/harness/rework-contract.html
+      - README.md
+      - docs/product-v2-project-context.md
+      - docs/product-v2-goal-and-implementation-plan.md
+      - .github/workflows/ci-cd.yml
+
+next_action_task: V2.6.1
+blockers: []
 unknowns:
   - visual_language_review_detection_quality_is_uncalibrated_channels_and_binding_only_proven_in_V2.5.2
-updated_at: 2026-09-30T16:41:17+08:00
+updated_at: 2026-09-30T17:29:53+08:00
 ```
