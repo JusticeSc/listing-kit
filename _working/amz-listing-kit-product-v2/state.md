@@ -616,7 +616,7 @@ task_progress:
       - README.md
       - docs/product-v2-project-context.md
   V2.UI.2:
-    status: active
+    status: done
     evidence:
       - evals/product-v2/v2.ui.2-interaction-visual-20260930-232009final.txt
       - evals/product-v2/v2.ui.2-interaction-visual-20260930-232009final.json
@@ -632,14 +632,20 @@ task_progress:
       - app/product_v2/ui/stage-shell.js
       - app/product_v2/workspace.js
       - evals/product-v2/v2.7.2-remote-real-e2e-20261001-013714-real01.txt
+      - evals/product-v2/remote-persistence-20261001-020726-pre-restart.txt
+      - evals/product-v2/remote-persistence-20261001-021516-post-restart.txt
+      - evals/product-v2/evidence/self-review-remote-390-20261001.png
+      - evals/product-v2/evidence/self-review-remote-zoom200-20261001.png
+      - evals/product-v2/evidence/self-review-remote-empty-390-20261001.png
+      - evals/product-v2/v2.ui.2-walkthrough-record.md
       - docs/product-v2-ui-contract.md
       - README.md
       - .github/workflows/ci-cd.yml
-next_action_task: V2.UI.2
+next_action_task: V2.UI.3
 blockers: []
 unknowns:
   - visual_language_review_detection_quality_is_uncalibrated_channels_and_binding_only_proven_in_V2.5.2
-  - ui_information_hierarchy_primary_action_image_comparison_and_visual_direction_await_product_owner_walkthrough_V2.UI.2
+  - ui_information_hierarchy_primary_action_image_comparison_and_visual_direction_self_reviewed_20261001_owner_walkthrough_deferred_to_final_human_gate
   - dashscope_balance_exhausted_20261001_remote_e2e_reviews_blocked_topup_needed
-updated_at: 2026-10-01T01:57:00+08:00
+updated_at: 2026-10-01T02:27:00+08:00
 ```
