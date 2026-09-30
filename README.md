@@ -123,6 +123,7 @@ uv run python tools\verify_v2_1_4_formal_entry.py
 uv run python tools\verify_v2_2_1_product_contracts.py
 uv run python tools\verify_v2_2_2_semantic_provider.py
 uv run python tools\verify_v2_2_3_intake_understanding.py
+uv run python tools\verify_v2_2_4_category_generality.py
 uv run python tools\verify_v2_3_1_suite_registry.py
 uv run python tools\verify_v2_3_2_suite_editor.py
 uv run python tools\verify_v2_3_3_spec_versions.py
@@ -131,11 +132,20 @@ uv run python tools\verify_v2_3_5_pre_generation_confirm.py
 uv run python tools\verify_v2_3_6_prompt_manual_edit.py
 uv run python tools\verify_v2_4_1_image_gateway.py
 uv run python tools\verify_v2_4_2_generation_attempt.py
+uv run python tools\verify_v2_4_3_batch_execution.py
+uv run python tools\verify_v2_4_4_candidate_blob.py
+uv run python tools\verify_v2_5_1_deterministic_review.py
+uv run python tools\verify_v2_5_2_vlm_review.py
+uv run python tools\verify_v2_5_3_compare_panel.py
+uv run python tools\verify_v2_5_4_rework_loop.py
+uv run python tools\verify_v2_6_1_selection.py
 ```
 
 `verify_v2_2_2_semantic_provider.py` 默认只做离线回放（真实 ChatOpenAI + 假传输），不联网；
 加 `--live` 才会做计划 §12.2 允许的最小真实调用（正例 1 次 + 无效密钥 401 负例 1 次），
 需要已在服务器环境里配置 `DASHSCOPE_API_KEY`。
+ `verify_v2_2_4_category_generality.py` 默认只跑离线检查（C1 输入驱动、C5 无常量泄漏）；
+加 `--live` 才会做四类商品的真实语义调用（每类最多 1 次、不重试），同样需要 `DASHSCOPE_API_KEY`。
 
 文档、状态和控制面守卫必须串行执行：
 

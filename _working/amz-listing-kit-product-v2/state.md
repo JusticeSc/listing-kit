@@ -11,7 +11,7 @@ status: active
 goal_binding: required
 goal_id: 01a0ca17-2179-7eb0-969a-af9c79c4d8ca
 system_goal_observed_status: active
-system_goal_observed_at: 2026-09-30T18:40:00+08:00
+system_goal_observed_at: 2026-09-30T18:47:01+08:00
 plan_ref: docs/product-v2-goal-and-implementation-plan.md
 latest_audit: evals/product-v2/v2.6.1-selection-20260930-183606final.txt
 
@@ -108,6 +108,10 @@ phase_progress:
       - evals/product-v2/v2.5.1-deterministic-review-20260930-142836-final.txt
       - evals/product-v2/v2.5.1-deterministic-review-20260930-142836-final.json
       - evals/product-v2/evidence/v2.5.1-deterministic-review-20260930-142836.png
+      - evals/product-v2/v2.6.1-selection-20260930-183606final.txt
+      - evals/product-v2/v2.6.1-selection-20260930-183606final.json
+      - evals/product-v2/evidence/v2.6.1-selection-20260930-183606.png
+      - evals/product-v2/evidence/v2.6.1-selection-20260930-183606-detail.png
 
 task_progress:
   V2.0.1:
@@ -227,6 +231,10 @@ task_progress:
       - evals/product-v2/v2.2.3-intake-understanding-20260930-024645.json
       - evals/product-v2/v2.2.3-intake-understanding-20260930-025231.txt
       - evals/product-v2/v2.2.3-intake-understanding-20260930-025231.json
+      - evals/product-v2/v2.2.3-intake-understanding-20260930-184523.txt
+      - evals/product-v2/v2.2.3-intake-understanding-20260930-184523.json
+      - evals/product-v2/evidence/v2.2.3-workspace-20260930-184523.png
+      - evals/product-v2/evidence/v2.2.3-narrow-20260930-184523.png
   V2.2.4:
     status: done
     evidence:
@@ -312,6 +320,7 @@ task_progress:
       - app/product_v2/styles.css
       - README.md
       - docs/product-v2-project-context.md
+      - docs/product-v2-goal-and-implementation-plan.md
       - docs/product-v2-goal-and-implementation-plan.md
       - .github/workflows/ci-cd.yml
       - evals/product-v2/v2.1.4-formal-entry-20260930-031657-v234-regression.txt
@@ -574,5 +583,5 @@ next_action_task: V2.5.5
 blockers: []
 unknowns:
   - visual_language_review_detection_quality_is_uncalibrated_channels_and_binding_only_proven_in_V2.5.2
-updated_at: 2026-09-30T18:40:00+08:00
+updated_at: 2026-09-30T18:47:01+08:00
 ```
