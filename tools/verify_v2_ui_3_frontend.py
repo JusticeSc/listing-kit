@@ -263,6 +263,12 @@ def main() -> int:
                   focus_after_analyze and focus_after_analyze["id"] == "stage-understand-title",
                   {"focus": focus_after_analyze})
 
+            progress_text = page.locator("#slots-progress").inner_text()
+            check("UI3-18", "理解页阻塞摘要本地化：不出现裸 slot_id 与英文状态词",
+                  "product_name" not in progress_text and "proposed" not in progress_text
+                  and ("商品名称" in progress_text or "商品品类" in progress_text),
+                  {"text": progress_text[:240]})
+
             rounds = confirm_slots(page)
             page.click("#stage-next-understand")
             expect(page.locator('[data-stage-panel="plan"]')).to_be_visible()

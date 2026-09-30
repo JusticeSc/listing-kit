@@ -172,6 +172,12 @@ phase_progress:
       - evals/product-v2/v273-rehearsal-20261001-072035-crash.json
       - evals/product-v2/v273-rehearsal-20261001-073329.md
       - evals/product-v2/v273-rehearsal-20261001-073329.json
+      - evals/product-v2/v2.ui.3-frontend-20261001-073741-v269-red.txt
+      - evals/product-v2/v2.ui.3-frontend-20261001-073811-v269-green.txt
+      - evals/product-v2/v2.ui.3-frontend-20261001-073811-v269-green.json
+      - evals/product-v2/v2.2.3-intake-understanding-20261001-073929-v269.txt
+      - evals/product-v2/v2.6.4-a11y-20261001-073942-v269.txt
+      - evals/product-v2/v273-rehearsal-20261001-074015.md
 
   "7":
     status: active
@@ -848,6 +854,22 @@ task_progress:
       - tools/verify_v2_4_1_image_gateway.py
       - app/product_v2_server.py
       - app/product_v2/workspace.js
+  V2.6.9:
+    status: done
+    evidence:
+      - evals/product-v2/v2.ui.3-frontend-20261001-073741-v269-red.txt
+      - evals/product-v2/v2.ui.3-frontend-20261001-073741-v269-red.json
+      - evals/product-v2/v2.ui.3-frontend-20261001-073811-v269-green.txt
+      - evals/product-v2/v2.ui.3-frontend-20261001-073811-v269-green.json
+      - evals/product-v2/evidence/v2.ui.3-frontend-20261001-073811-v269-green-understand.png
+      - evals/product-v2/v2.2.3-intake-understanding-20261001-073929-v269.txt
+      - evals/product-v2/v2.2.3-intake-understanding-20261001-073929-v269.json
+      - evals/product-v2/v2.6.4-a11y-20261001-073942-v269.txt
+      - evals/product-v2/v2.6.4-a11y-20261001-073942-v269.json
+      - evals/product-v2/v273-rehearsal-20261001-074015.md
+      - evals/product-v2/v273-rehearsal-20261001-074015.json
+      - app/product_v2/workspace.js
+      - tools/verify_v2_ui_3_frontend.py
   V2.7.1:
     status: done
     evidence:
@@ -867,5 +889,5 @@ unknowns:
   - dashscope_balance_arrears_20261001T0433_remote_real_e2e_blocked_at_semantic_step
     upstream_account_arrears_evidence_evals_product_v2_evidence_remote-real-e2e-20261001-043317-lamp01-failure.png
     retry_after_topup_before_claiming_v2_7_2_gate
-updated_at: 2026-10-01T07:35:30+08:00
+updated_at: 2026-10-01T07:42:30+08:00
 ```

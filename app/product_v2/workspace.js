@@ -260,8 +260,10 @@ function formatValue(slot) {
   return String(value);
 }
 
-function describeBlocking(blocking) {
-  return (blocking || []).map((item) => item.message).join("；");
+function describeBlocking(blocking, mapMessage = null) {
+  return (blocking || [])
+    .map((item) => (mapMessage ? mapMessage(item.message) : item.message))
+    .join("；");
 }
 
 export function createWorkspace({ repository, onProjectChanged = null }) {
@@ -775,7 +777,7 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
       ? "分析中…"
       : ready
         ? (capabilitiesError ? "分析服务状态：" + capabilitiesError : "资料已就绪。")
-        : "还缺：" + describeBlocking(problems);
+        : "还缺：" + describeBlocking(problems, localizeSlotTerms);
 
     if (lastAnalyze) {
       elements.analyzeResult.hidden = false;
@@ -948,7 +950,8 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
       await saveIntakeNow();
       const readiness = intakeReadiness(intake);
       if (!readiness.ready) {
-        showError(elements.analyzeError, "商品资料还不完整：" + describeBlocking(readiness.blocking));
+        showError(elements.analyzeError, "商品资料还不完整："
+          + describeBlocking(readiness.blocking, localizeSlotTerms));
         requestFocus(elements.analyzeError);
         return;
       }
@@ -1043,6 +1046,28 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
   }
   /* ---------------------------------------------------------- 商品理解 */
 
+  /**
+   * 渲染层本地化：domain 的阻塞消息只认 slot_id 与英文状态词，展示前换成用户认得的
+   * 槽位名与中文状态（V2.6.9 走查发现「关键槽位 product_name 仍是 proposed」直接上屏）。
+   */
+  function localizeSlotTerms(message) {
+    let out = String(message == null ? "" : message);
+    const labels = slotEntries()
+      .map((entry) => ({
+        id: String((entry.slot && entry.slot.slot_id) || ""),
+        label: String((entry.slot && entry.slot.label) || ""),
+      }))
+      .filter((item) => item.id && item.label && item.label !== item.id)
+      .sort((left, right) => right.id.length - left.id.length);
+    for (const item of labels) {
+      if (out.indexOf(item.id) >= 0) out = out.split(item.id).join(item.label);
+    }
+    for (const [status, text] of Object.entries(STATUS_TEXT)) {
+      if (out.indexOf(status) >= 0) out = out.split(status).join(text);
+    }
+    return out;
+  }
+
   function renderSlots() {
     elements.slotList.replaceChildren();
     const entries = slotEntries();
@@ -1054,7 +1079,8 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     elements.slotsProgress.textContent = entries.length
       ? "必须确认的槽位 " + confirmedCritical.length + " / " + critical.length + " 已确认 · 待处理 "
         + open.length + " 项 · 共 " + entries.length + " 项"
-        + (understandingBlocking.length ? " · 还缺：" + describeBlocking(understandingBlocking) : "")
+        + (understandingBlocking.length
+          ? " · 还缺：" + describeBlocking(understandingBlocking, localizeSlotTerms) : "")
       : "还没有槽位。";
     elements.slotsToggle.textContent = showAll ? "只看待处理项" : "显示全部事实";
     elements.slotsToggle.setAttribute("aria-expanded", showAll ? "true" : "false");
