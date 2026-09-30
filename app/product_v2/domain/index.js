@@ -22,3 +22,4 @@ export * from "./candidate.js";
 export * from "./review.js";
 export * from "./compare.js";
 export * from "./rework.js";
+export * from "./selection.js";

@@ -267,6 +267,7 @@
       <div id="attempt-editor" hidden>
         <p id="attempt-status" class="meta" role="status"></p>
         <p id="attempt-provider" class="meta"></p>
+        <p id="adopt-progress" class="meta" role="status"></p>
         <div id="attempt-batch" class="attempt-batch" hidden>
           <div class="toolbar attempt-batch-actions">
             <button id="batch-run" type="button" class="primary">整套生成</button>
@@ -283,6 +284,7 @@
             <h4 id="compare-title">候选比较与审核清单</h4>
             <span id="compare-subject" class="meta"></span>
             <span class="compare-head-actions">
+              <button id="adopt-open" type="button" disabled>采用此候选</button>
               <button id="rework-open" type="button" disabled>用此候选发起返工</button>
               <button id="compare-jump" type="button">下一个待处理</button>
               <button id="compare-close" type="button">收起</button>
@@ -333,7 +335,25 @@
           <p id="rework-status" class="status" role="status" hidden></p>
           <p id="rework-error" class="error" role="alert" hidden></p>
         </section>
-      </div>
+        <section id="adopt-panel" class="adopt-panel" hidden aria-labelledby="adopt-title">
+          <div class="adopt-head">
+            <h4 id="adopt-title">采用候选（人工选择）</h4>
+            <span id="adopt-basis" class="meta"></span>
+            <span class="adopt-head-actions">
+              <button id="adopt-cancel" type="button">关闭</button>
+            </span>
+          </div>
+          <p id="adopt-current" class="meta"></p>
+          <p id="adopt-fingerprint" class="meta"></p>
+          <div class="toolbar">
+            <button id="adopt-submit" class="primary" type="button" disabled>采用这条候选</button>
+            <button id="adopt-clear" type="button" disabled>取消采用</button>
+          </div>
+          <p id="adopt-readiness" class="meta"></p>
+          <p id="adopt-status" class="status" role="status" hidden></p>
+          <p id="adopt-error" class="error" role="alert" hidden></p>
+        </section>
+     </div>
       <p id="attempt-error" class="error" role="alert" hidden></p>
     </section>
   </section>

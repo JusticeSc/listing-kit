@@ -35,6 +35,7 @@ import {
   REVIEW_REPORT_DOCUMENT_KIND,
   REWORK_CONTRACT_VERSION,
   REWORK_PROBLEMS,
+  SELECTION_CONTRACT_VERSION,
   SHOT_TEMPLATES,
   SUITE_PLAN_DOCUMENT_ID,
   STYLE_SPEC_DOCUMENT_ID,
@@ -42,6 +43,7 @@ import {
   addShotFromTemplate,
   applySlotAction,
   assertShotSpec,
+  assertSelectionRecord,
   assertStyleSpec,
   attemptPromptStaleness,
   attemptReconcileMode,
@@ -59,6 +61,8 @@ import {
   buildProductBrief,
   buildReworkDirective,
   buildReviewReport,
+  buildSelectionRecord,
+  buildSelectionSet,
   canAddSlot,
   canConfirmSlot,
   canDeleteSlot,
@@ -79,6 +83,7 @@ import {
   coreSlotDefinition,
   defaultCompareTargetId,
   deriveBatchState,
+  deriveSelectionState,
   emptyShotSpecFromShot,
   emptyStyleSpec,
   emptyProductInput,
@@ -105,6 +110,9 @@ import {
   requestSnapshotOf,
   selectReferences,
   seedSuitePlan,
+  selectionSetText,
+  selectionStateLabel,
+  selectionSummaryText,
   specChangeProjection,
   sortFindings,
   suggestReworkProblems,
@@ -136,6 +144,7 @@ const IMAGE_STATUS_PATH = "/api/v2/images/status";
 const IMAGE_RESULT_PATH = "/api/v2/images/result";
 const REVIEW_PATH = "/api/v2/review/candidate";
 const REWORK_CONFIRM_PREFIX = "rework:";
+const SELECTION_KIND = DOMAIN_DOCUMENT_KINDS.selection;
 
 const DRAFT_DEBOUNCE_MS = 600;
 const ANALYZE_MAX_SLOTS = 12;
@@ -182,7 +191,7 @@ const REVIEW_ORDER = Object.freeze({
   conflict: 0, unknown: 1, missing: 2, proposed: 3, confirmed: 4, superseded: 5,
 });
 
-const SCOPE_TEXT = "这一版覆盖“商品资料 → 商品理解 → 套图规划 → 规格 → Prompt → 生成前确认 → 整套生成与逐图进度（含单张核对）”；审核、返工与导出尚未接入。";
+const SCOPE_TEXT = "这一版覆盖“商品资料 → 商品理解 → 套图规划 → 规格 → Prompt → 生成前确认 → 整套生成与逐图进度（含单张核对）→ 审核 → 单图返工 → 人工采用”；整套一致性报告与导出交付尚未接入。";
 
 function createElement(tag, options = {}, children = []) {
   const node = document.createElement(tag);
@@ -332,6 +341,18 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     reworkSummary: document.getElementById("rework-summary"),
     reworkStatus: document.getElementById("rework-status"),
     reworkError: document.getElementById("rework-error"),
+    adoptOpen: document.getElementById("adopt-open"),
+    adoptPanel: document.getElementById("adopt-panel"),
+    adoptBasis: document.getElementById("adopt-basis"),
+    adoptCancel: document.getElementById("adopt-cancel"),
+    adoptCurrent: document.getElementById("adopt-current"),
+    adoptFingerprint: document.getElementById("adopt-fingerprint"),
+    adoptSubmit: document.getElementById("adopt-submit"),
+    adoptClear: document.getElementById("adopt-clear"),
+    adoptReadiness: document.getElementById("adopt-readiness"),
+    adoptStatus: document.getElementById("adopt-status"),
+    adoptError: document.getElementById("adopt-error"),
+    adoptProgress: document.getElementById("adopt-progress"),
   };
 
   let project = null;
@@ -370,6 +391,11 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
   let reworkInFlight = false;
   let reworkShotId = null;
   let reworkSource = null;
+  let selections = new Map();
+  let adoptInFlight = false;
+  let adoptShotId = null;
+  let adoptCandidateId = null;
+  let adoptSource = null;
   let previewUrls = new Map();
   let batchState = null;
   let busy = false;
@@ -2700,6 +2726,9 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     if (reworkShotId !== null && candidateId !== compareCandidateId) {
       closeReworkPanel({ focusCandidate: false });
     }
+    if (adoptShotId !== null && candidateId !== compareCandidateId) {
+      closeAdoptPanel({ focusCandidate: false });
+    }
     compareCandidateId = candidateId;
     const tabs = elements.compareCandidates.querySelectorAll('[role="tab"]');
     for (const tab of tabs) {
@@ -2715,6 +2744,7 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     const row = rows.find((item) => item.candidate_id === candidateId) || null;
     renderCompareChecklist(shot, row);
     updateReworkEntry(shot, row);
+    updateAdoptEntry(shot, row);
     elements.compareStatus.textContent = "";
   }
 
@@ -2728,6 +2758,8 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
       elements.compareBasisTitle.textContent = "";
       closeReworkPanel({ focusCandidate: false });
       updateReworkEntry(null, null);
+      closeAdoptPanel({ focusCandidate: false });
+      updateAdoptEntry(null, null);
       return;
     }
     const shot = ((suitePlan && suitePlan.shots) || [])
@@ -2768,6 +2800,7 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     const targetRow = rows.find((row) => row.candidate_id === targetId) || null;
     renderCompareChecklist(shot, targetRow);
     updateReworkEntry(shot, targetRow);
+    updateAdoptEntry(shot, targetRow);
     refreshCompareReferences(shot).catch(handleInternalError);
   }
 
@@ -2803,6 +2836,14 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
         className: "badge " + (COMPARE_STATE_BADGE[row.review_state] || "is-review-unchecked"),
         text: compareStateLabel(row),
       }));
+      const adopted = compareShotId ? adoptedMarkOf(compareShotId) : null;
+      if (adopted && adopted.candidate_id === row.candidate_id) {
+        head.append(createElement("span", {
+          className: "badge is-adopted",
+          attrs: { "data-adopted": adopted.state },
+          text: adopted.state === "current" ? "已采用" : "已采用（已过期）",
+        }));
+      }
       main.append(head);
       const source = [];
       if (row.task_id) source.push("task " + String(row.task_id).slice(0, 8));
@@ -2984,7 +3025,7 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     elements.attemptLocked.hidden = ready;
     elements.attemptEditor.hidden = !ready;
     elements.attemptList.innerHTML = "";
-    if (!ready) { renderBatch(); renderCompare(); return; }
+    if (!ready) { renderBatch(); renderCompare(); renderSelectionProgress(); return; }
     const summary = suitePlanSummary(suitePlan, suiteContext());
     const confirmed = confirmationIsCurrent();
     const provider = imageProviderBlock();
@@ -3135,6 +3176,19 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
           });
           row.append(compareButton);
         }
+        const selectionEntry = selections.get(item.shot_id) || null;
+        const selectionState = deriveSelectionState(selectionEntry ? selectionEntry.record : null,
+          candidateChainOf(item.shot_id).map((entry) => entry.record));
+        if (selectionEntry || candidateChainOf(item.shot_id).length) {
+          row.append(createElement("p", {
+            className: "meta attempt-selection",
+            attrs: {
+              "data-selection-state": selectionState,
+              "data-selection-shot": item.shot_id,
+            },
+            text: selectionSummaryText(selectionEntry ? selectionEntry.record : null, selectionState),
+          }));
+        }
         if (state === ATTEMPT_STATES.pending_submit && !record.task_id) {
           row.append(createElement("p", {
             className: "meta attempt-note",
@@ -3243,6 +3297,7 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
       + counts.failed + " 张。" + (confirmed ? "可以整套生成或逐张提交。" : "确认缺失或已过期，暂不能提交。");
     renderBatch();
     renderCompare();
+    renderSelectionProgress();
   }
 
   /**
@@ -4096,10 +4151,228 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     }
   }
 
+  /* ----------------------------------------------- 人工选择与失效（V2.6.1） */
+
+  function selectionEntryOf(shotId) {
+    return selections.get(shotId) || null;
+  }
+
+  function candidatePayloadsOf(shotId) {
+    return candidateChainOf(shotId).map((entry) => entry.record);
+  }
+
+  function selectionStateOf(shotId) {
+    const entry = selectionEntryOf(shotId);
+    return deriveSelectionState(entry ? entry.record : null, candidatePayloadsOf(shotId));
+  }
+
+  /** 某张图当前采用的候选（含过期标记）：只读投影，供比较列表做徽标。 */
+  function adoptedMarkOf(shotId) {
+    const entry = selectionEntryOf(shotId);
+    if (!entry || !entry.record || entry.record.action !== "select") return null;
+    return { candidate_id: entry.record.candidate_id, state: selectionStateOf(shotId) };
+  }
+
+  /** SelectionSet 投影：V2.5.5 / V2.6.2 的唯一输入集合；这里只报告数量，不拦导出。 */
+  function selectionSetNow() {
+    const summaries = suitePlan ? suitePlanSummary(suitePlan, suiteContext()).shots : [];
+    const shots = summaries.map((shot) => ({
+      shot_id: shot.shot_id, required: shot.required === true,
+    }));
+    const selectionsByShot = {};
+    for (const [shotId, entry] of selections) selectionsByShot[shotId] = entry.record;
+    const candidatesByShotId = {};
+    for (const shot of shots) candidatesByShotId[shot.shot_id] = candidatePayloadsOf(shot.shot_id);
+    return buildSelectionSet({
+      shots: shots, selections: selectionsByShot, candidatesByShotId: candidatesByShotId,
+      at: new Date().toISOString(),
+    });
+  }
+
+  function renderSelectionProgress() {
+    if (!suitePlan) {
+      elements.adoptProgress.textContent = "";
+      return;
+    }
+    const set = selectionSetNow();
+    elements.adoptProgress.textContent = set.summary.required_total > 0
+      ? selectionSetText(set) + "采用只引用候选（candidate_id + sha256），不复制图片。"
+      : "";
+  }
+
+  /** 比较区入口的状态：只投影候选身份，不写任何记录（写记录在相邻的独立采用区）。 */
+  function updateAdoptEntry(shot, row) {
+    const available = Boolean(shot && row && row.record && row.asset_sha256);
+    elements.adoptOpen.disabled = !available;
+    if (available) {
+      elements.adoptOpen.dataset.shotId = shot.shot_id;
+      elements.adoptOpen.dataset.candidateId = row.candidate_id;
+      elements.adoptOpen.dataset.candidateSha256 = row.asset_sha256;
+    } else {
+      delete elements.adoptOpen.dataset.shotId;
+      delete elements.adoptOpen.dataset.candidateId;
+      delete elements.adoptOpen.dataset.candidateSha256;
+    }
+  }
+
+  /** 采用目标：把「正看着的候选」解析成候选记录 + 文档版本 + 当前审核报告。 */
+  function adoptSourceOf(shotId, candidateId) {
+    for (const entry of candidateChainOf(shotId)) {
+      if (entry.record && entry.record.candidate_id === candidateId) {
+        const stored = reviewReports.get(candidateId);
+        const report = stored && reviewIsCurrent(stored.report, entry.record)
+          ? stored.report : null;
+        return { candidate: entry.record, version: entry.version, report: report };
+      }
+    }
+    return null;
+  }
+
+  function selectionTextOf(shotId) {
+    const entry = selectionEntryOf(shotId);
+    return selectionSummaryText(entry ? entry.record : null, selectionStateOf(shotId));
+  }
+
+  function renderAdoptPanel() {
+    if (!adoptShotId || !adoptSource) return;
+    const shotId = adoptShotId;
+    const source = adoptSource;
+    const entry = selectionEntryOf(shotId);
+    const state = selectionStateOf(shotId);
+    const summary = suitePlan ? suitePlanSummary(suitePlan, suiteContext()).shots
+      .find((item) => item.shot_id === shotId) : null;
+    elements.adoptBasis.textContent = shotLabelOf(shotId) + " · 当前" + selectionStateLabel(state)
+      + " · 候选 v" + source.version + " · sha256 "
+      + String(source.candidate.asset_sha256).slice(0, 12) + "…";
+    elements.adoptCurrent.textContent = selectionTextOf(shotId);
+    elements.adoptFingerprint.textContent = source.report
+      ? "将绑定当前审核报告：" + reviewSummaryText(source.report)
+        + "（审核合同 " + String(source.report.review_contract_version) + "）"
+      : "这条候选还没有当前审核报告：采用会明确记下「没有报告」，导出前仍需补一份当前报告。";
+    const already = Boolean(entry && entry.record && entry.record.action === "select"
+      && entry.record.candidate_id === source.candidate.candidate_id && state === "current");
+    elements.adoptSubmit.disabled = adoptInFlight || already;
+    elements.adoptSubmit.textContent = already ? "已采用这条候选" : "采用这条候选";
+    elements.adoptClear.disabled = adoptInFlight
+      || !(entry && entry.record && entry.record.action === "select");
+    elements.adoptReadiness.textContent = summary && summary.required
+      ? "这张图是必需图：导出前必须有当前有效的选择。"
+      : "这张图是可选图：采用后仍可改选或取消。";
+  }
+
+  function openAdoptPanel() {
+    const shotId = elements.adoptOpen.dataset.shotId || null;
+    const candidateId = elements.adoptOpen.dataset.candidateId || null;
+    if (!shotId || !candidateId) return;
+    const source = adoptSourceOf(shotId, candidateId);
+    if (!source) {
+      elements.compareStatus.textContent = "这条候选已经不在本地候选链里，无法采用。";
+      return;
+    }
+    adoptShotId = shotId;
+    adoptCandidateId = candidateId;
+    adoptSource = source;
+    elements.adoptPanel.hidden = false;
+    elements.adoptPanel.dataset.adoptContract = SELECTION_CONTRACT_VERSION;
+    elements.adoptPanel.dataset.shotId = shotId;
+    elements.adoptPanel.dataset.candidateId = candidateId;
+    elements.adoptStatus.textContent = "";
+    elements.adoptStatus.hidden = true;
+    clearError(elements.adoptError);
+    renderAdoptPanel();
+    const target = elements.adoptSubmit.disabled ? elements.adoptCancel : elements.adoptSubmit;
+    if (target) target.focus();
+  }
+
+  function closeAdoptPanel({ focusCandidate = false } = {}) {
+    const shotId = adoptShotId;
+    const candidateId = adoptCandidateId;
+    adoptShotId = null;
+    adoptCandidateId = null;
+    adoptSource = null;
+    elements.adoptPanel.hidden = true;
+    elements.adoptStatus.textContent = "";
+    elements.adoptStatus.hidden = true;
+    clearError(elements.adoptError);
+    if (focusCandidate && shotId && candidateId) focusCompareCandidate(shotId, candidateId);
+  }
+
+  /** 写一条选择记录：select = 采用 / 改选；clear = 取消采用。失败时不改内存里的旧选择。 */
+  async function writeSelectionRecord(action) {
+    if (!projectId || !adoptShotId || !adoptSource) return null;
+    const shotId = adoptShotId;
+    const source = adoptSource;
+    const record = buildSelectionRecord({
+      selectionId: newActionId(),
+      action: action,
+      shotId: shotId,
+      candidate: action === "select" ? source.candidate : null,
+      candidateVersion: action === "select" ? source.version : null,
+      report: action === "select" ? source.report : null,
+      at: new Date().toISOString(),
+    });
+    assertSelectionRecord(record);
+    const saved = await repository.documents.save(projectId, {
+      kind: SELECTION_KIND, documentId: shotId, payload: record,
+    });
+    const previous = selectionEntryOf(shotId);
+    selections.set(shotId, { record: record, version: saved.version });
+    return { record: record, version: saved.version, previous: previous };
+  }
+
+  async function handleAdoptSubmit() {
+    if (adoptInFlight) return;
+    adoptInFlight = true;
+    elements.adoptStatus.textContent = "";
+    elements.adoptStatus.hidden = true;
+    clearError(elements.adoptError);
+    renderAdoptPanel();
+    try {
+      const source = adoptSource;
+      const result = await writeSelectionRecord("select");
+      if (!result) return;
+      const replaced = result.previous && result.previous.record
+        && result.previous.record.action === "select" ? result.previous.record : null;
+      elements.adoptStatus.hidden = false;
+      elements.adoptStatus.textContent = "已采用候选 v" + (source ? source.version : "?")
+        + "（选择记录 v" + result.version + "）。"
+        + (replaced ? "上一次选择保留在历史里。" : "")
+        + "改选或取消采用只会追加新记录。";
+    } catch (error) {
+      showError(elements.adoptError, (error && error.message) || "选择没有保存，请重试。");
+    } finally {
+      adoptInFlight = false;
+      renderAttempts();
+      renderAdoptPanel();
+    }
+  }
+
+  async function handleAdoptClear() {
+    if (adoptInFlight) return;
+    adoptInFlight = true;
+    elements.adoptStatus.textContent = "";
+    elements.adoptStatus.hidden = true;
+    clearError(elements.adoptError);
+    renderAdoptPanel();
+    try {
+      const result = await writeSelectionRecord("clear");
+      if (!result) return;
+      elements.adoptStatus.hidden = false;
+      elements.adoptStatus.textContent = "已取消采用（选择记录 v" + result.version
+        + "）；历史保留，可以重新采用任一候选。";
+    } catch (error) {
+      showError(elements.adoptError, (error && error.message) || "取消采用没有保存，请重试。");
+    } finally {
+      adoptInFlight = false;
+      renderAttempts();
+      renderAdoptPanel();
+    }
+  }
+
   function renderHeaderText(projectRecord) {
     const state = projectRecord ? projectRecord.state : null;
     if (state === "READY_TO_GENERATE") {
-      elements.scope.textContent = "生成前确认已通过：可以整套生成或逐张提交，并按任务编号核对进度；审核、返工与导出仍未接入。";
+      elements.scope.textContent = "生成前确认已通过：可以整套生成或逐张提交，并按任务编号核对进度；可以审核、单图返工与采用候选；整套一致性报告与导出交付仍未接入。";
     } else if (state === "PLAN_REVIEW") {
       elements.scope.textContent = "商品理解已就绪，可以编辑套图规划、规格、Prompt 与生成前确认；通过确认后才能提交生成。";
     } else {
@@ -4238,6 +4511,18 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
         handleReworkCancel();
       }
     });
+    elements.adoptOpen.addEventListener("click", () => { openAdoptPanel(); });
+    elements.adoptSubmit.addEventListener("click", () => { handleAdoptSubmit(); });
+    elements.adoptClear.addEventListener("click", () => { handleAdoptClear(); });
+    elements.adoptCancel.addEventListener("click", () => {
+      closeAdoptPanel({ focusCandidate: true });
+    });
+    elements.adoptPanel.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeAdoptPanel({ focusCandidate: true });
+      }
+    });
     elements.reworkDirection.addEventListener("input", () => {
       const shotId = reworkShotId;
       const draft = shotId ? reworkDrafts.get(shotId) : null;
@@ -4284,9 +4569,15 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     reworkInFlight = false;
     reworkShotId = null;
     reworkSource = null;
+    selections = new Map();
+    adoptInFlight = false;
+    adoptShotId = null;
+    adoptCandidateId = null;
+    adoptSource = null;
     elements.comparePanel.hidden = true;
     elements.reworkPanel.hidden = true;
     elements.reworkPreviewBox.hidden = true;
+    elements.adoptPanel.hidden = true;
     showAll = false;
     interaction = { slotId: null, mode: null };
 
@@ -4357,6 +4648,13 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
       if (token !== openToken) return;
       candidateChains.set(shot.shot_id, candidateDocs.slice().reverse()
         .map((record) => ({ record: record.payload, version: record.version })));
+    }
+    const selectionDocs = await repository.documents.listLatest(projectId, SELECTION_KIND);
+    if (token !== openToken) return;
+    for (const record of selectionDocs) {
+      if (record.payload && typeof record.payload === "object") {
+        selections.set(record.document_id, { record: record.payload, version: record.version });
+      }
     }
     const reviewDocs = await repository.documents.listLatest(projectId, REVIEW_KIND);
     if (token !== openToken) return;
