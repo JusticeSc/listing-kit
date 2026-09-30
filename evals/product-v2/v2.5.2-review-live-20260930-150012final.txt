@@ -1,0 +1,12 @@
+V2.5.2 最小真实复核请求（单次调用；候选与参考图为同一张真实照片）
+NOT-AUTHORITY: point-in-time verification evidence only
+========================================================================
+status: checked
+provider: dashscope-review · model: qwen-vl-max
+candidate: 5c5e0fdde808… (133949 字节)
+findings: 0（check: ）
+request_id: chatcmpl-a4851479-b605-9339-8692-c385bcdb68e1 · latency_ms: 6131 · usage: {'prompt_tokens': 1857, 'completion_tokens': 30, 'total_tokens': 1887}
+binding_ok: True
+
+边界：不评估检出质量；失败不重试、不伪造 PASS。
+json: evals/product-v2/v2.5.2-review-live-20260930-150012final.json

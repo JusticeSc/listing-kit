@@ -1,0 +1,13 @@
+{
+  "name": "ok-two-findings",
+  "note": "结构合法的两条发现；契约级标注：期望映射到 vlm.deformity 与 vlm.garbled_text。不证明真实检出质量。",
+  "kind": "parsed",
+  "output": {
+    "findings": [
+      {"check": "deformity", "evidence": "杯口边缘出现第二道不自然的弧线。", "confidence": 0.72},
+      {"check": "garbled_text", "evidence": "底部标签文字笔画连成乱码。", "confidence": 0.58}
+    ],
+    "summary": "发现两处疑似问题。"
+  },
+  "expect": {"outcome": "findings", "checks": ["deformity", "garbled_text"]}
+}

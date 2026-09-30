@@ -1,0 +1,6 @@
+{
+  "name": "truncated-output",
+  "note": "模型输出被 max_tokens 截断；必须归 PROVIDER_OUTPUT_TRUNCATED，浏览器侧落 Unknown。",
+  "kind": "truncated",
+  "expect": {"error_code": "PROVIDER_OUTPUT_TRUNCATED", "error_family": "provider_failed"}
+}

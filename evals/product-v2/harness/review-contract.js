@@ -104,12 +104,21 @@ async function sha256Hex(bytes) {
     .map((byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
-test("R01", "注册表纪律：17 条规则、三层覆盖、零问题、版本与消费者齐备", async () => {
-  expect(DETERMINISTIC_RULES.length === 17, "当前注册表必须是 17 条规则（现在是 "
-    + DETERMINISTIC_RULES.length + "）");
+test("R01", "注册表纪律：确定性三层 17 条 + VLM 层非阻断、零问题、版本与消费者齐备", async () => {
+  const deterministicLayers = ["generation", "candidate", "export"];
+  const deterministicCount = DETERMINISTIC_RULES
+    .filter((item) => deterministicLayers.includes(item.layer)).length;
+  expect(deterministicCount === 17, "确定性三层必须保持 17 条规则（现在是 "
+    + deterministicCount + "）");
+  const vlmRules = DETERMINISTIC_RULES.filter((item) => item.layer === "vlm");
+  expect(vlmRules.length >= 9, "VLM 层必须登记 check 与完成性规则（现在是 "
+    + vlmRules.length + " 条）");
+  vlmRules.forEach((item) => {
+    expect(item.severity !== "BLOCK", item.rule_id + " 不得为 BLOCK（VLM 不能升级为硬阻断）");
+  });
   expect(checkRuleRegistry().length === 0, "正式注册表必须零问题");
   const layers = new Set(DETERMINISTIC_RULES.map((item) => item.layer));
-  ["generation", "candidate", "export"].forEach((layer) => {
+  ["generation", "candidate", "export", "vlm"].forEach((layer) => {
     expect(layers.has(layer), "必须覆盖 " + layer + " 层");
   });
   DETERMINISTIC_RULES.forEach((item) => {

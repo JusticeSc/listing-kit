@@ -7,7 +7,7 @@
      未知降级不阻断、报告模型与当前性、WebCrypto 哈希复算。
   3) 既有契约套件回归（candidate / attempt / batch / confirm / prompt_edit / suite_editor）全过。
   4) 真实工作台走查（假 provider）：候选保存后 IndexedDB 出现 kind="review_report" 的当前报告
-     （绑定 candidate_id + 合同版本 v2.5.1 + asset_sha256），候选行出现 data-review-summary 摘要；
+     （绑定 candidate_id + 当前合同版本 + asset_sha256），候选行出现 data-review-summary 摘要；
      刷新后报告与摘要仍在且不重复铺。
   5) 正式入口 --check 全过；零意外 console error / page error。
 
@@ -20,6 +20,7 @@ import argparse
 import importlib.util
 import json
 import os
+import re
 import socket
 import struct
 import subprocess
@@ -43,6 +44,16 @@ MIME = {
     ".css": "text/css; charset=utf-8",
     ".json": "application/json; charset=utf-8",
 }
+
+
+def current_review_contract() -> str:
+    """合同版本只有一个权威（review.js 常量）；本验证器跟随当前版本，不写死字面量。"""
+
+    text = (PRODUCT_DIR / "domain" / "review.js").read_text(encoding="utf-8")
+    match = re.search(r'REVIEW_CONTRACT_VERSION\s*=\s*"([^"]+)"', text)
+    if match is None:
+        raise SystemExit("review.js 里找不到 REVIEW_CONTRACT_VERSION。")
+    return match.group(1)
 
 DOMAIN_FILES = [
     "app/product_v2/domain/shared.js",
@@ -359,6 +370,7 @@ def main() -> int:
     from playwright.sync_api import expect, sync_playwright  # noqa: PLC0415
 
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    contract = current_review_contract()
     checks: list[dict] = []
     console_errors: list[str] = []
     page_errors: list[str] = []
@@ -462,13 +474,14 @@ def main() -> int:
 
                 def wait_review_ui(shot_id: str, timeout: int = 30_000) -> None:
                     page.wait_for_function(
-                        """(shot) => {
+                        """(payload) => {
                             const node = document.querySelector(
-                                '#attempt-list .attempt-row[data-shot-id="' + shot + '"]');
+                                '#attempt-list .attempt-row[data-shot-id="' + payload.shot + '"]');
                             const line = node && node.querySelector('.attempt-review');
                             const summary = line && line.getAttribute('data-review-summary');
-                            return Boolean(summary && summary.indexOf('自动检查 v2.5.1') === 0);
-                        }""", arg=shot_id, timeout=timeout)
+                            return Boolean(summary
+                                && summary.indexOf('自动检查 ' + payload.version) === 0);
+                        }""", arg={"shot": shot_id, "version": contract}, timeout=timeout)
 
                 def confirm_generation() -> None:
                     expect(page.locator("#confirm-action")).to_be_enabled()
@@ -533,18 +546,19 @@ def main() -> int:
                 ui["review_summary_text"] = review_ui.get("text")
                 ui["review_contract_version"] = report.get("review_contract_version")
                 check("V2.5.1-03",
-                      "候选保存后自动生成当前 ReviewReport（绑定身份 + 合同 v2.5.1），界面出现摘要行",
+                      "候选保存后自动生成当前 ReviewReport（绑定身份 + 合同 "
+                      + contract + "），界面出现摘要行",
                       len(cand_chain) == 1
                       and len(reviews) == 1
-                      and report.get("review_contract_version") == "v2.5.1"
+                      and report.get("review_contract_version") == contract
                       and report.get("candidate_id") == candidate_id
                       and report.get("shot_id") == cand.get("shot_id")
                       and report.get("asset_sha256") == cand.get("asset_sha256")
                       and isinstance(report.get("findings"), list) and len(report["findings"]) > 0
                       and all(isinstance(summary.get(key), int)
                               for key in ["BLOCK", "HIGH_RISK", "WARNING", "PASS", "UNKNOWN"])
-                      and (review_ui.get("summary") or "").startswith("自动检查 v2.5.1")
-                      and review_ui.get("contract") == "v2.5.1"
+                      and (review_ui.get("summary") or "").startswith("自动检查 " + contract)
+                      and review_ui.get("contract") == contract
                       and review_ui.get("candidate") == candidate_id
                       and "阻断" in (review_ui.get("text") or "")
                       and "提醒" in (review_ui.get("text") or ""),
@@ -567,7 +581,7 @@ def main() -> int:
                       and review_json(after_reload, candidate_id)
                       == review_json(before_reload, candidate_id)
                       and ((row_of(after_reload, ok_shot) or {}).get("review") or {})
-                      .get("summary", "").startswith("自动检查 v2.5.1"),
+                      .get("summary", "").startswith("自动检查 " + contract),
                       {"review_docs_before": len(reviews_for(before_reload, candidate_id)),
                        "review_docs_after": len(reviews_for(after_reload, candidate_id))})
 

@@ -1,0 +1,42 @@
+{
+  "suite_id": "v2.5.2-review-live-probe",
+  "observed_at": "2026-09-30T15:00:12",
+  "planned": {
+    "contract": "v2.5.2",
+    "provider_id": "dashscope-review",
+    "model_id": "qwen-vl-max",
+    "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+    "timeout_seconds": 60.0,
+    "max_tokens": 2000,
+    "candidate": {
+      "path": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\_working\\amz-listing-kit-product-demo\\real-run-01\\workspace\\inputs\\originals\\5c5e0fdde80847dc140af37778678f3e9b3fb7962bba70360e62630501a85629.jpg",
+      "sha256": "5c5e0fdde80847dc140af37778678f3e9b3fb7962bba70360e62630501a85629",
+      "byte_size": 133949
+    },
+    "reference_images": 1,
+    "api_key_configured": true
+  },
+  "attempts": 1,
+  "model_calls": 1,
+  "note": "候选与参考图是同一张真实照片：只证明通道与结构化输出，不评估检出质量。",
+  "status": "checked",
+  "result": {
+    "contract_version": "v2.5.2",
+    "candidate_sha256": "5c5e0fdde80847dc140af37778678f3e9b3fb7962bba70360e62630501a85629",
+    "findings": [],
+    "summary": "候选图与参考图在商品外观上一致，无可见差异。",
+    "provider_id": "dashscope-review",
+    "model_id": "qwen-vl-max",
+    "request_id": "chatcmpl-a4851479-b605-9339-8692-c385bcdb68e1",
+    "usage": {
+      "prompt_tokens": 1857,
+      "completion_tokens": 30,
+      "total_tokens": 1887
+    },
+    "latency_ms": 6131,
+    "reference_images_sent": true,
+    "checked_at": "2026-09-30T07:00:18Z",
+    "attempts": 1
+  },
+  "binding_ok": true
+}

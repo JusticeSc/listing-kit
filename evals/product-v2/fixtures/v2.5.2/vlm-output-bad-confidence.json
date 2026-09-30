@@ -1,0 +1,12 @@
+{
+  "name": "bad-confidence-rejected",
+  "note": "置信度越界（1.4）必须整包拒绝；置信度不合法时不允许进入报告。",
+  "kind": "parsed",
+  "output": {
+    "findings": [
+      {"check": "part_anomaly", "evidence": "把手处多出一块结构。", "confidence": 1.4}
+    ],
+    "summary": "疑似部件异常。"
+  },
+  "expect": {"error_code": "INVALID_RESPONSE", "error_family": "provider_failed"}
+}

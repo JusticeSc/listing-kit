@@ -1,0 +1,7 @@
+{
+  "name": "clean-no-findings",
+  "note": "模型未报告问题；契约级标注：findings 必须为空数组，不得伪造发现。",
+  "kind": "parsed",
+  "output": {"findings": [], "summary": "未发现明显问题。"},
+  "expect": {"outcome": "findings", "checks": []}
+}

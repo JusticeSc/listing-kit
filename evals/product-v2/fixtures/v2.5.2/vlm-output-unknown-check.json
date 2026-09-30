@@ -1,0 +1,12 @@
+{
+  "name": "unknown-check-rejected",
+  "note": "模型使用了词表外的 check（把审美判断塞进复核）；整包必须拒绝，不得静默清洗。",
+  "kind": "parsed",
+  "output": {
+    "findings": [
+      {"check": "aesthetic_ugly", "evidence": "看起来不够高级。", "confidence": 0.9}
+    ],
+    "summary": "审美建议。"
+  },
+  "expect": {"error_code": "INVALID_RESPONSE", "error_family": "provider_failed"}
+}

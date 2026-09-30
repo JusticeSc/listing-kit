@@ -1,0 +1,437 @@
+{
+  "suite_id": "v2.5.2-vlm-review-provider",
+  "status": "passed",
+  "observed_at": "2026-09-30T15:05:10",
+  "contract": "v2.5.2",
+  "model_calls": 0,
+  "external_network_calls": 0,
+  "checks": [
+    {
+      "id": "V2.5.2-01",
+      "title": "综合语法门：新 provider / workspace / 两个 harness 通过 node --check 与 Python AST",
+      "ok": true,
+      "detail": {
+        "node_failed": [],
+        "py_failed": []
+      }
+    },
+    {
+      "id": "V2.5.2-02",
+      "title": "跨语言一致：VLM check 词表与合同版本在服务端与浏览器侧完全一致",
+      "ok": true,
+      "detail": {
+        "js_checks": [
+          "product_fidelity",
+          "part_anomaly",
+          "deformity",
+          "clipping",
+          "garbled_text",
+          "goal_completion",
+          "prohibited_content"
+        ],
+        "py_checks": [
+          "product_fidelity",
+          "part_anomaly",
+          "deformity",
+          "clipping",
+          "garbled_text",
+          "goal_completion",
+          "prohibited_content"
+        ],
+        "js_version": "v2.5.2",
+        "py_version": "v2.5.2"
+      }
+    },
+    {
+      "id": "V2.5.2-03",
+      "title": "不重复造轮子：复核 provider 复用 SEL-003 通道（ChatOpenAI + 共享错误映射），零自建传输",
+      "ok": true,
+      "detail": {
+        "forbidden_hits": [],
+        "shared_model": true,
+        "shared_errors": true
+      }
+    },
+    {
+      "id": "V2.5.2-04",
+      "title": "注册表与代码一致：review 角色、真实/假 adapter、模型环境变量与默认选择",
+      "ok": true,
+      "detail": {
+        "default": "dashscope-review",
+        "real": "v2_dashscope_review",
+        "fake": "v2_fake_review"
+      }
+    },
+    {
+      "id": "V2.5.2-05",
+      "title": "注册表构造：环境变量能选择 fake-review（场景 clean）且真实默认模型已登记",
+      "ok": true,
+      "detail": {
+        "provider": "fake-review",
+        "scenario": "clean",
+        "model": "qwen-vl-max"
+      }
+    },
+    {
+      "id": "V2.5.2-F01",
+      "title": "已标样例 bad-confidence-rejected：置信度越界（1.4）必须整包拒绝",
+      "ok": true,
+      "detail": {
+        "name": "bad-confidence-rejected",
+        "kind": "parsed",
+        "state": "rejected",
+        "code": "INVALID_RESPONSE",
+        "family": "provider_failed",
+        "retry_policy": "retryable"
+      }
+    },
+    {
+      "id": "V2.5.2-F02",
+      "title": "已标样例 clean-no-findings：模型未报告问题",
+      "ok": true,
+      "detail": {
+        "name": "clean-no-findings",
+        "kind": "parsed",
+        "state": "findings",
+        "checks": [],
+        "candidate_sha256": "92a2334e03e0",
+        "image_blocks": 1
+      }
+    },
+    {
+      "id": "V2.5.2-F03",
+      "title": "已标样例 ok-two-findings：结构合法的两条发现",
+      "ok": true,
+      "detail": {
+        "name": "ok-two-findings",
+        "kind": "parsed",
+        "state": "findings",
+        "checks": [
+          "deformity",
+          "garbled_text"
+        ],
+        "candidate_sha256": "92a2334e03e0",
+        "image_blocks": 1,
+        "data_url_prefix": "data:image/png;base64,iVBORw0K"
+      }
+    },
+    {
+      "id": "V2.5.2-F04",
+      "title": "已标样例 truncated-output：模型输出被 max_tokens 截断",
+      "ok": true,
+      "detail": {
+        "name": "truncated-output",
+        "kind": "truncated",
+        "state": "rejected",
+        "code": "PROVIDER_OUTPUT_TRUNCATED",
+        "family": "provider_failed",
+        "retry_policy": "requires_review"
+      }
+    },
+    {
+      "id": "V2.5.2-F05",
+      "title": "已标样例 unknown-check-rejected：模型使用了词表外的 check（把审美判断塞进复核）",
+      "ok": true,
+      "detail": {
+        "name": "unknown-check-rejected",
+        "kind": "parsed",
+        "state": "rejected",
+        "code": "INVALID_RESPONSE",
+        "family": "provider_failed",
+        "retry_policy": "retryable"
+      }
+    },
+    {
+      "id": "V2.5.2-06",
+      "title": "fake provider 场景矩阵：ok/clean 返回，其余 8 类按四归口分类，且每次只调用一次",
+      "ok": true,
+      "detail": {
+        "scenarios": [
+          {
+            "scenario": "ok",
+            "family": null,
+            "code": null,
+            "retry_policy": null,
+            "findings": 2,
+            "calls": 1
+          },
+          {
+            "scenario": "clean",
+            "family": null,
+            "code": null,
+            "retry_policy": null,
+            "findings": 0,
+            "calls": 1
+          },
+          {
+            "scenario": "auth_failed",
+            "family": "provider_failed",
+            "code": "PROVIDER_AUTH_FAILED",
+            "retry_policy": "fatal",
+            "findings": null,
+            "calls": 1
+          },
+          {
+            "scenario": "http_error",
+            "family": "provider_failed",
+            "code": "PROVIDER_HTTP_ERROR",
+            "retry_policy": "retryable",
+            "findings": null,
+            "calls": 1
+          },
+          {
+            "scenario": "internal_error",
+            "family": "internal",
+            "code": "INTERNAL_ERROR",
+            "retry_policy": "requires_review",
+            "findings": null,
+            "calls": 1
+          },
+          {
+            "scenario": "invalid_output",
+            "family": "provider_failed",
+            "code": "INVALID_RESPONSE",
+            "retry_policy": "retryable",
+            "findings": null,
+            "calls": 1
+          },
+          {
+            "scenario": "rate_limited",
+            "family": "provider_failed",
+            "code": "PROVIDER_RATE_LIMITED",
+            "retry_policy": "retryable",
+            "findings": null,
+            "calls": 1
+          },
+          {
+            "scenario": "refusal",
+            "family": "provider_failed",
+            "code": "PROVIDER_REFUSED",
+            "retry_policy": "fatal",
+            "findings": null,
+            "calls": 1
+          },
+          {
+            "scenario": "timeout_before_send",
+            "family": "provider_failed",
+            "code": "PROVIDER_TIMEOUT",
+            "retry_policy": "retryable",
+            "findings": null,
+            "calls": 1
+          },
+          {
+            "scenario": "unknown",
+            "family": "provider_unknown",
+            "code": "PROVIDER_TIMEOUT",
+            "retry_policy": "requires_review",
+            "findings": null,
+            "calls": 1
+          }
+        ],
+        "declared": [
+          "ok",
+          "clean",
+          "unknown",
+          "timeout_before_send",
+          "invalid_output",
+          "refusal",
+          "rate_limited",
+          "http_error",
+          "auth_failed",
+          "internal_error"
+        ]
+      }
+    },
+    {
+      "id": "V2.5.2-07",
+      "title": "capabilities 暴露 review：合同、端点、provider 身份与参考图能力",
+      "ok": true,
+      "detail": {
+        "provider_id": "fake-review",
+        "model_id": "fake-qwen-vl-max",
+        "configured": true,
+        "capabilities": {
+          "provider_id": "fake-review",
+          "model_id": "fake-qwen-vl-max",
+          "reference_images": true,
+          "structured_output": "local",
+          "stateless": true,
+          "test_double": true,
+          "scenario": "ok"
+        }
+      }
+    },
+    {
+      "id": "V2.5.2-08",
+      "title": "复核路由（fake ok）：200 且发现绑定候选 sha256，不含任何采纳/选择字段",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "findings": 2
+      }
+    },
+    {
+      "id": "V2.5.2-09",
+      "title": "图片哈希与字节不一致 → input_rejected/400（不调用模型）",
+      "ok": true,
+      "detail": {
+        "family": "input_rejected",
+        "code": "INPUT_INVALID",
+        "message": "候选图的 sha256 与收到的字节不一致；拒绝把身份不明的图片送模型。",
+        "retry_policy": "fatal",
+        "http_status": null,
+        "request_id": null,
+        "details": {
+          "problems": [
+            {
+              "path": "$"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "V2.5.2-10",
+      "title": "超时/结果未知 → 504 + unknown=true + provider_unknown/requires_review",
+      "ok": true,
+      "detail": {
+        "status": 504,
+        "error": {
+          "family": "provider_unknown",
+          "code": "PROVIDER_TIMEOUT",
+          "message": "假复核 Provider：读取超时，无法确认结果。",
+          "retry_policy": "requires_review",
+          "http_status": null,
+          "request_id": null,
+          "details": {}
+        }
+      }
+    },
+    {
+      "id": "V2.5.2-11",
+      "title": "非法模型输出 → 502 INVALID_RESPONSE（服务端 provider_failed，浏览器投影为 Unknown）",
+      "ok": true,
+      "detail": {
+        "status": 502,
+        "error": {
+          "family": "provider_failed",
+          "code": "INVALID_RESPONSE",
+          "message": "假复核 Provider：输出不符合结构契约；整包拒绝。",
+          "retry_policy": "retryable",
+          "http_status": null,
+          "request_id": null,
+          "details": {}
+        }
+      }
+    },
+    {
+      "id": "V2.5.2-12",
+      "title": "R01–R13 旧套件回归：注册表升级到 v2.5.2 后全部通过",
+      "ok": true,
+      "detail": {
+        "status": "passed",
+        "failed": []
+      }
+    },
+    {
+      "id": "V2.5.2-13",
+      "title": "R14–R21 复核契约套件：词表/映射/合并/Unknown/反向探针全部通过",
+      "ok": true,
+      "detail": {
+        "status": "passed",
+        "failed": [],
+        "cases": 8
+      }
+    },
+    {
+      "id": "V2.5.2-14",
+      "title": "工作台走查：点“自动复核（VLM）”后报告落 checked，VLM 发现与确定性层并存",
+      "ok": true,
+      "detail": {
+        "outcome": "checked",
+        "vlm_findings": [
+          "vlm.deformity",
+          "vlm.garbled_text"
+        ],
+        "deterministic": 7
+      }
+    },
+    {
+      "id": "V2.5.2-15",
+      "title": "不自动采纳：复核不改变候选字节身份与 Attempt 状态",
+      "ok": true,
+      "detail": {
+        "candidate": "[{\"payload\": {\"action_id",
+        "state": "succeeded"
+      }
+    },
+    {
+      "id": "V2.5.2-16",
+      "title": "刷新持久化：复核块仍在、版本链不继续增长（重开项目不重复铺报告）",
+      "ok": true,
+      "detail": {
+        "docs_before": 2,
+        "docs_after": 2
+      }
+    },
+    {
+      "id": "V2.5.2-17",
+      "title": "失败保留 Unknown：复核未完成不伪造 PASS，候选/Attempt 保持不变",
+      "ok": true,
+      "detail": {
+        "outcome": "unknown",
+        "vlm_findings": [
+          "vlm.inspection_unavailable:UNKNOWN"
+        ]
+      }
+    },
+    {
+      "id": "V2.5.2-18",
+      "title": "正式入口 --check 全过（含复核路由自检：路由、请求身份、provider 不可用分类）",
+      "ok": true,
+      "detail": {
+        "rc": 0,
+        "tail": [
+          "  PASS  复核 provider 不可用时 capabilities 仍 200 且 configured=false  review={'kind': 'dependency', 'detail': 'RuntimeError: 自检：复核 provider 构造失败'}",
+          "  PASS  复核 provider 不可用时复核路由 503 且错误分类明确                        status=503 error={'family': 'internal', 'code': 'PROVIDER_NOT_CONFIGURED', 'message': '语义 provider 不可用：检查注册表、依赖与 DASHSCOPE_API_KEY。', 'retry_policy': 'fatal', 'http_status': 503, 'request_id': None, 'details': {'kind': 'dependency', 'detail': 'RuntimeError: 自检：复核 provider 构造失败'}}",
+          "V2 正式入口自检：33/33 通过。"
+        ]
+      }
+    },
+    {
+      "id": "V2.5.2-19",
+      "title": "零意外 console error / page error（唯一允许项：Unknown 路径的 504 资源日志）",
+      "ok": true,
+      "detail": {
+        "unexpected_console": [],
+        "expected_unknown_path_504": [
+          "Failed to load resource: the server responded with a status of 504 (Gateway Timeout)"
+        ],
+        "page": []
+      }
+    }
+  ],
+  "screenshots": [
+    "evals/product-v2/evidence/v2.5.2-vlm-review-20260930-150502.png"
+  ],
+  "ui": {
+    "candidate_id": "act-b5143c97074f469e8344e712871d91f8",
+    "review_checked": {
+      "outcome": "checked",
+      "findings": [
+        "vlm.deformity",
+        "vlm.garbled_text"
+      ]
+    },
+    "review_unknown": {
+      "outcome": "unknown",
+      "findings": [
+        "vlm.inspection_unavailable"
+      ]
+    }
+  },
+  "console_errors": [
+    "Failed to load resource: the server responded with a status of 504 (Gateway Timeout)"
+  ],
+  "page_errors": []
+}

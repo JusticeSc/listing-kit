@@ -1,0 +1,87 @@
+V2.5.2 可替换 VLM 复核 Provider 验证（fake 契约 + 已标样例 + 浏览器闭环）
+NOT-AUTHORITY: point-in-time verification evidence only
+============================================================================
+  [PASS] V2.5.2-01 综合语法门：新 provider / workspace / 两个 harness 通过 node --check 与 Python AST
+         {"node_failed": [], "py_failed": []}
+  [PASS] V2.5.2-02 跨语言一致：VLM check 词表与合同版本在服务端与浏览器侧完全一致
+         {"js_checks": ["product_fidelity", "part_anomaly", "deformity", "clipping", "garbled_text", "goal_completion", "prohibited_content"], "py_checks": ["product_fidelity", "part_anomaly", "deformity", "clipping", "garbled_text", "goal_completion", "prohibited_content"], "js_version": "v2.5.2", "py_version": "v2.5.2"}
+  [PASS] V2.5.2-03 不重复造轮子：复核 provider 复用 SEL-003 通道（ChatOpenAI + 共享错误映射），零自建传输
+         {"forbidden_hits": [], "shared_model": true, "shared_errors": true}
+  [PASS] V2.5.2-04 注册表与代码一致：review 角色、真实/假 adapter、模型环境变量与默认选择
+         {"default": "dashscope-review", "real": "v2_dashscope_review", "fake": "v2_fake_review"}
+  [PASS] V2.5.2-05 注册表构造：环境变量能选择 fake-review（场景 clean）且真实默认模型已登记
+         {"provider": "fake-review", "scenario": "clean", "model": "qwen-vl-max"}
+  [PASS] V2.5.2-F01 已标样例 bad-confidence-rejected：置信度越界（1.4）必须整包拒绝
+         {"name": "bad-confidence-rejected", "kind": "parsed", "state": "rejected", "code": "INVALID_RESPONSE", "family": "provider_failed", "retry_policy": "retryable"}
+  [PASS] V2.5.2-F02 已标样例 clean-no-findings：模型未报告问题
+         {"name": "clean-no-findings", "kind": "parsed", "state": "findings", "checks": [], "candidate_sha256": "92a2334e03e0", "image_blocks": 1}
+  [PASS] V2.5.2-F03 已标样例 ok-two-findings：结构合法的两条发现
+         {"name": "ok-two-findings", "kind": "parsed", "state": "findings", "checks": ["deformity", "garbled_text"], "candidate_sha256": "92a2334e03e0", "image_blocks": 1, "data_url_prefix": "data:image/png;base64,iVBORw0K"}
+  [PASS] V2.5.2-F04 已标样例 truncated-output：模型输出被 max_tokens 截断
+         {"name": "truncated-output", "kind": "truncated", "state": "rejected", "code": "PROVIDER_OUTPUT_TRUNCATED", "family": "provider_failed", "retry_policy": "requires_review"}
+  [PASS] V2.5.2-F05 已标样例 unknown-check-rejected：模型使用了词表外的 check（把审美判断塞进复核）
+         {"name": "unknown-check-rejected", "kind": "parsed", "state": "rejected", "code": "INVALID_RESPONSE", "family": "provider_failed", "retry_policy": "retryable"}
+  [PASS] V2.5.2-06 fake provider 场景矩阵：ok/clean 返回，其余 8 类按四归口分类，且每次只调用一次
+         {"scenarios": [{"scenario": "ok", "family": null, "code": null, "retry_policy": null, "findings": 2, "calls": 1}, {"scenario": "clean", "family": null, "code": null, "retry_policy": null, "findings": 0, "calls": 1}, {"scenario": "auth_failed", "family": "provider_failed", "code": "PROVIDER_AUTH_FAILED", "retry_policy": "fatal", "findings": null, "calls": 1},
+  [PASS] V2.5.2-07 capabilities 暴露 review：合同、端点、provider 身份与参考图能力
+         {"provider_id": "fake-review", "model_id": "fake-qwen-vl-max", "configured": true, "capabilities": {"provider_id": "fake-review", "model_id": "fake-qwen-vl-max", "reference_images": true, "structured_output": "local", "stateless": true, "test_double": true, "scenario": "ok"}}
+  [PASS] V2.5.2-08 复核路由（fake ok）：200 且发现绑定候选 sha256，不含任何采纳/选择字段
+         {"status": 200, "findings": 2}
+  [PASS] V2.5.2-09 图片哈希与字节不一致 → input_rejected/400（不调用模型）
+         {"family": "input_rejected", "code": "INPUT_INVALID", "message": "候选图的 sha256 与收到的字节不一致；拒绝把身份不明的图片送模型。", "retry_policy": "fatal", "http_status": null, "request_id": null, "details": {"problems": [{"path": "$"}]}}
+  [PASS] V2.5.2-10 超时/结果未知 → 504 + unknown=true + provider_unknown/requires_review
+         {"status": 504, "error": {"family": "provider_unknown", "code": "PROVIDER_TIMEOUT", "message": "假复核 Provider：读取超时，无法确认结果。", "retry_policy": "requires_review", "http_status": null, "request_id": null, "details": {}}}
+  [PASS] V2.5.2-11 非法模型输出 → 502 INVALID_RESPONSE（服务端 provider_failed，浏览器投影为 Unknown）
+         {"status": 502, "error": {"family": "provider_failed", "code": "INVALID_RESPONSE", "message": "假复核 Provider：输出不符合结构契约；整包拒绝。", "retry_policy": "retryable", "http_status": null, "request_id": null, "details": {}}}
+  [PASS] V2.5.2-12 R01–R13 旧套件回归：注册表升级到 v2.5.2 后全部通过
+         {"status": "passed", "failed": []}
+  [PASS] V2.5.2-13 R14–R21 复核契约套件：词表/映射/合并/Unknown/反向探针全部通过
+         {"status": "passed", "failed": [], "cases": 8}
+  [PASS] V2.5.2-14 工作台走查：点“自动复核（VLM）”后报告落 checked，VLM 发现与确定性层并存
+         {"outcome": "checked", "vlm_findings": ["vlm.deformity", "vlm.garbled_text"], "deterministic": 7}
+  [PASS] V2.5.2-15 不自动采纳：复核不改变候选字节身份与 Attempt 状态
+         {"candidate": "[{\"payload\": {\"action_id", "state": "succeeded"}
+  [PASS] V2.5.2-16 刷新持久化：复核块仍在、版本链不继续增长（重开项目不重复铺报告）
+         {"docs_before": 2, "docs_after": 2}
+  [PASS] V2.5.2-17 失败保留 Unknown：复核未完成不伪造 PASS，候选/Attempt 保持不变
+         {"outcome": "unknown", "vlm_findings": ["vlm.inspection_unavailable:UNKNOWN"]}
+  [PASS] V2.5.2-18 正式入口 --check 全过（含复核路由自检：路由、请求身份、provider 不可用分类）
+         {"rc": 0, "tail": ["  PASS  复核 provider 不可用时 capabilities 仍 200 且 configured=false  review={'kind': 'dependency', 'detail': 'RuntimeError: 自检：复核 provider 构造失败'}", "  PASS  复核 provider 不可用时复核路由 503 且错误分类明确                        status=503 error={'family': 'internal', 'code': 'PROVIDER_NOT_CONFIGURED', 'message': '语义 provider 不可用：检查注册表、依赖与 DASHSCOPE_API_KEY。'
+  [PASS] V2.5.2-19 零意外 console error / page error（唯一允许项：Unknown 路径的 504 资源日志）
+         {"unexpected_console": [], "expected_unknown_path_504": ["Failed to load resource: the server responded with a status of 504 (Gateway Timeout)"], "page": []}
+----------------------------------------------------------------------------
+observed_at: 2026-09-30T15:05:10
+status: passed
+contract: v2.5.2
+model_calls: 0 · external_network_calls: 0（fake providers + 本地静态服务器）
+json: evals/product-v2/v2.5.2-vlm-review-20260930-150502final.json
+
+边界：本套件 0 次真实模型调用；fake provider 只证明契约、归因与工作台闭环，
+不证明真实 VLM 的检出质量。真实最小请求由 tools/probe_v2_5_2_review_live.py
+单独执行并把请求审计写进证据（计划 §12.2 的预算纪律）。
+
+CHECKS
+- [PASS] V2.5.2-01 综合语法门：新 provider / workspace / 两个 harness 通过 node --check 与 Python AST
+- [PASS] V2.5.2-02 跨语言一致：VLM check 词表与合同版本在服务端与浏览器侧完全一致
+- [PASS] V2.5.2-03 不重复造轮子：复核 provider 复用 SEL-003 通道（ChatOpenAI + 共享错误映射），零自建传输
+- [PASS] V2.5.2-04 注册表与代码一致：review 角色、真实/假 adapter、模型环境变量与默认选择
+- [PASS] V2.5.2-05 注册表构造：环境变量能选择 fake-review（场景 clean）且真实默认模型已登记
+- [PASS] V2.5.2-F01 已标样例 bad-confidence-rejected：置信度越界（1.4）必须整包拒绝
+- [PASS] V2.5.2-F02 已标样例 clean-no-findings：模型未报告问题
+- [PASS] V2.5.2-F03 已标样例 ok-two-findings：结构合法的两条发现
+- [PASS] V2.5.2-F04 已标样例 truncated-output：模型输出被 max_tokens 截断
+- [PASS] V2.5.2-F05 已标样例 unknown-check-rejected：模型使用了词表外的 check（把审美判断塞进复核）
+- [PASS] V2.5.2-06 fake provider 场景矩阵：ok/clean 返回，其余 8 类按四归口分类，且每次只调用一次
+- [PASS] V2.5.2-07 capabilities 暴露 review：合同、端点、provider 身份与参考图能力
+- [PASS] V2.5.2-08 复核路由（fake ok）：200 且发现绑定候选 sha256，不含任何采纳/选择字段
+- [PASS] V2.5.2-09 图片哈希与字节不一致 → input_rejected/400（不调用模型）
+- [PASS] V2.5.2-10 超时/结果未知 → 504 + unknown=true + provider_unknown/requires_review
+- [PASS] V2.5.2-11 非法模型输出 → 502 INVALID_RESPONSE（服务端 provider_failed，浏览器投影为 Unknown）
+- [PASS] V2.5.2-12 R01–R13 旧套件回归：注册表升级到 v2.5.2 后全部通过
+- [PASS] V2.5.2-13 R14–R21 复核契约套件：词表/映射/合并/Unknown/反向探针全部通过
+- [PASS] V2.5.2-14 工作台走查：点“自动复核（VLM）”后报告落 checked，VLM 发现与确定性层并存
+- [PASS] V2.5.2-15 不自动采纳：复核不改变候选字节身份与 Attempt 状态
+- [PASS] V2.5.2-16 刷新持久化：复核块仍在、版本链不继续增长（重开项目不重复铺报告）
+- [PASS] V2.5.2-17 失败保留 Unknown：复核未完成不伪造 PASS，候选/Attempt 保持不变
+- [PASS] V2.5.2-18 正式入口 --check 全过（含复核路由自检：路由、请求身份、provider 不可用分类）
+- [PASS] V2.5.2-19 零意外 console error / page error（唯一允许项：Unknown 路径的 504 资源日志）
