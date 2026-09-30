@@ -1,0 +1,487 @@
+diff --git a/app/product_v2/index.html b/app/product_v2/index.html
+index f36f0b6..5bdb825 100644
+--- a/app/product_v2/index.html
++++ b/app/product_v2/index.html
+@@ -364,6 +364,24 @@
+      </div>
+       <p id="attempt-error" class="error" role="alert" hidden></p>
+     </section>
++
++    <section class="card" aria-labelledby="suite-review-title">
++      <div class="card-head">
++        <h3 id="suite-review-title">整套一致性</h3>
++        <p class="meta">对当前人工采用集合做整套检查：确定性部分复用导出就绪与字节哈希核对，视觉部分由可替换的 VLM 检查跨图的商品外观、颜色材质、公共风格与低级异常。报告绑定当时的选择与输入，任何变化都会让它过期；视觉层只给提示或 Unknown，不取消人工选择。</p>
++      </div>
++      <p id="suite-review-locked" class="empty" hidden>完成商品理解并生成套图方案后，才能做整套检查。</p>
++      <div id="suite-review-editor" hidden>
++        <p id="suite-review-status" class="meta" role="status"></p>
++        <p id="suite-review-vlm" class="meta"></p>
++        <div class="toolbar">
++          <button id="suite-review-run" class="primary" type="button">运行整套检查</button>
++          <span id="suite-review-progress" class="meta" role="status"></span>
++        </div>
++        <div id="suite-review-groups"></div>
++      </div>
++      <p id="suite-review-error" class="error" role="alert" hidden></p>
++    </section>
+   </section>
+ </main>
+ 
+diff --git a/app/product_v2/styles.css b/app/product_v2/styles.css
+index 1180b1a..fae4147 100644
+--- a/app/product_v2/styles.css
++++ b/app/product_v2/styles.css
+@@ -796,3 +796,13 @@ select:focus-visible, summary:focus-visible, .link-button:focus-visible {
+ 
+ /* hidden 属性必须真的隐藏：作者样式里的 display 会覆盖浏览器默认的 [hidden] 规则。 */
+ [hidden] { display: none !important; }
++
++.suite-group { margin-top: 14px; }
++.suite-group-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
++.suite-finding-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
++.suite-finding { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
++.suite-finding-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
++.suite-finding-head .name { font-weight: 600; }
++.suite-finding-head button { padding: 2px 8px; font-size: 12px; }
++.suite-finding p { margin: 4px 0 0; }
++.attempt-row.is-jump-target { outline: 2px solid #1c4f8f; outline-offset: 2px; }
+diff --git a/app/product_v2/workspace.js b/app/product_v2/workspace.js
+index 8cc691a..034beca 100644
+--- a/app/product_v2/workspace.js
++++ b/app/product_v2/workspace.js
+@@ -37,11 +37,16 @@ import {
+   REWORK_PROBLEMS,
+   SELECTION_CONTRACT_VERSION,
+   SHOT_TEMPLATES,
++  SUITE_MAX_IMAGES,
+   SUITE_PLAN_DOCUMENT_ID,
++  SUITE_REVIEW_CONTRACT_VERSION,
++  SUITE_REVIEW_DOCUMENT_ID,
++  SUITE_REVIEW_DOCUMENT_KIND,
+   STYLE_SPEC_DOCUMENT_ID,
+   addCustomShotToPlan,
+   addShotFromTemplate,
+   applySlotAction,
++  assembleSuiteReview,
+   assertShotSpec,
+   assertSelectionRecord,
+   assertStyleSpec,
+@@ -88,6 +93,7 @@ import {
+   emptyStyleSpec,
+   emptyProductInput,
+   evaluateCandidateFindings,
++  inputsFingerprintOf,
+   intakeReadiness,
+   mergeVlmReview,
+   moveShot,
+@@ -110,6 +116,7 @@ import {
+   requestSnapshotOf,
+   selectReferences,
+   seedSuitePlan,
++  selectionFingerprintOf,
+   selectionSetText,
+   selectionStateLabel,
+   selectionSummaryText,
+@@ -119,6 +126,7 @@ import {
+   suggestedReworkDirection,
+   suitePlanSummary,
+   suiteSpecDigest,
++  suiteReviewSummaryText,
+   styleSpecDiff,
+   topFinding,
+   validateSuitePlan,
+@@ -145,6 +153,8 @@ const IMAGE_RESULT_PATH = "/api/v2/images/result";
+ const REVIEW_PATH = "/api/v2/review/candidate";
+ const REWORK_CONFIRM_PREFIX = "rework:";
+ const SELECTION_KIND = DOMAIN_DOCUMENT_KINDS.selection;
++const SUITE_REVIEW_KIND = SUITE_REVIEW_DOCUMENT_KIND;
++const SUITE_REVIEW_PATH = "/api/v2/review/suite";
+ 
+ const DRAFT_DEBOUNCE_MS = 600;
+ const ANALYZE_MAX_SLOTS = 12;
+@@ -191,7 +201,7 @@ const REVIEW_ORDER = Object.freeze({
+   conflict: 0, unknown: 1, missing: 2, proposed: 3, confirmed: 4, superseded: 5,
+ });
+ 
+-const SCOPE_TEXT = "这一版覆盖“商品资料 → 商品理解 → 套图规划 → 规格 → Prompt → 生成前确认 → 整套生成与逐图进度（含单张核对）→ 审核 → 单图返工 → 人工采用”；整套一致性报告与导出交付尚未接入。";
++const SCOPE_TEXT = "这一版覆盖“商品资料 → 商品理解 → 套图规划 → 规格 → Prompt → 生成前确认 → 整套生成与逐图进度（含单张核对）→ 审核 → 单图返工 → 人工采用 → 整套一致性报告”；只剩导出交付尚未接入。";
+ 
+ function createElement(tag, options = {}, children = []) {
+   const node = document.createElement(tag);
+@@ -353,6 +363,14 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
+     adoptStatus: document.getElementById("adopt-status"),
+     adoptError: document.getElementById("adopt-error"),
+     adoptProgress: document.getElementById("adopt-progress"),
++    suiteReviewLocked: document.getElementById("suite-review-locked"),
++    suiteReviewEditor: document.getElementById("suite-review-editor"),
++    suiteReviewStatus: document.getElementById("suite-review-status"),
++    suiteReviewVlm: document.getElementById("suite-review-vlm"),
++    suiteReviewRun: document.getElementById("suite-review-run"),
++    suiteReviewProgress: document.getElementById("suite-review-progress"),
++    suiteReviewGroups: document.getElementById("suite-review-groups"),
++    suiteReviewError: document.getElementById("suite-review-error"),
+   };
+ 
+   let project = null;
+@@ -396,6 +414,8 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
+   let adoptShotId = null;
+   let adoptCandidateId = null;
+   let adoptSource = null;
++  let suiteReviewRecord = null;
++  let suiteReviewInFlight = false;
+   let previewUrls = new Map();
+   let batchState = null;
+   let busy = false;
+@@ -4372,7 +4392,7 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
+   function renderHeaderText(projectRecord) {
+     const state = projectRecord ? projectRecord.state : null;
+     if (state === "READY_TO_GENERATE") {
+-      elements.scope.textContent = "生成前确认已通过：可以整套生成或逐张提交，并按任务编号核对进度；可以审核、单图返工与采用候选；整套一致性报告与导出交付仍未接入。";
++      elements.scope.textContent = "生成前确认已通过：可以整套生成或逐张提交，并按任务编号核对进度；可以审核、单图返工、采用候选并运行整套一致性检查；只剩导出交付尚未接入。";
+     } else if (state === "PLAN_REVIEW") {
+       elements.scope.textContent = "商品理解已就绪，可以编辑套图规划、规格、Prompt 与生成前确认；通过确认后才能提交生成。";
+     } else {
+@@ -4409,6 +4429,305 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
+     renderHeaderText(project);
+   }
+ 
++  /* ---------------------------------------------------------- V2.5.5 整套一致性 */
++
++  function candidateRecordById(shotId, candidateId) {
++    return candidatePayloadsOf(shotId)
++      .find((item) => item && item.candidate_id === candidateId) || null;
++  }
++
++  /** 一次整套检查的快照：当前选择入口、指纹与复用测量所需的全部输入（渲染与运行共用）。 */
++  function suiteReviewSnapshot() {
++    const set = selectionSetNow();
++    const entries = set.entries.filter(
++      (entry) => entry && entry.state === "current" && entry.candidate_id);
++    const selectionsProjection = {};
++    const reportsByCandidate = {};
++    entries.forEach((entry) => {
++      selectionsProjection[entry.shot_id] = entry.candidate_id;
++      const stored = reviewReports.get(entry.candidate_id);
++      const candidate = candidateRecordById(entry.shot_id, entry.candidate_id);
++      if (stored && candidate && reviewIsCurrent(stored.report, candidate)) {
++        reportsByCandidate[entry.candidate_id] = stored;
++      }
++    });
++    const candidatesByShot = {};
++    const attemptsByShot = {};
++    for (const shot of (suitePlan && Array.isArray(suitePlan.shots) ? suitePlan.shots : [])) {
++      candidatesByShot[shot.shot_id] = candidatePayloadsOf(shot.shot_id);
++      attemptsByShot[shot.shot_id] = attemptChainOf(shot.shot_id);
++    }
++    const factsById = {};
++    for (const [slotId, entry] of slots.entries()) factsById[slotId] = entry;
++    const specsById = {};
++    for (const [shotId, entry] of shotSpecs.entries()) specsById[shotId] = entry;
++    const selectionFingerprint = selectionFingerprintOf(set);
++    const inputsFingerprint = inputsFingerprintOf({
++      selectionFingerprint: selectionFingerprint,
++      suitePlan: suitePlan,
++      styleSpec: styleSpec,
++      shotSpecsById: specsById,
++      reportsByCandidate: reportsByCandidate,
++    });
++    return {
++      set: set, entries: entries, selectionsProjection: selectionsProjection,
++      reportsByCandidate: reportsByCandidate, candidatesByShot: candidatesByShot,
++      attemptsByShot: attemptsByShot, factsById: factsById, specsById: specsById,
++      selectionFingerprint: selectionFingerprint, inputsFingerprint: inputsFingerprint,
++    };
++  }
++
++  function suiteReviewStatusText(snapshot, record) {
++    if (!record) return "尚未运行整套检查；运行后报告会绑定当时的人工选择与输入。";
++    const report = record.report;
++    if (report.selection_fingerprint !== snapshot.selectionFingerprint) {
++      return "报告已过期：人工选择在报告之后发生了变化，重新运行即可更新。";
++    }
++    if (report.inputs_fingerprint !== snapshot.inputsFingerprint) {
++      return "报告已过期：套图计划、规格或所选报告发生了变化，重新运行即可更新。";
++    }
++    return "报告是当前的（生成于 " + shortTime(report.created_at) + "）；选择或输入再变化就会过期。";
++  }
++
++  function suiteSeverityLabel(severity) {
++    return {
++      BLOCK: "阻断", HIGH_RISK: "高风险", WARNING: "提醒", UNKNOWN: "未知", PASS: "通过",
++    }[severity] || String(severity);
++  }
++
++  function suiteSeverityClass(severity) {
++    return {
++      BLOCK: "is-review-block", HIGH_RISK: "is-review-high", WARNING: "is-review-warn",
++      UNKNOWN: "is-review-unknown", PASS: "is-review-pass",
++    }[severity] || "is-review-unchecked";
++  }
++
++  function jumpToShot(shotId) {
++    const row = elements.attemptList.querySelector('.attempt-row[data-shot-id="' + shotId + '"]');
++    if (!row) return false;
++    row.scrollIntoView({ block: "nearest" });
++    row.classList.add("is-jump-target");
++    window.setTimeout(() => { row.classList.remove("is-jump-target"); }, 1600);
++    return true;
++  }
++
++  function renderSuiteReviewGroups(report) {
++    const container = elements.suiteReviewGroups;
++    container.innerHTML = "";
++    if (!report) return;
++    ["BLOCK", "HIGH_RISK", "WARNING", "UNKNOWN", "PASS"].forEach((severity) => {
++      const findings = report.findings.filter((item) => item.severity === severity);
++      if (findings.length === 0) return;
++      const group = createElement("div", {
++        className: "suite-group", attrs: { "data-severity": severity },
++      });
++      const head = createElement("div", { className: "suite-group-head" });
++      head.append(createElement("span", {
++        className: "badge " + suiteSeverityClass(severity), text: suiteSeverityLabel(severity),
++      }));
++      head.append(createElement("span", { className: "meta", text: String(findings.length) + " 条" }));
++      group.append(head);
++      const list = createElement("ul", { className: "suite-finding-list" });
++      findings.forEach((finding) => {
++        const item = createElement("li", {
++          className: "suite-finding", attrs: { "data-rule-id": finding.rule_id },
++        });
++        const line = createElement("div", { className: "suite-finding-head" });
++        line.append(createElement("span", { className: "name", text: finding.title }));
++        line.append(createElement("span", { className: "meta", text: finding.rule_id }));
++        if (finding.affected_shot_ids.length > 0) {
++          const jump = createElement("button", { text: "定位到图", attrs: { type: "button" } });
++          jump.addEventListener("click", () => { jumpToShot(finding.affected_shot_ids[0]); });
++          line.append(jump);
++        }
++        item.append(line);
++        item.append(createElement("p", { className: "meta", text: finding.detail }));
++        if (finding.affected_shot_ids.length > 0) {
++          item.append(createElement("p", {
++            className: "meta", text: "涉及：" + finding.affected_shot_ids.join("、"),
++          }));
++        }
++        list.append(item);
++      });
++      group.append(list);
++      container.append(group);
++    });
++  }
++
++  function renderSuiteReview() {
++    const ready = understandingReady && Boolean(suitePlan);
++    elements.suiteReviewLocked.hidden = ready;
++    elements.suiteReviewEditor.hidden = !ready;
++    if (!ready) {
++      elements.suiteReviewGroups.innerHTML = "";
++      return;
++    }
++    const snapshot = suiteReviewSnapshot();
++    elements.suiteReviewStatus.textContent = suiteReviewStatusText(snapshot, suiteReviewRecord);
++    elements.suiteReviewRun.disabled = suiteReviewInFlight;
++    const report = suiteReviewRecord ? suiteReviewRecord.report : null;
++    if (!report) {
++      elements.suiteReviewVlm.textContent = "";
++    } else {
++      const vlm = report.vlm && typeof report.vlm === "object" ? report.vlm : null;
++      const requested = vlm && Array.isArray(vlm.requested_shot_ids)
++        ? vlm.requested_shot_ids.length : 0;
++      const submitted = vlm && Array.isArray(vlm.submitted_shot_ids)
++        ? vlm.submitted_shot_ids.length : 0;
++      elements.suiteReviewVlm.textContent = suiteReviewSummaryText(report)
++        + (vlm && vlm.provider_id ? " · " + vlm.provider_id : "")
++        + (vlm && vlm.model_id ? "/" + vlm.model_id : "")
++        + " · 送审 " + submitted + "/" + requested + " 张"
++        + (vlm && vlm.reason ? " · 原因 " + vlm.reason : "");
++    }
++    renderSuiteReviewGroups(report);
++    if (!suiteReviewInFlight) elements.suiteReviewProgress.textContent = "";
++  }
++
++  function styleSummaryText() {
++    if (!styleSpec) return "";
++    const parts = [];
++    [["背景", "background"], ["光线", "lighting"], ["色调", "color_tone"],
++      ["构图", "composition"]].forEach((pair) => {
++      const value = String(styleSpec[pair[1]] || "").trim();
++      if (value) parts.push(pair[0] + "：" + value);
++    });
++    const avoid = Array.isArray(styleSpec.avoid) ? styleSpec.avoid.filter((item) => item) : [];
++    if (avoid.length > 0) parts.push("避免：" + avoid.join("、"));
++    return parts.join("；").slice(0, 500);
++  }
++
++  /** 组装一次整套视觉复核：全部字节可读才送审；不可读/超限/超张数一律记 Unknown（不送半份资料）。 */
++  async function buildSuiteVlmRun(entries) {
++    const requestedIds = entries.map((entry) => entry.shot_id);
++    if (entries.length === 0) {
++      return { envelope: null, reason: "no_selection", requested_shot_ids: [],
++        submitted_shot_ids: [], asset_sha256_by_shot: {} };
++    }
++    if (entries.length > SUITE_MAX_IMAGES) {
++      return { envelope: null, reason: "over_limit", requested_shot_ids: requestedIds,
++        submitted_shot_ids: [], asset_sha256_by_shot: {} };
++    }
++    const prepared = [];
++    const shaByShot = {};
++    for (const entry of entries) {
++      const candidate = candidateRecordById(entry.shot_id, entry.candidate_id);
++      const shot = (suitePlan.shots || [])
++        .find((item) => item && item.shot_id === entry.shot_id) || null;
++      if (!candidate || !shot) {
++        return { envelope: null, reason: "missing_bytes", requested_shot_ids: requestedIds,
++          submitted_shot_ids: [], asset_sha256_by_shot: shaByShot };
++      }
++      const asset = await repository.assets.get(projectId, candidate.asset_sha256);
++      if (!asset || !(asset.blob instanceof Blob)) {
++        return { envelope: null, reason: "missing_bytes", requested_shot_ids: requestedIds,
++          submitted_shot_ids: [], asset_sha256_by_shot: shaByShot };
++      }
++      if (asset.blob.size > MAX_REVIEW_IMAGE_BYTES) {
++        return { envelope: null, reason: "image_too_large", requested_shot_ids: requestedIds,
++          submitted_shot_ids: [], asset_sha256_by_shot: shaByShot };
++      }
++      const specEntry = shotSpecEntry(entry.shot_id);
++      const spec = specEntry ? specEntry.spec : emptyShotSpecFromShot(shot);
++      prepared.push({
++        shot_id: entry.shot_id,
++        title: String(shot.role_label || shot.label || shot.role_id || "图片任务").slice(0, 200),
++        purpose: String(spec.purpose || "").slice(0, 500),
++        keep_items: Array.isArray(spec.keep) ? spec.keep.slice(0, 8) : [],
++        allow_changes: Array.isArray(spec.change_allowed) ? spec.change_allowed.slice(0, 8) : [],
++        media_type: candidate.media_type || "image/png",
++        sha256: candidate.asset_sha256,
++        data_base64: await blobToBase64(asset.blob),
++      });
++      shaByShot[entry.shot_id] = candidate.asset_sha256;
++    }
++    const facts = [];
++    for (const entry of slots.values()) {
++      const slot = entry && entry.slot ? entry.slot : null;
++      if (!slot || slot.status !== "confirmed") continue;
++      const value = Array.isArray(slot.value) ? slot.value.join("；") : String(slot.value);
++      facts.push({
++        label: String(slot.label || slot.slot_id).slice(0, 60),
++        value: value.slice(0, 200),
++      });
++      if (facts.length >= 20) break;
++    }
++    const request = {
++      contract_version: SUITE_REVIEW_CONTRACT_VERSION,
++      locale: ANALYZE_LOCALE,
++      platform: ANALYZE_PLATFORM,
++      product_facts: facts,
++      style_summary: styleSummaryText(),
++      images: prepared,
++    };
++    let envelope = null;
++    try {
++      const response = await fetch(SUITE_REVIEW_PATH, {
++        method: "POST",
++        headers: { "Content-Type": "application/json" },
++        body: JSON.stringify(request),
++      });
++      envelope = await response.json().catch(() => null);
++    } catch (error) {
++      envelope = null;
++    }
++    if (!envelope || typeof envelope !== "object") {
++      return { envelope: null, reason: "transport", requested_shot_ids: requestedIds,
++        submitted_shot_ids: requestedIds, asset_sha256_by_shot: shaByShot };
++    }
++    return { envelope: envelope, reason: null, requested_shot_ids: requestedIds,
++      submitted_shot_ids: requestedIds, asset_sha256_by_shot: shaByShot };
++  }
++
++  async function handleSuiteReviewRun() {
++    if (!projectId || !suitePlan || suiteReviewInFlight) return;
++    suiteReviewInFlight = true;
++    clearError(elements.suiteReviewError);
++    elements.suiteReviewProgress.textContent = "正在运行整套检查…";
++    renderSuiteReview();
++    try {
++      const at = new Date().toISOString();
++      const snapshot = suiteReviewSnapshot();
++      const vlmRun = await buildSuiteVlmRun(snapshot.entries);
++      const report = await assembleSuiteReview({
++        selectionSet: snapshot.set,
++        suitePlan: suitePlan,
++        styleSpec: styleSpec,
++        shotSpecsById: snapshot.specsById,
++        context: suiteContext(),
++        factsById: snapshot.factsById,
++        sellingPoints: Array.isArray(intake.selling_points) ? intake.selling_points : [],
++        shots: suitePlan.shots,
++        selections: snapshot.selectionsProjection,
++        candidatesByShot: snapshot.candidatesByShot,
++        attemptsByShot: snapshot.attemptsByShot,
++        reportsByCandidate: snapshot.reportsByCandidate,
++        readBytes: async (sha) => {
++          const asset = await repository.assets.get(projectId, sha);
++          if (!asset || !(asset.blob instanceof Blob)) return null;
++          return new Uint8Array(await asset.blob.arrayBuffer());
++        },
++        digest: sha256Hex,
++        vlmRun: vlmRun,
++        at: at,
++      });
++      const saved = await repository.documents.save(projectId, {
++        kind: SUITE_REVIEW_KIND,
++        documentId: SUITE_REVIEW_DOCUMENT_ID,
++        payload: report,
++      });
++      suiteReviewRecord = {
++        report: report,
++        version: saved && typeof saved.version === "number" ? saved.version : 0,
++      };
++    } catch (error) {
++      showError(elements.suiteReviewError, (error && error.message) || "整套检查失败。");
++    } finally {
++      suiteReviewInFlight = false;
++      renderSuiteReview();
++    }
++  }
++
+   function renderAll() {
+     clearError(elements.error);
+     if (understandingError) {
+@@ -4425,6 +4744,7 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
+     renderPrompts();
+     renderConfirm();
+     renderAttempts();
++    renderSuiteReview();
+     renderHeaderText(project);
+   }
+ 
+@@ -4479,6 +4799,7 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
+     });
+     elements.batchReconcile.addEventListener("click", () => { handleBatchReconcile(); });
+     elements.batchRetry.addEventListener("click", () => { handleBatchRetry(); });
++    elements.suiteReviewRun.addEventListener("click", () => { handleSuiteReviewRun(); });
+     elements.compareJump.addEventListener("click", () => {
+       const target = elements.compareJump.dataset.targetShot;
+       if (!target) {
+@@ -4559,6 +4880,8 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
+     candidateChains = new Map();
+     candidateInFlight = new Set();
+     reviewReports = new Map();
++    suiteReviewRecord = null;
++    suiteReviewInFlight = false;
+     revokePreviewUrls();
+     batchState = null;
+     compareShotId = null;
+@@ -4663,6 +4986,12 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
+         reviewReports.set(record.document_id, { report: record.payload, version: record.version });
+       }
+     }
++    const suiteRecordDoc = await repository.documents.getLatest(
++      projectId, SUITE_REVIEW_KIND, SUITE_REVIEW_DOCUMENT_ID);
++    if (token !== openToken) return;
++    suiteReviewRecord = suiteRecordDoc && suiteRecordDoc.payload
++      && typeof suiteRecordDoc.payload === "object"
++      ? { report: suiteRecordDoc.payload, version: suiteRecordDoc.version } : null;
+     for (const shot of (suitePlan && Array.isArray(suitePlan.shots) ? suitePlan.shots : [])) {
+       const latest = latestStoredCandidateOf(shot.shot_id);
+       if (!latest) continue;

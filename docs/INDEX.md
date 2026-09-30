@@ -41,6 +41,7 @@
 | `_working/amz-listing-kit-product-demo/state.md` | Product V1 v2.6 | `历史证据` | `superseded` | 被 `_working/amz-listing-kit-product-v2/state.md` 取代；保留 D-1 至 D4.12 的完成证据，不据此继续 D4.13 |
 | `docs/product-v2-project-context.md` | Product V2 | `架构设计` | `current` | Product V2 项目身份、运行边界、数据所有权、技术栈、目录地图和质量门槛的唯一上下文入口 |
 | `docs/product-v2-goal-and-implementation-plan.md` | Product V2 | `产品目标` | `current` | Product V2 目标合同、需求、状态、不变量、详细任务、Gate、验收矩阵与系统 Goal 绑定文本的唯一权威 |
+| `docs/product-v2-ui-contract.md` | Product V2 V2.UI.2 | `设计草案` | `draft` | V2.UI.2 交互与视觉契约：六阶段信息架构、逐视图对象/信息/行为/状态/规则/反馈与表现层基线；生效条件：产品发起人走查确认后转 `架构设计`/`current` 并补入 §1 路由表 |
 | `_working/amz-listing-kit-product-v2/state.md` | Product V2 | `执行状态` | `current` | Product V2 当前进度、证据指针、阻塞、未知与唯一下一动作；不复制计划正文 |
 | `_working/amz-listing-kit-product-v2/tasks/v255-server.md` | Product V2 V2.5.5 | `设计草案` | `draft` | V2.5.5 服务端施工任务书（与计划 §9.20 落地契约同批）；生效条件：V2.5.5 施工期间；任务在 state 置 done 后改登记为 `superseded` |
 | `_working/amz-listing-kit-product-v2/tasks/v255-verifier.md` | Product V2 V2.5.5 | `设计草案` | `draft` | V2.5.5 验证器施工任务书（与计划 §9.20 落地契约同批）；生效条件：V2.5.5 施工期间；任务在 state 置 done 后改登记为 `superseded` |
