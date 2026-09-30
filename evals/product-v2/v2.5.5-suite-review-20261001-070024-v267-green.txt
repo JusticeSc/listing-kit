@@ -1,0 +1,34 @@
+V2.5.5 整套一致性验收 · 20261001-070024-v267-green
+结果：13/13 通过
+
+[PASS] V2.5.5-00 ESM 语法门（domain / workspace / harness）
+       [{"file": "app/product_v2/domain/suite-review.js", "rc": 0, "stderr": ""}, {"file": "app/product_v2/workspace.js", "rc": 0, "stderr": ""}, {"file": "app/product_v2/app.js", "rc": 0, "stderr": ""}, {"file": "evals/product-v2/harness/suite-review-contract.js", "rc": 0, "stderr": ""}]
+[PASS] V2.5.5-01 服务端词表/合同版本/张数上限/端点与浏览器互为镜像
+       {"py": ["suite_color_material_consistency", "suite_cross_image_anomaly", "suite_product_consistency", "suite_style_consistency"], "js": ["suite_color_material_consistency", "suite_cross_image_anomaly", "suite_product_consistency", "suite_style_consistency"], "contract": ["v2.5.5", "v2.5.5"], "max": ["8", "8"]}
+[PASS] V2.5.5-02 单一权威：复用既有测量；界面落点与文档种类已登记
+       {"len_suite_js": 32286, "duplicate_ids": [], "duplicate_element_keys": []}
+[PASS] V2.5.5-03 契约套件 S01–S06 全过
+       {"status": "passed", "cases": ["S01", "S02", "S03", "S04", "S05", "S06"], "failed": []}
+[PASS] V2.5.5-04 工作台整套检查：报告当前、视觉已核对、发现可见
+       {"status": "整套检查 v2.5.5：阻断 1 · 高风险 1 · 提醒 1 · 未知 0 · 视觉复核已完成", "findings": [{"rule": "export.no_blocking_findings", "severity": "BLOCK", "jumps": 4}, {"rule": "vlm.suite_product_consistency", "severity": "HIGH_RISK", "jumps": 2}, {"rule": "vlm.suite_style_consistency", "severity": "WARNING", "jumps": 4}], "note": "视觉复核：fake-qwen-vl-max · 2026-10-01T00:00:00Z"}
+[PASS] V2.5.5-05 报告以 suite_review 文档写入 IndexedDB
+       [{"kind": "suite_review", "document_id": "suite_review", "version": 1}]
+[PASS] V2.5.5-12 整套发现「定位」按钮本地化：按钮带图名、界面不出现裸 shot_id
+       {"buttons": [{"text": "定位：主图·干净背景", "shot": "shot_main_clean"}, {"text": "定位：卖点信息图", "shot": "shot_infographic_benefits"}, {"text": "定位：场景图·使用中", "shot": "shot_scene_lifestyle"}, {"text": "定位：细节图·材质工艺", "shot": "shot_detail_material"}, {"text": "定位：主图·干净背景", "shot": "shot_main_clean"}, {"text": "定位：卖点信息图", "shot": "shot_infographic_benefits"}], "has_raw_shot_id": false}
+[PASS] V2.5.5-06 发现可跳转到对应图行
+       {"shot": "shot_main_clean", "focused": {"stage": "review", "visible": true}}
+[PASS] V2.5.5-07 方案变化后报告过期并可重算为当前
+       {"stale": "整套检查已过期：选择或输入在报告之后发生了变化，请重新运行。 上一版：整套检查 v2.5.5：阻断 1 · 高风险 1 · 提醒 1 · 未知 0 · 视觉复核已完成", "rerun": "整套检查 v2.5.5：阻断 1 · 高风险 1 · 提醒 2 · 未知 0 · 视觉复核已完成"}
+[PASS] V2.5.5-08 刷新后报告仍在且仍是当前
+       {"status": "整套检查 v2.5.5：阻断 1 · 高风险 1 · 提醒 2 · 未知 0 · 视觉复核已完成", "findings": 4}
+[PASS] V2.5.5-09 主链零意外 console / page / HTTP 错误
+       {"console": [], "page": [], "http": []}
+[PASS] V2.5.5-10 视觉通道失败：只落 UNKNOWN，确定性部分照常
+       {"status": "整套检查 v2.5.5：阻断 1 · 高风险 0 · 提醒 0 · 未知 1 · 视觉复核未完成（Unknown）", "findings": [{"rule": "export.no_blocking_findings", "severity": "BLOCK", "jumps": 4}, {"rule": "vlm.suite_inspection_unavailable", "severity": "UNKNOWN", "jumps": 4}]}
+[PASS] V2.5.5-11 正式入口自检全过且含整套复核路由
+       {"rc": 0, "tail": ["  PASS  整套复核 provider 不可用时 capabilities 仍 200 且 configured=false  suite_review={'kind': 'dependency', 'detail': 'RuntimeError: 自检：整套复核 provider 构造失败'}", "  PASS  整套复核 provider 不可用时路由 503 且错误分类明确                          status=503 error={'family': 'internal', 'code': 'PROVIDER_NOT_CONFIGURED', 'message': '语义 provider 不可用：检查注册表、依赖与 DASHSCOPE_API_KEY。', 'retry_policy': 'fatal', 'http_status': 503, 'request_id': None, 'details': {'kind': 'dependency', 'detail': 'RuntimeError: 自检：整套复核 provider 构造失败'}}", "V2 正式入口自检：38/38 通过。"]}
+
+SCREENSHOTS
+- evals/product-v2/evidence/v2.5.5-suite-review-20261001-070024-v267-green-current.png
+- evals/product-v2/evidence/v2.5.5-suite-review-20261001-070024-v267-green-rerun.png
+- evals/product-v2/evidence/v2.5.5-suite-review-20261001-070024-v267-green-unknown.png

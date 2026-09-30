@@ -4020,6 +4020,23 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     return item ? item.label : shotId;
   }
 
+  /**
+   * 渲染层本地化：domain 的门禁/报告文案里 shot_id 是机器标识，展示时替换成用户认得的图名。
+   * 只改投影、不改 domain 数据（导出与存档仍保留 shot_id）；长 id 先替换，避免互为子串时误伤。
+   */
+  function localizeShotIds(text) {
+    let out = String(text == null ? "" : text);
+    const summary = suitePlan ? suitePlanSummary(suitePlan, suiteContext()) : null;
+    const shots = (summary ? summary.shots : []).slice().sort((left, right) =>
+      String(right.shot_id).length - String(left.shot_id).length);
+    for (const item of shots) {
+      if (item && item.shot_id && out.indexOf(item.shot_id) >= 0) {
+        out = out.split(item.shot_id).join(item.label || item.shot_id);
+      }
+    }
+    return out;
+  }
+
   /** 批次状态 = 套图顺序 + 每张图最新 Attempt + Prompt 就绪状态的投影；没有第二份状态。 */
   function deriveBatch() {
     const summary = suitePlan ? suitePlanSummary(suitePlan, suiteContext()) : null;
@@ -5081,10 +5098,10 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
         row.append(createElement("span", {
           className: "name", text: String(finding.title || finding.rule_id),
         }));
-        row.append(createElement("p", { className: "meta", text: String(finding.detail || "") }));
+        row.append(createElement("p", { className: "meta", text: localizeShotIds(finding.detail) }));
         for (const shotId of (Array.isArray(finding.affected_shot_ids) ? finding.affected_shot_ids : [])) {
           const jump = createElement("button", {
-            text: "定位这张图", attrs: { type: "button", "data-shot-id": shotId },
+            text: "定位：" + shotLabelOf(shotId), attrs: { type: "button", "data-shot-id": shotId },
           });
           jump.addEventListener("click", () => { jumpToReviewShot(shotId); });
           row.append(jump);
@@ -5194,14 +5211,14 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
       row.append(createElement("span", { className: "name", text: String(item.title || item.rule_id) }));
       // 通过项压成一行（信息不减、占位减半）；阻断项保留独立说明行便于逐条处理。
       row.append(createElement(passed ? "span" : "p", {
-        className: "meta", text: String(item.detail || ""),
+        className: "meta", text: localizeShotIds(item.detail),
       }));
       // Unknown 的处置入口就是下面的「确认已知悉」；这里不再给会误导的跳图按钮。
       const jumpable = !passed && item.rule_id !== "export.unknown_acknowledged";
       for (const shotId of (jumpable && Array.isArray(item.affected_shot_ids)
         ? item.affected_shot_ids : [])) {
         const jump = createElement("button", {
-          text: "去处理", attrs: { type: "button", "data-shot-id": shotId },
+          text: "去处理：" + shotLabelOf(shotId), attrs: { type: "button", "data-shot-id": shotId },
         });
         jump.addEventListener("click", () => { jumpToReviewShot(shotId); });
         row.append(jump);

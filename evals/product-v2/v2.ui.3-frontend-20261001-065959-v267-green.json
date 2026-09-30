@@ -1,0 +1,282 @@
+{
+  "task": "V2.UI.3",
+  "suite_id": "v2.ui.3-frontend",
+  "status": "passed",
+  "finished_at": "2026-10-01T07:00:16",
+  "checks": [
+    {
+      "id": "UI3-01",
+      "title": "首页五态（空/列表/创建/导入/异常）与工作台摘要、全局保存状态在正式入口就位",
+      "ok": true,
+      "detail": {
+        "home_states": true,
+        "workbench": true
+      }
+    },
+    {
+      "id": "UI3-02",
+      "title": "六阶段标题可聚焦（tabindex=-1）；外壳纯净（无存储/网络引用）；无内联样式与外部资源",
+      "ok": true,
+      "detail": {
+        "focusable_titles": true,
+        "shell_clean": true,
+        "no_inline": true,
+        "no_external": true
+      }
+    },
+    {
+      "id": "UI3-03",
+      "title": "空白首页：无项目、无预填、唯一可见主操作为「新建项目」",
+      "ok": true,
+      "detail": {
+        "rows": 0,
+        "name_value": "",
+        "primaries": [
+          "create-project"
+        ]
+      }
+    },
+    {
+      "id": "UI3-04",
+      "title": "资料阶段：键盘创建/打开后停靠「资料」，资料齐备后分析可用",
+      "ok": true,
+      "detail": {
+        "gate": "资料已就绪。"
+      }
+    },
+    {
+      "id": "UI3-05",
+      "title": "分析完成：自动进入「理解」且焦点落到结果标题",
+      "ok": true,
+      "detail": {
+        "focus": {
+          "id": "stage-understand-title",
+          "cls": "",
+          "shot": null
+        }
+      }
+    },
+    {
+      "id": "UI3-06",
+      "title": "槽位确认后进入「方案」，焦点落到方案标题",
+      "ok": true,
+      "detail": {
+        "rounds": 4,
+        "focus": {
+          "id": "stage-plan-title",
+          "cls": "",
+          "shot": null
+        }
+      }
+    },
+    {
+      "id": "UI3-07",
+      "title": "套图方案可人工增（复制）、删、排序，操作后回到原集合且顺序变化",
+      "ok": true,
+      "detail": {
+        "before": [
+          "shot_main_clean",
+          "shot_infographic_benefits",
+          "shot_scene_lifestyle",
+          "shot_detail_material"
+        ],
+        "after_copy": [
+          "shot_main_clean",
+          "shot_infographic_benefits",
+          "shot_scene_lifestyle",
+          "shot_detail_material",
+          "shot_main_clean_copy"
+        ],
+        "copy_id": "shot_main_clean_copy",
+        "after_delete": [
+          "shot_main_clean",
+          "shot_infographic_benefits",
+          "shot_scene_lifestyle",
+          "shot_detail_material"
+        ],
+        "after_move": [
+          "shot_infographic_benefits",
+          "shot_main_clean",
+          "shot_scene_lifestyle",
+          "shot_detail_material"
+        ]
+      }
+    },
+    {
+      "id": "UI3-08",
+      "title": "整套生成完成：全部终态、焦点落到第一个结果/问题行、全局保存状态可见",
+      "ok": true,
+      "detail": {
+        "states": {
+          "shot_infographic_benefits": "succeeded",
+          "shot_main_clean": "succeeded",
+          "shot_scene_lifestyle": "succeeded",
+          "shot_detail_material": "succeeded"
+        },
+        "focus": {
+          "id": null,
+          "cls": "attempt-row",
+          "shot": "shot_infographic_benefits"
+        },
+        "save_state": "已保存 · 版本 1 · 07:00:04"
+      }
+    },
+    {
+      "id": "UI3-09",
+      "title": "逐图人工采用：每张图进入 current",
+      "ok": true,
+      "detail": {
+        "adopted": [
+          "current",
+          "current",
+          "current",
+          "current"
+        ]
+      }
+    },
+    {
+      "id": "UI3-10",
+      "title": "交付阶段：门禁逐图 current；交付包按 V2.6.2 待接入禁用；项目包可导出",
+      "ok": true,
+      "detail": {
+        "gates": [
+          "current",
+          "current",
+          "current",
+          "current"
+        ],
+        "export_disabled": true,
+        "package_disabled": false
+      }
+    },
+    {
+      "id": "UI3-17",
+      "title": "交付门禁阻断文案与「去处理」按钮本地化：按钮带图名、界面不出现裸 shot_id",
+      "ok": true,
+      "detail": {
+        "buttons": [
+          {
+            "text": "去处理：卖点信息图",
+            "shot": "shot_infographic_benefits"
+          },
+          {
+            "text": "去处理：主图·干净背景",
+            "shot": "shot_main_clean"
+          },
+          {
+            "text": "去处理：场景图·使用中",
+            "shot": "shot_scene_lifestyle"
+          },
+          {
+            "text": "去处理：细节图·材质工艺",
+            "shot": "shot_detail_material"
+          }
+        ],
+        "has_raw_shot_id": false
+      }
+    },
+    {
+      "id": "UI3-11",
+      "title": "刷新恢复：阶段与逐图采用保持，IndexedDB 记录数前后一致",
+      "ok": true,
+      "detail": {
+        "reload": {
+          "current": "deliver",
+          "gates": [
+            "current",
+            "current",
+            "current",
+            "current"
+          ]
+        },
+        "before": {
+          "assets": 5,
+          "documents": 51,
+          "projects": 1
+        },
+        "after": {
+          "assets": 5,
+          "documents": 51,
+          "projects": 1
+        }
+      }
+    },
+    {
+      "id": "UI3-12",
+      "title": "390px 与 200% 等效视口：无横向溢出且当前阶段可见",
+      "ok": true,
+      "detail": {
+        "narrow": {
+          "scroll": 390,
+          "client": 390,
+          "current_visible": true
+        },
+        "zoom200": {
+          "scroll": 720,
+          "client": 720,
+          "current_visible": true
+        }
+      }
+    },
+    {
+      "id": "UI3-13",
+      "title": "主链零意外 console / page / HTTP 错误",
+      "ok": true,
+      "detail": {
+        "console": [],
+        "page": [],
+        "http": []
+      }
+    },
+    {
+      "id": "UI3-14",
+      "title": "演练：明确失败与 Unknown 都可见且有下一步动作（重试 / 核对任务）",
+      "ok": true,
+      "detail": {
+        "states": {
+          "shot_main_clean": "succeeded",
+          "shot_infographic_benefits": "failed",
+          "shot_scene_lifestyle": "unknown"
+        },
+        "failed_button": 1,
+        "unknown_new_action": 1,
+        "unknown_reconcile": 0,
+        "unknown_note": 1
+      }
+    },
+    {
+      "id": "UI3-15",
+      "title": "演练：等待 4 秒后 Attempt 行数不变（没有自动重提/静默重复提交）",
+      "ok": true,
+      "detail": {
+        "rows": 3
+      }
+    },
+    {
+      "id": "UI3-16",
+      "title": "分析失败：错误摘要可见、包含分类与重试策略，焦点落到错误摘要",
+      "ok": true,
+      "detail": {
+        "focus": {
+          "id": "analyze-error",
+          "cls": "error",
+          "shot": null
+        },
+        "message": "假 Provider：服务不可用。 分类：provider_failed / PROVIDER_HTTP_ERROR 重试策略：retryable"
+      }
+    }
+  ],
+  "screenshots": [
+    "evals/product-v2/evidence/v2.ui.3-frontend-20261001-065959-v267-green-home.png",
+    "evals/product-v2/evidence/v2.ui.3-frontend-20261001-065959-v267-green-intake.png",
+    "evals/product-v2/evidence/v2.ui.3-frontend-20261001-065959-v267-green-understand.png",
+    "evals/product-v2/evidence/v2.ui.3-frontend-20261001-065959-v267-green-plan.png",
+    "evals/product-v2/evidence/v2.ui.3-frontend-20261001-065959-v267-green-generate.png",
+    "evals/product-v2/evidence/v2.ui.3-frontend-20261001-065959-v267-green-review.png",
+    "evals/product-v2/evidence/v2.ui.3-frontend-20261001-065959-v267-green-deliver.png",
+    "evals/product-v2/evidence/v2.ui.3-frontend-20261001-065959-v267-green-narrow.png",
+    "evals/product-v2/evidence/v2.ui.3-frontend-20261001-065959-v267-green-zoom200.png",
+    "evals/product-v2/evidence/v2.ui.3-frontend-20261001-065959-v267-green-drill.png"
+  ],
+  "boundary": "fake provider + 本机服务器；不证明真实模型质量、整套一致性（V2.5.5）与交付 ZIP（V2.6.2）；产品发起人走查与陌生人验收见 V2.7.3。"
+}

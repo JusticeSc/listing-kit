@@ -324,6 +324,23 @@ def main() -> int:
                        }""")
                 check("V2.5.5-05", "报告以 suite_review 文档写入 IndexedDB",
                       len(stored) == 1 and stored[0]["document_id"] == "suite_review", stored)
+                localized = page.evaluate(
+                    """() => {
+                         const box = document.getElementById('suite-review-findings');
+                         const buttons = [...box.querySelectorAll('button[data-shot-id]')]
+                           .map((node) => ({ text: (node.textContent || '').trim(),
+                                             shot: node.dataset.shotId }));
+                         return { text: (box.textContent || ''), buttons: buttons };
+                       }""")
+                check("V2.5.5-12",
+                      "整套发现「定位」按钮本地化：按钮带图名、界面不出现裸 shot_id",
+                      len(localized["buttons"]) >= 1
+                      and "shot_" not in localized["text"]
+                      and all(item["text"].startswith("定位：")
+                              and item["shot"] not in item["text"]
+                              for item in localized["buttons"]),
+                      {"buttons": localized["buttons"][:6],
+                       "has_raw_shot_id": "shot_" in localized["text"]})
                 jump = page.locator('#suite-review-findings .suite-finding '
                                     'button[data-shot-id]').first
                 target_shot = jump.get_attribute("data-shot-id")
