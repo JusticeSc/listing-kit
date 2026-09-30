@@ -1,0 +1,81 @@
+V2.UI.2 六阶段交互与视觉基线验证（静态契约 + 真实工作台走查 + 响应式/键盘/视觉证据）
+NOT-AUTHORITY: point-in-time verification evidence only
+============================================================================
+  [PASS] UI2-01 信息架构唯一权威：六阶段导航与面板顺序、标签一致，面板标题是导航标签的完整表述，阶段条有导航语义与摘要输出位
+         {"nav": ["intake", "understand", "plan", "generate", "review", "deliver"], "panels": ["intake", "understand", "plan", "generate", "review", "deliver"], "labels": ["资料", "理解", "方案", "生成", "审核返工", "交付"], "titles": ["商品资料", "商品理解", "套图方案", "生成", "审核与返工", "交付"], "title_ok": true}
+  [PASS] UI2-02 空白首页紧凑：一个创建入口（primary）+ 一个次级导入，空态由状态驱动，不预填示例商品
+         {"create_primary": 1, "import_ghost": true, "table_in_home": false}
+  [PASS] UI2-03 外壳纯净：stage-shell 只做投影（无存储/网络/领域依赖），阶段定义顺序与产品合同一致，界面脚本语法通过
+         {"forbidden_tokens": [], "definitions": ["intake", "understand", "plan", "generate", "review", "deliver"], "node_checks": {"app/product_v2/workspace.js": 0, "app/product_v2/app.js": 0, "app/product_v2/ui/stage-shell.js": 0}}
+  [PASS] UI2-04 表现层 token 单源：styles.css 的 :root 提供颜色语义变量，组件用 var(--…) 取值，含 focus-visible 与小屏断点
+         {"var_uses": 157, "missing_tokens": [], "important": 2, "media_queries": ["760"]}
+  [PASS] UI2-05 无内联样式、无外部资源、无新前端依赖：页面只引用本目录资源（data: 图标除外）
+         {"inline_style": 0, "external": [], "non_relative": []}
+  [PASS] UI2-06 渐进披露与阶段推进：项目元数据收进 details；四个阶段脚注各只有一个推进按钮与实际主操作分离
+         {"project_scope_in_details": true, "stage_feet": 4, "buttons_per_foot": [1, 1, 1, 1], "primary_per_foot": [1, 1, 0, 1]}
+  [PASS] UI2-07 空白首页：只突出一个创建入口，导入是次级动作，空态可见且没有预填商品
+         {"home": {"empty_visible": true, "project_rows": 0, "visible_primary": ["create-project"], "import_class": "ghost", "name_value": "", "home_visible": true}, "screenshot": "evals/product-v2/evidence/v2.ui.2-home-20260930-232009.png"}
+  [PASS] UI2-08 新建后默认停靠「资料」：唯一 current 阶段带 aria-current，其余阶段锁定且禁用
+         {"keyboard_open": true, "keyboard_create": true, "stage": {"buttons": [{"id": "intake", "label": "资料", "number": "1", "disabled": false, "current": true, "complete": false, "locked": false, "aria": "step"}, {"id": "understand", "label": "理解", "number": "2", "disabled": true, "current": false, "complete": false, "locked": true, "aria": null}, {"id": "plan", "
+  [PASS] UI2-09 阶段可达性：锁定阶段点击不进面板；切换阶段不写任何 IndexedDB 记录
+         {"locked_button": {"disabled": true}, "visible": ["intake"], "storage_unchanged": true}
+  [PASS] UI2-10 资料阶段：缺输入时主操作禁用并在按钮旁说明缺什么；整屏只有一个可见主操作
+         {"disabled": true, "gate": "还缺：商品名称必填。；至少需要一张参考图。", "visible_primary": ["analyze-run"], "ref_count": 0}
+  [PASS] UI2-11 分析商品资料（键盘 Enter 触发）成功后自动推进到阶段二「理解」，槽位进入待处理列表
+         {"keyboard_analyze": true, "stage": {"buttons": [{"id": "intake", "label": "资料", "number": "1", "disabled": false, "current": false, "complete": true, "locked": false, "aria": null}, {"id": "understand", "label": "理解", "number": "2", "disabled": false, "current": true, "complete": false, "locked": false, "aria": "step"}, {"id": "plan", "label": "方案", "number
+  [PASS] UI2-12 理解到方案：确认全部待处理槽位后可推进，推荐方案生成 1..N 张图片任务，阶段条随之前移
+         {"shots": ["shot_main_clean", "shot_infographic_benefits", "shot_scene_lifestyle", "shot_detail_material"], "confirm_rounds": 4, "stage": {"buttons": [{"id": "intake", "label": "资料", "number": "1", "disabled": false, "current": false, "complete": true, "locked": false, "aria": null}, {"id": "understand", "label": "理解", "number": "2", "disabled": false, "curr
+  [PASS] UI2-13 生成阶段：整套生成后逐图进入成功态，并在阶段脚注开放「去审核与返工」入口
+         {"attempt_rows": 4, "shots": 4, "summary": "4/4 张有候选"}
+  [PASS] UI2-14 审核阶段以图片为中心：每张图一张审核卡（候选大图 + 采用状态 + 三个行内动作），「生成」转为已完成
+         {"keyboard_stage_switch": true, "cards": 4, "images": 4, "screenshot": "evals/product-v2/evidence/v2.ui.2-review-20260930-232009.png", "summary": "已采用 0/4 · 必需图 0/1"}
+  [PASS] UI2-15 逐图人工采用：每张图都能从审核卡进入采用面板并落一条当前选择，卡片徽标同步为已采用
+         {"adopted": [{"shot_id": "shot_main_clean", "state": "current", "badge": "已采用"}, {"shot_id": "shot_infographic_benefits", "state": "current", "badge": "已采用"}, {"shot_id": "shot_scene_lifestyle", "state": "current", "badge": "已采用"}, {"shot_id": "shot_detail_material", "state": "current", "badge": "已采用"}]}
+  [PASS] UI2-16 交付阶段：门禁清单逐图列出采用状态，交付包按钮保持禁用并说明接入边界，项目包导出可用
+         {"gate_rows": 4, "status": "人工采用已齐；整套一致性检查与交付包生成尚未接入，现在只能导出项目包。", "screenshot": "evals/product-v2/evidence/v2.ui.2-deliver-20260930-232009.png"}
+  [PASS] UI2-17 刷新恢复：重开页面落在最靠后的未完成阶段「交付」，项目与记录逐字不变
+         {"visible": ["deliver"], "digest": {"db_exists": true, "projects": 1, "documents": 48, "assets": 5, "digest": "86a385ad94d31754f354915e98543f6b520ffdf9ca3405f657274fc34702ff55"}, "complete": ["intake", "understand", "plan", "generate", "review"]}
+  [PASS] UI2-18 390px：单列布局无横向溢出，阶段条可横向滚动且当前阶段保持在可视区内
+         {"probe": {"document_scroll_width": 390, "document_client_width": 390, "body_scroll_width": 390, "nav_scrollable": true, "current_stage_visible": true, "current_stage": "deliver", "rects": {"create": {"x": 0, "y": 0, "width": 0, "height": 0, "visible": false}, "analyze": {"x": 0, "y": 0, "width": 0, "height": 0, "visible": false}, "nav": {"x": 14, "y": 190, 
+  [PASS] UI2-19 200% 缩放等价视口（1440 窗口缩到 720×450 CSS 像素）：无横向滚动条，阶段条可见
+         {"probe": {"document_scroll_width": 720, "document_client_width": 720, "body_scroll_width": 720, "nav_scrollable": false, "current_stage_visible": true, "current_stage": "deliver", "rects": {"create": {"x": 0, "y": 0, "width": 0, "height": 0, "visible": false}, "analyze": {"x": 0, "y": 0, "width": 0, "height": 0, "visible": false}, "nav": {"x": 14, "y": 58, 
+  [PASS] UI2-20 键盘路径：新建、打开、分析、阶段推进与阶段切换五个关键动作都由键盘触发并断言焦点落点
+         {"keyboard": {"create": true, "open": true, "analyze": true, "plan_to_generate": true, "stage_switch": true}}
+  [PASS] UI2-21 正式入口 --check 全过（六阶段外壳没有破坏无状态自检）
+         {"rc": 0, "retried_after_connection_reset": false, "tail": ["  PASS  复核 provider 不可用时 capabilities 仍 200 且 configured=false  review={'kind': 'dependency', 'detail': 'RuntimeError: 自检：复核 provider 构造失败'}", "  PASS  复核 provider 不可用时复核路由 503 且错误分类明确                        status=503 error={'family': 'internal', 'code': 'PROVIDER_NOT_CONFIGURED', 'message': '语义 p
+  [PASS] UI2-22 零意外 console error / page error（界面重写不得引入运行时错误）
+         {"console_errors": [], "page_errors": []}
+----------------------------------------------------------------------------
+observed_at: 2026-09-30T23:20:21
+status: passed
+contract: v2.ui.2（六阶段外壳 + 表现层基线）
+model_calls: 0 · external_network_calls: 0（fake providers + 本机服务器）
+json: evals/product-v2/v2.ui.2-interaction-visual-20260930-232009final.json
+
+边界：本套件 0 次真实模型调用；它证明「六阶段外壳是界面投影、可达性规则成立、既有业务
+能力仍由真实状态驱动、既有回归不破」，不证明产品发起人走查已通过。V2.5.5 整套一致性与
+V2.6.2 交付包生成仍未接入，本批只证明界面没有伪造它们。
+
+CHECKS
+- [PASS] UI2-01 信息架构唯一权威：六阶段导航与面板顺序、标签一致，面板标题是导航标签的完整表述，阶段条有导航语义与摘要输出位
+- [PASS] UI2-02 空白首页紧凑：一个创建入口（primary）+ 一个次级导入，空态由状态驱动，不预填示例商品
+- [PASS] UI2-03 外壳纯净：stage-shell 只做投影（无存储/网络/领域依赖），阶段定义顺序与产品合同一致，界面脚本语法通过
+- [PASS] UI2-04 表现层 token 单源：styles.css 的 :root 提供颜色语义变量，组件用 var(--…) 取值，含 focus-visible 与小屏断点
+- [PASS] UI2-05 无内联样式、无外部资源、无新前端依赖：页面只引用本目录资源（data: 图标除外）
+- [PASS] UI2-06 渐进披露与阶段推进：项目元数据收进 details；四个阶段脚注各只有一个推进按钮与实际主操作分离
+- [PASS] UI2-07 空白首页：只突出一个创建入口，导入是次级动作，空态可见且没有预填商品
+- [PASS] UI2-08 新建后默认停靠「资料」：唯一 current 阶段带 aria-current，其余阶段锁定且禁用
+- [PASS] UI2-09 阶段可达性：锁定阶段点击不进面板；切换阶段不写任何 IndexedDB 记录
+- [PASS] UI2-10 资料阶段：缺输入时主操作禁用并在按钮旁说明缺什么；整屏只有一个可见主操作
+- [PASS] UI2-11 分析商品资料（键盘 Enter 触发）成功后自动推进到阶段二「理解」，槽位进入待处理列表
+- [PASS] UI2-12 理解到方案：确认全部待处理槽位后可推进，推荐方案生成 1..N 张图片任务，阶段条随之前移
+- [PASS] UI2-13 生成阶段：整套生成后逐图进入成功态，并在阶段脚注开放「去审核与返工」入口
+- [PASS] UI2-14 审核阶段以图片为中心：每张图一张审核卡（候选大图 + 采用状态 + 三个行内动作），「生成」转为已完成
+- [PASS] UI2-15 逐图人工采用：每张图都能从审核卡进入采用面板并落一条当前选择，卡片徽标同步为已采用
+- [PASS] UI2-16 交付阶段：门禁清单逐图列出采用状态，交付包按钮保持禁用并说明接入边界，项目包导出可用
+- [PASS] UI2-17 刷新恢复：重开页面落在最靠后的未完成阶段「交付」，项目与记录逐字不变
+- [PASS] UI2-18 390px：单列布局无横向溢出，阶段条可横向滚动且当前阶段保持在可视区内
+- [PASS] UI2-19 200% 缩放等价视口（1440 窗口缩到 720×450 CSS 像素）：无横向滚动条，阶段条可见
+- [PASS] UI2-20 键盘路径：新建、打开、分析、阶段推进与阶段切换五个关键动作都由键盘触发并断言焦点落点
+- [PASS] UI2-21 正式入口 --check 全过（六阶段外壳没有破坏无状态自检）
+- [PASS] UI2-22 零意外 console error / page error（界面重写不得引入运行时错误）

@@ -36,6 +36,10 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "tools"))
+
+import v2_stage_nav as stage_nav  # noqa: E402  （V2.UI.2 六阶段工作台导航）
+
 PRODUCT_DIR = ROOT / "app" / "product_v2"
 HARNESS_DIR = ROOT / "evals" / "product-v2" / "harness"
 EVIDENCE_DIR = ROOT / "evals" / "product-v2"
@@ -655,6 +659,7 @@ def main() -> int:
                 page.reload(wait_until="networkidle")
                 page.click("#suite-seed")
                 expect(page.locator("#shot-list .shot-row")).to_have_count(4)
+                stage_nav.goto(page, "generate")
                 expect(page.locator("#prompt-list .shot-spec")).to_have_count(4)
                 initial = probe()
                 shot_ids = initial["shot_ids"]
@@ -719,6 +724,7 @@ def main() -> int:
                 requests_before_reload = len(result_requests)
                 before_reload = probe()
                 page.reload(wait_until="networkidle")
+                stage_nav.goto(page, "generate")
                 wait_preview(ok_shot)
                 after_reload = probe()
                 check("V2.4.4-05",

@@ -34,6 +34,10 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "tools"))
+
+import v2_stage_nav as stage_nav  # noqa: E402  （V2.UI.2 六阶段工作台导航）
+
 PRODUCT_DIR = ROOT / "app" / "product_v2"
 HARNESS_DIR = ROOT / "evals" / "product-v2" / "harness"
 EVIDENCE_DIR = ROOT / "evals" / "product-v2"
@@ -386,7 +390,11 @@ def main() -> int:
             page.click('#project-list .project-row button[data-action="open"]')
             expect(page.locator("#project-view")).to_be_visible()
             expect(page.locator("#confirm-editor")).to_be_hidden()
-            expect(page.locator("#confirm-locked")).to_be_visible()
+            # V2.UI.2：方案就绪前「生成」阶段本身不可达，「未就绪」由阶段条的锁定投影表达。
+            blank_generate = page.locator('#stage-nav [data-stage-nav="generate"]')
+            expect(blank_generate).to_be_disabled()
+            if "is-locked" not in (blank_generate.get_attribute("class") or ""):
+                raise AssertionError("方案就绪前「生成」阶段应在阶段条上标为锁定（缺 is-locked）")
             page.set_input_files("#ref-file", str(reference))
             expect(page.locator("#ref-list .ref-row")).to_have_count(1)
             page.fill("#intake-name", "便携保温杯")
@@ -404,7 +412,9 @@ def main() -> int:
             page.reload(wait_until="networkidle")
             page.click("#suite-seed")
             expect(page.locator("#shot-list .shot-row")).to_have_count(4)
+            stage_nav.goto(page, "generate")
             expect(page.locator("#confirm-editor")).to_be_visible()
+            expect(page.locator("#confirm-locked")).to_be_hidden()
             expect(page.locator("#confirm-list .confirm-shot")).to_have_count(4)
             first = page.evaluate(CONFIRM_PROBE)
             sheet = first["sheet"]
@@ -420,6 +430,7 @@ def main() -> int:
                   {"status": first["ui"]["status"], "blocked": sheet["blocked"],
                    "summary": first["ui"]["summary"][:200]})
 
+            stage_nav.goto(page, "plan")
             page.select_option("#suite-template", "comparison_competitor")
             page.click("#suite-add-template")
             expect(page.locator("#shot-list .shot-row")).to_have_count(5)
@@ -441,6 +452,7 @@ def main() -> int:
             page.click('#shot-list .shot-row[data-shot-id="shot_comparison_competitor"] button:has-text("删除")')
             expect(page.locator("#shot-list .shot-row")).to_have_count(4)
 
+            stage_nav.goto(page, "generate")
             page.click('#prompt-list .shot-spec[data-shot-id="shot_main_clean"] button')
             page.wait_for_selector('#prompt-list .shot-spec[data-shot-id="shot_main_clean"][data-prompt-state="saved"]')
             partial = page.evaluate(CONFIRM_PROBE)
@@ -482,9 +494,12 @@ def main() -> int:
                   {"state": confirmed["project_state"],
                    "hash": record["payload"]["fingerprint"]["hash"][:12] if record else None})
 
+            stage_nav.goto(page, "plan")
+            stage_nav.reveal(page, "#specs-editor")
             page.fill("#style-background", "深灰无缝背景")
             page.click("#style-save")
             expect(page.locator("#style-version")).to_have_text("版本 v1")
+            stage_nav.goto(page, "generate")
             expect(page.locator("#confirm-record")).to_contain_text("已失效")
             stale = page.evaluate(CONFIRM_PROBE)
             stale_fields = [reason["field"] for reason in stale["staleness"]["reasons"]]
@@ -519,6 +534,7 @@ def main() -> int:
             screenshots.append(screenshot_rel)
 
             page.reload(wait_until="networkidle")
+            stage_nav.goto(page, "generate")
             expect(page.locator("#confirm-editor")).to_be_visible()
             expect(page.locator("#confirm-record")).to_contain_text("已确认 v2")
             reloaded = page.evaluate(CONFIRM_PROBE)

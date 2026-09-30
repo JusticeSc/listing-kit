@@ -23,8 +23,12 @@
 | app/product_v2/index.html | b0870f97255e5db904006d6385651507203a75245e057861a059cf7d464f313a |
 | app/product_v2/styles.css | bdb36fbddbdde14d337849b6e5662530e6951c6bc004c9b3ee8385b753ac5d92 |
 | app/product_v2/workspace.js | a6f5f848b35677255797ddaf869e274d6c2cc9cf5097ed94e74bd4f9c0694edb |
-| wip-ui.patch | 5f0399a0c98c2acb2a482ed21de3f7e12b427ad96080b8966579774b575e16fc |
-| wip-domain.patch | f018096affa3bcaf0e87536c41c53b7d776ddc7c353284f546cc43b9dcce50f8 |
+| wip-ui.patch | 2e9a847fc41915612be95bfc84513895ecce075034d0fcd41a3ee79a613eae99 |
+| wip-domain.patch | b25bc969482ec2538302d13e4454ad55bd387097b4e7d805c33681fb94812baf |
+
+补记（2026-09-30 晚）：初版 patch 由 PowerShell 管道写出，行尾是 CRLF，`git apply` 会报
+“patch does not apply”。已用 `git diff --output=...` 重新生成 LF 版本并覆盖；上表哈希为修正后的值。
+验证：`git apply -R --check wip-ui.patch` 与 `git apply -R --check wip-domain.patch` 均通过。
 
 ## 恢复方式
 

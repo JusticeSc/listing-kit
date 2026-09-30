@@ -27,6 +27,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "src"))
+sys.path.insert(0, str(ROOT / "tools"))
+
+import v2_stage_nav as stage_nav  # noqa: E402  （V2.UI.2 六阶段工作台导航）
 from console import enable_utf8  # noqa: E402
 enable_utf8()
 
@@ -219,6 +222,13 @@ PANEL_PROBE = """
     focused_tab_id: active && active.getAttribute && active.getAttribute("role") === "tab"
       ? active.id : null,
     focused_compare_action: active && active.dataset ? (active.dataset.compareAction || null) : null,
+    focus_shot: (() => {
+      if (!active) return null;
+      if (active.dataset && active.dataset.compareAction) return active.dataset.compareAction;
+      const card = active.closest ? active.closest(".review-card[data-shot-id]") : null;
+      return card ? card.getAttribute("data-shot-id") : null;
+    })(),
+    focus_visible: Boolean(active && active.offsetParent !== null),
     cards: [...panel.querySelectorAll('#compare-candidates [role="tab"]')].map((node) => ({
       candidate_id: node.dataset.candidateId,
       state: node.dataset.reviewState,
@@ -312,6 +322,7 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                         }""", arg=shot_id, timeout=timeout)
 
                 def click_row_button(shot_id: str, text: str) -> None:
+                    stage_nav.goto(page, "generate")
                     row(shot_id).locator(f'button:has-text("{text}")').first.click()
 
                 def submit_once(shot_id: str, first: bool) -> None:
@@ -322,7 +333,9 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                     wait_candidate_ui(shot_id)
 
                 def open_panel(shot_id: str, card_count: int, references: int | None = None) -> None:
+                    stage_nav.goto(page, "generate")
                     row(shot_id).locator('button[data-compare-action]').first.click()
+                    stage_nav.goto(page, "review")
                     expect(page.locator("#compare-panel")).to_be_visible()
                     expect(page.locator("#compare-panel")).to_have_attribute(
                         "data-compare-contract", COMPARE_CONTRACT_VERSION)
@@ -457,12 +470,13 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 expected_ids = [card["candidate_id"] for card in panel["cards"]]
                 checks.append({
                     "id": "V2.5.3-11",
-                    "title": "键盘路径：方向键/Home/End 在候选间移动并保持焦点，Escape 回到入口按钮",
+                    "title": "键盘路径：方向键/Home/End 在候选间移动并保持焦点，Escape 回到该图当前可见的比较入口",
                     "ok": after_right["selected_candidate_id"] == expected_ids[1]
                           and after_right["focused_tab_id"] == "compare-tab-" + expected_ids[1]
                           and after_end["selected_candidate_id"] == expected_ids[-1]
                           and after_home["selected_candidate_id"] == expected_ids[0]
-                          and after_escape["focused_compare_action"] == first_shot
+                          and after_escape["focus_shot"] == first_shot
+                          and after_escape["focus_visible"] is True
                           and after_escape["visible"] is True,
                     "detail": {"right": after_right["selected_candidate_id"],
                                "end": after_end["selected_candidate_id"],

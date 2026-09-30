@@ -27,6 +27,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "src"))
+sys.path.insert(0, str(ROOT / "tools"))
+
+import v2_stage_nav as stage_nav  # noqa: E402  （V2.UI.2 六阶段工作台导航）
 from console import enable_utf8  # noqa: E402
 enable_utf8()
 
@@ -467,6 +470,7 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                         }""", arg=shot_id, timeout=timeout)
 
                 def click_row_button(shot_id: str, text: str) -> None:
+                    stage_nav.goto(page, "generate")
                     row(shot_id).locator(f'button:has-text("{text}")').first.click()
 
                 def submit_once(shot_id: str) -> None:
@@ -491,7 +495,9 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 def open_panel(shot_id: str, card_count: int, references: int = 1) -> None:
                     state = compare_state()
                     if not (state["visible"] and state["shot"] == shot_id):
+                        stage_nav.goto(page, "generate")
                         row(shot_id).locator('button[data-compare-action]').first.click()
+                    stage_nav.goto(page, "review")
                     page.wait_for_function(
                         """(payload) => {
                             const panel = document.getElementById("compare-panel");

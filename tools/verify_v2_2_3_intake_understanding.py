@@ -46,6 +46,9 @@ EVIDENCE_DIR = ROOT / "evals" / "product-v2"
 APP_NAME = "V2.2.3"
 PY = sys.executable
 sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / "tools"))
+
+import v2_stage_nav as stage_nav  # noqa: E402  （V2.UI.2 六阶段工作台导航）
 
 SCAN_DIRS = ("app", "src", "config")
 SKIP_PARTS = {"__pycache__", ".uv-cache", ".git"}
@@ -377,6 +380,7 @@ def main() -> int:
                                    if item["slot_id"] == "product_category")
             page.click("#slots-toggle")
             scenario["value"] = "conflict"
+            stage_nav.goto(page, "intake")
             page.click("#analyze-run")
             page.wait_for_timeout(900)
             conflicted = page.evaluate(DB_SNAPSHOT)
@@ -389,6 +393,7 @@ def main() -> int:
 
             scenario["value"] = "timeout_after_send"
             unknown_before = len(analyze_posts)
+            stage_nav.goto(page, "intake")
             page.click("#analyze-run")
             expect(page.locator("#analyze-error")).to_contain_text("结果未知")
             unknown_text = page.locator("#analyze-error").inner_text()
@@ -398,6 +403,7 @@ def main() -> int:
                   {"posts_before": unknown_before, "posts_after": len(analyze_posts),
                    "message": unknown_text[:200]})
             category_row = page.locator('#slot-list .slot-row[data-slot-id="product_category"]')
+            stage_nav.goto(page, "understand")
             category_row.get_by_role("button", name="填值并确认", exact=True).click()
             category_row.locator('[data-role="value"]').fill("小家电 · 便携榨汁杯")
             category_row.get_by_role("button", name="确认", exact=True).click()
@@ -407,7 +413,8 @@ def main() -> int:
             page.wait_for_timeout(400)
             resolved = page.evaluate(DB_SNAPSHOT)
             state_now = resolved["projects"][0]["state"]
-            scope_text = page.locator("#project-scope").inner_text()
+            # V2.UI.2 起项目元数据收进 <details>（渐进披露）；文本仍必须正确，只是默认不绘制。
+            scope_text = page.locator("#project-scope").text_content() or ""
             expect(page.locator("#project-state")).to_have_text("待确认套图")
             check(f"{APP_NAME}-14", "状态派生到 PLAN_REVIEW，并如实说明套图可编辑、提交需确认",
                   state_now == "PLAN_REVIEW" and "套图规划" in scope_text
@@ -432,6 +439,7 @@ def main() -> int:
             check(f"{APP_NAME}-15", "390px 视口无横向溢出", overflow["scroll"] <= overflow["client"] + 1, overflow)
             page.set_viewport_size({"width": 1280, "height": 900})
 
+            stage_nav.goto(page, "understand")
             page.click("#slot-add summary")
             page.evaluate("() => { document.activeElement.blur(); }")
             seen: list[str] = []
@@ -440,9 +448,20 @@ def main() -> int:
                 seen.append(page.evaluate(
                     "() => { const node = document.activeElement;"
                     " return node ? (node.id || node.tagName) : null; }"))
-            check(f"{APP_NAME}-16", "键盘可达：参考图、保存草稿、分析、槽位开关与新增槽位控件都在 Tab 顺序内",
-                  {"ref-add", "intake-save", "analyze-run", "slots-toggle", "slot-add-id"} <= set(seen),
-                  {"visited": [item for item in seen if item][:40]})
+            stage_nav.goto(page, "intake")
+            page.evaluate("() => { document.activeElement.blur(); }")
+            seen_intake: list[str] = []
+            for _ in range(40):
+                page.keyboard.press("Tab")
+                seen_intake.append(page.evaluate(
+                    "() => { const node = document.activeElement;"
+                    " return node ? (node.id || node.tagName) : null; }"))
+            check(f"{APP_NAME}-16",
+                  "键盘可达：每个阶段的控件都在自己阶段的 Tab 顺序内（理解：槽位开关/新增槽位；资料：参考图/保存草稿/分析）",
+                  {"slots-toggle", "slot-add-id"} <= set(seen)
+                  and {"ref-add", "intake-save", "analyze-run"} <= set(seen_intake),
+                  {"understand_stage": [item for item in seen if item][:40],
+                   "intake_stage": [item for item in seen_intake if item][:40]})
 
             open_after = page.evaluate(DB_SNAPSHOT)
             # 唯一允许出现的是“故意触发的 Unknown 场景”那条 504：浏览器会把 5xx 记录到控制台。

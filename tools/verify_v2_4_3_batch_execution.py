@@ -34,6 +34,10 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "tools"))
+
+import v2_stage_nav as stage_nav  # noqa: E402  （V2.UI.2 六阶段工作台导航）
+
 PRODUCT_DIR = ROOT / "app" / "product_v2"
 HARNESS_DIR = ROOT / "evals" / "product-v2" / "harness"
 EVIDENCE_DIR = ROOT / "evals" / "product-v2"
@@ -300,6 +304,7 @@ def read_suite(browser, url: str, variable: str, console_errors: list, page_erro
 
 
 def compile_all(page, shot_ids: list, wait_ms: int = 200) -> None:
+    stage_nav.goto(page, "generate")
     for shot_id in shot_ids:
         card = f'#prompt-list .shot-spec[data-shot-id="{shot_id}"]'
         page.click(card + " .toolbar button")
@@ -308,6 +313,7 @@ def compile_all(page, shot_ids: list, wait_ms: int = 200) -> None:
 
 
 def save_edit(page, shot_id: str, text: str, reason: str, wait_ms: int = 600) -> None:
+    stage_nav.goto(page, "generate")
     card = f'#prompt-list .shot-spec[data-shot-id="{shot_id}"]'
     page.fill(card + " textarea.prompt-edit-text", text)
     page.fill(card + " input.prompt-edit-reason", reason)
@@ -510,11 +516,13 @@ def main() -> int:
                         arg=expectations, timeout=timeout)
 
                 def confirm_generation() -> None:
+                    stage_nav.goto(page, "generate")
                     expect(page.locator("#confirm-action")).to_be_enabled()
                     page.click("#confirm-action")
                     expect(page.locator("#confirm-record")).to_contain_text("已确认 v")
 
                 def add_shots(template_id: str, count: int = 1) -> list:
+                    stage_nav.goto(page, "plan")
                     before = list(probe()["shot_ids"])
                     for _ in range(count):
                         page.select_option("#suite-template", template_id)
@@ -524,6 +532,7 @@ def main() -> int:
                     return [shot for shot in after if shot not in before]
 
                 def click_row_button(shot_id: str, text: str) -> None:
+                    stage_nav.goto(page, "generate")
                     row(shot_id).locator(f'button:has-text("{text}")').first.click()
 
                 def submits_for(action_id: str) -> int:
@@ -554,6 +563,7 @@ def main() -> int:
                 page.reload(wait_until="networkidle")
                 page.click("#suite-seed")
                 expect(page.locator("#shot-list .shot-row")).to_have_count(4)
+                stage_nav.goto(page, "generate")
                 expect(page.locator("#prompt-editor")).to_be_visible()
                 expect(page.locator("#prompt-list .shot-spec")).to_have_count(4)
                 initial = probe()
@@ -760,6 +770,7 @@ def main() -> int:
                 mode["hold"].set()
                 mode["hold"] = None
                 page.wait_for_timeout(800)
+                stage_nav.goto(page, "generate")
                 restored = probe()
                 restored_chain = chain_of(restored, stop_second)
                 restored_row = row_of(restored, stop_second) or {}

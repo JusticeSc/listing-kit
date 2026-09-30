@@ -65,6 +65,7 @@ jobs:
           uv run python tools/verify_v2_5_3_compare_panel.py
           uv run python tools/verify_v2_5_4_rework_loop.py
           uv run python tools/verify_v2_6_1_selection.py
+          uv run python tools/verify_v2_ui_2_interaction_visual.py
 
       - name: Reject verification side effects
         run: git diff --exit-code

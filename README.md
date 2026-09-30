@@ -25,6 +25,9 @@
 - 生成前确认：把套图计划与每图 Prompt 归约成一张确认单，显示张数、每图任务、将发送的模型参数与参考图角色、未消除风险；
   缺 Prompt、Prompt 过期或依赖不足时精确阻断并给出返回位置；确认记录按指纹绑定、append-only，上游变化即失效并回落到「计划复核」状态；
 - Python 服务只提供静态页面、健康检查与无状态 API（能力查询、语义分析、图像网关三段），不保存工作空间、最近项目或图片。
+- 界面按「资料 → 理解 → 方案 → 生成 → 审核返工 → 交付」六阶段同页推进：阶段条始终可见，显示完成 / 当前 / 锁定，
+  未解锁阶段给出原因；同一时刻只突出一个主操作；首页只有「新建项目」一个主操作与次级「导入项目包」；
+  Prompt 全文、hash、task id 与项目元数据默认收进「详情」；390px 与 200% 缩放不遮挡关键操作，关键路径可纯键盘走通。
 - 无状态图像网关已就位：`/api/v2/images/submit|status|result` 三段路由转发一次
   `qwen-image-3.0` 调用——提交只返回任务身份（provider/model、task id、状态、结果数量、request id），
   查询返回权威状态，取回返回 PNG 字节；上游签名地址从不外发，服务端不保存任务表。
@@ -147,6 +150,7 @@ uv run python tools\verify_v2_5_2_vlm_review.py
 uv run python tools\verify_v2_5_3_compare_panel.py
 uv run python tools\verify_v2_5_4_rework_loop.py
 uv run python tools\verify_v2_6_1_selection.py
+uv run python tools\verify_v2_ui_2_interaction_visual.py
 ```
 
 远程 HTTPS 正式入口与浏览器能力诊断单独验证（需要能访问 `https://47.115.172.233:8080`

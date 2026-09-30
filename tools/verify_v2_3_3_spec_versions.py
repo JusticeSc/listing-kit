@@ -34,6 +34,10 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "tools"))
+
+import v2_stage_nav as stage_nav  # noqa: E402  （V2.UI.2 六阶段工作台导航）
+
 PRODUCT_DIR = ROOT / "app" / "product_v2"
 HARNESS_DIR = ROOT / "evals" / "product-v2" / "harness"
 EVIDENCE_DIR = ROOT / "evals" / "product-v2"
@@ -321,6 +325,8 @@ def main() -> int:
             expect(page.locator("#specs-editor")).to_be_hidden()
             page.click("#suite-seed")
             expect(page.locator("#shot-list .shot-row")).to_have_count(4)
+            # V2.UI.2：风格与单图规格收在「公共风格与单图规格」折叠区里，默认不展开。
+            page.click("details:has(#specs-editor) > summary")
             expect(page.locator("#specs-editor")).to_be_visible()
             effect_text = page.locator("#style-effect").inner_text()
             check("V2.3.3-03", "套图方案就绪后规格区解锁；保存前就说明影响范围",
@@ -410,6 +416,8 @@ def main() -> int:
 
             page.reload(wait_until="networkidle")
             expect(page.locator("#project-view")).to_be_visible()
+            stage_nav.goto(page, "plan")
+            page.click("details:has(#specs-editor) > summary")
             expect(page.locator("#style-version")).to_have_text("版本 v3")
             expect(page.locator(shot_card + " .shot-spec-head .meta")).to_have_text("规格 v3")
             reloaded_text = page.eval_on_selector("#shot-spec-list", "node => node.textContent")

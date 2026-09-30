@@ -33,6 +33,10 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "tools"))
+
+import v2_stage_nav as stage_nav  # noqa: E402  （V2.UI.2 六阶段工作台导航）
+
 PRODUCT_DIR = ROOT / "app" / "product_v2"
 HARNESS_DIR = ROOT / "evals" / "product-v2" / "harness"
 EVIDENCE_DIR = ROOT / "evals" / "product-v2"
@@ -379,6 +383,7 @@ def main() -> int:
             expect(page.locator("#prompt-editor")).to_be_hidden()
             page.click("#suite-seed")
             expect(page.locator("#shot-list .shot-row")).to_have_count(4)
+            stage_nav.goto(page, "generate")
             expect(page.locator("#prompt-editor")).to_be_visible()
             expect(page.locator("#prompt-list .shot-spec")).to_have_count(4)
             seeded = page.evaluate(PROMPT_SNAPSHOT)
@@ -418,10 +423,13 @@ def main() -> int:
                   and info_v1["ui_text"] == info_v1["text"],
                   {"items": info_v1["literal_items"], "warnings": info_v1["warnings"]})
 
+            stage_nav.goto(page, "plan")
+            stage_nav.reveal(page, "#specs-editor")
             page.fill("#style-background", "浅灰无缝背景")
             page.fill("#style-lighting", "柔和顶光")
             page.click("#style-save")
             expect(page.locator("#style-version")).to_have_text("版本 v1")
+            stage_nav.goto(page, "generate")
             expect(page.locator(main_card)).to_have_attribute("data-prompt-state", "stale")
             stale_text = page.locator(main_card + " pre.prompt-text").inner_text()
             page.click(main_card + " button")
@@ -436,11 +444,14 @@ def main() -> int:
                   and stale_text == main_v1["text"],
                   {"v1": main_v1["record_hash"], "v2": main_v2["record_hash"]})
 
+            stage_nav.goto(page, "plan")
+            stage_nav.reveal(page, "#specs-editor")
             page.fill("#spec-keep-shot_main_clean", "柔光照明")
             page.click('#shot-spec-list .shot-spec[data-shot-id="shot_main_clean"] button:has-text("保存")')
             page.fill("#style-avoid", "柔光照明")
             page.click("#style-save")
             expect(page.locator(main_card)).to_have_attribute("data-prompt-state", "stale")
+            stage_nav.goto(page, "generate")
             page.click(main_card + " button")
             expect(page.locator("#prompt-error")).to_be_visible()
             conflict_text = page.locator("#prompt-error").inner_text()
@@ -457,6 +468,7 @@ def main() -> int:
             screenshots.append(screenshot_rel)
 
             page.reload(wait_until="networkidle")
+            stage_nav.goto(page, "generate")
             expect(page.locator("#prompt-editor")).to_be_visible()
             expect(page.locator(main_card + " .shot-spec-head .meta")).to_have_text("版本 v2")
             reloaded_main = page.evaluate(RECOMPUTE, {"shotId": "shot_main_clean"})

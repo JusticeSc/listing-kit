@@ -33,6 +33,10 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "tools"))
+
+import v2_stage_nav as stage_nav  # noqa: E402  （V2.UI.2 六阶段工作台导航）
+
 PRODUCT_DIR = ROOT / "app" / "product_v2"
 HARNESS_DIR = ROOT / "evals" / "product-v2" / "harness"
 EVIDENCE_DIR = ROOT / "evals" / "product-v2"
@@ -187,6 +191,7 @@ def read_suite(browser, url: str, variable: str, console_errors: list, page_erro
 
 
 def compile_all(page, shot_ids: list, wait_ms: int = 200) -> None:
+    stage_nav.goto(page, "generate")
     for shot_id in shot_ids:
         card = f'#prompt-list .shot-spec[data-shot-id="{shot_id}"]'
         page.click(card + " .toolbar button")
@@ -484,11 +489,13 @@ def main() -> int:
                         }""", arg={"shot": shot_id, "version": contract}, timeout=timeout)
 
                 def confirm_generation() -> None:
+                    stage_nav.goto(page, "generate")
                     expect(page.locator("#confirm-action")).to_be_enabled()
                     page.click("#confirm-action")
                     expect(page.locator("#confirm-record")).to_contain_text("已确认 v")
 
                 def click_row_button(shot_id: str, text: str) -> None:
+                    stage_nav.goto(page, "generate")
                     row(shot_id).locator(f'button:has-text("{text}")').first.click()
 
                 def generate_and_settle(shot_id: str) -> None:

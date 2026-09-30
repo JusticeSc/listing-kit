@@ -37,6 +37,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "src"))          # 只为取 console（见 src/console.py）
+sys.path.insert(0, str(ROOT / "tools"))
+
+import v2_stage_nav as stage_nav  # noqa: E402  （V2.UI.2 六阶段工作台导航）
 from console import enable_utf8  # noqa: E402
 enable_utf8()
 
@@ -520,6 +523,7 @@ def run_browser_checks(stamp: str, screenshots: list[str], console_errors: list[
                         }""", arg={"shot": shot_id, "needle": needle}, timeout=timeout)
 
                 def click_row_button(shot_id: str, text: str) -> None:
+                    stage_nav.goto(page, "generate")
                     row(shot_id).locator(f'button:has-text("{text}")').first.click()
 
                 def generate_and_settle(shot_id: str) -> None:
@@ -556,6 +560,7 @@ def run_browser_checks(stamp: str, screenshots: list[str], console_errors: list[
                 shot_ids = initial["shot_ids"]
                 v251.compile_all(page, shot_ids)
                 ok_shot = shot_ids[0]
+                stage_nav.goto(page, "generate")
                 expect(page.locator("#confirm-action")).to_be_enabled()
                 page.click("#confirm-action")
                 expect(page.locator("#confirm-record")).to_contain_text("已确认 v")

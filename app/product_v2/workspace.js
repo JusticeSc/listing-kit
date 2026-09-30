@@ -124,6 +124,8 @@ import {
   validateSuitePlan,
 } from "./domain/index.js";
 import { sha256Hex } from "./storage/db.js";
+import { exportProjectPackage } from "./storage/index.js";
+import { createStageShell } from "./ui/stage-shell.js";
 
 const INTAKE_DOCUMENT_ID = "intake";
 const INTAKE_KIND = DOMAIN_DOCUMENT_KINDS.product_input;
@@ -353,7 +355,32 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     adoptStatus: document.getElementById("adopt-status"),
     adoptError: document.getElementById("adopt-error"),
     adoptProgress: document.getElementById("adopt-progress"),
+    generateError: document.getElementById("generate-error"),
+    stageNav: document.getElementById("stage-nav"),
+    stagePanels: document.getElementById("stage-panels"),
+    stageSummary: document.getElementById("stage-summary"),
+    stageNextUnderstand: document.getElementById("stage-next-understand"),
+    stageNextUnderstandNote: document.getElementById("stage-next-understand-note"),
+    stageNextPlan: document.getElementById("stage-next-plan"),
+    stageNextPlanNote: document.getElementById("stage-next-plan-note"),
+    stageNextReview: document.getElementById("stage-next-review"),
+    stageNextReviewNote: document.getElementById("stage-next-review-note"),
+    stageNextDeliver: document.getElementById("stage-next-deliver"),
+    stageNextDeliverNote: document.getElementById("stage-next-deliver-note"),
+    reviewList: document.getElementById("review-list"),
+    reviewEmpty: document.getElementById("review-empty"),
+    deliveryGate: document.getElementById("delivery-gate"),
+    deliverExport: document.getElementById("deliver-export"),
+    deliverProjectPackage: document.getElementById("deliver-project-package"),
+    deliverStatus: document.getElementById("deliver-status"),
+    deliverError: document.getElementById("deliver-error"),
   };
+
+  const stageShell = createStageShell({
+    nav: elements.stageNav,
+    panelRoot: elements.stagePanels,
+    summary: elements.stageSummary,
+  });
 
   let project = null;
   let projectId = null;
@@ -413,6 +440,17 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
   function clearError(element) {
     element.textContent = "";
     element.hidden = true;
+  }
+
+  /** 生成与审核两个阶段都可能发起提交/核对：错误就近显示在对应阶段，两处同一份文本。 */
+  function showAttemptError(message) {
+    showError(elements.generateError, message);
+    showError(elements.attemptError, message);
+  }
+
+  function clearAttemptError() {
+    clearError(elements.generateError);
+    clearError(elements.attemptError);
   }
 
   function revokeObjectUrls() {
@@ -875,6 +913,7 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
       if (Array.isArray(proposal.questions) && proposal.questions.length) {
         analyzeProblems.push("模型提出的问题：" + proposal.questions.join(" / "));
       }
+      stageShell.select("understand");
     } catch (error) {
       handleInternalError(error);
     } finally {
@@ -2616,22 +2655,22 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
 
   /** 单张「保存候选图片」按钮入口：只翻译结果，不做批次策略。 */
   async function handleStoreCandidate(shotId) {
-    clearError(elements.attemptError);
+    clearAttemptError();
     const result = await ensureCandidateStored(shotId);
     if (result.stored) {
       elements.attemptStatus.textContent = "候选已保存：sha256 " + result.sha256.slice(0, 12)
         + "…（" + result.width + "×" + result.height + "）。"
         + (result.review ? " " + result.review : "");
     } else if (result.failed) {
-      showError(elements.attemptError, result.message);
+      showAttemptError( result.message);
     } else if (result.reason === "already_stored") {
       elements.attemptStatus.textContent = "这条记录的候选已在本地，无需重复保存。";
     } else if (result.reason === "not_succeeded") {
-      showError(elements.attemptError, "这次生成还没有成功结论，暂不能保存候选。");
+      showAttemptError( "这次生成还没有成功结论，暂不能保存候选。");
     } else if (result.reason === "no_task_id") {
-      showError(elements.attemptError, "这条记录没有任务编号，无法取回候选。");
+      showAttemptError( "这条记录没有任务编号，无法取回候选。");
     } else if (result.reason === "no_attempt") {
-      showError(elements.attemptError, "这张图还没有生成记录。");
+      showAttemptError( "这张图还没有生成记录。");
     }
     return result;
   }
@@ -2713,6 +2752,7 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
   function openCompare(shotId, options = {}) {
     compareShotId = shotId;
     compareCandidateId = options.candidateId || null;
+    stageShell.select("review");
     renderCompare();
     if (options.focus === true) {
       const active = elements.compareCandidates.querySelector('[role="tab"][aria-selected="true"]');
@@ -3009,9 +3049,7 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     else if (event.key === "End") next = tabs.length - 1;
     else if (event.key === "Escape") {
       event.preventDefault();
-      const entry = elements.attemptList.querySelector(
-        'button[data-compare-action="' + compareShotId + '"]');
-      if (entry) entry.focus(); else elements.compareClose.focus();
+      focusCompareEntry(compareShotId);
       return;
     } else {
       return;
@@ -3298,6 +3336,7 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     renderBatch();
     renderCompare();
     renderSelectionProgress();
+    refreshDerived();
   }
 
   /**
@@ -3388,44 +3427,44 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
 
   /** 单张提交（按钮入口）：只负责把核心结果翻译成界面反馈，批次策略不在这里。 */
   async function handleSubmitAttempt(shotId, options = {}) {
-    clearError(elements.attemptError);
+    clearAttemptError();
     const outcome = await performSubmitAttempt(shotId, options);
     if (outcome.skipped) {
       if (outcome.reason === "no_confirmation") {
-        showError(elements.attemptError,
+        showAttemptError(
           "生成前确认缺失或已过期：先回到「生成前确认」重新确认，再提交。");
       } else if (outcome.reason === "blocked") {
         const blocking = outcome.blocking;
-        showError(elements.attemptError, "同一张图已经有一条进行中的生成（"
+        showAttemptError( "同一张图已经有一条进行中的生成（"
           + attemptStateLabel(blocking.state) + "，action " + blocking.action_id
           + "）。先核对并按结论处理，再新建 action。");
       } else if (outcome.reason === "no_prompt") {
-        showError(elements.attemptError, "这张图还没有可用的 Prompt 版本：先编译并保存。");
+        showAttemptError( "这张图还没有可用的 Prompt 版本：先编译并保存。");
       } else if (outcome.reason === "shot_missing") {
-        showError(elements.attemptError, "这张图已不在套图方案里，先刷新套图规划。");
+        showAttemptError( "这张图已不在套图方案里，先刷新套图规划。");
       } else if (outcome.reason === "no_references") {
-        showError(elements.attemptError, "这张图没有可用参考图（至少需要一张）。");
+        showAttemptError( "这张图没有可用参考图（至少需要一张）。");
       } else if (outcome.reason === "reference_read_failed") {
-        showError(elements.attemptError, outcome.message);
+        showAttemptError( outcome.message);
       }
       return outcome;
     }
     if (outcome.thrown) {
-      showError(elements.attemptError, outcome.message);
+      showAttemptError( outcome.message);
       return outcome;
     }
     const record = outcome.record;
     elements.attemptStatus.textContent = "action " + record.action_id + "：" + attemptStateLabel(record.state)
       + (record.task_id ? "（task " + record.task_id + "）" : "") + "。";
     if (record.state === ATTEMPT_STATES.unknown) {
-      showError(elements.attemptError, "这次提交的结果没有确认：不要重复提交。"
+      showAttemptError( "这次提交的结果没有确认：不要重复提交。"
         + (record.task_id ? "可以按任务编号核对。" : "没有任务编号，只能显式新建 action。"));
     } else if (record.state === ATTEMPT_STATES.failed) {
-      showError(elements.attemptError, "这次提交明确失败：" + record.error.message
+      showAttemptError( "这次提交明确失败：" + record.error.message
         + "（重试策略 " + record.error.retry_policy + "）。");
     }
     if (outcome.candidate && outcome.candidate.failed) {
-      showError(elements.attemptError, outcome.candidate.message);
+      showAttemptError( outcome.candidate.message);
     } else if (outcome.candidate && outcome.candidate.stored) {
       elements.attemptStatus.textContent += " 候选已保存到本地（sha256 "
         + outcome.candidate.sha256.slice(0, 12) + "…）。";
@@ -3477,23 +3516,23 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
 
   /** 单张核对（按钮入口）。 */
   async function handleReconcileAttempt(shotId) {
-    clearError(elements.attemptError);
+    clearAttemptError();
     const result = await performReconcileAttempt(shotId);
     if (result.skipped) {
       if (result.reason === "no_task") {
-        showError(elements.attemptError, "这条记录没有任务编号，无法核对；只能显式新建 action。");
+        showAttemptError( "这条记录没有任务编号，无法核对；只能显式新建 action。");
       }
       return result;
     }
     if (result.failed) {
-      showError(elements.attemptError, result.message);
+      showAttemptError( result.message);
       return result;
     }
     if (result.advanced) {
       elements.attemptStatus.textContent = "已核对 task " + result.task_id + "："
         + attemptStateLabel(result.state) + "。";
       if (result.candidate && result.candidate.failed) {
-        showError(elements.attemptError, result.candidate.message);
+        showAttemptError( result.candidate.message);
       } else if (result.candidate && result.candidate.stored) {
         elements.attemptStatus.textContent += " 候选已保存到本地（sha256 "
           + result.candidate.sha256.slice(0, 12) + "…）。";
@@ -3673,9 +3712,25 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
       tab.focus();
       return;
     }
-    const entry = elements.attemptList.querySelector(
+    focusCompareEntry(shotId);
+  }
+
+  /**
+   * 焦点只能落到用户当前看得见的比较入口。
+   * V2.UI.2 起阶段分屏：尝试行在「生成」、审核卡在「审核返工」，跨阶段的入口是隐藏的，
+   * 直接 focus 会被浏览器丢成 body。顺序：审核卡入口 → 尝试行入口 → 阶段条当前阶段 → 面板内关闭键。
+   */
+  function focusCompareEntry(shotId) {
+    const isVisible = (node) => Boolean(node && node.offsetParent !== null);
+    const reviewEntry = elements.reviewList
+      ? elements.reviewList.querySelector('.review-card[data-shot-id="' + shotId + '"] button')
+      : null;
+    const attemptEntry = elements.attemptList.querySelector(
       'button[data-compare-action="' + shotId + '"]');
-    if (entry) entry.focus();
+    const stageButton = elements.stageNav.querySelector("[data-stage-nav].is-current");
+    const target = [reviewEntry, attemptEntry, stageButton, elements.compareClose]
+      .find(isVisible);
+    if (target) target.focus();
   }
 
   /** 按建议重填：问题与方向回到报告先看项的默认值，预览作废。 */
@@ -3968,14 +4023,14 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
    */
   async function handleBatchRun() {
     if (!projectId || !suitePlan || (batchState && batchState.active)) return;
-    clearError(elements.attemptError);
+    clearAttemptError();
     const plan = deriveBatch();
     if (plan.queue.length === 0 && plan.fetch_queue.length === 0) {
-      showError(elements.attemptError, "没有待提交的图；可以核对进行中、重试失败的图或保存候选。");
+      showAttemptError( "没有待提交的图；可以核对进行中、重试失败的图或保存候选。");
       return;
     }
     if (plan.queue.length > 0 && !confirmationIsCurrent()) {
-      showError(elements.attemptError,
+      showAttemptError(
         "生成前确认缺失或已过期：先回到「生成前确认」重新确认，再整套生成。");
       return;
     }
@@ -4080,16 +4135,16 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
 
   /** 批量的「核对进行中」：所有有任务编号的在途记录各查一次，不重提。 */
   async function handleBatchReconcile() {
-    clearError(elements.attemptError);
+    clearAttemptError();
     const before = deriveBatch();
     if (before.reconcile_queue.length === 0) {
-      showError(elements.attemptError, "没有可按任务编号核对的记录。");
+      showAttemptError( "没有可按任务编号核对的记录。");
       return;
     }
     try {
       await pollActiveAttempts({ once: true });
     } catch (error) {
-      showError(elements.attemptError, (error && error.message) || "核对没有完成，记录保持原样。");
+      showAttemptError( (error && error.message) || "核对没有完成，记录保持原样。");
       return;
     }
     const after = deriveBatch();
@@ -4100,15 +4155,15 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
   /** 批量的「重试失败」：只对明确失败的图显式新建 action，绝不动未知与在途记录。 */
   async function handleBatchRetry() {
     if (batchState && batchState.active) return;
-    clearError(elements.attemptError);
+    clearAttemptError();
     if (!confirmationIsCurrent()) {
-      showError(elements.attemptError,
+      showAttemptError(
         "生成前确认缺失或已过期：先回到「生成前确认」重新确认，再重试。");
       return;
     }
     const plan = deriveBatch();
     if (plan.retry_queue.length === 0) {
-      showError(elements.attemptError, "没有明确失败的图可重试。");
+      showAttemptError( "没有明确失败的图可重试。");
       return;
     }
     batchState = {
@@ -4409,6 +4464,266 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     renderHeaderText(project);
   }
 
+  /* ---------------------------------------------------------- 六阶段投影与交付门禁（V2.UI.2） */
+
+  function shotSummariesNow() {
+    return suitePlan ? suitePlanSummary(suitePlan, suiteContext()).shots : [];
+  }
+
+  /**
+   * 每个阶段的完成 / 可用 / 摘要只在这里派生一次；外壳只负责画出来。
+   * available=false 表示阶段条上的入口不可用（前置未完成），不是错误。
+   */
+  function computeStageStates() {
+    const shots = shotSummariesNow();
+    const entries = slotEntries();
+    const confirmed = entries.filter((item) => item.slot.status === "confirmed").length;
+    const unknownSlots = entries.filter((item) => item.slot.status === "unknown").length;
+    const hasSlots = slots.size > 0;
+    const withCandidate = shots.filter((shot) => Boolean(latestStoredCandidateOf(shot.shot_id)));
+    const settled = shots.filter((shot) => {
+      if (latestStoredCandidateOf(shot.shot_id)) return true;
+      const latest = latestAttemptOf(shot.shot_id);
+      return Boolean(latest && latest.record.state === ATTEMPT_STATES.failed);
+    });
+    const unknownAttempts = shots.filter((shot) => {
+      const latest = latestAttemptOf(shot.shot_id);
+      return Boolean(latest && latest.record.state === ATTEMPT_STATES.unknown);
+    });
+    const requiredShots = shots.filter((shot) => shot.required === true);
+    const requiredSelected = requiredShots.filter((shot) => selectionStateOf(shot.shot_id) === "current");
+    const selectedShots = shots.filter((shot) => selectionStateOf(shot.shot_id) === "current");
+    const projectName = project ? project.name : "";
+    const referenceCount = Array.isArray(intake.references) ? intake.references.length : 0;
+    const intakeSummary = [projectName, referenceCount ? "参考图 " + referenceCount + " 张" : ""]
+      .filter(Boolean).join(" · ");
+
+    return {
+      intake: {
+        available: true,
+        status: hasSlots ? "complete" : "current",
+        hint: hasSlots ? "" : "上传参考图、填写商品资料，然后点“分析商品资料”。",
+        summary: hasSlots ? intakeSummary : "",
+      },
+      understand: {
+        available: hasSlots,
+        status: understandingReady ? "complete" : "current",
+        hint: hasSlots ? "" : "先在「资料」里分析商品资料。",
+        summary: understandingReady
+          ? "已确认 " + confirmed + " 项" + (unknownSlots ? " · 未知 " + unknownSlots + " 项" : "")
+          : "",
+      },
+      plan: {
+        available: understandingReady,
+        status: shots.length ? "complete" : "current",
+        hint: understandingReady ? "" : "先完成商品理解。",
+        summary: shots.length ? shots.length + " 张图片任务" : "",
+      },
+      generate: {
+        available: shots.length > 0,
+        status: (shots.length > 0 && settled.length === shots.length) ? "complete" : "current",
+        hint: shots.length ? "" : "先生成套图方案。",
+        summary: shots.length
+          ? withCandidate.length + "/" + shots.length + " 张有候选"
+            + (unknownAttempts.length ? " · " + unknownAttempts.length + " 张待核对" : "")
+          : "",
+      },
+      review: {
+        available: withCandidate.length > 0,
+        status: (shots.length > 0 && selectedShots.length === shots.length) ? "complete" : "current",
+        hint: withCandidate.length ? "" : "先生成至少一张候选。",
+        summary: shots.length
+          ? "已采用 " + selectedShots.length + "/" + shots.length
+            + " · 必需图 " + requiredSelected.length + "/" + requiredShots.length
+          : "",
+      },
+      deliver: {
+        available: withCandidate.length > 0,
+        status: "current",
+        hint: withCandidate.length ? "" : "先生成候选。",
+        summary: shots.length
+          ? "必需图已采用 " + requiredSelected.length + "/" + requiredShots.length
+          : "",
+      },
+    };
+  }
+
+  /** 默认停靠：最靠后的“可用且未完成”的阶段；全部完成则停在交付。 */
+  function defaultStageId(states = null) {
+    const map = states || computeStageStates();
+    for (const id of ["intake", "understand", "plan", "generate", "review", "deliver"]) {
+      if (map[id] && map[id].available !== false && map[id].status !== "complete") return id;
+    }
+    return "deliver";
+  }
+
+  /** 阶段底部的推进按钮：禁用时说明缺什么；不改变任何数据。 */
+  function renderStageFoot(states) {
+    const shots = shotSummariesNow();
+    elements.stageNextUnderstand.disabled = !understandingReady;
+    elements.stageNextUnderstandNote.textContent = understandingReady
+      ? "" : "关键事实全部确认后才能进入方案。";
+    elements.stageNextPlan.disabled = shots.length === 0;
+    elements.stageNextPlanNote.textContent = shots.length
+      ? "" : "先生成或添加至少一张图片。";
+    const candidates = states && states.review ? states.review.available : false;
+    elements.stageNextReview.disabled = !candidates;
+    elements.stageNextReviewNote.textContent = candidates ? "" : "先产生至少一张候选。";
+    const requiredShots = shots.filter((shot) => shot.required === true);
+    const pending = requiredShots.filter((shot) => selectionStateOf(shot.shot_id) !== "current");
+    elements.stageNextDeliver.disabled = pending.length > 0 || shots.length === 0;
+    elements.stageNextDeliverNote.textContent = shots.length === 0
+      ? "先生成候选。"
+      : (pending.length ? "还有 " + pending.length + " 张必需图没有采用候选。" : "");
+  }
+
+  function refreshStageShell({ reset = false } = {}) {
+    const states = computeStageStates();
+    if (reset) stageShell.select(defaultStageId(states));
+    stageShell.update(states, { fallback: defaultStageId(states) });
+    renderStageFoot(states);
+    return states;
+  }
+
+  /**
+   * 业务状态变化后的统一收尾：派生投影（审核列表 / 交付门禁）与阶段外壳一起刷新。
+   * 所有会改变套图、Attempt、候选与采用状态的处理函数都经 renderAttempts 落到这里，
+   * 避免阶段条与阶段脚注停留在旧状态（例如生成推荐方案后仍显示「先生成或添加至少一张图片」）。
+   */
+  function refreshDerived() {
+    renderReviewList();
+    renderDeliveryGate();
+    return refreshStageShell();
+  }
+
+  /** 审核阶段的逐图入口：图片 + 候选数 + 采用状态 + 比较/返工/采用。 */
+  function renderReviewList() {
+    if (!elements.reviewList) return;
+    elements.reviewList.innerHTML = "";
+    const shots = shotSummariesNow();
+    const reviewable = shots.filter((shot) => candidateChainOf(shot.shot_id).length > 0);
+    elements.reviewEmpty.hidden = reviewable.length > 0;
+    for (const shot of reviewable) {
+      const chain = candidateChainOf(shot.shot_id);
+      const stored = latestStoredCandidateOf(shot.shot_id);
+      const state = selectionStateOf(shot.shot_id);
+      const card = createElement("div", {
+        className: "review-card",
+        attrs: { "data-shot-id": shot.shot_id, "data-selection-state": state },
+      });
+      const head = createElement("div", { className: "review-card-head" });
+      head.append(createElement("span", { className: "name", text: shot.label }));
+      head.append(createElement("span", {
+        className: "badge " + (state === "current" ? "is-adopted" : (state === "stale" ? "is-review-warn" : "is-empty")),
+        text: state === "current" ? "已采用" : (state === "stale" ? "已采用（已过期）" : "未采用"),
+      }));
+      head.append(createElement("span", { className: "meta", text: "候选 " + chain.length + " 个" }));
+      card.append(head);
+      if (stored) {
+        const candidate = stored.record;
+        const preview = createElement("div", { className: "review-preview" });
+        const img = createElement("img", { attrs: { alt: shot.label + " 的最新候选", loading: "lazy" } });
+        preview.append(img);
+        card.append(preview);
+        ensurePreviewUrl(shot.shot_id, stored.record.action_id, candidate.asset_sha256)
+          .then((url) => { if (url && img.isConnected) img.src = url; })
+          .catch(() => {});
+      } else {
+        card.append(createElement("p", {
+          className: "meta", text: "最新一次生成还没有保存到本地的候选；到「生成」里核对或重试。",
+        }));
+      }
+      const actions = createElement("div", { className: "review-card-actions" });
+      const compareButton = createElement("button", {
+        text: "比较候选（" + chain.length + "）", attrs: { type: "button" },
+      });
+      compareButton.addEventListener("click", () => { openCompare(shot.shot_id, { focus: true }); });
+      actions.append(compareButton);
+      const reworkButton = createElement("button", { text: "按问题返工", attrs: { type: "button" } });
+      reworkButton.disabled = !stored;
+      reworkButton.addEventListener("click", () => {
+        openCompare(shot.shot_id, {});
+        openReworkPanel();
+      });
+      actions.append(reworkButton);
+      const adoptButton = createElement("button", {
+        className: "primary", text: "采用候选", attrs: { type: "button" },
+      });
+      adoptButton.disabled = !stored;
+      adoptButton.addEventListener("click", () => {
+        openCompare(shot.shot_id, {});
+        openAdoptPanel();
+      });
+      actions.append(adoptButton);
+      card.append(actions);
+      elements.reviewList.append(card);
+    }
+  }
+
+  /** 交付阶段：只报告门禁状态；交付包生成属于 V2.6.2，不在这里伪造。 */
+  function renderDeliveryGate() {
+    if (!elements.deliveryGate) return;
+    elements.deliveryGate.innerHTML = "";
+    const shots = shotSummariesNow();
+    for (const shot of shots) {
+      const state = selectionStateOf(shot.shot_id);
+      const row = createElement("div", {
+        className: "gate-row", attrs: { "data-shot-id": shot.shot_id, "data-selection-state": state },
+      });
+      row.append(createElement("span", { className: "name", text: shot.label }));
+      row.append(createElement("span", {
+        className: "badge " + (state === "current" ? "is-adopted" : (state === "stale" ? "is-review-warn" : "is-empty")),
+        text: state === "current" ? "已采用" : (state === "stale" ? "已采用（已过期）" : "未采用"),
+      }));
+      row.append(createElement("span", {
+        className: "meta", text: shot.required === true ? "必需图" : "可选图",
+      }));
+      if (state !== "current") {
+        const jump = createElement("button", { text: "去审核", attrs: { type: "button" } });
+        jump.addEventListener("click", () => { stageShell.select("review"); });
+        row.append(jump);
+      }
+      elements.deliveryGate.append(row);
+    }
+    const requiredShots = shots.filter((shot) => shot.required === true);
+    const pending = requiredShots.filter((shot) => selectionStateOf(shot.shot_id) !== "current");
+    elements.deliverExport.disabled = true;
+    elements.deliverStatus.textContent = !shots.length
+      ? "还没有套图方案。"
+      : (pending.length
+        ? "还差 " + pending.length + " 张必需图没有当前有效的采用。"
+        : "人工采用已齐；整套一致性检查与交付包生成尚未接入，现在只能导出项目包。");
+  }
+
+  function stageFileName(manifest) {
+    const safe = ((project && project.name) || "project")
+      .replace(/[\\/:*?"<>|\s]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "project";
+    const stamp = String((manifest && manifest.exported_at) || new Date().toISOString())
+      .replace(/[-:]/g, "").replace("T", "-").slice(0, 13);
+    return safe + "-" + stamp + ".zip";
+  }
+
+  async function handleExportFromWorkspace() {
+    clearError(elements.deliverError);
+    elements.deliverStatus.textContent = "正在打包完整项目…";
+    try {
+      const { bytes, manifest } = await exportProjectPackage(repository, projectId);
+      const blob = new Blob([bytes], { type: "application/zip" });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = stageFileName(manifest);
+      document.body.append(anchor);
+      anchor.click();
+      anchor.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 10_000);
+      elements.deliverStatus.textContent = "已导出项目包（含完整历史，可在别的浏览器导入）。";
+    } catch (error) {
+      elements.deliverStatus.textContent = "";
+      showError(elements.deliverError, (error && error.message) || "导出失败，请重试。");
+    }
+  }
+
   function renderAll() {
     clearError(elements.error);
     if (understandingError) {
@@ -4426,6 +4741,7 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     renderConfirm();
     renderAttempts();
     renderHeaderText(project);
+    refreshDerived();
   }
 
   function bind() {
@@ -4536,6 +4852,11 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
         saveIntakeNow().catch(() => {});
       }
     });
+    elements.stageNextUnderstand.addEventListener("click", () => { stageShell.select("plan"); });
+    elements.stageNextPlan.addEventListener("click", () => { stageShell.select("generate"); });
+    elements.stageNextReview.addEventListener("click", () => { stageShell.select("review"); });
+    elements.stageNextDeliver.addEventListener("click", () => { stageShell.select("deliver"); });
+    elements.deliverProjectPackage.addEventListener("click", () => { handleExportFromWorkspace(); });
   }
 
   async function loadWorkspace() {
@@ -4679,6 +5000,7 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     renderAll();
     await deriveAndApplyState();
     renderAll();
+    refreshStageShell({ reset: true });
     await loadCapabilities();
     if (token !== openToken) return;
     renderAnalyze();
