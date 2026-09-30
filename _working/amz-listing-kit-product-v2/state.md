@@ -631,6 +631,7 @@ task_progress:
       - app/product_v2/styles.css
       - app/product_v2/ui/stage-shell.js
       - app/product_v2/workspace.js
+      - evals/product-v2/v2.7.2-remote-real-e2e-20261001-013714-real01.txt
       - docs/product-v2-ui-contract.md
       - README.md
       - .github/workflows/ci-cd.yml
@@ -639,5 +640,6 @@ blockers: []
 unknowns:
   - visual_language_review_detection_quality_is_uncalibrated_channels_and_binding_only_proven_in_V2.5.2
   - ui_information_hierarchy_primary_action_image_comparison_and_visual_direction_await_product_owner_walkthrough_V2.UI.2
-updated_at: 2026-10-01T01:22:00+08:00
+  - dashscope_balance_exhausted_20261001_remote_e2e_reviews_blocked_topup_needed
+updated_at: 2026-10-01T01:57:00+08:00
 ```
