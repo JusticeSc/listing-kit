@@ -166,6 +166,13 @@ def _pick_skipped_phase(data: dict) -> tuple[str, str]:
     构造不出来。J5 的判据本身是「已推进的阶段，前置必须 done」，两个方向等价，
     所以这里从反方向构造：最后一个未完成阶段用来激活，它前面最后一个 done 阶段
     退回 pending。这样无论进度停在哪一相，只要还有未完成阶段就构造得出来。
+
+    退回的 done 阶段还要避开两类 Gate，否则同一次注入会连带其他 tag，失去
+    「只报该报的」的证明力：
+      * next_action 依赖的 Gate —— 那是 J7 的地盘（2026-10-01 首轮撞到，J5+J7）；
+      * 任何已推进任务（active/done）依赖的 Gate —— 那是 J6 的地盘
+        （2026-10-01 夜间 CI 又一次撞到：V2.7.1 已 done 且依赖 G6，退回 Phase 6
+        连带打出 J6）。只挑 Gate 无人依赖的 done 阶段退回。
     """
     heads = PLAN_PHASE_HEAD.findall(PLAN_TEXT)
     rows = data.get("phase_progress") or {}
@@ -178,15 +185,18 @@ def _pick_skipped_phase(data: dict) -> tuple[str, str]:
     if not open_phases:
         raise RuntimeError("所有阶段都已完成，这条探针无法构造 —— 要更新探针，不是放宽判据")
     tip = open_phases[-1]
-    # 退回 pending 的阶段不能是 next_action 依赖的 Gate：那是 J7 的地盘，
-    # 同一次注入里连带触发 J7 会让这一向失去「只报该报的」的证明力
-    # （2026-10-01 走到 Phase 7 时，next_action=V2.7.1 依赖 G6，退回 Phase 6
-    # 就同时打出了 J5+J7）。挑一个不被 next_action 依赖的 done 阶段。
-    na_deps = {d for d in (PLAN_DEPS.get(str(data.get("next_action_task") or "")) or [])}
+    na_deps = set(PLAN_DEPS.get(str(data.get("next_action_task") or "")) or [])
+    moved = [tid for tid in PLAN_TASKS
+             if ((data.get("task_progress") or {}).get(tid) or {}).get("status") in ("active", "done")]
+    busy_gates = {dep for tid in moved for dep in (PLAN_DEPS.get(tid) or [])
+                  if dep.startswith("G")}
+    busy = na_deps | busy_gates
     done_before = [pid for pid in heads[:heads.index(tip)]
-                   if status(pid) == "done" and f"G{pid}" not in na_deps]
+                   if status(pid) == "done" and f"G{pid}" not in busy]
     if not done_before:
-        raise RuntimeError("要推进的阶段之前没有可退回的 done 阶段（next_action 依赖的 Gate 除外），探针需要更新")
+        raise RuntimeError(
+            "要推进的阶段之前没有可退回的 done 阶段（next_action 或被已推进任务依赖的 Gate 除外）；"
+            f"busy={sorted(busy)}，探针需要更新，不是放宽判据")
     return done_before[-1], tip
 
 
