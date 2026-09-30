@@ -139,7 +139,9 @@ def main() -> int:
 
     stamp = args.stamp or datetime.now().strftime("%Y%m%d-%H%M%S")
     try:
-        checks = ci_commands() + EXTRA_CHECKS
+        checks = ci_commands()
+        known = {script for _tag, script, _extra in checks}
+        checks += [item for item in EXTRA_CHECKS if item[1] not in known]
         if args.only:
             checks = [c for c in checks if args.only in c[1]]
         if not checks:

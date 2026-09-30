@@ -40,6 +40,7 @@ jobs:
           uv run python tools/check_docs.py --no-run
           uv run python tools/check_project_state.py
           uv run python evals/probes/project_state.py
+          uv run python evals/probes/docs_index.py
 
       - name: Check formal entry and browser contracts
         run: |
