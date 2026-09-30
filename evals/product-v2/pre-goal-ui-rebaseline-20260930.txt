@@ -1,0 +1,41 @@
+NOT-AUTHORITY
+
+Product V2 正式 Goal 前：远程入口与前端重基线准备审计
+observed_at: 2026-09-30T20:15:13+08:00
+goal_status_observed: paused
+goal_id: 01a0ca17-2179-7eb0-969a-af9c79c4d8ca
+
+触发证据
+- 用户通过 http://47.115.172.233:8780/ 看到首页，并在其浏览器宿主得到“IndexedDB 不支持”；同时指出首页不像可交付产品。
+- 标准 Playwright Chromium 对同一远程 URL：HTTP 200，indexedDB 类型为 object，最小数据库 open/upgrade/delete 成功，页面启动无 console/page error。
+- 同一次浏览器探针：isSecureContext=false，crypto.randomUUID 与 crypto.subtle 均为 undefined。
+- 在远程 HTTP 页面填写项目名并点击“新建项目”后，app/product_v2/storage/db.js 的 randomId() 抛 UNSUPPORTED_BROWSER；界面映射成“IndexedDB 不支持”。所以至少存在一个确定缺陷：明文远程 origin 缺少 WebCrypto，却被错误归因为 IndexedDB。用户截图宿主是否同时缺 IndexedDB，需要 V2.UI.1 按能力项实测，不能从截图继续猜。
+- GET http://47.115.172.233:8780/api/health 返回 product=v2、server_state=none、user_data=browser-indexeddb；服务可达不等于浏览器主链可用。
+
+已完成的准备
+1. 目标计划升级为 v3.1；新增 §2.1 Goal 验收增补、§9.19a V2.UI.1、§9.19b V2.UI.2、§9.19c V2.UI.3。
+2. 唯一任务依赖改为 V2.6.1 → V2.UI.1 → V2.UI.2 → V2.UI.3 → V2.5.5；不再先向现有纵向工程表单继续堆整套复核。
+3. 项目上下文新增 SEL-012：当前稳定版桌面 Chrome/Edge + 可信 HTTPS remote origin；不自研 UUID/SHA-256 降级，不新增服务器项目状态。
+4. Gate G5 加入正式远程入口与产品发起人视觉/交互走查；完成矩阵由 C1–C15 扩为 C1–C17。
+5. 执行 state 保持 paused，唯一 next_action_task 改为 V2.UI.1；V2.5.5 浏览器侧未提交候选原样保留，不误标完成。
+6. 改权威文档前快照：_stage-amz-control/pre-goal-ui-rebaseline-20260930-201513/。
+
+正式开工顺序
+V2.UI.1：取得可信 HTTPS 正式入口；分项能力诊断；Chrome/Edge 空白创建与恢复；HTTP 负例准确报 WebCrypto/secure-context。
+V2.UI.2：完成项目首页、六阶段同页工作台、关键正常/失败/Unknown 状态的交互契约与真实页面视觉走查；产品发起人确认后过门。
+V2.UI.3：在正式入口重构真实首页和工作台，复用现有 repository/domain/service；跑新 UI E2E 与相关既有浏览器回归。
+V2.5.5：在确认后的审核阶段完成整套一致性服务端、合同、页面和证据。
+V2.6.2–V2.7.5：交付 ZIP、项目迁移、可用性终验、全回归、最小真实模型、陌生人走查、完成审计、V1 日落。
+
+开工门
+- 系统 Goal 仍 paused；本文件只证明准备，不代表正式执行已开始。
+- 正式恢复前读取顺序仍是 docs/INDEX.md → AGENTS.md → 项目上下文 → v3.1 计划 → state。
+- 第一个代码切片只能是 V2.UI.1；不得绕过 HTTPS/能力门直接继续 V2.5.5。
+- V2.UI.2 必须有产品发起人走查，不能由自动截图或模型自评替代。
+- 开发/回归默认 fake provider；真实模型调用仍按计划 §12.2 最小预算执行。
+
+未证明
+- 当前尚无可信 HTTPS 产品 URL，因此 V2.UI.1 未完成。
+- 当前截图宿主究竟是嵌入式浏览器策略还是用户侧禁用存储，尚未分项测量；它不改变首版 Chrome/Edge 支持边界。
+- 前端尚未重构；现有截图直接反证“产品视觉已完成”。
+- V2.5.5 服务端、验证器、交付 ZIP、项目迁移、陌生人完整走查仍未完成。

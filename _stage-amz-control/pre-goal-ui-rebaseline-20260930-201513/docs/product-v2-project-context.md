@@ -71,8 +71,6 @@ Python 无状态 AI 服务
 | 容器 | `amz-listing-kit:<git-sha>` | 镜像只包含 Product V2 正式入口；健康失败恢复上一容器，不清理其他应用 |
 | 密钥来源 | 环境变量 | `DASHSCOPE_API_KEY` 等；变量清单见 `.env.example` 与本文件 §4.2 |
 
-浏览器支持与 origin 取值由 SEL-012 固定：本机开发可用 `http://127.0.0.1` / `localhost`；远程正式入口必须经可信 HTTPS 暴露。固定端口 `8780` 是容器内部/服务器监听端口，不等于要求用户直接访问明文 `http://<IP>:8780`。
-
 ## 4. 技术栈与可替换边界
 
 | 层 | 当前选择 | 边界 |
@@ -108,7 +106,6 @@ Python 无状态 AI 服务
 | SEL-009 | V1 日落 | 用户已定（2026-09-30）：V2.7.4 发布候选冻结后，专批删除 Product V1 代码与随之失效的依赖（含自造重试/退避/文件锁：`src/imagegen.py` `_retry`、`src/application_service.py` 限流退避、`src/workspace_store.py` 文件锁）；git 历史保留，V1 证据不删除 | 边跑边删 V1；把 V1 主路径保留到 V2 完成 | V2.7.4 冻结时执行 V2.7.5；届时逐项复核依赖与工具引用 |
 | SEL-010 | 图像网关传输层 | 复用 `requests`（V1 已在用的锁定直接依赖）+ 三条无状态路由（submit / status / result）；协议与错误映射按 §9.10 自写，但请求形状沿用 V1 冻结合同（`src/providers/dashscope_image.py`）；PoC 与依赖实测见 `evals/product-v2/sel010-image-gateway-transport-poc-20260930.txt` | 官方 `dashscope` SDK（0.27.x→1.27.7 实测解析 32 包，拖入 aiohttp / typer / websocket-client 等）；`httpx`（第二套 HTTP 客户端，无协议收益）；OpenAI 兼容图像端点（百炼图像合成不是该形状） | 需要批量并发、取消、多供应商路由或成本统计时重估 SDK；百炼改协议时按冻结合同重测并更新 §9.10 |
 | SEL-011 | 复核（VLM）通道与模型 | 用户已定（2026-09-30）：复核复用 SEL-003 的 langchain 通道（`ChatOpenAI` + json_mode 结构化输出 + `map_openai_exception` 四归口），默认模型 `qwen-vl-max`（`REVIEW_MODEL` 可覆盖，registry 条目 `dashscope-review`）；输入 = 候选 + ≤3 参考图 + ShotSpec 摘要 + 已确认事实；输出只允许 7 个 check + evidence + confidence；VLM 只提示、不得 BLOCK、失败落 Unknown、不产生采纳 | 新建第二套 HTTP 客户端/适配器层（重复造轮子）；官方 SDK（拖包）；让模型自带严重度或采纳结论；把审美判断升级为平台硬阻断 | 需要多模态模型路由/降级或成本统计；百炼模型命名/能力变化；检出质量校准需要模型对比时（后续任务） |
-| SEL-012 | 浏览器支持与安全 origin | 首版保证当前稳定版桌面 Chrome/Edge；远程正式入口必须是可信 HTTPS secure context，TLS 由现有穿透/反向代理终止，应用容器保持无状态 HTTP。保留 IndexedDB + 原生 WebCrypto；不为远程明文 HTTP 或嵌入式浏览器自研 UUID/SHA-256、引入浏览器密码学 polyfill或服务器项目存储。能力失败必须区分 IndexedDB、WebCrypto、schema、配额与事务并给恢复动作 | 在浏览器手写 UUID/SHA-256 降级；新增 hash/UUID 服务端接口；把项目迁回服务器；把所有宿主纳入保证范围 | 目标客户必须使用不可提供 secure context 的受控宿主，或 Chrome/Edge 支持策略发生业务变化时重开；先证明真实环境约束再选替代 |
 
 状态：SEL-000 至 SEL-011 已定案（2026-09-30）。依赖权威已从 `requirements.txt` 迁移到
 `pyproject.toml` + `uv.lock`，守卫、CI、README 同步（证据见
@@ -201,8 +198,6 @@ amz-listing-kit/
 9. 主流程不需要主体分割或抠图；抠图仅可作为未来独立、显式选择的专项能力。
 10. 服务器不保存用户项目状态；浏览器清理数据或 origin 变化造成的迁移由项目包解决。
 11. 密钥只从服务器环境变量读取，不进入浏览器、Git、项目包或证据文件。
-12. 远程正式入口必须来自可信 HTTPS secure context；本机 localhost 是唯一明文开发例外。
-13. 默认界面投影业务任务而非工程结构；Prompt/hash/task id 可查但必须渐进披露。
 
 ## 7. 质量门槛
 
@@ -211,7 +206,7 @@ amz-listing-kit/
 | 控制面 | 唯一目标、唯一状态、唯一下一动作、文档全部登记 | `tools/check_docs.py`、`tools/check_project_state.py` |
 | 领域与存储 | schema、迁移、事务、依赖失效和 Blob 生命周期正确 | 单元测试、反向探针、导入/导出哈希比对 |
 | 服务合同 | 无服务器业务持久化；错误、Unknown 与 Provider 身份可恢复 | API 契约测试、服务器重启轨迹、磁盘差异审计 |
-| 浏览器产品 | 正式 HTTPS 入口在当前 Chrome/Edge 空白启动、刷新/关页恢复；完整主链、失败与窄屏可用；界面通过产品发起人视觉/交互走查 | Playwright、控制台/网络、IndexedDB 后置条件、1440/390/200% 视觉证据、走查记录 |
+| 浏览器产品 | 空白启动、刷新恢复、完整主链、失败与窄屏可用 | Playwright、控制台/网络、IndexedDB 后置条件、视觉证据 |
 | 生成系统 | 真实参考图、真实 Prompt、真实 task ID、候选和报告可追溯 | Provider 请求快照、模型记录、候选哈希、ReviewReport |
 | 产品完成 | 陌生使用者能够独立完成不同品类任务 | 首次使用者走查、完成矩阵；Mock 或自评不能替代 |
 | 格式检查 | 暂无 ruff/eslint：本仓库没有格式化工具链，格式由 `.gitattributes` 与评审保证 | 引入格式化工具需先过选型门（SEL 记录） |

@@ -82,8 +82,6 @@ uv run python app\server.py --open
 uv run python app\server.py --host 0.0.0.0 --port 8780
 ```
 
-当前实现依赖浏览器原生 IndexedDB、`crypto.randomUUID` 与 WebCrypto SHA-256。localhost 是浏览器认可的开发安全上下文；远程直接访问 `http://<IP>:8780` 时，Chrome/Edge 会保留 IndexedDB 但不暴露后两项，因此页面能打开却不能可靠新建项目或计算资产哈希。远程产品入口必须由穿透或反向代理提供可信 HTTPS；在 V2.UI.1 完成前，缺 WebCrypto 还可能被旧错误文案误显示为“IndexedDB 不支持”，不能据此断言数据库本身不可用。
-
 语义分析默认走注册表里的 `dashscope-semantic`，需要服务器环境变量 `DASHSCOPE_API_KEY`；缺密钥时该路由返回
 明确的 503 分类错误并提示 provider 未配置，不会假装成功。无密钥环境与验证入口可设
 `AMZ_V2_SEMANTIC_PROVIDER=fake-semantic` 使用测试替身。密钥只允许通过服务器环境变量提供，
