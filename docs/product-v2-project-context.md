@@ -164,7 +164,7 @@ amz-listing-kit/
 │  ├─ server.py                         # 正式服务入口：默认 V2；--legacy-v1 回 V1；--offline-fixture 旧 Mock
 │  ├─ product_v1_server.py              # Product V1 历史实现，迁移期保留（--legacy-v1）
 │  ├─ product_v2_server.py              # V2 无状态 HTTP 适配器：静态资源 + /api/health + capabilities + semantic/analyze + 图像网关 + review/candidate（V2.5.2）
-│  └─ product_v2/                       # V2 前端静态资源；domain/prompt.js 是 Prompt 编译与人工编辑唯一权威（V2.3.4 / V2.3.6）、domain/confirm.js 是生成前确认唯一权威（V2.3.5）、domain/review.js 是确定性校验与 VLM 复核映射（规则注册表 / ReviewReport）唯一权威（V2.5.1 / V2.5.2）；vendor/ 已 vendored fflate 0.8.3（SEL-008）
+│  └─ product_v2/                       # V2 前端静态资源；domain/prompt.js 是 Prompt 编译与人工编辑唯一权威（V2.3.4 / V2.3.6）、domain/confirm.js 是生成前确认唯一权威（V2.3.5）、domain/review.js 是确定性校验与 VLM 复核映射（规则注册表 / ReviewReport）唯一权威（V2.5.1 / V2.5.2）、domain/compare.js 是候选比较与审核清单排序的视图模型唯一权威（先看顺序仍取自 review.js 的 REVIEW_SEVERITY_ORDER，V2.5.3）；vendor/ 已 vendored fflate 0.8.3（SEL-008）
 ├─ src/
 │  ├─ product_v2_contracts.py           # 领域与 API 契约（目标）
 │  ├─ providers/                        # 语义链路已落地（v2_semantic / v2_dashscope_semantic / v2_fake_semantic）；图像网关已落地（v2_image / v2_dashscope_image / v2_fake_image）；复核链路已落地（v2_review / v2_dashscope_review / v2_fake_review，共享装配 v2_langchain_chat，SEL-011）；错误词表唯一权威 = v2_errors.py
