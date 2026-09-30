@@ -1,0 +1,35 @@
+amz-listing-kit Product V2 V2.4.1 stateless image gateway
+NOT-AUTHORITY: point-in-time verification evidence only
+observed_at: 2026-09-30T13:44:21
+status: passed
+model_calls: 0 · network_calls: 0 (fake provider + injected transport)
+json: evals/product-v2/v2.4.1-image-gateway-20260930-134149-v245-transport-fix.json
+
+CHECKS
+- [PASS] V2.4.1-01 capabilities 暴露图像网关：合同、端点、provider 与参考图能力
+- [PASS] V2.4.1-02 提交返回任务身份，且不把上游签名结果地址外发
+- [PASS] V2.4.1-03 取回结果不依赖先查询：PNG 字节与 hash / 身份响应头一致
+- [PASS] V2.4.1-04 查询返回权威状态与结果数量（仍然只有身份，没有地址）
+- [PASS] V2.4.1-05 确定性：同一 action_id 两次提交得到同一任务身份
+- [PASS] V2.4.1-06 输入拒绝矩阵：十个非法提交全部 400 input_rejected 且 unknown=false
+- [PASS] V2.4.1-07 目录 / 工作空间字段被拒，且哨兵目录未被读取或改写
+- [PASS] V2.4.1-08 超过字节上限的提交被拒（400 input_rejected，不调用上游）
+- [PASS] V2.4.1-09 提交未确认：504 + unknown=true + requires_review，且不伪造任务身份
+- [PASS] V2.4.1-10 查询未确认：504 + unknown=true（不猜结果、不落失败）
+- [PASS] V2.4.1-11 上游明确失败是数据：200 + status=FAILED + 错误说明，仍不返回地址
+- [PASS] V2.4.1-12 没有成功结果时取回被拒：502 + provider_failed(fatal)
+- [PASS] V2.4.1-13 结果下载失败可重试：502 + provider_failed(retryable)
+- [PASS] V2.4.1-14 真实适配器提交形状：异步头、模型、参考图 data URL、参数与任务身份
+- [PASS] V2.4.1-15 上游错误分类：401=fatal / 429 提交可重试 / 500 与超时=Unknown / 任务号不符=Unknown
+- [PASS] V2.4.1-16 非受信结果地址不下发下载请求（RESULT_URL_MISSING，只发生一次状态查询）
+- [PASS] V2.4.1-17 结果取回：先查权威状态再下载受信地址，返回 PNG 字节
+- [PASS] V2.4.1-18 非 PNG 结果进制失败（不做“就当它是图片”的宽容）
+- [PASS] V2.4.1-19 未配置密钥：capabilities 仍 200，图像 provider configured=false
+- [PASS] V2.4.1-20 未配置密钥时提交 503 PROVIDER_NOT_CONFIGURED（没有发图）
+- [PASS] V2.4.1-21 注册表选择：默认 dashscope-image、环境变量可切 fake-image，构造不联网
+- [PASS] V2.4.1-22 正式入口自检全过（包含图像路由：提交/查询/取回/拒绝/未配置）
+- [PASS] V2.4.1-24 默认 HTTP 传输是函数也能工作（真实提交不再 AttributeError 变 500）
+- [PASS] V2.4.1-23 磁盘不变量：整轮前后仓库 manifest 零差异（服务不落任何用户状态）
+
+BOUNDARY
+证明图像网关在真实 HTTP 上可用且无状态：提交只返回任务身份（provider 与 model 身份、task id、状态、结果数量、错误与 request id），签名结果地址只在进程内使用；查询与取回各自独立，取回结果不依赖先前是否查询过；输入里的目录/工作空间字段、参考图数量与内容、尺寸、提示词长度与请求体上限都被拒绝且不调用上游；上游 4xx 是明确失败（429 与欠费可重试），5xx、连接中断、任务号不符与无法解析都归 Unknown 并要求人工核对，绝不自动重提；未配置密钥时 capabilities 仍 200 且明确configured=false，提交返回 503 PROVIDER_NOT_CONFIGURED。真实适配器的请求形状与错误分类由注入的假 transport 断言，整轮 0 次真实模型调用、0 次网络请求、仓库文件 manifest 零差异。不证明：真实出图质量、真实参考图是否被上游接受、候选 Blob、审核报告、返工与交付 ZIP——这些属于 V2.4.2 起的批次。

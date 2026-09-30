@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import base64
 import re
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from typing import Any, Protocol
 from urllib.parse import quote, urlsplit
 
@@ -45,6 +45,31 @@ def _requests_transport(method: str, url: str, *, headers: Mapping[str, str],
                         allow_redirects: bool) -> Any:
     return requests.request(method, url, headers=dict(headers), json=json,
                             timeout=timeout, allow_redirects=allow_redirects)
+
+
+class _FunctionTransport:
+    """把「函数式」HTTP 传输规范化成 Transport 协议对象（默认 transport 就是一个函数）。"""
+
+    __slots__ = ("_call",)
+
+    def __init__(self, call: Callable[..., Any]) -> None:
+        self._call = call
+
+    def request(self, method: str, url: str, *, headers: Mapping[str, str],
+                json: Mapping[str, Any] | None, timeout: float,
+                allow_redirects: bool) -> Any:
+        return self._call(method, url, headers=headers, json=json, timeout=timeout,
+                          allow_redirects=allow_redirects)
+
+
+def _as_transport(transport: Transport | None) -> Transport:
+    """函数式与对象式传输都归一成带 ``request`` 的对象；默认走 ``_requests_transport``。"""
+
+    if transport is None:
+        return _FunctionTransport(_requests_transport)
+    if callable(transport) and not hasattr(transport, "request"):
+        return _FunctionTransport(transport)
+    return transport
 
 
 def _status_code(response: Any) -> int:
@@ -153,7 +178,7 @@ class DashScopeImageProvider:
             raise ValueError("图像网关超时必须是正数。") from None
         if self.timeout <= 0:
             raise ValueError("图像网关超时必须是正数。")
-        self._transport = transport if transport is not None else _requests_transport
+        self._transport = _as_transport(transport)
 
     # ------------------------------------------------------------ 能力与就绪
 

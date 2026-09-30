@@ -496,6 +496,51 @@ def main() -> int:
     check("V2.4.1-22", "正式入口自检全过（包含图像路由：提交/查询/取回/拒绝/未配置）",
           entry["rc"] == 0 and any("通过。" in line for line in entry["tail"]), entry)
 
+    # 默认 transport 回归：真实装配用的是模块级「函数式」传输，必须被规范化成 Transport 协议，
+    # 否则真实提交会在 _call 里 AttributeError 变成 500（V2.4.5 真实闭环首跑发现）。
+    import src.providers.v2_dashscope_image as adapter_module
+
+    class StubRequests:
+        """只实现 request() 的 requests 替身：证明默认 transport 走的是真实 HTTP 包装。"""
+
+        def __init__(self, responses: list) -> None:
+            self.responses = list(responses)
+            self.calls: list[dict] = []
+
+        def request(self, method: str, url: str, **kwargs):  # noqa: A002
+            self.calls.append({"method": method, "url": url})
+            item = self.responses.pop(0)
+            if isinstance(item, BaseException):
+                raise item
+            return item
+
+    default_stub = StubRequests([
+        Response(200, {"output": {"task_id": "task-default-transport", "task_status": "RUNNING"}},
+                 headers={"X-Request-Id": "req-default-1"}),
+    ])
+    original_requests = adapter_module.requests
+    adapter_module.requests = default_stub
+    try:
+        default_provider = create_default_image_provider(
+            environ={"DASHSCOPE_API_KEY": "test-key"})
+        reference = png_bytes("verifier-ref")
+        default_task = default_provider.submit(SubmitRequest(
+            action_id="verify-default-transport-1",
+            prompt="默认传输规范化回归。",
+            references=[{"role": "primary", "media_type": "image/png",
+                         "sha256": hashlib.sha256(reference).hexdigest(),
+                         "data_base64": base64.b64encode(reference).decode("ascii")}],
+            size="1344*1344"))
+    finally:
+        adapter_module.requests = original_requests
+    check("V2.4.1-24",
+          "默认 HTTP 传输是函数也能工作（真实提交不再 AttributeError 变 500）",
+          default_task.task_id == "task-default-transport"
+          and default_task.status == "RUNNING"
+          and len(default_stub.calls) == 1
+          and default_stub.calls[0]["method"] == "POST",
+          {"task": default_task.to_dict(), "calls": len(default_stub.calls)})
+
     after = repo_manifest()
     added = sorted(set(after) - set(before))
     removed = sorted(set(before) - set(after))
