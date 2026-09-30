@@ -681,6 +681,58 @@ select:focus-visible, summary:focus-visible, .link-button:focus-visible {
 
 .badge.is-review-unchecked { background: #eceef2; color: #4b5563; }
 
+/* 单图返工（V2.5.4） */
+
+.rework-panel {
+  margin-top: 10px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  display: grid;
+  gap: 8px;
+}
+
+.rework-head { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+
+.rework-head h4 { margin: 0; font-size: 15px; }
+
+.rework-head-actions { margin-left: auto; display: inline-flex; gap: 6px; align-items: center; }
+
+.rework-problems { border: 0; padding: 0; margin: 0; }
+
+.rework-problems legend { padding: 0; }
+
+.rework-problem-options { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 4px; }
+
+.rework-problem { margin: 0; display: inline-flex; align-items: center; gap: 4px; }
+
+.rework-panel .field { margin-top: 0; }
+
+.rework-panel textarea {
+  width: 100%;
+  font: inherit;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  resize: vertical;
+}
+
+.rework-panel .toolbar button { padding: 6px 10px; font-size: 13px; }
+
+.rework-panel .toolbar button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.rework-preview {
+  display: grid;
+  gap: 6px;
+  border: 1px dashed var(--line);
+  border-radius: 6px;
+  padding: 8px;
+  background: #fafbfc;
+}
+
+.rework-preview .prompt-text { margin: 0; max-height: 260px; overflow: auto; }
+
 @media (max-width: 900px) {
   .compare-body { grid-template-columns: minmax(0, 1fr); }
 }
@@ -690,3 +742,6 @@ select:focus-visible, summary:focus-visible, .link-button:focus-visible {
   .compare-references img { width: 84px; }
   .compare-references img { height: 84px; }
 }
+
+/* hidden 属性必须真的隐藏：作者样式里的 display 会覆盖浏览器默认的 [hidden] 规则。 */
+[hidden] { display: none !important; }

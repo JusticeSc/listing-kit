@@ -33,6 +33,8 @@ import {
   PROVIDER_PROFILES,
   REFERENCE_ROLES,
   REVIEW_REPORT_DOCUMENT_KIND,
+  REWORK_CONTRACT_VERSION,
+  REWORK_PROBLEMS,
   SHOT_TEMPLATES,
   SUITE_PLAN_DOCUMENT_ID,
   STYLE_SPEC_DOCUMENT_ID,
@@ -55,6 +57,7 @@ import {
   buildEditedPromptRecord,
   buildPromptRecord,
   buildProductBrief,
+  buildReworkDirective,
   buildReviewReport,
   canAddSlot,
   canConfirmSlot,
@@ -96,12 +99,16 @@ import {
   reviewChecklist,
   reviewIsCurrent,
   reviewSummaryText,
+  reworkIsCurrent,
+  reworkSummaryText,
   removeShot,
   requestSnapshotOf,
   selectReferences,
   seedSuitePlan,
   specChangeProjection,
   sortFindings,
+  suggestReworkProblems,
+  suggestedReworkDirection,
   suitePlanSummary,
   suiteSpecDigest,
   styleSpecDiff,
@@ -128,6 +135,7 @@ const IMAGE_SUBMIT_PATH = "/api/v2/images/submit";
 const IMAGE_STATUS_PATH = "/api/v2/images/status";
 const IMAGE_RESULT_PATH = "/api/v2/images/result";
 const REVIEW_PATH = "/api/v2/review/candidate";
+const REWORK_CONFIRM_PREFIX = "rework:";
 
 const DRAFT_DEBOUNCE_MS = 600;
 const ANALYZE_MAX_SLOTS = 12;
@@ -308,6 +316,22 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     compareCandidates: document.getElementById("compare-candidates"),
     compareChecklist: document.getElementById("compare-checklist"),
     compareStatus: document.getElementById("compare-status"),
+    reworkOpen: document.getElementById("rework-open"),
+    reworkPanel: document.getElementById("rework-panel"),
+    reworkBasis: document.getElementById("rework-basis"),
+    reworkProblems: document.getElementById("rework-problems"),
+    reworkDirection: document.getElementById("rework-direction"),
+    reworkPreview: document.getElementById("rework-preview"),
+    reworkEdit: document.getElementById("rework-edit"),
+    reworkSubmit: document.getElementById("rework-submit"),
+    reworkReset: document.getElementById("rework-reset"),
+    reworkCancel: document.getElementById("rework-cancel"),
+    reworkPreviewBox: document.getElementById("rework-preview-box"),
+    reworkPreviewMeta: document.getElementById("rework-preview-meta"),
+    reworkPreviewText: document.getElementById("rework-preview-text"),
+    reworkSummary: document.getElementById("rework-summary"),
+    reworkStatus: document.getElementById("rework-status"),
+    reworkError: document.getElementById("rework-error"),
   };
 
   let project = null;
@@ -341,6 +365,11 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
   let compareShotId = null;
   let compareCandidateId = null;
   let compareToken = 0;
+  let reworkDrafts = new Map();
+  let reworkConfirmations = new Map();
+  let reworkInFlight = false;
+  let reworkShotId = null;
+  let reworkSource = null;
   let previewUrls = new Map();
   let batchState = null;
   let busy = false;
@@ -1742,43 +1771,69 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     });
   }
 
+  /**
+   * 纯编译一张图的 Prompt（不写记录）：预览、保存与提交共用同一条编译路径。
+   */
+  async function compileShotPrompt(shotId, options = {}) {
+    const shot = suitePlan.shots.find((item) => item.shot_id === shotId);
+    if (!shot) throw new Error("找不到这张图，可能已被删除。");
+    const brief = buildProductBrief(slotEntries());
+    const specEntry = shotSpecEntry(shotId);
+    const compiled = compilePrompt({
+      brief: brief,
+      shot: shot,
+      styleSpec: styleSpec,
+      shotSpec: specEntry ? specEntry.spec : null,
+      context: suiteContext(),
+      versions: {
+        suite_version: suiteVersion,
+        style_version: styleVersion,
+        shot_spec_version: specEntry ? specEntry.version : null,
+      },
+      ...(options.rework ? { rework: options.rework } : {}),
+    });
+    const references = selectReferences(shot, intake.references.map((item) => ({
+      role: item.role, sha256: item.asset_sha256,
+    })));
+    const snapshot = requestSnapshotOf(compiled, { references: references });
+    const hash = await promptHash(snapshot, { digest: sha256Hex });
+    const payload = buildPromptRecord({ compiled: compiled, snapshot: snapshot, hash: hash });
+    const problems = checkPromptRecord(payload);
+    if (problems.length > 0) throw new Error(problems[0].message);
+    return { payload: payload, compiled: compiled, references: references };
+  }
+
+  /** 保存一条已编译的 Prompt 版本；版本号由 repository 递增，旧版本保留。 */
+  async function savePromptPayload(shotId, payload) {
+    const saved = await repository.documents.save(projectId, {
+      kind: PROMPT_KIND, documentId: shotId, payload: payload,
+    });
+    promptVersions.set(shotId, { record: payload, version: saved.version });
+    return saved;
+  }
+
+  /**
+   * 编译并保存一张图的 Prompt 版本（V2.5.4 起可选带返工指令）。
+   * 纯编译 + 保存；失败抛错交给调用方，界面文案不在这一层写死。
+   */
+  async function compileAndSavePrompt(shotId, options = {}) {
+    const result = await compileShotPrompt(shotId, options);
+    const saved = await savePromptPayload(shotId, result.payload);
+    return { saved: saved, payload: result.payload, compiled: result.compiled,
+             references: result.references };
+  }
+
   async function handleCompilePrompt(shotId) {
     if (!projectId || !suitePlan || !understandingReady) return;
     clearError(elements.promptError);
     try {
-      const shot = suitePlan.shots.find((item) => item.shot_id === shotId);
-      if (!shot) throw new Error("找不到这张图，可能已被删除。");
-      const brief = buildProductBrief(slotEntries());
-      const specEntry = shotSpecEntry(shotId);
-      const compiled = compilePrompt({
-        brief: brief,
-        shot: shot,
-        styleSpec: styleSpec,
-        shotSpec: specEntry ? specEntry.spec : null,
-        context: suiteContext(),
-        versions: {
-          suite_version: suiteVersion,
-          style_version: styleVersion,
-          shot_spec_version: specEntry ? specEntry.version : null,
-        },
-      });
-      const references = selectReferences(shot, intake.references.map((item) => ({
-        role: item.role, sha256: item.asset_sha256,
-      })));
-      const snapshot = requestSnapshotOf(compiled, { references: references });
-      const hash = await promptHash(snapshot, { digest: sha256Hex });
-      const payload = buildPromptRecord({ compiled: compiled, snapshot: snapshot, hash: hash });
-      const problems = checkPromptRecord(payload);
-      if (problems.length > 0) throw new Error(problems[0].message);
-      const saved = await repository.documents.save(projectId, {
-        kind: PROMPT_KIND, documentId: shotId, payload: payload,
-      });
-      promptVersions.set(shotId, { record: payload, version: saved.version });
+      const result = await compileAndSavePrompt(shotId);
       renderPrompts();
       renderConfirm();
       renderAttempts();
       await deriveAndApplyState();
-      elements.promptStatus.textContent = "已保存 " + shotId + " 的 Prompt 版本 v" + saved.version + "。";
+      elements.promptStatus.textContent = "已保存 " + shotId + " 的 Prompt 版本 v"
+        + result.saved.version + "。";
     } catch (error) {
       showError(elements.promptError,
         (error && error.message) ? error.message + "（旧版本已保留）" : "编译未完成，旧版本已保留。");
@@ -1829,8 +1884,11 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
 
   /* ---------------------------------------------------------- 生成前确认 */
 
-  /** 当前确认单：界面、状态派生与提交都读同一份投影，不各自重算。 */
-  function buildCurrentSheet() {
+  /**
+   * 确认单投影：界面、状态派生与提交都读同一份，不各自重算。
+   * shotIds 给定时只投影这些图（V2.5.4 单图返工），否则是整套。
+   */
+  function buildScopedSheet(shotIds) {
     if (!suitePlan) return null;
     const entries = [...promptVersions.entries()].map(([shotId, entry]) => ({
       shot_id: shotId, record: entry.record, version: entry.version,
@@ -1844,7 +1902,12 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
       promptEntries: entries,
       context: suiteContext(),
       currentBasisByShot: basisByShot,
+      shotIds: shotIds,
     });
+  }
+
+  function buildCurrentSheet() {
+    return buildScopedSheet(null);
   }
 
   /** 确认记录是否仍然对得上「这一批将要提交的东西」。 */
@@ -1857,6 +1920,27 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     } catch (error) {
       return false;
     }
+  }
+
+  /**
+   * 这张图的返工确认是否仍然有效：与整套确认同一套「快照逐字比对」判定，
+   * 只是作用域只有这一张图——改别的图不会让它失效，改这张图一定会失效。
+   */
+  function reworkConfirmationIsCurrent(shotId) {
+    const entry = reworkConfirmations.get(shotId);
+    if (!entry) return false;
+    try {
+      const sheet = buildScopedSheet([shotId]);
+      if (!sheet || !sheet.can_submit) return false;
+      return !confirmationStaleness(entry.payload, confirmationSnapshot(sheet)).stale;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  /** 提交这张图的条件：整套确认有效，或这张图有自己有效的返工确认。 */
+  function confirmationIsCurrentForShot(shotId) {
+    return confirmationIsCurrent() || reworkConfirmationIsCurrent(shotId);
   }
 
   function renderConfirm() {
@@ -2582,6 +2666,24 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     return COMPARE_STATE_TEXT[row.review_state] || row.review_state;
   }
 
+  /**
+   * 返工入口的状态：只有「正看着一条有字节的候选」才可发起。
+   * 这里只投影 candidate_id + sha256，不写任何记录（写记录在相邻的独立返工区）。
+   */
+  function updateReworkEntry(shot, row) {
+    const available = Boolean(shot && row && row.record && row.asset_sha256);
+    elements.reworkOpen.disabled = !available;
+    if (available) {
+      elements.reworkOpen.dataset.shotId = shot.shot_id;
+      elements.reworkOpen.dataset.candidateId = row.candidate_id;
+      elements.reworkOpen.dataset.candidateSha256 = row.asset_sha256;
+    } else {
+      delete elements.reworkOpen.dataset.shotId;
+      delete elements.reworkOpen.dataset.candidateId;
+      delete elements.reworkOpen.dataset.candidateSha256;
+    }
+  }
+
   function openCompare(shotId, options = {}) {
     compareShotId = shotId;
     compareCandidateId = options.candidateId || null;
@@ -2594,6 +2696,10 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
 
   /** 切换查看目标：不改规则、不写存储，只换清单与 aria 选中态，避免重建列表时丢焦点。 */
   function selectCompareCandidate(candidateId, options = {}) {
+    // 换一条候选时收起返工区（它绑定打开那一刻的候选身份），草稿保留。
+    if (reworkShotId !== null && candidateId !== compareCandidateId) {
+      closeReworkPanel({ focusCandidate: false });
+    }
     compareCandidateId = candidateId;
     const tabs = elements.compareCandidates.querySelectorAll('[role="tab"]');
     for (const tab of tabs) {
@@ -2606,7 +2712,9 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     const rows = inventory.rowsByShotId[compareShotId] || [];
     const shot = ((suitePlan && suitePlan.shots) || [])
       .find((item) => item && item.shot_id === compareShotId) || null;
-    renderCompareChecklist(shot, rows.find((row) => row.candidate_id === candidateId) || null);
+    const row = rows.find((item) => item.candidate_id === candidateId) || null;
+    renderCompareChecklist(shot, row);
+    updateReworkEntry(shot, row);
     elements.compareStatus.textContent = "";
   }
 
@@ -2618,6 +2726,8 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
       elements.compareChecklist.innerHTML = "";
       elements.compareReferences.innerHTML = "";
       elements.compareBasisTitle.textContent = "";
+      closeReworkPanel({ focusCandidate: false });
+      updateReworkEntry(null, null);
       return;
     }
     const shot = ((suitePlan && suitePlan.shots) || [])
@@ -2655,7 +2765,9 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     elements.compareJump.dataset.targetShot = nextShot || "";
     elements.compareStatus.textContent = "";
     renderCompareCandidates(rows, targetId);
-    renderCompareChecklist(shot, rows.find((row) => row.candidate_id === targetId) || null);
+    const targetRow = rows.find((row) => row.candidate_id === targetId) || null;
+    renderCompareChecklist(shot, targetRow);
+    updateReworkEntry(shot, targetRow);
     refreshCompareReferences(shot).catch(handleInternalError);
   }
 
@@ -2995,21 +3107,6 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
               }
             });
             row.append(reviewButton);
-            if (candidateChainOf(item.shot_id).length) {
-              const compareButton = createElement("button", {
-                text: "比较候选（" + candidateChainOf(item.shot_id).length + "）",
-                attrs: {
-                  type: "button",
-                  "data-compare-action": item.shot_id,
-                  "aria-expanded": String(compareShotId === item.shot_id),
-                  title: "对比这张图的参考图、历史候选与审核清单",
-                },
-              });
-              compareButton.addEventListener("click", (event) => {
-                openCompare(item.shot_id, { focus: event.detail === 0 });
-              });
-              row.append(compareButton);
-            }
           } else if (stored) {
             row.append(createElement("p", {
               className: "meta attempt-note",
@@ -3021,6 +3118,22 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
               text: "上游已完成，候选字节尚未保存到本地。",
             }));
           }
+        }
+        // 比较区只看候选链：最新一次尝试是失败/未知时，历史候选仍然可以比较与返工。
+        if (candidateChainOf(item.shot_id).length) {
+          const compareButton = createElement("button", {
+            text: "比较候选（" + candidateChainOf(item.shot_id).length + "）",
+            attrs: {
+              type: "button",
+              "data-compare-action": item.shot_id,
+              "aria-expanded": String(compareShotId === item.shot_id),
+              title: "对比这张图的参考图、历史候选与审核清单",
+            },
+          });
+          compareButton.addEventListener("click", (event) => {
+            openCompare(item.shot_id, { focus: event.detail === 0 });
+          });
+          row.append(compareButton);
         }
         if (state === ATTEMPT_STATES.pending_submit && !record.task_id) {
           row.append(createElement("p", {
@@ -3039,7 +3152,8 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
       const actions = createElement("div", { className: "toolbar attempt-actions" });
       const batchActive = Boolean(batchState && batchState.active);
       const inFlight = attemptInFlight.has(item.shot_id) || busy || batchActive;
-      const canSubmit = confirmed && Boolean(entry) && !inFlight;
+      const shotConfirmed = confirmationIsCurrentForShot(item.shot_id);
+      const canSubmit = shotConfirmed && Boolean(entry) && !inFlight;
       const reconcileMode = record ? attemptReconcileMode(record) : ATTEMPT_RECONCILE_MODES.none;
       const stuckPending = state === ATTEMPT_STATES.pending_submit && !record.task_id;
       if (reconcileMode === ATTEMPT_RECONCILE_MODES.by_task) {
@@ -3097,9 +3211,10 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
         button.disabled = true;
         actions.append(button);
       }
-      if (!confirmed) {
+      if (!shotConfirmed) {
         actions.append(createElement("span", {
-          className: "meta", text: "生成前确认缺失或已过期：先回到上面重新确认。",
+          className: "meta",
+          text: "这张图还没有有效的生成前确认：先在「生成前确认」确认整套，或在候选比较面板里走一次返工确认。",
         }));
       } else if (!entry) {
         actions.append(createElement("span", { className: "meta", text: "先编译并保存这张图的 Prompt。" }));
@@ -3140,7 +3255,9 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     if (attemptInFlight.has(shotId)) return { skipped: true, reason: "in_flight" };
     attemptInFlight.add(shotId);
     try {
-      if (!confirmationIsCurrent()) return { skipped: true, reason: "no_confirmation" };
+      if (!confirmationIsCurrentForShot(shotId)) {
+        return { skipped: true, reason: "no_confirmation" };
+      }
       const blocking = blockingAttemptFor(allAttemptRecords(), shotId);
       // 显式「放弃核对」只允许放弃没有任务编号、无法核对的 pending 记录；
       // 有 task id 的记录仍然只能先核对（防重复提交的语义不变）。
@@ -3331,6 +3448,362 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
         + result.note + "）。";
     }
     return result;
+  }
+
+  /* --------------------------------------------- 单图返工闭环（V2.5.4） */
+
+  /**
+   * 返工区与比较区相邻但独立：比较区只投影、只读；这里才写 Prompt 版本、
+   * 单图确认与新的生成尝试。草稿按图留在内存，预览只有用户确认时才落成版本。
+   */
+
+  function reworkConfirmId(shotId) {
+    return REWORK_CONFIRM_PREFIX + shotId;
+  }
+
+  /** 返工草稿按图保存；第一次打开时用报告的先看项预选问题与方向，之后保留用户改动。 */
+  function reworkDraftOf(shotId, row) {
+    let draft = reworkDrafts.get(shotId);
+    if (!draft) {
+      draft = {
+        problems: suggestReworkProblems(row ? row.report : null),
+        direction: suggestedReworkDirection(row ? row.report : null),
+        directive: null,
+        preview: null,
+      };
+      reworkDrafts.set(shotId, draft);
+    }
+    return draft;
+  }
+
+  function reworkShotRow(shotId, candidateId) {
+    const inventory = compareInventory();
+    const rows = inventory.rowsByShotId[shotId] || [];
+    return rows.find((item) => item.candidate_id === candidateId) || rows[0] || null;
+  }
+
+  function reworkSummaryOf(draft) {
+    if (draft && draft.preview) {
+      return "预览已就绪：确认并生成会把它保存为 Prompt 新版本（旧版本保留），"
+        + "只重新生成这张图；改过问题或方向后需要重新预览。";
+    }
+    return "选好问题或写下方向 → 预览返工 Prompt → 确认并生成这张图。";
+  }
+
+  function updateReworkControls(shotId, draft) {
+    if (!draft) return;
+    const hasReason = draft.problems.length > 0
+      || String(elements.reworkDirection.value || "").trim().length > 0;
+    const busy = reworkInFlight;
+    elements.reworkPreview.disabled = busy || !hasReason;
+    elements.reworkEdit.disabled = busy || !draft.preview;
+    elements.reworkSubmit.disabled = busy || !draft.preview;
+    elements.reworkReset.disabled = busy;
+    elements.reworkCancel.disabled = busy;
+    elements.reworkSummary.textContent = reworkSummaryOf(draft);
+  }
+
+  /** 输入变了：旧预览不再代表将要发送的内容，必须重新预览。 */
+  function dirtyReworkDraft(draft) {
+    if (!draft || !draft.preview) return;
+    draft.preview = null;
+    draft.directive = null;
+    elements.reworkPreviewBox.hidden = true;
+    elements.reworkStatus.hidden = true;
+  }
+
+  function renderReworkPreviewBox(draft) {
+    if (!draft || !draft.preview) {
+      elements.reworkPreviewBox.hidden = true;
+      return;
+    }
+    elements.reworkPreviewBox.hidden = false;
+    elements.reworkPreviewMeta.textContent =
+      "将保存为 Prompt 新版本（旧版本保留）并只重新生成这张图 · 参考图 "
+      + draft.preview.references + " 张 · 全文 " + draft.preview.text.length + " 字";
+    elements.reworkPreviewText.textContent = draft.preview.text;
+  }
+
+  function renderReworkProblems(shotId, draft) {
+    const box = elements.reworkProblems;
+    const host = box.querySelector(".rework-problem-options") || box;
+    for (const node of Array.from(host.querySelectorAll("label.rework-problem"))) node.remove();
+    for (const problem of REWORK_PROBLEMS) {
+      const label = createElement("label", {
+        className: "check rework-problem",
+        attrs: { title: problem.hint, "data-problem-id": problem.id },
+      });
+      const input = createElement("input", {
+        attrs: { id: "rework-problem-" + problem.id, type: "checkbox", value: problem.id },
+      });
+      input.checked = draft.problems.indexOf(problem.id) >= 0;
+      input.addEventListener("change", () => {
+        if (input.checked) {
+          if (draft.problems.indexOf(problem.id) === -1) {
+            draft.problems = draft.problems.concat([problem.id]);
+          }
+        } else {
+          draft.problems = draft.problems.filter((id) => id !== problem.id);
+        }
+        dirtyReworkDraft(draft);
+        updateReworkControls(shotId, draft);
+      });
+      label.append(input, document.createTextNode(" " + problem.label));
+      host.append(label);
+    }
+  }
+
+  /** 入口：把当前正看着的候选（candidate_id + sha256）交给返工表单；只改内存状态。 */
+  function openReworkPanel() {
+    const shotId = elements.reworkOpen.dataset.shotId || compareShotId;
+    const candidateId = elements.reworkOpen.dataset.candidateId || compareCandidateId;
+    if (!shotId || !candidateId || reworkInFlight) return;
+    const row = reworkShotRow(shotId, candidateId);
+    if (!row || !row.record) {
+      elements.compareStatus.textContent = "这条候选已经不在了，先重新选择候选。";
+      return;
+    }
+    reworkShotId = shotId;
+    reworkSource = {
+      shot_id: shotId, candidate_id: row.candidate_id, asset_sha256: row.asset_sha256,
+      version: row.version === null || row.version === undefined ? null : row.version,
+    };
+    const draft = reworkDraftOf(shotId, row);
+    const panel = elements.reworkPanel;
+    panel.hidden = false;
+    panel.dataset.reworkContract = REWORK_CONTRACT_VERSION;
+    panel.dataset.shotId = shotId;
+    panel.dataset.candidateId = row.candidate_id;
+    const basis = ["返工依据：候选 v" + (reworkSource.version === null ? "?" : reworkSource.version),
+                   "sha256 " + String(reworkSource.asset_sha256).slice(0, 12) + "…"];
+    if (row.top_finding) basis.push("先看：" + row.top_finding.title);
+    if (reworkConfirmationIsCurrent(shotId)) basis.push("这张图的返工确认仍然有效");
+    elements.reworkBasis.textContent = basis.join(" · ");
+    renderReworkProblems(shotId, draft);
+    if (elements.reworkDirection.value !== draft.direction) {
+      elements.reworkDirection.value = draft.direction;
+    }
+    renderReworkPreviewBox(draft);
+    elements.reworkStatus.hidden = true;
+    clearError(elements.reworkError);
+    updateReworkControls(shotId, draft);
+    const first = elements.reworkProblems.querySelector('input[type="checkbox"]');
+    if (first) first.focus();
+    panel.scrollIntoView({ block: "nearest" });
+  }
+
+  /** 收起返工区：清掉未确认的预览；草稿（问题与方向）按图保留。 */
+  function closeReworkPanel({ focusCandidate = false } = {}) {
+    const shotId = reworkShotId;
+    const candidateId = reworkSource ? reworkSource.candidate_id : null;
+    reworkShotId = null;
+    reworkSource = null;
+    elements.reworkPanel.hidden = true;
+    elements.reworkPreviewBox.hidden = true;
+    elements.reworkStatus.hidden = true;
+    clearError(elements.reworkError);
+    const draft = shotId ? reworkDrafts.get(shotId) : null;
+    if (draft) {
+      draft.preview = null;
+      draft.directive = null;
+    }
+    if (focusCandidate && shotId) focusCompareCandidate(shotId, candidateId);
+  }
+
+  /** 收起后把焦点还给原候选：比较区还在就回到候选页签，否则回到该图的比较入口。 */
+  function focusCompareCandidate(shotId, candidateId) {
+    const tab = candidateId ? elements.compareCandidates.querySelector(
+      '[role="tab"][data-candidate-id="' + candidateId + '"]') : null;
+    if (tab) {
+      tab.focus();
+      return;
+    }
+    const entry = elements.attemptList.querySelector(
+      'button[data-compare-action="' + shotId + '"]');
+    if (entry) entry.focus();
+  }
+
+  /** 按建议重填：问题与方向回到报告先看项的默认值，预览作废。 */
+  function resetReworkDraft() {
+    const shotId = reworkShotId;
+    if (!shotId || reworkInFlight) return;
+    const row = reworkShotRow(shotId, reworkSource ? reworkSource.candidate_id : null);
+    reworkDrafts.delete(shotId);
+    const draft = reworkDraftOf(shotId, row);
+    renderReworkProblems(shotId, draft);
+    if (elements.reworkDirection.value !== draft.direction) {
+      elements.reworkDirection.value = draft.direction;
+    }
+    elements.reworkPreviewBox.hidden = true;
+    elements.reworkStatus.hidden = true;
+    clearError(elements.reworkError);
+    updateReworkControls(shotId, draft);
+  }
+
+  function handleReworkCancel() {
+    if (reworkInFlight) return;
+    closeReworkPanel({ focusCandidate: true });
+  }
+
+  /** 预览：按当前问题与方向编译一次；只显示，不写记录。 */
+  async function handleReworkPreview() {
+    if (!projectId || !reworkShotId || reworkInFlight) return;
+    const shotId = reworkShotId;
+    clearError(elements.reworkError);
+    const row = reworkShotRow(shotId, reworkSource ? reworkSource.candidate_id : null);
+    if (!row || !row.record) {
+      showError(elements.reworkError, "返工依据已经不在，先回到比较区重新选择候选。");
+      return;
+    }
+    const draft = reworkDraftOf(shotId, row);
+    draft.direction = elements.reworkDirection.value;
+    reworkInFlight = true;
+    updateReworkControls(shotId, draft);
+    try {
+      const directive = buildReworkDirective({
+        directiveId: newActionId(),
+        shotId: shotId,
+        candidate: row.record,
+        report: row.report,
+        problems: draft.problems,
+        direction: draft.direction,
+        at: new Date().toISOString(),
+      });
+      const result = await compileShotPrompt(shotId, { rework: directive });
+      draft.directive = directive;
+      draft.preview = {
+        directive_id: directive.directive_id,
+        payload: result.payload,
+        references: result.references.length,
+        text: result.payload.compiled.text,
+      };
+      renderReworkPreviewBox(draft);
+      elements.reworkStatus.hidden = false;
+      elements.reworkStatus.textContent = "预览已就绪：确认并生成时会先把它保存为新版本，"
+        + "再只提交这一张图；预览本身没有写入任何记录。";
+    } catch (error) {
+      showError(elements.reworkError, (error && error.message)
+        ? error.message + "（预览未生成，旧版本与输入保留）"
+        : "预览没有生成，旧版本与输入保留。");
+    } finally {
+      reworkInFlight = false;
+      const current = reworkDrafts.get(shotId);
+      if (current) updateReworkControls(shotId, current);
+    }
+  }
+
+  /** 查看/编辑完整 Prompt：把这次预览落成版本，再把焦点交给这张图的人工编辑区。 */
+  async function handleReworkEdit() {
+    if (!projectId || !reworkShotId || reworkInFlight) return;
+    const shotId = reworkShotId;
+    const draft = reworkDrafts.get(shotId);
+    clearError(elements.reworkError);
+    if (!draft || !draft.preview) {
+      showError(elements.reworkError, "先预览返工 Prompt，再查看或编辑全文。");
+      return;
+    }
+    reworkInFlight = true;
+    updateReworkControls(shotId, draft);
+    try {
+      const latest = promptVersions.get(shotId) || null;
+      let version = latest ? latest.version : 0;
+      const fromPreview = Boolean(latest && latest.record.rework
+        && latest.record.rework.directive_id === draft.preview.directive_id);
+      if (!fromPreview) {
+        const saved = await savePromptPayload(shotId, draft.preview.payload);
+        version = saved.version;
+      }
+      renderPrompts();
+      renderConfirm();
+      const area = elements.promptList.querySelector(
+        '[data-shot-id="' + shotId + '"] textarea.prompt-edit-text');
+      elements.reworkStatus.hidden = false;
+      elements.reworkStatus.textContent = "已保存为 Prompt v" + version
+        + "；可以在下方「Prompt 预览与版本」里编辑全文并另存新版本。";
+      if (area) {
+        area.scrollIntoView({ block: "center" });
+        area.focus();
+      }
+    } catch (error) {
+      showError(elements.reworkError, (error && error.message) || "没有打开编辑区。");
+    } finally {
+      reworkInFlight = false;
+      const current = reworkDrafts.get(shotId);
+      if (current) updateReworkControls(shotId, current);
+    }
+  }
+
+  /**
+   * 确认并生成这张图：先确保这次返工已经落成 Prompt 版本（发送的永远是这张图最新的版本），
+   * 再写「只覆盖这张图」的确认记录、新建 Attempt 并核对一次结论；失败不影响旧候选。
+   */
+  async function handleReworkSubmit() {
+    if (!projectId || !reworkShotId || reworkInFlight) return;
+    const shotId = reworkShotId;
+    const sourceCandidateId = reworkSource ? reworkSource.candidate_id : null;
+    const draft = reworkDrafts.get(shotId);
+    clearError(elements.reworkError);
+    if (!draft || !draft.preview || !draft.directive) {
+      showError(elements.reworkError, "先预览返工 Prompt，再确认生成。");
+      return;
+    }
+    reworkInFlight = true;
+    updateReworkControls(shotId, draft);
+    try {
+      const latest = promptVersions.get(shotId) || null;
+      let version = latest ? latest.version : 0;
+      const fromPreview = Boolean(latest && latest.record.rework
+        && latest.record.rework.directive_id === draft.preview.directive_id);
+      if (!fromPreview) {
+        const saved = await savePromptPayload(shotId, draft.preview.payload);
+        version = saved.version;
+      }
+      const sheet = buildScopedSheet([shotId]);
+      if (!sheet || !Array.isArray(sheet.shots) || sheet.shots.length === 0) {
+        throw new Error("这张图已经不在套图方案里，返工没有提交。");
+      }
+      if (!sheet.can_submit) throw new Error("这张图当前还有阻断，不能提交返工。");
+      const snapshot = confirmationSnapshot(sheet);
+      const hash = await promptHash(snapshot, { digest: sha256Hex });
+      const payload = buildConfirmationRecord({
+        sheet: sheet, hash: hash, confirmedAt: new Date().toISOString(),
+      });
+      const problems = checkConfirmationRecord(payload);
+      if (problems.length > 0) throw new Error(problems[0].message);
+      const savedConfirm = await repository.documents.save(projectId, {
+        kind: CONFIRM_KIND, documentId: reworkConfirmId(shotId), payload: payload,
+      });
+      reworkConfirmations.set(shotId, { payload: payload, version: savedConfirm.version });
+      const outcome = await handleSubmitAttempt(shotId, {
+        note: "单图返工：" + reworkSummaryText(draft.directive).slice(0, 120),
+      });
+      if (outcome && outcome.skipped) {
+        throw new Error("返工提交被跳过（" + outcome.reason + "）。");
+      }
+      if (outcome && outcome.thrown) throw new Error(outcome.message);
+      await handleReconcileAttempt(shotId);
+      const latestAttempt = latestAttemptOf(shotId);
+      const state = latestAttempt ? latestAttempt.record.state : null;
+      draft.directive = null;
+      draft.preview = null;
+      reworkShotId = null;
+      reworkSource = null;
+      elements.reworkPanel.hidden = true;
+      elements.reworkPreviewBox.hidden = true;
+      elements.reworkStatus.hidden = true;
+      renderAttempts();
+      await deriveAndApplyState();
+      focusCompareCandidate(shotId, sourceCandidateId);
+      elements.compareStatus.textContent = "返工已提交（Prompt v" + version + " · "
+        + attemptStateLabel(state) + "）；旧候选保留，只有这张图新增了版本。";
+    } catch (error) {
+      showError(elements.reworkError,
+        (error && error.message) || "返工没有提交；旧候选与旧 Prompt 不受影响。");
+    } finally {
+      reworkInFlight = false;
+      const current = reworkDrafts.get(shotId);
+      if (current) updateReworkControls(shotId, current);
+    }
   }
 
   /* ------------------------------------------------------------ 整套批次执行 */
@@ -3753,6 +4226,26 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
       if (entry) entry.focus();
     });
     elements.compareCandidates.addEventListener("keydown", handleCompareKeydown);
+    elements.reworkOpen.addEventListener("click", () => { openReworkPanel(); });
+    elements.reworkPreview.addEventListener("click", () => { handleReworkPreview(); });
+    elements.reworkEdit.addEventListener("click", () => { handleReworkEdit(); });
+    elements.reworkSubmit.addEventListener("click", () => { handleReworkSubmit(); });
+    elements.reworkReset.addEventListener("click", () => { resetReworkDraft(); });
+    elements.reworkCancel.addEventListener("click", () => { handleReworkCancel(); });
+    elements.reworkPanel.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        handleReworkCancel();
+      }
+    });
+    elements.reworkDirection.addEventListener("input", () => {
+      const shotId = reworkShotId;
+      const draft = shotId ? reworkDrafts.get(shotId) : null;
+      if (!draft) return;
+      draft.direction = elements.reworkDirection.value;
+      dirtyReworkDraft(draft);
+      updateReworkControls(shotId, draft);
+    });
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "hidden" && saveTimer !== null) {
         saveIntakeNow().catch(() => {});
@@ -3786,7 +4279,14 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     compareShotId = null;
     compareCandidateId = null;
     compareToken += 1;
+    reworkDrafts = new Map();
+    reworkConfirmations = new Map();
+    reworkInFlight = false;
+    reworkShotId = null;
+    reworkSource = null;
     elements.comparePanel.hidden = true;
+    elements.reworkPanel.hidden = true;
+    elements.reworkPreviewBox.hidden = true;
     showAll = false;
     interaction = { slotId: null, mode: null };
 
@@ -3839,6 +4339,11 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     for (const record of confirmDocs) {
       if (record.document_id === CONFIRM_DOCUMENT_ID && record.payload && record.payload.fingerprint) {
         confirmRecord = { payload: record.payload, version: record.version };
+      } else if (record.document_id.startsWith(REWORK_CONFIRM_PREFIX)
+                 && record.payload && record.payload.fingerprint) {
+        reworkConfirmations.set(
+          record.document_id.slice(REWORK_CONFIRM_PREFIX.length),
+          { payload: record.payload, version: record.version });
       }
     }
     for (const shot of (suitePlan && Array.isArray(suitePlan.shots) ? suitePlan.shots : [])) {

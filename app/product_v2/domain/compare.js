@@ -119,6 +119,7 @@ export function compareRows({ candidates, reportsByCandidateId, attemptsByAction
       pending: compareStateOf(report) === "pending",
       top_finding: report ? topFinding(report) : null,
       report,
+      record,
     });
   }).filter(Boolean);
   rows.sort((left, right) => (compareRowRank(left) - compareRowRank(right))

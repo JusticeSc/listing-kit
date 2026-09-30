@@ -283,6 +283,7 @@
             <h4 id="compare-title">候选比较与审核清单</h4>
             <span id="compare-subject" class="meta"></span>
             <span class="compare-head-actions">
+              <button id="rework-open" type="button" disabled>用此候选发起返工</button>
               <button id="compare-jump" type="button">下一个待处理</button>
               <button id="compare-close" type="button">收起</button>
             </span>
@@ -301,6 +302,36 @@
             </div>
           </div>
           <p id="compare-status" class="meta" role="status"></p>
+        </section>
+        <section id="rework-panel" class="rework-panel" hidden aria-labelledby="rework-title">
+          <div class="rework-head">
+            <h4 id="rework-title">按问题返工这张图</h4>
+            <span id="rework-basis" class="meta"></span>
+            <span class="rework-head-actions">
+              <button id="rework-reset" type="button" class="link-button">按建议重填</button>
+              <button id="rework-cancel" type="button">取消</button>
+            </span>
+          </div>
+          <fieldset id="rework-problems" class="rework-problems">
+            <legend class="meta">问题分类（可多选；至少要选一类或写一句方向）</legend>
+            <div class="rework-problem-options"></div>
+          </fieldset>
+          <div class="field">
+            <label for="rework-direction">改进方向（可改写）</label>
+            <textarea id="rework-direction" rows="2" maxlength="300"></textarea>
+          </div>
+          <div class="toolbar">
+            <button id="rework-preview" type="button">预览返工 Prompt</button>
+            <button id="rework-edit" type="button">查看/编辑完整 Prompt</button>
+            <button id="rework-submit" type="button" class="primary" disabled>确认并生成这张图</button>
+          </div>
+          <div id="rework-preview-box" class="rework-preview" hidden>
+            <p id="rework-preview-meta" class="meta"></p>
+            <pre id="rework-preview-text" class="prompt-text"></pre>
+          </div>
+          <p id="rework-summary" class="meta"></p>
+          <p id="rework-status" class="status" role="status" hidden></p>
+          <p id="rework-error" class="error" role="alert" hidden></p>
         </section>
       </div>
       <p id="attempt-error" class="error" role="alert" hidden></p>

@@ -100,6 +100,9 @@ export function buildConfirmationSheet(input = {}) {
   if (!provider) invalid("Provider 档不存在：" + String(input.providerId));
   const context = isPlainObject(input.context) ? input.context : {};
   const currentBasisByShot = isPlainObject(input.currentBasisByShot) ? input.currentBasisByShot : {};
+  // 可选作用域（V2.5.4 单图返工）：只确认要重跑的那张图，不触及其它图片的确认状态。
+  const scopeShotIds = Array.isArray(input.shotIds) && input.shotIds.length > 0
+    ? [...new Set(input.shotIds.filter((item) => isNonEmptyString(item)))] : null;
   const entries = new Map();
   for (const item of Array.isArray(input.promptEntries) ? input.promptEntries : []) {
     if (isPlainObject(item) && isNonEmptyString(item.shot_id)) entries.set(item.shot_id, item);
@@ -108,6 +111,7 @@ export function buildConfirmationSheet(input = {}) {
   const shots = [];
   for (const [index, shot] of plan.shots.entries()) {
     if (!isPlainObject(shot)) continue;
+    if (scopeShotIds && !scopeShotIds.includes(shot.shot_id)) continue;
     const shotId = shot.shot_id;
     const label = isNonEmptyString(shot.label) ? shot.label : String(shotId);
     const role = roleDefinition(shot.role_id);
@@ -272,6 +276,7 @@ export function buildConfirmationSheet(input = {}) {
     can_submit: shots.length > 0 && blockedShots.length === 0,
     shots: shots,
     external_summary: externalSummary,
+    ...(scopeShotIds ? { scope_shot_ids: scopeShotIds } : {}),
     blockers: shots.flatMap((item) => item.blockers.map((blocker) => ({
       shot_id: item.shot_id,
       label: item.label,
@@ -300,6 +305,13 @@ export function checkConfirmationSheet(sheet) {
   }
   if (!isPlainObject(sheet.provider) || !isNonEmptyString(sheet.provider.model_id)) {
     pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.provider", "确认单缺少 Provider 档。");
+  }
+  if (sheet.scope_shot_ids !== undefined) {
+    if (!Array.isArray(sheet.scope_shot_ids) || sheet.scope_shot_ids.length === 0
+        || sheet.scope_shot_ids.some((item) => !isNonEmptyString(item))) {
+      pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.scope_shot_ids",
+        "作用域必须是至少一张图的 shot_id 数组。");
+    }
   }
   const shots = Array.isArray(sheet.shots) ? sheet.shots : null;
   if (!shots) {
@@ -379,6 +391,8 @@ export function confirmationSnapshot(sheet) {
   assertConfirmationSheet(sheet);
   return {
     schema_version: CONFIRM_SCHEMA_VERSION,
+    ...(Array.isArray(sheet.scope_shot_ids) && sheet.scope_shot_ids.length > 0
+      ? { scope_shot_ids: [...sheet.scope_shot_ids] } : {}),
     platform: { platform_id: sheet.platform.platform_id, version: sheet.platform.version },
     provider: { model_id: sheet.provider.model_id, version: sheet.provider.version },
     can_submit: sheet.can_submit === true,

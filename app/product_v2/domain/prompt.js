@@ -12,6 +12,7 @@
  */
 
 import { DOMAIN_ERROR_CODES, invalid } from "./errors.js";
+import { assertReworkDirective, reworkProblemLabel } from "./rework.js";
 import { checkShotDraft, evaluateShot, roleDefinition } from "./suite-plan.js";
 import {
   assertShotSpec,
@@ -348,6 +349,14 @@ export function promptBasisOf(input, platform, provider) {
     shot_spec_version: positive(versions.shot_spec_version),
     platform: { platform_id: platform.platform_id, version: platform.version },
     provider: { model_id: provider.model_id, version: provider.version },
+    ...(isPlainObject(input.rework) ? {
+      rework: {
+        directive_id: input.rework.directive_id,
+        candidate_id: input.rework.candidate_id,
+        candidate_sha256: input.rework.candidate_sha256,
+        problems: [...(Array.isArray(input.rework.problems) ? input.rework.problems : [])],
+      },
+    } : {}),
   };
 }
 
@@ -366,6 +375,11 @@ export function compilePrompt(input) {
   const styleSpec = input.styleSpec ? assertStyleSpec(input.styleSpec) : emptyStyleSpec();
   const shotSpec = input.shotSpec ? assertShotSpec(input.shotSpec) : emptyShotSpecFromShot(shot);
   problems.push(...checkSpecConflicts(shotSpec, styleSpec));
+  // 返工指令（V2.5.4）：只允许作用于本图，且必须已经通过领域校验。
+  const rework = isPlainObject(input.rework) ? assertReworkDirective(input.rework) : null;
+  if (rework && rework.shot_id !== shot.shot_id) {
+    invalid("返工指令属于另一张图，不能用于编译这张图的 Prompt。");
+  }
   const context = isPlainObject(input.context) ? input.context : {};
   const dependency = evaluateShot(shot, context);
   for (const item of dependency.blocking) {
@@ -459,6 +473,17 @@ export function compilePrompt(input) {
   }
   sections.push(section("shot_task", "本图任务", "instruction", taskLines.join(""), taskRefs));
 
+  if (rework) {
+    // 用户方向按「逐字引用」处理：括号内允许任意语言，语言策略仍然成立。
+    const problemText = rework.problems.map(reworkProblemLabel).join("、");
+    const reworkLines = ["本次返工要求（只改这张图，其它段落保持不变）："];
+    if (problemText) reworkLines.push("这次的问题属于" + quoteLiteral(problemText) + "；");
+    if (rework.direction) reworkLines.push("改进方向" + quoteLiteral(rework.direction) + "；");
+    reworkLines.push("不要重复出现上一条候选里已经被指出的同类问题。");
+    sections.push(section("rework_directive", "本次返工要求", "instruction", reworkLines.join(""),
+      ["rework:" + rework.directive_id, "candidate:" + rework.candidate_id, shotRef]));
+  }
+
   const textItems = [];
   const textRefs = [];
   for (const fact of boundFacts) {
@@ -542,6 +567,14 @@ export function compilePrompt(input) {
     source_refs: promptSourceRefs(sections),
     warnings: warnings,
     basis: promptBasisOf(input, platform, provider),
+    rework: rework ? Object.freeze({
+      contract_version: rework.contract_version,
+      directive_id: rework.directive_id,
+      candidate_id: rework.candidate_id,
+      candidate_sha256: rework.candidate_sha256,
+      problems: rework.problems,
+      direction: rework.direction,
+    }) : null,
   };
   const selfCheck = [
     ...checkCompiledPrompt(compiled),
@@ -595,6 +628,27 @@ export function checkCompiledPrompt(compiled) {
   if (!isPlainObject(compiled)) {
     pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$", "编译结果必须是对象。");
     return problems;
+  }
+  if (compiled.rework !== undefined && compiled.rework !== null) {
+    const rework = compiled.rework;
+    if (!isPlainObject(rework) || !isNonEmptyString(rework.contract_version)
+        || !isNonEmptyString(rework.directive_id) || !isNonEmptyString(rework.candidate_id)
+        || !isSha256Hex(rework.candidate_sha256)) {
+      pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.rework",
+        "返工块必须绑定指令与候选身份。");
+    } else if (!(Array.isArray(compiled.sections) ? compiled.sections : [])
+      .some((item) => item && item.key === "rework_directive")) {
+      pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.rework",
+        "带返工块的编译结果必须有「本次返工要求」段落。");
+    } else {
+      // 返工块与来源引用必须指向同一条指令与同一条候选，防止只改一处就冒充另一条返工。
+      const refs = Array.isArray(compiled.source_refs) ? compiled.source_refs : [];
+      if (refs.indexOf("rework:" + rework.directive_id) === -1
+          || refs.indexOf("candidate:" + rework.candidate_id) === -1) {
+        pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.rework",
+          "返工块必须与来源引用一致（rework:<id> 与 candidate:<id>）。");
+      }
+    }
   }
   problems.push(...sectionProblems(compiled.sections));
   if (compiled.origin !== "manual_edit") {
@@ -684,6 +738,7 @@ export function buildPromptRecord({ compiled, snapshot, hash } = {}) {
       language: compiled.language,
       platform: compiled.platform,
       provider: compiled.provider,
+      ...(compiled.rework ? { rework: compiled.rework } : {}),
     },
     request_snapshot: snapshot,
     hash: hash,
