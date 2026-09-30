@@ -35,6 +35,7 @@ _working/**
 evals/.tmp/
 evals/probes/*
 !evals/probes/project_state.py
+!evals/probes/docs_index.py
 evals/**/*.png
 evals/**/*.jpg
 evals/**/*.jpeg
