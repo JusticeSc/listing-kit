@@ -175,7 +175,12 @@ class ProductV2Handler(BaseHTTPRequestHandler):
         self.send_header("Cache-Control", "no-store")
         self.send_header("X-Content-Type-Options", "nosniff")
         self.end_headers()
-        self.wfile.write(payload)
+        try:
+            self.wfile.write(payload)
+        except (ConnectionError, OSError):
+            # 客户端在响应写出前断开（例如刷新打断了正在等待的提交）：这只是这一次连接的失败。
+            # 服务端无状态，不因此改变或撤销任何结论；浏览器侧按「没有收到响应」处理。
+            pass
 
     def _send_json(self, code: int, body: object) -> None:
         payload = json.dumps(body, ensure_ascii=False).encode("utf-8")

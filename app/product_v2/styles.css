@@ -500,3 +500,25 @@ select:focus-visible, summary:focus-visible, .link-button:focus-visible {
 .badge.is-attempt-failed { background: #fbe6e4; color: #8a2420; }
 .badge.is-attempt-unknown { background: #f4e9cd; color: #6b4e07; }
 .badge.is-attempt-stale { background: #efe6d5; color: #6b4e07; }
+
+/* 整套批次执行（V2.4.3） */
+
+.attempt-batch {
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  background: #fbfcfe;
+  display: grid;
+  gap: 6px;
+}
+
+.attempt-batch-actions { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+
+.attempt-batch-actions button { padding: 6px 10px; font-size: 13px; }
+
+.attempt-batch-actions button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+#batch-progress { margin: 0; }
+
+#batch-hint { margin: 0; color: #8a5a00; }

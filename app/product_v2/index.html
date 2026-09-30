@@ -261,12 +261,22 @@
     <section class="card" aria-labelledby="attempt-title">
       <div class="card-head">
         <h3 id="attempt-title">生成执行</h3>
-        <p class="meta">生成前确认通过后逐张提交。每次提交先登记这次生成（action id）与将发送的 Prompt 版本、参考图，再调用图像网关；拿到任务编号（task id）后可随时核对，刷新、换标签页或服务端重启都不影响结论。结果未知时不会自动重提，只提供「核对」与「新建 action」。</p>
+        <p class="meta">生成前确认通过后可以整套生成或逐张提交。每次提交先登记这次生成（action id）与将发送的 Prompt 版本、参考图，再调用图像网关；批次按套图顺序提交并逐图显示进度，拿到任务编号（task id）后可随时核对，刷新、换标签页或服务端重启都不影响结论。部分失败不丢成功结果；结果未知不会自动重提，只提供「核对」与「新建 action」。</p>
       </div>
       <p id="attempt-locked" class="empty" hidden>完成商品理解、编译 Prompt 并通过“生成前确认”后，才能提交生成。</p>
       <div id="attempt-editor" hidden>
         <p id="attempt-status" class="meta" role="status"></p>
         <p id="attempt-provider" class="meta"></p>
+        <div id="attempt-batch" class="attempt-batch" hidden>
+          <div class="toolbar attempt-batch-actions">
+            <button id="batch-run" type="button" class="primary">整套生成</button>
+            <button id="batch-stop" type="button" hidden>停止新增提交</button>
+            <button id="batch-reconcile" type="button" hidden>核对进行中</button>
+            <button id="batch-retry" type="button" hidden>重试失败</button>
+          </div>
+          <p id="batch-progress" class="meta" role="status"></p>
+          <p id="batch-hint" class="meta" hidden></p>
+        </div>
         <div id="attempt-list"></div>
       </div>
       <p id="attempt-error" class="error" role="alert" hidden></p>

@@ -38,6 +38,8 @@ import {
   attemptPromptStaleness,
   attemptReconcileMode,
   attemptStateLabel,
+  batchProgressText,
+  batchSubmitHalts,
   blockingAttemptFor,
   buildAttemptRecord,
   briefReadiness,
@@ -58,6 +60,7 @@ import {
   confirmationStaleness,
   copyShot,
   coreSlotDefinition,
+  deriveBatchState,
   emptyShotSpecFromShot,
   emptyStyleSpec,
   emptyProductInput,
@@ -130,7 +133,7 @@ const REVIEW_ORDER = Object.freeze({
   conflict: 0, unknown: 1, missing: 2, proposed: 3, confirmed: 4, superseded: 5,
 });
 
-const SCOPE_TEXT = "这一版覆盖“商品资料 → 商品理解 → 套图规划 → 规格 → Prompt → 生成前确认 → 单张生成与核对”；审核、返工与导出尚未接入。";
+const SCOPE_TEXT = "这一版覆盖“商品资料 → 商品理解 → 套图规划 → 规格 → Prompt → 生成前确认 → 整套生成与逐图进度（含单张核对）”；审核、返工与导出尚未接入。";
 
 function createElement(tag, options = {}, children = []) {
   const node = document.createElement(tag);
@@ -246,6 +249,13 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     attemptEditor: document.getElementById("attempt-editor"),
     attemptStatus: document.getElementById("attempt-status"),
     attemptProvider: document.getElementById("attempt-provider"),
+    batchBar: document.getElementById("attempt-batch"),
+    batchRun: document.getElementById("batch-run"),
+    batchStop: document.getElementById("batch-stop"),
+    batchReconcile: document.getElementById("batch-reconcile"),
+    batchRetry: document.getElementById("batch-retry"),
+    batchProgress: document.getElementById("batch-progress"),
+    batchHint: document.getElementById("batch-hint"),
     attemptList: document.getElementById("attempt-list"),
     attemptError: document.getElementById("attempt-error"),
   };
@@ -274,6 +284,7 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
   let confirmRecord = null;
   let attemptChains = new Map();
   let attemptInFlight = new Set();
+  let batchState = null;
   let busy = false;
   let saveTimer = null;
   let objectUrls = [];
@@ -2060,7 +2071,7 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     elements.attemptLocked.hidden = ready;
     elements.attemptEditor.hidden = !ready;
     elements.attemptList.innerHTML = "";
-    if (!ready) return;
+    if (!ready) { renderBatch(); return; }
     const summary = suitePlanSummary(suitePlan, suiteContext());
     const confirmed = confirmationIsCurrent();
     const provider = imageProviderBlock();
@@ -2145,7 +2156,8 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
         }));
       }
       const actions = createElement("div", { className: "toolbar attempt-actions" });
-      const inFlight = attemptInFlight.has(item.shot_id) || busy;
+      const batchActive = Boolean(batchState && batchState.active);
+      const inFlight = attemptInFlight.has(item.shot_id) || busy || batchActive;
       const canSubmit = confirmed && Boolean(entry) && !inFlight;
       const reconcileMode = record ? attemptReconcileMode(record) : ATTEMPT_RECONCILE_MODES.none;
       const stuckPending = state === ATTEMPT_STATES.pending_submit && !record.task_id;
@@ -2223,58 +2235,45 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     const activeText = counts.active > 0 ? "进行中 " + counts.active + " 张；" : "";
     elements.attemptStatus.textContent = "共 " + counts.total + " 张；未生成 " + counts.none + " 张；"
       + activeText + "已成功 " + counts.succeeded + " 张；结果未知 " + counts.unknown + " 张；失败 "
-      + counts.failed + " 张。" + (confirmed ? "可以逐张提交。" : "确认缺失或已过期，暂不能提交。");
+      + counts.failed + " 张。" + (confirmed ? "可以整套生成或逐张提交。" : "确认缺失或已过期，暂不能提交。");
+    renderBatch();
   }
 
   /**
-   * 单张提交：先落库（pending_submit），再发请求。
+   * 单张提交核心：先落库（pending_submit），再发请求。
    * 重入保护在函数第一行生效：双击 / 连点只会产生一条 Attempt。
+   * 返回信封分类（供单张界面与批次循环共用判断）；批次策略不在这里。
    */
-  async function handleSubmitAttempt(shotId, options = {}) {
-    if (!projectId || !suitePlan) return;
-    if (attemptInFlight.has(shotId)) return;
+  async function performSubmitAttempt(shotId, options = {}) {
+    if (!projectId || !suitePlan) return { skipped: true, reason: "not_ready" };
+    if (attemptInFlight.has(shotId)) return { skipped: true, reason: "in_flight" };
     attemptInFlight.add(shotId);
-    clearError(elements.attemptError);
     try {
-      if (!confirmationIsCurrent()) {
-        showError(elements.attemptError,
-          "生成前确认缺失或已过期：先回到「生成前确认」重新确认，再提交。");
-        return;
-      }
+      if (!confirmationIsCurrent()) return { skipped: true, reason: "no_confirmation" };
       const blocking = blockingAttemptFor(allAttemptRecords(), shotId);
       // 显式「放弃核对」只允许放弃没有任务编号、无法核对的 pending 记录；
       // 有 task id 的记录仍然只能先核对（防重复提交的语义不变）。
       const abandonStuck = Boolean(options.explicitNew) && Boolean(blocking)
         && blocking.state === ATTEMPT_STATES.pending_submit && !blocking.task_id;
       if (blocking && !abandonStuck) {
-        showError(elements.attemptError, "同一张图已经有一条进行中的生成（"
-          + attemptStateLabel(blocking.state) + "，action " + blocking.action_id
-          + "）。先核对并按结论处理，再新建 action。");
-        return;
+        return { skipped: true, reason: "blocked", blocking: blocking };
       }
       const entry = promptRecordOf(shotId);
-      if (!entry) {
-        showError(elements.attemptError, "这张图还没有可用的 Prompt 版本：先编译并保存。");
-        return;
-      }
+      if (!entry) return { skipped: true, reason: "no_prompt" };
       const shot = suitePlan.shots.find((item) => item.shot_id === shotId);
-      if (!shot) {
-        showError(elements.attemptError, "这张图已不在套图方案里，先刷新套图规划。");
-        return;
-      }
+      if (!shot) return { skipped: true, reason: "shot_missing" };
       const references = selectReferences(shot, intake.references.map((item) => ({
         role: item.role, sha256: item.asset_sha256,
       })));
-      if (references.length === 0) {
-        showError(elements.attemptError, "这张图没有可用参考图（至少需要一张）。");
-        return;
-      }
+      if (references.length === 0) return { skipped: true, reason: "no_references" };
       let referencePayload;
       try {
         referencePayload = await buildSubmitReferences(references);
       } catch (error) {
-        showError(elements.attemptError, (error && error.message) || "参考图读取失败，没有提交。");
-        return;
+        return {
+          skipped: true, reason: "reference_read_failed",
+          message: (error && error.message) || "参考图读取失败，没有提交。",
+        };
       }
       const identity = attemptProviderIdentity();
       const parameters = attemptParametersOf(entry);
@@ -2288,7 +2287,7 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
         provider: { provider_id: identity.provider_id, model_id: identity.model_id },
         parameters: parameters,
         at: at,
-        note: options.explicitNew ? "用户显式新建 action" : "用户发起生成",
+        note: options.explicitNew ? "用户显式新建 action" : (options.note || "用户发起生成"),
       });
       const saved = await repository.documents.save(projectId, {
         kind: ATTEMPT_KIND, documentId: shotId, payload: record,
@@ -2307,38 +2306,69 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
         kind: ATTEMPT_KIND, documentId: shotId, payload: outcome.record,
       });
       rememberAttempt(shotId, { record: outcome.record, version: savedNext.version });
-      elements.attemptStatus.textContent = "action " + actionId + "：" + attemptStateLabel(outcome.record.state)
-        + (outcome.record.task_id ? "（task " + outcome.record.task_id + "）" : "") + "。";
-      if (outcome.record.state === ATTEMPT_STATES.unknown) {
-        showError(elements.attemptError, "这次提交的结果没有确认：不要重复提交。"
-          + (outcome.record.task_id ? "可以按任务编号核对。" : "没有任务编号，只能显式新建 action。"));
-      } else if (outcome.record.state === ATTEMPT_STATES.failed) {
-        showError(elements.attemptError, "这次提交明确失败：" + outcome.record.error.message
-          + "（重试策略 " + outcome.record.error.retry_policy + "）。");
-      }
+      return { ...outcome.outcome, record: outcome.record, submitted: true };
     } catch (error) {
-      showError(elements.attemptError,
-        (error && error.message) || "提交没有完成；已登记的身份与历史仍然保留。");
+      return {
+        thrown: true, state: null, error: null,
+        message: (error && error.message) || "提交没有完成；已登记的身份与历史仍然保留。",
+      };
     } finally {
       attemptInFlight.delete(shotId);
       renderAttempts();
     }
   }
 
+  /** 单张提交（按钮入口）：只负责把核心结果翻译成界面反馈，批次策略不在这里。 */
+  async function handleSubmitAttempt(shotId, options = {}) {
+    clearError(elements.attemptError);
+    const outcome = await performSubmitAttempt(shotId, options);
+    if (outcome.skipped) {
+      if (outcome.reason === "no_confirmation") {
+        showError(elements.attemptError,
+          "生成前确认缺失或已过期：先回到「生成前确认」重新确认，再提交。");
+      } else if (outcome.reason === "blocked") {
+        const blocking = outcome.blocking;
+        showError(elements.attemptError, "同一张图已经有一条进行中的生成（"
+          + attemptStateLabel(blocking.state) + "，action " + blocking.action_id
+          + "）。先核对并按结论处理，再新建 action。");
+      } else if (outcome.reason === "no_prompt") {
+        showError(elements.attemptError, "这张图还没有可用的 Prompt 版本：先编译并保存。");
+      } else if (outcome.reason === "shot_missing") {
+        showError(elements.attemptError, "这张图已不在套图方案里，先刷新套图规划。");
+      } else if (outcome.reason === "no_references") {
+        showError(elements.attemptError, "这张图没有可用参考图（至少需要一张）。");
+      } else if (outcome.reason === "reference_read_failed") {
+        showError(elements.attemptError, outcome.message);
+      }
+      return outcome;
+    }
+    if (outcome.thrown) {
+      showError(elements.attemptError, outcome.message);
+      return outcome;
+    }
+    const record = outcome.record;
+    elements.attemptStatus.textContent = "action " + record.action_id + "：" + attemptStateLabel(record.state)
+      + (record.task_id ? "（task " + record.task_id + "）" : "") + "。";
+    if (record.state === ATTEMPT_STATES.unknown) {
+      showError(elements.attemptError, "这次提交的结果没有确认：不要重复提交。"
+        + (record.task_id ? "可以按任务编号核对。" : "没有任务编号，只能显式新建 action。"));
+    } else if (record.state === ATTEMPT_STATES.failed) {
+      showError(elements.attemptError, "这次提交明确失败：" + record.error.message
+        + "（重试策略 " + record.error.retry_policy + "）。");
+    }
+    return outcome;
+  }
+
   /**
-   * 按已保存的 task id 核对：只用查询推进状态，绝不重提。
+   * 按已保存的 task id 核对核心：只用查询推进状态，绝不重提。
    * 服务端没有任务表，因此服务端重启、换标签页都不改变结论。
    */
-  async function handleReconcileAttempt(shotId) {
-    if (!projectId || attemptInFlight.has(shotId)) return;
+  async function performReconcileAttempt(shotId) {
+    if (!projectId || attemptInFlight.has(shotId)) return { skipped: true, reason: "in_flight" };
     attemptInFlight.add(shotId);
-    clearError(elements.attemptError);
     try {
       const latest = latestAttemptOf(shotId);
-      if (!latest || !latest.record.task_id) {
-        showError(elements.attemptError, "这条记录没有任务编号，无法核对；只能显式新建 action。");
-        return;
-      }
+      if (!latest || !latest.record.task_id) return { skipped: true, reason: "no_task" };
       const { envelope } = await postImageJson(IMAGE_STATUS_PATH, { task_id: latest.record.task_id });
       const outcome = nextFromStatusEnvelope(latest.record, envelope, { at: new Date().toISOString() });
       if (outcome.outcome.advanced) {
@@ -2346,24 +2376,310 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
           kind: ATTEMPT_KIND, documentId: shotId, payload: outcome.record,
         });
         rememberAttempt(shotId, { record: outcome.record, version: saved.version });
-        elements.attemptStatus.textContent = "已核对 task " + latest.record.task_id + "："
-          + attemptStateLabel(outcome.record.state) + "。";
-      } else {
-        elements.attemptStatus.textContent = "已核对 task " + latest.record.task_id + "：没有新结论（"
-          + (outcome.outcome.note || "记录保持原样") + "）。";
+        return { advanced: true, task_id: latest.record.task_id, state: outcome.record.state };
       }
+      return {
+        advanced: false, task_id: latest.record.task_id, state: latest.record.state,
+        note: outcome.outcome.note || "记录保持原样",
+      };
     } catch (error) {
-      showError(elements.attemptError, (error && error.message) || "核对没有完成，记录保持原样。");
+      return {
+        failed: true,
+        message: (error && error.message) || "核对没有完成，记录保持原样。",
+      };
     } finally {
       attemptInFlight.delete(shotId);
       renderAttempts();
     }
   }
 
+  /** 单张核对（按钮入口）。 */
+  async function handleReconcileAttempt(shotId) {
+    clearError(elements.attemptError);
+    const result = await performReconcileAttempt(shotId);
+    if (result.skipped) {
+      if (result.reason === "no_task") {
+        showError(elements.attemptError, "这条记录没有任务编号，无法核对；只能显式新建 action。");
+      }
+      return result;
+    }
+    if (result.failed) {
+      showError(elements.attemptError, result.message);
+      return result;
+    }
+    if (result.advanced) {
+      elements.attemptStatus.textContent = "已核对 task " + result.task_id + "："
+        + attemptStateLabel(result.state) + "。";
+    } else {
+      elements.attemptStatus.textContent = "已核对 task " + result.task_id + "：没有新结论（"
+        + result.note + "）。";
+    }
+    return result;
+  }
+
+  /* ------------------------------------------------------------ 整套批次执行 */
+
+  const BATCH_POLL_INTERVAL_MS = 4000;
+  const BATCH_POLL_MAX_ROUNDS = 300;
+
+  function sleep(ms) {
+    return new Promise((resolve) => { window.setTimeout(resolve, ms); });
+  }
+
+  function shotLabelOf(shotId) {
+    const summary = suitePlan ? suitePlanSummary(suitePlan, suiteContext()) : null;
+    const item = (summary ? summary.shots : []).find((shot) => shot.shot_id === shotId);
+    return item ? item.label : shotId;
+  }
+
+  /** 批次状态 = 套图顺序 + 每张图最新 Attempt + Prompt 就绪状态的投影；没有第二份状态。 */
+  function deriveBatch() {
+    const summary = suitePlan ? suitePlanSummary(suitePlan, suiteContext()) : null;
+    const shots = summary ? summary.shots : [];
+    const latest = {};
+    for (const item of shots) {
+      const entry = latestAttemptOf(item.shot_id);
+      latest[item.shot_id] = entry ? entry.record : null;
+    }
+    return deriveBatchState({
+      shots: shots.map((item) => ({ shot_id: item.shot_id, label: item.label })),
+      latestAttempts: latest,
+      promptReady: (shotId) => Boolean(promptRecordOf(shotId)),
+    });
+  }
+
+  function renderBatch() {
+    if (!elements.batchBar) return;
+    const ready = understandingReady && Boolean(suitePlan);
+    elements.batchBar.hidden = !ready;
+    if (!ready) return;
+    const state = deriveBatch();
+    const running = Boolean(batchState && batchState.active);
+    const confirmed = confirmationIsCurrent();
+    const progress = [batchProgressText(state)];
+    if (running) {
+      if (batchState.phase === "poll") {
+        progress.push("批次进行中：正在按任务编号核对上游进度");
+      } else {
+        progress.push(batchState.currentShotId
+          ? "批次进行中：正在提交「" + shotLabelOf(batchState.currentShotId) + "」"
+          : "批次进行中");
+      }
+    }
+    if (batchState && batchState.halted) {
+      progress.push("已停止新增提交（" + batchState.haltReason + "）；已提交的记录全部保留");
+    }
+    if (batchState && batchState.stopped) {
+      progress.push("已停止新增提交；已提交的记录全部保留");
+    }
+    elements.batchProgress.textContent = progress.join("；") + "。";
+
+    const hints = [];
+    if (!confirmed) hints.push("生成前确认缺失或已过期：先回到「生成前确认」重新确认。");
+    if (state.counts.blocked_no_prompt > 0) {
+      hints.push("有 " + state.counts.blocked_no_prompt + " 张还没编译 Prompt。");
+    }
+    if (state.review_queue.length > 0) {
+      hints.push("有 " + state.review_queue.length
+        + " 张没有任务编号、无法核对：系统不会自动重提，需要显式新建 action。");
+    }
+    elements.batchHint.textContent = hints.join(" ");
+    elements.batchHint.hidden = hints.length === 0;
+
+    elements.batchRun.hidden = running;
+    elements.batchRun.disabled = !confirmed || running || state.queue.length === 0;
+    if (state.queue.length === 0) {
+      elements.batchRun.textContent = state.counts.total > 0 && state.all_succeeded
+        ? "已全部生成" : "没有待生成的图";
+    } else {
+      elements.batchRun.textContent = state.started
+        ? "继续生成剩余（" + state.queue.length + " 张）"
+        : "整套生成（" + state.queue.length + " 张）";
+    }
+    elements.batchStop.hidden = !running;
+    elements.batchReconcile.hidden = state.reconcile_queue.length === 0;
+    elements.batchReconcile.disabled = running || state.reconcile_queue.length === 0;
+    elements.batchReconcile.textContent = "核对进行中（" + state.reconcile_queue.length + " 张）";
+    elements.batchRetry.hidden = state.retry_queue.length === 0;
+    elements.batchRetry.disabled = running || !confirmed || state.retry_queue.length === 0;
+    elements.batchRetry.textContent = "重试失败（" + state.retry_queue.length + " 张）";
+  }
+
+  /**
+   * 整套批次：按套图顺序先提交所有「待提交」的图，再按已保存 task id 轮询推进。
+   * 停止只停新增提交：不撤销、不覆盖、不删除任何已有记录。
+   */
+  async function handleBatchRun() {
+    if (!projectId || !suitePlan || (batchState && batchState.active)) return;
+    clearError(elements.attemptError);
+    if (!confirmationIsCurrent()) {
+      showError(elements.attemptError,
+        "生成前确认缺失或已过期：先回到「生成前确认」重新确认，再整套生成。");
+      return;
+    }
+    const plan = deriveBatch();
+    if (plan.queue.length === 0) {
+      showError(elements.attemptError, "没有待提交的图；可以核对进行中或重试失败的图。");
+      return;
+    }
+    batchState = {
+      active: true, stopped: false, halted: false, haltReason: "",
+      currentShotId: null, phase: "submit",
+    };
+    renderAttempts();
+    let submitted = 0;
+    try {
+      for (const shotId of plan.queue) {
+        if (batchState.stopped || batchState.halted) break;
+        if (!confirmationIsCurrent()) {
+          batchState.halted = true;
+          batchState.haltReason = "生成前确认已过期";
+          break;
+        }
+        batchState.currentShotId = shotId;
+        renderBatch();
+        const outcome = await performSubmitAttempt(shotId, { note: "整套生成：批次提交" });
+        if (outcome.skipped) continue;
+        submitted += 1;
+        if (outcome.thrown) {
+          batchState.halted = true;
+          batchState.haltReason = outcome.message || "提交没有完成";
+          break;
+        }
+        if (batchSubmitHalts(outcome)) {
+          batchState.halted = true;
+          batchState.haltReason = (outcome.error && outcome.error.message)
+            || "系统性提交错误（继续提交会产生更多未知记录）";
+          break;
+        }
+      }
+      batchState.phase = "poll";
+      batchState.currentShotId = null;
+      await pollActiveAttempts();
+    } catch (error) {
+      batchState.halted = true;
+      batchState.haltReason = (error && error.message) || "批次执行出现异常";
+    } finally {
+      const finished = batchState;
+      batchState = null;
+      renderAttempts();
+      const finalState = deriveBatch();
+      if (finished && finished.halted) {
+        elements.attemptStatus.textContent = "批次已停止新增提交（" + finished.haltReason
+          + "）：本批提交 " + submitted + " 张，已有记录全部保留。";
+      } else if (finished && finished.stopped) {
+        elements.attemptStatus.textContent = "批次已停止：本批提交 " + submitted
+          + " 张，已有记录全部保留；可继续核对或继续生成剩余。";
+      } else {
+        elements.attemptStatus.textContent = "批次结束：" + batchProgressText(finalState);
+      }
+    }
+  }
+
+  /** 轮询在途记录（只查询、不重提）。批次运行中循环到没有可核对的记录为止。 */
+  async function pollActiveAttempts(options = {}) {
+    const intervalMs = options.intervalMs || BATCH_POLL_INTERVAL_MS;
+    const maxRounds = options.maxRounds || BATCH_POLL_MAX_ROUNDS;
+    const once = options.once === true;
+    for (let round = 0; round < maxRounds; round += 1) {
+      if (batchState && batchState.halted) return;
+      const state = deriveBatch();
+      if (state.reconcile_queue.length === 0) return;
+      if (batchState) { batchState.phase = "poll"; renderBatch(); }
+      for (const shotId of state.reconcile_queue) {
+        if (batchState && batchState.halted) return;
+        await performReconcileAttempt(shotId);
+      }
+      renderAttempts();
+      if (once) return;
+      // 停止只停新增提交：已提交的身份仍然各查一次，给出当前结论后不再轮询。
+      if (batchState && batchState.stopped) return;
+      if (round === maxRounds - 1 && batchState) {
+        batchState.halted = true;
+        batchState.haltReason = "上游长时间没有结论，已停止自动核对；记录仍在，可继续核对";
+        return;
+      }
+      await sleep(intervalMs);
+    }
+  }
+
+  /** 批量的「核对进行中」：所有有任务编号的在途记录各查一次，不重提。 */
+  async function handleBatchReconcile() {
+    clearError(elements.attemptError);
+    const before = deriveBatch();
+    if (before.reconcile_queue.length === 0) {
+      showError(elements.attemptError, "没有可按任务编号核对的记录。");
+      return;
+    }
+    try {
+      await pollActiveAttempts({ once: true });
+    } catch (error) {
+      showError(elements.attemptError, (error && error.message) || "核对没有完成，记录保持原样。");
+      return;
+    }
+    const after = deriveBatch();
+    elements.attemptStatus.textContent = "已核对 " + before.reconcile_queue.length + " 张："
+      + batchProgressText(after);
+  }
+
+  /** 批量的「重试失败」：只对明确失败的图显式新建 action，绝不动未知与在途记录。 */
+  async function handleBatchRetry() {
+    if (batchState && batchState.active) return;
+    clearError(elements.attemptError);
+    if (!confirmationIsCurrent()) {
+      showError(elements.attemptError,
+        "生成前确认缺失或已过期：先回到「生成前确认」重新确认，再重试。");
+      return;
+    }
+    const plan = deriveBatch();
+    if (plan.retry_queue.length === 0) {
+      showError(elements.attemptError, "没有明确失败的图可重试。");
+      return;
+    }
+    batchState = {
+      active: true, stopped: false, halted: false, haltReason: "",
+      currentShotId: null, phase: "submit",
+    };
+    renderAttempts();
+    let submitted = 0;
+    try {
+      for (const shotId of plan.retry_queue) {
+        if (batchState.stopped || batchState.halted) break;
+        batchState.currentShotId = shotId;
+        renderBatch();
+        const outcome = await performSubmitAttempt(shotId, {
+          explicitNew: true, note: "批次重试失败图",
+        });
+        if (outcome.skipped) continue;
+        submitted += 1;
+        if (outcome.thrown || batchSubmitHalts(outcome)) {
+          batchState.halted = true;
+          batchState.haltReason = outcome.thrown
+            ? (outcome.message || "提交没有完成")
+            : ((outcome.error && outcome.error.message) || "系统性提交错误");
+          break;
+        }
+      }
+      batchState.phase = "poll";
+      batchState.currentShotId = null;
+      await pollActiveAttempts();
+    } catch (error) {
+      batchState.halted = true;
+      batchState.haltReason = (error && error.message) || "重试执行出现异常";
+    } finally {
+      const finished = batchState;
+      batchState = null;
+      renderAttempts();
+      elements.attemptStatus.textContent = finished && finished.halted
+        ? "重试已停止新增提交（" + finished.haltReason + "）：已提交的记录全部保留。"
+        : "重试结束：本批提交 " + submitted + " 张；" + batchProgressText(deriveBatch());
+    }
+  }
+
   function renderHeaderText(projectRecord) {
     const state = projectRecord ? projectRecord.state : null;
     if (state === "READY_TO_GENERATE") {
-      elements.scope.textContent = "生成前确认已通过：可以逐张提交生成，并可按任务编号核对结果；审核、返工与导出仍未接入。";
+      elements.scope.textContent = "生成前确认已通过：可以整套生成或逐张提交，并按任务编号核对进度；审核、返工与导出仍未接入。";
     } else if (state === "PLAN_REVIEW") {
       elements.scope.textContent = "商品理解已就绪，可以编辑套图规划、规格、Prompt 与生成前确认；通过确认后才能提交生成。";
     } else {
@@ -2461,6 +2777,15 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     elements.styleSave.addEventListener("click", () => { handleSaveStyle(); });
     elements.styleRestore.addEventListener("click", () => { handleRestoreStyle(); });
     elements.confirmAction.addEventListener("click", () => { handleConfirmGeneration(); });
+    elements.batchRun.addEventListener("click", () => { handleBatchRun(); });
+    elements.batchStop.addEventListener("click", () => {
+      if (batchState && batchState.active) {
+        batchState.stopped = true;
+        renderBatch();
+      }
+    });
+    elements.batchReconcile.addEventListener("click", () => { handleBatchReconcile(); });
+    elements.batchRetry.addEventListener("click", () => { handleBatchRetry(); });
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "hidden" && saveTimer !== null) {
         saveIntakeNow().catch(() => {});
@@ -2486,6 +2811,7 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     confirmRecord = null;
     attemptChains = new Map();
     attemptInFlight = new Set();
+    batchState = null;
     showAll = false;
     interaction = { slotId: null, mode: null };
 

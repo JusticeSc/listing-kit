@@ -17,3 +17,4 @@ export * from "./specs.js";
 export * from "./prompt.js";
 export * from "./confirm.js";
 export * from "./attempt.js";
+export * from "./batch.js";
