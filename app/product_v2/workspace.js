@@ -4064,6 +4064,9 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
             || "系统性提交错误（继续提交会产生更多未知记录）";
           break;
         }
+        // 上游按账号限流（百炼 429 Throttling.RateQuota：未受理、可重试）：整套生成逐张推进，
+        // 让本张先出结论再提交下一张，避免突发提交把可重试的限流变成成片失败。
+        await pollActiveAttempts();
       }
       batchState.phase = "poll";
       batchState.currentShotId = null;
