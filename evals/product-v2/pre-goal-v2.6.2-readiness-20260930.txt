@@ -1,0 +1,77 @@
+NOT-AUTHORITY — Product V2 正式 Goal 恢复前准备审计（2026-09-30，V2.5.5→V2.6.x）
+
+用途
+====
+记录 V2.6.x 开工前的事实基线、已完成设计、阻断和恢复动作。本文件只作时点证据；目标、
+任务依赖与验收以 docs/product-v2-goal-and-implementation-plan.md 为准，当前进度以
+_working/amz-listing-kit-product-v2/state.md 为准。
+
+事实基线
+========
+- 系统 Goal：01a0ca17-2179-7eb0-969a-af9c79c4d8ca，2026-09-30T19:36:03+08:00 读数 active。
+- Git：HEAD = origin/main = a6f9a72（docs-control：落盘 V2.5.5 落地契约并留执行前快照）。
+- 已提交/已部署边界：V2.6.1；GitHub Actions run 36706420075 全绿（控制面 + Docker/远程部署）。
+- 本机 8780 本轮未启动服务；不把远程部署成功写成本机服务正在运行。
+- V2.5.5 存在未提交候选代码（浏览器领域模块、规则注册表与工作台已完成；服务端与验证器未落地）。
+  它不是完成证据，不进入 task_progress。
+
+新鲜检查
+========
+- tools/check_docs.py --no-run：退出 0（修正后：补登记两份 V2.5.5 任务书）。
+- tools/check_project_state.py：退出 0。
+- evals/probes/project_state.py：19 向全部符合预期。
+- app/server.py --check：V2 正式入口自检 33/33 通过。
+- 说明：首次 check_docs 报红 —— _working/amz-listing-kit-product-v2/tasks/v255-server.md 与
+  v255-verifier.md 未登记。已按「先登记、再写文件」补进 docs/INDEX.md（`设计草案` / `draft`），
+  并在两份任务书顶部补 CONTROL-STATUS 标记；清除该阻塞后四道守卫全绿。
+
+控制面准备完成
+==============
+- 修改前快照：_stage-amz-control/v2.6.2-before-20260930-193339/（计划、上下文、state、README、INDEX + hashes.md）。
+- 计划已新增 §9.21 V2.6.2（交付 ZIP 与硬门禁）、§9.22 V2.6.3（项目 ZIP 迁移与 schema 升级）、
+  §9.23 V2.6.4（渐进披露、空/忙/错/Unknown、可访问性）落地契约：模块、合同、新规则、证据命名已定。
+- 责任拆分（不重做测量）：V2.5.5 产出 suite_review 报告与 suite.* BLOCK；V2.6.2 只消费既有测量，
+  新增 export.suite_review_current / export.unknown_acknowledged（BLOCK）与 export_record /
+  review_acknowledgement 文档种类；V2.6.3 负责跨浏览器迁移与包格式升级；V2.6.4 负责界面四态与可访问性。
+- 技术选型无需重开：复用 storage/zip.js、IndexedDB repository、既有 review/suite-review 合同与
+  fake provider；不新增运行时依赖、HTTP 客户端或模型通道。
+
+权威文件哈希
+============
+- 计划（本批修改后）：68EC3A4F804073D0E544616EB530BA2615E69B5A280F7274A8C2F919CD18AECF
+- 文档登记 INDEX（本批修改后）：BC3606BFBDDAAF6142BD20B81B77553144A1A89DA41D9293DC66F1C65905D803
+- state 校准后：5211F333A7C1B7792AAE6025E9B8EB7FAAEF57FD774065185DF84283DA0FB095
+- 项目上下文未改：E9A2EE17EB9C38A3482A7B6819187814BEDDB399046F31EC5E31904B84E40694B
+- README 未改：CE32C184CED364623C05038265A15BC6FABAACE6D5757832199F417B8EB2A31F
+
+未提交候选代码检查点
+====================
+以下字节只用于恢复和对照，不表示设计已接受：
+- app/product_v2/domain/suite-review.js 8a40c762867569ef386d3de935dfee911799670ab54ca78d3dad8a0f1b1c56da
+- app/product_v2/domain/review.js 569101b85018b260b170d2184b49d2cb95035028ad949f56adcb744344552c72
+- app/product_v2/domain/shared.js f686af5f83d2d8cddc246fc3cff3421aa3c9b22591838c2c9b2431a61227d55d
+- app/product_v2/domain/index.js 815f0f72cb711407d12a438ef212492dd613de41332a49f21e84ea27a574f589
+- app/product_v2/index.html a4884588bf43fb1f036ca7b781d6315f6159f2c48d174713c6558d2c6e2fa5b0
+- app/product_v2/styles.css 30bdfcd166744b113baac7b170c168cb35b6b2b6b5800606bc9334384a8b349c
+- app/product_v2/workspace.js a6f5f848b35677255797ddaf869e274d6c2cc9cf5097ed94e74bd4f9c0694edb
+
+正式开工门
+==========
+开工时必须在同一控制动作中满足：
+1. 系统 Goal 实际读数 active；
+2. state.status = active；
+3. phase_progress["5"].status = active（V2.5.5 完成前保持 active）；
+4. next_action_task = V2.5.5：先落服务端与验证器，再进入 V2.6.2；
+5. V2.5.5 完成前不写 done，不把本报告、文档完成或语法通过写成 V2.5.5 完成；
+6. V2.6.2 开工前必须先有 V2.5.5 的证据与 state 收尾（含 v2.5.5-before 快照「执行后」哈希列）。
+
+唯一下一动作
+============
+继续 V2.5.5：实现服务端整套复核路由与自检、落地验证器与证据；提交后在 state 中把 V2.5.5 置
+done、next_action_task 切到 V2.6.2（交付门禁），并补齐两份批次快照的「执行后」哈希列。
+
+边界
+====
+- 本准备不修改或提交现有 V2.5.5 候选代码（除控制面文档）。
+- 未运行真实模型、未消耗模型调用预算。
+- 未证明交付 ZIP、迁移或可访问性能力已经实现。

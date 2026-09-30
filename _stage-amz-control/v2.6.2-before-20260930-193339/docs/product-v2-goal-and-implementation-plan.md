@@ -1192,32 +1192,6 @@ stale 而不是被覆盖；失败 Attempt 不影响已有选择。Selection 只�
 - 正式入口自检新增整套复核检查（33 项以上），同步更新既有验证器里对旧计数的断言。
 - 验证：`tools/verify_v2_5_5_suite_review.py` = 静态守卫 + `suite-review-contract` 套件 + SL/RW/CP/R 回归 + 跨语言镜像比对（词表/合同版本/张数上限）+ 工作台走查（一致套图、漂移探针、选择变化失效、Unknown 人工复核、刷新恢复、跳转定位、零意外 console）。证据 `evals/product-v2/v2.5.5-suite-review-*-final.*` + `evidence/v2.5.5-suite-review-*.png`。
 
-### 9.21 V2.6.2 浏览器交付 ZIP 与硬门禁
-
-**落地契约（V2.6.2 实现层）：**
-
-- 交付门禁唯一权威 `app/product_v2/domain/export-gate.js`：只消费既有测量（`evaluateExportReadiness`、`verifyAssetHashes`、`suiteReviewIsCurrent`、`checkSuiteReviewReport`），不重做第二套；新规则登记进 review.js 注册表：`export.suite_review_current`（BLOCK：整套报告存在、对当前 selection/inputs 当前且无未消解 BLOCK）与 `export.unknown_acknowledged`（BLOCK：当前单图与整套报告中的每条 UNKNOWN 都有对应人工确认）。
-- Unknown 确认是 append-only 文档 `review_acknowledgement`（document_id = 目标报告 id + rule_id + 规范化 shot_ids 摘要；含 target_kind/target_id/rule_id/shot_ids/acknowledged_at）：只记录「已知悉」，不改写发现、不自动选择、不删除报告。
-- 交付包用 `storage/zip.js`（buildZip）生成，固定内容：`images/<shot_id>-<candidate_id>.<ext>`、`manifest.json`（选择与输入指纹、每图 shot/candidate/attempt/asset sha256、PromptVersion 身份）、`checks.json`（当前单图与整套发现投影）、`README.txt`（人读摘要）；成功后写入 append-only 文档 `export_record`（包 sha256、字节数、included_shot_ids/candidate_id/sha256 清单、生成时间），重复生成只追加、不覆盖历史；任何一步失败不产生完成记录，界面返回精确问题 Shot。
-- 新文档种类 `export_record` 与 `review_acknowledgement` 登记进 shared.js `DOMAIN_DOCUMENT_KINDS`（唯一权威）。界面：交付分区含门禁清单（逐条 PASS/BLOCK 与定位）、「生成交付包」按钮、成功后的文件名/大小/sha256 与下载入口；不新增第二套状态。
-- 验证：`tools/verify_v2_6_2_delivery.py` + `delivery-gate-contract` 套件：正反门禁（缺选择、整套报告过期、未确认 Unknown、哈希不符）、ZIP 解包逐文件核对、manifest 反查输入到候选、失败不落记录、重复生成保留历史。证据 `evals/product-v2/v2.6.2-delivery-*-final.*` + `evidence/v2.6.2-delivery-*.png`。
-
-### 9.22 V2.6.3 项目 ZIP 迁移与 schema 升级闭环
-
-**落地契约（V2.6.3 实现层）：**
-
-- 迁移权威仍是 `storage/package.js` + `transfer.js`：包格式升到 2，携带每记录 schema_version 与完整文档/资产清单；`parseProjectPackage` 先校验格式与完整性，再按 `migrations.js` 迁移链升级旧包（格式 1 / 旧 schema）；无法升级时给出精确条目并拒绝导入，不做静默降级。
-- 导入保持单 IndexedDB 事务（projects/documents/assets）且全量先校验后写入：任一记录非法整体回滚，不留半成品；导入为新 project_id 时保留完整历史（所有文档版本与资产字节），导入后可直接继续返工、选择与生成交付包。
-- 验证：`tools/verify_v2_6_3_project_transfer.py` + 双浏览器往返（导出 → 清空 → 导入 → 再导出逐哈希一致；导入后完成一次返工与一次交付包生成）+ 旧格式 fixture 升级路径。证据 `evals/product-v2/v2.6.3-transfer-*-final.*` + `evidence/v2.6.3-transfer-*.png`。
-
-### 9.23 V2.6.4 渐进披露、空/忙/错/Unknown 与可访问性
-
-**落地契约（V2.6.4 实现层）：**
-
-- 界面唯一权威仍是 `app/product_v2/index.html` + `workspace.js` + `styles.css`，不新增业务状态：工程字段（指纹、sha256、attempt/task id）默认收进「详情」；每个分区必须可观察空/忙/错/Unknown 四态，且每态都有下一步动作（重试、取消、定位、确认），不用说明文字掩盖模型错误。
-- 390px 宽度与 200% 缩放不遮挡关键操作、无横向溢出；完整任务路径可纯键盘走通（可见焦点、图标按钮有可访问名、异步完成后焦点落点明确）。
-- 验证：`tools/verify_v2_6_4_accessibility.py` = Playwright 390px/200% 截图 + 键盘脚本 + axe 扫描 + console/network 断言 + 真实入口走查。证据 `evals/product-v2/v2.6.4-a11y-*-final.*` + `evidence/v2.6.4-a11y-*.png`。
-
 ## 10. 实施阶段、任务与 Gate
 
 任何时刻最多一个阶段 active。每个任务同时交付必要的数据合同、服务、界面和验证，不把“前端做完”“后端做完”当作用户可观察成果。
