@@ -1,0 +1,23 @@
+V2 走查演练服务探针（工具验证，不是产品验收）
+时间：2026-09-30T23:44:34+08:00
+服务：tools/walkthrough_server.py --port 8778
+剧本：第 1 次提交成功 / 第 2 次明确失败 / 第 3 次提交结果未知 / 第 4 次及以后成功
+方法：uv run --locked python -（stdin 脚本直接调用 /api/v2/images/submit 与 /api/v2/images/status）
+
+首次探针因 action_id 少于 8 位被契约拒绝（INPUT_INVALID），修正为合法长度后复跑，结果如下：
+
+submit  walkthr-shot-0001    http=200 unknown=False task=fake-9fd9b1b31573d207 state=RUNNING
+submit  walkthr-shot-0002    http=200 unknown=False task=fake-b71b973afc545618 state=RUNNING
+submit  walkthr-shot-0003    http=504 unknown=True  task=None               code=PROVIDER_OUTCOME_UNKNOWN retry=requires_review
+submit  walkthr-shot-0004    http=200 unknown=False task=fake-47e318adabc84390 state=RUNNING
+status  walkthr-shot-0001    http=200 unknown=False state=SUCCEEDED
+status  walkthr-shot-0002    http=200 unknown=False state=FAILED task_error=图像生成任务失败（错误码 FAKE_CONTENT_REJECTED）。
+status  walkthr-shot-0004    http=200 unknown=False state=SUCCEEDED
+recover submit walkthr-retry-0002     http=200 unknown=False task=fake-25d4e417e7748c59 state=RUNNING
+recover status walkthr-retry-0002     http=200 unknown=False state=SUCCEEDED
+recover submit walkthr-newaction-0003 http=200 unknown=False task=fake-b1252903405c3cd5 state=RUNNING
+recover status walkthr-newaction-0003 http=200 unknown=False state=SUCCEEDED
+
+结论：四态（成功 / 明确失败 / 无编号 Unknown / 成功）与两条恢复路径（重试、新建 action）均按设计返回；
+探针之后已重启服务（进程内剧本复位），走查者拿到的是干净剧本。
+测试后置：本机 8778 与 8779 两个走查入口 /api/health 均 200，server_state=none。
