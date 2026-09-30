@@ -1,0 +1,78 @@
+NOT-AUTHORITY — Product V2 正式 Goal 恢复前准备审计（2026-09-30）
+
+用途
+====
+记录 V2.5.4 开工前的事实基线、已完成设计、阻断和恢复动作。本文件只作时点证据；目标、
+任务依赖与验收以 docs/product-v2-goal-and-implementation-plan.md 为准，当前进度以
+_working/amz-listing-kit-product-v2/state.md 为准。
+
+事实基线
+========
+- 系统 Goal：01a0ca17-2179-7eb0-969a-af9c79c4d8ca，2026-09-30T16:41:17+08:00 读数 paused。
+- Git：HEAD = origin/main = b73409d5a093b7423f5e68f6a1b489d35a05c360。
+- 已提交/已部署边界：V2.5.3；GitHub Actions run 36684666036 的验证、Docker 健康检查与远程部署成功。
+- 本机 8780 在审计时无监听；不把远程部署成功写成本机服务正在运行。
+- V2.5.4 存在未提交候选代码；它不是完成证据，不进入 task_progress。
+
+新鲜检查
+========
+- tools/check_docs.py --no-run：退出 0。
+- tools/check_project_state.py：退出 0（校准前只证明旧记录内部一致，不证明系统 Goal 实时一致）。
+- evals/probes/project_state.py：19 向符合预期。
+- app/server.py --check：33/33 通过。
+- V2.3.4 Prompt、V2.3.5 生成前确认、V2.3.6 Prompt 人工编辑回归通过。
+- V2.5.3 比较面板回归：18/19；V2.5.3-03 失败，因为候选 V2.5.4 把写业务记录的返工动作放进
+  计划明确只读的比较面板。本失败是设计边界证据，不允许通过放宽旧判据消除。
+
+控制面准备完成
+==============
+- 修改前快照：_stage-amz-control/v2.5.4-before-20260930-163419/。
+- 计划已新增 §9.18 V2.5.4：比较区只读、独立返工区、完整 ReworkDirective、逐 Shot 确认隔离、
+  正常/失败/Unknown/刷新/双击验证与零真实调用纪律。
+- 计划已新增 §9.19 V2.6.1：人工 Selection 是唯一候选集合，不由审核或最新版本代替。
+- 计划已新增 §9.20 V2.5.5：整套一致性报告必须绑定 SelectionSet；执行顺序调整为
+  返工 → Selection → 整套一致性 → 交付。
+- V2.5.4 的「重新选择前不可导出」被拆成可验证责任：本批产生完整 lineage 且不自动选择；
+  V2.6.1 负责选择失效，V2.6.2 负责真正阻断导出。
+- 技术选型无需重开：本批只新增业务语义，继续复用 IndexedDB repository、现有 Prompt/Attempt/
+  Candidate/Review 合同与 fake provider；不新增 HTTP 客户端、框架、运行时依赖或模型通道。
+
+权威文件哈希
+============
+- 计划修改后：0E3C6DDC63388D306837612CBB1CBF9E51D89C2442F57403A28432424D4FEF5B
+- 项目上下文未改：87B52F0222B2A2E6F4746C95296FE4A37B0AD74285E6B7D64C18351D4CAEF4C1
+- state 校准前：CF5E184EAE17D6CD236A41E21BF33AD6E98687F34EEACE4AB9C6B413F4329DA2
+- README 未改：2A0348370B4C99A6A3258C60951B584F6340F9A59CF3109563D74126EBD5E0BC
+- state 校准后：102110CF0979FB6B361146E9D9612D74F9E737AF4E57D064E5668E1F8E36F791
+
+未提交候选代码检查点
+====================
+以下字节只用于恢复和对照，不表示设计已接受：
+- app/product_v2/domain/compare.js AAA3AEA1B0B3639DAEE56E7F8BFBBC2FA78BB0742D94B7904A83EDF33190A446
+- app/product_v2/domain/confirm.js 292A2A8AF7C01216D56C652791309DAE59593D208A3255993F9677B0B4BE28E6
+- app/product_v2/domain/index.js C9037DFFB062A4FFAAE34341DE32A41BCBF06808E20C8D2A752BEEE0665AE98F
+- app/product_v2/domain/prompt.js 042D619A1B911712D58D997C503E5463ADF6669B818FF62E34B418DC1C553323
+- app/product_v2/domain/rework.js 7AE6841F5F023C01C53A00F5C6DB22E9D71681E82F509A6B5C6B91E2F58B5710
+- app/product_v2/index.html 193C1D27C6D8E3659B23B100F6E514A15619C855384D272E8719E0D95A4E9DF8
+- app/product_v2/styles.css 0A444DB641FAC627A37F40DF7E584A05D83BE56AD0DD631F0A0A3E8A42D7FAE8
+- app/product_v2/workspace.js C38465BE2C1EAD6D436D2D511014D42A3A654F73656631B090F7ECBA07F0D8BB
+
+正式开工门
+==========
+开工时必须在同一控制动作中满足：
+1. 系统 Goal 实际读数 active；
+2. state.status = active；
+3. phase_progress["5"].status = active；
+4. next_action_task = V2.5.4；
+5. 工作区候选代码仍按 §9.18 重整，先让 V2.5.3-03 恢复绿色，再新增 V2.5.4 专属验证；
+6. 不把本报告、文档完成或语法通过写成 V2.5.4 完成。
+
+唯一下一动作
+============
+由用户在系统中恢复 Goal；随后同步激活 state 与 Phase 5，按 §9.18 重整并验证 V2.5.4。
+
+边界
+====
+- 本准备不修改或提交现有 V2.5.4 候选代码。
+- 未运行真实模型、未消耗模型调用预算。
+- 未证明 V2.5.4、Selection、一致性报告或导出能力已经实现。

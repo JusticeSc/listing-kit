@@ -1124,6 +1124,60 @@ V2.5.3 只补这块投影，不新增规则、不重算报告、不产生选择�
 刷新一致性、单候选回退与「下一个待处理」跳转、整页与面板特写截图。证据
 `evals/product-v2/v2.5.3-compare-panel-*-final.*` + `evals/product-v2/evidence/v2.5.3-compare-panel-*`。
 
+### 9.18 V2.5.4 问题分类、改进方向与单图返工闭环
+
+返工不是「再点一次生成」，而是把某条候选的问题、用户决定的改进方向和实际重新发送的 Prompt
+组成一条可追溯命令。V2.5.4 只负责生成新版本和证明影响隔离；人工 Selection 与导出门禁分别由
+V2.6.1 / V2.6.2 提交，不能在本批提前宣称已经阻止导出。
+
+**界面责任**：V2.5.3 的 `#compare-panel` 继续只读；它可以在内存中指出当前查看的候选，但不得写文档、
+资产、Attempt 或 Selection。返工是同一页面中与比较区相邻的独立 `#rework-panel`：入口「用此候选发起返工」
+把 `candidate_id + sha256` 交给返工表单；表单用原生 checkbox/fieldset 展示九类常见问题，允许自由改写方向，
+提供「预览返工 Prompt」「查看/编辑完整 Prompt」「确认并生成这张图」「取消」。输入均有显式 label，状态用
+克制的 polite/alert 反馈，键盘焦点从入口进入表单、完成或取消后回到原候选。
+
+**领域对象（唯一权威 = `app/product_v2/domain/rework.js`）**：`ReworkDirective` 保存
+`directive_id / shot_id / source candidate id+sha256 / source review contract+top finding /
+problem categories / direction / created_at`。报告是建议来源而不是提交权威：用户确认指令后，报告重算不静默
+改写方向；候选身份或字节变化时指令失效。完整指令嵌入新的 PromptVersion，避免另建一份平行返工文档。
+Prompt 编译器只追加一个 `rework_directive` 段，其余来源段、参考图选择和 Provider 参数沿用现有权威。
+
+**确认隔离**：整套确认不能用「任一 Prompt 改动 ⇒ 所有 Shot 都失效」的全有或全无判定。
+`confirmationCoversCurrentShot(record, currentSheet, shotId)` 逐图比较 Prompt hash、实际参考图、平台与 Provider；
+目标 Shot 新 Prompt 只使目标确认过期，无关 Shot 的原确认继续有效。公共 StyleSpec、平台或 Provider 改动若使
+多个 Prompt 变化，则受影响 Shot 分别失效。目标图写一条 `scope_shot_ids=[shot_id]` 的局部确认后才可提交。
+
+**执行与输出**：`ReworkDirective → PromptVersion → scoped GenerationConfirm → GenerationAttempt →
+Candidate Blob → ReviewReport`。提交前先持久化 action；双击只产生一条；有 task id 的 Unknown 先核对，
+无 task id 不自动重提；失败保留旧 Prompt、旧候选与可用 Blob。成功只给目标 Shot 新增版本，新候选不自动
+成为最终选择，用户以后可以重新选择新候选或旧候选。
+
+**不变量与验证**：比较面板交互前后业务记录逐字一致；目标以外的 Prompt/Confirmation/Attempt/Candidate/
+Blob hash 零变化；旧候选保留；返工失败可恢复；刷新后完整来源链恢复。领域合同至少覆盖空理由、未知分类、
+候选跨 Shot、hash 不符、来源缺失与反向探针；浏览器覆盖正常、失败、Unknown、重复点击、刷新、键盘焦点、
+console/network 和 IndexedDB 后置条件。开发与回归使用 fake provider、真实模型调用为 0；V2.3.4–V2.5.3
+相关回归必须保持全绿，禁止通过放宽 V2.5.3「比较区只读」判据过关。
+
+### 9.19 V2.6.1 人工 Selection 与失效判断
+
+整套一致性与交付都必须有一个明确的候选集合，不能偷用「最新候选」。因此 V2.6.1 在 V2.5.5 之前实施，
+任务 ID 保留但依赖顺序以 §10.1 为准。`SelectionRecord` 保存 shot、candidate id/hash/version、选择动作身份、
+选择时审核指纹和时间；一个必需 Shot 最多一个 current 选择。自动审核只提供依据，不产生选择。
+
+用户可以采用、改选、取消采用，并可在返工后重新选择旧候选。目标 Shot 出现新的成功候选时，原选择变为
+stale 而不是被覆盖；失败 Attempt 不影响已有选择。Selection 只引用内容寻址的候选，不复制图片。
+输出 `SelectionSet`，作为 V2.5.5 与 V2.6.2 唯一输入集合；缺选和 stale 的实际导出阻断由 V2.6.2 验证。
+
+### 9.20 V2.5.5 基于 SelectionSet 的整套一致性报告
+
+输入是当前 SelectionSet、已选候选 Blob、ProductBrief、SuitePlan、StyleSpec、ShotSpec 与单图 ReviewReport。
+确定性部分检查必需角色、卖点覆盖、重复/遗漏、尺寸格式、报告当前性及 Selection/Blob/hash 一致；视觉部分
+复用 SEL-003/011 的 ChatOpenAI 通道，检查商品外观、颜色材质、公共风格与跨图低级异常，不新建 HTTP 客户端。
+
+`SuiteReviewReport` 绑定 `selection_fingerprint + contract_version`，每条发现带 `affected_shot_ids`；选择变化后
+报告精确过期并可重算。确定性 BLOCK 交给导出硬门；VLM 只能给提示或 Unknown，不能取消人工选择，Unknown
+由用户明确复核。报告界面直接跳到相关 Shot，不建立第二套候选状态。
+
 ## 10. 实施阶段、任务与 Gate
 
 任何时刻最多一个阶段 active。每个任务同时交付必要的数据合同、服务、界面和验证，不把“前端做完”“后端做完”当作用户可观察成果。
@@ -1163,15 +1217,15 @@ V2.5.3 只补这块投影，不新增规则、不重算报告、不产生选择�
 
 **Gate G4：** 真实参考图请求成功；批量部分失败不丢结果；已知 task ID 在服务器重启后可继续查询；Unknown 不自动重提；候选 Blob 和来源链持久化。
 
-### Phase 5：自动校验、比较与局部返工
+### Phase 5：自动校验、比较、局部返工、人工选择与整套一致性
 
-目标：系统发现低级错误并把异常投影给用户，返工只影响目标 Shot。
+目标：系统发现低级错误并把异常投影给用户，返工只影响目标 Shot；人工明确选出整套候选后，系统才对该集合做一致性检查。
 
-**Gate G5：** 每个候选有当前 ReviewReport；参考/旧/新候选可直接比较；目标 Shot 返工后旧候选保留、无关 Blob 与 Attempt hash 不变；整套一致性报告可重算。
+**Gate G5：** 每个候选有当前 ReviewReport；参考/旧/新候选可直接比较；目标 Shot 返工后旧候选保留、无关 Blob 与 Attempt hash 不变；每个必需 Shot 有明确且当前的人工 Selection；整套一致性报告绑定 SelectionSet、可重算并定位到 Shot。
 
 ### Phase 6：选择、交付与可用性
 
-目标：人工采纳形成唯一交付选择，浏览器生成交付包和完整项目包。
+目标：基于 Phase 5 的人工选择与一致性结论，浏览器生成交付包和完整项目包，并完成可用性收尾。
 
 **Gate G6：** 缺选或硬检查失败时不能导出；交付 ZIP 可复检；完整项目包可跨浏览器恢复；390px、200% 缩放、键盘和失败反馈满足产品基线。
 
@@ -1211,10 +1265,10 @@ V2.5.3 只补这块投影，不新增规则、不重算报告、不产生选择�
 | V2.5.1 | 生成前、单图和导出的确定性验证器 | G4 | 每条硬规则有版本、消费者和可复现测量；审美不冒充硬门 | 单元/反向探针 | 未知规则降为提示或禁用 |
 | V2.5.2 | 可替换 VLM ReviewProvider | V2.5.1 | 输出绑定 Candidate/ReviewContract；非法/超时保留 Unknown；不自动采纳；真实调用复用 SEL-003 的 langchain 通道，不新建 HTTP 客户端或适配器 | fake provider、已标样例、最小真实请求 | 允许人工审核继续，不伪造 PASS |
 | V2.5.3 | 参考图、旧候选、新候选和审核清单比较界面 | V2.5.2 | 比较直接，异常优先，完整报告按需展开 | Playwright、视觉证据、键盘路径 | 回退单候选视图但保留数据 |
-| V2.5.4 | 问题分类、改进方向和单图返工闭环 | V2.5.3 | 只目标 Shot 新建 Prompt/Attempt；旧候选保留；重新选择前不可导出 | 前后对象与 Blob hash diff | 返工失败仍保留旧可用候选 |
-| V2.5.5 | 整套风格、商品与覆盖一致性报告 | V2.5.4 | 报告可重算并绑定整套版本；问题能定位到 Shot | 已知一致/漂移套图探针、人工复核 | Unknown 交人工，不自动拒绝整套 |
-| V2.6.1 | 人工 Selection 与交付门禁 | G5 | 每个必需 Shot 恰一候选；过期、缺选、硬错误精确阻断 | 状态机、浏览器正反路径 | 保留选择，返回问题 Shot |
-| V2.6.2 | 浏览器交付 ZIP | V2.6.1 | 只含选定图、manifest、README、检查；重导不覆盖历史记录 | 解包、hash、manifest 反查 | 生成失败不产生完成 ExportRecord |
+| V2.5.4 | 问题分类、改进方向和单图返工闭环 | V2.5.3 | 只目标 Shot 新建 Prompt/Attempt/Candidate/Review；完整返工来源可追溯；旧候选与无关确认、Attempt、Blob hash 不变；新候选不自动选择 | 领域反向探针、前后对象/hash diff、浏览器正常/失败/Unknown/刷新/双击轨迹 | 返工失败仍保留旧可用候选；比较区保持只读 |
+| V2.6.1 | 人工 Selection 与失效判断 | V2.5.4 | 每个必需 Shot 最多一个 current 选择；新成功候选使目标旧选择 stale；用户可重新选择新或旧候选；自动审核不产生选择 | 状态机、选择/改选/取消/返工后重选浏览器路径 | 保留候选，选择写入失败不改旧 Selection |
+| V2.5.5 | 基于 SelectionSet 的整套风格、商品与覆盖一致性报告 | V2.6.1 | 报告绑定 selection fingerprint、可重算；确定性与 VLM 权限分离；问题能定位到 Shot | 已知一致/漂移套图探针、选择变化失效、人工复核 | Unknown 交人工，不自动取消选择或拒绝整套 |
+| V2.6.2 | 浏览器交付 ZIP 与硬门禁 | V2.5.5 | 全部必需选择 current、硬检查通过且 Unknown 已人工复核；ZIP 只含选定图、manifest、README、检查；重导不覆盖历史记录 | 正反门禁、解包、hash、manifest 反查 | 生成失败不产生完成 ExportRecord；返回精确问题 Shot |
 | V2.6.3 | 项目 ZIP 迁移与 schema 升级闭环 | V2.6.2 | 完整历史跨浏览器恢复并可继续返工 | 双浏览器 round-trip | staging 导入、失败不 commit |
 | V2.6.4 | 渐进披露、空/忙/错/Unknown、响应式与可访问性 | V2.6.3 | 390px、200% 缩放、键盘、焦点、错误恢复无阻塞 | Playwright、axe/人工走查、console/network | 不用说明文字掩盖模型错误 |
 | V2.7.1 | Product V2 全回归与反向探针 | G6 | 两次连续全绿、指纹一致；每个关键守卫被证明能变红 | 汇总报告和原始日志 | 有漂移不进入真实验收 |

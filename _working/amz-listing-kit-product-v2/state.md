@@ -7,13 +7,13 @@
 ```yaml
 state_schema: amz-project-state/v2
 task_id: amz-listing-kit-product-v2
-status: active
+status: paused
 goal_binding: required
 goal_id: 01a0ca17-2179-7eb0-969a-af9c79c4d8ca
-system_goal_observed_status: active
-system_goal_observed_at: 2026-09-29T21:16:19+08:00
+system_goal_observed_status: paused
+system_goal_observed_at: 2026-09-30T16:41:17+08:00
 plan_ref: docs/product-v2-goal-and-implementation-plan.md
-latest_audit: evals/product-v2/v2.5.2-vlm-review-20260930-150502final.txt
+latest_audit: evals/product-v2/pre-goal-v2.5.4-readiness-20260930.txt
 
 phase_progress:
   "0":
@@ -94,7 +94,7 @@ phase_progress:
       - evals/product-v2/v2.4.1-image-gateway-20260930-134149-v245-transport-fix.txt
 
   "5":
-    status: active
+    status: pending
     evidence:
       - evals/product-v2/v2.5.2-vlm-review-20260930-150502final.txt
       - evals/product-v2/v2.5.2-vlm-review-20260930-150502final.json
@@ -523,8 +523,9 @@ task_progress:
       - .github/workflows/ci-cd.yml
 
 next_action_task: V2.5.4
-blockers: []
+blockers:
+  - system_goal_is_paused_resume_required_before_formal_execution
 unknowns:
   - visual_language_review_detection_quality_is_uncalibrated_channels_and_binding_only_proven_in_V2.5.2
-updated_at: 2026-09-30T15:36:00+08:00
+updated_at: 2026-09-30T16:41:17+08:00
 ```
