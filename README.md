@@ -82,7 +82,13 @@ uv run python app\server.py --open
 uv run python app\server.py --host 0.0.0.0 --port 8780
 ```
 
-当前实现依赖浏览器原生 IndexedDB、`crypto.randomUUID` 与 WebCrypto SHA-256。localhost 是浏览器认可的开发安全上下文；远程直接访问 `http://<IP>:8780` 时，Chrome/Edge 会保留 IndexedDB 但不暴露后两项，因此页面能打开却不能可靠新建项目或计算资产哈希。远程产品入口必须由穿透或反向代理提供可信 HTTPS；在 V2.UI.1 完成前，缺 WebCrypto 还可能被旧错误文案误显示为“IndexedDB 不支持”，不能据此断言数据库本身不可用。
+当前实现依赖浏览器原生 IndexedDB、`crypto.randomUUID` 与 WebCrypto SHA-256；首版只保证当前稳定版桌面
+Chrome 与 Edge（SEL-012）。localhost 是浏览器认可的开发安全上下文；远程正式入口必须是 HTTPS：
+本仓库的部署把 TLS 终止在 Caddy 容器（`deploy/caddy/Caddyfile`，Let's Encrypt IP 证书 shortlived
+profile 自动续期），应用容器仍只提供无状态 HTTP，当前试用入口是 `https://47.115.172.233:8080/`。
+直接打开明文 `http://<IP>:8780` 时，Chrome/Edge 会保留 IndexedDB 但禁用 WebCrypto；页面会精确说明
+“缺的是安全上下文 / WebCrypto”并禁用新建与导入，不会把缺口误报成 IndexedDB 不支持（证据见
+`evals/product-v2/v2.ui.1-remote-entry-*-final.*`）。
 
 语义分析默认走注册表里的 `dashscope-semantic`，需要服务器环境变量 `DASHSCOPE_API_KEY`；缺密钥时该路由返回
 明确的 503 分类错误并提示 provider 未配置，不会假装成功。无密钥环境与验证入口可设

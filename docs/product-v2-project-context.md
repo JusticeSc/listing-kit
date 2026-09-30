@@ -73,6 +73,8 @@ Python 无状态 AI 服务
 
 浏览器支持与 origin 取值由 SEL-012 固定：本机开发可用 `http://127.0.0.1` / `localhost`；远程正式入口必须经可信 HTTPS 暴露。固定端口 `8780` 是容器内部/服务器监听端口，不等于要求用户直接访问明文 `http://<IP>:8780`。
 
+2026-09-30 落地（V2.UI.1）：TLS 终止在 Caddy 容器（配置 `deploy/caddy/Caddyfile`，由 `.github/workflows/ci-cd.yml` 的部署步骤收敛），使用 Let's Encrypt IP 证书 shortlived profile 自动续期，HTTPS 对外监听 8080；云安全组丢弃 443，大陆对未备案域名的 80 端口请求返回拦截页（`Server: Beaver`），因此不使用域名证书。应用容器继续只提供无状态 HTTP，当前试用入口为 `https://47.115.172.233:8080/`；明文 `http://47.115.172.233:8780` 只作负例，页面会精确提示缺的是安全上下文/WebCrypto。
+
 ## 4. 技术栈与可替换边界
 
 | 层 | 当前选择 | 边界 |
