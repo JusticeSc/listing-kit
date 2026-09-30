@@ -27,6 +27,7 @@ import json
 import os
 import subprocess
 import sys
+import urllib.parse
 from datetime import datetime
 from pathlib import Path
 
@@ -157,10 +158,21 @@ def main() -> int:
         page.screenshot(path=str(path), full_page=True)
         screenshots.append(path.relative_to(ROOT).as_posix())
 
-    def attach_errors(page, bucket: list[str]) -> None:
+    def attach_errors(page, bucket: list[str], network: list[str], base: str) -> None:
+        """console/page error 与网络异常都进证据：4xx/5xx 和跨源请求都算问题。"""
+        expected_netloc = urllib.parse.urlsplit(base).netloc
         page.on("console", lambda message: bucket.append("console:" + message.text)
                 if message.type == "error" else None)
         page.on("pageerror", lambda error: bucket.append("pageerror:" + str(error)))
+
+        def on_response(response) -> None:
+            split = urllib.parse.urlsplit(response.url)
+            if split.scheme in ("http", "https") and split.netloc != expected_netloc:
+                network.append("cross-origin:" + response.url)
+            if response.status >= 400:
+                network.append("status:" + str(response.status) + " " + response.url)
+
+        page.on("response", on_response)
 
     def create_project(page, name: str) -> bool:
         page.fill("#new-project-name", name)
@@ -184,10 +196,11 @@ def main() -> int:
             # 1) 本机 localhost：安全来源例外，不得出现工程诊断
             if local_base:
                 errors: list[str] = []
+                network: list[str] = []
                 browser = launch(pw, "chrome")
                 context = browser.new_context()
                 page = context.new_page()
-                attach_errors(page, errors)
+                attach_errors(page, errors, network, local_base)
                 page.goto(local_base + "/", wait_until="load", timeout=30000)
                 page.wait_for_timeout(800)
                 state = page.evaluate(HOME_STATE_JS)
@@ -204,17 +217,19 @@ def main() -> int:
                       created and name in (after.get("project_names") or []),
                       {"created": created, "after": after.get("project_names")})
                 shot(page, "localhost")
-                check("V2.UI.1-02", "localhost 会话零 console/page error", not errors, errors)
+                check("V2.UI.1-02", "localhost 会话零 console/page/网络错误",
+                      not errors and not network, {"console": errors, "network": network})
                 browser.close()
 
             # 2)+3) 远程 HTTPS：Chrome 与 Edge 各走一遍
             for engine, check_offset in (("chrome", 10), ("edge", 20)):
                 errors = []
+                network = []
                 browser = launch(pw, engine)
                 version = browser.version
                 context = browser.new_context()
                 page = context.new_page()
-                attach_errors(page, errors)
+                attach_errors(page, errors, network, args.https)
                 page.goto(args.https + "/", wait_until="load", timeout=45000)
                 page.wait_for_timeout(900)
                 state = page.evaluate(HOME_STATE_JS)
@@ -231,7 +246,7 @@ def main() -> int:
                 after_reload = page.evaluate(HOME_STATE_JS)
                 page.close()
                 page = context.new_page()
-                attach_errors(page, errors)
+                attach_errors(page, errors, network, args.https)
                 page.goto(args.https + "/", wait_until="load", timeout=45000)
                 page.wait_for_timeout(900)
                 after_reopen = page.evaluate(HOME_STATE_JS)
@@ -247,16 +262,17 @@ def main() -> int:
                        "indexeddb": db_state})
                 shot(page, engine)
                 check("V2.UI.1-{:02d}".format(check_offset + 2),
-                      "远程 HTTPS + " + engine + " 会话零 console/page error",
-                      not errors, errors)
+                      "远程 HTTPS + " + engine + " 会话零 console/page/网络错误",
+                      not errors and not network, {"console": errors, "network": network})
                 browser.close()
 
             # 4) 远程 HTTP 负例：必须精确报 secure_context/WebCrypto，而不是 IndexedDB
             errors = []
+            network = []
             browser = launch(pw, "chrome")
             context = browser.new_context()
             page = context.new_page()
-            attach_errors(page, errors)
+            attach_errors(page, errors, network, args.http)
             page.goto(args.http + "/", wait_until="load", timeout=45000)
             page.wait_for_timeout(1200)
             negative = page.evaluate(HOME_STATE_JS)
@@ -276,7 +292,8 @@ def main() -> int:
             check("V2.UI.1-30", "远程 HTTP 负例精确报 secure_context/WebCrypto 缺口",
                   ok_negative, negative)
             shot(page, "http-negative")
-            check("V2.UI.1-31", "远程 HTTP 负例会话零 console/page error", not errors, errors)
+            check("V2.UI.1-31", "远程 HTTP 负例会话零 console/page/网络错误",
+                  not errors and not network, {"console": errors, "network": network})
             browser.close()
     finally:
         if server is not None:

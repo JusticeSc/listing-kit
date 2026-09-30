@@ -149,6 +149,13 @@ uv run python tools\verify_v2_5_4_rework_loop.py
 uv run python tools\verify_v2_6_1_selection.py
 ```
 
+远程 HTTPS 正式入口与浏览器能力诊断单独验证（需要能访问 `https://47.115.172.233:8080`
+与明文负例 `http://47.115.172.233:8780`，因此不进 CI，部署后按需运行）：
+
+```powershell
+uv run python tools\verify_v2_ui_1_remote_entry.py
+```
+
 `verify_v2_2_2_semantic_provider.py` 默认只做离线回放（真实 ChatOpenAI + 假传输），不联网；
 加 `--live` 才会做计划 §12.2 允许的最小真实调用（正例 1 次 + 无效密钥 401 负例 1 次），
 需要已在服务器环境里配置 `DASHSCOPE_API_KEY`。

@@ -7,11 +7,11 @@
 ```yaml
 state_schema: amz-project-state/v2
 task_id: amz-listing-kit-product-v2
-status: paused
+status: active
 goal_binding: required
 goal_id: 01a0ca17-2179-7eb0-969a-af9c79c4d8ca
-system_goal_observed_status: paused
-system_goal_observed_at: 2026-09-30T20:15:13+08:00
+system_goal_observed_status: active
+system_goal_observed_at: 2026-09-30T21:35:00+08:00
 plan_ref: docs/product-v2-goal-and-implementation-plan.md
 latest_audit: evals/product-v2/pre-goal-ui-rebaseline-20260930.txt
 
@@ -94,7 +94,7 @@ phase_progress:
       - evals/product-v2/v2.4.1-image-gateway-20260930-134149-v245-transport-fix.txt
 
   "5":
-    status: pending
+    status: active
     evidence:
       - evals/product-v2/v2.5.4-rework-loop-20260930-172722final.txt
       - evals/product-v2/v2.5.4-rework-loop-20260930-172722final.json
@@ -112,6 +112,12 @@ phase_progress:
       - evals/product-v2/v2.6.1-selection-20260930-183606final.json
       - evals/product-v2/evidence/v2.6.1-selection-20260930-183606.png
       - evals/product-v2/evidence/v2.6.1-selection-20260930-183606-detail.png
+      - evals/product-v2/v2.ui.1-remote-entry-20260930-213048-final.txt
+      - evals/product-v2/v2.ui.1-remote-entry-20260930-213048-final.json
+      - evals/product-v2/evidence/v2.ui.1-remote-entry-20260930-213048-localhost.png
+      - evals/product-v2/evidence/v2.ui.1-remote-entry-20260930-213048-chrome.png
+      - evals/product-v2/evidence/v2.ui.1-remote-entry-20260930-213048-edge.png
+      - evals/product-v2/evidence/v2.ui.1-remote-entry-20260930-213048-http-negative.png
 
 task_progress:
   V2.0.1:
@@ -579,10 +585,31 @@ task_progress:
       - README.md
       - docs/product-v2-project-context.md
       - .github/workflows/ci-cd.yml
-next_action_task: V2.UI.1
+
+  V2.UI.1:
+    status: done
+    evidence:
+      - evals/product-v2/v2.ui.1-remote-entry-20260930-213048-final.txt
+      - evals/product-v2/v2.ui.1-remote-entry-20260930-213048-final.json
+      - evals/product-v2/evidence/v2.ui.1-remote-entry-20260930-213048-localhost.png
+      - evals/product-v2/evidence/v2.ui.1-remote-entry-20260930-213048-chrome.png
+      - evals/product-v2/evidence/v2.ui.1-remote-entry-20260930-213048-edge.png
+      - evals/product-v2/evidence/v2.ui.1-remote-entry-20260930-213048-http-negative.png
+      - tools/verify_v2_ui_1_remote_entry.py
+      - deploy/caddy/Caddyfile
+      - app/product_v2/storage/capabilities.js
+      - app/product_v2/storage/errors.js
+      - app/product_v2/storage/db.js
+      - app/product_v2/storage/index.js
+      - app/product_v2/app.js
+      - app/product_v2/index.html
+      - app/product_v2/styles.css
+      - .github/workflows/ci-cd.yml
+      - README.md
+      - docs/product-v2-project-context.md
+next_action_task: V2.UI.2
 blockers: []
 unknowns:
   - visual_language_review_detection_quality_is_uncalibrated_channels_and_binding_only_proven_in_V2.5.2
-  - trusted_https_public_entry_is_not_yet_proven_for_remote_product_url
-updated_at: 2026-09-30T20:15:13+08:00
+updated_at: 2026-09-30T21:35:00+08:00
 ```
