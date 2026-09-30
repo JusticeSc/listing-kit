@@ -58,6 +58,7 @@ jobs:
           uv run python tools/verify_v2_3_6_prompt_manual_edit.py
           uv run python tools/verify_v2_4_1_image_gateway.py
           uv run python tools/verify_v2_4_2_generation_attempt.py
+          uv run python tools/verify_v2_4_3_batch_execution.py
 
       - name: Reject verification side effects
         run: git diff --exit-code

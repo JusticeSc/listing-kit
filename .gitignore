@@ -44,6 +44,10 @@ evals/**/*.mp4
 evals/**/*.zip
 evals/**/*.log
 
+# Curated final visual evidence referenced by the control plane is versioned
+!evals/product-v2/evidence/
+!evals/product-v2/evidence/*.png
+
 # Editors and operating systems
 .vscode/
 .idea/

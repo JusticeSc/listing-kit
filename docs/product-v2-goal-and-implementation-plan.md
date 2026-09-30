@@ -900,6 +900,50 @@ Prompt 前进后旧 Attempt 有「基于旧版本」标记。
 
 **边界**：本批不保存候选字节（V2.4.4）、不做整套批量与部分失败（V2.4.3）、不做审核与返工（Phase 5）。
 
+### 9.12 V2.4.3 整套批次执行与逐图进度
+
+本节是「一键生成整套」的批次设计；唯一权威是 `app/product_v2/domain/batch.js`（纯函数投影），
+单张 Attempt 的身份与恢复规则不变（§9.11）。批次层不写存储、不发请求、不读时钟、不生成 action id。
+
+**没有批次实体**。批次不是一种被存储的对象：进度、队列与下一步全部由「套图顺序 + 每张图最新
+Attempt + Prompt 就绪状态」即时推导（`deriveBatchState`，同输入必得同输出）。刷新、关标签页、
+换浏览器会话后按同样输入重算即得同样结果，不存在第二份需要对账的状态，因此没有「批次丢了」
+这种恢复问题。
+
+每张图在批次里的状态是六值投影：`blocked_no_prompt`（无 Prompt）、`ready`（待提交）、
+`active`（处理中）、`succeeded`、`failed`、`unknown`；前两个是「未提交」的两种原因，
+其余是 Attempt 状态的直接投影。提交顺序 = 套图顺序（唯一权威是套图计划，批次层不重排）。
+
+**队列与下一步**。推导输出四个队列：`queue`（可提交）、`reconcile_queue`（有 task id、只能核对）、
+`retry_queue`（明确失败、可重试）、`review_queue`（无身份的未知，只能人工核对）。下一步优先级：
+`empty → submit → compile → wait → review → retry → done`——先把能自动推进的动作补全，再把未知
+交回人工。
+
+**停止语义**。两种停止都不改变任何既有记录：
+
+1. 系统性停止：提交结局属于 `BATCH_HALT_CODES`（`SUBMIT_OUTCOME_UNKNOWN`、`RESPONSE_UNREADABLE`）
+   或 `error.family = internal`（服务端内部故障、provider 未配置）时，立即停新增提交——继续提交只会
+   把剩余图片拖成同类记录。这是提交结局的判定（`batchSubmitHalts`），不是界面文案判断。
+2. 用户停止：只停「新增提交」，不撤销、不覆盖、不删除任何已在途或已完成记录；再次点击从剩余队列继续。
+
+单张的明确失败（input_rejected / provider_failed）与单张的未知（上游 504）不停止批次——它们可隔离、
+可单独处理。
+
+**无身份记录与重试**。无 task id 的 `pending_submit` 与 `unknown` 永不进入提交队列与重试队列
+（`attemptReconcileMode` 判为不可核对），只能显式「新建 action」（§9.11 同规则）。重试是用户显式
+动作：沿用旧 Prompt 版本、产生新 action_id、旧记录逐字保留。
+
+**轮询**。批次运行在浏览器侧轮询（`BATCH_POLL_INTERVAL_MS = 4000`，最多 300 轮），只核对有 task id
+的记录；每轮按最新记录重推投影并渲染。服务端不参与（无任务表，§9.10）。
+
+**证据要求**（`tools/verify_v2_4_3_batch_execution.py`，V2.4.3-00..13）：正常批次按套图顺序
+各提交一次并自动核对到全部成功；部分失败隔离（一张 failed 不阻塞其余，成功记录零改写）；失败单张
+重试旧记录逐字保留；Unknown 无 task id 不自动重提、显式新建 action 后成功；停止只停新增提交；
+刷新恢复后「继续生成剩余」。终版证据：`evals/product-v2/v2.4.3-batch-suite-<stamp>-final.txt/.json`
+与 `evals/product-v2/evidence/v2.4.3-batch-suite-<stamp>.png`。
+
+**边界**：本批不保存候选字节（V2.4.4），不做审核、比较与返工（Phase 5），不做交付门禁（Phase 6）。
+
 ## 10. 实施阶段、任务与 Gate
 
 任何时刻最多一个阶段 active。每个任务同时交付必要的数据合同、服务、界面和验证，不把“前端做完”“后端做完”当作用户可观察成果。

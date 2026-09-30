@@ -43,8 +43,8 @@ phase_progress:
       - evals/product-v2/v2-domain-primitive-cleanup-20260930.txt
       - evals/product-v2/v2.2.3-intake-understanding-20260930-015817.txt
       - evals/product-v2/v2.2.3-intake-understanding-20260930-015817.json
-      - evals/product-v2/v2.2.3-workspace-20260930-015817.png
-      - evals/product-v2/v2.2.3-narrow-20260930-015817.png
+      - evals/product-v2/evidence/v2.2.3-workspace-20260930-015817.png
+      - evals/product-v2/evidence/v2.2.3-narrow-20260930-015817.png
       - evals/product-v2/v2.1.1-indexeddb-20260930-015729.txt
       - evals/product-v2/v2.1.2-project-home-20260930-015239.txt
       - evals/product-v2/v2.1.3-project-package-20260930-015253.txt
@@ -69,7 +69,7 @@ phase_progress:
       - evals/product-v2/v2.3.5-pre-generation-confirm-20260930-033626-final.txt
       - evals/product-v2/v2.3.6-prompt-manual-edit-20260930-035000-final.txt
       - evals/product-v2/v2.3.6-prompt-manual-edit-20260930-035000-final.json
-      - evals/product-v2/v2.3.6-prompt-manual-edit-20260930-035000.png
+      - evals/product-v2/evidence/v2.3.6-prompt-manual-edit-20260930-035000.png
       - evals/product-v2/v2.3.5-pre-generation-confirm-20260930-035020-v236-regression.txt
       - evals/product-v2/v2.3.4-prompt-compiler-20260930-035020-v236-regression.txt
       - evals/product-v2/v2.3.2-suite-editor-20260930-035037-v236-regression.txt
@@ -81,7 +81,10 @@ phase_progress:
       - evals/product-v2/v2.4.1-image-gateway-20260930-091224-final.json
       - evals/product-v2/v2.4.2-generation-attempt-20260930-112423-final.txt
       - evals/product-v2/v2.4.2-generation-attempt-20260930-112423-final.json
-      - evals/product-v2/v2.4.2-generation-attempt-20260930-112423.png
+      - evals/product-v2/evidence/v2.4.2-generation-attempt-20260930-112423.png
+      - evals/product-v2/v2.4.3-batch-suite-20260930-114918-final.txt
+      - evals/product-v2/v2.4.3-batch-suite-20260930-114918-final.json
+      - evals/product-v2/evidence/v2.4.3-batch-suite-20260930-114918.png
 
 task_progress:
   V2.0.1:
@@ -191,12 +194,12 @@ task_progress:
       - .github/workflows/ci-cd.yml
       - evals/product-v2/v2.2.3-intake-understanding-20260930-023544.txt
       - evals/product-v2/v2.2.3-intake-understanding-20260930-023544.json
-      - evals/product-v2/v2.2.3-workspace-20260930-023544.png
-      - evals/product-v2/v2.2.3-narrow-20260930-023544.png
+      - evals/product-v2/evidence/v2.2.3-workspace-20260930-023544.png
+      - evals/product-v2/evidence/v2.2.3-narrow-20260930-023544.png
       - evals/product-v2/v2.2.3-intake-understanding-20260930-024451.txt
       - evals/product-v2/v2.2.3-intake-understanding-20260930-024451.json
-      - evals/product-v2/v2.2.3-workspace-20260930-024451.png
-      - evals/product-v2/v2.2.3-narrow-20260930-024451.png
+      - evals/product-v2/evidence/v2.2.3-workspace-20260930-024451.png
+      - evals/product-v2/evidence/v2.2.3-narrow-20260930-024451.png
       - evals/product-v2/v2.2.3-intake-understanding-20260930-024645.txt
       - evals/product-v2/v2.2.3-intake-understanding-20260930-024645.json
       - evals/product-v2/v2.2.3-intake-understanding-20260930-025231.txt
@@ -233,13 +236,13 @@ task_progress:
     evidence:
       - evals/product-v2/v2.3.2-suite-editor-20260930-024451.txt
       - evals/product-v2/v2.3.2-suite-editor-20260930-024451.json
-      - evals/product-v2/v2.3.2-suite-editor-20260930-024451.png
+      - evals/product-v2/evidence/v2.3.2-suite-editor-20260930-024451.png
       - evals/product-v2/v2.3.2-suite-editor-20260930-024629.txt
       - evals/product-v2/v2.3.2-suite-editor-20260930-024629.json
-      - evals/product-v2/v2.3.2-suite-editor-20260930-024629.png
+      - evals/product-v2/evidence/v2.3.2-suite-editor-20260930-024629.png
       - evals/product-v2/v2.3.2-suite-editor-20260930-025222.txt
       - evals/product-v2/v2.3.2-suite-editor-20260930-025222.json
-      - evals/product-v2/v2.3.2-suite-editor-20260930-025222.png
+      - evals/product-v2/evidence/v2.3.2-suite-editor-20260930-025222.png
       - evals/product-v2/v2.3.2-oversize-drain-20260930.txt
       - tools/verify_v2_3_2_suite_editor.py
       - evals/product-v2/harness/suite-editor-contract.js
@@ -257,7 +260,7 @@ task_progress:
     evidence:
       - evals/product-v2/v2.3.3-spec-versions-20260930-025205.txt
       - evals/product-v2/v2.3.3-spec-versions-20260930-025205.json
-      - evals/product-v2/v2.3.3-spec-versions-20260930-025205.png
+      - evals/product-v2/evidence/v2.3.3-spec-versions-20260930-025205.png
       - tools/verify_v2_3_3_spec_versions.py
       - evals/product-v2/harness/specs-contract.js
       - evals/product-v2/harness/specs-contract.html
@@ -273,7 +276,7 @@ task_progress:
     evidence:
       - evals/product-v2/v2.3.4-prompt-compiler-20260930-031626-final.txt
       - evals/product-v2/v2.3.4-prompt-compiler-20260930-031626-final.json
-      - evals/product-v2/v2.3.4-prompt-compiler-20260930-031626.png
+      - evals/product-v2/evidence/v2.3.4-prompt-compiler-20260930-031626.png
       - tools/verify_v2_3_4_prompt_compiler.py
       - evals/product-v2/harness/prompt-contract.js
       - evals/product-v2/harness/prompt-contract.html
@@ -300,7 +303,7 @@ task_progress:
     evidence:
       - evals/product-v2/v2.3.5-pre-generation-confirm-20260930-033626-final.txt
       - evals/product-v2/v2.3.5-pre-generation-confirm-20260930-033626-final.json
-      - evals/product-v2/v2.3.5-pre-generation-confirm-20260930-033626.png
+      - evals/product-v2/evidence/v2.3.5-pre-generation-confirm-20260930-033626.png
       - tools/verify_v2_3_5_pre_generation_confirm.py
       - evals/product-v2/harness/confirm-contract.js
       - evals/product-v2/harness/confirm-contract.html
@@ -329,7 +332,7 @@ task_progress:
     evidence:
       - evals/product-v2/v2.3.6-prompt-manual-edit-20260930-035000-final.txt
       - evals/product-v2/v2.3.6-prompt-manual-edit-20260930-035000-final.json
-      - evals/product-v2/v2.3.6-prompt-manual-edit-20260930-035000.png
+      - evals/product-v2/evidence/v2.3.6-prompt-manual-edit-20260930-035000.png
       - tools/verify_v2_3_6_prompt_manual_edit.py
       - evals/product-v2/harness/prompt-edit-contract.js
       - evals/product-v2/harness/prompt-edit-contract.html
@@ -372,7 +375,7 @@ task_progress:
     evidence:
       - evals/product-v2/v2.4.2-generation-attempt-20260930-112423-final.txt
       - evals/product-v2/v2.4.2-generation-attempt-20260930-112423-final.json
-      - evals/product-v2/v2.4.2-generation-attempt-20260930-112423.png
+      - evals/product-v2/evidence/v2.4.2-generation-attempt-20260930-112423.png
       - tools/verify_v2_4_2_generation_attempt.py
       - app/product_v2/domain/attempt.js
       - app/product_v2/workspace.js
@@ -384,9 +387,28 @@ task_progress:
       - docs/product-v2-goal-and-implementation-plan.md
       - .github/workflows/ci-cd.yml
 
-next_action_task: V2.4.3
+  V2.4.3:
+    status: done
+    evidence:
+      - evals/product-v2/v2.4.3-batch-suite-20260930-114918-final.txt
+      - evals/product-v2/v2.4.3-batch-suite-20260930-114918-final.json
+      - evals/product-v2/evidence/v2.4.3-batch-suite-20260930-114918.png
+      - tools/verify_v2_4_3_batch_execution.py
+      - app/product_v2/domain/batch.js
+      - app/product_v2/domain/index.js
+      - app/product_v2/workspace.js
+      - app/product_v2/index.html
+      - app/product_v2/styles.css
+      - app/product_v2_server.py
+      - evals/product-v2/harness/batch-contract.js
+      - evals/product-v2/harness/batch-contract.html
+      - README.md
+      - docs/product-v2-goal-and-implementation-plan.md
+      - .github/workflows/ci-cd.yml
+
+next_action_task: V2.4.4
 blockers: []
 unknowns:
   - visual_language_provider_model_id_is_deferred_to_V2.5.2_and_does_not_block_browser_workspace_work
-updated_at: 2026-09-30T11:25:11+08:00
+updated_at: 2026-09-30T11:56:10+08:00
 ```
