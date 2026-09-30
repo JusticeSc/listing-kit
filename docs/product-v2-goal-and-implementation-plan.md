@@ -336,6 +336,570 @@ PromptContext
 
 每个写外部系统的请求都带稳定 action ID。服务端错误响应必须区分输入拒绝、Provider 明确失败、超时/Unknown 和内部错误；不得返回“失败”掩盖未知结果。
 
+### 9.1 V2.2.2 语义 Provider：契约、装配与错误分类
+
+本节是 `deepseek-v4.1-flash` 适配器（`src/providers/v2_semantic.py`、
+`src/providers/v2_dashscope_semantic.py`、`src/providers/v2_fake_semantic.py`）的操作级设计；
+选型依据在项目上下文 §4.1 的 SEL-003/006/007，这里不重复论证，也不改变它们的结论。
+
+**契约对象（SEL-006，权威表示 = Pydantic）**
+
+- `SemanticRequest`：一次分析的全部输入（商品资料投影、参考图元数据、选项）。字段级约束（必填、长度、数量、词表）在模型上声明；越界即 `input_rejected` + `fatal`，绝不截断或补默认值后照常调用。
+- `RawSlot`：模型原始槽位。跨字段校验：`value` 形状必须与 `value_type` 一致、`core_fixed` 必须命中核心注册表且 `value_type` 与注册表一致、`enum_values` 只允许 `enum` 使用、`depends_on` 合法且不含自依赖与重复。`critical` 不在模型契约里：归一化时由系统按 `CORE_SLOT_REGISTRY` 派生（V2.2.4 实测要求模型回显只会制造整包拒绝）。
+- `RawProposal`：`summary` / `questions` / `slots`；`slots` 有常量上限（24），本次实际上限由请求的 `max_slots` 决定。
+
+**装配（SEL-007）**
+
+- `ChatOpenAI(model, base_url, api_key, timeout, max_retries=0)`，再 `with_structured_output(RawProposal, method="json_mode", include_raw=True, extra_body={"max_tokens": 预算})`；不注入 temperature 等本项目未验证的参数。
+- 系统提示必须含 "JSON" 字样，并携带由 `RawProposal.model_json_schema()` 生成的格式说明（`json_mode` 不会自动注入格式，百炼同 OpenAI 要求提示中出现 json）。
+- 令牌预算走 `extra_body.max_tokens`（默认 5000，`AMZ_V2_SEMANTIC_MAX_TOKENS`）：SEL-003 PoC 证明百炼兼容模式认 `max_tokens`，而 langchain-openai 1.6.6 会把 `max_tokens` 字段改写成 `max_completion_tokens`（本机实测），后者在百炼的支持未证实。默认值按 §9.3 实测校准：6 槽 ≈ 950 completion tokens（含 reasoning 324、prompt 1157），12 槽成功样本 1734（含 reasoning 547）；1400 与 3200 下都出现过截断（`evals/product-v2/v2.2.4-category-generality-20260930-021048.txt`、`-021404.txt`），因此取 5000，并用一次直连调用确认该参数被端点接受。
+- 单次调用预算：`max_attempts=1`；库层重试被显式关闭，Unknown 之后不得自动重提（错误语义见下）。
+
+**禁止的静默清洗（三条，全部改为分类失败）**
+
+1. 不合成证据：模型没给 `evidence` 即 `INVALID_RESPONSE`；系统不代写、不补默认来源。
+2. 不丢弃非法槽位：`slots` 出现非对象或违反跨字段约束的项，整包 `INVALID_RESPONSE`（带索引）。
+3. 不截断：`len(slots) > max_slots` 即 `INVALID_RESPONSE`（带数量），不取前 N 个。
+
+错误消息与证据不得回显输入正文或密钥（密钥片段按 `***` 遮蔽）。
+
+**错误分类表（family / code / retry_policy）**
+
+| 触发 | family | code | retry_policy |
+|---|---|---|---|
+| 输入字段越界、上下文超长 | input_rejected | INPUT_INVALID / INPUT_TOO_LONG | fatal |
+| 401 / 403 | provider_failed | PROVIDER_AUTH_FAILED | fatal |
+| 429 | provider_failed | PROVIDER_RATE_LIMITED | retryable |
+| 其余 HTTP 失败（含 5xx） | provider_failed | PROVIDER_HTTP_ERROR | retryable |
+| 连接失败（确定未送达） | provider_failed | PROVIDER_UNREACHABLE | retryable |
+| 超时（无法区分是否送达） | provider_unknown | PROVIDER_TIMEOUT | requires_review |
+| 内容策略拒绝 | provider_failed | PROVIDER_REFUSED | fatal |
+| 输出被 `length` 截断 | provider_failed | PROVIDER_OUTPUT_TRUNCATED | requires_review |
+| 可见文本为空 | provider_failed | INVALID_RESPONSE | retryable |
+| JSON / 结构校验失败 | provider_failed | INVALID_RESPONSE | retryable |
+| 未分类异常 | provider_unknown | PROVIDER_UNKNOWN | requires_review |
+
+超时保守归 Unknown：宁可人工核对，也不自动重提。`retryable` 只表示“没有产生外部副作用、可以安全重试”，不代表系统会自动重试——真实调用仍受 §12.2 的预算纪律约束，重试必须是可见决定。
+
+**验证入口**：`tools/verify_v2_2_2_semantic_provider.py`。离线部分（跨语言注册表、装配与真实请求体断言、错误映射矩阵、三条静默清洗负例、fake 全场景、无隐藏重试）默认执行；`--live` 增加 Q4 允许的最小真实调用（正例 1 次 + 无效密钥 401 负例 1 次）。
+
+### 9.2 V2.2.3 商品资料与异常驱动理解界面
+
+本节是「商品资料 → 商品理解」这一段的操作级设计：视图、动作、状态、规则与反馈。数据形状的权威仍是
+§4 与浏览器侧 domain 契约（`app/product_v2/domain/`），本节不复制字段定义。
+
+**服务端（第一组真实 API 路由，仍是纯无状态）**
+
+| Method | Path | 输入 | 输出 | 失败语义 |
+|---|---|---|---|---|
+| GET | `/api/v2/capabilities` | 无 | 语义 provider 能力（id/模型/是否配置/契约版本）与 `analyze` 的请求字段 | 无 |
+| POST | `/api/v2/semantic/analyze` | SemanticRequest 投影（名称/介绍/卖点/重点/参考图元数据/上限） | 语义提案（槽位 + 问题 + meta） | 分类错误 + `unknown` 标记 |
+
+路由只做三件事：选 provider、调用、把分类错误映射成 HTTP 状态（`input_rejected`→400、
+`provider_failed`→502、`provider_unknown`→504 且 `unknown=true`、`internal`→500）。请求体有字节上限，
+非法 JSON 归 `input_rejected`。provider 由环境变量选择（默认取 `config/product-v2/providers.json`），
+`fake-semantic` 用于无密钥环境与验证入口。服务端不落任何业务状态、不保存项目。
+
+**重分析不排除已存在槽位**：请求里的 `existing_slot_ids` 一律传空。重复提案是「冲突检测」的输入——
+已确认值与新提案不同时，`applySlotAction` 会把槽位变成 `conflict` 并保留双方证据，而不是静默覆盖。
+
+**浏览器侧四个视图（同一个项目视图内，按顺序）**
+
+| 视图 | 默认展示 | 按需展开 | 动作 | 规则 |
+|---|---|---|---|---|
+| 参考图 | 缩略图、角色、删除 | 原图信息（尺寸/字节/媒体类型/文件名） | 上传（可多选）、改角色、删除 | 至少一张 primary；同 sha256 不重复登记；≤20 张 |
+| 商品资料 | 名称、介绍、卖点、重点 | — | 编辑（防抖草稿）、保存 | 字段上限取自 domain；未就绪时“分析”不可用并说明缺什么 |
+| 分析 | 一个按钮与最近一次结果摘要 | 失败详情 | 分析 / 重新分析 | 前置条件=资料就绪；`unknown` 之后不自动重提，只能人工再点 |
+| 商品理解 | 冲突、未知、缺失、未确认、必确认项 | 全部事实、来源、置信、依赖 | 确认、修改、标记未知、删除、新增 | 按钮集合由 `slotPermissions`/`canConfirmSlot`/`canDeleteSlot`/`canAddSlot` 派生；非法动作不出现 |
+
+**草稿与确认事实**：表单内容在停止输入后防抖写入商品资料文档（同一 document_id，版本递增），刷新后
+原样恢复；模型提案只经 `applySlotAction` 写入槽位文档，因此已确认值不会被覆盖。
+
+**状态派生**：`EMPTY`（未就绪且无槽位）→ `INTAKE_READY`（资料就绪、无槽位）→ `UNDERSTANDING_REVIEW`
+（有槽位但理解未就绪）→ `PLAN_REVIEW`（`briefReadiness` 通过）。状态由对象关系派生并写回项目记录，
+不由界面任意赋值。`PLAN_REVIEW` 只表示“已具备进入套图规划的条件”；套图与生成尚未接入时，界面必须
+显式说明可用范围，不能让状态标签暗示未实现的能力。
+
+**验证入口**：`tools/verify_v2_2_3_intake_understanding.py`——用真实正式入口 + `fake-semantic`
+provider 驱动真实浏览器：空白起点、上传参考图、草稿刷新保留、分析入库、异常优先列表、权限投影、
+重分析冲突不覆盖、`unknown` 不自动重提（用浏览器网络事件计数）、状态推进、390px 与键盘路径。
+
+契约套件的浏览器入口（`tools/v2_test_server.py`）复用正式入口的处理器与同一套路由，只额外挂 `/harness/`
+并把 provider 固定为 `fake-semantic`：契约验证走的是产品代码路径，不是另一份静态服务器。
+
+### 9.3 V2.2.4 四类商品通用性探针（Gate G2 证据）
+
+本节定义「四类结构明显不同的商品得到不同、可解释、可追溯的动态槽位」怎样被机检。它不新增用户可见功能，
+也不改变 §9.1 的契约与装配；它是 Gate G2 的完成证据入口，未通过时改槽位协议或 Prompt，不写商品名分支。
+
+**固定输入（fixture 写在验证脚本里，不进用户项目）**
+
+| 类别 | 输入要点 | 期望的结构差异 |
+|---|---|---|
+| 品牌刚性商品 | 品牌、型号、材质、性能数字 | 品牌/材质/性能参数类槽位 |
+| 服装 | 面料、版型、适用场景 | 面料/版型/尺码类槽位 |
+| 包装食品 | 配料、净含量、包装形态 | 配料/净含量/保质期类槽位 |
+| 家具 | 尺寸、材质、承重、组装 | 尺寸/承重/安装类槽位 |
+
+fixture 只提供 `SemanticRequest` 的字段（名称、介绍、卖点、本次重点、参考图元数据、locale、platform、
+上限），不提供品类标签；探针不写 IndexedDB、不复用浏览器项目、不改任何产品状态。
+
+**判据（全部机检；任一条不成立则 Gate G2 不通过）**
+
+1. 输入驱动：四个 fixture 都通过 `parse_request`，且 `build_messages` 生成的用户消息两两不同。
+2. 合法性：真实 provider 返回的每个槽位都通过消费侧 `check_proposal_slot`（与适配器内的
+   `assert_proposal_legal` 是同一套硬约束，不接受任何非法槽位）。
+3. 结构差异：四类的 `category_dynamic` 槽位 id 集合两两不全等；至少两类存在「只属于该类」的动态槽位。
+4. 可追溯：每个动态槽位满足 `source=model_inference`、`status=proposed`、`confidence∈[0,1]`、
+   至少一条 evidence，且提案带非空 summary。
+5. 无常量泄漏：fixture 的商品名、品牌与特征词不得出现在 `src/`、`config/` 与 `app/product_v2/**/*.js`；
+   HTML 里的示例文案不算泄漏，但同一批词出现在 JS 里即失败。系统提示不得出现任何品类枚举。
+
+**预算与停止条件（§12.2）**：`--live` 走 `dashscope-semantic`，每类最多 1 次、总计最多 4 次真实调用；
+不重试、不“抽卡”。任何一类失败（分类失败或 Unknown）只按分类记录，该类判为未验证并使 G2 不通过；
+不降低判据，也不因为结果不好看而重跑。离线模式只跑判据 1 与 5，0 次调用。
+
+**证据**：`tools/verify_v2_2_4_category_generality.py` 输出
+`evals/product-v2/v2.2.4-category-generality-<stamp>.txt/.json`：四个请求投影的指纹、每类的动态槽位
+（slot_id/label/value_type/value/confidence/evidence）、核心槽位值、summary、questions、usage、
+request_id 与逐条判据结论，供人工逐类审阅。
+
+### 9.4 V2.3.1 图片角色、模板与条件依赖注册表
+
+本节是 Gate G3 的第一块：把「一张图要什么依据」变成可机检、只有一个消费者的规则注册表。
+它不新增用户可见功能，也不生成图片；界面消费与 Prompt 编译在 V2.3.2–V2.3.4。
+
+**落点与唯一消费者**
+
+- 唯一权威表示 = `app/product_v2/domain/suite-plan.js`：冻结数据 + 纯函数，与 `CORE_SLOT_REGISTRY`
+  同法（无构建步骤、无新增依赖、不碰存储与网络）。
+- 唯一规则消费者 = 同一模块导出的 `evaluateDependencies` / `evaluateShot` / `recommendPlan` /
+  `checkShotDraft` / `validateSuiteRegistry`。服务器不复制这套规则；后续 `/api/v2/suites/plan`
+  若需要，必须先按本节「新增消费者」条件重开，或在请求里携带浏览器解析好的 ShotSpec，
+  不允许在 Python 里再写一份会悄悄分叉的依赖判断。
+- 依赖只引用核心槽位 id 与「该图绑定的已确认事实」，不出现任何商品名、品牌或品类分支。
+- 参考图角色词表必须与语义契约一致：浏览器 `REFERENCE_ROLES` 从 4 项扩到 6 项
+  （`primary/detail/packaging/scene/competitor/other`）——否则「对比图」依赖在真实界面里永远无法
+  满足。逐字比对仍由 `tools/verify_v2_2_2_semantic_provider.py` 的跨语言合同项负责（与核心槽位
+  注册表同一项）；本节的验证器只断言「注册表依赖用到的 role 都在词表内」。
+
+**数据形状（每个字段必须有消费者）**
+
+- `IMAGE_ROLES`：`role_id` / `label` / `purpose` / `custom`；`custom` 角色是用户自定义图的落点。
+- `SHOT_TEMPLATES`：`template_id` / `role_id` / `label` / `intent` / `required` / `order` /
+  `dependencies`（按 `order` 升序构成推荐顺序）。
+- 依赖谓词（故意很小，但足以表达对比/尺寸/成分三类硬依赖）：
+  - `asset_role {role}`：必须有该角色的参考图（对比图要 `competitor`）；
+  - `fact {slot_id}`：该核心槽位必须 `confirmed`；
+  - `fact_any {slot_ids}`：给定核心槽位里至少一个 `confirmed`；
+  - `bound_fact {}`：该图必须绑定至少一个已确认事实——品类专属的配料/成分事实没有固定
+    slot_id，由人工在计划里绑定，注册表因此保持品类无关；
+  - `any_of {of}`：任一子谓词成立（尺寸图 = 核心 `size_summary` 或人工绑定的动态尺寸事实）。
+- 求值上下文：`facts`（`slot_id` / `status` / `value`）、`assets`（`role` / `sha256`）、
+  `bound_fact_ids`。只有 `status=confirmed` 的事实算依据；其余状态一律阻断并给精确原因。
+
+**行为**
+
+- `recommendPlan(context, options)`：按 `order` 返回有序 Shot 实例与逐条依赖状态；必需模板即使被
+  阻断也要返回（界面必须指出先补什么），可选模板保留「被阻断 + 原因」，不静默丢弃。
+- `evaluateShot(shot, context)`：对已实例化的 Shot 用其绑定事实重新求值，供编辑器即时投影。
+- `createCustomShot` / `checkShotDraft`：支持 custom；未知角色、空 label、非法绑定被拒。
+- `validateSuiteRegistry`：重复 id、未知角色、未知依赖、空 `slot_ids`、`order` 非法或重复、
+  注册表里的 custom 模板、未被任何模板引用的角色（custom 除外）、以及**没有消费者的字段**
+  都报红；`any_of` 递归校验并限深。
+
+**验证与证据**
+
+- `tools/verify_v2_3_1_suite_registry.py`：`node --check` + 真实 Chromium 跑
+  `evals/product-v2/harness/suite-plan-contract.js`（R01–R13）：正例、反向探针（每条守卫都要能
+  变红），以及 R11 **改数据探针**——逐字段变异并断言 `FIELD_CONSUMERS` 指名的消费者输出必须变化。
+- 证据：`evals/product-v2/v2.3.1-suite-registry-<stamp>.txt/.json`。
+
+**边界与复访**：只证明角色/模板/依赖语言本身的机检行为与唯一消费者。不证明推荐组合的审美质量、
+Prompt 编译、真实生成与审核（V2.3.4 起）。当 Python 侧确实需要独立判断依赖（例如服务端要在
+不信任浏览器输入时自行阻断）时，按「新增一个消费者」重开本节，同时给出跨语言一致守卫。
+
+### 9.5 V2.3.2 可增删复排的套图编辑器
+
+本节把 §9.4 的注册表变成用户可编辑的套图计划：任意张数、复制、删除、排序，顺序与必需/可选
+状态一致持久化；界面消费在 `app/product_v2/workspace.js` 的「套图规划」卡片。
+
+**落点与唯一权威**
+
+- 唯一权威表示与操作 = `app/product_v2/domain/suite.js`：`SuitePlan` 文档契约 + 纯函数操作，
+  复用 §9.4 的注册表与 `checkShotDraft` / `evaluateShot`，不复制依赖规则、不新增依赖。
+- 存储：`DOMAIN_DOCUMENT_KINDS.suite_plan`，`document_id = "suite"`，沿用既有版本化 documents
+  仓库（append-only）；「没有方案」= 没有本文档，不用空数组冒充。
+- 失效语义沿用 `invalidation.js`：增删走 `shot_added_or_removed`（scope=suite），本任务的
+  验证不覆盖传播（V2.3.3 落版本与失效），只保证计划文档本身的事务性。
+
+**数据形状与不变量**
+
+- `shots` 数组的顺序就是持久化顺序（第 i 项 order = i+1），不额外存 order 字段以免两份真相。
+- 每个 Shot：`shot_id` / `template_id` / `role_id` / `label` / `intent` / `required` / `custom` /
+  `dependencies` / `fact_slot_ids`。
+- 不变量：`1..20` 张；`shot_id` 合法且唯一；非自定义图必须来自已登记模板、角色一致、
+  依赖与模板逐字一致；自定义图 `template_id=null`、依赖为空、`required=false`；
+  整套至少 1 张必需图（Amazon 主图不允许删到 0）。
+
+**操作（纯函数，失败原子）**
+
+- `seedSuitePlan(context)`：必需模板 + 依赖已满足的可选模板，按 `order` 落成计划；被阻断的
+  可选模板不静默塞入（在「添加」列表里带原因呈现）。
+- `addShotFromTemplate` / `addCustomShotToPlan`：追加；id 由 `shot_<template_id>` 派生并自动
+  去重（`_2`、`_3`…），同一模板允许出现多次（例如两个场景变体）。
+- `copyShot`：新 id、`required=false`、名称加「（副本）」；原图不动，复制不是「改」。
+- `removeShot`：会删掉最后一张、或删掉最后一张必需图时拒绝并给出精确原因。
+- `moveShot(plan, shotId, ±1)`：数组内换位；边界处返回 unchanged（不报错）。
+- 所有操作返回新计划对象，输入不被修改；失败抛 `CONTRACT_INVALID`，调用方因此不会写出
+  半成品——这就是「操作事务失败不改变旧计划」的实现方式。
+
+**界面契约（按钮 / 状态 / 反馈）**
+
+- 按钮：`生成推荐方案`、`选择模板 + 添加模板图`、`添加自定义图（名称 + 用途）`；
+  每行 `上移` / `下移` / `复制` / `删除`。
+- 状态：`共 N 张，可生成 M 张`；每行显示 必需/自定义 徽标与依赖状态（满足或精确阻断原因）。
+- 锁定：商品理解未就绪（非 `PLAN_REVIEW`）时套图卡片只读，并说明先完成哪一步。
+- 反馈：操作失败显示精确原因，旧计划与存储版本都不变；刷新后顺序、复制与删除结果原样恢复。
+
+**验证与证据**
+
+- 契约 harness `evals/product-v2/harness/suite-editor-contract.js`（E01–E12）：操作语义、
+  不变量、反向探针（每条守卫都能变红）、失败原子性与 id 去重。
+- `tools/verify_v2_3_2_suite_editor.py`：域契约 + 真实正式入口 UI 流（生成推荐 → 复制 → 上移 →
+  删除副本 → 删必需图被拒 → 加自定义图 → 刷新恢复）+ 存储版本对照 + 截图。
+- 证据：`evals/product-v2/v2.3.2-suite-editor-<stamp>.txt/.json/.png`。
+
+**边界与复访**：不证明 StyleSpec/ShotSpec 版本与失效传播（V2.3.3）、Prompt 编译与真实请求
+（V2.3.4）、生成前确认与外发资料摘要（V2.3.5）。计划文档的跨机器迁移沿用项目包路径，不另开后门。
+
+### 9.6 V2.3.3 StyleSpec 与 ShotSpec：编辑、版本与失效传播
+
+本节把「公共风格」和「单图规格」变成可编辑、可回退、影响范围精确的规格层；Prompt 编译在 V2.3.4
+消费这些字段，本任务只负责规格本身与它引起的失效投影。
+
+**落点与唯一权威**
+
+- 唯一权威表示与规则 = `app/product_v2/domain/specs.js`：两个文档契约、默认值派生、差异、失效投影
+  与审核清单投影都在本文件；依赖规则复用 §9.4，失效语义复用 `invalidation.js`，不复制第二份。
+- 存储：`DOMAIN_DOCUMENT_KINDS.style_spec`（`document_id = "style"`，项目级一份）与
+  `DOMAIN_DOCUMENT_KINDS.shot_spec`（`document_id = shot_id`，每张图一份）；沿用 append-only
+  documents 仓库与 `expectedVersion` 乐观并发，历史只增不改。
+
+**数据形状**
+
+- `StyleSpec`：`schema_version` + `background` / `lighting` / `color_tone` / `composition`（文本）
+  + `avoid`（列表，一行一条）；空字段不进入投影（投影只列有值的字段）。
+- `ShotSpec`：`schema_version` + `purpose`（必填，这张图要达成什么）+ `keep`（必须保持）+
+  `change_allowed`（允许变化）+ `notes`（可选）；`keep` / `change_allowed` 各 1..8 项、单项 <= 60 字。
+- 默认值由角色派生：`purpose` 取模板 intent，保留项/允许变化按角色给默认（主图必须保持商品外观、
+  标识与颜色；场景图允许环境与道具变化），自定义图按通用默认；未保存的规格在界面上明确标注「默认」。
+
+**操作与不变量**
+
+- `checkStyleSpec` / `checkShotSpec`：未知字段、类型不符、超长、空 purpose、重复项、空列表都报红；
+  失败抛 `CONTRACT_INVALID`，调用方不写半成品。
+- `styleSpecDiff` / `shotSpecDiff`：只报告真正变化的字段，供界面显示「这次改了什么」。
+- `specChangeProjection(changeKind, context)`：把 `invalidationsFor` 的结果投影成人读结论——
+  影响哪些图、失效什么、保留什么；`style_changed` 影响全套，`shot_spec_changed` 只影响目标 Shot
+  且必须带 shotId。
+- `previousVersionOf(versions, currentVersion)`：回退只选「比当前小的最高版本」；回退 = 用旧 payload
+  写一个新版本，历史不覆盖（由存储层保证）。
+- `reviewChecklist(shot, {shotSpec, styleSpec})`：把规格投影成逐图审核清单（目的 / 必须保持 /
+  允许变化 / 公共风格），确定性输出，供 V2.5 的自动与人工审核复用。
+- `suiteSpecDigest(plan, {styleSpec, shotSpecsById})`：按计划顺序给出每张图的清单与「默认/已保存」
+  状态，界面只消费这一份投影。
+
+**界面契约**
+
+- 「风格与单图规格」卡片：风格表单（五字段）+ `保存风格` + 版本号 + 失效投影提示（保存前就显示
+  「会影响全部 N 张图：Prompt 版本与审核报告失效；套图计划与参考图保留」）。
+- 每张图一份规格编辑器（目的 / 必须保持 / 允许变化）+ `保存` + 版本号 + `恢复上一版本`
+  （无上一版本时禁用）+ 审核清单预览。
+- 后置条件可见：保存成功后版本号 +1 且清单立刻反映新值；单图保存不得改变其他图的版本或清单。
+
+**验证与证据**
+
+- 契约 harness `evals/product-v2/harness/specs-contract.js`（F01–F12）：默认值、校验反向探针、
+  差异、失效投影（整套 vs 单图）、回退选版、清单投影与 digest。
+- `tools/verify_v2_3_3_spec_versions.py`：域契约 + 真实正式入口 UI 流（保存风格 → 清单全变 →
+  只保存单图 → 其他图版本不变 → 回退成新版本且历史递增 → 刷新恢复）+ 截图与存储版本对照。
+- 证据：`evals/product-v2/v2.3.3-spec-versions-<stamp>.txt/.json/.png`。
+
+**边界与复访**：不证明 Prompt 编译与请求一致性（V2.3.4）、生成前确认（V2.3.5）、真实生成与审核
+（Phase 4 起）。风格字段是结构化规格，不是 Prompt 片段；在 V2.3.4 里它们进入编译器输入，不得被
+拼成无规则的中英文混合文本。
+
+### 9.7 V2.3.4 Provider 感知 Prompt 编译器
+
+本节把 §9.4 的依赖、§9.6 的规格、平台规则与 qwen-image-3.0 的 Provider 合同编译成
+「可查看、可追溯、与实际请求逐字一致」的 Prompt 版本；编译器是纯函数，不调用模型、不生成图片。
+
+**落点与唯一权威**
+
+- 唯一权威表示与规则 = `app/product_v2/domain/prompt.js`：平台档（`PLATFORM_PROFILES`）、Provider 档
+  （`PROVIDER_PROFILES`）、分段模板、语言策略、冲突判定、请求快照与来源引用都在本文件。
+- 复用而不是重写：依赖是否满足复用 §9.4 `evaluateDependencies`；失效语义沿用 `invalidation.js` 的
+  `prompt_edited`；hash 复用 `app/product_v2/storage/db.js` 的 WebCrypto `sha256Hex`（与 repository
+  的 `digest` 注入同法由调用方注入，domain 不 import storage、不新增第二种散列）；Prompt 分段拼装是
+  领域语义而非通用模板能力，不引入模板引擎或新依赖。
+- 版本化记录：`DOMAIN_DOCUMENT_KINDS.prompt_version`（`document_id = shot_id`，每图一份，append-only）；
+  输入变化只让版本过期，不覆盖历史。
+- 顺带修复（同一节范围）：`suite.js` 在种子/手动添加模板图时，把模板依赖中由已确认核心事实满足的部分
+  自动绑定为该图的文案来源（`impliedFactBindings`）。规则仍然只有 §9.4 依赖表一份，不新增界面、
+  不写商品分支；否则卖点信息图等文字类图片会编译出没有文案来源的空壳 Prompt。
+
+**输入、输出与原子性**
+
+- 输入 = `brief`（已确认事实）+ 一个 `shot` + `styleSpec`/`shotSpec` + `context`（facts/assets，供依赖判定）
+  + 平台档 + Provider 档。
+- 输出 = `{ sections[], text, source_refs[], warnings[], language, platform, provider, basis }`：
+  每个 section 有 `key/label/kind/text/source_refs`，`text` 是 sections 的确定性拼接（模型真正收到的字符串）。
+- 失败 = `CONTRACT_INVALID` + 精确问题列表（缺依据、冲突、超长、非法引用），不返回半成品、不修改输入。
+  调用方在失败时保留已保存的旧版本，并阻止生成（V2.3.5 在此之上做生成前确认）。
+
+**语言策略（policy id = `zh-instruction-v1`）**
+
+- 指令段（商品一致性/风格/任务/平台/避免）统一中文；段内任何非中文原文必须来自输入、去引号后以「」逐字引用；
+  编译器对引用值做引号中和与空白归一，保证检查器不可能把用户值误当裸外语。
+- 图中文字 = 平台语言：`amazon_us` 为英文；每条必须逐字等于某条已确认事实值，禁止翻译、改写或补全。
+  事实值语言与平台语言不一致时给出 `ON_IMAGE_TEXT_NOT_PLATFORM_LANGUAGE` 警告（交人工决定，不自动翻译）。
+- Amazon 主图不得出现叠加文字/水印；主图编译时不产出文字段；若绑定了事实而未使用，必须给出显式警告，
+  不静默丢弃。
+
+**冲突、覆盖与泄漏守卫**
+
+- `keep` 与 `avoid`、`keep` 与 `change_allowed` 去重归一后相交 → 阻断编译。
+- 主图要求纯白背景而公共风格给出非白背景 → 平台覆盖风格 + `STYLE_OVERRIDDEN_BY_PLATFORM` 警告，
+  两个来源都写进 `source_refs`，不静默改写。
+- 未确认或未绑定的事实值出现在任何段落 → `UNAUTHORIZED_FACT_VALUE` 阻断（对齐 V1 的既有教训）。
+- Provider 约束：参考图 1..3、尺寸在 384..2048 与面积/比例合同内、`prompt_extend=false`、`watermark=false`、
+  负向约束写进正文尾部（该模型没有独立 negative 字段）。
+
+**记录、hash 与过期**
+
+- `request_snapshot` = `{model, size, n, prompt_extend, watermark, reference_roles, prompt}`，含真实参考图的
+  hash/角色引用，不含图片字节；`hash = sha256(canonicalJson(request_snapshot))`。
+- `basis` = 槽位 basis + `suite_version` + `style_version` + `shot_spec_version` + 平台/Provider 档版本；
+  `promptStaleness(record, current)` 机检过期并给出原因，供界面显示「需重新编译」。
+- 界面展示文本、记录文本与快照文本必须是同一个字符串；UI 的 hash 不得由展示层另算。
+
+**界面契约**
+
+- 「Prompt 预览与版本」卡片：每张图一行/一卡，显示 `role_label`、编译状态、`text`、来源引用、
+  `hash` 前 12 位与完整值、请求摘要（模型/尺寸/参考图角色/负向约束在正文）；未编译显示「未编译」，
+  过期显示「已过期：原因」，失败显示精确阻断原因且旧版本仍可见。
+- 按钮集合固定为「编译并保存版本」（就绪时可用）；不做生成、不做确认（后续任务）。
+
+**验证与证据**
+
+- 契约 harness `evals/product-v2/harness/prompt-contract.js`（G01–G12）：golden 快照、来源可解析、
+  hash 稳定性与输入不变性、语言策略、主图平台覆盖、keep/avoid 冲突、依赖阻断、未授权事实泄漏、
+  请求快照一致性、逐条反向探针。
+- `tools/verify_v2_3_4_prompt_compiler.py`：`node --check` + 真实 Chromium 契约套件 + 正式入口 UI 流
+  （编译→保存→界面/存储/hash 三者一致→改风格→过期→重新编译→刷新恢复）+ 截图 + 零 console error。
+- 证据：`evals/product-v2/v2.3.4-prompt-compiler-<stamp>.txt/.json/.png`。
+
+**边界与复访**：不调用任何模型、不生成图片、不证明出图质量（Phase 4）；不做生成前确认与外发资料摘要
+（V2.3.5）。新增第二个 Provider 时只允许新增档位数据与差异项；若出现跨 Provider 的模板分叉，先按
+「新增消费者」重开本节，不允许把平台或供应商分支写进界面层。
+
+### 9.8 V2.3.5 生成前确认与外发资料摘要
+
+本节把「套图计划 + 每图 PromptVersion + 参考图 + 平台/Provider 档」归约成一张确定性的生成前确认单：
+用户提交前必须看到张数、每图任务与状态、将要发给外部模型的资料、尚未消除的风险；任何一图缺 Prompt、
+Prompt 过期或依赖不满足都必须阻断并给出精确修改位置。本任务不调用模型、不提交任何生成请求。
+
+**落点与唯一权威**
+
+- 唯一权威表示与规则 = `app/product_v2/domain/confirm.js`：确认单形状、阻断码、外发资料摘要、风险传播与
+  指纹失效判定都在本文件。不复制 Prompt 规则（复用 `prompt.js`），不复制依赖规则（复用 `suite-plan.js`
+  的 `evaluateShot`），不写第二种散列（指纹由调用方注入 `storage/db.js` 的 `sha256Hex`）。
+- 版本化记录：`DOMAIN_DOCUMENT_KINDS.generation_confirm`（`document_id = "generation"`，append-only）。
+  每次确认写一条新版本，不覆盖、不删除历史。
+- 项目状态：存在「与当前确认单指纹一致」的确认记录时，派生状态从 `PLAN_REVIEW` 前进到 `READY_TO_GENERATE`；
+  确认失效（上游或 Prompt 前进）自动回落到 `PLAN_REVIEW`。状态仍由对象关系派生，界面不自由赋值（§6.1）。
+- 界面只做投影与触发：确认按钮只写本地记录，不发请求；文案必须明说本版尚未调用图片模型。
+
+**输入、输出与原子性**
+
+- 输入 = `suitePlan` + 每图 `{record, version}`（可缺）+ `context`（facts/assets）+ 每图当前 basis
+  （`briefBasis / suite_version / style_version / shot_spec_version / platform / provider`）。
+- 输出 = 确认单 `{schema_version, platform, provider, total, ready, blocked, can_submit, shots[], external_summary, blockers[], risks[]}`：
+  - `shots[]`：`shot_id / order / label / role_label / intent / template_id / required / satisfied / prompt{version, hash, chars} / references[{role, sha256_prefix}] / risks[] / blockers[]`；
+  - `external_summary`：`model / size / n / prompt_extend / watermark / reference_count / reference_roles / prompt_chars / on_image_text_language / statement`，
+    只出现真实会外发的参数与资料身份：参考图只列角色 + sha256 前 12 位，不含图片字节；
+  - 精确位置：每个阻断带 `fix = {region, shot_id, label, action}`，`region ∈ intake / understanding / suite / style / shot_spec / prompt`。
+- 阻断码（全部阻止提交）：`PROMPT_MISSING`、`PROMPT_RECORD_INVALID`、`PROMPT_TEXT_MISMATCH`、`PROMPT_STALE`、
+  `DEPENDENCY_UNSATISFIED`、`PLATFORM_MISMATCH`、`PROVIDER_MISMATCH`、`REFERENCE_COUNT_INVALID`。
+  `PROMPT_STALE` 的 fix 位置按过期原因字段投影（`brief.*` → 商品理解，`style_version` → 风格，`shot_spec_version` → 单图规格，
+  `suite_version` → 套图规划，其余 → Prompt）。
+- 风险（可确认但不得静默丢弃）= 编译警告（语言不一致、平台覆盖风格、主图绑定事实未使用）逐条进入 `risks[]`，
+  界面可见；确认记录里必须列出「确认时存在的风险码」。
+- 失败 = 不产出可提交确认单（`can_submit = false`），但仍返回完整投影供界面定位；确认写入失败不产生记录。
+
+**指纹与失效**
+
+- `snapshot = {schema_version, platform{platform_id,version}, provider{model_id,version}, can_submit, shots[{shot_id, prompt_version, prompt_hash, prompt_chars, reference_roles, blocked[]}], external_summary}`；
+  `fingerprint = sha256(canonicalJson(snapshot))`。它与单图「请求快照 hash」是两个东西：后者证明一次请求，
+  前者证明「这一批将要提交的东西」。
+- 过期/缺依赖不是风险而是阻断：不允许用「确认」跳过。
+- 已存在的确认记录与当前 snapshot 不一致 → 界面显示「确认已失效」并给出原因（张数、某图 Prompt 版本/hash、
+  阻断状态或外发摘要变化），必须重新确认；失效不改写旧记录。
+
+**界面契约**
+
+- 「生成前确认」卡片（在 Prompt 卡片之后）：状态行显示总张数 / 就绪张数 / 阻断张数；下面是外发资料摘要一句、
+  阻断清单（逐条含图片、阻断码、原因与 fix 位置）、风险清单和每图行（序号、名称、角色与必需/可选、Prompt 版本与
+  hash 前 12 位、参考图角色与 hash 前缀、提示词字符数、风险码）。完整 Prompt 文本只在上面 Prompt 卡片展示，不复制第二份。
+- 按钮集合固定为一个「生成前确认」（`can_submit` 时可用）+ 一行确认状态文本；本任务不提供「开始生成」按钮，
+  确认成功后显示「已确认 vN…本版尚未调用图片模型」。未就绪时按钮禁用，阻断清单给出第一条 fix 位置。
+
+**验证与证据**
+
+- 契约 harness `evals/product-v2/harness/confirm-contract.js`（H01–H12）：确定性指纹与键序、正常全绿确认单、
+  缺 Prompt 阻断、过期阻断（风格前进）、依赖不满足阻断、Provider/平台不符阻断、参考图数量越界阻断、
+  风险传播（语言/覆盖/忽略）、外发摘要与 request_snapshot 一致、确认记录合法性与失效判定、逐条反向探针。
+- `tools/verify_v2_3_5_pre_generation_confirm.py`：`node --check` + 真实 Chromium 契约套件 + 正式入口 UI 流
+  （编译全部图 → 确认区显示张数与外发摘要 → 缺一张 Prompt 与缺依赖分别阻断并定位 → 全部就绪后确认 → 改风格使
+  确认失效并回落 `PLAN_REVIEW` → 重新编译再次确认 → 刷新后确认记录、指纹与状态一致）+ 截图 + 零 console error
+  + 回归旧套件。
+- 证据：`evals/product-v2/v2.3.5-pre-generation-confirm-<stamp>.txt/.json/.png`。
+
+**边界与复访**：不调用模型、不提交生成、不产生候选（Phase 4）；不证明出图质量与审核（Phase 5）。
+新增第二个 Provider/平台时必须扩展档位数据与差异项，不允许在确认单里写供应商分支。
+
+### 9.9 V2.3.6 Prompt 人工编辑版本
+
+本节把「人工改提示词」变成可追溯的版本操作：用户直接编辑全文并保存为新版本，旧版本保留；语言与平台规则
+降级为可见提示，产品真相仍硬阻断；编辑不改编译依据，所以上游前进后它会像编译版本一样过期。
+
+**落点与唯一权威**
+
+- 唯一权威 = `app/product_v2/domain/prompt.js` 的「人工编辑」段落：编辑记录形状、硬阻断清单、降级提示码与
+  提示构造都在本文件；不新建第二份 Prompt 规则文件，也不在界面层重写规则。
+- 复用而不是重写：硬阻断复用 `checkPromptLeaks`（未确认事实）与 `sectionProblems`；语言检查复用
+  `checkPromptLanguage`（结果降级为提示）；失效投影复用 `invalidation.js` 的 `prompt_edited`；hash 复用注入式
+  `sha256Hex`。编辑器不调用模型（不做对话式改写）。
+- 版本与身份：仍写 `DOMAIN_DOCUMENT_KINDS.prompt_version`（`document_id = shot_id`，append-only）。
+  记录新增 `origin`（`compiled` / `manual_edit`）、`edited_from{version,hash}`（人工版本才有）、
+  `edit_reason`、`edited_at`；`basis` 逐字继承被编辑版本，不重算。
+
+**输入、输出与原子性**
+
+- 输入 = 基础 PromptVersion 记录 + 新全文 + 编辑原因（必填）+ 上下文事实 + 时间戳。
+- 输出 = 新版本记录：`compiled.sections = [{key:"manual_edit", label:"人工编辑全文", kind:"manual_edit", text, source_refs}]`，
+  `compiled.text` 逐字等于用户输入，`source_refs` = 基础来源 + `prompt_edit:<base_hash>`，
+  `request_snapshot.prompt` 逐字等于同一字符串，`hash = sha256(canonicalJson(request_snapshot))`。
+- 硬阻断（不产记录、旧版本不变）：基础记录不合法；全文为空或只有空白；超过 Provider 上限；含控制字符；
+  与基础版本逐字相同（没有变化的“新版本”没有意义）；未确认事实值出现在文本里（引用与非引用都算）；
+  新出现的「」引用不是任何已确认事实值（`MANUAL_EDIT_UNKNOWN_QUOTE`）；非文字白名单角色新增已确认文案
+  （`MANUAL_EDIT_PLATFORM_TEXT_RULE`，主图属于此类）。
+- 授权引用集合 = 被编辑文本里已有的「」引用 ∪ 已确认事实值 ∪ 平台背景短语：既能保留编译器产物
+  （风格/规格/意图/平台常量），又不允许编辑绕过商品真相与平台文字规则。
+- 唯一降级：语言策略（指令段出现未引用的非中文）写进 `compiled.warnings`
+  （`MANUAL_EDIT_LANGUAGE_RULE`），界面与生成前确认都必须可见；编译器输出仍按 §9.7 严格自检，不因本节放宽。
+- `checkCompiledPrompt` 对 `origin === "manual_edit"` 跳过语言策略阻断（其余段落、拼接与来源一致性照旧检查），
+  保证下游（生成前确认、请求快照）读到同一份形状。
+
+**失效投影与过期**
+
+- 保存人工版本时写入 `invalidation = invalidationsFor("prompt_edited", {shotId})`：影响范围只限目标 Shot 的
+  Prompt/审核/选择，保留商品理解、套图、单图规格与其他 Shot（与 §4.4 一致）。
+- 编辑不改变 basis：上游槽位/风格/单图规格前进后，人工版本与编译版本同样判过期并阻止生成；
+  重新编译会得到新的编译版本，用户可再次编辑。
+
+**界面契约**
+
+- 「Prompt 预览与版本」每图卡片增加：当前文本、`人工编辑 vN`（含原因）标记、可编辑全文的文本区、必填编辑原因、
+  「保存为新版本」按钮；保存成功后卡片显示新版本、新 hash 与提示列表，旧版本仍可在版本历史中看到。
+- 保存失败显示精确原因并保留旧版本与用户输入，不清空文本区；未编译的图没有编辑区（先编译）。
+- 按钮集合固定为「编译并保存版本」与「保存为新版本」，不提供「让模型改写」之类未实现的承诺。
+
+**验证与证据**
+
+- 契约 harness `evals/product-v2/harness/prompt-edit-contract.js`（M01–M12）：正常编辑与链式编辑、hash 与快照一致、
+  空/超长/控制字符/无变化阻断、未确认事实阻断、语言与引用降级为提示、主图平台提示、记录自检、失效投影精确、
+  过期与确认失效联动、反向探针（篡改记录必须变红、编译器仍严格）。
+- `tools/verify_v2_3_6_prompt_manual_edit.py`：`node --check` + 真实 Chromium 契约 + 正式入口 UI 流
+  （编译全部 → 确认生成 → 编辑主图提示词 → 确认失效并回落 → 非法编辑被拒且旧版本保留 → 再次确认 → 刷新恢复）
+  + 截图 + 零 console error + 回归既有套件。
+- 证据：`evals/product-v2/v2.3.6-prompt-manual-edit-<stamp>.txt/.json/.png`。
+
+**边界与复访**：不做分段编辑、模型改写、A/B 推荐或多版本并存比较（需要时另立任务）；不改变参考图选择与
+请求参数（仍是 §9.7 的 Provider 档）；真实出图仍属 Phase 4，本任务只保证“将要发送的字符串”与记录一致。
+
+### 9.10 V2.4.1 无状态图像网关：合同、装配与错误分类
+
+本节是 `qwen-image-3.0` 网关的操作级设计：`src/providers/v2_image.py`（合同与分类）、
+`v2_dashscope_image.py`（真实适配器）、`v2_fake_image.py`（替身）。选型依据在项目上下文 §4.1 的
+SEL-010，这里不重复论证；请求形状沿用 V1 已验证的冻结合同，不重新发明协议。
+
+**三条路由（都不保存任何状态）**
+
+- `POST /api/v2/images/submit`：`action_id` + `prompt` + 参考图（角色 / 媒体类型 / sha256 / base64）
+  + `size` / `seed` / `model_id` → provider 与 model 身份、task id、状态、结果数量、错误、request id。
+- `POST /api/v2/images/status`：`task_id` → 权威状态（PENDING / RUNNING / SUCCEEDED / FAILED /
+  CANCELED / UNKNOWN）与结果数量。
+- `POST /api/v2/images/result`：`task_id` → 图片字节流（`Content-Type` + `X-Image-Sha256` + 身份响应头）。
+- 上游签名结果地址只在本进程内使用；返回给浏览器的 JSON 永远不含地址。
+
+**不变量（写成判据，验证器逐条检查）**
+
+1. 无任务表：服务端不保存任务；同一 task id 在任意时刻、任意实例上给出同样结论。
+2. 每次请求新建 provider 实例：任何“上次调用过”都不参与本次结论（取回结果不要求先查询）。
+3. 输入白名单：契约外字段（含 `directory` / `workspace`）一律 400，不读本机路径。
+4. 四类归口：`input_rejected`→400、`provider_failed`→502、`provider_unknown`→504
+   （`unknown:true` + `requires_review`）、`internal`→500 / 503。
+5. 明确失败与未知分离：任务 FAILED 是数据（200 + `status=FAILED` + 说明）；连接中断、5xx、
+   无法解析与任务号不符才是 Unknown，且 Unknown 不自动重提。
+6. 结果只认 PNG：非 PNG 字节进制失败，不做宽容解析；结果地址必须落在受信阿里云 HTTPS 主机。
+
+**装配**：`v2_registry.create_image_provider` 读同一份 `config/product-v2/providers.json`
+（`role=image`）：默认 `dashscope-image`，`AMZ_V2_IMAGE_PROVIDER=fake-image` 切替身，
+`AMZ_V2_FAKE_IMAGE_SCENARIO` 选场景。密钥只从环境变量读（`DASHSCOPE_API_KEY`）；缺失时
+capabilities 仍 200 且 `configured=false`，提交返回 503 `PROVIDER_NOT_CONFIGURED`。
+
+**边界与复访**：本批不生成候选、不写浏览器状态、不证明出图质量；浏览器侧 Attempt / action ID /
+Unknown 恢复属于 V2.4.2，批量与部分失败属于 V2.4.3，候选 Blob 属于 V2.4.4。真实调用只在
+V2.4.2 的闭环里按 §12.2 的成本纪律发生，网关本身可离线验证。
+
+### 9.11 V2.4.2 浏览器 Attempt、action ID、task ID 与 Unknown 恢复
+
+本节是「一次生成」在浏览器里的身份与恢复设计；唯一权威是
+`app/product_v2/domain/attempt.js`（形状、状态机、恢复判据），网关合同仍是 §9.10。
+
+**对象**：`GenerationAttempt`，按 Shot 追加版本存进 IndexedDB
+（`kind = generation_attempt`，`document_id = shot_id`，append-only，永不覆盖、永不删除）。
+一条 Attempt 记录：`action_id`、`state`、`prompt{version,hash}`、`references[{role,sha256}]`、
+`provider{provider_id,model_id}`、`parameters{size,n,prompt_extend,watermark}`、`task_id`、
+`request_id`、`error{family,code,message,retry_policy}`、`created_at`、`updated_at`、`change_log[]`。
+
+**状态机**（`pending_submit → submitted → running → succeeded | failed | unknown`）
+
+1. `pending_submit` 在**发起请求之前**先落库：浏览器崩溃或刷新时，任务身份仍然存在。
+2. 提交返回后按结果推进：拿到 task id → `submitted`（其后查询可能推进为 `running`）；
+   上游明确拒绝（input_rejected / provider_failed）→ `failed`；连接中断、5xx、无法解析 → `unknown`。
+3. `succeeded` / `failed` 是终态。`unknown` 也是该 Attempt 的终态：它**不允许**被改写成 `submitted`，
+   只能由用户显式「新建 action」——那条新 Attempt 有新的 action_id，旧记录原样保留。
+4. 有 task id 的 Attempt 必须能`核对`：查询按已保存的 task id 进行，因此服务端重启、换标签页、
+   换浏览器会话都不影响结论（服务端没有任务表，§9.10）。
+5. 没有 task id 的 Unknown 不许自动重提：界面只提供「核对」（若可能有 id）与「显式新建 action」。
+
+**防重复**：同一 Shot 在 `pending_submit…running` 期间按钮不可用，且提交入口有重入保护；
+双击、连点、刷新都不会产生第二条同 action 提交。重试属于用户动作，不属于自动行为。
+唯一例外：没有 task id 的 `pending_submit`（刷新 / 崩溃中断、无法核对）与没有 task id 的 Unknown
+同规则——不自动重提，但用户可以显式「新建 action（放弃核对）」；有 task id 的进行中记录仍然只能先核对。
+
+**过期**：Attempt 记录它编译时用的 Prompt 版本与 hash。Prompt 被重新编译或人工编辑后，旧 Attempt
+仍是历史（不失效、不删除），但界面必须标明「基于旧版本 v?」；要为新版本出图，用户确认后提交新 Attempt。
+
+**证据要求**：提交前落库、双击只产生一条、刷新恢复、刷新中断的 pending 保留身份且不自动重提、
+服务端重启后按 task id 核对、Unknown 不自动重提、显式新建 action 保留旧记录（含无身份的 pending）、
+Prompt 前进后旧 Attempt 有「基于旧版本」标记。
+
+**边界**：本批不保存候选字节（V2.4.4）、不做整套批量与部分失败（V2.4.3）、不做审核与返工（Phase 5）。
+
 ## 10. 实施阶段、任务与 Gate
 
 任何时刻最多一个阶段 active。每个任务同时交付必要的数据合同、服务、界面和验证，不把“前端做完”“后端做完”当作用户可观察成果。
@@ -414,6 +978,7 @@ PromptContext
 | V2.3.3 | StyleSpec 与 ShotSpec 编辑、版本和失效传播 | V2.3.2 | 公共风格影响全套；单图修改只影响目标；审核清单可投影 | 版本/依赖测试、UI 后置条件 | 回退到上一版本，不覆盖历史 |
 | V2.3.4 | Provider 感知 Prompt 编译器 | V2.3.3 | Prompt 来源可追溯；界面、记录与请求 hash 一致；语言策略明确 | golden、请求快照、混杂/冲突探针 | 编译失败保留旧版本并阻止生成 |
 | V2.3.5 | 生成前确认与外发资料摘要 | V2.3.4 | 显示张数、任务、风险和发送资料；过期/缺依赖不能提交 | 浏览器正反路径 | 返回准确修改位置 |
+| V2.3.6 | Prompt 人工编辑版本 | V2.3.5 | 可直接编辑全文并保存为新版本；旧版本保留；编辑后失效投影精确；界面文本与记录/快照 hash 一致 | 编辑正反路径、语言策略降级为提示、版本历史 | 编辑失败不改旧版本 |
 | V2.4.1 | 无状态 qwen-image-3.0 submit/status/result gateway | G3 | 不读取/写入用户 workspace；响应保留 Provider 身份和错误语义 | API 契约、磁盘 diff、fake provider | 切回 fake provider，不伪造成功 |
 | V2.4.2 | 浏览器 Attempt、action ID、task ID 与 Unknown 恢复 | V2.4.1 | 提交前持久化身份；已知 task 可跨服务重启核对；无 task 的 Unknown 不自动重试 | 重启/超时/重复点击轨迹 | 用户显式创建新 action |
 | V2.4.3 | 整套批次执行和逐图进度 | V2.4.2 | 部分失败不丢成功；刷新恢复；失败 Shot 可单独重试 | fake 正常/partial/unknown E2E | 停止新增提交，保留已有结果 |
@@ -431,6 +996,7 @@ PromptContext
 | V2.7.2 | 最小真实模型闭环 | V2.7.1 | DeepSeek、Qwen、VLM 各只做完成证据需要的最少调用；请求/结果可追溯 | 真实请求审计、task ID、候选与报告 | 失败保留证据，不循环烧钱 |
 | V2.7.3 | 非内置商品与首次使用者走查 | V2.7.2 | 无命令行、JSON、口授完成全链；记录介入和失败点 | 录屏、观察表、项目/交付包 | 有介入则修复后换人重验 |
 | V2.7.4 | C1–C15 完成审计与发布候选冻结 | V2.7.3 | 每项 proven；代码/配置/静态资源/证据无漂移；限制明确 | completion matrix、指纹、回退说明 | 任一 missing/indirect 则 Goal 不完成 |
+| V2.7.5 | Product V1 日落批次 | V2.7.4 | V1 代码、入口、配置、验证器与失效依赖删除；正式入口只剩 V2；历史可由 git 恢复 | 删除清单、依赖重登、守卫与回归 | 任何 V2 缺口暴露时从 git 恢复，不半删 |
 
 ## 11. 完成证据矩阵
 
@@ -477,7 +1043,7 @@ PromptContext
 
 ### 13.1 迁移原则
 
-- Product V1 代码、配置、证据和旧工作空间先保留，不删除、不自动迁移。
+- Product V1 代码、配置、证据和旧工作空间先保留、不自动迁移；V2.7.4 发布候选冻结后由 V2.7.5 专批删除（SEL-009），git 历史保留，V1 证据不删除。
 - Product V2 使用独立前端资源、API 前缀、schema 和浏览器数据库名。
 - 复用 Provider 与业务语义时通过接口提取，不让 V2 重新依赖 WorkspaceStore。
 - V2 达到 G6 前，旧正式入口仍可用于回归和对照；V2 导航不能同时提供两条完成同一任务的主路径。

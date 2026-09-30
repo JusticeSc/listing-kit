@@ -17,7 +17,7 @@
 
 | 层 | 稳定边界 | 事实从哪里读 |
 |---|---|---|
-| Product V1 | 本机文件夹工作空间与旧完整生图闭环冻结为回归基线；只复用业务语义、Provider 经验和测试案例，不继续扩展服务器工作空间；V2.7.4 冻结后由 V2.7.5 专批删除（SEL-009） | 当前仍可运行的行为见 `README.md` 的历史入口；设计与完成轨迹从 `docs/INDEX.md` 的 superseded 文档进入 |
+| Product V1 | 本机文件夹工作空间与旧完整生图闭环冻结为回归基线；只复用业务语义、Provider 经验和测试案例，不继续扩展服务器工作空间 | 当前仍可运行的行为见 `README.md` 的历史入口；设计与完成轨迹从 `docs/INDEX.md` 的 superseded 文档进入 |
 | Product V2 | 浏览器拥有用户项目，Python 服务无业务状态；所有新能力都必须在这一所有权边界内实现 | 已落地行为只看 `README.md` 与代码；当前进度和证据只看 Product V2 state；目标只看 Product V2 计划 |
 | 参考模板 | `docs/standards-template/` 是外部课程模板的原样副本，不是本项目运行规范 | 采纳映射、未采纳项与复访条件只在 `AGENTS.md` §Standards Mapping |
 
@@ -30,15 +30,15 @@
 现代桌面浏览器
 ├─ localStorage：当前项目 ID、少量界面偏好
 ├─ IndexedDB：项目记录、参考图、候选图、任务身份、校验、选择和历史版本
-├─ domain/：事实、套图、规格与 Prompt 编译的唯一权威（V2.3.4 起在浏览器侧执行）
 └─ ZIP：完整项目包或最终交付包
         │
         │ 同源 HTTP；每次请求携带完成本动作所需上下文
         ▼
 Python 无状态 AI 服务
 ├─ DeepSeek 语义分析
-├─ qwen-image-3.0 提交、查询与结果转发（V2.4 起）
-└─ 可替换视觉语言模型校验（V2.5 起）
+├─ 套图规划与 Prompt 编译
+├─ qwen-image-3.0 提交、查询与结果转发
+└─ 可替换视觉语言模型校验
         │
         ▼
 外部模型 Provider
@@ -101,59 +101,46 @@ Python 无状态 AI 服务
 | SEL-004 | 项目管理规范 | 采纳 `docs/standards-template/` 的**要求**，落进现有五份权威（映射见 `AGENTS.md` §Standards Mapping），不新建 `standards/` 平行目录 | 复制模板另立一套 standards/（会与计划/state 形成双权威） | 需要对外交付独立规范包时重开 |
 | SEL-005 | 持续交付 | 采用 GitHub Actions + Docker：PR/push 串行执行控制面、正式入口、浏览器合同和容器健康检查；仅 `main` 传最小 Product V2 构建上下文，由远程 Docker 构建 SHA 镜像，固定 `8780` 端口，失败恢复上一容器 | 继续只靠本机守卫；每次跨网传完整基础镜像；服务器拉整个 Git 仓库；引入镜像仓库或编排平台 | 需要多主机、零停机、镜像签名/制品留存或固定端口无法满足时重开 |
 | SEL-006 | 语义契约表示 | Python 侧契约表示权威 = Pydantic（langchain-core 自带，锁定 2.13.5）：请求 / 原始提案 / 提案槽位三类模型 + 跨字段校验；校验作用在模型原始输出；错误四类归口、归一化映射、浏览器侧 `checkFactSlot` 与 `CORE_SLOT_REGISTRY` 保留 | Python 侧继续手写形状/不变量校验（重复造轮子，违反复用门）；浏览器改吃 schema（受 SEL-000 无构建约束，且与 SEL-001 状态权威错位） | V2.6.3 项目包跨版本迁移需要 schema 版本与迁移器时，以“契约权威”为题重开（评估 JSON Schema 作中立权威 + 双语言消费者） |
-| SEL-007 | LangChain 使用边界 | v1 直调形态：`ChatOpenAI.with_structured_output(原始提案模型, method="json_mode", include_raw=True)`；系统/用户消息直接构造，JSON 格式说明由 Pydantic schema 生成并注入系统提示；LCEL 管道、ChatPromptTemplate、Agent/Memory 均不使用（保留为库内可用能力，不是本项目范式）；装配与错误分类的操作细节见计划 §9.1 | LCEL 管道（0.x 主推范式）；默认 `method="json_schema"`（百炼对自定义模型名的支持未证实；不支持时 400 且会被误分类）；`method="function_calling"`（依赖该模型在百炼的函数调用支持）；ChatPromptTemplate | 百炼确认支持 `response_format: json_schema` 时把 method 切换回默认（改一个装配参数 + 重跑契约测试）；需要多步编排时按 SEL-001 的复访条件另立决策 |
+| SEL-007 | LangChain 使用边界 | v1 直调形态：`ChatOpenAI.with_structured_output(原始提案模型, method="json_mode", include_raw=True)`；系统/用户消息直接构造，JSON 格式说明由 Pydantic schema 生成并注入系统提示；LCEL 管道、ChatPromptTemplate、Agent/Memory 均不使用（保留为库内可用能力，不是本项目范式） | LCEL 管道（0.x 主推范式）；默认 `method="json_schema"`（百炼对自定义模型名的支持未证实；不支持时 400 且会被误分类）；`method="function_calling"`（依赖该模型在百炼的函数调用支持）；ChatPromptTemplate | 百炼确认支持 `response_format: json_schema` 时把 method 切换回默认（改一个装配参数 + 重跑契约测试）；需要多步编排时按 SEL-001 的复访条件另立决策 |
 | SEL-008 | 浏览器 ZIP 能力 | 用户已定（2026-09-30）：vendor fflate 0.8.3（MIT）替换自研 ZIP 容器；vendored 单文件 = `esm/browser.js`（90,922B，自包含 ESM，上游 sha256 前 16 位 `B7CA4450B19559A1`），随附许可证文件并登记 vendor 表；`storage/zip.js` 退化为薄适配器：保持 buildZip/readZip 接口与我方错误码及上限检查，格式校验委托 fflate | 继续自研 ZIP 容器（8.7KB：CRC32 + 本地头/中央目录/EOCD）；minified UMD 33KB（全局脚本、非 ESM）；jszip（体积更大） | 上游发布修复版需升级时（重跑包合同与 V2.1.3 往返验证）；fflate 停更或许可变化时重选 |
-| SEL-009 | V1 日落 | 用户已定（2026-09-30）：V2.7.4 发布候选冻结后，专批删除 Product V1 代码与随之失效的依赖（含自造重试/退避/文件锁：`src/imagegen.py` `_retry`、`src/application_service.py` 限流退避、`src/workspace_store.py` 文件锁）；git 历史保留，V1 证据不删除 | 边跑边删 V1；把 V1 主路径保留到 V2 完成 | V2.7.4 冻结时执行 V2.7.5；届时逐项复核依赖与工具引用 |
-| SEL-010 | 图像网关传输层 | 复用 `requests`（V1 已在用的锁定直接依赖）+ 三条无状态路由（submit / status / result）；协议与错误映射按 §9.10 自写，但请求形状沿用 V1 冻结合同（`src/providers/dashscope_image.py`）；PoC 与依赖实测见 `evals/product-v2/sel010-image-gateway-transport-poc-20260930.txt` | 官方 `dashscope` SDK（0.27.x→1.27.7 实测解析 32 包，拖入 aiohttp / typer / websocket-client 等）；`httpx`（第二套 HTTP 客户端，无协议收益）；OpenAI 兼容图像端点（百炼图像合成不是该形状） | 需要批量并发、取消、多供应商路由或成本统计时重估 SDK；百炼改协议时按冻结合同重测并更新 §9.10 |
 
-状态：SEL-000 至 SEL-010 已定案（2026-09-30）。依赖权威已从 `requirements.txt` 迁移到
-`pyproject.toml` + `uv.lock`，守卫、CI、README 同步（证据见
-`evals/product-v2/dependency-authority-migration-20260930.txt`）；依赖按 SEL-003 引入
-（langchain-core / langchain-openai）；工作区中的 V2.2.2 适配器草案在任务完成前
+状态：SEL-000 至 SEL-008 已定案（2026-09-30）。依赖已按 SEL-003 引入
+（langchain-core / langchain-openai，经 `uv add`）；工作区中的 V2.2.2 适配器草案在任务完成前
 仍不得写成已实现能力。
 
 ### 4.2 依赖与 vendor 登记
 
-`tools/check_docs.py` 会把下面两张表与 `pyproject.toml` + `uv.lock`、`app/product_v2/vendor/`
-做双向比对：新增依赖必须同时改登记表与 `pyproject.toml`（`uv add` 落锁），移除依赖必须两处同删。
+`tools/check_docs.py` 会把下面两张表与 `requirements.txt`、`app/product_v2/vendor/`
+做双向比对：新增依赖必须同时改登记表与 `requirements.txt`，移除依赖必须两处同删。
 
-依赖权威从 `requirements.txt` 迁移到 `pyproject.toml` + `uv.lock`（SEL-000 修订，2026-09-30；
-删除 requirements 文件、守卫改读锁文件、CI 与 README 同步；证据见
-`evals/product-v2/dependency-authority-migration-20260930.txt`）。
+> 迁移中（2026-09-30，SEL-000 修订）：依赖权威正从 `requirements.txt` 切到
+> `pyproject.toml` + `uv.lock`；本表将在迁移收尾（守卫改读 pyproject+uv.lock、
+> requirements 文件删除、CI/README 同步）时按新格式重登记。已定案待登记：
+> langchain-core 1.6.6（MIT）、langchain-openai 1.6.6（MIT）、pydantic 2.13.5（MIT，
+> langchain-core 自带）、playwright 1.63.0（dev 组，Apache-2.0）、
+> rembg 2.0.84 / onnxruntime 1.30.0（cutout 组，均 MIT）。
 
 <!-- dependency-registry:begin -->
 | 包 | 版本 | 许可 | 用途 | 引入决策 | 移除成本 |
 |---|---|---|---|---|---|
-| jsonschema | 4.26.0 | MIT | Draft 2020-12 结构契约校验（V1 合同与验证器） | V1 基线；V2 提案校验权威是 Pydantic（SEL-006），去留随 V1 日落逐项核实 | 小 |
-| langchain-core | 1.6.6 | MIT | 语义调用与结构化输出原语 | SEL-003/007 引入（2026-09-30） | 中：换回直连要重写适配器 |
-| langchain-openai | 1.6.6 | MIT | ChatOpenAI 指向百炼兼容端点 | SEL-003 引入 | 中 |
-| numpy | 2.4.6 | BSD-3-Clause | V1 像素与数组运算 | V1 基线 | 中：V1 图像链路依赖 |
-| pillow | 12.3.0 | MIT-CMU | 图像读写、尺寸与校验 | V1 基线；V2 图像链路继续使用 | 中 |
-| python-dotenv | 1.2.3 | BSD-3-Clause | `.env` 本地加载 | V1 基线；V2.2.2 正式入口接线复用 | 小 |
-| pyyaml | 6.0.3 | MIT | YAML 配置读取（V1 配置与守卫） | V1 基线 | 小 |
-| requests | 2.34.2 | Apache-2.0 | V1 外部模型 HTTP 调用与验证工具 | V1 基线；V2 语义改经 langchain-openai（SEL-003）；V2 图像网关客户端在 V2.4.1 选型 | 小：集中在 V1 链路与 `tools/` |
-| onnxruntime | 1.30.0 | MIT | 抠图可选组（cutout，不默认安装） | V1 基线；随 V1 日落后复核 | 小：optional 组 |
-| rembg | 2.0.84 | MIT | 抠图可选组（cutout，不默认安装） | V1 基线；随 V1 日落后复核 | 小：optional 组 |
-| playwright | 1.63.0 | Apache-2.0 | dev 组：浏览器合同验证 | SEL-005 CI 引入 | 小：dev 组 |
-| pydantic | 2.13.5 | MIT | 语义契约模型（SEL-006 锁定的传递依赖） | SEL-006 | 小：随 langchain-core 传递 |
-| openai | 3.20.0 | Apache-2.0 | 兼容客户端（langchain-openai 传递依赖） | SEL-003 链路传递引入 | 小：随 langchain-openai 传递 |
+| pillow | 12.3.0 | MIT-CMU | 图像读写、尺寸与白底检查 | V1 基线已锁版本；V2 图像链路继续使用 | 中：校验与导出依赖它 |
+| numpy | 2.4.6 | BSD-3-Clause（含 0BSD/MIT/Zlib/CC0 组件） | 像素与数组运算（V1 合成、白底统计） | V1 基线已锁版本 | 中：V1 图像链路依赖它 |
+| requests | 2.34.2 | Apache-2.0 | Product V1 外部模型 HTTP 调用 | V1 基线；V2 语义调用改经 langchain-openai（SEL-003），V1 链路继续使用 | 小：集中在 `src/providers/` |
+| PyYAML | 6.0.3 | MIT | 读取 `slots.yaml`、平台与品类配置 | V1 基线已锁版本 | 小：配置读取集中 |
+| python-dotenv | 1.2.3 | BSD-3-Clause | 本地 `.env` 加载（`run.py`） | V1 基线已锁版本 | 小：入口一处 |
+| jsonschema | 4.26.0 | MIT | 结构契约校验（Draft 2020-12） | V1 基线已锁版本；V2 提案校验继续使用 | 小：契约校验集中 |
 <!-- dependency-registry:end -->
 
-CI 浏览器验证依赖来自 pyproject 的 dev 组（`playwright==1.63.0`，Apache-2.0），不进入生产镜像。
-GitHub Actions 复用官方 `actions/checkout@v6`、`actions/setup-python@v6`，用 `uv sync --locked` 与
-`uv run` 执行守卫、正式入口和浏览器验证；SEL-005 是引入依据。
+CI 工具单独锁在 `requirements-ci.txt`，不进入生产镜像：`playwright==1.63.0`（Apache-2.0）用于浏览器
+合同回归。GitHub Actions 复用官方 `actions/checkout@v6`、`actions/setup-python@v6`；SEL-005 是引入依据。
 
 <!-- vendor-registry:begin -->
 | 文件 | 版本/来源 | 用途 | 引入决策 |
 |---|---|---|---|
-| fflate.browser.js | fflate 0.8.3（npm `esm/browser.js`，自包含 ESM，90,922B，sha256 `B7CA4450B19559A1D50EB381ADCEE94B82449674BE4CD17789D9BEBA7E6122A1`） | 浏览器 ZIP 读写（项目包导入导出） | SEL-008（2026-09-30 定，同批落地）；MIT |
-| fflate.LICENSE.txt | fflate 0.8.3 MIT 许可证原文（1,069B，sha256 `0A1DF3A083D0C010560AA342E87959C8C1070E6FD54545741F083F22D0C8B551`） | 第三方许可证随附 | SEL-008；与库文件同批校验 |
 <!-- vendor-registry:end -->
 
-SEL-008 已落地（2026-09-30）：`storage/zip.js` 退化为薄适配器，结构解析与解压委托
-fflate，只保留产品上限/错误码与逐条 CRC32 完整性校验（fflate 自身不校验 CRC32）。
-升级上游时重跑包合同与 V2.1.3 往返验证，并更新本表哈希；证据
-`evals/product-v2/sel008-fflate-vendoring-20260930.txt`。
+SEL-008 已定引入 fflate（浏览器 ZIP，MIT）：目录创建、单文件 vendoring（含许可证与哈希）
+与 vendor 登记在实施批次落地；在此之前 `app/product_v2/vendor/` 仍为空。
 
 ## 5. 目标目录地图
 
@@ -162,14 +149,15 @@ amz-listing-kit/
 ├─ app/
 │  ├─ server.py                         # 正式服务入口：默认 V2；--legacy-v1 回 V1；--offline-fixture 旧 Mock
 │  ├─ product_v1_server.py              # Product V1 历史实现，迁移期保留（--legacy-v1）
-│  ├─ product_v2_server.py              # V2 无状态 HTTP 适配器：静态资源 + /api/health + capabilities + semantic/analyze
-│  └─ product_v2/                       # V2 前端静态资源；domain/prompt.js 是 Prompt 编译与人工编辑唯一权威（V2.3.4 / V2.3.6）、domain/confirm.js 是生成前确认唯一权威（V2.3.5）；vendor/ 已 vendored fflate 0.8.3（SEL-008）
+│  ├─ product_v2_server.py              # V2 无状态 HTTP 适配器（已落地，V2.1.4）
+│  └─ product_v2/                       # V2 前端静态资源；storage/、domain/ 契约、项目首页、项目包与正式入口均已落地
 ├─ src/
 │  ├─ product_v2_contracts.py           # 领域与 API 契约（目标）
-│  ├─ providers/                        # 语义链路已落地（v2_semantic / v2_dashscope_semantic / v2_fake_semantic）；图像网关已落地（v2_image / v2_dashscope_image / v2_fake_image）；错误词表唯一权威 = v2_errors.py；VLM 适配器仍是目标
+│  ├─ providers/                        # DeepSeek、Qwen、VLM 适配器（目标）
+│  ├─ prompt_compiler.py                # 纯编译边界（目标）
 │  └─ validators/                       # 确定性验证器（目标）
 ├─ config/
-│  └─ product-v2/                       # provider 注册表（providers.json，已落地）；平台、模板与问题分类仍是目标
+│  └─ product-v2/                       # 平台、模板、问题分类和 provider 注册（目标）
 ├─ docs/
 │  ├─ INDEX.md                          # 文档身份和读取路由
 │  ├─ product-v2-project-context.md     # 本文件
@@ -179,7 +167,7 @@ amz-listing-kit/
 ├─ evals/product-v2/                    # V2 验证证据（目标）
 ├─ .github/workflows/ci-cd.yml           # PR/push CI；main Docker CD
 ├─ Dockerfile                            # 只打包 Product V2 正式运行入口
-└─ tools/                               # 控制面、契约、浏览器和回归验证入口；v2_test_server.py 复用产品处理器 + fake provider
+└─ tools/                               # 控制面、契约、浏览器和回归验证入口
 ```
 
 新增目录前先判断它属于实现、目标、状态还是证据；不能归类的目录先不建。目录地图描述的是目标落点，尚未存在的均标为“目标”，不能据此声称已经实现。

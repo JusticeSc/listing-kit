@@ -102,8 +102,7 @@ tasks:
     depends_on:
       - P-1.5
     evidence:
-      - _stage-amz-control/sel009-depmig-sync-20260930-010414/requirements.txt
-      - evals/product-v2/dependency-authority-migration-20260930.txt
+      - requirements.txt
       - README.md
       - evals/phase0_foundation_calibration.txt
   - id: P0.2
@@ -121,6 +120,8 @@ tasks:
     evidence:
       - evals/phase0_regress_fresh.txt
       - evals/last_regress.txt
+      - out/B0FULLSET01_20260923-125218-258886/plan.json
+      - out/B0FULLSET01_20260923-125218-258886/run.jsonl
   - id: P0.4
     status: done
     depends_on:
@@ -129,6 +130,7 @@ tasks:
       - README.md
       - docs/product-v1-goal-and-implementation-plan.md
       - tools/check_docs.py
+      - evals/probes/docs_index.py
   - id: P0.5
     status: done
     depends_on:

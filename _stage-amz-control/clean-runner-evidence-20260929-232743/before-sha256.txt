@@ -1,0 +1,2 @@
+_working\amz-listing-kit-product-demo\state.md 1e0ef9e3f6b227c14ecb8a2f6759e4ea4718a1fd189bc8408fd16eb68fc72a77
+_working\amz-listing-kit-product-v1\state.md fcdc071c1d625b4efdc90a979fbc7e09ecc8a80c5e159c9f49fced82636d0ea5
