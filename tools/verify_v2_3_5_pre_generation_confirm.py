@@ -495,6 +495,22 @@ def main() -> int:
                   and ("请人工确认" in shot_texts or "文案不是" in shot_texts),
                   {"prompt": prompt_warnings[:200], "risks": ready["ui"]["risks"][:200]})
 
+            language_messages: dict[str, list[str]] = {}
+            for risk in ready["sheet"]["risks"]:
+                if risk["code"] != "ON_IMAGE_TEXT_NOT_PLATFORM_LANGUAGE":
+                    continue
+                language_messages.setdefault(risk["shot_id"], []).append(risk["message"])
+            duplicate_counts = {shot: len(items) - len(set(items))
+                                for shot, items in language_messages.items()}
+            signature_messages = [message for items in language_messages.values()
+                                  for message in items if "signature_features" in message]
+            check("V2.3.5-15",
+                  "同一槽位的语言风险按槽位去重：逐图只出现一条，多值（夹具 2 条）时给出条数",
+                  bool(signature_messages)
+                  and all(count == 0 for count in duplicate_counts.values())
+                  and all("2 条" in message for message in signature_messages),
+                  {"messages": signature_messages[:4], "duplicates": duplicate_counts})
+
             page.click("#confirm-action")
             expect(page.locator("#confirm-record")).to_contain_text("已确认 v1")
             confirmed = page.evaluate(CONFIRM_PROBE)

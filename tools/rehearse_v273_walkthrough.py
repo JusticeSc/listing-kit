@@ -189,6 +189,31 @@ def main() -> int:
                 snap(page, "generate-done-full", full=True)
                 mark("generate", started)
 
+                # 单图 VLM 复核（假通道返回两条高风险发现）：只提示、不阻断、不改选择。
+                vlm_target = shots_ids[0]
+                vlm_row = f'#attempt-list .attempt-row[data-shot-id="{vlm_target}"]'
+                vlm_button = page.locator("#attempt-list button[data-review-action]").first
+                if vlm_button.count() > 0:
+                    started = time.monotonic()
+                    before_summary = page.locator(vlm_row + " .attempt-review").inner_text()
+                    vlm_button.click()
+                    page.wait_for_function(
+                        """(payload) => {
+                             const row = document.querySelector(payload.row);
+                             const node = row && row.querySelector('.attempt-review');
+                             if (!node) return false;
+                             const text = node.textContent || '';
+                             return text !== payload.before && !text.includes("复核中");
+                           }""",
+                        arg={"row": vlm_row, "before": before_summary}, timeout=90_000)
+                    probes["vlm_review"] = {
+                        "shot": vlm_target,
+                        "before": before_summary[:200],
+                        "after": page.locator(vlm_row + " .attempt-review").inner_text()[:200],
+                    }
+                    snap(page, "vlm-review")
+                    mark("vlm-review", started)
+
                 started = time.monotonic()
                 page.click("#stage-next-review")
                 expect(page.locator('[data-stage-panel="review"]')).to_be_visible()
@@ -362,7 +387,8 @@ def main() -> int:
         f"- 入口：本机 fake 走查服务器（tools/rehearse_v273_walkthrough.py，label={args.label}）",
         f"- 商品/参考图：{args.product_name}（非内置品类）· {reference.name}",
         "- 剧本：new → intake → understand(确认全部) → plan(推荐方案) → generate(全部成功) →",
-        "  review(比较+单图返工+逐图采用) → deliver(整套检查 → 导出 ZIP) → 390px 复核",
+        "  generate(单图 VLM 复核) → review(比较+单图返工+逐图采用) →"
+        " deliver(整套检查 → 导出 ZIP) → 390px 复核",
         "",
         "## 节点耗时",
         "",
