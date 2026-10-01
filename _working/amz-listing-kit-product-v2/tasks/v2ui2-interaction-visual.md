@@ -1,6 +1,6 @@
 # V2.UI.2 前端交互契约与视觉基线 任务书
 
-> CONTROL-STATUS: draft · AUTHORITY: task-brief（V2.UI.2 施工任务书；不发布目标、状态或规范）
+> CONTROL-STATUS: superseded · AUTHORITY: historical-task-brief（V2.UI.2 已完成；不再据此施工）
 
 仓库：E:\workbuddy_workspace\2026-09-20-16-38-19\amz-listing-kit（Windows PowerShell，命令先 Set-Location 到该目录）。
 本任务书是 V2.UI.2 施工的唯一指令来源。上位契约：计划 §9.19b / §9.19c 与 §2.1 增补文本；先读计划 §5 工作流、

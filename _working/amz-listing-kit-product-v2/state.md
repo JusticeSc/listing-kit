@@ -14,7 +14,7 @@ goal_pending_reason: system_goal_paused_await_user_resume
 system_goal_observed_status: paused
 system_goal_observed_at: 2026-10-01T11:01:24+08:00
 plan_ref: docs/product-v2-goal-and-implementation-plan.md
-latest_audit: evals/product-v2/evidence-retention-20261001-112418.md
+latest_audit: evals/product-v2/pre-goal-control-closeout-20261001-115805.md
 
 phase_progress:
   "0":
@@ -1047,9 +1047,5 @@ blockers: []
 unknowns:
   - visual_language_review_detection_quality_is_uncalibrated_channels_and_binding_only_proven_in_V2.5.2
   - ui_information_hierarchy_primary_action_image_comparison_and_visual_direction_self_reviewed_20261001_owner_walkthrough_deferred_to_final_human_gate
-  - dashscope_balance_arrears_20261001T0433_resolved_after_topup_same_day
-    arrears_evidence_evals_product_v2_evidence_remote-real-e2e-20261001-043317-lamp01-failure.png
-    passing_rerun_evals_product_v2_v2_7_2-remote-real-e2e-20261001-091400.txt
-    external_premise_may_change_without_notice_real_runs_have_cost
-updated_at: 2026-10-01T11:25:53+08:00
+updated_at: 2026-10-01T11:59:15+08:00
 ```

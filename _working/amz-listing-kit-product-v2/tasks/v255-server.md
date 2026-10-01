@@ -1,6 +1,6 @@
 # V2.5.5 服务端任务书（整套一致性复核，POST /api/v2/review/suite）
 
-> CONTROL-STATUS: draft · AUTHORITY: task-brief（V2.5.5 施工任务书；不发布目标、状态或规范）
+> CONTROL-STATUS: superseded · AUTHORITY: historical-task-brief（V2.5.5 已完成；不再据此施工）
 
 仓库：E:\workbuddy_workspace\2026-09-20-16-38-19\amz-listing-kit（Windows PowerShell，命令先 Set-Location 到该目录）。
 本任务书是 V2.5.5 服务端实现的唯一指令来源；浏览器侧契约已冻结在 app/product_v2/domain/suite-review.js（先读它）。

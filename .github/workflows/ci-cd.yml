@@ -74,7 +74,13 @@ jobs:
           uv run python tools/verify_v2_ui_3_frontend.py
 
       - name: Reject verification side effects
-        run: git diff --exit-code
+        run: |
+          dirty="$(git status --porcelain --untracked-files=all)"
+          if [ -n "$dirty" ]; then
+            printf '%s\n' "$dirty"
+            echo "Verification changed tracked files or created non-ignored files."
+            exit 1
+          fi
 
   container:
     name: Docker image, smoke test, and main deploy

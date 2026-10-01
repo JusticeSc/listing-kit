@@ -43,9 +43,9 @@
 | `docs/product-v2-goal-and-implementation-plan.md` | Product V2 | `产品目标` | `current` | Product V2 目标合同、需求、状态、不变量、详细任务、Gate、验收矩阵与系统 Goal 绑定文本的唯一权威 |
 | `docs/product-v2-ui-contract.md` | Product V2 V2.UI.2 | `设计草案` | `draft` | V2.UI.2 交互与视觉契约：六阶段信息架构、逐视图对象/信息/行为/状态/规则/反馈与表现层基线；生效条件：产品发起人走查确认后转 `架构设计`/`current` 并补入 §1 路由表 |
 | `_working/amz-listing-kit-product-v2/state.md` | Product V2 | `执行状态` | `current` | Product V2 当前进度、证据指针、阻塞、未知与唯一下一动作；不复制计划正文 |
-| `_working/amz-listing-kit-product-v2/tasks/v255-server.md` | Product V2 V2.5.5 | `设计草案` | `draft` | V2.5.5 服务端施工任务书（与计划 §9.20 落地契约同批）；生效条件：V2.5.5 施工期间；任务在 state 置 done 后改登记为 `superseded` |
-| `_working/amz-listing-kit-product-v2/tasks/v255-verifier.md` | Product V2 V2.5.5 | `设计草案` | `draft` | V2.5.5 验证器施工任务书（与计划 §9.20 落地契约同批）；生效条件：V2.5.5 施工期间；任务在 state 置 done 后改登记为 `superseded` |
-| `_working/amz-listing-kit-product-v2/tasks/v2ui2-interaction-visual.md` | Product V2 V2.UI.2 | `设计草案` | `draft` | V2.UI.2 前端交互契约与视觉基线施工任务书（与计划 §9.19b 落地契约同批）；生效条件：V2.UI.2 施工期间；任务在 state 置 done 后改登记为 `superseded` |
+| `_working/amz-listing-kit-product-v2/tasks/v255-server.md` | Product V2 V2.5.5 | `历史证据` | `superseded` | V2.5.5 已完成；任务书只保留当时的服务端施工边界，不再据此执行 |
+| `_working/amz-listing-kit-product-v2/tasks/v255-verifier.md` | Product V2 V2.5.5 | `历史证据` | `superseded` | V2.5.5 已完成；任务书只保留当时的验证施工边界，不再据此执行 |
+| `_working/amz-listing-kit-product-v2/tasks/v2ui2-interaction-visual.md` | Product V2 V2.UI.2 | `历史证据` | `superseded` | V2.UI.2 已完成；任务书只保留当时的交互与视觉施工边界，不再据此执行 |
 | `_working/amz-listing-kit-product-v2/tasks/v273-walkthrough-kit.md` | Product V2 V2.7.3 | `设计草案` | `draft` | V2.7.3 陌生人 / 产品发起人走查工具包（前置条件、任务脚本、观察表、归档要求）；生效条件：V2.7.3 走查期间；走查结论归档后改登记为 `superseded` |
 | `_working/amz-listing-kit-product-demo/tasks/brief-d42-usability-a11y.md` | Product V1 D4.2 | `历史证据` | `superseded` | D4.2 已完成；任务书只保留当时边界和执行约束，不再驱动当前施工 |
 | `_working/amz-listing-kit-product-demo/tasks/brief-d43-backup-restore.md` | Product V1 D4.3 | `历史证据` | `superseded` | D4.3 已完成；任务书只保留当时边界和执行约束，不再驱动当前施工 |

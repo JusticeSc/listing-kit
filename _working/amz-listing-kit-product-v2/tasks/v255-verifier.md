@@ -1,6 +1,6 @@
 # V2.5.5 验证器任务书（整套一致性报告）
 
-> CONTROL-STATUS: draft · AUTHORITY: task-brief（V2.5.5 施工任务书；不发布目标、状态或规范）
+> CONTROL-STATUS: superseded · AUTHORITY: historical-task-brief（V2.5.5 已完成；不再据此施工）
 
 仓库：E:\workbuddy_workspace\2026-09-20-16-38-19\amz-listing-kit（Windows PowerShell，命令先 Set-Location）。本任务书是 V2.5.5 验证实现的唯一指令来源。
 

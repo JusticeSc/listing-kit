@@ -37,7 +37,8 @@ r"""文档守卫 —— 让文档里的话有人守。
     ⑤ README 不复制 next_action、任务 ID 或固定七坑位表       → problems
     ⑥ 受管文档 bash 围栏里的 python 命令**真跑**，rc 必须 0  → problems
     ⑦ 仓库里每一份 *.md 都在 docs/INDEX.md 里登记、管辖事实与状态都是闭集合之一；
-       非生成文档顶部的 CONTROL-STATUS 必须与 INDEX 相同 → problems
+       非生成文档顶部的 CONTROL-STATUS 必须与 INDEX 相同；已完成任务的任务书不能仍是 draft
+       → problems
        —— 本项管两件事：「哪一份有效」，以及「哪一类事实归谁」。前六项都是单向的
           （文档 vs 表 / 卡 vs 生成器），没有一项能发现「两份文档互相矛盾」：
           那不是一个"值不相等"的问题，是**权威没有登记**。见 _check_docs_index。
@@ -654,6 +655,7 @@ CONTROL_STATUS_RE = re.compile(
     r"CONTROL-STATUS:\s*(current|generated|draft|superseded|to-delete)\b")
 
 INDEX = ROOT / "docs" / "INDEX.md"
+CURRENT_STATE = ROOT / "_working" / "amz-listing-kit-product-v2" / "state.md"
 
 
 def _check_docs_index(rep: Report) -> None:
@@ -761,6 +763,27 @@ def _check_docs_index(rep: Report) -> None:
             rep.problem(f"管辖事实「{kind}」在登记表里没有任何出处 —— "
                         f"「{DOC_KINDS[kind]}」这件事目前没有权威文件，"
                         f"读者只能自己拼。先登记一份，再往下走。")
+
+    # 任务结束后，施工任务书仍标 draft 会邀请后来者再次执行。任务身份只从 INDEX 的
+    # 世代列读取，任务状态只从 current state 读取，不另建第三张映射表。
+    task_statuses: dict[str, str] = {}
+    if CURRENT_STATE.exists():
+        state_text = CURRENT_STATE.read_text(encoding="utf-8")
+        task_statuses = dict(re.findall(
+            r"(?m)^  (V2(?:\.[0-9A-Za-z-]+)+):\r?\n    status: ([a-z]+)$",
+            state_text,
+        ))
+    for path, (generation, _kind, state, _note) in sorted(declared.items()):
+        if not path.startswith("_working/amz-listing-kit-product-v2/tasks/"):
+            continue
+        task_match = re.search(r"\b(V2(?:\.[0-9A-Za-z-]+)+)\b", generation)
+        if not task_match:
+            continue
+        task_id = task_match.group(1)
+        if task_statuses.get(task_id) in {"done", "dropped", "superseded"} and state == "draft":
+            rep.problem(f"任务书身份漂移：{task_id} 在 current state 已是 "
+                        f"{task_statuses[task_id]!r}，但 {path} 仍登记为 draft —— "
+                        "完成后的施工指令必须转 superseded，不能继续邀请执行。")
 
     counts = "、".join(f"{k} {len(v)}" for k, v in sorted(by_kind.items()))
     rep.note(f"文档登记：已登记 {len(declared)} 份，仓库里实际 {len(actual)} 份"

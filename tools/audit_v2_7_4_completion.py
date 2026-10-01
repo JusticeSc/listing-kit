@@ -20,8 +20,10 @@ from __future__ import annotations
 
 import fnmatch
 import json
+import subprocess
 import sys
 from datetime import datetime
+from functools import lru_cache
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -106,8 +108,33 @@ MATRIX: dict[str, dict] = {
 }
 
 
+@lru_cache(maxsize=1)
+def tracked_evidence() -> frozenset[str]:
+    """Only versioned evidence may feed a completion matrix.
+
+    Local verifier output is useful while debugging, but a clean checkout cannot
+    reproduce a matrix that points at an untracked newest file.
+    """
+    proc = subprocess.run(
+        ["git", "-C", str(ROOT), "ls-files", "-z", "--", "evals/product-v2"],
+        capture_output=True,
+        check=False,
+    )
+    if proc.returncode != 0:
+        return frozenset()
+    return frozenset(
+        item.decode("utf-8").replace("\\", "/")
+        for item in proc.stdout.split(b"\0") if item
+    )
+
+
 def newest(pattern: str) -> Path | None:
-    hits = [p for p in EVIDENCE_DIR.glob("*") if fnmatch.fnmatch(p.name, pattern.split("/")[-1])]
+    tracked = tracked_evidence()
+    hits = [
+        p for p in EVIDENCE_DIR.glob("*")
+        if fnmatch.fnmatch(p.name, pattern.split("/")[-1])
+        and p.relative_to(ROOT).as_posix() in tracked
+    ]
     return max(hits, key=lambda p: p.stat().st_mtime) if hits else None
 
 
