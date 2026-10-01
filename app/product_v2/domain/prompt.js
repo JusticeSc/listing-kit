@@ -486,29 +486,33 @@ export function compilePrompt(input) {
 
   const textItems = [];
   const textRefs = [];
-  // 同一槽位的多条非目标语言文案合并为一条风险（给出条数），避免逐值重复上屏。
+  // V2.6.17：只有「允许图中文字」的角色才会排出文字段落 —— 无文字角色（场景图/细节图等）
+  // 报「图中将逐字保留原文」是误报。同一槽位的多条非目标语言文案仍合并为一条风险
+  //（给出条数），消息里补上可操作建议（改英文后重新确认）。
   const languageRisks = new Map();
-  for (const fact of boundFacts) {
-    for (const value of factTexts(fact)) {
-      const language = languageOf(value);
-      const sourceRef = "product_brief.fact:" + fact.slot_id;
-      textItems.push({ text: quoteLiteral(value), language: language, source_ref: sourceRef });
-      textRefs.push(sourceRef);
-      if (language !== platform.on_image_text_language) {
-        languageRisks.set(fact.slot_id, (languageRisks.get(fact.slot_id) || 0) + 1);
+  if (allowsText) {
+    for (const fact of boundFacts) {
+      for (const value of factTexts(fact)) {
+        const language = languageOf(value);
+        const sourceRef = "product_brief.fact:" + fact.slot_id;
+        textItems.push({ text: quoteLiteral(value), language: language, source_ref: sourceRef });
+        textRefs.push(sourceRef);
+        if (language !== platform.on_image_text_language) {
+          languageRisks.set(fact.slot_id, (languageRisks.get(fact.slot_id) || 0) + 1);
+        }
       }
     }
-  }
-  for (const [slotId, count] of languageRisks) {
-    warnings.push({
-      code: "ON_IMAGE_TEXT_NOT_PLATFORM_LANGUAGE",
-      message: count > 1
-        ? "商品事实「" + slotId + "」有 " + count + " 条文案不是 " + platform.on_image_text_language
-          + "，图中将逐字保留原文，请人工确认是否使用。"
-        : "商品事实「" + slotId + "」的文案不是 " + platform.on_image_text_language
-          + "，图中将逐字保留原文，请人工确认是否使用。",
-      source_refs: ["product_brief.fact:" + slotId, platformRef],
-    });
+    for (const [slotId, count] of languageRisks) {
+      warnings.push({
+        code: "ON_IMAGE_TEXT_NOT_PLATFORM_LANGUAGE",
+        message: count > 1
+          ? "商品事实「" + slotId + "」有 " + count + " 条文案不是 " + platform.on_image_text_language
+            + "，图中将逐字保留原文，请人工确认是否使用；建议把这条事实值改成英文后重新确认。"
+          : "商品事实「" + slotId + "」的文案不是 " + platform.on_image_text_language
+            + "，图中将逐字保留原文，请人工确认是否使用；建议把这条事实值改成英文后重新确认。",
+        source_refs: ["product_brief.fact:" + slotId, platformRef],
+      });
+    }
   }
   if (allowsText && textItems.length > 0) {
     const header = "图中文字（只允许逐字使用以下已确认文案，不翻译、不改写、不新增；文字语言应为"

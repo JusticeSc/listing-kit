@@ -1099,16 +1099,39 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     for (const entry of list) elements.slotList.append(slotRow(entry));
   }
 
+  /** 某个 slot_id 的中文名（找不到就退回原样）；依赖与来源引用用它去掉工程感。 */
+  function slotLabelOfId(slotId) {
+    for (const entry of slotEntries()) {
+      if (entry.slot && entry.slot.slot_id === slotId) return entry.slot.label || slotId;
+    }
+    return slotId;
+  }
+
+  /** 主行只放人话：来源档 + 置信（「必须确认」已经是徽标，不再重复一次）。 */
   function slotMetaText(entry) {
     const slot = entry.slot;
-    const parts = [slot.slot_id, AUTHORITY_TEXT[slot.authority] || slot.authority];
-    if (slot.critical === true) parts.push("必须确认");
+    const parts = [AUTHORITY_TEXT[slot.authority] || slot.authority];
     if (slot.confidence !== null && slot.confidence !== undefined) {
       parts.push("置信 " + Number(slot.confidence).toFixed(2));
     }
-    parts.push("版本 v" + entry.version);
-    if (slot.depends_on && slot.depends_on.length) parts.push("依赖 " + slot.depends_on.join("、"));
     return parts.join(" · ");
+  }
+
+  /**
+   * 事实卡的工程标识（V2.6.16）：slot_id、版本、依赖、证据来源引用（字段名 / 资产哈希 /
+   * 模型 id）一律进折叠的技术详情，主行只留人能判断的信息；追溯链不减，只是换了位置。
+   */
+  function slotTechLines(entry) {
+    const slot = entry.slot;
+    const lines = ["标识 " + slot.slot_id, "版本 v" + entry.version];
+    if (slot.depends_on && slot.depends_on.length) {
+      lines.push("依赖 " + slot.depends_on.map((id) => slotLabelOfId(id)).join("、"));
+    }
+    const refs = (Array.isArray(slot.evidence) ? slot.evidence : [])
+      .map((item) => (item && item.ref ? String(item.ref) : ""))
+      .filter((ref) => ref !== "");
+    if (refs.length) lines.push("来源引用 " + refs.join("、"));
+    return lines;
   }
 
   function slotRow(entry) {
@@ -1145,7 +1168,7 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
         const label = EVIDENCE_TEXT[item.kind] || item.kind;
         list.append(createElement("li", {
           className: "meta",
-          text: label + " · " + item.ref + (item.note ? "：" + item.note : ""),
+          text: item.note ? label + "：" + item.note : label,
         }));
       }
       row.append(list);
@@ -1153,6 +1176,8 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
 
     if (interaction.slotId === slot.slot_id) row.append(slotEditor(entry, interaction.mode));
     row.append(slotActions(entry));
+    const tech = techDetails(slotTechLines(entry));
+    if (tech) row.append(tech);
     return row;
   }
 

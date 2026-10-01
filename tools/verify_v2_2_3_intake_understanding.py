@@ -111,6 +111,27 @@ async (projectId) => {
 """
 
 
+SLOT_TECH_PROBE = """() => [...document.querySelectorAll('#slot-list .slot-row')].map((row) => {
+  const clone = row.cloneNode(true);
+  clone.querySelectorAll('details').forEach((node) => node.remove());
+  const tech = [...row.querySelectorAll('.tech-details')].map((node) => ({
+    open: node.open === true,
+    summary: (node.querySelector('summary') || {}).textContent || '',
+    body: (node.querySelector('.tech-body') || {}).textContent || '',
+  }));
+  return { slot_id: row.getAttribute('data-slot-id'), status: row.getAttribute('data-status'),
+           main_text: (clone.textContent || '').replace(/\\s+/g, ' ').trim(), tech: tech };
+})"""
+
+SLOT_PANEL_MAIN_TEXT = """() => {
+  const panel = document.querySelector('[data-stage-panel="understand"]');
+  if (!panel) return '';
+  const clone = panel.cloneNode(true);
+  clone.querySelectorAll('details').forEach((node) => node.remove());
+  return (clone.textContent || '').replace(/\\s+/g, ' ');
+}"""
+
+
 def png_bytes(width: int, height: int, color: tuple[int, int, int]) -> bytes:
     """不用第三方库生成一张真实 PNG（RGB，无压缩过滤）。"""
 
@@ -352,6 +373,29 @@ def main() -> int:
             check(f"{APP_NAME}-09", "异常优先：默认列表按 冲突 → 未知 → 缺失 → 未确认 排序，已确认事实默认折叠",
                   statuses == sorted(statuses, key=lambda item: STATUS_ORDER[item])
                   and "confirmed" not in statuses and "missing" in statuses, statuses)
+
+            # V2.6.16：事实卡片只把人话放主行；slot_id / 版本 / 证据来源（字段名、哈希、模型 id）
+            # 一律收进该卡折叠的「技术详情」。判据用「删掉 details 后的可见文本」自证，不看样式。
+            tech_rows = page.evaluate(SLOT_TECH_PROBE)
+            panel_main = page.evaluate(SLOT_PANEL_MAIN_TEXT)
+            hex_re = re.compile(r"\b[0-9a-f]{12,}\b")
+            tech_ok = bool(tech_rows)
+            tech_detail = {"rows": tech_rows[:4], "count": len(tech_rows)}
+            for item in tech_rows:
+                main_text = item["main_text"]
+                if not item["tech"] or any(node["open"] for node in item["tech"]):
+                    tech_ok = False
+                if item["slot_id"] not in " ".join(node["body"] for node in item["tech"]):
+                    tech_ok = False
+                if item["slot_id"] in main_text or "版本 v" in main_text or "sha256" in main_text.lower():
+                    tech_ok = False
+                if hex_re.search(main_text):
+                    tech_ok = False
+            if "product_input" in panel_main or "fake-deepseek" in panel_main:
+                tech_ok = False
+            check(f"{APP_NAME}-22",
+                  "事实卡片渐进披露：主行无 slot_id/版本/来源引用（字段名、哈希、模型 id），工程标识在技术详情里",
+                  tech_ok, tech_detail)
 
             rows_default = {item["slot_id"]: item for item in eval_rows(page)}
             core_actions = rows_default.get("product_name", {}).get("actions", [])

@@ -162,6 +162,8 @@ async () => {
     String(right.updated_at || "").localeCompare(String(left.updated_at || "")))[0] || null;
   return {
     sheet: sheet,
+    plan_shots: plan.payload.shots.map((shot) => ({ shot_id: shot.shot_id, role_id: shot.role_id })),
+    text_roles: [...domain.PLATFORM_PROFILES.amazon_us.on_image_text_roles],
     staleness: staleness,
     recomputed_hash: recomputedHash,
     record: confirmRow ? { version: confirmRow.version, payload: confirmRow.payload } : null,
@@ -510,6 +512,23 @@ def main() -> int:
                   and all(count == 0 for count in duplicate_counts.values())
                   and all("2 条" in message for message in signature_messages),
                   {"messages": signature_messages[:4], "duplicates": duplicate_counts})
+
+            # V2.6.17：语言风险只对「允许图中文字」的角色成立 —— 场景图/细节图不排文字，
+            # 报「图中将逐字保留原文」是误报；同时有文字的角色要给可操作建议。
+            role_by_shot = {item["shot_id"]: item["role_id"] for item in ready["plan_shots"]}
+            text_roles = set(ready["text_roles"])
+            language_risks = [risk for risk in ready["sheet"]["risks"]
+                              if risk["code"] == "ON_IMAGE_TEXT_NOT_PLATFORM_LANGUAGE"]
+            false_positive = [risk for risk in language_risks
+                              if role_by_shot.get(risk["shot_id"]) not in text_roles]
+            actionable = [risk for risk in language_risks if "建议" in risk["message"]]
+            check("V2.3.5-16",
+                  "语言风险只出现在允许图中文字的角色（文字角色带可操作建议，无文字角色不误报）",
+                  bool(language_risks) and not false_positive
+                  and len(actionable) == len(language_risks),
+                  {"false_positive": [risk["shot_id"] for risk in false_positive],
+                   "roles": role_by_shot, "text_roles": sorted(text_roles),
+                   "messages": [risk["message"] for risk in language_risks][:3]})
 
             page.click("#confirm-action")
             expect(page.locator("#confirm-record")).to_contain_text("已确认 v1")

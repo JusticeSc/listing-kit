@@ -365,7 +365,7 @@ def main() -> int:
             logs_a = ui3.collect(page_a)
             try:
                 page_a.goto(f"http://127.0.0.1:{port}/", wait_until="domcontentloaded")
-                shots = v262.walk_to_deliver(page_a, "V263 迁移品", reference)
+                shots, _walk_probes = v262.walk_to_deliver(page_a, "V263 迁移品", reference)
                 gate_a = v262.wait_gate(page_a)
                 shot(page_a, "a-gate")
                 delivery_a = v262.download_delivery(page_a, downloads / "delivery-a.zip")

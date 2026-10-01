@@ -982,6 +982,34 @@ task_progress:
       - app/product_v2/index.html
       - app/product_v2/styles.css
       - tools/verify_v2_6_2_delivery.py
+      - tools/verify_v2_6_3_project_transfer.py
+      - evals/product-v2/v2.6.3-transfer-20261001-102204.txt
+      - evals/product-v2/v2.7.1-regression-20261001-v261617-reg-final.txt
+  V2.6.16:
+    status: done
+    evidence:
+      - evals/product-v2/v2.2.3-intake-understanding-20261001-100041-v2616-red.txt
+      - evals/product-v2/v2.2.3-intake-understanding-20261001-100041-v2616-red.json
+      - evals/product-v2/v2.2.3-intake-understanding-20261001-100144-v2616-green.txt
+      - evals/product-v2/v2.2.3-intake-understanding-20261001-100144-v2616-green.json
+      - evals/product-v2/v2.2.3-workspace-20261001-100144.png
+      - evals/product-v2/v2.ui.3-frontend-20261001-100211-v2616-reg.txt
+      - evals/product-v2/v2.ui.2-interaction-visual-20261001-100240.txt
+      - evals/product-v2/v2.6.4-a11y-20261001-100253.txt
+      - evals/product-v2/v2.2.4-category-generality-20261001-100229-v2616-reg.txt
+      - evals/product-v2/v2.7.1-regression-20261001-v261617-reg-final.txt
+      - app/product_v2/workspace.js
+      - tools/verify_v2_2_3_intake_understanding.py
+  V2.6.17:
+    status: done
+    evidence:
+      - evals/product-v2/v2.3.5-pre-generation-confirm-20261001-100629-v2617-red.txt
+      - evals/product-v2/v2.3.5-pre-generation-confirm-20261001-100629-v2617-red.json
+      - evals/product-v2/v2.3.5-pre-generation-confirm-20261001-100709-v2617-green.txt
+      - evals/product-v2/v2.3.5-pre-generation-confirm-20261001-100709-v2617-green.json
+      - evals/product-v2/v2.7.1-regression-20261001-v261617-reg-final.txt
+      - app/product_v2/domain/prompt.js
+      - tools/verify_v2_3_5_pre_generation_confirm.py
   V2.7.1:
     status: done
     evidence:
@@ -1021,5 +1049,5 @@ unknowns:
     arrears_evidence_evals_product_v2_evidence_remote-real-e2e-20261001-043317-lamp01-failure.png
     passing_rerun_evals_product_v2_v2_7_2-remote-real-e2e-20261001-091400.txt
     external_premise_may_change_without_notice_real_runs_have_cost
-updated_at: 2026-10-01T09:52:00+08:00
+updated_at: 2026-10-01T10:22:00+08:00
 ```
