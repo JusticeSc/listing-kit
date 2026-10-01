@@ -157,6 +157,7 @@ def main() -> int:
 
     lines = [
         f"V2.7.4 完成矩阵（机械汇总） · {stamp}",
+        "NOT-AUTHORITY: point-in-time verification evidence only",
         "",
         "本表只核对「证据文件在不在、结论标记有没有」与「哪些门还开着」；",
         "**不判定 proven** —— 对象、条件、时点、来源、结果与限制仍要审计人逐条读。",
