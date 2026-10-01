@@ -357,7 +357,7 @@ def main() -> int:
         "> 用于在真人走查前暴露摩擦点；不构成 C15/C17 的人工走查证据。",
         "",
         f"- 入口：本机 fake 走查服务器（tools/rehearse_v273_walkthrough.py，label={args.label}）",
-        f"- 品类/参考图：非内置品类（落地灯）· {reference.name}",
+        f"- 商品/参考图：{args.product_name}（非内置品类）· {reference.name}",
         "- 剧本：new → intake → understand(确认全部) → plan(推荐方案) → generate(全部成功) →",
         "  review(比较+单图返工+逐图采用) → deliver(整套检查 → 导出 ZIP) → 390px 复核",
         "",

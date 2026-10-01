@@ -1523,8 +1523,10 @@ message 走 `localizeSlotTerms()`（槽位名替代 id）；逐图风险行显�
 
 **回归保持**：UI3 18/18（`v2.ui.3-frontend-20261001-080422-v273-prep.*`）、V2.5.5 13/13
 （`v2.5.5-suite-review-20261001-080457.*`）、V2.5.4 40/40、V2.6.1 46/46、V2.5.3 38/38；
-预演三品类各 8 节全通并各导出 ZIP（落地灯 `…080336`、餐椅 `…080521`、蜂蜜 `…080541`）
-＋截图 `evidence/v273-rehearsal-20261001-080336-rework-compare.png`、`…-deliver-exported.png`。
+预演三品类各 8 节全通并各导出 ZIP（落地灯 `…081220`、餐椅 `…081240`、蜂蜜 `…081254`）
+＋截图 `evidence/v273-rehearsal-20261001-081220-rework-compare.png`、`…-deliver-exported.png`。
+
+预演报告首行模板此前写死「落地灯」，三品类报告统一修正为实际商品名（`--product-name`）后重跑归档。
 
 **边界**：预演仍是 fake 通道、零模型调用，不构成 C15/C17 人工证据；导出 ZIP 为假图字节。
 
