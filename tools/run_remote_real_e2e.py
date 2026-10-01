@@ -34,9 +34,9 @@ enable_utf8()
 
 EVIDENCE_DIR = ROOT / "evals" / "product-v2"
 EVIDENCE_IMAGE_DIR = EVIDENCE_DIR / "evidence"
-DEFAULT_IMAGE = (ROOT / "_working" / "amz-listing-kit-product-demo" / "real-run-01"
-                 / "workspace" / "inputs" / "originals"
-                 / "5c5e0fdde80847dc140af37778678f3e9b3fb7962bba70360e62630501a85629.jpg")
+# C14 要求非内置商品：默认落地灯（非内置品类），商品名/卖点与参考图保持一致。
+DEFAULT_IMAGE = (ROOT / "_working" / "amz-listing-kit-product-demo" / "real-run-lamp"
+                 / "lamp-3m.jpg")
 MAX_SHOTS = 5
 TERMINAL_STATES = {"succeeded", "failed", "unknown"}
 
@@ -89,14 +89,14 @@ def main() -> int:
     parser.add_argument("--base", default="https://47.115.172.233:8080")
     parser.add_argument("--image", default=str(DEFAULT_IMAGE))
     parser.add_argument("--label", default="")
-    parser.add_argument("--product-name", default="针织套头毛衣 · 远程真实链路预演")
-    parser.add_argument("--intake-name", default="粗棒针织套头毛衣")
+    parser.add_argument("--product-name", default="夹式 LED 阅读灯 · 远程真实链路预演")
+    parser.add_argument("--intake-name", default="夹式 LED 阅读灯")
     parser.add_argument("--intake-description",
-                        default="墨绿色粗棒针织套头毛衣，圆领长袖，厚实保暖，罗纹袖口与下摆，"
-                                "左下摆有方形品牌织标。")
+                        default="三档色温夹式 LED 阅读灯，USB-C 供电，关节臂可调，"
+                                "哑光黑灯身，暖光柔和。")
     parser.add_argument("--selling-points",
-                        default="粗棒罗纹针织肌理\n宽松落肩版型\n罗纹收口不易变形")
-    parser.add_argument("--focus", default="突出面料肌理与宽松版型，颜色以墨绿为准")
+                        default="3 档色温\n无级调光\nUSB-C 供电")
+    parser.add_argument("--focus", default="夜读场景，突出灯头角度与暖光氛围")
     parser.add_argument("--generation-timeout", type=float, default=900.0)
     parser.add_argument("--suite-timeout", type=float, default=600.0)
     args = parser.parse_args()
