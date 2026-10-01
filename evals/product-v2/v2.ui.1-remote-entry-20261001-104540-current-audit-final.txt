@@ -1,0 +1,26 @@
+V2.UI.1 正式远程入口、浏览器能力与错误诊断
+时间：2026-10-01T10:46:01
+git HEAD：356ad4ee92eee3a9cb8ea41d8eef1df1e518335d
+远程 HTTPS：https://47.115.172.233:8080/
+远程 HTTP：http://47.115.172.233:8780/
+Edge 可执行文件：C:\Program Files (x86)\Microsoft\Edge\Application\154.0.4258.37\msedge.exe
+
+[PASS] V2.UI.1-10 远程 HTTPS + chrome 是安全上下文且能力齐备
+       {"version": "154.0.8037.93", "state": {"secure_context": true, "subtle": "object", "subtle_digest": "function", "random_uuid": "function", "indexeddb": "object", "notice_present": true, "notice_hidden": true, "notice_code": null, "notice_gap": null, "notice_text": "当前来源： 重新检测", "create_disabled": false, "import_disabled": false, "boot_error_hidden": true, "home_error_hidden": true, "project_names": []}}
+[PASS] V2.UI.1-11 远程 HTTPS + chrome 新建后刷新与关页重开仍在
+       {"created": true, "after_reload": ["UI1 远程 chrome 20261001-104540"], "after_reopen": ["UI1 远程 chrome 20261001-104540"], "indexeddb": {"db_exists": true, "project_count": 1, "project_names": ["UI1 远程 chrome 20261001-104540"]}}
+[PASS] V2.UI.1-12 远程 HTTPS + chrome 会话零 console/page/网络错误
+       {"console": [], "network": []}
+[PASS] V2.UI.1-20 远程 HTTPS + edge 是安全上下文且能力齐备
+       {"version": "154.0.4258.37", "state": {"secure_context": true, "subtle": "object", "subtle_digest": "function", "random_uuid": "function", "indexeddb": "object", "notice_present": true, "notice_hidden": true, "notice_code": null, "notice_gap": null, "notice_text": "当前来源： 重新检测", "create_disabled": false, "import_disabled": false, "boot_error_hidden": true, "home_error_hidden": true, "project_names": []}}
+[PASS] V2.UI.1-21 远程 HTTPS + edge 新建后刷新与关页重开仍在
+       {"created": true, "after_reload": ["UI1 远程 edge 20261001-104540"], "after_reopen": ["UI1 远程 edge 20261001-104540"], "indexeddb": {"db_exists": true, "project_count": 1, "project_names": ["UI1 远程 edge 20261001-104540"]}}
+[PASS] V2.UI.1-22 远程 HTTPS + edge 会话零 console/page/网络错误
+       {"console": [], "network": []}
+[PASS] V2.UI.1-30 远程 HTTP 负例精确报 secure_context/WebCrypto 缺口
+       {"secure_context": false, "subtle": "undefined", "subtle_digest": "undefined", "random_uuid": "undefined", "indexeddb": "object", "notice_present": true, "notice_hidden": false, "notice_code": "SECURE_CONTEXT_REQUIRED", "notice_gap": "secure_context", "notice_text": "当前来源不是安全上下文（HTTP） 浏览器在非安全来源禁用 WebCrypto：crypto.randomUUID 与 crypto.subtle 不可用，因此无法新建项目、导入项目包或计算内容哈希。IndexedDB 本身可用，这不是 IndexedDB 缺失。 当前来源：http://47.115.172.233:8780 请改用部署者提供的 HTTPS 正式入口；本机开发可用 http://127.0.0.1 或 http://localhost。 重新检测", "create_disabled": true, "import_disabled": true, "boot_error_hidden": true, "home_error_hidden": true, "project_names": []}
+[PASS] V2.UI.1-31 远程 HTTP 负例会话零 console/page/网络错误
+       {"console": [], "network": []}
+
+截图：evals/product-v2/evidence/v2.ui.1-remote-entry-20261001-104540-chrome.png, evals/product-v2/evidence/v2.ui.1-remote-entry-20261001-104540-edge.png, evals/product-v2/evidence/v2.ui.1-remote-entry-20261001-104540-http-negative.png
+结果：8/8 通过，0 失败。

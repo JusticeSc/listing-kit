@@ -1,0 +1,33 @@
+amz-listing-kit 远程正式入口「不调模型」半程往返
+NOT-AUTHORITY: point-in-time verification evidence only
+finished_at: 2026-10-01T08:48:01
+status: passed
+base: https://47.115.172.233:8080
+reference: E:\workbuddy_workspace\2026-09-20-16-38-19\amz-listing-kit\_working\amz-listing-kit-product-demo\real-run-lamp\lamp-3m.jpg
+
+CHECKS
+- [PASS] RN-01 远程正式入口空白启动：无项目、无预填名称
+  detail: {"rows": 0, "name": ""}
+- [PASS] RN-02 远程入口可新建并打开项目（浏览器本地）
+- [PASS] RN-03 上传参考图并填写资料（技术详情默认收起、图已入库）
+  detail: {"asset_sha256": "30c6042a7f7bdee442dda53659cc889ac8ce093d94d2924877e51aa491dc8092"}
+- [PASS] RN-04 项目包可导出（真实下载字节）
+  detail: {"bytes": 681849, "filename": "远程半程往返（不调模型）-20261001-0047.zip"}
+- [PASS] RN-05 项目包结构自洽：manifest + 文档 + 资产，资产字节哈希与清单一致
+  detail: {"entries": 4, "documents": 2, "assets": 1, "asset_hash_ok": true, "format_version": 2}
+- [PASS] RN-06 新浏览器配置文件初始为空，导入项目包后出现同名项目
+  detail: {"before": 0, "imported": "远程半程往返（不调模型）"}
+- [PASS] RN-07 导入后业务记录与参考图资产哈希一致（跨浏览器往返）
+  detail: {"restored": {"name": "落地灯", "description": "金属灯身配浅色布艺灯罩；照片为实物参考", "focus": "保持灯罩与支架形状颜色", "refs": 1}, "sha_a": "30c6042a7f7bdee442dda53659cc889ac8ce093d94d2924877e51aa491dc8092", "sha_b": "30c6042a7f7bdee442dda53659cc889ac8ce093d94d2924877e51aa491dc8092", "sha_zip": "30c6042a7f7bdee442dda53659cc889ac8ce093d94d2924877e51aa491dc8092"}
+- [PASS] RN-08 导入后的项目在刷新后仍从 IndexedDB 恢复
+  detail: {"title": "远程半程往返（不调模型）"}
+
+SCREENSHOTS
+- evals/product-v2/evidence/remote-no-model-roundtrip-20261001-084750-home.png
+- evals/product-v2/evidence/remote-no-model-roundtrip-20261001-084750-intake.png
+- evals/product-v2/evidence/remote-no-model-roundtrip-20261001-084750-imported.png
+
+BOUNDARY
+不含任何模型调用；不替代 V2.7.2 真实模型闭环、V2.7.3 人工走查；上游账户与网络条件可能随时变化。
+
+结果：8/8 通过

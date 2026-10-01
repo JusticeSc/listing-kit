@@ -1,0 +1,55 @@
+amz-listing-kit Product V2 V2.2.1 product understanding contracts
+NOT-AUTHORITY: point-in-time verification evidence only
+observed_at: 2026-10-01T10:08:43
+status: passed
+json: evals/product-v2/v2.2.1-product-contracts-20261001-100841.json
+
+CHECKS
+- [PASS] V2.2.1-00 domain 与 harness 模块通过 node --check（ESM 语法门）
+- [PASS] V2.2.1-01 契约套件全部通过且用例清单完整（C01..C37）
+- [PASS] V2.2.1-02 反向探针确实被执行（非法形状 / 模型确认 / 无值确认 / 环 / 越界失效 / brief 不一致）
+- [PASS] V2.2.1-03 驱动侧独立集成：资料/槽位/理解落库，槽位升级后 brief 过期且历史保留
+- [PASS] V2.2.1-04 浏览器会话零 console error / page error
+- [PASS] V2.2.1-05 正式入口自检仍全过（V2.2.1 不破坏 V2.1.4）
+
+SUITE CASES
+- [PASS] C01 词表与核心注册表冻结：权限与状态的取值域不由界面定义
+- [PASS] C02 核心槽位必须与注册表一致；未登记的自称 core_fixed 被拒
+- [PASS] C03 商品资料正例：名称 + primary 参考图 → 资料就绪
+- [PASS] C04 资料缺失被精确定位：名称、参考图、primary 三种
+- [PASS] C05 参考图判据：sha 形状、重复登记、角色闭集
+- [PASS] C06 长度上限：超长名称与超量卖点被拒
+- [PASS] C07 FactSlot 正例：人工确认的核心槽位通过全部判据
+- [PASS] C08 词表外取值被拒：authority / source / status / value_type
+- [PASS] C09 置信规则：只有 model_inference 能带 confidence，且必须在 0..1
+- [PASS] C10 值形状判据覆盖五种类型
+- [PASS] C11 状态与值一一对应：该有值的有值，不该有的没有
+- [PASS] C12 proposed 只能来自模型；人工确认模型提案必须保留置信读数
+- [PASS] C13 派生槽位：来源必须是规则，且必须声明依赖
+- [PASS] C14 自定义槽位：确认值只能来自用户或参考图观察
+- [PASS] C15 槽位集合判据：重复 id、悬空依赖、自环、两节点环
+- [PASS] C16 权限矩阵逐格：谁能改值由 authority 决定
+- [PASS] C17 增删权限：核心不可删、动态有依赖不可删、自定义自由、模型只能加动态
+- [PASS] C18 模型不能确认事实：propose 可以，confirm 必须被拒
+- [PASS] C19 模型提案：proposed + 置信 + 证据，一律不许自动变 confirmed
+- [PASS] C20 模型提案与已确认值不同 → 冲突（不得静默覆盖人工事实）
+- [PASS] C21 模型提案与已确认值相同 → 保持 confirmed，只留证据
+- [PASS] C22 用户编辑：值变为人工事实，模型置信被清除
+- [PASS] C23 冲突确认必须带裁决值；无值确认被拒
+- [PASS] C24 派生槽位：用户不能直接改值，规则确认合法
+- [PASS] C25 supersede 是终态：不能再提案、无值确认被拒
+- [PASS] C26 标记冲突：证据不足被拒，两条证据成立且清空单方值
+- [PASS] C27 标记未知：清空值并保留槽位（Unknown 不许当成失败或成功）
+- [PASS] C28 失效图逐类匹配：失效集与保留集都必须完全一致
+- [PASS] C29 定向失效：只失效引用该事实的 Shot，其余 Shot 必须保留
+- [PASS] C30 Shot 级失效必须带 shotId：没有目标就无法限制影响范围
+- [PASS] C31 投影：已确认的进事实、未决的进待处理，basis 记录精确版本
+- [PASS] C32 brief 反向探针：引用不在 basis、重复状态、错误类别来源都被拒
+- [PASS] C33 brief 与当前事实对照：版本落后、值被改、待处理已确认三类都报
+- [PASS] C34 过期是版本事实，不是界面判断：briefIsStale 给出可读原因
+- [PASS] C35 就绪门：关键槽位未确认或没有任何事实时不许进入计划
+- [PASS] C36 落库集成：资料/槽位/理解都是版本化文档；槽位升级后 brief 过期且历史保留
+- [PASS] C37 领域对象必须是可 JSON 往返的纯数据：Blob / 函数混入一律被拒
+
+BOUNDARY
+证明商品理解领域契约可机检：固定/动态/自定义/派生四类槽位的权限矩阵、来源与确认状态、状态转换（模型只能提案、冲突不许静默覆盖、无值不许确认、派生不能直接改值）、失效图（失效集与保留集逐类匹配，历史与 Blob 永不失效，Shot 级失效必须带目标）、ProductBrief 的版本化投影、过期判定与就绪门，并在真实 IndexedDB 上完成资料/槽位/理解三仓落库与版本推进。不证明 DeepSeek 适配、界面投影、套图规划、生成、审核与交付。
