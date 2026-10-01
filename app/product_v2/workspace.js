@@ -420,6 +420,8 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     suiteReviewFindings: document.getElementById("suite-review-findings"),
     suiteReviewError: document.getElementById("suite-review-error"),
     deliveryGate: document.getElementById("delivery-gate"),
+    deliverySuiteStatus: document.getElementById("delivery-suite-status"),
+    deliverySuiteFindings: document.getElementById("delivery-suite-findings"),
     deliveryUnknowns: document.getElementById("delivery-unknowns"),
     deliverExport: document.getElementById("deliver-export"),
     deliverProjectPackage: document.getElementById("deliver-project-package"),
@@ -4757,17 +4759,29 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     return refreshStageShell();
   }
 
-  /** 审核阶段的逐图入口：图片 + 候选数 + 采用状态 + 比较/返工/采用。 */
+  /**
+   * 审核阶段的逐图入口：图片 + 候选数 + 采用状态 + 逐图检查摘要 + 比较/返工/采用。
+   *
+   * 卡片右栏此前只有图名与徽标，真实链路走查（2026-10-01 自审）里一大片空白——
+   * 人只能点开比较面板才知道这张图「查出了什么」。这里复读同一份当前报告
+   * （compareInventory 已按 reviewIsCurrent 过滤），把状态、机器结论与「先看哪一条」
+   * 摆到卡片上；不新增第二套规则，也不改变任何选择语义。
+   */
   function renderReviewList() {
     if (!elements.reviewList) return;
     elements.reviewList.innerHTML = "";
     const shots = shotSummariesNow();
     const reviewable = shots.filter((shot) => candidateChainOf(shot.shot_id).length > 0);
     elements.reviewEmpty.hidden = reviewable.length > 0;
+    const inventory = reviewable.length ? compareInventory() : { rowsByShotId: {} };
     for (const shot of reviewable) {
       const chain = candidateChainOf(shot.shot_id);
       const stored = latestStoredCandidateOf(shot.shot_id);
       const state = selectionStateOf(shot.shot_id);
+      const rows = inventory.rowsByShotId[shot.shot_id] || [];
+      const shownRow = stored
+        ? (rows.find((row) => row.candidate_id === stored.record.candidate_id) || null)
+        : null;
       const card = createElement("div", {
         className: "review-card",
         attrs: { "data-shot-id": shot.shot_id, "data-selection-state": state },
@@ -4794,6 +4808,37 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
           className: "meta", text: "最新一次生成还没有保存到本地的候选；到「生成」里核对或重试。",
         }));
       }
+      const check = createElement("div", {
+        className: "review-card-check",
+        attrs: {
+          "data-shot-id": shot.shot_id,
+          "data-review-state": shownRow ? shownRow.review_state : "unchecked",
+          "data-candidate-id": shownRow ? shownRow.candidate_id : "",
+        },
+      });
+      if (shownRow) {
+        check.append(createElement("span", {
+          className: "badge " + (COMPARE_STATE_BADGE[shownRow.review_state] || "is-review-unchecked"),
+          text: compareStateLabel(shownRow),
+        }));
+        if (shownRow.report) {
+          check.append(createElement("span", {
+            className: "meta review-check-summary", text: reviewSummaryText(shownRow.report),
+          }));
+        }
+        check.append(createElement("p", {
+          className: "meta review-check-headline", text: compareRowHeadline(shownRow),
+        }));
+      } else {
+        check.append(createElement("span", {
+          className: "badge is-review-unchecked",
+          text: COMPARE_STATE_TEXT.unchecked,
+        }));
+        check.append(createElement("p", {
+          className: "meta", text: "这张图还没有当前审核报告；打开「比较候选」可查看或补建。",
+        }));
+      }
+      card.append(check);
       const actions = createElement("div", { className: "review-card-actions" });
       const compareButton = createElement("button", {
         text: "比较候选（" + chain.length + "）", attrs: { type: "button" },
@@ -4807,10 +4852,15 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
         openReworkPanel();
       });
       actions.append(reworkButton);
+      // 已采用就不再邀请重复采用（与 #adopt-submit 的「已采用这条候选」同一语义）；
+      // 换用其他候选走「比较候选」，因此这里保持禁用而不是换成第二个主操作。
+      const alreadyAdopted = state === "current";
       const adoptButton = createElement("button", {
-        className: "primary", text: "采用候选", attrs: { type: "button" },
+        text: alreadyAdopted ? "已采用" : "采用候选", attrs: { type: "button" },
       });
-      adoptButton.disabled = !stored;
+      if (!alreadyAdopted) adoptButton.className = "primary";
+      if (alreadyAdopted) adoptButton.title = "已采用这条候选；换用其他候选请点「比较候选」。";
+      adoptButton.disabled = !stored || alreadyAdopted;
       adoptButton.addEventListener("click", () => {
         openCompare(shot.shot_id, {});
         openAdoptPanel();
@@ -5119,18 +5169,25 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     }
     elements.suiteReviewFindings.innerHTML = "";
     if (!report) return;
+    appendSuiteFindings(elements.suiteReviewFindings, report);
+  }
+
+  /**
+   * 整套发现的单一投影（审核阶段与交付阶段共用，避免两套写法 / 两个事实来源）。
+   * 只读传入的报告，重排成「严重度分组 + 逐条定位」；不写任何状态。
+   */
+  function appendSuiteFindings(container, report) {
     const findings = Array.isArray(report.findings) ? report.findings : [];
-    const order = REVIEW_SEVERITY_ORDER;
     const shown = findings.filter((item) => item && item.severity !== "PASS");
     if (shown.length === 0) {
-      elements.suiteReviewFindings.append(createElement("p", {
+      container.append(createElement("p", {
         className: "meta", text: "没有需要人工处理的整套发现。",
       }));
     }
-    for (const severity of order) {
+    for (const severity of REVIEW_SEVERITY_ORDER) {
       const group = shown.filter((item) => item.severity === severity);
       if (!group.length) continue;
-      elements.suiteReviewFindings.append(createElement("p", {
+      container.append(createElement("p", {
         className: "meta suite-group", text: COMPARE_SEVERITY_TEXT[severity] || severity,
       }));
       for (const finding of group) {
@@ -5153,12 +5210,12 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
           jump.addEventListener("click", () => { jumpToReviewShot(shotId); });
           row.append(jump);
         }
-        elements.suiteReviewFindings.append(row);
+        container.append(row);
       }
     }
     const passCount = findings.filter((item) => item && item.severity === "PASS").length;
     if (passCount > 0) {
-      elements.suiteReviewFindings.append(createElement("p", {
+      container.append(createElement("p", {
         className: "meta", text: "另 " + passCount + " 项确定性检查通过（细节在候选审核清单里）。",
       }));
     }
@@ -5282,6 +5339,31 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     }
   }
 
+  /**
+   * 交付页的整套检查投影（V2.6.15）：交付是最后决策点，门禁全绿只说明「硬检查通过」，
+   * 不代表没有风险 —— 这里复读同一份 suite review 报告（单一权威），把非阻断的
+   * 高风险/提醒连同定位入口摆到导出按钮前面；过期报告如实说明，阻断仍由门禁负责。
+   */
+  function renderDeliverySuite() {
+    if (!elements.deliverySuiteStatus || !elements.deliverySuiteFindings) return;
+    elements.deliverySuiteStatus.textContent = "";
+    elements.deliverySuiteFindings.innerHTML = "";
+    const entry = suiteReportEntry();
+    const report = entry ? entry.report : null;
+    if (!report) {
+      elements.deliverySuiteStatus.textContent = projectId && suitePlan
+        ? "尚未运行整套检查；交付门禁会在缺失或不当前时阻断导出。"
+        : "先在「方案」生成套图方案，再运行整套检查。";
+      return;
+    }
+    const current = projectId ? suiteReviewIsCurrent(report, suiteFingerprintsNow()) : false;
+    elements.deliverySuiteStatus.textContent = current
+      ? suiteReviewSummaryText(report)
+      : ("整套检查已过期：选择或输入在报告之后发生了变化，请回审核阶段重新运行。上一版："
+         + suiteReviewSummaryText(report));
+    appendSuiteFindings(elements.deliverySuiteFindings, report);
+  }
+
   /** 待确认 Unknown：每条一个「确认已知悉」按钮；确认是 append-only 记录，不改写报告。 */
   function renderDeliveryUnknowns() {
     if (!elements.deliveryUnknowns) return;
@@ -5380,6 +5462,7 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
       elements.deliveryGate.append(row);
     }
     renderDeliveryFindings();
+    renderDeliverySuite();
     renderDeliveryUnknowns();
     renderDeliveryResult();
     const requiredShots = shots.filter((shot) => shot.required === true);

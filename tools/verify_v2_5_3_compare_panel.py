@@ -203,6 +203,18 @@ async ({ projectId, shotId, pngBase64, actionId, taskId }) => {
 """
 
 
+CARD_STATE_PROBE = """() => [...document.querySelectorAll('#review-list .review-card')].map((card) => {
+  const check = card.querySelector('.review-card-check');
+  const buttons = [...card.querySelectorAll('.review-card-actions button')].map((node) => ({
+    text: (node.textContent || '').trim(), disabled: node.disabled === true }));
+  return { shot_id: card.getAttribute('data-shot-id'),
+           selection_state: card.getAttribute('data-selection-state'),
+           review_state: check ? check.getAttribute('data-review-state') : null,
+           candidate_id: check ? (check.getAttribute('data-candidate-id') || '') : '',
+           text: check ? (check.textContent || '').trim() : '',
+           buttons: buttons };
+})"""
+
 PANEL_PROBE = """
 () => {
   const panel = document.getElementById("compare-panel");
@@ -594,6 +606,70 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 ui["panel_buttons"] = all_buttons
                 ui["screenshot"] = screenshot_rel
                 ui["screenshot_detail"] = detail_rel
+
+                # V2.6.14（审核卡状态投影）：卡片必须自己说清「这条候选查过什么」与
+                # 「现在能不能采用」，不能只靠点开比较面板才知道 —— 空白右栏是真实使用摩擦。
+                card_states = page.evaluate(CARD_STATE_PROBE)
+                # candidate_chains 是 {version, payload} 版本记录：这里只取候选身份，
+                # 用来证明卡片摘要是「正在展示的那条候选」的当前报告，不是随便一张。
+                chains = {
+                    shot: {entry["payload"]["candidate_id"] for entry in entries}
+                    for shot, entries in ((first_shot, candidates_first),
+                                          (second_shot, candidates_second))
+                }
+                card_ok = len(card_states) >= 2
+                card_detail = {"cards": card_states}
+                for item in card_states:
+                    chain = chains.get(item["shot_id"], [])
+                    if item["review_state"] not in ("pending", "unknown", "clean", "unchecked"):
+                        card_ok = False
+                    if not item["text"]:
+                        card_ok = False
+                    elif item["review_state"] == "unchecked":
+                        if "未检查" not in item["text"]:
+                            card_ok = False
+                    elif "自动检查" not in item["text"]:
+                        card_ok = False
+                    if item["candidate_id"] not in chain:
+                        card_ok = False
+                    if not any(button["text"] == "采用候选" and button["disabled"] is False
+                               for button in item["buttons"]):
+                        card_ok = False
+                if not any(item["review_state"] != "unchecked" for item in card_states):
+                    card_ok = False
+                checks.append({
+                    "id": "V2.5.3-20",
+                    "title": "审核卡逐图检查摘要：显示所展示候选的当前报告状态（含 VLM 状态），未采用时保留可用入口",
+                    "ok": card_ok,
+                    "detail": card_detail,
+                })
+
+                # V2.6.14（采用后不再邀请重复采用）：同一张卡的第三个按钮必须跟随状态变化。
+                target_card = card_states[0]["shot_id"] if card_states else first_shot
+                page.click(f'#review-list .review-card[data-shot-id="{target_card}"] '
+                           'button:has-text("采用候选")')
+                page.wait_for_selector("#adopt-submit:not([disabled])", timeout=15_000)
+                page.click("#adopt-submit")
+                page.wait_for_selector("#adopt-status:not([hidden])", timeout=15_000)
+                adopted_cards = page.evaluate(CARD_STATE_PROBE)
+                adopted_target = next((item for item in adopted_cards
+                                       if item["shot_id"] == target_card), None)
+                adopted_others = [item for item in adopted_cards
+                                  if item["shot_id"] != target_card]
+                checks.append({
+                    "id": "V2.5.3-21",
+                    "title": "采用后按钮反映状态：目标卡为「已采用」且禁用，未采用的卡仍保留「采用候选」",
+                    "ok": bool(adopted_target)
+                          and adopted_target["selection_state"] == "current"
+                          and any(button["text"] == "已采用" and button["disabled"] is True
+                                  for button in adopted_target["buttons"])
+                          and not any(button["text"] == "采用候选" and button["disabled"] is False
+                                      for button in adopted_target["buttons"])
+                          and all(any(button["text"] == "采用候选" and button["disabled"] is False
+                                      for button in item["buttons"])
+                                  for item in adopted_others),
+                    "detail": {"adopted": adopted_target, "others": adopted_others},
+                })
             finally:
                 context.close()
     finally:

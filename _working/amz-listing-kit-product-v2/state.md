@@ -952,6 +952,36 @@ task_progress:
       - evals/product-v2/evidence/v273-rehearsal-20261001-083716-generate-confirm.png
       - app/product_v2/domain/prompt.js
       - tools/verify_v2_3_5_pre_generation_confirm.py
+  V2.6.14:
+    status: done
+    evidence:
+      - evals/product-v2/v2.5.3-compare-panel-20261001-093846v2614-red.txt
+      - evals/product-v2/v2.5.3-compare-panel-20261001-093846v2614-red.json
+      - evals/product-v2/v2.5.3-compare-panel-20261001-094436v2614-final.txt
+      - evals/product-v2/v2.5.3-compare-panel-20261001-094436v2614-final.json
+      - evals/product-v2/v2.ui.3-frontend-20261001-094610-v2614-reg.txt
+      - evals/product-v2/v2.ui.2-interaction-visual-20261001-094630.txt
+      - evals/product-v2/v2.6.4-a11y-20261001-094713.txt
+      - evals/product-v2/v2.5.5-suite-review-20261001-094921-v2614-reg.txt
+      - evals/product-v2/v2.5.4-rework-loop-20261001-094937v2614-reg.txt
+      - evals/product-v2/v2.6.1-selection-20261001-094733.txt
+      - evals/product-v2/v273-rehearsal-20261001-095045.md
+      - evals/product-v2/evidence/v2.5.3-compare-panel-20261001-094436.png
+      - app/product_v2/workspace.js
+      - app/product_v2/styles.css
+      - tools/verify_v2_5_3_compare_panel.py
+  V2.6.15:
+    status: done
+    evidence:
+      - evals/product-v2/v2.6.2-delivery-20261001-093813-v2615-red.txt
+      - evals/product-v2/v2.6.2-delivery-20261001-093813-v2615-red.json
+      - evals/product-v2/v2.6.2-delivery-20261001-094448-v2615-final.txt
+      - evals/product-v2/v2.6.2-delivery-20261001-094448-v2615-final.json
+      - evals/product-v2/evidence/v2.6.2-delivery-20261001-094448-v2615-final-gate-pass.png
+      - app/product_v2/workspace.js
+      - app/product_v2/index.html
+      - app/product_v2/styles.css
+      - tools/verify_v2_6_2_delivery.py
   V2.7.1:
     status: done
     evidence:
@@ -991,5 +1021,5 @@ unknowns:
     arrears_evidence_evals_product_v2_evidence_remote-real-e2e-20261001-043317-lamp01-failure.png
     passing_rerun_evals_product_v2_v2_7_2-remote-real-e2e-20261001-091400.txt
     external_premise_may_change_without_notice_real_runs_have_cost
-updated_at: 2026-10-01T09:26:00+08:00
+updated_at: 2026-10-01T09:52:00+08:00
 ```

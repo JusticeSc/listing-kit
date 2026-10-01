@@ -109,6 +109,18 @@ READ_DOCS = """async (kind) => {
   return rows;
 }"""
 
+SUITE_FINDINGS_JS = """(scope) => ({
+  status: ((document.getElementById(scope.status) || {}).textContent || '').trim(),
+  findings: [...document.querySelectorAll(scope.list + ' .suite-finding')].map((node) => ({
+    rule: node.getAttribute('data-rule-id'),
+    severity: node.getAttribute('data-severity'),
+    jumps: node.querySelectorAll('button[data-shot-id]').length })) })"""
+
+SUITE_PROBE = ("() => (" + SUITE_FINDINGS_JS + ")({status: 'suite-review-status', "
+               "list: '#suite-review-findings'})")
+DELIVER_SUITE_PROBE = ("() => (" + SUITE_FINDINGS_JS + ")({status: 'delivery-suite-status', "
+                       "list: '#delivery-suite-findings'})")
+
 DROP_ONE_ASSET = """async () => {
   const db = await new Promise((resolve, reject) => {
     const request = indexedDB.open('amz-listing-kit-v2');
@@ -250,7 +262,8 @@ def wait_gate(page, timeout: int = 30_000) -> dict:
     return page.evaluate(GATE_STATE)
 
 
-def walk_to_deliver(page, name: str, reference: Path, *, run_vlm: bool = False) -> list[str]:
+def walk_to_deliver(page, name: str, reference: Path, *,
+                    run_vlm: bool = False) -> tuple[list[str], dict]:
     """走到交付阶段：资料 → 理解 → 方案 → 生成（可选逐个 VLM 复核）→ 采用 → 整套检查。"""
     ui3.create_project(page, name, reference)
     page.click("#analyze-run")
@@ -287,8 +300,11 @@ def walk_to_deliver(page, name: str, reference: Path, *, run_vlm: bool = False) 
         "() => document.getElementById('suite-review-status')"
         ".textContent.indexOf('整套检查 v') >= 0",
         timeout=60_000)
+    probes = {"suite_review": page.evaluate(SUITE_PROBE)}
     page.click('[data-stage-nav="deliver"]')
-    return shots
+    page.wait_for_timeout(400)
+    probes["suite_deliver"] = page.evaluate(DELIVER_SUITE_PROBE)
+    return shots, probes
 
 
 def download_delivery(page, path: Path) -> dict:
@@ -432,7 +448,7 @@ def main() -> int:
             logs = ui3.collect(page)
             try:
                 page.goto(f"http://127.0.0.1:{port}/", wait_until="domcontentloaded")
-                shots = walk_to_deliver(page, "V262 交付品", reference)
+                shots, walk_probes = walk_to_deliver(page, "V262 交付品", reference)
                 state = wait_gate(page)
                 shot(page, "gate-pass")
                 blocking = [item for item in state["findings"] if item["severity"] == "BLOCK"]
@@ -442,6 +458,31 @@ def main() -> int:
                       and all(row["state"] == "current" for row in state["rows"]),
                       {"status": state["status"], "blocking": blocking,
                        "rows": state["rows"][:3], "findings": state["findings"]})
+
+                # V2.6.15：交付页必须把「整套检查结论」摆到导出按钮前面 —— 门禁全绿不等于
+                # 没有风险；非阻断的高风险/提醒要在最后决策点仍然可见，且与存储报告一致。
+                suite_reports = page.evaluate(READ_DOCS, "suite_review")
+                stored_findings = []
+                if suite_reports:
+                    payload = suite_reports[-1]["payload"] or {}
+                    stored_findings = [{"rule": item.get("rule_id"), "severity": item.get("severity")}
+                                       for item in payload.get("findings", [])
+                                       if item.get("severity") != "PASS"]
+                review_side = walk_probes.get("suite_review", {})
+                deliver_side = walk_probes.get("suite_deliver", {})
+                check("V2.6.2-13",
+                      "交付页投影整套检查结论：摘要 + 非 PASS 发现（带定位）与存储报告逐条一致",
+                      bool(deliver_side.get("findings"))
+                      and "整套检查" in deliver_side.get("status", "")
+                      and [(item["rule"], item["severity"]) for item in deliver_side["findings"]]
+                      == [(item["rule"], item["severity"]) for item in review_side.get("findings", [])]
+                      and [(item["rule"], item["severity"]) for item in deliver_side["findings"]]
+                      == [(item["rule"], item["severity"]) for item in stored_findings]
+                      and all(item["jumps"] >= 1 for item in deliver_side["findings"]),
+                      {"status": deliver_side.get("status"),
+                       "deliver": deliver_side.get("findings"),
+                       "review": review_side.get("findings"),
+                       "stored": stored_findings})
 
                 first = download_delivery(page, downloads / "delivery-1.zip")
                 zoom = inspect_zip(downloads / "delivery-1.zip")

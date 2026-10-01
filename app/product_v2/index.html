@@ -503,6 +503,11 @@
             <p class="meta">交付包只包含已采用的候选；整套一致性与确定性导出检查通过后才允许生成。</p>
           </div>
           <div id="delivery-gate" class="delivery-gate"></div>
+          <section id="delivery-suite" class="delivery-suite" aria-labelledby="delivery-suite-title">
+            <h5 id="delivery-suite-title" class="delivery-suite-title">整套检查结论</h5>
+            <p id="delivery-suite-status" class="meta" role="status"></p>
+            <div id="delivery-suite-findings" class="suite-findings"></div>
+          </section>
           <div id="delivery-unknowns" class="delivery-unknowns"></div>
           <div class="toolbar">
             <button id="deliver-export" class="primary" type="button" disabled>生成交付包（ZIP）</button>
