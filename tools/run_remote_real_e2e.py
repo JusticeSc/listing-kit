@@ -203,27 +203,40 @@ def main() -> int:
 
             step = time.monotonic()
             page.click("#analyze-run")
-            # 成功（出现槽位）与明确失败（页面报错条）二者必居其一。旧实现只等槽位：
-            # 上游欠费时界面已经把原因写清楚了，脚本却空等 300 秒，再报一个不含
-            # 任何原因信息的 TimeoutError（2026-10-01 真实发生）。这里把「界面上的
-            # 原因」直接变成失败原因与证据 —— 省下 5 分钟，也不丢信息。
-            page.wait_for_selector(
-                "#slot-list .slot-row, #analyze-error:not([hidden])", timeout=300_000)
-            analyze_error = page.evaluate(
-                """() => { const node = document.getElementById('analyze-error');
-                     return node && !node.hidden ? (node.textContent || '').trim() : ''; }""")
+            # 成功（理解阶段出现槽位）与明确失败（资料页可见错误条且没有槽位）二者必居其一。
+            # 不能用逗号选择器：Playwright 会按文档顺序取第一个匹配元素再等它可见，
+            # #analyze-error 在资料页、比理解页槽位更靠前；成功切页后资料页整体隐藏，
+            # 联合选择器就永远等不到（2026-10-01 真实发生，误报 5 分钟超时）。
+            # 「部分提案没有写入：模型提出的问题…」是成功但带缺口的正常状态，不是失败。
+            page.wait_for_function(
+                """() => {
+                     const seen = (node) => Boolean(node) && (node.checkVisibility
+                       ? node.checkVisibility() : node.getClientRects().length > 0);
+                     const rows = document.querySelectorAll('#slot-list .slot-row');
+                     const error = document.getElementById('analyze-error');
+                     return (rows.length > 0 && seen(rows[0]))
+                       || (error && !error.hidden && seen(error));
+                   }""", timeout=300_000)
             mark("analyze", step)
-            if analyze_error:
-                check("RR-02", "真实语义分析（deepseek-v4.1-flash）返回槽位并进入理解阶段",
-                      False, {"error": analyze_error, "elapsed_s": timings["analyze"]})
-                raise RuntimeError("语义分析未被受理：" + analyze_error[:300])
             page.wait_for_timeout(500)
             slot_count = page.locator("#slot-list .slot-row").count()
+            understand_visible = page.locator('[data-stage-panel="understand"]').is_visible()
+            analyze_note = page.evaluate(
+                """() => { const node = document.getElementById('analyze-error');
+                     const visible = node && !node.hidden
+                       && (node.checkVisibility ? node.checkVisibility()
+                                                : node.getClientRects().length > 0);
+                     return node && visible ? (node.textContent || '').trim() : ''; }""")
+            if slot_count == 0:
+                check("RR-02", "真实语义分析（deepseek-v4.1-flash）返回槽位并进入理解阶段",
+                      False, {"error": analyze_note or "无槽位且无可见错误",
+                              "elapsed_s": timings["analyze"]})
+                raise RuntimeError("语义分析未被受理：" + (analyze_note[:300] or "无槽位"))
             shot("understand")
             check("RR-02", "真实语义分析（deepseek-v4.1-flash）返回槽位并进入理解阶段",
-                  slot_count > 0
-                  and page.locator('[data-stage-panel="understand"]').is_visible(),
-                  {"slots": slot_count, "elapsed_s": timings["analyze"]})
+                  slot_count > 0 and understand_visible,
+                  {"slots": slot_count, "elapsed_s": timings["analyze"],
+                   "analyze_note": analyze_note[:200]})
 
             step = time.monotonic()
             guard = 0
@@ -432,7 +445,7 @@ def main() -> int:
             mark("delivery_package", step)
             shot("delivery-package")
             check("RR-09", "交付包（真实字节）：Python 独立核对 ZIP 条目与 manifest 哈希逐条一致",
-                  delivered["ok"] and len(delivered["images"]) == len(shots)
+                  delivered["ok"] and delivered["images"] == len(shots)
                   and delivery_info["bytes"] > 0,
                   {"delivered": delivered, "package": delivery_info})
 
@@ -453,6 +466,13 @@ def main() -> int:
             page.reload(wait_until="networkidle")
             expect(page.locator("#project-view")).to_be_visible(timeout=60_000)
             page.wait_for_timeout(800)
+            # 阶段本身不要求跨刷新持久化（恢复的是数据）；刷新后回到交付阶段再核对门禁。
+            page.click('[data-stage-nav="deliver"]')
+            page.wait_for_selector('[data-stage-panel="deliver"]:not([hidden])', timeout=30_000)
+            page.wait_for_function(
+                "() => document.querySelectorAll('#delivery-gate .gate-row').length > 0",
+                timeout=30_000)
+            page.wait_for_timeout(300)
             reload_state = page.evaluate(
                 """() => ({ stage: (document.querySelector('#stage-nav [data-stage-nav].is-current')
                        || {}).dataset ? document.querySelector('#stage-nav [data-stage-nav].is-current')

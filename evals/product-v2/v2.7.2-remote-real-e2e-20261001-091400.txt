@@ -1,0 +1,90 @@
+amz-listing-kit Product V2 远程真实链路 E2E 预演（真实模型）
+NOT-AUTHORITY: point-in-time verification evidence only
+finished_at: 2026-10-01T09:17:34
+status: passed
+base: https://47.115.172.233:8080
+product_name: 夹式 LED 阅读灯 · 远程真实链路预演
+reference: E:\workbuddy_workspace\2026-09-20-16-38-19\amz-listing-kit\_working\amz-listing-kit-product-demo\real-run-lamp\lamp-3m.jpg
+json: evals/product-v2/v2.7.2-remote-real-e2e-20261001-091400.json
+
+CHECKS
+- [PASS] RR-01 正式远程入口从空白浏览器配置文件启动：无项目、无预填商品
+- [PASS] RR-02 真实语义分析（deepseek-v4.1-flash）返回槽位并进入理解阶段
+- [PASS] RR-03 推荐套图方案生成并收敛到 ≤5 张（真实依据驱动）
+- [PASS] RR-04 整套生成（真实 qwen-image-3.0 + 参考图）逐张到达终态
+- [PASS] RR-05a 每个成功候选都有绑定当前规格的确定性检查摘要
+- [PASS] RR-05b VLM 复核对每个候选到达终态（已检查/未完成），无悬挂
+- [PASS] RR-06 逐图人工采用：每张图留下当前有效的选择
+- [PASS] RR-07 整套一致性（真实 qwen-vl-max）：报告对当前选择有效
+- [PASS] RR-08 交付门禁（真实链路）：逐图采用、无阻断、Unknown 已逐条确认后允许交付
+- [PASS] RR-09 交付包（真实字节）：Python 独立核对 ZIP 条目与 manifest 哈希逐条一致
+- [PASS] RR-10 项目包（完整历史）可下载
+- [PASS] RR-11 刷新后项目从 IndexedDB 恢复：阶段与逐图采用状态不变
+
+TIMINGS_S
+- blank_home: 1.7
+- create_open: 0.1
+- intake: 0.3
+- analyze: 12.9
+- confirm_slots: 3.4
+- suite_plan: 0.9
+- compile_prompts: 1.1
+- batch_generate: 100.5
+- vlm_review: 48.8
+- adopt: 0.5
+- suite_review: 34.1
+- delivery_gate: 0.7
+- delivery_package: 0.4
+- project_package: 0.3
+- reload: 3.2
+
+SHOTS
+- shot_main_clean | 主图·干净背景 | required=True | blocked=False
+- shot_infographic_benefits | 卖点信息图 | required=False | blocked=False
+- shot_scene_lifestyle | 场景图·使用中 | required=False | blocked=False
+- shot_detail_material | 细节图·材质工艺 | required=False | blocked=False
+
+ATTEMPT_STATES
+- shot_main_clean: succeeded
+- shot_infographic_benefits: succeeded
+- shot_scene_lifestyle: succeeded
+- shot_detail_material: succeeded
+
+VLM_REVIEWS
+- shot_main_clean: before=自动检查 v2.5.2：阻断 0 · 高风险 0 · 提醒 1 · 未知 0 · VLM 未检查
+    after=自动检查 v2.5.2：阻断 0 · 高风险 2 · 提醒 2 · 未知 0 · VLM 已检查
+- shot_infographic_benefits: before=自动检查 v2.5.2：阻断 0 · 高风险 0 · 提醒 1 · 未知 0 · VLM 未检查
+    after=自动检查 v2.5.2：阻断 0 · 高风险 3 · 提醒 1 · 未知 0 · VLM 已检查
+- shot_scene_lifestyle: before=自动检查 v2.5.2：阻断 0 · 高风险 0 · 提醒 1 · 未知 0 · VLM 未检查
+    after=自动检查 v2.5.2：阻断 0 · 高风险 0 · 提醒 1 · 未知 0 · VLM 已检查
+- shot_detail_material: before=自动检查 v2.5.2：阻断 0 · 高风险 0 · 提醒 1 · 未知 0 · VLM 未检查
+    after=自动检查 v2.5.2：阻断 0 · 高风险 0 · 提醒 1 · 未知 0 · VLM 已检查
+
+DELIVERY
+- suite: {"status": "整套检查 v2.5.5：阻断 0 · 高风险 2 · 提醒 2 · 未知 0 · 视觉复核已完成", "note": "视觉复核：qwen-vl-max · 2026-10-01T01:17:29Z", "findings": [{"rule": "vlm.suite_product_consistency", "severity": "HIGH_RISK"}, {"rule": "vlm.suite_color_material_consistency", "severity": "HIGH_RISK"}, {"rule": "suite.selling_point_coverage", "severity": "WARNING"}, {"rule": "vlm.suite_style_consistency", "severity": "WARNING"}]}
+- status: 交付门禁通过：可以生成交付包（只包含已采用的候选）。
+- export_button_disabled: False
+- package_button_disabled: False
+- delivery_package: {"filename": "夹式-LED-阅读灯-·-远程真实链路预演-交付包-20261001-0117.zip", "bytes": 6181000, "sha256": "7fbae803592f0e5c19160ad5b53b5375bb9100bd7e1c2800cff642b76b9e1ce5", "path": "C:\\Users\\31368\\AppData\\Local\\Temp\\amz-remote-e2e-dl-qzpom6bi\\夹式-LED-阅读灯-·-远程真实链路预演-交付包-20261001-0117.zip"}
+- delivered: {"ok": true, "names": ["README.txt", "checks.json", "images/shot_detail_material-act-7c03652b30154b4baed20e7d232925b8.png", "images/shot_infographic_benefits-act-7fe9bc65c11641c982696c7582c86c6e.png", "images/shot_main_clean-act-9d8853e5407b4d0880d164271589bd21.png", "images/shot_scene_lifestyle-act-409f83830d6a4c819442bc81c218502e.png", "manifest.json"], "images": 4, "mismatches": [], "gate_status": "ready", "acknowledgements": []}
+- package: {"filename": "夹式-LED-阅读灯-·-远程真实链路预演-20261001-0117.zip", "bytes": 6974188, "path": "C:\\Users\\31368\\AppData\\Local\\Temp\\amz-remote-e2e-dl-qzpom6bi\\夹式-LED-阅读灯-·-远程真实链路预演-20261001-0117.zip"}
+
+ERRORS
+- console_errors: 0
+- http_errors: []
+- page_errors: []
+
+SCREENSHOTS
+- evals/product-v2/evidence/remote-real-e2e-20261001-091400-home.png
+- evals/product-v2/evidence/remote-real-e2e-20261001-091400-intake.png
+- evals/product-v2/evidence/remote-real-e2e-20261001-091400-understand.png
+- evals/product-v2/evidence/remote-real-e2e-20261001-091400-plan.png
+- evals/product-v2/evidence/remote-real-e2e-20261001-091400-generate.png
+- evals/product-v2/evidence/remote-real-e2e-20261001-091400-review.png
+- evals/product-v2/evidence/remote-real-e2e-20261001-091400-suite-review.png
+- evals/product-v2/evidence/remote-real-e2e-20261001-091400-deliver.png
+- evals/product-v2/evidence/remote-real-e2e-20261001-091400-delivery-package.png
+- evals/product-v2/evidence/remote-real-e2e-20261001-091400-after-reload.png
+
+BOUNDARY
+单点时间证据；不替代产品发起人走查与陌生人验收；账户余额等外部前提可能随时变化。

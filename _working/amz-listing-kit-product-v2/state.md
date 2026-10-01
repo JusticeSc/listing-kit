@@ -192,6 +192,8 @@ phase_progress:
       - evals/product-v2/v2.7.1-regression-20261001-061430-final.txt
       - tools/verify_v2_7_1_regression.py
       - evals/probes/docs_index.py
+      - evals/product-v2/v2.7.2-remote-real-e2e-20261001-091400.txt
+      - evals/product-v2/v2.7.2-remote-real-e2e-20261001-091400.json
 
 task_progress:
   V2.0.1:
@@ -961,13 +963,33 @@ task_progress:
       - evals/probes/docs_index.py
       - evals/probes/project_state.py
       - tools/verify_v2_1_2_project_home.py
-next_action_task: V2.7.2
+  V2.7.2:
+    status: done
+    evidence:
+      - evals/product-v2/v2.7.2-remote-real-e2e-20261001-091400.txt
+      - evals/product-v2/v2.7.2-remote-real-e2e-20261001-091400.json
+      - evals/product-v2/evidence/remote-real-e2e-20261001-091400-home.png
+      - evals/product-v2/evidence/remote-real-e2e-20261001-091400-intake.png
+      - evals/product-v2/evidence/remote-real-e2e-20261001-091400-understand.png
+      - evals/product-v2/evidence/remote-real-e2e-20261001-091400-plan.png
+      - evals/product-v2/evidence/remote-real-e2e-20261001-091400-generate.png
+      - evals/product-v2/evidence/remote-real-e2e-20261001-091400-review.png
+      - evals/product-v2/evidence/remote-real-e2e-20261001-091400-suite-review.png
+      - evals/product-v2/evidence/remote-real-e2e-20261001-091400-deliver.png
+      - evals/product-v2/evidence/remote-real-e2e-20261001-091400-delivery-package.png
+      - evals/product-v2/evidence/remote-real-e2e-20261001-091400-after-reload.png
+      - tools/run_remote_real_e2e.py
+      - tools/audit_v2_7_4_completion.py
+      - evals/product-v2/v2.7.4-completion-matrix-20261001-092307.md
+      - evals/product-v2/v2.7.4-completion-matrix-20261001-092307.json
+next_action_task: V2.7.3
 blockers: []
 unknowns:
   - visual_language_review_detection_quality_is_uncalibrated_channels_and_binding_only_proven_in_V2.5.2
   - ui_information_hierarchy_primary_action_image_comparison_and_visual_direction_self_reviewed_20261001_owner_walkthrough_deferred_to_final_human_gate
-  - dashscope_balance_arrears_20261001T0433_remote_real_e2e_blocked_at_semantic_step
-    upstream_account_arrears_evidence_evals_product_v2_evidence_remote-real-e2e-20261001-043317-lamp01-failure.png
-    retry_after_topup_before_claiming_v2_7_2_gate
-updated_at: 2026-10-01T08:38:30+08:00
+  - dashscope_balance_arrears_20261001T0433_resolved_after_topup_same_day
+    arrears_evidence_evals_product_v2_evidence_remote-real-e2e-20261001-043317-lamp01-failure.png
+    passing_rerun_evals_product_v2_v2_7_2-remote-real-e2e-20261001-091400.txt
+    external_premise_may_change_without_notice_real_runs_have_cost
+updated_at: 2026-10-01T09:26:00+08:00
 ```

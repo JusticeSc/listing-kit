@@ -1570,6 +1570,49 @@ message 走 `localizeSlotTerms()`（槽位名替代 id）；逐图风险行显�
 
 **边界**：不改风险判定与阻断语义；只改同一槽位内的展示粒度。
 
+### 9.35 V2.7.2 真实模型最小闭环（2026-10-01，百炼欠费解除后一次跑通）
+
+**前置阻塞与解除**：2026-10-01T04:33 首次真实链路在语义步骤被百炼账户欠费挡下
+（`502 UPSTREAM_ACCOUNT_ARREARS`，证据 `evals/product-v2/evidence/remote-real-e2e-20261001-043317-lamp01-failure.png`）；
+用户充值解除后，同一入口一次重跑通过。
+
+**结果（12/12 PASS）**：`evals/product-v2/v2.7.2-remote-real-e2e-20261001-091400.{txt,json}`，
+base `https://47.115.172.233:8080`，非内置商品「夹式 LED 阅读灯 · 远程真实链路预演」
+（参考图 `_working/amz-listing-kit-product-demo/real-run-lamp/lamp-3m.jpg`）：
+
+- RR-01 空白浏览器配置文件 → RR-02 deepseek-v4.1-flash 真实语义分析（12.9s）→
+  RR-03 真实依据驱动的方案（≤5 张）→ RR-04 qwen-image-3.0 真实参考图整套生成
+  （100.5s，4/4 succeeded）→ RR-05a 确定性检查摘要 + RR-05b VLM 复核（48.8s）→
+  RR-06 逐图采用 → RR-07 qwen-vl-max 整套一致性（34.1s）→ RR-08 交付门禁 →
+  RR-09 交付 ZIP 用 Python 独立核对条目与 manifest 哈希（0 mismatch）→ RR-10 项目包 →
+  RR-11 刷新恢复。
+- 交付包 6,181,000 字节，sha256 `7fbae803592f0e5c19160ad5b53b5375bb9100bd7e1c2800cff642b76b9e1ce5`，
+  含 4 张真图；0 console error、0 HTTP error。
+
+**真实图片与 VLM 发现（产品边界的现场证据）**：主图/场景图/细节图干净可用；卖点信息图出现中文
+乱码标题与多余标注；真实 VLM 复核给出 `vlm.product_fidelity`（颜色偏蓝灰 vs 参考哑光黑）、
+`vlm.part_anomaly`（多出金属环）、`vlm.garbled_text`（标题乱码）、`vlm.goal_completion`
+（主图背景未保持干净）；整套 HIGH_RISK 2 + WARNING 2。全部落在人工返工面内，不构成阻断——
+模型缺陷被投影成可操作风险，而不是自动放行或硬拒（这正是 C11 的设计）。
+
+**本轮修掉的三处脚本缺陷（都是自审发现，非放宽判据）**：
+
+1. 成功/失败二选一的逗号选择器会按文档顺序取 `#analyze-error` 再等它可见，切页后空等
+   300s 误报超时；改为 `wait_for_function`（槽位可见 或 资料页可见错误），并把
+   「部分提案没有写入：模型提出的问题…」记为成功但带缺口。
+2. `RR-09` 把 `delivered["images"]`（整数 4）当列表取长度 → 恒假但被前一条件掩盖；
+   改为 `== len(shots)`。
+3. `RR-11` 刷新后未切回交付阶段就核对门禁（阶段本身不持久化，恢复的是数据）；
+   改为先点回 deliver 再断言。
+
+**矩阵变化**：`tools/audit_v2_7_4_completion.py` 结清 C9（真实参考图 + task ID）与
+C14（非内置商品）的 external gate，证据 glob 加 `v2.7.2-remote-real-e2e-*` 的 RR-04/RR-03；
+`v2.7.4-completion-matrix-20261001-092307.*`：证据齐备 16/17、无未闭合门且证据齐备 15/17，
+仅剩 C15（陌生人走查）与 C17（产品发起人走查）两道人工门。
+
+**边界**：单时点证据；不替代 C15/C17 人工走查；账户余额等外部前提随时可能变化；真实调用有成本，
+不重复整链（单次欠费探针脚本 `_working/arrears-probe.py`，2026-10-01 复查为 200）。
+
 
 ## 10. 实施阶段、任务与 Gate
 
