@@ -897,14 +897,14 @@ task_progress:
       - evals/product-v2/v2.6.2-delivery-20261001-080658.txt
       - evals/product-v2/v2.6.2-delivery-20261001-080658.json
       - evals/product-v2/evidence/v2.6.2-delivery-20261001-080658-suite-missing.png
-      - evals/product-v2/v273-rehearsal-20261001-081220.md
-      - evals/product-v2/v273-rehearsal-20261001-081220.json
-      - evals/product-v2/v273-rehearsal-20261001-081240.md
-      - evals/product-v2/v273-rehearsal-20261001-081240.json
-      - evals/product-v2/v273-rehearsal-20261001-081254.md
-      - evals/product-v2/v273-rehearsal-20261001-081254.json
-      - evals/product-v2/evidence/v273-rehearsal-20261001-081220-rework-compare.png
-      - evals/product-v2/evidence/v273-rehearsal-20261001-081220-deliver-exported.png
+      - evals/product-v2/v273-rehearsal-20261001-081734.md
+      - evals/product-v2/v273-rehearsal-20261001-081734.json
+      - evals/product-v2/v273-rehearsal-20261001-081755.md
+      - evals/product-v2/v273-rehearsal-20261001-081755.json
+      - evals/product-v2/v273-rehearsal-20261001-081815.md
+      - evals/product-v2/v273-rehearsal-20261001-081815.json
+      - evals/product-v2/evidence/v273-rehearsal-20261001-081734-rework-compare.png
+      - evals/product-v2/evidence/v273-rehearsal-20261001-081734-deliver-exported.png
       - evals/product-v2/v2.ui.3-frontend-20261001-080422-v273-prep.txt
       - evals/product-v2/v2.ui.3-frontend-20261001-080422-v273-prep.json
       - evals/product-v2/v2.5.5-suite-review-20261001-080457.txt
@@ -918,6 +918,20 @@ task_progress:
       - app/product_v2/workspace.js
       - tools/verify_v2_6_2_delivery.py
       - tools/verify_v2_ui_3_frontend.py
+      - tools/rehearse_v273_walkthrough.py
+  V2.6.12:
+    status: done
+    evidence:
+      - evals/product-v2/v2.6.2-delivery-20261001-081609-v2612-red.txt
+      - evals/product-v2/v2.6.2-delivery-20261001-081609-v2612-red.json
+      - evals/product-v2/v2.6.2-delivery-20261001-081642-v2612-green.txt
+      - evals/product-v2/v2.6.2-delivery-20261001-081642-v2612-green.json
+      - evals/product-v2/v273-rehearsal-20261001-081734.md
+      - evals/product-v2/v273-rehearsal-20261001-081734.json
+      - evals/product-v2/v273-rehearsal-20261001-081755.json
+      - evals/product-v2/v273-rehearsal-20261001-081815.json
+      - app/product_v2/workspace.js
+      - tools/verify_v2_6_2_delivery.py
       - tools/rehearse_v273_walkthrough.py
   V2.7.1:
     status: done
@@ -938,5 +952,5 @@ unknowns:
   - dashscope_balance_arrears_20261001T0433_remote_real_e2e_blocked_at_semantic_step
     upstream_account_arrears_evidence_evals_product_v2_evidence_remote-real-e2e-20261001-043317-lamp01-failure.png
     retry_after_topup_before_claiming_v2_7_2_gate
-updated_at: 2026-10-01T08:14:00+08:00
+updated_at: 2026-10-01T08:20:00+08:00
 ```

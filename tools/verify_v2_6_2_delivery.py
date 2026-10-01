@@ -453,12 +453,16 @@ def main() -> int:
                       first["bytes"] > 0 and zoom["broken"] is None
                       and zoom["names"] == expected_names and digest_ok
                       and len(zoom["manifest"]["images"]) == len(shots)
+                      and all(item.get("attempt_state") == "succeeded"
+                              for item in zoom["manifest"]["images"])
                       and zoom["checks"]["gate_status"] == "ready"
                       and isinstance(zoom["manifest"]["selection_fingerprint"], str)
                       and "shot_" in (zoom["manifest"]["selection_fingerprint"] or "")
                       and "V262 交付品" in zoom["readme"],
                       {"download": first, "names": zoom["names"],
                        "digests": {key: value["sha256"][:12] for key, value in zoom["digests"].items()},
+                       "attempt_states": [item.get("attempt_state")
+                                          for item in zoom["manifest"]["images"]],
                        "readme_head": zoom["readme"].splitlines()[:4]})
 
                 records = page.evaluate(READ_DOCS, "export_record")

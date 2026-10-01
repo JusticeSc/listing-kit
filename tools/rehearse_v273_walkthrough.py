@@ -305,12 +305,15 @@ def main() -> int:
                 zip_bytes = export_path.read_bytes()
                 with zipfile.ZipFile(io.BytesIO(zip_bytes)) as archive:
                     names = sorted(archive.namelist())
+                    manifest = json.loads(archive.read("manifest.json").decode("utf-8"))
                 probes["export"] = {
                     "file_name": download.suggested_filename,
                     "bytes": len(zip_bytes),
                     "sha256": hashlib.sha256(zip_bytes).hexdigest(),
                     "entries": names[:12],
                     "has_manifest": any(name.endswith("manifest.json") for name in names),
+                    "attempt_states": [item.get("attempt_state")
+                                       for item in (manifest.get("images") or [])],
                     "saved_to": str(export_path.relative_to(ROOT)),
                 }
                 page.wait_for_timeout(400)

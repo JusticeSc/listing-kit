@@ -1523,10 +1523,32 @@ message 走 `localizeSlotTerms()`（槽位名替代 id）；逐图风险行显�
 
 **回归保持**：UI3 18/18（`v2.ui.3-frontend-20261001-080422-v273-prep.*`）、V2.5.5 13/13
 （`v2.5.5-suite-review-20261001-080457.*`）、V2.5.4 40/40、V2.6.1 46/46、V2.5.3 38/38；
-预演三品类各 8 节全通并各导出 ZIP（落地灯 `…081220`、餐椅 `…081240`、蜂蜜 `…081254`）
-＋截图 `evidence/v273-rehearsal-20261001-081220-rework-compare.png`、`…-deliver-exported.png`。
+预演三品类各 8 节全通并各导出 ZIP（落地灯 `…081734`、餐椅 `…081755`、蜂蜜 `…081815`）
+＋截图 `evidence/v273-rehearsal-20261001-081734-rework-compare.png`、`…-deliver-exported.png`。
 
 预演报告首行模板此前写死「落地灯」，三品类报告统一修正为实际商品名（`--product-name`）后重跑归档。
+
+### 9.33 V2.6.12 交付包 manifest 的 Attempt 状态取最新版本（2026-10-01 自审发现）
+
+**触发**：V2.6.11 打通导出后，逐字核对交付包真字节，发现 `manifest.json` 每张图的
+`attempt_state` 都写成 `pending_submit`（红证据 `v2.6.2-delivery-20261001-081609-v2612-red.*`），
+而同包的 `checks.json` 与界面都显示这些图已成功并被人工采用——交付包自带的追溯信息自相矛盾。
+
+**根因**：Attempt 的状态迁移写成同一文档的新版本（v1 = `pending_submit`，后续版本才是
+`submitted → running → succeeded`）；导出取数用 `attemptChainOf(...).find(action_id)` 命中的是
+**最早版本**。domain 的既有写法（`review.findRecordByAction`、`candidate.candidateForAttempt`）
+都是倒序取最新，导出这一处漏了。
+
+**修复**（`app/product_v2/workspace.js`，仅取数，不改状态机与报告）：导出改为复用候选比较区同一投影
+`attemptsByActionId()`（版本升序覆盖 = 最新版本）。
+
+**回归判据（可红可绿）**：`V2.6.2-04` 升级为「ZIP 内 manifest 每图 `attempt_state` 必须为
+`succeeded`」并记录 `attempt_states` 明细。红：`…081609-v2612-red.*`（V2.6.2-04 FAIL）；
+绿：`…081642-v2612-green.*`（13/13，明细 `['succeeded','succeeded','succeeded','succeeded']`）。
+
+**回归保持**：预演三品类重跑（`…081734/081755/081815`），导出探针新增 `attempt_states` 字段。
+
+**边界**：只影响交付包内 manifest 的追溯字段与包哈希；选择、门禁判定、图片字节不变。
 
 **边界**：预演仍是 fake 通道、零模型调用，不构成 C15/C17 人工证据；导出 ZIP 为假图字节。
 
@@ -1633,6 +1655,7 @@ message 走 `localizeSlotTerms()`（槽位名替代 id）；逐图风险行显�
 | V2.6.9 | 理解页阻塞摘要本地化（走查发现：裸 slot_id 与英文状态上屏） | V2.6.8 | `#slots-progress` 无 `product_name`/`proposed` 且有槽位名（UI3-18 红→绿） | 理解页截图 + 红绿证据 + V2.2.3/V2.6.4 回归 | 卡片技术标识与风险 code 不在本次范围 |
 | V2.6.10 | 风险提示本地化（V2.6.9 延续：Prompt 卡与汇总区裸槽位 id、逐图行裸规则码） | V2.6.9 | 逐图/Prompt 无裸码与裸 id、汇总 message 本地化（V2.3.5-14 红→绿） | 三份绿证据 + 走查截图 | 规则码保留在汇总区与悬浮标题 |
 | V2.6.11 | 走查预演全链升级与整套阻断定位入口（自审发现：非图级阻断无入口、预演走不到导出） | V2.6.10 | 非图级阻断带「去运行整套检查」且焦点落到运行按钮（V2.6.2-12 红→绿）；预演三品类返工+整套检查+导出各 8 节全通 | 红/绿证据 + 预演报告与导出 ZIP + UI3/V2.5.5/V2.5.4/V2.6.1/V2.5.3 回归 | 预演为 fake 通道（零模型），不构成 C15/C17 人工证据 |
+| V2.6.12 | 交付包 manifest 的 Attempt 状态取最新版本（自审发现：每图写成 pending_submit） | V2.6.11 | manifest 每图 `attempt_state=succeeded`（V2.6.2-04 升级红→绿）；预演导出探针含 attempt_states | 红/绿证据 + 三品类预演 | 只改取数；不改状态机、选择与门禁判定 |
 | V2.7.1 | Product V2 全回归与反向探针 | G6 | 两次连续全绿、指纹一致；每个关键守卫被证明能变红 | 汇总报告和原始日志 | 有漂移不进入真实验收 |
 | V2.7.2 | 最小真实模型闭环 | V2.7.1 | DeepSeek、Qwen、VLM 各只做完成证据需要的最少调用；请求/结果可追溯 | 真实请求审计、task ID、候选与报告 | 失败保留证据，不循环烧钱 |
 | V2.7.3 | 非内置商品与首次使用者走查 | V2.7.2 | 无命令行、JSON、口授完成全链；记录介入和失败点 | 录屏、观察表、项目/交付包 | 有介入则修复后换人重验 |

@@ -5572,9 +5572,9 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
           shot_id: shot.shot_id, candidate_id: candidateId,
           media_type: mediaType, bytes: bytes,
         });
-        const attemptRecord = attemptChainOf(shot.shot_id)
-          .map((entry) => entry.record)
-          .find((item) => item && item.action_id === candidate.action_id) || null;
+        // Attempt 的状态迁移是同一文档的新版本（v1=pending_submit），必须取该 action 的
+        // 最新版本，否则 manifest 记下最早版本。复用候选比较区同一投影（版本升序覆盖）。
+        const attemptRecord = attemptsByActionId()[candidate.action_id] || null;
         const prompt = promptRecordOf(shot.shot_id);
         files.push({
           shot_id: shot.shot_id, shot_label: shot.label,
