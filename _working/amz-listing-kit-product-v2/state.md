@@ -992,7 +992,8 @@ task_progress:
       - evals/product-v2/v2.2.3-intake-understanding-20261001-100041-v2616-red.json
       - evals/product-v2/v2.2.3-intake-understanding-20261001-100144-v2616-green.txt
       - evals/product-v2/v2.2.3-intake-understanding-20261001-100144-v2616-green.json
-      - evals/product-v2/v2.2.3-workspace-20261001-100144.png
+      - evals/product-v2/evidence/v2.2.3-workspace-20261001-100144-v2616-green.png
+      - tools/check_project_state.py
       - evals/product-v2/v2.ui.3-frontend-20261001-100211-v2616-reg.txt
       - evals/product-v2/v2.ui.2-interaction-visual-20261001-100240.txt
       - evals/product-v2/v2.6.4-a11y-20261001-100253.txt
@@ -1049,5 +1050,5 @@ unknowns:
     arrears_evidence_evals_product_v2_evidence_remote-real-e2e-20261001-043317-lamp01-failure.png
     passing_rerun_evals_product_v2_v2_7_2-remote-real-e2e-20261001-091400.txt
     external_premise_may_change_without_notice_real_runs_have_cost
-updated_at: 2026-10-01T10:22:00+08:00
+updated_at: 2026-10-01T10:29:00+08:00
 ```

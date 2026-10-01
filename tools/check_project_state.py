@@ -56,6 +56,7 @@ from __future__ import annotations
 
 import argparse
 import re
+import subprocess
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -113,6 +114,26 @@ def _rel(p: Path) -> str:
 
 def _exists(rel: str) -> bool:
     return (ROOT / rel).exists()
+
+
+def _tracked(rel: str) -> bool | None:
+    """证据文件进版本库了吗；不是 git 工作树 / git 不可用时返回 None（不做判断）。
+
+    2026-10-01 真实事故：state 里指了指一个被 .gitignore 的 PNG（本地存在，CI 检出后不存在），
+    本地 J6 全绿、CI 的同一判据把这次推送判红。这里只对「存在但未入库」发警告不判失败 ——
+    pre-commit 阶段证据通常还没 git add，硬判会逼人绕过检查。
+    """
+    try:
+        proc = subprocess.run(
+            ["git", "-C", str(ROOT), "ls-files", "--error-unmatch", "--", rel],
+            capture_output=True, text=True)
+    except OSError:
+        return None
+    if proc.returncode == 0:
+        return True
+    if "not a git repository" in (proc.stderr or ""):
+        return None
+    return False
 
 
 def _plan_tasks(plan_text: str) -> tuple[list[str], dict[str, list[str]]]:
@@ -469,6 +490,9 @@ def _check(rep: Report) -> None:
                         if not _exists(str(e)):
                             rep.problem(f"[J6] {rel} 任务 {tid} 的 evidence "
                                         f"指向不存在的文件：{e}")
+                        elif _tracked(str(e)) is False:
+                            rep.note(f"[J6-warn] {rel} 任务 {tid} 的 evidence 存在但还没进版本库："
+                                     f"{e} —— 本地检查看得见、CI 检出后看不见；提交前先 git add。")
 
         # [J9] 记录状态与阶段/任务状态必须一致。
         # 记录状态值本身不在取值域时由 J2 独占报出：两个判据同时响，既让「只报
