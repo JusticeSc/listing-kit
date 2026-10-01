@@ -1,0 +1,77 @@
+V2.5.4 问题分类、改进方向与单图返工闭环验证（返工契约套件 + 真实工作台走查 + 视觉证据）
+NOT-AUTHORITY: point-in-time verification evidence only
+============================================================================
+  [PASS] V2.5.4-01 语法门：rework / prompt / confirm / workspace / 返工契约套件与本工具全部可解析
+         {"files": [{"file": "app/product_v2/domain/rework.js", "rc": 0, "stderr": ""}, {"file": "app/product_v2/domain/prompt.js", "rc": 0, "stderr": ""}, {"file": "app/product_v2/domain/confirm.js", "rc": 0, "stderr": ""}, {"file": "app/product_v2/workspace.js", "rc": 0, "stderr": ""}, {"file": "evals/product-v2/harness/rework-contract.js", "rc": 0, "stderr": ""}, 
+  [PASS] V2.5.4-02 单一权威：九类问题与返工合同版本只在 domain/rework.js 定义，工作台只引用
+         {"duplicated_in_workspace": [], "local_definition": false, "imports_problems": true}
+  [PASS] V2.5.4-03 界面责任：比较区只放入口，返工表单是相邻的独立 #rework-panel（fieldset + 预览框）
+         {"entry_in_compare": true, "panel_sibling": true, "fieldset": true, "preview_box": true, "buttons": true, "entry_hands_sha": true}
+  [PASS] V2.5.4-04 追溯链唯一：返工要求进同一份 PromptVersion，确认用 rework:<shot>，复用既有提交通道
+         {"prompt_section": true, "record_keeps_rework": true, "compile_pure": true, "save_then_confirm": true, "reuses_attempt_channel": true, "no_direct_gateway": true, "scoped_confirm_prefix": true}
+  [PASS] V2.5.4-05 不回退：比较区仍是纯投影（V2.5.3 判据原样保持，返工逻辑不在其中）
+         {"forbidden_tokens": [], "section_chars": 15940}
+  [PASS] V2.5.4-06 RW-01–RW-15 返工契约套件：空理由、未知分类、跨图候选、hash 不符与正反路径全部守住
+         {"status": "passed", "failed": [], "cases": 15}
+  [PASS] V2.5.4-07 既有套件回归：CP-01–CP-15、R01–R13、R14–R21 在返工闭环落地后仍全过
+         {"compare": "passed", "review": "passed", "provider": "passed"}
+  [PASS] V2.5.4-08 入口：比较区把当前候选（candidate_id + sha256）交给相邻的独立返工区
+         {"in_compare": true, "disabled": false, "shot_id": "shot_main_clean", "candidate_id": "act-4d78c8ea58724c9f9a352188b36bc148", "candidate_sha256": "e53967bbfbd476bdb4ab2c39e2f3690f6fd5ffc3a73b13d5323d7354899eecea"}
+  [PASS] V2.5.4-09 返工表单：独立面板、九类问题 fieldset、显式 label、焦点从入口进入第一个问题
+         {"contract": "v2.5.4", "problems": 9, "legend": "问题分类（可多选；至少要选一类或写一句方向）", "focus": "rework-problem-product_fidelity"}
+  [PASS] V2.5.4-10 比较区保持只读：勾选、填写、取消全程业务记录逐字不变，焦点回到原候选
+         {"checked": ["product_fidelity", "platform_risk"], "focus_after_cancel": "compare-tab-act-4d78c8ea58724c9f9a352188b36bc148", "expected_focus": "compare-tab-act-4d78c8ea58724c9f9a352188b36bc148", "records_unchanged": true}
+  [PASS] V2.5.4-11 预览：显示将发送的全文（参考图 1 张）且不写任何记录；改动输入后必须重新预览
+         {"preview_chars": 540, "meta": "将保存为 Prompt 新版本（旧版本保留）并只重新生成这张图 · 参考图 1 张 · 全文 540 字", "dirty": {"preview": false, "submit_disabled": true}, "records_unchanged": true}
+  [PASS] V2.5.4-12 确认隔离：返工只写 scope=[目标图] 的单图确认，整套确认与无关图逐字不变
+         {"rework_confirm_scope": ["shot_main_clean"], "suite_confirm_same": true, "second_untouched": true}
+  [PASS] V2.5.4-13 成功链：入口预览的全文 == 真实发送的 prompt == 新 Prompt 版本；只给目标图新增 Attempt/Candidate/Review
+         {"attempt_state": "succeeded", "prompt_version": 2, "prompt_hash_match": true, "wire_prompt_chars": 540, "preview_chars": 540, "candidates": 2}
+  [PASS] V2.5.4-14 影响隔离：无关图的 Prompt/Attempt/Candidate/Blob 零变化；目标图的旧候选与旧 Blob 原样保留
+         {"second_candidates_same": true, "old_candidate_kept": true, "old_blob": {"found": true, "hash_match": true}, "second_prompt_versions": 1}
+  [PASS] V2.5.4-15 双击防护：连点「确认并生成这张图」只产生一条 Attempt、一次真实请求
+         {"new_actions": 1, "new_versions": 3, "requests": 1, "action_id": "act-d0ec257a2d694cf9b5d1e3880472e199"}
+  [PASS] V2.5.4-16 失败可恢复：明确失败只留失败 Attempt（不产生候选），旧候选与旧 Blob 保留，可再次发起返工
+         {"state": "failed", "attempts": 3, "candidates_same": true, "row_state": "failed", "compare_status": "返工已提交（Prompt v3 · 已失败）；旧候选保留，只有这张图新增了版本。", "recovered": true}
+  [PASS] V2.5.4-17 Unknown 不自动重提：只留一条无 task id 的未知 Attempt，旧数据与候选不动，界面提示先不重提
+         {"state": "unknown", "task_id": null, "attempts": 4, "requests": 1, "row_state": "unknown", "error": "这条记录没有任务编号，无法核对；只能显式新建 action。"}
+  [PASS] V2.5.4-18 刷新恢复：候选/Attempt/返工确认从 IndexedDB 恢复，面板可重开（整页 + 返工区截图留档）
+         {"candidates": 2, "attempts": 11, "business_records_same": true, "screenshots": {"evals/product-v2/evidence/v2.5.4-rework-loop-20261001-080740.png": 179701, "evals/product-v2/evidence/v2.5.4-rework-loop-20261001-080740-detail.png": 35890}, "prompt_chars": 531}
+  [PASS] V2.5.4-19 正式入口 --check 全过（返工闭环没有破坏既有自检）
+         {"rc": 0, "tail": ["  PASS  整套复核 provider 不可用时 capabilities 仍 200 且 configured=false  suite_review={'kind': 'dependency', 'detail': 'RuntimeError: 自检：整套复核 provider 构造失败'}", "  PASS  整套复核 provider 不可用时路由 503 且错误分类明确                          status=503 error={'family': 'internal', 'code': 'PROVIDER_NOT_CONFIGURED', 'message': '语义 provider 不可用：检查注册表、依赖与 DASHSCO
+  [PASS] V2.5.4-20 零意外 console error / page error（唯一允许项：Unknown 路径的 504 资源日志）
+         {"unexpected_console": [], "expected_unknown_path_504": ["[workbench] Failed to load resource: the server responded with a status of 504 (Gateway Timeout)"], "page_errors": []}
+----------------------------------------------------------------------------
+observed_at: 2026-10-01T08:07:51
+status: passed
+contract: v2.5.4（返工）· v2.5.3（比较面板）· v2.5.2（复核报告）
+model_calls: 0 · external_network_calls: 0（fake providers + 本地静态服务器）
+json: evals/product-v2/v2.5.4-rework-loop-20261001-080740v273-prep.json
+
+边界：本套件 0 次真实模型调用；比较区保持只读，返工只在独立 #rework-panel 里写
+PromptVersion + scope=[目标图] 的确认 + Attempt；候选采纳（Selection）属 V2.6.1，
+导出 zip 属 V2.6.2，本批不宣称已经具备。
+「与真实请求一致」由浏览器侧捕获的 /api/v2/images/submit 请求体逐字比对得出，
+发送目标是本地 fake 图像网关（不是阿里云百炼）。
+
+CHECKS
+- [PASS] V2.5.4-01 语法门：rework / prompt / confirm / workspace / 返工契约套件与本工具全部可解析
+- [PASS] V2.5.4-02 单一权威：九类问题与返工合同版本只在 domain/rework.js 定义，工作台只引用
+- [PASS] V2.5.4-03 界面责任：比较区只放入口，返工表单是相邻的独立 #rework-panel（fieldset + 预览框）
+- [PASS] V2.5.4-04 追溯链唯一：返工要求进同一份 PromptVersion，确认用 rework:<shot>，复用既有提交通道
+- [PASS] V2.5.4-05 不回退：比较区仍是纯投影（V2.5.3 判据原样保持，返工逻辑不在其中）
+- [PASS] V2.5.4-06 RW-01–RW-15 返工契约套件：空理由、未知分类、跨图候选、hash 不符与正反路径全部守住
+- [PASS] V2.5.4-07 既有套件回归：CP-01–CP-15、R01–R13、R14–R21 在返工闭环落地后仍全过
+- [PASS] V2.5.4-08 入口：比较区把当前候选（candidate_id + sha256）交给相邻的独立返工区
+- [PASS] V2.5.4-09 返工表单：独立面板、九类问题 fieldset、显式 label、焦点从入口进入第一个问题
+- [PASS] V2.5.4-10 比较区保持只读：勾选、填写、取消全程业务记录逐字不变，焦点回到原候选
+- [PASS] V2.5.4-11 预览：显示将发送的全文（参考图 1 张）且不写任何记录；改动输入后必须重新预览
+- [PASS] V2.5.4-12 确认隔离：返工只写 scope=[目标图] 的单图确认，整套确认与无关图逐字不变
+- [PASS] V2.5.4-13 成功链：入口预览的全文 == 真实发送的 prompt == 新 Prompt 版本；只给目标图新增 Attempt/Candidate/Review
+- [PASS] V2.5.4-14 影响隔离：无关图的 Prompt/Attempt/Candidate/Blob 零变化；目标图的旧候选与旧 Blob 原样保留
+- [PASS] V2.5.4-15 双击防护：连点「确认并生成这张图」只产生一条 Attempt、一次真实请求
+- [PASS] V2.5.4-16 失败可恢复：明确失败只留失败 Attempt（不产生候选），旧候选与旧 Blob 保留，可再次发起返工
+- [PASS] V2.5.4-17 Unknown 不自动重提：只留一条无 task id 的未知 Attempt，旧数据与候选不动，界面提示先不重提
+- [PASS] V2.5.4-18 刷新恢复：候选/Attempt/返工确认从 IndexedDB 恢复，面板可重开（整页 + 返工区截图留档）
+- [PASS] V2.5.4-19 正式入口 --check 全过（返工闭环没有破坏既有自检）
+- [PASS] V2.5.4-20 零意外 console error / page error（唯一允许项：Unknown 路径的 504 资源日志）

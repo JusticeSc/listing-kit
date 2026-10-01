@@ -12,11 +12,14 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import importlib.util
+import io
 import json
 import socket
 import sys
 import time
+import zipfile
 from datetime import datetime
 from pathlib import Path
 
@@ -42,6 +45,8 @@ def load_module(path: Path, name: str):
 
 ui3 = load_module(ROOT / "tools" / "verify_v2_ui_3_frontend.py", "rehearsal_ui3")
 
+from src.providers.v2_fake_suite_review import FakeSuiteReviewProvider  # noqa: E402
+
 
 def free_port() -> int:
     with socket.socket() as sock:
@@ -56,6 +61,10 @@ def main() -> int:
     parser.add_argument("--product-name", default="夹式 LED 阅读灯")
     parser.add_argument("--description", default="三档色温夹式 LED 阅读灯，USB-C 供电，关节臂可调。")
     parser.add_argument("--points", default="3 档色温|无级调光|USB-C 供电")
+    parser.add_argument("--image-size", type=int, default=1024,
+                        help="假图片边长；默认 1024 才越过「最小长边 1000px」平台阻断。")
+    parser.add_argument("--skip-rework", action="store_true",
+                        help="跳过单图返工步（默认执行：返工第 1 张并保留旧候选）。")
     args = parser.parse_args()
 
     reference = Path(args.reference) if args.reference else (
@@ -83,7 +92,10 @@ def main() -> int:
         timeline.append(item)
 
     port = free_port()
-    server = ui3.start_server("127.0.0.1", port)
+    server = ui3.start_server(
+        "127.0.0.1", port,
+        image=lambda: ui3.FakeImageProvider(scenario="ok", size=args.image_size),
+        suite_review=lambda: FakeSuiteReviewProvider(scenario="ok"))
     try:
         with sync_playwright() as pw:
             profile = ROOT / "_working" / f"rehearsal-profile-{args.label}-{stamp}"
@@ -193,6 +205,40 @@ def main() -> int:
                     page.wait_for_timeout(500)
                     snap(page, "compare")
                     snap(page, "compare-full", full=True)
+                rework_shot = shots_ids[0]
+                if not args.skip_rework:
+                    started = time.monotonic()
+                    if compare.count() == 0:
+                        page.click(f'#review-list .review-card[data-shot-id="{rework_shot}"] '
+                                   'button:has-text("比较候选")')
+                        page.wait_for_timeout(400)
+                    expect(page.locator("#compare-panel")).to_be_visible(timeout=10_000)
+                    candidates_before = page.locator(
+                        '#compare-candidates [role="tab"]').count()
+                    expect(page.locator("#rework-open")).to_be_enabled(timeout=10_000)
+                    page.click("#rework-open")
+                    expect(page.locator("#rework-panel")).to_be_visible()
+                    page.click('label[data-problem-id="product_fidelity"]')
+                    page.fill("#rework-direction",
+                              "只修正商品主体的轮廓与比例，颜色、材质和标识保持不变。")
+                    page.click("#rework-preview")
+                    expect(page.locator("#rework-preview-box")).to_be_visible(timeout=20_000)
+                    snap(page, "rework-preview")
+                    page.click("#rework-submit")
+                    ui3.wait_terminal(page, [rework_shot], timeout=90_000)
+                    page.wait_for_timeout(400)
+                    page.click(f'#review-list .review-card[data-shot-id="{rework_shot}"] '
+                               'button:has-text("比较候选")')
+                    page.wait_for_timeout(500)
+                    probes["rework"] = {
+                        "shot": rework_shot,
+                        "candidates_before": candidates_before,
+                        "candidates_after": page.locator(
+                            '#compare-candidates [role="tab"]').count(),
+                        "attempt_state": page.evaluate(ui3.ATTEMPT_STATES).get(rework_shot),
+                    }
+                    snap(page, "rework-compare")
+                    mark("rework", started)
                 for shot_id in shots_ids:
                     page.click(f'#review-list .review-card[data-shot-id="{shot_id}"] '
                                'button:has-text("采用候选")')
@@ -217,6 +263,60 @@ def main() -> int:
                 probes["deliver_export_disabled"] = page.locator("#deliver-export").is_disabled()
                 snap(page, "deliver")
                 snap(page, "deliver-full", full=True)
+
+                # 整套一致性阻断应带定位入口：点它回审核阶段的整套检查（假通道 clean）
+                suite_jump = page.locator('#delivery-gate button[data-suite-action="run"]')
+                probes["deliver_suite_jump_text"] = (
+                    suite_jump.first.inner_text() if suite_jump.count() else "")
+                if suite_jump.count() == 0:
+                    page.click('[data-stage-nav="review"]')
+                else:
+                    suite_jump.first.click()
+                expect(page.locator('[data-stage-panel="review"]')).to_be_visible()
+                probes["suite_run_focused"] = page.evaluate(
+                    "() => (document.activeElement && document.activeElement.id) || ''")
+                page.click("#suite-review-run")
+                page.wait_for_function(
+                    """() => {
+                         const node = document.getElementById("suite-review-status");
+                         const text = node ? (node.textContent || "") : "";
+                         return Boolean(text) && !text.includes("尚未运行整套检查")
+                           && !text.includes("检查中");
+                       }""", timeout=90_000)
+                probes["suite_status_text"] = page.locator("#suite-review-status").inner_text()
+                probes["suite_note_text"] = page.locator("#suite-review-note").inner_text()
+                probes["suite_findings_text"] = page.locator(
+                    "#suite-review-findings").inner_text()[:400]
+                page.click('[data-stage-nav="deliver"]')
+                expect(page.locator('[data-stage-panel="deliver"]')).to_be_visible()
+                page.wait_for_timeout(600)
+                expect(page.locator("#deliver-export")).to_be_enabled(timeout=30_000)
+                probes["deliver_export_after_suite"] = not page.locator(
+                    "#deliver-export").is_disabled()
+                snap(page, "deliver-ready")
+                with page.expect_download(timeout=60_000) as download_info:
+                    page.click("#deliver-export")
+                download = download_info.value
+                export_dir = ROOT / "_working" / "amz-listing-kit-product-v2" / "rehearsal-exports"
+                export_dir.mkdir(parents=True, exist_ok=True)
+                export_path = export_dir / (stamp + "-" + args.label + "-"
+                                            + download.suggested_filename)
+                download.save_as(str(export_path))
+                zip_bytes = export_path.read_bytes()
+                with zipfile.ZipFile(io.BytesIO(zip_bytes)) as archive:
+                    names = sorted(archive.namelist())
+                probes["export"] = {
+                    "file_name": download.suggested_filename,
+                    "bytes": len(zip_bytes),
+                    "sha256": hashlib.sha256(zip_bytes).hexdigest(),
+                    "entries": names[:12],
+                    "has_manifest": any(name.endswith("manifest.json") for name in names),
+                    "saved_to": str(export_path.relative_to(ROOT)),
+                }
+                page.wait_for_timeout(400)
+                probes["deliver_result_text"] = page.locator(
+                    "#delivery-result").inner_text()[:300]
+                snap(page, "deliver-exported")
                 mark("deliver", started)
 
                 # 390px 复核：理解 / 审核 / 交付三个关键阶段
@@ -259,7 +359,7 @@ def main() -> int:
         f"- 入口：本机 fake 走查服务器（tools/rehearse_v273_walkthrough.py，label={args.label}）",
         f"- 品类/参考图：非内置品类（落地灯）· {reference.name}",
         "- 剧本：new → intake → understand(确认全部) → plan(推荐方案) → generate(全部成功) →",
-        "  review(比较+逐图采用) → deliver(阻断展示) → 390px 复核",
+        "  review(比较+单图返工+逐图采用) → deliver(整套检查 → 导出 ZIP) → 390px 复核",
         "",
         "## 节点耗时",
         "",
@@ -283,8 +383,14 @@ def main() -> int:
 
     print("报告：" + str(report.relative_to(ROOT)))
     print("截图 " + str(len(shots)) + " 张；节数 " + str(len(timeline)))
-    print("交付门禁阻断=" + str(probes.get("deliver_export_disabled"))
+    export = probes.get("export") or {}
+    print("初次门禁阻断=" + str(probes.get("deliver_export_disabled"))
           + "；跳转按钮=" + str(len(probes.get("deliver_jump_buttons") or [])))
+    print("返工候选 " + str((probes.get("rework") or {}).get("candidates_before")) + "→"
+          + str((probes.get("rework") or {}).get("candidates_after"))
+          + "；整套检查=" + str(probes.get("suite_status_text"))[:40])
+    print("导出=" + str(export.get("file_name")) + " bytes=" + str(export.get("bytes"))
+          + " manifest=" + str(export.get("has_manifest")))
     return 0
 
 

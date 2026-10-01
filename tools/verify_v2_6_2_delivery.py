@@ -150,6 +150,28 @@ DROP_ONE_ASSET = """async () => {
   return dropped;
 }"""
 
+DROP_SUITE_REPORT = """async () => {
+  const db = await new Promise((resolve, reject) => {
+    const request = indexedDB.open('amz-listing-kit-v2');
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+  const removed = await new Promise((resolve, reject) => {
+    const tx = db.transaction('documents', 'readwrite');
+    const store = tx.objectStore('documents');
+    let count = 0;
+    store.openCursor().onsuccess = (event) => {
+      const cursor = event.target.result;
+      if (!cursor) { resolve(count); return; }
+      if (cursor.value.kind === 'suite_review') { cursor.delete(); count += 1; }
+      cursor.continue();
+    };
+    tx.onerror = () => reject(tx.error);
+  });
+  db.close();
+  return removed;
+}"""
+
 
 def free_port() -> int:
     with socket.socket() as probe:
@@ -483,6 +505,30 @@ def main() -> int:
                       and len(records3) == 2,
                       {"dropped": str(dropped)[:40], "status": broken_state["status"],
                        "findings": broken_state["findings"]})
+
+                # 整套一致性报告缺失（删掉文档后刷新）：门禁必须给出非图级阻断的定位入口
+                removed = page.evaluate(DROP_SUITE_REPORT)
+                page.reload(wait_until="networkidle")
+                page.wait_for_selector("#project-view:not([hidden])", timeout=30_000)
+                page.click('[data-stage-nav="deliver"]')
+                suite_state = wait_gate(page)
+                jump = page.locator('#delivery-gate button[data-suite-action="run"]')
+                jump_text = jump.first.inner_text() if jump.count() else ""
+                shot(page, "suite-missing")
+                jump.click()
+                page.wait_for_selector('[data-stage-panel="review"]:not([hidden])', timeout=10_000)
+                focus_id = page.evaluate(
+                    "() => (document.activeElement && document.activeElement.id) || ''")
+                check("V2.6.2-12",
+                      "整套一致性阻断（非图级）：带「去运行整套检查」定位入口并把焦点落到运行按钮",
+                      removed >= 1
+                      and any(item["rule"] == "export.suite_review_current"
+                              and item["severity"] == "BLOCK" for item in suite_state["findings"])
+                      and jump_text == "去运行整套检查"
+                      and focus_id == "suite-review-run",
+                      {"removed": removed, "jump": jump_text, "focus": focus_id,
+                       "blocking": [item for item in suite_state["findings"]
+                                    if item["severity"] == "BLOCK"]})
 
                 unexpected = [item for item in logs["http"] if "/favicon.ico" not in item]
                 check("V2.6.2-09", "主链零意外 console / page / HTTP 错误",

@@ -1,0 +1,169 @@
+{
+  "status": "ok",
+  "finished_at": "2026-10-01T08:01:11",
+  "reference": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\_working\\amz-listing-kit-product-demo\\real-run-lamp\\lamp-3m.jpg",
+  "timeline": [
+    {
+      "node": "home",
+      "seconds": 0.3
+    },
+    {
+      "node": "intake",
+      "seconds": 0.4
+    },
+    {
+      "node": "understand",
+      "seconds": 0.6
+    },
+    {
+      "node": "plan",
+      "seconds": 1.7,
+      "confirm_rounds": 5
+    },
+    {
+      "node": "generate",
+      "seconds": 2.2
+    },
+    {
+      "node": "rework",
+      "seconds": 1.2
+    },
+    {
+      "node": "review",
+      "seconds": 1.6
+    },
+    {
+      "node": "deliver",
+      "seconds": 2.2
+    }
+  ],
+  "probes": {
+    "home_empty_text": "这台浏览器还没有项目。填写名称后点“新建项目”开始。",
+    "intake_gate": "资料已就绪。",
+    "slot_rows": 10,
+    "understand_panel_text": "商品理解\n\n先处理冲突、未知与必须确认的槽位；已确认的事实默认折叠。\n\n事实槽位\n\n模型只能提议；确认、修改、标未知与移除都由你决定，历史版本保留。\n\n必须确认的槽位 0 / 3 已确认 · 待处理 10 项 · 共 10 项 · 还缺：关键槽位 商品名称 仍是 模型提案。；关键槽位 商品品类 仍是 模型提案。；关键槽位 必须保持的商品特征 仍是 模型提案。；还没有任何已确认事实。\n显示全部事实\n缺失\n品牌\nbrand · 系统固定 · 版本 v1\n还没有值。\n填值并确认\n修改\n标记未知\n缺失\n颜色概览\ncolor_summary · 系统固定 · 版本 v1\n还没有值。\n填值并确认\n修改\n标记未知\n缺失\n主要材质\nkey_material · 系统固定 · 版本 v1\n还没有值。\n填值并确认\n修改\n标记未知\n缺失\n包装内容物\npackage_contents · 系统固定 · 版本 v1\n还没有值。\n填值并确认\n修改\n标记未知\n缺失\n尺寸概览\nsize_summary · 系统固定 · 版本 v1\n还没有值。\n填值并确认\n修改\n标记未知\n模型提案\n商品品类\n必须确认\nproduct_category · 系统固定 · 必须确认 · 置信 0.90 · 版本 v2\n通用品类（假数据）\n模型 · fake-deepseek-v4.1-flash：假 Provider 的品类占位，需人工确认。\n确认\n修改\n标记未知\n模型提案\n商品名称\n必须确认\nproduct_name · 系统固定 · 必须确认 · 置信 0.90 · 版本 v2\n夹式 LED 阅读灯\n模型 · fake-dee",
+    "confirm_rounds": 5,
+    "plan_shots": [
+      "shot_main_clean",
+      "shot_infographic_benefits",
+      "shot_scene_lifestyle",
+      "shot_detail_material"
+    ],
+    "generate_terminal_ok": true,
+    "attempt_states": {
+      "shot_main_clean": "succeeded",
+      "shot_infographic_benefits": "succeeded",
+      "shot_scene_lifestyle": "succeeded",
+      "shot_detail_material": "succeeded"
+    },
+    "review_next_disabled": false,
+    "review_next_note": "",
+    "attempt_rows": [
+      {
+        "shot": "shot_main_clean",
+        "state": "succeeded",
+        "text": "主图·干净背景\n已成功\nPrompt v1\n技术详情\n\n提交 2026/10/1 08:01:03 · 更新 2026/10/1 08:01:03\n\n技术详情\n\n最近一次变化：上游已完成\n\n候选已保存到本地 · 1024×1024 · image/png · 5 KB（预览来自本地字节）\n\n技术详情\n\n自动检查 v2."
+      },
+      {
+        "shot": "shot_infographic_benefits",
+        "state": "succeeded",
+        "text": "卖点信息图\n已成功\nPrompt v1\n技术详情\n\n提交 2026/10/1 08:01:04 · 更新 2026/10/1 08:01:04\n\n技术详情\n\n最近一次变化：上游已完成\n\n候选已保存到本地 · 1024×1024 · image/png · 5 KB（预览来自本地字节）\n\n技术详情\n\n自动检查 v2.5."
+      },
+      {
+        "shot": "shot_scene_lifestyle",
+        "state": "succeeded",
+        "text": "场景图·使用中\n已成功\nPrompt v1\n技术详情\n\n提交 2026/10/1 08:01:04 · 更新 2026/10/1 08:01:04\n\n技术详情\n\n最近一次变化：上游已完成\n\n候选已保存到本地 · 1024×1024 · image/png · 5 KB（预览来自本地字节）\n\n技术详情\n\n自动检查 v2."
+      },
+      {
+        "shot": "shot_detail_material",
+        "state": "succeeded",
+        "text": "细节图·材质工艺\n已成功\nPrompt v1\n技术详情\n\n提交 2026/10/1 08:01:04 · 更新 2026/10/1 08:01:04\n\n技术详情\n\n最近一次变化：上游已完成\n\n候选已保存到本地 · 1024×1024 · image/png · 5 KB（预览来自本地字节）\n\n技术详情\n\n自动检查 v2"
+      }
+    ],
+    "review_states_before": [
+      "none",
+      "none",
+      "none",
+      "none"
+    ],
+    "rework": {
+      "shot": "shot_main_clean",
+      "candidates_before": 1,
+      "candidates_after": 2,
+      "attempt_state": "succeeded"
+    },
+    "review_states_after": [
+      "current",
+      "current",
+      "current",
+      "current"
+    ],
+    "deliver_gate_text": "主图·干净背景\n已采用\n必需图\n卖点信息图\n已采用\n可选图\n场景图·使用中\n已采用\n可选图\n细节图·材质工艺\n已采用\n可选图\n阻断\n整套一致性报告当前\n\n还没有整套一致性报告；先运行整套检查。\n\n通过\n选择完整性\n必需 Shot 选择完整（1 项）。\n通过\n选择链完整性\n选择 → 候选 → 来源 Attempt 身份一致（核对 4 条选择）。\n通过\n报告当前性\n所选候选都有当前报告（核对 4 条选择）。\n通过\n所选报告无阻断\n所选报告均不含阻断项（核对 4 条选择）。\n通过\n交付字节哈希\n交付字节哈希与候选记录一致（核对 4 条）。\n通过\nUnknown 已人工确认\n全部 Unknown 已人工确认（或没有 Unknown）。",
+    "deliver_jump_buttons": [],
+    "deliver_export_disabled": true,
+    "suite_status_text": "整套检查 v2.5.5：阻断 0 · 高风险 0 · 提醒 0 · 未知 0 · 视觉复核已完成",
+    "suite_note_text": "视觉复核：fake-qwen-vl-max · 2026-10-01T00:00:00Z",
+    "suite_findings_text": "没有需要人工处理的整套发现。\n\n另 11 项确定性检查通过（细节在候选审核清单里）。",
+    "deliver_export_after_suite": true,
+    "export": {
+      "file_name": "V273-夹式-LED-阅读灯-交付包-20261001-0001.zip",
+      "bytes": 42043,
+      "sha256": "918910000371fe9147670cb0699259fe161d3e41f0b56736abb1bb2bf81d2663",
+      "entries": [
+        "README.txt",
+        "checks.json",
+        "images/shot_detail_material-act-7f6006d5216e4d74a78449c899597b28.png",
+        "images/shot_infographic_benefits-act-9e45d9db0d97486282e3b779892b6bfd.png",
+        "images/shot_main_clean-act-c056e9fda1924903b4cc189db193960f.png",
+        "images/shot_scene_lifestyle-act-5a9fda9bc8fe49ab8a9d1a977a0228cd.png",
+        "manifest.json"
+      ],
+      "has_manifest": true,
+      "saved_to": "_working\\amz-listing-kit-product-v2\\rehearsal-exports\\20261001-080059-lamp-V273-夹式-LED-阅读灯-交付包-20261001-0001.zip"
+    },
+    "deliver_result_text": "最近一次交付包：V273-夹式-LED-阅读灯-交付包-20261001-0001.zip（41 KB）\n\n技术详情\n下载交付包",
+    "overflow_understand_390": {
+      "scroll": 390,
+      "client": 390,
+      "current_visible": true
+    },
+    "overflow_review_390": {
+      "scroll": 390,
+      "client": 390,
+      "current_visible": true
+    },
+    "overflow_deliver_390": {
+      "scroll": 390,
+      "client": 390,
+      "current_visible": true
+    },
+    "console_errors": [],
+    "page_errors": [],
+    "http_errors": []
+  },
+  "screenshots": [
+    "v273-rehearsal-20261001-080059-home.png",
+    "v273-rehearsal-20261001-080059-intake.png",
+    "v273-rehearsal-20261001-080059-intake-full.png",
+    "v273-rehearsal-20261001-080059-understand.png",
+    "v273-rehearsal-20261001-080059-understand-full.png",
+    "v273-rehearsal-20261001-080059-plan.png",
+    "v273-rehearsal-20261001-080059-generate-confirm.png",
+    "v273-rehearsal-20261001-080059-generate-done.png",
+    "v273-rehearsal-20261001-080059-generate-done-full.png",
+    "v273-rehearsal-20261001-080059-review.png",
+    "v273-rehearsal-20261001-080059-review-full.png",
+    "v273-rehearsal-20261001-080059-compare.png",
+    "v273-rehearsal-20261001-080059-compare-full.png",
+    "v273-rehearsal-20261001-080059-rework-preview.png",
+    "v273-rehearsal-20261001-080059-rework-compare.png",
+    "v273-rehearsal-20261001-080059-review-adopted.png",
+    "v273-rehearsal-20261001-080059-deliver.png",
+    "v273-rehearsal-20261001-080059-deliver-full.png",
+    "v273-rehearsal-20261001-080059-deliver-ready.png",
+    "v273-rehearsal-20261001-080059-deliver-exported.png",
+    "v273-rehearsal-20261001-080059-understand-390.png",
+    "v273-rehearsal-20261001-080059-review-390.png",
+    "v273-rehearsal-20261001-080059-deliver-390.png"
+  ]
+}

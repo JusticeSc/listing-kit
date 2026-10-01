@@ -153,12 +153,14 @@ def create_project(page, name: str, reference: Path, *, keyboard: bool = False) 
     fill_intake(page, reference, name)
 
 
-def start_server(host: str, port: int, *, semantic=None, image=None, review=None):
+def start_server(host: str, port: int, *, semantic=None, image=None, review=None,
+                 suite_review=None):
     server = server_module.create_product_v2_server(
         host, port,
         provider_factory=semantic or (lambda: FakeSemanticProvider(scenario="ok")),
         image_provider_factory=image or (lambda: FakeImageProvider(scenario="ok")),
-        review_provider_factory=review or (lambda: FakeReviewProvider(scenario="ok")))
+        review_provider_factory=review or (lambda: FakeReviewProvider(scenario="ok")),
+        suite_review_provider_factory=suite_review)
     threading.Thread(target=server.serve_forever, daemon=True).start()
     return server
 

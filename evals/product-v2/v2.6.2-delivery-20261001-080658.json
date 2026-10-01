@@ -1,0 +1,417 @@
+{
+ "stamp": "20261001-080658",
+ "label": "",
+ "checks": [
+  {
+   "id": "V2.6.2-00",
+   "title": "ESM 语法门（domain / workspace / 契约套件）",
+   "ok": true,
+   "detail": [
+    {
+     "file": "app/product_v2/domain/export-gate.js",
+     "rc": 0,
+     "stderr": ""
+    },
+    {
+     "file": "app/product_v2/workspace.js",
+     "rc": 0,
+     "stderr": ""
+    },
+    {
+     "file": "app/product_v2/domain/index.js",
+     "rc": 0,
+     "stderr": ""
+    },
+    {
+     "file": "evals/product-v2/harness/delivery-gate-contract.js",
+     "rc": 0,
+     "stderr": ""
+    }
+   ]
+  },
+  {
+   "id": "V2.6.2-01",
+   "title": "单一权威：复用既有测量；界面落点与新文档种类已登记",
+   "ok": true,
+   "detail": {
+    "single_authority": true,
+    "duplicate_ids": [],
+    "duplicate_element_keys": []
+   }
+  },
+  {
+   "id": "V2.6.2-02",
+   "title": "契约套件 D01–D06 全过",
+   "ok": true,
+   "detail": {
+    "status": "passed",
+    "cases": [
+     "D01",
+     "D02",
+     "D03",
+     "D04",
+     "D05",
+     "D06"
+    ],
+    "failed": []
+   }
+  },
+  {
+   "id": "V2.6.2-03",
+   "title": "工作台交付门禁：无阻断、按钮可用、逐图行完整",
+   "ok": true,
+   "detail": {
+    "status": "交付门禁通过：可以生成交付包（只包含已采用的候选）。",
+    "blocking": [],
+    "rows": [
+     {
+      "shot_id": "shot_main_clean",
+      "state": "current"
+     },
+     {
+      "shot_id": "shot_infographic_benefits",
+      "state": "current"
+     },
+     {
+      "shot_id": "shot_scene_lifestyle",
+      "state": "current"
+     }
+    ],
+    "findings": [
+     {
+      "rule": "export.selection_complete",
+      "severity": "PASS",
+      "jumps": 0
+     },
+     {
+      "rule": "export.chain_integrity",
+      "severity": "PASS",
+      "jumps": 0
+     },
+     {
+      "rule": "export.report_current",
+      "severity": "PASS",
+      "jumps": 0
+     },
+     {
+      "rule": "export.no_blocking_findings",
+      "severity": "PASS",
+      "jumps": 0
+     },
+     {
+      "rule": "export.asset_hash_matches",
+      "severity": "PASS",
+      "jumps": 0
+     },
+     {
+      "rule": "export.suite_review_current",
+      "severity": "PASS",
+      "jumps": 0
+     },
+     {
+      "rule": "export.unknown_acknowledged",
+      "severity": "PASS",
+      "jumps": 0
+     }
+    ]
+   }
+  },
+  {
+   "id": "V2.6.2-04",
+   "title": "交付包下载成功，Python 独立核对 ZIP 内容与哈希",
+   "ok": true,
+   "detail": {
+    "download": {
+     "filename": "V262-交付品-交付包-20261001-0007.zip",
+     "bytes": 47686,
+     "sha256": "19ed418a88e766bc02d98d0ea4ce083e3826520a851161162cf954122a4a2f87"
+    },
+    "names": [
+     "README.txt",
+     "checks.json",
+     "images/shot_detail_material-act-0bb9439be7b1432b9eafe14e42378c57.png",
+     "images/shot_infographic_benefits-act-3e50d9ea25564f05bce6c7637023f82a.png",
+     "images/shot_main_clean-act-feb45f3ee35c45db9e359ebddb37410c.png",
+     "images/shot_scene_lifestyle-act-d803752d4a494fb6be4a311212c266e6.png",
+     "manifest.json"
+    ],
+    "digests": {
+     "images/shot_main_clean-act-feb45f3ee35c45db9e359ebddb37410c.png": "a46d88c2cbd9",
+     "images/shot_infographic_benefits-act-3e50d9ea25564f05bce6c7637023f82a.png": "39b78d1354a1",
+     "images/shot_scene_lifestyle-act-d803752d4a494fb6be4a311212c266e6.png": "f55060e96d48",
+     "images/shot_detail_material-act-0bb9439be7b1432b9eafe14e42378c57.png": "649a7347ff9d"
+    },
+    "readme_head": [
+     "商品套图交付包",
+     "",
+     "项目：V262 交付品",
+     "生成时间：2026-10-01T00:07:08.460Z"
+    ]
+   }
+  },
+  {
+   "id": "V2.6.2-05",
+   "title": "export_record 以 append-only 文档写入 IndexedDB",
+   "ok": true,
+   "detail": {
+    "records": [
+     {
+      "document_id": "export-20261001000708460-19ed418a88e7",
+      "version": 1
+     }
+    ]
+   }
+  },
+  {
+   "id": "V2.6.2-06",
+   "title": "重复生成只追加：两条记录、document_id 与包哈希各自独立",
+   "ok": true,
+   "detail": {
+    "ids": [
+     "export-20261001000708460-19ed418a88e7",
+     "export-20261001000708761-d6ef65b87290"
+    ],
+    "sha": [
+     "19ed418a88e7",
+     "d6ef65b87290"
+    ]
+   }
+  },
+  {
+   "id": "V2.6.2-07",
+   "title": "刷新后：记录仍在、门禁仍无阻断、最近交付包可见",
+   "ok": true,
+   "detail": {
+    "result": "最近一次交付包：V262-交付品-交付包-20261001-0007.zip（47 KB）技术详情sha256 d6ef65b87290cdb8…",
+    "status": "交付门禁通过：可以生成交付包（只包含已采用的候选）。"
+   }
+  },
+  {
+   "id": "V2.6.2-08",
+   "title": "候选字节缺失：门禁阻断、按钮禁用、不产生新记录",
+   "ok": true,
+   "detail": {
+    "dropped": "d4db67f8-d645-4968-96c7-c2ce170ede4e:649",
+    "status": "交付门禁未通过：1 条阻断，逐条处理后才能生成。",
+    "findings": [
+     {
+      "rule": "export.asset_hash_matches",
+      "severity": "BLOCK",
+      "jumps": 1
+     },
+     {
+      "rule": "export.selection_complete",
+      "severity": "PASS",
+      "jumps": 0
+     },
+     {
+      "rule": "export.chain_integrity",
+      "severity": "PASS",
+      "jumps": 0
+     },
+     {
+      "rule": "export.report_current",
+      "severity": "PASS",
+      "jumps": 0
+     },
+     {
+      "rule": "export.no_blocking_findings",
+      "severity": "PASS",
+      "jumps": 0
+     },
+     {
+      "rule": "export.suite_review_current",
+      "severity": "PASS",
+      "jumps": 0
+     },
+     {
+      "rule": "export.unknown_acknowledged",
+      "severity": "PASS",
+      "jumps": 0
+     }
+    ]
+   }
+  },
+  {
+   "id": "V2.6.2-12",
+   "title": "整套一致性阻断（非图级）：带「去运行整套检查」定位入口并把焦点落到运行按钮",
+   "ok": true,
+   "detail": {
+    "removed": 1,
+    "jump": "去运行整套检查",
+    "focus": "suite-review-run",
+    "blocking": [
+     {
+      "rule": "export.asset_hash_matches",
+      "severity": "BLOCK",
+      "jumps": 1
+     },
+     {
+      "rule": "export.suite_review_current",
+      "severity": "BLOCK",
+      "jumps": 0
+     }
+    ]
+   }
+  },
+  {
+   "id": "V2.6.2-09",
+   "title": "主链零意外 console / page / HTTP 错误",
+   "ok": true,
+   "detail": {
+    "console": [],
+    "page": [],
+    "http": []
+   }
+  },
+  {
+   "id": "V2.6.2-10",
+   "title": "Unknown 未确认不可导出；逐条确认后门禁通过并可交付",
+   "ok": true,
+   "detail": {
+    "blocked": {
+     "status": "交付门禁未通过：1 条阻断，逐条处理后才能生成。",
+     "unknowns": [
+      {
+       "rule": "vlm.inspection_unavailable",
+       "label": "确认已知悉",
+       "disabled": false
+      },
+      {
+       "rule": "vlm.inspection_unavailable",
+       "label": "确认已知悉",
+       "disabled": false
+      },
+      {
+       "rule": "vlm.inspection_unavailable",
+       "label": "确认已知悉",
+       "disabled": false
+      }
+     ]
+    },
+    "unlocked": {
+     "status": "已记录「已知悉」（append-only，不作为通过证据）。",
+     "guards": 4
+    },
+    "acked": [
+     "vlm.inspection_unavailable"
+    ],
+    "download": 49904
+   }
+  },
+  {
+   "id": "V2.6.2-11",
+   "title": "正式入口自检全过",
+   "ok": true,
+   "detail": {
+    "rc": 0,
+    "tail": [
+     "  PASS  整套复核 provider 不可用时 capabilities 仍 200 且 configured=false  suite_review={'kind': 'dependency', 'detail': 'RuntimeError: 自检：整套复核 provider 构造失败'}",
+     "  PASS  整套复核 provider 不可用时路由 503 且错误分类明确                          status=503 error={'family': 'internal', 'code': 'PROVIDER_NOT_CONFIGURED', 'message': '语义 provider 不可用：检查注册表、依赖与 DASHSCOPE_API_KEY。', 'retry_policy': 'fatal', 'http_status': 503, 'request_id': None, 'details': {'kind': 'dependency', 'detail': 'RuntimeError: 自检：整套复核 provider 构造失败'}}",
+     "V2 正式入口自检：38/38 通过。"
+    ]
+   }
+  }
+ ],
+ "screenshots": [
+  "evals/product-v2/evidence/v2.6.2-delivery-20261001-080658-gate-pass.png",
+  "evals/product-v2/evidence/v2.6.2-delivery-20261001-080658-after-reload.png",
+  "evals/product-v2/evidence/v2.6.2-delivery-20261001-080658-hash-missing.png",
+  "evals/product-v2/evidence/v2.6.2-delivery-20261001-080658-suite-missing.png",
+  "evals/product-v2/evidence/v2.6.2-delivery-20261001-080658-unknown-blocked.png",
+  "evals/product-v2/evidence/v2.6.2-delivery-20261001-080658-unknown-confirmed.png"
+ ],
+ "suite": {
+  "suite": "v2.6.2-delivery",
+  "status": "passed",
+  "cases": [
+   {
+    "id": "D01",
+    "title": "正向：完整采用 + 当前报告 + 哈希一致 → ready 且七条规则全 PASS",
+    "status": "passed",
+    "detail": {
+     "findings": 7,
+     "status": "ready"
+    },
+    "duration_ms": 17
+   },
+   {
+    "id": "D02",
+    "title": "反向：缺必需图选择 → selection_complete BLOCK 且点名 Shot",
+    "status": "passed",
+    "detail": {
+     "detail": "缺少必需选择：shot_scene。"
+    },
+    "duration_ms": 1
+   },
+   {
+    "id": "D03",
+    "title": "反向：整套报告缺失或过期 → suite_review_current BLOCK",
+    "status": "passed",
+    "detail": {
+     "missing": "BLOCK"
+    },
+    "duration_ms": 1
+   },
+   {
+    "id": "D04",
+    "title": "Unknown：未确认 BLOCK；确认后通过且身份稳定（append-only）",
+    "status": "passed",
+    "detail": {
+     "document_id": "ack-review_report-cand_main-vlm-inspection_unavailable-shot_main",
+     "unknowns": 1
+    },
+    "duration_ms": 2
+   },
+   {
+    "id": "D05",
+    "title": "反向：字节哈希不符 → asset_hash_matches BLOCK",
+    "status": "passed",
+    "detail": {
+     "detail": "交付字节哈希核对失败：shot_main：9f64a747e1b9… ≠ e202c34b347f…；shot_scene：9f64a747e1b9… ≠ e202c34b347f…。"
+    },
+    "duration_ms": 1
+   },
+   {
+    "id": "D06",
+    "title": "交付包往返：条目集合、逐条字节、manifest 反查与记录身份一致",
+    "status": "passed",
+    "detail": {
+     "entries": 5,
+     "zip_bytes": 1327,
+     "document_id": "export-20261001050000+08-0c7de0948674"
+    },
+    "duration_ms": 4
+   }
+  ],
+  "started_at": "2026-10-01T00:07:01.245Z",
+  "finished_at": "2026-10-01T00:07:01.271Z"
+ },
+ "walkthrough": {
+  "shots": [
+   "shot_main_clean",
+   "shot_infographic_benefits",
+   "shot_scene_lifestyle",
+   "shot_detail_material"
+  ],
+  "first": {
+   "filename": "V262-交付品-交付包-20261001-0007.zip",
+   "bytes": 47686,
+   "sha256": "19ed418a88e766bc02d98d0ea4ce083e3826520a851161162cf954122a4a2f87"
+  },
+  "second": {
+   "filename": "V262-交付品-交付包-20261001-0007.zip",
+   "bytes": 47686,
+   "sha256": "d6ef65b87290cdb871d9a3241dbae5a18256c1104566c0993202b878bb58d0c5"
+  },
+  "names": [
+   "README.txt",
+   "checks.json",
+   "images/shot_detail_material-act-0bb9439be7b1432b9eafe14e42378c57.png",
+   "images/shot_infographic_benefits-act-3e50d9ea25564f05bce6c7637023f82a.png",
+   "images/shot_main_clean-act-feb45f3ee35c45db9e359ebddb37410c.png",
+   "images/shot_scene_lifestyle-act-d803752d4a494fb6be4a311212c266e6.png",
+   "manifest.json"
+  ]
+ }
+}

@@ -1,0 +1,452 @@
+{
+  "suite_id": "v2.5.3-compare-panel",
+  "status": "passed",
+  "observed_at": "2026-10-01T08:08:19",
+  "contract": "v2.5.3",
+  "review_contract": "v2.5.2",
+  "model_calls": 0,
+  "external_network_calls": 0,
+  "checks": [
+    {
+      "id": "V2.5.3-01",
+      "title": "语法门：compare / review / workspace / 契约套件与本工具全部可解析",
+      "ok": true,
+      "detail": {
+        "files": [
+          {
+            "file": "app/product_v2/domain/compare.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/domain/review.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/domain/index.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/workspace.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "evals/product-v2/harness/compare-panel.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "tools/verify_v2_5_3_compare_panel.py",
+            "rc": 0,
+            "stderr": ""
+          }
+        ]
+      }
+    },
+    {
+      "id": "V2.5.3-02",
+      "title": "单一权威：先看顺序只在 domain/review.js 定义，比较模块与工作台只引用",
+      "ok": true,
+      "detail": {
+        "order_in_review": true,
+        "duplicated_in": []
+      }
+    },
+    {
+      "id": "V2.5.3-03",
+      "title": "比较面板是纯投影：不写文档、不写资产、不产生选择",
+      "ok": true,
+      "detail": {
+        "forbidden_tokens": [],
+        "section_chars": 15940
+      }
+    },
+    {
+      "id": "V2.5.3-04",
+      "title": "面板接线：HTML 的 tablist/tabpanel 与合同版本贯穿领域层与工作台",
+      "ok": true,
+      "detail": {
+        "panel": true,
+        "tablist": true,
+        "tabpanel": true,
+        "contract_constant": true,
+        "contract_used": true,
+        "default_projection": true
+      }
+    },
+    {
+      "id": "V2.5.3-05",
+      "title": "CP-01–CP-15 比较契约套件：异常优先、默认目标、清单排序与反向探针全部通过",
+      "ok": true,
+      "detail": {
+        "status": "passed",
+        "failed": [],
+        "cases": 15
+      }
+    },
+    {
+      "id": "V2.5.3-06",
+      "title": "复核契约回归：R01–R13 与 R14–R21 在比较面板落地后仍全过",
+      "ok": true,
+      "detail": {
+        "review": "passed",
+        "provider": "passed",
+        "review_failed": [],
+        "provider_failed": []
+      }
+    },
+    {
+      "id": "V2.5.3-07",
+      "title": "入口：每张有候选的图都有「比较候选」，点开即投影该图（无第二套状态）",
+      "ok": true,
+      "detail": {
+        "contract": "v2.5.3",
+        "shot": "shot_main_clean",
+        "subject": "主图·干净背景 · 候选 3 · 待处理 2",
+        "visible": true
+      }
+    },
+    {
+      "id": "V2.5.3-08",
+      "title": "参考图栏 = 这张图实际发送的参考图（与提交选择一致，不是全部参考图）",
+      "ok": true,
+      "detail": {
+        "references": [
+          {
+            "sha256": "88bcc17af574e50d447d09bc06d9636033a215d738a8a13768ba63dd0d1a38d2",
+            "has_image": true,
+            "text": "商品主图技术详情sha256 88bcc17a…"
+          }
+        ],
+        "title": "这张图实际发送的参考图（1 张）",
+        "expected_sha256": "88bcc17af574e50d"
+      }
+    },
+    {
+      "id": "V2.5.3-09",
+      "title": "候选卡与 IndexedDB 一致：两次生成 + 一个合规夹具 = 三张，按版本可追溯",
+      "ok": true,
+      "detail": {
+        "cards": [
+          [
+            "act-caa2b94166484358aa007e47bc1bc2a0",
+            "候选 v2",
+            "pending"
+          ],
+          [
+            "act-c185b94c59b743098c58cfbe0df14d9f",
+            "候选 v1",
+            "pending"
+          ],
+          [
+            "act-fixture-compliant",
+            "候选 v3",
+            "clean"
+          ]
+        ],
+        "db_versions": [
+          1,
+          2,
+          3
+        ]
+      }
+    },
+    {
+      "id": "V2.5.3-10",
+      "title": "异常优先：有阻断的两个候选排在无发现的夹具之前，默认看排在最前的那一个",
+      "ok": true,
+      "detail": {
+        "order": [
+          "act-caa2b94166484358aa007e47bc1bc2a0",
+          "act-c185b94c59b743098c58cfbe0df14d9f",
+          "act-fixture-compliant"
+        ],
+        "states": [
+          "pending",
+          "pending",
+          "clean"
+        ],
+        "selected": "act-caa2b94166484358aa007e47bc1bc2a0",
+        "fixture_severities": [
+          "PASS",
+          "PASS",
+          "PASS",
+          "PASS",
+          "PASS",
+          "PASS",
+          "PASS"
+        ]
+      }
+    },
+    {
+      "id": "V2.5.3-11",
+      "title": "键盘路径：方向键/Home/End 在候选间移动并保持焦点，Escape 回到该图当前可见的比较入口",
+      "ok": true,
+      "detail": {
+        "right": "act-c185b94c59b743098c58cfbe0df14d9f",
+        "end": "act-fixture-compliant",
+        "home": "act-caa2b94166484358aa007e47bc1bc2a0",
+        "escape_focus": null,
+        "expected": [
+          "act-caa2b94166484358aa007e47bc1bc2a0",
+          "act-c185b94c59b743098c58cfbe0df14d9f",
+          "act-fixture-compliant"
+        ]
+      }
+    },
+    {
+      "id": "V2.5.3-12",
+      "title": "完整报告按需展开：默认收起，展开后含合同版本、通过项与视觉复核状态",
+      "ok": true,
+      "detail": {
+        "collapsed": false,
+        "summary": "完整报告（合同 v2.5.2 · 7 条）",
+        "pass_rows": 5,
+        "vlm": "视觉复核：未检查",
+        "findings": 9,
+        "criteria": [
+          "目的：完整展示商品主体，背景干净，不添加资料里没有的部件",
+          "必须保持：商品外观、颜色与比例；标识与文字"
+        ]
+      }
+    },
+    {
+      "id": "V2.5.3-13",
+      "title": "面板不改业务状态：候选字节、Attempt 与审核报告在交互前后完全一致",
+      "ok": true,
+      "detail": {
+        "candidates_first": 3,
+        "reports_before": 4,
+        "reports_after": 4
+      }
+    },
+    {
+      "id": "V2.5.3-14",
+      "title": "刷新后一致：候选、默认目标与清单来自 IndexedDB，不依赖内存状态",
+      "ok": true,
+      "detail": {
+        "order": [
+          "act-caa2b94166484358aa007e47bc1bc2a0",
+          "act-c185b94c59b743098c58cfbe0df14d9f",
+          "act-fixture-compliant"
+        ],
+        "selected": "act-caa2b94166484358aa007e47bc1bc2a0",
+        "contract": "v2.5.3",
+        "references": 1
+      }
+    },
+    {
+      "id": "V2.5.3-15",
+      "title": "单候选回退与「下一个待处理」：一张图一个候选照常比较，跳转落到有问题的图",
+      "ok": true,
+      "detail": {
+        "second_shot": "shot_infographic_benefits",
+        "cards": 1,
+        "jump_target": "shot_main_clean",
+        "landed": "shot_main_clean",
+        "focus": "compare-tab-act-caa2b94166484358aa007e47bc1bc2a0"
+      }
+    },
+    {
+      "id": "V2.5.3-16",
+      "title": "边界：面板不承担采纳与导出，只有比较所需的动作",
+      "ok": true,
+      "detail": {
+        "buttons": [
+          "下一个待处理",
+          "候选 v1待处理64×64 · 2026/10/1 08:08:16阻断 · 最小长边 1000px：最长边 64px 低于平台缩放下限 1000px，交付后无法启用缩放。",
+          "候选 v2待处理64×64 · 2026/10/1 08:08:16阻断 · 最小长边 1000px：最长边 64px 低于平台缩放下限 1000px，交付后无法启用缩放。",
+          "候选 v3无发现1600×1600 · 2026/10/1 08:08:16自动检查没有发现问题（机器结论，人工确认仍然必要）。",
+          "收起",
+          "用此候选发起返工",
+          "采用此候选"
+        ],
+        "forbidden": []
+      }
+    },
+    {
+      "id": "V2.5.3-17",
+      "title": "视觉证据：面板在真实工作台里可见（整页 + 面板特写截图留档）",
+      "ok": true,
+      "detail": {
+        "evals/product-v2/evidence/v2.5.3-compare-panel-20261001-080809.png": 150979,
+        "evals/product-v2/evidence/v2.5.3-compare-panel-20261001-080809-detail.png": 77183
+      }
+    },
+    {
+      "id": "V2.5.3-18",
+      "title": "正式入口 --check 全过（比较面板没有破坏既有自检）",
+      "ok": true,
+      "detail": {
+        "rc": 0,
+        "tail": [
+          "  PASS  整套复核 provider 不可用时 capabilities 仍 200 且 configured=false  suite_review={'kind': 'dependency', 'detail': 'RuntimeError: 自检：整套复核 provider 构造失败'}",
+          "  PASS  整套复核 provider 不可用时路由 503 且错误分类明确                          status=503 error={'family': 'internal', 'code': 'PROVIDER_NOT_CONFIGURED', 'message': '语义 provider 不可用：检查注册表、依赖与 DASHSCOPE_API_KEY。', 'retry_policy': 'fatal', 'http_status': 503, 'request_id': None, 'details': {'kind': 'dependency', 'detail': 'RuntimeError: 自检：整套复核 provider 构造失败'}}",
+          "V2 正式入口自检：38/38 通过。"
+        ]
+      }
+    },
+    {
+      "id": "V2.5.3-19",
+      "title": "零意外 console error / page error",
+      "ok": true,
+      "detail": {
+        "console_errors": [],
+        "page_errors": []
+      }
+    }
+  ],
+  "ui": {
+    "injected": {
+      "candidate_id": "act-fixture-compliant",
+      "version": 3,
+      "sha256": "0b2be9cdbac9a4a579736259450ab17e719fd15ab3f6bdb00668fb443ceef779",
+      "role_id": "main",
+      "severities": [
+        "PASS",
+        "PASS",
+        "PASS",
+        "PASS",
+        "PASS",
+        "PASS",
+        "PASS"
+      ]
+    },
+    "panel": {
+      "visible": true,
+      "contract": "v2.5.3",
+      "shot_id": "shot_main_clean",
+      "subject": "主图·干净背景 · 候选 3 · 待处理 2",
+      "status": "",
+      "selected_candidate_id": "act-caa2b94166484358aa007e47bc1bc2a0",
+      "focused_tab_id": null,
+      "focused_compare_action": null,
+      "focus_shot": null,
+      "focus_visible": false,
+      "cards": [
+        {
+          "candidate_id": "act-caa2b94166484358aa007e47bc1bc2a0",
+          "state": "pending",
+          "selected": true,
+          "tabindex": 0,
+          "version_text": "候选 v2",
+          "headline": "阻断 · 最小长边 1000px：最长边 64px 低于平台缩放下限 1000px，交付后无法启用缩放。",
+          "has_image": true
+        },
+        {
+          "candidate_id": "act-c185b94c59b743098c58cfbe0df14d9f",
+          "state": "pending",
+          "selected": false,
+          "tabindex": -1,
+          "version_text": "候选 v1",
+          "headline": "阻断 · 最小长边 1000px：最长边 64px 低于平台缩放下限 1000px，交付后无法启用缩放。",
+          "has_image": true
+        },
+        {
+          "candidate_id": "act-fixture-compliant",
+          "state": "clean",
+          "selected": false,
+          "tabindex": -1,
+          "version_text": "候选 v3",
+          "headline": "自动检查没有发现问题（机器结论，人工确认仍然必要）。",
+          "has_image": true
+        }
+      ],
+      "findings": [
+        {
+          "severity": "BLOCK",
+          "rule": "platform.min_long_side",
+          "text": "阻断最小长边 1000pxplatform.min_long_side · v1最长边 64px 低于平台缩放下限 1000px，交付后无法启用缩放。实测：{\"long_side\":64,\"threshold\":1000}"
+        },
+        {
+          "severity": "WARNING",
+          "rule": "platform.recommended_long_side",
+          "text": "提醒推荐长边 1600pxplatform.recommended_long_side · v1最长边 64px 低于推荐值 1600px（不阻断；需要最佳缩放时可提高生成尺寸）。实测：{\"long_side\":64,\"threshold\""
+        },
+        {
+          "severity": "BLOCK",
+          "rule": "platform.min_long_side",
+          "text": "阻断最小长边 1000pxplatform.min_long_side · v1最长边 64px 低于平台缩放下限 1000px，交付后无法启用缩放。实测：{\"long_side\":64,\"threshold\":1000}"
+        },
+        {
+          "severity": "WARNING",
+          "rule": "platform.recommended_long_side",
+          "text": "提醒推荐长边 1600pxplatform.recommended_long_side · v1最长边 64px 低于推荐值 1600px（不阻断；需要最佳缩放时可提高生成尺寸）。实测：{\"long_side\":64,\"threshold\""
+        },
+        {
+          "severity": "PASS",
+          "rule": "candidate.png_contract",
+          "text": "通过PNG 字节合同candidate.png_contract · v1PNG 头可解析：64×64（颜色类型 2，位深 8）。实测：{\"width\":64,\"height\":64,\"color_type\":2,\"bit_depth\":8"
+        },
+        {
+          "severity": "PASS",
+          "rule": "candidate.record_consistent",
+          "text": "通过候选记录与字节一致candidate.record_consistent · v1记录与字节一致：宽高 64×64、179 字节、image/png。实测：{\"width\":64,\"height\":64,\"byte_size\":179}"
+        },
+        {
+          "severity": "PASS",
+          "rule": "platform.main_square",
+          "text": "通过主图 1:1platform.main_square · v1主图宽高比 1.0000，符合 1:1（容差 ±2%）。实测：{\"ratio\":1}"
+        },
+        {
+          "severity": "PASS",
+          "rule": "platform.alpha_channel",
+          "text": "通过透明通道提示platform.alpha_channel · v1未检测到透明通道（颜色类型 2）。实测：{\"color_type\":2,\"has_transparency\":false}"
+        },
+        {
+          "severity": "PASS",
+          "rule": "candidate.pixel_depth",
+          "text": "通过像素位深candidate.pixel_depth · v1像素位深 8 位。实测：{\"bit_depth\":8}"
+        }
+      ],
+      "checklist_state": "pending",
+      "checklist_first_heading": "先看这些（2）",
+      "checklist_labelled_by": "compare-tab-act-caa2b94166484358aa007e47bc1bc2a0",
+      "report_open": false,
+      "report_summary": "完整报告（合同 v2.5.2 · 7 条）",
+      "report_pass_rows": 5,
+      "report_vlm": "视觉复核：未检查",
+      "criteria": [
+        "目的：完整展示商品主体，背景干净，不添加资料里没有的部件",
+        "必须保持：商品外观、颜色与比例；标识与文字",
+        "允许变化：背景",
+        "单图规格尚未保存，这里用的是默认派生值。"
+      ],
+      "references": [
+        {
+          "sha256": "88bcc17af574e50d447d09bc06d9636033a215d738a8a13768ba63dd0d1a38d2",
+          "has_image": true,
+          "text": "商品主图技术详情sha256 88bcc17a…"
+        }
+      ],
+      "reference_title": "这张图实际发送的参考图（1 张）",
+      "jump_disabled": false,
+      "jump_target": "shot_infographic_benefits",
+      "buttons": [
+        "采用此候选",
+        "用此候选发起返工",
+        "下一个待处理",
+        "收起",
+        "候选 v2待处理64×64 · 2026/10/1 08:08:16阻断 · 最小长边 1000px：最长边 64px 低于平台缩放下限 1000px，交付后无法启用缩放。",
+        "候选 v1待处理64×64 · 2026/10/1 08:08:16阻断 · 最小长边 1000px：最长边 64px 低于平台缩放下限 1000px，交付后无法启用缩放。",
+        "候选 v3无发现1600×1600 · 2026/10/1 08:08:16自动检查没有发现问题（机器结论，人工确认仍然必要）。"
+      ]
+    },
+    "panel_buttons": [
+      "下一个待处理",
+      "候选 v1待处理64×64 · 2026/10/1 08:08:16阻断 · 最小长边 1000px：最长边 64px 低于平台缩放下限 1000px，交付后无法启用缩放。",
+      "候选 v2待处理64×64 · 2026/10/1 08:08:16阻断 · 最小长边 1000px：最长边 64px 低于平台缩放下限 1000px，交付后无法启用缩放。",
+      "候选 v3无发现1600×1600 · 2026/10/1 08:08:16自动检查没有发现问题（机器结论，人工确认仍然必要）。",
+      "收起",
+      "用此候选发起返工",
+      "采用此候选"
+    ],
+    "screenshot": "evals/product-v2/evidence/v2.5.3-compare-panel-20261001-080809.png",
+    "screenshot_detail": "evals/product-v2/evidence/v2.5.3-compare-panel-20261001-080809-detail.png"
+  },
+  "console_errors": [],
+  "page_errors": []
+}

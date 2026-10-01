@@ -5083,6 +5083,14 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
     if (button) button.focus({ preventScroll: true });
   }
 
+  /** 门禁：整套一致性阻断不属于任何一张图，定位回审核阶段的整套检查运行按钮。 */
+  function jumpToSuiteCheck() {
+    stageShell.select("review");
+    if (!elements.suiteReviewRun) return;
+    elements.suiteReviewRun.scrollIntoView({ block: "center" });
+    elements.suiteReviewRun.focus({ preventScroll: true });
+  }
+
   /** 整套一致性分区：状态行 + 运行按钮 + 按严重度分组的发现（每条可跳到对应图行）。 */
   function renderSuitePanel() {
     if (!elements.suiteReviewStatus || !elements.suiteReviewFindings) return;
@@ -5260,6 +5268,14 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
           text: "去处理：" + shotLabelOf(shotId), attrs: { type: "button", "data-shot-id": shotId },
         });
         jump.addEventListener("click", () => { jumpToReviewShot(shotId); });
+        row.append(jump);
+      }
+      // 整套一致性阻断不是某一张图的问题：给「去运行整套检查」把使用者送回审核阶段的运行按钮。
+      if (!passed && item.rule_id === "export.suite_review_current") {
+        const jump = createElement("button", {
+          text: "去运行整套检查", attrs: { type: "button", "data-suite-action": "run" },
+        });
+        jump.addEventListener("click", () => { jumpToSuiteCheck(); });
         row.append(jump);
       }
       elements.deliveryGate.append(row);

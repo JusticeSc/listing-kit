@@ -1,0 +1,324 @@
+{
+ "stamp": "20261001-080457",
+ "label": "",
+ "checks": [
+  {
+   "id": "V2.5.5-00",
+   "title": "ESM 语法门（domain / workspace / harness）",
+   "ok": true,
+   "detail": [
+    {
+     "file": "app/product_v2/domain/suite-review.js",
+     "rc": 0,
+     "stderr": ""
+    },
+    {
+     "file": "app/product_v2/workspace.js",
+     "rc": 0,
+     "stderr": ""
+    },
+    {
+     "file": "app/product_v2/app.js",
+     "rc": 0,
+     "stderr": ""
+    },
+    {
+     "file": "evals/product-v2/harness/suite-review-contract.js",
+     "rc": 0,
+     "stderr": ""
+    }
+   ]
+  },
+  {
+   "id": "V2.5.5-01",
+   "title": "服务端词表/合同版本/张数上限/端点与浏览器互为镜像",
+   "ok": true,
+   "detail": {
+    "py": [
+     "suite_color_material_consistency",
+     "suite_cross_image_anomaly",
+     "suite_product_consistency",
+     "suite_style_consistency"
+    ],
+    "js": [
+     "suite_color_material_consistency",
+     "suite_cross_image_anomaly",
+     "suite_product_consistency",
+     "suite_style_consistency"
+    ],
+    "contract": [
+     "v2.5.5",
+     "v2.5.5"
+    ],
+    "max": [
+     "8",
+     "8"
+    ]
+   }
+  },
+  {
+   "id": "V2.5.5-02",
+   "title": "单一权威：复用既有测量；界面落点与文档种类已登记",
+   "ok": true,
+   "detail": {
+    "len_suite_js": 32286,
+    "duplicate_ids": [],
+    "duplicate_element_keys": []
+   }
+  },
+  {
+   "id": "V2.5.5-03",
+   "title": "契约套件 S01–S06 全过",
+   "ok": true,
+   "detail": {
+    "status": "passed",
+    "cases": [
+     "S01",
+     "S02",
+     "S03",
+     "S04",
+     "S05",
+     "S06"
+    ],
+    "failed": []
+   }
+  },
+  {
+   "id": "V2.5.5-04",
+   "title": "工作台整套检查：报告当前、视觉已核对、发现可见",
+   "ok": true,
+   "detail": {
+    "status": "整套检查 v2.5.5：阻断 1 · 高风险 1 · 提醒 1 · 未知 0 · 视觉复核已完成",
+    "findings": [
+     {
+      "rule": "export.no_blocking_findings",
+      "severity": "BLOCK",
+      "jumps": 4
+     },
+     {
+      "rule": "vlm.suite_product_consistency",
+      "severity": "HIGH_RISK",
+      "jumps": 2
+     },
+     {
+      "rule": "vlm.suite_style_consistency",
+      "severity": "WARNING",
+      "jumps": 4
+     }
+    ],
+    "note": "视觉复核：fake-qwen-vl-max · 2026-10-01T00:00:00Z"
+   }
+  },
+  {
+   "id": "V2.5.5-05",
+   "title": "报告以 suite_review 文档写入 IndexedDB",
+   "ok": true,
+   "detail": [
+    {
+     "kind": "suite_review",
+     "document_id": "suite_review",
+     "version": 1
+    }
+   ]
+  },
+  {
+   "id": "V2.5.5-12",
+   "title": "整套发现「定位」按钮本地化：按钮带图名、界面不出现裸 shot_id",
+   "ok": true,
+   "detail": {
+    "buttons": [
+     {
+      "text": "定位：主图·干净背景",
+      "shot": "shot_main_clean"
+     },
+     {
+      "text": "定位：卖点信息图",
+      "shot": "shot_infographic_benefits"
+     },
+     {
+      "text": "定位：场景图·使用中",
+      "shot": "shot_scene_lifestyle"
+     },
+     {
+      "text": "定位：细节图·材质工艺",
+      "shot": "shot_detail_material"
+     },
+     {
+      "text": "定位：主图·干净背景",
+      "shot": "shot_main_clean"
+     },
+     {
+      "text": "定位：卖点信息图",
+      "shot": "shot_infographic_benefits"
+     }
+    ],
+    "has_raw_shot_id": false
+   }
+  },
+  {
+   "id": "V2.5.5-06",
+   "title": "发现可跳转到对应图行",
+   "ok": true,
+   "detail": {
+    "shot": "shot_main_clean",
+    "focused": {
+     "stage": "review",
+     "visible": true
+    }
+   }
+  },
+  {
+   "id": "V2.5.5-07",
+   "title": "方案变化后报告过期并可重算为当前",
+   "ok": true,
+   "detail": {
+    "stale": "整套检查已过期：选择或输入在报告之后发生了变化，请重新运行。 上一版：整套检查 v2.5.5：阻断 1 · 高风险 1 · 提醒 1 · 未知 0 · 视觉复核已完成",
+    "rerun": "整套检查 v2.5.5：阻断 1 · 高风险 1 · 提醒 2 · 未知 0 · 视觉复核已完成"
+   }
+  },
+  {
+   "id": "V2.5.5-08",
+   "title": "刷新后报告仍在且仍是当前",
+   "ok": true,
+   "detail": {
+    "status": "整套检查 v2.5.5：阻断 1 · 高风险 1 · 提醒 2 · 未知 0 · 视觉复核已完成",
+    "findings": 4
+   }
+  },
+  {
+   "id": "V2.5.5-09",
+   "title": "主链零意外 console / page / HTTP 错误",
+   "ok": true,
+   "detail": {
+    "console": [],
+    "page": [],
+    "http": []
+   }
+  },
+  {
+   "id": "V2.5.5-10",
+   "title": "视觉通道失败：只落 UNKNOWN，确定性部分照常",
+   "ok": true,
+   "detail": {
+    "status": "整套检查 v2.5.5：阻断 1 · 高风险 0 · 提醒 0 · 未知 1 · 视觉复核未完成（Unknown）",
+    "findings": [
+     {
+      "rule": "export.no_blocking_findings",
+      "severity": "BLOCK",
+      "jumps": 4
+     },
+     {
+      "rule": "vlm.suite_inspection_unavailable",
+      "severity": "UNKNOWN",
+      "jumps": 4
+     }
+    ]
+   }
+  },
+  {
+   "id": "V2.5.5-11",
+   "title": "正式入口自检全过且含整套复核路由",
+   "ok": true,
+   "detail": {
+    "rc": 0,
+    "tail": [
+     "  PASS  整套复核 provider 不可用时 capabilities 仍 200 且 configured=false  suite_review={'kind': 'dependency', 'detail': 'RuntimeError: 自检：整套复核 provider 构造失败'}",
+     "  PASS  整套复核 provider 不可用时路由 503 且错误分类明确                          status=503 error={'family': 'internal', 'code': 'PROVIDER_NOT_CONFIGURED', 'message': '语义 provider 不可用：检查注册表、依赖与 DASHSCOPE_API_KEY。', 'retry_policy': 'fatal', 'http_status': 503, 'request_id': None, 'details': {'kind': 'dependency', 'detail': 'RuntimeError: 自检：整套复核 provider 构造失败'}}",
+     "V2 正式入口自检：38/38 通过。"
+    ]
+   }
+  }
+ ],
+ "screenshots": [
+  "evals/product-v2/evidence/v2.5.5-suite-review-20261001-080457-current.png",
+  "evals/product-v2/evidence/v2.5.5-suite-review-20261001-080457-rerun.png",
+  "evals/product-v2/evidence/v2.5.5-suite-review-20261001-080457-unknown.png"
+ ],
+ "suite": {
+  "suite": "v2.5.5-suite-review",
+  "status": "passed",
+  "cases": [
+   {
+    "id": "S01",
+    "title": "suite 规则登记：BLOCK/WARNING/视觉规则齐备，视觉规则不得为 BLOCK",
+    "status": "passed",
+    "detail": {
+     "checks": 4
+    },
+    "duration_ms": 0
+   },
+   {
+    "id": "S02",
+    "title": "缺必需选择：suite.selection_current 报 BLOCK 且 affected_shot_ids 精确",
+    "status": "passed",
+    "detail": {
+     "block": 1
+    },
+    "duration_ms": 8
+   },
+   {
+    "id": "S03",
+    "title": "重复任务与卖点未覆盖：两条 WARNING 都要出现并可定位",
+    "status": "passed",
+    "detail": {
+     "warnings": 2
+    },
+    "duration_ms": 1
+   },
+   {
+    "id": "S04",
+    "title": "完整装配：确定性零 BLOCK、视觉 checked、报告当前；指纹变化即过期",
+    "status": "passed",
+    "detail": {
+     "summary": {
+      "BLOCK": 0,
+      "HIGH_RISK": 0,
+      "WARNING": 0,
+      "PASS": 11,
+      "UNKNOWN": 0
+     }
+    },
+    "duration_ms": 1
+   },
+   {
+    "id": "S05",
+    "title": "视觉漂移：check 映射到登记规则；越界 shot_id 必须落 UNKNOWN（protocol）",
+    "status": "passed",
+    "detail": {
+     "high_risk": 1
+    },
+    "duration_ms": 2
+   },
+   {
+    "id": "S06",
+    "title": "视觉失败与超限：只落 UNKNOWN，确定性部分不受影响",
+    "status": "passed",
+    "detail": {
+     "unknown": 1
+    },
+    "duration_ms": 1
+   }
+  ],
+  "started_at": "2026-10-01T00:04:58.228Z",
+  "finished_at": "2026-10-01T00:04:58.241Z"
+ },
+ "walkthrough": {
+  "findings": [
+   {
+    "rule": "export.no_blocking_findings",
+    "severity": "BLOCK",
+    "jumps": 4
+   },
+   {
+    "rule": "vlm.suite_product_consistency",
+    "severity": "HIGH_RISK",
+    "jumps": 2
+   },
+   {
+    "rule": "vlm.suite_style_consistency",
+    "severity": "WARNING",
+    "jumps": 4
+   }
+  ]
+ }
+}

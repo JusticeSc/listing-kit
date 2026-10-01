@@ -889,6 +889,36 @@ task_progress:
       - evals/product-v2/evidence/v273-rehearsal-20261001-074743-generate-confirm.png
       - app/product_v2/workspace.js
       - tools/verify_v2_3_5_pre_generation_confirm.py
+  V2.6.11:
+    status: done
+    evidence:
+      - evals/product-v2/v273-rehearsal-20261001-080059.json
+      - evals/product-v2/evidence/v273-rehearsal-20261001-080059-deliver.png
+      - evals/product-v2/v2.6.2-delivery-20261001-080658.txt
+      - evals/product-v2/v2.6.2-delivery-20261001-080658.json
+      - evals/product-v2/evidence/v2.6.2-delivery-20261001-080658-suite-missing.png
+      - evals/product-v2/v273-rehearsal-20261001-080336.md
+      - evals/product-v2/v273-rehearsal-20261001-080336.json
+      - evals/product-v2/v273-rehearsal-20261001-080521.md
+      - evals/product-v2/v273-rehearsal-20261001-080521.json
+      - evals/product-v2/v273-rehearsal-20261001-080541.md
+      - evals/product-v2/v273-rehearsal-20261001-080541.json
+      - evals/product-v2/evidence/v273-rehearsal-20261001-080336-rework-compare.png
+      - evals/product-v2/evidence/v273-rehearsal-20261001-080336-deliver-exported.png
+      - evals/product-v2/v2.ui.3-frontend-20261001-080422-v273-prep.txt
+      - evals/product-v2/v2.ui.3-frontend-20261001-080422-v273-prep.json
+      - evals/product-v2/v2.5.5-suite-review-20261001-080457.txt
+      - evals/product-v2/v2.5.5-suite-review-20261001-080457.json
+      - evals/product-v2/v2.5.4-rework-loop-20261001-080740v273-prep.txt
+      - evals/product-v2/v2.5.4-rework-loop-20261001-080740v273-prep.json
+      - evals/product-v2/v2.6.1-selection-20261001-080751.txt
+      - evals/product-v2/v2.6.1-selection-20261001-080751.json
+      - evals/product-v2/v2.5.3-compare-panel-20261001-080809.txt
+      - evals/product-v2/v2.5.3-compare-panel-20261001-080809.json
+      - app/product_v2/workspace.js
+      - tools/verify_v2_6_2_delivery.py
+      - tools/verify_v2_ui_3_frontend.py
+      - tools/rehearse_v273_walkthrough.py
   V2.7.1:
     status: done
     evidence:
@@ -908,5 +938,5 @@ unknowns:
   - dashscope_balance_arrears_20261001T0433_remote_real_e2e_blocked_at_semantic_step
     upstream_account_arrears_evidence_evals_product_v2_evidence_remote-real-e2e-20261001-043317-lamp01-failure.png
     retry_after_topup_before_claiming_v2_7_2_gate
-updated_at: 2026-10-01T07:48:30+08:00
+updated_at: 2026-10-01T08:10:00+08:00
 ```
