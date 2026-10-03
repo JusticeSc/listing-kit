@@ -1,0 +1,708 @@
+{
+  "evidence_kind": "NOT-AUTHORITY",
+  "mode": "independent Chrome headless, page-level input only, loopback requests",
+  "profile": "C:\\Users\\31368\\AppData\\Local\\Temp\\amz-r21-headless-matrix-1z_4bu4c",
+  "zoom": [
+    {
+      "requested_base_width": 1440,
+      "realized_base_width": 1440,
+      "zoom": 1.25,
+      "selected": {
+        "value": "1.25",
+        "label": "125%"
+      },
+      "stage": "intake",
+      "width": 1152,
+      "height": 720,
+      "dpr": 1.25,
+      "visualScale": 1,
+      "scrollWidth": 1152,
+      "scrollHeight": 1497
+    },
+    {
+      "requested_base_width": 1440,
+      "realized_base_width": 1440,
+      "zoom": 1.25,
+      "selected": {
+        "value": "1.25",
+        "label": "125%"
+      },
+      "stage": "understand",
+      "width": 1152,
+      "height": 720,
+      "dpr": 1.25,
+      "visualScale": 1,
+      "scrollWidth": 1152,
+      "scrollHeight": 1348
+    },
+    {
+      "requested_base_width": 1440,
+      "realized_base_width": 1440,
+      "zoom": 1.25,
+      "selected": {
+        "value": "1.25",
+        "label": "125%"
+      },
+      "stage": "review",
+      "width": 1152,
+      "height": 720,
+      "dpr": 1.25,
+      "visualScale": 1,
+      "scrollWidth": 1152,
+      "scrollHeight": 3610
+    },
+    {
+      "requested_base_width": 1440,
+      "realized_base_width": 1440,
+      "zoom": 2,
+      "selected": {
+        "value": "2",
+        "label": "200%"
+      },
+      "stage": "intake",
+      "width": 720,
+      "height": 450,
+      "dpr": 2,
+      "visualScale": 1,
+      "scrollWidth": 720,
+      "scrollHeight": 1540
+    },
+    {
+      "requested_base_width": 1440,
+      "realized_base_width": 1440,
+      "zoom": 2,
+      "selected": {
+        "value": "2",
+        "label": "200%"
+      },
+      "stage": "understand",
+      "width": 720,
+      "height": 450,
+      "dpr": 2,
+      "visualScale": 1,
+      "scrollWidth": 720,
+      "scrollHeight": 1353
+    },
+    {
+      "requested_base_width": 1440,
+      "realized_base_width": 1440,
+      "zoom": 2,
+      "selected": {
+        "value": "2",
+        "label": "200%"
+      },
+      "stage": "review",
+      "width": 720,
+      "height": 450,
+      "dpr": 2,
+      "visualScale": 1,
+      "scrollWidth": 720,
+      "scrollHeight": 4191
+    },
+    {
+      "requested_base_width": 1366,
+      "realized_base_width": 1366,
+      "zoom": 1.25,
+      "selected": {
+        "value": "1.25",
+        "label": "125%"
+      },
+      "stage": "intake",
+      "width": 1093,
+      "height": 720,
+      "dpr": 1.25,
+      "visualScale": 1,
+      "scrollWidth": 1093,
+      "scrollHeight": 1497
+    },
+    {
+      "requested_base_width": 1366,
+      "realized_base_width": 1366,
+      "zoom": 1.25,
+      "selected": {
+        "value": "1.25",
+        "label": "125%"
+      },
+      "stage": "understand",
+      "width": 1093,
+      "height": 720,
+      "dpr": 1.25,
+      "visualScale": 1,
+      "scrollWidth": 1093,
+      "scrollHeight": 1348
+    },
+    {
+      "requested_base_width": 1366,
+      "realized_base_width": 1366,
+      "zoom": 1.25,
+      "selected": {
+        "value": "1.25",
+        "label": "125%"
+      },
+      "stage": "review",
+      "width": 1093,
+      "height": 720,
+      "dpr": 1.25,
+      "visualScale": 1,
+      "scrollWidth": 1093,
+      "scrollHeight": 3641
+    },
+    {
+      "requested_base_width": 1366,
+      "realized_base_width": 1366,
+      "zoom": 2,
+      "selected": {
+        "value": "2",
+        "label": "200%"
+      },
+      "stage": "intake",
+      "width": 683,
+      "height": 450,
+      "dpr": 2,
+      "visualScale": 1,
+      "scrollWidth": 683,
+      "scrollHeight": 1540
+    },
+    {
+      "requested_base_width": 1366,
+      "realized_base_width": 1366,
+      "zoom": 2,
+      "selected": {
+        "value": "2",
+        "label": "200%"
+      },
+      "stage": "understand",
+      "width": 683,
+      "height": 450,
+      "dpr": 2,
+      "visualScale": 1,
+      "scrollWidth": 683,
+      "scrollHeight": 1353
+    },
+    {
+      "requested_base_width": 1366,
+      "realized_base_width": 1366,
+      "zoom": 2,
+      "selected": {
+        "value": "2",
+        "label": "200%"
+      },
+      "stage": "review",
+      "width": 683,
+      "height": 450,
+      "dpr": 2,
+      "visualScale": 1,
+      "scrollWidth": 683,
+      "scrollHeight": 4288
+    }
+  ],
+  "responsive": [
+    {
+      "stage": "intake",
+      "width": 1440,
+      "height": 900,
+      "scrollWidth": 1440,
+      "scrollHeight": 1503
+    },
+    {
+      "stage": "understand",
+      "width": 1440,
+      "height": 900,
+      "scrollWidth": 1440,
+      "scrollHeight": 1356
+    },
+    {
+      "stage": "review",
+      "width": 1440,
+      "height": 900,
+      "scrollWidth": 1440,
+      "scrollHeight": 3647
+    },
+    {
+      "stage": "intake",
+      "width": 1366,
+      "height": 768,
+      "scrollWidth": 1366,
+      "scrollHeight": 1503
+    },
+    {
+      "stage": "understand",
+      "width": 1366,
+      "height": 768,
+      "scrollWidth": 1366,
+      "scrollHeight": 1356
+    },
+    {
+      "stage": "review",
+      "width": 1366,
+      "height": 768,
+      "scrollWidth": 1366,
+      "scrollHeight": 3647
+    },
+    {
+      "stage": "intake",
+      "width": 390,
+      "height": 844,
+      "scrollWidth": 390,
+      "scrollHeight": 1702
+    },
+    {
+      "stage": "understand",
+      "width": 390,
+      "height": 844,
+      "scrollWidth": 390,
+      "scrollHeight": 1484
+    },
+    {
+      "stage": "review",
+      "width": 390,
+      "height": 844,
+      "scrollWidth": 390,
+      "scrollHeight": 4593
+    }
+  ],
+  "keyboard": [
+    {
+      "stage": "intake",
+      "step": 0,
+      "id": "",
+      "tag": "BUTTON",
+      "text": "2\n理解",
+      "outline": "rgb(36, 86, 214) solid 2px"
+    },
+    {
+      "stage": "intake",
+      "step": 1,
+      "id": "",
+      "tag": "BUTTON",
+      "text": "3\n方案",
+      "outline": "rgb(36, 86, 214) solid 2px"
+    },
+    {
+      "stage": "intake",
+      "step": 2,
+      "id": "",
+      "tag": "BUTTON",
+      "text": "4\n生成",
+      "outline": "rgb(36, 86, 214) solid 2px"
+    },
+    {
+      "stage": "intake",
+      "step": 3,
+      "id": "",
+      "tag": "BUTTON",
+      "text": "5\n审核返工",
+      "outline": "rgb(36, 86, 214) solid 2px"
+    },
+    {
+      "stage": "intake",
+      "step": 4,
+      "id": "",
+      "tag": "BUTTON",
+      "text": "6\n交付",
+      "outline": "rgb(36, 86, 214) solid 2px"
+    },
+    {
+      "stage": "intake",
+      "step": 5,
+      "id": "ref-add",
+      "tag": "BUTTON",
+      "text": "添加参考图…",
+      "outline": "rgb(36, 86, 214) solid 2px"
+    },
+    {
+      "stage": "intake",
+      "step": 6,
+      "id": "",
+      "tag": "SUMMARY",
+      "text": "技术详情",
+      "outline": "rgb(36, 86, 214) solid 2px"
+    },
+    {
+      "stage": "intake",
+      "step": 7,
+      "id": "",
+      "tag": "SELECT",
+      "text": "商品主图\n细节图\n包装图\n场景参考\n竞品参考\n其他",
+      "outline": "rgb(36, 86, 214) solid 2px"
+    },
+    {
+      "stage": "intake",
+      "step": 8,
+      "id": "",
+      "tag": "BUTTON",
+      "text": "删除",
+      "outline": "rgb(36, 86, 214) solid 2px"
+    },
+    {
+      "stage": "intake",
+      "step": 9,
+      "id": "intake-name",
+      "tag": "INPUT",
+      "text": "",
+      "outline": "rgb(36, 86, 214) solid 2px"
+    },
+    {
+      "stage": "intake",
+      "step": 10,
+      "id": "intake-description",
+      "tag": "TEXTAREA",
+      "text": "",
+      "outline": "rgb(36, 86, 214) solid 2px"
+    },
+    {
+      "stage": "intake",
+      "step": 11,
+      "id": "intake-selling-points",
+      "tag": "TEXTAREA",
+      "text": "",
+      "outline": "rgb(36, 86, 214) solid 2px"
+    },
+    {
+      "stage": "intake",
+      "step": 12,
+      "id": "intake-focus",
+      "tag": "INPUT",
+      "text": "",
+      "outline": "rgb(36, 86, 214) solid 2px"
+    },
+    {
+      "stage": "intake",
+      "step": 13,
+      "id": "intake-save",
+      "tag": "BUTTON",
+      "text": "保存草稿",
+      "outline": "rgb(36, 86, 214) solid 2px"
+    },
+    {
+      "stage": "intake",
+      "step": 14,
+      "id": "analyze-run",
+      "tag": "BUTTON",
+      "text": "分析商品资料",
+      "outline": "rgb(36, 86, 214) solid 2px"
+    },
+    {
+      "stage": "intake",
+      "step": 15,
+      "id": "",
+      "tag": "BODY",
+      "text": "Amazon US 商品套图\n\n项目保存在这台浏览器；服务器不保存你的项目，也不保存最近使用记录。\n\n← 项目列表\nR21 白色杯子审计\n待",
+      "outline": "rgb(29, 35, 48) none 3px"
+    },
+    {
+      "stage": "intake",
+      "step": 16,
+      "id": "back-home",
+      "tag": "BUTTON",
+      "text": "← 项目列表",
+      "outline": "rgb(36, 86, 214) solid 2px"
+    },
+    {
+      "stage": "intake",
+      "step": 17,
+      "id": "",
+      "tag": "SUMMARY",
+      "text": "项目信息",
+      "outline": "rgb(36, 86, 214) solid 2px"
+    },
+    {
+      "stage": "understand",
+      "step": 0,
+      "id": "",
+      "tag": "BUTTON",
+      "text": "3\n方案",
+      "outline": "rgb(36, 86, 214) solid 2px"
+    },
+    {
+      "stage": "understand",
+      "step": 1,
+      "id": "",
+      "tag": "BUTTON",
+      "text": "4\n生成",
+      "outline": "rgb(36, 86, 214) solid 2px"
+    },
+    {
+      "stage": "understand",
+      "step": 2,
+      "id": "",
+      "tag": "BUTTON",
+      "text": "5\n审核返工",
+      "outline": "rgb(36, 86, 214) solid 2px"
+    },
+    {
+      "stage": "understand",
+      "step": 3,
+      "id": "",
+      "tag": "BUTTON",
+      "text": "6\n交付",
+      "outline": "rgb(36, 86, 214) solid 2px"
+    },
+    {
+      "stage": "understand",
+      "step": 4,
+      "id": "slots-toggle",
+      "tag": "BUTTON",
+      "text": "显示全部事实",
+      "outline": "rgb(36, 86, 214) solid 2px"
+    },
+    {
+      "stage": "understand",
+      "step": 5,
+      "id": "",
+      "tag": "BUTTON",
+      "text": "填值并确认",
+      "outline": "rgb(36, 86, 214) solid 2px"
+    },
+    {
+      "stage": "understand",
+      "step": 6,
+      "id": "",
+      "tag": "BUTTON",
+      "text": "修改",
+      "outline": "rgb(36, 86, 214) solid 2px"
+    },
+    {
+      "stage": "understand",
+      "step": 7,
+      "id": "",
+      "tag": "BUTTON",
+      "text": "标记未知",
+      "outline": "rgb(36, 86, 214) solid 2px"
+    },
+    {
+      "stage": "understand",
+      "step": 8,
+      "id": "",
+      "tag": "SUMMARY",
+      "text": "技术详情",
+      "outline": "rgb(36, 86, 214) solid 2px"
+    },
+    {
+      "stage": "understand",
+      "step": 9,
+      "id": "",
+      "tag": "BUTTON",
+      "text": "填值并确认",
+      "outline": "rgb(36, 86, 214) solid 2px"
+    },
+    {
+      "stage": "understand",
+      "step": 10,
+      "id": "",
+      "tag": "BUTTON",
+      "text": "修改",
+      "outline": "rgb(36, 86, 214) solid 2px"
+    },
+    {
+      "stage": "understand",
+      "step": 11,
+      "id": "",
+      "tag": "BUTTON",
+      "text": "标记未知",
+      "outline": "rgb(36, 86, 214) solid 2px"
+    },
+    {
+      "stage": "understand",
+      "step": 12,
+      "id": "",
+      "tag": "SUMMARY",
+      "text": "技术详情",
+      "outline": "rgb(36, 86, 214) solid 2px"
+    },
+    {
+      "stage": "understand",
+      "step": 13,
+      "id": "",
+      "tag": "BUTTON",
+      "text": "填值并确认",
+      "outline": "rgb(36, 86, 214) solid 2px"
+    },
+    {
+      "stage": "understand",
+      "step": 14,
+      "id": "",
+      "tag": "BUTTON",
+      "text": "修改",
+      "outline": "rgb(36, 86, 214) solid 2px"
+    },
+    {
+      "stage": "understand",
+      "step": 15,
+      "id": "",
+      "tag": "BUTTON",
+      "text": "标记未知",
+      "outline": "rgb(36, 86, 214) solid 2px"
+    },
+    {
+      "stage": "understand",
+      "step": 16,
+      "id": "",
+      "tag": "SUMMARY",
+      "text": "技术详情",
+      "outline": "rgb(36, 86, 214) solid 2px"
+    },
+    {
+      "stage": "understand",
+      "step": 17,
+      "id": "",
+      "tag": "BUTTON",
+      "text": "填值并确认",
+      "outline": "rgb(36, 86, 214) solid 2px"
+    },
+    {
+      "stage": "review",
+      "step": 0,
+      "id": "compare-checklist",
+      "tag": "DIV",
+      "text": "先看这些（1）\n提醒\n推荐长边 1600px\nplatform.recommended_long_side · v1\n\n最长边 1200px",
+      "outline": "rgb(36, 86, 214) solid 2px"
+    },
+    {
+      "stage": "review",
+      "step": 1,
+      "id": "",
+      "tag": "SUMMARY",
+      "text": "完整报告（合同 v2.5.2 · 7 条）",
+      "outline": "rgb(36, 86, 214) solid 2px"
+    },
+    {
+      "stage": "review",
+      "step": 2,
+      "id": "",
+      "tag": "SUMMARY",
+      "text": "技术详情",
+      "outline": "rgb(36, 86, 214) solid 2px"
+    },
+    {
+      "stage": "review",
+      "step": 3,
+      "id": "stage-next-deliver",
+      "tag": "BUTTON",
+      "text": "去交付",
+      "outline": "rgb(36, 86, 214) solid 2px"
+    },
+    {
+      "stage": "review",
+      "step": 4,
+      "id": "back-home",
+      "tag": "BUTTON",
+      "text": "← 项目列表",
+      "outline": "rgb(36, 86, 214) solid 2px"
+    },
+    {
+      "stage": "review",
+      "step": 5,
+      "id": "",
+      "tag": "SUMMARY",
+      "text": "项目信息",
+      "outline": "rgb(36, 86, 214) solid 2px"
+    },
+    {
+      "stage": "review",
+      "step": 6,
+      "id": "",
+      "tag": "BUTTON",
+      "text": "1\n资料",
+      "outline": "rgb(36, 86, 214) solid 2px"
+    },
+    {
+      "stage": "review",
+      "step": 7,
+      "id": "",
+      "tag": "BUTTON",
+      "text": "2\n理解",
+      "outline": "rgb(36, 86, 214) solid 2px"
+    },
+    {
+      "stage": "review",
+      "step": 8,
+      "id": "",
+      "tag": "BUTTON",
+      "text": "3\n方案",
+      "outline": "rgb(36, 86, 214) solid 2px"
+    },
+    {
+      "stage": "review",
+      "step": 9,
+      "id": "",
+      "tag": "BUTTON",
+      "text": "4\n生成",
+      "outline": "rgb(36, 86, 214) solid 2px"
+    },
+    {
+      "stage": "review",
+      "step": 10,
+      "id": "",
+      "tag": "BUTTON",
+      "text": "5\n审核返工",
+      "outline": "rgb(36, 86, 214) solid 2px"
+    },
+    {
+      "stage": "review",
+      "step": 11,
+      "id": "",
+      "tag": "BUTTON",
+      "text": "6\n交付",
+      "outline": "rgb(36, 86, 214) solid 2px"
+    },
+    {
+      "stage": "review",
+      "step": 12,
+      "id": "",
+      "tag": "BUTTON",
+      "text": "比较候选（2）",
+      "outline": "rgb(36, 86, 214) solid 2px"
+    },
+    {
+      "stage": "review",
+      "step": 13,
+      "id": "",
+      "tag": "BUTTON",
+      "text": "按问题返工",
+      "outline": "rgb(36, 86, 214) solid 2px"
+    },
+    {
+      "stage": "review",
+      "step": 14,
+      "id": "",
+      "tag": "BUTTON",
+      "text": "比较候选（1）",
+      "outline": "rgb(36, 86, 214) solid 2px"
+    },
+    {
+      "stage": "review",
+      "step": 15,
+      "id": "",
+      "tag": "BUTTON",
+      "text": "按问题返工",
+      "outline": "rgb(36, 86, 214) solid 2px"
+    },
+    {
+      "stage": "review",
+      "step": 16,
+      "id": "",
+      "tag": "BUTTON",
+      "text": "比较候选（1）",
+      "outline": "rgb(36, 86, 214) solid 2px"
+    },
+    {
+      "stage": "review",
+      "step": 17,
+      "id": "",
+      "tag": "BUTTON",
+      "text": "按问题返工",
+      "outline": "rgb(36, 86, 214) solid 2px"
+    }
+  ],
+  "candidate_keyboard": {
+    "focus": "compare-tab-act-0f510b88d55a4595870718039abb8d5c",
+    "selected": "compare-tab-act-0f510b88d55a4595870718039abb8d5c"
+  },
+  "escape_focus": "比较候选（2）",
+  "summary": {
+    "zoom_surfaces": 12,
+    "responsive_surfaces": 9,
+    "keyboard_steps": 54
+  }
+}

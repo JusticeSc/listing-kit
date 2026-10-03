@@ -1,0 +1,36 @@
+amz-listing-kit Product V2 V2.4.2 浏览器 Attempt、action ID、task ID 与 Unknown 恢复
+NOT-AUTHORITY: point-in-time verification evidence only
+observed_at: 2026-10-03T08:47:04
+status: passed
+model_calls: 0 · external_network_calls: 0 (fake image provider + 本机服务)
+json: evals/product-v2/v2.4.2-generation-attempt-20261003-084647.json
+
+CHECKS
+- [PASS] V2.4.2-00 domain / workspace / harness 通过 node --check（ESM 语法门）
+- [PASS] V2.4.2-01 A01–A13 契约套件全过且用例齐全
+- [PASS] V2.4.2-02 反向探针确实执行（非法输入 / 非法迁移 / 篡改 / 回退 / 无身份恢复）
+- [PASS] V2.4.2-02b 既有契约套件回归：确认单 / Prompt 编辑 / 套图编辑器全过
+- [PASS] V2.4.2-03 生成执行区就绪：4 张图待生成、provider 身份可见、锁定提示收起
+- [PASS] V2.4.2-04 提交前落库：服务端已收到提交时，IndexedDB 已是 pending_submit 且 Prompt 版本一致
+- [PASS] V2.4.2-05 双击只产生一条 Attempt：只发生一次提交，且迁移链只有一个 action id
+- [PASS] V2.4.2-06 提交信封 → submitted：task id 保存；请求里的 Prompt / 引用 / 尺寸与记录一致
+- [PASS] V2.4.2-17 冻结执行身份：记录带协议/能力版本/凭据引用（无 secret），提交请求 target 与之一致
+- [PASS] V2.4.2-07 按 task id 核对推进 succeeded：迁移链完整、没有重新提交
+- [PASS] V2.4.2-18 核对请求按冻结身份带 target：协议/目标/模型/能力版本与记录一致（不偷用当前设置）
+- [PASS] V2.4.2-08 刷新恢复：succeeded 身份、task id 与 UI 徽标一致
+- [PASS] V2.4.2-09 服务端重启后按已保存 task id 核对成功（服务端无任务表）
+- [PASS] V2.4.2-10 Unknown 不自动重提：unknown / 无 task id / requires_review，界面只给显式新建
+- [PASS] V2.4.2-11 显式新建 action：新身份生效，旧 unknown 记录逐字保留
+- [PASS] V2.4.2-12 刷新打断提交：pending 身份保留、不自动重提、界面可显式新建 action
+- [PASS] V2.4.2-13 刷新后显式新建 action：旧 pending 记录原样保留、新身份可提交
+- [PASS] V2.4.2-14 Prompt 前进后旧 Attempt 标「基于旧版本 v1」，记录零改写
+- [PASS] V2.4.2-19 环境身份漂移阻塞核对：不发请求、记录零改写、给出原身份与恢复条件
+- [PASS] V2.4.2-19b 环境恢复后同 task 仍按原身份核对成功（不新建、不换目标）
+- [PASS] V2.4.2-20 同 task 不同 target 直发网关：400 EXECUTION_IDENTITY_MISMATCH（不转发）；target 一致时放行
+- [PASS] V2.4.2-21 capabilities 图像块暴露 capability_version 与契约版本（身份冻结数据源）
+- [PASS] V2.4.2-15 零意外 console error / page error（预期内的 504 与刷新中断除外）
+- [PASS] V2.4.2-16 正式入口自检仍全过（V2.4.2 不破坏既有入口）
+- [PASS] V2.4.2-22 可分享配置导出契约（Node）：只含白名单字段、secret 混入被拒
+
+BOUNDARY
+证明「一次生成」在真实浏览器与真实 HTTP 上可核对：发起提交之前先把 pending_submit 身份写进 IndexedDB（服务端已收到请求时记录已在库里），双击与重入只产生一条 Attempt；提交信封按网关四类归口推进状态，task id / request id / 错误语义原样保存；核对只按已保存的 task id 查询，服务端重启（无任务表）后结论不变；没有 task id 的 Unknown 不允许自动重提，界面只提供显式新建 action，且旧记录逐字保留；刷新打断提交时 pending 身份仍在、不产生第二次提交；Prompt 前进后旧 Attempt 标「基于旧版本 v1」且记录零改写。请求体里的 Prompt 文本、参考图与尺寸与记录和页面一致。V2.R4.4：pending_submit 起就冻结执行身份（协议/能力版本/凭据引用，无 secret），提交与核对请求都按冻结身份带 target；环境身份漂移（provider 换目标）阻塞核对——不发请求、记录零改写、给恢复条件，环境恢复后同 task 按原身份核对成功；直发网关对 target 不符返回 400 EXECUTION_IDENTITY_MISMATCH，target 一致放行；capabilities 暴露 capability_version 作为冻结数据源；可分享配置导出（不含 secret、凭据声明为重新提供）契约在 Node 套件全过。本批不保存候选字节（V2.4.4）、不做整套批量与部分失败（V2.4.3）、不做审核与返工（Phase 5）；全程 0 次真实模型调用、0 次外部网络；图像 provider 是注入的假替身，只证明身份与状态机，不证明真实出图质量。

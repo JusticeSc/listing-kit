@@ -1,0 +1,503 @@
+{
+  "control": "NOT-AUTHORITY",
+  "stamp": "20261003-105608",
+  "label": "r52-helper-fix",
+  "status": "passed",
+  "failed_ids": [],
+  "checks": [
+    {
+      "id": "R52-00",
+      "title": "domain / generation / workspace / harness node --check 全过",
+      "ok": true,
+      "detail": {
+        "failed": []
+      }
+    },
+    {
+      "id": "R52-01",
+      "title": "node --test 镜像域套件：除预存 C09 外全过（基准失败点名，不许靠重跑掩盖）",
+      "ok": true,
+      "detail": {
+        "rc": 1,
+        "tail": [
+          "✖ C09 :: 批次候选投影：已成功未保存 → succeeded_unstored + fetch_queue + 下一步 fetch；保存后回到 done (2.3951ms)",
+          "ℹ pass 222",
+          "ℹ fail 1",
+          "✖ failing tests:",
+          "✖ C09 :: 批次候选投影：已成功未保存 → succeeded_unstored + fetch_queue + 下一步 fetch；保存后回到 done (2.3951ms)"
+        ]
+      }
+    },
+    {
+      "id": "R52-U01",
+      "title": "能力档常量：capability_version=3、契约 v2.4.1",
+      "ok": true,
+      "detail": {
+        "capability": 3
+      }
+    },
+    {
+      "id": "R52-U02",
+      "title": "提交成功：一次调用 + 请求形状（model/size/b64_json/png/watermark）",
+      "ok": true,
+      "detail": {
+        "calls": 1,
+        "prompt_head": "参考图主图，白色背景，产品居中。"
+      }
+    },
+    {
+      "id": "R52-U03",
+      "title": "成功结果：SUCCEEDED + task_id=null + 原样字节 + request_id",
+      "ok": true,
+      "detail": {
+        "request_id": "req-ark-fixed",
+        "sync_bytes": 74
+      }
+    },
+    {
+      "id": "R52-U04",
+      "title": "网关 dict 视图：task_id=null + sync=true，字节不进 dict",
+      "ok": true,
+      "detail": {
+        "provider": {
+          "provider_id": "volcengine-ark",
+          "model_id": "doubao-seedream-5-0-flash-260915"
+        },
+        "task_id": null,
+        "status": "SUCCEEDED",
+        "result_count": 1,
+        "error": null,
+        "request_id": "req-ark-fixed",
+        "unknown": false,
+        "sync": true
+      }
+    },
+    {
+      "id": "R52-U05",
+      "title": "能力块：sync_tasks=true、async_tasks=false、test_double=false",
+      "ok": true,
+      "detail": {
+        "contract": "v2.4.1",
+        "reference_images": true,
+        "max_reference_images": 3,
+        "async_tasks": false,
+        "sync_tasks": true,
+        "n_per_submit": 1,
+        "prompt_extend": false,
+        "watermark": false,
+        "stateless": true,
+        "test_double": false,
+        "size": "1344*1344",
+        "credential_source": "test_double"
+      }
+    },
+    {
+      "id": "R52-U06",
+      "title": "429 → provider_failed / UPSTREAM_RATE_LIMITED / retryable",
+      "ok": true,
+      "detail": {
+        "code": "UPSTREAM_RATE_LIMITED"
+      }
+    },
+    {
+      "id": "R52-U07",
+      "title": "欠费 → UPSTREAM_ACCOUNT_ARREARS（provider_failed）",
+      "ok": true,
+      "detail": {
+        "code": "UPSTREAM_ACCOUNT_ARREARS"
+      }
+    },
+    {
+      "id": "R52-U08",
+      "title": "4xx 非欠费 → UPSTREAM_REJECTED / fatal",
+      "ok": true,
+      "detail": {
+        "code": "UPSTREAM_REJECTED"
+      }
+    },
+    {
+      "id": "R52-U09",
+      "title": "5xx → provider_unknown / requires_review（不自动重提）",
+      "ok": true,
+      "detail": {
+        "code": "UPSTREAM_OUTCOME_UNKNOWN"
+      }
+    },
+    {
+      "id": "R52-U10",
+      "title": "超时 → provider_unknown（结果无法确认，显式新建 action）",
+      "ok": true,
+      "detail": {
+        "code": "PROVIDER_OUTCOME_UNKNOWN"
+      }
+    },
+    {
+      "id": "R52-U11",
+      "title": "空数据 → provider_failed / UPSTREAM_EMPTY_RESULT",
+      "ok": true,
+      "detail": {
+        "code": "UPSTREAM_EMPTY_RESULT"
+      }
+    },
+    {
+      "id": "R52-U12",
+      "title": "非 PNG → RESULT_IMAGE_INVALID（不伪造媒体类型）",
+      "ok": true,
+      "detail": {
+        "code": "RESULT_IMAGE_INVALID"
+      }
+    },
+    {
+      "id": "R52-U13",
+      "title": "status → SYNC_TASK_ID_REQUIRED（拒绝按假 task 核对）",
+      "ok": true,
+      "detail": {
+        "code": "SYNC_TASK_ID_REQUIRED"
+      }
+    },
+    {
+      "id": "R52-U14",
+      "title": "result → SYNC_TASK_ID_REQUIRED（拒绝按假 task 重取）",
+      "ok": true,
+      "detail": {
+        "code": "SYNC_TASK_ID_REQUIRED"
+      }
+    },
+    {
+      "id": "R52-U15",
+      "title": "默认档关闭 → fail-closed PROVIDER_NOT_CONFIGURED（不外呼）",
+      "ok": true,
+      "detail": {
+        "code": "PROVIDER_NOT_CONFIGURED"
+      }
+    },
+    {
+      "id": "R52-U16",
+      "title": "出站白名单收窄 → OUTBOUND_POLICY_REJECTED（不外呼）",
+      "ok": true,
+      "detail": {
+        "code": "OUTBOUND_POLICY_REJECTED"
+      }
+    },
+    {
+      "id": "R52-U17",
+      "title": "BYOK：credential_source 变 byok 且密钥生效",
+      "ok": true,
+      "detail": {
+        "source": "byok"
+      }
+    },
+    {
+      "id": "R52-U18",
+      "title": "注册表：volcengine-ark 同步协议 entry 完整",
+      "ok": true,
+      "detail": {
+        "reference_images": true,
+        "max_reference_images": 3,
+        "async_tasks": false,
+        "sync_tasks": true,
+        "stateless": true,
+        "test_double": false
+      }
+    },
+    {
+      "id": "R52-U19",
+      "title": "注册表装配（默认档 open）→ configured / source=default",
+      "ok": true,
+      "detail": {
+        "source": "default"
+      }
+    },
+    {
+      "id": "R52-U20",
+      "title": "默认档 closed → fail-closed（source=none）",
+      "ok": true,
+      "detail": {
+        "source": "none"
+      }
+    },
+    {
+      "id": "R52-G01",
+      "title": "capabilities 暴露火山目标与能力版本 3",
+      "ok": true,
+      "detail": {
+        "provider": {
+          "provider_id": "volcengine-ark",
+          "model_id": "doubao-seedream-5-0-flash-260915",
+          "capability_version": 3,
+          "configured": true,
+          "credential_source": "test_double",
+          "capabilities": {
+            "contract": "v2.4.1",
+            "reference_images": true,
+            "max_reference_images": 3,
+            "async_tasks": false,
+            "sync_tasks": true,
+            "n_per_submit": 1,
+            "prompt_extend": false,
+            "watermark": false,
+            "stateless": true,
+            "test_double": false,
+            "size": "1344*1344",
+            "credential_source": "test_double"
+          }
+        }
+      }
+    },
+    {
+      "id": "R52-G02",
+      "title": "能力块 sync_tasks 标志出现在 provider capabilities",
+      "ok": true,
+      "detail": {
+        "contract": "v2.4.1",
+        "reference_images": true,
+        "max_reference_images": 3,
+        "async_tasks": false,
+        "sync_tasks": true,
+        "n_per_submit": 1,
+        "prompt_extend": false,
+        "watermark": false,
+        "stateless": true,
+        "test_double": false,
+        "size": "1344*1344",
+        "credential_source": "test_double"
+      }
+    },
+    {
+      "id": "R52-G03",
+      "title": "提交 200；信封 task_id=null + sync=true + 媒体类型正确",
+      "ok": true,
+      "detail": {
+        "task": {
+          "provider": {
+            "provider_id": "volcengine-ark",
+            "model_id": "doubao-seedream-5-0-flash-260915"
+          },
+          "task_id": null,
+          "status": "SUCCEEDED",
+          "result_count": 1,
+          "error": null,
+          "request_id": "req-ark-gateway",
+          "unknown": false,
+          "sync": true
+        }
+      }
+    },
+    {
+      "id": "R52-G04",
+      "title": "字节复核：image_base64 解码后 sha256 与 image_sha256 一致",
+      "ok": true,
+      "detail": {
+        "sha": "92a2334e03e0fa6a3e6c21b97c354ac60828773960aacc025ee4d61884c2456b"
+      }
+    },
+    {
+      "id": "R52-G05",
+      "title": "transport 恰好一次调用（同步协议没有后续 status/result 外呼）",
+      "ok": true,
+      "detail": {
+        "calls": 1
+      }
+    },
+    {
+      "id": "R52-G06",
+      "title": "status 路由对同步协议 → provider_unknown / SYNC_TASK_ID_REQUIRED",
+      "ok": true,
+      "detail": {
+        "status": 504,
+        "calls": 1
+      }
+    },
+    {
+      "id": "R52-G07",
+      "title": "能力版本漂移冻结身份：400 EXECUTION_IDENTITY_MISMATCH 且不转发",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "calls": 1
+      }
+    },
+    {
+      "id": "R52-G08",
+      "title": "非法协议 target → 400 input_rejected（不进入外呼）",
+      "ok": true,
+      "detail": {
+        "status": 400
+      }
+    },
+    {
+      "id": "R52-02",
+      "title": "A01–A19 契约套件全过（含 A19 同步协议合同）",
+      "ok": true,
+      "detail": {
+        "status": "passed",
+        "missing": [],
+        "failed": []
+      }
+    },
+    {
+      "id": "R52-03",
+      "title": "既有契约套件回归：确认单 / Prompt 编辑 / 套图编辑器全过",
+      "ok": true,
+      "detail": {
+        "confirm": {
+          "status": "passed",
+          "failed": []
+        },
+        "prompt_edit": {
+          "status": "passed",
+          "failed": []
+        },
+        "suite_editor": {
+          "status": "passed",
+          "failed": []
+        }
+      }
+    },
+    {
+      "id": "R52-E01",
+      "title": "同步批次：恰好 4 次 transport 提交、0 次 status 外呼",
+      "ok": true,
+      "detail": {
+        "calls": [
+          "https://ark.cn-beijing.volces.com/api/v3/images/generations",
+          "https://ark.cn-beijing.volces.com/api/v3/images/generations",
+          "https://ark.cn-beijing.volces.com/api/v3/images/generations",
+          "https://ark.cn-beijing.volces.com/api/v3/images/generations"
+        ]
+      }
+    },
+    {
+      "id": "R52-E02",
+      "title": "4 张图全部 succeeded 且 task_id=null、sync 身份冻结",
+      "ok": true,
+      "detail": [
+        {
+          "state": "succeeded",
+          "task_id": null,
+          "sync": true
+        },
+        {
+          "state": "succeeded",
+          "task_id": null,
+          "sync": true
+        },
+        {
+          "state": "succeeded",
+          "task_id": null,
+          "sync": true
+        },
+        {
+          "state": "succeeded",
+          "task_id": null,
+          "sync": true
+        }
+      ]
+    },
+    {
+      "id": "R52-E03",
+      "title": "每张图候选入库；asset sha256 与 transport 字节一致",
+      "ok": true,
+      "detail": {
+        "candidates": {
+          "shot_detail_material": 1,
+          "shot_infographic_benefits": 1,
+          "shot_main_clean": 1,
+          "shot_scene_lifestyle": 1
+        },
+        "asset_shas": 1
+      }
+    },
+    {
+      "id": "R52-E04",
+      "title": "UI 行显示候选已保存（真实字节预览口径）",
+      "ok": true,
+      "detail": [
+        {
+          "shot_id": "shot_main_clean",
+          "state": "succeeded",
+          "candidate_text": "候选已保存到本地 · 48×48 · image/png · 1 KB（预览来自本地字节）"
+        },
+        {
+          "shot_id": "shot_infographic_benefits",
+          "state": "succeeded",
+          "candidate_text": "候选已保存到本地 · 48×48 · image/png · 1 KB（预览来自本地字节）"
+        },
+        {
+          "shot_id": "shot_scene_lifestyle",
+          "state": "succeeded",
+          "candidate_text": "候选已保存到本地 · 48×48 · image/png · 1 KB（预览来自本地字节）"
+        },
+        {
+          "shot_id": "shot_detail_material",
+          "state": "succeeded",
+          "candidate_text": "候选已保存到本地 · 48×48 · image/png · 1 KB（预览来自本地字节）"
+        }
+      ]
+    },
+    {
+      "id": "R52-E05",
+      "title": "刷新后：4 条 succeeded 记录 + 候选仍在（IndexedDB 权威）",
+      "ok": true,
+      "detail": {
+        "candidates": {
+          "shot_detail_material": 1,
+          "shot_infographic_benefits": 1,
+          "shot_main_clean": 1,
+          "shot_scene_lifestyle": 1
+        }
+      }
+    },
+    {
+      "id": "R52-E06",
+      "title": "显式新建 action：又走同步协议成功（task_id=null）",
+      "ok": true,
+      "detail": {
+        "action": "act-ddb86e9d77c64b4293c4934a5b5f0210",
+        "calls": 5
+      }
+    },
+    {
+      "id": "R52-E07",
+      "title": "fresh module 缺字节 → sync_bytes_missing（显式补救，不假成功）",
+      "ok": true,
+      "detail": {
+        "failed": true,
+        "reason": "sync_bytes_missing",
+        "message": "同步结果是一次性字节，页面刷新后不再可取；人工核对现有结论后，显式新建 action 重新生成。"
+      }
+    },
+    {
+      "id": "R52-E08",
+      "title": "结束后 transport 总调用数恰为 5（4 批次 + 1 显式新建）",
+      "ok": true,
+      "detail": {
+        "calls": 5
+      }
+    },
+    {
+      "id": "R52-98",
+      "title": "正式入口 --check 全过",
+      "ok": true,
+      "detail": {
+        "rc": 0,
+        "stdout": "t_double', 'capabilities': {'provider_id': 'fake-suite-review', 'model_id': 'fake-qwen-vl-max', 'suite_review_contract': 'v2.5.5', 'max_images': 8, 'reference_images': True, 'structured_output': 'local', 'stateless': True, 'test_double': True, 'credential_source': 'test_double', 'scenario': 'ok'}}\n  PASS  整套复核路由（fake provider）只给送审集合内提示且不含严重度/采纳结论                 status=200 findings=0\n  PASS  整套复核图片哈希与字节不一致 → input_rejected/400（不调用模型）                status=400 error={'family': 'input_rejected', 'code': 'INPUT_INVALID', 'message': '第 2 张图（shot_b）的 sha256 与收到的字节不一致；拒绝把身份不明的图片送模型。', 'retry_policy': 'fatal', 'http_status': None, 'request_id': None, 'details': {'problems': [{'path': '$'}]}}\n  PASS  复核图片哈希与字节不一致 → input_rejected/400（不调用模型）                  status=400 error={'family': 'input_rejected', 'code': 'INPUT_INVALID', 'message': '候选图的 sha256 与收到的字节不一致；拒绝把身份不明的图片送模型。', 'retry_policy': 'fatal', 'http_status': None, 'request_id': None, 'details': {'problems': [{'path': '$'}]}}\n  PASS  复核 provider 不可用时 capabilities 仍 200 且 configured=false    review={'kind': 'dependency', 'detail': 'RuntimeError: 自检：复核 provider 构造失败'}\n  PASS  复核 provider 不可用时复核路由 503 且错误分类明确                          status=503 error={'family': 'internal', 'code': 'PROVIDER_NOT_CONFIGURED', 'message': '语义 provider 不可用：检查注册表、依赖与 DASHSCOPE_API_KEY。', 'retry_policy': 'fatal', 'http_status': 503, 'request_id': None, 'details': {'kind': 'dependency', 'detail': 'RuntimeError: 自检：复核 provider 构造失败'}}\n  PASS  整套复核 provider 不可用时 capabilities 仍 200 且 configured=false  suite_review={'kind': 'dependency', 'detail': 'RuntimeError: 自检：整套复核 provider 构造失败'}\n  PASS  整套复核 provider 不可用时路由 503 且错误分类明确                          status=503 error={'family': 'internal', 'code': 'PROVIDER_NOT_CONFIGURED', 'message': '语义 provider 不可用：检查注册表、依赖与 DASHSCOPE_API_KEY。', 'retry_policy': 'fatal', 'http_status': 503, 'request_id': None, 'details': {'kind': 'dependency', 'detail': 'RuntimeError: 自检：整套复核 provider 构造失败'}}\nV2 正式入口自检：38/38 通过。\n",
+        "stderr": ""
+      }
+    },
+    {
+      "id": "R52-99",
+      "title": "零 console error / page error",
+      "ok": true,
+      "detail": {
+        "console": [],
+        "pages": []
+      }
+    }
+  ],
+  "screenshots": [
+    "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\evals\\product-v2\\PRODUCT-V2-R5.2-batch-20261003-105619.png",
+    "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\evals\\product-v2\\PRODUCT-V2-R5.2-refresh-20261003-105621.png"
+  ],
+  "network": "offline-transport-only; 0 real model calls"
+}

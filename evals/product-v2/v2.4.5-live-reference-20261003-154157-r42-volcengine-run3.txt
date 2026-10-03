@@ -1,0 +1,17 @@
+amz-listing-kit Product V2 V2.4.5 真实参考图最小闭环（真实 volcengine seedream 调用）
+NOT-AUTHORITY: point-in-time verification evidence only
+observed_at: 2026-10-03T15:42:23
+status: passed
+image_submit_requests: 1 · image_status_requests: 0 · image_result_requests: 0
+reference: _working/amz-listing-kit-product-v2/walkthrough-assets/food/honey-jar-antique.jpg sha256 c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461
+json: evals/product-v2/v2.4.5-live-reference-20261003-154157-r42-volcengine-run3.json
+
+CHECKS
+- [PASS] V2.4.5-01 图像 provider 是真实 volcengine-ark 且 configured=true（fake-image 切替不算）
+- [PASS] V2.4.5-02 本次只提交一次，且请求携带真实参考图（含 sha256）与非空 Prompt
+- [PASS] V2.4.5-03 同步提交一步到终态 succeeded，task_id 为空且 status 零外呼（伪造 task 算失败）
+- [PASS] V2.4.5-04 候选非 Mock：同步信封字节入库、sha 双边一致（记录 = 本机重算）、尺寸等于请求尺寸、浏览器可预览
+- [PASS] V2.4.5-05 零意外 console error / page error
+
+BOUNDARY
+证明一笔预算内的真实参考图闭环：图像 provider 是 volcengine-ark（configured=true），一次真实同步 submit 携带真实商品参考图（sha256 c024b7cf2b04…，2239735 字节）与非空 Prompt；提交信封一步到 succeeded，task_id 为空且 status 零外呼；结果字节由提交信封一次性取回并存成浏览器 IndexedDB 里的 Blob，sha256 双边一致（候选记录 = 本机重算），尺寸等于请求尺寸。语义槽位由验证器直接播种（0 次语义调用），所以本证据不证明商品理解质量、出图审美质量、跨品类通用性、审核与返工（Phase 5）。

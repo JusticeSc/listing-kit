@@ -1,0 +1,25 @@
+{
+  "schema": "amz-selection-authorization/v1",
+  "source": "user-ask-selection",
+  "question_id": "frontend_checker",
+  "selection": "批准开发期检查器",
+  "approved": {
+    "package": "typescript",
+    "version": "6.0.3",
+    "scope": "repository-root-devDependency",
+    "lock": "package-lock.json",
+    "install_scripts": false,
+    "type_check": "JSDoc/checkJs/noEmit",
+    "behavior_runner": "existing-node-native-test",
+    "dependency_guard_and_ci": true
+  },
+  "not_authorized": [
+    "other-new-dependencies",
+    "framework-or-production-build",
+    "paid-model-calls",
+    "private-material-uploads",
+    "git-commit-or-push",
+    "deployment",
+    "v1-deletion"
+  ]
+}

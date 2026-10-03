@@ -1,0 +1,56 @@
+{
+  "task": "V2.4.5",
+  "suite_id": "v2.4.5-live-reference",
+  "status": "failed",
+  "finished_at": "2026-10-03T15:38:08",
+  "reference": {
+    "path": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\_working\\amz-listing-kit-product-v2\\walkthrough-assets\\food\\honey-jar-antique.jpg",
+    "sha256": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461",
+    "byte_size": 2239735
+  },
+  "model_calls": 1,
+  "image_submit_requests": 1,
+  "image_status_requests": 0,
+  "image_result_requests": 0,
+  "checks": [
+    {
+      "id": "V2.4.5-01",
+      "title": "图像 provider 是真实 volcengine-ark 且 configured=true（fake-image 切替不算）",
+      "ok": true,
+      "detail": {
+        "provider": "图像 provider：volcengine-ark · doubao-seedream-5-0-flash-260915 · 已配置"
+      }
+    },
+    {
+      "id": "V2.4.5-99",
+      "title": "真实闭环在完成前中断（记录保持原样，不自动重提）",
+      "ok": false,
+      "detail": "AssertionError: Locator expected to have attribute 'submitted'\nActual value: unknown \nCall log:\n  - Expect \"to_have_attribute\" locator(\"#attempt-list .attempt-row[data-shot-id=\\\"shot_main_clean\\\"]\") with timeout 30000ms\n  - waiting for locator(\"#attempt-list .attempt-row[data-shot-id=\\\"shot_main_clean\\\"]\")\n    2 × locator resolved to <div tabindex=\"-1\" class=\"attempt-row\" data-attempt-state=\"none\" data-shot-id=\"shot_main_clean\">…</div>\n      - unexpected value \"none\"\n    - locator resolved to <div tabindex=\"-1\" class=\"attempt-row\" data-shot-id=\"shot_main_clean\" data-attempt-state=\"pending_submit\">…</div>\n    - unexpected value \"pending_submit\"\n    59 × locator resolved to <div tabindex=\"-1\" class=\"attempt-row\" data-attempt-state=\"unknown\" data-shot-id=\"shot_main_clean\">…</div>\n       - unexpected value \"unknown\"\n\nAria snapshot:\n- text: 主图·干净背景 结果未知，需要核对 Prompt v1\n- group: 技术详情 ▾\n- paragraph: 提交 2026/10/3 15:37:38 · 更新 2026/10/3 15:37:38\n- group: 技术详情 ▾\n- paragraph: 最近一次变化：服务端没有给出结论\n- paragraph: 未知原因：provider_unknown / INTERNAL_ERROR：服务器内部错误；没有产生可用的分析结果。（重试策略 requires_review）\n- paragraph: 这次提交没有留下任务编号（可能已到达上游）。系统不会自动重提；可以显式新建 action，或先核对（若已有编号）。\n- button \"新建 action（放弃核对）\"\n- group: 历史 2 次提交（只追加，不覆盖）"
+    },
+    {
+      "id": "V2.4.5-05",
+      "title": "零意外 console error / page error",
+      "ok": false,
+      "detail": {
+        "console": [
+          "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+        ],
+        "unexpected": [
+          "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+        ],
+        "page": []
+      }
+    }
+  ],
+  "ui_flow": {
+    "provider": "图像 provider：volcengine-ark · doubao-seedream-5-0-flash-260915 · 已配置",
+    "image_provider_id": "volcengine-ark",
+    "target_shot": "shot_main_clean"
+  },
+  "console_errors": [
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+  ],
+  "page_errors": [],
+  "screenshots": [],
+  "boundary": "证明一笔预算内的真实参考图闭环：图像 provider 是 volcengine-ark（configured=true），一次真实同步 submit 携带真实商品参考图（sha256 c024b7cf2b04…，2239735 字节）与非空 Prompt；提交信封一步到 succeeded，task_id 为空且 status 零外呼；结果字节由提交信封一次性取回并存成浏览器 IndexedDB 里的 Blob，sha256 双边一致（候选记录 = 本机重算），尺寸等于请求尺寸。语义槽位由验证器直接播种（0 次语义调用），所以本证据不证明商品理解质量、出图审美质量、跨品类通用性、审核与返工（Phase 5）。"
+}

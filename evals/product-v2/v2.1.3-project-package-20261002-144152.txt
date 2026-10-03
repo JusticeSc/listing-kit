@@ -1,0 +1,26 @@
+amz-listing-kit Product V2 V2.1.3 project package contract
+NOT-AUTHORITY: point-in-time verification evidence only
+observed_at: 2026-10-02T14:41:56
+status: passed
+json: evals/product-v2/v2.1.3-project-package-20261002-144152.json
+
+CHECKS
+- [PASS] V2.1.3-00 storage 模块与 app.js 通过 node --check
+- [PASS] V2.1.3-01 包契约套件全部通过且用例清单完整
+- [PASS] V2.1.3-02 界面导出产生下载文件且给出结果提示
+- [PASS] V2.1.3-03 导出包是标准 ZIP：CRC 全过、manifest 与资产哈希一致
+- [PASS] V2.1.3-04 清空状态后导入：业务记录、文档与资产哈希与导出前一致
+- [PASS] V2.1.3-05 重复导入分配新 project_id，两份内容一致且互不覆盖
+- [PASS] V2.1.3-06 损坏包被拒绝：界面报错且项目数量不变
+- [PASS] V2.1.3-07 全程无 console error / page error
+
+SUITE CASES
+- [PASS] Z04 项目包往返：文档版本与资产哈希一致
+- [PASS] Z05 篡改资产内容：PACKAGE_HASH_MISMATCH
+- [PASS] Z06 包版本高于代码支持：PACKAGE_UNSUPPORTED_VERSION
+- [PASS] Z07 导入到空库：同 id 恢复；重复导入自动分配新 id
+- [PASS] Z08 导入中途失败：整笔事务回滚，目标库不留残留
+- [PASS] Z09 导出→清空→导入：文档载荷与资产字节逐字节一致
+
+BOUNDARY
+证明完整项目包的导出与导入：标准 ZIP、CRC/哈希校验、清空浏览器状态后逐项一致、重复导入 id 冲突处理、损坏包拒绝且不污染数据、导入事务回滚。不证明交付包（导出 ZIP）、正式入口、商品资料之后的业务链与首次使用者可用性。

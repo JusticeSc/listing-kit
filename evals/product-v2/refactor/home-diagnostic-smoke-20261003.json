@@ -1,0 +1,18 @@
+{
+  "not_authority": "controlled post-click reload exercises verifier failure capture; not product regression failure or historical root cause",
+  "exit_code": 0,
+  "capture": "evals/product-v2/v2.1.4-failure-20261003-025348-profile-reopened-back-home.json",
+  "injection_source": "import sys\nsys.path.insert(0, 'tools')\nimport verify_v2_1_4_formal_entry as entry\nfrom playwright.sync_api import Page\noriginal = Page.click\nclicks = 0\ndef click(self, selector, **kwargs):\n  global clicks\n  result = original(self, selector, **kwargs)\n  if selector == '#back-home':\n    clicks += 1\n    if clicks == 2:\n      self.reload(wait_until='networkidle')\n  return result\nPage.click = click\ntry:\n  entry.main()\nexcept AssertionError:\n  print('EXPECTED_DIAGNOSTIC_FAILURE_CAPTURED')\nelse:\n  raise AssertionError('controlled reload did not reach diagnostic path')\n",
+  "stage": "profile-reopened-back-home",
+  "db_counts": {
+    "projects": 1,
+    "documents": 1,
+    "assets": 1
+  },
+  "source_sha256": {
+    "app/product_v2/app.js": "d239d659f8b16d9e68419e813dace0a4d62dd3573f28f775eabce581830d381c",
+    "app/product_v2/session.js": "81aff815a92d9dc667a94810f7dfd678b9b838b658f672976f29372bcb213e22",
+    "app/product_v2/storage/repository.js": "c18f3095d6647f64d07474769e46f615e7fd0441118c9fd0799b0584119f5656"
+  },
+  "earlier_injection_attempt": "init-script fault did not trigger; excluded from capture proof"
+}

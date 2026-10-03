@@ -1,0 +1,19 @@
+amz-listing-kit Product V2 V2.5.1 生成前、单图与导出的确定性验证器
+NOT-AUTHORITY: point-in-time verification evidence only
+observed_at: 2026-10-03T12:29:46
+status: passed
+model_calls: 0 · external_network_calls: 0 (fake providers + 本机服务)
+json: evals/product-v2/v2.5.1-deterministic-review-20261003-122935.json
+
+CHECKS
+- [PASS] V2.5.1-00 domain / workspace / harness 通过 node --check（ESM 语法门）
+- [PASS] V2.5.1-01 R11 宿主案例全过且清单齐全（R01..R10/R12/R13 在 npm run test:domain）
+- [PASS] V2.5.1-02 R11 反向探针确实执行（哈希篡改/缺失阻断/缺 digest 注入抛错）
+- [PASS] V2.5.1-02b 既有契约套件回归全过（candidate / attempt / batch / confirm / prompt_edit / suite_editor）
+- [PASS] V2.5.1-03 候选保存后自动生成当前 ReviewReport（绑定身份 + 合同 v2.5.2），界面出现摘要行
+- [PASS] V2.5.1-04 刷新后报告与摘要仍在、候选链不变、review_report 文档不重复铺
+- [PASS] V2.5.1-05 零意外 console error / page error
+- [PASS] V2.5.1-06 正式入口自检仍全过（本批不破坏既有入口）
+
+BOUNDARY
+证明确定性验证器在真实浏览器上按规则版本工作：注册表对缺要素/重复 id/未知词表/无任务锚点的消费者/未被认领的确认单代码直接报错；单图检查只做可复现测量——PNG 合同、记录一致性、最小长边 1000px（阻断）、推荐 1600px、主图 1:1、透明通道（HIGH_RISK 人工确认）、像素位深；测量失败一律降为 UNKNOWN 且不阻断；生成前阻塞项从确认单一对一映射为 BLOCK、提示项映射为 WARNING；导出就绪检查覆盖选择完整性、报告当前性、报告无 BLOCK、选择链一致性与 WebCrypto sha256 复算。候选保存时自动生成绑定 candidate_id + review_contract_version + asset_sha256 的 ReviewReport 并投影到工作台摘要行，刷新后保留且不重复铺。本批不做 VLM 审核、比较界面与返工（V2.5.2+）；0 次真实模型调用、0 次外部网络；图像与语义 provider 都是注入的假替身，只证明确定性校验语义，不证明真实出图质量。

@@ -1,0 +1,14 @@
+{
+  "schema": "amz-owner-decision/v1",
+  "not_authority": "specific owner approval; not implementation or supplier evidence",
+  "observed_at": "2026-10-02T19:21:18.369Z",
+  "decisions": {
+    "storage_index": "批准索引改造",
+    "second_model_region": "大陆 Volcengine"
+  },
+  "scope": {
+    "storage": "Native latest/OCC head queries only; preserve full history, assets, transactions, data; no latest dual-write table or new dependency.",
+    "model": "Mainland candidate direction only. Paid calls/material upload/account/terms/credentials/budget still unauthorized."
+  },
+  "source": "functions.ask user answers in current conversation"
+}

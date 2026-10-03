@@ -1,0 +1,72 @@
+{
+  "schema": "amz-home-read-recovery/v1",
+  "not_authority": "controlled local path proof; historical intermittent trigger remains unknown",
+  "recorded_at": "2026-10-02T18:55:36.966Z",
+  "boot_preload": {
+    "ui_rows": 4,
+    "ready": "1"
+  },
+  "read_failure": {
+    "ui_rows": 4,
+    "empty_visible": false,
+    "error_text": "controlled-project-list-read-failure",
+    "retry_visible": true,
+    "unhandled": []
+  },
+  "keyboard_retry": {
+    "ui_rows": 4,
+    "busy": "false",
+    "unhandled": []
+  },
+  "slow_native_read": {
+    "started": {
+      "started": 149225.90000000596
+    },
+    "pending": {
+      "rows": 4,
+      "status_visible": true,
+      "busy": "true",
+      "empty_visible": false,
+      "hold_finished": null
+    }
+  },
+  "boot_failure_and_retry": {
+    "failure": {
+      "error": "controlled-boot-list-read-failure",
+      "create_disabled": true,
+      "retry_visible": true,
+      "unhandled": []
+    },
+    "recovered": {
+      "rows": 4,
+      "ready": "1",
+      "create_disabled": false,
+      "unhandled": []
+    }
+  },
+  "narrow": {
+    "inner_width": 390,
+    "scroll_width": 375,
+    "retry_visible": true,
+    "error": "controlled-narrow-home-read-failure",
+    "rows": 4
+  },
+  "screenshot": "evals/product-v2/refactor/home-read-error-390-20261003.png",
+  "regression_evidence": [
+    "evals/product-v2/v2.3.3-session-lifecycle-20261003-025221-home-read-recovery-shutdown.json",
+    "evals/product-v2/v2.1.4-formal-entry-20261003-024816-home-read-recovery.json",
+    "evals/product-v2/v2.1.2-project-home-20261003-024837-home-read-recovery.json"
+  ],
+  "domain_tests": {
+    "passed": 223,
+    "failed": 0
+  },
+  "diagnostic_capture": "evals/product-v2/refactor/home-diagnostic-smoke-20261003.json",
+  "source_sha256": {
+    "app/product_v2/app.js": "d239d659f8b16d9e68419e813dace0a4d62dd3573f28f775eabce581830d381c",
+    "app/product_v2/index.html": "8ddb6caf8f6b2b4480fdab84877df7db42b1f9b9566de4770219e3249cfc7930",
+    "tools/verify_v2_3_3_session_lifecycle.py": "c61c390ecf1abc85e3f579d39ef3abe44dd64914db3ff199a4d0fdfdfda7e68f",
+    "tools/verify_v2_1_4_formal_entry.py": "92bfb76def602bf7e3486d5b59007d84423ab321a221ef961167f77d8a1a5535"
+  },
+  "hash_definition": "SHA256 over complete physical bytes, not reader output"
+}

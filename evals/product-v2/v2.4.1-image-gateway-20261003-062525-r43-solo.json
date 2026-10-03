@@ -1,0 +1,734 @@
+{
+  "task": "V2.4.1",
+  "suite_id": "v2.4.1-image-gateway",
+  "status": "passed",
+  "finished_at": "2026-10-03T06:25:53",
+  "model_calls": 0,
+  "network_calls": 0,
+  "checks": [
+    {
+      "id": "V2.4.1-01",
+      "title": "capabilities 暴露图像网关：合同、端点、provider 与参考图能力",
+      "ok": true,
+      "detail": {
+        "provider": {
+          "provider_id": "fake-qwen-image",
+          "model_id": "qwen-image-3.0",
+          "configured": true,
+          "credential_source": null,
+          "capabilities": {
+            "contract": "v2.4.1",
+            "reference_images": true,
+            "max_reference_images": 3,
+            "async_tasks": true,
+            "n_per_submit": 1,
+            "prompt_extend": false,
+            "watermark": false,
+            "stateless": true,
+            "test_double": true,
+            "credential_source": "test_double",
+            "upstream_provider_id": "dashscope-qwen-image"
+          }
+        }
+      }
+    },
+    {
+      "id": "V2.4.1-02",
+      "title": "提交返回任务身份，且不把上游签名结果地址外发",
+      "ok": true,
+      "detail": {
+        "task": {
+          "provider": {
+            "provider_id": "fake-qwen-image",
+            "model_id": "qwen-image-3.0"
+          },
+          "task_id": "fake-ff0e2fbdfac00df8",
+          "status": "RUNNING",
+          "result_count": 0,
+          "error": null,
+          "request_id": null,
+          "unknown": false
+        }
+      }
+    },
+    {
+      "id": "V2.4.1-03",
+      "title": "取回结果不依赖先查询：PNG 字节与 hash / 身份响应头一致",
+      "ok": true,
+      "detail": {
+        "bytes": 179,
+        "sha": "494a111f5432"
+      }
+    },
+    {
+      "id": "V2.4.1-04",
+      "title": "查询返回权威状态与结果数量（仍然只有身份，没有地址）",
+      "ok": true,
+      "detail": {
+        "task": {
+          "provider": {
+            "provider_id": "fake-qwen-image",
+            "model_id": "qwen-image-3.0"
+          },
+          "task_id": "fake-ff0e2fbdfac00df8",
+          "status": "SUCCEEDED",
+          "result_count": 1,
+          "error": null,
+          "request_id": null,
+          "unknown": false
+        }
+      }
+    },
+    {
+      "id": "V2.4.1-05",
+      "title": "确定性：同一 action_id 两次提交得到同一任务身份",
+      "ok": true,
+      "detail": {
+        "task_id": "fake-ff0e2fbdfac00df8"
+      }
+    },
+    {
+      "id": "V2.4.1-06",
+      "title": "输入拒绝矩阵：十个非法提交全部 400 input_rejected 且 unknown=false",
+      "ok": true,
+      "detail": [
+        {
+          "probe": "目录字段",
+          "status": 400,
+          "family": "input_rejected",
+          "unknown": false,
+          "paths": [
+            "directory"
+          ]
+        },
+        {
+          "probe": "工作空间字段",
+          "status": 400,
+          "family": "input_rejected",
+          "unknown": false,
+          "paths": [
+            "workspace"
+          ]
+        },
+        {
+          "probe": "空白提示词",
+          "status": 400,
+          "family": "input_rejected",
+          "unknown": false,
+          "paths": [
+            "prompt"
+          ]
+        },
+        {
+          "probe": "零参考图",
+          "status": 400,
+          "family": "input_rejected",
+          "unknown": false,
+          "paths": [
+            "references"
+          ]
+        },
+        {
+          "probe": "四张参考图",
+          "status": 400,
+          "family": "input_rejected",
+          "unknown": false,
+          "paths": [
+            "references"
+          ]
+        },
+        {
+          "probe": "sha 与字节不符",
+          "status": 400,
+          "family": "input_rejected",
+          "unknown": false,
+          "paths": [
+            "references.0"
+          ]
+        },
+        {
+          "probe": "媒体类型不受支持",
+          "status": 400,
+          "family": "input_rejected",
+          "unknown": false,
+          "paths": [
+            "references.0.media_type"
+          ]
+        },
+        {
+          "probe": "超长提示词",
+          "status": 400,
+          "family": "input_rejected",
+          "unknown": false,
+          "paths": [
+            "prompt"
+          ]
+        },
+        {
+          "probe": "非法尺寸",
+          "status": 400,
+          "family": "input_rejected",
+          "unknown": false,
+          "paths": [
+            "size"
+          ]
+        },
+        {
+          "probe": "非法 action_id",
+          "status": 400,
+          "family": "input_rejected",
+          "unknown": false,
+          "paths": [
+            "action_id"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "V2.4.1-07",
+      "title": "目录 / 工作空间字段被拒，且哨兵目录未被读取或改写",
+      "ok": true,
+      "detail": {
+        "sentinel_dir": "C:\\Users\\31368\\AppData\\Local\\Temp\\amz-v241-tdfgquda",
+        "paths": [
+          "directory"
+        ]
+      }
+    },
+    {
+      "id": "V2.4.1-08",
+      "title": "超过图像提交字节上限的请求被拒（400 input_rejected，不调用上游）",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "bytes": 50331778,
+        "code": "INPUT_INVALID"
+      }
+    },
+    {
+      "id": "V2.4.1-25",
+      "title": "1MB 真实字节的参考图（base64≈1.4MB，真实商品图量级）提交被受理，不触字节上限",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "bytes": 1398349,
+        "task": "fake-234502e3e92f279c",
+        "error": null
+      }
+    },
+    {
+      "id": "V2.4.1-09",
+      "title": "提交未确认：504 + unknown=true + requires_review，且不伪造任务身份",
+      "ok": true,
+      "detail": {
+        "status": 504,
+        "error": {
+          "family": "provider_unknown",
+          "code": "PROVIDER_OUTCOME_UNKNOWN",
+          "message": "提交响应未能确认，服务端是否受理无法判断；先核对，不要自动重提。",
+          "retry_policy": "requires_review",
+          "http_status": null,
+          "request_id": null,
+          "details": {}
+        }
+      }
+    },
+    {
+      "id": "V2.4.1-10",
+      "title": "查询未确认：504 + unknown=true（不猜结果、不落失败）",
+      "ok": true,
+      "detail": {
+        "status": 504,
+        "error": {
+          "family": "provider_unknown",
+          "code": "PROVIDER_STATUS_UNKNOWN",
+          "message": "暂时无法确认这个任务的状态；请再次查询原任务，不要重新提交。",
+          "retry_policy": "requires_review",
+          "http_status": null,
+          "request_id": null,
+          "details": {}
+        }
+      }
+    },
+    {
+      "id": "V2.4.1-11",
+      "title": "上游明确失败是数据：200 + status=FAILED + 错误说明，仍不返回地址",
+      "ok": true,
+      "detail": {
+        "task": {
+          "provider": {
+            "provider_id": "fake-qwen-image",
+            "model_id": "qwen-image-3.0"
+          },
+          "task_id": "fake-1111111111111111",
+          "status": "FAILED",
+          "result_count": 0,
+          "error": "图像生成任务失败（错误码 FAKE_CONTENT_REJECTED）。",
+          "request_id": null,
+          "unknown": false
+        }
+      }
+    },
+    {
+      "id": "V2.4.1-12",
+      "title": "没有成功结果时取回被拒：502 + provider_failed(fatal)",
+      "ok": true,
+      "detail": {
+        "status": 502,
+        "error": {
+          "family": "provider_failed",
+          "code": "RESULT_NOT_AVAILABLE",
+          "message": "任务没有成功结果可下载。",
+          "retry_policy": "fatal",
+          "http_status": null,
+          "request_id": null,
+          "details": {}
+        }
+      }
+    },
+    {
+      "id": "V2.4.1-13",
+      "title": "结果下载失败可重试：502 + provider_failed(retryable)",
+      "ok": true,
+      "detail": {
+        "status": 502,
+        "error": {
+          "family": "provider_failed",
+          "code": "RESULT_DOWNLOAD_FAILED",
+          "message": "结果图片下载失败；没有产生可用的候选字节。",
+          "retry_policy": "retryable",
+          "http_status": null,
+          "request_id": null,
+          "details": {}
+        }
+      }
+    },
+    {
+      "id": "V2.4.1-14",
+      "title": "真实适配器提交形状：异步头、模型、参考图 data URL、参数与任务身份",
+      "ok": true,
+      "detail": {
+        "url": "https://dashscope.aliyuncs.com/api/v1/services/aigc/image-generation/generation",
+        "parameters": {
+          "size": "1344*1344",
+          "n": 1,
+          "prompt_extend": false,
+          "watermark": false,
+          "seed": 7
+        }
+      }
+    },
+    {
+      "id": "V2.4.1-15",
+      "title": "上游错误分类：401=fatal / 429 提交可重试 / 500 与超时=Unknown / 任务号不符=Unknown",
+      "ok": true,
+      "detail": {
+        "f401": {
+          "family": "provider_failed",
+          "code": "UPSTREAM_REJECTED",
+          "message": "百炼拒绝了任务查询请求（HTTP 401）（服务码 InvalidApiKey）。",
+          "retry_policy": "fatal",
+          "http_status": 401,
+          "request_id": null,
+          "details": {}
+        },
+        "f429": {
+          "family": "provider_failed",
+          "code": "UPSTREAM_RATE_LIMITED",
+          "message": "百炼暂时限流（HTTP 429）（服务码 Throttling）；这次提交没有被受理，稍后可重试这张图。",
+          "retry_policy": "retryable",
+          "http_status": 429,
+          "request_id": null,
+          "details": {}
+        },
+        "f500": {
+          "family": "provider_unknown",
+          "code": "UPSTREAM_OUTCOME_UNKNOWN",
+          "message": "任务查询响应异常（HTTP 500），远端结果无法确认。",
+          "retry_policy": "requires_review",
+          "http_status": 500,
+          "request_id": null,
+          "details": {}
+        },
+        "timeout": {
+          "family": "provider_unknown",
+          "code": "PROVIDER_OUTCOME_UNKNOWN",
+          "message": "任务查询的连接中断或超时，远端结果无法确认；先核对，不要自动重提。",
+          "retry_policy": "requires_review",
+          "http_status": null,
+          "request_id": null,
+          "details": {
+            "kind": "TimeoutError"
+          }
+        },
+        "mismatch": {
+          "family": "provider_unknown",
+          "code": "PROVIDER_TASK_MISMATCH",
+          "message": "查询响应里的任务编号与请求不一致；请核对原任务。",
+          "retry_policy": "requires_review",
+          "http_status": null,
+          "request_id": null,
+          "details": {}
+        }
+      }
+    },
+    {
+      "id": "V2.4.1-16",
+      "title": "非受信结果地址不下发下载请求（RESULT_URL_MISSING，只发生一次状态查询）",
+      "ok": true,
+      "detail": {
+        "calls": [
+          "https://dashscope.aliyuncs.com/api/v1/tasks/task-abc"
+        ]
+      }
+    },
+    {
+      "id": "V2.4.1-17",
+      "title": "结果取回：先查权威状态再下载受信地址，返回 PNG 字节",
+      "ok": true,
+      "detail": {
+        "calls": [
+          "https://dashscope.aliyuncs.com/api/v1/tasks/task-abc",
+          "https://dashscope-result.aliyuncs.com/task/a.png"
+        ]
+      }
+    },
+    {
+      "id": "V2.4.1-18",
+      "title": "非 PNG 结果进制失败（不做“就当它是图片”的宽容）",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "id": "V2.4.1-19",
+      "title": "未配置密钥：capabilities 仍 200，图像 provider configured=false",
+      "ok": true,
+      "detail": {
+        "provider": {
+          "provider_id": "dashscope-qwen-image",
+          "model_id": "qwen-image-3.0",
+          "configured": false,
+          "credential_source": "none",
+          "capabilities": {
+            "contract": "v2.4.1",
+            "reference_images": true,
+            "max_reference_images": 3,
+            "async_tasks": true,
+            "n_per_submit": 1,
+            "prompt_extend": false,
+            "watermark": false,
+            "stateless": true,
+            "test_double": false,
+            "size": "1344*1344",
+            "credential_source": "none"
+          }
+        }
+      }
+    },
+    {
+      "id": "V2.4.1-20",
+      "title": "未配置密钥时提交 503 PROVIDER_NOT_CONFIGURED（没有发图）",
+      "ok": true,
+      "detail": {
+        "status": 503,
+        "error": {
+          "family": "internal",
+          "code": "PROVIDER_NOT_CONFIGURED",
+          "message": "默认档密钥处于关闭状态（或未配置密钥）；部署侧显式打开默认档，或用 BYOK 请求头带上自己的密钥。没有调用图像模型。",
+          "retry_policy": "fatal",
+          "http_status": 503,
+          "request_id": null,
+          "details": {}
+        }
+      }
+    },
+    {
+      "id": "V2.4.1-21",
+      "title": "注册表选择：默认 dashscope-image、环境变量可切 fake-image，构造不联网",
+      "ok": true,
+      "detail": {
+        "default": "dashscope-image",
+        "env": "fake-image",
+        "real_model": "qwen-image-3.0"
+      }
+    },
+    {
+      "id": "V2.4.1-22",
+      "title": "正式入口自检全过（包含图像路由：提交/查询/取回/拒绝/未配置）",
+      "ok": true,
+      "detail": {
+        "args": [
+          "--check"
+        ],
+        "rc": 0,
+        "tail": [
+          "  PASS  整套复核路由（fake provider）只给送审集合内提示且不含严重度/采纳结论                 status=200 findings=0",
+          "  PASS  整套复核图片哈希与字节不一致 → input_rejected/400（不调用模型）                status=400 error={'family': 'input_rejected', 'code': 'INPUT_INVALID', 'message': '第 2 张图（shot_b）的 sha256 与收到的字节不一致；拒绝把身份不明的图片送模型。', 'retry_policy': 'fatal', 'http_status': None, 'request_id': None, 'details': {'problems': [{'path': '$'}]}}",
+          "  PASS  复核图片哈希与字节不一致 → input_rejected/400（不调用模型）                  status=400 error={'family': 'input_rejected', 'code': 'INPUT_INVALID', 'message': '候选图的 sha256 与收到的字节不一致；拒绝把身份不明的图片送模型。', 'retry_policy': 'fatal', 'http_status': None, 'request_id': None, 'details': {'problems': [{'path': '$'}]}}",
+          "  PASS  复核 provider 不可用时 capabilities 仍 200 且 configured=false    review={'kind': 'dependency', 'detail': 'RuntimeError: 自检：复核 provider 构造失败'}",
+          "  PASS  复核 provider 不可用时复核路由 503 且错误分类明确                          status=503 error={'family': 'internal', 'code': 'PROVIDER_NOT_CONFIGURED', 'message': '语义 provider 不可用：检查注册表、依赖与 DASHSCOPE_API_KEY。', 'retry_policy': 'fatal', 'http_status': 503, 'request_id': None, 'details': {'kind': 'dependency', 'detail': 'RuntimeError: 自检：复核 provider 构造失败'}}",
+          "  PASS  整套复核 provider 不可用时 capabilities 仍 200 且 configured=false  suite_review={'kind': 'dependency', 'detail': 'RuntimeError: 自检：整套复核 provider 构造失败'}",
+          "  PASS  整套复核 provider 不可用时路由 503 且错误分类明确                          status=503 error={'family': 'internal', 'code': 'PROVIDER_NOT_CONFIGURED', 'message': '语义 provider 不可用：检查注册表、依赖与 DASHSCOPE_API_KEY。', 'retry_policy': 'fatal', 'http_status': 503, 'request_id': None, 'details': {'kind': 'dependency', 'detail': 'RuntimeError: 自检：整套复核 provider 构造失败'}}",
+          "V2 正式入口自检：38/38 通过。"
+        ]
+      }
+    },
+    {
+      "id": "V2.4.1-24",
+      "title": "默认 HTTP 传输是函数也能工作（真实提交不再 AttributeError 变 500）",
+      "ok": true,
+      "detail": {
+        "task": {
+          "provider": {
+            "provider_id": "dashscope-qwen-image",
+            "model_id": "qwen-image-3.0"
+          },
+          "task_id": "task-default-transport",
+          "status": "RUNNING",
+          "result_count": 0,
+          "error": null,
+          "request_id": "req-default-1",
+          "unknown": false
+        },
+        "calls": 1
+      }
+    },
+    {
+      "id": "V2.4.1-26",
+      "title": "默认档开关解析：合法值双向、非法值必须抛错（fail-closed）",
+      "ok": true,
+      "detail": [
+        {
+          "case": {
+            "AMZ_V2_DEFAULT_TRIAL": "1"
+          },
+          "open": true
+        },
+        {
+          "case": {
+            "AMZ_V2_DEFAULT_TRIAL": "OPEN"
+          },
+          "open": true
+        },
+        {
+          "case": {
+            "AMZ_V2_DEFAULT_TRIAL": "closed"
+          },
+          "open": false
+        },
+        {
+          "case": {
+            "AMZ_V2_DEFAULT_TRIAL": "0"
+          },
+          "open": false
+        },
+        {
+          "case": {},
+          "open": false
+        }
+      ]
+    },
+    {
+      "id": "V2.4.1-27",
+      "title": "默认档开关在注册表构造生效：closed 时部署密钥不进适配器，open 恢复沿用",
+      "ok": true,
+      "detail": {
+        "blocked": {
+          "contract": "v2.4.1",
+          "reference_images": true,
+          "max_reference_images": 3,
+          "async_tasks": true,
+          "n_per_submit": 1,
+          "prompt_extend": false,
+          "watermark": false,
+          "stateless": true,
+          "test_double": false,
+          "size": "1344*1344",
+          "credential_source": "none"
+        },
+        "opened": {
+          "contract": "v2.4.1",
+          "reference_images": true,
+          "max_reference_images": 3,
+          "async_tasks": true,
+          "n_per_submit": 1,
+          "prompt_extend": false,
+          "watermark": false,
+          "stateless": true,
+          "test_double": false,
+          "size": "1344*1344",
+          "credential_source": "default"
+        }
+      }
+    },
+    {
+      "id": "V2.4.1-28",
+      "title": "出站白名单：八类非法目标全部在传输前拒绝（OUTBOUND_POLICY_REJECTED，0 次上游调用）",
+      "ok": true,
+      "detail": [
+        {
+          "probe": "非 https",
+          "blocked": true,
+          "code": "OUTBOUND_POLICY_REJECTED",
+          "status": 503,
+          "calls": 0
+        },
+        {
+          "probe": "非 443 端口",
+          "blocked": true,
+          "code": "OUTBOUND_POLICY_REJECTED",
+          "status": 503,
+          "calls": 0
+        },
+        {
+          "probe": "回环 IP",
+          "blocked": true,
+          "code": "OUTBOUND_POLICY_REJECTED",
+          "status": 503,
+          "calls": 0
+        },
+        {
+          "probe": "云元数据地址",
+          "blocked": true,
+          "code": "OUTBOUND_POLICY_REJECTED",
+          "status": 503,
+          "calls": 0
+        },
+        {
+          "probe": "私网 IPv6",
+          "blocked": true,
+          "code": "OUTBOUND_POLICY_REJECTED",
+          "status": 503,
+          "calls": 0
+        },
+        {
+          "probe": "URL 内嵌凭据",
+          "blocked": true,
+          "code": "OUTBOUND_POLICY_REJECTED",
+          "status": 503,
+          "calls": 0
+        },
+        {
+          "probe": "白名单外主机",
+          "blocked": true,
+          "code": "OUTBOUND_POLICY_REJECTED",
+          "status": 503,
+          "calls": 0
+        },
+        {
+          "probe": "后缀伪装",
+          "blocked": true,
+          "code": "OUTBOUND_POLICY_REJECTED",
+          "status": 503,
+          "calls": 0
+        }
+      ]
+    },
+    {
+      "id": "V2.4.1-29",
+      "title": "BYOK 请求头密钥随单次请求进入适配器 Authorization；响应里不回显",
+      "ok": true,
+      "detail": {
+        "auth": "Bearer byok-",
+        "status": 200
+      }
+    },
+    {
+      "id": "V2.4.1-30",
+      "title": "BYOK 密钥不出现在响应头、响应体或任何回显位置（status 路径二次校验）",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "headers": [
+          "cache-control",
+          "content-length",
+          "content-type",
+          "date",
+          "server",
+          "x-content-type-options"
+        ]
+      }
+    },
+    {
+      "id": "V2.4.1-31",
+      "title": "默认档关闭 + 部署密钥存在：capabilities 仍 200 且 configured=false，提交 503 且 0 次上游调用",
+      "ok": true,
+      "detail": {
+        "provider": {
+          "provider_id": "dashscope-qwen-image",
+          "model_id": "qwen-image-3.0",
+          "configured": false,
+          "credential_source": "none",
+          "capabilities": {
+            "contract": "v2.4.1",
+            "reference_images": true,
+            "max_reference_images": 3,
+            "async_tasks": true,
+            "n_per_submit": 1,
+            "prompt_extend": false,
+            "watermark": false,
+            "stateless": true,
+            "test_double": false,
+            "size": "1344*1344",
+            "credential_source": "none"
+          }
+        },
+        "submit": {
+          "status": 503,
+          "error": {
+            "family": "internal",
+            "code": "PROVIDER_NOT_CONFIGURED",
+            "message": "默认档密钥处于关闭状态（或未配置密钥）；部署侧显式打开默认档，或用 BYOK 请求头带上自己的密钥。没有调用图像模型。",
+            "retry_policy": "fatal",
+            "http_status": 503,
+            "request_id": null,
+            "details": {}
+          }
+        },
+        "calls": 0
+      }
+    },
+    {
+      "id": "V2.4.1-32",
+      "title": "BYOK 绕过默认档开关：部署密钥被关时 BYOK 仍可换入同一请求的适配器",
+      "ok": true,
+      "detail": {
+        "credential_source": "byok",
+        "api_key": "byok-owned-key-0002"
+      }
+    },
+    {
+      "id": "V2.4.1-33",
+      "title": "BYOK 边界：测试替身显式 no-op；空白 BYOK 头无论 provider 是谁都 400 BYOK_HEADER_INVALID",
+      "ok": true,
+      "detail": {
+        "fake_submit": 200,
+        "blank_submit": 400,
+        "error": {
+          "family": "input_rejected",
+          "code": "BYOK_HEADER_INVALID",
+          "message": "图像网关 BYOK 请求头为空或超出可用长度；这次请求没有调用模型。",
+          "retry_policy": "fatal",
+          "http_status": 400,
+          "request_id": null,
+          "details": {}
+        }
+      }
+    },
+    {
+      "id": "V2.4.1-23",
+      "title": "磁盘不变量：整轮前后仓库 manifest 零差异（服务不落任何用户状态）",
+      "ok": true,
+      "detail": {
+        "files": 8396,
+        "added": [],
+        "removed": [],
+        "changed": []
+      }
+    }
+  ],
+  "console_errors": [],
+  "page_errors": [],
+  "screenshots": [],
+  "boundary": "证明图像网关在真实 HTTP 上可用且无状态：提交只返回任务身份（provider 与 model 身份、task id、状态、结果数量、错误与 request id），签名结果地址只在进程内使用；查询与取回各自独立，取回结果不依赖先前是否查询过；输入里的目录/工作空间字段、参考图数量与内容、尺寸、提示词长度与请求体上限都被拒绝且不调用上游；上游 4xx 是明确失败（429 与欠费可重试），5xx、连接中断、任务号不符与无法解析都归 Unknown 并要求人工核对，绝不自动重提；未配置密钥时 capabilities 仍 200 且明确configured=false，提交返回 503 PROVIDER_NOT_CONFIGURED。默认档开关未显式开启时部署密钥不进适配器（两级 fail-closed，capabilities 同时给出 credential_source 与 default_trial 状态）；出站白名单在任何传输生效之前拒绝非 https/非 443/私网与白名单外目标；BYOK 请求头只随单次请求进入内存并被本次提交使用，服务器不落盘、不在响应头/响应体/错误里回显。真实适配器的请求形状与错误分类由注入的假 transport 断言，整轮 0 次真实模型调用、0 次网络请求、仓库文件 manifest 零差异。不证明：真实出图质量、真实参考图是否被上游接受、候选 Blob、审核报告、返工与交付 ZIP——这些属于 V2.4.2 起的批次。"
+}

@@ -1,0 +1,85 @@
+V2.6.1 人工 Selection 与失效判断验证（选择契约套件 + 真实工作台走查 + 视觉证据）
+NOT-AUTHORITY: point-in-time verification evidence only
+============================================================================
+  [PASS] V2.6.1-01 语法门：selection / shared / workspace / 选择契约套件与本工具全部可解析
+         {"files": [{"file": "app/product_v2/domain/selection.js", "rc": 0, "stderr": ""}, {"file": "app/product_v2/domain/shared.js", "rc": 0, "stderr": ""}, {"file": "app/product_v2/workspace.js", "rc": 0, "stderr": ""}, {"file": "evals/product-v2/harness/selection-contract.js", "rc": 0, "stderr": ""}, {"file": "tools/verify_v2_6_1_selection.py", "rc": 0, "stderr":
+  [PASS] V2.6.1-02 单一权威：选择记录形状、词表与合同版本只在 domain/selection.js 定义，工作台只引用
+         {"duplicated_in_workspace": [], "imports_contract": true}
+  [PASS] V2.6.1-03 界面责任：比较区只放入口，采用面板是相邻的独立 #adopt-panel 并绑定候选身份
+         {"entry_in_compare_head": true, "panel_sibling": true, "buttons": true, "panel_fields": true, "progress_line": true, "panel_binding": true}
+  [PASS] V2.6.1-04 写路径唯一：采用只经仓储追加选择记录，先落盘再更新内存，失败走错误提示
+         {"forbidden_tokens": [], "saves_selection": true, "memory_after_save": true, "error_path_kept": true, "no_auto_select": true, "negative_probe": {"selections_save_guard_red": true, "compare_purity_guard_red": true, "rework_purity_guard_red": true, "ok": true}, "section_chars": 9192}
+  [PASS] V2.6.1-05 不回退：比较区仍是纯投影、返工区未被采用逻辑污染（V2.5.3 / V2.5.4 判据保持）
+         {"compare_forbidden": [], "rework_forbidden": []}
+  [PASS] V2.6.1-06 SL-01–SL-18 选择契约套件：跨图候选、缺身份、非法 sha、过高 schema 版本、过期投影全部守住
+         {"status": "passed", "failed": [], "cases": 18}
+  [PASS] V2.6.1-07 既有套件回归：RW-01–RW-15、CP-01–CP-15、R01–R13 与复核 provider 在采用落地后仍全过
+         {"rework": "passed", "compare": "passed", "review": "passed", "provider": "passed"}
+  [PASS] V2.6.1-08 自动审核只提供依据：种子阶段已有候选与报告，但没有任何选择记录，行内摘要仍是「尚未采用」
+         {"selection_rows": 0, "progress": {"current": 0, "required": 1, "stale": 0, "missing": 1}, "candidates": ["act-c2532e056a1846ed832c2aa611f95876", "act-495c8bc835c84cc88fdb290e4132d524"], "row": {"shot_id": "shot_main_clean", "attempt_state": "succeeded", "selection_state": "none", "selection_text": "尚未采用候选：在候选比较里选一条，点「采用此候选」。"}}
+  [PASS] V2.6.1-09 入口：比较区把「正看着的候选」交给采用面板，换卡后入口同步换身份
+         {"default": "act-c2532e056a1846ed832c2aa611f95876", "switched": "act-495c8bc835c84cc88fdb290e4132d524", "entry": {"in_compare": true, "disabled": false, "shot_id": "shot_main_clean", "candidate_id": "act-495c8bc835c84cc88fdb290e4132d524", "candidate_sha256": "cdda29b792b68fd5e5d1a9e7f1b46b67906c1323af80a7ae535f7f58406e1572"}, "selected": "act-495c8bc835c84cc
+  [PASS] V2.6.1-10 采用面板：独立面板绑定候选身份与合同版本，显示将绑定的当前审核报告与这套图的采用要求
+         {"contract": "v2.6.1", "basis": "主图·干净背景 · 当前尚未采用候选 · 候选 v2", "fingerprint": "将绑定当前审核报告：自动检查 v2.5.2：阻断 1 · 高风险 0 · 提醒 1 · 未知 0 · VLM 未检查（审核合同 v2.5.2）", "readiness": "这张图是必需图：导出前必须有当前有效的选择。", "focus": "adopt-submit"}
+  [PASS] V2.6.1-11 打开与关闭采用面板不写任何记录，关闭后焦点回到原候选卡
+         {"focus_after_close": "compare-tab-act-495c8bc835c84cc88fdb290e4132d524", "expected_focus": "compare-tab-act-495c8bc835c84cc88fdb290e4132d524", "records_unchanged": true}
+  [PASS] V2.6.1-12 采用：追加一条选择记录（绑定候选身份/版本/审核指纹），行摘要、候选徽标与整套进度同步更新
+         {"selection": {"kind": "selection", "document_id": "shot_main_clean", "version": 1, "payload_sha256": "f37116d9fb53a62ded344bbd7fe3c84ababa3f135a9f93f98e700943f17e712f", "action": "select", "candidate_id": "act-495c8bc835c84cc88fdb290e4132d524", "candidate_version": 2, "candidate_sha256": "cdda29b792b68fd5e5d1a9e7f1b46b67906c1323af80a7ae535f7f58406e1572", "s
+  [PASS] V2.6.1-13 采用只写选择：Prompt/Attempt/Candidate/Review/确认与图片资产逐字不变，无关图零变化
+         {"others_untouched": true, "second_shot_untouched": true, "assets": 4}
+  [PASS] V2.6.1-14 改选：追加新版本而不是覆盖，旧记录逐字保留，徽标与摘要随之移动
+         {"version": 2, "kept_prefix": true, "badges": [{"state": "current", "text": "已采用", "candidate_id": "act-c2532e056a1846ed832c2aa611f95876"}], "progress": {"current": 1, "required": 1, "stale": 0, "missing": 0}}
+  [PASS] V2.6.1-15 返工后失效：新的成功候选只把旧选择标成过期，不覆盖、不自动改选、不自动取消
+         {"newest_candidate": "act-a02813a280fa4b13812aeeab79f444b0", "row": {"shot_id": "shot_main_clean", "attempt_state": "succeeded", "selection_state": "stale", "selection_text": "已采用候选 v1（选择记录 act-ab92d02a905d46338e6e13733df939f8）；已过期：之后出现了新候选，请重新采用（新候选或旧候选都行）。"}, "progress": {"current": 0, "required": 1, "stale": 1, "missing": 0}, "badges": {"act-c2532e056a184
+  [PASS] V2.6.1-16 返工后重选旧候选：过期选择重新变 current，徽标回到旧候选，历史全部保留
+         {"selection": {"kind": "selection", "document_id": "shot_main_clean", "version": 3, "payload_sha256": "361ea720dd7160ca65cd4f39582b05a08041af7b91299f7f98561305dbd1d1c0", "action": "select", "candidate_id": "act-495c8bc835c84cc88fdb290e4132d524", "candidate_version": 2, "candidate_sha256": "cdda29b792b68fd5e5d1a9e7f1b46b67906c1323af80a7ae535f7f58406e1572", "s
+  [PASS] V2.6.1-17 写入失败不改旧选择：明确报错、不新增记录、旧选择与进度不变；恢复后重试能追加
+         {"error": "注入的写入失败", "version_after_failure": 3, "recovered_version": 4}
+  [PASS] V2.6.1-18 双击防护：连点「采用这条候选」只追加一条记录、一次版本推进
+         {"selection_rows": 5, "version": 5}
+  [PASS] V2.6.1-19 取消采用：追加一条不带候选身份的 clear 记录，摘要与进度回到缺选，历史 select 记录保留
+         {"selection": {"kind": "selection", "document_id": "shot_main_clean", "version": 6, "payload_sha256": "a6fef183f30adc5f9fb3a619abf5c465bf6a59e1bb8c5d85a6275652944c9ee3", "action": "clear", "candidate_id": null, "candidate_version": null, "candidate_sha256": null, "selection_id": "act-c06902059f764ba699f649c9b81f5f08", "has_fingerprint": false, "payload_keys"
+  [PASS] V2.6.1-20 刷新恢复：选择状态、行摘要、整套进度与候选徽标从 IndexedDB 恢复，刷新不写任何记录
+         {"records_same": true, "row": {"shot_id": "shot_main_clean", "attempt_state": "succeeded", "selection_state": "cleared", "selection_text": "已取消采用（历史保留）；可以重新采用任一候选。"}, "progress": {"current": 0, "required": 1, "stale": 0, "missing": 1}}
+  [PASS] V2.6.1-21 视觉证据：整页与采用面板特写落盘；选择记录只引用内容寻址身份，不含图片字节
+         {"screenshots": {"evals/product-v2/evidence/v2.6.1-selection-20261003-123145.png": 212290, "evals/product-v2/evidence/v2.6.1-selection-20261003-123145-detail.png": 27706}, "selection_payloads": [{"keys": "action,candidate_id,candidate_sha256,candidate_version,contract_version,created_at,review_fingerprint,schema_version,selection_id,shot_id", "chars": 671}, 
+  [PASS] V2.6.1-22 正式入口 --check 全过（采用闭环没有破坏既有自检）
+         {"rc": 0, "tail": ["  PASS  整套复核 provider 不可用时 capabilities 仍 200 且 configured=false  suite_review={'kind': 'dependency', 'detail': 'RuntimeError: 自检：整套复核 provider 构造失败'}", "  PASS  整套复核 provider 不可用时路由 503 且错误分类明确                          status=503 error={'family': 'internal', 'code': 'PROVIDER_NOT_CONFIGURED', 'message': '语义 provider 不可用：检查注册表、依赖与 DASHSCO
+  [PASS] V2.6.1-23 零意外 console error / page error（唯一允许项：Unknown 路径的 504 资源日志）
+         {"unexpected_console": [], "expected_unknown_path_504": [], "page_errors": []}
+----------------------------------------------------------------------------
+observed_at: 2026-10-03T12:31:56
+status: passed
+contract: v2.6.1（人工选择）· v2.5.4（返工）· v2.5.3（比较）· v2.5.2（复核）
+model_calls: 0 · external_network_calls: 0（fake providers + 本地静态服务器）
+json: evals/product-v2/v2.6.1-selection-20261003-123145.json
+
+边界：本套件 0 次真实模型调用，采用过程不调用任何模型；写入失败用例是在浏览器侧
+对 IDBObjectStore.add 注入一次失败，验证「写失败不改旧 Selection」的错误路径，不代表
+真实磁盘写满或事务冲突下的表现。整套一致性报告属 V2.5.5、导出阻断与交付 zip 属 V2.6.2，
+本批不宣称已经具备；采用也不代表候选已通过导出硬门。
+
+CHECKS
+- [PASS] V2.6.1-01 语法门：selection / shared / workspace / 选择契约套件与本工具全部可解析
+- [PASS] V2.6.1-02 单一权威：选择记录形状、词表与合同版本只在 domain/selection.js 定义，工作台只引用
+- [PASS] V2.6.1-03 界面责任：比较区只放入口，采用面板是相邻的独立 #adopt-panel 并绑定候选身份
+- [PASS] V2.6.1-04 写路径唯一：采用只经仓储追加选择记录，先落盘再更新内存，失败走错误提示
+- [PASS] V2.6.1-05 不回退：比较区仍是纯投影、返工区未被采用逻辑污染（V2.5.3 / V2.5.4 判据保持）
+- [PASS] V2.6.1-06 SL-01–SL-18 选择契约套件：跨图候选、缺身份、非法 sha、过高 schema 版本、过期投影全部守住
+- [PASS] V2.6.1-07 既有套件回归：RW-01–RW-15、CP-01–CP-15、R01–R13 与复核 provider 在采用落地后仍全过
+- [PASS] V2.6.1-08 自动审核只提供依据：种子阶段已有候选与报告，但没有任何选择记录，行内摘要仍是「尚未采用」
+- [PASS] V2.6.1-09 入口：比较区把「正看着的候选」交给采用面板，换卡后入口同步换身份
+- [PASS] V2.6.1-10 采用面板：独立面板绑定候选身份与合同版本，显示将绑定的当前审核报告与这套图的采用要求
+- [PASS] V2.6.1-11 打开与关闭采用面板不写任何记录，关闭后焦点回到原候选卡
+- [PASS] V2.6.1-12 采用：追加一条选择记录（绑定候选身份/版本/审核指纹），行摘要、候选徽标与整套进度同步更新
+- [PASS] V2.6.1-13 采用只写选择：Prompt/Attempt/Candidate/Review/确认与图片资产逐字不变，无关图零变化
+- [PASS] V2.6.1-14 改选：追加新版本而不是覆盖，旧记录逐字保留，徽标与摘要随之移动
+- [PASS] V2.6.1-15 返工后失效：新的成功候选只把旧选择标成过期，不覆盖、不自动改选、不自动取消
+- [PASS] V2.6.1-16 返工后重选旧候选：过期选择重新变 current，徽标回到旧候选，历史全部保留
+- [PASS] V2.6.1-17 写入失败不改旧选择：明确报错、不新增记录、旧选择与进度不变；恢复后重试能追加
+- [PASS] V2.6.1-18 双击防护：连点「采用这条候选」只追加一条记录、一次版本推进
+- [PASS] V2.6.1-19 取消采用：追加一条不带候选身份的 clear 记录，摘要与进度回到缺选，历史 select 记录保留
+- [PASS] V2.6.1-20 刷新恢复：选择状态、行摘要、整套进度与候选徽标从 IndexedDB 恢复，刷新不写任何记录
+- [PASS] V2.6.1-21 视觉证据：整页与采用面板特写落盘；选择记录只引用内容寻址身份，不含图片字节
+- [PASS] V2.6.1-22 正式入口 --check 全过（采用闭环没有破坏既有自检）
+- [PASS] V2.6.1-23 零意外 console error / page error（唯一允许项：Unknown 路径的 504 资源日志）

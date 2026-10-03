@@ -1,0 +1,92 @@
+{
+  "evidence_kind": "NOT-AUTHORITY",
+  "project_crc_ok": true,
+  "delivery_crc_ok": true,
+  "project_assets": [
+    {
+      "path": "assets/1546088a36a6db20689681824a459d05db83850775a924851b911db6e9d649e1",
+      "matches": true
+    },
+    {
+      "path": "assets/27d63a01d4479252b119665defa6f18b7b7f84f8c04bc9fcf6256ee0637e14c4",
+      "matches": true
+    },
+    {
+      "path": "assets/565fd5b74a9a956a3495281ec071f1d9428e685f78546bc846b9fdb220851d90",
+      "matches": true
+    },
+    {
+      "path": "assets/5f6911bccd0381df59083a175a3394d8a8467b32c62ef17eb53144eb60929c1d",
+      "matches": true
+    },
+    {
+      "path": "assets/6a83c52afbfe4f9ead1cb3762ab9a86992be717a5d43e97d3ea9660b5a573975",
+      "matches": true
+    },
+    {
+      "path": "assets/e2e2658a1cafe892f143a681ed018939febea512aef11aec0dff6b03df47f5c8",
+      "matches": true
+    }
+  ],
+  "delivery_images": [
+    {
+      "shot": "shot_main_clean",
+      "action": "act-0f510b88d55a4595870718039abb8d5c",
+      "bytes_match": true,
+      "recorded_attempt_prompt": {
+        "version": 1,
+        "hash": "228457c96d7cf325a376cd2fb3240eac0cd4ce508949426b1d8d97466d4b7d12"
+      },
+      "delivery_prompt": {
+        "version": 2,
+        "hash": "a4461623862f4d4c3ca44429aeb278f2d3ac4d967f6783f398e62cf81f1b8fe6"
+      },
+      "provenance_matches": false
+    },
+    {
+      "shot": "shot_infographic_benefits",
+      "action": "act-9279a912a75448a2a9b63498f62a70e8",
+      "bytes_match": true,
+      "recorded_attempt_prompt": {
+        "version": 1,
+        "hash": "3ed9360adc2d8fc8925c252442f95703db37511e37f3cfee103ab206803a1d1c"
+      },
+      "delivery_prompt": {
+        "version": 1,
+        "hash": "3ed9360adc2d8fc8925c252442f95703db37511e37f3cfee103ab206803a1d1c"
+      },
+      "provenance_matches": true
+    },
+    {
+      "shot": "shot_scene_lifestyle",
+      "action": "act-10844b49952a456ca0b612411bd4dbb5",
+      "bytes_match": true,
+      "recorded_attempt_prompt": {
+        "version": 1,
+        "hash": "bd2cb6b479d2456b0d5e62138f622a20085e83b1738841281bf7240300758f69"
+      },
+      "delivery_prompt": {
+        "version": 1,
+        "hash": "bd2cb6b479d2456b0d5e62138f622a20085e83b1738841281bf7240300758f69"
+      },
+      "provenance_matches": true
+    },
+    {
+      "shot": "shot_detail_material",
+      "action": "act-8aacd00c21464a188565f2add78cec9d",
+      "bytes_match": true,
+      "recorded_attempt_prompt": {
+        "version": 1,
+        "hash": "3c8375b941d274a6b7264e48a7dda8f87b63a9fe636c7e94e4733a27c6f7be4e"
+      },
+      "delivery_prompt": {
+        "version": 1,
+        "hash": "3c8375b941d274a6b7264e48a7dda8f87b63a9fe636c7e94e4733a27c6f7be4e"
+      },
+      "provenance_matches": true
+    }
+  ],
+  "provenance_mismatches": [
+    "shot_main_clean"
+  ]
+}

@@ -1,0 +1,187 @@
+{
+  "evidence_kind": "point-in-time-not-authority",
+  "observed_at": "2026-10-01T14:31:34.293Z",
+  "command": "uv run --locked python -c <throwaway smoke: loopback-only socket guard, harness capabilities, Pillow image verification>",
+  "exit_code": 0,
+  "providers": [
+    "fake-semantic",
+    "fake-qwen-image",
+    "fake-review",
+    "fake-suite-review"
+  ],
+  "observations": [
+    {
+      "capabilities": {
+        "ok": true,
+        "semantic_contract": "v2.2.2",
+        "analyze_fields": [
+          "product_name",
+          "description",
+          "selling_points",
+          "focus",
+          "references",
+          "locale",
+          "platform",
+          "max_slots",
+          "existing_slot_ids"
+        ],
+        "images": {
+          "contract": "v2.4.1",
+          "endpoints": [
+            "/api/v2/images/submit",
+            "/api/v2/images/status",
+            "/api/v2/images/result"
+          ],
+          "submit_fields": [
+            "action_id",
+            "prompt",
+            "references",
+            "size",
+            "seed",
+            "model_id"
+          ],
+          "provider": {
+            "provider_id": "fake-qwen-image",
+            "model_id": "qwen-image-3.0",
+            "configured": true,
+            "capabilities": {
+              "contract": "v2.4.1",
+              "reference_images": true,
+              "max_reference_images": 3,
+              "async_tasks": true,
+              "n_per_submit": 1,
+              "prompt_extend": false,
+              "watermark": false,
+              "stateless": true,
+              "test_double": true,
+              "upstream_provider_id": "dashscope-qwen-image"
+            }
+          },
+          "unavailable": null
+        },
+        "review": {
+          "contract": "v2.5.2",
+          "endpoint": "/api/v2/review/candidate",
+          "provider": {
+            "provider_id": "fake-review",
+            "model_id": "fake-qwen-vl-max",
+            "configured": true,
+            "capabilities": {
+              "provider_id": "fake-review",
+              "model_id": "fake-qwen-vl-max",
+              "reference_images": true,
+              "structured_output": "local",
+              "stateless": true,
+              "test_double": true,
+              "scenario": "ok"
+            }
+          },
+          "unavailable": null
+        },
+        "suite_review": {
+          "contract": "v2.5.5",
+          "endpoint": "/api/v2/review/suite",
+          "max_images": 8,
+          "provider": {
+            "provider_id": "fake-suite-review",
+            "model_id": "fake-qwen-vl-max",
+            "configured": true,
+            "capabilities": {
+              "provider_id": "fake-suite-review",
+              "model_id": "fake-qwen-vl-max",
+              "suite_review_contract": "v2.5.5",
+              "max_images": 8,
+              "reference_images": true,
+              "structured_output": "local",
+              "stateless": true,
+              "test_double": true,
+              "scenario": "ok"
+            }
+          },
+          "unavailable": null
+        },
+        "provider": {
+          "provider_id": "fake-semantic",
+          "model_id": "fake-deepseek-v4.1-flash",
+          "configured": true,
+          "capabilities": {
+            "provider_id": "fake-semantic",
+            "model_id": "fake-deepseek-v4.1-flash",
+            "reference_images": false,
+            "structured_output": "local",
+            "stateless": true,
+            "test_double": true,
+            "scenario": "ok"
+          }
+        },
+        "unavailable": null
+      },
+      "blocked_external_attempts": []
+    },
+    {
+      "asset": "examples/input/cup_source.jpg",
+      "dimensions": [
+        1024,
+        1024
+      ],
+      "sha256": "565fd5b74a9a956a3495281ec071f1d9428e685f78546bc846b9fdb220851d90"
+    },
+    {
+      "asset": "examples/input/cup_closeup.jpg",
+      "dimensions": [
+        1024,
+        614
+      ],
+      "sha256": "e66fb31df4ec025227ad14d3bf70c3689b803feebbe7392b65ad5d1b117b4278"
+    },
+    {
+      "asset": "examples/input/cup_contents.jpg",
+      "dimensions": [
+        1200,
+        1200
+      ],
+      "sha256": "620d742e727dc069bf7356fab7dd11215e7448e09373999fdf9d5b6cda1fff53"
+    },
+    {
+      "asset": "examples/input/competitor.jpg",
+      "dimensions": [
+        1200,
+        1200
+      ],
+      "sha256": "677efb17d1264d28fd7255d95ed838fbd261f950b892d779fa7c93a27319fbd2"
+    },
+    {
+      "asset": "_working/amz-listing-kit-product-v2/walkthrough-assets/food/honey-jar-antique.jpg",
+      "dimensions": [
+        3840,
+        2560
+      ],
+      "sha256": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461"
+    },
+    {
+      "asset": "_working/amz-listing-kit-product-v2/walkthrough-assets/food/honey-display-laduree.jpg",
+      "dimensions": [
+        3840,
+        2550
+      ],
+      "sha256": "2e8578b494a8ac333c5560c7cc95ad71c15fc8ae6f2c17ece2422cb74d7379d9"
+    },
+    {
+      "asset": "_working/amz-listing-kit-product-v2/walkthrough-assets/furniture/dining-chair-art-nouveau.jpg",
+      "dimensions": [
+        2304,
+        3456
+      ],
+      "sha256": "4a3b4fc589fb4affe97f65e67fe8de922f2c70007b95039e178c7419c37d86c9"
+    },
+    {
+      "asset": "_working/amz-listing-kit-product-v2/walkthrough-assets/furniture/dining-chair-1939.jpg",
+      "dimensions": [
+        1890,
+        2362
+      ],
+      "sha256": "73fd1324e1cc30ba09c6eaa1c301e2aefcb20654dfdb88b1288982e067474f4d"
+    }
+  ],
+  "stderr": ""
+}

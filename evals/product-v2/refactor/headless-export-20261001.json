@@ -1,0 +1,25 @@
+{
+  "evidence_kind": "NOT-AUTHORITY",
+  "mode": "Chrome headless, independent temporary profile, loopback only",
+  "profile": "C:\\Users\\31368\\AppData\\Local\\Temp\\amz-r21-headless-smoke-p5l12qhs",
+  "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36",
+  "exports": [
+    {
+      "selector": "#deliver-project-package",
+      "suggested_filename": "R21-白色杯子审计-20261001-1535.zip",
+      "bytes": 402518,
+      "sha256": "695b84e60ac586c2d31ecbd89cb101bdfb0d379cce68bf0b796b8c39a72f69b0",
+      "format_version": 2,
+      "asset_hash_mismatches": []
+    },
+    {
+      "selector": "#deliver-export",
+      "suggested_filename": "R21-白色杯子审计-交付包-20261001-1535.zip",
+      "bytes": 48070,
+      "sha256": "eff726836df7832a6e368607258516f90fcb20988bf709ebae186f5ab23a2e96",
+      "format_version": null,
+      "asset_hash_mismatches": []
+    }
+  ],
+  "refresh_product_name": "白色保温杯"
+}

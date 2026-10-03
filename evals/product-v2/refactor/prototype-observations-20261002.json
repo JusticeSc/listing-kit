@@ -1,0 +1,282 @@
+{
+  "evidence_kind": "NOT-AUTHORITY",
+  "schema": "amz-prototype-review/v1",
+  "started_at": "2026-10-01T16:43:05.674Z",
+  "browser_scope": "isolated Chrome headless; actual product handler and IndexedDB; all upstream factories fake",
+  "observations": [
+    {
+      "scenario": "rework Escape returns to trigger without dismissing comparison",
+      "compare_preserved": true,
+      "focus": "rework-open",
+      "records_unchanged": true
+    },
+    {
+      "scenario": "single-shot rework preserves other shots and old adoption",
+      "shot": "shot_infographic_benefits",
+      "candidates_before": 1,
+      "candidates_after": 2,
+      "unrelated_records_equal": true,
+      "selection_records_equal": true
+    },
+    {
+      "scenario": "keyboard candidate navigation is read-only",
+      "selected": "act-9279a912a75448a2a9b63498f62a70e8",
+      "records_unchanged": true
+    },
+    {
+      "scenario": "adoption Escape restores trigger and does not choose a candidate",
+      "focus": "adopt-open",
+      "records_unchanged": true
+    },
+    {
+      "scenario": "explicitly adopting legal old candidate binds its exact identity and bytes",
+      "candidate_id": "act-9279a912a75448a2a9b63498f62a70e8",
+      "candidate_sha256": "1546088a36a6db20689681824a459d05db83850775a924851b911db6e9d649e1",
+      "candidate_version": 1,
+      "selection_version": 2,
+      "matches_old_candidate": true
+    },
+    {
+      "scenario": "known-task reconciliation still unknown is truthful and never resubmits",
+      "state": "unknown",
+      "submits_before": 2,
+      "submits_after": 2
+    },
+    {
+      "scenario": "no-task submission uncertainty keeps old candidate and exposes no fake query",
+      "state": "unknown",
+      "task_id": null,
+      "old_candidates": 1,
+      "submit_count": 3,
+      "query_absent": true
+    },
+    {
+      "scenario": "refresh preserves Unknown records without resubmission",
+      "records_unchanged": true,
+      "submits_before": 3,
+      "submits_after": 3,
+      "branches": [
+        {
+          "shot": "shot_scene_lifestyle",
+          "explanation": "结果尚未确定：已有原任务编号，请手动核对原任务；不会自动重提，成功历史与人工采用保留。",
+          "query_present": true
+        },
+        {
+          "shot": "shot_detail_material",
+          "explanation": "本次提交没有任务编号，不能直接查询，也不能认定失败，可能已经受理。保留未知记录；显式放弃核对后新建任务可能重复生成或计费。",
+          "query_present": false
+        }
+      ]
+    }
+  ],
+  "trail_before_reload": [
+    {
+      "kind": "click",
+      "t": 56581.59999999404,
+      "id": "",
+      "shot": null,
+      "text": "5\n审核返工"
+    },
+    {
+      "kind": "click",
+      "t": 56626.09999999404,
+      "id": "",
+      "shot": null,
+      "text": "比较候选（2）"
+    },
+    {
+      "kind": "click",
+      "t": 56702.70000000298,
+      "id": "rework-open",
+      "shot": "shot_main_clean",
+      "text": "用此候选发起返工"
+    },
+    {
+      "kind": "click",
+      "t": 56732.20000000298,
+      "id": "rework-cancel",
+      "shot": null,
+      "text": "取消"
+    },
+    {
+      "kind": "click",
+      "t": 306832.09999999404,
+      "id": "compare-close",
+      "shot": null,
+      "text": "收起"
+    },
+    {
+      "kind": "click",
+      "t": 306866.39999999106,
+      "id": "",
+      "shot": null,
+      "text": "比较候选（1）"
+    },
+    {
+      "kind": "click",
+      "t": 306946.5,
+      "id": "rework-open",
+      "shot": "shot_infographic_benefits",
+      "text": "用此候选发起返工"
+    },
+    {
+      "kind": "click",
+      "t": 307044.700000003,
+      "id": "rework-preview",
+      "shot": null,
+      "text": "预览返工 Prompt"
+    },
+    {
+      "kind": "click",
+      "t": 307150.89999999106,
+      "id": "rework-submit",
+      "shot": null,
+      "text": "确认并生成这张图"
+    },
+    {
+      "kind": "click",
+      "t": 428154.799999997,
+      "id": "adopt-open",
+      "shot": "shot_infographic_benefits",
+      "text": "采用此候选"
+    },
+    {
+      "kind": "click",
+      "t": 428195.200000003,
+      "id": "adopt-cancel",
+      "shot": null,
+      "text": "关闭"
+    },
+    {
+      "kind": "click",
+      "t": 428263.59999999404,
+      "id": "adopt-open",
+      "shot": "shot_infographic_benefits",
+      "text": "采用此候选"
+    },
+    {
+      "kind": "click",
+      "t": 428309.299999997,
+      "id": "adopt-submit",
+      "shot": null,
+      "text": "采用这条候选"
+    },
+    {
+      "kind": "click",
+      "t": 533232,
+      "id": "adopt-cancel",
+      "shot": null,
+      "text": "关闭"
+    },
+    {
+      "kind": "click",
+      "t": 533275.700000003,
+      "id": "compare-close",
+      "shot": null,
+      "text": "收起"
+    },
+    {
+      "kind": "click",
+      "t": 533307.8999999911,
+      "id": "",
+      "shot": null,
+      "text": "比较候选（1）"
+    },
+    {
+      "kind": "click",
+      "t": 533340.700000003,
+      "id": "rework-open",
+      "shot": "shot_scene_lifestyle",
+      "text": "用此候选发起返工"
+    },
+    {
+      "kind": "click",
+      "t": 533404.700000003,
+      "id": "rework-preview",
+      "shot": null,
+      "text": "预览返工 Prompt"
+    },
+    {
+      "kind": "click",
+      "t": 533440.5,
+      "id": "rework-submit",
+      "shot": null,
+      "text": "确认并生成这张图"
+    },
+    {
+      "kind": "click",
+      "t": 635133.099999994,
+      "id": "",
+      "shot": null,
+      "text": "4\n生成"
+    },
+    {
+      "kind": "click",
+      "t": 635247,
+      "id": "",
+      "shot": null,
+      "text": "核对任务"
+    },
+    {
+      "kind": "click",
+      "t": 691534.200000003,
+      "id": "",
+      "shot": null,
+      "text": "5\n审核返工"
+    },
+    {
+      "kind": "click",
+      "t": 691574.099999994,
+      "id": "",
+      "shot": null,
+      "text": "比较候选（1）"
+    },
+    {
+      "kind": "click",
+      "t": 691611.8999999911,
+      "id": "rework-open",
+      "shot": "shot_detail_material",
+      "text": "用此候选发起返工"
+    },
+    {
+      "kind": "click",
+      "t": 691677.200000003,
+      "id": "rework-preview",
+      "shot": null,
+      "text": "预览返工 Prompt"
+    },
+    {
+      "kind": "click",
+      "t": 691709.299999997,
+      "id": "rework-submit",
+      "shot": null,
+      "text": "确认并生成这张图"
+    },
+    {
+      "kind": "click",
+      "t": 691859,
+      "id": "",
+      "shot": null,
+      "text": "4\n生成"
+    }
+  ],
+  "zoom_setup": {
+    "settings_zoom_before": "1",
+    "settings_zoom_after": {
+      "value": "1",
+      "label": "\n            100%\n          "
+    },
+    "product_geometry": {
+      "width": 1440,
+      "height": 900,
+      "dpr": 1.25,
+      "scale": 1
+    },
+    "private_api": "not exposed; measured actual settings UI and product geometry"
+  },
+  "managed_matrix_attempt": {
+    "result": "unproven",
+    "reason": "CDP Runtime.callFunctionOn timed out during click/scroll; partial matrix was not returned, so no matrix pass is claimed",
+    "next": "independent isolated headless Chrome runtime, actual browser settings UI"
+  }
+}

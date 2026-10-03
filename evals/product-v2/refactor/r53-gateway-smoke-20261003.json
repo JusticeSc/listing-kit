@@ -1,0 +1,207 @@
+{
+  "control": "NOT-AUTHORITY: point-in-time gateway smoke; not real supplier or deployment evidence",
+  "observed_at": "2026-10-03T03:35:36.076Z",
+  "real_model_calls": 0,
+  "runs": [
+    {
+      "status": "failed",
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "----------------------------------------\r\nException occurred during processing of request from ('127.0.0.1', 24251)\r\nTraceback (most recent call last):\r\n  File \"D:\\programfile64\\uv\\python\\cpython-3.13.11-windows-x86_64-none\\Lib\\socketserver.py\", line 697, in process_request_thread\r\n    self.finish_request(request, client_address)\r\n    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^\r\n  File \"D:\\programfile64\\uv\\python\\cpython-3.13.11-windows-x86_64-none\\Lib\\socketserver.py\", line 362, in finish_request\r\n    self.RequestHandlerClass(request, client_address, self)\r\n    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\r\n  File \"D:\\programfile64\\uv\\python\\cpython-3.13.11-windows-x86_64-none\\Lib\\socketserver.py\", line 766, in __init__\r\n    self.handle()\r\n    ~~~~~~~~~~~^^\r\n  File \"D:\\programfile64\\uv\\python\\cpython-3.13.11-windows-x86_64-none\\Lib\\http\\server.py\", line 447, in handle\r\n    self.handle_one_request()\r\n    ~~~~~~~~~~~~~~~~~~~~~~~^^\r\n  File \"D:\\programfile64\\uv\\python\\cpython-3.13.11-windows-x86_64-none\\Lib\\http\\server.py\", line 435, in handle_one_request\r\n    method()\r\n    ~~~~~~^^\r\n  File \"E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\app\\product_v2_server.py\", line 320, in do_POST\r\n    self._images_submit()\r\n    ~~~~~~~~~~~~~~~~~~~^^\r\n  File \"E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\app\\product_v2_server.py\", line 521, in _images_submit\r\n    request, status, payload = self._image_request(\r\n                               ~~~~~~~~~~~~~~~~~~~^\r\n        SubmitRequest, max_bytes=MAX_IMAGE_BODY_BYTES)\r\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\r\n  File \"E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\app\\product_v2_server.py\", line 484, in _image_request\r\n    return model.model_validate(decoded), 200, None\r\n           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^\r\n  File \"E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\.venv\\Lib\\site-packages\\pydantic\\main.py\", line 732, in model_validate\r\n    return cls.__pydantic_validator__.validate_python(\r\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\r\n  File \"E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\.venv\\Lib\\site-packages\\pydantic\\_internal\\_mock_val_ser.py\", line 100, in __getattr__\r\n    raise PydanticUserError(self._error_message, code=self._code)\r\npydantic.errors.PydanticUserError: `SubmitRequest` is not fully defined; you should define `Literal`, then call `SubmitRequest.model_rebuild()`.\r\n\r\nFor further information visit https://errors.pydantic.dev/2.13/u/class-not-fully-defined\r\n----------------------------------------\r\nTraceback (most recent call last):\r\n  File \"<string>\", line 1, in <module>\r\n    import sys; sys.path.insert(0,\"tools\"); from verify_v2_r5_2_two_adapters import gateway_e2e_checks; checks=[]; gateway_e2e_checks(lambda i,t,o,d: checks.append({\"id\":i,\"title\":t,\"ok\":bool(o),\"detail\":d})); import json; print(json.dumps(checks,ensure_ascii=False,indent=2)); sys.exit(0 if all(c[\"ok\"] for c in checks) else 1)\r\n                                                                                                                   ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\r\n  File \"E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\tools\\verify_v2_r5_2_two_adapters.py\", line 663, in gateway_e2e_checks\r\n    status, payload = post_json(base, \"/api/v2/images/submit\", submit_payload)\r\n                      ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\r\n  File \"E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\tools\\verify_v2_r5_2_two_adapters.py\", line 291, in post_json\r\n    return error.code, json.loads(error.read().decode(\"utf-8\"))\r\n                       ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\r\n  File \"D:\\programfile64\\uv\\python\\cpython-3.13.11-windows-x86_64-none\\Lib\\json\\__init__.py\", line 352, in loads\r\n    return _default_decoder.decode(s)\r\n           ~~~~~~~~~~~~~~~~~~~~~~~^^^\r\n  File \"D:\\programfile64\\uv\\python\\cpython-3.13.11-windows-x86_64-none\\Lib\\json\\decoder.py\", line 345, in decode\r\n    obj, end = self.raw_decode(s, idx=_w(s, 0).end())\r\n               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^\r\n  File \"D:\\programfile64\\uv\\python\\cpython-3.13.11-windows-x86_64-none\\Lib\\json\\decoder.py\", line 363, in raw_decode\r\n    raise JSONDecodeError(\"Expecting value\", s, err.value) from None\r\njson.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)\r\n",
+      "cause": "SubmitRequest forward annotation Literal was not imported"
+    },
+    {
+      "status": "passed",
+      "exit_code": 0,
+      "checks": [
+        {
+          "id": "R52-G01",
+          "title": "capabilities 暴露火山目标与能力版本 3",
+          "ok": true,
+          "detail": {
+            "provider": {
+              "provider_id": "volcengine-ark",
+              "model_id": "doubao-seedream-5-0-flash-260915",
+              "capability_version": 3,
+              "configured": true,
+              "credential_source": "test_double",
+              "capabilities": {
+                "contract": "v2.4.1",
+                "reference_images": true,
+                "max_reference_images": 3,
+                "async_tasks": false,
+                "sync_tasks": true,
+                "n_per_submit": 1,
+                "prompt_extend": false,
+                "watermark": false,
+                "stateless": true,
+                "test_double": false,
+                "size": "1344*1344",
+                "credential_source": "test_double",
+                "request_profile": {
+                  "size": "1344*1344",
+                  "n": 1,
+                  "prompt_extend": false,
+                  "watermark": false,
+                  "output_format": "png",
+                  "supports_negative_prompt_field": false,
+                  "max_reference_images": 3,
+                  "reference_media_types": [
+                    "image/png",
+                    "image/jpeg"
+                  ],
+                  "min_side": 384,
+                  "max_side": 2048,
+                  "min_area": 921600,
+                  "max_area": 4194304,
+                  "min_ratio": 0.125,
+                  "max_ratio": 8,
+                  "max_prompt_chars": 4000
+                }
+              }
+            }
+          }
+        },
+        {
+          "id": "R52-G02",
+          "title": "能力块 sync_tasks 标志出现在 provider capabilities",
+          "ok": true,
+          "detail": {
+            "contract": "v2.4.1",
+            "reference_images": true,
+            "max_reference_images": 3,
+            "async_tasks": false,
+            "sync_tasks": true,
+            "n_per_submit": 1,
+            "prompt_extend": false,
+            "watermark": false,
+            "stateless": true,
+            "test_double": false,
+            "size": "1344*1344",
+            "credential_source": "test_double",
+            "request_profile": {
+              "size": "1344*1344",
+              "n": 1,
+              "prompt_extend": false,
+              "watermark": false,
+              "output_format": "png",
+              "supports_negative_prompt_field": false,
+              "max_reference_images": 3,
+              "reference_media_types": [
+                "image/png",
+                "image/jpeg"
+              ],
+              "min_side": 384,
+              "max_side": 2048,
+              "min_area": 921600,
+              "max_area": 4194304,
+              "min_ratio": 0.125,
+              "max_ratio": 8,
+              "max_prompt_chars": 4000
+            }
+          }
+        },
+        {
+          "id": "R52-G03",
+          "title": "提交 200；信封 task_id=null + sync=true + 媒体类型正确",
+          "ok": true,
+          "detail": {
+            "task": {
+              "provider": {
+                "provider_id": "volcengine-ark",
+                "model_id": "doubao-seedream-5-0-flash-260915"
+              },
+              "task_id": null,
+              "status": "SUCCEEDED",
+              "result_count": 1,
+              "error": null,
+              "request_id": "req-ark-gateway",
+              "unknown": false,
+              "sync": true
+            }
+          }
+        },
+        {
+          "id": "R52-G04",
+          "title": "字节复核：image_base64 解码后 sha256 与 image_sha256 一致",
+          "ok": true,
+          "detail": {
+            "sha": "92a2334e03e0fa6a3e6c21b97c354ac60828773960aacc025ee4d61884c2456b"
+          }
+        },
+        {
+          "id": "R52-G05",
+          "title": "transport 恰好一次调用（同步协议没有后续 status/result 外呼）",
+          "ok": true,
+          "detail": {
+            "calls": 1
+          }
+        },
+        {
+          "id": "R52-G06",
+          "title": "status 路由对同步协议 → provider_unknown / SYNC_TASK_ID_REQUIRED",
+          "ok": true,
+          "detail": {
+            "status": 504,
+            "calls": 1
+          }
+        },
+        {
+          "id": "R52-G07",
+          "title": "能力版本漂移冻结身份：400 EXECUTION_IDENTITY_MISMATCH 且不转发",
+          "ok": true,
+          "detail": {
+            "status": 400,
+            "calls": 1
+          }
+        },
+        {
+          "id": "R52-G08",
+          "title": "非法协议 target → 400 input_rejected（不进入外呼）",
+          "ok": true,
+          "detail": {
+            "status": 400
+          }
+        },
+        {
+          "id": "R53-G01",
+          "title": "能力外请求提交前拒绝，供应商调用数不增加",
+          "ok": true,
+          "detail": {
+            "parameters": {
+              "size": "768*768"
+            },
+            "status": 400,
+            "calls": 1
+          }
+        },
+        {
+          "id": "R53-G02",
+          "title": "能力外请求提交前拒绝，供应商调用数不增加",
+          "ok": true,
+          "detail": {
+            "parameters": {
+              "n": 2
+            },
+            "status": 400,
+            "calls": 1
+          }
+        },
+        {
+          "id": "R53-G03",
+          "title": "能力外请求提交前拒绝，供应商调用数不增加",
+          "ok": true,
+          "detail": {
+            "parameters": {
+              "output_format": "jpeg"
+            },
+            "status": 400,
+            "calls": 1
+          }
+        }
+      ],
+      "stderr": "",
+      "repair": "Imported typing.Any and typing.Literal in v2_image.py"
+    }
+  ]
+}

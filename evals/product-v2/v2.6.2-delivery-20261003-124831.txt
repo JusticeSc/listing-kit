@@ -1,0 +1,39 @@
+V2.6.2 交付包与硬门禁验收 · 20261003-124831
+结果：14/14 通过
+
+[PASS] V2.6.2-00 ESM 语法门（domain / workspace / 契约套件）
+       [{"file": "app/product_v2/domain/export-gate.js", "rc": 0, "stderr": ""}, {"file": "app/product_v2/workspace.js", "rc": 0, "stderr": ""}, {"file": "app/product_v2/domain/index.js", "rc": 0, "stderr": ""}, {"file": "evals/product-v2/harness/delivery-gate-contract.js", "rc": 0, "stderr": ""}]
+[PASS] V2.6.2-01 单一权威：复用既有测量；界面落点与新文档种类已登记
+       {"single_authority": true, "duplicate_ids": [], "duplicate_element_keys": []}
+[PASS] V2.6.2-02 契约套件 D01–D06 全过
+       {"status": "passed", "cases": ["D01", "D02", "D03", "D04", "D05", "D06"], "failed": []}
+[PASS] V2.6.2-03 工作台交付门禁：无阻断、按钮可用、逐图行完整
+       {"status": "交付门禁通过：可以生成交付包（只包含已采用的候选）。", "blocking": [], "rows": [{"shot_id": "shot_main_clean", "state": "current"}, {"shot_id": "shot_infographic_benefits", "state": "current"}, {"shot_id": "shot_scene_lifestyle", "state": "current"}], "findings": [{"rule": "export.selection_complete", "severity": "PASS", "jumps": 0}, {"rule": "export.chain_integrity", "severity": "PASS", "jumps": 0}, {"rule": "export.report_current", "severity": "PASS", "jumps": 0}, {"rule": "export.no_blocking_findings", "severity": "PASS", "jumps": 0}, {"rule": "export.asset_hash_matches", "severity": "PASS", "jumps": 0},
+[PASS] V2.6.2-13 交付页投影整套检查结论：摘要 + 非 PASS 发现（带定位）与存储报告逐条一致
+       {"status": "整套检查 v2.5.5：阻断 0 · 高风险 1 · 提醒 1 · 未知 0 · 视觉复核已完成", "deliver": [{"rule": "vlm.suite_product_consistency", "severity": "HIGH_RISK", "jumps": 2}, {"rule": "vlm.suite_style_consistency", "severity": "WARNING", "jumps": 4}], "review": [{"rule": "vlm.suite_product_consistency", "severity": "HIGH_RISK", "jumps": 2}, {"rule": "vlm.suite_style_consistency", "severity": "WARNING", "jumps": 4}], "stored": [{"rule": "vlm.suite_product_consistency", "severity": "HIGH_RISK"}, {"rule": "vlm.suite_style_consistency", "severity": "WARNING"}]}
+[PASS] V2.6.2-04 交付包下载成功，Python 独立核对 ZIP 内容与哈希
+       {"download": {"filename": "V262-交付品-交付包-20261003-0448.zip", "bytes": 47515, "sha256": "900c8e34d55adafe608ce2ef964ca700426ca796c2c900f87cb5aad8dffbe325"}, "names": ["README.txt", "checks.json", "images/shot_detail_material-act-0f178b20dc3b40c986b8f70586958016.png", "images/shot_infographic_benefits-act-d63293aa8c3040298249f5db3106345d.png", "images/shot_main_clean-act-0f0eb0b4e0ad47ebabf2cc0a3cb2ef98.png", "images/shot_scene_lifestyle-act-89fd3bff6ebf493eaa2cb4d50d489bd6.png", "manifest.json"], "digests": {"images/shot_main_clean-act-0f0eb0b4e0ad47ebabf2cc0a3cb2ef98.png": "ad5b27e72c7c", "imag
+[PASS] V2.6.2-05 export_record 以 append-only 文档写入 IndexedDB
+       {"records": [{"document_id": "export-20261003044838571-900c8e34d55a", "version": 1}]}
+[PASS] V2.6.2-06 重复生成只追加：两条记录、document_id 与包哈希各自独立
+       {"ids": ["export-20261003044838571-900c8e34d55a", "export-20261003044838787-65cea6ca2863"], "sha": ["900c8e34d55a", "65cea6ca2863"]}
+[PASS] V2.6.2-07 刷新后：记录仍在、门禁仍无阻断、最近交付包可见
+       {"result": "最近一次交付包：V262-交付品-交付包-20261003-0448.zip（46 KB）技术详情sha256 65cea6ca28636650…", "status": "交付门禁通过：可以生成交付包（只包含已采用的候选）。"}
+[PASS] V2.6.2-08 候选字节缺失：门禁阻断、按钮禁用、不产生新记录
+       {"dropped": "377609c1-6f67-4e05-be80-f0df572e8ee8:ed8", "status": "交付门禁未通过：1 条阻断，逐条处理后才能生成。", "findings": [{"rule": "export.asset_hash_matches", "severity": "BLOCK", "jumps": 1}, {"rule": "export.selection_complete", "severity": "PASS", "jumps": 0}, {"rule": "export.chain_integrity", "severity": "PASS", "jumps": 0}, {"rule": "export.report_current", "severity": "PASS", "jumps": 0}, {"rule": "export.no_blocking_findings", "severity": "PASS", "jumps": 0}, {"rule": "export.suite_review_current", "severity": "PASS", "jumps": 0}, {"rule": "export.unknown_acknowledged", "severity": "PASS", "jumps": 
+[PASS] V2.6.2-12 整套一致性阻断（非图级）：带「去运行整套检查」定位入口并把焦点落到运行按钮
+       {"removed": 1, "jump": "去运行整套检查", "focus": "suite-review-run", "blocking": [{"rule": "export.asset_hash_matches", "severity": "BLOCK", "jumps": 1}, {"rule": "export.suite_review_current", "severity": "BLOCK", "jumps": 0}]}
+[PASS] V2.6.2-09 主链零意外 console / page / HTTP 错误
+       {"console": [], "page": [], "http": []}
+[PASS] V2.6.2-10 Unknown 未确认不可导出；逐条确认后门禁通过并可交付
+       {"blocked": {"status": "交付门禁未通过：1 条阻断，逐条处理后才能生成。", "unknowns": [{"rule": "vlm.inspection_unavailable", "label": "确认已知悉", "disabled": false}, {"rule": "vlm.inspection_unavailable", "label": "确认已知悉", "disabled": false}, {"rule": "vlm.inspection_unavailable", "label": "确认已知悉", "disabled": false}]}, "unlocked": {"status": "已记录「已知悉」（append-only，不作为通过证据）。", "guards": 4}, "acked": ["vlm.inspection_unavailable"], "download": 49886}
+[PASS] V2.6.2-11 正式入口自检全过
+       {"rc": 0, "tail": ["  PASS  整套复核 provider 不可用时 capabilities 仍 200 且 configured=false  suite_review={'kind': 'dependency', 'detail': 'RuntimeError: 自检：整套复核 provider 构造失败'}", "  PASS  整套复核 provider 不可用时路由 503 且错误分类明确                          status=503 error={'family': 'internal', 'code': 'PROVIDER_NOT_CONFIGURED', 'message': '语义 provider 不可用：检查注册表、依赖与 DASHSCOPE_API_KEY。', 'retry_policy': 'fatal', 'http_status': 503, 'request_id': None, 'details': {'kind': 'dependency', 'detail': 'RuntimeError: 自检：整套复核 provider 构造失败'}}", "V2 正式入口自检：38/38 通过。"]}
+
+SCREENSHOTS
+- evals/product-v2/evidence/v2.6.2-delivery-20261003-124831-gate-pass.png
+- evals/product-v2/evidence/v2.6.2-delivery-20261003-124831-after-reload.png
+- evals/product-v2/evidence/v2.6.2-delivery-20261003-124831-hash-missing.png
+- evals/product-v2/evidence/v2.6.2-delivery-20261003-124831-suite-missing.png
+- evals/product-v2/evidence/v2.6.2-delivery-20261003-124831-unknown-blocked.png
+- evals/product-v2/evidence/v2.6.2-delivery-20261003-124831-unknown-confirmed.png

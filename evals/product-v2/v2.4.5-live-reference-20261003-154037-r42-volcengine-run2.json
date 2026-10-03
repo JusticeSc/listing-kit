@@ -1,0 +1,50 @@
+{
+  "task": "V2.4.5",
+  "suite_id": "v2.4.5-live-reference",
+  "status": "failed",
+  "finished_at": "2026-10-03T15:41:12",
+  "reference": {
+    "path": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\_working\\amz-listing-kit-product-v2\\walkthrough-assets\\food\\honey-jar-antique.jpg",
+    "sha256": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461",
+    "byte_size": 2239735
+  },
+  "model_calls": 1,
+  "image_submit_requests": 1,
+  "image_status_requests": 0,
+  "image_result_requests": 0,
+  "checks": [
+    {
+      "id": "V2.4.5-01",
+      "title": "图像 provider 是真实 volcengine-ark 且 configured=true（fake-image 切替不算）",
+      "ok": true,
+      "detail": {
+        "provider": "图像 provider：volcengine-ark · doubao-seedream-5-0-flash-260915 · 已配置"
+      }
+    },
+    {
+      "id": "V2.4.5-99",
+      "title": "真实闭环在完成前中断（记录保持原样，不自动重提）",
+      "ok": false,
+      "detail": "AssertionError: Locator expected to have attribute 'submitted'\nActual value: succeeded \nCall log:\n  - Expect \"to_have_attribute\" locator(\"#attempt-list .attempt-row[data-shot-id=\\\"shot_main_clean\\\"]\") with timeout 30000ms\n  - waiting for locator(\"#attempt-list .attempt-row[data-shot-id=\\\"shot_main_clean\\\"]\")\n    2 × locator resolved to <div tabindex=\"-1\" class=\"attempt-row\" data-attempt-state=\"none\" data-shot-id=\"shot_main_clean\">…</div>\n      - unexpected value \"none\"\n    47 × locator resolved to <div tabindex=\"-1\" class=\"attempt-row\" data-shot-id=\"shot_main_clean\" data-attempt-state=\"pending_submit\">…</div>\n       - unexpected value \"pending_submit\"\n    13 × locator resolved to <div tabindex=\"-1\" class=\"attempt-row\" data-shot-id=\"shot_main_clean\" data-attempt-state=\"succeeded\">…</div>\n       - unexpected value \"succeeded\"\n\nAria snapshot:\n- text: 主图·干净背景 已成功 Prompt v1\n- group: 技术详情 ▾\n- paragraph: 提交 2026/10/3 15:40:42 · 更新 2026/10/3 15:41:05\n- group: 技术详情 ▾\n- paragraph: 最近一次变化：同步结果已返回\n- img \"主图·干净背景 的候选\"\n- paragraph: 候选已保存到本地 · 1344×1344 · image/png · 2057 KB（预览来自本地字节）\n- group: 技术详情 ▾\n- paragraph: 自动检查 v2.5.2：阻断 0 · 高风险 0 · 提醒 1 · 未知 0 · VLM 未检查 · 先看：推荐长边 1600px — 最长边 1344px 低于推荐值 1600px（不阻断；需要最佳缩放时可提高生成尺寸）。\n- button \"自动复核（VLM）\"\n- button \"比较候选（1）\"\n- paragraph: 尚未采用候选：在候选比较里选一条，点「采用此候选」。\n- button \"再生成一张（新建 action）\"\n- group: 历史 2 次提交（只追加，不覆盖）"
+    },
+    {
+      "id": "V2.4.5-05",
+      "title": "零意外 console error / page error",
+      "ok": true,
+      "detail": {
+        "console": [],
+        "unexpected": [],
+        "page": []
+      }
+    }
+  ],
+  "ui_flow": {
+    "provider": "图像 provider：volcengine-ark · doubao-seedream-5-0-flash-260915 · 已配置",
+    "image_provider_id": "volcengine-ark",
+    "target_shot": "shot_main_clean"
+  },
+  "console_errors": [],
+  "page_errors": [],
+  "screenshots": [],
+  "boundary": "证明一笔预算内的真实参考图闭环：图像 provider 是 volcengine-ark（configured=true），一次真实同步 submit 携带真实商品参考图（sha256 c024b7cf2b04…，2239735 字节）与非空 Prompt；提交信封一步到 succeeded，task_id 为空且 status 零外呼；结果字节由提交信封一次性取回并存成浏览器 IndexedDB 里的 Blob，sha256 双边一致（候选记录 = 本机重算），尺寸等于请求尺寸。语义槽位由验证器直接播种（0 次语义调用），所以本证据不证明商品理解质量、出图审美质量、跨品类通用性、审核与返工（Phase 5）。"
+}

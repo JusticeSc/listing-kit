@@ -1,0 +1,20 @@
+amz-listing-kit Product V2 V2.2.1 product understanding contracts
+NOT-AUTHORITY: point-in-time verification evidence only
+observed_at: 2026-10-02T14:41:44
+status: passed
+json: evals/product-v2/v2.2.1-product-contracts-20261002-144142.json
+
+CHECKS
+- [PASS] V2.2.1-00 domain 与 harness 模块通过 node --check（ESM 语法门）
+- [PASS] V2.2.1-01 宿主契约案例全部通过且清单完整（C36/C37；C01..C35 在 npm run test:domain）
+- [PASS] V2.2.1-02 反向探针确实被执行（非法形状 / 模型确认 / 无值确认 / 环 / 越界失效 / brief 不一致）
+- [PASS] V2.2.1-03 驱动侧独立集成：资料/槽位/理解落库，槽位升级后 brief 过期且历史保留
+- [PASS] V2.2.1-04 浏览器会话零 console error / page error
+- [PASS] V2.2.1-05 正式入口自检仍全过（V2.2.1 不破坏 V2.1.4）
+
+SUITE CASES
+- [PASS] C36 落库集成：资料/槽位/理解都是版本化文档；槽位升级后 brief 过期且历史保留
+- [PASS] C37 领域对象必须是可 JSON 往返的纯数据：Blob / 函数混入一律被拒
+
+BOUNDARY
+证明商品理解领域契约可机检：固定/动态/自定义/派生四类槽位的权限矩阵、来源与确认状态、状态转换（模型只能提案、冲突不许静默覆盖、无值不许确认、派生不能直接改值）、失效图（失效集与保留集逐类匹配，历史与 Blob 永不失效，Shot 级失效必须带目标）、ProductBrief 的版本化投影、过期判定与就绪门，并在真实 IndexedDB 上完成资料/槽位/理解三仓落库与版本推进。不证明 DeepSeek 适配、界面投影、套图规划、生成、审核与交付。

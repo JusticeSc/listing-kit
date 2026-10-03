@@ -1,0 +1,190 @@
+{
+  "schema": "amz-verification-evidence/v1",
+  "run": "V2.R3.3 session lifecycle",
+  "stamp": "20261003-121827",
+  "status": "passed",
+  "failed": [],
+  "checks": [
+    {
+      "id": "V2.3.3-00",
+      "title": "workspace/app/session 通过 node --check",
+      "ok": true,
+      "detail": {
+        "workspace": {
+          "file": "app/product_v2/workspace.js",
+          "rc": 0,
+          "stderr": ""
+        },
+        "app": {
+          "file": "app/product_v2/app.js",
+          "rc": 0,
+          "stderr": ""
+        },
+        "session": {
+          "file": "app/product_v2/session.js",
+          "rc": 0,
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "id": "V2.3.3-01",
+      "title": "正常启动零延迟：控件只解锁一次且解锁时 data-ready=1",
+      "ok": true,
+      "detail": {
+        "ready_flag": "1",
+        "trail": [
+          [
+            "disabled",
+            "",
+            true,
+            121
+          ],
+          [
+            "disabled",
+            "",
+            false,
+            145
+          ]
+        ]
+      }
+    },
+    {
+      "id": "V2.3.3-02",
+      "title": "模块加载延迟：解锁时刻即 data-ready=1（无早解锁窗口）",
+      "ok": true,
+      "detail": {
+        "ready_at_ms": "",
+        "boot_ready_at_ms": ""
+      }
+    },
+    {
+      "id": "V2.3.3-03",
+      "title": "工作区装载延迟：视图出现时工作区已完成装载",
+      "ok": true,
+      "detail": {
+        "ws_loaded": true,
+        "shot_rows": 0
+      }
+    },
+    {
+      "id": "V2.3.3-04",
+      "title": "boot 失败：控件保持禁用、boot-retry 显示、错误信息可见",
+      "ok": true,
+      "detail": {
+        "still_disabled": true,
+        "boot_err": "当前浏览器没有可用的 IndexedDB，请改用当前稳定版桌面 Chrome 或 Edge。"
+      }
+    },
+    {
+      "id": "V2.3.3-05",
+      "title": "打开 A → 打开 B：旧回调不重置 B 的视图/项目名",
+      "ok": true,
+      "detail": {
+        "title": "项目 B",
+        "pid_a": "46ad65bd-80c3-4f4f-86c0-dc1c36a48936",
+        "pid_b": "6b5d02ec-9e73-407a-a8c3-da615020beee"
+      }
+    },
+    {
+      "id": "V2.3.3-06",
+      "title": "A 的陈旧 intake 输入已按 A 的 project_id 落库，没有写进 B（B 的 intake 为空或属于 B 自己）",
+      "ok": true,
+      "detail": {
+        "per_project": {
+          "46ad65bd-80c3-4f4f-86c0-dc1c36a48936": [
+            "A 的商品名"
+          ]
+        },
+        "pid_b": "6b5d02ec-9e73-407a-a8c3-da615020beee"
+      }
+    },
+    {
+      "id": "V2.3.3-07",
+      "title": "双标签陈旧编辑：冲突编辑器可见且三方不同字段逐项展示",
+      "ok": true,
+      "detail": {
+        "conflict_editor": true,
+        "conflict_rows": 2
+      }
+    },
+    {
+      "id": "V2.3.3-08",
+      "title": "冲突解决后：三字段落库、版本追加、A 的输入未被静默覆盖",
+      "ok": true,
+      "detail": {
+        "versions": [
+          1,
+          2,
+          3
+        ],
+        "latest_name": "标签页甲的商品名"
+      }
+    },
+    {
+      "id": "V2.3.3-09",
+      "title": "浏览器重启后项目、草稿与首页列表完整恢复",
+      "ok": true,
+      "detail": {
+        "restored_name": "双标签冲突",
+        "restored_pid": "08ac18f1-8825-4752-b412-0350c4de6238",
+        "conflict_pid": "08ac18f1-8825-4752-b412-0350c4de6238",
+        "rows": 1,
+        "product_name": "标签页甲的商品名"
+      }
+    },
+    {
+      "id": "V2.3.3-11",
+      "title": "首页读取失败保留项目列表且显示就地重试",
+      "ok": true,
+      "detail": {
+        "rows": 1,
+        "retry_visible": true
+      }
+    },
+    {
+      "id": "V2.3.3-12",
+      "title": "键盘重试恢复同一项目且无未处理拒绝",
+      "ok": true,
+      "detail": {
+        "project_id": "08ac18f1-8825-4752-b412-0350c4de6238"
+      }
+    },
+    {
+      "id": "V2.3.3-13",
+      "title": "慢读取有忙碌反馈且保留已有项目，不假称空库",
+      "ok": true,
+      "detail": {
+        "busy": "true",
+        "loading": true,
+        "rows": 1,
+        "empty": false
+      }
+    },
+    {
+      "id": "V2.3.3-14",
+      "title": "启动列表失败保持禁用，重试后恢复项目和完整首页",
+      "ok": true,
+      "detail": {
+        "locked_on_failure": true,
+        "retry_visible": true
+      }
+    },
+    {
+      "id": "V2.3.3-10",
+      "title": "全程零 console error / page error",
+      "ok": true,
+      "detail": {
+        "console_errors": [],
+        "page_errors": []
+      }
+    }
+  ],
+  "screenshots": [
+    "evals/product-v2/v233-20261003-121827-delayed-open.png",
+    "evals/product-v2/v233-20261003-121827-boot-failed.png",
+    "evals/product-v2/v233-20261003-121827-ab-switch.png",
+    "evals/product-v2/v233-20261003-121827-conflict-resolved.png",
+    "evals/product-v2/v233-20261003-121827-home-read-failed.png"
+  ]
+}
