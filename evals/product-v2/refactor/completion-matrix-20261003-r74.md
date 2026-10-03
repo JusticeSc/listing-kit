@@ -2,9 +2,9 @@
 
 NOT-AUTHORITY: point-in-time completion evidence only.
 
-- commit: `69869de`（closeout sync）+ `301040e`（closeout volc adopt-export）+ `df3e95e`（matrix），发布部署自 `69869de`。
-- CI：`37134502658` 两 job 全 success（verify；deploy：image build + smoke + 远端回滚部署，head `69869de9174f5cf61219a2db42331b553cd6e398`，首次 attempt 镜像源 403，rerun 后 success，非产品失败）。
-- 部署：`deployed_image=amz-listing-kit:69869de9174f5cf61219a2db42331b553cd6e398 host_port=8780 health=healthy`，`deployed_tls=https://47.115.172.233:8080 caddy_container=amz-listing-kit-tls`。
+- commit: `f242320`（freeze matrix）+ `69869de`（closeout sync）+ `301040e`（volc adopt-export），发布部署自 `f242320`。
+- CI：`37135218431` 两 job 全 success（verify；deploy：image build + smoke + 远端回滚部署，head `f2423200534a4472545645560eb8836d636da62f`）。
+- 部署：`deployed_image=amz-listing-kit:f2423200534a4472545645560eb8836d636da62f host_port=8780 health=healthy`，`deployed_tls=https://47.115.172.233:8080 caddy_container=amz-listing-kit-tls`。
 - 线上（2026-10-03，无付费调用）：`/api/health` 200 `product=v2,server_state=none`；`/` 200 29526B；`/api/v2/capabilities` 200（images contract v2.4.1, default_trial closed；review v2.5.2；suite_review v2.5.5）；空参考图 submit 400 INPUT_INVALID 未调模型；语义空输入 400 INPUT_INVALID 未调模型；`/api/anything` 404 NOT_FOUND。
 - 回退：`_stage-amz-control/r74-freeze-20261003-121505/`（scope_fp `daeee042…`，deploy_fp `d0dc166e…`，pre head `ed363d3`）。
  - 预算：spent 1.15/5.0 CNY，image 8/8、semantic_vlm 3/4、total 11/12；本轮线上验证 0 付费；追加 `v2.4.5-volc-adopt-export-20261003-222253.json` VE-01→VE-08 9/9（adopt+export，0.12元）与失败留痕 `222140.json`（0.12元）。
@@ -33,5 +33,5 @@ NOT-AUTHORITY: point-in-time completion evidence only.
 | RC20（工程/部署/指纹） | proven | CI deploy success + 线上 health/capabilities/静态/输入守卫（0付费）+ 回退基线/指纹；V1 删除相关本轮不适用（未删 V1） |
 
 ```json
- {"rc01_rc17_rc19":"proven","rc18":"out_of_scope_not_passed","rc20_eng_deploy_fingerprint":"proven","rc20_v1_deletion":"out_of_scope_not_done","ci_run":"37134502658","deployed_image":"amz-listing-kit:69869de9174f5cf61219a2db42331b553cd6e398","origin":"https://47.115.172.233:8080","paid_online_probes":0,"budget_spent_cny":1.15,"budget_cap_cny":5.0}
+ {"rc01_rc17_rc19":"proven","rc18":"out_of_scope_not_passed","rc20_eng_deploy_fingerprint":"proven","rc20_v1_deletion":"out_of_scope_not_done","ci_run":"37135218431","deployed_image":"amz-listing-kit:f2423200534a4472545645560eb8836d636da62f","origin":"https://47.115.172.233:8080","paid_online_probes":0,"budget_spent_cny":1.15,"budget_cap_cny":5.0}
 ```
