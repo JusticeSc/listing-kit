@@ -64,7 +64,9 @@ phase_progress:
     - evals/product-v2/refactor/storage-contract-review-20261003.md
   '7':
     status: active
-    evidence: []
+    evidence:
+    - evals/product-v2/refactor/completion-matrix-20261003-r74.md
+    - evals/product-v2/refactor/completion-matrix-20261003-r74.json
 task_progress:
   V2.R0.1:
     status: done
@@ -320,20 +322,23 @@ task_progress:
     status: pending
     evidence: []
   V2.R7.4:
-    status: pending
+    status: active
+    evidence:
+    - evals/product-v2/refactor/completion-matrix-20261003-r74.md
+    - evals/product-v2/refactor/completion-matrix-20261003-r74.json
 next_action_task: V2.R7.4
 blockers: []
 unknowns:
+  - r74_done_ci_37123159734_deploy_24a2464_origin_https_47_115_172_233_8080_paid_online_probes_0_evidence_completion-matrix-20261003-r74_follow_V2.R7.4_RC20
   - r71_done_regression_r71f_semlive_vlm_dashscope194526_volc195600_spent_0_91_of_5_evidence_full-verification-20261003-r71_follow_V2.R7.1_RC09
   - historical_boot_and_formal_entry_intermittent_trigger_unproven_controlled_home_read_failure_and_readiness_windows_fixed_diagnostics_now_capture_stage_UI_and_independent_DB_follow_V2.R1.2_V2.R3.3_V2.R7.1_RC19
   - sync_image_protocol_links_result_bytes_to_single_submit_envelope_no_task_id_bytes_missing_after_refresh_requires_explicit_new_action_or_manual_review_implementation_covered_by_browser_E2E_and_node_A19
   - node_domain_suite_C09_frozen_identity_fixture_aligned_browser_and_node_R52-01_waiver_removed_verified_by_PRODUCT-V2-R5.2-offline-e2e-20261003-120238_follow_V2.R5.3
   - native_latest_index_production_path_measured_same_fixture_history_assets_OCC_and_roundtrip_verified_heap_sampling_lower_bound_cold_open_not_claimed_faster_pressure_download_not_verified_follow_V2.R6.4
   - UI3_save_state_wiring_restored_and_later_pass_exists_without_before_after_code_hash_attribution_follow_V2.R3.3_and_V2.R7.1
-  - public_default_paid_profile_to_remain_closed_restricted_access_and_consumption_controls_require_implementation_follow_V2.R4.3
+  - public_default_paid_profile_online_closed_default_trial_closed_no_key_no_upstream_verified_by_capabilities_and_400_probes_follow_V2.R4.3_V2.R7.4
   - ui_baseline_observed_in_chrome_headless_T7_settings_capability_missing_final_contract_still_requires_implementation_human_C17_C15_and_V1_sunset_outside_triggered_Goal_follow_plan_2_and_plan_12
   - vlm_detection_quality_uncalibrated_do_not_infer_accuracy_from_contract_pass
-  - existing_environment_HTTPS_origin_health_and_capabilities_observed_DASHSCOPE_API_KEY_and_VOLCENGINE_API_KEY_Secret_names_verified_CD_mapping_corrected_but_new_runtime_not_observed_follow_V2.R4.3_V2.R5.2_V2.R7.4
   - triggered_unattended_Goal_text_lands_in_plan_2_and_state_bound_to_system_Goal_follow_plan_12
-updated_at: '2026-10-03T11:58:00.000Z'
+updated_at: '2026-10-03T13:10:00.000Z'
 ```
