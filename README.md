@@ -112,16 +112,16 @@ profile 自动续期），应用容器仍只提供无状态 HTTP，当前试用�
 “缺的是安全上下文 / WebCrypto”并禁用新建与导入，不会把缺口误报成 IndexedDB 不支持（证据见
 `evals/product-v2/v2.ui.1-remote-entry-*-final.*`）。
 
-语义分析默认走注册表里的 `dashscope-semantic`，需要服务器环境变量 `DASHSCOPE_API_KEY`；缺密钥时该路由返回
+语义分析默认走注册表里的 `dashscope-semantic`（`deepseek-v4.1-flash`），需要服务器环境变量 `DASHSCOPE_API_KEY`；缺密钥时该路由返回
 明确的 503 分类错误并提示 provider 未配置，不会假装成功。无密钥环境与验证入口可设
 `AMZ_V2_SEMANTIC_PROVIDER=fake-semantic` 使用测试替身。密钥只允许通过服务器环境变量提供，
-不得写进浏览器、项目包、日志或 Git。
+不得写进浏览器、项目包、日志或 Git。图像双 Adapter：`dashscope-image`（`qwen-image-3.0`，异步）与 `volcengine-ark`（`doubao-seedream-5-0-flash-260915`，同步一步到终态、无 task 链），第二生图环境变量 `ARK_API_KEY`；复核 `dashscope-review` / 整套复核 `dashscope-suite-review`（`qwen-vl-max`，VLM 只分级不自动采用）。
 
 凭据口径（V2.R4.3）：部署密钥受默认档开关 `AMZ_V2_DEFAULT_TRIAL` 约束，未设置或 `closed/off/0/false`
 时不会进入真实模型调用（路由返回 503 PROVIDER_NOT_CONFIGURED，capabilities 会给出
 `credential_source` 与 `default_trial` 状态）；显式设 `open/on/1/true` 才沿用部署密钥。
 图像网关另外支持 BYOK：浏览器单次请求可带 `X-AMZ-Listing-Key-Image` 头，密钥只在请求内存中
-转发与使用，不落盘、不回显；出站统一走 `aliyuncs.com` 白名单（`v2_outbound.py`），非白名单、
+转发与使用，不落盘、不回显；出站统一走白名单（`v2_outbound.py`：`aliyuncs.com` + `volces.com` 后缀），非白名单、
 私网与非 https 目标在传输前被拒绝。
 
 ## 实际运行链
@@ -241,7 +241,7 @@ app/server.py                    正式启动入口；默认 V2
 app/product_v2_server.py         V2 无状态 HTTP 适配器（静态资源 + capabilities + semantic/analyze + images/submit|status|result）
 app/product_v2/                  V2 页面、IndexedDB 存储与工作区（workspace.js）
 app/product_v2/domain/           领域合同：事实槽位、套图、规格、Prompt 编译与人工编辑、生成前确认、生成 Attempt（prompt.js / confirm.js / attempt.js 是各自唯一权威）
-src/providers/                   Provider 适配器与注册表（语义：v2_semantic / v2_dashscope_semantic / v2_fake_semantic；图像：v2_image / v2_dashscope_image / v2_fake_image；错误词表：v2_errors）
+src/providers/                   Provider 适配器与注册表（语义：v2_semantic / v2_dashscope_semantic / v2_fake_semantic；图像：v2_image / v2_dashscope_image / v2_volcengine_image / v2_fake_image；复核：v2_dashscope_review / v2_fake_review；整套复核：v2_dashscope_suite_review / v2_fake_suite_review；错误词表：v2_errors；出站白名单：v2_outbound `aliyuncs.com` + `volces.com`）
 config/product-v2/               provider 注册表与选择环境变量；当前实现依赖它，是否已提交以 git status 为准
 tools/                           自检、契约验证和控制面守卫
 evals/product-v2/                时点证据，不是当前状态或规范
