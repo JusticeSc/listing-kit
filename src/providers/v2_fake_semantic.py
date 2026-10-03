@@ -90,8 +90,14 @@ class FakeSemanticProvider:
             "structured_output": "local",
             "stateless": True,
             "test_double": True,
+            "credential_source": "test_double",
             "scenario": self.scenario,
         }
+
+    def apply_credentials(self, *, api_key: str) -> None:
+        """测试替身没有真实密钥轴；BYOK 请求头对替身是显式 no-op（不落盘、不回显）。"""
+
+        return None
 
     def __init__(self, scenario: str = "ok", *, latency_ms: int = 0,
                  existing_values: Mapping[str, Any] | None = None,
@@ -100,6 +106,8 @@ class FakeSemanticProvider:
         self.latency_ms = latency_ms
         self.existing_values = dict(existing_values or {})
         self.category_hint = category_hint
+        # 与 capabilities() 声明一致：服务器能力块读实例属性（V2.R4.3/R4.4 统一口径）。
+        self.credential_source = "test_double"
         self.calls: list[dict[str, Any]] = []
 
     def analyze(self, request: SemanticRequest, *, scenario: str | None = None,

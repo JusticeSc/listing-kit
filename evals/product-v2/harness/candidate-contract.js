@@ -183,6 +183,13 @@ function batchAttempt(shotId, overrides = {}) {
     action_id: "act-" + shotId,
     task_id: "task-" + shotId,
     state: "succeeded",
+    // R4.4 起真实记录都带冻结执行身份（pending_submit 起落库）；身份缺失的路由
+    // 归 no_identity→review，由 V2.4.2-16 与 B05 单独覆盖，不在这里用假记录。
+    schema_version: 2,
+    execution_identity: {
+      protocol: "v2.4.1", capability_version: 2,
+      credential_reference: { source: "byok" },
+    },
     ...overrides,
   };
 }

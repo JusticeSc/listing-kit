@@ -143,13 +143,11 @@ def create_project(page, name: str, reference: Path, *, keyboard: bool = False) 
     else:
         page.fill("#new-project-name", name)
         page.click("#create-project")
-    page.wait_for_selector("#project-list .project-row", timeout=15_000)
-    if keyboard:
-        page.focus('#project-list .project-row button[data-action="open"]')
-        page.keyboard.press("Enter")
-    else:
-        page.click('#project-list .project-row button[data-action="open"]')
+    # R3.3：新建即打开——不再回列表行点 open；等待即等“工作台已完整装载”。
     page.wait_for_selector("#project-view:not([hidden])", timeout=15_000)
+    page.wait_for_function(
+        "() => (document.getElementById('project-view') || {}).dataset.ready === '1'",
+        timeout=15_000)
     fill_intake(page, reference, name)
 
 

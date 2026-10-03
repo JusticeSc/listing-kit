@@ -40,7 +40,6 @@ r"""文档守卫的反向对照（每向只改一个变量，改完即还原）�
     K 写死解释器路径         README 塞回绝对路径          → 1，须报「解释器的绝对路径」
     L vendor 未登记          往 vendor 目录丢一个文件     → 1，须报「没有登记」
     M README 抄探针方向数    README 写回 N 向植入对照     → 1，须报「不得手抄探针方向数」
-    N 完成任务书仍 draft     同改 INDEX 与文件头          → 1，须报「任务书身份漂移」
 
 判据分两层，缺一不可：
     ① 退出码与预期一致；
@@ -64,14 +63,15 @@ enable_utf8()
 
 INDEX = ROOT / "docs" / "INDEX.md"
 README = ROOT / "README.md"
+FRONTEND_MANIFEST = ROOT / "package.json"
+FRONTEND_LOCK = ROOT / "package-lock.json"
 GUARD = ROOT / "tools" / "check_docs.py"
 VENDOR_PROBE = ROOT / "app" / "product_v2" / "vendor" / "zz_probe_ghost.js"
-TASK_PROBE = ROOT / "_working" / "amz-listing-kit-product-v2" / "tasks" / "v255-server.md"
 
 # 备份留**字节**：仓库里同时存在 CRLF（README / 卡片）与 LF（计划、新工具）两种行尾，
 # 而**没有任何守卫管这件事**。用 read_text() 备份、write_text() 还原，在 Windows 上
 # 会把 LF 文件悄悄变成 CRLF ——「已还原」这句话就成了假的。所以存 bytes，还原后比一次。
-WATCHED = (INDEX, README, TASK_PROBE)
+WATCHED = (INDEX, README, FRONTEND_MANIFEST, FRONTEND_LOCK)
 ORIG = {p: p.read_text(encoding="utf-8") for p in WATCHED}
 ORIG_BYTES = {p: p.read_bytes() for p in WATCHED}
 
@@ -87,7 +87,6 @@ ABS_INTERP = "解释器的绝对路径"
 VENDOR_UNREG = "没有登记"
 VENDOR_GHOST = "登记了、目录里却没有"
 README_NUMBER = "不得手抄探针方向数"
-TASK_STATUS_DRIFT = "任务书身份漂移"
 
 GHOST_DOC = "docs/zz_probe_ghost.md"
 GHOST_STATE = "_working/zz_probe_state.md"
@@ -156,12 +155,10 @@ def build_cases() -> list[tuple[str, list, int, list[str], list[str]]]:
                        if n >= 2 and kind not in ("实现", "产品目标", "执行状态", "项目规则")), "")
     plan_doc = pick_row("产品目标")
     state_doc = pick_row("执行状态")
-    task_doc = TASK_PROBE.relative_to(ROOT).as_posix()
     missing = [name for name, value in (("设计草案/draft 行", draft),
                                         ("≥2 份的管辖事实", multi_kind),
                                         ("产品目标 行", plan_doc),
-                                        ("执行状态 行", state_doc),
-                                        ("完成任务书 行", task_doc if task_doc in ROWS else "")) if not value]
+                                        ("执行状态 行", state_doc)) if not value]
     if missing:
         raise ProbeOutdated("登记表里找不到：" + "、".join(missing) + " —— 探针需要更新")
 
@@ -206,12 +203,16 @@ def build_cases() -> list[tuple[str, list, int, list[str], list[str]]]:
         ("M README 抄探针方向数（写回 N 向植入对照）",
          [("append", README, "（13 向植入对照）")], 1,
          [README_NUMBER], [MISSING_OF, NOT_IN_REPO, BAD_STATE]),
-        ("N 完成任务书仍 draft（INDEX 与文件头同时退回）",
-         [("text", INDEX, row_line(task_doc),
-           rebuild(task_doc, kind="设计草案", state="draft", note="探针：模拟仍在施工")),
-          ("text", TASK_PROBE, "CONTROL-STATUS: superseded", "CONTROL-STATUS: draft")], 1,
-         [TASK_STATUS_DRIFT, "V2.5.5"],
-         [MISSING_OF, NOT_IN_REPO, BAD_STATE, EMPTY_NOTE, BAD_KIND]),
+        ("N README 复制下一动作赋值",
+         [("append", README, "next_action_task: V2.R3.1")], 1,
+         ["README 不得复制 state 的下一动作赋值"], [MISSING_OF, NOT_IN_REPO]),
+        ("O README 说明恢复入口不复制进度",
+         [("append", README, "冷恢复入口输出下一任务，请按 state 路由读取。")], 0,
+         [], ["README 不得复制 state 的下一动作赋值"]),
+        ("P 前端 manifest 引入未批准未落锁依赖",
+         [("text", FRONTEND_MANIFEST, '"devDependencies": {',
+           '"devDependencies": {"zz-unapproved-probe": "1.2.3",')], 1,
+         [], [MISSING_OF, NOT_IN_REPO]),
     ]
 
 
@@ -303,7 +304,7 @@ def main() -> int:
             print(f"✗ 还原后与原始状态不一致：{drift} —— 「已还原」不成立（行尾、编码或残留文件）")
             bad += 1
         else:
-            print("已还原 docs/INDEX.md / README.md / 任务书 / vendor 探针文件（字节一致）")
+            print("已还原 INDEX / README / 前端 manifest-lock / vendor 探针文件（字节一致）")
 
     print()
     if bad:

@@ -61,27 +61,180 @@ export const PLATFORM_PROFILES = Object.freeze({
   }),
 });
 
-/** Provider 档：qwen-image-3.0 合同（来源 = V1 `src/providers/dashscope_image.py` 的请求与校验）。 */
-export const PROVIDER_PROFILES = Object.freeze({
-  "qwen-image-3.0": Object.freeze({
-    provider_id: "dashscope-qwen-image",
-    model_id: "qwen-image-3.0",
-    version: 1,
-    size: "1344*1344",
-    n: 1,
-    prompt_extend: false,
-    watermark: false,
-    supports_negative_prompt_field: false,
-    max_reference_images: 3,
-    min_side: 384,
-    max_side: 2048,
-    min_area: 512 * 512,
-    max_area: 2048 * 2048,
-    min_ratio: 1 / 8,
-    max_ratio: 8,
-    max_prompt_chars: MAX_PROMPT_CHARS,
-  }),
-});
+/**
+ * 参考图选择的产品默认硬上限：与图像网关一次提交的参考图上限一致。
+ * 具体上限由调用方按有效 Provider 档显式传入；缺省用它，不做模型查表。
+ */
+export const MAX_REFERENCE_SELECTION = 3;
+
+export const IMAGE_PROFILE_VERSION_PATTERN = /^v[0-9A-Za-z._-]{1,40}$/;
+export const IMAGE_SIZE_PATTERN = /^[0-9]{1,4}\*[0-9]{1,4}$/;
+
+/**
+ * 有效图像 Prompt 档（V2.R5.3）：从 capabilities.images 的 provider 能力投影出的
+ * 非秘密请求 profile，平铺绑定目标身份与协议。credential_source / configured /
+ * 密钥等凭据字段永不进入本档，因此也不进 basis 与请求 hash。
+ *
+ * 字段来源是服务端正式能力块：版本取 images.provider.capability_version，
+ * 协议取 images.contract，请求参数取 images.provider.capabilities.request_profile。
+ * 缺字段即拒绝（不猜参数、不兜底 model 表）。
+ */
+export const IMAGE_PROFILE_FIELDS = Object.freeze([
+  "size", "n", "prompt_extend", "watermark", "output_format",
+  "supports_negative_prompt_field", "max_reference_images", "reference_media_types",
+  "min_side", "max_side", "min_area", "max_area", "min_ratio", "max_ratio",
+  "max_prompt_chars",
+]);
+
+function isPositiveInteger(value) {
+  return Number.isInteger(value) && value > 0;
+}
+
+function isPositiveNumber(value) {
+  return typeof value === "number" && Number.isFinite(value) && value > 0;
+}
+
+/** 尺寸是否落在某一档声明的边/面积/比例范围内；返回 null 表示合法。 */
+export function sizeScopeProblem(profile, size) {
+  if (!isNonEmptyString(size) || !IMAGE_SIZE_PATTERN.test(size)) {
+    return "尺寸必须是「宽*高」格式。";
+  }
+  const parts = size.split("*");
+  const width = Number(parts[0]);
+  const height = Number(parts[1]);
+  if (width < profile.min_side || width > profile.max_side
+      || height < profile.min_side || height > profile.max_side) {
+    return "尺寸边长超出档位 " + profile.min_side + ".." + profile.max_side + "。";
+  }
+  if (width * height < profile.min_area || width * height > profile.max_area) {
+    return "尺寸面积超出档位 " + profile.min_area + ".." + profile.max_area + "。";
+  }
+  const ratio = width / height;
+  if (ratio < profile.min_ratio || ratio > profile.max_ratio) {
+    return "尺寸长宽比超出档位 " + profile.min_ratio + ".." + profile.max_ratio + "。";
+  }
+  return null;
+}
+
+/** 有效 Prompt 档的形状与自洽检查；返回问题列表（空 = 合法）。 */
+export function checkImagePromptProfile(profile) {
+  const problems = [];
+  if (!isPlainObject(profile)) {
+    pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$", "图像 Prompt 档必须是对象。");
+    return problems;
+  }
+  if (!isNonEmptyString(profile.provider_id)) {
+    pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.provider_id", "图像 Prompt 档缺少 provider_id。");
+  }
+  if (!isNonEmptyString(profile.model_id)) {
+    pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.model_id", "图像 Prompt 档缺少 model_id。");
+  }
+  if (!isPositiveInteger(profile.version)) {
+    pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.version", "图像 Prompt 档版本必须是正整数。");
+  }
+  if (!isNonEmptyString(profile.protocol) || !IMAGE_PROFILE_VERSION_PATTERN.test(String(profile.protocol))) {
+    pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.protocol", "图像 Prompt 档协议版本不合法。");
+  }
+  for (const key of ["n", "max_reference_images", "min_side", "max_side",
+                     "min_area", "max_area", "max_prompt_chars"]) {
+    if (!isPositiveInteger(profile[key])) {
+      pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$." + key,
+        "图像 Prompt 档 " + key + " 必须是正整数。");
+    }
+  }
+  for (const key of ["min_ratio", "max_ratio"]) {
+    if (!isPositiveNumber(profile[key])) {
+      pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$." + key,
+        "图像 Prompt 档 " + key + " 必须是正数。");
+    }
+  }
+  for (const key of ["prompt_extend", "watermark", "supports_negative_prompt_field"]) {
+    if (typeof profile[key] !== "boolean") {
+      pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$." + key,
+        "图像 Prompt 档 " + key + " 必须是布尔值。");
+    }
+  }
+  if (!isNonEmptyString(profile.output_format)) {
+    pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.output_format",
+      "图像 Prompt 档缺少输出格式。");
+  }
+  if (!Array.isArray(profile.reference_media_types) || profile.reference_media_types.length === 0
+      || profile.reference_media_types.some((item) => !isNonEmptyString(item))) {
+    pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.reference_media_types",
+      "图像 Prompt 档必须声明非空的参考图媒体类型。");
+  }
+  if (problems.length === 0) {
+    if (profile.min_side > profile.max_side) {
+      pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.min_side", "图像 Prompt 档边长上下限颠倒。");
+    }
+    if (profile.min_area > profile.max_area) {
+      pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.min_area", "图像 Prompt 档面积上下限颠倒。");
+    }
+    if (profile.min_ratio > profile.max_ratio) {
+      pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.min_ratio", "图像 Prompt 档比例上下限颠倒。");
+    }
+    const sizeProblem = sizeScopeProblem(profile, profile.size);
+    if (sizeProblem) {
+      pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.size", "默认尺寸不合法：" + sizeProblem);
+    }
+  }
+  return problems;
+}
+
+export function assertImagePromptProfile(profile) {
+  const problems = checkImagePromptProfile(profile);
+  if (problems.length > 0) {
+    invalid("图像 Prompt 档不合法：" + problems[0].message, { problems: problems.slice(0, 3) });
+  }
+  return profile;
+}
+
+/**
+ * 从 capabilities 的 images 块投影有效 Prompt 档（V2.R5.3）。
+ * 只读版本（provider.capability_version）、协议（images.contract）与非秘密 request_profile；
+ * 不取 credential_source / configured，缺字段或字段非法直接拒绝。
+ */
+export function imagePromptProfile(images) {
+  if (!isPlainObject(images)) invalid("图像能力块缺失：无法投影有效 Prompt 档。");
+  const contract = images.contract;
+  if (!isNonEmptyString(contract) || !IMAGE_PROFILE_VERSION_PATTERN.test(contract)) {
+    invalid("图像能力块的协议版本（images.contract）缺失或不合法。");
+  }
+  const provider = isPlainObject(images.provider) ? images.provider : null;
+  if (!provider) invalid("图像能力块缺少 provider：不能投影 Prompt 档。");
+  if (!isNonEmptyString(provider.provider_id)) invalid("图像能力块缺少 provider_id。");
+  if (!isNonEmptyString(provider.model_id)) invalid("图像能力块缺少 model_id。");
+  if (!isPositiveInteger(provider.capability_version)) {
+    invalid("图像能力块缺少有效版本（images.provider.capability_version）。");
+  }
+  const capabilities = isPlainObject(provider.capabilities) ? provider.capabilities : null;
+  const raw = capabilities && isPlainObject(capabilities.request_profile)
+    ? capabilities.request_profile : null;
+  if (!raw) invalid("图像 provider 缺少 request_profile：不能猜测请求参数。");
+  const profile = {
+    provider_id: provider.provider_id,
+    model_id: provider.model_id,
+    version: provider.capability_version,
+    protocol: contract,
+    size: raw.size,
+    n: raw.n,
+    prompt_extend: raw.prompt_extend,
+    watermark: raw.watermark,
+    output_format: raw.output_format,
+    supports_negative_prompt_field: raw.supports_negative_prompt_field,
+    max_reference_images: raw.max_reference_images,
+    reference_media_types: Array.isArray(raw.reference_media_types)
+      ? [...raw.reference_media_types] : raw.reference_media_types,
+    min_side: raw.min_side,
+    max_side: raw.max_side,
+    min_area: raw.min_area,
+    max_area: raw.max_area,
+    min_ratio: raw.min_ratio,
+    max_ratio: raw.max_ratio,
+    max_prompt_chars: raw.max_prompt_chars,
+  };
+  return assertImagePromptProfile(profile);
+}
 
 /* ------------------------------------------------------------ 基础工具 */
 
@@ -348,7 +501,8 @@ export function promptBasisOf(input, platform, provider) {
     style_version: positive(versions.style_version),
     shot_spec_version: positive(versions.shot_spec_version),
     platform: { platform_id: platform.platform_id, version: platform.version },
-    provider: { model_id: provider.model_id, version: provider.version },
+    // 冻结完整有效档（含目标、协议、能力边界与请求参数）；凭据字段从不进入本档。
+    provider: { ...provider },
     ...(isPlainObject(input.rework) ? {
       rework: {
         directive_id: input.rework.directive_id,
@@ -371,7 +525,12 @@ export function compilePrompt(input) {
   const problems = [];
   problems.push(...checkShotDraft(shot));
   const platform = resolveProfile("平台", PLATFORM_PROFILES, input.platformId || "amazon_us");
-  const provider = resolveProfile("Provider", PROVIDER_PROFILES, input.providerId || "qwen-image-3.0");
+  const profileProblems = checkImagePromptProfile(input.providerProfile);
+  if (profileProblems.length > 0) {
+    invalid("Prompt 编译缺少有效 Provider 档：" + profileProblems[0].message,
+      { problems: profileProblems.slice(0, 3) });
+  }
+  const provider = input.providerProfile;
   const styleSpec = input.styleSpec ? assertStyleSpec(input.styleSpec) : emptyStyleSpec();
   const shotSpec = input.shotSpec ? assertShotSpec(input.shotSpec) : emptyShotSpecFromShot(shot);
   problems.push(...checkSpecConflicts(shotSpec, styleSpec));
@@ -538,7 +697,8 @@ export function compilePrompt(input) {
     platformLines.join(""), [platformRef]));
 
   sections.push(section("provider_contract", "输出规格", "instruction",
-    "输出规格：一张" + quoteLiteral(provider.size) + "的方形高清商品图，不添加水印。",
+    "输出规格：一张" + quoteLiteral(provider.size) + "的" + quoteLiteral(provider.output_format)
+      + "格式高清商品图，不添加水印。",
     [providerRef]));
 
   const avoidList = [
@@ -563,17 +723,7 @@ export function compilePrompt(input) {
       on_image_text: platform.on_image_text_language,
     },
     platform: { platform_id: platform.platform_id, version: platform.version, label: platform.label },
-    provider: {
-      provider_id: provider.provider_id,
-      model_id: provider.model_id,
-      version: provider.version,
-      size: provider.size,
-      n: provider.n,
-      prompt_extend: provider.prompt_extend,
-      watermark: provider.watermark,
-      supports_negative_prompt_field: provider.supports_negative_prompt_field,
-      max_prompt_chars: provider.max_prompt_chars,
-    },
+    provider: { ...provider },
     sections: sections,
     text: text,
     source_refs: promptSourceRefs(sections),
@@ -608,11 +758,13 @@ export function compilePrompt(input) {
 /* --------------------------------------------------- 自检、快照与版本记录 */
 
 /**
- * 参考图选择（Provider 感知）：先满足该 Shot 声明的 asset_role 依赖，再用主图补齐；
- * 数量不超过 Provider 上限；同一 sha256 只出现一次。选不出参考图时由请求快照统一报错。
+ * 参考图选择：先满足该 Shot 声明的 asset_role 依赖，再用主图补齐；
+ * 数量不超过调用方给的有效上限（缺省产品硬上限）；同一 sha256 只出现一次。
+ * 只做 role/hash 选择，不做模型查表；选不出参考图时由请求快照统一报错。
  */
 export function selectReferences(shot, references, options = {}) {
-  const provider = resolveProfile("Provider", PROVIDER_PROFILES, options.providerId || "qwen-image-3.0");
+  const limit = options.maxReferences === undefined ? MAX_REFERENCE_SELECTION : options.maxReferences;
+  if (!isPositiveInteger(limit)) invalid("参考图上限必须是正整数。");
   const list = (Array.isArray(references) ? references : [])
     .map((item) => ({
       role: item && item.role,
@@ -629,7 +781,7 @@ export function selectReferences(shot, references, options = {}) {
       if (item.role !== role) continue;
       if (picked.some((entry) => entry.sha256 === item.sha256)) continue;
       picked.push({ role: item.role, sha256: item.sha256 });
-      if (picked.length >= provider.max_reference_images) return picked;
+      if (picked.length >= limit) return picked;
     }
   }
   return picked;
@@ -688,13 +840,65 @@ export function assertCompiledPrompt(compiled) {
   return compiled;
 }
 
+/**
+ * 快照与冻结档一致性检查：build/checkPromptRecord 与 requestSnapshotOf 共用。
+ * 只比较请求相关字段与目标身份，不比较任何凭据字段；返回问题列表。
+ */
+function checkSnapshotAgainstProfile(profile, snapshot) {
+  const problems = [];
+  if (!isPlainObject(snapshot)) {
+    pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.request_snapshot", "请求快照必须是对象。");
+    return problems;
+  }
+  if (!isPlainObject(profile)) {
+    pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.compiled.provider",
+      "编译结果缺少冻结的 Provider 档。");
+    return problems;
+  }
+  const expect = (key, expected) => {
+    if (snapshot[key] !== expected) {
+      pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.request_snapshot." + key,
+        "请求快照的 " + key + " 必须等于冻结档的 " + String(expected) + "。");
+    }
+  };
+  expect("model", profile.model_id);
+  expect("size", profile.size);
+  expect("n", profile.n);
+  expect("prompt_extend", profile.prompt_extend);
+  expect("watermark", profile.watermark);
+  expect("output_format", profile.output_format);
+  const target = isPlainObject(snapshot.target) ? snapshot.target : null;
+  const expectedTarget = isPositiveInteger(profile.version)
+    ? { provider_id: profile.provider_id, model_id: profile.model_id,
+        protocol: profile.protocol, capability_version: profile.version } : null;
+  if (!target || !expectedTarget
+      || canonicalJson(target) !== canonicalJson(expectedTarget)) {
+    pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.request_snapshot.target",
+      "请求快照的 target 必须等于冻结档的目标身份（协议/目标/模型/能力版本）。");
+  }
+  const refs = Array.isArray(snapshot.references) ? snapshot.references : null;
+  if (!refs) {
+    pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.request_snapshot.references",
+      "请求快照缺少参考图数组。");
+  } else {
+    // 数量上下限由 requestSnapshotOf 与确认单（REFERENCE_COUNT_INVALID）负责；
+    // 这里只核对每条参考图的身份形状，避免同一件事被两处不同码重复判定。
+    refs.forEach((item, index) => {
+      if (!isPlainObject(item) || !isNonEmptyString(item.role) || !isSha256Hex(item.sha256)) {
+        pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID,
+          "$.request_snapshot.references[" + index + "]", "参考图必须带 role 与 sha256。");
+      }
+    });
+  }
+  return problems;
+}
+
 /** 请求快照：只包含真实会发送的参数与参考图身份，不含图片字节；prompt 必须逐字等于编译文本。 */
 export function requestSnapshotOf(compiled, options = {}) {
   assertCompiledPrompt(compiled);
-  const provider = compiled.provider || {};
-  const profile = PROVIDER_PROFILES[provider.model_id] || null;
+  const profile = assertImagePromptProfile(compiled.provider);
   const refs = Array.isArray(options.references) ? options.references : [];
-  if (profile && (refs.length < 1 || refs.length > profile.max_reference_images)) {
+  if (refs.length < 1 || refs.length > profile.max_reference_images) {
     invalid("参考图数量必须在 1.." + profile.max_reference_images + " 之间，当前 " + refs.length + " 张。");
   }
   const references = refs.map((item) => {
@@ -704,14 +908,23 @@ export function requestSnapshotOf(compiled, options = {}) {
     }
     return { role: item.role, sha256: item.sha256 };
   });
+  const sizeProblem = sizeScopeProblem(profile, profile.size);
+  if (sizeProblem) invalid("冻结档位的默认尺寸不合法：" + sizeProblem);
   return {
-    model: provider.model_id,
-    size: provider.size,
-    n: provider.n,
-    prompt_extend: provider.prompt_extend,
-    watermark: provider.watermark,
+    model: profile.model_id,
+    size: profile.size,
+    n: profile.n,
+    prompt_extend: profile.prompt_extend,
+    watermark: profile.watermark,
+    output_format: profile.output_format,
     references: references,
     prompt: compiled.text,
+    target: {
+      provider_id: profile.provider_id,
+      model_id: profile.model_id,
+      protocol: profile.protocol,
+      capability_version: profile.version,
+    },
   };
 }
 
@@ -731,6 +944,10 @@ export async function promptHash(snapshot, options = {}) {
 
 export function buildPromptRecord({ compiled, snapshot, hash } = {}) {
   assertCompiledPrompt(compiled);
+  const snapshotProblems = checkSnapshotAgainstProfile(compiled.provider, snapshot);
+  if (snapshotProblems.length > 0) {
+    invalid(snapshotProblems[0].message, { problems: snapshotProblems.slice(0, 3) });
+  }
   if (!isPlainObject(snapshot) || snapshot.prompt !== compiled.text) {
     invalid("请求快照的 prompt 必须与编译文本逐字一致。");
   }
@@ -773,6 +990,9 @@ export function checkPromptRecord(record) {
     pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.shot_id", "记录缺少 shot_id。");
   }
   problems.push(...checkCompiledPrompt(record.compiled));
+  problems.push(...checkImagePromptProfile(record.compiled && record.compiled.provider));
+  problems.push(...checkSnapshotAgainstProfile(
+    record.compiled && record.compiled.provider, record.request_snapshot));
   if (!isPlainObject(record.request_snapshot)
       || record.request_snapshot.prompt !== (record.compiled && record.compiled.text)) {
     pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.request_snapshot",
@@ -910,8 +1130,9 @@ export async function buildEditedPromptRecord({ base, baseVersion, text, reason,
   if (!Number.isInteger(baseVersion) || baseVersion < 1) {
     invalid("人工编辑需要被编辑版本的版本号（来自文档仓库）。");
   }
-  const provider = PROVIDER_PROFILES[(base.compiled.provider || {}).model_id] || null;
-  const maxChars = provider ? provider.max_prompt_chars : MAX_PROMPT_CHARS;
+  const frozenProvider = base.compiled.provider;
+  const maxChars = isPositiveInteger(frozenProvider && frozenProvider.max_prompt_chars)
+    ? frozenProvider.max_prompt_chars : MAX_PROMPT_CHARS;
   const textProblems = checkEditText(text, { maxChars: maxChars, baseText: base.compiled.text });
   if (textProblems.length > 0) {
     invalid("人工编辑未通过：" + textProblems[0].message, { problems: textProblems });
@@ -986,7 +1207,13 @@ export async function buildEditedPromptRecord({ base, baseVersion, text, reason,
   return record;
 }
 
-/** 过期机检：槽位 basis、套图/风格/单图版本、平台与 Provider 档版本任一前进即过期。 */
+/**
+ * 过期机检：槽位 basis、套图/风格/单图版本、平台档与完整 Provider 档任一变化即过期。
+ *
+ * Provider 比较不再只看 numeric version：目标（provider_id/model_id）、协议与请求相关
+ * 能力边界/参数任一不同都判过期；当前档缺字段也判过期。凭据字段（credential_source /
+ * configured / 密钥引用）不在比较集合内，因此纯凭据轮换不使 Prompt 过期。
+ */
 export function promptStaleness(record, current = {}) {
   const reasons = [];
   const basis = isPlainObject(record) && isPlainObject(record.basis) ? record.basis : null;
@@ -1018,9 +1245,40 @@ export function promptStaleness(record, current = {}) {
   if ((basis.platform || {}).version !== platformVersion) {
     reasons.push({ field: "platform", stored: (basis.platform || {}).version ?? null, current: platformVersion, reason: "平台档版本前进" });
   }
-  const providerVersion = isPlainObject(current.provider) ? current.provider.version : null;
-  if ((basis.provider || {}).version !== providerVersion) {
-    reasons.push({ field: "provider", stored: (basis.provider || {}).version ?? null, current: providerVersion, reason: "Provider 档版本前进" });
-  }
+  reasons.push(...providerStaleReasons(basis.provider, current.provider));
   return { stale: reasons.length > 0, reasons: reasons };
+}
+
+/** Provider 档的过期原因：目标 / 协议 / 版本 / 请求参数与能力边界任一不同或缺失即过期。 */
+function providerStaleReasons(storedProvider, currentProvider) {
+  const reasons = [];
+  const stored = isPlainObject(storedProvider) ? storedProvider : null;
+  const now = isPlainObject(currentProvider) ? currentProvider : null;
+  if (!stored) {
+    return [{ field: "provider", stored: null, current: now, reason: "记录缺少 Provider 档。" }];
+  }
+  if (!now) {
+    return [{ field: "provider", stored: stored.version ?? null, current: null, reason: "当前 Provider 档缺失。" }];
+  }
+  const fields = ["provider_id", "model_id", "version", "protocol", ...IMAGE_PROFILE_FIELDS];
+  const missing = fields.filter((key) => stored[key] === undefined || now[key] === undefined);
+  if (missing.length > 0) {
+    return [{
+      field: "provider", stored: stored.version ?? null, current: now.version ?? null,
+      reason: "Provider 档字段不完整：" + missing.join("、"),
+    }];
+  }
+  const before = {};
+  const after = {};
+  for (const key of fields) {
+    before[key] = stored[key];
+    after[key] = now[key];
+  }
+  if (canonicalJson(before) !== canonicalJson(after)) {
+    return [{
+      field: "provider", stored: stored.version ?? null, current: now.version ?? null,
+      reason: "Provider 档目标或请求参数变化",
+    }];
+  }
+  return reasons;
 }

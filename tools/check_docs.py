@@ -76,6 +76,7 @@ r"""文档守卫 —— 让文档里的话有人守。
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import shlex
 import subprocess
@@ -487,9 +488,9 @@ def _check_readme_scope(rep: Report) -> None:
             rep.problem(f"README 缺少当前实现边界标记：{marker!r}")
 
     forbidden = {
-        r"next_action_task": "README 不得复制 state 的 next_action 字段",
-        r"下一任务": "README 不得发布会漂移的下一任务",
-        r"\bV2\.\d+\.\d+\b": "README 不得复制 Product V2 任务进度 ID",
+        r"^\s*(?:[-*>]\s*)?(?:next_action_task|下一任务|下一动作)\s*[：:]\s*`?"
+        r"(?:V2\.[0-9A-Za-z.-]+|D[-0-9A-Za-z.]+)\b":
+            "README 不得复制 state 的下一动作赋值",
         r"^##\s*\d*\.?\s*七坑位表": "固定七坑位表属于 legacy，不得继续占据当前实现入口",
         r"跑全套回归（\d+\s*项": "README 不得手抄会漂移的回归项数",
         # 2026-10-01：`_check_numbers()` 退役后（README 不再抄任何运行结果），
@@ -904,6 +905,60 @@ def _marked_rows(text: str, begin: str, end: str) -> list[list[str]] | None:
     return rows[1:] if rows else []
 
 
+def _check_frontend_dependencies(rep: Report, context: str) -> None:
+    """前端开发依赖只有根 manifest/lock/登记一份权威，不进入产品目录。"""
+    try:
+        manifest = json.loads((ROOT / "package.json").read_text(encoding="utf-8"))
+        lock = json.loads((ROOT / "package-lock.json").read_text(encoding="utf-8"))
+        product_manifest = json.loads(
+            (ROOT / "app/product_v2/package.json").read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        rep.problem(f"前端依赖 manifest/lock 不可读：{exc}")
+        return
+    if any(not isinstance(value, dict) for value in (manifest, lock, product_manifest)):
+        rep.problem("前端工具 manifest/lock 与产品 ESM manifest 顶层必须是对象")
+        return
+    direct = manifest.get("devDependencies")
+    packages = lock.get("packages")
+    if not isinstance(direct, dict) or not isinstance(packages, dict):
+        rep.problem("前端依赖 devDependencies/lock.packages 必须是对象")
+        return
+    if manifest.get("private") is not True or any(
+            manifest.get(key) for key in ("dependencies", "optionalDependencies", "peerDependencies")):
+        rep.problem("前端工具 manifest 必须 private 且只有已登记开发依赖")
+    rows = _marked_rows(context, "<!-- frontend-dependency-registry:begin -->",
+                        "<!-- frontend-dependency-registry:end -->")
+    if rows is None:
+        rep.problem("项目上下文缺少 frontend-dependency-registry 登记")
+        return
+    declared = {row[0]: (row[1], row[2]) for row in rows if len(row) >= 3}
+    locked = {}
+    for path, record in packages.items():
+        if not path:
+            continue
+        if not path.startswith("node_modules/") or not isinstance(record, dict):
+            rep.problem(f"前端依赖锁存在未支持的包记录：{path}")
+            continue
+        name = path.removeprefix("node_modules/")
+        locked[name] = (record.get("version"), record.get("license"))
+        if (record.get("dev") is not True or not record.get("integrity")
+                or not str(record.get("resolved", "")).startswith("https://")):
+            rep.problem(f"前端依赖 {name} 缺开发范围、HTTPS 来源或完整性指纹")
+    if set(direct) != set(declared) or locked != declared:
+        rep.problem("前端依赖 manifest/lock/登记不一致")
+    if any(not re.fullmatch(r"\d+\.\d+\.\d+", str(version))
+           or version != declared.get(name, (None, None))[0] for name, version in direct.items()):
+        rep.problem("前端开发依赖必须与登记一致且锁定精确版本")
+    root = packages.get("")
+    if not isinstance(root, dict) or root.get("devDependencies") != direct:
+        rep.problem("前端依赖 lock 根声明与 manifest 不一致")
+    elif root.get("engines") != manifest.get("engines"):
+        rep.problem("前端 Node/npm 版本在 manifest 与 lock 不一致")
+    if any(product_manifest.get(key) for key in ("dependencies", "devDependencies")):
+        rep.problem("产品 ESM manifest 不得建立第二份前端依赖权威")
+    rep.note(f"前端开发依赖：manifest/lock/登记 {len(direct)} 包")
+
+
 def _check_reuse_first_gate(rep: Report) -> None:
     """⑨ 选型门禁有落点、依赖有登记，且登记表与 pyproject.toml + uv.lock / vendor 双向一致。"""
     for name in STRAY_PROJECT_FILES:
@@ -984,6 +1039,7 @@ def _check_reuse_first_gate(rep: Report) -> None:
             locked_count = len(direct) - len(unpinned)
             rep.note(f"依赖登记：pyproject 直接依赖 {len(direct)} 个（锁定 {locked_count}）"
                      f"↔ uv.lock {len(locked)} 包 ↔ 登记表 {len(declared_pins)} 行")
+    _check_frontend_dependencies(rep, context)
 
     vendor_rows = _marked_rows(context, VENDOR_BEGIN, VENDOR_END)
     vendor_actual: set[str] = set()

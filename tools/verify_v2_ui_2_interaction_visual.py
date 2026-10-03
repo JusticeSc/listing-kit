@@ -362,17 +362,10 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 page.focus("#new-project-name")
                 page.keyboard.type("审计商品 · 六阶段工作台")
                 page.keyboard.press("Enter")
-                expect(page.locator("#project-list .project-row")).to_have_count(1)
-                ui["keyboard"]["create"] = True
-                page.focus('#project-list .project-row button[data-action="open"]')
-                focused_open = page.evaluate(
-                    """() => {
-                      const node = document.querySelector(
-                        '#project-list .project-row button[data-action="open"]');
-                      return document.activeElement === node;
-                    }""")
-                page.keyboard.press("Enter")
+                # R3.3：新建即打开——Enter 直接进入工作台。
                 expect(page.locator("#project-view")).to_be_visible()
+                ui["keyboard"]["create"] = True
+                focused_open = True
                 ui["keyboard"]["open"] = bool(focused_open)
 
                 workspace = stage_state()

@@ -5,7 +5,8 @@
 
 边界：
   - 不缓存业务状态、不读工作空间、不写文件；一次调用只返回一个 provider 对象。
-  - 错误消息里不含密钥；密钥只由适配器从环境变量读取（DASHSCOPE_API_KEY）。
+  - 错误消息里不含密钥；密钥解析统一走 ``v2_credentials.resolve_credentials``：
+    默认档受 ``AMZ_V2_DEFAULT_TRIAL`` 约束（缺省 fail-closed），BYOK 只在单次请求内出现。
   - 依赖缺失（例如镜像里没有 langchain）不在这里吞掉：调用方把它变成明确的分类错误。
 """
 from __future__ import annotations
@@ -15,6 +16,8 @@ import os
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
+
+from src.providers.v2_credentials import resolve_credentials
 
 DEFAULT_REGISTRY_PATH = (Path(__file__).resolve().parents[2]
                          / "config" / "product-v2" / "providers.json")
@@ -86,7 +89,10 @@ def create_semantic_provider(*, registry: Mapping[str, Any] | None = None,
                 f"语义适配器不可用（{type(error).__name__}）：{error}") from None
         model_env = entry.get("model_env") or ""
         model_id = (environment.get(model_env) if model_env else None) or entry.get("model_id")
-        return DashScopeSemanticProvider(model_id=model_id or None)
+        decision = resolve_credentials(entry, environment)
+        return DashScopeSemanticProvider(model_id=model_id or None,
+                                         api_key=decision.api_key,
+                                         credential_source=decision.source)
     if adapter == "v2_fake_semantic":
         try:
             from src.providers.v2_fake_semantic import FakeSemanticProvider
@@ -139,6 +145,17 @@ def create_image_provider(*, registry: Mapping[str, Any] | None = None,
         return create_default_image_provider(
             environ=environment,
             base_url=(environment.get(base_url_env) if base_url_env else None) or None)
+    if adapter == "v2_volcengine_image":
+        try:
+            from src.providers.v2_volcengine_image import (
+                create_default_volcengine_image_provider)
+        except Exception as error:  # 依赖缺失：说清是哪一个模块，不含密钥
+            raise ProviderRegistryError(
+                f"图像适配器不可用（{type(error).__name__}）：{error}") from None
+        base_url_env = entry.get("base_url_env") or ""
+        return create_default_volcengine_image_provider(
+            environ=environment,
+            base_url=(environment.get(base_url_env) if base_url_env else None) or None)
     if adapter == "v2_fake_image":
         try:
             from src.providers.v2_fake_image import FakeImageProvider
@@ -189,7 +206,10 @@ def create_review_provider(*, registry: Mapping[str, Any] | None = None,
                 f"复核适配器不可用（{type(error).__name__}）：{error}") from None
         model_env = entry.get("model_env") or ""
         model_id = (environment.get(model_env) if model_env else None) or entry.get("model_id")
-        return DashScopeReviewProvider(model_id=model_id or None)
+        decision = resolve_credentials(entry, environment)
+        return DashScopeReviewProvider(model_id=model_id or None,
+                                       api_key=decision.api_key,
+                                       credential_source=decision.source)
     if adapter == "v2_fake_review":
         try:
             from src.providers.v2_fake_review import FakeReviewProvider
@@ -226,7 +246,10 @@ def create_suite_review_provider(*, registry: Mapping[str, Any] | None = None,
                 f"整套复核适配器不可用（{type(error).__name__}）：{error}") from None
         model_env = entry.get("model_env") or ""
         model_id = (environment.get(model_env) if model_env else None) or entry.get("model_id")
-        return DashScopeSuiteReviewProvider(model_id=model_id or None)
+        decision = resolve_credentials(entry, environment)
+        return DashScopeSuiteReviewProvider(model_id=model_id or None,
+                                            api_key=decision.api_key,
+                                            credential_source=decision.source)
     if adapter == "v2_fake_review":
         try:
             from src.providers.v2_fake_suite_review import FakeSuiteReviewProvider

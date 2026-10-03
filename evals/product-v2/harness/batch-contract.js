@@ -10,11 +10,8 @@
  */
 
 import {
-  BATCH_HALT_CODES,
   BATCH_NEXT_STEPS,
   BATCH_SHOT_STATES,
-  BATCH_SHOT_STATE_LABELS,
-  batchProgressText,
   batchSubmitHalts,
   deriveBatchState,
 } from "/domain/index.js";
@@ -34,6 +31,13 @@ const SHOTS = [
 
 function attempt(state, overrides = {}) {
   return {
+    schema_version: 2,
+    execution_identity: {
+      schema_version: 1,
+      protocol: "v2.4.1",
+      capability_version: 2,
+      credential_reference: { source: "test_double" },
+    },
     state: state,
     action_id: "act-11111111-2222-3333-4444-555555555555",
     task_id: null,
@@ -58,7 +62,6 @@ test("B01", "空批次：计数全零、下一步是 empty、没有任何队列"
     "空批次不允许有队列");
   expect(state.settled === true, "空批次视为已静置");
   expect(state.all_succeeded === false, "空批次不允许自称全部成功");
-  expect(BATCH_HALT_CODES.length === 2, "停止码词表必须保持两条");
   return { next_step: state.next_step };
 });
 
@@ -132,6 +135,14 @@ test("B05", "未知与失败的下一步：有身份可核对则 wait；无身�
   expect(byTask.review_queue.length === 0, "有任务编号的未知不需要人工强制处理");
   const noIdentity = single(attempt("unknown", { task_id: null }));
   expect(noIdentity.next_step === BATCH_NEXT_STEPS.review, "无身份未知下一步是人工处理");
+  const missingFrozenIdentity = single(attempt("unknown", {
+    task_id: "task-u-002", execution_identity: null,
+  }));
+  expect(missingFrozenIdentity.reconcile_queue.length === 0
+    && missingFrozenIdentity.review_queue.join("|") === SHOTS[0].shot_id
+    && missingFrozenIdentity.queue.length === 0
+    && missingFrozenIdentity.retry_queue.length === 0,
+    "即使有任务编号，缺冻结执行身份也不得猜目标核对或自动重提");
   const failedOnly = single(attempt("failed"));
   expect(failedOnly.next_step === BATCH_NEXT_STEPS.retry, "只剩失败下一步是重试");
   const allDone = deriveBatchState({
@@ -212,7 +223,7 @@ test("B08", "确定性与顺序：输入键顺序打乱不影响输出；同输�
   return { next_step: first.next_step, rows: first.rows.length };
 });
 
-test("B09", "行投影：Attempt 状态原样透出，标签缺省回退 shot_id，进度文案包含关键计数", async () => {
+test("B09", "行投影：运行状态、任务编号与核对方式保持一致", async () => {
   const state = derive({
     shot_main_clean: attempt("running", { task_id: "task-r-009" }),
     shot_feature_scene: attempt("succeeded"),
@@ -221,19 +232,7 @@ test("B09", "行投影：Attempt 状态原样透出，标签缺省回退 shot_id
   const row = state.rows[0];
   expect(row.state === "running", "Attempt 状态必须原样透出");
   expect(row.task_id === "task-r-009" && row.reconcile_mode === "by_task", "任务编号与核对方式必须透出");
-  const noLabel = deriveBatchState({
-    shots: [{ shot_id: "shot_main_clean" }],
-    latestAttempts: {},
-    promptReady: () => true,
-  });
-  expect(noLabel.rows[0].label === "shot_main_clean", "标签缺省时回退 shot_id");
-  const text = batchProgressText(state);
-  expect(text.includes("共 3 张") && text.includes("已成功 1")
-    && text.includes("处理中 1") && text.includes("结果未知 1"),
-    "进度文案必须包含关键计数：" + text);
-  expect(batchProgressText(null) === "批次状态不可用。", "空状态的文案必须稳定");
-  expect(BATCH_SHOT_STATE_LABELS.ready === "待提交", "状态词表必须保持产品用语");
-  return { text: text };
+  return { task_id: row.task_id, state: row.state, reconcile_mode: row.reconcile_mode };
 });
 
 /* ---------------------------------------------------------------- 运行器 */

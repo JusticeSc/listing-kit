@@ -3,7 +3,8 @@
 
 检查：
   1) domain 与 harness 模块全部通过 node --check（ESM 语法门）。
-  2) 契约套件在真实 Chromium 里全部通过，且用例清单完整（C01..C37）。
+  2) 宿主特有契约案例（C36 落库集成、C37 JSON 纯数据守卫）在真实 Chromium 里全部通过；
+     C01..C35 纯领域断言已按 R3.2 分层迁至 `npm run test:domain`（Node 直跑，同批断言）。
   3) 反向探针确实存在并被执行：非法形状、模型确认、无值确认、依赖成环、越界失效、brief 不一致。
   4) 由驱动侧独立走一遍"资料 + 槽位 + 理解"落库：真 IndexedDB、真 repository、真版本推进。
   5) 正式入口 `app/server.py --check` 仍然通过（V2.2.1 不得破坏 V2.1.4）。
@@ -47,10 +48,10 @@ DOMAIN_FILES = [
     "evals/product-v2/harness/brief-contract.js",
 ]
 
-EXPECTED_CASES = [f"C{index:02d}" for index in range(1, 38)]
+# R3.2 分层：浏览器只承载宿主特有案例；纯领域 C01..C35 在 npm run test:domain。
+EXPECTED_CASES = ["C36", "C37"]
 
-NEGATIVE_CASES = ["C04", "C05", "C08", "C10", "C11", "C15", "C18", "C20", "C23",
-                  "C24", "C25", "C26", "C28", "C30", "C32", "C33", "C37"]
+NEGATIVE_CASES = ["C37"]
 
 DRIVER_INTEGRATION = """
 async () => {
@@ -222,7 +223,7 @@ def main() -> int:
                 case_ids = [item["id"] for item in suite.get("cases", [])]
                 missing = [case for case in EXPECTED_CASES if case not in case_ids]
                 failed_cases = [item for item in suite.get("cases", []) if not item.get("ok")]
-                check("V2.2.1-01", "契约套件全部通过且用例清单完整（C01..C37）",
+                check("V2.2.1-01", "宿主契约案例全部通过且清单完整（C36/C37；C01..C35 在 npm run test:domain）",
                       suite.get("status") == "passed" and not missing and not failed_cases,
                       {"status": suite.get("status"), "cases": len(case_ids), "missing": missing,
                        "failed": [item["id"] for item in failed_cases],

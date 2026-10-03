@@ -547,7 +547,6 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 page.wait_for_selector("#empty-state:not([hidden])", timeout=60_000)
                 page.fill("#new-project-name", "审计商品 · 人工选择")
                 page.click("#create-project")
-                page.click('#project-list .project-row button[data-action="open"]')
                 expect(page.locator("#project-view")).to_be_visible()
                 page.set_input_files("#ref-file", str(reference))
                 expect(page.locator("#ref-list .ref-row")).to_have_count(1)

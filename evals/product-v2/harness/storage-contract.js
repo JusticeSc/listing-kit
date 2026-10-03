@@ -12,6 +12,8 @@ import {
   CURRENT_PROJECT_POINTER_KEY,
   STORAGE_SCHEMA_VERSION,
   STORE_SPECS,
+  DEFAULT_MIGRATIONS,
+  documentKeyOf,
   openDatabase,
   openStorage,
   pointerKeys,
@@ -517,6 +519,65 @@ test("M03", "迁移抛错：升级事务回滚，不留下半个 schema", async 
     return { code: outcome.code, stores: Array.from(reopened.objectStoreNames).sort() };
   } finally {
     reopened.close();
+    await dropDatabase(name);
+  }
+});
+
+test("M04", "真实 v1 项目升级：数值最新版、历史、资产与 OCC 保持一致", async () => {
+  const name = newDbName("amz-v2-real-upgrade");
+  const old = await openStorage({ name, migrations: DEFAULT_MIGRATIONS.slice(0, 1) });
+  let project;
+  let asset;
+  try {
+    project = await old.repository.projects.create({ name: "旧库升级" });
+    asset = await old.repository.assets.put(project.project_id, {
+      bytes: utf8Bytes("upgrade-asset-preserved"), mediaType: "image/png", originalName: "old.png",
+    });
+    for (const documentId of ["a", "a:x", "中文"]) {
+      for (const version of [1, 9, 10, 100]) {
+        await rawPut(old.db, "documents", {
+          document_key: documentKeyOf(project.project_id, PROBE_DOC, documentId, version),
+          project_id: project.project_id, kind: PROBE_DOC, document_id: documentId,
+          version, schema_version: 1, payload: { documentId, version },
+          created_at: project.created_at, updated_at: project.updated_at,
+        });
+      }
+    }
+  } finally {
+    old.close();
+  }
+  const upgraded = await openStorage({ name });
+  try {
+    const repo = upgraded.repository;
+    const latest = await repo.documents.listLatest(project.project_id, PROBE_DOC);
+    const expectedIds = ["a", "a:x", "中文"].sort((a, b) => a.localeCompare(b));
+    expect(JSON.stringify(latest.map((row) => row.document_id)) === JSON.stringify(expectedIds),
+      "升级后最新版列表必须保留全部独立文档及原排序");
+    expect(latest.every((row) => row.version === 100 && row.payload.version === 100),
+      "最新版必须按数值取 100，不能取字符串排序的 9");
+    expect(await repo.documents.getLatest(project.project_id, PROBE_DOC, "missing") === null,
+      "不存在文档必须返回 null");
+    expect((await repo.documents.listLatest(project.project_id, "absent")).length === 0,
+      "不存在 kind 不得返回相邻 kind");
+    const retained = await repo.assets.get(project.project_id, asset.sha256);
+    expect(await retained.blob.text() === "upgrade-asset-preserved", "升级后资产字节不得改变");
+    expect(JSON.stringify(await repo.projects.get(project.project_id)) === JSON.stringify(project),
+      "升级不得重写项目元数据");
+    const history = await repo.documents.listVersions(project.project_id, PROBE_DOC, "a");
+    expect(JSON.stringify(history.map((row) => row.payload.version)) === "[100,10,9,1]",
+      "升级必须保留完整历史及各版本载荷");
+    const writes = await Promise.allSettled([101, 102].map((value) => repo.documents.save(project.project_id, {
+      kind: PROBE_DOC, documentId: "a", expectedVersion: 100, payload: { value },
+    })));
+    expect(writes.filter((row) => row.status === "fulfilled").length === 1, "OCC 必须只有一个赢家");
+    expect(writes.filter((row) => row.status === "rejected")
+      .every((row) => row.reason.code === "REVISION_CONFLICT"), "OCC 输家必须得到可见冲突");
+    expect((await repo.documents.getLatest(project.project_id, PROBE_DOC, "a")).version === 101,
+      "升级后保存必须在数值版本头上仅追加一次");
+    return { old_version: 1, new_version: upgraded.db.version,
+      latest_versions: latest.map((row) => row.version), history_versions: history.map((row) => row.version) };
+  } finally {
+    upgraded.close();
     await dropDatabase(name);
   }
 });

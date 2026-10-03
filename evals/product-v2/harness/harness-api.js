@@ -94,6 +94,33 @@ export function utf8Bytes(text) {
   return new TextEncoder().encode(text);
 }
 
+/**
+ * V2.R5.3 有效图像 Prompt 档的固定测试 fixture（纯领域常量，不调用模型、不读服务端）。
+ * 形状与 domain.imagePromptProfile(capabilities.images) 的输出一致：目标 + 协议 + 请求 profile；
+ * 数值沿用当前产品网关的保守请求限制（384..2048 边、512²..2048² 面积、比例 1/8..8、1344*1344）。
+ */
+export const IMAGE_PROMPT_PROFILE = Object.freeze({
+  provider_id: "dashscope-qwen-image",
+  model_id: "qwen-image-3.0",
+  version: 1,
+  protocol: "v2.4.1",
+  size: "1344*1344",
+  n: 1,
+  prompt_extend: false,
+  watermark: false,
+  output_format: "png",
+  supports_negative_prompt_field: false,
+  max_reference_images: 3,
+  reference_media_types: Object.freeze(["image/png", "image/jpeg"]),
+  min_side: 384,
+  max_side: 2048,
+  min_area: 512 * 512,
+  max_area: 2048 * 2048,
+  min_ratio: 1 / 8,
+  max_ratio: 8,
+  max_prompt_chars: 4000,
+});
+
 /* ---- window.v2Harness：Python 侧驱动的窄接口 ---- */
 
 const handles = new Map();

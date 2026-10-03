@@ -2,7 +2,7 @@
 
 > CONTROL-STATUS: current · AUTHORITY: project-context
 > 本文件回答“项目是什么、怎样运行、数据归谁、目录与质量门槛是什么”。产品目标、验收与任务图只在
-> [`product-v2-goal-and-implementation-plan.md`](product-v2-goal-and-implementation-plan.md) 维护；执行位置只在
+> [`product-v2-refactor-plan.md`](product-v2-refactor-plan.md) 维护；执行位置只在
 > [`../_working/amz-listing-kit-product-v2/state.md`](../_working/amz-listing-kit-product-v2/state.md) 维护。
 
 ## 1. 项目身份
@@ -17,7 +17,7 @@
 
 | 层 | 稳定边界 | 事实从哪里读 |
 |---|---|---|
-| Product V1 | 本机文件夹工作空间与旧完整生图闭环冻结为回归基线；只复用业务语义、Provider 经验和测试案例，不继续扩展服务器工作空间；V2.7.4 冻结后由 V2.7.5 专批删除（SEL-009） | 当前仍可运行的行为见 `README.md` 的历史入口；设计与完成轨迹从 `docs/INDEX.md` 的 superseded 文档进入 |
+| Product V1 | 本机文件夹工作空间与旧完整生图闭环冻结为回归基线；只复用业务语义、Provider 经验和测试案例；重构最终人审与日落前回退审计后由 V2.R7.3 专批删除（SEL-009） | 当前仍可运行的行为见 `README.md` 的历史入口；设计与完成轨迹从 `docs/INDEX.md` 的 superseded 文档进入 |
 | Product V2 | 浏览器拥有用户项目，Python 服务无业务状态；所有新能力都必须在这一所有权边界内实现 | 已落地行为只看 `README.md` 与代码；当前进度和证据只看 Product V2 state；目标只看 Product V2 计划 |
 | 参考模板 | `docs/standards-template/` 是外部课程模板的原样副本，不是本项目运行规范 | 采纳映射、未采纳项与复访条件只在 `AGENTS.md` §Standards Mapping |
 
@@ -80,7 +80,7 @@ Python 无状态 AI 服务
 | 层 | 当前选择 | 边界 |
 |---|---|---|
 | 前端 | 原生 HTML、CSS、JavaScript | 延续现有低依赖路线；业务状态通过 repository/service 接口访问，不让 DOM 成为状态源 |
-| 浏览器持久化 | IndexedDB + Blob；localStorage 只放轻量指针 | 需要 schema migration、事务、容量提示、项目导入/导出；不把图片 Base64 塞进 localStorage |
+| 浏览器持久化 | IndexedDB + Blob；localStorage 只放轻量指针 | 当前格式事务、容量提示、项目导入/导出；开发态旧版本兼容不要求（SEL-018）；不把图片 Base64 塞进 localStorage |
 | 服务端 | Python；正式入口 `app/server.py` 默认启动 Product V2 无状态适配器（`--legacy-v1` 回 V1） | 服务方法无用户工作空间参数；请求进、模型响应出；正式入口不读写工作空间或最近项目索引 |
 | 语义模型 | `deepseek-v4.1-flash`，经 SemanticProvider 适配 | 输出必须通过结构契约；模型可替换，领域对象不绑定模型文本 |
 | 图片模型 | 阿里云百炼 `qwen-image-3.0`，经 ImageProvider 适配 | 直接使用参考图；主流程不抠图、不部署本地分割模型 |
@@ -98,7 +98,7 @@ Python 无状态 AI 服务
 
 | ID | 范围 | 决策 | 被拒方案 | 复访条件 |
 |---|---|---|---|---|
-| SEL-000 | 依赖政策 | 分层：Python 侧允许登记过的 pinned 依赖，依赖管理与锁的唯一权威是 `pyproject.toml` + `uv.lock`（新增一律 `uv add`，CI 用 `uv sync --locked`）；浏览器侧保持无构建步骤，只允许 vendor 单文件库；领域规则（槽位注册表、错误归口、状态语义）自研，通用原语优先复用 | 全层放开 npm 构建链；全零新增依赖；requirements.txt 与 pyproject 双份手工维护 | 前端需要组件框架或状态管理，或离线安装条件变化 |
+| SEL-000 | 依赖政策 | Python pinned 依赖仍由 pyproject.toml + uv.lock 管理；浏览器原生 ESM，无产品构建。渐进前端工具已按 SEL-021 单独批准并锁根 package.json/package-lock.json；构建/框架仍需实际成本与独立选型，不把低依赖变成拒绝类型检查的理由；领域规则自研、通用原语复用 | 未经选型直接放开 npm/全仓 TS/框架；全零工具；多份 manifest/lock 权威 | 工具 PoC、实际 DOM 维护痛点、离线安装约束变化时 |
 | SEL-001 | 编排层 | 不引入 LangGraph 与 Agent/Memory 编排，服务端保持无状态（业务状态权威是浏览器 IndexedDB）；引入 `langchain-core` / `langchain-openai` 仅作提示词、模型调用与结构化解析原语（见 SEL-003），不承担状态与编排 | LangGraph checkpointer + 服务端状态；Agent/Memory 编排 | 出现服务端自主多步编排，或需要跨进程恢复的长任务 |
 | SEL-002 | 服务端 HTTP | 暂保留 stdlib `http.server`（零运行时依赖、端点少、单进程） | Flask / FastAPI + uvicorn | V2.4 图片上传/下载需要 multipart 与流式响应时重开 |
 | SEL-003 | 语义/视觉调用传输层 | 用户已确认（2026-09-30）：`langchain-core` + `langchain-openai` 的 `ChatOpenAI` 指向百炼 OpenAI 兼容端点（`deepseek-v4.1-flash`）；显式 timeout、`max_retries=0`（禁止隐藏重试）；失败映射进 `v2_semantic` 四类归口。版本：langchain-core 1.6.6、langchain-openai 1.6.6（均 MIT）；依赖实测与 PoC 报告见 `evals/product-v2/sel003-transport-selection-20260929.txt` | LiteLLM（59 包，为单一兼容协议付 4 倍依赖）；`requests` 手写适配器（重复造 HTTP/重试轮子）；OpenAI SDK 直连（已含于 langchain-openai，不建双轨） | 接入第二个供应商或需要路由/降级/成本统计时评估 LiteLLM；需要 OpenAI 专有能力时评估直连。PoC 已发现：`deepseek-v4.1-flash` 为推理型输出，需给 reasoning 留预算 |
@@ -107,11 +107,23 @@ Python 无状态 AI 服务
 | SEL-006 | 语义契约表示 | Python 侧契约表示权威 = Pydantic（langchain-core 自带，锁定 2.13.5）：请求 / 原始提案 / 提案槽位三类模型 + 跨字段校验；校验作用在模型原始输出；错误四类归口、归一化映射、浏览器侧 `checkFactSlot` 与 `CORE_SLOT_REGISTRY` 保留 | Python 侧继续手写形状/不变量校验（重复造轮子，违反复用门）；浏览器改吃 schema（受 SEL-000 无构建约束，且与 SEL-001 状态权威错位） | V2.6.3 项目包跨版本迁移需要 schema 版本与迁移器时，以“契约权威”为题重开（评估 JSON Schema 作中立权威 + 双语言消费者） |
 | SEL-007 | LangChain 使用边界 | v1 直调形态：`ChatOpenAI.with_structured_output(原始提案模型, method="json_mode", include_raw=True)`；系统/用户消息直接构造，JSON 格式说明由 Pydantic schema 生成并注入系统提示；LCEL 管道、ChatPromptTemplate、Agent/Memory 均不使用（保留为库内可用能力，不是本项目范式）；装配与错误分类的操作细节见计划 §9.1 | LCEL 管道（0.x 主推范式）；默认 `method="json_schema"`（百炼对自定义模型名的支持未证实；不支持时 400 且会被误分类）；`method="function_calling"`（依赖该模型在百炼的函数调用支持）；ChatPromptTemplate | 百炼确认支持 `response_format: json_schema` 时把 method 切换回默认（改一个装配参数 + 重跑契约测试）；需要多步编排时按 SEL-001 的复访条件另立决策 |
 | SEL-008 | 浏览器 ZIP 能力 | 用户已定（2026-09-30）：vendor fflate 0.8.3（MIT）替换自研 ZIP 容器；vendored 单文件 = `esm/browser.js`（90,922B，自包含 ESM，上游 sha256 前 16 位 `B7CA4450B19559A1`），随附许可证文件并登记 vendor 表；`storage/zip.js` 退化为薄适配器：保持 buildZip/readZip 接口与我方错误码及上限检查，格式校验委托 fflate | 继续自研 ZIP 容器（8.7KB：CRC32 + 本地头/中央目录/EOCD）；minified UMD 33KB（全局脚本、非 ESM）；jszip（体积更大） | 上游发布修复版需升级时（重跑包合同与 V2.1.3 往返验证）；fflate 停更或许可变化时重选 |
-| SEL-009 | V1 日落 | 用户已定（2026-09-30）：V2.7.4 发布候选冻结后，专批删除 Product V1 代码与随之失效的依赖（含自造重试/退避/文件锁：`src/imagegen.py` `_retry`、`src/application_service.py` 限流退避、`src/workspace_store.py` 文件锁）；git 历史保留，V1 证据不删除 | 边跑边删 V1；把 V1 主路径保留到 V2 完成 | V2.7.4 冻结时执行 V2.7.5；届时逐项复核依赖与工具引用 |
+| SEL-009 | V1 日落 | 已批准方向不变：先通过重构最终人审（V2.R7.2），形成日落前可回退基线，再由 V2.R7.3 经专批删除 V1 和真实失效依赖；保留历史证据，删后重跑完整回归/主链及最终指纹 | 边重构边删；跳过人审/基线；沿用删除前发布指纹 | V2.R7.2 与日落前审计通过时逐项核对引用；本轮未授权删除 |
 | SEL-010 | 图像网关传输层 | 复用 `requests`（V1 已在用的锁定直接依赖）+ 三条无状态路由（submit / status / result）；协议与错误映射按 §9.10 自写，但请求形状沿用 V1 冻结合同（`src/providers/dashscope_image.py`）；PoC 与依赖实测见 `evals/product-v2/sel010-image-gateway-transport-poc-20260930.txt` | 官方 `dashscope` SDK（0.27.x→1.27.7 实测解析 32 包，拖入 aiohttp / typer / websocket-client 等）；`httpx`（第二套 HTTP 客户端，无协议收益）；OpenAI 兼容图像端点（百炼图像合成不是该形状） | 需要批量并发、取消、多供应商路由或成本统计时重估 SDK；百炼改协议时按冻结合同重测并更新 §9.10 |
 | SEL-011 | 复核（VLM）通道与模型 | 用户已定（2026-09-30）：复核复用 SEL-003 的 langchain 通道（`ChatOpenAI` + json_mode 结构化输出 + `map_openai_exception` 四归口），默认模型 `qwen-vl-max`（`REVIEW_MODEL` 可覆盖，registry 条目 `dashscope-review`）；输入 = 候选 + ≤3 参考图 + ShotSpec 摘要 + 已确认事实；输出只允许 7 个 check + evidence + confidence；VLM 只提示、不得 BLOCK、失败落 Unknown、不产生采纳 | 新建第二套 HTTP 客户端/适配器层（重复造轮子）；官方 SDK（拖包）；让模型自带严重度或采纳结论；把审美判断升级为平台硬阻断 | 需要多模态模型路由/降级或成本统计；百炼模型命名/能力变化；检出质量校准需要模型对比时（后续任务） |
-| SEL-012 | 浏览器支持与安全 origin | 首版保证当前稳定版桌面 Chrome/Edge；远程正式入口必须是可信 HTTPS secure context，TLS 由现有穿透/反向代理终止，应用容器保持无状态 HTTP。保留 IndexedDB + 原生 WebCrypto；不为远程明文 HTTP 或嵌入式浏览器自研 UUID/SHA-256、引入浏览器密码学 polyfill或服务器项目存储。能力失败必须区分 IndexedDB、WebCrypto、schema、配额与事务并给恢复动作 | 在浏览器手写 UUID/SHA-256 降级；新增 hash/UUID 服务端接口；把项目迁回服务器；把所有宿主纳入保证范围 | 目标客户必须使用不可提供 secure context 的受控宿主，或 Chrome/Edge 支持策略发生业务变化时重开；先证明真实环境约束再选替代 |
+| SEL-012 | 浏览器支持与安全 origin | 用户恢复后的当前 Goal 验证范围为稳定版桌面 Chrome（计划 §2.4）；旧 Chrome/Edge 专项记录保留历史身份，不宣称 Edge 本轮通过。远程正式入口必须是可信 HTTPS secure context，TLS 由现有穿透/反向代理终止，应用容器保持无状态 HTTP。保留 IndexedDB + 原生 WebCrypto；不为明文 HTTP 自研 UUID/SHA-256、密码学 polyfill 或服务器项目存储；失败区分能力/schema/配额/事务并给恢复动作 | 浏览器手写密码学降级、服务端项目库、把所有宿主纳入保证范围、用无头结果替真人走查 | 当前 Goal 的浏览器范围或实际受控宿主需求改变时重开；先证明真实约束 |
 | SEL-013 | 可访问性扫描 | 用户已定（2026-10-01，自审授权范围内）：vendor axe-core 4.13.0（MPL-2.0）单文件到测试侧 `evals/product-v2/vendor/`，由 `tools/verify_v2_6_4_accessibility.py` 注入正式入口页面运行扫描；不新增构建链、不进产品运行时 | 运行时 CDN 引入（不可离线复现）；npm/pip 构建依赖（违反 SEL-000 无构建链）；自写规则引擎（重复造轮子） | axe 上游大版本升级（重跑可访问性终验）；MPL 许可变化；需要运行时无障碍报告时重估 |
+| SEL-014 | 重构运行形态与模型范围 | 用户确认：浏览器本地优先 + 无业务持久化 Python 网关；模型不是核心卖点，仅有限模型解耦；第二生图模型尚未选，按 V2.R4.1/R4.2 评估/获批真实 PoC，不迁 Node 或引入服务端项目库 | 胖后端/账户数据库、全栈 TS、任意模型平台、仅换 model 字符串冒充生图兼容 | 跨设备/协作/后台持续执行成为实际需求，或有限协议维护成本实测不可接受时 |
+| SEL-015 | 凭据产品政策 | 用户确认：BYOK 为主，部署默认档仅受限试用；默认 key 不下发、不附到用户 endpoint。BYOK 首轮目标为内存会话 + HTTPS 请求级使用、不进本地持久化/包/日志/错误/诊断；当前产品仍 env-only，具体出站/访问/费用策略由 V2.R4.1/R4.3 闭合，非本轮调用授权 | 无限公开默认付费 key、默认 key 透传任意地址、secret 跟配置导出、先持久保存再补安全 | 需要持久凭据或扩大试用范围时明确风险/权限；第二协议认证方式确定后复访实现 |
+| SEL-016 | 前端工程化与 UI | 用户确认渐进类型检查/验证分层与 UI 人体工程审计方向；先实际任务基线，再原型和目标合同；复用已有业务语义但不将现有 domain/repository 或页面结构设为不可替换；不预定布局、六强制步骤、React/Vue、构建工具或全仓 TS；按 SEL-018 允许激进 clean cutover | 先换皮/拆文件、框架即工程化、机械降低点击而取消必要确认、Skill 代替真页面证据 | V2.R2/R3.1 的问题/原型/PoC 提供明确收益时选择工具与布局 |
+| SEL-017 | 当前 Goal 真实观察与旧控制面冻结 | 用户已恢复并确认当前 Goal：不新建、不虚构 ID、不写生命周期。工具本次实际返回原生 handle，按计划 §2.2 required 绑定并保存原样 ID 与观察证据；session 仅用于接口确实无 ID，不将原生 handle 补成 UUID。新会话须重读真实 Goal；旧 plan/state/观察保持历史身份。用户确认后的离线本地实现已获授权，付费/私有上传/提交推送/部署/V1 日落/新依赖仍各自设门 | 假状态、用旧 ID 承担新 objective、双 current 权威、凭旧观察声称本会话重读、虚构 UUID 或谎称缺 ID | Goal 接口身份或生命周期协议变化时重开；恢复先核对实时读数 |
+| SEL-018 | 开发态兼容与设计自由度 | 用户明确：“不用考虑历史兼容性，现在仍在开发阶段，允许你做激进的设计。”旧版本/schema/包迁移及真实旧工件恢复不再要求；按计划 §2.3 clean cutover，可重做 Module/Interface/UI/记录格式、移除被替代路径；新开发库/旧格式拒绝须显式，不静默删除浏览器数据。同版本候选历史、人工选择、任务冻结身份、刷新恢复、ZIP哈希及安全不变量保留；其余权限门不变 | 为缺失旧测试包停工、保留向后兼容 shim/迁移层、将激进设计当作静默丢数据或付费/部署/V1删除授权 | 首次正式发布/存在需支持的历史用户数据时，重新定义版本兼容承诺；开发期不预建设迁移层 |
+| SEL-019 | 问题导向参考系统研究 | V2.R2.3 已核查 pi `88ff80b`/0.99.2（MIT）、ComfyUI `2d6b7328`/0.38.0（GPL v3）、Open WebUI `8bd8b4f`/0.11.4（自定义品牌约束许可），固定全文 SHA/路径见 `evals/product-v2/refactor/reference-review-20261001.md`。仅采纳概念：用途/能力/协议 Adapter/凭据分层；交付只读采用候选原 action 的冻结 Prompt，不读当前编辑头；同 Shot 直接图片对照与稳定候选导航；Unknown 分身份恢复、状态/影响/下一动作先于技术详情。BYOK 仍仅内存，概念不等于新依赖或真实能力证明，布局由 R2.2 原型冻结 | 复制三套平台/代码/样式/品牌、账户或服务器项目库、pi 聊天兼容冒充图片协议、上游持久凭据照搬 IndexedDB、Comfy 元数据新功能、隐式自动重提/采用/付费、未选型新运行依赖 | R2.2/R4.1/R4.2 的原型/能力/费用证据；确需复制代码或引入库时重开许可/依赖门 |
+| SEL-020 | 电商参考 skill 问题导向复核 | V2.R2.2 只读核查工作区根三目录：`ecommerce-image-suite-main/`（Apache-2.0 但 README 陈旧矛盾、占位符未填、模特/实拍无许可）、`ecom-details-image-main/`（自称 MIT 但无 LICENSE 文件，`.env.example` 含第三方代理明文 key 泄漏样本）、`ecommerce-skills-main/`（MIT 2026 dlazy，实读 platform-compliance/detect-task/item-detail＋shared 脚本/测试/规格）。结论：三者只提供流程编排与规格清单（批次 manifest、参考图锁定、先单图后整套、客观像素机检＋主观 VLM 质检分层、固定质检 prompt、中文排版四条件、逐轮 manifest、dry-run、不伪造测量），均无图片结果验收实现（保真/文字/事实/尺寸/齐全性须 amz 自建）；零字节复制，不复制代码/模板/样式/品牌/资产/凭据，不引入 Node 脚本链与真实调用/付费；证据 `evals/product-v2/refactor/prototype-review-20261002.md` §5 | 未经许可复制代码/模板原文、样式/模特/实拍资产、品牌与联系方式；硬编码供应商分支冒充解耦；真实模型调用/付费上传；把 prompt 自述或人工观感当验收结论；复用泄漏凭据 | R6 验收自建时复用 rubric/阈值数据；确需复制代码或引入依赖时重开许可/依赖门 |
+| SEL-021 | 前端开发检查与行为验证 | 用户明确批准开发期检查器：根 package.json/package-lock.json 锁 typescript 6.0.3（Apache-2.0，无传递安装依赖），安装禁用 scripts；JSDoc/checkJs/noEmit，Node 24.19.0/npm 11.17.0，行为验证复用 node:test。真实领域 strict PoC 零诊断，错误 Shot ID 类型负例 TS2322；根开发依赖不进产品静态根或 Docker COPY。现有 JS/ESM 保留，不引入框架/生产构建；渐进诊断迁移与 CI 接线由 R3.2 闭合。证据 frontend-selection-20261002.md、frontend-approval-20261002.json | 全仓 TS 强迁移、框架先行、类型检查等同 node --check、产品目录安装导致编译器进入生产、多个依赖锁、隐式 npx 取包 | 版本安全/许可变化，真实类型表达或手工 DOM 成本证明不足时复访；移除 dev 包/检查配置成本小，JSDoc 保留为合同 |
+
+SEL-000..013 中对旧计划 §9.x 的操作设计引用仍指冻结的
+`product-v2-goal-and-implementation-plan.md`，不把历史操作说明当未来任务。
+SEL-014..021 是本轮方向/控制选择与固定来源复用结论；SEL-021 的唯一开发期检查器已单独批准，第二模型、预算、框架与部署尚未批准。
 
 状态：SEL-000 至 SEL-011 已定案（2026-09-30）。依赖权威已从 `requirements.txt` 迁移到
 `pyproject.toml` + `uv.lock`，守卫、CI、README 同步（证据见
@@ -121,8 +133,8 @@ Python 无状态 AI 服务
 
 ### 4.2 依赖与 vendor 登记
 
-`tools/check_docs.py` 会把下面两张表与 `pyproject.toml` + `uv.lock`、`app/product_v2/vendor/`
-做双向比对：新增依赖必须同时改登记表与 `pyproject.toml`（`uv add` 落锁），移除依赖必须两处同删。
+`tools/check_docs.py` 双向核对 Python 的 pyproject/uv.lock、前端开发期根 package.json/package-lock.json
+及 vendor 登记。每类依赖只有一份 manifest/lock 权威；新增/移除必须同步对应登记，不放开任意 npm 包。
 
 依赖权威从 `requirements.txt` 迁移到 `pyproject.toml` + `uv.lock`（SEL-000 修订，2026-09-30；
 删除 requirements 文件、守卫改读锁文件、CI 与 README 同步；证据见
@@ -147,8 +159,21 @@ Python 无状态 AI 服务
 <!-- dependency-registry:end -->
 
 CI 浏览器验证依赖来自 pyproject 的 dev 组（`playwright==1.63.0`，Apache-2.0），不进入生产镜像。
-GitHub Actions 复用官方 `actions/checkout@v6`、`actions/setup-python@v6`，用 `uv sync --locked` 与
-`uv run` 执行守卫、正式入口和浏览器验证；SEL-005 是引入依据。
+GitHub Actions 复用官方 actions/checkout@v6、actions/setup-python@v6（SEL-005）；前端复用
+官方 [setup-node v6.4.0](https://github.com/actions/setup-node/tree/v6.4.0)，固定 commit
+`48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e`（MIT，已核 LICENSE/API tag；SEL-021）。
+Node 从根 engines 读精确版本，CI 安装同 engines 的 npm 后 npm ci 禁 scripts；禁自动缓存，不引入
+产品构建/Node 运行时/认证框架。uv sync --locked 与 uv run 继续执行 Python/浏览器验证。
+
+前端开发期版本合同：Node `24.19.0`、npm `11.17.0`，来源为本机已安装工具；根 manifest/lock 锁定，
+R3.2 CI 已声明接线（尚待集成验证）；Node 只用于验证，Python/静态 ESM 仍是产品运行时。安装只允许已批准包，使用
+`npm ci --ignore-scripts`，不通过 npx 隐式下载工具。当前依赖仅 typescript，一个 dev 包，无传递安装依赖。
+
+<!-- frontend-dependency-registry:begin -->
+| 包 | 版本 | 许可 | 用途 | 引入决策 | 移除成本 |
+|---|---|---|---|---|---|
+| typescript | 6.0.3 | Apache-2.0 | dev-only JSDoc/checkJs/noEmit | SEL-021；用户明确批准 | 小：删除开发依赖、锁条目与检查配置 |
+<!-- frontend-dependency-registry:end -->
 
 <!-- vendor-registry:begin -->
 | 文件 | 版本/来源 | 用途 | 引入决策 |
@@ -182,7 +207,7 @@ amz-listing-kit/
 ├─ docs/
 │  ├─ INDEX.md                          # 文档身份和读取路由
 │  ├─ product-v2-project-context.md     # 本文件
-│  └─ product-v2-goal-and-implementation-plan.md
+│  └─ product-v2-refactor-plan.md        # 当前目标/任务；旧 goal-and-implementation-plan 是历史基线
 ├─ _working/amz-listing-kit-product-v2/
 │  └─ state.md                          # 唯一执行状态
 ├─ evals/product-v2/                    # V2 验证证据（目标）
@@ -205,7 +230,7 @@ amz-listing-kit/
 8. VLM 负责发现问题，人工负责最终采纳；硬规则只来自可复现的确定性检查。
 9. 主流程不需要主体分割或抠图；抠图仅可作为未来独立、显式选择的专项能力。
 10. 服务器不保存用户项目状态；浏览器清理数据或 origin 变化造成的迁移由项目包解决。
-11. 密钥只从服务器环境变量读取，不进入浏览器、Git、项目包或证据文件。
+11. 部署默认密钥只在服务器使用；BYOK 重构目标按 SEL-015：仅获批内存会话/HTTPS 请求级使用，不进入浏览器持久化、Git、项目包、日志、错误或证据；当前产品未实现 BYOK。
 12. 远程正式入口必须来自可信 HTTPS secure context；本机 localhost 是唯一明文开发例外。
 13. 默认界面投影业务任务而非工程结构；Prompt/hash/task id 可查但必须渐进披露。
 
@@ -214,14 +239,14 @@ amz-listing-kit/
 | 层 | 必须证明什么 | 主要证据 |
 |---|---|---|
 | 控制面 | 唯一目标、唯一状态、唯一下一动作、文档全部登记 | `tools/check_docs.py`、`tools/check_project_state.py` |
-| 领域与存储 | schema、迁移、事务、依赖失效和 Blob 生命周期正确 | 单元测试、反向探针、导入/导出哈希比对 |
+| 领域与存储 | 当前 schema、事务、依赖失效、Blob 生命周期与同版本往返正确；旧版本兼容按 SEL-018 不要求 | 单元测试、反向探针、导入/导出哈希比对 |
 | 服务合同 | 无服务器业务持久化；错误、Unknown 与 Provider 身份可恢复 | API 契约测试、服务器重启轨迹、磁盘差异审计 |
 | 浏览器产品 | 正式 HTTPS 入口在当前 Chrome/Edge 空白启动、刷新/关页恢复；完整主链、失败与窄屏可用；界面通过产品发起人视觉/交互走查 | Playwright、控制台/网络、IndexedDB 后置条件、1440/390/200% 视觉证据、走查记录 |
 | 生成系统 | 真实参考图、真实 Prompt、真实 task ID、候选和报告可追溯 | Provider 请求快照、模型记录、候选哈希、ReviewReport |
 | 产品完成 | 陌生使用者能够独立完成不同品类任务 | 首次使用者走查、完成矩阵；Mock 或自评不能替代 |
 | 格式检查 | 暂无 ruff/eslint：本仓库没有格式化工具链，格式由 `.gitattributes` 与评审保证 | 引入格式化工具需先过选型门（SEL 记录） |
-| 静态检查 | 暂无静态检查器；等价手段是守卫脚本（`tools/check_*.py`）与 `node --check` 语法门 | 同上 |
-| 单元测试 | 以验证入口（`tools/verify_*.py`）与反向探针为主，不以 pytest 收集为门槛 | 证据要求见计划 §12 与 `AGENTS.md` |
+| 静态检查 | 当前仅守卫与 `node --check` 语法门，不能称等价类型检查；渐进类型工具按 SEL-016 / V2.R3.1 选型后落锁接线 | 新工具未实施前不宣称通过类型门 |
+| 单元测试 | 当前以 `tools/verify_*.py` 与反向探针为主；目标验证分层按重构计划 §7.3 / V2.R3.2，不把已规划入口当现有工具 | 行为/边界/转换与宿主验证分工；规则见 `AGENTS.md` |
 | 覆盖率 | 暂不设阈值：本项目的判据是“证据能判红”，不是行覆盖率 | 若引入覆盖率门槛，先立 SEL 决策并说明理由 |
 | 应用构建 | 前端无需编译；Python 可直接运行；正式交付物是 CI 构建的 Docker 镜像 | `python app/server.py --check`、`docker build` |
 | 容器交付 | 镜像只含正式 V2 运行资源；健康检查通过；部署失败可恢复上一容器 | `docker build`、容器 `/api/health`、GitHub Actions run 与部署日志 |

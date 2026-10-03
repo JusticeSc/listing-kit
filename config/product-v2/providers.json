@@ -65,6 +65,26 @@
       "max_attempts": 1
     },
     {
+      "id": "volcengine-ark",
+      "role": "image",
+      "adapter": "v2_volcengine_image",
+      "model_id": "doubao-seedream-5-0-flash-260915",
+      "model_env": null,
+      "api_key_env": "ARK_API_KEY",
+      "base_url_env": "AMZ_V2_ARK_BASE_URL",
+      "timeout_env": "AMZ_V2_ARK_TIMEOUT",
+      "max_tokens_env": null,
+      "capabilities": {
+        "reference_images": true,
+        "max_reference_images": 3,
+        "async_tasks": false,
+        "sync_tasks": true,
+        "stateless": true,
+        "test_double": false
+      },
+      "max_attempts": 1
+    },
+    {
       "id": "fake-image",
       "role": "image",
       "adapter": "v2_fake_image",

@@ -18,8 +18,8 @@ import {
 } from "./shared.js";
 import {
   PLATFORM_PROFILES,
-  PROVIDER_PROFILES,
   canonicalJson,
+  checkImagePromptProfile,
   checkPromptRecord,
   promptStaleness,
 } from "./prompt.js";
@@ -45,7 +45,7 @@ export const FIX_REGIONS = Object.freeze([
 ]);
 
 const SUMMARY_FIELDS = Object.freeze([
-  "model", "size", "n", "prompt_extend", "watermark",
+  "model", "size", "n", "prompt_extend", "watermark", "output_format",
   "reference_count", "reference_roles", "prompt_chars",
 ]);
 
@@ -79,7 +79,7 @@ function fixForStaleReason(reason, shotId, label) {
     return fixTarget("prompt", shotId, label, "平台档已更新，重新编译这张图的 Prompt。");
   }
   if (field === "provider") {
-    return fixTarget("prompt", shotId, label, "Provider 档已更新，重新编译这张图的 Prompt。");
+    return fixTarget("prompt", shotId, label, "有效 Provider 档或请求参数已更新，重新编译这张图的 Prompt。");
   }
   return fixTarget("prompt", shotId, label, "到「Prompt 预览与版本」重新编译这张图（原因：" + (field || "未知") + "）。");
 }
@@ -96,8 +96,12 @@ export function buildConfirmationSheet(input = {}) {
   }
   const platform = PLATFORM_PROFILES[input.platformId || "amazon_us"];
   if (!platform) invalid("平台档不存在：" + String(input.platformId));
-  const provider = PROVIDER_PROFILES[input.providerId || "qwen-image-3.0"];
-  if (!provider) invalid("Provider 档不存在：" + String(input.providerId));
+  const provider = input.providerProfile;
+  const profileProblems = checkImagePromptProfile(provider);
+  if (profileProblems.length > 0) {
+    invalid("生成前确认缺少有效 Provider 档：" + profileProblems[0].message,
+      { problems: profileProblems.slice(0, 3) });
+  }
   const context = isPlainObject(input.context) ? input.context : {};
   const currentBasisByShot = isPlainObject(input.currentBasisByShot) ? input.currentBasisByShot : {};
   // 可选作用域（V2.5.4 单图返工）：只确认要重跑的那张图，不触及其它图片的确认状态。
@@ -170,14 +174,15 @@ export function buildConfirmationSheet(input = {}) {
           });
         }
         const compiledProvider = record.compiled.provider || {};
-        if (compiledProvider.model_id !== provider.model_id
-            || compiledProvider.version !== provider.version) {
+        // 比对完整冻结档（目标 / 协议 / 版本 / 请求参数），而非只比 model+version。
+        if (canonicalJson(compiledProvider) !== canonicalJson(provider)) {
           blockers.push({
             code: CONFIRM_BLOCKER_CODES.PROVIDER_MISMATCH,
-            message: "这张图的 Prompt 用的是 " + String(compiledProvider.model_id)
-              + "@" + String(compiledProvider.version) + "，当前 Provider 档是 "
-              + provider.model_id + "@" + provider.version + "。",
-            fix: fixTarget("prompt", shotId, label, "按当前 Provider 档重新编译这张图的 Prompt。"),
+            message: "这张图的 Prompt 冻结的是 " + String(compiledProvider.model_id)
+              + "@" + String(compiledProvider.version) + "（协议 " + String(compiledProvider.protocol)
+              + "），当前有效 Provider 档是 " + provider.model_id + "@" + provider.version
+              + "（协议 " + provider.protocol + "）。",
+            fix: fixTarget("prompt", shotId, label, "按当前有效 Provider 档重新编译这张图的 Prompt。"),
           });
         }
         const snapshotRefs = Array.isArray(snapshot.references) ? snapshot.references : [];
@@ -248,6 +253,7 @@ export function buildConfirmationSheet(input = {}) {
     n: provider.n,
     prompt_extend: provider.prompt_extend,
     watermark: provider.watermark,
+    output_format: provider.output_format,
     reference_count: referenceCount,
     reference_roles: referenceRoles,
     prompt_chars: promptChars,
@@ -256,19 +262,23 @@ export function buildConfirmationSheet(input = {}) {
       + promptChars + " 字）与 " + referenceCount + " 张参考图（角色："
       + (referenceRoles.length > 0 ? referenceRoles.join("、") : "无") + "）；参数 "
       + provider.size + " / n=" + provider.n + " / prompt_extend=" + String(provider.prompt_extend)
-      + " / watermark=" + String(provider.watermark) + "；图中文字语言 " + platform.on_image_text_language + "。",
+      + " / watermark=" + String(provider.watermark) + " / 输出格式 " + provider.output_format
+      + "；图中文字语言 " + platform.on_image_text_language + "。",
   };
 
   return {
     schema_version: CONFIRM_SCHEMA_VERSION,
     platform: { platform_id: platform.platform_id, version: platform.version, label: platform.label },
     provider: {
+      provider_id: provider.provider_id,
       model_id: provider.model_id,
       version: provider.version,
+      protocol: provider.protocol,
       size: provider.size,
       n: provider.n,
       prompt_extend: provider.prompt_extend,
       watermark: provider.watermark,
+      output_format: provider.output_format,
     },
     total: shots.length,
     ready: shots.length - blockedShots.length,
@@ -303,8 +313,12 @@ export function checkConfirmationSheet(sheet) {
   if (!isPlainObject(sheet.platform) || !isNonEmptyString(sheet.platform.platform_id)) {
     pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.platform", "确认单缺少平台档。");
   }
-  if (!isPlainObject(sheet.provider) || !isNonEmptyString(sheet.provider.model_id)) {
-    pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.provider", "确认单缺少 Provider 档。");
+  if (!isPlainObject(sheet.provider) || !isNonEmptyString(sheet.provider.model_id)
+      || !isNonEmptyString(sheet.provider.provider_id)
+      || !isNonEmptyString(sheet.provider.protocol)
+      || !isNonEmptyString(sheet.provider.output_format)) {
+    pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.provider",
+      "确认单缺少完整 Provider 档（目标 / 协议 / 输出格式）。");
   }
   if (sheet.scope_shot_ids !== undefined) {
     if (!Array.isArray(sheet.scope_shot_ids) || sheet.scope_shot_ids.length === 0
@@ -366,7 +380,8 @@ export function checkConfirmationSheet(sheet) {
   if (!isPlainObject(summary)) {
     pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.external_summary", "确认单缺少外发摘要。");
   } else {
-    if (summary.model !== (sheet.provider || {}).model_id || summary.size !== (sheet.provider || {}).size) {
+    if (summary.model !== (sheet.provider || {}).model_id || summary.size !== (sheet.provider || {}).size
+        || summary.output_format !== (sheet.provider || {}).output_format) {
       pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.external_summary.model",
         "外发摘要的参数必须来自 Provider 档。");
     }
@@ -410,6 +425,7 @@ export function confirmationSnapshot(sheet) {
       n: sheet.external_summary.n,
       prompt_extend: sheet.external_summary.prompt_extend,
       watermark: sheet.external_summary.watermark,
+      output_format: sheet.external_summary.output_format,
       reference_count: sheet.external_summary.reference_count,
       reference_roles: [...sheet.external_summary.reference_roles],
       prompt_chars: sheet.external_summary.prompt_chars,

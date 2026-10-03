@@ -38,6 +38,15 @@ function requireId(value, label) {
   return value;
 }
 
+// 数值 version 排序独立于 document_key 的字符串表示；OCC 调用复用写事务。
+async function readDocumentHead(store, projectId, kind, documentId) {
+  const range = IDBKeyRange.bound(
+    [projectId, kind, documentId, 1], [projectId, kind, documentId, Infinity]);
+  const cursor = await requestToPromise(
+    store.index("by_project_document_version").openCursor(range, "prev"));
+  return cursor ? cursor.value : null;
+}
+
 function normalizeName(value) {
   const text = typeof value === "string" ? value.trim() : "";
   if (!text) {
@@ -258,9 +267,8 @@ export function createRepository({
         throw new StorageError(STORAGE_ERROR_CODES.NOT_FOUND, "项目 " + projectId + " 不存在。");
       }
       const store = tx.objectStore("documents");
-      const history = await requestToPromise(
-        store.index("by_project_document").getAll(IDBKeyRange.only([projectId, kind, documentId])));
-      const currentVersion = history.reduce((max, item) => Math.max(max, item.version), 0);
+      const head = await readDocumentHead(store, projectId, kind, documentId);
+      const currentVersion = head ? head.version : 0;
       if (expectedVersion !== null && expectedVersion !== undefined
           && Number(expectedVersion) !== currentVersion) {
         throw new StorageError(
@@ -311,23 +319,37 @@ export function createRepository({
   }
 
   async function getLatestDocument(projectId, kind, documentId) {
-    const history = await listDocumentVersions(projectId, kind, documentId);
-    return history.length ? history[0] : null;
+    requireId(projectId, "project_id");
+    requireId(kind, "kind");
+    requireId(documentId, "documentId");
+    return withTransaction(db, ["documents"], "readonly",
+      (tx) => readDocumentHead(tx.objectStore("documents"), projectId, kind, documentId));
   }
 
   /** 指定 kind 下每个 document_id 的最新版本（kind 参与索引键，查询不许跨 kind 返回）。 */
   async function listLatestDocuments(projectId, kind) {
     requireId(projectId, "project_id");
     requireId(kind, "kind");
-    const all = await withTransaction(db, ["documents"], "readonly",
-      (tx) => requestToPromise(tx.objectStore("documents").index("by_project_kind")
-        .getAll(IDBKeyRange.only([projectId, kind]))));
-    const latest = new Map();
-    for (const record of all) {
-      const current = latest.get(record.document_id);
-      if (!current || record.version > current.version) latest.set(record.document_id, record);
-    }
-    return [...latest.values()].sort((left, right) => left.document_id.localeCompare(right.document_id));
+    const latest = await withTransaction(db, ["documents"], "readonly", (tx) => {
+      const range = IDBKeyRange.bound([projectId, kind], [projectId, kind, []]);
+      const request = tx.objectStore("documents").index("by_project_document_version")
+        .openCursor(range, "prev");
+      return new Promise((resolve, reject) => {
+        const records = [];
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+          const cursor = request.result;
+          if (!cursor) {
+            resolve(records);
+            return;
+          }
+          records.push(cursor.value);
+          // version ≥ 1：跳到当前文档的历史之前，只反序列化下一个文档的头。
+          cursor.continue([projectId, kind, cursor.key[2], 0]);
+        };
+      });
+    });
+    return latest.sort((left, right) => left.document_id.localeCompare(right.document_id));
   }
 
   /** 一个项目的全部文档版本（含历史），按 kind/document_id/version 稳定排序；导出项目包用。 */

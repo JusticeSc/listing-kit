@@ -80,6 +80,68 @@ POINTER_SNAPSHOT = """
 })
 """
 
+# 刷新后失败时，boot_error 为空 + 项目行数 0 + 指针仍在 这三种现象同时成立，
+# 既可能是「脚本没执行」，也可能是「执行了但卡在某一步」——两者对判据都表现为
+# #project-view 不出现。这段只在失败时读取，用来区分它们：
+#   - 时间线里出现过 disabled=true  => boot() 确实执行过（HTML 默认无 disabled 属性）
+#   - 没出现过                      => 模块没加载/没跑到第一行
+#   - view_hidden / empty_hidden / project_view_seen 用来区分「卡在 refresh 之前」与
+#     「refresh 完成了但 showProject 没跑」。
+BOOT_TRAIL_SCRIPT = """
+(() => {
+  const trail = [];
+  window.__bootTrail = trail;
+  const now = () => Math.round(performance.now());
+  // 必须从 init script 起就观察，不能等 DOMContentLoaded：模块脚本是 deferred，
+  // 在 DOMContentLoaded 之前就已执行，boot() 的第一次 setHomeControlsBlocked(true)
+  // 同步跑完后立刻 await；若观察器起晚了，true→false 这条轨迹会整段丢失，
+  // 把「boot 已执行」误判成「脚本没执行」。
+  const observer = new MutationObserver((records) => {
+    for (const r of records) {
+      if (r.target && r.target.id === 'create-project') {
+        trail.push(['attr', r.oldValue, r.target.disabled, now()]);
+      }
+      if (r.target && r.target.id === 'project-view' && !r.target.hidden) {
+        trail.push(['view-shown', now()]);
+      }
+    }
+  });
+  const attach = () => {
+    if (document.documentElement) {
+      observer.observe(document.documentElement, { subtree: true, attributes: true,
+        attributeOldValue: true, attributeFilter: ['disabled', 'hidden'] });
+      trail.push(['observing', document.readyState, now()]);
+    } else {
+      setTimeout(attach, 0);
+    }
+  };
+  attach();
+  window.addEventListener('error', (e) => {
+    trail.push(['err', String((e && e.message) || e), now()]);
+  });
+  window.addEventListener('unhandledrejection', (e) => {
+    trail.push(['reject', String((e && e.reason) || e), now()]);
+  });
+})();
+"""
+
+BOOT_STAGE_SNAPSHOT = """
+() => ({
+  trail: (window.__bootTrail || []).slice(-60),
+  ready_state: document.readyState,
+  create_has_disabled_attr: (document.getElementById('create-project') || {}).hasAttribute
+    ? document.getElementById('create-project').hasAttribute('disabled') : null,
+  project_view_hidden: (document.getElementById('project-view') || {}).hidden,
+  empty_state_hidden: (document.getElementById('empty-state') || {}).hidden,
+  rows: document.querySelectorAll('#project-list .project-row').length,
+  // 直接回答「模块加载了吗」：本次文档里 app.js / workspace.js 有没有真的取到。
+  resources: (performance.getEntriesByType('resource') || [])
+    .filter((r) => /app\\.js|workspace\\.js|storage\\/index\\.js/.test(r.name))
+    .map((r) => ({ name: r.name.split('/').pop(), ms: Math.round(r.duration),
+                   bytes: r.transferSize || r.encodedBodySize || 0 })),
+})
+"""
+
 SEED_DOCUMENT_AND_ASSET = """
 async (projectId) => {
   const mod = await import("/storage/index.js");
@@ -161,6 +223,10 @@ def main() -> int:
             browser = pw.chromium.launch(headless=True)
             try:
                 context = browser.new_context(viewport={"width": 1280, "height": 900})
+                # 失败时唯一能区分「boot 没跑」「boot 卡住」「boot 完成但视图没切」的证据。
+                # 只观测，不参与任何判据：boot() 第一行 setHomeControlsBlocked(true) 会把
+                # #create-project 置 disabled，HTML 默认无该属性，所以这条轨迹能证明脚本执行过。
+                context.add_init_script(BOOT_TRAIL_SCRIPT)
                 page = context.new_page()
                 page.on("console", lambda message: console_errors.append(message.text)
                         if message.type == "error" else None)
@@ -183,23 +249,28 @@ def main() -> int:
                     {"db": blank_db["counts"], "pointer_keys": blank_pointer["keys"]},
                 )
 
-                # --- 新建 ---
+                # --- 新建（R3.3：新建即打开——写指针并进入工作台，与 handleOpen 同路径） ---
                 page.fill("#new-project-name", "蓝色保温杯 秋季主图")
                 page.click("#create-project")
-                expect(page.locator("#project-list .project-row")).to_have_count(1)
-                expect(page.locator("#project-list .name")).to_have_text("蓝色保温杯 秋季主图")
+                expect(page.locator("#project-view")).to_be_visible()
+                expect(page.locator("#project-title")).to_have_text("蓝色保温杯 秋季主图")
                 created_db = page.evaluate(DB_SNAPSHOT)
                 created_pointer = page.evaluate(POINTER_SNAPSHOT)
                 project_id = created_db["projects"][0]["project_id"]
                 check(
                     "V2.1.2-02",
-                    "新建：IndexedDB 恰有一条记录且 localStorage 仍为空",
-                    created_db["counts"]["projects"] == 1 and created_pointer["keys"] == []
-                    and created_db["projects"][0]["state"] == "EMPTY",
-                    {"counts": created_db["counts"], "pointer_keys": created_pointer["keys"]},
+                    "新建即打开：IndexedDB 恰有一条 EMPTY 记录且当前指针已写入",
+                    created_db["counts"]["projects"] == 1
+                    and created_db["projects"][0]["state"] == "EMPTY"
+                    and created_pointer["current"] is not None
+                    and json.loads(created_pointer["current"])["project_id"] == project_id,
+                    {"counts": created_db["counts"], "pointer": created_pointer["current"]},
                 )
 
-                # --- 打开 + 刷新 ---
+                # --- 回首页 + 打开 + 刷新（R3.3：boot 自动恢复指针项目并进入工作台） ---
+                page.click("#back-home")
+                expect(page.locator("#home-view")).to_be_visible()
+                expect(page.locator("#project-list .project-row")).to_have_count(1)
                 page.click("#project-list .project-row [data-action='open']")
                 expect(page.locator("#project-view")).to_be_visible()
                 expect(page.locator("#project-title")).to_have_text("蓝色保温杯 秋季主图")
@@ -224,6 +295,32 @@ def main() -> int:
                              pointer_keys: Object.keys(localStorage).sort(),
                              pointer: localStorage.getItem('amz-listing-kit-v2:current-project'),
                            })""")
+                    diagnostics.update(page.evaluate(BOOT_STAGE_SNAPSHOT))
+                    diagnostics["console_errors"] = console_errors
+                    diagnostics["page_errors"] = page_errors
+                    # 判读规则写进证据本身，避免下一次再靠猜：
+                    #   boot 执行过 => 时间线含 'attr'（#create-project 的 disabled 变过，
+                    #                   HTML 默认无该属性，只有 boot() 的
+                    #                   setHomeControlsBlocked 会写它）
+                    #   boot 没执行 => 只有 'observing'，且 has_disabled_attr 恒为 false
+                    #   卡在哪一步  => 有 'view-shown' 说明 showProject 跑过；
+                    #                   有 'err'/'reject' 说明模块期抛错
+                    trail = diagnostics.get("trail") or []
+                    seen = {entry[0] for entry in trail}
+                    if "attr" in seen:
+                        diagnostics["boot_judged"] = ("boot 执行过；"
+                                                      + ("但项目视图从未可见 => 卡在 showProject 之前"
+                                                         if "view-shown" not in seen
+                                                         else "项目视图曾可见 => 与断言存在时序竞争"))
+                    elif "view-shown" in seen:
+                        diagnostics["boot_judged"] = "boot 执行过且视图曾可见"
+                    elif "err" in seen or "reject" in seen:
+                        diagnostics["boot_judged"] = "脚本抛错 => 见 trail 的 err/reject"
+                    else:
+                        diagnostics["boot_judged"] = "boot 未执行（模块没加载或没跑到第一行）"
+                    diagnostics["module_loaded"] = any(
+                        r.get("name") == "app.js" and r.get("bytes", 0) > 0
+                        for r in diagnostics.get("resources") or [])
                     diag_path = EVIDENCE_DIR / f"v2.1.2-reload-diagnostics-{stamp}.json"
                     diag_path.write_text(json.dumps(diagnostics, ensure_ascii=False, indent=1),
                                          encoding="utf-8")
@@ -313,11 +410,12 @@ def main() -> int:
                 context_a = browser.new_context()
                 context_b = browser.new_context()
                 page_a = context_a.new_page()
-                page_b = context_b.new_page()
                 page_a.goto(base_url + "/", wait_until="networkidle")
                 page_a.fill("#new-project-name", "隔离验证项目")
                 page_a.click("#create-project")
-                expect(page_a.locator("#project-list .project-row")).to_have_count(1)
+                expect(page_a.locator("#project-view")).to_be_visible()
+                expect(page_a.locator("#project-view")).to_contain_text("隔离验证项目")
+                page_b = context_b.new_page()
                 page_b.goto(base_url + "/", wait_until="networkidle")
                 seen_in_b = page_b.locator("#project-list .project-row").count()
                 pointer_b = page_b.evaluate(POINTER_SNAPSHOT)

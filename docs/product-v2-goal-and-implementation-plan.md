@@ -1,10 +1,10 @@
 # amz-listing-kit Product V2 Goal 与详细实施计划
 
-> CONTROL-STATUS: current · AUTHORITY: product-goal-plan
-> **版本：v3.1 · 2026-09-30**
-> 本文件是 Product V2 的目标、需求、行为、状态、任务、依赖、Gate 和完成证据的唯一权威。
-> 项目运行边界见 [`product-v2-project-context.md`](product-v2-project-context.md)；当前进度只见
-> [`../_working/amz-listing-kit-product-v2/state.md`](../_working/amz-listing-kit-product-v2/state.md)。
+> CONTROL-STATUS: superseded · AUTHORITY: historical-product-goal-plan
+> **冻结基线：v3.1；2026-10-01 被 `product-v2-refactor-plan.md` 接管未来目标与任务。**
+> 本文保留旧合同、任务、C1–C17、故障轨迹和旧系统 Goal 原文，不发布当前下一动作。
+> 系统 Goal 生命周期未因文档归档改变；实际核对与新绑定只按当前计划 V2.R1.1。
+> 旧未完成人审与后续回归失败不能被旧 done 记录覆盖；当前进度只看唯一 current state。
 
 ## 0. 一页结论
 

@@ -1,0 +1,42 @@
+{
+  "suite_id": "v2.5.2-review-live-probe",
+  "observed_at": "2026-10-03T19:42:38",
+  "planned": {
+    "contract": "v2.5.2",
+    "provider_id": "dashscope-review",
+    "model_id": "qwen-vl-max",
+    "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+    "timeout_seconds": 60.0,
+    "max_tokens": 2000,
+    "candidate": {
+      "path": "_working\\amz-listing-kit-product-v2\\walkthrough-assets\\food\\honey-jar-antique.jpg",
+      "sha256": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461",
+      "byte_size": 2239735
+    },
+    "reference_images": 1,
+    "api_key_configured": true
+  },
+  "attempts": 1,
+  "model_calls": 1,
+  "note": "候选与参考图是同一张真实照片：只证明通道与结构化输出，不评估检出质量。",
+  "status": "checked",
+  "result": {
+    "contract_version": "v2.5.2",
+    "candidate_sha256": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461",
+    "findings": [],
+    "summary": "候选图与参考图在商品外观、颜色、形状、材质及标识上一致，无可见问题。",
+    "provider_id": "dashscope-review",
+    "model_id": "qwen-vl-max",
+    "request_id": "chatcmpl-3256e900-3fd2-95bb-8220-fd86bee61639",
+    "usage": {
+      "prompt_tokens": 3101,
+      "completion_tokens": 38,
+      "total_tokens": 3139
+    },
+    "latency_ms": 9982,
+    "reference_images_sent": true,
+    "checked_at": "2026-10-03T11:42:48Z",
+    "attempts": 1
+  },
+  "binding_ok": true
+}

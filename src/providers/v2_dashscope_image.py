@@ -11,6 +11,7 @@
 from __future__ import annotations
 
 import base64
+import os
 import re
 from collections.abc import Callable, Mapping, Sequence
 from typing import Any, Protocol
@@ -19,9 +20,11 @@ from urllib.parse import quote, urlsplit
 import requests
 
 from src.providers import is_arrears_provider_code
+from src.providers.v2_credentials import resolve_credentials
 from src.providers.v2_image import (DEFAULT_SIZE, IMAGE_MODEL_ID, IMAGE_PROVIDER_ID,
                                     ImageFailure, ImageTaskResult, SubmitRequest,
-                                    TaskRequest)
+                                    TaskRequest, image_request_profile)
+from src.providers.v2_outbound import DEFAULT_ALLOWED_HOSTS, OutboundPolicyError, validate_outbound_url
 
 DEFAULT_BASE_URL = "https://dashscope.aliyuncs.com/api/v1"
 CREATE_PATH = "/services/aigc/image-generation/generation"
@@ -167,8 +170,23 @@ class DashScopeImageProvider:
 
     def __init__(self, *, api_key: str | None = None, base_url: str | None = DEFAULT_BASE_URL,
                  model_id: str = IMAGE_MODEL_ID, provider_id: str = IMAGE_PROVIDER_ID,
-                 timeout: float = 30.0, transport: Transport | None = None) -> None:
-        self.api_key = api_key.strip() if isinstance(api_key, str) else ""
+                 timeout: float = 30.0, transport: Transport | None = None,
+                 allowed_hosts: Sequence[str] | None = None,
+                 credential_source: str | None = None) -> None:
+        # credential_source 由 v2_credentials.resolve_credentials 决定（V2.R4.3）：
+        #   none    → 默认档被关闭，环境变量里有密钥也不带进适配器；
+        #   default → 注册表口径的部署密钥（仅当 AMZ_V2_DEFAULT_TRIAL 显式开启）；
+        #   byok    → 本次请求的浏览器内存密钥（apply_credentials 之后）；
+        #   env     → 直接构造（验证器/探针）沿用旧口径：api_key is None 时读环境变量。
+        resolved_source = credential_source or "env"
+        if resolved_source == "none":
+            self.api_key = ""
+        elif api_key is None:
+            self.api_key = os.getenv(DEFAULT_API_KEY_ENV, "")
+        else:
+            self.api_key = api_key.strip() if isinstance(api_key, str) else ""
+        self.credential_source = resolved_source
+        self.allowed_hosts = tuple(allowed_hosts) if allowed_hosts else DEFAULT_ALLOWED_HOSTS
         self.base_url = _safe_base_url(base_url)
         self.model_id = model_id.strip() if isinstance(model_id, str) else ""
         self.provider_id = provider_id.strip() if isinstance(provider_id, str) else ""
@@ -200,10 +218,29 @@ class DashScopeImageProvider:
             "stateless": True,
             "test_double": False,
             "size": DEFAULT_SIZE,
+            "credential_source": self.credential_source,
+            # V2.R5.3 非秘密请求 profile：纯业务投影，不含密钥；BYOK/默认档不改变它。
+            "request_profile": image_request_profile(),
         }
+
+    def apply_credentials(self, *, api_key: str) -> None:
+        """把本次请求内存态的 BYOK 密钥换上；只影响当前实例，不写盘、不进日志。"""
+
+        if not isinstance(api_key, str) or not api_key.strip():
+            raise ImageFailure("input_rejected", "BYOK_CREDENTIAL_INVALID",
+                               "BYOK 密钥为空或格式非法；这次请求不调用图像模型。",
+                               retry_policy="fatal", http_status=400)
+        self.api_key = api_key.strip()
+        self.credential_source = "byok"
 
     def _ready(self) -> None:
         if not self.api_key:
+            if self.credential_source == "none":
+                raise ImageFailure(
+                    "internal", "PROVIDER_NOT_CONFIGURED",
+                    "默认档密钥处于关闭状态（或未配置密钥）；部署侧显式打开默认档，"
+                    "或用 BYOK 请求头带上自己的密钥。没有调用图像模型。",
+                    retry_policy="fatal", http_status=503)
             raise ImageFailure("internal", "PROVIDER_NOT_CONFIGURED",
                                f"未配置 {DEFAULT_API_KEY_ENV}，没有调用图像模型。",
                                retry_policy="fatal", http_status=503)
@@ -213,6 +250,15 @@ class DashScopeImageProvider:
 
     def _call(self, operation: str, method: str, url: str, *,
               headers: Mapping[str, str], json_body: Mapping[str, Any] | None) -> Any:
+        # 出站白名单在任何传输生效之前判定：非白名单/私网/非 https 一律不发。
+        try:
+            validate_outbound_url(url, allowed_hosts=self.allowed_hosts, label=operation)
+        except OutboundPolicyError as error:
+            raise ImageFailure(
+                "internal", "OUTBOUND_POLICY_REJECTED",
+                "出站地址不满足白名单策略；这次操作没有发出去，也不会自动重试。",
+                retry_policy="fatal", http_status=503,
+                details={"reason": error.reason}) from None
         try:
             return self._transport.request(method, url, headers=headers, json=json_body,
                                            timeout=self.timeout, allow_redirects=False)
@@ -286,8 +332,10 @@ class DashScopeImageProvider:
             encoded = base64.b64encode(item.content()).decode("ascii")
             content.append({"image": f"data:{item.media_type};base64,{encoded}"})
         content.append({"text": request.prompt})
-        parameters: dict[str, Any] = {"size": request.size, "n": 1,
-                                      "prompt_extend": False, "watermark": False}
+        # V2.R5.3：实际 body 使用已校验冻结字段，不暗改配置（Pydantic 已拒绝非法值）。
+        parameters: dict[str, Any] = {"size": request.size, "n": request.n,
+                                      "prompt_extend": request.prompt_extend,
+                                      "watermark": request.watermark}
         if request.seed is not None:
             parameters["seed"] = request.seed
         body = {
@@ -402,9 +450,13 @@ def create_default_image_provider(*, environ: Mapping[str, str] | None = None,
                                   transport: Transport | None = None,
                                   timeout: float | None = None,
                                   base_url: str | None = None) -> DashScopeImageProvider:
-    """按环境变量构造真实适配器；构造过程不联网。"""
+    """按注册表口径构造真实适配器；构造过程不联网。
 
-    import os
+    密钥来源统一走 ``v2_credentials.resolve_credentials``：``api_key_env`` 与注册表
+    ``dashscope-image`` 条目一致（DASHSCOPE_API_KEY）；``AMZ_V2_DEFAULT_TRIAL`` 未开
+    时部署密钥不会进入适配器（fail-closed）。 ``allowed_hosts`` 复用
+    ``v2_outbound.DEFAULT_ALLOWED_HOSTS``（DashScope/结果地址共用的 aliyuncs.com 白名单）。
+    """
 
     source = os.environ if environ is None else environ
     raw_timeout = source.get(DEFAULT_TIMEOUT_ENV)
@@ -414,7 +466,8 @@ def create_default_image_provider(*, environ: Mapping[str, str] | None = None,
             resolved_timeout = float(raw_timeout) if raw_timeout else 30.0
         except ValueError:
             resolved_timeout = 30.0
+    decision = resolve_credentials({"api_key_env": DEFAULT_API_KEY_ENV}, source)
     return DashScopeImageProvider(
-        api_key=source.get(DEFAULT_API_KEY_ENV),
+        api_key=decision.api_key,
         base_url=base_url or source.get(DEFAULT_BASE_URL_ENV) or DEFAULT_BASE_URL,
-        transport=transport, timeout=resolved_timeout)
+        transport=transport, timeout=resolved_timeout, credential_source=decision.source)

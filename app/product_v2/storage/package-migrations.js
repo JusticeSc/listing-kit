@@ -23,13 +23,21 @@ export const PAYLOAD_SCHEMA_VERSIONS = Object.freeze({
   shot_spec: 1,
   prompt_version: 1,
   generation_confirm: 1,
-  generation_attempt: 1,
+  generation_attempt: 2,
   candidate: 1,
   review_report: 1,
   selection: 1,
   suite_review: 1,
   export_record: 1,
   review_acknowledgement: 1,
+});
+
+/**
+ * 低于该值就必须整体拒绝的 kind（V2.R4.4）：generation_attempt 自 schema 2 起要求
+ * 冻结执行身份；旧 schema 1 记录不做 legacy 映射（计划 §2.3），导出的旧包按精确条目拒绝。
+ */
+export const MIN_PAYLOAD_SCHEMA_VERSIONS = Object.freeze({
+  generation_attempt: 2,
 });
 
 /** 当前复核合同版本（镜像 domain/review.js 的 REVIEW_CONTRACT_VERSION）。 */
@@ -50,6 +58,15 @@ export function assertPayloadSchemaSupported(record) {
       STORAGE_ERROR_CODES.PACKAGE_UNSUPPORTED_VERSION,
       "无法升级：文档 " + entryLabel(record) + " 声明的 payload schema_version=" + declared
         + " 高于当前支持的 " + max + "；请用较新版本打开或先导出该记录。",
+    );
+  }
+  const min = MIN_PAYLOAD_SCHEMA_VERSIONS[record.kind];
+  if (min !== undefined && declared < min) {
+    throw new StorageError(
+      STORAGE_ERROR_CODES.PACKAGE_UNSUPPORTED_VERSION,
+      "无法导入：文档 " + entryLabel(record) + " 声明的 payload schema_version=" + declared
+        + " 低于当前要求的 " + min + "（该记录缺少冻结执行身份，不做 legacy 映射、"
+        + "不部分写入）；按计划 §2.3 整包拒绝。",
     );
   }
 }

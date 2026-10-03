@@ -214,12 +214,27 @@ def run_entry(args: list[str], timeout: int = 180) -> dict:
 STATUS_ORDER = {"conflict": 0, "unknown": 1, "missing": 2, "proposed": 3, "confirmed": 4, "superseded": 5}
 
 
+def review_rank(row: dict) -> int:
+    """与 workspace.js `reviewRankOf` 同一条规则：必须确认（且未收尾）排在缺失之前。
+
+    计划 §5 / V2.2.3 验收要求默认列表突出「冲突、未知、低置信和必确认项」，
+    页面文案也承诺「先处理冲突、未知与必须确认的槽位」；只按 STATUS_ORDER 排会把
+    不阻塞门禁的 missing 顶到必确认项前面。
+    """
+    status = row["status"]
+    if status not in ("confirmed", "superseded") and row["critical"] == "1":
+        return 2
+    base = STATUS_ORDER[status]
+    return base if base < 2 else base + 1
+
+
 def eval_rows(page) -> list[dict]:
     return page.eval_on_selector_all(
         "#slot-list .slot-row",
         """nodes => nodes.map((node) => ({
              slot_id: node.dataset.slotId,
              status: node.dataset.status,
+             critical: node.dataset.critical || "0",
              actions: [...node.querySelectorAll('.slot-actions button')]
                .map((button) => button.textContent.trim()),
            }))""",
@@ -296,8 +311,7 @@ def main() -> int:
 
             page.fill("#new-project-name", "审计商品 · 便携榨汁杯")
             page.click("#create-project")
-            expect(page.locator("#project-list .project-row")).to_have_count(1)
-            page.click('#project-list .project-row button[data-action="open"]')
+            # R3.3：新建即打开，不再回列表行点 open。
             expect(page.locator("#project-view")).to_be_visible()
             expect(page.locator("#ref-empty")).to_be_visible()
             expect(page.locator("#intake-name")).to_have_value("")
@@ -369,10 +383,22 @@ def main() -> int:
                   and all(item["status"] in ("missing", "proposed", "confirmed") for item in analyzed["slots"]),
                   {"core": len(CORE_SLOT_REGISTRY), "slots": len(analyzed["slots"]), "proposed": len(proposed)})
 
-            statuses = [item["status"] for item in eval_rows(page)]
-            check(f"{APP_NAME}-09", "异常优先：默认列表按 冲突 → 未知 → 缺失 → 未确认 排序，已确认事实默认折叠",
-                  statuses == sorted(statuses, key=lambda item: STATUS_ORDER[item])
-                  and "confirmed" not in statuses and "missing" in statuses, statuses)
+            rows_09 = eval_rows(page)
+            statuses = [item["status"] for item in rows_09]
+            ranks = [review_rank(item) for item in rows_09]
+            critical_idx = [i for i, item in enumerate(rows_09) if item["critical"] == "1"]
+            # 计划要求「必确认项」被突出；missing/proposed 里不阻塞门禁的普通项不得插到它们前面。
+            blocking_idx = [i for i, item in enumerate(rows_09)
+                            if item["critical"] != "1" and item["status"] in ("missing", "proposed")]
+            critical_first = (not critical_idx or not blocking_idx
+                              or max(critical_idx) < min(blocking_idx))
+            check(f"{APP_NAME}-09",
+                  "异常优先：默认列表按 冲突 → 未知 → 必须确认 → 缺失 → 未确认 排序，"
+                  "必须确认项压在不阻塞门禁的缺失项之前，已确认事实默认折叠",
+                  ranks == sorted(ranks) and critical_first
+                  and "confirmed" not in statuses and "missing" in statuses,
+                  {"statuses": statuses, "ranks": ranks, "critical_idx": critical_idx,
+                   "blocking_idx": blocking_idx})
 
             # V2.6.16：事实卡片只把人话放主行；slot_id / 版本 / 证据来源（字段名、哈希、模型 id）
             # 一律收进该卡折叠的「技术详情」。判据用「删掉 details 后的可见文本」自证，不看样式。

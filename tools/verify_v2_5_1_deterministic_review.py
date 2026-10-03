@@ -3,8 +3,8 @@
 
 检查：
   1) domain / workspace / harness 通过 node --check（ESM 语法门）。
-  2) R01–R13 契约套件在真实 Chromium 全过：注册表纪律、三层正反探针、
-     未知降级不阻断、报告模型与当前性、WebCrypto 哈希复算。
+  2) R11 WebCrypto 哈希复算宿主案例在真实 Chromium 全过；R01..R10/R12/R13 纯领域断言
+     已按 R3.2 分层迁至 `npm run test:domain`（Node 直跑，同批断言）。
   3) 既有契约套件回归（candidate / attempt / batch / confirm / prompt_edit / suite_editor）全过。
   4) 真实工作台走查（假 provider）：候选保存后 IndexedDB 出现 kind="review_report" 的当前报告
      （绑定 candidate_id + 当前合同版本 + asset_sha256），候选行出现 data-review-summary 摘要；
@@ -80,8 +80,9 @@ DOMAIN_FILES = [
     "evals/product-v2/harness/review-contract.js",
 ]
 
-EXPECTED_CASES = [f"R{index:02d}" for index in range(1, 14)]
-NEGATIVE_CASES = ["R02", "R04", "R06", "R07", "R08", "R09", "R10", "R11", "R12"]
+# R3.2 分层：浏览器只承载宿主特有案例 R11；纯领域 R01..R10/R12/R13 在 npm run test:domain。
+EXPECTED_CASES = ["R11"]
+NEGATIVE_CASES = ["R11"]
 REGRESSION_SUITES = (
     ("candidate", "candidate-contract.html", "__V2_CANDIDATE_RESULTS__"),
     ("attempt", "attempt-contract.html", "__V2_ATTEMPT_RESULTS__"),
@@ -413,13 +414,13 @@ def main() -> int:
     case_ids = [item["id"] for item in suite.get("cases", [])]
     missing = [case for case in EXPECTED_CASES if case not in case_ids]
     failed_cases = [item for item in suite.get("cases", []) if not item.get("ok")]
-    check("V2.5.1-01", "R01–R13 契约套件全过且用例齐全",
+    check("V2.5.1-01", "R11 宿主案例全过且清单齐全（R01..R10/R12/R13 在 npm run test:domain）",
           suite.get("status") == "passed" and not missing and not failed_cases,
           {"status": suite.get("status"), "missing": missing,
            "failed": [{"id": item["id"], "error": item.get("error")}
                       for item in failed_cases[:3]]})
     negative_seen = [case for case in NEGATIVE_CASES if case in case_ids]
-    check("V2.5.1-02", "反向探针确实执行（坏注册表/低分辨率/透明/坏字节/未登记代码/过期报告/哈希篡改）",
+    check("V2.5.1-02", "R11 反向探针确实执行（哈希篡改/缺失阻断/缺 digest 注入抛错）",
           negative_seen == NEGATIVE_CASES and not failed_cases,
           {"expected": NEGATIVE_CASES, "seen": negative_seen})
     regression = {name: {"status": value.get("status"), "failed": value.get("failed_ids", [])}
@@ -509,7 +510,6 @@ def main() -> int:
                 page.goto(base + "/", wait_until="networkidle")
                 page.fill("#new-project-name", "审计商品 · 自动检查")
                 page.click("#create-project")
-                page.click('#project-list .project-row button[data-action="open"]')
                 expect(page.locator("#project-view")).to_be_visible()
                 page.set_input_files("#ref-file", str(reference))
                 expect(page.locator("#ref-list .ref-row")).to_have_count(1)

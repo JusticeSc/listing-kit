@@ -20,6 +20,11 @@ export const CHANGE_KINDS = Object.freeze([
 
 const NEVER_INVALIDATED = Object.freeze(["project_history", "candidate_blobs"]);
 
+/**
+ * @typedef {{shotId?: string, shotIds?: string[], briefUsesSlot?: boolean}} InvalidationContext
+ * @typedef {{scope: string, invalidates: readonly string[], preserves: readonly string[]}} InvalidationRule
+ * @type {Readonly<Record<string, InvalidationRule>>}
+ */
 export const INVALIDATION_TABLE = Object.freeze({
   references_changed: Object.freeze({
     scope: "project",
@@ -58,6 +63,11 @@ export const INVALIDATION_TABLE = Object.freeze({
   }),
 });
 
+/**
+ * @param {string} changeKind
+ * @param {InvalidationContext} [context]
+ * @returns {{kind: string, scope: string, invalidates: string[], preserves: string[], target_shot_id: string | null}}
+ */
 export function invalidationsFor(changeKind, context = {}) {
   const rule = INVALIDATION_TABLE[changeKind];
   if (!rule) invalid("未知变化类型 " + JSON.stringify(changeKind) + "。", { change_kind: changeKind });

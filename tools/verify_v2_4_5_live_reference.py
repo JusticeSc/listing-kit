@@ -97,26 +97,36 @@ def main() -> int:
                         help="确认执行真实调用；没有它只打印用途并退出")
     parser.add_argument("--label", default="")
     parser.add_argument("--reference", default="")
+    parser.add_argument("--image-provider", default="",
+                        help="覆盖图像 provider id（如 volcengine-ark）；默认走注册表默认")
     parser.add_argument("--shot-index", type=int, default=0)
     parser.add_argument("--poll-limit", type=int, default=40)
     parser.add_argument("--poll-interval", type=float, default=6.0)
     args = parser.parse_args()
 
-    if not args.live or not os.environ.get("DASHSCOPE_API_KEY", "").strip():
-        print("未执行：需要 --live 且环境变量 DASHSCOPE_API_KEY 存在。")
+    want_volc = args.image_provider.strip() == "volcengine-ark"
+    need_key = "ARK_API_KEY" if want_volc else "DASHSCOPE_API_KEY"
+    if not args.live or not os.environ.get(need_key, "").strip():
+        print(f"未执行：需要 --live 且环境变量 {need_key} 存在。")
         print("本轮没有发出任何真实请求，也没有产生证据文件。")
         return 2
     reference = Path(args.reference) if args.reference else DEFAULT_REFERENCE
+    if not reference.is_absolute():
+        reference = (ROOT / reference).resolve()
     if not reference.is_file():
         print("参考图不存在：" + str(reference))
         return 2
     reference_sha = sha256_file(reference)
     reference_size = reference.stat().st_size
 
+    import sys as _sys
+    _sys.path.insert(0, str(ROOT / "tools"))
+    import v2_stage_nav as stage_nav
     from playwright.sync_api import expect, sync_playwright  # noqa: PLC0415
 
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     checks: list[dict] = []
+
     console_errors: list[str] = []
     page_errors: list[str] = []
     screenshots: list[str] = []
@@ -127,7 +137,10 @@ def main() -> int:
     module = load_server_module()
     from src.providers.v2_fake_semantic import FakeSemanticProvider  # noqa: PLC0415
 
-    # 图像 provider 不注入：走注册表默认（dashscope-image）。这就是本次真实调用本身。
+    # 图像 provider 选择：默认走注册表默认（dashscope-image）；
+    # --image-provider volcengine-ark 时走火山同步链。这就是本次真实调用本身。
+    if args.image_provider.strip():
+        os.environ["AMZ_V2_IMAGE_PROVIDER"] = args.image_provider.strip()
     port = free_port()
     server = module.create_product_v2_server(
         "127.0.0.1", port,
@@ -243,8 +256,10 @@ def main() -> int:
                     row(shot_id).locator(f'button:has-text("{text}")').first.click()
 
                 def compile_all(shot_ids: list) -> None:
+                    stage_nav.goto(page, "generate")
                     for shot_id in shot_ids:
                         card = f'#prompt-list .shot-spec[data-shot-id="{shot_id}"]'
+                        page.locator(card + " .toolbar button").scroll_into_view_if_needed(timeout=10_000)
                         page.click(card + " .toolbar button")
                         page.wait_for_selector(card + '[data-prompt-state="saved"]',
                                                timeout=20_000)
@@ -258,10 +273,10 @@ def main() -> int:
                 page.goto(base + "/", wait_until="networkidle")
                 page.fill("#new-project-name", "真实闭环 · 参考图")
                 page.click("#create-project")
-                page.click('#project-list .project-row button[data-action="open"]')
                 expect(page.locator("#project-view")).to_be_visible()
+                stage_nav.goto(page, "intake")
                 page.set_input_files("#ref-file", str(reference))
-                expect(page.locator("#ref-list .ref-row")).to_have_count(1)
+                expect(page.locator("#ref-list .ref-row")).to_have_count(1, timeout=30_000)
                 page.fill("#intake-name", "便携保温杯")
                 page.fill("#intake-description", "316ml 不锈钢保温杯，旋盖密封。")
                 page.fill("#intake-selling-points", "12小时保温\n304不锈钢内胆")
@@ -276,8 +291,10 @@ def main() -> int:
                     " db.close(); return rows.map((item) => item.project_id); }")
                 page.evaluate(SEED_SLOTS, project_ids[0])
                 page.reload(wait_until="networkidle")
+                stage_nav.goto(page, "plan")
                 page.click("#suite-seed")
                 expect(page.locator("#shot-list .shot-row")).to_have_count(4)
+                stage_nav.goto(page, "generate")
                 expect(page.locator("#prompt-list .shot-spec")).to_have_count(4)
                 shot_ids = probe()["shot_ids"]
                 compile_all(shot_ids)
@@ -285,19 +302,29 @@ def main() -> int:
                 ready = probe()
                 provider_text = ready["ui"]["provider"]
                 ui["provider"] = provider_text
+                ui["image_provider_id"] = args.image_provider.strip() or "dashscope-image"
                 configured = "未配置" not in provider_text
-                check("V2.4.5-01",
-                      "图像 provider 是真实 dashscope-image 且 configured=true（fake-image 切替不算）",
-                      configured and "dashscope" in provider_text,
-                      {"provider": provider_text})
+                if want_volc:
+                    check("V2.4.5-01",
+                          "图像 provider 是真实 volcengine-ark 且 configured=true（fake-image 切替不算）",
+                          configured and "volcengine" in provider_text,
+                          {"provider": provider_text})
+                else:
+                    check("V2.4.5-01",
+                          "图像 provider 是真实 dashscope-image 且 configured=true（fake-image 切替不算）",
+                          configured and "dashscope" in provider_text,
+                          {"provider": provider_text})
                 if not configured:
                     raise RuntimeError("图像 provider 未配置：不提交任何真实请求（预算未花）。")
 
-                # ---------------- 真实提交：只发一次，只提交一张图 ----------------
                 target = list(shot_ids)[args.shot_index]
                 ui["target_shot"] = target
                 click_row_button(target, "生成这张图")
-                wait_state(target, "submitted")
+                if want_volc:
+                    # 同步协议：提交信封一步到终态，不经过 submitted 中间态；直接等 succeeded。
+                    wait_state(target, "succeeded")
+                else:
+                    wait_state(target, "submitted")
                 first_submit = submit_requests[0] if submit_requests else {}
                 check("V2.4.5-02",
                       "本次只提交一次，且请求携带真实参考图（含 sha256）与非空 Prompt",
@@ -312,29 +339,52 @@ def main() -> int:
 
                 terminal = "submitted"
                 polls = 0
-                for _ in range(args.poll_limit):
-                    current = row_of(probe(), target) or {}
-                    if current.get("state") in ("succeeded", "failed", "unknown"):
-                        terminal = current.get("state")
-                        break
-                    polls += 1
-                    click_row_button(target, "核对任务")
-                    page.wait_for_timeout(int(args.poll_interval * 1000))
+                if want_volc:
+                    # 同步协议：提交信封一步到终态，无 task 链，不点“核对任务”。
+                    for _ in range(args.poll_limit):
+                        current = row_of(probe(), target) or {}
+                        if current.get("state") in ("succeeded", "failed", "unknown"):
+                            terminal = current.get("state")
+                            break
+                        polls += 1
+                        page.wait_for_timeout(int(args.poll_interval * 1000))
+                    else:
+                        terminal = "timeout"
                 else:
-                    terminal = "timeout"
+                    for _ in range(args.poll_limit):
+                        current = row_of(probe(), target) or {}
+                        if current.get("state") in ("succeeded", "failed", "unknown"):
+                            terminal = current.get("state")
+                            break
+                        polls += 1
+                        click_row_button(target, "核对任务")
+                        page.wait_for_timeout(int(args.poll_interval * 1000))
+                    else:
+                        terminal = "timeout"
                 settled = probe()
                 latest = chain_of(settled, target)[-1]["payload"] if chain_of(settled, target) else {}
                 ui["terminal"] = terminal
                 ui["polls"] = polls
-                check("V2.4.5-03",
-                      "有界轮询到终态 succeeded，task id 出现在状态查询里",
-                      terminal == "succeeded"
-                      and bool(latest.get("task_id"))
-                      and latest.get("task_id") in status_requests
-                      and polls <= args.poll_limit,
-                      {"terminal": terminal, "polls": polls,
-                       "task_id": latest.get("task_id"),
-                       "status_calls": len(status_requests)})
+                if want_volc:
+                    check("V2.4.5-03",
+                          "同步提交一步到终态 succeeded，task_id 为空且 status 零外呼（伪造 task 算失败）",
+                          terminal == "succeeded"
+                          and latest.get("task_id") is None
+                          and len(status_requests) == 0
+                          and polls <= args.poll_limit,
+                          {"terminal": terminal, "polls": polls,
+                           "task_id": latest.get("task_id"),
+                           "status_calls": len(status_requests)})
+                else:
+                    check("V2.4.5-03",
+                          "有界轮询到终态 succeeded，task id 出现在状态查询里",
+                          terminal == "succeeded"
+                          and bool(latest.get("task_id"))
+                          and latest.get("task_id") in status_requests
+                          and polls <= args.poll_limit,
+                          {"terminal": terminal, "polls": polls,
+                           "task_id": latest.get("task_id"),
+                           "status_calls": len(status_requests)})
                 if terminal != "succeeded":
                     raise RuntimeError("真实任务没有落到 succeeded（terminal=" + str(terminal)
                                        + "）；记录保持原样，不做自动重提。")
@@ -359,24 +409,41 @@ def main() -> int:
                     "width": rec.get("width"), "height": rec.get("height"),
                     "byte_size": rec.get("byte_size"),
                     "media_type": rec.get("media_type"),
-                    "provider_id": ok_result.get("provider_id"),
-                    "model_id": ok_result.get("model_id"),
+                    "provider_id": (ok_result.get("provider_id")
+                                    or (latest.get("provider") or {}).get("provider_id") or ""),
+                    "model_id": (ok_result.get("model_id")
+                                 or (latest.get("provider") or {}).get("model_id") or ""),
                 }
-                check("V2.4.5-04",
-                      "候选非 Mock：真实字节入库、sha 三方一致、尺寸等于请求尺寸、浏览器可预览",
-                      bool(rec) and bool(asset) and asset["has_blob"]
-                      and asset["role"] == "candidate"
-                      and hashed.get("found") is True
-                      and hashed.get("sha256") == rec.get("asset_sha256")
-                      and ok_result.get("declared_sha") == rec.get("asset_sha256")
-                      and rec.get("media_type") == "image/png"
-                      and int(rec.get("byte_size") or 0) > 5120
-                      and (not want or [rec.get("width"), rec.get("height")] == want)
-                      and preview.get("natural_width", 0) > 0,
-                      {"record": ui["result"],
-                       "recomputed": str(hashed.get("sha256"))[:12],
-                       "declared": str(ok_result.get("declared_sha"))[:12],
-                       "result_statuses": [item["status"] for item in resolved]})
+                if want_volc:
+                    check("V2.4.5-04",
+                          "候选非 Mock：同步信封字节入库、sha 双边一致（记录 = 本机重算）、尺寸等于请求尺寸、浏览器可预览",
+                          bool(rec) and bool(asset) and asset["has_blob"]
+                          and asset["role"] == "candidate"
+                          and hashed.get("found") is True
+                          and hashed.get("sha256") == rec.get("asset_sha256")
+                          and rec.get("media_type") == "image/png"
+                          and int(rec.get("byte_size") or 0) > 5120
+                          and (not want or [rec.get("width"), rec.get("height")] == want)
+                          and preview.get("natural_width", 0) > 0,
+                          {"record": ui["result"],
+                           "recomputed": str(hashed.get("sha256"))[:12],
+                           "result_statuses": [item["status"] for item in resolved]})
+                else:
+                    check("V2.4.5-04",
+                          "候选非 Mock：真实字节入库、sha 三方一致、尺寸等于请求尺寸、浏览器可预览",
+                          bool(rec) and bool(asset) and asset["has_blob"]
+                          and asset["role"] == "candidate"
+                          and hashed.get("found") is True
+                          and hashed.get("sha256") == rec.get("asset_sha256")
+                          and ok_result.get("declared_sha") == rec.get("asset_sha256")
+                          and rec.get("media_type") == "image/png"
+                          and int(rec.get("byte_size") or 0) > 5120
+                          and (not want or [rec.get("width"), rec.get("height")] == want)
+                          and preview.get("natural_width", 0) > 0,
+                          {"record": ui["result"],
+                           "recomputed": str(hashed.get("sha256"))[:12],
+                           "declared": str(ok_result.get("declared_sha"))[:12],
+                           "result_statuses": [item["status"] for item in resolved]})
 
                 screenshot_rel = f"evals/product-v2/v2.4.5-live-reference-{stamp}.png"
                 page.screenshot(path=str(ROOT / screenshot_rel), full_page=True)
@@ -407,14 +474,24 @@ def main() -> int:
     failed = [item for item in checks if not item["ok"]]
     status = "passed" if not failed else "failed"
     finished_at = datetime.now().strftime("%Y-%m-%dT%H:%M:%S%z")
-    boundary = (
-        "证明一笔预算内的真实参考图闭环：图像 provider 是注册表默认的 dashscope-image（configured=true），"
-        "一次真实 submit 携带真实商品参考图（sha256 " + reference_sha[:12] + "…，"
-        + str(reference_size) + " 字节）与非空 Prompt；有界轮询到 succeeded 且 task id 出现在状态查询里；"
-        "结果字节由真实响应取回并存成浏览器 IndexedDB 里的 Blob，sha256 三方一致（候选记录 = 本机重算 = "
-        "服务端 X-Image-Sha256），尺寸等于请求尺寸。语义槽位由验证器直接播种（0 次语义调用），"
-        "所以本证据不证明商品理解质量、出图审美质量、跨品类通用性、审核与返工（Phase 5）。"
-    )
+    if want_volc:
+        boundary = (
+            "证明一笔预算内的真实参考图闭环：图像 provider 是 volcengine-ark（configured=true），"
+            "一次真实同步 submit 携带真实商品参考图（sha256 " + reference_sha[:12] + "…，"
+            + str(reference_size) + " 字节）与非空 Prompt；提交信封一步到 succeeded，task_id 为空且 status 零外呼；"
+            "结果字节由提交信封一次性取回并存成浏览器 IndexedDB 里的 Blob，sha256 双边一致（候选记录 = 本机重算），"
+            "尺寸等于请求尺寸。语义槽位由验证器直接播种（0 次语义调用），"
+            "所以本证据不证明商品理解质量、出图审美质量、跨品类通用性、审核与返工（Phase 5）。"
+        )
+    else:
+        boundary = (
+            "证明一笔预算内的真实参考图闭环：图像 provider 是注册表默认的 dashscope-image（configured=true），"
+            "一次真实 submit 携带真实商品参考图（sha256 " + reference_sha[:12] + "…，"
+            + str(reference_size) + " 字节）与非空 Prompt；有界轮询到 succeeded 且 task id 出现在状态查询里；"
+            "结果字节由真实响应取回并存成浏览器 IndexedDB 里的 Blob，sha256 三方一致（候选记录 = 本机重算 = "
+            "服务端 X-Image-Sha256），尺寸等于请求尺寸。语义槽位由验证器直接播种（0 次语义调用），"
+            "所以本证据不证明商品理解质量、出图审美质量、跨品类通用性、审核与返工（Phase 5）。"
+        )
     report = {
         "task": "V2.4.5",
         "suite_id": "v2.4.5-live-reference",
@@ -438,15 +515,22 @@ def main() -> int:
     txt_path = EVIDENCE_DIR / f"v2.4.5-live-reference-{stamp}{label}.txt"
     json_path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
 
+    try:
+        reference_display = reference.relative_to(ROOT).as_posix()
+    except ValueError:
+        reference_display = str(reference)
+    title = ("amz-listing-kit Product V2 V2.4.5 真实参考图最小闭环（真实 volcengine seedream 调用）"
+             if want_volc else
+             "amz-listing-kit Product V2 V2.4.5 真实参考图最小闭环（真实 qwen-image 调用）")
     lines = [
-        "amz-listing-kit Product V2 V2.4.5 真实参考图最小闭环（真实 qwen-image 调用）",
+        title,
         "NOT-AUTHORITY: point-in-time verification evidence only",
         f"observed_at: {finished_at}",
         f"status: {status}",
         "image_submit_requests: " + str(len(submit_requests))
         + " · image_status_requests: " + str(len(status_requests))
         + " · image_result_requests: " + str(len(result_requests)),
-        f"reference: {reference.relative_to(ROOT).as_posix()} sha256 {reference_sha}",
+        f"reference: {reference_display} sha256 {reference_sha}",
         f"json: {json_path.relative_to(ROOT).as_posix()}",
         "",
         "CHECKS",

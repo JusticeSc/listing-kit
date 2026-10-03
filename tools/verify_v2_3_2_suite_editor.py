@@ -313,7 +313,7 @@ def main() -> int:
             page.goto(base + "/", wait_until="networkidle")
             page.fill("#new-project-name", "审计商品 · 套图编辑器")
             page.click("#create-project")
-            page.click('#project-list .project-row button[data-action="open"]')
+            # R3.3：新建即打开。
             expect(page.locator("#project-view")).to_be_visible()
 
             page.set_input_files("#ref-file", str(reference))

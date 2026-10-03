@@ -82,8 +82,7 @@ def main() -> int:
 
                 page.fill("#new-project-name", args.name)
                 page.click("#create-project")
-                page.wait_for_selector("#project-list .project-row", timeout=30_000)
-                page.click('#project-list .project-row button[data-action="open"]')
+                # R3.3：新建即打开，不再回列表行点 open。
                 page.wait_for_selector("#project-view:not([hidden])", timeout=30_000)
                 check("RN-02", "远程入口可新建并打开项目（浏览器本地）", True, None)
 

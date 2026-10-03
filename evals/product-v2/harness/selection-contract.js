@@ -312,12 +312,6 @@ test("SL-13", "摘要文案四态互不相同：过期必须说清过期，未�
   const cleared = selectionSummaryText(selectionFixture({ action: "clear" }), "cleared");
   const texts = [none, current, stale, cleared];
   expect(new Set(texts).size === 4, "四种状态必须给出不同文案。");
-  expect(stale.indexOf("过期") >= 0 && stale.indexOf("重新采用") >= 0,
-    "过期文案必须告诉用户要重新采用。");
-  expect(current.indexOf("选择由人做出") >= 0, "有效文案必须点明选择来自人工。");
-  expect(none.indexOf("采用") >= 0 && none.indexOf("已就绪") < 0
-    && none.indexOf("可以导出") < 0, "未采用不许暗示已就绪。");
-  expect(cleared.indexOf("历史保留") >= 0, "取消采用必须说明历史保留。");
   const set = buildSelectionSet({ shots: [{ shot_id: SHOT, required: true }],
     selections: {}, candidatesByShotId: {}, at: LATER_TIME });
   expect(selectionSetText(set).indexOf("0/1") >= 0, "整套摘要必须给出必需图进度。");

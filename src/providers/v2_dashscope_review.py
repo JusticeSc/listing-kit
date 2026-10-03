@@ -20,6 +20,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 
 from src.providers.v2_langchain_chat import (default_chat_model, response_finish_reason,
                                              response_request_id, response_usage, visible_text)
+from src.providers.v2_outbound import OutboundPolicyError, validate_outbound_url
 from src.providers.v2_review import (REVIEW_CONTRACT_VERSION, DecodedImage,
                                      DecodedReviewRequest, RawReviewOutput, ReviewResult,
                                      parse_raw_output)
@@ -118,10 +119,24 @@ class DashScopeReviewProvider:
     def __init__(self, *, api_key: str | None = None, model_id: str | None = None,
                  base_url: str | None = None, timeout: float | None = None,
                  max_tokens: int | None = None, llm_factory: Callable[[], Any] | None = None,
-                 clock: Callable[[], float] = time.monotonic) -> None:
-        self.api_key = api_key if api_key is not None else os.environ.get(DEFAULT_API_KEY_ENV)
+                 clock: Callable[[], float] = time.monotonic,
+                 credential_source: str | None = None) -> None:
+        # credential_source 由 v2_credentials.resolve_credentials 决定（V2.R4.3）：
+        #   none → 默认档被关闭：环境变量里有密钥也不带进适配器；
+        #   default/byok → 调用方显式解析后传入（BYOK 走 apply_credentials）；
+        #   env → 直接构造（验证器/探针）沿用旧口径：api_key is None 时读环境变量。
+        if credential_source == "none":
+            self.api_key = ""
+        else:
+            self.api_key = api_key if api_key is not None else os.environ.get(DEFAULT_API_KEY_ENV)
+        self.credential_source = credential_source or "env"
         self.model_id = model_id or os.environ.get(MODEL_ENV) or DEFAULT_MODEL_ID
         self.base_url = base_url or os.environ.get(BASE_URL_ENV) or DEFAULT_BASE_URL
+        try:
+            validate_outbound_url(self.base_url)
+        except OutboundPolicyError as error:
+            raise ValueError(
+                f"复核端点 {self.base_url} 不满足出站白名单策略：{error.reason}。") from None
         env_timeout = os.environ.get(TIMEOUT_ENV)
         self.timeout = float(timeout if timeout is not None else (env_timeout or DEFAULT_TIMEOUT_SECONDS))
         env_tokens = os.environ.get(MAX_TOKENS_ENV)
@@ -163,6 +178,7 @@ class DashScopeReviewProvider:
             "review_contract": REVIEW_CONTRACT_VERSION,
             "supports_reference_images": self.supports_reference_images,
             "configured": bool(self.api_key),
+            "credential_source": self.credential_source,
             "endpoint_host": self.base_url,
             "timeout_seconds": self.timeout,
             "max_tokens": self.max_tokens,
@@ -170,9 +186,24 @@ class DashScopeReviewProvider:
             "transport": "langchain-openai/ChatOpenAI",
         }
 
+    def apply_credentials(self, *, api_key: str) -> None:
+        """把本次请求内存态的 BYOK 密钥换上；复核 BYOK 路线在本切片只留接缝。"""
+
+        if not isinstance(api_key, str) or not api_key.strip():
+            raise SemanticFailure("input_rejected", "BYOK_CREDENTIAL_INVALID",
+                                  "BYOK 密钥为空或格式非法；这次请求不调用复核模型。",
+                                  retry_policy="fatal")
+        self.api_key = api_key.strip()
+        self.credential_source = "byok"
+
     # ------------------------------------------------------------ 一次调用
     def review(self, request: DecodedReviewRequest) -> ReviewResult:
         if not self.api_key:
+            if self.credential_source == "none":
+                raise SemanticFailure("internal", "PROVIDER_NOT_CONFIGURED",
+                                      "默认档密钥处于关闭状态（或未配置密钥）；部署侧显式打开默认档，"
+                                      "或用 BYOK 路径带上自己的密钥。没有调用复核模型。",
+                                      retry_policy="fatal")
             raise SemanticFailure("internal", "PROVIDER_NOT_CONFIGURED",
                                   f"未配置 {DEFAULT_API_KEY_ENV}，无法调用真实复核模型。",
                                   retry_policy="fatal")

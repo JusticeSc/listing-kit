@@ -2,10 +2,14 @@
 
 > CONTROL-STATUS: current · AUTHORITY: implemented-behavior
 > 本文件只回答“当前代码实际能做什么、怎样启动和验证”。产品目标见
-> [`docs/product-v2-goal-and-implementation-plan.md`](docs/product-v2-goal-and-implementation-plan.md)，
+> [`docs/product-v2-refactor-plan.md`](docs/product-v2-refactor-plan.md)，
 > 当前进度与下一动作见
 > [`_working/amz-listing-kit-product-v2/state.md`](_working/amz-listing-kit-product-v2/state.md)，
 > 文档身份和读取顺序见 [`docs/INDEX.md`](docs/INDEX.md)。
+
+只读冷恢复入口：`uv run --locked python tools/refactor_resume.py`。它核对仓库计划、状态与观察证据，
+输出下一任务及可读 Goal；显示的是仓库保存的最近观察，不会查询系统 Goal。恢复会话须另读真实 Goal，
+不能把历史观察当成当前读数。绑定合同与展示码归一范围见计划 §2.2。
 
 ## 当前可用边界
 
@@ -13,7 +17,9 @@
 
 - 从空白页面新建、打开、重命名、复制和删除项目；
 - 项目列表、商品资料草稿、参考图、槽位和商品理解都保存在当前浏览器的 IndexedDB；
+- 文档最新版与保存时的 OCC 版本头按数值版本索引读取，不加载全部历史；本机数据库升级保留文档历史、资产和项目元数据，完整项目包仍包含全部版本。
 - localStorage 只保存当前项目指针；
+- 启动时先完成本机列表读取再解锁；返回首页遇到慢读取会显示忙碌状态，读取失败保留已有列表并提供键盘可用的重试入口，不把读取失败显示成空项目库。
 - 将完整项目导出为 ZIP，或从 ZIP 导入；导入前校验结构和内容哈希；
 - 在工作区里上传参考图（可选择角色、同内容自动去重）、填写商品资料并自动保存草稿；
 - 点一次按钮做一次无状态语义分析，提案只以“模型提案”入库，由人工确认、修改、标记未知或移除；
@@ -110,6 +116,13 @@ profile 自动续期），应用容器仍只提供无状态 HTTP，当前试用�
 明确的 503 分类错误并提示 provider 未配置，不会假装成功。无密钥环境与验证入口可设
 `AMZ_V2_SEMANTIC_PROVIDER=fake-semantic` 使用测试替身。密钥只允许通过服务器环境变量提供，
 不得写进浏览器、项目包、日志或 Git。
+
+凭据口径（V2.R4.3）：部署密钥受默认档开关 `AMZ_V2_DEFAULT_TRIAL` 约束，未设置或 `closed/off/0/false`
+时不会进入真实模型调用（路由返回 503 PROVIDER_NOT_CONFIGURED，capabilities 会给出
+`credential_source` 与 `default_trial` 状态）；显式设 `open/on/1/true` 才沿用部署密钥。
+图像网关另外支持 BYOK：浏览器单次请求可带 `X-AMZ-Listing-Key-Image` 头，密钥只在请求内存中
+转发与使用，不落盘、不回显；出站统一走 `aliyuncs.com` 白名单（`v2_outbound.py`），非白名单、
+私网与非 https 目标在传输前被拒绝。
 
 ## 实际运行链
 

@@ -14,22 +14,44 @@ export const DOMAIN_ERROR_CODES = Object.freeze({
 });
 
 export class DomainError extends Error {
+  /**
+   * @param {string} code
+   * @param {string} message
+   * @param {unknown} [details]
+   */
   constructor(code, message, details = null) {
     super(message);
     this.name = "DomainError";
+    /** @type {string} */
     this.code = code;
+    /** @type {unknown} */
     this.details = details;
   }
 }
 
+/**
+ * @param {string} message
+ * @param {unknown} [details]
+ * @returns {never}
+ */
 export function invalid(message, details = null) {
   throw new DomainError(DOMAIN_ERROR_CODES.CONTRACT_INVALID, message, details);
 }
 
+/**
+ * @param {string} message
+ * @param {unknown} [details]
+ * @returns {never}
+ */
 export function illegal(message, details = null) {
   throw new DomainError(DOMAIN_ERROR_CODES.CONTRACT_TRANSITION_ILLEGAL, message, details);
 }
 
+/**
+ * @param {string} message
+ * @param {unknown} [details]
+ * @returns {never}
+ */
 export function denied(message, details = null) {
   throw new DomainError(DOMAIN_ERROR_CODES.CONTRACT_PERMISSION_DENIED, message, details);
 }

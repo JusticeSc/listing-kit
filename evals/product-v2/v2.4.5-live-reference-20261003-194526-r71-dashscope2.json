@@ -1,0 +1,102 @@
+{
+  "task": "V2.4.5",
+  "suite_id": "v2.4.5-live-reference",
+  "status": "passed",
+  "finished_at": "2026-10-03T19:46:06",
+  "reference": {
+    "path": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\_working\\amz-listing-kit-product-v2\\walkthrough-assets\\food\\honey-jar-antique.jpg",
+    "sha256": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461",
+    "byte_size": 2239735
+  },
+  "model_calls": 1,
+  "image_submit_requests": 1,
+  "image_status_requests": 5,
+  "image_result_requests": 1,
+  "checks": [
+    {
+      "id": "V2.4.5-01",
+      "title": "图像 provider 是真实 dashscope-image 且 configured=true（fake-image 切替不算）",
+      "ok": true,
+      "detail": {
+        "provider": "图像 provider：dashscope-qwen-image · qwen-image-3.0 · 已配置"
+      }
+    },
+    {
+      "id": "V2.4.5-02",
+      "title": "本次只提交一次，且请求携带真实参考图（含 sha256）与非空 Prompt",
+      "ok": true,
+      "detail": {
+        "submits": 1,
+        "references": 1,
+        "reference_media": [
+          "image/jpeg"
+        ],
+        "size": "1344*1344"
+      }
+    },
+    {
+      "id": "V2.4.5-03",
+      "title": "有界轮询到终态 succeeded，task id 出现在状态查询里",
+      "ok": true,
+      "detail": {
+        "terminal": "succeeded",
+        "polls": 5,
+        "task_id": "75401703-ea9e-4f34-95fa-7e193168bf17",
+        "status_calls": 5
+      }
+    },
+    {
+      "id": "V2.4.5-04",
+      "title": "候选非 Mock：真实字节入库、sha 三方一致、尺寸等于请求尺寸、浏览器可预览",
+      "ok": true,
+      "detail": {
+        "record": {
+          "requested_size": "1344*1344",
+          "width": 1344,
+          "height": 1344,
+          "byte_size": 1125979,
+          "media_type": "image/png",
+          "provider_id": "dashscope-qwen-image",
+          "model_id": "qwen-image-3.0"
+        },
+        "recomputed": "a01d7200692a",
+        "declared": "a01d7200692a",
+        "result_statuses": [
+          200
+        ]
+      }
+    },
+    {
+      "id": "V2.4.5-05",
+      "title": "零意外 console error / page error",
+      "ok": true,
+      "detail": {
+        "console": [],
+        "unexpected": [],
+        "page": []
+      }
+    }
+  ],
+  "ui_flow": {
+    "provider": "图像 provider：dashscope-qwen-image · qwen-image-3.0 · 已配置",
+    "image_provider_id": "dashscope-image",
+    "target_shot": "shot_main_clean",
+    "terminal": "succeeded",
+    "polls": 5,
+    "result": {
+      "requested_size": "1344*1344",
+      "width": 1344,
+      "height": 1344,
+      "byte_size": 1125979,
+      "media_type": "image/png",
+      "provider_id": "dashscope-qwen-image",
+      "model_id": "qwen-image-3.0"
+    }
+  },
+  "console_errors": [],
+  "page_errors": [],
+  "screenshots": [
+    "evals/product-v2/v2.4.5-live-reference-20261003-194526.png"
+  ],
+  "boundary": "证明一笔预算内的真实参考图闭环：图像 provider 是注册表默认的 dashscope-image（configured=true），一次真实 submit 携带真实商品参考图（sha256 c024b7cf2b04…，2239735 字节）与非空 Prompt；有界轮询到 succeeded 且 task id 出现在状态查询里；结果字节由真实响应取回并存成浏览器 IndexedDB 里的 Blob，sha256 三方一致（候选记录 = 本机重算 = 服务端 X-Image-Sha256），尺寸等于请求尺寸。语义槽位由验证器直接播种（0 次语义调用），所以本证据不证明商品理解质量、出图审美质量、跨品类通用性、审核与返工（Phase 5）。"
+}

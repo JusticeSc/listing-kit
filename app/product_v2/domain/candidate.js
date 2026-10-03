@@ -88,7 +88,7 @@ export function parsePngDimensions(bytes) {
   return { width: header.width, height: header.height };
 }
 
-/** 构造候选记录；来源必须是已成功且有 task id 的 Attempt，所有身份字段必填。 */
+/** 构造候选记录；来源必须是已成功且有结果依据的 Attempt（异步=task_id，同步=冻结 sync 身份）。 */
 export function buildCandidateRecord({
   shotId, attempt, assetSha256, byteSize, width, height, at,
 } = {}) {
@@ -96,7 +96,12 @@ export function buildCandidateRecord({
   if (!isPlainObject(attempt)) invalid("候选需要来源 Attempt。");
   if (attempt.state !== ATTEMPT_STATES.succeeded) invalid("来源 Attempt 不是 succeeded，不能建候选。");
   if (!isNonEmptyString(attempt.action_id)) invalid("来源 Attempt 缺少 action_id。");
-  if (!isNonEmptyString(attempt.task_id)) invalid("来源 Attempt 缺少 task_id，不能建候选。");
+  const frozen = isPlainObject(attempt.execution_identity)
+    ? attempt.execution_identity : null;
+  const sync = frozen !== null && frozen.sync === true;
+  if (!sync && !isNonEmptyString(attempt.task_id)) {
+    invalid("来源 Attempt 没有 task_id（也不是同步协议记录），不能建候选。");
+  }
   if (!isSha256Hex(assetSha256)) invalid("候选需要 64 位十六进制 asset_sha256。");
   if (!Number.isInteger(byteSize) || byteSize < 1) invalid("候选字节数不合法。");
   if (!Number.isInteger(width) || !Number.isInteger(height) || width < 1 || height < 1) {
@@ -109,6 +114,8 @@ export function buildCandidateRecord({
     shot_id: shotId,
     action_id: attempt.action_id,
     task_id: attempt.task_id,
+    // V2.R5.2：同步协议候选显式声明来源（task_id 允许为 null）；异步候选固定 false。
+    sync: sync === true,
     asset_sha256: assetSha256,
     media_type: CANDIDATE_MEDIA_TYPE,
     byte_size: byteSize,
@@ -141,7 +148,12 @@ export function checkCandidateRecord(record) {
       "候选身份必须等于来源 Attempt 的 action_id。");
   }
   if (!isNonEmptyString(record.task_id)) {
-    pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.task_id", "缺少来源 task_id。");
+    // V2.R5.2 同步协议候选：task_id 允许为 null，但必须显式携带 sync === true；
+    // 缺这个声明的记录维持历史判据（缺 task_id 即不符）。
+    if (record.sync !== true || record.task_id !== null) {
+      pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.task_id",
+        "缺少来源 task_id（同步候选必须显式声明 sync 且 task_id 为 null）。");
+    }
   }
   if (!isSha256Hex(record.asset_sha256)) {
     pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.asset_sha256",
@@ -175,23 +187,32 @@ export function candidateForAttempt(candidates, actionId) {
   return null;
 }
 
-/** 候选与来源 Attempt 的一致性（预览 / 导出前的复核判据）。 */
+/** 候选与来源 Attempt 的一致性（预览 / 导出前的复核判据）。同步候选 task_id 允许为 null。 */
 export function candidateMatchesAttempt(candidate, attempt) {
   const record = candidate && isPlainObject(candidate.record) ? candidate.record : candidate;
   if (!isPlainObject(record) || !isPlainObject(attempt)) return false;
   return record.action_id === attempt.action_id
     && record.task_id === attempt.task_id
+    && Boolean(record.sync) === Boolean(attempt.execution_identity
+      && attempt.execution_identity.sync)
     && record.shot_id === attempt.shot_id;
 }
 
-/** 投影：这张图现在该不该（重新）保存候选。 */
+/**
+ * 投影：这张图现在该不该（重新）保存候选。
+ * V2.R5.2 同步协议：succeeded 且冻结身份声明 sync === true 时，task_id 允许为空，照样入库；
+ * 其他任何「succeeded 无 task_id」形状仍拒绝（reason no_task_id）。
+ */
 export function candidateStoreDecision({ attempt, candidates } = {}) {
   if (!isPlainObject(attempt)) return { needed: false, reason: "no_attempt" };
   if (attempt.state !== ATTEMPT_STATES.succeeded) {
     return { needed: false, reason: "not_succeeded" };
   }
   if (!isNonEmptyString(attempt.task_id)) {
-    return { needed: false, reason: "no_task_id" };
+    const frozen = isPlainObject(attempt.execution_identity) ? attempt.execution_identity : null;
+    if (!(frozen && frozen.sync === true && isNonEmptyString(attempt.action_id))) {
+      return { needed: false, reason: "no_task_id" };
+    }
   }
   const existing = candidateForAttempt(candidates || [], attempt.action_id);
   if (existing) return { needed: false, reason: "already_stored", candidate: existing };

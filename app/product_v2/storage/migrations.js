@@ -6,12 +6,18 @@
 
 import { STORE_SPECS, STORAGE_SCHEMA_VERSION } from "./schema.js";
 
+// v1 的索引集合冻结：当前 STORE_SPECS 新增的索引只能由后续升级步骤创建。
+const V1_INDEX_NAMES = new Set([
+  "by_updated_at", "by_project_id", "by_sha256", "by_project_kind", "by_project_document",
+]);
+
 function applyStoreSpec(db, spec) {
   const store = db.createObjectStore(spec.name, {
     keyPath: spec.keyPath,
     autoIncrement: spec.autoIncrement,
   });
   for (const index of spec.indexes) {
+    if (!V1_INDEX_NAMES.has(index.name)) continue;
     store.createIndex(index.name, index.keyPath, {
       unique: index.unique,
       multiEntry: index.multiEntry,
@@ -29,6 +35,14 @@ export const DEFAULT_MIGRATIONS = Object.freeze([
           applyStoreSpec(db, spec);
         }
       }
+    },
+  }),
+  Object.freeze({
+    version: 2,
+    describe: "追加数值版本复合索引，保留全部文档历史和资产",
+    apply(_db, tx) {
+      tx.objectStore("documents").createIndex(
+        "by_project_document_version", ["project_id", "kind", "document_id", "version"]);
     },
   }),
 ]);

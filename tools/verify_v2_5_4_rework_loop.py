@@ -75,7 +75,7 @@ def rework_section(text: str) -> str:
     """workspace.js 里单图返工那一整块（独立分区，不属于比较区）。"""
 
     start = text.index("单图返工闭环（V2.5.4）")
-    end = text.index("整套批次执行", start)
+    end = text.index("function renderBatch", start)
     return text[start:end]
 
 
@@ -446,7 +446,6 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 page.goto(base + "/", wait_until="networkidle")
                 page.fill("#new-project-name", "审计商品 · 单图返工")
                 page.click("#create-project")
-                page.click('#project-list .project-row button[data-action="open"]')
                 expect(page.locator("#project-view")).to_be_visible()
                 page.set_input_files("#ref-file", str(reference))
                 expect(page.locator("#ref-list .ref-row")).to_have_count(1)

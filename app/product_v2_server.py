@@ -19,6 +19,7 @@ from __future__ import annotations
 import base64
 import json
 import hashlib
+import os
 import re
 import sys
 import threading
@@ -56,6 +57,10 @@ SUITE_REVIEW_PATH = "/api/v2/review/suite"
 ANALYZE_FIELDS = ("product_name", "description", "selling_points", "focus", "references",
                   "locale", "platform", "max_slots", "existing_slot_ids")
 IMAGE_SUBMIT_FIELDS = ("action_id", "prompt", "references", "size", "seed", "model_id")
+# BYOK（V2.R4.3）：浏览器内存里的用户密钥随单次请求进 HTTP 头；服务器只在本次请求内
+# 转发给适配器，不落盘、不进日志、不进注册表。缺省等价于没有 BYOK：provider 按部署
+# 配置解析，默认档开关关闭时就是 503 PROVIDER_NOT_CONFIGURED。
+IMAGE_BYOK_HEADER = "X-AMZ-Listing-Key-Image"
 
 MIME = {
     ".html": "text/html; charset=utf-8",
@@ -118,17 +123,31 @@ def status_for_failure(failure: Any) -> int:
     if family == "provider_unknown":
         return 504
     if family == "internal":
-        return 503 if code == "PROVIDER_NOT_CONFIGURED" else 500
+        if code in ("PROVIDER_NOT_CONFIGURED", "OUTBOUND_POLICY_REJECTED"):
+            return 503
+        return 500
     return 502
 
 
-_SECRET_PATTERN = re.compile(r"(sk-|Bearer\s+)[A-Za-z0-9._\-]+")
+_SECRET_PATTERN = re.compile(r"(sk-|Bearer\s+|x-amz-listing-key-[a-z]+\s*[:=]\s*)"
+                             r"[A-Za-z0-9._\-]+", re.IGNORECASE)
 
 
 def redact(text: str, limit: int = 300) -> str:
-    """错误消息只保留可诊断信息：不出现密钥片段或请求正文。"""
+    """错误消息只保留可诊断信息：不出现密钥片段（含 BYOK 头携带的值）或请求正文。"""
 
     return _SECRET_PATTERN.sub("***", str(text))[:limit]
+
+
+def default_trial_state() -> str:
+    """自省口径：open / closed / invalid（解析失败）。只发状态值，不发任何密钥。"""
+
+    from src.providers.v2_credentials import resolve_default_trial
+
+    try:
+        return "open" if resolve_default_trial(os.environ) else "closed"
+    except ValueError:
+        return "invalid"
 
 
 def failure_payload(family: str, code: str, message: str, *, retry_policy: str = "fatal",
@@ -343,6 +362,7 @@ class ProductV2Handler(BaseHTTPRequestHandler):
             "provider_id": getattr(provider, "provider_id", None),
             "model_id": getattr(provider, "model_id", None),
             "configured": True,
+            "credential_source": getattr(provider, "credential_source", None),
             "capabilities": provider_capabilities(provider),
         }
         self._send_json(200, payload)
@@ -350,13 +370,14 @@ class ProductV2Handler(BaseHTTPRequestHandler):
     # ---------------------------------------------------------- 图像网关（V2.4.1）
 
     def _image_capabilities(self) -> dict[str, Any]:
-        from src.providers.v2_image import IMAGE_CONTRACT_VERSION
+        from src.providers.v2_image import IMAGE_CONTRACT_VERSION, IMAGES_CAPABILITY_VERSION
 
         block: dict[str, Any] = {
             "contract": IMAGE_CONTRACT_VERSION,
             "endpoints": [IMAGE_SUBMIT_PATH, IMAGE_STATUS_PATH, IMAGE_RESULT_PATH],
             "submit_fields": list(IMAGE_SUBMIT_FIELDS),
             "provider": {"provider_id": None, "model_id": None,
+                         "capability_version": IMAGES_CAPABILITY_VERSION,
                          "configured": False, "capabilities": {}},
             "unavailable": None,
         }
@@ -367,20 +388,33 @@ class ProductV2Handler(BaseHTTPRequestHandler):
                 "kind": _provider_error_kind(error),
                 "detail": redact(type(error).__name__ + ": " + str(error)),
             }
+            block["default_trial"] = default_trial_state()
             return block
         block["provider"] = {
             "provider_id": getattr(provider, "provider_id", None),
             "model_id": getattr(provider, "model_id", None),
+            "capability_version": IMAGES_CAPABILITY_VERSION,
             "configured": bool(getattr(provider, "configured", True)),
+            "credential_source": getattr(provider, "credential_source", None),
             "capabilities": provider_capabilities(provider),
         }
+        block["default_trial"] = default_trial_state()
         return block
 
     def _image_provider(self) -> Any:
         from src.providers.v2_image import ImageFailure
 
+        raw_byok = self.headers.get(IMAGE_BYOK_HEADER)
+        if raw_byok is not None:
+            byok = raw_byok.strip()
+            if not byok or len(byok) > 512:
+                raise ImageFailure("input_rejected", "BYOK_HEADER_INVALID",
+                                   "图像网关 BYOK 请求头为空或超出可用长度；这次请求没有调用模型。",
+                                   retry_policy="fatal", http_status=400)
+        else:
+            byok = None
         try:
-            return self.image_provider_factory()
+            provider = self.image_provider_factory()
         except Exception as error:  # noqa: BLE001 - 构造失败 = 明确的未配置，而不是 500
             raise ImageFailure(
                 "internal", "PROVIDER_NOT_CONFIGURED",
@@ -388,6 +422,50 @@ class ProductV2Handler(BaseHTTPRequestHandler):
                 retry_policy="fatal", http_status=503,
                 details={"kind": _provider_error_kind(error),
                          "detail": redact(type(error).__name__ + ": " + str(error))}) from None
+        if byok is not None:
+            apply = getattr(provider, "apply_credentials", None)
+            if not callable(apply):
+                raise ImageFailure("input_rejected", "BYOK_UNSUPPORTED",
+                                   "当前 provider 不支持 BYOK 凭据；这次请求没有调用模型。",
+                                   retry_policy="fatal", http_status=400)
+            apply(api_key=byok)
+        return provider
+
+    def _verify_execution_target(self, request: Any, provider: Any) -> None:
+        """按冻结身份核对目标（V2.R4.4）：不匹配就 400，绝不转发到别的目标。
+
+        已提交任务保留原协议/目标/模型/能力版本；同 task 不同 target 不串，
+        不偷用当前配置查询旧任务。target 缺省（老验证工具）保持既有语义。
+        """
+        from src.providers.v2_image import (
+            EXECUTION_PROTOCOL_PATTERN, IMAGE_CONTRACT_VERSION, IMAGES_CAPABILITY_VERSION,
+            ImageFailure,
+        )
+        target = getattr(request, "target", None)
+        if target is None:
+            return
+        expected = (str(getattr(provider, "provider_id", "")),
+                    str(getattr(provider, "model_id", "")),
+                    IMAGE_CONTRACT_VERSION, IMAGES_CAPABILITY_VERSION)
+        actual = (str(target.provider_id), str(target.model_id),
+                  str(target.protocol), target.capability_version)
+        if not EXECUTION_PROTOCOL_PATTERN.fullmatch(actual[2]):
+            raise ImageFailure("input_rejected", "EXECUTION_IDENTITY_MISMATCH",
+                               "冻结执行身份的协议版本不合法；没有调用模型。",
+                               retry_policy="fatal", http_status=400)
+        if expected[:3] != actual[:3] or expected[3] != actual[3]:
+            raise ImageFailure(
+                "input_rejected", "EXECUTION_IDENTITY_MISMATCH",
+                "冻结执行身份与当前图像网关不一致：已提交任务按原身份核对；"
+                "本次请求没有转发、没有调用模型。",
+                retry_policy="fatal", http_status=400,
+                details={"frozen_target": {"provider_id": actual[0], "model_id": actual[1],
+                                           "protocol": actual[2],
+                                           "capability_version": actual[3]},
+                         "current_target": {"provider_id": expected[0],
+                                            "model_id": expected[1],
+                                            "protocol": expected[2],
+                                            "capability_version": expected[3]}})
 
     def _image_request(self, model: Any, *,
                        max_bytes: int = MAX_BODY_BYTES) -> tuple[Any, int, dict[str, Any] | None]:
@@ -411,6 +489,25 @@ class ProductV2Handler(BaseHTTPRequestHandler):
             return None, 400, input_rejected_payload(
                 "请求字段不符合图像网关契约；没有调用模型。", problems)
 
+    def _verify_request_profile(self, request: Any, provider: Any) -> None:
+        """按 resolved provider 的 request_profile 前置核验（V2.R5.3）。
+
+        非法 = INPUT_INVALID/400，不调用模型、不输出秘密（原因只含计数与参数名）。
+        缺 profile 或 profile 不完整 = 同样拒绝（no readiness），不猜 qwen、不回退。
+        """
+        from src.providers.v2_image import ImageFailure, profile_violation
+
+        capabilities = provider_capabilities(provider)
+        profile = capabilities.get("request_profile")
+        if profile is None:
+            raise ImageFailure("input_rejected", "INPUT_INVALID",
+                               "当前 provider 没有可用的 request_profile；不能确认请求是否在其能力内。",
+                               retry_policy="fatal", http_status=400)
+        reason = profile_violation(request, profile)
+        if reason is not None:
+            raise ImageFailure("input_rejected", "INPUT_INVALID", reason + "这次没有调用模型。",
+                               retry_policy="fatal", http_status=400)
+
     def _image_failure_response(self, failure: Any) -> None:
         self._send_json(status_for_failure(failure), {
             "ok": False,
@@ -427,7 +524,10 @@ class ProductV2Handler(BaseHTTPRequestHandler):
             self._send_json(status, payload)
             return
         try:
-            task = self._image_provider().submit(request)
+            provider = self._image_provider()
+            self._verify_execution_target(request, provider)
+            self._verify_request_profile(request, provider)
+            task = provider.submit(request)
         except ImageFailure as failure:
             self._image_failure_response(failure)
             return
@@ -435,7 +535,30 @@ class ProductV2Handler(BaseHTTPRequestHandler):
             self._send_json(500, internal_error_payload(
                 redact(type(error).__name__ + ": " + str(error))))
             return
-        self._send_json(200, {"ok": True, "unknown": False, "task": task.to_dict()})
+        payload = {"ok": True, "unknown": False, "task": task.to_dict()}
+        sync_block = self._sync_image_envelope(task)
+        if sync_block:
+            payload.update(sync_block)
+        self._send_json(200, payload)
+
+    def _sync_image_envelope(self, task: Any) -> dict[str, Any] | None:
+        """同步协议（V2.R5.2）：结果字节一次性随提交信封回浏览器。
+
+        字节只进这一次响应体，不写盘、不进日志、不进第二次响应；浏览器用
+        ``image_sha256`` 独立复核字节（不靠服务端口头声明）。没有同步结果就返回
+        None，继续用异步三段链的原样响应。
+        """
+        sync_result = getattr(task, "sync_result", None)
+        if not sync_result:
+            return None
+        content, media_type = sync_result
+        if not isinstance(content, bytes) or not content:
+            return None
+        return {
+            "image_base64": base64.b64encode(content).decode("ascii"),
+            "image_media_type": media_type,
+            "image_sha256": hashlib.sha256(content).hexdigest(),
+        }
 
     def _images_status(self) -> None:
         from src.providers.v2_image import ImageFailure, TaskRequest
@@ -445,7 +568,9 @@ class ProductV2Handler(BaseHTTPRequestHandler):
             self._send_json(status, payload)
             return
         try:
-            task = self._image_provider().status(request)
+            provider = self._image_provider()
+            self._verify_execution_target(request, provider)
+            task = provider.status(request)
         except ImageFailure as failure:
             self._image_failure_response(failure)
             return
@@ -464,6 +589,7 @@ class ProductV2Handler(BaseHTTPRequestHandler):
             return
         try:
             provider = self._image_provider()
+            self._verify_execution_target(request, provider)
             content, media_type = provider.result(request)
         except ImageFailure as failure:
             self._image_failure_response(failure)
@@ -561,6 +687,7 @@ class ProductV2Handler(BaseHTTPRequestHandler):
             "provider_id": getattr(provider, "provider_id", None),
             "model_id": getattr(provider, "model_id", None),
             "configured": bool(getattr(provider, "configured", True)),
+            "credential_source": getattr(provider, "credential_source", None),
             "capabilities": provider_capabilities(provider),
         }
         return block
@@ -641,6 +768,7 @@ class ProductV2Handler(BaseHTTPRequestHandler):
             "provider_id": getattr(provider, "provider_id", None),
             "model_id": getattr(provider, "model_id", None),
             "configured": bool(getattr(provider, "configured", True)),
+            "credential_source": getattr(provider, "credential_source", None),
             "capabilities": provider_capabilities(provider),
         }
         return block

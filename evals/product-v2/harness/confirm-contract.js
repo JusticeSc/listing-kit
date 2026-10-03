@@ -12,7 +12,6 @@ import {
   CONFIRM_BLOCKER_CODES,
   DOMAIN_ERROR_CODES,
   PLATFORM_PROFILES,
-  PROVIDER_PROFILES,
   buildConfirmationRecord,
   buildConfirmationSheet,
   buildPromptRecord,
@@ -30,7 +29,7 @@ import {
 } from "/domain/index.js";
 
 import { sha256Hex } from "/storage/db.js";
-import { expect, expectCode, serializeError } from "./harness-api.js";
+import { IMAGE_PROMPT_PROFILE, expect, expectCode, serializeError } from "./harness-api.js";
 
 const cases = [];
 
@@ -153,7 +152,7 @@ function basisFixture(options = {}) {
     style_version: options.styleVersion === undefined ? 1 : options.styleVersion,
     shot_spec_version: options.shotSpecVersion === undefined ? null : options.shotSpecVersion,
     platform: { version: PLATFORM_PROFILES[PLATFORM_ID].version },
-    provider: { version: PROVIDER_PROFILES[PROVIDER_ID].version },
+    provider: options.providerProfile || IMAGE_PROMPT_PROFILE,
   };
 }
 
@@ -166,6 +165,7 @@ async function compileEntry(shot, options = {}) {
     styleSpec: options.styleSpec || styleFixture(),
     shotSpec: emptyShotSpecFromShot(shot),
     context: context,
+    providerProfile: IMAGE_PROMPT_PROFILE,
     versions: {
       suite_version: options.suiteVersion === undefined ? 1 : options.suiteVersion,
       style_version: options.styleVersion === undefined ? 1 : options.styleVersion,
@@ -184,12 +184,14 @@ async function compileEntry(shot, options = {}) {
 
 function sheetOf(options = {}) {
   const plan = options.plan || planFixture();
+  const providerProfile = options.providerProfile || IMAGE_PROMPT_PROFILE;
   const basisByShot = {};
   for (const shot of plan.shots) {
     basisByShot[shot.shot_id] = basisFixture({
       styleVersion: options.styleVersion,
       suiteVersion: options.suiteVersion,
       shotSpecVersion: (options.shotSpecVersions || {})[shot.shot_id],
+      providerProfile: providerProfile,
     });
   }
   if (options.basisOverride) Object.assign(basisByShot, options.basisOverride);
@@ -199,7 +201,7 @@ function sheetOf(options = {}) {
     context: options.context || contextFixture(),
     currentBasisByShot: basisByShot,
     platformId: options.platformId || PLATFORM_ID,
-    providerId: options.providerId || PROVIDER_ID,
+    providerProfile: providerProfile,
   });
 }
 
@@ -306,9 +308,17 @@ test("H05", "缺依赖：对比图没有竞品素材时阻断并定位到套图�
 test("H06", "Provider 或平台不符：记录被改后不能提交", async () => {
   const plan = planFixture([mainShot()]);
   const entry = await compileEntry(plan.shots[0]);
-  const providerBumped = copyRecord(entry, (record) => { record.compiled.provider.version = 2; });
-  const providerSheet = sheetOf({ plan: plan, entries: [providerBumped] });
+  // 当前有效档前进（能力版本不同）→ 冻结档与当前档不符
+  const bumpedProfile = { ...IMAGE_PROMPT_PROFILE, version: IMAGE_PROMPT_PROFILE.version + 1 };
+  const providerSheet = sheetOf({ plan: plan, entries: [entry], providerProfile: bumpedProfile });
   expect(codesOfShot(providerSheet, "shot_main_clean").includes(CONFIRM_BLOCKER_CODES.PROVIDER_MISMATCH), "Provider 版本不符必须阻断。");
+  // 请求参数不同（同版本）同样必须阻断，而不是只看版本号
+  const paramSheet = sheetOf({ plan: plan, entries: [entry], providerProfile: { ...IMAGE_PROMPT_PROFILE, size: "2048*2048" } });
+  expect(codesOfShot(paramSheet, "shot_main_clean").includes(CONFIRM_BLOCKER_CODES.PROVIDER_MISMATCH), "请求参数不符必须阻断。");
+  // 冻结档被改但快照 target 未同步 → 记录自检必须判红（先于确认单比较）
+  const tampered = copyRecord(entry, (record) => { record.compiled.provider.version = 2; });
+  const tamperedSheet = sheetOf({ plan: plan, entries: [tampered] });
+  expect(codesOfShot(tamperedSheet, "shot_main_clean").includes(CONFIRM_BLOCKER_CODES.PROMPT_RECORD_INVALID), "冻结档与快照 target 不符必须判记录无效。");
   const platformChanged = copyRecord(entry, (record) => { record.compiled.platform.platform_id = "amazon_de"; });
   const platformSheet = sheetOf({ plan: plan, entries: [platformChanged] });
   expect(codesOfShot(platformSheet, "shot_main_clean").includes(CONFIRM_BLOCKER_CODES.PLATFORM_MISMATCH), "平台不符必须阻断。");
@@ -430,6 +440,7 @@ test("H12", "反向探针：计数、fix、摘要与输入错误都必须变红"
   await expectCode(async () => { buildConfirmationSheet({}); }, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "缺套图计划必须拒绝");
   const noBasis = buildConfirmationSheet({
     suitePlan: plan, promptEntries: entries, context: contextFixture(), currentBasisByShot: {},
+    providerProfile: IMAGE_PROMPT_PROFILE,
   });
   expect(noBasis.can_submit === false, "没有当前依据时不能提交。");
   expect(codesOfShot(noBasis, "shot_main_clean").includes(CONFIRM_BLOCKER_CODES.PROMPT_STALE), "缺依据必须按过期处理。");

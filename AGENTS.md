@@ -1,9 +1,12 @@
 # Repository Guidelines
 
 > CONTROL-STATUS: current · AUTHORITY: agent-rules
-> 本文件是仓库工作规则的唯一权威。目标与完成判据看 `docs/product-v2-goal-and-implementation-plan.md`；
+> 本文件是仓库工作规则的唯一权威。目标与完成判据看 `docs/product-v2-refactor-plan.md`；
 > 项目边界与技术栈看 `docs/product-v2-project-context.md`；当前进度看
 > `_working/amz-listing-kit-product-v2/state.md`。进入项目按 `docs/INDEX.md` 的路由顺序读，不复制正文。
+
+当前 state 的 `prepared` 仅表示真正未观察到/未经用户确认 Goal 的准备态（绑定语义与证据合同以计划 §2.2 为准，不复制到此）：下一动作按计划做 R1.1 当前 Goal 重读核对与会话绑定；会话绑定完成前不开始产品施工。用户已确认当前 Goal 后，离线本地实现已获授权；付费模型调用、私有上传、提交/推送、部署、V1 日落、新依赖选型仍各自单独设门。
+`uv run --locked python tools/refactor_resume.py` 只读输出持久恢复路由；不使用聊天或内存 todo 代替 state。
 
 ## Project Structure & Module Organization
 
@@ -67,8 +70,10 @@ uv run --locked python evals/probes/project_state.py  # 反向探针
 
 Python 3.13；`snake_case` 变量与函数，模块用短小写名；注释与界面文案用中文，标识符与文件名保持
 ASCII。前端是原生 ESM，**无构建步骤**；DOM 只做投影，业务状态一律走 `storage/` 的 repository 接口。
-换行服从 `.gitattributes`（`.py`/`.js`/`.md` 为 LF，`.bat` 为 CRLF）。依赖只由
-`pyproject.toml` + `uv.lock` 管理，新增用 `uv add` 落锁。
+换行服从 `.gitattributes`（`.py`/`.js`/`.md` 为 LF，`.bat` 为 CRLF）。Python 依赖由
+`pyproject.toml` + `uv.lock` 管理（uv add）；前端开发依赖由根 `package.json` + `package-lock.json`
+管理（已批准包、精确版本、禁安装 scripts）。JSDoc/checkJs/noEmit 与 Node 原生行为验证按 SEL-021，
+不把 node --check 当类型门；工具版本和登记只见项目上下文 §4.2。
 
 类用 `PascalCase`，常量用 `UPPER_SNAKE`，私有实现加 `_` 前缀；命名必须表达意图，禁止 `tmp_final`
 这类无法审查的名字。一个函数只做一件事（超过约 40 行优先拆分）；注释只写“为什么与权衡”，
@@ -99,9 +104,11 @@ ASCII。前端是原生 ESM，**无构建步骤**；DOM 只做投影，业务状
 
 ## Security & Configuration Tips
 
-密钥只从服务器环境变量读取（`DASHSCOPE_API_KEY`、`SEMANTIC_MODEL`、`IMAGE_MODEL`），不进浏览器、
-Git、项目包、日志与证据。服务器不保存用户项目状态；浏览器 IndexedDB 是业务状态的权威，
-`localStorage` 只放当前项目指针。
+当前已实现凭据仍只来自服务器环境变量（`DASHSCOPE_API_KEY` 等）。重构目标为 SEL-015 的
+BYOK 为主、默认档受限试用：部署默认 key 永不下发、不发送到用户自定义目标；用户 key 仅在经批准
+的内存会话/HTTPS 请求路径使用，不进 IndexedDB、localStorage、Git、项目包、日志、错误或诊断。
+持久保存用户 key 需另行授权；准备计划不代表 BYOK 已实现或允许调用。服务器不保存用户项目状态；
+IndexedDB 是项目权威，localStorage 只放当前项目指针和无秘密界面偏好。
 
 ## Selection Gate (Reuse-first)
 
@@ -125,6 +132,6 @@ HTTP 客户端、重试与退避、限流、缓存、定时调度、任务队列
 `docs/product-v2-project-context.md` §4.1，实现前经用户确认。业务语义（槽位权限、失效传播、
 交付门禁）自研是标准答案，不受此限。
 
-登记即门禁：`pyproject.toml` + `uv.lock` 与项目上下文 §4.2 的依赖登记表逐包一致，`app/product_v2/vendor/`
-与 vendor 登记表逐一对应；少改一处 `tools/check_docs.py` 报红。
+登记即门禁：Python manifest/lock、前端开发期根 manifest/lock 与项目上下文 §4.2 逐包一致，
+vendor 与登记逐一对应；产品目录只保留 ESM 身份，不建第二份依赖权威。少改一处 `tools/check_docs.py` 报红。
 <!-- reuse-first:end -->

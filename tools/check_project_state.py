@@ -13,19 +13,23 @@
     [J0] 工作记录读得出来（有 ```yaml 块、能解析、顶层是映射）
     [J1] 活动工作记录唯一：`_working/*/state.md` 里 status=active 的恰好一份
     [J2] 状态取值闭集合（记录 / 阶段 / 任务三处都算）
-    [J3] Goal 绑定：goal_binding=required 时 goal_id 必须是真 ID；
-         optional 时必须写明 goal_pending_reason
+    [J3] Goal 绑定：required 持真实 ID，当前 v2 同时持有匹配的观察证据；
+         optional 时必须写明 goal_pending_reason；prepared 只能 optional、无 Goal ID；
+         session（仅 v2 记录）必须 goal_id=null 并持有无 ID 的观察证据；
+         观察证据核对身份、目标正文与时刻，不能据旧观察声称本会话重读
     [J4] 状态引用的阶段 / 任务身份必须存在于计划；阶段图、Gate 和任务依赖只由计划定义
     [J5] 阶段推进合法：最多一个 active；active/done 的前置阶段必须 done；
          done 必须带 gate_evidence，且证据文件真实存在
     [J6] 任务状态合法：状态只能引用计划任务；done 必须有存在的证据；
          active/done 的依赖按计划计算且必须 done
-    [J7] next_action 可执行：指向的任务存在、是 pending、依赖已 done
+    [J7] next_action 存在且依赖已 done；pending/active 可执行；
+         已绑定记录可停在 blocked，但必须有以该任务 ID + "_" 开头的明确阻塞条目
     [J8] 不重抄：目标 / 范围 / 决策的正文只有一处（那份计划）；
          state.md 只许引用
     [J9] 记录与阶段一致（记录状态值本身非法时归 J2，J9 不重复计数）：
          有 active 阶段 ⇒ 记录必须 active；记录 active ⇒ 至少一相在跑
-         （最多一相由 J5 管）；记录 completed ⇒ 没有未收尾的阶段与任务
+         （最多一相由 J5 管）；prepared 仅限 v2、无系统 Goal 读数或 active 项；
+         记录 completed ⇒ 没有未收尾的阶段与任务
     [J10] 执行记录的时刻不许是编的：updated_at 必须存在、带时区，且不晚于这个文件
          最后写入的时刻（容差 10 分钟）。
 
@@ -55,11 +59,13 @@ J9 因此允许 paused 记录读 blocked 或 paused；只要 Goal 一处变而�
 from __future__ import annotations
 
 import argparse
+import hashlib
+import json
 import re
 import subprocess
 import sys
 from datetime import datetime
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))          # 只为取 console（见 src/console.py）
@@ -68,16 +74,26 @@ enable_utf8()
 
 WORKING = ROOT / "_working"
 
-RECORD_STATUSES = {"active", "paused", "completed", "superseded"}
+RECORD_STATUSES = {"prepared", "active", "paused", "completed", "superseded"}
 ITEM_STATUSES = {"pending", "active", "done", "blocked", "dropped", "superseded"}
 UPDATED_AT_TOLERANCE_SEC = 600          # 容忍四舍五入，不容忍「未来读数」
 STATE_SCHEMA_V2 = "amz-project-state/v2"
+
+# session 绑定：user 已确认当前 Goal，但 Goal 接口拿不到稳定 ID。绑定声明的是
+# 「本轮会话核对过当前 Goal」，不是全局身份替代 —— goal_id 必须为 null（空串也不行），
+# 真实证据文件（amz-goal-observation/v1）才是它的锚。
+GOAL_BINDING_SESSION = "session"
+GOAL_OBSERVATION_SCHEMA = "amz-goal-observation/v1"
+GOAL_OBSERVATION_SOURCE = "goal-tool"
+GOAL_OBSERVATION_AUTH = "user_confirmed_current_goal"
+OBSERVED_AT_TOLERANCE_SEC = 600         # 与 updated_at 同一容差：容忍取整，不容忍未来读数
 
 # 这些事实的正文归各记录的 plan_ref；执行状态里只许引用，不许抄。
 FORBIDDEN_KEYS = ("scope", "objective", "decisions", "non_goals", "metrics")
 V2_ALLOWED_KEYS = {
     "state_schema", "task_id", "status", "goal_binding", "goal_id", "goal_pending_reason",
     "system_goal_observed_status", "system_goal_observed_at", "plan_ref",
+    "goal_binding_evidence",
     "latest_audit", "phase_progress", "task_progress", "next_action_task",
     "blockers", "unknowns", "updated_at",
 }
@@ -89,8 +105,12 @@ DEP_TOKEN_RE = re.compile(
     r"(?<![A-Za-z0-9_.-])(D[-0-9A-Za-z.]+|V2\.[0-9A-Za-z.-]+|G-?\d+(?:\.\d+)?)(?![A-Za-z0-9_.-])"
 )
 YAML_BLOCK = re.compile(r"```yaml\r?\n(.*?)```", re.S)
-GOAL_ID_RE = re.compile(r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-"
-                        r"[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
+GOAL_ID_RE = re.compile(r"^(?:[0-9a-fA-F]{16}|[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-"
+                        r"[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})$")
+# 只处理工具已观察到的两种边框与明确的终端展示码，不吞普通正文字符。
+GOAL_DISPLAY_MARGIN = re.compile(r"^\s*[▏│]\s?", re.M)
+GOAL_DISPLAY_CODE = re.compile(r"\[13;28;13;[01];0;1_")
+PARENT_DOT_RE = re.compile(r"(?:^|[/\\])\.\.(?:[/\\]|$)")
 
 
 class Report:
@@ -152,6 +172,43 @@ def _plan_tasks(plan_text: str) -> tuple[list[str], dict[str, list[str]]]:
     return ids, deps
 
 
+def _goal_plan_text(plan_text: str) -> str | None:
+    """计划 §2.1 的拟建 Goal 原文；§2.1 缺围栏时返回 None 并由调用方报 J8。"""
+    m = re.search(r"^### 2\.1 .*?^```text\n(.*?)^```", plan_text, re.M | re.S)
+    if not m or not m.group(1).strip():
+        return None
+    return m.group(1).strip()
+
+
+def _goal_display_norm(text: str) -> str:
+    """移除已观察展示码、行首边框和版式空白；保留普通标点与正文。"""
+    display_text = GOAL_DISPLAY_CODE.sub("\n", text)
+    return re.sub(r"\s+", "", GOAL_DISPLAY_MARGIN.sub("", display_text))
+
+
+def _times_equal(a, b) -> bool | None:
+    """「两条车道同一刻读数」的可比实现。
+
+    YAML 会把 RFC3339 字符串撕成 datetime，JSON 证据里却是字符串：直接 `!=`
+    会把合法读数误报成不一致。两边都解析成时刻再比；可比但值不同返回 False，
+    有一边根本解析不了返回 None（调用方按各自格式的判据另报）。
+    """
+    stamps = []
+    for value in (a, b):
+        if isinstance(value, datetime):
+            stamps.append(value)
+            continue
+        if isinstance(value, str):
+            try:
+                stamps.append(datetime.fromisoformat(value.replace("Z", "+00:00")))
+            except ValueError:
+                return None
+            continue
+        return None
+    first, second = stamps
+    return first == second
+
+
 def _progress_map(rep: Report, rel: str, value, label: str, tag: str) -> dict:
     if value is None:
         return {}
@@ -201,7 +258,129 @@ def _check_updated_at(rep: Report, rel: str, path: Path, d: dict) -> None:
                     f"读数是跑出来的，不许写一个还没发生的时刻。")
 
 
-def _check_v2(rep: Report, rel: str, d: dict, plan_text: str,
+def _check_goal_evidence(rep: Report, rel: str, d: dict, plan_ref: str,
+                         plan_text: str) -> None:
+    """核对当前 v2 的真实观察：身份、授权、目标正文与同刻读数。
+
+    required 使用工具原样返回的 ID；session 仅用于接口确实无 ID 的情况。
+    观察保留原始展示体，正文归一不允许改写标点或普通文字。
+    """
+    ev_ref = d.get("goal_binding_evidence")
+    if not ev_ref:
+        rep.problem(f"[J3] {rel} 的 goal_binding={d.get('goal_binding')}，但没有 goal_binding_evidence —— "
+                    f"没有证据，声明就是说了。")
+        return
+    if not isinstance(ev_ref, str):
+        rep.problem(f"[J3] {rel} 的 goal_binding_evidence 必须是仓库相对路径，"
+                    f"实际是 {type(ev_ref).__name__}。")
+        return
+    if (PurePosixPath(ev_ref).is_absolute() or PureWindowsPath(ev_ref).is_absolute()
+            or PARENT_DOT_RE.search(ev_ref)):
+        rep.problem(f"[J3] {rel} 的 goal_binding_evidence={ev_ref!r} 不是仓库相对路径 —— "
+                    f"证据必须在仓库内，仓库外的路径读者核对不了。")
+        return
+    path = ROOT / ev_ref
+    if not path.exists():
+        rep.problem(f"[J3] {rel} 的 goal_binding_evidence 指向不存在的文件：{ev_ref}。")
+        return
+    try:
+        record = json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, UnicodeDecodeError, OSError) as exc:
+        rep.problem(f"[J3] {rel} 的 goal_binding_evidence 无法按 JSON 读出：{exc}。")
+        return
+    if not isinstance(record, dict):
+        rep.problem(f"[J3] {rel} 的 goal_binding_evidence 顶层不是 JSON 对象。")
+        return
+    if record.get("schema") != GOAL_OBSERVATION_SCHEMA:
+        rep.problem(f"[J3] {rel} 的 goal_binding_evidence schema={record.get('schema')!r} "
+                    f"不是 {GOAL_OBSERVATION_SCHEMA}。")
+        return
+    if record.get("source") != GOAL_OBSERVATION_SOURCE:
+        rep.problem(f"[J3] {rel} 的 goal_binding_evidence source={record.get('source')!r} "
+                    f"必须是 {GOAL_OBSERVATION_SOURCE} 读数。")
+        return
+    if record.get("authorization") != GOAL_OBSERVATION_AUTH:
+        rep.problem(f"[J3] {rel} 的 goal_binding_evidence authorization="
+                    f"{record.get('authorization')!r} 不是 {GOAL_OBSERVATION_AUTH}。")
+        return
+    if not str(record.get("user_confirmation") or "").strip():
+        rep.problem(f"[J3] {rel} 的 goal_binding_evidence 缺 user_confirmation —— "
+                    f"「用户确认过当前 Goal」必须有出处。")
+        return
+    if record.get("plan_ref") != plan_ref:
+        rep.problem(f"[J3] {rel} 的 goal_binding_evidence.plan_ref={record.get('plan_ref')!r} "
+                    f"与 state.plan_ref={plan_ref!r} 不一致。")
+        return
+    if d.get("goal_binding") == "required":
+        if record.get("goal_id") != d.get("goal_id") or record.get("id_unavailable") is not False:
+            rep.problem(f"[J3] {rel} 的 required 观察身份与 state 不一致，"
+                        f"或仍声称接口未返回 ID。")
+            return
+    elif record.get("goal_id") is not None or record.get("id_unavailable") is not True:
+        rep.problem(f"[J3] {rel} 的 session 观察必须 goal_id=null、id_unavailable=true。")
+        return
+    observed_at = record.get("observed_at")
+    state_at = d.get("system_goal_observed_at")
+    if not isinstance(observed_at, str):
+        rep.problem(f"[J3] {rel} 的 goal_binding_evidence.observed_at 必须是字符串时刻。")
+        return
+    try:
+        stamp = datetime.fromisoformat(observed_at.replace("Z", "+00:00"))
+    except ValueError:
+        rep.problem(f"[J3] {rel} 的 goal_binding_evidence.observed_at={observed_at!r} "
+                    f"不是 ISO-8601 时刻。")
+        return
+    if stamp.tzinfo is None:
+        rep.problem(f"[J3] {rel} 的 goal_binding_evidence.observed_at={observed_at!r} "
+                    f"没有时区 —— 与 J10 同一纪律。")
+        return
+    same_time = _times_equal(observed_at, state_at)
+    if same_time is False:
+        rep.problem(f"[J3] {rel} 的 goal_binding_evidence.observed_at 与 state 的 "
+                    f"system_goal_observed_at 不是同一刻：{observed_at!r} vs {state_at!r} —— "
+                    f"两条车道必须同一刻读数。")
+    elif same_time is None:
+        rep.problem(f"[J3] {rel} 的两条时刻车道对不上：evidence.observed_at={observed_at!r}，"
+                    f"state.system_goal_observed_at={state_at!r} —— 有哪边不是可对的 ISO-8601 时刻。")
+    now = datetime.now(stamp.tzinfo)
+    late = (stamp - now).total_seconds()
+    if late > OBSERVED_AT_TOLERANCE_SEC:
+        rep.problem(f"[J3] {rel} 的 goal_binding_evidence.observed_at={observed_at} "
+                    f"比现在还晚 {late / 60:.0f} 分钟 —— 读数不许写在未来。")
+    observed_status = record.get("observed_status")
+    state_status = d.get("system_goal_observed_status")
+    if observed_status != state_status:
+        rep.problem(f"[J3] {rel} 的 goal_binding_evidence.observed_status 与 state 的 "
+                    f"system_goal_observed_status 不一致：{observed_status!r} vs "
+                    f"{state_status!r}。")
+        return
+    if observed_status not in ("active", "paused", "blocked"):
+        rep.problem(f"[J3] {rel} 的 goal_binding_evidence.observed_status="
+                    f"{observed_status!r} 不在 Goal 生命周期取值域。")
+        return
+    allowed_statuses = {"paused", "blocked"} if d.get("status") == "paused" else {d.get("status")}
+    if observed_status not in allowed_statuses:
+        rep.problem(f"[J9] {rel} 记录 status={d.get('status')!r}，但 Goal 观察是 {observed_status!r}。")
+    plan_goal = _goal_plan_text(plan_text)
+    if plan_goal is None:
+        rep.problem(f"[J8] {plan_ref} 的 2.1 没有 text 围栏 —— 计划必须承载唯一的拟建 Goal 原文。")
+        return
+    expected_sha = hashlib.sha256(plan_goal.encode("utf-8")).hexdigest()
+    if record.get("objective_sha256") != expected_sha:
+        rep.problem(f"[J3] {rel} 的 goal_binding_evidence.objective_sha256 与计划 §2.1 原文不匹配 —— "
+                    f"指纹对不上，观察的不是这份计划的目标。")
+        return
+    observed_objective = record.get("observed_objective")
+    if not isinstance(observed_objective, str) or not observed_objective.strip():
+        rep.problem(f"[J3] {rel} 的 goal_binding_evidence 缺 observed_objective —— "
+                    f"指纹声明了计划，实际读到的目标也要在场。")
+        return
+    if _goal_display_norm(observed_objective) != _goal_display_norm(plan_goal):
+        rep.problem(f"[J3] {rel} 的 goal_binding_evidence.observed_objective 与计划 §2.1 目标 "
+                    f"不一致（展示归一后仍不等）—— 观察到的是另一个 Goal。")
+
+
+def _check_v2(rep: Report, rel: str, d: dict, plan_ref: str, plan_text: str,
               plan_phases: list[str], plan_gates: set[str]) -> None:
     """单一权威状态：计划管结构，state 只管进度 / 证据 / 下一动作。"""
     extra = sorted(set(d) - V2_ALLOWED_KEYS)
@@ -296,7 +475,7 @@ def _check_v2(rep: Report, rel: str, d: dict, plan_text: str,
     record_status = d.get("status")
     # Superseded/completed records are evidence snapshots, not resumable work.  Requiring a
     # next action there would force a false instruction into history just to satisfy J7.
-    if record_status in ("active", "paused"):
+    if record_status in ("prepared", "active", "paused"):
         na = d.get("next_action_task")
         if not na:
             rep.problem(f"[J7] {rel} 没有 next_action_task。")
@@ -304,8 +483,14 @@ def _check_v2(rep: Report, rel: str, d: dict, plan_text: str,
             rep.problem(f"[J7] {rel} 的 next_action_task={na!r} 不在计划任务表。")
         else:
             nst = task_status.get(str(na), "pending")
-            if nst not in ("pending", "active"):
+            allowed_next = {"pending"} if record_status == "prepared" else {"pending", "active", "blocked"}
+            if nst not in allowed_next:
                 rep.problem(f"[J7] {rel} 的 next_action_task={na!r} 当前是 {nst}。")
+            if nst == "blocked" and record_status != "prepared":
+                prefix = str(na) + "_"
+                if not any(isinstance(item, str) and item.startswith(prefix) and len(item) > len(prefix)
+                           for item in (d.get("blockers") or [])):
+                    rep.problem(f"[J7] {rel} 的阻塞恢复点 {na!r} 缺少对应任务的明确阻塞条目。")
             undone = [dep for dep in task_deps.get(str(na), []) if not dep_done(dep)]
             if undone:
                 rep.problem(f"[J7] {rel} 的 next_action_task={na!r} 依赖 {undone} 未完成。")
@@ -316,8 +501,14 @@ def _check_v2(rep: Report, rel: str, d: dict, plan_text: str,
         rep.problem(f"[J9] {rel} 记录 status={record_status!r}，但最近系统 Goal 读数是 {observed!r}。")
     if record_status == "active" and not active_phases:
         rep.problem(f"[J9] {rel} 记录 active，但 phase_progress 没有 active 阶段。")
-    if record_status != "active" and active_phases:
+    if record_status in RECORD_STATUSES and record_status != "active" and active_phases:
         rep.problem(f"[J9] {rel} 记录 {record_status!r}，却有 active 阶段 {active_phases}。")
+    if record_status == "prepared":
+        active_tasks = [tid for tid, st in task_status.items() if st == "active"]
+        if active_tasks:
+            rep.problem(f"[J9] {rel} 记录 prepared，却有 active 任务 {active_tasks}。")
+        if observed not in (None, "") or d.get("system_goal_observed_at") not in (None, ""):
+            rep.problem(f"[J9] {rel} 记录 prepared，却保存了系统 Goal 读数；未绑定不能冒充已观察。")
     if record_status == "completed":
         open_phases = [pid for pid, st in phase_status.items() if st != "done"]
         open_tasks = [tid for tid, st in task_status.items()
@@ -401,20 +592,44 @@ def _check(rep: Report) -> None:
         binding = d.get("goal_binding")
         gid = d.get("goal_id")
         if binding == "required":
-            if not (isinstance(gid, str) and GOAL_ID_RE.match(gid)):
+            if not (isinstance(gid, str) and GOAL_ID_RE.fullmatch(gid)):
                 rep.problem(f"[J3] {rel} 声明 goal_binding=required，但 goal_id={gid!r} "
-                            f"不是有效的 Goal 标识 —— 它是这份文件的锚；锚没了，"
-                            f"「做到哪」就没有对照物。")
+                            f"不是工具支持的原样 Goal 标识。")
+            elif d.get("state_schema") == STATE_SCHEMA_V2 and st != "superseded":
+                _check_goal_evidence(rep, rel, d, str(ref), plan_text)
+        elif binding == "session":
+            if d.get("state_schema") != STATE_SCHEMA_V2:
+                rep.problem(f"[J3] {rel} 的 goal_binding=session 只属于 v2 执行状态，"
+                            f"legacy 记录不许借用 session 绕过 Goal 绑定合同。")
+            elif st == "prepared":
+                rep.problem(f"[J3] {rel} 记录 prepared，不允许 session 绑定。")
+            elif d.get("goal_id") is not None:
+                rep.problem(f"[J3] {rel} 声明 goal_binding=session，但 goal_id={gid!r} —— "
+                            f"接口无 ID 时必须为 null（空串也不许）。")
+            else:
+                _check_goal_evidence(rep, rel, d, str(ref), plan_text)
         elif binding == "optional":
+            if d.get("goal_binding_evidence"):
+                rep.problem(f"[J3] {rel} 的 goal_binding=optional，却带着 goal_binding_evidence —— "
+                            f"不能借 session 证据越过 optional 的未绑定状态。")
             if gid in (None, "", "null") and not str(d.get("goal_pending_reason") or "").strip():
                 rep.problem(f"[J3] {rel} 的 goal_id 为空，且没有 goal_pending_reason —— "
                             f"为什么还没绑 Goal，必须写出来。")
         else:
             rep.problem(f"[J3] {rel} 的 goal_binding={binding!r} 不在取值域："
-                        f"required / optional")
+                        f"required / optional / session")
+        if st == "prepared":
+            if (binding != "optional" or gid not in (None, "")
+                    or not str(d.get("goal_pending_reason") or "").strip()):
+                rep.problem(f"[J3] {rel} 记录 prepared，必须 optional、goal_id 为空且有未绑定理由。")
+            if d.get("state_schema") != STATE_SCHEMA_V2:
+                rep.problem(f"[J9] {rel} 记录 prepared 只允许 {STATE_SCHEMA_V2}。")
 
         if d.get("state_schema") == STATE_SCHEMA_V2:
-            _check_v2(rep, rel, d, plan_text, plan_phases, plan_gates)
+            if d.get("goal_binding") == "session":
+                rep.note(f"session 绑定以 goal_binding_evidence 的 amz-goal-observation/v1 "
+                         f"记录为锚；goal_id 保持 null，不冒充真实 Goal ID")
+            _check_v2(rep, rel, d, str(ref), plan_text, plan_phases, plan_gates)
             continue
 
         phases = [ph for ph in (d.get("phases") or []) if isinstance(ph, dict)]

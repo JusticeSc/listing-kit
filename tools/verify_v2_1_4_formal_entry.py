@@ -102,6 +102,34 @@ async (projectId) => {
 }
 """
 
+HOME_READ_TRAIL = """
+(() => {
+  const trail = window.__homeReadTrail = [];
+  const note = (event, detail = {}) => {
+    trail.push({ event, at_ms: performance.now(), ...detail });
+    if (trail.length > 64) trail.shift();
+  };
+  const original = IDBObjectStore.prototype.getAll;
+  IDBObjectStore.prototype.getAll = function (...args) {
+    if (this.name !== 'projects') return original.apply(this, args);
+    note('projects.getAll:start');
+    try {
+      const request = original.apply(this, args);
+      request.addEventListener('success', () =>
+        note('projects.getAll:success', { records: request.result.length }));
+      request.addEventListener('error', () =>
+        note('projects.getAll:error', { name: request.error && request.error.name }));
+      return request;
+    } catch (error) {
+      note('projects.getAll:throw', { name: error.name });
+      throw error;
+    }
+  };
+  addEventListener('unhandledrejection', event =>
+    note('unhandledrejection', { message: String(event.reason) }));
+})();
+"""
+
 
 def sha256_file(path: Path) -> str:
     digest = hashlib.sha256()
@@ -255,6 +283,52 @@ def main() -> int:
     def check(check_id: str, title: str, ok: bool, detail: object = None) -> None:
         checks.append({"id": check_id, "title": title, "ok": bool(ok), "detail": detail})
 
+    def assert_home_project(page, stage: str) -> None:
+        try:
+            expect(page.locator("#home-view")).to_be_visible()
+            expect(page.locator("#project-list .project-row")).to_have_count(1)
+            expect(page.locator("#project-list .name")).to_have_text("正式入口验证 · 保温杯")
+        except Exception as error:
+            failure = {
+                "not_authority": "Failure evidence, not a successful run or root-cause claim.",
+                "stage": stage, "exception": str(error),
+                "console_errors": console_errors, "page_errors": page_errors,
+                "code_sha256": {
+                    path: sha256_file(ROOT / path) for path in (
+                        "app/product_v2/app.js", "app/product_v2/session.js",
+                        "app/product_v2/storage/repository.js")},
+            }
+            try:
+                failure["ui"] = page.evaluate("""() => ({
+                  url: location.href,
+                  home_hidden: document.getElementById('home-view').hidden,
+                  project_hidden: document.getElementById('project-view').hidden,
+                  rows: document.querySelectorAll('#project-list .project-row').length,
+                  empty_hidden: document.getElementById('empty-state').hidden,
+                  boot_error: document.getElementById('boot-error').textContent,
+                  home_error: document.getElementById('home-error').textContent,
+                  read_error: document.getElementById('home-read-error')?.textContent,
+                  busy: document.getElementById('project-list').getAttribute('aria-busy'),
+                  trail: window.__homeReadTrail,
+                  navigation: performance.getEntriesByType('navigation')
+                    .map(item => ({ type: item.type, start: item.startTime })),
+                })""")
+                failure["pointer"] = page.evaluate(POINTER_SNAPSHOT)
+                failure["independent_db"] = page.evaluate(
+                    "() => Promise.race([(" + DB_SNAPSHOT + ")(), "
+                    "new Promise(resolve => setTimeout(() => "
+                    "resolve({unknown: 'independent read exceeded 2000ms'}), 2000))])")
+                png = EVIDENCE_DIR / f"v2.1.4-failure-{stamp}-{stage}.png"
+                page.screenshot(path=str(png))
+                failure["screenshot"] = png.relative_to(ROOT).as_posix()
+            except Exception as capture_error:
+                failure["capture_error"] = str(capture_error)
+            EVIDENCE_DIR.mkdir(parents=True, exist_ok=True)
+            path = EVIDENCE_DIR / f"v2.1.4-failure-{stamp}-{stage}.json"
+            path.write_text(json.dumps(failure, ensure_ascii=False, indent=2), encoding="utf-8")
+            print("失败证据：" + path.relative_to(ROOT).as_posix())
+            raise
+
     # --- 1. 语法自检 ---
     compile_results = []
     for target in ("app/server.py", "app/product_v2_server.py"):
@@ -311,6 +385,7 @@ def main() -> int:
 
         with sync_playwright() as pw:
             def attach(context):
+                context.add_init_script(HOME_READ_TRAIL)
                 context.on("request", lambda request: request_urls.append(request.url))
                 context.on("console", lambda message: console_errors.append(message.text)
                            if message.type == "error" else None)
@@ -337,11 +412,15 @@ def main() -> int:
 
                 page.fill("#new-project-name", "正式入口验证 · 保温杯")
                 page.click("#create-project")
-                expect(page.locator("#project-list .project-row")).to_have_count(1)
+                # R3.3：新建即打开——先断言工作台，再回首页截图/断言列表。
+                expect(page.locator("#project-view")).to_be_visible()
+                expect(page.locator("#project-title")).to_have_text("正式入口验证 · 保温杯")
                 created_db = page.evaluate(DB_SNAPSHOT)
                 project_id = created_db["projects"][0]["project_id"]
                 seeded = page.evaluate(SEED_DOCUMENT_AND_ASSET, project_id)
                 seeded_db = page.evaluate(DB_SNAPSHOT)
+                page.click("#back-home")
+                assert_home_project(page, "created-back-home")
                 list_png = EVIDENCE_DIR / f"v2.1.4-formal-project-{stamp}.png"
                 page.screenshot(path=str(list_png))
                 screenshots.append(list_png.relative_to(ROOT).as_posix())
@@ -368,8 +447,12 @@ def main() -> int:
                 attach(ctx_a)
                 page_a = ctx_a.pages[0] if ctx_a.pages else ctx_a.new_page()
                 page_a.goto(server.base_url + "/", wait_until="networkidle")
-                expect(page_a.locator("#project-list .project-row")).to_have_count(1)
-                expect(page_a.locator("#project-list .name")).to_have_text("正式入口验证 · 保温杯")
+                # R3.3：boot 自动恢复指针项目并进入工作台；首页列表要回首页才 refresh，
+                # 所以持久化先断言 project-view + IndexedDB，再回首页断言列表。
+                expect(page_a.locator("#project-view")).to_be_visible()
+                expect(page_a.locator("#project-title")).to_have_text("正式入口验证 · 保温杯")
+                page_a.click("#back-home")
+                assert_home_project(page_a, "profile-reopened-back-home")
                 reopened_db = page_a.evaluate(DB_SNAPSHOT)
                 check(f"{APP_NAME}-07", "关浏览器重开后项目与资产 hash 恢复（IndexedDB 持久化）",
                       reopened_db["counts"] == seeded_db["counts"]
@@ -380,7 +463,10 @@ def main() -> int:
                 server.stop()
                 server.start()
                 page_a.reload(wait_until="networkidle")
-                expect(page_a.locator("#project-list .project-row")).to_have_count(1)
+                # 重启后刷新同样回到工作台（指针未变）；先断言恢复，再回首页断言列表。
+                expect(page_a.locator("#project-view")).to_be_visible()
+                page_a.click("#back-home")
+                assert_home_project(page_a, "server-restarted-back-home")
                 after_restart_db = page_a.evaluate(DB_SNAPSHOT)
                 check(f"{APP_NAME}-08", "重启服务器后刷新：项目与资产 hash 仍一致",
                       after_restart_db["counts"] == seeded_db["counts"]

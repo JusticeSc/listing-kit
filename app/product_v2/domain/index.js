@@ -17,6 +17,7 @@ export * from "./specs.js";
 export * from "./prompt.js";
 export * from "./confirm.js";
 export * from "./attempt.js";
+export * from "./config-export.js";
 export * from "./batch.js";
 export * from "./candidate.js";
 export * from "./review.js";

@@ -41,6 +41,8 @@ class FakeSuiteReviewProvider:
     def __init__(self, scenario: str = "ok", *, latency_ms: int = 0) -> None:
         self.scenario = scenario
         self.latency_ms = latency_ms
+        # 与 capabilities() 声明一致：服务器能力块读实例属性（V2.R4.3/R4.4 统一口径）。
+        self.credential_source = "test_double"
         self.calls: list[dict[str, Any]] = []
 
     def capabilities(self) -> dict[str, Any]:
@@ -53,8 +55,14 @@ class FakeSuiteReviewProvider:
             "structured_output": "local",
             "stateless": True,
             "test_double": True,
+            "credential_source": "test_double",
             "scenario": self.scenario,
         }
+
+    def apply_credentials(self, *, api_key: str) -> None:
+        """测试替身没有真实密钥轴；BYOK 请求头对替身是显式 no-op（不落盘、不回显）。"""
+
+        return None
 
     def review(self, request: DecodedSuiteReviewRequest, *,
                scenario: str | None = None) -> SuiteReviewResult:

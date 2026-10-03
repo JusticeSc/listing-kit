@@ -167,13 +167,16 @@ def main() -> int:
         threading.Thread(target=server.serve_forever, daemon=True).start()
         return server, f"http://127.0.0.1:{port}"
 
-    def request(base: str, method: str, path: str, body: bytes | None = None):
+    def request(base: str, method: str, path: str, body: bytes | None = None, *,
+                headers_extra: dict[str, str] | None = None):
         from urllib.parse import urlsplit
 
         parts = urlsplit(base)
         connection = http.client.HTTPConnection(parts.hostname, parts.port, timeout=30)
         try:
             headers = {"Content-Type": "application/json; charset=utf-8"} if body is not None else {}
+            if headers_extra:
+                headers.update(headers_extra)
             connection.request(method, path, body=body, headers=headers)
             response = connection.getresponse()
             return (response.status, response.getheader("Content-Type") or "",
@@ -555,7 +558,7 @@ def main() -> int:
     adapter_module.requests = default_stub
     try:
         default_provider = create_default_image_provider(
-            environ={"DASHSCOPE_API_KEY": "test-key"})
+            environ={"DASHSCOPE_API_KEY": "test-key", "AMZ_V2_DEFAULT_TRIAL": "open"})
         reference = png_bytes("verifier-ref")
         default_task = default_provider.submit(SubmitRequest(
             action_id="verify-default-transport-1",
@@ -573,6 +576,173 @@ def main() -> int:
           and len(default_stub.calls) == 1
           and default_stub.calls[0]["method"] == "POST",
           {"task": default_task.to_dict(), "calls": len(default_stub.calls)})
+
+    # ------------------------------------------------ 默认档开关与 BYOK（V2.R4.3）
+
+    from src.providers.v2_credentials import resolve_default_trial
+
+    gate_cases = [
+        ({"AMZ_V2_DEFAULT_TRIAL": "1"}, True),
+        ({"AMZ_V2_DEFAULT_TRIAL": "OPEN"}, True),
+        ({"AMZ_V2_DEFAULT_TRIAL": "closed"}, False),
+        ({"AMZ_V2_DEFAULT_TRIAL": "0"}, False),
+        ({}, False),
+    ]
+    gate_ok = True
+    gate_detail = []
+    for env_case, expected in gate_cases:
+        try:
+            gate_ok = gate_ok and resolve_default_trial(env_case) is expected
+            gate_detail.append({"case": dict(env_case), "open": resolve_default_trial(env_case)})
+        except ValueError:
+            gate_ok = False
+            gate_detail.append({"case": dict(env_case), "raised": True})
+    try:
+        resolve_default_trial({"AMZ_V2_DEFAULT_TRIAL": "重新表述一下"})
+        invalid_rejected = False
+    except ValueError:
+        invalid_rejected = True
+    check("V2.4.1-26", "默认档开关解析：合法值双向、非法值必须抛错（fail-closed）",
+          gate_ok and invalid_rejected, gate_detail)
+
+    blocked_provider = create_image_provider(registry=registry,
+                                             env={"DASHSCOPE_API_KEY": "deploy-key"})
+    opened_provider = create_image_provider(registry=registry,
+                                            env={"DASHSCOPE_API_KEY": "deploy-key",
+                                                 "AMZ_V2_DEFAULT_TRIAL": "open"})
+    check("V2.4.1-27",
+          "默认档开关在注册表构造生效：closed 时部署密钥不进适配器，open 恢复沿用",
+          blocked_provider.api_key == "" and blocked_provider.credential_source == "none"
+          and blocked_provider.capabilities().get("credential_source") == "none"
+          and blocked_provider.capabilities().get("stateless") is True
+          and opened_provider.api_key == "deploy-key"
+          and opened_provider.credential_source == "default",
+          {"blocked": blocked_provider.capabilities(), "opened": opened_provider.capabilities()})
+
+    guard_probes = [
+        ("非 https", "http://dashscope.aliyuncs.com/services/aigc/image-generation/generation"),
+        ("非 443 端口", "https://dashscope.aliyuncs.com:8443/tasks/task-guard"),
+        ("回环 IP", "https://127.0.0.1/tasks/task-guard"),
+        ("云元数据地址", "https://169.254.169.254/latest/meta-data/"),
+        ("私网 IPv6", "https://[fd00::1]/tasks/task-guard"),
+        ("URL 内嵌凭据", "https://user:pw@dashscope.aliyuncs.com/tasks/task-guard"),
+        ("白名单外主机", "https://evil.example.com/tasks/task-guard"),
+        ("后缀伪装", "https://dashscope.aliyuncs.com.evil.io/tasks/task-guard"),
+    ]
+    rejections = []
+    for label, url in guard_probes:
+        transport_probe = RecordingTransport([])
+        guarded = DashScopeImageProvider(api_key="k" * 24, transport=transport_probe)
+        try:
+            guarded._call("守卫探针", "GET", url, headers={}, json_body=None)  # noqa: SLF001
+            rejections.append({"probe": label, "blocked": False})
+        except ImageFailure as failure:
+            rejections.append({"probe": label, "blocked": True,
+                               "code": failure.code,
+                               "status": failure.http_status,
+                               "calls": len(transport_probe.calls)})
+    check("V2.4.1-28",
+          "出站白名单：八类非法目标全部在传输前拒绝（OUTBOUND_POLICY_REJECTED，0 次上游调用）",
+          all(item.get("blocked") and item.get("code") == "OUTBOUND_POLICY_REJECTED"
+              and item.get("status") == 503 and item.get("calls") == 0 for item in rejections),
+          rejections)
+
+    recorded = RecordingTransport([
+        Response(200, {"output": {"task_id": "task-byok", "task_status": "RUNNING"},
+                       "request_id": "req-byok-1"}),
+        Response(200, {"output": {"task_id": "task-byok", "task_status": "SUCCEEDED"},
+                       "request_id": "req-byok-2"}),
+    ])
+    server, base = serve(lambda: create_default_image_provider(environ={}, transport=recorded))
+    try:
+        status, _, _, raw = request(
+            base, "POST", SUBMIT_PATH, submit_body("verify-action-byok"),
+            headers_extra={"X-AMZ-Listing-Key-Image": "byok-owned-key-0001"})
+        payload = json_of(raw)
+        submit_call = recorded.calls[0] if recorded.calls else {}
+        check("V2.4.1-29",
+              "BYOK 请求头密钥随单次请求进入适配器 Authorization；响应里不回显",
+              status == 200 and payload.get("ok") is True
+              and (payload.get("task") or {}).get("task_id") == "task-byok"
+              and submit_call.get("headers", {}).get("Authorization") == "Bearer byok-owned-key-0001"
+              and "byok-owned-key-0001" not in raw.decode("utf-8", "replace"),
+              {"auth": (submit_call.get("headers", {}).get("Authorization") or "")[:12],
+               "status": status})
+        status, ctype, headers, raw = request(
+            base, "POST", STATUS_PATH,
+            json.dumps({"task_id": "task-byok"}).encode("utf-8"),
+            headers_extra={"X-AMZ-Listing-Key-Image": "byok-owned-key-0001"})
+        body_text = raw.decode("utf-8", "replace")
+        check("V2.4.1-30",
+              "BYOK 密钥不出现在响应头、响应体或任何回显位置（status 路径二次校验）",
+              status == 200 and (json_of(raw).get("task") or {}).get("status") == "SUCCEEDED"
+              and "byok-owned-key-0001" not in body_text
+              and all("byok-owned-key-0001" not in str(value)
+                      for value in headers.values()),
+              {"status": status, "headers": sorted(headers)})
+    finally:
+        server.shutdown()
+        server.server_close()
+
+    gate_recorded = RecordingTransport([])
+    server, base = serve(lambda: create_default_image_provider(
+        environ={"DASHSCOPE_API_KEY": "sk-deploy", "AMZ_V2_DEFAULT_TRIAL": "closed"},
+        transport=gate_recorded))
+    try:
+        status, _, _, raw = request(base, "GET", CAPABILITIES_PATH)
+        provider_block = (json_of(raw).get("images") or {}).get("provider") or {}
+        status2, _, _, raw2 = request(base, "POST", SUBMIT_PATH,
+                                      submit_body("verify-action-gate-closed"))
+        payload2 = json_of(raw2)
+        error2 = payload2.get("error") or {}
+        check("V2.4.1-31",
+              "默认档关闭 + 部署密钥存在：capabilities 仍 200 且 configured=false，提交 503 且 0 次上游调用",
+              status == 200 and provider_block.get("configured") is False
+              and provider_block.get("credential_source") == "none"
+              and (json_of(raw).get("images") or {}).get("default_trial") == "closed"
+              and status2 == 503 and error2.get("code") == "PROVIDER_NOT_CONFIGURED"
+              and payload2.get("unknown") is False and len(gate_recorded.calls) == 0,
+              {"provider": provider_block, "submit": {"status": status2, "error": error2},
+               "calls": len(gate_recorded.calls)})
+    finally:
+        server.shutdown()
+        server.server_close()
+
+    byok_bypass = create_default_image_provider(environ={"DASHSCOPE_API_KEY": "deploy-key"})
+    try:
+        byok_bypass.apply_credentials(api_key="byok-owned-key-0002")
+        applied = True
+    except ImageFailure:
+        applied = False
+    check("V2.4.1-32",
+          "BYOK 绕过默认档开关：部署密钥被关时 BYOK 仍可换入同一请求的适配器",
+          applied and byok_bypass.credential_source == "byok"
+          and byok_bypass.capabilities().get("credential_source") == "byok"
+          and byok_bypass.api_key == "byok-owned-key-0002"
+          and byok_bypass.api_key != "deploy-key",
+          {"credential_source": byok_bypass.credential_source,
+           "api_key": byok_bypass.api_key})
+
+    server, base = serve(lambda: FakeImageProvider("ok"))
+    try:
+        status, _, _, raw = request(
+            base, "POST", SUBMIT_PATH, submit_body("verify-action-fake-byok"),
+            headers_extra={"X-AMZ-Listing-Key-Image": "byok-owned-key-0003"})
+        fake_ok = status == 200 and json_of(raw).get("ok") is True
+        status_blank, _, _, raw_blank = request(
+            base, "POST", SUBMIT_PATH, submit_body("verify-action-byok-blank"),
+            headers_extra={"X-AMZ-Listing-Key-Image": "   "})
+        blank_error = (json_of(raw_blank).get("error") or {})
+        check("V2.4.1-33",
+              "BYOK 边界：测试替身显式 no-op；空白 BYOK 头无论 provider 是谁都 400 BYOK_HEADER_INVALID",
+              fake_ok
+              and status_blank == 400
+              and blank_error.get("code") == "BYOK_HEADER_INVALID"
+              and blank_error.get("family") == "input_rejected",
+              {"fake_submit": status, "blank_submit": status_blank, "error": blank_error})
+    finally:
+        server.shutdown()
+        server.server_close()
 
     after = repo_manifest()
     added = sorted(set(after) - set(before))
@@ -593,8 +763,12 @@ def main() -> int:
         "不依赖先前是否查询过；输入里的目录/工作空间字段、参考图数量与内容、尺寸、提示词长度与请求体上限"
         "都被拒绝且不调用上游；上游 4xx 是明确失败（429 与欠费可重试），5xx、连接中断、任务号不符与"
         "无法解析都归 Unknown 并要求人工核对，绝不自动重提；未配置密钥时 capabilities 仍 200 且明确"
-        "configured=false，提交返回 503 PROVIDER_NOT_CONFIGURED。真实适配器的请求形状与错误分类由注入的"
-        "假 transport 断言，整轮 0 次真实模型调用、0 次网络请求、仓库文件 manifest 零差异。"
+        "configured=false，提交返回 503 PROVIDER_NOT_CONFIGURED。默认档开关未显式开启时部署密钥不进"
+        "适配器（两级 fail-closed，capabilities 同时给出 credential_source 与 default_trial 状态）；"
+        "出站白名单在任何传输生效之前拒绝非 https/非 443/私网与白名单外目标；BYOK 请求头只随单次"
+        "请求进入内存并被本次提交使用，服务器不落盘、不在响应头/响应体/错误里回显。真实适配器的"
+        "请求形状与错误分类由注入的假 transport 断言，整轮 0 次真实模型调用、0 次网络请求、"
+        "仓库文件 manifest 零差异。"
         "不证明：真实出图质量、真实参考图是否被上游接受、候选 Blob、审核报告、返工与交付 ZIP——"
         "这些属于 V2.4.2 起的批次。"
     )

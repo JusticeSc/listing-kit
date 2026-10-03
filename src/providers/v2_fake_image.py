@@ -19,7 +19,8 @@ import zlib
 from typing import Any
 
 from src.providers.v2_image import (IMAGE_MODEL_ID, IMAGE_PROVIDER_ID, ImageFailure,
-                                    ImageTaskResult, SubmitRequest, TaskRequest)
+                                    ImageTaskResult, SubmitRequest, TaskRequest,
+                                    image_request_profile)
 
 FAKE_SCENARIOS = ("ok", "failed", "submit_unknown", "status_unknown", "download_failed")
 FAKE_PROVIDER_ID = "fake-qwen-image"
@@ -40,6 +41,8 @@ class FakeImageProvider:
         self.size = max(8, int(size))
         self.provider_id = FAKE_PROVIDER_ID
         self.model_id = IMAGE_MODEL_ID
+        # 与 capabilities() 声明一致：服务器能力块读实例属性（V2.R4.3/R4.4 统一口径）。
+        self.credential_source = "test_double"
         self.calls: dict[str, int] = {"submit": 0, "status": 0, "result": 0}
 
     # ------------------------------------------------------------ 能力
@@ -55,8 +58,16 @@ class FakeImageProvider:
             "watermark": False,
             "stateless": True,
             "test_double": True,
+            "credential_source": "test_double",
             "upstream_provider_id": IMAGE_PROVIDER_ID,
+            # V2.R5.3：与真实 qwen 同形状有效 profile（qwen 网关限制口径）。
+            "request_profile": image_request_profile(),
         }
+
+    def apply_credentials(self, *, api_key: str) -> None:
+        """测试替身没有真实密钥轴；BYOK 请求头对替身是显式 no-op（不落盘、不回显）。"""
+
+        return None
 
     # ------------------------------------------------------------ 内部
 

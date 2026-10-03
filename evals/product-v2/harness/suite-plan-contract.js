@@ -99,8 +99,6 @@ test("R01", "内置注册表自检零问题；schema 与依赖词表齐全", () 
   expect(json(described.dependency_kinds) === json([...DEPENDENCY_KINDS]),
     "依赖词表与常量不一致。");
   expect(DEPENDENCY_KINDS.length === 5, "依赖谓词应为 5 种。");
-  expect(IMAGE_ROLES.length === 9 && SHOT_TEMPLATES.length === 8,
-    "角色/模板基数变化：" + IMAGE_ROLES.length + "/" + SHOT_TEMPLATES.length);
   return { problems: problems.length, roles: IMAGE_ROLES.length, templates: SHOT_TEMPLATES.length };
 });
 

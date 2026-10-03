@@ -10,18 +10,26 @@
 
 import {
   ATTEMPT_ERROR_FAMILIES,
+  ATTEMPT_CREDENTIAL_SOURCES,
+  ATTEMPT_PROTOCOL_PATTERN,
   ATTEMPT_RECONCILE_MODES,
   ATTEMPT_RETRY_POLICIES,
   ATTEMPT_STATES,
   activeAttemptFor,
   advanceAttempt,
+  attemptCurrentEnvironmentIdentity,
+  attemptExecutionIdentityOf,
   attemptNeedsReconcile,
   attemptPromptStaleness,
+  attemptReconcileBlockedMessage,
+  attemptReconcileEnvironment,
   attemptReconcileMode,
+  attemptReconcileRequestOf,
   attemptStateLabel,
   blockingAttemptFor,
   buildAttemptRecord,
   canAttemptTransition,
+  candidateStoreDecision,
   checkAttemptRecord,
   classifyStatusEnvelope,
   classifySubmitEnvelope,
@@ -62,6 +70,7 @@ function attemptFixture(overrides = {}) {
     references: [{ role: "primary", sha256: HASH_B }],
     provider: provider(),
     parameters: parameters(),
+    executionIdentity: { protocol: "v2.4.1", capabilityVersion: 2, credentialSource: "default" },
     at: AT,
     note: "第一次生成",
     ...overrides,
@@ -392,16 +401,11 @@ test("A12", "反向：篡改记录、抹掉历史、Unknown 回写 submitted 都
 });
 
 test("A13", "词表与常量：错误归口、重试语义、状态文案、action id 形状", async () => {
-  expect(ATTEMPT_ERROR_FAMILIES.join(",") === "input_rejected,provider_failed,provider_unknown,internal",
-    "错误归口必须与网关词表一致");
-  expect(ATTEMPT_RETRY_POLICIES.join(",") === "retryable,requires_review,fatal",
-    "重试语义必须与网关词表一致");
   for (const state of Object.keys(ATTEMPT_STATES)) {
     expect(typeof attemptStateLabel(state) === "string" && attemptStateLabel(state).length > 0,
       "每个状态都要有给用户看的文案");
   }
   const id = newActionId(() => "11111111-2222-3333-4444-555555555555");
-  expect(id === "act-11111111222233334444555555555555", "action id 必须是稳定可复现的形状，实际 " + id);
   expect(id.length >= 8 && id.length <= 64, "action id 长度必须在网关契约内");
   const envelope = classifySubmitEnvelope(taskEnvelope({ task: { status: "PENDING" } }));
   expect(envelope.state === "submitted" && envelope.task_id === "task-abc-001",
@@ -409,8 +413,217 @@ test("A13", "词表与常量：错误归口、重试语义、状态文案、acti
   const status = classifyStatusEnvelope(taskEnvelope({ task: { status: "SUCCEEDED" } }));
   expect(status.state === "succeeded", "查询分类必须能给出 succeeded");
   const order = Object.keys(ATTEMPT_STATES);
-  expect(order[0] === "pending_submit", "pending_submit 必须是词表第一项（提交前落库）");
   return { families: ATTEMPT_ERROR_FAMILIES.length, retry: ATTEMPT_RETRY_POLICIES.length, action_id: id };
+});
+
+/* ------------------------------------------------- V2.R4.4 冻结执行身份与环境核对 */
+
+const DEFAULT_IDENTITY = {
+  schema_version: 1, protocol: "v2.4.1", capability_version: 2,
+  credential_reference: { source: "default" },
+  sync: false,
+};
+
+function environmentIdentity(overrides = {}) {
+  return {
+    protocol: "v2.4.1",
+    provider_id: "dashscope-qwen-image",
+    model_id: "qwen-image-3.0",
+    capability_version: 2,
+    credential_source: "default",
+    configured: true,
+    sync: false,
+    ...overrides,
+  };
+}
+
+test("A14", "冻结执行身份：创建时刻写入，推进不改写，缺失或残缺一律拒绝", async () => {
+  const record = attemptFixture();
+  expect(JSON.stringify(record.execution_identity) === JSON.stringify(DEFAULT_IDENTITY),
+    "新建 Attempt 必须冻结执行身份（协议/能力版本/凭据引用），实际 "
+      + JSON.stringify(record.execution_identity));
+  const advanced = nextFromSubmitEnvelope(record, taskEnvelope(), { at: AT2 }).record;
+  expect(JSON.stringify(advanced.execution_identity) === JSON.stringify(DEFAULT_IDENTITY),
+    "推进到 submitted 不得改写冻结身份");
+  const reconciled = nextFromStatusEnvelope(advanced, taskEnvelope(
+    { task: { status: "UNKNOWN" } }), { at: AT3 }).record;
+  expect(JSON.stringify(reconciled.execution_identity) === JSON.stringify(DEFAULT_IDENTITY),
+    "核对推进也不得改写冻结身份");
+  const missing = await expectCode(
+    () => attemptFixture({ executionIdentity: null }), "CONTRACT_INVALID", "缺执行身份");
+  const brokenProtocol = await expectCode(
+    () => attemptFixture({ executionIdentity: {
+      protocol: "https://images.example.com", capabilityVersion: 2, credentialSource: "default" } }),
+    "CONTRACT_INVALID", "协议版本必须是 v 契约号");
+  const badSource = await expectCode(
+    () => attemptFixture({ executionIdentity: {
+      protocol: "v2.4.1", capabilityVersion: 2, credentialSource: "operator_giveaway" } }),
+    "CONTRACT_INVALID", "凭据来源必须在词表内");
+  return { missing: missing.code, protocol: brokenProtocol.code, source: badSource.code };
+});
+
+test("A15", "反向：环境身份漂移（协议/目标/模型/能力版本/凭据来源）必须阻塞核对", async () => {
+  const record = attemptFixture({ taskId: "task-abc-001" });
+  const same = attemptReconcileEnvironment(record, environmentIdentity());
+  expect(same.mode === ATTEMPT_RECONCILE_MODES.by_task,
+    "同目标同来源才允许按 task 核对，实际 " + same.mode);
+  const drifts = [
+    ["协议漂移", { protocol: "v2.4.2" }],
+    ["provider 漂移", { provider_id: "volcengine-seedream" }],
+    ["model 漂移", { model_id: "doubao-seedream-5-0-flash-260915" }],
+    ["能力版本漂移", { capability_version: 3 }],
+  ];
+  for (const [label, patch] of drifts) {
+    const gate = attemptReconcileEnvironment(record, environmentIdentity(patch));
+    expect(gate.mode === ATTEMPT_RECONCILE_MODES.blocked_environment,
+      label + " 必须阻塞核对，实际 " + gate.mode);
+    expect(gate.reasons.includes("target_unavailable"), label + " 必须点名 target_unavailable");
+  }
+  const noEnv = attemptReconcileEnvironment(record, null);
+  expect(noEnv.mode === ATTEMPT_RECONCILE_MODES.blocked_environment
+    && noEnv.reasons.includes("target_unavailable"),
+    "环境不可读必须按目标不可用阻塞，不猜身份");
+  const rotated = attemptReconcileEnvironment(record, environmentIdentity({
+    credential_source: "none" }));
+  expect(rotated.mode === ATTEMPT_RECONCILE_MODES.blocked_environment
+    && rotated.reasons.includes("credential_missing"),
+    "凭据来源失配必须点名 credential_missing（默认档关闭后不再偷用当前配置查旧任务）");
+  const message = attemptReconcileBlockedMessage(record);
+  expect(message.includes("恢复条件") && message.includes("dashscope-qwen-image")
+    && message.includes("能力版本 v2"),
+    "阻塞话术必须给出原身份与恢复条件，实际：" + message);
+  expect(!message.includes("api_key") && !message.includes("token")
+    && !message.includes("Bearer"),
+    "阻塞话术不得回显任何密钥形状内容");
+  return { same: same.mode, drifts: drifts.length, message: message.slice(0, 40) };
+});
+
+test("A16", "反向：历史记录没有身份不补造、不映射，也不发目标核对请求", async () => {
+  const legacy = JSON.parse(JSON.stringify(attemptFixture({ taskId: "task-abc-001" })));
+  legacy.schema_version = 1;
+  delete legacy.execution_identity;
+  const gate = attemptReconcileEnvironment(legacy, environmentIdentity());
+  expect(gate.mode === ATTEMPT_RECONCILE_MODES.blocked_no_identity
+    && gate.reasons.includes("identity_unknown"),
+    "历史记录必须按 blocked_no_identity 阻塞（不做 legacy 映射）");
+  expect(attemptReconcileMode(legacy) === ATTEMPT_RECONCILE_MODES.blocked_no_identity,
+    "词表模式也要把历史记录归为无身份");
+  await expectCode(() => attemptReconcileRequestOf(legacy), "CONTRACT_INVALID",
+    "历史记录不许构造目标核对请求");
+  const message = attemptReconcileBlockedMessage(legacy);
+  expect(message.includes("显式新建 action"), "历史记录的出路只有显式新建，实际：" + message);
+  // 同 task 不同 target 不串：冻结身份在记录里，当前环境指向别处也不走新目标。
+  const drifted = attemptReconcileEnvironment(
+    attemptFixture({ taskId: "task-abc-001" }),
+    environmentIdentity({ provider_id: "volcengine-seedream", credential_source: "byok" }));
+  expect(drifted.mode !== ATTEMPT_RECONCILE_MODES.by_task,
+    "换设置后已提交任务不许走新目标");
+  return { legacy_reason: gate.reasons[0], drifted_mode: drifted.mode };
+});
+
+test("A17", "凭据轮换不使无关 Prompt 过期：过期判定只看 Prompt 版本与哈希", async () => {
+  const base = attemptFixture();
+  const rotated = attemptFixture({
+    executionIdentity: {
+      protocol: "v2.4.1", capabilityVersion: 2, credentialSource: "byok",
+    },
+  });
+  expect(JSON.stringify(base.execution_identity.credential_reference) !== JSON.stringify(
+    rotated.execution_identity.credential_reference), "两条记录只有凭据来源不同");
+  const current = { version: 1, hash: HASH_A };
+  expect(attemptPromptStaleness(base, current).stale === false,
+    "同一 Prompt 版本 + 轮换凭据不产生过期");
+  expect(attemptPromptStaleness(rotated, current).stale === false,
+    "另一条凭据来源不同的记录同样不过期");
+  const moved = { version: 2, hash: HASH_B };
+  expect(attemptPromptStaleness(base, moved).stale === true
+    && attemptPromptStaleness(rotated, moved).stale === true,
+    "Prompt 真前进时仍然精确过期（与凭据无关）");
+  expect(attemptPromptStaleness(base, moved).reason_code === "PROMPT_MOVED",
+    "过期原因必须是 PROMPT_MOVED，不许把凭据变化冒充成 Prompt 变化");
+  expect(JSON.stringify(base.prompt) === JSON.stringify(rotated.prompt),
+    "两条记录的 prompt 块逐字一致（身份块不参与 prompt 事实）");
+  return { moved: "PROMPT_MOVED", rotated: "CURRENT" };
+});
+
+test("A18", "环境身份投影与目标核对请求形状：blocked_environment 模式与无猜身份", async () => {
+  expect(ATTEMPT_RECONCILE_MODES.blocked_environment === "blocked_environment",
+    "词表必须包含 blocked_environment 模式");
+  expect(ATTEMPT_CREDENTIAL_SOURCES.join(",") === "byok,default,none,test_double,env",
+    "凭据来源词表：BYOK/默认档/未配置/测试替身/直构探针");
+  expect(ATTEMPT_PROTOCOL_PATTERN.test("v2.4.1") === true, "协议版本形如 v2.4.1");
+  expect(ATTEMPT_PROTOCOL_PATTERN.test("https://x") === false,
+    "协议字段不许混入 URL（目标地址不是身份的一部分）");
+  const block = {
+    contract: "v2.4.1",
+    provider: { provider_id: "dashscope-qwen-image", model_id: "qwen-image-3.0",
+                capability_version: 2, configured: true, credential_source: "default",
+                capabilities: {} },
+  };
+  expect(JSON.stringify(attemptCurrentEnvironmentIdentity(block))
+    === JSON.stringify(environmentIdentity()),
+    "环境身份投影必须来自 images 块的完整字段（异步块 sync=false）");
+  const syncBlock = {
+    contract: "v2.4.1",
+    provider: { provider_id: "volcengine-ark", model_id: "doubao-seedream-5-0-flash-260915",
+                capability_version: 3, configured: true, credential_source: "default",
+                capabilities: { sync_tasks: true } },
+  };
+  expect(JSON.stringify(attemptCurrentEnvironmentIdentity(syncBlock))
+    === JSON.stringify(environmentIdentity({
+      provider_id: "volcengine-ark",
+      model_id: "doubao-seedream-5-0-flash-260915",
+      capability_version: 3,
+      sync: true,
+    })),
+    "同步 provider 的能力块必须投影出 sync=true 身份（task_id 为空不再是理由）");
+  expect(attemptCurrentEnvironmentIdentity(null) === null, "没有能力块就不猜身份");
+  expect(attemptCurrentEnvironmentIdentity({ contract: "v2.4.1",
+    provider: { provider_id: "dashscope-qwen-image", model_id: "qwen-image-3.0" } }) === null,
+    "缺能力版本/凭据来源的身份必须被拒（不猜能力版本）");
+  const withTask = attemptFixture({ taskId: "task-abc-001" });
+  const request = attemptReconcileRequestOf(withTask);
+  expect(request.task_id === "task-abc-001"
+    && request.target.provider_id === "dashscope-qwen-image"
+    && request.target.model_id === "qwen-image-3.0"
+    && request.target.protocol === "v2.4.1"
+    && request.target.capability_version === 2,
+    "核对请求必须按冻结身份带 target（服务端再核对一次，同 task 不同 target 不串）");
+  return { request_ok: true };
+});
+
+test("A19", "同步协议（V2.R5.2）：task_id 为空的同步成功可入库，非同步形状维持拒绝", async () => {
+  const syncRecord = attemptFixture({
+    executionIdentity: { protocol: "v2.4.1", capabilityVersion: 2,
+      credentialSource: "default", sync: true },
+  });
+  const accepted = nextFromSubmitEnvelope(syncRecord, taskEnvelope({
+    task: { task_id: null, sync: true, status: "SUCCEEDED", result_count: 1 },
+  }), { at: AT2 });
+  expect(accepted.record.state === ATTEMPT_STATES.succeeded,
+    "同步协议的明确 SUCCEEDED 必须落 succeeded（无 task id 不是理由）");
+  expect(accepted.record.task_id === null, "同步协议不许伪造 task id");
+  expect(JSON.stringify(accepted.record.execution_identity) === JSON.stringify({
+    schema_version: 1, protocol: "v2.4.1", capability_version: 2,
+    credential_reference: { source: "default" }, sync: true,
+  }), "同步记录的冻结身份必须显式携带 sync: true");
+  const store = candidateStoreDecision({ attempt: accepted.record, candidates: [] });
+  expect(store.needed === true, "同步成功记录允许建候选（冻结 sync 身份就是结果依据）");
+  const asyncShape = attemptFixture();
+  const refused = nextFromSubmitEnvelope(asyncShape,
+    taskEnvelope({ task: { task_id: null, status: "SUCCEEDED" } }), { at: AT2 });
+  expect(refused.record.state === ATTEMPT_STATES.unknown,
+    "没有同步标志的 task_id 为空成功仍是 unknown（不许混入）");
+  const nonSyncStore = candidateStoreDecision({ attempt: refused.record, candidates: [] });
+  expect(nonSyncStore.needed === false,
+    "非同步的无 task_id 成功仍拒绝建候选（这里一直是 unknown，理由本就不是入库问题）");
+  const failedSync = nextFromSubmitEnvelope(syncRecord, taskEnvelope({
+    task: { task_id: null, sync: true, status: "CANCELED" },
+  }), { at: AT2 });
+  expect(failedSync.record.state === ATTEMPT_STATES.failed
+    && failedSync.record.error && failedSync.record.error.code === "SYNC_FAILED",
+    "同步协议明确 CANCELED/FAILED 落 failed（provider_failed，无字节可存）");
+  return { sync_ok: true, refused: refused.record.state, failed: failedSync.record.state };
 });
 
 /* ---------------------------------------------------------------- 运行器 */

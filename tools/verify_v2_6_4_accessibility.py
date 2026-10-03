@@ -301,26 +301,19 @@ def main() -> int:
                       {"path": reached_ids, "all_visible": focus_all_visible,
                        "focus": focus_ok})
 
-                # 纯键盘创建：输入名称（键盘）→ Tab 到创建 → Enter
+                # 纯键盘创建：输入名称（键盘）→ Tab 到创建 → Enter（R3.3：新建即打开）
                 page.keyboard.type("V264 A11y")
                 _, create_focus = tab_until(page, "create-project", max_steps=6)
                 if create_focus and create_focus.get("visible"):
                     page.keyboard.press("Enter")
-                page.wait_for_selector("#project-list .project-row", timeout=15_000)
-                open_focus = None
-                for _ in range(12):
-                    page.keyboard.press("Tab")
-                    candidate = page.evaluate(FOCUS_STYLE)
-                    if candidate and candidate.get("action") == "open":
-                        open_focus = candidate
-                        page.keyboard.press("Enter")
-                        break
                 page.wait_for_selector("#project-view:not([hidden])", timeout=30_000)
+                page.wait_for_function(
+                    "() => (document.getElementById('project-view') || {}).dataset.ready === '1'",
+                    timeout=30_000)
                 shot(page, "keyboard-created")
                 check("V2.6.4-05", "纯键盘创建并打开：Tab + 输入 + Enter 进入工作台",
-                      create_focus is not None and create_focus.get("visible") is True
-                      and open_focus is not None and open_focus.get("visible") is True,
-                      {"create_focus": create_focus, "open_focus": open_focus})
+                      create_focus is not None and create_focus.get("visible") is True,
+                      {"create_focus": create_focus})
 
                 # 资料 → 分析 → 槽位 → 方案
                 ui3.fill_intake(page, reference, "V264 A11y")

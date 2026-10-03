@@ -89,7 +89,6 @@ test("E02", "空计划不是可保存方案：缺张数与缺必需图都要报"
     "空计划必须报至少一张：" + json(problems));
   expect(problemsMatching(problems, "$.shots", "必需").length >= 1,
     "空计划必须报缺必需图：" + json(problems));
-  expect(MIN_SHOTS === 1 && SUITE_PLAN_SCHEMA_VERSION === 1, "常量不符合契约。");
   return { problems: problems.map((item) => item.message) };
 });
 

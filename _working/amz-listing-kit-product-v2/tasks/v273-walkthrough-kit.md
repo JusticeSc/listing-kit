@@ -1,8 +1,8 @@
 # V2.7.3 走查工具包（陌生人 / 产品发起人）
 
-> CONTROL-STATUS: draft · AUTHORITY: V2.7.3 施工任务书
-> 生效条件：V2.7.3 走查期间使用；走查结论与观察表归档后改登记为 `superseded`。
-> 通过线只在计划 §10.1 / §11（C15、C17）里定义；本文件只管「怎么把这两条走完」。
+> CONTROL-STATUS: superseded · AUTHORITY: historical-walkthrough-kit
+> 被 `docs/product-v2-refactor-plan.md` 的 V2.R7.2 接管最终走查；本文件仅保留旧脚本参考。
+> 旧 C15/C17 尚未闭合，本次归档不表示通过；不从此工具包恢复施工。
 
 ## 1. 这次要证明什么
 

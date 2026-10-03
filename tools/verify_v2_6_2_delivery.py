@@ -301,8 +301,34 @@ def walk_to_deliver(page, name: str, reference: Path, *,
         ".textContent.indexOf('整套检查 v') >= 0",
         timeout=60_000)
     probes = {"suite_review": page.evaluate(SUITE_PROBE)}
+    # B01/RC16 回归：交付前在生成阶段再次编译首张图（当前 Prompt 头前进），旧采用
+    # 候选的原 action 冻结 Prompt 不变；交付 manifest 必须记旧冻结版本，不得跟随当前头。
+    page.click('[data-stage-nav="generate"]')
+    ui3.compile_all(page, shots[:1])
     page.click('[data-stage-nav="deliver"]')
     page.wait_for_timeout(400)
+    probes["b01_manifest_provenance"] = page.evaluate("""() => {
+      const read = (store) => new Promise((resolve, reject) => {
+        const request = indexedDB.open("amz-listing-kit-v2");
+        request.onsuccess = () => {
+          const db = request.result;
+          const tx = db.transaction(store, "readonly").objectStore(store).getAll();
+          tx.onsuccess = () => { const rows = tx.result; db.close(); resolve(rows); };
+          tx.onerror = () => reject(tx.error);
+        };
+        request.onerror = () => reject(request.error);
+      });
+      return (async () => {
+        const documents = await read("documents");
+        const attempts = documents.filter((row) => row.kind === "generation_attempt");
+        const latestByAction = {};
+        for (const row of attempts) latestByAction[row.payload.action_id] = row.payload;
+        return Object.values(latestByAction).map((record) => ({
+          action_id: record.action_id, prompt_version: record.prompt.version,
+          prompt_hash: record.prompt.hash,
+        }));
+      })();
+    }""")
     probes["suite_deliver"] = page.evaluate(DELIVER_SUITE_PROBE)
     return shots, probes
 
@@ -490,12 +516,19 @@ def main() -> int:
                                 and item["byte_size"] == item["declared_size"]
                                 for item in zoom["digests"].values())
                 expected_names = sorted(zoom["images"] + ["README.txt", "checks.json", "manifest.json"])
+                frozen_by_action = {item["action_id"]: item
+                                    for item in walk_probes.get("b01_manifest_provenance", [])}
+                provenance_ok = all(
+                    item.get("prompt_version") == (frozen_by_action.get(item.get("attempt_action_id")) or {}).get("prompt_version")
+                    and item.get("prompt_hash") == (frozen_by_action.get(item.get("attempt_action_id")) or {}).get("prompt_hash")
+                    for item in zoom["manifest"]["images"])
                 check("V2.6.2-04", "交付包下载成功，Python 独立核对 ZIP 内容与哈希",
                       first["bytes"] > 0 and zoom["broken"] is None
                       and zoom["names"] == expected_names and digest_ok
                       and len(zoom["manifest"]["images"]) == len(shots)
                       and all(item.get("attempt_state") == "succeeded"
                               for item in zoom["manifest"]["images"])
+                      and provenance_ok
                       and zoom["checks"]["gate_status"] == "ready"
                       and isinstance(zoom["manifest"]["selection_fingerprint"], str)
                       and "shot_" in (zoom["manifest"]["selection_fingerprint"] or "")
@@ -504,6 +537,9 @@ def main() -> int:
                        "digests": {key: value["sha256"][:12] for key, value in zoom["digests"].items()},
                        "attempt_states": [item.get("attempt_state")
                                           for item in zoom["manifest"]["images"]],
+                       "provenance": [(item.get("shot_id"), item.get("prompt_version"),
+                                       str(item.get("prompt_hash"))[:12])
+                                      for item in zoom["manifest"]["images"]],
                        "readme_head": zoom["readme"].splitlines()[:4]})
 
                 records = page.evaluate(READ_DOCS, "export_record")

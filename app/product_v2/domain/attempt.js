@@ -23,14 +23,32 @@ import {
   pushProblem,
 } from "./shared.js";
 import { REFERENCE_ROLES } from "./intake.js";
+import { canonicalJson } from "./prompt.js";
 
-export const ATTEMPT_SCHEMA_VERSION = 1;
+export const ATTEMPT_SCHEMA_VERSION = 2;
 export const ATTEMPT_DOCUMENT_KIND = DOMAIN_DOCUMENT_KINDS.generation_attempt;
 export const ATTEMPT_ACTION_ID_PATTERN = /^[A-Za-z0-9._:-]{8,64}$/;
 export const ATTEMPT_TASK_ID_PATTERN = /^[A-Za-z0-9._:-]{1,256}$/;
 export const ATTEMPT_SIZE_PATTERN = /^[0-9]{1,4}\*[0-9]{1,4}$/;
 export const MAX_ATTEMPT_REFERENCES = 3;
 export const MAX_ATTEMPT_N = 4;
+
+/**
+ * 冻结执行身份（V2.R4.4）：已提交任务保留「协议 / 目标 / 模型 / 能力版本 / 凭据引用」，
+ * 换设置后仍按原身份核对；不猜目标，不偷用当前配置查询旧任务。
+ *  - protocol：图像网关请求契约版本（服务端 IMAGE_CONTRACT_VERSION，例如 "v2.4.1"）；
+ *  - capability_version：服务端能力声明版本（IMAGES_CAPABILITY_VERSION，正整数；R5.2 接入
+ *    第二协议 Adapter 时会前移，旧任务因此按原能力版本核对）；
+ *  - credential_reference：只记录来源标签（byok / default / none / test_double），
+ *    **密钥值本身永不入记录**（凭据轮换不使无关 Prompt 过期：该块也不进 request_snapshot）。
+ * 同版本新旧任务按各自冻结身份核对；schema_version < 2 的历史记录没有身份块，
+ * 不做 legacy 映射（按计划 §2.3 显式拒绝自动核对，不补造身份）。
+ */
+export const ATTEMPT_EXECUTION_IDENTITY_SCHEMA_VERSION = 1;
+export const ATTEMPT_PROTOCOL_PATTERN = /^v[0-9A-Za-z._-]{1,40}$/;
+export const ATTEMPT_CREDENTIAL_SOURCES = Object.freeze([
+  "byok", "default", "none", "test_double", "env",
+]);
 
 /** 状态词表：pending_submit 必须在发起请求之前落库。 */
 export const ATTEMPT_STATES = Object.freeze({
@@ -54,11 +72,14 @@ export const ATTEMPT_STATE_LABELS = Object.freeze({
   unknown: "结果未知，需要核对",
 });
 
-/** 恢复方式：none = 不需要核对；by_task = 可按已保存 task id 核对；blocked = 没有身份，只能显式新建。 */
+/** 恢复方式：none = 不需要核对；by_task = 可按已保存 task id 核对；
+ *  blocked_no_identity = 没有身份（含历史记录），只能显式新建；
+ *  blocked_environment = 有身份但当前环境漂移/缺凭据，只能恢复环境后按原身份核对。 */
 export const ATTEMPT_RECONCILE_MODES = Object.freeze({
   none: "none",
   by_task: "by_task",
   blocked_no_identity: "blocked_no_identity",
+  blocked_environment: "blocked_environment",
 });
 
 /**
@@ -210,6 +231,30 @@ export function checkAttemptRecord(record) {
     pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.provider",
       "provider 必须记录 {provider_id, model_id}。");
   }
+  const identity = record.execution_identity;
+  if (!isPlainObject(identity)) {
+    pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.execution_identity",
+      "缺少冻结执行身份 execution_identity（协议/能力版本/凭据引用）。");
+  } else {
+    if (identity.schema_version !== ATTEMPT_EXECUTION_IDENTITY_SCHEMA_VERSION) {
+      pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.execution_identity.schema_version",
+        "执行身份块版本不认识：" + String(identity.schema_version));
+    }
+    if (typeof identity.protocol !== "string"
+        || !ATTEMPT_PROTOCOL_PATTERN.test(identity.protocol)) {
+      pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.execution_identity.protocol",
+        "执行身份协议版本必须是 v 开头的契约版本号（如 v2.4.1）。");
+    }
+    if (!Number.isInteger(identity.capability_version) || identity.capability_version < 1) {
+      pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.execution_identity.capability_version",
+        "执行身份 capability_version 必须是正整数。");
+    }
+    const reference = identity.credential_reference;
+    if (!isPlainObject(reference) || !ATTEMPT_CREDENTIAL_SOURCES.includes(reference.source)) {
+      pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.execution_identity.credential_reference",
+        "credential_reference.source 必须在词表内：" + ATTEMPT_CREDENTIAL_SOURCES.join("/") + "。");
+    }
+  }
   const parameters = record.parameters;
   if (!isPlainObject(parameters)) {
     pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.parameters",
@@ -329,14 +374,26 @@ export function checkAttemptRecord(record) {
 /**
  * 创建一条 Attempt：**一律以 pending_submit 落库**，且在发起请求之前完成写入。
  * 函数本身不写存储：调用方先 `documents.save(...)`，拿到版本后再发请求。
+ * 执行身份（execution_identity）必须在创建时冻结：换设置后仍按原身份核对，创建时刻之后的
+ * 任何环境变化都不回写这条记录。
  */
 export function buildAttemptRecord({
-  actionId, shotId, prompt, references, provider, parameters,
+  actionId, shotId, prompt, references, provider, parameters, executionIdentity = null,
   taskId = null, requestId = null, error = null, at, note = "用户显式发起生成",
 } = {}) {
   const referencesList = Array.isArray(references)
     ? references.map((item) => ({ role: item && item.role, sha256: item && item.sha256 }))
     : references;
+  const identity = isPlainObject(executionIdentity)
+    ? {
+      schema_version: ATTEMPT_EXECUTION_IDENTITY_SCHEMA_VERSION,
+      protocol: executionIdentity.protocol,
+      capability_version: executionIdentity.capabilityVersion,
+      credential_reference: { source: executionIdentity.credentialSource },
+      // V2.R5.2：同步协议在响应里一次性给结果字节、没有 task id；缺席 = 异步（默认）。
+      sync: executionIdentity.sync === true,
+    }
+    : null;
   const record = {
     schema_version: ATTEMPT_SCHEMA_VERSION,
     action_id: actionId,
@@ -347,6 +404,7 @@ export function buildAttemptRecord({
     provider: isPlainObject(provider)
       ? { provider_id: provider.provider_id, model_id: provider.model_id }
       : provider,
+    execution_identity: identity,
     parameters: isPlainObject(parameters)
       ? {
         size: parameters.size, n: parameters.n,
@@ -411,7 +469,158 @@ export function advanceAttempt(record, options = {}) {
   };
   const problems = checkAttemptRecord(next);
   if (problems.length > 0) invalid("推进后的记录不合法：" + problems[0].message, { problems: problems });
+  if (canonicalJson(record.execution_identity) !== canonicalJson(next.execution_identity)) {
+    invalid("推进不得改写冻结执行身份：换设置后已提交任务仍按原身份核对。");
+  }
   return next;
+}
+
+/* ------------------------------------------------------------ 冻结执行身份（V2.R4.4） */
+
+/** 读取记录上的冻结执行身份块；历史记录（schema_version < 2）返回 null，不做 legacy 补造。 */
+export function attemptExecutionIdentityOf(record) {
+  if (!isPlainObject(record)) return null;
+  if (record.schema_version !== ATTEMPT_SCHEMA_VERSION) return null;
+  return isPlainObject(record.execution_identity) ? record.execution_identity : null;
+}
+
+/**
+ * 当前环境的有效图像身份（提交/核对时刻用这个快照；当前读数不是历史记录的身份）。
+ * 输入是 capabilities 的 images 块（签名见 V2.4.1：contract / provider / default_trial）。
+ * provider 缺失或身份字段不完整时返回 null，调用方按「环境目标不可用」处理，不猜身份。
+ */
+export function attemptCurrentEnvironmentIdentity(imagesBlock) {
+  if (!isPlainObject(imagesBlock)) return null;
+  const provider = isPlainObject(imagesBlock.provider) ? imagesBlock.provider : null;
+  if (!provider) return null;
+  if (!isNonEmptyString(provider.provider_id) || !isNonEmptyString(provider.model_id)) {
+    return null;
+  }
+  if (typeof imagesBlock.contract !== "string"
+      || !ATTEMPT_PROTOCOL_PATTERN.test(imagesBlock.contract)) {
+    return null;
+  }
+  if (!Number.isInteger(provider.capability_version) || provider.capability_version < 1) {
+    return null;
+  }
+  const source = provider.credential_reference && isPlainObject(provider.credential_reference)
+    ? provider.credential_reference.source
+    : provider.credential_source;
+  if (!ATTEMPT_CREDENTIAL_SOURCES.includes(source)) return null;
+  const capabilities = isPlainObject(provider.capabilities) ? provider.capabilities : {};
+  return {
+    protocol: imagesBlock.contract,
+    provider_id: provider.provider_id,
+    model_id: provider.model_id,
+    capability_version: provider.capability_version,
+    credential_source: source,
+    configured: provider.configured !== false,
+    // V2.R5.2：同步协议适配器（火山方舟 flash）的提交响应自带结果字节，没有 task id。
+    // 服务端 capabilities 的形状是 provider.capabilities.sync_tasks；异步 provider 没有这个
+    // 键 → false，语义与历史记录一致。
+    sync: capabilities.sync_tasks === true,
+  };
+}
+
+/** 把当前环境身份转成「冻结进记录」的 executionIdentity 输入（提交前用）。 */
+export function attemptExecutionIdentityFromEnvironment(current) {
+  if (!isPlainObject(current)) {
+    invalid("提交前必须读到有效的图像环境身份（协议/目标/模型/能力版本/凭据来源）。");
+  }
+  return {
+    protocol: current.protocol,
+    capabilityVersion: current.capability_version,
+    credentialSource: current.credential_source,
+    sync: current.sync === true,
+  };
+}
+
+/**
+ * 提交/核对前判据：冻结身份 vs 当前环境的核对模式。
+ *  - by_task：目标与凭据来源与冻结身份一致 → 允许按 task id 核对；
+ *  - blocked_environment：目标能力漂移（协议/目标/模型/能力版本任一变化）或凭据来源失配
+ *    （credential_missing）→ 不发请求、不重提、不改记录；恢复条件在 message。
+ *  - blocked_no_identity：历史记录没有身份块（schema_version < 2）→ 不补造、不映射。
+ */
+export function attemptReconcileEnvironment(record, current) {
+  const frozen = attemptExecutionIdentityOf(record);
+  if (!frozen) {
+    return {
+      mode: ATTEMPT_RECONCILE_MODES.blocked_no_identity,
+      reasons: ["identity_unknown"],
+      frozen: null,
+    };
+  }
+  if (!isNonEmptyString(record.task_id)) {
+    return {
+      mode: ATTEMPT_RECONCILE_MODES.blocked_no_identity,
+      reasons: ["task_unknown"],
+      frozen: frozen,
+    };
+  }
+  const provider = isPlainObject(record.provider) ? record.provider : {};
+  const reasons = [];
+  if (!isPlainObject(current)) {
+    reasons.push("target_unavailable");
+  } else {
+    if (current.protocol !== frozen.protocol
+        || current.provider_id !== provider.provider_id
+        || current.model_id !== provider.model_id
+        || current.capability_version !== frozen.capability_version) {
+      reasons.push("target_unavailable");
+    }
+    if (current.credential_source !== frozen.credential_reference.source) {
+      reasons.push("credential_missing");
+    }
+  }
+  if (reasons.length > 0) {
+    return {
+      mode: ATTEMPT_RECONCILE_MODES.blocked_environment,
+      reasons: reasons,
+      frozen: frozen,
+      applied_target: current ? {
+        protocol: current.protocol, provider_id: current.provider_id,
+        model_id: current.model_id, capability_version: current.capability_version,
+        credential_source: current.credential_source,
+      } : null,
+    };
+  }
+  return { mode: ATTEMPT_RECONCILE_MODES.by_task, reasons: [], frozen: frozen };
+}
+
+/** 核对被阻塞时的界面话术：说清原身份、当前环境与恢复条件；不假称已取消、不引导重提。 */
+export function attemptReconcileBlockedMessage(record) {
+  const provider = isPlainObject(record.provider) ? record.provider : {};
+  const task = isNonEmptyString(record.task_id) ? "（task " + record.task_id + "）" : "";
+  if (!attemptExecutionIdentityOf(record)) {
+    return "这条 Attempt（" + String(record.action_id || "") + "）是历史记录，没有冻结执行身份，"
+      + "不会给它补造身份或按当前设置核对；如需继续生成，请显式新建 action。";
+  }
+  return "已提交任务" + task + "的执行身份与当前环境不一致，保持原状态不动："
+    + "期望协议 " + String(record.execution_identity.protocol)
+    + "、目标 " + String(provider.provider_id || "?") + "/" + String(provider.model_id || "?")
+    + "、能力版本 v" + String(record.execution_identity.capability_version || "?")
+    + "。恢复条件：把服务端图像 provider 恢复为原目标（同协议、同能力版本）并提供同一来源"
+    + "（" + String(record.execution_identity.credential_reference.source) + "）的可用凭据后，"
+    + "再按任务编号核对；不要用当前设置新建任务，也不要把结果冒充这条记录的结论。";
+}
+
+/** 核对请求体：服务端按冻结身份核目标（EXECUTION_IDENTITY_MISMATCH 的前端侧来源）。 */
+export function attemptReconcileRequestOf(record) {
+  const frozen = attemptExecutionIdentityOf(record);
+  if (!frozen) {
+    invalid("历史 Attempt 没有执行身份，不构造目标核对请求（不补造、不猜测）。");
+  }
+  const provider = isPlainObject(record.provider) ? record.provider : {};
+  return {
+    task_id: isNonEmptyString(record.task_id) ? record.task_id : null,
+    target: {
+      provider_id: provider.provider_id,
+      model_id: provider.model_id,
+      protocol: frozen.protocol,
+      capability_version: frozen.capability_version,
+    },
+  };
 }
 
 /* ------------------------------------------------------------ 恢复判据 */
@@ -450,8 +659,10 @@ export function attemptReconcileMode(record) {
   if (record.state === ATTEMPT_STATES.succeeded || record.state === ATTEMPT_STATES.failed) {
     return ATTEMPT_RECONCILE_MODES.none;
   }
-  if (isNonEmptyString(record.task_id)) return ATTEMPT_RECONCILE_MODES.by_task;
-  return ATTEMPT_RECONCILE_MODES.blocked_no_identity;
+  if (!isNonEmptyString(record.task_id)) return ATTEMPT_RECONCILE_MODES.blocked_no_identity;
+  // 历史记录（schema_version < 2 或缺身份块）不能按原身份核对：不补造、不按当前设置猜。
+  if (!attemptExecutionIdentityOf(record)) return ATTEMPT_RECONCILE_MODES.blocked_no_identity;
+  return ATTEMPT_RECONCILE_MODES.by_task;
 }
 
 /** 「基于旧版本」标记：Prompt 前进（重编译或人工编辑）后旧 Attempt 仍然是历史，只是不再是当前依据。 */
@@ -491,6 +702,8 @@ function readIdentity(task) {
     request_id: isNonEmptyString(task && task.request_id) ? String(task.request_id) : null,
     provider_id: isNonEmptyString(provider.provider_id) ? String(provider.provider_id) : null,
     model_id: isNonEmptyString(provider.model_id) ? String(provider.model_id) : null,
+    // V2.R5.2：同步协议标志只从响应本身读；异步 provider 的响应没有这个键 → false。
+    sync: task && task.sync === true,
   };
 }
 
@@ -524,6 +737,33 @@ export function classifySubmitEnvelope(envelope) {
   if (task && env.ok === true) {
     const identity = readIdentity(task);
     const status = String(task.status || "").toUpperCase();
+    // V2.R5.2 同步协议：提交即终态；结果字节在同一个信封里，浏览器侧独立复核哈希。
+    // 这里只承认不可伪造的形状：task_id 为空 + task.sync 为 true + 明确的状态值。
+    if (!task.task_id && task.sync === true) {
+      if (status === "SUCCEEDED") {
+        return { ...identity, state: ATTEMPT_STATES.succeeded, error: null,
+                 note: "同步结果已返回" };
+      }
+      if (status === "FAILED" || status === "CANCELED") {
+        return {
+          ...identity, state: ATTEMPT_STATES.failed,
+          note: "同步生成明确未成功（" + status + "）",
+          error: normalizedError(null, {
+            family: "provider_failed", code: "SYNC_FAILED",
+            message: "同步生成没有成功（" + status + "）。", retry_policy: "fatal",
+          }),
+        };
+      }
+      return {
+        ...identity, state: ATTEMPT_STATES.unknown,
+        note: "同步响应状态无法识别：" + status,
+        error: unknownError(null, {
+          family: ATTEMPT_UNKNOWN_FAMILY, code: "SYNC_STATUS_UNRECOGNIZED",
+          message: "同步响应的状态无法识别；结果未知，不要自动重提。",
+          retry_policy: "requires_review",
+        }),
+      };
+    }
     if (!identity.task_id) {
       return {
         ...identity, state: ATTEMPT_STATES.unknown, note: "提交响应缺少任务编号",

@@ -21,6 +21,8 @@ import {
 import { dropDatabase, expect, expectCode, newDbName, rawCount, serializeError, utf8Bytes }
   from "./harness-api.js";
 
+import { buildAttemptRecord } from "/domain/index.js";
+
 const cases = [];
 
 function test(id, title, run) {
@@ -59,95 +61,7 @@ async function seedProject(repository, { name = "打包验证项目" } = {}) {
 
 /* ---------- ZIP 读写 ---------- */
 
-test("Z01", "ZIP 往返：UTF-8 路径与二进制字节一致", async () => {
-  const entries = [
-    { path: "manifest.json", bytes: utf8Bytes("{\"ok\":true}") },
-    { path: "assets/中文名.bin", bytes: new Uint8Array([0, 255, 128, 7, 9]) },
-  ];
-  const zip = buildZip(entries);
-  const parsed = await readZip(zip);
-  expect(parsed.length === 2, "应读出 2 个条目，实际 " + parsed.length);
-  const names = parsed.map((item) => item.path).sort();
-  expect(JSON.stringify(names) === JSON.stringify(["assets/中文名.bin", "manifest.json"]),
-    "路径不符：" + JSON.stringify(names));
-  const binary = parsed.find((item) => item.path.endsWith(".bin")).bytes;
-  expect(JSON.stringify([...binary]) === JSON.stringify([0, 255, 128, 7, 9]), "二进制字节应一致");
-  return { entries: names, zip_bytes: zip.length };
-});
-
-test("Z02", "损坏 ZIP 被拒绝：截断与内容篡改都报 PACKAGE_INVALID", async () => {
-  const zip = buildZip([{ path: "a.txt", bytes: utf8Bytes("hello-zip-world") }]);
-  const truncated = zip.slice(0, Math.floor(zip.length / 2));
-  const truncation = await expectCode(() => readZip(truncated), "PACKAGE_INVALID", "截断 ZIP");
-  const tampered = zip.slice();
-  tampered[40] = tampered[40] ^ 0xff;
-  const corruption = await expectCode(() => readZip(tampered), "PACKAGE_INVALID", "篡改 ZIP");
-  return { truncation: truncation.message, corruption: corruption.message };
-});
-
-test("Z03", "能读别的工具用 deflate 压缩的 ZIP", async () => {
-  const payload = utf8Bytes("deflate-payload-".repeat(20));
-  const deflated = new Uint8Array(await new Response(
-    new Blob([payload]).stream().pipeThrough(new CompressionStream("deflate-raw")),
-  ).arrayBuffer());
-  const checksum = crc32(payload);
-  // 手工拼一个 method=8 的 ZIP（模拟别的工具产出的压缩包）：本地头 + 中央目录 + EOCD
-  const name = utf8Bytes("compressed.txt");
-  const local = new Uint8Array(30 + name.length);
-  const localView = new DataView(local.buffer);
-  localView.setUint32(0, 0x04034b50, true);
-  localView.setUint16(4, 20, true);
-  localView.setUint16(6, 0x0800, true);
-  localView.setUint16(8, 8, true);
-  localView.setUint32(14, checksum, true);
-  localView.setUint32(18, deflated.length, true);
-  localView.setUint32(22, payload.length, true);
-  localView.setUint16(26, name.length, true);
-  local.set(name, 30);
-  const central = new Uint8Array(46 + name.length);
-  const centralView = new DataView(central.buffer);
-  centralView.setUint32(0, 0x02014b50, true);
-  centralView.setUint16(4, 20, true);
-  centralView.setUint16(6, 20, true);
-  centralView.setUint16(8, 0x0800, true);
-  centralView.setUint16(10, 8, true);
-  centralView.setUint32(16, checksum, true);
-  centralView.setUint32(20, deflated.length, true);
-  centralView.setUint32(24, payload.length, true);
-  centralView.setUint16(28, name.length, true);
-  centralView.setUint32(42, 0, true);
-  central.set(name, 46);
-  const eocd = new Uint8Array(22);
-  const eocdView = new DataView(eocd.buffer);
-  eocdView.setUint32(0, 0x06054b50, true);
-  eocdView.setUint16(8, 1, true);
-  eocdView.setUint16(10, 1, true);
-  eocdView.setUint32(12, central.length, true);
-  eocdView.setUint32(16, local.length + deflated.length, true);
-  const zip = new Uint8Array(local.length + deflated.length + central.length + eocd.length);
-  zip.set(local, 0);
-  zip.set(deflated, local.length);
-  zip.set(central, local.length + deflated.length);
-  zip.set(eocd, local.length + deflated.length + central.length);
-  const parsed = await readZip(zip);
-  expect(parsed.length === 1 && parsed[0].path === "compressed.txt", "应读出压缩条目");
-  const roundTrip = parsed[0].bytes;
-  expect(roundTrip.length === payload.length
-    && roundTrip.every((value, index) => value === payload[index]), "解压结果应与原文一致");
-  // 反向：CRC 被改动后必须拒绝
-  const brokenCentral = central.slice();
-  new DataView(brokenCentral.buffer).setUint32(16, checksum ^ 0xffff, true);
-  const broken = new Uint8Array(local.length + deflated.length + central.length + eocd.length);
-  broken.set(local, 0);
-  broken.set(deflated, local.length);
-  broken.set(brokenCentral, local.length + deflated.length);
-  broken.set(eocd, local.length + deflated.length + central.length);
-  const crcFailure = await expectCode(() => readZip(broken), "PACKAGE_INVALID", "deflate CRC 校验");
-  return { deflated_bytes: deflated.length, payload_bytes: payload.length,
-           crc_failure: crcFailure.message };
-});
-
-/* ---------- 项目包 ---------- */
+/* R3.2：纯领域断言已迁至 evals/product-v2/node/（同名 .test.mjs），此处仅保留宿主特有案例。 */
 
 test("Z04", "项目包往返：文档版本与资产哈希一致", () => withRepo(async ({ repository }) => {
   const seeded = await seedProject(repository);
@@ -278,13 +192,92 @@ test("Z09", "导出→清空→导入：文档载荷与资产字节逐字节一�
   }
 }));
 
+test("Z10", "执行身份包往返：attempt（含冻结身份）导出→导入后逐字一致", () => withRepo(async ({ repository }) => {
+  const seeded = await seedProject(repository);
+  const attempt = buildAttemptRecord({
+    actionId: "act-roundtrip-0001-aaaa-bbbb-cccccccccccc",
+    shotId: "shot_main_clean",
+    prompt: { version: 1, hash: "a".repeat(64) },
+    references: [{ role: "primary", sha256: seeded.first.sha256 }],
+    provider: { provider_id: "dashscope-qwen-image", model_id: "qwen-image-3.0" },
+    executionIdentity: { protocol: "v2.4.1", capabilityVersion: 2, credentialSource: "default" },
+    parameters: { size: "1344*1344", n: 1, prompt_extend: false, watermark: false },
+    at: "2026-09-30T10:00:00+08:00",
+    note: "打包往返",
+  });
+  await repository.documents.save(seeded.project.project_id, {
+    kind: "generation_attempt", documentId: "shot_main_clean", payload: attempt,
+  });
+  const built = await exportProjectPackage(repository, seeded.project.project_id);
+  const parsed = await parseProjectPackage(built.bytes);
+  const attemptDocs = parsed.documents.filter((item) => item.kind === "generation_attempt");
+  expect(attemptDocs.length === 1, "包内应含一条 attempt 记录");
+  const roundtrip = attemptDocs[0].payload;
+  expect(JSON.stringify(roundtrip.execution_identity)
+    === JSON.stringify(attempt.execution_identity),
+    "执行身份块往返后逐字一致：" + JSON.stringify(roundtrip.execution_identity));
+  expect(JSON.stringify(roundtrip) === JSON.stringify(attempt),
+    "attempt 记录往返后逐字一致");
+  const name = newDbName("amz-v2-attempt-import");
+  const target = await openStorage({ name });
+  try {
+    const imported = await importProjectPackage(target.db, built.bytes);
+    expect(imported.id_assigned === false, "空库导入应保留 project_id");
+    const docs = await target.repository.documents.listVersions(
+      seeded.project.project_id, "generation_attempt", "shot_main_clean");
+    expect(docs.length === 1
+      && JSON.stringify(docs[0].payload.execution_identity)
+        === JSON.stringify(attempt.execution_identity),
+      "导入后的 attempt 执行身份保持");
+    return { identity: roundtrip.execution_identity, documents: parsed.documents.length };
+  } finally {
+    target.close();
+    await dropDatabase(name);
+  }
+}));
+
+test("Z11", "反向：schema 1 的 attempt 记录（无冻结身份）整包原子拒绝", () => withRepo(async ({ repository }) => {
+  const seeded = await seedProject(repository);
+  await repository.documents.save(seeded.project.project_id, {
+    kind: "generation_attempt", documentId: "shot_main_clean",
+    payload: {
+      schema_version: 1,
+      action_id: "act-legacy-0001-aaaa-bbbb-cccccccccccc",
+      shot_id: "shot_main_clean",
+      state: "pending_submit",
+      prompt: { version: 1, hash: "a".repeat(64) },
+      references: [{ role: "primary", sha256: seeded.first.sha256 }],
+      provider: { provider_id: "dashscope-qwen-image", model_id: "qwen-image-3.0" },
+      parameters: { size: "1344*1344", n: 1, prompt_extend: false, watermark: false },
+      task_id: null,
+      request_id: null,
+      error: null,
+      created_at: "2026-09-30T10:00:00+08:00",
+      updated_at: "2026-09-30T10:00:00+08:00",
+      change_log: [{ at: "2026-09-30T10:00:00+08:00", via: "user",
+                     from: null, to: "pending_submit", note: "旧记录" }],
+    },
+  });
+  const built = await exportProjectPackage(repository, seeded.project.project_id);
+  const outcome = await expectCode(
+    () => parseProjectPackage(built.bytes), "PACKAGE_UNSUPPORTED_VERSION", "旧 attempt 记录");
+  expect(outcome.message.includes("不做 legacy 映射")
+    && outcome.message.includes("不部分写入"),
+    "拒绝话术必须说清不做 legacy 映射与不部分写入：" + outcome.message);
+  // 原子性：解析阶段拒绝，绝不触碰数据库（本用例没有第二个库；仓库内数据也不被改写）。
+  const docs = await repository.documents.listVersions(
+    seeded.project.project_id, "generation_attempt", "shot_main_clean");
+  expect(docs.length === 1 && docs[0].payload.schema_version === 1,
+    "原库内容保持原样（旧记录留在原库，不被静默删除或改写）");
+  return { code: outcome.code, documents_in_repo: docs.length };
+}));
+
 /* ---------- 运行器 ---------- */
 
 function render(results) {
   const target = document.getElementById("results");
   if (target) target.textContent = JSON.stringify(results, null, 2);
 }
-
 async function runSuite() {
   const results = {
     suite: "v2.1.3-package-contract",

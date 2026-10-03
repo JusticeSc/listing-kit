@@ -44,6 +44,7 @@ from src.providers.v2_langchain_chat import (
     response_usage,
     visible_text,
 )
+from src.providers.v2_outbound import OutboundPolicyError, validate_outbound_url
 
 DEFAULT_PROVIDER_ID = "dashscope-semantic"
 DEFAULT_MODEL_ID = "deepseek-v4.1-flash"
@@ -128,10 +129,25 @@ class DashScopeSemanticProvider:
                  base_url: str | None = None, timeout: float | None = None,
                  max_tokens: int | None = None,
                  llm_factory: Callable[[], Any] | None = None,
-                 clock: Callable[[], float] = time.monotonic) -> None:
-        self.api_key = api_key if api_key is not None else os.getenv(DEFAULT_API_KEY_ENV)
-        self.model_id = model_id or os.getenv(MODEL_ENV) or DEFAULT_MODEL_ID
-        self.base_url = (base_url or os.getenv(BASE_URL_ENV) or DEFAULT_BASE_URL).rstrip("/")
+                 clock: Callable[[], float] = time.monotonic,
+                 credential_source: str | None = None) -> None:
+        # credential_source 由 v2_credentials.resolve_credentials 决定（V2.R4.3）：
+        #   none → 默认档被关闭：环境变量里有密钥也不带进适配器；
+        #   default/byok → 调用方显式解析后传入（BYOK 走 apply_credentials）；
+        #   env → 直接构造（验证器/探针）沿用旧口径：api_key is None 时读环境变量。
+        if credential_source == "none":
+            self.api_key = ""
+        else:
+            self.api_key = api_key if api_key is not None else os.environ.get(DEFAULT_API_KEY_ENV)
+        self.credential_source = credential_source or "env"
+        self.model_id = model_id or os.environ.get(MODEL_ENV) or DEFAULT_MODEL_ID
+        candidate_url = (base_url or os.getenv(BASE_URL_ENV) or DEFAULT_BASE_URL).rstrip("/")
+        try:
+            validate_outbound_url(candidate_url)
+        except OutboundPolicyError as error:
+            raise ValueError(
+                f"语义端点 {candidate_url} 不满足出站白名单策略：{error.reason}。") from None
+        self.base_url = candidate_url
         self.timeout = float(timeout or os.getenv(TIMEOUT_ENV) or DEFAULT_TIMEOUT_SECONDS)
         self.max_tokens = int(max_tokens or os.getenv(MAX_TOKENS_ENV) or DEFAULT_MAX_TOKENS)
         self._llm_factory = llm_factory
@@ -162,6 +178,11 @@ class DashScopeSemanticProvider:
     def analyze(self, request: SemanticRequest) -> SemanticProposal:
         request = validate_request(request)
         if not self.api_key:
+            if self.credential_source == "none":
+                raise SemanticFailure("internal", "PROVIDER_NOT_CONFIGURED",
+                                      "默认档密钥处于关闭状态（或未配置密钥）；部署侧显式打开默认档，"
+                                      "或用 BYOK 路径带上自己的密钥。没有调用语义模型。",
+                                      retry_policy="fatal")
             raise SemanticFailure("internal", "PROVIDER_NOT_CONFIGURED",
                                   f"未配置 {DEFAULT_API_KEY_ENV}，无法调用真实语义模型。",
                                   retry_policy="fatal")
@@ -182,12 +203,23 @@ class DashScopeSemanticProvider:
             "semantic_contract": SEMANTIC_CONTRACT_VERSION,
             "supports_images": self.supports_images,
             "configured": bool(self.api_key),
+            "credential_source": self.credential_source,
             "endpoint_host": self.base_url,
             "timeout_seconds": self.timeout,
             "max_tokens": self.max_tokens,
             "structured_output": "json_mode",
             "transport": "langchain-openai/ChatOpenAI",
         }
+
+    def apply_credentials(self, *, api_key: str) -> None:
+        """把本次请求内存态的 BYOK 密钥换上；语义 BYOK 路线在本切片只留接缝。"""
+
+        if not isinstance(api_key, str) or not api_key.strip():
+            raise SemanticFailure("input_rejected", "BYOK_CREDENTIAL_INVALID",
+                                  "BYOK 密钥为空或格式非法；这次请求不调用语义模型。",
+                                  retry_policy="fatal")
+        self.api_key = api_key.strip()
+        self.credential_source = "byok"
 
     # ------------------------------------------------------------ 结果 → 提案
     def _to_proposal(self, result: Any, request: SemanticRequest, *,

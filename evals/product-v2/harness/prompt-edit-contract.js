@@ -34,7 +34,7 @@ import {
 } from "/domain/index.js";
 
 import { sha256Hex } from "/storage/db.js";
-import { expect, expectCode, serializeError } from "./harness-api.js";
+import { IMAGE_PROMPT_PROFILE, expect, expectCode, serializeError } from "./harness-api.js";
 
 const cases = [];
 
@@ -138,7 +138,7 @@ function basisFixture(options = {}) {
     style_version: options.styleVersion === undefined ? 1 : options.styleVersion,
     shot_spec_version: options.shotSpecVersion === undefined ? null : options.shotSpecVersion,
     platform: { version: PLATFORM_PROFILES[PLATFORM_ID].version },
-    provider: { version: 1 },
+    provider: IMAGE_PROMPT_PROFILE,
   };
 }
 
@@ -151,6 +151,7 @@ async function compiledEntry(shot, options = {}) {
     styleSpec: options.styleSpec || styleFixture(),
     shotSpec: emptyShotSpecFromShot(shot),
     context: context,
+    providerProfile: IMAGE_PROMPT_PROFILE,
     versions: {
       suite_version: 1,
       style_version: options.styleVersion === undefined ? 1 : options.styleVersion,
@@ -191,6 +192,7 @@ function sheetOf(record, shot, options = {}) {
     promptEntries: [{ shot_id: shot.shot_id, record: record, version: options.version || 1 }],
     context: options.context || contextFixture(),
     currentBasisByShot: basisByShot,
+    providerProfile: IMAGE_PROMPT_PROFILE,
   });
 }
 

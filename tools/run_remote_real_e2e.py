@@ -184,8 +184,7 @@ def main() -> int:
             step = time.monotonic()
             page.fill("#new-project-name", args.product_name)
             page.click("#create-project")
-            expect(page.locator("#project-list .project-row")).to_have_count(1)
-            page.click('#project-list .project-row button[data-action="open"]')
+            # R3.3：新建即打开，不再回列表行点 open。
             expect(page.locator("#project-view")).to_be_visible()
             expect(page.locator('[data-stage-panel="intake"]')).to_be_visible()
             mark("create_open", step)

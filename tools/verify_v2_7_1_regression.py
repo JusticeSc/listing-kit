@@ -12,12 +12,10 @@ r"""V2.7.1 Product V2 全回归：两次连续全绿 + 结果指纹一致。
 排成有序表再哈希，两轮必须逐字节一致 —— 不一致说明结论本身不可复现，
 那这次「全绿」就不能拿来当发布候选的证据。
 
-命令清单**只从 CI 工作流读**（`.github/workflows/ci-cd.yml` 里 `uv run python …` 的行）。
+命令清单只从 CI verify job 读取 Python 与根 npm 验证模式，复用 tools/check_verification.py 的解析器。
 两处清单各自维护时，最先漂的就是「CI 跑的」与「本地跑的」不是同一套；本地照着
 CI 重抄一份清单，等于给自己留了一条悄悄少跑几步的路。
 
-额外两条不在 CI 里的探针（`evals/probes/docs_index.py`）在这里补跑：
-反向对照证明「守卫会红」，属于验收证据，不属于 CI 的每次开销。
 
 用法
 ----
@@ -43,6 +41,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 from console import enable_utf8  # noqa: E402
+from check_verification import ci_commands  # noqa: E402
 
 enable_utf8()
 
@@ -50,13 +49,6 @@ WORKFLOW = ROOT / ".github" / "workflows" / "ci-cd.yml"
 EVID = ROOT / "evals" / "product-v2"
 LOCK = EVID / ".v2.7.1-regression.lock"
 
-# CI 里逐条执行的命令行（`uv run python <脚本> [参数]`）
-CI_LINE = re.compile(r"^\s*uv run python ([^\s#]+)(.*)$")
-
-# 不在 CI 里、但属于本次验收的反向对照
-EXTRA_CHECKS: list[tuple[str, str, list[str]]] = [
-    ("探针", "evals/probes/docs_index.py", []),
-]
 
 # [PASS]/[OK  ]/FAIL 这类结果行的信号：只认 ASCII 编号，避免把
 # 「PASS 整套复核 provider 不可用…」这类中文描述当成可变信号
@@ -72,19 +64,6 @@ NOISE = re.compile(
 MAX_OUTPUT = 200_000   # 单条命令的原始输出上限（超出截断并标注）
 
 
-def ci_commands() -> list[tuple[str, str, list[str]]]:
-    """从 CI 工作流读命令清单 —— 单一权威，本文件不重抄一份。"""
-    if not WORKFLOW.exists():
-        return []
-    cmds: list[tuple[str, str, list[str]]] = []
-    for raw in WORKFLOW.read_text(encoding="utf-8").splitlines():
-        m = CI_LINE.match(raw)
-        if not m:
-            continue
-        script = m.group(1).strip()
-        rest = m.group(2).strip()
-        cmds.append(("CI", script, rest.split() if rest else []))
-    return cmds
 
 
 def signals_of(text: str) -> list[str]:
@@ -96,7 +75,11 @@ def signals_of(text: str) -> list[str]:
 
 
 def run_one(script: str, extra: list[str], timeout: int = 900) -> dict:
-    argv = ["uv", "run", "--locked", "python", script, *extra]
+    if script.startswith("npm:"):
+        npm = "npm.cmd" if os.name == "nt" else "npm"
+        argv = [npm, "run", script[4:]] + (["--", *extra] if extra else [])
+    else:
+        argv = ["uv", "run", "--locked", "python", script, *extra]
     t0 = time.monotonic()
     try:
         p = subprocess.run(argv, cwd=str(ROOT), capture_output=True, text=True,
@@ -139,13 +122,11 @@ def main() -> int:
 
     stamp = args.stamp or datetime.now().strftime("%Y%m%d-%H%M%S")
     try:
-        checks = ci_commands()
-        known = {script for _tag, script, _extra in checks}
-        checks += [item for item in EXTRA_CHECKS if item[1] not in known]
+        checks = ci_commands(WORKFLOW)
         if args.only:
-            checks = [c for c in checks if args.only in c[1]]
+            checks = [c for c in checks if args.only in c[0]]
         if not checks:
-            print("命令清单为空 —— CI 工作流读不到 `uv run python …` 行了吗？")
+            print("命令清单为空 —— CI verify job 没有可执行的已登记验证模式。")
             return 2
 
         print(f"V2.7.1 全回归 · {args.rounds} 轮 · {len(checks)} 条命令 · {stamp}")
@@ -153,7 +134,7 @@ def main() -> int:
         for r in range(1, args.rounds + 1):
             print(f"=== 第 {r}/{args.rounds} 轮")
             rows: list[dict] = []
-            for _tag, script, extra in checks:
+            for script, extra in checks:
                 row = run_one(script, extra)
                 row["script"] = script
                 row["args"] = extra

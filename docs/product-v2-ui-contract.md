@@ -2,8 +2,9 @@
 
 > CONTROL-STATUS: draft · AUTHORITY: ui-interaction-contract（产品发起人走查确认前为设计草案；确认后转 current 并补入 INDEX 路由）
 > 本文件只定义“用户看到什么、能做什么、什么状态下能做什么、操作后系统如何反馈”，以及支撑它的表现层基线。
-> 目标、对象、数据所有权与状态机由 `docs/product-v2-goal-and-implementation-plan.md` 与
-> `docs/product-v2-project-context.md` 管辖；本文件不改写它们，只做投影。
+> 目标、对象、数据所有权与状态机由 `docs/product-v2-refactor-plan.md` 与
+> `docs/product-v2-project-context.md` 管辖；本文保留待审的旧六阶段设计，不作为重构布局已获确认的证据。
+> 新 UI 审计、原型和合同复访按 V2.R2.1/V2.R2.2；最终人审按 V2.R7.2，不由自审替代。
 
 ## 1. 目的与边界
 
@@ -261,3 +262,31 @@
 - 走查确认项：信息层级、主操作、图片比较、视觉方向；任何“需要旁边解释才知道点哪里”、工程字段压过业务信息、关键操作被遮挡或仍像调试表单，都判未通过。
 - 生效：产品发起人确认后，本文件 CONTROL-STATUS 转 `current`、INDEX 管辖事实转 `架构设计` 并补入路由；任务的完成证据与被否项一并记录。
 - 变更：实现偏离先改本文件再改代码；界面不得引入第二套状态源；任何新增视图/按钮必须补充到第 4 节对应清单并说明理由。
+
+## 9. R2.3 研究输入（不冻结新布局或授权）
+
+- 固定来源与许可：context SEL-019；证据 `evals/product-v2/refactor/reference-review-20261001.md`。只学习概念，不复制 pi/ComfyUI/Open WebUI 代码、CSS、品牌或依赖，不将文本 diff 当作图片比较证明。
+- 新原型要验证同 Shot 的参考/旧/新候选直接对照、当前候选身份和稳定导航，删除整套长卡之后再找比较区的上下文跳转；不预定三栏或继续六强制页面。
+- 状态提示首先解释发生了什么、影响哪张图、下一步；已知 task 核对与无 task Unknown 分开，工程信息进 details，不回显原始秘密/错误 payload。
+- Prompt/交付来源必须来自人工采用候选的原 Attempt 冻结身份；当前 Prompt 与历史来源分别展示，不洗成同一版本。R2.1 B01 仍是未修复的发布 blocker。
+- 必要事实确认、生成/返工授权与人工采用保留；候选导航、打开预览或关闭弹层不产生业务选择或提交。任何新增高风险含义另获确认；最终 C17/C15 不由原型 self-review 代替。
+- 原型、测量与最终生效条件按重构计划 R2.2/§7.2/R7.2；本文此前六阶段设计在 R2.2 clean cutover 前仍属待复访草案，不冒充新布局已获确认。
+
+## 10. R2.2 原型冻结（设计态，未生效）
+
+> 本节为设计态冻结记录；生效条件与全文相同：产品发起人走查确认后转 `current`。原型实现（`evals/product-v2/harness/workbench-prototype.js/css` + `_prototype_smoke.py`）可移除，不进产品默认数据，不改 domain/repository。
+> 证据：`evals/product-v2/refactor/prototype-review-20261002.md`；无头 PASS `prototype-smoke-20261002.json`（`result PASS`，console 空、loopback 外零放行）；截图 4 张；reload 前 27 click 轨迹见 `prototype-observations-20261002.json`。
+
+| 问题 | 原型设计 | 冻结判据（可测） | 落点 |
+|---|---|---|---|
+| H02 图片上下文/滚动 | 同 Shot 参考/旧/新并排工作区，比较入口紧邻任务卡 | 高频比较不依赖记忆另一屏；身份/版本/采用状态文本可辨；入口不在整套长卡之后 | R6.2 / RC03 / 计划 §7.2 |
+| H01 高频继续劳动 | 事实旁原始资料对照 + 失效影响条 + 重编入口 | 影响范围可见；必要确认保留；成功历史/人工采用不丢；不自动付费提交 | R6.1 / RC14 |
+| H03 技术词/异常分支 | 已知/无 task Unknown 分层解释 + details | 已知核对不增 submit；无 task 明确不可查询与重提风险；错误给影响 + 下一步 | R5.1 / R6.3 / 计划 §7.2 |
+| B01 交付溯源错 | 比较区只读展示候选原 Attempt 身份（未修产品） | 交付只读采用候选原 action 冻结 Prompt；旧候选 manifest Prompt 与原 Attempt 相等 | R6.3 / RC16 / RC18（仍发布 blocker） |
+| G01 设置能力缺口 | 原型未做设置页（T7 缺口延续） | 设置仅展示可用能力与非 secret 身份；BYOK 内存；默认 key 不送用户目标 | R4.3 / R6.3 / RC08（未冻结，待 R4.1/R4.3） |
+| 键盘/焦点/刷新 | 16 步 dialog 包络 + Escape 回触发器 + 刷新零重提 | 焦点可见不被遮挡、关闭回触发器、保存/核对真反馈；包络判据为“仍在 modal 内 + 轮廓可见”，不要求每步 document.hasFocus | R6 / R7 / RC04（Edge/桌面/真人未覆） |
+
+- 未冻结：三栏 vs 其他布局；六阶段结构（clean cutover 复访中）；具体文案/密度/新增样式；设置页形态。
+- 授权：本原型未引入新增高风险含义/授权行为；返工提交、人工采用沿用产品现有确认；导航/预览/关闭不产生业务选择或提交。后续新增高风险含义另获确认；self 审不替代 C17/C15。
+- 可用套图结论：当前候选为 fake 纯色图，无真实 Adapter/预算/真人验收，RC09/RC18 不 proven；冻结的是 §4 式六维 rubric（保真/文字/事实/尺寸/整套/人审），供 R4.2/R6.2/R7.1 使用。
+- 清除：R6 切片替换原型后删除 harness + smoke 脚本 + 失败考古 JSON，保留本报告与 PASS 证据。

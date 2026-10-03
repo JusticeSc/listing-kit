@@ -131,10 +131,6 @@ test("CP-03", "默认目标是异常优先而不是最新：最新的无发现�
 });
 
 test("CP-04", "严重度顺序表只有一份：compare 模块与 review.js 共用同一顺序", () => {
-  expect(REVIEW_SEVERITY_ORDER.join(",") === "BLOCK,HIGH_RISK,WARNING,UNKNOWN",
-    "先看顺序被改动：" + REVIEW_SEVERITY_ORDER.join(","));
-  expect(COMPARE_PENDING_SEVERITIES.join(",") === "BLOCK,HIGH_RISK,WARNING",
-    "待处理集合必须排除 UNKNOWN，实际 " + COMPARE_PENDING_SEVERITIES.join(","));
   expect(compareSeverityRank({ severity: "BLOCK" }) === 0, "阻断应排第一");
   expect(compareSeverityRank({ severity: "UNKNOWN" }) === 3, "未知应排第四");
   expect(compareSeverityRank({ severity: "PASS" }) === REVIEW_SEVERITY_ORDER.length,

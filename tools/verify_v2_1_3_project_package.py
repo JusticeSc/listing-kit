@@ -3,7 +3,9 @@
 
 检查：
   1) 静态：storage 模块与 app.js 通过 node --check。
-  2) 包契约套件：ZIP 读写、项目包往返、篡改/截断/未来版本拒绝、导入事务回滚、id 冲突。
+  2) 包契约套件（宿主 IDB 案例：项目包往返/篡改拒绝/导入回滚/id 冲突，Z04..Z09，
+     执行身份往返 Z10 / legacy attempt 记录原子拒绝 Z11）
+     在真实 Chromium 全过；ZIP 读写 Z01..Z03 由 `npm run test:domain` 在 Node 直跑（R3.2 分层）。
   3) 界面导出：下载的 ZIP 能被 Python zipfile 打开，CRC 全过，manifest 与资产哈希一致。
   4) 清空浏览器状态后导入：业务记录、文档版本与资产哈希与导出前逐项一致。
   5) 损坏包：界面拒绝且不产生任何项目（不污染现有数据）。
@@ -35,7 +37,7 @@ from v2_test_server import start as start_server  # noqa: E402
 EVIDENCE_DIR = ROOT / "evals" / "product-v2"
 STORAGE_DIR = ROOT / "app" / "product_v2" / "storage"
 DB_NAME = "amz-listing-kit-v2"
-EXPECTED_CASE_IDS = [f"Z0{index}" for index in range(1, 10)]
+EXPECTED_CASE_IDS = [f"Z{index:02d}" for index in range(4, 12)]
 
 SEED_PROJECT = """
 async () => {
@@ -197,9 +199,12 @@ def main() -> int:
                 page.goto(base_url + "/", wait_until="networkidle")
                 page.fill("#new-project-name", "打包验证项目")
                 page.click("#create-project")
-                expect(page.locator("#project-list .project-row")).to_have_count(1)
+                # R3.3：新建即打开；导出走首页行内动作，先回首页。
+                expect(page.locator("#project-view")).to_be_visible()
                 seeded = page.evaluate(SEED_PROJECT)
                 page.reload(wait_until="networkidle")
+                page.click("#back-home")
+                expect(page.locator("#project-list .project-row")).to_have_count(1)
                 before = page.evaluate(SNAPSHOT)
                 package_path = Path(workdir) / "exported-project.zip"
                 with page.expect_download() as download_info:

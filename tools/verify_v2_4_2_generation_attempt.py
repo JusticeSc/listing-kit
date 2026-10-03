@@ -3,19 +3,25 @@
 
 检查：
   1) domain / workspace / harness 通过 node --check（ESM 语法门）。
-  2) 契约套件 A01..A13 在真实 Chromium 全过（形状、信封→状态、迁移边、append-only、
-     查询不回退、Unknown 恢复、防重复、过期标记、篡改反向探针、词表常量）。
+  2) 契约套件 A01..A18 在真实 Chromium 全过（形状、信封→状态、迁移边、append-only、
+     查询不回退、Unknown 恢复、防重复、过期标记、篡改反向探针、词表常量、
+     冻结执行身份、环境漂移阻塞、legacy 拒绝、凭据轮换不使 Prompt 过期、核对请求形状）。
   3) 既有契约回归：确认单 / Prompt 编辑 / 套图编辑器全过。
   4) 正式入口：套图 + 编译 + 确认后就绪，4 张图可提交，provider 身份可见。
-  5) 提交前落库：服务端已收到提交时，IndexedDB 已是 pending_submit，Prompt 版本一致。
+  5) 提交前落库：服务端已收到提交时，IndexedDB 已是 pending_submit，Prompt 版本一致，
+     且记录已带冻结执行身份（协议/能力版本/凭据引用，无 secret）；提交请求带同身份 target。
   6) 双击只产生一条 Attempt；提交请求仅一次；请求里的 Prompt / 引用 / 尺寸与记录一致。
-  7) 核对推进 succeeded：迁移链完整、没有重新提交。
+  7) 核对推进 succeeded：迁移链完整、没有重新提交；核对请求按冻结身份带 target。
   8) 刷新恢复：succeeded 身份与 UI 一致。
   9) 服务端重启后按已保存 task id 核对成功（服务端无任务表）。
  10) Unknown 不自动重提；显式新建 action 保留旧记录。
  11) 刷新打断提交：pending 身份保留、不自动重提、旧记录原样。
  12) Prompt 前进后旧 Attempt 标「基于旧版本 v1」，记录零改写。
  13) 零 console error / page error；截图落盘；正式入口 --check 全过。
+ 14) 环境身份漂移（provider 换目标 + 页面重读能力）阻塞核对：不发请求、不改记录、
+     给出明确恢复条件；环境恢复后同 task 仍按原身份核对成功。
+ 15) 同 task 不同 target 直发网关：Python 合同层 400 EXECUTION_IDENTITY_MISMATCH；
+     target 与网关一致时放行。
 
 运行：
   uv run --locked python tools/verify_v2_4_2_generation_attempt.py
@@ -23,6 +29,7 @@
 from __future__ import annotations
 
 import argparse
+import base64
 import hashlib
 import importlib.util
 import json
@@ -34,6 +41,8 @@ import sys
 import tempfile
 import threading
 import time
+import urllib.error
+import urllib.request
 import zlib
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -46,6 +55,8 @@ import v2_stage_nav as stage_nav  # noqa: E402  （V2.UI.2 六阶段工作台导
 
 PRODUCT_DIR = ROOT / "app" / "product_v2"
 HARNESS_DIR = ROOT / "evals" / "product-v2" / "harness"
+IMAGE_SUBMIT_PATH = "/api/v2/images/submit"
+IMAGE_STATUS_PATH = "/api/v2/images/status"
 EVIDENCE_DIR = ROOT / "evals" / "product-v2"
 
 MIME = {
@@ -73,8 +84,8 @@ DOMAIN_FILES = [
     "evals/product-v2/harness/attempt-contract.js",
 ]
 
-EXPECTED_CASES = [f"A{index:02d}" for index in range(1, 14)]
-NEGATIVE_CASES = ["A02", "A04", "A06", "A08", "A09", "A10", "A11", "A12"]
+EXPECTED_CASES = [f"A{index:02d}" for index in range(1, 19)]
+NEGATIVE_CASES = ["A02", "A04", "A06", "A08", "A09", "A10", "A11", "A12", "A15", "A16"]
 REGRESSION_SUITES = (
     ("confirm", "confirm-contract.html", "__V2_CONFIRM_RESULTS__"),
     ("prompt_edit", "prompt-edit-contract.html", "__V2_PROMPT_EDIT_RESULTS__"),
@@ -212,6 +223,27 @@ def free_port() -> int:
     with socket.socket() as probe:
         probe.bind(("127.0.0.1", 0))
         return probe.getsockname()[1]
+
+
+def post_json(base: str, path: str, payload: dict) -> tuple[int, dict]:
+    """直发网关用的 JSON POST；4xx/5xx 也返回 (status, payload) 而不抛异常。"""
+    request = urllib.request.Request(
+        base + path, data=json.dumps(payload).encode("utf-8"),
+        headers={"Content-Type": "application/json"}, method="POST")
+    try:
+        with urllib.request.urlopen(request, timeout=10) as response:
+            return response.status, json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as error:
+        body = error.read().decode("utf-8", errors="replace") or "{}"
+        try:
+            return error.code, json.loads(body)
+        except json.JSONDecodeError:
+            return error.code, {"raw": body[:400]}
+
+
+def get_json(base: str, path: str) -> tuple[int, dict]:
+    with urllib.request.urlopen(base + path, timeout=10) as response:
+        return response.status, json.loads(response.read().decode("utf-8"))
 
 
 def run_entry(args: list[str], timeout: int = 180) -> dict:
@@ -378,6 +410,8 @@ def main() -> int:
     module = load_server_module()
     from src.providers.v2_fake_image import FakeImageProvider  # noqa: PLC0415
     from src.providers.v2_fake_semantic import FakeSemanticProvider  # noqa: PLC0415
+    from src.providers.v2_image import (IMAGE_CONTRACT_VERSION, IMAGES_CAPABILITY_VERSION,
+                                        SubmitRequest, TaskRequest)  # noqa: PLC0415
 
     class GatedFakeImageProvider(FakeImageProvider):
         """真替身上加一个「服务端已收到提交」门 + 可选延迟，供验证器观察提交前落库。"""
@@ -395,11 +429,26 @@ def main() -> int:
                 time.sleep(self._delay)
             return super().submit(request)
 
-    mode: dict = {"image_scenario": "ok", "gate": None, "delay": 0.0}
+    class DriftedImageProvider(GatedFakeImageProvider):
+        """provider_id/model_id 换成另一目标（模拟换设置后的环境身份漂移）。
+
+        冻结执行身份核对必须因此阻塞：核对请求按原身份带 target，
+        服务端发现目标不一致返回 EXECUTION_IDENTITY_MISMATCH。
+        """
+
+        def __init__(self, scenario: str, gate: threading.Event | None = None,
+                     delay: float = 0.0) -> None:
+            super().__init__(scenario, gate=gate, delay=delay)
+            self.provider_id = "fake-alt-image"
+            self.model_id = "fake-alt-model"
+
+    mode: dict = {"image_scenario": "ok", "gate": None, "delay": 0.0,
+                  "identity_drift": False}
 
     def image_factory():
-        return GatedFakeImageProvider(mode["image_scenario"],
-                                      gate=mode.get("gate"), delay=mode.get("delay") or 0.0)
+        cls = DriftedImageProvider if mode.get("identity_drift") else GatedFakeImageProvider
+        return cls(mode["image_scenario"],
+                   gate=mode.get("gate"), delay=mode.get("delay") or 0.0)
 
     def make_server():
         return module.create_product_v2_server(
@@ -452,6 +501,7 @@ def main() -> int:
                             "action_id": body.get("action_id"),
                             "prompt": body.get("prompt"),
                             "size": body.get("size"),
+                            "target": body.get("target"),
                             "references": [{key: ref.get(key) for key in ("role", "sha256")}
                                            for ref in body.get("references", [])],
                         })
@@ -460,7 +510,10 @@ def main() -> int:
                             body = json.loads(request.post_data or "{}")
                         except ValueError:
                             body = {}
-                        status_requests.append(str(body.get("task_id")))
+                        status_requests.append({
+                            "task_id": str(body.get("task_id")),
+                            "target": body.get("target"),
+                        })
 
                 page.on("request", on_request)
 
@@ -478,7 +531,6 @@ def main() -> int:
                 page.goto(base + "/", wait_until="networkidle")
                 page.fill("#new-project-name", "审计商品 · 生成执行")
                 page.click("#create-project")
-                page.click('#project-list .project-row button[data-action="open"]')
                 expect(page.locator("#project-view")).to_be_visible()
                 page.set_input_files("#ref-file", str(reference))
                 expect(page.locator("#ref-list .ref-row")).to_have_count(1)
@@ -579,6 +631,23 @@ def main() -> int:
                       {"task": final["task_id"], "expected": expected_task,
                        "request_ok": request_ok, "references": final["references"]})
 
+                # ---- 17 冻结执行身份：pending_submit 就带身份；提交请求带同一 target ----
+                submit_target = (captured[0].get("target") or {}) if captured else {}
+                record_identity = final.get("execution_identity") or {}
+                check("V2.4.2-17",
+                      "冻结执行身份：记录带协议/能力版本/凭据引用（无 secret），提交请求 target 与之一致",
+                      record_identity.get("schema_version") == 1
+                      and record_identity.get("protocol") == IMAGE_CONTRACT_VERSION
+                      and record_identity.get("capability_version") == IMAGES_CAPABILITY_VERSION
+                      and (record_identity.get("credential_reference") or {}).get("source")
+                          == "test_double"
+                      and submit_target.get("provider_id") == final["provider"]["provider_id"]
+                      and submit_target.get("model_id") == final["provider"]["model_id"]
+                      and submit_target.get("protocol") == record_identity.get("protocol")
+                      and submit_target.get("capability_version")
+                          == record_identity.get("capability_version"),
+                      {"identity": record_identity, "submit_target": submit_target})
+
                 # ---- 07/08 核对推进 + 刷新恢复 ----
                 status_before = len(status_requests)
                 row(shot_main).locator('button:has-text("核对任务")').click()
@@ -591,11 +660,24 @@ def main() -> int:
                       final_r["state"] == "succeeded"
                       and [entry["to"] for entry in final_r["change_log"]]
                       == ["pending_submit", "submitted", "succeeded"]
-                      and new_status == [expected_task]
+                      and [item["task_id"] for item in new_status] == [expected_task]
                       and len([item for item in submit_requests
                                if item["action_id"] == final["action_id"]]) == 1,
                       {"chain": [entry["to"] for entry in final_r["change_log"]],
                        "status_requests": new_status})
+
+                # ---- 18 核对请求按冻结身份带 target ----
+                reconcile_target = (new_status[0].get("target") or {}) if new_status else {}
+                check("V2.4.2-18",
+                      "核对请求按冻结身份带 target：协议/目标/模型/能力版本与记录一致（不偷用当前设置）",
+                      reconcile_target.get("provider_id") == final_r["provider"]["provider_id"]
+                      and reconcile_target.get("model_id") == final_r["provider"]["model_id"]
+                      and reconcile_target.get("protocol")
+                          == (final_r["execution_identity"] or {}).get("protocol")
+                      and reconcile_target.get("capability_version")
+                          == (final_r["execution_identity"] or {}).get("capability_version"),
+                      {"reconcile_target": reconcile_target,
+                       "identity": final_r["execution_identity"]})
 
                 page.reload(wait_until="networkidle")
                 stage_nav.goto(page, "generate")
@@ -619,7 +701,7 @@ def main() -> int:
                 chain_s = chain_of(second, shot_second)
                 record_s = chain_s[-1]["payload"]
                 status_count_before = len(
-                    [item for item in status_requests if item == record_s["task_id"]])
+                    [item for item in status_requests if item["task_id"] == record_s["task_id"]])
                 restart_events.append(
                     {"at": datetime.now().isoformat(timespec="seconds"),
                      "task": record_s["task_id"],
@@ -630,7 +712,7 @@ def main() -> int:
                 after_restart = probe()
                 final_s = chain_of(after_restart, shot_second)[-1]["payload"]
                 status_count_after = len(
-                    [item for item in status_requests if item == record_s["task_id"]])
+                    [item for item in status_requests if item["task_id"] == record_s["task_id"]])
                 check("V2.4.2-09",
                       "服务端重启后按已保存 task id 核对成功（服务端无任务表）",
                       final_s["state"] == "succeeded"
@@ -759,6 +841,112 @@ def main() -> int:
                        "badges": row_stale.get("badges"),
                        "state": after_stale["project_state"]})
 
+                # ---- 19 环境身份漂移阻塞核对：不发请求、记录零改写；恢复后同 task 核对 ----
+                wait_state(shot_third, "submitted", timeout=20_000)
+                drift_before = probe()
+                drift_chain = chain_of(drift_before, shot_third)
+                drift_record = drift_chain[-1]["payload"]
+                status_before_drift = len(status_requests)
+                mode["identity_drift"] = True
+                restart_server()
+                page.reload(wait_until="networkidle")
+                stage_nav.goto(page, "generate")
+                expect(page.locator("#attempt-editor")).to_be_visible()
+                wait_state(shot_third, "submitted", timeout=20_000)
+                row(shot_third).locator('button:has-text("核对任务")').click()
+                # 生成阶段：错误就近显示在 generate 面板（#attempt-error 在复核阶段面板）。
+                expect(page.locator("#generate-error")).to_be_visible()
+                drift_error = (page.locator("#generate-error").inner_text() or "")
+                page.wait_for_timeout(800)
+                after_drift = probe()
+                check("V2.4.2-19",
+                      "环境身份漂移阻塞核对：不发请求、记录零改写、给出原身份与恢复条件",
+                      versions_of(chain_of(after_drift, shot_third),
+                                  drift_record["action_id"])
+                      == versions_of(drift_chain, drift_record["action_id"])
+                      and len(status_requests) == status_before_drift
+                      and "执行身份" in drift_error
+                      and "恢复条件" in drift_error
+                      and drift_record["state"] == "submitted",
+                      {"status_delta": len(status_requests) - status_before_drift,
+                       "error": drift_error[:260],
+                       "state": (chain_of(after_drift, shot_third)[-1]["payload"] or {}).get("state")})
+                mode["identity_drift"] = False
+                restart_server()
+                page.reload(wait_until="networkidle")
+                stage_nav.goto(page, "generate")
+                expect(page.locator("#attempt-editor")).to_be_visible()
+                row(shot_third).locator('button:has-text("核对任务")').click()
+                wait_state(shot_third, "succeeded", timeout=20_000)
+                restored = probe()
+                restored_record = chain_of(restored, shot_third)[-1]["payload"]
+                check("V2.4.2-19b",
+                      "环境恢复后同 task 仍按原身份核对成功（不新建、不换目标）",
+                      restored_record["state"] == "succeeded"
+                      and restored_record["task_id"] == drift_record["task_id"]
+                      and len(action_ids(chain_of(restored, shot_third)))
+                          == len(action_ids(drift_chain)),
+                      {"task": restored_record["task_id"], "state": restored_record["state"]})
+
+                # ---- 20 同 task 不同 target 直发网关（Python 合同层） ----
+                mismatch_target = {
+                    "task_id": drift_record["task_id"],
+                    "target": {"provider_id": "fake-alt-image", "model_id": "fake-alt-model",
+                               "protocol": IMAGE_CONTRACT_VERSION,
+                               "capability_version": IMAGES_CAPABILITY_VERSION},
+                }
+                bad_status, bad_payload = post_json(base, IMAGE_STATUS_PATH, mismatch_target)
+                good_target = {
+                    "task_id": "fake-" + hashlib.sha256(
+                        b"probe-target-ok").hexdigest()[:16],
+                    "target": {"provider_id": "fake-qwen-image", "model_id": "qwen-image-3.0",
+                               "protocol": IMAGE_CONTRACT_VERSION,
+                               "capability_version": IMAGES_CAPABILITY_VERSION},
+                }
+                good_status, good_payload = post_json(base, IMAGE_STATUS_PATH, good_target)
+                wrong_submit = {
+                    "action_id": "probe-target-mismatch-1",
+                    "prompt": "探测冻结身份核对（不调用模型）",
+                    "size": "1344*1344",
+                    "references": [{"role": "primary", "media_type": "image/png",
+                                    "sha256": hashlib.sha256(png_bytes(8, 8, (1, 2, 3)))
+                                    .hexdigest(),
+                                    "data_base64": base64.b64encode(
+                                        png_bytes(8, 8, (1, 2, 3))).decode("ascii")}],
+                    "target": {"provider_id": "fake-alt-image", "model_id": "fake-alt-model",
+                               "protocol": IMAGE_CONTRACT_VERSION,
+                               "capability_version": IMAGES_CAPABILITY_VERSION},
+                }
+                bad_submit_status, bad_submit_payload = post_json(
+                    base, IMAGE_SUBMIT_PATH, wrong_submit)
+                check("V2.4.2-20",
+                      "同 task 不同 target 直发网关：400 EXECUTION_IDENTITY_MISMATCH（不转发）"
+                      "；target 一致时放行",
+                      bad_status == 400
+                      and (bad_payload.get("error") or {}).get("code")
+                          == "EXECUTION_IDENTITY_MISMATCH"
+                      and bad_submit_status == 400
+                      and (bad_submit_payload.get("error") or {}).get("code")
+                          == "EXECUTION_IDENTITY_MISMATCH"
+                      and good_status == 200 and good_payload.get("ok") is True,
+                      {"bad_status": bad_status, "bad_code":
+                          (bad_payload.get("error") or {}).get("code"),
+                       "bad_submit_status": bad_submit_status,
+                       "good_status": good_status,
+                       "good_task": (good_payload.get("task") or {}).get("task_id")})
+
+                # ---- 21 capabilities 暴露能力版本（前端冻结进身份的数据源） ----
+                get_status, caps_payload = get_json(base, "/api/v2/capabilities")
+                caps_provider = ((caps_payload.get("images") or {}).get("provider") or {})
+                check("V2.4.2-21",
+                      "capabilities 图像块暴露 capability_version 与契约版本（身份冻结数据源）",
+                      get_status == 200
+                      and caps_provider.get("capability_version") == IMAGES_CAPABILITY_VERSION
+                      and (caps_payload.get("images") or {}).get("contract")
+                          == IMAGE_CONTRACT_VERSION,
+                      {"capability_version": caps_provider.get("capability_version"),
+                       "contract": (caps_payload.get("images") or {}).get("contract")})
+
                 screenshot_rel = f"evals/product-v2/v2.4.2-generation-attempt-{stamp}.png"
                 page.screenshot(path=str(ROOT / screenshot_rel), full_page=True)
                 screenshots.append(screenshot_rel)
@@ -797,6 +985,14 @@ def main() -> int:
     check("V2.4.2-16", "正式入口自检仍全过（V2.4.2 不破坏既有入口）",
           entry["rc"] == 0 and any("通过。" in line for line in entry["tail"]), entry)
 
+    config_suite = subprocess.run(
+        ["node", "--test", str(ROOT / "evals/product-v2/node/config-export.test.mjs")],
+        cwd=str(ROOT), capture_output=True, text=True, encoding="utf-8",
+        errors="replace", timeout=300)
+    check("V2.4.2-22", "可分享配置导出契约（Node）：只含白名单字段、secret 混入被拒",
+          config_suite.returncode == 0,
+          {"tail": config_suite.stdout.strip().splitlines()[-4:]})
+
     failed = [item for item in checks if not item["ok"]]
     status = "passed" if not failed else "failed"
     finished_at = datetime.now().strftime("%Y-%m-%dT%H:%M:%S%z")
@@ -807,6 +1003,11 @@ def main() -> int:
         "（无任务表）后结论不变；没有 task id 的 Unknown 不允许自动重提，界面只提供显式新建 action，"
         "且旧记录逐字保留；刷新打断提交时 pending 身份仍在、不产生第二次提交；Prompt 前进后旧 Attempt "
         "标「基于旧版本 v1」且记录零改写。请求体里的 Prompt 文本、参考图与尺寸与记录和页面一致。"
+        "V2.R4.4：pending_submit 起就冻结执行身份（协议/能力版本/凭据引用，无 secret），提交与核对请求"
+        "都按冻结身份带 target；环境身份漂移（provider 换目标）阻塞核对——不发请求、记录零改写、给恢复条件，"
+        "环境恢复后同 task 按原身份核对成功；直发网关对 target 不符返回 400 EXECUTION_IDENTITY_MISMATCH，"
+        "target 一致放行；capabilities 暴露 capability_version 作为冻结数据源；可分享配置导出"
+        "（不含 secret、凭据声明为重新提供）契约在 Node 套件全过。"
         "本批不保存候选字节（V2.4.4）、不做整套批量与部分失败（V2.4.3）、不做审核与返工（Phase 5）；"
         "全程 0 次真实模型调用、0 次外部网络；图像 provider 是注入的假替身，只证明身份与状态机，"
         "不证明真实出图质量。"

@@ -107,6 +107,9 @@ CONFIRM_PROBE = """
 async () => {
   const domain = await import("/domain/index.js");
   const storage = await import("/storage/db.js");
+  // 有效图像 Prompt 档必须与服务端当前能力一致：直接从 capabilities 投影，不复制常量。
+  const capabilities = await (await fetch("/api/v2/capabilities")).json();
+  const imageProfile = domain.imagePromptProfile(capabilities.images);
   const db = await new Promise((resolve, reject) => {
     const request = indexedDB.open("amz-listing-kit-v2");
     request.onsuccess = () => resolve(request.result);
@@ -143,7 +146,7 @@ async () => {
       style_version: styleRow ? styleRow.version : null,
       shot_spec_version: spec ? spec.version : null,
       platform: { version: domain.PLATFORM_PROFILES.amazon_us.version },
-      provider: { version: domain.PROVIDER_PROFILES["qwen-image-3.0"].version },
+      provider: imageProfile,
     };
   }
   const sheet = domain.buildConfirmationSheet({
@@ -154,6 +157,7 @@ async () => {
       assets: ((intake && intake.payload.references) || []).map((item) => ({ role: item.role, sha256: item.asset_sha256 })),
     },
     currentBasisByShot: basisByShot,
+    providerProfile: imageProfile,
   });
   const snapshot = domain.confirmationSnapshot(sheet);
   const staleness = confirmRow ? domain.confirmationStaleness(confirmRow.payload, snapshot) : null;
@@ -389,7 +393,6 @@ def main() -> int:
             page.goto(base + "/", wait_until="networkidle")
             page.fill("#new-project-name", "审计商品 · 生成前确认")
             page.click("#create-project")
-            page.click('#project-list .project-row button[data-action="open"]')
             expect(page.locator("#project-view")).to_be_visible()
             expect(page.locator("#confirm-editor")).to_be_hidden()
             # V2.UI.2：方案就绪前「生成」阶段本身不可达，「未就绪」由阶段条的锁定投影表达。

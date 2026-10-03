@@ -8,11 +8,11 @@
 
 import {
   CAPABILITY_GAPS,
-  openStorage,
   exportProjectPackage,
   importProjectPackage,
   probeBrowserCapabilities,
 } from "./storage/index.js";
+import { createSession } from "./session.js";
 import { createWorkspace } from "./workspace.js";
 
 const STATE_LABELS = {
@@ -44,6 +44,9 @@ const ERROR_MESSAGES = {
 
 const elements = {
   bootError: document.getElementById("boot-error"),
+  bootRetryRow: document.getElementById("boot-retry-row"),
+  bootRetry: document.getElementById("boot-retry"),
+  bootPending: document.getElementById("boot-pending"),
   capabilityNotice: document.getElementById("capability-notice"),
   homeError: document.getElementById("home-error"),
   homeView: document.getElementById("home-view"),
@@ -56,6 +59,10 @@ const elements = {
   projectList: document.getElementById("project-list"),
   emptyState: document.getElementById("empty-state"),
   homeStatus: document.getElementById("home-status"),
+  homeReadStatus: document.getElementById("home-read-status"),
+  homeReadError: document.getElementById("home-read-error"),
+  homeReadRetryRow: document.getElementById("home-read-retry-row"),
+  homeReadRetry: document.getElementById("home-read-retry"),
   rowTemplate: document.getElementById("project-row-template"),
   backHome: document.getElementById("back-home"),
   projectTitle: document.getElementById("project-title"),
@@ -64,12 +71,12 @@ const elements = {
   projectUpdated: document.getElementById("project-updated"),
 };
 
+let session = null;
 let repository = null;
-let database = null;
-let workspace = null;
 let projects = [];
 let currentProjectId = null;
 let rowMode = { mode: "idle", projectId: null };
+let projectListGeneration = 0;
 
 function formatTime(iso) {
   const date = new Date(iso);
@@ -185,6 +192,8 @@ function setHomeControlsBlocked(blocked) {
   elements.createSubmit.disabled = blocked;
   elements.nameInput.disabled = blocked;
   elements.importTrigger.disabled = blocked;
+  // R3.3：解锁即"完整恢复完成"；验证器用 data-ready 判断是否存在早解锁窗口。
+  elements.createSubmit.dataset.ready = blocked ? "" : "1";
 }
 
 function packageFileName(project, manifest) {
@@ -195,8 +204,7 @@ function packageFileName(project, manifest) {
 }
 
 function showHome() {
-  if (workspace) workspace.close();
-  if (repository) void refresh();
+  // 会话动作（关闭/打开）由 session 统一管理；这里只投影视图与首页列表。
   elements.homeView.hidden = false;
   elements.projectView.hidden = true;
 }
@@ -236,6 +244,8 @@ function resetSaveState() {
 function showProject(project) {
   elements.homeView.hidden = true;
   elements.projectView.hidden = false;
+  // R3.3：视图可见 = 工作区已完整装载；验证器以此区分"仅切视图"与"可交互"。
+  elements.projectView.dataset.ready = "1";
   elements.projectTitle.textContent = project.name;
   elements.projectState.textContent = stateLabel(project.state);
   elements.projectCreated.textContent = formatTime(project.created_at);
@@ -294,48 +304,76 @@ function buildRow(project) {
   return row;
 }
 
-function renderList() {
-  elements.projectList.replaceChildren();
-  for (const project of projects) {
-    elements.projectList.append(buildRow(project));
-  }
-  const isEmpty = projects.length === 0;
-  elements.emptyState.hidden = !isEmpty;
+function renderList(nextProjects = projects) {
+  const rows = nextProjects.map(buildRow);
+  elements.projectList.replaceChildren(...rows);
+  projects = nextProjects;
+  elements.emptyState.hidden = projects.length !== 0;
 }
 
-async function refresh() {
-  projects = await repository.projects.list();
-  renderList();
+async function refresh({ required = false } = {}) {
+  const generation = ++projectListGeneration;
+  elements.projectList.setAttribute("aria-busy", "true");
+  elements.homeReadStatus.hidden = false;
+  elements.emptyState.hidden = true;
+  clearError(elements.homeReadError);
+  elements.homeReadRetryRow.hidden = true;
+  try {
+    const nextProjects = await repository.projects.list();
+    if (generation === projectListGeneration) renderList(nextProjects);
+  } catch (error) {
+    if (generation === projectListGeneration) {
+      showError(elements.homeReadError, describeError(error));
+      elements.homeReadRetryRow.hidden = false;
+    }
+    if (required) throw error;
+  } finally {
+    if (generation === projectListGeneration) {
+      elements.projectList.setAttribute("aria-busy", "false");
+      elements.homeReadStatus.hidden = true;
+    }
+  }
 }
 
 async function handleCreate(name) {
   clearError(elements.homeError);
-  if (!repository) {
+  if (!session || !session.repository) {
     showError(elements.homeError, "本地数据库还在初始化，请稍候再操作。");
     return null;
   }
   try {
-    const project = await repository.projects.create({ name });
+    const project = await session.repository.projects.create({ name });
     elements.nameInput.value = "";
-    await refresh();
     rowMode = { mode: "idle", projectId: null };
+    // R3.3：新建即打开——与 handleOpen 走同一条"完整恢复完成后才切视图"的路径。
+    const opened = await session.openProject(project);
+    currentProjectId = opened.project_id;
+    showProject(opened);
+    resetSaveState();
+    await refresh();
     return project;
   } catch (error) {
     showError(elements.homeError, describeError(error));
+    await refresh();
     return null;
   }
 }
 
 async function handleOpen(projectId) {
   clearError(elements.homeError);
+  if (!session || !session.repository) {
+    showError(elements.homeError, "本地数据库还在初始化，请稍候再操作。");
+    return;
+  }
   try {
-    await repository.pointer.set(projectId);
-    currentProjectId = projectId;
-    const project = await repository.projects.get(projectId);
-    showProject(project);
+    const project = await session.repository.projects.get(projectId);
+    // openProject 依次：保存旧项目草稿 → 推进会话代 → 写指针 → 完整恢复工作区。
+    // 恢复完成后才切视图，"看到工作台"与"可以交互"是同一时刻。
+    const opened = await session.openProject(project);
+    currentProjectId = opened.project_id;
+    showProject(opened);
     resetSaveState();
     renderList();
-    if (workspace) await workspace.open(project);
   } catch (error) {
     showError(elements.homeError, describeError(error));
   }
@@ -378,6 +416,7 @@ async function handleDelete(projectId) {
     await repository.projects.remove(projectId);
     if (currentProjectId === projectId) {
       currentProjectId = null;
+      if (session) void session.closeProject();
       showHome();
     }
     rowMode = { mode: "idle", projectId: null };
@@ -412,14 +451,14 @@ async function handleImport(file) {
   clearError(elements.homeError);
   clearStatus();
   if (!file) return;
-  if (!database || !repository) {
+  if (!session || !session.db || !repository) {
     elements.importFile.value = "";
     showError(elements.homeError, "本地数据库还在初始化，请稍候再导入。");
     return;
   }
   try {
     const bytes = new Uint8Array(await file.arrayBuffer());
-    const result = await importProjectPackage(database, bytes);
+    const result = await importProjectPackage(session.db, bytes);
     rowMode = { mode: "idle", projectId: null };
     await refresh();
     showStatus(
@@ -472,63 +511,77 @@ elements.projectList.addEventListener("click", (event) => {
 
 elements.backHome.addEventListener("click", () => {
   showHome();
+  void refresh();
+});
+
+elements.homeReadRetry.addEventListener("click", () => {
+  void refresh();
 });
 
 elements.capabilityNotice.querySelector('[data-role="diag-retry"]').addEventListener("click", () => {
   void boot();
 });
 
+elements.bootRetry.addEventListener("click", () => {
+  void boot();
+});
+
+/**
+ * R3.3：ready = 完整恢复完成。首页控件默认禁用（HTML），boot 全程保持禁用，
+ * 直到数据库打开、指针恢复、工作区装载、首页列表都结束才解锁；
+ * boot 失败时保持禁用并给出错误 + 重试入口，不再出现"控件可用但背后没有仓库"的窗口。
+ */
 async function boot() {
   setHomeControlsBlocked(true);
-  if (workspace) {
-    workspace.close();
-    workspace = null;
-  }
-  if (database) {
-    try {
-      database.close();
-    } catch (error) {
-      // 旧连接已经不可用；重新打开即可。
-    }
-    database = null;
-  }
-  repository = null;
-  clearError(elements.homeError);
+  elements.bootRetryRow.hidden = true;
   clearError(elements.bootError);
 
   const capabilities = await probeBrowserCapabilities();
   renderCapabilityDiagnosis(capabilities);
   const blocked = capabilities.gaps.length > 0;
-  setHomeControlsBlocked(blocked);
 
-  try {
-    const opened = await openStorage();
-    repository = opened.repository;
-    instrumentSaveState(repository);
-    database = opened.db;
-    workspace = createWorkspace({
-      repository,
+  if (!session) {
+    session = createSession({
+      createWorkspace,
       onProjectChanged(project) {
         if (project && currentProjectId === project.project_id) showProject(project);
         if (currentProjectId) void refresh();
       },
     });
-    const current = await repository.pointer.get();
-    currentProjectId = current ? current.project_id : null;
-    await refresh();
+  }
+  try {
+    const restored = await session.boot();
+    // R3.3 验证探针：只暴露当前会话代与项目 ID，不暴露仓库/DOM 写能力。
+    window.__v2SessionProbe = {
+      get generation() { return session.generation; },
+      get projectId() { return session.currentProject ? session.currentProject.project_id : null; },
+      get phase() { return session.phase; },
+    };
+    repository = session.repository;
+    // UI.3 全局保存状态：R3.3 重构时漏接——恢复 boot 成功后的单点投影接线。
+    instrumentSaveState(repository);
+    await refresh({ required: true });
+    elements.bootPending.hidden = true;
     if (blocked) {
+      setHomeControlsBlocked(true);
+      if (restored.project) void session.closeProject();
       showHome();
       return;
     }
-    if (current) {
-      showProject(current);
+    if (restored.project) {
+      currentProjectId = restored.project.project_id;
+      showProject(restored.project);
       resetSaveState();
-      await workspace.open(current);
     } else {
       showHome();
     }
-  } catch (error) {
     setHomeControlsBlocked(false);
+  } catch (error) {
+    elements.bootPending.hidden = true;
+    clearError(elements.homeReadError);
+    elements.homeReadRetryRow.hidden = true;
+    setHomeControlsBlocked(true);
+    elements.bootRetryRow.hidden = false;
     showError(elements.bootError, describeError(error));
   }
 }

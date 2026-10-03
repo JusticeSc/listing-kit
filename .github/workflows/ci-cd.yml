@@ -28,6 +28,17 @@ jobs:
         with:
           python-version: "3.13"
 
+      - name: Set up locked frontend tools
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0, MIT
+        with:
+          node-version-file: package.json
+          package-manager-cache: false
+
+      - name: Install approved frontend checker
+        run: |
+          npm install --global "npm@$(node -p 'require("./package.json").engines.npm')" --ignore-scripts
+          npm ci --ignore-scripts
+
       - name: Install uv and locked dependencies
         run: |
           python -m pip install --upgrade pip
@@ -41,6 +52,14 @@ jobs:
           uv run python tools/check_project_state.py
           uv run python evals/probes/project_state.py
           uv run python evals/probes/docs_index.py
+          uv run python tools/check_verification.py
+          uv run python evals/probes/verification_policy.py
+
+      - name: Check frontend versions types and direct behavior
+        run: |
+          npm run check:versions
+          npm run check:types
+          npm run test:domain
 
       - name: Check formal entry and browser contracts
         run: |
@@ -51,8 +70,10 @@ jobs:
           uv run python tools/verify_v2_1_4_formal_entry.py
           uv run python tools/verify_v2_2_1_product_contracts.py
           uv run python tools/verify_v2_2_2_semantic_provider.py
+          uv run python tools/verify_v2_2_3_intake_understanding.py
           uv run python tools/verify_v2_3_1_suite_registry.py
           uv run python tools/verify_v2_3_2_suite_editor.py
+          uv run python tools/verify_v2_3_3_session_lifecycle.py
           uv run python tools/verify_v2_3_3_spec_versions.py
           uv run python tools/verify_v2_3_4_prompt_compiler.py
           uv run python tools/verify_v2_3_5_pre_generation_confirm.py
@@ -63,6 +84,7 @@ jobs:
           uv run python tools/verify_v2_4_4_candidate_blob.py
           uv run python tools/verify_v2_5_1_deterministic_review.py
           uv run python tools/verify_v2_5_2_vlm_review.py
+          uv run python tools/verify_v2_r5_2_two_adapters.py
           uv run python tools/verify_v2_5_3_compare_panel.py
           uv run python tools/verify_v2_5_4_rework_loop.py
           uv run python tools/verify_v2_5_5_suite_review.py
@@ -151,17 +173,22 @@ jobs:
           SSH_HOST: ${{ secrets.SSH_HOST }}
           SSH_USER: ${{ secrets.SSH_USER }}
           DASHSCOPE_API_KEY: ${{ secrets.DASHSCOPE_API_KEY }}
+          # 第二 provider（火山 Ark，R4.3 只做运行环境接线；适配器本体属 R5.2）。
+          ARK_API_KEY: ${{ secrets.VOLCENGINE_API_KEY }}
         run: |
           set -Eeuo pipefail
-          if [ -z "${DASHSCOPE_API_KEY:-}" ]; then
-            echo "DASHSCOPE_API_KEY 未配置：跳过同步，远程容器按未配置 provider 运行。" >&2
+          if [ -z "${DASHSCOPE_API_KEY:-}" ] && [ -z "${ARK_API_KEY:-}" ]; then
+            echo "两个 provider 密钥都未配置：跳过同步，远程容器按未配置 provider 运行。" >&2
             exit 0
           fi
           target="${SSH_USER}@${SSH_HOST}"
           staging="$(mktemp)"
           chmod 600 "$staging"
           trap 'rm -f -- "$staging"' EXIT
-          printf 'DASHSCOPE_API_KEY=%s\n' "$DASHSCOPE_API_KEY" > "$staging"
+          {
+            if [ -n "${DASHSCOPE_API_KEY:-}" ]; then printf 'DASHSCOPE_API_KEY=%s\n' "$DASHSCOPE_API_KEY"; fi
+            if [ -n "${ARK_API_KEY:-}" ]; then printf 'ARK_API_KEY=%s\n' "$ARK_API_KEY"; fi
+          } > "$staging"
           scp -o ConnectTimeout=15 "$staging" "$target:/tmp/amz-listing-kit-secrets.env"
           ssh -o ConnectTimeout=15 -o ServerAliveInterval=15 "$target" 'bash -s' <<'REMOTE'
           set -Eeuo pipefail
@@ -171,7 +198,7 @@ jobs:
           install -d -m 700 "$HOME/.config/amz-listing-kit"
           touch "$file"
           tmp="$(mktemp)"
-          grep -v '^DASHSCOPE_API_KEY=' "$file" > "$tmp" || true
+          grep -v -e '^DASHSCOPE_API_KEY=' -e '^ARK_API_KEY=' "$file" > "$tmp" || true
           cat "$staging" >> "$tmp"
           mv "$tmp" "$file"
           chmod 600 "$file"

@@ -10,7 +10,7 @@
  */
 
 export const DB_NAME = "amz-listing-kit-v2";
-export const STORAGE_SCHEMA_VERSION = 1;
+export const STORAGE_SCHEMA_VERSION = 2;
 export const RECORD_SCHEMA_VERSION = 1;
 
 /** 项目状态词表（Product V2 计划 §6.1）。状态由对象关系派生，界面不得自由赋值。 */
@@ -60,6 +60,7 @@ export const STORE_SPECS = Object.freeze([
   freezeStore("documents", "document_key", [
     { name: "by_project_kind", keyPath: ["project_id", "kind"] },
     { name: "by_project_document", keyPath: ["project_id", "kind", "document_id"] },
+    { name: "by_project_document_version", keyPath: ["project_id", "kind", "document_id", "version"] },
   ]),
 ]);
 

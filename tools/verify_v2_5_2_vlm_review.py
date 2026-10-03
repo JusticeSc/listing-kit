@@ -535,7 +535,6 @@ def run_browser_checks(stamp: str, screenshots: list[str], console_errors: list[
                 page.goto(base + "/", wait_until="networkidle")
                 page.fill("#new-project-name", "审计商品 · VLM 复核")
                 page.click("#create-project")
-                page.click('#project-list .project-row button[data-action="open"]')
                 expect(page.locator("#project-view")).to_be_visible()
                 page.set_input_files("#ref-file", str(reference))
                 expect(page.locator("#ref-list .ref-row")).to_have_count(1)

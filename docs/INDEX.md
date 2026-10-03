@@ -11,15 +11,19 @@
 
 | 要回答的问题 | 唯一权威 | 其他地方只允许 |
 |---|---|---|
-| Goal 现在运行、暂停还是完成 | 系统 Goal `01a0ca17-2179-7eb0-969a-af9c79c4d8ca`；最近读数记录在 `_working/amz-listing-kit-product-v2/state.md` | 文档只记录 Goal 身份和最近读数，不自行改写生命周期 |
+| Goal 现在运行、暂停还是完成 | 系统 Goal；绑定状态与最近实际读数只在 `_working/amz-listing-kit-product-v2/state.md`，旧 Goal 读数见 superseded 基线 | `prepared` 仅表示真正未观察/未确认、尚无会话绑定，不冒充系统 paused/active；绑定语义与证据合同以产品计划 §2.2 为准；不据旧读数继续旧发布、不虚构 ID |
 | 项目是什么、运行边界、数据与目录归谁 | `docs/product-v2-project-context.md` | 计划和 README 只链接，不复制项目身份、目标运行时或数据所有权 |
-| 要做成什么、什么算完成、阶段/任务怎样依赖 | `docs/product-v2-goal-and-implementation-plan.md` | 按 ID 引用，不复制目标、Gate、任务定义或依赖 |
+| 要做成什么、什么算完成、阶段/任务怎样依赖 | `docs/product-v2-refactor-plan.md` | 按 ID 引用，不复制目标、Gate、任务定义或依赖；旧计划仅作基线合同来源 |
 | 当前做到哪、证据在哪、唯一下一动作是什么 | `_working/amz-listing-kit-product-v2/state.md` | 历史审计只能保存当时快照，不发布“当前状态” |
 | 现有代码实际上能做什么 | `README.md` 指向的代码、配置与验证入口 | 目标计划不得把未实现能力写成当前实现 |
 | 哪份文档有效、历史还是待删 | 本文件 | 各文件只声明自己的 CONTROL-STATUS，不建立另一张总表 |
 | 某次检查或实验实际发生了什么 | `evals/` 下对应原始产物和时点报告 | 只作证据，不发布后续计划、当前状态或新规范 |
 
 恢复工作时只按这个顺序读：**本文件 → Product V2 项目上下文 → 当前 state → state 指向的下一任务在产品计划中的任务卡 → 该任务证据 → 相关代码**。默认不读 `standards-template/`、`drafts/`、旧计划、旧 state 或横切面文档。
+
+重构恢复不依赖聊天：state 为 `prepared` 时，读取计划 §2 的 Goal 原文及 §9 的下一任务卡，先执行 `V2.R1.1` 的当前 Goal 重读核对与会话绑定门；会话绑定完成前不开始产品施工。用户已确认当前 Goal 后离线本地实现已获授权；真实模型调用、发布、V1 日落、私有上传、提交/推送、新依赖选型仍各自单独设门。
+
+当前目标以计划为准，计划准备完成不等于重构完成，也不自动改变旧系统 Goal 生命周期。
 
 ---
 
@@ -40,13 +44,16 @@
 | `docs/product-demo-goal-and-implementation-plan.md` | Product V1 v2.6 | `历史证据` | `superseded` | 被 `docs/product-v2-goal-and-implementation-plan.md` 取代；服务器文件夹工作空间与 D4.13/D4.14 不再驱动当前开发 |
 | `_working/amz-listing-kit-product-demo/state.md` | Product V1 v2.6 | `历史证据` | `superseded` | 被 `_working/amz-listing-kit-product-v2/state.md` 取代；保留 D-1 至 D4.12 的完成证据，不据此继续 D4.13 |
 | `docs/product-v2-project-context.md` | Product V2 | `架构设计` | `current` | Product V2 项目身份、运行边界、数据所有权、技术栈、目录地图和质量门槛的唯一上下文入口 |
-| `docs/product-v2-goal-and-implementation-plan.md` | Product V2 | `产品目标` | `current` | Product V2 目标合同、需求、状态、不变量、详细任务、Gate、验收矩阵与系统 Goal 绑定文本的唯一权威 |
+| `docs/product-v2-goal-and-implementation-plan.md` | Product V2 重构前基线 | `历史证据` | `superseded` | 被 `docs/product-v2-refactor-plan.md` 接管未来目标与任务；保留旧合同、C1–C17 和旧 Goal 原文，不据此继续 V2.7.3 |
+| `docs/product-v2-refactor-plan.md` | Product V2 定向重构 | `产品目标` | `current` | 详细任务、UI审计、模型评估、同版本恢复与验收、权限门及当前 Goal 可读原文/绑定合同的唯一权威；恢复修订见 §2 |
+| `_working/amz-listing-kit-product-v2-baseline/state.md` | Product V2 重构前基线 | `历史证据` | `superseded` | 被 current state 接管；保留旧进度与旧 Goal 的最近实际读数，不发布下一动作 |
 | `docs/product-v2-ui-contract.md` | Product V2 V2.UI.2 | `设计草案` | `draft` | V2.UI.2 交互与视觉契约：六阶段信息架构、逐视图对象/信息/行为/状态/规则/反馈与表现层基线；生效条件：产品发起人走查确认后转 `架构设计`/`current` 并补入 §1 路由表 |
-| `_working/amz-listing-kit-product-v2/state.md` | Product V2 | `执行状态` | `current` | Product V2 当前进度、证据指针、阻塞、未知与唯一下一动作；不复制计划正文 |
+| `_working/amz-listing-kit-product-v2/state.md` | Product V2 定向重构 | `执行状态` | `current` | 唯一进度、证据、真实 Goal 绑定与下一动作；prepared 仅表示真正未观察/未确认，不冒充系统状态；旧观察不等于本会话重读 |
+| `_working/amz-listing-kit-product-v2/tasks/r42-r52-volcengine-closure-20261003.md` | Product V2 R4.2/R5.2 火山真实链 | `历史证据` | `superseded` | R4.2/R5.2 已完成并记录进 current state；笔记保留本轮付费/修复/验证事实与证据指针，不据此执行 |
 | `_working/amz-listing-kit-product-v2/tasks/v255-server.md` | Product V2 V2.5.5 | `历史证据` | `superseded` | V2.5.5 已完成；任务书只保留当时的服务端施工边界，不再据此执行 |
 | `_working/amz-listing-kit-product-v2/tasks/v255-verifier.md` | Product V2 V2.5.5 | `历史证据` | `superseded` | V2.5.5 已完成；任务书只保留当时的验证施工边界，不再据此执行 |
 | `_working/amz-listing-kit-product-v2/tasks/v2ui2-interaction-visual.md` | Product V2 V2.UI.2 | `历史证据` | `superseded` | V2.UI.2 已完成；任务书只保留当时的交互与视觉施工边界，不再据此执行 |
-| `_working/amz-listing-kit-product-v2/tasks/v273-walkthrough-kit.md` | Product V2 V2.7.3 | `设计草案` | `draft` | V2.7.3 陌生人 / 产品发起人走查工具包（前置条件、任务脚本、观察表、归档要求）；生效条件：V2.7.3 走查期间；走查结论归档后改登记为 `superseded` |
+| `_working/amz-listing-kit-product-v2/tasks/v273-walkthrough-kit.md` | Product V2 V2.7.3 基线 | `历史证据` | `superseded` | 被重构计划 V2.R7.2 最终人审任务接管；旧脚本仅供任务参考，旧人审未完成、不转为通过 |
 | `_working/amz-listing-kit-product-demo/tasks/brief-d42-usability-a11y.md` | Product V1 D4.2 | `历史证据` | `superseded` | D4.2 已完成；任务书只保留当时边界和执行约束，不再驱动当前施工 |
 | `_working/amz-listing-kit-product-demo/tasks/brief-d43-backup-restore.md` | Product V1 D4.3 | `历史证据` | `superseded` | D4.3 已完成；任务书只保留当时边界和执行约束，不再驱动当前施工 |
 | `_working/amz-listing-kit-product-demo/tasks/d4.13-first-user-walkthrough-kit.md` | Product V1 D4.13 | `历史证据` | `superseded` | 被 Product V2 的 V2.7.3 首次使用者走查取代；旧工具包只保留任务设计参考 |

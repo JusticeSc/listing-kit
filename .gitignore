@@ -16,6 +16,7 @@ __pycache__/
 htmlcov/
 .uv-cache/
 .cache/
+node_modules/
 
 # Product/runtime outputs that must not become source
 out/
@@ -35,8 +36,7 @@ _working/**
 # were explicitly promoted; new reports require an exact `git add -f -- <path>`.
 evals/.tmp/
 evals/probes/*
-!evals/probes/project_state.py
-!evals/probes/docs_index.py
+!evals/probes/verification_policy.py
 evals/product-v2/*.txt
 evals/product-v2/*.json
 evals/product-v2/*.md

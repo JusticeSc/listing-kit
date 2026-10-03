@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-r"""项目状态守卫的十九向反向对照。
+r"""项目状态守卫的反向对照。
 
 当前状态使用 `amz-project-state/v2`：计划拥有阶段、Gate、任务和依赖；state 只保存
 进度、证据与下一动作。本探针逐向植入一种漂移，要求守卫**只**报对应的 J0–J9 tag，
@@ -18,10 +18,18 @@ r"""项目状态守卫的十九向反向对照。
 判据挂在「今天恰好在哪一相」上，就会随无关变化变红或变绿。所以现在每条 case 都从
 `_normalize()` 产出的**受控基线**出发：身份与结构照抄实时 state，但把"处在哪一相"抹平。
 另外每条探针都要自证「确实改动了字节」——没改到东西的探针会伪装成「抓不到」。
+
+Goal 观察绑定（session 与原生 required）
+---------------------------------------
+当前 required 绑定核对原样工具 ID；session 只用于接口确实无 ID。
+探针只改 `_probe_tmp_evidence.json` 夹具，不改真实观察文件；每向逐字节还原。
+合成 ID 仅用于确定性反向对照；真实原生 handle 从实时观察读取。
 """
 from __future__ import annotations
 
 import copy
+import hashlib
+import json
 import re
 import shutil
 import subprocess
@@ -38,7 +46,10 @@ from console import enable_utf8  # noqa: E402
 
 enable_utf8()
 
-from check_project_state import _plan_tasks  # noqa: E402  （「计划里谁依赖谁」只此一处实现）
+from check_project_state import (  # noqa: E402
+    GOAL_BINDING_SESSION, _goal_display_norm, _goal_plan_text,
+    _plan_tasks, PHASE_HEAD,
+)
 
 GUARD = ROOT / "tools" / "check_project_state.py"
 YAML_BLOCK = re.compile(r"```yaml\r?\n(.*?)```", re.S)
@@ -50,7 +61,7 @@ def _current_state() -> Path:
     for path in sorted((ROOT / "_working").glob("*/state.md")):
         text = path.read_text(encoding="utf-8")
         if ("state_schema: amz-project-state/v2" in text
-                and re.search(r"^status: (?:active|paused)$", text, re.M)):
+                and re.search(r"^status: (?:prepared|active|paused)$", text, re.M)):
             candidates.append(path)
     if len(candidates) != 1:
         raise RuntimeError(f"需要恰好一份 current v2 状态，实际 {len(candidates)}：{candidates}")
@@ -71,6 +82,22 @@ PLAN_TASKS, PLAN_DEPS = _plan_tasks(PLAN_TEXT)
 
 DUP_DIRS = [ROOT / "_working" / "_probe_dup_1",
             ROOT / "_working" / "_probe_dup_2"]
+# session 证据的临时夹具：只在这份确定性拷贝里注入漂移，绝不改真实观察文件；
+# 每次 _restore() 连字节带文件一起还原。
+TMP_EVIDENCE_REL = "evals/product-v2/refactor/_probe_tmp_evidence.json"
+TMP_EVIDENCE = ROOT / TMP_EVIDENCE_REL
+# 从实时 state 读取本会话观察；不把旧目标的观察硬编码为永远有效的基线。
+REAL_EVIDENCE_REL = ORIG_DATA["goal_binding_evidence"]
+REAL_EVIDENCE = json.loads((ROOT / REAL_EVIDENCE_REL).read_text(encoding="utf-8"))
+PLAN_GOAL = _goal_plan_text(PLAN_TEXT)
+PLAN_GOAL_SHA = hashlib.sha256(PLAN_GOAL.encode("utf-8")).hexdigest()
+
+# 探针自证：真实观察证据仍然对得上计划（指纹 + 展示归一）。对不上就不许往下跑，
+# 否则 AH/AI 这些「合法形态」会拿脱节的证据当基线。
+if REAL_EVIDENCE["objective_sha256"] != PLAN_GOAL_SHA:
+    raise RuntimeError("真实观察 objective_sha256 与计划 §2.1 指纹不一致 —— 先修观察证据，探针拒跑")
+if _goal_display_norm(REAL_EVIDENCE["observed_objective"]) != _goal_display_norm(PLAN_GOAL):
+    raise RuntimeError("真实观察与计划 §2.1 展示归一后不等 —— 先修观察证据，探针拒跑")
 
 
 def _normalize(data: dict) -> dict:
@@ -80,12 +107,20 @@ def _normalize(data: dict) -> dict:
     O/P 这类「制造相位矛盾」的探针也不会因为目标相位已经存在而变成空操作。
     """
     result = copy.deepcopy(data)
-    result["status"] = "paused"
-    result["system_goal_observed_status"] = "paused"
-    phases = result.setdefault("phase_progress", {})
-    for pid, row in list(phases.items()):
-        if isinstance(row, dict) and row.get("status") == "active":
-            phases[pid] = {**row, "status": "pending"}
+    result["status"] = "prepared"
+    result["goal_binding"] = "optional"
+    result["goal_id"] = None
+    result["goal_pending_reason"] = "探针受控基线尚未绑定 Goal"
+    result["system_goal_observed_status"] = None
+    result["system_goal_observed_at"] = None
+    # 实时 state 已转入 session 绑定后，这里必须把证据引用一并抹平：
+    # 否则受控基线自带 session 证据，D/T/U/N 这些原有探针全部被 J3 连带误伤。
+    result["goal_binding_evidence"] = None
+    for key in ("phase_progress", "task_progress"):
+        rows = result.setdefault(key, {})
+        for identity, row in list(rows.items()):
+            if isinstance(row, dict) and row.get("status") in ("active", "blocked"):
+                rows[identity] = {**row, "status": "pending"}
     return result
 
 
@@ -115,6 +150,12 @@ def _make_active(data: dict) -> dict:
     result = copy.deepcopy(data)
     result["status"] = "active"
     result["system_goal_observed_status"] = "active"
+    result["goal_binding"] = "required"
+    result["goal_id"] = "00000000-0000-4000-8000-000000000001"  # 仅本地反向探针的合成身份
+    result["system_goal_observed_at"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    result["goal_binding_evidence"] = _write_tmp_evidence(
+        goal_id=result["goal_id"], id_unavailable=False,
+        observed_at=result["system_goal_observed_at"])
     phases = result.setdefault("phase_progress", {})
     heads = PLAN_PHASE_HEAD.findall(PLAN_TEXT)
     open_phase = next((pid for pid in heads
@@ -153,7 +194,7 @@ def _pick_task_with_unmet_dep(data: dict) -> str:
     raise RuntimeError("计划里找不到「依赖未完成」的未完成任务，探针需要更新")
 
 
-PLAN_PHASE_HEAD = re.compile(r"^###\s+Phase\s+(-?\d+(?:\.\d+)?)\s*[：:]", re.M)
+PLAN_PHASE_HEAD = PHASE_HEAD
 
 
 def _pick_skipped_phase(data: dict) -> tuple[str, str]:
@@ -185,6 +226,10 @@ def _pick_skipped_phase(data: dict) -> tuple[str, str]:
     if not open_phases:
         raise RuntimeError("所有阶段都已完成，这条探针无法构造 —— 要更新探针，不是放宽判据")
     tip = open_phases[-1]
+    # prepared 的多个 pending 阶段无需退回已完成门禁；直接跳过前一个 pending。
+    pending_before = [pid for pid in heads[:heads.index(tip)] if status(pid) == "pending"]
+    if pending_before:
+        return pending_before[-1], tip
     na_deps = set(PLAN_DEPS.get(str(data.get("next_action_task") or "")) or [])
     moved = [tid for tid in PLAN_TASKS
              if ((data.get("task_progress") or {}).get(tid) or {}).get("status") in ("active", "done")]
@@ -209,9 +254,67 @@ def _run_guard() -> tuple[int, str]:
 
 def _restore() -> None:
     STATE.write_bytes(ORIG_BYTES)
+    TMP_EVIDENCE.unlink(missing_ok=True)
     for directory in DUP_DIRS:
         if directory.exists():
             shutil.rmtree(directory)
+
+
+EVIDENCE_BASE = {
+    "schema": "amz-goal-observation/v1",
+    "source": "goal-tool",
+    "authorization": "user_confirmed_current_goal",
+    "user_confirmation": "不是给你设置了goal吗",
+    "plan_ref": str(ORIG_DATA["plan_ref"]),
+    "goal_id": None,
+    "id_unavailable": True,
+    "observed_status": "active",
+    "observed_at": REAL_EVIDENCE["observed_at"],
+    "objective_sha256": PLAN_GOAL_SHA,
+    "observed_objective": PLAN_GOAL,
+}
+
+
+def _write_tmp_evidence(**overrides) -> str:
+    """把确定性夹具写到仓库内的临时拷贝；返回仓库相对路径给 state 引用。"""
+    record = dict(EVIDENCE_BASE)
+    record.update(overrides)
+    TMP_EVIDENCE.parent.mkdir(parents=True, exist_ok=True)
+    TMP_EVIDENCE.write_text(json.dumps(record, ensure_ascii=False, indent=2) + "\n",
+                            encoding="utf-8", newline="\n")
+    return TMP_EVIDENCE_REL
+
+
+def _sessionize(data: dict, *, status: str = "active", evidence_rel: str | None,
+                active_phase: bool = True) -> dict:
+    """构造 session 合同允许的记录形态：goal_id 必须是 null，读数来自证据文件。
+
+    prepared 形态例外：没有可观察的当前 Goal，读数必须为空 —— 正是 guard 要拦的
+    「prepared 冒充 session」。
+    """
+    result = copy.deepcopy(data)
+    result["goal_binding"] = GOAL_BINDING_SESSION
+    result["goal_id"] = None
+    result["goal_pending_reason"] = None
+    result["goal_binding_evidence"] = evidence_rel
+    result["status"] = status
+    if status == "prepared":
+        result["system_goal_observed_status"] = None
+        result["system_goal_observed_at"] = None
+        return result
+    result["system_goal_observed_status"] = status
+    result["system_goal_observed_at"] = REAL_EVIDENCE["observed_at"]
+    if not active_phase:
+        raise RuntimeError("active 记录需要 active 阶段——探针构造无效形态")
+    if status == "active":
+        phases = result.setdefault("phase_progress", {})
+        heads = PLAN_PHASE_HEAD.findall(PLAN_TEXT)
+        open_phase = next((pid for pid in heads
+                           if (phases.get(pid) or {}).get("status") != "done"), None)
+        if open_phase is None:
+            raise RuntimeError("所有阶段都已完成，探针无法构造合法开工形态 —— 要更新探针，不是放宽判据")
+        phases[open_phase] = {"status": "active", "evidence": []}
+    return result
 
 
 def _mutate(case: str) -> tuple[list[str], bool]:
@@ -237,7 +340,11 @@ def _mutate(case: str) -> tuple[list[str], bool]:
     elif case == "E":
         data.setdefault("phase_progress", {})["999"] = {"status": "pending", "evidence": []}
     elif case == "F":
-        data.setdefault("phase_progress", {})["1"] = {"status": "done", "evidence": []}
+        phases = data.setdefault("phase_progress", {})
+        heads = PLAN_PHASE_HEAD.findall(PLAN_TEXT)
+        picked = next((pid for pid in heads
+                       if (phases.get(pid) or {}).get("status") == "done"), heads[0])
+        phases[picked] = {"status": "done", "evidence": []}
     elif case == "G":
         data["status"] = "active"
         data["system_goal_observed_status"] = "active"
@@ -248,7 +355,10 @@ def _mutate(case: str) -> tuple[list[str], bool]:
     elif case == "H":
         data.setdefault("task_progress", {})["D999.1"] = {"status": "pending", "evidence": []}
     elif case == "I":
-        data.setdefault("task_progress", {})["D1.C1"] = {"status": "done", "evidence": []}
+        tasks = data.setdefault("task_progress", {})
+        picked = next(tid for tid in PLAN_TASKS
+                      if (tasks.get(tid) or {}).get("status") == "done")
+        tasks[picked] = {"status": "done", "evidence": []}
     elif case == "J":
         picked = _pick_task_with_unmet_dep(data)
         if picked == BASE.get("next_action_task"):
@@ -274,6 +384,10 @@ def _mutate(case: str) -> tuple[list[str], bool]:
         # next_action 的依赖仍然满足，否则这条会连带触发 J7，违反「只报该报的」。
         data = _make_active(data)
         data["status"] = "paused"
+        data["system_goal_observed_status"] = "paused"
+        data["goal_binding_evidence"] = _write_tmp_evidence(
+            goal_id=data["goal_id"], id_unavailable=False,
+            observed_at=data["system_goal_observed_at"], observed_status="paused")
     elif case == "P":
         data["status"] = "active"
         data["system_goal_observed_status"] = "active"
@@ -284,6 +398,203 @@ def _mutate(case: str) -> tuple[list[str], bool]:
                               + timedelta(days=2)).isoformat(timespec="seconds")
     elif case == "S":
         data["updated_at"] = datetime.now().isoformat(timespec="seconds")
+    elif case == "T":
+        data["goal_binding"] = "required"
+        data["goal_id"] = "00000000-0000-4000-8000-000000000001"
+    elif case == "U":
+        data["goal_id"] = "00000000-0000-4000-8000-000000000001"
+    elif case == "V":
+        data["system_goal_observed_status"] = "active"
+    elif case == "W":
+        data["system_goal_observed_at"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    elif case == "X":
+        data = _make_active(data)
+        data["status"] = "prepared"
+        data["goal_binding"] = "optional"
+        data["goal_id"] = None
+        data["goal_binding_evidence"] = None
+        data["system_goal_observed_status"] = None
+        data["system_goal_observed_at"] = None
+    elif case == "Y":
+        # 偷开尚有未完成依赖的非 next_action 任务：J6/J9 必须同时拒绝。
+        ready = _pick_task_with_unmet_dep(data)
+        data.setdefault("task_progress", {})[ready] = {"status": "active", "evidence": []}
+    elif case == "Z":
+        data.pop("next_action_task", None)
+    elif case == "AA":
+        data.setdefault("task_progress", {})[str(data["next_action_task"])] = {
+            "status": "active", "evidence": []}
+    elif case == "AB":
+        data.setdefault("task_progress", {})[str(data["next_action_task"])] = {
+            "status": "blocked", "evidence": []}
+    elif case == "AC":
+        data.pop("state_schema", None)
+        phases = data.pop("phase_progress", {})
+        tasks = data.pop("task_progress", {})
+        data["phases"] = [
+            {"id": pid, "gate": f"G{pid}", "status": (phases.get(pid) or {}).get("status", "pending"),
+             "gate_evidence": (phases.get(pid) or {}).get("evidence", [])}
+            for pid in PLAN_PHASE_HEAD.findall(PLAN_TEXT)]
+        data["tasks"] = [
+            {"id": tid, "status": (tasks.get(tid) or {}).get("status", "pending"),
+             # legacy 的 depends_on 只接受任务引用；Gate 是 v2 的计划语义。
+             "depends_on": [dep for dep in PLAN_DEPS.get(tid, []) if dep in PLAN_TASKS],
+             "evidence": (tasks.get(tid) or {}).get("evidence", [])}
+            for tid in PLAN_TASKS]
+    elif case == "AD":
+        data["next_action_task"] = next(
+            tid for tid in PLAN_TASKS
+            if ((data.get("task_progress") or {}).get(tid) or {}).get("status") == "done")
+    elif case == "AE":
+        data = _make_active(data)
+        data["system_goal_observed_status"] = "blocked"
+        data["goal_binding_evidence"] = _write_tmp_evidence(
+            goal_id=data["goal_id"], id_unavailable=False,
+            observed_at=data["system_goal_observed_at"], observed_status="blocked")
+    elif case == "AF":
+        data = _make_active(data)
+        data["status"] = "paused"
+        data["phase_progress"] = copy.deepcopy(BASE.get("phase_progress") or {})
+    elif case == "AG":
+        data = _make_active(data)
+        data["status"] = "paused"
+        data["system_goal_observed_status"] = "blocked"
+        data["goal_binding_evidence"] = _write_tmp_evidence(
+            goal_id=data["goal_id"], id_unavailable=False,
+            observed_at=data["system_goal_observed_at"], observed_status="blocked")
+        data["phase_progress"] = copy.deepcopy(BASE.get("phase_progress") or {})
+    elif case == "AH":
+        data = _sessionize(
+            data, status="active",
+            evidence_rel=_write_tmp_evidence(observed_objective=REAL_EVIDENCE["observed_objective"]))
+    elif case == "AI":
+        data = _sessionize(data, status="paused",
+                           evidence_rel=_write_tmp_evidence(observed_status="paused"))
+    elif case == "AJ":
+        data = _sessionize(data, status="active", evidence_rel=None)
+        data.pop("goal_binding_evidence", None)
+    elif case == "AK":
+        data = _sessionize(
+            data, status="active",
+            evidence_rel=_write_tmp_evidence(objective_sha256="0" * 64))
+    elif case == "AL":
+        data = _sessionize(
+            data, status="active",
+            evidence_rel=_write_tmp_evidence(observed_objective="已知不存在的另一目标"))
+    elif case == "AM":
+        data = _sessionize(
+            data, status="active",
+            evidence_rel=_write_tmp_evidence(plan_ref="docs/其他计划.md"))
+    elif case == "AN":
+        data = _sessionize(
+            data, status="active",
+            evidence_rel=_write_tmp_evidence(goal_id="00000000-0000-4000-8000-000000000001"))
+    elif case == "AO":
+        data = _sessionize(
+            data, status="active",
+            evidence_rel=_write_tmp_evidence(observed_at="2000-01-01T00:00:00+00:00"))
+    elif case == "AP":
+        data = _sessionize(
+            data, status="active",
+            evidence_rel=_write_tmp_evidence(observed_at="2026-10-01T12:14:51"))
+    elif case == "AQ":
+        data = _sessionize(
+            data, status="active", evidence_rel="evals/product-v2/refactor/不存在的观察.json")
+    elif case == "AR":
+        data = _sessionize(data, status="active", evidence_rel="E:/仓库外观察.json")
+    elif case == "AS":
+        data = _sessionize(data, status="active", evidence_rel="../仓库外观察.json")
+    elif case == "AT":
+        data = _sessionize(
+            data, status="active",
+            evidence_rel=_write_tmp_evidence(schema="amz-goal-observation/v2"))
+    elif case == "AU":
+        data = _sessionize(
+            data, status="active",
+            evidence_rel=_write_tmp_evidence(authorization="user_said_so_once"))
+    elif case == "AV":
+        data = _sessionize(data, status="prepared", evidence_rel=None, active_phase=False)
+        data.pop("goal_binding_evidence", None)
+    elif case == "AW":
+        data = _sessionize(data, status="active", evidence_rel=REAL_EVIDENCE_REL)
+        data["goal_binding"] = "required"
+        data["goal_id"] = "00000000-0000-4000-8000-000000000001"
+    elif case == "AY":
+        data = _sessionize(
+            data, status="active",
+            evidence_rel=_write_tmp_evidence(observed_objective=PLAN_GOAL + "多出来的尾巴。"))
+    elif case == "AZ":
+        data = _sessionize(data, status="active", evidence_rel=REAL_EVIDENCE_REL)
+        data.pop("state_schema", None)
+        phases = data.pop("phase_progress", {})
+        tasks = data.pop("task_progress", {})
+        data["phases"] = [
+            {"id": pid, "gate": f"G{pid}", "status": (phases.get(pid) or {}).get("status", "pending"),
+             "gate_evidence": (phases.get(pid) or {}).get("evidence", [])}
+            for pid in PLAN_PHASE_HEAD.findall(PLAN_TEXT)]
+        data["tasks"] = [
+            {"id": tid, "status": (tasks.get(tid) or {}).get("status", "pending"),
+             "depends_on": [dep for dep in PLAN_DEPS.get(tid, []) if dep in PLAN_TASKS],
+             "evidence": (tasks.get(tid) or {}).get("evidence", [])}
+            for tid in PLAN_TASKS]
+    elif case == "BA":
+        # state 的读数车道要跟证据一致（paused），让冲突落在「记录 active vs 观察 paused」
+        # —— 那是 J9 的地盘；不然这条会连带 J3，失去「只报该报的」。
+        data = _sessionize(
+            data, status="active",
+            evidence_rel=_write_tmp_evidence(observed_status="paused"))
+        data["system_goal_observed_status"] = "paused"
+    elif case == "BB":
+        data = _sessionize(data, status="active", evidence_rel=TMP_EVIDENCE_REL)
+        TMP_EVIDENCE.write_text("{ 显然不是 JSON", encoding="utf-8")
+    elif case == "BC":
+        record = dict(EVIDENCE_BASE)
+        record.pop("id_unavailable")
+        TMP_EVIDENCE.write_text(json.dumps(record, ensure_ascii=False, indent=2) + "\n",
+                                encoding="utf-8", newline="\n")
+        data = _sessionize(data, status="active", evidence_rel=TMP_EVIDENCE_REL)
+    elif case == "BD":
+        record = dict(EVIDENCE_BASE)
+        record.pop("schema")
+        TMP_EVIDENCE.write_text(json.dumps(record, ensure_ascii=False, indent=2) + "\n",
+                                encoding="utf-8", newline="\n")
+        data = _sessionize(data, status="active", evidence_rel=TMP_EVIDENCE_REL)
+    elif case == "BE":
+        record = dict(EVIDENCE_BASE)
+        record.pop("authorization")
+        TMP_EVIDENCE.write_text(json.dumps(record, ensure_ascii=False, indent=2) + "\n",
+                                encoding="utf-8", newline="\n")
+        data = _sessionize(data, status="active", evidence_rel=TMP_EVIDENCE_REL)
+    elif case == "BF":
+        data = copy.deepcopy(ORIG_DATA)
+    elif case == "BG":
+        data = copy.deepcopy(ORIG_DATA)
+        data["goal_id"] = "0000000000000001"
+    elif case == "BH":
+        data = _make_active(data)
+        data["goal_binding_evidence"] = _write_tmp_evidence(
+            goal_id=data["goal_id"], id_unavailable=False,
+            observed_at=data["system_goal_observed_at"], observed_objective=PLAN_GOAL + "改写目标")
+    elif case == "BI":
+        data = _make_active(data)
+        data["goal_binding_evidence"] = _write_tmp_evidence(
+            goal_id=data["goal_id"], id_unavailable=False,
+            observed_at=data["system_goal_observed_at"],
+            observed_objective=PLAN_GOAL.replace("。", "；", 1))
+    elif case == "BJ":
+        data = _make_active(data)
+        data["goal_binding_evidence"] = None
+    elif case == "BK":
+        data = _make_active(data)
+        data["goal_binding_evidence"] = _write_tmp_evidence(
+            goal_id=data["goal_id"], id_unavailable=True,
+            observed_at=data["system_goal_observed_at"])
+    elif case in ("BL", "BM"):
+        data = _make_active(data)
+        tid = str(data["next_action_task"])
+        data.setdefault("task_progress", {})[tid] = {"status": "blocked", "evidence": []}
+        data["blockers"] = ([tid + "_awaits_owner_permission"] if case == "BL"
+                            else ["another_task_awaits_owner_permission"])
     else:
         problems.append(f"未知 case {case}")
 
@@ -312,6 +623,51 @@ CASES = [
     ("Q", "靠改记录宣布 completed", 1, {"J9"}),
     ("R", "updated_at 写在两天以后", 1, {"J10"}),
     ("S", "updated_at 没有时区", 1, {"J10"}),
+    ("T", "prepared 冒充 required 绑定", 1, {"J3"}),
+    ("U", "prepared optional 却保存 Goal ID", 1, {"J3"}),
+    ("V", "prepared 保存系统 Goal 状态读数", 1, {"J9"}),
+    ("W", "prepared 保存系统 Goal 观察时刻", 1, {"J9"}),
+    ("X", "prepared 混入 active 阶段", 1, {"J9"}),
+    ("Y", "prepared 偷开依赖未满足的非 next_action 任务", 1, {"J6", "J9"}),
+    ("Z", "prepared 缺少 next_action", 1, {"J7"}),
+    ("AA", "prepared next_action 已 active", 1, {"J7", "J9"}),
+    ("AB", "prepared next_action 已 blocked", 1, {"J7"}),
+    ("AC", "legacy 结构不能声明 prepared", 1, {"J9"}),
+    ("AD", "prepared next_action 已 done", 1, {"J7"}),
+    ("AE", "active 与系统 blocked 读数不匹配", 1, {"J9"}),
+    ("AF", "paused 与系统 active 读数不匹配", 1, {"J9"}),
+    ("AG", "paused 与系统 blocked 合法映射", 0, set()),
+    ("AH", "session active 观察与终端展示归一 · 合法", 0, set()),
+    ("AI", "session 绑定 + paused 观察 · 合法暂停", 0, set()),
+    ("AJ", "session 缺少证据文件声明", 1, {"J3"}),
+    ("AK", "session 证据目标哈希不匹配", 1, {"J3"}),
+    ("AL", "session 证据 observed_objective 是另一目标", 1, {"J3"}),
+    ("AM", "session 证据 plan_ref 与 state 不一致", 1, {"J3"}),
+    ("AN", "session 证据伪造 Goal ID", 1, {"J3"}),
+    ("AO", "session 证据 observed_at 与 state 读数不同刻", 1, {"J3"}),
+    ("AP", "session 证据 observed_at 没有时区", 1, {"J3"}),
+    ("AQ", "session 证据文件不存在", 1, {"J3"}),
+    ("AR", "session 证据是盘符绝对路径", 1, {"J3"}),
+    ("AS", "session 证据用 ../ 跳出仓库", 1, {"J3"}),
+    ("AT", "session 证据 schema 不对", 1, {"J3"}),
+    ("AU", "session 证据授权来源不对", 1, {"J3"}),
+    ("AV", "prepared 冒充 session 绑定", 1, {"J3"}),
+    ("AW", "required 身份与观察 Goal ID 不一致", 1, {"J3"}),
+    ("AY", "session 证据正文被追加改动（展示归一后不等）", 1, {"J3"}),
+    ("AZ", "legacy 结构借用 session 绑定", 1, {"J3"}),
+    ("BA", "session 证据 paused 与记录 active 冲突", 1, {"J9"}),
+    ("BB", "session 证据是坏 JSON", 1, {"J3"}),
+    ("BC", "session 证据缺 id_unavailable", 1, {"J3"}),
+    ("BD", "session 证据缺 schema", 1, {"J3"}),
+    ("BE", "session 证据缺 authorization", 1, {"J3"}),
+    ("BF", "真实原生 Goal handle 与原始展示体 · 合法", 0, set()),
+    ("BG", "required state 偷换另一原生 Goal handle", 1, {"J3"}),
+    ("BH", "required 观察正文追加目标", 1, {"J3"}),
+    ("BI", "展示归一不得吞正文标点改写", 1, {"J3"}),
+    ("BJ", "required 当前 v2 缺观察证据", 1, {"J3"}),
+    ("BK", "required 有 ID 却声称 ID 不可用", 1, {"J3"}),
+    ("BL", "active 阻塞恢复点具有对应阻塞记录 · 合法", 0, set()),
+    ("BM", "active 阻塞恢复点没有对应阻塞记录", 1, {"J7"}),
 ]
 
 
@@ -346,8 +702,11 @@ def main() -> int:
         if STATE.read_bytes() != ORIG_BYTES:
             print("✗ 还原后与原始字节不一致")
             bad += 1
-        else:
-            print(f"已逐字节恢复 {STATE.relative_to(ROOT).as_posix()} 并清理探针副本")
+        if TMP_EVIDENCE.exists():
+            print(f"✗ 探针临时证据未被清理：{TMP_EVIDENCE_REL}")
+            bad += 1
+        if STATE.read_bytes() == ORIG_BYTES and not TMP_EVIDENCE.exists():
+            print(f"已逐字节恢复 {STATE.relative_to(ROOT).as_posix()}、临时证据夹具并清理探针副本")
 
     if bad:
         print(f"✗ {bad}/{len(CASES)} 向与预期不符")
