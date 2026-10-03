@@ -100,6 +100,22 @@
    "reserve_cny": 0.12,
    "status": "spent",
    "evidence": "evals/product-v2/v2.4.5-live-reference-20261003-195600-r71-volc2.json"
+  },
+  {
+   "calls": 1,
+   "note": "flash 1344x1344 single-ref n=1 volc adopt-export attempt 222140 via product path (AMZ_V2_DEFAULT_TRIAL=open): sync submit succeeded + candidate stored (sha a73b857b), verifier script VE-06 probe syntax failed before adopt; output 0.12 billed, input free; failure evidence only, no retry on this result",
+   "provider": "volcengine-ark",
+   "reserve_cny": 0.12,
+   "status": "spent",
+   "evidence": "evals/product-v2/v2.4.5-volc-adopt-export-20261003-222140.json"
+  },
+  {
+   "calls": 1,
+   "note": "flash 1344x1344 single-ref n=1 volc adopt-export closeout (AMZ_V2_DEFAULT_TRIAL=open): sync one-shot succeeded, task_id null, adopted + suite-checked + delivery-exported; output 0.12, input free",
+   "provider": "volcengine-ark",
+   "reserve_cny": 0.12,
+   "status": "spent",
+   "evidence": "evals/product-v2/v2.4.5-volc-adopt-export-20261003-222253.json"
   }
  ],
  "runtime_wiring": {
@@ -109,11 +125,11 @@
   "material": "honey-jar-antique.jpg sha256 c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461, CC BY 2.0 Cindy Shebley, SOURCES.txt"
  },
  "spent_calls": {
-  "image": 6,
+  "image": 8,
   "semantic_vlm": 3
  },
- "spent_cny": 0.91,
+ "spent_cny": 1.15,
  "stop_rule": "先到即停(金额或次数);未知计费保留预留不释放;追加预算需授权;不用付费调用调试错误和边界",
- "total_reserved_cny": 0.91,
- "updated_at": "2026-10-03T11:57:00Z"
+ "total_reserved_cny": 1.15,
+ "updated_at": "2026-10-03T22:23:16Z"
  }

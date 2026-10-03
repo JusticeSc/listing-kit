@@ -363,6 +363,22 @@
         "ci": true,
         "reason": "真实远程入口，仅当前 Chrome 接受范围；对应部署/远程走查授权后执行，不能替代本地 fake 浏览器验证。"
       }
+    ],
+    "tools/verify_v2_volc_adopt_export.py": [
+      {
+        "args": [],
+        "category": "paid",
+        "ci": false,
+        "reason": "火山真实采用导出闭环：默认零外呼自检；--live 按预算门走一次同步生图并采用导出，绝不接 CI。"
+      },
+      {
+        "args": [
+          "--live"
+        ],
+        "category": "paid",
+        "ci": false,
+        "reason": "真实外发与计费必须另外取得模型、材料、地区及预算授权；绝不接 CI。"
+      }
     ]
   },
   "human_gates": {

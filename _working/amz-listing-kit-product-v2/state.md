@@ -322,13 +322,18 @@ task_progress:
     status: pending
     evidence: []
   V2.R7.4:
-    status: active
-    evidence:
-    - evals/product-v2/refactor/completion-matrix-20261003-r74.md
-    - evals/product-v2/refactor/completion-matrix-20261003-r74.json
+     status: active
+     evidence:
+     - evals/product-v2/refactor/completion-matrix-20261003-r74.md
+     - evals/product-v2/refactor/completion-matrix-20261003-r74.json
+     - evals/product-v2/v2.4.5-volc-adopt-export-20261003-222253.json
+     - evals/product-v2/v2.4.5-volc-adopt-export-20261003-222140.json
+     - tools/verify_v2_volc_adopt_export.py
+     - config/product-v2/verification.json
 next_action_task: V2.R7.4
 blockers: []
 unknowns:
+  - r74_closeout_volc_adopt_export_222253_pass_spent_1_15_of_5_image_8_of_8_matrix_budget_and_RC09_RC16_synced_evidence_completion-matrix-20261003-r74_follow_V2.R7.4
   - r74_done_ci_37123159734_deploy_24a2464_origin_https_47_115_172_233_8080_paid_online_probes_0_evidence_completion-matrix-20261003-r74_follow_V2.R7.4_RC20
   - r71_done_regression_r71f_semlive_vlm_dashscope194526_volc195600_spent_0_91_of_5_evidence_full-verification-20261003-r71_follow_V2.R7.1_RC09
   - historical_boot_and_formal_entry_intermittent_trigger_unproven_controlled_home_read_failure_and_readiness_windows_fixed_diagnostics_now_capture_stage_UI_and_independent_DB_follow_V2.R1.2_V2.R3.3_V2.R7.1_RC19
@@ -340,5 +345,5 @@ unknowns:
   - ui_baseline_observed_in_chrome_headless_T7_settings_capability_missing_final_contract_still_requires_implementation_human_C17_C15_and_V1_sunset_outside_triggered_Goal_follow_plan_2_and_plan_12
   - vlm_detection_quality_uncalibrated_do_not_infer_accuracy_from_contract_pass
   - triggered_unattended_Goal_text_lands_in_plan_2_and_state_bound_to_system_Goal_follow_plan_12
-updated_at: '2026-10-03T13:10:00.000Z'
+updated_at: '2026-10-03T14:55:00.000Z'
 ```

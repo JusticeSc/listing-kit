@@ -1,0 +1,21 @@
+amz-listing-kit Product V2 火山真实候选采用与导出闭环（1 次真实调用）
+NOT-AUTHORITY: point-in-time verification evidence only
+observed_at: 2026-10-03T22:23:16
+status: passed
+image_submit_requests: 1 · image_status_requests: 0
+reference: _working/amz-listing-kit-product-v2/walkthrough-assets/food/honey-jar-antique.jpg sha256 c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461
+json: evals/product-v2/v2.4.5-volc-adopt-export-20261003-222253.json
+
+CHECKS
+- [PASS] VE-01 图像 provider 是真实 volcengine-ark 且 configured=true
+- [PASS] VE-02 本次只提交一次，且请求携带真实参考图（含 sha256）与非空 Prompt
+- [PASS] VE-03 同步提交一步到终态 succeeded，task_id 为空且 status 零外呼
+- [PASS] VE-04 候选非 Mock：同步信封字节入库、sha 双边一致、尺寸等于请求尺寸、可预览
+- [PASS] VE-05 确定性审核报告当前有效（采用面板显示将绑定当前审核报告）
+- [PASS] VE-06 人工采用：selection 记录绑定候选身份/版本/sha，行状态 current
+- [PASS] VE-07a 交付门禁 ready（无 BLOCK），导出按钮可用
+- [PASS] VE-07 交付包：manifest 按采用候选原 action 溯源，ZIP 自洽，记录 append-only
+- [PASS] VE-08 零意外 console error / page error
+
+BOUNDARY
+火山严格闭环补证：图像 provider 是 volcengine-ark（configured=true），一次真实同步 submit 携带真实商品参考图（sha256 c024b7cf2b04…，2239735 字节）与非空 Prompt；提交信封一步到 succeeded，task_id 为空且 status 零外呼；结果字节入库成 IndexedDB Blob（sha 双边一致）；确定性审核随候选自动生成且当前有效；人工在审核页点“采用候选”并提交选择记录；整套检查当前、交付门禁 ready；交付包 manifest 按采用候选原 action 的冻结 Prompt 版本/hash 溯源，ZIP sha 自洽，export_record append-only。语义槽位由验证器直接播种（0 语义调用），VLM 未重跑（r71-vlm 已证 binding_ok，且 VLM 按不变量永不自动采用）。本证据不证明出图审美质量与跨品类通用性。spent 0.12 CNY recorded in budget-ledger.json。

@@ -1,0 +1,197 @@
+{
+  "task": "V2.R7.4-closeout",
+  "suite_id": "v2-volc-adopt-export",
+  "status": "passed",
+  "finished_at": "2026-10-03T22:23:16",
+  "reference": {
+    "path": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\_working\\amz-listing-kit-product-v2\\walkthrough-assets\\food\\honey-jar-antique.jpg",
+    "sha256": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461",
+    "byte_size": 2239735
+  },
+  "model_calls": 1,
+  "image_submit_requests": 1,
+  "image_status_requests": 0,
+  "checks": [
+    {
+      "id": "VE-01",
+      "title": "图像 provider 是真实 volcengine-ark 且 configured=true",
+      "ok": true,
+      "detail": {
+        "provider": "图像 provider：volcengine-ark · doubao-seedream-5-0-flash-260915 · 已配置"
+      }
+    },
+    {
+      "id": "VE-02",
+      "title": "本次只提交一次，且请求携带真实参考图（含 sha256）与非空 Prompt",
+      "ok": true,
+      "detail": {
+        "submits": 1,
+        "references": 1,
+        "reference_media": [
+          "image/jpeg"
+        ],
+        "size": "1344*1344"
+      }
+    },
+    {
+      "id": "VE-03",
+      "title": "同步提交一步到终态 succeeded，task_id 为空且 status 零外呼",
+      "ok": true,
+      "detail": {
+        "terminal": "succeeded",
+        "task_id": null,
+        "status_calls": 0
+      }
+    },
+    {
+      "id": "VE-04",
+      "title": "候选非 Mock：同步信封字节入库、sha 双边一致、尺寸等于请求尺寸、可预览",
+      "ok": true,
+      "detail": {
+        "record": {
+          "requested_size": "1344*1344",
+          "width": 1344,
+          "height": 1344,
+          "byte_size": 2064241,
+          "media_type": "image/png",
+          "provider_id": "volcengine-ark",
+          "model_id": "doubao-seedream-5-0-flash-260915",
+          "asset_sha256": "746ddbeb66f692f2d42c39b275e61d376c8cd51aae8acc4732bef61f95bb4ad7",
+          "action_id": "act-108f2f7a02f34feda02020c90a7d77d5",
+          "candidate_id": "act-108f2f7a02f34feda02020c90a7d77d5"
+        },
+        "recomputed": "746ddbeb66f6"
+      }
+    },
+    {
+      "id": "VE-05",
+      "title": "确定性审核报告当前有效（采用面板显示将绑定当前审核报告）",
+      "ok": true,
+      "detail": {
+        "fingerprint": "将绑定当前审核报告：自动检查 v2.5.2：阻断 0 · 高风险 0 · 提醒 1 · 未知 0 · VLM 未检查（审核合同 v2.5.2）"
+      }
+    },
+    {
+      "id": "VE-06",
+      "title": "人工采用：selection 记录绑定候选身份/版本/sha，行状态 current",
+      "ok": true,
+      "detail": {
+        "selection": {
+          "action": "select",
+          "candidate_id": "act-108f2f7a02f34feda02020c90a7d77d5",
+          "candidate_sha256": "746ddbeb66f692f2d42c39b275e61d376c8cd51aae8acc4732bef61f95bb4ad7",
+          "candidate_version": 1,
+          "selection_id": "act-8435515b9eed4fb682e3072502d7f07b"
+        }
+      }
+    },
+    {
+      "id": "VE-07a",
+      "title": "交付门禁 ready（无 BLOCK），导出按钮可用",
+      "ok": true,
+      "detail": {
+        "status": "交付门禁通过：可以生成交付包（只包含已采用的候选）。",
+        "findings": [
+          {
+            "rule": "export.selection_complete",
+            "severity": "PASS",
+            "jumps": 0
+          },
+          {
+            "rule": "export.chain_integrity",
+            "severity": "PASS",
+            "jumps": 0
+          },
+          {
+            "rule": "export.report_current",
+            "severity": "PASS",
+            "jumps": 0
+          },
+          {
+            "rule": "export.no_blocking_findings",
+            "severity": "PASS",
+            "jumps": 0
+          },
+          {
+            "rule": "export.asset_hash_matches",
+            "severity": "PASS",
+            "jumps": 0
+          },
+          {
+            "rule": "export.suite_review_current",
+            "severity": "PASS",
+            "jumps": 0
+          },
+          {
+            "rule": "export.unknown_acknowledged",
+            "severity": "PASS",
+            "jumps": 0
+          }
+        ]
+      }
+    },
+    {
+      "id": "VE-07",
+      "title": "交付包：manifest 按采用候选原 action 溯源，ZIP 自洽，记录 append-only",
+      "ok": true,
+      "detail": {
+        "names": [
+          "README.txt",
+          "checks.json",
+          "images/shot_main_clean-act-108f2f7a02f34feda02020c90a7d77d5.png",
+          "manifest.json"
+        ],
+        "zip_sha256": "acaa0f3cfe2530c6",
+        "zip_bytes": 2076071,
+        "gate_status": "ready"
+      }
+    },
+    {
+      "id": "VE-08",
+      "title": "零意外 console error / page error",
+      "ok": true,
+      "detail": {
+        "console": [],
+        "unexpected": [],
+        "page": []
+      }
+    }
+  ],
+  "ui_flow": {
+    "provider": "图像 provider：volcengine-ark · doubao-seedream-5-0-flash-260915 · 已配置",
+    "target_shot": "shot_main_clean",
+    "terminal": "succeeded",
+    "result": {
+      "requested_size": "1344*1344",
+      "width": 1344,
+      "height": 1344,
+      "byte_size": 2064241,
+      "media_type": "image/png",
+      "provider_id": "volcengine-ark",
+      "model_id": "doubao-seedream-5-0-flash-260915",
+      "asset_sha256": "746ddbeb66f692f2d42c39b275e61d376c8cd51aae8acc4732bef61f95bb4ad7",
+      "action_id": "act-108f2f7a02f34feda02020c90a7d77d5",
+      "candidate_id": "act-108f2f7a02f34feda02020c90a7d77d5"
+    },
+    "delivery": {
+      "names": [
+        "README.txt",
+        "checks.json",
+        "images/shot_main_clean-act-108f2f7a02f34feda02020c90a7d77d5.png",
+        "manifest.json"
+      ],
+      "zip_sha256": "acaa0f3cfe2530c6",
+      "zip_bytes": 2076071,
+      "gate_status": "ready"
+    }
+  },
+  "console_errors": [],
+  "page_errors": [],
+  "screenshots": [
+    "evals/product-v2/v2.4.5-volc-adopt-export-20261003-222253.png"
+  ],
+  "budget": {
+    "spent_this_run_cny": 0.12
+  },
+  "boundary": "火山严格闭环补证：图像 provider 是 volcengine-ark（configured=true），一次真实同步 submit 携带真实商品参考图（sha256 c024b7cf2b04…，2239735 字节）与非空 Prompt；提交信封一步到 succeeded，task_id 为空且 status 零外呼；结果字节入库成 IndexedDB Blob（sha 双边一致）；确定性审核随候选自动生成且当前有效；人工在审核页点“采用候选”并提交选择记录；整套检查当前、交付门禁 ready；交付包 manifest 按采用候选原 action 的冻结 Prompt 版本/hash 溯源，ZIP sha 自洽，export_record append-only。语义槽位由验证器直接播种（0 语义调用），VLM 未重跑（r71-vlm 已证 binding_ok，且 VLM 按不变量永不自动采用）。本证据不证明出图审美质量与跨品类通用性。spent 0.12 CNY recorded in budget-ledger.json。"
+}
