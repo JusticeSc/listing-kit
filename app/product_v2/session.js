@@ -1,3 +1,4 @@
+// Generated from app/product_v2/session.ts; edit the TS source and run `npm run build:frontend`.
 /**
  * Product V2 会话 Module（V2.R3.3）：boot / DB / pointer / restore / close 的唯一入口。
  *
@@ -16,129 +17,141 @@
  *
  * 本模块不持有业务状态，也不做 DOM 投影；界面判定（ready/失败/重试）由调用方
  * 按 boot() 的结果与 phase 投影。
+ *
+ * TypeScript 迁移（计划 §9 V2.R7.5）：本文件是唯一手工维护实现；同名 `session.js`
+ * 由 `npm run build:frontend` 从本文件生成，浏览器只消费生成的 `.js`。
  */
-
 import { openStorage } from "./storage/index.js";
-
 export const SESSION_PHASES = Object.freeze({
-  idle: "idle",
-  booting: "booting",
-  ready: "ready",
-  failed: "failed",
+    idle: "idle",
+    booting: "booting",
+    ready: "ready",
+    failed: "failed",
 });
-
 export function createSession({ createWorkspace, onProjectChanged = null } = {}) {
-  if (typeof createWorkspace !== "function") {
-    throw new Error("createSession 需要 createWorkspace 工厂。");
-  }
-
-  let db = null;
-  let repository = null;
-  let workspace = null;
-  let generation = 0;
-  let currentProject = null;
-  let phase = SESSION_PHASES.idle;
-  let bootPromise = null;
-
-  function beginAction() {
-    const snapshot = {
-      generation,
-      projectId: currentProject ? currentProject.project_id : null,
-    };
-    return {
-      generation: snapshot.generation,
-      projectId: snapshot.projectId,
-      alive: () => snapshot.generation === generation
-        && snapshot.projectId === (currentProject ? currentProject.project_id : null),
-    };
-  }
-
-  async function boot() {
-    if (bootPromise) return bootPromise;
-    bootPromise = (async () => {
-      phase = SESSION_PHASES.booting;
-      generation += 1;
-      if (workspace) {
-        await workspace.close();
-        workspace = null;
-      }
-      if (db) {
+    if (typeof createWorkspace !== "function") {
+        throw new Error("createSession 需要 createWorkspace 工厂。");
+    }
+    const buildWorkspace = createWorkspace;
+    let db = null;
+    let repository = null;
+    let workspace = null;
+    let generation = 0;
+    let currentProject = null;
+    let phase = SESSION_PHASES.idle;
+    let bootPromise = null;
+    function beginAction() {
+        const snapshot = {
+            generation,
+            projectId: currentProject ? currentProject.project_id : null,
+        };
+        return {
+            generation: snapshot.generation,
+            projectId: snapshot.projectId,
+            alive: () => snapshot.generation === generation
+                && snapshot.projectId === (currentProject ? currentProject.project_id : null),
+        };
+    }
+    async function boot() {
+        if (bootPromise)
+            return bootPromise;
+        bootPromise = (async () => {
+            phase = SESSION_PHASES.booting;
+            generation += 1;
+            if (workspace) {
+                await workspace.close();
+                workspace = null;
+            }
+            if (db) {
+                try {
+                    db.close();
+                }
+                catch {
+                    // 旧连接已经不可用；重新打开即可。
+                }
+                db = null;
+            }
+            repository = null;
+            currentProject = null;
+            const opened = await openStorage();
+            db = opened.db;
+            repository = opened.repository;
+            workspace = buildWorkspace({ repository, session: api, onProjectChanged });
+            const current = await repository.pointer.get();
+            if (current) {
+                currentProject = current;
+                await workspace.open(current);
+            }
+            phase = SESSION_PHASES.ready;
+            return { project: current };
+        })();
         try {
-          db.close();
-        } catch (_ignored) {
-          // 旧连接已经不可用；重新打开即可。
+            return await bootPromise;
         }
-        db = null;
-      }
-      repository = null;
-      currentProject = null;
-
-      const opened = await openStorage();
-      db = opened.db;
-      repository = opened.repository;
-      workspace = createWorkspace({ repository, session: api, onProjectChanged });
-      const current = await repository.pointer.get();
-      if (current) {
-        currentProject = current;
-        await workspace.open(current);
-      }
-      phase = SESSION_PHASES.ready;
-      return { project: current };
-    })();
-    try {
-      return await bootPromise;
-    } catch (error) {
-      phase = SESSION_PHASES.failed;
-      throw error;
-    } finally {
-      bootPromise = null;
+        catch (error) {
+            phase = SESSION_PHASES.failed;
+            throw error;
+        }
+        finally {
+            bootPromise = null;
+        }
     }
-  }
-
-  async function openProject(projectRecord) {
-    if (!repository) {
-      throw new Error("会话未就绪，不能打开项目。");
+    async function openProject(projectRecord) {
+        if (!repository) {
+            throw new Error("会话未就绪，不能打开项目。");
+        }
+        if (!workspace) {
+            // 与 !repository 同属"会话未就绪"：boot 成功时两者同时建立，
+            // 只有 boot 中途失败才可能到这里，仍按未就绪报错，不抛 TypeError。
+            throw new Error("会话未就绪，不能打开项目。");
+        }
+        if (workspace.isOpen()) {
+            // 先把旧项目的草稿保存落库（旧 generation 仍有效），再换会话；
+            // 之后 generation 推进，旧项目的一切回调都不再驱动界面。
+            await workspace.close();
+        }
+        generation += 1;
+        await repository.pointer.set(projectRecord.project_id);
+        currentProject = projectRecord;
+        await workspace.open(projectRecord);
+        return projectRecord;
     }
-    if (workspace && workspace.isOpen()) {
-      // 先把旧项目的草稿保存落库（旧 generation 仍有效），再换会话；
-      // 之后 generation 推进，旧项目的一切回调都不再驱动界面。
-      await workspace.close();
+    async function closeProject() {
+        if (workspace && workspace.isOpen()) {
+            await workspace.close();
+        }
+        generation += 1;
+        currentProject = null;
     }
-    generation += 1;
-    await repository.pointer.set(projectRecord.project_id);
-    currentProject = projectRecord;
-    await workspace.open(projectRecord);
-    return projectRecord;
-  }
-
-  async function closeProject() {
-    if (workspace && workspace.isOpen()) {
-      await workspace.close();
+    function updateProjectMetadata(projectRecord) {
+        if (!workspace || !currentProject || currentProject.project_id !== projectRecord.project_id) {
+            throw new Error("不能更新非当前项目的会话元数据。");
+        }
+        // 改名不切换项目或推进 generation；正在执行的动作仍属于原会话。
+        currentProject = projectRecord;
+        workspace.setProject(projectRecord);
     }
-    generation += 1;
-    currentProject = null;
-  }
-
-  const api = {
-    get phase() {
-      return phase;
-    },
-    get generation() {
-      return generation;
-    },
-    get repository() {
-      return repository;
-    },
-    get db() {
-      return db;
-    },
-    get currentProject() {
-      return currentProject;
-    },
-    beginAction,
-    boot,
-    openProject,
-    closeProject,
-  };
-  return api;
+    const api = {
+        get phase() {
+            return phase;
+        },
+        get generation() {
+            return generation;
+        },
+        get repository() {
+            return repository;
+        },
+        get db() {
+            return db;
+        },
+        get currentProject() {
+            return currentProject;
+        },
+        beginAction,
+        boot,
+        openProject,
+        closeProject,
+        updateProjectMetadata,
+    };
+    return api;
 }

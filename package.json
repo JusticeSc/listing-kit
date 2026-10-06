@@ -9,6 +9,8 @@
   "scripts": {
     "check:versions": "node tools/check_frontend_versions.mjs",
     "check:types": "tsc --noEmit -p jsconfig.json",
+    "build:frontend": "node tools/build_product_v2_ts.mjs",
+    "check:generated": "node tools/build_product_v2_ts.mjs --check",
     "test:domain": "node --test evals/product-v2/node/*.test.mjs"
   },
   "devDependencies": {
