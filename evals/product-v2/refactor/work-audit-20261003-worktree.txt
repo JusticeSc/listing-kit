@@ -1,0 +1,154 @@
+NOT-AUTHORITY: point-in-time worktree inventory before audit metadata edits; no commit or push.
+
+## main...origin/main
+ M .github/workflows/ci-cd.yml
+ M .gitignore
+ M AGENTS.md
+ M README.md
+ M _working/amz-listing-kit-product-v2/state.md
+ M _working/amz-listing-kit-product-v2/tasks/v273-walkthrough-kit.md
+ M app/product_v2/app.js
+ M app/product_v2/domain/errors.js
+ M app/product_v2/domain/invalidation.js
+ M app/product_v2/index.html
+ M app/product_v2/workspace.js
+ M docs/INDEX.md
+ M docs/product-v2-goal-and-implementation-plan.md
+ M docs/product-v2-project-context.md
+ M docs/product-v2-ui-contract.md
+ M evals/probes/docs_index.py
+ M evals/probes/project_state.py
+ M evals/product-v2/harness/attempt-contract.js
+ M evals/product-v2/harness/batch-contract.js
+ M evals/product-v2/harness/brief-contract.js
+ M evals/product-v2/harness/compare-panel.js
+ M evals/product-v2/harness/package-contract.js
+ M evals/product-v2/harness/review-contract.js
+ M evals/product-v2/harness/selection-contract.js
+ M evals/product-v2/harness/suite-editor-contract.js
+ M evals/product-v2/harness/suite-plan-contract.js
+ M tools/check_docs.py
+ M tools/check_project_state.py
+ M tools/rehearse_v273_walkthrough.py
+ M tools/run_remote_real_e2e.py
+ M tools/v2_test_server.py
+ M tools/verify_remote_no_model_roundtrip.py
+ M tools/verify_v2_1_2_project_home.py
+ M tools/verify_v2_1_3_project_package.py
+ M tools/verify_v2_1_4_formal_entry.py
+ M tools/verify_v2_2_1_product_contracts.py
+ M tools/verify_v2_2_3_intake_understanding.py
+ M tools/verify_v2_3_2_suite_editor.py
+ M tools/verify_v2_3_3_spec_versions.py
+ M tools/verify_v2_3_4_prompt_compiler.py
+ M tools/verify_v2_3_5_pre_generation_confirm.py
+ M tools/verify_v2_3_6_prompt_manual_edit.py
+ M tools/verify_v2_4_2_generation_attempt.py
+ M tools/verify_v2_4_3_batch_execution.py
+ M tools/verify_v2_4_4_candidate_blob.py
+ M tools/verify_v2_4_5_live_reference.py
+ M tools/verify_v2_5_1_deterministic_review.py
+ M tools/verify_v2_5_2_vlm_review.py
+ M tools/verify_v2_5_3_compare_panel.py
+ M tools/verify_v2_5_4_rework_loop.py
+ M tools/verify_v2_6_1_selection.py
+ M tools/verify_v2_6_4_accessibility.py
+ M tools/verify_v2_7_1_regression.py
+ M tools/verify_v2_ui_2_interaction_visual.py
+ M tools/verify_v2_ui_3_frontend.py
+?? _stage-amz-control/development-cutover-20261001-143954/
+?? _stage-amz-control/frontend-tools-20261002-20261002-025220820/
+?? _stage-amz-control/frontend-type-baseline-20261002-20261002030601600/
+?? _stage-amz-control/frontend-type-draft-20261002-20261002040458649/
+?? _stage-amz-control/goal-rebind-20261002-20261002-023013139/
+?? _stage-amz-control/goal-resume-20261001-142140/
+?? _stage-amz-control/goal-session-unblock-20261001T121249Z/
+?? _stage-amz-control/r22-freeze-20261002/
+?? _stage-amz-control/recovery-20261001-143134/
+?? _stage-amz-control/work-audit-20261001-103825/
+?? _working/amz-listing-kit-product-v2-baseline/
+?? app/product_v2/session.js
+?? config/product-v2/verification.json
+?? docs/product-v2-refactor-plan.md
+?? evals/probes/verification_policy.py
+?? evals/product-v2/harness/workbench-prototype-control.json
+?? evals/product-v2/harness/workbench-prototype-server.py
+?? evals/product-v2/harness/workbench-prototype.css
+?? evals/product-v2/harness/workbench-prototype.js
+?? evals/product-v2/node/
+?? evals/product-v2/refactor/
+?? jsconfig.json
+?? package-lock.json
+?? package.json
+?? tools/check_frontend_versions.mjs
+?? tools/check_verification.py
+?? tools/refactor_resume.py
+?? tools/verify_v2_3_3_session_lifecycle.py
+warning: in the working copy of 'tools/verify_v2_3_3_spec_versions.py', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of 'tools/verify_v2_3_4_prompt_compiler.py', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of 'tools/verify_v2_3_5_pre_generation_confirm.py', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of 'tools/verify_v2_3_6_prompt_manual_edit.py', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of 'tools/verify_v2_4_2_generation_attempt.py', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of 'tools/verify_v2_4_3_batch_execution.py', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of 'tools/verify_v2_4_4_candidate_blob.py', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of 'tools/verify_v2_4_5_live_reference.py', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of 'tools/verify_v2_5_1_deterministic_review.py', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of 'tools/verify_v2_5_2_vlm_review.py', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of 'tools/verify_v2_5_3_compare_panel.py', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of 'tools/verify_v2_5_4_rework_loop.py', CRLF will be replaced by LF the next time Git touches it
+ .github/workflows/ci-cd.yml                        |   21 +
+ .gitignore                                         |    4 +-
+ AGENTS.md                                          |   23 +-
+ README.md                                          |    6 +-
+ _working/amz-listing-kit-product-v2/state.md       | 1144 +++-----------------
+ .../tasks/v273-walkthrough-kit.md                  |    6 +-
+ app/product_v2/app.js                              |  110 +-
+ app/product_v2/domain/errors.js                    |   22 +
+ app/product_v2/domain/invalidation.js              |   10 +
+ app/product_v2/index.html                          |   12 +-
+ app/product_v2/workspace.js                        |  942 ++++++++++++----
+ docs/INDEX.md                                      |   16 +-
+ docs/product-v2-goal-and-implementation-plan.md    |   10 +-
+ docs/product-v2-project-context.md                 |   55 +-
+ docs/product-v2-ui-contract.md                     |   33 +-
+ evals/probes/docs_index.py                         |   29 +-
+ evals/probes/project_state.py                      |  379 ++++++-
+ evals/product-v2/harness/attempt-contract.js       |    6 -
+ evals/product-v2/harness/batch-contract.js         |    2 -
+ evals/product-v2/harness/brief-contract.js         |  511 +--------
+ evals/product-v2/harness/compare-panel.js          |    4 -
+ evals/product-v2/harness/package-contract.js       |   91 +-
+ evals/product-v2/harness/review-contract.js        |  252 +----
+ evals/product-v2/harness/selection-contract.js     |    6 -
+ evals/product-v2/harness/suite-editor-contract.js  |    1 -
+ evals/product-v2/harness/suite-plan-contract.js    |    2 -
+ tools/check_docs.py                                |   62 +-
+ tools/check_project_state.py                       |  241 ++++-
+ tools/rehearse_v273_walkthrough.py                 |    3 -
+ tools/run_remote_real_e2e.py                       |    3 +-
+ tools/v2_test_server.py                            |   41 +-
+ tools/verify_remote_no_model_roundtrip.py          |    3 +-
+ tools/verify_v2_1_2_project_home.py                |  118 +-
+ tools/verify_v2_1_3_project_package.py             |   10 +-
+ tools/verify_v2_1_4_formal_entry.py                |   14 +-
+ tools/verify_v2_2_1_product_contracts.py           |   11 +-
+ tools/verify_v2_2_3_intake_understanding.py        |   38 +-
+ tools/verify_v2_3_2_suite_editor.py                |    2 +-
+ tools/verify_v2_3_3_spec_versions.py               |    1 -
+ tools/verify_v2_3_4_prompt_compiler.py             |    1 -
+ tools/verify_v2_3_5_pre_generation_confirm.py      |    1 -
+ tools/verify_v2_3_6_prompt_manual_edit.py          |    1 -
+ tools/verify_v2_4_2_generation_attempt.py          |    1 -
+ tools/verify_v2_4_3_batch_execution.py             |    1 -
+ tools/verify_v2_4_4_candidate_blob.py              |    1 -
+ tools/verify_v2_4_5_live_reference.py              |    1 -
+ tools/verify_v2_5_1_deterministic_review.py        |   14 +-
+ tools/verify_v2_5_2_vlm_review.py                  |    1 -
+ tools/verify_v2_5_3_compare_panel.py               |    1 -
+ tools/verify_v2_5_4_rework_loop.py                 |    1 -
+ tools/verify_v2_6_1_selection.py                   |    1 -
+ tools/verify_v2_6_4_accessibility.py               |   19 +-
+ tools/verify_v2_7_1_regression.py                  |   41 +-
+ tools/verify_v2_ui_2_interaction_visual.py         |   13 +-
+ tools/verify_v2_ui_3_frontend.py                   |   10 +-
+ 55 files changed, 1994 insertions(+), 2358 deletions(-)

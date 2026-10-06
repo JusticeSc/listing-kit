@@ -1,0 +1,342 @@
+{
+  "evidence_kind": "NOT-AUTHORITY",
+  "schema": "amz-prototype-smoke/v1",
+  "started_at": "2026-10-01T17:24:02.360181+00:00",
+  "upstreams": "all four explicitly fake; genuine product handler and IndexedDB",
+  "observations": [
+    {
+      "scenario": "single-shot rework",
+      "unrelated_records_equal": true,
+      "selection_records_equal": true,
+      "two_shots_each_two_candidates": true
+    },
+    {
+      "scenario": "no-task Unknown",
+      "query_absent": true,
+      "old_candidate_retained": true
+    },
+    {
+      "scenario": "still-Unknown reconciliation",
+      "state": "unknown",
+      "submits_before": 3,
+      "submits_after": 3
+    },
+    {
+      "scenario": "native modal Tab enclosure and Escape return",
+      "steps": 16,
+      "focus": "rework-open",
+      "comparison_retained": true
+    },
+    {
+      "scenario": "fact edit impact and continued workflow",
+      "affected_prompts": 4,
+      "impact": "发送摘要已失效：1. 主图·干净背景、2. 卖点信息图、3. 场景图·使用中、4. 细节图·材质工艺。重新编译并人工确认后才能生成；已有候选与人工采用记录保留。",
+      "candidates_and_selections_preserved": true,
+      "no_automatic_submit": true
+    }
+  ],
+  "responsive": [],
+  "native_zoom": [],
+  "keyboard": [
+    {
+      "id": "rework-preview",
+      "tag": "BUTTON",
+      "document_has_focus": true,
+      "dialog_modal": true,
+      "in_modal": true,
+      "box": {
+        "x": 228,
+        "y": 667.3125,
+        "width": 133.78125,
+        "height": 48,
+        "top": 667.3125,
+        "right": 361.78125,
+        "bottom": 715.3125,
+        "left": 228
+      },
+      "outline": "solid"
+    },
+    {
+      "id": "",
+      "tag": "BODY",
+      "document_has_focus": false,
+      "dialog_modal": true,
+      "in_modal": false,
+      "box": {
+        "x": 0,
+        "y": -185,
+        "width": 1440,
+        "height": 2391.6875,
+        "top": -185,
+        "right": 1440,
+        "bottom": 2206.6875,
+        "left": 0
+      },
+      "outline": "none"
+    },
+    {
+      "id": "rework-reset",
+      "tag": "BUTTON",
+      "document_has_focus": true,
+      "dialog_modal": true,
+      "in_modal": true,
+      "box": {
+        "x": 1076,
+        "y": 419,
+        "width": 74,
+        "height": 48,
+        "top": 419,
+        "right": 1150,
+        "bottom": 467,
+        "left": 1076
+      },
+      "outline": "solid"
+    },
+    {
+      "id": "rework-cancel",
+      "tag": "BUTTON",
+      "document_has_focus": true,
+      "dialog_modal": true,
+      "in_modal": true,
+      "box": {
+        "x": 1156,
+        "y": 419,
+        "width": 56,
+        "height": 48,
+        "top": 419,
+        "right": 1212,
+        "bottom": 467,
+        "left": 1156
+      },
+      "outline": "solid"
+    },
+    {
+      "id": "",
+      "tag": "SUMMARY",
+      "document_has_focus": true,
+      "dialog_modal": true,
+      "in_modal": true,
+      "box": {
+        "x": 228,
+        "y": 485,
+        "width": 984,
+        "height": 18.59375,
+        "top": 485,
+        "right": 1212,
+        "bottom": 503.59375,
+        "left": 228
+      },
+      "outline": "solid"
+    },
+    {
+      "id": "rework-problem-product_fidelity",
+      "tag": "INPUT",
+      "document_has_focus": true,
+      "dialog_modal": true,
+      "in_modal": true,
+      "box": {
+        "x": 232,
+        "y": 530.53125,
+        "width": 13,
+        "height": 13,
+        "top": 530.53125,
+        "right": 245,
+        "bottom": 543.53125,
+        "left": 232
+      },
+      "outline": "solid"
+    },
+    {
+      "id": "rework-problem-part_error",
+      "tag": "INPUT",
+      "document_has_focus": true,
+      "dialog_modal": true,
+      "in_modal": true,
+      "box": {
+        "x": 322,
+        "y": 530.53125,
+        "width": 13,
+        "height": 13,
+        "top": 530.53125,
+        "right": 335,
+        "bottom": 543.53125,
+        "left": 322
+      },
+      "outline": "solid"
+    },
+    {
+      "id": "rework-problem-scene",
+      "tag": "INPUT",
+      "document_has_focus": true,
+      "dialog_modal": true,
+      "in_modal": true,
+      "box": {
+        "x": 412,
+        "y": 530.53125,
+        "width": 13,
+        "height": 13,
+        "top": 530.53125,
+        "right": 425,
+        "bottom": 543.53125,
+        "left": 412
+      },
+      "outline": "solid"
+    },
+    {
+      "id": "rework-problem-composition",
+      "tag": "INPUT",
+      "document_has_focus": true,
+      "dialog_modal": true,
+      "in_modal": true,
+      "box": {
+        "x": 476,
+        "y": 530.53125,
+        "width": 13,
+        "height": 13,
+        "top": 530.53125,
+        "right": 489,
+        "bottom": 543.53125,
+        "left": 476
+      },
+      "outline": "solid"
+    },
+    {
+      "id": "rework-problem-selling_point",
+      "tag": "INPUT",
+      "document_has_focus": true,
+      "dialog_modal": true,
+      "in_modal": true,
+      "box": {
+        "x": 540,
+        "y": 530.53125,
+        "width": 13,
+        "height": 13,
+        "top": 530.53125,
+        "right": 553,
+        "bottom": 543.53125,
+        "left": 540
+      },
+      "outline": "solid"
+    },
+    {
+      "id": "rework-problem-text",
+      "tag": "INPUT",
+      "document_has_focus": true,
+      "dialog_modal": true,
+      "in_modal": true,
+      "box": {
+        "x": 630,
+        "y": 530.53125,
+        "width": 13,
+        "height": 13,
+        "top": 530.53125,
+        "right": 643,
+        "bottom": 543.53125,
+        "left": 630
+      },
+      "outline": "solid"
+    },
+    {
+      "id": "rework-problem-style",
+      "tag": "INPUT",
+      "document_has_focus": true,
+      "dialog_modal": true,
+      "in_modal": true,
+      "box": {
+        "x": 694,
+        "y": 530.53125,
+        "width": 13,
+        "height": 13,
+        "top": 530.53125,
+        "right": 707,
+        "bottom": 543.53125,
+        "left": 694
+      },
+      "outline": "solid"
+    },
+    {
+      "id": "rework-problem-platform_risk",
+      "tag": "INPUT",
+      "document_has_focus": true,
+      "dialog_modal": true,
+      "in_modal": true,
+      "box": {
+        "x": 758,
+        "y": 530.53125,
+        "width": 13,
+        "height": 13,
+        "top": 530.53125,
+        "right": 771,
+        "bottom": 543.53125,
+        "left": 758
+      },
+      "outline": "solid"
+    },
+    {
+      "id": "rework-problem-other",
+      "tag": "INPUT",
+      "document_has_focus": true,
+      "dialog_modal": true,
+      "in_modal": true,
+      "box": {
+        "x": 848,
+        "y": 530.53125,
+        "width": 13,
+        "height": 13,
+        "top": 530.53125,
+        "right": 861,
+        "bottom": 543.53125,
+        "left": 848
+      },
+      "outline": "solid"
+    },
+    {
+      "id": "rework-direction",
+      "tag": "TEXTAREA",
+      "document_has_focus": true,
+      "dialog_modal": true,
+      "in_modal": true,
+      "box": {
+        "x": 228,
+        "y": 586.25,
+        "width": 984,
+        "height": 63.375,
+        "top": 586.25,
+        "right": 1212,
+        "bottom": 649.625,
+        "left": 228
+      },
+      "outline": "solid"
+    },
+    {
+      "id": "rework-preview",
+      "tag": "BUTTON",
+      "document_has_focus": true,
+      "dialog_modal": true,
+      "in_modal": true,
+      "box": {
+        "x": 228,
+        "y": 667.3125,
+        "width": 133.78125,
+        "height": 48,
+        "top": 667.3125,
+        "right": 361.78125,
+        "bottom": 715.3125,
+        "left": 228
+      },
+      "outline": "solid"
+    }
+  ],
+  "browser": {
+    "version": "154.0.8037.93",
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36",
+    "headless": true,
+    "fresh_profile": true
+  },
+  "result": "FAIL",
+  "failure": {
+    "type": "Error",
+    "message": "Page.goto: Cannot navigate to \"chrome://settings/appearance\": this page is not available in an isolated browser context, and opening it crashes the browser. Use browserType.launchPersistentContext() instead.\nCall log:\n  - navigating to \"chrome://settings/appearance\", waiting until \"load\"\n"
+  },
+  "finished_at": "2026-10-01T17:24:05.779076+00:00"
+}

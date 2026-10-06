@@ -1,0 +1,56 @@
+{
+  "evidence_kind": "NOT-AUTHORITY",
+  "schema": "amz-prototype-smoke/v1",
+  "started_at": "2026-10-01T17:18:16.887763+00:00",
+  "upstreams": "all four explicitly fake; genuine product handler and IndexedDB",
+  "observations": [
+    {
+      "scenario": "single-shot rework",
+      "unrelated_records_equal": true,
+      "selection_records_equal": true,
+      "two_shots_each_two_candidates": true
+    },
+    {
+      "scenario": "no-task Unknown",
+      "query_absent": true,
+      "old_candidate_retained": true
+    },
+    {
+      "scenario": "still-Unknown reconciliation",
+      "state": "unknown",
+      "submits_before": 3,
+      "submits_after": 3
+    }
+  ],
+  "responsive": [],
+  "native_zoom": [],
+  "keyboard": [
+    {
+      "id": "rework-preview",
+      "in_modal": true,
+      "box": {
+        "x": 228,
+        "y": 667.3125,
+        "width": 133.78125,
+        "height": 48,
+        "top": 667.3125,
+        "right": 361.78125,
+        "bottom": 715.3125,
+        "left": 228
+      },
+      "outline": "solid"
+    }
+  ],
+  "browser": {
+    "version": "154.0.8037.93",
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36",
+    "headless": true,
+    "fresh_profile": true
+  },
+  "result": "FAIL",
+  "failure": {
+    "type": "AssertionError",
+    "message": ""
+  },
+  "finished_at": "2026-10-01T17:18:21.563019+00:00"
+}

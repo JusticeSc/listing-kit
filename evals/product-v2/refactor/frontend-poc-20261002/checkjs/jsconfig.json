@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true,
+    "strict": true,
+    "noEmit": true,
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2022", "DOM"]
+  },
+  "include": [
+    "sample.mjs",
+    "../../../../../app/product_v2/domain/invalidation.js",
+    "../../../../../app/product_v2/domain/errors.js"
+  ]
+}

@@ -236,6 +236,15 @@ task_progress:
     - evals/product-v2/refactor/generation-module-20261005-formal.md
     - evals/product-v2/refactor/r51-packet-05-reserve-fence-20261006.json
     - evals/product-v2/refactor/r51-packet-06-delivery-scope-20261007.json
+    - evals/product-v2/v2.r51p04-input-owner-20261006-163934.json
+    - evals/product-v2/v2.r51p04-input-owner-20261006-163934.txt
+    - evals/product-v2/v2.r51p05-reserve-twotab-20261006-165748.json
+    - evals/product-v2/v2.r51p05-reserve-twotab-20261006-165748.txt
+    - evals/product-v2/v2.r51p06-adopt-deliver-20261006-170325.json
+    - evals/product-v2/v2.r51p06-adopt-deliver-20261006-170325.txt
+    - evals/product-v2/v2.r51ga-group-a-20261006-170716.json
+    - evals/product-v2/v2.r51ga-group-a-20261006-170716.txt
+    - evals/product-v2/refactor/r51-page-evidence-20261007.md
   V2.R5.2:
     status: pending
     evidence:
@@ -357,11 +366,7 @@ task_progress:
     - app/product_v2/domain/config-export.ts
     - tools/build_product_v2_ts.mjs
 next_action_task: V2.R5.1
-blockers:
-  - V2.R5.1_packet_04_page_repro_missing_input_owner_save_restore_and_unrelated_shot_not_locked_after_code_done_node_only
-  - V2.R5.1_packet_05_page_repro_missing_two_tab_single_POST_late_A_preserve_OCC0_no_retry_crash_window_after_code_done_node_227_only
-  - V2.R5.1_packet_06_page_repro_missing_two_tab_adopt_conflict_old_candidate_single_snapshot_mixed_package_refusal_roundtrip_verifiers_expired_adopt_panel_absent
-  - V2.R5.1_group_A_page_partially_proven_formal_entry_12_of_12_and_repro_r51_confirm_4_shots_console_network_IDB_postconditions_to_verify
+blockers: []
 unknowns:
   - historical_r74_closeout_volc_adopt_export_222253_pass_spent_1_15_of_5_image_8_of_8_matrix_CI_37136575625_deploy_24a3561_origin_https_47_115_172_233_8080_paid_online_probes_0_evidence_completion-matrix-20261003-r74_not_current_completion
   - historical_r71_regression_r71f_semlive_vlm_dashscope194526_volc195600_spent_0_91_of_5_evidence_full-verification-20261003-r71_not_current_G6_or_design_proof
@@ -402,5 +407,5 @@ unknowns:
   - combined_release_actual_runtime_source_image_ID_and_Caddy_hash_gate_moved_before_finalize_and_into_rollback_condition_but_latest_workflow_not_revalidated_Docker_transaction_and_previous_version_page_recovery_unproven_no_release_acceptance
   - detailed_refactor_design_20261006_target_only_owner_Interfaces_atomic_authorization_OCC_snapshot_dedup_tests_history_and_original_task_work_packages_written_no_product_edits_or_task_status_changes_no_current_goal_read_tool_available_user_stop_remains_follow_docs_product_v2_refactor_design
   - lower_model_preparation_20261006_design_r2_section10_frozen_reservation_action_preservation_lifecycle_report_ZIP_emit_release_algorithms_section11_11_internal_packets_atomic_group_A_01_03_section12_start_text_only_no_product_edits_runtime_browser_model_git_deploy_or_status_change_user_stop_R51_unchanged_follow_lower-model-preparation-20261006
-updated_at: '2026-10-06T16:05:38+08:00'
+updated_at: '2026-10-07T01:10:56+08:00'
 ```
