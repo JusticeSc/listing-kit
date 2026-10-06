@@ -109,6 +109,7 @@ import { consumptionFence, createProjectInputsModule } from "./project-inputs.js
 import { createPromptModule } from "./prompts.js";
 import { createReviewDeliveryModule } from "./review-delivery.js";
 import { createSelectionAdoptionModule } from "./selection-adoption.js";
+import { createDeliveryView } from "./ui/delivery-view.js";
 import { createStageShell } from "./ui/stage-shell.js";
 import {
   AUTHORITY_TEXT,
@@ -118,10 +119,13 @@ import {
   SEVERITY_BADGE,
   STATUS_TEXT,
   appendTech,
+  clearError,
   createElement,
   describeBlocking,
+  errorMessageOf,
   formatValue,
   reviewRankOf,
+  showError,
   splitLines,
   techDetails,
 } from "./ui/dom.js";
@@ -163,6 +167,7 @@ import {
  * @typedef {import("./domain/type-contracts.js").CompareRow} CompareRow
  * @typedef {import("./domain/type-contracts.js").CompareState} CompareState
  * @typedef {import("./domain/type-contracts.js").DeliveryGateResult} DeliveryGateResult
+ * @typedef {import("./ui/delivery-view.js").DeliveryView} DeliveryView
  * @typedef {import("./domain/type-contracts.js").UnknownItem} UnknownItem
  * @typedef {import("./domain/type-contracts.js").GateFinding} GateFinding
  * @typedef {import("./domain/type-contracts.js").ImagePromptProfile} ImagePromptProfile
@@ -628,12 +633,17 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
     deliverError: /** @type {HTMLElement} */ (document.getElementById("deliver-error")),
   };
 
+  // 交付视图（设计 §2.1 第四个视图）持 DOM、展开与自己的对象 URL；先声明后装配：
+  // 下面的 onSelect 与两个 Module 的 changed 都只在装配完成后触发，不在装配期回调。
+  /** @type {DeliveryView|null} */
+  let deliveryView = null;
+
   const stageShell = createStageShell({
     nav: /** @type {HTMLElement} */ (elements.stageNav),
     panelRoot: /** @type {HTMLElement} */ (elements.stagePanels),
     summary: /** @type {HTMLElement} */ (elements.stageSummary),
     onSelect: (/** @type {string} */ id) => {
-      if (id === "deliver") requestDeliveryGateRefresh();
+      if (id === "deliver") deliveryView?.requestGateRefresh();
       if (id === "understand" && projectId) void prepareManualFacts();
       if (id === "generate" && projectId) void prepareSystemPrompts();
     },
@@ -715,7 +725,7 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
     prompts,
     settings: modelSettings,
     beginAction, sources: projectSources,
-    changed: () => { renderSuitePanel(); renderDeliveryGate(); },
+    changed: () => { deliveryView?.render(); },
   });
   // 单图复核请求准备归 adoption：generation 的注入在 adoption 装配后补线，
   // 调用只发生在用户点击复核时（装配早已完成），不形成装配期循环。
@@ -734,7 +744,42 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
     adoption: selectionAdoption,
     settings: modelSettings,
     beginAction, sources: projectSources,
-    changed: () => { renderSuitePanel(); renderDeliveryGate(); },
+    changed: () => { deliveryView?.render(); },
+  });
+
+  // 交付视图只持 DOM、展开与自己的对象 URL；逐图采用状态、门禁、整套结论与两类导出
+  // 都读 owner 投影，视图不写库、不重算判定、不组 manifest/ZIP。
+  deliveryView = createDeliveryView({
+    elements: {
+      reviewList: elements.reviewList,
+      suiteReviewStatus: elements.suiteReviewStatus,
+      suiteReviewRun: elements.suiteReviewRun,
+      suiteAiReviewRun: elements.suiteAiReviewRun,
+      suiteReviewNote: elements.suiteReviewNote,
+      suiteReviewFindings: elements.suiteReviewFindings,
+      suiteReviewError: elements.suiteReviewError,
+      deliveryGate: elements.deliveryGate,
+      deliverySuiteStatus: elements.deliverySuiteStatus,
+      deliverySuiteFindings: elements.deliverySuiteFindings,
+      deliveryUnknowns: elements.deliveryUnknowns,
+      deliverExport: elements.deliverExport,
+      deliverStatus: elements.deliverStatus,
+      deliverResult: elements.deliverResult,
+      deliverError: elements.deliverError,
+    },
+    deps: {
+      reviewDelivery,
+      selectionAdoption,
+      inputs,
+      beginAction,
+      currentProjectId: () => projectId,
+      capabilities: () => capabilities,
+      shotSummaries: shotSummariesNow,
+      shotLabelOf,
+      localizeShotIds,
+      selectionStateOf,
+      selectStage: (/** @type {string} */ id) => stageShell.select(id),
+    },
   });
 
   /** @type {EffectiveCapabilities|null} */
@@ -785,11 +830,6 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
   let reworkSource = null;
   /** @type {string[]} */
   let objectUrls = [];
-  /** 下载链接由视图持有：sha256 → 即时创建的对象 URL（owner 只记身份不记 URL）。 */
-  /** 下载链接由视图持有：sha256 → 即时创建的对象 URL（owner 只记身份不记 URL）。
-   * @type {Map<string, string>}
-   */
-  const downloadUrlByFile = new Map();
   /** @type {Map<string, string>} */
   let previewUrls = new Map();
   /** @type {boolean} */
@@ -799,19 +839,6 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
   /** @type {boolean} */
   let bound = false;
   /* ------------------------------------------------------ 公共读写与工具 */
-
-  /**
-   * 抛出值的可读信息（catch 变量为 unknown；只读 message 字符串，缺失即空串）。
-   * @param {unknown} error
-   * @param {string} fallback
-   * @returns {string}
-   */
-  function errorMessageOf(error, fallback) {
-    if (error instanceof Error && typeof error.message === "string" && error.message) return error.message;
-    if (error !== null && typeof error === "object" && "message" in error
-      && typeof error.message === "string" && error.message) return error.message;
-    return fallback;
-  }
 
   /**
    * 有后缀的抛出信息：有 message 即 message + suffix，否则原样返回 fallback（与旧三元输出一致）。
@@ -826,26 +853,6 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
       && typeof error.message === "string" && error.message) return error.message + suffix;
     return fallback;
   }
-
-  /**
-   * @param {HTMLElement} element
-   * @param {string} message
-   * @returns {void}
-   */
-  function showError(element, message) {
-    element.textContent = message;
-    element.hidden = false;
-  }
-
-  /**
-   * @param {HTMLElement} element
-   * @returns {void}
-   */
-  function clearError(element) {
-    element.textContent = "";
-    element.hidden = true;
-  }
-
 
   /** 生成与审核两个阶段都可能发起提交/核对：错误就近显示在对应阶段，两处同一份文本。
    * @param {string|undefined} message
@@ -870,8 +877,6 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
   function revokeObjectUrls() {
     for (const url of objectUrls) URL.revokeObjectURL(url);
     objectUrls = [];
-    for (const url of downloadUrlByFile.values()) URL.revokeObjectURL(url);
-    downloadUrlByFile.clear();
   }
 
   /**
@@ -4784,8 +4789,8 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
    */
   function refreshDerived() {
     renderReviewList();
-    renderSuitePanel();
-    requestDeliveryGateRefresh();
+    deliveryView?.render();
+    deliveryView?.requestGateRefresh();
     return refreshStageShell();
   }
 
@@ -4941,458 +4946,6 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
       map[shotId] = chain.map((item) => item.record);
     }
     return map;
-  }
-
-  /** 整套检查只做视图装配与动作转发：执行、报告与门禁刷新归 reviewDelivery 所有。 */
-  /** 整套检查只做视图装配与动作转发：执行、报告与门禁刷新归 reviewDelivery 所有。
-   * @param {{ai?: boolean}} [options]
-   * @returns {Promise<void>}
-   */
-  async function runSuiteReview({ ai = false } = {}) {
-    const action = beginAction();
-    if (!action.projectId || !action.alive()) return;
-    clearError(elements.suiteReviewError);
-    try {
-      const outcome = await reviewDelivery.runSuiteReview({ ai });
-      if (!action.alive()) return;
-      if (outcome && outcome.failed) {
-        showError(elements.suiteReviewError,
-          errorMessageOf(outcome.message || outcome.reason, "整套检查没有保存；之前的报告保留。"));
-      }
-    } catch (error) {
-      if (action.alive()) showError(elements.suiteReviewError,
-        errorMessageOf(error, "整套检查没有保存；之前的报告保留。"));
-    } finally {
-      if (action.alive()) { renderSuitePanel(); reviewDelivery.requestGateRefresh(); }
-    }
-  }
-
-  /**
-   * @param {string} shotId
-   * @returns {void}
-   */
-  function jumpToReviewShot(shotId) {
-    stageShell.select("review");
-    if (!elements.reviewList) return;
-    const row = /** @type {HTMLElement|null} */ (elements.reviewList.querySelector('.review-card[data-shot-id="' + shotId + '"]'));
-    if (!row) return;
-    row.scrollIntoView({ block: "center" });
-    const button = /** @type {HTMLButtonElement|null} */ (row.querySelector("button"));
-    if (button) button.focus({ preventScroll: true });
-  }
-
-  /** 门禁：整套一致性阻断不属于任何一张图，定位回审核阶段的整套检查运行按钮。 */
-  /** 门禁：整套一致性阻断不属于任何一张图，定位回审核阶段的整套检查运行按钮。
-   * @returns {void}
-   */
-  function jumpToSuiteCheck() {
-    stageShell.select("review");
-    if (!elements.suiteReviewRun) return;
-    elements.suiteReviewRun.scrollIntoView({ block: "center" });
-    elements.suiteReviewRun.focus({ preventScroll: true });
-  }
-
-  /** 整套一致性分区：状态行 + 运行按钮 + 按严重度分组的发现（每条可跳到对应图行）。 */
-  /** 整套一致性分区：状态行 + 运行按钮 + 按严重度分组的发现（每条可跳到对应图行）。
-   * @returns {void}
-   */
-  function renderSuitePanel() {
-    if (!elements.suiteReviewStatus || !elements.suiteReviewFindings) return;
-    const projection = reviewDelivery.projection();
-    const entry = projection.suite;
-    const report = entry ? entry.report : null;
-    const current = projection.suiteCurrent;
-    const running = projection.running;
-    elements.suiteReviewRun.disabled = !projectId || !inputs.suitePlan() || running;
-    elements.suiteReviewRun.textContent = running ? "检查中…" : "运行本地确定性检查";
-    elements.suiteAiReviewRun.disabled = !projectId || !inputs.suitePlan() || running
-      || !capabilities?.suite_review?.provider || capabilities.suite_review.provider.configured === false;
-    if (!report) {
-      elements.suiteReviewStatus.textContent = projectId && inputs.suitePlan()
-        ? "尚未运行整套检查。"
-        : "先在「方案」生成套图方案，再运行整套检查。";
-      elements.suiteReviewNote.textContent = "";
-    } else if (!current) {
-      elements.suiteReviewStatus.textContent = "整套检查已过期：选择或输入在报告之后发生了变化，请重新运行。"
-        + " 上一版：" + suiteReviewSummaryText(report);
-      elements.suiteReviewNote.textContent = "";
-    } else {
-      elements.suiteReviewStatus.textContent = suiteReviewSummaryText(report);
-      const vlm = report.vlm && report.vlm.outcome === "checked" ? report.vlm : null;
-      elements.suiteReviewNote.textContent = vlm
-        ? ("视觉复核：" + String(vlm.model_id || vlm.provider_id || "已完成")
-           + (vlm.checked_at ? " · " + vlm.checked_at : ""))
-        : "未做 AI 复核；当前确定性检查与人工采用仍是交付硬门。";
-    }
-    elements.suiteReviewFindings.innerHTML = "";
-    if (!report) return;
-    appendSuiteFindings(elements.suiteReviewFindings, report);
-  }
-
-  /**
-   * 整套发现的单一投影（审核阶段与交付阶段共用，避免两套写法 / 两个事实来源）。
-   * 只读传入的报告，重排成「严重度分组 + 逐条定位」；不写任何状态。
-   */
-  /**
-   * @param {HTMLElement} container
-   * @param {SuiteReviewReport} report
-   * @returns {void}
-   */
-  function appendSuiteFindings(container, report) {
-    const findings = Array.isArray(report.findings) ? report.findings : [];
-    const shown = findings.filter((item) => item && item.severity !== "PASS");
-    if (shown.length === 0) {
-      container.append(createElement("p", {
-        className: "meta", text: "没有需要人工处理的整套发现。",
-      }));
-    }
-    for (const severity of REVIEW_SEVERITY_ORDER) {
-      const group = shown.filter((item) => item.severity === severity);
-      if (!group.length) continue;
-      container.append(createElement("p", {
-        className: "meta suite-group", text: COMPARE_SEVERITY_TEXT[severity] || severity,
-      }));
-      for (const finding of group) {
-        const row = createElement("div", {
-          className: "suite-finding",
-          attrs: { "data-rule-id": finding.rule_id, "data-severity": finding.severity },
-        });
-        row.append(createElement("span", {
-          className: "badge " + (/** @type {Record<string, string>} */ (SEVERITY_BADGE)[finding.severity] || "is-review-unknown"),
-          text: COMPARE_SEVERITY_TEXT[finding.severity] || finding.severity,
-        }));
-        row.append(createElement("span", {
-          className: "name", text: String(finding.title || finding.rule_id),
-        }));
-        row.append(createElement("p", { className: "meta", text: localizeShotIds(finding.detail) }));
-        for (const shotId of (Array.isArray(finding.affected_shot_ids) ? finding.affected_shot_ids : [])) {
-          const jump = createElement("button", {
-            text: "定位：" + shotLabelOf(shotId), attrs: { type: "button", "data-shot-id": shotId },
-          });
-          jump.addEventListener("click", () => { jumpToReviewShot(shotId); });
-          row.append(jump);
-        }
-        container.append(row);
-      }
-    }
-    const passCount = findings.filter((item) => item && item.severity === "PASS").length;
-    if (passCount > 0) {
-      container.append(createElement("p", {
-        className: "meta", text: "另 " + passCount + " 项确定性检查通过（细节在候选审核清单里）。",
-      }));
-    }
-  }
-
-  /* -------------------------------------------------- 交付门禁与交付包（V2.6.2） */
-
-  /** 交付门禁只做视图装配与动作转发：输入投影、去抖刷新与门禁状态归 reviewDelivery 所有。 */
-  /** 交付门禁只做视图装配与动作转发：输入投影、去抖刷新与门禁状态归 reviewDelivery 所有。
-   * @returns {void}
-   */
-  function requestDeliveryGateRefresh() {
-    reviewDelivery.requestGateRefresh();
-  }
-
-  /** 门禁重算经 owner 执行；这里只等新投影落定后重渲染（owner 的 changed 已触发 render）。 */
-  /** 门禁重算经 owner 执行；这里只等新投影落定后重渲染（owner 的 changed 已触发 render）。
-   * @returns {Promise<void>}
-   */
-  async function refreshDeliveryGate() {
-    await reviewDelivery.refreshGate();
-  }
-
-  /** 门禁展示顺序：阻断优先，PASS 收在最后；不改判定，只改阅读顺序。 */
-  const GATE_SEVERITY_RANK = /** @type {Record<string, number>} */ (Object.freeze({
-    BLOCK: 0, HIGH_RISK: 1, WARNING: 2, UNKNOWN: 3, PASS: 4,
-  }));
-
-  /** 门禁逐条：严重度徽标 + 说明 + 受影响 Shot 的定位入口。 */
-  /** 门禁逐条：严重度徽标 + 说明 + 受影响 Shot 的定位入口。
-   * @returns {void}
-   */
-  function renderDeliveryFindings() {
-    const state = reviewDelivery.projection().gate;
-    const findings = state && Array.isArray(state.findings) ? state.findings : [];
-    if (!findings.length) {
-      elements.deliveryGate.append(createElement("p", {
-        className: "meta",
-        text: state && state.failed
-          ? ("门禁检查失败：" + (state.message || "未知错误"))
-          : "正在核对交付门禁…",
-      }));
-      return;
-    }
-    const ordered = findings.slice().sort((left, right) =>
-      (GATE_SEVERITY_RANK[/** @type {string} */ (left.severity)] === undefined ? 9 : GATE_SEVERITY_RANK[/** @type {string} */ (left.severity)])
-      - (GATE_SEVERITY_RANK[/** @type {string} */ (right.severity)] === undefined ? 9 : GATE_SEVERITY_RANK[/** @type {string} */ (right.severity)]));
-    for (const item of ordered) {
-      const passed = item.severity === "PASS";
-      const row = createElement("div", {
-        className: "gate-finding" + (passed ? " is-pass" : ""),
-        attrs: { "data-rule-id": item.rule_id, "data-severity": item.severity },
-      });
-      row.append(createElement("span", {
-        className: "badge " + (/** @type {Record<string, string>} */ (SEVERITY_BADGE)[item.severity] || "is-review-unknown"),
-        text: COMPARE_SEVERITY_TEXT[item.severity] || item.severity,
-      }));
-      row.append(createElement("span", { className: "name", text: String(item.title || item.rule_id) }));
-      // 通过项压成一行（信息不减、占位减半）；阻断项保留独立说明行便于逐条处理。
-      row.append(createElement(passed ? "span" : "p", {
-        className: "meta", text: localizeShotIds(item.detail),
-      }));
-      // Unknown 的处置入口就是下面的「确认已知悉」；这里不再给会误导的跳图按钮。
-      const jumpable = !passed && item.rule_id !== "export.unknown_acknowledged";
-      for (const shotId of (jumpable && Array.isArray(item.affected_shot_ids)
-        ? item.affected_shot_ids : [])) {
-        const jump = createElement("button", {
-          text: "去处理：" + shotLabelOf(shotId), attrs: { type: "button", "data-shot-id": shotId },
-        });
-        jump.addEventListener("click", () => { jumpToReviewShot(shotId); });
-        row.append(jump);
-      }
-      // 整套一致性阻断不是某一张图的问题：给「去运行整套检查」把使用者送回审核阶段的运行按钮。
-      if (!passed && item.rule_id === "export.suite_review_current") {
-        const jump = createElement("button", {
-          text: "去运行整套检查", attrs: { type: "button", "data-suite-action": "run" },
-        });
-        jump.addEventListener("click", () => { jumpToSuiteCheck(); });
-        row.append(jump);
-      }
-      elements.deliveryGate.append(row);
-    }
-  }
-
-  /**
-   * 交付页的整套检查投影（V2.6.15）：交付是最后决策点，门禁全绿只说明「硬检查通过」，
-   * 不代表没有风险 —— 这里复读同一份 suite review 报告（单一权威），把非阻断的
-   * 高风险/提醒连同定位入口摆到导出按钮前面；过期报告如实说明，阻断仍由门禁负责。
-   */
-  /**
-   * @returns {void}
-   */
-  function renderDeliverySuite() {
-    if (!elements.deliverySuiteStatus || !elements.deliverySuiteFindings) return;
-    elements.deliverySuiteStatus.textContent = "";
-    elements.deliverySuiteFindings.innerHTML = "";
-    const entry = reviewDelivery.projection().suite;
-    const report = entry ? entry.report : null;
-    if (!report) {
-      elements.deliverySuiteStatus.textContent = projectId && inputs.suitePlan()
-        ? "尚未运行整套检查；交付门禁会在缺失或不当前时阻断导出。"
-        : "先在「方案」生成套图方案，再运行整套检查。";
-      return;
-    }
-    const current = projectId ? reviewDelivery.projection().suiteCurrent : false;
-    elements.deliverySuiteStatus.textContent = current
-      ? suiteReviewSummaryText(report)
-      : ("整套检查已过期：选择或输入在报告之后发生了变化，请回审核阶段重新运行。上一版："
-         + suiteReviewSummaryText(report));
-    appendSuiteFindings(elements.deliverySuiteFindings, report);
-  }
-
-  /** 待确认 Unknown：每条一个「确认已知悉」按钮；确认是 append-only 记录，不改写报告。 */
-  /** 待确认 Unknown：每条一个「确认已知悉」按钮；确认是 append-only 记录，不改写报告。
-   * @returns {void}
-   */
-  function renderDeliveryUnknowns() {
-    if (!elements.deliveryUnknowns) return;
-    elements.deliveryUnknowns.innerHTML = "";
-    const state = reviewDelivery.projection().gate;
-    const unknowns = state && Array.isArray(state.unknowns) ? state.unknowns : [];
-    if (!unknowns.length) return;
-    elements.deliveryUnknowns.append(createElement("p", {
-      className: "meta", text: "未知项（模型无法判定）：逐条确认已知悉后才允许交付。",
-    }));
-    for (const unknown of unknowns) {
-      const row = createElement("div", {
-        className: "gate-unknown",
-        attrs: { "data-rule-id": unknown.rule_id, "data-target-id": unknown.target_id },
-      });
-      row.append(createElement("span", { className: "name", text: String(unknown.title || unknown.rule_id) }));
-      row.append(createElement("p", { className: "meta", text: String(unknown.detail || "") }));
-      const button = createElement("button", {
-        text: unknown.acknowledged === true ? "已确认" : "确认已知悉", attrs: { type: "button" },
-      });
-      button.disabled = unknown.acknowledged === true;
-      button.addEventListener("click", () => { acknowledgeUnknown(unknown, button); });
-      row.append(button);
-      elements.deliveryUnknowns.append(row);
-    }
-  }
-
-  /** 确认只追加：document_id 由未知项身份派生，重复确认只新增版本。 */
-  /** 确认只追加：document_id 由未知项身份派生，重复确认只新增版本。
-   * @param {UnknownItem} unknown
-   * @param {HTMLButtonElement} button
-   * @returns {Promise<void>}
-   */
-  async function acknowledgeUnknown(unknown, button) {
-    if (!projectId) return;
-    const action = beginAction();
-    if (!action.projectId) return;
-    clearError(elements.deliverError);
-    button.disabled = true;
-    try {
-      const outcome = await selectionAdoption.acknowledge(unknown);
-      if (!action.alive()) return;
-      await reviewDelivery.refreshGate();
-      if (!action.alive()) return;
-      void outcome;
-      elements.deliverStatus.textContent = "已记录「已知悉」（append-only，不作为通过证据）。";
-    } catch (error) {
-      if (action.alive()) {
-        button.disabled = false;
-        showError(elements.deliverError, errorMessageOf(error, "确认没有保存，请重试。"));
-      }
-    }
-  }
-
-  /** 最近一次交付包结果：刷新后仍有记录（无 blob 时只显示身份，不伪装可下载）。 */
-  /**
-   * @returns {void}
-   */
-  function renderDeliveryResult() {
-    if (!elements.deliverResult) return;
-    elements.deliverResult.innerHTML = "";
-    const record = reviewDelivery.projection().record;
-    if (!record) {
-      elements.deliverResult.hidden = true;
-      return;
-    }
-    elements.deliverResult.hidden = false;
-    elements.deliverResult.append(createElement("p", {
-      className: "meta",
-      text: "最近一次交付包：" + record.file_name + "（"
-        + Math.round(record.byte_size / 1024) + " KB）",
-    }));
-    appendTech(elements.deliverResult,
-      ["sha256 " + String(record.sha256).slice(0, 16) + "…"]);
-    // 对象 URL 归视图持有：下载链接由各次导出命令即时创建，不进 owner。
-    const url = downloadUrlByFile.get(record.sha256) || null;
-    if (url) {
-      elements.deliverResult.append(createElement("a", {
-        text: "下载交付包",
-        attrs: { href: url, download: record.file_name },
-      }));
-    }
-  }
-
-  /** 交付阶段：逐图采用状态 + 门禁清单 + Unknown 确认 + 生成交付包入口。 */
-  /**
-   * @returns {void}
-   */
-  function renderDeliveryGate() {
-    if (!elements.deliveryGate) return;
-    elements.deliveryGate.innerHTML = "";
-    const shots = shotSummariesNow();
-    for (const shot of shots) {
-      const state = selectionStateOf(shot.shot_id);
-      const row = createElement("div", {
-        className: "gate-row", attrs: { "data-shot-id": shot.shot_id, "data-selection-state": state },
-      });
-      row.append(createElement("span", { className: "name", text: shot.label }));
-      row.append(createElement("span", {
-        className: "badge " + (state === "current" ? "is-adopted" : (state === "stale" ? "is-review-warn" : "is-empty")),
-        text: state === "current" ? "已采用" : (state === "stale" ? "已采用（已过期）" : "未采用"),
-      }));
-      row.append(createElement("span", {
-        className: "meta", text: shot.required === true ? "必需图" : "可选图",
-      }));
-      if (state !== "current") {
-        const jump = createElement("button", { text: "去审核", attrs: { type: "button" } });
-        jump.addEventListener("click", () => { stageShell.select("review"); });
-        row.append(jump);
-      }
-      elements.deliveryGate.append(row);
-    }
-    renderDeliveryFindings();
-    renderDeliverySuite();
-    renderDeliveryUnknowns();
-    renderDeliveryResult();
-    const requiredShots = shots.filter((shot) => shot.required === true);
-    const pending = requiredShots.filter((shot) => selectionStateOf(shot.shot_id) !== "current");
-    const projection = reviewDelivery.projection();
-    const state = projection.gate;
-    elements.deliverExport.disabled = !(state && state.ready_to_export === true) || projection.exporting;
-    elements.deliverStatus.textContent = !shots.length
-      ? "还没有套图方案。"
-      : (projection.exporting
-        ? "正在生成交付包…"
-        : (pending.length
-          ? "还差 " + pending.length + " 张必需图没有当前有效的采用。"
-          : (!state || state.failed || !state.findings.length
-            ? "正在核对交付门禁…"
-            : (state.ready_to_export
-              ? "交付门禁通过：可以生成交付包（只包含已采用的候选）。"
-              : "交付门禁未通过：" + state.blocking.length + " 条阻断，逐条处理后才能生成。"))));
-  }
-  /**
-   * @param {{bytes: Uint8Array, file_name: string}} artifact
-   * @returns {void}
-   */
-  function downloadArtifact(artifact) {
-    const blob = new Blob([artifact.bytes.slice()], { type: "application/zip" });
-    const url = URL.createObjectURL(blob);
-    objectUrls.push(url);
-    const record = reviewDelivery.projection().record;
-    if (record) downloadUrlByFile.set(record.sha256, url);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = artifact.file_name;
-    document.body.append(anchor);
-    anchor.click();
-    anchor.remove();
-  }
-
-  /**
-   * @returns {Promise<void>}
-   */
-  async function handleExportFromWorkspace() {
-    const action = beginAction();
-    if (!action.projectId) return;
-    clearError(elements.deliverError);
-    elements.deliverStatus.textContent = "正在打包完整项目…";
-    try {
-      const outcome = await reviewDelivery.exportProject();
-      if (!action.alive() || !outcome.artifact) return;
-      downloadArtifact(outcome.artifact);
-      elements.deliverStatus.textContent = "已导出项目包（含完整历史，可在别的浏览器导入）。";
-    } catch (error) {
-      if (action.alive()) {
-        elements.deliverStatus.textContent = "";
-        showError(elements.deliverError, errorMessageOf(error, "导出失败，请重试。"));
-      }
-    }
-  }
-
-  /* 交付包生成归 reviewDelivery 所有；workspace 只做下载与状态文案，不组 manifest/ZIP/export_record。 */
-
-  /** 生成交付包：门禁未通过时 owner 抛错，这里只翻译结果，不做批次策略。 */
-  /**
-   * @returns {Promise<void>}
-   */
-  async function handleDeliverExport() {
-    const action = beginAction();
-    if (!action.projectId || !projectId) return;
-    clearError(elements.deliverError);
-    renderDeliveryGate();
-    try {
-      const outcome = await reviewDelivery.exportDelivery();
-      if (!action.alive()) return;
-      if (outcome && outcome.skipped) return;
-      if (outcome && outcome.artifact) {
-        downloadArtifact(outcome.artifact);
-        elements.deliverStatus.textContent = "已生成交付包（" + (outcome.includedShots || 0)
-          + " 张图；记录已追加，不覆盖历史）。";
-      }
-    } catch (error) {
-      if (action.alive()) {
-        elements.deliverStatus.textContent = "交付包未生成。";
-        showError(elements.deliverError, errorMessageOf(error, "生成交付包失败，请重试。"));
-      }
-    } finally {
-      if (action.alive()) renderDeliveryGate();
-    }
   }
 
   /**
@@ -5558,11 +5111,11 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
     elements.stageNextDeliver.addEventListener("click", () => {
       stageShell.select("deliver", { focusHeading: true });
     });
-    elements.deliverProjectPackage.addEventListener("click", () => { handleExportFromWorkspace(); });
-    elements.deliverExport.addEventListener("click", () => { handleDeliverExport(); });
+    elements.deliverProjectPackage.addEventListener("click", () => { void deliveryView?.handleProjectExport(); });
+    elements.deliverExport.addEventListener("click", () => { void deliveryView?.handleDeliveryExport(); });
     if (elements.suiteReviewRun) {
-      elements.suiteReviewRun.addEventListener("click", () => { runSuiteReview(); });
-      elements.suiteAiReviewRun.addEventListener("click", () => { void runSuiteReview({ ai: true }); });
+      elements.suiteReviewRun.addEventListener("click", () => { void deliveryView?.runSuiteReview(); });
+      elements.suiteAiReviewRun.addEventListener("click", () => { void deliveryView?.runSuiteReview({ ai: true }); });
     }
   }
 
@@ -5587,6 +5140,7 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
     reviewDelivery.reset();
     revokePreviewUrls();
     revokeObjectUrls();
+    deliveryView?.dispose();
     compareShotId = null;
     compareCandidateId = null;
     compareToken += 1;
@@ -5672,6 +5226,7 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
       await saveIntakeNow();
       revokeObjectUrls();
       revokePreviewUrls();
+      deliveryView?.dispose();
       project = null;
       projectId = null;
     },

@@ -109,3 +109,23 @@ export function describeBlocking(blocking, mapMessage = null) {
         .map((item) => (mapMessage ? mapMessage(item.message) : item.message))
         .join("；");
 }
+/** 把 DOMException/业务错误统一降为可读文案；不吞掉原始错误对象。 */
+export function errorMessageOf(error, fallback) {
+    if (error instanceof Error && typeof error.message === "string" && error.message)
+        return error.message;
+    if (error !== null && typeof error === "object" && "message" in error) {
+        const message = error.message;
+        if (typeof message === "string" && message)
+            return message;
+    }
+    return fallback;
+}
+/** 就地报错：写进指定元素并显示；错误文案不自动消失，避免被下一次渲染悄悄抹掉。 */
+export function showError(element, message) {
+    element.textContent = message;
+    element.hidden = false;
+}
+export function clearError(element) {
+    element.textContent = "";
+    element.hidden = true;
+}
