@@ -422,7 +422,8 @@ export function createReviewDeliveryModule(deps) {
                 actionRefs.push({ actionId: observation.record.action_id, version: observation.version });
                 promptRefs.push(ref("prompt_version", file.shot_id, file.prompt_version));
             }
-            const fence = consumptionFence(snap.source, snap.shots.map(shot => shot.shot_id));
+            // 围栏只钉住实际交付的 shots：无关 shot 调整不误阻断交付（设计 §10.6）。
+            const fence = consumptionFence(snap.source, images.map(image => image.shot_id));
             fence.assetSha256 = [...fence.assetSha256, ...files.map(file => file.asset_sha256)];
             await deps.repository.commitDeliveryRecord({
                 projectId: action.projectId, exportDocumentId: exportRecordDocumentIdOf({ at, zipSha256: sha }), payload,

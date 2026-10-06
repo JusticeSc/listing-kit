@@ -813,7 +813,7 @@ export function createRepository({
         if (canonicalJson(existing.payload) !== canonicalJson(payload)) transactionConflict("export_identity_conflict");
         return /** @type {import("./validate.js").StoredDocumentRecord<import("../domain/type-contracts.js").ExportRecordPayload>} */ (existing);
       }
-      await checkFenceHeads(tx, projectId, input.fence);
+      await checkFenceHeads(tx, projectId, input.fence, input.candidates.map(ref => ref.documentId));
       for (const ref of [...input.selections, ...input.reports, ...input.acknowledgements, input.suiteReport]) {
         const row = await exactDocument(store, projectId, ref);
         const head = await readDocumentHead(store, projectId, ref.kind, ref.documentId);
