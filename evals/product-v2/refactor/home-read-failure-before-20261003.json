@@ -1,0 +1,22 @@
+{
+  "schema": "amz-home-read-reproduction/v1",
+  "not_authority": "controlled fault reproduction, not historical incident root cause",
+  "recorded_at": "2026-10-02T18:39:54.854Z",
+  "source_sha256": "dff7281945e73d184deb6d9b2f460b8f03c3627766143d28188010291293db3a",
+  "injection": "Throw one UnknownError at native projects.getAll, while actual project DB remains intact.",
+  "before": {
+    "version": 1,
+    "ui_rows": 0
+  },
+  "after_click": {
+    "ui_rows": 0,
+    "empty_visible": false,
+    "error_visible": false,
+    "error_text": "",
+    "retry": false,
+    "unhandled": [
+      "StorageError: controlled-project-list-read-failure"
+    ]
+  },
+  "source_provenance": "Pre-edit app source reconstructed by reversing owned edit; original snapshot content tag 4A02 reproduced. Prior reader-output digest superseded."
+}

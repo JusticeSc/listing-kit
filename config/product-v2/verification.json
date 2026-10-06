@@ -38,13 +38,28 @@
         "ci": true
       }
     ],
-    "npm:check:versions": [
+    "npm:build:frontend": [
       {
         "args": [],
-        "category": "control",
+        "category": "types",
+        "ci": false,
+        "reason": "写产物命令：CI 只跑 check:generated 校验新鲜度，不在 CI 里写文件；本地改 TS 后跑 build:frontend 再提交产物。"
+      }
+    ],
+    "npm:check:generated": [
+      {
+        "args": [],
+        "category": "types",
         "ci": true
       }
     ],
+     "npm:check:versions": [
+       {
+         "args": [],
+         "category": "control",
+         "ci": true
+       }
+     ],
     "npm:test:domain": [
       {
         "args": [],

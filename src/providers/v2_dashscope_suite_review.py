@@ -27,7 +27,7 @@ from src.providers.v2_suite_review import (SUITE_CHECK_LABELS, SUITE_REVIEW_CONT
                                            RawSuiteReviewOutput, SuiteReviewResult,
                                            parse_raw_suite_output)
 
-DEFAULT_PROVIDER_ID = "dashscope-suite-review"
+DEFAULT_PROVIDER_ID = "dashscope-review"
 DEFAULT_MODEL_ID = "qwen-vl-max"
 DEFAULT_API_KEY_ENV = "DASHSCOPE_API_KEY"
 DEFAULT_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1"

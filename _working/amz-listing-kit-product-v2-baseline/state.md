@@ -782,7 +782,7 @@ task_progress:
       - evals/product-v2/harness/project-package-contract.js
       - evals/product-v2/harness/project-package-contract.html
       - app/product_v2/storage/package.js
-      - app/product_v2/storage/package-migrations.js
+      - _stage-amz-control/formal-start-20261005T024433Z/app/product_v2/storage/package-migrations.js
       - app/product_v2/storage/transfer.js
       - app/product_v2/storage/index.js
       - app/product_v2/app.js

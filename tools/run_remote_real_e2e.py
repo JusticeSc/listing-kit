@@ -287,8 +287,11 @@ def main() -> int:
             step = time.monotonic()
             expect(page.locator("#confirm-action")).to_be_enabled(timeout=60_000)
             page.click("#confirm-action")
-            expect(page.locator("#confirm-record")).to_contain_text("已确认 v", timeout=60_000)
-            page.click("#batch-run")
+            # 确认即提交，无需二步：等 attempt 行出现即视为已提交。
+            page.wait_for_function(
+                """() => document.querySelectorAll(
+                    '#attempt-list .attempt-row[data-attempt-state]').length > 0""",
+                timeout=60_000)
             page.wait_for_function(
                 """(ids) => ids.every((shotId) => {
                   const node = document.querySelector(

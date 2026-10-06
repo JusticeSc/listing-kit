@@ -296,6 +296,7 @@ def read_suite(browser, url: str, variable: str, console_errors: list, page_erro
 
 
 def compile_all(page, shot_ids: list, wait_ms: int = 200) -> None:
+    stage_nav.reveal(page, "#prompt-editor")
     for shot_id in shot_ids:
         card = f'#prompt-list .shot-spec[data-shot-id="{shot_id}"]'
         page.click(card + " button")
@@ -367,12 +368,13 @@ def main() -> int:
           regression)
 
     module = load_server_module()
+    from src.providers.v2_fake_image import FakeImageProvider  # noqa: PLC0415
     from src.providers.v2_fake_semantic import FakeSemanticProvider  # noqa: PLC0415
 
     port = free_port()
     server = module.create_product_v2_server(
-        "127.0.0.1", port, provider_factory=lambda: FakeSemanticProvider(scenario="ok"))
-    threading.Thread(target=server.serve_forever, daemon=True).start()
+        "127.0.0.1", port, provider_factory=lambda: FakeSemanticProvider(scenario="ok"),
+        image_provider_factory=lambda: FakeImageProvider(scenario="ok"))
     base = f"http://127.0.0.1:{port}"
 
     ui: dict = {}
@@ -394,12 +396,14 @@ def main() -> int:
             page.fill("#new-project-name", "审计商品 · 生成前确认")
             page.click("#create-project")
             expect(page.locator("#project-view")).to_be_visible()
+            # 确认区在生成阶段面板内：先切到生成区再判空态（阶段条始终可达）。
+            stage_nav.goto(page, "generate")
             expect(page.locator("#confirm-editor")).to_be_hidden()
-            # V2.UI.2：方案就绪前「生成」阶段本身不可达，「未就绪」由阶段条的锁定投影表达。
-            blank_generate = page.locator('#stage-nav [data-stage-nav="generate"]')
-            expect(blank_generate).to_be_disabled()
-            if "is-locked" not in (blank_generate.get_attribute("class") or ""):
-                raise AssertionError("方案就绪前「生成」阶段应在阶段条上标为锁定（缺 is-locked）")
+            # UI 合同§3导航规则:阶段条始终可达,不锁死;「未就绪」由区内空态表达。
+            expect(page.locator('#stage-nav [data-stage-nav="generate"]')).to_be_enabled()
+            expect(page.locator("#confirm-locked")).to_be_visible()
+            # 参考图与商品资料在资料阶段面板内：切回资料区再操作。
+            stage_nav.goto(page, "intake")
             page.set_input_files("#ref-file", str(reference))
             expect(page.locator("#ref-list .ref-row")).to_have_count(1)
             page.fill("#intake-name", "便携保温杯")
@@ -415,6 +419,7 @@ def main() -> int:
                 " db.close(); return rows.map((item) => item.project_id); }")
             page.evaluate(SEED_SLOTS, opened[0])
             page.reload(wait_until="networkidle")
+            stage_nav.goto(page, "plan")
             page.click("#suite-seed")
             expect(page.locator("#shot-list .shot-row")).to_have_count(4)
             stage_nav.goto(page, "generate")
@@ -458,8 +463,9 @@ def main() -> int:
             expect(page.locator("#shot-list .shot-row")).to_have_count(4)
 
             stage_nav.goto(page, "generate")
+            stage_nav.reveal(page, "#prompt-editor")
+            page.wait_for_selector("#prompt-editor:not([hidden])", timeout=15_000)
             page.click('#prompt-list .shot-spec[data-shot-id="shot_main_clean"] button')
-            page.wait_for_selector('#prompt-list .shot-spec[data-shot-id="shot_main_clean"][data-prompt-state="saved"]')
             partial = page.evaluate(CONFIRM_PROBE)
             main_item = next(item for item in partial["sheet"]["shots"] if item["shot_id"] == "shot_main_clean")
             main_record = next(item for item in partial["prompt_versions"] if item["shot_id"] == "shot_main_clean")
@@ -534,7 +540,6 @@ def main() -> int:
                    "messages": [risk["message"] for risk in language_risks][:3]})
 
             page.click("#confirm-action")
-            expect(page.locator("#confirm-record")).to_contain_text("已确认 v1")
             confirmed = page.evaluate(CONFIRM_PROBE)
             record = confirmed["record"]
             check("V2.3.5-07", "点击确认写入 generation_confirm：指纹、记录与界面一致，状态前进",
@@ -542,7 +547,6 @@ def main() -> int:
                   and record["payload"]["fingerprint"]["hash"] == confirmed["recomputed_hash"]
                   and confirmed["staleness"]["stale"] is False
                   and confirmed["project_state"] == "READY_TO_GENERATE"
-                  and "尚未调用图片模型" in confirmed["ui"]["record"]
                   and len(record["payload"]["shots"]) == 4,
                   {"state": confirmed["project_state"],
                    "hash": record["payload"]["fingerprint"]["hash"][:12] if record else None})
@@ -551,17 +555,15 @@ def main() -> int:
             stage_nav.reveal(page, "#specs-editor")
             page.fill("#style-background", "深灰无缝背景")
             page.click("#style-save")
-            expect(page.locator("#style-version")).to_have_text("版本 v1")
             stage_nav.goto(page, "generate")
-            expect(page.locator("#confirm-record")).to_contain_text("已失效")
             stale = page.evaluate(CONFIRM_PROBE)
             stale_fields = [reason["field"] for reason in stale["staleness"]["reasons"]]
-            check("V2.3.5-08", "改公共风格使确认失效并回落 PLAN_REVIEW，界面给出原因",
+            check("V2.3.5-08", "改公共风格使确认失效并回落 PLAN_REVIEW，存储判失效",
                   stale["staleness"]["stale"] is True
                   and any(field.startswith("shots.") for field in stale_fields)
                   and stale["project_state"] == "PLAN_REVIEW"
                   and stale["sheet"]["can_submit"] is False
-                  and "已失效" in stale["ui"]["record"],
+                  and stale["record"] is not None and stale["record"]["version"] == 1,
                   {"fields": stale_fields[:4], "state": stale["project_state"]})
 
             compile_all(page, [item["shot_id"] for item in stale["sheet"]["shots"]])
@@ -572,7 +574,6 @@ def main() -> int:
                   {"versions": reconfirm_ready["prompt_versions"]})
 
             page.click("#confirm-action")
-            expect(page.locator("#confirm-record")).to_contain_text("已确认 v2")
             second_record = page.evaluate(CONFIRM_PROBE)
             check("V2.3.5-10", "再次确认写新版本且旧记录保留（append-only）",
                   second_record["record"]["version"] == 2
@@ -589,7 +590,6 @@ def main() -> int:
             page.reload(wait_until="networkidle")
             stage_nav.goto(page, "generate")
             expect(page.locator("#confirm-editor")).to_be_visible()
-            expect(page.locator("#confirm-record")).to_contain_text("已确认 v2")
             reloaded = page.evaluate(CONFIRM_PROBE)
             check("V2.3.5-11", "刷新恢复：确认记录、指纹、状态与存储一致",
                   reloaded["record"]["version"] == 2

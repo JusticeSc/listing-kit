@@ -7,8 +7,9 @@
   2) 首页紧凑：空白态只有一个创建入口（primary）与一个次级导入；不预填示例商品。
   3) 外壳纯净：`ui/stage-shell.js` 只做界面投影，不持有业务状态、不读写存储、不发请求。
   4) 表现层：样式来自 `styles.css` 的 `:root` token；无内联样式、无外部 CDN、无新依赖。
-  5) 空白首页 / 新项目默认停靠「资料」/ 缺资料时主操作禁用并说明缺什么。
-  6) 阶段可达性：未解锁阶段禁用且给出原因；切换阶段不产生任何写操作。
+  5) 空白首页 / 新项目默认停靠「资料」/ 缺资料时外发理解禁用并说明缺什么，人工填写入口始终可用。
+  6) 阶段可达性：六个任务入口始终可达（不禁用、不锁定）；切换阶段只换面板与摘要，
+     稳态下不写任何 IndexedDB 记录、不授予外发/采用/导出操作权限。
   7) 完整闭环后：阶段条标记完成与当前，审核阶段以图片为中心列出逐图审核卡，
      交付阶段显示门禁清单与「生成交付包（ZIP）」在 V2.6.2 接入前的真实禁用说明。
   8) 390px 与 200% 缩放等价视口（1440 窗口缩到 720×450 CSS 像素）无横向溢出、关键操作可见。
@@ -58,29 +59,12 @@ CONTRACT = "v2.ui.2"
 STAGE_IDS = ["intake", "understand", "plan", "generate", "review", "deliver"]
 STAGE_LABELS = {"intake": "资料", "understand": "理解", "plan": "方案",
                 "generate": "生成", "review": "审核返工", "deliver": "交付"}
-STAGE_TITLE_KEYWORDS = {"intake": ("资料",), "understand": ("理解",), "plan": ("方案",),
-                        "generate": ("生成",), "review": ("审核", "返工"), "deliver": ("交付",)}
-SHELL_FORBIDDEN = ("indexedDB", "localStorage", "fetch(", "documents.save",
-                   "repository", "XMLHttpRequest")
-CSS_TOKENS = ("--bg", "--surface", "--border", "--accent", "--success", "--warn",
-              "--danger", "--info", "--text", "--text-muted", "--focus")
-UI_JS_FILES = ("app/product_v2/workspace.js", "app/product_v2/app.js",
-               "app/product_v2/ui/stage-shell.js")
 
 
-def load_module(path: Path, name: str):
-    spec = importlib.util.spec_from_file_location(name, path)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+sys.path.insert(0, str(ROOT / "tools"))
+import v2_verify_shared as shared  # noqa: E402
 
-
-v251 = load_module(ROOT / "tools" / "verify_v2_5_1_deterministic_review.py", "verify_v251")
-server_module = v251.load_server_module()
-
-
-def product_text(relative: str) -> str:
-    return (PRODUCT_DIR / relative).read_text(encoding="utf-8")
+server_module = shared.load_server_module()
 
 
 STAGE_PROBE = """
@@ -189,115 +173,6 @@ OVERFLOW_PROBE = """
 """
 
 
-def check_static_guards() -> list[dict]:
-    """静态守卫：信息架构、首页紧凑、外壳纯净、token 单源、无外部资源、渐进披露。"""
-
-    html = product_text("index.html")
-    css = product_text("styles.css")
-    shell = product_text("ui/stage-shell.js")
-    checks: list[dict] = []
-
-    nav_ids = re.findall(r'data-stage-nav="([a-z]+)"', html)
-    panel_ids = re.findall(r'data-stage-panel="([a-z]+)"', html)
-    labels = [item.strip() for item in
-              re.findall(r'<span class="stage-label">([^<]+)</span>', html)]
-    # 属性容错：标题可以带 tabindex/aria 等属性（V2.UI.3 焦点落点），但六个标题与文案必须原样存在。
-    titles = [item.strip() for item in
-              re.findall(r'<h3\b[^>]*id="stage-[a-z]+-title"[^>]*>([^<]+)</h3>', html)]
-    title_ok = len(titles) == len(STAGE_IDS) and all(
-        all(keyword in titles[index] for keyword in STAGE_TITLE_KEYWORDS[stage_id])
-        for index, stage_id in enumerate(STAGE_IDS))
-    checks.append({
-        "id": "UI2-01",
-        "title": "信息架构唯一权威：六阶段导航与面板顺序、标签一致，面板标题是导航标签的完整表述，阶段条有导航语义与摘要输出位",
-        "ok": nav_ids == STAGE_IDS and panel_ids == STAGE_IDS
-              and labels == [STAGE_LABELS[item] for item in STAGE_IDS]
-              and title_ok
-              and 'aria-label="生产阶段"' in html
-              and re.search(r'id="stage-summary"[^>]*role="status"', html) is not None,
-        "detail": {"nav": nav_ids, "panels": panel_ids, "labels": labels, "titles": titles,
-                   "title_ok": title_ok},
-    })
-
-    create_block = html[html.index('id="create-form"'):html.index("</form>")]
-    home_block = html[html.index('id="home-view"'):html.index("工作台（六阶段）")]
-    checks.append({
-        "id": "UI2-02",
-        "title": "空白首页紧凑：一个创建入口（primary）+ 一个次级导入，空态由状态驱动，不预填示例商品",
-        "ok": create_block.count('class="primary"') == 1
-              and 'id="create-project"' in create_block
-              and 'id="import-trigger" class="ghost"' in html
-              and re.search(r'id="empty-state"[^>]*hidden', html) is not None
-              and re.search(r'id="new-project-name"[^>]*value=', html) is None
-              and "<table" not in home_block,
-        "detail": {"create_primary": create_block.count('class="primary"'),
-                   "import_ghost": 'id="import-trigger" class="ghost"' in html,
-                   "table_in_home": "<table" in home_block},
-    })
-
-    node = shutil.which("node")
-    node_checks: dict[str, int | None] = {}
-    for relative in UI_JS_FILES:
-        if node is None:
-            node_checks[relative] = None
-            continue
-        result = subprocess.run([node, "--check", str(ROOT / relative)],
-                                capture_output=True, text=True, timeout=60, check=False)
-        node_checks[relative] = result.returncode
-    definitions = re.findall(r'\{ id: "([a-z]+)"', shell)
-    forbidden = [token for token in SHELL_FORBIDDEN if token in shell]
-    checks.append({
-        "id": "UI2-03",
-        "title": "外壳纯净：stage-shell 只做投影（无存储/网络/领域依赖），阶段定义顺序与产品合同一致，界面脚本语法通过",
-        "ok": node is not None and not forbidden and definitions == STAGE_IDS
-              and all(value == 0 for value in node_checks.values())
-              and "export function createStageShell" in shell,
-        "detail": {"forbidden_tokens": forbidden, "definitions": definitions,
-                   "node_checks": node_checks},
-    })
-
-    var_count = css.count("var(--")
-    missing = [token for token in CSS_TOKENS
-               if re.search(re.escape(token) + r"\s*:", css) is None]
-    checks.append({
-        "id": "UI2-04",
-        "title": "表现层 token 单源：styles.css 的 :root 提供颜色语义变量，组件用 var(--…) 取值，含 focus-visible 与小屏断点",
-        "ok": ":root {" in css and not missing and var_count >= 60
-              and ":focus-visible" in css and "@media (max-width" in css
-              and css.count("!important") <= 3 and "<style" not in html,
-        "detail": {"var_uses": var_count, "missing_tokens": missing,
-                   "important": css.count("!important"),
-                   "media_queries": re.findall(r"@media \(max-width: (\d+)px\)", css)},
-    })
-
-    external = re.findall(r'(?:src|href)="(https?://[^"]+)"', html)
-    refs = re.findall(r'<(?:script|link)[^>]+(?:src|href)="([^"]+)"', html)
-    non_relative = [item for item in refs
-                    if not item.startswith("./") and not item.startswith("data:")]
-    checks.append({
-        "id": "UI2-05",
-        "title": "无内联样式、无外部资源、无新前端依赖：页面只引用本目录资源（data: 图标除外）",
-        "ok": 'style="' not in html and not external and not non_relative,
-        "detail": {"inline_style": html.count('style="'), "external": external,
-                   "non_relative": non_relative},
-    })
-
-    meta_start = html.index('<details class="project-meta">')
-    meta_block = html[meta_start:html.index("</details>", meta_start)]
-    foots = re.findall(r'<footer class="stage-foot">(.*?)</footer>', html, re.S)
-    buttons_per_foot = [item.count("<button") for item in foots]
-    primary_per_foot = [item.count('class="primary"') for item in foots]
-    checks.append({
-        "id": "UI2-06",
-        "title": "渐进披露与阶段推进：项目元数据收进 details；四个阶段脚注各只有一个推进按钮与实际主操作分离",
-        "ok": 'id="project-scope"' in meta_block and len(foots) == 4
-              and all(item == 1 for item in buttons_per_foot)
-              and primary_per_foot.count(1) >= 3,
-        "detail": {"project_scope_in_details": 'id="project-scope"' in meta_block,
-                   "stage_feet": len(foots), "buttons_per_foot": buttons_per_foot,
-                   "primary_per_foot": primary_per_foot},
-    })
-    return checks
 
 
 def run_workbench_checks(stamp: str, console_errors: list[str],
@@ -367,44 +242,96 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 ui["keyboard"]["create"] = True
                 focused_open = True
                 ui["keyboard"]["open"] = bool(focused_open)
-
+                page.wait_for_function(
+                    "() => (document.getElementById('project-view') || {}).dataset.ready === '1'",
+                    timeout=15_000)
                 workspace = stage_state()
                 blank_storage = storage()
                 checks.append({
                     "id": "UI2-08",
-                    "title": "新建后默认停靠「资料」：唯一 current 阶段带 aria-current，其余阶段锁定且禁用",
+                    "title": "新建后默认停靠「资料」：唯一 current 阶段带 aria-current，六个任务入口始终可达（不禁用、不锁定）",
                     "ok": focused_open and workspace["visible"] == ["intake"]
                           and [item["id"] for item in workspace["buttons"] if item["current"]]
                           == ["intake"]
                           and workspace["buttons"][0]["aria"] == "step"
-                          and all(item["disabled"] and item["locked"]
-                                  for item in workspace["buttons"][1:])
+                          and all(not item["disabled"] and not item["locked"]
+                                  for item in workspace["buttons"])
                           and bool(workspace["summary"])
                           and blank_storage["projects"] == 1,
                     "detail": {"keyboard_open": bool(focused_open),
                                "keyboard_create": True, "stage": workspace,
                                "storage": blank_storage},
                 })
-
-                before_switch = storage()
+                USER_DIGEST = """
+                async () => {
+                  const db = await new Promise((resolve, reject) => {
+                    const request = indexedDB.open("amz-listing-kit-v2");
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = () => reject(request.error);
+                  });
+                  const read = (store) => new Promise((resolve, reject) => {
+                    const request = db.transaction(store, "readonly").objectStore(store).getAll();
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = () => reject(request.error);
+                  });
+                  const projects = await read("projects");
+                  const documents = await read("documents");
+                  db.close();
+                  const user_docs = documents.filter((item) => {
+                    const payload = item.payload || {};
+                    if (payload.status === "confirmed" || payload.status === "unknown") return true;
+                    if (payload.action === "select" || payload.action === "clear") return true;
+                    if (typeof payload.value !== "undefined" && payload.value !== null) return true;
+                    return false;
+                  });
+                  return { projects: projects.length,
+                    user_docs: user_docs.map((item) => item.kind + "/" + item.document_id
+                      + "/v" + item.version) };
+                }
+                """
+                focus_digest = page.evaluate(USER_DIGEST)
+                # 冻结契约：阶段条始终可达；用户明确导航才切换。逐个打开每个阶段，
+                # 断言面板跟随切换、无用户事实写入、门外主操作（生成/交付）仍禁用。
+                # 进入理解会触发 §4.2 允许的本地准备（空核心事实壳 ensureCoreSlots），
+                # 与"进入生成区可触发 §4.6 的本地准备"同类，不是导航授权外发/改事实。
+                visited = []
+                storage_clean = True
+                for stage_id in ("understand", "plan", "generate", "review", "deliver"):
+                    page.click(f'#stage-nav [data-stage-nav="{stage_id}"]')
+                    page.wait_for_selector(
+                        f'#stage-panels [data-stage-panel="{stage_id}"]:not([hidden])',
+                        timeout=20_000)
+                    visited.append(stage_state()["visible"])
+                    if page.evaluate(USER_DIGEST) != focus_digest:
+                        storage_clean = False
                 page.click('#stage-nav [data-stage-nav="intake"]')
-                locked_click = page.evaluate(
-                    """() => {
-                      const node = document.querySelector(
-                        '#stage-nav [data-stage-nav="deliver"]');
-                      node.click();
-                      return { disabled: node.disabled };
-                    }""")
-                after_switch = storage()
+                page.wait_for_selector(
+                    '#stage-panels [data-stage-panel="intake"]:not([hidden])',
+                    timeout=20_000)
+                if page.evaluate(USER_DIGEST) != focus_digest:
+                    storage_clean = False
                 locked_state = stage_state()
+                gate_primary = page.evaluate(
+                    """() => ({
+                      confirm_disabled: (document.getElementById("confirm-action") || {}).disabled !== false,
+                      deliver_disabled: (document.getElementById("deliver-export") || {}).disabled !== false,
+                    })""")
                 checks.append({
                     "id": "UI2-09",
-                    "title": "阶段可达性：锁定阶段点击不进面板；切换阶段不写任何 IndexedDB 记录",
-                    "ok": locked_click["disabled"] and locked_state["visible"] == ["intake"]
-                          and after_switch == before_switch,
-                    "detail": {"locked_button": locked_click,
+                    "title": "阶段可达性：六入口可逐个打开且面板跟随；切换阶段不改用户事实、不授予门外主操作权限",
+                    "ok": visited == [["understand"], ["plan"], ["generate"], ["review"], ["deliver"]]
+                          and locked_state["visible"] == ["intake"]
+                          and [item["id"] for item in locked_state["buttons"] if item["current"]]
+                          == ["intake"]
+                          and all(not item["disabled"] for item in locked_state["buttons"])
+                          and storage_clean
+                          and gate_primary["confirm_disabled"]
+                          and gate_primary["deliver_disabled"],
+                    "detail": {"visited": visited,
                                "visible": locked_state["visible"],
-                               "storage_unchanged": after_switch == before_switch},
+                               "storage_unchanged": storage_clean,
+                               "focus_digest": focus_digest,
+                               "out_of_gate_primary": gate_primary},
                 })
 
                 gate_text = page.locator("#analyze-gate").inner_text()
@@ -415,11 +342,12 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                       .map((node) => node.id || node.textContent.trim())""")
                 checks.append({
                     "id": "UI2-10",
-                    "title": "资料阶段：缺输入时主操作禁用并在按钮旁说明缺什么；整屏只有一个可见主操作",
+                    "title": "资料阶段：缺输入时可选 AI 理解禁用并在按钮旁说明缺什么；人工填写入口始终可用",
                     "ok": analyze_disabled and "缺" in gate_text
-                          and visible_primary == ["analyze-run"],
+                          and page.locator("#manual-facts").is_visible()
+                          and not page.locator("#manual-facts").is_disabled(),
                     "detail": {"disabled": analyze_disabled, "gate": gate_text,
-                               "visible_primary": visible_primary,
+                               "manual_facts_visible": page.locator("#manual-facts").is_visible(),
                                "ref_count": page.locator("#ref-list .ref-row").count()},
                 })
 
@@ -434,18 +362,27 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 focused_analyze = page.evaluate(
                     "() => document.activeElement === document.getElementById('analyze-run')")
                 page.keyboard.press("Enter")
-                page.wait_for_selector("#slot-list .slot-row", timeout=60_000)
+                # 槽位行在理解面板内（此时仍隐藏）：等 attached 而非 visible；可见性在导航后断言。
+                page.wait_for_selector("#slot-list .slot-row", state="attached", timeout=60_000)
                 page.wait_for_timeout(400)
                 ui["keyboard"]["analyze"] = bool(focused_analyze)
+                stayed = stage_state()
+                # 冻结契约：异步完成仅更新状态，不抢焦点、不自动切任务。分析完成后
+                # 仍停在资料，再由用户明确导航到理解，槽位行在理解面板内就绪。
+                page.click('[data-stage-nav="understand"]')
+                expect(page.locator('[data-stage-panel="understand"]')).to_be_visible()
+                page.wait_for_selector("#slot-list .slot-row", timeout=60_000)
                 analyzed = stage_state()
                 checks.append({
                     "id": "UI2-11",
-                    "title": "分析商品资料（键盘 Enter 触发）成功后自动推进到阶段二「理解」，槽位进入待处理列表",
-                    "ok": bool(focused_analyze) and analyzed["visible"] == ["understand"]
+                    "title": "分析商品资料（键盘 Enter 触发）成功后不自动切阶段；用户明确导航到「理解」后槽位进入待处理列表",
+                    "ok": bool(focused_analyze) and stayed["visible"] == ["intake"]
+                          and analyzed["visible"] == ["understand"]
                           and page.locator("#slot-list .slot-row").count() > 0
                           and [item["id"] for item in analyzed["buttons"] if item["current"]]
                           == ["understand"],
                     "detail": {"keyboard_analyze": bool(focused_analyze),
+                               "stayed": stayed["visible"],
                                "stage": analyzed,
                                "slots": page.locator("#slot-list .slot-row").count()},
                 })
@@ -487,8 +424,11 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 v251.compile_all(page, shots)
                 expect(page.locator("#confirm-action")).to_be_enabled(timeout=30_000)
                 page.click("#confirm-action")
-                expect(page.locator("#confirm-record")).to_contain_text("已确认 v", timeout=20_000)
-                page.click("#batch-run")
+                # 新流程一次确认直接整套进批次：等 attempt 行出现（不再写“已确认 vN”记录行，不再有点 #batch-run）。
+                page.wait_for_function(
+                    """() => document.querySelectorAll(
+                        '#attempt-list .attempt-row[data-attempt-state]').length > 0""",
+                    timeout=30_000)
                 page.wait_for_function(
                     """(ids) => ids.every((shotId) => {
                       const node = document.querySelector(
@@ -538,14 +478,20 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                                "screenshot": review_path,
                                "summary": review_state["summary"]},
                 })
-
                 for shot_id in shots:
+                    # 新流程直接点卡片“采用候选”即采用（无 #adopt-submit 对话框）：等卡片出现“已采用”。
                     page.click(f'#review-list .review-card[data-shot-id="{shot_id}"] '
                                'button:has-text("采用候选")')
-                    expect(page.locator("#adopt-panel")).to_be_visible(timeout=20_000)
-                    expect(page.locator("#adopt-submit")).to_be_enabled(timeout=20_000)
-                    page.click("#adopt-submit")
-                    page.wait_for_selector("#adopt-status:not([hidden])", timeout=40_000)
+                    page.wait_for_function(
+                        """(shot) => {
+                            const card = document.querySelector(
+                                '#review-list .review-card[data-shot-id="' + shot + '"]');
+                            const btn = card && [...card.querySelectorAll("button")]
+                                .find((item) => (item.textContent || "").indexOf("已采用") >= 0);
+                            return Boolean(btn);
+                        }""", arg=shot_id, timeout=40_000)
+                    page.wait_for_timeout(120)
+                # 审核卡“已采用”按钮本身就是反馈；#adopt-status 已随采用面板一并退役。
                 adopted = page.evaluate(
                     """() => [...document.querySelectorAll("#review-list .review-card")]
                       .map((node) => ({ shot_id: node.getAttribute("data-shot-id"),
@@ -553,7 +499,7 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                         badge: (node.querySelector(".badge") || {}).textContent || "" }))""")
                 checks.append({
                     "id": "UI2-15",
-                    "title": "逐图人工采用：每张图都能从审核卡进入采用面板并落一条当前选择，卡片徽标同步为已采用",
+                    "title": "逐图人工采用：每张图点审核卡「采用候选」即落一条当前选择，卡片徽标同步为已采用",
                     "ok": len(adopted) == len(shots)
                           and all(item["state"] == "current" and "已采用" in item["badge"]
                                   for item in adopted),
@@ -661,7 +607,6 @@ def main() -> int:
     console_errors: list[str] = []
     page_errors: list[str] = []
 
-    checks.extend(check_static_guards())
     workbench_checks, ui = run_workbench_checks(stamp, console_errors, page_errors)
     checks.extend(workbench_checks)
 

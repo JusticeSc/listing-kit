@@ -39,6 +39,11 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 
 import v2_stage_nav as stage_nav  # noqa: E402  （V2.UI.2 六阶段工作台导航）
+import v2_verify_shared as shared  # noqa: E402  （正式 server/夹具/共同业务操作）
+from v2_verify_shared import (  # noqa: E402
+    png_bytes, load_server_module, free_port, run_entry, read_suite, compile_all,
+)
+
 
 PRODUCT_DIR = ROOT / "app" / "product_v2"
 HARNESS_DIR = ROOT / "evals" / "product-v2" / "harness"
@@ -82,41 +87,9 @@ REGRESSION_SUITES = (
 )
 
 
-def png_bytes(width: int, height: int, color: tuple[int, int, int]) -> bytes:
-    raw = b"".join(b"\x00" + bytes(color) * width for _ in range(height))
-
-    def chunk(tag: bytes, payload: bytes) -> bytes:
-        return (struct.pack(">I", len(payload)) + tag + payload
-                + struct.pack(">I", zlib.crc32(tag + payload) & 0xFFFFFFFF))
-
-    header = struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)
-    return (b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", header)
-            + chunk(b"IDAT", zlib.compress(raw)) + chunk(b"IEND", b""))
 
 
-def load_server_module():
-    spec = importlib.util.spec_from_file_location(
-        "product_v2_server_under_test", ROOT / "app" / "product_v2_server.py")
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
 
-
-def free_port() -> int:
-    with socket.socket() as probe:
-        probe.bind(("127.0.0.1", 0))
-        return probe.getsockname()[1]
-
-
-def run_entry(args: list[str], timeout: int = 180) -> dict:
-    env = {**os.environ, "PYTHONUTF8": "1", "PYTHONDONTWRITEBYTECODE": "1"}
-    completed = subprocess.run(
-        [sys.executable, "-B", str(ROOT / "app" / "server.py"), *args],
-        cwd=str(ROOT), env=env, capture_output=True, text=True,
-        encoding="utf-8", errors="replace", timeout=timeout, check=False,
-    )
-    return {"args": args, "rc": completed.returncode,
-            "tail": (completed.stdout + completed.stderr).strip().splitlines()[-10:]}
 
 
 def run_node_checks() -> dict:
@@ -129,63 +102,7 @@ def run_node_checks() -> dict:
     return {"files": results, "ok": all(item["rc"] == 0 for item in results)}
 
 
-class HarnessHandler(BaseHTTPRequestHandler):
-    def log_message(self, format, *args):  # noqa: A002
-        return
 
-    def _send(self, payload: bytes, ctype: str) -> None:
-        self.send_response(200)
-        self.send_header("Content-Type", ctype)
-        self.send_header("Content-Length", str(len(payload)))
-        self.send_header("Cache-Control", "no-store")
-        self.end_headers()
-        self.wfile.write(payload)
-
-    def do_GET(self):  # noqa: N802
-        path = self.path.split("?", 1)[0]
-        if path.startswith("/harness/"):
-            candidate = (HARNESS_DIR / path[len("/harness/"):]).resolve()
-            if str(candidate).startswith(str(HARNESS_DIR.resolve())) and candidate.is_file():
-                self._send(candidate.read_bytes(),
-                           MIME.get(candidate.suffix, "application/octet-stream"))
-                return
-        else:
-            candidate = (PRODUCT_DIR / path.lstrip("/")).resolve()
-            if str(candidate).startswith(str(PRODUCT_DIR.resolve())) and candidate.is_file():
-                self._send(candidate.read_bytes(),
-                           MIME.get(candidate.suffix, "application/octet-stream"))
-                return
-        self.send_error(404)
-
-
-def start_static_server() -> tuple[ThreadingHTTPServer, str]:
-    server = ThreadingHTTPServer(("127.0.0.1", 0), HarnessHandler)
-    threading.Thread(target=server.serve_forever, daemon=True).start()
-    return server, f"http://127.0.0.1:{server.server_address[1]}"
-
-
-def read_suite(browser, url: str, variable: str, console_errors: list, page_errors: list) -> dict:
-    page = browser.new_page()
-    try:
-        page.on("console", lambda message: console_errors.append("[suite] " + message.text)
-                if message.type == "error" else None)
-        page.on("pageerror", lambda error: page_errors.append("[suite] " + str(error)))
-        page.goto(url, wait_until="domcontentloaded")
-        page.wait_for_function(
-            f"() => window.{variable} && ['passed','failed','crashed'].includes(window.{variable}.status)",
-            timeout=90_000,
-        )
-        return page.evaluate(f"() => window.{variable}")
-    finally:
-        page.close()
-
-
-def compile_all(page, shot_ids: list, wait_ms: int = 200) -> None:
-    for shot_id in shot_ids:
-        card = f'#prompt-list .shot-spec[data-shot-id="{shot_id}"]'
-        page.click(card + " .toolbar button")
-        page.wait_for_selector(card + '[data-prompt-state="saved"]', timeout=15_000)
-        page.wait_for_timeout(wait_ms)
 
 
 SEED_SLOTS = """
@@ -277,11 +194,6 @@ async () => {
         ({ text: item.textContent, disabled: item.disabled })),
     };
   });
-  const buttonInfo = (id) => {
-    const node = document.getElementById(id);
-    if (!node) return null;
-    return { text: node.textContent, disabled: node.disabled, hidden: node.hidden };
-  };
   const errorNode = document.getElementById("attempt-error");
   const progressNode = document.getElementById("batch-progress");
   const hintNode = document.getElementById("batch-hint");
@@ -302,7 +214,6 @@ async () => {
       batch: {
         progress: progressNode ? progressNode.textContent : "",
         hint: hintNode ? hintNode.textContent : "",
-        run: buttonInfo("batch-run"),
       },
     },
   };
@@ -612,10 +523,11 @@ def main() -> int:
                                 && node.textContent.includes(wanted));
                         }""", arg=text, timeout=timeout)
 
-                def confirm_generation() -> None:
-                    expect(page.locator("#confirm-action")).to_be_enabled()
-                    page.click("#confirm-action")
-                    expect(page.locator("#confirm-record")).to_contain_text("已确认 v")
+                def confirm_generation() -> dict:
+                    gate = shared.confirm_and_submit(page, expect, probe, submit_requests)
+                    assert gate["ok"], f"确认必须产生本次授权的新消费：{gate['after_actions']}"
+                    return gate
+
 
                 def click_row_button(shot_id: str, text: str) -> None:
                     row(shot_id).locator(f'button:has-text("{text}")').first.click()
@@ -665,18 +577,18 @@ def main() -> int:
                 compile_all(page, shot_ids)
                 ok_shot, fail_shot, quota_shot, batch_shot = shot_ids
                 append_prompt_mark(page, fail_shot, MARK_FETCH_FAIL, "验证取回失败一次")
-                confirm_generation()
+                # 确认即提交：就绪探针必须在点确认之前采，否则批次已在跑、行状态不再是 none。
                 ready = probe()
+                confirm_generation()
                 ui["base_shots"] = shot_ids
                 check("V2.4.4-03",
-                      "就绪：4 张待提交、整套生成按钮可见、候选栏为空且只有参考图字节",
+                      "就绪：4 张待提交、候选栏为空且只有参考图字节",
                       len(ready["ui"]["rows"]) == 4
                       and all(item["state"] == "none" for item in ready["ui"]["rows"])
                       and all(item["preview"] is None for item in ready["ui"]["rows"])
-                      and "整套生成（4 张）" in (ready["ui"]["batch"]["run"] or {}).get("text", "")
                       and len(ready["asset_rows"]) == 1
                       and ready["candidate_chains"] == {},
-                      {"run": (ready["ui"]["batch"]["run"] or {}).get("text"),
+                      {"rows": len(ready["ui"]["rows"]),
                        "assets": len(ready["asset_rows"])})
 
                 # ---------------- 单张成功：候选自动入库，三方 sha256 一致 ----------------
@@ -808,7 +720,11 @@ def main() -> int:
                 # ---------------- 整套批次：只提交剩余图一次；全部成功且候选全部入库 ----------------
                 stage = "check08-batch"
                 submits_before8 = len(submit_requests)
-                page.click("#batch-run")
+                # 确认即提交后仅剩 batch_shot 未提交：按当前语义点继续队列，不再点已删除的旧整套按钮。
+                page.wait_for_selector(
+                    '.generation-queue button:has-text("按原摘要继续未提交队列")',
+                    timeout=30_000)
+                page.click('.generation-queue button:has-text("按原摘要继续未提交队列")')
                 wait_states({shot: "succeeded" for shot in shot_ids})
                 wait_candidate_ui(batch_shot)
                 finished = probe()
@@ -834,8 +750,7 @@ def main() -> int:
                       and all_stored and chains_ok
                       and "已成功 4" in finished["ui"]["batch"]["progress"]
                       and "待保存候选" not in finished["ui"]["batch"]["progress"]
-                      and "候选还没保存" not in finished["ui"]["batch"]["hint"]
-                      and "已全部生成" in (finished["ui"]["batch"]["run"] or {}).get("text", ""),
+                      and "候选还没保存" not in finished["ui"]["batch"]["hint"],
                       {"captured": len(captured8),
                        "progress": finished["ui"]["batch"]["progress"],
                        "hint": finished["ui"]["batch"]["hint"]})

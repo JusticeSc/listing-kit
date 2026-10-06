@@ -52,6 +52,8 @@ r"""文档守卫的反向对照（每向只改一个变量，改完即还原）�
 from __future__ import annotations
 
 import re
+import shutil
+import tempfile
 import subprocess
 import sys
 from pathlib import Path
@@ -61,11 +63,29 @@ sys.path.insert(0, str(ROOT / "src"))          # 只为取 console（见 src/con
 from console import enable_utf8  # noqa: E402
 enable_utf8()
 
+CODE_ROOT = ROOT
+_fixture = tempfile.TemporaryDirectory(prefix="amz-docs-probe-")
+ROOT = Path(_fixture.name)
+# 只复制守卫读取的控制材料；不复制或写入业务目录、密钥、浏览器数据。
+for relative in ("README.md", "AGENTS.md", "package.json", "package-lock.json",
+                 "pyproject.toml", "uv.lock", "app/product_v2/package.json"):
+    source = CODE_ROOT / relative
+    target = ROOT / relative
+    target.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(source, target)
+for directory in ("docs", "_working"):
+    for source in (CODE_ROOT / directory).rglob("*.md"):
+        target = ROOT / source.relative_to(CODE_ROOT)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, target)
+for relative in ("config", "app/product_v2/vendor", "evals/product-v2/vendor"):
+    shutil.copytree(CODE_ROOT / relative, ROOT / relative)
+
 INDEX = ROOT / "docs" / "INDEX.md"
 README = ROOT / "README.md"
 FRONTEND_MANIFEST = ROOT / "package.json"
 FRONTEND_LOCK = ROOT / "package-lock.json"
-GUARD = ROOT / "tools" / "check_docs.py"
+GUARD = CODE_ROOT / "tools" / "check_docs.py"
 VENDOR_PROBE = ROOT / "app" / "product_v2" / "vendor" / "zz_probe_ghost.js"
 
 # 备份留**字节**：仓库里同时存在 CRLF（README / 卡片）与 LF（计划、新工具）两种行尾，
@@ -140,7 +160,7 @@ def rebuild(doc: str, **over: str) -> str:
 
 def run_guard() -> tuple[int, str]:
     """跑真正的守卫（--no-run：跳过命令执行，快、不花钱；本条判据与命令无关）。"""
-    p = subprocess.run([sys.executable, str(GUARD), "--no-run"],
+    p = subprocess.run([sys.executable, "-B", str(GUARD), "--no-run", "--root", str(ROOT)],
                        cwd=str(ROOT), capture_output=True, text=True,
                        encoding="utf-8", errors="replace", timeout=180)
     return p.returncode, (p.stdout or "") + (p.stderr or "")
@@ -296,15 +316,14 @@ def main() -> int:
             if problems:
                 bad += 1
     finally:
-        # 无条件还原：探针改的是真文件（docs/INDEX.md / README.md / vendor 目录），
-        # 崩在中途也必须把它们放回去
+        # 所有植入只作用于临时副本；中断不需要回写任何权威文件。
         restore()
         drift = restore_drift()
         if drift:
             print(f"✗ 还原后与原始状态不一致：{drift} —— 「已还原」不成立（行尾、编码或残留文件）")
             bad += 1
         else:
-            print("已还原 INDEX / README / 前端 manifest-lock / vendor 探针文件（字节一致）")
+            print("独立副本已恢复 INDEX / README / manifest-lock / vendor（权威文件从未写入）")
 
     print()
     if bad:

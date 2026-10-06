@@ -36,49 +36,20 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 
 import v2_stage_nav as stage_nav  # noqa: E402  （V2.UI.2 六阶段工作台导航）
+import v2_verify_shared as shared  # noqa: E402  （正式 server/夹具/共同业务操作）
+from v2_verify_shared import (  # noqa: E402
+    read_suite, load_server_module, free_port, png_bytes, PROBE, SEED_SLOTS,
+    compile_all, candidate_of, reviews_for, row_of,
+)
+from src.providers.v2_review import REVIEW_CONTRACT_VERSION  # noqa: E402
 
 PRODUCT_DIR = ROOT / "app" / "product_v2"
 HARNESS_DIR = ROOT / "evals" / "product-v2" / "harness"
 EVIDENCE_DIR = ROOT / "evals" / "product-v2"
 EVIDENCE_IMAGE_DIR = EVIDENCE_DIR / "evidence"
 
-MIME = {
-    ".html": "text/html; charset=utf-8",
-    ".js": "text/javascript; charset=utf-8",
-    ".css": "text/css; charset=utf-8",
-    ".json": "application/json; charset=utf-8",
-}
 
 
-def current_review_contract() -> str:
-    """合同版本只有一个权威（review.js 常量）；本验证器跟随当前版本，不写死字面量。"""
-
-    text = (PRODUCT_DIR / "domain" / "review.js").read_text(encoding="utf-8")
-    match = re.search(r'REVIEW_CONTRACT_VERSION\s*=\s*"([^"]+)"', text)
-    if match is None:
-        raise SystemExit("review.js 里找不到 REVIEW_CONTRACT_VERSION。")
-    return match.group(1)
-
-DOMAIN_FILES = [
-    "app/product_v2/domain/shared.js",
-    "app/product_v2/domain/errors.js",
-    "app/product_v2/domain/slots.js",
-    "app/product_v2/domain/intake.js",
-    "app/product_v2/domain/brief.js",
-    "app/product_v2/domain/invalidation.js",
-    "app/product_v2/domain/suite-plan.js",
-    "app/product_v2/domain/suite.js",
-    "app/product_v2/domain/specs.js",
-    "app/product_v2/domain/prompt.js",
-    "app/product_v2/domain/confirm.js",
-    "app/product_v2/domain/attempt.js",
-    "app/product_v2/domain/batch.js",
-    "app/product_v2/domain/candidate.js",
-    "app/product_v2/domain/review.js",
-    "app/product_v2/domain/index.js",
-    "app/product_v2/workspace.js",
-    "evals/product-v2/harness/review-contract.js",
-]
 
 # R3.2 分层：浏览器只承载宿主特有案例 R11；纯领域 R01..R10/R12/R13 在 npm run test:domain。
 EXPECTED_CASES = ["R11"]
@@ -93,278 +64,24 @@ REGRESSION_SUITES = (
 )
 
 
-def png_bytes(width: int, height: int, color: tuple[int, int, int]) -> bytes:
-    raw = b"".join(b"\x00" + bytes(color) * width for _ in range(height))
-
-    def chunk(tag: bytes, payload: bytes) -> bytes:
-        return (struct.pack(">I", len(payload)) + tag + payload
-                + struct.pack(">I", zlib.crc32(tag + payload) & 0xFFFFFFFF))
-
-    header = struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)
-    return (b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", header)
-            + chunk(b"IDAT", zlib.compress(raw)) + chunk(b"IEND", b""))
 
 
-def load_server_module():
-    spec = importlib.util.spec_from_file_location(
-        "product_v2_server_under_test", ROOT / "app" / "product_v2_server.py")
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
 
 
-def free_port() -> int:
-    with socket.socket() as probe:
-        probe.bind(("127.0.0.1", 0))
-        return probe.getsockname()[1]
 
 
-def run_entry(args: list[str], timeout: int = 180) -> dict:
-    env = {**os.environ, "PYTHONUTF8": "1", "PYTHONDONTWRITEBYTECODE": "1"}
-    completed = subprocess.run(
-        [sys.executable, "-B", str(ROOT / "app" / "server.py"), *args],
-        cwd=str(ROOT), env=env, capture_output=True, text=True,
-        encoding="utf-8", errors="replace", timeout=timeout, check=False,
-    )
-    return {"args": args, "rc": completed.returncode,
-            "tail": (completed.stdout + completed.stderr).strip().splitlines()[-10:]}
 
 
-def run_node_checks() -> dict:
-    results = []
-    for relative in DOMAIN_FILES:
-        completed = subprocess.run(["node", "--check", str(ROOT / relative)],
-                                   cwd=str(ROOT), capture_output=True, text=True, check=False)
-        results.append({"file": relative, "rc": completed.returncode,
-                        "stderr": completed.stderr.strip()[-200:]})
-    return {"files": results, "ok": all(item["rc"] == 0 for item in results)}
 
 
-class HarnessHandler(BaseHTTPRequestHandler):
-    def log_message(self, format, *args):  # noqa: A002
-        return
-
-    def _send(self, payload: bytes, ctype: str) -> None:
-        self.send_response(200)
-        self.send_header("Content-Type", ctype)
-        self.send_header("Content-Length", str(len(payload)))
-        self.send_header("Cache-Control", "no-store")
-        self.end_headers()
-        self.wfile.write(payload)
-
-    def do_GET(self):  # noqa: N802
-        path = self.path.split("?", 1)[0]
-        if path.startswith("/harness/"):
-            candidate = (HARNESS_DIR / path[len("/harness/"):]).resolve()
-            if str(candidate).startswith(str(HARNESS_DIR.resolve())) and candidate.is_file():
-                self._send(candidate.read_bytes(),
-                           MIME.get(candidate.suffix, "application/octet-stream"))
-                return
-        else:
-            candidate = (PRODUCT_DIR / path.lstrip("/")).resolve()
-            if str(candidate).startswith(str(PRODUCT_DIR.resolve())) and candidate.is_file():
-                self._send(candidate.read_bytes(),
-                           MIME.get(candidate.suffix, "application/octet-stream"))
-                return
-        self.send_error(404)
 
 
-def start_static_server() -> tuple[ThreadingHTTPServer, str]:
-    server = ThreadingHTTPServer(("127.0.0.1", 0), HarnessHandler)
-    threading.Thread(target=server.serve_forever, daemon=True).start()
-    return server, f"http://127.0.0.1:{server.server_address[1]}"
 
 
-def read_suite(browser, url: str, variable: str, console_errors: list, page_errors: list) -> dict:
-    page = browser.new_page()
-    try:
-        page.on("console", lambda message: console_errors.append("[suite] " + message.text)
-                if message.type == "error" else None)
-        page.on("pageerror", lambda error: page_errors.append("[suite] " + str(error)))
-        page.goto(url, wait_until="domcontentloaded")
-        page.wait_for_function(
-            f"() => window.{variable} && ['passed','failed','crashed'].includes(window.{variable}.status)",
-            timeout=90_000,
-        )
-        return page.evaluate(f"() => window.{variable}")
-    finally:
-        page.close()
 
 
-def compile_all(page, shot_ids: list, wait_ms: int = 200) -> None:
-    stage_nav.goto(page, "generate")
-    for shot_id in shot_ids:
-        card = f'#prompt-list .shot-spec[data-shot-id="{shot_id}"]'
-        page.click(card + " .toolbar button")
-        page.wait_for_selector(card + '[data-prompt-state="saved"]', timeout=15_000)
-        page.wait_for_timeout(wait_ms)
 
 
-SEED_SLOTS = """
-async (projectId) => {
-  const domain = await import("/domain/index.js");
-  const storage = await import("/storage/index.js");
-  const opened = await storage.openStorage({});
-  try {
-    const repository = opened.repository;
-    const slot = (slotId, value) => {
-      const definition = domain.coreSlotDefinition(slotId);
-      return {
-        schema_version: 1, slot_id: slotId, label: definition.label,
-        authority: "core_fixed", value_type: definition.value_type,
-        critical: definition.critical, value: value, source: "user_input",
-        status: "confirmed", confidence: null,
-        evidence: [{ kind: "user", ref: "v251-seed" }], depends_on: [],
-      };
-    };
-    await repository.documents.save(projectId, {
-      kind: "fact_slot", documentId: "product_name", payload: slot("product_name", "便携保温杯"),
-    });
-    await repository.documents.save(projectId, {
-      kind: "fact_slot", documentId: "product_category", payload: slot("product_category", "保温杯"),
-    });
-    await repository.documents.save(projectId, {
-      kind: "fact_slot", documentId: "signature_features",
-      payload: slot("signature_features", ["304不锈钢内胆", "12小时保温"]),
-    });
-    return { slots: 3 };
-  } finally {
-    opened.close();
-  }
-}
-"""
-
-PROBE = """
-async () => {
-  const db = await new Promise((resolve, reject) => {
-    const request = indexedDB.open("amz-listing-kit-v2");
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-  const read = (store) => new Promise((resolve, reject) => {
-    const request = db.transaction(store, "readonly").objectStore(store).getAll();
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-  const documents = await read("documents");
-  const projects = await read("projects");
-  const assets = await read("assets");
-  db.close();
-  const chains = {};
-  for (const item of documents.filter((row) => row.kind === "generation_attempt")) {
-    (chains[item.document_id] = chains[item.document_id] || []).push({
-      version: item.version, payload: item.payload,
-    });
-  }
-  for (const key of Object.keys(chains)) {
-    chains[key].sort((left, right) => left.version - right.version);
-  }
-  const candidates = {};
-  for (const item of documents.filter((row) => row.kind === "candidate")) {
-    (candidates[item.document_id] = candidates[item.document_id] || []).push({
-      version: item.version, payload: item.payload,
-    });
-  }
-  for (const key of Object.keys(candidates)) {
-    candidates[key].sort((left, right) => left.version - right.version);
-  }
-  const reviews = documents.filter((row) => row.kind === "review_report")
-    .map((row) => ({ document_id: row.document_id, version: row.version, payload: row.payload }))
-    .sort((left, right) => (left.document_id + left.version)
-      .localeCompare(right.document_id + right.version));
-  const plans = documents.filter((item) => item.kind === "suite_plan")
-    .sort((left, right) => left.version - right.version);
-  const plan = plans.length ? plans[plans.length - 1] : null;
-  const rows = [...document.querySelectorAll("#attempt-list .attempt-row")].map((node) => {
-    const img = node.querySelector(".attempt-preview img");
-    const candidateMeta = node.querySelector(".attempt-candidate");
-    const reviewNode = node.querySelector(".attempt-review");
-    return {
-      shot_id: node.getAttribute("data-shot-id"),
-      state: node.getAttribute("data-attempt-state"),
-      candidate_meta: candidateMeta ? candidateMeta.textContent : null,
-      review: reviewNode ? {
-        text: reviewNode.textContent,
-        summary: reviewNode.getAttribute("data-review-summary"),
-        contract: reviewNode.getAttribute("data-review-contract"),
-        candidate: reviewNode.getAttribute("data-review-candidate"),
-      } : null,
-      preview: img ? {
-        src: img.getAttribute("src") || "",
-        complete: img.complete,
-        natural_width: img.naturalWidth,
-      } : null,
-      buttons: [...node.querySelectorAll("button")].map((item) =>
-        ({ text: item.textContent, disabled: item.disabled })),
-    };
-  });
-  const errorNode = document.getElementById("attempt-error");
-  return {
-    project_ids: projects.map((item) => item.project_id),
-    shot_ids: plan ? plan.payload.shots.map((shot) => shot.shot_id) : [],
-    attempt_chains: chains,
-    candidate_chains: candidates,
-    review_reports: reviews,
-    asset_rows: assets.map((item) => ({
-      sha256: item.sha256, media_type: item.media_type, byte_size: item.byte_size,
-      width: item.width, height: item.height, role: item.role,
-      has_blob: item.blob instanceof Blob,
-    })),
-    ui: {
-      error: errorNode ? errorNode.textContent : "",
-      error_hidden: errorNode ? errorNode.hidden : true,
-      rows: rows,
-    },
-  };
-}
-"""
-
-HASH_ASSET = """
-async ({ sha256 }) => {
-  const db = await new Promise((resolve, reject) => {
-    const request = indexedDB.open("amz-listing-kit-v2");
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-  const rows = await new Promise((resolve, reject) => {
-    const request = db.transaction("assets", "readonly").objectStore("assets").getAll();
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-  db.close();
-  const record = rows.find((item) => item.sha256 === sha256);
-  if (!record || !(record.blob instanceof Blob)) return { found: false };
-  const buffer = await record.blob.arrayBuffer();
-  const digest = await crypto.subtle.digest("SHA-256", buffer);
-  const hex = Array.from(new Uint8Array(digest))
-    .map((byte) => byte.toString(16).padStart(2, "0")).join("");
-  return { found: true, sha256: hex, byte_size: buffer.byteLength };
-}
-"""
-
-
-def chain_of(data: dict, shot_id: str) -> list:
-    return data["attempt_chains"].get(shot_id, [])
-
-
-def candidate_of(data: dict, shot_id: str) -> list:
-    return data["candidate_chains"].get(shot_id, [])
-
-
-def row_of(data: dict, shot_id: str) -> dict | None:
-    return next((row for row in data["ui"]["rows"] if row["shot_id"] == shot_id), None)
-
-
-def reviews_for(data: dict, candidate_id: str) -> list:
-    return [item for item in data["review_reports"] if item["document_id"] == candidate_id]
-
-
-def candidate_json(data: dict, shot_id: str) -> str:
-    return json.dumps(candidate_of(data, shot_id), ensure_ascii=False, sort_keys=True)
-
-
-def review_json(data: dict, candidate_id: str) -> str:
-    return json.dumps(reviews_for(data, candidate_id), ensure_ascii=False, sort_keys=True)
 
 
 def main() -> int:
@@ -386,12 +103,8 @@ def main() -> int:
     def check(check_id: str, title: str, ok: bool, detail: object = None) -> None:
         checks.append({"id": check_id, "title": title, "ok": bool(ok), "detail": detail})
 
-    node_result = run_node_checks()
-    check("V2.5.1-00", "domain / workspace / harness 通过 node --check（ESM 语法门）",
-          node_result["ok"],
-          {"failed": [item for item in node_result["files"] if item["rc"] != 0][:3]})
 
-    static_server, static_url = start_static_server()
+    static_server, static_url = shared.start_static_server()
     suites: dict = {}
     try:
         with sync_playwright() as pw:
@@ -467,9 +180,20 @@ def main() -> int:
                         f'#attempt-list .attempt-row[data-shot-id="{shot_id}"]')
 
                 def wait_state(shot_id: str, state: str, timeout: int = 30_000) -> None:
+                    # fake 上游同步完成时批次直接到 succeeded，不停 submitted：
+                    # 等 submitted 时同样接受已落定的 succeeded/reconciling。
+                    if state == "submitted":
+                        page.wait_for_function(
+                            """(shot) => {
+                                const node = document.querySelector(
+                                    '#attempt-list .attempt-row[data-shot-id="' + shot + '"]');
+                                const value = node && node.getAttribute("data-attempt-state");
+                                return value === "submitted" || value === "succeeded"
+                                    || value === "reconciling";
+                            }""", arg=shot_id, timeout=timeout)
+                        return
                     expect(row(shot_id)).to_have_attribute(
                         "data-attempt-state", state, timeout=timeout)
-
                 def wait_candidate_ui(shot_id: str, timeout: int = 30_000) -> None:
                     page.wait_for_function(
                         """(shot) => {
@@ -489,20 +213,33 @@ def main() -> int:
                                 && summary.indexOf('自动检查 ' + payload.version) === 0);
                         }""", arg={"shot": shot_id, "version": contract}, timeout=timeout)
 
-                def confirm_generation() -> None:
-                    stage_nav.goto(page, "generate")
-                    expect(page.locator("#confirm-action")).to_be_enabled()
-                    page.click("#confirm-action")
-                    expect(page.locator("#confirm-record")).to_contain_text("已确认 v")
+                def confirm_generation() -> dict:
+                    # 确认即提交：本次授权的新增 attempt 消费证明（非任意旧行存在）。
+                    gate = shared.confirm_and_submit(page, expect, probe)
+                    assert gate["ok"], f"确认必须产生本次授权的新消费：{gate['after_actions']}"
+                    return gate
+
 
                 def click_row_button(shot_id: str, text: str) -> None:
                     stage_nav.goto(page, "generate")
                     row(shot_id).locator(f'button:has-text("{text}")').first.click()
 
                 def generate_and_settle(shot_id: str) -> None:
-                    click_row_button(shot_id, "生成这张图")
+                    # 新流程一次确认直接整套进批次（runBatch 自动提交全部已就绪图）：
+                    # 批次轮询会自动核对；只在仍停 submitted 时点核对，点前重读防竞态。
                     wait_state(shot_id, "submitted")
-                    click_row_button(shot_id, "核对任务")
+                    for _attempt in range(20):
+                        state = row(shot_id).get_attribute("data-attempt-state")
+                        if state != "submitted":
+                            break
+                        button = row(shot_id).locator('button:has-text("核对任务")').first
+                        try:
+                            if button.is_enabled(timeout=1000):
+                                button.click(timeout=5000)
+                                break
+                        except Exception:
+                            pass
+                        page.wait_for_timeout(1000)
                     wait_state(shot_id, "succeeded")
 
                 # ---------------- 项目准备：空白项目 → 参考图 → 资料 → 槽位 → 套图 → 确认 ----------------

@@ -14,16 +14,18 @@
 | Goal 现在运行、暂停还是完成 | 系统 Goal；绑定状态与最近实际读数只在 `_working/amz-listing-kit-product-v2/state.md`，旧 Goal 读数见 superseded 基线 | `prepared` 仅表示真正未观察/未确认、尚无会话绑定，不冒充系统 paused/active；绑定语义与证据合同以产品计划 §2.2 为准；不据旧读数继续旧发布、不虚构 ID |
 | 项目是什么、运行边界、数据与目录归谁 | `docs/product-v2-project-context.md` | 计划和 README 只链接，不复制项目身份、目标运行时或数据所有权 |
 | 要做成什么、什么算完成、阶段/任务怎样依赖 | `docs/product-v2-refactor-plan.md` | 按 ID 引用，不复制目标、Gate、任务定义或依赖；旧计划仅作基线合同来源 |
+| Module 状态归谁、业务 Interface如何收口、低模型怎样按小包施工 | `docs/product-v2-refactor-design.md` | 目标详细设计及§10–12冻结规格/小包/启动文本，不是已实现声明；业务结果/正式任务仍取计划，技术栈和数据归属仍取项目上下文 |
 | 当前做到哪、证据在哪、唯一下一动作是什么 | `_working/amz-listing-kit-product-v2/state.md` | 历史审计只能保存当时快照，不发布“当前状态” |
 | 现有代码实际上能做什么 | `README.md` 指向的代码、配置与验证入口 | 目标计划不得把未实现能力写成当前实现 |
 | 哪份文档有效、历史还是待删 | 本文件 | 各文件只声明自己的 CONTROL-STATUS，不建立另一张总表 |
 | 某次检查或实验实际发生了什么 | `evals/` 下对应原始产物和时点报告 | 只作证据，不发布后续计划、当前状态或新规范 |
 
-恢复工作时只按这个顺序读：**本文件 → Product V2 项目上下文 → 当前 state → state 指向的下一任务在产品计划中的任务卡 → 该任务证据 → 相关代码**。默认不读 `standards-template/`、`drafts/`、旧计划、旧 state 或横切面文档。
+恢复工作时只按这个顺序读：**本文件 → Product V2 项目上下文 → 当前 state → state 指向的下一任务在产品计划中的任务卡 → 该任务证据 → 相关代码**。结构重构时按计划§15.4定向读取 `docs/product-v2-refactor-design.md` 对应节，不再从聊天重建 Interface；默认不读 `standards-template/`、`drafts/`、旧计划、旧 state 或无关横切面文档。
 
 重构恢复不依赖聊天：state 为 `prepared` 时，读取计划 §2 的 Goal 原文及 §9 的下一任务卡，先执行 `V2.R1.1` 的当前 Goal 重读核对与会话绑定门；会话绑定完成前不开始产品施工。用户已确认当前 Goal 后离线本地实现已获授权；真实模型调用、发布、V1 日落、私有上传、提交/推送、新依赖选型仍各自单独设门。
 
 当前目标以计划为准，计划准备完成不等于重构完成，也不自动改变旧系统 Goal 生命周期。
+准备本身不创建Goal。用户已正式触发本轮全文，当前Goal原文在计划§2.1，启动方案及编制来源在§16；真实绑定与受影响任务恢复点取state。新会话仍须重读真实Goal，不把历史绑定、准备检查或UI draft当当前验收或另行启动许可。
 
 ---
 
@@ -45,9 +47,10 @@
 | `_working/amz-listing-kit-product-demo/state.md` | Product V1 v2.6 | `历史证据` | `superseded` | 被 `_working/amz-listing-kit-product-v2/state.md` 取代；保留 D-1 至 D4.12 的完成证据，不据此继续 D4.13 |
 | `docs/product-v2-project-context.md` | Product V2 | `架构设计` | `current` | Product V2 项目身份、运行边界、数据所有权、技术栈、目录地图和质量门槛的唯一上下文入口 |
 | `docs/product-v2-goal-and-implementation-plan.md` | Product V2 重构前基线 | `历史证据` | `superseded` | 被 `docs/product-v2-refactor-plan.md` 接管未来目标与任务；保留旧合同、C1–C17 和旧 Goal 原文，不据此继续 V2.7.3 |
-| `docs/product-v2-refactor-plan.md` | Product V2 定向重构 | `产品目标` | `current` | 详细任务、UI审计、模型评估、同版本恢复与验收、权限门及当前 Goal 可读原文/绑定合同的唯一权威；恢复修订见 §2 |
+| `docs/product-v2-refactor-plan.md` | Product V2定向重构 | `产品目标` | `current` | §2.1当前真实Goal，§6/§9/§10正式任务/依赖/验收，§14业务合同，§15批次验证，§16本轮启动方案及编制来源；§12和旧观察仅历史，不另建PRD/准备计划 |
+| `docs/product-v2-refactor-design.md` | Product V2 联合结构重构 | `架构设计` | `current` | 目标Module/Interface、事务/生命周期、重复/测试/历史治理；§10–12为高难度冻结规格、低模型小包和启动文本；不声明实现/进度，不另立Goal/任务/RC |
 | `_working/amz-listing-kit-product-v2-baseline/state.md` | Product V2 重构前基线 | `历史证据` | `superseded` | 被 current state 接管；保留旧进度与旧 Goal 的最近实际读数，不发布下一动作 |
-| `docs/product-v2-ui-contract.md` | Product V2 V2.UI.2 | `设计草案` | `draft` | V2.UI.2 交互与视觉契约：六阶段信息架构、逐视图对象/信息/行为/状态/规则/反馈与表现层基线；生效条件：产品发起人走查确认后转 `架构设计`/`current` 并补入 §1 路由表 |
+| `docs/product-v2-ui-contract.md` | Product V2 V2.UI.2 | `设计草案` | `draft` | 人工/辅助共享任务及有限设置投影；§8区分设计范围、工程与C17/C15，业务合同取计划§14。转current需产品发起人实际走查，之后转 `架构设计` 并补§1路由；工程自审不冒充签署 |
 | `_working/amz-listing-kit-product-v2/state.md` | Product V2 定向重构 | `执行状态` | `current` | 唯一进度、证据、真实 Goal 绑定与下一动作；prepared 仅表示真正未观察/未确认，不冒充系统状态；旧观察不等于本会话重读 |
 | `_working/amz-listing-kit-product-v2/tasks/r42-r52-volcengine-closure-20261003.md` | Product V2 R4.2/R5.2 火山真实链 | `历史证据` | `superseded` | R4.2/R5.2 已完成并记录进 current state；笔记保留本轮付费/修复/验证事实与证据指针，不据此执行 |
 | `_working/amz-listing-kit-product-v2/tasks/v255-server.md` | Product V2 V2.5.5 | `历史证据` | `superseded` | V2.5.5 已完成；任务书只保留当时的服务端施工边界，不再据此执行 |
@@ -84,10 +87,10 @@
 | `docs/drafts/slots-v3-proposal.md` | v3 | `历史证据` | `superseded` | 被 `docs/drafts/slots-v4-generation-first.md` 取代 |
 | `docs/standards-template/README.md` | 外部参考模板 | `设计草案` | `draft` | 外部课程模板原样副本；本项目按 `AGENTS.md` §Standards Mapping 适配其要求，模板自身只作参考 |
 | `docs/standards-template/00-project-context.md` | 外部参考模板 | `设计草案` | `draft` | 项目身份与技术栈模板；对应权威为 `docs/product-v2-project-context.md`（已含选型记录与依赖登记） |
-| `docs/standards-template/01-requirements.md` | 外部参考模板 | `设计草案` | `draft` | 活 PRD 与验收写法模板；对应权威为 Product V2 计划 §3 产品合同 + §10.1 任务表 + §11 证据矩阵 |
+| `docs/standards-template/01-requirements.md` | 外部参考模板 | `设计草案` | `draft` | 活PRD与验收写法模板；对应计划§14业务合同、§6/§9任务和§10完成矩阵 |
 | `docs/standards-template/02-coding-standards.md` | 外部参考模板 | `设计草案` | `draft` | 编码标准；已适配进 `AGENTS.md` 的 Coding Style；未采用 ruff，理由与替代写在项目上下文 §7 质量门槛 |
-| `docs/standards-template/03-testing-standards.md` | 外部参考模板 | `设计草案` | `draft` | 测试标准；已适配进计划 §12 与 `AGENTS.md` 的 Testing Guidelines；覆盖率为“暂无阈值 + 理由” |
-| `docs/standards-template/04-git-workflow.md` | 外部参考模板 | `设计草案` | `draft` | Git/PR 流程模板；当前 GitHub 分支、PR 与人工合并规则映射在 `AGENTS.md` §Standards Mapping |
+| `docs/standards-template/03-testing-standards.md` | 外部参考模板 | `设计草案` | `draft` | 测试模板；按计划§7.3/§15.3及AGENTS风险导向验证适配，不设覆盖率阈值 |
+| `docs/standards-template/04-git-workflow.md` | 外部参考模板 | `设计草案` | `draft` | Git/PR模板；现有分支和CI/保护要求、获批合并方式只读AGENTS对应章节 |
 | `docs/standards-template/05-cicd-standards.md` | 外部参考模板 | `设计草案` | `draft` | CI/CD 标准；Docker + GitHub Actions + SSH 部署的采纳差异与 SEL-005 映射在 `AGENTS.md` §Standards Mapping |
 | `docs/standards-template/06-ai-collab-protocol.md` | 外部参考模板 | `设计草案` | `draft` | AI 协作协议；主干已适配：选型门 = `AGENTS.md` §Selection Gate，确认门 = state 唯一下一动作 + 用户确认 |
 | `docs/standards-template/07-dependency-standards.md` | 外部参考模板 | `设计草案` | `draft` | 依赖与复用阶梯；已适配进 `AGENTS.md` §Selection Gate 与项目上下文 §4.2 依赖登记（版本锁定 + 许可证） |
@@ -96,6 +99,9 @@
 | `docs/standards-template/templates/PR_TEMPLATE.md` | 外部参考模板 | `设计草案` | `draft` | 暂不复制模板；当前 PR 最小内容与 CI 门禁见 `AGENTS.md` 的 Commit & Pull Request Guidelines |
 | `docs/standards-template/templates/TECH_SELECTION.md` | 外部参考模板 | `设计草案` | `draft` | 选型报告模板；本项目用 `AGENTS.md` 的字段清单 + 项目上下文 §4.1 决策行承载，不单独立文件 |
 | `docs/standards-template/templates/ADR_TEMPLATE.md` | 外部参考模板 | `设计草案` | `draft` | ADR 模板；本项目以项目上下文 §4.1 的 SEL 行（含复访条件）代替独立 `docs/adr/` 目录 |
+| `docs/agents/issue-tracker.md` | 工程技能 | `设计草案` | `draft` | 技能脚手架生成的 Issue 跟踪约定（GitHub + `gh`）；生效条件：用户启用 `to-tickets`/`triage`/`to-spec` 技能后按此执行 |
+| `docs/agents/triage-labels.md` | 工程技能 | `设计草案` | `draft` | 技能脚手架生成的五类 triage 角色映射；生效条件：用户启用 `triage` 技能后按此贴标签 |
+| `docs/agents/domain.md` | 工程技能 | `设计草案` | `draft` | 技能脚手架生成的领域文档消费规则（单上下文）；生效条件：`GLOSSARY.md`/`docs/adr/` 由 `/domain-modeling` 建出后按此消费 |
 
 ---
 

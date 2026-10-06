@@ -295,7 +295,12 @@ def main() -> int:
                 compile_all(shot_ids)
                 expect(page.locator("#confirm-action")).to_be_enabled()
                 page.click("#confirm-action")
-                expect(page.locator("#confirm-record")).to_contain_text("已确认 v")
+                # 确认即提交（confirmAndRun 一次保存授权并直接整套提交）：
+                # 等 attempt 行出现（行为判据），不再钉 #confirm-record 实现文案。
+                page.wait_for_function(
+                    """() => document.querySelectorAll(
+                        '#attempt-list .attempt-row[data-attempt-state]').length > 0""",
+                    timeout=30_000)
                 ready = probe()
                 provider_text = ready["ui"]["provider"]
                 ui["provider"] = provider_text

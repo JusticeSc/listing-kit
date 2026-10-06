@@ -59,6 +59,7 @@ jobs:
         run: |
           npm run check:versions
           npm run check:types
+          npm run check:generated
           npm run test:domain
 
       - name: Check formal entry and browser contracts
@@ -119,6 +120,17 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v6
 
+      - name: Set up release acceptance tooling
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install locked acceptance dependencies
+        run: |
+          python -m pip install uv==0.9.18
+          uv sync --locked
+          uv run playwright install --with-deps chromium
+
       - name: Build immutable image
         run: docker build --pull --tag "${IMAGE_NAME}:${GITHUB_SHA}" .
 
@@ -152,6 +164,15 @@ jobs:
       - name: Remove smoke container
         if: always()
         run: docker rm --force amz-listing-kit-smoke >/dev/null 2>&1 || true
+
+      - name: Release transaction selftest (real disposable containers)
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          # PR 与 main push 都真实执行事务脚本与一次性容器（已批准的 Linux
+          # Docker runner + 锁依赖 Playwright Chromium）；缺守护进程/拉取失败
+          # 按 missing_prereq（exit 2）如实红，不伪造绿。远程发布前先过机制门。
+          uv run --locked python tools/release_transaction_probe.py --selftest
 
       - name: Prepare SSH
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -206,7 +227,8 @@ jobs:
           echo "app.env 已更新：$(wc -l < "$file") 行（密钥值不回显）"
           REMOTE
 
-      - name: Build on remote Docker and deploy with rollback
+      - name: Build on remote Docker and deploy (full release transaction)
+        id: release_deploy
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         shell: bash
         env:
@@ -216,14 +238,20 @@ jobs:
           set -Eeuo pipefail
           target="${SSH_USER}@${SSH_HOST}"
           context="/tmp/amz-listing-kit-${GITHUB_SHA}"
+          script="deploy/release-transaction.sh"
           ssh -o ConnectTimeout=15 -o ServerAliveInterval=15 "$target" \
             "case '$context' in /tmp/amz-listing-kit-[0-9a-f]*) rm -rf -- '$context';; *) exit 2;; esac; install -d -m 700 '$context'"
+          # 事务脚本随构建上下文一起上传：远程 deploy 入口先装一份到
+          # ~/.config/amz-listing-kit/release-transaction.sh，供后续
+          # finalize/rollback 会话复用同一身份与逻辑。
+          # 上下文按目录整体上传，与 Dockerfile 的目录 COPY 和 .dockerignore 白名单对齐：
+          # 不再字面钉单个源文件，避免新增运行文件漏传或旧文件被显式带入镜像。
           tar -czf - Dockerfile .dockerignore pyproject.toml uv.lock \
-            app/server.py app/product_v2_server.py app/product_v2 src config deploy \
+            app src config deploy \
             | ssh -o ConnectTimeout=15 -o ServerAliveInterval=15 "$target" "tar -xzf - -C '$context'"
           ssh -o ConnectTimeout=15 -o ServerAliveInterval=15 "$target" 'bash -s' -- \
             "${IMAGE_NAME}:${GITHUB_SHA}" "${CONTAINER_NAME}" "${APP_PORT}" "$context" \
-            "${APP_PUBLIC_IP}" "${APP_HTTPS_PORT}" <<'REMOTE'
+            "${APP_PUBLIC_IP}" "${APP_HTTPS_PORT}" "$script" <<'REMOTE'
           set -Eeuo pipefail
           image="$1"
           name="$2"
@@ -231,90 +259,152 @@ jobs:
           context="$4"
           public_ip="$5"
           https_port="$6"
-          previous="${name}-previous"
-          env_file="$HOME/.config/amz-listing-kit/app.env"
-
+          script="$7"
+          # 旧版本恢复点（完整事务语义见 deploy/release-transaction.sh）：
+          # previous 应用容器与 Caddy 配置备份至少保留到容器健康、外部 HTTPS、
+          # 静态资源与约定页面主链全部验收结束；提前删除 previous 是已核对的
+          # 回退缺口，这里绝不提前删除。deploy 只做容器健康 + TLS 收敛 +
+          # 受信 HTTPS 入口检查；静态资源/页面主链验收见后一步，全部通过才
+          # finalize 清理；任一必要失败走 rollback 恢复上一已知可用状态。
           case "$context" in
             /tmp/amz-listing-kit-[0-9a-f]*) ;;
             *) echo "refusing unexpected build context: $context" >&2; exit 2 ;;
           esac
-          trap 'rm -rf -- "$context"' EXIT
-          docker build --pull --tag "$image" "$context"
-          docker rm --force "$previous" >/dev/null 2>&1 || true
-          if docker container inspect "$name" >/dev/null 2>&1; then
-            docker stop "$name" >/dev/null
-            docker rename "$name" "$previous"
-          fi
-
-          run_args=(--detach --name "$name" --restart unless-stopped --publish "${port}:8780")
-          if [ -f "$env_file" ]; then
-            run_args+=(--env-file "$env_file")
-          fi
-
-          if ! docker run "${run_args[@]}" "$image"; then
-            docker rename "$previous" "$name" >/dev/null 2>&1 || true
-            docker start "$name" >/dev/null 2>&1 || true
-            exit 1
-          fi
-
-          healthy=false
-          for attempt in $(seq 1 30); do
-            status="$(docker inspect --format '{{.State.Health.Status}}' "$name")"
-            if [ "$status" = healthy ]; then healthy=true; break; fi
-            if [ "$status" = unhealthy ]; then break; fi
-            sleep 2
-          done
-
-          if [ "$healthy" != true ]; then
-            docker logs "$name" || true
-            docker rm --force "$name" >/dev/null 2>&1 || true
-            if docker container inspect "$previous" >/dev/null 2>&1; then
-              docker rename "$previous" "$name"
-              docker start "$name"
-            fi
-            exit 1
-          fi
-
-          docker rm --force "$previous" >/dev/null 2>&1 || true
-
-          # 正式入口的 TLS 终止层（V2.UI.1）：Caddy 容器与配置随部署收敛，
-          # 应用容器保持无状态 HTTP；证书与 ACME 账户落在命名卷里，跨部署复用。
-          tls_name="${name}-tls"
-          tls_dir="$HOME/.config/amz-listing-kit/tls"
-          caddyfile="$tls_dir/Caddyfile"
-          install -d -m 700 "$tls_dir"
-          tls_changed=false
-          if [ -f "$context/deploy/caddy/Caddyfile" ] && ! cmp -s "$context/deploy/caddy/Caddyfile" "$caddyfile"; then
-            install -m 600 "$context/deploy/caddy/Caddyfile" "$caddyfile"
-            tls_changed=true
-          fi
-          if docker container inspect "$tls_name" >/dev/null 2>&1; then
-            if [ "$tls_changed" = true ]; then
-              docker restart "$tls_name" >/dev/null
-            else
-              docker start "$tls_name" >/dev/null 2>&1 || true
-            fi
-          else
-            docker run --detach --name "$tls_name" --restart unless-stopped --network host \
-              --volume "$caddyfile":/etc/caddy/Caddyfile:ro \
-              --volume "${name}-caddy-data":/data \
-              --volume "${name}-caddy-config":/config \
-              caddy:2 >/dev/null
-          fi
-
-          https_ok=false
-          for attempt in $(seq 1 20); do
-            if curl -fsS --max-time 8 "https://${public_ip}:${https_port}/api/health" >/dev/null 2>&1; then
-              https_ok=true
-              break
-            fi
-            sleep 3
-          done
-          if [ "$https_ok" != true ]; then
-            docker logs --tail 40 "$tls_name" >&2 || true
-            echo "https_entry_unhealthy url=https://${public_ip}:${https_port}/" >&2
-            exit 1
-          fi
-          echo "deployed_image=$image host_port=$port health=healthy"
-          echo "deployed_tls=https://${public_ip}:${https_port} caddy_container=$tls_name"
+          bash "$context/$script" deploy "$image" "$name" "$port" "$context" \
+            "$public_ip" "$https_port"
           REMOTE
+
+      - name: Release acceptance (static assets and page main chain)
+        id: release_acceptance
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          # 受信 HTTPS 上的真实资源/页面验收：健康、能力、静态字节与已批准
+          # Playwright 无头 Chromium 实际启动/状态就绪/主链，不带 BYOK、
+          # 不做任何付费调用。失败绝不直接清理 previous，由下一步 rollback
+          # 按事务身份恢复上一已知可用状态并核对实际可用性。
+          uv run --locked python tools/release_transaction_probe.py --page-smoke \
+            --base "https://${APP_PUBLIC_IP}:${APP_HTTPS_PORT}"
+
+      - name: Verify runtime and configuration fingerprints before cleanup
+        id: release_fingerprint
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+        run: |
+          set -Eeuo pipefail
+          mkdir -p release-evidence
+          target="${SSH_USER}@${SSH_HOST}"
+          # 在 previous 和配置备份仍存在时核对实际运行字节、不可变镜像 ID、
+          # 受服 Caddy 配置与本轮源树；任何不一致进入同一真实回退门。
+          # 只采集公开配置摘要，不读取 app.env、私钥或凭据。
+          ssh -o ConnectTimeout=15 -o ServerAliveInterval=15 "$target" \
+            "docker exec -i '${CONTAINER_NAME}' python - --fingerprint --runtime-root . --base http://127.0.0.1:8780" \
+            < tools/release_transaction_probe.py > release-evidence/runtime-fingerprint.json
+          ssh -o ConnectTimeout=15 -o ServerAliveInterval=15 "$target" \
+            "docker inspect --format '{{.Image}} {{.Config.Image}}' '${CONTAINER_NAME}'" \
+            > release-evidence/image.txt
+          ssh -o ConnectTimeout=15 -o ServerAliveInterval=15 "$target" \
+            "docker exec '${CONTAINER_NAME}-tls' sha256sum /etc/caddy/Caddyfile" \
+            > release-evidence/caddy.sha256
+          uv run --locked python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          import re
+
+          evidence = Path("release-evidence")
+          data = json.loads((evidence / "runtime-fingerprint.json").read_text(encoding="utf-8"))
+          assert data["schema_version"] == "amz-runtime-fingerprint/v1", "unexpected fingerprint schema"
+          assert data["default_trial"] == "closed", "default trial must remain closed"
+          assert re.fullmatch(r"[0-9a-f]{64}", data["runtime_sha256"])
+          assert re.fullmatch(r"[0-9a-f]{64}", data["public_configuration_sha256"])
+          # 实际服务且已生成的浏览器 JS：只认 HTTP 200 服务字节的 hash，不认本地同名文件。
+          for resource, digest in data["served_scripts_sha256"].items():
+              assert re.fullmatch(r"[0-9a-f]{64}", digest), f"bad served script digest: {resource}"
+          root = Path.cwd().resolve()
+          for name, actual in data["files"].items():
+              lowered = name.lower()
+              assert "secret" not in lowered and "app.env" not in lowered, f"secret in fingerprint: {name}"
+              source = (root / name).resolve()
+              assert source.is_relative_to(root), f"invalid runtime path: {name}"
+              with source.open("rb") as stream:
+                  expected = hashlib.file_digest(stream, "sha256").hexdigest()
+              assert actual == expected, f"runtime/source mismatch: {name}"
+          image_id, image_tag = (evidence / "image.txt").read_text(encoding="utf-8").split()
+          assert re.fullmatch(r"sha256:[0-9a-f]{64}", image_id), "missing immutable image ID"
+          assert image_tag == f'{os.environ["IMAGE_NAME"]}:{os.environ["GITHUB_SHA"]}', "unexpected serving image"
+          caddy = (evidence / "caddy.sha256").read_text(encoding="utf-8").split()[0]
+          expected_caddy = hashlib.sha256(Path("deploy/caddy/Caddyfile").read_bytes()).hexdigest()
+          assert caddy == expected_caddy, "serving TLS configuration differs from accepted source"
+          (evidence / "release.json").write_text(json.dumps({
+              "commit": os.environ["GITHUB_SHA"], "image_id": image_id, "image_tag": image_tag,
+              "runtime_sha256": data["runtime_sha256"],
+              "public_configuration_sha256": data["public_configuration_sha256"],
+              "caddy_configuration_sha256": caddy,
+          }, sort_keys=True, indent=2) + "\n", encoding="utf-8")
+          print("runtime_sha256=" + data["runtime_sha256"])
+          print("public_configuration_sha256=" + data["public_configuration_sha256"])
+          print("image_id=" + image_id)
+          print("caddy_configuration_sha256=" + caddy)
+          PY
+
+      - name: Finalize release (cleanup previous only after all acceptance)
+        id: release_finalize
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+        run: |
+          set +e
+          target="${SSH_USER}@${SSH_HOST}"
+          context="/tmp/amz-listing-kit-${GITHUB_SHA}"
+          # 只有全部验收通过才走到 finalize：按事务身份核对镜像一致后，
+          # 才删除 previous 与备份。finalize 仍重验容器健康 + 受信 HTTPS +
+          # 静态首页/样式/脚本（任一失败 exit 1，事务保持开放，rollback 恢复）。
+          # - 重验证失败（exit 1：新容器缺失/不健康、HTTPS/静态失败）是必要失败，
+          #   事务保持开放，由 rollback 门恢复；
+          # - 收尾失败（exit 4：新版本健康但删 previous/备份/事务文件失败，
+          #   或无有效开放事务）绝不自动回滚，需人工清理。
+          ssh -o ConnectTimeout=15 -o ServerAliveInterval=15 "$target" "bash ~/.config/amz-listing-kit/release-transaction.sh finalize '${IMAGE_NAME}:${GITHUB_SHA}' '${CONTAINER_NAME}' '${APP_PORT}' '$context' '${APP_PUBLIC_IP}' '${APP_HTTPS_PORT}'"
+          finalize_rc="$?"
+          echo "release_finalize_rc=$finalize_rc"
+          if [ "$finalize_rc" -eq 1 ]; then
+            echo "recoverable=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "recoverable=false" >> "$GITHUB_OUTPUT"
+          fi
+          if [ "$finalize_rc" -eq 4 ]; then
+            echo "finalize_cleanup_failed: new version healthy, manual cleanup needed (exit 4)" >&2
+          fi
+          exit "$finalize_rc"
+
+
+      - name: Upload release evidence
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-evidence-${{ github.sha }}
+          path: release-evidence/
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Roll back to previous known working state
+        if: failure() && github.event_name == 'push' && github.ref == 'refs/heads/main' && (steps.release_deploy.outcome == 'failure' || steps.release_acceptance.outcome == 'failure' || steps.release_fingerprint.outcome == 'failure' || (steps.release_finalize.outcome == 'failure' && steps.release_finalize.outputs.recoverable == 'true'))
+        shell: bash
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+        run: |
+          set -Eeuo pipefail
+          target="${SSH_USER}@${SSH_HOST}"
+          context="/tmp/amz-listing-kit-${GITHUB_SHA}"
+          # 任一必要环节失败都进入明确回退：恢复 previous 应用容器与
+          # Caddy 配置并核对受信 HTTPS 实际可用。回退本身失败则报
+          # unrecovered_failed_release（exit 3），绝不把失败报成成功。
+          ssh -o ConnectTimeout=15 -o ServerAliveInterval=15 "$target" "bash ~/.config/amz-listing-kit/release-transaction.sh rollback '${IMAGE_NAME}:${GITHUB_SHA}' '${CONTAINER_NAME}' '${APP_PORT}' '$context' '${APP_PUBLIC_IP}' '${APP_HTTPS_PORT}' acceptance_failed"

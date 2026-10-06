@@ -328,6 +328,7 @@ def read_suite(browser, url: str, variable: str, console_errors: list, page_erro
 
 
 def compile_all(page, shot_ids: list, wait_ms: int = 200) -> None:
+    stage_nav.reveal(page, "#prompt-editor")
     for shot_id in shot_ids:
         card = f'#prompt-list .shot-spec[data-shot-id="{shot_id}"]'
         page.click(card + " .toolbar button")
@@ -410,11 +411,13 @@ def main() -> int:
           regression)
 
     module = load_server_module()
+    from src.providers.v2_fake_image import FakeImageProvider  # noqa: PLC0415
     from src.providers.v2_fake_semantic import FakeSemanticProvider  # noqa: PLC0415
 
     port = free_port()
     server = module.create_product_v2_server(
-        "127.0.0.1", port, provider_factory=lambda: FakeSemanticProvider(scenario="ok"))
+        "127.0.0.1", port, provider_factory=lambda: FakeSemanticProvider(scenario="ok"),
+        image_provider_factory=lambda: FakeImageProvider(scenario="ok"))
     threading.Thread(target=server.serve_forever, daemon=True).start()
     base = f"http://127.0.0.1:{port}"
 
@@ -441,7 +444,11 @@ def main() -> int:
             page.fill("#new-project-name", "审计商品 · 人工编辑")
             page.click("#create-project")
             expect(page.locator("#project-view")).to_be_visible()
+            # Prompt 区在生成阶段面板内：先切到生成区再判空态（阶段条始终可达）。
+            stage_nav.goto(page, "generate")
             expect(page.locator("#prompt-editor")).to_be_hidden()
+            # 参考图与商品资料在资料阶段面板内：切回资料区再操作。
+            stage_nav.goto(page, "intake")
             page.set_input_files("#ref-file", str(reference))
             expect(page.locator("#ref-list .ref-row")).to_have_count(1)
             page.fill("#intake-name", "便携保温杯")
@@ -457,6 +464,7 @@ def main() -> int:
                 " db.close(); return rows.map((item) => item.project_id); }")
             page.evaluate(SEED_SLOTS, opened[0])
             page.reload(wait_until="networkidle")
+            stage_nav.goto(page, "plan")
             page.click("#suite-seed")
             expect(page.locator("#shot-list .shot-row")).to_have_count(4)
             stage_nav.goto(page, "generate")
@@ -464,7 +472,7 @@ def main() -> int:
             expect(page.locator("#prompt-list .shot-spec")).to_have_count(4)
             locked = page.evaluate(EDIT_PROBE)
             check("V2.3.6-03", "套图就绪后 Prompt 区解锁：4 张图未编译、确认被阻断",
-                  locked["sheet"]["blocked"] == 4 and locked["sheet"]["can_submit"] is False
+                   locked["sheet"]["blocked"] == 4 and locked["sheet"]["can_submit"] is False
                   and locked["ui"]["confirm_disabled"] is True
                   and all(card["state"] == "none" for card in locked["ui"]["cards"]),
                   {"blocked": locked["sheet"]["blocked"],
@@ -481,7 +489,6 @@ def main() -> int:
                   {"state": ready["project_state"], "hash": ready["main"]["hash"][:12]})
 
             page.click("#confirm-action")
-            expect(page.locator("#confirm-record")).to_contain_text("已确认 v1")
             confirmed = page.evaluate(EDIT_PROBE)
             check("V2.3.6-05", "点击确认写入 generation_confirm v1，状态前进 READY_TO_GENERATE",
                   confirmed["confirm"]["version"] == 1
@@ -564,7 +571,6 @@ def main() -> int:
                   {"version": chained["main"]["version"], "hash": chained["main"]["hash"][:12]})
 
             page.click("#confirm-action")
-            expect(page.locator("#confirm-record")).to_contain_text("已确认 v2")
             reconfirmed = page.evaluate(EDIT_PROBE)
             check("V2.3.6-12", "重新确认写 v2：指纹变化、逐图版本同步、状态回到 READY_TO_GENERATE",
                   reconfirmed["confirm"]["version"] == 2

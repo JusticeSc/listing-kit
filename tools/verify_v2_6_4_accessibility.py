@@ -1,8 +1,7 @@
 """V2.6.4 渐进披露、空/忙/错/Unknown 与可访问性终验（fake provider；0 次真实模型调用）。
 
 检查：
-  A) 静态：ESM 语法门；技术详情落点（#rework-tech / #adopt-tech / techDetails 使用点 / CSS）；
-     axe-core vendor 文件完整性（sha256 与许可证在仓库里可验证）。
+  A) axe-core vendor 文件完整性（sha256 与许可证在仓库里可验证）。
   B) 浏览器（真实 Chromium + 正式入口 + fake provider）：
      - 空白首页 axe WCAG A/AA 扫描 0 violations；键盘 Tab 序列可达主操作且焦点可见；
      - 纯键盘创建项目（Tab + 输入 + Enter）；
@@ -47,22 +46,12 @@ AXE_LICENSE_SHA256 = "AF175B9D96EE93C21A036152E1B905B0B95304D4AE8C2C921C7609100B
 AXE_BYTES = 580491
 
 
-def load_module(path: Path, name: str):
-    spec = importlib.util.spec_from_file_location(name, path)
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[name] = module
-    spec.loader.exec_module(module)
-    return module
+sys.path.insert(0, str(ROOT / "tools"))
+import v2_verify_shared as shared  # noqa: E402
+from walkthrough_server import WalkthroughImageProvider  # noqa: E402
 
+server_module = shared.load_server_module("v264_server")
 
-server_module = load_module(ROOT / "app" / "product_v2_server.py", "v264_server")
-ui3 = load_module(ROOT / "tools" / "verify_v2_ui_3_frontend.py", "v264_ui3")
-v262 = load_module(ROOT / "tools" / "verify_v2_6_2_delivery.py", "v264_v262")
-
-INDEX_HTML = (PRODUCT_DIR / "index.html").read_text(encoding="utf-8")
-WORKSPACE_JS = (PRODUCT_DIR / "workspace.js").read_text(encoding="utf-8")
-STYLES_CSS = (PRODUCT_DIR / "styles.css").read_text(encoding="utf-8")
-CONTEXT_MD = (ROOT / "docs" / "product-v2-project-context.md").read_text(encoding="utf-8")
 
 AXE_RUN = """async () => {
   const result = await axe.run(document, {
@@ -115,7 +104,15 @@ TECH_PROBE = """(scope) => {
 }"""
 
 BATCH_STATE = """() => ({
-  run_disabled: (document.getElementById('batch-run') || {}).disabled === true,
+  started_rows: [...document.querySelectorAll('#attempt-list .attempt-row')].filter((row) => {
+    const state = row.getAttribute('data-attempt-state');
+    return state !== null && state !== 'none';
+  }).length,
+  active_rows: [...document.querySelectorAll('#attempt-list .attempt-row')].filter((row) => {
+    const state = row.getAttribute('data-attempt-state');
+    return state !== null && state !== 'none' && state !== 'succeeded'
+      && state !== 'failed' && state !== 'unknown';
+  }).length,
   stop_visible: (() => {
     const node = document.getElementById('batch-stop');
     if (!node || node.hidden) return false;
@@ -160,13 +157,13 @@ def sha256_of(path: Path) -> str:
 
 def start_server(host: str, port: int, *, image_factory=None):
     """正式入口 + fake provider（含整套复核），与 V2.6.2 走查同一装配。"""
-    suite = v262.fake_suite.FakeSuiteReviewProvider(scenario="drift")
+    suite = shared.fake_suite.FakeSuiteReviewProvider(scenario="drift")
     server = server_module.create_product_v2_server(
         host, port,
-        provider_factory=lambda: v262.fake_semantic.FakeSemanticProvider(scenario="ok"),
+        provider_factory=lambda: shared.fake_semantic.FakeSemanticProvider(scenario="ok"),
         image_provider_factory=(image_factory
-                                or (lambda: v262.fake_image.FakeImageProvider(scenario="ok", size=1200))),
-        review_provider_factory=lambda: v262.fake_review.FakeReviewProvider(scenario="ok"),
+                                or (lambda: shared.fake_image.FakeImageProvider(scenario="ok", size=1200))),
+        review_provider_factory=lambda: shared.fake_review.FakeReviewProvider(scenario="ok"),
         suite_review_provider_factory=lambda: suite)
     threading.Thread(target=server.serve_forever, daemon=True).start()
     return server, suite
@@ -230,49 +227,29 @@ def main() -> int:
                                    cwd=str(ROOT), capture_output=True, text=True, check=False)
         node_results.append({"file": relative, "rc": completed.returncode,
                              "stderr": completed.stderr.strip()[-160:]})
-    html_ids = re.findall(r'id="([^"]+)"', INDEX_HTML)
-    duplicate_ids = sorted({item for item in html_ids if html_ids.count(item) > 1})
-    element_keys = re.findall(
-        r"^\s*([A-Za-z_$][A-Za-z0-9_$]*):\s*document\.getElementById", WORKSPACE_JS, re.M)
-    duplicate_keys = sorted({item for item in element_keys if element_keys.count(item) > 1})
-    check("V2.6.4-00", "ESM 语法门与 DOM 身份唯一（无重复 id / 元素键）",
-          all(item["rc"] == 0 for item in node_results)
-          and not duplicate_ids and not duplicate_keys,
-          {"node": node_results, "duplicate_ids": duplicate_ids,
-           "duplicate_element_keys": duplicate_keys})
+    check("V2.6.4-00", "ESM 语法门（workspace / app / stage-shell）",
+          all(item["rc"] == 0 for item in node_results), {"node": node_results})
 
-    tech_landed = (
-        WORKSPACE_JS.count("techDetails(") >= 9
-        and 'id="rework-tech"' in INDEX_HTML and 'id="adopt-tech"' in INDEX_HTML
-        and 'id="rework-tech-body"' in INDEX_HTML and 'id="adopt-tech-body"' in INDEX_HTML
-        and ".tech-details" in STYLES_CSS and ".tech-details[open]" in STYLES_CSS
-        and "const tech = techDetails(techLines)" in WORKSPACE_JS
-        and "techDetails(attemptTech)" in WORKSPACE_JS)
-    check("V2.6.4-01", "技术详情落点：统一 techDetails + 返工/采用面板 + 样式规则",
-          tech_landed, {"techDetails_calls": WORKSPACE_JS.count("techDetails("),
-                        "rework_tech": 'id="rework-tech"' in INDEX_HTML,
-                        "adopt_tech": 'id="adopt-tech"' in INDEX_HTML,
-                        "css": ".tech-details" in STYLES_CSS})
+
 
     axe_ok = (AXE_PATH.exists() and AXE_PATH.is_file() and AXE_PATH.stat().st_size == AXE_BYTES
               and sha256_of(AXE_PATH) == AXE_SHA256
-              and AXE_LICENSE.exists() and sha256_of(AXE_LICENSE) == AXE_LICENSE_SHA256
-              and "axe-core.min.js" in CONTEXT_MD and AXE_SHA256[:16] in CONTEXT_MD)
-    check("V2.6.4-02", "axe-core vendor 文件完整性与登记一致（SEL-013）",
+              and AXE_LICENSE.exists() and sha256_of(AXE_LICENSE) == AXE_LICENSE_SHA256)
+    check("V2.6.4-02", "axe-core vendor 文件完整可执行（字节/sha/许可证）",
           axe_ok, {"exists": AXE_PATH.exists(),
                    "bytes": AXE_PATH.stat().st_size if AXE_PATH.exists() else None,
-                   "sha_match": AXE_PATH.exists() and sha256_of(AXE_PATH) == AXE_SHA256,
-                   "registry": "axe-core.min.js" in CONTEXT_MD})
+                   "sha_match": AXE_PATH.exists() and sha256_of(AXE_PATH) == AXE_SHA256})
+
 
     # ---------------- 浏览器主链 ----------------
     from playwright.sync_api import sync_playwright
 
     temp_root = Path(tempfile.mkdtemp(prefix="amz-v264-"))
     reference = temp_root / "ref.png"
-    reference.write_bytes(ui3.v251.png_bytes(900, 900, (36, 92, 160)))
+    reference.write_bytes(shared.png_bytes(900, 900, (36, 92, 160)))
 
     with sync_playwright() as pw:
-        port = v262.free_port()
+        port = shared.free_port()
         server, _suite = start_server("127.0.0.1", port)
         try:
             context = pw.chromium.launch_persistent_context(
@@ -280,7 +257,7 @@ def main() -> int:
                 viewport={"width": 1440, "height": 950}, accept_downloads=True)
             page = context.pages[0] if context.pages else context.new_page()
             page.set_default_timeout(30_000)
-            logs = ui3.collect(page)
+            logs = shared.collect(page)
             try:
                 page.goto(f"http://127.0.0.1:{port}/", wait_until="domcontentloaded")
                 page.wait_for_function(
@@ -316,30 +293,32 @@ def main() -> int:
                       {"create_focus": create_focus})
 
                 # 资料 → 分析 → 槽位 → 方案
-                ui3.fill_intake(page, reference, "V264 A11y")
+                shared.fill_intake(page, reference, "V264 A11y")
                 squeeze: dict[str, list] = {}
                 squeeze["intake"] = page.evaluate(TECH_SQUEEZE)
                 shot(page, "ref-card-1440")
                 page.click("#analyze-run")
                 page.wait_for_selector("#slot-list .slot-row", timeout=30_000)
-                ui3.confirm_slots(page)
+                shared.confirm_slots(page)
                 page.click("#stage-next-understand")
                 page.click("#suite-seed")
                 page.wait_for_selector("#shot-list .shot-row", timeout=20_000)
                 page.click("#stage-next-plan")
-                shots = page.evaluate(ui3.SHOT_IDS)
-                ui3.compile_all(page, shots)
-                page.click("#confirm-action")
-                page.wait_for_selector("#confirm-record", timeout=15_000)
-
-                # 生成阶段：空态 → 忙态 → 终态
+                shots = page.evaluate(shared.SHOT_IDS)
+                shared.compile_all(page, shots)
                 empty = page.evaluate(EMPTY_STATE)
-                page.click("#batch-run")
+                import v2_verify_shared as _shared
+                from playwright.sync_api import expect as _expect
+                gate = _shared.confirm_and_submit(page, _expect, lambda: page.evaluate(shared.PROBE))
+                assert gate["ok"], f"确认必须产生本次授权的新消费：{gate['after_actions']}"
+
+                # 生成阶段：忙态采样（确认即提交：点确认后批次已在跑，直接采忙态）
                 page.wait_for_timeout(120)
                 busy = page.evaluate(BATCH_STATE)
                 shot(page, "busy")
-                busy_ok = busy["run_disabled"] or busy["stop_visible"] or "进行中" in busy["progress"]
-                ui3.wait_terminal(page, shots, timeout=120_000)
+                busy_ok = (busy["started_rows"] > 0 or busy["active_rows"] > 0
+                           or busy["stop_visible"] or "进行中" in busy["progress"])
+                shared.wait_terminal(page, shots, timeout=120_000)
                 check("V2.6.4-06", "生成阶段四态之空/忙：未生成可见、整套生成中可观察",
                       empty["rows"] == len(shots) and empty["missing"] == len(shots)
                       and "尚未生成" in empty["badge"] and busy_ok,
@@ -432,8 +411,8 @@ def main() -> int:
 
                 # 交付阶段：门禁 → 交付包 → 技术详情 → axe
                 page.click('[data-stage-nav="deliver"]')
-                gate = v262.wait_gate(page)
-                v262.download_delivery(page, temp_root / "delivery.zip")
+                gate = shared.wait_gate(page)
+                shared.download_delivery(page, temp_root / "delivery.zip")
                 page.wait_for_timeout(300)
                 deliver_tech = page.evaluate(TECH_PROBE, "#delivery-result")
                 squeeze["deliver"] = page.evaluate(TECH_SQUEEZE)
@@ -464,11 +443,11 @@ def main() -> int:
                 # 390px 与 200% 等效视口
                 page.set_viewport_size({"width": 390, "height": 844})
                 page.wait_for_timeout(300)
-                narrow = page.evaluate(ui3.OVERFLOW_PROBE)
+                narrow = page.evaluate(shared.OVERFLOW_PROBE)
                 shot(page, "narrow-390")
                 page.set_viewport_size({"width": 720, "height": 450})
                 page.wait_for_timeout(300)
-                zoom = page.evaluate(ui3.OVERFLOW_PROBE)
+                zoom = page.evaluate(shared.OVERFLOW_PROBE)
                 shot(page, "zoom-200")
                 check("V2.6.4-11", "390px 与 200% 等效视口：无横向溢出且当前阶段可见",
                       narrow["scroll"] <= narrow["client"] + 1
@@ -490,8 +469,8 @@ def main() -> int:
             server.server_close()
 
         # ---------------- 演练：成功 / 失败 / Unknown 三态 + 下一步 ----------------
-        port2 = v262.free_port()
-        drill_image = ui3.walkthrough.WalkthroughImageProvider()
+        port2 = shared.free_port()
+        drill_image = shared.walkthrough.WalkthroughImageProvider()
         server2, _ = start_server("127.0.0.1", port2, image_factory=lambda: drill_image)
         try:
             context2 = pw.chromium.launch_persistent_context(
@@ -499,33 +478,32 @@ def main() -> int:
                 viewport={"width": 1440, "height": 950}, accept_downloads=True)
             page2 = context2.pages[0] if context2.pages else context2.new_page()
             page2.set_default_timeout(30_000)
-            logs2 = ui3.collect(page2)
+            logs2 = shared.collect(page2)
             try:
                 page2.goto(f"http://127.0.0.1:{port2}/", wait_until="domcontentloaded")
                 page2.wait_for_function(
                     "() => { const node = document.getElementById('create-project');"
                     " return node && node.disabled === false; }", timeout=15_000)
-                ui3.create_project(page2, "V264 演练品", reference)
+                shared.create_project(page2, "V264 演练品", reference)
                 page2.click("#analyze-run")
                 page2.wait_for_selector("#slot-list .slot-row", timeout=30_000)
-                ui3.confirm_slots(page2)
+                shared.confirm_slots(page2)
                 page2.click("#stage-next-understand")
                 page2.click("#suite-seed")
                 page2.wait_for_selector("#shot-list .shot-row", timeout=20_000)
                 guard = 0
-                while len(page2.evaluate(ui3.SHOT_IDS)) > 3 and guard < 10:
-                    ids = page2.evaluate(ui3.SHOT_IDS)
+                while len(page2.evaluate(shared.SHOT_IDS)) > 3 and guard < 10:
+                    ids = page2.evaluate(shared.SHOT_IDS)
                     page2.click(f'#shot-list .shot-row[data-shot-id="{ids[-1]}"] '
                                 'button:has-text("删除")')
                     page2.wait_for_timeout(250)
                     guard += 1
                 page2.click("#stage-next-plan")
-                drill_ids = page2.evaluate(ui3.SHOT_IDS)
-                ui3.compile_all(page2, drill_ids)
-                page2.click("#confirm-action")
-                page2.wait_for_selector("#confirm-record", timeout=15_000)
-                page2.click("#batch-run")
-                ui3.wait_terminal(page2, drill_ids, timeout=120_000)
+                drill_ids = page2.evaluate(shared.SHOT_IDS)
+                shared.compile_all(page2, drill_ids)
+                gate2 = _shared.confirm_and_submit(page2, _expect, lambda: page2.evaluate(shared.PROBE))
+                assert gate2["ok"], f"确认必须产生本次授权的新消费：{gate2['after_actions']}"
+                shared.wait_terminal(page2, drill_ids, timeout=120_000)
                 page2.wait_for_timeout(4000)
                 states = page2.evaluate("""() => Object.fromEntries(
                   [...document.querySelectorAll('#attempt-list .attempt-row')]

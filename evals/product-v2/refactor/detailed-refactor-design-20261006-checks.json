@@ -1,0 +1,34 @@
+{
+  "scope": "Design documents, unchanged authoritative contracts, and stopped recovery only; not product implementation verification",
+  "checks": [
+    {
+      "command": "uv run --locked python tools/check_docs.py --no-run",
+      "cwd": "amz-listing-kit",
+      "observed_exit_code": 0,
+      "observed_wall_time_seconds": 9.66,
+      "observed_facts": ["62 registered Markdown files matched 62 actual files", "One current product-goal authority and one execution-state authority", "Dependency and standards mappings passed"],
+      "limit": "--no-run explicitly skipped execution of documented commands"
+    },
+    {
+      "command": "uv run --locked python tools/refactor_resume.py",
+      "cwd": "amz-listing-kit",
+      "observed_exit_code": 0,
+      "observed_wall_time_seconds": 2.91,
+      "observed_phase_count": 8,
+      "observed_task_count": 27,
+      "observed_next_action": "V2.R5.1",
+      "observed_next_action_status": "blocked",
+      "observed_goal_sha256": "6677a6803003f0894dd522bdd7102b53ca30c866532ff48fdc79e4b148d7c495",
+      "observed_facts": ["Printed user-requested stop blocker and forbade restricted execution", "Printed updated original task card and its detailed-design reference"],
+      "limit": "Recovery script reads repository records, not current system Goal"
+    },
+    {
+      "check": "Native complete-byte hash and complete dependency/RC section comparisons against pre-design snapshot",
+      "result": "all unchanged-contract comparisons true",
+      "manifest": "_stage-amz-control/detailed-design-2026-10-06T03-00-50-972Z/design-result-manifest.json",
+      "comparison_scope": {"dependencies_section_chars": 2970, "RC_section_chars": 1590},
+      "unchanged": ["Goal text", "Task dependency section", "RC section", "All phase progress", "All task statuses", "Next action", "User stop blocker", "Goal binding and latest historical observation fields"],
+      "limit": "Does not prove product behavior or a live system Goal read"
+    }
+  ]
+}

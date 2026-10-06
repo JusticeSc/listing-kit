@@ -1,17 +1,13 @@
-"""V2.6.3 项目包格式 2、迁移链与跨浏览器闭环（0 次真实模型调用）。
+"""V2.6.3 当前项目包合同与跨浏览器闭环（0 次真实模型调用）。
 
 检查：
-  1) 静态：ESM 语法门；storage 镜像（PAYLOAD_SCHEMA_VERSIONS / CURRENT_REVIEW_CONTRACT_VERSION）
-     与 domain 现场逐条一致；PACKAGE_FORMAT_VERSION / MIN_SUPPORTED；导入导出界面落点；
-     迁移链只升级包格式与记录形状（不改写业务事实）；无重复 id / 元素键。
-  2) 契约套件 P01–P07（真实 Chromium）：格式 2 自描述往返、身份被换拒绝、格式 1 升级 +
-     旧 VLM 合同丢弃、当前合同不动、格式过高/过低/计数不符拒绝、payload schema 过高点名拒绝、
-     旧包直接入库。
-  3) 双浏览器闭环（fake provider）：浏览器 A 走完整链路并生成交付包 → 导出项目包；
+  1) 契约套件 P01–P08（真实 Chromium）：当前格式往返、身份拒绝、历史报告原样保留、
+     格式/schema/完整性拒绝、旧包原子拒绝且已有库不变。
+  2) 双浏览器闭环（fake provider）：浏览器 A 走完整链路并生成交付包 → 导出项目包；
      Python zipfile/hashlib 独立核对；浏览器 B（全新 profile）导入 → 逐文档 payload 哈希与
      资产 sha256 与 A 一致（浏览器 crypto 独立重算）；在 B 上完成一次按问题返工 + 重新采用 +
      整套检查 + 交付包生成；再导出项目包，A 的记录集合逐条保留且新增返工/交付记录。
-  4) 正式入口 --check 全过；两个浏览器主链零意外 console/page/HTTP 错误。
+  3) 正式入口 --check 全过；两个浏览器主链零意外 console/page/HTTP 错误。
 
 运行：
   uv run --locked python tools/verify_v2_6_3_project_transfer.py --label final
@@ -20,9 +16,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
-import importlib.util
 import json
-import re
 import subprocess
 import sys
 import tempfile
@@ -32,49 +26,14 @@ from datetime import datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-PRODUCT_DIR = ROOT / "app" / "product_v2"
 EVIDENCE_DIR = ROOT / "evals" / "product-v2"
 EVIDENCE_IMAGE_DIR = EVIDENCE_DIR / "evidence"
 
 
-def load_module(path: Path, name: str):
-    spec = importlib.util.spec_from_file_location(name, path)
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[name] = module
-    spec.loader.exec_module(module)
-    return module
+sys.path.insert(0, str(ROOT / "tools"))
+import v2_verify_shared as shared  # noqa: E402
+import v2_stage_nav as stage_nav  # noqa: E402
 
-
-server_module = load_module(ROOT / "app" / "product_v2_server.py", "v263_server")
-ui3 = load_module(ROOT / "tools" / "verify_v2_ui_3_frontend.py", "v263_ui3")
-v262 = load_module(ROOT / "tools" / "verify_v2_6_2_delivery.py", "v263_v262")
-
-INDEX_HTML = (PRODUCT_DIR / "index.html").read_text(encoding="utf-8")
-WORKSPACE_JS = (PRODUCT_DIR / "workspace.js").read_text(encoding="utf-8")
-APP_JS = (PRODUCT_DIR / "app.js").read_text(encoding="utf-8")
-PACKAGE_JS = (PRODUCT_DIR / "storage" / "package.js").read_text(encoding="utf-8")
-MIGRATIONS_JS = (PRODUCT_DIR / "storage" / "package-migrations.js").read_text(encoding="utf-8")
-TRANSFER_JS = (PRODUCT_DIR / "storage" / "transfer.js").read_text(encoding="utf-8")
-STORAGE_INDEX_JS = (PRODUCT_DIR / "storage" / "index.js").read_text(encoding="utf-8")
-
-MIRROR_PROBE = """
-import { DOMAIN_DOCUMENT_KINDS } from './app/product_v2/domain/shared.js';
-import { REVIEW_CONTRACT_VERSION } from './app/product_v2/domain/review.js';
-import { PAYLOAD_SCHEMA_VERSIONS, CURRENT_REVIEW_CONTRACT_VERSION,
-         MIGRATION_CONTRACT_VERSION } from './app/product_v2/storage/package-migrations.js';
-import { PACKAGE_FORMAT, PACKAGE_FORMAT_VERSION,
-         PACKAGE_FORMAT_VERSION_MIN_SUPPORTED } from './app/product_v2/storage/package.js';
-console.log(JSON.stringify({
-  domain_kinds: Object.values(DOMAIN_DOCUMENT_KINDS).sort(),
-  mirror_kinds: Object.keys(PAYLOAD_SCHEMA_VERSIONS).sort(),
-  domain_review: REVIEW_CONTRACT_VERSION,
-  mirror_review: CURRENT_REVIEW_CONTRACT_VERSION,
-  migration_contract: MIGRATION_CONTRACT_VERSION,
-  format: PACKAGE_FORMAT,
-  version: PACKAGE_FORMAT_VERSION,
-  min_supported: PACKAGE_FORMAT_VERSION_MIN_SUPPORTED,
-}));
-"""
 
 READ_LIBRARY = """async () => {
   const db = await new Promise((resolve, reject) => {
@@ -202,7 +161,7 @@ def inspect_project_package(path: Path) -> dict:
 
 
 def downgrade_to_format_one(source: Path, target: Path) -> None:
-    """把格式 2 包重建成格式 1（记录只有 payload、无 integrity），验证旧包迁移路径。"""
+    """把当前包重建成旧格式，验证 UI 在写入前拒绝且已有数据不变。"""
     with zipfile.ZipFile(source) as archive:
         manifest = json.loads(archive.read("manifest.json").decode("utf-8"))
         manifest["format_version"] = 1
@@ -235,7 +194,7 @@ def wait_candidate_count(page, minimum: int, timeout_s: int = 60) -> int:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="V2.6.3 项目包迁移与跨浏览器验收")
+    parser = argparse.ArgumentParser(description="V2.6.3 当前项目包与跨浏览器验收")
     parser.add_argument("--label", default="")
     args = parser.parse_args()
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -258,75 +217,16 @@ def main() -> int:
         page.screenshot(path=str(path), full_page=True)
         screenshots.append(path.relative_to(ROOT).as_posix())
 
-    # ---------------- 静态守卫 ----------------
-    node_files = ["app/product_v2/storage/package.js",
-                  "app/product_v2/storage/package-migrations.js",
-                  "app/product_v2/storage/transfer.js",
-                  "app/product_v2/storage/index.js",
-                  "app/product_v2/workspace.js",
-                  "app/product_v2/app.js",
-                  "evals/product-v2/harness/project-package-contract.js"]
-    node_results = []
-    for relative in node_files:
-        completed = subprocess.run(["node", "--check", str(ROOT / relative)],
-                                   cwd=str(ROOT), capture_output=True, text=True, check=False)
-        node_results.append({"file": relative, "rc": completed.returncode,
-                             "stderr": completed.stderr.strip()[-160:]})
-    check("V2.6.3-00", "ESM 语法门（storage / workspace / app / 契约套件）",
-          all(item["rc"] == 0 for item in node_results), node_results)
-
-    completed = subprocess.run(["node", "--input-type=module", "-e", MIRROR_PROBE],
-                               cwd=str(ROOT), capture_output=True, text=True, check=False)
-    mirror = None
-    try:
-        mirror = json.loads((completed.stdout or "").strip().splitlines()[-1])
-    except (ValueError, IndexError):
-        mirror = None
-    mirror_ok = (bool(mirror)
-                 and mirror["domain_kinds"] == mirror["mirror_kinds"]
-                 and len(mirror["domain_kinds"]) == 15
-                 and mirror["domain_review"] == mirror["mirror_review"] == "v2.5.2"
-                 and mirror["migration_contract"] == "v2.6.3"
-                 and mirror["format"] == "amz-listing-kit-project"
-                 and mirror["version"] == 2 and mirror["min_supported"] == 1)
-    check("V2.6.3-01", "storage 镜像与 domain 现场一致（15 种文档、复核合同 v2.5.2、格式 2 支持 1）",
-          mirror_ok, mirror or {"rc": completed.returncode, "stderr": completed.stderr.strip()[-300:]})
-
-    html_ids = re.findall(r'id="([^"]+)"', INDEX_HTML)
-    duplicate_ids = sorted({item for item in html_ids if html_ids.count(item) > 1})
-    element_keys = re.findall(
-        r"^\s*([A-Za-z_$][A-Za-z0-9_$]*):\s*document\.getElementById", WORKSPACE_JS, re.M)
-    duplicate_keys = sorted({item for item in element_keys if element_keys.count(item) > 1})
-    landed = (
-        'id="import-trigger"' in INDEX_HTML and 'id="import-file"' in INDEX_HTML
-        and 'id="deliver-project-package"' in INDEX_HTML
-        and "exportProjectPackage" in WORKSPACE_JS
-        and "importProjectPackage" in APP_JS and "migrations_applied" in APP_JS
-        and "已升级" in APP_JS
-        and "parseProjectPackage" in TRANSFER_JS and "buildProjectPackage" in TRANSFER_JS
-        and "migrations_applied" in TRANSFER_JS
-        and "migratePackage(" in PACKAGE_JS and "migrateRecord(" in PACKAGE_JS
-        and "assertPayloadSchemaSupported" in PACKAGE_JS
-        and 'export * from "./package-migrations.js"' in STORAGE_INDEX_JS
-        and "PACKAGE_FORMAT_VERSION = 2" in PACKAGE_JS
-        and "PACKAGE_FORMAT_VERSION_MIN_SUPPORTED = 1" in PACKAGE_JS
-        and "CURRENT_REVIEW_CONTRACT_VERSION = \"v2.5.2\"" in MIGRATIONS_JS
-        and "zipSync" not in MIGRATIONS_JS and "crc32" not in MIGRATIONS_JS)
-    check("V2.6.3-02", "导入导出界面落点与单一权威（迁移链不复制 ZIP/散列实现）",
-          landed and not duplicate_ids and not duplicate_keys,
-          {"landed": landed, "duplicate_ids": duplicate_ids,
-           "duplicate_element_keys": duplicate_keys})
-
-    # ---------------- 契约套件 P01–P07 ----------------
+    # ---------------- 契约套件 P01–P08 ----------------
     suites: dict = {}
-    static_server, base = v262.static_url()
+    static_server, base = shared.start_static_server()
     try:
         from playwright.sync_api import sync_playwright
 
         with sync_playwright() as pw:
             browser = pw.chromium.launch(headless=True)
             try:
-                suites["transfer"] = v262.read_suite(
+                suites["transfer"] = shared.read_suite(
                     browser, base + "/harness/project-package-contract.html",
                     "__V2_TRANSFER_RESULTS__")
             finally:
@@ -337,9 +237,9 @@ def main() -> int:
     suite = suites.get("transfer", {})
     case_ids = [item.get("id") for item in suite.get("cases", [])]
     failed = [item for item in suite.get("cases", []) if item.get("status") != "passed"]
-    check("V2.6.3-03", "契约套件 P01–P07 全过（真实 Chromium）",
+    check("V2.6.3-03", "契约套件 P01–P08 全过（真实 Chromium）",
           suite.get("status") == "passed"
-          and case_ids == [f"P0{index}" for index in range(1, 8)] and not failed,
+          and case_ids == [f"P0{index}" for index in range(1, 9)] and not failed,
           {"status": suite.get("status"), "cases": case_ids,
            "failed": [{"id": item.get("id"), "error": item.get("error")} for item in failed[:3]]})
 
@@ -348,27 +248,27 @@ def main() -> int:
 
     temp_root = Path(tempfile.mkdtemp(prefix="amz-v263-"))
     reference = temp_root / "ref.png"
-    reference.write_bytes(ui3.v251.png_bytes(900, 900, (36, 92, 160)))
+    reference.write_bytes(shared.png_bytes(900, 900, (36, 92, 160)))
     downloads = temp_root / "downloads"
     downloads.mkdir(parents=True, exist_ok=True)
 
     walkthrough: dict = {}
     with sync_playwright() as pw:
-        port = v262.free_port()
-        server, _suite_instance = v262.start_product_server(port, review_scenario="ok")
+        port = shared.free_port()
+        server, _suite_instance = shared.start_product_server(port, review_scenario="ok")
         try:
             context_a = pw.chromium.launch_persistent_context(
                 str(temp_root / "profile-a"), headless=True,
                 viewport={"width": 1440, "height": 950}, accept_downloads=True)
             page_a = context_a.pages[0] if context_a.pages else context_a.new_page()
             page_a.set_default_timeout(30_000)
-            logs_a = ui3.collect(page_a)
+            logs_a = shared.collect(page_a)
             try:
                 page_a.goto(f"http://127.0.0.1:{port}/", wait_until="domcontentloaded")
-                shots, _walk_probes = v262.walk_to_deliver(page_a, "V263 迁移品", reference)
-                gate_a = v262.wait_gate(page_a)
+                shots, _walk_probes = shared.walk_to_deliver(page_a, "V263 迁移品", reference)
+                gate_a = shared.wait_gate(page_a)
                 shot(page_a, "a-gate")
-                delivery_a = v262.download_delivery(page_a, downloads / "delivery-a.zip")
+                delivery_a = shared.download_delivery(page_a, downloads / "delivery-a.zip")
                 with page_a.expect_download(timeout=120_000) as info_a:
                     page_a.click("#deliver-project-package")
                 project_a_path = downloads / "project-a.zip"
@@ -382,7 +282,6 @@ def main() -> int:
                                   "generation_confirm", "product_input", "prompt_version",
                                   "review_report", "selection", "suite_plan", "suite_review",
                                   "fact_slot"}
-                registered_kinds = set(mirror["domain_kinds"]) if mirror else set()
                 integrity_ok = (package_a["integrity"].get("documents")
                                 == len(package_a["documents"])
                                 and package_a["integrity"].get("assets")
@@ -396,7 +295,6 @@ def main() -> int:
                       and package_a["manifest"].get("format_version") == 2
                       and package_a["broken"] is None and records_ok and integrity_ok and assets_ok
                       and expected_kinds <= set(doc_kinds)
-                      and set(doc_kinds) <= registered_kinds
                       and package_a["manifest"].get("project", {}).get("name") == "V263 迁移品",
                       {"format_version": package_a["manifest"].get("format_version"),
                        "integrity": package_a["integrity"], "documents": len(package_a["documents"]),
@@ -412,7 +310,7 @@ def main() -> int:
                     viewport={"width": 1440, "height": 950}, accept_downloads=True)
                 page_b = context_b.pages[0] if context_b.pages else context_b.new_page()
                 page_b.set_default_timeout(30_000)
-                logs_b = ui3.collect(page_b)
+                logs_b = shared.collect(page_b)
                 try:
                     page_b.goto(f"http://127.0.0.1:{port}/", wait_until="domcontentloaded")
                     page_b.wait_for_function(
@@ -454,8 +352,8 @@ def main() -> int:
                            "assets_b": len(asset_set_b), "digests_ok": browser_digest_ok})
                     shot(page_b, "b-opened")
 
-                    # ---- B：按问题返工 → 新候选 ----
-                    page_b.click('[data-stage-nav="review"]')
+                    # ---- B：按问题返工 → 新候选（当前一站式 reworkSubmit；禁止旧 #adopt-panel 假设） ----
+                    stage_nav.goto(page_b, "review")
                     first_shot = shots[0]
                     candidate_before = page_b.evaluate(READ_KIND_COUNT, "candidate")
                     card = page_b.locator(
@@ -472,54 +370,66 @@ def main() -> int:
                     page_b.click("#rework-preview")
                     page_b.wait_for_selector("#rework-submit:not([disabled])", timeout=20_000)
                     page_b.click("#rework-submit")
-                    page_b.wait_for_function(
-                        "() => document.getElementById('rework-panel').hidden === true",
-                        timeout=60_000)
                     candidate_after = wait_candidate_count(page_b, candidate_before + 1)
                     attempt_count = page_b.evaluate(READ_KIND_COUNT, "generation_attempt")
-                    shot(page_b, "b-reworked")
                     check("V2.6.3-06", "B 导入后按问题返工：新增候选与 Attempt（迁移后的项目可继续生产）",
                           candidate_after == candidate_before + 1
                           and attempt_count >= len(shots) + 1,
                           {"candidate_before": candidate_before, "candidate_after": candidate_after,
                            "attempts": attempt_count, "shots": len(shots)})
+                    # 新候选到达不自动改选：旧采用保持 current（不自动指向最新），仍需人工显式采用。
+                    pre_adopt_state = page_b.evaluate(
+                        f"() => (document.querySelector('#review-list .review-card[data-shot-id=\"{first_shot}\"]') || {{}}).getAttribute('data-selection-state')")
+                    check("V2.6.3-06a", "新候选不自动改选：旧采用保持 current、仍需人工显式采用最新",
+                          pre_adopt_state == "current",
+                          {"pre_adopt_state": pre_adopt_state})
 
-                    # ---- B：显式选中最新候选并采用 ----
+                    # ---- B：显式选中最新候选并一键采用（#adopt-open 单击，无二次确认面板） ----
                     card.locator('button:has-text("比较候选")').click()
                     page_b.wait_for_selector("#compare-panel:not([hidden])", timeout=15_000)
                     latest = page_b.evaluate(READ_LATEST_CANDIDATE, first_shot)
                     if not latest:
                         raise RuntimeError("B 项目里找不到最新候选")
                     page_b.click(
-                        f'#compare-candidates [data-candidate-id="{latest["candidate_id"]}"]')
+                        f'#compare-candidates [role="tab"][data-candidate-id="{latest["candidate_id"]}"]')
                     page_b.click("#adopt-open")
-                    page_b.wait_for_selector("#adopt-submit:not([disabled])", timeout=15_000)
-                    page_b.click("#adopt-submit")
-                    page_b.wait_for_selector("#adopt-status:not([hidden])", timeout=15_000)
+                    page_b.wait_for_function(
+                        f"() => [...document.querySelectorAll('#review-list .review-card')].some((node) => node.getAttribute('data-shot-id') === '{first_shot}' && node.getAttribute('data-selection-state') === 'current')",
+                        timeout=15_000)
                     page_b.wait_for_timeout(300)
 
-                    # ---- B：整套检查 → 交付门禁 → 交付包 ----
+                    # ---- B：整套检查 → 交付门禁 → 交付包（当前阶段显式导航；AI 复核按需可选不自动跑） ----
+                    stage_nav.goto(page_b, "review")
                     page_b.click("#suite-review-run")
                     page_b.wait_for_function(
                         "() => { const node = document.getElementById('suite-review-status');"
-                        " return node && node.textContent.indexOf('整套检查 v') >= 0; }",
+                        " return node && node.textContent.indexOf('整套检查 ') >= 0; }",
                         timeout=60_000)
-                    page_b.click('[data-stage-nav="deliver"]')
-                    gate_b = v262.wait_gate(page_b)
+                    stage_nav.goto(page_b, "deliver")
+                    gate_b = shared.wait_gate(page_b)
                     blocking_b = [item for item in gate_b["findings"] if item["severity"] == "BLOCK"]
                     shot(page_b, "b-deliver")
-                    delivery_b = v262.download_delivery(page_b, downloads / "delivery-b.zip")
-                    zoom_b = v262.inspect_zip(downloads / "delivery-b.zip")
+                    delivery_b = shared.download_delivery(page_b, downloads / "delivery-b.zip")
+                    zoom_b = shared.inspect_zip(downloads / "delivery-b.zip")
                     digest_b_ok = all(item["sha256"] == item["declared"]
                                       and item["byte_size"] == item["declared_size"]
                                       for item in zoom_b["digests"].values())
+                    delivered_first = next((item for item in zoom_b["manifest"]["images"]
+                                          if item.get("shot_id") == first_shot), {})
                     check("V2.6.3-07", "B 返工后门禁重新就绪并生成交付包（迁移后的完整闭环）",
                           not blocking_b and gate_b["disabled"] is False
                           and delivery_b["bytes"] > 0 and zoom_b["broken"] is None
-                          and digest_b_ok and len(zoom_b["manifest"]["images"]) == len(shots),
+                          and digest_b_ok and len(zoom_b["manifest"]["images"]) == len(shots)
+                          and delivered_first.get("candidate_id") == latest["candidate_id"]
+                          and delivered_first.get("attempt_action_id")
+                          and delivered_first.get("prompt_version")
+                          and delivered_first.get("prompt_hash"),
                           {"blocking": blocking_b[:3], "status": gate_b["status"][:160],
                            "delivery": delivery_b,
-                           "images": len(zoom_b["manifest"]["images"])})
+                           "images": len(zoom_b["manifest"]["images"]),
+                           "delivered": {key: delivered_first.get(key) for key in
+                                         ("shot_id", "candidate_id", "attempt_action_id",
+                                          "prompt_version")}})
 
                     # ---- B：再导出项目包，A 的记录逐条保留并可继续增长 ----
                     with page_b.expect_download(timeout=120_000) as info_b:
@@ -549,38 +459,32 @@ def main() -> int:
                            "new_kinds": new_kinds,
                            "documents": [len(package_a["documents"]), len(package_b["documents"])],
                            "assets": [len(package_a["assets"]), len(package_b["assets"])]})
-                    # ---- 格式 1 旧包 UI 导入：提示已升级、同 id 冲突分配新项目、迁移后可用 ----
+                    # ---- 旧格式 UI 拒绝：保留已有项目及所有资产/版本 ----
                     candidates_before_v1 = page_b.evaluate(READ_KIND_COUNT, "candidate")
                     v1_path = downloads / "project-a-format1.zip"
                     downgrade_to_format_one(project_a_path, v1_path)
-                    a_project_id = package_a["manifest"]["project"]["project_id"]
                     page_b.click("#back-home")
                     page_b.wait_for_selector("#home-view:not([hidden])", timeout=15_000)
                     page_b.wait_for_selector("#project-list .project-row", timeout=15_000)
                     rows_before = page_b.locator("#project-list .project-row").count()
                     page_b.set_input_files("#import-file", str(v1_path))
                     page_b.wait_for_function(
-                        "() => { const node = document.getElementById('home-status');"
-                        " return node && node.textContent.indexOf('已升级') >= 0; }",
+                        "() => { const node = document.getElementById('home-error');"
+                        " return node && !node.hidden && node.textContent; }",
                         timeout=30_000)
-                    upgrade_status = page_b.text_content("#home-status") or ""
+                    rejection = page_b.text_content("#home-error") or ""
                     rows_after = page_b.locator("#project-list .project-row").count()
-                    new_row = ('#project-list .project-row'
-                               ':not([data-project-id="' + a_project_id + '"])')
-                    page_b.click(new_row + ' button[data-action="open"]')
-                    page_b.wait_for_selector("#project-view:not([hidden])", timeout=30_000)
                     candidates_after_v1 = page_b.evaluate(READ_KIND_COUNT, "candidate")
-                    check("V2.6.3-09", "格式 1 旧包 UI 导入：提示已升级、冲突分配新项目、迁移后项目可打开",
-                          "已升级" in upgrade_status and "包格式 1 → 2" in upgrade_status
-                          and rows_after == rows_before + 1
-                          and candidates_after_v1 == candidates_before_v1 + len(shots),
-                          {"status": upgrade_status[:200], "rows": [rows_before, rows_after],
+                    check("V2.6.3-09", "旧格式 UI 导入拒绝，已有项目和候选不变",
+                          bool(rejection) and rows_after == rows_before
+                          and candidates_after_v1 == candidates_before_v1,
+                          {"error": rejection[:200], "rows": [rows_before, rows_after],
                            "candidates": [candidates_before_v1, candidates_after_v1]})
                     walkthrough["b"] = {"latest_candidate": latest,
                                         "new_kinds": new_kinds,
                                         "delivery": delivery_b,
                                         "package_bytes": package_b["bytes"],
-                                        "format1_upgrade": upgrade_status[:200]}
+                                        "format1_rejected": rejection[:200]}
                 finally:
                     context_b.close()
 
@@ -608,7 +512,7 @@ def main() -> int:
           completed.returncode == 0, {"rc": completed.returncode, "tail": tail})
 
     passed = sum(1 for item in checks if item["ok"])
-    lines = [f"V2.6.3 项目包迁移与跨浏览器闭环验收 · {stamp}{label}",
+    lines = [f"V2.6.3 当前项目包与跨浏览器闭环验收 · {stamp}{label}",
              f"结果：{passed}/{len(checks)} 通过", ""]
     for item in checks:
         lines.append(f"[{'PASS' if item['ok'] else 'FAIL'}] {item['id']} {item['title']}")

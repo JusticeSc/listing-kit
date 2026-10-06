@@ -1,0 +1,32 @@
+{
+  "NOT-AUTHORITY": "point-in-time evidence",
+  "event": "authorized_start_blocked_before_goal_binding",
+  "recorded_at": "2026-10-05T02:38:47.711Z",
+  "plan_ref": "docs/product-v2-refactor-plan.md",
+  "goal_draft_section": "16.3",
+  "user_trigger": "开始吧",
+  "user_authorization": "Start the complete engineering and release scope already specified in plan sections 16.1 and 16.3; no authorization to bypass section 16.2 Goal binding.",
+  "goal_observation": "unavailable; no current system Goal read obtained",
+  "tool_evidence": [
+    {"interface": "Eval tool.goal({op:'get'})", "result": "Unknown tool from js runtime: goal", "context": "Attempted earlier in this same conversation during preparation; not a No active goal result."},
+    {"interface": "read xd://goal", "result": "No such tool: xd://goal. Mounted devices: ast_edit, debug, lsp. Active top-level tools are also dispatchable via xd://<tool>."},
+    {"interface": "read xd://get_goal", "result": "No such tool: xd://get_goal. Mounted devices: ast_edit, debug, lsp. Active top-level tools are also dispatchable via xd://<tool>."},
+    {"interface": "read xd://create_goal", "result": "No such tool: xd://create_goal. Mounted devices: ast_edit, debug, lsp. Active top-level tools are also dispatchable via xd://<tool>."}
+  ],
+  "snapshot": "_stage-amz-control/goal-start-blocked-20261005T023847Z",
+  "before_sha256": {
+    "_working/amz-listing-kit-product-v2/state.md": "5aa7dc7f53a083333ffef44c256d9e8972ac17b0894c526f0bfed614eb49301b",
+    "docs/product-v2-refactor-plan.md": "efe2d0d92d848434af55f7d6c68e617b23e4291b45da618bd0a1ac82825b6c23"
+  },
+  "actions": {
+    "goal_created_or_bound": false,
+    "goal_lifecycle_changed": false,
+    "product_code_changed": false,
+    "affected_task_acceptance_reassessed": false,
+    "product_started": false,
+    "paid_calls": 0,
+    "commit_push_merge_deploy": false,
+    "budget_changed": false
+  },
+  "recovery": "User start authorization received. Restore real Goal get/create access and follow plan section 16.2, or obtain explicit user approval to revise the system-Goal prerequisite. Preserve historical binding; do not fabricate a Goal ID, session observation, or lifecycle. No product execution before the prerequisite is legitimately resolved."
+}

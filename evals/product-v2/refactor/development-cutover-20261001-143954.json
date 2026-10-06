@@ -1,0 +1,81 @@
+{
+  "not_authority": true,
+  "observed_at": "2026-10-01T14:39:54.995Z",
+  "user_authorization": "不用考虑历史兼容性，现在仍在开发阶段，允许你做激进的设计。",
+  "before_and_packages": [
+    {
+      "snapshots": [
+        {
+          "path": "docs/product-v2-refactor-plan.md",
+          "before_sha256": "642236956440b70e4fa1f08a2b594d5bb4ee2ccaf468d26e257dcf843c861071",
+          "snapshot": "_stage-amz-control\\development-cutover-20261001-143954\\docs\\product-v2-refactor-plan.md"
+        },
+        {
+          "path": "docs/product-v2-project-context.md",
+          "before_sha256": "6dd71a27a3c181f1b4405dae18350f461a98a38273c91507c7a6926e91652738",
+          "snapshot": "_stage-amz-control\\development-cutover-20261001-143954\\docs\\product-v2-project-context.md"
+        },
+        {
+          "path": "_working/amz-listing-kit-product-v2/state.md",
+          "before_sha256": "5d55947498d3545c412affdb157c5cb40bc6d4ec9064560a62c66a5f5fed7d2b",
+          "snapshot": "_stage-amz-control\\development-cutover-20261001-143954\\_working\\amz-listing-kit-product-v2\\state.md"
+        }
+      ]
+    },
+    {
+      "package": "r12-baseline-project-a-format2-50docs.zip",
+      "sha256": "d8421b567d9499cee7adfc5d1042bd2e6bcb557891f513441ab0722320a4a52d",
+      "documents": 50,
+      "assets": 5,
+      "kinds": {
+        "candidate": 4,
+        "export_record": 1,
+        "fact_slot": 16,
+        "generation_attempt": 12,
+        "generation_confirm": 1,
+        "product_input": 2,
+        "prompt_version": 4,
+        "review_report": 4,
+        "selection": 4,
+        "suite_plan": 1,
+        "suite_review": 1
+      },
+      "main_candidate_versions": [
+        1
+      ],
+      "bad_crc": null,
+      "asset_mismatches": 0
+    },
+    {
+      "package": "r12-baseline-project-b-history-60docs.zip",
+      "sha256": "09ed48fea444ba241211763092b3a8df169f707800e12fea89f46608e2b13fc0",
+      "documents": 60,
+      "assets": 6,
+      "kinds": {
+        "candidate": 5,
+        "export_record": 2,
+        "fact_slot": 16,
+        "generation_attempt": 15,
+        "generation_confirm": 2,
+        "product_input": 2,
+        "prompt_version": 5,
+        "review_report": 5,
+        "selection": 5,
+        "suite_plan": 1,
+        "suite_review": 2
+      },
+      "main_candidate_versions": [
+        1,
+        2
+      ],
+      "bad_crc": null,
+      "asset_mismatches": 0
+    }
+  ],
+  "after_sha256": {
+    "docs/product-v2-refactor-plan.md": "9c54da73defd586765480d011de21810dc7acb66ec513872adb1965e9eae4076",
+    "docs/product-v2-project-context.md": "1ad8551c242e9a5a9931eb290869554719482caecb5d3c54488fa6adec30a1e0",
+    "_working/amz-listing-kit-product-v2/state.md": "9a029394da78836502aad651c29da4059e5937c70e0b8566164701ab03047dc2"
+  },
+  "scope_note": "旧格式兼容要求取消；同版本产品行为保留；未伪造系统 Goal 改写或缺失旧包恢复"
+}

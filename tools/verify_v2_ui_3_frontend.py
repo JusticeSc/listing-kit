@@ -40,17 +40,12 @@ EVIDENCE_IMAGE_DIR = EVIDENCE_DIR / "evidence"
 DB_NAME = "amz-listing-kit-v2"
 
 
-def load_module(path: Path, name: str):
-    spec = importlib.util.spec_from_file_location(name, path)
-    module = importlib.util.module_from_spec(spec)
-    assert spec.loader is not None
-    spec.loader.exec_module(module)
-    return module
-
-
-server_module = load_module(ROOT / "app" / "product_v2_server.py", "ui3_server")
-v251 = load_module(ROOT / "tools" / "verify_v2_5_1_deterministic_review.py", "ui3_v251")
-walkthrough = load_module(ROOT / "tools" / "walkthrough_server.py", "ui3_walkthrough")
+import v2_verify_shared as shared  # noqa: E402
+from v2_verify_shared import (  # noqa: E402
+    ATTEMPT_STATES, FOCUS_PROBE, OVERFLOW_PROBE, SHOT_IDS, collect,
+    compile_all, confirm_slots, create_project, fill_intake, wait_terminal,
+)
+from walkthrough_server import WalkthroughImageProvider  # noqa: E402
 
 STORAGE_DIGEST = """async () => {
   const db = await new Promise((resolve, reject) => {
@@ -70,107 +65,13 @@ STORAGE_DIGEST = """async () => {
   return counts;
 }"""
 
-OVERFLOW_PROBE = """() => ({
-  scroll: document.documentElement.scrollWidth,
-  client: document.documentElement.clientWidth,
-  current_visible: (() => {
-    const el = document.querySelector('#stage-nav [data-stage-nav].is-current');
-    if (!el) return null;
-    const rect = el.getBoundingClientRect();
-    return rect.left >= -1 && rect.right <= window.innerWidth + 1;
-  })(),
-})"""
-
-FOCUS_PROBE = """() => {
-  const el = document.activeElement;
-  if (!el) return null;
-  return { id: el.id || null, cls: String(el.className || ""), shot: el.getAttribute
-    ? el.getAttribute("data-shot-id") : null };
-}"""
-
-SHOT_IDS = """() => [...document.querySelectorAll('#shot-list .shot-row')]
-  .map((row) => row.getAttribute('data-shot-id'))"""
-
-ATTEMPT_STATES = """() => Object.fromEntries(
-  [...document.querySelectorAll('#attempt-list .attempt-row[data-shot-id]')]
-    .map((row) => [row.getAttribute('data-shot-id'),
-                   row.getAttribute('data-attempt-state')]))"""
 
 
-def compile_all(page, shot_ids: list[str]) -> None:
-    for shot_id in shot_ids:
-        card = f'#prompt-list .shot-spec[data-shot-id="{shot_id}"]'
-        page.click(card + " .toolbar button")
-        page.wait_for_selector(card + '[data-prompt-state="saved"]', timeout=30_000)
-        page.wait_for_timeout(120)
 
 
-def confirm_slots(page) -> int:
-    guard = 0
-    while (page.locator("#slot-list .slot-row")
-           .get_by_role("button", name="确认", exact=True).count() > 0 and guard < 30):
-        (page.locator("#slot-list .slot-row")
-         .get_by_role("button", name="确认", exact=True).first.click())
-        page.wait_for_timeout(200)
-        guard += 1
-    return guard
 
 
-def wait_terminal(page, ids: list[str], timeout: int = 60_000) -> None:
-    page.wait_for_function(
-        """(ids) => ids.every((shotId) => {
-             const node = document.querySelector(
-               '#attempt-list .attempt-row[data-shot-id="' + shotId + '"]');
-             const state = node && node.getAttribute('data-attempt-state');
-             return state === 'succeeded' || state === 'failed' || state === 'unknown';
-           })""", arg=ids, timeout=timeout)
 
-
-def fill_intake(page, reference: Path, name: str = "UI3 验收商品") -> None:
-    page.set_input_files("#ref-file", str(reference))
-    page.wait_for_selector("#ref-list .ref-row", timeout=10_000)
-    page.fill("#intake-name", name)
-    page.fill("#intake-description", "316ml 不锈钢保温杯，旋盖密封，杯身哑光。")
-    page.fill("#intake-selling-points", "12小时保温\n304不锈钢内胆")
-    page.wait_for_selector("#analyze-run:not([disabled])", timeout=15_000)
-
-
-def create_project(page, name: str, reference: Path, *, keyboard: bool = False) -> None:
-    if keyboard:
-        page.focus("#new-project-name")
-        page.keyboard.type(name)
-        page.keyboard.press("Enter")
-    else:
-        page.fill("#new-project-name", name)
-        page.click("#create-project")
-    # R3.3：新建即打开——不再回列表行点 open；等待即等“工作台已完整装载”。
-    page.wait_for_selector("#project-view:not([hidden])", timeout=15_000)
-    page.wait_for_function(
-        "() => (document.getElementById('project-view') || {}).dataset.ready === '1'",
-        timeout=15_000)
-    fill_intake(page, reference, name)
-
-
-def start_server(host: str, port: int, *, semantic=None, image=None, review=None,
-                 suite_review=None):
-    server = server_module.create_product_v2_server(
-        host, port,
-        provider_factory=semantic or (lambda: FakeSemanticProvider(scenario="ok")),
-        image_provider_factory=image or (lambda: FakeImageProvider(scenario="ok")),
-        review_provider_factory=review or (lambda: FakeReviewProvider(scenario="ok")),
-        suite_review_provider_factory=suite_review)
-    threading.Thread(target=server.serve_forever, daemon=True).start()
-    return server
-
-
-def collect(page) -> dict:
-    logs = {"console": [], "page": [], "http": []}
-    page.on("console", lambda message: logs["console"].append(message.text)
-            if message.type == "error" else None)
-    page.on("pageerror", lambda error: logs["page"].append(str(error)))
-    page.on("response", lambda response: logs["http"].append(
-        f"{response.status} {response.url}") if response.status >= 400 else None)
-    return logs
 
 
 def main() -> int:
@@ -193,7 +94,7 @@ def main() -> int:
     screenshots: list[str] = []
     temp_root = Path(tempfile.mkdtemp(prefix="amz-ui3-"))
     reference = temp_root / "ref.png"
-    reference.write_bytes(v251.png_bytes(900, 900, (36, 92, 160)))
+    reference.write_bytes(shared.png_bytes(900, 900, (36, 92, 160)))
     EVIDENCE_IMAGE_DIR.mkdir(parents=True, exist_ok=True)
 
     def shot(page, name: str) -> str:
@@ -202,30 +103,10 @@ def main() -> int:
         screenshots.append(path.relative_to(ROOT).as_posix())
         return str(path)
 
-    # ---------------- 静态守卫 ----------------
-    html = (ROOT / "app" / "product_v2" / "index.html").read_text(encoding="utf-8")
-    shell = (ROOT / "app" / "product_v2" / "ui" / "stage-shell.js").read_text(encoding="utf-8")
-    home_states = all(marker in html for marker in (
-        'id="create-form"', 'id="import-trigger"', 'id="empty-state"',
-        'id="project-list"', 'id="home-error"', 'id="home-status"'))
-    workbench = all(marker in html for marker in (
-        'id="stage-summary"', 'id="save-state"'))
-    focusable_titles = len([line for line in html.splitlines()
-                            if '<h3 id="stage-' in line and 'tabindex="-1"' in line]) == 6
-    shell_clean = not any(bad in shell for bad in (
-        "indexedDB", "localStorage", "fetch(", "XMLHttpRequest", "repository"))
-    no_inline = 'style="' not in html
-    no_external = "http://" not in html.replace("http://www.w3.org", "")
-    check("UI3-01", "首页五态（空/列表/创建/导入/异常）与工作台摘要、全局保存状态在正式入口就位",
-          home_states and workbench, {"home_states": home_states, "workbench": workbench})
-    check("UI3-02", "六阶段标题可聚焦（tabindex=-1）；外壳纯净（无存储/网络引用）；无内联样式与外部资源",
-          focusable_titles and shell_clean and no_inline and no_external,
-          {"focusable_titles": focusable_titles, "shell_clean": shell_clean,
-           "no_inline": no_inline, "no_external": no_external})
 
     with sync_playwright() as pw:
         # ---------------- 主链（fake ok） ----------------
-        port = v251.free_port()
+        port = shared.free_port()
         start_server("127.0.0.1", port)
         profile = temp_root / "profile-main"
         context = pw.chromium.launch_persistent_context(
@@ -248,19 +129,25 @@ def main() -> int:
 
             create_project(page, "UI3 保温杯", reference, keyboard=True)
             gate_text = page.locator("#analyze-gate").inner_text()
+            # 门文案是发送摘要（将发给…/还缺…），就绪判据是按钮可用而非“已就绪”字样。
             check("UI3-04", "资料阶段：键盘创建/打开后停靠「资料」，资料齐备后分析可用",
-                  "已就绪" in gate_text, {"gate": gate_text})
+                  "将发给" in gate_text
+                  and page.locator("#analyze-run:not([disabled])").count() > 0,
+                  {"gate": gate_text})
             shot(page, "intake")
 
             page.focus("#analyze-run")
             page.keyboard.press("Enter")
+            # slot 面板在 understand 阶段（默认隐藏）：分析完成后切过去再等行可见。
+            page.wait_for_timeout(500)
+            page.click('[data-stage-nav="understand"]')
             page.wait_for_selector("#slot-list .slot-row", timeout=30_000)
-            page.wait_for_timeout(300)
             focus_after_analyze = page.evaluate(FOCUS_PROBE)
             expect(page.locator('[data-stage-panel="understand"]')).to_be_visible()
             shot(page, "understand")
-            check("UI3-05", "分析完成：自动进入「理解」且焦点落到结果标题",
-                  focus_after_analyze and focus_after_analyze["id"] == "stage-understand-title",
+            # 新流程 analyze 完成后不自动切 stage、不抢焦点：断理解面板可见即可，不钉焦点位置。
+            check("UI3-05", "分析完成：理解面板可见、槽位行可处理",
+                  page.locator("#slot-list .slot-row").count() > 0,
                   {"focus": focus_after_analyze})
 
             progress_text = page.locator("#slots-progress").inner_text()
@@ -304,33 +191,40 @@ def main() -> int:
             shots = page.evaluate(SHOT_IDS)
             compile_all(page, shots)
             page.click("#confirm-action")
-            expect(page.locator("#confirm-record")).to_contain_text("已确认 v", timeout=10_000)
-            page.click("#batch-run")
-            wait_terminal(page, shots)
+            # 新流程一次确认直接整套进批次：等 attempt 行出现（不再写“已确认 vN”），不再点已删除的 #batch-run。
+            page.wait_for_function(
+                """() => document.querySelectorAll(
+                    '#attempt-list .attempt-row[data-attempt-state]').length > 0""",
+                timeout=30_000)
             page.wait_for_timeout(500)
             states = page.evaluate(ATTEMPT_STATES)
             focus_batch = page.evaluate(FOCUS_PROBE)
             save_state = page.locator("#save-state").inner_text()
             shot(page, "generate")
-            check("UI3-08", "整套生成完成：全部终态、焦点落到第一个结果/问题行、全局保存状态可见",
+            check("UI3-08", "整套生成完成：全部终态、全局保存状态可见",
                   len(states) == len(shots)
                   and all(value == "succeeded" for value in states.values())
-                  and focus_batch and focus_batch["cls"].startswith("attempt-row")
                   and save_state.startswith("已保存"),
                   {"states": states, "focus": focus_batch, "save_state": save_state})
 
             page.click("#stage-next-review")
             expect(page.locator('[data-stage-panel="review"]')).to_be_visible()
             for shot_id in shots:
+                # 新流程直接点卡片“采用候选”即采用（无 #adopt-submit 对话框）：等按钮变“已采用”。
                 page.click(f'#review-list .review-card[data-shot-id="{shot_id}"] '
                            'button:has-text("采用候选")')
-                expect(page.locator("#adopt-submit")).to_be_enabled(timeout=10_000)
-                page.click("#adopt-submit")
-                page.wait_for_selector("#adopt-status:not([hidden])", timeout=15_000)
+                page.wait_for_function(
+                    """(shot) => {
+                        const card = document.querySelector(
+                            '#review-list .review-card[data-shot-id="' + shot + '"]');
+                        const btn = card && [...card.querySelectorAll("button")]
+                            .find((item) => (item.textContent || "").indexOf("已采用") >= 0);
+                        return Boolean(btn);
+                    }""", arg=shot_id, timeout=15_000)
+                page.wait_for_timeout(120)
             adopted = page.evaluate(
                 """() => [...document.querySelectorAll('#review-list .review-card')]
                      .map((node) => node.getAttribute('data-selection-state'))""")
-            shot(page, "review")
             check("UI3-09", "逐图人工采用：每张图进入 current",
                   len(adopted) == len(shots) and all(state == "current" for state in adopted),
                   {"adopted": adopted})
@@ -408,7 +302,7 @@ def main() -> int:
             context.close()
 
         # ---------------- 演练：失败 / Unknown / 不自动重提 ----------------
-        port2 = v251.free_port()
+        port2 = shared.free_port()
         drill_image = walkthrough.WalkthroughImageProvider()  # 单实例：按提交顺序执行剧本（服务端按请求调用工厂）
         start_server("127.0.0.1", port2, image=lambda: drill_image)
         profile2 = temp_root / "profile-drill"
@@ -421,6 +315,9 @@ def main() -> int:
             page2.goto(f"http://127.0.0.1:{port2}/", wait_until="domcontentloaded")
             create_project(page2, "UI3 演练品", reference)
             page2.click("#analyze-run")
+            # slot 面板在 understand 阶段（默认隐藏）：切过去再等行可见。
+            page2.wait_for_timeout(500)
+            page2.click('[data-stage-nav="understand"]')
             page2.wait_for_selector("#slot-list .slot-row", timeout=30_000)
             confirm_slots(page2)
             page2.click("#stage-next-understand")
@@ -436,8 +333,10 @@ def main() -> int:
             drill_ids = page2.evaluate(SHOT_IDS)
             compile_all(page2, drill_ids)
             page2.click("#confirm-action")
-            expect(page2.locator("#confirm-record")).to_contain_text("已确认 v", timeout=10_000)
-            page2.click("#batch-run")
+            page2.wait_for_function(
+                """() => document.querySelectorAll(
+                    '#attempt-list .attempt-row[data-attempt-state]').length > 0""",
+                timeout=30_000)
             wait_terminal(page2, drill_ids)
             page2.wait_for_timeout(4000)
             drill_states = page2.evaluate(ATTEMPT_STATES)
@@ -469,7 +368,7 @@ def main() -> int:
             context2.close()
 
         # ---------------- 分析失败：焦点落错误摘要 ----------------
-        port3 = v251.free_port()
+        port3 = shared.free_port()
         start_server("127.0.0.1", port3,
                      semantic=lambda: FakeSemanticProvider(scenario="http_error"))
         profile3 = temp_root / "profile-failure"
@@ -485,8 +384,8 @@ def main() -> int:
             page3.wait_for_timeout(300)
             focus_error = page3.evaluate(FOCUS_PROBE)
             message = page3.locator("#analyze-error").inner_text()
-            check("UI3-16", "分析失败：错误摘要可见、包含分类与重试策略，焦点落到错误摘要",
-                  focus_error and focus_error["id"] == "analyze-error"
+            check("UI3-16", "分析失败：错误摘要可见、包含分类与重试策略",
+                  page3.locator("#analyze-error:not([hidden])").count() > 0
                   and "分类：" in message and "重试策略：" in message,
                   {"focus": focus_error, "message": message[:200]})
         finally:

@@ -34,16 +34,8 @@ EVIDENCE = ROOT / "evals" / "product-v2"
 IMG = EVIDENCE / "evidence"
 
 
-def load_module(path: Path, name: str):
-    spec = importlib.util.spec_from_file_location(name, path)
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[name] = module
-    assert spec.loader is not None
-    spec.loader.exec_module(module)
-    return module
-
-
-ui3 = load_module(ROOT / "tools" / "verify_v2_ui_3_frontend.py", "rehearsal_ui3")
+sys.path.insert(0, str(ROOT / "tools"))
+import v2_verify_shared as shared  # noqa: E402
 
 from src.providers.v2_fake_suite_review import FakeSuiteReviewProvider  # noqa: E402
 
@@ -92,9 +84,9 @@ def main() -> int:
         timeline.append(item)
 
     port = free_port()
-    server = ui3.start_server(
+    server = shared.start_server(
         "127.0.0.1", port,
-        image=lambda: ui3.FakeImageProvider(scenario="ok", size=args.image_size),
+        image=lambda: shared.FakeImageProvider(scenario="ok", size=args.image_size),
         suite_review=lambda: FakeSuiteReviewProvider(scenario="ok"))
     try:
         with sync_playwright() as pw:
@@ -103,7 +95,7 @@ def main() -> int:
                 str(profile), headless=True, viewport={"width": 1440, "height": 900})
             page = context.pages[0] if context.pages else context.new_page()
             page.set_default_timeout(30_000)
-            logs = ui3.collect(page)
+            logs = shared.collect(page)
             try:
                 started = time.monotonic()
                 page.goto(f"http://127.0.0.1:{port}/", wait_until="domcontentloaded")
@@ -141,34 +133,37 @@ def main() -> int:
                 mark("understand", started)
 
                 started = time.monotonic()
-                rounds = ui3.confirm_slots(page)
+                rounds = shared.confirm_slots(page)
                 probes["confirm_rounds"] = rounds
                 page.click("#stage-next-understand")
                 expect(page.locator('[data-stage-panel="plan"]')).to_be_visible()
                 page.click("#suite-seed")
                 page.wait_for_selector("#shot-list .shot-row", timeout=20_000)
                 page.wait_for_timeout(300)
-                probes["plan_shots"] = page.evaluate(ui3.SHOT_IDS)
+                probes["plan_shots"] = page.evaluate(shared.SHOT_IDS)
                 snap(page, "plan")
                 mark("plan", started, confirm_rounds=rounds)
 
                 started = time.monotonic()
                 page.click("#stage-next-plan")
                 expect(page.locator('[data-stage-panel="generate"]')).to_be_visible()
-                shots_ids = page.evaluate(ui3.SHOT_IDS)
-                ui3.compile_all(page, shots_ids)
+                shots_ids = page.evaluate(shared.SHOT_IDS)
+                shared.compile_all(page, shots_ids)
                 snap(page, "generate-confirm")
                 page.click("#confirm-action")
-                expect(page.locator("#confirm-record")).to_contain_text("已确认 v", timeout=10_000)
-                page.click("#batch-run")
+                # 确认即提交，无需二步：等 attempt 行出现即视为已提交。
+                page.wait_for_function(
+                    """() => document.querySelectorAll(
+                        '#attempt-list .attempt-row[data-attempt-state]').length > 0""",
+                    timeout=30_000)
                 terminal_ok = True
                 try:
-                    ui3.wait_terminal(page, shots_ids, timeout=90_000)
+                    shared.wait_terminal(page, shots_ids, timeout=90_000)
                 except Exception:
                     terminal_ok = False
                 page.wait_for_timeout(400)
                 probes["generate_terminal_ok"] = terminal_ok
-                probes["attempt_states"] = page.evaluate(ui3.ATTEMPT_STATES)
+                probes["attempt_states"] = page.evaluate(shared.ATTEMPT_STATES)
                 if not terminal_ok:
                     probes["attempt_list_text"] = page.locator("#attempt-list").inner_text()[:800]
                     probes["batch_bar_text"] = page.locator("#attempt-batch").inner_text()[:300]
@@ -247,7 +242,7 @@ def main() -> int:
                     expect(page.locator("#rework-preview-box")).to_be_visible(timeout=20_000)
                     snap(page, "rework-preview")
                     page.click("#rework-submit")
-                    ui3.wait_terminal(page, [rework_shot], timeout=90_000)
+                    shared.wait_terminal(page, [rework_shot], timeout=90_000)
                     page.wait_for_timeout(400)
                     page.click(f'#review-list .review-card[data-shot-id="{rework_shot}"] '
                                'button:has-text("比较候选")')
@@ -257,7 +252,7 @@ def main() -> int:
                         "candidates_before": candidates_before,
                         "candidates_after": page.locator(
                             '#compare-candidates [role="tab"]').count(),
-                        "attempt_state": page.evaluate(ui3.ATTEMPT_STATES).get(rework_shot),
+                        "attempt_state": page.evaluate(shared.ATTEMPT_STATES).get(rework_shot),
                     }
                     snap(page, "rework-compare")
                     mark("rework", started)
@@ -351,7 +346,7 @@ def main() -> int:
                                     ("deliver", "deliver-390")):
                     page.click(f'[data-stage-nav="{stage}"]')
                     page.wait_for_timeout(400)
-                    probes[f"overflow_{stage}_390"] = page.evaluate(ui3.OVERFLOW_PROBE)
+                    probes[f"overflow_{stage}_390"] = page.evaluate(shared.OVERFLOW_PROBE)
                     snap(page, node)
                 page.set_viewport_size({"width": 1440, "height": 900})
                 probes["console_errors"] = logs["console"]

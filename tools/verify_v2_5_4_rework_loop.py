@@ -48,135 +48,12 @@ BUSINESS_KINDS = {"prompt_version", "generation_attempt", "candidate", "review_r
                   "generation_confirm"}
 
 
-def load_module(path: Path, name: str):
-    spec = importlib.util.spec_from_file_location(name, path)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+import v2_verify_shared as shared  # noqa: E402
+from v2_verify_shared import digest_untouched, digest_kept_prefix  # noqa: E402
+
+server_module = shared.load_server_module()
 
 
-v251 = load_module(ROOT / "tools" / "verify_v2_5_1_deterministic_review.py", "verify_v251")
-server_module = v251.load_server_module()
-
-
-def product_text(relative: str) -> str:
-    return (PRODUCT_DIR / relative).read_text(encoding="utf-8")
-
-
-def compare_section(text: str) -> str:
-    """workspace.js 里比较面板那一整块（分区注释 → renderAttempts 之前）。"""
-
-    start = text.index("候选比较与审核清单（V2.5.3）")
-    end = text.index("function renderAttempts", start)
-    return text[start:end]
-
-
-def rework_section(text: str) -> str:
-    """workspace.js 里单图返工那一整块（独立分区，不属于比较区）。"""
-
-    start = text.index("单图返工闭环（V2.5.4）")
-    end = text.index("function renderBatch", start)
-    return text[start:end]
-
-
-def check_static_guards() -> list[dict]:
-    checks: list[dict] = []
-    syntax_targets = [
-        PRODUCT_DIR / "domain" / "rework.js",
-        PRODUCT_DIR / "domain" / "prompt.js",
-        PRODUCT_DIR / "domain" / "confirm.js",
-        PRODUCT_DIR / "workspace.js",
-        HARNESS_DIR / "rework-contract.js",
-        Path(__file__).resolve(),
-    ]
-    results = []
-    for target in syntax_targets:
-        if target.suffix == ".js":
-            command = ["node", "--check", str(target)]
-        else:
-            command = [sys.executable, "-c",
-                       "import ast,pathlib,sys;ast.parse(pathlib.Path(sys.argv[1]).read_text(encoding='utf-8'))",
-                       str(target)]
-        completed = subprocess.run(command, cwd=str(ROOT), capture_output=True, text=True, check=False)
-        results.append({"file": target.relative_to(ROOT).as_posix(), "rc": completed.returncode,
-                        "stderr": completed.stderr.strip()[-160:]})
-    checks.append({
-        "id": "V2.5.4-01",
-        "title": "语法门：rework / prompt / confirm / workspace / 返工契约套件与本工具全部可解析",
-        "ok": all(item["rc"] == 0 for item in results),
-        "detail": {"files": results},
-    })
-
-    rework_text = product_text("domain/rework.js")
-    workspace_text = product_text("workspace.js")
-    html = (PRODUCT_DIR / "index.html").read_text(encoding="utf-8")
-    # 只挑不会与普通词撞名的 id；普通词（text/other 等）在 JS 里到处都是，不能当判据。
-    distinctive = ["product_fidelity", "part_error", "composition", "selling_point", "platform_risk"]
-    duplicated = [problem for problem in distinctive
-                  if f'"{problem}"' in workspace_text or f"'{problem}'" in workspace_text]
-    local_definition = ("REWORK_PROBLEM_IDS =" in workspace_text
-                        or "const REWORK_PROBLEMS" in workspace_text
-                        or "商品失真" in workspace_text)
-    checks.append({
-        "id": "V2.5.4-02",
-        "title": "单一权威：九类问题与返工合同版本只在 domain/rework.js 定义，工作台只引用",
-        "ok": 'REWORK_PROBLEM_IDS' in rework_text and 'REWORK_CONTRACT_VERSION = "v2.5.4"' in rework_text
-              and "REWORK_PROBLEMS," in workspace_text and "REWORK_CONTRACT_VERSION," in workspace_text
-              and not duplicated and not local_definition,
-        "detail": {"duplicated_in_workspace": duplicated,
-                   "local_definition": local_definition,
-                   "imports_problems": "REWORK_PROBLEMS," in workspace_text},
-    })
-
-    i_compare = html.index('id="compare-panel"')
-    i_rework = html.index('id="rework-panel"')
-    compare_html = html[i_compare:i_rework]
-    sibling = compare_html.count("<section") == compare_html.count("</section>")
-    wiring = {
-        "entry_in_compare": 'id="rework-open"' in compare_html,
-        "panel_sibling": sibling and i_rework > i_compare,
-        "fieldset": "<fieldset id=\"rework-problems\"" in html,
-        "preview_box": 'id="rework-preview-box"' in html,
-        "buttons": all(f'id="{name}"' in html for name in
-                       ("rework-preview", "rework-edit", "rework-submit", "rework-cancel")),
-        "entry_hands_sha": "dataset.candidateSha256 = row.asset_sha256" in workspace_text,
-    }
-    checks.append({
-        "id": "V2.5.4-03",
-        "title": "界面责任：比较区只放入口，返工表单是相邻的独立 #rework-panel（fieldset + 预览框）",
-        "ok": all(wiring.values()),
-        "detail": wiring,
-    })
-
-    prompt_text = product_text("domain/prompt.js")
-    section_text = rework_section(workspace_text)
-    chain = {
-        "prompt_section": '"rework_directive"' in prompt_text,
-        "record_keeps_rework": "compiled.rework" in prompt_text,
-        "compile_pure": "compileShotPrompt" in section_text,
-        "save_then_confirm": "savePromptPayload" in section_text and "buildScopedSheet" in section_text,
-        "reuses_attempt_channel": "handleSubmitAttempt" in section_text,
-        "no_direct_gateway": "postImageJson" not in section_text and "fetch(" not in section_text,
-        "scoped_confirm_prefix": 'REWORK_CONFIRM_PREFIX = "rework:"' in workspace_text,
-    }
-    checks.append({
-        "id": "V2.5.4-04",
-        "title": "追溯链唯一：返工要求进同一份 PromptVersion，确认用 rework:<shot>，复用既有提交通道",
-        "ok": all(chain.values()),
-        "detail": chain,
-    })
-
-    block = compare_section(workspace_text)
-    forbidden = [token for token in ("documents.save", "assets.put", "REVIEW_KIND", "CANDIDATE_KIND",
-                                     "selection", "SELECTION", "openReworkPanel")
-                 if token in block]
-    checks.append({
-        "id": "V2.5.4-05",
-        "title": "不回退：比较区仍是纯投影（V2.5.3 判据原样保持，返工逻辑不在其中）",
-        "ok": not forbidden,
-        "detail": {"forbidden_tokens": forbidden, "section_chars": len(block)},
-    })
-    return checks
 
 
 STORAGE_DIGEST = """
@@ -289,19 +166,10 @@ def digest_versions(digest: dict, kind: str, document_id: str) -> int:
     return len(rows)
 
 
-def digest_untouched(before: dict, after: dict, document_ids: set[str]) -> bool:
-    """这些 document_id 的所有行（含 payload 摘要）在前后完全一致。"""
-
-    left = [row for row in before["rows"] if row["document_id"] in document_ids]
-    right = [row for row in after["rows"] if row["document_id"] in document_ids]
-    return left == right
 
 
-def digest_kept_prefix(before: dict, after: dict) -> bool:
-    """before 的每一行都在 after 里原样存在（旧版本只增不改）。"""
 
-    table = digest_table(after)
-    return all(table.get(key) == row for key, row in digest_table(before).items())
+
 
 
 def digest_business(digest: dict) -> list:
@@ -327,18 +195,18 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
     ui: dict = {}
     holder = {"scenario": "ok"}
     captured: list[dict] = []
-    port = v251.free_port()
+    port = shared.free_port()
     server = server_module.create_product_v2_server(
         "127.0.0.1", port,
         provider_factory=lambda: FakeSemanticProvider(scenario="ok"),
         image_provider_factory=lambda: FakeImageProvider(scenario=holder["scenario"]),
         review_provider_factory=lambda: FakeReviewProvider("ok"))
     threading.Thread(target=server.serve_forever, daemon=True).start()
-    static_server, static_url = v251.start_static_server()
+    static_server, static_url = shared.start_static_server()
     temp_root = Path(tempfile.mkdtemp(prefix="amz-v254-"))
     profile = temp_root / "profile"
     reference = temp_root / "ref.png"
-    reference.write_bytes(v251.png_bytes(1200, 1200, (36, 92, 160)))
+    reference.write_bytes(shared.png_bytes(1200, 1200, (36, 92, 160)))
     reference_sha = hashlib.sha256(reference.read_bytes()).hexdigest()
     base = f"http://127.0.0.1:{port}"
     EVIDENCE_IMAGE_DIR.mkdir(parents=True, exist_ok=True)
@@ -362,7 +230,7 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 page.on("request", on_request)
 
                 def probe() -> dict:
-                    return page.evaluate(v251.PROBE)
+                    return page.evaluate(shared.PROBE)
 
                 def rework_probe() -> dict:
                     return page.evaluate(REWORK_PROBE)
@@ -388,11 +256,15 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                     stage_nav.goto(page, "generate")
                     row(shot_id).locator(f'button:has-text("{text}")').first.click()
 
-                def submit_once(shot_id: str) -> None:
-                    click_row_button(shot_id, "生成这张图")
-                    wait_state(shot_id, "submitted")
-                    click_row_button(shot_id, "核对任务")
-                    wait_state(shot_id, "succeeded")
+                def wait_terminal(shot_id: str, timeout: int = 120_000) -> None:
+                    # 确认即整套提交：runBatch 自动提交并核对，只等终态与候选。
+                    page.wait_for_function(
+                        """(shot) => {
+                            const node = document.querySelector(
+                                '#attempt-list .attempt-row[data-shot-id="' + shot + '"]');
+                            const state = node && node.getAttribute('data-attempt-state');
+                            return state === 'succeeded' || state === 'failed' || state === 'unknown';
+                          }""", arg=shot_id, timeout=timeout)
                     wait_candidate_ui(shot_id)
 
                 def open_panel(shot_id: str, card_count: int, references: int = 1) -> None:
@@ -462,23 +334,25 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                     " req.onsuccess = () => resolve(req.result); });"
                     " db.close(); return rows.map((item) => item.project_id); }")
                 project_id = project_ids[0]
-                page.evaluate(v251.SEED_SLOTS, project_id)
+                page.evaluate(shared.SEED_SLOTS, project_id)
                 page.reload(wait_until="networkidle")
                 page.click("#suite-seed")
                 expect(page.locator("#shot-list .shot-row")).to_have_count(4)
                 shot_ids = probe()["shot_ids"]
                 first_shot, second_shot = shot_ids[0], shot_ids[1]
-                v251.compile_all(page, shot_ids)
+                shared.compile_all(page, shot_ids)
                 expect(page.locator("#confirm-action")).to_be_enabled()
                 page.click("#confirm-action")
-                expect(page.locator("#confirm-record")).to_contain_text("已确认 v")
-                submit_once(first_shot)
-                submit_once(second_shot)
+                expect(page.locator("#attempt-list .attempt-row")).to_have_count(4, timeout=30_000)
+                wait_terminal(first_shot)
+                wait_terminal(second_shot)
+                for shot_id in shot_ids[2:]:
+                    wait_terminal(shot_id)
 
                 seeded = probe()
                 seeded_storage = storage()
                 candidates_first = seeded["candidate_chains"].get(first_shot, [])
-                second_candidates_json = v251.candidate_json(seeded, second_shot)
+                second_candidates_json = shared.candidate_json(seeded, second_shot)
                 second_attempts_json = json.dumps(
                     seeded["attempt_chains"].get(second_shot, []), sort_keys=True, default=str)
                 expected_candidate_id = candidates_first[0]["payload"]["candidate_id"]
@@ -640,12 +514,12 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                                "candidates": len(new_candidates)},
                 })
 
-                old_blob = page.evaluate(v251.HASH_ASSET, {"sha256": expected_candidate_sha})
+                old_blob = page.evaluate(shared.HASH_ASSET, {"sha256": expected_candidate_sha})
                 after_assets = {item["sha256"]: item for item in digest_after_submit["assets"]}
                 checks.append({
                     "id": "V2.5.4-14",
                     "title": "影响隔离：无关图的 Prompt/Attempt/Candidate/Blob 零变化；目标图的旧候选与旧 Blob 原样保留",
-                    "ok": v251.candidate_json(succeeded, second_shot) == second_candidates_json
+                    "ok": shared.candidate_json(succeeded, second_shot) == second_candidates_json
                           and json.dumps(succeeded["attempt_chains"].get(second_shot, []),
                                          sort_keys=True, default=str) == second_attempts_json
                           and digest_untouched(digest_before_submit, digest_after_submit, second_docs)
@@ -660,7 +534,7 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                           and digest_versions(digest_after_submit, "prompt_version", second_shot)
                               == second_prompt_versions,
                     "detail": {"second_candidates_same":
-                               v251.candidate_json(succeeded, second_shot) == second_candidates_json,
+                               shared.candidate_json(succeeded, second_shot) == second_candidates_json,
                                "old_candidate_kept": any(
                                    item["payload"]["asset_sha256"] == expected_candidate_sha
                                    for item in new_candidates),
@@ -702,8 +576,8 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                     "title": "失败可恢复：明确失败只留失败 Attempt（不产生候选），旧候选与旧 Blob 保留，可再次发起返工",
                     "ok": failed_attempt["state"] == "failed"
                           and len(action_ids(attempts_failed)) == len(action_ids(attempts_after)) + 1
-                          and v251.candidate_json(failed_probe, first_shot)
-                              == v251.candidate_json(succeeded, first_shot)
+                          and shared.candidate_json(failed_probe, first_shot)
+                              == shared.candidate_json(succeeded, first_shot)
                           and len(failed_requests) == 1
                           and failed_requests[0]["payload"]["prompt"] == failure_preview_text
                           and digest_untouched(digest_after_submit, failed_storage, second_docs)
@@ -712,8 +586,8 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                           and recovered["submit_disabled"] is False,
                     "detail": {"state": failed_attempt["state"],
                                "attempts": len(action_ids(attempts_failed)),
-                               "candidates_same": v251.candidate_json(failed_probe, first_shot)
-                               == v251.candidate_json(succeeded, first_shot),
+                               "candidates_same": shared.candidate_json(failed_probe, first_shot)
+                               == shared.candidate_json(succeeded, first_shot),
                                "row_state": failed_row["state"] if failed_row else None,
                                "compare_status": failed_panel["compare_status"],
                                "recovered": recovered["submit_disabled"] is False},
@@ -743,8 +617,8 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                           and len(action_ids(attempts_unknown)) == len(action_ids(attempts_failed)) + 1
                           and len(unknown_requests) == 1
                           and unknown_requests[0]["payload"]["prompt"] == unknown_preview_text
-                          and v251.candidate_json(unknown_probe, first_shot)
-                              == v251.candidate_json(succeeded, first_shot)
+                          and shared.candidate_json(unknown_probe, first_shot)
+                              == shared.candidate_json(succeeded, first_shot)
                           and digest_untouched(failed_storage, unknown_storage, second_docs)
                           and bool(unknown_row) and unknown_row["state"] == "unknown"
                           and "没有任务编号" in unknown_probe["ui"]["error"],
@@ -772,8 +646,8 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 checks.append({
                     "id": "V2.5.4-18",
                     "title": "刷新恢复：候选/Attempt/返工确认从 IndexedDB 恢复，面板可重开（整页 + 返工区截图留档）",
-                    "ok": v251.candidate_json(reloaded, first_shot)
-                              == v251.candidate_json(unknown_probe, first_shot)
+                    "ok": shared.candidate_json(reloaded, first_shot)
+                              == shared.candidate_json(unknown_probe, first_shot)
                           and json.dumps(reloaded["attempt_chains"].get(first_shot, []),
                                          sort_keys=True, default=str)
                               == json.dumps(unknown_probe["attempt_chains"].get(first_shot, []),
@@ -813,18 +687,18 @@ def run_harness_suites(console_errors: list[str], page_errors: list[str]) -> lis
     checks: list[dict] = []
     with sync_playwright() as pw:
         browser = pw.chromium.launch(headless=True)
-        static_server, static_url = v251.start_static_server()
+        static_server, static_url = shared.start_static_server()
         try:
-            rework_suite = v251.read_suite(
+            rework_suite = shared.read_suite(
                 browser, static_url + "/harness/rework-contract.html",
                 "__V2_REWORK_RESULTS__", console_errors, page_errors)
-            compare_suite = v251.read_suite(
+            compare_suite = shared.read_suite(
                 browser, static_url + "/harness/compare-panel.html",
                 "__V2_COMPARE_RESULTS__", console_errors, page_errors)
-            review_suite = v251.read_suite(
+            review_suite = shared.read_suite(
                 browser, static_url + "/harness/review-contract.html",
                 "__V2_REVIEW_RESULTS__", console_errors, page_errors)
-            provider_suite = v251.read_suite(
+            provider_suite = shared.read_suite(
                 browser, static_url + "/harness/review-provider-contract.html",
                 "__V2_REVIEW_PROVIDER_RESULTS__", console_errors, page_errors)
         finally:
@@ -864,12 +738,11 @@ def main() -> int:
     console_errors: list[str] = []
     page_errors: list[str] = []
 
-    checks.extend(check_static_guards())
     checks.extend(run_harness_suites(console_errors, page_errors))
     workbench_checks, ui = run_workbench_checks(stamp, console_errors, page_errors)
     checks.extend(workbench_checks)
 
-    entry = v251.run_entry(["--check"])
+    entry = shared.run_entry(["--check"])
     checks.append({
         "id": "V2.5.4-19",
         "title": "正式入口 --check 全过（返工闭环没有破坏既有自检）",

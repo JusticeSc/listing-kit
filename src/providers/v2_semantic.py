@@ -15,6 +15,9 @@ tools/verify_v2_2_2_semantic_provider.py 比对；这里不复制它们的实现
 """
 from __future__ import annotations
 
+import base64
+import binascii
+import hashlib
 import json
 import math
 import re
@@ -34,8 +37,12 @@ FACT_SLOT_SCHEMA_VERSION = 1
 
 SLOT_ID_PATTERN = re.compile(r"^[a-z][a-z0-9_]{1,47}$")
 SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
-
-SLOT_VALUE_TYPES = ("text", "text_list", "number", "boolean", "enum")
+SLOT_VALUE_TYPES = ("text", "text_list", "number", "boolean", "enum", "dimension_list")
+DIMENSION_AXES = ("height", "width", "length", "depth", "diameter", "weight", "volume", "thickness")
+DIMENSION_UNITS = ("mm", "cm", "m", "in", "ft", "g", "kg", "ml", "l", "oz", "lb")
+MAX_DIMENSIONS = 12
+MAX_DIMENSION_OBJECT_LENGTH = 60
+MAX_DIMENSION_SOURCE_LENGTH = 120
 MODEL_SLOT_AUTHORITIES = ("core_fixed", "category_dynamic")
 MODEL_EVIDENCE_KINDS = ("model", "asset", "user")
 REFERENCE_ROLES = ("primary", "detail", "packaging", "scene", "competitor", "other")
@@ -65,6 +72,7 @@ CORE_SLOT_REGISTRY = {
     "key_material": ("主要材质", "text", False),
     "color_summary": ("颜色概览", "text", False),
     "size_summary": ("尺寸概览", "text", False),
+    "size_dimensions": ("尺寸规格（对象/轴向/数值/单位）", "dimension_list", False),
     "package_contents": ("包装内容物", "text_list", False),
 }
 
@@ -139,10 +147,52 @@ def value_shape_problem(value_type: str, value: Any, enum_values: Any) -> str | 
         if not isinstance(value, str) or value not in enum_values:
             return "enum 值必须是 enum_values 之一。"
         return None
+    if value_type == "dimension_list":
+        return dimension_list_problem(value)
     return f"未知 value_type：{value_type}。"
 
 
-# ------------------------------------------------------------ 输入投影（Request）
+def dimension_problem(item: Any) -> str | None:
+    """一条尺寸测量：对象/轴向/有限正数/单位/来源依据，缺一不可（与 domain/shared.js 对齐）。"""
+
+    if not isinstance(item, Mapping):
+        return "尺寸测量必须是对象（object/axis/value/unit/source_basis）。"
+    target = item.get("object")
+    if not isinstance(target, str) or target.strip() == "" or len(target) > MAX_DIMENSION_OBJECT_LENGTH:
+        return f"尺寸测量必须说明测量对象（1-{MAX_DIMENSION_OBJECT_LENGTH} 字）。"
+    if item.get("axis") not in DIMENSION_AXES:
+        return "轴向必须在词表内：" + "/".join(DIMENSION_AXES) + "。"
+    number = item.get("value")
+    if (isinstance(number, bool) or not isinstance(number, (int, float))
+            or not math.isfinite(float(number)) or float(number) <= 0):
+        return "尺寸数值必须是有限正数（不许自由文本或 0/负值）。"
+    if item.get("unit") not in DIMENSION_UNITS:
+        return "单位必须在词表内：" + "/".join(DIMENSION_UNITS) + "。"
+    basis = item.get("source_basis")
+    if not isinstance(basis, str) or basis.strip() == "" or len(basis) > MAX_DIMENSION_SOURCE_LENGTH:
+        return f"尺寸测量必须给出人确认的来源依据（1-{MAX_DIMENSION_SOURCE_LENGTH} 字）。"
+    return None
+
+
+def dimension_list_problem(value: Any) -> str | None:
+    """尺寸事实必须是非空测量数组；同一对象+轴向+单位只允许一条。"""
+
+    if not isinstance(value, (list, tuple)) or not value:
+        return "尺寸事实必须是非空的测量数组。"
+    if len(value) > MAX_DIMENSIONS:
+        return f"尺寸测量最多 {MAX_DIMENSIONS} 条。"
+    seen: set[str] = set()
+    for item in value:
+        problem = dimension_problem(item)
+        if problem:
+            return problem
+        if isinstance(item, Mapping):
+            key = str(item.get("object")) + "|" + str(item.get("axis")) + "|" + str(item.get("unit"))
+            if key in seen:
+                return "同一对象+轴向+单位只允许一条（避免自相矛盾的重复测量）。"
+            seen.add(key)
+    return None
+
 
 class ReferencedAsset(BaseModel):
     """调用方明确告知的一张参考图（只带元数据，不带本机路径）。"""
@@ -153,6 +203,82 @@ class ReferencedAsset(BaseModel):
     media_type: str = Field(min_length=1, max_length=120, description="例如 image/png")
     role: Literal["primary", "detail", "packaging", "scene", "competitor", "other"]
     original_name: str | None = Field(default=None, max_length=200)
+
+
+SEMANTIC_VISION_CONTRACT_VERSION = "v2.6.0"
+VISION_IMAGE_MEDIA_TYPES = ("image/png", "image/jpeg")
+MAX_VISION_IMAGES = 3
+MAX_VISION_IMAGE_BYTES = 4 * 1024 * 1024
+MAX_VISION_TOTAL_BYTES = 12 * 1024 * 1024
+MAX_VISION_BASE64_CHARS = 6 * 1024 * 1024
+VISION_IMAGE_ROLES = ("primary", "detail", "packaging", "scene", "competitor", "other")
+ANALYZE_BASE_FIELDS = ("product_name", "description", "selling_points", "focus", "references",
+                        "locale", "platform", "max_slots", "existing_slot_ids")
+
+class VisionReferenceImage(BaseModel):
+    """一次看图理解送模型的参考图：内容身份（sha256）+ 严格 base64 字节；服务端解码后复算哈希。"""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    role: Literal["primary", "detail", "packaging", "scene", "competitor", "other"]
+    media_type: str
+    sha256: str = Field(pattern=SHA256_PATTERN.pattern, description="参考图内容的 64 位小写 sha256")
+    data_base64: str = Field(min_length=16, max_length=MAX_VISION_BASE64_CHARS)
+
+    @field_validator("media_type")
+    @classmethod
+    def _media_type(cls, value: str) -> str:
+        if value not in VISION_IMAGE_MEDIA_TYPES:
+            raise ValueError("media_type 只接受 " + "、".join(VISION_IMAGE_MEDIA_TYPES) + "。")
+        return value
+
+    @field_validator("data_base64")
+    @classmethod
+    def _base64(cls, value: str) -> str:
+        try:
+            base64.b64decode(value, validate=True)
+        except (binascii.Error, ValueError):
+            raise ValueError("data_base64 不是严格 base64。") from None
+        return value
+
+
+@dataclass(frozen=True)
+class DecodedVisionImage:
+    role: str
+    media_type: str
+    sha256: str
+    data: bytes
+
+
+def decode_vision_images(images: Sequence[Mapping[str, Any] | VisionReferenceImage]) -> tuple[DecodedVisionImage, ...]:
+    """解码并复算哈希；任何不一致都抛 ValueError（调用方归 input_rejected，不产生模型调用）。"""
+    decoded: list[DecodedVisionImage] = []
+    seen: set[str] = set()
+    total = 0
+    for index, raw in enumerate(images):
+        item = raw if isinstance(raw, VisionReferenceImage) else VisionReferenceImage.model_validate(dict(raw))
+        try:
+            data = base64.b64decode(item.data_base64, validate=True)
+        except (binascii.Error, ValueError):
+            raise ValueError(f"reference_images[{index}] 的 data_base64 不是严格 base64。") from None
+        if not data:
+            raise ValueError(f"reference_images[{index}] 是空字节。")
+        if len(data) > MAX_VISION_IMAGE_BYTES:
+            raise ValueError(f"reference_images[{index}] 超过 {MAX_VISION_IMAGE_BYTES} 字节上限。")
+        digest = hashlib.sha256(data).hexdigest()
+        if digest != item.sha256:
+            raise ValueError(f"reference_images[{index}] 的 sha256 与收到的字节不一致；拒绝把身份不明的图片送模型。")
+        if digest in seen:
+            raise ValueError("reference_images 里 sha256 重复；同一张图只送一次。")
+        seen.add(digest)
+        total += len(data)
+        decoded.append(DecodedVisionImage(role=item.role, media_type=item.media_type,
+                                         sha256=digest, data=data))
+    if len(decoded) > MAX_VISION_IMAGES:
+        raise ValueError(f"reference_images 一次最多 {MAX_VISION_IMAGES} 张。")
+    if total > MAX_VISION_TOTAL_BYTES:
+        raise ValueError(f"reference_images 合计超过 {MAX_VISION_TOTAL_BYTES} 字节上限。")
+    return tuple(decoded)
 
 
 class SemanticRequest(BaseModel):
@@ -218,8 +344,8 @@ class RawSlot(BaseModel):
     slot_id: str = Field(pattern=SLOT_ID_PATTERN.pattern, description="小写字母开头的槽位标识")
     label: str = Field(min_length=1, max_length=60)
     authority: Literal["core_fixed", "category_dynamic"]
-    value_type: Literal["text", "text_list", "number", "boolean", "enum"]
-    value: str | list[str] | bool | int | float
+    value_type: Literal["text", "text_list", "number", "boolean", "enum", "dimension_list"]
+    value: str | list[str] | list[dict[str, Any]] | bool | int | float
     confidence: float = Field(ge=0.0, le=1.0, description="0..1，仅用于排序，不代表已确认")
     evidence: tuple[RawEvidence, ...] = Field(min_length=1, max_length=MAX_EVIDENCE_ITEMS)
     depends_on: tuple[str, ...] = Field(default=(), max_length=MAX_DEPENDS_ON)

@@ -4,13 +4,14 @@
   "scope": "product-v2-stateless",
   "default_semantic_provider_id": "dashscope-semantic",
   "provider_selection_env": "AMZ_V2_SEMANTIC_PROVIDER",
-  "default_image_provider_id": "dashscope-image",
+  "default_image_provider_id": "dashscope-qwen-image",
   "image_provider_selection_env": "AMZ_V2_IMAGE_PROVIDER",
   "default_review_provider_id": "dashscope-review",
   "review_provider_selection_env": "AMZ_V2_REVIEW_PROVIDER",
   "providers": [
     {
       "id": "dashscope-semantic",
+      "label": "DeepSeek 理解",
       "role": "semantic",
       "adapter": "v2_dashscope_semantic",
       "model_id": "deepseek-v4.1-flash",
@@ -28,7 +29,28 @@
       "max_attempts": 1
     },
     {
+      "id": "dashscope-vision",
+      "label": "通义千问 VL 理解",
+      "role": "semantic",
+      "adapter": "v2_dashscope_vision_semantic",
+      "model_id": "qwen-vl-max",
+      "model_env": "VISION_MODEL",
+      "api_key_env": "DASHSCOPE_API_KEY",
+      "base_url_env": "AMZ_V2_VISION_BASE_URL",
+      "timeout_env": "AMZ_V2_VISION_TIMEOUT",
+      "max_tokens_env": "AMZ_V2_VISION_MAX_TOKENS",
+      "capabilities": {
+        "reference_images": true,
+        "max_reference_images": 3,
+        "structured_output": "json_mode",
+        "stateless": true,
+        "test_double": false
+      },
+      "max_attempts": 1
+    },
+    {
       "id": "fake-semantic",
+      "label": "测试替身·语义",
       "role": "semantic",
       "adapter": "v2_fake_semantic",
       "model_id": "fake-deepseek-v4.1-flash",
@@ -46,7 +68,8 @@
       "max_attempts": 1
     },
     {
-      "id": "dashscope-image",
+      "id": "dashscope-qwen-image",
+      "label": "通义千问图像",
       "role": "image",
       "adapter": "v2_dashscope_image",
       "model_id": "qwen-image-3.0",
@@ -66,6 +89,7 @@
     },
     {
       "id": "volcengine-ark",
+      "label": "火山方舟闪速",
       "role": "image",
       "adapter": "v2_volcengine_image",
       "model_id": "doubao-seedream-5-0-flash-260915",
@@ -85,7 +109,8 @@
       "max_attempts": 1
     },
     {
-      "id": "fake-image",
+      "id": "fake-qwen-image",
+      "label": "测试替身·图像",
       "role": "image",
       "adapter": "v2_fake_image",
       "model_id": "qwen-image-3.0",
@@ -105,6 +130,7 @@
     },
     {
       "id": "dashscope-review",
+      "label": "通义千问复核",
       "role": "review",
       "adapter": "v2_dashscope_review",
       "model_id": "qwen-vl-max",
@@ -124,6 +150,7 @@
     },
     {
       "id": "fake-review",
+      "label": "测试替身·复核",
       "role": "review",
       "adapter": "v2_fake_review",
       "model_id": "fake-qwen-vl-max",

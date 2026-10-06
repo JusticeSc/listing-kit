@@ -365,6 +365,9 @@ def main() -> int:
             page.click("#analyze-run")
             expect(page.locator("#slots-progress")).to_contain_text("必须确认的槽位")
             page.wait_for_timeout(500)
+            # V2.UI.2 起异步完成不自动切阶段（UI 契约 §1.6/§3）：槽位在「理解」，由用户明确导航。
+            stage_nav.goto(page, "understand")
+            page.wait_for_selector("#slot-list .slot-row", timeout=30_000)
             analyzed = page.evaluate(DB_SNAPSHOT)
             body = json.loads(analyze_posts[-1]) if analyze_posts else {}
             check(f"{APP_NAME}-07", "分析：一次点击只发一次 POST，请求字段等于 capabilities.analyze_fields，existing_slot_ids 为空",

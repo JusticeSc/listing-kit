@@ -82,11 +82,14 @@ class FakeSemanticProvider:
 
     def capabilities(self) -> dict[str, Any]:
         """测试替身能力声明；与 config/product-v2/providers.json 的 fake-semantic 条目一致。"""
-
+        from src.providers.v2_semantic import ANALYZE_BASE_FIELDS
         return {
             "provider_id": self.provider_id,
             "model_id": self.model_id,
             "reference_images": False,
+            "supports_images": False,
+            "vision": False,
+            "analyze_fields": list(ANALYZE_BASE_FIELDS),
             "structured_output": "local",
             "stateless": True,
             "test_double": True,
@@ -110,13 +113,15 @@ class FakeSemanticProvider:
         self.credential_source = "test_double"
         self.calls: list[dict[str, Any]] = []
 
-    def analyze(self, request: SemanticRequest, *, scenario: str | None = None,
+    def analyze(self, request: SemanticRequest, images: Any = None, *,
+                scenario: str | None = None,
                 existing_values: Mapping[str, Any] | None = None,
                 category_hint: str | None = None) -> SemanticProposal:
         scenario = scenario or self.scenario
         existing_values = existing_values if existing_values is not None else self.existing_values
         category_hint = category_hint if category_hint is not None else self.category_hint
-        self.calls.append({"scenario": scenario, "product_name": request.product_name})
+        self.calls.append({"scenario": scenario, "product_name": request.product_name,
+                           "vision_images": len(images) if images else 0})
         if scenario not in FAKE_SCENARIOS:
             raise invalid_response(f"未知假场景 {scenario!r}。",
                                    details={"allowed": list(FAKE_SCENARIOS)})

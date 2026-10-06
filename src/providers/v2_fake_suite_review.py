@@ -14,7 +14,7 @@ from src.providers.v2_semantic import (classify_http_failure, classify_transport
 from src.providers.v2_suite_review import (SUITE_REVIEW_CONTRACT_VERSION,
                                            DecodedSuiteReviewRequest, SuiteReviewResult)
 
-FAKE_PROVIDER_ID = "fake-suite-review"
+FAKE_PROVIDER_ID = "fake-review"
 FAKE_MODEL_ID = "fake-qwen-vl-max"
 FAKE_CHECKED_AT = "2026-10-01T00:00:00Z"
 

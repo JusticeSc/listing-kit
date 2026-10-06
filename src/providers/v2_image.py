@@ -253,6 +253,9 @@ class ExecutionTarget(BaseModel):
     model_id: str
     protocol: str
     capability_version: int
+    # 新客户端总是发送冻结 attempt 的 credential_source（只记来源标签，非秘密）；
+    # 缺省（老验证工具直发）保持既有语义：服务端跳过凭据引用核对。
+    credential_source: str | None = None
 
     @field_validator("provider_id")
     @classmethod
@@ -282,6 +285,14 @@ class ExecutionTarget(BaseModel):
             raise ValueError("target.capability_version 必须是正整数。")
         return value
 
+    @field_validator("credential_source")
+    @classmethod
+    def _credential(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        if value not in ("byok", "default", "none", "test_double", "env"):
+            raise ValueError("target.credential_source 不在来源词表内。")
+        return value
 
 class SubmitRequest(BaseModel):
     """一次提交的完整输入；出现额外字段（含目录/工作空间）即拒绝。

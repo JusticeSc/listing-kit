@@ -49,6 +49,9 @@ class FakeImageProvider:
 
     def capabilities(self) -> dict[str, Any]:
         return {
+            "provider_id": self.provider_id,
+            "model_id": self.model_id,
+            "configured": self.configured,
             "contract": "v2.4.1",
             "reference_images": True,
             "max_reference_images": 3,

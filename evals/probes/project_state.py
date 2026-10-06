@@ -33,6 +33,7 @@ import json
 import re
 import shutil
 import subprocess
+import tempfile
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -52,6 +53,31 @@ from check_project_state import (  # noqa: E402
 )
 
 GUARD = ROOT / "tools" / "check_project_state.py"
+CODE_ROOT = ROOT
+_fixture = tempfile.TemporaryDirectory(prefix="amz-state-probe-")
+ROOT = Path(_fixture.name)
+for source in (CODE_ROOT / "_working").glob("*/state.md"):
+    target = ROOT / source.relative_to(CODE_ROOT)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(source, target)
+    match = YAML_BLOCK.search(source.read_text(encoding="utf-8")) if "YAML_BLOCK" in globals() else re.search(
+        r"```yaml\r?\n(.*?)```", source.read_text(encoding="utf-8"), re.S)
+    if not match:
+        continue
+    def copy_references(value):
+        if isinstance(value, dict):
+            for item in value.values():
+                copy_references(item)
+        elif isinstance(value, list):
+            for item in value:
+                copy_references(item)
+        elif isinstance(value, str):
+            original = (CODE_ROOT / value).resolve()
+            if original.is_file() and CODE_ROOT in original.parents:
+                copied = ROOT / original.relative_to(CODE_ROOT)
+                copied.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(original, copied)
+    copy_references(yaml.safe_load(match.group(1)))
 YAML_BLOCK = re.compile(r"```yaml\r?\n(.*?)```", re.S)
 TAG = re.compile(r"\[J(\d+)\]")
 
@@ -246,7 +272,7 @@ def _pick_skipped_phase(data: dict) -> tuple[str, str]:
 
 
 def _run_guard() -> tuple[int, str]:
-    proc = subprocess.run([sys.executable, str(GUARD)], cwd=str(ROOT),
+    proc = subprocess.run([sys.executable, "-B", str(GUARD), "--root", str(ROOT)], cwd=str(ROOT),
                           capture_output=True, text=True, encoding="utf-8",
                           errors="replace", timeout=180)
     return proc.returncode, (proc.stdout or "") + (proc.stderr or "")
@@ -706,7 +732,7 @@ def main() -> int:
             print(f"✗ 探针临时证据未被清理：{TMP_EVIDENCE_REL}")
             bad += 1
         if STATE.read_bytes() == ORIG_BYTES and not TMP_EVIDENCE.exists():
-            print(f"已逐字节恢复 {STATE.relative_to(ROOT).as_posix()}、临时证据夹具并清理探针副本")
+            print(f"独立副本已恢复 {STATE.relative_to(ROOT).as_posix()}；权威 state/观察证据从未写入")
 
     if bad:
         print(f"✗ {bad}/{len(CASES)} 向与预期不符")

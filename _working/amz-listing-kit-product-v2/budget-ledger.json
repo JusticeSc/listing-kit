@@ -1,17 +1,40 @@
 {
  "budget_cap_cny": 5.0,
- "cap_source": "triggered Goal §2.1/§12.2 (2026-10-03, goal 1596e3da4da5b9bb)",
+ "cap_source": "current Goal §2.1/§16.1 (2026-10-05, goal 1599c9600ae01cb7); historical cap/spent/reservations retained",
  "count_cap": {
   "image_max": 8,
   "image_per_call": 1,
-  "semantic_vlm_max": 4,
-  "total_max": 12
+  "semantic_vlm_max": 6,
+  "total_max": 14
+ },
+ "supplement_authorization": {
+  "goal_id": "1599c9600ae01cb7",
+  "source": "docs/product-v2-refactor-plan.md §16.1; user formally started and manually activated full Goal",
+  "authorized_at": "2026-10-05T02:44:33.539Z",
+  "max_new_semantic_vlm_calls": 3,
+  "max_incremental_spent_and_unsettled_cny": 1.0,
+  "baseline_semantic_vlm_calls": 3,
+  "baseline_spent_cny": 1.15,
+  "additional_image_calls": 0,
+  "rule": "沿用全部历史记录；至少一次真实图文理解，其他只补改变且缺证能力；先预留，Unknown不释放；新增额度不是已调用或供应商余额。"
  },
  "price_origin": {
   "flash": "r.jina.ai proxy of https://www.volcengine.com/docs/ark/model-pricing lines ~1630-1655: doubao-seedream-5-0-flash input free, output 0.12 yuan/image; verified 2026-10-03 this session",
   "qwen": "https://help.aliyun.com/zh/model-studio/qwen-image-3-0.md Beijing: input 0.02 + output 0.18 per image; verified 2026-10-03 this session",
   "semantic": "https://help.aliyun.com/zh/model-studio/model-pricing Beijing: deepseek-v4.1-flash input busy 2/inactive 1 per M, output busy 8/inactive 4 per M; verified 2026-10-03 (conservative busy rate)",
   "review": "https://help.aliyun.com/zh/model-studio/model-pricing Beijing: qwen-vl-max input 1.6/M, output 4/M; verified 2026-10-03"
+ },
+ "vision_price_origin": {
+  "official_url": "https://help.aliyun.com/en/model-studio/qwen-vl-max",
+  "region": "China Beijing",
+  "input_cny_per_million_tokens": 1.6,
+  "output_cny_per_million_tokens": 4.0,
+  "official_max_input_tokens": 129024,
+  "actual_max_output_tokens": 5000,
+  "worst_case_cny": 0.2264384,
+  "reserved_cny_per_call": 0.23,
+  "verified_this_session": "2026-10-05; evidence generation-module-20261005-formal.md",
+  "rule": "Entire official input limit plus actual Adapter output limit; no free-tier or cache discount assumed."
  },
  "reservations": [
   {
@@ -117,6 +140,38 @@
    "status": "spent",
    "evidence": "evals/product-v2/v2.4.5-volc-adopt-export-20261003-222253.json"
   }
+  ,
+  {
+   "id": "vision-ui-20261005-single-call",
+   "calls": 1,
+   "provider": "dashscope-vision",
+   "model_id": "qwen-vl-max",
+   "purpose": "product_vision_understanding",
+   "reserve_cny": 0.23,
+   "status": "succeeded_billing_unsettled",
+   "note": "Exactly one actual UI BYOK vision invocation through checked httpx2 SDK dispatch; provider200, legal unconfirmed proposal saved. Earlier gateway-size rejection had no SDK call. No retry. Invoice not observed: retain full0.23 reservation; token-based official-price estimate is recorded separately and not booked as settled spend.",
+   "asset_sha256": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461",
+   "evidence": "_stage-amz-control/formal-development-20261005/vision-ui-live.json"
+   ,"reserved_at": "2026-10-05T13:54:21.442Z"
+   ,"observed_at": "2026-10-05T14:14:56.601170Z"
+   ,"request_id": "chatcmpl-42cfa038-5b57-92ca-8b69-696560707777"
+   ,"usage": {"prompt_tokens": 2549, "completion_tokens": 1479, "total_tokens": 4028}
+   ,"cost_estimate_cny": 0.0099944
+  }
+  ,{
+   "id": "vision-ui-20261005-offline-isolation-incident",
+   "calls": 1,
+   "provider": "dashscope-vision",
+   "model_id": "qwen-vl-max",
+   "purpose": "unintended_dummy_key_sdk_request",
+   "reserve_cny": 0.23,
+   "status": "unknown_billing",
+   "http_status": 401,
+   "note": "The intended offline smoke patched httpx but the default SDK dispatched through httpx2; the dummy-key request reached the provider and returned PROVIDER_AUTH_FAILED. The old zero-call counter is invalid. Count one SDK invocation conservatively and retain full price reservation; no billing-zero claim. Actual httpx2 dispatch is now checked and guarded before invocation, and the same full-size image passed a no-network replay.",
+   "asset_sha256": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461",
+   "evidence": "_stage-amz-control/formal-development-20261005/vision-ui-offline-isolation-failed-401.json",
+   "observed_at": "2026-10-05T14:01:22.311393Z"
+  }
  ],
  "runtime_wiring": {
   "ARK_API_KEY": "present in refreshed shell process 2026-10-03 (length 36, value never logged); VOLCENGINE_API_KEY absent; refreshed env enabled r71-volc2",
@@ -126,10 +181,10 @@
  },
  "spent_calls": {
   "image": 8,
-  "semantic_vlm": 3
+  "semantic_vlm": 5
  },
  "spent_cny": 1.15,
  "stop_rule": "先到即停(金额或次数);未知计费保留预留不释放;追加预算需授权;不用付费调用调试错误和边界",
- "total_reserved_cny": 1.15,
- "updated_at": "2026-10-03T22:23:16Z"
+ "total_reserved_cny": 1.61,
+ "updated_at": "2026-10-05T14:22:15.672Z"
  }

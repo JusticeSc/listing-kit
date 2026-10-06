@@ -375,7 +375,8 @@ class VolcengineImageProvider:
 def create_default_volcengine_image_provider(*, environ: Mapping[str, str] | None = None,
                                              transport: Transport | None = None,
                                              timeout: float | None = None,
-                                             base_url: str | None = None
+                                             base_url: str | None = None,
+                                             byok_api_key: str | None = None
                                              ) -> VolcengineImageProvider:
     """按注册表口径构造真实适配器；构造过程不联网。
 
@@ -394,7 +395,7 @@ def create_default_volcengine_image_provider(*, environ: Mapping[str, str] | Non
             resolved_timeout = float(raw_timeout) if raw_timeout else DEFAULT_TIMEOUT_SECONDS
         except ValueError:
             resolved_timeout = DEFAULT_TIMEOUT_SECONDS
-    decision = resolve_credentials({"api_key_env": DEFAULT_API_KEY_ENV}, source)
+    decision = resolve_credentials({"api_key_env": DEFAULT_API_KEY_ENV}, source, byok_api_key=byok_api_key)
     return VolcengineImageProvider(
         api_key=decision.api_key,
         base_url=base_url or source.get(DEFAULT_BASE_URL_ENV) or DEFAULT_BASE_URL,

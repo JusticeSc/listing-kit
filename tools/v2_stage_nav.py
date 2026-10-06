@@ -61,19 +61,15 @@ def probe(page) -> dict:
 
 
 def reveal(page, selector: str, timeout: int = 20_000) -> None:
-    """展开包住 selector 的 <details>（已展开时不动它）。
-
-    渐进披露是产品合同的一部分（工程信息默认收进「详情」）；验证器要读里面的内容时，
-    必须先像用户一样点开它，而不是直接读隐藏文本。
-    """
+    """展开包住 selector 的 <details>（已展开时不动它）。"""
 
     node = page.locator(selector).first
     if node.count() == 0:
-        raise AssertionError(f"找不到元素：{selector}")
+        raise AssertionError("找不到元素：" + selector)
     if node.is_visible():
         return
-    summary = page.locator(f"details:has({selector}) > summary").first
+    summary = page.locator("details:has(" + selector + ") > summary").first
     if summary.count() == 0:
-        raise AssertionError(f"{selector} 当前不可见，且找不到包住它的 <details> 折叠区")
+        raise AssertionError(selector + " 当前不可见，且找不到包住它的 <details> 折叠区")
     summary.click()
     node.wait_for(state="visible", timeout=timeout)

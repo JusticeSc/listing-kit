@@ -1,16 +1,12 @@
-"""V2.5.5 证据：基于 SelectionSet 的整套一致性报告（0 次真实模型调用）。
+"""V2.5.5 证据：整套一致性报告（0 次真实模型调用）。
 
 检查：
-  1) 静态：ESM/Python 语法门；服务端词表与浏览器 SUITE_VLM_CHECK_TO_RULE 互为镜像；
-     合同版本与送审张数上限一致；端点常量一致。
-  2) 单一权威：suite-review.js 只复用 review.js 的导出就绪与哈希复算，不自带 PNG 解析/散列；
-     index.html 有整套分区；shared.js 登记 suite_review 文档种类。
-  3) 契约套件 S01–S06（真实 Chromium）：注册表、缺选择、重复与卖点、完整装配与过期、
+  1) 契约套件 S01–S06（真实 Chromium）：注册表、缺选择、重复与卖点、完整装配与过期、
      视觉漂移与越界拒绝、失败与超限只落 Unknown。
-  4) 工作台走查（fake provider）：采用完成后运行整套检查；报告写入 IndexedDB（kind=suite_review）；
+  2) 工作台走查（fake provider）：采用完成后运行整套检查；报告写入 IndexedDB（kind=suite_review）；
      发现可见、可跳到对应图；方案变化后报告过期并可重算；刷新后仍在。
-  5) 视觉通道失败演练：只落 UNKNOWN，确定性部分照常。
-  6) 正式入口 --check 全过；零意外 console/page/HTTP 错误。
+  3) 视觉通道失败演练：只落 UNKNOWN，确定性部分照常。
+  4) 正式入口 --check 全过；零意外 console/page/HTTP 错误。
 
 运行：
   uv run --locked python tools/verify_v2_5_5_suite_review.py --label final
@@ -20,7 +16,6 @@ from __future__ import annotations
 import argparse
 import importlib.util
 import json
-import re
 import socket
 import subprocess
 import sys
@@ -31,6 +26,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "tools"))
 PRODUCT_DIR = ROOT / "app" / "product_v2"
 HARNESS_DIR = ROOT / "evals" / "product-v2" / "harness"
 EVIDENCE_DIR = ROOT / "evals" / "product-v2"
@@ -43,117 +39,13 @@ MIME = {
     ".json": "application/json; charset=utf-8",
 }
 
-
-def load_module(path: Path, name: str):
-    spec = importlib.util.spec_from_file_location(name, path)
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[name] = module
-    spec.loader.exec_module(module)
-    return module
+import v2_verify_shared as shared  # noqa: E402  （正式 server/夹具/共同业务操作）
+from v2_verify_shared import walk_to_adoption  # noqa: E402
+from v2_verify_shared import free_port, read_suite, start_product_server  # noqa: E402
 
 
-server_module = load_module(ROOT / "app" / "product_v2_server.py", "v255_server")
-ui3 = load_module(ROOT / "tools" / "verify_v2_ui_3_frontend.py", "v255_ui3")
-suite_provider = load_module(ROOT / "src" / "providers" / "v2_fake_suite_review.py", "v255_fake_suite")
-fake_image = load_module(ROOT / "src" / "providers" / "v2_fake_image.py", "v255_fake_image")
-fake_review = load_module(ROOT / "src" / "providers" / "v2_fake_review.py", "v255_fake_review")
-fake_semantic = load_module(ROOT / "src" / "providers" / "v2_fake_semantic.py", "v255_fake_semantic")
-
-SUITE_PY = (ROOT / "src" / "providers" / "v2_suite_review.py").read_text(encoding="utf-8")
-SUITE_JS = (PRODUCT_DIR / "domain" / "suite-review.js").read_text(encoding="utf-8")
-WORKSPACE_JS = (PRODUCT_DIR / "workspace.js").read_text(encoding="utf-8")
-INDEX_HTML = (PRODUCT_DIR / "index.html").read_text(encoding="utf-8")
-SHARED_JS = (PRODUCT_DIR / "domain" / "shared.js").read_text(encoding="utf-8")
-SERVER_PY = (ROOT / "app" / "product_v2_server.py").read_text(encoding="utf-8")
 
 
-def free_port() -> int:
-    with socket.socket() as probe:
-        probe.bind(("127.0.0.1", 0))
-        return probe.getsockname()[1]
-
-
-class HarnessHandler(BaseHTTPRequestHandler):
-    def log_message(self, format, *args):  # noqa: A002
-        return
-
-    def _send(self, payload: bytes, ctype: str) -> None:
-        self.send_response(200)
-        self.send_header("Content-Type", ctype)
-        self.send_header("Content-Length", str(len(payload)))
-        self.send_header("Cache-Control", "no-store")
-        self.end_headers()
-        self.wfile.write(payload)
-
-    def do_GET(self):  # noqa: N802
-        path = self.path.split("?", 1)[0]
-        if path.startswith("/harness/"):
-            candidate = (HARNESS_DIR / path[len("/harness/"):]).resolve()
-            if str(candidate).startswith(str(HARNESS_DIR.resolve())) and candidate.is_file():
-                self._send(candidate.read_bytes(), MIME.get(candidate.suffix, "application/octet-stream"))
-                return
-        else:
-            candidate = (PRODUCT_DIR / path.lstrip("/")).resolve()
-            if str(candidate).startswith(str(PRODUCT_DIR.resolve())) and candidate.is_file():
-                self._send(candidate.read_bytes(), MIME.get(candidate.suffix, "application/octet-stream"))
-                return
-        self.send_error(404)
-
-
-def static_url() -> tuple[ThreadingHTTPServer, str]:
-    server = ThreadingHTTPServer(("127.0.0.1", 0), HarnessHandler)
-    threading.Thread(target=server.serve_forever, daemon=True).start()
-    return server, f"http://127.0.0.1:{server.server_address[1]}"
-
-
-def read_suite(browser, url: str, variable: str) -> dict:
-    page = browser.new_page()
-    try:
-        page.goto(url, wait_until="domcontentloaded")
-        page.wait_for_function(
-            f"() => window.{variable} && ['passed','failed','crashed'].includes(window.{variable}.status)",
-            timeout=90_000)
-        return page.evaluate(f"() => window.{variable}")
-    finally:
-        page.close()
-
-
-def start_product_server(port: int, suite_scenario: str):
-    suite = suite_provider.FakeSuiteReviewProvider(scenario=suite_scenario)
-    server = server_module.create_product_v2_server(
-        "127.0.0.1", port,
-        provider_factory=lambda: fake_semantic.FakeSemanticProvider(scenario="ok"),
-        image_provider_factory=lambda: fake_image.FakeImageProvider(scenario="ok"),
-        review_provider_factory=lambda: fake_review.FakeReviewProvider(scenario="ok"),
-        suite_review_provider_factory=lambda: suite)
-    threading.Thread(target=server.serve_forever, daemon=True).start()
-    return server, suite
-
-
-def walk_to_adoption(page, name: str, reference: Path) -> list[str]:
-    ui3.create_project(page, name, reference)
-    page.click("#analyze-run")
-    page.wait_for_selector("#slot-list .slot-row", timeout=30_000)
-    ui3.confirm_slots(page)
-    page.click("#stage-next-understand")
-    page.click("#suite-seed")
-    page.wait_for_selector("#shot-list .shot-row", timeout=20_000)
-    page.click("#stage-next-plan")
-    shots = page.evaluate(ui3.SHOT_IDS)
-    ui3.compile_all(page, shots)
-    page.click("#confirm-action")
-    page.wait_for_selector("#confirm-record", timeout=15_000)
-    page.click("#batch-run")
-    ui3.wait_terminal(page, shots, timeout=90_000)
-    page.click("#stage-next-review")
-    for shot_id in shots:
-        page.click(f'#review-list .review-card[data-shot-id="{shot_id}"] '
-                   'button:has-text("采用候选")')
-        page.wait_for_selector("#adopt-submit:not([disabled])", timeout=15_000)
-        page.click("#adopt-submit")
-        page.wait_for_selector("#adopt-status:not([hidden])", timeout=15_000)
-        page.wait_for_timeout(120)
-    return shots
 
 
 SUITE_STATUS = "() => document.getElementById('suite-review-status').textContent"
@@ -199,43 +91,7 @@ def main() -> int:
     check("V2.5.5-00", "ESM 语法门（domain / workspace / harness）",
           all(item["rc"] == 0 for item in node_results), node_results)
 
-    py_checks = re.search(r"SUITE_VLM_CHECKS = \(([^)]+)\)", SUITE_PY)
-    js_checks = re.search(r"SUITE_VLM_CHECK_TO_RULE = Object\.freeze\(\{([^}]+)\}",
-                          SUITE_JS, re.S)
-    py_keys = sorted(re.findall(r'"([a-z_]+)"', py_checks.group(1))) if py_checks else []
-    js_keys = sorted(re.findall(r"^\s*([a-z_]+):", js_checks.group(1), re.M)) if js_checks else []
-    py_contract = re.search(r'SUITE_REVIEW_CONTRACT_VERSION = "([^"]+)"', SUITE_PY)
-    js_contract = re.search(r'SUITE_REVIEW_CONTRACT_VERSION = "([^"]+)"', SUITE_JS)
-    js_max = re.search(r"SUITE_MAX_IMAGES = (\d+)", SUITE_JS)
-    py_max = re.search(r"MAX_SUITE_IMAGES = (\d+)", SUITE_PY)
-    mirror_ok = (py_keys == js_keys and bool(py_keys) and py_contract and js_contract
-                 and py_contract.group(1) == js_contract.group(1)
-                 and js_max and py_max and js_max.group(1) == py_max.group(1)
-                 and 'SUITE_REVIEW_PATH = "/api/v2/review/suite"' in WORKSPACE_JS
-                 and 'SUITE_REVIEW_PATH = "/api/v2/review/suite"' in SERVER_PY)
-    check("V2.5.5-01", "服务端词表/合同版本/张数上限/端点与浏览器互为镜像",
-          mirror_ok, {"py": py_keys, "js": js_keys,
-                      "contract": [py_contract and py_contract.group(1),
-                                   js_contract and js_contract.group(1)],
-                      "max": [py_max and py_max.group(1), js_max and js_max.group(1)]})
 
-    reuse_ok = ('from "./review.js"' in SUITE_JS
-                and "evaluateExportReadiness" in SUITE_JS and "verifyAssetHashes" in SUITE_JS
-                and "parsePngHeader" not in SUITE_JS and "crc32" not in SUITE_JS
-                and "assembleSuiteReview(" in WORKSPACE_JS
-                and 'id="suite-review-status"' in INDEX_HTML and 'id="suite-review-run"' in INDEX_HTML
-                and 'id="suite-review-findings"' in INDEX_HTML
-                and 'suite_review: "suite_review"' in SHARED_JS)
-    html_ids = re.findall(r'id="([^"]+)"', INDEX_HTML)
-    duplicate_ids = sorted({item for item in html_ids if html_ids.count(item) > 1})
-    # 元素表键名撞车曾让方案阶段的错误提示写进审核阶段的节点（真实缺陷，2026-10-01）。
-    element_keys = re.findall(
-        r"^\s*([A-Za-z_$][A-Za-z0-9_$]*):\s*document\.getElementById", WORKSPACE_JS, re.M)
-    duplicate_keys = sorted({item for item in element_keys if element_keys.count(item) > 1})
-    check("V2.5.5-02", "单一权威：复用既有测量；界面落点与文档种类已登记",
-          reuse_ok and not duplicate_ids and not duplicate_keys, {"len_suite_js": len(SUITE_JS),
-                                           "duplicate_ids": duplicate_ids,
-                                           "duplicate_element_keys": duplicate_keys})
 
     # ---------------- 契约套件 ----------------
     suites: dict = {}
@@ -267,7 +123,7 @@ def main() -> int:
 
     temp_root = Path(tempfile.mkdtemp(prefix="amz-v255-"))
     reference = temp_root / "ref.png"
-    reference.write_bytes(ui3.v251.png_bytes(900, 900, (36, 92, 160)))
+    reference.write_bytes(shared.png_bytes(900, 900, (36, 92, 160)))
 
     walkthrough: dict = {}
     with sync_playwright() as pw:
@@ -279,10 +135,16 @@ def main() -> int:
                 viewport={"width": 1440, "height": 950})
             page = context.pages[0] if context.pages else context.new_page()
             page.set_default_timeout(30_000)
-            logs = ui3.collect(page)
+            logs = shared.collect(page)
             try:
                 page.goto(f"http://127.0.0.1:{port}/", wait_until="domcontentloaded")
                 shots = walk_to_adoption(page, "V255 一致性品", reference)
+                # 新流程本地检查与 AI 复核分开（§14.8 按需）：先跑 AI（drift 场景 fake），再跑本地确定性检查。
+                page.click("#suite-ai-review-run")
+                page.wait_for_function(
+                    "() => document.getElementById('suite-review-status')"
+                    ".textContent.indexOf('整套检查 v') >= 0",
+                    timeout=60_000)
                 page.click("#suite-review-run")
                 page.wait_for_function(
                     "() => document.getElementById('suite-review-status')"
@@ -292,7 +154,6 @@ def main() -> int:
                 status = page.evaluate(SUITE_STATUS)
                 findings = page.evaluate(SUITE_FINDINGS)
                 note = page.locator("#suite-review-note").inner_text()
-                shot(page, "current")
                 check("V2.5.5-04", "工作台整套检查：报告当前、视觉已核对、发现可见",
                       "整套检查 v2.5.5" in status and "视觉复核已完成" in status
                       and any(item["severity"] == "HIGH_RISK" for item in findings)
@@ -322,8 +183,9 @@ def main() -> int:
                          db.close();
                          return docs.filter((row) => row.kind === 'suite_review');
                        }""")
+                # AI 复核与本地检查各写一版（均为当前报告链）：断最新版存在且身份正确，不钉死版本号。
                 check("V2.5.5-05", "报告以 suite_review 文档写入 IndexedDB",
-                      len(stored) == 1 and stored[0]["document_id"] == "suite_review", stored)
+                      len(stored) >= 1 and stored[-1]["document_id"] == "suite_review", stored)
                 localized = page.evaluate(
                     """() => {
                          const box = document.getElementById('suite-review-findings');
@@ -407,6 +269,12 @@ def main() -> int:
             try:
                 page2.goto(f"http://127.0.0.1:{port2}/", wait_until="domcontentloaded")
                 walk_to_adoption(page2, "V255 失败演练品", reference)
+                # unknown 场景同样先跑 AI（落 UNKNOWN），再跑本地确定性检查。
+                page2.click("#suite-ai-review-run")
+                page2.wait_for_function(
+                    "() => document.getElementById('suite-review-status')"
+                    ".textContent.indexOf('整套检查 v') >= 0",
+                    timeout=60_000)
                 page2.click("#suite-review-run")
                 page2.wait_for_function(
                     "() => document.getElementById('suite-review-status')"

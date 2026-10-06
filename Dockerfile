@@ -15,10 +15,16 @@ WORKDIR /opt/amz-listing-kit
 COPY pyproject.toml uv.lock ./
 RUN uv sync --locked --no-dev --no-install-project
 
-# Product V2 运行时：正式入口、产品静态资源、语义 provider 注册表与两个无状态 API 的依赖。
-# 旧 V1 代码、测试装置（evals/）、冻结草案与工作记录不进入镜像。
-COPY app/server.py app/product_v2_server.py ./app/
-COPY app/product_v2/ ./app/product_v2/
+# Product V2 运行时:正式入口、产品静态资源、V2 provider 注册表/适配器与无状态网关的依赖。
+# 目录 COPY + .dockerignore 排除旧业务(无字面文件钉):V1入口/旧fixture归档与实现/旧tracer、
+# V1适配器(src/providers非v2_*)、V1业务核心、旧config均不在镜像里。
+# 导入集合从当前代码推导:product_v2_server只触及src/console.py与src/providers/{__init__,v2_*}、
+# 其第三方依赖(requests/Pillow/langchain/pydantic,见uv.lock)与config/product-v2/providers.json;
+# config/product-v2/verification.json 只服务 CI 登记校验，由 .dockerignore 排除。
+# 旧 fixture 归档(app/offline_fixture.py)只服务本地回归,不进镜像。
+# 渐进 TS 迁移(计划 §9 V2.R7.5):domain/*.ts 与 .d.ts 由 .dockerignore 排除,镜像里只带
+# `npm run build:frontend` 生成的同目录 .js;生产运行时没有 TS 编译器,也没有第二份源码。
+COPY app/ ./app/
 COPY src/ ./src/
 COPY config/ ./config/
 

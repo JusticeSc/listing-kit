@@ -183,8 +183,8 @@ def check_registry(check: Any) -> None:
     js = read_js_registry()
     py = python_registry()
     diff = sorted(set(py.items()) ^ set(js.items()))
-    check("V2.2.2-01", "跨语言核心槽位注册表一致（8 项：slot_id/label/value_type/critical）",
-          len(py) == 8 and len(js) == 8 and py == js,
+    check("V2.2.2-01", "跨语言核心槽位注册表一致（9 项：slot_id/label/value_type/critical）",
+          len(py) == 9 and len(js) == 9 and py == js,
           {"python": len(py), "js": len(js), "diff": diff[:4]})
 
 

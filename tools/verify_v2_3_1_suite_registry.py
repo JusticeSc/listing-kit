@@ -63,7 +63,8 @@ async () => {
   const basePlan = domain.recommendPlan({ facts, assets: [{ role: "primary" }] });
   const byId = Object.fromEntries(basePlan.instances.map((item) => [item.template_id, item]));
   const withSize = domain.recommendPlan({
-    facts: [...facts, { slot_id: "size_summary", status: "confirmed", value: "500ml" }],
+    facts: [...facts, { slot_id: "size_dimensions", status: "confirmed",
+      value: [{ object: "杯身", axis: "volume", value: 500, unit: "ml", source_basis: "官方参数" }] }],
     assets: [{ role: "primary" }, { role: "competitor" }],
   });
   const customShot = domain.createCustomShot({ label: "赠品特写", factSlotIds: ["package_contents"] });
@@ -217,7 +218,7 @@ def main() -> int:
                       json.dumps(driver.get("required_blocked")) == "[]"
                       and driver.get("satisfiable") == ["main_clean", "infographic_benefits",
                                                         "scene_lifestyle", "detail_material"]
-                      and any("size_summary" in item for item in driver.get("size_blocked_reason", []))
+                      and any("size_dimensions" in item for item in driver.get("size_blocked_reason", []))
                       and any("competitor" in item
                               for item in driver.get("comparison_blocked_reason", []))
                       and "size_dimensions" in driver.get("with_size_satisfiable", [])

@@ -197,11 +197,14 @@ class DashScopeSemanticProvider:
         return self._to_proposal(result, request, latency_ms=latency_ms)
 
     def capabilities(self) -> dict[str, Any]:
+        from src.providers.v2_semantic import ANALYZE_BASE_FIELDS
         return {
             "provider_id": self.provider_id,
             "model_id": self.model_id,
             "semantic_contract": SEMANTIC_CONTRACT_VERSION,
             "supports_images": self.supports_images,
+            "vision": False,
+            "analyze_fields": list(ANALYZE_BASE_FIELDS),
             "configured": bool(self.api_key),
             "credential_source": self.credential_source,
             "endpoint_host": self.base_url,

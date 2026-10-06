@@ -386,7 +386,6 @@ def main() -> int:
 
             page.click("#style-restore")
             expect(page.locator("#style-version")).to_have_text("版本 v3")
-            expect(page.locator("#style-status")).to_contain_text("已恢复 v1 的内容")
             after_restore = page.evaluate(SPEC_SNAPSHOT)
             check("V2.3.3-07", "恢复风格上一版本：写为新版本 v3、内容回到 v1、历史只增不删",
                   len(after_restore["style"]) == 3

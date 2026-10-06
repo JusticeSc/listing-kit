@@ -1,0 +1,30 @@
+{
+  "NOT-AUTHORITY": "point-in-time evidence",
+  "event": "formal_start_and_acceptance_reassessment",
+  "recorded_at": "2026-10-05T02:44:33.539Z",
+  "goal_id": "1599c9600ae01cb7",
+  "objective_sha256": "6677a6803003f0894dd522bdd7102b53ca30c866532ff48fdc79e4b148d7c495",
+  "goal_binding_evidence": "evals/product-v2/refactor/goal-observation-20261005-formal-start.json",
+  "source": "User manually activated the full section 16.3 objective; actual goal.get returned active and native ID; objective compared exactly with repository section 16.3.",
+  "snapshot": "_stage-amz-control/formal-start-20261005T024433Z",
+  "snapshot_manifest": "_stage-amz-control/formal-start-20261005T024433Z/snapshot-manifest.json",
+  "snapshot_verified_files": 258,
+  "initial_worktree": {"branch": "main", "head": "aa24514082164f79f20a111c560670fb443b9a07", "staged": 0, "unstaged": 6, "untracked": 62, "meaning": "Existing user/worktree materials preserved; no blanket add or cleanup."},
+  "acceptance_reassessment": {
+    "V2.R4.3": "active: current credential channel only image; registry semantic/review factories lack request BYOK and formal client settings missing; close all existing consumers first.",
+    "V2.R4.4": "pending: recheck nonsecret effective configuration, original-target credential reference and package contract after settings cutover.",
+    "V2.R5.1": "pending only because prerequisite R4.4 reopens; retain valid execution Module evidence, do not rebuild or rerun unchanged proof without consumer impact.",
+    "V2.R5.2": "pending only because prerequisite R5.1 reopens; retain both real Adapter/reference-image evidence, no additional image calls authorized.",
+    "V2.R5.3": "pending: automatic local preparation, manual-text preservation, current request summary and one explicit submit require new consumer proof.",
+    "V2.R6.1": "pending: direct manual core facts, purpose-specific missing information and actual semantic vision contract not covered by historical UI proof.",
+    "V2.R6.2": "pending: stable direct comparison, local rework/adoption and optional AI behavior not covered by historical UI proof.",
+    "V2.R6.3": "pending: settings consumers, deterministic reports separate from AI not_run, ZIP/manifests and original identity recovery require current proof.",
+    "V2.R7.1": "pending: current G6 not established; final two rounds and real vision evidence still required.",
+    "V2.R7.4": "pending: reported boot defect correspondence and full release rollback/HTTPS/page acceptance still required."
+  },
+  "retained": "Phase0-3, model selection and previous image PoC, index/OCC R6.4 and all historical proof remain. R5.1/R5.2 status reopening is dependency consistency, not deletion or rebuild of valid implementation.",
+  "next_action": "V2.R4.3",
+  "product_data_baseline": "Verified before first product edit: actual page creation/fake analysis/human confirmation/4 synthetic candidates/explicit main adoption/full ZIP export, fresh-origin UI import/open, 44 versioned document payloads and 5 asset identities exactly equal. Package SHA256 13445da8d841170882919b5a7893807ced1d38cabdce007a6134f9d34aca6718 (86074 bytes), attempt schema 2; _stage-amz-control/formal-start-20261005T024433Z/downloads/正式开发基线-20261005-20261005-0258.zip. Recovered screenshot baseline-recovered.webp. Fake 64px candidates correctly remain hard-blocked; not quality/delivery proof. Existing r12 ZIP rejection retained: schema1 attempts intentionally unsupported. Baseline also observed initial template add fails on null suite plan, to close in current manual task path.",
+  "budget": "Preserve historical spent/reservations; authorize only section16.1 supplement, no model calls in startup.",
+  "verification": "check_docs --no-run exit0 (not command execution proof); 64-direction project_state probes all expected, restored original state byte-for-byte; refactor_resume exit0 active/native Goal/current hash/next R4.3. Current ZIP fresh-origin import/open preserves exact payload/version history and asset identities, no browser errors; zero supplier calls."
+}

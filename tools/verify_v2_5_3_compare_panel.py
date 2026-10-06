@@ -47,99 +47,11 @@ EXPECTED_REVIEW_CASES = [f"R{index}" for index in range(1, 14)]
 EXPECTED_PROVIDER_CASES = [f"R{index}" for index in range(14, 22)]
 
 
-def load_module(path: Path, name: str):
-    spec = importlib.util.spec_from_file_location(name, path)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+import v2_verify_shared as shared  # noqa: E402
+
+server_module = shared.load_server_module()
 
 
-v251 = load_module(ROOT / "tools" / "verify_v2_5_1_deterministic_review.py", "verify_v251")
-server_module = v251.load_server_module()
-
-
-def product_text(relative: str) -> str:
-    return (PRODUCT_DIR / relative).read_text(encoding="utf-8")
-
-
-def compare_section(text: str) -> str:
-    """workspace.js 里比较面板那一整块（分区注释 → renderAttempts 之前）。"""
-
-    start = text.index("候选比较与审核清单（V2.5.3）")
-    end = text.index("function renderAttempts", start)
-    return text[start:end]
-
-
-def check_static_guards() -> list[dict]:
-    checks: list[dict] = []
-    syntax_targets = [
-        PRODUCT_DIR / "domain" / "compare.js",
-        PRODUCT_DIR / "domain" / "review.js",
-        PRODUCT_DIR / "domain" / "index.js",
-        PRODUCT_DIR / "workspace.js",
-        HARNESS_DIR / "compare-panel.js",
-        Path(__file__).resolve(),
-    ]
-    results = []
-    for target in syntax_targets:
-        if target.suffix == ".js":
-            command = ["node", "--check", str(target)]
-        else:
-            command = [sys.executable, "-c",
-                       "import ast,pathlib,sys;ast.parse(pathlib.Path(sys.argv[1]).read_text(encoding='utf-8'))",
-                       str(target)]
-        completed = subprocess.run(command, cwd=str(ROOT), capture_output=True, text=True, check=False)
-        results.append({"file": target.relative_to(ROOT).as_posix(), "rc": completed.returncode,
-                        "stderr": completed.stderr.strip()[-160:]})
-    checks.append({
-        "id": "V2.5.3-01",
-        "title": "语法门：compare / review / workspace / 契约套件与本工具全部可解析",
-        "ok": all(item["rc"] == 0 for item in results),
-        "detail": {"files": results},
-    })
-
-    review_text = product_text("domain/review.js")
-    compare_text = product_text("domain/compare.js")
-    workspace_text = product_text("workspace.js")
-    canonical = '["BLOCK", "HIGH_RISK", "WARNING", "UNKNOWN"]'
-    duplicates = [name for name, text in (("domain/compare.js", compare_text),
-                                          ("workspace.js", workspace_text))
-                  if re.search(r'\[\s*"BLOCK"\s*,\s*"HIGH_RISK"', text)]
-    checks.append({
-        "id": "V2.5.3-02",
-        "title": "单一权威：先看顺序只在 domain/review.js 定义，比较模块与工作台只引用",
-        "ok": canonical in review_text and not duplicates
-              and "REVIEW_SEVERITY_ORDER" in compare_text
-              and "compareSeverityRank" in compare_text,
-        "detail": {"order_in_review": canonical in review_text, "duplicated_in": duplicates},
-    })
-
-    block = compare_section(workspace_text)
-    forbidden = [token for token in ("documents.save", "assets.put", "REVIEW_KIND", "CANDIDATE_KIND",
-                                     "selection", "SELECTION") if token in block]
-    checks.append({
-        "id": "V2.5.3-03",
-        "title": "比较面板是纯投影：不写文档、不写资产、不产生选择",
-        "ok": not forbidden,
-        "detail": {"forbidden_tokens": forbidden, "section_chars": len(block)},
-    })
-
-    html = (PRODUCT_DIR / "index.html").read_text(encoding="utf-8")
-    wiring = {
-        "panel": 'id="compare-panel"' in html,
-        "tablist": 'role="tablist"' in html,
-        "tabpanel": 'role="tabpanel"' in html,
-        "contract_constant": f'COMPARE_CONTRACT_VERSION = "{COMPARE_CONTRACT_VERSION}"' in compare_text,
-        "contract_used": "COMPARE_CONTRACT_VERSION" in workspace_text,
-        "default_projection": "defaultCompareTargetId" in workspace_text,
-    }
-    checks.append({
-        "id": "V2.5.3-04",
-        "title": "面板接线：HTML 的 tablist/tabpanel 与合同版本贯穿领域层与工作台",
-        "ok": all(wiring.values()),
-        "detail": wiring,
-    })
-    return checks
 
 
 INJECT_FIXTURE_CANDIDATE = """
@@ -287,21 +199,21 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
     checks: list[dict] = []
     ui: dict = {}
     holder = {"scenario": "ok"}
-    port = v251.free_port()
+    port = shared.free_port()
     server = server_module.create_product_v2_server(
         "127.0.0.1", port,
         provider_factory=lambda: FakeSemanticProvider(scenario="ok"),
         image_provider_factory=lambda: FakeImageProvider(scenario="ok"),
         review_provider_factory=lambda: FakeReviewProvider(holder["scenario"]))
     threading.Thread(target=server.serve_forever, daemon=True).start()
-    static_server, static_url = v251.start_static_server()
+    static_server, static_url = shared.start_static_server()
     temp_root = Path(tempfile.mkdtemp(prefix="amz-v253-"))
     profile = temp_root / "profile"
     reference = temp_root / "ref.png"
-    reference.write_bytes(v251.png_bytes(1200, 1200, (36, 92, 160)))
+    reference.write_bytes(shared.png_bytes(1200, 1200, (36, 92, 160)))
     reference_sha = hashlib.sha256(reference.read_bytes()).hexdigest()
     compliant = temp_root / "compliant.png"
-    compliant.write_bytes(v251.png_bytes(1600, 1600, (232, 236, 240)))
+    compliant.write_bytes(shared.png_bytes(1600, 1600, (232, 236, 240)))
     base = f"http://127.0.0.1:{port}"
     EVIDENCE_IMAGE_DIR.mkdir(parents=True, exist_ok=True)
     try:
@@ -314,7 +226,7 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 page.on("pageerror", lambda error: page_errors.append("[workbench] " + str(error)))
 
                 def probe() -> dict:
-                    return page.evaluate(v251.PROBE)
+                    return page.evaluate(shared.PROBE)
 
                 def panel_probe() -> dict:
                     return page.evaluate(PANEL_PROBE)
@@ -337,12 +249,6 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                     stage_nav.goto(page, "generate")
                     row(shot_id).locator(f'button:has-text("{text}")').first.click()
 
-                def submit_once(shot_id: str, first: bool) -> None:
-                    click_row_button(shot_id, "生成这张图" if first else "再生成一张")
-                    wait_state(shot_id, "submitted")
-                    click_row_button(shot_id, "核对任务")
-                    wait_state(shot_id, "succeeded")
-                    wait_candidate_ui(shot_id)
 
                 def open_panel(shot_id: str, card_count: int, references: int | None = None) -> None:
                     stage_nav.goto(page, "generate")
@@ -390,20 +296,18 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                     " req.onsuccess = () => resolve(req.result); });"
                     " db.close(); return rows.map((item) => item.project_id); }")
                 project_id = project_ids[0]
-                page.evaluate(v251.SEED_SLOTS, project_id)
+                page.evaluate(shared.SEED_SLOTS, project_id)
                 page.reload(wait_until="networkidle")
+                stage_nav.goto(page, "plan")
                 page.click("#suite-seed")
                 expect(page.locator("#shot-list .shot-row")).to_have_count(4)
                 initial = probe()
                 shot_ids = initial["shot_ids"]
                 first_shot, second_shot = shot_ids[0], shot_ids[1]
-                v251.compile_all(page, shot_ids)
-                expect(page.locator("#confirm-action")).to_be_enabled()
-                page.click("#confirm-action")
-                expect(page.locator("#confirm-record")).to_contain_text("已确认 v")
-                submit_once(first_shot, True)
-                submit_once(first_shot, False)
-                submit_once(second_shot, True)
+                shared.compile_all(page, shot_ids)
+                shared.confirm_and_submit(page, expect, probe, shot_ids=shot_ids)
+                click_row_button(first_shot, "再生成一张")
+                shared.confirm_and_submit(page, expect, probe, shot_ids=[first_shot])
                 injected = page.evaluate(INJECT_FIXTURE_CANDIDATE, {
                     "projectId": project_id, "shotId": first_shot,
                     "pngBase64": base64.b64encode(compliant.read_bytes()).decode("ascii"),
@@ -500,7 +404,7 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 collapsed = panel_probe()
                 page.locator("#compare-checklist details.compare-report summary").click()
                 expanded = panel_probe()
-                review_contract = v251.current_review_contract()
+                review_contract = shared.current_review_contract()
                 checks.append({
                     "id": "V2.5.3-12",
                     "title": "完整报告按需展开：默认收起，展开后含合同版本、通过项与视觉复核状态",
@@ -525,8 +429,8 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 checks.append({
                     "id": "V2.5.3-13",
                     "title": "面板不改业务状态：候选字节、Attempt 与审核报告在交互前后完全一致",
-                    "ok": v251.candidate_json(after_panel, first_shot) == v251.candidate_json(seeded, first_shot)
-                          and v251.candidate_json(after_panel, second_shot) == v251.candidate_json(seeded, second_shot)
+                    "ok": shared.candidate_json(after_panel, first_shot) == shared.candidate_json(seeded, first_shot)
+                          and shared.candidate_json(after_panel, second_shot) == shared.candidate_json(seeded, second_shot)
                           and json.dumps(after_panel["attempt_chains"], sort_keys=True, default=str)
                           == json.dumps(seeded["attempt_chains"], sort_keys=True, default=str)
                           and len(after_panel["review_reports"]) == len(seeded["review_reports"]),
@@ -684,15 +588,15 @@ def run_harness_suites(console_errors: list[str], page_errors: list[str]) -> lis
     checks: list[dict] = []
     with sync_playwright() as pw:
         browser = pw.chromium.launch(headless=True)
-        static_server, static_url = v251.start_static_server()
+        static_server, static_url = shared.start_static_server()
         try:
-            compare_suite = v251.read_suite(
+            compare_suite = shared.read_suite(
                 browser, static_url + "/harness/compare-panel.html",
                 "__V2_COMPARE_RESULTS__", console_errors, page_errors)
-            review_suite = v251.read_suite(
+            review_suite = shared.read_suite(
                 browser, static_url + "/harness/review-contract.html",
                 "__V2_REVIEW_RESULTS__", console_errors, page_errors)
-            provider_suite = v251.read_suite(
+            provider_suite = shared.read_suite(
                 browser, static_url + "/harness/review-provider-contract.html",
                 "__V2_REVIEW_PROVIDER_RESULTS__", console_errors, page_errors)
         finally:
@@ -732,12 +636,11 @@ def main() -> int:
     console_errors: list[str] = []
     page_errors: list[str] = []
 
-    checks.extend(check_static_guards())
     checks.extend(run_harness_suites(console_errors, page_errors))
     workbench_checks, ui = run_workbench_checks(stamp, console_errors, page_errors)
     checks.extend(workbench_checks)
 
-    entry = v251.run_entry(["--check"])
+    entry = shared.run_entry(["--check"])
     checks.append({
         "id": "V2.5.3-18",
         "title": "正式入口 --check 全过（比较面板没有破坏既有自检）",
@@ -773,7 +676,7 @@ def main() -> int:
         "-" * 76,
         f"observed_at: {observed_at}",
         f"status: {'passed' if passed == len(checks) else 'failed'}",
-        f"contract: {COMPARE_CONTRACT_VERSION}（面板）· {v251.current_review_contract()}（审核报告）",
+        f"contract: {COMPARE_CONTRACT_VERSION}（面板）· {shared.current_review_contract()}（审核报告）",
         "model_calls: 0 · external_network_calls: 0（fake providers + 本地静态服务器）",
         f"json: {json_path.relative_to(ROOT).as_posix()}",
         "",
@@ -796,7 +699,7 @@ def main() -> int:
         "status": "passed" if passed == len(checks) else "failed",
         "observed_at": observed_at,
         "contract": COMPARE_CONTRACT_VERSION,
-        "review_contract": v251.current_review_contract(),
+        "review_contract": shared.current_review_contract(),
         "model_calls": 0,
         "external_network_calls": 0,
         "checks": checks,

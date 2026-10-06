@@ -30,6 +30,7 @@ import json
 import os
 import socket
 import subprocess
+import shutil
 import sys
 import tempfile
 import threading
@@ -47,27 +48,12 @@ STATUS_PATH = "/api/v2/images/status"
 RESULT_PATH = "/api/v2/images/result"
 CAPABILITIES_PATH = "/api/v2/capabilities"
 
-MANIFEST_SKIP = {"__pycache__", "node_modules", "dist", "build"}
 
 
-def repo_manifest() -> dict[str, str]:
-    """仓库文件清单（排除缓存与 .git）：用内容 hash 证明这轮没有改到别的文件。"""
-
-    manifest: dict[str, str] = {}
-    for path in sorted(ROOT.rglob("*")):
-        if not path.is_file():
-            continue
-        parts = set(path.relative_to(ROOT).parts)
-        # 跳过多点目录（.git / .venv / .uv-cache …）与缓存目录：它们不是产品状态，
-        # 但对它们做整树哈希会让「磁盘零差异」这条判据慢到不可用。
-        if parts & MANIFEST_SKIP or any(part.startswith(".") for part in parts):
-            continue
-        try:
-            manifest[path.relative_to(ROOT).as_posix()] = hashlib.sha256(
-                path.read_bytes()).hexdigest()
-        except OSError:
-            continue
-    return manifest
+def runtime_manifest(runtime_root: Path) -> dict[str, str]:
+    """只对被验网关的独立运行根取全文件指纹，不把旁路报告当业务持久化。"""
+    return {path.relative_to(runtime_root).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
+            for path in runtime_root.rglob("*") if path.is_file()}
 
 
 def free_port() -> int:
@@ -76,9 +62,9 @@ def free_port() -> int:
         return probe.getsockname()[1]
 
 
-def load_server_module():
+def load_server_module(runtime_root: Path):
     spec = importlib.util.spec_from_file_location(
-        "product_v2_server_under_test", ROOT / "app" / "product_v2_server.py")
+        "product_v2_server_under_test", runtime_root / "app" / "product_v2_server.py")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
@@ -137,10 +123,7 @@ class RecordingTransport:
         return item
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser(description="V2.4.1 图像网关验证")
-    parser.add_argument("--label", default="")
-    args = parser.parse_args()
+def run_verification(args, runtime_root: Path) -> int:
 
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     checks: list[dict] = []
@@ -149,8 +132,8 @@ def main() -> int:
     def check(check_id: str, title: str, ok: bool, detail: object = None) -> None:
         checks.append({"id": check_id, "title": title, "ok": bool(ok), "detail": detail})
 
-    before = repo_manifest()
-    module = load_server_module()
+    module = load_server_module(runtime_root)
+    before = runtime_manifest(runtime_root)
     from src.providers.v2_dashscope_image import (DEFAULT_BASE_URL, DashScopeImageProvider,
                                                   create_default_image_provider)
     from src.providers.v2_fake_image import FakeImageProvider
@@ -518,11 +501,11 @@ def main() -> int:
 
     registry = load_registry()
     default_choice = resolve_image_provider_id(registry, env={})
-    env_choice = resolve_image_provider_id(registry, env={"AMZ_V2_IMAGE_PROVIDER": "fake-image"})
+    env_choice = resolve_image_provider_id(registry, env={"AMZ_V2_IMAGE_PROVIDER": "fake-qwen-image"})
     real_provider = create_image_provider(registry=registry, env={})
-    fake_provider = create_image_provider(registry=registry, env={"AMZ_V2_IMAGE_PROVIDER": "fake-image"})
-    check("V2.4.1-21", "注册表选择：默认 dashscope-image、环境变量可切 fake-image，构造不联网",
-          default_choice == "dashscope-image" and env_choice == "fake-image"
+    fake_provider = create_image_provider(registry=registry, env={"AMZ_V2_IMAGE_PROVIDER": "fake-qwen-image"})
+    check("V2.4.1-21", "注册表选择：默认 dashscope-qwen-image、环境变量可切 fake-qwen-image，构造不联网",
+          default_choice == "dashscope-qwen-image" and env_choice == "fake-qwen-image"
           and type(real_provider).__name__ == "DashScopeImageProvider"
           and type(fake_provider).__name__ == "FakeImageProvider",
           {"default": default_choice, "env": env_choice,
@@ -744,11 +727,11 @@ def main() -> int:
         server.shutdown()
         server.server_close()
 
-    after = repo_manifest()
+    after = runtime_manifest(runtime_root)
     added = sorted(set(after) - set(before))
     removed = sorted(set(before) - set(after))
     changed = sorted(name for name in set(before) & set(after) if before[name] != after[name])
-    check("V2.4.1-23", "磁盘不变量：整轮前后仓库 manifest 零差异（服务不落任何用户状态）",
+    check("V2.4.1-23", "磁盘不变量：独立网关运行根零新增、零改写、零删除（无业务落盘）",
           not added and not removed and not changed,
           {"files": len(before), "added": added[:5], "removed": removed[:5], "changed": changed[:5]})
 
@@ -768,7 +751,7 @@ def main() -> int:
         "出站白名单在任何传输生效之前拒绝非 https/非 443/私网与白名单外目标；BYOK 请求头只随单次"
         "请求进入内存并被本次提交使用，服务器不落盘、不在响应头/响应体/错误里回显。真实适配器的"
         "请求形状与错误分类由注入的假 transport 断言，整轮 0 次真实模型调用、0 次网络请求、"
-        "仓库文件 manifest 零差异。"
+        "独立网关运行根的全部文件 manifest 零差异（不扫描其它验证器的报告目录）。"
         "不证明：真实出图质量、真实参考图是否被上游接受、候选 Blob、审核报告、返工与交付 ZIP——"
         "这些属于 V2.4.2 起的批次。"
     )
@@ -829,6 +812,23 @@ def run_entry(args: list[str], timeout: int = 180) -> dict:
     )
     return {"args": args, "rc": completed.returncode,
             "tail": (completed.stdout + completed.stderr).strip().splitlines()[-8:]}
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="V2.4.1 图像网关验证")
+    parser.add_argument("--label", default="")
+    args = parser.parse_args()
+    with tempfile.TemporaryDirectory(prefix="amz-image-gateway-runtime-") as temporary:
+        runtime_root = Path(temporary)
+        for relative in ("app", "src", "config"):
+            shutil.copytree(ROOT / relative, runtime_root / relative,
+                            ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
+        previous = Path.cwd()
+        try:
+            os.chdir(runtime_root)
+            return run_verification(args, runtime_root)
+        finally:
+            os.chdir(previous)
 
 
 if __name__ == "__main__":

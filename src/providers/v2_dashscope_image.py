@@ -449,11 +449,12 @@ class DashScopeImageProvider:
 def create_default_image_provider(*, environ: Mapping[str, str] | None = None,
                                   transport: Transport | None = None,
                                   timeout: float | None = None,
-                                  base_url: str | None = None) -> DashScopeImageProvider:
+                                  base_url: str | None = None,
+                                  byok_api_key: str | None = None) -> DashScopeImageProvider:
     """按注册表口径构造真实适配器；构造过程不联网。
 
     密钥来源统一走 ``v2_credentials.resolve_credentials``：``api_key_env`` 与注册表
-    ``dashscope-image`` 条目一致（DASHSCOPE_API_KEY）；``AMZ_V2_DEFAULT_TRIAL`` 未开
+    ``dashscope-qwen-image`` 条目一致（DASHSCOPE_API_KEY）；``AMZ_V2_DEFAULT_TRIAL`` 未开
     时部署密钥不会进入适配器（fail-closed）。 ``allowed_hosts`` 复用
     ``v2_outbound.DEFAULT_ALLOWED_HOSTS``（DashScope/结果地址共用的 aliyuncs.com 白名单）。
     """
@@ -466,7 +467,7 @@ def create_default_image_provider(*, environ: Mapping[str, str] | None = None,
             resolved_timeout = float(raw_timeout) if raw_timeout else 30.0
         except ValueError:
             resolved_timeout = 30.0
-    decision = resolve_credentials({"api_key_env": DEFAULT_API_KEY_ENV}, source)
+    decision = resolve_credentials({"api_key_env": DEFAULT_API_KEY_ENV}, source, byok_api_key=byok_api_key)
     return DashScopeImageProvider(
         api_key=decision.api_key,
         base_url=base_url or source.get(DEFAULT_BASE_URL_ENV) or DEFAULT_BASE_URL,

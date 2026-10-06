@@ -40,6 +40,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(ROOT / "tools"))
+import v2_verify_shared as shared  # noqa: E402
 
 from console import enable_utf8  # noqa: E402
 
@@ -198,7 +199,7 @@ async () => {
 """
 
 BYTES_MISSING_PROBE = """
-async ({projectId, mod}) => {
+async ({projectId}) => {
   const gen = await import("/generation.js");
   const storage = await import("/storage/index.js");
   const opened = await storage.openStorage({});
@@ -209,21 +210,23 @@ async ({projectId, mod}) => {
       beginAction: () => ({ alive: () => true, projectId }),
       projectIdReader: () => projectId,
       environmentReader: () => null,
-      suitePlanReader: () => null,
+      requestHeaders: () => ({}),
+      suitePlanReader: () => ({ shots: [{ shot_id: "shot_probe", role_id: "main" }] }),
       suiteSummaryReader: () => null,
       promptEntryReader: () => null,
-      shotConfirmationReader: () => false,
-      wholeConfirmationReader: () => false,
-      referenceSourceReader: () => "primary",
-      reviewRequestBuilder: () => ({}),
+      confirmationReader: () => null,
+      promptBasisReader: () => null,
+      referenceSourceReader: () => [],
+      promptsSheet: () => null,
+      imageEnvironment: () => null,
+      candidateReviewRequest: () => ({}),
       renderAttempts: noop, renderBatch: noop, status: noop,
-      attemptError: noop, clearAttemptError: noop, focusAfterBatch: noop,
+      attemptError: noop, clearAttemptError: noop,
       repository,
     });
     const now = "2026-10-03T00:00:00.000Z";
     const actionId = "act-aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
-    mod.loadAttemptChain("shot_probe", [{
-      record: {
+    await repository.documents.save(projectId, { kind: "generation_attempt", documentId: "shot_probe", payload: {
         schema_version: 2, action_id: actionId, shot_id: "shot_probe",
         state: "succeeded", task_id: null, request_id: "req-probe",
         prompt: { version: 1, hash: "a".repeat(64) },
@@ -235,8 +238,8 @@ async ({projectId, mod}) => {
           capability_version: 3, credential_reference: { source: "test_double" },
           sync: true },
         notes: [], created_at: now, updated_at: now,
-      }, version: 1,
-    }]);
+      } });
+    await mod.restore({ alive: () => true, projectId });
     const outcome = await mod.storeCandidate("shot_probe",
       { action: { alive: () => true, projectId } });
     return { failed: outcome.failed === true, reason: outcome.reason || null,
@@ -244,7 +247,6 @@ async ({projectId, mod}) => {
   } finally {
     opened.close();
   }
-}
 """
 
 
@@ -724,6 +726,7 @@ def gateway_e2e_checks(check) -> None:
 
 def compile_all(page, shot_ids: list) -> None:
     """按 shot 列表点每张图的编译按钮（V2.4.2 用的同一入口形状）。"""
+    stage_nav.reveal(page, "#prompt-editor")
     for shot_id in shot_ids:
         card = f'#prompt-list .shot-spec[data-shot-id="{shot_id}"]'
         page.click(card + " .toolbar button")
@@ -792,12 +795,10 @@ def browser_e2e_checks(check, screenshots: list[str], console_errors: list,
         first_probe = page.evaluate(ID_DB_PROBE)
         shot_ids = first_probe["shot_ids"]
         compile_all(page, shot_ids)
-        page.click("#confirm-action")
-        expect(page.locator("#confirm-record")).to_contain_text("已确认 v1")
-
+        # 确认即提交：先备齐 4 次同步响应再点确认，确认后直接等 attempt 终态，不再点已删除的旧整套按钮。
         for _ in range(4):
             transport.script_success(reference)
-        page.click("#batch-run")
+        page.click("#confirm-action")
         for shot_id in shot_ids:
             page.wait_for_selector(
                 f'#attempt-list .attempt-row[data-shot-id="{shot_id}"]'
@@ -881,6 +882,7 @@ def browser_e2e_checks(check, screenshots: list[str], console_errors: list,
         transport.script_success(reference, request_id="req-ark-second")
         row_selector = f'#attempt-list .attempt-row[data-shot-id="{target_shot}"]'
         page.click(row_selector + ' button:has-text("再生成一张")')
+        shared.confirm_and_submit(page, expect, shot_ids=[target_shot])
         page.wait_for_selector(row_selector + '[data-attempt-state="succeeded"]',
                                timeout=40_000)
         page.wait_for_timeout(1200)
@@ -914,7 +916,6 @@ def browser_e2e_checks(check, screenshots: list[str], console_errors: list,
         page.reload(wait_until="networkidle")
         stage_nav.goto(page, "generate")
         expect(page.locator("#prompt-list .shot-spec")).to_have_count(4)
-        expect(page.locator("#confirm-record")).to_contain_text("已确认 v1")
         rotated = page.evaluate(ID_DB_PROBE)
         check("R53-E02", "纯凭据轮换保留 Prompt/确认且零新增外呼",
               rotated["prompts"] == prompts_before_rotation

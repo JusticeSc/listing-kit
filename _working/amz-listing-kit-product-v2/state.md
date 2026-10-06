@@ -3,19 +3,20 @@
 > CONTROL-STATUS: current · AUTHORITY: execution-state
 > 只保存进度、证据、阻塞/未知与下一动作；目标和任务定义只在 `docs/product-v2-refactor-plan.md`。
 > prepared 是未绑定新 Goal 的本地准备态，不是系统 paused。旧读数与完成记录只见 superseded 基线。
+> 2026-10-06用户明确指令“按照计划开发吧”，解除前述停工门并恢复V2.R5.1受限施工。恢复核对：Goal原文仍计划§2.1 sha6677a6803003f0894dd522bdd7102b53ca30c866532ff48fdc79e4b148d7c495；state守卫与文档守卫通过；预算image8/8已满不新增、semantic/VLM5/6、总13/14、预留1.61/5元；事前快照_resume-r51-2026-10-06T03-51-56-463Z；S0基线check:types与check:generated均红、suiteReports等未声明仍被引用。按§15/设计§11从组A开始，不另立任务。组A包01-03已闭合：产物集合/owner消费者/恢复生命周期迁移完成，check:types零诊断、check:generated 9/9、node 226/226、页面repro与V2.1.4正式入口通过；证据evals/product-v2/refactor/r51-group-a-20261006.json；仍V2.R5.1 active，下一包按设计§11.2包04起。
 
 ```yaml
 state_schema: amz-project-state/v2
 task_id: amz-listing-kit-product-v2-refactor
 status: active
 goal_binding: required
-goal_id: "1596e3da4da5b9bb"
+goal_id: "1599c9600ae01cb7"
 goal_pending_reason: null
-goal_binding_evidence: evals/product-v2/refactor/goal-observation-20261003-unattended-trigger.json
+goal_binding_evidence: evals/product-v2/refactor/goal-observation-20261006-combined-refactor.json
 system_goal_observed_status: active
-system_goal_observed_at: '2026-10-02T21:03:51.198Z'
+system_goal_observed_at: '2026-10-05T18:44:51.649Z'
 plan_ref: docs/product-v2-refactor-plan.md
-latest_audit: evals/product-v2/refactor/storage-contract-review-20261003.md
+latest_audit: evals/product-v2/refactor/generation-module-20261005-formal.md
 phase_progress:
   '0':
     status: done
@@ -48,22 +49,26 @@ phase_progress:
     - evals/product-v2/refactor/effective-config-byok-20261003.md
     - evals/product-v2/refactor/execution-identity-package-20261003-072854.md
     - evals/product-v2/v2.4.5-live-reference-20261003-154157-r42-volcengine-run3.json
+    - evals/product-v2/refactor/formal-start-20261005.json
   '5':
-    status: done
+    status: active
     evidence:
     - evals/product-v2/refactor/generation-module-20261003-084705.md
     - evals/product-v2/refactor/two-image-adapters-20261003-094600.md
     - evals/product-v2/refactor/prompt-confirmation-consistency-20261003-120238.md
     - evals/product-v2/PRODUCT-V2-R5.2-offline-e2e-20261003-154254.json
   '6':
-    status: done
+    status: pending
     evidence:
     - evals/product-v2/refactor/intake-suite-ui-20261003-122229.md
     - evals/product-v2/refactor/compare-rework-selection-ui-20261003-123202.md
     - evals/product-v2/refactor/delivery-recovery-settings-ui-20261003-124930.md
     - evals/product-v2/refactor/storage-contract-review-20261003.md
+    - evals/product-v2/refactor/product-design-audit-20261004.md
+    - evals/product-v2/refactor/design-convergence-20261004.md
+    - evals/product-v2/refactor/specification-consolidation-20261004.md
   '7':
-    status: active
+    status: pending
     evidence:
     - evals/product-v2/refactor/completion-matrix-20261003-r74.md
     - evals/product-v2/refactor/completion-matrix-20261003-r74.json
@@ -92,6 +97,7 @@ task_progress:
     - evals/product-v2/refactor/goal-observation-20261002.json
     - evals/product-v2/refactor/goal-recovery-20261002.md
     - evals/product-v2/refactor/goal-observation-20261003-unattended-trigger.json
+    - evals/product-v2/refactor/goal-observation-20261005-formal-start.json
   V2.R1.2:
     status: done
     evidence:
@@ -103,7 +109,6 @@ task_progress:
   V2.R1.3:
     status: done
     evidence:
-    - evals/product-v2/refactor/audit-protocol-20261001-095948.md
     - evals/product-v2/refactor/work-audit-20261001-103825.md
     - evals/product-v2/refactor/baseline-and-boot-20261001-133400.md
     - evals/product-v2/refactor/recovery-and-r13-20261001-143134.md
@@ -186,11 +191,14 @@ task_progress:
     status: done
     evidence:
     - evals/product-v2/refactor/effective-config-byok-20261003.md
-    - evals/product-v2/v2.4.1-image-gateway-20261003-062525-r43-solo.txt
-    - evals/product-v2/v2.4.1-image-gateway-20261003-062525-r43-solo.json
-    - evals/product-v2/v2.2.2-semantic-provider-20261003-062450-r43-config-byok.txt
-    - evals/product-v2/v2.5.2-vlm-review-20261003-062459r43-config-byok.json
-    - evals/product-v2/v2.5.5-suite-review-20261003-062832-r43-config-byok.txt
+    - evals/product-v2/refactor/config-and-credential-20261005.md
+    - evals/product-v2/v2.4.1-image-gateway-20261005-141712.txt
+    - evals/product-v2/v2.2.2-semantic-provider-20261005-141538.txt
+    - evals/product-v2/v2.5.1-deterministic-review-20261005-142343.txt
+    - evals/product-v2/v2.5.2-vlm-review-20261005-142259.txt
+    - evals/product-v2/v2.5.5-suite-review-20261005-141348.txt
+    - evals/product-v2/v2.ui.3-frontend-20261005-150315.txt
+    - evals/product-v2/v2.ui.3-frontend-20261005-150341-final.txt
     - src/providers/v2_credentials.py
     - src/providers/v2_outbound.py
     - app/product_v2_server.py
@@ -209,15 +217,15 @@ task_progress:
     - evals/product-v2/v2.4.2-generation-attempt-20261003-084647.txt
     - evals/product-v2/v2.4.3-batch-suite-20261003-084705.json
     - evals/product-v2/v2.4.3-batch-suite-20261003-084705.txt
-    - app/product_v2/domain/attempt.js
-    - app/product_v2/workspace.js
-    - app/product_v2_server.py
-    - src/providers/v2_fake_image.py
-    - src/providers/v2_fake_semantic.py
-    - src/providers/v2_fake_review.py
-    - src/providers/v2_fake_suite_review.py
+    - evals/product-v2/refactor/execution-identity-package-20261005.md
+    - evals/product-v2/v2.4.2-generation-attempt-20261005-184623.json
+    - evals/product-v2/v2.4.2-generation-attempt-20261005-184623.txt
+    - evals/product-v2/v2.4.1-image-gateway-20261005-184700.json
+    - evals/product-v2/v2.4.1-image-gateway-20261005-184700.txt
+    - evals/product-v2/v2.1.3-project-package-20261005-184649.json
+    - evals/product-v2/v2.1.3-project-package-20261005-184649.txt
   V2.R5.1:
-    status: done
+    status: active
     evidence:
     - evals/product-v2/refactor/generation-module-20261003-084705.md
     - app/product_v2/generation.js
@@ -225,8 +233,10 @@ task_progress:
     - evals/product-v2/v2.4.2-generation-attempt-20261003-084647.json
     - evals/product-v2/v2.4.3-batch-suite-20261003-084705.json
     - evals/product-v2/v2.4.4-candidate-blob-20261003-085109.json
+    - evals/product-v2/refactor/generation-module-20261005-formal.md
+    - evals/product-v2/refactor/r51-packet-05-reserve-fence-20261006.json
   V2.R5.2:
-    status: done
+    status: pending
     evidence:
     - evals/product-v2/refactor/two-image-adapters-20261003-094600.md
     - evals/product-v2/PRODUCT-V2-R5.2-offline-e2e-20261003-094235.json
@@ -254,14 +264,14 @@ task_progress:
     - evals/product-v2/v2.4.5-live-reference-20261003-154157-r42-volcengine-run3.txt
     - evals/product-v2/v2.4.5-live-reference-20261003-154157.png
   V2.R5.3:
-    status: done
+    status: pending
     evidence:
     - evals/product-v2/refactor/r53-gateway-smoke-20261003.json
     - evals/product-v2/refactor/model-preflight-20261003.txt
     - evals/product-v2/refactor/prompt-confirmation-consistency-20261003-120238.md
     - evals/product-v2/PRODUCT-V2-R5.2-offline-e2e-20261003-120238.json
   V2.R6.1:
-    status: done
+    status: pending
     evidence:
     - evals/product-v2/refactor/intake-suite-ui-20261003-122229.md
     - evals/product-v2/v2.2.3-intake-understanding-20261003-121735.txt
@@ -272,8 +282,9 @@ task_progress:
     - evals/product-v2/v2.3.5-pre-generation-confirm-20261003-122120.txt
     - evals/product-v2/v2.3.6-prompt-manual-edit-20261003-122145.txt
     - evals/product-v2/PRODUCT-V2-R5.2-offline-e2e-20261003-122229.json
+    - evals/product-v2/refactor/generation-module-20261005-formal.md
   V2.R6.2:
-    status: done
+    status: pending
     evidence:
     - evals/product-v2/refactor/compare-rework-selection-ui-20261003-123202.md
     - evals/product-v2/v2.5.1-deterministic-review-20261003-122935.txt
@@ -283,13 +294,20 @@ task_progress:
     - evals/product-v2/v2.5.5-suite-review-20261003-123125.txt
     - evals/product-v2/v2.6.1-selection-20261003-123145.txt
     - evals/product-v2/v2.6.4-a11y-20261003-123202.txt
+    - evals/product-v2/refactor/generation-module-20261005-formal.md
   V2.R6.3:
-    status: done
+    status: pending
     evidence:
     - evals/product-v2/refactor/delivery-recovery-settings-ui-20261003-124930.md
     - evals/product-v2/v2.6.2-delivery-20261003-124831.txt
     - evals/product-v2/v2.6.3-transfer-20261003-124930.txt
     - evals/product-v2/v2.6.4-a11y-20261003-123202.txt
+    - evals/product-v2/refactor/product-design-audit-20261004.md
+    - evals/product-v2/refactor/design-convergence-20261004.md
+    - evals/product-v2/refactor/specification-consolidation-20261004.md
+    - evals/product-v2/refactor/development-preparation-20261004.md
+    - evals/product-v2/refactor/goal-start-blocked-20261005.json
+    - evals/product-v2/refactor/generation-module-20261005-formal.md
   V2.R6.4:
     status: done
     evidence:
@@ -304,7 +322,7 @@ task_progress:
     - evals/product-v2/v2.3.3-session-lifecycle-20261003-032515-native-latest-index.json
     - evals/product-v2/v2.1.4-formal-entry-20261003-032824-native-latest-index.json
   V2.R7.1:
-    status: done
+    status: pending
     evidence:
     - evals/product-v2/refactor/full-verification-20261003-r71.md
     - evals/product-v2/v2.7.1-regression-20261003-r71f-final.txt
@@ -322,7 +340,7 @@ task_progress:
     status: pending
     evidence: []
   V2.R7.4:
-     status: active
+     status: pending
      evidence:
      - evals/product-v2/refactor/completion-matrix-20261003-r74.md
      - evals/product-v2/refactor/completion-matrix-20261003-r74.json
@@ -330,19 +348,55 @@ task_progress:
      - evals/product-v2/v2.4.5-volc-adopt-export-20261003-222140.json
      - tools/verify_v2_volc_adopt_export.py
      - config/product-v2/verification.json
-next_action_task: V2.R7.4
-blockers: []
+  V2.R7.5:
+    status: pending
+    evidence:
+    - evals/product-v2/refactor/generation-module-20261005-formal.md
+    - app/product_v2/domain/attempt.ts
+    - app/product_v2/domain/config-export.ts
+    - tools/build_product_v2_ts.mjs
+next_action_task: V2.R5.1
+blockers:
+  - V2.R5.1_packet_06_selection_delivery_txn_pending_commitSelection_readProjectSnapshot_commitDeliveryRecord_after_packet_05_closed
 unknowns:
-  - r74_closeout_volc_adopt_export_222253_pass_spent_1_15_of_5_image_8_of_8_matrix_CI_37136575625_deploy_24a3561_origin_https_47_115_172_233_8080_paid_online_probes_0_evidence_completion-matrix-20261003-r74_follow_V2.R7.4
-  - r71_done_regression_r71f_semlive_vlm_dashscope194526_volc195600_spent_0_91_of_5_evidence_full-verification-20261003-r71_follow_V2.R7.1_RC09
+  - historical_r74_closeout_volc_adopt_export_222253_pass_spent_1_15_of_5_image_8_of_8_matrix_CI_37136575625_deploy_24a3561_origin_https_47_115_172_233_8080_paid_online_probes_0_evidence_completion-matrix-20261003-r74_not_current_completion
+  - historical_r71_regression_r71f_semlive_vlm_dashscope194526_volc195600_spent_0_91_of_5_evidence_full-verification-20261003-r71_not_current_G6_or_design_proof
   - historical_boot_and_formal_entry_intermittent_trigger_unproven_controlled_home_read_failure_and_readiness_windows_fixed_diagnostics_now_capture_stage_UI_and_independent_DB_follow_V2.R1.2_V2.R3.3_V2.R7.1_RC19
   - sync_image_protocol_links_result_bytes_to_single_submit_envelope_no_task_id_bytes_missing_after_refresh_requires_explicit_new_action_or_manual_review_implementation_covered_by_browser_E2E_and_node_A19
   - node_domain_suite_C09_frozen_identity_fixture_aligned_browser_and_node_R52-01_waiver_removed_verified_by_PRODUCT-V2-R5.2-offline-e2e-20261003-120238_follow_V2.R5.3
   - native_latest_index_production_path_measured_same_fixture_history_assets_OCC_and_roundtrip_verified_heap_sampling_lower_bound_cold_open_not_claimed_faster_pressure_download_not_verified_follow_V2.R6.4
   - UI3_save_state_wiring_restored_and_later_pass_exists_without_before_after_code_hash_attribution_follow_V2.R3.3_and_V2.R7.1
   - public_default_paid_profile_online_closed_default_trial_closed_no_key_no_upstream_verified_by_capabilities_and_400_probes_follow_V2.R4.3_V2.R7.4
-  - ui_baseline_observed_in_chrome_headless_T7_settings_capability_missing_final_contract_still_requires_implementation_human_C17_C15_and_V1_sunset_outside_triggered_Goal_follow_plan_2_and_plan_12
   - vlm_detection_quality_uncalibrated_do_not_infer_accuracy_from_contract_pass
-  - triggered_unattended_Goal_text_lands_in_plan_2_and_state_bound_to_system_Goal_follow_plan_12
-updated_at: '2026-10-03T16:35:00.000Z'
+  - historical_triggered_unattended_Goal_binding_retained_current_20261004_goal_get_No_active_goal_not_new_binding_or_lifecycle_change_follow_plan_2_and_plan_13
+  - design_20261004_draft_text_sketches_only_no_product_code_model_calls_commits_or_deployment_R61_R62_old_evidence_not_new_UI_acceptance_follow_design_convergence_20261004
+  - product_choices_confirmed_existing_models_plus_own_key_AI_review_on_demand_and_export_allowed_without_AI_deterministic_reports_hard_checks_selection_and_integrity_still_required_follow_plan_13_14
+  - specification_20261004_plan14_business_contract_UI_draft_and_context_responsibility_map_written_only_no_product_code_model_calls_or_release_no_new_Goal_follow_specification_consolidation_20261004
+  - historical_20261004_semantic_text_and_reference_metadata_only_reference_images_sent_false_new_vision_implementation_and_real_substep_now_follow_generation-module-20261005-formal_full_assisted_task_still_pending
+  - vision_20261005_exact_one_checked_httpx2_UI_call_qwen_vl_max_real_JPEG_2239735_full_sha_saved_12_proposed_unconfirmed_analysis_source_snapshot_current_record_v3_succeeded_applied_not_complete_assisted_task_no_native_vision_project_ZIP_follow_generation-module-20261005-formal
+  - vision_20261005_offline_guard_patched_wrong_httpx_default_SDK_httpx2_dummy_key_401_counter_zero_invalid_count_one_and_retain_0_23_unknown_billing_live_success_0_23_also_retained_total_reserved_1_61_image8_semantic5_total13_follow_budget-ledger
+  - optional_AI_policy_requires_separating_suite_not_run_from_model_unknown_preserve_current_deterministic_reports_and_real_submission_unknown_no_auto_retry_follow_plan_14_8
+  - historical_done_proofs_keep_original_scope_section14_new_acceptance_not_reassessed_recheck_affected_existing_tasks_when_implementation_authorized_no_new_task_table_follow_plan_14_10
+  - implementation_batches_and_risk_based_minimal_verification_written_plan15_only_no_product_work_no_new_tasks_or_status_changes_resume_R63_requires_scope_and_actual_Goal_check
+  - development_preparation_20261004_plan_r7_goal_draft_16_3_not_created_existing_binding_and_done_historical_only_reassess_affected_tasks_once_on_real_start_follow_plan_7_5_16_2
+  - next_round_delivery_live_supplement_and_CI_protected_agent_merge_choices_confirmed_in_ask_preparation_does_not_execute_or_reset_budget_follow_plan_16_1
+  - dependency_R62_now_R53_no_wait_for_R61_vision_completion_shared_config_existing_consumers_R43_new_vision_consumer_R61_final_G6_RC07_unchanged_scope_follow_plan_6_15
+  - release_rollback_gap_previous_container_removed_before_HTTPS_page_acceptance_not_fixed_in_preparation_R74_must_implement_plan_7_7
+  - startup_20261005_user_said_start_goal_runtime_unknown_tool_goal_and_xd_goal_get_goal_create_goal_not_mounted_no_current_system_read_no_creation_no_product_work_evidence_goal-start-blocked-20261005_json_historical_binding_unchanged
+  - formal_start_20261005_goal_tool_restored_user_manual_goal_active_1599c9600ae01cb7_draft_exact_match_historical_missing_tool_block_resolved_no_duplicate_creation_follow_formal-start-20261005_json
+  - r43_done_20261005_settings_consumers_closed_existing_purposes_formal_entry_browser_matrix_green_verifier_only_changes_no_product_semantics_node_10_failures_preexisting_R62_harness_not_this_round_follow_config-and-credential-20261005
+  - historical_formal_start_20261005_affected_acceptance_reopened_R43_R44_R53_R61_R62_R63_R71_R74_and_dependency_status_R51_R52_keep_valid_proof_no_rebuild_initial_Phase4_active_next_R43_same_version_ZIP_baseline_was_required_and_completed_before_product_write
+  - formal_development_20261005_human_main_scene_once_confirm_rework_original_selection_preserved_no_AI_native_delivery_and_project_ZIP_44_documents_4_assets_byte_equal_first_TS_attempt_config_export_strict_green_other_TS_and_consumers_pending_not_final_R51_R61_R62_R63_R75_acceptance_follow_generation-module-20261005-formal
+  - semantic_original_snapshot_and_same_project_late_source_change_guard_offline_UI_proven_old_request_old_source_v2_current_input_v3_stale_disposition_no_product_name_fact_applied_no_page_errors_follow_analysis-snapshot-after2_json_live_quality_and_full_assisted_task_are_separate
+  - caller_strict_App_slice_zero_own_diagnostics_workspace_slice_integration_pending_session_metadata_rename_source_fix_not_yet_compiled_or_smoked_no_R75_done_follow_generation-module-20261005-formal
+  - vision_preflight_transient_create_disabled_no_original_UI_phase_trace_later_green_not_root_cause_or_RC19_closure_follow_vision-ui-transient-startup-disabled_json_and_plan_7_6
+  - combined_refactor_20261006_user_requests_complete_current_Goal_and_structural_refactor_plan15_4_original_Goal_unchanged_active_native_rebound_no_new_dependencies_budget_V1_sunset_or_permission_expansion
+  - combined_refactor_baseline_483_source_control_files_exact_snapshot_stage_combined_refactor_2026_10_05T18_44_47_076Z_existing_project_source_native_import_open_export_2364581_bytes_no_page_errors_required_main_selection_gate_currently_blocked_do_not_claim_full_delivery_green
+  - user_stop_20261006_two_continuation_agents_cancelled_nine_registered_local_services_including_headless_browser_stopped_worktree_preserved_no_goal_completion_commit_or_deployment_follow_latest_audit_stop_section
+  - combined_workspace_last_actual_create_open_failed_suiteReports_is_not_defined_project_saved_in_IDB_but_view_hidden_new_strict_prompts_authorization_selection_adoption_review_delivery_TS_sources_not_compiled_or_integrated_no_current_runtime_pass_claim
+  - combined_verification_shared_helpers_and_isolated_root_guards_gateway_probe_partially_migrated_no_final_regression_source_pins_aliases_and_live_single_submit_consumers_require_completion_before_any_live_call
+  - combined_release_actual_runtime_source_image_ID_and_Caddy_hash_gate_moved_before_finalize_and_into_rollback_condition_but_latest_workflow_not_revalidated_Docker_transaction_and_previous_version_page_recovery_unproven_no_release_acceptance
+  - detailed_refactor_design_20261006_target_only_owner_Interfaces_atomic_authorization_OCC_snapshot_dedup_tests_history_and_original_task_work_packages_written_no_product_edits_or_task_status_changes_no_current_goal_read_tool_available_user_stop_remains_follow_docs_product_v2_refactor_design
+  - lower_model_preparation_20261006_design_r2_section10_frozen_reservation_action_preservation_lifecycle_report_ZIP_emit_release_algorithms_section11_11_internal_packets_atomic_group_A_01_03_section12_start_text_only_no_product_edits_runtime_browser_model_git_deploy_or_status_change_user_stop_R51_unchanged_follow_lower-model-preparation-20261006
+updated_at: '2026-10-06T16:05:38+08:00'
 ```
