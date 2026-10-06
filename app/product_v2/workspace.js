@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * Product V2 项目工作区（V2.2.3）：参考图 → 商品资料 → 分析 → 商品理解。
  *
@@ -13,19 +14,18 @@
  *  - “删除”槽位实现为 supersede：退出活动事实集合，历史版本保留。
  */
 
-import {
-  ATTEMPT_DOCUMENT_KIND,
+ import {
   ATTEMPT_ACTIVE_STATES,
   ATTEMPT_RECONCILE_MODES,
   ATTEMPT_STATES,
-  CANDIDATE_DOCUMENT_KIND,
   COMPARE_CONTRACT_VERSION,
   COMPARE_SEVERITY_TEXT,
   COMPARE_STATE_TEXT,
   CONFIRM_DOCUMENT_ID,
-  CORE_SLOT_REGISTRY,
   DOMAIN_DOCUMENT_KINDS,
-  EXPORT_GATE_CONTRACT_VERSION,
+  DIMENSION_AXES,
+  DIMENSION_UNITS,
+  MAX_DIMENSIONS,
   FACT_SLOT_SCHEMA_VERSION,
   MAX_REFERENCES,
   MANUAL_EDIT_REASON_MAX,
@@ -33,73 +33,56 @@ import {
   PLATFORM_PROFILES,
   imagePromptProfile,
   REFERENCE_ROLES,
-  REVIEW_REPORT_DOCUMENT_KIND,
   REVIEW_SEVERITY_ORDER,
   REWORK_CONTRACT_VERSION,
   REWORK_PROBLEMS,
   SELECTION_CONTRACT_VERSION,
+  SLOT_VALUE_TYPES,
   SHOT_TEMPLATES,
-  SUITE_PLAN_DOCUMENT_ID,
-  STYLE_SPEC_DOCUMENT_ID,
-  acknowledgementDocumentIdOf,
+  setShotFactBindings,
+  shotSignatureOf,
+  shotReadiness,
   addCustomShotToPlan,
   addShotFromTemplate,
-  applySlotAction,
-  assertShotSpec,
-  assertSelectionRecord,
-  assertStyleSpec,
-  assembleSuiteReview,
+  attemptCurrentEnvironmentIdentity,
+  assertConfirmationSheet,
   attemptPromptStaleness,
   attemptReconcileMode,
+  attemptReconcileEnvironment,
+  attemptReconcileBlockedMessage,
   attemptStateLabel,
   batchProgressText,
-  briefReadiness,
-  buildAcknowledgement,
-  buildConfirmationRecord,
   buildConfirmationSheet,
-  buildDeliveryEntries,
   buildEditedPromptRecord,
-  buildExportRecord,
   buildPromptRecord,
-  buildProductBrief,
   buildReworkDirective,
   buildReviewReport,
-  buildSelectionRecord,
-  buildSelectionSet,
   canAddSlot,
   canConfirmSlot,
   canDeleteSlot,
   canEditValue,
   candidateMatchesAttempt,
-  checkConfirmationRecord,
   checkFactSlot,
-  checkPromptRecord,
   compareCounts,
+  canonicalJson,
   compareRowHeadline,
   compareRows,
+  defaultCompareTargetId,
+  discardManualEdit,
+  reconfirmEditedPrompt,
   compilePrompt,
-  confirmationSnapshot,
-  confirmationStaleness,
   copyShot,
   coreSlotDefinition,
-  defaultCompareTargetId,
-  deliveryImagePathOf,
-  deliveryFileName,
-  deriveSelectionState,
-  emptyShotSpecFromShot,
   emptyStyleSpec,
-  emptyProductInput,
-  evaluateDeliveryGate,
-  exportRecordDocumentIdOf,
+  emptyShotSpecFromShot,
   intakeReadiness,
+  isPlainObject,
   moveShot,
   newActionId,
   nextPendingShotId,
-  previousVersionOf,
   promptHash,
   promptStaleness,
   recommendPlan,
-  referenceFromAsset,
   reviewChecklist,
   reviewIsCurrent,
   reviewSummaryText,
@@ -110,66 +93,355 @@ import {
   selectReferences,
   seedSuitePlan,
   selectionSetText,
-  selectionStateLabel,
   selectionSummaryText,
   specChangeProjection,
   sortFindings,
   suggestReworkProblems,
   suggestedReworkDirection,
-  selectionFingerprintOf,
-  inputsFingerprintOf,
-  suiteReviewIsCurrent,
-  suiteReviewSummaryText,
-  SUITE_MAX_IMAGES,
-  SUITE_REVIEW_DOCUMENT_ID,
   suitePlanSummary,
+  suiteReviewSummaryText,
   suiteSpecDigest,
   styleSpecDiff,
   topFinding,
-  validateSuitePlan,
 } from "./domain/index.js";
-import { sha256Hex } from "./storage/db.js";
-import { STORAGE_ERROR_CODES } from "./storage/errors.js";
-import { buildZip, exportProjectPackage } from "./storage/index.js";
 import { createGenerationModule } from "./generation.js";
+import { consumptionFence, createProjectInputsModule } from "./project-inputs.js";
+import { createPromptModule } from "./prompts.js";
+import { createReviewDeliveryModule } from "./review-delivery.js";
+import { createSelectionAdoptionModule } from "./selection-adoption.js";
 import { createStageShell } from "./ui/stage-shell.js";
+/**
+ * 本文件 JSDoc 类型说明（V2.R7.5 调用方严格化，不改运行时）：
+ *  - 领域/存储/会话/模型设置/生成/语义分析的权威类型分别来自
+ *    `domain/type-contracts.js`、`storage/validate.js`、`session.js`、
+ *    `model-settings.js`、`generation.js`、`semantic-analysis.js` 的 TS 声明；
+ *    这里只做调用面的局部收口，不建第二套业务约定。
+ *  - DOM 句柄一律收窄到真实元素类型（按 index.html 标签断言非空；全部 id 已核对存在，
+ *    既有运行时守卫保留为纵深防御）。
+ *  - 未经校验的持久化读出在消费边界收窄（`unknown` → 守卫/断言），不伪造形状；
+ *    已校验记录在验证边界注明来源后允许收窄。
+ * @typedef {import("./domain/type-contracts.js").FactSlot} FactSlot
+ * @typedef {import("./domain/type-contracts.js").FactSlotValue} FactSlotValue
+ * @typedef {import("./domain/type-contracts.js").SlotEntry} SlotEntry
+ * @typedef {import("./domain/type-contracts.js").SlotStatus} SlotStatus
+ * @typedef {import("./domain/type-contracts.js").ProductInput} ProductInput
+ * @typedef {import("./domain/type-contracts.js").ProductReference} ProductReference
+ * @typedef {import("./domain/type-contracts.js").ReferenceRole} ReferenceRole
+ * @typedef {import("./domain/type-contracts.js").SemanticProposal} SemanticProposal
+ * @typedef {import("./domain/type-contracts.js").SemanticAnalysisSource} SemanticAnalysisSource
+ * @typedef {import("./domain/type-contracts.js").PlanShot} PlanShot
+ * @typedef {import("./domain/type-contracts.js").SuitePlan} SuitePlan
+ * @typedef {import("./domain/type-contracts.js").SuitePlanSummary} SuitePlanSummary
+ * @typedef {import("./domain/type-contracts.js").StyleSpec} StyleSpec
+ * @typedef {import("./domain/type-contracts.js").ShotSpec} ShotSpec
+ * @typedef {import("./domain/type-contracts.js").PromptRecord} PromptRecord
+ * @typedef {import("./domain/type-contracts.js").ConfirmationRecord} ConfirmationRecord
+ * @typedef {import("./domain/type-contracts.js").ConfirmationSnapshot} ConfirmationSnapshot
+ * @typedef {import("./domain/type-contracts.js").AttemptRecord} AttemptRecord
+ * @typedef {import("./domain/type-contracts.js").AttemptState} AttemptState
+ * @typedef {import("./domain/type-contracts.js").CandidateRecord} CandidateRecord
+ * @typedef {import("./domain/type-contracts.js").ReviewReport} ReviewReport
+ * @typedef {import("./domain/type-contracts.js").ReviewFinding} ReviewFinding
+ * @typedef {import("./domain/type-contracts.js").SelectionRecord} SelectionRecord
+ * @typedef {import("./domain/type-contracts.js").SelectionState} SelectionState
+ * @typedef {import("./domain/type-contracts.js").SuiteReviewReport} SuiteReviewReport
+ * @typedef {import("./domain/type-contracts.js").CompareRow} CompareRow
+ * @typedef {import("./domain/type-contracts.js").CompareState} CompareState
+ * @typedef {import("./domain/type-contracts.js").DeliveryGateResult} DeliveryGateResult
+ * @typedef {import("./domain/type-contracts.js").UnknownItem} UnknownItem
+ * @typedef {import("./domain/type-contracts.js").GateFinding} GateFinding
+ * @typedef {import("./domain/type-contracts.js").ImagePromptProfile} ImagePromptProfile
+ * @typedef {import("./domain/type-contracts.js").ReworkDirective} ReworkDirective
+ * @typedef {import("./domain/type-contracts.js").DomainProblem} DomainProblem
+ * @typedef {import("./storage/validate.js").ProjectRepository} ProjectRepository
+ * @typedef {import("./storage/validate.js").StoredProjectRecord} StoredProjectRecord
+ * @typedef {import("./storage/validate.js").StoredDocumentRecord} StoredDocumentRecord
+ * @typedef {import("./storage/validate.js").StoredAssetRecord} StoredAssetRecord
+ * @typedef {import("./session.js").Session} Session
+ * @typedef {import("./session.js").ActionSnapshot} ActionSnapshot
+ * @typedef {import("./model-settings.js").ModelSettings} ModelSettings
+ * @typedef {import("./model-settings.js").EffectiveCapabilities} EffectiveCapabilities
+ * @typedef {import("./generation.js").GenerationModule} GenerationModule
+ * @typedef {import("./generation.js").AttemptEntry} AttemptEntry
+ * @typedef {import("./generation.js").CandidateEntry} CandidateEntry
+ * @typedef {import("./generation.js").ReviewReportEntry} ReviewReportEntry
+ * @typedef {import("./generation.js").ConfirmationQueue} ConfirmationQueue
+ * @typedef {import("./generation.js").PromptEntry} PromptEntry
+ * @typedef {import("./generation.js").StoreCandidateResult} StoreCandidateResult
+ * @typedef {import("./generation.js").GenerationIntent} GenerationIntent
+ * @typedef {import("./semantic-analysis.js").AnalysisOutcome} AnalysisOutcome
+ * @typedef {import("./semantic-analysis.js").SemanticRequestBody} SemanticRequestBody
+ */
 
-const INTAKE_DOCUMENT_ID = "intake";
-const INTAKE_KIND = DOMAIN_DOCUMENT_KINDS.product_input;
-const SLOT_KIND = DOMAIN_DOCUMENT_KINDS.fact_slot;
-const SUITE_KIND = DOMAIN_DOCUMENT_KINDS.suite_plan;
-const STYLE_KIND = DOMAIN_DOCUMENT_KINDS.style_spec;
-const SHOT_SPEC_KIND = DOMAIN_DOCUMENT_KINDS.shot_spec;
-const PROMPT_KIND = DOMAIN_DOCUMENT_KINDS.prompt_version;
-const CONFIRM_KIND = DOMAIN_DOCUMENT_KINDS.generation_confirm;
-const ATTEMPT_KIND = ATTEMPT_DOCUMENT_KIND;
-const CANDIDATE_KIND = CANDIDATE_DOCUMENT_KIND;
-const REVIEW_KIND = REVIEW_REPORT_DOCUMENT_KIND;
+/**
+ * 生成前确认单：domain/confirm.js `buildConfirmationSheet` 的确定性输出。领域层不导出该结构
+ * 类型，工作区按实际消费的字段在本地收窄，并在 Narrow 时用 `assertConfirmationSheet` 校验。
+ * @typedef {{
+ *   schema_version: number, total: number, ready: number, blocked: number, can_submit: boolean,
+ *   platform: {platform_id: string, version: string, label?: string},
+ *   provider: {provider_id: string, model_id: string, version: string, protocol: string, size: string,
+ *              n: number, prompt_extend: boolean, watermark: boolean, output_format: string},
+ *   external_summary: {model: string, size: string, n: number, prompt_extend: boolean, watermark: boolean,
+ *                      output_format: string, reference_count: number, reference_roles: string[],
+ *                      prompt_chars: number, on_image_text_language?: string, statement: string},
+ *   shots: Array<ConfirmationSheetShot>,
+ *   scope_shot_ids?: string[],
+ *   blockers: Array<{shot_id: string, label: string, order: number, code: string, message: string,
+ *                    fix: {region: string, shot_id: string|null, label: string, action: string}}>,
+ *   risks: Array<{code: string, message: string, shot_id?: string, label?: string}>,
+ * }} ConfirmationSheetView
+ */
+
+/**
+ * 确认单中的单张图片行（字段与 confirm.js 输出逐项对应）。
+ * @typedef {{
+ *   shot_id: string, order: number, label: string, role_id: string|null, role_label: string|null,
+ *   intent: string|null, template_id: string|null, required: boolean, satisfied: boolean,
+ *   prompt: {version: number|null, hash: string|null, chars: number|null},
+ *   references: Array<{role: string, sha256_prefix: string}>,
+ *   risks: Array<{code: string, message: string, shot_id: string, label: string}>,
+ *   blockers: Array<{code: string, message: string,
+ *                    fix: {region: string, shot_id: string|null, label: string, action: string}}>,
+ * }} ConfirmationSheetShot
+ */
+
+/**
+ * 工作区的生成意图投影：确认单在本地已收窄，identity/snapshot 沿用 generation.js 声明。
+ * @typedef {GenerationIntent & {all: ConfirmationSheetView|null, sheet: ConfirmationSheetView|null}} WorkspaceGenerationIntent
+ */
+
+/**
+ * 已校验的持久化槽位条目（storage 读出经 checkFactSlot 收窄后的内存面）。
+ * @typedef {{slot: FactSlot, version: number}} ValidatedSlotEntry
+ */
+
+/**
+ * 当前编辑中的商品资料：保存/出站前各字段都已落成具体值（不再是可选项）。
+ * @typedef {{schema_version: number, product_name: string, description: string, selling_points: string[], focus: string, references: ProductReference[]}} CompleteProductInput
+ */
+
+/**
+ * 元素表：按 index.html 实际标签收窄；全部 id 均在 index.html 中核对存在，
+ * 因此句柄为非空（缺失即装配错误）；bind/render 的既有运行时守卫保留为纵深防御。
+ * @typedef {object} WorkspaceElements
+ * @property {HTMLElement} error
+ * @property {HTMLElement} scope
+ * @property {HTMLButtonElement} refAdd
+ * @property {HTMLInputElement} refFile
+ * @property {HTMLElement} refCount
+ * @property {HTMLElement} refError
+ * @property {HTMLElement} refEmpty
+ * @property {HTMLElement} refList
+ * @property {HTMLInputElement} intakeName
+ * @property {HTMLTextAreaElement} intakeDescription
+ * @property {HTMLTextAreaElement} intakePoints
+ * @property {HTMLInputElement} intakeFocus
+ * @property {HTMLButtonElement} intakeSave
+ * @property {HTMLElement} intakeDraft
+ * @property {HTMLElement} intakeError
+ * @property {HTMLButtonElement} manualFacts
+ * @property {HTMLButtonElement} analyzeRun
+ * @property {HTMLElement} analyzeGate
+ * @property {HTMLElement} analyzeResult
+ * @property {HTMLElement} analyzeError
+ * @property {HTMLButtonElement} analyzeNewAfterUnknown
+ * @property {HTMLElement} slotsProgress
+ * @property {HTMLButtonElement} slotsToggle
+ * @property {HTMLElement} slotsEmpty
+ * @property {HTMLElement} slotList
+ * @property {HTMLInputElement} slotAddId
+ * @property {HTMLInputElement} slotAddLabel
+ * @property {HTMLSelectElement} slotAddType
+ * @property {HTMLTextAreaElement} slotAddValue
+ * @property {HTMLInputElement} slotAddAllowModel
+ * @property {HTMLButtonElement} slotAddSave
+ * @property {HTMLElement} slotAddStatus
+ * @property {HTMLElement} slotsError
+ * @property {HTMLElement} suiteLocked
+ * @property {HTMLElement} suiteEditor
+ * @property {HTMLButtonElement} suiteSeed
+ * @property {HTMLSelectElement} suiteTemplate
+ * @property {HTMLElement} suiteTemplateHint
+ * @property {HTMLButtonElement} suiteAddTemplate
+ * @property {HTMLButtonElement} suiteCustomToggle
+ * @property {HTMLElement} suiteStatus
+ * @property {HTMLElement} suiteCustomPanel
+ * @property {HTMLInputElement} suiteCustomLabel
+ * @property {HTMLInputElement} suiteCustomIntent
+ * @property {HTMLButtonElement} suiteCustomSave
+ * @property {HTMLElement} suiteCustomStatus
+ * @property {HTMLElement} suiteEmpty
+ * @property {HTMLElement} shotList
+ * @property {HTMLElement} suiteError
+ * @property {HTMLElement} specsLocked
+ * @property {HTMLElement} specsEditor
+ * @property {HTMLInputElement} styleBackground
+ * @property {HTMLInputElement} styleLighting
+ * @property {HTMLInputElement} styleColorTone
+ * @property {HTMLInputElement} styleComposition
+ * @property {HTMLTextAreaElement} styleAvoid
+ * @property {HTMLButtonElement} styleSave
+ * @property {HTMLButtonElement} styleRestore
+ * @property {HTMLElement} styleVersion
+ * @property {HTMLElement} styleEffect
+ * @property {HTMLElement} styleStatus
+ * @property {HTMLElement} styleError
+ * @property {HTMLElement} shotSpecsEmpty
+ * @property {HTMLElement} shotSpecList
+ * @property {HTMLElement} specsError
+ * @property {HTMLElement} promptLocked
+ * @property {HTMLElement} promptEditor
+ * @property {HTMLElement} localPreparationStatus
+ * @property {HTMLElement} promptStatus
+ * @property {HTMLElement} promptList
+ * @property {HTMLElement} promptError
+ * @property {HTMLElement} confirmLocked
+ * @property {HTMLElement} confirmEditor
+ * @property {HTMLElement} confirmStatus
+ * @property {HTMLElement} confirmSummary
+ * @property {HTMLElement} confirmBlockers
+ * @property {HTMLElement} confirmRisks
+ * @property {HTMLElement} confirmList
+ * @property {HTMLButtonElement} confirmAction
+ * @property {HTMLElement} confirmRecord
+ * @property {HTMLElement} confirmError
+ * @property {HTMLElement} attemptLocked
+ * @property {HTMLElement} attemptEditor
+ * @property {HTMLElement} attemptStatus
+ * @property {HTMLElement} attemptProvider
+ * @property {HTMLElement} batchBar
+ * @property {HTMLElement} queueList
+ * @property {HTMLButtonElement} batchStop
+ * @property {HTMLButtonElement} batchReconcile
+ * @property {HTMLButtonElement} batchRetry
+ * @property {HTMLElement} batchProgress
+ * @property {HTMLElement} batchHint
+ * @property {HTMLElement} attemptList
+ * @property {HTMLElement} attemptError
+ * @property {HTMLElement} comparePanel
+ * @property {HTMLElement} compareSubject
+ * @property {HTMLButtonElement} compareJump
+ * @property {HTMLButtonElement} compareClose
+ * @property {HTMLElement} compareBasisTitle
+ * @property {HTMLElement} compareReferences
+ * @property {HTMLElement} compareCandidates
+ * @property {HTMLElement} compareChecklist
+ * @property {HTMLElement} compareStatus
+ * @property {HTMLImageElement} compareViewedImage
+ * @property {HTMLElement} compareViewedCaption
+ * @property {HTMLButtonElement} compareViewedZoom
+ * @property {HTMLImageElement} compareBaselineImage
+ * @property {HTMLSelectElement} compareBaselineSelect
+ * @property {HTMLButtonElement} compareBaselineZoom
+ * @property {HTMLButtonElement} compareReview
+ * @property {HTMLDialogElement} imageZoomDialog
+ * @property {HTMLElement} imageZoomTitle
+ * @property {HTMLImageElement} imageZoomContent
+ * @property {HTMLButtonElement} imageZoomNative
+ * @property {HTMLButtonElement} imageZoomClose
+ * @property {HTMLButtonElement} reworkOpen
+ * @property {HTMLElement} reworkPanel
+ * @property {HTMLElement} reworkBasis
+ * @property {HTMLElement} reworkProblems
+ * @property {HTMLTextAreaElement} reworkDirection
+ * @property {HTMLButtonElement} reworkPreview
+ * @property {HTMLButtonElement} reworkEdit
+ * @property {HTMLButtonElement} reworkSubmit
+ * @property {HTMLButtonElement} reworkReset
+ * @property {HTMLButtonElement} reworkCancel
+ * @property {HTMLElement} reworkPreviewBox
+ * @property {HTMLElement} reworkPreviewMeta
+ * @property {HTMLElement} reworkPreviewText
+ * @property {HTMLElement} reworkTech
+ * @property {HTMLElement} reworkTechBody
+ * @property {HTMLElement} reworkSummary
+ * @property {HTMLElement} reworkStatus
+ * @property {HTMLElement} reworkError
+ * @property {HTMLButtonElement} adoptOpen
+ * @property {HTMLButtonElement} adoptClear
+ * @property {HTMLElement} adoptStatus
+ * @property {HTMLElement} adoptError
+ * @property {HTMLElement} adoptProgress
+ * @property {HTMLElement} generateError
+ * @property {HTMLElement} stageNav
+ * @property {HTMLElement} stagePanels
+ * @property {HTMLElement} stageSummary
+ * @property {HTMLButtonElement} stageNextUnderstand
+ * @property {HTMLElement} stageNextUnderstandNote
+ * @property {HTMLButtonElement} stageNextPlan
+ * @property {HTMLElement} stageNextPlanNote
+ * @property {HTMLButtonElement} stageNextReview
+ * @property {HTMLElement} stageNextReviewNote
+ * @property {HTMLButtonElement} stageNextDeliver
+ * @property {HTMLElement} stageNextDeliverNote
+ * @property {HTMLElement} reviewList
+ * @property {HTMLElement} reviewEmpty
+ * @property {HTMLElement} suiteReviewStatus
+ * @property {HTMLButtonElement} suiteReviewRun
+ * @property {HTMLButtonElement} suiteAiReviewRun
+ * @property {HTMLElement} suiteReviewNote
+ * @property {HTMLElement} suiteReviewFindings
+ * @property {HTMLElement} suiteReviewError
+ * @property {HTMLElement} deliveryGate
+ * @property {HTMLElement} deliverySuiteStatus
+ * @property {HTMLElement} deliverySuiteFindings
+ * @property {HTMLElement} deliveryUnknowns
+ * @property {HTMLButtonElement} deliverExport
+ * @property {HTMLButtonElement} deliverProjectPackage
+ * @property {HTMLElement} deliverStatus
+ * @property {HTMLElement} deliverResult
+ * @property {HTMLElement} deliverError
+ */
+
+/**
+ * createElement 的选项（不引入第二套 DOM 抽象，只收口现有调用）。
+ * @typedef {object} WorkspaceElementOptions
+ * @property {string} [className]
+ * @property {string} [text]
+ * @property {Record<string, string|number|boolean|null|undefined>} [attrs]
+ * @property {Record<string, unknown>} [props]
+ * @property {string} [htmlFor]
+ */
+
+ /**
+ * 返工预览（handleReworkPreview 显式预览后产生；payload 是编译后请求载荷）。
+ * @typedef {object} ReworkPreview
+ * @property {string} directive_id
+ * @property {import("./domain/type-contracts.js").CompiledPrompt} payload
+ * @property {number} references
+ * @property {string} text
+ */
+ /**
+ * 返工草稿（按图内存态；预览/指令只在显式预览后产生，不自动生成）。
+ * @typedef {object} ReworkDraft
+ * @property {string[]} problems
+ * @property {string} direction
+ * @property {ReworkPreview|null} [preview]
+ * @property {ReworkDirective|null} [directive]
+ */
+
+/**
+ * 比较区行（compareInventory 的投影行；record 恒为已校验候选）。
+ * @typedef {object} CompareInventoryRow
+ * @property {string} candidate_id
+ * @property {string} shot_id
+ * @property {string} asset_sha256
+ * @property {CompareState} review_state
+ * @property {boolean} pending
+ * @property {ReviewFinding|null} top_finding
+ * @property {ReviewReport|null} report
+ * @property {CandidateRecord} record
+ * @property {number|null} version
+ * @property {string} created_at
+ * @property {string|null} attempt_action_id
+ * @property {string|null} task_id
+ * @property {number|null} width
+ * @property {number|null} height
+ */
+
 
 const CAPABILITIES_PATH = "/api/v2/capabilities";
-const ANALYZE_PATH = "/api/v2/semantic/analyze";
 const REVIEW_PATH = "/api/v2/review/candidate";
-const SUITE_REVIEW_PATH = "/api/v2/review/suite";
-const SUITE_REVIEW_KIND = DOMAIN_DOCUMENT_KINDS.suite_review;
-const MAX_SUITE_IMAGE_BYTES = 4 * 1024 * 1024;
-const REWORK_CONFIRM_PREFIX = "rework:";
-const SELECTION_KIND = DOMAIN_DOCUMENT_KINDS.selection;
-const REVIEW_ACK_KIND = DOMAIN_DOCUMENT_KINDS.review_acknowledgement;
-const EXPORT_RECORD_KIND = DOMAIN_DOCUMENT_KINDS.export_record;
-
-const DRAFT_DEBOUNCE_MS = 600;
-const ANALYZE_MAX_SLOTS = 12;
-const MAX_REVIEW_IMAGE_BYTES = 4 * 1024 * 1024;
-const MAX_REVIEW_REFERENCES = 3;
-// 单张参考图上限：与图像提交体上限（48MB，3 张 base64 后 ≈40MB）配套；
-// 上游 qwen-image 对输入图也有约 10MB 的量级限制。
-const MAX_REFERENCE_IMAGE_BYTES = 10 * 1024 * 1024;
-const ANALYZE_LOCALE = "zh-CN";
-const ANALYZE_PLATFORM = "amazon_us";
-const DEFAULT_ANALYZE_FIELDS = Object.freeze([
-  "product_name", "description", "selling_points", "focus", "references",
-  "locale", "platform", "max_slots", "existing_slot_ids",
-]);
 
 const STATUS_TEXT = Object.freeze({
   confirmed: "已确认", proposed: "模型提案", missing: "缺失",
@@ -212,19 +484,28 @@ const REVIEW_ORDER = Object.freeze({
  * （品牌、包装内容物等不参与解锁）。只按 REVIEW_ORDER 排，4 个不阻塞的 missing
  * 会压在 3 个阻塞的 proposed+critical 前面，与页面文案「先处理冲突、未知与必须确认
  * 的槽位」相反：读者按视觉顺序走，会先做几件不影响推进的事才碰到真正的门槛。
+ * @param {SlotEntry} entry
+ * @returns {number}
  */
 function reviewRankOf(entry) {
   const status = entry.slot.status;
   if (status !== "confirmed" && status !== "superseded" && entry.slot.critical === true) {
     return 2;
   }
-  const base = REVIEW_ORDER[status] ?? 9;
+  const base = /** @type {Record<string, number>} */ (REVIEW_ORDER)[status] ?? 9;
   // 冲突/未知仍然最先；缺失及之后的普通状态整体后移一位，给 critical 让位。
   return base < 2 ? base : base + 1;
 }
 
 const SCOPE_TEXT = "这一版覆盖“商品资料 → 商品理解 → 套图规划 → 规格 → Prompt → 生成前确认 → 整套生成与逐图进度（含单张核对）→ 审核 → 单图返工 → 人工采用”；整套一致性报告与导出交付尚未接入。";
 
+/**
+ * @template {keyof HTMLElementTagNameMap} T
+ * @param {T} tag
+ * @param {WorkspaceElementOptions} [options]
+ * @param {Array<string|Node|null|false|undefined>} [children]
+ * @returns {HTMLElementTagNameMap[T]}
+ */
 function createElement(tag, options = {}, children = []) {
   const node = document.createElement(tag);
   if (options.className) node.className = options.className;
@@ -239,6 +520,10 @@ function createElement(tag, options = {}, children = []) {
   return node;
 }
 
+/**
+ * @param {unknown} text
+ * @returns {string[]}
+ */
 function splitLines(text) {
   return String(text || "").split("\n").map((item) => item.trim()).filter((item) => item.length > 0);
 }
@@ -246,6 +531,9 @@ function splitLines(text) {
 /**
  * V2.6.4 渐进披露：工程字段（sha256 / action / task / 指纹）默认收进「技术详情」。
  * 业务判读所需信息留在主行；技术字段不删除、展开即可见，也仍可从 dataset 读取。
+ * @param {string|string[]} lines
+ * @param {string} [label]
+ * @returns {HTMLElementTagNameMap["details"]|null}
  */
 function techDetails(lines, label = "技术详情") {
   const items = (Array.isArray(lines) ? lines : [lines]).filter(
@@ -257,6 +545,22 @@ function techDetails(lines, label = "技术详情") {
   return details;
 }
 
+/**
+ * 追加技术详情节点：无内容时是空操作，保持既有「有内容才出现」的渲染行为。
+ * @param {HTMLElement} parent
+ * @param {string|string[]} lines
+ * @param {string} [label]
+ * @returns {void}
+ */
+function appendTech(parent, lines, label) {
+  const node = techDetails(lines, label);
+  if (node) parent.append(node);
+}
+
+/**
+ * @param {FactSlot} slot
+ * @returns {string}
+ */
 function formatValue(slot) {
   const value = slot.value;
   if (value === null || value === undefined) return "";
@@ -265,373 +569,502 @@ function formatValue(slot) {
   return String(value);
 }
 
+/**
+ * @param {Array<{message: string}>|DomainProblem[]|null|undefined} blocking
+ * @param {((message: string) => string)|null} [mapMessage]
+ * @returns {string}
+ */
 function describeBlocking(blocking, mapMessage = null) {
   return (blocking || [])
     .map((item) => (mapMessage ? mapMessage(item.message) : item.message))
     .join("；");
 }
 
-export function createWorkspace({ repository, session = null, onProjectChanged = null }) {
+/**
+ * 工作区工厂：会话提供 repository/session/onProjectChanged；模型设置由外层装配透传。
+ * 返回句柄只暴露 open/close/isOpen/setProject，不感知内部渲染状态。
+ * @param {{repository: ProjectRepository, session: Session|null, modelSettings: ModelSettings, onProjectChanged?: ((project: StoredProjectRecord|null) => void)|null}} args
+ * @returns {import("./session.js").WorkspaceHandle}
+ */
+export function createWorkspace({ repository, session = null, modelSettings, onProjectChanged = null }) {
   if (!session) {
     throw new Error("createWorkspace 需要 session（V2.R3.3 会话 Module）。");
   }
+  /** @type {WorkspaceElements} */
   const elements = {
-    error: document.getElementById("workspace-error"),
-    scope: document.getElementById("project-scope"),
-    refAdd: document.getElementById("ref-add"),
-    refFile: document.getElementById("ref-file"),
-    refCount: document.getElementById("ref-count"),
-    refError: document.getElementById("ref-error"),
-    refEmpty: document.getElementById("ref-empty"),
-    refList: document.getElementById("ref-list"),
-    intakeName: document.getElementById("intake-name"),
-    intakeDescription: document.getElementById("intake-description"),
-    intakePoints: document.getElementById("intake-selling-points"),
-    intakeFocus: document.getElementById("intake-focus"),
-    intakeSave: document.getElementById("intake-save"),
-    intakeDraft: document.getElementById("intake-draft"),
-    intakeError: document.getElementById("intake-error"),
-    analyzeRun: document.getElementById("analyze-run"),
-    analyzeGate: document.getElementById("analyze-gate"),
-    analyzeResult: document.getElementById("analyze-result"),
-    analyzeError: document.getElementById("analyze-error"),
-    slotsProgress: document.getElementById("slots-progress"),
-    slotsToggle: document.getElementById("slots-toggle"),
-    slotsEmpty: document.getElementById("slots-empty"),
-    slotList: document.getElementById("slot-list"),
-    slotAddId: document.getElementById("slot-add-id"),
-    slotAddLabel: document.getElementById("slot-add-label"),
-    slotAddType: document.getElementById("slot-add-type"),
-    slotAddValue: document.getElementById("slot-add-value"),
-    slotAddAllowModel: document.getElementById("slot-add-allow-model"),
-    slotAddSave: document.getElementById("slot-add-save"),
-    slotAddStatus: document.getElementById("slot-add-status"),
-    slotsError: document.getElementById("slots-error"),
-    suiteLocked: document.getElementById("suite-locked"),
-    suiteEditor: document.getElementById("suite-editor"),
-    suiteSeed: document.getElementById("suite-seed"),
-    suiteTemplate: document.getElementById("suite-template"),
-    suiteTemplateHint: document.getElementById("suite-template-hint"),
-    suiteAddTemplate: document.getElementById("suite-add-template"),
-    suiteCustomToggle: document.getElementById("suite-custom-toggle"),
-    suiteStatus: document.getElementById("suite-status"),
-    suiteCustomPanel: document.getElementById("suite-custom-panel"),
-    suiteCustomLabel: document.getElementById("suite-custom-label"),
-    suiteCustomIntent: document.getElementById("suite-custom-intent"),
-    suiteCustomSave: document.getElementById("suite-custom-save"),
-    suiteCustomStatus: document.getElementById("suite-custom-status"),
-    suiteEmpty: document.getElementById("suite-empty"),
-    shotList: document.getElementById("shot-list"),
-    suiteError: document.getElementById("suite-error"),
-    specsLocked: document.getElementById("specs-locked"),
-    specsEditor: document.getElementById("specs-editor"),
-    styleBackground: document.getElementById("style-background"),
-    styleLighting: document.getElementById("style-lighting"),
-    styleColorTone: document.getElementById("style-color-tone"),
-    styleComposition: document.getElementById("style-composition"),
-    styleAvoid: document.getElementById("style-avoid"),
-    styleSave: document.getElementById("style-save"),
-    styleRestore: document.getElementById("style-restore"),
-    styleVersion: document.getElementById("style-version"),
-    styleEffect: document.getElementById("style-effect"),
-    styleStatus: document.getElementById("style-status"),
-    styleError: document.getElementById("style-error"),
-    shotSpecsEmpty: document.getElementById("shot-specs-empty"),
-    shotSpecList: document.getElementById("shot-spec-list"),
-    specsError: document.getElementById("specs-error"),
-    promptLocked: document.getElementById("prompt-locked"),
-    promptEditor: document.getElementById("prompt-editor"),
-    promptStatus: document.getElementById("prompt-status"),
-    promptList: document.getElementById("prompt-list"),
-    promptError: document.getElementById("prompt-error"),
-    confirmLocked: document.getElementById("confirm-locked"),
-    confirmEditor: document.getElementById("confirm-editor"),
-    confirmStatus: document.getElementById("confirm-status"),
-    confirmSummary: document.getElementById("confirm-summary"),
-    confirmBlockers: document.getElementById("confirm-blockers"),
-    confirmRisks: document.getElementById("confirm-risks"),
-    confirmList: document.getElementById("confirm-list"),
-    confirmAction: document.getElementById("confirm-action"),
-    confirmRecord: document.getElementById("confirm-record"),
-    confirmError: document.getElementById("confirm-error"),
-    attemptLocked: document.getElementById("attempt-locked"),
-    attemptEditor: document.getElementById("attempt-editor"),
-    attemptStatus: document.getElementById("attempt-status"),
-    attemptProvider: document.getElementById("attempt-provider"),
-    batchBar: document.getElementById("attempt-batch"),
-    batchRun: document.getElementById("batch-run"),
-    batchStop: document.getElementById("batch-stop"),
-    batchReconcile: document.getElementById("batch-reconcile"),
-    batchRetry: document.getElementById("batch-retry"),
-    batchProgress: document.getElementById("batch-progress"),
-    batchHint: document.getElementById("batch-hint"),
-    attemptList: document.getElementById("attempt-list"),
-    attemptError: document.getElementById("attempt-error"),
-    comparePanel: document.getElementById("compare-panel"),
-    compareSubject: document.getElementById("compare-subject"),
-    compareJump: document.getElementById("compare-jump"),
-    compareClose: document.getElementById("compare-close"),
-    compareBasisTitle: document.getElementById("compare-basis-title"),
-    compareReferences: document.getElementById("compare-references"),
-    compareCandidates: document.getElementById("compare-candidates"),
-    compareChecklist: document.getElementById("compare-checklist"),
-    compareStatus: document.getElementById("compare-status"),
-    reworkOpen: document.getElementById("rework-open"),
-    reworkPanel: document.getElementById("rework-panel"),
-    reworkBasis: document.getElementById("rework-basis"),
-    reworkProblems: document.getElementById("rework-problems"),
-    reworkDirection: document.getElementById("rework-direction"),
-    reworkPreview: document.getElementById("rework-preview"),
-    reworkEdit: document.getElementById("rework-edit"),
-    reworkSubmit: document.getElementById("rework-submit"),
-    reworkReset: document.getElementById("rework-reset"),
-    reworkCancel: document.getElementById("rework-cancel"),
-    reworkPreviewBox: document.getElementById("rework-preview-box"),
-    reworkPreviewMeta: document.getElementById("rework-preview-meta"),
-    reworkPreviewText: document.getElementById("rework-preview-text"),
-    reworkTech: document.getElementById("rework-tech"),
-    reworkTechBody: document.getElementById("rework-tech-body"),
-    reworkSummary: document.getElementById("rework-summary"),
-    reworkStatus: document.getElementById("rework-status"),
-    reworkError: document.getElementById("rework-error"),
-    adoptOpen: document.getElementById("adopt-open"),
-    adoptPanel: document.getElementById("adopt-panel"),
-    adoptBasis: document.getElementById("adopt-basis"),
-    adoptCancel: document.getElementById("adopt-cancel"),
-    adoptCurrent: document.getElementById("adopt-current"),
-    adoptFingerprint: document.getElementById("adopt-fingerprint"),
-    adoptTech: document.getElementById("adopt-tech"),
-    adoptTechBody: document.getElementById("adopt-tech-body"),
-    adoptSubmit: document.getElementById("adopt-submit"),
-    adoptClear: document.getElementById("adopt-clear"),
-    adoptReadiness: document.getElementById("adopt-readiness"),
-    adoptStatus: document.getElementById("adopt-status"),
-    adoptError: document.getElementById("adopt-error"),
-    adoptProgress: document.getElementById("adopt-progress"),
-    generateError: document.getElementById("generate-error"),
-    stageNav: document.getElementById("stage-nav"),
-    stagePanels: document.getElementById("stage-panels"),
-    stageSummary: document.getElementById("stage-summary"),
-    stageNextUnderstand: document.getElementById("stage-next-understand"),
-    stageNextUnderstandNote: document.getElementById("stage-next-understand-note"),
-    stageNextPlan: document.getElementById("stage-next-plan"),
-    stageNextPlanNote: document.getElementById("stage-next-plan-note"),
-    stageNextReview: document.getElementById("stage-next-review"),
-    stageNextReviewNote: document.getElementById("stage-next-review-note"),
-    stageNextDeliver: document.getElementById("stage-next-deliver"),
-    stageNextDeliverNote: document.getElementById("stage-next-deliver-note"),
-    reviewList: document.getElementById("review-list"),
-    reviewEmpty: document.getElementById("review-empty"),
-    suiteReviewStatus: document.getElementById("suite-review-status"),
-    suiteReviewRun: document.getElementById("suite-review-run"),
-    suiteReviewNote: document.getElementById("suite-review-note"),
-    suiteReviewFindings: document.getElementById("suite-review-findings"),
-    suiteReviewError: document.getElementById("suite-review-error"),
-    deliveryGate: document.getElementById("delivery-gate"),
-    deliverySuiteStatus: document.getElementById("delivery-suite-status"),
-    deliverySuiteFindings: document.getElementById("delivery-suite-findings"),
-    deliveryUnknowns: document.getElementById("delivery-unknowns"),
-    deliverExport: document.getElementById("deliver-export"),
-    deliverProjectPackage: document.getElementById("deliver-project-package"),
-    deliverStatus: document.getElementById("deliver-status"),
-    deliverResult: document.getElementById("delivery-result"),
-    deliverError: document.getElementById("deliver-error"),
+    error: /** @type {HTMLElement} */ (document.getElementById("workspace-error")),
+    scope: /** @type {HTMLElement} */ (document.getElementById("project-scope")),
+    refAdd: /** @type {HTMLButtonElement} */ (document.getElementById("ref-add")),
+    refFile: /** @type {HTMLInputElement} */ (document.getElementById("ref-file")),
+    refCount: /** @type {HTMLElement} */ (document.getElementById("ref-count")),
+    refError: /** @type {HTMLElement} */ (document.getElementById("ref-error")),
+    refEmpty: /** @type {HTMLElement} */ (document.getElementById("ref-empty")),
+    refList: /** @type {HTMLElement} */ (document.getElementById("ref-list")),
+    intakeName: /** @type {HTMLInputElement} */ (document.getElementById("intake-name")),
+    intakeDescription: /** @type {HTMLTextAreaElement} */ (document.getElementById("intake-description")),
+    intakePoints: /** @type {HTMLTextAreaElement} */ (document.getElementById("intake-selling-points")),
+    intakeFocus: /** @type {HTMLInputElement} */ (document.getElementById("intake-focus")),
+    intakeSave: /** @type {HTMLButtonElement} */ (document.getElementById("intake-save")),
+    intakeDraft: /** @type {HTMLElement} */ (document.getElementById("intake-draft")),
+    intakeError: /** @type {HTMLElement} */ (document.getElementById("intake-error")),
+    manualFacts: /** @type {HTMLButtonElement} */ (document.getElementById("manual-facts")),
+    analyzeRun: /** @type {HTMLButtonElement} */ (document.getElementById("analyze-run")),
+    analyzeGate: /** @type {HTMLElement} */ (document.getElementById("analyze-gate")),
+    analyzeResult: /** @type {HTMLElement} */ (document.getElementById("analyze-result")),
+    analyzeError: /** @type {HTMLElement} */ (document.getElementById("analyze-error")),
+    analyzeNewAfterUnknown: /** @type {HTMLButtonElement} */ (document.getElementById("analyze-new-after-unknown")),
+    slotsProgress: /** @type {HTMLElement} */ (document.getElementById("slots-progress")),
+    slotsToggle: /** @type {HTMLButtonElement} */ (document.getElementById("slots-toggle")),
+    slotsEmpty: /** @type {HTMLElement} */ (document.getElementById("slots-empty")),
+    slotList: /** @type {HTMLElement} */ (document.getElementById("slot-list")),
+    slotAddId: /** @type {HTMLInputElement} */ (document.getElementById("slot-add-id")),
+    slotAddLabel: /** @type {HTMLInputElement} */ (document.getElementById("slot-add-label")),
+    slotAddType: /** @type {HTMLSelectElement} */ (document.getElementById("slot-add-type")),
+    slotAddValue: /** @type {HTMLTextAreaElement} */ (document.getElementById("slot-add-value")),
+    slotAddAllowModel: /** @type {HTMLInputElement} */ (document.getElementById("slot-add-allow-model")),
+    slotAddSave: /** @type {HTMLButtonElement} */ (document.getElementById("slot-add-save")),
+    slotAddStatus: /** @type {HTMLElement} */ (document.getElementById("slot-add-status")),
+    slotsError: /** @type {HTMLElement} */ (document.getElementById("slots-error")),
+    suiteLocked: /** @type {HTMLElement} */ (document.getElementById("suite-locked")),
+    suiteEditor: /** @type {HTMLElement} */ (document.getElementById("suite-editor")),
+    suiteSeed: /** @type {HTMLButtonElement} */ (document.getElementById("suite-seed")),
+    suiteTemplate: /** @type {HTMLSelectElement} */ (document.getElementById("suite-template")),
+    suiteTemplateHint: /** @type {HTMLElement} */ (document.getElementById("suite-template-hint")),
+    suiteAddTemplate: /** @type {HTMLButtonElement} */ (document.getElementById("suite-add-template")),
+    suiteCustomToggle: /** @type {HTMLButtonElement} */ (document.getElementById("suite-custom-toggle")),
+    suiteStatus: /** @type {HTMLElement} */ (document.getElementById("suite-status")),
+    suiteCustomPanel: /** @type {HTMLElement} */ (document.getElementById("suite-custom-panel")),
+    suiteCustomLabel: /** @type {HTMLInputElement} */ (document.getElementById("suite-custom-label")),
+    suiteCustomIntent: /** @type {HTMLInputElement} */ (document.getElementById("suite-custom-intent")),
+    suiteCustomSave: /** @type {HTMLButtonElement} */ (document.getElementById("suite-custom-save")),
+    suiteCustomStatus: /** @type {HTMLElement} */ (document.getElementById("suite-custom-status")),
+    suiteEmpty: /** @type {HTMLElement} */ (document.getElementById("suite-empty")),
+    shotList: /** @type {HTMLElement} */ (document.getElementById("shot-list")),
+    suiteError: /** @type {HTMLElement} */ (document.getElementById("suite-error")),
+    specsLocked: /** @type {HTMLElement} */ (document.getElementById("specs-locked")),
+    specsEditor: /** @type {HTMLElement} */ (document.getElementById("specs-editor")),
+    styleBackground: /** @type {HTMLInputElement} */ (document.getElementById("style-background")),
+    styleLighting: /** @type {HTMLInputElement} */ (document.getElementById("style-lighting")),
+    styleColorTone: /** @type {HTMLInputElement} */ (document.getElementById("style-color-tone")),
+    styleComposition: /** @type {HTMLInputElement} */ (document.getElementById("style-composition")),
+    styleAvoid: /** @type {HTMLTextAreaElement} */ (document.getElementById("style-avoid")),
+    styleSave: /** @type {HTMLButtonElement} */ (document.getElementById("style-save")),
+    styleRestore: /** @type {HTMLButtonElement} */ (document.getElementById("style-restore")),
+    styleVersion: /** @type {HTMLElement} */ (document.getElementById("style-version")),
+    styleEffect: /** @type {HTMLElement} */ (document.getElementById("style-effect")),
+    styleStatus: /** @type {HTMLElement} */ (document.getElementById("style-status")),
+    styleError: /** @type {HTMLElement} */ (document.getElementById("style-error")),
+    shotSpecsEmpty: /** @type {HTMLElement} */ (document.getElementById("shot-specs-empty")),
+    shotSpecList: /** @type {HTMLElement} */ (document.getElementById("shot-spec-list")),
+    specsError: /** @type {HTMLElement} */ (document.getElementById("specs-error")),
+    promptLocked: /** @type {HTMLElement} */ (document.getElementById("prompt-locked")),
+    promptEditor: /** @type {HTMLElement} */ (document.getElementById("prompt-editor")),
+    localPreparationStatus: /** @type {HTMLElement} */ (document.getElementById("local-preparation-status")),
+    promptStatus: /** @type {HTMLElement} */ (document.getElementById("prompt-status")),
+    promptList: /** @type {HTMLElement} */ (document.getElementById("prompt-list")),
+    promptError: /** @type {HTMLElement} */ (document.getElementById("prompt-error")),
+    confirmLocked: /** @type {HTMLElement} */ (document.getElementById("confirm-locked")),
+    confirmEditor: /** @type {HTMLElement} */ (document.getElementById("confirm-editor")),
+    confirmStatus: /** @type {HTMLElement} */ (document.getElementById("confirm-status")),
+    confirmSummary: /** @type {HTMLElement} */ (document.getElementById("confirm-summary")),
+    confirmBlockers: /** @type {HTMLElement} */ (document.getElementById("confirm-blockers")),
+    confirmRisks: /** @type {HTMLElement} */ (document.getElementById("confirm-risks")),
+    confirmList: /** @type {HTMLElement} */ (document.getElementById("confirm-list")),
+    confirmAction: /** @type {HTMLButtonElement} */ (document.getElementById("confirm-action")),
+    confirmRecord: /** @type {HTMLElement} */ (document.getElementById("confirm-record")),
+    confirmError: /** @type {HTMLElement} */ (document.getElementById("confirm-error")),
+    attemptLocked: /** @type {HTMLElement} */ (document.getElementById("attempt-locked")),
+    attemptEditor: /** @type {HTMLElement} */ (document.getElementById("attempt-editor")),
+    attemptStatus: /** @type {HTMLElement} */ (document.getElementById("attempt-status")),
+    attemptProvider: /** @type {HTMLElement} */ (document.getElementById("attempt-provider")),
+    batchBar: /** @type {HTMLElement} */ (document.getElementById("attempt-batch")),
+    queueList: /** @type {HTMLElement} */ (document.getElementById("generation-queues")),
+    batchStop: /** @type {HTMLButtonElement} */ (document.getElementById("batch-stop")),
+    batchReconcile: /** @type {HTMLButtonElement} */ (document.getElementById("batch-reconcile")),
+    batchRetry: /** @type {HTMLButtonElement} */ (document.getElementById("batch-retry")),
+    batchProgress: /** @type {HTMLElement} */ (document.getElementById("batch-progress")),
+    batchHint: /** @type {HTMLElement} */ (document.getElementById("batch-hint")),
+    attemptList: /** @type {HTMLElement} */ (document.getElementById("attempt-list")),
+    attemptError: /** @type {HTMLElement} */ (document.getElementById("attempt-error")),
+    comparePanel: /** @type {HTMLElement} */ (document.getElementById("compare-panel")),
+    compareSubject: /** @type {HTMLElement} */ (document.getElementById("compare-subject")),
+    compareJump: /** @type {HTMLButtonElement} */ (document.getElementById("compare-jump")),
+    compareClose: /** @type {HTMLButtonElement} */ (document.getElementById("compare-close")),
+    compareBasisTitle: /** @type {HTMLElement} */ (document.getElementById("compare-basis-title")),
+    compareReferences: /** @type {HTMLElement} */ (document.getElementById("compare-references")),
+    compareCandidates: /** @type {HTMLElement} */ (document.getElementById("compare-candidates")),
+    compareChecklist: /** @type {HTMLElement} */ (document.getElementById("compare-checklist")),
+    compareStatus: /** @type {HTMLElement} */ (document.getElementById("compare-status")),
+    compareViewedImage: /** @type {HTMLImageElement} */ (document.getElementById("compare-viewed-image")),
+    compareViewedCaption: /** @type {HTMLElement} */ (document.getElementById("compare-viewed-caption")),
+    compareViewedZoom: /** @type {HTMLButtonElement} */ (document.getElementById("compare-viewed-zoom")),
+    compareBaselineImage: /** @type {HTMLImageElement} */ (document.getElementById("compare-baseline-image")),
+    compareBaselineSelect: /** @type {HTMLSelectElement} */ (document.getElementById("compare-baseline-select")),
+    compareBaselineZoom: /** @type {HTMLButtonElement} */ (document.getElementById("compare-baseline-zoom")),
+    compareReview: /** @type {HTMLButtonElement} */ (document.getElementById("compare-review")),
+    imageZoomDialog: /** @type {HTMLDialogElement} */ (document.getElementById("image-zoom-dialog")),
+    imageZoomTitle: /** @type {HTMLElement} */ (document.getElementById("image-zoom-title")),
+    imageZoomContent: /** @type {HTMLImageElement} */ (document.getElementById("image-zoom-content")),
+    imageZoomNative: /** @type {HTMLButtonElement} */ (document.getElementById("image-zoom-native")),
+    imageZoomClose: /** @type {HTMLButtonElement} */ (document.getElementById("image-zoom-close")),
+    reworkOpen: /** @type {HTMLButtonElement} */ (document.getElementById("rework-open")),
+    reworkPanel: /** @type {HTMLElement} */ (document.getElementById("rework-panel")),
+    reworkBasis: /** @type {HTMLElement} */ (document.getElementById("rework-basis")),
+    reworkProblems: /** @type {HTMLElement} */ (document.getElementById("rework-problems")),
+    reworkDirection: /** @type {HTMLTextAreaElement} */ (document.getElementById("rework-direction")),
+    reworkPreview: /** @type {HTMLButtonElement} */ (document.getElementById("rework-preview")),
+    reworkEdit: /** @type {HTMLButtonElement} */ (document.getElementById("rework-edit")),
+    reworkSubmit: /** @type {HTMLButtonElement} */ (document.getElementById("rework-submit")),
+    reworkReset: /** @type {HTMLButtonElement} */ (document.getElementById("rework-reset")),
+    reworkCancel: /** @type {HTMLButtonElement} */ (document.getElementById("rework-cancel")),
+    reworkPreviewBox: /** @type {HTMLElement} */ (document.getElementById("rework-preview-box")),
+    reworkPreviewMeta: /** @type {HTMLElement} */ (document.getElementById("rework-preview-meta")),
+    reworkPreviewText: /** @type {HTMLElement} */ (document.getElementById("rework-preview-text")),
+    reworkTech: /** @type {HTMLElement} */ (document.getElementById("rework-tech")),
+    reworkTechBody: /** @type {HTMLElement} */ (document.getElementById("rework-tech-body")),
+    reworkSummary: /** @type {HTMLElement} */ (document.getElementById("rework-summary")),
+    reworkStatus: /** @type {HTMLElement} */ (document.getElementById("rework-status")),
+    reworkError: /** @type {HTMLElement} */ (document.getElementById("rework-error")),
+    adoptOpen: /** @type {HTMLButtonElement} */ (document.getElementById("adopt-open")),
+    adoptClear: /** @type {HTMLButtonElement} */ (document.getElementById("adopt-clear")),
+    adoptStatus: /** @type {HTMLElement} */ (document.getElementById("adopt-status")),
+    adoptError: /** @type {HTMLElement} */ (document.getElementById("adopt-error")),
+    adoptProgress: /** @type {HTMLElement} */ (document.getElementById("adopt-progress")),
+    generateError: /** @type {HTMLElement} */ (document.getElementById("generate-error")),
+    stageNav: /** @type {HTMLElement} */ (document.getElementById("stage-nav")),
+    stagePanels: /** @type {HTMLElement} */ (document.getElementById("stage-panels")),
+    stageSummary: /** @type {HTMLElement} */ (document.getElementById("stage-summary")),
+    stageNextUnderstand: /** @type {HTMLButtonElement} */ (document.getElementById("stage-next-understand")),
+    stageNextUnderstandNote: /** @type {HTMLElement} */ (document.getElementById("stage-next-understand-note")),
+    stageNextPlan: /** @type {HTMLButtonElement} */ (document.getElementById("stage-next-plan")),
+    stageNextPlanNote: /** @type {HTMLElement} */ (document.getElementById("stage-next-plan-note")),
+    stageNextReview: /** @type {HTMLButtonElement} */ (document.getElementById("stage-next-review")),
+    stageNextReviewNote: /** @type {HTMLElement} */ (document.getElementById("stage-next-review-note")),
+    stageNextDeliver: /** @type {HTMLButtonElement} */ (document.getElementById("stage-next-deliver")),
+    stageNextDeliverNote: /** @type {HTMLElement} */ (document.getElementById("stage-next-deliver-note")),
+    reviewList: /** @type {HTMLElement} */ (document.getElementById("review-list")),
+    reviewEmpty: /** @type {HTMLElement} */ (document.getElementById("review-empty")),
+    suiteReviewStatus: /** @type {HTMLElement} */ (document.getElementById("suite-review-status")),
+    suiteReviewRun: /** @type {HTMLButtonElement} */ (document.getElementById("suite-review-run")),
+    suiteAiReviewRun: /** @type {HTMLButtonElement} */ (document.getElementById("suite-ai-review-run")),
+    suiteReviewNote: /** @type {HTMLElement} */ (document.getElementById("suite-review-note")),
+    suiteReviewFindings: /** @type {HTMLElement} */ (document.getElementById("suite-review-findings")),
+    suiteReviewError: /** @type {HTMLElement} */ (document.getElementById("suite-review-error")),
+    deliveryGate: /** @type {HTMLElement} */ (document.getElementById("delivery-gate")),
+    deliverySuiteStatus: /** @type {HTMLElement} */ (document.getElementById("delivery-suite-status")),
+    deliverySuiteFindings: /** @type {HTMLElement} */ (document.getElementById("delivery-suite-findings")),
+    deliveryUnknowns: /** @type {HTMLElement} */ (document.getElementById("delivery-unknowns")),
+    deliverExport: /** @type {HTMLButtonElement} */ (document.getElementById("deliver-export")),
+    deliverProjectPackage: /** @type {HTMLButtonElement} */ (document.getElementById("deliver-project-package")),
+    deliverStatus: /** @type {HTMLElement} */ (document.getElementById("deliver-status")),
+    deliverResult: /** @type {HTMLElement} */ (document.getElementById("delivery-result")),
+    deliverError: /** @type {HTMLElement} */ (document.getElementById("deliver-error")),
   };
 
   const stageShell = createStageShell({
-    nav: elements.stageNav,
-    panelRoot: elements.stagePanels,
-    summary: elements.stageSummary,
-    onSelect: (id) => { if (id === "deliver") requestDeliveryGateRefresh(); },
-  });
-
-  let project = null;
-  let projectId = null;
-  // R3.3：动作身份冻结的本地别名——所有状态变更动作统一经 session.beginAction()。
-  const beginAction = () => session.beginAction();
-
-  // V2.R5.1：生成执行 Module——单张提交/核对/候选保存/VLM 复核/整套批次的唯一执行权威。
-  // workspace 保留只读输入的读者与投影回调；持久化顺序全部由 Module 决定。
-  const generation = createGenerationModule({
-    repository: repository,
-    beginAction: beginAction,
-    projectIdReader: () => projectId,
-    environmentReader: () => (capabilities && capabilities.images ? capabilities.images : null),
-    suitePlanReader: () => suitePlan,
-    suiteSummaryReader: () => (suitePlan ? suitePlanSummary(suitePlan, suiteContext()) : null),
-    promptEntryReader: (shotId) => promptRecordOf(shotId),
-    shotConfirmationReader: (shotId) => confirmationIsCurrentForShot(shotId),
-    wholeConfirmationReader: () => confirmationIsCurrent(),
-    referenceSourceReader: () => intake.references.map((item) => ({
-      role: item.role, sha256: item.asset_sha256,
-    })),
-    reviewRequestBuilder: (shotId, candidate) => buildReviewRequest(shotId, candidate),
-    renderAttempts: renderAttempts,
-    renderBatch: renderBatch,
-    status: (text) => { elements.attemptStatus.textContent = text; },
-    attemptError: showAttemptError,
-    clearAttemptError: clearAttemptError,
-    focusAfterBatch: () => {
-      requestFocus(() => {
-        const rows = [...document.querySelectorAll("#attempt-list .attempt-row")];
-        const problem = rows.find((row) => ["failed", "unknown"].includes(
-          row.getAttribute("data-attempt-state")));
-        return problem || rows[0] || elements.attemptStatus;
-      });
-      flushPendingFocus();
+    nav: /** @type {HTMLElement} */ (elements.stageNav),
+    panelRoot: /** @type {HTMLElement} */ (elements.stagePanels),
+    summary: /** @type {HTMLElement} */ (elements.stageSummary),
+    onSelect: (/** @type {string} */ id) => {
+      if (id === "deliver") requestDeliveryGateRefresh();
+      if (id === "understand" && projectId) void prepareManualFacts();
+      if (id === "generate" && projectId) void prepareSystemPrompts();
     },
   });
 
-  let intake = emptyProductInput();
-  let intakeVersion = 0;
-  let intakeFingerprint = "";
-  let slots = new Map();
+  /** @type {StoredProjectRecord|null} */
+  let project = null;
+  /** @type {string|null} */
+  let projectId = null;
+  // R3.3：动作身份冻结的本地别名——所有状态变更动作统一经 session.beginAction()。
+  /** @type {() => ActionSnapshot} */
+  const beginAction = () => session.beginAction();
+
+  // 输入面唯一所有者（包04 收口）：资料/事实/方案/风格/单图规格与语义分析执行都在这里，
+  // workspace 只保留 DOM 草稿编辑状态、装配与视图渲染，不再持有第二份输入状态。
+  const inputs = createProjectInputsModule({
+    repository,
+    beginAction,
+    settings: modelSettings,
+    capabilities: () => capabilities,
+    projectIdReader: () => projectId,
+    projectNameReader: () => (project && project.name) || "",
+    draftInput: draftInputPayload,
+    changed: () => {
+      void deriveAndApplyState().then(() => {
+        renderAnalyze();
+        updateDraftStatus();
+        renderConflictEditor();
+        renderHeaderText(project);
+      });
+    },
+  });
+  /** 跨 Module 只读文档投影：唯一来源是 inputs.sources()（不传闭包、不留第二份投影）。 */
+  const projectSources = () => inputs.sources();
+
+  const prompts = createPromptModule({
+    repository: /** @type {import("./storage/validate.js").ProjectRepository} */ (/** @type {unknown} */ (repository)),
+    beginAction, sources: projectSources,
+    imageEnvironment: () => /** @type {unknown} */ (capabilities && capabilities.images),
+  });
+  // 装配顺序固定为 prompts → generation → selection → delivery（设计§10.1）。
+  // selection/delivery 的 generation 依赖是已装配实例，不传 null 占位。
+  // 授权队列/scope/mode 的唯一所有者是 generation（设计§2.1）；确认单投影归 prompts。
+  /** @type {GenerationModule} */
+  const generation = createGenerationModule({
+    // workspace 的 repository 即 storage ProjectRepository（权威面）；生成 Module 只消费
+    // 其 documents.save/get/listLatest/listVersions + assets.get/put 子集，这里按消费面收窄（同一运行时对象）。
+    repository: /** @type {import("./generation.js").GenerationRepository} */ (/** @type {unknown} */ (repository)),
+    beginAction: beginAction,
+    projectIdReader: () => projectId,
+    environmentReader: /** @param {unknown} saved */ (saved) => modelSettings.imageEnvironment(
+      (/** @type {{provider?: {provider_id?: string}, payload?: {fingerprint?: {snapshot?: {execution_target?: {provider_id?: string}}}}}} */ (saved))?.provider?.provider_id || (/** @type {{payload?: {fingerprint?: {snapshot?: {execution_target?: {provider_id?: string}}}}}} */ (saved))?.payload?.fingerprint?.snapshot?.execution_target?.provider_id,
+      (/** @type {{execution_identity?: {credential_reference?: {source?: string}}, payload?: {fingerprint?: {snapshot?: {execution_target?: {credential_source?: string}}}}}} */ (saved))?.execution_identity?.credential_reference?.source || (/** @type {{payload?: {fingerprint?: {snapshot?: {execution_target?: {credential_source?: string}}}}}} */ (saved))?.payload?.fingerprint?.snapshot?.execution_target?.credential_source),
+    requestHeaders: /** @param {import("./model-settings.js").Purpose} purpose */ (purpose, providerId, source) => modelSettings.headers(purpose, providerId, source),
+    suitePlanReader: () => inputs.suitePlan(),
+    suiteSummaryReader: () => {
+      const plan = inputs.suitePlan();
+      return plan ? /** @type {SuitePlanSummary} */ (suitePlanSummary(plan, inputs.suiteContext())) : null;
+    },
+    promptEntryReader: (shotId, version) => prompts.entryOf(shotId, version ?? null),
+    confirmationReader: (shotId) => generation.confirmationFor(shotId),
+    promptBasisReader: (shotId, provider) => prompts.basis(shotId, provider, projectSources()),
+    fenceReader: (shotId) => consumptionFence(projectSources(), [shotId]),
+    referenceSourceReader: () => inputs.references().map((item) => ({
+      role: item.role, sha256: item.asset_sha256,
+    })),
+    promptsSheet: (ids) => prompts.sheet(ids ?? null),
+    imageEnvironment: (saved) => /** @type {unknown} */ (saved ?? modelSettings.imageEnvironment()),
+    candidateReviewRequest: async () => { throw new Error("复核请求准备尚未装配。"); },
+    renderAttempts: renderAttempts,
+    renderBatch: renderBatch,
+    status: (/** @type {string} */ text) => { elements.attemptStatus.textContent = text; },
+    attemptError: showAttemptError,
+    clearAttemptError: clearAttemptError,
+  });
+  const selectionAdoption = createSelectionAdoptionModule({
+    repository: /** @type {import("./storage/validate.js").ProjectRepository} */ (/** @type {unknown} */ (repository)),
+    generation,
+    prompts,
+    settings: modelSettings,
+    beginAction, sources: projectSources,
+    changed: () => { renderSuitePanel(); renderDeliveryGate(); },
+  });
+  // 单图复核请求准备归 adoption：generation 的注入在 adoption 装配后补线，
+  // 调用只发生在用户点击复核时（装配早已完成），不形成装配期循环。
+  generation.setCandidateReviewRequest(
+    (/** @type {string} */ shotId, /** @type {CandidateRecord} */ candidate, /** @type {string} */ pid) =>
+      selectionAdoption.candidateReviewRequest(shotId, candidate, pid));
+  generation.setReviewRunner(
+    (/** @type {string} */ shotId, /** @type {string} */ candidateId) =>
+      selectionAdoption.reviewCandidate(shotId, candidateId));
+  generation.setReviewFlightReader(
+    (/** @type {string} */ shotId) => selectionAdoption.isReviewInFlight(shotId));
+  generation.setReviewAccess(selectionAdoption);
+  const reviewDelivery = createReviewDeliveryModule({
+    repository: /** @type {import("./storage/validate.js").ProjectRepository} */ (/** @type {unknown} */ (repository)),
+    generation,
+    adoption: selectionAdoption,
+    settings: modelSettings,
+    beginAction, sources: projectSources,
+    changed: () => { renderSuitePanel(); renderDeliveryGate(); },
+  });
+
+  /** @type {EffectiveCapabilities|null} */
   let capabilities = null;
+  /** @type {string|null} */
   let capabilitiesError = null;
+  /** @type {import("./domain/type-contracts.js").BriefReadiness["blocking"]} */
   let understandingBlocking = [];
+  /** @type {unknown} */
   let understandingError = null;
+  /** @type {{slots: number, applied: number, provider: string, model: string|null, sourceVersion: number, referenceImagesSent: boolean, at: string, summary: string}|null} */
   let lastAnalyze = null;
+  /** @type {boolean} */
+  let analyzeRequiresConfirmation = false;
+  /** @type {string[]} */
   let analyzeProblems = [];
-  // UI.3：异步结束后的焦点落点（结果标题 / 首个问题 / 错误摘要）。
-  let pendingFocus = null;
+  /** @type {boolean} */
   let showAll = false;
+  /** @type {{slotId: string|null, mode: string|null}} */
   let interaction = { slotId: null, mode: null };
-  let suitePlan = null;
-  let suiteVersion = 0;
+  /** @type {boolean} */
   let understandingReady = false;
-  let styleSpec = emptyStyleSpec();
-  let styleVersion = 0;
-  let shotSpecs = new Map();
-  let promptVersions = new Map();
-  let confirmRecord = null;
-  let suiteReports = new Map();
-  let suiteRunInFlight = false;
-  // V2.6.2：交付门禁结果与交付记录（记录只追加，不新增第二套状态）。
-  let deliveryGateState = null;
-  let deliveryGateTimer = null;
-  let deliveryInFlight = false;
-  let deliveryRecord = null;
-  let acknowledgements = new Map();
+  // Prompt 版本/历史/准备状态 → prompts Module；确认队列/scope/mode → generation Module；
+  // 采用记录 → selectionAdoption Module；整套报告/门禁/交付包 → reviewDelivery Module；
+  // 资料/事实/方案/风格/单图规格 → project-inputs Module（唯一所有者）。
+  // 本闭包不再持有上述可变状态，只保留 DOM 草稿编辑状态、视图装配与生命周期。
+  /** @type {string|null} */
   let compareShotId = null;
+  /** @type {string|null} */
   let compareCandidateId = null;
+  /** @type {number} */
   let compareToken = 0;
+  /** @type {number} */
+  let compareImageToken = 0;
+  /** @type {string|null} */
+  let compareBaselineId = null;
+  /** @type {Map<string, {candidateId: string|null, baselineId: string|null}>} */
+  const compareViews = new Map();
+  /** @type {HTMLElement|null} */
+  let imageZoomReturnFocus = null;
+  /** @type {Map<string, ReworkDraft>} */
   let reworkDrafts = new Map();
-  let reworkConfirmations = new Map();
+  /** @type {boolean} */
   let reworkInFlight = false;
+  /** @type {string|null} */
   let reworkShotId = null;
+  /** @type {{shot_id: string, candidate_id: string, asset_sha256: string, version: number|null}|null} */
   let reworkSource = null;
-  let selections = new Map();
-  let adoptInFlight = false;
-  let adoptShotId = null;
-  let adoptCandidateId = null;
-  let adoptSource = null;
-  let previewUrls = new Map();
-  let busy = false;
-  let saveTimer = null;
+  /** @type {string[]} */
   let objectUrls = [];
-  let bound = false;
-  /**
-   * R3.3：不再自管递增 token；每个动作经 session.beginAction() 冻结
-   * { generation, projectId }，alive() 同时判断"会话代未变"与"仍是同一项目"。
+  /** 下载链接由视图持有：sha256 → 即时创建的对象 URL（owner 只记身份不记 URL）。 */
+  /** 下载链接由视图持有：sha256 → 即时创建的对象 URL（owner 只记身份不记 URL）。
+   * @type {Map<string, string>}
    */
-  let intakeConflict = null;
-  /* 双标签陈旧编辑的三态（V2.R3.3）：
-   * - merged=true：已按三路合并落库（本地输入优先），视图已同步到新版本；
-   * - unresolved 非空：合并仍冲突，冲突编辑器打开中，必须人工逐项解决后再次保存；
-   * - 仅 version/at：合并失败的旧路径，就地报冲突并不覆盖，等待再次保存追加新版本。 */
+  const downloadUrlByFile = new Map();
+  /** @type {Map<string, string>} */
+  let previewUrls = new Map();
+  /** @type {boolean} */
+  let submissionInFlight = false;
+  /** @type {WorkspaceGenerationIntent|null} */
+  let displayedGenerationIntent = null;
+  /** @type {boolean} */
+  let bound = false;
   /* ------------------------------------------------------ 公共读写与工具 */
 
+  /**
+   * 抛出值的可读信息（catch 变量为 unknown；只读 message 字符串，缺失即空串）。
+   * @param {unknown} error
+   * @param {string} fallback
+   * @returns {string}
+   */
+  function errorMessageOf(error, fallback) {
+    if (error instanceof Error && typeof error.message === "string" && error.message) return error.message;
+    if (error !== null && typeof error === "object" && "message" in error
+      && typeof error.message === "string" && error.message) return error.message;
+    return fallback;
+  }
+
+  /**
+   * 有后缀的抛出信息：有 message 即 message + suffix，否则原样返回 fallback（与旧三元输出一致）。
+   * @param {unknown} error
+   * @param {string} fallback
+   * @param {string} suffix
+   * @returns {string}
+   */
+  function errorMessageSuffixed(error, fallback, suffix) {
+    if (error instanceof Error && typeof error.message === "string" && error.message) return error.message + suffix;
+    if (error !== null && typeof error === "object" && "message" in error
+      && typeof error.message === "string" && error.message) return error.message + suffix;
+    return fallback;
+  }
+
+  /**
+   * @param {HTMLElement} element
+   * @param {string} message
+   * @returns {void}
+   */
   function showError(element, message) {
     element.textContent = message;
     element.hidden = false;
   }
 
+  /**
+   * @param {HTMLElement} element
+   * @returns {void}
+   */
   function clearError(element) {
     element.textContent = "";
     element.hidden = true;
   }
 
-  function requestFocus(target) {
-    pendingFocus = target;
-  }
 
-  function flushPendingFocus() {
-    const target = pendingFocus;
-    pendingFocus = null;
-    if (!target) return;
-    const node = typeof target === "function" ? target() : target;
-    if (!node || typeof node.focus !== "function") return;
-    if (!node.hasAttribute("tabindex")
-        && !["BUTTON", "A", "INPUT", "TEXTAREA", "SELECT"].includes(node.tagName)) {
-      node.setAttribute("tabindex", "-1");
-    }
-    node.focus();
-  }
-
-  /** 生成与审核两个阶段都可能发起提交/核对：错误就近显示在对应阶段，两处同一份文本。 */
+  /** 生成与审核两个阶段都可能发起提交/核对：错误就近显示在对应阶段，两处同一份文本。
+   * @param {string|undefined} message
+   * @returns {void}
+   */
   function showAttemptError(message) {
-    showError(elements.generateError, message);
-    showError(elements.attemptError, message);
+    showError(elements.generateError, message || "");
+    showError(elements.attemptError, message || "");
   }
 
+  /**
+   * @returns {void}
+   */
   function clearAttemptError() {
     clearError(elements.generateError);
     clearError(elements.attemptError);
   }
 
+  /**
+   * @returns {void}
+   */
   function revokeObjectUrls() {
     for (const url of objectUrls) URL.revokeObjectURL(url);
     objectUrls = [];
+    for (const url of downloadUrlByFile.values()) URL.revokeObjectURL(url);
+    downloadUrlByFile.clear();
   }
 
+  /**
+   * @returns {void}
+   */
   function revokePreviewUrls() {
     for (const url of previewUrls.values()) URL.revokeObjectURL(url);
     previewUrls = new Map();
   }
 
-  function currentIntakePayload() {
+  /**
+   * DOM 草稿编辑区是 workspace 唯一保留的输入状态：所有者通过 draftInput 依赖读取它，
+   * 落库/合并/指纹一律由 project-inputs 负责，这里不持有第二份资料状态。
+   * @returns {CompleteProductInput}
+   */
+  function draftInputPayload() {
     return {
       schema_version: PRODUCT_INPUT_SCHEMA_VERSION,
       product_name: elements.intakeName.value.trim(),
       description: elements.intakeDescription.value.trim(),
       selling_points: splitLines(elements.intakePoints.value),
       focus: elements.intakeFocus.value.trim(),
-      references: intake.references.map((item) => ({ ...item })),
+      references: inputs.references().map((item) => ({ ...item })),
     };
   }
 
-  function fingerprintOf(payload) {
-    return JSON.stringify([
-      payload.product_name, payload.description, payload.selling_points,
-      payload.focus, payload.references,
-    ]);
-  }
-
-  function slotEntries() {
-    return [...slots.values()].map((entry) => ({ slot: entry.slot, version: entry.version }));
-  }
-
+  /**
+   * @param {string} slotId
+   * @returns {number}
+   */
   function dependencyCountOf(slotId) {
     let count = 0;
-    for (const entry of slots.values()) {
+    for (const entry of inputs.slotEntries()) {
       if ((entry.slot.depends_on || []).includes(slotId)) count += 1;
     }
     return count;
   }
 
+  /**
+   * @param {unknown} error
+   * @returns {void}
+   */
   function handleInternalError(error) {
-    showError(elements.error, (error && error.message) || "操作没有完成，请重试。");
+    showError(elements.error, errorMessageOf(error, "操作没有完成，请重试。"));
   }
 
   /* ------------------------------------------------------------ 参考图 */
 
+  /**
+   * @returns {Promise<void>}
+   */
   async function renderReferences() {
     // 先异步取齐资产、只在最后一刻替换 DOM：重叠渲染不会把同一行插两次。
-    const entries = intake.references.map((item) => ({ ...item }));
+    const pid = projectId;
+    if (!pid) return;
+    const entries = inputs.references();
     const rows = [];
     const urls = [];
     for (const [index, entry] of entries.entries()) {
-      const asset = await repository.assets.get(projectId, entry.asset_sha256);
+      const asset = await repository.assets.get(pid, entry.asset_sha256);
       const row = createElement("li", { className: "ref-row" });
       row.dataset.sha = entry.asset_sha256;
 
@@ -656,7 +1089,7 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
            (asset.width && asset.height ? asset.width + "×" + asset.height : "尺寸未知")].join(" · ")
         : "资产记录缺失";
       main.append(createElement("span", { className: "meta", text: info }));
-      main.append(techDetails(["sha256 " + entry.asset_sha256.slice(0, 12) + "…"]));
+      appendTech(main, ["sha256 " + entry.asset_sha256.slice(0, 12) + "…"]);
 
       const actions = createElement("div", { className: "ref-actions" });
       const select = createElement("select", {
@@ -665,11 +1098,11 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
       });
       for (const role of REFERENCE_ROLES) {
         select.append(createElement("option", {
-          text: ROLE_TEXT[role] || role, attrs: { value: role },
+          text: /** @type {Record<string, string>} */ (ROLE_TEXT)[role] || role, attrs: { value: role },
         }));
       }
       select.value = entry.role;
-      select.addEventListener("change", () => { handleRoleChange(index, select.value); });
+      select.addEventListener("change", () => { handleRoleChange(index, /** @type {ReferenceRole} */ (select.value)); });
       const remove = createElement("button", {
         className: "danger", text: "删除", attrs: { type: "button" },
       });
@@ -688,291 +1121,118 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
     elements.refEmpty.hidden = entries.length > 0;
   }
 
+  /**
+   * @param {number} index
+   * @param {import("./domain/type-contracts.js").ReferenceRole} role
+   * @returns {Promise<void>}
+   */
   async function handleRoleChange(index, role) {
-    const entry = intake.references[index];
-    if (!entry) return;
     const action = beginAction();
-    entry.role = role;
     clearError(elements.refError);
-    await saveIntakeNow();
+    if (inputs) await inputs.setReferenceRole(index, role);
     if (!action.alive()) return;
     renderAll();
   }
 
+  /**
+   * @param {number} index
+   * @returns {Promise<void>}
+   */
   async function handleRemoveReference(index) {
-    if (!intake.references[index]) return;
     const action = beginAction();
-    intake.references.splice(index, 1);
     clearError(elements.refError);
-    await saveIntakeNow();
+    if (inputs) await inputs.removeReference(index);
     if (!action.alive()) return;
     renderAll();
   }
 
+  /**
+   * @param {FileList|File[]|null|undefined} fileList
+   * @returns {Promise<void>}
+   */
   async function handleFiles(fileList) {
     const files = [...(fileList || [])];
     if (!files.length) return;
     const action = beginAction();
     if (!action.projectId) return;
     clearError(elements.refError);
-    const known = new Set(intake.references.map((item) => item.asset_sha256));
-    let wantsPrimary = !intake.references.some((item) => item.role === "primary");
-    let added = 0;
-    for (const file of files) {
-      if (intake.references.length >= MAX_REFERENCES) {
-        if (action.alive()) {
-          showError(elements.refError, "参考图最多 " + MAX_REFERENCES + " 张，多出的文件没有加入。");
-        }
-        break;
-      }
-      if (file.size > MAX_REFERENCE_IMAGE_BYTES) {
-        if (action.alive()) {
-          showError(elements.refError,
-            "“" + file.name + "”超过单张参考图上限 10MB，已跳过；请压缩后再上传。");
-        }
-        continue;
-      }
-      let width = null;
-      let height = null;
-      try {
-        const bitmap = await createImageBitmap(file);
-        width = bitmap.width;
-        height = bitmap.height;
-        bitmap.close();
-      } catch (error) {
-        if (action.alive()) {
-          showError(elements.refError, "“" + file.name + "”不是可读取的图片，已跳过。");
-        }
-        continue;
-      }
-      if (!action.alive()) break;   // 会话已切换：不再向仓库继续写参考图
-      const role = wantsPrimary ? "primary" : "other";
-      const asset = await repository.assets.put(action.projectId, {
-        blob: file,
-        mediaType: file.type || "application/octet-stream",
-        originalName: file.name,
-        role,
-        width,
-        height,
-      });
-      if (known.has(asset.sha256)) {
-        if (action.alive()) {
-          showError(elements.refError, "“" + file.name + "”与已有参考图内容相同，已跳过。");
-        }
-        continue;
-      }
-      known.add(asset.sha256);
-      if (action.alive()) {
-        intake.references.push(referenceFromAsset(asset, { role }));
-      }
-      wantsPrimary = false;
-      added += 1;
-    }
-    if (added) {
-      await saveIntakeNow();
-      if (action.alive()) renderAll();
-    }
+    const added = await inputs.addReferences(files, (kind, file) => {
+      if (!action.alive()) return;
+      if (kind === "too_many") showError(elements.refError, "参考图最多 " + MAX_REFERENCES + " 张，多出的文件没有加入。");
+      else if (kind === "too_large") showError(elements.refError, "“" + file.name + "”超过单张参考图上限 10MB，已跳过；请压缩后再上传。");
+      else if (kind === "unreadable") showError(elements.refError, "“" + file.name + "”不是可读取的图片，已跳过。");
+      else showError(elements.refError, "“" + file.name + "”与已有参考图内容相同，已跳过。");
+    });
+    if (added && action.alive()) renderAll();
   }
 
   /* ---------------------------------------------------------- 商品资料 */
 
+  /**
+   * @returns {void}
+   */
   function updateDraftStatus() {
-    if (intakeConflict) {
+    const conflictState = inputs.conflict();
+    const storedVersion = inputs.draftVersion();
+    const storedName = inputs.intakeSnapshot().product_name;
+    if (conflictState) {
       // R3.3 双标签陈旧编辑：就地报冲突，不静默胜出。文档历史是 append-only。
-      if (intakeConflict.merged === true) {
-        elements.intakeDraft.textContent = "另一个标签页已保存版本 v" + intakeConflict.version
+      if (conflictState.merged === true) {
+        elements.intakeDraft.textContent = "另一个标签页已保存版本 v" + conflictState.version
           + "：你的输入已按本地优先自动合并为新版本；请核对内容后再次保存确认。";
-      } else if (Array.isArray(intakeConflict.unresolved) && intakeConflict.unresolved.length > 0) {
-        elements.intakeDraft.textContent = "另一个标签页已保存版本 v" + intakeConflict.version
-          + "：有 " + intakeConflict.unresolved.length + " 项需要你逐项解决，请在冲突编辑器里处理。";
+      } else if (Array.isArray(conflictState.unresolved) && conflictState.unresolved.length > 0) {
+        elements.intakeDraft.textContent = "另一个标签页已保存版本 v" + conflictState.version
+          + "：有 " + conflictState.unresolved.length + " 项需要你逐项解决，请在冲突编辑器里处理。";
       } else {
-        elements.intakeDraft.textContent = "检测到另一个标签页已保存版本 v" + intakeConflict.version
+        elements.intakeDraft.textContent = "检测到另一个标签页已保存版本 v" + conflictState.version
           + "：你正在编辑的内容没有覆盖它；再次保存会追加为新版本。";
       }
       return;
     }
-    elements.intakeDraft.textContent = intakeVersion
-      ? "草稿已保存 · 版本 " + intakeVersion + (intake.product_name ? "" : "（尚未填写商品名称）")
+    elements.intakeDraft.textContent = storedVersion
+      ? "草稿已保存 · 版本 " + storedVersion + (storedName ? "" : "（尚未填写商品名称）")
       : "还没有保存过草稿。";
   }
 
+  /**
+   * @returns {void}
+   */
   function scheduleDraftSave() {
-    clearTimeout(saveTimer);
-    // 冻结动作归属：这个定时器属于当前会话/项目；换项目或换会话后不再写。
-    const scheduled = beginAction();
+    inputs.scheduleDraftSave();
     elements.intakeDraft.textContent = "正在编辑…";
     renderAnalyze();
-    saveTimer = setTimeout(() => {
-      saveTimer = null;
-      if (!scheduled.alive()) return;
-      saveIntakeNow()
-        .then(() => deriveAndApplyState())
-        .then(() => { if (scheduled.alive()) { renderAnalyze(); renderHeaderText(project); } })
-        .catch(handleInternalError);
-    }, DRAFT_DEBOUNCE_MS);
-  }
-
-  function saveIntakeNow() {
-    if (saveTimer !== null) {
-      clearTimeout(saveTimer);
-      saveTimer = null;
-    }
-    const action = beginAction();
-    if (!action.projectId) {
-      // 会话已关闭后的迟到调用：不动仓库，编辑器里的输入原样保留给用户。
-      return Promise.resolve(false);
-    }
-    const pid = action.projectId;
-    const payload = currentIntakePayload();
-    const fingerprint = fingerprintOf(payload);
-    if (fingerprint === intakeFingerprint) {
-      updateDraftStatus();
-      return Promise.resolve(false);
-    }
-    return (async () => {
-      let record;
-      try {
-        record = await repository.documents.save(pid, {
-          kind: INTAKE_KIND,
-          documentId: INTAKE_DOCUMENT_ID,
-          payload,
-          // R3.3 OCC：编辑传观察版本。另一标签页已前进时按 REVISION_CONFLICT 就地报冲突。
-          expectedVersion: intakeVersion > 0 ? intakeVersion : null,
-        });
-      } catch (error) {
-        if (error && error.code === STORAGE_ERROR_CODES.REVISION_CONFLICT) {
-          const latest = await repository.documents.getLatest(pid, INTAKE_KIND, INTAKE_DOCUMENT_ID);
-          if (!action.alive()) return false;
-          const latestPayload = latest && latest.payload ? latest.payload : null;
-          const latestVersion = latest ? latest.version : 0;
-          const basePayload = intake;
-          const baseVersion = intakeVersion;
-          const merged = latestPayload ? mergeIntakePayloads(basePayload, payload, latestPayload) : null;
-          if (merged && merged.merged && merged.record) {
-            const mergedRecord = await repository.documents.save(pid, {
-              kind: INTAKE_KIND,
-              documentId: INTAKE_DOCUMENT_ID,
-              payload: merged.record,
-              expectedVersion: latestVersion,
-            });
-            if (!action.alive()) return false;
-            intake = merged.record;
-            intakeVersion = mergedRecord.version;
-            intakeFingerprint = fingerprintOf(merged.record);
-            intakeConflict = {
-              version: latestVersion,
-              at: new Date().toISOString(),
-              merged: true,
-            };
-            updateDraftStatus();
-            renderIntake();
-            return false;
-          }
-          if (merged && Array.isArray(merged.unresolved) && merged.unresolved.length > 0) {
-            if (!action.alive()) return false;
-            intakeConflict = {
-              version: latestVersion,
-              at: new Date().toISOString(),
-              merged: false,
-              unresolved: merged.unresolved,
-            };
-            updateDraftStatus();
-            renderConflictEditor(basePayload, baseVersion, latestPayload, latestVersion, merged.unresolved);
-            return false;
-          }
-          intakeConflict = {
-            version: latest && latest.payload ? latest.version : 0,
-            at: new Date().toISOString(),
-          };
-          updateDraftStatus();
-          return false;
-        }
-        throw error;
-      }
-      // 记录已按冻结项目落库；界面状态只属于还活着的会话。
-      if (!action.alive()) return false;
-      intake = payload;
-      intakeVersion = record.version;
-      intakeFingerprint = fingerprint;
-      intakeConflict = null;
-      updateDraftStatus();
-      return true;
-    })();
   }
 
   /**
-   * 双标签三路合并（V2.R3.3）：base=本标签页上次成功读取的版本，mine=本次想保存的
-   * 输入，theirs=另一个标签页已落库的最新版本。字段级规则：
-   * - 文本字段：以本地输入为准；theirs 单独改过且 mine 没改的字段并入（不丢对方输入）；
-   * - 卖点：单方改动直接取改动方；双方都改则按本地优先并集；
-   * - 参考图：按 asset_sha256 并集，role 以本地为准、本地没有的沿用对方；
-   * - 同一文本字段 base/theirs/mine 三方互不相同 => 不自动合并，逐项进冲突编辑器。
-   * 返回 { merged:true, record } 或 { merged:false, unresolved:[{field, mine, theirs}] }；
-   * 全部失败返回 null（走旧的就地报冲突路径）。
+   * @returns {Promise<boolean>}
    */
-  function mergeIntakePayloads(base, mine, theirs) {
-    if (!mine || typeof mine !== "object" || !theirs || typeof theirs !== "object") return null;
-    const baseSafe = base && typeof base === "object" ? base : {};
-    const mineRefs = Array.isArray(mine.references) ? mine.references : [];
-    const theirRefs = Array.isArray(theirs.references) ? theirs.references : [];
-    const refBySha = new Map();
-    for (const ref of theirRefs) {
-      if (ref && ref.asset_sha256) refBySha.set(ref.asset_sha256, ref);
-    }
-    for (const ref of mineRefs) {
-      if (ref && ref.asset_sha256) refBySha.set(ref.asset_sha256, ref);
-    }
-    const textFields = ["product_name", "description", "focus"];
-    const unresolved = [];
-    const mergedTexts = {};
-    for (const field of textFields) {
-      const b = baseSafe[field] === undefined ? "" : baseSafe[field];
-      const m = mine[field] === undefined ? "" : mine[field];
-      const h = theirs[field] === undefined ? "" : theirs[field];
-      if (m === h) { mergedTexts[field] = m; continue; }
-      if (m === b) { mergedTexts[field] = h; continue; }
-      if (h === b) { mergedTexts[field] = m; continue; }
-      unresolved.push({ field: field, mine: m, theirs: h });
-    }
-    const basePoints = Array.isArray(baseSafe.selling_points) ? baseSafe.selling_points : [];
-    const minePoints = Array.isArray(mine.selling_points) ? mine.selling_points : [];
-    const theirPoints = Array.isArray(theirs.selling_points) ? theirs.selling_points : [];
-    const joins = (list) => list.join("\u0000");
-    let mergedPoints = null;
-    if (joins(minePoints) === joins(theirPoints)) mergedPoints = minePoints;
-    else if (joins(minePoints) === joins(basePoints)) mergedPoints = theirPoints;
-    else if (joins(theirPoints) === joins(basePoints)) mergedPoints = minePoints;
-    else {
-      mergedPoints = [...minePoints];
-      for (const point of theirPoints) {
-        if (!mergedPoints.includes(point)) mergedPoints.push(point);
-      }
-    }
-    if (unresolved.length > 0) {
-      return { merged: false, unresolved: unresolved };
-    }
-    return {
-      merged: true,
-      record: {
-        product_name: mergedTexts.product_name,
-        description: mergedTexts.description,
-        focus: mergedTexts.focus,
-        selling_points: mergedPoints,
-        references: [...refBySha.values()],
-      },
-    };
+  function saveIntakeNow() {
+    return inputs.saveIntakeNow().then((ok) => deriveAndApplyState().then(() => ok));
   }
 
-  /** 冲突编辑器：三方互不相同的字段逐项展示，只能二选一；解决后保存为新版本。 */
-  function renderConflictEditor(basePayload, baseVersion, latestPayload, latestVersion, unresolved) {
+  /**
+   * 冲突编辑器只读所有者的未解决项；解决后由 owner 合并/落库，这里不直接写仓库。
+   * @returns {void}
+   */
+  function renderConflictEditor() {
+    const host = elements.intakeError.parentElement;
+    const existing = host ? host.querySelector(".conflict-editor") : null;
+    const conflictState = inputs.conflict();
+    const unresolved = conflictState && Array.isArray(conflictState.unresolved)
+      ? conflictState.unresolved : [];
+    if (!conflictState || !unresolved.length) {
+      if (existing) existing.remove();
+      return;
+    }
+    if (existing) return; // 已有编辑器：保留用户已经做出的选择，不重建。
     const editor = document.createElement("div");
     editor.className = "conflict-editor";
     editor.setAttribute("role", "group");
     editor.setAttribute("aria-label", "双标签编辑冲突，需要人工逐项解决");
     const title = document.createElement("p");
     title.className = "meta";
-    title.textContent = "另一个标签页已保存版本 v" + latestVersion
-      + "（你的版本 v" + baseVersion + "）：以下字段两边都改了，请逐项选择保留哪一边。";
+    title.textContent = "另一个标签页已保存版本 v" + conflictState.version
+      + "：以下字段两边都改了，请逐项选择保留哪一边。";
     editor.append(title);
     const picks = new Map();
     for (const item of unresolved) {
@@ -1006,7 +1266,7 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
       mineText.textContent = "我的：" + String(item.mine === "" ? "（空）" : item.mine);
       const theirsText = document.createElement("p");
       theirsText.className = "meta";
-      theirsText.textContent = "对方 v" + latestVersion + "：" + String(item.theirs === "" ? "（空）" : item.theirs);
+      theirsText.textContent = "对方 v" + conflictState.version + "：" + String(item.theirs === "" ? "（空）" : item.theirs);
       row.append(label, theirsText, mineText, mineBtn, theirsBtn);
       editor.append(row);
     }
@@ -1015,33 +1275,17 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
     saveBtn.className = "primary";
     saveBtn.textContent = "按我的选择保存为新版本";
     saveBtn.addEventListener("click", () => {
+      /** @type {Record<string, "mine"|"theirs">} */
       const resolved = {};
       for (const item of unresolved) {
-        resolved[item.field] = picks.get(item.field) === "theirs" ? item.theirs : item.mine;
+        resolved[item.field] = picks.get(item.field) === "theirs" ? "theirs" : "mine";
       }
-      const base = latestPayload && typeof latestPayload === "object" ? latestPayload : {};
-      const merged = mergeIntakePayloads(base, Object.assign({}, base, resolved), base);
-      const record = merged && merged.merged
-        ? merged.record
-        : Object.assign({}, base, resolved);
-      const action = beginAction();
-      repository.documents.save(action.projectId, {
-        kind: INTAKE_KIND,
-        documentId: INTAKE_DOCUMENT_ID,
-        payload: record,
-        expectedVersion: latestVersion,
-      }).then((saved) => {
-        if (!action.alive()) return;
-        intake = record;
-        intakeVersion = saved.version;
-        intakeFingerprint = fingerprintOf(record);
-        intakeConflict = null;
+      inputs.resolveConflict(resolved).then((ok) => {
+        if (!ok) return;
         editor.remove();
-        updateDraftStatus();
         renderIntake();
       }).catch((error) => {
-        if (!action.alive()) return;
-        showError(elements.intakeError, (error && error.message) || "冲突解决没有保存，请重试。");
+        showError(elements.intakeError, errorMessageOf(error, "冲突解决没有保存，请重试。"));
       });
     });
     const cancelBtn = document.createElement("button");
@@ -1054,35 +1298,65 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
     elements.intakeError.before(editor);
   }
 
+  /**
+   * @returns {void}
+   */
   function renderIntake() {
-    elements.intakeName.value = intake.product_name || "";
-    elements.intakeDescription.value = intake.description || "";
-    elements.intakePoints.value = (intake.selling_points || []).join("\n");
-    elements.intakeFocus.value = intake.focus || "";
+    const stored = inputs.intakeSnapshot();
+    elements.intakeName.value = stored.product_name || "";
+    elements.intakeDescription.value = stored.description || "";
+    elements.intakePoints.value = (stored.selling_points || []).join("\n");
+    elements.intakeFocus.value = stored.focus || "";
     updateDraftStatus();
   }
   /* -------------------------------------------------------------- 分析 */
 
+  /**
+   * @returns {DomainProblem[]}
+   */
   function gateProblems() {
-    return intakeReadiness(currentIntakePayload()).blocking;
+    return intakeReadiness(draftInputPayload()).blocking;
   }
 
+  /**
+   * @param {unknown} provider
+   * @returns {boolean}
+   */
+  function seesImages(provider) {
+    const caps = isPlainObject(provider) && isPlainObject(provider.capabilities) ? provider.capabilities : {};
+    return caps.vision === true || caps.supports_images === true;
+  }
+
+  /**
+   * @returns {void}
+   */
   function renderAnalyze() {
     const problems = gateProblems();
     const ready = problems.length === 0;
-    elements.analyzeRun.textContent = lastAnalyze ? "重新分析" : "分析商品资料";
-    elements.analyzeRun.disabled = busy || !ready;
-    elements.analyzeGate.textContent = busy
-      ? "分析中…"
-      : ready
-        ? (capabilitiesError ? "分析服务状态：" + capabilitiesError : "资料已就绪。")
-        : "还缺：" + describeBlocking(problems, localizeSlotTerms);
+    const provider = capabilities?.provider;
+    const vision = seesImages(provider);
+    const imageCount = Math.min(inputs.references().length, 3);
+    elements.analyzeNewAfterUnknown.hidden = !analyzeRequiresConfirmation;
+    elements.analyzeNewAfterUnknown.disabled = inputs.isAnalysisRunning()
+      || !ready || !provider || provider.configured === false;
+    elements.analyzeRun.textContent = (lastAnalyze ? "再次" : "") + (vision ? "图文理解" : "仅文字理解") + "（可选）";
+    elements.analyzeRun.disabled = inputs.isAnalysisRunning() || !ready || !provider || provider.configured === false;
+    elements.analyzeGate.textContent = inputs.isAnalysisRunning() ? "理解中；不会自动重试…"
+      : !ready ? "还缺：" + describeBlocking(problems, localizeSlotTerms)
+        : !provider || provider.configured === false
+          ? "此用途缺少有效模型或凭据；请打开模型设置。人工填写不受影响。"
+          : "将发给 " + provider.model_id + "：当前名称、介绍、卖点与重点，"
+            + (vision ? imageCount + " 张实际图片（按列表顺序，主图优先，最多 3 张）"
+              : "仅参考图元数据，不发送图片字节")
+            + "。供应商按实际调用计费；不能据元数据宣称已经看图。";
 
     if (lastAnalyze) {
       elements.analyzeResult.hidden = false;
       elements.analyzeResult.textContent = "最近一次分析：" + lastAnalyze.slots + " 个提案，写入 "
         + lastAnalyze.applied + " 个槽位 · " + lastAnalyze.provider
         + (lastAnalyze.model ? "（" + lastAnalyze.model + "）" : "")
+        + " · 原资料 v" + lastAnalyze.sourceVersion
+        + (lastAnalyze.referenceImagesSent ? " · 已发送实际图片" : " · 未发送图片字节")
         + " · " + lastAnalyze.at + (lastAnalyze.summary ? " · " + lastAnalyze.summary : "");
     } else {
       elements.analyzeResult.hidden = true;
@@ -1098,274 +1372,119 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
     }
   }
 
-  function reportAnalyzeFailure(status, result) {
-    const error = result && result.error ? result.error : null;
-    const parts = [];
-    if (error) {
-      parts.push(error.message || error.code || "分析失败");
-      parts.push("分类：" + (error.family || "internal") + " / " + (error.code || "INTERNAL_ERROR"));
-      if (error.retry_policy) parts.push("重试策略：" + error.retry_policy);
-      if (error.request_id) parts.push("请求 ID：" + error.request_id);
-    } else {
-      parts.push("分析服务返回 HTTP " + status + "，响应不是本产品约定的错误结构。");
-    }
-    if (result && result.unknown === true) {
-      parts.push("结果未知：这次请求可能已经产生结果。系统不会自动重试，请确认后再手动点击“重新分析”。");
-    } else if (status === 503) {
-      parts.push("语义 provider 当前不可用：检查 config/product-v2/providers.json、依赖与 DASHSCOPE_API_KEY。");
-    } else if (status === 400) {
-      parts.push("服务端拒绝了这份请求；按提示修改资料后可以再试。");
-    }
-    showError(elements.analyzeError, parts.join(" "));
-    requestFocus(elements.analyzeError);
-  }
 
-  async function buildAnalyzeBody(pid = projectId) {
-    const payload = currentIntakePayload();
-    const references = [];
-    for (const entry of payload.references) {
-      const asset = await repository.assets.get(pid, entry.asset_sha256);
-      if (!asset) {
-        throw new Error("参考图资产缺失（sha256 " + entry.asset_sha256.slice(0, 12) + "…），请重新上传。");
-      }
-      references.push({
-        sha256: asset.sha256,
-        media_type: asset.media_type || "application/octet-stream",
-        role: entry.role,
-        original_name: asset.original_name || null,
-      });
-    }
-    const body = {
-      product_name: payload.product_name,
-      description: payload.description,
-      selling_points: payload.selling_points,
-      focus: payload.focus,
-      references,
-      locale: ANALYZE_LOCALE,
-      platform: ANALYZE_PLATFORM,
-      max_slots: ANALYZE_MAX_SLOTS,
-      existing_slot_ids: [],
-    };
-    const allowed = capabilities && Array.isArray(capabilities.analyze_fields)
-      && capabilities.analyze_fields.length
-      ? capabilities.analyze_fields
-      : DEFAULT_ANALYZE_FIELDS;
-    const filtered = {};
-    for (const field of allowed) if (field in body) filtered[field] = body[field];
-    return filtered;
-  }
-
-  /** pid 必须来自动作冻结的 projectId：旧回调只写自己项目，绝不写换会话后的当前项目。 */
-  async function persistSlot(slot, pid, action = null) {
-    const record = await repository.documents.save(pid, {
-      kind: SLOT_KIND, documentId: slot.slot_id, payload: slot,
-    });
-    // 槽位缓存属于当前会话；动作已过期时只保留落库结果，不污染新项目的缓存。
-    if (!action || action.alive()) {
-      slots.set(slot.slot_id, { slot: record.payload, version: record.version });
-    }
-    return record;
-  }
-
-  async function ensureCoreSlots(pid, action) {
-    let created = 0;
-    for (const definition of CORE_SLOT_REGISTRY) {
-      if (slots.has(definition.slot_id)) continue;
-      await persistSlot({
-        schema_version: FACT_SLOT_SCHEMA_VERSION,
-        slot_id: definition.slot_id,
-        label: definition.label,
-        authority: "core_fixed",
-        value_type: definition.value_type,
-        value: null,
-        source: "system_default",
-        status: "missing",
-        confidence: null,
-        evidence: [],
-        depends_on: [],
-        critical: definition.critical,
-      }, pid, action);
-      created += 1;
-    }
-    return created;
-  }
-
-  function baseSlotFor(raw, proposalIds) {
-    const definition = raw.authority === "core_fixed" ? coreSlotDefinition(raw.slot_id) : null;
-    if (raw.authority === "core_fixed" && !definition) return null;
-    const known = new Set(slots.keys());
-    const base = {
-      schema_version: FACT_SLOT_SCHEMA_VERSION,
-      slot_id: raw.slot_id,
-      label: definition ? definition.label : raw.label,
-      authority: raw.authority,
-      value_type: definition ? definition.value_type : raw.value_type,
-      value: null,
-      source: "system_default",
-      status: "missing",
-      confidence: null,
-      evidence: [],
-      depends_on: (raw.depends_on || []).filter((id) => proposalIds.has(id) || known.has(id)),
-      critical: definition ? definition.critical : raw.critical === true,
-    };
-    if (base.value_type === "enum") {
-      base.enum_values = Array.isArray(raw.enum_values) ? raw.enum_values.slice() : [];
-    }
-    if (base.authority === "user_custom") base.allow_model_proposal = true;
-    return base;
-  }
-
-  async function applyProposal(proposal, pid, action) {
-    const rawSlots = Array.isArray(proposal.slots) ? proposal.slots : [];
-    const proposalIds = new Set(rawSlots.map((item) => item && item.slot_id).filter(Boolean));
-    const problems = [];
-    let applied = 0;
-    for (const raw of rawSlots) {
-      try {
-        const existing = slots.get(raw.slot_id);
-        const base = existing ? existing.slot : baseSlotFor(raw, proposalIds);
-        if (!base) {
-          problems.push(raw.slot_id + "：模型把未知槽位标成系统固定槽位，已拒绝。");
-          continue;
-        }
-        const next = applySlotAction(base, {
-          action: "propose", actor: "model",
-          value: raw.value, confidence: raw.confidence, evidence: raw.evidence,
-        });
-        if (typeof raw.model_id === "string") next.model_id = raw.model_id;
-        await persistSlot(next, pid, action);
-        applied += 1;
-      } catch (error) {
-        const slotId = raw && raw.slot_id ? raw.slot_id : "未知槽位";
-        problems.push(slotId + "：" + ((error && error.message) || "提案被拒绝"));
-      }
-    }
-    return { applied, problems };
-  }
-
-  async function runAnalyze() {
-    if (busy) return;
+  let manualFactsPreparing = false;
+  /**
+   * @returns {Promise<void>}
+   */
+  async function prepareManualFacts() {
+    if (!projectId || manualFactsPreparing) return;
     const action = beginAction();
-    busy = true;
+    const pid = action.projectId;
+    if (!pid) return;
+    manualFactsPreparing = true;
+    try {
+      await inputs.ensureCoreSlots();
+      if (!action.alive()) return;
+      await deriveAndApplyState();
+      renderSlots();
+      refreshStageShell();
+    } catch (error) {
+      if (action.alive()) handleInternalError(error);
+    } finally { manualFactsPreparing = false; }
+  }
+
+  /**
+   * @param {{allowNewAfterUnknown?: boolean}} [args]
+   * @returns {Promise<void>}
+   */
+  async function runAnalyze({ allowNewAfterUnknown = false } = {}) {
+    const action = beginAction();
     analyzeProblems = [];
+    analyzeRequiresConfirmation = false;
     clearError(elements.analyzeError);
+    const pending = inputs.runAnalysis({ allowNewAfterUnknown });
     renderAnalyze();
     try {
-      await saveIntakeNow();
+      const outcome = await pending;
       if (!action.alive()) return;
-      const readiness = intakeReadiness(intake);
-      if (!readiness.ready) {
-        showError(elements.analyzeError, "商品资料还不完整："
-          + describeBlocking(readiness.blocking, localizeSlotTerms));
-        requestFocus(elements.analyzeError);
-        return;
+      if (outcome.kind === "requires_confirmation") {
+        analyzeRequiresConfirmation = true;
+        showError(elements.analyzeError, "原分析结果仍未知，可能已经计费。不会自动重提；只有明确选择“另发新分析”才会再次发送，可能重复计费。");
+      } else if (outcome.kind === "not_sent" || outcome.kind === "apply_failed") {
+        showError(elements.analyzeError, outcome.message);
+      } else if (outcome.kind === "failed" || outcome.kind === "unknown") {
+        analyzeRequiresConfirmation = outcome.kind === "unknown";
+        showError(elements.analyzeError, describeAnalyzeFailure(outcome.error, outcome.kind === "unknown"));
+      } else if (outcome.kind === "stale") {
+        showError(elements.analyzeError, "提案已保留在原资料 v" + outcome.record.source.version
+          + " 的分析记录中；当前资料已变化，没有写入当前事实。");
+      } else if (outcome.kind === "applied") {
+        const { proposal, applied, record } = outcome;
+        analyzeProblems = applied.problems;
+        lastAnalyze = {
+          at: new Date(record.updated_at).toLocaleString("zh-CN", { hour12: false }),
+          provider: proposal.meta.provider_id, model: proposal.meta.model_id,
+          slots: proposal.slots.length, applied: applied.applied, summary: proposal.summary,
+          sourceVersion: record.source.version, referenceImagesSent: record.reference_images_sent,
+        };
+        if (proposal.questions.length) analyzeProblems.push("模型提出的问题：" + proposal.questions.join(" / "));
       }
-      await ensureCoreSlots(action.projectId, action);
-      if (!action.alive()) return;
-      let body;
-      try {
-        body = await buildAnalyzeBody(action.projectId);
-      } catch (error) {
-        showError(elements.analyzeError, "本地资料不完整：" + ((error && error.message) || "未知错误"));
-        requestFocus(elements.analyzeError);
-        return;
-      }
-      if (!action.alive()) return;
-      let response;
-      try {
-        response = await fetch(ANALYZE_PATH, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
-      } catch (error) {
-        showError(elements.analyzeError,
-          "无法连接分析服务（本机服务是否在运行？）。这次调用可能已经发送，系统不会自动重试；"
-          + "需要时请手动再次点击。");
-        requestFocus(elements.analyzeError);
-        return;
-      }
-      if (!action.alive()) return;
-      let result = null;
-      try {
-        result = await response.json();
-      } catch (error) {
-        result = null;
-      }
-      if (!action.alive()) return;
-      if (!response.ok || !result || result.ok !== true) {
-        reportAnalyzeFailure(response.status, result);
-        return;
-      }
-      const proposal = result.proposal || {};
-      const applied = await applyProposal(proposal, action.projectId, action);
-      const meta = proposal.meta || {};
-      analyzeProblems = applied.problems;
-      lastAnalyze = {
-        at: new Date().toLocaleString("zh-CN", { hour12: false }),
-        provider: meta.provider_id || "未声明 provider",
-        model: meta.model_id || "",
-        slots: Array.isArray(proposal.slots) ? proposal.slots.length : 0,
-        applied: applied.applied,
-        summary: proposal.summary || "",
-      };
-      if (Array.isArray(proposal.questions) && proposal.questions.length) {
-        analyzeProblems.push("模型提出的问题：" + proposal.questions.join(" / "));
-      }
-      // 会话已切换：分析结果已按冻结项目落库，但不得重置新项目的视图或抢焦点。
-      if (!action.alive()) return;
-      requestFocus(analyzeProblems.length
-        ? () => elements.analyzeError
-        : () => document.getElementById("stage-understand-title"));
-      stageShell.select("understand");
     } catch (error) {
       if (action.alive()) handleInternalError(error);
     } finally {
-      busy = false;
       if (action.alive()) {
-        try {
-          await deriveAndApplyState();
-        } catch (error) {
-          handleInternalError(error);
-        }
+        try { await deriveAndApplyState(); }
+        catch (error) { handleInternalError(error); }
         renderAll();
-        flushPendingFocus();
       }
     }
   }
 
+  /**
+   * @returns {Promise<void>}
+   */
   async function loadCapabilities() {
-    capabilities = null;
     capabilitiesError = null;
-    try {
-      const response = await fetch(CAPABILITIES_PATH, { headers: { Accept: "application/json" } });
-      let payload = null;
-      try {
-        payload = await response.json();
-      } catch (error) {
-        payload = null;
-      }
-      if (response.ok && payload && payload.ok === true) {
-        capabilities = payload;
-        if (payload.provider && payload.provider.configured === false) {
-          capabilitiesError = "当前的语义 provider 未配置完成，请检查密钥与依赖。";
-        }
-      } else {
-        capabilitiesError = "capabilities 接口返回 HTTP " + response.status + "。";
-      }
-    } catch (error) {
-      capabilitiesError = (error && error.message) || "无法访问 capabilities 接口。";
-    }
+    capabilities = await modelSettings.refresh();
+    if (!capabilities) capabilitiesError = "有效模型配置不可用；本地资料可继续编辑，请打开模型设置。";
   }
   /* ---------------------------------------------------------- 商品理解 */
+
+  /**
+   * 分析失败的可见摘要：人话在前，分类与重试策略是网关信封在前端的投影（§9.10），
+   * 与落库记录同源，不在渲染层重算。结果未知时追加「可能已计费、不会自动重试」，
+   * 不把未知说成失败，也不让用户以为系统会自己重发。
+   */
+  /**
+   * @param {unknown} error
+   * @param {unknown} unknown
+   * @returns {string}
+   */
+  function describeAnalyzeFailure(error, unknown) {
+    const parts = [String(errorMessageOf(error, "分析失败"))];
+    // 网关信封在前端的投影：只读已知标量字段，形状由网关契约给出（§9.10）。
+    const info = isPlainObject(error) ? error : {};
+    parts.push("分类：" + String(info.family || "internal")
+      + " / " + String(info.code || "INTERNAL_ERROR"));
+    if (info.retry_policy) parts.push("重试策略：" + String(info.retry_policy));
+    if (unknown) {
+      parts.push("结果未知：这次请求可能已经产生结果。系统不会自动重试，请确认后再手动点击“重新分析”。");
+    }
+    return parts.join(" ");
+  }
 
   /**
    * 渲染层本地化：domain 的阻塞消息只认 slot_id 与英文状态词，展示前换成用户认得的
    * 槽位名与中文状态（V2.6.9 走查发现「关键槽位 product_name 仍是 proposed」直接上屏）。
    */
+  /**
+   * @param {unknown} message
+   * @returns {string}
+   */
   function localizeSlotTerms(message) {
     let out = String(message == null ? "" : message);
-    const labels = slotEntries()
+    const labels = inputs.slotEntries()
       .map((entry) => ({
         id: String((entry.slot && entry.slot.slot_id) || ""),
         label: String((entry.slot && entry.slot.label) || ""),
@@ -1381,9 +1500,12 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
     return out;
   }
 
+  /**
+   * @returns {void}
+   */
   function renderSlots() {
     elements.slotList.replaceChildren();
-    const entries = slotEntries();
+    const entries = inputs.slotEntries();
     const critical = entries.filter((entry) => entry.slot.critical === true);
     const confirmedCritical = critical.filter((entry) => entry.slot.status === "confirmed");
     const open = entries.filter(
@@ -1409,17 +1531,25 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
   }
 
   /** 某个 slot_id 的中文名（找不到就退回原样）；依赖与来源引用用它去掉工程感。 */
+  /**
+   * @param {string} slotId
+   * @returns {string}
+   */
   function slotLabelOfId(slotId) {
-    for (const entry of slotEntries()) {
+    for (const entry of inputs.slotEntries()) {
       if (entry.slot && entry.slot.slot_id === slotId) return entry.slot.label || slotId;
     }
     return slotId;
   }
 
   /** 主行只放人话：来源档 + 置信（「必须确认」已经是徽标，不再重复一次）。 */
+  /**
+   * @param {ValidatedSlotEntry} entry
+   * @returns {string}
+   */
   function slotMetaText(entry) {
     const slot = entry.slot;
-    const parts = [AUTHORITY_TEXT[slot.authority] || slot.authority];
+    const parts = [/** @type {Record<string, string>} */ (AUTHORITY_TEXT)[slot.authority] || slot.authority];
     if (slot.confidence !== null && slot.confidence !== undefined) {
       parts.push("置信 " + Number(slot.confidence).toFixed(2));
     }
@@ -1429,6 +1559,10 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
   /**
    * 事实卡的工程标识（V2.6.16）：slot_id、版本、依赖、证据来源引用（字段名 / 资产哈希 /
    * 模型 id）一律进折叠的技术详情，主行只留人能判断的信息；追溯链不减，只是换了位置。
+   */
+  /**
+   * @param {ValidatedSlotEntry} entry
+   * @returns {string[]}
    */
   function slotTechLines(entry) {
     const slot = entry.slot;
@@ -1443,6 +1577,10 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
     return lines;
   }
 
+  /**
+   * @param {ValidatedSlotEntry} entry
+   * @returns {HTMLLIElement}
+   */
   function slotRow(entry) {
     const slot = entry.slot;
     const status = slot.status;
@@ -1453,7 +1591,7 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
 
     const head = createElement("div", { className: "slot-head" });
     head.append(createElement("span", {
-      className: "badge is-" + status, text: STATUS_TEXT[status] || status,
+      className: "badge is-" + status, text: /** @type {Record<string, string>} */ (STATUS_TEXT)[status] || status,
     }));
     head.append(createElement("span", { className: "name", text: slot.label }));
     if (slot.critical === true) {
@@ -1476,7 +1614,7 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
     if (Array.isArray(slot.evidence) && slot.evidence.length) {
       const list = createElement("ul", { className: "evidence" });
       for (const item of slot.evidence) {
-        const label = EVIDENCE_TEXT[item.kind] || item.kind;
+        const label = /** @type {Record<string, string>} */ (EVIDENCE_TEXT)[item.kind] || item.kind;
         list.append(createElement("li", {
           className: "meta",
           text: item.note ? label + "：" + item.note : label,
@@ -1485,13 +1623,18 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
       row.append(list);
     }
 
-    if (interaction.slotId === slot.slot_id) row.append(slotEditor(entry, interaction.mode));
+    const mode = interaction.mode;
+    if (interaction.slotId === slot.slot_id && mode) row.append(slotEditor(entry, mode));
     row.append(slotActions(entry));
     const tech = techDetails(slotTechLines(entry));
     if (tech) row.append(tech);
     return row;
   }
 
+  /**
+   * @param {ValidatedSlotEntry} entry
+   * @returns {HTMLDivElement}
+   */
   function slotActions(entry) {
     const slot = entry.slot;
     const actions = createElement("div", { className: "slot-actions" });
@@ -1546,6 +1689,60 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
     return actions;
   }
 
+  /**
+   * @param {unknown} initial
+   * @returns {HTMLDivElement}
+   */
+  function dimensionEditor(initial) {
+    const list = createElement("div", { className: "dimension-editor", attrs: { id: "slot-editor-value" } });
+    const rows = createElement("div", { className: "dimension-rows" });
+    const add = createElement("button", { text: "添加测量", attrs: { type: "button" } });
+    /** @type {Record<string, string>} */
+    const axisLabels = { height: "高度", width: "宽度", length: "长度", depth: "深度",
+      diameter: "直径", weight: "重量", volume: "容量", thickness: "厚度" };
+    /**
+     * @param {import("./domain/type-contracts.js").DimensionMeasurement|Record<string, unknown>} [measurement]
+     * @returns {void}
+     */
+    function appendRow(measurement = {}) {
+      if (rows.children.length >= MAX_DIMENSIONS) return;
+      const row = createElement("fieldset", { className: "dimension-row" });
+      row.append(createElement("legend", { text: "已确认的测量（不猜数字）" }));
+      for (const [key, label] of [["object", "测量对象"], ["axis", "轴向"],
+        ["value", "数值"], ["unit", "单位"], ["source_basis", "来源依据"]]) {
+        const wrapper = createElement("label", { text: label });
+        const control = key === "axis" || key === "unit"
+          ? createElement("select")
+          : createElement("input", { attrs: { type: key === "value" ? "number" : "text",
+            step: key === "value" ? "any" : null, min: key === "value" ? "0" : null } });
+        control.dataset.dimensionField = key;
+        if (key === "axis" || key === "unit") {
+          control.append(createElement("option", { text: "请选择", attrs: { value: "" } }));
+          for (const value of key === "axis" ? DIMENSION_AXES : DIMENSION_UNITS) {
+            control.append(createElement("option", { text: axisLabels[value] || value, attrs: { value } }));
+          }
+        }
+        const fields = /** @type {Record<string, unknown>} */ (measurement);
+        control.value = fields[key] == null ? "" : String(fields[key]);
+        wrapper.append(control);
+        row.append(wrapper);
+      }
+      const remove = createElement("button", { text: "删除这条测量", attrs: { type: "button" } });
+      remove.addEventListener("click", () => { row.remove(); add.disabled = false; });
+      row.append(remove);
+      rows.append(row);
+      add.disabled = rows.children.length >= MAX_DIMENSIONS;
+    }
+    for (const measurement of Array.isArray(initial) && initial.length ? initial : [{}]) appendRow(measurement);
+    add.addEventListener("click", () => appendRow());
+    list.append(rows, add);
+    return list;
+  }
+
+  /**
+   * @param {FactSlot} slot
+   * @returns {unknown}
+   */
   function suggestedValue(slot) {
     for (const item of slot.evidence || []) {
       if (item && item.ref === "model_proposal" && typeof item.note === "string") {
@@ -1559,6 +1756,11 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
     return null;
   }
 
+  /**
+   * @param {ValidatedSlotEntry} entry
+   * @param {string} mode
+   * @returns {HTMLDivElement}
+   */
   function slotEditor(entry, mode) {
     const slot = entry.slot;
     const editor = createElement("div", { className: "slot-editor" });
@@ -1575,6 +1777,8 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
         : (Array.isArray(suggestion) ? suggestion : []);
       node = createElement("textarea", { attrs: { id: "slot-editor-value", rows: 3 } });
       node.value = initial.join("\n");
+    } else if (slot.value_type === "dimension_list") {
+      node = dimensionEditor(Array.isArray(slot.value) ? slot.value : suggestion);
     } else if (slot.value_type === "boolean") {
       node = createElement("select", { attrs: { id: "slot-editor-value" } });
       node.append(createElement("option", { text: "是", attrs: { value: "true" } }));
@@ -1612,7 +1816,7 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
       try {
         value = readEditorValue(slot, node);
       } catch (error) {
-        showError(elements.slotsError, (error && error.message) || "值不合法。");
+        showError(elements.slotsError, errorMessageOf(error, "值不合法。"));
         return;
       }
       clearError(elements.slotsError);
@@ -1630,8 +1834,36 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
     return editor;
   }
 
+  /**
+   * @param {FactSlot} slot
+   * @param {HTMLElement} node
+   * @returns {import("./domain/type-contracts.js").FactSlotValue}
+   */
   function readEditorValue(slot, node) {
-    const raw = node.value;
+    if (slot.value_type === "dimension_list") {
+      /** @type {import("./domain/type-contracts.js").DimensionMeasurement[]} */
+      const values = Array.from(node.querySelectorAll(".dimension-row"), (row) => {
+        /** @type {Record<string, string|number>} */
+        const fields = {};
+        for (const control of /** @type {NodeListOf<HTMLInputElement|HTMLSelectElement>} */ (row.querySelectorAll("[data-dimension-field]"))) {
+          const key = control.dataset.dimensionField;
+          if (!key) continue;
+          fields[key] = key === "value" ? Number(control.value) : control.value.trim();
+        }
+        // 轴向/单位选项来自 DIMENSION_AXES / DIMENSION_UNITS 词表；checkFactSlot 再校验。
+        return {
+          object: String(fields.object || ""),
+          axis: /** @type {import("./domain/type-contracts.js").DimensionAxis} */ (String(fields.axis || "")),
+          value: Number(fields.value),
+          unit: /** @type {import("./domain/type-contracts.js").DimensionUnit} */ (String(fields.unit || "")),
+          source_basis: String(fields.source_basis || ""),
+        };
+      });
+      if (!values.length) throw new Error("至少填写一条已确认的测量。");
+      return values;
+    }
+    const raw = node instanceof HTMLInputElement || node instanceof HTMLTextAreaElement
+      || node instanceof HTMLSelectElement ? node.value : "";
     if (slot.value_type === "text_list") {
       const items = splitLines(raw);
       if (!items.length) throw new Error("文本列表至少要有一条。");
@@ -1650,30 +1882,46 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
     return text;
   }
 
+  /**
+   * @param {ValidatedSlotEntry} entry
+   * @param {import("./domain/type-contracts.js").SlotActionSpec} spec
+   * @returns {Promise<void>}
+   */
   async function handleSlotAction(entry, spec) {
     const action = beginAction();
+    if (!action.projectId) return;
     clearError(elements.slotsError);
     try {
-      const next = applySlotAction(entry.slot, spec);
-      await persistSlot(next, action.projectId, action);
+      await inputs.slotAction(entry.slot.slot_id, spec);
       if (!action.alive()) return;
       interaction = { slotId: null, mode: null };
       await deriveAndApplyState();
       renderAll();
     } catch (error) {
       if (action.alive()) {
-        showError(elements.slotsError, (error && error.message) || "这个动作没有完成。");
+        showError(elements.slotsError, errorMessageOf(error, "这个动作没有完成。"));
       }
     }
   }
 
+  /**
+   * @returns {Promise<void>}
+   */
   async function handleAddSlot() {
     clearError(elements.slotsError);
     elements.slotAddStatus.textContent = "";
     const slotId = elements.slotAddId.value.trim().toLowerCase();
     const label = elements.slotAddLabel.value.trim();
-    const valueType = elements.slotAddType.value;
+    const rawType = elements.slotAddType.value;
     const rawValue = elements.slotAddValue.value;
+    // 值类型选项来自 index.html 的固定 select；词表校验后再按 SlotValueType 使用。
+    if (!/** @type {readonly string[]} */ (SLOT_VALUE_TYPES).includes(rawType)) {
+      showError(elements.slotsError, "值类型不在支持列表内。");
+      return;
+    }
+    /** @type {import("./domain/type-contracts.js").SlotValueType} */
+    const valueType = /** @type {import("./domain/type-contracts.js").SlotValueType} */ (rawType);
+    /** @type {FactSlotValue} */
     let value;
     try {
       if (valueType === "text_list") {
@@ -1690,9 +1938,10 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
         if (!value) throw new Error("值不能为空。");
       }
     } catch (error) {
-      showError(elements.slotsError, (error && error.message) || "值不合法。");
+      showError(elements.slotsError, errorMessageOf(error, "值不合法。"));
       return;
     }
+    /** @type {FactSlot} */
     const candidate = {
       schema_version: FACT_SLOT_SCHEMA_VERSION,
       slot_id: slotId,
@@ -1713,13 +1962,15 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
       showError(elements.slotsError, problems.map((item) => item.message).join("；"));
       return;
     }
-    if (!canAddSlot(candidate, "user", { existingSlots: slotEntries().map((item) => item.slot) })) {
+    if (!canAddSlot(candidate, "user", { existingSlots: inputs.slotEntries().map((item) => item.slot) })) {
       showError(elements.slotsError, "槽位标识已存在，或这个槽位不允许新增。");
       return;
     }
     const action = beginAction();
+    const pid = action.projectId;
+    if (!pid) return;
     try {
-      await persistSlot(candidate, action.projectId, action);
+      await inputs.addCustomSlot(candidate);
       if (!action.alive()) return;
       elements.slotAddId.value = "";
       elements.slotAddLabel.value = "";
@@ -1730,7 +1981,7 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
       renderAll();
     } catch (error) {
       if (action.alive()) {
-        showError(elements.slotsError, (error && error.message) || "新增槽位失败。");
+        showError(elements.slotsError, errorMessageOf(error, "新增槽位失败。"));
       }
     }
   }
@@ -1738,21 +1989,20 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
 
   /* ------------------------------------------------------------ 套图规划 */
 
-  function suiteContext() {
-    return {
-      facts: [...slots.values()].map((entry) => ({
-        slot_id: entry.slot.slot_id,
-        status: entry.slot.status,
-        value: entry.slot.value,
-      })),
-      assets: intake.references.map((item) => ({ role: item.role, sha256: item.asset_sha256 })),
-    };
-  }
-
+  /**
+   * 套图依据缺口的本地连接文本（与 domain/confirm.js blockingText 同形状输入，
+   * 但此处只用于模板提示/行内说明，不做门禁判定；缺口无文案时按空串连接，由调用文案兜底）。
+   * @param {import("./domain/type-contracts.js").DependencyBlocking[]|null|undefined} blocking
+   * @returns {string}
+   */
   function suiteBlockingText(blocking) {
-    return (blocking || []).map((item) => item.reason || item.message).join("；");
+    return (blocking || []).map((item) => item.reason || "").join("；");
   }
 
+  /**
+   * @param {import("./domain/type-contracts.js").PlanRecommendation} recommendation
+   * @returns {void}
+   */
   function updateTemplateHint(recommendation) {
     const instance = recommendation.instances
       .find((item) => item.template_id === elements.suiteTemplate.value);
@@ -1765,11 +2015,13 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
       : "该模板暂时缺依据：" + suiteBlockingText(instance.blocking);
   }
 
+  /**
+   * @returns {void}
+   */
   function renderSuite() {
-    elements.suiteLocked.hidden = understandingReady;
-    elements.suiteEditor.hidden = !understandingReady;
-    if (!understandingReady) return;
-    const recommendation = recommendPlan(suiteContext());
+    elements.suiteLocked.hidden = true;
+    elements.suiteEditor.hidden = false;
+    const recommendation = recommendPlan(inputs.suiteContext());
     if (elements.suiteTemplate.options.length !== SHOT_TEMPLATES.length) {
       elements.suiteTemplate.innerHTML = "";
       for (const template of SHOT_TEMPLATES) {
@@ -1780,18 +2032,22 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
       }
     }
     updateTemplateHint(recommendation);
-    const summary = suitePlan ? suitePlanSummary(suitePlan, suiteContext()) : null;
+    const plan = inputs.suitePlan();
+    const summary = plan ? /** @type {SuitePlanSummary} */ (suitePlanSummary(plan, inputs.suiteContext())) : null;
     elements.suiteStatus.textContent = summary
       ? "共 " + summary.total + " 张，依据已满足 " + summary.satisfiable + " 张"
         + (summary.blocked ? "；" + summary.blocked + " 张缺依据" : "")
       : "还没有套图方案。";
     elements.suiteEmpty.hidden = Boolean(summary);
     elements.shotList.innerHTML = "";
-    if (!summary) return;
+    if (!summary || !plan) return;
     summary.shots.forEach((item, index) => {
+      // 已保存计划恒有 shot_id（validateSuitePlan 要求字符串）；null 仅存在于未落库草稿。
+      const shotId = item.shot_id;
+      if (typeof shotId !== "string") return;
       const row = createElement("li", {
         className: "shot-row",
-        attrs: { "data-shot-id": item.shot_id, "data-blocked": String(!item.satisfied) },
+        attrs: { "data-shot-id": shotId, "data-blocked": String(!item.satisfied) },
       });
       const head = createElement("div", { className: "shot-head" });
       head.append(createElement("span", { className: "badge", text: String(index + 1) }));
@@ -1809,26 +2065,80 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
         className: "meta",
         text: item.satisfied ? "依据已满足。" : "暂时缺依据：" + suiteBlockingText(item.blocking),
       }));
+      const planned = plan.shots.find(shot => shot.shot_id === shotId);
+      if (!planned) return;
+      const readiness = shotReadiness(planned, inputs.suiteContext());
+      const fixes = createElement("div", { className: "shot-fixes" });
+      const slotById = new Map(inputs.slotEntries().map((entry) => [entry.slot.slot_id, entry.slot]));
+      for (const slotId of readiness.missing_fact_ids) {
+        const definition = coreSlotDefinition(slotId);
+        const fix = createElement("button", {
+          text: "填写／确认：" + (slotById.get(slotId)?.label || definition?.label || slotId),
+          attrs: { type: "button" },
+        });
+        fix.addEventListener("click", () => {
+          showAll = true;
+          interaction = { slotId, mode: "edit" };
+          if (!definition && !slotById.has(slotId)) {
+            elements.slotAddId.value = slotId;
+            elements.slotAddLabel.value = slotId;
+          }
+          stageShell.select("understand");
+          renderSlots();
+        });
+        fixes.append(fix);
+      }
+      for (const role of readiness.missing_asset_roles) {
+        const fix = createElement("button", {
+          text: "补参考图：" + (/** @type {Record<string, string>} */ (ROLE_TEXT)[role] || role), attrs: { type: "button" },
+        });
+        fix.addEventListener("click", () => stageShell.select("intake"));
+        fixes.append(fix);
+      }
+      if (fixes.children.length) row.append(fixes);
+      const bindings = createElement("details", { className: "shot-bindings" });
+      bindings.append(createElement("summary", { text: "绑定这张图使用的已确认事实" }));
+      /** @type {HTMLInputElement[]} */
+      const checks = [];
+      for (const entry of inputs.slotEntries().filter(entry => entry.slot.status === "confirmed")) {
+        const label = createElement("label", { className: "choice" });
+        const check = createElement("input", { attrs: { type: "checkbox", value: entry.slot.slot_id } });
+        check.checked = planned.fact_slot_ids.includes(entry.slot.slot_id);
+        label.append(check, document.createTextNode(entry.slot.label));
+        bindings.append(label);
+        checks.push(check);
+      }
+      if (!checks.length) {
+        bindings.append(createElement("p", { className: "meta", text: "先确认需要使用的事实；不从未确认提案猜文案或尺寸。" }));
+      }
+      const applyBindings = createElement("button", { text: "保存本图事实绑定", attrs: { type: "button" } });
+      applyBindings.disabled = !checks.length;
+      applyBindings.addEventListener("click", () => {
+        const ids = checks.filter(check => check.checked).map(check => check.value);
+        void handleSuiteOp(() => setShotFactBindings(plan, shotId, ids));
+      });
+      bindings.append(applyBindings);
+      row.append(bindings);
       const actions = createElement("div", { className: "shot-actions" });
       const up = createElement("button", { text: "上移", attrs: { type: "button" } });
       up.disabled = index === 0;
       up.addEventListener("click", () => {
-        handleSuiteOp(() => moveShot(suitePlan, item.shot_id, -1));
+        handleSuiteOp(() => moveShot(plan, shotId, -1));
       });
       const down = createElement("button", { text: "下移", attrs: { type: "button" } });
       down.disabled = index === summary.shots.length - 1;
       down.addEventListener("click", () => {
-        handleSuiteOp(() => moveShot(suitePlan, item.shot_id, 1));
+        handleSuiteOp(() => moveShot(plan, shotId, 1));
       });
       const copy = createElement("button", { text: "复制", attrs: { type: "button" } });
       copy.addEventListener("click", () => {
-        handleSuiteOp(() => copyShot(suitePlan, item.shot_id));
+        handleSuiteOp(() => copyShot(plan, shotId));
       });
       const remove = createElement("button", {
         text: "删除", className: "danger", attrs: { type: "button" },
       });
       remove.addEventListener("click", () => {
-        handleSuiteOp(() => removeShot(suitePlan, item.shot_id));
+        handleSuiteOp(() => removeShot(plan, shotId));
       });
       actions.append(up, down, copy, remove);
       row.append(actions);
@@ -1836,23 +2146,16 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
     });
   }
 
+  /**
+   * @param {() => {plan: import("./domain/suite.js").PlanRecord, [key: string]: unknown}} run
+   * @returns {Promise<boolean>}
+   */
   async function handleSuiteOp(run) {
-    if (!understandingReady || !projectId) return false;
-    const action = beginAction();
+    if (!projectId) return false;
     clearError(elements.suiteError);
     try {
-      const result = run();
-      const nextPlan = result && result.plan ? result.plan : result;
-      const problems = validateSuitePlan(nextPlan);
-      if (problems.length > 0) throw new Error(problems[0].message);
-      const saved = await repository.documents.save(action.projectId, {
-        kind: SUITE_KIND,
-        documentId: SUITE_PLAN_DOCUMENT_ID,
-        payload: nextPlan,
-      });
-      if (!action.alive()) return false;
-      suitePlan = nextPlan;
-      suiteVersion = saved && typeof saved.version === "number" ? saved.version : suiteVersion + 1;
+      const ok = await inputs.applySuiteOp(run);
+      if (!ok) return false;
       renderSuite();
       renderStyleSpec();
       renderShotSpecs();
@@ -1862,17 +2165,23 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
       await deriveAndApplyState();
       return true;
     } catch (error) {
+      const action = beginAction();
       if (action.alive()) {
-        showError(elements.suiteError, (error && error.message) || "操作没有完成，请重试。");
+        showError(elements.suiteError, errorMessageOf(error, "操作没有完成，请重试。"));
       }
       return false;
     }
   }
 
+  /**
+   * @returns {Promise<void>}
+   */
   async function handleSuiteAddCustom() {
     const label = elements.suiteCustomLabel.value.trim();
     const intent = elements.suiteCustomIntent.value.trim();
-    const ok = await handleSuiteOp(() => addCustomShotToPlan(suitePlan, { label, intent }));
+    const plan = inputs.suitePlan();
+    if (!plan) return;
+    const ok = await handleSuiteOp(() => addCustomShotToPlan(plan, { label, intent }));
     if (ok) {
       elements.suiteCustomLabel.value = "";
       elements.suiteCustomIntent.value = "";
@@ -1882,6 +2191,9 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
 
   /* -------------------------------------------------- 风格与单图规格 */
 
+  /**
+   * @returns {StyleSpec}
+   */
   function styleFormPayload() {
     return {
       ...emptyStyleSpec(),
@@ -1893,7 +2205,12 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
     };
   }
 
+  /**
+   * @param {StyleSpec} spec
+   * @returns {void}
+   */
   function fillStyleForm(spec) {
+    /** @type {Array<[HTMLInputElement|HTMLTextAreaElement, string]>} */
     const pairs = [
       [elements.styleBackground, spec.background || ""],
       [elements.styleLighting, spec.lighting || ""],
@@ -1906,43 +2223,51 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
     }
   }
 
+  /**
+   * @returns {void}
+   */
   function renderStyleSpec() {
-    const ready = understandingReady && Boolean(suitePlan);
+    const plan = inputs.suitePlan();
+    const ready = Boolean(plan);
     elements.specsLocked.hidden = ready;
     elements.specsEditor.hidden = !ready;
-    if (!ready) return;
-    fillStyleForm(styleSpec);
-    elements.styleVersion.textContent = styleVersion > 0
-      ? "版本 v" + styleVersion
+    if (!plan) return;
+    const shownSpec = inputs.styleSpec();
+    const shownVersion = inputs.styleVersion();
+    fillStyleForm(shownSpec);
+    elements.styleVersion.textContent = shownVersion > 0
+      ? "版本 v" + shownVersion
       : "尚未保存";
-    elements.styleRestore.disabled = styleVersion <= 1;
+    elements.styleRestore.disabled = shownVersion <= 1;
     const projection = specChangeProjection("style_changed", {
-      shotCount: suitePlan.shots.length,
+      shotCount: plan.shots.length,
     });
     elements.styleEffect.textContent = "保存后影响：" + projection.affects_text
       + "；失效：" + projection.invalidates_text + "；保留：" + projection.preserves_text + "。";
   }
 
-  function shotSpecEntry(shotId) {
-    return shotSpecs.get(shotId) || null;
-  }
-
+  /**
+   * @returns {void}
+   */
   function renderShotSpecs() {
-    const ready = understandingReady && Boolean(suitePlan);
+    const plan = inputs.suitePlan();
+    const ready = Boolean(plan);
     elements.specsLocked.hidden = ready;
     elements.specsEditor.hidden = !ready;
     elements.shotSpecList.innerHTML = "";
-    if (!ready) return;
-    elements.shotSpecsEmpty.hidden = suitePlan.shots.length > 0;
-    const byId = {};
-    for (const [shotId, entry] of shotSpecs.entries()) byId[shotId] = entry;
-    const digest = suiteSpecDigest(suitePlan, { styleSpec, shotSpecsById: byId });
+    if (!plan) return;
+    elements.shotSpecsEmpty.hidden = plan.shots.length > 0;
+    const byId = inputs.shotSpecsById();
+    const digest = suiteSpecDigest(plan, { styleSpec: inputs.styleSpec(), shotSpecsById: byId });
     digest.shots.forEach((item, index) => {
-      const shot = suitePlan.shots[index];
-      const entry = shotSpecEntry(item.shot_id);
+      // 已保存计划恒有 shot_id；null 仅存在于未落库草稿，跳过即可。
+      const shotId = item.shot_id;
+      const shot = plan.shots[index];
+      if (typeof shotId !== "string" || !shot) return;
+      const entry = inputs.shotSpecEntry(shotId);
       const spec = entry ? entry.spec : emptyShotSpecFromShot(shot);
       const card = createElement("div", {
-        className: "shot-spec", attrs: { "data-shot-id": item.shot_id },
+        className: "shot-spec", attrs: { "data-shot-id": shotId },
       });
       const head = createElement("div", { className: "shot-spec-head" });
       head.append(createElement("span", {
@@ -1954,7 +2279,7 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
       card.append(head);
 
       const purposeField = createElement("div", { className: "field" });
-      const purposeId = "spec-purpose-" + item.shot_id;
+      const purposeId = "spec-purpose-" + shotId;
       const purposeLabel = createElement("label", { text: "目的" });
       purposeLabel.setAttribute("for", purposeId);
       const purposeInput = createElement("input", { attrs: { id: purposeId, maxlength: "200" } });
@@ -1963,7 +2288,7 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
       card.append(purposeField);
 
       const keepField = createElement("div", { className: "field" });
-      const keepId = "spec-keep-" + item.shot_id;
+      const keepId = "spec-keep-" + shotId;
       const keepLabel = createElement("label", { text: "必须保持（一行一条）" });
       keepLabel.setAttribute("for", keepId);
       const keepArea = createElement("textarea", { attrs: { id: keepId, rows: "2" } });
@@ -1972,7 +2297,7 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
       card.append(keepField);
 
       const changeField = createElement("div", { className: "field" });
-      const changeId = "spec-change-" + item.shot_id;
+      const changeId = "spec-change-" + shotId;
       const changeLabel = createElement("label", { text: "允许变化（一行一条）" });
       changeLabel.setAttribute("for", changeId);
       const changeArea = createElement("textarea", { attrs: { id: changeId, rows: "2" } });
@@ -1983,7 +2308,7 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
       const toolbar = createElement("div", { className: "toolbar" });
       const saveButton = createElement("button", { text: "保存", attrs: { type: "button" } });
       saveButton.addEventListener("click", () => {
-        handleSaveShotSpec(item.shot_id, {
+        handleSaveShotSpec(shotId, {
           purpose: purposeInput.value.trim(),
           keep: splitLines(keepArea.value),
           change_allowed: splitLines(changeArea.value),
@@ -1993,7 +2318,7 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
         text: "恢复上一版本", attrs: { type: "button" },
       });
       restoreButton.disabled = !entry || entry.version <= 1;
-      restoreButton.addEventListener("click", () => { handleRestoreShotSpec(item.shot_id); });
+      restoreButton.addEventListener("click", () => { handleRestoreShotSpec(shotId); });
       toolbar.append(saveButton, restoreButton);
       card.append(toolbar);
 
@@ -2013,24 +2338,22 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
     });
   }
 
+  /**
+   * @returns {Promise<void>}
+   */
   async function handleSaveStyle() {
-    if (!projectId || !suitePlan) return;
+    const plan = inputs.suitePlan();
+    if (!projectId || !plan) return;
     const action = beginAction();
+    if (!action.projectId) return;
     clearError(elements.styleError);
     elements.styleStatus.hidden = true;
     try {
       const next = styleFormPayload();
-      assertStyleSpec(next);
-      const diffs = styleSpecDiff(styleSpec, next);
-      const record = await repository.documents.save(action.projectId, {
-        kind: STYLE_KIND,
-        documentId: STYLE_SPEC_DOCUMENT_ID,
-        payload: next,
-        expectedVersion: styleVersion > 0 ? styleVersion : null,
-      });
+      const before = inputs.styleSpec();
+      const diffs = styleSpecDiff(before, next);
+      await inputs.saveStyle(next);
       if (!action.alive()) return;
-      styleSpec = next;
-      styleVersion = record.version;
       renderStyleSpec();
       renderShotSpecs();
       renderPrompts();
@@ -2039,38 +2362,29 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
       await deriveAndApplyState();
       if (!action.alive()) return;
       elements.styleStatus.hidden = false;
-      elements.styleStatus.textContent = "已保存 v" + record.version
+      elements.styleStatus.textContent = "已保存 v" + inputs.styleVersion()
         + (diffs.length > 0
           ? "（改动：" + diffs.map((item) => item.label).join("、") + "）"
           : "（没有字段变化）");
     } catch (error) {
       if (action.alive()) {
-        showError(elements.styleError, (error && error.message) || "保存没有完成，请重试。");
+        showError(elements.styleError, errorMessageOf(error, "保存没有完成，请重试。"));
       }
     }
   }
 
+  /**
+   * @returns {Promise<void>}
+   */
   async function handleRestoreStyle() {
-    if (!projectId || styleVersion <= 1) return;
+    if (!projectId || inputs.styleVersion() <= 1) return;
     const action = beginAction();
+    if (!action.projectId) return;
     clearError(elements.styleError);
     try {
-      const versions = await repository.documents.listVersions(
-        action.projectId, STYLE_KIND, STYLE_SPEC_DOCUMENT_ID);
-      const target = previousVersionOf(versions, styleVersion);
-      if (!target) {
-        showError(elements.styleError, "没有更早的版本可以恢复。");
-        return;
-      }
-      const record = await repository.documents.save(action.projectId, {
-        kind: STYLE_KIND,
-        documentId: STYLE_SPEC_DOCUMENT_ID,
-        payload: target.payload,
-        expectedVersion: styleVersion,
-      });
+      const before = inputs.styleVersion();
+      const restoredVersion = await inputs.restoreStyle();
       if (!action.alive()) return;
-      styleSpec = { ...emptyStyleSpec(), ...target.payload };
-      styleVersion = record.version;
       renderStyleSpec();
       renderShotSpecs();
       renderPrompts();
@@ -2079,39 +2393,29 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
       await deriveAndApplyState();
       if (!action.alive()) return;
       elements.styleStatus.hidden = false;
-      elements.styleStatus.textContent = "已恢复 v" + target.version
-        + " 的内容，写为新版本 v" + record.version + "。";
+      elements.styleStatus.textContent = restoredVersion > 0
+        ? "已恢复上一版本的内容（v" + before + " → v" + restoredVersion + "）。"
+        : "已恢复上一版本的内容。";
     } catch (error) {
       if (action.alive()) {
-        showError(elements.styleError, (error && error.message) || "恢复没有完成，请重试。");
+        showError(elements.styleError, errorMessageOf(error, "恢复没有完成，请重试。"));
       }
     }
   }
 
+  /**
+   * @param {string} shotId
+   * @param {Partial<ShotSpec>} changes
+   * @returns {Promise<void>}
+   */
   async function handleSaveShotSpec(shotId, changes) {
-    if (!projectId || !suitePlan) return;
+    if (!projectId) return;
     const action = beginAction();
+    if (!action.projectId) return;
     clearError(elements.specsError);
     try {
-      const shot = suitePlan.shots.find((item) => item.shot_id === shotId);
-      if (!shot) throw new Error("找不到这张图，可能已被删除。");
-      const entry = shotSpecEntry(shotId);
-      const base = entry ? entry.spec : emptyShotSpecFromShot(shot);
-      const next = {
-        ...base,
-        purpose: changes.purpose,
-        keep: changes.keep,
-        change_allowed: changes.change_allowed,
-      };
-      assertShotSpec(next);
-      const record = await repository.documents.save(action.projectId, {
-        kind: SHOT_SPEC_KIND,
-        documentId: shotId,
-        payload: next,
-        expectedVersion: entry ? entry.version : null,
-      });
+      await inputs.saveShotSpec(shotId, changes);
       if (!action.alive()) return;
-      shotSpecs.set(shotId, { spec: next, version: record.version });
       renderShotSpecs();
       renderPrompts();
       renderConfirm();
@@ -2119,36 +2423,23 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
       await deriveAndApplyState();
     } catch (error) {
       if (action.alive()) {
-        showError(elements.specsError, (error && error.message) || "保存没有完成，请重试。");
+        showError(elements.specsError, errorMessageOf(error, "保存没有完成，请重试。"));
       }
     }
   }
 
+  /**
+   * @param {string} shotId
+   * @returns {Promise<void>}
+   */
   async function handleRestoreShotSpec(shotId) {
     if (!projectId) return;
     const action = beginAction();
+    if (!action.projectId) return;
     clearError(elements.specsError);
     try {
-      const entry = shotSpecEntry(shotId);
-      if (!entry || entry.version <= 1) {
-        showError(elements.specsError, "没有更早的版本可以恢复。");
-        return;
-      }
-      const versions = await repository.documents.listVersions(
-        action.projectId, SHOT_SPEC_KIND, shotId);
-      const target = previousVersionOf(versions, entry.version);
-      if (!target) {
-        showError(elements.specsError, "没有更早的版本可以恢复。");
-        return;
-      }
-      const record = await repository.documents.save(action.projectId, {
-        kind: SHOT_SPEC_KIND,
-        documentId: shotId,
-        payload: target.payload,
-        expectedVersion: entry.version,
-      });
+      await inputs.restoreShotSpec(shotId);
       if (!action.alive()) return;
-      shotSpecs.set(shotId, { spec: target.payload, version: record.version });
       renderShotSpecs();
       renderPrompts();
       renderConfirm();
@@ -2156,76 +2447,84 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
       await deriveAndApplyState();
     } catch (error) {
       if (action.alive()) {
-        showError(elements.specsError, (error && error.message) || "恢复没有完成，请重试。");
+        showError(elements.specsError, errorMessageOf(error, "恢复没有完成，请重试。"));
       }
     }
   }
 
   /* --------------------------------------------------------- Prompt 编译 */
 
+  /* Prompt 版本/依据的唯一所有者是 prompts Module；以下只做只读转发，不持有第二份 Map。 */
+  /**
+   * @param {string} shotId
+   * @param {number|null|undefined} version
+   * @returns {PromptEntry|null}
+   */
+  function promptVersionAt(shotId, version) {
+    return prompts.entryOf(shotId, version ?? null);
+  }
+
   function currentImageProfile() {
-    try {
-      return imagePromptProfile(capabilities && capabilities.images);
-    } catch (error) {
-      return null;
-    }
+    return prompts.profile(/** @type {unknown} */ (capabilities && capabilities.images));
   }
 
-  function promptCurrentBasis(shotId) {
-    let briefBasis = [];
-    try {
-      briefBasis = buildProductBrief(slotEntries()).basis;
-    } catch (error) {
-      briefBasis = [];
-    }
-    const specEntry = shotSpecEntry(shotId);
-    return {
-      briefBasis: briefBasis,
-      suite_version: suiteVersion > 0 ? suiteVersion : null,
-      style_version: styleVersion > 0 ? styleVersion : null,
-      shot_spec_version: specEntry ? specEntry.version : null,
-      platform: { version: PLATFORM_PROFILES.amazon_us.version },
-      provider: currentImageProfile(),
-    };
+  /**
+   * @param {string|null} shotId
+   * @param {ImagePromptProfile|null} [provider]
+   * @returns {unknown}
+   */
+  function promptCurrentBasis(shotId, provider = currentImageProfile()) {
+    return prompts.basis(shotId, provider, projectSources());
   }
 
+  /**
+   * @param {string|null} shotId
+   * @returns {PromptEntry|null}
+   */
   function promptRecordOf(shotId) {
-    const entry = promptVersions.get(shotId) || null;
-    if (!entry || !entry.record || !entry.record.compiled) return null;
-    return entry;
+    return prompts.entryOf(shotId, null);
   }
 
   /** 未保存的编辑草稿：重渲染时保留用户输入，不让界面动作吞掉正在写的文本。 */
+  /**
+   * @returns {Map<string, {text: string, reason: string}>}
+   */
   function capturePromptEdits() {
     const drafts = new Map();
-    for (const area of elements.promptList.querySelectorAll("textarea.prompt-edit-text")) {
+    for (const area of /** @type {NodeListOf<HTMLTextAreaElement>} */ (elements.promptList.querySelectorAll("textarea.prompt-edit-text"))) {
       const shotId = area.getAttribute("data-shot-id");
       const reason = area.parentElement
-        ? area.parentElement.querySelector("input.prompt-edit-reason") : null;
+        ? /** @type {HTMLInputElement|null} */ (area.parentElement.querySelector("input.prompt-edit-reason")) : null;
       if (shotId) drafts.set(shotId, { text: area.value, reason: reason ? reason.value : "" });
     }
     return drafts;
   }
 
+  /**
+   * @returns {void}
+   */
   function renderPrompts() {
     const drafts = capturePromptEdits();
-    const ready = understandingReady && Boolean(suitePlan);
+    const ready = Boolean(inputs.suitePlan());
     elements.promptLocked.hidden = ready;
     elements.promptEditor.hidden = !ready;
     elements.promptList.innerHTML = "";
     if (!ready) return;
-    const summary = suitePlanSummary(suitePlan, suiteContext());
+    const summary = suitePlanSummary(inputs.suitePlan(), inputs.suiteContext());
     elements.promptStatus.textContent = summary
       ? "共 " + summary.total + " 张，依据已满足 " + summary.satisfiable + " 张可编译。"
       : "";
     if (!summary) return;
     summary.shots.forEach((item, index) => {
-      const entry = promptRecordOf(item.shot_id);
-      const stale = entry ? promptStaleness(entry.record, promptCurrentBasis(item.shot_id)) : null;
+      // 已保存计划恒有 shot_id；null 仅存在于未落库草稿，跳过即可。
+      const shotId = item.shot_id;
+      if (typeof shotId !== "string") return;
+      const entry = promptRecordOf(shotId);
+      const stale = entry ? promptStaleness(entry.record, promptCurrentBasis(shotId)) : null;
       const card = createElement("div", {
         className: "shot-spec",
         attrs: {
-          "data-shot-id": item.shot_id,
+          "data-shot-id": shotId,
           "data-prompt-state": entry ? (stale && stale.stale ? "stale" : "saved") : "none",
         },
       });
@@ -2278,7 +2577,10 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
         if (stale && stale.stale) {
           card.append(createElement("p", {
             className: "meta prompt-warning",
-            text: "已过期（" + stale.reasons.map((reason) => reason.field).join("、") + "），请重新编译。",
+            text: "依据已变化（" + stale.reasons.map(reason => reason.field).join("、") + "）。"
+              + (entry.record.origin === "manual_edit"
+                ? "人工全文没有被覆盖；请按当前依据重新确认，或明确丢弃后重新准备。"
+                : "系统会本地重新准备，不调用模型。"),
           }));
         }
       } else if (!item.satisfied) {
@@ -2288,44 +2590,60 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
       }
       const toolbar = createElement("div", { className: "toolbar" });
       const compileButton = createElement("button", {
-        text: "编译并保存版本", className: "primary", attrs: { type: "button" },
+        text: entry?.record.origin === "manual_edit" ? "丢弃人工全文并重新准备" : "重新本地准备",
+        className: entry?.record.origin === "manual_edit" ? "danger" : "", attrs: { type: "button" },
       });
-      compileButton.disabled = !item.satisfied || busy;
-      compileButton.addEventListener("click", () => { handleCompilePrompt(item.shot_id); });
+      compileButton.disabled = !item.satisfied || inputs.isAnalysisRunning();
+      compileButton.addEventListener("click", () => {
+        if (entry?.record.origin === "manual_edit") void handleDiscardManualPrompt(shotId);
+        else void handleCompilePrompt(shotId);
+      });
       toolbar.append(compileButton);
+      let reconfirmButton = null;
+      if (entry?.record.origin === "manual_edit" && stale?.stale) {
+        reconfirmButton = createElement("button", {
+          text: "按当前依据确认此人工全文", attrs: { type: "button" },
+        });
+        reconfirmButton.disabled = !item.satisfied || inputs.isAnalysisRunning();
+        reconfirmButton.addEventListener("click", () => { void handleReconfirmManualPrompt(shotId); });
+        toolbar.append(reconfirmButton);
+      }
       card.append(toolbar);
       if (entry) {
-        const draft = drafts.get(item.shot_id) || null;
-        const unsaved = Boolean(draft) && draft.text !== entry.record.compiled.text;
+        const draft = drafts.get(shotId) || null;
+        const unsaved = draft !== null && draft.text !== entry.record.compiled.text;
         const block = createElement("div", { className: "prompt-edit-block" });
         block.append(createElement("label", {
           className: "meta",
-          attrs: { for: "prompt-edit-" + item.shot_id },
+          attrs: { for: "prompt-edit-" + shotId },
           text: "人工编辑全文（保存为新版本；原版本保留）",
         }));
         const area = createElement("textarea", {
           className: "prompt-edit-text",
-          attrs: { id: "prompt-edit-" + item.shot_id, "data-shot-id": item.shot_id, rows: "6" },
+          attrs: { id: "prompt-edit-" + shotId, "data-shot-id": shotId, rows: "6" },
         });
-        area.value = unsaved ? draft.text : entry.record.compiled.text;
+        area.value = draft && unsaved ? draft.text : entry.record.compiled.text;
         block.append(area);
+        area.addEventListener("input", () => {
+          if (reconfirmButton) reconfirmButton.disabled = !item.satisfied || inputs.isAnalysisRunning() || area.value !== entry.record.compiled.text;
+        });
         block.append(createElement("label", {
           className: "meta",
-          attrs: { for: "prompt-edit-reason-" + item.shot_id },
+          attrs: { for: "prompt-edit-reason-" + shotId },
           text: "编辑原因（必填，写入版本记录）",
         }));
         const reason = createElement("input", {
           className: "prompt-edit-reason",
           attrs: {
-            id: "prompt-edit-reason-" + item.shot_id, type: "text", autocomplete: "off",
+            id: "prompt-edit-reason-" + shotId, type: "text", autocomplete: "off",
             maxlength: String(MANUAL_EDIT_REASON_MAX),
           },
         });
-        if (unsaved && draft.reason) reason.value = draft.reason;
+        if (draft && unsaved && draft.reason) reason.value = draft.reason;
         block.append(reason);
         const saveEdit = createElement("button", { text: "保存为新版本", attrs: { type: "button" } });
-        saveEdit.disabled = busy;
-        saveEdit.addEventListener("click", () => { handleSaveEditedPrompt(item.shot_id); });
+        saveEdit.disabled = inputs.isAnalysisRunning();
+        saveEdit.addEventListener("click", () => { handleSaveEditedPrompt(shotId); });
         block.append(saveEdit);
         card.append(block);
       }
@@ -2333,70 +2651,101 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
     });
   }
 
-  /**
-   * 纯编译一张图的 Prompt（不写记录）：预览、保存与提交共用同一条编译路径。
-   */
-  async function compileShotPrompt(shotId, options = {}) {
-    const shot = suitePlan.shots.find((item) => item.shot_id === shotId);
-    if (!shot) throw new Error("找不到这张图，可能已被删除。");
-    const brief = buildProductBrief(slotEntries());
-    const specEntry = shotSpecEntry(shotId);
-    const providerProfile = currentImageProfile();
-    if (!providerProfile) throw new Error("尚未取得有效图像能力，请恢复模型服务后再编译；不会猜测模型参数。");
-    const compiled = compilePrompt({
-      brief: brief,
-      shot: shot,
-      styleSpec: styleSpec,
-      shotSpec: specEntry ? specEntry.spec : null,
-      context: suiteContext(),
-      providerProfile: providerProfile,
-      versions: {
-        suite_version: suiteVersion,
-        style_version: styleVersion,
-        shot_spec_version: specEntry ? specEntry.version : null,
-      },
-      ...(options.rework ? { rework: options.rework } : {}),
-    });
-    const references = selectReferences(shot, intake.references.map((item) => ({
-      role: item.role, sha256: item.asset_sha256,
-    })), { maxReferences: providerProfile.max_reference_images });
-    const snapshot = requestSnapshotOf(compiled, { references: references });
-    const hash = await promptHash(snapshot, { digest: sha256Hex });
-    const payload = buildPromptRecord({ compiled: compiled, snapshot: snapshot, hash: hash });
-    const problems = checkPromptRecord(payload);
-    if (problems.length > 0) throw new Error(problems[0].message);
-    return { payload: payload, compiled: compiled, references: references };
-  }
 
-  /** 保存一条已编译的 Prompt 版本；版本号由 repository 递增，旧版本保留。 */
-  async function savePromptPayload(shotId, payload, action = null) {
-    const pid = action ? action.projectId : projectId;
-    const saved = await repository.documents.save(pid, {
-      kind: PROMPT_KIND, documentId: shotId, payload: payload,
-    });
-    if (!action || action.alive()) {
-      promptVersions.set(shotId, { record: payload, version: saved.version });
+  /** 本地准备是 prompts Module 的动作；这里只传 DOM 草稿并呈现结果文案。 */
+  async function prepareSystemPrompts() {
+    if (!projectId || prompts.isPreparing()) return;
+    const action = beginAction();
+    if (!action.projectId) return;
+    const gate = !inputs.suitePlan()
+      ? "先添加图片任务；本地准备不会调用模型。"
+      : (!understandingReady ? "请人工确认核心事实；各图片用途的额外缺项就地补足。"
+        : (!currentImageProfile() ? "等待有效图像配置；打开模型设置可恢复。" : null));
+    if (gate) {
+      elements.localPreparationStatus.textContent = gate;
+      return;
     }
-    return saved;
+    elements.localPreparationStatus.textContent = "正在本地准备已就绪图片任务；不会调用模型…";
+    renderConfirm();
+    try {
+      const result = await prompts.prepare(capturePromptEdits());
+      if (!action.alive()) return;
+      if (result.reason === "no_plan" || result.reason === "facts" || result.reason === "configuration") {
+        elements.localPreparationStatus.textContent = result.reason === "no_plan"
+          ? "先添加图片任务；本地准备不会调用模型。"
+          : result.reason === "facts" ? "请人工确认核心事实；各图片用途的额外缺项就地补足。"
+            : "等待有效图像配置；打开模型设置可恢复。";
+        return;
+      }
+      if (result.reason === "in_flight" || result.reason === "unchanged"
+        || result.reason === "stale_session" || result.reason === "no_project") return;
+      elements.localPreparationStatus.textContent = result.errors.length
+        ? "部分任务尚未准备：" + result.errors.join("；")
+        : "本地准备完成" + (result.prepared ? "（更新 " + result.prepared + " 张）" : "")
+          + "；未调用模型。人工文本保留，提交前请核对下面的摘要。";
+      await deriveAndApplyState();
+    } finally {
+      if (action.alive()) { renderPrompts(); renderConfirm(); renderAttempts(); }
+    }
   }
 
   /**
-   * 编译并保存一张图的 Prompt 版本（V2.5.4 起可选带返工指令）。
-   * 纯编译 + 保存；失败抛错交给调用方，界面文案不在这一层写死。
+   * @param {string} shotId
+   * @returns {Promise<void>}
    */
-  async function compileAndSavePrompt(shotId, options = {}) {
-    const result = await compileShotPrompt(shotId, options);
-    const saved = await savePromptPayload(shotId, result.payload, options.action || null);
-    return { saved: saved, payload: result.payload, compiled: result.compiled,
-             references: result.references };
+  async function handleReconfirmManualPrompt(shotId) {
+    const entry = promptRecordOf(shotId);
+    if (!entry || entry.record.origin !== "manual_edit") return;
+    const action = beginAction();
+    const area = /** @type {HTMLTextAreaElement|null} */ (elements.promptList.querySelector('textarea.prompt-edit-text[data-shot-id="' + shotId + '"]'));
+    if (area && area.value !== entry.record.compiled.text) {
+      showError(elements.promptError, "此全文有未保存修改；先保存，再重新确认，不会确认另一份旧文本。");
+      return;
+    }
+    clearError(elements.promptError);
+    try {
+      const saved = await prompts.reconfirm(shotId, area ? area.value : null, action);
+      if (!saved) return;
+      if (!action.alive()) return;
+      renderPrompts(); renderConfirm(); renderAttempts();
+      elements.promptStatus.textContent = "人工全文原文保留，已按当前依据重新确认为 v" + saved.version + "；未调用模型。";
+    } catch (error) {
+      if (action.alive()) showError(elements.promptError, errorMessageOf(error, "重新确认失败；原人工全文保留。"));
+    }
   }
 
+  /**
+   * @param {string} shotId
+   * @returns {Promise<void>}
+   */
+  async function handleDiscardManualPrompt(shotId) {
+    const entry = promptRecordOf(shotId);
+    if (!entry || entry.record.origin !== "manual_edit") return;
+    const action = beginAction();
+    const area = /** @type {HTMLTextAreaElement|null} */ (elements.promptList.querySelector('textarea.prompt-edit-text[data-shot-id="' + shotId + '"]'));
+    const previousDraft = area?.value;
+    clearError(elements.promptError);
+    try {
+      const payload = await prompts.discard(shotId, action);
+      if (!action.alive() || !payload) return;
+      if (area && area.value === previousDraft) area.value = payload.compiled.text;
+      renderPrompts(); renderConfirm(); renderAttempts();
+      elements.promptStatus.textContent = "已明确丢弃人工覆盖并恢复当前系统 Prompt；历史全文保留，未调用模型。";
+    } catch (error) {
+      if (action.alive()) showError(elements.promptError, errorMessageOf(error, "丢弃未完成；原全文与输入保留。"));
+    }
+  }
+
+  /**
+   * @param {string} shotId
+   * @returns {Promise<void>}
+   */
   async function handleCompilePrompt(shotId) {
-    if (!projectId || !suitePlan || !understandingReady) return;
+    if (!projectId || !inputs.suitePlan() || !understandingReady) return;
     const action = beginAction();
     clearError(elements.promptError);
     try {
-      const result = await compileAndSavePrompt(shotId, { action });
+      const result = await prompts.compileAndSave(shotId, { action });
       if (!action.alive()) return;
       renderPrompts();
       renderConfirm();
@@ -2408,16 +2757,19 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
     } catch (error) {
       if (!action.alive()) return;
       showError(elements.promptError,
-        (error && error.message) ? error.message + "（旧版本已保留）" : "编译未完成，旧版本已保留。");
+        errorMessageSuffixed(error, "编译未完成，旧版本已保留。", "（旧版本已保留）"));
       renderPrompts();
       renderConfirm();
       renderAttempts();
     }
   }
 
-  /** 人工编辑：保存为新版本；失败时保留旧版本与用户输入，不清空文本区。 */
+  /** 人工编辑：保存为新版本；失败时保留旧版本与用户输入，不清空文本区。
+   * @param {string} shotId
+   * @returns {Promise<void>}
+   */
   async function handleSaveEditedPrompt(shotId) {
-    if (!projectId || !suitePlan || !understandingReady) return;
+    if (!projectId || !inputs.suitePlan() || !understandingReady) return;
     const action = beginAction();
     clearError(elements.promptError);
     const entry = promptRecordOf(shotId);
@@ -2425,25 +2777,11 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
       showError(elements.promptError, "先编译并保存这张图的 Prompt，再编辑。");
       return;
     }
-    const area = document.getElementById("prompt-edit-" + shotId);
-    const reasonInput = document.getElementById("prompt-edit-reason-" + shotId);
+    const area = /** @type {HTMLTextAreaElement|null} */ (document.getElementById("prompt-edit-" + shotId));
+    const reasonInput = /** @type {HTMLInputElement|null} */ (document.getElementById("prompt-edit-reason-" + shotId));
     try {
-      const context = suiteContext();
-      context.brief = buildProductBrief(slotEntries());
-      const record = await buildEditedPromptRecord({
-        base: entry.record,
-        baseVersion: entry.version,
-        text: area ? area.value : "",
-        reason: reasonInput ? reasonInput.value : "",
-        editedAt: new Date().toISOString(),
-        context: context,
-        digest: sha256Hex,
-      });
-      const saved = await repository.documents.save(action.projectId, {
-        kind: PROMPT_KIND, documentId: shotId, payload: record,
-      });
+      const saved = await prompts.edit(shotId, area ? area.value : "", reasonInput ? reasonInput.value : "", action);
       if (!action.alive()) return;
-      promptVersions.set(shotId, { record: record, version: saved.version });
       renderPrompts();
       renderConfirm();
       renderAttempts();
@@ -2454,7 +2792,7 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
     } catch (error) {
       if (action.alive()) {
         showError(elements.promptError,
-          (error && error.message) ? error.message + "（旧版本与输入已保留）" : "编辑未保存，旧版本与输入已保留。");
+          errorMessageSuffixed(error, "编辑未保存，旧版本与输入已保留。", "（旧版本与输入已保留）"));
       }
     }
   }
@@ -2465,66 +2803,85 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
    * 确认单投影：界面、状态派生与提交都读同一份，不各自重算。
    * shotIds 给定时只投影这些图（V2.5.4 单图返工），否则是整套。
    */
-  function buildScopedSheet(shotIds) {
-    if (!suitePlan) return null;
-    const providerProfile = currentImageProfile();
-    if (!providerProfile) return null;
-    const entries = [...promptVersions.entries()].map(([shotId, entry]) => ({
-      shot_id: shotId, record: entry.record, version: entry.version,
-    }));
-    const basisByShot = {};
-    for (const shot of suitePlan.shots) {
-      basisByShot[shot.shot_id] = promptCurrentBasis(shot.shot_id);
-    }
-    return buildConfirmationSheet({
-      suitePlan: suitePlan,
-      promptEntries: entries,
-      providerProfile: providerProfile,
-      context: suiteContext(),
-      currentBasisByShot: basisByShot,
-      shotIds: shotIds,
-    });
+  /**
+   * 确认单投影：界面、状态派生与提交都读同一份，不各自重算。
+   * 唯一所有者是 prompts Module；这里只转发，不重建规则。
+   * @param {string[]|null} shotIds
+   * @returns {ConfirmationSheetView|null}
+   */
+  function buildScopedSheet(shotIds, { providerProfile = currentImageProfile() } = {}) {
+    return /** @type {ConfirmationSheetView|null} */ (prompts.sheet(shotIds, providerProfile));
   }
 
+  /**
+   * @returns {ConfirmationSheetView|null}
+   */
   function buildCurrentSheet() {
     return buildScopedSheet(null);
   }
 
+  /**
+   * 意图装配（薄装配层）：scope/mode/队列所有权在 generation Module（设计§2.1），
+   * 确认单投影归 prompts；当前性/环境匹配的唯一判据也在 generation
+   * （isConfirmedShotCurrent / confirmationTargetMatched），这里只转发，不重建规则。
+   * @returns {WorkspaceGenerationIntent|null}
+   */
+  function buildGenerationIntent() {
+    const batch = generation.deriveBatch();
+    const queue = batch.queue && batch.queue.length ? batch.queue : batch.retry_queue;
+    const intent = generation.intent({ queue: batch.queue, retry_queue: batch.retry_queue });
+    if (!intent) return null;
+    return /** @type {WorkspaceGenerationIntent|null} */ ({ ...intent, all: intent.all, sheet: intent.sheet });
+  }
+
+  /**
+   * 单图当前性：转发 generation.isConfirmedShotCurrent（执行与按钮同一判据）。
+   * @param {ConfirmationQueue} queue
+   * @param {string} shotId
+   * @returns {boolean}
+   */
+  function queueShotIsCurrent(queue, shotId) {
+    return generation.isConfirmedShotCurrent(queue, shotId);
+  }
+
   /** 确认记录是否仍然对得上「这一批将要提交的东西」。 */
+  /** 确认记录是否仍然对得上「这一批将要提交的东西」。
+   * @returns {boolean}
+   */
   function confirmationIsCurrent() {
-    if (!confirmRecord) return false;
-    try {
-      const sheet = buildCurrentSheet();
-      if (!sheet || !sheet.can_submit) return false;
-      return !confirmationStaleness(confirmRecord.payload, confirmationSnapshot(sheet)).stale;
-    } catch (error) {
-      return false;
-    }
+    const queue = generation.confirmed();
+    return Boolean(queue?.payload?.fingerprint?.snapshot?.execution_target
+      && queue.payload.shots.some((/** @type {{shot_id: string}} */ shot) => queueShotIsCurrent(queue, shot.shot_id)));
   }
 
   /**
    * 这张图的返工确认是否仍然有效：与整套确认同一套「快照逐字比对」判定，
    * 只是作用域只有这一张图——改别的图不会让它失效，改这张图一定会失效。
    */
+  /**
+   * 这张图的返工确认是否仍然有效：与整套确认同一套「快照逐字比对」判定，
+   * 只是作用域只有这一张图——改别的图不会让它失效，改这张图一定会失效。
+   * @param {string} shotId
+   * @returns {boolean}
+   */
   function reworkConfirmationIsCurrent(shotId) {
-    const entry = reworkConfirmations.get(shotId);
-    if (!entry) return false;
-    try {
-      const sheet = buildScopedSheet([shotId]);
-      if (!sheet || !sheet.can_submit) return false;
-      return !confirmationStaleness(entry.payload, confirmationSnapshot(sheet)).stale;
-    } catch (error) {
-      return false;
-    }
+    const entry = generation.reworkEntry(shotId);
+    return Boolean(entry && queueShotIsCurrent(entry, shotId));
   }
-
-  /** 提交这张图的条件：整套确认有效，或这张图有自己有效的返工确认。 */
+  /** 提交这张图的条件：这张图在某个现存授权队列里仍有效（generation 统一判据）。
+   * @param {string|null} shotId
+   * @returns {boolean}
+   */
   function confirmationIsCurrentForShot(shotId) {
-    return confirmationIsCurrent() || reworkConfirmationIsCurrent(shotId);
+    if (!shotId) return false;
+    return generation.shotHasCurrent(shotId);
   }
 
+  /**
+   * @returns {void}
+   */
   function renderConfirm() {
-    const ready = understandingReady && Boolean(suitePlan);
+    const ready = Boolean(inputs.suitePlan());
     elements.confirmLocked.hidden = ready;
     elements.confirmEditor.hidden = !ready;
     elements.confirmSummary.innerHTML = "";
@@ -2533,24 +2890,36 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
     elements.confirmList.innerHTML = "";
     elements.confirmRecord.textContent = "";
     elements.confirmAction.disabled = true;
+    displayedGenerationIntent = null;
     if (!ready) return;
+    /** @type {ConfirmationSheetView|null} */
     let sheet = null;
     try {
-      sheet = buildCurrentSheet();
+      displayedGenerationIntent = buildGenerationIntent();
+      sheet = displayedGenerationIntent ? displayedGenerationIntent.all : null;
     } catch (error) {
       showError(elements.confirmError,
-        "生成前确认投影失败：" + ((error && error.message) || "未知错误"));
+        "生成前确认投影失败：" + (errorMessageOf(error, "未知错误")));
       return;
     }
-    if (!sheet) {
+    if (!sheet || !displayedGenerationIntent) {
       elements.confirmStatus.textContent = "尚未取得有效图像能力；恢复服务后再确认，不会提交未经核对的请求。";
       return;
     }
-    elements.confirmStatus.textContent = "共 " + sheet.total + " 张；就绪 " + sheet.ready
-      + " 张；阻断 " + sheet.blocked + " 张" + (sheet.can_submit ? "；可以确认。" : "。");
+    const intent = displayedGenerationIntent;
+    const sending = intent.sheet;
+    const sendingIds = new Set(sending?.shots.map(item => item.shot_id) || []);
+    elements.confirmStatus.textContent = "本次明确发送 " + (sending?.total || 0) + " 张；"
+      + "用途缺项／过期任务不外发；已有成功、进行中或 Unknown 不自动重提。";
     elements.confirmSummary.append(createElement("p", {
-      className: "confirm-summary", text: sheet.external_summary.statement,
+      className: "confirm-summary", text: sending ? sending.external_summary.statement : "当前没有可新增发送的已就绪图片任务。",
     }));
+    if (generation.mode() === "explicit_new") {
+      elements.confirmSummary.append(createElement("p", {
+        className: "prompt-warning",
+        text: "这是另一个新动作，不是核对原任务。原 Unknown 可能已经被受理，另发可能重复扣费；原记录与采用不删除、不覆盖。",
+      }));
+    }
     elements.confirmSummary.append(createElement("p", {
       className: "meta",
       text: "每张图发送自己的 Prompt 文本与上列参考图；不发送本地文件本身、历史候选或其他项目数据。",
@@ -2562,6 +2931,14 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
       row.append(createElement("span", {
         className: "meta", text: "返回：" + blocker.fix.region + " · " + blocker.fix.action,
       }));
+      const fix = createElement("button", { text: "去补足此项", attrs: { type: "button" } });
+      fix.addEventListener("click", () => {
+        const task = /** @type {Record<string, string>} */ ({ intake: "intake", understanding: "understand", suite: "plan",
+          style: "generate", shot_spec: "generate", prompt: "generate" })[blocker.fix.region];
+        stageShell.select(task);
+        if (blocker.fix.region === "prompt") /** @type {HTMLDetailsElement} */ (document.getElementById("prompt-details")).open = true;
+      });
+      row.append(fix);
       elements.confirmBlockers.append(row);
     }
     for (const risk of sheet.risks) {
@@ -2583,7 +2960,7 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
       }));
       head.append(createElement("span", {
         className: item.blockers.length > 0 ? "badge is-critical" : "badge is-confirmed",
-        text: item.blockers.length > 0 ? "阻断 " + item.blockers.length + " 项" : "就绪",
+        text: sendingIds.has(item.shot_id) ? "本次发送" : item.blockers.length ? "本次不发送：缺项／过期" : "本次不重复提交",
       }));
       head.append(createElement("span", {
         className: "meta",
@@ -2596,11 +2973,11 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
       row.append(createElement("p", {
         className: "meta",
         text: "参考图 " + item.references.length + " 张（"
-          + (item.references.map((ref) => ROLE_TEXT[ref.role] || ref.role).join("、") || "无") + "）"
+          + (item.references.map((ref) => /** @type {Record<string, string>} */ (ROLE_TEXT)[ref.role] || ref.role).join("、") || "无") + "）"
           + (item.prompt.chars === null ? "" : " · 提示词 " + item.prompt.chars + " 字"),
       }));
       const referenceTech = techDetails(item.references.map(
-        (ref) => (ROLE_TEXT[ref.role] || ref.role) + " sha256 " + ref.sha256_prefix));
+        (ref) => (/** @type {Record<string, string>} */ (ROLE_TEXT)[ref.role] || ref.role) + " sha256 " + ref.sha256_prefix));
       if (referenceTech) row.append(referenceTech);
       if (item.risks.length > 0) {
         row.append(createElement("p", {
@@ -2612,65 +2989,64 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
       }
       elements.confirmList.append(row);
     }
-    elements.confirmAction.disabled = !sheet.can_submit || busy;
-    if (confirmRecord) {
-      const staleness = confirmationStaleness(confirmRecord.payload, confirmationSnapshot(sheet));
-      elements.confirmRecord.textContent = staleness.stale
-        ? "已确认 v" + confirmRecord.version + " 已失效（"
-          + staleness.reasons.map((reason) => reason.field).join("、") + "），需要重新确认。"
-        : "已确认 v" + confirmRecord.version + "（" + confirmRecord.payload.confirmed_at
-          + "）；本版尚未调用图片模型。";
-    } else {
-      elements.confirmRecord.textContent = "尚未确认。";
-    }
+    const identity = intent.identity;
+    elements.confirmAction.disabled = !sending?.can_submit || !identity?.configured || inputs.isAnalysisRunning()
+      || prompts.isPreparing() || submissionInFlight || modelSettings.refreshing
+      || Boolean(generation.batchStateReader()?.active);
+    elements.confirmAction.textContent = (generation.mode() === "explicit_new" ? "确认并另发 " : "确认并生成 ")
+      + (sending?.total || 0) + " 张";
+    elements.confirmRecord.textContent = identity?.configured
+      ? "一次点击先保存这份授权，再按摘要外发；不会要求第二次提交。"
+      : "原目标凭据未就绪。打开模型设置补凭据；本地事实、Prompt、采用和导出不受影响。";
   }
 
+  /**
+   * @returns {Promise<void>}
+   */
   async function handleConfirmGeneration() {
-    if (!projectId || !suitePlan) return;
+    if (!projectId || !inputs.suitePlan() || submissionInFlight || prompts.isPreparing() || modelSettings.refreshing) return;
+    const authorized = displayedGenerationIntent;
     const action = beginAction();
+    const expectedVersion = generation.confirmed()?.version || 0;
+    submissionInFlight = true;
+    elements.confirmAction.disabled = true;
     clearError(elements.confirmError);
     try {
-      const sheet = buildCurrentSheet();
-      if (!sheet) throw new Error("还没有可确认的套图方案。");
-      if (!sheet.can_submit) {
-        throw new Error("还有 " + sheet.blocked + " 张图未就绪，不能确认生成。");
-      }
-      const snapshot = confirmationSnapshot(sheet);
-      const hash = await promptHash(snapshot, { digest: sha256Hex });
-      const payload = buildConfirmationRecord({
-        sheet: sheet, hash: hash, confirmedAt: new Date().toISOString(),
-      });
-      const problems = checkConfirmationRecord(payload);
-      if (problems.length > 0) throw new Error(problems[0].message);
-      const saved = await repository.documents.save(action.projectId, {
-        kind: CONFIRM_KIND, documentId: CONFIRM_DOCUMENT_ID, payload: payload,
-      });
-      if (!action.alive()) return;
-      confirmRecord = { payload: payload, version: saved.version };
-      renderConfirm();
-      renderAttempts();
-      elements.confirmRecord.textContent = "已确认 v" + saved.version + "（" + payload.confirmed_at
-        + "）；本版尚未调用图片模型。";
-      await deriveAndApplyState();
+      await generation.confirmAndRun(/** @type {import("./generation.js").ConfirmAndRunInput} */ ({
+        intent: authorized, readIntent: buildGenerationIntent,
+        documentId: CONFIRM_DOCUMENT_ID, expectedVersion, action,
+      }));
     } catch (error) {
-      if (!action.alive()) return;
-      showError(elements.confirmError, (error && error.message) || "确认没有完成，请重试。");
-      renderConfirm();
+      if (action.alive()) showError(elements.confirmError, errorMessageOf(error, "生成没有完成；授权与历史保留。"));
+    } finally {
+      submissionInFlight = false;
+      if (action.alive()) { renderConfirm(); renderAttempts(); }
     }
   }
 
   /* ------------------------------------------------------------ 生成执行 */
 
+  /**
+   * @param {string|null} shotId
+   * @returns {{version: number, hash: string}|null}
+   */
   function currentPromptPointer(shotId) {
     const entry = promptRecordOf(shotId);
     return entry ? { version: entry.version, hash: entry.record.hash } : null;
   }
 
+  /**
+   * @returns {import("./model-settings.js").ProviderCapability|null}
+   */
   function imageProviderBlock() {
     const images = capabilities && capabilities.images ? capabilities.images : null;
     return images && images.provider ? images.provider : null;
   }
 
+  /**
+   * @param {unknown} state
+   * @returns {string}
+   */
   function attemptBadgeClass(state) {
     if (state === ATTEMPT_STATES.succeeded) return "is-attempt-done";
     if (state === ATTEMPT_STATES.failed) return "is-attempt-failed";
@@ -2678,73 +3054,25 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
     return "is-attempt-active";
   }
 
+  /**
+   * @param {unknown} iso
+   * @returns {string}
+   */
   function shortTime(iso) {
     if (!iso) return "?";
     try {
-      return new Date(iso).toLocaleString("zh-CN", { hour12: false });
+      // Date 接受的输入是 string|number|Date；其余形状直接走下面的 String 回退。
+      const date = new Date(/** @type {string | number | Date} */ (iso));
+      return date.toLocaleString("zh-CN", { hour12: false });
     } catch (error) {
       return String(iso);
     }
   }
 
-  async function blobToBase64(blob) {
-    const buffer = await blob.arrayBuffer();
-    const bytes = new Uint8Array(buffer);
-    let binary = "";
-    const chunk = 0x8000;
-    for (let index = 0; index < bytes.length; index += chunk) {
-      binary += String.fromCharCode.apply(null, bytes.subarray(index, index + chunk));
-    }
-    return btoa(binary);
-  }
-
-  /**
-   * V2.5.2：把目标 Shot 的最新候选投影成一次复核请求。
-   * 图片字节只从 IndexedDB 读；资料缺失或超上限时抛错（调用方转为未完成，不送半份资料）。
+  /** 单张「保存候选图片」按钮入口：只翻译结果，不做批次策略。
+   * @param {string} shotId
+   * @returns {Promise<StoreCandidateResult>}
    */
-  async function buildReviewRequest(shotId, candidate) {
-    const asset = await repository.assets.get(projectId, candidate.asset_sha256);
-    if (!asset || !(asset.blob instanceof Blob)) {
-      throw new Error("候选字节缺失，无法复核；请重新生成或重新导入项目。");
-    }
-    if (asset.blob.size > MAX_REVIEW_IMAGE_BYTES) {
-      throw new Error("候选字节超过复核上限（" + MAX_REVIEW_IMAGE_BYTES + " 字节），未发起复核。");
-    }
-    const shot = (suitePlan && Array.isArray(suitePlan.shots) ? suitePlan.shots : [])
-      .find((item) => item && item.shot_id === shotId) || null;
-    const specEntry = shotSpecEntry(shotId);
-    const spec = specEntry ? specEntry.spec : (shot ? emptyShotSpecFromShot(shot) : null);
-    const references = shot
-      ? selectReferences(shot, (Array.isArray(intake.references) ? intake.references : [])
-          .map((item) => ({ role: item.role, sha256: item.asset_sha256 })))
-        .slice(0, MAX_REVIEW_REFERENCES)
-      : [];
-    const referencePayload = await generation.buildReferencePayload(references, projectId);
-    const facts = confirmedFactPayloads();
-    return {
-      candidate: {
-        media_type: candidate.media_type || "image/png",
-        sha256: candidate.asset_sha256,
-        data_base64: await blobToBase64(asset.blob),
-      },
-      references: referencePayload.map((item) => ({
-        media_type: item.media_type,
-        sha256: item.sha256,
-        data_base64: item.data_base64,
-      })),
-      shot: {
-        title: String((shot && (shot.role_label || shot.role_id)) || "图片任务").slice(0, 200),
-        purpose: spec ? String(spec.purpose || "").slice(0, 500) : "",
-        keep_items: spec ? spec.keep.slice(0, 8) : [],
-        allow_changes: spec ? spec.change_allowed.slice(0, 8) : [],
-      },
-      platform: ANALYZE_PLATFORM,
-      product_facts: facts,
-      locale: ANALYZE_LOCALE,
-    };
-  }
-
-  /** 单张「保存候选图片」按钮入口：只翻译结果，不做批次策略。 */
   async function handleStoreCandidate(shotId) {
     clearAttemptError();
     const result = await generation.storeCandidate(shotId);
@@ -2766,11 +3094,20 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
   }
 
   /** 预览 URL 缓存：每个候选一个 object URL，关闭项目时统一撤销。 */
+  /** 预览 URL 缓存：每个候选一个 object URL，关闭项目时统一撤销。
+   * @param {string} shotId
+   * @param {string} actionId
+   * @param {string} assetSha256
+   * @returns {Promise<string|null>}
+   */
   async function ensurePreviewUrl(shotId, actionId, assetSha256) {
     const key = shotId + ":" + actionId;
-    if (previewUrls.has(key)) return previewUrls.get(key);
-    const asset = await repository.assets.get(projectId, assetSha256);
-    if (!asset || !(asset.blob instanceof Blob)) return null;
+    const cached = previewUrls.get(key);
+    if (cached) return cached;
+    const pid = projectId;
+    if (!pid) return null;
+    const asset = await repository.assets.get(pid, assetSha256);
+    if (pid !== projectId || !asset || !(asset.blob instanceof Blob)) return null;
     const url = URL.createObjectURL(asset.blob);
     previewUrls.set(key, url);
     return url;
@@ -2782,7 +3119,11 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
    * 面板只是投影：候选、报告、参考图全部来自 IndexedDB 已经存在的事实，
    * 排序与默认目标由 domain/compare.js 决定（唯一权威），这里不重算报告、不写任何记录。
    */
+  /**
+   * @returns {Record<string, AttemptRecord>}
+   */
   function attemptsByActionId() {
+    /** @type {Record<string, AttemptRecord>} */
     const map = {};
     for (const record of generation.allAttemptRecords()) {
       if (record && typeof record.action_id === "string") map[record.action_id] = record;
@@ -2791,17 +3132,22 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
   }
 
   /** 每张图的候选行（异常优先）+ 计划顺序；报告只在 reviewIsCurrent 为真时参与。 */
+  /** 每张图的候选行（异常优先）+ 计划顺序；报告只在 reviewIsCurrent 为真时参与。
+   * @returns {{shots: Array<{shot_id: string}>, rowsByShotId: Record<string, CompareInventoryRow[]>}}
+   */
   function compareInventory() {
-    const shots = suitePlan ? suitePlanSummary(suitePlan, suiteContext()).shots : [];
+    const shots = inputs.suitePlan() ? suitePlanSummary(inputs.suitePlan(), inputs.suiteContext()).shots : [];
+    /** @type {Record<string, CompareInventoryRow[]>} */
     const rowsByShotId = {};
     const attempts = attemptsByActionId();
     for (const item of shots) {
       const chain = generation.candidateChainOf(item.shot_id);
+      /** @type {Record<string, ReviewReport>} */
       const reports = {};
       for (const entry of chain) {
-        const candidate = entry && entry.record ? entry.record : entry;
+        const candidate = entry.record;
         if (!candidate || typeof candidate.candidate_id !== "string") continue;
-        const existing = generation.reviewReportOf(candidate.candidate_id);
+        const existing = selectionAdoption.reportOf(candidate.candidate_id);
         if (existing && reviewIsCurrent(existing.report, candidate)) {
           reports[candidate.candidate_id] = existing.report;
         }
@@ -2813,10 +3159,18 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
     return { shots, rowsByShotId };
   }
 
+  /**
+   * @param {string} candidateId
+   * @returns {string}
+   */
   function compareTabId(candidateId) {
     return "compare-tab-" + String(candidateId).replace(/[^A-Za-z0-9_-]/g, "-");
   }
 
+  /**
+   * @param {CompareInventoryRow} row
+   * @returns {string}
+   */
   function compareStateLabel(row) {
     return COMPARE_STATE_TEXT[row.review_state] || row.review_state;
   }
@@ -2825,13 +3179,20 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
    * 返工入口的状态：只有「正看着一条有字节的候选」才可发起。
    * 这里只投影 candidate_id + sha256，不写任何记录（写记录在相邻的独立返工区）。
    */
+  /**
+   * @param {PlanShot|null} shot
+   * @param {CompareInventoryRow|null} row
+   * @returns {void}
+   */
   function updateReworkEntry(shot, row) {
-    const available = Boolean(shot && row && row.record && row.asset_sha256);
+    const candidate = row && row.record ? row.record : null;
+    const sha256 = row ? row.asset_sha256 : null;
+    const available = Boolean(shot && candidate && sha256);
     elements.reworkOpen.disabled = !available;
-    if (available) {
+    if (available && shot && row && candidate && sha256) {
       elements.reworkOpen.dataset.shotId = shot.shot_id;
       elements.reworkOpen.dataset.candidateId = row.candidate_id;
-      elements.reworkOpen.dataset.candidateSha256 = row.asset_sha256;
+      elements.reworkOpen.dataset.candidateSha256 = sha256;
     } else {
       delete elements.reworkOpen.dataset.shotId;
       delete elements.reworkOpen.dataset.candidateId;
@@ -2839,28 +3200,37 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
     }
   }
 
+  /**
+   * @param {string} shotId
+   * @param {{candidateId?: string|null, focus?: boolean}} [options]
+   * @returns {void}
+   */
   function openCompare(shotId, options = {}) {
     compareShotId = shotId;
-    compareCandidateId = options.candidateId || null;
+    const previous = compareViews.get(projectId + ":" + shotId);
+    compareCandidateId = options.candidateId || previous?.candidateId || null;
+    compareBaselineId = previous?.baselineId || null;
     stageShell.select("review");
     renderCompare();
     if (options.focus === true) {
-      const active = elements.compareCandidates.querySelector('[role="tab"][aria-selected="true"]');
+      const active = /** @type {HTMLButtonElement|null} */ (elements.compareCandidates.querySelector('[role="tab"][aria-selected="true"]'));
       if (active) active.focus();
     }
   }
 
   /** 切换查看目标：不改规则、不写存储，只换清单与 aria 选中态，避免重建列表时丢焦点。 */
+  /** 切换查看目标：不改规则、不写存储，只换清单与 aria 选中态，避免重建列表时丢焦点。
+   * @param {string|null} candidateId
+   * @param {{focus?: boolean}} [options]
+   * @returns {void}
+   */
   function selectCompareCandidate(candidateId, options = {}) {
     // 换一条候选时收起返工区（它绑定打开那一刻的候选身份），草稿保留。
     if (reworkShotId !== null && candidateId !== compareCandidateId) {
       closeReworkPanel({ focusCandidate: false });
     }
-    if (adoptShotId !== null && candidateId !== compareCandidateId) {
-      closeAdoptPanel({ focusCandidate: false });
-    }
     compareCandidateId = candidateId;
-    const tabs = elements.compareCandidates.querySelectorAll('[role="tab"]');
+    const tabs = /** @type {NodeListOf<HTMLButtonElement>} */ (elements.compareCandidates.querySelectorAll('[role="tab"]'));
     for (const tab of tabs) {
       const selected = tab.dataset.candidateId === candidateId;
       tab.setAttribute("aria-selected", selected ? "true" : "false");
@@ -2868,18 +3238,25 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
       if (selected && options.focus === true) tab.focus();
     }
     const inventory = compareInventory();
-    const rows = inventory.rowsByShotId[compareShotId] || [];
-    const shot = ((suitePlan && suitePlan.shots) || [])
-      .find((item) => item && item.shot_id === compareShotId) || null;
+    const shotId = compareShotId;
+    if (!shotId) return;
+    const rows = inventory.rowsByShotId[shotId] || [];
+    const shot = (inputs.suitePlan()?.shots || [])
+      .find((item) => item && item.shot_id === shotId) || null;
       const row = rows.find((item) => item.candidate_id === candidateId) || null;
       renderCompareChecklist(shot, row);
     updateReworkEntry(shot, row);
     updateAdoptEntry(shot, row);
     elements.compareStatus.textContent = "";
+    void renderCompareImages(rows);
+    if (shot) void refreshCompareReferences(shot).catch(handleInternalError);
   }
 
+  /**
+   * @returns {void}
+   */
   function renderCompare() {
-    const ready = understandingReady && Boolean(suitePlan);
+    const ready = Boolean(inputs.suitePlan());
     if (!ready || !compareShotId) {
       elements.comparePanel.hidden = true;
       elements.compareCandidates.innerHTML = "";
@@ -2888,19 +3265,19 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
       elements.compareBasisTitle.textContent = "";
       closeReworkPanel({ focusCandidate: false });
       updateReworkEntry(null, null);
-      closeAdoptPanel({ focusCandidate: false });
       updateAdoptEntry(null, null);
       return;
     }
-    const shot = ((suitePlan && suitePlan.shots) || [])
-      .find((item) => item && item.shot_id === compareShotId) || null;
+    const shotId = compareShotId;
+    const shot = (inputs.suitePlan()?.shots || [])
+      .find((item) => item && item.shot_id === shotId) || null;
     if (!shot) {
       compareShotId = null;
       renderCompare();
       return;
     }
     const inventory = compareInventory();
-    const rows = inventory.rowsByShotId[compareShotId] || [];
+    const rows = inventory.rowsByShotId[shotId] || [];
     if (!rows.length) {
       compareShotId = null;
       renderCompare();
@@ -2910,18 +3287,18 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
       ? compareCandidateId : defaultCompareTargetId(rows);
     compareCandidateId = targetId;
     elements.comparePanel.dataset.compareContract = COMPARE_CONTRACT_VERSION;
-    elements.comparePanel.dataset.shotId = compareShotId;
+    elements.comparePanel.dataset.shotId = shotId;
     elements.comparePanel.hidden = false;
     const counts = compareCounts(rows);
     const parts = ["候选 " + counts.total];
     if (counts.pending) parts.push("待处理 " + counts.pending);
     if (counts.unknown) parts.push("未知 " + counts.unknown);
     if (counts.unchecked) parts.push("未检查 " + counts.unchecked);
-    elements.compareSubject.textContent = shotLabelOf(compareShotId) + " · " + parts.join(" · ");
+    elements.compareSubject.textContent = shotLabelOf(shotId) + " · " + parts.join(" · ");
     const nextShot = nextPendingShotId({
       rowsByShotId: inventory.rowsByShotId,
       shotOrder: inventory.shots.map((item) => item.shot_id),
-      currentShotId: compareShotId,
+      currentShotId: shotId,
     });
     elements.compareJump.disabled = !nextShot;
     elements.compareJump.dataset.targetShot = nextShot || "";
@@ -2930,10 +3307,93 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
     const targetRow = rows.find((row) => row.candidate_id === targetId) || null;
     renderCompareChecklist(shot, targetRow);
     updateReworkEntry(shot, targetRow);
+    void renderCompareImages(rows);
     updateAdoptEntry(shot, targetRow);
     refreshCompareReferences(shot).catch(handleInternalError);
   }
 
+  /**
+   * @returns {void}
+   */
+  function rememberCompareView() {
+    if (projectId && compareShotId) compareViews.set(projectId + ":" + compareShotId, {
+      candidateId: compareCandidateId, baselineId: compareBaselineId,
+    });
+  }
+
+  /**
+   * @param {CompareInventoryRow[]} rows
+   * @returns {Promise<void>}
+   */
+  async function renderCompareImages(rows) {
+    const token = ++compareImageToken;
+    const viewed = rows.find(row => row.candidate_id === compareCandidateId);
+    const comparison = rows.find(row => row.candidate_id === compareBaselineId);
+    if (!comparison || comparison.candidate_id === compareCandidateId) compareBaselineId = null;
+    const select = elements.compareBaselineSelect;
+    select.replaceChildren(createElement("option", { text: "不指定对照", attrs: { value: "" } }));
+    for (const row of rows) {
+      if (row.candidate_id === compareCandidateId) continue;
+      const current = compareShotId;
+      select.append(createElement("option", {
+        text: "候选 v" + row.version + (current && adoptedMarkOf(current)?.candidate_id === row.candidate_id ? " · 已采用" : ""),
+        attrs: { value: row.candidate_id },
+      }));
+    }
+    select.value = compareBaselineId || "";
+    rememberCompareView();
+    const currentShot = compareShotId;
+    const adopted = currentShot ? adoptedMarkOf(currentShot) : null;
+    elements.compareViewedCaption.textContent = "当前查看：候选 v" + (viewed?.version || "?")
+      + (adopted?.candidate_id === compareCandidateId ? " · 已采用" : " · 未采用此候选")
+      + "；查看和对照不会改选。";
+    const reviewShotId = compareShotId;
+    elements.compareReview.disabled = !viewed || !reviewShotId || selectionAdoption.isReviewInFlight(reviewShotId)
+    for (const { row, image, zoom } of [
+      { row: viewed, image: elements.compareViewedImage, zoom: elements.compareViewedZoom },
+      { row: compareBaselineId ? comparison : null, image: elements.compareBaselineImage, zoom: elements.compareBaselineZoom },
+    ]) {
+      image.hidden = true; image.removeAttribute("src"); zoom.disabled = true;
+      if (!row) continue;
+      const url = await ensurePreviewUrl(row.shot_id, row.candidate_id, row.asset_sha256);
+      if (token !== compareImageToken) return;
+      if (!url) { elements.compareStatus.textContent = "候选字节缺失；请恢复项目包，不会用另一张图片替代。"; continue; }
+      image.src = url; image.hidden = false; image.dataset.candidateId = row.candidate_id;
+      zoom.disabled = false;
+    }
+  }
+
+  /**
+   * @param {string} src
+   * @param {string} label
+   * @returns {void}
+   */
+  function openImageZoom(src, label) {
+    if (!src) return;
+    imageZoomReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    elements.imageZoomContent.src = src;
+    elements.imageZoomContent.alt = label;
+    elements.imageZoomContent.classList.remove("at-native-size");
+    elements.imageZoomTitle.textContent = label;
+    elements.imageZoomNative.textContent = "100% 像素";
+    elements.imageZoomDialog.showModal();
+    elements.imageZoomClose.focus();
+  }
+
+  /**
+   * @returns {void}
+   */
+  function closeImageZoom() {
+    elements.imageZoomDialog.close();
+    elements.imageZoomContent.removeAttribute("src");
+    if (imageZoomReturnFocus?.isConnected) imageZoomReturnFocus.focus();
+  }
+
+  /**
+   * @param {CompareInventoryRow[]} rows
+   * @param {string|null} targetId
+   * @returns {void}
+   */
   function renderCompareCandidates(rows, targetId) {
     const list = elements.compareCandidates;
     list.innerHTML = "";
@@ -2962,7 +3422,7 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
         className: "name", text: "候选 v" + (row.version === null ? "?" : row.version),
       }));
       head.append(createElement("span", {
-        className: "badge " + (COMPARE_STATE_BADGE[row.review_state] || "is-review-unchecked"),
+        className: "badge " + (/** @type {Record<string, string>} */ (COMPARE_STATE_BADGE)[row.review_state] || "is-review-unchecked"),
         text: compareStateLabel(row),
       }));
       const adopted = compareShotId ? adoptedMarkOf(compareShotId) : null;
@@ -2987,6 +3447,10 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
     }
   }
 
+  /**
+   * @param {ReviewFinding} finding
+   * @returns {HTMLLIElement}
+   */
   function compareFindingRow(finding) {
     const item = createElement("li", {
       className: "compare-finding",
@@ -2994,7 +3458,7 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
     });
     const head = createElement("div", { className: "compare-card-head" });
     head.append(createElement("span", {
-      className: "badge " + (SEVERITY_BADGE[finding.severity] || "is-review-unknown"),
+      className: "badge " + (/** @type {Record<string, string>} */ (SEVERITY_BADGE)[finding.severity] || "is-review-unknown"),
       text: COMPARE_SEVERITY_TEXT[finding.severity] || finding.severity,
     }));
     head.append(createElement("span", { className: "name", text: finding.title }));
@@ -3012,6 +3476,11 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
   }
 
   /** 审核清单 = 当前候选的待处理发现（异常优先）+ 这张图的验收依据 + 按需展开的完整报告。 */
+  /** 审核清单 = 当前候选的待处理发现（异常优先）+ 这张图的验收依据 + 按需展开的完整报告。
+   * @param {PlanShot|null} shot
+   * @param {CompareInventoryRow|null} row
+   * @returns {void}
+   */
   function renderCompareChecklist(shot, row) {
     const box = elements.compareChecklist;
     box.innerHTML = "";
@@ -3063,9 +3532,10 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
       box.append(createElement("p", { className: "meta", text: compareRowHeadline(row) }));
     }
     box.append(createElement("h5", { text: "这张图的验收依据" }));
-    const specEntry = shotSpecEntry(shot.shot_id);
+    if (!shot) return;
+    const specEntry = inputs.shotSpecEntry(shot.shot_id);
     const checklist = reviewChecklist(shot, {
-      shotSpec: specEntry ? specEntry.spec : null, styleSpec: styleSpec,
+      shotSpec: specEntry ? specEntry.spec : null, styleSpec: inputs.styleSpec(),
     });
     const criteria = createElement("ul", { className: "compare-basis-list" });
     criteria.append(createElement("li", { text: "目的：" + checklist.purpose }));
@@ -3095,23 +3565,30 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
   }
 
   /** 这张图实际会发送的参考图（与提交时同一选择函数），用作比较的左边一栏。 */
+  /** 这张图实际会发送的参考图（与提交时同一选择函数），用作比较的左边一栏。
+   * @param {PlanShot} shot
+   * @returns {Promise<void>}
+   */
   async function refreshCompareReferences(shot) {
     const token = ++compareToken;
-    const references = selectReferences(shot, (Array.isArray(intake.references) ? intake.references : [])
-      .map((item) => ({ role: item.role, sha256: item.asset_sha256 })));
-    const entries = [];
+    const pid = projectId;
+    const viewed = adoptSourceOf(shot.shot_id, compareCandidateId)?.candidate;
+    const origin = viewed ? attemptsByActionId()[viewed.action_id] : null;
+    const references = origin?.references || [];
+    const entries = /** @type {Array<{reference: {sha256: string, role: string}, asset: import("./storage/validate.js").StoredAssetRecord|null|undefined}>} */ ([]);
     for (const reference of references) {
-      const asset = await repository.assets.get(projectId, reference.sha256);
+      if (!pid) continue;
+      const asset = await repository.assets.get(pid, reference.sha256);
       entries.push({ reference, asset });
     }
-    if (token !== compareToken) return;
+    if (token !== compareToken || pid !== projectId) return;
     const list = elements.compareReferences;
     list.innerHTML = "";
     if (!entries.length) {
-      elements.compareBasisTitle.textContent = "这张图没有可用参考图（现在提交会被拒绝）。";
+      elements.compareBasisTitle.textContent = "找不到当前候选的原参考图来源链；不会用当前新资料冒充原图。";
       return;
     }
-    elements.compareBasisTitle.textContent = "这张图实际发送的参考图（" + entries.length + " 张）";
+    elements.compareBasisTitle.textContent = "当前候选原任务参考图（" + entries.length + " 张）；均按原比例展示。";
     for (const entry of entries) {
       const item = createElement("li", { attrs: { "data-reference-sha256": entry.reference.sha256 } });
       const url = await ensurePreviewUrl("参考图", entry.reference.sha256, entry.reference.sha256);
@@ -3120,19 +3597,26 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
         item.append(createElement("img", {
           attrs: { src: url, alt: "参考图 " + entry.reference.role, loading: "lazy" },
         }));
+        const zoom = createElement("button", { text: "放大参考原图", attrs: { type: "button" } });
+        zoom.addEventListener("click", () => openImageZoom(url, "参考原图 · " + (/** @type {Record<string, string>} */ (ROLE_TEXT)[entry.reference.role] || entry.reference.role)));
+        item.append(zoom);
       } else {
         item.append(createElement("span", { className: "meta", text: "资产缺失" }));
       }
       item.append(createElement("span", {
-        className: "meta", text: ROLE_TEXT[entry.reference.role] || entry.reference.role,
+        className: "meta", text: /** @type {Record<string, string>} */ (ROLE_TEXT)[entry.reference.role] || entry.reference.role,
       }));
-      item.append(techDetails(["sha256 " + String(entry.reference.sha256).slice(0, 8) + "…"]));
+      appendTech(item, ["sha256 " + String(entry.reference.sha256).slice(0, 8) + "…"]);
       list.append(item);
     }
   }
 
+  /**
+   * @param {KeyboardEvent} event
+   * @returns {void}
+   */
   function handleCompareKeydown(event) {
-    const tabs = Array.from(elements.compareCandidates.querySelectorAll('[role="tab"]'));
+    const tabs = Array.from(/** @type {NodeListOf<HTMLButtonElement>} */ (elements.compareCandidates.querySelectorAll('[role="tab"]')));
     if (!tabs.length) return;
     const current = tabs.findIndex((tab) => tab.getAttribute("aria-selected") === "true");
     const index = current === -1 ? 0 : current;
@@ -3150,16 +3634,19 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
       return;
     }
     event.preventDefault();
-    selectCompareCandidate(tabs[next].dataset.candidateId, { focus: true });
+    selectCompareCandidate(tabs[next]?.dataset.candidateId ?? null, { focus: true });
   }
 
+  /**
+   * @returns {void}
+   */
   function renderAttempts() {
-    const ready = understandingReady && Boolean(suitePlan);
+    const ready = Boolean(inputs.suitePlan());
     elements.attemptLocked.hidden = ready;
     elements.attemptEditor.hidden = !ready;
     elements.attemptList.innerHTML = "";
     if (!ready) { renderBatch(); renderCompare(); renderSelectionProgress(); return; }
-    const summary = suitePlanSummary(suitePlan, suiteContext());
+    const summary = suitePlanSummary(inputs.suitePlan(), inputs.suiteContext());
     const confirmed = confirmationIsCurrent();
     const provider = imageProviderBlock();
     elements.attemptProvider.textContent = provider
@@ -3170,7 +3657,7 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
     const shots = summary ? summary.shots : [];
     for (const item of shots) {
       const chain = generation.attemptChainOf(item.shot_id);
-      const latest = chain.length ? chain[chain.length - 1] : null;
+      const latest = generation.latestAttemptOf(item.shot_id);
       const record = latest ? latest.record : null;
       const state = record ? record.state : null;
       const entry = promptRecordOf(item.shot_id);
@@ -3182,9 +3669,10 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
       else if (state === ATTEMPT_STATES.unknown) counts.unknown += 1;
       else counts.active += 1;
 
+      const rowShotId = item.shot_id;
       const row = createElement("div", {
         className: "attempt-row",
-        attrs: { "data-shot-id": item.shot_id, "data-attempt-state": state || "none",
+        attrs: { "data-shot-id": rowShotId, "data-attempt-state": state || "none",
                  "tabindex": "-1" },
       });
       const head = createElement("div", { className: "attempt-head" });
@@ -3214,7 +3702,7 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
         row.append(createElement("p", { className: "meta attempt-task", text: parts.join(" · ") }));
         const attemptTech = ["action " + record.action_id];
         if (record.task_id) attemptTech.push("task " + record.task_id);
-        row.append(techDetails(attemptTech));
+        appendTech(row, attemptTech);
         const note = record.change_log.length
           ? record.change_log[record.change_log.length - 1].note : null;
         if (note) row.append(createElement("p", { className: "meta", text: "最近一次变化：" + note }));
@@ -3247,8 +3735,8 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
                 + candidate.media_type + " · "
                 + Math.max(1, Math.round(candidate.byte_size / 1024)) + " KB（预览来自本地字节）",
             }));
-            row.append(techDetails(["sha256 " + candidate.asset_sha256.slice(0, 12) + "…"]));
-            const reviewEntry = generation.reviewReportOf(candidate.candidate_id);
+            appendTech(row, ["sha256 " + candidate.asset_sha256.slice(0, 12) + "…"]);
+            const reviewEntry = selectionAdoption.reportOf(candidate.candidate_id);
             if (reviewEntry && reviewIsCurrent(reviewEntry.report, candidate)) {
               const top = topFinding(reviewEntry.report);
               row.append(createElement("p", {
@@ -3269,16 +3757,18 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
               }));
             }
             const reviewButton = createElement("button", {
-              text: generation.isReviewInFlight(item.shot_id) ? "复核中…" : "自动复核（VLM）",
+              text: rowShotId && selectionAdoption.isReviewInFlight(rowShotId) ? "复核中…" : "AI 复核这条候选（可选）",
               attrs: {
                 type: "button",
                 "data-review-action": candidate.candidate_id,
                 title: "调用视觉语言模型找可疑问题；只提示，不自动采纳",
               },
             });
-            reviewButton.disabled = generation.isReviewInFlight(item.shot_id);
+            reviewButton.disabled = Boolean(!rowShotId || selectionAdoption.isReviewInFlight(rowShotId))
+              || !capabilities?.review?.provider || capabilities.review.provider.configured === false;
             reviewButton.addEventListener("click", async () => {
-              const outcome = await generation.reviewCandidate(item.shot_id);
+              if (!rowShotId) return;
+              const outcome = await selectionAdoption.reviewCandidate(rowShotId, candidate.candidate_id);
               if (outcome && outcome.failed) {
                 elements.attemptStatus.textContent = "复核未完成：" + outcome.message
                   + "（候选与报告保持不变）";
@@ -3298,25 +3788,25 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
           }
         }
         // 比较区只看候选链：最新一次尝试是失败/未知时，历史候选仍然可以比较与返工。
-        if (generation.candidateChainOf(item.shot_id).length) {
+        if (generation.candidateChainOf(rowShotId).length) {
           const compareButton = createElement("button", {
-            text: "比较候选（" + generation.candidateChainOf(item.shot_id).length + "）",
+            text: "比较候选（" + generation.candidateChainOf(rowShotId).length + "）",
             attrs: {
               type: "button",
-              "data-compare-action": item.shot_id,
-              "aria-expanded": String(compareShotId === item.shot_id),
+              "data-compare-action": rowShotId,
+              "aria-expanded": String(compareShotId === rowShotId),
               title: "对比这张图的参考图、历史候选与审核清单",
             },
           });
           compareButton.addEventListener("click", (event) => {
-            openCompare(item.shot_id, { focus: event.detail === 0 });
+            if (!rowShotId) return;
+            openCompare(rowShotId, { focus: event.detail === 0 });
           });
           row.append(compareButton);
         }
-        const selectionEntry = selections.get(item.shot_id) || null;
-        const selectionState = deriveSelectionState(selectionEntry ? selectionEntry.record : null,
-          generation.candidateChainOf(item.shot_id).map((entry) => entry.record));
-        if (selectionEntry || generation.candidateChainOf(item.shot_id).length) {
+        const selectionEntry = rowShotId ? selectionAdoption.entryOf(rowShotId) : null;
+        const selectionState = rowShotId ? selectionAdoption.stateOf(rowShotId) : "none";
+        if (selectionEntry || (rowShotId && generation.candidateChainOf(rowShotId).length)) {
           row.append(createElement("p", {
             className: "meta attempt-selection",
             attrs: {
@@ -3344,15 +3834,32 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
       const actions = createElement("div", { className: "toolbar attempt-actions" });
       const batchState = generation.batchStateReader();
       const batchActive = Boolean(batchState && batchState.active);
-      const inFlight = generation.isAttemptInFlight(item.shot_id) || busy || batchActive;
-      const shotConfirmed = confirmationIsCurrentForShot(item.shot_id);
+      const inFlight = (rowShotId ? generation.isAttemptInFlight(rowShotId) : false) || inputs.isAnalysisRunning() || batchActive;
+      const shotConfirmed = confirmationIsCurrentForShot(rowShotId);
       const canSubmit = shotConfirmed && Boolean(entry) && !inFlight;
       const reconcileMode = record ? attemptReconcileMode(record) : ATTEMPT_RECONCILE_MODES.none;
-      const stuckPending = state === ATTEMPT_STATES.pending_submit && !record.task_id;
-      if (reconcileMode === ATTEMPT_RECONCILE_MODES.by_task) {
+      const stuckPending = state === ATTEMPT_STATES.pending_submit && record && !record.task_id;
+      if (reconcileMode === ATTEMPT_RECONCILE_MODES.by_task && record) {
+        const environment = attemptCurrentEnvironmentIdentity(modelSettings.imageEnvironment(
+          record.provider.provider_id, record.execution_identity.credential_reference.source));
+        const gate = attemptReconcileEnvironment(record, environment);
+        if (gate.mode !== ATTEMPT_RECONCILE_MODES.by_task) {
+          actions.append(createElement("p", {
+            className: "meta", text: attemptReconcileBlockedMessage(record),
+          }));
+          const credentials = createElement("button", {
+            text: record.execution_identity.credential_reference.source === "byok"
+              ? "给原目标补凭据" : "查看原目标配置",
+            attrs: { type: "button", "data-original-credentials": item.shot_id },
+          });
+          credentials.addEventListener("click", () => modelSettings.open("image",
+            record.execution_identity.credential_reference.source === "byok"
+              ? record.provider.provider_id : undefined));
+          actions.append(credentials);
+        }
         const button = createElement("button", { text: "核对任务", attrs: { type: "button" } });
-        button.disabled = inFlight;
-        button.addEventListener("click", () => { handleReconcileAttempt(item.shot_id); });
+        button.disabled = inFlight || gate.mode !== ATTEMPT_RECONCILE_MODES.by_task;
+        button.addEventListener("click", () => { handleReconcileAttempt(rowShotId); });
         actions.append(button);
       }
       if (!record) {
@@ -3360,45 +3867,45 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
           className: "primary", text: "生成这张图", attrs: { type: "button" },
         });
         button.disabled = !canSubmit;
-        button.addEventListener("click", () => { handleSubmitAttempt(item.shot_id); });
+        button.addEventListener("click", () => { handleSubmitAttempt(rowShotId); });
         actions.append(button);
       } else if (stuckPending || state === ATTEMPT_STATES.unknown) {
         const button = createElement("button", {
           text: "新建 action（放弃核对）", attrs: { type: "button" },
         });
-        button.disabled = !canSubmit;
+        button.disabled = !entry || inFlight;
         button.addEventListener("click", () => {
-          handleSubmitAttempt(item.shot_id, { explicitNew: true });
+          handleSubmitAttempt(rowShotId, { explicitNew: true });
         });
         actions.append(button);
       } else if (state === ATTEMPT_STATES.failed) {
         const button = createElement("button", {
           text: "重试（新建 action）", attrs: { type: "button" },
         });
-        button.disabled = !canSubmit;
+        button.disabled = !entry || inFlight;
         button.addEventListener("click", () => {
-          handleSubmitAttempt(item.shot_id, { explicitNew: true });
+          handleSubmitAttempt(rowShotId, { explicitNew: true });
         });
         actions.append(button);
       } else if (state === ATTEMPT_STATES.succeeded) {
-        const stored = generation.candidateForAttemptOf(item.shot_id, record.action_id);
+        const stored = generation.candidateForAttemptOf(rowShotId, record.action_id);
         if (!stored) {
           const save = createElement("button", {
             className: "primary", text: "保存候选图片", attrs: { type: "button" },
           });
-          save.disabled = inFlight || generation.isCandidateInFlight(item.shot_id);
-          save.addEventListener("click", () => { handleStoreCandidate(item.shot_id); });
+          save.disabled = inFlight || (rowShotId ? generation.isCandidateInFlight(rowShotId) : false);
+          save.addEventListener("click", () => { handleStoreCandidate(rowShotId); });
           actions.append(save);
         }
         const button = createElement("button", {
           text: "再生成一张（新建 action）", attrs: { type: "button" },
         });
-        button.disabled = !canSubmit;
+        button.disabled = !entry || inFlight;
         button.addEventListener("click", () => {
-          handleSubmitAttempt(item.shot_id, { explicitNew: true });
+          handleSubmitAttempt(rowShotId, { explicitNew: true });
         });
         actions.append(button);
-      } else if (ATTEMPT_ACTIVE_STATES.includes(state)) {
+      } else if (record && state && ATTEMPT_ACTIVE_STATES.includes(state)) {
         const label = inFlight ? "提交中…" : "上游处理中，先核对";
         const button = createElement("button", { text: label, attrs: { type: "button" } });
         button.disabled = true;
@@ -3415,7 +3922,7 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
       row.append(actions);
       if (chain.length > 1) {
         const details = createElement("details", { className: "attempt-history" });
-        details.append(createElement("summary", { text: "历史 " + chain.length + " 次提交（只追加，不覆盖）" }));
+        details.append(createElement("summary", { text: "历史 " + chain.length + " 条状态记录（提交与核对均追加保留）" }));
         for (const item2 of chain.slice().reverse()) {
           const itemRecord = item2.record;
           details.append(createElement("p", {
@@ -3441,8 +3948,21 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
   }
 
   /** 单张提交（按钮入口）：只负责把核心结果翻译成界面反馈，执行顺序在生成 Module。 */
+  /** 单张提交（按钮入口）：只负责把核心结果翻译成界面反馈，执行顺序在生成 Module。
+   * @param {string|null} shotId
+   * @param {import("./generation.js").SubmitAttemptOptions} [options]
+   * @returns {Promise<import("./generation.js").SubmitAttemptResult|undefined>}
+   */
   async function handleSubmitAttempt(shotId, options = {}) {
+    if (!shotId) return;
     const action = options.action || beginAction();
+    if (options.explicitNew) {
+      generation.enterExplicitNew(shotId);
+      stageShell.select("generate");
+      renderConfirm();
+      elements.confirmAction.focus();
+      return;
+    }
     clearAttemptError();
     const outcome = await generation.submitAttempt(shotId, { ...options, action });
     if (!action.alive()) return outcome;
@@ -3452,9 +3972,11 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
           "生成前确认缺失或已过期：先回到「生成前确认」重新确认，再提交。");
       } else if (outcome.reason === "blocked") {
         const blocking = outcome.blocking;
-        showAttemptError( "同一张图已经有一条进行中的生成（"
-          + attemptStateLabel(blocking.state) + "，action " + blocking.action_id
-          + "）。先核对并按结论处理，再新建 action。");
+        if (blocking) {
+          showAttemptError( "同一张图已经有一条进行中的生成（"
+            + attemptStateLabel(blocking.state) + "，action " + blocking.action_id
+            + "）。先核对并按结论处理，再新建 action。");
+        }
       } else if (outcome.reason === "no_prompt") {
         showAttemptError( "这张图还没有可用的 Prompt 版本：先编译并保存。");
       } else if (outcome.reason === "shot_missing") {
@@ -3474,18 +3996,19 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
       return outcome;
     }
     const record = outcome.record;
+    if (!record) return outcome;
     elements.attemptStatus.textContent = "action " + record.action_id + "：" + attemptStateLabel(record.state)
       + (record.task_id ? "（task " + record.task_id + "）" : "") + "。";
     if (record.state === ATTEMPT_STATES.unknown) {
       showAttemptError( "这次提交的结果没有确认：不要重复提交。"
         + (record.task_id ? "可以按任务编号核对。" : "没有任务编号，只能显式新建 action。"));
-    } else if (record.state === ATTEMPT_STATES.failed) {
+    } else if (record.state === ATTEMPT_STATES.failed && record.error) {
       showAttemptError( "这次提交明确失败：" + record.error.message
         + "（重试策略 " + record.error.retry_policy + "）。");
     }
     if (outcome.candidate && outcome.candidate.failed) {
       showAttemptError( outcome.candidate.message);
-    } else if (outcome.candidate && outcome.candidate.stored) {
+    } else if (outcome.candidate && outcome.candidate.stored && outcome.candidate.sha256) {
       elements.attemptStatus.textContent += " 候选已保存到本地（sha256 "
         + outcome.candidate.sha256.slice(0, 12) + "…）。";
     }
@@ -3493,7 +4016,13 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
   }
 
   /** 单张核对（按钮入口）：只负责把核心结果翻译成界面反馈，执行顺序在生成 Module。 */
+  /** 单张核对（按钮入口）：只负责把核心结果翻译成界面反馈，执行顺序在生成 Module。
+   * @param {string|null} shotId
+   * @param {import("./generation.js").ReconcileAttemptOptions} [options]
+   * @returns {Promise<import("./generation.js").ReconcileAttemptResult|undefined>}
+   */
   async function handleReconcileAttempt(shotId, options = {}) {
+    if (!shotId) return;
     const action = options.action || beginAction();
     clearAttemptError();
     const result = await generation.reconcileAttempt(shotId, { ...options, action });
@@ -3517,7 +4046,7 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
         + attemptStateLabel(result.state) + "。";
       if (result.candidate && result.candidate.failed) {
         showAttemptError( result.candidate.message);
-      } else if (result.candidate && result.candidate.stored) {
+      } else if (result.candidate && result.candidate.stored && result.candidate.sha256) {
         elements.attemptStatus.textContent += " 候选已保存到本地（sha256 "
           + result.candidate.sha256.slice(0, 12) + "…）。";
       }
@@ -3535,11 +4064,20 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
    * 单图确认与新的生成尝试。草稿按图留在内存，预览只有用户确认时才落成版本。
    */
 
+  /**
+   * @param {string} shotId
+   * @returns {string}
+   */
   function reworkConfirmId(shotId) {
-    return REWORK_CONFIRM_PREFIX + shotId;
+    return generation.reworkDocumentId(shotId);
   }
 
   /** 返工草稿按图保存；第一次打开时用报告的先看项预选问题与方向，之后保留用户改动。 */
+  /** 返工草稿按图保存；第一次打开时用报告的先看项预选问题与方向，之后保留用户改动。
+   * @param {string} shotId
+   * @param {CompareInventoryRow|null} row
+   * @returns {ReworkDraft}
+   */
   function reworkDraftOf(shotId, row) {
     let draft = reworkDrafts.get(shotId);
     if (!draft) {
@@ -3554,12 +4092,21 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
     return draft;
   }
 
+  /**
+   * @param {string} shotId
+   * @param {string|null} candidateId
+   * @returns {CompareInventoryRow|null}
+   */
   function reworkShotRow(shotId, candidateId) {
     const inventory = compareInventory();
     const rows = inventory.rowsByShotId[shotId] || [];
     return rows.find((item) => item.candidate_id === candidateId) || rows[0] || null;
   }
 
+  /**
+   * @param {ReworkDraft|null} draft
+   * @returns {string}
+   */
   function reworkSummaryOf(draft) {
     if (draft && draft.preview) {
       return "预览已就绪：确认并生成会把它保存为 Prompt 新版本（旧版本保留），"
@@ -3568,6 +4115,11 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
     return "选好问题或写下方向 → 预览返工 Prompt → 确认并生成这张图。";
   }
 
+  /**
+   * @param {string|null} shotId
+   * @param {ReworkDraft|null} draft
+   * @returns {void}
+   */
   function updateReworkControls(shotId, draft) {
     if (!draft) return;
     const hasReason = draft.problems.length > 0
@@ -3582,6 +4134,10 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
   }
 
   /** 输入变了：旧预览不再代表将要发送的内容，必须重新预览。 */
+  /** 输入变了：旧预览不再代表将要发送的内容，必须重新预览。
+   * @param {ReworkDraft|null} draft
+   * @returns {void}
+   */
   function dirtyReworkDraft(draft) {
     if (!draft || !draft.preview) return;
     draft.preview = null;
@@ -3590,6 +4146,10 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
     elements.reworkStatus.hidden = true;
   }
 
+  /**
+   * @param {ReworkDraft|null} draft
+   * @returns {void}
+   */
   function renderReworkPreviewBox(draft) {
     if (!draft || !draft.preview) {
       elements.reworkPreviewBox.hidden = true;
@@ -3602,9 +4162,14 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
     elements.reworkPreviewText.textContent = draft.preview.text;
   }
 
+  /**
+   * @param {string} shotId
+   * @param {ReworkDraft} draft
+   * @returns {void}
+   */
   function renderReworkProblems(shotId, draft) {
     const box = elements.reworkProblems;
-    const host = box.querySelector(".rework-problem-options") || box;
+    const host = /** @type {HTMLElement} */ (box.querySelector(".rework-problem-options") || box);
     for (const node of Array.from(host.querySelectorAll("label.rework-problem"))) node.remove();
     for (const problem of REWORK_PROBLEMS) {
       const label = createElement("label", {
@@ -3632,6 +4197,9 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
   }
 
   /** 入口：把当前正看着的候选（candidate_id + sha256）交给返工表单；只改内存状态。 */
+  /** 入口：把当前正看着的候选（candidate_id + sha256）交给返工表单；只改内存状态。
+   * @returns {void}
+   */
   function openReworkPanel() {
     const shotId = elements.reworkOpen.dataset.shotId || compareShotId;
     const candidateId = elements.reworkOpen.dataset.candidateId || compareCandidateId;
@@ -3669,12 +4237,16 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
     elements.reworkStatus.hidden = true;
     clearError(elements.reworkError);
     updateReworkControls(shotId, draft);
-    const first = elements.reworkProblems.querySelector('input[type="checkbox"]');
+    const first = /** @type {HTMLInputElement|null} */ (elements.reworkProblems.querySelector('input[type="checkbox"]'));
     if (first) first.focus();
     panel.scrollIntoView({ block: "nearest" });
   }
 
   /** 收起返工区：清掉未确认的预览；草稿（问题与方向）按图保留。 */
+  /** 收起返工区：清掉未确认的预览；草稿（问题与方向）按图保留。
+   * @param {{focusCandidate?: boolean}} [options]
+   * @returns {void}
+   */
   function closeReworkPanel({ focusCandidate = false } = {}) {
     const shotId = reworkShotId;
     const candidateId = reworkSource ? reworkSource.candidate_id : null;
@@ -3693,9 +4265,14 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
   }
 
   /** 收起后把焦点还给原候选：比较区还在就回到候选页签，否则回到该图的比较入口。 */
+  /**
+   * @param {string} shotId
+   * @param {string|null} candidateId
+   * @returns {void}
+   */
   function focusCompareCandidate(shotId, candidateId) {
-    const tab = candidateId ? elements.compareCandidates.querySelector(
-      '[role="tab"][data-candidate-id="' + candidateId + '"]') : null;
+    const tab = candidateId ? /** @type {HTMLButtonElement|null} */ (elements.compareCandidates.querySelector(
+      '[role="tab"][data-candidate-id="' + candidateId + '"]')) : null;
     if (tab) {
       tab.focus();
       return;
@@ -3708,20 +4285,27 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
    * V2.UI.2 起阶段分屏：尝试行在「生成」、审核卡在「审核返工」，跨阶段的入口是隐藏的，
    * 直接 focus 会被浏览器丢成 body。顺序：审核卡入口 → 尝试行入口 → 阶段条当前阶段 → 面板内关闭键。
    */
+  /** 收起后把焦点还给原候选：比较区还在就回到候选页签，否则回到该图的比较入口。
+   * @param {string|null} shotId
+   * @returns {void}
+   */
   function focusCompareEntry(shotId) {
-    const isVisible = (node) => Boolean(node && node.offsetParent !== null);
+    const isVisible = (/** @type {HTMLElement|null|undefined} */ node) => Boolean(node && node.offsetParent !== null);
     const reviewEntry = elements.reviewList
-      ? elements.reviewList.querySelector('.review-card[data-shot-id="' + shotId + '"] button')
+      ? /** @type {HTMLButtonElement|null} */ (elements.reviewList.querySelector('.review-card[data-shot-id="' + shotId + '"] button'))
       : null;
-    const attemptEntry = elements.attemptList.querySelector(
-      'button[data-compare-action="' + shotId + '"]');
-    const stageButton = elements.stageNav.querySelector("[data-stage-nav].is-current");
+    const attemptEntry = /** @type {HTMLButtonElement|null} */ (elements.attemptList.querySelector(
+      'button[data-compare-action="' + shotId + '"]'));
+    const stageButton = /** @type {HTMLButtonElement|null} */ (elements.stageNav.querySelector("[data-stage-nav].is-current"));
     const target = [reviewEntry, attemptEntry, stageButton, elements.compareClose]
       .find(isVisible);
     if (target) target.focus();
   }
 
   /** 按建议重填：问题与方向回到报告先看项的默认值，预览作废。 */
+  /** 按建议重填：问题与方向回到报告先看项的默认值，预览作废。
+   * @returns {void}
+   */
   function resetReworkDraft() {
     const shotId = reworkShotId;
     if (!shotId || reworkInFlight) return;
@@ -3738,12 +4322,18 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
     updateReworkControls(shotId, draft);
   }
 
+  /**
+   * @returns {void}
+   */
   function handleReworkCancel() {
     if (reworkInFlight) return;
     closeReworkPanel({ focusCandidate: true });
   }
 
   /** 预览：按当前问题与方向编译一次；只显示，不写记录。 */
+  /** 预览：按当前问题与方向编译一次；只显示，不写记录。
+   * @returns {Promise<void>}
+   */
   async function handleReworkPreview() {
     if (!projectId || !reworkShotId || reworkInFlight) return;
     const shotId = reworkShotId;
@@ -3767,22 +4357,20 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
         direction: draft.direction,
         at: new Date().toISOString(),
       });
-      const result = await compileShotPrompt(shotId, { rework: directive });
+      const result = await prompts.compile(shotId, { rework: directive });
       draft.directive = directive;
       draft.preview = {
         directive_id: directive.directive_id,
-        payload: result.payload,
+        payload: result.compiled,
         references: result.references.length,
-        text: result.payload.compiled.text,
+        text: result.compiled.text,
       };
       renderReworkPreviewBox(draft);
       elements.reworkStatus.hidden = false;
       elements.reworkStatus.textContent = "预览已就绪：确认并生成时会先把它保存为新版本，"
         + "再只提交这一张图；预览本身没有写入任何记录。";
     } catch (error) {
-      showError(elements.reworkError, (error && error.message)
-        ? error.message + "（预览未生成，旧版本与输入保留）"
-        : "预览没有生成，旧版本与输入保留。");
+      showError(elements.reworkError, errorMessageSuffixed(error, "预览没有生成，旧版本与输入保留。", "（预览未生成，旧版本与输入保留）"));
     } finally {
       reworkInFlight = false;
       const current = reworkDrafts.get(shotId);
@@ -3791,6 +4379,9 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
   }
 
   /** 查看/编辑完整 Prompt：把这次预览落成版本，再把焦点交给这张图的人工编辑区。 */
+  /** 查看/编辑完整 Prompt：把这次预览落成版本，再把焦点交给这张图的人工编辑区。
+   * @returns {Promise<void>}
+   */
   async function handleReworkEdit() {
     if (!projectId || !reworkShotId || reworkInFlight) return;
     const shotId = reworkShotId;
@@ -3803,18 +4394,19 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
     reworkInFlight = true;
     updateReworkControls(shotId, draft);
     try {
-      const latest = promptVersions.get(shotId) || null;
+      const latest = promptRecordOf(shotId);
       let version = latest ? latest.version : 0;
-      const fromPreview = Boolean(latest && latest.record.rework
-        && latest.record.rework.directive_id === draft.preview.directive_id);
+      const fromPreview = Boolean(latest && latest.record.compiled.rework
+        && latest.record.compiled.rework.directive_id === draft.preview.directive_id);
       if (!fromPreview) {
-        const saved = await savePromptPayload(shotId, draft.preview.payload);
-        version = saved.version;
+        if (!draft.directive) throw new Error("先预览返工 Prompt，再查看或编辑全文。");
+        const saved = await prompts.compileAndSave(shotId, { rework: draft.directive });
+        version = saved.saved.version;
       }
       renderPrompts();
       renderConfirm();
-      const area = elements.promptList.querySelector(
-        '[data-shot-id="' + shotId + '"] textarea.prompt-edit-text');
+      const area = /** @type {HTMLTextAreaElement|null} */ (elements.promptList.querySelector(
+        '[data-shot-id="' + shotId + '"] textarea.prompt-edit-text'));
       elements.reworkStatus.hidden = false;
       elements.reworkStatus.textContent = "已保存为 Prompt v" + version
         + "；可以在下方「Prompt 预览与版本」里编辑全文并另存新版本。";
@@ -3823,7 +4415,7 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
         area.focus();
       }
     } catch (error) {
-      showError(elements.reworkError, (error && error.message) || "没有打开编辑区。");
+      showError(elements.reworkError, errorMessageOf(error, "没有打开编辑区。"));
     } finally {
       reworkInFlight = false;
       const current = reworkDrafts.get(shotId);
@@ -3832,8 +4424,19 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
   }
 
   /**
+   * @param {string} shotId
+   * @returns {GenerationIntent|null}
+   */
+  function buildReworkIntent(shotId) {
+    return /** @type {GenerationIntent|null} */ (generation.reworkIntent(shotId));
+  }
+
+  /**
    * 确认并生成这张图：先确保这次返工已经落成 Prompt 版本（发送的永远是这张图最新的版本），
    * 再写「只覆盖这张图」的确认记录、新建 Attempt 并核对一次结论；失败不影响旧候选。
+   */
+  /**
+   * @returns {Promise<void>}
    */
   async function handleReworkSubmit() {
     if (!projectId || !reworkShotId || reworkInFlight) return;
@@ -3849,42 +4452,22 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
     reworkInFlight = true;
     updateReworkControls(shotId, draft);
     try {
-      const latest = promptVersions.get(shotId) || null;
+      const latest = promptRecordOf(shotId);
       let version = latest ? latest.version : 0;
-      const fromPreview = Boolean(latest && latest.record.rework
-        && latest.record.rework.directive_id === draft.preview.directive_id);
+      const fromPreview = Boolean(latest && latest.record.compiled.rework
+        && latest.record.compiled.rework.directive_id === draft.preview.directive_id);
       if (!fromPreview) {
-        const saved = await savePromptPayload(shotId, draft.preview.payload, action);
-        version = saved.version;
+        if (!draft.directive) throw new Error("先预览返工 Prompt，再确认生成。");
+        const saved = await prompts.compileAndSave(shotId, { rework: draft.directive, action });
+        version = saved.saved.version;
       }
       if (!action.alive()) return;
-      const sheet = buildScopedSheet([shotId]);
-      if (!sheet || !Array.isArray(sheet.shots) || sheet.shots.length === 0) {
-        throw new Error("这张图已经不在套图方案里，返工没有提交。");
-      }
-      if (!sheet.can_submit) throw new Error("这张图当前还有阻断，不能提交返工。");
-      const snapshot = confirmationSnapshot(sheet);
-      const hash = await promptHash(snapshot, { digest: sha256Hex });
-      const payload = buildConfirmationRecord({
-        sheet: sheet, hash: hash, confirmedAt: new Date().toISOString(),
+      const intent = buildReworkIntent(shotId);
+      if (!intent) throw new Error("这张图当前还有阻断，返工没有外发。");
+      await generation.confirmAndRun({
+        intent, readIntent: () => buildReworkIntent(shotId), expectedVersion: version,
+        documentId: reworkConfirmId(shotId), action,
       });
-      const problems = checkConfirmationRecord(payload);
-      if (problems.length > 0) throw new Error(problems[0].message);
-      const savedConfirm = await repository.documents.save(action.projectId, {
-        kind: CONFIRM_KIND, documentId: reworkConfirmId(shotId), payload: payload,
-      });
-      if (action.alive()) {
-        reworkConfirmations.set(shotId, { payload: payload, version: savedConfirm.version });
-      }
-      const outcome = await handleSubmitAttempt(shotId, {
-        note: "单图返工：" + reworkSummaryText(draft.directive).slice(0, 120),
-        action,
-      });
-      if (outcome && outcome.skipped) {
-        throw new Error("返工提交被跳过（" + outcome.reason + "）。");
-      }
-      if (outcome && outcome.thrown) throw new Error(outcome.message);
-      await handleReconcileAttempt(shotId, { action });
       if (!action.alive()) return;
       const latestAttempt = generation.latestAttemptOf(shotId);
       const state = latestAttempt ? latestAttempt.record.state : null;
@@ -3903,7 +4486,7 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
     } catch (error) {
       if (action.alive()) {
         showError(elements.reworkError,
-          (error && error.message) || "返工没有提交；旧候选与旧 Prompt 不受影响。");
+          errorMessageOf(error, "返工没有提交；旧候选与旧 Prompt 不受影响。"));
       }
     } finally {
       if (action.alive()) {
@@ -3914,8 +4497,12 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
     }
   }
 
+  /**
+   * @param {string} shotId
+   * @returns {string}
+   */
   function shotLabelOf(shotId) {
-    const summary = suitePlan ? suitePlanSummary(suitePlan, suiteContext()) : null;
+    const summary = inputs.suitePlan() ? suitePlanSummary(inputs.suitePlan(), inputs.suiteContext()) : null;
     const item = (summary ? summary.shots : []).find((shot) => shot.shot_id === shotId);
     return item ? item.label : shotId;
   }
@@ -3924,9 +4511,13 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
    * 渲染层本地化：domain 的门禁/报告文案里 shot_id 是机器标识，展示时替换成用户认得的图名。
    * 只改投影、不改 domain 数据（导出与存档仍保留 shot_id）；长 id 先替换，避免互为子串时误伤。
    */
+  /**
+   * @param {unknown} text
+   * @returns {string}
+   */
   function localizeShotIds(text) {
     let out = String(text == null ? "" : text);
-    const summary = suitePlan ? suitePlanSummary(suitePlan, suiteContext()) : null;
+    const summary = inputs.suitePlan() ? suitePlanSummary(inputs.suitePlan(), inputs.suiteContext()) : null;
     const shots = (summary ? summary.shots : []).slice().sort((left, right) =>
       String(right.shot_id).length - String(left.shot_id).length);
     for (const item of shots) {
@@ -3937,9 +4528,12 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
     return out;
   }
 
+  /**
+   * @returns {void}
+   */
   function renderBatch() {
     if (!elements.batchBar) return;
-    const ready = understandingReady && Boolean(suitePlan);
+    const ready = Boolean(inputs.suitePlan());
     elements.batchBar.hidden = !ready;
     if (!ready) return;
     const state = generation.deriveBatch();
@@ -3947,7 +4541,7 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
     const running = Boolean(batchState && batchState.active);
     const confirmed = confirmationIsCurrent();
     const progress = [batchProgressText(state)];
-    if (running) {
+    if (running && batchState) {
       if (batchState.phase === "poll") {
         progress.push("批次进行中：正在按任务编号核对上游进度");
       } else {
@@ -3983,70 +4577,78 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
     elements.batchHint.textContent = hints.join(" ");
     elements.batchHint.hidden = hints.length === 0;
 
-    elements.batchRun.hidden = running;
-    const queueReady = state.queue.length > 0;
-    const fetchOnly = !queueReady && state.fetch_queue.length > 0;
-    elements.batchRun.disabled = running || (queueReady ? !confirmed : !fetchOnly);
-    if (queueReady) {
-      elements.batchRun.textContent = state.started
-        ? "继续生成剩余（" + state.queue.length + " 张）"
-        : "整套生成（" + state.queue.length + " 张）";
-    } else if (fetchOnly) {
-      elements.batchRun.textContent = "保存候选（" + state.fetch_queue.length + " 张）";
-    } else if (state.counts.total > 0 && state.all_succeeded) {
-      elements.batchRun.textContent = "已全部生成";
-    } else {
-      elements.batchRun.textContent = "没有待生成的图";
+    elements.queueList.replaceChildren();
+    // 队列投影（pending/current/targetMatched）归 generation.queues() 所有；这里只渲染，不重算判据。
+    for (const { queue, pending, current, targetMatched: matched } of generation.queues()) {
+      if (!pending.length) continue;
+      const target = queue.payload.fingerprint.snapshot.execution_target;
+      if (!target) continue;
+      const row = createElement("div", { className: "generation-queue" });
+      row.append(createElement("p", {
+        className: "meta", text: "原队列 v" + queue.version + " · " + target.model_id + " · "
+          + target.protocol + " · 凭据 " + target.credential_source + " · 尚未提交 " + pending.length
+          + " 张（当前依据有效 " + current.length + " 张）：" + pending.map((shotId) => shotLabelOf(shotId)).join("、"),
+      }));
+      row.append(createElement("p", { className: "meta", text: String(queue.payload.external_summary.statement) }));
+      const resume = createElement("button", { text: "按原摘要继续未提交队列", attrs: { type: "button" } });
+      resume.disabled = running || submissionInFlight || !matched || !current.length;
+      resume.addEventListener("click", () => { void generation.runBatch({ confirmation: queue }); });
+      const credentials = createElement("button", { text: "给原目标补凭据", attrs: { type: "button" } });
+      credentials.addEventListener("click", () => modelSettings.open("image", target.provider_id));
+      row.append(resume, credentials);
+      elements.queueList.append(row);
     }
     elements.batchStop.hidden = !running;
     elements.batchReconcile.hidden = state.reconcile_queue.length === 0;
     elements.batchReconcile.disabled = running || state.reconcile_queue.length === 0;
     elements.batchReconcile.textContent = "核对进行中（" + state.reconcile_queue.length + " 张）";
     elements.batchRetry.hidden = state.retry_queue.length === 0;
-    elements.batchRetry.disabled = running || !confirmed || state.retry_queue.length === 0;
-    elements.batchRetry.textContent = "重试失败（" + state.retry_queue.length + " 张）";
+    elements.batchRetry.disabled = running || state.retry_queue.length === 0;
+    elements.batchRetry.textContent = "查看失败图的重试摘要（" + state.retry_queue.length + " 张）";
   }
 
   /* ----------------------------------------------- 人工选择与失效（V2.6.1） */
 
+  // 人工选择与采用：记录所有权在 selectionAdoption Module；这里只做视图装配
+  // （状态徽标/入口按钮）与动作转发，不直接读写记录或拼持久化顺序。
+  /**
+   * @param {string|null} shotId
+   * @returns {{record: SelectionRecord, version: number}|null}
+   */
   function selectionEntryOf(shotId) {
-    return selections.get(shotId) || null;
+    return selectionAdoption.entryOf(shotId);
   }
 
-  function candidatePayloadsOf(shotId) {
-    return generation.candidateChainOf(shotId).map((entry) => entry.record);
-  }
-
+  /**
+   * @param {string} shotId
+   * @returns {SelectionState}
+   */
   function selectionStateOf(shotId) {
-    const entry = selectionEntryOf(shotId);
-    return deriveSelectionState(entry ? entry.record : null, candidatePayloadsOf(shotId));
+    return selectionAdoption.stateOf(shotId);
   }
 
   /** 某张图当前采用的候选（含过期标记）：只读投影，供比较列表做徽标。 */
+  /** 某张图当前采用的候选（含过期标记）：只读投影，供比较列表做徽标。
+   * @param {string|null} shotId
+   * @returns {{candidate_id: string|null, state: SelectionState}|null}
+   */
   function adoptedMarkOf(shotId) {
-    const entry = selectionEntryOf(shotId);
-    if (!entry || !entry.record || entry.record.action !== "select") return null;
-    return { candidate_id: entry.record.candidate_id, state: selectionStateOf(shotId) };
+    return selectionAdoption.adoptedMark(shotId);
   }
 
   /** SelectionSet 投影：V2.5.5 / V2.6.2 的唯一输入集合；这里只报告数量，不拦导出。 */
+  /** SelectionSet 投影：V2.5.5 / V2.6.2 的唯一输入集合；这里只报告数量，不拦导出。
+   * @returns {import("./domain/type-contracts.js").SelectionSet}
+   */
   function selectionSetNow() {
-    const summaries = suitePlan ? suitePlanSummary(suitePlan, suiteContext()).shots : [];
-    const shots = summaries.map((shot) => ({
-      shot_id: shot.shot_id, required: shot.required === true,
-    }));
-    const selectionsByShot = {};
-    for (const [shotId, entry] of selections) selectionsByShot[shotId] = entry.record;
-    const candidatesByShotId = {};
-    for (const shot of shots) candidatesByShotId[shot.shot_id] = candidatePayloadsOf(shot.shot_id);
-    return buildSelectionSet({
-      shots: shots, selections: selectionsByShot, candidatesByShotId: candidatesByShotId,
-      at: new Date().toISOString(),
-    });
+    return selectionAdoption.projection(projectSources()).set;
   }
 
+  /**
+   * @returns {void}
+   */
   function renderSelectionProgress() {
-    if (!suitePlan) {
+    if (!inputs.suitePlan()) {
       elements.adoptProgress.textContent = "";
       return;
     }
@@ -4057,194 +4659,70 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
   }
 
   /** 比较区入口的状态：只投影候选身份，不写任何记录（写记录在相邻的独立采用区）。 */
+  /** 比较区入口的状态：只投影候选身份，不写任何记录（写记录在相邻的独立采用区）。
+   * @param {PlanShot|null} shot
+   * @param {CompareInventoryRow|null} row
+   * @returns {void}
+   */
   function updateAdoptEntry(shot, row) {
-    const available = Boolean(shot && row && row.record && row.asset_sha256);
-    elements.adoptOpen.disabled = !available;
-    if (available) {
-      elements.adoptOpen.dataset.shotId = shot.shot_id;
-      elements.adoptOpen.dataset.candidateId = row.candidate_id;
-      elements.adoptOpen.dataset.candidateSha256 = row.asset_sha256;
-    } else {
-      delete elements.adoptOpen.dataset.shotId;
-      delete elements.adoptOpen.dataset.candidateId;
-      delete elements.adoptOpen.dataset.candidateSha256;
-    }
+    const available = Boolean(shot && row && row.record && row.record.asset_sha256);
+    const selected = shot ? selectionAdoption.entryOf(shot.shot_id)?.record || null : null;
+    const already = Boolean(selected && selected.action === "select" && row
+      && selected.candidate_id === row.candidate_id
+      && shot && selectionAdoption.stateOf(shot.shot_id) === "current");
+    elements.adoptOpen.disabled = !available || already;
+    elements.adoptClear.disabled = !selected || selected.action !== "select";
   }
 
   /** 采用目标：把「正看着的候选」解析成候选记录 + 文档版本 + 当前审核报告。 */
+  /** 采用目标：把「正看着的候选」解析成候选记录 + 文档版本 + 当前审核报告。
+   * @param {string|null} shotId
+   * @param {string|null} candidateId
+   * @returns {{candidate: CandidateRecord, version: number, report: ReviewReport|null}|null}
+   */
   function adoptSourceOf(shotId, candidateId) {
-    for (const entry of generation.candidateChainOf(shotId)) {
-      if (entry.record && entry.record.candidate_id === candidateId) {
-        const stored = generation.reviewReportOf(candidateId);
-        const report = stored && reviewIsCurrent(stored.report, entry.record)
-          ? stored.report : null;
-        return { candidate: entry.record, version: entry.version, report: report };
-      }
-    }
-    return null;
+    return selectionAdoption.sourceOf(shotId, candidateId);
   }
 
+  /**
+   * @param {string} shotId
+   * @returns {string}
+   */
   function selectionTextOf(shotId) {
-    const entry = selectionEntryOf(shotId);
-    return selectionSummaryText(entry ? entry.record : null, selectionStateOf(shotId));
+    return selectionAdoption.summary(shotId);
   }
 
-  function renderAdoptPanel() {
-    if (!adoptShotId || !adoptSource) return;
-    const shotId = adoptShotId;
-    const source = adoptSource;
-    const entry = selectionEntryOf(shotId);
-    const state = selectionStateOf(shotId);
-    const summary = suitePlan ? suitePlanSummary(suitePlan, suiteContext()).shots
-      .find((item) => item.shot_id === shotId) : null;
-    elements.adoptBasis.textContent = shotLabelOf(shotId) + " · 当前" + selectionStateLabel(state)
-      + " · 候选 v" + source.version;
-    if (elements.adoptTechBody) {
-      elements.adoptTechBody.textContent = "sha256 "
-        + String(source.candidate.asset_sha256).slice(0, 12) + "… · candidate "
-        + String(source.candidate.candidate_id);
-    }
-    if (elements.adoptTech) elements.adoptTech.hidden = false;
-    elements.adoptCurrent.textContent = selectionTextOf(shotId);
-    elements.adoptFingerprint.textContent = source.report
-      ? "将绑定当前审核报告：" + reviewSummaryText(source.report)
-        + "（审核合同 " + String(source.report.review_contract_version) + "）"
-      : "这条候选还没有当前审核报告：采用会明确记下「没有报告」，导出前仍需补一份当前报告。";
-    const already = Boolean(entry && entry.record && entry.record.action === "select"
-      && entry.record.candidate_id === source.candidate.candidate_id && state === "current");
-    elements.adoptSubmit.disabled = adoptInFlight || already;
-    elements.adoptSubmit.textContent = already ? "已采用这条候选" : "采用这条候选";
-    elements.adoptClear.disabled = adoptInFlight
-      || !(entry && entry.record && entry.record.action === "select");
-    elements.adoptReadiness.textContent = summary && summary.required
-      ? "这张图是必需图：导出前必须有当前有效的选择。"
-      : "这张图是可选图：采用后仍可改选或取消。";
-  }
-
-  function openAdoptPanel() {
-    const shotId = elements.adoptOpen.dataset.shotId || null;
-    const candidateId = elements.adoptOpen.dataset.candidateId || null;
-    if (!shotId || !candidateId) return;
-    const source = adoptSourceOf(shotId, candidateId);
-    if (!source) {
-      elements.compareStatus.textContent = "这条候选已经不在本地候选链里，无法采用。";
-      return;
-    }
-    adoptShotId = shotId;
-    adoptCandidateId = candidateId;
-    adoptSource = source;
-    elements.adoptPanel.hidden = false;
-    elements.adoptPanel.dataset.adoptContract = SELECTION_CONTRACT_VERSION;
-    elements.adoptPanel.dataset.shotId = shotId;
-    elements.adoptPanel.dataset.candidateId = candidateId;
-    elements.adoptStatus.textContent = "";
-    elements.adoptStatus.hidden = true;
-    clearError(elements.adoptError);
-    renderAdoptPanel();
-    const target = elements.adoptSubmit.disabled ? elements.adoptCancel : elements.adoptSubmit;
-    if (target) target.focus();
-  }
-
-  function closeAdoptPanel({ focusCandidate = false } = {}) {
-    const shotId = adoptShotId;
-    const candidateId = adoptCandidateId;
-    adoptShotId = null;
-    adoptCandidateId = null;
-    adoptSource = null;
-    elements.adoptPanel.hidden = true;
-    elements.adoptStatus.textContent = "";
-    elements.adoptStatus.hidden = true;
-    clearError(elements.adoptError);
-    if (focusCandidate && shotId && candidateId) focusCompareCandidate(shotId, candidateId);
-  }
-
-  /** 写一条选择记录：select = 采用 / 改选；clear = 取消采用。失败时不改内存里的旧选择。 */
-  async function writeSelectionRecord(action) {
-    if (!projectId || !adoptShotId || !adoptSource) return null;
-    const writeAction = beginAction();
-    const shotId = adoptShotId;
-    const source = adoptSource;
-    const record = buildSelectionRecord({
-      selectionId: newActionId(),
-      action: action,
-      shotId: shotId,
-      candidate: action === "select" ? source.candidate : null,
-      candidateVersion: action === "select" ? source.version : null,
-      report: action === "select" ? source.report : null,
-      at: new Date().toISOString(),
-    });
-    assertSelectionRecord(record);
-    const saved = await repository.documents.save(writeAction.projectId, {
-      kind: SELECTION_KIND, documentId: shotId, payload: record,
-    });
-    if (writeAction.alive()) {
-      const previous = selectionEntryOf(shotId);
-      selections.set(shotId, { record: record, version: saved.version });
-      return { record: record, version: saved.version, previous: previous };
-    }
-    // 已过期动作：记录已按冻结项目落库；不提供内存结果给界面。
-    return null;
-  }
-
-  async function handleAdoptSubmit() {
-    if (adoptInFlight) return;
+  /** One explicit human action. Identity freezes before any byte read; selection is append-only/OCC.
+   * @param {"select"|"clear"} kind
+   * @param {string|null} [shotId]
+   * @param {string|null} [candidateId]
+   * @returns {Promise<void>}
+   */
+  async function handleCandidateSelection(kind, shotId = compareShotId, candidateId = compareCandidateId) {
+    if (!projectId || !shotId || selectionAdoption.isSelecting()) return;
     const action = beginAction();
-    adoptInFlight = true;
-    elements.adoptStatus.textContent = "";
-    elements.adoptStatus.hidden = true;
     clearError(elements.adoptError);
-    renderAdoptPanel();
+    elements.adoptStatus.hidden = false;
+    elements.adoptStatus.textContent = "正在保存 " + shotLabelOf(shotId) + " 的人工选择…";
     try {
-      const source = adoptSource;
-      const result = await writeSelectionRecord("select");
-      if (!result || !action.alive()) return;
-      const replaced = result.previous && result.previous.record
-        && result.previous.record.action === "select" ? result.previous.record : null;
-      elements.adoptStatus.hidden = false;
-      elements.adoptStatus.textContent = "已采用候选 v" + (source ? source.version : "?")
-        + "（选择记录 v" + result.version + "）。"
-        + (replaced ? "上一次选择保留在历史里。" : "")
-        + "改选或取消采用只会追加新记录。";
+      await selectionAdoption.select(kind, shotId, candidateId);
+      if (!action.alive()) return;
+      elements.adoptStatus.textContent = shotLabelOf(shotId)
+        + (kind === "select" ? " 已采用候选" : " 已取消采用")
+        + "；旧候选和旧采用保留在历史中。确定性硬阻断仍会阻止交付。";
     } catch (error) {
-      if (action.alive()) {
-        showError(elements.adoptError, (error && error.message) || "选择没有保存，请重试。");
-      }
+      if (!action.alive()) return;
+      elements.adoptStatus.textContent = "人工选择没有保存；原采用保留。";
+      showError(elements.adoptError, errorMessageOf(error, "存储失败，请重试。"));
     } finally {
-      if (action.alive()) {
-        adoptInFlight = false;
-        renderAttempts();
-        renderAdoptPanel();
-      }
+      if (action.alive()) renderAttempts();
     }
   }
 
-  async function handleAdoptClear() {
-    if (adoptInFlight) return;
-    const action = beginAction();
-    adoptInFlight = true;
-    elements.adoptStatus.textContent = "";
-    elements.adoptStatus.hidden = true;
-    clearError(elements.adoptError);
-    renderAdoptPanel();
-    try {
-      const result = await writeSelectionRecord("clear");
-      if (!result || !action.alive()) return;
-      elements.adoptStatus.hidden = false;
-      elements.adoptStatus.textContent = "已取消采用（选择记录 v" + result.version
-        + "）；历史保留，可以重新采用任一候选。";
-    } catch (error) {
-      if (action.alive()) {
-        showError(elements.adoptError, (error && error.message) || "取消采用没有保存，请重试。");
-      }
-    } finally {
-      if (action.alive()) {
-        adoptInFlight = false;
-        renderAttempts();
-        renderAdoptPanel();
-      }
-    }
-  }
-
+  /**
+   * @param {StoredProjectRecord|null} projectRecord
+   * @returns {void}
+   */
   function renderHeaderText(projectRecord) {
     const state = projectRecord ? projectRecord.state : null;
     if (state === "READY_TO_GENERATE") {
@@ -4256,22 +4734,21 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
     }
   }
 
+  /**
+   * @returns {Promise<void>}
+   */
   async function deriveAndApplyState() {
     const action = beginAction();
     if (!action.projectId) return;
-    understandingBlocking = [];
-    understandingError = null;
-    understandingReady = false;
-    try {
-      const brief = buildProductBrief(slotEntries());
-      const readiness = briefReadiness(brief);
-      understandingReady = readiness.ready;
-      understandingBlocking = readiness.blocking;
-    } catch (error) {
-      understandingError = error;
-    }
-    const state = slots.size === 0
-      ? (intakeReadiness(intake).ready ? "INTAKE_READY" : "EMPTY")
+    await inputs.deriveState();
+    const understood = inputs.understanding();
+    understandingBlocking = understood.blocking;
+    understandingError = understood.error;
+    understandingReady = understood.ready;
+    const entryCount = inputs.slotEntries().length;
+    const draftPayload = inputs.intakeSnapshot();
+    const state = entryCount === 0
+      ? (intakeReadiness(draftPayload).ready ? "INTAKE_READY" : "EMPTY")
       : (understandingReady
         ? (confirmationIsCurrent() ? "READY_TO_GENERATE" : "PLAN_REVIEW")
         : "UNDERSTANDING_REVIEW");
@@ -4285,7 +4762,7 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
         }
       } catch (error) {
         if (action.alive()) {
-          showError(elements.error, (error && error.message) || "状态写回失败。");
+          showError(elements.error, errorMessageOf(error, "状态写回失败。"));
         }
       }
     }
@@ -4294,20 +4771,26 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
 
   /* ---------------------------------------------------------- 六阶段投影与交付门禁（V2.UI.2） */
 
+  /**
+   * @returns {import("./domain/type-contracts.js").SuitePlanSummary["shots"]}
+   */
   function shotSummariesNow() {
-    return suitePlan ? suitePlanSummary(suitePlan, suiteContext()).shots : [];
+    return inputs.suitePlan() ? suitePlanSummary(inputs.suitePlan(), inputs.suiteContext()).shots : [];
   }
 
   /**
    * 每个阶段的完成 / 可用 / 摘要只在这里派生一次；外壳只负责画出来。
    * available=false 表示阶段条上的入口不可用（前置未完成），不是错误。
    */
+  /**
+   * @returns {Record<string, {status?: string, summary?: string, hint?: string, available?: boolean}>}
+   */
   function computeStageStates() {
     const shots = shotSummariesNow();
-    const entries = slotEntries();
+    const entries = inputs.slotEntries();
     const confirmed = entries.filter((item) => item.slot.status === "confirmed").length;
     const unknownSlots = entries.filter((item) => item.slot.status === "unknown").length;
-    const hasSlots = slots.size > 0;
+    const hasSlots = inputs.slotEntries().length > 0;
     const withCandidate = shots.filter((shot) =>
       Boolean(generation.latestStoredCandidateOf(shot.shot_id)));
     const settled = shots.filter((shot) => {
@@ -4323,7 +4806,7 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
     const requiredSelected = requiredShots.filter((shot) => selectionStateOf(shot.shot_id) === "current");
     const selectedShots = shots.filter((shot) => selectionStateOf(shot.shot_id) === "current");
     const projectName = project ? project.name : "";
-    const referenceCount = Array.isArray(intake.references) ? intake.references.length : 0;
+    const referenceCount = inputs.references().length;
     const intakeSummary = [projectName, referenceCount ? "参考图 " + referenceCount + " 张" : ""]
       .filter(Boolean).join(" · ");
 
@@ -4331,13 +4814,13 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
       intake: {
         available: true,
         status: hasSlots ? "complete" : "current",
-        hint: hasSlots ? "" : "上传参考图、填写商品资料，然后点“分析商品资料”。",
+        hint: hasSlots ? "" : "上传参考图，自己填写商品事实；AI 理解是可选辅助。",
         summary: hasSlots ? intakeSummary : "",
       },
       understand: {
         available: hasSlots,
         status: understandingReady ? "complete" : "current",
-        hint: hasSlots ? "" : "先在「资料」里分析商品资料。",
+        hint: hasSlots ? "" : "可直接填写并确认核心事实，不需要先调用模型。",
         summary: understandingReady
           ? "已确认 " + confirmed + " 项" + (unknownSlots ? " · 未知 " + unknownSlots + " 项" : "")
           : "",
@@ -4378,6 +4861,10 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
   }
 
   /** 默认停靠：最靠后的“可用且未完成”的阶段；全部完成则停在交付。 */
+  /** 默认停靠：最靠后的“可用且未完成”的阶段；全部完成则停在交付。
+   * @param {Record<string, {status?: string, summary?: string, hint?: string, available?: boolean}>|null} [states]
+   * @returns {string}
+   */
   function defaultStageId(states = null) {
     const map = states || computeStageStates();
     for (const id of ["intake", "understand", "plan", "generate", "review", "deliver"]) {
@@ -4387,25 +4874,33 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
   }
 
   /** 阶段底部的推进按钮：禁用时说明缺什么；不改变任何数据。 */
+  /** 阶段底部的推进按钮：禁用时说明缺什么；不改变任何数据。
+   * @param {Record<string, {status?: string, summary?: string, hint?: string, available?: boolean}>} states
+   * @returns {void}
+   */
   function renderStageFoot(states) {
     const shots = shotSummariesNow();
-    elements.stageNextUnderstand.disabled = !understandingReady;
+    elements.stageNextUnderstand.disabled = false;
     elements.stageNextUnderstandNote.textContent = understandingReady
-      ? "" : "关键事实全部确认后才能进入方案。";
-    elements.stageNextPlan.disabled = shots.length === 0;
+      ? "" : "可以先规划图片任务；缺失的核心事实只阻断生成。";
+    elements.stageNextPlan.disabled = false;
     elements.stageNextPlanNote.textContent = shots.length
       ? "" : "先生成或添加至少一张图片。";
     const candidates = states && states.review ? states.review.available : false;
-    elements.stageNextReview.disabled = !candidates;
+    elements.stageNextReview.disabled = false;
     elements.stageNextReviewNote.textContent = candidates ? "" : "先产生至少一张候选。";
     const requiredShots = shots.filter((shot) => shot.required === true);
     const pending = requiredShots.filter((shot) => selectionStateOf(shot.shot_id) !== "current");
-    elements.stageNextDeliver.disabled = pending.length > 0 || shots.length === 0;
+    elements.stageNextDeliver.disabled = false;
     elements.stageNextDeliverNote.textContent = shots.length === 0
       ? "先生成候选。"
       : (pending.length ? "还有 " + pending.length + " 张必需图没有采用候选。" : "");
   }
 
+  /**
+   * @param {{reset?: boolean}} [options]
+   * @returns {Record<string, {status?: string, summary?: string, hint?: string, available?: boolean}>}
+   */
   function refreshStageShell({ reset = false } = {}) {
     const states = computeStageStates();
     if (reset) stageShell.select(defaultStageId(states));
@@ -4418,6 +4913,7 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
    * 业务状态变化后的统一收尾：派生投影（审核列表 / 交付门禁）与阶段外壳一起刷新。
    * 所有会改变套图、Attempt、候选与采用状态的处理函数都经 renderAttempts 落到这里，
    * 避免阶段条与阶段脚注停留在旧状态（例如生成推荐方案后仍显示「先生成或添加至少一张图片」）。
+   * @returns {Record<string, {status?: string, summary?: string, hint?: string, available?: boolean}>}
    */
   function refreshDerived() {
     renderReviewList();
@@ -4433,6 +4929,7 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
    * 人只能点开比较面板才知道这张图「查出了什么」。这里复读同一份当前报告
    * （compareInventory 已按 reviewIsCurrent 过滤），把状态、机器结论与「先看哪一条」
    * 摆到卡片上；不新增第二套规则，也不改变任何选择语义。
+   * @returns {void}
    */
   function renderReviewList() {
     if (!elements.reviewList) return;
@@ -4440,14 +4937,14 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
     const shots = shotSummariesNow();
     const reviewable = shots.filter((shot) => generation.candidateChainOf(shot.shot_id).length > 0);
     elements.reviewEmpty.hidden = reviewable.length > 0;
-    const inventory = reviewable.length ? compareInventory() : { rowsByShotId: {} };
+    const inventory = reviewable.length ? compareInventory() : { rowsByShotId: /** @type {Record<string, CompareInventoryRow[]>} */ ({}) };
     for (const shot of reviewable) {
       const chain = generation.candidateChainOf(shot.shot_id);
       const stored = generation.latestStoredCandidateOf(shot.shot_id);
       const state = selectionStateOf(shot.shot_id);
       const rows = inventory.rowsByShotId[shot.shot_id] || [];
       const shownRow = stored
-        ? (rows.find((row) => row.candidate_id === stored.record.candidate_id) || null)
+        ? (rows.find((/** @type {CompareInventoryRow} */ row) => row.candidate_id === stored.record.candidate_id) || null)
         : null;
       const card = createElement("div", {
         className: "review-card",
@@ -4485,7 +4982,7 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
       });
       if (shownRow) {
         check.append(createElement("span", {
-          className: "badge " + (COMPARE_STATE_BADGE[shownRow.review_state] || "is-review-unchecked"),
+          className: "badge " + (/** @type {Record<string, string>} */ (COMPARE_STATE_BADGE)[shownRow.review_state] || "is-review-unchecked"),
           text: compareStateLabel(shownRow),
         }));
         if (shownRow.report) {
@@ -4519,8 +5016,6 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
         openReworkPanel();
       });
       actions.append(reworkButton);
-      // 已采用就不再邀请重复采用（与 #adopt-submit 的「已采用这条候选」同一语义）；
-      // 换用其他候选走「比较候选」，因此这里保持禁用而不是换成第二个主操作。
       const alreadyAdopted = state === "current";
       const adoptButton = createElement("button", {
         text: alreadyAdopted ? "已采用" : "采用候选", attrs: { type: "button" },
@@ -4529,8 +5024,7 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
       if (alreadyAdopted) adoptButton.title = "已采用这条候选；换用其他候选请点「比较候选」。";
       adoptButton.disabled = !stored || alreadyAdopted;
       adoptButton.addEventListener("click", () => {
-        openCompare(shot.shot_id, {});
-        openAdoptPanel();
+        if (stored) void handleCandidateSelection("select", shot.shot_id, stored.record.candidate_id);
       });
       actions.append(adoptButton);
       card.append(actions);
@@ -4540,277 +5034,90 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
 
   /* ------------------------------------------------------- 整套一致性（V2.5.5） */
 
-  /** 已确认事实的最小投影（单图复核与整套复核共用，唯一来源）。 */
-  function confirmedFactPayloads() {
-    const facts = [];
-    for (const entry of slots.values()) {
-      const slot = entry && entry.slot ? entry.slot : null;
-      if (!slot || slot.status !== "confirmed") continue;
-      const value = Array.isArray(slot.value) ? slot.value.join("；") : String(slot.value);
-      facts.push({
-        label: String(slot.label || slot.slot_id).slice(0, 60),
-        value: value.slice(0, 200),
-      });
-      if (facts.length >= 20) break;
-    }
-    return facts;
-  }
-
+  /**
+   * @returns {{report: SuiteReviewReport, version: number}|null}
+   */
   function suiteReportEntry() {
-    return suiteReports.get(SUITE_REVIEW_DOCUMENT_ID) || null;
+    return reviewDelivery.projection().suite;
   }
 
-  function suiteShotSpecsById() {
-    const byId = {};
-    for (const [shotId, entry] of shotSpecs) {
-      if (entry && entry.spec) byId[shotId] = entry.spec;
-    }
-    return byId;
-  }
 
-  function suiteReportsByCandidate() {
-    const map = {};
-    for (const entry of generation.reviewReportsNow()) {
-      const candidateId = entry[0];
-      const value = entry[1];
-      if (value && value.report) map[candidateId] = value.report;
-    }
-    return map;
-  }
-
+  /**
+   * @returns {Record<string, SelectionRecord>}
+   */
   function suiteSelectionMap() {
-    const map = {};
-    for (const [shotId, entry] of selections) {
-      if (entry && entry.record && entry.record.action === "select") {
-        map[shotId] = entry.record.candidate_id;
-      }
+    const projection = selectionAdoption.projection(projectSources());
+    const map = /** @type {Record<string, SelectionRecord>} */ ({});
+    for (const [shotId, record] of Object.entries(projection.records)) {
+      if (record && record.action === "select") map[shotId] = record;
     }
     return map;
   }
 
+  /**
+   * @returns {Record<string, CandidateRecord[]>}
+   */
   function suiteCandidatesByShot() {
-    const map = {};
-    for (const shot of shotSummariesNow()) map[shot.shot_id] = candidatePayloadsOf(shot.shot_id);
+    const map = /** @type {Record<string, CandidateRecord[]>} */ ({});
+    for (const shot of shotSummariesNow()) {
+      map[shot.shot_id] = generation.candidateChainOf(shot.shot_id).map((entry) => entry.record);
+    }
     return map;
   }
 
+  /**
+   * @returns {Record<string, AttemptRecord[]>}
+   */
   function suiteAttemptsByShot() {
-    const map = {};
+    const map = /** @type {Record<string, AttemptRecord[]>} */ ({});
     for (const [shotId, chain] of generation.attemptChainsNow()) {
       map[shotId] = chain.map((item) => item.record);
     }
     return map;
   }
 
-  function suiteFactsById() {
-    const map = {};
-    for (const [slotId, entry] of slots) {
-      if (entry && entry.slot) map[slotId] = entry.slot;
-    }
-    return map;
-  }
-
-  /** 当前选择与输入的指纹（报告当前性唯一依据；与 domain 的规范化逐字一致）。 */
-  function suiteFingerprintsNow() {
-    const selectionSet = selectionSetNow();
-    const selectionFingerprint = selectionFingerprintOf(selectionSet);
-    const inputsFingerprint = inputsFingerprintOf({
-      selectionFingerprint: selectionFingerprint,
-      suitePlan: suitePlan,
-      styleSpec: styleSpec,
-      shotSpecsById: suiteShotSpecsById(),
-      reportsByCandidate: suiteReportsByCandidate(),
-    });
-    return { selectionSet, selectionFingerprint, inputsFingerprint };
-  }
-
-  function suiteStyleSummaryText() {
-    if (!styleSpec) return "";
-    const parts = [];
-    if (styleSpec.background) parts.push("背景：" + styleSpec.background);
-    if (styleSpec.lighting) parts.push("光线：" + styleSpec.lighting);
-    if (styleSpec.color_tone) parts.push("色调：" + styleSpec.color_tone);
-    if (styleSpec.composition) parts.push("构图：" + styleSpec.composition);
-    if (Array.isArray(styleSpec.avoid) && styleSpec.avoid.length) {
-      parts.push("避免：" + styleSpec.avoid.join("、"));
-    }
-    return parts.join("；").slice(0, 500);
-  }
-
-  /**
-   * 送审集合与请求体：图片字节只从 IndexedDB 读；任何一张缺字节/超上限都不送半份资料。
-   * 返回 {request, requested, submitted, shaByShot, reason}；reason 非空时 request 为 null。
+  /** 整套检查只做视图装配与动作转发：执行、报告与门禁刷新归 reviewDelivery 所有。 */
+  /** 整套检查只做视图装配与动作转发：执行、报告与门禁刷新归 reviewDelivery 所有。
+   * @param {{ai?: boolean}} [options]
+   * @returns {Promise<void>}
    */
-  async function suiteVlmRequestFor(selectionMap, pid = projectId) {
-    const requested = [];
-    for (const shot of shotSummariesNow()) {
-      if (selectionStateOf(shot.shot_id) === "current") requested.push(shot.shot_id);
-    }
-    if (requested.length === 0) {
-      return { reason: "no_selection", requested: [], submitted: [], shaByShot: {}, request: null };
-    }
-    if (requested.length > SUITE_MAX_IMAGES) {
-      return { reason: "over_limit", requested: requested, submitted: [], shaByShot: {}, request: null };
-    }
-    const images = [];
-    const submitted = [];
-    const shaByShot = {};
-    const planShots = suitePlan && Array.isArray(suitePlan.shots) ? suitePlan.shots : [];
-    for (const shotId of requested) {
-      const candidateId = selectionMap[shotId];
-      const chain = candidatePayloadsOf(shotId);
-      const candidate = chain.find((item) => item && item.candidate_id === candidateId) || null;
-      if (!candidate) {
-        return { reason: "missing_bytes", requested: requested, submitted: [], shaByShot: {}, request: null };
-      }
-      let asset = null;
-      try {
-        asset = await repository.assets.get(pid, candidate.asset_sha256);
-      } catch (error) {
-        asset = null;
-      }
-      if (!asset || !(asset.blob instanceof Blob)) {
-        return { reason: "missing_bytes", requested: requested, submitted: [], shaByShot: {}, request: null };
-      }
-      if (asset.blob.size > MAX_SUITE_IMAGE_BYTES) {
-        return { reason: "image_too_large", requested: requested, submitted: [], shaByShot: {}, request: null };
-      }
-      const shot = planShots.find((item) => item && item.shot_id === shotId) || null;
-      const specEntry = shotSpecs.get(shotId) || null;
-      const spec = specEntry && specEntry.spec
-        ? specEntry.spec : (shot ? emptyShotSpecFromShot(shot) : null);
-      submitted.push(shotId);
-      shaByShot[shotId] = candidate.asset_sha256;
-      images.push({
-        shot_id: shotId,
-        title: String((shot && (shot.label || shot.role_label || shot.role_id)) || "图片任务").slice(0, 200),
-        purpose: spec ? String(spec.purpose || "").slice(0, 500) : "",
-        keep_items: spec ? spec.keep.slice(0, 8) : [],
-        allow_changes: spec ? spec.change_allowed.slice(0, 8) : [],
-        image: {
-          media_type: candidate.media_type || "image/png",
-          sha256: candidate.asset_sha256,
-          data_base64: await blobToBase64(asset.blob),
-        },
-      });
-    }
-    return {
-      reason: null, requested: requested, submitted: submitted, shaByShot: shaByShot,
-      request: {
-        images: images,
-        platform: ANALYZE_PLATFORM,
-        locale: ANALYZE_LOCALE,
-        style_summary: suiteStyleSummaryText(),
-        product_facts: confirmedFactPayloads(),
-      },
-    };
-  }
-
-  /**
-   * 运行一次整套检查：确定性（suite.* + 复用 export.*）无论如何都跑；视觉层最多 8 张，
-   * 失败只落 Unknown。报告以 suite_review 文档写入 IndexedDB（append-only，每条版本一记录）。
-   */
-  async function runSuiteReview() {
+  async function runSuiteReview({ ai = false } = {}) {
     const action = beginAction();
-    if (!action.projectId) return { skipped: true, reason: "no_project" };
-    if (suiteRunInFlight) return { skipped: true, reason: "in_flight" };
-    if (!suitePlan) return { failed: true, reason: "no_plan", message: "还没有套图方案。" };
-    suiteRunInFlight = true;
+    if (!action.projectId || !action.alive()) return;
     clearError(elements.suiteReviewError);
-    renderSuitePanel();
     try {
-      const at = new Date().toISOString();
-      const fingerprints = suiteFingerprintsNow();
-      const selectionMap = suiteSelectionMap();
-      const prepared = await suiteVlmRequestFor(selectionMap, action.projectId);
-      if (!action.alive()) return { skipped: true, reason: "stale_session" };
-      let envelope = null;
-      let reason = prepared.reason;
-      if (prepared.request) {
-        try {
-          const response = await fetch(SUITE_REVIEW_PATH, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(prepared.request),
-          });
-          envelope = await response.json().catch(() => null);
-        } catch (error) {
-          envelope = null;
-        }
-        reason = !envelope || typeof envelope !== "object"
-          ? "transport" : (envelope.ok === true ? null : "server");
+      const outcome = await reviewDelivery.runSuiteReview({ ai });
+      if (!action.alive()) return;
+      if (outcome && outcome.failed) {
+        showError(elements.suiteReviewError,
+          errorMessageOf(outcome.message || outcome.reason, "整套检查没有保存；之前的报告保留。"));
       }
-      const vlmRun = {
-        envelope: envelope,
-        reason: reason || null,
-        requested_shot_ids: prepared.requested,
-        submitted_shot_ids: prepared.reason ? [] : prepared.submitted,
-        asset_sha256_by_shot: prepared.reason ? {} : prepared.shaByShot,
-      };
-      const report = await assembleSuiteReview({
-        selectionSet: fingerprints.selectionSet,
-        suitePlan: suitePlan,
-        styleSpec: styleSpec,
-        shotSpecsById: suiteShotSpecsById(),
-        context: suiteContext(),
-        factsById: suiteFactsById(),
-        sellingPoints: Array.isArray(intake.selling_points) ? intake.selling_points : [],
-        shots: shotSummariesNow(),
-        selections: selectionMap,
-        candidatesByShot: suiteCandidatesByShot(),
-        attemptsByShot: suiteAttemptsByShot(),
-        reportsByCandidate: suiteReportsByCandidate(),
-        readBytes: async (sha) => {
-          const asset = await repository.assets.get(action.projectId, sha);
-          return asset && asset.blob instanceof Blob
-            ? new Uint8Array(await asset.blob.arrayBuffer()) : null;
-        },
-        digest: sha256Hex,
-        vlmRun: vlmRun,
-        at: at,
-      });
-      let version = 0;
-      try {
-        const saved = await repository.documents.save(action.projectId, {
-          kind: SUITE_REVIEW_KIND, documentId: SUITE_REVIEW_DOCUMENT_ID, payload: report,
-        });
-        version = saved.version;
-      } catch (error) {
-        version = 0;
-      }
-      if (action.alive()) {
-        suiteReports.set(SUITE_REVIEW_DOCUMENT_ID, { report: report, version: version });
-      }
-      return {
-        ok: true,
-        summary: suiteReviewSummaryText(report),
-        vlm: report.vlm ? report.vlm.outcome : "not_run",
-      };
     } catch (error) {
-      return {
-        failed: true, reason: "assemble_invalid",
-        message: (error && error.message) || "整套检查无法完成。",
-      };
+      if (action.alive()) showError(elements.suiteReviewError,
+        errorMessageOf(error, "整套检查没有保存；之前的报告保留。"));
     } finally {
-      if (action.alive()) {
-        suiteRunInFlight = false;
-        renderSuitePanel();
-        requestDeliveryGateRefresh();
-      }
+      if (action.alive()) { renderSuitePanel(); reviewDelivery.requestGateRefresh(); }
     }
   }
 
+  /**
+   * @param {string} shotId
+   * @returns {void}
+   */
   function jumpToReviewShot(shotId) {
     stageShell.select("review");
     if (!elements.reviewList) return;
-    const row = elements.reviewList.querySelector('.review-card[data-shot-id="' + shotId + '"]');
+    const row = /** @type {HTMLElement|null} */ (elements.reviewList.querySelector('.review-card[data-shot-id="' + shotId + '"]'));
     if (!row) return;
     row.scrollIntoView({ block: "center" });
-    const button = row.querySelector("button");
+    const button = /** @type {HTMLButtonElement|null} */ (row.querySelector("button"));
     if (button) button.focus({ preventScroll: true });
   }
 
   /** 门禁：整套一致性阻断不属于任何一张图，定位回审核阶段的整套检查运行按钮。 */
+  /** 门禁：整套一致性阻断不属于任何一张图，定位回审核阶段的整套检查运行按钮。
+   * @returns {void}
+   */
   function jumpToSuiteCheck() {
     stageShell.select("review");
     if (!elements.suiteReviewRun) return;
@@ -4819,16 +5126,22 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
   }
 
   /** 整套一致性分区：状态行 + 运行按钮 + 按严重度分组的发现（每条可跳到对应图行）。 */
+  /** 整套一致性分区：状态行 + 运行按钮 + 按严重度分组的发现（每条可跳到对应图行）。
+   * @returns {void}
+   */
   function renderSuitePanel() {
     if (!elements.suiteReviewStatus || !elements.suiteReviewFindings) return;
-    const entry = suiteReportEntry();
+    const projection = reviewDelivery.projection();
+    const entry = projection.suite;
     const report = entry ? entry.report : null;
-    const current = report && projectId
-      ? suiteReviewIsCurrent(report, suiteFingerprintsNow()) : false;
-    elements.suiteReviewRun.disabled = !projectId || !suitePlan || suiteRunInFlight;
-    elements.suiteReviewRun.textContent = suiteRunInFlight ? "检查中…" : "运行整套检查";
+    const current = projection.suiteCurrent;
+    const running = projection.running;
+    elements.suiteReviewRun.disabled = !projectId || !inputs.suitePlan() || running;
+    elements.suiteReviewRun.textContent = running ? "检查中…" : "运行本地确定性检查";
+    elements.suiteAiReviewRun.disabled = !projectId || !inputs.suitePlan() || running
+      || !capabilities?.suite_review?.provider || capabilities.suite_review.provider.configured === false;
     if (!report) {
-      elements.suiteReviewStatus.textContent = projectId && suitePlan
+      elements.suiteReviewStatus.textContent = projectId && inputs.suitePlan()
         ? "尚未运行整套检查。"
         : "先在「方案」生成套图方案，再运行整套检查。";
       elements.suiteReviewNote.textContent = "";
@@ -4842,7 +5155,7 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
       elements.suiteReviewNote.textContent = vlm
         ? ("视觉复核：" + String(vlm.model_id || vlm.provider_id || "已完成")
            + (vlm.checked_at ? " · " + vlm.checked_at : ""))
-        : "";
+        : "未做 AI 复核；当前确定性检查与人工采用仍是交付硬门。";
     }
     elements.suiteReviewFindings.innerHTML = "";
     if (!report) return;
@@ -4852,6 +5165,11 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
   /**
    * 整套发现的单一投影（审核阶段与交付阶段共用，避免两套写法 / 两个事实来源）。
    * 只读传入的报告，重排成「严重度分组 + 逐条定位」；不写任何状态。
+   */
+  /**
+   * @param {HTMLElement} container
+   * @param {SuiteReviewReport} report
+   * @returns {void}
    */
   function appendSuiteFindings(container, report) {
     const findings = Array.isArray(report.findings) ? report.findings : [];
@@ -4873,7 +5191,7 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
           attrs: { "data-rule-id": finding.rule_id, "data-severity": finding.severity },
         });
         row.append(createElement("span", {
-          className: "badge " + (SEVERITY_BADGE[finding.severity] || "is-review-unknown"),
+          className: "badge " + (/** @type {Record<string, string>} */ (SEVERITY_BADGE)[finding.severity] || "is-review-unknown"),
           text: COMPARE_SEVERITY_TEXT[finding.severity] || finding.severity,
         }));
         row.append(createElement("span", {
@@ -4900,74 +5218,33 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
 
   /* -------------------------------------------------- 交付门禁与交付包（V2.6.2） */
 
-  /** 读取已采用候选的字节（IndexedDB Blob → Uint8Array）；缺失返回 null。 */
-  async function readCandidateBytes(sha256, pid = projectId) {
-    const asset = await repository.assets.get(pid, sha256);
-    return asset && asset.blob instanceof Blob
-      ? new Uint8Array(await asset.blob.arrayBuffer()) : null;
-  }
-
-  /** 交付门禁的输入投影：与整套检查共用同一批只读投影，不重做第二套测量。 */
-  function deliveryGateInputs(pid = projectId) {
-    const suiteEntry = suiteReportEntry();
-    return {
-      shots: shotSummariesNow().map((shot) => ({
-        shot_id: shot.shot_id, required: shot.required === true,
-      })),
-      selections: suiteSelectionMap(),
-      candidatesByShot: suiteCandidatesByShot(),
-      reportsByCandidate: suiteReportsByCandidate(),
-      attemptsByShot: suiteAttemptsByShot(),
-      suiteReport: suiteEntry ? suiteEntry.report : null,
-      suiteFingerprints: suiteFingerprintsNow(),
-      acknowledgements: [...acknowledgements.values()].map((entry) => entry.record),
-      readBytes: (sha) => readCandidateBytes(sha, pid),
-      digest: sha256Hex,
-    };
-  }
-
-  /** 去抖重算：任何影响交付的写入之后都走这里；界面只能读 deliveryGateState。 */
+  /** 交付门禁只做视图装配与动作转发：输入投影、去抖刷新与门禁状态归 reviewDelivery 所有。 */
+  /** 交付门禁只做视图装配与动作转发：输入投影、去抖刷新与门禁状态归 reviewDelivery 所有。
+   * @returns {void}
+   */
   function requestDeliveryGateRefresh() {
-    clearTimeout(deliveryGateTimer);
-    deliveryGateTimer = setTimeout(() => {
-      deliveryGateTimer = null;
-      refreshDeliveryGate().catch(() => {});
-    }, 60);
+    reviewDelivery.requestGateRefresh();
   }
 
-  /** 门禁结果只保存在内存里：检查失败不写任何存储，也不产生交付记录。 */
+  /** 门禁重算经 owner 执行；这里只等新投影落定后重渲染（owner 的 changed 已触发 render）。 */
+  /** 门禁重算经 owner 执行；这里只等新投影落定后重渲染（owner 的 changed 已触发 render）。
+   * @returns {Promise<void>}
+   */
   async function refreshDeliveryGate() {
-    const action = beginAction();
-    if (!action.projectId) {
-      if (action.alive()) {
-        deliveryGateState = null;
-        renderDeliveryGate();
-      }
-      return;
-    }
-    let next = null;
-    let failure = null;
-    try {
-      next = await evaluateDeliveryGate(deliveryGateInputs(action.projectId));
-    } catch (error) {
-      failure = (error && error.message) || "交付门禁无法完成。";
-    }
-    if (!action.alive()) return;
-    deliveryGateState = next
-      ? { ...next, failed: false, checked_at: new Date().toISOString() }
-      : { failed: true, message: failure, ready_to_export: false,
-          findings: [], blocking: [], unknowns: [], unresolved_unknowns: [] };
-    renderDeliveryGate();
+    await reviewDelivery.refreshGate();
   }
 
   /** 门禁展示顺序：阻断优先，PASS 收在最后；不改判定，只改阅读顺序。 */
-  const GATE_SEVERITY_RANK = Object.freeze({
+  const GATE_SEVERITY_RANK = /** @type {Record<string, number>} */ (Object.freeze({
     BLOCK: 0, HIGH_RISK: 1, WARNING: 2, UNKNOWN: 3, PASS: 4,
-  });
+  }));
 
   /** 门禁逐条：严重度徽标 + 说明 + 受影响 Shot 的定位入口。 */
+  /** 门禁逐条：严重度徽标 + 说明 + 受影响 Shot 的定位入口。
+   * @returns {void}
+   */
   function renderDeliveryFindings() {
-    const state = deliveryGateState;
+    const state = reviewDelivery.projection().gate;
     const findings = state && Array.isArray(state.findings) ? state.findings : [];
     if (!findings.length) {
       elements.deliveryGate.append(createElement("p", {
@@ -4979,8 +5256,8 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
       return;
     }
     const ordered = findings.slice().sort((left, right) =>
-      (GATE_SEVERITY_RANK[left.severity] === undefined ? 9 : GATE_SEVERITY_RANK[left.severity])
-      - (GATE_SEVERITY_RANK[right.severity] === undefined ? 9 : GATE_SEVERITY_RANK[right.severity]));
+      (GATE_SEVERITY_RANK[/** @type {string} */ (left.severity)] === undefined ? 9 : GATE_SEVERITY_RANK[/** @type {string} */ (left.severity)])
+      - (GATE_SEVERITY_RANK[/** @type {string} */ (right.severity)] === undefined ? 9 : GATE_SEVERITY_RANK[/** @type {string} */ (right.severity)]));
     for (const item of ordered) {
       const passed = item.severity === "PASS";
       const row = createElement("div", {
@@ -4988,7 +5265,7 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
         attrs: { "data-rule-id": item.rule_id, "data-severity": item.severity },
       });
       row.append(createElement("span", {
-        className: "badge " + (SEVERITY_BADGE[item.severity] || "is-review-unknown"),
+        className: "badge " + (/** @type {Record<string, string>} */ (SEVERITY_BADGE)[item.severity] || "is-review-unknown"),
         text: COMPARE_SEVERITY_TEXT[item.severity] || item.severity,
       }));
       row.append(createElement("span", { className: "name", text: String(item.title || item.rule_id) }));
@@ -5023,19 +5300,22 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
    * 不代表没有风险 —— 这里复读同一份 suite review 报告（单一权威），把非阻断的
    * 高风险/提醒连同定位入口摆到导出按钮前面；过期报告如实说明，阻断仍由门禁负责。
    */
+  /**
+   * @returns {void}
+   */
   function renderDeliverySuite() {
     if (!elements.deliverySuiteStatus || !elements.deliverySuiteFindings) return;
     elements.deliverySuiteStatus.textContent = "";
     elements.deliverySuiteFindings.innerHTML = "";
-    const entry = suiteReportEntry();
+    const entry = reviewDelivery.projection().suite;
     const report = entry ? entry.report : null;
     if (!report) {
-      elements.deliverySuiteStatus.textContent = projectId && suitePlan
+      elements.deliverySuiteStatus.textContent = projectId && inputs.suitePlan()
         ? "尚未运行整套检查；交付门禁会在缺失或不当前时阻断导出。"
         : "先在「方案」生成套图方案，再运行整套检查。";
       return;
     }
-    const current = projectId ? suiteReviewIsCurrent(report, suiteFingerprintsNow()) : false;
+    const current = projectId ? reviewDelivery.projection().suiteCurrent : false;
     elements.deliverySuiteStatus.textContent = current
       ? suiteReviewSummaryText(report)
       : ("整套检查已过期：选择或输入在报告之后发生了变化，请回审核阶段重新运行。上一版："
@@ -5044,10 +5324,13 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
   }
 
   /** 待确认 Unknown：每条一个「确认已知悉」按钮；确认是 append-only 记录，不改写报告。 */
+  /** 待确认 Unknown：每条一个「确认已知悉」按钮；确认是 append-only 记录，不改写报告。
+   * @returns {void}
+   */
   function renderDeliveryUnknowns() {
     if (!elements.deliveryUnknowns) return;
     elements.deliveryUnknowns.innerHTML = "";
-    const state = deliveryGateState;
+    const state = reviewDelivery.projection().gate;
     const unknowns = state && Array.isArray(state.unknowns) ? state.unknowns : [];
     if (!unknowns.length) return;
     elements.deliveryUnknowns.append(createElement("p", {
@@ -5071,56 +5354,66 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
   }
 
   /** 确认只追加：document_id 由未知项身份派生，重复确认只新增版本。 */
+  /** 确认只追加：document_id 由未知项身份派生，重复确认只新增版本。
+   * @param {UnknownItem} unknown
+   * @param {HTMLButtonElement} button
+   * @returns {Promise<void>}
+   */
   async function acknowledgeUnknown(unknown, button) {
     if (!projectId) return;
     const action = beginAction();
+    if (!action.projectId) return;
     clearError(elements.deliverError);
     button.disabled = true;
     try {
-      const at = new Date().toISOString();
-      const record = buildAcknowledgement({ unknown: unknown, at: at });
-      const documentId = acknowledgementDocumentIdOf(record);
-      const saved = await repository.documents.save(action.projectId, {
-        kind: REVIEW_ACK_KIND, documentId: documentId, payload: record,
-      });
+      const outcome = await selectionAdoption.acknowledge(unknown);
       if (!action.alive()) return;
-      acknowledgements.set(documentId, { record: record, version: saved.version });
-      await refreshDeliveryGate();
+      await reviewDelivery.refreshGate();
       if (!action.alive()) return;
+      void outcome;
       elements.deliverStatus.textContent = "已记录「已知悉」（append-only，不作为通过证据）。";
     } catch (error) {
       if (action.alive()) {
         button.disabled = false;
-        showError(elements.deliverError, (error && error.message) || "确认没有保存，请重试。");
+        showError(elements.deliverError, errorMessageOf(error, "确认没有保存，请重试。"));
       }
     }
   }
 
   /** 最近一次交付包结果：刷新后仍有记录（无 blob 时只显示身份，不伪装可下载）。 */
+  /**
+   * @returns {void}
+   */
   function renderDeliveryResult() {
     if (!elements.deliverResult) return;
     elements.deliverResult.innerHTML = "";
-    if (!deliveryRecord) {
+    const record = reviewDelivery.projection().record;
+    if (!record) {
       elements.deliverResult.hidden = true;
       return;
     }
     elements.deliverResult.hidden = false;
     elements.deliverResult.append(createElement("p", {
       className: "meta",
-      text: "最近一次交付包：" + deliveryRecord.file_name + "（"
-        + Math.round(deliveryRecord.byte_size / 1024) + " KB）",
+      text: "最近一次交付包：" + record.file_name + "（"
+        + Math.round(record.byte_size / 1024) + " KB）",
     }));
-    elements.deliverResult.append(techDetails(
-      ["sha256 " + String(deliveryRecord.sha256).slice(0, 16) + "…"]));
-    if (deliveryRecord.url) {
+    appendTech(elements.deliverResult,
+      ["sha256 " + String(record.sha256).slice(0, 16) + "…"]);
+    // 对象 URL 归视图持有：下载链接由各次导出命令即时创建，不进 owner。
+    const url = downloadUrlByFile.get(record.sha256) || null;
+    if (url) {
       elements.deliverResult.append(createElement("a", {
         text: "下载交付包",
-        attrs: { href: deliveryRecord.url, download: deliveryRecord.file_name },
+        attrs: { href: url, download: record.file_name },
       }));
     }
   }
 
   /** 交付阶段：逐图采用状态 + 门禁清单 + Unknown 确认 + 生成交付包入口。 */
+  /**
+   * @returns {void}
+   */
   function renderDeliveryGate() {
     if (!elements.deliveryGate) return;
     elements.deliveryGate.innerHTML = "";
@@ -5151,11 +5444,12 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
     renderDeliveryResult();
     const requiredShots = shots.filter((shot) => shot.required === true);
     const pending = requiredShots.filter((shot) => selectionStateOf(shot.shot_id) !== "current");
-    const state = deliveryGateState;
-    elements.deliverExport.disabled = !(state && state.ready_to_export === true) || deliveryInFlight;
+    const projection = reviewDelivery.projection();
+    const state = projection.gate;
+    elements.deliverExport.disabled = !(state && state.ready_to_export === true) || projection.exporting;
     elements.deliverStatus.textContent = !shots.length
       ? "还没有套图方案。"
-      : (deliveryInFlight
+      : (projection.exporting
         ? "正在生成交付包…"
         : (pending.length
           ? "还差 " + pending.length + " 张必需图没有当前有效的采用。"
@@ -5165,276 +5459,83 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
               ? "交付门禁通过：可以生成交付包（只包含已采用的候选）。"
               : "交付门禁未通过：" + state.blocking.length + " 条阻断，逐条处理后才能生成。"))));
   }
-
-  function stageFileName(manifest) {
-    const safe = ((project && project.name) || "project")
-      .replace(/[\\/:*?"<>|\s]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "project";
-    const stamp = String((manifest && manifest.exported_at) || new Date().toISOString())
-      .replace(/[-:]/g, "").replace("T", "-").slice(0, 13);
-    return safe + "-" + stamp + ".zip";
+  /**
+   * @param {{bytes: Uint8Array, file_name: string}} artifact
+   * @returns {void}
+   */
+  function downloadArtifact(artifact) {
+    const blob = new Blob([artifact.bytes.slice()], { type: "application/zip" });
+    const url = URL.createObjectURL(blob);
+    objectUrls.push(url);
+    const record = reviewDelivery.projection().record;
+    if (record) downloadUrlByFile.set(record.sha256, url);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = artifact.file_name;
+    document.body.append(anchor);
+    anchor.click();
+    anchor.remove();
   }
 
+  /**
+   * @returns {Promise<void>}
+   */
   async function handleExportFromWorkspace() {
     const action = beginAction();
     if (!action.projectId) return;
     clearError(elements.deliverError);
     elements.deliverStatus.textContent = "正在打包完整项目…";
     try {
-      const { bytes, manifest } = await exportProjectPackage(repository, action.projectId);
-      if (!action.alive()) return;
-      const blob = new Blob([bytes], { type: "application/zip" });
-      const url = URL.createObjectURL(blob);
-      const anchor = document.createElement("a");
-      anchor.href = url;
-      anchor.download = stageFileName(manifest);
-      document.body.append(anchor);
-      anchor.click();
-      anchor.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 10_000);
+      const outcome = await reviewDelivery.exportProject();
+      if (!action.alive() || !outcome.artifact) return;
+      downloadArtifact(outcome.artifact);
       elements.deliverStatus.textContent = "已导出项目包（含完整历史，可在别的浏览器导入）。";
     } catch (error) {
       if (action.alive()) {
         elements.deliverStatus.textContent = "";
-        showError(elements.deliverError, (error && error.message) || "导出失败，请重试。");
+        showError(elements.deliverError, errorMessageOf(error, "导出失败，请重试。"));
       }
     }
   }
 
-  /* ------------------------------------------------------ 交付包生成（V2.6.2） */
+  /* 交付包生成归 reviewDelivery 所有；workspace 只做下载与状态文案，不组 manifest/ZIP/export_record。 */
 
-  /** 交付包 manifest：选择与输入指纹 + 每图身份（含 PromptVersion 与 Attempt）。 */
-  function buildDeliveryManifest({ at, files, selectionFingerprint, inputsFingerprint }) {
-    return {
-      schema_version: 1,
-      contract_version: EXPORT_GATE_CONTRACT_VERSION,
-      project_id: projectId,
-      project_name: (project && project.name) || "",
-      exported_at: at,
-      selection_fingerprint: selectionFingerprint,
-      inputs_fingerprint: inputsFingerprint,
-      images: files.map((file) => ({
-        shot_id: file.shot_id,
-        shot_label: file.shot_label,
-        candidate_id: file.candidate_id,
-        attempt_action_id: file.attempt_action_id,
-        attempt_state: file.attempt_state,
-        asset_sha256: file.asset_sha256,
-        media_type: file.media_type,
-        byte_size: file.byte_size,
-        file: file.path,
-        prompt_version: file.prompt_version,
-        prompt_hash: file.prompt_hash,
-      })),
-    };
-  }
-
-  /** 交付包 checks：当前门禁发现 + 每张采用候选的单图报告投影 + Unknown 确认记录。 */
-  function buildDeliveryChecks({ at, gate, files }) {
-    const suiteEntry = suiteReportEntry();
-    const countsOf = (findings) => {
-      const counts = { block: 0, warning: 0, unknown: 0, pass: 0 };
-      findings.forEach((item) => {
-        if (!item || typeof item.severity !== "string") return;
-        const key = item.severity.toLowerCase();
-        if (Object.prototype.hasOwnProperty.call(counts, key)) counts[key] += 1;
-      });
-      return counts;
-    };
-    return {
-      schema_version: 1,
-      contract_version: EXPORT_GATE_CONTRACT_VERSION,
-      generated_at: at,
-      gate_status: gate.status,
-      findings: gate.findings.map((item) => ({
-        rule_id: item.rule_id, rule_version: item.rule_version, severity: item.severity,
-        title: item.title, detail: item.detail, measured: item.measured,
-        affected_shot_ids: [...item.affected_shot_ids],
-      })),
-      per_shot: files.map((file) => {
-        const entry = generation.reviewReportOf(file.candidate_id);
-        const findings = entry && entry.report && Array.isArray(entry.report.findings)
-          ? entry.report.findings : [];
-        return {
-          shot_id: file.shot_id,
-          candidate_id: file.candidate_id,
-          report_version: entry ? entry.version : null,
-          counts: countsOf(findings),
-          findings: findings.filter((item) => item && item.severity !== "PASS").map((item) => ({
-            rule_id: item.rule_id, severity: item.severity,
-            title: item.title, detail: item.detail,
-          })),
-        };
-      }),
-      suite_review: suiteEntry ? {
-        document_id: SUITE_REVIEW_DOCUMENT_ID,
-        version: suiteEntry.version,
-        selection_fingerprint: suiteEntry.report.selection_fingerprint,
-        inputs_fingerprint: suiteEntry.report.inputs_fingerprint,
-        counts: countsOf(Array.isArray(suiteEntry.report.findings) ? suiteEntry.report.findings : []),
-      } : null,
-      acknowledgements: [...acknowledgements.values()].map((entry) => ({
-        document_id: entry.record.target_id,
-        rule_id: entry.record.rule_id,
-        target_kind: entry.record.target_kind,
-        shot_ids: Array.isArray(entry.record.shot_ids) ? [...entry.record.shot_ids] : [],
-        acknowledged_at: entry.record.acknowledged_at,
-      })),
-    };
-  }
-
-  /** 交付包 README：直接给人看的小抄（不替代 manifest/checks）。 */
-  function buildDeliveryReadme({ at, files }) {
-    const lines = [
-      "商品套图交付包",
-      "",
-      "项目：" + ((project && project.name) || "(未命名)"),
-      "生成时间：" + at,
-      "包含图片：" + files.length + " 张（每张一个已采用候选）",
-      "",
-      "清单：",
-    ];
-    files.forEach((file) => {
-      lines.push("- " + file.shot_label + "：" + file.path
-        + "（candidate " + file.candidate_id + " · sha256 "
-        + String(file.asset_sha256).slice(0, 12) + "…）");
-    });
-    lines.push("");
-    lines.push("manifest.json 记录每张图的来源与指纹；checks.json 记录门禁与审核发现。");
-    lines.push("本包只包含已采用的候选；未采用候选与完整历史请用「导出项目包」。");
-    return lines.join("\n");
-  }
-
-  /** 生成交付包：门禁通过才打包；任何一步失败都不写 export_record。 */
+  /** 生成交付包：门禁未通过时 owner 抛错，这里只翻译结果，不做批次策略。 */
+  /**
+   * @returns {Promise<void>}
+   */
   async function handleDeliverExport() {
-    if (!projectId || deliveryInFlight) return;
     const action = beginAction();
+    if (!action.projectId || !projectId) return;
     clearError(elements.deliverError);
-    deliveryInFlight = true;
     renderDeliveryGate();
     try {
-      await refreshDeliveryGate();
+      const outcome = await reviewDelivery.exportDelivery();
       if (!action.alive()) return;
-      const state = deliveryGateState;
-      if (!state || state.failed || state.ready_to_export !== true) {
-        showError(elements.deliverError, state && state.failed
-          ? ("门禁检查失败：" + (state.message || "未知错误"))
-          : "交付门禁未通过：先处理阻断项并确认 Unknown。");
-        elements.deliverStatus.textContent = "交付门禁未通过，没有生成交付包。";
-        return;
+      if (outcome && outcome.skipped) return;
+      if (outcome && outcome.artifact) {
+        downloadArtifact(outcome.artifact);
+        elements.deliverStatus.textContent = "已生成交付包（" + (outcome.includedShots || 0)
+          + " 张图；记录已追加，不覆盖历史）。";
       }
-      const selectionMap = suiteSelectionMap();
-      const images = [];
-      const files = [];
-      for (const shot of shotSummariesNow()) {
-        if (!action.alive()) return;
-        const candidateId = selectionMap[shot.shot_id];
-        if (!candidateId) continue;
-        const candidate = candidatePayloadsOf(shot.shot_id)
-          .find((item) => item && item.candidate_id === candidateId) || null;
-        if (!candidate) {
-          if (action.alive()) {
-            showError(elements.deliverError, shot.label + " 的选择指向的候选不存在，不能打包。");
-            elements.deliverStatus.textContent = "交付包未生成。";
-          }
-          return;
-        }
-        const bytes = await readCandidateBytes(candidate.asset_sha256, action.projectId);
-        if (!bytes) {
-          if (action.alive()) {
-            showError(elements.deliverError, shot.label + " 的候选字节缺失，不能打包。");
-            elements.deliverStatus.textContent = "交付包未生成。";
-          }
-          return;
-        }
-        const mediaType = candidate.media_type || "image/png";
-        images.push({
-          shot_id: shot.shot_id, candidate_id: candidateId,
-          media_type: mediaType, bytes: bytes,
-        });
-        // B01/RC16：manifest 的 Prompt 溯源必须读被采用候选原 action Attempt 冻结的
-        // prompt{version,hash}，不读当前编辑头 promptRecordOf。旧候选 + 新编译头并存时，
-        // 若仍取当前头，同一 candidate/action/asset 会被记下错误的当前 Prompt 版本。
-        const attemptRecord = attemptsByActionId()[candidate.action_id] || null;
-        const frozenPrompt = attemptRecord && attemptRecord.prompt ? attemptRecord.prompt : null;
-        files.push({
-          shot_id: shot.shot_id, shot_label: shot.label,
-          candidate_id: candidateId, attempt_action_id: candidate.action_id,
-          attempt_state: attemptRecord ? attemptRecord.state : "",
-          asset_sha256: candidate.asset_sha256, media_type: mediaType,
-          byte_size: bytes.length,
-          path: deliveryImagePathOf({
-            shotId: shot.shot_id, candidateId: candidateId, mediaType: mediaType,
-          }),
-          prompt_version: frozenPrompt ? frozenPrompt.version : null,
-          prompt_hash: frozenPrompt ? frozenPrompt.hash : null,
-        });
-      }
-      if (!images.length) {
-        showError(elements.deliverError, "没有可交付的已采用候选。");
-        elements.deliverStatus.textContent = "交付包未生成。";
-        return;
-      }
-      const at = new Date().toISOString();
-      const fingerprints = suiteFingerprintsNow();
-      const manifest = buildDeliveryManifest({
-        at: at, files: files,
-        selectionFingerprint: fingerprints.selectionFingerprint,
-        inputsFingerprint: fingerprints.inputsFingerprint,
-      });
-      const checks = buildDeliveryChecks({ at: at, gate: state, files: files });
-      const readme = buildDeliveryReadme({ at: at, files: files });
-      const entries = buildDeliveryEntries({
-        images: images, manifest: manifest, checks: checks, readme: readme,
-      });
-      const zipBytes = buildZip(entries, { modifiedAt: new Date(at) });
-      const zipSha256 = await sha256Hex(zipBytes);
-      const projectName = (project && project.name) || "";
-      const record = buildExportRecord({
-        projectId: action.projectId, projectName: projectName,
-        zipSha256: zipSha256, zipBytes: zipBytes.length, entries: entries,
-        gate: state,
-        selectionFingerprint: fingerprints.selectionFingerprint,
-        inputsFingerprint: fingerprints.inputsFingerprint,
-        includedShotIds: images.map((item) => item.shot_id), at: at,
-      });
-      await repository.documents.save(action.projectId, {
-        kind: EXPORT_RECORD_KIND,
-        documentId: exportRecordDocumentIdOf({ at: at, zipSha256: zipSha256 }),
-        payload: record,
-      });
-      if (!action.alive()) return;
-      const url = URL.createObjectURL(new Blob([zipBytes], { type: "application/zip" }));
-      objectUrls.push(url);
-      deliveryRecord = {
-        file_name: deliveryFileName({ projectName: projectName, at: at }),
-        byte_size: zipBytes.length, sha256: zipSha256, at: at, url: url,
-      };
-      const anchor = document.createElement("a");
-      anchor.href = url;
-      anchor.download = deliveryRecord.file_name;
-      document.body.append(anchor);
-      anchor.click();
-      anchor.remove();
-      elements.deliverStatus.textContent = "已生成交付包（" + images.length
-        + " 张图；记录已追加，不覆盖历史）。";
     } catch (error) {
       if (action.alive()) {
         elements.deliverStatus.textContent = "交付包未生成。";
-        showError(elements.deliverError, (error && error.message) || "生成交付包失败，请重试。");
+        showError(elements.deliverError, errorMessageOf(error, "生成交付包失败，请重试。"));
       }
     } finally {
-      if (action.alive()) {
-        deliveryInFlight = false;
-        renderDeliveryGate();
-      }
+      if (action.alive()) renderDeliveryGate();
     }
   }
 
+  /**
+   * @returns {void}
+   */
   function renderAll() {
     clearError(elements.error);
     if (understandingError) {
       showError(elements.error,
-        "商品理解投影失败：" + ((understandingError && understandingError.message) || "未知错误"));
+        "商品理解投影失败：" + errorMessageOf(understandingError, "未知错误"));
     }
     renderReferences().catch(handleInternalError);
     renderIntake();
@@ -5450,12 +5551,15 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
     refreshDerived();
   }
 
+  /**
+   * @returns {void}
+   */
   function bind() {
     if (bound) return;
     bound = true;
     elements.refAdd.addEventListener("click", () => elements.refFile.click());
-    elements.refFile.addEventListener("change", (event) => {
-      handleFiles(event.target.files).finally(() => { elements.refFile.value = ""; });
+    elements.refFile.addEventListener("change", (/** @type {Event} */ event) => {
+      handleFiles(/** @type {HTMLInputElement} */ (event.target).files).finally(() => { elements.refFile.value = ""; });
     });
     for (const node of [elements.intakeName, elements.intakeDescription,
                         elements.intakePoints, elements.intakeFocus]) {
@@ -5468,20 +5572,32 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
         .catch(handleInternalError);
     });
     elements.analyzeRun.addEventListener("click", () => { runAnalyze(); });
+    elements.analyzeNewAfterUnknown.addEventListener("click", () => { void runAnalyze({ allowNewAfterUnknown: true }); });
+    elements.manualFacts.addEventListener("click", async () => {
+      const action = beginAction();
+      try {
+        await saveIntakeNow();
+        if (!action.alive()) return;
+        await prepareManualFacts();
+        if (action.alive()) stageShell.select("understand", { focusHeading: true });
+      } catch (error) { if (action.alive()) handleInternalError(error); }
+    });
     elements.slotsToggle.addEventListener("click", () => {
       showAll = !showAll;
       renderSlots();
     });
     elements.slotAddSave.addEventListener("click", () => { handleAddSlot(); });
     elements.suiteSeed.addEventListener("click", () => {
-      handleSuiteOp(() => seedSuitePlan(suiteContext()));
+      handleSuiteOp(() => seedSuitePlan(inputs.suiteContext()));
     });
     elements.suiteAddTemplate.addEventListener("click", () => {
+      const plan = inputs.suitePlan();
+      if (!plan) return;
       handleSuiteOp(() => addShotFromTemplate(
-        suitePlan, elements.suiteTemplate.value, { context: suiteContext() }));
+        plan, elements.suiteTemplate.value, { context: inputs.suiteContext() }));
     });
     elements.suiteTemplate.addEventListener("change", () => {
-      updateTemplateHint(recommendPlan(suiteContext()));
+      updateTemplateHint(recommendPlan(inputs.suiteContext()));
     });
     elements.suiteCustomToggle.addEventListener("click", () => {
       const opening = elements.suiteCustomPanel.hidden;
@@ -5492,10 +5608,12 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
     elements.styleSave.addEventListener("click", () => { handleSaveStyle(); });
     elements.styleRestore.addEventListener("click", () => { handleRestoreStyle(); });
     elements.confirmAction.addEventListener("click", () => { handleConfirmGeneration(); });
-    elements.batchRun.addEventListener("click", () => { generation.runBatch(); });
     elements.batchStop.addEventListener("click", () => { generation.stopBatch(); });
     elements.batchReconcile.addEventListener("click", () => { generation.reconcileOnce(); });
-    elements.batchRetry.addEventListener("click", () => { generation.runRetryOnce(); });
+    elements.batchRetry.addEventListener("click", () => {
+      generation.enterFailedRetry(generation.deriveBatch().retry_queue);
+      stageShell.select("generate"); renderConfirm();
+    });
     elements.compareJump.addEventListener("click", () => {
       const target = elements.compareJump.dataset.targetShot;
       if (!target) {
@@ -5503,7 +5621,7 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
         return;
       }
       openCompare(target, { focus: true });
-      const row = elements.attemptList.querySelector('.attempt-row[data-shot-id="' + target + '"]');
+      const row = /** @type {HTMLElement|null} */ (elements.attemptList.querySelector('.attempt-row[data-shot-id="' + target + '"]'));
       if (row) row.scrollIntoView({ block: "nearest" });
     });
     elements.compareClose.addEventListener("click", () => {
@@ -5511,35 +5629,45 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
       compareShotId = null;
       compareCandidateId = null;
       renderCompare();
-      const entry = elements.attemptList.querySelector(
-        'button[data-compare-action="' + previous + '"]');
-      if (entry) entry.focus();
+      const entry = previous ? /** @type {HTMLButtonElement|null} */ (elements.attemptList.querySelector(
+        'button[data-compare-action="' + previous + '"]')) : null;
     });
-    elements.compareCandidates.addEventListener("keydown", handleCompareKeydown);
+    elements.compareCandidates.addEventListener("keydown", /** @type {(event: KeyboardEvent) => void} */ (handleCompareKeydown));
+    elements.compareBaselineSelect.addEventListener("change", () => {
+      compareBaselineId = elements.compareBaselineSelect.value || null;
+      void renderCompareImages(compareShotId ? compareInventory().rowsByShotId[compareShotId] || [] : []);
+    });
+    elements.compareViewedZoom.addEventListener("click", () => openImageZoom(elements.compareViewedImage.src, elements.compareViewedCaption.textContent));
+    elements.compareBaselineZoom.addEventListener("click", () => openImageZoom(elements.compareBaselineImage.src, "对照候选（不改变采用）"));
+    elements.imageZoomClose.addEventListener("click", closeImageZoom);
+    elements.imageZoomDialog.addEventListener("cancel", event => { event.preventDefault(); closeImageZoom(); });
+    elements.imageZoomNative.addEventListener("click", () => {
+      const native = elements.imageZoomContent.classList.toggle("at-native-size");
+      elements.imageZoomNative.textContent = native ? "适应窗口" : "100% 像素";
+    });
+    elements.compareReview.addEventListener("click", async () => {
+      const shotId = compareShotId, candidateId = compareCandidateId;
+      if (!shotId || !candidateId) return;
+      const outcome = await selectionAdoption.reviewCandidate(shotId, candidateId);
+      if (shotId === compareShotId && candidateId === compareCandidateId) {
+        renderCompare();
+        elements.compareStatus.textContent = outcome?.failed ? "AI 复核未完成：" + outcome.message : "复核结果只属于所点击的这条候选，不自动采用。";
+      }
+    });
     elements.reworkOpen.addEventListener("click", () => { openReworkPanel(); });
     elements.reworkPreview.addEventListener("click", () => { handleReworkPreview(); });
     elements.reworkEdit.addEventListener("click", () => { handleReworkEdit(); });
     elements.reworkSubmit.addEventListener("click", () => { handleReworkSubmit(); });
     elements.reworkReset.addEventListener("click", () => { resetReworkDraft(); });
     elements.reworkCancel.addEventListener("click", () => { handleReworkCancel(); });
-    elements.reworkPanel.addEventListener("keydown", (event) => {
+    elements.reworkPanel.addEventListener("keydown", (/** @type {KeyboardEvent} */ event) => {
       if (event.key === "Escape") {
         event.preventDefault();
         handleReworkCancel();
       }
     });
-    elements.adoptOpen.addEventListener("click", () => { openAdoptPanel(); });
-    elements.adoptSubmit.addEventListener("click", () => { handleAdoptSubmit(); });
-    elements.adoptClear.addEventListener("click", () => { handleAdoptClear(); });
-    elements.adoptCancel.addEventListener("click", () => {
-      closeAdoptPanel({ focusCandidate: true });
-    });
-    elements.adoptPanel.addEventListener("keydown", (event) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        closeAdoptPanel({ focusCandidate: true });
-      }
-    });
+    elements.adoptOpen.addEventListener("click", () => { void handleCandidateSelection("select"); });
+    elements.adoptClear.addEventListener("click", () => { void handleCandidateSelection("clear"); });
     elements.reworkDirection.addEventListener("input", () => {
       const shotId = reworkShotId;
       const draft = shotId ? reworkDrafts.get(shotId) : null;
@@ -5549,9 +5677,7 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
       updateReworkControls(shotId, draft);
     });
     document.addEventListener("visibilitychange", () => {
-      if (document.visibilityState === "hidden" && saveTimer !== null) {
-        saveIntakeNow().catch(() => {});
-      }
+      if (document.visibilityState === "hidden") saveIntakeNow().catch(() => {});
     });
     elements.stageNextUnderstand.addEventListener("click", () => {
       stageShell.select("plan", { focusHeading: true });
@@ -5569,185 +5695,66 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
     elements.deliverExport.addEventListener("click", () => { handleDeliverExport(); });
     if (elements.suiteReviewRun) {
       elements.suiteReviewRun.addEventListener("click", () => { runSuiteReview(); });
+      elements.suiteAiReviewRun.addEventListener("click", () => { void runSuiteReview({ ai: true }); });
     }
   }
 
+  /**
+   * @returns {Promise<void>}
+   */
   async function loadWorkspace() {
     const action = beginAction();
-    intake = emptyProductInput();
-    intakeVersion = 0;
-    intakeFingerprint = "";
-    intakeConflict = null;
-    busy = false;
-    slots = new Map();
+    const pid = projectId && action.projectId && projectId === action.projectId ? projectId : null;
+    if (!pid) return;
     lastAnalyze = null;
     analyzeProblems = [];
-    suitePlan = null;
-    suiteVersion = 0;
     understandingReady = false;
-    styleSpec = emptyStyleSpec();
-    styleVersion = 0;
-    shotSpecs = new Map();
-    promptVersions = new Map();
-    confirmRecord = null;
-    // V2.R5.1：生成执行侧链/飞行集合/报告全部在 Module 里,loadWorkspace 统一重灌。
+    // 资料/事实/方案/风格/单图规格的唯一所有者是 project-inputs：reset+restore 一次灌入。
+    inputs.reset();
+    await inputs.restore(action);
+    if (!action.alive()) return;
+    prompts.reset();
+    // V2.R5.1：生成执行侧链/飞行集合/报告/授权队列全部在 Module 里，loadWorkspace 统一重灌。
     generation.reset();
-    suiteReports = new Map();
-    suiteRunInFlight = false;
-    deliveryGateState = null;
-    deliveryInFlight = false;
-    deliveryRecord = null;
-    acknowledgements = new Map();
+    selectionAdoption.reset();
+    reviewDelivery.reset();
     revokePreviewUrls();
+    revokeObjectUrls();
     compareShotId = null;
     compareCandidateId = null;
     compareToken += 1;
     reworkDrafts = new Map();
-    reworkConfirmations = new Map();
     reworkInFlight = false;
     reworkShotId = null;
     reworkSource = null;
-    selections = new Map();
-    adoptInFlight = false;
-    adoptShotId = null;
-    adoptCandidateId = null;
-    adoptSource = null;
     elements.comparePanel.hidden = true;
     elements.reworkPanel.hidden = true;
     elements.reworkPreviewBox.hidden = true;
-    elements.adoptPanel.hidden = true;
     showAll = false;
     interaction = { slotId: null, mode: null };
 
-    const intakeDoc = await repository.documents.getLatest(projectId, INTAKE_KIND, INTAKE_DOCUMENT_ID);
+    // Prompt 版本/历史恢复归 prompts.restore 所有；授权/尝试/候选链恢复归 generation.restore。
+    await prompts.restore(action);
     if (!action.alive()) return;
-    if (intakeDoc && intakeDoc.payload && typeof intakeDoc.payload === "object") {
-      intake = { ...emptyProductInput(), ...intakeDoc.payload };
-      if (!Array.isArray(intake.references)) intake.references = [];
-      if (!Array.isArray(intake.selling_points)) intake.selling_points = [];
-      intakeVersion = intakeDoc.version;
-    }
-    intakeFingerprint = fingerprintOf(intake);
-    const slotDocs = await repository.documents.listLatest(action.projectId, SLOT_KIND);
+    await generation.restore(action);
     if (!action.alive()) return;
-    for (const record of slotDocs) {
-      if (record.kind === SLOT_KIND && record.payload && typeof record.payload === "object") {
-        slots.set(record.document_id, { slot: record.payload, version: record.version });
-      }
-    }
-    const suiteDoc = await repository.documents.getLatest(
-      projectId, SUITE_KIND, SUITE_PLAN_DOCUMENT_ID);
+    // 采用记录+已知悉+单图报告由 selectionAdoption.restore 恢复（生成链已在上先灌入）。
+    await selectionAdoption.restore(action);
     if (!action.alive()) return;
-    if (suiteDoc && suiteDoc.payload && Array.isArray(suiteDoc.payload.shots)) {
-      suitePlan = suiteDoc.payload;
-      suiteVersion = suiteDoc.version;
-    }
-    const styleDoc = await repository.documents.getLatest(
-      projectId, STYLE_KIND, STYLE_SPEC_DOCUMENT_ID);
+    // 整套报告与交付记录由 reviewDelivery.restore 恢复（suite+export；ack 已由 adoption.restore 恢复）。
+    await reviewDelivery.restore(action);
     if (!action.alive()) return;
-    if (styleDoc && styleDoc.payload && typeof styleDoc.payload === "object") {
-      styleSpec = { ...emptyStyleSpec(), ...styleDoc.payload };
-      styleVersion = styleDoc.version;
-    }
-    const specDocs = await repository.documents.listLatest(action.projectId, SHOT_SPEC_KIND);
-    if (!action.alive()) return;
-    for (const record of specDocs) {
-      if (record.payload && typeof record.payload === "object") {
-        shotSpecs.set(record.document_id, { spec: record.payload, version: record.version });
-      }
-    }
-    const promptDocs = await repository.documents.listLatest(action.projectId, PROMPT_KIND);
-    if (!action.alive()) return;
-    for (const record of promptDocs) {
-      if (record.payload && typeof record.payload === "object" && record.payload.compiled) {
-        promptVersions.set(record.document_id, { record: record.payload, version: record.version });
-      }
-    }
-    const confirmDocs = await repository.documents.listLatest(action.projectId, CONFIRM_KIND);
-    if (!action.alive()) return;
-    for (const record of confirmDocs) {
-      if (record.document_id === CONFIRM_DOCUMENT_ID && record.payload && record.payload.fingerprint) {
-        confirmRecord = { payload: record.payload, version: record.version };
-      } else if (record.document_id.startsWith(REWORK_CONFIRM_PREFIX)
-                 && record.payload && record.payload.fingerprint) {
-        reworkConfirmations.set(
-          record.document_id.slice(REWORK_CONFIRM_PREFIX.length),
-          { payload: record.payload, version: record.version });
-      }
-    }
-    for (const shot of (suitePlan && Array.isArray(suitePlan.shots) ? suitePlan.shots : [])) {
-      const attemptDocs = await repository.documents.listVersions(action.projectId, ATTEMPT_KIND, shot.shot_id);
-      if (!action.alive()) return;
-      generation.loadAttemptChain(shot.shot_id, attemptDocs.slice().reverse()
-        .map((record) => ({ record: record.payload, version: record.version })));
-    }
-    for (const shot of (suitePlan && Array.isArray(suitePlan.shots) ? suitePlan.shots : [])) {
-      const candidateDocs = await repository.documents.listVersions(action.projectId, CANDIDATE_KIND, shot.shot_id);
-      if (!action.alive()) return;
-      generation.loadCandidateChain(shot.shot_id, candidateDocs.slice().reverse()
-        .map((record) => ({ record: record.payload, version: record.version })));
-    }
-    const selectionDocs = await repository.documents.listLatest(action.projectId, SELECTION_KIND);
-    if (!action.alive()) return;
-    for (const record of selectionDocs) {
-      if (record.payload && typeof record.payload === "object") {
-        selections.set(record.document_id, { record: record.payload, version: record.version });
-      }
-    }
-    const reviewDocs = await repository.documents.listLatest(action.projectId, REVIEW_KIND);
-    if (!action.alive()) return;
-    for (const record of reviewDocs) {
-      if (record.payload && typeof record.payload === "object") {
-        generation.setReviewReport(record.document_id, { report: record.payload, version: record.version });
-      }
-    }
-    const suiteDocs = await repository.documents.listLatest(action.projectId, SUITE_REVIEW_KIND);
-    if (!action.alive()) return;
-    for (const record of suiteDocs) {
-      if (record.document_id === SUITE_REVIEW_DOCUMENT_ID
-          && record.payload && typeof record.payload === "object") {
-        suiteReports.set(SUITE_REVIEW_DOCUMENT_ID, {
-          report: record.payload, version: record.version,
-        });
-      }
-    }
-    const ackDocs = await repository.documents.listLatest(action.projectId, REVIEW_ACK_KIND);
-    if (!action.alive()) return;
-    for (const record of ackDocs) {
-      if (record.payload && typeof record.payload === "object") {
-        acknowledgements.set(record.document_id,
-          { record: record.payload, version: record.version });
-      }
-    }
-    const exportDocs = await repository.documents.listLatest(action.projectId, EXPORT_RECORD_KIND);
-    if (!action.alive()) return;
-    if (exportDocs.length) {
-      const payloads = exportDocs.map((item) => item.payload)
-        .filter((item) => item && typeof item === "object")
-        .sort((left, right) => String(left.exported_at || "")
-          .localeCompare(String(right.exported_at || "")));
-      const latest = payloads.length ? payloads[payloads.length - 1] : null;
-      if (latest && typeof latest === "object") {
-        deliveryRecord = {
-          file_name: deliveryFileName({
-            projectName: (project && project.name) || "", at: latest.exported_at,
-          }),
-          byte_size: Number(latest.zip_bytes) || 0,
-          sha256: String(latest.zip_sha256 || ""),
-          at: latest.exported_at || "",
-          url: null,
-        };
-      }
-    }
-    for (const shot of (suitePlan && Array.isArray(suitePlan.shots) ? suitePlan.shots : [])) {
-      const latest = generation.latestStoredCandidateOf(shot.shot_id);
+    const plan = inputs.suitePlan();
+    for (const shot of (plan && Array.isArray(plan.shots) ? plan.shots : [])) {
+      // 落库套图 shot_id 恒为 string（见上；此处同）。
+      const latest = generation.latestStoredCandidateOf(/** @type {string} */ (shot.shot_id));
       if (!latest) continue;
       const candidate = latest.record;
-      const stored = generation.reviewReportOf(candidate.candidate_id);
+      const stored = selectionAdoption.reportOf(candidate.candidate_id);
       // 重开只补建缺失/过期报告：内存面已有当前报告则跳过，避免 review_report 版本无意义 +1。
       if (stored && reviewIsCurrent(stored.report, candidate)) continue;
       try {
-        await generation.ensureReviewReport(shot.shot_id, candidate, null, action.projectId);
+        await selectionAdoption.ensureReport(/** @type {string} */ (shot.shot_id), candidate, null, action.projectId);
       } catch (error) {
         // 打开项目时的报告补建是尽力而为；失败不阻塞工作区。
       }
@@ -5768,7 +5775,13 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
     renderAll();
   }
 
+  modelSettings.subscribe(() => {
+    capabilities = modelSettings.capabilities;
+    capabilitiesError = capabilities ? null : "有效模型配置正在读取或不可用，请打开模型设置。";
+    if (projectId) renderAll();
+  });
   return {
+    /** @param {StoredProjectRecord} projectRecord @returns {Promise<void>} */
     async open(projectRecord) {
       bind();
       project = projectRecord;
@@ -5780,33 +5793,27 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
         handleInternalError(error);
       }
     },
+    /** @returns {boolean} */
     isOpen() {
       return projectId !== null;
     },
+    /** @returns {Promise<void>} */
     async close() {
       // 会话代由 session 统一推进；这里只做关闭时的收尾：
       // 先把未保存的草稿按当前（旧）会话落库，再清理本地资源与项目引用。
       // 不承诺取消上游：已发出的请求与已提交的任务照常完成，结果记录仍会写入。
-      if (saveTimer !== null) {
-        try {
-          await saveIntakeNow();
-        } catch (error) {
-          handleInternalError(error);
-        }
-      }
+      await saveIntakeNow();
       revokeObjectUrls();
       revokePreviewUrls();
       project = null;
       projectId = null;
     },
+    /** @param {StoredProjectRecord} projectRecord @returns {void} */
     setProject(projectRecord) {
       if (projectRecord && projectRecord.project_id === projectId) {
         project = projectRecord;
         renderHeaderText(project);
       }
-    },
-    async reviewLatestCandidate(shotId) {
-      return generation.reviewCandidate(shotId);
     },
   };
 }
