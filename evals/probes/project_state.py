@@ -77,6 +77,12 @@ for source in (CODE_ROOT / "_working").glob("*/state.md"):
                 copied = ROOT / original.relative_to(CODE_ROOT)
                 copied.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(original, copied)
+            elif original.is_dir() and CODE_ROOT in original.parents:
+                # evidence 也可以是目录（如 evals/product-v2/fixtures/v2.5.2/ 这类夹具集）；
+                # 守卫用 exists() 判存在，临时副本必须复制整棵目录，否则真库里存在的
+                # 引用会在副本里变成 J6「指向不存在」，把受控基线和每个反例都污染成假红。
+                shutil.copytree(original, ROOT / original.relative_to(CODE_ROOT),
+                                dirs_exist_ok=True)
     copy_references(yaml.safe_load(match.group(1)))
 YAML_BLOCK = re.compile(r"```yaml\r?\n(.*?)```", re.S)
 TAG = re.compile(r"\[J(\d+)\]")
