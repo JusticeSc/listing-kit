@@ -235,6 +235,7 @@ task_progress:
     - evals/product-v2/v2.4.4-candidate-blob-20261003-085109.json
     - evals/product-v2/refactor/generation-module-20261005-formal.md
     - evals/product-v2/refactor/r51-packet-05-reserve-fence-20261006.json
+    - evals/product-v2/refactor/r51-packet-06-delivery-scope-20261007.json
   V2.R5.2:
     status: pending
     evidence:
@@ -357,7 +358,7 @@ task_progress:
     - tools/build_product_v2_ts.mjs
 next_action_task: V2.R5.1
 blockers:
-  - V2.R5.1_packet_06_selection_delivery_txn_pending_commitSelection_readProjectSnapshot_commitDeliveryRecord_after_packet_05_closed
+  - V2.R5.1_packet_07_view_split_pending_narrow_views_after_packet_06_closed
 unknowns:
   - historical_r74_closeout_volc_adopt_export_222253_pass_spent_1_15_of_5_image_8_of_8_matrix_CI_37136575625_deploy_24a3561_origin_https_47_115_172_233_8080_paid_online_probes_0_evidence_completion-matrix-20261003-r74_not_current_completion
   - historical_r71_regression_r71f_semlive_vlm_dashscope194526_volc195600_spent_0_91_of_5_evidence_full-verification-20261003-r71_not_current_G6_or_design_proof
