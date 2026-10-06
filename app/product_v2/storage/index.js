@@ -13,12 +13,17 @@ export * from "./pointer.js";
 export * from "./repository.js";
 export * from "./zip.js";
 export * from "./package.js";
-export * from "./package-migrations.js";
+export * from "./package-schema.js";
 export * from "./transfer.js";
 
 import { openDatabase } from "./db.js";
 import { createRepository } from "./repository.js";
 
+/**
+ * 一次打开数据库并拿到仓库。
+ * @param {Parameters<typeof openDatabase>[0] & Partial<import("./repository.js").RepositoryDeps>} [options]
+ * @returns {Promise<{db:IDBDatabase, repository:import("./validate.js").ProjectRepository, close:() => void}>}
+ */
 export async function openStorage(options = {}) {
   const db = await openDatabase(options);
   const repository = createRepository({

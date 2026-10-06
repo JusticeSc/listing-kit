@@ -24,20 +24,37 @@ export const REVIEW_REPORT_SCHEMA_VERSION = 1;
 export const REVIEW_CONTRACT_VERSION = "v2.5.2";
 export const REVIEW_REPORT_DOCUMENT_KIND = DOMAIN_DOCUMENT_KINDS.review_report;
 
+/** 审核层词表（注册表 layer 字段的唯一合法值）。
+ * @type {readonly import("./type-contracts.js").ReviewLayer[]}
+ */
 export const REVIEW_LAYERS = Object.freeze(["generation", "candidate", "export", "vlm", "suite"]);
+/** 严重度词表（发现的 severity 字段的唯一合法值）。
+ * @type {readonly import("./type-contracts.js").ReviewSeverity[]}
+ */
 export const REVIEW_SEVERITIES = Object.freeze(["BLOCK", "HIGH_RISK", "WARNING", "PASS", "UNKNOWN"]);
 /**
  * 人工先看顺序（唯一权威）：阻断 → 高风险 → 提醒 → 未知。
  * PASS 只是完成标记，不参与排序；比较面板（domain/compare.js）与本文件的 topFinding 共用这一份。
+ * @type {readonly import("./type-contracts.js").ReviewSeverity[]}
  */
 export const REVIEW_SEVERITY_ORDER = Object.freeze(["BLOCK", "HIGH_RISK", "WARNING", "UNKNOWN"]);
+/** 违规严重度子集（规则注册表只允许这三种；PASS/UNKNOWN 不是规则严重度）。
+ * @type {readonly ("BLOCK"|"HIGH_RISK"|"WARNING")[]}
+ */
 export const VIOLATION_SEVERITIES = Object.freeze(["BLOCK", "HIGH_RISK", "WARNING"]);
+/** 测量失败时的降级策略词表。
+ * @type {readonly import("./type-contracts.js").UnknownPolicy[]}
+ */
 export const UNKNOWN_POLICIES = Object.freeze(["hint", "disable"]);
+/** 单图 VLM 复核的 outcome 词表。
+ * @type {readonly import("./type-contracts.js").VlmOutcome[]}
+ */
 export const VLM_OUTCOMES = Object.freeze(["checked", "unknown"]);
 
 /**
  * VLM check 词表：与服务端 src/providers/v2_review.py 的 VLM_CHECKS 键集合必须一致（跨语言镜像），
  * 由 tools/verify_v2_5_2_vlm_review.py 比对；rule_id / 严重度 / 消费者的唯一权威仍是本文件注册表。
+ * @type {Readonly<Record<import("./type-contracts.js").VlmCheckId, string>>}
  */
 export const VLM_CHECK_TO_RULE = Object.freeze({
   product_fidelity: "vlm.product_fidelity",
@@ -65,6 +82,7 @@ function rule(entry) {
 /**
  * 规则注册表：唯一权威。每条规则的 measurement 指向已有权威的实现；
  * consumer 必须能追到一个真实组件和任务号；unknown_policy 决定测量失败时的降级方式。
+ * @type {Readonly<import("./type-contracts.js").ReviewRule[]>}
  */
 export const DETERMINISTIC_RULES = Object.freeze([
   rule({
@@ -315,13 +333,20 @@ const RULE_BY_ID = Object.freeze(DETERMINISTIC_RULES.reduce((table, entry) => {
   return table;
 }, {}));
 
-/** 已登记规则的只读查询：消费者用它取权威严重度，不复制注册表。 */
+/** 已登记规则的只读查询：消费者用它取权威严重度，不复制注册表。
+ * @param {unknown} ruleId
+ * @returns {Readonly<import("./type-contracts.js").ReviewRule>|null}
+ */
 export function registeredRule(ruleId) {
   return RULE_BY_ID[ruleId] || null;
 }
 
-/** 注册表自检：缺要素、重复 id、未知词表、consumer 无任务锚点、确认单代码未被认领都报红。 */
+/** 注册表自检：缺要素、重复 id、未知词表、consumer 无任务锚点、确认单代码未被认领都报红。
+ * @param {unknown} [registry]
+ * @returns {import("./type-contracts.js").DomainProblem[]}
+ */
 export function checkRuleRegistry(registry = DETERMINISTIC_RULES) {
+  /** @type {import("./type-contracts.js").DomainProblem[]} */
   const problems = [];
   if (!Array.isArray(registry)) {
     pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$", "规则注册表必须是数组。");
@@ -404,6 +429,14 @@ export function checkRuleRegistry(registry = DETERMINISTIC_RULES) {
   });
   return problems;
 }
+
+/** 用注册表条目构造一条 finding；rule_id 未登记或严重度不在词表内直接报错。
+ * @param {string} ruleId
+ * @param {import("./type-contracts.js").ReviewSeverity} severity
+ * @param {string} detail
+ * @param {unknown} [measured]
+ * @returns {import("./type-contracts.js").ReviewFinding}
+ */
 export function makeFinding(ruleId, severity, detail, measured) {
   const entry = RULE_BY_ID[ruleId];
   if (!entry) invalid("发现引用了未登记的规则：" + String(ruleId));
@@ -442,9 +475,12 @@ function findRecordByAction(chain, actionId) {
  * 单图确定性检查：对候选字节与记录做平台/合同/记录三层测量。
  * bytes 为 null 表示字节不可读——对应规则降为 UNKNOWN 提示，绝不阻断；
  * 字节存在但违反合同时是 BLOCK（测量成功）。
+ * @param {{candidate?: unknown, bytes?: Uint8Array|ArrayBuffer|null, roleId?: unknown}} [args]
+ * @returns {import("./type-contracts.js").ReviewFinding[]}
  */
 export function evaluateCandidateFindings({ candidate, bytes, roleId } = {}) {
   if (!isPlainObject(candidate)) invalid("候选检查需要候选记录。");
+  /** @type {import("./type-contracts.js").ReviewFinding[]} */
   const findings = [];
   const recordProblems = checkCandidateRecord(candidate);
   const view = bytesViewOf(bytes);
@@ -478,7 +514,8 @@ export function evaluateCandidateFindings({ candidate, bytes, roleId } = {}) {
     findings.push(makeFinding("candidate.record_consistent", "BLOCK",
       "候选记录形状不合法：" + recordProblems.map((item) => item.path + " " + item.message).join("；"),
       { problems: recordProblems }));
-  } else if (parsed) {
+  } else if (parsed && view) {
+    /** @type {string[]} */
     const mismatches = [];
     if (candidate.width !== parsed.width || candidate.height !== parsed.height) {
       mismatches.push("宽高 记录 " + candidate.width + "×" + candidate.height + " ≠ 字节 "
@@ -580,9 +617,12 @@ export function evaluateCandidateFindings({ candidate, bytes, roleId } = {}) {
   }
   return Object.freeze(findings);
 }
+
 /**
  * 生成前确定性检查：只消费 confirm.buildConfirmationSheet 的 blockers / risks，
  * 不复制确认单自身的判断；每个 blocker 代码必须被注册表认领（未登记直接报错）。
+ * @param {unknown} sheet
+ * @returns {import("./type-contracts.js").ExportReadiness}
  */
 export function evaluateGenerationFindings(sheet) {
   if (!isPlainObject(sheet) || !Array.isArray(sheet.shots)) {
@@ -594,6 +634,7 @@ export function evaluateGenerationFindings(sheet) {
       entry.blocker_codes.forEach((code) => { codeRules[code] = entry; });
     }
   });
+  /** @type {import("./type-contracts.js").ReviewFinding[]} */
   const findings = [];
   sheet.shots.forEach((shot) => {
     if (!isPlainObject(shot)) return;
@@ -629,11 +670,15 @@ function reportPayloadOf(entry) {
 /**
  * 导出就绪检查：选择完整性、报告当前性、报告无阻断、选择链完整性（同步部分）。
  * selections 是 {shot_id: candidate_id} 的最小投影；字节哈希复算见 verifyAssetHashes。
+ * @param {{shots?: unknown, selections?: unknown, candidatesByShot?: unknown,
+ *          reportsByCandidate?: unknown, attemptsByShot?: unknown}} [args]
+ * @returns {import("./type-contracts.js").ExportReadiness}
  */
 export function evaluateExportReadiness({ shots, selections, candidatesByShot,
                                           reportsByCandidate, attemptsByShot } = {}) {
   if (!Array.isArray(shots)) invalid("导出检查需要套图计划 shots。");
   const selectionMap = isPlainObject(selections) ? selections : {};
+  /** @type {import("./type-contracts.js").ReviewFinding[]} */
   const findings = [];
 
   const requiredShots = shots.filter((shot) => shot && shot.required === true);
@@ -650,8 +695,11 @@ export function evaluateExportReadiness({ shots, selections, candidatesByShot,
       { required_count: requiredShots.length }));
   }
 
+  /** @type {string[]} */
   const chainIssues = [];
+  /** @type {string[]} */
   const reportIssues = [];
+  /** @type {string[]} */
   const blockingIssues = [];
   let checked = 0;
   shots.forEach((shot) => {
@@ -717,14 +765,20 @@ export function evaluateExportReadiness({ shots, selections, candidatesByShot,
 /**
  * 交付字节哈希复算：readBytes 由调用方注入（读 IndexedDB Blob），digest 必须是 storage/db.js 的
  * sha256Hex；本层不写第二种散列。缺失与不一致都是 BLOCK。
+ * @param {{selections?: unknown, candidatesByShot?: unknown, readBytes?: unknown, digest?: unknown}} [args]
+ * @returns {Promise<import("./type-contracts.js").AssetHashCheck>}
  */
 export async function verifyAssetHashes({ selections, candidatesByShot, readBytes, digest } = {}) {
   if (typeof readBytes !== "function") invalid("哈希复算需要 readBytes(asset_sha256)。");
   if (typeof digest !== "function") invalid("哈希复算需要注入 digest（storage/db.js 的 sha256Hex）。");
   const selectionMap = isPlainObject(selections) ? selections : {};
+  /** @type {import("./type-contracts.js").ReviewFinding[]} */
   const findings = [];
+  /** @type {string[]} */
   const missing = [];
+  /** @type {string[]} */
   const mismatches = [];
+  /** @type {string[]} */
   const passed = [];
   const shotIds = Object.keys(selectionMap);
   for (const shotId of shotIds) {
@@ -803,6 +857,10 @@ function checkVlmBlock(vlm, problems, path) {
 /**
  * 一次复核信封 → VLM findings + 复核块。成功信封必须是 checked 结果且绑定当前候选；
  * 失败信封一律投影为 UNKNOWN（不伪造 PASS、不阻塞人工），并保留分类原因。
+ * @param {{candidate?: unknown, review?: unknown, at?: unknown}} [args]
+ * @returns {{outcome: import("./type-contracts.js").VlmOutcome,
+ *            findings: import("./type-contracts.js").ReviewFinding[],
+ *            vlm: import("./type-contracts.js").VlmBlock}}
  */
 export function buildVlmReview({ candidate, review, at } = {}) {
   if (!isPlainObject(candidate) || !isNonEmptyString(candidate.candidate_id)
@@ -813,6 +871,7 @@ export function buildVlmReview({ candidate, review, at } = {}) {
   if (!isPlainObject(review) || typeof review.ok !== "boolean") {
     invalid("VLM 复核需要服务端信封（ok 标记）。");
   }
+  /** @type {import("./type-contracts.js").ReviewFinding[]} */
   const findings = [];
   let vlm = null;
   if (review.ok === true) {
@@ -904,7 +963,10 @@ export function buildVlmReview({ candidate, review, at } = {}) {
   });
 }
 
-/** 把一次复核合并进当前报告：确定性 findings 保留，VLM 层整体替换，报告身份不变。 */
+/** 把一次复核合并进当前报告：确定性 findings 保留，VLM 层整体替换，报告身份不变。
+ * @param {{report?: unknown, candidate?: unknown, review?: unknown, at?: unknown}} [args]
+ * @returns {import("./type-contracts.js").ReviewReport}
+ */
 export function mergeVlmReview({ report, candidate, review, at } = {}) {
   if (!isPlainObject(report)) invalid("合并复核需要已有报告。");
   if (!reviewIsCurrent(report, candidate)) {
@@ -923,6 +985,8 @@ export function mergeVlmReview({ report, candidate, review, at } = {}) {
 /**
  * ReviewReport：绑定 candidate_id + review_contract_version + asset_sha256 的不可变快照。
  * findings 只允许引用注册表里的规则；summary 是逐严重度计数（由本函数计算，不接受外部传入）。
+ * @param {{candidate?: unknown, findings?: unknown, vlm?: unknown, at?: unknown}} [args]
+ * @returns {import("./type-contracts.js").ReviewReport}
  */
 export function buildReviewReport({ candidate, findings, vlm, at } = {}) {
   if (!isPlainObject(candidate)) invalid("报告需要候选记录。");
@@ -973,8 +1037,12 @@ export function buildReviewReport({ candidate, findings, vlm, at } = {}) {
   });
 }
 
-/** 报告形状检查；summary 与 findings 计数不一致也算不合法（报告不允许自相矛盾）。 */
+/** 报告形状检查；summary 与 findings 计数不一致也算不合法（报告不允许自相矛盾）。
+ * @param {unknown} report
+ * @returns {import("./type-contracts.js").DomainProblem[]}
+ */
 export function checkReviewReport(report) {
+  /** @type {import("./type-contracts.js").DomainProblem[]} */
   const problems = [];
   if (!isPlainObject(report)) {
     pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$", "审核报告必须是对象。");
@@ -1045,7 +1113,11 @@ export function checkReviewReport(report) {
   return problems;
 }
 
-/** 报告是否对当前候选与当前合同版本仍然有效。 */
+/** 报告是否对当前候选与当前合同版本仍然有效。
+ * @param {unknown} report
+ * @param {unknown} candidate
+ * @returns {boolean}
+ */
 export function reviewIsCurrent(report, candidate) {
   if (!isPlainObject(report) || !isPlainObject(candidate)) return false;
   return report.review_contract_version === REVIEW_CONTRACT_VERSION
@@ -1054,7 +1126,10 @@ export function reviewIsCurrent(report, candidate) {
     && report.asset_sha256 === candidate.asset_sha256;
 }
 
-/** 最需要人工先看的发现：BLOCK > HIGH_RISK > WARNING > UNKNOWN；全 PASS 返回 null。 */
+/** 最需要人工先看的发现：BLOCK > HIGH_RISK > WARNING > UNKNOWN；全 PASS 返回 null。
+ * @param {unknown} report
+ * @returns {import("./type-contracts.js").ReviewFinding|null}
+ */
 export function topFinding(report) {
   const findings = report && Array.isArray(report.findings) ? report.findings : [];
   for (const severity of REVIEW_SEVERITY_ORDER) {
@@ -1064,7 +1139,10 @@ export function topFinding(report) {
   return null;
 }
 
-/** 界面一行摘要：只报需要行动的数量，不重复全部细节。 */
+/** 界面一行摘要：只报需要行动的数量，不重复全部细节。
+ * @param {unknown} report
+ * @returns {string}
+ */
 export function reviewSummaryText(report) {
   const summary = report && isPlainObject(report.summary) ? report.summary : {};
   const vlm = report && isPlainObject(report.vlm) ? report.vlm : null;
@@ -1077,4 +1155,24 @@ export function reviewSummaryText(report) {
     + " · 提醒 " + Number(summary.WARNING || 0)
     + " · 未知 " + Number(summary.UNKNOWN || 0)
     + " · " + vlmText;
+}
+
+/**
+ * 单图报告的复核状态投影（manifest / 界面共用，V2.R6.2）：
+ * reviewed = 真跑过 AI 且绑定候选字节；unknown = 真发起但失败/不确定（保留原因与请求号）；
+ * not_reviewed = 没发起 AI 复核——这是「未调用」，不是模型判断，也不阻断确定性交付。
+ * @param {unknown} report
+ * @returns {{status: "reviewed"|"unknown"|"not_reviewed", reason: string|null,
+ *            checked_at: string|null, request_id: string|null}}
+ */
+export function reviewStatusOf(report) {
+  const vlm = report && isPlainObject(report.vlm) ? report.vlm : null;
+  if (!vlm) return Object.freeze({ status: "not_reviewed", reason: "not_run",
+    checked_at: null, request_id: null });
+  if (vlm.outcome === "checked") {
+    return Object.freeze({ status: "reviewed", reason: null,
+      checked_at: vlm.checked_at || null, request_id: vlm.request_id || null });
+  }
+  return Object.freeze({ status: "unknown", reason: "unknown",
+    checked_at: vlm.checked_at || null, request_id: vlm.request_id || null });
 }

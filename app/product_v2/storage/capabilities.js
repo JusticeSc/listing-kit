@@ -34,6 +34,10 @@ const PROBE_KEY_PATH = "document_key";
 const PROBE_KEY = "__capability_probe__";
 
 /** 在目标库上写一条保留键记录再删掉；成功与否只说明引擎能否完成读写事务。 */
+/**
+ * @param {IDBDatabase} db
+ * @returns {Promise<boolean>}
+ */
 function probeReadWriteTransaction(db) {
   return new Promise((resolve) => {
     let transaction;
@@ -55,6 +59,7 @@ function probeReadWriteTransaction(db) {
     transaction.onerror = () => finish(false);
     try {
       const store = transaction.objectStore(PROBE_STORE);
+      /** @type {Record<string, string>} */
       const record = {};
       record[PROBE_KEY_PATH] = PROBE_KEY;
       const write = store.put(record);
@@ -69,6 +74,12 @@ function probeReadWriteTransaction(db) {
   });
 }
 
+/**
+ * 浏览器能力探针：逐项测量（安全上下文 / IndexedDB / 打开目标库 / randomUUID /
+ * crypto.subtle / 最小读写事务），只测量不写业务记录。
+ * @param {{idbFactory?:IDBFactory|null, cryptoObj?:Crypto|null, locationObj?:Location|null, secureContextFlag?:boolean|null, openDatabaseFn?:typeof import("./db.js").openDatabase}} [options]
+ * @returns {Promise<{ok:boolean, origin:string, secure_context:boolean, indexeddb:boolean, database_open:boolean, database_name:string, database_open_error:string|null, random_uuid:boolean, webcrypto:boolean, transaction:boolean|null, gaps:CapabilityGap[]}>}
+ */
 export async function probeBrowserCapabilities(options = {}) {
   const {
     idbFactory = globalThis.indexedDB,
@@ -88,7 +99,9 @@ export async function probeBrowserCapabilities(options = {}) {
 
   let databaseOpen = false;
   let databaseOpenError = null;
+  /** @type {boolean|null} */
   let transaction = null;
+  /** @type {IDBDatabase|null} */
   let database = null;
 
   if (indexeddb) {
@@ -96,20 +109,24 @@ export async function probeBrowserCapabilities(options = {}) {
       database = await openDatabaseFn({ idbFactory });
       databaseOpen = true;
     } catch (error) {
-      const code = error && error.code ? String(error.code) : String((error && error.name) || error);
-      const message = error && error.message ? "：" + error.message : "";
+      const failure = /** @type {{code?:unknown, name?:unknown, message?:unknown}} */ (error);
+      const code = failure && failure.code ? String(failure.code) : String((failure && failure.name) || failure);
+      const message = failure && failure.message ? "：" + String(failure.message) : "";
       databaseOpenError = code + message;
     }
   }
   if (database) {
+    const opened = database;
     try {
-      transaction = await probeReadWriteTransaction(database);
+      transaction = await probeReadWriteTransaction(opened);
     } finally {
-      database.close();
+      opened.close();
     }
   }
 
+  /** @type {CapabilityGap[]} */
   const gaps = [];
+  /** @param {CapabilityGap} gap */
   const addGap = (gap) => {
     if (!gaps.includes(gap)) gaps.push(gap);
   };

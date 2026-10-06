@@ -3,7 +3,8 @@
  *
  * 正向：suite 规则登记；确定性 BLOCK/WARNING 与 affected_shot_ids；一次完整装配（确定性 + 视觉）
  *       产出当前报告；指纹变化即过期。
- * 反向：缺选择、重复任务、卖点未覆盖、越界 shot_id、视觉通道失败与超限都必须被抓住且只落 Unknown。
+ * 反向：缺选择、重复任务、卖点未覆盖、越界 shot_id、视觉通道失败落 Unknown、
+ *       没发起（超限/未选）落 not_run 且不伪造 UNKNOWN。
  *
  * 结果写到 window.__V2_SUITE_RESULTS__，由 tools/verify_v2_5_5_suite_review.py 读取。
  */
@@ -20,6 +21,7 @@ import {
   inputsFingerprintOf,
   selectionFingerprintOf,
   suiteReviewIsCurrent,
+  suiteReviewStatusOf,
   registeredRule,
 } from "/domain/index.js";
 import { sha256Hex } from "/storage/db.js";
@@ -260,6 +262,21 @@ test("S04", "完整装配：确定性零 BLOCK、视觉 checked、报告当前�
     inputsFingerprint: inputsFingerprint }) === true, "同一指纹必须判当前");
   expect(suiteReviewIsCurrent(report, { selectionFingerprint: selectionFingerprint + "x",
     inputsFingerprint: inputsFingerprint }) === false, "选择指纹变化必须判过期");
+  // V2.R6.2：本地重跑（vlmRun:null）在同指纹下必须复用真 checked 元数据，不退回 not_run。
+  const rerunInputs = assembleInputs(fx, null);
+  rerunInputs.previousReport = report;
+  const rerun = await assembleSuiteReview(rerunInputs);
+  expect(rerun.vlm && rerun.vlm.outcome === "checked", "同指纹本地重跑必须保留真 checked 元数据");
+  expect(rerun.vlm.request_id === "req-1" && rerun.vlm.model_id === "fake-qwen-vl-max",
+    "复用的视觉块必须保留真实请求号与模型：" + JSON.stringify(rerun.vlm));
+  expect(suiteReviewStatusOf(rerun).status === "reviewed", "复用的 checked 必须投影为 reviewed");
+  const changedInputs = assembleInputs(fx, null);
+  changedInputs.previousReport = report;
+  changedInputs.styleSpec = { ...changedInputs.styleSpec, background: "灰底" };
+  const changed = await assembleSuiteReview(changedInputs);
+  expect(changed.vlm && changed.vlm.outcome === "not_run",
+    "指纹变化后不得复用旧 checked，也不得伪造：" + JSON.stringify(changed.vlm));
+  expect(suiteReviewStatusOf(changed).status === "not_reviewed", "not_run 必须投影为 not_reviewed");
   return { summary: report.summary };
 });
 
@@ -289,7 +306,7 @@ test("S05", "视觉漂移：check 映射到登记规则；越界 shot_id 必须�
   return { high_risk: report.summary.HIGH_RISK };
 });
 
-test("S06", "视觉失败与超限：只落 UNKNOWN，确定性部分不受影响", async () => {
+test("S06", "视觉失败落 UNKNOWN、没发起落 not_run：确定性部分都不受影响", async () => {
   const fx = await fixture();
   const serverFailure = {
     envelope: { ok: false, unknown: true,
@@ -310,9 +327,13 @@ test("S06", "视觉失败与超限：只落 UNKNOWN，确定性部分不受影�
   const overLimit = { envelope: null, reason: "over_limit", requested_shot_ids: ["shot_main"],
     submitted_shot_ids: [], asset_sha256_by_shot: {} };
   const limited = await assembleSuiteReview(assembleInputs(fx, overLimit));
-  const limitedUnknown = limited.findings
-    .find((item) => item.rule_id === "vlm.suite_inspection_unavailable");
-  expect(limitedUnknown && limitedUnknown.measured.reason === "over_limit", "超限必须记 over_limit");
+  expect(limited.vlm && limited.vlm.outcome === "not_run",
+    "超限是没发起，不是模型 Unknown：" + JSON.stringify(limited.vlm));
+  expect(limited.vlm.reason === "over_limit", "必须保留 over_limit 原因");
+  expect(!limited.findings.some((item) => item.rule_id === "vlm.suite_inspection_unavailable"),
+    "没发起不得伪造 UNKNOWN 行");
+  expect(suiteReviewStatusOf(limited).status === "not_reviewed",
+    "not_run 必须投影为 not_reviewed（未调用 AI，不阻断交付）");
   return { unknown: report.summary.UNKNOWN };
 });
 

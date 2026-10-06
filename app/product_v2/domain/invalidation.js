@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * 失效图（V2.2.1，计划 §4.4）：一次变化必须失效什么、必须保留什么。
  *
@@ -8,6 +9,7 @@
 
 import { invalid } from "./errors.js";
 
+/** @type {readonly import("./type-contracts.js").ChangeKind[]} */
 export const CHANGE_KINDS = Object.freeze([
   "references_changed",
   "identity_fact_changed",
@@ -21,9 +23,7 @@ export const CHANGE_KINDS = Object.freeze([
 const NEVER_INVALIDATED = Object.freeze(["project_history", "candidate_blobs"]);
 
 /**
- * @typedef {{shotId?: string, shotIds?: string[], briefUsesSlot?: boolean}} InvalidationContext
- * @typedef {{scope: string, invalidates: readonly string[], preserves: readonly string[]}} InvalidationRule
- * @type {Readonly<Record<string, InvalidationRule>>}
+ * @type {Readonly<Record<import("./type-contracts.js").ChangeKind, import("./type-contracts.js").InvalidationRule>>}
  */
 export const INVALIDATION_TABLE = Object.freeze({
   references_changed: Object.freeze({
@@ -64,9 +64,10 @@ export const INVALIDATION_TABLE = Object.freeze({
 });
 
 /**
- * @param {string} changeKind
- * @param {InvalidationContext} [context]
- * @returns {{kind: string, scope: string, invalidates: string[], preserves: string[], target_shot_id: string | null}}
+ * 一次变化的失效投影：返回失效集合、保留集合与目标 Shot；shot 级变化缺 shotId 直接拒绝。
+ * @param {import("./type-contracts.js").ChangeKind} changeKind
+ * @param {import("./type-contracts.js").InvalidationContext} [context]
+ * @returns {import("./type-contracts.js").InvalidationResult}
  */
 export function invalidationsFor(changeKind, context = {}) {
   const rule = INVALIDATION_TABLE[changeKind];

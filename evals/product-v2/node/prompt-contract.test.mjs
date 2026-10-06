@@ -394,7 +394,7 @@ test("G11", "请求快照与版本记录：prompt 逐字一致、参考图越界
   return { hash: hash, snapshot_size: snapshot.size };
 });
 
-test("G12", "过期机检：版本前进即过期；一致则不过期；坏记录有明确原因", async () => {
+test("G12", "过期机检：只认这张图实际消费的依据；无关槽位不使这张图过期", async () => {
   const compiled = compileMain();
   const snapshot = requestSnapshotOf(compiled, { references: [{ role: "primary", sha256: SHA_PRIMARY }] });
   const record = buildPromptRecord({
@@ -402,6 +402,7 @@ test("G12", "过期机检：版本前进即过期；一致则不过期；坏记�
   });
   const current = {
     briefBasis: compiled.basis.brief,
+    shot_signature: compiled.basis.shot_signature,
     suite_version: 3,
     style_version: 1,
     shot_spec_version: 1,
@@ -412,12 +413,17 @@ test("G12", "过期机检：版本前进即过期；一致则不过期；坏记�
   const styleBumped = promptStaleness(record, { ...current, style_version: 2 });
   expect(styleBumped.stale && styleBumped.reasons[0].field === "style_version",
     "风格版本前进必须过期：" + json(styleBumped));
-  const slotBumped = promptStaleness(record, {
-    ...current, briefBasis: current.briefBasis.map((item) =>
-      item.slot_id === "size_summary" ? { ...item, version: 2 } : item),
+  // 主图只依赖主参考图、不消费任何事实：无关槽位变化不得使这张图过期（V2.R6.2）。
+  const unrelatedBumped = promptStaleness(record, {
+    ...current,
+    briefBasis: [...current.briefBasis, { slot_id: "size_summary", version: 2 }],
   });
-  expect(slotBumped.stale && slotBumped.reasons.some((item) => item.field === "brief.size_summary"),
-    "槽位版本前进必须过期：" + json(slotBumped));
+  expect(unrelatedBumped.stale === false,
+    "未消费的槽位变化不得使这张图过期：" + json(unrelatedBumped));
+  // 这张图自己的定义变了 → 过期，原因点名 shot_signature（改别的图不影响本图）。
+  const signatureChanged = promptStaleness(record, { ...current, shot_signature: "changed" });
+  expect(signatureChanged.stale && signatureChanged.reasons[0].field === "shot_signature",
+    "这张图自己的定义变化必须过期：" + json(signatureChanged));
   const providerBumped = promptStaleness(record, {
     ...current, provider: { ...IMAGE_PROMPT_PROFILE, version: IMAGE_PROMPT_PROFILE.version + 1 },
   });
@@ -438,8 +444,32 @@ test("G12", "过期机检：版本前进即过期；一致则不过期；坏记�
   });
   expect(missingField.stale && missingField.reasons[0].field === "provider",
     "当前档缺字段必须过期：" + json(missingField));
+  // 消费该槽位的图：它消费的槽位版本前进 → 过期；它没消费的槽位前进 → 不过期。
+  const infoShot = infographicShot();
+  const infoCompiled = compileMain({ shot: infoShot, shotSpec: emptyShotSpecFromShot(infoShot) });
+  const infoSnapshot = requestSnapshotOf(infoCompiled,
+    { references: [{ role: "primary", sha256: SHA_PRIMARY }] });
+  const infoRecord = buildPromptRecord({
+    compiled: infoCompiled, snapshot: infoSnapshot, hash: await promptHash(infoSnapshot, DIGEST),
+  });
+  expect(json(infoCompiled.basis.brief) === json([{ slot_id: "signature_features", version: 1 }]),
+    "信息图只消费它用到的已确认事实：" + json(infoCompiled.basis.brief));
+  const infoCurrent = {
+    briefBasis: infoCompiled.basis.brief,
+    shot_signature: infoCompiled.basis.shot_signature,
+    suite_version: 3, style_version: 1, shot_spec_version: 1,
+    platform: { version: 1 }, provider: IMAGE_PROMPT_PROFILE,
+  };
+  const consumedBumped = promptStaleness(infoRecord, {
+    ...infoCurrent,
+    briefBasis: infoCurrent.briefBasis.map((item) =>
+      item.slot_id === "signature_features" ? { ...item, version: 2 } : item),
+  });
+  expect(consumedBumped.stale && consumedBumped.reasons.some((item) =>
+    item.field === "brief.signature_features"),
+  "消费的槽位版本前进必须过期：" + json(consumedBumped));
   expect(checkPromptLanguage(compiled.sections).length === 0, "回归：默认编译仍满足语言策略。");
-  return { style: styleBumped.reasons };
+  return { style: styleBumped.reasons, info_basis: infoCompiled.basis.brief };
 });
 
 /* ---------------------------------------------------------------- 运行器 */

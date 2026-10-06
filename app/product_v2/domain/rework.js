@@ -15,7 +15,11 @@ export const REWORK_SCHEMA_VERSION = 1;
 export const REWORK_DIRECTION_MIN = 4;
 export const REWORK_DIRECTION_MAX = 300;
 
-/** 固定问题分类（计划 §8.3）：问题是对现象的分类，改进方向是本次要改变什么。 */
+/**
+ * 固定问题分类（计划 §8.3）：问题是对现象的分类，改进方向是本次要改变什么。
+ * @typedef {{id: import("./type-contracts.js").ReworkProblemId, label: string, hint: string}} ReworkProblem
+ * @type {Readonly<ReworkProblem[]>}
+ */
 export const REWORK_PROBLEMS = Object.freeze([
   { id: "product_fidelity", label: "商品失真", hint: "颜色、材质、比例、标识或部件与参考图不一致" },
   { id: "part_error", label: "部件错误", hint: "多出、缺失、错位的部件或穿模" },
@@ -28,14 +32,17 @@ export const REWORK_PROBLEMS = Object.freeze([
   { id: "other", label: "其他", hint: "上面的分类都不合适，用方向写清楚" },
 ]);
 
-export const REWORK_PROBLEM_IDS = Object.freeze(REWORK_PROBLEMS.map((item) => item.id));
+export const REWORK_PROBLEM_IDS = Object.freeze(
+  /** @type {import("./type-contracts.js").ReworkProblemId[]} */ (REWORK_PROBLEMS.map((item) => item.id)));
 
 const PROBLEM_BY_ID = Object.freeze(REWORK_PROBLEMS.reduce((table, item) => {
   table[item.id] = item;
   return table;
-}, {}));
+}, /** @type {Record<string, ReworkProblem>} */ ({})));
 
-/** 复核规则 → 问题分类：只用于预选，用户可以改。 */
+/** 复核规则 → 问题分类：只用于预选，用户可以改。
+ * @type {Readonly<Record<string, import("./type-contracts.js").ReworkProblemId>>}
+ */
 export const REWORK_RULE_PROBLEM = Object.freeze({
   "candidate.png_contract": "platform_risk",
   "platform.min_long_side": "platform_risk",
@@ -52,17 +59,28 @@ export const REWORK_RULE_PROBLEM = Object.freeze({
   "vlm.prohibited_content": "platform_risk",
 });
 
+/**
+ * @param {string} id
+ * @returns {string}
+ */
 export function reworkProblemLabel(id) {
   const entry = PROBLEM_BY_ID[id];
   return entry ? entry.label : String(id);
 }
 
+/**
+ * @param {string} id
+ * @returns {string}
+ */
 export function reworkProblemHint(id) {
   const entry = PROBLEM_BY_ID[id];
   return entry ? entry.hint : "";
 }
 
-/** 报告先看项建议的问题分类；没有发现时返回空数组（用户自己选）。 */
+/** 报告先看项建议的问题分类；没有发现时返回空数组（用户自己选）。
+ * @param {unknown} report
+ * @returns {import("./type-contracts.js").ReworkProblemId[]}
+ */
 export function suggestReworkProblems(report) {
   const top = topFinding(report);
   if (!top) return [];
@@ -73,6 +91,8 @@ export function suggestReworkProblems(report) {
 /**
  * 建议方向：把先看项翻译成一句可编辑的默认文案。
  * 不用「」包住标题，避免与编译器「逐字引用」的括号约定互相干扰。
+ * @param {unknown} report
+ * @returns {string}
  */
 export function suggestedReworkDirection(report) {
   const top = topFinding(report);
@@ -82,7 +102,10 @@ export function suggestedReworkDirection(report) {
     + " 只修改这一点，其余部分保持与参考图一致。";
 }
 
-/** 方向文本归一：把引号字符换成括号，保证它作为逐字引用内容时括号不互相干扰。 */
+/** 方向文本归一：把引号字符换成括号，保证它作为逐字引用内容时括号不互相干扰。
+ * @param {unknown} direction
+ * @returns {string}
+ */
 export function normalizeReworkDirection(direction) {
   if (direction === null || direction === undefined) return "";
   return String(direction)
@@ -95,6 +118,9 @@ export function normalizeReworkDirection(direction) {
 /**
  * 返工指令：绑定「哪一张图、哪一条候选、因为什么、要改成什么」。
  * problems 与 direction 至少要有一个；两者都留空等于没有返工理由，直接拒绝。
+ * @param {{directiveId?: unknown, shotId?: unknown, candidate?: unknown, report?: unknown,
+ *          problems?: unknown, direction?: unknown, at?: unknown}} [args]
+ * @returns {import("./type-contracts.js").ReworkDirective}
  */
 export function buildReworkDirective({ directiveId, shotId, candidate, report, problems,
                                        direction, at } = {}) {
@@ -139,7 +165,12 @@ export function buildReworkDirective({ directiveId, shotId, candidate, report, p
   });
 }
 
+/** 返工指令形状检查；返回问题清单（空数组 = 合法）。
+ * @param {unknown} directive
+ * @returns {import("./type-contracts.js").DomainProblem[]}
+ */
 export function checkReworkDirective(directive) {
+  /** @type {import("./type-contracts.js").DomainProblem[]} */
   const problems = [];
   if (!isPlainObject(directive)) {
     pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$", "返工指令必须是对象。");
@@ -194,13 +225,21 @@ export function checkReworkDirective(directive) {
   return problems;
 }
 
+/** 校验通过则原样返回指令，否则抛 DomainError。
+ * @param {unknown} directive
+ * @returns {import("./type-contracts.js").ReworkDirective}
+ */
 export function assertReworkDirective(directive) {
   const problems = checkReworkDirective(directive);
   if (problems.length > 0) invalid("返工指令不合法：" + problems[0].message);
   return directive;
 }
 
-/** 指令是否仍对这条候选有效：候选换了或复核合同升级了，就必须重新发起返工。 */
+/** 指令是否仍对这条候选有效：候选换了或复核合同升级了，就必须重新发起返工。
+ * @param {unknown} directive
+ * @param {unknown} candidate
+ * @returns {boolean}
+ */
 export function reworkIsCurrent(directive, candidate) {
   if (!isPlainObject(directive) || !isPlainObject(candidate)) return false;
   return directive.contract_version === REWORK_CONTRACT_VERSION
@@ -209,11 +248,15 @@ export function reworkIsCurrent(directive, candidate) {
     && directive.candidate_sha256 === candidate.asset_sha256;
 }
 
-/** 界面一行摘要：问题分类 + 方向；不含命令，也不暗示已经采纳。 */
+/** 界面一行摘要：问题分类 + 方向；不含命令，也不暗示已经采纳。
+ * @param {unknown} directive
+ * @returns {string}
+ */
 export function reworkSummaryText(directive) {
   if (!isPlainObject(directive)) return "";
   const labels = (Array.isArray(directive.problems) ? directive.problems : [])
     .map(reworkProblemLabel);
+  /** @type {string[]} */
   const parts = [];
   if (labels.length > 0) parts.push(labels.join("、"));
   if (isNonEmptyString(directive.direction)) parts.push("方向：" + directive.direction);

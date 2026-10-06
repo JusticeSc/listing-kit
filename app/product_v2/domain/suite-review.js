@@ -35,6 +35,7 @@ export const SUITE_VLM_MAX_EVIDENCE_LENGTH = 300;
 /**
  * 整套 VLM check 词表：与服务端 src/providers/v2_suite_review.py 的 SUITE_VLM_CHECKS 键集合
  * 互为镜像（由 tools/verify_v2_5_5_suite_review.py 比对）；rule_id 与严重度的唯一权威仍是 review.js。
+ * @type {Readonly<Record<string, string>>}
  */
 export const SUITE_VLM_CHECK_TO_RULE = Object.freeze({
   suite_product_consistency: "vlm.suite_product_consistency",
@@ -43,11 +44,28 @@ export const SUITE_VLM_CHECK_TO_RULE = Object.freeze({
   suite_style_consistency: "vlm.suite_style_consistency",
 });
 
-/** 视觉层未执行/未完成的分类原因（消费者只投影原因码，不在这里写界面文案）。 */
+/** 视觉层未执行/未完成的分类原因（消费者只投影原因码，不在这里写界面文案）。
+ * @type {readonly import("./type-contracts.js").SuiteVlmReason[]}
+ */
 export const SUITE_VLM_REASONS = Object.freeze([
   "not_run", "no_selection", "over_limit", "missing_bytes", "image_too_large",
   "transport", "server", "protocol",
 ]);
+
+/**
+ * 「根本没发起视觉复核」的原因（V2.R6.2）：本地前置未满足或用户没触发，未产生任何外部调用。
+ * 这些不是模型判断的 Unknown，必须与真实尝试失败（transport/server/protocol）分开：
+ * 前者不产 UNKNOWN 发现、不阻断交付；后者保留尝试记录并要求人工确认。
+ * @type {readonly import("./type-contracts.js").SuiteVlmReason[]}
+ */
+export const SUITE_VLM_NOT_RUN_REASONS = Object.freeze([
+  "not_run", "no_selection", "over_limit", "missing_bytes", "image_too_large",
+]);
+
+/** 报告视觉状态词表：checked = 真跑过；unknown = 真发起但失败/不确定；not_run = 没发起。
+ * @type {readonly import("./type-contracts.js").SuiteVlmOutcome[]}
+ */
+export const SUITE_REVIEW_VLM_OUTCOMES = Object.freeze(["checked", "unknown", "not_run"]);
 
 /* ------------------------------------------------------------------ 规范化与指纹 */
 
@@ -66,7 +84,10 @@ function canonicalValue(value) {
   return value;
 }
 
-/** 规范化载荷：键序稳定、去掉 undefined，用于指纹与证据复算（不依赖对象插入顺序）。 */
+/** 规范化载荷：键序稳定、去掉 undefined，用于指纹与证据复算（不依赖对象插入顺序）。
+ * @param {unknown} value
+ * @returns {string}
+ */
 export function canonicalSuitePayload(value) {
   return JSON.stringify(canonicalValue(value));
 }
@@ -94,6 +115,8 @@ function withAffected(finding, shotIds) {
 
 /**
  * SelectionSet 规范化快照：只取身份与状态字段，不含生成时间（时间不改变「选择是什么」）。
+ * @param {unknown} selectionSet
+ * @returns {string}
  */
 export function selectionFingerprintOf(selectionSet) {
   if (!isPlainObject(selectionSet) || !Array.isArray(selectionSet.entries)) {
@@ -129,6 +152,9 @@ function reportPayloadOf(entry) {
 /**
  * 输入指纹：在选择指纹之外纳入 计划、公共风格、单图规格、所选报告身份。
  * reportsByCandidate 传「当前选中所指候选的当前报告」（键是 candidate_id）。
+ * @param {{selectionFingerprint?: unknown, suitePlan?: unknown, styleSpec?: unknown,
+ *          shotSpecsById?: unknown, reportsByCandidate?: unknown}} [args]
+ * @returns {string}
  */
 export function inputsFingerprintOf({ selectionFingerprint = "", suitePlan = null,
                                       styleSpec = null, shotSpecsById = {},
@@ -173,6 +199,7 @@ export function inputsFingerprintOf({ selectionFingerprint = "", suitePlan = nul
     };
   });
   return canonicalSuitePayload({
+    dependency_scope: "required_or_selected",
     selection: selectionFingerprint,
     style: style,
     shots: planShots,
@@ -217,6 +244,9 @@ function sellingPointCovered(point, suitePlan, factsById) {
 
 /**
  * 五个 suite.* 确定性检查：每条发现都带 affected_shot_ids（PASS 为空数组，问题带可定位的 Shot）。
+ * @param {{suitePlan?: unknown, selectionSet?: unknown, context?: unknown,
+ *          factsById?: unknown, sellingPoints?: unknown}} [args]
+ * @returns {{findings: import("./type-contracts.js").ReviewFinding[]}}
  */
 export function evaluateSuiteFindings({ suitePlan, selectionSet, context = {},
                                         factsById = {}, sellingPoints = [] } = {}) {
@@ -230,6 +260,7 @@ export function evaluateSuiteFindings({ suitePlan, selectionSet, context = {},
   const assets = isPlainObject(context) && Array.isArray(context.assets) ? context.assets : [];
   const summary = suitePlanSummary(suitePlan, { facts: facts, assets: assets });
   const recommendation = recommendPlan({ facts: facts, assets: assets });
+  /** @type {import("./type-contracts.js").ReviewFinding[]} */
   const findings = [];
 
   const requiredEntries = selectionSet.entries
@@ -252,7 +283,10 @@ export function evaluateSuiteFindings({ suitePlan, selectionSet, context = {},
       { required_total: requiredEntries.length }), []));
   }
 
-  const blockedShots = summary.shots.filter((shot) => shot && shot.satisfied !== true);
+  // 未采用的可选草稿不是交付物；其缺项仍阻断本图生成，不误锁已采用的其他图。
+  const deliveryShots = summary.shots.filter(shot => shot.required === true
+    || selectionSet.entries.some(entry => entry.shot_id === shot.shot_id && isNonEmptyString(entry.candidate_id)));
+  const blockedShots = deliveryShots.filter(shot => shot.satisfied !== true);
   if (blockedShots.length > 0) {
     const detail = blockedShots.map((shot) => "「" + shotLabelOf(shot) + "」缺依据："
       + (Array.isArray(shot.blocking) ? shot.blocking : [])
@@ -263,7 +297,7 @@ export function evaluateSuiteFindings({ suitePlan, selectionSet, context = {},
       blockedShots.map((shot) => shot.shot_id)));
   } else {
     findings.push(withAffected(makeFinding("suite.dependency_satisfied", "PASS",
-      "套图 " + summary.total + " 张的生成依据都已满足。", { total: summary.total }), []));
+      "交付范围 " + deliveryShots.length + " 张的生成依据都已满足。", { total: deliveryShots.length }), []));
   }
 
   const groups = new Map();
@@ -358,6 +392,8 @@ function attributionFor(finding) {
 
 /**
  * 把导出就绪与哈希核对的发现原样并入整套报告，只补 affected_shot_ids 归属（测量不重做）。
+ * @param {{readinessFindings?: unknown, hashFindings?: unknown}} [args]
+ * @returns {import("./type-contracts.js").ReviewFinding[]}
  */
 export function mergeExportFindings({ readinessFindings = [], hashFindings = [] } = {}) {
   const all = [...(Array.isArray(readinessFindings) ? readinessFindings : []),
@@ -458,9 +494,33 @@ function unknownBlockFor(reason, requested, submitted, shaByShot, at, error, mes
 }
 
 /**
+ * 「没发起复核」块（V2.R6.2）：只记录为什么没跑以及本地前置状态，不产 UNKNOWN 发现。
+ * 人工采用、确定性单图/整套报告、硬门与字节核对都照常，导出不会被这个状态阻断。
+ */
+function notRunBlockFor(reason, requested, submitted, shaByShot, at) {
+  return Object.freeze({
+    outcome: "not_run",
+    contract_version: SUITE_REVIEW_CONTRACT_VERSION,
+    requested_shot_ids: Object.freeze([...requested]),
+    submitted_shot_ids: Object.freeze([...submitted]),
+    asset_sha256_by_shot: Object.freeze({ ...shaByShot }),
+    provider_id: null,
+    model_id: null,
+    request_id: null,
+    checked_at: at,
+    latency_ms: null,
+    summary: unknownReasonText(reason),
+    reason: reason,
+  });
+}
+
+/**
  * 一次整套视觉复核的运行记录 → VLM findings + vlm 块。
  * vlmRun = { envelope | null, reason, requested_shot_ids, submitted_shot_ids, asset_sha256_by_shot }。
  * 任何结构/身份异常都投影为 UNKNOWN（保留原因），绝不抛错、绝不产生 PASS 假象。
+ * @param {{vlmRun?: unknown, at?: unknown}} [args]
+ * @returns {{findings: import("./type-contracts.js").ReviewFinding[],
+ *            vlm: import("./type-contracts.js").SuiteVlmBlock|null}}
  */
 export function buildSuiteVlmFindings({ vlmRun, at } = {}) {
   if (!isIsoTimestamp(at)) invalid("整套复核需要 ISO 时间（at）。");
@@ -476,6 +536,7 @@ export function buildSuiteVlmFindings({ vlmRun, at } = {}) {
     });
   }
   const envelope = isPlainObject(run.envelope) ? run.envelope : null;
+  /** @type {import("./type-contracts.js").ReviewFinding[]} */
   const findings = [];
   let vlm = null;
 
@@ -537,8 +598,14 @@ export function buildSuiteVlmFindings({ vlmRun, at } = {}) {
     vlm = unknownBlockFor("server", requested, submitted, shaByShot, at, error, message);
   } else {
     const reason = SUITE_VLM_REASONS.indexOf(run.reason) >= 0 ? run.reason : "not_run";
-    findings.push(unknownFindingFor(reason, requested, at, null, null));
-    vlm = unknownBlockFor(reason, requested, submitted, shaByShot, at, null, null);
+    // V2.R6.2：没真正发起（默认 / 未选 / 超限 / 字节不可用）与真实尝试失败分开。
+    // 前者不产 UNKNOWN 发现、不阻断交付；后者保留失败记录并交人工确认。
+    if (SUITE_VLM_NOT_RUN_REASONS.indexOf(reason) >= 0) {
+      vlm = notRunBlockFor(reason, requested, submitted, shaByShot, at);
+    } else {
+      findings.push(unknownFindingFor(reason, requested, at, null, null));
+      vlm = unknownBlockFor(reason, requested, submitted, shaByShot, at, null, null);
+    }
   }
 
   return Object.freeze({ findings: Object.freeze(findings), vlm: vlm });
@@ -549,6 +616,9 @@ export function buildSuiteVlmFindings({ vlmRun, at } = {}) {
 /**
  * SuiteReviewReport：绑定 selection_fingerprint + inputs_fingerprint 的不可变快照。
  * findings 只允许引用注册表规则；每条必须带 affected_shot_ids；summary 由本函数计算。
+ * @param {{selectionFingerprint?: unknown, inputsFingerprint?: unknown, findings?: unknown,
+ *          vlm?: unknown, at?: unknown}} [args]
+ * @returns {import("./type-contracts.js").SuiteReviewReport}
  */
 export function buildSuiteReviewReport({ selectionFingerprint, inputsFingerprint,
                                          findings, vlm = null, at } = {}) {
@@ -558,7 +628,7 @@ export function buildSuiteReviewReport({ selectionFingerprint, inputsFingerprint
   if (!Array.isArray(findings) || findings.length === 0) invalid("整套报告需要非空 findings 数组。");
   if (vlm !== null && vlm !== undefined) {
     if (!isPlainObject(vlm)
-        || ["checked", "unknown"].indexOf(vlm.outcome) === -1
+        || SUITE_REVIEW_VLM_OUTCOMES.indexOf(vlm.outcome) === -1
         || vlm.contract_version !== SUITE_REVIEW_CONTRACT_VERSION) {
       invalid("整套报告的 VLM 块不合法。");
     }
@@ -600,7 +670,10 @@ export function buildSuiteReviewReport({ selectionFingerprint, inputsFingerprint
   });
 }
 
-/** 报告形状检查：与 checkReviewReport 同构，但要求每条发现带 affected_shot_ids。 */
+/** 报告形状检查：与 checkReviewReport 同构，但要求每条发现带 affected_shot_ids。
+ * @param {unknown} report
+ * @returns {import("./type-contracts.js").DomainProblem[]}
+ */
 export function checkSuiteReviewReport(report) {
   const problems = [];
   if (!isPlainObject(report)) {
@@ -625,9 +698,9 @@ export function checkSuiteReviewReport(report) {
   }
   if (report.vlm !== null && report.vlm !== undefined) {
     if (!isPlainObject(report.vlm)
-        || ["checked", "unknown"].indexOf(report.vlm.outcome) === -1) {
+        || SUITE_REVIEW_VLM_OUTCOMES.indexOf(report.vlm.outcome) === -1) {
       pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.vlm",
-        "VLM 块必须是 checked/unknown。");
+        "VLM 块必须是 checked/unknown/not_run。");
     } else if (report.vlm.contract_version !== SUITE_REVIEW_CONTRACT_VERSION) {
       pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.vlm.contract_version",
         "VLM 块必须绑定当前合同版本。");
@@ -677,20 +750,28 @@ export function checkSuiteReviewReport(report) {
   return problems;
 }
 
-/** 报告是否对当前选择与输入仍然有效（字符串指纹逐字比较，选择或输入变化即过期）。 */
+/** 报告是否对当前选择与输入仍然有效（字符串指纹逐字比较，选择或输入变化即过期）。
+ * @param {unknown} report
+ * @param {{selectionFingerprint?: unknown, inputsFingerprint?: unknown}} [fingerprints]
+ * @returns {boolean}
+ */
 export function suiteReviewIsCurrent(report, fingerprints = {}) {
   if (!isPlainObject(report) || !isPlainObject(fingerprints)) return false;
   return report.selection_fingerprint === fingerprints.selectionFingerprint
     && report.inputs_fingerprint === fingerprints.inputsFingerprint;
 }
 
-/** 一行摘要（界面状态行与提示共用）。 */
+/** 一行摘要（界面状态行与提示共用）。
+ * @param {unknown} report
+ * @returns {string}
+ */
 export function suiteReviewSummaryText(report) {
   const summary = report && isPlainObject(report.summary) ? report.summary : {};
   const vlm = report && isPlainObject(report.vlm) ? report.vlm : null;
-  const vlmText = vlm
-    ? (vlm.outcome === "checked" ? "视觉复核已完成" : "视觉复核未完成（Unknown）")
-    : "视觉复核未检查";
+  const vlmText = !vlm ? "视觉复核未检查"
+    : vlm.outcome === "checked" ? "视觉复核已完成"
+      : vlm.outcome === "not_run" ? "视觉复核未运行（可选）"
+        : "视觉复核未完成（Unknown）";
   return "整套检查 " + String(report && report.contract_version)
     + "：阻断 " + Number(summary.BLOCK || 0)
     + " · 高风险 " + Number(summary.HIGH_RISK || 0)
@@ -699,18 +780,46 @@ export function suiteReviewSummaryText(report) {
     + " · " + vlmText;
 }
 
+/**
+ * 整套报告的视觉状态投影（manifest / 界面共用）：
+ * reviewed = 真跑过且绑定候选字节；unknown = 真发起但失败/不确定（保留原因）；
+ * not_reviewed = 没发起（保留原因），UI 明说「未调用 AI」，不伪装成模型判断。
+ * @param {unknown} report
+ * @returns {{status: "reviewed"|"unknown"|"not_reviewed", reason: string|null, checked_at: string|null}}
+ */
+export function suiteReviewStatusOf(report) {
+  const vlm = report && isPlainObject(report.vlm) ? report.vlm : null;
+  if (!vlm) return Object.freeze({ status: "not_reviewed", reason: "not_run", checked_at: null });
+  if (vlm.outcome === "checked") {
+    return Object.freeze({ status: "reviewed", reason: null, checked_at: vlm.checked_at || null });
+  }
+  if (vlm.outcome === "not_run") {
+    return Object.freeze({ status: "not_reviewed",
+      reason: isNonEmptyString(vlm.reason) ? vlm.reason : "not_run", checked_at: null });
+  }
+  return Object.freeze({ status: "unknown",
+    reason: isNonEmptyString(vlm.reason) ? vlm.reason : null, checked_at: vlm.checked_at || null });
+}
+
 /* -------------------------------------------------------------------- 组合入口 */
 
 /**
  * 一次整套检查的组装入口：确定性（suite.* + 复用的 export.*）+ 视觉合并 + 指纹 + 报告。
  * readBytes / digest 由调用方注入（分别读 IndexedDB Blob 与 storage/db.js 的 sha256Hex）。
+ * @param {{selectionSet?: unknown, suitePlan?: unknown, styleSpec?: unknown,
+ *          shotSpecsById?: unknown, context?: unknown, factsById?: unknown,
+ *          sellingPoints?: unknown, shots?: unknown, selections?: unknown,
+ *          candidatesByShot?: unknown, attemptsByShot?: unknown, reportsByCandidate?: unknown,
+ *          readBytes?: unknown, digest?: unknown, vlmRun?: unknown,
+ *          previousReport?: unknown, at?: unknown}} [args]
+ * @returns {Promise<import("./type-contracts.js").SuiteReviewReport>}
  */
 export async function assembleSuiteReview({ selectionSet, suitePlan, styleSpec = null,
                                             shotSpecsById = {}, context = {}, factsById = {},
                                             sellingPoints = [], shots, selections,
                                             candidatesByShot, attemptsByShot,
                                             reportsByCandidate, readBytes, digest,
-                                            vlmRun = null, at } = {}) {
+                                            vlmRun = null, previousReport = null, at } = {}) {
   if (!isPlainObject(suitePlan) || !Array.isArray(suitePlan.shots)) {
     invalid("整套检查需要套图计划（shots 数组）。");
   }
@@ -731,7 +840,6 @@ export async function assembleSuiteReview({ selectionSet, suitePlan, styleSpec =
   const exportFindings = mergeExportFindings({
     readinessFindings: readiness.findings, hashFindings: hashCheck.findings,
   });
-  const vlm = buildSuiteVlmFindings({ vlmRun: vlmRun, at: at });
   const selectionFingerprint = selectionFingerprintOf(selectionSet);
   const inputsFingerprint = inputsFingerprintOf({
     selectionFingerprint: selectionFingerprint,
@@ -740,6 +848,20 @@ export async function assembleSuiteReview({ selectionSet, suitePlan, styleSpec =
     shotSpecsById: shotSpecsById,
     reportsByCandidate: reportsByCandidate,
   });
+  // V2.R6.2：本地重跑（没传 vlmRun）默认 not_run、零外部调用；但若上一份报告的真视觉结果
+  // 在完全相同的选择/输入指纹下仍然当前，就整体复用它（不重发请求、不伪造 checked 信封）。
+  // 注意：真跑过但零发现时也要保留 checked 元数据（findings 可以为空），不能因 reused 为空而退回 not_run。
+  let vlm = null;
+  if (!isPlainObject(vlmRun) && isPlainObject(previousReport)
+      && isPlainObject(previousReport.vlm)
+      && (previousReport.vlm.outcome === "checked" || previousReport.vlm.outcome === "unknown")
+      && suiteReviewIsCurrent(previousReport, {
+        selectionFingerprint: selectionFingerprint, inputsFingerprint: inputsFingerprint })) {
+    const reused = (Array.isArray(previousReport.findings) ? previousReport.findings : [])
+      .filter((item) => isPlainObject(item) && item.layer === "vlm");
+    vlm = { findings: reused, vlm: previousReport.vlm };
+  }
+  if (!vlm) vlm = buildSuiteVlmFindings({ vlmRun: vlmRun, at: at });
   return buildSuiteReviewReport({
     selectionFingerprint: selectionFingerprint,
     inputsFingerprint: inputsFingerprint,

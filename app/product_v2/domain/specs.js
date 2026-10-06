@@ -14,15 +14,24 @@ import { DOMAIN_ERROR_CODES, invalid } from "./errors.js";
 import { invalidationsFor } from "./invalidation.js";
 import { isNonEmptyString, isPlainObject, pushProblem } from "./shared.js";
 
+/** @type {number} */
 export const STYLE_SPEC_SCHEMA_VERSION = 1;
+/** @type {number} */
 export const SHOT_SPEC_SCHEMA_VERSION = 1;
+/** @type {"style"} */
 export const STYLE_SPEC_DOCUMENT_ID = "style";
+/** @type {number} */
 export const MAX_STYLE_TEXT = 200;
+/** @type {number} */
 export const MAX_STYLE_AVOID = 10;
+/** @type {number} */
 export const MAX_SHOT_PURPOSE = 200;
+/** @type {number} */
 export const MAX_SHOT_ITEMS = 8;
+/** @type {number} */
 export const MAX_SHOT_ITEM_LENGTH = 60;
 
+/** @type {readonly import("./type-contracts.js").StyleSpecField[]} */
 export const STYLE_SPEC_FIELDS = Object.freeze([
   Object.freeze({ key: "background", label: "背景风格", kind: "text" }),
   Object.freeze({ key: "lighting", label: "光线", kind: "text" }),
@@ -31,10 +40,12 @@ export const STYLE_SPEC_FIELDS = Object.freeze([
   Object.freeze({ key: "avoid", label: "避免出现", kind: "list" }),
 ]);
 
+/** @type {readonly string[]} */
 const STYLE_KEYS = Object.freeze(["schema_version", ...STYLE_SPEC_FIELDS.map((item) => item.key)]);
+/** @type {readonly string[]} */
 const SHOT_KEYS = Object.freeze(["schema_version", "purpose", "keep", "change_allowed", "notes"]);
 
-/** 失效目标的人读名字；投影文本与界面提示共用这一份。 */
+/** 失效目标的人读名字；投影文本与界面提示共用这一份。 @type {Readonly<Record<string, string>>} */
 export const ARTIFACT_LABELS = Object.freeze({
   prompt_versions: "Prompt 版本",
   review_reports: "审核报告",
@@ -55,6 +66,10 @@ export const ARTIFACT_LABELS = Object.freeze({
 
 /* ------------------------------------------------------------------ 公共风格 */
 
+/**
+ * 生成一份空白公共风格规格（未配置状态）。
+ * @returns {import("./type-contracts.js").StyleSpec}
+ */
 export function emptyStyleSpec() {
   return {
     schema_version: STYLE_SPEC_SCHEMA_VERSION,
@@ -66,6 +81,14 @@ export function emptyStyleSpec() {
   };
 }
 
+/**
+ * 校验单个文本字段（长度上限由调用方给出 label 描述）。
+ * @param {import("./type-contracts.js").DomainProblem[]} problems
+ * @param {Record<string, unknown>} spec
+ * @param {string} key
+ * @param {string} label
+ * @returns {void}
+ */
 function checkStyleText(problems, spec, key, label) {
   const value = spec[key];
   if (value === undefined || value === null) return;
@@ -80,7 +103,13 @@ function checkStyleText(problems, spec, key, label) {
   }
 }
 
+/**
+ * 公共风格规格的形状与内容校验；返回问题列表（空 = 合法）。
+ * @param {unknown} spec
+ * @returns {import("./type-contracts.js").DomainProblem[]}
+ */
 export function checkStyleSpec(spec) {
+  /** @type {import("./type-contracts.js").DomainProblem[]} */
   const problems = [];
   if (!isPlainObject(spec)) {
     pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$", "风格规格必须是对象。");
@@ -128,13 +157,24 @@ export function checkStyleSpec(spec) {
   return problems;
 }
 
+/**
+ * 判断公共风格是否完全未配置（或根本不是一个对象）。
+ * @param {unknown} spec
+ * @returns {boolean}
+ */
 export function styleSpecIsEmpty(spec) {
   if (!isPlainObject(spec)) return true;
   return styleSpecSummary(spec).length === 0;
 }
 
+/**
+ * 公共风格的界面摘要（每条一段人读文本）；未配置返回空数组。
+ * @param {unknown} spec
+ * @returns {import("./type-contracts.js").StyleSpecSummaryItem[]}
+ */
 export function styleSpecSummary(spec) {
   if (!isPlainObject(spec)) return [];
+  /** @type {import("./type-contracts.js").StyleSpecSummaryItem[]} */
   const items = [];
   for (const field of STYLE_SPEC_FIELDS) {
     const value = spec[field.key];
@@ -155,6 +195,12 @@ export function styleSpecSummary(spec) {
   return items;
 }
 
+/**
+ * 字段值的规范化比较形态：text → trim；list → 过滤空项后逐条 trim。
+ * @param {import("./type-contracts.js").StyleSpecField} field
+ * @param {Record<string, unknown> | null | undefined} spec
+ * @returns {string | string[]}
+ */
 function normalizedStyleValue(field, spec) {
   const value = spec ? spec[field.key] : undefined;
   if (field.kind === "text") return isNonEmptyString(value) ? value.trim() : "";
@@ -163,6 +209,12 @@ function normalizedStyleValue(field, spec) {
     : [];
 }
 
+/**
+ * 公共风格的前后差异（逐字段 before/after）；无差异返回空数组。
+ * @param {Record<string, unknown> | null | undefined} previous
+ * @param {Record<string, unknown> | null | undefined} next
+ * @returns {import("./type-contracts.js").SpecDiffItem[]}
+ */
 export function styleSpecDiff(previous, next) {
   const diffs = [];
   for (const field of STYLE_SPEC_FIELDS) {
@@ -177,6 +229,7 @@ export function styleSpecDiff(previous, next) {
 
 /* ------------------------------------------------------------------ 单图规格 */
 
+/** 每种角色的默认「必须保持」；未保存规格时用这份投影。 @type {Readonly<Record<string, string[]>>} */
 const DEFAULT_KEEP_BY_ROLE = Object.freeze({
   main: ["商品外观、颜色与比例", "标识与文字"],
   infographic: ["已确认卖点文字"],
@@ -189,6 +242,7 @@ const DEFAULT_KEEP_BY_ROLE = Object.freeze({
   custom: ["商品外观与标识"],
 });
 
+/** 每种角色的默认「允许变化」；与 keep 同一份口径。 @type {Readonly<Record<string, string[]>>} */
 const DEFAULT_ALLOW_BY_ROLE = Object.freeze({
   main: ["背景"],
   infographic: ["标注排版与配色"],
@@ -201,6 +255,11 @@ const DEFAULT_ALLOW_BY_ROLE = Object.freeze({
   custom: ["构图、场景与光线"],
 });
 
+/**
+ * 从 Shot 派生一份默认单图规格（目的取 intent/label，keep/change_allowed 按角色默认）。
+ * @param {unknown} shot
+ * @returns {import("./type-contracts.js").ShotSpec}
+ */
 export function emptyShotSpecFromShot(shot) {
   const roleId = isPlainObject(shot) && typeof shot.role_id === "string" ? shot.role_id : "custom";
   const purpose = isPlainObject(shot) && isNonEmptyString(shot.intent)
@@ -215,6 +274,15 @@ export function emptyShotSpecFromShot(shot) {
   };
 }
 
+/**
+ * 校验 keep / change_allowed 列表（元素类型、上限与去重）；可要求至少一项。
+ * @param {import("./type-contracts.js").DomainProblem[]} problems
+ * @param {Record<string, unknown>} spec
+ * @param {string} key
+ * @param {string} label
+ * @param {{required: boolean}} options
+ * @returns {void}
+ */
 function checkShotItems(problems, spec, key, label, { required }) {
   const value = spec[key];
   if (value === undefined || value === null) {
@@ -251,7 +319,13 @@ function checkShotItems(problems, spec, key, label, { required }) {
   });
 }
 
+/**
+ * 单图规格的形状与内容校验；返回问题列表（空 = 合法）。
+ * @param {unknown} spec
+ * @returns {import("./type-contracts.js").DomainProblem[]}
+ */
 export function checkShotSpec(spec) {
+  /** @type {import("./type-contracts.js").DomainProblem[]} */
   const problems = [];
   if (!isPlainObject(spec)) {
     pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$", "单图规格必须是对象。");
@@ -285,12 +359,23 @@ export function checkShotSpec(spec) {
   return problems;
 }
 
+/**
+ * keep / change_allowed 的规范化比较形态；非数组一律视为空列表。
+ * @param {unknown} value
+ * @returns {string[]}
+ */
 function normalizedShotItems(value) {
   return Array.isArray(value)
     ? value.filter((item) => isNonEmptyString(item)).map((item) => item.trim())
     : [];
 }
 
+/**
+ * 单图规格的前后差异（目的 + keep/change_allowed）；无差异返回空数组。
+ * @param {Record<string, unknown> | null | undefined} previous
+ * @param {Record<string, unknown> | null | undefined} next
+ * @returns {import("./type-contracts.js").SpecDiffItem[]}
+ */
 export function shotSpecDiff(previous, next) {
   const diffs = [];
   const prevPurpose = previous && isNonEmptyString(previous.purpose) ? previous.purpose.trim() : "";
@@ -310,10 +395,20 @@ export function shotSpecDiff(previous, next) {
 
 /* -------------------------------------------------------- 失效投影与版本 */
 
+/**
+ * @param {readonly string[]} keys
+ * @returns {string[]}
+ */
 function labelList(keys) {
   return keys.map((key) => ARTIFACT_LABELS[key] || key);
 }
 
+/**
+ * 失效投影（人读版）：一次变化影响什么、失效什么、保留什么。
+ * @param {import("./type-contracts.js").ChangeKind} changeKind
+ * @param {import("./type-contracts.js").InvalidationContext & {shotCount?: number, shotLabel?: string}} [context]
+ * @returns {{change_kind: string, scope: string, target_shot_id: string | null, affects: "suite" | "shot", affects_text: string, invalidates: string[], preserves: string[], invalidates_text: string, preserves_text: string}}
+ */
 export function specChangeProjection(changeKind, context = {}) {
   const result = invalidationsFor(changeKind, context);
   const shotCount = Number.isInteger(context.shotCount) ? context.shotCount : null;
@@ -335,6 +430,12 @@ export function specChangeProjection(changeKind, context = {}) {
   };
 }
 
+/**
+ * 取 versions 里 version < currentVersion 的最大者；要求 currentVersion 是正整数。
+ * @param {unknown} versions
+ * @param {number} currentVersion
+ * @returns {{version: number} & Record<string, unknown> | null}
+ */
 export function previousVersionOf(versions, currentVersion) {
   if (!Number.isInteger(currentVersion) || currentVersion < 1) {
     invalid("当前版本必须是正整数。");
@@ -348,6 +449,12 @@ export function previousVersionOf(versions, currentVersion) {
 
 /* -------------------------------------------------------- 审核清单与聚合 */
 
+/**
+ * 单图的审核清单投影：目的/必须保持/允许变化/公共风格四段。
+ * @param {unknown} shot
+ * @param {{shotSpec?: import("./type-contracts.js").ShotSpec | null, styleSpec?: import("./type-contracts.js").StyleSpec | null}} [options]
+ * @returns {{shot_id: string | null, label: string, role_id: string | null, required: boolean, custom: boolean, saved: boolean, purpose: string, must_keep: string[], may_change: string[], style_configured: boolean, style_lines: string[], sections: {key: string, label: string, items: string[]}[]}}
+ */
 export function reviewChecklist(shot, options = {}) {
   if (!isPlainObject(shot)) invalid("审核清单需要一张 Shot。");
   const savedSpec = isPlainObject(options.shotSpec) ? options.shotSpec : null;
@@ -375,6 +482,12 @@ export function reviewChecklist(shot, options = {}) {
   };
 }
 
+/**
+ * 整套图的规格聚合：每张图的保存状态、版本与完整审核清单。
+ * @param {unknown} plan
+ * @param {{shotSpecsById?: Record<string, {spec?: import("./type-contracts.js").ShotSpec | null, version: number} | null | undefined>, styleSpec?: import("./type-contracts.js").StyleSpec | null}} [options]
+ * @returns {{total: number, saved: number, defaults: number, style_configured: boolean, shots: {shot_id: string | null, label: string, saved: boolean, version: number, checklist: {shot_id: string | null, label: string, role_id: string | null, required: boolean, custom: boolean, saved: boolean, purpose: string, must_keep: string[], may_change: string[], style_configured: boolean, style_lines: string[], sections: {key: string, label: string, items: string[]}[]}}[]}}
+ */
 export function suiteSpecDigest(plan, options = {}) {
   const shots = (isPlainObject(plan) && Array.isArray(plan.shots) ? plan.shots : [])
     .map((shot) => {
@@ -401,6 +514,11 @@ export function suiteSpecDigest(plan, options = {}) {
   };
 }
 
+/**
+ * 校验公共风格并原样返回；失败抛 CONTRACT_INVALID（绝不写半成品进版本历史）。
+ * @param {import("./type-contracts.js").StyleSpec} spec
+ * @returns {import("./type-contracts.js").StyleSpec}
+ */
 export function assertStyleSpec(spec) {
   const problems = checkStyleSpec(spec);
   if (problems.length > 0) invalid("风格规格不合法：" + problems[0].message,
@@ -408,6 +526,11 @@ export function assertStyleSpec(spec) {
   return spec;
 }
 
+/**
+ * 校验单图规格并原样返回；失败抛 CONTRACT_INVALID。
+ * @param {import("./type-contracts.js").ShotSpec} spec
+ * @returns {import("./type-contracts.js").ShotSpec}
+ */
 export function assertShotSpec(spec) {
   const problems = checkShotSpec(spec);
   if (problems.length > 0) invalid("单图规格不合法：" + problems[0].message,

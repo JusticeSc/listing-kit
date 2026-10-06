@@ -34,6 +34,11 @@ const CRC_TABLE = (() => {
   return table;
 })();
 
+/**
+ * CRC-32（IEEE 802.3，与 ZIP 一致）。
+ * @param {Uint8Array} bytes
+ * @returns {number} 无符号 32 位
+ */
 export function crc32(bytes) {
   let crc = 0xffffffff;
   for (let index = 0; index < bytes.length; index += 1) {
@@ -42,10 +47,12 @@ export function crc32(bytes) {
   return (crc ^ 0xffffffff) >>> 0;
 }
 
+/** @param {unknown} error @returns {string} */
 function errorText(error) {
   return error instanceof Error && error.message ? error.message : String(error);
 }
 
+/** @param {string} message @returns {StorageError} */
 function invalid(message) {
   return new StorageError(STORAGE_ERROR_CODES.PACKAGE_INVALID, message);
 }
@@ -53,6 +60,8 @@ function invalid(message) {
 /**
  * 只读中央目录，拿到逐条 CRC32/长度用于完整性校验（结构解析仍以 fflate 为准）。
  * 越界、缺 EOCD、坏签名都直接拒绝；ZIP64 按产品上限拒绝。
+ * @param {Uint8Array} bytes
+ * @returns {{path:string, crc:number, size:number}[]}
  */
 function readDirectoryRecords(bytes) {
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
@@ -105,6 +114,12 @@ function readDirectoryRecords(bytes) {
   return records;
 }
 
+/**
+ * 构建 store（level 0）ZIP；路径重复或条目数/体积超上限直接拒绝。
+ * @param {{path:string, bytes:Uint8Array}[]} entries
+ * @param {{modifiedAt?:Date}} [options]
+ * @returns {Uint8Array}
+ */
 export function buildZip(entries, { modifiedAt = new Date() } = {}) {
   if (entries.length > MAX_ENTRIES) {
     throw new StorageError(STORAGE_ERROR_CODES.PACKAGE_TOO_LARGE, "ZIP 条目数超过 65535。");
@@ -128,6 +143,12 @@ export function buildZip(entries, { modifiedAt = new Date() } = {}) {
   return bytes;
 }
 
+/**
+ * 读取 ZIP 并逐条核对长度与 CRC32；返回按中央目录顺序的条目。
+ * @param {Uint8Array} bytes
+ * @param {{maxEntries?:number}} [options]
+ * @returns {Promise<{path:string, bytes:Uint8Array}[]>}
+ */
 export async function readZip(bytes, { maxEntries = 4096 } = {}) {
   if (!(bytes instanceof Uint8Array)) {
     throw invalid("readZip 需要 Uint8Array。");

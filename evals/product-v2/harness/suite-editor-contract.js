@@ -20,9 +20,12 @@ import {
   emptySuitePlan,
   moveShot,
   nextShotId,
+  normalizeSuitePlan,
   removeShot,
   seedSuitePlan,
+  setShotFactBindings,
   shotById,
+  shotReadiness,
   suitePlanSummary,
   validateSuitePlan,
 } from "/domain/index.js";
@@ -83,16 +86,20 @@ test("E01", "推荐播种：必需 + 依据已满足入选，被阻断可选带�
   return { seeded: idsOf(result.plan), skipped: skippedIds };
 });
 
-test("E02", "空计划不是可保存方案：缺张数与缺必需图都要报", () => {
+test("E02", "空计划不是可保存方案：缺张数与缺必需图都要报；null 视为待建空计划", () => {
   const problems = validateSuitePlan(emptySuitePlan());
   expect(problemsMatching(problems, "$.shots", "至少").length >= 1,
     "空计划必须报至少一张：" + json(problems));
   expect(problemsMatching(problems, "$.shots", "必需").length >= 1,
     "空计划必须报缺必需图：" + json(problems));
+  const normalized = normalizeSuitePlan(null);
+  expect(json(normalized) === json(emptySuitePlan()),
+    "null/undefined 必须归一为空计划（首次添加模板不该崩）：" + json(normalized));
+  expect(json(normalizeSuitePlan(normalized)) === json(normalized), "已建计划原样返回。");
   return { problems: problems.map((item) => item.message) };
 });
 
-test("E03", "添加模板图：同一模板允许重复且 id 自动去重；被阻断模板可添加但显示原因", () => {
+test("E03", "添加模板图：同一模板允许重复且 id 自动去重；被阻断模板可添加但显示原因", async () => {
   const plan = seededPlan();
   const again = addShotFromTemplate(plan, "scene_lifestyle");
   expect(again.shot.shot_id === "shot_scene_lifestyle_2", "重复模板要拿到 _2：" + again.shot.shot_id);
@@ -102,7 +109,26 @@ test("E03", "添加模板图：同一模板允许重复且 id 自动去重；被
   expect(!blocked.satisfied && blocked.blocking.some((item) => String(item.reason).includes("competitor")),
     "被阻断模板添加后必须显示原因：" + json(blocked));
   expect(summary.total === 6 && summary.blocked === 1, "投影数量不对：" + json([summary.total, summary.blocked]));
-  return { ids: idsOf(comparison.plan), blocked: blocked.blocking };
+  const fromEmpty = addShotFromTemplate(null, "main_clean");
+  expect(json(idsOf(fromEmpty.plan)) === json(["shot_main_clean"]),
+    "null 空计划也应能首次从模板添加：" + json(idsOf(fromEmpty.plan)));
+  const optionalFirst = await expectCode(() => addShotFromTemplate(null, "size_dimensions"),
+    DOMAIN_ERROR_CODES.CONTRACT_INVALID, "必需");
+  const competitorShot = comparison.plan.shots
+    .find((item) => item.shot_id === comparison.shot.shot_id);
+  const readiness = shotReadiness(competitorShot, contextWith());
+  expect(readiness.ready === false && readiness.missing_asset_roles.includes("competitor"),
+    "按用途就绪要点名缺的角色：" + json(readiness));
+  expect(json(readiness.consumed_slot_ids) === json(["signature_features"]),
+    "只消费这张图用到的已确认事实：" + json(readiness.consumed_slot_ids));
+  const rebound = setShotFactBindings(comparison.plan, "shot_main_clean", ["product_name"]);
+  expect(json(rebound.shot.fact_slot_ids) === json(["product_name"]), "改绑定应生效。");
+  await expectCode(() => setShotFactBindings(comparison.plan, "shot_main_clean", ["brand", "brand"]),
+    DOMAIN_ERROR_CODES.CONTRACT_INVALID, "重复");
+  await expectCode(() => setShotFactBindings(comparison.plan, "shot_main_clean", ["Bad"]),
+    DOMAIN_ERROR_CODES.CONTRACT_INVALID, "合法 slot_id");
+  return { ids: idsOf(comparison.plan), blocked: blocked.blocking,
+    null_first_error: optionalFirst.message, readiness: readiness };
 });
 
 test("E04", "自定义图：新增合法、空名称被拒、可复制且仍是可选图", async () => {

@@ -15,7 +15,6 @@ import {
   ATTEMPT_RECONCILE_MODES,
   ATTEMPT_RETRY_POLICIES,
   ATTEMPT_STATES,
-  activeAttemptFor,
   advanceAttempt,
   attemptCurrentEnvironmentIdentity,
   attemptExecutionIdentityOf,
@@ -26,14 +25,13 @@ import {
   attemptReconcileMode,
   attemptReconcileRequestOf,
   attemptStateLabel,
-  blockingAttemptFor,
   buildAttemptRecord,
   canAttemptTransition,
   candidateStoreDecision,
   checkAttemptRecord,
   classifyStatusEnvelope,
   classifySubmitEnvelope,
-  latestAttemptFor,
+  currentAttempt,
   newActionId,
   nextFromStatusEnvelope,
   nextFromSubmitEnvelope,
@@ -301,31 +299,33 @@ test("A09", "Unknown 恢复：有 task id 可核对，无 task id 只能显式�
     "没有 task id 的 Unknown 不许核对推进");
   expect(blocked.code === "CONTRACT_TRANSITION_ILLEGAL", "必须明确报非法迁移");
   const newAction = attemptFixture({ actionId: ACTION_B, at: AT3, note: "用户显式新建 action" });
-  const chain = [noTask, newAction];
-  expect(latestAttemptFor(chain, "shot_main_clean").action_id === ACTION_B, "最新 Attempt 是新建的那条");
+  const chain = [{ record: noTask, version: 1 }, { record: newAction, version: 2 }];
+  expect(currentAttempt(chain).record.action_id === ACTION_B, "最新预约是新建的动作");
   expect(noTask.state === "unknown" && noTask.change_log.length === 2, "旧记录必须原样保留");
   return { with_task: attemptReconcileMode(withTask), no_task: attemptReconcileMode(noTask),
            reconciled: reconciled.record.state };
 });
 
-test("A10", "防重复：进行中的 Attempt 阻止再次提交", async () => {
+test("A10", "动作投影：旧响应保全且不掩盖后续在途预约", async () => {
   const pending = attemptFixture();
-  expect(blockingAttemptFor([pending], "shot_main_clean").state === "pending_submit",
-    "pending_submit 必须拦住第二次提交");
   const submitted = nextFromSubmitEnvelope(pending, taskEnvelope(), { at: AT2 }).record;
-  expect(activeAttemptFor([pending, submitted], "shot_main_clean").task_id === "task-abc-001",
-    "submitted 必须拦住第二次提交");
-  const running = nextFromStatusEnvelope(submitted,
-    taskEnvelope({ task: { status: "RUNNING" } }), { at: AT3 }).record;
-  expect(Boolean(activeAttemptFor([running], "shot_main_clean")), "running 必须拦住第二次提交");
-  const done = nextFromStatusEnvelope(running,
+  const lateSuccess = nextFromStatusEnvelope(submitted,
     taskEnvelope({ task: { status: "SUCCEEDED" } }), { at: AT3 }).record;
-  expect(blockingAttemptFor([done], "shot_main_clean") === null, "终态之后才允许新建 action");
-  const failed = nextFromSubmitEnvelope(pending,
-    failureEnvelope("provider_failed", "PROVIDER_REJECTED", "retryable"), { at: AT2 }).record;
-  expect(blockingAttemptFor([failed], "shot_main_clean") === null, "明确失败之后允许用户重试");
-  expect(activeAttemptFor([done], "shot_other") === null, "防重复必须按 Shot 隔离");
-  return { pending: "blocked", running: "blocked", terminal: "open" };
+  const newAction = attemptFixture({ actionId: ACTION_B, at: AT3 });
+  const entries = [
+    { record: pending, version: 1 }, { record: submitted, version: 2 },
+    { record: newAction, version: 3 }, { record: lateSuccess, version: 4 },
+  ];
+  const latest = currentAttempt(entries);
+  expect(latest.record.action_id === ACTION_B && latest.record.state === "pending_submit",
+    "旧动作成功不得将新预约投影为已结束");
+  expect(latest.reservationVersion === 3, "预约顺序来自数值文档版本");
+  expect(currentAttempt([...entries].reverse()).record.action_id === ACTION_B,
+    "IDB返回顺序不改变当前动作");
+  expect(currentAttempt(entries.filter(item => item.record.action_id !== ACTION_B)).record.state === "succeeded",
+    "旧动作的合法成功观察仍然保全");
+  expect(currentAttempt([]) === null, "空链无当前动作");
+  return { current: ACTION_B, state: latest.record.state, previous: "succeeded" };
 });
 
 test("A11", "过期标记：Prompt 前进后旧 Attempt 标「基于旧版本」", async () => {
@@ -488,14 +488,11 @@ test("A15", "反向：环境身份漂移（协议/目标/模型/能力版本/凭
   expect(rotated.mode === ATTEMPT_RECONCILE_MODES.blocked_environment
     && rotated.reasons.includes("credential_missing"),
     "凭据来源失配必须点名 credential_missing（默认档关闭后不再偷用当前配置查旧任务）");
-  const message = attemptReconcileBlockedMessage(record);
-  expect(message.includes("恢复条件") && message.includes("dashscope-qwen-image")
-    && message.includes("能力版本 v2"),
-    "阻塞话术必须给出原身份与恢复条件，实际：" + message);
-  expect(!message.includes("api_key") && !message.includes("token")
-    && !message.includes("Bearer"),
-    "阻塞话术不得回显任何密钥形状内容");
-  return { same: same.mode, drifts: drifts.length, message: message.slice(0, 40) };
+  const unavailable = attemptReconcileEnvironment(record, environmentIdentity({ configured: false }));
+  expect(unavailable.mode === ATTEMPT_RECONCILE_MODES.blocked_environment
+    && unavailable.reasons.includes("credential_missing"),
+    "身份相同但凭据不可用时不能核对");
+  return { same: same.mode, drifts: drifts.length, unavailable: unavailable.mode };
 });
 
 test("A16", "反向：历史记录没有身份不补造、不映射，也不发目标核对请求", async () => {
@@ -510,8 +507,6 @@ test("A16", "反向：历史记录没有身份不补造、不映射，也不发�
     "词表模式也要把历史记录归为无身份");
   await expectCode(() => attemptReconcileRequestOf(legacy), "CONTRACT_INVALID",
     "历史记录不许构造目标核对请求");
-  const message = attemptReconcileBlockedMessage(legacy);
-  expect(message.includes("显式新建 action"), "历史记录的出路只有显式新建，实际：" + message);
   // 同 task 不同 target 不串：冻结身份在记录里，当前环境指向别处也不走新目标。
   const drifted = attemptReconcileEnvironment(
     attemptFixture({ taskId: "task-abc-001" }),

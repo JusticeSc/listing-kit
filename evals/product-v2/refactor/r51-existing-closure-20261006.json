@@ -1,0 +1,278 @@
+{
+  "schema_version": "amz-r51-existing-closure-evidence/v1",
+  "authority": "point-in-time evidence only; not Goal completion",
+  "observed_at": "2026-10-06T11:31:34.549Z",
+  "goal_read": {
+    "native_attempt": "tool.goal({op:get})",
+    "native_result": "ToolError: Unknown tool from js runtime: goal",
+    "alternate": "xd://goal",
+    "alternate_result": "No such tool; mounted ast_edit/debug/lsp",
+    "current_lifecycle": "unobserved",
+    "binding_id_retained_as_last_observation": "1599c9600ae01cb7",
+    "new_packets_and_publish": "blocked until plan2.2 current native read"
+  },
+  "verification": {
+    "types": "passed after 6 initial diagnostics fixed",
+    "emitted_and_checked_modules": 10,
+    "node": {
+      "tests": 226,
+      "pass": 226,
+      "fail": 0,
+      "artifact": "artifact://300"
+    },
+    "input_browser_evidence": [
+      "evals/product-v2/v2.3.2-suite-editor-20261006-183508.txt",
+      "evals/product-v2/v2.3.3-spec-versions-20261006-183619.txt",
+      "evals/product-v2/v2.2.3-intake-understanding-20261006-183628.txt"
+    ],
+    "generation_browser_evidence": "evals/product-v2/v2.4.2-generation-attempt-20261006-185711.json",
+    "input_two_tab": {
+      "project_id": "15010f5f-fefb-4010-b899-7ff8517d313d",
+      "first_save": 1,
+      "left_save": 2,
+      "conflict_field": "focus",
+      "right_resolution": 3,
+      "reload_value": "右标签修改",
+      "editor_closed": true,
+      "page_errors": 0,
+      "screenshots": [
+        "_stage-amz-control/r51-existing-closure-20261006/intake-owner.webp",
+        "_stage-amz-control/r51-existing-closure-20261006/intake-conflict.webp"
+      ]
+    },
+    "native_reservations": {
+      "same_confirmation": {
+        "scenario": "two_tabs_same_confirmation",
+        "posts": 1,
+        "rows": [
+          {
+            "reserved": true,
+            "version": 1,
+            "actionId": "act-83fedf2797484033bebd92e2ccf9742a",
+            "httpStatus": 200,
+            "envelope": {
+              "ok": true,
+              "unknown": false,
+              "task": {
+                "provider": {
+                  "provider_id": "fake-qwen-image",
+                  "model_id": "qwen-image-3.0"
+                },
+                "task_id": "fake-258d2a3eef776979",
+                "status": "RUNNING",
+                "result_count": 0,
+                "error": null,
+                "request_id": null,
+                "unknown": false,
+                "sync": false
+              }
+            }
+          },
+          {
+            "reserved": false,
+            "code": "REVISION_CONFLICT",
+            "reason": "authorization_consumed"
+          }
+        ]
+      },
+      "different_confirmation_versions": {
+        "posts": 1,
+        "rows": [
+          {
+            "reserved": true,
+            "version": 1,
+            "actionId": "act-61a2f082238f4f7c928e21f01541435c",
+            "httpStatus": 200
+          },
+          {
+            "reserved": false,
+            "code": "REVISION_CONFLICT",
+            "reason": "action_changed"
+          }
+        ]
+      },
+      "failed_retry": {
+        "posts": 1,
+        "rows": [
+          {
+            "reserved": true,
+            "version": 3,
+            "actionId": "act-cd00ee9515d54df3a8b503802be42138",
+            "httpStatus": 200
+          },
+          {
+            "reserved": false,
+            "code": "REVISION_CONFLICT",
+            "reason": "authorization_consumed"
+          }
+        ]
+      },
+      "explicit_new": {
+        "posts": 1,
+        "rows": [
+          {
+            "reserved": true,
+            "version": 2,
+            "actionId": "act-81d21e9669c049baba4d852303acf8e9",
+            "httpStatus": 200
+          },
+          {
+            "reserved": false,
+            "code": "REVISION_CONFLICT",
+            "reason": "authorization_consumed"
+          }
+        ]
+      },
+      "unrelated_shot": {
+        "posts": 1,
+        "rows": [
+          {
+            "reserved": true,
+            "version": 1,
+            "actionId": "act-c7245b13e3734059bc30f0b2464839fd",
+            "httpStatus": 200
+          },
+          {
+            "reserved": false,
+            "code": "REVISION_CONFLICT",
+            "reason": "authorization_consumed"
+          }
+        ]
+      },
+      "consumed_reference_change": {
+        "code": "REVISION_CONFLICT",
+        "reason": "shot_blocked"
+      },
+      "reservations_after_reference_change": 0,
+      "undefined_seen_version": {
+        "code": "SCHEMA_INVALID"
+      },
+      "late_action": {
+        "a": {
+          "actionId": "act-311799d5a73f4552acb7613ffd7ea0c7",
+          "reservation": 1,
+          "observation": 3,
+          "state": "succeeded"
+        },
+        "b": {
+          "actionId": "act-dc30c91c05c041bc89407fb0fb7aca87",
+          "reservation": 2,
+          "currentObservation": 2,
+          "state": "pending_submit"
+        },
+        "historyVersions": [
+          3,
+          2,
+          1
+        ],
+        "terminalObservationUnchanged": true,
+        "candidate": {
+          "version": 1,
+          "sourceAction": "act-311799d5a73f4552acb7613ffd7ea0c7",
+          "duplicateVersion": 1
+        },
+        "staleC": {
+          "code": "REVISION_CONFLICT",
+          "reason": "action_changed"
+        }
+      }
+    },
+    "native_adoption": {
+      "first_expected_zero": [
+        {
+          "committed": true,
+          "version": 1,
+          "action": "select",
+          "selectionId": "act-d74ae10090104e1f81120b11aa049d05",
+          "candidateId": "act-311799d5a73f4552acb7613ffd7ea0c7"
+        },
+        {
+          "committed": false,
+          "code": "REVISION_CONFLICT",
+          "reason": "selection_changed"
+        }
+      ],
+      "clear_against_distinct_candidate": [
+        {
+          "committed": true,
+          "version": 2,
+          "action": "clear",
+          "selectionId": "act-22b575c2b03c4b148b10bbab18c4dc08",
+          "candidateId": null
+        },
+        {
+          "committed": false,
+          "code": "REVISION_CONFLICT",
+          "reason": "selection_changed"
+        }
+      ]
+    },
+    "source_fence": {
+      "before": {
+        "before": "foreign_project_source_accepted",
+        "targetProject": "e1243d63-7296-4773-9648-cb2c9e2bf2fc",
+        "sourceProject": "4b87eec5-3217-4ef1-a01a-a14f38d1e4fa",
+        "reportVersion": 1,
+        "reportProblems": []
+      },
+      "after": {
+        "foreignSourceRejected": {
+          "code": "REVISION_CONFLICT",
+          "reason": "projection_project_changed"
+        },
+        "validSourceReportVersion": 2,
+        "shotProjectionRejected": {
+          "code": "REVISION_CONFLICT",
+          "reason": "consumed_projection_changed"
+        },
+        "absentSpecCreationRejected": {
+          "code": "REVISION_CONFLICT",
+          "reason": "consumed_head_changed"
+        },
+        "headPreserved": 2
+      }
+    },
+    "release_probe_cli": {
+      "help_exit": 0,
+      "prerequisites_exit": 2,
+      "docker_cli": true,
+      "docker_daemon": false,
+      "curl": true,
+      "playwright": true,
+      "linux_transaction_exercised": false
+    }
+  },
+  "retained_failures": [
+    {
+      "command": "npm run check:types",
+      "failure": "6 initial kind/nullability diagnostics; corrected before emit"
+    },
+    {
+      "command": "verify_v2_3_3_spec_versions",
+      "failure": "old restore wording pin; removed; original payload/version/history assertions preserved"
+    },
+    {
+      "command": "verify_v2_4_2_generation_attempt",
+      "failure": "missing shared.start_static_server consumer; fixed"
+    },
+    {
+      "evidence": "evals/product-v2/v2.4.2-generation-attempt-20261006-184648.json",
+      "failure": "before-authority READY state assumption and legacy row submit reused consumed authorization; new one-shot summary/fresh confirmation path; pending-before-HTTP check now asserts state"
+    },
+    {
+      "command": "verify_v2_6_1_selection",
+      "failure": "obsolete wait for Generate button after confirmation had already auto-submitted; obsolete adoption panel consumers now being closed, not passed"
+    }
+  ],
+  "scope": {
+    "packet04": "behavior verified",
+    "packet05": "reservation/observation behavior verified; final integrated emitter green",
+    "packet06": "native OCC/fence verified; delivery/project ZIP consumers pending closure and runtime proof",
+    "packet07_plus": "not started",
+    "release_helper": "edited only; Linux Docker rollback not proven"
+  },
+  "real_model_calls": 0,
+  "commits": 0,
+  "pushes": 0,
+  "deployments": 0
+}

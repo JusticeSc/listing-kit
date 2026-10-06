@@ -21,6 +21,7 @@ export const BATCH_SCHEMA_VERSION = 1;
  * 每张图在批次里的状态；前两个是「未提交」的两种原因，其余是 Attempt 状态的投影。
  * V2.4.4 起多一种「已成功但候选字节还没进 IndexedDB」的投影（succeeded_unstored）——
  * 只在调用方提供 candidateStored 时才会出现；不提供时行为与 V2.4.3 完全一致。
+ * @type {Readonly<Record<import("./type-contracts.js").BatchShotState, import("./type-contracts.js").BatchShotState>>}
  */
 export const BATCH_SHOT_STATES = Object.freeze({
   blocked_no_prompt: "blocked_no_prompt",
@@ -32,6 +33,9 @@ export const BATCH_SHOT_STATES = Object.freeze({
   unknown: "unknown",
 });
 
+/** 每张图状态的界面文案（与 BATCH_SHOT_STATES 键一一对应）。
+ * @type {Readonly<Record<import("./type-contracts.js").BatchShotState, string>>}
+ */
 export const BATCH_SHOT_STATE_LABELS = Object.freeze({
   blocked_no_prompt: "待编译 Prompt",
   ready: "待提交",
@@ -42,7 +46,9 @@ export const BATCH_SHOT_STATE_LABELS = Object.freeze({
   unknown: "结果未知",
 });
 
-/** 下一步优先级：empty → submit → compile → wait → fetch → review → retry → done。 */
+/** 下一步优先级：empty → submit → compile → wait → fetch → review → retry → done。
+ * @type {Readonly<Record<import("./type-contracts.js").BatchNextStep, import("./type-contracts.js").BatchNextStep>>}
+ */
 export const BATCH_NEXT_STEPS = Object.freeze({
   empty: "empty",
   submit: "submit",
@@ -64,6 +70,10 @@ export const BATCH_NEXT_STEPS = Object.freeze({
  */
 export const BATCH_HALT_CODES = Object.freeze(["SUBMIT_OUTCOME_UNKNOWN", "RESPONSE_UNREADABLE"]);
 
+/** 判断一次提交结果是否触发批次停止（系统性错误才停，单张失败/未知不停）。
+ * @param {unknown} outcome
+ * @returns {boolean}
+ */
 export function batchSubmitHalts(outcome) {
   if (!isPlainObject(outcome)) return false;
   const error = isPlainObject(outcome.error) ? outcome.error : null;
@@ -78,6 +88,9 @@ export function batchSubmitHalts(outcome) {
  *  - latestAttempts：shot_id → 最新 Attempt 记录（或 null）；
  *  - promptReady：shot_id → 是否已有可提交的 Prompt 版本。
  * 输出：每张图的状态、计数、全部队列与下一步；同输入必须得到同输出。
+ * @param {{shots?: unknown, latestAttempts?: Record<string, unknown>, promptReady?: function(string): boolean,
+ *          candidateStored?: function(string): boolean|null}} [args]
+ * @returns {import("./type-contracts.js").BatchState}
  */
 export function deriveBatchState({
   shots, latestAttempts = {}, promptReady = () => true, candidateStored = null,
@@ -183,7 +196,10 @@ export function deriveBatchState({
   };
 }
 
-/** 进度一行文案（界面直接投影；词表在这里，不散落在各处）。 */
+/** 进度一行文案（界面直接投影；词表在这里，不散落在各处）。
+ * @param {unknown} state
+ * @returns {string}
+ */
 export function batchProgressText(state) {
   const counts = isPlainObject(state) ? state.counts : null;
   if (!isPlainObject(counts)) return "批次状态不可用。";

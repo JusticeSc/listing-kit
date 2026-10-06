@@ -185,8 +185,9 @@ function batchAttempt(shotId, overrides = {}) {
     state: "succeeded",
     schema_version: 2,
     execution_identity: {
+      schema_version: 1,
       protocol: "v2.4.1", capability_version: 2,
-      credential_reference: { source: "byok" },
+      credential_reference: { source: "byok" }, sync: false,
     },
     ...overrides,
   };

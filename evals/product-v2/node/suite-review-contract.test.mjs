@@ -20,6 +20,7 @@ import {
   inputsFingerprintOf,
   selectionFingerprintOf,
   suiteReviewIsCurrent,
+  suiteReviewStatusOf,
   registeredRule,
 } from "../../../app/product_v2/domain/index.js";
 import { sha256Hex } from "../../../app/product_v2/storage/db.js";
@@ -289,7 +290,7 @@ test("S05", "视觉漂移：check 映射到登记规则；越界 shot_id 必须�
   return { high_risk: report.summary.HIGH_RISK };
 });
 
-test("S06", "视觉失败与超限：只落 UNKNOWN，确定性部分不受影响", async () => {
+test("S06", "视觉失败落 UNKNOWN、没发起落 not_run：确定性部分都不受影响", async () => {
   const fx = await fixture();
   const serverFailure = {
     envelope: { ok: false, unknown: true,
@@ -310,9 +311,13 @@ test("S06", "视觉失败与超限：只落 UNKNOWN，确定性部分不受影�
   const overLimit = { envelope: null, reason: "over_limit", requested_shot_ids: ["shot_main"],
     submitted_shot_ids: [], asset_sha256_by_shot: {} };
   const limited = await assembleSuiteReview(assembleInputs(fx, overLimit));
-  const limitedUnknown = limited.findings
-    .find((item) => item.rule_id === "vlm.suite_inspection_unavailable");
-  expect(limitedUnknown && limitedUnknown.measured.reason === "over_limit", "超限必须记 over_limit");
+  expect(limited.vlm && limited.vlm.outcome === "not_run",
+    "超限是没发起，不是模型 Unknown：" + JSON.stringify(limited.vlm));
+  expect(limited.vlm.reason === "over_limit", "必须保留 over_limit 原因");
+  expect(!limited.findings.some((item) => item.rule_id === "vlm.suite_inspection_unavailable"),
+    "没发起不得伪造 UNKNOWN 行");
+  expect(suiteReviewStatusOf(limited).status === "not_reviewed",
+    "not_run 必须投影为 not_reviewed（未调用 AI，不阻断交付）");
   return { unknown: report.summary.UNKNOWN };
 });
 

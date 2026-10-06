@@ -24,10 +24,16 @@ export const COMPARE_CONTRACT_VERSION = "v2.5.3";
 export const COMPARE_PENDING_SEVERITIES = Object.freeze(
   REVIEW_SEVERITY_ORDER.filter((item) => item !== "UNKNOWN"));
 
+/** 比较状态词表的界面文案。
+ * @type {Readonly<Record<import("./type-contracts.js").CompareState, string>>}
+ */
 export const COMPARE_STATE_TEXT = Object.freeze({
   pending: "待处理", unknown: "未知", clean: "无发现", unchecked: "未检查",
 });
 
+/** 严重度的界面文案（含 PASS 完成标记）。
+ * @type {Readonly<Record<import("./type-contracts.js").ReviewSeverity, string>>}
+ */
 export const COMPARE_SEVERITY_TEXT = Object.freeze({
   BLOCK: "阻断", HIGH_RISK: "高风险", WARNING: "提醒", UNKNOWN: "未知", PASS: "通过",
 });
@@ -36,14 +42,20 @@ export const COMPARE_UNCHECKED_TEXT =
   "没有自动检查报告：保存候选时会自动生成，旧候选在重新打开项目时补建。";
 export const COMPARE_CLEAN_TEXT = "自动检查没有发现问题（机器结论，人工确认仍然必要）。";
 
-/** 严重度秩：只读 review.js 的顺序表；未登记的严重度与「没有发现」都排在最后。 */
+/** 严重度秩：只读 review.js 的顺序表；未登记的严重度与「没有发现」都排在最后。
+ * @param {unknown} finding
+ * @returns {number}
+ */
 export function compareSeverityRank(finding) {
   const severity = isPlainObject(finding) ? finding.severity : null;
   const index = REVIEW_SEVERITY_ORDER.indexOf(severity);
   return index === -1 ? REVIEW_SEVERITY_ORDER.length : index;
 }
 
-/** 审核清单顺序：阻断 → 高风险 → 提醒 → 未知 → 通过；同档保持报告原顺序（稳定排序）。 */
+/** 审核清单顺序：阻断 → 高风险 → 提醒 → 未知 → 通过；同档保持报告原顺序（稳定排序）。
+ * @param {unknown} findings
+ * @returns {import("./type-contracts.js").ReviewFinding[]}
+ */
 export function sortFindings(findings) {
   const list = Array.isArray(findings) ? findings : [];
   return list
@@ -57,6 +69,9 @@ export function sortFindings(findings) {
 /**
  * 单个候选的复核状态：pending（需要先看）/ unknown（没查完）/ clean（无发现）/ unchecked（没有报告）。
  * options.current === false 表示报告与当前合同版本或候选字节不一致，一律降级为 unchecked。
+ * @param {unknown} report
+ * @param {{current?: boolean}} [options]
+ * @returns {import("./type-contracts.js").CompareState}
  */
 export function compareStateOf(report, options = {}) {
   if (!isPlainObject(report) || !Array.isArray(report.findings) || report.findings.length === 0) {
@@ -70,7 +85,10 @@ export function compareStateOf(report, options = {}) {
   return "clean";
 }
 
-/** 面板一行摘要：没有报告 / 无发现 / 最需要先看的一条；不重复整份报告。 */
+/** 面板一行摘要：没有报告 / 无发现 / 最需要先看的一条；不重复整份报告。
+ * @param {unknown} row
+ * @returns {string}
+ */
 export function compareRowHeadline(row) {
   if (!isPlainObject(row)) return "";
   if (row.review_state === "unchecked") return COMPARE_UNCHECKED_TEXT;
@@ -81,7 +99,10 @@ export function compareRowHeadline(row) {
   return label + " · " + String(finding.title || finding.rule_id || "") + "：" + String(finding.detail || "");
 }
 
-/** 行的排序秩：未检查排在无发现之后（「还不知道」比「已确认没发现」更弱）。 */
+/** 行的排序秩：未检查排在无发现之后（「还不知道」比「已确认没发现」更弱）。
+ * @param {unknown} row
+ * @returns {number}
+ */
 export function compareRowRank(row) {
   if (!isPlainObject(row)) return REVIEW_SEVERITY_ORDER.length + 2;
   if (row.review_state === "unchecked") return REVIEW_SEVERITY_ORDER.length + 1;
@@ -94,6 +115,8 @@ export function compareRowRank(row) {
  * candidates：storage 版本记录（{record, version}）或裸候选记录；
  * reportsByCandidateId：candidate_id → 报告（调用方先用 reviewIsCurrent 过滤，本模块不重算）；
  * attemptsByActionId：action_id → Attempt 记录（只用于显示来源，可缺省）。
+ * @param {{candidates?: unknown, reportsByCandidateId?: unknown, attemptsByActionId?: unknown}} [args]
+ * @returns {import("./type-contracts.js").CompareRow[]}
  */
 export function compareRows({ candidates, reportsByCandidateId, attemptsByActionId } = {}) {
   const list = Array.isArray(candidates) ? candidates : [];
@@ -128,13 +151,19 @@ export function compareRows({ candidates, reportsByCandidateId, attemptsByAction
   return Object.freeze(rows);
 }
 
-/** 默认查看目标 = 排在最前的那一个（异常优先，同级新到旧）。 */
+/** 默认查看目标 = 排在最前的那一个（异常优先，同级新到旧）。
+ * @param {unknown} rows
+ * @returns {string|null}
+ */
 export function defaultCompareTargetId(rows) {
   const list = Array.isArray(rows) ? rows : [];
   return list.length && isNonEmptyString(list[0].candidate_id) ? list[0].candidate_id : null;
 }
 
-/** 概览计数：面板标题行用；不展开细节。 */
+/** 概览计数：面板标题行用；不展开细节。
+ * @param {unknown} rows
+ * @returns {import("./type-contracts.js").CompareCounts}
+ */
 export function compareCounts(rows) {
   const counts = { total: 0, pending: 0, unknown: 0, clean: 0, unchecked: 0 };
   for (const row of Array.isArray(rows) ? rows : []) {
@@ -146,7 +175,10 @@ export function compareCounts(rows) {
   return counts;
 }
 
-/** 下一个待处理的 Shot：从当前之后按计划顺序找，绕回一圈；没有就返回 null。 */
+/** 下一个待处理的 Shot：从当前之后按计划顺序找，绕回一圈；没有就返回 null。
+ * @param {{rowsByShotId?: unknown, shotOrder?: unknown, currentShotId?: unknown}} [args]
+ * @returns {string|null}
+ */
 export function nextPendingShotId({ rowsByShotId, shotOrder, currentShotId } = {}) {
   const rows = isPlainObject(rowsByShotId) ? rowsByShotId : {};
   const order = Array.isArray(shotOrder)
@@ -163,8 +195,12 @@ export function nextPendingShotId({ rowsByShotId, shotOrder, currentShotId } = {
   return null;
 }
 
-/** 行集合自检：唯一性、身份、排序与状态一致；反向探针用它证明守卫会变红。 */
+/** 行集合自检：唯一性、身份、排序与状态一致；反向探针用它证明守卫会变红。
+ * @param {unknown} rows
+ * @returns {import("./type-contracts.js").DomainProblem[]}
+ */
 export function checkCompareRows(rows) {
+  /** @type {import("./type-contracts.js").DomainProblem[]} */
   const problems = [];
   if (!Array.isArray(rows)) {
     pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$", "比较行必须是数组。");

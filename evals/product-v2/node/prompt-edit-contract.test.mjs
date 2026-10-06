@@ -24,11 +24,14 @@ import {
   compilePrompt,
   confirmationSnapshot,
   confirmationStaleness,
+  discardManualEdit,
   emptyShotSpecFromShot,
   emptyStyleSpec,
   invalidationsFor,
+  latestSystemPromptVersion,
   promptHash,
   promptStaleness,
+  reconfirmEditedPrompt,
   requestSnapshotOf,
   selectReferences,
 } from "../../../app/product_v2/domain/index.js";
@@ -414,6 +417,35 @@ test("M11", "过期与确认联动：编辑不改依据，但改变确认指纹�
   expect(reConfirmed.shots[0].prompt_version === 2, "重新确认必须记录新版本号。");
   const stable = confirmationStaleness(reConfirmed, confirmationSnapshot(sheetOf(record, shot, { version: 2 })));
   expect(stable.stale === false, "重新确认后必须回到有效。");
+  // V2.R6.2：人工文本重新确认（逐字保留原文本、依据更新到当前）与丢弃覆盖。
+  const basisNow = {
+    briefBasis: record.basis.brief,
+    shot_signature: record.basis.shot_signature,
+    suite_version: 1, style_version: 1, shot_spec_version: null,
+    platform: { version: PLATFORM_PROFILES[PLATFORM_ID].version },
+    provider: IMAGE_PROMPT_PROFILE,
+  };
+  const reconfirmed = await reconfirmEditedPrompt({
+    base: record, baseVersion: 2, reason: "文本仍适用，依据已更新",
+    at: BASE_TIME, basis: basisNow, context: contextFixture(), digest: sha256Hex,
+  });
+  expect(reconfirmed.compiled.text === record.compiled.text, "重新确认必须逐字保留人工文本。");
+  expect(reconfirmed.reconfirmed === true && reconfirmed.edited_from.version === 2,
+    "重新确认必须指向被确认版本并留痕：" + JSON.stringify(reconfirmed.edited_from));
+  expect(checkPromptRecord(reconfirmed).length === 0, "重新确认记录必须自检通过。");
+  expect(promptStaleness(reconfirmed, basisNow).stale === false, "重新确认后不得过期。");
+  await expectCode(async () => { await reconfirmEditedPrompt({
+    base: record, baseVersion: 2, reason: "缺依据", at: BASE_TIME, context: contextFixture(),
+    digest: sha256Hex }); },
+    DOMAIN_ERROR_CODES.CONTRACT_INVALID, "当前编译依据");
+  const history = [{ version: 1, record: entry.record }, { version: 2, record: record }];
+  const discarded = discardManualEdit(record, history);
+  expect(discarded.target && discarded.target.version === 1 && discarded.requires_recompile === false,
+    "丢弃人工覆盖应回到最新系统版本：" + JSON.stringify(discarded.target));
+  expect(latestSystemPromptVersion(history).record.origin !== "manual_edit",
+    "最新系统版本必须不是人工编辑。");
+  await expectCode(() => { discardManualEdit(entry.record, history); },
+    DOMAIN_ERROR_CODES.CONTRACT_INVALID, "系统编译版本");
   return { fields: fields };
 });
 

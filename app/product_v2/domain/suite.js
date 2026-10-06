@@ -21,15 +21,34 @@ import {
   templateDefinition,
 } from "./suite-plan.js";
 
+/**
+ * 运行时计划形状：shots 元素为 ShotRecord（模板依赖在运行时被冻结，见 suite-plan.js）。
+ * @typedef {Omit<import("./suite-plan.js").ShotRecord, "shot_id">} PlanRecordShotBase
+ * @typedef {PlanRecordShotBase & {shot_id: string}} TemplateShot
+ * @typedef {{schema_version: number, shots: ReadonlyArray<TemplateShot>}} PlanRecord
+ */
+
+/** @type {number} */
 export const SUITE_PLAN_SCHEMA_VERSION = 1;
+/** @type {"suite"} */
 export const SUITE_PLAN_DOCUMENT_ID = "suite";
+/** @type {number} */
 export const MIN_SHOTS = 1;
+/** @type {number} */
 export const MAX_SHOTS = 20;
 
+/**
+ * 尚未添加任何图的空计划。
+ * @returns {PlanRecord}
+ */
 export function emptySuitePlan() {
   return { schema_version: SUITE_PLAN_SCHEMA_VERSION, shots: [] };
 }
 
+/**
+ * @param {PlanRecord} plan
+ * @returns {void}
+ */
 function checkPlanShape(plan) {
   if (!isPlainObject(plan) || !Array.isArray(plan.shots)) {
     invalid("套图计划必须是 { shots: [...] }。");
@@ -39,16 +58,43 @@ function checkPlanShape(plan) {
   }
 }
 
+/**
+ * 空计划容忍（V2.R6.2）：null/undefined 表示「还没建过套图计划」，按空计划处理。
+ * 这样首次从模板添加一张图不会因为计划尚不存在而报「套图计划必须是 {shots:[...]}」；
+ * 真正的畸形计划（非空但字段不对）仍然照旧报错，不静默吞掉。
+ * @param {PlanRecord | null | undefined} plan
+ * @returns {PlanRecord}
+ */
+export function normalizeSuitePlan(plan) {
+  return (plan === null || plan === undefined) ? emptySuitePlan() : plan;
+}
+
+/**
+ * @param {{schema_version?: number}} plan
+ * @param {ReadonlyArray<TemplateShot>} shots
+ * @returns {PlanRecord}
+ */
 function withShots(plan, shots) {
   return { schema_version: SUITE_PLAN_SCHEMA_VERSION, shots };
 }
 
+/**
+ * 按 shot_id 找图；计划畸形或找不到返回 null。
+ * @param {unknown} plan
+ * @param {string} shotId
+ * @returns {import("./suite-plan.js").ShotRecord | null}
+ */
 export function shotById(plan, shotId) {
   if (!isPlainObject(plan) || !Array.isArray(plan.shots)) return null;
   return plan.shots.find((shot) => isPlainObject(shot) && shot.shot_id === shotId) || null;
 }
 
 /** id 派生：shot_<template_id>，冲突时加 _2、_3……；不引入随机数，刷新后才可复现。 */
+/**
+ * @param {{shots?: ReadonlyArray<import("./suite-plan.js").ShotRecord>} | null | undefined} plan
+ * @param {string} base
+ * @returns {string}
+ */
 export function nextShotId(plan, base) {
   const taken = new Set((plan && plan.shots ? plan.shots : [])
     .filter((shot) => isPlainObject(shot))
@@ -59,6 +105,12 @@ export function nextShotId(plan, base) {
   return base + "_" + index;
 }
 
+/**
+ * @param {string} templateId
+ * @param {{shots?: ReadonlyArray<import("./suite-plan.js").ShotRecord>}} plan
+ * @param {{shotId?: string | null, registry?: import("./suite-plan.js").SuiteRegistryView | null, factSlotIds?: ReadonlyArray<string>} | undefined} [options]
+ * @returns {TemplateShot}
+ */
 function shotFromTemplate(templateId, plan, options = {}) {
   const registry = options.registry;
   const template = templateDefinition(templateId, registry);
@@ -78,6 +130,11 @@ function shotFromTemplate(templateId, plan, options = {}) {
   };
 }
 
+/**
+ * @param {PlanRecord} plan
+ * @param {import("./suite-plan.js").SuiteRegistryView | null | undefined} [registry]
+ * @returns {void}
+ */
 function assertValid(plan, registry) {
   const problems = validateSuitePlan(plan, registry);
   if (problems.length > 0) {
@@ -90,13 +147,19 @@ function assertValid(plan, registry) {
 /**
  * 模板依赖里由「已确认核心事实」满足的部分，在种子/手动添加时自动绑定为该图的文案来源。
  * 规则仍然只有 §9.4 的依赖注册表一份；这里只是把它反解成默认绑定，不新增判断。
+ * @param {string} templateId
+ * @param {import("./type-contracts.js").EvalContext | null | undefined} context
+ * @param {import("./suite-plan.js").SuiteRegistryView | null | undefined} registry
+ * @returns {string[]}
  */
 function impliedFactBindings(templateId, context, registry) {
   const template = templateDefinition(templateId, registry);
   const confirmed = new Set((context && Array.isArray(context.facts) ? context.facts : [])
     .filter((item) => isPlainObject(item) && item.status === "confirmed")
     .map((item) => item.slot_id));
+  /** @type {Set<string>} */
   const out = new Set();
+  /** @param {import("./suite-plan.js").FrozenShotDependency} requirement */
   const collect = (requirement) => {
     if (!isPlainObject(requirement)) return;
     if (requirement.kind === "fact" && confirmed.has(requirement.slot_id)) {
@@ -115,10 +178,19 @@ function impliedFactBindings(templateId, context, registry) {
   return [...out];
 }
 
+/**
+ * 由推荐模板种子建计划：必需图或已满足的模板自动纳入，其余跳过并给出原因。
+ * @param {import("./type-contracts.js").EvalContext | null | undefined} context
+ * @param {{registry?: import("./suite-plan.js").SuiteRegistryView | null, bound_fact_ids_by_template?: Record<string, string[]> | null, shotId?: string | null} | undefined} [options]
+ * @returns {{plan: PlanRecord, included: string[], skipped: {template_id: string, blocking: import("./type-contracts.js").DependencyBlocking[]}[]}}
+ */
 export function seedSuitePlan(context, options = {}) {
   const recommendation = recommendPlan(context, options);
+  /** @type {import("./suite-plan.js").ShotRecord[]} */
   const shots = [];
+  /** @type {string[]} */
   const included = [];
+  /** @type {{template_id: string, blocking: import("./type-contracts.js").DependencyBlocking[]}[]} */
   const skipped = [];
   for (const instance of recommendation.instances) {
     if (instance.required || instance.satisfied) {
@@ -139,7 +211,15 @@ export function seedSuitePlan(context, options = {}) {
   return { plan, included, skipped };
 }
 
+/**
+ * 从模板添加一张图（自动把模板里已满足的已确认事实绑定为文案来源）；返回新计划与这张图。
+ * @param {PlanRecord | null | undefined} plan
+ * @param {string} templateId
+ * @param {{context?: import("./type-contracts.js").EvalContext | null, registry?: import("./suite-plan.js").SuiteRegistryView | null, shotId?: string | null, factSlotIds?: ReadonlyArray<string>} | undefined} [options]
+ * @returns {{plan: PlanRecord, shot: import("./suite-plan.js").ShotRecord}}
+ */
 export function addShotFromTemplate(plan, templateId, options = {}) {
+  plan = normalizeSuitePlan(plan);
   checkPlanShape(plan);
   if (plan.shots.length >= MAX_SHOTS) invalid("套图最多 " + MAX_SHOTS + " 张。");
   const ctx = options.context || {};
@@ -150,7 +230,44 @@ export function addShotFromTemplate(plan, templateId, options = {}) {
   return { plan: next, shot };
 }
 
+/**
+ * 编辑某张图绑定的文案来源（V2.R6.2）：人可以为某个用途单独挑选它消费的已确认事实，
+ * 不必把无关事实塞进这张图的依据。只校验形状与去重；是否已确认由各用途就绪投影按图判定。
+ * @param {PlanRecord | null | undefined} plan
+ * @param {string} shotId
+ * @param {ReadonlyArray<string>} slotIds
+ * @param {{registry?: import("./suite-plan.js").SuiteRegistryView | null} | undefined} [options]
+ * @returns {{plan: PlanRecord, shot: import("./suite-plan.js").ShotRecord}}
+ */
+export function setShotFactBindings(plan, shotId, slotIds, options = {}) {
+  plan = normalizeSuitePlan(plan);
+  checkPlanShape(plan);
+  if (!Array.isArray(slotIds)) invalid("绑定的事实必须是 slot_id 数组。");
+  const seen = new Set();
+  for (const slotId of slotIds) {
+    if (typeof slotId !== "string" || !SLOT_ID_PATTERN.test(slotId)) {
+      invalid("绑定的事实必须是合法 slot_id：" + String(slotId));
+    }
+    if (seen.has(slotId)) invalid("绑定的事实不允许重复：" + slotId);
+    seen.add(slotId);
+  }
+  const index = plan.shots.findIndex((shot) => isPlainObject(shot) && shot.shot_id === shotId);
+  if (index < 0) invalid("找不到要改绑定的图：" + String(shotId));
+  const shot = { ...plan.shots[index], fact_slot_ids: [...slotIds] };
+  const next = withShots(plan, plan.shots.map((item, itemIndex) => (itemIndex === index ? shot : item)));
+  assertValid(next, options.registry);
+  return { plan: next, shot };
+}
+
+/**
+ * 添加自定义图（可选图；名称必填）；返回新计划与这张图。
+ * @param {PlanRecord | null | undefined} plan
+ * @param {{label?: string, intent?: string, factSlotIds?: ReadonlyArray<string>} | undefined} [input]
+ * @param {{registry?: import("./suite-plan.js").SuiteRegistryView | null} | undefined} [options]
+ * @returns {{plan: PlanRecord, shot: import("./suite-plan.js").ShotRecord}}
+ */
 export function addCustomShotToPlan(plan, input = {}, options = {}) {
+  plan = normalizeSuitePlan(plan);
   checkPlanShape(plan);
   if (plan.shots.length >= MAX_SHOTS) invalid("套图最多 " + MAX_SHOTS + " 张。");
   const draft = createCustomShot(input);
@@ -160,7 +277,15 @@ export function addCustomShotToPlan(plan, input = {}, options = {}) {
   return { plan: next, shot };
 }
 
+/**
+ * 复制一张图（副本必为可选图；label 加「（副本）」）；返回新计划与这张图。
+ * @param {PlanRecord | null | undefined} plan
+ * @param {string} shotId
+ * @param {{registry?: import("./suite-plan.js").SuiteRegistryView | null} | undefined} [options]
+ * @returns {{plan: PlanRecord, shot: import("./suite-plan.js").ShotRecord}}
+ */
 export function copyShot(plan, shotId, options = {}) {
+  plan = normalizeSuitePlan(plan);
   checkPlanShape(plan);
   if (plan.shots.length >= MAX_SHOTS) invalid("套图最多 " + MAX_SHOTS + " 张。");
   const source = shotById(plan, shotId);
@@ -182,7 +307,15 @@ export function copyShot(plan, shotId, options = {}) {
   return { plan: next, shot };
 }
 
+/**
+ * 删除一张图（保底：至少保留 1 张图、最后一张必需图不可删）；返回新计划与被删的图。
+ * @param {PlanRecord | null | undefined} plan
+ * @param {string} shotId
+ * @param {{registry?: import("./suite-plan.js").SuiteRegistryView | null} | undefined} [options]
+ * @returns {{plan: PlanRecord, removed: import("./suite-plan.js").ShotRecord}}
+ */
 export function removeShot(plan, shotId, options = {}) {
+  plan = normalizeSuitePlan(plan);
   checkPlanShape(plan);
   const index = plan.shots.findIndex((shot) => isPlainObject(shot) && shot.shot_id === shotId);
   if (index < 0) invalid("找不到要删除的图：" + String(shotId));
@@ -198,7 +331,16 @@ export function removeShot(plan, shotId, options = {}) {
   return { plan: next, removed: shot };
 }
 
+/**
+ * 上移（-1）/下移（+1）；越界时不动。返回新计划与是否移动。
+ * @param {PlanRecord | null | undefined} plan
+ * @param {string} shotId
+ * @param {number} delta
+ * @param {{registry?: import("./suite-plan.js").SuiteRegistryView | null} | undefined} [options]
+ * @returns {{plan: PlanRecord, moved: boolean}}
+ */
 export function moveShot(plan, shotId, delta, options = {}) {
+  plan = normalizeSuitePlan(plan);
   checkPlanShape(plan);
   if (delta !== 1 && delta !== -1) invalid("只支持上移（-1）或下移（+1）。");
   const index = plan.shots.findIndex((shot) => isPlainObject(shot) && shot.shot_id === shotId);
@@ -214,7 +356,14 @@ export function moveShot(plan, shotId, delta, options = {}) {
 
 /* ------------------------------------------------------------ 校验与投影 */
 
+/**
+ * 套图计划的全部机检（文档形状/数量/逐图草案/依赖一致性）；返回问题列表（空 = 合法）。
+ * @param {unknown} plan
+ * @param {import("./suite-plan.js").SuiteRegistryView | null | undefined} [registry]
+ * @returns {import("./type-contracts.js").DomainProblem[]}
+ */
 export function validateSuitePlan(plan, registry) {
+  /** @type {import("./type-contracts.js").DomainProblem[]} */
   const problems = [];
   if (!isPlainObject(plan)) {
     pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$", "套图计划必须是对象。");
@@ -283,6 +432,13 @@ export function validateSuitePlan(plan, registry) {
   return problems;
 }
 
+/**
+ * 按图的求值汇总（界面可见）；输入是已校验的计划，shot_id 必为真实 id。
+ * @param {PlanRecord | null | undefined} plan
+ * @param {import("./type-contracts.js").EvalContext | null | undefined} context
+ * @param {import("./suite-plan.js").SuiteRegistryView | null | undefined} [registry]
+ * @returns {{total: number, satisfiable: number, blocked: number, required_blocked: string[], shots: {shot_id: string, template_id: string | null, label: string, role_id: string, role_label: string | null, required: boolean, custom: boolean, satisfied: boolean, blocking: import("./type-contracts.js").DependencyBlocking[]}[]}}
+ */
 export function suitePlanSummary(plan, context, registry) {
   const shots = (plan && Array.isArray(plan.shots) ? plan.shots : []).map((shot) => {
     const evaluation = evaluateShot(shot, context || {}, registry);

@@ -10,10 +10,17 @@ import { assertPointerShape, MAX_POINTER_BYTES } from "./validate.js";
 
 export const CURRENT_PROJECT_POINTER_KEY = "amz-listing-kit-v2:current-project";
 
+/**
+ * @returns {Storage|null}
+ */
 function defaultStorage() {
   return globalThis.localStorage || null;
 }
 
+/**
+ * @param {Storage|null} [storage=defaultStorage()]
+ * @returns {void}
+ */
 export function removePointer(storage = defaultStorage()) {
   if (!storage) return;
   try {
@@ -21,6 +28,11 @@ export function removePointer(storage = defaultStorage()) {
   } catch (_ignored) { /* 隐私模式下可能不可写；指针丢了不影响项目数据 */ }
 }
 
+/**
+ * 读指针；损坏/超长/多字段一律清除并返回 null，不伪造项目。
+ * @param {Storage|null} [storage=defaultStorage()]
+ * @returns {{project_id:string, updated_at:string}|null}
+ */
 export function readPointer(storage = defaultStorage()) {
   if (!storage) return null;
   let raw = null;
@@ -48,6 +60,11 @@ export function readPointer(storage = defaultStorage()) {
   return { project_id: parsed.project_id, updated_at: parsed.updated_at };
 }
 
+/**
+ * @param {{project_id:string, updated_at:string}} pointer
+ * @param {Storage|null} [storage=defaultStorage()]
+ * @returns {boolean} 写入是否成功（隐私模式下可能失败）
+ */
 export function writePointer(pointer, storage = defaultStorage()) {
   if (!storage) return false;
   const canonical = { project_id: pointer.project_id, updated_at: pointer.updated_at };
@@ -62,6 +79,10 @@ export function writePointer(pointer, storage = defaultStorage()) {
   }
 }
 
+/**
+ * @param {Storage|null} [storage=defaultStorage()]
+ * @returns {string[]}
+ */
 export function pointerKeys(storage = defaultStorage()) {
   if (!storage) return [];
   const keys = [];

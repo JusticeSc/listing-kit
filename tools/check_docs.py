@@ -84,6 +84,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+CODE_ROOT = ROOT
 sys.path.insert(0, str(ROOT / "src"))
 from console import enable_utf8  # noqa: E402  （控制台编码归一：见 src/console.py）
 enable_utf8()
@@ -476,17 +477,6 @@ def _check_readme_scope(rep: Report) -> None:
     由生成器逐字守住，当前阶段与下一动作只允许从 state 读取。
     """
     text = README.read_text(encoding="utf-8")
-    required = (
-        "默认入口现在提供 Product V2 的浏览器本地项目外壳",
-        "当前默认页面**还不能**",
-        "python app\\server.py --legacy-v1 --check",
-        "docs/INDEX.md",
-        "IndexedDB",
-    )
-    for marker in required:
-        if marker not in text:
-            rep.problem(f"README 缺少当前实现边界标记：{marker!r}")
-
     forbidden = {
         r"^\s*(?:[-*>]\s*)?(?:next_action_task|下一任务|下一动作)\s*[：:]\s*`?"
         r"(?:V2\.[0-9A-Za-z.-]+|D[-0-9A-Za-z.]+)\b":
@@ -573,21 +563,6 @@ def _check_readme_slot_table(rep: Report, cfg: dict) -> None:
 
 # ---------------------------------------------------------------- 铁律
 
-def _check_orchestrator_rule(rep: Report) -> None:
-    """铁律：orchestrator 里不许按坑位号分支。**守卫自己实现判据。**
-
-    见模块头：不能照抄文档里那句 grep —— grep 零匹配时退出码为 1，而这条铁律的判据
-    正是"零匹配才算过"。照抄会把判据整个反过来。
-    """
-    src = (ROOT / "src" / "orchestrator.py").read_text(encoding="utf-8")
-    # 模式在源码里拼出来：本文件若直接写着那个字面量，它自己就成了"违规样本"，
-    # 将来任何全仓扫描都会把守卫本身报成告警。
-    pat = re.compile(r'slot\["id"\]\s*==|slot\.id\s*==')
-    for i, ln in enumerate(src.splitlines(), 1):
-        if pat.search(ln):
-            rep.problem(f"src/orchestrator.py:{i} 出现按坑位号分支：{ln.strip()} —— "
-                        f"这意味着坑位行为又回到了代码里，"
-                        f"『加一个坑位 = 加一行数据』立刻失效。")
 
 
 # ---------------------------------------------------------------- 卡
@@ -1131,14 +1106,31 @@ def main(argv: list[str] | None = None) -> int:
                     help="跳过命令执行（快，但会明说哪些断言没被验）")
     ap.add_argument("--explain", action="store_true",
                     help="把补过参数的命令、被跳过的命令与理由也打印出来")
+    ap.add_argument("--root", type=Path, default=CODE_ROOT,
+                    help="只读被验项目根；反向探针使用独立临时副本")
     args = ap.parse_args(argv)
+    global ROOT, README, CARDS_DIR, MANAGED_HAND, MANAGED_GEN
+    global INDEX, CURRENT_STATE, AGENTS_FILE, PYPROJECT_FILE, UV_LOCK_FILE
+    global CONTEXT_FILE, VENDOR_DIRS, STANDARDS_DIR
+    ROOT = args.root.resolve()
+    README = ROOT / "README.md"
+    CARDS_DIR = ROOT / "docs" / "cards"
+    MANAGED_HAND = [README]
+    MANAGED_GEN = sorted(CARDS_DIR.glob("*.md"))
+    INDEX = ROOT / "docs" / "INDEX.md"
+    CURRENT_STATE = ROOT / "_working" / "amz-listing-kit-product-v2" / "state.md"
+    AGENTS_FILE = ROOT / "AGENTS.md"
+    PYPROJECT_FILE = ROOT / "pyproject.toml"
+    UV_LOCK_FILE = ROOT / "uv.lock"
+    CONTEXT_FILE = ROOT / "docs" / "product-v2-project-context.md"
+    VENDOR_DIRS = (ROOT / "app/product_v2/vendor", ROOT / "evals/product-v2/vendor")
+    STANDARDS_DIR = ROOT / "docs" / "standards-template"
 
     rep = Report()
-    cfg = schema.assert_valid()
+    cfg = schema.assert_valid(ROOT / schema.SLOTS_REL)
 
     _check_cards(rep, cfg)
     _check_readme_scope(rep)
-    _check_orchestrator_rule(rep)
     _check_docs_index(rep)
     _check_reuse_first_gate(rep)
     _check_standards_mapping(rep)

@@ -25,6 +25,7 @@ function applyStoreSpec(db, spec) {
   }
 }
 
+/** @type {ReadonlyArray<Readonly<import("./db.js").DatabaseMigration>>} */
 export const DEFAULT_MIGRATIONS = Object.freeze([
   Object.freeze({
     version: 1,
@@ -41,6 +42,10 @@ export const DEFAULT_MIGRATIONS = Object.freeze([
     version: 2,
     describe: "追加数值版本复合索引，保留全部文档历史和资产",
     apply(_db, tx) {
+      if (!tx) {
+        // versionchange 事件必然携带事务；缺失即升级环境异常，回滚并保留旧 schema。
+        throw new Error("v2 迁移需要 versionchange 事务。");
+      }
       tx.objectStore("documents").createIndex(
         "by_project_document_version", ["project_id", "kind", "document_id", "version"]);
     },

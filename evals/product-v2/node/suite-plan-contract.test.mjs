@@ -2,7 +2,7 @@
  * V2.3.1 套图注册表契约测试（Node 原生进程，非 Mock）：
  * 图片角色、Shot 模板与条件依赖语言。
  *
- * 正向：注册表自检、参考图角色词表、模板投影、五类依赖求值、推荐排序与必需阻断、
+ * 正向：注册表自检、参考图角色词表、模板投影、六类依赖求值、推荐排序与必需阻断、
  * 自定义 Shot 与草稿校验。
  * 反向（故意让守卫变红）：重复 id、未知角色、custom 模板、order 非法、非核心事实、
  * 空/重复 fact_any、any_of 递归限深、多余参数、未知依赖、无登记字段、无消费者角色、
@@ -73,6 +73,14 @@ function fact(slotId, status) {
   return { slot_id: slotId, status, value: slotId + "-值" };
 }
 
+/** 结构性尺寸事实（V2.R6.2）：对象/轴向/有限正数/单位/来源依据，缺一即非尺寸。 */
+function dimensionFact(slotId, status) {
+  return {
+    slot_id: slotId, status,
+    value: [{ object: "瓶身", axis: "height", value: 21.5, unit: "cm", source_basis: "人工测量" }],
+  };
+}
+
 function problemsMatching(problems, pathPart, textPart) {
   return problems.filter((item) => String(item.path || "").includes(pathPart)
     && String(item.message || "").includes(textPart));
@@ -98,7 +106,7 @@ test("R01", "内置注册表自检零问题；schema 与依赖词表齐全", () 
     "schema_version 不一致：" + String(described.schema_version));
   expect(json(described.dependency_kinds) === json([...DEPENDENCY_KINDS]),
     "依赖词表与常量不一致。");
-  expect(DEPENDENCY_KINDS.length === 5, "依赖谓词应为 5 种。");
+  expect(DEPENDENCY_KINDS.length === 6, "依赖谓词应为 6 种。");
   return { problems: problems.length, roles: IMAGE_ROLES.length, templates: SHOT_TEMPLATES.length };
 });
 
@@ -186,25 +194,32 @@ test("R05", "事实依赖只认 confirmed；其余每种状态都给出精确原
   return { blocking_statuses: [...BLOCKING_FACT_STATUSES], absent_reason: absent.blocking[0].reason };
 });
 
-test("R06", "尺寸图双路径：核心 size_summary 或该图绑定的动态尺寸事实", () => {
+test("R06", "尺寸图只认结构化尺寸：自由文本/标量不得冒充测量", () => {
   const dependencies = templateDefinition("size_dimensions").dependencies;
-  const coreProposed = evaluateDependencies(dependencies,
-    { facts: [fact("size_summary", "proposed")], assets: [] });
-  expect(!coreProposed.satisfied, "未确认的 size_summary 不应满足。");
-  expect(coreProposed.blocking[0].kind === "any_of", "any_of 应整体报告为一条阻断。");
-  const coreConfirmed = evaluateDependencies(dependencies,
+  const freeText = evaluateDependencies(dependencies,
     { facts: [fact("size_summary", "confirmed")], assets: [] });
-  expect(coreConfirmed.satisfied, "size_summary 确认后尺寸图应满足。");
+  expect(!freeText.satisfied, "确认的自由文本 size_summary 也不得满足尺寸图。");
+  expect(freeText.blocking[0].kind === "any_of", "any_of 应整体报告为一条阻断。");
+  const coreProposed = evaluateDependencies(dependencies,
+    { facts: [dimensionFact("size_dimensions", "proposed")], assets: [] });
+  expect(!coreProposed.satisfied, "未确认的结构化尺寸不应满足。");
+  const coreConfirmed = evaluateDependencies(dependencies,
+    { facts: [dimensionFact("size_dimensions", "confirmed")], assets: [] });
+  expect(coreConfirmed.satisfied, "结构化尺寸确认后尺寸图应满足。");
   const boundUnconfirmed = evaluateDependencies(dependencies,
-    { facts: [fact("bottle_height", "proposed")], assets: [], bound_fact_ids: ["bottle_height"] });
-  expect(!boundUnconfirmed.satisfied, "绑定事实未确认时应阻断。");
-  const boundConfirmed = evaluateDependencies(dependencies,
+    { facts: [dimensionFact("bottle_height", "proposed")], assets: [], bound_fact_ids: ["bottle_height"] });
+  expect(!boundUnconfirmed.satisfied, "绑定尺寸未确认时应阻断。");
+  const boundFreeText = evaluateDependencies(dependencies,
     { facts: [fact("bottle_height", "confirmed")], assets: [], bound_fact_ids: ["bottle_height"] });
-  expect(boundConfirmed.satisfied, "绑定事实确认后应满足。");
+  expect(!boundFreeText.satisfied, "绑定的自由文本/标量事实不得冒充尺寸测量。");
+  const boundConfirmed = evaluateDependencies(dependencies,
+    { facts: [dimensionFact("bottle_height", "confirmed")], assets: [],
+      bound_fact_ids: ["bottle_height"] });
+  expect(boundConfirmed.satisfied, "绑定的结构化尺寸确认后应满足。");
   const unbound = evaluateDependencies(dependencies,
-    { facts: [fact("bottle_height", "confirmed")], assets: [] });
+    { facts: [dimensionFact("bottle_height", "confirmed")], assets: [] });
   expect(!unbound.satisfied, "确认但未绑定不得算数。");
-  return { core_reason: coreProposed.blocking[0].reason };
+  return { free_text_reason: freeText.blocking[0].reason, unbound_reason: unbound.blocking[0].reason };
 });
 
 test("R07", "对比图要竞品参考图 + 已确认特征；两条都缺都要逐条说清", () => {
@@ -337,6 +352,11 @@ const REVERSE_MUTATIONS = [
   { id: "dependency_extra_param", why: "依赖带多余参数", path: "", text: "不接受参数 note",
     mutate(registry) {
       templateAt(registry, "main_clean").dependencies = [{ kind: "asset_role", role: "primary", note: "x" }];
+    } },
+  { id: "bound_dimension_extra_param", why: "bound_dimension 不接受参数", path: "", text: "不接受参数 note",
+    mutate(registry) {
+      templateAt(registry, "size_dimensions").dependencies =
+        [{ kind: "bound_dimension", note: "x" }];
     } },
   { id: "asset_role_unknown", why: "参考图角色不在词表", path: "", text: "参考图角色不在词表内",
     mutate(registry) { templateAt(registry, "main_clean").dependencies = [{ kind: "asset_role", role: "ghost_role" }]; } },
@@ -568,9 +588,12 @@ test("R13", "evaluateShot 用图自身绑定事实求值：绑定与模板依赖
   const unbound = evaluateShot({ ...shot, fact_slot_ids: [] },
     { facts: [fact("bottle_height", "confirmed")], assets: [] });
   expect(!unbound.satisfied, "没有绑定时不得借用别处确认的事实。");
-  const boundProposed = evaluateShot(shot, { facts: [fact("bottle_height", "proposed")], assets: [] });
+  const boundProposed = evaluateShot(shot, { facts: [dimensionFact("bottle_height", "proposed")], assets: [] });
   expect(!boundProposed.satisfied, "绑定事实未确认应阻断。");
-  const boundConfirmed = evaluateShot(shot, { facts: [fact("bottle_height", "confirmed")], assets: [] });
+  const boundFreeText = evaluateShot(shot, { facts: [fact("bottle_height", "confirmed")], assets: [] });
+  expect(!boundFreeText.satisfied, "绑定的自由文本事实不得满足尺寸图。");
+  const boundConfirmed = evaluateShot(shot,
+    { facts: [dimensionFact("bottle_height", "confirmed")], assets: [] });
   expect(boundConfirmed.satisfied && boundConfirmed.shot_id === "s-size"
     && boundConfirmed.template_id === "size_dimensions",
     "绑定确认后应满足并保留身份：" + json(boundConfirmed));

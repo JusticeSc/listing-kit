@@ -68,6 +68,7 @@ from datetime import datetime
 from pathlib import Path, PurePosixPath, PureWindowsPath
 
 ROOT = Path(__file__).resolve().parent.parent
+CODE_ROOT = ROOT
 sys.path.insert(0, str(ROOT / "src"))          # 只为取 console（见 src/console.py）
 from console import enable_utf8  # noqa: E402
 enable_utf8()
@@ -762,8 +763,13 @@ def _check(rep: Report) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
+    global ROOT, WORKING
     ap = argparse.ArgumentParser(description="项目状态守卫：让「做到哪了」有人守")
-    ap.parse_known_args(argv)          # 容忍调用方多塞的参数
+    ap.add_argument("--root", type=Path, default=CODE_ROOT,
+                    help="只读被验项目根；反向探针使用独立临时副本")
+    args, _ = ap.parse_known_args(argv)
+    ROOT = args.root.resolve()
+    WORKING = ROOT / "_working"
     rep = Report()
     _check(rep)
     print("=" * 72)

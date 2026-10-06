@@ -18,6 +18,7 @@ import { DOMAIN_ERROR_CODES, invalid } from "./errors.js";
 export const EXPORT_GATE_CONTRACT_VERSION = "v2.6.2";
 export const EXPORT_RECORD_KIND = "export_record";
 export const REVIEW_ACKNOWLEDGEMENT_KIND = "review_acknowledgement";
+/** 交付包固定条目名（manifest/checks/readme；图片条目在 images/ 目录下）。 */
 export const DELIVERY_ENTRY_NAMES = Object.freeze({
   manifest: "manifest.json",
   checks: "checks.json",
@@ -44,6 +45,7 @@ function finding(ruleId, message, affectedShotIds, measured, severity) {
  */
 function affectedShotsOf(item, knownShotIds) {
   const measured = isPlainObject(item.measured) ? item.measured : {};
+  /** @type {unknown[]} */
   const values = [];
   ["missing", "shots", "issues", "mismatches"].forEach((key) => {
     if (Array.isArray(measured[key])) values.push(...measured[key]);
@@ -61,7 +63,10 @@ function affectedShotsOf(item, knownShotIds) {
   return [...found];
 }
 
-/** 未知项身份：单图 = 报告 + 规则；整套 = 报告 + 规则 + Shot 集合。同一身份只允许一条确认。 */
+/** 未知项身份：单图 = 报告 + 规则；整套 = 报告 + 规则 + Shot 集合。同一身份只允许一条确认。
+ * @param {unknown} unknown
+ * @returns {string|null}
+ */
 export function unknownIdentityOf(unknown) {
   if (!isPlainObject(unknown)) return null;
   const kind = unknown.target_kind === "suite_review" ? "suite_review" : "review_report";
@@ -72,9 +77,14 @@ export function unknownIdentityOf(unknown) {
   return kind + "|" + targetId + "|" + ruleId + "|" + shotIds.join(",");
 }
 
-/** 从当前单图报告与整套报告里收集全部 UNKNOWN（唯一来源：报告里的发现本身）。 */
+/** 从当前单图报告与整套报告里收集全部 UNKNOWN（唯一来源：报告里的发现本身）。
+ * @param {{shots?: unknown, selections?: unknown, reportsByCandidate?: unknown,
+ *          candidatesByShot?: unknown, suiteReport?: unknown}} [args]
+ * @returns {import("./type-contracts.js").UnknownItem[]}
+ */
 export function collectUnknowns({ shots = [], selections = {}, reportsByCandidate = {},
                                   candidatesByShot = {}, suiteReport = null } = {}) {
+  /** @type {import("./type-contracts.js").UnknownItem[]} */
   const unknowns = [];
   shots.forEach((shot) => {
     if (!isPlainObject(shot) || !isNonEmptyString(shot.shot_id)) return;
@@ -118,7 +128,11 @@ export function collectUnknowns({ shots = [], selections = {}, reportsByCandidat
   return unknowns;
 }
 
-/** 已确认的未知项：acknowledgements 里能对上身份（kind/target/rule/shot 集合）的条目。 */
+/** 已确认的未知项：acknowledgements 里能对上身份（kind/target/rule/shot 集合）的条目。
+ * @param {unknown} unknowns
+ * @param {unknown} [acknowledgements]
+ * @returns {import("./type-contracts.js").UnknownItem[]}
+ */
 export function resolveUnknowns(unknowns, acknowledgements = []) {
   const acknowledged = new Set();
   (Array.isArray(acknowledgements) ? acknowledgements : []).forEach((record) => {
@@ -133,7 +147,10 @@ export function resolveUnknowns(unknowns, acknowledgements = []) {
   }));
 }
 
-/** 人工确认记录（append-only）：document_id = 身份摘要，写库由调用方完成。 */
+/** 人工确认记录（append-only）：document_id = 身份摘要，写库由调用方完成。
+ * @param {{unknown?: unknown, at?: unknown, actor?: unknown}} [args]
+ * @returns {import("./type-contracts.js").AcknowledgementRecord}
+ */
 export function buildAcknowledgement({ unknown, at, actor = "user" } = {}) {
   const identity = unknownIdentityOf(unknown);
   if (!identity) invalid("确认记录需要有效的未知项身份（target/rule）。");
@@ -152,6 +169,10 @@ export function buildAcknowledgement({ unknown, at, actor = "user" } = {}) {
   });
 }
 
+/** 确认记录的 document_id（身份摘要的安全化形式；同一身份只允许一条确认）。
+ * @param {unknown} acknowledgement
+ * @returns {string}
+ */
 export function acknowledgementDocumentIdOf(acknowledgement) {
   const identity = unknownIdentityOf(acknowledgement);
   if (!identity) invalid("确认记录缺少身份，无法生成 document_id。");
@@ -161,6 +182,11 @@ export function acknowledgementDocumentIdOf(acknowledgement) {
 /**
  * 交付门禁：复用导出就绪、字节哈希、整套报告与 Unknown 确认四类既有测量。
  * 返回 {status, ready_to_export, findings, blocking, unknowns, unresolved_unknowns}。
+ * @param {{shots?: unknown, selections?: unknown, candidatesByShot?: unknown,
+ *          reportsByCandidate?: unknown, attemptsByShot?: unknown, readBytes?: unknown,
+ *          digest?: unknown, suiteReport?: unknown, suiteFingerprints?: unknown,
+ *          acknowledgements?: unknown}} [args]
+ * @returns {Promise<import("./type-contracts.js").DeliveryGateResult>}
  */
 export async function evaluateDeliveryGate({ shots, selections, candidatesByShot,
                                              reportsByCandidate, attemptsByShot,
@@ -241,7 +267,10 @@ export async function evaluateDeliveryGate({ shots, selections, candidatesByShot
   });
 }
 
-/** 交付包条目：images/<shot>-<candidate>.<ext> + manifest.json + checks.json + README.txt。 */
+/** 交付包条目：images/<shot>-<candidate>.<ext> + manifest.json + checks.json + README.txt。
+ * @param {{shotId?: unknown, candidateId?: unknown, mediaType?: unknown}} [args]
+ * @returns {string}
+ */
 export function deliveryImagePathOf({ shotId, candidateId, mediaType } = {}) {
   if (!isNonEmptyString(shotId) || !isNonEmptyString(candidateId)) {
     invalid("交付包图片路径需要 shot_id 与 candidate_id。");
@@ -251,11 +280,16 @@ export function deliveryImagePathOf({ shotId, candidateId, mediaType } = {}) {
     + "-" + String(candidateId).replace(/[^A-Za-z0-9_-]+/g, "-") + "." + ext;
 }
 
+/** 组装交付包条目列表（图片 + manifest.json + checks.json + README.txt；路径必须唯一）。
+ * @param {{images?: unknown, manifest?: unknown, checks?: unknown, readme?: unknown}} [args]
+ * @returns {import("./type-contracts.js").DeliveryEntry[]}
+ */
 export function buildDeliveryEntries({ images = [], manifest, checks, readme } = {}) {
   if (!Array.isArray(images)) invalid("交付包需要 images 列表。");
   if (!isPlainObject(manifest) || !isPlainObject(checks) || !isNonEmptyString(readme)) {
     invalid("交付包需要 manifest、checks 与 README。");
   }
+  /** @type {import("./type-contracts.js").DeliveryEntry[]} */
   const entries = [];
   const seen = new Set();
   images.forEach((item) => {
@@ -281,7 +315,12 @@ export function buildDeliveryEntries({ images = [], manifest, checks, readme } =
   })));
 }
 
-/** 导出记录（append-only）：包身份 + 内容清单 + 生成时间；不覆盖历史。 */
+/** 导出记录（append-only）：包身份 + 内容清单 + 生成时间；不覆盖历史。
+ * @param {{projectId?: unknown, projectName?: unknown, zipSha256?: unknown, zipBytes?: unknown,
+ *          entries?: unknown, gate?: unknown, selectionFingerprint?: unknown,
+ *          inputsFingerprint?: unknown, includedShotIds?: unknown, at?: unknown}} [args]
+ * @returns {import("./type-contracts.js").ExportRecordPayload}
+ */
 export function buildExportRecord({ projectId, projectName, zipSha256, zipBytes, entries,
                                     gate, selectionFingerprint, inputsFingerprint,
                                     includedShotIds, at } = {}) {
@@ -317,6 +356,8 @@ export function buildExportRecord({ projectId, projectName, zipSha256, zipBytes,
 /**
  * 导出记录 document_id：时间戳 + 包 sha256 前 12 位；每次生成都是新 document_id，
  * 因此 listLatest(export_record) 天然是「只追加、不覆盖」的历史。
+ * @param {{at?: unknown, zipSha256?: unknown}} [args]
+ * @returns {string}
  */
 export function exportRecordDocumentIdOf({ at, zipSha256 } = {}) {
   if (!isNonEmptyString(at) || !isSha256Hex(zipSha256)) {
@@ -327,7 +368,10 @@ export function exportRecordDocumentIdOf({ at, zipSha256 } = {}) {
   return "export-" + stamp + "-" + String(zipSha256).slice(0, 12);
 }
 
-/** 交付包文件名：项目名 + 时间戳；调用方用于下载与展示。 */
+/** 交付包文件名：项目名 + 时间戳；调用方用于下载与展示。
+ * @param {{projectName?: unknown, at?: unknown}} [args]
+ * @returns {string}
+ */
 export function deliveryFileName({ projectName, at } = {}) {
   const safe = String(projectName || "project").replace(/[\\/:*?"<>|\s]+/g, "-")
     .replace(/^-+|-+$/g, "").slice(0, 60) || "project";

@@ -30,6 +30,8 @@ const PNG_MAGIC = Object.freeze([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]
  * 宽高必须来自 IHDR 字节；颜色类型/位深在头部足够时一并读出；
  * 透明通道 = 颜色类型 4/6，或块结构允许时扫到 tRNS。
  * 签名 / IHDR / 宽高 / 颜色类型不合法一律 invalid，不猜；块结构不完整时透明判定返回 null（未知）。
+ * @param {Uint8Array|ArrayBuffer} bytes
+ * @returns {import("./type-contracts.js").PngHeader}
  */
 export function parsePngHeader(bytes) {
   const view = bytes instanceof Uint8Array ? bytes
@@ -82,16 +84,21 @@ function pngTransparency(view, colorType) {
   return null;
 }
 
-/** 从 PNG 字节头解析宽高（V2.4.4 起的对外形状；解析权威是 parsePngHeader）。 */
+/** 从 PNG 字节头解析宽高（V2.4.4 起的对外形状；解析权威是 parsePngHeader）。
+ * @param {Uint8Array|ArrayBuffer} bytes
+ * @returns {{width: number, height: number}}
+ */
 export function parsePngDimensions(bytes) {
   const header = parsePngHeader(bytes);
   return { width: header.width, height: header.height };
 }
 
-/** 构造候选记录；来源必须是已成功且有结果依据的 Attempt（异步=task_id，同步=冻结 sync 身份）。 */
-export function buildCandidateRecord({
-  shotId, attempt, assetSha256, byteSize, width, height, at,
-} = {}) {
+/** 构造候选记录；来源必须是已成功且有结果依据的 Attempt（异步=task_id，同步=冻结 sync 身份）。
+ * @param {{shotId?: unknown, attempt?: unknown, assetSha256?: unknown, byteSize?: unknown,
+ *          width?: unknown, height?: unknown, at?: unknown}} [args]
+ * @returns {import("./type-contracts.js").CandidateRecord}
+ */
+export function buildCandidateRecord({ shotId, attempt, assetSha256, byteSize, width, height, at } = {}) {
   if (!isNonEmptyString(shotId)) invalid("候选需要 shot_id。");
   if (!isPlainObject(attempt)) invalid("候选需要来源 Attempt。");
   if (attempt.state !== ATTEMPT_STATES.succeeded) invalid("来源 Attempt 不是 succeeded，不能建候选。");
@@ -129,8 +136,12 @@ export function buildCandidateRecord({
   });
 }
 
-/** 记录形状检查；返回问题清单（空数组 = 合法）。 */
+/** 记录形状检查；返回问题清单（空数组 = 合法）。
+ * @param {unknown} record
+ * @returns {import("./type-contracts.js").DomainProblem[]}
+ */
 export function checkCandidateRecord(record) {
+  /** @type {import("./type-contracts.js").DomainProblem[]} */
   const problems = [];
   if (!isPlainObject(record)) {
     pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$", "候选记录必须是对象。");
@@ -176,7 +187,11 @@ export function checkCandidateRecord(record) {
   return problems;
 }
 
-/** 从候选链（同 Shot 的版本序列）找某个 action 的候选；幂等保存的判据。 */
+/** 从候选链（同 Shot 的版本序列）找某个 action 的候选；幂等保存的判据。
+ * @param {unknown} candidates
+ * @param {unknown} actionId
+ * @returns {unknown}
+ */
 export function candidateForAttempt(candidates, actionId) {
   if (!Array.isArray(candidates) || !isNonEmptyString(actionId)) return null;
   for (let index = candidates.length - 1; index >= 0; index -= 1) {
@@ -187,7 +202,11 @@ export function candidateForAttempt(candidates, actionId) {
   return null;
 }
 
-/** 候选与来源 Attempt 的一致性（预览 / 导出前的复核判据）。同步候选 task_id 允许为 null。 */
+/** 候选与来源 Attempt 的一致性（预览 / 导出前的复核判据）。同步候选 task_id 允许为 null。
+ * @param {unknown} candidate
+ * @param {unknown} attempt
+ * @returns {boolean}
+ */
 export function candidateMatchesAttempt(candidate, attempt) {
   const record = candidate && isPlainObject(candidate.record) ? candidate.record : candidate;
   if (!isPlainObject(record) || !isPlainObject(attempt)) return false;
@@ -202,6 +221,8 @@ export function candidateMatchesAttempt(candidate, attempt) {
  * 投影：这张图现在该不该（重新）保存候选。
  * V2.R5.2 同步协议：succeeded 且冻结身份声明 sync === true 时，task_id 允许为空，照样入库；
  * 其他任何「succeeded 无 task_id」形状仍拒绝（reason no_task_id）。
+ * @param {{attempt?: unknown, candidates?: unknown}} [args]
+ * @returns {import("./type-contracts.js").CandidateStoreDecision}
  */
 export function candidateStoreDecision({ attempt, candidates } = {}) {
   if (!isPlainObject(attempt)) return { needed: false, reason: "no_attempt" };

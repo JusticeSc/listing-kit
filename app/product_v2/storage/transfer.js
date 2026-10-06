@@ -14,13 +14,15 @@ import { assertAssetRecord, assertDocumentRecord, assertProjectRecord } from "./
 import { assetKeyOf, documentKeyOf } from "./repository.js";
 import { buildProjectPackage, parseProjectPackage } from "./package.js";
 
+/**
+ * 导出完整项目（项目记录 + 全部文档版本 + 全部资产字节）为项目包。
+ * @param {import("./validate.js").ProjectRepository} repository
+ * @param {string} projectId
+ * @param {{exportedAt?:string}} [options]
+ * @returns {Promise<{bytes:Uint8Array, manifest:import("./package.js").PackageManifest}>}
+ */
 export async function exportProjectPackage(repository, projectId, { exportedAt } = {}) {
-  const project = await repository.projects.get(projectId);
-  if (!project) {
-    throw new StorageError(STORAGE_ERROR_CODES.NOT_FOUND, "项目 " + projectId + " 不存在。");
-  }
-  const documents = await repository.documents.listAll(projectId);
-  const storedAssets = await repository.assets.list(projectId);
+  const { project, documents, assets: storedAssets } = await repository.readProjectSnapshot(projectId);
   const assets = [];
   for (const record of storedAssets) {
     assets.push({
@@ -39,6 +41,14 @@ export async function exportProjectPackage(repository, projectId, { exportedAt }
   return buildProjectPackage({ project, documents, assets, exportedAt });
 }
 
+/**
+ * 导入项目包：解析与哈希校验全部在事务外完成，写入在单个事务里，
+ * 任何一步抛错都会 abort，浏览器里不会出现导入了一半的项目。
+ * @param {IDBDatabase} db
+ * @param {Uint8Array} packageBytes
+ * @param {{now?:() => string, newId?:() => string}} [options]
+ * @returns {Promise<{project:import("./validate.js").StoredProjectRecord, id_assigned:boolean, documents:number, assets:number, manifest:import("./package.js").PackageManifest}>}
+ */
 export async function importProjectPackage(db, packageBytes, { now = nowIso, newId = randomId } = {}) {
   const parsed = await parseProjectPackage(packageBytes);
   const timestamp = now();
@@ -46,7 +56,8 @@ export async function importProjectPackage(db, packageBytes, { now = nowIso, new
     const projects = tx.objectStore("projects");
     let projectId = parsed.project.project_id;
     let idAssigned = false;
-    const existing = await requestToPromise(projects.get(projectId));
+    const existing = await requestToPromise(
+      /** @type {IDBRequest<import("./validate.js").StoredProjectRecord|undefined>} */ (projects.get(projectId)));
     if (existing) {
       projectId = newId();
       idAssigned = true;
@@ -107,11 +118,15 @@ export async function importProjectPackage(db, packageBytes, { now = nowIso, new
       documents: parsed.documents.length,
       assets: parsed.assets.length,
       manifest: parsed.manifest,
-      migrations_applied: parsed.migrations_applied || [],
     };
   });
 }
 
+/**
+ * @param {unknown} value
+ * @param {string} fallback
+ * @returns {string}
+ */
 function isoTimestampOr(value, fallback) {
   return typeof value === "string" && !Number.isNaN(Date.parse(value)) ? value : fallback;
 }

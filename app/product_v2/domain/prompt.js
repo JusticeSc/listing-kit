@@ -13,7 +13,7 @@
 
 import { DOMAIN_ERROR_CODES, invalid } from "./errors.js";
 import { assertReworkDirective, reworkProblemLabel } from "./rework.js";
-import { checkShotDraft, evaluateShot, roleDefinition } from "./suite-plan.js";
+import { checkShotDraft, consumedSlotIdsOf, evaluateShot, roleDefinition, shotSignatureOf } from "./suite-plan.js";
 import {
   assertShotSpec,
   assertStyleSpec,
@@ -79,6 +79,7 @@ export const IMAGE_SIZE_PATTERN = /^[0-9]{1,4}\*[0-9]{1,4}$/;
  * 协议取 images.contract，请求参数取 images.provider.capabilities.request_profile。
  * 缺字段即拒绝（不猜参数、不兜底 model 表）。
  */
+/** @type {readonly string[]} */
 export const IMAGE_PROFILE_FIELDS = Object.freeze([
   "size", "n", "prompt_extend", "watermark", "output_format",
   "supports_negative_prompt_field", "max_reference_images", "reference_media_types",
@@ -94,7 +95,11 @@ function isPositiveNumber(value) {
   return typeof value === "number" && Number.isFinite(value) && value > 0;
 }
 
-/** 尺寸是否落在某一档声明的边/面积/比例范围内；返回 null 表示合法。 */
+/** 尺寸是否落在某一档声明的边/面积/比例范围内；返回 null 表示合法。
+ * @param {unknown} profile
+ * @param {unknown} size
+ * @returns {string | null}
+ */
 export function sizeScopeProblem(profile, size) {
   if (!isNonEmptyString(size) || !IMAGE_SIZE_PATTERN.test(size)) {
     return "尺寸必须是「宽*高」格式。";
@@ -116,7 +121,10 @@ export function sizeScopeProblem(profile, size) {
   return null;
 }
 
-/** 有效 Prompt 档的形状与自洽检查；返回问题列表（空 = 合法）。 */
+/** 有效 Prompt 档的形状与自洽检查；返回问题列表（空 = 合法）。
+ * @param {unknown} profile
+ * @returns {import("./type-contracts.js").DomainProblem[]}
+ */
 export function checkImagePromptProfile(profile) {
   const problems = [];
   if (!isPlainObject(profile)) {
@@ -181,6 +189,10 @@ export function checkImagePromptProfile(profile) {
   return problems;
 }
 
+/**
+ * @param {unknown} profile
+ * @returns {import("./type-contracts.js").ImagePromptProfile}
+ */
 export function assertImagePromptProfile(profile) {
   const problems = checkImagePromptProfile(profile);
   if (problems.length > 0) {
@@ -193,6 +205,8 @@ export function assertImagePromptProfile(profile) {
  * 从 capabilities 的 images 块投影有效 Prompt 档（V2.R5.3）。
  * 只读版本（provider.capability_version）、协议（images.contract）与非秘密 request_profile；
  * 不取 credential_source / configured，缺字段或字段非法直接拒绝。
+ * @param {unknown} images
+ * @returns {import("./type-contracts.js").ImagePromptProfile}
  */
 export function imagePromptProfile(images) {
   if (!isPlainObject(images)) invalid("图像能力块缺失：无法投影有效 Prompt 档。");
@@ -238,17 +252,30 @@ export function imagePromptProfile(images) {
 
 /* ------------------------------------------------------------ 基础工具 */
 
+/**
+ * @param {string} kind
+ * @param {Record<string, object>} table
+ * @param {string} id
+ * @returns {object}
+ */
 function resolveProfile(kind, table, id) {
   const value = table[id];
   if (!value) invalid(kind + "档不存在：" + String(id));
   return value;
 }
 
+/**
+ * @param {unknown} value
+ * @returns {string}
+ */
 function normalizePhrase(value) {
   return String(value == null ? "" : value).normalize("NFKC").toLowerCase().replace(/\s+/g, "");
 }
 
-/** 把用户值变成安全引用：控制字符转空格、引号中和、空白归一，避免引用边界被值本身破坏。 */
+/** 把用户值变成安全引用：控制字符转空格、引号中和、空白归一，避免引用边界被值本身破坏。
+ * @param {unknown} value
+ * @returns {string}
+ */
 export function quoteLiteral(value) {
   const clean = String(value == null ? "" : value)
     .replace(/[\u0000-\u001f\u007f]/g, " ")
@@ -261,11 +288,12 @@ export function quoteLiteral(value) {
   return "「" + clean + "」";
 }
 
-/** 稳定序列化：对象键排序、数组保持顺序；hash 与快照比较共用这一份。 */
+/** 稳定序列化：对象键排序、数组保持顺序；hash 与快照比较共用这一份。 @param {unknown} value @returns {string} */
 export function canonicalJson(value) {
   return JSON.stringify(canonicalize(value));
 }
 
+/** @param {unknown} value @returns {unknown} */
 function canonicalize(value) {
   if (Array.isArray(value)) return value.map(canonicalize);
   if (value && typeof value === "object") {
@@ -284,7 +312,7 @@ function hasAsciiLetters(text) {
   return /[A-Za-z]/.test(String(text));
 }
 
-/** 文本的语言标签：zh / en / mixed；用于图中文字与平台语言的对照。 */
+/** 文本的语言标签：zh / en / mixed；用于图中文字与平台语言的对照。 @param {unknown} text @returns {string} */
 export function languageOf(text) {
   const cjk = hasCjk(text);
   const latin = hasAsciiLetters(text);
@@ -294,6 +322,7 @@ export function languageOf(text) {
   return "neutral";
 }
 
+/** @param {unknown} fact @returns {string[]} */
 function factTexts(fact) {
   const value = fact ? fact.value : null;
   if (Array.isArray(value)) {
@@ -304,6 +333,14 @@ function factTexts(fact) {
   return [];
 }
 
+/**
+ * @param {string} key
+ * @param {string} label
+ * @param {string} kind
+ * @param {string} text
+ * @param {string[]} sourceRefs
+ * @returns {import("./type-contracts.js").PromptSection}
+ */
 function section(key, label, kind, text, sourceRefs) {
   return Object.freeze({
     key: key,
@@ -314,6 +351,14 @@ function section(key, label, kind, text, sourceRefs) {
   });
 }
 
+/**
+ * @param {string} key
+ * @param {string} label
+ * @param {string} text
+ * @param {import("./type-contracts.js").PromptTextItem[]} items
+ * @param {string[]} sourceRefs
+ * @returns {import("./type-contracts.js").PromptSection}
+ */
 function literalSection(key, label, text, items, sourceRefs) {
   return Object.freeze({
     key: key,
@@ -325,6 +370,10 @@ function literalSection(key, label, text, items, sourceRefs) {
   });
 }
 
+/**
+ * @param {unknown} sections
+ * @returns {import("./type-contracts.js").DomainProblem[]}
+ */
 function sectionProblems(sections) {
   const problems = [];
   if (!Array.isArray(sections) || sections.length === 0) {
@@ -355,6 +404,10 @@ function sectionProblems(sections) {
   return problems;
 }
 
+/**
+ * @param {unknown} sections
+ * @returns {string[]}
+ */
 export function promptSourceRefs(sections) {
   const refs = [];
   for (const item of Array.isArray(sections) ? sections : []) {
@@ -365,7 +418,7 @@ export function promptSourceRefs(sections) {
   return refs;
 }
 
-/** 去掉引用片段后剩下的裸文本；语言与泄漏检查共用这一份。 */
+/** 去掉引用片段后剩下的裸文本；语言与泄漏检查共用这一份。 @param {unknown} text @returns {string} */
 export function stripQuotedSpans(text) {
   return String(text == null ? "" : text)
     .replace(/「[^」]*」/g, " ")
@@ -374,7 +427,7 @@ export function stripQuotedSpans(text) {
     .replace(/‘[^’]*’/g, " ");
 }
 
-/** 语言检查：指令段不得出现未引用的英文；文中文字必须是逐字引用的字符串。 */
+/** 语言检查：指令段不得出现未引用的英文；文中文字必须是逐字引用的字符串。 @param {unknown} sections @returns {import("./type-contracts.js").DomainProblem[]} */
 export function checkPromptLanguage(sections) {
   const problems = [];
   for (const item of Array.isArray(sections) ? sections : []) {
@@ -415,7 +468,7 @@ export function checkPromptLanguage(sections) {
 
 /* ------------------------------------------------------ 冲突、泄漏与逐字 */
 
-/** keep / change_allowed 与公共风格 avoid 的确定性冲突判定。 */
+/** keep / change_allowed 与公共风格 avoid 的确定性冲突判定。 @param {unknown} shotSpec @param {unknown} styleSpec @returns {import("./type-contracts.js").DomainProblem[]} */
 export function checkSpecConflicts(shotSpec, styleSpec) {
   const problems = [];
   const avoid = new Set((styleSpec.avoid || []).map(normalizePhrase));
@@ -437,6 +490,10 @@ export function checkSpecConflicts(shotSpec, styleSpec) {
 /**
  * 未确认事实泄漏：conflict 值在任何位置出现都阻断（冲突必须先解决）；
  * 其余未确认状态只检查引用之外的裸文本——引用内容来自用户自己的输入，不算模型偷写事实。
+ * @param {unknown} sections
+ * @param {unknown} contextFacts
+ * @param {{includeQuoted?: boolean}} [options]
+ * @returns {import("./type-contracts.js").DomainProblem[]}
  */
 export function checkPromptLeaks(sections, contextFacts, options = {}) {
   const problems = [];
@@ -460,7 +517,7 @@ export function checkPromptLeaks(sections, contextFacts, options = {}) {
   return problems;
 }
 
-/** 图中文字必须逐字等于某条已确认事实值，并带一致的语言标签。 */
+/** 图中文字必须逐字等于某条已确认事实值，并带一致的语言标签。 @param {unknown} sections @param {unknown} brief @returns {import("./type-contracts.js").DomainProblem[]} */
 export function checkLiteralVerbatim(sections, brief) {
   const problems = [];
   const confirmed = new Map(
@@ -490,13 +547,31 @@ export function checkLiteralVerbatim(sections, brief) {
 
 /* ------------------------------------------------------------ 编译器 */
 
+/**
+ * @param {unknown} input
+ * @param {{platform_id: string, version: number}} platform
+ * @param {import("./type-contracts.js").ImagePromptProfile} provider
+ * @returns {import("./type-contracts.js").PromptBasis}
+ */
 export function promptBasisOf(input, platform, provider) {
   const versions = isPlainObject(input.versions) ? input.versions : {};
   const positive = (value) => (Number.isInteger(value) && value > 0 ? value : null);
+  const shot = isPlainObject(input.shot) ? input.shot : null;
+  const brief = isPlainObject(input.brief) ? input.brief : {};
+  const confirmedIds = (Array.isArray(brief.confirmed_facts) ? brief.confirmed_facts : [])
+    .filter((item) => isPlainObject(item) && isNonEmptyString(item.slot_id))
+    .map((item) => item.slot_id);
+  const consumed = shot ? consumedSlotIdsOf(shot, confirmedIds) : [];
+  const consumedSet = new Set(consumed);
+  // V2.R6.2：只冻结这张图实际消费的槽位版本，无关槽位变化不再使这张图的 Prompt 过期。
+  const consumedBasis = (Array.isArray(brief.basis) ? brief.basis : [])
+    .filter((item) => isPlainObject(item) && consumedSet.has(item.slot_id))
+    .map((item) => ({ slot_id: item.slot_id, version: item.version }));
   return {
-    brief: (input.brief.basis || []).map((item) => ({
-      slot_id: item.slot_id, version: item.version,
-    })),
+    brief: consumedBasis,
+    consumed_slot_ids: consumed,
+    // 这张图自己的确定性签名（与整份套图文档版本无关）；改别的图不让这张图过期。
+    shot_signature: shot ? shotSignatureOf(shot) : null,
     suite_version: positive(versions.suite_version),
     style_version: positive(versions.style_version),
     shot_spec_version: positive(versions.shot_spec_version),
@@ -514,6 +589,10 @@ export function promptBasisOf(input, platform, provider) {
   };
 }
 
+/**
+ * @param {unknown} input
+ * @returns {import("./type-contracts.js").CompiledPrompt}
+ */
 export function compilePrompt(input) {
   if (!isPlainObject(input)) invalid("Prompt 编译输入必须是对象。");
   const brief = input.brief;
@@ -761,6 +840,10 @@ export function compilePrompt(input) {
  * 参考图选择：先满足该 Shot 声明的 asset_role 依赖，再用主图补齐；
  * 数量不超过调用方给的有效上限（缺省产品硬上限）；同一 sha256 只出现一次。
  * 只做 role/hash 选择，不做模型查表；选不出参考图时由请求快照统一报错。
+ * @param {unknown} shot
+ * @param {unknown} references
+ * @param {{maxReferences?: number}} [options]
+ * @returns {import("./type-contracts.js").PromptReferenceSelection[]}
  */
 export function selectReferences(shot, references, options = {}) {
   const limit = options.maxReferences === undefined ? MAX_REFERENCE_SELECTION : options.maxReferences;
@@ -787,6 +870,10 @@ export function selectReferences(shot, references, options = {}) {
   return picked;
 }
 
+/**
+ * @param {unknown} compiled
+ * @returns {import("./type-contracts.js").DomainProblem[]}
+ */
 export function checkCompiledPrompt(compiled) {
   const problems = [];
   if (!isPlainObject(compiled)) {
@@ -832,6 +919,10 @@ export function checkCompiledPrompt(compiled) {
   return problems;
 }
 
+/**
+ * @param {unknown} compiled
+ * @returns {import("./type-contracts.js").CompiledPrompt}
+ */
 export function assertCompiledPrompt(compiled) {
   const problems = checkCompiledPrompt(compiled);
   if (problems.length > 0) {
@@ -843,6 +934,9 @@ export function assertCompiledPrompt(compiled) {
 /**
  * 快照与冻结档一致性检查：build/checkPromptRecord 与 requestSnapshotOf 共用。
  * 只比较请求相关字段与目标身份，不比较任何凭据字段；返回问题列表。
+ * @param {unknown} profile
+ * @param {unknown} snapshot
+ * @returns {import("./type-contracts.js").DomainProblem[]}
  */
 function checkSnapshotAgainstProfile(profile, snapshot) {
   const problems = [];
@@ -893,7 +987,11 @@ function checkSnapshotAgainstProfile(profile, snapshot) {
   return problems;
 }
 
-/** 请求快照：只包含真实会发送的参数与参考图身份，不含图片字节；prompt 必须逐字等于编译文本。 */
+/** 请求快照：只包含真实会发送的参数与参考图身份，不含图片字节；prompt 必须逐字等于编译文本。
+ * @param {unknown} compiled
+ * @param {{references?: unknown}} [options]
+ * @returns {import("./type-contracts.js").RequestSnapshot}
+ */
 export function requestSnapshotOf(compiled, options = {}) {
   assertCompiledPrompt(compiled);
   const profile = assertImagePromptProfile(compiled.provider);
@@ -928,7 +1026,11 @@ export function requestSnapshotOf(compiled, options = {}) {
   };
 }
 
-/** hash 复用注入的 sha256Hex（WebCrypto）；本层不写第二种散列。 */
+/** hash 复用注入的 sha256Hex（WebCrypto）；本层不写第二种散列。
+ * @param {unknown} snapshot
+ * @param {{digest?: unknown}} [options]
+ * @returns {Promise<import("./type-contracts.js").Sha256Hex>}
+ */
 export async function promptHash(snapshot, options = {}) {
   const digest = options.digest;
   if (typeof digest !== "function") {
@@ -942,6 +1044,10 @@ export async function promptHash(snapshot, options = {}) {
   return hex;
 }
 
+/**
+ * @param {{compiled?: unknown, snapshot?: unknown, hash?: unknown}} [args]
+ * @returns {import("./type-contracts.js").PromptRecord}
+ */
 export function buildPromptRecord({ compiled, snapshot, hash } = {}) {
   assertCompiledPrompt(compiled);
   const snapshotProblems = checkSnapshotAgainstProfile(compiled.provider, snapshot);
@@ -975,7 +1081,7 @@ export function buildPromptRecord({ compiled, snapshot, hash } = {}) {
   };
 }
 
-/** 版本记录形状（存储层写入前使用）。 */
+/** 版本记录形状（存储层写入前使用）。 @param {unknown} record @returns {import("./type-contracts.js").DomainProblem[]} */
 export function checkPromptRecord(record) {
   const problems = [];
   if (!isPlainObject(record)) {
@@ -1052,7 +1158,7 @@ function trimQuotes(value) {
   return String(value == null ? "" : value).replace(/^「/, "").replace(/」$/, "");
 }
 
-/** 人工编辑的硬阻断：空文本、控制字符、超长、与当前版本逐字相同。 */
+/** 人工编辑的硬阻断：空文本、控制字符、超长、与当前版本逐字相同。 @param {unknown} text @param {{maxChars?: number, baseText?: string}} [options] @returns {import("./type-contracts.js").DomainProblem[]} */
 export function checkEditText(text, options = {}) {
   const problems = [];
   if (typeof text !== "string" || text.trim().length === 0) {
@@ -1077,18 +1183,27 @@ export function checkEditText(text, options = {}) {
 /**
  * 人工编辑规则：只有语言策略降级为提示；未授权引用与平台文字白名单仍然阻断。
  * 被编辑文本里已经存在的引用视为已授权（编译器产物或用户输入的产物），新增引用必须来自已确认事实。
+ * @param {{text?: unknown, base?: unknown, brief?: unknown, platform?: unknown}} [args]
+ * @returns {{problems: import("./type-contracts.js").DomainProblem[], warnings: import("./type-contracts.js").PromptWarning[]}}
  */
-export function checkManualEditRules({ text, base, brief } = {}) {
+export function checkManualEditRules({ text, base, brief, platform = null } = {}) {
   const problems = [];
   const warnings = [];
   const baseText = (base && base.compiled && base.compiled.text) || "";
   const allowedQuotes = new Set(
     (String(baseText).match(QUOTE_PATTERN) || []).map((quote) => normalizePhrase(trimQuotes(quote))));
-  const platform = base && base.compiled && base.compiled.platform
-    ? PLATFORM_PROFILES[base.compiled.platform.platform_id] || null : null;
-  const backgroundPhrase = platform ? normalizePhrase(platform.main_image.background_phrase) : "";
+  // 重新确认走调用方给的当前冻结平台（basis.platform）；人工编辑沿用被编辑版本的旧平台。不猜注册表。
+  const currentRegistry = isPlainObject(platform) && Array.isArray(platform.on_image_text_roles)
+    ? platform
+    : (isPlainObject(platform) && isNonEmptyString(platform.platform_id)
+      ? PLATFORM_PROFILES[platform.platform_id] || null
+      : null);
+  const registry = currentRegistry
+    || (base && base.compiled && base.compiled.platform
+      ? PLATFORM_PROFILES[base.compiled.platform.platform_id] || null : null);
+  const backgroundPhrase = registry ? normalizePhrase(registry.main_image.background_phrase) : "";
   const roleId = (base && base.role_id) || null;
-  const textAllowed = platform ? platform.on_image_text_roles.includes(roleId) : true;
+  const textAllowed = registry ? registry.on_image_text_roles.includes(roleId) : true;
   const confirmed = new Set();
   for (const fact of (brief && Array.isArray(brief.confirmed_facts) ? brief.confirmed_facts : [])) {
     for (const value of factTexts(fact)) confirmed.add(normalizePhrase(value));
@@ -1121,8 +1236,13 @@ export function checkManualEditRules({ text, base, brief } = {}) {
   return { problems: problems, warnings: warnings };
 }
 
-/** 人工编辑版本：全文直接生效，hash 覆盖真实请求快照，basis 逐字继承被编辑版本。 */
-export async function buildEditedPromptRecord({ base, baseVersion, text, reason, editedAt, context, digest } = {}) {
+/** 人工编辑版本：全文直接生效，hash 覆盖真实请求快照；目标身份取调用方给的当前冻结档（不静默沿用旧依据）。
+ * 调用方不给 basis 时退化为逐字继承被编辑版本的旧依据（旧行为）；给出当前 basis 时 compiled.provider /
+ * platform/language 必须与当前一致，否则确认单按 PROVIDER_MISMATCH/PLATFORM_MISMATCH 拒绝。人工文本逐字保留，不重排版。
+ * @param {{base?: unknown, baseVersion?: unknown, text?: unknown, reason?: unknown, editedAt?: unknown, context?: unknown, digest?: unknown, basis?: unknown}} [args]
+ * @returns {Promise<import("./type-contracts.js").PromptRecord>}
+ */
+export async function buildEditedPromptRecord({ base, baseVersion, text, reason, editedAt, context, digest, basis = null } = {}) {
   const baseProblems = checkPromptRecord(base);
   if (baseProblems.length > 0) {
     invalid("被编辑的 Prompt 记录不合法：" + baseProblems[0].message, { problems: baseProblems.slice(0, 3) });
@@ -1130,7 +1250,9 @@ export async function buildEditedPromptRecord({ base, baseVersion, text, reason,
   if (!Number.isInteger(baseVersion) || baseVersion < 1) {
     invalid("人工编辑需要被编辑版本的版本号（来自文档仓库）。");
   }
-  const frozenProvider = base.compiled.provider;
+  const activeBasis = isPlainObject(basis) ? basis : base.basis;
+  const frozenProvider = isPlainObject(activeBasis) && isPlainObject(activeBasis.provider)
+    ? activeBasis.provider : base.compiled.provider;
   const maxChars = isPositiveInteger(frozenProvider && frozenProvider.max_prompt_chars)
     ? frozenProvider.max_prompt_chars : MAX_PROMPT_CHARS;
   const textProblems = checkEditText(text, { maxChars: maxChars, baseText: base.compiled.text });
@@ -1162,20 +1284,34 @@ export async function buildEditedPromptRecord({ base, baseVersion, text, reason,
       reason_code: rules.problems[0].reason_code || null,
     });
   }
+  // 目标身份：调用方给出当前 basis 时用当前冻结档（与 reconfirm 一致），否则沿用被编辑版本的旧依据。
+  // 人工文本逐字保留（text/sections/source_refs 不重排版），只更新 provider/platform/language/basis。
+  const hasCurrentBasis = isPlainObject(activeBasis) && isPlainObject(activeBasis.platform)
+    && isPlainObject(activeBasis.provider);
+  const editRegistry = hasCurrentBasis && isNonEmptyString(activeBasis.platform.platform_id)
+    ? PLATFORM_PROFILES[activeBasis.platform.platform_id] || null : null;
+  const editProvider = hasCurrentBasis ? assertImagePromptProfile(activeBasis.provider) : null;
   const compiled = {
     schema_version: PROMPT_SCHEMA_VERSION,
     shot_id: base.shot_id,
     role_id: base.role_id,
     label: base.label,
     origin: "manual_edit",
-    language: { ...(base.compiled.language || {}) },
-    platform: { ...(base.compiled.platform || {}) },
-    provider: { ...(base.compiled.provider || {}) },
+    language: hasCurrentBasis
+      ? { ...(base.compiled.language || {}),
+          ...(editRegistry ? { on_image_text: editRegistry.on_image_text_language } : {}) }
+      : { ...(base.compiled.language || {}) },
+    platform: hasCurrentBasis
+      ? { platform_id: activeBasis.platform.platform_id, version: activeBasis.platform.version,
+          label: editRegistry ? editRegistry.label
+            : (activeBasis.platform.label || activeBasis.platform.platform_id) }
+      : { ...(base.compiled.platform || {}) },
+    provider: hasCurrentBasis ? { ...editProvider } : { ...(base.compiled.provider || {}) },
     sections: sections,
     text: text,
     source_refs: sourceRefs,
     warnings: rules.warnings,
-    basis: base.basis,
+    basis: hasCurrentBasis ? activeBasis : base.basis,
   };
   const problems = checkCompiledPrompt(compiled);
   if (problems.length > 0) {
@@ -1208,11 +1344,192 @@ export async function buildEditedPromptRecord({ base, baseVersion, text, reason,
 }
 
 /**
- * 过期机检：槽位 basis、套图/风格/单图版本、平台档与完整 Provider 档任一变化即过期。
+ * 人工文本重新确认（V2.R6.2）：这张图实际消费的依据变了、但人工文本仍然适用时，
+ * 由人显式确认，生成一个**逐字保留原文本**的新人工版本，把依据更新到当前 basis。
+ *
+ * 与 buildEditedPromptRecord 的区别：编辑要求文本必须变化；重新确认要求文本必须**逐字不变**
+ * （要改文本请走编辑）。不静默覆盖历史：新版本 edited_from 指向被确认的版本，旧版本仍在。
+ * basis 由调用方给出（用 promptBasisOf 按当前 shot/brief/versions 计算），保证新记录不过期。
+ * @param {{base?: unknown, baseVersion?: unknown, reason?: unknown, at?: unknown, basis?: unknown, references?: unknown, context?: unknown, digest?: unknown, currentCompiled?: unknown}} [args]
+ * @returns {Promise<import("./type-contracts.js").PromptRecord>}
+ */
+export async function reconfirmEditedPrompt({ base, baseVersion, reason, at, basis,
+                                              references = null, context = {}, digest,
+                                              currentCompiled = null } = {}) {
+  const baseProblems = checkPromptRecord(base);
+  if (baseProblems.length > 0) {
+    invalid("被重新确认的 Prompt 记录不合法：" + baseProblems[0].message, { problems: baseProblems.slice(0, 3) });
+  }
+  if (!Number.isInteger(baseVersion) || baseVersion < 1) {
+    invalid("重新确认需要被确认版本的版本号（来自文档仓库）。");
+  }
+  if (!isPlainObject(basis) || !isPlainObject(basis.platform) || !isPlainObject(basis.provider)) {
+    invalid("重新确认需要当前编译依据（含 platform 与 provider），不静默沿用旧依据。");
+  }
+  const text = base.compiled.text;
+  const frozenProvider = basis.provider;
+  const maxChars = isPositiveInteger(frozenProvider && frozenProvider.max_prompt_chars)
+    ? frozenProvider.max_prompt_chars : MAX_PROMPT_CHARS;
+  const textProblems = checkEditText(text, { maxChars: maxChars });
+  if (textProblems.length > 0) {
+    invalid("重新确认未通过：" + textProblems[0].message, { problems: textProblems });
+  }
+  if (!isNonEmptyString(reason) || reason.trim().length > MANUAL_EDIT_REASON_MAX) {
+    invalid("重新确认必须填写不超过 " + MANUAL_EDIT_REASON_MAX + " 字的确认原因。");
+  }
+  if (typeof at !== "string" || Number.isNaN(Date.parse(at))) {
+    invalid("重新确认需要 ISO 时间戳（at）。");
+  }
+  const sourceRefs = [...new Set([...(base.compiled.source_refs || []), "prompt_reconfirm:" + base.hash])];
+  const sections = [Object.freeze({
+    key: "manual_edit",
+    label: "人工编辑全文",
+    kind: "manual_edit",
+    text: text,
+    source_refs: Object.freeze([...sourceRefs]),
+  })];
+  const leaks = checkPromptLeaks(sections, (context || {}).facts, { includeQuoted: true });
+  if (leaks.length > 0) {
+    invalid("重新确认未通过：" + leaks[0].message, { problems: leaks.slice(0, 3) });
+  }
+  // 硬事实门：旧人工文本里的「」引用不能靠「文本没变」自证——必须仍被当前已确认事实逐字
+  // 支撑，否则显式重新确认等于给已失效断言盖新时间戳。调用方给出当前编译产物
+  // （currentCompiled）时，用它做规则基准：旧文本里已有、但当前编译/当前事实里都不再逐字
+  // 出现的引用视为过期断言，直接拒绝，不自动改写人工文本。edited_from 仍保留原始人工记录。
+  const ruleBase = isPlainObject(currentCompiled) && isNonEmptyString(currentCompiled.text)
+    ? currentCompiled : null;
+  const currentRegistry = (isPlainObject(basis.platform) && isNonEmptyString(basis.platform.platform_id)
+    ? PLATFORM_PROFILES[basis.platform.platform_id] || null : null);
+  const rules = checkManualEditRules({ text: text, base: ruleBase || base, brief: (context || {}).brief,
+    platform: currentRegistry || basis.platform });
+  if (rules.problems.length > 0) {
+    invalid("重新确认未通过：" + rules.problems[0].message, {
+      problems: rules.problems.slice(0, 3),
+      reason_code: rules.problems[0].reason_code || null,
+    });
+  }
+  // 重新确认的目标身份 = 调用方给的**当前**冻结档（basis.provider 已是 imagePromptProfile
+  // 验证过的有效档）；compiled.provider/platform 必须与 basis 一致，否则 requestSnapshotOf
+  // 仍指向旧模型，确认单按 PROVIDER_MISMATCH 拒绝。人工文本逐字保留，不重排版。
+  const currentProvider = assertImagePromptProfile(basis.provider);
+  const currentPlatform = {
+    platform_id: basis.platform.platform_id,
+    version: basis.platform.version,
+    label: currentRegistry ? currentRegistry.label : (basis.platform.label || basis.platform.platform_id),
+  };
+  // 语言块：instruction 仍是 zh（人工文本逐字保留，不重排版）；图中文字语言跟当前平台档，
+  // 不沿用旧记录（旧平台语言若已变更，沿用会让 language 与 platform 自相矛盾）。
+  const currentLanguage = {
+    ...(base.compiled.language || {}),
+    ...(currentRegistry ? { on_image_text: currentRegistry.on_image_text_language } : {}),
+  };
+  const compiled = {
+    schema_version: PROMPT_SCHEMA_VERSION,
+    shot_id: base.shot_id,
+    role_id: base.role_id,
+    label: base.label,
+    origin: "manual_edit",
+    language: currentLanguage,
+    platform: currentPlatform,
+    provider: { ...currentProvider },
+    sections: sections,
+    text: text,
+    source_refs: sourceRefs,
+    warnings: rules.warnings,
+    basis: basis,
+  };
+  const compiledProblems = checkCompiledPrompt(compiled);
+  if (compiledProblems.length > 0) {
+    invalid("重新确认记录自检未通过：" + compiledProblems[0].message, { problems: compiledProblems.slice(0, 3) });
+  }
+  const refs = Array.isArray(references)
+    ? references
+    : (base.request_snapshot && Array.isArray(base.request_snapshot.references)
+      ? base.request_snapshot.references : []);
+  const snapshot = requestSnapshotOf(compiled, { references: refs });
+  const hash = await promptHash(snapshot, { digest: digest });
+  const record = {
+    schema_version: PROMPT_SCHEMA_VERSION,
+    shot_id: base.shot_id,
+    role_id: base.role_id,
+    label: base.label,
+    origin: "manual_edit",
+    edited_from: { version: baseVersion, hash: base.hash },
+    edit_reason: reason.trim(),
+    edited_at: at,
+    invalidation: invalidationsFor("prompt_edited", { shotId: base.shot_id }),
+    compiled: compiled,
+    request_snapshot: snapshot,
+    hash: hash,
+    basis: basis,
+    reconfirmed: true,
+  };
+  const recordProblems = checkPromptRecord(record);
+  if (recordProblems.length > 0) {
+    invalid("重新确认记录不合法：" + recordProblems[0].message, { problems: recordProblems.slice(0, 3) });
+  }
+  return record;
+}
+
+/**
+ * 丢弃人工覆盖的落点（V2.R6.2）：返回历史里最新一条「系统编译」版本（非人工编辑），
+ * 供调用方恢复或作为重新编译的基准；没有系统版本时返回 null（只能重新编译，不静默沿用人工文本）。
+ * history = [{version, record}] 或 [{version, payload}]（payload 即记录）。
+ * @param {unknown} history
+ * @returns {{version: number | null, record: import("./type-contracts.js").PromptRecord} | null}
+ */
+export function latestSystemPromptVersion(history) {
+  const list = (Array.isArray(history) ? history : [])
+    .map((item) => {
+      if (!isPlainObject(item)) return null;
+      const record = isPlainObject(item.record) ? item.record
+        : (isPlainObject(item.payload) ? item.payload : item);
+      const version = Number.isInteger(item.version) ? item.version
+        : (Number.isInteger(record && record.prompt_version) ? record.prompt_version : null);
+      return isPlainObject(record) ? { version: version, record: record } : null;
+    })
+    .filter((item) => item !== null && item.record.origin !== "manual_edit"
+      && typeof item.record.hash === "string")
+    .sort((left, right) => (left.version === null ? -1 : left.version)
+      - (right.version === null ? -1 : right.version));
+  return list.length ? list[list.length - 1] : null;
+}
+
+/** 丢弃人工覆盖：返回可恢复的系统版本（或 null 表示必须重新编译），不修改任何记录。
+ * @param {unknown} record
+ * @param {unknown} history
+ * @returns {{discarded_version: unknown, discarded_hash: unknown, target: {version: unknown, hash: unknown, record: unknown} | null, requires_recompile: boolean}}
+ */
+export function discardManualEdit(record, history) {
+  if (!isPlainObject(record) || record.origin !== "manual_edit") {
+    invalid("只有人工编辑版本才有可丢弃的覆盖；系统编译版本无需丢弃。");
+  }
+  const target = latestSystemPromptVersion(history);
+  return Object.freeze({
+    discarded_version: record.edited_from ? record.edited_from.version : null,
+    discarded_hash: record.edited_from ? record.edited_from.hash : null,
+    target: target ? { version: target.version, hash: target.record.hash,
+      record: target.record } : null,
+    requires_recompile: target === null,
+  });
+}
+
+/**
+ * 过期机检：只核对这张图**实际消费**的依据——它消费的槽位版本、它自己的 shot 签名、
+ * 风格/单图规格版本、平台档与完整 Provider 档。任何一处变化即过期。
+ *
+ * 两条边界（V2.R6.2）：
+ *  - 无关槽位变化不再使这张图过期：记录里 frozen 的 `consumed_slot_ids` 之外的槽位不参与比较；
+ *    没有该字段的历史记录退化为「按记录的 brief 逐条比较」（历史证据照旧）。
+ *  - 整份套图文档版本不再参与比较：改用这张图自己的 `shot_signature`（改别的图不影响本图）；
+ *    历史记录若只有 `suite_version`，仍按版本比较。
  *
  * Provider 比较不再只看 numeric version：目标（provider_id/model_id）、协议与请求相关
  * 能力边界/参数任一不同都判过期；当前档缺字段也判过期。凭据字段（credential_source /
  * configured / 密钥引用）不在比较集合内，因此纯凭据轮换不使 Prompt 过期。
+ * @param {unknown} record
+ * @param {unknown} [current]
+ * @returns {import("./type-contracts.js").PromptStaleness}
  */
 export function promptStaleness(record, current = {}) {
   const reasons = [];
@@ -1220,7 +1537,10 @@ export function promptStaleness(record, current = {}) {
   if (!basis) {
     return { stale: true, reasons: [{ field: "basis", stored: null, current: null, reason: "记录缺少编译依据。" }] };
   }
-  const storedBasis = new Map((basis.brief || []).map((item) => [item.slot_id, item.version]));
+  const consumed = Array.isArray(basis.consumed_slot_ids) ? new Set(basis.consumed_slot_ids) : null;
+  const storedAll = (basis.brief || []).map((item) => [item.slot_id, item.version]);
+  const storedBasis = new Map(consumed
+    ? storedAll.filter(([slotId]) => consumed.has(slotId)) : storedAll);
   const currentBasis = new Map((current.briefBasis || []).map((item) => [item.slot_id, item.version]));
   for (const [slotId, version] of storedBasis) {
     if (!currentBasis.has(slotId)) {
@@ -1229,12 +1549,29 @@ export function promptStaleness(record, current = {}) {
       reasons.push({ field: "brief." + slotId, stored: version, current: currentBasis.get(slotId), reason: "槽位版本已前进" });
     }
   }
-  for (const [slotId, version] of currentBasis) {
-    if (!storedBasis.has(slotId)) {
-      reasons.push({ field: "brief." + slotId, stored: null, current: version, reason: "出现新槽位" });
+  // 只有历史记录（没有 consumed_slot_ids）才把「出现新槽位」当过期；精确记录只认已消费槽位。
+  if (!consumed) {
+    for (const [slotId, version] of currentBasis) {
+      if (!storedBasis.has(slotId)) {
+        reasons.push({ field: "brief." + slotId, stored: null, current: version, reason: "出现新槽位" });
+      }
     }
   }
-  for (const key of ["suite_version", "style_version", "shot_spec_version"]) {
+  // 这张图自己的签名优先（改别的图不使本图过期）；历史记录或未提供签名的调用方退回版本比较。
+  const hasSignature = basis.shot_signature !== undefined && basis.shot_signature !== null;
+  const callerProvidesSignature = Object.prototype.hasOwnProperty.call(current, "shot_signature");
+  const useSignature = hasSignature && callerProvidesSignature;
+  if (useSignature) {
+    const nowSignature = current.shot_signature === undefined ? null : current.shot_signature;
+    if (basis.shot_signature !== nowSignature) {
+      reasons.push({ field: "shot_signature", stored: "signed", current: nowSignature ? "signed" : null,
+        reason: "这张图自己的定义已变化" });
+    }
+  }
+  const versionKeys = useSignature
+    ? ["style_version", "shot_spec_version"]
+    : ["suite_version", "style_version", "shot_spec_version"];
+  for (const key of versionKeys) {
     const stored = basis[key] === undefined ? null : basis[key];
     const now = current[key] === undefined ? null : current[key];
     if (stored !== now) {
@@ -1249,7 +1586,11 @@ export function promptStaleness(record, current = {}) {
   return { stale: reasons.length > 0, reasons: reasons };
 }
 
-/** Provider 档的过期原因：目标 / 协议 / 版本 / 请求参数与能力边界任一不同或缺失即过期。 */
+/** Provider 档的过期原因：目标 / 协议 / 版本 / 请求参数与能力边界任一不同或缺失即过期。
+ * @param {unknown} storedProvider
+ * @param {unknown} currentProvider
+ * @returns {{field: string, stored: unknown, current: unknown, reason: string}[]}
+ */
 function providerStaleReasons(storedProvider, currentProvider) {
   const reasons = [];
   const stored = isPlainObject(storedProvider) ? storedProvider : null;

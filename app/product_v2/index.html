@@ -12,6 +12,7 @@
   <div class="topbar-inner">
     <h1 class="brand">Amazon US 商品套图</h1>
     <p class="topbar-note">项目保存在这台浏览器；服务器不保存你的项目，也不保存最近使用记录。</p>
+    <button id="model-settings-open" type="button" aria-haspopup="dialog" aria-controls="model-settings-dialog">模型设置</button>
   </div>
 </header>
 
@@ -148,11 +149,13 @@
 
         <section class="card" aria-labelledby="analyze-title">
           <div class="card-head">
-            <h4 id="analyze-title">分析商品资料</h4>
-            <p class="meta">把上面的资料与参考图元数据发给语义模型；服务器不保存项目内容。</p>
+            <h4 id="analyze-title">确认商品事实</h4>
+            <p class="meta">可以直接人工填写。AI 理解只提出待确认的建议，不自动确认事实；仅在你明确点击时外发资料。</p>
           </div>
           <div class="toolbar">
-            <button id="analyze-run" class="primary" type="button">分析商品资料</button>
+            <button id="manual-facts" class="primary" type="button">自己填写商品事实</button>
+            <button id="analyze-run" type="button">AI 辅助理解（可选）</button>
+            <button id="analyze-new-after-unknown" type="button" hidden>另发新分析（可能重复计费）</button>
             <span id="analyze-gate" class="meta" role="status"></span>
           </div>
           <p id="analyze-result" class="status" role="status" hidden></p>
@@ -176,7 +179,7 @@
             <span id="slots-progress" class="meta" role="status"></span>
             <button id="slots-toggle" type="button" aria-expanded="false">显示全部事实</button>
           </div>
-          <p id="slots-empty" class="empty" hidden>还没有槽位；先在“资料”里点“分析商品资料”。</p>
+          <p id="slots-empty" class="empty" hidden>正在准备核心事实输入；不需要调用模型。</p>
           <ul id="slot-list" class="slot-list"></ul>
           <details id="slot-add" class="sub-panel">
             <summary>新增自定义槽位</summary>
@@ -314,28 +317,26 @@
       <section class="stage-panel" data-stage-panel="generate" hidden aria-labelledby="stage-generate-title">
         <div class="stage-head">
           <h3 id="stage-generate-title" tabindex="-1">生成</h3>
-          <p class="meta">先确认将发送的资料与张数，再整套生成或逐张提交；任务编号可随时核对。</p>
+          <p class="meta">系统自动本地准备提示词。核对实际发送摘要后，明确点击一次生成；费用由供应商按实际调用计算，无法核实的金额不作估算。</p>
         </div>
 
-        <section class="card" aria-labelledby="prompt-title">
-          <div class="card-head">
-            <h4 id="prompt-title">Prompt</h4>
-            <p class="meta">每张图一个版本；界面文本、版本记录与请求快照逐字一致；失败时保留旧版本。可人工编辑全文并另存新版本。</p>
-          </div>
-          <p id="prompt-locked" class="empty" hidden>完成商品理解并生成套图方案后，才能编译 Prompt。</p>
+        <p id="local-preparation-status" class="meta" role="status"></p>
+        <details id="prompt-details" class="card sub-card">
+          <summary id="prompt-title">查看／编辑完整 Prompt（高级）</summary>
+          <p id="prompt-locked" class="empty" hidden>先在方案里添加图片任务；系统会本地准备已就绪的任务，不调用模型。</p>
           <div id="prompt-editor" hidden>
             <p id="prompt-status" class="meta" role="status"></p>
             <div id="prompt-list"></div>
           </div>
           <p id="prompt-error" class="error" role="alert" hidden></p>
-        </section>
+        </details>
 
         <section class="card" aria-labelledby="confirm-title">
           <div class="card-head">
-            <h4 id="confirm-title">生成前确认</h4>
-            <p class="meta">提交前核对：张数、每图任务、将要发给外部模型的资料与未消除风险；过期或缺依据时不能提交。</p>
+            <h4 id="confirm-title">实际发送摘要</h4>
+            <p class="meta">这次发送的图片、资料、模型与参数以下面当前摘要为准。缺项只阻断对应图片，不会自动重提未知结果。</p>
           </div>
-          <p id="confirm-locked" class="empty" hidden>完成商品理解并生成套图方案后，才能做生成前确认。</p>
+          <p id="confirm-locked" class="empty" hidden>先添加图片任务，再按用途补足所需事实。</p>
           <div id="confirm-editor" hidden>
             <p id="confirm-status" class="meta" role="status"></p>
             <div id="confirm-summary"></div>
@@ -343,7 +344,7 @@
             <div id="confirm-risks"></div>
             <div id="confirm-list"></div>
             <div class="toolbar">
-              <button id="confirm-action" class="primary" type="button">生成前确认</button>
+              <button id="confirm-action" class="primary" type="button">确认并生成</button>
               <span id="confirm-record" class="meta" role="status"></span>
             </div>
           </div>
@@ -353,21 +354,21 @@
         <section class="card" aria-labelledby="attempt-title">
           <div class="card-head">
             <h4 id="attempt-title">生成执行</h4>
-            <p class="meta">生成前确认通过后可以整套生成或逐张提交。每次提交先登记 action id 与将发送的 Prompt 版本、参考图，再调用图像网关；批次按套图顺序提交并逐图显示进度。部分失败不丢成功结果；结果未知不会自动重提，只提供「核对」与「新建 action」。成功的图片会把候选字节存进浏览器本地，刷新后仍可预览。</p>
+            <p class="meta">上面的「确认并生成」一次保存授权并外发已就绪任务。停止仅阻止后续新增提交；刷新后仍可按原模型、Prompt 和凭据来源继续未提交队列。成功图片立即存入本地，失败不丢成功结果，Unknown 不自动重提。</p>
           </div>
-          <p id="attempt-locked" class="empty" hidden>完成商品理解、编译 Prompt 并通过“生成前确认”后，才能提交生成。</p>
+          <p id="attempt-locked" class="empty" hidden>先添加图片任务，再补足核心事实与本图用途的依据。</p>
           <div id="attempt-editor" hidden>
             <p id="attempt-status" class="meta" role="status"></p>
             <p id="attempt-provider" class="meta"></p>
             <div id="attempt-batch" class="attempt-batch" hidden>
               <div class="toolbar attempt-batch-actions">
-                <button id="batch-run" type="button" class="primary">整套生成</button>
                 <button id="batch-stop" type="button" hidden>停止新增提交</button>
                 <button id="batch-reconcile" type="button" hidden>核对进行中</button>
                 <button id="batch-retry" type="button" hidden>重试失败</button>
               </div>
               <p id="batch-progress" class="meta" role="status"></p>
               <p id="batch-hint" class="meta" hidden></p>
+              <div id="generation-queues"></div>
             </div>
             <div id="attempt-list"></div>
           </div>
@@ -394,6 +395,8 @@
           </div>
           <p id="review-empty" class="empty" hidden>还没有生成成功的候选；先在「生成」里整套生成或逐张提交。</p>
           <div id="review-list" class="review-list"></div>
+          <p id="adopt-status" class="status" role="status" hidden></p>
+          <p id="adopt-error" class="error" role="alert" hidden></p>
         </section>
 
         <section class="card" aria-labelledby="suite-review-title">
@@ -402,7 +405,8 @@
             <p id="suite-review-status" class="meta" role="status">尚未运行整套检查。</p>
           </div>
           <div class="toolbar">
-            <button id="suite-review-run" type="button" disabled>运行整套检查</button>
+            <button id="suite-review-run" type="button" disabled>运行本地确定性检查</button>
+            <button id="suite-ai-review-run" type="button" disabled>AI 复核当前采用套图（可选）</button>
             <span id="suite-review-note" class="meta"></span>
           </div>
           <div id="suite-review-findings" class="suite-findings"></div>
@@ -414,15 +418,33 @@
             <h4 id="compare-title">候选比较与审核清单</h4>
             <span id="compare-subject" class="meta"></span>
             <span class="compare-head-actions">
-              <button id="adopt-open" type="button" disabled>采用此候选</button>
-              <button id="rework-open" type="button" disabled>用此候选发起返工</button>
+              <button id="adopt-open" class="primary" type="button" disabled>采用当前候选</button>
+              <button id="adopt-clear" type="button" disabled>取消这张图的采用</button>
+              <button id="rework-open" type="button" disabled>返工当前候选</button>
+              <button id="compare-review" type="button" disabled>AI 复核当前查看候选（可选）</button>
               <button id="compare-jump" type="button">下一个待处理</button>
               <button id="compare-close" type="button">收起</button>
             </span>
           </div>
-          <div class="compare-basis">
-            <p class="meta" id="compare-basis-title"></p>
-            <ul id="compare-references" class="compare-references"></ul>
+          <p class="meta" id="compare-basis-title"></p>
+          <div class="compare-image-grid">
+            <figure>
+              <figcaption>原任务参考图</figcaption>
+              <ul id="compare-references" class="compare-references"></ul>
+            </figure>
+            <figure>
+              <figcaption>
+                <label for="compare-baseline-select">对照候选</label>
+                <select id="compare-baseline-select"></select>
+              </figcaption>
+              <img id="compare-baseline-image" alt="所指定的对照候选" hidden>
+              <button id="compare-baseline-zoom" type="button" disabled>放大对照候选</button>
+            </figure>
+            <figure>
+              <figcaption id="compare-viewed-caption">当前查看候选（查看不等于采用）</figcaption>
+              <img id="compare-viewed-image" alt="当前查看候选" hidden>
+              <button id="compare-viewed-zoom" type="button" disabled>放大当前候选</button>
+            </figure>
           </div>
           <div class="compare-body">
             <div class="compare-column">
@@ -469,28 +491,6 @@
           <p id="rework-status" class="status" role="status" hidden></p>
           <p id="rework-error" class="error" role="alert" hidden></p>
         </section>
-        <section id="adopt-panel" class="adopt-panel" hidden aria-labelledby="adopt-title">
-          <div class="adopt-head">
-            <h4 id="adopt-title">采用候选（人工选择）</h4>
-            <span id="adopt-basis" class="meta"></span>
-            <span class="adopt-head-actions">
-              <button id="adopt-cancel" type="button">关闭</button>
-            </span>
-          </div>
-          <details id="adopt-tech" class="tech-details" hidden>
-            <summary>技术详情</summary>
-            <p id="adopt-tech-body" class="meta"></p>
-          </details>
-          <p id="adopt-current" class="meta"></p>
-          <p id="adopt-fingerprint" class="meta"></p>
-          <div class="toolbar">
-            <button id="adopt-submit" class="primary" type="button" disabled>采用这条候选</button>
-            <button id="adopt-clear" type="button" disabled>取消采用</button>
-          </div>
-          <p id="adopt-readiness" class="meta"></p>
-          <p id="adopt-status" class="status" role="status" hidden></p>
-          <p id="adopt-error" class="error" role="alert" hidden></p>
-        </section>
         <p id="attempt-error" class="error" role="alert" hidden></p>
 
         <footer class="stage-foot">
@@ -532,6 +532,30 @@
   </section>
 </main>
 
+<dialog id="image-zoom-dialog" class="image-zoom" aria-labelledby="image-zoom-title">
+  <div class="toolbar">
+    <h2 id="image-zoom-title">原比例查看</h2>
+    <button id="image-zoom-native" type="button">100% 像素</button>
+    <button id="image-zoom-close" type="button">关闭</button>
+  </div>
+  <div class="image-zoom-scroll"><img id="image-zoom-content" alt=""></div>
+</dialog>
+
+<dialog id="model-settings-dialog" class="model-settings" aria-labelledby="model-settings-title" aria-describedby="model-settings-note">
+  <form id="model-settings-form" autocomplete="off">
+    <h2 id="model-settings-title">模型设置</h2>
+    <p id="model-settings-note" class="note">只选择已有模型。密钥只保留在当前标签页内存，不写入项目、浏览器存储或导出包；刷新后需重新提供。查看或应用设置不调用供应商，配置完成也不会自动提交任务。</p>
+    <div id="model-settings-rows"></div>
+    <section id="model-settings-original" hidden></section>
+    <p id="model-settings-error" class="error" role="alert" hidden></p>
+    <p id="model-settings-status" class="meta" role="status"></p>
+    <div class="toolbar">
+      <button id="model-settings-apply" class="primary" type="submit">应用设置</button>
+      <button id="model-settings-cancel" type="button">取消</button>
+    </div>
+  </form>
+</dialog>
+
 <template id="project-row-template">
   <li class="project-row">
     <div class="row-main">
@@ -549,6 +573,6 @@
   </li>
 </template>
 
-<script type="module" src="./app.js"></script>
+<script type="module" src="./entry.js"></script>
 </body>
 </html>

@@ -2,7 +2,7 @@
  * V2.6.3 项目包契约测试（真实 Chromium，非 Mock）。
  *
  * 正向：格式 2 自描述记录 + 完整性计数 + 往返身份一致。
- * 迁移：格式 1 旧包升级到 2；旧复核合同丢弃 VLM 块；当前合同不动。
+ * 旧格式原子拒绝；当前格式历史报告不被修改。
  * 反向：记录身份被换、完整性计数不符、格式过高/过低、payload schema 过高都必须按精确条目拒绝。
  *
  * 结果写到 window.__V2_TRANSFER_RESULTS__，由 tools/verify_v2_6_3_project_transfer.py 读取。
@@ -10,7 +10,6 @@
 import {
   PACKAGE_FORMAT,
   PACKAGE_FORMAT_VERSION,
-  PACKAGE_FORMAT_VERSION_MIN_SUPPORTED,
   buildProjectPackage,
   buildZip,
   importProjectPackage,
@@ -68,6 +67,20 @@ function legacyPackageBytes({ reviewReport = null, manifestOverrides = {} } = {}
     { path: "assets/" + LEGACY_ASSET_SHA, bytes: utf8Bytes("LEG") },
   ];
   return buildZip(entries, { modifiedAt: new Date(AT) });
+}
+
+function currentPackageBytes(reviewReport = v1ReviewReport({ contract: "v2.5.2" })) {
+  const manifest = legacyManifest();
+  const payloads = [{ schema_version: 1, product_name: "包往返商品" }, reviewReport];
+  return buildProjectPackage({
+    project: manifest.project,
+    documents: manifest.documents.map((meta, index) => ({
+      ...meta, project_id: manifest.project.project_id,
+      document_key: meta.kind + "/" + meta.document_id, payload: payloads[index],
+    })),
+    assets: [{ ...manifest.assets[0], bytes: utf8Bytes("LEG") }],
+    exportedAt: AT,
+  }).bytes;
 }
 
 function v1ReviewReport({ contract = "v2.5.1" } = {}) {
@@ -129,8 +142,7 @@ test("P01", "格式 2 往返：记录自描述、完整性计数相符、无需�
       && record.version === 1, "记录文件必须自描述身份");
     const parsed = await parseProjectPackage(built.bytes);
     expect(parsed.documents.length === 1 && parsed.assets.length === 1, "往返数量一致");
-    expect(parsed.migrations_applied.length === 0, "当前格式不需要迁移");
-    return { integrity: built.manifest.integrity, applied: parsed.migrations_applied };
+    return { integrity: built.manifest.integrity };
   }));
 
 test("P02", "记录文件身份被换：按条目拒绝，不静默导入",
@@ -150,38 +162,33 @@ test("P02", "记录文件身份被换：按条目拒绝，不静默导入",
     return { message: outcome.message };
   }));
 
-test("P03", "格式 1 旧包：升级为格式 2，旧 VLM 合同块被丢弃且记录在案", async () => {
-  const legacy = legacyPackageBytes({ reviewReport: v1ReviewReport() });
-  const parsed = await parseProjectPackage(legacy);
-  const applied = parsed.migrations_applied.join(" | ");
-  expect(parsed.manifest.format_version === PACKAGE_FORMAT_VERSION, "旧包必须升级到当前格式");
-  expect(applied.indexOf("包格式 1 → 2") >= 0, "必须记录包格式迁移");
-  expect(applied.indexOf("review_report/cand-legacy/v1") >= 0, "必须记录记录级迁移");
-  const report = parsed.documents.find((item) => item.kind === "review_report");
-  expect(report.payload.vlm === null, "旧合同 VLM 块必须丢弃");
-  expect(report.payload.migrated_from_review_contract === "v2.5.1", "必须留下降级来源");
-  return { applied: parsed.migrations_applied };
+test("P03", "格式 1 旧包拒绝，不补造当前身份", async () => {
+  const outcome = await expectCode(
+    () => parseProjectPackage(legacyPackageBytes({ reviewReport: v1ReviewReport() })),
+    "PACKAGE_UNSUPPORTED_VERSION", "旧包不可自动迁移");
+  return { code: outcome.code };
 });
 
-test("P04", "当前合同的复核报告不被改动", async () => {
-  const legacy = legacyPackageBytes({ reviewReport: v1ReviewReport({ contract: "v2.5.2" }) });
-  const parsed = await parseProjectPackage(legacy);
+test("P04", "当前格式保留历史复核报告的原始内容", async () => {
+  const original = v1ReviewReport();
+  const parsed = await parseProjectPackage(currentPackageBytes(original));
   const report = parsed.documents.find((item) => item.kind === "review_report");
-  expect(report.payload.vlm !== null, "当前合同的 VLM 块必须保留");
-  expect(parsed.migrations_applied.every((item) => item.indexOf("review_report") < 0),
-    "当前合同不应触发记录级迁移");
-  return { applied: parsed.migrations_applied };
+  expect(JSON.stringify(report.payload) === JSON.stringify(original),
+    "导入不得丢弃历史复核块或改写合同");
+  return { contract: report.payload.review_contract_version };
 });
 
 test("P05", "格式过高/过低与完整性计数不符：都拒绝", async () => {
   const future = await expectCode(() => parseProjectPackage(legacyPackageBytes({
     manifestOverrides: { format_version: 99 } })), "PACKAGE_UNSUPPORTED_VERSION", "未来格式");
-  // 0 不是历史格式（格式从 1 起），是损坏声明：按 PACKAGE_INVALID 拒绝，不进迁移链。
+  // 0 是损坏声明，不是可支持的历史格式。
   const tooOld = await expectCode(() => parseProjectPackage(legacyPackageBytes({
     manifestOverrides: { format_version: 0 } })), "PACKAGE_INVALID", "非法格式声明");
-  expect(PACKAGE_FORMAT_VERSION_MIN_SUPPORTED <= PACKAGE_FORMAT_VERSION, "支持区间必须自洽");
-  const counted = legacyPackageBytes({ manifestOverrides: {
-    format_version: 2, integrity: { documents: 5, assets: 1, document_bytes: 10, asset_bytes: 3 } } });
+  const entries = await readZip(currentPackageBytes());
+  const counted = buildZip(entries.map(entry => entry.path === "manifest.json"
+    ? { ...entry, bytes: DOC.encode(JSON.stringify({
+      ...JSON.parse(TEXT.decode(entry.bytes)), integrity: { documents: 5, assets: 1 },
+    })) } : entry));
   const mismatch = await expectCode(() => parseProjectPackage(counted), "PACKAGE_INVALID",
     "完整性计数不符");
   return { future: future.message.slice(0, 40), too_old: tooOld.message.slice(0, 40),
@@ -189,30 +196,41 @@ test("P05", "格式过高/过低与完整性计数不符：都拒绝", async () 
 });
 
 test("P06", "payload schema 高于当前支持：点名条目拒绝", async () => {
-  const legacy = legacyPackageBytes({
-    reviewReport: Object.assign(v1ReviewReport(), { schema_version: 99 }) });
-  const outcome = await expectCode(() => parseProjectPackage(legacy),
+  const bytes = currentPackageBytes({ ...v1ReviewReport(), schema_version: 99 });
+  const outcome = await expectCode(() => parseProjectPackage(bytes),
     "PACKAGE_UNSUPPORTED_VERSION", "payload schema 过高");
   expect(outcome.message.indexOf("review_report/cand-legacy/v1") >= 0, "必须点名是哪一条记录");
   expect(outcome.message.indexOf("99") >= 0, "必须写出声明的版本");
   return { message: outcome.message };
 });
 
-test("P07", "格式 1 旧包可直接导入浏览器库（迁移在事务外完成）",
+test("P07", "旧包拒绝不写入任何项目、文档或资产",
   () => withRepo(async ({ db, repository }) => {
-    const legacy = legacyPackageBytes({ reviewReport: v1ReviewReport() });
-    const result = await importProjectPackage(db, legacy);
-    expect(result.project.project_id === "legacy-project", "旧包应保留 project_id");
-    expect(result.documents === 2 && result.assets === 1,
-      "导入数量不符：" + JSON.stringify(result));
-    expect(result.migrations_applied.length >= 1, "导入结果必须报告已应用的迁移");
-    const documents = await repository.documents.listAll("legacy-project");
-    const report = documents.find((item) => item.kind === "review_report");
-    expect(report && report.payload.vlm === null, "入库的是迁移后的记录");
-    const assets = await rawCount(db, "assets");
-    expect(assets === 1, "资产必须入库");
-    return { migrations: result.migrations_applied, assets: assets };
+    const existing = await seedProject(repository);
+    const before = await Promise.all(["projects", "documents", "assets"].map(store => rawCount(db, store)));
+    await expectCode(() => importProjectPackage(db,
+      legacyPackageBytes({ reviewReport: v1ReviewReport() })),
+    "PACKAGE_UNSUPPORTED_VERSION", "旧包须在写入前拒绝");
+    const after = await Promise.all(["projects", "documents", "assets"].map(store => rawCount(db, store)));
+    expect(JSON.stringify(after) === JSON.stringify(before), "拒绝不能产生半份项目");
+    expect((await repository.projects.get(existing.project.project_id)).name === existing.project.name,
+      "已有项目不能被拒绝的包覆盖");
+    return { before, after };
   }));
+
+test("P08", "Attempt 缺失或旧 schema 拒绝，不把未知身份当当前版本", async () => {
+  for (const payload of [{}, { schema_version: 1 }]) {
+    const bytes = buildProjectPackage({
+      project: legacyManifest().project,
+      documents: [{ project_id: "legacy-project", document_key: "attempt/action",
+        kind: "generation_attempt", document_id: "action", version: 1,
+        schema_version: 1, created_at: AT, updated_at: AT, payload }],
+      assets: [], exportedAt: AT,
+    }).bytes;
+    await expectCode(() => parseProjectPackage(bytes), "PACKAGE_UNSUPPORTED_VERSION",
+      "没有当前身份 schema 的 Attempt 不可导入");
+  }
+});
 
 async function runSuite() {
   const results = {

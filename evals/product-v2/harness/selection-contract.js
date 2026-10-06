@@ -4,7 +4,8 @@
  * 正向：采用记录绑定候选身份/候选版本/审核指纹与时间、没有报告也能采用但明确留白、
  *       取消采用与原候选解耦、改选后重新变 current、SelectionSet 必需/可选计数。
  * 反向：跨图候选、缺身份、非法 sha、非正整数版本、未知动作、过高 schema 版本、
- *       篡改记录、非法时间戳不得误判过期、过期投影不许偷换成最新候选。
+ *       篡改记录、非法时间戳不得误判过期、过期投影不许偷换成最新候选；
+ *       更新的成功候选不得自动使采用过期（V2.R6.2）。
  *
  * 结果写到 window.__V2_SELECTION_RESULTS__，由 tools/verify_v2_6_1_selection.py 读取。
  */
@@ -177,33 +178,41 @@ test("SL-05", "记录自检：未知动作、缺目标图、非 ISO 时间、过
   return byPath;
 });
 
-test("SL-06", "失效判断四态：none / current / cleared / stale", () => {
+test("SL-06", "失效判断四态：none / current / cleared / stale（stale 只由真实依据变化触发）", () => {
   const candidate = candidateFixture();
   const record = selectionFixture({ candidate: candidate });
   expect(deriveSelectionState(null, [candidate]) === "none", "没有选择记录时是 none。");
   expect(deriveSelectionState(record, [candidate]) === "current", "选择时已有的候选不引起过期。");
+  // V2.R6.2：之后出现的新成功候选不再自动使采用过期（自动审核只提供依据，采用是人的决定）。
   expect(deriveSelectionState(record, [candidate, candidateFixture({
-    candidate_id: "cand-main-002", created_at: LATER_TIME })]) === "stale",
-    "之后出现的新成功候选必须让选择过期。");
+    candidate_id: "cand-main-002", created_at: LATER_TIME })]) === "current",
+    "更新的成功候选不得自动使采用过期。");
+  expect(deriveSelectionState(record, [candidate], { consumedStale: true }) === "stale",
+    "这张图实际消费的依据变化必须过期。");
   const cleared = selectionFixture({ action: "clear", at: LATER_TIME });
   expect(deriveSelectionState(cleared, [candidate]) === "cleared", "取消采用是独立状态。");
   expect(selectionStateLabel("stale") === SELECTION_STATE_TEXT.stale, "状态文案必须来自同一张表。");
   return { states: SELECTION_STATES.slice() };
 });
 
-test("SL-07", "过期只认更晚的成功候选：更早或同刻的候选都不引起过期", () => {
+test("SL-07", "过期判据：候选来源缺失或字节身份变化才过期，时间先后不参与", () => {
   const candidate = candidateFixture();
   const record = selectionFixture({ candidate: candidate, at: LATER_TIME });
   const earlier = candidateFixture({ candidate_id: "cand-main-000", created_at: EARLIER_TIME });
   const sameMoment = candidateFixture({ candidate_id: "cand-main-001b", created_at: LATER_TIME });
-  expect(deriveSelectionState(record, [earlier, sameMoment]) === "current",
-    "更早或同刻的候选不能把选择判成过期。");
-  expect(deriveSelectionState(record, [candidateFixture({
-    candidate_id: "cand-main-003", created_at: "2026-09-30T05:00:00+08:00" })]) === "stale",
-    "更晚的候选必须判成过期。");
-  return { earlier: deriveSelectionState(record, [earlier]),
-    same_moment: deriveSelectionState(record, [sameMoment]), later: "stale" };
+  const later = candidateFixture({ candidate_id: "cand-main-003",
+    created_at: "2026-09-30T05:00:00+08:00" });
+  expect(deriveSelectionState(record, [candidate, earlier, sameMoment, later]) === "current",
+    "候选出现时间先后不参与过期判断。");
+  expect(deriveSelectionState(record, [earlier, sameMoment, later]) === "stale",
+    "被采用的候选已不在候选链里必须过期。");
+  const byteChanged = candidateFixture({ asset_sha256: SHA_B });
+  expect(deriveSelectionState(record, [byteChanged]) === "stale",
+    "候选字节身份变化必须过期。");
+  return { earlier: deriveSelectionState(record, [candidate, earlier]),
+    same_moment: deriveSelectionState(record, [candidate, sameMoment]), later: "current" };
 });
+
 test("SL-08", "反向：非法时间戳与「没有候选」都不能被误判成过期", () => {
   const candidate = candidateFixture();
   const record = selectionFixture({ candidate: candidate });
@@ -213,13 +222,12 @@ test("SL-08", "反向：非法时间戳与「没有候选」都不能被误判�
     null,
     { payload: { candidate_id: "cand-broken-3", created_at: 42 } },
   ];
-  expect(deriveSelectionState(record, broken) === "current",
+  expect(deriveSelectionState(record, [...broken, candidate]) === "current",
     "失败 Attempt 不产生候选；解析不了时间的记录不许触发过期。");
   expect(deriveSelectionState(null, broken) === "none", "没有记录时仍是 none。");
   expect(deriveSelectionState(undefined, undefined) === "none", "缺参数不许抛错。");
-  const wrapped = [{ record: { candidate_id: "cand-new",
-    created_at: "2026-09-30T06:00:00+08:00" } }];
-  expect(deriveSelectionState(record, wrapped) === "stale",
+  const wrapped = [{ record: candidate }];
+  expect(deriveSelectionState(record, wrapped) === "current",
     "带 record 包装的候选行同样参与判断。");
   return { broken: broken.length };
 });
@@ -240,15 +248,19 @@ test("SL-09", "改选：更晚的选择动作重新变 current，投影指向新
   return { state: state, candidate: covers.candidate_id };
 });
 
-test("SL-10", "过期投影不偷换身份：stale 时仍指向被采用的候选，而不是最新候选", () => {
+test("SL-10", "过期投影不偷换身份：新候选出现仍是 current 且指向被采用的候选", () => {
   const adopted = candidateFixture();
   const record = selectionFixture({ candidate: adopted });
   const newer = candidateFixture({ candidate_id: "cand-main-004", asset_sha256: SHA_B,
     created_at: "2026-09-30T07:00:00+08:00" });
   const covers = selectionCoversShot(record, [adopted, newer]);
-  expect(covers.state === "stale" && covers.current === false, "新候选出现后必须标成过期。");
-  expect(covers.candidate_id === adopted.candidate_id, "过期不等于改选：身份仍是原候选。");
+  expect(covers.state === "current" && covers.current === true,
+    "更新候选出现不得自动使采用过期：" + JSON.stringify(covers));
+  expect(covers.candidate_id === adopted.candidate_id, "投影必须仍指向被采用的候选。");
   expect(covers.candidate_id !== newer.candidate_id, "不许把最新候选冒充成已采用。");
+  const staleCovers = selectionCoversShot(record, [adopted, newer], { consumedStale: true });
+  expect(staleCovers.state === "stale" && staleCovers.candidate_id === adopted.candidate_id,
+    "过期不等于改选：身份仍是原候选。");
   return covers;
 });
 
@@ -266,12 +278,19 @@ test("SL-11", "SelectionSet：必需图的 current / stale / missing 与可选�
       created_at: "2026-09-30T08:00:00+08:00" })],
     [OTHER_SHOT]: [info],
   };
-  const set = buildSelectionSet({ shots: shots, selections: selections,
+  // V2.R6.2：更晚的新候选不再使采用过期；stale 只能来自这张图实际消费依据的变化。
+  const fresh = buildSelectionSet({ shots: shots, selections: selections,
     candidatesByShotId: candidatesByShotId, at: LATER_TIME });
+  expect(fresh.summary.required_total === 2 && fresh.summary.current === 2
+    && fresh.summary.stale === 0 && fresh.summary.missing === 0,
+    "新候选出现时必需图应仍全部 current：" + JSON.stringify(fresh.summary));
+  const set = buildSelectionSet({ shots: shots, selections: selections,
+    candidatesByShotId: candidatesByShotId,
+    basisByShotId: { [OTHER_SHOT]: { consumedStale: true } }, at: LATER_TIME });
   expect(set.contract_version === SELECTION_CONTRACT_VERSION, "集合版本必须与记录同源。");
   expect(set.summary.required_total === 2 && set.summary.current === 1
     && set.summary.stale === 1 && set.summary.missing === 0,
-    "必需图的三种状态必须分开计数：" + JSON.stringify(set.summary));
+    "消费依据变化的必需图必须计入 stale：" + JSON.stringify(set.summary));
   expect(set.summary.optional_current === 0, "可选项不参与必需图统计。");
   const cleared = buildSelectionSet({ shots: shots,
     selections: { [SHOT]: selectionFixture({ action: "clear" }) },

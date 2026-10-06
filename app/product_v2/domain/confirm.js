@@ -11,6 +11,10 @@
 
 import { DOMAIN_ERROR_CODES, invalid } from "./errors.js";
 import {
+  ATTEMPT_CREDENTIAL_SOURCES,
+  ATTEMPT_PROTOCOL_PATTERN,
+} from "./attempt.js";
+import {
   isNonEmptyString,
   isPlainObject,
   isSha256Hex,
@@ -27,6 +31,7 @@ import { evaluateShot, roleDefinition } from "./suite-plan.js";
 
 export const CONFIRM_SCHEMA_VERSION = 1;
 export const CONFIRM_DOCUMENT_ID = "generation";
+const SUBMISSION_MODES = Object.freeze(["initial", "failed_retry", "rework", "explicit_new"]);
 
 export const CONFIRM_BLOCKER_CODES = Object.freeze({
   PROMPT_MISSING: "PROMPT_MISSING",
@@ -401,11 +406,44 @@ export function assertConfirmationSheet(sheet) {
   return sheet;
 }
 
-/** 指纹输入：覆盖“这一批将要提交的东西”，不包含展示文案。 */
-export function confirmationSnapshot(sheet) {
+function confirmationExecutionTarget(identity, provider) {
+  if (!isPlainObject(identity) || !isNonEmptyString(identity.provider_id)
+      || !isNonEmptyString(identity.model_id)
+      || !ATTEMPT_PROTOCOL_PATTERN.test(identity.protocol)
+      || !Number.isInteger(identity.capability_version) || identity.capability_version < 1
+      || !ATTEMPT_CREDENTIAL_SOURCES.includes(identity.credential_source)
+      || typeof identity.sync !== "boolean") {
+    invalid("生成授权缺少可核对的原目标、协议、能力版本或凭据来源。");
+  }
+  if (!isPlainObject(provider) || provider.model_id !== identity.model_id
+      || provider.version !== identity.capability_version
+      || (provider.provider_id !== undefined && provider.provider_id !== identity.provider_id)
+      || (provider.protocol !== undefined && provider.protocol !== identity.protocol)) {
+    invalid("生成授权目标与已显示的 Prompt 有效档不一致。");
+  }
+  return {
+    provider_id: identity.provider_id, model_id: identity.model_id,
+    protocol: identity.protocol, capability_version: identity.capability_version,
+    credential_source: identity.credential_source, sync: identity.sync,
+  };
+}
+
+/**
+ * 指纹输入：覆盖“这一批将要提交的东西”，不包含展示文案。
+ * execution_target/submission_mode 只在给出 executionIdentity 时写入，历史记录可缺。
+ * @param {unknown} sheet
+ * @param {{executionIdentity?: unknown, submissionMode?: unknown}} [options]
+ * @returns {import("./type-contracts.js").ConfirmationSnapshot}
+ */
+export function confirmationSnapshot(sheet, { executionIdentity = null, submissionMode = "initial" } = {}) {
   assertConfirmationSheet(sheet);
+  if (executionIdentity && !SUBMISSION_MODES.includes(submissionMode)) invalid("生成授权缺少明确的动作类型。");
   return {
     schema_version: CONFIRM_SCHEMA_VERSION,
+    ...(executionIdentity ? {
+      execution_target: confirmationExecutionTarget(executionIdentity, sheet.provider),
+      submission_mode: submissionMode,
+    } : {}),
     ...(Array.isArray(sheet.scope_shot_ids) && sheet.scope_shot_ids.length > 0
       ? { scope_shot_ids: [...sheet.scope_shot_ids] } : {}),
     platform: { platform_id: sheet.platform.platform_id, version: sheet.platform.version },
@@ -502,8 +540,12 @@ export function confirmationStaleness(record, currentSnapshot) {
   return { stale: true, reasons: reasons };
 }
 
-/** 确认记录：确认是“用户对某一具体输入的显式确认”，所以它绑定指纹而不是绑定时间。 */
-export function buildConfirmationRecord({ sheet, hash, confirmedAt } = {}) {
+/**
+ * 确认记录：确认是“用户对某一具体输入的显式确认”，所以它绑定指纹而不是绑定时间。
+ * @param {{sheet?: unknown, hash?: unknown, confirmedAt?: unknown, executionIdentity?: unknown, submissionMode?: unknown}} [args]
+ * @returns {import("./type-contracts.js").ConfirmationRecord}
+ */
+export function buildConfirmationRecord({ sheet, hash, confirmedAt, executionIdentity = null, submissionMode = "initial" } = {}) {
   assertConfirmationSheet(sheet);
   if (sheet.can_submit !== true) {
     invalid("还有 " + sheet.blocked + " 张图未就绪，不能确认生成。");
@@ -515,7 +557,7 @@ export function buildConfirmationRecord({ sheet, hash, confirmedAt } = {}) {
   return {
     schema_version: CONFIRM_SCHEMA_VERSION,
     confirmed_at: confirmedAt,
-    fingerprint: { snapshot: confirmationSnapshot(sheet), hash: hash },
+    fingerprint: { snapshot: confirmationSnapshot(sheet, { executionIdentity, submissionMode }), hash: hash },
     platform: { platform_id: sheet.platform.platform_id, version: sheet.platform.version },
     provider: { model_id: sheet.provider.model_id, version: sheet.provider.version },
     total: sheet.total,
@@ -557,6 +599,15 @@ export function checkConfirmationRecord(record) {
     if (record.fingerprint.snapshot.can_submit !== true) {
       pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.fingerprint.snapshot.can_submit",
         "只有可提交的确认单才能写确认记录。");
+    }
+    if (record.fingerprint.snapshot.execution_target !== undefined) {
+      try {
+        if (!SUBMISSION_MODES.includes(record.fingerprint.snapshot.submission_mode)) invalid("生成授权缺少动作类型。");
+        confirmationExecutionTarget(record.fingerprint.snapshot.execution_target, record.fingerprint.snapshot.provider);
+      } catch (error) {
+        pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.fingerprint.snapshot.execution_target",
+          error.message);
+      }
     }
   }
   if (!Array.isArray(record.shots) || record.shots.length === 0) {

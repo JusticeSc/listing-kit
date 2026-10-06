@@ -29,6 +29,15 @@ export const PROJECT_STATES = Object.freeze([
 /** 文档种类只做格式约束；具体契约由后续任务（V2.2.1 起）逐个落位。 */
 export const DOCUMENT_KIND_PATTERN = /^[a-z][a-z0-9_]{1,48}$/;
 
+/** @typedef {{name:string, keyPath:string|string[], unique:boolean, multiEntry:boolean}} StoreIndexSpec */
+/** @typedef {{name:string, keyPath:string|string[], autoIncrement:boolean, indexes:ReadonlyArray<StoreIndexSpec>}} StoreSpec */
+
+/**
+ * @param {string} name
+ * @param {string|string[]} keyPath
+ * @param {ReadonlyArray<{name:string, keyPath:string|string[]}>} indexes
+ * @returns {Readonly<StoreSpec>}
+ */
 function freezeStore(name, keyPath, indexes) {
   return Object.freeze({
     name,
@@ -66,10 +75,18 @@ export const STORE_SPECS = Object.freeze([
 
 export const STORE_NAMES = Object.freeze(STORE_SPECS.map((spec) => spec.name));
 
+/**
+ * @param {string|string[]} keyPath
+ * @returns {string[]}
+ */
 function normalizeKeyPath(keyPath) {
   return Array.isArray(keyPath) ? [...keyPath] : [keyPath];
 }
 
+/**
+ * @param {Readonly<StoreSpec>} spec
+ * @returns {{name:string, keyPath:string[], autoIncrement:boolean, indexes:{name:string,keyPath:string[],unique:boolean,multiEntry:boolean}[]}}
+ */
 function normalizeSpec(spec) {
   return {
     name: spec.name,
@@ -86,14 +103,22 @@ function normalizeSpec(spec) {
   };
 }
 
-/** 代码认为数据库"应该长什么样"。 */
+/**
+ * 代码认为数据库"应该长什么样"。
+ * @param {ReadonlyArray<Readonly<StoreSpec>>} [specs=STORE_SPECS]
+ * @returns {{name:string, keyPath:string[], autoIncrement:boolean, indexes:{name:string,keyPath:string[],unique:boolean,multiEntry:boolean}[]}[]}
+ */
 export function expectedSchemaShape(specs = STORE_SPECS) {
   return specs
     .map((spec) => normalizeSpec(spec))
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
-/** 数据库实际长什么样；只读事务，不改任何数据。 */
+/**
+ * 数据库实际长什么样；只读事务，不改任何数据。
+ * @param {IDBDatabase} db
+ * @returns {{name:string, keyPath:string[], autoIncrement:boolean, indexes:{name:string,keyPath:string[],unique:boolean,multiEntry:boolean}[]}[]}
+ */
 export function describeDatabase(db) {
   const described = [];
   for (const name of Array.from(db.objectStoreNames).sort()) {
@@ -117,7 +142,12 @@ export function describeDatabase(db) {
   return described;
 }
 
-/** 返回人读漂移清单；空数组表示实际结构与 STORE_SPECS 一致。 */
+/**
+ * 返回人读漂移清单；空数组表示实际结构与 STORE_SPECS 一致。
+ * @param {IDBDatabase} db
+ * @param {ReadonlyArray<Readonly<StoreSpec>>} [specs=STORE_SPECS]
+ * @returns {string[]}
+ */
 export function schemaDrift(db, specs = STORE_SPECS) {
   const expected = expectedSchemaShape(specs);
   const actual = describeDatabase(db);
