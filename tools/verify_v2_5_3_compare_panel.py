@@ -52,8 +52,6 @@ import v2_verify_shared as shared  # noqa: E402
 server_module = shared.load_server_module()
 
 
-
-
 INJECT_FIXTURE_CANDIDATE = """
 async ({ projectId, shotId, pngBase64, actionId, taskId }) => {
   const storage = await import("/storage/index.js");

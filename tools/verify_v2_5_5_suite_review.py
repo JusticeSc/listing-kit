@@ -95,7 +95,7 @@ def main() -> int:
 
     # ---------------- 契约套件 ----------------
     suites: dict = {}
-    static_server, base = static_url()
+    static_server, base = shared.start_static_server()
     try:
         from playwright.sync_api import sync_playwright
 
@@ -128,7 +128,7 @@ def main() -> int:
     walkthrough: dict = {}
     with sync_playwright() as pw:
         port = free_port()
-        server, _suite_instance = start_product_server(port, "drift")
+        server, _suite_instance = start_product_server(port, suite_scenario="drift")
         try:
             context = pw.chromium.launch_persistent_context(
                 str(temp_root / "profile-drift"), headless=True,
@@ -259,7 +259,7 @@ def main() -> int:
             server.server_close()
 
         port2 = free_port()
-        server2, _ = start_product_server(port2, "unknown")
+        server2, _ = start_product_server(port2, suite_scenario="unknown")
         try:
             context2 = pw.chromium.launch_persistent_context(
                 str(temp_root / "profile-unknown"), headless=True,

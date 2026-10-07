@@ -38,6 +38,23 @@ from src.providers.v2_fake_review import FakeReviewProvider  # noqa: E402
 from src.providers.v2_fake_semantic import FakeSemanticProvider  # noqa: E402
 from src.providers.v2_fake_suite_review import FakeSuiteReviewProvider  # noqa: E402
 
+
+def current_review_contract() -> str:
+    """审核报告合同版本：唯一权威是产品 domain/review.js 的 REVIEW_CONTRACT_VERSION。
+
+    为什么放共享里：V2.R5.1 切分（111711e）把 5_1 的本地 current_review_contract 删掉，
+    5_3 的三处 shared.current_review_contract 调用当时就断了（AttributeError）；
+    恢复时读产品常量，不写死字面量，断言仍对比展开后的报告文本。
+    """
+    import re as _re
+
+    text = (ROOT / "app" / "product_v2" / "domain" / "review.js").read_text(encoding="utf-8")
+    match = _re.search(r'REVIEW_CONTRACT_VERSION\s*=\s*"([^"]+)"', text)
+    if match is None:
+        raise SystemExit("review.js 里找不到 REVIEW_CONTRACT_VERSION。")
+    return match.group(1)
+
+
 ATTEMPT_ANY_JS = (
     "() => document.querySelectorAll("
     "'#attempt-list .attempt-row[data-attempt-state]').length > 0"
