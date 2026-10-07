@@ -4,6 +4,7 @@
 > 只保存进度、证据、阻塞/未知与下一动作；目标和任务定义只在 `docs/product-v2-refactor-plan.md`。
 > prepared 是未绑定新 Goal 的本地准备态，不是系统 paused。旧读数与完成记录只见 superseded 基线。
 > 2026-10-06用户明确指令“按照计划开发吧”，解除前述停工门并恢复V2.R5.1受限施工。恢复核对：Goal原文仍计划§2.1 sha6677a6803003f0894dd522bdd7102b53ca30c866532ff48fdc79e4b148d7c495；state守卫与文档守卫通过；预算image8/8已满不新增、semantic/VLM5/6、总13/14、预留1.61/5元；事前快照_resume-r51-2026-10-06T03-51-56-463Z；S0基线check:types与check:generated均红、suiteReports等未声明仍被引用。按§15/设计§11从组A开始，不另立任务。组A包01-03已闭合：产物集合/owner消费者/恢复生命周期迁移完成，check:types零诊断、check:generated 9/9、node 226/226、页面repro与V2.1.4正式入口通过；证据evals/product-v2/refactor/r51-group-a-20261006.json；仍V2.R5.1 active，下一包按设计§11.2包04起。
+2026-10-07包07（按任务拆视图）闭合：四个视图落地（`ui/delivery-view.ts` e4b35c7、`ui/input-view.ts` 5d2997f、`ui/generation-view.ts` 53fb17d、`ui/compare-view.ts` 04e3398；workspace.js 5686→1598行，含 ea541e7 死代码清扫），视图只持DOM/订阅/命令，装配与生命周期留workspace；每切片真跑闸门（node --check/build/check:types/check:generated/node单测227）与页面级证据（`repro_r51_p04_inputs`/`p05_reserve`/`p06_adopt` 各6/6、`verify_v2_6_2_delivery` 12/13与改动前基线逐字节同结果、`verify_v2_2_3`/`verify_v2_3_2` 全过），证据 r51-packet-07-views-20261007.md。既有验证器缺陷(5_5 static_url/3_5基线即挂/5_3 缺shared属性)非本包引入，归包09。下一包：设计§11.2包08（图文/可选AI与设置闭环）。真跑修好的验证器还发现四项既有产品侧红（非包07引入，已用包07前基线 bbf3509 + 同版本脚本逐条对照）：3_5/3_6/3_4 走查中 `#prompt-editor` 在 suite-seed→generate 后不可见（3_5 静默挂住）、5_3-15 `#compare-jump` 点击后不落 first_shot、5_5-04/09 整套AI复核 POST 400（请求侧 `suiteRequest` 在已采用集合为空时仍外发，服务端 `images` 最小1张校验正确，拒绝形状 input_rejected/INPUT_INVALID）。这些归包08/产品侧，修前不当成通过、不重跑洗绿。包07 验证网修复见 commit 7d995ce。
 
 ```yaml
 state_schema: amz-project-state/v2
@@ -245,6 +246,7 @@ task_progress:
     - evals/product-v2/v2.r51ga-group-a-20261006-170716.json
     - evals/product-v2/v2.r51ga-group-a-20261006-170716.txt
     - evals/product-v2/refactor/r51-page-evidence-20261007.md
+    - evals/product-v2/refactor/r51-packet-07-views-20261007.md
   V2.R5.2:
     status: pending
     evidence:
@@ -407,5 +409,5 @@ unknowns:
   - combined_release_actual_runtime_source_image_ID_and_Caddy_hash_gate_moved_before_finalize_and_into_rollback_condition_but_latest_workflow_not_revalidated_Docker_transaction_and_previous_version_page_recovery_unproven_no_release_acceptance
   - detailed_refactor_design_20261006_target_only_owner_Interfaces_atomic_authorization_OCC_snapshot_dedup_tests_history_and_original_task_work_packages_written_no_product_edits_or_task_status_changes_no_current_goal_read_tool_available_user_stop_remains_follow_docs_product_v2_refactor_design
   - lower_model_preparation_20261006_design_r2_section10_frozen_reservation_action_preservation_lifecycle_report_ZIP_emit_release_algorithms_section11_11_internal_packets_atomic_group_A_01_03_section12_start_text_only_no_product_edits_runtime_browser_model_git_deploy_or_status_change_user_stop_R51_unchanged_follow_lower-model-preparation-20261006
-updated_at: '2026-10-07T01:10:56+08:00'
+updated_at: '2026-10-07T08:36:37+08:00'
 ```
