@@ -1,6 +1,6 @@
 // Generated from app/product_v2/review-delivery.ts; edit the TS source and run `npm run build:frontend`.
 /** 整套复核、交付硬门、原动作溯源与两类 ZIP 的唯一执行 Module；无 DOM、无对象 URL。 */
-import { DOMAIN_DOCUMENT_KINDS, EXPORT_GATE_CONTRACT_VERSION, SUITE_MAX_IMAGES, SUITE_REVIEW_DOCUMENT_ID, assembleSuiteReview, buildDeliveryEntries, buildExportRecord, candidateMatchesAttempt, checkSuiteReviewReport, deliveryFileName, deliveryImagePathOf, emptyShotSpecFromShot, evaluateDeliveryGate, exportRecordDocumentIdOf, inputsFingerprintOf, selectionFingerprintOf, suitePlanSummary, suiteReviewIsCurrent, suiteReviewStatusOf, suiteReviewSummaryText, buildSelectionSet, assertSelectionRecord, promptStaleness, checkPromptRecord, checkReviewReport, checkAttemptRecord, checkCandidateRecord, attemptActions, } from "./domain/index.js";
+import { DOMAIN_DOCUMENT_KINDS, EXPORT_GATE_CONTRACT_VERSION, SUITE_MAX_IMAGES, SUITE_REVIEW_DOCUMENT_ID, acknowledgementDocumentIdOf, assembleSuiteReview, buildDeliveryEntries, buildExportRecord, candidateMatchesAttempt, checkSuiteReviewReport, deliveryFileName, deliveryImagePathOf, emptyShotSpecFromShot, evaluateDeliveryGate, exportRecordDocumentIdOf, inputsFingerprintOf, reviewStatusOf, selectionFingerprintOf, suitePlanSummary, suiteReviewIsCurrent, suiteReviewStatusOf, suiteReviewSummaryText, buildSelectionSet, assertSelectionRecord, promptStaleness, checkPromptRecord, checkReviewReport, checkAttemptRecord, checkCandidateRecord, attemptActions, } from "./domain/index.js";
 import { sha256Hex } from "./storage/db.js";
 import { buildZip, exportProjectPackage } from "./storage/index.js";
 import { confirmedFacts, sourceContext, promptCurrentBasisOf } from "./prompts.js";
@@ -381,20 +381,20 @@ export function createReviewDeliveryModule(deps) {
                 project_id: action.projectId, project_name: projectName, exported_at: at,
                 selection_fingerprint: snap.fingerprints.selectionFingerprint, inputs_fingerprint: snap.fingerprints.inputsFingerprint,
                 ai_review: suiteReviewStatusOf(snap.suite?.report), images: files.map(file => ({
-                    ...file, file: file.path, ai_review: suiteReviewStatusOf(snap.reportsByCandidate[file.candidate_id]),
+                    ...file, file: file.path, ai_review: reviewStatusOf(snap.reportsByCandidate[file.candidate_id]),
                 })) };
             const checks = { schema_version: 1, contract_version: EXPORT_GATE_CONTRACT_VERSION, generated_at: at,
                 gate_status: checked.status, findings: checked.findings,
                 per_shot: files.map(file => {
                     const entry = snap.reportEntries[file.candidate_id], findings = entry?.report.findings || [];
                     return { shot_id: file.shot_id, candidate_id: file.candidate_id, report_version: entry?.version || null,
-                        ai_review: suiteReviewStatusOf(entry?.report), counts: counts(findings),
+                        ai_review: reviewStatusOf(entry?.report), counts: counts(findings),
                         findings: findings.filter(item => item.severity !== "PASS").map(item => ({ rule_id: item.rule_id, severity: item.severity, title: item.title, detail: item.detail })) };
                 }),
                 suite_review: snap.suite ? { document_id: SUITE_REVIEW_DOCUMENT_ID, version: snap.suite.version,
                     ai_review: suiteReviewStatusOf(snap.suite.report), selection_fingerprint: snap.suite.report.selection_fingerprint,
                     inputs_fingerprint: snap.suite.report.inputs_fingerprint, counts: counts(snap.suite.report.findings) } : null,
-                acknowledgements: snap.acknowledgements.map(ack => ({ document_id: acknowledgementId(ack), rule_id: ack.rule_id,
+                acknowledgements: snap.acknowledgements.map(ack => ({ document_id: acknowledgementDocumentIdOf(ack), rule_id: ack.rule_id,
                     target_kind: ack.target_kind, shot_ids: ack.shot_ids, acknowledged_at: ack.acknowledged_at })) };
             const readme = ["商品套图交付包", "", "项目：" + (projectName || "(未命名)"), "生成时间：" + at,
                 "包含图片：" + files.length + " 张（每张一个已采用候选）", "", "清单：",
@@ -429,7 +429,7 @@ export function createReviewDeliveryModule(deps) {
                 projectId: action.projectId, exportDocumentId: exportRecordDocumentIdOf({ at, zipSha256: sha }), payload,
                 selections: files.map(file => ref("selection", file.shot_id)),
                 reports: files.map(file => ref("review_report", file.candidate_id)),
-                acknowledgements: snap.acknowledgements.map(ack => ref("review_acknowledgement", acknowledgementId(ack))),
+                acknowledgements: snap.acknowledgements.map(ack => ref("review_acknowledgement", acknowledgementDocumentIdOf(ack))),
                 suiteReport: ref("suite_review", SUITE_REVIEW_DOCUMENT_ID), candidates: candidateRefs, attempts: actionRefs,
                 originalPrompts: promptRefs, fence,
             });
@@ -486,7 +486,4 @@ export function createReviewDeliveryModule(deps) {
             return { suite, suiteCurrent: Boolean(suite && suiteReviewIsCurrent(suite.report, snap.fingerprints)),
                 gate, running: running !== null, exporting: exporting !== null, record };
         } };
-}
-function acknowledgementId(record) {
-    return [record.target_kind, record.target_id, record.rule_id, ...record.shot_ids].join("|");
 }

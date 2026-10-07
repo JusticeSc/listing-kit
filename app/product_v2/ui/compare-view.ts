@@ -1063,20 +1063,23 @@ export function createCompareView(
     updateReworkControls(shotId, draft);
     try {
       const latest = deps.promptRecordOf(shotId) || null;
-      let version = latest ? latest.version : 0;
+      let promptVersion = latest ? latest.version : 0;
       const fromPreview = Boolean(latest && latest.record.compiled.rework
         && latest.record.compiled.rework.directive_id === draft.preview.directive_id);
       if (!fromPreview) {
         if (!draft.directive) throw new Error("先预览返工 Prompt，再确认生成。");
         const saved = await prompts.compileAndSave(shotId, { rework: draft.directive, action });
-        version = saved.saved.version;
+        promptVersion = saved.saved.version;
       }
       if (!action.alive()) return;
       // 意图即读即用：提交前读一次、发送时 generation 内部再读一次，两次不一致即拒发。
       const intent = generation.reworkIntent(shotId);
       if (!intent) throw new Error("这张图当前还有阻断，返工没有外发。");
+      // 确认记录与 Prompt 是两条版本链：expectedVersion 必须取所见返工确认头（首次 0），
+      // 不能误传 Prompt 版本（否则 generation_confirm/rework:shot 报 REVISION_CONFLICT 且面板不关）。
+      const confirmExpectedVersion = generation.reworkEntry(shotId)?.version || 0;
       await generation.confirmAndRun({
-        intent, readIntent: () => generation.reworkIntent(shotId), expectedVersion: version,
+        intent, readIntent: () => generation.reworkIntent(shotId), expectedVersion: confirmExpectedVersion,
         documentId: generation.reworkDocumentId(shotId), action,
       });
       if (!action.alive()) return;
@@ -1092,7 +1095,7 @@ export function createCompareView(
       deps.renderAttempts();
       await deps.deriveState();
       focusCompareCandidate(shotId, sourceCandidateId);
-      elements.compareStatus.textContent = "返工已提交（Prompt v" + version + " · "
+      elements.compareStatus.textContent = "返工已提交（Prompt v" + promptVersion + " · "
         + attemptStateLabel(state) + "）；旧候选保留，只有这张图新增了版本。";
     } catch (error) {
       if (action.alive()) {
