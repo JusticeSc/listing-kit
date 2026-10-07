@@ -58,7 +58,8 @@ export type IntakeConflict = {
 } | null;
 export type LastAnalyze = {
   slots: number; applied: number; provider: string; model: string | null;
-  sourceVersion: number; referenceImagesSent: boolean; at: string; summary: string;
+  sourceVersion: number; referenceImagesSent: boolean; imageProvenance: { role: string; media_type: string; sha256: string }[];
+  at: string; summary: string;
 } | null;
 export type InputsDependencies = {
   repository: ProjectRepository;
@@ -751,6 +752,7 @@ export function createProjectInputsModule(deps: InputsDependencies): InputsModul
           provider: proposal.meta.provider_id, model: proposal.meta.model_id,
           slots: proposal.slots.length, applied: applied.applied, summary: proposal.summary,
           sourceVersion: record.source.version, referenceImagesSent: record.reference_images_sent,
+          imageProvenance: [...(record.image_provenance || [])],
         };
         if (proposal.questions.length) analyzeProblems.push("模型提出的问题：" + proposal.questions.join(" / "));
       }

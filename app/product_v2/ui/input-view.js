@@ -199,11 +199,15 @@ export function createInputView({ elements, deps }) {
                         + "。供应商按实际调用计费；不能据元数据宣称已经看图。";
         if (lastAnalyze) {
             elements.analyzeResult.hidden = false;
+            const provenance = (lastAnalyze.imageProvenance || [])
+                .map((item) => item.role + "/" + item.sha256.slice(0, 12) + "…").join("、");
             elements.analyzeResult.textContent = "最近一次分析：" + lastAnalyze.slots + " 个提案，写入 "
                 + lastAnalyze.applied + " 个槽位 · " + lastAnalyze.provider
                 + (lastAnalyze.model ? "（" + lastAnalyze.model + "）" : "")
                 + " · 原资料 v" + lastAnalyze.sourceVersion
-                + (lastAnalyze.referenceImagesSent ? " · 已发送实际图片" : " · 未发送图片字节")
+                + (lastAnalyze.referenceImagesSent
+                    ? " · 已发送实际图片" + (provenance ? "（" + provenance + "）" : "")
+                    : " · 未发送图片字节")
                 + " · " + lastAnalyze.at + (lastAnalyze.summary ? " · " + lastAnalyze.summary : "");
         }
         else {
@@ -277,6 +281,7 @@ export function createInputView({ elements, deps }) {
                     provider: proposal.meta.provider_id, model: proposal.meta.model_id,
                     slots: proposal.slots.length, applied: applied.applied, summary: proposal.summary,
                     sourceVersion: record.source.version, referenceImagesSent: record.reference_images_sent,
+                    imageProvenance: [...(record.image_provenance || [])],
                 };
                 if (proposal.questions.length)
                     analyzeProblems.push("模型提出的问题：" + proposal.questions.join(" / "));

@@ -730,6 +730,7 @@ export function createProjectInputsModule(deps) {
                     provider: proposal.meta.provider_id, model: proposal.meta.model_id,
                     slots: proposal.slots.length, applied: applied.applied, summary: proposal.summary,
                     sourceVersion: record.source.version, referenceImagesSent: record.reference_images_sent,
+                    imageProvenance: [...(record.image_provenance || [])],
                 };
                 if (proposal.questions.length)
                     analyzeProblems.push("模型提出的问题：" + proposal.questions.join(" / "));

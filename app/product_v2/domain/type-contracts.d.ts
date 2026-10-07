@@ -181,6 +181,11 @@ export type SemanticAnalysisFailure = {
   message: string;
   retry_policy: string;
 };
+export type SemanticImageProvenance = {
+  role: string;
+  media_type: string;
+  sha256: string;
+};
 export type SemanticAnalysisRecord = {
   schema_version: 1;
   action_id: string;
@@ -189,6 +194,8 @@ export type SemanticAnalysisRecord = {
   created_at: IsoTimestamp;
   updated_at: IsoTimestamp;
   reference_images_sent: boolean;
+  /** 本次实际发送的图片来源（role/media/sha256，无字节原文、无密钥）；旧记录缺席=未知，不回填。 */
+  image_provenance?: SemanticImageProvenance[];
 } & (
   | { state: "pending_submit"; proposal: null; error: null; disposition: "not_applied" }
   | { state: "succeeded"; proposal: SemanticProposal; error: null;

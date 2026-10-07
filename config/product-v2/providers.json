@@ -68,6 +68,25 @@
       "max_attempts": 1
     },
     {
+      "id": "fake-vision-semantic",
+      "label": "测试替身·图文理解",
+      "role": "semantic",
+      "adapter": "v2_fake_vision_semantic",
+      "model_id": "fake-qwen-vl-max",
+      "model_env": null,
+      "api_key_env": null,
+      "base_url_env": null,
+      "timeout_env": null,
+      "max_tokens_env": null,
+      "capabilities": {
+        "reference_images": true,
+        "structured_output": "local",
+        "stateless": true,
+        "test_double": true
+      },
+      "max_attempts": 1
+    },
+    {
       "id": "dashscope-qwen-image",
       "label": "通义千问图像",
       "role": "image",

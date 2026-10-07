@@ -128,6 +128,14 @@ def create_semantic_provider(*, registry: Mapping[str, Any] | None = None,
                 f"假 provider 不可用（{type(error).__name__}）：{error}") from None
         scenario = environment.get(FAKE_SCENARIO_ENV) or "ok"
         return FakeSemanticProvider(scenario)
+    if adapter == "v2_fake_vision_semantic":
+        try:
+            from src.providers.v2_fake_vision_semantic import FakeVisionSemanticProvider
+        except Exception as error:
+            raise ProviderRegistryError(
+                f"假看图 provider 不可用（{type(error).__name__}）：{error}") from None
+        scenario = environment.get(FAKE_SCENARIO_ENV) or "ok"
+        return FakeVisionSemanticProvider(scenario)
     raise ProviderRegistryError(f"provider {chosen} 的 adapter 未登记：{adapter!r}。")
 
 

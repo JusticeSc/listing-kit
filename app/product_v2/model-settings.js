@@ -194,13 +194,25 @@ export function createModelSettings() {
             }
         }
     }
+    function effectiveBlockOf(purpose) {
+        if (purpose === "semantic")
+            return capabilities?.provider || null;
+        if (purpose === "image")
+            return capabilities?.images?.provider || null;
+        return capabilities?.review?.provider || null;
+    }
+    function effectiveTextOf(purpose, current) {
+        const providerId = current.provider_id || "未声明";
+        const modelId = current.model_id || "未声明";
+        const state = current.configured === false ? "未配置（请求会被拒绝，不会调用模型）" : "已配置";
+        const source = current.credential_source ? " · 凭据 " + current.credential_source : "";
+        const scope = " · 密钥仅当前标签页内存，请求级发送";
+        return LABELS[purpose] + "有效配置：" + providerId + " · " + modelId + " · " + state + source + scope + "。";
+    }
     function showKeyState(purpose, providerId, input) {
         input.value = draftKeys.get(keyId(purpose, providerId)) || "";
         input.placeholder = keys.has(keyId(purpose, providerId)) ? "已在本标签页提供；留空保留" : "自己的 API key（仅本标签页）";
     }
-    /**
-     * 创建密码输入框（密钥只在标签页内存）。
-     */
     function keyField(purpose, providerId) {
         const input = document.createElement("input");
         input.type = "password";
@@ -227,6 +239,21 @@ export function createModelSettings() {
             const legend = document.createElement("legend");
             legend.textContent = LABELS[p];
             section.append(legend);
+            const current = effectiveBlockOf(p);
+            if (current) {
+                const effective = document.createElement("p");
+                effective.className = "meta";
+                effective.dataset.effectiveConfig = p;
+                effective.textContent = effectiveTextOf(p, current);
+                section.append(effective);
+            }
+            else {
+                const missing = document.createElement("p");
+                missing.className = "meta";
+                missing.dataset.effectiveConfig = p;
+                missing.textContent = LABELS[p] + "：缺少有效模型或凭据；请选择现有模型并提供自己的密钥，人工操作不受影响。";
+                section.append(missing);
+            }
             const selectLabel = document.createElement("label");
             selectLabel.htmlFor = "model-provider-" + p;
             selectLabel.textContent = "现有模型";

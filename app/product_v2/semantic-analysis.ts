@@ -55,17 +55,17 @@ function isProposalSlot(value: unknown): value is FactSlot & { model_id?: string
 }
 function readProposal(value: unknown, prepared: PreparedAnalysis): SemanticProposal {
   if (!isPlainObject(value) || !Array.isArray(value.slots) || !value.slots.every(isProposalSlot)
-      || typeof value.summary !== "string" || !Array.isArray(value.questions)
-      || !value.questions.every((question): question is string => typeof question === "string")
-      || !isPlainObject(value.meta)) throw new Error("商品理解返回了非法提案；没有写入事实槽位。");
+    || typeof value.summary !== "string" || !Array.isArray(value.questions)
+    || !value.questions.every((question): question is string => typeof question === "string")
+    || !isPlainObject(value.meta)) throw new Error("商品理解返回了非法提案；没有写入事实槽位。");
   const meta = value.meta;
   if (meta.provider_id !== prepared.provider.provider_id || meta.model_id !== prepared.provider.model_id
-      || typeof meta.reference_images_sent !== "boolean"
-      || meta.reference_images_sent !== Boolean(prepared.body.reference_images?.length)
-      || !Array.isArray(meta.inputs_used)
-      || !meta.inputs_used.every((input): input is string => typeof input === "string")
-      || (meta.reference_images_sent && !meta.inputs_used.includes("actual_images"))
-      || (meta.request_id !== null && typeof meta.request_id !== "string")) {
+    || typeof meta.reference_images_sent !== "boolean"
+    || meta.reference_images_sent !== Boolean(prepared.body.reference_images?.length)
+    || !Array.isArray(meta.inputs_used)
+    || !meta.inputs_used.every((input): input is string => typeof input === "string")
+    || (meta.reference_images_sent && !meta.inputs_used.includes("actual_images"))
+    || (meta.request_id !== null && typeof meta.request_id !== "string")) {
     throw new Error("商品理解的模型或实际看图身份与本次发送不符；没有写入事实槽位。");
   }
   return { slots: value.slots, summary: value.summary, questions: value.questions,
@@ -112,9 +112,12 @@ export function createSemanticAnalysisModule(deps: SemanticAnalysisDependencies)
         return { kind: "not_sent", action, message: "资料已变化；没有发送旧资料，请核对后重新明确发起。" };
       }
       const at = new Date().toISOString();
+      const sentImages = prepared.body.reference_images || [];
+      const imageProvenance = sentImages.map((item) => ({ role: String(item.role),
+        media_type: String(item.media_type), sha256: String(item.sha256) }));
       const base = { schema_version: 1 as const, action_id: newActionId(), source: prepared.source,
         provider: prepared.provider, created_at: at, updated_at: at,
-        reference_images_sent: Boolean(prepared.body.reference_images?.length) };
+        reference_images_sent: sentImages.length > 0, image_provenance: imageProvenance };
       let version = 0;
       async function save(record: SemanticAnalysisRecord): Promise<void> {
         const saved = await deps.repository.documents.save(pid, { kind: "semantic_analysis",

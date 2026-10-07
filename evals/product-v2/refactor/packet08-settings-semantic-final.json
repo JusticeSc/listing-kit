@@ -1,0 +1,169 @@
+{
+  "label": "packet08-settings-semantic-final",
+  "at": "2026-10-07T03:28:09.434449+00:00",
+  "reference_sha256": "7af577c6699c88fb4d28c4ea992237dd9dbd17026beec0b37b2ac18351d34419",
+  "checks": [
+    {
+      "code": "P08-01a",
+      "title": "能力投影露出 fake-vision 看图档（注入接缝无头直调即保留实例）",
+      "ok": true,
+      "detail": {
+        "provider_id": "fake-vision-semantic",
+        "model_id": "fake-qwen-vl-max",
+        "configured": true,
+        "credential_source": "test_double",
+        "vision": true,
+        "reference_images": true,
+        "choices": [
+          "dashscope-semantic",
+          "dashscope-vision",
+          "fake-vision-semantic"
+        ]
+      }
+    },
+    {
+      "code": "P08-01b",
+      "title": "设置面板三用途有效配置行可见（含缺 key 提示语）",
+      "ok": true,
+      "detail": {
+        "semantic": "商品理解有效配置：fake-vision-semantic · fake-qwen-vl-max · 已配置 · 凭据 test_double · 密钥仅当前标签页内存，请求级发送。",
+        "image": "图片生成有效配置：fake-qwen-image · qwen-image-3.0 · 已配置 · 凭据 test_double · 密钥仅当前标签页内存，请求级发送。",
+        "review": "AI 图片复核（按需）有效配置：fake-review · fake-qwen-vl-max · 已配置 · 凭据 test_double · 密钥仅当前标签页内存，请求级发送。"
+      }
+    },
+    {
+      "code": "P08-01c",
+      "title": "面板文案声明密钥仅标签页内存/请求级（非 secret）",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "code": "P08-01d",
+      "title": "注入看图档后理解区声明将发送实际图片（页面所示配置）",
+      "ok": true,
+      "detail": "将发给 fake-qwen-vl-max：当前名称、介绍、卖点与重点，1 张实际图片（按列表顺序，主图优先，最多 3 张）。供应商按实际调用计费；不能据元数据宣称已经看图。"
+    },
+    {
+      "code": "P08-04b",
+      "title": "页面分析按钮可用（注入替身已配置，不锁人工主链）",
+      "ok": true,
+      "detail": {
+        "gate": "将发给 fake-qwen-vl-max：当前名称、介绍、卖点与重点，1 张实际图片（按列表顺序，主图优先，最多 3 张）。供应商按实际调用计费；不能据元数据宣称已经看图。"
+      }
+    },
+    {
+      "code": "P08-04c",
+      "title": "无 key 的看图请求体被网关拒绝（VISION_BYTES_REQUIRED，不调用模型）",
+      "ok": true,
+      "detail": {
+        "family": "input_rejected",
+        "code": "VISION_BYTES_REQUIRED",
+        "message": "看图理解需要至少一张已校验的参考图字节（reference_images 1..3 张）；这次请求没有调用模型。",
+        "retry_policy": "fatal",
+        "http_status": 400,
+        "request_id": null,
+        "details": null
+      }
+    },
+    {
+      "code": "P08-03pre",
+      "title": "点击分析前页面仍声明将发送实际图片（与看图档一致）",
+      "ok": true,
+      "detail": "将发给 fake-qwen-vl-max：当前名称、介绍、卖点与重点，1 张实际图片（按列表顺序，主图优先，最多 3 张）。供应商按实际调用计费；不能据元数据宣称已经看图。"
+    },
+    {
+      "code": "P08-03a",
+      "title": "看图替身收到 exactly 1 张真实图片字节（非空 + sha 与上传原图一致）",
+      "ok": true,
+      "detail": [
+        {
+          "scenario": "ok",
+          "product_name": "P08 看图贯通",
+          "vision_images": 1,
+          "images": [
+            {
+              "role": "primary",
+              "media_type": "image/png",
+              "sha256": "7af577c6699c88fb4d28c4ea992237dd9dbd17026beec0b37b2ac18351d34419",
+              "byte_size": 3126
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "code": "P08-03b",
+      "title": "页面所示配置与实际请求一致（模型行 + 已发送图片行含 role/sha 前缀）",
+      "ok": true,
+      "detail": {
+        "result": "最近一次分析：4 个提案，写入 4 个槽位 · fake-vision-semantic（fake-qwen-vl-max） · 原资料 v2 · 已发送实际图片（primary/7af577c6699c…） · 2026/10/7 11:28:08 · 假看图 Provider 提案：已收到实际图片字节，仅用于有效配置贯通验证。",
+        "gate": "将发给 fake-qwen-vl-max：当前名称、介绍、卖点与重点，1 张实际图片（按列表顺序，主图优先，最多 3 张）。供应商按实际调用计费；不能据元数据宣称已经看图。"
+      }
+    },
+    {
+      "code": "P08-03c",
+      "title": "分析记录写真实图片来源（role/media/sha256，无字节原文）",
+      "ok": true,
+      "detail": [
+        {
+          "role": "primary",
+          "media_type": "image/png",
+          "sha256": "7af577c6699c88fb4d28c4ea992237dd9dbd17026beec0b37b2ac18351d34419"
+        }
+      ]
+    },
+    {
+      "code": "P08-02",
+      "title": "探针 key 不出现在 DOM/响应/库快照/日志/请求头记录",
+      "ok": true,
+      "detail": {
+        "hits": [],
+        "request_headers_seen": [
+          {},
+          {},
+          {}
+        ]
+      }
+    },
+    {
+      "code": "P08-04a",
+      "title": "旧格式包导入拒绝（包格式版本边界仍为当前 v2，不做迁移）",
+      "ok": true,
+      "detail": "见下方 storage/package.js 断言与 node 包契约测试"
+    }
+  ],
+  "captures": {
+    "capabilities": {
+      "provider_id": "fake-vision-semantic",
+      "model_id": "fake-qwen-vl-max",
+      "configured": true,
+      "credential_source": "test_double",
+      "vision": true,
+      "reference_images": true,
+      "choices": [
+        "dashscope-semantic",
+        "dashscope-vision",
+        "fake-vision-semantic"
+      ]
+    },
+    "gate_text": "将发给 fake-qwen-vl-max：当前名称、介绍、卖点与重点，1 张实际图片（按列表顺序，主图优先，最多 3 张）。供应商按实际调用计费；不能据元数据宣称已经看图。",
+    "analyze_result": "最近一次分析：4 个提案，写入 4 个槽位 · fake-vision-semantic（fake-qwen-vl-max） · 原资料 v2 · 已发送实际图片（primary/7af577c6699c…） · 2026/10/7 11:28:08 · 假看图 Provider 提案：已收到实际图片字节，仅用于有效配置贯通验证。",
+    "vision_calls": [
+      {
+        "scenario": "ok",
+        "product_name": "P08 看图贯通",
+        "vision_images": 1,
+        "images": [
+          {
+            "role": "primary",
+            "media_type": "image/png",
+            "sha256": "7af577c6699c88fb4d28c4ea992237dd9dbd17026beec0b37b2ac18351d34419",
+            "byte_size": 3126
+          }
+        ]
+      }
+    ],
+    "secret_hits": []
+  },
+  "note": "test-only fake-vision 替身经显式注入接缝；生产注册表未改（config/product-v2/providers.json 无 diff）。"
+}

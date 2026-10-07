@@ -72,9 +72,12 @@ export function createSemanticAnalysisModule(deps) {
                 return { kind: "not_sent", action, message: "资料已变化；没有发送旧资料，请核对后重新明确发起。" };
             }
             const at = new Date().toISOString();
+            const sentImages = prepared.body.reference_images || [];
+            const imageProvenance = sentImages.map((item) => ({ role: String(item.role),
+                media_type: String(item.media_type), sha256: String(item.sha256) }));
             const base = { schema_version: 1, action_id: newActionId(), source: prepared.source,
                 provider: prepared.provider, created_at: at, updated_at: at,
-                reference_images_sent: Boolean(prepared.body.reference_images?.length) };
+                reference_images_sent: sentImages.length > 0, image_provenance: imageProvenance };
             let version = 0;
             async function save(record) {
                 const saved = await deps.repository.documents.save(pid, { kind: "semantic_analysis",
