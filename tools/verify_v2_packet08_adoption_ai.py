@@ -162,24 +162,24 @@ def main() -> int:
                 review_calls_before = [dict(item) for item in review.calls]
                 check(checks, "P08A-02a", "生成/查看/切换比较/采用本身不产生复核外发（calls==0）",
                       len(review_calls_before) == 0, {"calls": len(review_calls_before)})
-                # 显式发起：点比较面板的 AI 复核按钮（带诊断：按钮态/复核状态行/DB 报告）。
-                diag = page.evaluate(
-                    """() => ({ review_disabled: document.getElementById("compare-review").disabled,
-                      status: (document.getElementById("compare-status") || {}).textContent || "",
-                      vlm: (document.querySelector("[data-compare-vlm]") || {}).textContent || "" })""")
-                print("DIAG-before-click", json.dumps(diag, ensure_ascii=False)[:400], flush=True)
+                tabs = page.locator('#compare-candidates [role="tab"]')
+                if tabs.count() > 1:
+                    tabs.nth(1).click()
+                    page.wait_for_timeout(400)
+                    tabs.nth(0).click()
+                    page.wait_for_timeout(400)
+                check(checks, "P08A-02b", "切换查看候选不产生复核外发",
+                      len(review.calls) == 0, {"calls": len(review.calls)})
                 page.locator("#compare-review").click()
-                for _ in range(12):
-                    page.wait_for_timeout(1000)
-                    diag2 = page.evaluate(
-                        """() => ({ status: (document.getElementById("compare-status") || {}).textContent || "",
-                          vlm: (document.querySelector("[data-compare-vlm]") || {}).textContent || "",
-                          v: (document.querySelector("[data-compare-vlm]") || {}).getAttribute("data-compare-vlm") })""")
-                    print("DIAG-poll", json.dumps(diag2, ensure_ascii=False)[:300],
-                          "calls=", len(review.calls), flush=True)
-                    if (diag2.get("v") == "checked"):
-                        break
-
+                page.wait_for_function(
+                    """() => { const n = document.querySelector("[data-compare-vlm]");
+                      return n && n.getAttribute("data-compare-vlm") === "checked"; }""",
+                    timeout=60_000)
+                page.wait_for_timeout(300)
+                review_calls_after_click = [dict(item) for item in review.calls]
+                check(checks, "P08A-02c", "显式发起后才有复核请求外发（exactly 1 次，不自动重提）",
+                      len(review_calls_after_click) == 1,
+                      {"calls": len(review_calls_after_click)})
                 # ---- P08A-03：真实失败才记 Unknown ----
                 holder["scenario"] = "unknown"
                 page.locator("#compare-review").click()
@@ -241,11 +241,15 @@ def main() -> int:
 
                 # ---- P08A-06：零意外错误 ----
                 http_bad = [h for h in logs["http"] if "/favicon.ico" not in h]
-                # unknown 演练的复核 5xx/4xx 资源日志与既有口径一致，允许。
+                # unknown 演练必然产生复核 504（unknown=true 的真实失败路径）；
+                # logs["http"] 已证明该 504 来自 /api/v2/review/candidate（http_ok 为空），
+                # 浏览器对失败 fetch 的资源日志是同一请求的另一面，属期望内，不判意外。
                 http_ok = [h for h in http_bad if "/api/v2/review/candidate" not in h]
-                check(checks, "P08A-06", "零意外 console / page / HTTP 错误（复核失败路径的资源日志除外）",
-                      not logs["console"] and not logs["page"] and not http_ok,
-                      {"console": logs["console"][:3], "page": logs["page"][:3], "http": http_ok[:3]})
+                console_ok = [h for h in logs["console"]
+                              if not ("504" in h and not http_ok)]
+                check(checks, "P08A-06", "零意外 console / page / HTTP 错误（unknown 演练的 504 路径除外）",
+                      not console_ok and not logs["page"] and not http_ok,
+                      {"console": console_ok[:3], "page": logs["page"][:3], "http": http_ok[:3]})
             finally:
                 context.close()
         finally:

@@ -8,11 +8,13 @@ export function sourceContext(source) {
         assets: source.references,
     };
 }
+/** 复核请求用已确认事实投影：只按服务端 FactItem 契约送 {label, value}；
+ * slot_id/source 是本地溯源字段，服务端 extra=forbid 会 400（input_rejected，不调用模型）。
+ * Prompt/简报侧的 ConfirmedFact（含 slot_id/source/value 原值）不受影响。 */
 export function confirmedFacts(source) {
     return source.slots.filter(({ slot }) => slot.status === "confirmed").slice(0, 20).map(({ slot }) => ({
-        slot_id: slot.slot_id, label: String(slot.label || slot.slot_id).slice(0, 60),
+        label: String(slot.label || slot.slot_id).slice(0, 60),
         value: (Array.isArray(slot.value) ? slot.value.join("；") : String(slot.value)).slice(0, 200),
-        source: slot.source,
     }));
 }
 /** 只读当前依据投影（沿用既有 R6.2 算法，不引入第二套 currentness 约定）：

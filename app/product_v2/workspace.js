@@ -593,7 +593,7 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
     prompts,
     settings: modelSettings,
     beginAction, sources: projectSources,
-    changed: () => { deliveryView?.render(); },
+    changed: () => { deliveryView?.render(); generationView?.renderAttempts(); },
   });
   // 单图复核请求准备归 adoption：generation 的注入在 adoption 装配后补线，
   // 调用只发生在用户点击复核时（装配早已完成），不形成装配期循环。

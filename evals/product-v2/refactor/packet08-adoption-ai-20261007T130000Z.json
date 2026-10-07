@@ -1,0 +1,166 @@
+{
+  "label": "packet08-adoption-ai-20261007T130000Z",
+  "at": "2026-10-07T04:32:39.466665+00:00",
+  "shot_id": "shot_main_clean",
+  "candidate_id": "act-c2babd56c403477ab311f90d4534764f",
+  "checks": [
+    {
+      "code": "P08A-01a",
+      "title": "未发起复核时审核卡显示未复核/未运行（不折叠成 Unknown）",
+      "ok": true,
+      "detail": {
+        "text": "AI 复核：未复核（未运行，按需发起才会调用；不阻断人工采用）",
+        "ai": "not_reviewed"
+      }
+    },
+    {
+      "code": "P08A-01b",
+      "title": "未发起复核时人工采用可继续（state=current，不被复核门阻断）",
+      "ok": true,
+      "detail": {
+        "state": "current"
+      }
+    },
+    {
+      "code": "P08A-01c",
+      "title": "比较面板未发起时视觉复核行记 not_run（不是 Unknown）",
+      "ok": true,
+      "detail": {
+        "text": "视觉复核（按需发起）：未复核（未运行，未发起 AI 复核；不阻断人工采用）",
+        "v": "not_run"
+      }
+    },
+    {
+      "code": "P08A-02a",
+      "title": "生成/查看/切换比较/采用本身不产生复核外发（calls==0）",
+      "ok": true,
+      "detail": {
+        "calls": 0
+      }
+    },
+    {
+      "code": "P08A-02b",
+      "title": "切换查看候选不产生复核外发",
+      "ok": true,
+      "detail": {
+        "calls": 0
+      }
+    },
+    {
+      "code": "P08A-02c",
+      "title": "显式发起后才有复核请求外发（exactly 1 次，不自动重提）",
+      "ok": true,
+      "detail": {
+        "calls": 1
+      }
+    },
+    {
+      "code": "P08A-03",
+      "title": "真实失败才显示 Unknown（outcome=unknown + inspection_unavailable，不伪造 PASS）",
+      "ok": true,
+      "detail": {
+        "outcome": "unknown",
+        "findings": [
+          "candidate.png_contract:PASS",
+          "candidate.record_consistent:PASS",
+          "platform.min_long_side:PASS",
+          "platform.recommended_long_side:WARNING",
+          "platform.main_square:PASS",
+          "platform.alpha_channel:PASS",
+          "candidate.pixel_depth:PASS",
+          "vlm.inspection_unavailable:UNKNOWN"
+        ]
+      }
+    },
+    {
+      "code": "P08A-03b",
+      "title": "复核失败不改变人工采用（仍 current，不自动改选）",
+      "ok": true,
+      "detail": {
+        "state": "current"
+      }
+    },
+    {
+      "code": "P08A-04",
+      "title": "刷新后如实展示（unknown 仍 unknown，不退回未复核/不涨版本链）",
+      "ok": true,
+      "detail": {
+        "card": {
+          "text": "AI 复核：未完成（结果未知，不阻断人工采用）",
+          "ai": "unknown"
+        },
+        "outcome": "unknown",
+        "versions": [
+          1,
+          2,
+          3
+        ]
+      }
+    },
+    {
+      "code": "P08A-05",
+      "title": "交付门仍评估确定性硬门（无 AI 报告不是硬缺口：门禁可读、无 not_run 伪造 BLOCK）",
+      "ok": true,
+      "detail": {
+        "gate_status": "交付门禁未通过：2 条阻断，逐条处理后才能生成。",
+        "findings": [
+          [
+            "export.suite_review_current",
+            "BLOCK"
+          ],
+          [
+            "export.unknown_acknowledged",
+            "BLOCK"
+          ],
+          [
+            "export.selection_complete",
+            "PASS"
+          ],
+          [
+            "export.chain_integrity",
+            "PASS"
+          ],
+          [
+            "export.report_current",
+            "PASS"
+          ],
+          [
+            "export.no_blocking_findings",
+            "PASS"
+          ],
+          [
+            "export.asset_hash_matches",
+            "PASS"
+          ]
+        ]
+      }
+    },
+    {
+      "code": "P08A-06",
+      "title": "零意外 console / page / HTTP 错误（unknown 演练的 504 路径除外）",
+      "ok": true,
+      "detail": {
+        "console": [],
+        "page": [],
+        "http": []
+      }
+    }
+  ],
+  "captures": {
+    "capabilities": {
+      "review_configured": true
+    },
+    "ai_line_before": "AI 复核：未复核（未运行，按需发起才会调用；不阻断人工采用）",
+    "adopt_state_before": "current",
+    "vlm_attr_before": "not_run",
+    "review_calls_before": [],
+    "review_calls_after_click": [
+      {
+        "scenario": "ok",
+        "candidate_sha256": "c1be573e916ebaea47019b3626847e657deed0472f29dd5605d28c717ce64368",
+        "references": 1
+      }
+    ]
+  },
+  "note": "fake-review 替身经显式注入接缝（holder 切换 ok/unknown）；0 真实模型调用；生成/查看/切换/采用零复核外发，显式点击 exactly 1 次。"
+}
