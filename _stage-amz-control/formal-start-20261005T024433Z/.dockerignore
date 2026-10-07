@@ -1,0 +1,13 @@
+**
+!Dockerfile
+!pyproject.toml
+!uv.lock
+!app/
+!app/server.py
+!app/product_v2_server.py
+!app/product_v2/
+!app/product_v2/**
+!src/
+!src/**
+!config/
+!config/**

@@ -1,0 +1,493 @@
+{
+  "NOT-AUTHORITY": "point-in-time UI and outbound evidence",
+  "mode": "offline-replay",
+  "observed_at": "2026-10-05T14:01:22.311393+00:00",
+  "model_calls": 0,
+  "status": "failed",
+  "asset_sha256": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461",
+  "upstream": [],
+  "local_posts": [
+    {
+      "path": "/api/v2/semantic/analyze",
+      "semantic_provider": "dashscope-vision",
+      "byok_supplied": true,
+      "body_keys": [
+        "description",
+        "existing_slot_ids",
+        "focus",
+        "locale",
+        "max_slots",
+        "platform",
+        "product_name",
+        "reference_images",
+        "references",
+        "selling_points"
+      ],
+      "product_name": "带金属盖的玻璃蜂蜜罐"
+    }
+  ],
+  "page_errors": [],
+  "origin": "http://127.0.0.1:2463",
+  "capabilities": {
+    "default_trial": null,
+    "semantic": null,
+    "provider": {
+      "provider_id": "dashscope-vision",
+      "model_id": "qwen-vl-max",
+      "protocol": "v2.2.2",
+      "capability_version": null,
+      "configured": false,
+      "credential_source": "none",
+      "capabilities": {
+        "provider_id": "dashscope-vision",
+        "model_id": "qwen-vl-max",
+        "semantic_contract": "v2.2.2",
+        "vision_contract": "v2.6.0",
+        "supports_images": true,
+        "vision": true,
+        "max_reference_images": 3,
+        "max_reference_bytes": 4194304,
+        "analyze_fields": [
+          "product_name",
+          "description",
+          "selling_points",
+          "focus",
+          "references",
+          "locale",
+          "platform",
+          "max_slots",
+          "existing_slot_ids",
+          "reference_images"
+        ],
+        "configured": false,
+        "credential_source": "none",
+        "endpoint_host": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+        "timeout_seconds": 60,
+        "max_tokens": 5000,
+        "structured_output": "json_mode",
+        "transport": "langchain-openai/ChatOpenAI"
+      }
+    },
+    "analyze_fields": [
+      "product_name",
+      "description",
+      "selling_points",
+      "focus",
+      "references",
+      "locale",
+      "platform",
+      "max_slots",
+      "existing_slot_ids"
+    ]
+  },
+  "password_inputs_cleared": true,
+  "gateway_status": 502,
+  "envelope": {
+    "ok": false,
+    "unknown": false,
+    "error": {
+      "family": "provider_failed",
+      "code": "PROVIDER_AUTH_FAILED",
+      "message": "语义模型鉴权失败：请检查 DASHSCOPE_API_KEY 是否有效。",
+      "retry_policy": "fatal",
+      "http_status": 401,
+      "request_id": null,
+      "details": {
+        "provider_code": "invalid_api_key"
+      }
+    }
+  },
+  "snapshot": {
+    "projects": [
+      {
+        "project_id": "2e1272a8-b057-48a1-be4c-db2734afbf14",
+        "schema_version": 1,
+        "name": "公开许可蜂蜜罐图文辅助",
+        "state": "UNDERSTANDING_REVIEW",
+        "revision": 3,
+        "created_at": "2026-10-05T14:01:24.577Z",
+        "updated_at": "2026-10-05T14:01:32.659Z"
+      }
+    ],
+    "documents": [
+      {
+        "document_key": "2e1272a8-b057-48a1-be4c-db2734afbf14:fact_slot:brand:1",
+        "project_id": "2e1272a8-b057-48a1-be4c-db2734afbf14",
+        "kind": "fact_slot",
+        "document_id": "brand",
+        "version": 1,
+        "schema_version": 1,
+        "payload": {
+          "schema_version": 1,
+          "slot_id": "brand",
+          "label": "品牌",
+          "authority": "core_fixed",
+          "value_type": "text",
+          "value": null,
+          "source": "system_default",
+          "status": "missing",
+          "confidence": null,
+          "evidence": [],
+          "depends_on": [],
+          "critical": false
+        },
+        "created_at": "2026-10-05T14:01:26.008Z",
+        "updated_at": "2026-10-05T14:01:26.008Z"
+      },
+      {
+        "document_key": "2e1272a8-b057-48a1-be4c-db2734afbf14:fact_slot:color_summary:1",
+        "project_id": "2e1272a8-b057-48a1-be4c-db2734afbf14",
+        "kind": "fact_slot",
+        "document_id": "color_summary",
+        "version": 1,
+        "schema_version": 1,
+        "payload": {
+          "schema_version": 1,
+          "slot_id": "color_summary",
+          "label": "颜色概览",
+          "authority": "core_fixed",
+          "value_type": "text",
+          "value": null,
+          "source": "system_default",
+          "status": "missing",
+          "confidence": null,
+          "evidence": [],
+          "depends_on": [],
+          "critical": false
+        },
+        "created_at": "2026-10-05T14:01:26.009Z",
+        "updated_at": "2026-10-05T14:01:26.009Z"
+      },
+      {
+        "document_key": "2e1272a8-b057-48a1-be4c-db2734afbf14:fact_slot:key_material:1",
+        "project_id": "2e1272a8-b057-48a1-be4c-db2734afbf14",
+        "kind": "fact_slot",
+        "document_id": "key_material",
+        "version": 1,
+        "schema_version": 1,
+        "payload": {
+          "schema_version": 1,
+          "slot_id": "key_material",
+          "label": "主要材质",
+          "authority": "core_fixed",
+          "value_type": "text",
+          "value": null,
+          "source": "system_default",
+          "status": "missing",
+          "confidence": null,
+          "evidence": [],
+          "depends_on": [],
+          "critical": false
+        },
+        "created_at": "2026-10-05T14:01:26.008Z",
+        "updated_at": "2026-10-05T14:01:26.008Z"
+      },
+      {
+        "document_key": "2e1272a8-b057-48a1-be4c-db2734afbf14:fact_slot:package_contents:1",
+        "project_id": "2e1272a8-b057-48a1-be4c-db2734afbf14",
+        "kind": "fact_slot",
+        "document_id": "package_contents",
+        "version": 1,
+        "schema_version": 1,
+        "payload": {
+          "schema_version": 1,
+          "slot_id": "package_contents",
+          "label": "包装内容物",
+          "authority": "core_fixed",
+          "value_type": "text_list",
+          "value": null,
+          "source": "system_default",
+          "status": "missing",
+          "confidence": null,
+          "evidence": [],
+          "depends_on": [],
+          "critical": false
+        },
+        "created_at": "2026-10-05T14:01:26.011Z",
+        "updated_at": "2026-10-05T14:01:26.011Z"
+      },
+      {
+        "document_key": "2e1272a8-b057-48a1-be4c-db2734afbf14:fact_slot:product_category:1",
+        "project_id": "2e1272a8-b057-48a1-be4c-db2734afbf14",
+        "kind": "fact_slot",
+        "document_id": "product_category",
+        "version": 1,
+        "schema_version": 1,
+        "payload": {
+          "schema_version": 1,
+          "slot_id": "product_category",
+          "label": "商品品类",
+          "authority": "core_fixed",
+          "value_type": "text",
+          "value": null,
+          "source": "system_default",
+          "status": "missing",
+          "confidence": null,
+          "evidence": [],
+          "depends_on": [],
+          "critical": true
+        },
+        "created_at": "2026-10-05T14:01:26.005Z",
+        "updated_at": "2026-10-05T14:01:26.005Z"
+      },
+      {
+        "document_key": "2e1272a8-b057-48a1-be4c-db2734afbf14:fact_slot:product_name:1",
+        "project_id": "2e1272a8-b057-48a1-be4c-db2734afbf14",
+        "kind": "fact_slot",
+        "document_id": "product_name",
+        "version": 1,
+        "schema_version": 1,
+        "payload": {
+          "schema_version": 1,
+          "slot_id": "product_name",
+          "label": "商品名称",
+          "authority": "core_fixed",
+          "value_type": "text",
+          "value": null,
+          "source": "system_default",
+          "status": "missing",
+          "confidence": null,
+          "evidence": [],
+          "depends_on": [],
+          "critical": true
+        },
+        "created_at": "2026-10-05T14:01:26.004Z",
+        "updated_at": "2026-10-05T14:01:26.004Z"
+      },
+      {
+        "document_key": "2e1272a8-b057-48a1-be4c-db2734afbf14:fact_slot:signature_features:1",
+        "project_id": "2e1272a8-b057-48a1-be4c-db2734afbf14",
+        "kind": "fact_slot",
+        "document_id": "signature_features",
+        "version": 1,
+        "schema_version": 1,
+        "payload": {
+          "schema_version": 1,
+          "slot_id": "signature_features",
+          "label": "必须保持的商品特征",
+          "authority": "core_fixed",
+          "value_type": "text_list",
+          "value": null,
+          "source": "system_default",
+          "status": "missing",
+          "confidence": null,
+          "evidence": [],
+          "depends_on": [],
+          "critical": true
+        },
+        "created_at": "2026-10-05T14:01:26.007Z",
+        "updated_at": "2026-10-05T14:01:26.007Z"
+      },
+      {
+        "document_key": "2e1272a8-b057-48a1-be4c-db2734afbf14:fact_slot:size_dimensions:1",
+        "project_id": "2e1272a8-b057-48a1-be4c-db2734afbf14",
+        "kind": "fact_slot",
+        "document_id": "size_dimensions",
+        "version": 1,
+        "schema_version": 1,
+        "payload": {
+          "schema_version": 1,
+          "slot_id": "size_dimensions",
+          "label": "尺寸规格（对象/轴向/数值/单位）",
+          "authority": "core_fixed",
+          "value_type": "dimension_list",
+          "value": null,
+          "source": "system_default",
+          "status": "missing",
+          "confidence": null,
+          "evidence": [],
+          "depends_on": [],
+          "critical": false
+        },
+        "created_at": "2026-10-05T14:01:26.011Z",
+        "updated_at": "2026-10-05T14:01:26.011Z"
+      },
+      {
+        "document_key": "2e1272a8-b057-48a1-be4c-db2734afbf14:fact_slot:size_summary:1",
+        "project_id": "2e1272a8-b057-48a1-be4c-db2734afbf14",
+        "kind": "fact_slot",
+        "document_id": "size_summary",
+        "version": 1,
+        "schema_version": 1,
+        "payload": {
+          "schema_version": 1,
+          "slot_id": "size_summary",
+          "label": "尺寸概览",
+          "authority": "core_fixed",
+          "value_type": "text",
+          "value": null,
+          "source": "system_default",
+          "status": "missing",
+          "confidence": null,
+          "evidence": [],
+          "depends_on": [],
+          "critical": false
+        },
+        "created_at": "2026-10-05T14:01:26.010Z",
+        "updated_at": "2026-10-05T14:01:26.010Z"
+      },
+      {
+        "document_key": "2e1272a8-b057-48a1-be4c-db2734afbf14:product_input:intake:1",
+        "project_id": "2e1272a8-b057-48a1-be4c-db2734afbf14",
+        "kind": "product_input",
+        "document_id": "intake",
+        "version": 1,
+        "schema_version": 1,
+        "payload": {
+          "schema_version": 1,
+          "product_name": "",
+          "description": "",
+          "selling_points": [],
+          "focus": "",
+          "references": [
+            {
+              "asset_sha256": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461",
+              "role": "primary"
+            }
+          ]
+        },
+        "created_at": "2026-10-05T14:01:25.013Z",
+        "updated_at": "2026-10-05T14:01:25.013Z"
+      },
+      {
+        "document_key": "2e1272a8-b057-48a1-be4c-db2734afbf14:product_input:intake:2",
+        "project_id": "2e1272a8-b057-48a1-be4c-db2734afbf14",
+        "kind": "product_input",
+        "document_id": "intake",
+        "version": 2,
+        "schema_version": 1,
+        "payload": {
+          "schema_version": 1,
+          "product_name": "带金属盖的玻璃蜂蜜罐",
+          "description": "请结合商品图片识别可见外观。品牌、精确尺寸、容量未提供，不猜测。最多提出六个可追溯槽位，由人工确认。",
+          "selling_points": [],
+          "focus": "",
+          "references": [
+            {
+              "asset_sha256": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461",
+              "role": "primary"
+            }
+          ]
+        },
+        "created_at": "2026-10-05T14:01:25.664Z",
+        "updated_at": "2026-10-05T14:01:25.664Z"
+      },
+      {
+        "document_key": "2e1272a8-b057-48a1-be4c-db2734afbf14:semantic_analysis:act-d1ace30751704e80a6f18b7f9890f2d3:1",
+        "project_id": "2e1272a8-b057-48a1-be4c-db2734afbf14",
+        "kind": "semantic_analysis",
+        "document_id": "act-d1ace30751704e80a6f18b7f9890f2d3",
+        "version": 1,
+        "schema_version": 1,
+        "payload": {
+          "schema_version": 1,
+          "action_id": "act-d1ace30751704e80a6f18b7f9890f2d3",
+          "source": {
+            "document_id": "intake",
+            "version": 2,
+            "fingerprint": "[\"带金属盖的玻璃蜂蜜罐\",\"请结合商品图片识别可见外观。品牌、精确尺寸、容量未提供，不猜测。最多提出六个可追溯槽位，由人工确认。\",[],\"\",[{\"asset_sha256\":\"c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461\",\"role\":\"primary\"}]]",
+            "payload": {
+              "schema_version": 1,
+              "product_name": "带金属盖的玻璃蜂蜜罐",
+              "description": "请结合商品图片识别可见外观。品牌、精确尺寸、容量未提供，不猜测。最多提出六个可追溯槽位，由人工确认。",
+              "selling_points": [],
+              "focus": "",
+              "references": [
+                {
+                  "asset_sha256": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461",
+                  "role": "primary"
+                }
+              ]
+            }
+          },
+          "provider": {
+            "provider_id": "dashscope-vision",
+            "model_id": "qwen-vl-max",
+            "credential_source": "byok"
+          },
+          "created_at": "2026-10-05T14:01:26.040Z",
+          "updated_at": "2026-10-05T14:01:26.040Z",
+          "reference_images_sent": true,
+          "state": "pending_submit",
+          "proposal": null,
+          "error": null,
+          "disposition": "not_applied"
+        },
+        "created_at": "2026-10-05T14:01:26.041Z",
+        "updated_at": "2026-10-05T14:01:26.041Z"
+      },
+      {
+        "document_key": "2e1272a8-b057-48a1-be4c-db2734afbf14:semantic_analysis:act-d1ace30751704e80a6f18b7f9890f2d3:2",
+        "project_id": "2e1272a8-b057-48a1-be4c-db2734afbf14",
+        "kind": "semantic_analysis",
+        "document_id": "act-d1ace30751704e80a6f18b7f9890f2d3",
+        "version": 2,
+        "schema_version": 1,
+        "payload": {
+          "schema_version": 1,
+          "action_id": "act-d1ace30751704e80a6f18b7f9890f2d3",
+          "source": {
+            "document_id": "intake",
+            "version": 2,
+            "fingerprint": "[\"带金属盖的玻璃蜂蜜罐\",\"请结合商品图片识别可见外观。品牌、精确尺寸、容量未提供，不猜测。最多提出六个可追溯槽位，由人工确认。\",[],\"\",[{\"asset_sha256\":\"c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461\",\"role\":\"primary\"}]]",
+            "payload": {
+              "schema_version": 1,
+              "product_name": "带金属盖的玻璃蜂蜜罐",
+              "description": "请结合商品图片识别可见外观。品牌、精确尺寸、容量未提供，不猜测。最多提出六个可追溯槽位，由人工确认。",
+              "selling_points": [],
+              "focus": "",
+              "references": [
+                {
+                  "asset_sha256": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461",
+                  "role": "primary"
+                }
+              ]
+            }
+          },
+          "provider": {
+            "provider_id": "dashscope-vision",
+            "model_id": "qwen-vl-max",
+            "credential_source": "byok"
+          },
+          "created_at": "2026-10-05T14:01:26.040Z",
+          "updated_at": "2026-10-05T14:01:32.650Z",
+          "reference_images_sent": true,
+          "state": "unknown",
+          "proposal": null,
+          "error": {
+            "family": "provider_failed",
+            "code": "PROVIDER_AUTH_FAILED",
+            "message": "语义模型鉴权失败：请检查 DASHSCOPE_API_KEY 是否有效。",
+            "retry_policy": "fatal"
+          },
+          "disposition": "not_applied"
+        },
+        "created_at": "2026-10-05T14:01:32.650Z",
+        "updated_at": "2026-10-05T14:01:32.650Z"
+      }
+    ],
+    "assets": [
+      {
+        "asset_key": "2e1272a8-b057-48a1-be4c-db2734afbf14:c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461",
+        "project_id": "2e1272a8-b057-48a1-be4c-db2734afbf14",
+        "sha256": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461",
+        "media_type": "image/jpeg",
+        "byte_size": 2239735,
+        "original_name": "honey-jar-antique.jpg",
+        "role": "primary",
+        "width": 3840,
+        "height": 2560,
+        "schema_version": 1,
+        "created_at": "2026-10-05T14:01:24.996Z"
+      }
+    ],
+    "localStorage": {
+      "amz-listing-kit-v2:model-selection": "{\"semantic\":\"dashscope-vision\",\"image\":\"dashscope-qwen-image\",\"review\":\"dashscope-review\"}",
+      "amz-listing-kit-v2:current-project": "{\"project_id\":\"2e1272a8-b057-48a1-be4c-db2734afbf14\",\"updated_at\":\"2026-10-05T14:01:24.577Z\"}"
+    }
+  },
+  "result_text": "",
+  "error_text": "语义模型鉴权失败：请检查 DASHSCOPE_API_KEY 是否有效。 分类：provider_failed / PROVIDER_AUTH_FAILED 重试策略：fatal 结果未知：这次请求可能已经产生结果。系统不会自动重试，请确认后再手动点击“重新分析”。",
+  "error_kind": "AssertionError",
+  "error_line": 141
+}

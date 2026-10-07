@@ -1,0 +1,33 @@
+[project]
+name = "amz-listing-kit"
+version = "0.1.0"
+description = "Local-first Amazon listing image workbench"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "jsonschema==4.26.0",
+    "langchain-core==1.6.6",
+    "langchain-openai==1.6.6",
+    "numpy==2.4.6",
+    "pillow==12.3.0",
+    "python-dotenv==1.2.3",
+    "pyyaml==6.0.3",
+    "requests==2.34.2",
+]
+
+[project.optional-dependencies]
+cutout = [
+    "onnxruntime==1.30.0",
+    "rembg==2.0.84",
+]
+
+# 依赖权威：pyproject 声明直接依赖（精确版本），uv.lock 锁定完整解析结果。
+# 镜像用清华源：本机与 CI 都通过锁定来源取包，避免"本机通了 CI 挂"。
+[[tool.uv.index]]
+url = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple/"
+default = true
+
+[dependency-groups]
+dev = [
+    "playwright==1.63.0",
+]

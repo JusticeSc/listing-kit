@@ -1,0 +1,130 @@
+{
+  "schema": "amz-listing-kit/provider-registry@2",
+  "version": 1,
+  "scope": "product-v2-stateless",
+  "default_semantic_provider_id": "dashscope-semantic",
+  "provider_selection_env": "AMZ_V2_SEMANTIC_PROVIDER",
+  "default_image_provider_id": "dashscope-image",
+  "image_provider_selection_env": "AMZ_V2_IMAGE_PROVIDER",
+  "default_review_provider_id": "dashscope-review",
+  "review_provider_selection_env": "AMZ_V2_REVIEW_PROVIDER",
+  "providers": [
+    {
+      "id": "dashscope-semantic",
+      "role": "semantic",
+      "adapter": "v2_dashscope_semantic",
+      "model_id": "deepseek-v4.1-flash",
+      "model_env": "SEMANTIC_MODEL",
+      "api_key_env": "DASHSCOPE_API_KEY",
+      "base_url_env": "AMZ_V2_SEMANTIC_BASE_URL",
+      "timeout_env": "AMZ_V2_SEMANTIC_TIMEOUT",
+      "max_tokens_env": "AMZ_V2_SEMANTIC_MAX_TOKENS",
+      "capabilities": {
+        "reference_images": false,
+        "structured_output": "json_mode",
+        "stateless": true,
+        "test_double": false
+      },
+      "max_attempts": 1
+    },
+    {
+      "id": "fake-semantic",
+      "role": "semantic",
+      "adapter": "v2_fake_semantic",
+      "model_id": "fake-deepseek-v4.1-flash",
+      "model_env": null,
+      "api_key_env": null,
+      "base_url_env": null,
+      "timeout_env": null,
+      "max_tokens_env": null,
+      "capabilities": {
+        "reference_images": false,
+        "structured_output": "local",
+        "stateless": true,
+        "test_double": true
+      },
+      "max_attempts": 1
+    },
+    {
+      "id": "dashscope-image",
+      "role": "image",
+      "adapter": "v2_dashscope_image",
+      "model_id": "qwen-image-3.0",
+      "model_env": null,
+      "api_key_env": "DASHSCOPE_API_KEY",
+      "base_url_env": "AMZ_V2_IMAGE_BASE_URL",
+      "timeout_env": "AMZ_V2_IMAGE_TIMEOUT",
+      "max_tokens_env": null,
+      "capabilities": {
+        "reference_images": true,
+        "max_reference_images": 3,
+        "async_tasks": true,
+        "stateless": true,
+        "test_double": false
+      },
+      "max_attempts": 1
+    },
+    {
+      "id": "fake-image",
+      "role": "image",
+      "adapter": "v2_fake_image",
+      "model_id": "qwen-image-3.0",
+      "model_env": null,
+      "api_key_env": null,
+      "base_url_env": null,
+      "timeout_env": null,
+      "max_tokens_env": null,
+      "capabilities": {
+        "reference_images": true,
+        "max_reference_images": 3,
+        "async_tasks": true,
+        "stateless": true,
+        "test_double": true
+      },
+      "max_attempts": 1
+    },
+    {
+      "id": "dashscope-review",
+      "role": "review",
+      "adapter": "v2_dashscope_review",
+      "model_id": "qwen-vl-max",
+      "model_env": "REVIEW_MODEL",
+      "api_key_env": "DASHSCOPE_API_KEY",
+      "base_url_env": "AMZ_V2_REVIEW_BASE_URL",
+      "timeout_env": "AMZ_V2_REVIEW_TIMEOUT",
+      "max_tokens_env": "AMZ_V2_REVIEW_MAX_TOKENS",
+      "capabilities": {
+        "reference_images": true,
+        "max_reference_images": 3,
+        "structured_output": "json_mode",
+        "stateless": true,
+        "test_double": false
+      },
+      "max_attempts": 1
+    },
+    {
+      "id": "fake-review",
+      "role": "review",
+      "adapter": "v2_fake_review",
+      "model_id": "fake-qwen-vl-max",
+      "model_env": null,
+      "api_key_env": null,
+      "base_url_env": null,
+      "timeout_env": null,
+      "max_tokens_env": null,
+      "capabilities": {
+        "reference_images": true,
+        "max_reference_images": 3,
+        "structured_output": "local",
+        "stateless": true,
+        "test_double": true
+      },
+      "max_attempts": 1
+    }
+  ],
+  "error_contract": {
+    "families": ["input_rejected", "provider_failed", "provider_unknown", "internal"],
+    "retry_policies": ["retryable", "requires_review", "fatal"],
+    "rule": "只有确定请求没有产生结果的失败才 retryable；发送后的超时归 provider_unknown 且不得自动重提。"
+  }
+}

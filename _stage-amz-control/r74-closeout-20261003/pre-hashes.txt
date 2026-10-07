@@ -1,0 +1,7 @@
+a06d4dbd238e79ff66b0d7140c6c36f331f312a7b3fe0f578d74266a55e3488d  README.md
+7f975a290cc983b28cabec2ef11a07eb26d54384caca1fb1aec42937a240c01d  docs/product-v2-project-context.md
+44a03f6fb0997356d8be763492b6a302ab38643b0af2587ef53c4d0dcf44e5f6  evals/product-v2/refactor/completion-matrix-20261003-r74.md
+577d7d9ff3f1910ac3c6c7839078f8820777dfba404544b4e6443d7f9fac6587  evals/product-v2/refactor/completion-matrix-20261003-r74.json
+060b43bc9ff275c1794a6ba1e3175365441cc66c37e5f0d468db29a198d5063f  config/product-v2/verification.json
+c41c4224790392c61538ab9e903833396cb01267cf6b9f58a79deb97934f7f20  _working/amz-listing-kit-product-v2/state.md
+7c1b7e25fb711bbf1bfa216303a234e745733cbbf6813596d1624da388984ae1  _working/amz-listing-kit-product-v2/budget-ledger.json

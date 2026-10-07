@@ -1,0 +1,28 @@
+{
+  "schema": "amz-listing-kit/platform-profile@1",
+  "profile_id": "amazon-us",
+  "version": 1,
+  "marketplace": "amazon.com",
+  "locale": "en-US",
+  "currency": "USD",
+  "required_archetypes": ["hero"],
+  "file_rules": {
+    "accepted_formats": ["jpeg", "tiff", "png", "gif"],
+    "min_long_side_px": 500,
+    "max_long_side_px": 10000,
+    "recommended_zoom_long_side_px": 1000,
+    "min_dpi": 72
+  },
+  "main_image_guidance": {
+    "background_rgb": [255, 255, 255],
+    "minimum_product_occupancy_percent": 85,
+    "text_overlay_allowed": false,
+    "watermark_allowed": false,
+    "verification": "human_review"
+  },
+  "source": {
+    "url": "https://sellercentral.amazon.com/help/hub/reference/external/G1881",
+    "verified_on": "2026-09-28",
+    "notes": "General US Seller Central product-image guide. Category-specific style guides may add constraints. File size, supported color profiles, and upload naming are not frozen here until their exact requirements are verified. Main-image composition rules are prompts/review guidance, not claims of automatic semantic validation."
+  }
+}

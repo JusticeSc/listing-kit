@@ -1,0 +1,551 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Amazon US 商品套图</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <h1 class="brand">Amazon US 商品套图</h1>
+    <p class="topbar-note">项目保存在这台浏览器；服务器不保存你的项目，也不保存最近使用记录。</p>
+  </div>
+</header>
+
+<main>
+  <p id="boot-error" class="error" role="alert" hidden></p>
+  <p id="boot-retry-row" hidden><button id="boot-retry" type="button">重试启动</button></p>
+  <section id="capability-notice" class="error diag" role="alert" hidden>
+    <p class="diag-title" data-role="diag-title"></p>
+    <p class="diag-detail" data-role="diag-detail"></p>
+    <p class="diag-meta">当前来源：<code data-role="diag-origin"></code></p>
+    <p class="diag-action" data-role="diag-action"></p>
+    <button type="button" data-role="diag-retry">重新检测</button>
+  </section>
+
+  <!-- R3.3：启动横幅默认可见、新建/导入默认禁用——模块没加载或 boot 未完成时，
+       界面明确处于"启动中"，不再出现"空白首页、点新建无响应"的假可用窗口。
+       boot() 结束（成功/能力受阻/失败）时收起横幅并按结果设置控件。 -->
+  <p id="boot-pending" class="meta" role="status">正在启动本地项目库…</p>
+
+  <!-- ================= 项目首页 ================= -->
+  <section id="home-view" class="home" aria-labelledby="home-title">
+    <div class="home-head">
+      <h2 id="home-title" class="section-title">本机项目</h2>
+      <p class="meta">从空白开始：给项目起个名字、上传商品参考图，其余交给系统。</p>
+    </div>
+    <form id="create-form" class="create-form" autocomplete="off">
+      <label class="visually-hidden" for="new-project-name">新项目名称</label>
+      <input id="new-project-name" name="name" maxlength="120" disabled
+             placeholder="商品或任务名称，例如：蓝色保温杯 秋季主图">
+      <button id="create-project" class="primary" type="submit" disabled>新建项目</button>
+    </form>
+    <div class="import-row">
+      <button id="import-trigger" class="ghost" type="button" disabled>导入项目包（.zip）</button>
+      <input id="import-file" type="file" accept=".zip,application/zip" hidden>
+      <span class="meta">项目包包含完整历史，可在另一台机器或另一个浏览器里恢复。</span>
+    </div>
+    <p id="home-error" class="error" role="alert" hidden></p>
+    <p id="home-status" class="status" role="status" hidden></p>
+    <p id="empty-state" class="empty" hidden>这台浏览器还没有项目。填写名称后点“新建项目”开始。</p>
+    <ul id="project-list" class="project-list"></ul>
+  </section>
+
+  <!-- ================= 工作台（六阶段） ================= -->
+  <section id="project-view" class="workspace" hidden>
+    <header class="workspace-head">
+      <button id="back-home" class="link-button" type="button">← 项目列表</button>
+      <div class="workspace-title">
+        <h2 id="project-title" class="section-title"></h2>
+        <span id="project-state" class="badge"></span>
+      </div>
+      <p id="save-state" class="meta save-state" role="status"></p>
+      <details class="project-meta">
+        <summary>项目信息</summary>
+        <dl class="facts">
+          <div><dt>创建时间</dt><dd id="project-created"></dd></div>
+          <div><dt>最近更新</dt><dd id="project-updated"></dd></div>
+          <div><dt>当前范围</dt><dd id="project-scope" class="note"></dd></div>
+        </dl>
+      </details>
+    </header>
+
+    <nav id="stage-nav" class="stage-nav" aria-label="生产阶段">
+      <button type="button" class="stage" data-stage-nav="intake">
+        <span class="stage-index">1</span><span class="stage-label">资料</span></button>
+      <button type="button" class="stage" data-stage-nav="understand">
+        <span class="stage-index">2</span><span class="stage-label">理解</span></button>
+      <button type="button" class="stage" data-stage-nav="plan">
+        <span class="stage-index">3</span><span class="stage-label">方案</span></button>
+      <button type="button" class="stage" data-stage-nav="generate">
+        <span class="stage-index">4</span><span class="stage-label">生成</span></button>
+      <button type="button" class="stage" data-stage-nav="review">
+        <span class="stage-index">5</span><span class="stage-label">审核返工</span></button>
+      <button type="button" class="stage" data-stage-nav="deliver">
+        <span class="stage-index">6</span><span class="stage-label">交付</span></button>
+    </nav>
+    <p id="stage-summary" class="stage-summary" role="status"></p>
+
+    <p id="workspace-error" class="error" role="alert" hidden></p>
+
+    <div id="stage-panels" class="stage-panels">
+
+      <!-- 阶段 1：资料 -->
+      <section class="stage-panel" data-stage-panel="intake" aria-labelledby="stage-intake-title">
+        <div class="stage-head">
+          <h3 id="stage-intake-title" tabindex="-1">商品资料</h3>
+          <p class="meta">上传参考图并填写商品信息；分析后的推断写在「理解」里，不覆盖你填的内容。</p>
+        </div>
+
+        <section class="card" aria-labelledby="refs-title">
+          <div class="card-head">
+            <h4 id="refs-title">参考图</h4>
+            <p class="meta">至少一张“商品主图（primary）”；内容相同的图不会重复登记；最多 20 张。</p>
+          </div>
+          <div class="toolbar">
+            <button id="ref-add" type="button">添加参考图…</button>
+            <input id="ref-file" type="file" accept="image/*" multiple hidden>
+            <span id="ref-count" class="meta"></span>
+          </div>
+          <p id="ref-error" class="error" role="alert" hidden></p>
+          <p id="ref-empty" class="empty" hidden>还没有参考图。</p>
+          <ul id="ref-list" class="ref-list"></ul>
+        </section>
+
+        <section class="card" aria-labelledby="intake-title">
+          <div class="card-head">
+            <h4 id="intake-title">商品资料</h4>
+            <p class="meta">只有你填写的内容进这里；模型推断写在“商品理解”，不覆盖这里。</p>
+          </div>
+          <div class="field">
+            <label for="intake-name">商品名称（必填）</label>
+            <input id="intake-name" maxlength="120" autocomplete="off">
+          </div>
+          <div class="field">
+            <label for="intake-description">商品介绍</label>
+            <textarea id="intake-description" rows="4" maxlength="2000"></textarea>
+          </div>
+          <div class="field">
+            <label for="intake-selling-points">卖点（一行一条）</label>
+            <textarea id="intake-selling-points" rows="4"></textarea>
+          </div>
+          <div class="field">
+            <label for="intake-focus">本次重点</label>
+            <input id="intake-focus" maxlength="500" autocomplete="off">
+          </div>
+          <div class="toolbar">
+            <button id="intake-save" type="button">保存草稿</button>
+            <span id="intake-draft" class="meta" role="status"></span>
+          </div>
+          <p id="intake-error" class="error" role="alert" hidden></p>
+        </section>
+
+        <section class="card" aria-labelledby="analyze-title">
+          <div class="card-head">
+            <h4 id="analyze-title">分析商品资料</h4>
+            <p class="meta">把上面的资料与参考图元数据发给语义模型；服务器不保存项目内容。</p>
+          </div>
+          <div class="toolbar">
+            <button id="analyze-run" class="primary" type="button">分析商品资料</button>
+            <span id="analyze-gate" class="meta" role="status"></span>
+          </div>
+          <p id="analyze-result" class="status" role="status" hidden></p>
+          <p id="analyze-error" class="error" role="alert" hidden></p>
+        </section>
+      </section>
+
+      <!-- 阶段 2：理解 -->
+      <section class="stage-panel" data-stage-panel="understand" hidden aria-labelledby="stage-understand-title">
+        <div class="stage-head">
+          <h3 id="stage-understand-title" tabindex="-1">商品理解</h3>
+          <p class="meta">先处理冲突、未知与必须确认的槽位；已确认的事实默认折叠。</p>
+        </div>
+
+        <section class="card" aria-labelledby="slots-title">
+          <div class="card-head">
+            <h4 id="slots-title">事实槽位</h4>
+            <p class="meta">模型只能提议；确认、修改、标未知与移除都由你决定，历史版本保留。</p>
+          </div>
+          <div class="toolbar">
+            <span id="slots-progress" class="meta" role="status"></span>
+            <button id="slots-toggle" type="button" aria-expanded="false">显示全部事实</button>
+          </div>
+          <p id="slots-empty" class="empty" hidden>还没有槽位；先在“资料”里点“分析商品资料”。</p>
+          <ul id="slot-list" class="slot-list"></ul>
+          <details id="slot-add" class="sub-panel">
+            <summary>新增自定义槽位</summary>
+            <div class="field">
+              <label for="slot-add-id">槽位标识（小写字母开头，2-48 位）</label>
+              <input id="slot-add-id" maxlength="48" placeholder="battery_life" autocomplete="off">
+            </div>
+            <div class="field">
+              <label for="slot-add-label">显示名称</label>
+              <input id="slot-add-label" maxlength="60" placeholder="电池续航" autocomplete="off">
+            </div>
+            <div class="field">
+              <label for="slot-add-type">值类型</label>
+              <select id="slot-add-type">
+                <option value="text">文本</option>
+                <option value="text_list">文本列表（一行一条）</option>
+                <option value="number">数字</option>
+                <option value="boolean">是 / 否</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="slot-add-value">值</label>
+              <textarea id="slot-add-value" rows="2"></textarea>
+            </div>
+            <label class="check"><input id="slot-add-allow-model" type="checkbox"> 允许模型之后对这个槽位提议</label>
+            <div class="toolbar">
+              <button id="slot-add-save" type="button">新增槽位</button>
+              <span id="slot-add-status" class="meta" role="status"></span>
+            </div>
+          </details>
+          <p id="slots-error" class="error" role="alert" hidden></p>
+        </section>
+
+        <footer class="stage-foot">
+          <button id="stage-next-understand" class="primary" type="button" disabled>进入套图方案</button>
+          <span id="stage-next-understand-note" class="meta"></span>
+        </footer>
+      </section>
+
+      <!-- 阶段 3：方案 -->
+      <section class="stage-panel" data-stage-panel="plan" hidden aria-labelledby="stage-plan-title">
+        <div class="stage-head">
+          <h3 id="stage-plan-title" tabindex="-1">套图方案</h3>
+          <p class="meta">列表顺序就是最终顺序；先定拍哪些图，再按需调整公共风格与单图规格。</p>
+        </div>
+
+        <section class="card" aria-labelledby="suite-title">
+          <div class="card-head">
+            <h4 id="suite-title">图片任务</h4>
+            <p class="meta">至少保留一张必需图；每张图显示依据是否已满足。</p>
+          </div>
+          <p id="suite-locked" class="empty" hidden>完成商品理解（关键事实全部确认）后才能编辑套图规划。</p>
+          <div id="suite-editor" hidden>
+            <div class="toolbar">
+              <button id="suite-seed" class="primary" type="button">生成推荐方案</button>
+              <label class="visually-hidden" for="suite-template">图片模板</label>
+              <select id="suite-template"></select>
+              <button id="suite-add-template" type="button">添加模板图</button>
+            </div>
+            <p id="suite-template-hint" class="meta"></p>
+            <div class="toolbar secondary">
+              <button id="suite-custom-toggle" type="button" aria-expanded="false">添加自定义图</button>
+              <span id="suite-status" class="meta" role="status"></span>
+            </div>
+            <div id="suite-custom-panel" class="sub-panel" hidden>
+              <div class="field">
+                <label for="suite-custom-label">名称（必填）</label>
+                <input id="suite-custom-label" maxlength="60" autocomplete="off" placeholder="例如：赠品特写">
+              </div>
+              <div class="field">
+                <label for="suite-custom-intent">用途（可选）</label>
+                <input id="suite-custom-intent" maxlength="200" autocomplete="off">
+              </div>
+              <div class="toolbar">
+                <button id="suite-custom-save" type="button">添加</button>
+                <span id="suite-custom-status" class="meta" role="status"></span>
+              </div>
+            </div>
+            <p id="suite-empty" class="empty" hidden>还没有套图方案：点“生成推荐方案”，或从模板 / 自定义添加。</p>
+            <ol id="shot-list" class="shot-list"></ol>
+          </div>
+          <p id="suite-error" class="error" role="alert" hidden></p>
+        </section>
+
+        <details class="card sub-card">
+          <summary>公共风格与单图规格</summary>
+          <section aria-labelledby="specs-title">
+            <h4 id="specs-title" class="visually-hidden">风格与单图规格</h4>
+            <p id="specs-locked" class="empty" hidden>完成商品理解并生成套图方案后，才能编辑风格与规格。</p>
+            <div id="specs-editor" hidden>
+              <h5 class="sub-title">公共风格（全部图片）</h5>
+              <div class="field">
+                <label for="style-background">背景风格</label>
+                <input id="style-background" maxlength="200" autocomplete="off">
+              </div>
+              <div class="field">
+                <label for="style-lighting">光线</label>
+                <input id="style-lighting" maxlength="200" autocomplete="off">
+              </div>
+              <div class="field">
+                <label for="style-color-tone">色调</label>
+                <input id="style-color-tone" maxlength="200" autocomplete="off">
+              </div>
+              <div class="field">
+                <label for="style-composition">构图约定</label>
+                <input id="style-composition" maxlength="200" autocomplete="off">
+              </div>
+              <div class="field">
+                <label for="style-avoid">避免出现（一行一条）</label>
+                <textarea id="style-avoid" rows="2"></textarea>
+              </div>
+              <div class="toolbar">
+                <button id="style-save" class="primary" type="button">保存风格</button>
+                <button id="style-restore" type="button">恢复上一版本</button>
+                <span id="style-version" class="meta" role="status"></span>
+              </div>
+              <p id="style-effect" class="meta"></p>
+              <p id="style-status" class="status" role="status" hidden></p>
+              <p id="style-error" class="error" role="alert" hidden></p>
+              <h5 class="sub-title">单图规格与审核清单</h5>
+              <p id="shot-specs-empty" class="empty" hidden>套图方案里还没有图片。</p>
+              <div id="shot-spec-list"></div>
+            </div>
+            <p id="specs-error" class="error" role="alert" hidden></p>
+          </section>
+        </details>
+
+        <footer class="stage-foot">
+          <button id="stage-next-plan" class="primary" type="button" disabled>进入生成准备</button>
+          <span id="stage-next-plan-note" class="meta"></span>
+        </footer>
+      </section>
+
+      <!-- 阶段 4：生成 -->
+      <section class="stage-panel" data-stage-panel="generate" hidden aria-labelledby="stage-generate-title">
+        <div class="stage-head">
+          <h3 id="stage-generate-title" tabindex="-1">生成</h3>
+          <p class="meta">先确认将发送的资料与张数，再整套生成或逐张提交；任务编号可随时核对。</p>
+        </div>
+
+        <section class="card" aria-labelledby="prompt-title">
+          <div class="card-head">
+            <h4 id="prompt-title">Prompt</h4>
+            <p class="meta">每张图一个版本；界面文本、版本记录与请求快照逐字一致；失败时保留旧版本。可人工编辑全文并另存新版本。</p>
+          </div>
+          <p id="prompt-locked" class="empty" hidden>完成商品理解并生成套图方案后，才能编译 Prompt。</p>
+          <div id="prompt-editor" hidden>
+            <p id="prompt-status" class="meta" role="status"></p>
+            <div id="prompt-list"></div>
+          </div>
+          <p id="prompt-error" class="error" role="alert" hidden></p>
+        </section>
+
+        <section class="card" aria-labelledby="confirm-title">
+          <div class="card-head">
+            <h4 id="confirm-title">生成前确认</h4>
+            <p class="meta">提交前核对：张数、每图任务、将要发给外部模型的资料与未消除风险；过期或缺依据时不能提交。</p>
+          </div>
+          <p id="confirm-locked" class="empty" hidden>完成商品理解并生成套图方案后，才能做生成前确认。</p>
+          <div id="confirm-editor" hidden>
+            <p id="confirm-status" class="meta" role="status"></p>
+            <div id="confirm-summary"></div>
+            <div id="confirm-blockers"></div>
+            <div id="confirm-risks"></div>
+            <div id="confirm-list"></div>
+            <div class="toolbar">
+              <button id="confirm-action" class="primary" type="button">生成前确认</button>
+              <span id="confirm-record" class="meta" role="status"></span>
+            </div>
+          </div>
+          <p id="confirm-error" class="error" role="alert" hidden></p>
+        </section>
+
+        <section class="card" aria-labelledby="attempt-title">
+          <div class="card-head">
+            <h4 id="attempt-title">生成执行</h4>
+            <p class="meta">生成前确认通过后可以整套生成或逐张提交。每次提交先登记 action id 与将发送的 Prompt 版本、参考图，再调用图像网关；批次按套图顺序提交并逐图显示进度。部分失败不丢成功结果；结果未知不会自动重提，只提供「核对」与「新建 action」。成功的图片会把候选字节存进浏览器本地，刷新后仍可预览。</p>
+          </div>
+          <p id="attempt-locked" class="empty" hidden>完成商品理解、编译 Prompt 并通过“生成前确认”后，才能提交生成。</p>
+          <div id="attempt-editor" hidden>
+            <p id="attempt-status" class="meta" role="status"></p>
+            <p id="attempt-provider" class="meta"></p>
+            <div id="attempt-batch" class="attempt-batch" hidden>
+              <div class="toolbar attempt-batch-actions">
+                <button id="batch-run" type="button" class="primary">整套生成</button>
+                <button id="batch-stop" type="button" hidden>停止新增提交</button>
+                <button id="batch-reconcile" type="button" hidden>核对进行中</button>
+                <button id="batch-retry" type="button" hidden>重试失败</button>
+              </div>
+              <p id="batch-progress" class="meta" role="status"></p>
+              <p id="batch-hint" class="meta" hidden></p>
+            </div>
+            <div id="attempt-list"></div>
+          </div>
+          <p id="generate-error" class="error" role="alert" hidden></p>
+        </section>
+
+        <footer class="stage-foot">
+          <button id="stage-next-review" type="button" disabled>去审核与返工</button>
+          <span id="stage-next-review-note" class="meta"></span>
+        </footer>
+      </section>
+
+      <!-- 阶段 5：审核返工 -->
+      <section class="stage-panel" data-stage-panel="review" hidden aria-labelledby="stage-review-title">
+        <div class="stage-head">
+          <h3 id="stage-review-title" tabindex="-1">审核与返工</h3>
+          <p class="meta">以图片为中心：比较参考图、历史候选与新候选，按问题返工，然后逐图人工采用。</p>
+        </div>
+
+        <section class="card" aria-labelledby="review-list-title">
+          <div class="card-head">
+            <h4 id="review-list-title">逐图审核</h4>
+            <p id="adopt-progress" class="meta" role="status"></p>
+          </div>
+          <p id="review-empty" class="empty" hidden>还没有生成成功的候选；先在「生成」里整套生成或逐张提交。</p>
+          <div id="review-list" class="review-list"></div>
+        </section>
+
+        <section class="card" aria-labelledby="suite-review-title">
+          <div class="card-head">
+            <h4 id="suite-review-title">整套一致性</h4>
+            <p id="suite-review-status" class="meta" role="status">尚未运行整套检查。</p>
+          </div>
+          <div class="toolbar">
+            <button id="suite-review-run" type="button" disabled>运行整套检查</button>
+            <span id="suite-review-note" class="meta"></span>
+          </div>
+          <div id="suite-review-findings" class="suite-findings"></div>
+          <p id="suite-review-error" class="error" role="alert" hidden></p>
+        </section>
+
+        <section id="compare-panel" class="compare-panel" hidden aria-labelledby="compare-title">
+          <div class="compare-head">
+            <h4 id="compare-title">候选比较与审核清单</h4>
+            <span id="compare-subject" class="meta"></span>
+            <span class="compare-head-actions">
+              <button id="adopt-open" type="button" disabled>采用此候选</button>
+              <button id="rework-open" type="button" disabled>用此候选发起返工</button>
+              <button id="compare-jump" type="button">下一个待处理</button>
+              <button id="compare-close" type="button">收起</button>
+            </span>
+          </div>
+          <div class="compare-basis">
+            <p class="meta" id="compare-basis-title"></p>
+            <ul id="compare-references" class="compare-references"></ul>
+          </div>
+          <div class="compare-body">
+            <div class="compare-column">
+              <p class="meta">候选（异常优先，同档新到旧）</p>
+              <div id="compare-candidates" class="compare-candidates" role="tablist" aria-label="候选"></div>
+            </div>
+            <div class="compare-column">
+              <div id="compare-checklist" role="tabpanel" tabindex="0" aria-label="审核清单"></div>
+            </div>
+          </div>
+          <p id="compare-status" class="meta" role="status"></p>
+        </section>
+        <section id="rework-panel" class="rework-panel" hidden aria-labelledby="rework-title">
+          <div class="rework-head">
+            <h4 id="rework-title">按问题返工这张图</h4>
+            <span id="rework-basis" class="meta"></span>
+            <span class="rework-head-actions">
+              <button id="rework-reset" type="button" class="link-button">按建议重填</button>
+              <button id="rework-cancel" type="button">取消</button>
+            </span>
+          </div>
+          <details id="rework-tech" class="tech-details" hidden>
+            <summary>技术详情</summary>
+            <p id="rework-tech-body" class="meta"></p>
+          </details>
+          <fieldset id="rework-problems" class="rework-problems">
+            <legend class="meta">问题分类（可多选；至少要选一类或写一句方向）</legend>
+            <div class="rework-problem-options"></div>
+          </fieldset>
+          <div class="field">
+            <label for="rework-direction">改进方向（可改写）</label>
+            <textarea id="rework-direction" rows="2" maxlength="300"></textarea>
+          </div>
+          <div class="toolbar">
+            <button id="rework-preview" type="button">预览返工 Prompt</button>
+            <button id="rework-edit" type="button">查看/编辑完整 Prompt</button>
+            <button id="rework-submit" type="button" class="primary" disabled>确认并生成这张图</button>
+          </div>
+          <div id="rework-preview-box" class="rework-preview" hidden>
+            <p id="rework-preview-meta" class="meta"></p>
+            <pre id="rework-preview-text" class="prompt-text"></pre>
+          </div>
+          <p id="rework-summary" class="meta"></p>
+          <p id="rework-status" class="status" role="status" hidden></p>
+          <p id="rework-error" class="error" role="alert" hidden></p>
+        </section>
+        <section id="adopt-panel" class="adopt-panel" hidden aria-labelledby="adopt-title">
+          <div class="adopt-head">
+            <h4 id="adopt-title">采用候选（人工选择）</h4>
+            <span id="adopt-basis" class="meta"></span>
+            <span class="adopt-head-actions">
+              <button id="adopt-cancel" type="button">关闭</button>
+            </span>
+          </div>
+          <details id="adopt-tech" class="tech-details" hidden>
+            <summary>技术详情</summary>
+            <p id="adopt-tech-body" class="meta"></p>
+          </details>
+          <p id="adopt-current" class="meta"></p>
+          <p id="adopt-fingerprint" class="meta"></p>
+          <div class="toolbar">
+            <button id="adopt-submit" class="primary" type="button" disabled>采用这条候选</button>
+            <button id="adopt-clear" type="button" disabled>取消采用</button>
+          </div>
+          <p id="adopt-readiness" class="meta"></p>
+          <p id="adopt-status" class="status" role="status" hidden></p>
+          <p id="adopt-error" class="error" role="alert" hidden></p>
+        </section>
+        <p id="attempt-error" class="error" role="alert" hidden></p>
+
+        <footer class="stage-foot">
+          <button id="stage-next-deliver" class="primary" type="button" disabled>去交付</button>
+          <span id="stage-next-deliver-note" class="meta"></span>
+        </footer>
+      </section>
+
+      <!-- 阶段 6：交付 -->
+      <section class="stage-panel" data-stage-panel="deliver" hidden aria-labelledby="stage-deliver-title">
+        <div class="stage-head">
+          <h3 id="stage-deliver-title" tabindex="-1">交付</h3>
+          <p class="meta">确认每张必需图都已人工采用、没有待核对的未知项，再导出交付包。</p>
+        </div>
+
+        <section class="card" aria-labelledby="deliver-gate-title">
+          <div class="card-head">
+            <h4 id="deliver-gate-title">交付门禁</h4>
+            <p class="meta">交付包只包含已采用的候选；整套一致性与确定性导出检查通过后才允许生成。</p>
+          </div>
+          <div id="delivery-gate" class="delivery-gate"></div>
+          <section id="delivery-suite" class="delivery-suite" aria-labelledby="delivery-suite-title">
+            <h5 id="delivery-suite-title" class="delivery-suite-title">整套检查结论</h5>
+            <p id="delivery-suite-status" class="meta" role="status"></p>
+            <div id="delivery-suite-findings" class="suite-findings"></div>
+          </section>
+          <div id="delivery-unknowns" class="delivery-unknowns"></div>
+          <div class="toolbar">
+            <button id="deliver-export" class="primary" type="button" disabled>生成交付包（ZIP）</button>
+            <button id="deliver-project-package" type="button">导出项目包（完整历史）</button>
+            <span id="deliver-status" class="meta" role="status"></span>
+          </div>
+          <div id="delivery-result" class="delivery-result" hidden></div>
+          <p id="deliver-error" class="error" role="alert" hidden></p>
+        </section>
+      </section>
+
+    </div>
+  </section>
+</main>
+
+<template id="project-row-template">
+  <li class="project-row">
+    <div class="row-main">
+      <span class="badge" data-role="state"></span>
+      <span class="name" data-role="name"></span>
+      <span class="meta" data-role="updated"></span>
+    </div>
+    <div class="row-actions" data-role="actions">
+      <button type="button" data-action="open" class="primary">打开</button>
+      <button type="button" data-action="rename">重命名</button>
+      <button type="button" data-action="duplicate">复制</button>
+      <button type="button" data-action="export">导出项目包</button>
+      <button type="button" data-action="delete" class="danger">删除</button>
+    </div>
+  </li>
+</template>
+
+<script type="module" src="./app.js"></script>
+</body>
+</html>

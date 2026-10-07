@@ -1,0 +1,320 @@
+name: Product V2 CI and Docker CD
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: product-v2-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Control plane and Product V2
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Set up locked frontend tools
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0, MIT
+        with:
+          node-version-file: package.json
+          package-manager-cache: false
+
+      - name: Install approved frontend checker
+        run: |
+          npm install --global "npm@$(node -p 'require("./package.json").engines.npm')" --ignore-scripts
+          npm ci --ignore-scripts
+
+      - name: Install uv and locked dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install uv==0.9.18
+          uv sync --locked
+          uv run playwright install --with-deps chromium
+
+      - name: Check control plane
+        run: |
+          uv run python tools/check_docs.py --no-run
+          uv run python tools/check_project_state.py
+          uv run python evals/probes/project_state.py
+          uv run python evals/probes/docs_index.py
+          uv run python tools/check_verification.py
+          uv run python evals/probes/verification_policy.py
+
+      - name: Check frontend versions types and direct behavior
+        run: |
+          npm run check:versions
+          npm run check:types
+          npm run test:domain
+
+      - name: Check formal entry and browser contracts
+        run: |
+          uv run python app/server.py --check
+          uv run python tools/verify_v2_1_1_indexeddb.py
+          uv run python tools/verify_v2_1_2_project_home.py
+          uv run python tools/verify_v2_1_3_project_package.py
+          uv run python tools/verify_v2_1_4_formal_entry.py
+          uv run python tools/verify_v2_2_1_product_contracts.py
+          uv run python tools/verify_v2_2_2_semantic_provider.py
+          uv run python tools/verify_v2_2_3_intake_understanding.py
+          uv run python tools/verify_v2_3_1_suite_registry.py
+          uv run python tools/verify_v2_3_2_suite_editor.py
+          uv run python tools/verify_v2_3_3_session_lifecycle.py
+          uv run python tools/verify_v2_3_3_spec_versions.py
+          uv run python tools/verify_v2_3_4_prompt_compiler.py
+          uv run python tools/verify_v2_3_5_pre_generation_confirm.py
+          uv run python tools/verify_v2_3_6_prompt_manual_edit.py
+          uv run python tools/verify_v2_4_1_image_gateway.py
+          uv run python tools/verify_v2_4_2_generation_attempt.py
+          uv run python tools/verify_v2_4_3_batch_execution.py
+          uv run python tools/verify_v2_4_4_candidate_blob.py
+          uv run python tools/verify_v2_5_1_deterministic_review.py
+          uv run python tools/verify_v2_5_2_vlm_review.py
+          uv run python tools/verify_v2_r5_2_two_adapters.py
+          uv run python tools/verify_v2_5_3_compare_panel.py
+          uv run python tools/verify_v2_5_4_rework_loop.py
+          uv run python tools/verify_v2_5_5_suite_review.py
+          uv run python tools/verify_v2_6_1_selection.py
+          uv run python tools/verify_v2_6_2_delivery.py
+          uv run python tools/verify_v2_6_3_project_transfer.py
+          uv run python tools/verify_v2_6_4_accessibility.py
+          uv run python tools/verify_v2_ui_2_interaction_visual.py
+          uv run python tools/verify_v2_ui_3_frontend.py
+
+      - name: Reject verification side effects
+        run: |
+          dirty="$(git status --porcelain --untracked-files=all)"
+          if [ -n "$dirty" ]; then
+            printf '%s\n' "$dirty"
+            echo "Verification changed tracked files or created non-ignored files."
+            exit 1
+          fi
+
+  container:
+    name: Docker image, smoke test, and main deploy
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      IMAGE_NAME: amz-listing-kit
+      CONTAINER_NAME: amz-listing-kit
+      APP_PORT: "8780"
+      APP_PUBLIC_IP: "47.115.172.233"
+      APP_HTTPS_PORT: "8080"
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Build immutable image
+        run: docker build --pull --tag "${IMAGE_NAME}:${GITHUB_SHA}" .
+
+      - name: Smoke-test container health
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          docker run --detach --name amz-listing-kit-smoke --publish 127.0.0.1:8780:8780 "${IMAGE_NAME}:${GITHUB_SHA}"
+          for attempt in $(seq 1 30); do
+            status="$(docker inspect --format '{{.State.Health.Status}}' amz-listing-kit-smoke)"
+            if [ "$status" = healthy ]; then
+              python - <<'PY'
+          import json
+          import urllib.request
+
+          with urllib.request.urlopen("http://127.0.0.1:8780/api/health", timeout=5) as response:
+              body = json.load(response)
+          assert body["product"] == "v2", body
+          assert body["server_state"] == "none", body
+          PY
+              exit 0
+            fi
+            if [ "$status" = unhealthy ]; then
+              break
+            fi
+            sleep 2
+          done
+          docker logs amz-listing-kit-smoke
+          exit 1
+
+      - name: Remove smoke container
+        if: always()
+        run: docker rm --force amz-listing-kit-smoke >/dev/null 2>&1 || true
+
+      - name: Prepare SSH
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        run: |
+          set -Eeuo pipefail
+          install -m 700 -d "$HOME/.ssh"
+          printf '%s\n' "$SSH_PRIVATE_KEY" > "$HOME/.ssh/id_ed25519"
+          chmod 600 "$HOME/.ssh/id_ed25519"
+          ssh-keyscan -H "$SSH_HOST" >> "$HOME/.ssh/known_hosts"
+
+      - name: Sync provider secrets to server env file
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          DASHSCOPE_API_KEY: ${{ secrets.DASHSCOPE_API_KEY }}
+          # 第二 provider（火山 Ark，R4.3 只做运行环境接线；适配器本体属 R5.2）。
+          ARK_API_KEY: ${{ secrets.VOLCENGINE_API_KEY }}
+        run: |
+          set -Eeuo pipefail
+          if [ -z "${DASHSCOPE_API_KEY:-}" ] && [ -z "${ARK_API_KEY:-}" ]; then
+            echo "两个 provider 密钥都未配置：跳过同步，远程容器按未配置 provider 运行。" >&2
+            exit 0
+          fi
+          target="${SSH_USER}@${SSH_HOST}"
+          staging="$(mktemp)"
+          chmod 600 "$staging"
+          trap 'rm -f -- "$staging"' EXIT
+          {
+            if [ -n "${DASHSCOPE_API_KEY:-}" ]; then printf 'DASHSCOPE_API_KEY=%s\n' "$DASHSCOPE_API_KEY"; fi
+            if [ -n "${ARK_API_KEY:-}" ]; then printf 'ARK_API_KEY=%s\n' "$ARK_API_KEY"; fi
+          } > "$staging"
+          scp -o ConnectTimeout=15 "$staging" "$target:/tmp/amz-listing-kit-secrets.env"
+          ssh -o ConnectTimeout=15 -o ServerAliveInterval=15 "$target" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          umask 077
+          staging="/tmp/amz-listing-kit-secrets.env"
+          file="$HOME/.config/amz-listing-kit/app.env"
+          install -d -m 700 "$HOME/.config/amz-listing-kit"
+          touch "$file"
+          tmp="$(mktemp)"
+          grep -v -e '^DASHSCOPE_API_KEY=' -e '^ARK_API_KEY=' "$file" > "$tmp" || true
+          cat "$staging" >> "$tmp"
+          mv "$tmp" "$file"
+          chmod 600 "$file"
+          rm -f -- "$staging"
+          echo "app.env 已更新：$(wc -l < "$file") 行（密钥值不回显）"
+          REMOTE
+
+      - name: Build on remote Docker and deploy with rollback
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+        run: |
+          set -Eeuo pipefail
+          target="${SSH_USER}@${SSH_HOST}"
+          context="/tmp/amz-listing-kit-${GITHUB_SHA}"
+          ssh -o ConnectTimeout=15 -o ServerAliveInterval=15 "$target" \
+            "case '$context' in /tmp/amz-listing-kit-[0-9a-f]*) rm -rf -- '$context';; *) exit 2;; esac; install -d -m 700 '$context'"
+          tar -czf - Dockerfile .dockerignore pyproject.toml uv.lock \
+            app/server.py app/product_v2_server.py app/product_v2 src config deploy \
+            | ssh -o ConnectTimeout=15 -o ServerAliveInterval=15 "$target" "tar -xzf - -C '$context'"
+          ssh -o ConnectTimeout=15 -o ServerAliveInterval=15 "$target" 'bash -s' -- \
+            "${IMAGE_NAME}:${GITHUB_SHA}" "${CONTAINER_NAME}" "${APP_PORT}" "$context" \
+            "${APP_PUBLIC_IP}" "${APP_HTTPS_PORT}" <<'REMOTE'
+          set -Eeuo pipefail
+          image="$1"
+          name="$2"
+          port="$3"
+          context="$4"
+          public_ip="$5"
+          https_port="$6"
+          previous="${name}-previous"
+          env_file="$HOME/.config/amz-listing-kit/app.env"
+
+          case "$context" in
+            /tmp/amz-listing-kit-[0-9a-f]*) ;;
+            *) echo "refusing unexpected build context: $context" >&2; exit 2 ;;
+          esac
+          trap 'rm -rf -- "$context"' EXIT
+          docker build --pull --tag "$image" "$context"
+          docker rm --force "$previous" >/dev/null 2>&1 || true
+          if docker container inspect "$name" >/dev/null 2>&1; then
+            docker stop "$name" >/dev/null
+            docker rename "$name" "$previous"
+          fi
+
+          run_args=(--detach --name "$name" --restart unless-stopped --publish "${port}:8780")
+          if [ -f "$env_file" ]; then
+            run_args+=(--env-file "$env_file")
+          fi
+
+          if ! docker run "${run_args[@]}" "$image"; then
+            docker rename "$previous" "$name" >/dev/null 2>&1 || true
+            docker start "$name" >/dev/null 2>&1 || true
+            exit 1
+          fi
+
+          healthy=false
+          for attempt in $(seq 1 30); do
+            status="$(docker inspect --format '{{.State.Health.Status}}' "$name")"
+            if [ "$status" = healthy ]; then healthy=true; break; fi
+            if [ "$status" = unhealthy ]; then break; fi
+            sleep 2
+          done
+
+          if [ "$healthy" != true ]; then
+            docker logs "$name" || true
+            docker rm --force "$name" >/dev/null 2>&1 || true
+            if docker container inspect "$previous" >/dev/null 2>&1; then
+              docker rename "$previous" "$name"
+              docker start "$name"
+            fi
+            exit 1
+          fi
+
+          docker rm --force "$previous" >/dev/null 2>&1 || true
+
+          # 正式入口的 TLS 终止层（V2.UI.1）：Caddy 容器与配置随部署收敛，
+          # 应用容器保持无状态 HTTP；证书与 ACME 账户落在命名卷里，跨部署复用。
+          tls_name="${name}-tls"
+          tls_dir="$HOME/.config/amz-listing-kit/tls"
+          caddyfile="$tls_dir/Caddyfile"
+          install -d -m 700 "$tls_dir"
+          tls_changed=false
+          if [ -f "$context/deploy/caddy/Caddyfile" ] && ! cmp -s "$context/deploy/caddy/Caddyfile" "$caddyfile"; then
+            install -m 600 "$context/deploy/caddy/Caddyfile" "$caddyfile"
+            tls_changed=true
+          fi
+          if docker container inspect "$tls_name" >/dev/null 2>&1; then
+            if [ "$tls_changed" = true ]; then
+              docker restart "$tls_name" >/dev/null
+            else
+              docker start "$tls_name" >/dev/null 2>&1 || true
+            fi
+          else
+            docker run --detach --name "$tls_name" --restart unless-stopped --network host \
+              --volume "$caddyfile":/etc/caddy/Caddyfile:ro \
+              --volume "${name}-caddy-data":/data \
+              --volume "${name}-caddy-config":/config \
+              caddy:2 >/dev/null
+          fi
+
+          https_ok=false
+          for attempt in $(seq 1 20); do
+            if curl -fsS --max-time 8 "https://${public_ip}:${https_port}/api/health" >/dev/null 2>&1; then
+              https_ok=true
+              break
+            fi
+            sleep 3
+          done
+          if [ "$https_ok" != true ]; then
+            docker logs --tail 40 "$tls_name" >&2 || true
+            echo "https_entry_unhealthy url=https://${public_ip}:${https_port}/" >&2
+            exit 1
+          fi
+          echo "deployed_image=$image host_port=$port health=healthy"
+          echo "deployed_tls=https://${public_ip}:${https_port} caddy_container=$tls_name"
+          REMOTE

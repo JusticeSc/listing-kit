@@ -1,0 +1,19 @@
+{
+  "not_authority": "pre-cutover runtime evidence",
+  "goal_id": "1599c9600ae01cb7",
+  "snapshot": "_stage-amz-control/combined-refactor-2026-10-05T18-44-47-076Z",
+  "downloads": [
+    {
+      "path": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\_stage-amz-control\\combined-refactor-downloads\\正式开发—人工套图主链-20261005-1846.zip",
+      "suggestedFilename": "正式开发—人工套图主链-20261005-1846.zip",
+      "url": "blob:http://127.0.0.1:18786/bd92bb72-bca2-49ed-88fe-236d6ea767bc",
+      "bytes": 2364581
+    }
+  ],
+  "page_errors": {
+    "entries": [],
+    "nextSeq": 0,
+    "dropped": 0
+  },
+  "delivery_gate": "required main selection currently blocked despite adopted row; not a full delivery pass"
+}

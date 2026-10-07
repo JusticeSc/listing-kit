@@ -1,0 +1,31 @@
+{
+  // 渐进 TS 迁移（计划 §9 V2.R7.5）的唯一检查/编译配置；`npm run check:types` 与
+  // `npm run build:frontend` 都读这份 include。
+  // checkJs 关闭是**明确的覆盖范围声明**，不是全局忽略：已迁 Module（.ts）始终严格检查；
+  // 保留的 JS 基线逐个用文件头 `// @ts-check` 自愿纳入（errors.js / invalidation.js）；
+  // 作为依赖被拉进来的旧 JS 只做类型推断、不被检查——所以「检查通过」不代表未列出的 JS
+  // 有类型保障，实际纳入范围就是下面 include 里的文件。
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": false,
+    "strict": true,
+    "noEmit": true,
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2022", "DOM"]
+  },
+  "include": [
+    "app/product_v2/domain/type-contracts.d.ts",
+    "app/product_v2/domain/errors.js",
+    "app/product_v2/domain/invalidation.js",
+    "app/product_v2/domain/attempt.ts",
+    "app/product_v2/domain/config-export.ts",
+    "app/product_v2/semantic-analysis.ts",
+    "app/product_v2/session.ts",
+    "app/product_v2/model-settings.ts",
+    "app/product_v2/generation.ts",
+    "app/product_v2/app.js",
+    "app/product_v2/workspace.js"
+  ]
+}

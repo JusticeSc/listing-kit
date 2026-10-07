@@ -1,0 +1,65 @@
+{
+  "NOT-AUTHORITY": "point-in-time UI and outbound evidence",
+  "mode": "preflight",
+  "observed_at": "2026-10-05T14:08:06.708827+00:00",
+  "model_calls": 0,
+  "status": "preflight_ready_no_model_call",
+  "asset_sha256": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461",
+  "upstream": [],
+  "local_posts": [],
+  "page_errors": [],
+  "origin": "http://127.0.0.1:2760",
+  "capabilities": {
+    "default_trial": null,
+    "semantic": null,
+    "provider": {
+      "provider_id": "dashscope-vision",
+      "model_id": "qwen-vl-max",
+      "protocol": "v2.2.2",
+      "capability_version": null,
+      "configured": false,
+      "credential_source": "none",
+      "capabilities": {
+        "provider_id": "dashscope-vision",
+        "model_id": "qwen-vl-max",
+        "semantic_contract": "v2.2.2",
+        "vision_contract": "v2.6.0",
+        "supports_images": true,
+        "vision": true,
+        "max_reference_images": 3,
+        "max_reference_bytes": 4194304,
+        "analyze_fields": [
+          "product_name",
+          "description",
+          "selling_points",
+          "focus",
+          "references",
+          "locale",
+          "platform",
+          "max_slots",
+          "existing_slot_ids",
+          "reference_images"
+        ],
+        "configured": false,
+        "credential_source": "none",
+        "endpoint_host": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+        "timeout_seconds": 60,
+        "max_tokens": 5000,
+        "structured_output": "json_mode",
+        "transport": "langchain-openai/ChatOpenAI"
+      }
+    },
+    "analyze_fields": [
+      "product_name",
+      "description",
+      "selling_points",
+      "focus",
+      "references",
+      "locale",
+      "platform",
+      "max_slots",
+      "existing_slot_ids"
+    ]
+  },
+  "password_inputs_cleared": true
+}

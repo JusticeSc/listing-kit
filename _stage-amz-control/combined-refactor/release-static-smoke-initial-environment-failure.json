@@ -1,0 +1,33 @@
+{
+  "not_authority": "controlled real TLS/static consumer smoke; not Docker transaction or user boot root proof",
+  "source_snapshot": "_stage-amz-control/combined-refactor-2026-10-05T18-44-47-076Z",
+  "shell_bytes": 8419876,
+  "TLS": "temporary explicitly trusted certificate, no host trust changes, no insecure flag",
+  "model_calls": 0,
+  "cases": [
+    {
+      "case": "before-large-shell",
+      "rc": 1,
+      "stderr": "",
+      "stdout": ""
+    },
+    {
+      "case": "after-large-shell",
+      "rc": 1,
+      "stderr": "",
+      "stdout": ""
+    },
+    {
+      "case": "after-missing-entry",
+      "rc": 1,
+      "stderr": "",
+      "stdout": ""
+    },
+    {
+      "case": "after-bad-shell",
+      "rc": 1,
+      "stderr": "",
+      "stdout": ""
+    }
+  ]
+}

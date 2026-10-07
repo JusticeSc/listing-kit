@@ -1,0 +1,1831 @@
+{
+  "NOT-AUTHORITY": "point-in-time UI and outbound evidence",
+  "mode": "live",
+  "observed_at": "2026-10-05T14:14:56.601170+00:00",
+  "model_calls": 1,
+  "status": "live_legal_proposal_saved_no_auto_confirmation",
+  "asset_sha256": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461",
+  "upstream": [
+    {
+      "url": "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
+      "method": "POST",
+      "model": "qwen-vl-max",
+      "max_tokens": 5000,
+      "images": [
+        {
+          "media_type": "image/jpeg",
+          "byte_size": 2239735,
+          "sha256": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461"
+        }
+      ],
+      "response_format": {
+        "type": "json_object"
+      },
+      "http_status": 200
+    }
+  ],
+  "local_posts": [
+    {
+      "path": "/api/v2/semantic/analyze",
+      "semantic_provider": "dashscope-vision",
+      "byok_supplied": true,
+      "body_keys": [
+        "description",
+        "existing_slot_ids",
+        "focus",
+        "locale",
+        "max_slots",
+        "platform",
+        "product_name",
+        "reference_images",
+        "references",
+        "selling_points"
+      ],
+      "product_name": "带金属盖的玻璃蜂蜜罐"
+    }
+  ],
+  "page_errors": [],
+  "origin": "http://127.0.0.1:3049",
+  "capabilities": {
+    "default_trial": null,
+    "semantic": null,
+    "provider": {
+      "provider_id": "dashscope-vision",
+      "model_id": "qwen-vl-max",
+      "protocol": "v2.2.2",
+      "capability_version": null,
+      "configured": false,
+      "credential_source": "none",
+      "capabilities": {
+        "provider_id": "dashscope-vision",
+        "model_id": "qwen-vl-max",
+        "semantic_contract": "v2.2.2",
+        "vision_contract": "v2.6.0",
+        "supports_images": true,
+        "vision": true,
+        "max_reference_images": 3,
+        "max_reference_bytes": 4194304,
+        "analyze_fields": [
+          "product_name",
+          "description",
+          "selling_points",
+          "focus",
+          "references",
+          "locale",
+          "platform",
+          "max_slots",
+          "existing_slot_ids",
+          "reference_images"
+        ],
+        "configured": false,
+        "credential_source": "none",
+        "endpoint_host": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+        "timeout_seconds": 60,
+        "max_tokens": 5000,
+        "structured_output": "json_mode",
+        "transport": "langchain-openai/ChatOpenAI"
+      }
+    },
+    "analyze_fields": [
+      "product_name",
+      "description",
+      "selling_points",
+      "focus",
+      "references",
+      "locale",
+      "platform",
+      "max_slots",
+      "existing_slot_ids"
+    ]
+  },
+  "password_inputs_cleared": true,
+  "sdk_dispatch": "httpx2.Client.send guarded before invocation",
+  "gateway_status": 200,
+  "envelope": {
+    "ok": true,
+    "unknown": false,
+    "proposal": {
+      "semantic_contract": "v2.2.2",
+      "slots": [
+        {
+          "schema_version": 1,
+          "slot_id": "product_name",
+          "label": "商品名称",
+          "authority": "core_fixed",
+          "value_type": "text",
+          "value": "带金属盖的玻璃蜂蜜罐",
+          "source": "model_inference",
+          "status": "proposed",
+          "confidence": 0.95,
+          "evidence": [
+            {
+              "kind": "model",
+              "ref": "product_input",
+              "note": "根据商品名称描述"
+            }
+          ],
+          "depends_on": [],
+          "model_id": "qwen-vl-max",
+          "critical": true
+        },
+        {
+          "schema_version": 1,
+          "slot_id": "product_category",
+          "label": "商品品类",
+          "authority": "core_fixed",
+          "value_type": "text",
+          "value": "储物罐",
+          "source": "model_inference",
+          "status": "proposed",
+          "confidence": 0.9,
+          "evidence": [
+            {
+              "kind": "asset",
+              "ref": "image/jpeg;c024b7cf2b04…",
+              "note": "图片显示为用于存放蜂蜜的容器"
+            }
+          ],
+          "depends_on": [],
+          "model_id": "qwen-vl-max",
+          "critical": true
+        },
+        {
+          "schema_version": 1,
+          "slot_id": "signature_features",
+          "label": "必须保持的商品特征",
+          "authority": "core_fixed",
+          "value_type": "text_list",
+          "value": [
+            "瓶身刻有'HONEY'字样",
+            "蜂巢纹理设计",
+            "金属盖密封结构"
+          ],
+          "source": "model_inference",
+          "status": "proposed",
+          "confidence": 0.95,
+          "evidence": [
+            {
+              "kind": "asset",
+              "ref": "image/jpeg;c024b7cf2b04…",
+              "note": "图片可见HONEY字样与蜂巢纹路"
+            }
+          ],
+          "depends_on": [],
+          "model_id": "qwen-vl-max",
+          "critical": true
+        },
+        {
+          "schema_version": 1,
+          "slot_id": "key_material",
+          "label": "主要材质",
+          "authority": "core_fixed",
+          "value_type": "text",
+          "value": "玻璃",
+          "source": "model_inference",
+          "status": "proposed",
+          "confidence": 0.98,
+          "evidence": [
+            {
+              "kind": "asset",
+              "ref": "image/jpeg;c024b7cf2b04…",
+              "note": "透明瓶身具有玻璃光泽"
+            }
+          ],
+          "depends_on": [],
+          "model_id": "qwen-vl-max",
+          "critical": false
+        },
+        {
+          "schema_version": 1,
+          "slot_id": "color_summary",
+          "label": "颜色概览",
+          "authority": "core_fixed",
+          "value_type": "text",
+          "value": "透明玻璃配棕色金属盖",
+          "source": "model_inference",
+          "status": "proposed",
+          "confidence": 0.9,
+          "evidence": [
+            {
+              "kind": "asset",
+              "ref": "image/jpeg;c024b7cf2b04…",
+              "note": "瓶身为透明，盖子呈锈褐色"
+            }
+          ],
+          "depends_on": [],
+          "model_id": "qwen-vl-max",
+          "critical": false
+        },
+        {
+          "schema_version": 1,
+          "slot_id": "size_summary",
+          "label": "尺寸概览",
+          "authority": "core_fixed",
+          "value_type": "text",
+          "value": "小型便携式罐体",
+          "source": "model_inference",
+          "status": "proposed",
+          "confidence": 0.7,
+          "evidence": [
+            {
+              "kind": "asset",
+              "ref": "image/jpeg;c024b7cf2b04…",
+              "note": "视觉上小于手掌大小"
+            }
+          ],
+          "depends_on": [],
+          "model_id": "qwen-vl-max",
+          "critical": false
+        },
+        {
+          "schema_version": 1,
+          "slot_id": "brand",
+          "label": "品牌",
+          "authority": "core_fixed",
+          "value_type": "text",
+          "value": "未提供",
+          "source": "model_inference",
+          "status": "proposed",
+          "confidence": 0.6,
+          "evidence": [
+            {
+              "kind": "model",
+              "ref": "product_input",
+              "note": "资料中未提及品牌信息"
+            },
+            {
+              "kind": "asset",
+              "ref": "image/jpeg;c024b7cf2b04…",
+              "note": "图片未显示品牌标识"
+            }
+          ],
+          "depends_on": [],
+          "model_id": "qwen-vl-max",
+          "critical": false
+        },
+        {
+          "schema_version": 1,
+          "slot_id": "package_contents",
+          "label": "包装内容物",
+          "authority": "core_fixed",
+          "value_type": "text_list",
+          "value": [
+            "玻璃蜂蜜罐",
+            "金属盖"
+          ],
+          "source": "model_inference",
+          "status": "proposed",
+          "confidence": 0.85,
+          "evidence": [
+            {
+              "kind": "asset",
+              "ref": "image/jpeg;c024b7cf2b04…",
+              "note": "图片仅显示罐体与盖子"
+            }
+          ],
+          "depends_on": [],
+          "model_id": "qwen-vl-max",
+          "critical": false
+        },
+        {
+          "schema_version": 1,
+          "slot_id": "glass_texture",
+          "label": "玻璃表面纹理",
+          "authority": "category_dynamic",
+          "value_type": "text",
+          "value": "蜂巢状凹凸纹理",
+          "source": "model_inference",
+          "status": "proposed",
+          "confidence": 0.95,
+          "evidence": [
+            {
+              "kind": "asset",
+              "ref": "image/jpeg;c024b7cf2b04…",
+              "note": "瓶身中部可见规则六边形图案"
+            }
+          ],
+          "depends_on": [],
+          "model_id": "qwen-vl-max"
+        },
+        {
+          "schema_version": 1,
+          "slot_id": "lid_condition",
+          "label": "盖子状态",
+          "authority": "category_dynamic",
+          "value_type": "text",
+          "value": "生锈老化",
+          "source": "model_inference",
+          "status": "proposed",
+          "confidence": 0.8,
+          "evidence": [
+            {
+              "kind": "asset",
+              "ref": "image/jpeg;c024b7cf2b04…",
+              "note": "金属盖表面有明显锈迹"
+            }
+          ],
+          "depends_on": [],
+          "model_id": "qwen-vl-max"
+        },
+        {
+          "schema_version": 1,
+          "slot_id": "honey_residue",
+          "label": "内部残留物",
+          "authority": "category_dynamic",
+          "value_type": "text",
+          "value": "底部有少量蜂蜜残留",
+          "source": "model_inference",
+          "status": "proposed",
+          "confidence": 0.9,
+          "evidence": [
+            {
+              "kind": "asset",
+              "ref": "image/jpeg;c024b7cf2b04…",
+              "note": "瓶底可见黄色粘稠物质"
+            }
+          ],
+          "depends_on": [],
+          "model_id": "qwen-vl-max"
+        },
+        {
+          "schema_version": 1,
+          "slot_id": "engraving_style",
+          "label": "文字雕刻方式",
+          "authority": "category_dynamic",
+          "value_type": "text",
+          "value": "压印",
+          "source": "model_inference",
+          "status": "proposed",
+          "confidence": 0.75,
+          "evidence": [
+            {
+              "kind": "asset",
+              "ref": "image/jpeg;c024b7cf2b04…",
+              "note": "HONEY字样为凹陷式浮雕"
+            }
+          ],
+          "depends_on": [],
+          "model_id": "qwen-vl-max"
+        }
+      ],
+      "questions": [
+        "金属盖是否为原装？",
+        "玻璃瓶是否有品牌标识？",
+        "瓶身文字是否为压印或蚀刻？"
+      ],
+      "summary": "一个带金属盖的玻璃蜂蜜罐，瓶身刻有'HONEY'字样和蜂巢图案，底部有残留蜂蜜。",
+      "meta": {
+        "provider_id": "dashscope-vision",
+        "model_id": "qwen-vl-max",
+        "request_id": "chatcmpl-42cfa038-5b57-92ca-8b69-696560707777",
+        "usage": {
+          "prompt_tokens": 2549,
+          "completion_tokens": 1479,
+          "total_tokens": 4028
+        },
+        "latency_ms": 34419,
+        "inputs_used": [
+          "product_input",
+          "reference_metadata",
+          "actual_images"
+        ],
+        "reference_images_sent": true,
+        "attempts": 1
+      }
+    }
+  },
+  "snapshot": {
+    "projects": [
+      {
+        "project_id": "e80ddebc-0b34-4079-a34b-6758ac891e55",
+        "schema_version": 1,
+        "name": "公开许可蜂蜜罐图文辅助",
+        "state": "UNDERSTANDING_REVIEW",
+        "revision": 3,
+        "created_at": "2026-10-05T14:14:59.015Z",
+        "updated_at": "2026-10-05T14:15:36.188Z"
+      }
+    ],
+    "documents": [
+      {
+        "document_key": "e80ddebc-0b34-4079-a34b-6758ac891e55:fact_slot:brand:1",
+        "project_id": "e80ddebc-0b34-4079-a34b-6758ac891e55",
+        "kind": "fact_slot",
+        "document_id": "brand",
+        "version": 1,
+        "schema_version": 1,
+        "payload": {
+          "schema_version": 1,
+          "slot_id": "brand",
+          "label": "品牌",
+          "authority": "core_fixed",
+          "value_type": "text",
+          "value": null,
+          "source": "system_default",
+          "status": "missing",
+          "confidence": null,
+          "evidence": [],
+          "depends_on": [],
+          "critical": false
+        },
+        "created_at": "2026-10-05T14:15:01.546Z",
+        "updated_at": "2026-10-05T14:15:01.546Z"
+      },
+      {
+        "document_key": "e80ddebc-0b34-4079-a34b-6758ac891e55:fact_slot:brand:2",
+        "project_id": "e80ddebc-0b34-4079-a34b-6758ac891e55",
+        "kind": "fact_slot",
+        "document_id": "brand",
+        "version": 2,
+        "schema_version": 1,
+        "payload": {
+          "schema_version": 1,
+          "slot_id": "brand",
+          "label": "品牌",
+          "authority": "core_fixed",
+          "value_type": "text",
+          "value": "未提供",
+          "source": "model_inference",
+          "status": "proposed",
+          "confidence": 0.6,
+          "evidence": [
+            {
+              "kind": "model",
+              "ref": "product_input",
+              "note": "资料中未提及品牌信息"
+            },
+            {
+              "kind": "asset",
+              "ref": "image/jpeg;c024b7cf2b04…",
+              "note": "图片未显示品牌标识"
+            },
+            {
+              "kind": "model",
+              "ref": "product_input:intake@v2",
+              "note": "本次提案使用的原资料快照；不是人工确认。"
+            }
+          ],
+          "depends_on": [],
+          "critical": false,
+          "model_id": "qwen-vl-max"
+        },
+        "created_at": "2026-10-05T14:15:36.181Z",
+        "updated_at": "2026-10-05T14:15:36.181Z"
+      },
+      {
+        "document_key": "e80ddebc-0b34-4079-a34b-6758ac891e55:fact_slot:color_summary:1",
+        "project_id": "e80ddebc-0b34-4079-a34b-6758ac891e55",
+        "kind": "fact_slot",
+        "document_id": "color_summary",
+        "version": 1,
+        "schema_version": 1,
+        "payload": {
+          "schema_version": 1,
+          "slot_id": "color_summary",
+          "label": "颜色概览",
+          "authority": "core_fixed",
+          "value_type": "text",
+          "value": null,
+          "source": "system_default",
+          "status": "missing",
+          "confidence": null,
+          "evidence": [],
+          "depends_on": [],
+          "critical": false
+        },
+        "created_at": "2026-10-05T14:15:01.548Z",
+        "updated_at": "2026-10-05T14:15:01.548Z"
+      },
+      {
+        "document_key": "e80ddebc-0b34-4079-a34b-6758ac891e55:fact_slot:color_summary:2",
+        "project_id": "e80ddebc-0b34-4079-a34b-6758ac891e55",
+        "kind": "fact_slot",
+        "document_id": "color_summary",
+        "version": 2,
+        "schema_version": 1,
+        "payload": {
+          "schema_version": 1,
+          "slot_id": "color_summary",
+          "label": "颜色概览",
+          "authority": "core_fixed",
+          "value_type": "text",
+          "value": "透明玻璃配棕色金属盖",
+          "source": "model_inference",
+          "status": "proposed",
+          "confidence": 0.9,
+          "evidence": [
+            {
+              "kind": "asset",
+              "ref": "image/jpeg;c024b7cf2b04…",
+              "note": "瓶身为透明，盖子呈锈褐色"
+            },
+            {
+              "kind": "model",
+              "ref": "product_input:intake@v2",
+              "note": "本次提案使用的原资料快照；不是人工确认。"
+            }
+          ],
+          "depends_on": [],
+          "critical": false,
+          "model_id": "qwen-vl-max"
+        },
+        "created_at": "2026-10-05T14:15:36.178Z",
+        "updated_at": "2026-10-05T14:15:36.178Z"
+      },
+      {
+        "document_key": "e80ddebc-0b34-4079-a34b-6758ac891e55:fact_slot:engraving_style:1",
+        "project_id": "e80ddebc-0b34-4079-a34b-6758ac891e55",
+        "kind": "fact_slot",
+        "document_id": "engraving_style",
+        "version": 1,
+        "schema_version": 1,
+        "payload": {
+          "schema_version": 1,
+          "slot_id": "engraving_style",
+          "label": "文字雕刻方式",
+          "authority": "category_dynamic",
+          "value_type": "text",
+          "value": "压印",
+          "source": "model_inference",
+          "status": "proposed",
+          "confidence": 0.75,
+          "evidence": [
+            {
+              "kind": "asset",
+              "ref": "image/jpeg;c024b7cf2b04…",
+              "note": "HONEY字样为凹陷式浮雕"
+            },
+            {
+              "kind": "model",
+              "ref": "product_input:intake@v2",
+              "note": "本次提案使用的原资料快照；不是人工确认。"
+            }
+          ],
+          "depends_on": [],
+          "critical": false,
+          "model_id": "qwen-vl-max"
+        },
+        "created_at": "2026-10-05T14:15:36.186Z",
+        "updated_at": "2026-10-05T14:15:36.186Z"
+      },
+      {
+        "document_key": "e80ddebc-0b34-4079-a34b-6758ac891e55:fact_slot:glass_texture:1",
+        "project_id": "e80ddebc-0b34-4079-a34b-6758ac891e55",
+        "kind": "fact_slot",
+        "document_id": "glass_texture",
+        "version": 1,
+        "schema_version": 1,
+        "payload": {
+          "schema_version": 1,
+          "slot_id": "glass_texture",
+          "label": "玻璃表面纹理",
+          "authority": "category_dynamic",
+          "value_type": "text",
+          "value": "蜂巢状凹凸纹理",
+          "source": "model_inference",
+          "status": "proposed",
+          "confidence": 0.95,
+          "evidence": [
+            {
+              "kind": "asset",
+              "ref": "image/jpeg;c024b7cf2b04…",
+              "note": "瓶身中部可见规则六边形图案"
+            },
+            {
+              "kind": "model",
+              "ref": "product_input:intake@v2",
+              "note": "本次提案使用的原资料快照；不是人工确认。"
+            }
+          ],
+          "depends_on": [],
+          "critical": false,
+          "model_id": "qwen-vl-max"
+        },
+        "created_at": "2026-10-05T14:15:36.183Z",
+        "updated_at": "2026-10-05T14:15:36.183Z"
+      },
+      {
+        "document_key": "e80ddebc-0b34-4079-a34b-6758ac891e55:fact_slot:honey_residue:1",
+        "project_id": "e80ddebc-0b34-4079-a34b-6758ac891e55",
+        "kind": "fact_slot",
+        "document_id": "honey_residue",
+        "version": 1,
+        "schema_version": 1,
+        "payload": {
+          "schema_version": 1,
+          "slot_id": "honey_residue",
+          "label": "内部残留物",
+          "authority": "category_dynamic",
+          "value_type": "text",
+          "value": "底部有少量蜂蜜残留",
+          "source": "model_inference",
+          "status": "proposed",
+          "confidence": 0.9,
+          "evidence": [
+            {
+              "kind": "asset",
+              "ref": "image/jpeg;c024b7cf2b04…",
+              "note": "瓶底可见黄色粘稠物质"
+            },
+            {
+              "kind": "model",
+              "ref": "product_input:intake@v2",
+              "note": "本次提案使用的原资料快照；不是人工确认。"
+            }
+          ],
+          "depends_on": [],
+          "critical": false,
+          "model_id": "qwen-vl-max"
+        },
+        "created_at": "2026-10-05T14:15:36.185Z",
+        "updated_at": "2026-10-05T14:15:36.185Z"
+      },
+      {
+        "document_key": "e80ddebc-0b34-4079-a34b-6758ac891e55:fact_slot:key_material:1",
+        "project_id": "e80ddebc-0b34-4079-a34b-6758ac891e55",
+        "kind": "fact_slot",
+        "document_id": "key_material",
+        "version": 1,
+        "schema_version": 1,
+        "payload": {
+          "schema_version": 1,
+          "slot_id": "key_material",
+          "label": "主要材质",
+          "authority": "core_fixed",
+          "value_type": "text",
+          "value": null,
+          "source": "system_default",
+          "status": "missing",
+          "confidence": null,
+          "evidence": [],
+          "depends_on": [],
+          "critical": false
+        },
+        "created_at": "2026-10-05T14:15:01.547Z",
+        "updated_at": "2026-10-05T14:15:01.547Z"
+      },
+      {
+        "document_key": "e80ddebc-0b34-4079-a34b-6758ac891e55:fact_slot:key_material:2",
+        "project_id": "e80ddebc-0b34-4079-a34b-6758ac891e55",
+        "kind": "fact_slot",
+        "document_id": "key_material",
+        "version": 2,
+        "schema_version": 1,
+        "payload": {
+          "schema_version": 1,
+          "slot_id": "key_material",
+          "label": "主要材质",
+          "authority": "core_fixed",
+          "value_type": "text",
+          "value": "玻璃",
+          "source": "model_inference",
+          "status": "proposed",
+          "confidence": 0.98,
+          "evidence": [
+            {
+              "kind": "asset",
+              "ref": "image/jpeg;c024b7cf2b04…",
+              "note": "透明瓶身具有玻璃光泽"
+            },
+            {
+              "kind": "model",
+              "ref": "product_input:intake@v2",
+              "note": "本次提案使用的原资料快照；不是人工确认。"
+            }
+          ],
+          "depends_on": [],
+          "critical": false,
+          "model_id": "qwen-vl-max"
+        },
+        "created_at": "2026-10-05T14:15:36.177Z",
+        "updated_at": "2026-10-05T14:15:36.177Z"
+      },
+      {
+        "document_key": "e80ddebc-0b34-4079-a34b-6758ac891e55:fact_slot:lid_condition:1",
+        "project_id": "e80ddebc-0b34-4079-a34b-6758ac891e55",
+        "kind": "fact_slot",
+        "document_id": "lid_condition",
+        "version": 1,
+        "schema_version": 1,
+        "payload": {
+          "schema_version": 1,
+          "slot_id": "lid_condition",
+          "label": "盖子状态",
+          "authority": "category_dynamic",
+          "value_type": "text",
+          "value": "生锈老化",
+          "source": "model_inference",
+          "status": "proposed",
+          "confidence": 0.8,
+          "evidence": [
+            {
+              "kind": "asset",
+              "ref": "image/jpeg;c024b7cf2b04…",
+              "note": "金属盖表面有明显锈迹"
+            },
+            {
+              "kind": "model",
+              "ref": "product_input:intake@v2",
+              "note": "本次提案使用的原资料快照；不是人工确认。"
+            }
+          ],
+          "depends_on": [],
+          "critical": false,
+          "model_id": "qwen-vl-max"
+        },
+        "created_at": "2026-10-05T14:15:36.184Z",
+        "updated_at": "2026-10-05T14:15:36.184Z"
+      },
+      {
+        "document_key": "e80ddebc-0b34-4079-a34b-6758ac891e55:fact_slot:package_contents:1",
+        "project_id": "e80ddebc-0b34-4079-a34b-6758ac891e55",
+        "kind": "fact_slot",
+        "document_id": "package_contents",
+        "version": 1,
+        "schema_version": 1,
+        "payload": {
+          "schema_version": 1,
+          "slot_id": "package_contents",
+          "label": "包装内容物",
+          "authority": "core_fixed",
+          "value_type": "text_list",
+          "value": null,
+          "source": "system_default",
+          "status": "missing",
+          "confidence": null,
+          "evidence": [],
+          "depends_on": [],
+          "critical": false
+        },
+        "created_at": "2026-10-05T14:15:01.550Z",
+        "updated_at": "2026-10-05T14:15:01.550Z"
+      },
+      {
+        "document_key": "e80ddebc-0b34-4079-a34b-6758ac891e55:fact_slot:package_contents:2",
+        "project_id": "e80ddebc-0b34-4079-a34b-6758ac891e55",
+        "kind": "fact_slot",
+        "document_id": "package_contents",
+        "version": 2,
+        "schema_version": 1,
+        "payload": {
+          "schema_version": 1,
+          "slot_id": "package_contents",
+          "label": "包装内容物",
+          "authority": "core_fixed",
+          "value_type": "text_list",
+          "value": [
+            "玻璃蜂蜜罐",
+            "金属盖"
+          ],
+          "source": "model_inference",
+          "status": "proposed",
+          "confidence": 0.85,
+          "evidence": [
+            {
+              "kind": "asset",
+              "ref": "image/jpeg;c024b7cf2b04…",
+              "note": "图片仅显示罐体与盖子"
+            },
+            {
+              "kind": "model",
+              "ref": "product_input:intake@v2",
+              "note": "本次提案使用的原资料快照；不是人工确认。"
+            }
+          ],
+          "depends_on": [],
+          "critical": false,
+          "model_id": "qwen-vl-max"
+        },
+        "created_at": "2026-10-05T14:15:36.182Z",
+        "updated_at": "2026-10-05T14:15:36.182Z"
+      },
+      {
+        "document_key": "e80ddebc-0b34-4079-a34b-6758ac891e55:fact_slot:product_category:1",
+        "project_id": "e80ddebc-0b34-4079-a34b-6758ac891e55",
+        "kind": "fact_slot",
+        "document_id": "product_category",
+        "version": 1,
+        "schema_version": 1,
+        "payload": {
+          "schema_version": 1,
+          "slot_id": "product_category",
+          "label": "商品品类",
+          "authority": "core_fixed",
+          "value_type": "text",
+          "value": null,
+          "source": "system_default",
+          "status": "missing",
+          "confidence": null,
+          "evidence": [],
+          "depends_on": [],
+          "critical": true
+        },
+        "created_at": "2026-10-05T14:15:01.544Z",
+        "updated_at": "2026-10-05T14:15:01.544Z"
+      },
+      {
+        "document_key": "e80ddebc-0b34-4079-a34b-6758ac891e55:fact_slot:product_category:2",
+        "project_id": "e80ddebc-0b34-4079-a34b-6758ac891e55",
+        "kind": "fact_slot",
+        "document_id": "product_category",
+        "version": 2,
+        "schema_version": 1,
+        "payload": {
+          "schema_version": 1,
+          "slot_id": "product_category",
+          "label": "商品品类",
+          "authority": "core_fixed",
+          "value_type": "text",
+          "value": "储物罐",
+          "source": "model_inference",
+          "status": "proposed",
+          "confidence": 0.9,
+          "evidence": [
+            {
+              "kind": "asset",
+              "ref": "image/jpeg;c024b7cf2b04…",
+              "note": "图片显示为用于存放蜂蜜的容器"
+            },
+            {
+              "kind": "model",
+              "ref": "product_input:intake@v2",
+              "note": "本次提案使用的原资料快照；不是人工确认。"
+            }
+          ],
+          "depends_on": [],
+          "critical": true,
+          "model_id": "qwen-vl-max"
+        },
+        "created_at": "2026-10-05T14:15:36.174Z",
+        "updated_at": "2026-10-05T14:15:36.174Z"
+      },
+      {
+        "document_key": "e80ddebc-0b34-4079-a34b-6758ac891e55:fact_slot:product_name:1",
+        "project_id": "e80ddebc-0b34-4079-a34b-6758ac891e55",
+        "kind": "fact_slot",
+        "document_id": "product_name",
+        "version": 1,
+        "schema_version": 1,
+        "payload": {
+          "schema_version": 1,
+          "slot_id": "product_name",
+          "label": "商品名称",
+          "authority": "core_fixed",
+          "value_type": "text",
+          "value": null,
+          "source": "system_default",
+          "status": "missing",
+          "confidence": null,
+          "evidence": [],
+          "depends_on": [],
+          "critical": true
+        },
+        "created_at": "2026-10-05T14:15:01.542Z",
+        "updated_at": "2026-10-05T14:15:01.542Z"
+      },
+      {
+        "document_key": "e80ddebc-0b34-4079-a34b-6758ac891e55:fact_slot:product_name:2",
+        "project_id": "e80ddebc-0b34-4079-a34b-6758ac891e55",
+        "kind": "fact_slot",
+        "document_id": "product_name",
+        "version": 2,
+        "schema_version": 1,
+        "payload": {
+          "schema_version": 1,
+          "slot_id": "product_name",
+          "label": "商品名称",
+          "authority": "core_fixed",
+          "value_type": "text",
+          "value": "带金属盖的玻璃蜂蜜罐",
+          "source": "model_inference",
+          "status": "proposed",
+          "confidence": 0.95,
+          "evidence": [
+            {
+              "kind": "model",
+              "ref": "product_input",
+              "note": "根据商品名称描述"
+            },
+            {
+              "kind": "model",
+              "ref": "product_input:intake@v2",
+              "note": "本次提案使用的原资料快照；不是人工确认。"
+            }
+          ],
+          "depends_on": [],
+          "critical": true,
+          "model_id": "qwen-vl-max"
+        },
+        "created_at": "2026-10-05T14:15:36.173Z",
+        "updated_at": "2026-10-05T14:15:36.173Z"
+      },
+      {
+        "document_key": "e80ddebc-0b34-4079-a34b-6758ac891e55:fact_slot:signature_features:1",
+        "project_id": "e80ddebc-0b34-4079-a34b-6758ac891e55",
+        "kind": "fact_slot",
+        "document_id": "signature_features",
+        "version": 1,
+        "schema_version": 1,
+        "payload": {
+          "schema_version": 1,
+          "slot_id": "signature_features",
+          "label": "必须保持的商品特征",
+          "authority": "core_fixed",
+          "value_type": "text_list",
+          "value": null,
+          "source": "system_default",
+          "status": "missing",
+          "confidence": null,
+          "evidence": [],
+          "depends_on": [],
+          "critical": true
+        },
+        "created_at": "2026-10-05T14:15:01.545Z",
+        "updated_at": "2026-10-05T14:15:01.545Z"
+      },
+      {
+        "document_key": "e80ddebc-0b34-4079-a34b-6758ac891e55:fact_slot:signature_features:2",
+        "project_id": "e80ddebc-0b34-4079-a34b-6758ac891e55",
+        "kind": "fact_slot",
+        "document_id": "signature_features",
+        "version": 2,
+        "schema_version": 1,
+        "payload": {
+          "schema_version": 1,
+          "slot_id": "signature_features",
+          "label": "必须保持的商品特征",
+          "authority": "core_fixed",
+          "value_type": "text_list",
+          "value": [
+            "瓶身刻有'HONEY'字样",
+            "蜂巢纹理设计",
+            "金属盖密封结构"
+          ],
+          "source": "model_inference",
+          "status": "proposed",
+          "confidence": 0.95,
+          "evidence": [
+            {
+              "kind": "asset",
+              "ref": "image/jpeg;c024b7cf2b04…",
+              "note": "图片可见HONEY字样与蜂巢纹路"
+            },
+            {
+              "kind": "model",
+              "ref": "product_input:intake@v2",
+              "note": "本次提案使用的原资料快照；不是人工确认。"
+            }
+          ],
+          "depends_on": [],
+          "critical": true,
+          "model_id": "qwen-vl-max"
+        },
+        "created_at": "2026-10-05T14:15:36.176Z",
+        "updated_at": "2026-10-05T14:15:36.176Z"
+      },
+      {
+        "document_key": "e80ddebc-0b34-4079-a34b-6758ac891e55:fact_slot:size_dimensions:1",
+        "project_id": "e80ddebc-0b34-4079-a34b-6758ac891e55",
+        "kind": "fact_slot",
+        "document_id": "size_dimensions",
+        "version": 1,
+        "schema_version": 1,
+        "payload": {
+          "schema_version": 1,
+          "slot_id": "size_dimensions",
+          "label": "尺寸规格（对象/轴向/数值/单位）",
+          "authority": "core_fixed",
+          "value_type": "dimension_list",
+          "value": null,
+          "source": "system_default",
+          "status": "missing",
+          "confidence": null,
+          "evidence": [],
+          "depends_on": [],
+          "critical": false
+        },
+        "created_at": "2026-10-05T14:15:01.550Z",
+        "updated_at": "2026-10-05T14:15:01.550Z"
+      },
+      {
+        "document_key": "e80ddebc-0b34-4079-a34b-6758ac891e55:fact_slot:size_summary:1",
+        "project_id": "e80ddebc-0b34-4079-a34b-6758ac891e55",
+        "kind": "fact_slot",
+        "document_id": "size_summary",
+        "version": 1,
+        "schema_version": 1,
+        "payload": {
+          "schema_version": 1,
+          "slot_id": "size_summary",
+          "label": "尺寸概览",
+          "authority": "core_fixed",
+          "value_type": "text",
+          "value": null,
+          "source": "system_default",
+          "status": "missing",
+          "confidence": null,
+          "evidence": [],
+          "depends_on": [],
+          "critical": false
+        },
+        "created_at": "2026-10-05T14:15:01.549Z",
+        "updated_at": "2026-10-05T14:15:01.549Z"
+      },
+      {
+        "document_key": "e80ddebc-0b34-4079-a34b-6758ac891e55:fact_slot:size_summary:2",
+        "project_id": "e80ddebc-0b34-4079-a34b-6758ac891e55",
+        "kind": "fact_slot",
+        "document_id": "size_summary",
+        "version": 2,
+        "schema_version": 1,
+        "payload": {
+          "schema_version": 1,
+          "slot_id": "size_summary",
+          "label": "尺寸概览",
+          "authority": "core_fixed",
+          "value_type": "text",
+          "value": "小型便携式罐体",
+          "source": "model_inference",
+          "status": "proposed",
+          "confidence": 0.7,
+          "evidence": [
+            {
+              "kind": "asset",
+              "ref": "image/jpeg;c024b7cf2b04…",
+              "note": "视觉上小于手掌大小"
+            },
+            {
+              "kind": "model",
+              "ref": "product_input:intake@v2",
+              "note": "本次提案使用的原资料快照；不是人工确认。"
+            }
+          ],
+          "depends_on": [],
+          "critical": false,
+          "model_id": "qwen-vl-max"
+        },
+        "created_at": "2026-10-05T14:15:36.180Z",
+        "updated_at": "2026-10-05T14:15:36.180Z"
+      },
+      {
+        "document_key": "e80ddebc-0b34-4079-a34b-6758ac891e55:product_input:intake:1",
+        "project_id": "e80ddebc-0b34-4079-a34b-6758ac891e55",
+        "kind": "product_input",
+        "document_id": "intake",
+        "version": 1,
+        "schema_version": 1,
+        "payload": {
+          "schema_version": 1,
+          "product_name": "",
+          "description": "",
+          "selling_points": [],
+          "focus": "",
+          "references": [
+            {
+              "asset_sha256": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461",
+              "role": "primary"
+            }
+          ]
+        },
+        "created_at": "2026-10-05T14:15:00.272Z",
+        "updated_at": "2026-10-05T14:15:00.272Z"
+      },
+      {
+        "document_key": "e80ddebc-0b34-4079-a34b-6758ac891e55:product_input:intake:2",
+        "project_id": "e80ddebc-0b34-4079-a34b-6758ac891e55",
+        "kind": "product_input",
+        "document_id": "intake",
+        "version": 2,
+        "schema_version": 1,
+        "payload": {
+          "schema_version": 1,
+          "product_name": "带金属盖的玻璃蜂蜜罐",
+          "description": "请结合商品图片识别可见外观。品牌、精确尺寸、容量未提供，不猜测。最多提出六个可追溯槽位，由人工确认。",
+          "selling_points": [],
+          "focus": "",
+          "references": [
+            {
+              "asset_sha256": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461",
+              "role": "primary"
+            }
+          ]
+        },
+        "created_at": "2026-10-05T14:15:01.181Z",
+        "updated_at": "2026-10-05T14:15:01.181Z"
+      },
+      {
+        "document_key": "e80ddebc-0b34-4079-a34b-6758ac891e55:semantic_analysis:act-659da4588d604f4a8180b8bbaf481bd2:1",
+        "project_id": "e80ddebc-0b34-4079-a34b-6758ac891e55",
+        "kind": "semantic_analysis",
+        "document_id": "act-659da4588d604f4a8180b8bbaf481bd2",
+        "version": 1,
+        "schema_version": 1,
+        "payload": {
+          "schema_version": 1,
+          "action_id": "act-659da4588d604f4a8180b8bbaf481bd2",
+          "source": {
+            "document_id": "intake",
+            "version": 2,
+            "fingerprint": "[\"带金属盖的玻璃蜂蜜罐\",\"请结合商品图片识别可见外观。品牌、精确尺寸、容量未提供，不猜测。最多提出六个可追溯槽位，由人工确认。\",[],\"\",[{\"asset_sha256\":\"c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461\",\"role\":\"primary\"}]]",
+            "payload": {
+              "schema_version": 1,
+              "product_name": "带金属盖的玻璃蜂蜜罐",
+              "description": "请结合商品图片识别可见外观。品牌、精确尺寸、容量未提供，不猜测。最多提出六个可追溯槽位，由人工确认。",
+              "selling_points": [],
+              "focus": "",
+              "references": [
+                {
+                  "asset_sha256": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461",
+                  "role": "primary"
+                }
+              ]
+            }
+          },
+          "provider": {
+            "provider_id": "dashscope-vision",
+            "model_id": "qwen-vl-max",
+            "credential_source": "byok"
+          },
+          "created_at": "2026-10-05T14:15:01.588Z",
+          "updated_at": "2026-10-05T14:15:01.588Z",
+          "reference_images_sent": true,
+          "state": "pending_submit",
+          "proposal": null,
+          "error": null,
+          "disposition": "not_applied"
+        },
+        "created_at": "2026-10-05T14:15:01.593Z",
+        "updated_at": "2026-10-05T14:15:01.593Z"
+      },
+      {
+        "document_key": "e80ddebc-0b34-4079-a34b-6758ac891e55:semantic_analysis:act-659da4588d604f4a8180b8bbaf481bd2:2",
+        "project_id": "e80ddebc-0b34-4079-a34b-6758ac891e55",
+        "kind": "semantic_analysis",
+        "document_id": "act-659da4588d604f4a8180b8bbaf481bd2",
+        "version": 2,
+        "schema_version": 1,
+        "payload": {
+          "schema_version": 1,
+          "action_id": "act-659da4588d604f4a8180b8bbaf481bd2",
+          "source": {
+            "document_id": "intake",
+            "version": 2,
+            "fingerprint": "[\"带金属盖的玻璃蜂蜜罐\",\"请结合商品图片识别可见外观。品牌、精确尺寸、容量未提供，不猜测。最多提出六个可追溯槽位，由人工确认。\",[],\"\",[{\"asset_sha256\":\"c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461\",\"role\":\"primary\"}]]",
+            "payload": {
+              "schema_version": 1,
+              "product_name": "带金属盖的玻璃蜂蜜罐",
+              "description": "请结合商品图片识别可见外观。品牌、精确尺寸、容量未提供，不猜测。最多提出六个可追溯槽位，由人工确认。",
+              "selling_points": [],
+              "focus": "",
+              "references": [
+                {
+                  "asset_sha256": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461",
+                  "role": "primary"
+                }
+              ]
+            }
+          },
+          "provider": {
+            "provider_id": "dashscope-vision",
+            "model_id": "qwen-vl-max",
+            "credential_source": "byok"
+          },
+          "created_at": "2026-10-05T14:15:01.588Z",
+          "updated_at": "2026-10-05T14:15:36.168Z",
+          "reference_images_sent": true,
+          "state": "succeeded",
+          "proposal": {
+            "slots": [
+              {
+                "schema_version": 1,
+                "slot_id": "product_name",
+                "label": "商品名称",
+                "authority": "core_fixed",
+                "value_type": "text",
+                "value": "带金属盖的玻璃蜂蜜罐",
+                "source": "model_inference",
+                "status": "proposed",
+                "confidence": 0.95,
+                "evidence": [
+                  {
+                    "kind": "model",
+                    "ref": "product_input",
+                    "note": "根据商品名称描述"
+                  }
+                ],
+                "depends_on": [],
+                "model_id": "qwen-vl-max",
+                "critical": true
+              },
+              {
+                "schema_version": 1,
+                "slot_id": "product_category",
+                "label": "商品品类",
+                "authority": "core_fixed",
+                "value_type": "text",
+                "value": "储物罐",
+                "source": "model_inference",
+                "status": "proposed",
+                "confidence": 0.9,
+                "evidence": [
+                  {
+                    "kind": "asset",
+                    "ref": "image/jpeg;c024b7cf2b04…",
+                    "note": "图片显示为用于存放蜂蜜的容器"
+                  }
+                ],
+                "depends_on": [],
+                "model_id": "qwen-vl-max",
+                "critical": true
+              },
+              {
+                "schema_version": 1,
+                "slot_id": "signature_features",
+                "label": "必须保持的商品特征",
+                "authority": "core_fixed",
+                "value_type": "text_list",
+                "value": [
+                  "瓶身刻有'HONEY'字样",
+                  "蜂巢纹理设计",
+                  "金属盖密封结构"
+                ],
+                "source": "model_inference",
+                "status": "proposed",
+                "confidence": 0.95,
+                "evidence": [
+                  {
+                    "kind": "asset",
+                    "ref": "image/jpeg;c024b7cf2b04…",
+                    "note": "图片可见HONEY字样与蜂巢纹路"
+                  }
+                ],
+                "depends_on": [],
+                "model_id": "qwen-vl-max",
+                "critical": true
+              },
+              {
+                "schema_version": 1,
+                "slot_id": "key_material",
+                "label": "主要材质",
+                "authority": "core_fixed",
+                "value_type": "text",
+                "value": "玻璃",
+                "source": "model_inference",
+                "status": "proposed",
+                "confidence": 0.98,
+                "evidence": [
+                  {
+                    "kind": "asset",
+                    "ref": "image/jpeg;c024b7cf2b04…",
+                    "note": "透明瓶身具有玻璃光泽"
+                  }
+                ],
+                "depends_on": [],
+                "model_id": "qwen-vl-max",
+                "critical": false
+              },
+              {
+                "schema_version": 1,
+                "slot_id": "color_summary",
+                "label": "颜色概览",
+                "authority": "core_fixed",
+                "value_type": "text",
+                "value": "透明玻璃配棕色金属盖",
+                "source": "model_inference",
+                "status": "proposed",
+                "confidence": 0.9,
+                "evidence": [
+                  {
+                    "kind": "asset",
+                    "ref": "image/jpeg;c024b7cf2b04…",
+                    "note": "瓶身为透明，盖子呈锈褐色"
+                  }
+                ],
+                "depends_on": [],
+                "model_id": "qwen-vl-max",
+                "critical": false
+              },
+              {
+                "schema_version": 1,
+                "slot_id": "size_summary",
+                "label": "尺寸概览",
+                "authority": "core_fixed",
+                "value_type": "text",
+                "value": "小型便携式罐体",
+                "source": "model_inference",
+                "status": "proposed",
+                "confidence": 0.7,
+                "evidence": [
+                  {
+                    "kind": "asset",
+                    "ref": "image/jpeg;c024b7cf2b04…",
+                    "note": "视觉上小于手掌大小"
+                  }
+                ],
+                "depends_on": [],
+                "model_id": "qwen-vl-max",
+                "critical": false
+              },
+              {
+                "schema_version": 1,
+                "slot_id": "brand",
+                "label": "品牌",
+                "authority": "core_fixed",
+                "value_type": "text",
+                "value": "未提供",
+                "source": "model_inference",
+                "status": "proposed",
+                "confidence": 0.6,
+                "evidence": [
+                  {
+                    "kind": "model",
+                    "ref": "product_input",
+                    "note": "资料中未提及品牌信息"
+                  },
+                  {
+                    "kind": "asset",
+                    "ref": "image/jpeg;c024b7cf2b04…",
+                    "note": "图片未显示品牌标识"
+                  }
+                ],
+                "depends_on": [],
+                "model_id": "qwen-vl-max",
+                "critical": false
+              },
+              {
+                "schema_version": 1,
+                "slot_id": "package_contents",
+                "label": "包装内容物",
+                "authority": "core_fixed",
+                "value_type": "text_list",
+                "value": [
+                  "玻璃蜂蜜罐",
+                  "金属盖"
+                ],
+                "source": "model_inference",
+                "status": "proposed",
+                "confidence": 0.85,
+                "evidence": [
+                  {
+                    "kind": "asset",
+                    "ref": "image/jpeg;c024b7cf2b04…",
+                    "note": "图片仅显示罐体与盖子"
+                  }
+                ],
+                "depends_on": [],
+                "model_id": "qwen-vl-max",
+                "critical": false
+              },
+              {
+                "schema_version": 1,
+                "slot_id": "glass_texture",
+                "label": "玻璃表面纹理",
+                "authority": "category_dynamic",
+                "value_type": "text",
+                "value": "蜂巢状凹凸纹理",
+                "source": "model_inference",
+                "status": "proposed",
+                "confidence": 0.95,
+                "evidence": [
+                  {
+                    "kind": "asset",
+                    "ref": "image/jpeg;c024b7cf2b04…",
+                    "note": "瓶身中部可见规则六边形图案"
+                  }
+                ],
+                "depends_on": [],
+                "model_id": "qwen-vl-max"
+              },
+              {
+                "schema_version": 1,
+                "slot_id": "lid_condition",
+                "label": "盖子状态",
+                "authority": "category_dynamic",
+                "value_type": "text",
+                "value": "生锈老化",
+                "source": "model_inference",
+                "status": "proposed",
+                "confidence": 0.8,
+                "evidence": [
+                  {
+                    "kind": "asset",
+                    "ref": "image/jpeg;c024b7cf2b04…",
+                    "note": "金属盖表面有明显锈迹"
+                  }
+                ],
+                "depends_on": [],
+                "model_id": "qwen-vl-max"
+              },
+              {
+                "schema_version": 1,
+                "slot_id": "honey_residue",
+                "label": "内部残留物",
+                "authority": "category_dynamic",
+                "value_type": "text",
+                "value": "底部有少量蜂蜜残留",
+                "source": "model_inference",
+                "status": "proposed",
+                "confidence": 0.9,
+                "evidence": [
+                  {
+                    "kind": "asset",
+                    "ref": "image/jpeg;c024b7cf2b04…",
+                    "note": "瓶底可见黄色粘稠物质"
+                  }
+                ],
+                "depends_on": [],
+                "model_id": "qwen-vl-max"
+              },
+              {
+                "schema_version": 1,
+                "slot_id": "engraving_style",
+                "label": "文字雕刻方式",
+                "authority": "category_dynamic",
+                "value_type": "text",
+                "value": "压印",
+                "source": "model_inference",
+                "status": "proposed",
+                "confidence": 0.75,
+                "evidence": [
+                  {
+                    "kind": "asset",
+                    "ref": "image/jpeg;c024b7cf2b04…",
+                    "note": "HONEY字样为凹陷式浮雕"
+                  }
+                ],
+                "depends_on": [],
+                "model_id": "qwen-vl-max"
+              }
+            ],
+            "summary": "一个带金属盖的玻璃蜂蜜罐，瓶身刻有'HONEY'字样和蜂巢图案，底部有残留蜂蜜。",
+            "questions": [
+              "金属盖是否为原装？",
+              "玻璃瓶是否有品牌标识？",
+              "瓶身文字是否为压印或蚀刻？"
+            ],
+            "meta": {
+              "provider_id": "dashscope-vision",
+              "model_id": "qwen-vl-max",
+              "request_id": "chatcmpl-42cfa038-5b57-92ca-8b69-696560707777",
+              "reference_images_sent": true,
+              "inputs_used": [
+                "product_input",
+                "reference_metadata",
+                "actual_images"
+              ]
+            }
+          },
+          "error": null,
+          "disposition": "stored"
+        },
+        "created_at": "2026-10-05T14:15:36.168Z",
+        "updated_at": "2026-10-05T14:15:36.168Z"
+      },
+      {
+        "document_key": "e80ddebc-0b34-4079-a34b-6758ac891e55:semantic_analysis:act-659da4588d604f4a8180b8bbaf481bd2:3",
+        "project_id": "e80ddebc-0b34-4079-a34b-6758ac891e55",
+        "kind": "semantic_analysis",
+        "document_id": "act-659da4588d604f4a8180b8bbaf481bd2",
+        "version": 3,
+        "schema_version": 1,
+        "payload": {
+          "schema_version": 1,
+          "action_id": "act-659da4588d604f4a8180b8bbaf481bd2",
+          "source": {
+            "document_id": "intake",
+            "version": 2,
+            "fingerprint": "[\"带金属盖的玻璃蜂蜜罐\",\"请结合商品图片识别可见外观。品牌、精确尺寸、容量未提供，不猜测。最多提出六个可追溯槽位，由人工确认。\",[],\"\",[{\"asset_sha256\":\"c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461\",\"role\":\"primary\"}]]",
+            "payload": {
+              "schema_version": 1,
+              "product_name": "带金属盖的玻璃蜂蜜罐",
+              "description": "请结合商品图片识别可见外观。品牌、精确尺寸、容量未提供，不猜测。最多提出六个可追溯槽位，由人工确认。",
+              "selling_points": [],
+              "focus": "",
+              "references": [
+                {
+                  "asset_sha256": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461",
+                  "role": "primary"
+                }
+              ]
+            }
+          },
+          "provider": {
+            "provider_id": "dashscope-vision",
+            "model_id": "qwen-vl-max",
+            "credential_source": "byok"
+          },
+          "created_at": "2026-10-05T14:15:01.588Z",
+          "updated_at": "2026-10-05T14:15:36.186Z",
+          "reference_images_sent": true,
+          "state": "succeeded",
+          "proposal": {
+            "slots": [
+              {
+                "schema_version": 1,
+                "slot_id": "product_name",
+                "label": "商品名称",
+                "authority": "core_fixed",
+                "value_type": "text",
+                "value": "带金属盖的玻璃蜂蜜罐",
+                "source": "model_inference",
+                "status": "proposed",
+                "confidence": 0.95,
+                "evidence": [
+                  {
+                    "kind": "model",
+                    "ref": "product_input",
+                    "note": "根据商品名称描述"
+                  }
+                ],
+                "depends_on": [],
+                "model_id": "qwen-vl-max",
+                "critical": true
+              },
+              {
+                "schema_version": 1,
+                "slot_id": "product_category",
+                "label": "商品品类",
+                "authority": "core_fixed",
+                "value_type": "text",
+                "value": "储物罐",
+                "source": "model_inference",
+                "status": "proposed",
+                "confidence": 0.9,
+                "evidence": [
+                  {
+                    "kind": "asset",
+                    "ref": "image/jpeg;c024b7cf2b04…",
+                    "note": "图片显示为用于存放蜂蜜的容器"
+                  }
+                ],
+                "depends_on": [],
+                "model_id": "qwen-vl-max",
+                "critical": true
+              },
+              {
+                "schema_version": 1,
+                "slot_id": "signature_features",
+                "label": "必须保持的商品特征",
+                "authority": "core_fixed",
+                "value_type": "text_list",
+                "value": [
+                  "瓶身刻有'HONEY'字样",
+                  "蜂巢纹理设计",
+                  "金属盖密封结构"
+                ],
+                "source": "model_inference",
+                "status": "proposed",
+                "confidence": 0.95,
+                "evidence": [
+                  {
+                    "kind": "asset",
+                    "ref": "image/jpeg;c024b7cf2b04…",
+                    "note": "图片可见HONEY字样与蜂巢纹路"
+                  }
+                ],
+                "depends_on": [],
+                "model_id": "qwen-vl-max",
+                "critical": true
+              },
+              {
+                "schema_version": 1,
+                "slot_id": "key_material",
+                "label": "主要材质",
+                "authority": "core_fixed",
+                "value_type": "text",
+                "value": "玻璃",
+                "source": "model_inference",
+                "status": "proposed",
+                "confidence": 0.98,
+                "evidence": [
+                  {
+                    "kind": "asset",
+                    "ref": "image/jpeg;c024b7cf2b04…",
+                    "note": "透明瓶身具有玻璃光泽"
+                  }
+                ],
+                "depends_on": [],
+                "model_id": "qwen-vl-max",
+                "critical": false
+              },
+              {
+                "schema_version": 1,
+                "slot_id": "color_summary",
+                "label": "颜色概览",
+                "authority": "core_fixed",
+                "value_type": "text",
+                "value": "透明玻璃配棕色金属盖",
+                "source": "model_inference",
+                "status": "proposed",
+                "confidence": 0.9,
+                "evidence": [
+                  {
+                    "kind": "asset",
+                    "ref": "image/jpeg;c024b7cf2b04…",
+                    "note": "瓶身为透明，盖子呈锈褐色"
+                  }
+                ],
+                "depends_on": [],
+                "model_id": "qwen-vl-max",
+                "critical": false
+              },
+              {
+                "schema_version": 1,
+                "slot_id": "size_summary",
+                "label": "尺寸概览",
+                "authority": "core_fixed",
+                "value_type": "text",
+                "value": "小型便携式罐体",
+                "source": "model_inference",
+                "status": "proposed",
+                "confidence": 0.7,
+                "evidence": [
+                  {
+                    "kind": "asset",
+                    "ref": "image/jpeg;c024b7cf2b04…",
+                    "note": "视觉上小于手掌大小"
+                  }
+                ],
+                "depends_on": [],
+                "model_id": "qwen-vl-max",
+                "critical": false
+              },
+              {
+                "schema_version": 1,
+                "slot_id": "brand",
+                "label": "品牌",
+                "authority": "core_fixed",
+                "value_type": "text",
+                "value": "未提供",
+                "source": "model_inference",
+                "status": "proposed",
+                "confidence": 0.6,
+                "evidence": [
+                  {
+                    "kind": "model",
+                    "ref": "product_input",
+                    "note": "资料中未提及品牌信息"
+                  },
+                  {
+                    "kind": "asset",
+                    "ref": "image/jpeg;c024b7cf2b04…",
+                    "note": "图片未显示品牌标识"
+                  }
+                ],
+                "depends_on": [],
+                "model_id": "qwen-vl-max",
+                "critical": false
+              },
+              {
+                "schema_version": 1,
+                "slot_id": "package_contents",
+                "label": "包装内容物",
+                "authority": "core_fixed",
+                "value_type": "text_list",
+                "value": [
+                  "玻璃蜂蜜罐",
+                  "金属盖"
+                ],
+                "source": "model_inference",
+                "status": "proposed",
+                "confidence": 0.85,
+                "evidence": [
+                  {
+                    "kind": "asset",
+                    "ref": "image/jpeg;c024b7cf2b04…",
+                    "note": "图片仅显示罐体与盖子"
+                  }
+                ],
+                "depends_on": [],
+                "model_id": "qwen-vl-max",
+                "critical": false
+              },
+              {
+                "schema_version": 1,
+                "slot_id": "glass_texture",
+                "label": "玻璃表面纹理",
+                "authority": "category_dynamic",
+                "value_type": "text",
+                "value": "蜂巢状凹凸纹理",
+                "source": "model_inference",
+                "status": "proposed",
+                "confidence": 0.95,
+                "evidence": [
+                  {
+                    "kind": "asset",
+                    "ref": "image/jpeg;c024b7cf2b04…",
+                    "note": "瓶身中部可见规则六边形图案"
+                  }
+                ],
+                "depends_on": [],
+                "model_id": "qwen-vl-max"
+              },
+              {
+                "schema_version": 1,
+                "slot_id": "lid_condition",
+                "label": "盖子状态",
+                "authority": "category_dynamic",
+                "value_type": "text",
+                "value": "生锈老化",
+                "source": "model_inference",
+                "status": "proposed",
+                "confidence": 0.8,
+                "evidence": [
+                  {
+                    "kind": "asset",
+                    "ref": "image/jpeg;c024b7cf2b04…",
+                    "note": "金属盖表面有明显锈迹"
+                  }
+                ],
+                "depends_on": [],
+                "model_id": "qwen-vl-max"
+              },
+              {
+                "schema_version": 1,
+                "slot_id": "honey_residue",
+                "label": "内部残留物",
+                "authority": "category_dynamic",
+                "value_type": "text",
+                "value": "底部有少量蜂蜜残留",
+                "source": "model_inference",
+                "status": "proposed",
+                "confidence": 0.9,
+                "evidence": [
+                  {
+                    "kind": "asset",
+                    "ref": "image/jpeg;c024b7cf2b04…",
+                    "note": "瓶底可见黄色粘稠物质"
+                  }
+                ],
+                "depends_on": [],
+                "model_id": "qwen-vl-max"
+              },
+              {
+                "schema_version": 1,
+                "slot_id": "engraving_style",
+                "label": "文字雕刻方式",
+                "authority": "category_dynamic",
+                "value_type": "text",
+                "value": "压印",
+                "source": "model_inference",
+                "status": "proposed",
+                "confidence": 0.75,
+                "evidence": [
+                  {
+                    "kind": "asset",
+                    "ref": "image/jpeg;c024b7cf2b04…",
+                    "note": "HONEY字样为凹陷式浮雕"
+                  }
+                ],
+                "depends_on": [],
+                "model_id": "qwen-vl-max"
+              }
+            ],
+            "summary": "一个带金属盖的玻璃蜂蜜罐，瓶身刻有'HONEY'字样和蜂巢图案，底部有残留蜂蜜。",
+            "questions": [
+              "金属盖是否为原装？",
+              "玻璃瓶是否有品牌标识？",
+              "瓶身文字是否为压印或蚀刻？"
+            ],
+            "meta": {
+              "provider_id": "dashscope-vision",
+              "model_id": "qwen-vl-max",
+              "request_id": "chatcmpl-42cfa038-5b57-92ca-8b69-696560707777",
+              "reference_images_sent": true,
+              "inputs_used": [
+                "product_input",
+                "reference_metadata",
+                "actual_images"
+              ]
+            }
+          },
+          "error": null,
+          "disposition": "applied"
+        },
+        "created_at": "2026-10-05T14:15:36.187Z",
+        "updated_at": "2026-10-05T14:15:36.187Z"
+      }
+    ],
+    "assets": [
+      {
+        "asset_key": "e80ddebc-0b34-4079-a34b-6758ac891e55:c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461",
+        "project_id": "e80ddebc-0b34-4079-a34b-6758ac891e55",
+        "sha256": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461",
+        "media_type": "image/jpeg",
+        "byte_size": 2239735,
+        "original_name": "honey-jar-antique.jpg",
+        "role": "primary",
+        "width": 3840,
+        "height": 2560,
+        "schema_version": 1,
+        "created_at": "2026-10-05T14:15:00.070Z"
+      }
+    ],
+    "localStorage": {
+      "amz-listing-kit-v2:model-selection": "{\"semantic\":\"dashscope-vision\",\"image\":\"dashscope-qwen-image\",\"review\":\"dashscope-review\"}",
+      "amz-listing-kit-v2:current-project": "{\"project_id\":\"e80ddebc-0b34-4079-a34b-6758ac891e55\",\"updated_at\":\"2026-10-05T14:14:59.015Z\"}"
+    }
+  },
+  "result_text": "最近一次分析：12 个提案，写入 12 个槽位 · dashscope-vision（qwen-vl-max） · 原资料 v2 · 已发送实际图片 · 2026/10/5 22:15:36 · 一个带金属盖的玻璃蜂蜜罐，瓶身刻有'HONEY'字样和蜂巢图案，底部有残留蜂蜜。",
+  "error_text": "部分提案没有写入：模型提出的问题：金属盖是否为原装？ / 玻璃瓶是否有品牌标识？ / 瓶身文字是否为压印或蚀刻？"
+}

@@ -187,7 +187,7 @@ export type GenerationDependencies = {
 export type BatchRunPhase = "submit" | "poll" | "fetch";
 export type BatchRunState = {
   active: boolean; stopped: boolean; halted: boolean; haltReason: string;
-  fetchBlocked: string; currentShotId: string | null; phase: BatchRunPhase;
+  fetchBlocked: string; fetchNotice: string; currentShotId: string | null; phase: BatchRunPhase;
 };
 
 /** 单张提交结果（扁平可选判别式：skipped / thrown / 已受理）。 */
@@ -809,6 +809,12 @@ export function createGenerationModule(deps: GenerationDependencies): Generation
     const record = options.record || latestAttemptOf(shotId)?.record;
     const roleId = options.roleId !== undefined ? options.roleId
       : deps.suitePlanReader()?.shots?.find(shot => shot.shot_id === shotId)?.role_id || null;
+    // 候选取回失败的原因必须能被界面说清（ui-contract §2.6「失败说明发生了什么、影响哪项、
+    // 下一步在哪里」）：批次路径此前只对配额记录 fetchBlocked，其它取回失败原因被丢弃，
+    // 用户只看到「候选还没保存」而不知道原因。空串表示当前没有未解决的取回失败。
+    const note = (message: string): void => {
+      if (batchState) batchState.fetchNotice = message;
+    };
     try {
       if (!record) return { skipped: true, reason: "no_attempt" };
       const decision = candidateStoreDecision({
@@ -831,9 +837,11 @@ export function createGenerationModule(deps: GenerationDependencies): Generation
         ? { ok: true, buffer: options.bytes }
         : await pickSyncOrFetchResultBytes(record, options.syncBytes);
       if (!fetched.ok) {
+        note(fetched.message);
         return { failed: true, reason: fetched.reason, message: fetched.message };
       }
       if (fetched.buffer.byteLength > MAX_CANDIDATE_BYTES) {
+        note("结果字节超过护栏上限（" + MAX_CANDIDATE_BYTES + " 字节），候选未保存。");
         return {
           failed: true, reason: "too_large",
           message: "结果字节超过护栏上限（" + MAX_CANDIDATE_BYTES + " 字节），候选未保存。",
@@ -843,6 +851,7 @@ export function createGenerationModule(deps: GenerationDependencies): Generation
       try {
         dimensions = parsePngDimensions(new Uint8Array(fetched.buffer));
       } catch (error) {
+        note(messageOf(error) || "结果不是可解析的 PNG，候选未保存。");
         return {
           failed: true, reason: "bad_bytes",
           message: messageOf(error) || "结果不是可解析的 PNG，候选未保存。",
@@ -869,6 +878,8 @@ export function createGenerationModule(deps: GenerationDependencies): Generation
           at: new Date().toISOString(),
         });
         const saved = await repository.saveCandidate(pid, shotId, candidate);
+        // 取回/保存成功即清掉上一次失败提示：提示必须反映当前是否仍有未保存的候选。
+        note("");
         if (action.alive()) {
           rememberCandidate(shotId, { record: candidate, version: saved.version });
         }
@@ -886,12 +897,15 @@ export function createGenerationModule(deps: GenerationDependencies): Generation
         };
       } catch (error) {
         if (error !== null && typeof error === "object" && "code" in error && error.code === "QUOTA_EXCEEDED") {
+          note("浏览器存储空间不足，候选未保存（记录保持原样）。"
+            + "可以先导出项目或清理旧数据，再点「保存候选图片」重试。");
           return {
             failed: true, reason: "quota",
             message: "浏览器存储空间不足，候选未保存（记录保持原样）。"
               + "可以先导出项目或清理旧数据，再点「保存候选图片」重试。",
           };
         }
+        note(messageOf(error) || "候选保存失败；记录保持原样，可以重试。");
         return {
           failed: true, reason: "storage",
           message: messageOf(error) || "候选保存失败；记录保持原样，可以重试。",
@@ -1327,7 +1341,7 @@ export function createGenerationModule(deps: GenerationDependencies): Generation
     const frozenTarget = confirmation.payload.fingerprint.snapshot.execution_target;
     const requestHeaders = deps.requestHeaders("image", frozenTarget.provider_id, frozenTarget.credential_source);
     const running: BatchRunState = { active: true, stopped: false, halted: false, haltReason: "", fetchBlocked: "",
-      currentShotId: null, phase: "submit" };
+      fetchNotice: "", currentShotId: null, phase: "submit" };
     batchState = running;
     deps.renderAttempts();
     let submitted = 0;

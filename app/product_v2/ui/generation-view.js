@@ -1112,6 +1112,9 @@ export function createGenerationView({ elements, deps }) {
         if (batchState && batchState.fetchBlocked) {
             hints.push("候选保存受阻：" + batchState.fetchBlocked);
         }
+        if (batchState && batchState.fetchNotice && !batchState.fetchBlocked) {
+            hints.push(batchState.fetchNotice + "候选记录保持原样，可以点「保存候选图片」重试。");
+        }
         elements.batchHint.textContent = hints.join(" ");
         elements.batchHint.hidden = hints.length === 0;
         elements.queueList.replaceChildren();

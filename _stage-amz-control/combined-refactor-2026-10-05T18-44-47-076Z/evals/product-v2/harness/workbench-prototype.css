@@ -1,0 +1,80 @@
+/* NOT-AUTHORITY: removable R2.2 prototype; tokens belong to product styles.css. */
+#prototype-banner {
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--border-strong);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+.workbench-prototype button { min-height: 48px; }
+#prototype-image-plane {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(0, 3fr);
+  gap: 16px;
+}
+.workbench-prototype .compare-basis { border: 0; margin: 0; }
+.workbench-prototype .compare-body { grid-template-columns: minmax(0, 1fr); }
+.workbench-prototype .compare-references li { width: 100%; }
+.workbench-prototype .compare-references img {
+  width: 100%; height: 280px; object-fit: contain;
+  background: var(--surface-soft);
+}
+.workbench-prototype .compare-candidates { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.workbench-prototype .compare-card { width: auto; min-width: 0; overflow-wrap: anywhere; }
+.workbench-prototype .compare-card .compare-card-main img { height: 280px; object-fit: contain; }
+#prototype-fact-context {
+  padding: 16px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  border-radius: var(--radius-md);
+  margin-bottom: 16px;
+}
+#prototype-fact-workbench { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 16px; align-items: start; }
+#prototype-fact-context { position: sticky; top: 16px; }
+#prototype-fact-impact { padding-block: 12px; }
+.workbench-prototype .review-card { grid-template-columns: 96px minmax(0, 1fr); }
+.workbench-prototype .review-card .review-preview { grid-row: 1 / span 3; }
+.workbench-prototype .review-card .review-preview img { height: 96px; object-fit: contain; }
+.workbench-prototype .review-card-actions { grid-column: 2; grid-row: 3; }
+#prototype-source-images, .prototype-dialog-context {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+}
+#prototype-source-images img, .prototype-dialog-context img {
+  width: 100%; height: 220px; object-fit: contain;
+  background: var(--surface-soft);
+}
+#prototype-source-images figcaption, .prototype-dialog-context figcaption { color: var(--text-muted); overflow-wrap: anywhere; }
+.prototype-action-dialog {
+  width: min(1060px, calc(100% - 32px));
+  max-height: calc(100svh - 32px);
+  padding: 20px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--text);
+  overflow: auto;
+}
+.prototype-action-dialog::backdrop { background: rgb(29 35 48 / 55%); }
+.prototype-action-dialog .rework-head, .prototype-action-dialog .adopt-head {
+  position: sticky; top: 0; z-index: 1;
+  padding-block: 8px;
+  background: var(--surface);
+}
+.prototype-action-dialog :focus-visible { scroll-margin-block: 80px; }
+.prototype-action-dialog .rework-panel, .prototype-action-dialog .adopt-panel { margin-bottom: 0; }
+.prototype-recovery { padding: 12px; margin-top: 8px; background: var(--warn-soft); color: var(--text); border-radius: var(--radius-sm); }
+.prototype-execution-details { margin-top: 8px; }
+@media (max-width: 760px) {
+  #prototype-banner { padding: 12px 16px; }
+  #prototype-image-plane { grid-template-columns: minmax(0, 1fr); }
+  .workbench-prototype .compare-references { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .workbench-prototype .compare-references img, .workbench-prototype .compare-card .compare-card-main img { height: 180px; }
+  #prototype-fact-workbench { grid-template-columns: minmax(0, 1fr); }
+  #prototype-fact-context { position: static; }
+  #prototype-source-images img, .prototype-dialog-context img { height: 140px; }
+  .prototype-action-dialog { padding: 12px; }
+}
+@media (max-width: 430px) {
+  .prototype-dialog-context { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

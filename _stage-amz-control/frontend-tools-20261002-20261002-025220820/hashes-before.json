@@ -1,0 +1,9 @@
+{
+  "AGENTS.md": "291aca00e5d8d46ebc0dbcc868e9dace27e654cea41ae0da4a8edcbd3ccbb6ab",
+  "README.md": "f7f77716c42e1577e3156feaf4009daa4c9242802ed8193527a1142362c5d2b8",
+  "docs/product-v2-project-context.md": "08283a4ddc1a015c3bc419d53da5fbbf43bad3a94a2588a815352ddb81d4e127",
+  "docs/product-v2-refactor-plan.md": "a1c94bdf17dc2272bd3635940bd0aaf6a4b7a55cd4eea528fc193fd2168be41e",
+  "_working/amz-listing-kit-product-v2/state.md": "102344d30e16ca1cb4fcb37c8e792fc3af2450113d68ce205911f1650742d817",
+  "tools/check_docs.py": "6f6d6943c01513581953ac7d16772a50b0da29e5ccb5097ddb5f163431805234",
+  ".github/workflows/ci-cd.yml": "3752ce2386fd6b31ca24bc624ef7c7cf2b703c03388d5d5e08ab93c5f042b17c"
+}

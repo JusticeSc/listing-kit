@@ -1,0 +1,198 @@
+# ============================================================
+# 亚马逊图片坑位规范表 v2  —— 整条链路的控制面核心资产
+# ------------------------------------------------------------
+# 【字段契约】每个字段必须写明**消费它的代码位置**；写不出消费方的字段不许进表。
+#   本项目已因"声明了但没人读"的死字段返工三次：
+#     text_style / DASHSCOPE_IMAGE_MODEL / text_layout
+#   并在 v1 的 export 块里又发现三个（format / color_mode / recommend_file_kb），
+#   以及两个**假装被校验**的规则名（no_watermark / text_render_ok）—— 本版全部删除。
+#   （反例：`role` 本来要删，但查出 synth.filename_for 在读它 → 有消费方，留下。）
+#
+# 【三条结构原则】
+#   ① 张数不是配置项 —— 实际出几张 = 本表 ∩ 素材齐套（由 needs 推出）
+#   ② 一个字段一个解释者 —— renderer 只被 registry 解释；text 只被文字层解释
+#   ③ 拒绝派生配置 —— 没有"输出几张"这类设置项
+# ============================================================
+version: 2
+
+# 消费方：src/schema.py —— 平台规则档位。US 档：强制坑位必须纯白底 + 禁文字。
+site: US
+
+# 消费方：src/schema.py → 解析 catalog 路径；换类目改这两个字段
+category: home_kitchen
+catalog: config/catalog/home_kitchen.yaml
+
+# ------------------------------------------------------------
+# 全局导出规格
+#   只保留真的有消费方的字段。格式（JPEG）与色彩空间（sRGB）由代码里
+#   `.convert("RGB")` + `"JPEG"` 硬保证 —— 它们不是配置，是事实，不进表。
+# ------------------------------------------------------------
+export:
+  aspect_ratio: "1:1"                        # validators.check_aspect_ratio
+  jpeg_quality: 92                           # synth / textlayer 落盘
+  long_side_px: 1600                         # 画布边长；synth.make_main_image
+  min_long_side_px: 1000                     # validators.check_long_side（平台下限）
+  max_file_mb: 10                            # validators.check_file_size
+  filename_pattern: "{upc}_{slot}_{seq}"     # synth.filename_for
+
+# ------------------------------------------------------------
+# 坑位定义
+#
+#   role         坑位的语义短名。消费方：synth.filename_for（拼文件名）。
+#                它让成品名自带用途（B0DEMO1234_01_main_1.jpg），
+#                而不是一串看不出来源的数字。
+#
+#   renderer     像素怎么来。**必须已登记在 src/registry.py**，写错启动即报错。
+#                compose_white    抠好的主体 → 纯白画布居中（零模型）
+#                flat_overlay     纯色底 → 贴主体 → 叠字（零模型）
+#                gen_bg_paste     生成空背景 → 贴主体（★唯一调模型）
+#                closeup_crop     特写原片裁切 → 叠字（零模型）
+#                contents_compose 内容物原片 → 抠 → 铺底 → 叠字（零模型）
+#                compare_side     自家主体 + 竞品图并排 → 叠字（零模型）
+#
+#   text         文字由谁产生。只允许 none | overlay。
+#                native（模型直出文字）**已从字段字典中删除** —— 实测不可控、
+#                不可复现，且改一个字要重出整张。
+#                none     不出文字（平台强制坑位恒为此值，不可被命令行覆盖）
+#                overlay  生成层禁字 + 代码叠字
+#
+#   mandatory    平台强制项，用户不可关闭（位置 1）。schema 会校验它同时满足
+#                站点档位要求（纯白底 + 禁文字）。
+#
+#   needs        这个坑位**必须有的素材**。缺任意一项 → 跳过该坑位（不报错、不凑）。
+#                取值：front(正面原片) closeup(特写) contents(内容物) competitor(竞品图)
+#                      bullets(卖点文案) specs(规格参数)
+#                ★ 字体不在这里 —— 它由 `text != none` 推出，属于派生，不重复声明。
+#                消费方：src/assets.py 齐套校验
+#
+#   background   背景取值。closed set：pure_white | palette | generated | from_photo
+#                消费方：renderers（compose_white 恒为纯白；flat_overlay 读 catalog.palette）
+#
+#   product_fill_pct
+#                主体在画布里的占比上限。消费方：synth.make_main_image（位置 1）、
+#                renderers/flat_overlay（位置 2/3，同时受文字条高度约束）。
+#                它同时是 validators.check_product_fill 的判据 ——
+#                出图参数与校验阈值必须是同一个数，否则"校验通过"没有意义。
+#
+#   annotation   要不要画双箭头标注线。closed set：none | dimension。
+#                消费方：renderers/flat_overlay。**必须与 text=overlay 同时出现**：
+#                标注线上的标签是用字体画出来的文字，没有文字层就没有标签。
+#                规则：只标**单轴数值**（如"高度: 22 cm"）；
+#                像"尺寸: 7 x 7 x 22 cm"这种三轴揉在一个值里的，**不标**并记明原因
+#                —— 宁可无线，不可乱标。
+#
+#   validate_level / validate_rules
+#                消费方：src/validators.py。**规则名必须已实现**，schema 会拦截
+#                未实现的规则名 —— v1 的 no_watermark / text_render_ok 就是
+#                「声称校验、实际静默跳过」的假校验，已删除。
+#                strict 会自动附加 edge_clean + file_size，无需重复声明。
+# ------------------------------------------------------------
+slots:
+  # ---- 位置 1 · 主图：搜索结果页第一眼，与几十个竞品并排 ----------------
+  - id: 1
+    role: main
+    purpose: 主图 / 纯白底展示
+    renderer: compose_white
+    text: none
+    mandatory: true
+    needs: [front]
+    background: pure_white
+    product_fill_pct: 85           # synth.make_main_image / validators.check_product_fill
+    contact_shadow: false          # synth._draw_contact_shadow；官方口径"无阴影"，
+                                   # 保留柔和接触阴影实践上通常可过审，默认先关。
+    validate_level: strict
+    validate_rules:
+      - white_bg_purity
+      - product_fill
+      - has_text_block
+      - aspect_ratio
+      - long_side_px
+      - filename_has_upc
+
+  # ---- 位置 2 · 卖点图解：买家点进详情页先看它 --------------------------
+  - id: 2
+    role: feature
+    purpose: 卖点图解 / 信息图
+    renderer: flat_overlay
+    text: overlay
+    mandatory: false
+    needs: [front, bullets]
+    background: palette
+    product_fill_pct: 55           # 主体占比：文字条已吃掉下半部，主体不能太大
+    max_callouts: 4                # orchestrator._slot_plan；4-5 条为宜，超出则移动端不可读
+                                   # （M3 验收③ 就是临时改成 5 跑一次：出图重排、耗时 < 1s）
+    validate_level: medium
+    validate_rules: [aspect_ratio, long_side_px, text_present]
+
+  # ---- 位置 3 · 规格：任务是"让人看清数字" ------------------------------
+  - id: 3
+    role: spec
+    purpose: 尺寸规格
+    renderer: flat_overlay
+    text: overlay
+    mandatory: false
+    needs: [front, specs]          # 规格数字来自 facts.specs，不涉画面
+    background: palette
+    product_fill_pct: 52           # 比位置 2 略小：要留出标注线的位置
+    annotation: dimension          # 双箭头标注线（标签取自 specs 的单轴数值）
+    max_callouts: 4
+    validate_level: medium
+    validate_rules: [aspect_ratio, long_side_px, text_present]
+    # 注：标注线（两端带箭头）由 flat_overlay 用代码绘制。
+    #     v1 的 needs_scale_reference（手/硬币并置）**已作废** —— 那是道具，
+    #     与 E0「原图不得含道具」自相矛盾，也把事实交给了一个随手拿的参照物。
+
+  # ---- 位置 4 · 场景使用：★ 全链路唯一调用生成模型的一格 -----------------
+  - id: 4
+    role: scene
+    purpose: 场景使用
+    renderer: gen_bg_paste         # 模型只画**空背景**，主体事后确定性贴入
+    text: none
+    mandatory: false
+    needs: [front]
+    background: generated
+    product_fill_pct: 46           # 场景图里主体略小：环境是这一格的主角
+    validate_level: loose
+    validate_rules: [aspect_ratio, long_side_px]
+    # 接缝/光影不融是本格已知代价，最小可行版本接受它（见 docs/最小可行设计.md §4）。
+    # 不引入超分、重绘、ControlNet —— 为低概率需求押永久复杂度不划算。
+
+  # ---- 位置 5 · 细节材质：必须来自**特写原片** ---------------------------
+  - id: 5
+    role: detail
+    purpose: 细节材质
+    renderer: closeup_crop         # ← 不是 generate：材质长什么样是事实
+    text: overlay
+    mandatory: false
+    needs: [closeup]               # 缺特写 → 跳过。**不许把正面图放大充数**
+    background: from_photo
+    max_callouts: 3
+    validate_level: loose
+    validate_rules: [aspect_ratio, long_side_px, text_present]
+
+  # ---- 位置 6 · 包装内容物：配置是不是事实 ---------------------------------
+  - id: 6
+    role: contents
+    purpose: 包装内容物
+    renderer: contents_compose
+    text: overlay
+    mandatory: false
+    needs: [contents]              # 缺内容物原片 → 跳过。图里根本没有盒子。
+    background: pure_white
+    max_callouts: 3
+    validate_level: loose
+    validate_rules: [aspect_ratio, long_side_px, text_present]
+
+  # ---- 位置 7 · 对比 / 信任背书 -------------------------------------------
+  - id: 7
+    role: compare
+    purpose: 对比 / 信任背书
+    renderer: compare_side
+    text: overlay
+    mandatory: false
+    needs: [front, competitor]     # 竞品图不在手上就只能跳过（别人的东西，模型无权编）
+    background: palette
+    max_callouts: 2
+    validate_level: medium
+    validate_rules: [aspect_ratio, long_side_px, text_present]
+    # 合规红线：不得贬低竞品，不得出现竞品品牌名（brand.json.forbidden_on_image 有此项）。

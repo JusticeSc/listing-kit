@@ -1,0 +1,23 @@
+{
+  "app/product_v2/domain/invalidation.js": "6f9c5b499e9d726275d5d848271d6ff643fd68623907f760b686ebecce61bbd4",
+  "app/product_v2/domain/errors.js": "aebc18fa39a1cdecc7f970ab49b50ce844637308bf297ce8be2c0be1a723b1d0",
+  "app/product_v2/domain/prompt.js": "69980c5b3ae42eb78962251f2c875883ef83204d7606d69ec0a9762357d8a611",
+  "app/product_v2/domain/export-gate.js": "a75804ea5a7960b594f873a3c6a676f97634590618d77591501980d102e05b96",
+  "app/product_v2/domain/index.js": "ffe96ff12d09f94f4c1f82eba096f4790f2541847e7d70a46d32abe29e75058c",
+  "app/product_v2/domain/shared.js": "749fea3cdaa943acc6ceff48db9e14f703d96a9e68e58040ee0d09e7947d33cf",
+  "app/product_v2/domain/review.js": "dcff404e87b6e30494dcc45532d988f8d5392248520fc1ad76e94d8f3247bf37",
+  "app/product_v2/domain/suite-review.js": "8a40c762867569ef386d3de935dfee911799670ab54ca78d3dad8a0f1b1c56da",
+  "app/product_v2/domain/selection.js": "b42d6fcd665bf03b90a006d36dcefd5f89d696c8cb5f768a43df501560afa5c2",
+  "app/product_v2/domain/compare.js": "aaa3aea1b0b3639daee56e7f8bfbbc2fa78bb0742d94b7904a83edf33190a446",
+  "app/product_v2/domain/confirm.js": "292a2a8af7c01216d56c652791309dae59593d208a3255993f9677b0b4be28e6",
+  "app/product_v2/domain/rework.js": "7ae6841f5f023c01c53a00f5c6db22e9d71681e82f509a6b5c6b91e2f58b5710",
+  "app/product_v2/domain/candidate.js": "082fa6fe3db6244c0b6cdac1ab9c3b3374e10bc78ffddc977af1b39eea46734e",
+  "app/product_v2/domain/batch.js": "e220654bea74177e657a370dfd430d6d6ff4d9277e863fd6c39bac0331946207",
+  "app/product_v2/domain/attempt.js": "733c21a83b3856667af4008555b5ccfd026db72e759ad7e14f18f29ee5fbeac8",
+  "app/product_v2/domain/suite.js": "e016bd96421bf942afffff828cb79eea0ad6851964cc68a8c46277d4542f02f6",
+  "app/product_v2/domain/specs.js": "adde75d688b6977eb38cd6a5a9dc76044b2f860eb18dbf5bf2b3a02b13e84b40",
+  "app/product_v2/domain/suite-plan.js": "5d713cc60be6455248f787bf4a3da5fc865b146986534c62f8db08bb64c815f8",
+  "app/product_v2/domain/intake.js": "b5775b517446387bb6430f0ead428282a673819d6df1fb8278d120208ddcb1f9",
+  "app/product_v2/domain/brief.js": "8fa53bddce940692456a8a72d6bf71403ec0e420c9d6522c97a336e56b81a447",
+  "app/product_v2/domain/slots.js": "9847cd5358ce19a340a9c798f13766d3e96f27e6fbcc43947693ce8638284938"
+}

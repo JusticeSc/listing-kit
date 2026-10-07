@@ -1,0 +1,57 @@
+# Local credentials and machine-specific overrides
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+
+# Python caches and local tooling
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.uv-cache/
+.cache/
+node_modules/
+
+# Product/runtime outputs that must not become source
+out/
+out_prev/
+out_verify_m7/
+_trash/
+
+# Working records are versioned; generated workspaces and run logs are not
+_working/**
+!_working/*/
+!_working/*/state.md
+!_working/*/tasks/
+!_working/*/tasks/**/*.md
+!_working/amz-listing-kit-product-demo/implementation-plan-2026-09-26.md
+
+# Point-in-time verifier output is local by default. Git already keeps files that
+# were explicitly promoted; new reports require an exact `git add -f -- <path>`.
+evals/.tmp/
+evals/probes/*
+!evals/probes/verification_policy.py
+evals/product-v2/*.txt
+evals/product-v2/*.json
+evals/product-v2/*.md
+evals/**/*.png
+evals/**/*.jpg
+evals/**/*.jpeg
+evals/**/*.webp
+evals/**/*.gif
+evals/**/*.mp4
+evals/**/*.zip
+evals/**/*.log
+
+# Editors and operating systems
+.vscode/
+.idea/
+Thumbs.db
+Desktop.ini
+.DS_Store

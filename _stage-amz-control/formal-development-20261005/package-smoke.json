@@ -1,0 +1,548 @@
+{
+  "results": [
+    {
+      "file": "delivery-downloaded.zip",
+      "name": "正式开发—人工套图主链-交付包-20261005-1229.zip",
+      "bytes": 31117,
+      "members": 5,
+      "manifest": {
+        "schema_version": 1,
+        "contract_version": "v2.6.2",
+        "project_id": "7d414da3-8d7e-4477-a2cd-7b97d4812c07",
+        "project_name": "正式开发—人工套图主链",
+        "exported_at": "2026-10-05T12:29:28.779Z",
+        "selection_fingerprint": "{\"contract_version\":\"v2.6.1\",\"entries\":[{\"candidate_id\":\"act-144e4fba7b214ffdadecf9453e7b02ad\",\"candidate_sha256\":\"9d34b3e53e06250b60c06248c7848383e5771867b8c8f3954156679d9e8e4cd5\",\"candidate_version\":1,\"required\":true,\"selected_at\":\"2026-10-05T11:32:56.367Z\",\"selection_id\":\"act-bb768c5ee3d54e69bdc8390fdce08192\",\"shot_id\":\"shot_main_clean\",\"state\":\"current\"},{\"candidate_id\":\"act-73499842a25441c6be9a3f48d9205923\",\"candidate_sha256\":\"63aac5275511fba00cb93ebe33369fe462256f3a175d7f5fda31d389f3fd0467\",\"candidate_version\":1,\"required\":false,\"selected_at\":\"2026-10-05T11:35:12.029Z\",\"selection_id\":\"act-ecd1b568b071456d9a1c0bc75d572ef0\",\"shot_id\":\"shot_scene_lifestyle\",\"state\":\"current\"},{\"candidate_id\":null,\"candidate_sha256\":null,\"candidate_version\":null,\"required\":false,\"selected_at\":null,\"selection_id\":null,\"shot_id\":\"shot_size_dimensions\",\"state\":\"none\"}]}",
+        "inputs_fingerprint": "{\"dependency_scope\":\"required_or_selected\",\"reports\":[{\"candidate_id\":\"act-144e4fba7b214ffdadecf9453e7b02ad\",\"report_asset_sha256\":\"9d34b3e53e06250b60c06248c7848383e5771867b8c8f3954156679d9e8e4cd5\",\"report_created_at\":\"2026-10-05T11:32:23.834Z\",\"report_finding_count\":7,\"review_contract_version\":\"v2.5.2\"},{\"candidate_id\":\"act-3044fabfea7c46bfb46663ce074718a2\",\"report_asset_sha256\":\"372dfb28cc81299ed94d064683a827d44ed2747121331d10f997e5bd4db61d52\",\"report_created_at\":\"2026-10-05T11:33:24.530Z\",\"report_finding_count\":7,\"review_contract_version\":\"v2.5.2\"},{\"candidate_id\":\"act-73499842a25441c6be9a3f48d9205923\",\"report_asset_sha256\":\"63aac5275511fba00cb93ebe33369fe462256f3a175d7f5fda31d389f3fd0467\",\"report_created_at\":\"2026-10-05T11:32:24.453Z\",\"report_finding_count\":6,\"review_contract_version\":\"v2.5.2\"}],\"selection\":\"{\\\"contract_version\\\":\\\"v2.6.1\\\",\\\"entries\\\":[{\\\"candidate_id\\\":\\\"act-144e4fba7b214ffdadecf9453e7b02ad\\\",\\\"candidate_sha256\\\":\\\"9d34b3e53e06250b60c06248c7848383e5771867b8c8f3954156679d9e8e4cd5\\\",\\\"candidate_version\\\":1,\\\"required\\\":true,\\\"selected_at\\\":\\\"2026-10-05T11:32:56.367Z\\\",\\\"selection_id\\\":\\\"act-bb768c5ee3d54e69bdc8390fdce08192\\\",\\\"shot_id\\\":\\\"shot_main_clean\\\",\\\"state\\\":\\\"current\\\"},{\\\"candidate_id\\\":\\\"act-73499842a25441c6be9a3f48d9205923\\\",\\\"candidate_sha256\\\":\\\"63aac5275511fba00cb93ebe33369fe462256f3a175d7f5fda31d389f3fd0467\\\",\\\"candidate_version\\\":1,\\\"required\\\":false,\\\"selected_at\\\":\\\"2026-10-05T11:35:12.029Z\\\",\\\"selection_id\\\":\\\"act-ecd1b568b071456d9a1c0bc75d572ef0\\\",\\\"shot_id\\\":\\\"shot_scene_lifestyle\\\",\\\"state\\\":\\\"current\\\"},{\\\"candidate_id\\\":null,\\\"candidate_sha256\\\":null,\\\"candidate_version\\\":null,\\\"required\\\":false,\\\"selected_at\\\":null,\\\"selection_id\\\":null,\\\"shot_id\\\":\\\"shot_size_dimensions\\\",\\\"state\\\":\\\"none\\\"}]}\",\"shots\":[{\"custom\":false,\"fact_slot_ids\":[],\"label\":\"主图·干净背景\",\"required\":true,\"role_id\":\"main\",\"shot_id\":\"shot_main_clean\",\"template_id\":\"main_clean\"},{\"custom\":false,\"fact_slot_ids\":[\"product_category\"],\"label\":\"场景图·使用中\",\"required\":false,\"role_id\":\"scene\",\"shot_id\":\"shot_scene_lifestyle\",\"template_id\":\"scene_lifestyle\"},{\"custom\":false,\"fact_slot_ids\":[],\"label\":\"尺寸图\",\"required\":false,\"role_id\":\"size\",\"shot_id\":\"shot_size_dimensions\",\"template_id\":\"size_dimensions\"}],\"specs\":[],\"style\":{\"avoid\":[],\"background\":\"\",\"color_tone\":\"\",\"composition\":\"\",\"lighting\":\"\"}}",
+        "ai_review": {
+          "status": "not_reviewed",
+          "reason": "not_run",
+          "checked_at": null
+        },
+        "images": [
+          {
+            "shot_id": "shot_main_clean",
+            "shot_label": "主图·干净背景",
+            "candidate_id": "act-144e4fba7b214ffdadecf9453e7b02ad",
+            "attempt_action_id": "act-144e4fba7b214ffdadecf9453e7b02ad",
+            "attempt_state": "succeeded",
+            "asset_sha256": "9d34b3e53e06250b60c06248c7848383e5771867b8c8f3954156679d9e8e4cd5",
+            "media_type": "image/png",
+            "byte_size": 8298,
+            "file": "images/shot_main_clean-act-144e4fba7b214ffdadecf9453e7b02ad.png",
+            "prompt_version": 1,
+            "prompt_hash": "a5087604d6ae4b74478008300d8c03a8653d468a2d9d268114774eee1a413b21",
+            "ai_review": {
+              "status": "not_reviewed",
+              "reason": "not_run",
+              "checked_at": null
+            }
+          },
+          {
+            "shot_id": "shot_scene_lifestyle",
+            "shot_label": "场景图·使用中",
+            "candidate_id": "act-73499842a25441c6be9a3f48d9205923",
+            "attempt_action_id": "act-73499842a25441c6be9a3f48d9205923",
+            "attempt_state": "succeeded",
+            "asset_sha256": "63aac5275511fba00cb93ebe33369fe462256f3a175d7f5fda31d389f3fd0467",
+            "media_type": "image/png",
+            "byte_size": 8298,
+            "file": "images/shot_scene_lifestyle-act-73499842a25441c6be9a3f48d9205923.png",
+            "prompt_version": 1,
+            "prompt_hash": "4afe1597e6c41e3da849eceb31473be5c307c58e564eab37bd21330a8f26cf14",
+            "ai_review": {
+              "status": "not_reviewed",
+              "reason": "not_run",
+              "checked_at": null
+            }
+          }
+        ]
+      }
+    },
+    {
+      "file": "project-downloaded.zip",
+      "name": "正式开发—人工套图主链-20261005-1229.zip",
+      "bytes": 2369839,
+      "members": 50,
+      "manifest": {
+        "format": "amz-listing-kit-project",
+        "format_version": 2,
+        "exported_at": "2026-10-05T12:29:29.046Z",
+        "record_schema_version": 1,
+        "project": {
+          "project_id": "7d414da3-8d7e-4477-a2cd-7b97d4812c07",
+          "name": "正式开发—人工套图主链",
+          "state": "READY_TO_GENERATE",
+          "revision": 5,
+          "schema_version": 1,
+          "created_at": "2026-10-05T11:29:11.269Z",
+          "updated_at": "2026-10-05T11:32:23.203Z"
+        },
+        "documents": [
+          {
+            "path": "documents/0000.json",
+            "kind": "candidate",
+            "document_id": "shot_main_clean",
+            "version": 1,
+            "schema_version": 1,
+            "created_at": "2026-10-05T11:32:23.833Z",
+            "updated_at": "2026-10-05T11:32:23.833Z"
+          },
+          {
+            "path": "documents/0001.json",
+            "kind": "candidate",
+            "document_id": "shot_main_clean",
+            "version": 2,
+            "schema_version": 1,
+            "created_at": "2026-10-05T11:33:24.530Z",
+            "updated_at": "2026-10-05T11:33:24.530Z"
+          },
+          {
+            "path": "documents/0002.json",
+            "kind": "candidate",
+            "document_id": "shot_scene_lifestyle",
+            "version": 1,
+            "schema_version": 1,
+            "created_at": "2026-10-05T11:32:24.452Z",
+            "updated_at": "2026-10-05T11:32:24.452Z"
+          },
+          {
+            "path": "documents/0003.json",
+            "kind": "export_record",
+            "document_id": "export-20261005114124554-f657c07eff80",
+            "version": 1,
+            "schema_version": 1,
+            "created_at": "2026-10-05T11:41:24.566Z",
+            "updated_at": "2026-10-05T11:41:24.566Z"
+          },
+          {
+            "path": "documents/0004.json",
+            "kind": "export_record",
+            "document_id": "export-20261005114153257-43bc3b23c97a",
+            "version": 1,
+            "schema_version": 1,
+            "created_at": "2026-10-05T11:41:53.259Z",
+            "updated_at": "2026-10-05T11:41:53.259Z"
+          },
+          {
+            "path": "documents/0005.json",
+            "kind": "export_record",
+            "document_id": "export-20261005114419808-31c84853f1c2",
+            "version": 1,
+            "schema_version": 1,
+            "created_at": "2026-10-05T11:44:19.811Z",
+            "updated_at": "2026-10-05T11:44:19.811Z"
+          },
+          {
+            "path": "documents/0006.json",
+            "kind": "export_record",
+            "document_id": "export-20261005122928779-c58fad39726f",
+            "version": 1,
+            "schema_version": 1,
+            "created_at": "2026-10-05T12:29:28.781Z",
+            "updated_at": "2026-10-05T12:29:28.781Z"
+          },
+          {
+            "path": "documents/0007.json",
+            "kind": "fact_slot",
+            "document_id": "brand",
+            "version": 1,
+            "schema_version": 1,
+            "created_at": "2026-10-05T11:29:59.316Z",
+            "updated_at": "2026-10-05T11:29:59.316Z"
+          },
+          {
+            "path": "documents/0008.json",
+            "kind": "fact_slot",
+            "document_id": "color_summary",
+            "version": 1,
+            "schema_version": 1,
+            "created_at": "2026-10-05T11:29:59.318Z",
+            "updated_at": "2026-10-05T11:29:59.318Z"
+          },
+          {
+            "path": "documents/0009.json",
+            "kind": "fact_slot",
+            "document_id": "key_material",
+            "version": 1,
+            "schema_version": 1,
+            "created_at": "2026-10-05T11:29:59.317Z",
+            "updated_at": "2026-10-05T11:29:59.317Z"
+          },
+          {
+            "path": "documents/0010.json",
+            "kind": "fact_slot",
+            "document_id": "package_contents",
+            "version": 1,
+            "schema_version": 1,
+            "created_at": "2026-10-05T11:29:59.320Z",
+            "updated_at": "2026-10-05T11:29:59.320Z"
+          },
+          {
+            "path": "documents/0011.json",
+            "kind": "fact_slot",
+            "document_id": "product_category",
+            "version": 1,
+            "schema_version": 1,
+            "created_at": "2026-10-05T11:29:59.314Z",
+            "updated_at": "2026-10-05T11:29:59.314Z"
+          },
+          {
+            "path": "documents/0012.json",
+            "kind": "fact_slot",
+            "document_id": "product_category",
+            "version": 2,
+            "schema_version": 1,
+            "created_at": "2026-10-05T11:30:51.415Z",
+            "updated_at": "2026-10-05T11:30:51.415Z"
+          },
+          {
+            "path": "documents/0013.json",
+            "kind": "fact_slot",
+            "document_id": "product_name",
+            "version": 1,
+            "schema_version": 1,
+            "created_at": "2026-10-05T11:29:59.313Z",
+            "updated_at": "2026-10-05T11:29:59.313Z"
+          },
+          {
+            "path": "documents/0014.json",
+            "kind": "fact_slot",
+            "document_id": "product_name",
+            "version": 2,
+            "schema_version": 1,
+            "created_at": "2026-10-05T11:31:20.047Z",
+            "updated_at": "2026-10-05T11:31:20.047Z"
+          },
+          {
+            "path": "documents/0015.json",
+            "kind": "fact_slot",
+            "document_id": "signature_features",
+            "version": 1,
+            "schema_version": 1,
+            "created_at": "2026-10-05T11:29:59.315Z",
+            "updated_at": "2026-10-05T11:29:59.315Z"
+          },
+          {
+            "path": "documents/0016.json",
+            "kind": "fact_slot",
+            "document_id": "signature_features",
+            "version": 2,
+            "schema_version": 1,
+            "created_at": "2026-10-05T11:31:20.132Z",
+            "updated_at": "2026-10-05T11:31:20.132Z"
+          },
+          {
+            "path": "documents/0017.json",
+            "kind": "fact_slot",
+            "document_id": "size_dimensions",
+            "version": 1,
+            "schema_version": 1,
+            "created_at": "2026-10-05T11:29:59.320Z",
+            "updated_at": "2026-10-05T11:29:59.320Z"
+          },
+          {
+            "path": "documents/0018.json",
+            "kind": "fact_slot",
+            "document_id": "size_summary",
+            "version": 1,
+            "schema_version": 1,
+            "created_at": "2026-10-05T11:29:59.319Z",
+            "updated_at": "2026-10-05T11:29:59.319Z"
+          },
+          {
+            "path": "documents/0019.json",
+            "kind": "generation_attempt",
+            "document_id": "shot_main_clean",
+            "version": 1,
+            "schema_version": 1,
+            "created_at": "2026-10-05T11:32:23.232Z",
+            "updated_at": "2026-10-05T11:32:23.232Z"
+          },
+          {
+            "path": "documents/0020.json",
+            "kind": "generation_attempt",
+            "document_id": "shot_main_clean",
+            "version": 2,
+            "schema_version": 1,
+            "created_at": "2026-10-05T11:32:23.775Z",
+            "updated_at": "2026-10-05T11:32:23.775Z"
+          },
+          {
+            "path": "documents/0021.json",
+            "kind": "generation_attempt",
+            "document_id": "shot_main_clean",
+            "version": 3,
+            "schema_version": 1,
+            "created_at": "2026-10-05T11:32:23.787Z",
+            "updated_at": "2026-10-05T11:32:23.787Z"
+          },
+          {
+            "path": "documents/0022.json",
+            "kind": "generation_attempt",
+            "document_id": "shot_main_clean",
+            "version": 4,
+            "schema_version": 1,
+            "created_at": "2026-10-05T11:33:23.897Z",
+            "updated_at": "2026-10-05T11:33:23.897Z"
+          },
+          {
+            "path": "documents/0023.json",
+            "kind": "generation_attempt",
+            "document_id": "shot_main_clean",
+            "version": 5,
+            "schema_version": 1,
+            "created_at": "2026-10-05T11:33:24.478Z",
+            "updated_at": "2026-10-05T11:33:24.478Z"
+          },
+          {
+            "path": "documents/0024.json",
+            "kind": "generation_attempt",
+            "document_id": "shot_main_clean",
+            "version": 6,
+            "schema_version": 1,
+            "created_at": "2026-10-05T11:33:24.489Z",
+            "updated_at": "2026-10-05T11:33:24.489Z"
+          },
+          {
+            "path": "documents/0025.json",
+            "kind": "generation_attempt",
+            "document_id": "shot_scene_lifestyle",
+            "version": 1,
+            "schema_version": 1,
+            "created_at": "2026-10-05T11:32:23.867Z",
+            "updated_at": "2026-10-05T11:32:23.867Z"
+          },
+          {
+            "path": "documents/0026.json",
+            "kind": "generation_attempt",
+            "document_id": "shot_scene_lifestyle",
+            "version": 2,
+            "schema_version": 1,
+            "created_at": "2026-10-05T11:32:24.402Z",
+            "updated_at": "2026-10-05T11:32:24.402Z"
+          },
+          {
+            "path": "documents/0027.json",
+            "kind": "generation_attempt",
+            "document_id": "shot_scene_lifestyle",
+            "version": 3,
+            "schema_version": 1,
+            "created_at": "2026-10-05T11:32:24.410Z",
+            "updated_at": "2026-10-05T11:32:24.410Z"
+          },
+          {
+            "path": "documents/0028.json",
+            "kind": "generation_confirm",
+            "document_id": "generation",
+            "version": 1,
+            "schema_version": 1,
+            "created_at": "2026-10-05T11:32:23.200Z",
+            "updated_at": "2026-10-05T11:32:23.200Z"
+          },
+          {
+            "path": "documents/0029.json",
+            "kind": "generation_confirm",
+            "document_id": "rework:shot_main_clean",
+            "version": 1,
+            "schema_version": 1,
+            "created_at": "2026-10-05T11:33:23.870Z",
+            "updated_at": "2026-10-05T11:33:23.870Z"
+          },
+          {
+            "path": "documents/0030.json",
+            "kind": "product_input",
+            "document_id": "intake",
+            "version": 1,
+            "schema_version": 1,
+            "created_at": "2026-10-05T11:29:29.473Z",
+            "updated_at": "2026-10-05T11:29:29.473Z"
+          },
+          {
+            "path": "documents/0031.json",
+            "kind": "product_input",
+            "document_id": "intake",
+            "version": 2,
+            "schema_version": 1,
+            "created_at": "2026-10-05T11:29:30.192Z",
+            "updated_at": "2026-10-05T11:29:30.192Z"
+          },
+          {
+            "path": "documents/0032.json",
+            "kind": "prompt_version",
+            "document_id": "shot_main_clean",
+            "version": 1,
+            "schema_version": 1,
+            "created_at": "2026-10-05T11:31:53.638Z",
+            "updated_at": "2026-10-05T11:31:53.638Z"
+          },
+          {
+            "path": "documents/0033.json",
+            "kind": "prompt_version",
+            "document_id": "shot_main_clean",
+            "version": 2,
+            "schema_version": 1,
+            "created_at": "2026-10-05T11:33:23.868Z",
+            "updated_at": "2026-10-05T11:33:23.868Z"
+          },
+          {
+            "path": "documents/0034.json",
+            "kind": "prompt_version",
+            "document_id": "shot_scene_lifestyle",
+            "version": 1,
+            "schema_version": 1,
+            "created_at": "2026-10-05T11:31:53.641Z",
+            "updated_at": "2026-10-05T11:31:53.641Z"
+          },
+          {
+            "path": "documents/0035.json",
+            "kind": "review_report",
+            "document_id": "act-144e4fba7b214ffdadecf9453e7b02ad",
+            "version": 1,
+            "schema_version": 1,
+            "created_at": "2026-10-05T11:32:23.834Z",
+            "updated_at": "2026-10-05T11:32:23.834Z"
+          },
+          {
+            "path": "documents/0036.json",
+            "kind": "review_report",
+            "document_id": "act-3044fabfea7c46bfb46663ce074718a2",
+            "version": 1,
+            "schema_version": 1,
+            "created_at": "2026-10-05T11:33:24.531Z",
+            "updated_at": "2026-10-05T11:33:24.531Z"
+          },
+          {
+            "path": "documents/0037.json",
+            "kind": "review_report",
+            "document_id": "act-73499842a25441c6be9a3f48d9205923",
+            "version": 1,
+            "schema_version": 1,
+            "created_at": "2026-10-05T11:32:24.453Z",
+            "updated_at": "2026-10-05T11:32:24.453Z"
+          },
+          {
+            "path": "documents/0038.json",
+            "kind": "selection",
+            "document_id": "shot_main_clean",
+            "version": 1,
+            "schema_version": 1,
+            "created_at": "2026-10-05T11:32:56.368Z",
+            "updated_at": "2026-10-05T11:32:56.368Z"
+          },
+          {
+            "path": "documents/0039.json",
+            "kind": "selection",
+            "document_id": "shot_scene_lifestyle",
+            "version": 1,
+            "schema_version": 1,
+            "created_at": "2026-10-05T11:35:12.030Z",
+            "updated_at": "2026-10-05T11:35:12.030Z"
+          },
+          {
+            "path": "documents/0040.json",
+            "kind": "suite_plan",
+            "document_id": "suite",
+            "version": 1,
+            "schema_version": 1,
+            "created_at": "2026-10-05T11:31:42.198Z",
+            "updated_at": "2026-10-05T11:31:42.198Z"
+          },
+          {
+            "path": "documents/0041.json",
+            "kind": "suite_plan",
+            "document_id": "suite",
+            "version": 2,
+            "schema_version": 1,
+            "created_at": "2026-10-05T11:31:42.283Z",
+            "updated_at": "2026-10-05T11:31:42.283Z"
+          },
+          {
+            "path": "documents/0042.json",
+            "kind": "suite_plan",
+            "document_id": "suite",
+            "version": 3,
+            "schema_version": 1,
+            "created_at": "2026-10-05T11:31:42.332Z",
+            "updated_at": "2026-10-05T11:31:42.332Z"
+          },
+          {
+            "path": "documents/0043.json",
+            "kind": "suite_review",
+            "document_id": "suite_review",
+            "version": 1,
+            "schema_version": 1,
+            "created_at": "2026-10-05T11:35:12.098Z",
+            "updated_at": "2026-10-05T11:35:12.098Z"
+          },
+          {
+            "path": "documents/0044.json",
+            "kind": "suite_review",
+            "document_id": "suite_review",
+            "version": 2,
+            "schema_version": 1,
+            "created_at": "2026-10-05T11:39:02.931Z",
+            "updated_at": "2026-10-05T11:39:02.931Z"
+          }
+        ],
+        "assets": [
+          {
+            "path": "assets/372dfb28cc81299ed94d064683a827d44ed2747121331d10f997e5bd4db61d52",
+            "sha256": "372dfb28cc81299ed94d064683a827d44ed2747121331d10f997e5bd4db61d52",
+            "media_type": "image/png",
+            "byte_size": 8298,
+            "original_name": "shot_main_clean-act-3044.png",
+            "role": "candidate",
+            "width": 1344,
+            "height": 1344,
+            "schema_version": 1,
+            "created_at": "2026-10-05T11:33:24.527Z"
+          },
+          {
+            "path": "assets/63aac5275511fba00cb93ebe33369fe462256f3a175d7f5fda31d389f3fd0467",
+            "sha256": "63aac5275511fba00cb93ebe33369fe462256f3a175d7f5fda31d389f3fd0467",
+            "media_type": "image/png",
+            "byte_size": 8298,
+            "original_name": "shot_scene_lifestyle-act-7349.png",
+            "role": "candidate",
+            "width": 1344,
+            "height": 1344,
+            "schema_version": 1,
+            "created_at": "2026-10-05T11:32:24.449Z"
+          },
+          {
+            "path": "assets/9d34b3e53e06250b60c06248c7848383e5771867b8c8f3954156679d9e8e4cd5",
+            "sha256": "9d34b3e53e06250b60c06248c7848383e5771867b8c8f3954156679d9e8e4cd5",
+            "media_type": "image/png",
+            "byte_size": 8298,
+            "original_name": "shot_main_clean-act-144e.png",
+            "role": "candidate",
+            "width": 1344,
+            "height": 1344,
+            "schema_version": 1,
+            "created_at": "2026-10-05T11:32:23.828Z"
+          },
+          {
+            "path": "assets/c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461",
+            "sha256": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461",
+            "media_type": "image/jpeg",
+            "byte_size": 2239735,
+            "original_name": "honey-jar-antique.jpg",
+            "role": "primary",
+            "width": 3840,
+            "height": 2560,
+            "schema_version": 1,
+            "created_at": "2026-10-05T11:29:29.458Z"
+          }
+        ],
+        "integrity": {
+          "documents": 45,
+          "assets": 4,
+          "document_bytes": 88235,
+          "asset_bytes": 2264629
+        }
+      }
+    }
+  ],
+  "page_errors": [],
+  "boundary": "Isolated Chrome headless; local fake provider; no paid calls"
+}
