@@ -37,6 +37,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 
 import v2_stage_nav as stage_nav  # noqa: E402  （V2.UI.2 六阶段工作台导航）
+import v2_verify_shared as shared  # noqa: E402  （自动本地准备的等待口径与其它验证器一致）
 
 PRODUCT_DIR = ROOT / "app" / "product_v2"
 HARNESS_DIR = ROOT / "evals" / "product-v2" / "harness"
@@ -569,15 +570,23 @@ def main() -> int:
                   and stale["record"] is not None and stale["record"]["version"] == 1,
                   {"fields": stale_fields[:4], "state": stale["project_state"]})
 
-            compile_all(page, [item["shot_id"] for item in stale["sheet"]["shots"]])
+            # 改风格后切回生成区会触发自动本地准备：必须等它落定再点（shared.compile_all 只重准备过期图），
+            # 否则按钮会因 prompts.isPreparing() 一直 disabled；版本语义不变（仍是重准备成新版本）。
+            shared.compile_all(page, [item["shot_id"] for item in stale["sheet"]["shots"]])
             reconfirm_ready = page.evaluate(CONFIRM_PROBE)
             check("V2.3.5-09", "重新编译后再次可确认，Prompt 版本全部前进",
                   reconfirm_ready["sheet"]["can_submit"] is True
-                  and all(item["version"] == 2 for item in reconfirm_ready["prompt_versions"]),
+                  # 只断言“各自相对初始 v1 前进”（不写死 v2）：改风格后自动本地准备 + 显式重准备
+                  # 可能让同一张图前进不止一次，写死 v2 会把合法的新语义判红。
+                  and all(item["version"] >= 2 for item in reconfirm_ready["prompt_versions"]),
                   {"versions": reconfirm_ready["prompt_versions"]})
 
-            # 重编译后确认区应回到可确认可见态；先显式到达再点（与 5_2 同形）：
-            # 若这里就红，说明是产品侧状态没回到 READY_TO_GENERATE，而不是点击本身的问题。
+            # 重编译后确认区应回到可确认可见态：自动本地准备是异步的，先有界等到按钮可用（真实用户路径），
+            # 再做点击；这里只改“怎么到达”，-10 仍然断言点击后的真实结果。
+            # 注意：当前语义下若摘要“本次明确发送 0 张”（已有成功记录不自动重提），按钮会一直保持 disabled，
+            # 此时这里会如实红在“expected to be enabled”，而不是被静默跳过。
+            page.wait_for_function(
+                "() => !document.getElementById('confirm-action').disabled", timeout=60_000)
             stage_nav.goto(page, "generate")
             expect(page.locator("#confirm-editor")).to_be_visible()
             expect(page.locator("#confirm-action")).to_be_enabled()
