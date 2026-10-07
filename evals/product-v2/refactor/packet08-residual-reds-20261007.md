@@ -75,6 +75,29 @@ playwright._impl._errors.TimeoutError: Page.click: Timeout 30000ms exceeded.
 - 失败形态：`#confirm-action` 存在但不可见（不是"找不到元素"），说明此刻确认编辑器处于隐藏态；`-09` 的 `can_submit is True` 是否成立尚未取到（脚本在打印前即抛异常）。
 - 判定待定：**产品侧（改风格+重编译后确认区未回到可确认可见态）vs 脚本侧（需要先 reveal 确认编辑器）**。因为 3_6 在同类步骤后直接点 `#confirm-action` 是通过的，两者差异需要一轮定向定位（读 `-09` 的 probe 快照 + 该步 DOM 可见性）。
 
+### 4.1 收紧后的诊断（主代理自己跑，14s 出结论）
+
+把该步改成显式到达（与 `verify_v2_5_2_vlm_review.py:484-486` 同形，只加期望、不改任何断言含义）：
+
+```python
+stage_nav.goto(page, "generate")
+expect(page.locator("#confirm-editor")).to_be_visible()
+expect(page.locator("#confirm-action")).to_be_enabled()
+page.click("#confirm-action")
+```
+
+结果：
+
+```
+AssertionError: Locator expected to be enabled     （EXIT=1，14.1s）
+```
+
+即：**确认编辑器可见，但确认按钮是 disabled**。所以失败点不是"没到达面板"，而是"重编译后确认按钮未回到可用态"。这同时否掉了 §4 里"面板切换"的猜测。
+
+待定项：这属于产品语义还是脚本期望？线索：`verify_v2_3_6_prompt_manual_edit.py` 的 `V2.3.6-12` 明确断言当前产品合同是"链式编辑后**如实停在未确认态：按钮 disabled，不自动重提**"。3_5 的 `-10` 则假设"改风格 + 重编译后按钮自动回到可用"。两者对同一状态给出相反前提，需要按产品合同定谁过期（本轮未改任何期望，避免用猜测放宽断言）。
+
+副作用（正面）：`-09`（`can_submit is True`）在该步之前被记录但不打印，因此按钮 disabled 时应用层 `can_submit` 的实际取值仍需在定性时一并取到（把 `check` 结果落成证据再比较）。
+
 ## 5. 本轮产品改动（子代理作业，主代理复核 diff）
 
 - `app/product_v2/ui/compare-view.{ts,js}`：返工提交遇 `unknown` 成功返回时走 `deps.showAttemptError(...)` 如实提示（含"没有任务编号，只能显式新建 action"分支），不改控制流与返回值。

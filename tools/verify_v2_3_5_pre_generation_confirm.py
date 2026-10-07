@@ -576,6 +576,11 @@ def main() -> int:
                   and all(item["version"] == 2 for item in reconfirm_ready["prompt_versions"]),
                   {"versions": reconfirm_ready["prompt_versions"]})
 
+            # 重编译后确认区应回到可确认可见态；先显式到达再点（与 5_2 同形）：
+            # 若这里就红，说明是产品侧状态没回到 READY_TO_GENERATE，而不是点击本身的问题。
+            stage_nav.goto(page, "generate")
+            expect(page.locator("#confirm-editor")).to_be_visible()
+            expect(page.locator("#confirm-action")).to_be_enabled()
             page.click("#confirm-action")
             second_record = page.evaluate(CONFIRM_PROBE)
             check("V2.3.5-10", "再次确认写新版本且旧记录保留（append-only）",
