@@ -219,7 +219,6 @@ async ({projectId}) => {
       referenceSourceReader: () => [],
       promptsSheet: () => null,
       imageEnvironment: () => null,
-      candidateReviewRequest: () => ({}),
       renderAttempts: noop, renderBatch: noop, status: noop,
       attemptError: noop, clearAttemptError: noop,
       repository,

@@ -77,8 +77,7 @@ test('late task success saves original candidate without clearing new project fl
     confirmationReader: () => null, promptBasisReader: () => null,
     fenceReader: () => ({ sources: [], projectionJson: '{"shots":[]}', assetSha256: [] }),
     referenceSourceReader: () => [],
-    promptsSheet: () => null, imageEnvironment: () => null,
-    candidateReviewRequest: () => null, renderAttempts: () => {}, renderBatch: () => {},
+    promptsSheet: () => null, imageEnvironment: () => null, renderAttempts: () => {}, renderBatch: () => {},
     status: () => {}, attemptError: () => {}, clearAttemptError: () => {},
   });
   const seedAttempt = (projectId, actionId, taskId) => {
@@ -149,8 +148,7 @@ test('old candidate cannot hide the current action result still needing retrieva
     promptEntryReader: () => null, confirmationReader: () => null, promptBasisReader: () => null,
     fenceReader: () => ({ sources: [], projectionJson: '{"shots":[]}', assetSha256: [] }),
     referenceSourceReader: () => [],
-    promptsSheet: () => null, imageEnvironment: () => null,
-    candidateReviewRequest: () => null, renderAttempts: () => {}, renderBatch: () => {},
+    promptsSheet: () => null, imageEnvironment: () => null, renderAttempts: () => {}, renderBatch: () => {},
     status: () => {}, attemptError: () => {}, clearAttemptError: () => {},
   });
   await module.restore(action);

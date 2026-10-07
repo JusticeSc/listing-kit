@@ -56,7 +56,7 @@
  } from "./domain/index.js";
  import { sha256Hex } from "./storage/db.js";
  import type { ConfirmationSheet } from "./prompts.js";
- import type { AdoptionReviewAccess, ReviewCandidateResult } from "./selection-adoption.js";
+import type { AdoptionReviewAccess } from "./selection-adoption.js";
  import type { AttemptReconcileResult } from "./domain/attempt.js";
 import type { ConsumptionFence, ProjectRepository } from "./storage/validate.js";
  import type {
@@ -174,9 +174,7 @@ export type GenerationDependencies = {
   referenceSourceReader(): ReferenceSource[];
   promptsSheet(shotIds?: string[] | null): ConfirmationSheet | null;
   imageEnvironment(saved?: unknown): unknown;
-  candidateReviewRequest(shotId: string, candidate: CandidateRecord, projectId: string): unknown;
   reviewAccess?: AdoptionReviewAccess | null;
-  reviewRunner?: ((shotId: string, candidateId: string) => Promise<ReviewCandidateResult>) | null;
   reviewFlightReader?: ((shotId: string) => boolean) | null;
   renderBatch(): void;
   renderAttempts(): void;
@@ -278,8 +276,6 @@ export type GenerationModule = {
   reconcileAttempt(shotId: string, options?: ReconcileAttemptOptions): Promise<ReconcileAttemptResult>;
   storeCandidate(shotId: string, options?: EnsureCandidateOptions): Promise<StoreCandidateResult>;
   buildReferencePayload(references: PromptReferenceSelection[], pid: string): Promise<ReferencePayloadItem[]>;
-  setCandidateReviewRequest(builder: (shotId: string, candidate: CandidateRecord, projectId: string) => unknown): void;
-  setReviewRunner(runner: (shotId: string, candidateId: string) => Promise<ReviewCandidateResult>): void;
   setReviewFlightReader(reader: (shotId: string) => boolean): void;
   setReviewAccess(access: AdoptionReviewAccess): void;
   deriveBatch(): BatchState;
@@ -369,7 +365,7 @@ export function createGenerationModule(deps: GenerationDependencies): Generation
     "suitePlanReader", "suiteSummaryReader", "promptEntryReader",
     "confirmationReader", "promptBasisReader", "fenceReader", "referenceSourceReader",
     "promptsSheet", "imageEnvironment",
-    "candidateReviewRequest", "renderAttempts", "renderBatch", "status",
+    "renderAttempts", "renderBatch", "status",
     "attemptError", "clearAttemptError"] as const;
   for (const name of functionDeps) {
     if (typeof deps[name] !== "function") {
@@ -382,9 +378,6 @@ export function createGenerationModule(deps: GenerationDependencies): Generation
 
   const repository = deps.repository;
   let attemptChains = new Map<string, AttemptEntry[]>();
-  // 单图复核请求准备归 adoption：装配期由 workspace 经 setter 补线（adoption 装配后），
-  // 构造期 deps 仍要求传入初始实现以满足 functionDeps 校验。
-  let candidateReviewRequestBuilder = deps.candidateReviewRequest;
   let attemptInFlight = new Set<string>();
   let candidateChains = new Map<string, CandidateEntry[]>();
   let candidateInFlight = new Set<string>();
@@ -1473,8 +1466,6 @@ export function createGenerationModule(deps: GenerationDependencies): Generation
     reconcileAttempt: performReconcileAttempt,
     storeCandidate: ensureCandidateStored,
     buildReferencePayload,
-    setCandidateReviewRequest: (builder) => { candidateReviewRequestBuilder = builder; },
-    setReviewRunner: (runner) => { deps.reviewRunner = runner; },
     setReviewFlightReader: (reader) => { deps.reviewFlightReader = reader; },
     setReviewAccess: (access) => { deps.reviewAccess = access; },
     // 批次

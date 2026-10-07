@@ -580,7 +580,6 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
     })),
     promptsSheet: (ids) => prompts.sheet(ids ?? null),
     imageEnvironment: (saved) => /** @type {unknown} */ (saved ?? modelSettings.imageEnvironment()),
-    candidateReviewRequest: async () => { throw new Error("复核请求准备尚未装配。"); },
     renderAttempts: () => generationView?.renderAttempts(),
     renderBatch: () => generationView?.renderBatch(),
     status: (/** @type {string} */ text) => { generationView?.setAttemptStatus(text); },
@@ -595,14 +594,6 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
     beginAction, sources: projectSources,
     changed: () => { deliveryView?.render(); generationView?.renderAttempts(); },
   });
-  // 单图复核请求准备归 adoption：generation 的注入在 adoption 装配后补线，
-  // 调用只发生在用户点击复核时（装配早已完成），不形成装配期循环。
-  generation.setCandidateReviewRequest(
-    (/** @type {string} */ shotId, /** @type {CandidateRecord} */ candidate, /** @type {string} */ pid) =>
-      selectionAdoption.candidateReviewRequest(shotId, candidate, pid));
-  generation.setReviewRunner(
-    (/** @type {string} */ shotId, /** @type {string} */ candidateId) =>
-      selectionAdoption.reviewCandidate(shotId, candidateId));
   generation.setReviewFlightReader(
     (/** @type {string} */ shotId) => selectionAdoption.isReviewInFlight(shotId));
   generation.setReviewAccess(selectionAdoption);

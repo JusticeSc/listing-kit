@@ -60,7 +60,7 @@ export function createGenerationModule(deps) {
         "suitePlanReader", "suiteSummaryReader", "promptEntryReader",
         "confirmationReader", "promptBasisReader", "fenceReader", "referenceSourceReader",
         "promptsSheet", "imageEnvironment",
-        "candidateReviewRequest", "renderAttempts", "renderBatch", "status",
+        "renderAttempts", "renderBatch", "status",
         "attemptError", "clearAttemptError"];
     for (const name of functionDeps) {
         if (typeof deps[name] !== "function") {
@@ -72,9 +72,6 @@ export function createGenerationModule(deps) {
     }
     const repository = deps.repository;
     let attemptChains = new Map();
-    // 单图复核请求准备归 adoption：装配期由 workspace 经 setter 补线（adoption 装配后），
-    // 构造期 deps 仍要求传入初始实现以满足 functionDeps 校验。
-    let candidateReviewRequestBuilder = deps.candidateReviewRequest;
     let attemptInFlight = new Set();
     let candidateChains = new Map();
     let candidateInFlight = new Set();
@@ -1202,8 +1199,6 @@ export function createGenerationModule(deps) {
         reconcileAttempt: performReconcileAttempt,
         storeCandidate: ensureCandidateStored,
         buildReferencePayload,
-        setCandidateReviewRequest: (builder) => { candidateReviewRequestBuilder = builder; },
-        setReviewRunner: (runner) => { deps.reviewRunner = runner; },
         setReviewFlightReader: (reader) => { deps.reviewFlightReader = reader; },
         setReviewAccess: (access) => { deps.reviewAccess = access; },
         // 批次
