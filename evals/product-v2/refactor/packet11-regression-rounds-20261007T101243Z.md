@@ -69,9 +69,9 @@
 | 验证器 | 第1轮 | 第2轮 | 定性 | 证据文件 |
 |---|---|---|---|---|
 | 1_1_indexeddb | RC=1：harness 无结果（120s 超时，`__V2_STORAGE_RESULTS__` 永不落定） | RC=1：同左 | 真红（产品缺陷，见§4-A） | 无本轮证据文件（中断在落盘前）；日志 `_working/p11regression/logs/v11.rN.log` |
-| 1_2_project_home | RC=0 全过 | RC=0 全过 | 真绿 | evals/product-v2/v2.1.2-project-home-20261007-175314-p11r1.txt / …-1805xx-p11r2.txt（同名 .json） |
-| 1_3_project_package | RC=0 全过 | RC=0 全过 | 真绿 | evals/product-v2/v2.1.3-project-package-20261007-175325-p11r1.txt / …-p11r2.txt（同名 .json） |
-| 1_4_formal_entry | RC=0 全过 | RC=0 全过 | 真绿 | evals/product-v2/v2.1.4-formal-entry-20261007-175330-p11r1.txt / …-p11r2.txt（同名 .json） |
+| 1_2_project_home | RC=0 全过 | RC=0 全过 | 真绿 | evals/product-v2/v2.1.2-project-home-20261007-175314-p11r1.txt / …-180444-p11r2.txt（同名 .json） |
+| 1_3_project_package | RC=0 全过 | RC=0 全过 | 真绿 | evals/product-v2/v2.1.3-project-package-20261007-175325-p11r1.txt / …-180453-p11r2.txt（同名 .json） |
+| 1_4_formal_entry | RC=0 全过 | RC=0 全过 | 真绿 | evals/product-v2/v2.1.4-formal-entry-20261007-175330-p11r1.txt / …-180457-p11r2.txt（同名 .json） |
 | 2_1_product_contracts | RC=0 全过 | RC=0 全过 | 真绿 | evals/product-v2/v2.2.1-product-contracts-20261007-175352-p11r1.txt / …-180517-p11r2.txt（同名 .json） |
 | 2_2_semantic_provider | RC=0（10/10） | RC=0（10/10） | 真绿 | evals/product-v2/v2.2.2-semantic-provider-20261007-175357-p11r1.txt / …-180522-p11r2.txt（同名 .json） |
 | 2_3_intake_understanding | RC=0 全过 | RC=0 全过 | 真绿 | evals/product-v2/v2.2.3-intake-understanding-20261007-175401-p11r1.txt / …-180527-p11r2.txt（同名 .json） |
