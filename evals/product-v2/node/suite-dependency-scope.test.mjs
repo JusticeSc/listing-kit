@@ -19,9 +19,13 @@ function dependencies(required = false, candidateId = null) {
 }
 
 test('unselected optional dimensions draft does not block adopted main image delivery', () => {
-  const finding = dependencies();
-  assert.equal(finding.severity, 'PASS');
-  assert.deepEqual(finding.affected_shot_ids, []);
+  const ok = dependencies();
+  assert.equal(ok.severity, 'PASS');
+  assert.deepEqual(ok.affected_shot_ids, []);
+  // 同一可选图一旦被采用（candidateId 落盘），同一条规则必须翻成 BLOCK：行为变了才算覆盖。
+  const adopted = dependencies(false, 'candidate-size');
+  assert.equal(adopted.severity, 'BLOCK');
+  assert.deepEqual(adopted.affected_shot_ids, ['shot_size']);
 });
 
 test('required or adopted dimensions still require confirmed dimensions', () => {

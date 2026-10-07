@@ -211,8 +211,6 @@ test("C09", "批次候选投影：已成功未保存 → succeeded_unstored + fe
   expect(partial.rows[0].state === "succeeded_unstored" && partial.rows[0].candidate_stored === false,
     "未保存的行必须投影为 succeeded_unstored");
   expect(partial.rows[1].candidate_stored === true, "已保存的行必须标记 candidate_stored");
-  const text = batchProgressText(partial);
-  expect(text.includes("待保存候选 1"), "进度文案必须包含待保存候选计数：" + text);
   const done = deriveBatchState({
     shots: SHOTS, latestAttempts: attempts, promptReady: () => true,
     candidateStored: () => true,

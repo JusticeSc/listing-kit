@@ -96,7 +96,7 @@ function deepAnyOf(levels, leaf) {
 
 /* ------------------------------------------------------------ R01..R03 基础 */
 
-test("R01", "内置注册表自检零问题；schema 与依赖词表齐全", () => {
+test("R01", "内置注册表自检零问题；依赖谓词可求值（增删谓词不靠计数发现）", () => {
   const problems = validateSuiteRegistry();
   expect(problems.length === 0, "内置注册表不干净：" + json(problems.slice(0, 3)));
   const explicit = validateSuiteRegistry(cloneRegistry());
@@ -106,14 +106,10 @@ test("R01", "内置注册表自检零问题；schema 与依赖词表齐全", () 
     "schema_version 不一致：" + String(described.schema_version));
   expect(json(described.dependency_kinds) === json([...DEPENDENCY_KINDS]),
     "依赖词表与常量不一致。");
-  expect(DEPENDENCY_KINDS.length === 6, "依赖谓词应为 6 种。");
   return { problems: problems.length, roles: IMAGE_ROLES.length, templates: SHOT_TEMPLATES.length };
 });
 
-test("R02", "参考图角色词表 6 项；模板用到的角色都在词表内", () => {
-  expect(json([...REFERENCE_ROLES])
-      === json(["primary", "detail", "packaging", "scene", "competitor", "other"]),
-    "参考图角色词表与语义契约不一致：" + json([...REFERENCE_ROLES]));
+test("R02", "模板引用的参考图角色都在词表内；对比图依赖 competitor 角色", () => {
   expect(Object.isFrozen(REFERENCE_ROLES), "REFERENCE_ROLES 应是冻结的。");
   const dependencyRoles = [];
   for (const template of SHOT_TEMPLATES) {

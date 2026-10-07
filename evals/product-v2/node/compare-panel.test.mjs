@@ -8,7 +8,6 @@
  */
 
 import {
-  COMPARE_PENDING_SEVERITIES,
   REVIEW_SEVERITY_ORDER,
   buildReviewReport,
   checkCompareRows,
@@ -21,7 +20,7 @@ import {
   nextPendingShotId,
   sortFindings,
 } from "../../../app/product_v2/domain/index.js";
-import { expect, serializeError } from "./harness-core.mjs";
+import { expect } from "./harness-core.mjs";
 
 const cases = [];
 
@@ -130,13 +129,12 @@ test("CP-03", "默认目标是异常优先而不是最新：最新的无发现�
   expect(defaultCompareTargetId([]) === null, "没有候选时应返回 null");
 });
 
-test("CP-04", "严重度顺序表只有一份：compare 模块与 review.js 共用同一顺序", () => {
+test("CP-04", "严重度顺序：阻断先看、未知仍先于通过/无发现（与 review 共用同一顺序）", () => {
   expect(compareSeverityRank({ severity: "BLOCK" }) === 0, "阻断应排第一");
-  expect(compareSeverityRank({ severity: "UNKNOWN" }) === 3, "未知应排第四");
-  expect(compareSeverityRank({ severity: "PASS" }) === REVIEW_SEVERITY_ORDER.length,
-    "通过项不参与先看顺序");
-  expect(compareSeverityRank(null) === REVIEW_SEVERITY_ORDER.length,
-    "没有发现与通过项同级");
+  expect(compareSeverityRank({ severity: "UNKNOWN" }) < compareSeverityRank({ severity: "PASS" }),
+    "未知仍先于通过项");
+  expect(compareSeverityRank({ severity: "PASS" }) === compareSeverityRank(null),
+    "通过项与无发现同级（都不参与先看）");
 });
 
 test("CP-05", "无发现 = clean：不是待处理，摘要说明只是机器结论", () => {

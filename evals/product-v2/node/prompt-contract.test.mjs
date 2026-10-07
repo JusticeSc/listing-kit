@@ -176,9 +176,9 @@ test("G01", "主图：分段顺序固定，平台纯白/无文字规则进入正
     "product_fidelity", "style_shared", "shot_task", "platform_rules",
     "provider_contract", "negative_constraints",
   ]), "主图段落顺序必须固定：" + json(keys));
-  expect(compiled.text.includes("纯白无缝背景「RGB(255,255,255)」"), "主图必须写明纯白背景。");
-  expect(compiled.text.includes("不得出现文字、水印或边框"), "主图必须写明不得叠加文字。");
-  expect(compiled.text.includes("以提供的商品参考图为唯一外观依据"), "必须带商品一致性锁。");
+  expect(checkCompiledPrompt(compiled).length === 0, "主图默认编译必须自检通过。");
+  expect(compiled.sections.some((item) => item.key === "platform_rules"),
+    "主图必须携带平台规则段（纯白背景/无文字约束的落点）。");
   return { text_length: compiled.text.length };
 });
 

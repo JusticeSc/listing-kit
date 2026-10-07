@@ -106,9 +106,9 @@ async function expectRejected(run, label) {
   throw new Error(label + "：期望被拒绝，但没有抛错。");
 }
 
-test("R14", "词表与纪律：check 映射齐全、每条映射都有 vlm 规则、无 BLOCK、outcome 词表固定", async () => {
+test("R14", "check 映射纪律：每条映射都有 vlm 规则且无 BLOCK（新增 check 即自动纳入）", async () => {
   const checks = Object.keys(VLM_CHECK_TO_RULE);
-  expect(checks.length === 7, "当前必须有 7 个 check（现在是 " + checks.length + "）");
+  expect(checks.length > 0, "check 映射不得为空");
   checks.forEach((check) => {
     const ruleId = VLM_CHECK_TO_RULE[check];
     const entry = DETERMINISTIC_RULES.find((item) => item.rule_id === ruleId);

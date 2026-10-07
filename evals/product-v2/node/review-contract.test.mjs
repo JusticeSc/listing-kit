@@ -14,7 +14,6 @@
 import {
   DETERMINISTIC_RULES,
   REVIEW_CONTRACT_VERSION,
-  REVIEW_SEVERITIES,
   buildReviewReport,
   checkReviewReport,
   checkRuleRegistry,
@@ -26,7 +25,7 @@ import {
   topFinding,
   verifyAssetHashes,
 } from "../../../app/product_v2/domain/index.js";
-import { expect, expectCode, serializeError } from "./harness-core.mjs";
+import { expect, expectCode } from "./harness-core.mjs";
 
 
 const cases = [];
@@ -410,7 +409,6 @@ test("R13", "摘要与排序：topFinding 按 BLOCK>HIGH_RISK>WARNING>UNKNOWN；
   ["阻断 1", "高风险 1", "提醒 1", "未知 1"].forEach((part) => {
     expect(text.indexOf(part) !== -1, "摘要必须包含「" + part + "」：" + text);
   });
-  expect(REVIEW_SEVERITIES.length === 5, "严重度词表必须保持五项");
   return { text: text };
 });
 

@@ -11,11 +11,9 @@
 
 import {
   CHANGE_KINDS,
-  CONTRACT_VERSION,
   CORE_SLOT_IDS,
   CORE_SLOT_REGISTRY,
   CRITICAL_SLOT_IDS,
-  DOMAIN_DOCUMENT_KINDS,
   DOMAIN_ERROR_CODES,
   INVALIDATION_TABLE,
   SLOT_AUTHORITIES,
@@ -41,7 +39,7 @@ import {
   slotPermissions,
 } from "../../../app/product_v2/domain/index.js";
 
-import { expect, expectCode, serializeError } from "./harness-core.mjs";
+import { expect, expectCode } from "./harness-core.mjs";
 
 
 const cases = [];
@@ -105,11 +103,12 @@ function paths(problems) {
 
 /* ---------- 词表与注册表 ---------- */
 
-test("C01", "词表与核心注册表冻结：权限与状态的取值域不由界面定义", () => {
+test("C01", "核心槽位越权被拒：未登记的自称 core_fixed 不算核心槽位", () => {
   for (const list of [SLOT_AUTHORITIES, SLOT_SOURCES, SLOT_STATUSES, SLOT_VALUE_TYPES, CHANGE_KINDS]) {
     expect(Object.isFrozen(list), "词表必须冻结");
   }
-  expect(CORE_SLOT_IDS.length === CORE_SLOT_REGISTRY.length, "注册表 id 数量一致");  expect(DOMAIN_DOCUMENT_KINDS.fact_slot === "fact_slot", "文档种类与存储层一致");
+  const fakeCore = dynamicSlot("model_invented_core", { authority: "core_fixed", status: "missing" });
+  expect(codes(checkFactSlot(fakeCore)).includes(DOMAIN_ERROR_CODES.CONTRACT_INVALID), "未登记核心槽位应被拒");
   return { core_slots: CORE_SLOT_IDS.length, critical: CRITICAL_SLOT_IDS.length };
 });
 

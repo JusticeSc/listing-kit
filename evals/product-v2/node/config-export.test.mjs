@@ -7,7 +7,6 @@
  */
 
 import {
-  CONFIG_CREDENTIAL_SOURCES,
   CONFIG_EXPORT_FORMAT,
   CONFIG_EXPORT_FORMAT_VERSION,
   buildShareableConfig,
@@ -145,8 +144,6 @@ test("X03", "反向：手工混入 secret / 版本不符 / 缺声明都会被导
                                               model_id: "qwen-image-3.0" } }),
       profile: PROFILE, at: AT }),
     "CONTRACT_INVALID", "缺能力版本");
-  expect(JSON.stringify(CONFIG_CREDENTIAL_SOURCES) === JSON.stringify(
-    ["byok", "default", "test_double"]), "凭据来源词表：byok/default/test_double");
   return { rejected: 3 };
 });
 

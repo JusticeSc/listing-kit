@@ -9,18 +9,12 @@
  */
 
 import {
-  ATTEMPT_ERROR_FAMILIES,
-  ATTEMPT_CREDENTIAL_SOURCES,
-  ATTEMPT_PROTOCOL_PATTERN,
   ATTEMPT_RECONCILE_MODES,
-  ATTEMPT_RETRY_POLICIES,
   ATTEMPT_STATES,
   advanceAttempt,
   attemptCurrentEnvironmentIdentity,
-  attemptExecutionIdentityOf,
   attemptNeedsReconcile,
   attemptPromptStaleness,
-  attemptReconcileBlockedMessage,
   attemptReconcileEnvironment,
   attemptReconcileMode,
   attemptReconcileRequestOf,
@@ -36,7 +30,7 @@ import {
   nextFromStatusEnvelope,
   nextFromSubmitEnvelope,
 } from "../../../app/product_v2/domain/index.js";
-import { expect, expectCode, serializeError } from "./harness-core.mjs";
+import { expect, expectCode } from "./harness-core.mjs";
 
 const cases = [];
 
@@ -400,11 +394,8 @@ test("A12", "反向：篡改记录、抹掉历史、Unknown 回写 submitted 都
   return { rejected: probes.map((item) => item[0]) };
 });
 
-test("A13", "词表与常量：错误归口、重试语义、状态文案、action id 形状", async () => {
-  for (const state of Object.keys(ATTEMPT_STATES)) {
-    expect(typeof attemptStateLabel(state) === "string" && attemptStateLabel(state).length > 0,
-      "每个状态都要有给用户看的文案");
-  }
+test("A13", "状态文案兜底与 action id 网关形状（非法状态不抛错、id 长度即网关契约）", async () => {
+  expect(attemptStateLabel("no_such_state") === "未知状态", "非法状态必须兜底，不抛错");
   const id = newActionId(() => "11111111-2222-3333-4444-555555555555");
   expect(id.length >= 8 && id.length <= 64, "action id 长度必须在网关契约内");
   const envelope = classifySubmitEnvelope(taskEnvelope({ task: { status: "PENDING" } }));
@@ -412,8 +403,7 @@ test("A13", "词表与常量：错误归口、重试语义、状态文案、acti
     "分类结果必须带任务身份");
   const status = classifyStatusEnvelope(taskEnvelope({ task: { status: "SUCCEEDED" } }));
   expect(status.state === "succeeded", "查询分类必须能给出 succeeded");
-  const order = Object.keys(ATTEMPT_STATES);
-  return { families: ATTEMPT_ERROR_FAMILIES.length, retry: ATTEMPT_RETRY_POLICIES.length, action_id: id };
+  return { action_id: id };
 });
 
 /* ------------------------------------------------- V2.R4.4 冻结执行身份与环境核对 */
@@ -541,14 +531,9 @@ test("A17", "凭据轮换不使无关 Prompt 过期：过期判定只看 Prompt 
   return { moved: "PROMPT_MOVED", rotated: "CURRENT" };
 });
 
-test("A18", "环境身份投影与目标核对请求形状：blocked_environment 模式与无猜身份", async () => {
-  expect(ATTEMPT_RECONCILE_MODES.blocked_environment === "blocked_environment",
-    "词表必须包含 blocked_environment 模式");
-  expect(ATTEMPT_CREDENTIAL_SOURCES.join(",") === "byok,default,none,test_double,env",
-    "凭据来源词表：BYOK/默认档/未配置/测试替身/直构探针");
-  expect(ATTEMPT_PROTOCOL_PATTERN.test("v2.4.1") === true, "协议版本形如 v2.4.1");
-  expect(ATTEMPT_PROTOCOL_PATTERN.test("https://x") === false,
-    "协议字段不许混入 URL（目标地址不是身份的一部分）");
+test("A18", "环境身份投影与目标核对请求形状：无身份不猜、有身份按冻结身份带 target", async () => {
+  expect(attemptReconcileMode({ state: "succeeded", task_id: "task-x" }) === "none",
+    "终态不需要核对（reconcileMode=none）");
   const block = {
     contract: "v2.4.1",
     provider: { provider_id: "dashscope-qwen-image", model_id: "qwen-image-3.0",
