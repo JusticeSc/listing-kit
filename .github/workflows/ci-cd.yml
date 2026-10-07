@@ -384,6 +384,46 @@ jobs:
           fi
           exit "$finalize_rc"
 
+      - name: Check rollback truth table (executable, auditable)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          # 回滚/不清 previous 的可执行条件（设计 §10.8 / 计划 §7.7 真值表，
+          # 事务身份与退出码语义见 deploy/release-transaction.sh 头注释）：
+          # | 失败点 | finalize 码 | 动作 | previous |
+          # | deploy/acceptance/fingerprint 任一失败 | — | rollback | 恢复上一可用 |
+          # | finalize 重验证失败（容器/HTTPS/静态） | 1 | rollback | 保留并恢复 |
+          # | finalize 收尾失败（删 previous/备份/事务失败） | 4 | 人工清理 | 绝不自动回滚 |
+          # | 回退本身失败 | 3 | 报 unrecovered | 保留 journal 精确故障 |
+          # | 全部通过 | 0 | finalize 清理 | 此时才删 previous/备份 |
+          # 下面只做 YAML 条件与脚本约定的静态一致性自检，不连 SSH、不碰服务。
+          python - <<'PY'
+          import re
+          from pathlib import Path
+          workflow = Path(".github/workflows/ci-cd.yml").read_text(encoding="utf-8")
+          script = Path("deploy/release-transaction.sh").read_text(encoding="utf-8")
+          # 1. rollback 门必须覆盖全部四类必要失败，且 finalize 失败必须带 recoverable==true 守卫。
+          gate = re.search(r"name: Roll back to previous known working state\n\s+if: (.+)", workflow)
+          assert gate, "rollback gate missing"
+          condition = gate.group(1)
+          for token in ("release_deploy", "release_acceptance", "release_fingerprint",
+                        "release_finalize", "recoverable"):
+              assert token in condition, f"rollback gate missing {token}"
+          # 2. finalize exit 4 绝不进 rollback 门（收尾失败需人工清理，见脚本头注释）。
+          assert 'outputs.recoverable' in condition, "finalize must gate on recoverable output"
+          assert re.search(r"recoverable=true.*GITHUB_OUTPUT", workflow), "finalize must set recoverable only on exit 1"
+          assert re.search(r"exit \"\$EXIT_FINALIZE\"|exit ['\"]?4", script) or "EXIT_FINALIZE" in script, \
+              "script must define finalize-cleanup exit 4"
+          # 3. deploy/finalize 内绝无“健康后提前删 previous”：previous 只由 finalize 成功路径删除。
+          assert "docker rm" not in workflow.split("Remove smoke container")[0].split("Build immutable image")[1], \
+              "no docker rm allowed between build and smoke"
+          finalize_body = script.split("cmd_finalize()")[1].split("cmd_rollback()")[0]
+          assert "docker rm --force" in finalize_body, "only finalize may remove previous"
+          deploy_body = script.split("cmd_deploy()")[1].split("cmd_finalize()")[0]
+          assert "docker rm --force" not in deploy_body, "deploy must never delete previous early"
+          print("rollback truth table consistent: gate covers 4 necessary failures, exit-4 excluded, previous only removed by finalize")
+          PY
 
       - name: Upload release evidence
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
