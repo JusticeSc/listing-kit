@@ -183,7 +183,7 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
 
     checks: list[dict] = []
     ui: dict = {"keyboard": {}}
-    port = v251.free_port()
+    port = shared.free_port()
     server = server_module.create_product_v2_server(
         "127.0.0.1", port,
         provider_factory=lambda: FakeSemanticProvider(scenario="ok"),
@@ -193,7 +193,7 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
     temp_root = Path(tempfile.mkdtemp(prefix="amz-ui2-"))
     profile = temp_root / "profile"
     reference = temp_root / "ref.png"
-    reference.write_bytes(v251.png_bytes(1200, 1200, (36, 92, 160)))
+    reference.write_bytes(shared.png_bytes(1200, 1200, (36, 92, 160)))
     base = f"http://127.0.0.1:{port}"
     EVIDENCE_IMAGE_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -403,7 +403,7 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 page.click("#suite-seed")
                 expect(page.locator("#shot-list .shot-row").first).to_be_visible(timeout=20_000)
                 page.wait_for_timeout(400)
-                shots = page.evaluate(v251.PROBE)["shot_ids"]
+                shots = page.evaluate(shared.PROBE)["shot_ids"]
                 plan_state = stage_state()
                 checks.append({
                     "id": "UI2-12",
@@ -421,7 +421,7 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 page.keyboard.press("Enter")
                 expect(page.locator('[data-stage-panel="generate"]')).to_be_visible()
                 ui["keyboard"]["plan_to_generate"] = bool(focused_plan_next)
-                v251.compile_all(page, shots)
+                shared.compile_all(page, shots)
                 expect(page.locator("#confirm-action")).to_be_enabled(timeout=30_000)
                 page.click("#confirm-action")
                 # 新流程一次确认直接整套进批次：等 attempt 行出现（不再写“已确认 vN”记录行，不再有点 #batch-run）。
@@ -618,13 +618,13 @@ def main() -> int:
                   for item in ("create", "open", "analyze", "plan_to_generate", "stage_switch")),
         "detail": {"keyboard": keyboard},
     })
-    entry = v251.run_entry(["--check"])
+    entry = shared.run_entry(["--check"])
     retried = False
     # 本机套接字偶发 ConnectionResetError（自检自己起停服务）；这是传输层抖动而非产品缺陷，
     # 只在这种可识别的传输错误上重试一次，并把重试记录进证据。
     if entry["rc"] != 0 and any("ConnectionResetError" in line for line in entry["tail"]):
         retried = True
-        entry = v251.run_entry(["--check"])
+        entry = shared.run_entry(["--check"])
     checks.append({
         "id": "UI2-21",
         "title": "正式入口 --check 全过（六阶段外壳没有破坏无状态自检）",

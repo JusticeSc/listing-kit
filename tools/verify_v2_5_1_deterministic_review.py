@@ -39,7 +39,7 @@ import v2_stage_nav as stage_nav  # noqa: E402  （V2.UI.2 六阶段工作台导
 import v2_verify_shared as shared  # noqa: E402  （正式 server/夹具/共同业务操作）
 from v2_verify_shared import (  # noqa: E402
     read_suite, load_server_module, free_port, png_bytes, PROBE, SEED_SLOTS,
-    compile_all, candidate_of, reviews_for, row_of,
+    compile_all, candidate_of, reviews_for, row_of, run_entry, candidate_json, review_json,
 )
 from src.providers.v2_review import REVIEW_CONTRACT_VERSION  # noqa: E402
 
@@ -93,7 +93,7 @@ def main() -> int:
     from playwright.sync_api import expect, sync_playwright  # noqa: PLC0415
 
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-    contract = current_review_contract()
+    contract = shared.current_review_contract()
     checks: list[dict] = []
     console_errors: list[str] = []
     page_errors: list[str] = []
@@ -215,7 +215,7 @@ def main() -> int:
 
                 def confirm_generation() -> dict:
                     # 确认即提交：本次授权的新增 attempt 消费证明（非任意旧行存在）。
-                    gate = shared.confirm_and_submit(page, expect, probe)
+                    gate = shared.confirm_and_submit(page, expect, probe, shot_ids=shot_ids)
                     assert gate["ok"], f"确认必须产生本次授权的新消费：{gate['after_actions']}"
                     return gate
 

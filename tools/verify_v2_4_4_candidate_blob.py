@@ -330,7 +330,7 @@ def main() -> int:
           node_result["ok"],
           {"failed": [item for item in node_result["files"] if item["rc"] != 0][:3]})
 
-    static_server, static_url = start_static_server()
+    static_server, static_url = shared.start_static_server()
     suites: dict = {}
     try:
         with sync_playwright() as pw:
@@ -524,7 +524,8 @@ def main() -> int:
                         }""", arg=text, timeout=timeout)
 
                 def confirm_generation() -> dict:
-                    gate = shared.confirm_and_submit(page, expect, probe, submit_requests)
+                    gate = shared.confirm_and_submit(page, expect, probe, submit_requests,
+                                                     shot_ids=shot_ids)
                     assert gate["ok"], f"确认必须产生本次授权的新消费：{gate['after_actions']}"
                     return gate
 

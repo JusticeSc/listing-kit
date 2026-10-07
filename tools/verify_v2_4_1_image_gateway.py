@@ -51,9 +51,14 @@ CAPABILITIES_PATH = "/api/v2/capabilities"
 
 
 def runtime_manifest(runtime_root: Path) -> dict[str, str]:
-    """只对被验网关的独立运行根取全文件指纹，不把旁路报告当业务持久化。"""
+    """只对被验网关的独立运行根取全文件指纹，不把旁路报告当业务持久化。
+
+    `__pycache__` / `*.pyc` 是解释器字节码缓存（导入即写），不是业务落盘，故排除；
+    否则本项会把「Python 正常导入」误报成业务写盘。
+    """
     return {path.relative_to(runtime_root).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
-            for path in runtime_root.rglob("*") if path.is_file()}
+            for path in runtime_root.rglob("*") if path.is_file()
+            and "__pycache__" not in path.parts and path.suffix != ".pyc"}
 
 
 def free_port() -> int:
@@ -751,7 +756,8 @@ def run_verification(args, runtime_root: Path) -> int:
         "出站白名单在任何传输生效之前拒绝非 https/非 443/私网与白名单外目标；BYOK 请求头只随单次"
         "请求进入内存并被本次提交使用，服务器不落盘、不在响应头/响应体/错误里回显。真实适配器的"
         "请求形状与错误分类由注入的假 transport 断言，整轮 0 次真实模型调用、0 次网络请求、"
-        "独立网关运行根的全部文件 manifest 零差异（不扫描其它验证器的报告目录）。"
+        "独立网关运行根的全部文件 manifest 零差异（排除解释器 __pycache__/*.pyc 字节码缓存；"
+        "不扫描其它验证器的报告目录）。"
         "不证明：真实出图质量、真实参考图是否被上游接受、候选 Blob、审核报告、返工与交付 ZIP——"
         "这些属于 V2.4.2 起的批次。"
     )

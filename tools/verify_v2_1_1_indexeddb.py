@@ -30,6 +30,8 @@ ROOT = Path(__file__).resolve().parents[1]
 STORAGE_DIR = ROOT / "app" / "product_v2" / "storage"
 VENDOR_DIR = ROOT / "app" / "product_v2" / "vendor"
 HARNESS_DIR = ROOT / "evals" / "product-v2" / "harness"
+# storage/repository.js 依赖 ../domain/index.js；浏览器按 URL 解析成 /domain/*，缺这条会 404
+DOMAIN_DIR = ROOT / "app" / "product_v2" / "domain"
 EVIDENCE_DIR = ROOT / "evals" / "product-v2"
 
 MIME = {
@@ -53,9 +55,10 @@ EXPECTED_CASE_IDS = [
 
 
 class StaticHandler(BaseHTTPRequestHandler):
-    """只服务测试需要的三类路径：/storage/*、/vendor/* 与 /harness/*。
+    """只服务测试需要的四类路径：/storage/*、/vendor/*、/harness/* 与 /domain/*。
 
     /vendor/* 是 SEL-008 之后 storage/zip.js 的新依赖（fflate）；
+    /domain/* 是 storage/repository.js 的依赖（../domain/index.js）；
     漏放行时表现为页面模块加载失败、套件结果永远不出现。
     """
 
@@ -63,6 +66,7 @@ class StaticHandler(BaseHTTPRequestHandler):
         "/storage/": STORAGE_DIR,
         "/vendor/": VENDOR_DIR,
         "/harness/": HARNESS_DIR,
+        "/domain/": DOMAIN_DIR,
     }
 
     def log_message(self, *_args):  # 关掉 stderr 噪音

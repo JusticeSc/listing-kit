@@ -157,7 +157,7 @@ def sha256_of(path: Path) -> str:
 
 def start_server(host: str, port: int, *, image_factory=None):
     """正式入口 + fake provider（含整套复核），与 V2.6.2 走查同一装配。"""
-    suite = shared.fake_suite.FakeSuiteReviewProvider(scenario="drift")
+    suite = shared.FakeSuiteReviewProvider(scenario="drift")
     server = server_module.create_product_v2_server(
         host, port,
         provider_factory=lambda: shared.fake_semantic.FakeSemanticProvider(scenario="ok"),
@@ -470,7 +470,7 @@ def main() -> int:
 
         # ---------------- 演练：成功 / 失败 / Unknown 三态 + 下一步 ----------------
         port2 = shared.free_port()
-        drill_image = shared.walkthrough.WalkthroughImageProvider()
+        drill_image = WalkthroughImageProvider()
         server2, _ = start_server("127.0.0.1", port2, image_factory=lambda: drill_image)
         try:
             context2 = pw.chromium.launch_persistent_context(

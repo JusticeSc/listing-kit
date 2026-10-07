@@ -47,6 +47,22 @@ from v2_verify_shared import (  # noqa: E402
 )
 from walkthrough_server import WalkthroughImageProvider  # noqa: E402
 
+
+server_module = shared.load_server_module("ui3_server")
+
+
+def start_server(host: str, port: int, *, semantic=None, image=None, review=None,
+                 suite_review=None):
+    """起正式入口（fake provider 可注入）；服务线程 daemon 化，返回 server 供 server_close。"""
+    server = server_module.create_product_v2_server(
+        host, port,
+        provider_factory=semantic or (lambda: FakeSemanticProvider(scenario="ok")),
+        image_provider_factory=image or (lambda: FakeImageProvider(scenario="ok")),
+        review_provider_factory=review or (lambda: FakeReviewProvider(scenario="ok")),
+        suite_review_provider_factory=suite_review)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    return server
+
 STORAGE_DIGEST = """async () => {
   const db = await new Promise((resolve, reject) => {
     const request = indexedDB.open('""" + DB_NAME + """');
@@ -303,7 +319,7 @@ def main() -> int:
 
         # ---------------- 演练：失败 / Unknown / 不自动重提 ----------------
         port2 = shared.free_port()
-        drill_image = walkthrough.WalkthroughImageProvider()  # 单实例：按提交顺序执行剧本（服务端按请求调用工厂）
+        drill_image = WalkthroughImageProvider()  # 单实例：按提交顺序执行剧本（服务端按请求调用工厂）
         start_server("127.0.0.1", port2, image=lambda: drill_image)
         profile2 = temp_root / "profile-drill"
         context2 = pw.chromium.launch_persistent_context(

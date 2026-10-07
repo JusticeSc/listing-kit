@@ -723,15 +723,6 @@ def gateway_e2e_checks(check) -> None:
         server.server_close()
 
 
-def compile_all(page, shot_ids: list) -> None:
-    """按 shot 列表点每张图的编译按钮（V2.4.2 用的同一入口形状）。"""
-    stage_nav.reveal(page, "#prompt-editor")
-    for shot_id in shot_ids:
-        card = f'#prompt-list .shot-spec[data-shot-id="{shot_id}"]'
-        page.click(card + " .toolbar button")
-    page.wait_for_timeout(400)
-
-
 def browser_e2e_checks(check, screenshots: list[str], console_errors: list,
                        page_errors: list) -> None:
     from playwright.sync_api import expect, sync_playwright
@@ -789,11 +780,14 @@ def browser_e2e_checks(check, screenshots: list[str], console_errors: list,
         page.click("#suite-seed")
         expect(page.locator("#shot-list .shot-row")).to_have_count(4)
         stage_nav.goto(page, "generate")
-        expect(page.locator("#prompt-editor")).to_be_visible()
+        # Prompt 编辑区在「查看／编辑完整 Prompt（高级）」折叠块里：默认收起，需按真实入口展开。
+        if page.evaluate("() => !document.getElementById('prompt-details').open"):
+            page.click("#prompt-title")
+        expect(page.locator("#prompt-editor")).to_be_visible(timeout=30_000)
         expect(page.locator("#prompt-list .shot-spec")).to_have_count(4)
         first_probe = page.evaluate(ID_DB_PROBE)
         shot_ids = first_probe["shot_ids"]
-        compile_all(page, shot_ids)
+        shared.compile_all(page, shot_ids)
         # 确认即提交：先备齐 4 次同步响应再点确认，确认后直接等 attempt 终态，不再点已删除的旧整套按钮。
         for _ in range(4):
             transport.script_success(reference)

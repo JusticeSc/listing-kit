@@ -275,7 +275,7 @@ def main() -> int:
           node_result["ok"],
           {"failed": [item for item in node_result["files"] if item["rc"] != 0][:3]})
 
-    static_server, static_url = start_static_server()
+    static_server, static_url = shared.start_static_server()
     suites: dict = {}
     try:
         with sync_playwright() as pw:
@@ -373,6 +373,7 @@ def main() -> int:
 
     submit_requests: list[dict] = []
     status_requests: list[str] = []
+    failed_requests: list[str] = []
     ui: dict = {}
     interrupted: str | None = None
     EVIDENCE_DIR.mkdir(parents=True, exist_ok=True)
@@ -390,6 +391,9 @@ def main() -> int:
                 page.on("console", lambda message: console_errors.append(message.text)
                         if message.type == "error" else None)
                 page.on("pageerror", lambda error: page_errors.append(str(error)))
+                # 被拒请求单独留证：混进 console_errors 会污染 -12 的“零意外 console error”判据。
+                page.on("requestfailed", lambda request: failed_requests.append(
+                    f"{request.failure} {request.url}"))
 
                 def on_request(request) -> None:
                     if request.method != "POST":
@@ -438,7 +442,8 @@ def main() -> int:
 
                 def confirm_generation() -> dict:
                     # 确认即提交：本次授权版本/shot/action 的新增消费证明（非旧行存在）。
-                    gate = shared.confirm_and_submit(page, expect, probe, submit_requests)
+                    gate = shared.confirm_and_submit(page, expect, probe, submit_requests,
+                                                     shot_ids=shot_ids)
                     assert gate["ok"], f"确认必须产生本次授权的新消费：{gate['after_actions']}"
                     return gate
 
@@ -503,6 +508,8 @@ def main() -> int:
                       and all(item["state"] == "none" for item in ready["ui"]["rows"])
                       and ready["project_state"] == "READY_TO_GENERATE",
                       {"rows": len(ready["ui"]["rows"]),
+                       "states": [item["state"] for item in ready["ui"]["rows"]],
+                       "project_state": ready["project_state"],
                        "progress": ready["ui"]["batch"]["progress"]})
                 status_before = len(status_requests)
                 gate = confirm_generation()
@@ -761,6 +768,23 @@ def main() -> int:
             pass
 
     if interrupted:
+        try:
+            gate = page.evaluate("""() => {
+              const el = (id) => document.getElementById(id);
+              return {
+                create_disabled: el("create-project").disabled,
+                create_data_ready: el("create-project").dataset.ready ?? null,
+                boot_pending_hidden: el("boot-pending").hidden,
+                boot_error: (el("boot-error").textContent || "").trim().slice(0, 200),
+                home_read_error: (el("home-read-error").textContent || "").trim().slice(0, 200),
+                capability_gap: el("capability-notice").dataset.errorGap ?? null,
+                phase: window.__v2SessionProbe ? window.__v2SessionProbe.phase : "no-probe",
+              };
+            }""")
+            interrupted = f"{interrupted}\ngate={gate}\nfailed_requests={failed_requests[:5]}"
+        except Exception as error:  # noqa: BLE001 - 诊断本身失败不能盖掉原始中断
+            interrupted = (f"{interrupted}\ngate=unavailable({type(error).__name__})"
+                           f"\nfailed_requests={failed_requests[:5]}")
         check("V2.4.3-99", "浏览器闭环在完成前中断", False, interrupted)
 
     expected_noise = ("Failed to load resource: the server responded with a status of 504",
