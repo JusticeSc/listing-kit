@@ -420,11 +420,11 @@ export function createCompareView({ elements, deps }) {
             const vlm = report.vlm;
             const vlmText = vlm
                 ? (vlm.outcome === "checked" ? "已完成" : "未完成（结果未知，不阻断人工审核）")
-                : "未检查";
+                : "未复核（未运行，未发起 AI 复核；不阻断人工采用）";
             details.append(createElement("p", {
                 className: "compare-report-row",
-                attrs: { "data-compare-vlm": vlm ? vlm.outcome : "absent" },
-                text: "视觉复核：" + vlmText + (vlm && vlm.model_id ? " · " + vlm.model_id : ""),
+                attrs: { "data-compare-vlm": vlm ? vlm.outcome : "not_run" },
+                text: "视觉复核（按需发起）：" + vlmText + (vlm && vlm.model_id ? " · " + vlm.model_id : ""),
             }));
             const all = createElement("ul", { className: "compare-findings" });
             for (const finding of findings)
@@ -550,6 +550,8 @@ export function createCompareView({ elements, deps }) {
         compareBaselineId = elements.compareBaselineSelect.value || null;
         void renderCompareImages(compareShotId ? compareInventory().rowsByShotId[compareShotId] || [] : []);
     }
+    /** 单图 AI 复核（按需发起）：只响应用户显式点击；查看/切换/采用不调用此函数。
+     * 未运行如实记 not_run（reviewStatusOf 投影），不折叠成 Unknown、不进 ack 门。 */
     async function handleCompareReview() {
         const shotId = compareShotId, candidateId = compareCandidateId;
         if (!shotId || !candidateId)
@@ -557,7 +559,7 @@ export function createCompareView({ elements, deps }) {
         const outcome = await selectionAdoption.reviewCandidate(shotId, candidateId);
         if (shotId === compareShotId && candidateId === compareCandidateId) {
             renderCompare();
-            elements.compareStatus.textContent = outcome?.failed ? "AI 复核未完成：" + outcome.message : "复核结果只属于所点击的这条候选，不自动采用。";
+            elements.compareStatus.textContent = outcome?.failed ? "AI 复核未完成：" + outcome.message + "（真实失败才记 Unknown，未发起仍是未复核）" : "复核结果只属于所点击的这条候选，不自动采用；未复核不阻断人工采用。";
         }
     }
     /* --------------------------------------------- 单图返工闭环（V2.5.4） */
@@ -1058,6 +1060,14 @@ export function createCompareView({ elements, deps }) {
                 if (shownRow.report) {
                     check.append(createElement("span", {
                         className: "meta review-check-summary", text: reviewSummaryText(shownRow.report),
+                    }));
+                    const aiStatus = selectionAdoption.reviewStatusOf(shownRow.candidate_id);
+                    check.append(createElement("p", {
+                        className: "meta review-check-ai",
+                        attrs: { "data-review-ai": aiStatus.status },
+                        text: aiStatus.status === "reviewed" ? "AI 复核：已完成（只提示，不自动采纳）"
+                            : aiStatus.status === "unknown" ? "AI 复核：未完成（结果未知，不阻断人工采用）"
+                                : "AI 复核：未复核（未运行，按需发起才会调用；不阻断人工采用）",
                     }));
                 }
                 check.append(createElement("p", {

@@ -1,12 +1,12 @@
 /** 人工采用/取消/Unknown 知悉的持久化顺序；不依赖 DOM，不自动选择最新候选。 */
- import {
-   DOMAIN_DOCUMENT_KINDS, REVIEW_REPORT_DOCUMENT_KIND, acknowledgementDocumentIdOf, assertSelectionRecord,
-   buildAcknowledgement, buildReviewReport, buildSelectionRecord, buildSelectionSet, candidateMatchesAttempt,
-   deriveSelectionState, emptyShotSpecFromShot, evaluateCandidateFindings,
-   mergeVlmReview,
-   newActionId, promptStaleness, reviewIsCurrent, reviewSummaryText, selectionSummaryText,
-   suitePlanSummary,
- } from "./domain/index.js";
+import {
+  DOMAIN_DOCUMENT_KINDS, REVIEW_REPORT_DOCUMENT_KIND, acknowledgementDocumentIdOf, assertSelectionRecord,
+  buildAcknowledgement, buildReviewReport, buildSelectionRecord, buildSelectionSet, candidateMatchesAttempt,
+  deriveSelectionState, emptyShotSpecFromShot, evaluateCandidateFindings,
+  mergeVlmReview,
+  newActionId, promptStaleness, reviewIsCurrent, reviewStatusOf, reviewSummaryText, selectionSummaryText,
+  suitePlanSummary,
+} from "./domain/index.js";
 import { confirmedFacts, sourceContext } from "./prompts.js";
 import { sha256Hex } from "./storage/db.js";
 import { consumptionFence } from "./project-inputs.js";
@@ -54,23 +54,26 @@ export type SelectionProjection = {
    reviewAccess?: AdoptionReviewAccess | null;
    changed?(): void;
  };
- export interface SelectionAdoptionModule extends AdoptionReviewAccess {
-   reset(): void;
-   restore(action: ActionSnapshot): Promise<void>;
-   entryOf(shotId: string | null): SelectionEntry | null;
-   stateOf(shotId: string): SelectionState;
-   adoptedMark(shotId: string | null): { candidate_id: string | null; state: SelectionState } | null;
-   sourceOf(shotId: string | null, candidateId: string | null): AdoptionSource | null;
-   summary(shotId: string): string;
-   projection(source?: ProjectSources): SelectionProjection;
-   select(kind: "select" | "clear", shotId: string, candidateId: string | null): Promise<AdoptionOutcome>;
-   acknowledge(unknown: UnknownItem): Promise<{ record: AcknowledgementRecord; currentSession: boolean }>;
-   acknowledgements(): AcknowledgementRecord[];
-   candidateReviewRequest(shotId: string, candidate: CandidateRecord, projectId: string): Promise<unknown>;
-   reviewCandidate(shotId: string, candidateId: string): Promise<ReviewCandidateResult>;
-   isSelecting(): boolean;
-   isReviewInFlight(shotId: string): boolean;
- }
+export interface SelectionAdoptionModule extends AdoptionReviewAccess {
+  reset(): void;
+  restore(action: ActionSnapshot): Promise<void>;
+  entryOf(shotId: string | null): SelectionEntry | null;
+  stateOf(shotId: string): SelectionState;
+  adoptedMark(shotId: string | null): { candidate_id: string | null; state: SelectionState } | null;
+  sourceOf(shotId: string | null, candidateId: string | null): AdoptionSource | null;
+  summary(shotId: string): string;
+  projection(source?: ProjectSources): SelectionProjection;
+  select(kind: "select" | "clear", shotId: string, candidateId: string | null): Promise<AdoptionOutcome>;
+  acknowledge(unknown: UnknownItem): Promise<{ record: AcknowledgementRecord; currentSession: boolean }>;
+  acknowledgements(): AcknowledgementRecord[];
+  candidateReviewRequest(shotId: string, candidate: CandidateRecord, projectId: string): Promise<unknown>;
+  reviewCandidate(shotId: string, candidateId: string): Promise<ReviewCandidateResult>;
+  /** 单图 AI 复核状态投影（V2.R6.2）：未发起=not_reviewed（未复核/未运行，不阻断采用）；
+   * 真发起失败/未知=unknown；真跑过=reviewed。视图只读此投影，不重算 vlm 块。 */
+  reviewStatusOf(candidateId: string): { status: "reviewed" | "unknown" | "not_reviewed"; reason: string | null };
+  isSelecting(): boolean;
+  isReviewInFlight(shotId: string): boolean;
+}
 
 export function createSelectionAdoptionModule(deps: SelectionDependencies): SelectionAdoptionModule {
   let selections = new Map<string, SelectionEntry>();
@@ -291,7 +294,8 @@ export function createSelectionAdoptionModule(deps: SelectionDependencies): Sele
     const source = structuredClone(deps.sources());
     const shot = source.suitePlan?.shots.find(entry => entry.shot_id === shotId);
     const spec = source.shotSpecs[shotId]?.spec || (shot ? emptyShotSpecFromShot(shot) : null);
-    const original = deps.generation.attemptChainOf(shotId).find(entry => entry.record.action_id === candidate.action_id)?.record;
+    const original = [...deps.generation.attemptChainOf(shotId)].reverse().find(entry => entry.record.action_id === candidate.action_id && candidateMatchesAttempt(candidate, entry.record))?.record
+      || deps.generation.attemptChainOf(shotId).find(entry => entry.record.action_id === candidate.action_id)?.record;
     if (!original || !candidateMatchesAttempt(candidate, original)) throw new Error("候选的原动作来源链缺失或不一致，没有发起 AI 复核。");
     const references = original.references.slice(0, MAX_REVIEW_REFERENCES);
     const facts = confirmedFacts(source);
@@ -387,6 +391,11 @@ export function createSelectionAdoptionModule(deps: SelectionDependencies): Sele
     reportsNow: () => reportAccess().reportsNow(),
     loadReport: (candidateId, entry) => reportAccess().loadReport(candidateId, entry),
     ensureReport: (shotId, candidate, bytes, pid, options = {}) => reportAccess().ensureReport(shotId, candidate, bytes, pid, options),
+    reviewStatusOf: (candidateId) => {
+      const stored = reportAccess().reportOf(candidateId);
+      const projected = reviewStatusOf(stored ? stored.report : null);
+      return { status: projected.status, reason: projected.reason };
+    },
     entryOf: id => id ? selections.get(id) || null : null,
     adoptedMark(id) {
       const entry = id ? selections.get(id) : null;

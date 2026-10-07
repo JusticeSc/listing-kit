@@ -1,6 +1,6 @@
 // Generated from app/product_v2/selection-adoption.ts; edit the TS source and run `npm run build:frontend`.
 /** 人工采用/取消/Unknown 知悉的持久化顺序；不依赖 DOM，不自动选择最新候选。 */
-import { DOMAIN_DOCUMENT_KINDS, REVIEW_REPORT_DOCUMENT_KIND, acknowledgementDocumentIdOf, assertSelectionRecord, buildAcknowledgement, buildReviewReport, buildSelectionRecord, buildSelectionSet, candidateMatchesAttempt, deriveSelectionState, emptyShotSpecFromShot, evaluateCandidateFindings, mergeVlmReview, newActionId, promptStaleness, reviewIsCurrent, reviewSummaryText, selectionSummaryText, suitePlanSummary, } from "./domain/index.js";
+import { DOMAIN_DOCUMENT_KINDS, REVIEW_REPORT_DOCUMENT_KIND, acknowledgementDocumentIdOf, assertSelectionRecord, buildAcknowledgement, buildReviewReport, buildSelectionRecord, buildSelectionSet, candidateMatchesAttempt, deriveSelectionState, emptyShotSpecFromShot, evaluateCandidateFindings, mergeVlmReview, newActionId, promptStaleness, reviewIsCurrent, reviewStatusOf, reviewSummaryText, selectionSummaryText, suitePlanSummary, } from "./domain/index.js";
 import { confirmedFacts, sourceContext } from "./prompts.js";
 import { sha256Hex } from "./storage/db.js";
 import { consumptionFence } from "./project-inputs.js";
@@ -255,7 +255,8 @@ export function createSelectionAdoptionModule(deps) {
         const source = structuredClone(deps.sources());
         const shot = source.suitePlan?.shots.find(entry => entry.shot_id === shotId);
         const spec = source.shotSpecs[shotId]?.spec || (shot ? emptyShotSpecFromShot(shot) : null);
-        const original = deps.generation.attemptChainOf(shotId).find(entry => entry.record.action_id === candidate.action_id)?.record;
+        const original = [...deps.generation.attemptChainOf(shotId)].reverse().find(entry => entry.record.action_id === candidate.action_id && candidateMatchesAttempt(candidate, entry.record))?.record
+            || deps.generation.attemptChainOf(shotId).find(entry => entry.record.action_id === candidate.action_id)?.record;
         if (!original || !candidateMatchesAttempt(candidate, original))
             throw new Error("候选的原动作来源链缺失或不一致，没有发起 AI 复核。");
         const references = original.references.slice(0, MAX_REVIEW_REFERENCES);
@@ -366,6 +367,11 @@ export function createSelectionAdoptionModule(deps) {
         reportsNow: () => reportAccess().reportsNow(),
         loadReport: (candidateId, entry) => reportAccess().loadReport(candidateId, entry),
         ensureReport: (shotId, candidate, bytes, pid, options = {}) => reportAccess().ensureReport(shotId, candidate, bytes, pid, options),
+        reviewStatusOf: (candidateId) => {
+            const stored = reportAccess().reportOf(candidateId);
+            const projected = reviewStatusOf(stored ? stored.report : null);
+            return { status: projected.status, reason: projected.reason };
+        },
         entryOf: id => id ? selections.get(id) || null : null,
         adoptedMark(id) {
             const entry = id ? selections.get(id) : null;

@@ -746,28 +746,25 @@ export function createGenerationView({ elements, deps }) {
                         else {
                             row.append(createElement("p", {
                                 className: "meta attempt-review",
-                                attrs: { "data-review-summary": "missing" },
-                                text: "自动检查报告尚未生成（候选保存时自动生成；旧候选会在重新打开项目时补建）。",
+                                attrs: { "data-review-summary": "missing", "data-review-vlm": "not_run" },
+                                text: "自动检查报告尚未生成（候选保存时自动生成；旧候选会在重新打开项目时补建）。AI 复核未运行：按需发起才会调用，未复核不阻断人工采用。",
                             }));
                         }
                         const reviewButton = createElement("button", {
-                            text: rowShotId && selectionAdoption.isReviewInFlight(rowShotId) ? "复核中…" : "AI 复核这条候选（可选）",
+                            text: rowShotId && selectionAdoption.isReviewInFlight(rowShotId) ? "复核中…" : "AI 复核这条候选（按需发起，可选）",
                             attrs: {
                                 type: "button",
                                 "data-review-action": candidate.candidate_id,
-                                title: "调用视觉语言模型找可疑问题；只提示，不自动采纳",
+                                title: "只在你点这一下时才调用视觉语言模型找可疑问题；查看、采用都不会触发。只提示，不自动采纳；未复核不阻断人工采用。",
                             },
                         });
-                        const reviewCaps = deps.capabilities();
-                        reviewButton.disabled = Boolean(!rowShotId || selectionAdoption.isReviewInFlight(rowShotId))
-                            || !reviewCaps?.review?.provider || reviewCaps.review.provider.configured === false;
                         reviewButton.addEventListener("click", async () => {
                             if (!rowShotId)
                                 return;
                             const outcome = await selectionAdoption.reviewCandidate(rowShotId, candidate.candidate_id);
                             if (outcome && outcome.failed) {
                                 setAttemptStatus("复核未完成：" + outcome.message
-                                    + "（候选与报告保持不变）");
+                                    + "（候选与报告保持不变；真实失败才记 Unknown，未发起仍是未复核）");
                             }
                         });
                         row.append(reviewButton);
