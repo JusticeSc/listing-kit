@@ -28,7 +28,6 @@ import http.client
 import importlib.util
 import json
 import os
-import socket
 import subprocess
 import shutil
 import sys
@@ -60,11 +59,6 @@ def runtime_manifest(runtime_root: Path) -> dict[str, str]:
             for path in runtime_root.rglob("*") if path.is_file()
             and "__pycache__" not in path.parts and path.suffix != ".pyc"}
 
-
-def free_port() -> int:
-    with socket.socket() as probe:
-        probe.bind(("127.0.0.1", 0))
-        return probe.getsockname()[1]
 
 
 def load_server_module(runtime_root: Path):
@@ -147,13 +141,12 @@ def run_verification(args, runtime_root: Path) -> int:
                                         validate_size)
 
     def serve(image_factory) -> tuple[Any, str]:
-        port = free_port()
         server = module.create_product_v2_server(
-            "127.0.0.1", port,
+            "127.0.0.1", 0,
             provider_factory=lambda: FakeSemanticProvider(scenario="ok"),
             image_provider_factory=image_factory)
         threading.Thread(target=server.serve_forever, daemon=True).start()
-        return server, f"http://127.0.0.1:{port}"
+        return server, f"http://127.0.0.1:{server.server_address[1]}"
 
     def request(base: str, method: str, path: str, body: bytes | None = None, *,
                 headers_extra: dict[str, str] | None = None):

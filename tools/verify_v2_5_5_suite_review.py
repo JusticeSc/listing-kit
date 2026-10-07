@@ -41,7 +41,7 @@ MIME = {
 
 import v2_verify_shared as shared  # noqa: E402  （正式 server/夹具/共同业务操作）
 from v2_verify_shared import walk_to_adoption  # noqa: E402
-from v2_verify_shared import free_port, read_suite, start_product_server  # noqa: E402
+from v2_verify_shared import read_suite, start_product_server  # noqa: E402
 
 
 
@@ -127,8 +127,8 @@ def main() -> int:
 
     walkthrough: dict = {}
     with sync_playwright() as pw:
-        port = free_port()
-        server, _suite_instance = start_product_server(port, suite_scenario="drift")
+        server, _suite_instance = start_product_server(0, suite_scenario="drift")
+        port = server.server_address[1]
         try:
             context = pw.chromium.launch_persistent_context(
                 str(temp_root / "profile-drift"), headless=True,
@@ -258,8 +258,8 @@ def main() -> int:
             server.shutdown()
             server.server_close()
 
-        port2 = free_port()
-        server2, _ = start_product_server(port2, suite_scenario="unknown")
+        server2, _ = start_product_server(0, suite_scenario="unknown")
+        port2 = server2.server_address[1]
         try:
             context2 = pw.chromium.launch_persistent_context(
                 str(temp_root / "profile-unknown"), headless=True,

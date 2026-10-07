@@ -154,11 +154,6 @@ def load_server_module():
     return module
 
 
-def free_port() -> int:
-    with socket.socket() as probe:
-        probe.bind(("127.0.0.1", 0))
-        return probe.getsockname()[1]
-
 
 def run_entry(args: list[str], timeout: int = 180) -> dict:
     env = {**os.environ, "PYTHONUTF8": "1", "PYTHONDONTWRITEBYTECODE": "1"}
@@ -280,11 +275,10 @@ def main() -> int:
     module = load_server_module()
     from src.providers.v2_fake_semantic import FakeSemanticProvider  # noqa: PLC0415
 
-    port = free_port()
     server = module.create_product_v2_server(
-        "127.0.0.1", port, provider_factory=lambda: FakeSemanticProvider(scenario="ok"))
+        "127.0.0.1", 0, provider_factory=lambda: FakeSemanticProvider(scenario="ok"))
     threading.Thread(target=server.serve_forever, daemon=True).start()
-    base = f"http://127.0.0.1:{port}"
+    base = f"http://127.0.0.1:{server.server_address[1]}"
 
     ui: dict = {}
     EVIDENCE_DIR.mkdir(parents=True, exist_ok=True)

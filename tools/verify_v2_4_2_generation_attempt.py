@@ -54,7 +54,7 @@ sys.path.insert(0, str(ROOT / "tools"))
 import v2_stage_nav as stage_nav  # noqa: E402  （V2.UI.2 六阶段工作台导航）
 import v2_verify_shared as shared  # noqa: E402  （正式 server/夹具/共同业务操作）
 from v2_verify_shared import (  # noqa: E402
-    png_bytes, load_server_module, free_port, run_entry, read_suite, compile_all,
+    PNG_bytes, load_server_module, run_entry, read_suite, compile_all,
 )
 
 
@@ -364,16 +364,15 @@ def main() -> int:
         return cls(mode["image_scenario"],
                    gate=mode.get("gate"), delay=mode.get("delay") or 0.0)
 
-    def make_server():
+    def make_server(port: int = 0):
         return module.create_product_v2_server(
             "127.0.0.1", port,
             provider_factory=lambda: FakeSemanticProvider(scenario="ok"),
             image_provider_factory=image_factory)
 
-    port = free_port()
-    server = make_server()
+    server = make_server(0)
     threading.Thread(target=server.serve_forever, daemon=True).start()
-    base = f"http://127.0.0.1:{port}"
+    base = f"http://127.0.0.1:{server.server_address[1]}"
 
     submit_requests: list[dict] = []
     status_requests: list[str] = []

@@ -96,9 +96,9 @@ def main() -> int:
     from playwright.sync_api import sync_playwright
 
     with sync_playwright() as pw:
-        port = shared.free_port()
         vision = FakeVisionSemanticProvider(scenario="ok")
-        server, _ = shared.start_product_server(port, semantic_factory=lambda: vision)
+        server, _ = shared.start_product_server(0, semantic_factory=lambda: vision)
+        port = server.server_address[1]
         try:
             context = pw.chromium.launch_persistent_context(
                 str(temp_root / "profile"), headless=True,

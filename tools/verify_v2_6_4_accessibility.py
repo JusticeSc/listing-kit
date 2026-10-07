@@ -48,6 +48,7 @@ AXE_BYTES = 580491
 
 sys.path.insert(0, str(ROOT / "tools"))
 import v2_verify_shared as shared  # noqa: E402
+import v2_stage_nav as stage_nav  # noqa: E402  （六阶段导航：分析后必须先进入商品理解面板）
 from walkthrough_server import WalkthroughImageProvider  # noqa: E402
 
 server_module = shared.load_server_module("v264_server")
@@ -160,10 +161,10 @@ def start_server(host: str, port: int, *, image_factory=None):
     suite = shared.FakeSuiteReviewProvider(scenario="drift")
     server = server_module.create_product_v2_server(
         host, port,
-        provider_factory=lambda: shared.fake_semantic.FakeSemanticProvider(scenario="ok"),
+        provider_factory=lambda: shared.FakeSemanticProvider(scenario="ok"),
         image_provider_factory=(image_factory
-                                or (lambda: shared.fake_image.FakeImageProvider(scenario="ok", size=1200))),
-        review_provider_factory=lambda: shared.fake_review.FakeReviewProvider(scenario="ok"),
+                                or (lambda: shared.FakeImageProvider(scenario="ok", size=1200))),
+        review_provider_factory=lambda: shared.FakeReviewProvider(scenario="ok"),
         suite_review_provider_factory=lambda: suite)
     threading.Thread(target=server.serve_forever, daemon=True).start()
     return server, suite
@@ -298,7 +299,8 @@ def main() -> int:
                 squeeze["intake"] = page.evaluate(TECH_SQUEEZE)
                 shot(page, "ref-card-1440")
                 page.click("#analyze-run")
-                page.wait_for_selector("#slot-list .slot-row", timeout=30_000)
+                stage_nav.goto(page, "understand")
+                page.wait_for_selector("#slot-list .slot-row:not([hidden])", timeout=30_000)
                 shared.confirm_slots(page)
                 page.click("#stage-next-understand")
                 page.click("#suite-seed")
@@ -309,7 +311,8 @@ def main() -> int:
                 empty = page.evaluate(EMPTY_STATE)
                 import v2_verify_shared as _shared
                 from playwright.sync_api import expect as _expect
-                gate = _shared.confirm_and_submit(page, _expect, lambda: page.evaluate(shared.PROBE))
+                gate = _shared.confirm_and_submit(page, _expect, lambda: page.evaluate(shared.PROBE),
+                                                  shot_ids=shots)
                 assert gate["ok"], f"确认必须产生本次授权的新消费：{gate['after_actions']}"
 
                 # 生成阶段：忙态采样（确认即提交：点确认后批次已在跑，直接采忙态）
@@ -395,13 +398,18 @@ def main() -> int:
                                 "open": (compare_tech or {}).get("open")}})
 
                 for shot_id in shots:
+                    # 「采用候选」直接落库（review 卡级直接采用），「采用当前候选」
+                    # （#adopt-open，比较区内单击即采用）是同一 Module.select 的第二入口：
+                    # 旧 #adopt-submit 元素已不存在，继续等它只会超时。
                     page.click(f'#review-list .review-card[data-shot-id="{shot_id}"] '
                                'button:has-text("采用候选")')
-                    page.wait_for_selector("#adopt-submit:not([disabled])", timeout=15_000)
-                    page.click("#adopt-submit")
-                    page.wait_for_selector("#adopt-status:not([hidden])", timeout=15_000)
+                    page.wait_for_function(
+                        """(shot) => document.querySelector(
+                            '#review-list .review-card[data-shot-id="' + shot
+                            + '"][data-selection-state="current"]') !== null""",
+                        arg=shot_id, timeout=15_000)
                     page.wait_for_timeout(120)
-                adopt_tech = page.evaluate(TECH_PROBE, "#adopt-panel")
+                adopt_tech = page.evaluate(TECH_PROBE, "#compare-checklist")
                 squeeze["review-adopted"] = page.evaluate(TECH_SQUEEZE)
                 page.click("#suite-review-run")
                 page.wait_for_function(
@@ -427,7 +435,7 @@ def main() -> int:
                       {"violations": violations_deliver[:4], "buttons": buttons_deliver,
                        "tech": {"total": (deliver_tech or {}).get("total"),
                                 "open": (deliver_tech or {}).get("open")}})
-                check("V2.6.4-10", "采用面板技术详情默认收起且主行不含 sha256",
+                check("V2.6.4-10", "采用后比较清单技术详情默认收起且主行不含 sha256",
                       adopt_tech is not None and adopt_tech["total"] >= 1
                       and adopt_tech["open"] == 0
                       and "sha256" not in (adopt_tech.get("main_text") or "").lower(),
@@ -486,7 +494,8 @@ def main() -> int:
                     " return node && node.disabled === false; }", timeout=15_000)
                 shared.create_project(page2, "V264 演练品", reference)
                 page2.click("#analyze-run")
-                page2.wait_for_selector("#slot-list .slot-row", timeout=30_000)
+                stage_nav.goto(page2, "understand")
+                page2.wait_for_selector("#slot-list .slot-row:not([hidden])", timeout=30_000)
                 shared.confirm_slots(page2)
                 page2.click("#stage-next-understand")
                 page2.click("#suite-seed")
@@ -501,7 +510,9 @@ def main() -> int:
                 page2.click("#stage-next-plan")
                 drill_ids = page2.evaluate(shared.SHOT_IDS)
                 shared.compile_all(page2, drill_ids)
-                gate2 = _shared.confirm_and_submit(page2, _expect, lambda: page2.evaluate(shared.PROBE))
+                gate2 = _shared.confirm_and_submit(page2, _expect,
+                                                   lambda: page2.evaluate(shared.PROBE),
+                                                   shot_ids=drill_ids)
                 assert gate2["ok"], f"确认必须产生本次授权的新消费：{gate2['after_actions']}"
                 shared.wait_terminal(page2, drill_ids, timeout=120_000)
                 page2.wait_for_timeout(4000)

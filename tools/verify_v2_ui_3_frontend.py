@@ -53,7 +53,7 @@ server_module = shared.load_server_module("ui3_server")
 
 def start_server(host: str, port: int, *, semantic=None, image=None, review=None,
                  suite_review=None):
-    """起正式入口（fake provider 可注入）；服务线程 daemon 化，返回 server 供 server_close。"""
+    """起正式入口（fake provider 可注入）；服务线程 daemon 化，返回 (server, port) 供 server_close。"""
     server = server_module.create_product_v2_server(
         host, port,
         provider_factory=semantic or (lambda: FakeSemanticProvider(scenario="ok")),
@@ -61,7 +61,7 @@ def start_server(host: str, port: int, *, semantic=None, image=None, review=None
         review_provider_factory=review or (lambda: FakeReviewProvider(scenario="ok")),
         suite_review_provider_factory=suite_review)
     threading.Thread(target=server.serve_forever, daemon=True).start()
-    return server
+    return server, server.server_address[1]
 
 STORAGE_DIGEST = """async () => {
   const db = await new Promise((resolve, reject) => {
@@ -122,8 +122,7 @@ def main() -> int:
 
     with sync_playwright() as pw:
         # ---------------- 主链（fake ok） ----------------
-        port = shared.free_port()
-        start_server("127.0.0.1", port)
+        server, port = start_server("127.0.0.1", 0)
         profile = temp_root / "profile-main"
         context = pw.chromium.launch_persistent_context(
             str(profile), headless=True, viewport={"width": 1440, "height": 900})
@@ -318,9 +317,8 @@ def main() -> int:
             context.close()
 
         # ---------------- 演练：失败 / Unknown / 不自动重提 ----------------
-        port2 = shared.free_port()
         drill_image = WalkthroughImageProvider()  # 单实例：按提交顺序执行剧本（服务端按请求调用工厂）
-        start_server("127.0.0.1", port2, image=lambda: drill_image)
+        server2, port2 = start_server("127.0.0.1", 0, image=lambda: drill_image)
         profile2 = temp_root / "profile-drill"
         context2 = pw.chromium.launch_persistent_context(
             str(profile2), headless=True, viewport={"width": 1440, "height": 900})
@@ -384,8 +382,7 @@ def main() -> int:
             context2.close()
 
         # ---------------- 分析失败：焦点落错误摘要 ----------------
-        port3 = shared.free_port()
-        start_server("127.0.0.1", port3,
+        server3, port3 = start_server("127.0.0.1", 0,
                      semantic=lambda: FakeSemanticProvider(scenario="http_error"))
         profile3 = temp_root / "profile-failure"
         context3 = pw.chromium.launch_persistent_context(

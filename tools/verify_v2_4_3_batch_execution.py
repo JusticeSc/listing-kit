@@ -39,7 +39,7 @@ sys.path.insert(0, str(ROOT / "tools"))
 import v2_stage_nav as stage_nav  # noqa: E402  （V2.UI.2 六阶段工作台导航）
 import v2_verify_shared as shared  # noqa: E402  （正式 server/夹具/共同业务操作）
 from v2_verify_shared import (  # noqa: E402
-    png_bytes, load_server_module, free_port, run_entry, read_suite, compile_all,
+    PNG_bytes, load_server_module, run_entry, read_suite, compile_all,
 )
 
 
@@ -194,6 +194,12 @@ async () => {
       locked_hidden: lockedNode ? lockedNode.hidden : null,
       editor_hidden: editorNode ? editorNode.hidden : null,
       rows: rows,
+      confirm: {
+        disabled: (document.getElementById("confirm-action") || {}).disabled ?? null,
+        text: (document.getElementById("confirm-action") || {}).textContent || "",
+        status: (document.getElementById("confirm-status") || {}).textContent || "",
+        record: (document.getElementById("confirm-record") || {}).textContent || "",
+      },
       batch_visible: batchNode ? !batchNode.hidden : null,
       batch: {
         progress: progressNode ? progressNode.textContent : "",
@@ -337,7 +343,6 @@ def main() -> int:
             elif MARK_UNKNOWN in prompt:
                 scenario = "unknown"
             task_id = FakeImageProvider.task_id_for(request.action_id)
-            mode["tasks"][task_id] = scenario
             if scenario == "unknown":
                 raise ImageFailure(
                     "provider_unknown", "PROVIDER_OUTCOME_UNKNOWN",
@@ -360,16 +365,15 @@ def main() -> int:
     def image_factory():
         return MarkerImageProvider(scenario="ok")
 
-    def make_server():
+    def make_server(port: int = 0):
         return module.create_product_v2_server(
             "127.0.0.1", port,
             provider_factory=lambda: FakeSemanticProvider(scenario="ok"),
             image_provider_factory=image_factory)
 
-    port = free_port()
-    server = make_server()
+    server = make_server(0)
     threading.Thread(target=server.serve_forever, daemon=True).start()
-    base = f"http://127.0.0.1:{port}"
+    base = f"http://127.0.0.1:{server.server_address[1]}"
 
     submit_requests: list[dict] = []
     status_requests: list[str] = []
@@ -440,10 +444,23 @@ def main() -> int:
                         }""",
                         arg=expectations, timeout=timeout)
 
-                def confirm_generation() -> dict:
+                def click_row_button(shot_id: str, text: str) -> None:
+                    # 行内"重试/新建 action"只切 scope/mode 并聚焦摘要
+                    # （generation-view.js:960-965），提交走随后的 confirm_and_submit。
+                    row(shot_id).locator(f'button:has-text("{text}")').first.click()
+
+                def current_shots() -> list:
+                    # 授权集合必须是"本次确认将消费的图"：套图增删/Prompt 重编译后
+                    # 摘要范围会变，禁止复用首批快照（否则 confirm_and_submit 在
+                    # "set(authorized)==set(shot_ids)" 恒假，120s 后报"消费未落定"）。
+                    return list(probe()["shot_ids"])
+
+                def confirm_generation(wanted: list | None = None) -> dict:
                     # 确认即提交：本次授权版本/shot/action 的新增消费证明（非旧行存在）。
+                    # wanted 省略时取当前套图全集；增量轮次调用方须显式传新增图。
+                    scope = list(wanted) if wanted is not None else current_shots()
                     gate = shared.confirm_and_submit(page, expect, probe, submit_requests,
-                                                     shot_ids=shot_ids)
+                                                     shot_ids=scope)
                     assert gate["ok"], f"确认必须产生本次授权的新消费：{gate['after_actions']}"
                     return gate
 
@@ -506,9 +523,13 @@ def main() -> int:
                 check("V2.4.3-03", "确认前就绪：4 张待提交、确认按钮可用且标注 4 张",
                       len(ready["ui"]["rows"]) == 4
                       and all(item["state"] == "none" for item in ready["ui"]["rows"])
-                      and ready["project_state"] == "READY_TO_GENERATE",
+                      # 项目状态在「确认并生成」写库后派生（PLAN_REVIEW → READY_TO_GENERATE），
+                      # 所以这里断言按钮的就绪与标注，状态推进由 -04 在点击之后断言。
+                      and ready["ui"]["confirm"]["disabled"] is False
+                      and "4 张" in ready["ui"]["confirm"]["text"],
                       {"rows": len(ready["ui"]["rows"]),
                        "states": [item["state"] for item in ready["ui"]["rows"]],
+                       "confirm": ready["ui"]["confirm"],
                        "project_state": ready["project_state"],
                        "progress": ready["ui"]["batch"]["progress"]})
                 status_before = len(status_requests)
@@ -530,12 +551,14 @@ def main() -> int:
                     and chain_of(done, shot)[-1]["payload"]["error"] is None
                     for shot in shot_ids)
                 check("V2.4.3-04",
-                      "正常批次：按套图顺序各提交一次，自动核对到全部成功，进度文本一致",
+                      "正常批次：一次确认即整套提交、各提交一次并核对到全部成功，确认后状态前进",
                       len(captured) == 4 and per_action_once and order_ok
                       and polled_ok and final_states_ok
+                      and done["project_state"] == "READY_TO_GENERATE"
                       and "已成功 4" in done["ui"]["batch"]["progress"],
                       {"captured": len(captured), "order_ok": order_ok,
                        "per_action_once": per_action_once, "polled_ok": polled_ok,
+                       "project_state": done["project_state"],
                        "progress": done["ui"]["batch"]["progress"]})
                 phase_a_records = {shot: chain_json(done, shot) for shot in shot_ids}
 
@@ -550,7 +573,7 @@ def main() -> int:
                           + "：这张图在正式批次的提交必须失败（验证部分失败隔离）。",
                           "验证部分失败")
                 submits_before = len(submit_requests)
-                confirm_generation()
+                confirm_generation([fail_shot, ok_shot])
                 # 确认即提交：confirmAndRun 已把两张新图整套提交并轮询到终态，
                 # 不再点已删除的 #batch-run；判据只看落库/提交计数/进度行为。
                 wait_states({fail_shot: "failed", ok_shot: "succeeded"})
@@ -579,15 +602,15 @@ def main() -> int:
                 # ---------------- 失败重试：旧记录零改写、无关记录零改写 ----------------
                 challenge = probe()["prompts"][fail_shot]["text"]
                 save_edit(page, fail_shot, challenge.replace(MARK_FAIL, ""), "移除验证标记")
-                confirm_generation()
-                before_retry = probe()
-                failed_prefix = chain_json(before_retry, fail_shot)
-                failed_prefix_len = len(chain_of(before_retry, fail_shot))
-                ok_before = chain_json(before_retry, ok_shot)
-                failed_action = chain_of(before_retry, fail_shot)[-1]["payload"]["action_id"]
+                digest = probe()
+                failed_prefix = chain_json(digest, fail_shot)
+                failed_prefix_len = len(chain_of(digest, fail_shot))
+                ok_before = chain_json(digest, ok_shot)
+                failed_action = chain_of(digest, fail_shot)[-1]["payload"]["action_id"]
+                # 失败重试语义 = 显式新动作：先行内"重试"把摘要 scope/mode 切到
+                # failed_retry，再按该摘要确认提交（4_2 同模式：先点行内再 confirm）。
                 click_row_button(fail_shot, "重试")
-                wait_state(fail_shot, "submitted")
-                click_row_button(fail_shot, "核对任务")
+                confirm_generation([fail_shot])
                 wait_state(fail_shot, "succeeded")
                 after_retry = probe()
                 retry_chain = chain_of(after_retry, fail_shot)
@@ -612,7 +635,7 @@ def main() -> int:
                           unknown_base_text + "\n\n" + MARK_UNKNOWN
                           + "：这次提交的结果必须未知（验证不自动重提）。",
                           "验证未知")
-                confirm_generation()
+                confirm_generation([unknown_shot])
                 # 确认即提交：confirmAndRun 已提交并落成 unknown，不再点已删除的 #batch-run。
                 wait_state(unknown_shot, "unknown")
                 unknown_after = probe()
@@ -641,51 +664,76 @@ def main() -> int:
 
                 unknown_text = probe()["prompts"][unknown_shot]["text"]
                 save_edit(page, unknown_shot, unknown_text.replace(MARK_UNKNOWN, ""), "移除未知标记")
-                confirm_generation()
+                # 无任务编号的 Unknown 只能「另发新请求」这一危险次操作创建新动作
+                # （ui-contract §4.6 第 193 行）：产品按「Unknown 不自动重提」把发送集合算成 0 张并禁用
+                # 「确认并生成」，这里先断言该拒绝，再走行内显式新建 action + 摘要确认。
+                refused = probe()["ui"]["confirm"]
                 click_row_button(unknown_shot, "新建 action")
-                wait_state(unknown_shot, "submitted")
-                click_row_button(unknown_shot, "核对任务")
+                confirm_generation([unknown_shot])
                 wait_state(unknown_shot, "succeeded")
                 unknown_fixed = probe()
                 fixed_chain = chain_of(unknown_fixed, unknown_shot)
                 fixed_prefix = json.dumps(fixed_chain[:unknown_prefix_len],
                                           ensure_ascii=False, sort_keys=True)
                 check("V2.4.3-08",
-                      "未知显式新建 action 后成功；旧未知记录逐字保留",
+                      "未知显式新建 action 后成功；旧未知记录逐字保留；摘要按不自动重提拒绝发送",
                       fixed_prefix == unknown_record_before
                       and fixed_chain[-1]["payload"]["state"] == "succeeded"
                       and fixed_chain[-1]["payload"]["action_id"] != unknown_action
-                      and len(fixed_chain) > unknown_prefix_len,
-                      {"chain": [entry["payload"]["state"] for entry in fixed_chain]})
+                      and len(fixed_chain) > unknown_prefix_len
+                      # 另发新动作只能显式发起（ui-contract §4.6 第 193 行）：产品把发送集合算成 0 张并禁用确认。
+                      and refused["disabled"] is True and "0 张" in refused["text"]
+                      and "Unknown 不自动重提" in refused["status"],
+                      {"chain": [entry["payload"]["state"] for entry in fixed_chain],
+                       "confirm_refusal": refused})
 
                 # ---------------- 停止：只停新增提交，已提交身份核对一次 ----------------
                 added = add_shots("detail_material", 1) + add_shots("infographic_benefits", 1) \
                     + add_shots("detail_material", 1)
                 compile_all(page, probe()["shot_ids"])
                 stop_first, stop_second, stop_third = added[0], added[1], added[2]
+                submits_before = len(submit_requests)
+                # 停止语义要求批次"在飞"（#batch-stop 仅 running 可见）：
+                # 用 submit 门闩 deterministic 地停在"第一张已提交、第二张未开始"处——
+                # 产品批次是顺序 for 循环（generation.ts runBatch：await 每张后再 poll），
+                # 所以门闩住第一张的响应即可让第二/三张保持零提交。
+                # 这里不能经 confirm_and_submit 的消费门：它要求本次授权的每张都已被外发，
+                # 而"停在第一张"恰恰与"全部外发"互斥（旧写法因此在门闩超时后才点停止）。
                 mode["arrived"] = threading.Event()
                 mode["hold"] = threading.Event()
-                submits_before = len(submit_requests)
-                # 确认即提交：confirm_generation 点 #confirm-action 后 confirmAndRun
-                # 直接整套提交；第一张 submit 到达上游后点 #batch-stop 只停新增提交。
-                confirm_generation()
+                authority_before_stop = page.evaluate(shared.AUTHORIZATION_PROBE)
+                known_confirmations = {(row["project_id"], row["document_id"], row["version"])
+                                       for row in authority_before_stop["confirmations"]}
+                expect(page.locator("#confirm-action")).to_be_enabled()
+                page.click("#confirm-action")
                 arrived = mode["arrived"].wait(20)
-                page.click("#batch-stop")
+                stop_clicked_before_release = False
+                if arrived:
+                    page.click("#batch-stop")
+                    stop_clicked_before_release = True
                 mode["hold"].set()
                 mode["hold"] = None
                 wait_state(stop_first, "succeeded")
                 stopped = probe()
+                authority_after_stop = page.evaluate(shared.AUTHORIZATION_PROBE)
+                fresh_confirmations = [
+                    row for row in authority_after_stop["confirmations"]
+                    if (row["project_id"], row["document_id"], row["version"])
+                    not in known_confirmations]
                 stop_window = list(submit_requests[submits_before:])
                 check("V2.4.3-09",
                       "停止：只提交了已开始的一张；停止后不再新增提交；已提交身份仍核对出结论",
                       arrived
+                      and stop_clicked_before_release
+                      and len(fresh_confirmations) == 1
                       and len(stop_window) == 1
                       and chain_of(stopped, stop_second) == []
                       and chain_of(stopped, stop_third) == []
                       and chain_of(stopped, stop_first)[-1]["payload"]["state"] == "succeeded"
                       and "批次已停止" in stopped["ui"]["status"],
                       {"arrived": arrived, "window": stop_window,
-                       "status": stopped["ui"]["status"]})
+                       "status": stopped["ui"]["status"],
+                       "fresh_confirmations": len(fresh_confirmations)})
 
                 # ---------------- 刷新恢复：身份保留、无第二次提交；继续生成剩余 ----------------
                 # 停止后 stop_second/stop_third 的原授权仍有效：点“按原摘要继续未提交队列”
@@ -729,10 +777,12 @@ def main() -> int:
                        "hint": restored["ui"]["batch"]["hint"]})
 
                 stuck_action = restored_chain[0]["payload"]["action_id"]
+                # 卡住的 pending 无任务编号：行内"新建 action"切 explicit_new 再摘要确认；
+                # 剩余提交走原队列的"按原摘要继续未提交队列"（同一原确认 runBatch）。
+                # 判据：attempt 行终态 + 进度文本 + 卡住身份只提交一次。
                 click_row_button(stop_second, "新建 action")
-                wait_state(stop_second, "submitted")
-                # 剩余提交走原队列的“按原摘要继续未提交队列”（同一原确认 runBatch），
-                # 不再点已删除的 #batch-run；判据：attempt 行终态 + 进度文本 + 卡住身份只提交一次。
+                confirm_generation([stop_second])
+                wait_state(stop_second, "succeeded")
                 click_queue_resume()
                 wait_states({stop_second: "succeeded", stop_third: "succeeded"})
                 finished = probe()

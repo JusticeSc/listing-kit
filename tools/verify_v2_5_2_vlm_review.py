@@ -260,9 +260,8 @@ def run_endpoint_checks(png: bytes) -> list[dict]:
     """无状态端点契约：用假复核 provider 走真实 HTTP；不触网、不落盘。"""
 
     holder = {"scenario": "ok"}
-    port = shared.free_port()
     server = server_module.create_product_v2_server(
-        "127.0.0.1", port,
+        "127.0.0.1", 0,
         provider_factory=lambda: FakeSemanticProvider(scenario="ok"),
         image_provider_factory=lambda: FakeImageProvider(scenario="ok"),
         review_provider_factory=lambda: FakeReviewProvider(holder["scenario"]))
@@ -270,7 +269,7 @@ def run_endpoint_checks(png: bytes) -> list[dict]:
     checks: list[dict] = []
     payload = review_payload(png)
     try:
-        _, caps = http_json("127.0.0.1", port, "GET", "/api/v2/capabilities")
+        _, caps = http_json("127.0.0.1", server.server_address[1], "GET", "/api/v2/capabilities")
         review_block = (caps or {}).get("review") or {}
         checks.append({
             "id": "V2.5.2-07",
@@ -344,9 +343,8 @@ def run_browser_checks(stamp: str, screenshots: list[str], console_errors: list[
 
     checks: list[dict] = []
     holder = {"scenario": "ok"}
-    port = shared.free_port()
     server = server_module.create_product_v2_server(
-        "127.0.0.1", port,
+        "127.0.0.1", 0,
         provider_factory=lambda: FakeSemanticProvider(scenario="ok"),
         image_provider_factory=lambda: FakeImageProvider(scenario="ok"),
         review_provider_factory=lambda: FakeReviewProvider(holder["scenario"]))
@@ -356,7 +354,7 @@ def run_browser_checks(stamp: str, screenshots: list[str], console_errors: list[
     profile = temp_root / "profile"
     reference = temp_root / "ref.png"
     reference.write_bytes(shared.png_bytes(16, 16, (36, 92, 160)))
-    base = f"http://127.0.0.1:{port}"
+    base = f"http://127.0.0.1:{server.server_address[1]}"
     EVIDENCE_IMAGE_DIR.mkdir(parents=True, exist_ok=True)
     try:
         with sync_playwright() as pw:

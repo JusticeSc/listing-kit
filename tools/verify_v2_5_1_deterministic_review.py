@@ -38,7 +38,7 @@ sys.path.insert(0, str(ROOT / "tools"))
 import v2_stage_nav as stage_nav  # noqa: E402  （V2.UI.2 六阶段工作台导航）
 import v2_verify_shared as shared  # noqa: E402  （正式 server/夹具/共同业务操作）
 from v2_verify_shared import (  # noqa: E402
-    read_suite, load_server_module, free_port, png_bytes, PROBE, SEED_SLOTS,
+    read_suite, load_server_module, png_bytes, PROBE, SEED_SLOTS,
     compile_all, candidate_of, reviews_for, row_of, run_entry, candidate_json, review_json,
 )
 from src.providers.v2_review import REVIEW_CONTRACT_VERSION  # noqa: E402
@@ -146,13 +146,12 @@ def main() -> int:
     from src.providers.v2_fake_image import FakeImageProvider  # noqa: PLC0415
     from src.providers.v2_fake_semantic import FakeSemanticProvider  # noqa: PLC0415
 
-    port = free_port()
     server = module.create_product_v2_server(
-        "127.0.0.1", port,
+        "127.0.0.1", 0,
         provider_factory=lambda: FakeSemanticProvider(scenario="ok"),
         image_provider_factory=lambda: FakeImageProvider(scenario="ok"))
     threading.Thread(target=server.serve_forever, daemon=True).start()
-    base = f"http://127.0.0.1:{port}"
+    base = f"http://127.0.0.1:{server.server_address[1]}"
 
     stage = "setup"
     interrupted: str | None = None

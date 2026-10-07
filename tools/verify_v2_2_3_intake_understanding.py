@@ -271,11 +271,10 @@ def main() -> int:
     def provider_factory():
         return FakeSemanticProvider(scenario=scenario["value"])
 
-    port = free_port()
     server = module.create_product_v2_server(
-        "127.0.0.1", port, provider_factory=provider_factory)
+        "127.0.0.1", 0, provider_factory=provider_factory)
     threading.Thread(target=server.serve_forever, daemon=True).start()
-    base = f"http://127.0.0.1:{port}"
+    base = f"http://127.0.0.1:{server.server_address[1]}"
     before_fp = fingerprint()
     try:
         with urllib.request.urlopen(base + "/api/v2/capabilities", timeout=10) as response:
@@ -595,6 +594,7 @@ def main() -> int:
 
     # 21：上面的浏览器检查用的是注入 fake provider 的进程；这里再证明默认注册表（真实 provider）
     # 下正式进程也能启动，且 capabilities 不会因为缺密钥而把进程打崩。
+    # 子进程端口无法 bind-0 读回；冲突时会健康检查失败，已记录为已知 flake 面
     entry_port = free_port()
     entry_env = {**os.environ, "PYTHONUTF8": "1", "PYTHONDONTWRITEBYTECODE": "1"}
     entry_proc = subprocess.Popen(

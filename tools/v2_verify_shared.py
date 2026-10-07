@@ -233,7 +233,22 @@ def confirm_and_submit(page, expect, probe=None, submit_requests: list | None = 
                                      for row in actions):
                     break
             if time.monotonic() >= deadline:
-                raise AssertionError(f"本次授权消费未落定：fresh={fresh}, actions={actions}, requests={requests}")
+                # 按钮/摘要区文案是判定「产品中止提交并展示变化」还是「静默无动作」的唯一现场证据。
+                area = page.evaluate("""() => {
+                  const el = (id) => document.getElementById(id);
+                  return {
+                    action: (el("confirm-action") || {}).textContent || "",
+                    action_disabled: el("confirm-action") ? el("confirm-action").disabled : null,
+                    status: (el("confirm-status") || {}).textContent || "",
+                    record: (el("confirm-record") || {}).textContent || "",
+                    error: (el("confirm-error") || {}).textContent || "",
+                    attempt_status: (el("attempt-status") || {}).textContent || "",
+                    progress: (el("batch-progress") || {}).textContent || "",
+                    queues: (el("generation-queues") || {}).textContent || "",
+                  };
+                }""")
+                raise AssertionError(f"本次授权消费未落定：fresh={fresh}, actions={actions}, "
+                                     f"requests={requests}, confirm_area={area}")
             page.wait_for_timeout(50)
         confirmation = fresh[0] if len(fresh) == 1 else None
         payload = (confirmation or {}).get("payload") or {}
@@ -601,7 +616,29 @@ def fill_intake(page, reference: Path, name: str = "UI3 验收商品") -> None:
     page.fill("#intake-name", name)
     page.fill("#intake-description", "316ml 不锈钢保温杯，旋盖密封，杯身哑光。")
     page.fill("#intake-selling-points", "12小时保温\n304不锈钢内胆")
-    page.wait_for_selector("#analyze-run:not([disabled])", timeout=15_000)
+    try:
+        page.wait_for_selector("#analyze-run:not([disabled])", timeout=15_000)
+    except Exception as error:  # noqa: BLE001 - 把「分析按钮为何不可用」的现场一并留证
+        gate = page.evaluate("""() => {
+          const el = (id) => document.getElementById(id);
+          const value = (id) => { const n = el(id); return n ? n.value : null; };
+          const visible = (node) => Boolean(node && !node.hidden && node.offsetParent !== null);
+          return {
+            refs: document.querySelectorAll("#ref-list .ref-row").length,
+            name: value("intake-name"),
+            description: value("intake-description"),
+            selling_points: value("intake-selling-points"),
+            analyze_disabled: el("analyze-run") ? el("analyze-run").disabled : null,
+            analyze_gate: (el("analyze-gate") || {}).textContent || "",
+            analyze_gate_visible: visible(el("analyze-gate")),
+            intake_locked_visible: visible(el("intake-locked")),
+            home_error: (el("home-error") || {}).textContent || "",
+            boot_error: (el("boot-error") || {}).textContent || "",
+            capability_gap: el("capability-notice") ? (el("capability-notice").dataset.errorGap ?? null) : null,
+            phase: window.__v2SessionProbe ? window.__v2SessionProbe.phase : "no-probe",
+          };
+        }""")
+        raise AssertionError(f"分析按钮未就绪：{type(error).__name__}: {error}\ngate={gate}") from error
 
 
 def create_project(page, name: str, reference: Path, *, keyboard: bool = False) -> None:

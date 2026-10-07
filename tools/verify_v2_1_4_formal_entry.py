@@ -195,10 +195,8 @@ def free_port() -> int:
         probe.bind(("127.0.0.1", 0))
         return probe.getsockname()[1]
 
-
 class FormalServer:
     """以子进程启动正式入口；停止后端口必须释放。"""
-
     def __init__(self, port: int) -> None:
         self.port = port
         self.proc: subprocess.Popen | None = None
@@ -356,8 +354,8 @@ def main() -> int:
     # --- 5. 磁盘审计开始：正式进程 + 浏览器完整会话前后零差异 ---
     before_fp = fingerprint()
 
+    # 子进程端口无法 bind-0 读回；冲突时会健康检查失败，已记录为已知 flake 面
     port = free_port()
-    server = FormalServer(port)
     temp_root = Path(tempfile.mkdtemp(prefix="amz-v2-formal-"))
     profile_a = temp_root / "profile-a"
     profile_b = temp_root / "profile-b"

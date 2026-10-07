@@ -106,7 +106,7 @@ def main() -> int:
 
         suite.review = scenario_review  # type: ignore[method-assign]
         server, _ = shared.start_product_server(
-            shared.free_port(), suite_factory=lambda: suite)
+            0, suite_factory=lambda: suite)
         port = server.server_address[1]
         try:
             context = pw.chromium.launch_persistent_context(

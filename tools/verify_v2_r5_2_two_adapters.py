@@ -26,7 +26,6 @@ import hashlib
 import importlib.util
 import json
 import os
-import socket
 import subprocess
 import sys
 import tempfile
@@ -292,11 +291,6 @@ def load_server_module():
     spec.loader.exec_module(module)
     return module
 
-
-def free_port() -> int:
-    with socket.socket() as probe:
-        probe.bind(("127.0.0.1", 0))
-        return probe.getsockname()[1]
 
 
 def post_json(base: str, path: str, payload: dict) -> tuple[int, dict]:
@@ -652,13 +646,12 @@ def gateway_e2e_checks(check) -> None:
                                        credential_source="test_double", transport=transport)
 
     module = load_server_module()
-    port = free_port()
     server = module.create_product_v2_server(
-        "127.0.0.1", port,
+        "127.0.0.1", 0,
         provider_factory=lambda: FakeSemanticProvider(scenario="ok"),
         image_provider_factory=image_factory)
     threading.Thread(target=server.serve_forever, daemon=True).start()
-    base = f"http://127.0.0.1:{port}"
+    base = f"http://127.0.0.1:{server.server_address[1]}"
     try:
         status, caps = get_json(base, "/api/v2/capabilities")
         provider_block = caps.get("images", {}).get("provider", {})
@@ -756,7 +749,6 @@ def browser_e2e_checks(check, screenshots: list[str], console_errors: list,
     reference = png_bytes(48, 48, (60, 120, 180))
     transport = TransportRecorder()
     module = load_server_module()
-    port = free_port()
 
     mode = {"credential_source": "test_double", "provider": "volcengine"}
     def image_factory():
@@ -769,11 +761,11 @@ def browser_e2e_checks(check, screenshots: list[str], console_errors: list,
                                        transport=transport)
 
     server = module.create_product_v2_server(
-        "127.0.0.1", port,
+        "127.0.0.1", 0,
         provider_factory=lambda: FakeSemanticProvider(scenario="ok"),
         image_provider_factory=image_factory)
     threading.Thread(target=server.serve_forever, daemon=True).start()
-    base = f"http://127.0.0.1:{port}"
+    base = f"http://127.0.0.1:{server.server_address[1]}"
     temp_root = tempfile.mkdtemp(prefix="amz-r52-")
     profile = Path(temp_root) / "profile"
     reference_file = Path(temp_root) / "reference.png"

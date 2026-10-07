@@ -41,7 +41,7 @@ sys.path.insert(0, str(ROOT / "tools"))
 import v2_stage_nav as stage_nav  # noqa: E402  （V2.UI.2 六阶段工作台导航）
 import v2_verify_shared as shared  # noqa: E402  （正式 server/夹具/共同业务操作）
 from v2_verify_shared import (  # noqa: E402
-    png_bytes, load_server_module, free_port, run_entry, read_suite, compile_all,
+    PNG_bytes, load_server_module, run_entry, read_suite, compile_all,
 )
 
 
@@ -398,13 +398,12 @@ def main() -> int:
                     retry_policy="retryable")
             return FakeImageProvider.result(self, request)
 
-    port = free_port()
     server = module.create_product_v2_server(
-        "127.0.0.1", port,
+        "127.0.0.1", 0,
         provider_factory=lambda: FakeSemanticProvider(scenario="ok"),
         image_provider_factory=lambda: MarkerImageProvider(scenario="ok"))
     threading.Thread(target=server.serve_forever, daemon=True).start()
-    base = f"http://127.0.0.1:{port}"
+    base = f"http://127.0.0.1:{server.server_address[1]}"
 
     submit_requests: list[dict] = []
     status_requests: list[str] = []
@@ -523,12 +522,24 @@ def main() -> int:
                                 && node.textContent.includes(wanted));
                         }""", arg=text, timeout=timeout)
 
-                def confirm_generation() -> dict:
+                def confirm_generation(wanted: list | None = None) -> dict:
+                    # 授权集合必须是"本次确认将消费的图"（4_3 同因：禁止复用首批快照，
+                    # 否则 confirm_and_submit 在 set(authorized)==set(shot_ids) 恒假）。
+                    scope = list(wanted) if wanted is not None else list(probe()["shot_ids"])
                     gate = shared.confirm_and_submit(page, expect, probe, submit_requests,
-                                                     shot_ids=shot_ids)
+                                                     shot_ids=scope)
                     assert gate["ok"], f"确认必须产生本次授权的新消费：{gate['after_actions']}"
                     return gate
 
+                def add_shots(template_id: str, count: int = 1) -> list:
+                    stage_nav.goto(page, "plan")
+                    before = list(probe()["shot_ids"])
+                    for _ in range(count):
+                        page.select_option("#suite-template", template_id)
+                        page.click("#suite-add-template")
+                        page.wait_for_timeout(250)
+                    after = list(probe()["shot_ids"])
+                    return [shot for shot in after if shot not in before]
 
                 def click_row_button(shot_id: str, text: str) -> None:
                     row(shot_id).locator(f'button:has-text("{text}")').first.click()
@@ -540,12 +551,6 @@ def main() -> int:
                 def results_for(task_id: str) -> list:
                     return [item for item in result_requests
                             if item["task_id"] == task_id]
-
-                def generate_and_settle(shot_id: str) -> None:
-                    click_row_button(shot_id, "生成这张图")
-                    wait_state(shot_id, "submitted")
-                    click_row_button(shot_id, "核对任务")
-                    wait_state(shot_id, "succeeded")
 
                 # ---------------- 项目准备：空白项目 → 参考图 → 资料 → 槽位 → 套图 → 确认 ----------------
                 stage = "prep"
@@ -569,6 +574,7 @@ def main() -> int:
                     " db.close(); return rows.map((item) => item.project_id); }")
                 page.evaluate(SEED_SLOTS, project_ids[0])
                 page.reload(wait_until="networkidle")
+                stage_nav.goto(page, "plan")
                 page.click("#suite-seed")
                 expect(page.locator("#shot-list .shot-row")).to_have_count(4)
                 stage_nav.goto(page, "generate")
@@ -576,26 +582,26 @@ def main() -> int:
                 initial = probe()
                 shot_ids = initial["shot_ids"]
                 compile_all(page, shot_ids)
-                ok_shot, fail_shot, quota_shot, batch_shot = shot_ids
-                append_prompt_mark(page, fail_shot, MARK_FETCH_FAIL, "验证取回失败一次")
-                # 确认即提交：就绪探针必须在点确认之前采，否则批次已在跑、行状态不再是 none。
+                ok_shot, quota_shot, batch_shot = shot_ids[:3]
+                # 摘要范围=消费集合：首批只确认 ok 单张（逐图场景挂到摘要范围上，
+                # ui-contract §4.6"单图生成同样有范围为 1 的摘要"）；其余图后加后确认。
                 ready = probe()
-                confirm_generation()
+                confirm_generation([ok_shot])
                 ui["base_shots"] = shot_ids
                 check("V2.4.4-03",
-                      "就绪：4 张待提交、候选栏为空且只有参考图字节",
-                      len(ready["ui"]["rows"]) == 4
+                      "就绪：首批摘要范围 1 张待提交、候选栏为空且只有参考图字节",
+                      len(ready["ui"]["rows"]) == 3
                       and all(item["state"] == "none" for item in ready["ui"]["rows"])
                       and all(item["preview"] is None for item in ready["ui"]["rows"])
                       and len(ready["asset_rows"]) == 1
                       and ready["candidate_chains"] == {},
                       {"rows": len(ready["ui"]["rows"]),
                        "assets": len(ready["asset_rows"])})
-
                 # ---------------- 单张成功：候选自动入库，三方 sha256 一致 ----------------
                 stage = "check04-single"
-                generate_and_settle(ok_shot)
-                wait_preview(ok_shot)
+                # 首批摘要已提交 ok 单张：confirm_and_submit 内 settle 已等到终态；
+                # 这里只等行状态投影与预览（禁止再点已消费的单图按钮）。
+                wait_state(ok_shot, "succeeded")
                 single = probe()
                 att4_chain = chain_of(single, ok_shot)
                 att4 = att4_chain[-1]["payload"] if att4_chain else {}
@@ -651,16 +657,23 @@ def main() -> int:
 
                 # ---------------- 取回失败一次：无半份记录、可恢复、重试后 sha 一致 ----------------
                 stage = "check06-fetch-fail"
+                fail_shot = add_shots("detail_material", 1)[0]
+                compile_all(page, [fail_shot])
+                append_prompt_mark(page, fail_shot, MARK_FETCH_FAIL, "验证取回失败一次")
                 before6 = probe()
                 assets6_before = len(before6["asset_rows"])
-                generate_and_settle(fail_shot)
+                confirm_generation([fail_shot])
+                wait_state(fail_shot, "succeeded")
                 wait_error_contains("RESULT_DOWNLOAD_FAILED")
                 failed_try = probe()
                 att6_chain = chain_of(failed_try, fail_shot)
                 att6 = att6_chain[-1]["payload"] if att6_chain else {}
                 err6 = failed_try["ui"]["error"]
+                # 批次语义：首轮取回 502 失败时 attempt 已 succeeded（提交结论不受掩盖），
+                # 候选缺失走 fetch_queue + hint（"候选还没保存"），无半份记录。
                 no_half6 = (candidate_of(failed_try, fail_shot) == []
-                            and len(failed_try["asset_rows"]) == assets6_before)
+                            and len(failed_try["asset_rows"]) == assets6_before
+                            and att6.get("state") == "succeeded")
                 click_row_button(fail_shot, "保存候选图片")
                 wait_candidate_ui(fail_shot)
                 recovered6 = probe()
@@ -672,7 +685,7 @@ def main() -> int:
                 declared6 = next((item["declared_sha"] for item in resolved6
                                   if item["status"] == 200 and item["declared_sha"]), "")
                 check("V2.4.4-06",
-                      "取回失败一次：不产生半份记录、错误可恢复、重试成功且 sha 与响应头一致",
+                      "取回失败一次：提交结论不受掩盖、无半份记录、手动保存后 sha 与响应头一致",
                       bool(att6) and bool(rec6)
                       and no_half6
                       and "取回候选失败" in err6 and "RESULT_DOWNLOAD_FAILED" in err6
@@ -693,7 +706,8 @@ def main() -> int:
                 assets7_before = len(before7["asset_rows"])
                 page.evaluate(INSTALL_IDB_FAULT)
                 page.evaluate(SET_IDB_FAULT, True)
-                generate_and_settle(quota_shot)
+                confirm_generation([quota_shot])
+                wait_state(quota_shot, "succeeded")
                 wait_error_contains("浏览器存储空间不足")
                 quota_failed = probe()
                 quota_no_half = (candidate_of(quota_failed, quota_shot) == []
@@ -721,23 +735,22 @@ def main() -> int:
                 # ---------------- 整套批次：只提交剩余图一次；全部成功且候选全部入库 ----------------
                 stage = "check08-batch"
                 submits_before8 = len(submit_requests)
-                # 确认即提交后仅剩 batch_shot 未提交：按当前语义点继续队列，不再点已删除的旧整套按钮。
-                page.wait_for_selector(
-                    '.generation-queue button:has-text("按原摘要继续未提交队列")',
-                    timeout=30_000)
-                page.click('.generation-queue button:has-text("按原摘要继续未提交队列")')
-                wait_states({shot: "succeeded" for shot in shot_ids})
+                # 剩余 batch_shot 走摘要确认（消费集合=[batch_shot]，"发送 1 张"）：
+                # 不再点已删除的旧整套按钮；"继续未提交队列"只用于停止/刷新后的原队列续跑。
+                confirm_generation([batch_shot])
+                wait_state(batch_shot, "succeeded")
                 wait_candidate_ui(batch_shot)
                 finished = probe()
                 final_rows = finished["ui"]["rows"]
-                all_stored = all(candidate_of(finished, shot) for shot in shot_ids)
+                all_ids = [ok_shot, quota_shot, batch_shot, fail_shot]
+                all_stored = all(candidate_of(finished, shot) for shot in all_ids)
                 chains_ok = all(
                     bool(chain_of(finished, shot))
                     and chain_of(finished, shot)[-1]["payload"]["state"] == "succeeded"
                     and bool(candidate_of(finished, shot))
                     and candidate_of(finished, shot)[-1]["payload"]["action_id"]
                     == chain_of(finished, shot)[-1]["payload"]["action_id"]
-                    for shot in shot_ids)
+                    for shot in all_ids)
                 captured8 = submit_requests[submits_before8:]
                 attempt8_chain = chain_of(finished, batch_shot)
                 attempt8 = attempt8_chain[-1]["payload"] if attempt8_chain else {}
@@ -758,7 +771,7 @@ def main() -> int:
                 ui["final"] = {
                     "attempt_states": {item["shot_id"]: item["state"] for item in final_rows},
                     "candidate_versions": {shot: len(candidate_of(finished, shot))
-                                           for shot in shot_ids},
+                                           for shot in all_ids},
                     "result_requests": len(result_requests),
                     "submit_requests": len(submit_requests),
                 }

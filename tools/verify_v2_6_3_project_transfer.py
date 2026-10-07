@@ -254,8 +254,8 @@ def main() -> int:
 
     walkthrough: dict = {}
     with sync_playwright() as pw:
-        port = shared.free_port()
-        server, _suite_instance = shared.start_product_server(port, review_scenario="ok")
+        server, _suite_instance = shared.start_product_server(0, review_scenario="ok")
+        port = server.server_address[1]
         try:
             context_a = pw.chromium.launch_persistent_context(
                 str(temp_root / "profile-a"), headless=True,

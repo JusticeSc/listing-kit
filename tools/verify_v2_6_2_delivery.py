@@ -33,7 +33,7 @@ import v2_stage_nav as stage_nav  # noqa: E402  （既有公共导航）
 
 from v2_verify_shared import (  # noqa: E402
     download_delivery, inspect_zip, wait_gate, walk_to_deliver, read_suite,
-    free_port, start_product_server,
+    start_product_server,
 )
 
 
@@ -212,8 +212,8 @@ def main() -> int:
 
     walkthrough: dict = {}
     with sync_playwright() as pw:
-        port = free_port()
-        server, _suite_instance = start_product_server(port, review_scenario="ok")
+        server, _suite_instance = start_product_server(0, review_scenario="ok")
+        port = server.server_address[1]
         try:
             context = pw.chromium.launch_persistent_context(
                 str(temp_root / "profile-main"), headless=True,
@@ -375,8 +375,8 @@ def main() -> int:
             server.server_close()
 
         # ---------------- Unknown 确认解锁（反向；可选 AI 缺席记 not_run 不阻断交付） ----------------
-        port2 = free_port()
-        server2, _ = start_product_server(port2, review_scenario="unknown")
+        server2, _ = start_product_server(0, review_scenario="unknown")
+        port2 = server2.server_address[1]
         try:
             context2 = pw.chromium.launch_persistent_context(
                 str(temp_root / "profile-unknown"), headless=True,

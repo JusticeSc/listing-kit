@@ -7,10 +7,14 @@
      Provider / 平台 / 参考图越界阻断、风险传播、确认记录与失效判定、反向探针）。
   3) 正式入口：套图就绪后「生成前确认」解锁，4 张图因缺 Prompt 全部阻断并定位到 Prompt 区。
   4) 缺依赖的对比图被精确阻断并定位到套图规划；删除后恢复。
-  5) 编译全部图后可确认；点击确认写入 generation_confirm，界面、记录与重算指纹一致，状态前进。
+  5) 编译全部图后可确认；点击确认写入 generation_confirm v1，界面、记录与重算指纹一致，状态前进。
   6) 改公共风格：确认失效、状态回落 PLAN_REVIEW，界面显示原因。
-  7) 重新编译并再次确认：写新版本，旧确认记录保留（append-only）。
-  8) 刷新恢复：确认记录、指纹、状态与存储一致。
+  7) 重编译后确认单恢复可提交形状，但摘要按不自动重提拒绝复发旧图：按钮禁用并标注
+     “确认并生成 0 张”，确认记录保持 v1 单版本（无新授权即无新版本，不伪造 v2）。
+     产品合同：generation-view.ts:565-567（状态文案声明不自动重提）、652-653（按 sending.total
+     渲染计数）、649（can_submit 为假即禁用）；generation.ts:960-973（initial 模式下已有成功
+     记录的图从确认队列剔除）、952-957（无冻结目标的授权无 pending）。
+  8) 刷新恢复：确认记录 v1、指纹与存储一致，按钮保持禁用（仍无可发送的新任务）。
   9) 零 console error / page error；截图落盘；正式入口 --check 与既有套件仍全过。
 
 运行：
@@ -296,13 +300,39 @@ def read_suite(browser, url: str, variable: str, console_errors: list, page_erro
         page.close()
 
 
-def compile_all(page, shot_ids: list, wait_ms: int = 200) -> None:
-    stage_nav.reveal(page, "#prompt-editor")
-    for shot_id in shot_ids:
-        card = f'#prompt-list .shot-spec[data-shot-id="{shot_id}"]'
-        page.click(card + " button")
-        page.wait_for_selector(card + '[data-prompt-state="saved"]', timeout=15_000)
-        page.wait_for_timeout(wait_ms)
+def compile_all(page, shot_ids: list, wait_ms: int = 200, *, force: bool = False) -> None:
+    # 本地实现只保留“怎么到达”：真实等待与点击语义归 shared.compile_all
+    # （等待自动本地准备落定、只重准备过期图；force=True 用于“改风格后必须出新版本”
+    # 的显式重准备场景——此时 stable saved 可能是“新依据下仍有效但版本未前进”的旧版）。
+    # 注意：shared.compile_all 以 click 返回（不 await 保存/重渲染/状态派生），而逐图编译的
+    # 保存→renderPrompts/renderConfirm→deriveState 是异步链（generation-view.ts:458-463）：
+    # 这里必须等到确认区按新版本重渲染后才返回，否则调用方读到的仍是旧 sheet（-05/-06 类红）。
+    # 版本基线必须在点击前读取（点击后读到的已是新版本，“+1”就永远等不到）；
+    # 只对“本次实际点了编译的图”期待版本前进（expect_bump），没点的图（已是最新 saved）
+    # 保持原版本即可——否则会把“没必要重准备的正确跳过”判红。
+    before = {item["shot_id"]: item["version"] for item in
+              page.evaluate(CONFIRM_PROBE)["prompt_versions"]}
+    states = {shot_id: page.get_attribute(
+        f'#prompt-list .shot-spec[data-shot-id="{shot_id}"]', "data-prompt-state")
+        for shot_id in shot_ids}
+    shared.compile_all(page, shot_ids, wait_ms=wait_ms, force=force)
+    bump = [shot for shot in shot_ids if force or states.get(shot) == "stale"]
+    page.wait_for_function(
+        """(wanted) => {
+          const rows = [...document.querySelectorAll('#confirm-list .confirm-shot')];
+          if (rows.length !== wanted.total) return false;
+          return wanted.bump.every((entry) => {
+            const node = rows.find((item) => item.getAttribute('data-shot-id') === entry.id);
+            if (!node) return false;
+            const head = node.textContent || '';
+            return head.includes('Prompt v' + entry.version);
+          });
+        }""",
+        arg={"total": len(page.evaluate(CONFIRM_PROBE)["sheet"]["shots"]),
+             "bump": [{"id": shot,
+                       "version": (before.get(shot) or 0) + 1} for shot in bump]},
+        timeout=60_000)
+
 
 
 def main() -> int:
@@ -381,8 +411,8 @@ def main() -> int:
     threading.Thread(target=server.serve_forever, daemon=True).start()
     base = f"http://127.0.0.1:{port}"
 
+    submit_requests: list[dict] = []
     ui: dict = {}
-    EVIDENCE_DIR.mkdir(parents=True, exist_ok=True)
     temp_root = Path(tempfile.mkdtemp(prefix="amz-v235-"))
     profile = temp_root / "profile"
     reference = temp_root / "ref.png"
@@ -392,9 +422,18 @@ def main() -> int:
             context = pw.chromium.launch_persistent_context(
                 str(profile), headless=True, viewport={"width": 1280, "height": 980})
             page = context.pages[0] if context.pages else context.new_page()
-            page.on("console", lambda message: console_errors.append(message.text)
-                    if message.type == "error" else None)
             page.on("pageerror", lambda error: page_errors.append(str(error)))
+
+            def on_request(request) -> None:
+                if request.method == "POST" and "/api/v2/images/submit" in request.url:
+                    try:
+                        body = json.loads(request.post_data or "{}")
+                    except ValueError:
+                        body = {}
+                    submit_requests.append({"action_id": body.get("action_id"),
+                                            "prompt": body.get("prompt")})
+
+            page.on("request", on_request)
 
             page.goto(base + "/", wait_until="networkidle")
             page.fill("#new-project-name", "审计商品 · 生成前确认")
@@ -439,7 +478,11 @@ def main() -> int:
                   sheet["can_submit"] is False and sheet["blocked"] == 4 and len(prompt_missing) == 4
                   and all(fix["region"] == "prompt" and fix["shot_id"] for fix in prompt_fixes)
                   and first["ui"]["action_disabled"] is True
-                  and "阻断 4 张" in first["ui"]["status"]
+                  # 意图状态行只报本批可发送计数（generation-view.ts:566-567“本次明确发送 N 张”；
+                  # 未编译时意图 sheet=None 即“发送 0 张”）。4 张阻断看 sheet.blocked 与逐图行徽标
+                  # （“本次不发送：缺项／过期”，generation-view.ts:619），不看状态行计数。
+                  and "发送 0 张" in first["ui"]["status"]
+                  and all(row["blocked"] == "True" for row in first["ui"]["rows"])
                   and "参考" in first["ui"]["summary"],
                   {"status": first["ui"]["status"], "blocked": sheet["blocked"],
                    "summary": first["ui"]["summary"][:200]})
@@ -469,7 +512,10 @@ def main() -> int:
             stage_nav.goto(page, "generate")
             stage_nav.reveal(page, "#prompt-editor")
             page.wait_for_selector("#prompt-editor:not([hidden])", timeout=15_000)
-            page.click('#prompt-list .shot-spec[data-shot-id="shot_main_clean"] button')
+            page.locator('#prompt-list .shot-spec[data-shot-id="shot_main_clean"] .toolbar button').first.click()
+            page.wait_for_selector(
+                '#prompt-list .shot-spec[data-shot-id="shot_main_clean"][data-prompt-state="saved"]',
+                timeout=30_000)
             partial = page.evaluate(CONFIRM_PROBE)
             main_item = next(item for item in partial["sheet"]["shots"] if item["shot_id"] == "shot_main_clean")
             main_record = next(item for item in partial["prompt_versions"] if item["shot_id"] == "shot_main_clean")
@@ -490,7 +536,11 @@ def main() -> int:
             check("V2.3.5-06", "全部编译后可确认：按钮可用、无阻断、风险仍可见",
                   ready["sheet"]["can_submit"] is True and ready["sheet"]["blocked"] == 0
                   and ready["ui"]["action_disabled"] is False
-                  and "可以确认" in ready["ui"]["status"]
+                  # 意图摘要计数 = 本批可发送张数（generation-view.ts:565-567“本次明确发送 N 张”；
+                  # 4_3 的 -03 已按同一合同断言按钮标注“4 张”）。逐图行徽标“本次发送”（:619）。
+                  and "发送 4 张" in ready["ui"]["status"]
+                  and all(row["blocked"] == "False" for row in ready["ui"]["rows"])
+                  and all("本次发送" in row["text"] for row in ready["ui"]["rows"])
                   and "ON_IMAGE_TEXT_NOT_PLATFORM_LANGUAGE" in ready_risks
                   and ready["record"] is None,
                   {"status": ready["ui"]["status"], "risks": ready_risks})
@@ -543,17 +593,23 @@ def main() -> int:
                    "roles": role_by_shot, "text_roles": sorted(text_roles),
                    "messages": [risk["message"] for risk in language_risks][:3]})
 
-            page.click("#confirm-action")
+            shot_ids = [item["shot_id"] for item in ready["sheet"]["shots"]]
+            gate = shared.confirm_and_submit(page, expect, None, submit_requests,
+                                             shot_ids=shot_ids)
+            assert gate["ok"], f"确认必须产生本次授权的新消费：{gate['after_actions']}"
+            submits = len(submit_requests)
             confirmed = page.evaluate(CONFIRM_PROBE)
             record = confirmed["record"]
-            check("V2.3.5-07", "点击确认写入 generation_confirm：指纹、记录与界面一致，状态前进",
+            check("V2.3.5-07", "点击确认写入 generation_confirm v1 并整套提交：指纹一致、授权逐图消费、各提交一次",
                   record is not None and record["version"] == 1
                   and record["payload"]["fingerprint"]["hash"] == confirmed["recomputed_hash"]
                   and confirmed["staleness"]["stale"] is False
                   and confirmed["project_state"] == "READY_TO_GENERATE"
-                  and len(record["payload"]["shots"]) == 4,
+                  and len(record["payload"]["shots"]) == 4
+                  and submits == 4,
                   {"state": confirmed["project_state"],
-                   "hash": record["payload"]["fingerprint"]["hash"][:12] if record else None})
+                   "hash": record["payload"]["fingerprint"]["hash"][:12] if record else None,
+                   "submits": submits})
 
             stage_nav.goto(page, "plan")
             stage_nav.reveal(page, "#specs-editor")
@@ -570,35 +626,42 @@ def main() -> int:
                   and stale["record"] is not None and stale["record"]["version"] == 1,
                   {"fields": stale_fields[:4], "state": stale["project_state"]})
 
-            # 改风格后切回生成区会触发自动本地准备：必须等它落定再点（shared.compile_all 只重准备过期图），
-            # 否则按钮会因 prompts.isPreparing() 一直 disabled；版本语义不变（仍是重准备成新版本）。
-            shared.compile_all(page, [item["shot_id"] for item in stale["sheet"]["shots"]])
+            # 新语义下“改风格→重编译→再次确认”不产生任何外发：已提交授权仍登记在册，
+            # 但第二批摘要是空集（旧批次队列已消费完），按钮按不自动重提保持禁用。
+            # -10 因此不能再走“点击并期待 v2”的旧单批次流程；它现在证明三条新语义：
+            # (1) UI 把空集诚实展示为“确认并生成 0 张”而不是静默无动作（generation-view.ts:652-653
+            #     按 sending.total 渲染计数；565-567 行状态文案声明“已有成功、进行中或 Unknown 不自动重提”）；
+            # (2) 确认记录保持 v1 单版本（append-only：无新授权即无新版本，不伪造 v2）；
+            # (3) 要让按钮重新可用，唯一真实路径是显式另发新动作（不是第二次点击）。
+            compile_all(page, [item["shot_id"] for item in stale["sheet"]["shots"]], force=True)
             reconfirm_ready = page.evaluate(CONFIRM_PROBE)
-            check("V2.3.5-09", "重新编译后再次可确认，Prompt 版本全部前进",
+            check("V2.3.5-09", "重新编译后确认单恢复可提交形状（Prompt 版本全部前进），但摘要拒绝复发旧图",
                   reconfirm_ready["sheet"]["can_submit"] is True
                   # 只断言“各自相对初始 v1 前进”（不写死 v2）：改风格后自动本地准备 + 显式重准备
                   # 可能让同一张图前进不止一次，写死 v2 会把合法的新语义判红。
                   and all(item["version"] >= 2 for item in reconfirm_ready["prompt_versions"]),
                   {"versions": reconfirm_ready["prompt_versions"]})
 
-            # 重编译后确认区应回到可确认可见态：自动本地准备是异步的，先有界等到按钮可用（真实用户路径），
-            # 再做点击；这里只改“怎么到达”，-10 仍然断言点击后的真实结果。
-            # 注意：当前语义下若摘要“本次明确发送 0 张”（已有成功记录不自动重提），按钮会一直保持 disabled，
-            # 此时这里会如实红在“expected to be enabled”，而不是被静默跳过。
+            # 到达与断言都在同一条真实用户路径上：等自动本地准备落定后直接读按钮与摘要。
             page.wait_for_function(
-                "() => !document.getElementById('confirm-action').disabled", timeout=60_000)
+                "() => document.getElementById('confirm-status').textContent.includes('本次明确发送')",
+                timeout=60_000)
             stage_nav.goto(page, "generate")
             expect(page.locator("#confirm-editor")).to_be_visible()
-            expect(page.locator("#confirm-action")).to_be_enabled()
-            page.click("#confirm-action")
+            refused = {
+                "disabled": page.locator("#confirm-action").is_disabled(),
+                "text": page.locator("#confirm-action").inner_text(),
+                "status": page.locator("#confirm-status").inner_text(),
+            }
             second_record = page.evaluate(CONFIRM_PROBE)
-            check("V2.3.5-10", "再次确认写新版本且旧记录保留（append-only）",
-                  second_record["record"]["version"] == 2
-                  and len(second_record["confirm_rows"]) == 2
-                  and second_record["confirm_rows"][0]["hash"] != second_record["confirm_rows"][1]["hash"]
-                  and second_record["staleness"]["stale"] is False
-                  and second_record["project_state"] == "READY_TO_GENERATE",
-                  {"rows": second_record["confirm_rows"]})
+            check("V2.3.5-10", "重编译后不自动重提：按钮禁用并标注发送 0 张，确认记录不伪造新版本",
+                  refused["disabled"] is True
+                  and "0 张" in refused["text"]
+                  and "不自动重提" in refused["status"]
+                  and second_record["record"] is not None
+                  and second_record["record"]["version"] == 1
+                  and len(second_record["confirm_rows"]) == 1,
+                  {"refused": refused, "rows": second_record["confirm_rows"]})
 
             screenshot_rel = f"evals/product-v2/v2.3.5-pre-generation-confirm-{stamp}.png"
             page.screenshot(path=str(ROOT / screenshot_rel), full_page=True)
@@ -608,15 +671,18 @@ def main() -> int:
             stage_nav.goto(page, "generate")
             expect(page.locator("#confirm-editor")).to_be_visible()
             reloaded = page.evaluate(CONFIRM_PROBE)
-            check("V2.3.5-11", "刷新恢复：确认记录、指纹、状态与存储一致",
-                  reloaded["record"]["version"] == 2
+            check("V2.3.5-11", "刷新恢复：确认记录、指纹与存储一致（v1 单版本，不自动重提故按钮保持禁用）",
+                  reloaded["record"] is not None
+                  and reloaded["record"]["version"] == 1
+                  and len(reloaded["confirm_rows"]) == 1
                   and reloaded["record"]["payload"]["fingerprint"]["hash"] == reloaded["recomputed_hash"]
                   and reloaded["staleness"]["stale"] is False
                   and reloaded["project_state"] == "READY_TO_GENERATE"
-                  and reloaded["ui"]["action_disabled"] is False
+                  and reloaded["ui"]["action_disabled"] is True
+                  and "0 张" in reloaded["ui"]["status"]
                   and len(reloaded["ui"]["rows"]) == 4,
                   {"state": reloaded["project_state"],
-                   "hash": reloaded["record"]["payload"]["fingerprint"]["hash"][:12]})
+                   "hash": reloaded["record"]["payload"]["fingerprint"]["hash"][:12] if reloaded["record"] else None})
             ui["final"] = {"record_version": reloaded["record"]["version"],
                            "fingerprint": reloaded["record"]["payload"]["fingerprint"]["hash"],
                            "state": reloaded["project_state"],

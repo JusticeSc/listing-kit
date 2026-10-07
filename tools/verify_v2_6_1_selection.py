@@ -60,6 +60,7 @@ def load_module(path: Path, name: str):
 
 v251 = load_module(ROOT / "tools" / "verify_v2_5_1_deterministic_review.py", "verify_v251")
 v254 = load_module(ROOT / "tools" / "verify_v2_5_4_rework_loop.py", "verify_v254")
+import v2_verify_shared as shared  # noqa: E402  （静态服/契约套件读取器已归共享模块）
 server_module = v251.load_server_module()
 
 
@@ -68,45 +69,58 @@ def product_text(relative: str) -> str:
 
 
 def compare_section(text: str) -> str:
-    """workspace.js 里比较面板那一整块（分区注释 → renderAttempts 之前）。"""
+    """compare-view 的比较/采用装配块（文件开头 → 单图返工分区）。"""
 
-    start = text.index("候选比较与审核清单（V2.5.3）")
-    end = text.index("function renderAttempts", start)
-    return text[start:end]
+    return text[:text.index("单图返工闭环（V2.5.4）")]
 
 
 def rework_section(text: str) -> str:
-    """workspace.js 里单图返工那一整块（独立分区，不属于比较区，也不属于采用区）。"""
+    """compare-view 的单图返工那一整块（独立分区，不属于比较区，也不属于采用区）。"""
 
     start = text.index("单图返工闭环（V2.5.4）")
-    end = text.index("人工选择与失效（V2.6.1）", start)
-    return text[start:end]
+    return text[start:text.index("人工选择与失效（V2.6.1）", start)]
 
 
 def selection_section(text: str) -> str:
-    """workspace.js 里人工选择那一整块（分区注释 → renderHeaderText 之前）。"""
+    """compare-view 的人工选择视图装配块（分区注释 → 文件末尾）：只装配与转发。"""
 
-    start = text.index("人工选择与失效（V2.6.1）")
-    end = text.index("function renderHeaderText", start)
-    return text[start:end]
+    return text[text.index("人工选择与失效（V2.6.1）"):]
+
+
+def selection_write_block(text: str) -> str:
+    """采用写路径的唯一所有者：selection-adoption Module 的 select()（记录所有权在 Module）。"""
+
+    start = text.index("async function select(")
+    return text[start:text.index("async function acknowledge(", start)]
 
 
 def section_guard(block: str) -> dict:
-    """采用区必须只经仓储追加记录：不直连 IndexedDB、不自己发请求、不复制图片。"""
+    """采用写路径（Module）：只经仓储追加记录、先落盘再更新内存、不直连存储、不复制图片。"""
 
     forbidden = [token for token in (
         "indexedDB", "fetch(", "assets.put", "assets.add", "storage.openStorage",
-        "prompt_version", "generation_attempt", "review_report",
+        "prompt_version", "generation_attempt",
     ) if token in block]
-    save_at = block.find("repository.documents.save(")
+    save_at = block.find("repository.commitSelection(")
     set_at = block.find("selections.set(")
     return {
         "forbidden_tokens": forbidden,
-        "saves_selection": save_at >= 0 and "kind: SELECTION_KIND" in block,
+        "saves_selection": save_at >= 0 and "buildSelectionRecord(" in block,
         "memory_after_save": save_at >= 0 and set_at > save_at,
+        "no_auto_select": "newActionId()" in block and "deps.beginAction()" in block,
+    }
+
+
+def view_forward_guard(block: str) -> dict:
+    """采用视图：只装配/转发与就地反馈，不直接读写业务记录（视图不是第二状态源）。"""
+
+    direct = [token for token in (
+        "documents.save", "selections.set", "indexedDB", "assets.put", "assets.add",
+    ) if token in block]
+    return {
+        "direct_writes": direct,
+        "forwards_to_module": "selectionAdoption.select(" in block,
         "error_path_kept": "showError(elements.adoptError" in block,
-        "no_auto_select": "writeSelectionRecord(" in block
-                          and "handleAdoptSubmit" in block and "handleAdoptClear" in block,
     }
 
 
@@ -124,32 +138,38 @@ def pure_rework_guard(block: str) -> list[str]:
 
     return [token for token in (
         "writeSelectionRecord", "handleAdoptSubmit", "handleAdoptClear", "selections.set",
-        "adoptSubmit", "adoptClear",
+        "adoptSubmit", "adoptClear", "selectionAdoption.select(", "adoptCandidate(",
     ) if token in block]
 
 
 def negative_probe() -> dict:
     """新增守卫的判红能力：同一判据必须能被一处篡改造红。"""
 
-    block = selection_section(product_text("workspace.js"))
+    block = selection_write_block(product_text("selection-adoption.ts"))
     valid = section_guard(block)
-    mutated = section_guard(block.replace("repository.documents.save(",
+    mutated = section_guard(block.replace("repository.commitSelection(",
                                           "indexedDB.open(", 1))
-    compare_block = compare_section(product_text("workspace.js"))
+    view_text = product_text("ui/compare-view.ts")
+    compare_block = compare_section(view_text)
     compare_valid = pure_compare_guard(compare_block)
     compare_mutated = pure_compare_guard(compare_block + "\n  selections.set('x', {});\n")
-    rework_block = rework_section(product_text("workspace.js"))
+    rework_block = rework_section(view_text)
     rework_valid = pure_rework_guard(rework_block)
-    rework_mutated = pure_rework_guard(rework_block + "\n  handleAdoptSubmit();\n")
+    rework_mutated = pure_rework_guard(rework_block + "\n  selectionAdoption.select('clear', 'x', null);\n")
+    view_valid = view_forward_guard(selection_section(view_text))
+    view_mutated = view_forward_guard(selection_section(view_text) + "\n  documents.save('p', {});\n")
     red = (not mutated["saves_selection"] and not mutated["memory_after_save"]
            and bool(compare_mutated) and not compare_valid
-           and bool(rework_mutated) and not rework_valid)
+           and bool(rework_mutated) and not rework_valid
+           and bool(view_mutated["direct_writes"]) and not view_valid["direct_writes"])
     return {
         "selections_save_guard_red": not mutated["saves_selection"],
         "compare_purity_guard_red": bool(compare_mutated) and not compare_valid,
         "rework_purity_guard_red": bool(rework_mutated) and not rework_valid,
+        "view_forward_guard_red": bool(view_mutated["direct_writes"]) and not view_valid["direct_writes"],
         "ok": red and valid["saves_selection"] and valid["memory_after_save"]
-              and valid["error_path_kept"] and not valid["forbidden_tokens"],
+              and valid["no_auto_select"] and not valid["forbidden_tokens"]
+              and view_valid["forwards_to_module"] and view_valid["error_path_kept"],
     }
 
 
@@ -182,63 +202,73 @@ def check_static_guards() -> list[dict]:
 
     selection_text = product_text("domain/selection.js")
     workspace_text = product_text("workspace.js")
+    module_text = product_text("selection-adoption.ts")
+    compare_text = product_text("ui/compare-view.ts")
     html = (PRODUCT_DIR / "index.html").read_text(encoding="utf-8")
-    duplicated = [token for token in ("SELECTION_CONTRACT_VERSION =", "SELECTION_SCHEMA_VERSION =",
-                                      "SELECTION_ACTIONS =", "SELECTION_STATES =",
-                                      "SELECTION_STATE_TEXT =", "function buildSelectionRecord")
-                  if token in workspace_text]
+    definition_tokens = ("SELECTION_CONTRACT_VERSION =", "SELECTION_SCHEMA_VERSION =",
+                         "SELECTION_ACTIONS =", "SELECTION_STATES =",
+                         "SELECTION_STATE_TEXT =", "function buildSelectionRecord")
+    duplicated = [token for token in definition_tokens if token in workspace_text]
+    defined_outside_domain = [name for name, text in (("selection-adoption.ts", module_text),
+                                                     ("ui/compare-view.ts", compare_text))
+                              if any(token in text for token in definition_tokens)]
     checks.append({
         "id": "V2.6.1-02",
-        "title": "单一权威：选择记录形状、词表与合同版本只在 domain/selection.js 定义，工作台只引用",
+        "title": "单一权威：选择记录形状、词表与合同版本只在 domain/selection.js 定义，消费者只引用",
         "ok": 'SELECTION_CONTRACT_VERSION = "v2.6.1"' in selection_text
               and 'DOMAIN_DOCUMENT_KINDS.selection' in selection_text
-              and "SELECTION_CONTRACT_VERSION," in workspace_text
-              and "buildSelectionRecord," in workspace_text
-              and "deriveSelectionState," in workspace_text
-              and not duplicated,
+              # 消费者改为经 domain 的构造函数/断言使用：记录所有权在 selection-adoption Module。
+              and "buildSelectionRecord(" in module_text
+              and "assertSelectionRecord(" in module_text
+              and "deriveSelectionState(" in module_text
+              and not duplicated and not defined_outside_domain,
         "detail": {"duplicated_in_workspace": duplicated,
-                   "imports_contract": "SELECTION_CONTRACT_VERSION," in workspace_text},
+                   "defined_outside_domain": defined_outside_domain,
+                   "module_uses_domain_builders": "buildSelectionRecord(" in module_text},
     })
 
     i_compare = html.index('<section id="compare-panel"')
-    i_adopt = html.index('<section id="adopt-panel"')
     i_attempt_error = html.index('id="attempt-error"')
-    panel_html = html[i_adopt:i_attempt_error]
-    head_html = html[i_compare:i_adopt]
+    compare_html = html[i_compare:i_attempt_error]
     wiring = {
-        "entry_in_compare_head": 'id="adopt-open"' in head_html,
-        "panel_sibling": i_adopt > i_compare and panel_html.count("<section") == panel_html.count("</section>"),
-        "buttons": all(f'id="{name}"' in panel_html for name in
-                       ("adopt-submit", "adopt-clear", "adopt-cancel")),
-        "panel_fields": all(f'id="{name}"' in panel_html for name in
-                            ("adopt-title", "adopt-basis", "adopt-current", "adopt-fingerprint",
-                             "adopt-readiness", "adopt-status", "adopt-error")),
-        "progress_line": 'id="adopt-progress"' in html,
-        "panel_binding": 'elements.adoptPanel.dataset.adoptContract = SELECTION_CONTRACT_VERSION;'
-                         in workspace_text
-                         and 'elements.adoptOpen.dataset.candidateSha256 = row.asset_sha256;'
-                         in workspace_text,
+        # 权威：ui-contract §4.9 / design §452「无第二个重复确认面板」——入口就地放在比较区。
+        "no_duplicate_panel": '<section id="adopt-panel"' not in html,
+        "entries_in_compare": all(f'id="{name}"' in compare_html for name in
+                                  ("adopt-open", "adopt-clear")),
+        "feedback_adjacent": all(f'id="{name}"' in html for name in
+                                 ("adopt-status", "adopt-error")),
+        "single_click_wiring":
+            'elements.adoptOpen.addEventListener("click", () => { void compareView?.adoptCandidate("select"); })'
+            in workspace_text
+            and 'elements.adoptClear.addEventListener("click", () => { void compareView?.adoptCandidate("clear"); })'
+            in workspace_text,
+        "clear_secondary_in_compare": 'id="adopt-clear"' in compare_html
+                                      and 'class="primary" type="button" disabled>采用当前候选' in compare_html,
     }
     checks.append({
         "id": "V2.6.1-03",
-        "title": "界面责任：比较区只放入口，采用面板是相邻的独立 #adopt-panel 并绑定候选身份",
+        "title": "界面责任：采用入口就地放在比较区（无第二个重复确认面板），主次按钮与反馈区就位",
         "ok": all(wiring.values()),
         "detail": wiring,
     })
 
-    block = selection_section(workspace_text)
+    block = selection_write_block(product_text("selection-adoption.ts"))
     guard = section_guard(block)
+    view_guard = view_forward_guard(selection_section(product_text("ui/compare-view.ts")))
     probe = negative_probe()
     checks.append({
         "id": "V2.6.1-04",
-        "title": "写路径唯一：采用只经仓储追加选择记录，先落盘再更新内存，失败走错误提示",
-        "ok": guard["saves_selection"] and guard["memory_after_save"] and guard["error_path_kept"]
-              and not guard["forbidden_tokens"] and probe["ok"],
-        "detail": {**guard, "negative_probe": probe, "section_chars": len(block)},
+        "title": "写路径唯一：采用只经仓储追加选择记录（Module 拥有记录），视图只转发、失败走错误提示",
+        "ok": guard["saves_selection"] and guard["memory_after_save"] and guard["no_auto_select"]
+              and not guard["forbidden_tokens"]
+              and not view_guard["direct_writes"] and view_guard["forwards_to_module"]
+              and view_guard["error_path_kept"] and probe["ok"],
+        "detail": {**guard, "view": view_guard, "negative_probe": probe, "section_chars": len(block)},
     })
 
-    compare_forbidden = pure_compare_guard(compare_section(workspace_text))
-    rework_forbidden = pure_rework_guard(rework_section(workspace_text))
+    view_text = product_text("ui/compare-view.ts")
+    compare_forbidden = pure_compare_guard(compare_section(view_text))
+    rework_forbidden = pure_rework_guard(rework_section(view_text))
     checks.append({
         "id": "V2.6.1-05",
         "title": "不回退：比较区仍是纯投影、返工区未被采用逻辑污染（V2.5.3 / V2.5.4 判据保持）",
@@ -308,8 +338,8 @@ async () => {
 
 SELECTION_PROBE = """
 () => {
-  const panel = document.getElementById("adopt-panel");
   const entry = document.getElementById("adopt-open");
+  const clearButton = document.getElementById("adopt-clear");
   const comparePanel = document.getElementById("compare-panel");
   const active = document.activeElement;
   const rows = [...document.querySelectorAll("#attempt-list .attempt-row")].map((node) => {
@@ -333,22 +363,13 @@ SELECTION_PROBE = """
     '#compare-candidates [role="tab"][aria-selected="true"]');
   const isHidden = (node) => Boolean(node && (node.hidden || node.offsetParent === null));
   return {
-    contract: panel.dataset.adoptContract || null,
-    visible: !panel.hidden,
-    panel_shot_id: panel.dataset.shotId || null,
-    panel_candidate_id: panel.dataset.candidateId || null,
-    title: (document.getElementById("adopt-title") || {}).textContent || "",
-    basis: (document.getElementById("adopt-basis") || {}).textContent || "",
-    current: (document.getElementById("adopt-current") || {}).textContent || "",
-    fingerprint: (document.getElementById("adopt-fingerprint") || {}).textContent || "",
-    readiness: (document.getElementById("adopt-readiness") || {}).textContent || "",
     status: (document.getElementById("adopt-status") || {}).textContent || "",
     status_hidden: isHidden(document.getElementById("adopt-status")),
     error: (document.getElementById("adopt-error") || {}).textContent || "",
     error_hidden: isHidden(document.getElementById("adopt-error")),
-    submit_disabled: document.getElementById("adopt-submit").disabled,
-    submit_text: (document.getElementById("adopt-submit") || {}).textContent || "",
-    clear_disabled: document.getElementById("adopt-clear").disabled,
+    open_disabled: entry.disabled,
+    open_text: entry.textContent || "",
+    clear_disabled: clearButton.disabled,
     progress: (document.getElementById("adopt-progress") || {}).textContent || "",
     compare_visible: !comparePanel.hidden,
     compare_status: (document.getElementById("compare-status") || {}).textContent || "",
@@ -457,9 +478,6 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 def row(shot_id: str):
                     return page.locator(f'#attempt-list .attempt-row[data-shot-id="{shot_id}"]')
 
-                def wait_state(shot_id: str, state: str, timeout: int = 30_000) -> None:
-                    expect(row(shot_id)).to_have_attribute("data-attempt-state", state,
-                                                           timeout=timeout)
 
                 def wait_candidate_ui(shot_id: str, timeout: int = 30_000) -> None:
                     page.wait_for_function(
@@ -469,16 +487,14 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                             return Boolean(node && node.querySelector('.attempt-candidate'));
                         }""", arg=shot_id, timeout=timeout)
 
-                def click_row_button(shot_id: str, text: str) -> None:
-                    stage_nav.goto(page, "generate")
-                    row(shot_id).locator(f'button:has-text("{text}")').first.click()
+                def wait_terminal_all(shot_ids: list, timeout: int = 120_000) -> None:
+                    # 一次点击 #confirm-action 会保存授权并外发全部已就绪任务（批次确认）：
+                    # 逐图"生成这张图"在已提交后是 disabled（产品正确的不自动重提），
+                    # 所以这里直接等全部图进入终态，不再逐图点按钮。
+                    shared.wait_terminal(page, shot_ids, timeout=timeout)
+                    for shot_id in shot_ids:
+                        wait_candidate_ui(shot_id)
 
-                def submit_once(shot_id: str) -> None:
-                    click_row_button(shot_id, "生成这张图")
-                    wait_state(shot_id, "submitted")
-                    click_row_button(shot_id, "核对任务")
-                    wait_state(shot_id, "succeeded")
-                    wait_candidate_ui(shot_id)
 
                 def compare_state() -> dict:
                     return page.evaluate(
@@ -517,22 +533,68 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                     page.wait_for_timeout(120)
                     return probe()
 
-                def open_adopt() -> dict:
-                    page.click("#adopt-open")
-                    expect(page.locator("#adopt-panel")).to_be_visible()
-                    return probe()
+                def adopt_state(candidate_id: str) -> dict:
+                    return page.evaluate(
+                        """(wanted) => {
+                            const open = document.getElementById("adopt-open");
+                            const tab = document.querySelector(
+                                '#compare-candidates [role="tab"][aria-selected="true"]');
+                            return {
+                                disabled: open ? open.disabled : null,
+                                selected: tab ? tab.getAttribute("data-candidate-id") : null,
+                            };
+                        }""", arg=candidate_id)
 
-                def adopt_submit() -> dict:
-                    page.click("#adopt-submit")
+                def adopt_ready(candidate_id: str) -> None:
+                    # 采用入口只投影「正看着的候选」与已落库的内存状态：点卡片后
+                    # 入口按需重算（selectCompareCandidate → updateAdoptEntry）。
+                    # 若正看着的候选就是已采用的当前项，入口保持 disabled
+                    # （updateAdoptEntry 的 already 分支：不重复提交），此时直接返回。
+                    state = adopt_state(candidate_id)
+                    if state["disabled"] is True and state["selected"] == candidate_id:
+                        return
+                    page.wait_for_function(
+                        """(wanted) => {
+                            const open = document.getElementById("adopt-open");
+                            if (!open || open.disabled) return false;
+                            const tab = document.querySelector(
+                                '#compare-candidates [role="tab"][aria-selected="true"]');
+                            return tab
+                              && tab.getAttribute("data-candidate-id") === wanted;
+                        }""", arg=candidate_id, timeout=20_000)
+
+
+                def adopt_click() -> dict:
+                    # 「无第二个重复确认面板」（ui-contract:225 / design §452）：一次点击就是明确的采用决定。
+                    # Module.select 是异步落库：先写 status"正在保存"，落库完成后才重写
+                    # "已采用候选/已取消采用"，所以等"正在保存"消失才算完成。
+                    page.click("#adopt-open")
                     page.wait_for_selector("#adopt-status:not([hidden])", timeout=20_000)
+                    page.wait_for_function(
+                        """() => { const node = document.getElementById("adopt-status");
+                            return node && !node.hidden
+                              && node.textContent.indexOf("正在保存") < 0; }""",
+                        timeout=20_000)
                     return probe()
 
                 def adopt_clear() -> dict:
+                    # clear 与 select 同一异步落库：等"正在保存"消失后再读行摘要，
+                    # 否则读到旧 current 投影。
                     page.click("#adopt-clear")
                     page.wait_for_selector("#adopt-status:not([hidden])", timeout=20_000)
+                    page.wait_for_function(
+                        """() => { const node = document.getElementById("adopt-status");
+                            return node && !node.hidden
+                              && node.textContent.indexOf("正在保存") < 0; }""",
+                        timeout=20_000)
                     return probe()
 
-                def rework_once(shot_id: str, problem_id: str, direction: str) -> None:
+
+                def rework_once(shot_id: str, problem_id: str, direction: str,
+                                known_candidates: int = 0) -> None:
+                    # 返工经单图确认外发：面板关闭只代表提交返回，不代表新候选已落库。
+                    # 用候选链长度增长（attempt_probe 的 candidate_chains）等新候选，
+                    # 再等候选 UI 出现；否则会读到"返工前"的旧链并误判 current。
                     page.click("#rework-open")
                     expect(page.locator("#rework-panel")).to_be_visible()
                     page.click(f'label[data-problem-id="{problem_id}"]')
@@ -541,6 +603,21 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                     expect(page.locator("#rework-preview-box")).to_be_visible(timeout=20_000)
                     page.click("#rework-submit")
                     expect(page.locator("#rework-panel")).to_be_hidden(timeout=40_000)
+                    if known_candidates:
+                        before = len((attempt_probe()["candidate_chains"] or {}).get(shot_id, []))
+                        page.wait_for_function(
+                            """(payload) => {
+                                const rows = document.querySelectorAll(
+                                    '#attempt-list .attempt-row[data-shot-id="' + payload.shot + '"]'
+                                    + ' .attempt-candidate');
+                                return rows.length > 0;
+                            }""", arg={"shot": shot_id}, timeout=40_000)
+                        deadline = 40_000
+                        while len((attempt_probe()["candidate_chains"] or {}).get(shot_id, [])) <= before:
+                            page.wait_for_timeout(200)
+                            deadline -= 200
+                            if deadline <= 0:
+                                break
                     wait_candidate_ui(shot_id)
 
                 page.goto(base + "/", wait_until="networkidle")
@@ -569,12 +646,18 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 expect(page.locator("#shot-list .shot-row")).to_have_count(4)
                 shot_ids = attempt_probe()["shot_ids"]
                 first_shot, second_shot = shot_ids[0], shot_ids[1]
-                v251.compile_all(page, shot_ids)
-                expect(page.locator("#confirm-action")).to_be_enabled()
-                page.click("#confirm-action")
-                expect(page.locator("#confirm-record")).to_contain_text("已确认 v")
-                submit_once(first_shot)
-                submit_once(second_shot)
+                shared.compile_all(page, shot_ids)
+                gate = shared.confirm_and_submit(
+                    page, expect, lambda: attempt_probe(), shot_ids=shot_ids)
+                assert gate["ok"], f"确认必须产生本次授权的新消费：{gate['after_actions']}"
+                expect(page.locator("#confirm-record")).to_contain_text("不会要求第二次提交")
+                # 「一次点击先保存这份授权」的真实可观察面：授权记录（单文档、版本递增）已落库。
+                confirmed_rows = [item for item in storage()["rows"]
+                                  if item["kind"] == "generation_confirm"
+                                  and item["document_id"] == "generation"]
+                if not confirmed_rows or confirmed_rows[-1]["version"] < 1:
+                    raise AssertionError("一次点击没有先落授权记录：" + repr(confirmed_rows))
+                wait_terminal_all(shot_ids)
                 open_panel(first_shot, 1, references=1)
                 rework_once(first_shot, "scene", "把背景换成纯白，商品保持不变，不要改标识。")
 
@@ -617,59 +700,46 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 followed = select_candidate(other_id)
                 checks.append({
                     "id": "V2.6.1-09",
-                    "title": "入口：比较区把「正看着的候选」交给采用面板，换卡后入口同步换身份",
+                    "title": "入口：采用主按钮始终绑定比较区「正看着的候选」，换卡后身份随之变化",
                     "ok": opened_compare["entry"]["in_compare"]
                           and opened_compare["entry"]["disabled"] is False
-                          and opened_compare["entry"]["shot_id"] == first_shot
-                          and opened_compare["entry"]["candidate_id"] == default_id
-                          and opened_compare["entry"]["candidate_sha256"] == candidate_shas[default_id]
-                          and followed["entry"]["candidate_id"] == other_id
-                          and followed["entry"]["candidate_sha256"] == candidate_shas[other_id],
+                          and opened_compare["selected_candidate_id"] == default_id
+                          and followed["selected_candidate_id"] == other_id,
                     "detail": {"default": default_id, "switched": other_id,
                                "entry": followed["entry"],
                                "selected": followed["selected_candidate_id"]},
                 })
 
-                adopt_panel = open_adopt()
+                viewed = probe()
                 checks.append({
                     "id": "V2.6.1-10",
-                    "title": "采用面板：独立面板绑定候选身份与合同版本，显示将绑定的当前审核报告与这套图的采用要求",
-                    "ok": adopt_panel["visible"]
-                          and adopt_panel["contract"] == SELECTION_CONTRACT_VERSION
-                          and adopt_panel["panel_shot_id"] == first_shot
-                          and adopt_panel["panel_candidate_id"] == other_id
-                          and "采用候选（人工选择）" in adopt_panel["title"]
-                          and "当前尚未采用" in adopt_panel["basis"]
-                          and ("候选 v" + str(candidate_versions[other_id])) in adopt_panel["basis"]
-                          and "将绑定当前审核报告" in adopt_panel["fingerprint"]
-                          and "这张图是" in adopt_panel["readiness"]
-                          and adopt_panel["submit_disabled"] is False
-                          and adopt_panel["submit_text"] == "采用这条候选"
-                          and adopt_panel["clear_disabled"] is True
-                          and adopt_panel["focus_id"] == "adopt-submit",
-                    "detail": {"contract": adopt_panel["contract"],
-                               "basis": adopt_panel["basis"],
-                               "fingerprint": adopt_panel["fingerprint"],
-                               "readiness": adopt_panel["readiness"],
-                               "focus": adopt_panel["focus_id"]},
+                    "title": "采用入口：主按钮绑定「当前查看候选」且就地保存（无确认面板），次按钮状态与之相称",
+                    "ok": viewed["selected_candidate_id"] == other_id
+                          and viewed["open_disabled"] is False
+                          and "采用当前候选" in viewed["open_text"]
+                          and viewed["clear_disabled"] is True
+                          and viewed["compare_visible"] is True,
+                    "detail": {"selected_candidate": viewed["selected_candidate_id"],
+                               "open_disabled": viewed["open_disabled"],
+                               "clear_disabled": viewed["clear_disabled"],
+                               "compare_visible": viewed["compare_visible"]},
                 })
 
-                page.click("#adopt-cancel")
-                closed = probe()
-                closed_storage = storage()
+                switched_view = select_candidate(default_id)
+                viewed_storage = storage()
                 checks.append({
                     "id": "V2.6.1-11",
-                    "title": "打开与关闭采用面板不写任何记录，关闭后焦点回到原候选卡",
-                    "ok": closed["visible"] is False
-                          and closed["focus_id"] == "compare-tab-" + other_id
-                          and closed_storage == seeded_storage,
-                    "detail": {"focus_after_close": closed["focus_id"],
-                               "expected_focus": "compare-tab-" + other_id,
-                               "records_unchanged": closed_storage == seeded_storage},
+                    "title": "查看/切换候选不改写任何记录，焦点落在被切换的候选标签",
+                    "ok": switched_view["selected_candidate_id"] == default_id
+                          and switched_view["focus_id"] == "compare-tab-" + default_id
+                          and viewed_storage == seeded_storage,
+                    "detail": {"selected_candidate": switched_view["selected_candidate_id"],
+                               "focus": switched_view["focus_id"],
+                               "records_unchanged": viewed_storage == seeded_storage},
                 })
-
-                open_adopt()
-                adopted = adopt_submit()
+                select_candidate(other_id)
+                adopt_ready(other_id)
+                adopted = adopt_click()
                 adopted_storage = storage()
                 first_selection = newest_selection(adopted_storage, first_shot)
                 adopted_rows = [item for item in adopted["rows"] if item["shot_id"] == first_shot]
@@ -692,7 +762,8 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                           and adopted_progress is not None
                           and adopted_progress["current"] == initial_progress["current"] + 1
                           and adopted_progress["stale"] == 0
-                          and "已采用候选 v" in adopted["status"]
+                          and "已采用候选" in adopted["status"]
+                          and "旧候选和旧采用保留在历史中" in adopted["status"]
                           and adopted["status_hidden"] is False,
                     "detail": {"selection": first_selection, "progress": adopted_progress,
                                "badges": adopted["badges"], "status": adopted["status"]},
@@ -701,17 +772,17 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 checks.append({
                     "id": "V2.6.1-13",
                     "title": "采用只写选择：Prompt/Attempt/Candidate/Review/确认与图片资产逐字不变，无关图零变化",
-                    "ok": others_untouched(closed_storage, adopted_storage)
-                          and v254.digest_untouched(closed_storage, adopted_storage, second_docs)
-                          and len(adopted_storage["assets"]) == len(closed_storage["assets"]),
-                    "detail": {"others_untouched": others_untouched(closed_storage, adopted_storage),
+                    "ok": others_untouched(viewed_storage, adopted_storage)
+                          and v254.digest_untouched(viewed_storage, adopted_storage, second_docs)
+                          and len(adopted_storage["assets"]) == len(viewed_storage["assets"]),
+                    "detail": {"others_untouched": others_untouched(viewed_storage, adopted_storage),
                                "second_shot_untouched": v254.digest_untouched(
-                                   closed_storage, adopted_storage, second_docs),
+                                   viewed_storage, adopted_storage, second_docs),
                                "assets": len(adopted_storage["assets"])},
                 })
                 switched = select_candidate(default_id)
-                open_adopt()
-                reselected = adopt_submit()
+                adopt_ready(default_id)
+                reselected = adopt_click()
                 reselected_storage = storage()
                 second_selection = newest_selection(reselected_storage, first_shot)
                 reselected_badges = {item["candidate_id"]: item for item in reselected["badges"]}
@@ -720,7 +791,7 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 checks.append({
                     "id": "V2.6.1-14",
                     "title": "改选：追加新版本而不是覆盖，旧记录逐字保留，徽标与摘要随之移动",
-                    "ok": switched["entry"]["candidate_id"] == default_id
+                    "ok": switched["selected_candidate_id"] == default_id
                           and second_selection is not None and second_selection["version"] == 2
                           and second_selection["candidate_id"] == default_id
                           and kept_prefix
@@ -735,44 +806,51 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                                "progress": reselected_progress},
                 })
 
-                rework_once(first_shot, "scene", "把背景换成纯白，商品保持不变，不要改标识。")
+                rework_once(first_shot, "scene", "把背景换成纯白，商品保持不变，不要改标识。",
+                            known_candidates=len(candidate_ids))
+                wait_candidate_ui(first_shot)
+                open_panel(first_shot, 3, references=1)
                 after_rework = attempt_probe()
                 chain_after = after_rework["candidate_chains"].get(first_shot, [])
                 newest_candidate_id = chain_after[-1]["payload"]["candidate_id"]
                 stale_rows = [item for item in probe()["rows"] if item["shot_id"] == first_shot]
                 stale_progress = progress_of(probe()["progress"])
-                open_panel(first_shot, 3, references=1)
                 stale_badges = {item["candidate_id"]: item for item in probe()["badges"]}
                 stale_selection = newest_selection(storage(), first_shot)
                 checks.append({
                     "id": "V2.6.1-15",
-                    "title": "返工后失效：新的成功候选只把旧选择标成过期，不覆盖、不自动改选、不自动取消",
+                    # 现产品语义（domain/selection.js:158-166）：新成功候选不再自动使采用过期
+                    # （自动审核只提供依据，采用是人的决定）；只有它实际消费的来源/依据
+                    # 真的变化（候选消失、字节变化、Prompt 依据过期）才 stale。
+                    # 返工经单图确认外发后，旧采用保持 current，新候选只追加到链上。
+                    "title": "返工后不自动失效：新候选追加到链上，旧采用保持 current（新候选≠人的决定失效）",
                     "ok": newest_candidate_id not in candidate_ids
-                          and stale_rows and stale_rows[0]["selection_state"] == "stale"
-                          and "过期" in (stale_rows[0]["selection_text"] or "")
-                          and stale_progress is not None and stale_progress["stale"] == 1
-                          and stale_progress["current"] == 0
-                          and stale_badges.get(default_id, {}).get("state") == "stale"
-                          and stale_badges.get(default_id, {}).get("text") == "已采用（已过期）"
+                          and len(chain_after) == len(candidate_ids) + 1
+                          and stale_rows and stale_rows[0]["selection_state"] == "current"
+                          and stale_progress is not None and stale_progress["current"] == 1
+                          and stale_progress["stale"] == 0
+                          and stale_badges.get(default_id, {}).get("state") == "current"
+                          and stale_badges.get(default_id, {}).get("text") == "已采用"
                           and stale_selection is not None
                           and stale_selection["candidate_id"] == default_id
                           and stale_selection["version"] == 2,
                     "detail": {"newest_candidate": newest_candidate_id,
+                               "chain_grew": len(chain_after),
                                "row": stale_rows[0] if stale_rows else None,
                                "progress": stale_progress, "badges": stale_badges,
                                "selection_version": stale_selection["version"] if stale_selection else None},
                 })
 
                 select_candidate(other_id)
-                open_adopt()
-                back_to_old = adopt_submit()
+                adopt_ready(other_id)
+                back_to_old = adopt_click()
                 back_storage = storage()
                 third_selection = newest_selection(back_storage, first_shot)
                 back_progress = progress_of(back_to_old["progress"])
                 back_badges = {item["candidate_id"]: item for item in back_to_old["badges"]}
                 checks.append({
                     "id": "V2.6.1-16",
-                    "title": "返工后重选旧候选：过期选择重新变 current，徽标回到旧候选，历史全部保留",
+                    "title": "返工后改选：追加新版本指向所选候选，徽标随之移动，历史全部保留",
                     "ok": third_selection is not None and third_selection["version"] == 3
                           and third_selection["candidate_id"] == other_id
                           and v254.digest_kept_prefix(reselected_storage, back_storage)
@@ -784,7 +862,7 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 })
 
                 select_candidate(newest_candidate_id)
-                open_adopt()
+                adopt_ready(newest_candidate_id)
                 failed_rows_before = len(selection_rows(back_storage))
                 page.evaluate(
                     """() => {
@@ -800,20 +878,21 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                         };
                         window.__v261FailSelectionWrite = true;
                     }""")
-                page.click("#adopt-submit")
+                page.click("#adopt-open")
                 page.wait_for_selector("#adopt-error:not([hidden])", timeout=20_000)
                 failed = probe()
                 failed_storage = storage()
                 failed_progress = progress_of(failed["progress"])
                 failed_selection = newest_selection(failed_storage, first_shot)
                 page.evaluate("() => { window.__v261FailSelectionWrite = false; }")
-                recovered = adopt_submit()
+                recovered = adopt_click()
                 recovered_storage = storage()
                 recovered_selection = newest_selection(recovered_storage, first_shot)
                 checks.append({
                     "id": "V2.6.1-17",
                     "title": "写入失败不改旧选择：明确报错、不新增记录、旧选择与进度不变；恢复后重试能追加",
-                    "ok": "写入失败" in failed["error"] and failed["status_hidden"] is True
+                    "ok": "写入失败" in failed["error"] and failed["error_hidden"] is False
+                          and "人工选择没有保存" in failed["status"]
                           and len(selection_rows(failed_storage)) == failed_rows_before
                           and failed_selection is not None
                           and failed_selection["candidate_id"] == other_id
@@ -822,7 +901,7 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                           and recovered_selection is not None
                           and recovered_selection["version"] == 4
                           and recovered_selection["candidate_id"] == newest_candidate_id
-                          and "已采用候选 v" in recovered["status"],
+                          and "已采用候选" in recovered["status"],
                     "detail": {"error": failed["error"], "version_after_failure":
                                failed_selection["version"] if failed_selection else None,
                                "recovered_version": recovered_selection["version"]
@@ -830,10 +909,10 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 })
 
                 select_candidate(default_id)
-                open_adopt()
+                adopt_ready(default_id)
                 page.evaluate(
                     """() => {
-                        const button = document.getElementById("adopt-submit");
+                        const button = document.getElementById("adopt-open");
                         button.dispatchEvent(new MouseEvent("click", { bubbles: true }));
                         button.dispatchEvent(new MouseEvent("click", { bubbles: true }));
                     }""")
@@ -842,7 +921,7 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 double_selection = newest_selection(double_storage, first_shot)
                 checks.append({
                     "id": "V2.6.1-18",
-                    "title": "双击防护：连点「采用这条候选」只追加一条记录、一次版本推进",
+                    "title": "双击防护：连点「采用当前候选」只追加一条记录、一次版本推进",
                     "ok": len(selection_rows(double_storage)) == failed_rows_before + 2
                           and double_selection is not None and double_selection["version"] == 5
                           and double_selection["candidate_id"] == default_id,
@@ -899,20 +978,19 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                                "progress": progress_of(reloaded["progress"])},
                 })
 
-                open_adopt()
-                if probe()["submit_disabled"] is False:
-                    adopt_submit()
+                if probe()["open_disabled"] is False:
+                    adopt_click()
                 screenshot_rel = f"evals/product-v2/evidence/v2.6.1-selection-{stamp}.png"
                 detail_rel = f"evals/product-v2/evidence/v2.6.1-selection-{stamp}-detail.png"
                 page.screenshot(path=str(ROOT / screenshot_rel), full_page=True)
-                page.locator("#adopt-panel").screenshot(path=str(ROOT / detail_rel))
+                page.locator("#compare-panel").screenshot(path=str(ROOT / detail_rel))
                 screenshot_paths = [ROOT / screenshot_rel, ROOT / detail_rel]
                 final_storage = storage()
                 final_payloads = [{"keys": item["payload_keys"], "chars": item["payload_chars"]}
                                   for item in selection_rows(final_storage)]
                 checks.append({
                     "id": "V2.6.1-21",
-                    "title": "视觉证据：整页与采用面板特写落盘；选择记录只引用内容寻址身份，不含图片字节",
+                    "title": "视觉证据：整页与比较区采用入口特写落盘；选择记录只引用内容寻址身份，不含图片字节",
                     "ok": all(path.is_file() and path.stat().st_size > 0 for path in screenshot_paths)
                           and bool(final_payloads)
                           and all(item["keys"] == SELECTION_PAYLOAD_KEYS for item in final_payloads)
@@ -921,7 +999,7 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                                                for path in screenshot_paths},
                                "selection_payloads": final_payloads,
                                "selection_rows": len(selection_rows(final_storage)),
-                               "adopt_panel": probe()["title"]},
+                               "adopt_status": probe()["status"]},
                 })
                 ui["screenshot"] = screenshot_rel
                 ui["screenshot_detail"] = detail_rel
@@ -941,21 +1019,21 @@ def run_harness_suites(console_errors: list[str], page_errors: list[str]) -> lis
     checks: list[dict] = []
     with sync_playwright() as pw:
         browser = pw.chromium.launch(headless=True)
-        static_server, static_url = v251.start_static_server()
+        static_server, static_url = shared.start_static_server()
         try:
-            selection_suite = v251.read_suite(
+            selection_suite = shared.read_suite(
                 browser, static_url + "/harness/selection-contract.html",
                 "__V2_SELECTION_RESULTS__", console_errors, page_errors)
-            rework_suite = v251.read_suite(
+            rework_suite = shared.read_suite(
                 browser, static_url + "/harness/rework-contract.html",
                 "__V2_REWORK_RESULTS__", console_errors, page_errors)
-            compare_suite = v251.read_suite(
+            compare_suite = shared.read_suite(
                 browser, static_url + "/harness/compare-panel.html",
                 "__V2_COMPARE_RESULTS__", console_errors, page_errors)
-            review_suite = v251.read_suite(
+            review_suite = shared.read_suite(
                 browser, static_url + "/harness/review-contract.html",
                 "__V2_REVIEW_RESULTS__", console_errors, page_errors)
-            provider_suite = v251.read_suite(
+            provider_suite = shared.read_suite(
                 browser, static_url + "/harness/review-provider-contract.html",
                 "__V2_REVIEW_PROVIDER_RESULTS__", console_errors, page_errors)
         finally:
