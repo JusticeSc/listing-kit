@@ -19,8 +19,6 @@ import {
   MAX_REFERENCES,
   PRODUCT_INPUT_SCHEMA_VERSION,
   REFERENCE_ROLES,
-  assertConfirmationSheet,
-  buildConfirmationSheet,
   intakeReadiness,
   reviewIsCurrent,
   suitePlanSummary,
@@ -103,7 +101,7 @@ import {
 
 /**
  * 生成前确认单：domain/confirm.js `buildConfirmationSheet` 的确定性输出。领域层不导出该结构
- * 类型，工作区按实际消费的字段在本地收窄，并在 Narrow 时用 `assertConfirmationSheet` 校验。
+ * 类型，工作区按实际消费的字段在本地收窄。
  * @typedef {{
  *   schema_version: number, total: number, ready: number, blocked: number, can_submit: boolean,
  *   platform: {platform_id: string, version: string, label?: string},
@@ -789,8 +787,6 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
 
   /** @type {EffectiveCapabilities|null} */
   let capabilities = null;
-  /** @type {string|null} */
-  let capabilitiesError = null;
   /** @type {import("./domain/type-contracts.js").BriefReadiness["blocking"]} */
   let understandingBlocking = [];
   /** @type {unknown} */
@@ -1067,9 +1063,7 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
    * @returns {Promise<void>}
    */
   async function loadCapabilities() {
-    capabilitiesError = null;
     capabilities = await modelSettings.refresh();
-    if (!capabilities) capabilitiesError = "有效模型配置不可用；本地资料可继续编辑，请打开模型设置。";
   }
 
   /**
@@ -1108,40 +1102,6 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
     return (blocking || []).map((item) => item.reason || "").join("；");
   }
 
-  /* --------------------------------------------------------- Prompt 编译 */
-
-  /* Prompt 版本/依据的唯一所有者是 prompts Module；以下只做只读转发，不持有第二份 Map。 */
-  /**
-   * @param {string} shotId
-   * @param {number|null|undefined} version
-   * @returns {PromptEntry|null}
-   */
-  function promptVersionAt(shotId, version) {
-    return prompts.entryOf(shotId, version ?? null);
-  }
-
-  /* ---------------------------------------------------------- 生成前确认 */
-
-  /**
-   * 确认单投影：界面、状态派生与提交都读同一份，不各自重算。
-   * shotIds 给定时只投影这些图（V2.5.4 单图返工），否则是整套。
-   */
-  /**
-   * 确认单投影：界面、状态派生与提交都读同一份，不各自重算。
-   * 唯一所有者是 prompts Module；这里只转发，不重建规则。
-   * @param {string[]|null} shotIds
-   * @returns {ConfirmationSheetView|null}
-   */
-  function buildScopedSheet(shotIds, { providerProfile = generationView?.currentImageProfile() } = {}) {
-    return /** @type {ConfirmationSheetView|null} */ (prompts.sheet(shotIds, providerProfile));
-  }
-
-  /**
-   * @returns {ConfirmationSheetView|null}
-   */
-  function buildCurrentSheet() {
-    return buildScopedSheet(null);
-  }
 
   /* ------------------------------------------------------------ 生成执行 */
 
@@ -1421,49 +1381,6 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
     return refreshStageShell();
   }
 
-  /* ------------------------------------------------------- 整套一致性（V2.5.5） */
-
-  /**
-   * @returns {{report: SuiteReviewReport, version: number}|null}
-   */
-  function suiteReportEntry() {
-    return reviewDelivery.projection().suite;
-  }
-
-
-  /**
-   * @returns {Record<string, SelectionRecord>}
-   */
-  function suiteSelectionMap() {
-    const projection = selectionAdoption.projection(projectSources());
-    const map = /** @type {Record<string, SelectionRecord>} */ ({});
-    for (const [shotId, record] of Object.entries(projection.records)) {
-      if (record && record.action === "select") map[shotId] = record;
-    }
-    return map;
-  }
-
-  /**
-   * @returns {Record<string, CandidateRecord[]>}
-   */
-  function suiteCandidatesByShot() {
-    const map = /** @type {Record<string, CandidateRecord[]>} */ ({});
-    for (const shot of shotSummariesNow()) {
-      map[shot.shot_id] = generation.candidateChainOf(shot.shot_id).map((entry) => entry.record);
-    }
-    return map;
-  }
-
-  /**
-   * @returns {Record<string, AttemptRecord[]>}
-   */
-  function suiteAttemptsByShot() {
-    const map = /** @type {Record<string, AttemptRecord[]>} */ ({});
-    for (const [shotId, chain] of generation.attemptChainsNow()) {
-      map[shotId] = chain.map((item) => item.record);
-    }
-    return map;
-  }
 
   /**
    * @returns {void}
@@ -1625,7 +1542,7 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
     renderAll();
     await loadCapabilities();
     if (!action.alive()) return;
-    // capabilities 是渲染输入（renderAnalyze 读 capabilitiesError、renderAttempts 读
+    // capabilities 是渲染输入（input-view 经 deps.capabilities() 读能力、renderAttempts 读
     // 图像 provider），必须在它到位后重新投影，否则初次打开会留下"尚未读到能力信息"
     // 的陈旧文案，直到下一次用户动作触发渲染才消失。
     // 确认有效性依赖 capabilities 投影的有效档：能力到位后再做唯一一次状态派生；
@@ -1639,7 +1556,6 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
 
   modelSettings.subscribe(() => {
     capabilities = modelSettings.capabilities;
-    capabilitiesError = capabilities ? null : "有效模型配置正在读取或不可用，请打开模型设置。";
     if (projectId) renderAll();
   });
   return {
