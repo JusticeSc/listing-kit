@@ -41,7 +41,7 @@ sys.path.insert(0, str(ROOT / "tools"))
 import v2_stage_nav as stage_nav  # noqa: E402  （V2.UI.2 六阶段工作台导航）
 import v2_verify_shared as shared  # noqa: E402  （正式 server/夹具/共同业务操作）
 from v2_verify_shared import (  # noqa: E402
-    PNG_bytes, load_server_module, run_entry, read_suite, compile_all,
+    png_bytes, load_server_module, run_entry, read_suite, compile_all,
 )
 
 

@@ -39,7 +39,7 @@ sys.path.insert(0, str(ROOT / "tools"))
 import v2_stage_nav as stage_nav  # noqa: E402  （V2.UI.2 六阶段工作台导航）
 import v2_verify_shared as shared  # noqa: E402  （正式 server/夹具/共同业务操作）
 from v2_verify_shared import (  # noqa: E402
-    PNG_bytes, load_server_module, run_entry, read_suite, compile_all,
+    png_bytes, load_server_module, run_entry, read_suite, compile_all,
 )
 
 
@@ -343,6 +343,9 @@ def main() -> int:
             elif MARK_UNKNOWN in prompt:
                 scenario = "unknown"
             task_id = FakeImageProvider.task_id_for(request.action_id)
+            # 场景表必须按 task_id 落盘：status() 只读 mode["tasks"]，不写的话
+            # 「按 Prompt 标记决定失败」永远退化成成功，-05 的部分失败路径不可达。
+            mode["tasks"][task_id] = scenario
             if scenario == "unknown":
                 raise ImageFailure(
                     "provider_unknown", "PROVIDER_OUTCOME_UNKNOWN",
@@ -433,16 +436,27 @@ def main() -> int:
                         "data-attempt-state", state, timeout=timeout)
 
                 def wait_states(expectations: dict, timeout: int = 90_000) -> None:
-                    page.wait_for_function(
-                        """(wanted) => {
-                            const rows = [...document.querySelectorAll('#attempt-list .attempt-row')];
-                            return Object.entries(wanted).every(([id, state]) => {
-                                const node = rows.find((item) =>
-                                    item.getAttribute('data-shot-id') === id);
-                                return node && node.getAttribute('data-attempt-state') === state;
-                            });
-                        }""",
-                        arg=expectations, timeout=timeout)
+                    try:
+                        page.wait_for_function(
+                            """(wanted) => {
+                                const rows = [...document.querySelectorAll('#attempt-list .attempt-row')];
+                                return Object.entries(wanted).every(([id, state]) => {
+                                    const node = rows.find((item) =>
+                                        item.getAttribute('data-shot-id') === id);
+                                    return node && node.getAttribute('data-attempt-state') === state;
+                                });
+                            }""",
+                            arg=expectations, timeout=timeout)
+                    except Exception as error:  # noqa: BLE001 - 超时也要报出真实观测
+                        observed = [{"shot": node.get_attribute("data-shot-id"),
+                                     "state": node.get_attribute("data-attempt-state"),
+                                     "text": (node.inner_text() or "")[:120]}
+                                    for node in page.locator(
+                                        "#attempt-list .attempt-row").all()]
+                        raise AssertionError(
+                            f"等待状态落定超时：wanted={expectations} observed={observed} "
+                            f"progress={page.locator('#batch-progress').inner_text()!r}"
+                        ) from error
 
                 def click_row_button(shot_id: str, text: str) -> None:
                     # 行内"重试/新建 action"只切 scope/mode 并聚焦摘要
@@ -730,9 +744,15 @@ def main() -> int:
                       and chain_of(stopped, stop_second) == []
                       and chain_of(stopped, stop_third) == []
                       and chain_of(stopped, stop_first)[-1]["payload"]["state"] == "succeeded"
-                      and "批次已停止" in stopped["ui"]["status"],
+                      # 停止提示由 #batch-progress 渲染（generation-view.ts:1183-1187：
+                      # 「已停止新增提交；已提交的记录全部保留」）。合同 ui-contract §按钮与确认规则
+                      # 「停止新增提交」要求：不假称取消上游、已提交任务继续观察；旧断言读
+                      # #attempt-status 的「批次已停止」是过期元素与文案。
+                      and "已停止新增提交" in stopped["ui"]["batch"]["progress"]
+                      and "已提交的记录全部保留" in stopped["ui"]["batch"]["progress"],
                       {"arrived": arrived, "window": stop_window,
                        "status": stopped["ui"]["status"],
+                       "progress": stopped["ui"]["batch"]["progress"],
                        "fresh_confirmations": len(fresh_confirmations)})
 
                 # ---------------- 刷新恢复：身份保留、无第二次提交；继续生成剩余 ----------------

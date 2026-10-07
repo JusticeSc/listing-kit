@@ -1371,7 +1371,11 @@ export function createGenerationModule(deps: GenerationDependencies): Generation
     } finally {
       if (action.alive()) {
         const finished = running;
-        batchState = null;
+        // 停止/暂停是合同要求可见的状态（ui-contract §3「已停止新增」）：
+        // 保留一个 active=false 的快照，renderBatch 才能持续显示停止/暂停与「已提交的记录全部保留」；
+        // 置 null 会让随后的 renderAttempts 通用文案立刻覆盖它（实测 #batch-progress 从未出现停止提示）。
+        // 轮询判定改用 live 快照（见 pollActiveAttempts），所以这里不改变核对语义。
+        batchState = { ...finished, active: false };
         deps.renderAttempts();
         const result = deriveBatch();
         deps.status((finished?.stopped ? "已停止新增提交；" : finished?.halted ? "已暂停（" + finished.haltReason + "）；" : "本批结束；")
@@ -1389,32 +1393,35 @@ export function createGenerationModule(deps: GenerationDependencies): Generation
     const once = options.once === true;
     // 动作归属：批次传入自己的冻结动作；独立核对在这里冻结。
     const action = options.action || deps.beginAction();
+    // 只有运行中的批次快照才参与停止/暂停判定：批次结束后快照仍保留（供 UI 显示停止/暂停），
+    // 但不得因此让后续独立核对（reconcileOnce）变成空操作。
+    const live = batchState && batchState.active ? batchState : null;
     for (let round = 0; round < maxRounds; round += 1) {
-      if (batchState && batchState.halted) return;
+      if (live && live.halted) return;
       if (!action.alive()) return;
       const state = deriveBatch();
       if (state.reconcile_queue.length === 0 && state.fetch_queue.length === 0) return;
-      if (batchState) { batchState.phase = "poll"; deps.renderBatch(); }
+      if (live) { live.phase = "poll"; deps.renderBatch(); }
       for (const shotId of state.reconcile_queue) {
-        if (batchState && batchState.halted) return;
+        if (live && live.halted) return;
         if (!action.alive()) return;
         await performReconcileAttempt(shotId, { action });
       }
       if (!action.alive()) return;
       // 候选保存：配额受阻时记录原因并停本轮保存；核对路径不受影响。
-      if (!(batchState && batchState.fetchBlocked)) {
+      if (!(live && live.fetchBlocked)) {
         const fetchState = deriveBatch();
         for (const shotId of fetchState.fetch_queue) {
           if (!action.alive()) return;
-          if (batchState) {
-            batchState.currentShotId = shotId;
-            batchState.phase = "fetch";
+          if (live) {
+            live.currentShotId = shotId;
+            live.phase = "fetch";
             deps.renderBatch();
           }
           const stored = await ensureCandidateStored(shotId, { action });
           if (!action.alive()) return;
           if (stored && stored.failed && stored.reason === "quota") {
-            if (batchState) batchState.fetchBlocked = stored.message || "";
+            if (live) live.fetchBlocked = stored.message || "";
             break;
           }
         }
@@ -1423,12 +1430,12 @@ export function createGenerationModule(deps: GenerationDependencies): Generation
       deps.renderAttempts();
       if (once) return;
       // 停止只停新增提交：已提交的身份仍然各查一次，给出当前结论后不再轮询。
-      if (batchState && batchState.stopped) return;
+      if (live && live.stopped) return;
       const after = deriveBatch();
       if (after.reconcile_queue.length === 0 && after.fetch_queue.length === 0) return;
-      if (round === maxRounds - 1 && batchState) {
-        batchState.halted = true;
-        batchState.haltReason = "上游长时间没有结论，已停止自动核对；记录仍在，可继续核对";
+      if (round === maxRounds - 1 && live) {
+        live.halted = true;
+        live.haltReason = "上游长时间没有结论，已停止自动核对；记录仍在，可继续核对";
         return;
       }
       await new Promise<void>((resolve) => {
