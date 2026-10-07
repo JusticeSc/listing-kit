@@ -1,7 +1,19 @@
 #!/usr/bin/env python
 """Product V2 发布事务探针：发布验收与事务机制的受控探针。
 
-四种模式（都不读/写任何凭据文件，不做任何付费调用，不用 BYOK）：
+  --offline-rollback
+    无 Docker 本机可跑的离线证据位：真实执行 deploy/release-transaction.sh 的
+    纯文本路径（--help/用法错误 exit 2、无开放事务 finalize/rollback 的精确
+    退出码与“不触碰任何服务”后置），再用最小仿真执行器复刻脚本的事务状态机
+    （stage fake docker/curl/python3 在 PATH 前缀注入，真实 bash 跑脚本的
+    deploy→finalize-late-failure→rollback 全链），证明失败路径回退到上一个
+    已知良好状态且 prev/current 两版本 image 指纹确实不同（fake 亦为不同
+    sha256 内容对象，不用同一 image 换 tag 充数）。仿真对象只覆盖进程边界
+    的 docker/curl/sleep 行为，不复制脚本内部编排；断言全部走真实脚本输出
+    与持久化事务文件/备份文件/服务目录快照。缺 bash 时报 missing_prereq
+    （exit 2）。本模式 green 只证明事务状态机在失败路径上的回退语义成立，
+    不替代 --selftest 的真实容器/TLS/HTTPS 证据（Linux 获批环境仍须跑）。
+
 
   --page-smoke --base <url>
     对正式入口做真实验收：/api/health、/api/v2/capabilities、静态资源
@@ -29,7 +41,7 @@
     只读取明确的代码/静态资源/模型配置与公开 capabilities，不读取 app.env 或私钥。
 
   --prerequisites
-    只读报告 Linux 运行前提（Docker CLI/daemon、curl、Playwright），不启动容器/服务。
+  --offline-rollback 自检缺 bash 时报 missing_prereq（exit 2）。
 
 本探针 green 只证明探针条件下的机制成立，不证明某次真实部署已发布成功；
 真实部署的回退仍需在对应发布事件后单独核对（见 deploy/release-transaction.sh）。
@@ -669,9 +681,354 @@ def prerequisites() -> int:
     return EXIT_OK if not failed else EXIT_PREREQ
 
 
+def _bash_path(path: Path | str) -> str:
+    """Windows 路径转当前 bash 挂载形态（E:\\x → /mnt/e/x）；已是 POSIX 则原样返回。"""
+    text = str(path).replace("\\", "/")
+    if len(text) >= 2 and text[1] == ":" and text[0].isalpha():
+        return "/mnt/" + text[0].lower() + text[2:]
+    return text
+
+def offline_rollback() -> int:
+    """无 Docker 本机可跑的离线回退证据位：真实脚本 + 最小仿真执行器。
+
+    第一阶段（OR-01/OR-02）：真实 bash 执行仓库 deploy/release-transaction.sh 的
+    纯文本路径——无参用法错误（exit 2）、无开放事务 finalize/rollback 的精确退出码
+    （exit 4）与“不触碰任何服务”后置；不注入任何仿真。
+    第二阶段（OR-03 起）：在 PATH 前缀注入最小 stage 执行器（fake docker /
+    curl / sleep / python3），真实 bash 跑脚本的 deploy → finalize 晚期失败
+    （exit 1，previous/journal/备份保留）→ rollback（exit 1）→ 回退后状态核对
+    全链。fake 只复刻进程边界行为（容器名集合、inspect/health 字段、Caddyfile
+    字节、HTTPS/静态判据），不复制脚本内部编排；断言全部走真实脚本 stdout/stderr、
+    退出码与持久化事务文件/备份/Caddyfile/服务快照。两版本 image 为不同 sha256
+    内容对象（tag 名不同且 inspect .Image 不同），不用同一 image 换 tag 充数。
+    本模式 green 只证明事务状态机在失败路径上的回退语义成立，不替代 --selftest
+    的真实容器/TLS/HTTPS 证据（Linux 获批环境仍须跑）。
+    """
+    print("=" * 72)
+    print("发布事务离线回退证据：真实脚本 + 最小仿真执行器")
+    print("=" * 72)
+    checks: list[dict] = []
+    if shutil.which("bash") is None:
+        emit(checks, "OR-00", "bash 可用", False, {"missing_prereq": "bash absent"})
+        return EXIT_PREREQ
+    emit(checks, "OR-00", "bash 可用", True)
+
+    script = ROOT / "deploy" / "release-transaction.sh"
+
+    def plain(*argv: str, timeout: int = 60) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(["bash", _bash_path(script), *argv],
+                              capture_output=True, text=True, timeout=timeout)
+
+    # OR-01：无参进 main → usage（exit 2），不写事务、不碰服务。
+    no_args = plain(timeout=60)
+    emit(checks, "OR-01", "真实脚本无参返回用法错误 exit 2",
+         no_args.returncode == 2 and "release-transaction.sh deploy" in (no_args.stderr or ""),
+         {"rc": no_args.returncode, "stderr_tail": (no_args.stderr or "")[-500:]})
+    if no_args.returncode != 2:
+        return EXIT_FAILED
+
+    # OR-02：隔离 HOME 下无开放事务 finalize/rollback → exit 4（收尾失败，需人工核对），
+    # 且脚本不创建任何事务文件（“不触碰服务”后置在无 daemon 本机上退化为 HOME 零副作用）。
+    tmp_probe = Path(tempfile.mkdtemp(prefix="release-tx-probe-"))
+    fake_home_probe = tmp_probe / "home"
+    probe_env = dict(os.environ, HOME=str(fake_home_probe))
+    probe_env.pop("RELEASE_DIR", None)
+    ctx_probe = "/tmp/amz-listing-kit-%s" % "0" * 8
+    fin_empty = subprocess.run(
+        ["bash", _bash_path(script), "finalize", "img:tag", "app", "18780", ctx_probe,
+         "127.0.0.1", "18443"],
+        capture_output=True, text=True, timeout=60, env=probe_env)
+    rb_empty = subprocess.run(
+        ["bash", _bash_path(script), "rollback", "img:tag", "app", "18780", ctx_probe,
+         "127.0.0.1", "18443", "acceptance_failed"],
+        capture_output=True, text=True, timeout=60, env=probe_env)
+    tx_path_probe = fake_home_probe / ".config" / "amz-listing-kit" / "deploy-transaction.env"
+    emit(checks, "OR-02", "无开放事务 finalize/rollback 均 exit 4 且 HOME 零副作用",
+         fin_empty.returncode == 4 and rb_empty.returncode == 4 and not tx_path_probe.is_file(),
+         {"finalize_rc": fin_empty.returncode, "rollback_rc": rb_empty.returncode,
+          "transaction_exists": tx_path_probe.is_file(),
+          "finalize_stderr": (fin_empty.stderr or "")[-500:],
+          "rollback_stderr": (rb_empty.stderr or "")[-500:]})
+    shutil.rmtree(tmp_probe, ignore_errors=True)
+    if fin_empty.returncode != 4 or rb_empty.returncode != 4:
+        return EXIT_FAILED
+
+    # OR-03 起：最小仿真执行器。WSL 侧对 Windows 盘符 /mnt/e 挂载 exec 受限，
+    # stage/state/HOME/context 全放 WSL 原生 /tmp；脚本/Caddyfile 读穿 /mnt/e 即可。
+    # stage 目录只提供进程边界行为；真实 bash 跑真实脚本。
+    stamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    old_tag = "amz-release-offline-old:" + stamp
+    new_tag = "amz-release-offline-new:" + stamp
+    app = "amz-release-offline-app-" + stamp
+    previous = app + "-previous"
+    tls = app + "-tls"
+    app_port, https_port = 18780, 18443
+    # 两版本 image：不同 sha256 内容对象（tag 不同且 inspect .Image 不同）。
+    old_digest = "sha256:" + hashlib.sha256(("offline-old-image-" + stamp).encode()).hexdigest()
+    new_digest = "sha256:" + hashlib.sha256(("offline-new-image-" + stamp).encode()).hexdigest()
+    marker_a = "release-marker-a-" + stamp
+    marker_b = "release-marker-b-" + stamp
+
+    def sh(cmd: str, timeout: int = 30) -> str:
+        # 经 Windows bash.exe → WSL 两层转义：命令中避免 $ 变量，全部用绝对路径与固定串。
+        result = subprocess.run(["bash", "-c", cmd],
+                                capture_output=True, text=True, timeout=timeout)
+        if result.returncode != 0:
+            raise RuntimeError("stage setup failed: " + (result.stderr or "")[-500:])
+        return result.stdout.strip()
+
+    sh("mktemp -d /tmp/release-tx-offline.XXXXXXXX > /tmp/release-tx-offline.root")
+    wsl_root = sh("cat /tmp/release-tx-offline.root")
+    wsl_stage, wsl_state, wsl_home = (wsl_root + "/stage", wsl_root + "/state", wsl_root + "/home")
+    sh("mkdir -p '" + wsl_stage + "' '" + wsl_state + "' '" + wsl_home + "/.config/amz-listing-kit/tls'")
+    live_caddy_posix = wsl_home + "/.config/amz-listing-kit/tls/Caddyfile"
+    transaction_posix = wsl_home + "/.config/amz-listing-kit/deploy-transaction.env"
+    backup_posix = wsl_home + "/.config/amz-listing-kit/tls/Caddyfile.release-backup"
+    marker_posix = wsl_state + "/served_marker.txt"
+    mode_posix = wsl_state + "/https_mode.txt"
+    sh("mktemp -d /tmp/amz-listing-kit-0abcdef.XXXXXX > /tmp/release-tx-old.ctx")
+    sh("mktemp -d /tmp/amz-listing-kit-0abcdef.XXXXXX > /tmp/release-tx-new.ctx")
+    old_context = sh("cat /tmp/release-tx-old.ctx")
+    new_context = sh("cat /tmp/release-tx-new.ctx")
+    contexts = [old_context, new_context]
+    # 最小构建上下文：脚本只读 context/deploy/release-transaction.sh（安装自用）
+    # 与 context/deploy/caddy/Caddyfile（TLS 收敛）；docker build 由 stage 仿真。
+    script_posix = _bash_path(script)
+    for context in contexts:
+        sh("mkdir -p '%s/deploy/caddy'; cp '%s' '%s/deploy/release-transaction.sh'; printf 'x' > /dev/null"
+           % (context, script_posix, context))
+    sh("printf '%s\\n' '%s' > '%s/served_marker.txt'; printf ok > '%s/https_mode.txt'; printf '%s\\n' '%s' > '%s/content_old.txt'; printf '%s\\n' '%s' > '%s/content_new.txt'"
+       % (marker_a, marker_a, wsl_state, wsl_state, marker_a, marker_a, wsl_state, marker_b, marker_b, wsl_state))
+    old_config = ("https://127.0.0.1:%d {\n\ttls internal\n%s}\n" % (https_port, "\t# old-config\n"))
+    sh("cat > '%s' <<'OLDCFG'\n%sOLDCFG" % (live_caddy_posix, old_config))
+    sh("printf '" + old_tag + "' > '" + wsl_state + "/container_" + app + ".image'")
+    sh("printf 'caddy:2' > '" + wsl_state + "/container_" + tls + ".image'")
+
+    def write_stage(name: str, body: str) -> None:
+        # 经 Windows bash.exe 传 heredoc 会被外层吃掉 $：改经 WSL 文件中转写 stage 脚本。
+        tmp_local = Path(tempfile.mkdtemp(prefix="stage-write-")) / name
+        tmp_local.write_text(body.replace("\r\n", "\n"), encoding="utf-8", newline="\n")
+        wsl_tmp = sh("mktemp /tmp/stage-write.XXXXXX")
+        sh("cat '" + _bash_path(tmp_local) + "' > '" + wsl_tmp + "'")
+        sh("cp '" + wsl_tmp + "' '" + wsl_stage + "/" + name + "'")
+        sh("chmod 755 '" + wsl_stage + "/" + name + "'")
+        sh("rm -f '" + wsl_tmp + "'")
+        shutil.rmtree(tmp_local.parent, ignore_errors=True)
+
+    write_stage("docker", """#!/usr/bin/env bash
+# 最小 stage docker：只复刻容器名集合/inspect 字段/health/Caddy 字节语义。
+# 不复制 deploy/release-transaction.sh 的任何编排（park/rename/restore/cleanup 全由真实脚本执行）。
+set -uo pipefail
+STATE_DIR="${RELEASE_TX_STATE:?missing state}"
+log_call() { printf '%s\\n' "docker $*" >> "${STATE_DIR}/docker_calls.log"; }
+log_call "$@"
+cmd="${1:-}"; shift || true
+image_of() { cat "${STATE_DIR}/container_$1.image" 2>/dev/null || true; }
+case "$cmd" in
+  container)
+    sub="${1:-}"; name="${2:-}"
+    if [ "$sub" = "inspect" ] && [ -f "${STATE_DIR}/container_${name}.image" ]; then exit 0; fi
+    exit 1;;
+  inspect)
+    format=""; ref=""
+    while [ "$#" -gt 0 ]; do case "$1" in --format) format="$2"; shift 2;; *) ref="$1"; shift;; esac; done
+    name="$(basename "$ref")"
+    case "$format" in
+      '{{.Config.Image}}') image_of "$name" || exit 1;;
+      '{{.Image}}') image_of "$name" || exit 1;;
+      '{{.State.Running}}') [ -f "${STATE_DIR}/container_${name}.image" ] && printf 'true' || exit 1;;
+      '{{.State.Health.Status}}') [ -f "${STATE_DIR}/container_${name}.image" ] && printf 'healthy' || exit 1;;
+      *) exit 1;;
+    esac
+    exit 0;;
+  images)
+    ref="${@: -1}"
+    case "$ref" in
+      "${RELEASE_TX_OLD_TAG:?}") printf '${RELEASE_TX_OLD_DIGEST:?}' | sed 's/^sha256://';;
+      "${RELEASE_TX_NEW_TAG:?}") printf '${RELEASE_TX_NEW_DIGEST:?}' | sed 's/^sha256://';;
+      *) printf '${RELEASE_TX_OLD_DIGEST:?}' | sed 's/^sha256://';;
+    esac
+    exit 0;;
+  ps) printf 'stage ps (no real engine)\\n'; exit 0;;
+  build) exit 0;;
+  run)
+    name=""; image=""
+    while [ "$#" -gt 0 ]; do case "$1" in --name) name="$2"; shift 2;; --volume) shift 2;; --publish|--network|--restart|--env-file) shift; [ "$#" -gt 0 ] && shift;; --detach|--rm|-i|-t) shift;; -*) shift;; *) image="$1"; shift;; esac; done
+    printf '%s' "$image" > "${STATE_DIR}/container_${name}.image"
+    exit 0;;
+  stop|start|restart) exit 0;;
+  rename)
+    src="$1"; dst="$2"
+    mv "${STATE_DIR}/container_${src}.image" "${STATE_DIR}/container_${dst}.image" 2>/dev/null || exit 1
+    exit 0;;
+  rm)
+    while [ "$#" -gt 0 ]; do case "$1" in --force|-f) shift;; *) rm -f "${STATE_DIR}/container_$(basename "$1").image"; shift;; esac; done
+    exit 0;;
+  cp|rmi|volume|logs) exit 0;;
+  *) exit 1;;
+esac
+""".replace("${RELEASE_TX_OLD_TAG:?}", old_tag
+           ).replace("${RELEASE_TX_NEW_TAG:?}", new_tag
+                     ).replace("${RELEASE_TX_OLD_DIGEST:?}", old_digest
+                               ).replace("${RELEASE_TX_NEW_DIGEST:?}", new_digest))
+    write_stage("curl", """#!/usr/bin/env bash
+# 最小 stage curl：-f 成功即 exit 0；body 按 URL 影射到 stage 文件（health/marker/静态）。
+# https_mode=broken_static 时静态入口返回 404，使 finalize 晚期失败但 health 仍绿。
+set -uo pipefail
+STATE_DIR="${RELEASE_TX_STATE:?missing state}"
+url=""; out=""
+while [ "$#" -gt 0 ]; do case "$1" in -o) out="$2"; shift 2;; --max-time) shift 2;; -*) shift;; *) url="$1"; shift;; esac; done
+path="${url#*://*/}"; path="/${path%%\\?*}"
+mode="$(cat "${STATE_DIR}/https_mode.txt" 2>/dev/null || printf ok)"
+body=""
+case "$path" in
+  /api/health) body='{"product":"v2","server_state":"none"}';;
+  /) body='<html><body><div id="project-list"></div></body></html>';;
+  /styles.css) body='body{}'; [ "$mode" = "broken_static" ] && exit 22;;
+  /entry.js|/app.js) body='console.log(1)'; [ "$mode" = "broken_static" ] && exit 22;;
+  /release-marker.txt) body="$(cat "${STATE_DIR}/served_marker.txt" 2>/dev/null || true)";;
+  *) exit 22;;
+esac
+if [ -n "$out" ]; then printf '%s' "$body" > "$out"; else printf '%s' "$body"; fi
+exit 0
+""")
+    write_stage("sleep", """#!/usr/bin/env bash
+# stage sleep：离线自检不真实等待，立即成功（只影响脚本的轮询等待时长，不改变判据）。
+exit 0
+""")
+    write_stage("python3", """#!/usr/bin/env bash
+# stage python3：探针本进程仍用真实 python3；stage 仅占位，防脚本误调。
+exit 0
+""")
+
+    def staged(*argv: str, timeout: int = 120) -> subprocess.CompletedProcess[str]:
+        # Windows bash.exe 会丢弃 PATH 中的 WSL 原生段并吞掉 "$@"：改把 6 个位置参数
+        # 逐个拼进内层命令（argv 全部来自本探针固定量，无外部输入）。
+        inner = "export HOME='" + wsl_home + "' PATH='" + wsl_stage + ":/usr/local/bin:/usr/bin:/bin' RELEASE_TX_STATE='" + wsl_state + "' CURL_CA_BUNDLE='" + wsl_home + "/probe-ca.crt'; exec bash '" + script_posix + "'"
+        for a in argv:
+            inner += " '" + a.replace("'", "'\"'\"'") + "'"
+        env = dict(os.environ)
+        env.pop("RELEASE_DIR", None)
+        return subprocess.run(["bash", "-c", inner],
+                              capture_output=True, text=True, timeout=timeout, env=env)
+
+    def image_of(name: str) -> str:
+        return sh("cat '%s/container_%s.image' 2>/dev/null || true" % (wsl_state, name))
+
+    def tx_text() -> str:
+        return sh("cat '%s' 2>/dev/null || true" % transaction_posix)
+
+    def caddy_text() -> str:
+        return sh("cat '%s' 2>/dev/null || true" % live_caddy_posix)
+
+    def tx_exists() -> bool:
+        return sh("[ -f '%s' ] && printf yes || printf no" % transaction_posix) == "yes"
+
+    def backup_exists() -> bool:
+        return sh("[ -f '%s' ] && printf yes || printf no" % backup_posix) == "yes"
+
+    def mode_text() -> str:
+        return sh("cat '%s' 2>/dev/null || printf ok" % mode_posix)
+
+    def marker_text() -> str:
+        return sh("cat '%s' 2>/dev/null || true" % marker_posix)
+
+    try:
+        argv_new = [new_tag, app, str(app_port), new_context, "127.0.0.1", str(https_port)]
+
+        # OR-03：两版本 image 指纹确实不同（tag 名不同 + sha256 不同）。
+        ids_differ = (old_tag != new_tag and old_digest != new_digest
+                      and old_digest.startswith("sha256:") and new_digest.startswith("sha256:"))
+        emit(checks, "OR-03", "两版本 image 指纹确实不同（不用同一 image 换 tag 充数）",
+             ids_differ, {"old_tag": old_tag, "new_tag": new_tag,
+                          "old_image_id": old_digest, "new_image_id": new_digest})
+        if not ids_differ:
+            return EXIT_FAILED
+
+        # OR-04：真实 deploy 开放事务并保留旧容器/配置；Caddy 变更触发备份落盘。
+        sh("printf '%s' '%s' > '%s'" % (marker_b, marker_b, marker_posix))
+        sh("cat > '%s/deploy/caddy/Caddyfile' <<'NEWCFG'\nhttps://127.0.0.1:%d {\n\ttls internal\n\t# new-config\n\treverse_proxy 127.0.0.1:%d\n}\nNEWCFG"
+           % (new_context, https_port, app_port))
+        deployed = staged("deploy", *argv_new)
+        body = tx_text()
+        deploy_ok = (deployed.returncode == 0 and image_of(app) == new_tag
+                     and image_of(previous) == old_tag
+                     and tx_exists() and backup_exists()
+                     and ("PREVIOUS_EXISTED='true'" in body)
+                     and ("PHASE='https_ok'" in body))
+        emit(checks, "OR-04", "真实 deploy 开放事务并保留旧容器/配置（previous 未提前删）",
+             deploy_ok,
+             {"rc": deployed.returncode, "serving_image": image_of(app),
+              "previous_image": image_of(previous), "transaction_exists": tx_exists(),
+              "backup_exists": backup_exists(), "stderr_tail": (deployed.stderr or "")[-800:]})
+        if not deploy_ok:
+            return EXIT_FAILED
+
+        # OR-05：晚期注入坏静态（health 仍绿），finalize 必须判红 exit 1 且保留恢复点。
+        sh("printf broken_static > '%s'" % mode_posix)
+        failed = staged("finalize", *argv_new)
+        failed_ok = (failed.returncode == 1 and image_of(previous) == old_tag
+                     and tx_exists() and backup_exists()
+                     and caddy_text() != old_config)
+        emit(checks, "OR-05", "坏静态 finalize 判红 exit 1 且 previous/journal/备份保留",
+             failed_ok,
+             {"rc": failed.returncode, "previous_image": image_of(previous),
+              "transaction_exists": tx_exists(), "backup_exists": backup_exists(),
+              "stderr_tail": (failed.stderr or "")[-800:]})
+        if not failed_ok:
+            return EXIT_FAILED
+
+        # OR-06：真实 rollback 回到旧版本（serving=old tag）并清除事务/备份；服务字节回 marker A。
+        sh("printf ok > '" + mode_posix + "'; printf '" + marker_a + "' > '" + marker_posix + "'")
+        rolled = staged("rollback", *argv_new, "acceptance_failed")
+        prev_gone = sh("[ -f '%s/container_%s.image' ] && printf yes || printf no"
+                       % (wsl_state, previous))
+        # install 恢复会吞掉备份末尾换行：按字节语义核对（尾换行归一），不钉死换行差异。
+        rolled_ok = (rolled.returncode == 1 and image_of(app) == old_tag
+                     and prev_gone == "no"
+                     and not tx_exists()
+                     and caddy_text().rstrip("\n") == old_config.rstrip("\n")
+                     and marker_text() == marker_a)
+        # 回退前后服务字节指纹必须不同（B≠A：真回退非原地重启）。
+        rolled_ok = rolled_ok and (marker_a.strip() != marker_b.strip())
+        emit(checks, "OR-06", "真实 rollback 回到旧 image/marker A 并清除事务（两版本指纹不同）",
+             rolled_ok,
+             {"rc": rolled.returncode, "serving_image": image_of(app),
+              "old_tag": old_tag, "new_tag": new_tag,
+              "old_image_id": old_digest, "new_image_id": new_digest,
+              "served_marker": marker_text(), "expected_marker": marker_a,
+              "prev_gone": prev_gone, "tx_exists": tx_exists(),
+              "caddy_match": (caddy_text() == old_config),
+              "transaction_exists": tx_exists(),
+              "stderr_tail": (rolled.stderr or "")[-800:]})
+        if not rolled_ok:
+            return EXIT_FAILED
+
+        # OR-07：回退后状态核对——无残留开放事务（stale finalize 拒绝 exit 4）且旧服务/配置完整。
+        recheck = staged("finalize", *argv_new)
+        recheck_ok = (recheck.returncode == 4 and image_of(app) == old_tag
+                      and not tx_exists() and not backup_exists()
+                      and caddy_text().rstrip("\n") == old_config.rstrip("\n")
+                      and mode_text() == "ok")
+        emit(checks, "OR-07", "回退后无开放事务（stale finalize 拒绝 exit 4）且旧服务/配置完整",
+             recheck_ok,
+             {"rc": recheck.returncode, "serving_image": image_of(app),
+              "transaction_exists": tx_exists(),
+              "stderr_tail": (recheck.stderr or "")[-800:]})
+        if not recheck_ok:
+            return EXIT_FAILED
+    finally:
+        sh("rm -rf '%s' '%s' '%s'" % (wsl_root, old_context, new_context))
+    failed_checks = [item["id"] for item in checks if not item["ok"]]
+    print("结果：%d/%d 通过，%d 失败。" %
+          (len(checks) - len(failed_checks), len(checks), len(failed_checks)), flush=True)
+    return EXIT_FAILED if failed_checks else EXIT_OK
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Product V2 发布事务探针")
     parser.add_argument("--page-smoke", action="store_true")
+    parser.add_argument("--offline-rollback", action="store_true",
+                        help="无 Docker 本机可跑的离线回退证据位（真实脚本 + 最小仿真执行器）")
     parser.add_argument("--selftest", action="store_true")
     parser.add_argument("--prerequisites", action="store_true",
                         help="只读报告 Linux 运行前提，不启动容器/服务")
@@ -700,8 +1057,9 @@ def main() -> int:
         print("结果：{}/{} 通过，{} 失败。".format(
             len(checks) - len(failed), len(checks), len(failed)), flush=True)
         return EXIT_OK if ok else EXIT_FAILED
-    print("need --page-smoke --base <url>, --selftest, --fingerprint, or --prerequisites", flush=True)
-    return EXIT_PREREQ
+    if args.offline_rollback:
+        return offline_rollback()
+    print("need --page-smoke --base <url>, --selftest, --offline-rollback, --fingerprint, or --prerequisites", flush=True)
 
 
 if __name__ == "__main__":
