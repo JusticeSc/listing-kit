@@ -12,7 +12,7 @@
  * TypeScript 迁移（计划 §9 V2.R7.5）：本文件是唯一手工维护实现；同名 `compare-view.js`
  * 由 `npm run build:frontend` 生成，浏览器只消费生成的 `.js`。
  */
-import { COMPARE_CONTRACT_VERSION, COMPARE_SEVERITY_TEXT, COMPARE_STATE_TEXT, REWORK_CONTRACT_VERSION, REWORK_PROBLEMS, attemptStateLabel, buildReworkDirective, compareCounts, compareRowHeadline, compareRows, defaultCompareTargetId, newActionId, nextPendingShotId, reviewChecklist, reviewIsCurrent, reviewSummaryText, selectionSetText, sortFindings, suggestReworkProblems, suggestedReworkDirection, suitePlanSummary, } from "../domain/index.js";
+import { ATTEMPT_STATES, COMPARE_CONTRACT_VERSION, COMPARE_SEVERITY_TEXT, COMPARE_STATE_TEXT, REWORK_CONTRACT_VERSION, REWORK_PROBLEMS, attemptStateLabel, buildReworkDirective, compareCounts, compareRowHeadline, compareRows, defaultCompareTargetId, newActionId, nextPendingShotId, reviewChecklist, reviewIsCurrent, reviewSummaryText, selectionSetText, sortFindings, suggestReworkProblems, suggestedReworkDirection, suitePlanSummary, } from "../domain/index.js";
 import { COMPARE_STATE_BADGE, ROLE_TEXT, SEVERITY_BADGE, appendTech, clearError, createElement, errorMessageOf, showError, techDetails, } from "./dom.js";
 /**
  * 审核视图工厂。
@@ -913,6 +913,12 @@ export function createCompareView({ elements, deps }) {
             focusCompareCandidate(shotId, sourceCandidateId);
             elements.compareStatus.textContent = "返工已提交（Prompt v" + promptVersion + " · "
                 + attemptStateLabel(state) + "）；旧候选保留，只有这张图新增了版本。";
+            // 与生成区单张提交同一语义：unknown 成功返回也要如实提示定位（只增显示调用，不改控制流与返回）。
+            if (state === ATTEMPT_STATES.unknown) {
+                const noTaskId = !latestAttempt || !latestAttempt.record.task_id;
+                deps.showAttemptError("这次返工提交的结果没有确认：不要重复提交。"
+                    + (noTaskId ? "没有任务编号，只能显式新建 action。" : "可以按任务编号核对。"));
+            }
         }
         catch (error) {
             if (action.alive()) {

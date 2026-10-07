@@ -12,6 +12,7 @@
  * 由 `npm run build:frontend` 生成，浏览器只消费生成的 `.js`。
  */
 import {
+  ATTEMPT_STATES,
   COMPARE_CONTRACT_VERSION,
   COMPARE_SEVERITY_TEXT,
   COMPARE_STATE_TEXT,
@@ -145,6 +146,8 @@ export type CompareViewDeps = {
   focusReviewEntry(shotId: string | null): void;
   /** 采用/返工提交后的尝试链刷新（生成视图）。 */
   renderAttempts(): void;
+  /** 生成阶段错误位写入（唯一所有者在生成视图：同时写 #generateError/#attemptError；比较区不自持第二份错误 DOM）。 */
+  showAttemptError(message: string): void;
   /** 返工「查看/编辑全文」把 Prompt 列表与确认单切到最新（生成视图）。 */
   renderPrompts(): void;
   renderConfirm(): void;
@@ -1097,6 +1100,12 @@ export function createCompareView(
       focusCompareCandidate(shotId, sourceCandidateId);
       elements.compareStatus.textContent = "返工已提交（Prompt v" + promptVersion + " · "
         + attemptStateLabel(state) + "）；旧候选保留，只有这张图新增了版本。";
+      // 与生成区单张提交同一语义：unknown 成功返回也要如实提示定位（只增显示调用，不改控制流与返回）。
+      if (state === ATTEMPT_STATES.unknown) {
+        const noTaskId = !latestAttempt || !latestAttempt.record.task_id;
+        deps.showAttemptError("这次返工提交的结果没有确认：不要重复提交。"
+          + (noTaskId ? "没有任务编号，只能显式新建 action。" : "可以按任务编号核对。"));
+      }
     } catch (error) {
       if (action.alive()) {
         showError(elements.reworkError,

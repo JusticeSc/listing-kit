@@ -857,6 +857,7 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
       selectStage: (/** @type {string} */ stageId) => stageShell.select(stageId),
       focusReviewEntry: focusCompareEntry,
       renderAttempts: () => generationView?.renderAttempts(),
+      showAttemptError: (/** @type {string} */ message) => { generationView?.showAttemptError(message); },
       renderPrompts: () => generationView?.renderPrompts(),
       renderConfirm: () => generationView?.renderConfirm(),
       promptRecordOf: (/** @type {string|null} */ shotId) => generationView?.promptRecordOf(shotId) ?? null,

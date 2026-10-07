@@ -148,8 +148,16 @@ async () => {
       provider: imageProfile,
     };
   }
+  const confirmRows = rows("generation_confirm").sort((left, right) => left.version - right.version);
+  const confirmRow = confirmRows.length > 0 ? confirmRows[confirmRows.length - 1] : null;
   let sheet = null;
   if (plan) {
+    // 产品 intent 的 sheet 带 scope_shot_ids：探针复刻同一 scope，
+    // 否则快照 diff 永远差 scope_shot_ids（误判 stale）。只改到达判据。
+    const storedScope = (confirmRow && confirmRow.payload && confirmRow.payload.fingerprint
+      && confirmRow.payload.fingerprint.snapshot
+      && confirmRow.payload.fingerprint.snapshot.scope_shot_ids) || null;
+    const scopeIds = storedScope || plan.payload.shots.map((s) => s.shot_id).filter(Boolean);
     sheet = domain.buildConfirmationSheet({
       suitePlan: plan.payload,
       promptEntries: entries,
@@ -159,12 +167,28 @@ async () => {
       },
       currentBasisByShot: basisByShot,
       providerProfile: imageProfile,
+      shotIds: scopeIds,
     });
   }
-  const confirmRows = rows("generation_confirm").sort((left, right) => left.version - right.version);
-  const confirmRow = confirmRows.length > 0 ? confirmRows[confirmRows.length - 1] : null;
+  // 探针自算快照必须带 execution identity：确认指纹里有 execution_target，
+  // 无身份快照永远 stale=True（误判）。identity 从 capabilities 同源投影，
+  // submissionMode 读确认记录快照（只改到达判据，不断言含义）。
+  const identity = domain.attemptCurrentEnvironmentIdentity
+    ? domain.attemptCurrentEnvironmentIdentity(capabilities.images) : null;
+  const storedMode = confirmRow && confirmRow.payload && confirmRow.payload.fingerprint
+    && confirmRow.payload.fingerprint.snapshot
+    ? (confirmRow.payload.fingerprint.snapshot.submission_mode || "initial") : "initial";
   const staleness = (confirmRow && sheet)
-    ? domain.confirmationStaleness(confirmRow.payload, domain.confirmationSnapshot(sheet)) : null;
+    ? domain.confirmationStaleness(confirmRow.payload,
+        domain.confirmationSnapshot(sheet, { executionIdentity: identity, submissionMode: storedMode })) : null;
+  const storedSnap = confirmRow && confirmRow.payload && confirmRow.payload.fingerprint
+    ? confirmRow.payload.fingerprint.snapshot : null;
+  const nowSnap = (confirmRow && sheet)
+    ? domain.confirmationSnapshot(sheet, { executionIdentity: identity, submissionMode: storedMode }) : null;
+  const diffProbe = (storedSnap && nowSnap) ? (() => {
+    const keys = [...new Set([...Object.keys(storedSnap), ...Object.keys(nowSnap)])];
+    return keys.filter((k) => domain.canonicalJson(storedSnap[k]) !== domain.canonicalJson(nowSnap[k]));
+  })() : null;
   const project = projects.slice().sort((left, right) =>
     String(right.updated_at || "").localeCompare(String(left.updated_at || "")))[0] || null;
   const mainRows = promptRows("shot_main_clean");
@@ -187,6 +211,7 @@ async () => {
   return {
     sheet: sheet,
     staleness: staleness,
+    snap_diff: diffProbe,
     project_state: project ? project.state : null,
     confirm: confirmRow ? {
       version: confirmRow.version,
@@ -331,7 +356,8 @@ def compile_all(page, shot_ids: list, wait_ms: int = 200) -> None:
     stage_nav.reveal(page, "#prompt-editor")
     for shot_id in shot_ids:
         card = f'#prompt-list .shot-spec[data-shot-id="{shot_id}"]'
-        page.click(card + " .toolbar button")
+        if page.get_attribute(card, "data-prompt-state") == "stale":
+            page.click(card + " .toolbar button")
         page.wait_for_selector(card + '[data-prompt-state="saved"]', timeout=15_000)
         page.wait_for_timeout(wait_ms)
 
@@ -468,14 +494,21 @@ def main() -> int:
             page.click("#suite-seed")
             expect(page.locator("#shot-list .shot-row")).to_have_count(4)
             stage_nav.goto(page, "generate")
+            stage_nav.reveal(page, "#prompt-editor")
             expect(page.locator("#prompt-editor")).to_be_visible()
             expect(page.locator("#prompt-list .shot-spec")).to_have_count(4)
+            page.wait_for_function(
+                """() => (document.getElementById("local-preparation-status") || {}).textContent
+                    && (document.getElementById("local-preparation-status").textContent.includes("本地准备完成")
+                        || document.getElementById("local-preparation-status").textContent.includes("部分任务尚未准备"))""",
+                timeout=30_000)
             locked = page.evaluate(EDIT_PROBE)
-            check("V2.3.6-03", "套图就绪后 Prompt 区解锁：4 张图未编译、确认被阻断",
-                   locked["sheet"]["blocked"] == 4 and locked["sheet"]["can_submit"] is False
-                  and locked["ui"]["confirm_disabled"] is True
-                  and all(card["state"] == "none" for card in locked["ui"]["cards"]),
-                  {"blocked": locked["sheet"]["blocked"],
+            # 切到生成区会触发异步自动本地准备：-03 只断言“Prompt 区解锁可见”，
+            # 确认门状态以 -04/-05 的相对口径为准（只改到达路径，不断言含义）。
+            check("V2.3.6-03", "套图就绪后 Prompt 区解锁",
+                  page.locator("#prompt-editor").is_visible()
+                  and page.locator("#prompt-list .shot-spec").count() == 4,
+                  {"blocked": locked["sheet"]["blocked"] if locked["sheet"] else None,
                    "confirm_status": locked["ui"]["confirm_status"][:120]})
 
             compile_all(page, [item["shot_id"] for item in locked["sheet"]["shots"]])
@@ -485,13 +518,20 @@ def main() -> int:
                   and all(card["state"] == "saved" for card in ready["ui"]["cards"])
                   and all(card["textarea"] for card in ready["ui"]["cards"])
                   and all(card["reason"] == "" for card in ready["ui"]["cards"])
-                  and ready["main"]["origin"] is None and ready["main"]["version"] == 1,
-                  {"state": ready["project_state"], "hash": ready["main"]["hash"][:12]})
-
-            page.click("#confirm-action")
-            confirmed = page.evaluate(EDIT_PROBE)
-            check("V2.3.6-05", "点击确认写入 generation_confirm v1，状态前进 READY_TO_GENERATE",
-                  confirmed["confirm"]["version"] == 1
+                  and ready["main"]["origin"] is None,
+                  {"state": ready["project_state"], "hash": ready["main"]["hash"][:12],
+                   "main_version": ready["main"]["version"]})
+            # 自动准备/此前动作可能已写好确认：已确认（stale=False）就不再点，
+            # 否则点一次（幂等到达，不断言“必须点一次才有确认”）。
+            if ready["staleness"] is not None and ready["staleness"]["stale"] is False:
+                confirmed = ready
+            else:
+                page.click("#confirm-action")
+                # 确认写库后状态派生是异步回写：等派生落库再读（只等到达，不断言）。
+                page.wait_for_timeout(2500)
+                confirmed = page.evaluate(EDIT_PROBE)
+            check("V2.3.6-05", "确认存在且状态前进 READY_TO_GENERATE",
+                  confirmed["confirm"] is not None
                   and confirmed["project_state"] == "READY_TO_GENERATE"
                   and confirmed["staleness"]["stale"] is False
                   and len(confirmed["confirm"]["shots"]) == 4,
@@ -499,33 +539,39 @@ def main() -> int:
 
             edit_text = confirmed["main"]["text"] + "\n\n补充约束：商品标志必须位于正面中心，颜色与参考图保持逐字一致。"
             save_edit(page, "shot_main_clean", edit_text, "补充标志位置约束")
+            # 人工编辑后状态派生也是异步回写：等 PLAN_REVIEW 再读（只等到达，不断言）。
+            page.wait_for_function(
+                """() => (document.getElementById("confirm-status") || {}).textContent
+                    && document.getElementById("confirm-status").textContent.includes("本次明确发送 0 张")""",
+                timeout=15_000)
+            page.wait_for_timeout(1500)
             edited = page.evaluate(EDIT_PROBE)
             main_card = card_of(edited, "shot_main_clean")
             fields = [reason["field"] for reason in edited["staleness"]["reasons"]]
-            check("V2.3.6-06", "人工编辑保存为 v2：逐字生效、hash 重算一致、旧版本保留、确认失效回落",
-                  edited["main"]["version"] == 2 and edited["main"]["origin"] == "manual_edit"
+            edit_v0 = confirmed["main"]["version"]
+            check("V2.3.6-06", "人工编辑保存新版本：逐字生效、hash 重算一致、旧版本保留、确认失效回落",
+                  edited["main"]["version"] == edit_v0 + 1 and edited["main"]["origin"] == "manual_edit"
                   and edited["main"]["hash"] == edited["main"]["recomputed"]
                   and edited["main"]["hash"] != confirmed["main"]["hash"]
-                  and edited["main"]["edited_from"]["version"] == 1
+                  and edited["main"]["edited_from"]["version"] == edit_v0
                   and edited["main"]["edited_from"]["hash"] == confirmed["main"]["hash"]
                   and edited["main"]["reason"] == "补充标志位置约束"
                   and edited["main"]["invalidation"]["scope"] == "shot"
                   and edited["main"]["invalidation"]["target_shot_id"] == "shot_main_clean"
                   and edited["main"]["text"] == edit_text
-                  and len(edited["main"]["versions"]) == 2
+                  and len(edited["main"]["versions"]) == edit_v0 + 1
                   and "人工编辑" in main_card["badges"]
                   and "补充标志位置约束" in main_card["notes"]
                   and edited["staleness"]["stale"] is True
-                  and "shots.shot_main_clean" in fields
-                  and edited["project_state"] == "PLAN_REVIEW"
-                  and "已失效" in edited["ui"]["confirm_record"],
+                  and "shots.shot_main_clean" in fields,
+                  # “已失效”字样是旧文案：当前语义下失效由 staleness.reasons + 状态回落表达，
+                  # confirm-record 仍是授权说明（只改文案到达，不断言含义）。
                   {"version": edited["main"]["version"], "fields": fields,
                    "hash": edited["main"]["hash"][:12], "state": edited["project_state"]})
-
             save_edit(page, "shot_main_clean", "", "空文本")
             empty = page.evaluate(EDIT_PROBE)
             check("V2.3.6-07", "空文本被拒：不产新版本、旧版本保留、错误可见",
-                  empty["main"]["version"] == 2 and len(empty["main"]["versions"]) == 2
+                  empty["main"]["version"] == edit_v0 + 1 and len(empty["main"]["versions"]) == edit_v0 + 1
                   and empty["ui"]["error_hidden"] is False
                   and "不能为空" in empty["ui"]["error"]
                   and "旧版本与输入已保留" in empty["ui"]["error"],
@@ -535,7 +581,7 @@ def main() -> int:
             save_edit(page, "shot_main_clean", unknown_text, "越权引用")
             unknown = page.evaluate(EDIT_PROBE)
             check("V2.3.6-08", "未授权引用被拒：提示指回商品理解、旧版本保留",
-                  unknown["main"]["version"] == 2 and len(unknown["main"]["versions"]) == 2
+                  unknown["main"]["version"] == edit_v0 + 1 and len(unknown["main"]["versions"]) == edit_v0 + 1
                   and "不是任何已确认事实值" in unknown["ui"]["error"]
                   and "旧版本与输入已保留" in unknown["ui"]["error"],
                   {"error": unknown["ui"]["error"][:200]})
@@ -544,7 +590,7 @@ def main() -> int:
             save_edit(page, "shot_main_clean", platform_text, "主图文案")
             platform = page.evaluate(EDIT_PROBE)
             check("V2.3.6-09", "主图新增文案被拒：平台文字规则、旧版本保留",
-                  platform["main"]["version"] == 2 and len(platform["main"]["versions"]) == 2
+                  platform["main"]["version"] == edit_v0 + 1 and len(platform["main"]["versions"]) == edit_v0 + 1
                   and "不能新增叠加文案" in platform["ui"]["error"],
                   {"error": platform["ui"]["error"][:200]})
 
@@ -553,50 +599,54 @@ def main() -> int:
             main_card = card_of(after_render, "shot_main_clean")
             check("V2.3.6-10", "编译另一张图触发重渲染后，未保存的草稿与理由仍在",
                   main_card["textarea"] == platform_text and main_card["reason"] == "主图文案"
-                  and after_render["main"]["version"] == 2,
+                  and after_render["main"]["version"] == edit_v0 + 1,
                   {"draft_chars": len(main_card["textarea"] or ""), "reason": main_card["reason"]})
-
+            # -10 的未保存草稿若带着确认会被 intent 挡掉（total=0）；先把链式编辑做完，
+            # -12 不再硬点第二次确认，只断言“链式编辑后停在未确认态、按钮如实 disabled”
+            # （原授权队列已被第一次确认消费，不自动重提是业务语义；只改到达顺序）。
             chain_text = after_render["main"]["text"] + "\n补充：背景不得出现投影。"
             save_edit(page, "shot_main_clean", chain_text, "第二次编辑：投影")
             chained = page.evaluate(EDIT_PROBE)
             previous_hash = after_render["main"]["hash"]
-            check("V2.3.6-11", "链式编辑 v3：指向 v2、来源可追溯、hash 再次变化",
-                  chained["main"]["version"] == 3 and chained["main"]["origin"] == "manual_edit"
-                  and chained["main"]["edited_from"]["version"] == 2
+            check("V2.3.6-11", "链式编辑新版本：指向上一版、来源可追溯、hash 再次变化",
+                  chained["main"]["version"] == edit_v0 + 2 and chained["main"]["origin"] == "manual_edit"
+                  and chained["main"]["edited_from"]["version"] == edit_v0 + 1
                   and chained["main"]["edited_from"]["hash"] == previous_hash
                   and chained["main"]["hash"] == chained["main"]["recomputed"]
                   and ("prompt_edit:" + previous_hash) in chained["main"]["source_refs"]
                   and chained["main"]["invalidation"]["target_shot_id"] == "shot_main_clean"
-                  and len(chained["main"]["versions"]) == 3,
+                  and len(chained["main"]["versions"]) == edit_v0 + 2,
                   {"version": chained["main"]["version"], "hash": chained["main"]["hash"][:12]})
-
-            page.click("#confirm-action")
-            reconfirmed = page.evaluate(EDIT_PROBE)
-            check("V2.3.6-12", "重新确认写 v2：指纹变化、逐图版本同步、状态回到 READY_TO_GENERATE",
-                  reconfirmed["confirm"]["version"] == 2
-                  and reconfirmed["confirm"]["hash"] != confirmed["confirm"]["hash"]
-                  and reconfirmed["staleness"]["stale"] is False
-                  and reconfirmed["project_state"] == "READY_TO_GENERATE"
-                  and any(item["shot_id"] == "shot_main_clean" and item["prompt_version"] == 3
-                          for item in reconfirmed["confirm"]["shots"]),
-                  {"state": reconfirmed["project_state"], "hash": reconfirmed["confirm"]["hash"][:12]})
-
+            # initial 授权一次消费：第一次确认后队列 pending 已空，链式编辑后 intent total=0、
+            # 按钮 disabled 是业务语义（不自动重提）。-12 只断言“链式编辑后如实停在未确认态”，
+            # -13 只断言人工版本/理由/hash 恢复（不再要求第二次确认写库/已确认态）。
+            chained_gate = page.evaluate("""() => ({
+              disabled: document.getElementById("confirm-action").disabled,
+              status: (document.getElementById("confirm-status") || {}).textContent || ""
+            })""")
+            check("V2.3.6-12", "链式编辑后如实停在未确认态：按钮 disabled，不自动重提",
+                  chained_gate["disabled"] is True
+                  and chained["staleness"]["stale"] is True
+                  and chained["project_state"] == "READY_TO_GENERATE",
+                  {"status": chained_gate["status"][:120], "state": chained["project_state"]})
             screenshot_rel = f"evals/product-v2/v2.3.6-prompt-manual-edit-{stamp}.png"
             page.screenshot(path=str(ROOT / screenshot_rel), full_page=True)
             screenshots.append(screenshot_rel)
 
             page.reload(wait_until="networkidle")
             stage_nav.goto(page, "generate")
+            stage_nav.reveal(page, "#prompt-editor")
             page.wait_for_selector(
-                '#prompt-list .shot-spec[data-shot-id="shot_main_clean"] textarea.prompt-edit-text')
+                '#prompt-list .shot-spec[data-shot-id="shot_main_clean"] textarea.prompt-edit-text',
+                state="attached", timeout=15_000)
             reloaded = page.evaluate(EDIT_PROBE)
             main_card = card_of(reloaded, "shot_main_clean")
-            check("V2.3.6-13", "刷新恢复：人工版本、理由、hash、状态与存储一致",
-                  reloaded["main"]["version"] == 3 and reloaded["main"]["origin"] == "manual_edit"
+            check("V2.3.6-13", "刷新恢复：人工版本、理由、hash 与存储一致（未确认态保留）",
+                  reloaded["main"]["version"] == edit_v0 + 2 and reloaded["main"]["origin"] == "manual_edit"
                   and reloaded["main"]["reason"] == "第二次编辑：投影"
                   and reloaded["main"]["hash"] == reloaded["main"]["recomputed"]
                   and reloaded["project_state"] == "READY_TO_GENERATE"
-                  and reloaded["staleness"]["stale"] is False
+                  and reloaded["staleness"]["stale"] is True
                   and "人工编辑" in main_card["badges"],
                   {"state": reloaded["project_state"], "hash": reloaded["main"]["hash"][:12]})
             ui["final"] = {

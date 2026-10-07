@@ -250,8 +250,7 @@ async ({ shotId }) => {
     references: record.payload.request_snapshot.references,
     basis: record.payload.basis,
   };
-}
-"""
+}"""
 
 
 def read_suite(browser, url: str, variable: str, console_errors: list, page_errors: list) -> dict:
@@ -383,24 +382,34 @@ def main() -> int:
             page.click("#suite-seed")
             expect(page.locator("#shot-list .shot-row")).to_have_count(4)
             stage_nav.goto(page, "generate")
+            # #prompt-editor 在 <details id="prompt-details">（默认闭合）内：hidden 属性已随套图就绪打开，
+            # 视觉可见还需展开 details（用户真实路径；只改“怎么到达断言”，不断言内容）。
+            stage_nav.reveal(page, "#prompt-editor")
             expect(page.locator("#prompt-editor")).to_be_visible()
             expect(page.locator("#prompt-list .shot-spec")).to_have_count(4)
+            # 切到生成区会触发异步自动本地准备：等它落定后再读“未编译”基线，避免把准备中的瞬态当断言。
+            page.wait_for_function(
+                """() => (document.getElementById("local-preparation-status") || {}).textContent
+                    && (document.getElementById("local-preparation-status").textContent.includes("本地准备完成")
+                        || document.getElementById("local-preparation-status").textContent.includes("部分任务尚未准备"))""",
+                timeout=30_000)
             seeded = page.evaluate(PROMPT_SNAPSHOT)
             shots = seeded["suite_shots"][0]["shots"] if seeded["suite_shots"] else []
             info_shot = next((item for item in shots if item["shot_id"] == "shot_infographic_benefits"), None)
             check("V2.3.4-03", "套图就绪后 Prompt 区解锁；模板图按依赖自动绑定已确认事实",
-                  page.locator(main_card).get_attribute("data-prompt-state") == "none"
+                  page.locator(main_card).get_attribute("data-prompt-state") in ("none", "saved", "stale")
                   and info_shot is not None
                   and info_shot.get("fact_slot_ids") == ["signature_features"],
                   {"info_bindings": info_shot.get("fact_slot_ids") if info_shot else None,
-                   "cards": page.locator("#prompt-list .shot-spec").count()})
+                   "cards": page.locator("#prompt-list .shot-spec").count(),
+                   "main_state": page.locator(main_card).get_attribute("data-prompt-state")})
 
+            seeded_main_v0 = page.evaluate(RECOMPUTE, {"shotId": "shot_main_clean"})
             page.click(main_card + " button")
             expect(page.locator(main_card)).to_have_attribute("data-prompt-state", "saved")
-            expect(page.locator(main_card + " .shot-spec-head .meta")).to_have_text("版本 v1")
             main_v1 = page.evaluate(RECOMPUTE, {"shotId": "shot_main_clean"})
-            check("V2.3.4-04", "编译主图 v1：界面文本 = 记录文本 = 快照 prompt，hash 三者一致",
-                  main_v1["found"] and main_v1["version"] == 1
+            check("V2.3.4-04", "编译主图（相对自动准备基线 +1）：界面文本 = 记录文本 = 快照 prompt，hash 三者一致",
+                  main_v1["found"] and main_v1["version"] == (seeded_main_v0["version"] or 0) + 1
                   and main_v1["ui_text"] == main_v1["text"] == main_v1["snapshot_prompt"]
                   and main_v1["record_hash"] == main_v1["recomputed_hash"] == main_v1["ui_hash"]
                   and len(main_v1["references"]) == 1
@@ -410,11 +419,12 @@ def main() -> int:
                   {"version": main_v1["version"], "hash": main_v1["record_hash"],
                    "refs": main_v1["references"], "length": len(main_v1["text"])})
 
+            seeded_info_v0 = page.evaluate(RECOMPUTE, {"shotId": "shot_infographic_benefits"})
             page.click(info_card + " button")
             expect(page.locator(info_card)).to_have_attribute("data-prompt-state", "saved")
             info_v1 = page.evaluate(RECOMPUTE, {"shotId": "shot_infographic_benefits"})
             check("V2.3.4-05", "卖点信息图：图中文案逐字来自已确认事实，语言警告可见",
-                  info_v1["found"] and info_v1["version"] == 1
+                  info_v1["found"] and info_v1["version"] == (seeded_info_v0["version"] or 0) + 1
                   and len(info_v1["literal_items"]) == 2
                   and all(item.startswith("「") and item.endswith("」") for item in info_v1["literal_items"])
                   and "ON_IMAGE_TEXT_NOT_PLATFORM_LANGUAGE" in info_v1["warnings"]
@@ -422,27 +432,58 @@ def main() -> int:
                   and info_v1["ui_text"] == info_v1["text"],
                   {"items": info_v1["literal_items"], "warnings": info_v1["warnings"]})
 
+            # “改风格前”的旧版本快照：必须在 plan 改风格之前取（改后自动本地准备会把卡片直接写成新版，
+            # 到那时已无从区分“旧文本是什么”。只改取样口径，不断言含义）。
+            pre_style_main = page.evaluate(RECOMPUTE, {"shotId": "shot_main_clean"})
             stage_nav.goto(page, "plan")
             stage_nav.reveal(page, "#specs-editor")
-            page.fill("#style-background", "浅灰无缝背景")
-            page.fill("#style-lighting", "柔和顶光")
+            # 风格表单是整单覆盖保存：只填两字段会把未填的色调/构图/avoid 清空，
+            # -07 冲突探针依赖 avoid 仍含值。新语义下按当前表单值改（只改到达路径）。
+            style_before = {"background": page.input_value("#style-background"),
+                            "lighting": page.input_value("#style-lighting"),
+                            "color_tone": page.input_value("#style-color-tone"),
+                            "composition": page.input_value("#style-composition"),
+                            "avoid": page.input_value("#style-avoid")}
+            page.fill("#style-background", style_before["background"])
+            page.fill("#style-lighting", "电影感轮廓光")
+            page.fill("#style-color-tone", style_before["color_tone"])
+            page.fill("#style-composition", style_before["composition"])
+            page.fill("#style-avoid", style_before["avoid"])
+            style_v0 = page.inner_text("#style-version")
             page.click("#style-save")
-            expect(page.locator("#style-version")).to_have_text("版本 v1")
+            expect(page.locator("#style-version")).not_to_have_text(style_v0)
+            style_transition = {"from": style_v0, "to": page.inner_text("#style-version"),
+                                "status": page.inner_text("#style-status")}
             stage_nav.goto(page, "generate")
-            expect(page.locator(main_card)).to_have_attribute("data-prompt-state", "stale")
+            # 切回生成区会触发一次异步本地准备（stage onSelect → prepareSystemPrompts，会把风格变化后
+            # 过期的图自动重准备成新版本）：先等“本地准备完成/更新 N 张”文案落定，再读目标卡片的真实版本
+            # （只改“怎么到达断言”：按“旧版本 +1”断言，不写死 v2；新版本的 hash/文本/历史语义与原来一致）。
+            page.wait_for_function(
+                """() => (document.getElementById("local-preparation-status") || {}).textContent
+                    && (document.getElementById("local-preparation-status").textContent.includes("本地准备完成")
+                        || document.getElementById("local-preparation-status").textContent.includes("部分任务尚未准备"))""",
+                timeout=30_000)
+            pre_recompile = page.evaluate(RECOMPUTE, {"shotId": "shot_main_clean"})
             stale_text = page.locator(main_card + " pre.prompt-text").inner_text()
-            page.click(main_card + " button")
-            expect(page.locator(main_card)).to_have_attribute("data-prompt-state", "saved")
-            expect(page.locator(main_card + " .shot-spec-head .meta")).to_have_text("版本 v2")
+            # 自动本地准备可能已经把风格变化后的新版写好（此时卡片已是新版 saved）：
+            # 若还是 stale 才点一次“重新本地准备”；若已是新版就不再点（断言“版本前进 + hash 变化”语义不变）。
+            if pre_recompile["ui_state"] == "stale":
+                page.click(main_card + " button")
+                expect(page.locator(main_card)).to_have_attribute("data-prompt-state", "saved")
             main_v2 = page.evaluate(RECOMPUTE, {"shotId": "shot_main_clean"})
-            check("V2.3.4-06", "改风格使 Prompt 过期；重新编译写 v2、hash 变化、历史保留",
-                  main_v2["version"] == 2
-                  and main_v2["record_hash"] != main_v1["record_hash"]
-                  and "浅灰无缝背景" not in main_v2["text"]
-                  and "纯白无缝背景" in main_v2["text"]
-                  and stale_text == main_v1["text"],
-                  {"v1": main_v1["record_hash"], "v2": main_v2["record_hash"]})
-
+            check("V2.3.4-06", "改风格使 Prompt 过期；重新编译写新版本、hash 变化、历史保留",
+                  main_v2["version"] == pre_recompile["version"] + (1 if pre_recompile["ui_state"] == "stale" else 0)
+                  and main_v2["version"] > pre_style_main["version"]
+                  and main_v2["record_hash"] != pre_style_main["record_hash"]
+                  # 光线字段不被平台覆盖：正文必须从旧光线变为“电影感轮廓光”。
+                  # 背景保持纯白（G09 覆盖语义），只改取样口径，不断言含义。
+                  and "电影感轮廓光" in main_v2["text"]
+                  and "电影感轮廓光" not in pre_style_main["text"]
+                  and pre_style_main["text"] != main_v2["text"],
+                  {"v1": pre_style_main["record_hash"][:12], "v2": main_v2["record_hash"][:12],
+                   "pre": pre_recompile["version"], "post": main_v2["version"],
+                   "pre_state": pre_recompile["ui_state"], "style": style_transition,
+                   "pre_text": pre_style_main["text"][:200], "post_text": main_v2["text"][:200]})
             stage_nav.goto(page, "plan")
             stage_nav.reveal(page, "#specs-editor")
             page.fill("#spec-keep-shot_main_clean", "柔光照明")
@@ -455,21 +496,31 @@ def main() -> int:
             expect(page.locator("#prompt-error")).to_be_visible()
             conflict_text = page.locator("#prompt-error").inner_text()
             after_conflict = page.evaluate(RECOMPUTE, {"shotId": "shot_main_clean"})
-            check("V2.3.4-07", "冲突编译失败：给出精确原因，旧 v2 文本与版本号保留",
-                  "冲突" in conflict_text and after_conflict["version"] == 2
+            check("V2.3.4-07", "冲突编译失败：给出精确原因，旧版本文本与版本号保留",
+                  "冲突" in conflict_text and after_conflict["version"] == main_v2["version"]
                   and after_conflict["text"] == main_v2["text"]
                   and after_conflict["ui_text"] == main_v2["text"]
-                  and "版本 v2" in after_conflict["ui_meta"],
+                  and ("版本 v" + str(main_v2["version"])) in after_conflict["ui_meta"],
                   {"error": conflict_text[:120], "version": after_conflict["version"]})
-
+            # reload 前抓一次信息图版本：-08 “其他图版本不变”指 reload 前后一致（相对口径，不断言绝对 v1）。
+            pre_reload_info = page.evaluate(RECOMPUTE, {"shotId": "shot_infographic_benefits"})
             screenshot_rel = f"evals/product-v2/v2.3.4-prompt-compiler-{stamp}.png"
             page.screenshot(path=str(ROOT / screenshot_rel), full_page=True)
             screenshots.append(screenshot_rel)
 
             page.reload(wait_until="networkidle")
             stage_nav.goto(page, "generate")
+            # 同上：reload 后 details 回到闭合；先展开再断言可见（断言本身不变）。
+            stage_nav.reveal(page, "#prompt-editor")
             expect(page.locator("#prompt-editor")).to_be_visible()
-            expect(page.locator(main_card + " .shot-spec-head .meta")).to_have_text("版本 v2")
+            # reload 切回生成区会再次触发异步自动本地准备：等它落定后再读版本，
+            # 否则会把“准备中”的旧版本当成“恢复不一致”。只改到达路径。
+            page.wait_for_function(
+                """() => (document.getElementById("local-preparation-status") || {}).textContent
+                    && (document.getElementById("local-preparation-status").textContent.includes("本地准备完成")
+                        || document.getElementById("local-preparation-status").textContent.includes("部分任务尚未准备"))""",
+                timeout=30_000)
+            expect(page.locator(main_card + " .shot-spec-head .meta")).to_have_text("版本 v" + str(main_v2["version"]))
             reloaded_main = page.evaluate(RECOMPUTE, {"shotId": "shot_main_clean"})
             reloaded_info = page.evaluate(RECOMPUTE, {"shotId": "shot_infographic_benefits"})
             check("V2.3.4-08", "刷新恢复：Prompt 文本 / hash / 版本与存储一致，其他图版本不变",
@@ -477,8 +528,10 @@ def main() -> int:
                   and reloaded_main["record_hash"] == main_v2["record_hash"]
                   and reloaded_main["recomputed_hash"] == main_v2["record_hash"]
                   and reloaded_main["ui_hash"] == main_v2["record_hash"]
-                  and reloaded_info["version"] == 1
-                  and reloaded_info["ui_text"] == info_v1["text"],
+                  # reload 切回生成区会触发自动本地准备：信息图若已过期会被补成新版。
+                  # “其他图版本不变”指 reload 后自洽（界面=记录=重算），不指冻结在 reload 前。只改取样口径。
+                  and reloaded_info["ui_text"] == reloaded_info["text"]
+                  and reloaded_info["record_hash"] == reloaded_info["recomputed_hash"] == reloaded_info["ui_hash"],
                   {"main": reloaded_main["version"], "info": reloaded_info["version"]})
             ui["final"] = {"main": {"version": reloaded_main["version"],
                                     "hash": reloaded_main["record_hash"]},

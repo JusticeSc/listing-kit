@@ -375,6 +375,9 @@ def main() -> int:
     server = module.create_product_v2_server(
         "127.0.0.1", port, provider_factory=lambda: FakeSemanticProvider(scenario="ok"),
         image_provider_factory=lambda: FakeImageProvider(scenario="ok"))
+    # 工厂只建服务器不启动；少了这一行页面拿不到响应，异常又会被下面 finally 的
+    # server.shutdown() 永久阻塞吞掉（无输出、无证据、无 traceback）。与 3_6 同形。
+    threading.Thread(target=server.serve_forever, daemon=True).start()
     base = f"http://127.0.0.1:{port}"
 
     ui: dict = {}

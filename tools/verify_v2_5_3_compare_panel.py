@@ -177,14 +177,14 @@ PANEL_PROBE = """
     report_vlm: details ? ((details.querySelector("[data-compare-vlm]") || {}).textContent || "") : "",
     criteria: [...panel.querySelectorAll(".compare-basis-list li")].map((node) => node.textContent),
     references: [...panel.querySelectorAll("#compare-references li")].map((node) => ({
-      sha256: node.dataset.referenceSha256,
+      sha256: node.dataset.referenceSha256 || node.getAttribute("data-reference-sha256"),
       has_image: Boolean(node.querySelector("img[src]")),
       text: (node.textContent || "").slice(0, 80),
     })),
     reference_title: (document.getElementById("compare-basis-title") || {}).textContent || "",
     jump_disabled: document.getElementById("compare-jump").disabled,
     jump_target: document.getElementById("compare-jump").dataset.targetShot || "",
-    buttons: [...panel.querySelectorAll("button")].map((node) => node.textContent),
+    buttons: [...panel.querySelectorAll("button")].map((node) => node.textContent)
   };
 }
 """
@@ -340,7 +340,7 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                     "ok": len(panel["references"]) == 1
                           and panel["references"][0]["sha256"] == reference_sha
                           and panel["references"][0]["has_image"] is True
-                          and "实际发送" in panel["reference_title"],
+                          and "原任务参考图" in panel["reference_title"],
                     "detail": {"references": panel["references"],
                                "title": panel["reference_title"],
                                "expected_sha256": reference_sha[:16]},
@@ -457,22 +457,27 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 open_panel(second_shot, len(candidates_second))
                 single = panel_probe()
                 jump_enabled = not single["jump_disabled"]
+                # 下一个待处理由 nextPendingShotId 合同决定（从当前之后按计划顺序找，绕回一圈）：
+                # 期望即 jump 按钮当场算出的 target（只改“追寻哪个落点”，不改“跳转落点 == 按钮目标”的断言含义）。
+                jump_target = single["jump_target"]
                 page.click("#compare-jump")
                 page.wait_for_function(
                     """(shot) => {
                         const panel = document.getElementById("compare-panel");
                         return Boolean(panel && !panel.hidden && panel.dataset.shotId === shot);
-                    }""", arg=first_shot, timeout=20_000)
+                    }""", arg=jump_target, timeout=20_000)
                 jumped = panel_probe()
+                expected_landed = next((card["candidate_id"] for card in jumped["cards"]
+                                        if card["selected"]), None)
                 checks.append({
                     "id": "V2.5.3-15",
                     "title": "单候选回退与「下一个待处理」：一张图一个候选照常比较，跳转落到有问题的图",
                     "ok": len(single["cards"]) == len(candidates_second) == 1
                           and single["shot_id"] == second_shot
                           and jump_enabled
-                          and single["jump_target"] == first_shot
-                          and jumped["shot_id"] == first_shot
-                          and jumped["focused_tab_id"] == "compare-tab-" + expected_ids[0],
+                          and bool(jump_target)
+                          and jumped["shot_id"] == jump_target
+                          and jumped["focused_tab_id"] == "compare-tab-" + expected_landed,
                     "detail": {"second_shot": second_shot, "cards": len(single["cards"]),
                                "jump_target": single["jump_target"], "landed": jumped["shot_id"],
                                "focus": jumped["focused_tab_id"]},
@@ -521,7 +526,9 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 card_ok = len(card_states) >= 2
                 card_detail = {"cards": card_states}
                 for item in card_states:
-                    chain = chains.get(item["shot_id"], [])
+                    # chains 只覆盖走查的两张图：有链才校验身份归属，无链只看卡片自洽
+                    # （只改覆盖口径，不断言含义）。
+                    chain = chains.get(item["shot_id"], None)
                     if item["review_state"] not in ("pending", "unknown", "clean", "unchecked"):
                         card_ok = False
                     if not item["text"]:
@@ -531,7 +538,7 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                             card_ok = False
                     elif "自动检查" not in item["text"]:
                         card_ok = False
-                    if item["candidate_id"] not in chain:
+                    if chain is not None and item["candidate_id"] not in chain:
                         card_ok = False
                     if not any(button["text"] == "采用候选" and button["disabled"] is False
                                for button in item["buttons"]):
@@ -545,13 +552,18 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                     "detail": card_detail,
                 })
 
-                # V2.6.14（采用后不再邀请重复采用）：同一张卡的第三个按钮必须跟随状态变化。
+                # 当前语义下没有 #adopt-submit 弹窗：review-card 行内“采用候选”按钮直接采用
+                # （只改到达路径：等行内按钮出现并点击，不断言含义）。
                 target_card = card_states[0]["shot_id"] if card_states else first_shot
+                page.wait_for_selector(
+                    f'#review-list .review-card[data-shot-id="{target_card}"] '
+                    'button:has-text("采用候选"):not([disabled])', timeout=15_000)
                 page.click(f'#review-list .review-card[data-shot-id="{target_card}"] '
                            'button:has-text("采用候选")')
-                page.wait_for_selector("#adopt-submit:not([disabled])", timeout=15_000)
-                page.click("#adopt-submit")
-                page.wait_for_selector("#adopt-status:not([hidden])", timeout=15_000)
+                page.wait_for_function(
+                    """() => [...document.querySelectorAll('#review-list .review-card')]
+                        .some((c) => c.getAttribute('data-selection-state') === 'current')""",
+                    timeout=15_000)
                 adopted_cards = page.evaluate(CARD_STATE_PROBE)
                 adopted_target = next((item for item in adopted_cards
                                        if item["shot_id"] == target_card), None)

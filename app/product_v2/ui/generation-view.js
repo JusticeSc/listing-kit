@@ -542,6 +542,13 @@ export function createGenerationView({ elements, deps }) {
         }
         finally {
             submissionInFlight = false;
+            // 确认写库后派生项目状态（PLAN_REVIEW → READY_TO_GENERATE）：与编译保存同一语义，
+            // 否则确认存在但状态不前进，-05 类“确认存在且状态前进”断言永远红。
+            try {
+                if (action.alive())
+                    await deps.deriveState();
+            }
+            catch { /* 状态派生失败不吞确认结果 */ }
             if (action.alive()) {
                 renderConfirm();
                 renderAttempts();
