@@ -379,6 +379,30 @@
         "reason": "真实远程入口，仅当前 Chrome 接受范围；对应部署/远程走查授权后执行，不能替代本地 fake 浏览器验证。"
       }
     ],
+    "tools/verify_v2_packet08_settings_vision.py": [
+      {
+        "args": [],
+        "category": "browser",
+        "ci": true,
+        "reason": "离线 fake provider 浏览器套件（包08 切片：客户端模型配置与设置面）；无密钥、零外呼。"
+      }
+    ],
+    "tools/verify_v2_packet08_adoption_ai.py": [
+      {
+        "args": [],
+        "category": "browser",
+        "ci": true,
+        "reason": "离线 fake provider 浏览器套件（包08 切片：按需 AI 复核与人工采用）；无密钥、零外呼。"
+      }
+    ],
+    "tools/verify_v2_packet08_delivery_ai.py": [
+      {
+        "args": [],
+        "category": "browser",
+        "ci": true,
+        "reason": "离线 fake provider 浏览器套件（包08 切片：交付与整套复核）；无密钥、零外呼。"
+      }
+    ],
     "tools/verify_v2_volc_adopt_export.py": [
       {
         "args": [],

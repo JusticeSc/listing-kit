@@ -169,10 +169,19 @@ async () => {
     });
   }
   const prompts = {};
+  const promptHistory = {};
   for (const item of documents.filter((row) => row.kind === "prompt_version")) {
     if (!prompts[item.document_id] || prompts[item.document_id].version < item.version) {
       prompts[item.document_id] = { version: item.version, payload: item.payload };
     }
+    (promptHistory[item.document_id] = promptHistory[item.document_id] || []).push({
+      version: item.version,
+      hash: item.payload && item.payload.hash ? item.payload.hash : null,
+      basis: item.payload && item.payload.basis ? item.payload.basis : null,
+    });
+  }
+  for (const key of Object.keys(promptHistory)) {
+    promptHistory[key].sort((left, right) => left.version - right.version);
   }
   const confirmations = documents.filter((row) => row.kind === "generation_confirm");
   for (const key of Object.keys(candidates)) {
@@ -191,6 +200,7 @@ async () => {
     attempt_chains: chains,
     candidates: candidates,
     prompts: prompts,
+    prompt_history: promptHistory,
     confirmations: confirmations,
     assets: assets.map((item) => ({ sha256: item.sha256, byte_size: item.byte_size })),
     ui_rows: rows,
@@ -216,6 +226,9 @@ async ({projectId}) => {
       promptEntryReader: () => null,
       confirmationReader: () => null,
       promptBasisReader: () => null,
+      // 本探针只走 storeCandidate（缺字节→显式失败）；消费围栏在 submitAttempt 才用到，
+      // 但 createGenerationModule 现在要求该依赖存在（generation.ts:366）。
+      fenceReader: () => null,
       referenceSourceReader: () => [],
       promptsSheet: () => null,
       imageEnvironment: () => null,
@@ -225,19 +238,25 @@ async ({projectId}) => {
     });
     const now = "2026-10-03T00:00:00.000Z";
     const actionId = "act-aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
-    await repository.documents.save(projectId, { kind: "generation_attempt", documentId: "shot_probe", payload: {
-        schema_version: 2, action_id: actionId, shot_id: "shot_probe",
-        state: "succeeded", task_id: null, request_id: "req-probe",
-        prompt: { version: 1, hash: "a".repeat(64) },
-        references: [{ role: "primary", sha256: "a".repeat(64) }],
-        provider: { provider_id: "volcengine-ark",
-                    model_id: "doubao-seedream-5-0-flash-260915" },
-        parameters: { size: "1344*1344" },
-        execution_identity: { schema_version: 1, protocol: "v2.4.1",
-          capability_version: 3, credential_reference: { source: "test_double" },
-          sync: true },
-        notes: [], created_at: now, updated_at: now,
-      } });
+    // 记录形状由 domain 构造函数收口（schema 演进时本探针不复制字段）：
+    // pending_submit 落库 → 按提交响应一步到 succeeded（同步协议没有 task id）。
+    const attemptDomain = await import("/domain/attempt.js");
+    const built = attemptDomain.buildAttemptRecord({
+      actionId, shotId: "shot_probe",
+      prompt: { version: 1, hash: "a".repeat(64) },
+      references: [{ role: "primary", sha256: "a".repeat(64) }],
+      provider: { provider_id: "volcengine-ark",
+                  model_id: "doubao-seedream-5-0-flash-260915" },
+      parameters: { size: "1344*1344", n: 1, prompt_extend: false, watermark: false },
+      executionIdentity: { protocol: "v2.4.1", capabilityVersion: 3,
+                           credentialSource: "test_double", sync: true },
+      taskId: null, requestId: "req-probe", at: now,
+    });
+    const payload = attemptDomain.advanceAttempt(built, {
+      state: "succeeded", via: "submit", at: "2026-10-03T00:00:01.000Z",
+      taskId: null, requestId: "req-probe",
+    });
+    await repository.documents.save(projectId, { kind: "generation_attempt", documentId: "shot_probe", payload });
     await mod.restore({ alive: () => true, projectId });
     const outcome = await mod.storeCandidate("shot_probe",
       { action: { alive: () => true, projectId } });
@@ -246,6 +265,7 @@ async ({projectId}) => {
   } finally {
     opened.close();
   }
+}
 """
 
 
@@ -917,20 +937,62 @@ def browser_e2e_checks(check, screenshots: list[str], console_errors: list,
               {"stale_count": page.locator('#prompt-list [data-prompt-state="stale"]').count(),
                "calls": len(transport.calls)})
 
-        # 正式协议切到另一模型：同能力版本也须精确失效，不暗改旧 Prompt/候选。
+        # 正式协议切到另一模型：同能力版本也须精确失效；系统 Prompt 按新依据本地重编译
+        # （plan §439/§870、ui-contract:39/167-176：自动准备缺失/过期系统文本，历史不被静默覆盖）。
         mode["provider"] = "dashscope"
         page.reload(wait_until="networkidle")
         stage_nav.goto(page, "generate")
-        expect(page.locator('#prompt-list [data-prompt-state="stale"]')).to_have_count(4)
-        expect(page.locator("#confirm-action")).to_be_disabled()
+        # 自动准备是异步本地动作：等它落定，再断言（不拿瞬时 stale 当终态）。
+        expect(page.locator('#prompt-list [data-prompt-state="saved"]')).to_have_count(4)
         changed = page.evaluate(ID_DB_PROBE)
-        check("R53-E03", "模型/协议目标改变使全部旧 Prompt 过期，历史保留且未调用新模型",
-              changed["prompts"] == prompts_before_rotation
-              and changed["attempt_chains"] == rotated["attempt_chains"]
-              and changed["candidates"] == rotated["candidates"]
-              and len(transport.calls) == 5,
-              {"stale_count": page.locator('#prompt-list [data-prompt-state="stale"]').count(),
-               "calls": len(transport.calls)})
+        old_provider = rotated["prompts"]["shot_main_clean"]["payload"]["basis"]["provider"]
+        per_shot = {}
+        for shot_id, history in sorted(changed.get("prompt_history", {}).items()):
+            before = rotated.get("prompt_history", {}).get(shot_id, [])
+            per_shot[shot_id] = {
+                "old_versions": [entry["version"] for entry in before],
+                "new_versions": [entry["version"] for entry in history],
+                "old_hash_kept": all(entry["hash"] == before[index]["hash"]
+                                     for index, entry in enumerate(before)),
+                "latest_provider": history[-1]["basis"]["provider"],
+                "latest_provider_id": history[-1]["basis"]["provider"]["provider_id"],
+                "latest_capability_version": history[-1]["basis"]["provider"]["version"],
+                "latest_protocol": history[-1]["basis"]["provider"]["protocol"],
+            }
+        reprepared = [
+            shot_id for shot_id, info in per_shot.items()
+            if info["latest_provider_id"] != old_provider["provider_id"]
+            and info["latest_capability_version"] == old_provider["version"]
+            and info["latest_protocol"] == old_provider["protocol"]
+            and len(info["new_versions"]) > len(info["old_versions"])
+            and info["old_hash_kept"]
+        ]
+        e03_detail = {
+            "shots_reprepared_to_new_target": sorted(reprepared),
+            "shots_total": len(per_shot),
+            "attempts_same": changed["attempt_chains"] == rotated["attempt_chains"],
+            "candidates_same": changed["candidates"] == rotated["candidates"],
+            "calls": len(transport.calls),
+            "stale_count": page.locator('#prompt-list [data-prompt-state="stale"]').count(),
+            "saved_count": page.locator('#prompt-list [data-prompt-state="saved"]').count(),
+            "none_count": page.locator('#prompt-list [data-prompt-state="none"]').count(),
+            "prompt_rows": page.locator("#prompt-list .shot-spec").count(),
+            "confirm_disabled": page.locator("#confirm-action").is_disabled(),
+            "confirm_text": page.locator("#confirm-action").text_content(),
+            "old_provider": old_provider["provider_id"],
+            "new_provider": per_shot["shot_main_clean"]["latest_provider_id"],
+            "per_shot": per_shot,
+        }
+        check("R53-E03",
+              "模型/协议目标改变：系统 Prompt 按新依据本地重编译（新版本、旧版本逐字保留）、零新增外呼且不自动重提",
+              len(reprepared) == len(per_shot) == 4
+              and e03_detail["attempts_same"] and e03_detail["candidates_same"]
+              and e03_detail["calls"] == 5
+              and e03_detail["stale_count"] == 0 and e03_detail["saved_count"] == 4
+              and e03_detail["none_count"] == 0
+              and e03_detail["confirm_disabled"] is True
+              and "0 张" in (e03_detail["confirm_text"] or ""),
+              e03_detail)
 
     try:
         with sync_playwright() as pw:

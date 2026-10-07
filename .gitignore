@@ -40,6 +40,8 @@ evals/probes/*
 evals/product-v2/*.txt
 evals/product-v2/*.json
 evals/product-v2/*.md
+# packet08 三件套（设置三用途/按需单图 AI/交付清单）的机器证据；人读报告仍按需 git add -f 晋级。
+evals/product-v2/refactor/packet08-*.json
 evals/**/*.png
 evals/**/*.jpg
 evals/**/*.jpeg

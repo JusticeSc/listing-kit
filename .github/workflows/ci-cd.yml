@@ -95,6 +95,9 @@ jobs:
           uv run python tools/verify_v2_6_4_accessibility.py
           uv run python tools/verify_v2_ui_2_interaction_visual.py
           uv run python tools/verify_v2_ui_3_frontend.py
+          uv run python tools/verify_v2_packet08_settings_vision.py
+          uv run python tools/verify_v2_packet08_adoption_ai.py
+          uv run python tools/verify_v2_packet08_delivery_ai.py
 
       - name: Reject verification side effects
         run: |
