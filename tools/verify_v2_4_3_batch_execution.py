@@ -917,6 +917,10 @@ def main() -> int:
         mark = "PASS" if item["ok"] else "FAIL"
         lines.append(f"- [{mark}] {item['id']} {item['title']}")
     lines += ["", "BOUNDARY", boundary]
+    if failed:
+        lines += ["", "FAILED DETAILS"]
+        lines += [f"- {item['id']} " + json.dumps(item["detail"], ensure_ascii=False)[:4000]
+                  for item in failed]
     txt_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
     for line in lines:
@@ -927,6 +931,14 @@ def main() -> int:
     print(" -", txt_path.relative_to(ROOT).as_posix())
     for shot in screenshots:
         print(" -", shot)
+    if failed:
+        # 失败时把判据的实测值打到日志里：远程 CI 只回日志，不传证据文件——
+        # 没有 detail 就只能靠猜机制（2026-10-08 的 V2.4.3-04 就是这样赔了一轮 CI）。
+        print("")
+        print("FAILED DETAILS")
+        for item in failed:
+            print(" -", item["id"], json.dumps(item["detail"], ensure_ascii=False)[:4000],
+                  flush=True)
     return 0 if status == "passed" else 1
 
 
