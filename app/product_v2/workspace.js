@@ -20,7 +20,6 @@ import {
   PRODUCT_INPUT_SCHEMA_VERSION,
   REFERENCE_ROLES,
   intakeReadiness,
-  reviewIsCurrent,
   suitePlanSummary,
 } from "./domain/index.js";
 import { createGenerationModule } from "./generation.js";
@@ -93,7 +92,6 @@ import {
  * @typedef {import("./model-settings.js").ModelSettings} ModelSettings
  * @typedef {import("./model-settings.js").EffectiveCapabilities} EffectiveCapabilities
  * @typedef {import("./generation.js").GenerationModule} GenerationModule
- * @typedef {import("./generation.js").ReviewReportEntry} ReviewReportEntry
  * @typedef {import("./generation.js").PromptEntry} PromptEntry
  * @typedef {import("./semantic-analysis.js").AnalysisOutcome} AnalysisOutcome
  * @typedef {import("./semantic-analysis.js").SemanticRequestBody} SemanticRequestBody
@@ -580,11 +578,6 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
     })),
     promptsSheet: (ids) => prompts.sheet(ids ?? null),
     imageEnvironment: (saved) => /** @type {unknown} */ (saved ?? modelSettings.imageEnvironment()),
-    renderAttempts: () => generationView?.renderAttempts(),
-    renderBatch: () => generationView?.renderBatch(),
-    status: (/** @type {string} */ text) => { generationView?.setAttemptStatus(text); },
-    attemptError: (/** @type {string|undefined} */ message) => { generationView?.showAttemptError(message); },
-    clearAttemptError: () => generationView?.clearAttemptError(),
   });
   const selectionAdoption = createSelectionAdoptionModule({
     repository: /** @type {import("./storage/validate.js").ProjectRepository} */ (/** @type {unknown} */ (repository)),
@@ -592,11 +585,10 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
     prompts,
     settings: modelSettings,
     beginAction, sources: projectSources,
-    changed: () => { deliveryView?.render(); generationView?.renderAttempts(); },
+    // 采用/报告侧变化要同时刷新：交付门（deliveryView）、生成区尝试行（reportBuildFailure 显示）
+    // 与审核列表（报告出现/补建失败）。三者都只读投影，不写库、不触发业务变更。
+    changed: () => { deliveryView?.render(); generationView?.renderAttempts(); compareView?.renderReviewList(); },
   });
-  generation.setReviewFlightReader(
-    (/** @type {string} */ shotId) => selectionAdoption.isReviewInFlight(shotId));
-  generation.setReviewAccess(selectionAdoption);
   const reviewDelivery = createReviewDeliveryModule({
     repository: /** @type {import("./storage/validate.js").ProjectRepository} */ (/** @type {unknown} */ (repository)),
     generation,
@@ -775,6 +767,9 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
       suffixedErrorMessage: errorMessageSuffixed,
     },
   });
+  // owner 只读文案投影的唯一订阅口（工作区一次装配，与下面的 modelSettings.subscribe 同一风格）：
+  // generation 不再注入 DOM 回调；忙碌/进度仍读飞行标识与批次投影，视图不解读业务状态。
+  generation.subscribe(() => { generationView?.applyNotice(); });
 
   /** @type {EffectiveCapabilities|null} */
   let capabilities = null;
@@ -1509,28 +1504,13 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
     if (!action.alive()) return;
     await generation.restore(action);
     if (!action.alive()) return;
-    // 采用记录+已知悉+单图报告由 selectionAdoption.restore 恢复（生成链已在上先灌入）。
+    // 采用记录+已知悉+单图报告由 selectionAdoption.restore 恢复（生成链已在上先灌入）；
+    // 缺失/过期确定性报告的补建也归 adoption（restore 内 + 订阅生成候选变化），工作区不补、不吞异常。
     await selectionAdoption.restore(action);
     if (!action.alive()) return;
     // 整套报告与交付记录由 reviewDelivery.restore 恢复（suite+export；ack 已由 adoption.restore 恢复）。
     await reviewDelivery.restore(action);
     if (!action.alive()) return;
-    const plan = inputs.suitePlan();
-    for (const shot of (plan && Array.isArray(plan.shots) ? plan.shots : [])) {
-      // 落库套图 shot_id 恒为 string（见上；此处同）。
-      const latest = generation.latestStoredCandidateOf(/** @type {string} */ (shot.shot_id));
-      if (!latest) continue;
-      const candidate = latest.record;
-      const stored = selectionAdoption.reportOf(candidate.candidate_id);
-      // 重开只补建缺失/过期报告：内存面已有当前报告则跳过，避免 review_report 版本无意义 +1。
-      if (stored && reviewIsCurrent(stored.report, candidate)) continue;
-      try {
-        await selectionAdoption.ensureReport(/** @type {string} */ (shot.shot_id), candidate, null, action.projectId);
-      } catch (error) {
-        // 打开项目时的报告补建是尽力而为；失败不阻塞工作区。
-      }
-      if (!action.alive()) return;
-    }
     renderAll();
     await loadCapabilities();
     if (!action.alive()) return;

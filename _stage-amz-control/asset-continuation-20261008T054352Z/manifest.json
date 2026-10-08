@@ -1,0 +1,26 @@
+{
+  "schema": "amz-continuation-delta-baseline/v1",
+  "observed_at": "2026-10-08T05:43:52.105Z",
+  "head": "132884d3a50a1188896111385eaaf6edf46c36b8",
+  "files": [
+    {
+      "path": "_working/amz-listing-kit-product-v2/state.md",
+      "sha256": "4b88acc2f3cb7fe06ed32755a507e81e8e17c4907095d32a3e07ed4442250f20",
+      "bytes": 56219
+    },
+    {
+      "path": "app/product_v2_server.py",
+      "sha256": "67a470f982e8cfb42770a46b972242a028143339007d4e4b90fe9770141f664f",
+      "bytes": 79850
+    },
+    {
+      "path": "README.md",
+      "sha256": "98988b8d238f9b73f086dee6e748ce10ff2c9f422c5ce5be60df88baffc90bd2",
+      "bytes": 21365
+    }
+  ],
+  "reused_full_baseline": "_stage-amz-control/final-delivery-start-20261007T145602Z/manifest.json",
+  "reused_data_baseline": "_stage-amz-control/final-delivery-start-20261007T145602Z/data/project-before.zip",
+  "data_proof": "evals/product-v2/refactor/final-delivery-20261007.md#启动绑定与恢复前置",
+  "scope": "Only preserve files to be changed; do not redo established project import/Blob proof unless its contract changes."
+}

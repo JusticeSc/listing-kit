@@ -422,8 +422,10 @@ class ProductV2Handler(BaseHTTPRequestHandler):
     def _read_body(self, max_bytes: int = MAX_BODY_BYTES) -> tuple[bytes | None, int, dict[str, Any] | None]:
         """返回 (body, status, payload)；payload 非空表示已经可以结束这个请求。"""
         raw_length = self.headers.get("Content-Length")
-        if raw_length is None:
-            return None, 400, input_rejected_payload("请求必须带合法的 Content-Length。")
+        if self.headers.get("Transfer-Encoding") is not None or raw_length is None:
+            # 不解码 chunked；长度不明确或有传输编码时，正文不能留给下一条请求。
+            self._drop_connection()
+            return None, 400, input_rejected_payload("请求只支持合法的 Content-Length，不支持 Transfer-Encoding。")
         if not str(raw_length).strip().isdigit():
             self._drop_connection()          # 长度不可知：残留正文无法安全跳过
             return None, 400, input_rejected_payload("请求必须带合法的 Content-Length。")
@@ -442,7 +444,7 @@ class ProductV2Handler(BaseHTTPRequestHandler):
                 if not chunk:
                     break
                 drain_budget -= len(chunk)
-            if drain_budget > 0:
+            if length > DRAIN_ABSOLUTE_MAX or drain_budget > 0:
                 self._drop_connection()
             return None, 400, input_rejected_payload(
                 f"请求体超过上限 {max_bytes} 字节。",
@@ -458,7 +460,9 @@ class ProductV2Handler(BaseHTTPRequestHandler):
         path = urllib.parse.unquote(parsed.path)
         # GET 不消费正文：带正文的 GET 是异常请求，读完才复用不安全。
         raw_length = self.headers.get("Content-Length")
-        if raw_length is not None and str(raw_length).strip().isdigit() and int(str(raw_length).strip()) > 0:
+        if (self.headers.get("Transfer-Encoding") is not None
+                or (raw_length is not None
+                    and (not str(raw_length).strip().isdigit() or int(str(raw_length).strip()) > 0))):
             self._drop_connection()
         # 查询参数在这里没有语义：不存在 directory / workspace 之类的服务端读取。
         if path == "/api/health":
@@ -1127,6 +1131,7 @@ def run_self_check() -> int:
     """正式入口自检：静态资源可取、两个无状态 API 行为正确、失败被分类、越权路径被拒。"""
     import http.client
     import io
+    import socket
 
     from PIL import Image
 
@@ -1274,6 +1279,44 @@ def run_self_check() -> int:
                   f"status={status} connection={close_header} closed={closed}")
         finally:
             connection.close()
+
+        # 将异常正文及下一条合法请求一起送达，验证只返回一份有界响应后关闭连接；
+        # 不能只断言首个状态码，否则残留正文被当成新请求的故障仍会漏过。
+        for method, path, framing, status in (
+            ("POST", ANALYZE_PATH, "Transfer-Encoding: chunked", 400),
+            ("POST", ANALYZE_PATH, "Transfer-Encoding: chunked\r\nContent-Length: 0", 400),
+            ("POST", ANALYZE_PATH, "", 400),
+            ("GET", "/api/health", "Transfer-Encoding: chunked", 200),
+            ("GET", "/api/health", "Content-Length: invalid", 200),
+        ):
+            with socket.create_connection((host, port), timeout=5) as connection:
+                connection.settimeout(5)
+                wire = (f"{method} {path} HTTP/1.1\r\nHost: localhost\r\n"
+                        + (f"{framing}\r\n" if framing else "")
+                        + "Connection: keep-alive\r\n\r\n2\r\n{}\r\n0\r\n\r\n"
+                        + "GET /api/health HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n")
+                connection.sendall(wire.encode("ascii"))
+                received = bytearray()
+                eof = False
+                try:
+                    while len(received) < 65536:
+                        part = connection.recv(8192)
+                        if not part:
+                            eof = True
+                            break
+                        received.extend(part)
+                except socket.timeout:
+                    pass
+            head, separator, response_body = bytes(received).partition(b"\r\n\r\n")
+            headers = dict(line.lower().split(b":", 1) for line in head.split(b"\r\n")[1:]
+                           if b":" in line)
+            declared = headers.get(b"content-length", b"").strip()
+            bounded = declared.isdigit() and len(response_body) == int(declared)
+            check(f"{method} {framing or '无 Content-Length'} 拒绝复用未读正文",
+                  head.startswith(f"HTTP/1.1 {status} ".encode("ascii"))
+                  and bool(separator) and headers.get(b"connection", b"").strip() == b"close"
+                  and bounded and eof,
+                  f"bounded={bounded} eof={eof} bytes={len(received)} headers={head!r}")
 
         status, _, _ = request("POST", "/api/anything")
         check("不存在其它服务端写接口", status == 404, f"status={status}")

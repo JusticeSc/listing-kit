@@ -77,8 +77,7 @@ test('late task success saves original candidate without clearing new project fl
     confirmationReader: () => null, promptBasisReader: () => null,
     fenceReader: () => ({ sources: [], projectionJson: '{"shots":[]}', assetSha256: [] }),
     referenceSourceReader: () => [],
-    promptsSheet: () => null, imageEnvironment: () => null, renderAttempts: () => {}, renderBatch: () => {},
-    status: () => {}, attemptError: () => {}, clearAttemptError: () => {},
+    promptsSheet: () => null, imageEnvironment: () => null,
   });
   const seedAttempt = (projectId, actionId, taskId) => {
     const key = projectId + "|generation_attempt|shot_main_clean";
@@ -148,8 +147,7 @@ test('old candidate cannot hide the current action result still needing retrieva
     promptEntryReader: () => null, confirmationReader: () => null, promptBasisReader: () => null,
     fenceReader: () => ({ sources: [], projectionJson: '{"shots":[]}', assetSha256: [] }),
     referenceSourceReader: () => [],
-    promptsSheet: () => null, imageEnvironment: () => null, renderAttempts: () => {}, renderBatch: () => {},
-    status: () => {}, attemptError: () => {}, clearAttemptError: () => {},
+    promptsSheet: () => null, imageEnvironment: () => null,
   });
   await module.restore(action);
   assert.deepEqual(module.deriveBatch().fetch_queue, ['shot_main_clean'],

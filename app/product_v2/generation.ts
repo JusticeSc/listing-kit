@@ -1,5 +1,5 @@
 /**
- * V2.R5.1 生成执行 Module：单张提交、按 task 核对、候选保存、单候选 VLM 复核
+ * V2.R5.1 生成执行 Module：单张提交、按 task 核对、候选保存
  * 与整套批次轮询的唯一执行权威。
  *
  * 职责（计划 §V2.R5.1）：
@@ -9,7 +9,9 @@
  *  - 下载/容量处理：候选字节 hash 校验、大小护栏、配额失败不产生半份记录。
  *
  * 本模块不持有 DOM、不持有编辑状态：套图/确认/Prompt/参考图等只读输入经 deps
- * 读取，渲染与文案经回调注入。workspace 只调用这里的接口并投影结果。
+ * 读取；单图 AI 复核与确定性报告归 selection-adoption（本模块只保全候选并通知投影变化），
+ * 渲染/状态/错误文案由视图读 notice() + 订阅 subscribe() 自取，不注入 DOM 回调。
+ * workspace 只调用这里的接口并投影结果。
  *
  * TypeScript 迁移（计划 §9 V2.R7.5）：本文件是唯一手工维护实现；同名 `generation.js`
  * 由 `npm run build:frontend` 从本文件生成，浏览器只消费生成的 `.js`（import 说明符保持 `.js`）。
@@ -39,7 +41,6 @@
    candidateStoreDecision,
    checkCandidateRecord,
    parsePngDimensions,
-  reviewSummaryText,
   imagePromptProfile,
   canonicalJson,
   checkPromptRecord,
@@ -56,7 +57,6 @@
  } from "./domain/index.js";
  import { sha256Hex } from "./storage/db.js";
  import type { ConfirmationSheet } from "./prompts.js";
-import type { AdoptionReviewAccess } from "./selection-adoption.js";
  import type { AttemptReconcileResult } from "./domain/attempt.js";
 import type { ConsumptionFence, ProjectRepository } from "./storage/validate.js";
  import type {
@@ -72,11 +72,9 @@ import type { ConsumptionFence, ProjectRepository } from "./storage/validate.js"
   ImagePromptProfile,
   PromptRecord,
   PromptReferenceSelection,
-  ReviewReport,
   Sha256Hex,
   SuitePlan,
   SuitePlanSummary,
-  VlmOutcome,
 } from "./domain/type-contracts.js";
 
 const IMAGE_SUBMIT_PATH = "/api/v2/images/submit";
@@ -98,7 +96,6 @@ export type ActionSnapshot = {
 /** 版本链条目：记录本体 + IndexedDB 版本号（渲染/幂等判据）。 */
 export type AttemptEntry = { record: AttemptRecord; version: number };
 export type CandidateEntry = { record: CandidateRecord; version: number };
-export type ReviewReportEntry = { report: ReviewReport; version: number };
 
 /** 确认队列（documentId + 落库后的确认记录 + 版本）；pendingConfirmedShots 的输入。 */
 export type ConfirmationQueue = {
@@ -174,13 +171,6 @@ export type GenerationDependencies = {
   referenceSourceReader(): ReferenceSource[];
   promptsSheet(shotIds?: string[] | null): ConfirmationSheet | null;
   imageEnvironment(saved?: unknown): unknown;
-  reviewAccess?: AdoptionReviewAccess | null;
-  reviewFlightReader?: ((shotId: string) => boolean) | null;
-  renderBatch(): void;
-  renderAttempts(): void;
-  status(text: string): void;
-  attemptError(text: string): void;
-  clearAttemptError(): void;
 };
 
 /** 批次运行状态（Module 内存面；不做第二份状态）。 */
@@ -217,7 +207,6 @@ export type StoreCandidateResult = {
   reason?: string; message?: string;
   candidate_id?: string; sha256?: Sha256Hex;
   width?: number; height?: number; byte_size?: number;
-  review?: string | null;
 };
 
 export type SubmitAttemptOptions = {
@@ -233,36 +222,44 @@ export type EnsureCandidateOptions = {
   flights?: Set<string>;
   candidates?: CandidateEntry[];
   record?: AttemptRecord;
-  roleId?: string | null;
   bytes?: ArrayBuffer;
   syncBytes?: Map<string, SyncBytesEntry>;
   quiet?: boolean;
 };
-export type EnsureReviewReportOptions = { action?: ActionSnapshot; roleId?: string | null };
 export type PollActiveAttemptsOptions = {
   action?: ActionSnapshot; intervalMs?: number; maxRounds?: number; once?: boolean;
 };
 export type RunBatchInput = { confirmation?: ConfirmationQueue; action?: ActionSnapshot };
 
-/** 摘要意图（workspace buildGenerationIntent 的投影）。 */
+/**
+ * 所见摘要：owner 在自己内部准备，携带项目/会话归属、模式、冻结 scope、授权文档与所见版本，
+ * 以及用户看到的那份 snapshot。视图只保存并原样交回本对象，不重算摘要、不猜版本。
+ */
 export type GenerationIntent = {
+  readonly projectId: string;
+  readonly generation: number;
+  readonly mode: ConfirmationSubmissionMode;
+  readonly scope: readonly string[];
+  readonly documentId: string;
+  readonly seenVersion: number;
   all: ConfirmationSheet | null;
   sheet: ConfirmationSheet | null;
   identity: AttemptCurrentEnvironmentIdentity | null;
-  mode: ConfirmationSubmissionMode;
   snapshot: ConfirmationSnapshot | null;
 };
 export type AuthorizationQueueView = {
   queue: ConfirmationQueue; pending: string[]; current: string[]; targetMatched: boolean;
 };
-export type ConfirmAndRunInput = {
-  intent: GenerationIntent | null;
-  readIntent: () => GenerationIntent | null;
-  documentId: string;
-  expectedVersion: number;
-  action?: ActionSnapshot;
+export type ConfirmAndRunInput = { intent: GenerationIntent };
+export type ConfirmAndRunResult = {
+  skipped?: true; stale?: true; reason?: string; message?: string;
+  /** stale 时返回 owner 重新算出的新摘要（供视图重新呈现），不自动确认。 */
+  intent?: GenerationIntent | null;
+  confirmation?: ConfirmationQueue;
 };
-export type ConfirmAndRunResult = { skipped?: true; confirmation?: ConfirmationQueue };
+
+/** owner 只读状态投影：旁路动作的用户可见文案，不参与任何业务判定。 */
+export type GenerationNotice = { readonly status: string; readonly error: string };
 
 /** 公开接口（workspace 与测试只调用这些方法）。 */
 export type GenerationModule = {
@@ -276,8 +273,6 @@ export type GenerationModule = {
   reconcileAttempt(shotId: string, options?: ReconcileAttemptOptions): Promise<ReconcileAttemptResult>;
   storeCandidate(shotId: string, options?: EnsureCandidateOptions): Promise<StoreCandidateResult>;
   buildReferencePayload(references: PromptReferenceSelection[], pid: string): Promise<ReferencePayloadItem[]>;
-  setReviewFlightReader(reader: (shotId: string) => boolean): void;
-  setReviewAccess(access: AdoptionReviewAccess): void;
   deriveBatch(): BatchState;
   batchStateReader(): BatchRunState | null;
   runBatch(input?: RunBatchInput): Promise<void>;
@@ -289,22 +284,24 @@ export type GenerationModule = {
   isConfirmedShotCurrent(confirmation: ConfirmationQueue | null | undefined, shotId: string): boolean;
   rememberConfirmation(queue: ConfirmationQueue): void;
   restore(action: ActionSnapshot): Promise<void>;
-  confirmed(): ConfirmationQueue | null;
   reworkEntry(shotId: string): ConfirmationQueue | null;
-  reworkDocumentId(shotId: string): string;
-  mode(): ConfirmationSubmissionMode;
   enterFailedRetry(shotIds: string[]): void;
   enterExplicitNew(shotId: string): void;
   hasCurrent(): boolean;
   shotHasCurrent(shotId: string | null): boolean;
   confirmationFor(shotId: string): ConfirmationQueue | null;
   queues(): AuthorizationQueueView[];
-  intent(batch: { queue: string[]; retry_queue: string[] }): GenerationIntent | null;
+  /** 所见摘要（整套/失败重试/显式另发）：只消费 owner 自己的 scope/mode 与批次队列。 */
+  prepareSummary(): GenerationIntent | null;
+  /** 所见摘要（单图返工）。 */
   reworkIntent(shotId: string): GenerationIntent;
   isAttemptInFlight(shotId: string): boolean;
   isCandidateInFlight(shotId: string): boolean;
-  isReviewInFlight(shotId: string): boolean;
   attemptChainsNow(): [string, AttemptEntry[]][];
+  /** 旁路动作的只读文案投影（忙碌/进度仍读上面的飞行标识与批次投影）。 */
+  notice(): GenerationNotice;
+  /** owner 投影变化通知：视图订阅读只读投影，不执行任何业务变更。 */
+  subscribe(listener: () => void): () => void;
   reset(): void;
 };
 
@@ -364,9 +361,7 @@ export function createGenerationModule(deps: GenerationDependencies): Generation
   const functionDeps = ["beginAction", "projectIdReader", "environmentReader", "requestHeaders",
     "suitePlanReader", "suiteSummaryReader", "promptEntryReader",
     "confirmationReader", "promptBasisReader", "fenceReader", "referenceSourceReader",
-    "promptsSheet", "imageEnvironment",
-    "renderAttempts", "renderBatch", "status",
-    "attemptError", "clearAttemptError"] as const;
+    "promptsSheet", "imageEnvironment"] as const;
   for (const name of functionDeps) {
     if (typeof deps[name] !== "function") {
       throw new Error("生成执行 Module 缺少依赖：" + name + "。");
@@ -393,6 +388,28 @@ export function createGenerationModule(deps: GenerationDependencies): Generation
   // V2.R5.2 同步协议：提交信封里的结果字节暂存（action_id → {buffer, expectSha}）。
   // 明确不落盘：页面刷新/关闭即失效，候选保存走显式补救路径。取走即删。
   let pendingSyncBytes = new Map<string, SyncBytesEntry>();
+  // owner 只读文案投影 + 唯一投影变化通知出口：视图订阅读投影，不注入 DOM 回调。
+  // 文案只是旁路动作的呈现结果，不参与任何业务判定（设计 §11.5.2）。
+  let noticeStatus = "";
+  let noticeError = "";
+  const listeners = new Set<() => void>();
+
+  function notify(): void {
+    for (const listener of [...listeners]) listener();
+  }
+  function setStatus(text: string): void {
+    noticeStatus = text;
+    notify();
+  }
+  function setNoticeError(text: string): void {
+    noticeError = text;
+    notify();
+  }
+  function clearNoticeError(): void {
+    if (!noticeError) return;
+    noticeError = "";
+    notify();
+  }
 
   /* ------------------------------------------------------------ 链与身份 */
 
@@ -461,6 +478,9 @@ export function createGenerationModule(deps: GenerationDependencies): Generation
     authorizationMode = "initial";
     pendingSyncBytes = new Map<string, SyncBytesEntry>();
     batchState = null;
+    // 换项目只清旁路文案；订阅者（视图）生命周期归 workspace 装配，不在 reset 里退订。
+    noticeStatus = "";
+    noticeError = "";
   }
   // 授权面：confirmedQueues/confirmed/reworkQueues/authorizationScope/authorizationMode 的
   // 唯一所有者（设计§2.1：显示摘要→明确提交→登记→执行的完整动作归 generation）。
@@ -566,26 +586,46 @@ export function createGenerationModule(deps: GenerationDependencies): Generation
   }
   // intent 复用旧 authorization.ts:136-147：prompts.sheet + scope/mode + confirmationSnapshot。
   // 旧 prompts/environment 间接依赖由新增 deps promptsSheet/imageEnvironment 替代。
-  function intentOf(batch: { queue: string[]; retry_queue: string[] }): GenerationIntent | null {
-    const all = deps.promptsSheet(null);
-    if (!all) return null;
-    const eligible = new Set(authorizationScope
-      || (authorizationMode === "failed_retry" ? batch.retry_queue : batch.queue));
+  // 冻结的 scope/mode 与授权文档/所见版本随 intent 一起交给视图；外发前 owner 重算同 scope
+  // 摘要比对（见 confirmAndRun），视图不再传 readIntent/documentId/expectedVersion。
+  function intentForScope(scope: readonly string[], mode: ConfirmationSubmissionMode,
+    all: ConfirmationSheet): GenerationIntent {
+    const eligible = new Set(scope);
     const ids = all.shots.filter((shot) => eligible.has(shot.shot_id) && !shot.blockers.length)
       .map((shot) => shot.shot_id);
     const sheet = ids.length ? deps.promptsSheet(ids) : null;
     const identity = attemptCurrentEnvironmentIdentity(deps.imageEnvironment());
     const snapshot = sheet && identity ? snapshotOfSheet(sheet, {
-      executionIdentity: identity, submissionMode: authorizationMode,
+      executionIdentity: identity, submissionMode: mode,
     }) : null;
-    return { all, sheet, identity, snapshot, mode: authorizationMode };
+    const action = deps.beginAction();
+    const reworkShotId = mode === "rework" && scope.length === 1 ? scope[0] : null;
+    const documentId = reworkShotId ? REWORK_CONFIRM_PREFIX + reworkShotId : CONFIRM_DOCUMENT_ID;
+    const seenVersion = reworkShotId
+      ? (reworkQueues.get(reworkShotId)?.version || 0)
+      : (confirmed?.version || 0);
+    return {
+      projectId: action.projectId || "", generation: action.generation, mode,
+      scope: [...scope], documentId, seenVersion, all, sheet, identity, snapshot,
+    };
+  }
+  function intentOf(batch: { queue: string[]; retry_queue: string[] }): GenerationIntent | null {
+    const all = deps.promptsSheet(null);
+    if (!all) return null;
+    const scope = authorizationScope
+      || (authorizationMode === "failed_retry" ? batch.retry_queue : batch.queue);
+    return intentForScope(scope, authorizationMode, all);
+  }
+  /** 所见摘要命令：只消费 owner 自己的 scope/mode 与当前批次队列，不接受队列/版本参数。 */
+  function prepareSummary(): GenerationIntent | null {
+    const batch = deriveBatch();
+    return intentOf({ queue: batch.queue, retry_queue: batch.retry_queue });
   }
   function reworkIntentOf(shotId: string): GenerationIntent {
+    const all = deps.promptsSheet(null);
     const sheet = deps.promptsSheet([shotId]);
-    if (!sheet?.can_submit) throw new Error("这张图当前还有阻断，返工没有外发。");
-    const identity = attemptCurrentEnvironmentIdentity(deps.imageEnvironment());
-    const snapshot = snapshotOfSheet(sheet, { executionIdentity: identity, submissionMode: "rework" });
-    return { all: sheet, sheet, identity, snapshot, mode: "rework" };
+    if (!all || !sheet?.can_submit) throw new Error("这张图当前还有阻断，返工没有外发。");
+    return intentForScope([shotId], "rework", all);
   }
 
   /* ------------------------------------------------------------ 传输层 */
@@ -807,8 +847,6 @@ export function createGenerationModule(deps: GenerationDependencies): Generation
     flights.add(shotId);
     const candidates = options.candidates || candidateChainOf(shotId);
     const record = options.record || latestAttemptOf(shotId)?.record;
-    const roleId = options.roleId !== undefined ? options.roleId
-      : deps.suitePlanReader()?.shots?.find(shot => shot.shot_id === shotId)?.role_id || null;
     // 候选取回失败的原因必须能被界面说清（ui-contract §2.6「失败说明发生了什么、影响哪项、
     // 下一步在哪里」）：批次路径此前只对配额记录 fetchBlocked，其它取回失败原因被丢弃，
     // 用户只看到「候选还没保存」而不知道原因。空串表示当前没有未解决的取回失败。
@@ -821,16 +859,7 @@ export function createGenerationModule(deps: GenerationDependencies): Generation
         attempt: record, candidates,
       });
       if (!decision.needed) {
-        if (decision.reason === "already_stored" && decision.candidate) {
-          // Unchecked cast: decision.candidate 恒为候选链条目 {record, version}（既有不变量）。
-          const storedEntry = decision.candidate as CandidateEntry;
-          const existing = storedEntry.record;
-          try {
-            if (deps.reviewAccess) await deps.reviewAccess.ensureReport(shotId, existing, null, pid, { action, roleId });
-          } catch (error) {
-            // 旧候选的报告补建是尽力而为，不改变幂等语义。
-          }
-        }
+        // 旧候选的确定性报告补建归 adoption（订阅候选变化 / restore），generation 只保全候选。
         return { skipped: true, reason: decision.reason };
       }
       const fetched: FetchedBytes = options.bytes
@@ -857,7 +886,6 @@ export function createGenerationModule(deps: GenerationDependencies): Generation
           message: messageOf(error) || "结果不是可解析的 PNG，候选未保存。",
         };
       }
-      let reviewSummary: string | null = null;
       try {
         // 候选保存是"上游已完成"的数据保全写：即使会话已切换，也按冻结项目落库。
         const asset = await repository.assets.put(pid, {
@@ -883,17 +911,11 @@ export function createGenerationModule(deps: GenerationDependencies): Generation
         if (action.alive()) {
           rememberCandidate(shotId, { record: candidate, version: saved.version });
         }
-        try {
-          const reviewEntry = deps.reviewAccess ? await deps.reviewAccess.ensureReport(shotId, candidate,
-            new Uint8Array(fetched.buffer), pid, { action, roleId }) : null;
-          reviewSummary = reviewEntry ? reviewSummaryText(reviewEntry.report) : null;
-        } catch (error) {
-          reviewSummary = null;
-        }
+        // 候选/资产保全成功即完成；确定性报告由 adoption 单向消费（订阅 + restore），
+        // 报告补建失败不改变这里的保存成功结论，也不丢已存图片。
         return {
           stored: true, candidate_id: record.action_id, sha256: asset.sha256,
           width: dimensions.width, height: dimensions.height, byte_size: asset.byte_size,
-          review: reviewSummary,
         };
       } catch (error) {
         if (error !== null && typeof error === "object" && "code" in error && error.code === "QUOTA_EXCEEDED") {
@@ -913,7 +935,7 @@ export function createGenerationModule(deps: GenerationDependencies): Generation
       }
     } finally {
       flights.delete(shotId);
-      if (!options.quiet && action.alive()) deps.renderAttempts();
+      if (!options.quiet && action.alive()) notify();
     }
   }
 
@@ -1131,8 +1153,8 @@ export function createGenerationModule(deps: GenerationDependencies): Generation
       if (!action.alive()) return { skipped: true, reason: "stale_session", record };
       if (action.alive()) {
         rememberAttempt(shotId, { record: record, version: saved.version });
-        deps.renderAttempts();
-        deps.status("已登记 " + actionId + "（pending_submit），正在提交…");
+        notify();
+        setStatus("已登记 " + actionId + "（pending_submit），正在提交…");
       }
       const { envelope } = await postImageJson(IMAGE_SUBMIT_PATH, {
         action_id: actionId,
@@ -1170,7 +1192,7 @@ export function createGenerationModule(deps: GenerationDependencies): Generation
       let candidate: StoreCandidateResult | null = null;
       if (outcome.record.state === ATTEMPT_STATES.succeeded) {
         candidate = await ensureCandidateStored(shotId, {
-          quiet: true, action, record: outcome.record, candidates, roleId: shot.role_id,
+          quiet: true, action, record: outcome.record, candidates,
           flights: candidateFlights, syncBytes,
         });
       }
@@ -1182,7 +1204,7 @@ export function createGenerationModule(deps: GenerationDependencies): Generation
       };
     } finally {
       flights.delete(shotId);
-      if (action.alive()) deps.renderAttempts();
+      if (action.alive()) notify();
     }
   }
 
@@ -1201,7 +1223,6 @@ export function createGenerationModule(deps: GenerationDependencies): Generation
       const latest = latestAttemptOf(shotId);
       if (!latest || !latest.record.task_id) return { skipped: true, reason: "no_task" };
       const candidates = candidateChainOf(shotId);
-      const roleId = deps.suitePlanReader()?.shots?.find(shot => shot.shot_id === shotId)?.role_id || null;
       // V2.R4.4：核对先过冻结身份判据——环境漂移或凭据来源失配时不发请求、不重提、不改记录。
       const current = attemptProviderIdentity(latest.record);
       const gate = attemptReconcileEnvironment(latest.record, current);
@@ -1233,7 +1254,7 @@ export function createGenerationModule(deps: GenerationDependencies): Generation
         let candidate: StoreCandidateResult | null = null;
         if (outcome.record.state === ATTEMPT_STATES.succeeded) {
           candidate = await ensureCandidateStored(shotId, {
-            quiet: true, action, record: outcome.record, candidates, roleId, flights: candidateFlights,
+            quiet: true, action, record: outcome.record, candidates, flights: candidateFlights,
           });
         }
         return {
@@ -1252,7 +1273,7 @@ export function createGenerationModule(deps: GenerationDependencies): Generation
       };
     } finally {
       flights.delete(shotId);
-      if (action.alive()) deps.renderAttempts();
+      if (action.alive()) notify();
     }
   }
 
@@ -1281,20 +1302,26 @@ export function createGenerationModule(deps: GenerationDependencies): Generation
 
   function stopBatch(): void {
     if (batchState && batchState.active) batchState.stopped = true;
-    deps.renderBatch();
+    notify();
   }
 
-  /** 摘要授权、原确认落库及执行是一个动作；UI 不决定持久化与外发的先后。 */
-  async function confirmAndRun({ intent, readIntent, documentId, expectedVersion,
-    action = deps.beginAction() }: ConfirmAndRunInput): Promise<ConfirmAndRunResult> {
-    if (!action.projectId || !action.alive() || batchState?.active) return { skipped: true };
+  /**
+   * 摘要授权、原确认落库及执行是一个动作；UI 只交出用户看过的那份摘要。
+   * owner 内部重算同 scope 的摘要比对（当前性），stale 时返回新摘要且零外发、不自动确认。
+   */
+  async function confirmAndRun({ intent }: ConfirmAndRunInput): Promise<ConfirmAndRunResult> {
+    const action = deps.beginAction();
+    if (!action.projectId || !action.alive() || batchState?.active) return { skipped: true, reason: "not_ready" };
+    if (!intent || intent.projectId !== action.projectId || intent.generation !== action.generation) {
+      return { skipped: true, reason: "stale_session", message: "项目或会话已切换；这份摘要不再有效，没有外发。" };
+    }
     const pid = action.projectId;
     const flights = authorizationInFlight;
-    if (flights.has(documentId)) return { skipped: true };
-    flights.add(documentId);
+    if (flights.has(intent.documentId)) return { skipped: true, reason: "in_flight" };
+    flights.add(intent.documentId);
     try {
       // intent / sheet / identity 缺一即没有可比对的摘要：与下面 !snapshot 走同一条拒绝。
-      if (!intent || !intent.sheet || !intent.identity || !intent.identity.configured) {
+      if (!intent.sheet || !intent.identity || !intent.identity.configured) {
         throw new Error("摘要与实际发送内容不一致，没有外发。");
       }
       const snapshot = snapshotOfSheet(intent.sheet,
@@ -1303,25 +1330,38 @@ export function createGenerationModule(deps: GenerationDependencies): Generation
         throw new Error("摘要与实际发送内容不一致，没有外发。");
       }
       const hash = await promptHash(snapshot, { digest: sha256Hex });
-      if (!action.alive()) return { skipped: true };
-      if (canonicalJson(snapshot) !== canonicalJson(readIntent()?.snapshot)) {
-        throw new Error("摘要已变化或当前未就绪；请核对新摘要后再确认，没有外发。");
+      if (!action.alive()) return { skipped: true, reason: "stale_session" };
+      // 异步 hash 之后重新核对同一 scope 的当前摘要：变了就返回新摘要，不把新内容当已确认。
+      let fresh: GenerationIntent | null = null;
+      try {
+        const all = deps.promptsSheet(null);
+        fresh = all ? intentForScope(intent.scope, intent.mode, all) : null;
+      } catch (error) {
+        fresh = null;
+      }
+      if (!fresh || !fresh.snapshot || canonicalJson(fresh.snapshot) !== canonicalJson(intent.snapshot)) {
+        return { stale: true, reason: "summary_changed",
+          message: "摘要已变化或当前未就绪；请核对新摘要后再确认，没有外发。", intent: fresh };
       }
       const payload: ConfirmationRecord = recordOfConfirmation({
         sheet: intent.sheet, hash, confirmedAt: new Date().toISOString(),
         executionIdentity: intent.identity, submissionMode: intent.mode,
       });
       const saved = await repository.documents.save(pid, {
-        kind: DOMAIN_DOCUMENT_KINDS.generation_confirm, documentId, payload, expectedVersion,
+        kind: DOMAIN_DOCUMENT_KINDS.generation_confirm, documentId: intent.documentId,
+        payload, expectedVersion: intent.seenVersion,
       });
-      const confirmation: ConfirmationQueue = { documentId, payload, version: saved.version };
+      const confirmation: ConfirmationQueue = {
+        documentId: intent.documentId, payload, version: saved.version,
+      };
       if (!action.alive()) return { confirmation, skipped: true };
       rememberConfirmation(confirmation);
       if (!action.alive()) return { confirmation, skipped: true };
+      notify();
       await runBatch({ confirmation, action });
       return { confirmation };
     } finally {
-      flights.delete(documentId);
+      flights.delete(intent.documentId);
     }
   }
 
@@ -1330,10 +1370,10 @@ export function createGenerationModule(deps: GenerationDependencies): Generation
    */
   async function runBatch({ confirmation, action = deps.beginAction() }: RunBatchInput = {}): Promise<void> {
     if (!action.alive() || !action.projectId || !deps.suitePlanReader() || batchState?.active) return;
-    deps.clearAttemptError();
+    clearNoticeError();
     const queue = pendingConfirmedShots(confirmation);
     if (!queue.length) {
-      deps.attemptError("原队列没有可新增提交的图；Unknown 只核对或明确另发，不自动重提。");
+      setNoticeError("原队列没有可新增提交的图；Unknown 只核对或明确另发，不自动重提。");
       return;
     }
     // 队列非空即保证确认与冻结目标存在：这条守卫只收窄类型。
@@ -1343,14 +1383,14 @@ export function createGenerationModule(deps: GenerationDependencies): Generation
     const running: BatchRunState = { active: true, stopped: false, halted: false, haltReason: "", fetchBlocked: "",
       fetchNotice: "", currentShotId: null, phase: "submit" };
     batchState = running;
-    deps.renderAttempts();
+    notify();
     let submitted = 0;
     const skipped: string[] = [];
     try {
       for (const shotId of queue) {
         if (!action.alive() || running.stopped || running.halted) break;
         running.currentShotId = shotId;
-        deps.renderBatch();
+        notify();
         const outcome = await performSubmitAttempt(shotId, {
           action, confirmation, requestHeaders, note: "用户一次授权的原队列提交",
         });
@@ -1390,9 +1430,9 @@ export function createGenerationModule(deps: GenerationDependencies): Generation
         // 置 null 会让随后的 renderAttempts 通用文案立刻覆盖它（实测 #batch-progress 从未出现停止提示）。
         // 轮询判定改用 live 快照（见 pollActiveAttempts），所以这里不改变核对语义。
         batchState = { ...finished, active: false };
-        deps.renderAttempts();
+        notify();
         const result = deriveBatch();
-        deps.status((finished?.stopped ? "已停止新增提交；" : finished?.halted ? "已暂停（" + finished.haltReason + "）；" : "本批结束；")
+        setStatus((finished?.stopped ? "已停止新增提交；" : finished?.halted ? "已暂停（" + finished.haltReason + "）；" : "本批结束；")
           + "已提交 " + submitted + " 张；" + batchProgressText(result)
           + (skipped.length ? "；未提交：" + skipped.join("；") : "")
           + "。原授权、未提交队列与所有历史记录保留。");
@@ -1415,7 +1455,7 @@ export function createGenerationModule(deps: GenerationDependencies): Generation
       if (!action.alive()) return;
       const state = deriveBatch();
       if (state.reconcile_queue.length === 0 && state.fetch_queue.length === 0) return;
-      if (live) { live.phase = "poll"; deps.renderBatch(); }
+      if (live) { live.phase = "poll"; notify(); }
       for (const shotId of state.reconcile_queue) {
         if (live && live.halted) return;
         if (!action.alive()) return;
@@ -1430,7 +1470,7 @@ export function createGenerationModule(deps: GenerationDependencies): Generation
           if (live) {
             live.currentShotId = shotId;
             live.phase = "fetch";
-            deps.renderBatch();
+            notify();
           }
           const stored = await ensureCandidateStored(shotId, { action });
           if (!action.alive()) return;
@@ -1450,7 +1490,7 @@ export function createGenerationModule(deps: GenerationDependencies): Generation
         }
       }
       if (!action.alive()) return;
-      deps.renderAttempts();
+      notify();
       if (once) return;
       // 停止只停新增提交：已提交的身份仍然各查一次，给出当前结论后不再轮询。
       if (live && live.stopped) return;
@@ -1469,20 +1509,20 @@ export function createGenerationModule(deps: GenerationDependencies): Generation
 
   /** 批量的「核对进行中」：所有有任务编号的在途记录各查一次，不重提。 */
   async function reconcileOnce(): Promise<void> {
-    deps.clearAttemptError();
+    clearNoticeError();
     const before = deriveBatch();
     if (before.reconcile_queue.length === 0) {
-      deps.attemptError("没有可按任务编号核对的记录。");
+      setNoticeError("没有可按任务编号核对的记录。");
       return;
     }
     try {
       await pollActiveAttempts({ once: true });
     } catch (error) {
-      deps.attemptError(messageOf(error) || "核对没有完成，记录保持原样。");
+      setNoticeError(messageOf(error) || "核对没有完成，记录保持原样。");
       return;
     }
     const after = deriveBatch();
-    deps.status("已核对 " + before.reconcile_queue.length + " 张："
+    setStatus("已核对 " + before.reconcile_queue.length + " 张："
       + batchProgressText(after));
   }
 
@@ -1496,17 +1536,12 @@ export function createGenerationModule(deps: GenerationDependencies): Generation
     reconcileAttempt: performReconcileAttempt,
     storeCandidate: ensureCandidateStored,
     buildReferencePayload,
-    setReviewFlightReader: (reader) => { deps.reviewFlightReader = reader; },
-    setReviewAccess: (access) => { deps.reviewAccess = access; },
     // 批次
     deriveBatch, batchStateReader, runBatch, reconcileOnce,
     confirmAndRun, stopBatch,
     pendingConfirmedShots, confirmationTargetMatched, isConfirmedShotCurrent,
     rememberConfirmation, restore,
-    confirmed: () => confirmed,
     reworkEntry: (shotId) => reworkQueues.get(shotId) || null,
-    reworkDocumentId: (shotId) => REWORK_CONFIRM_PREFIX + shotId,
-    mode: () => authorizationMode,
     enterFailedRetry: (shotIds) => {
       authorizationScope = [...shotIds];
       authorizationMode = "failed_retry";
@@ -1521,12 +1556,17 @@ export function createGenerationModule(deps: GenerationDependencies): Generation
     shotHasCurrent: shotHasCurrentQueue,
     confirmationFor: confirmationForOf,
     queues: queuesView,
-    intent: intentOf,
+    prepareSummary,
     reworkIntent: reworkIntentOf,
+    // 只读文案投影与投影变化通知（视图订阅；不注入 DOM 回调）
+    notice: () => ({ status: noticeStatus, error: noticeError }),
+    subscribe: (listener) => {
+      listeners.add(listener);
+      return () => { listeners.delete(listener); };
+    },
     // 飞行标识（渲染投影用）
     isAttemptInFlight: (shotId) => attemptInFlight.has(shotId),
     isCandidateInFlight: (shotId) => candidateInFlight.has(shotId),
-    isReviewInFlight: (shotId) => deps.reviewFlightReader ? deps.reviewFlightReader(shotId) : false,
     attemptChainsNow: () => Array.from(attemptChains.entries()),
     reset,
   };

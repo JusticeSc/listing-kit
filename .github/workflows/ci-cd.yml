@@ -14,6 +14,14 @@ concurrency:
   group: product-v2-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# 依赖索引由 pyproject.toml 固定为清华镜像；GitHub runner 到该镜像会偶发单请求超时
+# （2026-10-08：run 37760499569 Docker 构建拉 pillow 12.3.0、run 37762306228 host uv sync 拉
+# httpcore2 2.13.1，原文均为网络超时/重试耗尽）。这里只放宽安装期的 HTTP 超时与重试次数，
+# 不改索引、不改锁定内容、不碰产品行为；失败仍按真实原因红，不靠重跑洗绿。
+env:
+  UV_HTTP_TIMEOUT: "300"
+  UV_HTTP_RETRIES: "5"
+
 jobs:
   verify:
     name: Control plane and Product V2

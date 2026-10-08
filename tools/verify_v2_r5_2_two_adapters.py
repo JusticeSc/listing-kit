@@ -214,7 +214,6 @@ async ({projectId}) => {
   const opened = await storage.openStorage({});
   try {
     const repository = opened.repository;
-    const noop = () => {};
     const mod = gen.createGenerationModule({
       beginAction: () => ({ alive: () => true, projectId }),
       projectIdReader: () => projectId,
@@ -231,8 +230,6 @@ async ({projectId}) => {
       referenceSourceReader: () => [],
       promptsSheet: () => null,
       imageEnvironment: () => null,
-      renderAttempts: noop, renderBatch: noop, status: noop,
-      attemptError: noop, clearAttemptError: noop,
       repository,
     });
     const now = "2026-10-03T00:00:00.000Z";

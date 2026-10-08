@@ -1075,17 +1075,18 @@ export function createCompareView(
         promptVersion = saved.saved.version;
       }
       if (!action.alive()) return;
-      // 意图即读即用：提交前读一次、发送时 generation 内部再读一次，两次不一致即拒发。
+      // 所见摘要由 generation 准备（授权文档/所见版本/返工 scope 都在 owner 内部）；
+      // 视图只保存并原样交回，提交前不重算、不猜版本，也不决定持久化与外发的先后。
       const intent = generation.reworkIntent(shotId);
-      if (!intent) throw new Error("这张图当前还有阻断，返工没有外发。");
-      // 确认记录与 Prompt 是两条版本链：expectedVersion 必须取所见返工确认头（首次 0），
-      // 不能误传 Prompt 版本（否则 generation_confirm/rework:shot 报 REVISION_CONFLICT 且面板不关）。
-      const confirmExpectedVersion = generation.reworkEntry(shotId)?.version || 0;
-      await generation.confirmAndRun({
-        intent, readIntent: () => generation.reworkIntent(shotId), expectedVersion: confirmExpectedVersion,
-        documentId: generation.reworkDocumentId(shotId), action,
-      });
+      const result = await generation.confirmAndRun({ intent });
       if (!action.alive()) return;
+      if (result.stale) {
+        // owner 已算出新摘要且零外发：只呈现，不自动确认、不自动重提。
+        const fresh = result.intent?.sheet?.external_summary?.statement || "";
+        showError(elements.reworkError,
+          (result.message || "摘要已变化；请核对新摘要后再确认返工。") + (fresh ? "当前摘要：" + fresh : ""));
+        return;
+      }
       const latestAttempt = generation.latestAttemptOf(shotId);
       const state = latestAttempt ? latestAttempt.record.state : null;
       draft.directive = null;
@@ -1262,8 +1263,19 @@ export function createCompareView(
             attrs: { "data-review-ai": aiStatus.status },
             text: aiStatus.status === "reviewed" ? "AI 复核：已完成（只提示，不自动采纳）"
               : aiStatus.status === "unknown" ? "AI 复核：未完成（结果未知，不阻断人工采用）"
-              : "AI 复核：未复核（未运行，按需发起才会调用；不阻断人工采用）",
+                : "AI 复核：未复核（未运行，按需发起才会调用；不阻断人工采用）",
           }));
+        } else {
+          // 只在真的补建失败时多一行：确定性报告缺失 ≠ AI 未复核，失败原因必须如实显示。
+          const reportFailure = selectionAdoption.reportBuildFailure(shownRow.candidate_id);
+          if (reportFailure) {
+            check.append(createElement("p", {
+              className: "meta review-check-report",
+              attrs: { "data-review-report": "failed" },
+              text: "自动检查报告补建失败：" + reportFailure
+                + "（候选与本地图片保留，采用会被挡住；重新打开或再次采用会补建，不需要 AI）",
+            }));
+          }
         }
         check.append(createElement("p", {
           className: "meta review-check-headline", text: compareRowHeadline(shownRow),

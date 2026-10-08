@@ -268,6 +268,7 @@ def main() -> int:
     parser.add_argument("--label", default="")
     args = parser.parse_args()
 
+    from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
     from playwright.sync_api import expect, sync_playwright  # noqa: PLC0415
 
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -578,16 +579,28 @@ def main() -> int:
                 status_before = len([item for item in status_requests
                                      if item["task_id"] == expected_task])
                 if final["state"] != "succeeded":
-                    # 「核对任务」按钮在页面后台重绘时会先禁用/移除（行可能已自行核对到
-                    # succeeded）：先有界等可点；等不到且行已 succeeded 就不再点击；
-                    # 否则按原样抛错（fail-closed）。后续 wait_state 仍必须见到 succeeded。
+                    # 后台可在 enabled 检查与 click 之间完成原任务并移除按钮。
+                    # 仅当页面与独立读库均证明同一 action/task 已成功，才接受该竞态；
+                    # 超时、其它动作的成功或只有 DOM 成功都不能放行。
                     row_button = row(shot_main).locator('button:has-text("核对任务")')
                     try:
                         expect(row_button).to_be_enabled(timeout=15_000)
                         row_button.click()
-                    except AssertionError:
-                        state_now = (row(shot_main).get_attribute("data-attempt-state") or "")
-                        if state_now != "succeeded":
+                    except (AssertionError, PlaywrightTimeoutError) as error:
+                        state_now = row(shot_main).get_attribute("data-attempt-state") or ""
+                        current_chain = chain_of(probe(), shot_main)
+                        current = current_chain[-1]["payload"] if current_chain else {}
+                        completed_original = (state_now == "succeeded"
+                                              and current.get("state") == "succeeded"
+                                              and current.get("action_id") == final["action_id"]
+                                              and current.get("task_id") == expected_task)
+                        ui["manual_reconcile_race"] = {
+                            "exception": type(error).__name__,
+                            "dom_state": state_now, "stored_state": current.get("state"),
+                            "action_id": current.get("action_id"), "task_id": current.get("task_id"),
+                            "completed_original": completed_original,
+                        }
+                        if not completed_original:
                             raise
                 wait_state(shot_main, "succeeded", timeout=30_000)
                 reconciled = probe()

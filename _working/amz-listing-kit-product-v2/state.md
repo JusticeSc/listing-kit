@@ -3,8 +3,9 @@
 > CONTROL-STATUS: current · AUTHORITY: execution-state
 > 只保存进度、证据、阻塞/未知与下一动作；目标和任务定义只在 `docs/product-v2-refactor-plan.md`。
 > prepared 是未绑定新 Goal 的本地准备态，不是系统 paused。旧读数与完成记录只见 superseded 基线。
+> **2026-10-08最新恢复门**：用户明确“继续吧”，要求做过的工作不重做、积累成资产、逐步减少工作量与复杂性。相同产品Goal `159d03ed410f9ff9`已真实resume为active，正文与计划§2.1一致；原停止指令保留历史。绑定后的工作按5个独立消费者工作段保守占用原10轮，本次HTTP差量为第6轮，原预算/计数不清零；Phase5/R5.1 active。已有实现、真链和本地完整流程/两包资产保留，相关合同未改不重跑。差量快照`_stage-amz-control/asset-continuation-20261008T054352Z/manifest.json`复用原全量代码/数据恢复材料，不再重建整套基线。
 > 2026-10-08 远程 CD 收口轮（本机 Windows vs CI ubuntu 的 Linux 时序差逐个定位）：PR #4 推上去的
-> 5 段提交在**分支 CI** 上暴露 4 个跨平台红结点，全部按 FAILED DETAILS 实测修复——
+> 5段提交暴露4个跨平台红结点；当时曾称“全部实测修复”，最新审计收窄为对应等待改动/诊断与后续绿，不作为全部间歇根治证明——
 > 4_3 -04 的确认写库后状态派生是异步落库，探针直读 IndexedDB 与之竞速（Linux 时序下必读 PLAN_REVIEW；
 > 改 wait_project_state 20s 有界等待后取样，超时仍判红）；4_3 补失败 detail 打日志（b764740）；
 > UI3-08 只有 500ms 固定等批次，慢时序个别行仍 submitted（ab3d84b：wait_terminal + save-state 有界等待）；
@@ -20,8 +21,8 @@
 > release-evidence-206c8c84…，含 release.json/runtime-fingerprint.json/image.txt/caddy.sha256，
 > 4 files, 7758 bytes, artifact ID 11527154008）。
 > 本机实测远程产物：SHA256(commit)=206c8c84…；image_id=sha256:7602147ed004d93f0c4db3df743a8a2ae4074212ae25d62b4845d209365a3c61；
-> image_tag=amz-listing-kit:206c8c84…；runtime_sha256=591f2b8322…（77 文件全 hash，含 index.html、
-> domain/attempt.js、storage/db.js 等）；caddy_configuration_sha256=e375655d…；
+> image_tag=amz-listing-kit:206c8c84…；runtime_sha256=591f2b8322…（最新92d88c1工件实列145文件；原“77文件”说法错误）；
+> caddy_configuration_sha256=e375655d…；
 > public_configuration_sha256=752430317…；默认付费档 default_trial=closed ✓。
 > 本轮在 bundle 后 --page-smoke 一次 PASS 并上传证据工件（run 37722956684 失败→3_5 起主导，修复 206c8c8
 > 后 run 37723870895 success）；随后 main 的 run 37724535015 也 success。
@@ -29,10 +30,10 @@
 > 合并过 Hermutain 的结果；PR #4 于 03:29:23Z 正式 merged（merge commit f8651fae）。本地分支已清理，
 > 仅留 main。仍 V2.R5.1；真实模型调用于授权内延后（预算 image 5 次、理解/复核 2 次、增量 ≤3 元）。
 
-> **2026-10-07当前恢复门已成立**：用户恢复完整交付及必要增删/成熟复用、V1工程条件清理、隔离Chrome模拟真人、受保护PR/发布、新增3元和10轮门；当前Goal取计划§2.1/§16.1。本轮423份原字节与当前项目包基线已保存，真实页面导入/打开/比较及独立IDB/ZIP比较证明45份原文档、4份Blob、2个人工采用保留；详见本轮交付证据，完整E2E/最终验收仍未成立。
+> **历史2026-10-07恢复观察**：当时用户恢复完整交付、增删/复用、V1工程条件清理、隔离Chrome模拟真人、受保护PR/发布、新增3元和10轮门；当时423份原字节与当前项目包基线已保存，页面导入/打开/比较及IDB/ZIP比较证明45份原文档、4份Blob、2个人工采用保留。完整E2E/最终验收仍未成立；本段不解除最新停工门。
 > Goal原文口径提醒（2026-10-08 收口轮核对）：当前生效的 Goal 正文是计划 §2.1 的**重写版**（Objective/Success criteria/Verification/Boundaries/Stop conditions），sha256=`bac1155dbef21876391328dafd50a5624dee8461388754021a31aa59ff1c6fc6`；系统 Goal 观察（`evals/product-v2/refactor/goal-observation-final-delivery-20261007.json` 的 `objective_sha256`）与 `tools/refactor_resume.py` 的实时计算一致。下文历史行里出现的 `6677a680…` 是重写前文本，只作历史，不得用于绑定/一致性比对。
 > 真实系统产品Goal `159d03ed410f9ff9`于2026-10-07T14:52:53.892Z创建为active；创建前真实No active goal。本次原生观察见 `evals/product-v2/refactor/goal-observation-final-delivery-20261007.json`；不借旧产品ID或独立规划Goal绑定。旧规划已完成、报告/原绑定保留历史，不能拿旧停工门覆盖本次授权。
-> 实施/验收批次已用 **0/10**；当前为绑定与代码/同版本数据恢复前置，不计算为产品实施批次。实际差量沿计划§15.6/设计§11.5，不从已成立组A或设置重做；历史done仅保留原证明范围，未证消费者/完整任务/最终矩阵仍须实际运行。
+> 实施计数：旧“0/10”是过时启动读数。历史未逐批登记，两个明确大批按消费者保守占用5/10，分组/身份/证据在`evals/product-v2/refactor/asset-continuation-20261008.md`，不宣称唯一精确历史次数。第6轮HTTP闭合：异常后缀356→0、模型构造0、自检52/52；第7轮用户要求父接管，两个子代理已停止，父直接修Interface/报告单飞行失败与会话边界并统一emit15根，types/generated、Node227及3_5/4_2/5_1/6_3实际路径通过。空页面人工事实/一次提交/目标返工/原生报告写失败保全/明确采用恢复/无AI两包/同origin重启逐条恢复已直接证明，范围与限制见同前缀`-manual.json`。第8轮镜像allowlist/container-origin selftest与代表项目恢复源码已收口，真实Linux/Docker证明待现有PR/CI；未发布新版本。占用至8/10，最终R7.1两轮仍未发生。原预算/计数不重置。
 
 ## 历史实现与收尾观察（各段只保留原时点范围）
 
@@ -55,6 +56,10 @@
 2026-10-07包11第二片（用户要求收尾，进行中未闭合）：逐项修复与机制钉死，证据 `evals/product-v2/refactor/packet11-fix-reds-20261007T184000Z.md`（含 §7 新增机制）。**已实跑转绿**：5_1、4_1、1_1、ui_2、ui_3（`fa5b34a`，全部 rc=0）；`6_1`/`6_4`（rc=0，证据 `v2.6.1-selection-20261007-193953final.json` / `v2.6.4-a11y-20261007-194101-final.json`）；`r5_2`（rc=0，`PRODUCT-V2-R5.2-offline-e2e-20261007-190944.json`；`R53-E03` 旧期望"全部旧 Prompt 过期"与 plan §439/§870、ui-contract:39/167-176 的"自动准备+历史保留"相反，已按契约重写为"新版本按新依据+旧版本逐字保留+零外呼+不自动重提"）。**控制面缺口已修**：packet08 三件套此前未登记导致 CI `check_verification` 红，现登记 `category=browser, ci=true` 并接入 CI verify job（`check_verification` PASS 50 入口/44 CI 模式、`verification_policy` PASS 14 组），其机器证据按 `.gitignore` 精确忽略。**基础设施根因已刻画并修**：Windows 下 `free_port()` 的 TOCTOU 端口抢占（探针 `_working/_probe_port_race.py` 实测"同端口可被第二个服务器静默绑定成功"）是 `ERR_CONNECTION_REFUSED` / `gate=unavailable(Error)` / boot 卡死类假红的成因；22 个验证器已改为**产品服务器绑定 0 号端口并从 `server.server_address[1]` 读回**（仅 1_4/2_3 的子进程端口保留 `free_port()` 并加注释）。**未闭合（明确未验证）**：4_3（已修 `-09` 停止用例"不能走消费门"机制与阶段导航，未复跑）、4_4（已修 prep 阶段导航与批次语义重写，未复跑）、3_5（子代理改到一半：`-03/-05/-06/-07/-08/-11` 仍红；已钉死机制=进入 generate 阶段自动准备使"4 张缺 Prompt 被阻断"期望过期、`CONFIRM_PROBE` 的 sheet 口径≠UI 意图口径，应改断 UI DOM）、5_3 `-15` 收紧未实施；**两轮完整回归在以上修复后未重跑**，故包11 尚未闭合、不得声称通过。非浏览器十门在收尾时全绿（node --check/check:types/check:generated/test:domain 227、check_docs、check_project_state、project_state 64 向、docs_index 15 向、check_verification、verification_policy），26 个被改验证器全部 `py_compile` 通过。**恢复点**：先跑 4_3/4_4/3_5 单跑复验（串行，避免端口抢占），再按 `packet11-regression-rounds-20261007T101243Z.md` §2 清单跑两轮 34 项，最后 RC 矩阵与既有环境发布。
 2026-10-07包10两片闭合（子代理作业，主代理复核并提交/推送）：第一片 `df66fb0` 发布事务失败路径回退证据：新增 `tools/release_transaction_probe.py --offline-rollback`（真实脚本 + 最小 stage 执行器）OR-00~OR-07 8/8 PASS，`deploy→finalize 晚期失败(exit 1，previous/journal/备份保留)→rollback(exit 1)` 回到旧版本；两版本指纹确实不同（old `sha256:842efd18…` / new `sha256:fdb8ff08…`，marker b→a）；stale finalize exit 4；静态审计确认现有流程**无**"healthy 前提前删 previous"缺口（`rm previous` 仅在 finalize 全验收后，脏恢复点 deploy 直接 exit 1）；附 `.gitattributes` `*.sh eol=lf` 修工作树 CRLF 阻断（blob 本就 LF，未入 commit）。第二片 `92efb32` 在 `ci-cd.yml` 新增 `Check rollback truth table` step（每次 main push 真跑 Python 断言：回滚门覆盖 4 类失败、exit 4 永不进门、previous 只由 finalize 删、build→smoke 无 `docker rm`）；Docker 闭包为**静态核对**（本机无 docker daemon，如实声明未声称构建通过）：1837 跟踪文件中镜像内 148、运行时必需 31 项零缺失、`.ts`/V1/`verification.json` 正确排除、前端语句级 import 零悬空。两片七闸门全 0。**未决**：真实 `docker build`+smoke、真实容器/TLS/HTTPS 回退须在 Linux CI/获批环境跑（精确阻断，非绿灯替代）；浏览器数据恢复（同 origin ZIP 导入/Blob/历史）须另证，不以容器回滚冒充（§7.4）。
 
+2026-10-08第三批（发布自检三红机制修复 + 真实缩放/纯键盘证据 + V2.4.3-04 取样竞态；0 付费调用）：候选`e10b076`[run 37745951722](https://github.com/JusticeSc/listing-kit/actions/runs/37745951722)控制面绿、Docker/发布自检 23/27 红 4 条，全部落在探针自身，已按现象—机制对应修（`986a6df`）：(1) ST-LIVE 行内导出等不到 download——机制用 `_working/_probe_export_stale_node.py` 钉死：点「项目列表」后 `showHome()` 立即显示旧行、`refresh()` 随后重渲染，聚焦句柄 400ms 后 `isConnected=false`、`activeElement=BODY`，Enter 零 download，真实 `locator.click()` 有 download；改真实点击 + 60s + 失败附会话文案。(2) ST-09 用 `127.0.0.1:9` 会被 Chromium 以 `ERR_UNSAFE_PORT` 拒发，红的机制错成浏览器策略；改 `closed_loopback_port()` 并收紧为必须 `ERR_CONNECTION_REFUSED` 且无 `UNSAFE_PORT`（`_probe_dead_and_recovery.py` 实测）。(3) ST-RECOVERY-01 等 `#create-project:not([disabled])`——重开同一 profile 会直接恢复到上次打开的项目（`_probe_autopen_branch.py` 实测 `project_view_visible=true/create_project_visible=false`），且 `wait_for_selector` 传选择器列表只校验第一个匹配项；改按就绪信号 + 可见视图分支，`data_recovery` 在真实项目包（45 文档/4 资产/2 采用）上 -01..-04 绿。三处异常兜底 id 由重号 `-06`/`-01` 改 `-99`/`-90`。本机回归：`--page-smoke` 10/10、`--offline-rollback` 13/13×2（首次 OR-01 出现一次 `UnicodeDecodeError 0xfb`，同 HEAD 副本与改后版本随后连跑均绿，判本机 bash 输出瞬时故障、不改码掩盖）。候选`986a6df`[run 37756024859](https://github.com/JusticeSc/listing-kit/actions/runs/37756024859)控制面在既有 `verify_v2_4_3_batch_execution.py` 的 -04 红（`state_wait:true` 但随后独立取样读到 `PLAN_REVIEW`/「已成功 3 · 处理中 1」；同文件上一轮绿、两次之间零改动⇒时序型），机制=两个异步后置条件（批次核对落定、changed 订阅并发派生项目状态）被分开取样；改 `wait_batch_settled()` 用单次 evaluate 同取 projects store 与 `#batch-progress`，要求「state==READY_TO_GENERATE 且已成功 4」同一次成立再跑完整探针，并把 state/revision/progress 时间线写进 detail（`300c1c4`，判据未放宽；本机 14 项绿、timeline 单条）。真实缩放与纯键盘证据：`evals/product-v2/refactor/asset-continuation-20261008-zoom.json` + `evidence/…zoom-{1440,1366,390,125,200}.png`（隔离临时 profile 的系统 Chrome 无头、真实文件输入导入既有项目包、按真实路径重跑整套检查使交付门禁通过、`chrome://settings/appearance` 真实页面缩放）：1440/1366/390 与 125%（布局宽 1152=1440/1.25）/200%（720=1440/2）下交付 ZIP 与项目包按钮均 enabled、在视口内、未被遮挡，无 CSS zoom/transform；390px 文档无横向溢出、阶段导航行需横向滚动（550>345，符合“390px 只承诺关键可达不遮挡”）；纯键盘（200%）`Tab` 到 `deliver` 按 Enter 切阶段、到 `deliver-export` 按 Enter 真实产出交付包（30 KB，sha256 cb4bceff…），下一 Tab 到 `deliver-project-package` 按 Enter 得到导出成功文案。明确模拟性质，不冒充 C15/C17。下一动作：等该候选 CI（控制面→Docker 自检）验证探针三修与 -04 取样修复；若 -04 再现，用时间线区分「没写回」与「写回又被改回」再决定是否修产品侧派生竞态。
+
+2026-10-08第三批CI复核（候选`4847ed9`，[run 37758524774](https://github.com/JusticeSc/listing-kit/actions/runs/37758524774)，**两个 job 都 success**）：控制面全过（V2 正式入口 52/52；`V2.1.2-10` 旧 V1 路由未破坏；**`V2.4.3-04` PASS**——`wait_batch_settled()` 同次取样判据在 CI 时序成立；V2.4.4/5.x/6.x/UI2/2.1.x/2.2.x/2.3.x/2.4.1/2.4.2 全 PASS）。Docker job：`Build immutable image` 真跑 + 容器 health smoke + **`release_transaction_probe.py --selftest` 32/32 通过 0 失败**（ST-02-A/B 两版本独立上下文真实构建且 image ID 不同；ST-03-TLS 显式信任隔离 CA；ST-DATA-01 真实容器 origin 上真实 UI 建项目并导入合法项目包；ST-05/05-stale/05-dirty/06/07/08 真实 deploy/finalize/rollback 事务，回退回到真实旧 image ID/marker A；ST-LIVE-01..08/10 真实产品 origin 全过；ST-RECOVERY-01..05+ST-11 跨版本切换与失败回退后原项目身份/文档/资产字节/人工采用记录保留；ST-09 与 ST-DEAD-01..05/99 负例按设计判红，机制为 `ERR_CONNECTION_REFUSED` 而非 `ERR_UNSAFE_PORT`）+ **`--offline-rollback` 13/13 通过 0 失败**（Linux runner 上 OR-01 无 `UnicodeDecodeError`，与上一轮本机一次性瞬时故障一致）。**部署步骤 10–17 在 PR 运行按设计 skip**，故本轮只证明镜像级发布事务与页面/数据恢复，**不冒充线上已发布**；线上发布/指纹/finalize 由合并后 main push 运行承担。下一动作：把该证据并入报告与 PR 正文后合并本轮 PR（main 未设保护、无必需审查，门=CI 全绿），再核对 main 运行的部署/页面主链/指纹/finalize 与产物。
+
 ```yaml
 state_schema: amz-project-state/v2
 task_id: amz-listing-kit-product-v2-refactor
@@ -62,11 +67,11 @@ status: active
 goal_binding: required
 goal_id: "159d03ed410f9ff9"
 goal_pending_reason: null
-goal_binding_evidence: evals/product-v2/refactor/goal-observation-final-delivery-20261007.json
+goal_binding_evidence: evals/product-v2/refactor/goal-observation-continuation-20261008.json
 system_goal_observed_status: active
-system_goal_observed_at: '2026-10-07T14:52:53.892Z'
+system_goal_observed_at: '2026-10-08T05:43:52.105Z'
 plan_ref: docs/product-v2-refactor-plan.md
-latest_audit: evals/product-v2/refactor/audit-current-state-20261007.md
+latest_audit: evals/product-v2/refactor/audit-current-state-20261008.md
 phase_progress:
   '0':
     status: done
@@ -299,6 +304,7 @@ task_progress:
     - evals/product-v2/refactor/r51-page-evidence-20261007.md
     - evals/product-v2/refactor/r51-packet-07-views-20261007.md
     - evals/product-v2/refactor/packet11-convergence-20261008.md
+    - evals/product-v2/refactor/asset-continuation-20261008.md
     - evals/product-v2/v2.7.1-regression-20261008-p11close2-final.txt
     - evals/product-v2/v2.7.1-regression-20261008-p11close2-final.json
     - evals/product-v2/v2.ui.2-interaction-visual-20261008-015527fix6.json
@@ -475,8 +481,8 @@ unknowns:
   - historical_packet11_earlier_closeout_20261007_bind_zero_port_race_fix_and_individual_passes_retained_later_4_3_diag4_pass_supersedes_unverified_note_4_4_boot_after_bind_zero_and_check06_still_failed_3_5_six_reds_5_3_15_weak_oracle_settings_three_empty_proofs_and_final_two_rounds_unclosed_follow_audit-current-state-20261007
   - historical_planning_only_stop_20261007_later_superseded_by_user_explicit_full_delivery_resume_and_native_product_Goal_159d03ed410f9ff9_not_planning_Goal_binding_follow_goal-observation-final-delivery-20261007
   - current_structural_residual_generation_reviewAccess_setters_and_workspace_report_fill_UI_summary_and_render_callbacks_targeted_current_round_no_second_whole_architecture_refactor_follow_design_11_5
-  - current_R51_packet11_known_failures_carried_without_confirmation_rerun_4_4_two_layers_3_5_six_reds_5_3_target_oracle_packet08_PROBE_KEY_unused_no_key_missing_image_constant_old_ZIP_and_release_self_matching_ST_LIVE_other_origin_proofs_unclosed_follow_latest_audit
-  - current_delivery_batches_used_0_of_10_goal_159d03ed410f9ff9_binding_and_recovery_prerequisite_not_implementation_round_no_criteria_reduced_final_two_rounds_count_as_one_batch
+  - historical_R51_packet11_carried_failures_from_20261007_4_4_3_5_5_3_packet08_and_release_proof_gaps_later_convergence_has_scope_limited_passes_not_current_all_red_or_final_closure_follow_latest_audit
+  - historical_delivery_batches_0_of_10_was_binding_baseline_only_implementation_and_work_regression_since_then_not_counted_accurate_used_batches_unreconciled_do_not_reset_or_infer_ten_remaining_follow_latest_audit_and_plan_stop_conditions
   - current_V1_engineering_cleanup_authorized_after_G6_types_coverage_consumer_cutover_code_and_current_format_data_recovery_R73_before_final_R71_two_rounds_not_dependent_on_unperformed_independent_human_R72
   - current_paid_increment_max_3_CNY_5_image_calls_1_image_each_2_combined_semantic_VLM_retained_baseline_image8_semantic5_total13_reserved1_61_global5_ledger_caps_image13_semantic7_total20_no_automatic_paid_calls
   - current_20261008_p11_convergence_closed_carried_reds_3_5_4_3_4_4_5_3_15_packet08_empty_proofs_four_dangling_port_refs_4_2_stale_base_and_ui2_17_boot_derive_project_write_product_fix_settings_subscribe_saves_draft_only_reload_zero_write_two_round_offline_regression_green_identical_fingerprint_follow_R51_next_packet
@@ -486,11 +492,21 @@ unknowns:
   - current_20261008_p11_convergence_committed_three_slices_6b37145_keepalive_8d0320d_settings_draft_and_candidate_halt_22db254_verifiers_and_ci_then_control_plane_evidence_snapshots_pushed_origin_branch_draft_PR_4_to_main_merge_only_after_full_acceptance
   - current_20261008_user_instruction_no_local_docker_container_page_and_release_failure_classes_must_be_proven_by_remote_CD_github_actions_ubuntu_runner_local_daemon_absent_static_docker_closure_is_not_build_proof
   - current_20261008_PR4_first_remote_CI_red_13_J6_evidence_pointers_to_gitignored_evals_run_logs_R43_R44_local_guard_green_because_worktree_holds_them_fix_force_added_13_files_and_check_project_state_evidence_ok_now_warns_on_exists_but_untracked_do_not_regress
-  - current_20261008_linux_timing_reds_pr4_4_3_04_ui3_08_44_05_35_07_all_fixed_by_bounded_waits_or_diag_details_then_pr4_and_main_runs_success_follow_failed_details_mechanism_matching
+  - historical_20261008_linux_reds_4_3_04_ui3_08_35_07_have_bounded_state_wait_changes_and_later_green_4_4_05_added_diagnostics_then_green_not_independent_causal_fix_all_boot_or_timing_mechanisms_do_not_infer_closed_follow_latest_audit
   - current_20261008_CD_release_page_smoke_10_10_artifact_upload_release_json_runtime_fingerprint_json_image_txt_caddy_sha_main_runs_37723870895_success_pr_merged_03_29_23Z_follow_release_evidence
   - current_20261008_image_id_7602147e_runtime_sha256_591f2b83_caddy_sha256_e375655d_public_sha256_75243031_recorded_from_artifact_local_download_follow_evict_existing_v2_release
-  - current_20261008_state_append_run_main_6a69b04_4_2_browser_loop_interrupt_only_recorded_interrupt_reason_fixed_by_92d88c1_failed_details_emitter_4_2_local_green_then_run8_37726671328_full_success_artifact_11528238313_image_31cc5ec6_runtime_sha_unchanged_591f2b83_all_verifiers_green_linux_second_round
-  - current_two_failing_runs_then_green_same_verifier_show_linux_first_run_red_then_green_pattern_context_speed_diff_not_new_product_defect_4_4_05_and_3_5_dot_diag_both_this_pattern
-  - current_20261008_final_closure_user_ordered_immediate_stop_runs_37727901657_and_37728436213_hit_4_2_99_locator_resolve_never_resolved_for_reconcile_button_main_row_already_self_reconciled_succeeded_button_absent_fixed_by_c31213a_guarded_click_only_when_row_not_succeeded_local_4_2_green_tail_run_37729035340_c31213a_in_progress_unobserved_at_stop_recorded_as_open
-updated_at: '2026-10-08T05:02:00.000Z'
+  - historical_20261008_run_37725600616_6a69b04_4_2_browser_interrupt_92d88c1_added_failed_details_diagnostic_not_product_causal_fix_run_37726671328_success_artifact11528238313_image31cc5ec6_runtime591f2b83_not_proof_of_later_c31213a
+  - historical_two_reds_then_green_does_not_prove_context_speed_or_exclude_product_defect_4_4_05_and_3_5_diagnostic_history_keep_original_scope_no_root_cause_claim_follow_latest_audit
+  - current_20261008_audit_4_2_99_observed_Locator_click_TimeoutError_runs_37727901657_37728436213_c31213a_catches_AssertionError_only_expect_to_click_race_unclosed_self_reconciled_succeeded_cause_is_inference_not_observed_local_green_not_remote_fix_proof
+  - current_20261008_remote_runs_37729035340_c31213a_and_37729804595_132884d_completed_cancelled_deploy_job_zero_steps_latest_confirmed_successful_release_37726671328_92d88c1_image31cc5ec6_runtime591f2b83_live_health_ok_default_trial_closed_no_new_container_identity_read
+  - current_20261008_audit_prior_todo_16_of_16_was_stop_cleanup_not_acceptance_remaining_formal_tasks_pending_preserved_C15_C17_unperformed_no_product_Goal_completion
+  - current_20261008_release_probe_three_self_reds_fixed_with_mechanism_proofs_st_live_export_stale_focus_st_09_unsafe_port_st_recovery_reopen_autoproject_local_page_smoke_10_10_offline_rollback_13_13_docker_selftest_still_needs_remote_CI_validation
+  - current_20261008_zoom_keyboard_evidence_real_page_zoom_125_200_layout_1152_720_no_css_zoom_1440_1366_390_key_controls_enabled_in_viewport_unoccluded_390_nav_row_scrolls_550_345_keyboard_only_tab_enter_delivery_export_30KB_sha256_cb4bceff_and_project_package_simulated_headless_isolated_profile_not_C15_C17_not_remote_https_geometry
+  - current_20261008_v2_4_3_04_ci_red_state_wait_true_then_independent_sample_plan_review_with_3_of_4_succeeded_same_file_green_previous_run_zero_diff_between_runs_two_async_postconditions_sampled_separately_atomic_wait_batch_settled_plus_state_timeline_added_judgement_not_relaxed_product_side_derive_race_unconfirmed_no_rerun_for_green
+  - current_20261008_local_only_offline_rollback_OR_01_unicode_decode_0xfb_once_not_reproduced_HEAD_copy_and_modified_version_13_13_treated_as_windows_bash_child_output_transient_no_mechanism_claim_no_code_masking_linux_runner_later_13_13_confirms_local_only
+  - current_20261008_third_batch_ci_37758524774_4847ed9_both_jobs_success_control_plane_all_pass_including_V2_4_3_04_atomic_sampling_and_V2_1_2_10_v1_route_docker_job_build_smoke_selftest_32_32_offline_rollback_13_13_real_two_version_images_isolated_ca_tls_real_container_origin_ui_project_package_import_cross_version_rollback_same_origin_data_preserved_deploy_steps_skipped_on_pull_request_live_release_still_pending_main_push
+  - current_20261008_v1_sunset_r73_inventory_product_v1_has_no_unique_purpose_v2_covers_all_but_local_folder_workspace_and_its_http_api_superseded_by_sel014_sel018_pre_v1_m_series_layer_has_v2_uncovered_purposes_local_renderers_cutout_slot_registry_data_policy_review_checklist_pilot_registry_eval_dataset_m7_workbench_no_v1_data_on_disk_no_v1_to_v2_migration_by_design_five_deletion_blockers_verify_v2_1_2_project_home_V2_1_2_10_app_server_v1_branch_check_project_state_J5_J6_superseded_v1_state_evidence_check_docs_run_py_docs_cards_and_registry_schema_gen_slot_cards_plan_section_2_3_wording_vs_16_1_follow_refactor_v1-sunset_baseline_before_any_deletion
+  - current_20261008_two_ci_infra_download_timeouts_same_class_different_steps_run_37760499569_docker_build_pillow_30s_and_run_37762306228_host_uv_sync_httpcore2_mirror_tuna_retries_exhausted_not_product_regression_same_tree_passed_previous_round_fix_by_class_workflow_env_UV_HTTP_TIMEOUT_300_UV_HTTP_RETRIES_5_plus_dockerfile_env_index_lock_and_product_untouched_var_names_verified_by_uv_parse_error_if_same_class_recurs_report_as_infrastructure_not_rerun_for_green
+  - current_20261008_v1_sunset_baseline_captured_stage_amz_control_v1_sunset_20261008T100045Z_head_8a9e3bd_tree_d6a937c5_tracked_3282_manifest_digest_a6269682_representative_project_zip_sha256_4007b9b1_62_members_55_documents_6_assets_import_verified_real_file_input_and_real_open_click_idb_55_docs_6_assets_revision_8_screenshot_86196277_simulated_not_c15_c17
+updated_at: '2026-10-08T10:20:30.000Z'
 ```
