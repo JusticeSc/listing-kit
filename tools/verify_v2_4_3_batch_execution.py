@@ -238,6 +238,38 @@ def run_node_checks() -> dict:
 
 
 
+PROJECT_STATE_JS = """async (expected) => {
+  const db = await new Promise((resolve, reject) => {
+    const request = indexedDB.open("amz-listing-kit-v2");
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+  const rows = await new Promise((resolve, reject) => {
+    const request = db.transaction("projects", "readonly").objectStore("projects").getAll();
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+  db.close();
+  const latest = rows.slice().sort((left, right) =>
+    String(right.updated_at || "").localeCompare(String(left.updated_at || "")))[0];
+  return Boolean(latest) && latest.state === expected;
+}"""
+
+
+def wait_project_state(page, expected: str, wait_ms: int = 20_000) -> bool:
+    """有界等待项目状态推进到 expected。
+
+    确认写库后的状态派生是异步的（点击处理器在批次结束后才写回），而探针直接读
+    IndexedDB——按「读一次就断言」会把「还没写回」误判成「不前进」（CI 的 Linux
+    时序下必红，本机常绿）。等待只把这两种情况分开：超时仍按实际状态判红。
+    """
+    try:
+        page.wait_for_function(PROJECT_STATE_JS, arg=expected, timeout=wait_ms)
+        return True
+    except Exception:
+        return False
+
+
 def save_edit(page, shot_id: str, text: str, reason: str, wait_ms: int = 600) -> None:
     stage_nav.goto(page, "generate")
     stage_nav.reveal(page, "#prompt-editor")
@@ -549,7 +581,9 @@ def main() -> int:
                 status_before = len(status_requests)
                 gate = confirm_generation()
                 assert gate["ok"]
-                done = gate["after"]
+                # 状态推进有界等待后再取样：探针读库与派生写回曾竞速（详见 wait_project_state）。
+                advanced = wait_project_state(page, "READY_TO_GENERATE")
+                done = probe()
                 captured = gate["captured"]
                 captured_actions = gate["captured_actions"]
                 latest_actions = [chain_of(done, shot)[-1]["payload"]["action_id"]
@@ -572,6 +606,7 @@ def main() -> int:
                       and "已成功 4" in done["ui"]["batch"]["progress"],
                       {"captured": len(captured), "order_ok": order_ok,
                        "per_action_once": per_action_once, "polled_ok": polled_ok,
+                       "state_wait": advanced,
                        "project_state": done["project_state"],
                        "progress": done["ui"]["batch"]["progress"]})
                 phase_a_records = {shot: chain_json(done, shot) for shot in shot_ids}
