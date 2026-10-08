@@ -1,0 +1,21 @@
+{
+  "lock_segment": "1. A cylindrical vacuum-insulated cup with height exactly 22 cm and diameter exactly 7 cm, giving a precise height-to-diameter ratio of 22:7 (≈3.14:1).\n2. Entirely constructed from 316 stainless steel — no plastic, no aluminum, no ceramic, no glass components.\n3. Single-piece seamless body without visible seams, welds, or joints along the main cylindrical section.\n4. Capacity marked as 500 ml by design intent (not labeled; no text visible).\n5. HARD CONSTRAINTS: NO handle, NO side grip, NO carrying handle, NO strap; NO spout, NO pouring lip, NO straw, NO straw lid, NO second cap, NO flip top; Preserve the exact height-to-diameter ratio; do not make it shorter, wider, taller or slimmer; Keep the lid assembly's layered structure exactly as shown; do not simplify, merge or recolour its rings; NO text, NO letters, NO numbers, NO logo, NO brand mark, NO label, NO tag, NO barcode; Do not substitute a similar-looking item; this is the exact item from the reference.",
+  "used_facts": [
+    "title: 316不锈钢真空保温杯 500ml 家用办公便携水杯",
+    "specs: 容量: 500ml",
+    "specs: 材质: 316不锈钢",
+    "specs: 高度: 22 cm",
+    "specs: 宽度: 7 cm"
+  ],
+  "unknowns": [
+    "lid type (screw cap? push-button? appearance of lid layers)",
+    "lid color and finish",
+    "body surface finish (brushed? polished? matte?)",
+    "presence/absence of base ring or foot detail",
+    "exact shape/profile of rim and lid interface",
+    "location and extent of '防滑喷涂' (entire body? only lower half?)",
+    "color of silicone seal (if visible)",
+    "whether cup has a flat bottom or recessed base",
+    "any visible seam at base or lid junction"
+  ]
+}

@@ -1,0 +1,3540 @@
+{
+  "projects": [
+    {
+      "project_id": "7d414da3-8d7e-4477-a2cd-7b97d4812c07",
+      "name": "正式开发—人工套图主链",
+      "state": "PLAN_REVIEW",
+      "revision": 6,
+      "schema_version": 1,
+      "created_at": "2026-10-05T11:29:11.269Z",
+      "updated_at": "2026-10-07T15:04:10.219Z"
+    }
+  ],
+  "documents": [
+    {
+      "document_key": "7d414da3-8d7e-4477-a2cd-7b97d4812c07:candidate:shot_main_clean:1",
+      "project_id": "7d414da3-8d7e-4477-a2cd-7b97d4812c07",
+      "kind": "candidate",
+      "document_id": "shot_main_clean",
+      "version": 1,
+      "schema_version": 1,
+      "payload": {
+        "schema_version": 1,
+        "candidate_id": "act-144e4fba7b214ffdadecf9453e7b02ad",
+        "shot_id": "shot_main_clean",
+        "action_id": "act-144e4fba7b214ffdadecf9453e7b02ad",
+        "task_id": "fake-4e29ec6bd71a7c06",
+        "sync": false,
+        "asset_sha256": "9d34b3e53e06250b60c06248c7848383e5771867b8c8f3954156679d9e8e4cd5",
+        "media_type": "image/png",
+        "byte_size": 8298,
+        "width": 1344,
+        "height": 1344,
+        "provider": {
+          "provider_id": "fake-qwen-image",
+          "model_id": "qwen-image-3.0"
+        },
+        "created_at": "2026-10-05T11:32:23.832Z"
+      },
+      "created_at": "2026-10-05T11:32:23.833Z",
+      "updated_at": "2026-10-05T11:32:23.833Z"
+    },
+    {
+      "document_key": "7d414da3-8d7e-4477-a2cd-7b97d4812c07:candidate:shot_main_clean:2",
+      "project_id": "7d414da3-8d7e-4477-a2cd-7b97d4812c07",
+      "kind": "candidate",
+      "document_id": "shot_main_clean",
+      "version": 2,
+      "schema_version": 1,
+      "payload": {
+        "schema_version": 1,
+        "candidate_id": "act-3044fabfea7c46bfb46663ce074718a2",
+        "shot_id": "shot_main_clean",
+        "action_id": "act-3044fabfea7c46bfb46663ce074718a2",
+        "task_id": "fake-f18dab256979797a",
+        "sync": false,
+        "asset_sha256": "372dfb28cc81299ed94d064683a827d44ed2747121331d10f997e5bd4db61d52",
+        "media_type": "image/png",
+        "byte_size": 8298,
+        "width": 1344,
+        "height": 1344,
+        "provider": {
+          "provider_id": "fake-qwen-image",
+          "model_id": "qwen-image-3.0"
+        },
+        "created_at": "2026-10-05T11:33:24.529Z"
+      },
+      "created_at": "2026-10-05T11:33:24.530Z",
+      "updated_at": "2026-10-05T11:33:24.530Z"
+    },
+    {
+      "document_key": "7d414da3-8d7e-4477-a2cd-7b97d4812c07:candidate:shot_scene_lifestyle:1",
+      "project_id": "7d414da3-8d7e-4477-a2cd-7b97d4812c07",
+      "kind": "candidate",
+      "document_id": "shot_scene_lifestyle",
+      "version": 1,
+      "schema_version": 1,
+      "payload": {
+        "schema_version": 1,
+        "candidate_id": "act-73499842a25441c6be9a3f48d9205923",
+        "shot_id": "shot_scene_lifestyle",
+        "action_id": "act-73499842a25441c6be9a3f48d9205923",
+        "task_id": "fake-ff4c7221e5b9afd5",
+        "sync": false,
+        "asset_sha256": "63aac5275511fba00cb93ebe33369fe462256f3a175d7f5fda31d389f3fd0467",
+        "media_type": "image/png",
+        "byte_size": 8298,
+        "width": 1344,
+        "height": 1344,
+        "provider": {
+          "provider_id": "fake-qwen-image",
+          "model_id": "qwen-image-3.0"
+        },
+        "created_at": "2026-10-05T11:32:24.452Z"
+      },
+      "created_at": "2026-10-05T11:32:24.452Z",
+      "updated_at": "2026-10-05T11:32:24.452Z"
+    },
+    {
+      "document_key": "7d414da3-8d7e-4477-a2cd-7b97d4812c07:export_record:export-20261005114124554-f657c07eff80:1",
+      "project_id": "7d414da3-8d7e-4477-a2cd-7b97d4812c07",
+      "kind": "export_record",
+      "document_id": "export-20261005114124554-f657c07eff80",
+      "version": 1,
+      "schema_version": 1,
+      "payload": {
+        "schema_version": 1,
+        "contract_version": "v2.6.2",
+        "project_id": "7d414da3-8d7e-4477-a2cd-7b97d4812c07",
+        "project_name": "正式开发—人工套图主链",
+        "zip_sha256": "f657c07eff806473fffea398168262b95314c0493e8148dfacd0964dd8427d5b",
+        "zip_bytes": 30427,
+        "files": [
+          {
+            "path": "images/shot_main_clean-act-144e4fba7b214ffdadecf9453e7b02ad.png",
+            "byte_size": 8298
+          },
+          {
+            "path": "images/shot_scene_lifestyle-act-73499842a25441c6be9a3f48d9205923.png",
+            "byte_size": 8298
+          },
+          {
+            "path": "manifest.json",
+            "byte_size": 5142
+          },
+          {
+            "path": "checks.json",
+            "byte_size": 7257
+          },
+          {
+            "path": "README.txt",
+            "byte_size": 700
+          }
+        ],
+        "included_shot_ids": [
+          "shot_main_clean",
+          "shot_scene_lifestyle"
+        ],
+        "selection_fingerprint": "{\"contract_version\":\"v2.6.1\",\"entries\":[{\"candidate_id\":\"act-144e4fba7b214ffdadecf9453e7b02ad\",\"candidate_sha256\":\"9d34b3e53e06250b60c06248c7848383e5771867b8c8f3954156679d9e8e4cd5\",\"candidate_version\":1,\"required\":true,\"selected_at\":\"2026-10-05T11:32:56.367Z\",\"selection_id\":\"act-bb768c5ee3d54e69bdc8390fdce08192\",\"shot_id\":\"shot_main_clean\",\"state\":\"current\"},{\"candidate_id\":\"act-73499842a25441c6be9a3f48d9205923\",\"candidate_sha256\":\"63aac5275511fba00cb93ebe33369fe462256f3a175d7f5fda31d389f3fd0467\",\"candidate_version\":1,\"required\":false,\"selected_at\":\"2026-10-05T11:35:12.029Z\",\"selection_id\":\"act-ecd1b568b071456d9a1c0bc75d572ef0\",\"shot_id\":\"shot_scene_lifestyle\",\"state\":\"current\"},{\"candidate_id\":null,\"candidate_sha256\":null,\"candidate_version\":null,\"required\":false,\"selected_at\":null,\"selection_id\":null,\"shot_id\":\"shot_size_dimensions\",\"state\":\"none\"}]}",
+        "inputs_fingerprint": "{\"dependency_scope\":\"required_or_selected\",\"reports\":[{\"candidate_id\":\"act-144e4fba7b214ffdadecf9453e7b02ad\",\"report_asset_sha256\":\"9d34b3e53e06250b60c06248c7848383e5771867b8c8f3954156679d9e8e4cd5\",\"report_created_at\":\"2026-10-05T11:32:23.834Z\",\"report_finding_count\":7,\"review_contract_version\":\"v2.5.2\"},{\"candidate_id\":\"act-3044fabfea7c46bfb46663ce074718a2\",\"report_asset_sha256\":\"372dfb28cc81299ed94d064683a827d44ed2747121331d10f997e5bd4db61d52\",\"report_created_at\":\"2026-10-05T11:33:24.530Z\",\"report_finding_count\":7,\"review_contract_version\":\"v2.5.2\"},{\"candidate_id\":\"act-73499842a25441c6be9a3f48d9205923\",\"report_asset_sha256\":\"63aac5275511fba00cb93ebe33369fe462256f3a175d7f5fda31d389f3fd0467\",\"report_created_at\":\"2026-10-05T11:32:24.453Z\",\"report_finding_count\":6,\"review_contract_version\":\"v2.5.2\"}],\"selection\":\"{\\\"contract_version\\\":\\\"v2.6.1\\\",\\\"entries\\\":[{\\\"candidate_id\\\":\\\"act-144e4fba7b214ffdadecf9453e7b02ad\\\",\\\"candidate_sha256\\\":\\\"9d34b3e53e06250b60c06248c7848383e5771867b8c8f3954156679d9e8e4cd5\\\",\\\"candidate_version\\\":1,\\\"required\\\":true,\\\"selected_at\\\":\\\"2026-10-05T11:32:56.367Z\\\",\\\"selection_id\\\":\\\"act-bb768c5ee3d54e69bdc8390fdce08192\\\",\\\"shot_id\\\":\\\"shot_main_clean\\\",\\\"state\\\":\\\"current\\\"},{\\\"candidate_id\\\":\\\"act-73499842a25441c6be9a3f48d9205923\\\",\\\"candidate_sha256\\\":\\\"63aac5275511fba00cb93ebe33369fe462256f3a175d7f5fda31d389f3fd0467\\\",\\\"candidate_version\\\":1,\\\"required\\\":false,\\\"selected_at\\\":\\\"2026-10-05T11:35:12.029Z\\\",\\\"selection_id\\\":\\\"act-ecd1b568b071456d9a1c0bc75d572ef0\\\",\\\"shot_id\\\":\\\"shot_scene_lifestyle\\\",\\\"state\\\":\\\"current\\\"},{\\\"candidate_id\\\":null,\\\"candidate_sha256\\\":null,\\\"candidate_version\\\":null,\\\"required\\\":false,\\\"selected_at\\\":null,\\\"selection_id\\\":null,\\\"shot_id\\\":\\\"shot_size_dimensions\\\",\\\"state\\\":\\\"none\\\"}]}\",\"shots\":[{\"custom\":false,\"fact_slot_ids\":[],\"label\":\"主图·干净背景\",\"required\":true,\"role_id\":\"main\",\"shot_id\":\"shot_main_clean\",\"template_id\":\"main_clean\"},{\"custom\":false,\"fact_slot_ids\":[\"product_category\"],\"label\":\"场景图·使用中\",\"required\":false,\"role_id\":\"scene\",\"shot_id\":\"shot_scene_lifestyle\",\"template_id\":\"scene_lifestyle\"},{\"custom\":false,\"fact_slot_ids\":[],\"label\":\"尺寸图\",\"required\":false,\"role_id\":\"size\",\"shot_id\":\"shot_size_dimensions\",\"template_id\":\"size_dimensions\"}],\"specs\":[],\"style\":{\"avoid\":[],\"background\":\"\",\"color_tone\":\"\",\"composition\":\"\",\"lighting\":\"\"}}",
+        "gate": {
+          "status": "ready",
+          "findings": [
+            {
+              "rule_id": "export.selection_complete",
+              "severity": "PASS"
+            },
+            {
+              "rule_id": "export.chain_integrity",
+              "severity": "PASS"
+            },
+            {
+              "rule_id": "export.report_current",
+              "severity": "PASS"
+            },
+            {
+              "rule_id": "export.no_blocking_findings",
+              "severity": "PASS"
+            },
+            {
+              "rule_id": "export.asset_hash_matches",
+              "severity": "PASS"
+            },
+            {
+              "rule_id": "export.suite_review_current",
+              "severity": "PASS"
+            },
+            {
+              "rule_id": "export.unknown_acknowledged",
+              "severity": "PASS"
+            }
+          ]
+        },
+        "exported_at": "2026-10-05T11:41:24.554Z"
+      },
+      "created_at": "2026-10-05T11:41:24.566Z",
+      "updated_at": "2026-10-05T11:41:24.566Z"
+    },
+    {
+      "document_key": "7d414da3-8d7e-4477-a2cd-7b97d4812c07:export_record:export-20261005114153257-43bc3b23c97a:1",
+      "project_id": "7d414da3-8d7e-4477-a2cd-7b97d4812c07",
+      "kind": "export_record",
+      "document_id": "export-20261005114153257-43bc3b23c97a",
+      "version": 1,
+      "schema_version": 1,
+      "payload": {
+        "schema_version": 1,
+        "contract_version": "v2.6.2",
+        "project_id": "7d414da3-8d7e-4477-a2cd-7b97d4812c07",
+        "project_name": "正式开发—人工套图主链",
+        "zip_sha256": "43bc3b23c97a7ef77410fcb3748521d9506967aa92a20c8606f96823d6bf28f0",
+        "zip_bytes": 30427,
+        "files": [
+          {
+            "path": "images/shot_main_clean-act-144e4fba7b214ffdadecf9453e7b02ad.png",
+            "byte_size": 8298
+          },
+          {
+            "path": "images/shot_scene_lifestyle-act-73499842a25441c6be9a3f48d9205923.png",
+            "byte_size": 8298
+          },
+          {
+            "path": "manifest.json",
+            "byte_size": 5142
+          },
+          {
+            "path": "checks.json",
+            "byte_size": 7257
+          },
+          {
+            "path": "README.txt",
+            "byte_size": 700
+          }
+        ],
+        "included_shot_ids": [
+          "shot_main_clean",
+          "shot_scene_lifestyle"
+        ],
+        "selection_fingerprint": "{\"contract_version\":\"v2.6.1\",\"entries\":[{\"candidate_id\":\"act-144e4fba7b214ffdadecf9453e7b02ad\",\"candidate_sha256\":\"9d34b3e53e06250b60c06248c7848383e5771867b8c8f3954156679d9e8e4cd5\",\"candidate_version\":1,\"required\":true,\"selected_at\":\"2026-10-05T11:32:56.367Z\",\"selection_id\":\"act-bb768c5ee3d54e69bdc8390fdce08192\",\"shot_id\":\"shot_main_clean\",\"state\":\"current\"},{\"candidate_id\":\"act-73499842a25441c6be9a3f48d9205923\",\"candidate_sha256\":\"63aac5275511fba00cb93ebe33369fe462256f3a175d7f5fda31d389f3fd0467\",\"candidate_version\":1,\"required\":false,\"selected_at\":\"2026-10-05T11:35:12.029Z\",\"selection_id\":\"act-ecd1b568b071456d9a1c0bc75d572ef0\",\"shot_id\":\"shot_scene_lifestyle\",\"state\":\"current\"},{\"candidate_id\":null,\"candidate_sha256\":null,\"candidate_version\":null,\"required\":false,\"selected_at\":null,\"selection_id\":null,\"shot_id\":\"shot_size_dimensions\",\"state\":\"none\"}]}",
+        "inputs_fingerprint": "{\"dependency_scope\":\"required_or_selected\",\"reports\":[{\"candidate_id\":\"act-144e4fba7b214ffdadecf9453e7b02ad\",\"report_asset_sha256\":\"9d34b3e53e06250b60c06248c7848383e5771867b8c8f3954156679d9e8e4cd5\",\"report_created_at\":\"2026-10-05T11:32:23.834Z\",\"report_finding_count\":7,\"review_contract_version\":\"v2.5.2\"},{\"candidate_id\":\"act-3044fabfea7c46bfb46663ce074718a2\",\"report_asset_sha256\":\"372dfb28cc81299ed94d064683a827d44ed2747121331d10f997e5bd4db61d52\",\"report_created_at\":\"2026-10-05T11:33:24.530Z\",\"report_finding_count\":7,\"review_contract_version\":\"v2.5.2\"},{\"candidate_id\":\"act-73499842a25441c6be9a3f48d9205923\",\"report_asset_sha256\":\"63aac5275511fba00cb93ebe33369fe462256f3a175d7f5fda31d389f3fd0467\",\"report_created_at\":\"2026-10-05T11:32:24.453Z\",\"report_finding_count\":6,\"review_contract_version\":\"v2.5.2\"}],\"selection\":\"{\\\"contract_version\\\":\\\"v2.6.1\\\",\\\"entries\\\":[{\\\"candidate_id\\\":\\\"act-144e4fba7b214ffdadecf9453e7b02ad\\\",\\\"candidate_sha256\\\":\\\"9d34b3e53e06250b60c06248c7848383e5771867b8c8f3954156679d9e8e4cd5\\\",\\\"candidate_version\\\":1,\\\"required\\\":true,\\\"selected_at\\\":\\\"2026-10-05T11:32:56.367Z\\\",\\\"selection_id\\\":\\\"act-bb768c5ee3d54e69bdc8390fdce08192\\\",\\\"shot_id\\\":\\\"shot_main_clean\\\",\\\"state\\\":\\\"current\\\"},{\\\"candidate_id\\\":\\\"act-73499842a25441c6be9a3f48d9205923\\\",\\\"candidate_sha256\\\":\\\"63aac5275511fba00cb93ebe33369fe462256f3a175d7f5fda31d389f3fd0467\\\",\\\"candidate_version\\\":1,\\\"required\\\":false,\\\"selected_at\\\":\\\"2026-10-05T11:35:12.029Z\\\",\\\"selection_id\\\":\\\"act-ecd1b568b071456d9a1c0bc75d572ef0\\\",\\\"shot_id\\\":\\\"shot_scene_lifestyle\\\",\\\"state\\\":\\\"current\\\"},{\\\"candidate_id\\\":null,\\\"candidate_sha256\\\":null,\\\"candidate_version\\\":null,\\\"required\\\":false,\\\"selected_at\\\":null,\\\"selection_id\\\":null,\\\"shot_id\\\":\\\"shot_size_dimensions\\\",\\\"state\\\":\\\"none\\\"}]}\",\"shots\":[{\"custom\":false,\"fact_slot_ids\":[],\"label\":\"主图·干净背景\",\"required\":true,\"role_id\":\"main\",\"shot_id\":\"shot_main_clean\",\"template_id\":\"main_clean\"},{\"custom\":false,\"fact_slot_ids\":[\"product_category\"],\"label\":\"场景图·使用中\",\"required\":false,\"role_id\":\"scene\",\"shot_id\":\"shot_scene_lifestyle\",\"template_id\":\"scene_lifestyle\"},{\"custom\":false,\"fact_slot_ids\":[],\"label\":\"尺寸图\",\"required\":false,\"role_id\":\"size\",\"shot_id\":\"shot_size_dimensions\",\"template_id\":\"size_dimensions\"}],\"specs\":[],\"style\":{\"avoid\":[],\"background\":\"\",\"color_tone\":\"\",\"composition\":\"\",\"lighting\":\"\"}}",
+        "gate": {
+          "status": "ready",
+          "findings": [
+            {
+              "rule_id": "export.selection_complete",
+              "severity": "PASS"
+            },
+            {
+              "rule_id": "export.chain_integrity",
+              "severity": "PASS"
+            },
+            {
+              "rule_id": "export.report_current",
+              "severity": "PASS"
+            },
+            {
+              "rule_id": "export.no_blocking_findings",
+              "severity": "PASS"
+            },
+            {
+              "rule_id": "export.asset_hash_matches",
+              "severity": "PASS"
+            },
+            {
+              "rule_id": "export.suite_review_current",
+              "severity": "PASS"
+            },
+            {
+              "rule_id": "export.unknown_acknowledged",
+              "severity": "PASS"
+            }
+          ]
+        },
+        "exported_at": "2026-10-05T11:41:53.257Z"
+      },
+      "created_at": "2026-10-05T11:41:53.259Z",
+      "updated_at": "2026-10-05T11:41:53.259Z"
+    },
+    {
+      "document_key": "7d414da3-8d7e-4477-a2cd-7b97d4812c07:export_record:export-20261005114419808-31c84853f1c2:1",
+      "project_id": "7d414da3-8d7e-4477-a2cd-7b97d4812c07",
+      "kind": "export_record",
+      "document_id": "export-20261005114419808-31c84853f1c2",
+      "version": 1,
+      "schema_version": 1,
+      "payload": {
+        "schema_version": 1,
+        "contract_version": "v2.6.2",
+        "project_id": "7d414da3-8d7e-4477-a2cd-7b97d4812c07",
+        "project_name": "正式开发—人工套图主链",
+        "zip_sha256": "31c84853f1c2b7a8460eaa718c89e01e15ff56175d30bfa174539d8a7b7e3e8e",
+        "zip_bytes": 30427,
+        "files": [
+          {
+            "path": "images/shot_main_clean-act-144e4fba7b214ffdadecf9453e7b02ad.png",
+            "byte_size": 8298
+          },
+          {
+            "path": "images/shot_scene_lifestyle-act-73499842a25441c6be9a3f48d9205923.png",
+            "byte_size": 8298
+          },
+          {
+            "path": "manifest.json",
+            "byte_size": 5142
+          },
+          {
+            "path": "checks.json",
+            "byte_size": 7257
+          },
+          {
+            "path": "README.txt",
+            "byte_size": 700
+          }
+        ],
+        "included_shot_ids": [
+          "shot_main_clean",
+          "shot_scene_lifestyle"
+        ],
+        "selection_fingerprint": "{\"contract_version\":\"v2.6.1\",\"entries\":[{\"candidate_id\":\"act-144e4fba7b214ffdadecf9453e7b02ad\",\"candidate_sha256\":\"9d34b3e53e06250b60c06248c7848383e5771867b8c8f3954156679d9e8e4cd5\",\"candidate_version\":1,\"required\":true,\"selected_at\":\"2026-10-05T11:32:56.367Z\",\"selection_id\":\"act-bb768c5ee3d54e69bdc8390fdce08192\",\"shot_id\":\"shot_main_clean\",\"state\":\"current\"},{\"candidate_id\":\"act-73499842a25441c6be9a3f48d9205923\",\"candidate_sha256\":\"63aac5275511fba00cb93ebe33369fe462256f3a175d7f5fda31d389f3fd0467\",\"candidate_version\":1,\"required\":false,\"selected_at\":\"2026-10-05T11:35:12.029Z\",\"selection_id\":\"act-ecd1b568b071456d9a1c0bc75d572ef0\",\"shot_id\":\"shot_scene_lifestyle\",\"state\":\"current\"},{\"candidate_id\":null,\"candidate_sha256\":null,\"candidate_version\":null,\"required\":false,\"selected_at\":null,\"selection_id\":null,\"shot_id\":\"shot_size_dimensions\",\"state\":\"none\"}]}",
+        "inputs_fingerprint": "{\"dependency_scope\":\"required_or_selected\",\"reports\":[{\"candidate_id\":\"act-144e4fba7b214ffdadecf9453e7b02ad\",\"report_asset_sha256\":\"9d34b3e53e06250b60c06248c7848383e5771867b8c8f3954156679d9e8e4cd5\",\"report_created_at\":\"2026-10-05T11:32:23.834Z\",\"report_finding_count\":7,\"review_contract_version\":\"v2.5.2\"},{\"candidate_id\":\"act-3044fabfea7c46bfb46663ce074718a2\",\"report_asset_sha256\":\"372dfb28cc81299ed94d064683a827d44ed2747121331d10f997e5bd4db61d52\",\"report_created_at\":\"2026-10-05T11:33:24.530Z\",\"report_finding_count\":7,\"review_contract_version\":\"v2.5.2\"},{\"candidate_id\":\"act-73499842a25441c6be9a3f48d9205923\",\"report_asset_sha256\":\"63aac5275511fba00cb93ebe33369fe462256f3a175d7f5fda31d389f3fd0467\",\"report_created_at\":\"2026-10-05T11:32:24.453Z\",\"report_finding_count\":6,\"review_contract_version\":\"v2.5.2\"}],\"selection\":\"{\\\"contract_version\\\":\\\"v2.6.1\\\",\\\"entries\\\":[{\\\"candidate_id\\\":\\\"act-144e4fba7b214ffdadecf9453e7b02ad\\\",\\\"candidate_sha256\\\":\\\"9d34b3e53e06250b60c06248c7848383e5771867b8c8f3954156679d9e8e4cd5\\\",\\\"candidate_version\\\":1,\\\"required\\\":true,\\\"selected_at\\\":\\\"2026-10-05T11:32:56.367Z\\\",\\\"selection_id\\\":\\\"act-bb768c5ee3d54e69bdc8390fdce08192\\\",\\\"shot_id\\\":\\\"shot_main_clean\\\",\\\"state\\\":\\\"current\\\"},{\\\"candidate_id\\\":\\\"act-73499842a25441c6be9a3f48d9205923\\\",\\\"candidate_sha256\\\":\\\"63aac5275511fba00cb93ebe33369fe462256f3a175d7f5fda31d389f3fd0467\\\",\\\"candidate_version\\\":1,\\\"required\\\":false,\\\"selected_at\\\":\\\"2026-10-05T11:35:12.029Z\\\",\\\"selection_id\\\":\\\"act-ecd1b568b071456d9a1c0bc75d572ef0\\\",\\\"shot_id\\\":\\\"shot_scene_lifestyle\\\",\\\"state\\\":\\\"current\\\"},{\\\"candidate_id\\\":null,\\\"candidate_sha256\\\":null,\\\"candidate_version\\\":null,\\\"required\\\":false,\\\"selected_at\\\":null,\\\"selection_id\\\":null,\\\"shot_id\\\":\\\"shot_size_dimensions\\\",\\\"state\\\":\\\"none\\\"}]}\",\"shots\":[{\"custom\":false,\"fact_slot_ids\":[],\"label\":\"主图·干净背景\",\"required\":true,\"role_id\":\"main\",\"shot_id\":\"shot_main_clean\",\"template_id\":\"main_clean\"},{\"custom\":false,\"fact_slot_ids\":[\"product_category\"],\"label\":\"场景图·使用中\",\"required\":false,\"role_id\":\"scene\",\"shot_id\":\"shot_scene_lifestyle\",\"template_id\":\"scene_lifestyle\"},{\"custom\":false,\"fact_slot_ids\":[],\"label\":\"尺寸图\",\"required\":false,\"role_id\":\"size\",\"shot_id\":\"shot_size_dimensions\",\"template_id\":\"size_dimensions\"}],\"specs\":[],\"style\":{\"avoid\":[],\"background\":\"\",\"color_tone\":\"\",\"composition\":\"\",\"lighting\":\"\"}}",
+        "gate": {
+          "status": "ready",
+          "findings": [
+            {
+              "rule_id": "export.selection_complete",
+              "severity": "PASS"
+            },
+            {
+              "rule_id": "export.chain_integrity",
+              "severity": "PASS"
+            },
+            {
+              "rule_id": "export.report_current",
+              "severity": "PASS"
+            },
+            {
+              "rule_id": "export.no_blocking_findings",
+              "severity": "PASS"
+            },
+            {
+              "rule_id": "export.asset_hash_matches",
+              "severity": "PASS"
+            },
+            {
+              "rule_id": "export.suite_review_current",
+              "severity": "PASS"
+            },
+            {
+              "rule_id": "export.unknown_acknowledged",
+              "severity": "PASS"
+            }
+          ]
+        },
+        "exported_at": "2026-10-05T11:44:19.808Z"
+      },
+      "created_at": "2026-10-05T11:44:19.811Z",
+      "updated_at": "2026-10-05T11:44:19.811Z"
+    },
+    {
+      "document_key": "7d414da3-8d7e-4477-a2cd-7b97d4812c07:export_record:export-20261005122928779-c58fad39726f:1",
+      "project_id": "7d414da3-8d7e-4477-a2cd-7b97d4812c07",
+      "kind": "export_record",
+      "document_id": "export-20261005122928779-c58fad39726f",
+      "version": 1,
+      "schema_version": 1,
+      "payload": {
+        "schema_version": 1,
+        "contract_version": "v2.6.2",
+        "project_id": "7d414da3-8d7e-4477-a2cd-7b97d4812c07",
+        "project_name": "正式开发—人工套图主链",
+        "zip_sha256": "c58fad39726fac8217d951ceb7429ba85916ccbb2e5a1e9a781befb2bd44ea7b",
+        "zip_bytes": 31117,
+        "files": [
+          {
+            "path": "images/shot_main_clean-act-144e4fba7b214ffdadecf9453e7b02ad.png",
+            "byte_size": 8298
+          },
+          {
+            "path": "images/shot_scene_lifestyle-act-73499842a25441c6be9a3f48d9205923.png",
+            "byte_size": 8298
+          },
+          {
+            "path": "manifest.json",
+            "byte_size": 5482
+          },
+          {
+            "path": "checks.json",
+            "byte_size": 7607
+          },
+          {
+            "path": "README.txt",
+            "byte_size": 700
+          }
+        ],
+        "included_shot_ids": [
+          "shot_main_clean",
+          "shot_scene_lifestyle"
+        ],
+        "selection_fingerprint": "{\"contract_version\":\"v2.6.1\",\"entries\":[{\"candidate_id\":\"act-144e4fba7b214ffdadecf9453e7b02ad\",\"candidate_sha256\":\"9d34b3e53e06250b60c06248c7848383e5771867b8c8f3954156679d9e8e4cd5\",\"candidate_version\":1,\"required\":true,\"selected_at\":\"2026-10-05T11:32:56.367Z\",\"selection_id\":\"act-bb768c5ee3d54e69bdc8390fdce08192\",\"shot_id\":\"shot_main_clean\",\"state\":\"current\"},{\"candidate_id\":\"act-73499842a25441c6be9a3f48d9205923\",\"candidate_sha256\":\"63aac5275511fba00cb93ebe33369fe462256f3a175d7f5fda31d389f3fd0467\",\"candidate_version\":1,\"required\":false,\"selected_at\":\"2026-10-05T11:35:12.029Z\",\"selection_id\":\"act-ecd1b568b071456d9a1c0bc75d572ef0\",\"shot_id\":\"shot_scene_lifestyle\",\"state\":\"current\"},{\"candidate_id\":null,\"candidate_sha256\":null,\"candidate_version\":null,\"required\":false,\"selected_at\":null,\"selection_id\":null,\"shot_id\":\"shot_size_dimensions\",\"state\":\"none\"}]}",
+        "inputs_fingerprint": "{\"dependency_scope\":\"required_or_selected\",\"reports\":[{\"candidate_id\":\"act-144e4fba7b214ffdadecf9453e7b02ad\",\"report_asset_sha256\":\"9d34b3e53e06250b60c06248c7848383e5771867b8c8f3954156679d9e8e4cd5\",\"report_created_at\":\"2026-10-05T11:32:23.834Z\",\"report_finding_count\":7,\"review_contract_version\":\"v2.5.2\"},{\"candidate_id\":\"act-3044fabfea7c46bfb46663ce074718a2\",\"report_asset_sha256\":\"372dfb28cc81299ed94d064683a827d44ed2747121331d10f997e5bd4db61d52\",\"report_created_at\":\"2026-10-05T11:33:24.530Z\",\"report_finding_count\":7,\"review_contract_version\":\"v2.5.2\"},{\"candidate_id\":\"act-73499842a25441c6be9a3f48d9205923\",\"report_asset_sha256\":\"63aac5275511fba00cb93ebe33369fe462256f3a175d7f5fda31d389f3fd0467\",\"report_created_at\":\"2026-10-05T11:32:24.453Z\",\"report_finding_count\":6,\"review_contract_version\":\"v2.5.2\"}],\"selection\":\"{\\\"contract_version\\\":\\\"v2.6.1\\\",\\\"entries\\\":[{\\\"candidate_id\\\":\\\"act-144e4fba7b214ffdadecf9453e7b02ad\\\",\\\"candidate_sha256\\\":\\\"9d34b3e53e06250b60c06248c7848383e5771867b8c8f3954156679d9e8e4cd5\\\",\\\"candidate_version\\\":1,\\\"required\\\":true,\\\"selected_at\\\":\\\"2026-10-05T11:32:56.367Z\\\",\\\"selection_id\\\":\\\"act-bb768c5ee3d54e69bdc8390fdce08192\\\",\\\"shot_id\\\":\\\"shot_main_clean\\\",\\\"state\\\":\\\"current\\\"},{\\\"candidate_id\\\":\\\"act-73499842a25441c6be9a3f48d9205923\\\",\\\"candidate_sha256\\\":\\\"63aac5275511fba00cb93ebe33369fe462256f3a175d7f5fda31d389f3fd0467\\\",\\\"candidate_version\\\":1,\\\"required\\\":false,\\\"selected_at\\\":\\\"2026-10-05T11:35:12.029Z\\\",\\\"selection_id\\\":\\\"act-ecd1b568b071456d9a1c0bc75d572ef0\\\",\\\"shot_id\\\":\\\"shot_scene_lifestyle\\\",\\\"state\\\":\\\"current\\\"},{\\\"candidate_id\\\":null,\\\"candidate_sha256\\\":null,\\\"candidate_version\\\":null,\\\"required\\\":false,\\\"selected_at\\\":null,\\\"selection_id\\\":null,\\\"shot_id\\\":\\\"shot_size_dimensions\\\",\\\"state\\\":\\\"none\\\"}]}\",\"shots\":[{\"custom\":false,\"fact_slot_ids\":[],\"label\":\"主图·干净背景\",\"required\":true,\"role_id\":\"main\",\"shot_id\":\"shot_main_clean\",\"template_id\":\"main_clean\"},{\"custom\":false,\"fact_slot_ids\":[\"product_category\"],\"label\":\"场景图·使用中\",\"required\":false,\"role_id\":\"scene\",\"shot_id\":\"shot_scene_lifestyle\",\"template_id\":\"scene_lifestyle\"},{\"custom\":false,\"fact_slot_ids\":[],\"label\":\"尺寸图\",\"required\":false,\"role_id\":\"size\",\"shot_id\":\"shot_size_dimensions\",\"template_id\":\"size_dimensions\"}],\"specs\":[],\"style\":{\"avoid\":[],\"background\":\"\",\"color_tone\":\"\",\"composition\":\"\",\"lighting\":\"\"}}",
+        "gate": {
+          "status": "ready",
+          "findings": [
+            {
+              "rule_id": "export.selection_complete",
+              "severity": "PASS"
+            },
+            {
+              "rule_id": "export.chain_integrity",
+              "severity": "PASS"
+            },
+            {
+              "rule_id": "export.report_current",
+              "severity": "PASS"
+            },
+            {
+              "rule_id": "export.no_blocking_findings",
+              "severity": "PASS"
+            },
+            {
+              "rule_id": "export.asset_hash_matches",
+              "severity": "PASS"
+            },
+            {
+              "rule_id": "export.suite_review_current",
+              "severity": "PASS"
+            },
+            {
+              "rule_id": "export.unknown_acknowledged",
+              "severity": "PASS"
+            }
+          ]
+        },
+        "exported_at": "2026-10-05T12:29:28.779Z"
+      },
+      "created_at": "2026-10-05T12:29:28.781Z",
+      "updated_at": "2026-10-05T12:29:28.781Z"
+    },
+    {
+      "document_key": "7d414da3-8d7e-4477-a2cd-7b97d4812c07:fact_slot:brand:1",
+      "project_id": "7d414da3-8d7e-4477-a2cd-7b97d4812c07",
+      "kind": "fact_slot",
+      "document_id": "brand",
+      "version": 1,
+      "schema_version": 1,
+      "payload": {
+        "schema_version": 1,
+        "slot_id": "brand",
+        "label": "品牌",
+        "authority": "core_fixed",
+        "value_type": "text",
+        "value": null,
+        "source": "system_default",
+        "status": "missing",
+        "confidence": null,
+        "evidence": [],
+        "depends_on": [],
+        "critical": false
+      },
+      "created_at": "2026-10-05T11:29:59.316Z",
+      "updated_at": "2026-10-05T11:29:59.316Z"
+    },
+    {
+      "document_key": "7d414da3-8d7e-4477-a2cd-7b97d4812c07:fact_slot:color_summary:1",
+      "project_id": "7d414da3-8d7e-4477-a2cd-7b97d4812c07",
+      "kind": "fact_slot",
+      "document_id": "color_summary",
+      "version": 1,
+      "schema_version": 1,
+      "payload": {
+        "schema_version": 1,
+        "slot_id": "color_summary",
+        "label": "颜色概览",
+        "authority": "core_fixed",
+        "value_type": "text",
+        "value": null,
+        "source": "system_default",
+        "status": "missing",
+        "confidence": null,
+        "evidence": [],
+        "depends_on": [],
+        "critical": false
+      },
+      "created_at": "2026-10-05T11:29:59.318Z",
+      "updated_at": "2026-10-05T11:29:59.318Z"
+    },
+    {
+      "document_key": "7d414da3-8d7e-4477-a2cd-7b97d4812c07:fact_slot:key_material:1",
+      "project_id": "7d414da3-8d7e-4477-a2cd-7b97d4812c07",
+      "kind": "fact_slot",
+      "document_id": "key_material",
+      "version": 1,
+      "schema_version": 1,
+      "payload": {
+        "schema_version": 1,
+        "slot_id": "key_material",
+        "label": "主要材质",
+        "authority": "core_fixed",
+        "value_type": "text",
+        "value": null,
+        "source": "system_default",
+        "status": "missing",
+        "confidence": null,
+        "evidence": [],
+        "depends_on": [],
+        "critical": false
+      },
+      "created_at": "2026-10-05T11:29:59.317Z",
+      "updated_at": "2026-10-05T11:29:59.317Z"
+    },
+    {
+      "document_key": "7d414da3-8d7e-4477-a2cd-7b97d4812c07:fact_slot:package_contents:1",
+      "project_id": "7d414da3-8d7e-4477-a2cd-7b97d4812c07",
+      "kind": "fact_slot",
+      "document_id": "package_contents",
+      "version": 1,
+      "schema_version": 1,
+      "payload": {
+        "schema_version": 1,
+        "slot_id": "package_contents",
+        "label": "包装内容物",
+        "authority": "core_fixed",
+        "value_type": "text_list",
+        "value": null,
+        "source": "system_default",
+        "status": "missing",
+        "confidence": null,
+        "evidence": [],
+        "depends_on": [],
+        "critical": false
+      },
+      "created_at": "2026-10-05T11:29:59.320Z",
+      "updated_at": "2026-10-05T11:29:59.320Z"
+    },
+    {
+      "document_key": "7d414da3-8d7e-4477-a2cd-7b97d4812c07:fact_slot:product_category:1",
+      "project_id": "7d414da3-8d7e-4477-a2cd-7b97d4812c07",
+      "kind": "fact_slot",
+      "document_id": "product_category",
+      "version": 1,
+      "schema_version": 1,
+      "payload": {
+        "schema_version": 1,
+        "slot_id": "product_category",
+        "label": "商品品类",
+        "authority": "core_fixed",
+        "value_type": "text",
+        "value": null,
+        "source": "system_default",
+        "status": "missing",
+        "confidence": null,
+        "evidence": [],
+        "depends_on": [],
+        "critical": true
+      },
+      "created_at": "2026-10-05T11:29:59.314Z",
+      "updated_at": "2026-10-05T11:29:59.314Z"
+    },
+    {
+      "document_key": "7d414da3-8d7e-4477-a2cd-7b97d4812c07:fact_slot:product_category:2",
+      "project_id": "7d414da3-8d7e-4477-a2cd-7b97d4812c07",
+      "kind": "fact_slot",
+      "document_id": "product_category",
+      "version": 2,
+      "schema_version": 1,
+      "payload": {
+        "schema_version": 1,
+        "slot_id": "product_category",
+        "label": "商品品类",
+        "authority": "core_fixed",
+        "value_type": "text",
+        "value": "玻璃食品容器",
+        "source": "user_input",
+        "status": "confirmed",
+        "confidence": null,
+        "evidence": [],
+        "depends_on": [],
+        "critical": true
+      },
+      "created_at": "2026-10-05T11:30:51.415Z",
+      "updated_at": "2026-10-05T11:30:51.415Z"
+    },
+    {
+      "document_key": "7d414da3-8d7e-4477-a2cd-7b97d4812c07:fact_slot:product_name:1",
+      "project_id": "7d414da3-8d7e-4477-a2cd-7b97d4812c07",
+      "kind": "fact_slot",
+      "document_id": "product_name",
+      "version": 1,
+      "schema_version": 1,
+      "payload": {
+        "schema_version": 1,
+        "slot_id": "product_name",
+        "label": "商品名称",
+        "authority": "core_fixed",
+        "value_type": "text",
+        "value": null,
+        "source": "system_default",
+        "status": "missing",
+        "confidence": null,
+        "evidence": [],
+        "depends_on": [],
+        "critical": true
+      },
+      "created_at": "2026-10-05T11:29:59.313Z",
+      "updated_at": "2026-10-05T11:29:59.313Z"
+    },
+    {
+      "document_key": "7d414da3-8d7e-4477-a2cd-7b97d4812c07:fact_slot:product_name:2",
+      "project_id": "7d414da3-8d7e-4477-a2cd-7b97d4812c07",
+      "kind": "fact_slot",
+      "document_id": "product_name",
+      "version": 2,
+      "schema_version": 1,
+      "payload": {
+        "schema_version": 1,
+        "slot_id": "product_name",
+        "label": "商品名称",
+        "authority": "core_fixed",
+        "value_type": "text",
+        "value": "玻璃蜂蜜罐",
+        "source": "user_input",
+        "status": "confirmed",
+        "confidence": null,
+        "evidence": [],
+        "depends_on": [],
+        "critical": true
+      },
+      "created_at": "2026-10-05T11:31:20.047Z",
+      "updated_at": "2026-10-05T11:31:20.047Z"
+    },
+    {
+      "document_key": "7d414da3-8d7e-4477-a2cd-7b97d4812c07:fact_slot:signature_features:1",
+      "project_id": "7d414da3-8d7e-4477-a2cd-7b97d4812c07",
+      "kind": "fact_slot",
+      "document_id": "signature_features",
+      "version": 1,
+      "schema_version": 1,
+      "payload": {
+        "schema_version": 1,
+        "slot_id": "signature_features",
+        "label": "必须保持的商品特征",
+        "authority": "core_fixed",
+        "value_type": "text_list",
+        "value": null,
+        "source": "system_default",
+        "status": "missing",
+        "confidence": null,
+        "evidence": [],
+        "depends_on": [],
+        "critical": true
+      },
+      "created_at": "2026-10-05T11:29:59.315Z",
+      "updated_at": "2026-10-05T11:29:59.315Z"
+    },
+    {
+      "document_key": "7d414da3-8d7e-4477-a2cd-7b97d4812c07:fact_slot:signature_features:2",
+      "project_id": "7d414da3-8d7e-4477-a2cd-7b97d4812c07",
+      "kind": "fact_slot",
+      "document_id": "signature_features",
+      "version": 2,
+      "schema_version": 1,
+      "payload": {
+        "schema_version": 1,
+        "slot_id": "signature_features",
+        "label": "必须保持的商品特征",
+        "authority": "core_fixed",
+        "value_type": "text_list",
+        "value": [
+          "透明玻璃罐体",
+          "旋盖密封",
+          "保持原图商品外观"
+        ],
+        "source": "user_input",
+        "status": "confirmed",
+        "confidence": null,
+        "evidence": [],
+        "depends_on": [],
+        "critical": true
+      },
+      "created_at": "2026-10-05T11:31:20.132Z",
+      "updated_at": "2026-10-05T11:31:20.132Z"
+    },
+    {
+      "document_key": "7d414da3-8d7e-4477-a2cd-7b97d4812c07:fact_slot:size_dimensions:1",
+      "project_id": "7d414da3-8d7e-4477-a2cd-7b97d4812c07",
+      "kind": "fact_slot",
+      "document_id": "size_dimensions",
+      "version": 1,
+      "schema_version": 1,
+      "payload": {
+        "schema_version": 1,
+        "slot_id": "size_dimensions",
+        "label": "尺寸规格（对象/轴向/数值/单位）",
+        "authority": "core_fixed",
+        "value_type": "dimension_list",
+        "value": null,
+        "source": "system_default",
+        "status": "missing",
+        "confidence": null,
+        "evidence": [],
+        "depends_on": [],
+        "critical": false
+      },
+      "created_at": "2026-10-05T11:29:59.320Z",
+      "updated_at": "2026-10-05T11:29:59.320Z"
+    },
+    {
+      "document_key": "7d414da3-8d7e-4477-a2cd-7b97d4812c07:fact_slot:size_summary:1",
+      "project_id": "7d414da3-8d7e-4477-a2cd-7b97d4812c07",
+      "kind": "fact_slot",
+      "document_id": "size_summary",
+      "version": 1,
+      "schema_version": 1,
+      "payload": {
+        "schema_version": 1,
+        "slot_id": "size_summary",
+        "label": "尺寸概览",
+        "authority": "core_fixed",
+        "value_type": "text",
+        "value": null,
+        "source": "system_default",
+        "status": "missing",
+        "confidence": null,
+        "evidence": [],
+        "depends_on": [],
+        "critical": false
+      },
+      "created_at": "2026-10-05T11:29:59.319Z",
+      "updated_at": "2026-10-05T11:29:59.319Z"
+    },
+    {
+      "document_key": "7d414da3-8d7e-4477-a2cd-7b97d4812c07:generation_attempt:shot_main_clean:1",
+      "project_id": "7d414da3-8d7e-4477-a2cd-7b97d4812c07",
+      "kind": "generation_attempt",
+      "document_id": "shot_main_clean",
+      "version": 1,
+      "schema_version": 1,
+      "payload": {
+        "schema_version": 2,
+        "action_id": "act-144e4fba7b214ffdadecf9453e7b02ad",
+        "shot_id": "shot_main_clean",
+        "state": "pending_submit",
+        "prompt": {
+          "version": 1,
+          "hash": "a5087604d6ae4b74478008300d8c03a8653d468a2d9d268114774eee1a413b21"
+        },
+        "references": [
+          {
+            "role": "primary",
+            "sha256": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461"
+          }
+        ],
+        "provider": {
+          "provider_id": "fake-qwen-image",
+          "model_id": "qwen-image-3.0"
+        },
+        "execution_identity": {
+          "schema_version": 1,
+          "protocol": "v2.4.1",
+          "capability_version": 3,
+          "credential_reference": {
+            "source": "test_double"
+          },
+          "sync": false
+        },
+        "authorization": {
+          "document_id": "generation",
+          "version": 1,
+          "hash": "5cec7ceeece543c2ab3e9238f004cd0d072988fcdb044aa86c0c263552cf187d"
+        },
+        "parameters": {
+          "size": "1344*1344",
+          "n": 1,
+          "prompt_extend": false,
+          "watermark": false
+        },
+        "task_id": null,
+        "request_id": null,
+        "error": null,
+        "created_at": "2026-10-05T11:32:23.226Z",
+        "updated_at": "2026-10-05T11:32:23.226Z",
+        "change_log": [
+          {
+            "at": "2026-10-05T11:32:23.226Z",
+            "via": "user",
+            "from": null,
+            "to": "pending_submit",
+            "note": "用户一次授权的原队列提交"
+          }
+        ]
+      },
+      "created_at": "2026-10-05T11:32:23.232Z",
+      "updated_at": "2026-10-05T11:32:23.232Z"
+    },
+    {
+      "document_key": "7d414da3-8d7e-4477-a2cd-7b97d4812c07:generation_attempt:shot_main_clean:2",
+      "project_id": "7d414da3-8d7e-4477-a2cd-7b97d4812c07",
+      "kind": "generation_attempt",
+      "document_id": "shot_main_clean",
+      "version": 2,
+      "schema_version": 1,
+      "payload": {
+        "schema_version": 2,
+        "action_id": "act-144e4fba7b214ffdadecf9453e7b02ad",
+        "shot_id": "shot_main_clean",
+        "state": "submitted",
+        "prompt": {
+          "version": 1,
+          "hash": "a5087604d6ae4b74478008300d8c03a8653d468a2d9d268114774eee1a413b21"
+        },
+        "references": [
+          {
+            "role": "primary",
+            "sha256": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461"
+          }
+        ],
+        "provider": {
+          "provider_id": "fake-qwen-image",
+          "model_id": "qwen-image-3.0"
+        },
+        "execution_identity": {
+          "schema_version": 1,
+          "protocol": "v2.4.1",
+          "capability_version": 3,
+          "credential_reference": {
+            "source": "test_double"
+          },
+          "sync": false
+        },
+        "authorization": {
+          "document_id": "generation",
+          "version": 1,
+          "hash": "5cec7ceeece543c2ab3e9238f004cd0d072988fcdb044aa86c0c263552cf187d"
+        },
+        "parameters": {
+          "size": "1344*1344",
+          "n": 1,
+          "prompt_extend": false,
+          "watermark": false
+        },
+        "task_id": "fake-4e29ec6bd71a7c06",
+        "request_id": null,
+        "error": null,
+        "created_at": "2026-10-05T11:32:23.226Z",
+        "updated_at": "2026-10-05T11:32:23.774Z",
+        "change_log": [
+          {
+            "at": "2026-10-05T11:32:23.226Z",
+            "via": "user",
+            "from": null,
+            "to": "pending_submit",
+            "note": "用户一次授权的原队列提交"
+          },
+          {
+            "at": "2026-10-05T11:32:23.774Z",
+            "via": "submit",
+            "from": "pending_submit",
+            "to": "submitted",
+            "note": "上游已受理（RUNNING）"
+          }
+        ]
+      },
+      "created_at": "2026-10-05T11:32:23.775Z",
+      "updated_at": "2026-10-05T11:32:23.775Z"
+    },
+    {
+      "document_key": "7d414da3-8d7e-4477-a2cd-7b97d4812c07:generation_attempt:shot_main_clean:3",
+      "project_id": "7d414da3-8d7e-4477-a2cd-7b97d4812c07",
+      "kind": "generation_attempt",
+      "document_id": "shot_main_clean",
+      "version": 3,
+      "schema_version": 1,
+      "payload": {
+        "schema_version": 2,
+        "action_id": "act-144e4fba7b214ffdadecf9453e7b02ad",
+        "shot_id": "shot_main_clean",
+        "state": "succeeded",
+        "prompt": {
+          "version": 1,
+          "hash": "a5087604d6ae4b74478008300d8c03a8653d468a2d9d268114774eee1a413b21"
+        },
+        "references": [
+          {
+            "role": "primary",
+            "sha256": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461"
+          }
+        ],
+        "provider": {
+          "provider_id": "fake-qwen-image",
+          "model_id": "qwen-image-3.0"
+        },
+        "execution_identity": {
+          "schema_version": 1,
+          "protocol": "v2.4.1",
+          "capability_version": 3,
+          "credential_reference": {
+            "source": "test_double"
+          },
+          "sync": false
+        },
+        "authorization": {
+          "document_id": "generation",
+          "version": 1,
+          "hash": "5cec7ceeece543c2ab3e9238f004cd0d072988fcdb044aa86c0c263552cf187d"
+        },
+        "parameters": {
+          "size": "1344*1344",
+          "n": 1,
+          "prompt_extend": false,
+          "watermark": false
+        },
+        "task_id": "fake-4e29ec6bd71a7c06",
+        "request_id": null,
+        "error": null,
+        "created_at": "2026-10-05T11:32:23.226Z",
+        "updated_at": "2026-10-05T11:32:23.786Z",
+        "change_log": [
+          {
+            "at": "2026-10-05T11:32:23.226Z",
+            "via": "user",
+            "from": null,
+            "to": "pending_submit",
+            "note": "用户一次授权的原队列提交"
+          },
+          {
+            "at": "2026-10-05T11:32:23.774Z",
+            "via": "submit",
+            "from": "pending_submit",
+            "to": "submitted",
+            "note": "上游已受理（RUNNING）"
+          },
+          {
+            "at": "2026-10-05T11:32:23.786Z",
+            "via": "query",
+            "from": "submitted",
+            "to": "succeeded",
+            "note": "上游已完成"
+          }
+        ]
+      },
+      "created_at": "2026-10-05T11:32:23.787Z",
+      "updated_at": "2026-10-05T11:32:23.787Z"
+    },
+    {
+      "document_key": "7d414da3-8d7e-4477-a2cd-7b97d4812c07:generation_attempt:shot_main_clean:4",
+      "project_id": "7d414da3-8d7e-4477-a2cd-7b97d4812c07",
+      "kind": "generation_attempt",
+      "document_id": "shot_main_clean",
+      "version": 4,
+      "schema_version": 1,
+      "payload": {
+        "schema_version": 2,
+        "action_id": "act-3044fabfea7c46bfb46663ce074718a2",
+        "shot_id": "shot_main_clean",
+        "state": "pending_submit",
+        "prompt": {
+          "version": 2,
+          "hash": "dbac7f47b8198869eab44f5338c15afcd4656a1d0cb884f9bc01c22a0912c114"
+        },
+        "references": [
+          {
+            "role": "primary",
+            "sha256": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461"
+          }
+        ],
+        "provider": {
+          "provider_id": "fake-qwen-image",
+          "model_id": "qwen-image-3.0"
+        },
+        "execution_identity": {
+          "schema_version": 1,
+          "protocol": "v2.4.1",
+          "capability_version": 3,
+          "credential_reference": {
+            "source": "test_double"
+          },
+          "sync": false
+        },
+        "authorization": {
+          "document_id": "rework:shot_main_clean",
+          "version": 1,
+          "hash": "5e7be4b5fe0000b82b901eb67e4fde6e2265c99c206310f9f01ccffa850ff494"
+        },
+        "parameters": {
+          "size": "1344*1344",
+          "n": 1,
+          "prompt_extend": false,
+          "watermark": false
+        },
+        "task_id": null,
+        "request_id": null,
+        "error": null,
+        "created_at": "2026-10-05T11:33:23.893Z",
+        "updated_at": "2026-10-05T11:33:23.893Z",
+        "change_log": [
+          {
+            "at": "2026-10-05T11:33:23.893Z",
+            "via": "user",
+            "from": null,
+            "to": "pending_submit",
+            "note": "用户一次授权的原队列提交"
+          }
+        ]
+      },
+      "created_at": "2026-10-05T11:33:23.897Z",
+      "updated_at": "2026-10-05T11:33:23.897Z"
+    },
+    {
+      "document_key": "7d414da3-8d7e-4477-a2cd-7b97d4812c07:generation_attempt:shot_main_clean:5",
+      "project_id": "7d414da3-8d7e-4477-a2cd-7b97d4812c07",
+      "kind": "generation_attempt",
+      "document_id": "shot_main_clean",
+      "version": 5,
+      "schema_version": 1,
+      "payload": {
+        "schema_version": 2,
+        "action_id": "act-3044fabfea7c46bfb46663ce074718a2",
+        "shot_id": "shot_main_clean",
+        "state": "submitted",
+        "prompt": {
+          "version": 2,
+          "hash": "dbac7f47b8198869eab44f5338c15afcd4656a1d0cb884f9bc01c22a0912c114"
+        },
+        "references": [
+          {
+            "role": "primary",
+            "sha256": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461"
+          }
+        ],
+        "provider": {
+          "provider_id": "fake-qwen-image",
+          "model_id": "qwen-image-3.0"
+        },
+        "execution_identity": {
+          "schema_version": 1,
+          "protocol": "v2.4.1",
+          "capability_version": 3,
+          "credential_reference": {
+            "source": "test_double"
+          },
+          "sync": false
+        },
+        "authorization": {
+          "document_id": "rework:shot_main_clean",
+          "version": 1,
+          "hash": "5e7be4b5fe0000b82b901eb67e4fde6e2265c99c206310f9f01ccffa850ff494"
+        },
+        "parameters": {
+          "size": "1344*1344",
+          "n": 1,
+          "prompt_extend": false,
+          "watermark": false
+        },
+        "task_id": "fake-f18dab256979797a",
+        "request_id": null,
+        "error": null,
+        "created_at": "2026-10-05T11:33:23.893Z",
+        "updated_at": "2026-10-05T11:33:24.477Z",
+        "change_log": [
+          {
+            "at": "2026-10-05T11:33:23.893Z",
+            "via": "user",
+            "from": null,
+            "to": "pending_submit",
+            "note": "用户一次授权的原队列提交"
+          },
+          {
+            "at": "2026-10-05T11:33:24.477Z",
+            "via": "submit",
+            "from": "pending_submit",
+            "to": "submitted",
+            "note": "上游已受理（RUNNING）"
+          }
+        ]
+      },
+      "created_at": "2026-10-05T11:33:24.478Z",
+      "updated_at": "2026-10-05T11:33:24.478Z"
+    },
+    {
+      "document_key": "7d414da3-8d7e-4477-a2cd-7b97d4812c07:generation_attempt:shot_main_clean:6",
+      "project_id": "7d414da3-8d7e-4477-a2cd-7b97d4812c07",
+      "kind": "generation_attempt",
+      "document_id": "shot_main_clean",
+      "version": 6,
+      "schema_version": 1,
+      "payload": {
+        "schema_version": 2,
+        "action_id": "act-3044fabfea7c46bfb46663ce074718a2",
+        "shot_id": "shot_main_clean",
+        "state": "succeeded",
+        "prompt": {
+          "version": 2,
+          "hash": "dbac7f47b8198869eab44f5338c15afcd4656a1d0cb884f9bc01c22a0912c114"
+        },
+        "references": [
+          {
+            "role": "primary",
+            "sha256": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461"
+          }
+        ],
+        "provider": {
+          "provider_id": "fake-qwen-image",
+          "model_id": "qwen-image-3.0"
+        },
+        "execution_identity": {
+          "schema_version": 1,
+          "protocol": "v2.4.1",
+          "capability_version": 3,
+          "credential_reference": {
+            "source": "test_double"
+          },
+          "sync": false
+        },
+        "authorization": {
+          "document_id": "rework:shot_main_clean",
+          "version": 1,
+          "hash": "5e7be4b5fe0000b82b901eb67e4fde6e2265c99c206310f9f01ccffa850ff494"
+        },
+        "parameters": {
+          "size": "1344*1344",
+          "n": 1,
+          "prompt_extend": false,
+          "watermark": false
+        },
+        "task_id": "fake-f18dab256979797a",
+        "request_id": null,
+        "error": null,
+        "created_at": "2026-10-05T11:33:23.893Z",
+        "updated_at": "2026-10-05T11:33:24.489Z",
+        "change_log": [
+          {
+            "at": "2026-10-05T11:33:23.893Z",
+            "via": "user",
+            "from": null,
+            "to": "pending_submit",
+            "note": "用户一次授权的原队列提交"
+          },
+          {
+            "at": "2026-10-05T11:33:24.477Z",
+            "via": "submit",
+            "from": "pending_submit",
+            "to": "submitted",
+            "note": "上游已受理（RUNNING）"
+          },
+          {
+            "at": "2026-10-05T11:33:24.489Z",
+            "via": "query",
+            "from": "submitted",
+            "to": "succeeded",
+            "note": "上游已完成"
+          }
+        ]
+      },
+      "created_at": "2026-10-05T11:33:24.489Z",
+      "updated_at": "2026-10-05T11:33:24.489Z"
+    },
+    {
+      "document_key": "7d414da3-8d7e-4477-a2cd-7b97d4812c07:generation_attempt:shot_scene_lifestyle:1",
+      "project_id": "7d414da3-8d7e-4477-a2cd-7b97d4812c07",
+      "kind": "generation_attempt",
+      "document_id": "shot_scene_lifestyle",
+      "version": 1,
+      "schema_version": 1,
+      "payload": {
+        "schema_version": 2,
+        "action_id": "act-73499842a25441c6be9a3f48d9205923",
+        "shot_id": "shot_scene_lifestyle",
+        "state": "pending_submit",
+        "prompt": {
+          "version": 1,
+          "hash": "4afe1597e6c41e3da849eceb31473be5c307c58e564eab37bd21330a8f26cf14"
+        },
+        "references": [
+          {
+            "role": "primary",
+            "sha256": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461"
+          }
+        ],
+        "provider": {
+          "provider_id": "fake-qwen-image",
+          "model_id": "qwen-image-3.0"
+        },
+        "execution_identity": {
+          "schema_version": 1,
+          "protocol": "v2.4.1",
+          "capability_version": 3,
+          "credential_reference": {
+            "source": "test_double"
+          },
+          "sync": false
+        },
+        "authorization": {
+          "document_id": "generation",
+          "version": 1,
+          "hash": "5cec7ceeece543c2ab3e9238f004cd0d072988fcdb044aa86c0c263552cf187d"
+        },
+        "parameters": {
+          "size": "1344*1344",
+          "n": 1,
+          "prompt_extend": false,
+          "watermark": false
+        },
+        "task_id": null,
+        "request_id": null,
+        "error": null,
+        "created_at": "2026-10-05T11:32:23.859Z",
+        "updated_at": "2026-10-05T11:32:23.859Z",
+        "change_log": [
+          {
+            "at": "2026-10-05T11:32:23.859Z",
+            "via": "user",
+            "from": null,
+            "to": "pending_submit",
+            "note": "用户一次授权的原队列提交"
+          }
+        ]
+      },
+      "created_at": "2026-10-05T11:32:23.867Z",
+      "updated_at": "2026-10-05T11:32:23.867Z"
+    },
+    {
+      "document_key": "7d414da3-8d7e-4477-a2cd-7b97d4812c07:generation_attempt:shot_scene_lifestyle:2",
+      "project_id": "7d414da3-8d7e-4477-a2cd-7b97d4812c07",
+      "kind": "generation_attempt",
+      "document_id": "shot_scene_lifestyle",
+      "version": 2,
+      "schema_version": 1,
+      "payload": {
+        "schema_version": 2,
+        "action_id": "act-73499842a25441c6be9a3f48d9205923",
+        "shot_id": "shot_scene_lifestyle",
+        "state": "submitted",
+        "prompt": {
+          "version": 1,
+          "hash": "4afe1597e6c41e3da849eceb31473be5c307c58e564eab37bd21330a8f26cf14"
+        },
+        "references": [
+          {
+            "role": "primary",
+            "sha256": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461"
+          }
+        ],
+        "provider": {
+          "provider_id": "fake-qwen-image",
+          "model_id": "qwen-image-3.0"
+        },
+        "execution_identity": {
+          "schema_version": 1,
+          "protocol": "v2.4.1",
+          "capability_version": 3,
+          "credential_reference": {
+            "source": "test_double"
+          },
+          "sync": false
+        },
+        "authorization": {
+          "document_id": "generation",
+          "version": 1,
+          "hash": "5cec7ceeece543c2ab3e9238f004cd0d072988fcdb044aa86c0c263552cf187d"
+        },
+        "parameters": {
+          "size": "1344*1344",
+          "n": 1,
+          "prompt_extend": false,
+          "watermark": false
+        },
+        "task_id": "fake-ff4c7221e5b9afd5",
+        "request_id": null,
+        "error": null,
+        "created_at": "2026-10-05T11:32:23.859Z",
+        "updated_at": "2026-10-05T11:32:24.401Z",
+        "change_log": [
+          {
+            "at": "2026-10-05T11:32:23.859Z",
+            "via": "user",
+            "from": null,
+            "to": "pending_submit",
+            "note": "用户一次授权的原队列提交"
+          },
+          {
+            "at": "2026-10-05T11:32:24.401Z",
+            "via": "submit",
+            "from": "pending_submit",
+            "to": "submitted",
+            "note": "上游已受理（RUNNING）"
+          }
+        ]
+      },
+      "created_at": "2026-10-05T11:32:24.402Z",
+      "updated_at": "2026-10-05T11:32:24.402Z"
+    },
+    {
+      "document_key": "7d414da3-8d7e-4477-a2cd-7b97d4812c07:generation_attempt:shot_scene_lifestyle:3",
+      "project_id": "7d414da3-8d7e-4477-a2cd-7b97d4812c07",
+      "kind": "generation_attempt",
+      "document_id": "shot_scene_lifestyle",
+      "version": 3,
+      "schema_version": 1,
+      "payload": {
+        "schema_version": 2,
+        "action_id": "act-73499842a25441c6be9a3f48d9205923",
+        "shot_id": "shot_scene_lifestyle",
+        "state": "succeeded",
+        "prompt": {
+          "version": 1,
+          "hash": "4afe1597e6c41e3da849eceb31473be5c307c58e564eab37bd21330a8f26cf14"
+        },
+        "references": [
+          {
+            "role": "primary",
+            "sha256": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461"
+          }
+        ],
+        "provider": {
+          "provider_id": "fake-qwen-image",
+          "model_id": "qwen-image-3.0"
+        },
+        "execution_identity": {
+          "schema_version": 1,
+          "protocol": "v2.4.1",
+          "capability_version": 3,
+          "credential_reference": {
+            "source": "test_double"
+          },
+          "sync": false
+        },
+        "authorization": {
+          "document_id": "generation",
+          "version": 1,
+          "hash": "5cec7ceeece543c2ab3e9238f004cd0d072988fcdb044aa86c0c263552cf187d"
+        },
+        "parameters": {
+          "size": "1344*1344",
+          "n": 1,
+          "prompt_extend": false,
+          "watermark": false
+        },
+        "task_id": "fake-ff4c7221e5b9afd5",
+        "request_id": null,
+        "error": null,
+        "created_at": "2026-10-05T11:32:23.859Z",
+        "updated_at": "2026-10-05T11:32:24.409Z",
+        "change_log": [
+          {
+            "at": "2026-10-05T11:32:23.859Z",
+            "via": "user",
+            "from": null,
+            "to": "pending_submit",
+            "note": "用户一次授权的原队列提交"
+          },
+          {
+            "at": "2026-10-05T11:32:24.401Z",
+            "via": "submit",
+            "from": "pending_submit",
+            "to": "submitted",
+            "note": "上游已受理（RUNNING）"
+          },
+          {
+            "at": "2026-10-05T11:32:24.409Z",
+            "via": "query",
+            "from": "submitted",
+            "to": "succeeded",
+            "note": "上游已完成"
+          }
+        ]
+      },
+      "created_at": "2026-10-05T11:32:24.410Z",
+      "updated_at": "2026-10-05T11:32:24.410Z"
+    },
+    {
+      "document_key": "7d414da3-8d7e-4477-a2cd-7b97d4812c07:generation_confirm:generation:1",
+      "project_id": "7d414da3-8d7e-4477-a2cd-7b97d4812c07",
+      "kind": "generation_confirm",
+      "document_id": "generation",
+      "version": 1,
+      "schema_version": 1,
+      "payload": {
+        "schema_version": 1,
+        "confirmed_at": "2026-10-05T11:32:23.197Z",
+        "fingerprint": {
+          "snapshot": {
+            "schema_version": 1,
+            "execution_target": {
+              "provider_id": "fake-qwen-image",
+              "model_id": "qwen-image-3.0",
+              "protocol": "v2.4.1",
+              "capability_version": 3,
+              "credential_source": "test_double",
+              "sync": false
+            },
+            "submission_mode": "initial",
+            "scope_shot_ids": [
+              "shot_main_clean",
+              "shot_scene_lifestyle"
+            ],
+            "platform": {
+              "platform_id": "amazon_us",
+              "version": 1
+            },
+            "provider": {
+              "model_id": "qwen-image-3.0",
+              "version": 3
+            },
+            "can_submit": true,
+            "shots": [
+              {
+                "shot_id": "shot_main_clean",
+                "prompt_version": 1,
+                "prompt_hash": "a5087604d6ae4b74478008300d8c03a8653d468a2d9d268114774eee1a413b21",
+                "prompt_chars": 449,
+                "reference_roles": [
+                  "primary"
+                ],
+                "blocked": []
+              },
+              {
+                "shot_id": "shot_scene_lifestyle",
+                "prompt_version": 1,
+                "prompt_hash": "4afe1597e6c41e3da849eceb31473be5c307c58e564eab37bd21330a8f26cf14",
+                "prompt_chars": 351,
+                "reference_roles": [
+                  "primary"
+                ],
+                "blocked": []
+              }
+            ],
+            "external_summary": {
+              "model": "qwen-image-3.0",
+              "size": "1344*1344",
+              "n": 1,
+              "prompt_extend": false,
+              "watermark": false,
+              "output_format": "png",
+              "reference_count": 2,
+              "reference_roles": [
+                "primary"
+              ],
+              "prompt_chars": 800
+            }
+          },
+          "hash": "5cec7ceeece543c2ab3e9238f004cd0d072988fcdb044aa86c0c263552cf187d"
+        },
+        "platform": {
+          "platform_id": "amazon_us",
+          "version": 1
+        },
+        "provider": {
+          "model_id": "qwen-image-3.0",
+          "version": 3
+        },
+        "total": 2,
+        "external_summary": {
+          "model": "qwen-image-3.0",
+          "size": "1344*1344",
+          "n": 1,
+          "prompt_extend": false,
+          "watermark": false,
+          "output_format": "png",
+          "reference_count": 2,
+          "reference_roles": [
+            "primary"
+          ],
+          "prompt_chars": 800,
+          "on_image_text_language": "en",
+          "statement": "生成时将向 qwen-image-3.0 发送 2 条提示词（合计 800 字）与 2 张参考图（角色：primary）；参数 1344*1344 / n=1 / prompt_extend=false / watermark=false / 输出格式 png；图中文字语言 en。"
+        },
+        "shots": [
+          {
+            "shot_id": "shot_main_clean",
+            "label": "主图·干净背景",
+            "prompt_version": 1,
+            "prompt_hash": "a5087604d6ae4b74478008300d8c03a8653d468a2d9d268114774eee1a413b21",
+            "references": [
+              {
+                "role": "primary",
+                "sha256_prefix": "c024b7cf2b04"
+              }
+            ],
+            "risks": []
+          },
+          {
+            "shot_id": "shot_scene_lifestyle",
+            "label": "场景图·使用中",
+            "prompt_version": 1,
+            "prompt_hash": "4afe1597e6c41e3da849eceb31473be5c307c58e564eab37bd21330a8f26cf14",
+            "references": [
+              {
+                "role": "primary",
+                "sha256_prefix": "c024b7cf2b04"
+              }
+            ],
+            "risks": []
+          }
+        ],
+        "risks": []
+      },
+      "created_at": "2026-10-05T11:32:23.200Z",
+      "updated_at": "2026-10-05T11:32:23.200Z"
+    },
+    {
+      "document_key": "7d414da3-8d7e-4477-a2cd-7b97d4812c07:generation_confirm:rework:shot_main_clean:1",
+      "project_id": "7d414da3-8d7e-4477-a2cd-7b97d4812c07",
+      "kind": "generation_confirm",
+      "document_id": "rework:shot_main_clean",
+      "version": 1,
+      "schema_version": 1,
+      "payload": {
+        "schema_version": 1,
+        "confirmed_at": "2026-10-05T11:33:23.870Z",
+        "fingerprint": {
+          "snapshot": {
+            "schema_version": 1,
+            "execution_target": {
+              "provider_id": "fake-qwen-image",
+              "model_id": "qwen-image-3.0",
+              "protocol": "v2.4.1",
+              "capability_version": 3,
+              "credential_source": "test_double",
+              "sync": false
+            },
+            "submission_mode": "rework",
+            "scope_shot_ids": [
+              "shot_main_clean"
+            ],
+            "platform": {
+              "platform_id": "amazon_us",
+              "version": 1
+            },
+            "provider": {
+              "model_id": "qwen-image-3.0",
+              "version": 3
+            },
+            "can_submit": true,
+            "shots": [
+              {
+                "shot_id": "shot_main_clean",
+                "prompt_version": 2,
+                "prompt_hash": "dbac7f47b8198869eab44f5338c15afcd4656a1d0cb884f9bc01c22a0912c114",
+                "prompt_chars": 537,
+                "reference_roles": [
+                  "primary"
+                ],
+                "blocked": []
+              }
+            ],
+            "external_summary": {
+              "model": "qwen-image-3.0",
+              "size": "1344*1344",
+              "n": 1,
+              "prompt_extend": false,
+              "watermark": false,
+              "output_format": "png",
+              "reference_count": 1,
+              "reference_roles": [
+                "primary"
+              ],
+              "prompt_chars": 537
+            }
+          },
+          "hash": "5e7be4b5fe0000b82b901eb67e4fde6e2265c99c206310f9f01ccffa850ff494"
+        },
+        "platform": {
+          "platform_id": "amazon_us",
+          "version": 1
+        },
+        "provider": {
+          "model_id": "qwen-image-3.0",
+          "version": 3
+        },
+        "total": 1,
+        "external_summary": {
+          "model": "qwen-image-3.0",
+          "size": "1344*1344",
+          "n": 1,
+          "prompt_extend": false,
+          "watermark": false,
+          "output_format": "png",
+          "reference_count": 1,
+          "reference_roles": [
+            "primary"
+          ],
+          "prompt_chars": 537,
+          "on_image_text_language": "en",
+          "statement": "生成时将向 qwen-image-3.0 发送 1 条提示词（合计 537 字）与 1 张参考图（角色：primary）；参数 1344*1344 / n=1 / prompt_extend=false / watermark=false / 输出格式 png；图中文字语言 en。"
+        },
+        "shots": [
+          {
+            "shot_id": "shot_main_clean",
+            "label": "主图·干净背景",
+            "prompt_version": 2,
+            "prompt_hash": "dbac7f47b8198869eab44f5338c15afcd4656a1d0cb884f9bc01c22a0912c114",
+            "references": [
+              {
+                "role": "primary",
+                "sha256_prefix": "c024b7cf2b04"
+              }
+            ],
+            "risks": []
+          }
+        ],
+        "risks": []
+      },
+      "created_at": "2026-10-05T11:33:23.870Z",
+      "updated_at": "2026-10-05T11:33:23.870Z"
+    },
+    {
+      "document_key": "7d414da3-8d7e-4477-a2cd-7b97d4812c07:product_input:intake:1",
+      "project_id": "7d414da3-8d7e-4477-a2cd-7b97d4812c07",
+      "kind": "product_input",
+      "document_id": "intake",
+      "version": 1,
+      "schema_version": 1,
+      "payload": {
+        "schema_version": 1,
+        "product_name": "",
+        "description": "",
+        "selling_points": [],
+        "focus": "",
+        "references": [
+          {
+            "asset_sha256": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461",
+            "role": "primary"
+          }
+        ]
+      },
+      "created_at": "2026-10-05T11:29:29.473Z",
+      "updated_at": "2026-10-05T11:29:29.473Z"
+    },
+    {
+      "document_key": "7d414da3-8d7e-4477-a2cd-7b97d4812c07:product_input:intake:2",
+      "project_id": "7d414da3-8d7e-4477-a2cd-7b97d4812c07",
+      "kind": "product_input",
+      "document_id": "intake",
+      "version": 2,
+      "schema_version": 1,
+      "payload": {
+        "schema_version": 1,
+        "product_name": "玻璃蜂蜜罐",
+        "description": "透明玻璃罐，旋盖，蜂蜜内容物。沿用参考图外观，不声明尺寸或保温功能。",
+        "selling_points": [],
+        "focus": "",
+        "references": [
+          {
+            "asset_sha256": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461",
+            "role": "primary"
+          }
+        ]
+      },
+      "created_at": "2026-10-05T11:29:30.192Z",
+      "updated_at": "2026-10-05T11:29:30.192Z"
+    },
+    {
+      "document_key": "7d414da3-8d7e-4477-a2cd-7b97d4812c07:prompt_version:shot_main_clean:1",
+      "project_id": "7d414da3-8d7e-4477-a2cd-7b97d4812c07",
+      "kind": "prompt_version",
+      "document_id": "shot_main_clean",
+      "version": 1,
+      "schema_version": 1,
+      "payload": {
+        "schema_version": 1,
+        "shot_id": "shot_main_clean",
+        "role_id": "main",
+        "label": "主图·干净背景",
+        "compiled": {
+          "sections": [
+            {
+              "key": "product_fidelity",
+              "label": "商品一致性",
+              "kind": "instruction",
+              "text": "以提供的商品参考图为唯一外观依据：保持商品的轮廓、比例、颜色、材质、标识与现有部件不变；不要添加、删除、复制、换色或重新设计商品特征。不要在图片上叠加文字、参数、徽标或水印。",
+              "source_refs": [
+                "intake.references",
+                "suite_plan.shot:shot_main_clean",
+                "suite_plan.shot:shot_main_clean.role",
+                "platform:amazon_us@1"
+              ]
+            },
+            {
+              "key": "style_shared",
+              "label": "公共风格",
+              "kind": "instruction",
+              "text": "公共风格（整套一致）：主图背景纯白无缝背景「RGB(255,255,255)」。",
+              "source_refs": [
+                "platform:amazon_us@1"
+              ]
+            },
+            {
+              "key": "shot_task",
+              "label": "本图任务",
+              "kind": "instruction",
+              "text": "本图任务「主图·干净背景」，目的「完整展示商品主体，背景干净，不添加资料里没有的部件」。必须保持：「商品外观、颜色与比例」、「标识与文字」。允许变化：「背景」。",
+              "source_refs": [
+                "suite_plan.shot:shot_main_clean",
+                "shot_spec.purpose",
+                "shot_spec.keep",
+                "shot_spec.change_allowed"
+              ]
+            },
+            {
+              "key": "platform_rules",
+              "label": "平台规则",
+              "kind": "instruction",
+              "text": "平台规则「亚马逊美国站」：主图必须使用纯白无缝背景「RGB(255,255,255)」，商品主体至少占画面 85%，不得出现文字、水印或边框。整套图片不得出现水印、边框、联系方式或与商品无关的叠加元素。只能使用已确认的商品事实，不添加未确认的参数、功效或承诺。",
+              "source_refs": [
+                "platform:amazon_us@1"
+              ]
+            },
+            {
+              "key": "provider_contract",
+              "label": "输出规格",
+              "kind": "instruction",
+              "text": "输出规格：一张「1344*1344」的「png」格式高清商品图，不添加水印。",
+              "source_refs": [
+                "provider:qwen-image-3.0@3"
+              ]
+            },
+            {
+              "key": "negative_constraints",
+              "label": "必须避免",
+              "kind": "instruction",
+              "text": "必须避免：「水印」、「文字错乱或文字变形」、「商品变形、多出部件或与参考图不符的颜色和标识」、「任何叠加文字、参数徽标或边框」。",
+              "source_refs": [
+                "style_spec.avoid",
+                "platform:amazon_us@1",
+                "provider:qwen-image-3.0@3",
+                "shot_spec.keep"
+              ]
+            }
+          ],
+          "text": "以提供的商品参考图为唯一外观依据：保持商品的轮廓、比例、颜色、材质、标识与现有部件不变；不要添加、删除、复制、换色或重新设计商品特征。不要在图片上叠加文字、参数、徽标或水印。\n\n公共风格（整套一致）：主图背景纯白无缝背景「RGB(255,255,255)」。\n\n本图任务「主图·干净背景」，目的「完整展示商品主体，背景干净，不添加资料里没有的部件」。必须保持：「商品外观、颜色与比例」、「标识与文字」。允许变化：「背景」。\n\n平台规则「亚马逊美国站」：主图必须使用纯白无缝背景「RGB(255,255,255)」，商品主体至少占画面 85%，不得出现文字、水印或边框。整套图片不得出现水印、边框、联系方式或与商品无关的叠加元素。只能使用已确认的商品事实，不添加未确认的参数、功效或承诺。\n\n输出规格：一张「1344*1344」的「png」格式高清商品图，不添加水印。\n\n必须避免：「水印」、「文字错乱或文字变形」、「商品变形、多出部件或与参考图不符的颜色和标识」、「任何叠加文字、参数徽标或边框」。",
+          "source_refs": [
+            "intake.references",
+            "suite_plan.shot:shot_main_clean",
+            "suite_plan.shot:shot_main_clean.role",
+            "platform:amazon_us@1",
+            "shot_spec.purpose",
+            "shot_spec.keep",
+            "shot_spec.change_allowed",
+            "provider:qwen-image-3.0@3",
+            "style_spec.avoid"
+          ],
+          "warnings": [],
+          "language": {
+            "policy_id": "zh-instruction-v1",
+            "instruction": "zh",
+            "on_image_text": "en"
+          },
+          "platform": {
+            "platform_id": "amazon_us",
+            "version": 1,
+            "label": "亚马逊美国站"
+          },
+          "provider": {
+            "provider_id": "fake-qwen-image",
+            "model_id": "qwen-image-3.0",
+            "version": 3,
+            "protocol": "v2.4.1",
+            "size": "1344*1344",
+            "n": 1,
+            "prompt_extend": false,
+            "watermark": false,
+            "output_format": "png",
+            "supports_negative_prompt_field": false,
+            "max_reference_images": 3,
+            "reference_media_types": [
+              "image/png",
+              "image/jpeg"
+            ],
+            "min_side": 384,
+            "max_side": 2048,
+            "min_area": 262144,
+            "max_area": 4194304,
+            "min_ratio": 0.125,
+            "max_ratio": 8,
+            "max_prompt_chars": 4000
+          }
+        },
+        "request_snapshot": {
+          "model": "qwen-image-3.0",
+          "size": "1344*1344",
+          "n": 1,
+          "prompt_extend": false,
+          "watermark": false,
+          "output_format": "png",
+          "references": [
+            {
+              "role": "primary",
+              "sha256": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461"
+            }
+          ],
+          "prompt": "以提供的商品参考图为唯一外观依据：保持商品的轮廓、比例、颜色、材质、标识与现有部件不变；不要添加、删除、复制、换色或重新设计商品特征。不要在图片上叠加文字、参数、徽标或水印。\n\n公共风格（整套一致）：主图背景纯白无缝背景「RGB(255,255,255)」。\n\n本图任务「主图·干净背景」，目的「完整展示商品主体，背景干净，不添加资料里没有的部件」。必须保持：「商品外观、颜色与比例」、「标识与文字」。允许变化：「背景」。\n\n平台规则「亚马逊美国站」：主图必须使用纯白无缝背景「RGB(255,255,255)」，商品主体至少占画面 85%，不得出现文字、水印或边框。整套图片不得出现水印、边框、联系方式或与商品无关的叠加元素。只能使用已确认的商品事实，不添加未确认的参数、功效或承诺。\n\n输出规格：一张「1344*1344」的「png」格式高清商品图，不添加水印。\n\n必须避免：「水印」、「文字错乱或文字变形」、「商品变形、多出部件或与参考图不符的颜色和标识」、「任何叠加文字、参数徽标或边框」。",
+          "target": {
+            "provider_id": "fake-qwen-image",
+            "model_id": "qwen-image-3.0",
+            "protocol": "v2.4.1",
+            "capability_version": 3
+          }
+        },
+        "hash": "a5087604d6ae4b74478008300d8c03a8653d468a2d9d268114774eee1a413b21",
+        "basis": {
+          "brief": [],
+          "consumed_slot_ids": [],
+          "shot_signature": "{\"custom\":false,\"dependencies\":[{\"kind\":\"asset_role\",\"role\":\"primary\"}],\"fact_slot_ids\":[],\"intent\":\"完整展示商品主体，背景干净，不添加资料里没有的部件\",\"label\":\"主图·干净背景\",\"required\":true,\"role_id\":\"main\",\"shot_id\":\"shot_main_clean\",\"template_id\":\"main_clean\"}",
+          "suite_version": 3,
+          "style_version": null,
+          "shot_spec_version": null,
+          "platform": {
+            "platform_id": "amazon_us",
+            "version": 1
+          },
+          "provider": {
+            "provider_id": "fake-qwen-image",
+            "model_id": "qwen-image-3.0",
+            "version": 3,
+            "protocol": "v2.4.1",
+            "size": "1344*1344",
+            "n": 1,
+            "prompt_extend": false,
+            "watermark": false,
+            "output_format": "png",
+            "supports_negative_prompt_field": false,
+            "max_reference_images": 3,
+            "reference_media_types": [
+              "image/png",
+              "image/jpeg"
+            ],
+            "min_side": 384,
+            "max_side": 2048,
+            "min_area": 262144,
+            "max_area": 4194304,
+            "min_ratio": 0.125,
+            "max_ratio": 8,
+            "max_prompt_chars": 4000
+          }
+        }
+      },
+      "created_at": "2026-10-05T11:31:53.638Z",
+      "updated_at": "2026-10-05T11:31:53.638Z"
+    },
+    {
+      "document_key": "7d414da3-8d7e-4477-a2cd-7b97d4812c07:prompt_version:shot_main_clean:2",
+      "project_id": "7d414da3-8d7e-4477-a2cd-7b97d4812c07",
+      "kind": "prompt_version",
+      "document_id": "shot_main_clean",
+      "version": 2,
+      "schema_version": 1,
+      "payload": {
+        "schema_version": 1,
+        "shot_id": "shot_main_clean",
+        "role_id": "main",
+        "label": "主图·干净背景",
+        "compiled": {
+          "sections": [
+            {
+              "key": "product_fidelity",
+              "label": "商品一致性",
+              "kind": "instruction",
+              "text": "以提供的商品参考图为唯一外观依据：保持商品的轮廓、比例、颜色、材质、标识与现有部件不变；不要添加、删除、复制、换色或重新设计商品特征。不要在图片上叠加文字、参数、徽标或水印。",
+              "source_refs": [
+                "intake.references",
+                "suite_plan.shot:shot_main_clean",
+                "suite_plan.shot:shot_main_clean.role",
+                "platform:amazon_us@1"
+              ]
+            },
+            {
+              "key": "style_shared",
+              "label": "公共风格",
+              "kind": "instruction",
+              "text": "公共风格（整套一致）：主图背景纯白无缝背景「RGB(255,255,255)」。",
+              "source_refs": [
+                "platform:amazon_us@1"
+              ]
+            },
+            {
+              "key": "shot_task",
+              "label": "本图任务",
+              "kind": "instruction",
+              "text": "本图任务「主图·干净背景」，目的「完整展示商品主体，背景干净，不添加资料里没有的部件」。必须保持：「商品外观、颜色与比例」、「标识与文字」。允许变化：「背景」。",
+              "source_refs": [
+                "suite_plan.shot:shot_main_clean",
+                "shot_spec.purpose",
+                "shot_spec.keep",
+                "shot_spec.change_allowed"
+              ]
+            },
+            {
+              "key": "rework_directive",
+              "label": "本次返工要求",
+              "kind": "instruction",
+              "text": "本次返工要求（只改这张图，其它段落保持不变）：这次的问题属于「平台风险」；改进方向「保持罐体与盖子外观，仅提高背景明亮度。」；不要重复出现上一条候选里已经被指出的同类问题。",
+              "source_refs": [
+                "rework:act-81a9245e4b8a42ccb7385b73ffc3e70d",
+                "candidate:act-144e4fba7b214ffdadecf9453e7b02ad",
+                "suite_plan.shot:shot_main_clean"
+              ]
+            },
+            {
+              "key": "platform_rules",
+              "label": "平台规则",
+              "kind": "instruction",
+              "text": "平台规则「亚马逊美国站」：主图必须使用纯白无缝背景「RGB(255,255,255)」，商品主体至少占画面 85%，不得出现文字、水印或边框。整套图片不得出现水印、边框、联系方式或与商品无关的叠加元素。只能使用已确认的商品事实，不添加未确认的参数、功效或承诺。",
+              "source_refs": [
+                "platform:amazon_us@1"
+              ]
+            },
+            {
+              "key": "provider_contract",
+              "label": "输出规格",
+              "kind": "instruction",
+              "text": "输出规格：一张「1344*1344」的「png」格式高清商品图，不添加水印。",
+              "source_refs": [
+                "provider:qwen-image-3.0@3"
+              ]
+            },
+            {
+              "key": "negative_constraints",
+              "label": "必须避免",
+              "kind": "instruction",
+              "text": "必须避免：「水印」、「文字错乱或文字变形」、「商品变形、多出部件或与参考图不符的颜色和标识」、「任何叠加文字、参数徽标或边框」。",
+              "source_refs": [
+                "style_spec.avoid",
+                "platform:amazon_us@1",
+                "provider:qwen-image-3.0@3",
+                "shot_spec.keep"
+              ]
+            }
+          ],
+          "text": "以提供的商品参考图为唯一外观依据：保持商品的轮廓、比例、颜色、材质、标识与现有部件不变；不要添加、删除、复制、换色或重新设计商品特征。不要在图片上叠加文字、参数、徽标或水印。\n\n公共风格（整套一致）：主图背景纯白无缝背景「RGB(255,255,255)」。\n\n本图任务「主图·干净背景」，目的「完整展示商品主体，背景干净，不添加资料里没有的部件」。必须保持：「商品外观、颜色与比例」、「标识与文字」。允许变化：「背景」。\n\n本次返工要求（只改这张图，其它段落保持不变）：这次的问题属于「平台风险」；改进方向「保持罐体与盖子外观，仅提高背景明亮度。」；不要重复出现上一条候选里已经被指出的同类问题。\n\n平台规则「亚马逊美国站」：主图必须使用纯白无缝背景「RGB(255,255,255)」，商品主体至少占画面 85%，不得出现文字、水印或边框。整套图片不得出现水印、边框、联系方式或与商品无关的叠加元素。只能使用已确认的商品事实，不添加未确认的参数、功效或承诺。\n\n输出规格：一张「1344*1344」的「png」格式高清商品图，不添加水印。\n\n必须避免：「水印」、「文字错乱或文字变形」、「商品变形、多出部件或与参考图不符的颜色和标识」、「任何叠加文字、参数徽标或边框」。",
+          "source_refs": [
+            "intake.references",
+            "suite_plan.shot:shot_main_clean",
+            "suite_plan.shot:shot_main_clean.role",
+            "platform:amazon_us@1",
+            "shot_spec.purpose",
+            "shot_spec.keep",
+            "shot_spec.change_allowed",
+            "rework:act-81a9245e4b8a42ccb7385b73ffc3e70d",
+            "candidate:act-144e4fba7b214ffdadecf9453e7b02ad",
+            "provider:qwen-image-3.0@3",
+            "style_spec.avoid"
+          ],
+          "warnings": [],
+          "language": {
+            "policy_id": "zh-instruction-v1",
+            "instruction": "zh",
+            "on_image_text": "en"
+          },
+          "platform": {
+            "platform_id": "amazon_us",
+            "version": 1,
+            "label": "亚马逊美国站"
+          },
+          "provider": {
+            "provider_id": "fake-qwen-image",
+            "model_id": "qwen-image-3.0",
+            "version": 3,
+            "protocol": "v2.4.1",
+            "size": "1344*1344",
+            "n": 1,
+            "prompt_extend": false,
+            "watermark": false,
+            "output_format": "png",
+            "supports_negative_prompt_field": false,
+            "max_reference_images": 3,
+            "reference_media_types": [
+              "image/png",
+              "image/jpeg"
+            ],
+            "min_side": 384,
+            "max_side": 2048,
+            "min_area": 262144,
+            "max_area": 4194304,
+            "min_ratio": 0.125,
+            "max_ratio": 8,
+            "max_prompt_chars": 4000
+          },
+          "rework": {
+            "contract_version": "v2.5.4",
+            "directive_id": "act-81a9245e4b8a42ccb7385b73ffc3e70d",
+            "candidate_id": "act-144e4fba7b214ffdadecf9453e7b02ad",
+            "candidate_sha256": "9d34b3e53e06250b60c06248c7848383e5771867b8c8f3954156679d9e8e4cd5",
+            "problems": [
+              "platform_risk"
+            ],
+            "direction": "保持罐体与盖子外观，仅提高背景明亮度。"
+          }
+        },
+        "request_snapshot": {
+          "model": "qwen-image-3.0",
+          "size": "1344*1344",
+          "n": 1,
+          "prompt_extend": false,
+          "watermark": false,
+          "output_format": "png",
+          "references": [
+            {
+              "role": "primary",
+              "sha256": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461"
+            }
+          ],
+          "prompt": "以提供的商品参考图为唯一外观依据：保持商品的轮廓、比例、颜色、材质、标识与现有部件不变；不要添加、删除、复制、换色或重新设计商品特征。不要在图片上叠加文字、参数、徽标或水印。\n\n公共风格（整套一致）：主图背景纯白无缝背景「RGB(255,255,255)」。\n\n本图任务「主图·干净背景」，目的「完整展示商品主体，背景干净，不添加资料里没有的部件」。必须保持：「商品外观、颜色与比例」、「标识与文字」。允许变化：「背景」。\n\n本次返工要求（只改这张图，其它段落保持不变）：这次的问题属于「平台风险」；改进方向「保持罐体与盖子外观，仅提高背景明亮度。」；不要重复出现上一条候选里已经被指出的同类问题。\n\n平台规则「亚马逊美国站」：主图必须使用纯白无缝背景「RGB(255,255,255)」，商品主体至少占画面 85%，不得出现文字、水印或边框。整套图片不得出现水印、边框、联系方式或与商品无关的叠加元素。只能使用已确认的商品事实，不添加未确认的参数、功效或承诺。\n\n输出规格：一张「1344*1344」的「png」格式高清商品图，不添加水印。\n\n必须避免：「水印」、「文字错乱或文字变形」、「商品变形、多出部件或与参考图不符的颜色和标识」、「任何叠加文字、参数徽标或边框」。",
+          "target": {
+            "provider_id": "fake-qwen-image",
+            "model_id": "qwen-image-3.0",
+            "protocol": "v2.4.1",
+            "capability_version": 3
+          }
+        },
+        "hash": "dbac7f47b8198869eab44f5338c15afcd4656a1d0cb884f9bc01c22a0912c114",
+        "basis": {
+          "brief": [],
+          "consumed_slot_ids": [],
+          "shot_signature": "{\"custom\":false,\"dependencies\":[{\"kind\":\"asset_role\",\"role\":\"primary\"}],\"fact_slot_ids\":[],\"intent\":\"完整展示商品主体，背景干净，不添加资料里没有的部件\",\"label\":\"主图·干净背景\",\"required\":true,\"role_id\":\"main\",\"shot_id\":\"shot_main_clean\",\"template_id\":\"main_clean\"}",
+          "suite_version": 3,
+          "style_version": null,
+          "shot_spec_version": null,
+          "platform": {
+            "platform_id": "amazon_us",
+            "version": 1
+          },
+          "provider": {
+            "provider_id": "fake-qwen-image",
+            "model_id": "qwen-image-3.0",
+            "version": 3,
+            "protocol": "v2.4.1",
+            "size": "1344*1344",
+            "n": 1,
+            "prompt_extend": false,
+            "watermark": false,
+            "output_format": "png",
+            "supports_negative_prompt_field": false,
+            "max_reference_images": 3,
+            "reference_media_types": [
+              "image/png",
+              "image/jpeg"
+            ],
+            "min_side": 384,
+            "max_side": 2048,
+            "min_area": 262144,
+            "max_area": 4194304,
+            "min_ratio": 0.125,
+            "max_ratio": 8,
+            "max_prompt_chars": 4000
+          },
+          "rework": {
+            "directive_id": "act-81a9245e4b8a42ccb7385b73ffc3e70d",
+            "candidate_id": "act-144e4fba7b214ffdadecf9453e7b02ad",
+            "candidate_sha256": "9d34b3e53e06250b60c06248c7848383e5771867b8c8f3954156679d9e8e4cd5",
+            "problems": [
+              "platform_risk"
+            ]
+          }
+        }
+      },
+      "created_at": "2026-10-05T11:33:23.868Z",
+      "updated_at": "2026-10-05T11:33:23.868Z"
+    },
+    {
+      "document_key": "7d414da3-8d7e-4477-a2cd-7b97d4812c07:prompt_version:shot_main_clean:3",
+      "project_id": "7d414da3-8d7e-4477-a2cd-7b97d4812c07",
+      "kind": "prompt_version",
+      "document_id": "shot_main_clean",
+      "version": 3,
+      "schema_version": 1,
+      "payload": {
+        "schema_version": 1,
+        "shot_id": "shot_main_clean",
+        "role_id": "main",
+        "label": "主图·干净背景",
+        "compiled": {
+          "sections": [
+            {
+              "key": "product_fidelity",
+              "label": "商品一致性",
+              "kind": "instruction",
+              "text": "以提供的商品参考图为唯一外观依据：保持商品的轮廓、比例、颜色、材质、标识与现有部件不变；不要添加、删除、复制、换色或重新设计商品特征。不要在图片上叠加文字、参数、徽标或水印。",
+              "source_refs": [
+                "intake.references",
+                "suite_plan.shot:shot_main_clean",
+                "suite_plan.shot:shot_main_clean.role",
+                "platform:amazon_us@1"
+              ]
+            },
+            {
+              "key": "style_shared",
+              "label": "公共风格",
+              "kind": "instruction",
+              "text": "公共风格（整套一致）：主图背景纯白无缝背景「RGB(255,255,255)」。",
+              "source_refs": [
+                "platform:amazon_us@1"
+              ]
+            },
+            {
+              "key": "shot_task",
+              "label": "本图任务",
+              "kind": "instruction",
+              "text": "本图任务「主图·干净背景」，目的「完整展示商品主体，背景干净，不添加资料里没有的部件」。必须保持：「商品外观、颜色与比例」、「标识与文字」。允许变化：「背景」。",
+              "source_refs": [
+                "suite_plan.shot:shot_main_clean",
+                "shot_spec.purpose",
+                "shot_spec.keep",
+                "shot_spec.change_allowed"
+              ]
+            },
+            {
+              "key": "platform_rules",
+              "label": "平台规则",
+              "kind": "instruction",
+              "text": "平台规则「亚马逊美国站」：主图必须使用纯白无缝背景「RGB(255,255,255)」，商品主体至少占画面 85%，不得出现文字、水印或边框。整套图片不得出现水印、边框、联系方式或与商品无关的叠加元素。只能使用已确认的商品事实，不添加未确认的参数、功效或承诺。",
+              "source_refs": [
+                "platform:amazon_us@1"
+              ]
+            },
+            {
+              "key": "provider_contract",
+              "label": "输出规格",
+              "kind": "instruction",
+              "text": "输出规格：一张「1344*1344」的「png」格式高清商品图，不添加水印。",
+              "source_refs": [
+                "provider:qwen-image-3.0@3"
+              ]
+            },
+            {
+              "key": "negative_constraints",
+              "label": "必须避免",
+              "kind": "instruction",
+              "text": "必须避免：「水印」、「文字错乱或文字变形」、「商品变形、多出部件或与参考图不符的颜色和标识」、「任何叠加文字、参数徽标或边框」。",
+              "source_refs": [
+                "style_spec.avoid",
+                "platform:amazon_us@1",
+                "provider:qwen-image-3.0@3",
+                "shot_spec.keep"
+              ]
+            }
+          ],
+          "text": "以提供的商品参考图为唯一外观依据：保持商品的轮廓、比例、颜色、材质、标识与现有部件不变；不要添加、删除、复制、换色或重新设计商品特征。不要在图片上叠加文字、参数、徽标或水印。\n\n公共风格（整套一致）：主图背景纯白无缝背景「RGB(255,255,255)」。\n\n本图任务「主图·干净背景」，目的「完整展示商品主体，背景干净，不添加资料里没有的部件」。必须保持：「商品外观、颜色与比例」、「标识与文字」。允许变化：「背景」。\n\n平台规则「亚马逊美国站」：主图必须使用纯白无缝背景「RGB(255,255,255)」，商品主体至少占画面 85%，不得出现文字、水印或边框。整套图片不得出现水印、边框、联系方式或与商品无关的叠加元素。只能使用已确认的商品事实，不添加未确认的参数、功效或承诺。\n\n输出规格：一张「1344*1344」的「png」格式高清商品图，不添加水印。\n\n必须避免：「水印」、「文字错乱或文字变形」、「商品变形、多出部件或与参考图不符的颜色和标识」、「任何叠加文字、参数徽标或边框」。",
+          "source_refs": [
+            "intake.references",
+            "suite_plan.shot:shot_main_clean",
+            "suite_plan.shot:shot_main_clean.role",
+            "platform:amazon_us@1",
+            "shot_spec.purpose",
+            "shot_spec.keep",
+            "shot_spec.change_allowed",
+            "provider:qwen-image-3.0@3",
+            "style_spec.avoid"
+          ],
+          "warnings": [],
+          "language": {
+            "policy_id": "zh-instruction-v1",
+            "instruction": "zh",
+            "on_image_text": "en"
+          },
+          "platform": {
+            "platform_id": "amazon_us",
+            "version": 1,
+            "label": "亚马逊美国站"
+          },
+          "provider": {
+            "provider_id": "dashscope-qwen-image",
+            "model_id": "qwen-image-3.0",
+            "version": 3,
+            "protocol": "v2.4.1",
+            "size": "1344*1344",
+            "n": 1,
+            "prompt_extend": false,
+            "watermark": false,
+            "output_format": "png",
+            "supports_negative_prompt_field": false,
+            "max_reference_images": 3,
+            "reference_media_types": [
+              "image/png",
+              "image/jpeg"
+            ],
+            "min_side": 384,
+            "max_side": 2048,
+            "min_area": 262144,
+            "max_area": 4194304,
+            "min_ratio": 0.125,
+            "max_ratio": 8,
+            "max_prompt_chars": 4000
+          }
+        },
+        "request_snapshot": {
+          "model": "qwen-image-3.0",
+          "size": "1344*1344",
+          "n": 1,
+          "prompt_extend": false,
+          "watermark": false,
+          "output_format": "png",
+          "references": [
+            {
+              "role": "primary",
+              "sha256": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461"
+            }
+          ],
+          "prompt": "以提供的商品参考图为唯一外观依据：保持商品的轮廓、比例、颜色、材质、标识与现有部件不变；不要添加、删除、复制、换色或重新设计商品特征。不要在图片上叠加文字、参数、徽标或水印。\n\n公共风格（整套一致）：主图背景纯白无缝背景「RGB(255,255,255)」。\n\n本图任务「主图·干净背景」，目的「完整展示商品主体，背景干净，不添加资料里没有的部件」。必须保持：「商品外观、颜色与比例」、「标识与文字」。允许变化：「背景」。\n\n平台规则「亚马逊美国站」：主图必须使用纯白无缝背景「RGB(255,255,255)」，商品主体至少占画面 85%，不得出现文字、水印或边框。整套图片不得出现水印、边框、联系方式或与商品无关的叠加元素。只能使用已确认的商品事实，不添加未确认的参数、功效或承诺。\n\n输出规格：一张「1344*1344」的「png」格式高清商品图，不添加水印。\n\n必须避免：「水印」、「文字错乱或文字变形」、「商品变形、多出部件或与参考图不符的颜色和标识」、「任何叠加文字、参数徽标或边框」。",
+          "target": {
+            "provider_id": "dashscope-qwen-image",
+            "model_id": "qwen-image-3.0",
+            "protocol": "v2.4.1",
+            "capability_version": 3
+          }
+        },
+        "hash": "1e21451d85cfc9243c6d5c94345c884bef45f33ad779899d2252c26ffc85ce14",
+        "basis": {
+          "brief": [],
+          "consumed_slot_ids": [],
+          "shot_signature": "{\"custom\":false,\"dependencies\":[{\"kind\":\"asset_role\",\"role\":\"primary\"}],\"fact_slot_ids\":[],\"intent\":\"完整展示商品主体，背景干净，不添加资料里没有的部件\",\"label\":\"主图·干净背景\",\"required\":true,\"role_id\":\"main\",\"shot_id\":\"shot_main_clean\",\"template_id\":\"main_clean\"}",
+          "suite_version": 3,
+          "style_version": null,
+          "shot_spec_version": null,
+          "platform": {
+            "platform_id": "amazon_us",
+            "version": 1
+          },
+          "provider": {
+            "provider_id": "dashscope-qwen-image",
+            "model_id": "qwen-image-3.0",
+            "version": 3,
+            "protocol": "v2.4.1",
+            "size": "1344*1344",
+            "n": 1,
+            "prompt_extend": false,
+            "watermark": false,
+            "output_format": "png",
+            "supports_negative_prompt_field": false,
+            "max_reference_images": 3,
+            "reference_media_types": [
+              "image/png",
+              "image/jpeg"
+            ],
+            "min_side": 384,
+            "max_side": 2048,
+            "min_area": 262144,
+            "max_area": 4194304,
+            "min_ratio": 0.125,
+            "max_ratio": 8,
+            "max_prompt_chars": 4000
+          }
+        }
+      },
+      "created_at": "2026-10-07T15:04:10.389Z",
+      "updated_at": "2026-10-07T15:04:10.389Z"
+    },
+    {
+      "document_key": "7d414da3-8d7e-4477-a2cd-7b97d4812c07:prompt_version:shot_scene_lifestyle:1",
+      "project_id": "7d414da3-8d7e-4477-a2cd-7b97d4812c07",
+      "kind": "prompt_version",
+      "document_id": "shot_scene_lifestyle",
+      "version": 1,
+      "schema_version": 1,
+      "payload": {
+        "schema_version": 1,
+        "shot_id": "shot_scene_lifestyle",
+        "role_id": "scene",
+        "label": "场景图·使用中",
+        "compiled": {
+          "sections": [
+            {
+              "key": "product_fidelity",
+              "label": "商品一致性",
+              "kind": "instruction",
+              "text": "以提供的商品参考图为唯一外观依据：保持商品的轮廓、比例、颜色、材质、标识与现有部件不变；不要添加、删除、复制、换色或重新设计商品特征。不要在图片上叠加文字、参数、徽标或水印。",
+              "source_refs": [
+                "intake.references",
+                "suite_plan.shot:shot_scene_lifestyle",
+                "suite_plan.shot:shot_scene_lifestyle.role",
+                "platform:amazon_us@1"
+              ]
+            },
+            {
+              "key": "shot_task",
+              "label": "本图任务",
+              "kind": "instruction",
+              "text": "本图任务「场景图·使用中」，目的「把商品放进符合用途的真实场景，场景不改变商品外观」。必须保持：「商品外观与颜色」、「标识与文字」。允许变化：「环境、道具与光线」。",
+              "source_refs": [
+                "suite_plan.shot:shot_scene_lifestyle",
+                "shot_spec.purpose",
+                "shot_spec.keep",
+                "shot_spec.change_allowed"
+              ]
+            },
+            {
+              "key": "platform_rules",
+              "label": "平台规则",
+              "kind": "instruction",
+              "text": "平台规则「亚马逊美国站」：整套图片不得出现水印、边框、联系方式或与商品无关的叠加元素。只能使用已确认的商品事实，不添加未确认的参数、功效或承诺。",
+              "source_refs": [
+                "platform:amazon_us@1"
+              ]
+            },
+            {
+              "key": "provider_contract",
+              "label": "输出规格",
+              "kind": "instruction",
+              "text": "输出规格：一张「1344*1344」的「png」格式高清商品图，不添加水印。",
+              "source_refs": [
+                "provider:qwen-image-3.0@3"
+              ]
+            },
+            {
+              "key": "negative_constraints",
+              "label": "必须避免",
+              "kind": "instruction",
+              "text": "必须避免：「水印」、「文字错乱或文字变形」、「商品变形、多出部件或与参考图不符的颜色和标识」、「任何叠加文字、参数徽标或边框」。",
+              "source_refs": [
+                "style_spec.avoid",
+                "platform:amazon_us@1",
+                "provider:qwen-image-3.0@3",
+                "shot_spec.keep"
+              ]
+            }
+          ],
+          "text": "以提供的商品参考图为唯一外观依据：保持商品的轮廓、比例、颜色、材质、标识与现有部件不变；不要添加、删除、复制、换色或重新设计商品特征。不要在图片上叠加文字、参数、徽标或水印。\n\n本图任务「场景图·使用中」，目的「把商品放进符合用途的真实场景，场景不改变商品外观」。必须保持：「商品外观与颜色」、「标识与文字」。允许变化：「环境、道具与光线」。\n\n平台规则「亚马逊美国站」：整套图片不得出现水印、边框、联系方式或与商品无关的叠加元素。只能使用已确认的商品事实，不添加未确认的参数、功效或承诺。\n\n输出规格：一张「1344*1344」的「png」格式高清商品图，不添加水印。\n\n必须避免：「水印」、「文字错乱或文字变形」、「商品变形、多出部件或与参考图不符的颜色和标识」、「任何叠加文字、参数徽标或边框」。",
+          "source_refs": [
+            "intake.references",
+            "suite_plan.shot:shot_scene_lifestyle",
+            "suite_plan.shot:shot_scene_lifestyle.role",
+            "platform:amazon_us@1",
+            "shot_spec.purpose",
+            "shot_spec.keep",
+            "shot_spec.change_allowed",
+            "provider:qwen-image-3.0@3",
+            "style_spec.avoid"
+          ],
+          "warnings": [],
+          "language": {
+            "policy_id": "zh-instruction-v1",
+            "instruction": "zh",
+            "on_image_text": "en"
+          },
+          "platform": {
+            "platform_id": "amazon_us",
+            "version": 1,
+            "label": "亚马逊美国站"
+          },
+          "provider": {
+            "provider_id": "fake-qwen-image",
+            "model_id": "qwen-image-3.0",
+            "version": 3,
+            "protocol": "v2.4.1",
+            "size": "1344*1344",
+            "n": 1,
+            "prompt_extend": false,
+            "watermark": false,
+            "output_format": "png",
+            "supports_negative_prompt_field": false,
+            "max_reference_images": 3,
+            "reference_media_types": [
+              "image/png",
+              "image/jpeg"
+            ],
+            "min_side": 384,
+            "max_side": 2048,
+            "min_area": 262144,
+            "max_area": 4194304,
+            "min_ratio": 0.125,
+            "max_ratio": 8,
+            "max_prompt_chars": 4000
+          }
+        },
+        "request_snapshot": {
+          "model": "qwen-image-3.0",
+          "size": "1344*1344",
+          "n": 1,
+          "prompt_extend": false,
+          "watermark": false,
+          "output_format": "png",
+          "references": [
+            {
+              "role": "primary",
+              "sha256": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461"
+            }
+          ],
+          "prompt": "以提供的商品参考图为唯一外观依据：保持商品的轮廓、比例、颜色、材质、标识与现有部件不变；不要添加、删除、复制、换色或重新设计商品特征。不要在图片上叠加文字、参数、徽标或水印。\n\n本图任务「场景图·使用中」，目的「把商品放进符合用途的真实场景，场景不改变商品外观」。必须保持：「商品外观与颜色」、「标识与文字」。允许变化：「环境、道具与光线」。\n\n平台规则「亚马逊美国站」：整套图片不得出现水印、边框、联系方式或与商品无关的叠加元素。只能使用已确认的商品事实，不添加未确认的参数、功效或承诺。\n\n输出规格：一张「1344*1344」的「png」格式高清商品图，不添加水印。\n\n必须避免：「水印」、「文字错乱或文字变形」、「商品变形、多出部件或与参考图不符的颜色和标识」、「任何叠加文字、参数徽标或边框」。",
+          "target": {
+            "provider_id": "fake-qwen-image",
+            "model_id": "qwen-image-3.0",
+            "protocol": "v2.4.1",
+            "capability_version": 3
+          }
+        },
+        "hash": "4afe1597e6c41e3da849eceb31473be5c307c58e564eab37bd21330a8f26cf14",
+        "basis": {
+          "brief": [
+            {
+              "slot_id": "product_category",
+              "version": 2
+            }
+          ],
+          "consumed_slot_ids": [
+            "product_category"
+          ],
+          "shot_signature": "{\"custom\":false,\"dependencies\":[{\"kind\":\"asset_role\",\"role\":\"primary\"},{\"kind\":\"fact\",\"slot_id\":\"product_category\"}],\"fact_slot_ids\":[\"product_category\"],\"intent\":\"把商品放进符合用途的真实场景，场景不改变商品外观\",\"label\":\"场景图·使用中\",\"required\":false,\"role_id\":\"scene\",\"shot_id\":\"shot_scene_lifestyle\",\"template_id\":\"scene_lifestyle\"}",
+          "suite_version": 3,
+          "style_version": null,
+          "shot_spec_version": null,
+          "platform": {
+            "platform_id": "amazon_us",
+            "version": 1
+          },
+          "provider": {
+            "provider_id": "fake-qwen-image",
+            "model_id": "qwen-image-3.0",
+            "version": 3,
+            "protocol": "v2.4.1",
+            "size": "1344*1344",
+            "n": 1,
+            "prompt_extend": false,
+            "watermark": false,
+            "output_format": "png",
+            "supports_negative_prompt_field": false,
+            "max_reference_images": 3,
+            "reference_media_types": [
+              "image/png",
+              "image/jpeg"
+            ],
+            "min_side": 384,
+            "max_side": 2048,
+            "min_area": 262144,
+            "max_area": 4194304,
+            "min_ratio": 0.125,
+            "max_ratio": 8,
+            "max_prompt_chars": 4000
+          }
+        }
+      },
+      "created_at": "2026-10-05T11:31:53.641Z",
+      "updated_at": "2026-10-05T11:31:53.641Z"
+    },
+    {
+      "document_key": "7d414da3-8d7e-4477-a2cd-7b97d4812c07:prompt_version:shot_scene_lifestyle:2",
+      "project_id": "7d414da3-8d7e-4477-a2cd-7b97d4812c07",
+      "kind": "prompt_version",
+      "document_id": "shot_scene_lifestyle",
+      "version": 2,
+      "schema_version": 1,
+      "payload": {
+        "schema_version": 1,
+        "shot_id": "shot_scene_lifestyle",
+        "role_id": "scene",
+        "label": "场景图·使用中",
+        "compiled": {
+          "sections": [
+            {
+              "key": "product_fidelity",
+              "label": "商品一致性",
+              "kind": "instruction",
+              "text": "以提供的商品参考图为唯一外观依据：保持商品的轮廓、比例、颜色、材质、标识与现有部件不变；不要添加、删除、复制、换色或重新设计商品特征。不要在图片上叠加文字、参数、徽标或水印。",
+              "source_refs": [
+                "intake.references",
+                "suite_plan.shot:shot_scene_lifestyle",
+                "suite_plan.shot:shot_scene_lifestyle.role",
+                "platform:amazon_us@1"
+              ]
+            },
+            {
+              "key": "shot_task",
+              "label": "本图任务",
+              "kind": "instruction",
+              "text": "本图任务「场景图·使用中」，目的「把商品放进符合用途的真实场景，场景不改变商品外观」。必须保持：「商品外观与颜色」、「标识与文字」。允许变化：「环境、道具与光线」。",
+              "source_refs": [
+                "suite_plan.shot:shot_scene_lifestyle",
+                "shot_spec.purpose",
+                "shot_spec.keep",
+                "shot_spec.change_allowed"
+              ]
+            },
+            {
+              "key": "platform_rules",
+              "label": "平台规则",
+              "kind": "instruction",
+              "text": "平台规则「亚马逊美国站」：整套图片不得出现水印、边框、联系方式或与商品无关的叠加元素。只能使用已确认的商品事实，不添加未确认的参数、功效或承诺。",
+              "source_refs": [
+                "platform:amazon_us@1"
+              ]
+            },
+            {
+              "key": "provider_contract",
+              "label": "输出规格",
+              "kind": "instruction",
+              "text": "输出规格：一张「1344*1344」的「png」格式高清商品图，不添加水印。",
+              "source_refs": [
+                "provider:qwen-image-3.0@3"
+              ]
+            },
+            {
+              "key": "negative_constraints",
+              "label": "必须避免",
+              "kind": "instruction",
+              "text": "必须避免：「水印」、「文字错乱或文字变形」、「商品变形、多出部件或与参考图不符的颜色和标识」、「任何叠加文字、参数徽标或边框」。",
+              "source_refs": [
+                "style_spec.avoid",
+                "platform:amazon_us@1",
+                "provider:qwen-image-3.0@3",
+                "shot_spec.keep"
+              ]
+            }
+          ],
+          "text": "以提供的商品参考图为唯一外观依据：保持商品的轮廓、比例、颜色、材质、标识与现有部件不变；不要添加、删除、复制、换色或重新设计商品特征。不要在图片上叠加文字、参数、徽标或水印。\n\n本图任务「场景图·使用中」，目的「把商品放进符合用途的真实场景，场景不改变商品外观」。必须保持：「商品外观与颜色」、「标识与文字」。允许变化：「环境、道具与光线」。\n\n平台规则「亚马逊美国站」：整套图片不得出现水印、边框、联系方式或与商品无关的叠加元素。只能使用已确认的商品事实，不添加未确认的参数、功效或承诺。\n\n输出规格：一张「1344*1344」的「png」格式高清商品图，不添加水印。\n\n必须避免：「水印」、「文字错乱或文字变形」、「商品变形、多出部件或与参考图不符的颜色和标识」、「任何叠加文字、参数徽标或边框」。",
+          "source_refs": [
+            "intake.references",
+            "suite_plan.shot:shot_scene_lifestyle",
+            "suite_plan.shot:shot_scene_lifestyle.role",
+            "platform:amazon_us@1",
+            "shot_spec.purpose",
+            "shot_spec.keep",
+            "shot_spec.change_allowed",
+            "provider:qwen-image-3.0@3",
+            "style_spec.avoid"
+          ],
+          "warnings": [],
+          "language": {
+            "policy_id": "zh-instruction-v1",
+            "instruction": "zh",
+            "on_image_text": "en"
+          },
+          "platform": {
+            "platform_id": "amazon_us",
+            "version": 1,
+            "label": "亚马逊美国站"
+          },
+          "provider": {
+            "provider_id": "dashscope-qwen-image",
+            "model_id": "qwen-image-3.0",
+            "version": 3,
+            "protocol": "v2.4.1",
+            "size": "1344*1344",
+            "n": 1,
+            "prompt_extend": false,
+            "watermark": false,
+            "output_format": "png",
+            "supports_negative_prompt_field": false,
+            "max_reference_images": 3,
+            "reference_media_types": [
+              "image/png",
+              "image/jpeg"
+            ],
+            "min_side": 384,
+            "max_side": 2048,
+            "min_area": 262144,
+            "max_area": 4194304,
+            "min_ratio": 0.125,
+            "max_ratio": 8,
+            "max_prompt_chars": 4000
+          }
+        },
+        "request_snapshot": {
+          "model": "qwen-image-3.0",
+          "size": "1344*1344",
+          "n": 1,
+          "prompt_extend": false,
+          "watermark": false,
+          "output_format": "png",
+          "references": [
+            {
+              "role": "primary",
+              "sha256": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461"
+            }
+          ],
+          "prompt": "以提供的商品参考图为唯一外观依据：保持商品的轮廓、比例、颜色、材质、标识与现有部件不变；不要添加、删除、复制、换色或重新设计商品特征。不要在图片上叠加文字、参数、徽标或水印。\n\n本图任务「场景图·使用中」，目的「把商品放进符合用途的真实场景，场景不改变商品外观」。必须保持：「商品外观与颜色」、「标识与文字」。允许变化：「环境、道具与光线」。\n\n平台规则「亚马逊美国站」：整套图片不得出现水印、边框、联系方式或与商品无关的叠加元素。只能使用已确认的商品事实，不添加未确认的参数、功效或承诺。\n\n输出规格：一张「1344*1344」的「png」格式高清商品图，不添加水印。\n\n必须避免：「水印」、「文字错乱或文字变形」、「商品变形、多出部件或与参考图不符的颜色和标识」、「任何叠加文字、参数徽标或边框」。",
+          "target": {
+            "provider_id": "dashscope-qwen-image",
+            "model_id": "qwen-image-3.0",
+            "protocol": "v2.4.1",
+            "capability_version": 3
+          }
+        },
+        "hash": "103e827887e6a9706d70183f3462fb52118a5945823ee83b65fff921b4e1ffc4",
+        "basis": {
+          "brief": [
+            {
+              "slot_id": "product_category",
+              "version": 2
+            }
+          ],
+          "consumed_slot_ids": [
+            "product_category"
+          ],
+          "shot_signature": "{\"custom\":false,\"dependencies\":[{\"kind\":\"asset_role\",\"role\":\"primary\"},{\"kind\":\"fact\",\"slot_id\":\"product_category\"}],\"fact_slot_ids\":[\"product_category\"],\"intent\":\"把商品放进符合用途的真实场景，场景不改变商品外观\",\"label\":\"场景图·使用中\",\"required\":false,\"role_id\":\"scene\",\"shot_id\":\"shot_scene_lifestyle\",\"template_id\":\"scene_lifestyle\"}",
+          "suite_version": 3,
+          "style_version": null,
+          "shot_spec_version": null,
+          "platform": {
+            "platform_id": "amazon_us",
+            "version": 1
+          },
+          "provider": {
+            "provider_id": "dashscope-qwen-image",
+            "model_id": "qwen-image-3.0",
+            "version": 3,
+            "protocol": "v2.4.1",
+            "size": "1344*1344",
+            "n": 1,
+            "prompt_extend": false,
+            "watermark": false,
+            "output_format": "png",
+            "supports_negative_prompt_field": false,
+            "max_reference_images": 3,
+            "reference_media_types": [
+              "image/png",
+              "image/jpeg"
+            ],
+            "min_side": 384,
+            "max_side": 2048,
+            "min_area": 262144,
+            "max_area": 4194304,
+            "min_ratio": 0.125,
+            "max_ratio": 8,
+            "max_prompt_chars": 4000
+          }
+        }
+      },
+      "created_at": "2026-10-07T15:04:10.395Z",
+      "updated_at": "2026-10-07T15:04:10.395Z"
+    },
+    {
+      "document_key": "7d414da3-8d7e-4477-a2cd-7b97d4812c07:review_report:act-144e4fba7b214ffdadecf9453e7b02ad:1",
+      "project_id": "7d414da3-8d7e-4477-a2cd-7b97d4812c07",
+      "kind": "review_report",
+      "document_id": "act-144e4fba7b214ffdadecf9453e7b02ad",
+      "version": 1,
+      "schema_version": 1,
+      "payload": {
+        "schema_version": 1,
+        "review_contract_version": "v2.5.2",
+        "candidate_id": "act-144e4fba7b214ffdadecf9453e7b02ad",
+        "shot_id": "shot_main_clean",
+        "asset_sha256": "9d34b3e53e06250b60c06248c7848383e5771867b8c8f3954156679d9e8e4cd5",
+        "vlm": null,
+        "summary": {
+          "BLOCK": 0,
+          "HIGH_RISK": 0,
+          "WARNING": 1,
+          "PASS": 6,
+          "UNKNOWN": 0
+        },
+        "findings": [
+          {
+            "rule_id": "candidate.png_contract",
+            "rule_version": 1,
+            "layer": "candidate",
+            "severity": "PASS",
+            "title": "PNG 字节合同",
+            "detail": "PNG 头可解析：1344×1344（颜色类型 2，位深 8）。",
+            "measured": {
+              "width": 1344,
+              "height": 1344,
+              "color_type": 2,
+              "bit_depth": 8
+            }
+          },
+          {
+            "rule_id": "candidate.record_consistent",
+            "rule_version": 1,
+            "layer": "candidate",
+            "severity": "PASS",
+            "title": "候选记录与字节一致",
+            "detail": "记录与字节一致：宽高 1344×1344、8298 字节、image/png。",
+            "measured": {
+              "width": 1344,
+              "height": 1344,
+              "byte_size": 8298
+            }
+          },
+          {
+            "rule_id": "platform.min_long_side",
+            "rule_version": 1,
+            "layer": "candidate",
+            "severity": "PASS",
+            "title": "最小长边 1000px",
+            "detail": "最长边 1344px，满足平台缩放下限 1000px。",
+            "measured": {
+              "long_side": 1344,
+              "threshold": 1000
+            }
+          },
+          {
+            "rule_id": "platform.recommended_long_side",
+            "rule_version": 1,
+            "layer": "candidate",
+            "severity": "WARNING",
+            "title": "推荐长边 1600px",
+            "detail": "最长边 1344px 低于推荐值 1600px（不阻断；需要最佳缩放时可提高生成尺寸）。",
+            "measured": {
+              "long_side": 1344,
+              "threshold": 1600
+            }
+          },
+          {
+            "rule_id": "platform.main_square",
+            "rule_version": 1,
+            "layer": "candidate",
+            "severity": "PASS",
+            "title": "主图 1:1",
+            "detail": "主图宽高比 1.0000，符合 1:1（容差 ±2%）。",
+            "measured": {
+              "ratio": 1
+            }
+          },
+          {
+            "rule_id": "platform.alpha_channel",
+            "rule_version": 1,
+            "layer": "candidate",
+            "severity": "PASS",
+            "title": "透明通道提示",
+            "detail": "未检测到透明通道（颜色类型 2）。",
+            "measured": {
+              "color_type": 2,
+              "has_transparency": false
+            }
+          },
+          {
+            "rule_id": "candidate.pixel_depth",
+            "rule_version": 1,
+            "layer": "candidate",
+            "severity": "PASS",
+            "title": "像素位深",
+            "detail": "像素位深 8 位。",
+            "measured": {
+              "bit_depth": 8
+            }
+          }
+        ],
+        "created_at": "2026-10-05T11:32:23.834Z"
+      },
+      "created_at": "2026-10-05T11:32:23.834Z",
+      "updated_at": "2026-10-05T11:32:23.834Z"
+    },
+    {
+      "document_key": "7d414da3-8d7e-4477-a2cd-7b97d4812c07:review_report:act-3044fabfea7c46bfb46663ce074718a2:1",
+      "project_id": "7d414da3-8d7e-4477-a2cd-7b97d4812c07",
+      "kind": "review_report",
+      "document_id": "act-3044fabfea7c46bfb46663ce074718a2",
+      "version": 1,
+      "schema_version": 1,
+      "payload": {
+        "schema_version": 1,
+        "review_contract_version": "v2.5.2",
+        "candidate_id": "act-3044fabfea7c46bfb46663ce074718a2",
+        "shot_id": "shot_main_clean",
+        "asset_sha256": "372dfb28cc81299ed94d064683a827d44ed2747121331d10f997e5bd4db61d52",
+        "vlm": null,
+        "summary": {
+          "BLOCK": 0,
+          "HIGH_RISK": 0,
+          "WARNING": 1,
+          "PASS": 6,
+          "UNKNOWN": 0
+        },
+        "findings": [
+          {
+            "rule_id": "candidate.png_contract",
+            "rule_version": 1,
+            "layer": "candidate",
+            "severity": "PASS",
+            "title": "PNG 字节合同",
+            "detail": "PNG 头可解析：1344×1344（颜色类型 2，位深 8）。",
+            "measured": {
+              "width": 1344,
+              "height": 1344,
+              "color_type": 2,
+              "bit_depth": 8
+            }
+          },
+          {
+            "rule_id": "candidate.record_consistent",
+            "rule_version": 1,
+            "layer": "candidate",
+            "severity": "PASS",
+            "title": "候选记录与字节一致",
+            "detail": "记录与字节一致：宽高 1344×1344、8298 字节、image/png。",
+            "measured": {
+              "width": 1344,
+              "height": 1344,
+              "byte_size": 8298
+            }
+          },
+          {
+            "rule_id": "platform.min_long_side",
+            "rule_version": 1,
+            "layer": "candidate",
+            "severity": "PASS",
+            "title": "最小长边 1000px",
+            "detail": "最长边 1344px，满足平台缩放下限 1000px。",
+            "measured": {
+              "long_side": 1344,
+              "threshold": 1000
+            }
+          },
+          {
+            "rule_id": "platform.recommended_long_side",
+            "rule_version": 1,
+            "layer": "candidate",
+            "severity": "WARNING",
+            "title": "推荐长边 1600px",
+            "detail": "最长边 1344px 低于推荐值 1600px（不阻断；需要最佳缩放时可提高生成尺寸）。",
+            "measured": {
+              "long_side": 1344,
+              "threshold": 1600
+            }
+          },
+          {
+            "rule_id": "platform.main_square",
+            "rule_version": 1,
+            "layer": "candidate",
+            "severity": "PASS",
+            "title": "主图 1:1",
+            "detail": "主图宽高比 1.0000，符合 1:1（容差 ±2%）。",
+            "measured": {
+              "ratio": 1
+            }
+          },
+          {
+            "rule_id": "platform.alpha_channel",
+            "rule_version": 1,
+            "layer": "candidate",
+            "severity": "PASS",
+            "title": "透明通道提示",
+            "detail": "未检测到透明通道（颜色类型 2）。",
+            "measured": {
+              "color_type": 2,
+              "has_transparency": false
+            }
+          },
+          {
+            "rule_id": "candidate.pixel_depth",
+            "rule_version": 1,
+            "layer": "candidate",
+            "severity": "PASS",
+            "title": "像素位深",
+            "detail": "像素位深 8 位。",
+            "measured": {
+              "bit_depth": 8
+            }
+          }
+        ],
+        "created_at": "2026-10-05T11:33:24.530Z"
+      },
+      "created_at": "2026-10-05T11:33:24.531Z",
+      "updated_at": "2026-10-05T11:33:24.531Z"
+    },
+    {
+      "document_key": "7d414da3-8d7e-4477-a2cd-7b97d4812c07:review_report:act-73499842a25441c6be9a3f48d9205923:1",
+      "project_id": "7d414da3-8d7e-4477-a2cd-7b97d4812c07",
+      "kind": "review_report",
+      "document_id": "act-73499842a25441c6be9a3f48d9205923",
+      "version": 1,
+      "schema_version": 1,
+      "payload": {
+        "schema_version": 1,
+        "review_contract_version": "v2.5.2",
+        "candidate_id": "act-73499842a25441c6be9a3f48d9205923",
+        "shot_id": "shot_scene_lifestyle",
+        "asset_sha256": "63aac5275511fba00cb93ebe33369fe462256f3a175d7f5fda31d389f3fd0467",
+        "vlm": null,
+        "summary": {
+          "BLOCK": 0,
+          "HIGH_RISK": 0,
+          "WARNING": 1,
+          "PASS": 5,
+          "UNKNOWN": 0
+        },
+        "findings": [
+          {
+            "rule_id": "candidate.png_contract",
+            "rule_version": 1,
+            "layer": "candidate",
+            "severity": "PASS",
+            "title": "PNG 字节合同",
+            "detail": "PNG 头可解析：1344×1344（颜色类型 2，位深 8）。",
+            "measured": {
+              "width": 1344,
+              "height": 1344,
+              "color_type": 2,
+              "bit_depth": 8
+            }
+          },
+          {
+            "rule_id": "candidate.record_consistent",
+            "rule_version": 1,
+            "layer": "candidate",
+            "severity": "PASS",
+            "title": "候选记录与字节一致",
+            "detail": "记录与字节一致：宽高 1344×1344、8298 字节、image/png。",
+            "measured": {
+              "width": 1344,
+              "height": 1344,
+              "byte_size": 8298
+            }
+          },
+          {
+            "rule_id": "platform.min_long_side",
+            "rule_version": 1,
+            "layer": "candidate",
+            "severity": "PASS",
+            "title": "最小长边 1000px",
+            "detail": "最长边 1344px，满足平台缩放下限 1000px。",
+            "measured": {
+              "long_side": 1344,
+              "threshold": 1000
+            }
+          },
+          {
+            "rule_id": "platform.recommended_long_side",
+            "rule_version": 1,
+            "layer": "candidate",
+            "severity": "WARNING",
+            "title": "推荐长边 1600px",
+            "detail": "最长边 1344px 低于推荐值 1600px（不阻断；需要最佳缩放时可提高生成尺寸）。",
+            "measured": {
+              "long_side": 1344,
+              "threshold": 1600
+            }
+          },
+          {
+            "rule_id": "platform.alpha_channel",
+            "rule_version": 1,
+            "layer": "candidate",
+            "severity": "PASS",
+            "title": "透明通道提示",
+            "detail": "未检测到透明通道（颜色类型 2）。",
+            "measured": {
+              "color_type": 2,
+              "has_transparency": false
+            }
+          },
+          {
+            "rule_id": "candidate.pixel_depth",
+            "rule_version": 1,
+            "layer": "candidate",
+            "severity": "PASS",
+            "title": "像素位深",
+            "detail": "像素位深 8 位。",
+            "measured": {
+              "bit_depth": 8
+            }
+          }
+        ],
+        "created_at": "2026-10-05T11:32:24.453Z"
+      },
+      "created_at": "2026-10-05T11:32:24.453Z",
+      "updated_at": "2026-10-05T11:32:24.453Z"
+    },
+    {
+      "document_key": "7d414da3-8d7e-4477-a2cd-7b97d4812c07:selection:shot_main_clean:1",
+      "project_id": "7d414da3-8d7e-4477-a2cd-7b97d4812c07",
+      "kind": "selection",
+      "document_id": "shot_main_clean",
+      "version": 1,
+      "schema_version": 1,
+      "payload": {
+        "schema_version": 1,
+        "contract_version": "v2.6.1",
+        "selection_id": "act-bb768c5ee3d54e69bdc8390fdce08192",
+        "action": "select",
+        "shot_id": "shot_main_clean",
+        "candidate_id": "act-144e4fba7b214ffdadecf9453e7b02ad",
+        "candidate_sha256": "9d34b3e53e06250b60c06248c7848383e5771867b8c8f3954156679d9e8e4cd5",
+        "candidate_version": 1,
+        "review_fingerprint": {
+          "review_contract_version": "v2.5.2",
+          "report_created_at": "2026-10-05T11:32:23.834Z",
+          "candidate_id": "act-144e4fba7b214ffdadecf9453e7b02ad",
+          "asset_sha256": "9d34b3e53e06250b60c06248c7848383e5771867b8c8f3954156679d9e8e4cd5",
+          "finding_count": 7,
+          "top_rule_id": "platform.recommended_long_side",
+          "top_severity": "WARNING"
+        },
+        "created_at": "2026-10-05T11:32:56.367Z"
+      },
+      "created_at": "2026-10-05T11:32:56.368Z",
+      "updated_at": "2026-10-05T11:32:56.368Z"
+    },
+    {
+      "document_key": "7d414da3-8d7e-4477-a2cd-7b97d4812c07:selection:shot_scene_lifestyle:1",
+      "project_id": "7d414da3-8d7e-4477-a2cd-7b97d4812c07",
+      "kind": "selection",
+      "document_id": "shot_scene_lifestyle",
+      "version": 1,
+      "schema_version": 1,
+      "payload": {
+        "schema_version": 1,
+        "contract_version": "v2.6.1",
+        "selection_id": "act-ecd1b568b071456d9a1c0bc75d572ef0",
+        "action": "select",
+        "shot_id": "shot_scene_lifestyle",
+        "candidate_id": "act-73499842a25441c6be9a3f48d9205923",
+        "candidate_sha256": "63aac5275511fba00cb93ebe33369fe462256f3a175d7f5fda31d389f3fd0467",
+        "candidate_version": 1,
+        "review_fingerprint": {
+          "review_contract_version": "v2.5.2",
+          "report_created_at": "2026-10-05T11:32:24.453Z",
+          "candidate_id": "act-73499842a25441c6be9a3f48d9205923",
+          "asset_sha256": "63aac5275511fba00cb93ebe33369fe462256f3a175d7f5fda31d389f3fd0467",
+          "finding_count": 6,
+          "top_rule_id": "platform.recommended_long_side",
+          "top_severity": "WARNING"
+        },
+        "created_at": "2026-10-05T11:35:12.029Z"
+      },
+      "created_at": "2026-10-05T11:35:12.030Z",
+      "updated_at": "2026-10-05T11:35:12.030Z"
+    },
+    {
+      "document_key": "7d414da3-8d7e-4477-a2cd-7b97d4812c07:suite_plan:suite:1",
+      "project_id": "7d414da3-8d7e-4477-a2cd-7b97d4812c07",
+      "kind": "suite_plan",
+      "document_id": "suite",
+      "version": 1,
+      "schema_version": 1,
+      "payload": {
+        "schema_version": 1,
+        "shots": [
+          {
+            "shot_id": "shot_main_clean",
+            "template_id": "main_clean",
+            "role_id": "main",
+            "label": "主图·干净背景",
+            "intent": "完整展示商品主体，背景干净，不添加资料里没有的部件",
+            "required": true,
+            "custom": false,
+            "dependencies": [
+              {
+                "kind": "asset_role",
+                "role": "primary"
+              }
+            ],
+            "fact_slot_ids": []
+          }
+        ]
+      },
+      "created_at": "2026-10-05T11:31:42.198Z",
+      "updated_at": "2026-10-05T11:31:42.198Z"
+    },
+    {
+      "document_key": "7d414da3-8d7e-4477-a2cd-7b97d4812c07:suite_plan:suite:2",
+      "project_id": "7d414da3-8d7e-4477-a2cd-7b97d4812c07",
+      "kind": "suite_plan",
+      "document_id": "suite",
+      "version": 2,
+      "schema_version": 1,
+      "payload": {
+        "schema_version": 1,
+        "shots": [
+          {
+            "shot_id": "shot_main_clean",
+            "template_id": "main_clean",
+            "role_id": "main",
+            "label": "主图·干净背景",
+            "intent": "完整展示商品主体，背景干净，不添加资料里没有的部件",
+            "required": true,
+            "custom": false,
+            "dependencies": [
+              {
+                "kind": "asset_role",
+                "role": "primary"
+              }
+            ],
+            "fact_slot_ids": []
+          },
+          {
+            "shot_id": "shot_scene_lifestyle",
+            "template_id": "scene_lifestyle",
+            "role_id": "scene",
+            "label": "场景图·使用中",
+            "intent": "把商品放进符合用途的真实场景，场景不改变商品外观",
+            "required": false,
+            "custom": false,
+            "dependencies": [
+              {
+                "kind": "asset_role",
+                "role": "primary"
+              },
+              {
+                "kind": "fact",
+                "slot_id": "product_category"
+              }
+            ],
+            "fact_slot_ids": [
+              "product_category"
+            ]
+          }
+        ]
+      },
+      "created_at": "2026-10-05T11:31:42.283Z",
+      "updated_at": "2026-10-05T11:31:42.283Z"
+    },
+    {
+      "document_key": "7d414da3-8d7e-4477-a2cd-7b97d4812c07:suite_plan:suite:3",
+      "project_id": "7d414da3-8d7e-4477-a2cd-7b97d4812c07",
+      "kind": "suite_plan",
+      "document_id": "suite",
+      "version": 3,
+      "schema_version": 1,
+      "payload": {
+        "schema_version": 1,
+        "shots": [
+          {
+            "shot_id": "shot_main_clean",
+            "template_id": "main_clean",
+            "role_id": "main",
+            "label": "主图·干净背景",
+            "intent": "完整展示商品主体，背景干净，不添加资料里没有的部件",
+            "required": true,
+            "custom": false,
+            "dependencies": [
+              {
+                "kind": "asset_role",
+                "role": "primary"
+              }
+            ],
+            "fact_slot_ids": []
+          },
+          {
+            "shot_id": "shot_scene_lifestyle",
+            "template_id": "scene_lifestyle",
+            "role_id": "scene",
+            "label": "场景图·使用中",
+            "intent": "把商品放进符合用途的真实场景，场景不改变商品外观",
+            "required": false,
+            "custom": false,
+            "dependencies": [
+              {
+                "kind": "asset_role",
+                "role": "primary"
+              },
+              {
+                "kind": "fact",
+                "slot_id": "product_category"
+              }
+            ],
+            "fact_slot_ids": [
+              "product_category"
+            ]
+          },
+          {
+            "shot_id": "shot_size_dimensions",
+            "template_id": "size_dimensions",
+            "role_id": "size",
+            "label": "尺寸图",
+            "intent": "标注已确认的结构化尺寸（对象/轴向/数值/单位与来源）；不猜数字、不用自由文本冒充测量",
+            "required": false,
+            "custom": false,
+            "dependencies": [
+              {
+                "kind": "any_of",
+                "of": [
+                  {
+                    "kind": "fact",
+                    "slot_id": "size_dimensions"
+                  },
+                  {
+                    "kind": "bound_dimension"
+                  }
+                ]
+              }
+            ],
+            "fact_slot_ids": []
+          }
+        ]
+      },
+      "created_at": "2026-10-05T11:31:42.332Z",
+      "updated_at": "2026-10-05T11:31:42.332Z"
+    },
+    {
+      "document_key": "7d414da3-8d7e-4477-a2cd-7b97d4812c07:suite_review:suite_review:1",
+      "project_id": "7d414da3-8d7e-4477-a2cd-7b97d4812c07",
+      "kind": "suite_review",
+      "document_id": "suite_review",
+      "version": 1,
+      "schema_version": 1,
+      "payload": {
+        "schema_version": 1,
+        "contract_version": "v2.5.5",
+        "selection_fingerprint": "{\"contract_version\":\"v2.6.1\",\"entries\":[{\"candidate_id\":\"act-144e4fba7b214ffdadecf9453e7b02ad\",\"candidate_sha256\":\"9d34b3e53e06250b60c06248c7848383e5771867b8c8f3954156679d9e8e4cd5\",\"candidate_version\":1,\"required\":true,\"selected_at\":\"2026-10-05T11:32:56.367Z\",\"selection_id\":\"act-bb768c5ee3d54e69bdc8390fdce08192\",\"shot_id\":\"shot_main_clean\",\"state\":\"current\"},{\"candidate_id\":\"act-73499842a25441c6be9a3f48d9205923\",\"candidate_sha256\":\"63aac5275511fba00cb93ebe33369fe462256f3a175d7f5fda31d389f3fd0467\",\"candidate_version\":1,\"required\":false,\"selected_at\":\"2026-10-05T11:35:12.029Z\",\"selection_id\":\"act-ecd1b568b071456d9a1c0bc75d572ef0\",\"shot_id\":\"shot_scene_lifestyle\",\"state\":\"current\"},{\"candidate_id\":null,\"candidate_sha256\":null,\"candidate_version\":null,\"required\":false,\"selected_at\":null,\"selection_id\":null,\"shot_id\":\"shot_size_dimensions\",\"state\":\"none\"}]}",
+        "inputs_fingerprint": "{\"reports\":[{\"candidate_id\":\"act-144e4fba7b214ffdadecf9453e7b02ad\",\"report_asset_sha256\":\"9d34b3e53e06250b60c06248c7848383e5771867b8c8f3954156679d9e8e4cd5\",\"report_created_at\":\"2026-10-05T11:32:23.834Z\",\"report_finding_count\":7,\"review_contract_version\":\"v2.5.2\"},{\"candidate_id\":\"act-3044fabfea7c46bfb46663ce074718a2\",\"report_asset_sha256\":\"372dfb28cc81299ed94d064683a827d44ed2747121331d10f997e5bd4db61d52\",\"report_created_at\":\"2026-10-05T11:33:24.530Z\",\"report_finding_count\":7,\"review_contract_version\":\"v2.5.2\"},{\"candidate_id\":\"act-73499842a25441c6be9a3f48d9205923\",\"report_asset_sha256\":\"63aac5275511fba00cb93ebe33369fe462256f3a175d7f5fda31d389f3fd0467\",\"report_created_at\":\"2026-10-05T11:32:24.453Z\",\"report_finding_count\":6,\"review_contract_version\":\"v2.5.2\"}],\"selection\":\"{\\\"contract_version\\\":\\\"v2.6.1\\\",\\\"entries\\\":[{\\\"candidate_id\\\":\\\"act-144e4fba7b214ffdadecf9453e7b02ad\\\",\\\"candidate_sha256\\\":\\\"9d34b3e53e06250b60c06248c7848383e5771867b8c8f3954156679d9e8e4cd5\\\",\\\"candidate_version\\\":1,\\\"required\\\":true,\\\"selected_at\\\":\\\"2026-10-05T11:32:56.367Z\\\",\\\"selection_id\\\":\\\"act-bb768c5ee3d54e69bdc8390fdce08192\\\",\\\"shot_id\\\":\\\"shot_main_clean\\\",\\\"state\\\":\\\"current\\\"},{\\\"candidate_id\\\":\\\"act-73499842a25441c6be9a3f48d9205923\\\",\\\"candidate_sha256\\\":\\\"63aac5275511fba00cb93ebe33369fe462256f3a175d7f5fda31d389f3fd0467\\\",\\\"candidate_version\\\":1,\\\"required\\\":false,\\\"selected_at\\\":\\\"2026-10-05T11:35:12.029Z\\\",\\\"selection_id\\\":\\\"act-ecd1b568b071456d9a1c0bc75d572ef0\\\",\\\"shot_id\\\":\\\"shot_scene_lifestyle\\\",\\\"state\\\":\\\"current\\\"},{\\\"candidate_id\\\":null,\\\"candidate_sha256\\\":null,\\\"candidate_version\\\":null,\\\"required\\\":false,\\\"selected_at\\\":null,\\\"selection_id\\\":null,\\\"shot_id\\\":\\\"shot_size_dimensions\\\",\\\"state\\\":\\\"none\\\"}]}\",\"shots\":[{\"custom\":false,\"fact_slot_ids\":[],\"label\":\"主图·干净背景\",\"required\":true,\"role_id\":\"main\",\"shot_id\":\"shot_main_clean\",\"template_id\":\"main_clean\"},{\"custom\":false,\"fact_slot_ids\":[\"product_category\"],\"label\":\"场景图·使用中\",\"required\":false,\"role_id\":\"scene\",\"shot_id\":\"shot_scene_lifestyle\",\"template_id\":\"scene_lifestyle\"},{\"custom\":false,\"fact_slot_ids\":[],\"label\":\"尺寸图\",\"required\":false,\"role_id\":\"size\",\"shot_id\":\"shot_size_dimensions\",\"template_id\":\"size_dimensions\"}],\"specs\":[],\"style\":{\"avoid\":[],\"background\":\"\",\"color_tone\":\"\",\"composition\":\"\",\"lighting\":\"\"}}",
+        "vlm": {
+          "outcome": "not_run",
+          "contract_version": "v2.5.5",
+          "requested_shot_ids": [],
+          "submitted_shot_ids": [],
+          "asset_sha256_by_shot": {},
+          "provider_id": null,
+          "model_id": null,
+          "request_id": null,
+          "checked_at": "2026-10-05T11:35:12.085Z",
+          "latency_ms": null,
+          "summary": "尚未运行整套视觉复核",
+          "reason": "not_run"
+        },
+        "summary": {
+          "BLOCK": 1,
+          "HIGH_RISK": 0,
+          "WARNING": 1,
+          "PASS": 8,
+          "UNKNOWN": 0
+        },
+        "findings": [
+          {
+            "rule_id": "suite.selection_current",
+            "rule_version": 1,
+            "layer": "suite",
+            "severity": "PASS",
+            "title": "必需图人工选择当前有效",
+            "detail": "必需图的人工采用全部当前有效（1 张）。",
+            "measured": {
+              "required_total": 1
+            },
+            "affected_shot_ids": []
+          },
+          {
+            "rule_id": "suite.dependency_satisfied",
+            "rule_version": 1,
+            "layer": "suite",
+            "severity": "BLOCK",
+            "title": "套图依据依赖",
+            "detail": "以下图任务的生成依据未满足：「尺寸图」缺依据：以下任一条都不成立：事实 size_dimensions 尚未确认（当前 missing）；该尺寸图还没有绑定已确认的尺寸事实。",
+            "measured": {
+              "shots": [
+                "shot_size_dimensions"
+              ]
+            },
+            "affected_shot_ids": [
+              "shot_size_dimensions"
+            ]
+          },
+          {
+            "rule_id": "suite.duplicates",
+            "rule_version": 1,
+            "layer": "suite",
+            "severity": "PASS",
+            "title": "重复任务",
+            "detail": "未发现重复任务（同类模板且绑定依据集合相同）。",
+            "measured": {
+              "total": 3
+            },
+            "affected_shot_ids": []
+          },
+          {
+            "rule_id": "suite.recommended_omissions",
+            "rule_version": 1,
+            "layer": "suite",
+            "severity": "WARNING",
+            "title": "推荐图未纳入",
+            "detail": "以下推荐图当前依据已满足，但没有纳入套图：卖点信息图、细节图·材质工艺；有意省略可以忽略，需要时在套图方案里加入。",
+            "measured": {
+              "templates": [
+                "infographic_benefits",
+                "detail_material"
+              ]
+            },
+            "affected_shot_ids": []
+          },
+          {
+            "rule_id": "suite.selling_point_coverage",
+            "rule_version": 1,
+            "layer": "suite",
+            "severity": "PASS",
+            "title": "卖点覆盖",
+            "detail": "没有填写卖点，无需检查覆盖。",
+            "measured": {
+              "points": 0
+            },
+            "affected_shot_ids": []
+          },
+          {
+            "rule_id": "export.selection_complete",
+            "rule_version": 1,
+            "layer": "export",
+            "severity": "PASS",
+            "title": "选择完整性",
+            "detail": "必需 Shot 选择完整（1 项）。",
+            "measured": {
+              "required_count": 1
+            },
+            "affected_shot_ids": []
+          },
+          {
+            "rule_id": "export.chain_integrity",
+            "rule_version": 1,
+            "layer": "export",
+            "severity": "PASS",
+            "title": "选择链完整性",
+            "detail": "选择 → 候选 → 来源 Attempt 身份一致（核对 2 条选择）。",
+            "measured": {
+              "checked": 2
+            },
+            "affected_shot_ids": []
+          },
+          {
+            "rule_id": "export.report_current",
+            "rule_version": 1,
+            "layer": "export",
+            "severity": "PASS",
+            "title": "报告当前性",
+            "detail": "所选候选都有当前报告（核对 2 条选择）。",
+            "measured": {
+              "checked": 2
+            },
+            "affected_shot_ids": []
+          },
+          {
+            "rule_id": "export.no_blocking_findings",
+            "rule_version": 1,
+            "layer": "export",
+            "severity": "PASS",
+            "title": "所选报告无阻断",
+            "detail": "所选报告均不含阻断项（核对 2 条选择）。",
+            "measured": {
+              "checked": 2
+            },
+            "affected_shot_ids": []
+          },
+          {
+            "rule_id": "export.asset_hash_matches",
+            "rule_version": 1,
+            "layer": "export",
+            "severity": "PASS",
+            "title": "交付字节哈希",
+            "detail": "交付字节哈希与候选记录一致（核对 2 条）。",
+            "measured": {
+              "passed": 2
+            },
+            "affected_shot_ids": []
+          }
+        ],
+        "created_at": "2026-10-05T11:35:12.085Z"
+      },
+      "created_at": "2026-10-05T11:35:12.098Z",
+      "updated_at": "2026-10-05T11:35:12.098Z"
+    },
+    {
+      "document_key": "7d414da3-8d7e-4477-a2cd-7b97d4812c07:suite_review:suite_review:2",
+      "project_id": "7d414da3-8d7e-4477-a2cd-7b97d4812c07",
+      "kind": "suite_review",
+      "document_id": "suite_review",
+      "version": 2,
+      "schema_version": 1,
+      "payload": {
+        "schema_version": 1,
+        "contract_version": "v2.5.5",
+        "selection_fingerprint": "{\"contract_version\":\"v2.6.1\",\"entries\":[{\"candidate_id\":\"act-144e4fba7b214ffdadecf9453e7b02ad\",\"candidate_sha256\":\"9d34b3e53e06250b60c06248c7848383e5771867b8c8f3954156679d9e8e4cd5\",\"candidate_version\":1,\"required\":true,\"selected_at\":\"2026-10-05T11:32:56.367Z\",\"selection_id\":\"act-bb768c5ee3d54e69bdc8390fdce08192\",\"shot_id\":\"shot_main_clean\",\"state\":\"current\"},{\"candidate_id\":\"act-73499842a25441c6be9a3f48d9205923\",\"candidate_sha256\":\"63aac5275511fba00cb93ebe33369fe462256f3a175d7f5fda31d389f3fd0467\",\"candidate_version\":1,\"required\":false,\"selected_at\":\"2026-10-05T11:35:12.029Z\",\"selection_id\":\"act-ecd1b568b071456d9a1c0bc75d572ef0\",\"shot_id\":\"shot_scene_lifestyle\",\"state\":\"current\"},{\"candidate_id\":null,\"candidate_sha256\":null,\"candidate_version\":null,\"required\":false,\"selected_at\":null,\"selection_id\":null,\"shot_id\":\"shot_size_dimensions\",\"state\":\"none\"}]}",
+        "inputs_fingerprint": "{\"dependency_scope\":\"required_or_selected\",\"reports\":[{\"candidate_id\":\"act-144e4fba7b214ffdadecf9453e7b02ad\",\"report_asset_sha256\":\"9d34b3e53e06250b60c06248c7848383e5771867b8c8f3954156679d9e8e4cd5\",\"report_created_at\":\"2026-10-05T11:32:23.834Z\",\"report_finding_count\":7,\"review_contract_version\":\"v2.5.2\"},{\"candidate_id\":\"act-3044fabfea7c46bfb46663ce074718a2\",\"report_asset_sha256\":\"372dfb28cc81299ed94d064683a827d44ed2747121331d10f997e5bd4db61d52\",\"report_created_at\":\"2026-10-05T11:33:24.530Z\",\"report_finding_count\":7,\"review_contract_version\":\"v2.5.2\"},{\"candidate_id\":\"act-73499842a25441c6be9a3f48d9205923\",\"report_asset_sha256\":\"63aac5275511fba00cb93ebe33369fe462256f3a175d7f5fda31d389f3fd0467\",\"report_created_at\":\"2026-10-05T11:32:24.453Z\",\"report_finding_count\":6,\"review_contract_version\":\"v2.5.2\"}],\"selection\":\"{\\\"contract_version\\\":\\\"v2.6.1\\\",\\\"entries\\\":[{\\\"candidate_id\\\":\\\"act-144e4fba7b214ffdadecf9453e7b02ad\\\",\\\"candidate_sha256\\\":\\\"9d34b3e53e06250b60c06248c7848383e5771867b8c8f3954156679d9e8e4cd5\\\",\\\"candidate_version\\\":1,\\\"required\\\":true,\\\"selected_at\\\":\\\"2026-10-05T11:32:56.367Z\\\",\\\"selection_id\\\":\\\"act-bb768c5ee3d54e69bdc8390fdce08192\\\",\\\"shot_id\\\":\\\"shot_main_clean\\\",\\\"state\\\":\\\"current\\\"},{\\\"candidate_id\\\":\\\"act-73499842a25441c6be9a3f48d9205923\\\",\\\"candidate_sha256\\\":\\\"63aac5275511fba00cb93ebe33369fe462256f3a175d7f5fda31d389f3fd0467\\\",\\\"candidate_version\\\":1,\\\"required\\\":false,\\\"selected_at\\\":\\\"2026-10-05T11:35:12.029Z\\\",\\\"selection_id\\\":\\\"act-ecd1b568b071456d9a1c0bc75d572ef0\\\",\\\"shot_id\\\":\\\"shot_scene_lifestyle\\\",\\\"state\\\":\\\"current\\\"},{\\\"candidate_id\\\":null,\\\"candidate_sha256\\\":null,\\\"candidate_version\\\":null,\\\"required\\\":false,\\\"selected_at\\\":null,\\\"selection_id\\\":null,\\\"shot_id\\\":\\\"shot_size_dimensions\\\",\\\"state\\\":\\\"none\\\"}]}\",\"shots\":[{\"custom\":false,\"fact_slot_ids\":[],\"label\":\"主图·干净背景\",\"required\":true,\"role_id\":\"main\",\"shot_id\":\"shot_main_clean\",\"template_id\":\"main_clean\"},{\"custom\":false,\"fact_slot_ids\":[\"product_category\"],\"label\":\"场景图·使用中\",\"required\":false,\"role_id\":\"scene\",\"shot_id\":\"shot_scene_lifestyle\",\"template_id\":\"scene_lifestyle\"},{\"custom\":false,\"fact_slot_ids\":[],\"label\":\"尺寸图\",\"required\":false,\"role_id\":\"size\",\"shot_id\":\"shot_size_dimensions\",\"template_id\":\"size_dimensions\"}],\"specs\":[],\"style\":{\"avoid\":[],\"background\":\"\",\"color_tone\":\"\",\"composition\":\"\",\"lighting\":\"\"}}",
+        "vlm": {
+          "outcome": "not_run",
+          "contract_version": "v2.5.5",
+          "requested_shot_ids": [],
+          "submitted_shot_ids": [],
+          "asset_sha256_by_shot": {},
+          "provider_id": null,
+          "model_id": null,
+          "request_id": null,
+          "checked_at": "2026-10-05T11:39:02.919Z",
+          "latency_ms": null,
+          "summary": "尚未运行整套视觉复核",
+          "reason": "not_run"
+        },
+        "summary": {
+          "BLOCK": 0,
+          "HIGH_RISK": 0,
+          "WARNING": 1,
+          "PASS": 9,
+          "UNKNOWN": 0
+        },
+        "findings": [
+          {
+            "rule_id": "suite.selection_current",
+            "rule_version": 1,
+            "layer": "suite",
+            "severity": "PASS",
+            "title": "必需图人工选择当前有效",
+            "detail": "必需图的人工采用全部当前有效（1 张）。",
+            "measured": {
+              "required_total": 1
+            },
+            "affected_shot_ids": []
+          },
+          {
+            "rule_id": "suite.dependency_satisfied",
+            "rule_version": 1,
+            "layer": "suite",
+            "severity": "PASS",
+            "title": "套图依据依赖",
+            "detail": "交付范围 2 张的生成依据都已满足。",
+            "measured": {
+              "total": 2
+            },
+            "affected_shot_ids": []
+          },
+          {
+            "rule_id": "suite.duplicates",
+            "rule_version": 1,
+            "layer": "suite",
+            "severity": "PASS",
+            "title": "重复任务",
+            "detail": "未发现重复任务（同类模板且绑定依据集合相同）。",
+            "measured": {
+              "total": 3
+            },
+            "affected_shot_ids": []
+          },
+          {
+            "rule_id": "suite.recommended_omissions",
+            "rule_version": 1,
+            "layer": "suite",
+            "severity": "WARNING",
+            "title": "推荐图未纳入",
+            "detail": "以下推荐图当前依据已满足，但没有纳入套图：卖点信息图、细节图·材质工艺；有意省略可以忽略，需要时在套图方案里加入。",
+            "measured": {
+              "templates": [
+                "infographic_benefits",
+                "detail_material"
+              ]
+            },
+            "affected_shot_ids": []
+          },
+          {
+            "rule_id": "suite.selling_point_coverage",
+            "rule_version": 1,
+            "layer": "suite",
+            "severity": "PASS",
+            "title": "卖点覆盖",
+            "detail": "没有填写卖点，无需检查覆盖。",
+            "measured": {
+              "points": 0
+            },
+            "affected_shot_ids": []
+          },
+          {
+            "rule_id": "export.selection_complete",
+            "rule_version": 1,
+            "layer": "export",
+            "severity": "PASS",
+            "title": "选择完整性",
+            "detail": "必需 Shot 选择完整（1 项）。",
+            "measured": {
+              "required_count": 1
+            },
+            "affected_shot_ids": []
+          },
+          {
+            "rule_id": "export.chain_integrity",
+            "rule_version": 1,
+            "layer": "export",
+            "severity": "PASS",
+            "title": "选择链完整性",
+            "detail": "选择 → 候选 → 来源 Attempt 身份一致（核对 2 条选择）。",
+            "measured": {
+              "checked": 2
+            },
+            "affected_shot_ids": []
+          },
+          {
+            "rule_id": "export.report_current",
+            "rule_version": 1,
+            "layer": "export",
+            "severity": "PASS",
+            "title": "报告当前性",
+            "detail": "所选候选都有当前报告（核对 2 条选择）。",
+            "measured": {
+              "checked": 2
+            },
+            "affected_shot_ids": []
+          },
+          {
+            "rule_id": "export.no_blocking_findings",
+            "rule_version": 1,
+            "layer": "export",
+            "severity": "PASS",
+            "title": "所选报告无阻断",
+            "detail": "所选报告均不含阻断项（核对 2 条选择）。",
+            "measured": {
+              "checked": 2
+            },
+            "affected_shot_ids": []
+          },
+          {
+            "rule_id": "export.asset_hash_matches",
+            "rule_version": 1,
+            "layer": "export",
+            "severity": "PASS",
+            "title": "交付字节哈希",
+            "detail": "交付字节哈希与候选记录一致（核对 2 条）。",
+            "measured": {
+              "passed": 2
+            },
+            "affected_shot_ids": []
+          }
+        ],
+        "created_at": "2026-10-05T11:39:02.919Z"
+      },
+      "created_at": "2026-10-05T11:39:02.931Z",
+      "updated_at": "2026-10-05T11:39:02.931Z"
+    }
+  ],
+  "assets": [
+    {
+      "asset_key": "7d414da3-8d7e-4477-a2cd-7b97d4812c07:372dfb28cc81299ed94d064683a827d44ed2747121331d10f997e5bd4db61d52",
+      "project_id": "7d414da3-8d7e-4477-a2cd-7b97d4812c07",
+      "sha256": "372dfb28cc81299ed94d064683a827d44ed2747121331d10f997e5bd4db61d52",
+      "media_type": "image/png",
+      "byte_size": 8298,
+      "original_name": "shot_main_clean-act-3044.png",
+      "role": "candidate",
+      "width": 1344,
+      "height": 1344,
+      "schema_version": 1,
+      "created_at": "2026-10-05T11:33:24.527Z",
+      "actual_blob_bytes": 8298,
+      "actual_blob_sha256": "372dfb28cc81299ed94d064683a827d44ed2747121331d10f997e5bd4db61d52"
+    },
+    {
+      "asset_key": "7d414da3-8d7e-4477-a2cd-7b97d4812c07:63aac5275511fba00cb93ebe33369fe462256f3a175d7f5fda31d389f3fd0467",
+      "project_id": "7d414da3-8d7e-4477-a2cd-7b97d4812c07",
+      "sha256": "63aac5275511fba00cb93ebe33369fe462256f3a175d7f5fda31d389f3fd0467",
+      "media_type": "image/png",
+      "byte_size": 8298,
+      "original_name": "shot_scene_lifestyle-act-7349.png",
+      "role": "candidate",
+      "width": 1344,
+      "height": 1344,
+      "schema_version": 1,
+      "created_at": "2026-10-05T11:32:24.449Z",
+      "actual_blob_bytes": 8298,
+      "actual_blob_sha256": "63aac5275511fba00cb93ebe33369fe462256f3a175d7f5fda31d389f3fd0467"
+    },
+    {
+      "asset_key": "7d414da3-8d7e-4477-a2cd-7b97d4812c07:9d34b3e53e06250b60c06248c7848383e5771867b8c8f3954156679d9e8e4cd5",
+      "project_id": "7d414da3-8d7e-4477-a2cd-7b97d4812c07",
+      "sha256": "9d34b3e53e06250b60c06248c7848383e5771867b8c8f3954156679d9e8e4cd5",
+      "media_type": "image/png",
+      "byte_size": 8298,
+      "original_name": "shot_main_clean-act-144e.png",
+      "role": "candidate",
+      "width": 1344,
+      "height": 1344,
+      "schema_version": 1,
+      "created_at": "2026-10-05T11:32:23.828Z",
+      "actual_blob_bytes": 8298,
+      "actual_blob_sha256": "9d34b3e53e06250b60c06248c7848383e5771867b8c8f3954156679d9e8e4cd5"
+    },
+    {
+      "asset_key": "7d414da3-8d7e-4477-a2cd-7b97d4812c07:c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461",
+      "project_id": "7d414da3-8d7e-4477-a2cd-7b97d4812c07",
+      "sha256": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461",
+      "media_type": "image/jpeg",
+      "byte_size": 2239735,
+      "original_name": "honey-jar-antique.jpg",
+      "role": "primary",
+      "width": 3840,
+      "height": 2560,
+      "schema_version": 1,
+      "created_at": "2026-10-05T11:29:29.458Z",
+      "actual_blob_bytes": 2239735,
+      "actual_blob_sha256": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461"
+    }
+  ]
+}

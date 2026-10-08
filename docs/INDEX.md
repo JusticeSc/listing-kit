@@ -11,10 +11,10 @@
 
 | 要回答的问题 | 唯一权威 | 其他地方只允许 |
 |---|---|---|
-| Goal 现在运行、暂停还是完成 | 系统 Goal；绑定状态与最近实际读数只在 `_working/amz-listing-kit-product-v2/state.md`，旧 Goal 读数见 superseded 基线 | `prepared` 仅表示真正未观察/未确认、尚无会话绑定，不冒充系统 paused/active；绑定语义与证据合同以产品计划 §2.2 为准；不据旧读数继续旧发布、不虚构 ID |
+| Goal 现在运行、暂停还是完成 | 系统Goal；产品历史绑定与最近观察、独立规划观察的引用只在 `_working/amz-listing-kit-product-v2/state.md`，旧基线仅历史 | 实时读数不能由state的历史active推断；独立规划Goal不匹配产品工程正文，不能覆盖产品绑定或解除停工；绑定合同见计划§2.2/§15.6，不虚构ID/生命周期 |
 | 项目是什么、运行边界、数据与目录归谁 | `docs/product-v2-project-context.md` | 计划和 README 只链接，不复制项目身份、目标运行时或数据所有权 |
 | 要做成什么、什么算完成、阶段/任务怎样依赖 | `docs/product-v2-refactor-plan.md` | 按 ID 引用，不复制目标、Gate、任务定义或依赖；旧计划仅作基线合同来源 |
-| Module 状态归谁、业务 Interface如何收口、低模型怎样按小包施工 | `docs/product-v2-refactor-design.md` | 目标详细设计及§10–12冻结规格/小包/启动文本，不是已实现声明；业务结果/正式任务仍取计划，技术栈和数据归属仍取项目上下文 |
+| Module 状态归谁、业务 Interface如何收口、怎样按差量实施 | `docs/product-v2-refactor-design.md` | §10冻结算法、§11.2原包职责索引、§11.5当前差量/组合/验证、§12明确恢复后入口；不是当前全已实现/验收声明，业务结果与任务取计划，运行/数据取上下文 |
 | 当前做到哪、证据在哪、唯一下一动作是什么 | `_working/amz-listing-kit-product-v2/state.md` | 历史审计只能保存当时快照，不发布“当前状态” |
 | 现有代码实际上能做什么 | `README.md` 指向的代码、配置与验证入口 | 目标计划不得把未实现能力写成当前实现 |
 | 哪份文档有效、历史还是待删 | 本文件 | 各文件只声明自己的 CONTROL-STATUS，不建立另一张总表 |
@@ -25,7 +25,7 @@
 重构恢复不依赖聊天：state 为 `prepared` 时，读取计划 §2 的 Goal 原文及 §9 的下一任务卡，先执行 `V2.R1.1` 的当前 Goal 重读核对与会话绑定门；会话绑定完成前不开始产品施工。用户已确认当前 Goal 后离线本地实现已获授权；真实模型调用、发布、V1 日落、私有上传、提交/推送、新依赖选型仍各自单独设门。
 
 当前目标以计划为准，计划准备完成不等于重构完成，也不自动改变旧系统 Goal 生命周期。
-准备本身不创建Goal。用户已正式触发本轮全文，当前Goal原文在计划§2.1，启动方案及编制来源在§16；真实绑定与受影响任务恢复点取state。新会话仍须重读真实Goal，不把历史绑定、准备检查或UI draft当当前验收或另行启动许可。
+普通准备不创建产品Goal；本轮2026-10-07用户已明确恢复完整交付并由工具创建相符工程Goal，正文/授权只见计划§2.1/§16.1，原生观察/轮数/恢复点只见state。早期独立规划Goal只留原证明范围；新会话仍实时核对，不把历史active/规划完成/UI draft当当前验收或重复启动依据。
 
 ---
 
@@ -47,8 +47,8 @@
 | `_working/amz-listing-kit-product-demo/state.md` | Product V1 v2.6 | `历史证据` | `superseded` | 被 `_working/amz-listing-kit-product-v2/state.md` 取代；保留 D-1 至 D4.12 的完成证据，不据此继续 D4.13 |
 | `docs/product-v2-project-context.md` | Product V2 | `架构设计` | `current` | Product V2 项目身份、运行边界、数据所有权、技术栈、目录地图和质量门槛的唯一上下文入口 |
 | `docs/product-v2-goal-and-implementation-plan.md` | Product V2 重构前基线 | `历史证据` | `superseded` | 被 `docs/product-v2-refactor-plan.md` 接管未来目标与任务；保留旧合同、C1–C17 和旧 Goal 原文，不据此继续 V2.7.3 |
-| `docs/product-v2-refactor-plan.md` | Product V2定向重构 | `产品目标` | `current` | §2.1当前真实Goal，§6/§9/§10正式任务/依赖/验收，§14业务合同，§15批次验证，§16本轮启动方案及编制来源；§12和旧观察仅历史，不另建PRD/准备计划 |
-| `docs/product-v2-refactor-design.md` | Product V2 联合结构重构 | `架构设计` | `current` | 目标Module/Interface、事务/生命周期、重复/测试/历史治理；§10–12为高难度冻结规格、低模型小包和启动文本；不声明实现/进度，不另立Goal/任务/RC |
+| `docs/product-v2-refactor-plan.md` | Product V2定向重构 | `产品目标` | `current` | §2.1本轮真实产品Goal原文，§6/§9/§10正式任务/依赖/验收，§14业务合同，§15.6差量与资产信任，§16.1当前权限/预算/工程V1清理及10轮门；实时Goal/状态另取工具/state，不另建PRD/进度 |
+| `docs/product-v2-refactor-design.md` | Product V2 联合结构重构 | `架构设计` | `current` | 目标Module/Interface、事务/生命周期与治理；§10既定算法、§11.5当前差量收口及精确证明、§12恢复文本；§11.2只作原包索引，不重复已完成迁移，不另立Goal/任务/RC |
 | `_working/amz-listing-kit-product-v2-baseline/state.md` | Product V2 重构前基线 | `历史证据` | `superseded` | 被 current state 接管；保留旧进度与旧 Goal 的最近实际读数，不发布下一动作 |
 | `docs/product-v2-ui-contract.md` | Product V2 V2.UI.2 | `设计草案` | `draft` | 人工/辅助共享任务及有限设置投影；§8区分设计范围、工程与C17/C15，业务合同取计划§14。转current需产品发起人实际走查，之后转 `架构设计` 并补§1路由；工程自审不冒充签署 |
 | `_working/amz-listing-kit-product-v2/state.md` | Product V2 定向重构 | `执行状态` | `current` | 唯一进度、证据、真实 Goal 绑定与下一动作；prepared 仅表示真正未观察/未确认，不冒充系统状态；旧观察不等于本会话重读 |

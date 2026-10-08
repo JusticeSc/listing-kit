@@ -1,0 +1,9 @@
+{
+  "result": "PASS",
+  "original_documents_exactly_restored": 45,
+  "original_blob_hashes_and_bytes_exact": 4,
+  "original_human_adoptions_preserved": 2,
+  "new_local_prompt_versions": 2,
+  "project_zip_sha256": "0a41474bf2dab6da238045e7a32f8bf41d574f44236ca20b4e50f80a2fb70946",
+  "scope": "current-format real browser import/open/compare plus independent IDB and native ZIP bytes; not full E2E, real image quality, or completed native export"
+}

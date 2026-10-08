@@ -1,15 +1,15 @@
 # Product V2 联合结构重构详细设计
 
 > CONTROL-STATUS: current · AUTHORITY: refactor-implementation-design
-> 版本：r2 · 2026-10-06。本文是**目标设计，不是现有能力或工程完成声明**。目标/业务权限/正式任务/依赖/RC仍唯一取 `product-v2-refactor-plan.md`；技术选型、运行及数据归属取 `product-v2-project-context.md`；进度和恢复前沿只取 state。本轮只写设计及低模型实施规格，不解除停工，不执行下述施工包。
+> 版本：r3 · 2026-10-07。本文是**目标设计，不是工程完成声明**。目标/业务权限/正式任务/依赖/RC仍唯一取 `product-v2-refactor-plan.md`；技术选型、运行及数据归属取 `product-v2-project-context.md`；进度和恢复前沿只取state。§10保留既定算法，§11.2保留原包职责索引，当前版本只按§11.5差量收口及§12恢复；本轮仅完善方案，不解除停工。
 
 ## 1. 设计依据与决策
 
 ### 1.1 问题不是文件太大，而是规则和时序泄漏
 
-截至本轮只读核对：`app/product_v2/workspace.js` 有7516行，资料/事实/方案、Prompt、授权、执行、比较/采用、复核/交付及DOM交织。旧装配仍注入状态读者、渲染和错误callback；迁出的状态仍在工作台被直接读写。最近实际新建项目已落IndexedDB，但打开失败 `suiteReports is not defined`；不能用已删除重复声明或语法绿灯覆盖这条失败。
+2026-10-06设计基线：`app/product_v2/workspace.js`当时7516行，资料/事实/方案、Prompt、授权、执行、比较/采用、复核/交付及DOM交织；实际新建落IndexedDB而打开失败 `suiteReports is not defined`。四个新TS未进入完整emit/消费者集合，`generation.ts`与JS也不一致，来源 `evals/product-v2/refactor/detailed-refactor-design-20261006.md`。这些是**历史问题与设计起因**，不是当前恢复点。
 
-`prompts.ts`、`authorization.ts`、`selection-adoption.ts`、`review-delivery.ts` 已有新Interface，但未完成消费者切换。只读字节核对表明：四个TS虽被compiler program读到，却未进入生成/新鲜度清单；`prompts.js`不存在，另三份JS仍是旧手写版本。`generation.ts`与生成JS也不一致。详见本次时点证据 `evals/product-v2/refactor/detailed-refactor-design-20261006.md`；这是现状风险，不是本轮修复证明。
+2026-10-07审计已观察15个TS源类型/字节一致、业务owner/四视图存在，新建→保存草稿→刷新恢复成立，见 `evals/product-v2/refactor/audit-current-state-20261007.md`及checks；不再重做原子组A。仍有generation→adoption的确定性报告反向调用、工作台补报告、UI摘要编排与渲染callback等具体残余，按§11.5清除。源码可运行不等于完整任务、间歇根治、CI或发布已验收。
 
 ### 1.2 比较三种Interface后选定的方案
 
@@ -21,7 +21,7 @@
 
 **选定：显式业务所有者 + 在自然业务Module内收口完整动作；不增加总命令facade。**
 
-- 资料/事实/方案状态从workspace迁入 `project-inputs.ts`（拟建）；复用现有semantic提议、domain和repository。
+- 资料/事实/方案状态归 `project-inputs.ts`（现已存在）；复用现有semantic提议、domain和repository，仅完成未闭合消费者，不再新建第二份输入owner。
 - `prompts.ts`拥有Prompt编译、人工编辑/重新确认及版本；不拥有在途任务。
 - `generation.ts`合并独立 `authorization.ts` 的授权队列/模式/范围/消费，拥有“显示摘要→明确提交→登记→执行→观察/候选”的完整动作。迁完删除独立授权TS/旧JS和全部旧调用，无兼容别名。
 - `selection-adoption.ts`拥有单图确定性/可选AI报告、人工采用及风险知悉。单图报告从generation迁至这里，generation不再回调下游review请求构造。
@@ -43,7 +43,7 @@
 | selection-adoption.ts | 单图报告、采用版本、风险知悉、采用中状态 | 查看报告、显式AI复核、采用/清除、只读选择投影 | 重新提交、整套ZIP、工作台draft |
 | review-delivery.ts | 整套报告、交付门、交付记录、检查/导出中状态 | 明确AI整套复核、确定性检查、两类导出和门投影 | 自动采用、改变原任务模型 |
 | model-settings.ts | 有限用途选择、能力与key的当前标签页内存 | 非secret配置/可用性、内部凭据Adapter | key持久化、view/错误/包内secret |
-| 四个视图（拟 `ui/input-view.ts` 等） | 输入框未提交文本、展开/对比布局/焦点/ObjectURL | 用户事件、DOM更新 | repository写入、版本Map、业务规则、网络提交 |
+| 四个视图（现有 `ui/input-view.ts` 等） | 输入框未提交文本、展开/对比布局/焦点/ObjectURL | 用户事件、DOM更新 | repository写入、版本Map、业务规则、网络提交 |
 
 内存是对应已提交记录的缓存/只读投影，不是另一份权威。草稿明确不是confirmed；来源证据不等于actor权限；模型提议不能直接写人确认状态。查看/对照状态归视图，人工采用状态归业务Module。
 
@@ -62,6 +62,8 @@ app / session
 ```
 
 只注入上述具体窄Interface，不传workspace闭包、可变context、裸Map或“任意函数集合”。generation不依赖selection/delivery；报告需要attempt身份时由下游读取generation的只读投影。不存在 `confirmationSaved → authorization.remember` 回边；确认保存和队列缓存更新均在generation内部。
+
+这是依赖目标，不是现有实现全已遵守的声明。当前 `workspace.js`仍调用generation的review setter，后者在候选保存时回调adoption；不得把删除了旧AI请求builder等同于所有反向依赖已清除。具体切断、报告失败保全和订阅释放见§11.5.2。
 
 依赖分类：domain/内存计算为in-process；IndexedDB/ZIP为local-substitutable但事务/Blob仍需实际Chromium证明；Python网关为remote-owned；上游模型为remote-third-party，只在已存在协议/凭据/HTTP Seam替换Adapter。不给每个业务读操作发明port或mock；两个实际图片协议继续通过同一生成Interface消费，不在UI写供应商分支。
 
@@ -247,8 +249,8 @@ const adopted = await runtime.adoption.adopt({
 | R5.1/R5.3 + R6.1–3的人工路径 | 授权登记与版本fence、所见摘要、人工Prompt/事实、采用/导出快照事务；现有所有消费者迁入窄能力；清除跨Module业务Map和序列 | 人工空白输入→本地准备→明确提交→比较/返工→采用→两类ZIP；跨标签/Unknown反例；原动作/字节/hash不变 | 存储冲突禁外发/混合交付；不改变现有schema/加跨版本读shim。既有可恢复包验证仍成立 |
 | R3.2/R7.5及各受影响任务；最终R7.1 | 在前两包调用方切换中同步迁共享UI前置、删源码/词条/回声钉、移除整份验证器互引及HEAD裁剪；隔离反向root/业务落盘受测根 | implementation移动不假红，真实重复消费/OCC/字节/隔离反例仍判红；单次live消费者不会额外提交 | 不为了“先全绿”修复已废弃文字断言；不另建验证平台；未闭合消费者前禁live |
 | R6.1/R6.2/R6.3，设置归原R4.3合同 | 有限设置贯通新图文/复核消费者；图文提议原来源与人工确认；确定性与显式AI分开；复制schema/供应商分支就地治理 | 完整辅助任务与未点AI路径；实际图字节/原source身份/选择/导出；必要品质与费用按既有门 | key/预算缺口只阻对应真实调用，不伪造能力/自动换模型；不因设计完整把该任务done |
-| 各cutover包 + R7.4；原R6.4成果复用 | 同包删旧源码/alias、挑历史证据/原字节归档；正式V2/legacy/fixture和生产闭包同步；发布失败/回退日志如实保留 | 当前入口只依赖当前实现，历史可恢复，产物不含secret/无关材料；实际CI构建与正式HTTPS | 不动用户数据/V1；不因工具旧列表清除选中证据；历史路径引用和hash需同步 |
-| R7.1/R7.4 | 最终整合后原两轮、人工/辅助正式用户路径、代码/JS/镜像/配置指纹、旧版保留到最终门后清理 | 真正不同old/new版本服务及数据恢复；正式页面/静态资源/交付主链，不止health。全部适用RC范围匹配 | Linux事务/TLS和两不同版本回退以获批CI/环境为准；C15/C17和V1日落仍外部门，不虚构签署 |
+| 各cutover包 + R7.3/R7.4；原R6.4成果复用 | 同包删旧源码/alias、分类必要历史；按计划工程条件清除V1活路径/消费者/失效配置/依赖，生产闭包同步 | 当前入口只依赖当前实现，独有用途处理、共享依赖保留、代码/同版本数据可恢复；真实CI/HTTPS与删后指纹 | 不盲删用户原件/失败/账本/许可；必须覆盖/切消费者/基线后删，不以未经验证V1作回退 |
+| R7.1/R7.4 | V1切换后最终原两轮、人工/辅助实际任务、代码/JS/镜像/配置指纹、旧版本留到全部门后清理 | 真实不同old/new服务回退和同origin数据恢复，正式页面/静态资源/交付主链，不止health；适用RC完整直接证据 | Linux/TLS/两image由获批CI/环境实际运行；C17/C15独立真人单列未发生，模拟E2E不虚构签署 |
 
 §9是联合交付闭包，不再把第一行当成一次交给低模型的巨型任务。具体施工按§11小包及原子联调组推进；每个已切换业务对象只有一个实现，未切对象仍由原实现负责，不能增加shim或双维护。依赖密集的联调组可分步编辑，但完整消费者/生成JS/恢复路径同步后才运行并签包；不发布、验收或遗留“新TS已写、浏览器仍跑旧JS”的中间树。事务/行为缺口按§10规格实施，不在机械所有权迁移中偷偷改变业务含义。测试消费者随所在包同步迁，README只在实际行为证明后更新。
 
@@ -416,7 +418,7 @@ type CommitDeliveryInput = Readonly<{
 
 先对全program做diagnostics；再在内存收齐全部transpile输出及诊断，全部通过后才写。`--check`只比较完整集合、不写。构建阶段失败不能前几个JS已写、后一个失败；filesystem中途故障仍不承诺多文件原子，应保留失败并用该批精确快照恢复整组。不得手补生成JS或跳过严格类型。
 
-四份已写新TS与旧workspace Interface不相容，**不能单独重生成就声称修好**。按§11原子联调组同步所有实际调用/restore；已迁TS仅新增合法emit根/传递源码，不生成废弃authorization。`jsconfig.json`、package脚本、生成一致性、CI/正式HTML import及Docker白名单共同闭合。生产保留必要生成JS/vendor/license，排除compiler/TS源/evals/fake；真实加载资源字节与源码产物比对，不检查文字“看起来COPY了”。
+2026-10-06四份新TS/旧Interface不相容的风险已由组A处理；当前完整集合和消费者继续受本节约束，不重新发射旧authorization或重做该迁移。后续仅对真正改变的owner及全部调用/restore消费者同包切换；`jsconfig.json`、生成一致性、CI、正式HTML import与Docker白名单闭合。生产保留必要生成JS/vendor/license，排除compiler/TS源/evals/fake；真实服务字节与源码产物比对，不检查文字“看起来COPY了”。
 
 ### 10.8 发布/回退：保留既有事务平台，补真实不同版本证明
 
@@ -425,17 +427,17 @@ type CommitDeliveryInput = Readonly<{
 - previous容器、旧可运行镜像与必要非秘密配置/TLS备份留到外部可信HTTPS、静态资源、隔离Chrome页面主链、源码/镜像/配置指纹都完成，且finalize再次验证之后。deploy不提前清旧版本。
 - deploy/外部页面/指纹失败，或finalize可恢复验证失败（现有退出码1）进入rollback；finalize身份拒绝或已开始清理后的失败（现有退出码4）保留明确manual状态，不假称旧版完整保留，不盲删当前服务。恢复失败保留journal和准确失败，不报发布成功。
 - fingerprint保留现有全部app/src/config、锁文件、能力公开配置的覆盖，再核对实际生成且服务的JS、镜像ID/tag、Caddy hash；**不能把范围缩成“TS输出∩静态目录”而丢Python/config**。default_trial必须closed，secret永不取hash/输出；SSH现有keyscan仅TOFU，不是独立身份背书，不扩大Secrets/信任授权。
-- 修正selftest的同一image仅换old/new tag问题：正式Dockerfile的两个独立context，仅改变实际服务静态文件的隔离marker；分别build，先断言真实image ID不同。新版本服务marker B、previous对应A；晚期故意使static验收失败但health仍成功，finalize失败且previous/journal/备份保留，rollback后服务ID和marker回到A，再证明另一轮成功finalize。
+- 沿用现已实现的正式Dockerfile两独立context和markerA/B、不同image ID及late-failure断言；不要重新设计镜像回退。仍须在获批Linux环境真实运行，并将容器页面证明绑定到被测image实际服务的origin，不能把另起本地测试服务器的页面算进去；finalize失败保留previous/journal/备份，rollback核对ID及marker回A，另一轮成功finalize另证。
 - 容器/配置回退与浏览器数据恢复分别判定。发布前代表同版本完整项目ZIP与hash在批准独立Chrome中导入打开；回退后在**同一可信origin**验证包/Blob/历史，而不是换端口空库。不能以服务重启宣称IDB恢复，也不以改格式后旧应用强读新库替数据恢复。
 - Linux Docker/TLS在获批CI/部署环境运行；本机Windows缺运行时不伪造绿灯。页面只用批准Chrome无头/独立profile；缺Chrome/信任证书为精确阻断，不静默扩大浏览器或用 `curl -k`。smoke不调用付费模型。
 
-## 11. 低模型施工包与文件级顺序
+## 11. 施工包职责索引与当前差量收口
 
-以下“包”是原任务的内部编辑/验证步骤，**不增加正式任务ID、不改依赖、不建立第二份进度表**。每次先重读state；包与正式任务只能在当前授权/依赖满足时执行。一个修改所有者顺序推进；跨owner Interface未定或实际代码与规格冲突时停止相关变更，先升级决策，不让低模型自行造新架构。
+以下原“包”是正式任务的内部编辑/验证步骤，不增加任务ID、依赖或第二份进度表。§11.2保留其职责与算法映射，**不是把已做部分重列待办**；当前停在R5.1/包11未闭合，恢复只执行§11.5实际差距，进度及是否可执行仍取state与用户最新授权。
 
 ### 11.1 先准备执行环境，不从头再审计
 
-恢复开发需用户另行明确解除停工，并按计划§2.2取得当前真实Goal观察。现有483文件源码快照在 `_stage-amz-control/combined-refactor-2026-10-05T18-44-47-076Z/`；代表项目包先按其manifest定位核实字节/可恢复性，不把文档快照当数据基线。保留本轮未提交工作，不commit/reset/clean。早期baseline只运行一次以定位最早失效层，不因已有reported失败重新跑来“确认”；当前 `suiteReports is not defined` 为已知事实。
+恢复开发需用户另行明确解除停工，再按计划§2.2/§16.2取得真实产品Goal观察；独立规划Goal不匹配产品目标，不能替换绑定。既有483文件快照只保留其时点恢复范围；下一次写入前对当前精确代码/配置及同版本代表项目包核对字节/可恢复性，不重复整个早期基线或清库。`suiteReports`旧故障和emit半迁已不作为当前阻塞；已报告4_4两层失败不重跑来“确认”。
 
 施工前每包写五行：用户可见结果、精确文件/符号、必须保留的不变量、最小实际运行、失败/回退条件。禁止把整份设计丢给低模型要求“自由重构”。
 
@@ -451,11 +453,11 @@ type CommitDeliveryInput = Readonly<{
 | 06：采用与ZIP事务 | R6.2/R6.3相应合法切片/R7.5；依05 | repository commitSelection/readProjectSnapshot/commitDeliveryRecord→`storage/transfer.js`→adoption select/clear→delivery export→现有消费者 | 首次双标签采用冲突不覆盖；明确可选旧候选；完整项目包单快照，交付在规格/报告/采用变化时拒混包；两包Blob/hash/来源链往返 |
 | 07：按任务拆视图 | R6.1–3/R7.5；依04–06 | 现有workspace按事实/方案、生成摘要、比较/采用、交付各迁窄view；命名沿项目约定，非预建空文件。view只DOM+订阅+命令；工作台最终只生命周期装配 | 人工完整路径：合法输入→事实→用途/补项→默认Prompt摘要→一次提交→partial比较→就地返工→人工采用→两包；无重复确认面板 |
 | 08：图文/可选AI与设置闭环 | R6.1/R6.2/R6.3；必须满足各原依赖，不因包序解除R5.2等门 | settings现有三用途→semantic真实图字节/source→adoption显式单图AI→delivery显式整套AI→manifest/ack恢复→旧调用/复制schema同包删除 | 未点AI不外呼且可按确定性门导出；图文仅提议不确认事实；not_run≠真实Unknown；旧任务补原key，secret不进DOM/IDB/包/log |
-| 09：验证消费者与历史闭包 | 各受影响任务/R3.2/R7.5；随前包迁，最终在08后收口 | 原验证器/`v2_test_server.py`等已有前置→移除词条/source/mock回声→分类历史及INDEX引用→正式入口/Docker白名单 | 源码迁移不假红，重复外发/OCC/字节/秘密/旧回调反例仍抓错；失败/预算/许可及V1不删；可恢复归档不是全目录清空 |
+| 09：验证消费者与历史闭包 | 各受影响任务/R3.2/R7.5；随前包迁，最终在08后收口 | 原验证器/`v2_test_server.py`等既有前置→移除词条/source/mock回声→历史/INDEX引用→正式入口/Docker白名单 | 源码迁移不假红，重复外发/OCC/字节/秘密/旧回调反例仍抓错；失败/预算/许可/用户原件保留；V1清理按当前R7.3工程门，不全目录归档 |
 | 10：发布事务行为证据 | R7.4；离线设计可随前包，实际按原发布前置 | release脚本→probe真实两image/late failure→workflow rollback条件/指纹→Docker实际闭包 | Linux正式构建及可信HTTPS/Chrome；失败真回旧image+静态marker；浏览器同origin数据恢复另证，不以health替主链 |
-| 11：整合与最终交付 | R7.1/R7.4/R7.5；依原任务图全部适用前置 | 原两轮离线回归→正式人工/辅助场景/视觉/键盘/实际缩放→范围匹配RC矩阵→保护PR/CI→既有发布/最终指纹 | 原Goal+§9.1同时成立；已有启动间歇问题按计划§7.6补现象—机制证据，不重跑洗绿；真人C15/C17和V1删除仍非本轮 |
+| 11：整合与最终交付 | R7.1/R7.4/R7.5；依原任务图适用前置和R7.3工程清理 | 删后两轮离线回归→正式人工/辅助/视觉/键盘/真实缩放→直接RC矩阵→受保护PR/CI→既有HTTPS/最终指纹 | 当前Goal与§9.1全成立；启动间歇按计划§7.6因果证明，不重跑洗绿；C17/C15独立真人仍不发生/不伪标 |
 
-**原子联调组A=01–03**，是当前半迁树的最小复原闭包，不是“所有输入/视图/事务一次重写”。组内按对象完成机械步骤、不每个碎片跑全套；组末必须类型/产物/实际新建重开同时成立，失败先定位最早不相容Interface。04–08逐包实际运行相应用户路径；09不是拖到最后才改测试、删死路径，表中末段仅汇总未闭合引用。10不在产品主链未证时发布。
+**原子联调组A=01–03**是旧半迁树的历史最小复原闭包，现已存在相应运行证据，不再从头执行。04–10的已交付部分同样保留，只修§11.5具体残余；若新证据发现违反既有合同，回到唯一owner局部修正，而不是重新搬全部模块。09的消费者/死路径治理仍与受影响代码同包，10不在产品主链未证时发布。
 
 每个对象的机械迁移固定：列全部真实读写/恢复消费者→复用既有领域判据移到目标owner→更新全部消费者与通知→删除被替代实现→整组生成JS→检查及实际行为。不存在“旧代码先保留作兼容”、仅迁写不迁读、仅迁按钮不迁恢复。
 
@@ -467,7 +469,7 @@ type CommitDeliveryInput = Readonly<{
 - 07–08使用既有UI/交互/可访问性入口的实际改变路径，辅助部分复用 `verify_v2_2_2_semantic_provider.py`、`verify_v2_5_2_vlm_review.py`、`verify_v2_5_5_suite_review.py`；先全离线正式UI验证。CLI参数从当前工具读，不能按旧聊天猜。
 - 10用已有 `release_transaction_probe.py --selftest`、`--page-smoke`、`--fingerprint` 获批Linux入口；不因Windows缺Docker复制一个假脚本。11才运行既定两轮完整离线回归及范围匹配正式验收。
 - 会向evals写证据的验证器串行；无需每包跑全仓。控制守卫仅在该包改权威/恢复点时做所需检查。修复后重验失败的具体行为，不把“重跑这回绿了”当间歇根因证据。
-- 真实生图已8/8无追加；现账本语义/VLM5/6、总13/14、预留1.61/5元，不能把旧“新增3次”当还有3次。默认复用有效真链证据；剩余一次也不自动使用，只对实际改变且缺证的用途满足预算/素材/注入门后补证。缺证超额只阻对应动作并升级，不能付费调试或借默认key。
+- 预算/次数以计划§2.1/§16.1及实时原账本为唯一门。本次旧占用1.61/5元、image8/semantic5保留，新许可最多3元、5次生图/每次1张及2次理解/复核；未受影响真链优先复用，只补必要完整路径或改变缺证。价格/输入上界、公开许可、预算及安全注入先成立，Unknown计次数/保预留；不自动花额度/付费调试/借默认key，超过门及时升级。
 
 ### 11.4 交接/失败/升级规格
 
@@ -486,16 +488,107 @@ type CommitDeliveryInput = Readonly<{
 
 事务/生命周期/发布实现由原PR审查重点核对上述反例和时序；建议在05/06/10合入前进行高能力独立复核。模型“觉得正确”不能代替IDB/HTTP/真实版本回退证据，也不新增C15/C17前置。
 
-## 12. 给下一轮执行模型的启动文本
 
-此文本供**用户另行明确恢复开发后**使用；现在复制或存在于仓库不解除停工。它不是新Goal、不改变现Goal全文，也不配置或切换模型。
+### 11.5 当前版本差量收口：无需下一轮总体重构
+
+本节只规定恢复后的改动与证明，不是本次施工指令。产品终点/证据信任/停止门唯一取计划§15.6；原包与任务状态取state。下列具体差距来源于当前审计和实际源码，历史材料只作原证明，不为再次审计全仓而重复跑产品。
+
+#### 11.5.1 一次恢复核对，随后只读受影响闭包
+
+用户明确恢复后先运行 `uv run --locked python tools/refactor_resume.py`，核对系统产品Goal及原账本；规划Goal完成不代表产品Goal存在或已绑定。读取state指向的任务卡和本节，保留用户既有改动，核对当前候选/代表同版本项目ZIP后才写产品。若HEAD或文件已变化，核对相关差距是否仍存在，不机械应用本节旧行号或从包01开始。
+
+基线不是一次全套回归：现有审计已证明正式入口45项本地HTTP检查和页面新建/草稿保存/刷新，以及15个TS产物一致；它们范围有限但无需重新购买相同证明。4_3已有独立pass，4_4两类失败、3_5六红、5_3弱oracle及设置空证按已有事实承接，不为确认重新运行；修复后的最小命令见§11.5.4。
+
+#### 11.5.2 固定模块接缝与组合，不引入总编排层
+
+| 所属模块 | 保留的完整动作 | 当前具体收口／调用方不得做的事 |
+|---|---|---|
+| inputs / semantic-analysis | 人工编辑确认、资料/参考/用途/规格保存恢复、原source提议/人工应用 | 保留唯一 `sources()`；辅助提议进入同一人工确认/依赖流程，不另建模型项目、UI来源Map或自动确认链 |
+| prompts | 本地准备、人工编辑/过期原因与精确历史 | generation从其窄投影读实际将发文本/依据；UI不重新编译或以“最新头”替原动作版本 |
+| generation | 所见摘要、授权预约、单张/批量/返工提交、原动作观察及candidate保全 | 摘要与事务当前性归owner；删除反向review依赖、UI渲染/error callback和自注入确认读者；只输出执行/候选投影及无业务副作用变更通知 |
+| adoption | 确定性单图report、显式AI、采用/取消及ack | 订阅已保存候选、恢复时补本地report，失败可见；不通过generation setter写/读report，不能向generation“补回”采用/AI状态 |
+| delivery | 确定性/显式AI整套report、gate、交付提交与两包 | 消费原候选/采用/报告投影和repository快照，构包与围栏在本owner，不让workspace组manifest或恢复suite Map |
+| session / workspace / views | session项目切换；workspace一次装配；views草稿/焦点/DOM/URL | 保留inputs→prompts→generation→adoption→delivery恢复顺序；订阅/退订和UI状态投影不执行编译→保存→外发→报告序列，旧实例不复用为新项目 |
+
+**候选与报告的单向消费。**当前 `generation.ts` 的 `reviewAccess.ensureReport`（已有候选/新保存两处）、`setReviewAccess`／`setReviewFlightReader`和 `workspace.js` 的setter、恢复补report循环一并迁移：
+
+1. generation完成原项目候选/asset保全后通知其投影变化，报告结果不进入候选保存成功条件。`StoreCandidateResult.review`等报告转发字段随全部实际消费者同包删除；消费者直接读取adoption。
+2. 沿§2.3既定局部 `subscribe(changed)`通知，由adoption自己订阅generation并读取只读候选；同candidate身份和所消费版本的确定性补报告工作只保留一份flight，不新建事件总线/队列服务。已有当前report不增版本，确保过程复用既有 `ensureReport`、domain当前性和repository；AI调用不在订阅中发生。
+3. adoption.restore内部补缺失/过期确定性report并投影错误；workspace只调用restore，不再判断report当前性或吞掉补报告异常。失败保留已存图片及原采用，明确报告缺失、禁止采用/交付越过硬门；不能因此重POST生图，也不以假PASS或模型Unknown代替本地检查失败。
+4. 当前项目的新candidate可先预览，报告尚未准备不伪装可采用/可导出；本地恢复/再次明确采用可请求同owner补建。切换后退订UI与下游调度，已发生成仍归原项目保全；detached旧实例不向新实例报告Map或DOM写入，原项目重开由adoption.restore补report。
+5. `generation.isReviewInFlight`若只是未使用的转发则删除，真实复核忙碌消费者直接读adoption自己的投影；外发阻断仍由原attempt/授权领域合同决定，不能因拆依赖删Unknown/在途保护。全部引用迁移后删旧setter/type/helper，不留可选旧reviewAccess后门或re-export。
+
+**所见摘要只由generation定义。**当前 `ui/generation-view.ts`／workspace摘要与 `confirmAndRun({intent, readIntent, documentId, expectedVersion})`仍泄漏编排。目标在现有generation中提供“准备摘要”的具体业务命令，输入仅用户选定scope/mode；owner消费prompts/inputs/settings、产生带原项目/所见版本的意图和展示投影。视图保存并原样提交用户看过的意图，不传重新算摘要的callback、不猜documentId/expectedVersion、不自行保存授权再runBatch。generation内部按§10.2重验当前性并按§10.3预约；stale返回新摘要但不默认替用户确认。复用原hash/领域判据/事务，不重造快照格式、授权store或通用dispatch。
+
+**表现通知替代UI callback。**从现有GenerationDependencies等移除 `renderAttempts/renderBatch/status/attemptError/clearAttemptError`及裸DOM/可变Map注入，结果/忙碌/错误归具体owner投影，由已装配view订阅读取。消息可以保留原用户文案，但文案不作为领域状态；workspace只接生命周期、订阅和DOM，不接管业务错误恢复顺序。同一变更只通知必要视图，dispose清本实例监听/URL/timer，不引入全局Store。普通输入草稿仍归view，保存命令传明确草稿/seen版本，不从业务owner回调DOM取值。
+
+不为“纯架构”另建settings/notification/module平台；现有三用途settings内存凭据、有限配置、HTTP/IDB Seam继续沿用。必须清除的残余限于本表及受影响闭包，不能将所有现存getter/interface都变成一轮新设计。
+
+#### 11.5.3 失败路径与无效证明的精确修复单位
+
+| 单位／承接 | 精确落点 | 固定前置、失败后置与修复后准出 |
+|---|---|---|
+| 启动拒绝／R5.1、RC19 | `verify_v2_4_4_candidate_blob.py`启动门、既有shared server与受影响正式启动层 | 保留同源URL、server真实绑定地址、进程/线程存活、request/accept/finish时点及Chrome network失败层；只有对应因果证据才能关闭。bind-0已经使用，不再归结旧TOCTOU；第二次load成功、加timeout或“环境瞬态”不是根治证据，boot_retries必须显露 |
+| 候选check06／R5.1 | generation候选/批次状态、`ui/generation-view.ts`投影、同4_4原入口 | 受控result持续失败直至显式解除，观察当前失败提示、asset/candidate零半份、原attempt不丢；状态用实际flight/batch/保存后置，不匹配“批次进行中”文案。稳定可操作后明确重取，hash正确且submit计数不增加；解除前不能自动成功掩盖失败 |
+| 默认摘要／R5.3 | gen/Prompt领域规则、generation-view及 `verify_v2_3_5_pre_generation_confirm.py` | 自动准备系统Prompt，不覆盖人工；独立固定输入算目标发送集合/文本/hash，UI见到值、确认记录、每shot新action及捕获请求相符。已成功4图不能再伪造4张待发，0张按钮禁用；确有新图/明确返工才验证后续授权。stale零新submit、刷新精确历史、无关图不失效 |
+| 下一待处理／R6.2、R7.1 | compare领域判据、compare-view、`verify_v2_5_3_compare_panel.py`-15 | 夹具明确shot顺序、当前位置、待处理/风险类别；事先写出唯一预期及全处理边界，实际点击/焦点落点符合。不得从按钮dataset或同一被测函数求expected，不重新钉“永远第一图” |
+| 真BYOK与缺key／R4.3、R6.1–3 | `verify_v2_packet08_settings_vision.py`及当前settings/三用途正式消费 | 页面实际输入可识别测试key并触发合法文字/图文/生图/显式单图和整套复核；批准上游确收指定用途/原任务身份/key，合法出站头含key不算泄漏。清输入后全DOM投影、完整响应/IDB/localStorage、实际两包、console/日志/诊断无秘密，不截固定前缀。缺key场景提供合法图片base64/hash，观察凭据分类、零上游；不能用缺图片错误证明缺凭据 |
+| 旧格式包拒绝／R6.3 | 同settings原入口、transfer/import | 由真实当前导出包构造声明不支持的旧schema包、实际上传导入；预期明确拒绝且已有项目/文档/资产不变、无新项目半份。只测当前拒绝政策，不恢复旧格式兼容；删常量 `"probe-ok"`和假hash成功 |
+| 发布条件／R7.4 | `.github/workflows/ci-cd.yml`及原release probe | 删除/替换扫描自己token的truth-table源码钉；由现有事务故障场景验证deploy/acceptance/fingerprint失败回退、finalize exit1可恢复回退、身份/清理exit4进入manual而非盲回退。只改真实受影响门与既有probe，不新增发布平台 |
+| 容器页面／R7.4 | `release_transaction_probe.py --selftest`现有ST-LIVE与Docker/CI | 不同image ID/marker证据保留；页面对被测实际容器origin执行启动→新建→保存→刷新/重开、资源/console/network/IDB。另起fake server只能证明助手，不能署名容器产品；可信HTTPS和同origin数据恢复再由实际发布/回退轨迹证明 |
+
+每个单位改动与旧路径删除绑成一包；能按固定前置/后置修原入口就不新增永久脚本。产品问题与验证问题分别判断：用例空证不等于产品有bug，用例红也不能直接通过改期望放行。失败现象与机制对应不足，原发布条件仍未证，不让模型自行定性为基础设施噪声。
+
+#### 11.5.4 具体运行与最终顺序（仅恢复施工后）
+
+下列命令均从仓库根执行，**本轮规划不执行**。源码/调用方连贯改动完成后再编译、跑最小受影响消费者；不是每项编辑后刷一遍此清单。
 
 ```text
-恢复 amz-listing-kit 当前Goal的联合工程交付与结构重构；先核对用户此次是否明确解除state停工门以及实时Goal，未获恢复则仅报告阻断，不施工。按 docs/INDEX.md→项目上下文→_working/amz-listing-kit-product-v2/state.md→原计划下一任务卡及证据恢复，运行 tools/refactor_resume.py 获取真实前沿；不要新建Goal、重置进度或重做有效启动审计。
+# 改过TS的同包闭合：build包含strict检查，随后只读产物比较
+npm run build:frontend
+npm run check:generated
+# 未改TS但改变受检查调用方时用 npm run check:types；不重复同包相同诊断
 
-实现设计唯一在 docs/product-v2-refactor-design.md；先读§10冻结算法、§11当前小包、§9.1准出及相关owner规格。从原子联调组A（包01–03）闭合当前TS/JS/调用/恢复差异，实际验证新建/打开/重开，再按原任务依赖逐包推进输入、事务、两包ZIP、视图和辅助路径。每对象迁所有调用方和恢复，同包删除旧Map/helper/alias；无shim、通用dispatch、回调环、新框架/全仓TS。预占在同一IDB事务校验当前性/消费/业务阻断，旧action晚到结果保全但不掩盖新在途动作；采用/OCC首次0、导出精确来源/门禁围栏。
+# 对应差量修复后选其入口串行单跑，不为确认已有失败重跑
+uv run --locked python tools/verify_v2_4_4_candidate_blob.py --label convergence-blob
+uv run --locked python tools/verify_v2_3_5_pre_generation_confirm.py --label convergence-confirm
+uv run --locked python tools/verify_v2_5_3_compare_panel.py --label convergence-compare
+uv run --locked python tools/verify_v2_packet08_settings_vision.py --label convergence-settings
+# 改报告owner/订阅时仅加实际受影响报告/采用/交付消费者
+uv run --locked python tools/verify_v2_packet08_adoption_ai.py --label convergence-adoption
+uv run --locked python tools/verify_v2_packet08_delivery_ai.py --label convergence-delivery
 
-每包完成真实运行改变用户路径，保留失败并记录范围/剩余项；测试只按风险复用必要行为判据，删除源码/文案/mock回声钉，不刷新绿灯洗间歇失败。最终两轮、完整人工/辅助任务、RC、原PR保护、可信HTTPS、真实不同版本服务回退和同origin数据恢复仍全部适用。沿原账本/秘密/批准Chrome无头边界，无新增生图，不自动付费、不读secret明文，不强推/绕保护/清用户库/删V1。规格矛盾或权限/预算/数据/架构需新决策时停止对应动作并精确升级，不自行设计降级替代。C15/C17真人验收及V1日落仍非本轮。
+# 发布机制只在获批Linux/Docker环境：缺前提即明确阻断，不本机假绿替代
+uv run --locked python tools/release_transaction_probe.py --selftest
+# 对批准的部署/恢复可信origin，不带key、不收费；不忽略TLS信任
+uv run --locked python tools/release_transaction_probe.py --page-smoke --base https://47.115.172.233:8080
+uv run --locked python tools/release_transaction_probe.py --fingerprint --runtime-root .
+```
+
+**联调不是另造E2E平台。**用现有正式Chrome无头宿主从空项目页面上传合规参考图／填商品资料→人工事实确认→用途/尺寸补项→摘要生成→partial比较→目标返工→保留/改选→未AI交付实际下载→完整项目ZIP下载/导入/刷新。对同一项目记录页面动作、实际请求及action、IDB版本、ZIP对象/Blob/hash、焦点和真实视觉后置；不以直接种候选或调用内部函数替路径。辅助任务在同一路径上显式图文提议→人工确认，其他规则不另建；三用途配置、刷新丢key/补原key/旧task仅核对、0新submit、精确失效和真实Unknown仍覆盖。
+
+联调同时收口§11.5.2接缝与原反例（两tab预占、late A不掩盖B、采用OCC、单快照/交付围栏、旧实例隔离），按实际改动风险复用§11.3入口，不再为owner迁移复制状态机夹具。视口1440/1366、实际浏览器125%/200%、390px关键可达及纯键盘按原UI入口实际证明；deviceScaleFactor、CSS transform或缩窗口不算浏览器缩放，截图size非零不算视觉验收。
+
+最后一次产品/消费者修改闭合后才冻结候选：R7.1两轮按 `evals/product-v2/refactor/packet11-regression-rounds-20261007T101243Z.md`§1的34项离线清单与**当前registry/CI交集核对**，沿既有命令逐项串行，不因数字34固定新增无关检查。命令采用 `uv run --locked python tools/<该清单验证器>.py --label convergence-<验证器短名>-r1`及-r2；短名按清单实际文件唯一取值，packet08三个label绝不相同。两轮每项实际退出0、必要行为判据均成立；SKIP只证明相应离线部分，真实能力/外部门不能计为通过。原失败文件不覆盖，任一必要红都阻断冻结。
+
+真实能力先按计划§15.6资产规则映射已有证据，不能默认购买一次理解加一次复核。RC候选/结构六项成立后，现有PR→Linux verify→正式Docker build/smoke/selftest→审查/保护→main部署→受信HTTPS/静态资源/隔离页面→完整runtime指纹→finalize依序；服务回退同image/marker和同可信origin包/Blob/历史恢复分开证。线上实际发布行只在事实发生后置proven，不能先写矩阵完成再部署。
+
+#### 11.5.5 升级门和后续维护边界
+
+本轮完成就是原工程Goal与结构准出共同完成，不承诺之后再补一轮总体设计。今后普通变更定位到唯一owner：商品输入/用途到inputs+既有domain，文本准备到prompts，提交/原身份到generation，单图报告/采用到adoption，交付政策到delivery，协议/凭据到现有Adapter/settings，布局到现有view；跨owner只改真实消费者，不重建系统。
+
+新增架构/schema/权限/预算/保护规则、无法建立间歇现象—机制对应或旧证据确实失效且无许可补证，停止对应动作并精确升级；不偷偷豁免或降为“离线MVP”。用户停工则只保存恢复材料，不借“有Goal”继续。规划的3轮上限仅约束本次文档修订，不冒充恢复施工的无限重试许可，也不消耗模型调用额度。
+
+## 12. 给下一轮执行模型的启动文本
+
+2026-10-07用户已明确恢复产品交付并创建相符真实Goal，当前权限取计划§2.1/§16.1与state。下文是恢复路由而非第二份目标/进度；未来新会话仍实时核对，单独复制设计文本不能新增授权、重复创建Goal或自动配置/切模型。
+
+```text
+恢复 amz-listing-kit 产品工程Goal的联合交付与结构收口；先核对用户此次是否明确解除state停工门及实时系统Goal，未获恢复只报告阻断，不施工。按 docs/INDEX.md→项目上下文→_working/amz-listing-kit-product-v2/state.md→原计划下一任务卡及证据恢复，运行 uv run --locked python tools/refactor_resume.py 取得真实前沿。独立规划Goal不是产品绑定；已有相符产品Goal则核对，无相符Goal只按计划§16.2及用户本次触发处理，不自作生命周期变更、不重置进度或重复有效启动审计。
+
+实现设计唯一在 docs/product-v2-refactor-design.md；先读计划§15.6资产/终点与设计§11.5差量、§10冻结算法、§9.1准出和受影响owner规格。不要从已完成组A或设置重做：承接4_4两层失败、generation/adoption与UI业务序列残余、3_5/5_3失效证明及packet08空证，沿同一人工/辅助完整任务闭合，再最终离线冻结和既有CI/发布。每对象迁全部读写/恢复/通知消费者并同包删除旧setter/Map/helper/alias，唯一TS源及全部JS产物同步；无shim、总dispatch、回调环、新框架/全仓TS。预占同一IDB事务验当前性/消费/业务阻断，旧action晚到保全但不掩盖新在途；采用/OCC首次0、完整项目单快照与交付精确来源围栏分开。
+
+每包真实运行改变用户路径，保留失败并按原state记录轮数/交付/未证；必要判据抓行为不钉源码/文案/mock回声，间歇必须因果。最终V1工程条件下清理后的两轮、完整人工/辅助模拟真人E2E、RC/结构、原PR保护、真实HTTPS/不同版本回退与同origin数据恢复全部保留。沿原账本及最新§16.1增量3元/5次生图/2次理解复核门，不自动付费/读Secret明文/绕保护/清用户库；优先成熟复用、该加加该删删不造平台。规格/数据/总体架构/权限/预算需决策即及时升级，10轮未交付停并申请，不降验收；C17/C15独立真人仍未发生，不冒充通过。
 ```
 
 准备交付只证明规格和恢复入口一致。首次产品运行、事务交错、最终两轮、真实CI/HTTPS/两版本回退、完整图文品质与真人验收均由恢复后的实际证据判断，不由本文预先签署。

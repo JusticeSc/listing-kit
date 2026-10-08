@@ -9,7 +9,7 @@
 
 只读冷恢复入口：`uv run --locked python tools/refactor_resume.py`。它核对仓库计划、状态与观察证据，
 输出下一任务及可读 Goal；显示的是仓库保存的最近观察，不会查询系统 Goal。恢复会话须另读真实 Goal，
-不能把历史观察当成当前读数。绑定合同与展示码归一范围见计划 §2.2。
+不能把历史观察当当前读数。当前2026-10-07完整交付恢复授权/产品Goal只见计划§2.1/§16.1，绑定与已用轮数只看state；有限差量入口见§15.6/设计§11.5。早期独立规划完成不是产品验收，当前完整任务/最终发布仍须实际证明。
 
 ## 当前可用边界
 
@@ -53,9 +53,9 @@
   「停止」只停新增提交、保留全部已有记录，再点「继续生成剩余」接着走；单张明确失败不阻塞其余图片，
   可单独重试（重试 = 显式新建 action，旧记录逐字保留）；没有 task id 的记录永不自动重提，只能人工核对。
 
-两类 ZIP 与人工任务主链已在独立 Chrome 无头、真实页面动作和 native 下载中运行；完整项目包保留全部版本与资产，同版本导入/导出逐项核对 JSON、Blob 和 hash。只接受当前格式，旧格式/缺失执行身份明确且原子拒绝，不补造迁移身份、不静默删除旧库。
+两类ZIP与人工任务链已有独立Chrome无头、真实页面和native下载的同版本证据，完整项目包保留全部版本与资产；原运行范围见 `evals/product-v2/refactor/generation-module-20261005-formal.md`。当前代码只接受当前格式，旧格式/缺身份应明确原子拒绝、不补造迁移或静默删库；但packet08旧ZIP/秘密探针存在空证，不能用其旧pass宣称这些要求已验证。
 
-自动化证据的范围必须区分：本地 fake 候选证明交互、执行顺序、恢复和完整性，不证明真实图像质量；真实供应商证据按对应 Adapter 和路径引用，不因为报告更新重复付费。工程完成/发布前沿取 state；C15/C17 真人验收尚未发生，属于本轮外部门，不冒充自动化通过。当前人工纵向证据见 `evals/product-v2/refactor/generation-module-20261005-formal.md`。
+实现与证据分别说明：本地fake候选证明其实际运行的交互/顺序/恢复/完整性，不证明真图质量；真实供应商按原Adapter/输入/路径复用，不因报告更新重复付费。最新审计只运行新建/草稿保存/刷新及正式入口检查，当前完整任务、间歇根治、最终两轮/CI/容器发布仍未闭合，具体前沿取state。C15/C17真人验收仍未发生，属于本轮外部门，不冒充自动化通过。
 
 理解 Adapter 分开业务合同：`v2_dashscope_semantic.py` 使用 `deepseek-v4.1-flash` 处理文字，`v2_dashscope_vision_semantic.py` 使用 `qwen-vl-max` 发送实际商品图片并返回可追溯提案；单图/整套图片复核不复用商品理解提案 schema。`v2_registry.py` 装配有限配置，测试替身仅用于离线验证，不代表模型能力或质量。
 
@@ -69,7 +69,7 @@ TypeScript 6.0.3（Node 24.19.0 / npm 11.17.0），只在开发与 CI 使用，�
 说明符保持 `.js`；浏览器只加载生成的 `.js`，正式入口对 `.ts` / `.d.ts` 一律返回 404，Docker 镜像
 也排除 TS 源，生产运行时没有编译器。
 
-当前已编译的手工 TS 源为 `domain/attempt`、`domain/config-export`、`semantic-analysis`、`session`、`model-settings`、`generation`。保留的 `app.js` / `workspace.js` 调用方严格检查正在集成；未纳入 `jsconfig.json` 或未 opt-in 的 JS 不宣称有类型保障。
+现有TS源码包括 `domain/attempt`、`domain/config-export`、`semantic-analysis`、`session`、`model-settings`、五个业务owner（project-inputs/prompts/generation/selection-adoption/review-delivery）、`ui/dom`与四视图；本次之前的审计已校验15个TS产物，范围见其checks。实际strict集合/调用方取 `jsconfig.json`及各JS的opt-in，emit/新鲜度取compiler program批准范围内全部TS（含传递import的input-view），不能把文件存在或检查绿灯等同全仓类型/业务保障。
 
 ```bash
 npm ci --ignore-scripts
@@ -91,8 +91,7 @@ uv run python app\server.py --open
 uv run python app\server.py --host 0.0.0.0 --port 8780
 ```
 
-当前实现依赖浏览器原生 IndexedDB、`crypto.randomUUID` 与 WebCrypto SHA-256；首版只保证当前稳定版桌面
-Chrome 与 Edge（SEL-012）。localhost 是浏览器认可的开发安全上下文；远程正式入口必须是 HTTPS：
+当前实现依赖浏览器原生IndexedDB、`crypto.randomUUID`与WebCrypto SHA-256；本轮工程验证范围是稳定版桌面Chrome（计划§2.4），旧Edge记录仅历史，不冒充本轮通过。localhost是浏览器认可的开发安全上下文，远程正式入口必须是HTTPS：
 本仓库的部署把 TLS 终止在 Caddy 容器（`deploy/caddy/Caddyfile`，Let's Encrypt IP 证书 shortlived
 profile 自动续期），应用容器仍只提供无状态 HTTP，当前试用入口是 `https://47.115.172.233:8080/`。
 直接打开明文 `http://<IP>:8780` 时，Chrome/Edge 会保留 IndexedDB 但禁用 WebCrypto；页面会精确说明
@@ -216,8 +215,7 @@ IndexedDB、API、真实 Provider 和首次使用者证据，具体门槛由产�
 
 ## 历史 Product V1
 
-旧 Product V1 仍作为回归基线保留，拥有服务器文件夹工作空间、商品资料、提示词、真实图片生成、候选、
-单图返工、人工选择和导出等能力。它的状态所有权与 Product V2 不同，不是默认产品入口：
+旧Product V1源码与显式入口暂存，描述的是历史服务器文件夹工作空间实现，**不是当前已验收可用的回归/回退基线**。本轮计划R7.3在V2用途覆盖、正式消费者切换及代码/同版本数据恢复基线后清除其活路径；共享依赖与必要历史/用户原件保留。当前默认入口是V2，未执行V1清理前的历史启动方式如下：
 
 ```powershell
 uv run python app\server.py --legacy-v1 --check

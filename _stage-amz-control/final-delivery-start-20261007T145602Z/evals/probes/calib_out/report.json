@@ -1,0 +1,287 @@
+{
+  "probe": "dhash_calib",
+  "purpose": "dHash 测主体还是背景（离线校准）",
+  "reference": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\examples\\input\\cup_source.jpg",
+  "reference_size": [
+    1024,
+    1024
+  ],
+  "subject_rect_norm": [
+    0.32,
+    0.04,
+    0.66,
+    0.94
+  ],
+  "exp_a_grid": {
+    "grid": [
+      [
+        7,
+        13,
+        18,
+        8
+      ],
+      [
+        12,
+        9,
+        15,
+        12
+      ],
+      [
+        11,
+        9,
+        15,
+        9
+      ],
+      [
+        8,
+        16,
+        13,
+        9
+      ]
+    ],
+    "k": 4,
+    "min": 7,
+    "max": 18,
+    "mean": 11.5,
+    "note": "均匀 = 没有热点 = 对任一局部都不特别敏感；它反映全局纹理/结构"
+  },
+  "exp_b_region": {
+    "subject_rect_px": [
+      327,
+      40,
+      675,
+      962
+    ],
+    "subject_area_fraction": 0.306,
+    "hamming_subject_gray": 60,
+    "hamming_ring_gray": 80,
+    "hamming_ring_light": 76,
+    "hamming_ring_blur": 24,
+    "hamming_all_gray": 132,
+    "per_area_subject": 196.1,
+    "per_area_ring_light": 109.5
+  },
+  "exp_c_real": [
+    {
+      "arm": "advice",
+      "rel": "advice_qwen-image-2.0-pro/qwen-image-2.0-pro_r1.png",
+      "file": "qwen-image-2.0-pro_r1.png",
+      "human": "altered(2/3 长出源图没有的把手)",
+      "vs_source_full": 109,
+      "vs_source_center_crop": 109
+    },
+    {
+      "arm": "advice",
+      "rel": "advice_qwen-image-2.0-pro/qwen-image-2.0-pro_r2.png",
+      "file": "qwen-image-2.0-pro_r2.png",
+      "human": "altered(2/3 长出源图没有的把手)",
+      "vs_source_full": 122,
+      "vs_source_center_crop": 95
+    },
+    {
+      "arm": "advice",
+      "rel": "advice_qwen-image-2.0-pro/qwen-image-2.0-pro_r3.png",
+      "file": "qwen-image-2.0-pro_r3.png",
+      "human": "altered(2/3 长出源图没有的把手)",
+      "vs_source_full": 127,
+      "vs_source_center_crop": 114
+    },
+    {
+      "arm": "enumerated",
+      "rel": "enumerated_qwen-image-2.0-pro/qwen-image-2.0-pro_r1.png",
+      "file": "qwen-image-2.0-pro_r1.png",
+      "human": "held",
+      "vs_source_full": 89,
+      "vs_source_center_crop": 118
+    },
+    {
+      "arm": "enumerated",
+      "rel": "enumerated_qwen-image-2.0-pro/qwen-image-2.0-pro_r2.png",
+      "file": "qwen-image-2.0-pro_r2.png",
+      "human": "held",
+      "vs_source_full": 120,
+      "vs_source_center_crop": 104
+    },
+    {
+      "arm": "enumerated",
+      "rel": "enumerated_qwen-image-2.0-pro/qwen-image-2.0-pro_r3.png",
+      "file": "qwen-image-2.0-pro_r3.png",
+      "human": "held",
+      "vs_source_full": 98,
+      "vs_source_center_crop": 111
+    },
+    {
+      "arm": "c_text",
+      "rel": "c_text_qwen-image-2.0-pro/qwen-image-2.0-pro_r1.png",
+      "file": "qwen-image-2.0-pro_r1.png",
+      "human": "altered(3/3 丢棕色矮套)",
+      "vs_source_full": 89,
+      "vs_source_center_crop": 117
+    },
+    {
+      "arm": "c_text",
+      "rel": "c_text_qwen-image-2.0-pro/qwen-image-2.0-pro_r2.png",
+      "file": "qwen-image-2.0-pro_r2.png",
+      "human": "altered(3/3 丢棕色矮套)",
+      "vs_source_full": 121,
+      "vs_source_center_crop": 99
+    },
+    {
+      "arm": "c_text",
+      "rel": "c_text_qwen-image-2.0-pro/qwen-image-2.0-pro_r3.png",
+      "file": "qwen-image-2.0-pro_r3.png",
+      "human": "altered(3/3 丢棕色矮套)",
+      "vs_source_full": 98,
+      "vs_source_center_crop": 91
+    },
+    {
+      "arm": "c_vision",
+      "rel": "c_vision_qwen-image-2.0-pro/qwen-image-2.0-pro_r1.png",
+      "file": "qwen-image-2.0-pro_r1.png",
+      "human": "held",
+      "vs_source_full": 96,
+      "vs_source_center_crop": 80
+    },
+    {
+      "arm": "c_vision",
+      "rel": "c_vision_qwen-image-2.0-pro/qwen-image-2.0-pro_r2.png",
+      "file": "qwen-image-2.0-pro_r2.png",
+      "human": "held",
+      "vs_source_full": 120,
+      "vs_source_center_crop": 109
+    },
+    {
+      "arm": "c_vision",
+      "rel": "c_vision_qwen-image-2.0-pro/qwen-image-2.0-pro_r3.png",
+      "file": "qwen-image-2.0-pro_r3.png",
+      "human": "held",
+      "vs_source_full": 92,
+      "vs_source_center_crop": 73
+    },
+    {
+      "arm": "d_compiler",
+      "rel": "d_compiler_qwen-image-2.0-pro/qwen-image-2.0-pro_r1.png",
+      "file": "qwen-image-2.0-pro_r1.png",
+      "human": "held",
+      "vs_source_full": 85,
+      "vs_source_center_crop": 68
+    },
+    {
+      "arm": "d_compiler",
+      "rel": "d_compiler_qwen-image-2.0-pro/qwen-image-2.0-pro_r2.png",
+      "file": "qwen-image-2.0-pro_r2.png",
+      "human": "held",
+      "vs_source_full": 91,
+      "vs_source_center_crop": 96
+    },
+    {
+      "arm": "d_compiler",
+      "rel": "d_compiler_qwen-image-2.0-pro/qwen-image-2.0-pro_r3.png",
+      "file": "qwen-image-2.0-pro_r3.png",
+      "human": "held",
+      "vs_source_full": 79,
+      "vs_source_center_crop": 111
+    },
+    {
+      "arm": "extend",
+      "rel": "extend_qwen-image-2.0-pro/qwen-image-2.0-pro_r1.png",
+      "file": "qwen-image-2.0-pro_r1.png",
+      "human": "held",
+      "vs_source_full": 99,
+      "vs_source_center_crop": 103
+    },
+    {
+      "arm": "extend",
+      "rel": "extend_qwen-image-2.0-pro/qwen-image-2.0-pro_r2.png",
+      "file": "qwen-image-2.0-pro_r2.png",
+      "human": "held",
+      "vs_source_full": 117,
+      "vs_source_center_crop": 95
+    },
+    {
+      "arm": "extend",
+      "rel": "extend_qwen-image-2.0-pro/qwen-image-2.0-pro_r3.png",
+      "file": "qwen-image-2.0-pro_r3.png",
+      "human": "held",
+      "vs_source_full": 96,
+      "vs_source_center_crop": 90
+    }
+  ],
+  "c_overlap_check": {
+    "altered_range": [
+      89,
+      127
+    ],
+    "held_range": [
+      79,
+      120
+    ],
+    "ranges_overlap": true
+  },
+  "position_bias": {
+    "argmax_position_counter": {
+      "3": 1,
+      "2": 5
+    },
+    "n_arms": 6,
+    "detail": {
+      "advice": {
+        "argmax_pos": "3",
+        "values": [
+          109,
+          122,
+          127
+        ]
+      },
+      "enumerated": {
+        "argmax_pos": "2",
+        "values": [
+          89,
+          120,
+          98
+        ]
+      },
+      "c_text": {
+        "argmax_pos": "2",
+        "values": [
+          89,
+          121,
+          98
+        ]
+      },
+      "c_vision": {
+        "argmax_pos": "2",
+        "values": [
+          96,
+          120,
+          92
+        ]
+      },
+      "d_compiler": {
+        "argmax_pos": "2",
+        "values": [
+          85,
+          91,
+          79
+        ]
+      },
+      "extend": {
+        "argmax_pos": "2",
+        "values": [
+          99,
+          117,
+          96
+        ]
+      }
+    }
+  },
+  "notes": [
+    "参考图右下角自带 AI 水印 —— 按 src/intake.py 的 E0 规则本应被拒收；本实验的参考图是最坏情况样本（带水印 + 带道具条纹布）",
+    "human 列是判断不是测量，图在 c_real_data.jpg，留给你核对"
+  ],
+  "drawings": [
+    "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\evals\\probes\\calib_out\\ab_sensitivity.jpg",
+    "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\evals\\probes\\calib_out\\c_real_data.jpg",
+    "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\evals\\probes\\calib_out\\source_watermark_2x.jpg"
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "lock_segment": "1. A cylindrical vacuum-insulated tumbler with height exactly 22 cm and diameter exactly 7 cm, giving a precise height-to-diameter ratio of 22:7 (≈3.14:1). 2. Entire body constructed from 316 stainless steel — no other materials visible on exterior or interior surfaces. 3. Seamless monolithic construction: no visible seams, welds, or joints along the main body. 4. Single integrated lid assembly attached directly to the top rim — no separate cap, no hinge, no flip mechanism, no push-button protrusion. 5. Smooth continuous outer surface with no raised textural elements beyond uniform micro-texture implied by 'anti-slip spray' (but no visible pattern, ridge, or groove specified). HARD CONSTRAINTS: NO handle, NO side grip, NO carrying handle, NO strap; NO spout, NO pouring lip, NO straw, NO straw lid, NO second cap, NO flip top; Preserve the exact height-to-diameter ratio; do not make it shorter, wider, taller or slimmer; Keep the lid assembly's layered structure exactly as shown; do not simplify, merge or recolour its rings; NO text, NO letters, NO numbers, NO logo, NO brand mark, NO label, NO tag, NO barcode; Do not substitute a similar-looking item; this is the exact item from the reference.",
+  "used_facts": [
+    "title: 316不锈钢真空保温杯 500ml 家用办公便携水杯",
+    "specs: 容量: 500ml",
+    "specs: 材质: 316不锈钢",
+    "specs: 高度: 22 cm",
+    "specs: 宽度: 7 cm",
+    "selling points: 杯身防滑喷涂，湿手握持也不打滑"
+  ],
+  "unknowns": [
+    "lid type (screw-on / press-fit / other)",
+    "lid color or finish",
+    "presence/absence of threading on lid or body",
+    "exact visual appearance of 'anti-slip spray' (e.g., matte vs. grainy vs. stippled)",
+    "whether lid has visible rings or layered structure (no image description available)",
+    "body color or surface reflectivity",
+    "base shape (flat? recessed? rubberized?)",
+    "interior visibility (e.g., whether inner wall is visible in open-state reference)",
+    "exact position and form of seam between lid and body"
+  ]
+}

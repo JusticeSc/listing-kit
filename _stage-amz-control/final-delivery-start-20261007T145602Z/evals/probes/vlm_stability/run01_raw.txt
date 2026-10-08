@@ -1,0 +1,34 @@
+{
+  "product_type": "thermos flask",
+  "height_to_width_ratio": "2.50:1",
+  "sections_top_to_bottom": [
+    {
+      "name": "top rim",
+      "starts_at_height_frac": "0.00",
+      "ends_at_height_frac": "0.15",
+      "colour": "silver",
+      "finish": "metallic"
+    },
+    {
+      "name": "main body",
+      "starts_at_height_frac": "0.15",
+      "ends_at_height_frac": "0.75",
+      "colour": "silver",
+      "finish": "brushed metal"
+    },
+    {
+      "name": "base",
+      "starts_at_height_frac": "0.75",
+      "ends_at_height_frac": "1.00",
+      "colour": "dark brown",
+      "finish": "matte"
+    }
+  ],
+  "lid_layers": ["silver", "black rubber"],
+  "has_handle": false,
+  "has_spout": false,
+  "has_second_cap": false,
+  "has_printed_text_or_logo": false,
+  "prop_present": ["folded cloth"],
+  "uncertain": []
+}

@@ -1,0 +1,196 @@
+{
+  "schema": "amz-listing-kit/provider-registry@2",
+  "version": 1,
+  "scope": "product-v2-stateless",
+  "default_semantic_provider_id": "dashscope-semantic",
+  "provider_selection_env": "AMZ_V2_SEMANTIC_PROVIDER",
+  "default_image_provider_id": "dashscope-qwen-image",
+  "image_provider_selection_env": "AMZ_V2_IMAGE_PROVIDER",
+  "default_review_provider_id": "dashscope-review",
+  "review_provider_selection_env": "AMZ_V2_REVIEW_PROVIDER",
+  "providers": [
+    {
+      "id": "dashscope-semantic",
+      "label": "DeepSeek 理解",
+      "role": "semantic",
+      "adapter": "v2_dashscope_semantic",
+      "model_id": "deepseek-v4.1-flash",
+      "model_env": "SEMANTIC_MODEL",
+      "api_key_env": "DASHSCOPE_API_KEY",
+      "base_url_env": "AMZ_V2_SEMANTIC_BASE_URL",
+      "timeout_env": "AMZ_V2_SEMANTIC_TIMEOUT",
+      "max_tokens_env": "AMZ_V2_SEMANTIC_MAX_TOKENS",
+      "capabilities": {
+        "reference_images": false,
+        "structured_output": "json_mode",
+        "stateless": true,
+        "test_double": false
+      },
+      "max_attempts": 1
+    },
+    {
+      "id": "dashscope-vision",
+      "label": "通义千问 VL 理解",
+      "role": "semantic",
+      "adapter": "v2_dashscope_vision_semantic",
+      "model_id": "qwen-vl-max",
+      "model_env": "VISION_MODEL",
+      "api_key_env": "DASHSCOPE_API_KEY",
+      "base_url_env": "AMZ_V2_VISION_BASE_URL",
+      "timeout_env": "AMZ_V2_VISION_TIMEOUT",
+      "max_tokens_env": "AMZ_V2_VISION_MAX_TOKENS",
+      "capabilities": {
+        "reference_images": true,
+        "max_reference_images": 3,
+        "structured_output": "json_mode",
+        "stateless": true,
+        "test_double": false
+      },
+      "max_attempts": 1
+    },
+    {
+      "id": "fake-semantic",
+      "label": "测试替身·语义",
+      "role": "semantic",
+      "adapter": "v2_fake_semantic",
+      "model_id": "fake-deepseek-v4.1-flash",
+      "model_env": null,
+      "api_key_env": null,
+      "base_url_env": null,
+      "timeout_env": null,
+      "max_tokens_env": null,
+      "capabilities": {
+        "reference_images": false,
+        "structured_output": "local",
+        "stateless": true,
+        "test_double": true
+      },
+      "max_attempts": 1
+    },
+    {
+      "id": "fake-vision-semantic",
+      "label": "测试替身·图文理解",
+      "role": "semantic",
+      "adapter": "v2_fake_vision_semantic",
+      "model_id": "fake-qwen-vl-max",
+      "model_env": null,
+      "api_key_env": null,
+      "base_url_env": null,
+      "timeout_env": null,
+      "max_tokens_env": null,
+      "capabilities": {
+        "reference_images": true,
+        "structured_output": "local",
+        "stateless": true,
+        "test_double": true
+      },
+      "max_attempts": 1
+    },
+    {
+      "id": "dashscope-qwen-image",
+      "label": "通义千问图像",
+      "role": "image",
+      "adapter": "v2_dashscope_image",
+      "model_id": "qwen-image-3.0",
+      "model_env": null,
+      "api_key_env": "DASHSCOPE_API_KEY",
+      "base_url_env": "AMZ_V2_IMAGE_BASE_URL",
+      "timeout_env": "AMZ_V2_IMAGE_TIMEOUT",
+      "max_tokens_env": null,
+      "capabilities": {
+        "reference_images": true,
+        "max_reference_images": 3,
+        "async_tasks": true,
+        "stateless": true,
+        "test_double": false
+      },
+      "max_attempts": 1
+    },
+    {
+      "id": "volcengine-ark",
+      "label": "火山方舟闪速",
+      "role": "image",
+      "adapter": "v2_volcengine_image",
+      "model_id": "doubao-seedream-5-0-flash-260915",
+      "model_env": null,
+      "api_key_env": "ARK_API_KEY",
+      "base_url_env": "AMZ_V2_ARK_BASE_URL",
+      "timeout_env": "AMZ_V2_ARK_TIMEOUT",
+      "max_tokens_env": null,
+      "capabilities": {
+        "reference_images": true,
+        "max_reference_images": 3,
+        "async_tasks": false,
+        "sync_tasks": true,
+        "stateless": true,
+        "test_double": false
+      },
+      "max_attempts": 1
+    },
+    {
+      "id": "fake-qwen-image",
+      "label": "测试替身·图像",
+      "role": "image",
+      "adapter": "v2_fake_image",
+      "model_id": "qwen-image-3.0",
+      "model_env": null,
+      "api_key_env": null,
+      "base_url_env": null,
+      "timeout_env": null,
+      "max_tokens_env": null,
+      "capabilities": {
+        "reference_images": true,
+        "max_reference_images": 3,
+        "async_tasks": true,
+        "stateless": true,
+        "test_double": true
+      },
+      "max_attempts": 1
+    },
+    {
+      "id": "dashscope-review",
+      "label": "通义千问复核",
+      "role": "review",
+      "adapter": "v2_dashscope_review",
+      "model_id": "qwen-vl-max",
+      "model_env": "REVIEW_MODEL",
+      "api_key_env": "DASHSCOPE_API_KEY",
+      "base_url_env": "AMZ_V2_REVIEW_BASE_URL",
+      "timeout_env": "AMZ_V2_REVIEW_TIMEOUT",
+      "max_tokens_env": "AMZ_V2_REVIEW_MAX_TOKENS",
+      "capabilities": {
+        "reference_images": true,
+        "max_reference_images": 3,
+        "structured_output": "json_mode",
+        "stateless": true,
+        "test_double": false
+      },
+      "max_attempts": 1
+    },
+    {
+      "id": "fake-review",
+      "label": "测试替身·复核",
+      "role": "review",
+      "adapter": "v2_fake_review",
+      "model_id": "fake-qwen-vl-max",
+      "model_env": null,
+      "api_key_env": null,
+      "base_url_env": null,
+      "timeout_env": null,
+      "max_tokens_env": null,
+      "capabilities": {
+        "reference_images": true,
+        "max_reference_images": 3,
+        "structured_output": "local",
+        "stateless": true,
+        "test_double": true
+      },
+      "max_attempts": 1
+    }
+  ],
+  "error_contract": {
+    "families": ["input_rejected", "provider_failed", "provider_unknown", "internal"],
+    "retry_policies": ["retryable", "requires_review", "fatal"],
+    "rule": "只有确定请求没有产生结果的失败才 retryable；发送后的超时归 provider_unknown 且不得自动重提。"
+  }
+}

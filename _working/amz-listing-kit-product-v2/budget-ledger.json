@@ -1,13 +1,13 @@
 {
  "budget_cap_cny": 5.0,
- "cap_source": "current Goal §2.1/§16.1 (2026-10-05, goal 1599c9600ae01cb7); historical cap/spent/reservations retained",
+ "cap_source": "current Goal §2.1/§16.1 (2026-10-07, goal 159d03ed410f9ff9); incremental 3 yuan remains subject to cumulative 5 yuan; all historical spend/reservations retained",
  "count_cap": {
-  "image_max": 8,
+  "image_max": 13,
   "image_per_call": 1,
-  "semantic_vlm_max": 6,
-  "total_max": 14
+  "semantic_vlm_max": 7,
+  "total_max": 20
  },
- "supplement_authorization": {
+ "supplement_authorization_history": [{
   "goal_id": "1599c9600ae01cb7",
   "source": "docs/product-v2-refactor-plan.md §16.1; user formally started and manually activated full Goal",
   "authorized_at": "2026-10-05T02:44:33.539Z",
@@ -17,6 +17,21 @@
   "baseline_spent_cny": 1.15,
   "additional_image_calls": 0,
   "rule": "沿用全部历史记录；至少一次真实图文理解，其他只补改变且缺证能力；先预留，Unknown不释放；新增额度不是已调用或供应商余额。"
+ }],
+ "supplement_authorization": {
+  "goal_id": "159d03ed410f9ff9",
+  "source": "docs/product-v2-refactor-plan.md §2.1/§16.1; user explicitly grants 3 yuan new quota for necessary final-product verification",
+  "authorized_at": "2026-10-07T14:52:53.892Z",
+  "max_new_image_calls": 5,
+  "image_per_call": 1,
+  "max_new_semantic_vlm_calls": 2,
+  "max_incremental_spent_and_unsettled_cny": 3.0,
+  "baseline_image_calls": 8,
+  "baseline_semantic_vlm_calls": 5,
+  "baseline_total_calls": 13,
+  "baseline_spent_cny": 1.15,
+  "baseline_reserved_cny": 1.61,
+  "rule": "最大许可而非必须花完；优先复用未受影响真链，仅补实际改变或完整任务必要缺证，故障/接线全部先离线。沿原累计5元门先预留，失败/Unknown计次数并保留可能计费；余额、价格/输入上界、合法素材及安全注入须成立。"
  },
  "price_origin": {
   "flash": "r.jina.ai proxy of https://www.volcengine.com/docs/ark/model-pricing lines ~1630-1655: doubao-seedream-5-0-flash input free, output 0.12 yuan/image; verified 2026-10-03 this session",
@@ -186,5 +201,5 @@
  "spent_cny": 1.15,
  "stop_rule": "先到即停(金额或次数);未知计费保留预留不释放;追加预算需授权;不用付费调用调试错误和边界",
  "total_reserved_cny": 1.61,
- "updated_at": "2026-10-05T14:22:15.672Z"
+ "updated_at": "2026-10-07T14:56:02.000Z"
  }

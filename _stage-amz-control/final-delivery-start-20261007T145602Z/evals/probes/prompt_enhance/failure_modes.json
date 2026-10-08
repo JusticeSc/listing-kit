@@ -1,0 +1,72 @@
+{
+  "_note": "已知失败模式清单 v0.2 —— **这是会复利的资产**。每条来自一次实测，不是推想。",
+  "_why": "生成模型最常见的失败方向是「凭空加出没有的」而不是「改掉已有的」（臂 A 实测：3 张里 2 张长出了源图没有的把手）。所以锁段里必须有显式、逐条的否定句；这张表就是那些否定句的来源。",
+  "_lifecycle": "每轮实测出的新失败模式 → 追加一条 → 下轮自动进锁段。反复出现且与品类无关的 → 提升为跨类目的基础否定句。形态与库 A run_loop.mjs:177-189 的 report.fixes 回灌同型，区别是这里沉淀到**离线资产**而不是只追加到这一轮的 prompt 尾部。",
+  "_check_heads": "check_heads 是**判据用**的：交验时要求每个模式的任一 head 命中。表里的数据同时被「写提示词」和「校验提示词」两边读 —— 不是两份可能失同步的清单。",
+  "_check_kind": "check 决定怎么判命中 —— **两类失败要用两种句式对付**。negation = 「凭空加出」类 ⇒ 必须落在否定语境里（NO X / without X / 无 X）。assertion = 「改掉已有的」类（比例漂移 / 结构简化）⇒ 必须**正向定量断言**。拿 negation 去判 assertion 类会**把合格品判死**：实测臂 B 写的是 `height-to-diameter ratio about 3:1`（正向断言），v0.1 判据却要它出现在否定句里 ⇒ 正向对照假红。",
+  "_format": "id / category / pattern（人读） / negation（写进锁段的英文原句） / check（negation|assertion） / check_heads（判据锚点） / evidence（出处） / applies_to（品类，* = 全类目）",
+  "modes": [
+    {
+      "id": "FM-01",
+      "category": "凭空添加",
+      "pattern": "凭空长出手把 / 侧握把 / 提梁",
+      "negation": "NO handle, NO side grip, NO carrying handle, NO strap",
+      "check": "negation",
+      "check_heads": ["handle", "grip", "strap", "loop", "把手", "握把", "提梁"],
+      "evidence": "2026-09-22 臂 A（84 字嘱咐式锁段）：n=3 中 #2 #3 均长出源图没有的大把手，成了另一件商品",
+      "applies_to": "*"
+    },
+    {
+      "id": "FM-02",
+      "category": "凭空添加",
+      "pattern": "凭空长出壶口 / 出水嘴 / 吸管 / 第二层盖",
+      "negation": "NO spout, NO pouring lip, NO straw, NO straw lid, NO second cap, NO flip top",
+      "check": "negation",
+      "check_heads": ["spout", "pouring lip", "straw", "second cap", "flip top", "flip-top",
+                      "secondary cap", "壶口", "出水嘴", "吸管", "第二层盖"],
+      "evidence": "同上；#2 #3 同时出现了源图没有的壶口与双层盖",
+      "applies_to": "*"
+    },
+    {
+      "id": "FM-03",
+      "category": "比例漂移",
+      "pattern": "高瘦变矮胖（或反之），长径比不再等于资料里的值",
+      "negation": "Preserve the exact height-to-diameter ratio; do not make it shorter, wider, taller or slimmer",
+      "check": "assertion",
+      "check_heads": ["ratio", "proportion", "比例", "长径比"],
+      "evidence": "同上；#3 明显变矮变宽。资料里 高度 22cm / 宽度 7cm ⇒ 长径比 3.14:1 是**可算出来的**，所以这条能写成数字",
+      "applies_to": "*"
+    },
+    {
+      "id": "FM-04",
+      "category": "结构简化",
+      "pattern": "盖 / 瓶口 / 螺纹的分层结构被简化、替换或加上源图没有的色环",
+      "negation": "Keep the lid assembly's layered structure exactly as shown; do not simplify, merge or recolour its rings",
+      "check": "assertion",
+      "check_heads": ["lid", "cap", "rings", "layered", "瓶盖", "螺纹", "分层"],
+      "evidence": "同上；臂 A #1 的盖出现了源图没有的色环",
+      "applies_to": "*"
+    },
+    {
+      "id": "FM-05",
+      "category": "凭空添加",
+      "pattern": "自造文字 / logo / 标签 / 条码",
+      "negation": "NO text, NO letters, NO numbers, NO logo, NO brand mark, NO label, NO tag, NO barcode",
+      "check": "negation",
+      "check_heads": ["text", "letters", "numbers", "logo", "label", "tag", "barcode",
+                      "engraving", "marking", "文字", "水印", "标签", "二维码"],
+      "evidence": "跨三库一致的基础否定项（平台硬要求），非本次实测的新发现",
+      "applies_to": "*"
+    },
+    {
+      "id": "FM-06",
+      "category": "同族替换",
+      "pattern": "换成同品类里另一件相似商品（颜色/材质大体对，细节全不对）",
+      "negation": "Do not substitute a similar-looking item; this is the exact item from the reference",
+      "check": "negation",
+      "check_heads": ["substitute", "similar", "replace", "restyle", "相似商品", "竞品", "替换"],
+      "evidence": "2026-09-22 臂 A：失败后的观感正是「同品类的另一件商品」，而不是「同一件商品的场景图」",
+      "applies_to": "*"
+    }
+  ]
+}

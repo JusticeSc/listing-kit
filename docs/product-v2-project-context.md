@@ -36,9 +36,9 @@
         │ 同源 HTTP；每次请求携带完成本动作所需上下文
         ▼
 Python 无状态 AI 服务
-├─ DeepSeek 仅文字商品分析（当前 reference_images=false）
+├─ DeepSeek文字商品分析（明确未看图）／qwen-vl-max商品图文提议
 ├─ qwen-image-3.0 异步链 / 火山 doubao-seedream 同步生图
-└─ qwen-vl-max 候选/整套复核（不等于已实现商品看图理解）
+└─ qwen-vl-max 显式单图/整套复核（独立于商品提议合同）
         │
         ▼
 外部模型 Provider
@@ -69,7 +69,7 @@ Python 无状态 AI 服务
 | 宿主 | 本机 Python 开发入口；远程服务器 Docker 正式运行 | 默认 Python 启动仍绑定回环地址；远程容器固定监听 `0.0.0.0:8780`，暴露范围由服务器和使用者控制 |
 | 部署方式 | GitHub Actions → SSH → 远程 Docker | PR/push 先跑 CI；只有 `main` push 才传最小构建上下文，由远程 Docker 构建 SHA 镜像并替换同名容器 |
   | 容器 | `amz-listing-kit:<git-sha>` | 镜像只含V2正式入口；发布事务（`deploy/release-transaction.sh`）把 previous 应用容器与 Caddy 配置备份保留到 deploy 内验收（容器健康、受信 HTTPS、静态首页/样式/脚本）与事务外 acceptance（约定页面主链）及 finalize 重验全部结束才清理；脏恢复点（serving 与 previous 并存且无开放事务）直接拒绝 deploy；任一必要失败回退并核对实际可用性，回退失败 exit 3，收尾失败 exit 4 需人工清理 |
-| 密钥来源 | 环境变量及已实现图像请求级BYOK | 变量见`.env.example`/§4.2；其他用途客户端配置仍是目标，不据服务器key或图像头宣称全用途完成 |
+| 密钥来源 | 环境默认档及理解/生图/复核三用途请求级BYOK | 有限Provider选择与请求头已接入正式装配；key只在当前标签页/请求内存。实现接线不等于全用途秘密隔离验收成立，设置空证的剩余门见state及详细设计§11.5 |
 
 浏览器支持与 origin 取值由 SEL-012 固定：本机开发可用 `http://127.0.0.1` / `localhost`；远程正式入口必须经可信 HTTPS 暴露。固定端口 `8780` 是容器内部/服务器监听端口，不等于要求用户直接访问明文 `http://<IP>:8780`。
 
@@ -82,14 +82,14 @@ Python 无状态 AI 服务
 | 前端 | 原生 HTML、CSS、JavaScript | 延续现有低依赖路线；业务状态通过 repository/service 接口访问，不让 DOM 成为状态源 |
 | 浏览器持久化 | IndexedDB + Blob；localStorage 只放轻量指针 | 当前格式事务、容量提示、项目导入/导出；开发态旧版本兼容不要求（SEL-018）；不把图片 Base64 塞进 localStorage |
 | 服务端 | Python；正式入口 `app/server.py` 默认启动 Product V2 无状态适配器（`--legacy-v1` 回 V1） | 服务方法无用户工作空间参数；请求进、模型响应出；正式入口不读写工作空间或最近项目索引 |
-| 商品文字分析 | `deepseek-v4.1-flash`，经SemanticProvider适配 | 当前不发参考图，只产出事实提议；图文商品理解目标按计划§14.7，不能用元数据冒充看图 |
+| 商品理解 | `deepseek-v4.1-flash`文字／`qwen-vl-max`商品图文提议，各自SemanticProvider | 文字不发原图；看图Adapter发送实际字节并保留source，输出仍待人工确认。现有真图文子步不等于当前辅助完整任务已验收 |
 | 图片模型 | `qwen-image-3.0` 与大陆火山 `doubao-seedream-5-0-flash-260915` | 两个有限协议Adapter消费参考图；同步/异步归一业务结果，主流程不抠图、不部署本地分割模型 |
 | 视觉复核 | `qwen-vl-max`，候选及整套各自业务合同 | 当前多模态传输可复用，复核schema不能冒充商品理解；可选辅助/交付政策以计划§14.8为准 |
 | 确定性规则 | 版本化平台、文件、槽位依赖与状态规则 | 不把审美或模型自评伪装成硬规则 |
 | 服务端数据库 | 无 | Product V2 不引入数据库、账户、租户或服务器项目索引 |
 | 交付运行时 | Docker + GitHub Actions | CI 先验证同一 Dockerfile；远程服务器 Docker 从该提交的最小上下文构建 SHA 镜像并运行 |
 
-当前provider配置权威为 `config/product-v2/providers.json`，运行时由registry解析并注入消费者；百炼采用 `DASHSCOPE_API_KEY`、火山采用 `ARK_API_KEY`，无需额外DeepSeek key。图像已有请求级BYOK通道，不能据此声称理解/复核也已支持客户端选择与凭据；全用途目标见计划§14.7，具体差距见state。模型/参数不靠两份环境变量说明猜测；秘密不进持久化、包、日志、证据或Git，默认档受SEL-015的fail-closed约束。
+当前provider配置权威为 `config/product-v2/providers.json`，registry解析后注入消费者；百炼采用 `DASHSCOPE_API_KEY`、火山采用 `ARK_API_KEY`，无需额外DeepSeek key。三用途客户端有限设置及请求级BYOK已实现接线，正式头分别为 `X-AMZ-Listing-Key-Semantic`／`-Image`／`-Review`；商品看图理解有独立Adapter/提议schema，不能用候选复核合同代替。当前全用途/秘密/辅助任务证明差距取state，不把API头存在或过时设置绿灯当完成。秘密不进持久化/包/日志/证据/Git，默认档受SEL-015 fail-closed约束。
 
 ### 4.1 选型记录
 
@@ -103,11 +103,11 @@ Python 无状态 AI 服务
 | SEL-002 | 服务端 HTTP | 暂保留 stdlib `http.server`（零运行时依赖、端点少、单进程） | Flask / FastAPI + uvicorn | V2.4 图片上传/下载需要 multipart 与流式响应时重开 |
 | SEL-003 | 语义/视觉调用传输层 | 用户已确认（2026-09-30）：`langchain-core` + `langchain-openai` 的 `ChatOpenAI` 指向百炼 OpenAI 兼容端点（`deepseek-v4.1-flash`）；显式 timeout、`max_retries=0`（禁止隐藏重试）；失败映射进 `v2_semantic` 四类归口。版本：langchain-core 1.6.6、langchain-openai 1.6.6（均 MIT）；依赖实测与 PoC 报告见 `evals/product-v2/sel003-transport-selection-20260929.txt` | LiteLLM（59 包，为单一兼容协议付 4 倍依赖）；`requests` 手写适配器（重复造 HTTP/重试轮子）；OpenAI SDK 直连（已含于 langchain-openai，不建双轨） | 接入第二个供应商或需要路由/降级/成本统计时评估 LiteLLM；需要 OpenAI 专有能力时评估直连。PoC 已发现：`deepseek-v4.1-flash` 为推理型输出，需给 reasoning 留预算 |
 | SEL-004 | 项目管理规范 | 采纳 `docs/standards-template/` 的**要求**，落进现有五份权威（映射见 `AGENTS.md` §Standards Mapping），不新建 `standards/` 平行目录 | 复制模板另立一套 standards/（会与计划/state 形成双权威） | 需要对外交付独立规范包时重开 |
-| SEL-005 | 持续交付 | 采用GitHub Actions + Docker：PR/push执行既有CI，main通过SSH在远程构建SHA镜像并发布，固定origin/端口。当前自动回退覆盖启动/健康；完整发布事务及数据恢复目标只读计划§7.4/§7.7，R7.4修复提前清理旧容器的缺口，不在规约准备中改流水线 | 新镜像仓库/编排平台、容器健康冒充用户主链、容器回滚冒充浏览器数据恢复 | 发布验收范围或数据格式改变时；合并授权取AGENTS/计划§16，不绕过分支保护 |
+| SEL-005 | 持续交付 | 沿用GitHub Actions + Docker：PR-to-main/main push/manual触发既有CI，只有main push才在现有远端构建SHA镜像并发布，固定origin/端口。当前release事务实现已保留previous至acceptance/指纹/finalize后，离线stage证据不等于真实Docker/HTTPS。R7.4剩余实际容器页面、可信发布及同origin数据恢复按计划§7.4/§7.7与设计§11.5证明，不重建CD | 新镜像仓库/编排平台、healthy冒充用户主链、容器回退冒充浏览器数据恢复、源码token自匹配冒充条件真值 | 发布验收范围或数据格式改变时；合并授权取AGENTS/计划§16和最新停止门，不绕过保护 |
 | SEL-006 | 语义契约表示 | Python 侧契约表示权威 = Pydantic（langchain-core 自带，锁定 2.13.5）：请求 / 原始提案 / 提案槽位三类模型 + 跨字段校验；校验作用在模型原始输出；错误四类归口、归一化映射、浏览器侧 `checkFactSlot` 与 `CORE_SLOT_REGISTRY` 保留 | Python 侧继续手写形状/不变量校验（重复造轮子，违反复用门）；浏览器改吃 schema（受 SEL-000 无构建约束，且与 SEL-001 状态权威错位） | V2.6.3 项目包跨版本迁移需要 schema 版本与迁移器时，以“契约权威”为题重开（评估 JSON Schema 作中立权威 + 双语言消费者） |
 | SEL-007 | LangChain 使用边界 | v1 直调形态：`ChatOpenAI.with_structured_output(原始提案模型, method="json_mode", include_raw=True)`；系统/用户消息直接构造，JSON 格式说明由 Pydantic schema 生成并注入系统提示；LCEL 管道、ChatPromptTemplate、Agent/Memory 均不使用（保留为库内可用能力，不是本项目范式）；装配与错误分类的操作细节见计划 §9.1 | LCEL 管道（0.x 主推范式）；默认 `method="json_schema"`（百炼对自定义模型名的支持未证实；不支持时 400 且会被误分类）；`method="function_calling"`（依赖该模型在百炼的函数调用支持）；ChatPromptTemplate | 百炼确认支持 `response_format: json_schema` 时把 method 切换回默认（改一个装配参数 + 重跑契约测试）；需要多步编排时按 SEL-001 的复访条件另立决策 |
 | SEL-008 | 浏览器 ZIP 能力 | 用户已定（2026-09-30）：vendor fflate 0.8.3（MIT）替换自研 ZIP 容器；vendored 单文件 = `esm/browser.js`（90,922B，自包含 ESM，上游 sha256 前 16 位 `B7CA4450B19559A1`），随附许可证文件并登记 vendor 表；`storage/zip.js` 退化为薄适配器：保持 buildZip/readZip 接口与我方错误码及上限检查，格式校验委托 fflate | 继续自研 ZIP 容器（8.7KB：CRC32 + 本地头/中央目录/EOCD）；minified UMD 33KB（全局脚本、非 ESM）；jszip（体积更大） | 上游发布修复版需升级时（重跑包合同与 V2.1.3 往返验证）；fflate 停更或许可变化时重选 |
-| SEL-009 | V1 日落 | 已批准方向不变：先通过重构最终人审（V2.R7.2），形成日落前可回退基线，再由 V2.R7.3 经专批删除 V1 和真实失效依赖；保留历史证据，删后重跑完整回归/主链及最终指纹 | 边重构边删；跳过人审/基线；沿用删除前发布指纹 | V2.R7.2 与日落前审计通过时逐项核对引用；本轮未授权删除 |
+| SEL-009 | V1工程清理 | 2026-10-07用户明确纳入本轮R7.3：先证明V2覆盖当前用途、明确V1独有用途、切换正式消费者并取得精确代码/同版本数据恢复基线，再删V1活入口/实现/失效配置/依赖；保留共享依赖与历史/用户原件。最终两轮和指纹在删除后，C17/C15独立真人仍外部，不作为工程清理前置 | 盲删共享依赖/用户数据、保留两套活实现当“回退”、删后沿用旧指纹、模拟E2E冒充真人签署 | 逐项实际消费者闭包与用途覆盖成立再执行，删后正式V2主链/恢复及最终R7.1/R7.4验收 |
 | SEL-010 | 图像网关传输层 | 复用 `requests`（V1 已在用的锁定直接依赖）+ 三条无状态路由（submit / status / result）；协议与错误映射按 §9.10 自写，但请求形状沿用 V1 冻结合同（`src/providers/dashscope_image.py`）；PoC 与依赖实测见 `evals/product-v2/sel010-image-gateway-transport-poc-20260930.txt` | 官方 `dashscope` SDK（0.27.x→1.27.7 实测解析 32 包，拖入 aiohttp / typer / websocket-client 等）；`httpx`（第二套 HTTP 客户端，无协议收益）；OpenAI 兼容图像端点（百炼图像合成不是该形状） | 需要批量并发、取消、多供应商路由或成本统计时重估 SDK；百炼改协议时按冻结合同重测并更新 §9.10 |
 | SEL-011 | 复核（VLM）通道与模型 | 用户已定（2026-09-30）：复核复用 SEL-003 的 langchain 通道（`ChatOpenAI` + json_mode 结构化输出 + `map_openai_exception` 四归口），默认模型 `qwen-vl-max`（`REVIEW_MODEL` 可覆盖，registry 条目 `dashscope-review`）；输入 = 候选 + ≤3 参考图 + ShotSpec 摘要 + 已确认事实；输出只允许 7 个 check + evidence + confidence；VLM 只提示、不得 BLOCK、失败落 Unknown、不产生采纳 | 新建第二套 HTTP 客户端/适配器层（重复造轮子）；官方 SDK（拖包）；让模型自带严重度或采纳结论；把审美判断升级为平台硬阻断 | 需要多模态模型路由/降级或成本统计；百炼模型命名/能力变化；检出质量校准需要模型对比时（后续任务） |
 | SEL-012 | 浏览器支持与安全 origin | 用户恢复后的当前 Goal 验证范围为稳定版桌面 Chrome（计划 §2.4）；旧 Chrome/Edge 专项记录保留历史身份，不宣称 Edge 本轮通过。远程正式入口必须是可信 HTTPS secure context，TLS 由现有穿透/反向代理终止，应用容器保持无状态 HTTP。保留 IndexedDB + 原生 WebCrypto；不为明文 HTTP 自研 UUID/SHA-256、密码学 polyfill 或服务器项目存储；失败区分能力/schema/配额/事务并给恢复动作 | 浏览器手写密码学降级、服务端项目库、把所有宿主纳入保证范围、用无头结果替真人走查 | 当前 Goal 的浏览器范围或实际受控宿主需求改变时重开；先证明真实约束 |
@@ -115,11 +115,11 @@ Python 无状态 AI 服务
 | SEL-014 | 重构运行形态与模型范围 | 用户确认：浏览器本地优先 + 无业务持久化 Python 网关；模型不是核心卖点，仅有限模型解耦；第二生图已锁定大陆火山 `doubao-seedream-5-0-flash-260915`（R4.1 锁方向 / R4.2 真链 / R5.2 同步 Adapter `v2_volcengine_image.py`），`providers.json` 双 image 条目 `dashscope-image` + `volcengine-ark`，不迁 Node 或引入服务端项目库 | 胖后端/账户数据库、全栈 TS、任意模型平台、仅换 model 字符串冒充生图兼容 | 跨设备/协作/后台持续执行成为实际需求，或有限协议维护成本实测不可接受时 |
 | SEL-015 | 凭据产品政策 | BYOK 为主，部署默认档仅受限试用且缺省 closed。理解、生图、单图/整套复核共用 registry/credentials 的请求级有效配置；有限 Provider 选择与三用途 key 仅当前标签页内存及 HTTPS 请求，不进持久化/包/日志/错误/诊断；默认 key 不下发、不附到自定义目标。旧任务补原目标/来源凭据，不切新动作模型、不借默认 key 恢复 | 持久化 key、任意目标、Provider 业务分支、替旧任务补造当前身份 | 持久化凭据、账户/云同步或新增供应商协议需求时另获授权 |
 | SEL-016 | 前端工程化与 UI | 用户确认渐进类型检查/验证分层与 UI 人体工程审计方向；先实际任务基线，再原型和目标合同；复用已有业务语义但不将现有 domain/repository 或页面结构设为不可替换；不预定布局、六强制步骤、React/Vue、构建工具或全仓 TS；按 SEL-018 允许激进 clean cutover | 先换皮/拆文件、框架即工程化、机械降低点击而取消必要确认、Skill 代替真页面证据 | V2.R2/R3.1 的问题/原型/PoC 提供明确收益时选择工具与布局 |
-| SEL-017 | Goal历史与当前绑定 | 历史原生handle/观察只保留原证明范围，新会话重读实际Goal。本轮用户手动触发后的正文/绑定只看计划§2.1及state；启动方案和编制来源在§16，不重复创建、不绑旧ID，不在context复制授权/预算 | 旧ID承担新正文、假状态、双计划/进度、方案确认冒充启动许可 | 新会话或目标变化时核对实际工具返回，按计划§16.2同步真实正文/绑定/受影响状态 |
+| SEL-017 | Goal历史与当前绑定 | 本轮2026-10-07真实产品Goal已由工具创建，正文/当前授权只取计划§2.1/§16.1及state原生观察；旧2026-10-05绑定与独立规划只留原范围。新会话重读工具ID/正文，不重复创建、不把context变成第二份预算/进度 | 旧ID承担新正文、假生命周期、双计划/进度、规划完成冒充产品完成 | 新会话或目标变化时核对实际返回，按计划§16.2同步绑定/受影响状态 |
 | SEL-018 | 开发态兼容与设计自由度 | 用户明确：“不用考虑历史兼容性，现在仍在开发阶段，允许你做激进的设计。”旧版本/schema/包迁移及真实旧工件恢复不再要求；按计划 §2.3 clean cutover，可重做 Module/Interface/UI/记录格式、移除被替代路径；新开发库/旧格式拒绝须显式，不静默删除浏览器数据。同版本候选历史、人工选择、任务冻结身份、刷新恢复、ZIP哈希及安全不变量保留；其余权限门不变 | 为缺失旧测试包停工、保留向后兼容 shim/迁移层、将激进设计当作静默丢数据或付费/部署/V1删除授权 | 首次正式发布/存在需支持的历史用户数据时，重新定义版本兼容承诺；开发期不预建设迁移层 |
 | SEL-019 | 问题导向参考系统研究 | V2.R2.3 已核查 pi `88ff80b`/0.99.2（MIT）、ComfyUI `2d6b7328`/0.38.0（GPL v3）、Open WebUI `8bd8b4f`/0.11.4（自定义品牌约束许可），固定全文 SHA/路径见 `evals/product-v2/refactor/reference-review-20261001.md`。仅采纳概念：用途/能力/协议 Adapter/凭据分层；交付只读采用候选原 action 的冻结 Prompt，不读当前编辑头；同 Shot 直接图片对照与稳定候选导航；Unknown 分身份恢复、状态/影响/下一动作先于技术详情。BYOK 仍仅内存，概念不等于新依赖或真实能力证明，布局由 R2.2 原型冻结 | 复制三套平台/代码/样式/品牌、账户或服务器项目库、pi 聊天兼容冒充图片协议、上游持久凭据照搬 IndexedDB、Comfy 元数据新功能、隐式自动重提/采用/付费、未选型新运行依赖 | R2.2/R4.1/R4.2 的原型/能力/费用证据；确需复制代码或引入库时重开许可/依赖门 |
 | SEL-020 | 电商参考 skill 问题导向复核 | V2.R2.2 只读核查工作区根三目录：`ecommerce-image-suite-main/`（Apache-2.0 但 README 陈旧矛盾、占位符未填、模特/实拍无许可）、`ecom-details-image-main/`（自称 MIT 但无 LICENSE 文件，`.env.example` 含第三方代理明文 key 泄漏样本）、`ecommerce-skills-main/`（MIT 2026 dlazy，实读 platform-compliance/detect-task/item-detail＋shared 脚本/测试/规格）。结论：三者只提供流程编排与规格清单（批次 manifest、参考图锁定、先单图后整套、客观像素机检＋主观 VLM 质检分层、固定质检 prompt、中文排版四条件、逐轮 manifest、dry-run、不伪造测量），均无图片结果验收实现（保真/文字/事实/尺寸/齐全性须 amz 自建）；零字节复制，不复制代码/模板/样式/品牌/资产/凭据，不引入 Node 脚本链与真实调用/付费；证据 `evals/product-v2/refactor/prototype-review-20261002.md` §5 | 未经许可复制代码/模板原文、样式/模特/实拍资产、品牌与联系方式；硬编码供应商分支冒充解耦；真实模型调用/付费上传；把 prompt 自述或人工观感当验收结论；复用泄漏凭据 | R6 验收自建时复用 rubric/阈值数据；确需复制代码或引入依赖时重开许可/依赖门 |
-| SEL-021 | 前端开发检查与渐进TS迁移 | 根 package.json/package-lock.json 锁 typescript 6.0.3（Apache-2.0，无传递安装依赖），安装禁 scripts；Node 24.19.0/npm 11.17.0，行为验证复用 node:test。用户明确允许随当前功能批次逐步 TS 化，合同只读计划§9 V2.R7.5，不全仓机械改名。`domain/attempt`、`domain/config-export`、`semantic-analysis`、`session`、`model-settings`、`generation` 为唯一手工 TS 源；现有编译器 strict 检查后逐文件生成同目录 `.js`、保留 `.js` import，无打包器/TS 加载器/第二份锁。CI `check:generated` 防漂移；静态服务拒绝 TS/d.ts，Docker 排除源码，生产没有 Node/编译器。调用方严格检查和实际覆盖见 jsconfig/§7，不据编译成功称全仓已检查 | 全仓TS强迁移、框架先行、node --check 冒充类型检查、编译器进生产、多份手工 Implementation、any/全局忽略/虚假断言洗诊断、隐式 npx 取包 | 新批次先确定 Module/调用方覆盖及编译成本；新增依赖仍过选型门；回纯 JS 可保留生成 JS、删除 TS 源/声明、开发编译配置/命令与 CI 一步，业务/ESM不变 |
+| SEL-021 | 前端开发检查与渐进TS迁移 | 根package.json/package-lock.json锁typescript 6.0.3（Apache-2.0，无传递安装依赖），安装禁scripts；Node 24.19.0/npm 11.17.0，行为复用node:test。已迁domain/attempt、config-export、session、settings、semantic与五业务owner、ui/dom/四视图以TS为唯一手工源码，同名JS按ESM生成；当前产物集合取compiler program批准范围全部TS，不仅parsed.fileNames。jsconfig及opt-in调用方定义严格检查范围，CI check:generated防漂移，静态服务/Docker拒绝TS源码，生产无Node/编译器；不承诺全仓TS或未纳入JS有类型保障 | 全仓TS强迁移、框架先行、node --check冒充类型检查、compiler进生产、多份Implementation、any/忽略/假断言洗诊断、隐式npx取包 | 功能批次先确定owner/调用方及实际emit覆盖；新依赖另过门，撤销工具需同步源码/产物/配置/CI，原生ESM与业务不变 |
 
 SEL-000..013 中对旧计划 §9.x 的操作设计引用仍指冻结的
 `product-v2-goal-and-implementation-plan.md`，不把历史操作说明当未来任务。
@@ -223,7 +223,7 @@ amz-listing-kit/
 
 | 职责 | 既有落点 | 接口/状态边界 |
 |---|---|---|
-| 资料与事实 | project-inputs（目标）；semantic-analysis；domain/intake、slots、brief；repository | 输入/方案所有者迁出workspace；人工与模型走同一领域动作，来源、权限、提议、确认及只读消费投影分开 |
+| 资料与事实 | 现有project-inputs、semantic-analysis；domain/intake、slots、brief；repository | 人工与模型走同一领域动作，来源/权限/提议/确认与只读sources分开；仍有的UI/草稿回调接缝按详细设计收口，不因文件存在认定已全部完成 |
 | 图片任务与需求 | domain/suite-plan、specs | 用途/模板及事实/参考图依赖单一注册；可保存不完整任务，逐Shot派生就绪/缺项，UI和Python不重建表 |
 | 本地准备与确认 | prompts、generation；domain/prompt、confirm、invalidation | prompts拥有编译/人工文本/历史，generation拥有摘要授权及消费；强耦合授权合入generation，不保留独立转发层 |
 | 会话与存储 | session；storage/repository及db | ready/身份/生命周期/OCC、文档版本、追加观察及Blob事务；异步回调归属原快照，事务不await网络 |
@@ -231,11 +231,11 @@ amz-listing-kit/
 | 比较与采用 | selection-adoption；domain/compare、selection、review | 单图确定性/显式AI报告与采用归同一所有者，generation只提供候选/动作投影；查看/对照归视图，Selection只由人改变 |
 | 交付与恢复 | review-delivery；domain/suite-review、export-gate；storage/package、transfer及ZIP | 整套报告/交付门/记录/构包由业务Module完成；一致快照与原动作追溯按详细设计，不由UI组manifest |
 | 模型边界 | product_v2_server；providers/semantic、review、suite_review、image及registry/credentials/outbound/langchain_chat | 无业务落盘；请求级有限有效配置/凭据，共享传输不共享错误业务schema。商品看图理解需要独立提议合同，不复用要求candidate的复核请求 |
-| UI投影 | workspace（装配）、四类目标视图、index、ui/stage-shell及styles | 工作台不保留业务Map/时序；默认任务/高级/非秘密诊断投影同一快照，操作前置消费domain/能力，视图只发意图及呈现结果 |
+| UI投影 | workspace、现有input/generation/compare/delivery-view、index、ui/stage-shell及styles | 目标为装配/生命周期与纯投影；当前generation仍注入渲染/错误callback，摘要/报告部分时序仍泄漏。差量闭合见详细设计§11.5，不把四文件存在当职责准出 |
 
 Interface是可调用的业务动作及可渲染快照，不等于HTTP或额外转发层；Seam是可替换协议/凭据/传输/存储等边界。fake仅替外部模型，保持正式装配和领域消费，不能以fake出图证明真模型理解/忠实度。
 
-落实时对齐入口、纯规则、repository后置和正式出站捕获；基础配置在R4.3闭合现有消费者，新图文业务消费者由R6.1后续承接，最终全用途仍由G6/RC07验收。接口表写完不是实现完成；依赖、需求修订后的done和准备启动步骤只读计划§6/§7.5/§16，state不复制合同。
+基础配置与现有三用途消费者、商品图文Adapter均已有实现；范围匹配的行为/秘密/真实能力证据各自判断，不用“其他用途仍仅目标”的旧描述恢复，也不据静态接线宣称全部验收。唯一模块/组合设计及剩余反向report依赖、UI摘要编排按详细设计§11.5收口；正式依赖/验收仍取计划，当前前沿/停止门只取state。
 
 
 ## 6. 不变约束
@@ -269,7 +269,7 @@ Interface是可调用的业务动作及可渲染快照，不等于HTTP或额外�
 | 行为验证 | 原生node领域行为与Python合同/宿主验证分层，按计划§7.3及实际已接线入口 | 行为/边界/转换与IDB/网络/浏览器后置分工；规则见AGENTS，不因规约修订新增验证框架 |
 | 覆盖率 | 暂不设阈值：本项目的判据是“证据能判红”，不是行覆盖率 | 若引入覆盖率门槛，先立 SEL 决策并说明理由 |
 | 应用构建 | 产品运行时仍是原生 ESM、无打包器；已迁 TS Module 由 `npm run build:frontend` 生成同目录 `.js` 且产物提交（CI `check:generated` 防漂移）；Python 可直接运行；正式交付物仍是 CI 构建的 Docker 镜像（排除 TS 源、无编译器） | `python app/server.py --check`、`npm run build:frontend`、`docker build` |
-| 容器交付 | 当前启动/健康回退与目标完整发布回退分别说明，不把容器healthy当线上页面通过 | 计划§7.7/R7.4；既有Docker/Actions/部署日志及实际HTTPS/资源/主链/回退证据，准备不运行发布 |
+| 容器交付 | 区分现有完整事务实现、stage替身证据与当前实际Docker/HTTPS发布结果；healthy不代表页面可用 | 计划§7.7/R7.4及详细设计§11.5；真实镜像origin页面、可信HTTPS/资源/主链、服务回退及同origin数据恢复分别证明，规划不运行发布 |
 
 ## 8. 上下文读取与写入路由
 

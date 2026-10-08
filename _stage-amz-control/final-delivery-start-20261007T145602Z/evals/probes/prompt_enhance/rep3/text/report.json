@@ -1,0 +1,42 @@
+{
+  "probe": "prompt_enhance",
+  "arm": "text",
+  "arm_meaning": "只给文本资料",
+  "raw_prompt_chars": null,
+  "text_model": "qwen-plus-latest",
+  "text_elapsed_s": 11.8,
+  "text_usage": {
+    "completion_tokens": 512,
+    "prompt_tokens": 1517,
+    "total_tokens": 2029
+  },
+  "text_tried": [],
+  "vlm": null,
+  "lock_chars": 1113,
+  "comparison_baseline": {
+    "arm_B_human_lock_chars": 820
+  },
+  "used_facts": [
+    "title: 316不锈钢真空保温杯 500ml 家用办公便携水杯",
+    "specs: 容量: 500ml",
+    "specs: 材质: 316不锈钢",
+    "specs: 高度: 22 cm",
+    "specs: 宽度: 7 cm"
+  ],
+  "unknowns": [
+    "lid type (screw-on / press-fit / other)",
+    "lid visual structure (number of visible layers, presence/absence of external threading, recessed vs flush mount)",
+    "surface finish (brushed / polished / matte / other)",
+    "color tone (exact shade of stainless steel — e.g., cool silver vs warm gray)",
+    "presence/absence of base ring or foot detail",
+    "exact shape of top rim (chamfered / rounded / squared)",
+    "whether the 316 stainless is used for both inner and outer walls",
+    "location and visibility of vacuum seal indicator (if any)"
+  ],
+  "unknowns_count": 8,
+  "validation_problems": [],
+  "validation_advisories": [],
+  "validation_passed": true,
+  "lock_segment": "1. A cylindrical vacuum-insulated tumbler with height 22 cm and diameter 7 cm, giving an exact height-to-diameter ratio of 22:7 (≈3.14:1). 2. Entirely constructed from 316 stainless steel — visible as a uniform metallic silver-gray finish with no plating, coating, or color variation. 3. Seamless body construction: no visible seams, weld lines, or joint rings along the main cylindrical wall. 4. Single-piece lid assembly attached directly to the top rim; no separate gasket ring visible externally, no protruding spout, no push-button mechanism, no flip hinge, no secondary cap layer. 5. HARD CONSTRAINTS: NO handle, NO side grip, NO carrying handle, NO strap, NO spout, NO pouring lip, NO straw, NO straw lid, NO second cap, NO flip top, NO text, NO letters, NO numbers, NO logo, NO brand mark, NO label, NO tag, NO barcode, Preserve the exact height-to-diameter ratio; do not make it shorter, wider, taller or slimmer, Keep the lid assembly's layered structure exactly as shown; do not simplify, merge or recolour its rings, Do not substitute a similar-looking item; this is the exact item from the reference.",
+  "facts_chars": 357
+}

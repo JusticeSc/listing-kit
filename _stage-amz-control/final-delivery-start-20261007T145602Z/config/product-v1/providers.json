@@ -1,0 +1,28 @@
+{
+  "schema": "amz-listing-kit/provider-registry@1",
+  "version": 1,
+  "default_semantic_provider_id": "dashscope-qwen-semantic",
+  "default_image_provider_id": "dashscope-qwen-image",
+  "providers": [
+    {
+      "id": "dashscope-qwen-image",
+      "role": "image",
+      "adapter": "dashscope_async_image",
+      "model_id": "qwen-image-3.0",
+      "api_key_env": "DASHSCOPE_API_KEY",
+      "endpoint_env": null,
+      "capabilities": {"reference_images": true, "query_tasks": true},
+      "max_attempts": 1
+    },
+    {
+      "id": "dashscope-qwen-semantic",
+      "role": "semantic",
+      "adapter": "dashscope_openai_compatible_semantic",
+      "model_id": "qwen3.7-plus",
+      "api_key_env": "DASHSCOPE_API_KEY",
+      "endpoint_env": "DASHSCOPE_COMPATIBLE_BASE_URL",
+      "capabilities": {"reference_images": true, "query_tasks": false},
+      "max_attempts": 1
+    }
+  ]
+}

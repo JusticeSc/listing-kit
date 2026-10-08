@@ -1,0 +1,248 @@
+{
+  "probe": "vlm_stability",
+  "ref": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\examples\\input\\cup_source.jpg",
+  "n_requested": 3,
+  "temperature": null,
+  "model_availability": [
+    {
+      "model": "qwen-vl-max-latest",
+      "usable": false,
+      "error": "qwen-vl-max-latest 调用失败: HTTP 403: {\"error\":{\"message\":\"Access denied. For details, see: https://help.aliyun.com/zh/mode"
+    },
+    {
+      "model": "qwen-vl-plus-latest",
+      "usable": false,
+      "error": "qwen-vl-plus-latest 调用失败: HTTP 403: {\"error\":{\"message\":\"Access denied. For details, see: https://help.aliyun.com/zh/mod"
+    },
+    {
+      "model": "qwen-vl-max",
+      "usable": true,
+      "error": null
+    }
+  ],
+  "runs": [
+    {
+      "run": 1,
+      "model": "qwen-vl-max",
+      "elapsed_s": 6.5,
+      "usage": {
+        "prompt_tokens": 1244,
+        "completion_tokens": 260,
+        "total_tokens": 1504,
+        "completion_tokens_details": {
+          "text_tokens": 260
+        },
+        "prompt_tokens_details": {
+          "image_tokens": 1026,
+          "text_tokens": 218,
+          "cached_tokens": 0
+        }
+      },
+      "tried": [],
+      "parse_error": null,
+      "parsed": {
+        "product_type": "thermos flask",
+        "height_to_width_ratio": "2.50:1",
+        "sections_top_to_bottom": [
+          {
+            "name": "top rim",
+            "starts_at_height_frac": "0.00",
+            "ends_at_height_frac": "0.15",
+            "colour": "silver",
+            "finish": "metallic"
+          },
+          {
+            "name": "main body",
+            "starts_at_height_frac": "0.15",
+            "ends_at_height_frac": "0.75",
+            "colour": "silver",
+            "finish": "brushed metal"
+          },
+          {
+            "name": "base",
+            "starts_at_height_frac": "0.75",
+            "ends_at_height_frac": "1.00",
+            "colour": "dark brown",
+            "finish": "matte"
+          }
+        ],
+        "lid_layers": [
+          "silver",
+          "black rubber"
+        ],
+        "has_handle": false,
+        "has_spout": false,
+        "has_second_cap": false,
+        "has_printed_text_or_logo": false,
+        "prop_present": [
+          "folded cloth"
+        ],
+        "uncertain": []
+      }
+    },
+    {
+      "run": 2,
+      "model": "qwen-vl-max",
+      "elapsed_s": 5.8,
+      "usage": {
+        "prompt_tokens": 1244,
+        "completion_tokens": 214,
+        "total_tokens": 1458,
+        "completion_tokens_details": {
+          "text_tokens": 214
+        },
+        "prompt_tokens_details": {
+          "image_tokens": 1026,
+          "text_tokens": 218,
+          "cached_tokens": 896
+        }
+      },
+      "tried": [],
+      "parse_error": null,
+      "parsed": {
+        "product_type": "thermos flask",
+        "height_to_width_ratio": "2.50:1",
+        "sections_top_to_bottom": [
+          {
+            "name": "upper body",
+            "starts_at_height_frac": "0.00",
+            "ends_at_height_frac": "0.75",
+            "colour": "silver",
+            "finish": "brushed metal"
+          },
+          {
+            "name": "base",
+            "starts_at_height_frac": "0.75",
+            "ends_at_height_frac": "1.00",
+            "colour": "dark brown",
+            "finish": "matte rubber"
+          }
+        ],
+        "lid_layers": [
+          "metal ring",
+          "black seal"
+        ],
+        "has_handle": false,
+        "has_spout": false,
+        "has_second_cap": false,
+        "has_printed_text_or_logo": false,
+        "prop_present": [
+          "folded cloth"
+        ],
+        "uncertain": [
+          "exact material of base"
+        ]
+      }
+    },
+    {
+      "run": 3,
+      "model": "qwen-vl-max",
+      "elapsed_s": 5.7,
+      "usage": {
+        "prompt_tokens": 1244,
+        "completion_tokens": 213,
+        "total_tokens": 1457,
+        "completion_tokens_details": {
+          "text_tokens": 213
+        },
+        "prompt_tokens_details": {
+          "image_tokens": 1026,
+          "text_tokens": 218,
+          "cached_tokens": 896
+        }
+      },
+      "tried": [],
+      "parse_error": null,
+      "parsed": {
+        "product_type": "thermos",
+        "height_to_width_ratio": "2.15:1",
+        "sections_top_to_bottom": [
+          {
+            "name": "upper body",
+            "starts_at_height_frac": "0.00",
+            "ends_at_height_frac": "0.73",
+            "colour": "silver",
+            "finish": "brushed metal"
+          },
+          {
+            "name": "base",
+            "starts_at_height_frac": "0.73",
+            "ends_at_height_frac": "1.00",
+            "colour": "dark brown",
+            "finish": "matte"
+          }
+        ],
+        "lid_layers": [
+          "black rubber ring",
+          "metal rim"
+        ],
+        "has_handle": false,
+        "has_spout": false,
+        "has_second_cap": false,
+        "has_printed_text_or_logo": false,
+        "prop_present": [
+          "folded cloth"
+        ],
+        "uncertain": [
+          "exact material of base"
+        ]
+      }
+    }
+  ],
+  "agreement": {
+    "key_fields": {
+      "product_type": [
+        "thermos flask",
+        "thermos flask",
+        "thermos"
+      ],
+      "height_to_width_ratio": [
+        "2.50:1",
+        "2.50:1",
+        "2.15:1"
+      ],
+      "has_handle": [
+        "false",
+        "false",
+        "false"
+      ],
+      "has_spout": [
+        "false",
+        "false",
+        "false"
+      ],
+      "has_second_cap": [
+        "false",
+        "false",
+        "false"
+      ],
+      "has_printed_text_or_logo": [
+        "false",
+        "false",
+        "false"
+      ]
+    },
+    "sections_signature": [
+      "n=3 | 0.00-0.15:silver | 0.15-0.75:silver | 0.75-1.00:dark brown",
+      "n=2 | 0.00-0.75:silver | 0.75-1.00:dark brown",
+      "n=2 | 0.00-0.73:silver | 0.73-1.00:dark brown"
+    ],
+    "sections_identical": false,
+    "section_start_fracs": [
+      [
+        "0.00",
+        "0.15",
+        "0.75"
+      ],
+      [
+        "0.00",
+        "0.75"
+      ],
+      [
+        "0.00",
+        "0.73"
+      ]
+    ],
+    "all_fields_identical": false
+  }
+}
