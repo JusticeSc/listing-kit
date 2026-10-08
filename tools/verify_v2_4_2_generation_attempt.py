@@ -1115,6 +1115,12 @@ def main() -> int:
         mark = "PASS" if item["ok"] else "FAIL"
         lines.append(f"- [{mark}] {item['id']} {item['title']}")
     lines += ["", "BOUNDARY", boundary]
+    failed = [item for item in checks if not item["ok"]]
+    if failed:
+        # 失败时把判据实测值打进日志与文本证据（同 4_3/4_4 的 FAILED DETAILS）。
+        lines += ["", "FAILED DETAILS"]
+        lines += [f"- {item['id']} " + json.dumps(item["detail"], ensure_ascii=False, default=str)[:4000]
+                  for item in failed]
     txt_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
     for line in lines:
