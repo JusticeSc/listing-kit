@@ -697,10 +697,14 @@ def offline_rollback() -> int:
     第二阶段（OR-03 起）：在 PATH 前缀注入最小 stage 执行器（fake docker /
     curl / sleep / python3），真实 bash 跑脚本的 deploy → finalize 晚期失败
     （exit 1，previous/journal/备份保留）→ rollback（exit 1）→ 回退后状态核对
-    全链。fake 只复刻进程边界行为（容器名集合、inspect/health 字段、Caddyfile
-    字节、HTTPS/静态判据），不复制脚本内部编排；断言全部走真实脚本 stdout/stderr、
-    退出码与持久化事务文件/备份/Caddyfile/服务快照。两版本 image 为不同 sha256
-    内容对象（tag 名不同且 inspect .Image 不同），不用同一 image 换 tag 充数。
+    全链；随后按失败类别逐个走一遍：验收/指纹类失败 → rollback 恢复旧版本；
+    deploy 阶段失败（候选不健康）→ 脚本自身回退；清理失败 → exit 4（新版本继续
+    服务、previous 保留、不自动回退，清障后再 finalize 才收口）；回退本身失败 →
+    exit 3 且 journal 保留。回滚真值表由这些**行为**（真实脚本退出码 + 持久化事务
+    状态）证明，不再扫描工作流自身文本。fake 只复刻进程边界行为（容器名集合、
+    inspect/health 字段、Caddyfile 字节、HTTPS/静态判据），不复制脚本内部编排；
+    断言全部走真实脚本 stdout/stderr、退出码与持久化事务文件/备份/Caddyfile/服务快照。
+    两版本 image 为不同 sha256 内容对象（tag 名不同且 inspect .Image 不同），不用同一 image 换 tag 充数。
     本模式 green 只证明事务状态机在失败路径上的回退语义成立，不替代 --selftest
     的真实容器/TLS/HTTPS 证据（Linux 获批环境仍须跑）。
     """
@@ -820,10 +824,19 @@ def offline_rollback() -> int:
 # 不复制 deploy/release-transaction.sh 的任何编排（park/rename/restore/cleanup 全由真实脚本执行）。
 set -uo pipefail
 STATE_DIR="${RELEASE_TX_STATE:?missing state}"
-log_call() { printf '%s\\n' "docker $*" >> "${STATE_DIR}/docker_calls.log"; }
+log_call() { printf '%s\n' "docker $*" >> "${STATE_DIR}/docker_calls.log"; }
 log_call "$@"
 cmd="${1:-}"; shift || true
 image_of() { cat "${STATE_DIR}/container_$1.image" 2>/dev/null || true; }
+health_of() {
+  # 可按镜像注入 unhealthy：只让本次候选镜像不健康，上一版本仍判健康，
+  # 用于“deploy 阶段失败 → 脚本自身回退”的故障注入，不改变健康判据本身。
+  local img bad
+  img="$(image_of "$1")"
+  bad="$(cat "${STATE_DIR}/bad_health_image.txt" 2>/dev/null || true)"
+  if [ -n "$bad" ] && [ "$img" = "$bad" ]; then printf 'unhealthy'; else printf 'healthy'; fi
+}
+mode_is() { [ "$(cat "${STATE_DIR}/$1.txt" 2>/dev/null || true)" = "fail" ]; }
 case "$cmd" in
   container)
     sub="${1:-}"; name="${2:-}"
@@ -837,7 +850,7 @@ case "$cmd" in
       '{{.Config.Image}}') image_of "$name" || exit 1;;
       '{{.Image}}') image_of "$name" || exit 1;;
       '{{.State.Running}}') [ -f "${STATE_DIR}/container_${name}.image" ] && printf 'true' || exit 1;;
-      '{{.State.Health.Status}}') [ -f "${STATE_DIR}/container_${name}.image" ] && printf 'healthy' || exit 1;;
+      '{{.State.Health.Status}}') [ -f "${STATE_DIR}/container_${name}.image" ] && health_of "$name" || exit 1;;
       *) exit 1;;
     esac
     exit 0;;
@@ -856,12 +869,17 @@ case "$cmd" in
     while [ "$#" -gt 0 ]; do case "$1" in --name) name="$2"; shift 2;; --volume) shift 2;; --publish|--network|--restart|--env-file) shift; [ "$#" -gt 0 ] && shift;; --detach|--rm|-i|-t) shift;; -*) shift;; *) image="$1"; shift;; esac; done
     printf '%s' "$image" > "${STATE_DIR}/container_${name}.image"
     exit 0;;
-  stop|start|restart) exit 0;;
+  stop|start|restart)
+    # start_mode=fail：旧版本起不来 → 回退本身失败（exit 3），journal 必须保留。
+    if [ "$cmd" = "start" ] && mode_is start_mode; then exit 1; fi
+    exit 0;;
   rename)
     src="$1"; dst="$2"
     mv "${STATE_DIR}/container_${src}.image" "${STATE_DIR}/container_${dst}.image" 2>/dev/null || exit 1
     exit 0;;
   rm)
+    # rm_mode=fail：验收通过后清理 previous 失败 → finalize exit 4，绝不自动回滚。
+    if mode_is rm_mode; then printf 'stage rm refused\n' >&2; exit 1; fi
     while [ "$#" -gt 0 ]; do case "$1" in --force|-f) shift;; *) rm -f "${STATE_DIR}/container_$(basename "$1").image"; shift;; esac; done
     exit 0;;
   cp|rmi|volume|logs) exit 0;;
@@ -1016,6 +1034,110 @@ exit 0
               "transaction_exists": tx_exists(),
               "stderr_tail": (recheck.stderr or "")[-800:]})
         if not recheck_ok:
+            return EXIT_FAILED
+
+        # OR-08：deploy 成功开放事务后，**验收/运行时指纹类失败**（finalize 之前的失败类别）
+        # 必须回退到上一版本；这类失败不回滚就等于让坏版本当着正服务。
+        def refresh_context(context: str) -> None:
+            # 脚本成功收口会按设计删除构建上下文（deploy 的 EXIT trap / finalize 收尾），
+            # 后续场景再部署必须按同一内容重建上下文（脚本只读 context/deploy/... 两项）。
+            sh("rm -rf '%s'; mkdir -p '%s/deploy/caddy'; cp '%s' '%s/deploy/release-transaction.sh'"
+               % (context, context, script_posix, context))
+            sh("cat > '%s/deploy/caddy/Caddyfile' <<'NEWCFG'\n"
+               "https://127.0.0.1:%d {\n\ttls internal\n\t# new-config\n\treverse_proxy 127.0.0.1:%d\n}\nNEWCFG"
+               % (context, https_port, app_port))
+
+        refresh_context(new_context)
+        deployed_accept = staged("deploy", *argv_new)
+        accept_rolled = staged("rollback", *argv_new, "acceptance_failed")
+        accept_prev_gone = sh("[ -f '%s/container_%s.image' ] && printf yes || printf no"
+                              % (wsl_state, previous))
+        accept_ok = (deployed_accept.returncode == 0 and accept_rolled.returncode == 1
+                     and image_of(app) == old_tag and accept_prev_gone == "no"
+                     and not tx_exists() and not backup_exists()
+                     and caddy_text().rstrip("\n") == old_config.rstrip("\n")
+                     and marker_text() == marker_a)
+        emit(checks, "OR-08", "deploy 后验收/指纹类失败 → rollback 恢复旧版本并清事务",
+             accept_ok,
+             {"deploy_rc": deployed_accept.returncode, "rollback_rc": accept_rolled.returncode,
+              "serving_image": image_of(app), "previous_gone": accept_prev_gone,
+              "transaction_exists": tx_exists(), "backup_exists": backup_exists(),
+              "served_marker": marker_text(),
+              "deploy_stderr": (deployed_accept.stderr or "")[-1500:],
+              "stderr_tail": (accept_rolled.stderr or "")[-800:]})
+        if not accept_ok:
+            return EXIT_FAILED
+
+        # OR-09：**deploy 阶段失败**（新容器起不来/不健康）由脚本自身回退，不把失败报成发布成功。
+        refresh_context(new_context)
+        sh("printf '%s' '%s' > '%s/bad_health_image.txt'" % (new_tag, new_tag, wsl_state))
+        deploy_failed = staged("deploy", *argv_new)
+        sh("rm -f '%s/bad_health_image.txt'" % wsl_state)
+        deploy_fail_prev_gone = sh("[ -f '%s/container_%s.image' ] && printf yes || printf no"
+                                   % (wsl_state, previous))
+        deploy_fail_ok = (deploy_failed.returncode == 1 and image_of(app) == old_tag
+                          and deploy_fail_prev_gone == "no" and not tx_exists()
+                          and caddy_text().rstrip("\n") == old_config.rstrip("\n")
+                          and marker_text() == marker_a
+                          and "new container unhealthy" in (deploy_failed.stderr or ""))
+        emit(checks, "OR-09", "deploy 阶段失败（候选不健康）自身回退到旧版本，exit 1 且无残留事务",
+             deploy_fail_ok,
+             {"rc": deploy_failed.returncode, "serving_image": image_of(app),
+              "previous_gone": deploy_fail_prev_gone, "transaction_exists": tx_exists(),
+              "served_marker": marker_text(),
+              "stderr_tail": (deploy_failed.stderr or "")[-800:]})
+        if not deploy_fail_ok:
+            return EXIT_FAILED
+
+        # OR-10：**清理失败**（新版本已健康，删 previous 失败）→ exit 4，新版本继续服务、
+        # previous 保留、绝不自动回退；清障后再 finalize 才真正收口。
+        refresh_context(new_context)
+        deployed_clean = staged("deploy", *argv_new)
+        sh("printf '%s' '%s' > '%s'" % (marker_b, marker_b, marker_posix))
+        sh("printf fail > '%s/rm_mode.txt'" % wsl_state)
+        cleanup_failed = staged("finalize", *argv_new)
+        sh("rm -f '%s/rm_mode.txt'" % wsl_state)
+        prev_kept = image_of(previous)
+        cleanup_ok = (deployed_clean.returncode == 0 and cleanup_failed.returncode == 4
+                      and image_of(app) == new_tag and prev_kept == old_tag
+                      and tx_exists() and marker_text() == marker_b
+                      and "finalize_cleanup_failed" in (cleanup_failed.stderr or ""))
+        emit(checks, "OR-10", "清理失败 → exit 4：新版本继续服务、previous 保留、不自动回退（人工清理）",
+             cleanup_ok,
+             {"deploy_rc": deployed_clean.returncode, "finalize_rc": cleanup_failed.returncode,
+              "serving_image": image_of(app), "previous_image": prev_kept,
+              "transaction_exists": tx_exists(), "served_marker": marker_text(),
+              "stderr_tail": (cleanup_failed.stderr or "")[-800:]})
+        if not cleanup_ok:
+            return EXIT_FAILED
+        manual_cleanup = staged("finalize", *argv_new)
+        manual_ok = (manual_cleanup.returncode == 0 and image_of(app) == new_tag
+                     and not tx_exists() and not backup_exists()
+                     and sh("[ -f '%s/container_%s.image' ] && printf yes || printf no"
+                            % (wsl_state, previous)) == "no")
+        emit(checks, "OR-10b", "清障后同一 finalize 收口：exit 0，previous/备份/事务才被清理",
+             manual_ok,
+             {"rc": manual_cleanup.returncode, "serving_image": image_of(app),
+              "transaction_exists": tx_exists(), "backup_exists": backup_exists(),
+              "stderr_tail": (manual_cleanup.stderr or "")[-800:]})
+        if not manual_ok:
+            return EXIT_FAILED
+
+        # OR-11：**回退本身失败**（旧版本起不来）→ exit 3 且 journal/恢复点保留，
+        # 绝不把失败的回退报成已恢复。
+        argv_old = [old_tag, app, str(app_port), new_context, "127.0.0.1", str(https_port)]
+        refresh_context(new_context)
+        staged("deploy", *argv_old)
+        sh("printf fail > '%s/start_mode.txt'" % wsl_state)
+        unrecovered = staged("rollback", *argv_old, "acceptance_failed")
+        sh("rm -f '%s/start_mode.txt'" % wsl_state)
+        unrecovered_ok = (unrecovered.returncode == 3 and tx_exists()
+                          and "unrecovered_failed_release" in (unrecovered.stderr or ""))
+        emit(checks, "OR-11", "回退失败（旧版本起不来）→ exit 3 且 journal 保留，不报成已恢复",
+             unrecovered_ok,
+             {"rc": unrecovered.returncode, "transaction_exists": tx_exists(),
+              "stderr_tail": (unrecovered.stderr or "")[-800:]})
+        if not unrecovered_ok:
             return EXIT_FAILED
     finally:
         sh("rm -rf '%s' '%s' '%s'" % (wsl_root, old_context, new_context))

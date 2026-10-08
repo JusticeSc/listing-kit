@@ -145,6 +145,69 @@ async () => {
 }
 """
 
+STORAGE_DUMP = """
+async () => {
+  const names = (await indexedDB.databases()).map((item) => item.name);
+  if (!names.includes("amz-listing-kit-v2")) {
+    return { projects: {}, documents: {}, assets: {} };
+  }
+  const db = await new Promise((resolve, reject) => {
+    const request = indexedDB.open("amz-listing-kit-v2");
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+  const read = (store) => new Promise((resolve, reject) => {
+    const request = db.transaction(store, "readonly").objectStore(store).getAll();
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+  const pack = (rows) => Object.fromEntries(rows.map((row, index) => [
+    String(row.id ?? row.sha256 ?? row.key ?? index), JSON.stringify(row)]));
+  const packed = { projects: pack(await read("projects")),
+                   documents: pack(await read("documents")),
+                   assets: pack(await read("assets")) };
+  db.close();
+  return packed;
+}
+"""
+
+WRITE_TRACE = """
+(() => {
+  const original = IDBObjectStore.prototype.put;
+  window.__v2Writes = [];
+  IDBObjectStore.prototype.put = function (value, key) {
+    try {
+      if (this.name === "projects") {
+        window.__v2Writes.push({
+          state: value && value.state, revision: value && value.revision,
+          stack: (new Error().stack || "").split("\\n").slice(1, 6).join(" | "),
+        });
+      }
+    } catch (error) { /* 记录失败不得影响产品 */ }
+    return original.apply(this, arguments);
+  };
+})();
+"""
+
+
+def storage_diff(before: dict, after: dict) -> dict:
+    """刷新前后逐记录比对：只报真发生变化的存储键（失败时的证据）。"""
+    out: dict = {}
+    for store in ("projects", "documents", "assets"):
+        old, new = before.get(store) or {}, after.get(store) or {}
+        changed = [key for key in sorted(set(old) | set(new)) if old.get(key) != new.get(key)]
+        if changed:
+            out[store] = {
+                "changed": changed[:6],
+                "added": sorted(set(new) - set(old))[:6],
+                "removed": sorted(set(old) - set(new))[:6],
+                "sample": {key: {"before": (old.get(key) or "")[:300],
+                                 "after": (new.get(key) or "")[:300]}
+                           for key in changed[:2]},
+            }
+    return out
+
+
 OVERFLOW_PROBE = """
 () => {
   const rect = (id) => {
@@ -205,6 +268,7 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 str(profile), headless=True, viewport={"width": 1440, "height": 900})
             try:
                 page = context.pages[0] if context.pages else context.new_page()
+                context.add_init_script(WRITE_TRACE)
                 page.on("console", lambda message: console_errors.append(
                     "[workbench] " + message.text) if message.type == "error" else None)
                 page.on("pageerror", lambda error: page_errors.append(
@@ -534,11 +598,15 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 })
 
                 before_reload = storage()
+                before_dump = page.evaluate(STORAGE_DUMP)
+                page.evaluate("() => { window.__v2Writes = []; }")
                 page.reload(wait_until="networkidle")
                 expect(page.locator("#project-view")).to_be_visible()
                 page.wait_for_timeout(600)
                 reloaded = stage_state()
                 after_reload = storage()
+                after_dump = page.evaluate(STORAGE_DUMP)
+                reload_writes = page.evaluate("() => window.__v2Writes || []")
                 checks.append({
                     "id": "UI2-17",
                     "title": "刷新恢复：重开页面落在最靠后的未完成阶段「交付」，项目与记录逐字不变",
@@ -546,6 +614,12 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                           and [item["id"] for item in reloaded["buttons"] if item["current"]]
                           == ["deliver"],
                     "detail": {"visible": reloaded["visible"], "digest": after_reload,
+                               "before_reload": before_reload,
+                               "current": [item["id"] for item in reloaded["buttons"]
+                                           if item["current"]],
+                               "buttons": reloaded["buttons"],
+                               "diff": storage_diff(before_dump, after_dump),
+                               "reload_writes": reload_writes,
                                "complete": [item["id"] for item in reloaded["buttons"]
                                             if item["complete"]]},
                 })

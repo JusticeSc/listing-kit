@@ -433,9 +433,8 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
     ui: dict = {}
     holder = {"scenario": "ok"}
     captured: list[dict] = []
-    port = v251.free_port()
     server = server_module.create_product_v2_server(
-        "127.0.0.1", port,
+        "127.0.0.1", 0,
         provider_factory=lambda: FakeSemanticProvider(scenario="ok"),
         image_provider_factory=lambda: FakeImageProvider(scenario=holder["scenario"]),
         review_provider_factory=lambda: FakeReviewProvider("ok"))
@@ -445,7 +444,7 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
     reference = temp_root / "ref.png"
     reference.write_bytes(v251.png_bytes(1200, 1200, (36, 92, 160)))
     reference_sha = hashlib.sha256(reference.read_bytes()).hexdigest()
-    base = f"http://127.0.0.1:{port}"
+    base = f"http://127.0.0.1:{server.server_address[1]}"
     EVIDENCE_IMAGE_DIR.mkdir(parents=True, exist_ok=True)
     try:
         with sync_playwright() as pw:

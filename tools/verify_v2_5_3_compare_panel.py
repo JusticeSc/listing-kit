@@ -197,13 +197,17 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
     checks: list[dict] = []
     ui: dict = {}
     holder = {"scenario": "ok"}
-    port = shared.free_port()
+    # TOCTOU 说明：产品服务器直接绑 0 号端口并从 server_address 读回实际端口，
+    # 不用 shared.free_port() 先探测（Windows 上已被抢占的端口仍可静默绑定成功，
+    # 无人应答即 ERR_CONNECTION_REFUSED 假红；见 4_4 load_page/boot_retries 同源证据）。
+    # Harness 静态服 shared.start_static_server() 本就绑 0，不受影响。
     server = server_module.create_product_v2_server(
-        "127.0.0.1", port,
+        "127.0.0.1", 0,
         provider_factory=lambda: FakeSemanticProvider(scenario="ok"),
         image_provider_factory=lambda: FakeImageProvider(scenario="ok"),
         review_provider_factory=lambda: FakeReviewProvider(holder["scenario"]))
     threading.Thread(target=server.serve_forever, daemon=True).start()
+    base = f"http://127.0.0.1:{server.server_address[1]}"
     static_server, static_url = shared.start_static_server()
     temp_root = Path(tempfile.mkdtemp(prefix="amz-v253-"))
     profile = temp_root / "profile"
@@ -212,7 +216,6 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
     reference_sha = hashlib.sha256(reference.read_bytes()).hexdigest()
     compliant = temp_root / "compliant.png"
     compliant.write_bytes(shared.png_bytes(1600, 1600, (232, 236, 240)))
-    base = f"http://127.0.0.1:{port}"
     EVIDENCE_IMAGE_DIR.mkdir(parents=True, exist_ok=True)
     try:
         with sync_playwright() as pw:
@@ -454,33 +457,68 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                                "references": len(reloaded["references"])},
                 })
 
+                # 独立期望：先逐图观测「有没有待处理候选」（打开每张图自己的比较面板读候选状态），
+                # 再按合同从当前之后绕计划顺序找第一张有待处理的图。不能拿 jump 按钮自己的
+                # target 当期望（那是自证：目标算错但跳转忠实跟随也会绿）。
+                pending_by_shot: dict[str, bool] = {}
+                cards_by_shot: dict[str, int] = {}
+                for shot_id in shot_ids:
+                    if shot_id == first_shot:
+                        cards = panel["cards"]
+                    else:
+                        open_panel(shot_id, len(seeded["candidate_chains"].get(shot_id, [])))
+                        cards = panel_probe()["cards"]
+                    cards_by_shot[shot_id] = len(cards)
+                    pending_by_shot[shot_id] = any(card["state"] == "pending" for card in cards)
+                assert any(pending_by_shot.values()), "夹具里必须有待处理的图才能验跳转"
+
+                def expected_next_pending(current: str) -> str | None:
+                    order = list(shot_ids)
+                    start = order.index(current)
+                    for step in range(1, len(order) + 1):
+                        shot_id = order[(start + step) % len(order)]
+                        if pending_by_shot.get(shot_id):
+                            return shot_id
+                    return None
+
+                expected = expected_next_pending(second_shot)
                 open_panel(second_shot, len(candidates_second))
                 single = panel_probe()
                 jump_enabled = not single["jump_disabled"]
-                # 下一个待处理由 nextPendingShotId 合同决定（从当前之后按计划顺序找，绕回一圈）：
-                # 期望即 jump 按钮当场算出的 target（只改“追寻哪个落点”，不改“跳转落点 == 按钮目标”的断言含义）。
                 jump_target = single["jump_target"]
+                assert expected is not None, "观测到有待处理的图，期望就不该是空"
                 page.click("#compare-jump")
                 page.wait_for_function(
                     """(shot) => {
                         const panel = document.getElementById("compare-panel");
                         return Boolean(panel && !panel.hidden && panel.dataset.shotId === shot);
-                    }""", arg=jump_target, timeout=20_000)
+                    }""", arg=expected, timeout=20_000)
                 jumped = panel_probe()
-                expected_landed = next((card["candidate_id"] for card in jumped["cards"]
+                landed_selected = next((card["candidate_id"] for card in jumped["cards"]
                                         if card["selected"]), None)
+                # 绕圈边界：从落点再算一次下一张；只有落点自己有待处理时合同允许绕回自身，
+                # 否则必须指向另一张——两种情况按钮都不能变成死的。
+                expected_again = expected_next_pending(jumped["shot_id"])
                 checks.append({
                     "id": "V2.5.3-15",
-                    "title": "单候选回退与「下一个待处理」：一张图一个候选照常比较，跳转落到有问题的图",
+                    "title": "单候选回退与「下一个待处理」：一张图一个候选照常比较，跳转落到期望的下一张待处理图",
                     "ok": len(single["cards"]) == len(candidates_second) == 1
                           and single["shot_id"] == second_shot
                           and jump_enabled
-                          and bool(jump_target)
-                          and jumped["shot_id"] == jump_target
-                          and jumped["focused_tab_id"] == "compare-tab-" + expected_landed,
+                          and jump_target == expected
+                          and jumped["shot_id"] == expected
+                          and any(card["state"] == "pending" for card in jumped["cards"])
+                          and bool(landed_selected)
+                          and jumped["focused_tab_id"] == "compare-tab-" + (landed_selected or "")
+                          and not jumped["jump_disabled"]
+                          and jumped["jump_target"] == (expected_again or ""),
                     "detail": {"second_shot": second_shot, "cards": len(single["cards"]),
-                               "jump_target": single["jump_target"], "landed": jumped["shot_id"],
-                               "focus": jumped["focused_tab_id"]},
+                               "pending_by_shot": pending_by_shot,
+                               "cards_by_shot": cards_by_shot,
+                               "expected": expected, "jump_target": jump_target,
+                               "landed": jumped["shot_id"], "focus": jumped["focused_tab_id"],
+                               "again_expected": expected_again,
+                               "again_target": jumped["jump_target"]},
                 })
 
                 all_buttons = sorted({text for payload in (panel, single, jumped, reloaded)

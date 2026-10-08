@@ -652,7 +652,7 @@ def main() -> int:
         "suite": "v2.2.3-intake-understanding",
         "status": status,
         "finished_at": finished_at,
-        "port": port,
+        "port": server.server_address[1],
         "checks": checks,
         "console_errors": console_errors,
         "page_errors": page_errors,
@@ -673,7 +673,7 @@ def main() -> int:
         f"observed_at: {finished_at}",
         f"status: {status}",
         f"json: {json_path.relative_to(ROOT).as_posix()}",
-        f"port: {port}",
+        f"port: {server.server_address[1]}",
         "",
         "CHECKS",
     ]

@@ -361,6 +361,7 @@ def main() -> int:
     profile_b = temp_root / "profile-b"
     evidence: dict = {}
 
+    server = FormalServer(port)
     server.start()
     try:
         contract = {}

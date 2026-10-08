@@ -387,9 +387,14 @@ def main() -> int:
 
     def restart_server() -> None:
         nonlocal server
+        port = server.server_address[1]
         server.shutdown()
         server.server_close()
-        server = make_server()
+        server = make_server(port)
+        started = server.server_address[1]
+        assert started == port, (
+            f"重启后端口变化：{port} -> {started}；IndexedDB 按 origin 隔离，"
+            "换端口会让「同项目核对」失去前提")
         threading.Thread(target=server.serve_forever, daemon=True).start()
 
     try:
@@ -995,7 +1000,9 @@ def main() -> int:
                           (bad_payload.get("error") or {}).get("code"),
                        "bad_submit_status": bad_submit_status,
                        "good_status": good_status,
-                       "good_task": (good_payload.get("task") or {}).get("task_id")})
+                       "good_task": (good_payload.get("task") or {}).get("task_id"),
+                       "bad_payload": bad_payload, "good_payload": good_payload,
+                       "bad_submit_payload": bad_submit_payload})
 
                 # ---- 21 capabilities 暴露能力版本（前端冻结进身份的数据源） ----
                 get_status, caps_payload = get_json(base, "/api/v2/capabilities")

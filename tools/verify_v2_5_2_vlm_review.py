@@ -283,7 +283,7 @@ def run_endpoint_checks(png: bytes) -> list[dict]:
             "detail": review_block.get("provider"),
         })
 
-        status, body = http_json("127.0.0.1", port, "POST", "/api/v2/review/candidate", payload)
+        status, body = http_json("127.0.0.1", server.server_address[1], "POST", "/api/v2/review/candidate", payload)
         result = (body or {}).get("result") or {}
         checks.append({
             "id": "V2.5.2-08",
@@ -300,7 +300,7 @@ def run_endpoint_checks(png: bytes) -> list[dict]:
 
         bad = json.loads(json.dumps(payload))
         bad["candidate"]["sha256"] = "0" * 64
-        status, body = http_json("127.0.0.1", port, "POST", "/api/v2/review/candidate", bad)
+        status, body = http_json("127.0.0.1", server.server_address[1], "POST", "/api/v2/review/candidate", bad)
         checks.append({
             "id": "V2.5.2-09",
             "title": "图片哈希与字节不一致 → input_rejected/400（不调用模型）",
@@ -310,7 +310,7 @@ def run_endpoint_checks(png: bytes) -> list[dict]:
         })
 
         holder["scenario"] = "unknown"
-        status, body = http_json("127.0.0.1", port, "POST", "/api/v2/review/candidate", payload)
+        status, body = http_json("127.0.0.1", server.server_address[1], "POST", "/api/v2/review/candidate", payload)
         error = (body or {}).get("error") or {}
         checks.append({
             "id": "V2.5.2-10",
@@ -322,7 +322,7 @@ def run_endpoint_checks(png: bytes) -> list[dict]:
         })
 
         holder["scenario"] = "invalid_output"
-        status, body = http_json("127.0.0.1", port, "POST", "/api/v2/review/candidate", payload)
+        status, body = http_json("127.0.0.1", server.server_address[1], "POST", "/api/v2/review/candidate", payload)
         error = (body or {}).get("error") or {}
         checks.append({
             "id": "V2.5.2-11",

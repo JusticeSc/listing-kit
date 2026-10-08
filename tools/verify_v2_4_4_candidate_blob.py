@@ -9,9 +9,10 @@
   4) Blob hash：IndexedDB 字节重算 sha256 == 候选记录 == 响应头 X-Image-Sha256；
      媒体信息（64×64 PNG、字节数）与字节本身一致。
   5) 刷新预览：刷新后候选不重复、不重新下载，预览从 IndexedDB 恢复（naturalWidth>0）。
-  6) 取回失败一次：候选未保存、错误可见、不产生半份记录；重试后成功且 sha 稳定。
-  7) 配额异常：asset 写入 QUOTA_EXCEEDED 时没有半份记录，界面给可恢复指引；
-     清出空间（解除注入）后重试成功。
+  6) 取回失败一次：候选未保存、批次提示给出原因与下一步、不产生半份记录；
+     停止新增提交后按提示手动保存成功且 sha 稳定。
+  7) 配额异常：批次立即停（不空转）、没有半份记录、提示给可恢复指引；
+     清出空间（解除注入）后手动重试成功。
   8) 整套批次：剩余图片自动保存候选，进度含「已成功 4」且无「待保存候选」残留。
   9) 零意外 console error / page error；截图落盘；正式入口 --check 全过。
 
@@ -556,14 +557,6 @@ def main() -> int:
                             return Boolean(node && node.querySelector('.attempt-candidate'));
                         }""", arg=shot_id, timeout=timeout)
 
-                def wait_error_contains(text: str, timeout: int = 30_000) -> None:
-                    page.wait_for_function(
-                        """(wanted) => {
-                            const node = document.getElementById('attempt-error');
-                            return Boolean(node && !node.hidden
-                                && node.textContent.includes(wanted));
-                        }""", arg=text, timeout=timeout)
-
                 def wait_hint_contains(text: str, timeout: int = 30_000) -> None:
                     # 批次路径的失败原因在批次提示区（generation-view renderBatch → batchHint），
                     # 不是单张路径的 #attempt-error。
@@ -618,6 +611,12 @@ def main() -> int:
 
                 def click_row_button(shot_id: str, text: str) -> None:
                     row(shot_id).locator(f'button:has-text("{text}")').first.click()
+
+                def wait_save_enabled(shot_id: str, timeout: int = 30_000) -> None:
+                    # 「保存候选图片」是本地动作：批次运行中也可用，只有同一张的取回在途时短暂禁用。
+                    # 故障解除后按用户可见路径点它，不再依赖批次自己重试（用户看得到的是按钮 + 提示）。
+                    expect(row(shot_id).locator('button:has-text("保存候选图片")')
+                           .first).to_be_enabled(timeout=timeout)
 
                 def submits_for(action_id: str) -> int:
                     return len([item for item in submit_requests
@@ -759,6 +758,9 @@ def main() -> int:
                 confirm_generation([fail_shot])
                 wait_state(fail_shot, "succeeded")
                 wait_hint_contains("RESULT_DOWNLOAD_FAILED")
+                # 取回故障期间批次会一直自己重试（每轮 4s），故障不解除它不会结束：
+                # 用户按提示走的是「先停止新增提交，再点这一行的保存候选图片」。
+                page.click("#batch-stop")
                 wait_batch_idle()
                 failed_try = probe()
                 att6_chain = chain_of(failed_try, fail_shot)
@@ -772,6 +774,7 @@ def main() -> int:
                             and len(failed_try["asset_rows"]) == assets6_before
                             and att6.get("state") == "succeeded")
                 mode["fetch_fault"] = False
+                wait_save_enabled(fail_shot)
                 click_row_button(fail_shot, "保存候选图片")
                 wait_candidate_ui(fail_shot)
                 recovered6 = probe()
@@ -783,7 +786,7 @@ def main() -> int:
                 declared6 = next((item["declared_sha"] for item in resolved6
                                   if item["status"] == 200 and item["declared_sha"]), "")
                 check("V2.4.4-06",
-                      "取回失败：提交结论不受掩盖、原因与下一步可见、无半份记录、解除后手动保存 sha 与响应头一致",
+                      "取回失败：提交结论不受掩盖、原因与下一步可见、无半份记录、停止后手动保存 sha 与响应头一致",
                       bool(att6) and bool(rec6)
                       and no_half6
                       and bool(sent6) and MARK_FETCH_FAIL in (sent6[0]["prompt"] or "")
@@ -814,11 +817,15 @@ def main() -> int:
                 page.evaluate(SET_IDB_FAULT, True)
                 confirm_generation([quota_shot])
                 wait_state(quota_shot, "succeeded")
-                wait_error_contains("浏览器存储空间不足")
+                # 候选保存被本地存储挡住：批次必须立刻停（不再空转），原因与下一步在提示区。
+                wait_batch_idle()
                 quota_failed = probe()
+                quota_hint = quota_failed["ui"]["batch"]["hint"]
+                quota_progress = quota_failed["ui"]["batch"]["progress"]
                 quota_no_half = (candidate_of(quota_failed, quota_shot) == []
                                  and len(quota_failed["asset_rows"]) == assets7_before)
                 page.evaluate(SET_IDB_FAULT, False)
+                wait_save_enabled(quota_shot)
                 click_row_button(quota_shot, "保存候选图片")
                 wait_candidate_ui(quota_shot)
                 quota_ok = probe()
@@ -827,14 +834,16 @@ def main() -> int:
                 hashed7 = (page.evaluate(HASH_ASSET, {"sha256": rec7["asset_sha256"]})
                            if rec7 else {"found": False})
                 check("V2.4.4-07",
-                      "配额异常：不留半份记录、错误给出可恢复指引；解除后同一 action 保存成功",
+                      "配额异常：批次停而不空转、不留半份记录、提示含原因与下一步；解除后同一 action 保存成功",
                       bool(rec7) and hashed7.get("found") is True
                       and quota_no_half
-                      and "浏览器存储空间不足" in quota_failed["ui"]["error"]
-                      and "重试" in quota_failed["ui"]["error"]
+                      and "浏览器存储空间不足" in quota_hint
+                      and "保存候选图片" in quota_hint
+                      and "已停止新增提交" in quota_progress
+                      and "批次进行中" not in quota_progress
                       and len(candidate_of(quota_ok, quota_shot)) == 1
                       and hashed7.get("sha256") == rec7.get("asset_sha256"),
-                      {"error": quota_failed["ui"]["error"][:120],
+                      {"hint": quota_hint[:200], "progress": quota_progress[:200],
                        "candidate_chain": len(rec7_chain),
                        "half_record": not quota_no_half})
 
@@ -925,8 +934,9 @@ def main() -> int:
         "证明候选字节在真实浏览器与真实 IndexedDB 上是可持久、可校验、可恢复的：成功结论在同一步"
         "把结果字节存进内容寻址的 assets 仓，候选记录的 sha256 与重算值、服务端 X-Image-Sha256 "
         "响应头三方一致；刷新后预览来自本地字节、零新增取回请求且不重复保存；取回失败一次不产生"
-        "半份记录、错误可恢复、重试成功；IndexedDB 配额异常在协议层注入（产品代码无测试钩子），"
-        "失败不留半份记录并给出「清理后重试」指引；整套批次只提交剩余图一次、全部成功且候选全部"
+        "半份记录、批次提示给出原因与下一步，停止新增提交后按提示手动保存成功；IndexedDB 配额"
+        "异常在协议层注入（产品代码无测试钩子），保存被挡住时批次立即停而不空转、失败不留半份记录"
+        "并给出「清出空间后重试」指引；整套批次只提交剩余图一次、全部成功且候选全部"
         "入库，进度不再显示待保存候选。本批不做审核、单图返工与导出（Phase 5）；0 次真实模型调用、"
         "0 次外部网络；图像 provider 是注入的假替身（按 Prompt 标记决定取回场景），只证明候选"
         "持久化语义，不证明真实出图质量。"

@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import time
 import zipfile
 import importlib.util
@@ -28,6 +29,13 @@ import sys
 import threading
 import zlib
 from pathlib import Path
+
+# 本机回环不走系统代理：设了 HTTP(S)_PROXY 时 urllib 会把「端口没人监听」变成代理的
+# 502 Bad Gateway（空 body），把真实连接错误伪装成网关故障——本轮 4_2 的假红即此。
+# 只影响本进程（及子进程）对回环地址的代理判定，不改变任何真实上游调用。
+_LOOPBACK_NO_PROXY = "127.0.0.1,localhost,::1"
+os.environ.setdefault("no_proxy", _LOOPBACK_NO_PROXY)
+os.environ.setdefault("NO_PROXY", _LOOPBACK_NO_PROXY)
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
@@ -115,25 +123,83 @@ def start_product_server(port: int, *, image_scenario: str = "ok",
                     "review": review, "suite": suite}
 
 
+class SuiteLoadStall(RuntimeError):
+    """harness 页在 90s 内没有落定结论（载入卡住）；携带页面级诊断。"""
+
+    def __init__(self, diag: dict) -> None:
+        super().__init__("harness 页载入卡住")
+        self.diag = diag
+
+
 def read_suite(browser, url: str, variable: str,
                console_errors: list | None = None,
                page_errors: list | None = None) -> dict:
     """读 harness 契约套件结果（行为判据：window 变量落定 passed/failed/crashed）。"""
-    page = browser.new_page()
-    try:
-        if console_errors is not None:
-            page.on("console", lambda message: console_errors.append("[suite] " + message.text)
+
+    def load_once() -> tuple[dict, dict]:
+        """载入一次 harness 页；返回（套件结果, 诊断）。载入卡住时抛 SuiteLoadStall。"""
+        page = browser.new_page()
+        diag: dict = {"failed_requests": [], "console": [], "page_errors": []}
+        try:
+            if console_errors is not None:
+                page.on("console",
+                        lambda message: console_errors.append("[suite] " + message.text)
+                        if message.type == "error" else None)
+            page.on("console",
+                    lambda message: diag["console"].append(message.text)
                     if message.type == "error" else None)
-        if page_errors is not None:
-            page.on("pageerror", lambda error: page_errors.append("[suite] " + str(error)))
-        page.goto(url, wait_until="domcontentloaded")
-        page.wait_for_function(
-            f"() => window.{variable} && ['passed','failed','crashed']"
-            f".includes(window.{variable}.status)",
-            timeout=90_000)
-        return page.evaluate(f"() => window.{variable}")
-    finally:
-        page.close()
+            if page_errors is not None:
+                page.on("pageerror", lambda error: page_errors.append("[suite] " + str(error)))
+            page.on("pageerror", lambda error: diag["page_errors"].append(str(error)))
+            page.on("requestfailed",
+                    lambda request: diag["failed_requests"].append(
+                        f"{request.url} · {request.failure}"))
+            page.goto(url, wait_until="domcontentloaded")
+            try:
+                page.wait_for_function(
+                    f"() => window.{variable} && ['passed','failed','crashed']"
+                    f".includes(window.{variable}.status)",
+                    timeout=90_000)
+            except Exception as error:
+                if "Timeout" not in type(error).__name__:
+                    raise
+                # 页面没落定结论：区分「脚本抛错」与「资源没到」——后者是传输层抖动。
+                try:
+                    diag["ready_state"] = page.evaluate("() => document.readyState")
+                    diag["scripts"] = page.evaluate(
+                        "() => [...document.scripts].map((item) => item.src || '(inline)')")
+                except Exception:  # noqa: BLE001  诊断失败不影响原始错误
+                    pass
+                raise SuiteLoadStall(diag) from error
+            return page.evaluate(f"() => window.{variable}"), diag
+        finally:
+            page.close()
+
+    try:
+        return load_once()[0]
+    except SuiteLoadStall as stall:
+        # 只对**可识别的传输层卡住**（有资源请求失败、且页面自身没抛错）重载一次，
+        # 并把重试与诊断记进结果：本机回环偶发连接抖动不是产品结论，
+        # 但也不能被悄悄吞掉（指纹/证据必须保留这次症状）。
+        diag = stall.diag
+        if not diag.get("failed_requests") or diag.get("page_errors"):
+            raise RuntimeError(
+                f"harness 页未落定且不是传输层抖动：{url} · 诊断 {diag}") from stall.__cause__
+        for label, item in (("console", diag.get("console")),
+                            ("page_errors", diag.get("page_errors"))):
+            if item:
+                print(f"[suite-load-stall] {url} {label}: {item[:2]}")
+        print(f"[suite-load-stall] {url} 重载一次 · 失败请求 "
+              f"{diag['failed_requests'][:3]} · readyState {diag.get('ready_state')}")
+        suite = load_once()[0]
+        suite = dict(suite)
+        suite["load_stall_retried"] = True
+        suite["load_stall_evidence"] = {
+            "failed_requests": diag["failed_requests"][:3],
+            "ready_state": diag.get("ready_state"),
+            "scripts": (diag.get("scripts") or [])[:8],
+        }
+        return suite
 
 
 
