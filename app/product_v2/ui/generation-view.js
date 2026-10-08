@@ -897,7 +897,11 @@ export function createGenerationView({ elements, deps }) {
                     const save = createElement("button", {
                         className: "primary", text: "保存候选图片", attrs: { type: "button" },
                     });
-                    save.disabled = inFlight || (rowShotId ? generation.isCandidateInFlight(rowShotId) : false);
+                    // 批次运行中也要能用：取回失败时提示区正让用户点这个按钮,而它只做本地保存,
+                    // 同一张的并发保存由 isCandidateInFlight 挡住(模块内直接 no-op)。
+                    save.disabled = (rowShotId ? generation.isAttemptInFlight(rowShotId) : false)
+                        || inputs.isAnalysisRunning()
+                        || (rowShotId ? generation.isCandidateInFlight(rowShotId) : false);
                     save.addEventListener("click", () => { void handleStoreCandidate(rowShotId); });
                     actions.append(save);
                 }

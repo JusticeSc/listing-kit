@@ -1165,8 +1165,16 @@ export function createGenerationModule(deps) {
                     if (!action.alive())
                         return;
                     if (stored && stored.failed && stored.reason === "quota") {
-                        if (live)
+                        if (live) {
                             live.fetchBlocked = stored.message || "";
+                            // 本地存储放不下候选时继续轮询没有意义：这一张会一直停在取回队列，
+                            // 界面却显示"正在按任务编号核对"（其实没有在途任务可核对），
+                            // 而提示区让用户点的手动按钮在批次结束前不可用。与其它无法继续的情形一致：
+                            // 保留记录，停批次，把原因与下一步交给提示区。
+                            live.halted = true;
+                            live.haltReason = stored.message || "候选保存受阻";
+                            return;
+                        }
                         break;
                     }
                 }

@@ -1548,7 +1548,16 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
 
   modelSettings.subscribe(() => {
     capabilities = modelSettings.capabilities;
-    if (projectId) renderAll();
+    if (!projectId) return;
+    // 设置变化会整体重渲染（含商品资料的输入框）：先把还在防抖里的草稿落盘再渲染，
+    // 否则用户刚输入、尚未到落盘时点的文本会被按存储值重画掉——等于静默丢用户输入。
+    // 只落盘草稿（inputs.saveIntakeNow 无脏数据即 no-op，真落盘时经 changed 走派生），
+    // 不在这里派生状态：能力/会话就绪前派生会把中途结论写回项目记录
+    //（重开项目变成 PLAN_REVIEW、revision 无谓 +1，UI2-17 整库逐字判据必红）。
+    Promise.resolve()
+      .then(() => inputs.saveIntakeNow())
+      .catch(() => {})
+      .then(() => { renderAll(); });
   });
   return {
     /** @param {StoredProjectRecord} projectRecord @returns {Promise<void>} */
