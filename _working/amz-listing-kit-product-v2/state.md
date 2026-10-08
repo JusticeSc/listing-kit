@@ -3,6 +3,31 @@
 > CONTROL-STATUS: current · AUTHORITY: execution-state
 > 只保存进度、证据、阻塞/未知与下一动作；目标和任务定义只在 `docs/product-v2-refactor-plan.md`。
 > prepared 是未绑定新 Goal 的本地准备态，不是系统 paused。旧读数与完成记录只见 superseded 基线。
+> 2026-10-08 远程 CD 收口轮（本机 Windows vs CI ubuntu 的 Linux 时序差逐个定位）：PR #4 推上去的
+> 5 段提交在**分支 CI** 上暴露 4 个跨平台红结点，全部按 FAILED DETAILS 实测修复——
+> 4_3 -04 的确认写库后状态派生是异步落库，探针直读 IndexedDB 与之竞速（Linux 时序下必读 PLAN_REVIEW；
+> 改 wait_project_state 20s 有界等待后取样，超时仍判红）；4_3 补失败 detail 打日志（b764740）；
+> UI3-08 只有 500ms 固定等批次，慢时序个别行仍 submitted（ab3d84b：wait_terminal + save-state 有界等待）；
+> 4_4 -05 同理只记两个数字，现在失败时打印 candidate_record/assets/preview 实测（f6ee155，本机 4 轮全绿）；
+> 3_5 -07 与 -04 同型竞速（首个 main CD 红后修复，206c8c8）。PR #4 (7fa052f 等) 与 main 206c8c8 全绿：
+> `Control plane and Product V2` + `Docker image, smoke test, and main deploy` 双 job SUCCESS。
+> Docker/发布事务(job 2)：Build immutable image → Smoke-test container health → Release transaction
+> selftest (real disposable containers) → Release failure classes (real script, no containers) →
+> Prepare SSH → Sync provider secrets → Build on remote Docker and deploy (full release transaction)
+> → Release acceptance（`release_transaction_probe.py --page-smoke` 10/10 PASS，PS-01–PS-08 +
+> PS-05-entry.js/app.js + PS-07-package）→ Verify runtime and configuration fingerprints →
+> Finalize release (previous 只在全验收后清理) → Upload release evidence（artifact
+> release-evidence-206c8c84…，含 release.json/runtime-fingerprint.json/image.txt/caddy.sha256，
+> 4 files, 7758 bytes, artifact ID 11527154008）。
+> 本机实测远程产物：SHA256(commit)=206c8c84…；image_id=sha256:7602147ed004d93f0c4db3df743a8a2ae4074212ae25d62b4845d209365a3c61；
+> image_tag=amz-listing-kit:206c8c84…；runtime_sha256=591f2b8322…（77 文件全 hash，含 index.html、
+> domain/attempt.js、storage/db.js 等）；caddy_configuration_sha256=e375655d…；
+> public_configuration_sha256=752430317…；默认付费档 default_trial=closed ✓。
+> 本轮在 bundle 后 --page-smoke 一次 PASS 并上传证据工件（run 37722956684 失败→3_5 起主导，修复 206c8c8
+> 后 run 37723870895 success）；随后 main 的 run 37724535015 也 success。
+> 部署脚本 (deploy/release-transaction.sh) 与 CI 行为证据体系均按 2026-10-08 的 packet 走完。
+> 合并过 Hermutain 的结果；PR #4 于 03:29:23Z 正式 merged（merge commit f8651fae）。本地分支已清理，
+> 仅留 main。仍 V2.R5.1；真实模型调用于授权内延后（预算 image 5 次、理解/复核 2 次、增量 ≤3 元）。
 
 > **2026-10-07当前恢复门已成立**：用户恢复完整交付及必要增删/成熟复用、V1工程条件清理、隔离Chrome模拟真人、受保护PR/发布、新增3元和10轮门；当前Goal取计划§2.1/§16.1。本轮423份原字节与当前项目包基线已保存，真实页面导入/打开/比较及独立IDB/ZIP比较证明45份原文档、4份Blob、2个人工采用保留；详见本轮交付证据，完整E2E/最终验收仍未成立。
 > Goal原文口径提醒（2026-10-08 收口轮核对）：当前生效的 Goal 正文是计划 §2.1 的**重写版**（Objective/Success criteria/Verification/Boundaries/Stop conditions），sha256=`bac1155dbef21876391328dafd50a5624dee8461388754021a31aa59ff1c6fc6`；系统 Goal 观察（`evals/product-v2/refactor/goal-observation-final-delivery-20261007.json` 的 `objective_sha256`）与 `tools/refactor_resume.py` 的实时计算一致。下文历史行里出现的 `6677a680…` 是重写前文本，只作历史，不得用于绑定/一致性比对。
@@ -461,5 +486,9 @@ unknowns:
   - current_20261008_p11_convergence_committed_three_slices_6b37145_keepalive_8d0320d_settings_draft_and_candidate_halt_22db254_verifiers_and_ci_then_control_plane_evidence_snapshots_pushed_origin_branch_draft_PR_4_to_main_merge_only_after_full_acceptance
   - current_20261008_user_instruction_no_local_docker_container_page_and_release_failure_classes_must_be_proven_by_remote_CD_github_actions_ubuntu_runner_local_daemon_absent_static_docker_closure_is_not_build_proof
   - current_20261008_PR4_first_remote_CI_red_13_J6_evidence_pointers_to_gitignored_evals_run_logs_R43_R44_local_guard_green_because_worktree_holds_them_fix_force_added_13_files_and_check_project_state_evidence_ok_now_warns_on_exists_but_untracked_do_not_regress
-updated_at: '2026-10-08T01:34:53.000Z'
+  - current_20261008_linux_timing_reds_pr4_4_3_04_ui3_08_44_05_35_07_all_fixed_by_bounded_waits_or_diag_details_then_pr4_and_main_runs_success_follow_failed_details_mechanism_matching
+  - current_20261008_CD_release_page_smoke_10_10_artifact_upload_release_json_runtime_fingerprint_json_image_txt_caddy_sha_main_runs_37723870895_success_pr_merged_03_29_23Z_follow_release_evidence
+  - current_20261008_image_id_7602147e_runtime_sha256_591f2b83_caddy_sha256_e375655d_public_sha256_75243031_recorded_from_artifact_local_download_follow_evict_existing_v2_release
+  - current_two_failing_runs_then_green_same_verifier_show_linux_first_run_red_then_green_pattern_context_speed_diff_not_new_product_defect_4_4_05_and_3_5_dot_diag_both_this_pattern
+updated_at: '2026-10-08T04:02:00.000Z'
 ```
