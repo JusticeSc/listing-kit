@@ -1181,11 +1181,16 @@ def run_self_check() -> int:
     host, port = server.server_address[:2]
     checks: list[tuple[str, bool, str]] = []
 
+    transport_failures: list[str] = []
     def request(method: str, path: str, body: bytes | None = None) -> tuple[int, str, bytes]:
         # 连续起停回环端口时，极少数情况下连接会在读响应时被重置（Windows 上观察到一次）。
         # 自检是无状态、不落盘的，连接级错误重试一次；第二次仍失败才算真失败。
+        # 重试用尽后如实记录传输签名（方法/路径/尝试次数/异常类名），不改重试语义、
+        # 不掩盖失败：调用方仍抛异常，签名只留在 checks 明细里供 RC19 归因。
         last_error: Exception | None = None
+        attempts = 0
         for _attempt in range(2):
+            attempts += 1
             connection = http.client.HTTPConnection(host, port, timeout=20)
             try:
                 headers = ({"Content-Type": "application/json; charset=utf-8"}
@@ -1197,6 +1202,9 @@ def run_self_check() -> int:
                 last_error = error
             finally:
                 connection.close()
+        transport_failures.append(
+            f"{method} {path} attempts={attempts} "
+            f"error={type(last_error).__name__}: {last_error}")
         raise last_error if last_error else RuntimeError("自检请求失败。")
 
     def check(name: str, ok: bool, detail: str = "") -> None:
@@ -1612,6 +1620,15 @@ def run_self_check() -> int:
               and payload.get("unknown") is False,
               f"status={status} error={payload.get('error')}")
         mode["value"] = "fake"
+    except (ConnectionError, OSError) as error:
+        # 自检请求在两次尝试后仍被传输层重置：如实报告传输签名后退出，不冒充业务失败。
+        # server 照常关闭；已收集的 checks 与签名一起打印，供 RC19 现象—机制归因。
+        print(f"  FAIL  自检传输中断（两次尝试均被重置）  "
+              f"server={host}:{port} error={type(error).__name__}: {error}")
+        for signature in transport_failures:
+            print(f"  FAIL  传输签名  {signature}")
+        print(f"V2 正式入口自检：传输中断，已完成 {len(checks)} 项检查，未完成剩余项。")
+        return 1
     finally:
         server.shutdown()
         server.server_close()

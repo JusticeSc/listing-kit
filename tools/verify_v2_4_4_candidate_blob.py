@@ -31,6 +31,8 @@ import subprocess
 import sys
 import tempfile
 import threading
+import time
+import urllib.parse
 import zlib
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -309,10 +311,147 @@ def candidate_json(data: dict, shot_id: str) -> str:
     return json.dumps(candidate_of(data, shot_id), ensure_ascii=False, sort_keys=True)
 
 
+BOOT_GATE_JS = """() => {
+    const el = (id) => document.getElementById(id);
+    const pending = el('boot-pending');
+    const error = el('boot-error');
+    const projectView = el('project-view');
+    const create = el('new-project-name');
+    const bootError = Boolean(error && !error.hidden
+        && (error.textContent || '').trim().length > 0);
+    return Boolean(pending && pending.hidden && !bootError
+        && ((create && !create.disabled)
+            || (projectView && !projectView.hidden)));
+}"""
+
+
+def _boot_snapshot(page) -> dict:
+    """UI 启动门各里程碑的当前快照：只读 DOM 状态，不读任何业务/秘密内容。"""
+    try:
+        return dict(page.evaluate("""() => {
+            const el = (id) => document.getElementById(id);
+            const text = (id) => (el(id) || {}).textContent || '';
+            return {
+                ready_state: document.readyState,
+                url: location.href,
+                boot_pending_hidden: el('boot-pending') ? el('boot-pending').hidden : null,
+                boot_error: text('boot-error').slice(0, 500),
+                boot_error_hidden: el('boot-error') ? el('boot-error').hidden : null,
+                create_visible: el('new-project-name')
+                    ? !el('new-project-name').hidden : null,
+                create_disabled: el('new-project-name')
+                    ? el('new-project-name').disabled : null,
+                project_view_hidden: el('project-view') ? el('project-view').hidden : null,
+                scripts: [...document.scripts].map((item) =>
+                    (item.src || '(inline)').slice(-120)).slice(0, 12),
+            };
+        }"""))
+    except Exception as error:  # noqa: BLE001 - 诊断快照失败本身也是证据
+        return {"snapshot_error": f"{type(error).__name__}: {error}"}
+
+
+def _redact_url(url: str) -> str:
+    """诊断只保留同源路径与查询键名，不保留任何查询值/凭据/业务内容。"""
+    try:
+        parts = urllib.parse.urlsplit(url or "")
+        keys = sorted({key for key, _ in urllib.parse.parse_qsl(parts.query, keep_blank_values=True)})
+        query = ("?" + ",".join(keys)) if keys else ""
+        return f"{parts.scheme}://{parts.netloc}{parts.path}{query}"
+    except Exception:  # noqa: BLE001 - URL 形状异常时退回空占位，不丢整条诊断
+        return "<unparseable-url>"
+
+
+class BootCausalObserver:
+    """RC19 因果诊断：本地显式验证 host 的单调时钟事件关联。
+
+    只记录本地回环验证 host 的 bind/listen/accept/请求处理进入与完成/关闭、
+    浏览器导航目标/实际 URL/requestfailed/response 与 UI 启动门里程碑。
+    只记方法/路径/状态与诊断标识，不记 key、请求体或商品图片内容。
+    诊断能力与机制修复分开：本类只证明“观测到什么”，不声称根因。
+    """
+
+    def __init__(self) -> None:
+        self.origin = time.monotonic()
+        self.lock = threading.Lock()
+        self.server_events: list[dict] = []
+        self.browser_events: list[dict] = []
+        self.attempts: list[dict] = []
+
+    def now_ms(self) -> float:
+        return round((time.monotonic() - self.origin) * 1000.0, 3)
+
+    def server(self, kind: str, **fields) -> None:
+        event = {"t_ms": self.now_ms(), "kind": kind}
+        event.update(fields)
+        with self.lock:
+            self.server_events.append(event)
+
+    def browser(self, kind: str, **fields) -> None:
+        event = {"t_ms": self.now_ms(), "kind": kind}
+        event.update(fields)
+        with self.lock:
+            self.browser_events.append(event)
+
+    def failing_attempts(self) -> list[dict]:
+        return [item for item in self.attempts if not item.get("ready")]
+
+    def first_failure(self) -> dict | None:
+        failures = self.failing_attempts()
+        return dict(failures[0]) if failures else None
+
+    def window(self, start_ms: float, end_ms: float) -> dict:
+        with self.lock:
+            server = [event for event in self.server_events
+                      if start_ms <= float(event.get("t_ms", 0.0)) <= end_ms]
+            browser = [event for event in self.browser_events
+                       if start_ms <= float(event.get("t_ms", 0.0)) <= end_ms]
+        return {"server_events": server, "browser_events": browser}
+
+    def causal_branch(self, attempt: dict) -> str:
+        """§11.6.2 四条显式诊断分支；无法区分时如实返回 unknown 缺观测。"""
+        window = self.window(float(attempt.get("start_ms", 0.0)),
+                             float(attempt.get("end_ms", 0.0)))
+        accepted = [event for event in window["server_events"]
+                    if event.get("kind") == "accept"]
+        started = [event for event in window["server_events"]
+                   if event.get("kind") == "request_start"]
+        finished = [event for event in window["server_events"]
+                    if event.get("kind") == "request_finish"]
+        ready_wait_failed = attempt.get("phase") == "ready_wait"
+        navigation_failed = attempt.get("phase") == "navigation"
+        if not accepted and not started:
+            if navigation_failed:
+                return "no_accept_navigation_failed"
+            return "no_accept_ready_failed"
+        if started and not finished:
+            return "accepted_unfinished"
+        if finished and ready_wait_failed:
+            return "responded_ui_not_ready"
+        if navigation_failed:
+            return "navigation_failed_with_server_trace"
+        return "unknown_missing_discriminating_observation"
+
+    def summary(self) -> dict:
+        first = self.first_failure()
+        branch = self.causal_branch(first) if first else "no_failure_observed"
+        return {
+            "attempts": [dict(item) for item in self.attempts],
+            "first_failure": first,
+            "causal_branch": branch,
+            "server_event_count": len(self.server_events),
+            "browser_event_count": len(self.browser_events),
+            "server_events": [dict(item) for item in self.server_events],
+            "browser_events": [dict(item) for item in self.browser_events],
+        }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="V2.4.4 候选字节流、Blob 持久化与容量管理验证")
     parser.add_argument("--label", default="")
+    parser.add_argument("--boot-diagnostic", default="",
+                        choices=["", "disabled-listener", "stalled-response", "stalled-ui-boot"],
+                        help="仅用于单独验证启动诊断判红能力：关闭监听/卡住响应/卡住 UI 启动各一次，不进入 CI 默认路径。")
     args = parser.parse_args()
 
     from playwright.sync_api import expect, sync_playwright  # noqa: PLC0415
@@ -399,12 +538,97 @@ def main() -> int:
                     retry_policy="retryable")
             return FakeImageProvider.result(self, request)
 
+    boot_observer = BootCausalObserver()
     server = module.create_product_v2_server(
         "127.0.0.1", 0,
         provider_factory=lambda: FakeSemanticProvider(scenario="ok"),
         image_provider_factory=lambda: MarkerImageProvider(scenario="ok"))
-    threading.Thread(target=server.serve_forever, daemon=True).start()
-    base = f"http://127.0.0.1:{server.server_address[1]}"
+    # 本地显式验证 host 的最小诊断包装：标准库子类/实例级包装，不改产品处理器语义。
+    # 只记 bind/listen/accept/请求处理进入与完成/关闭与线程状态，不记任何业务内容。
+    bound_host, bound_port = server.server_address[:2]
+    boot_observer.server("bind", host=bound_host, port=bound_port,
+                         listening=bool(getattr(server, "socket", None)))
+    _native_get_request = server.get_request
+    _native_close_request = server.close_request
+    _native_process_request = server.process_request
+    _accepted_sequence = {"next": 0}
+
+    def _instrumented_get_request():
+        outcome = _native_get_request()
+        _accepted_sequence["next"] += 1
+        boot_observer.server("accept", accepted=_accepted_sequence["next"],
+                             active_threads=threading.active_count())
+        return outcome
+
+    def _instrumented_close_request(request) -> None:
+        try:
+            _native_close_request(request)
+        finally:
+            boot_observer.server("close", active_threads=threading.active_count())
+
+    def _instrumented_process_request(request, client_address) -> None:
+        boot_observer.server("handler_start", peer=str(client_address),
+                             active_threads=threading.active_count())
+        try:
+            _native_process_request(request, client_address)
+        finally:
+            boot_observer.server("handler_finish", peer=str(client_address),
+                                 active_threads=threading.active_count())
+
+    server.get_request = _instrumented_get_request
+    server.close_request = _instrumented_close_request
+    server.process_request = _instrumented_process_request
+    _finish_request = server.finish_request
+
+    def _instrumented_finish_request(request, client_address) -> None:
+        # 诊断包装只记录一次 handler 身份/生命周期，不改动产品请求处理本身。
+        boot_observer.server("request_start", peer=str(client_address))
+        try:
+            _finish_request(request, client_address)
+        finally:
+            boot_observer.server("request_finish", peer=str(client_address))
+
+    def _instrumented_process_request_thread(request, client_address) -> None:
+        boot_observer.server("request_start", peer=str(client_address))
+        try:
+            _finish_request(request, client_address)
+        finally:
+            boot_observer.server("request_finish", peer=str(client_address))
+
+    server.process_request_thread = _instrumented_process_request_thread
+
+    server.finish_request = _instrumented_finish_request
+    serve_thread = threading.Thread(target=server.serve_forever, daemon=True)
+    serve_thread.start()
+    actual_host, actual_port = server.server_address[:2]
+    assert int(actual_port) != 0, "验证 host 必须读回 0 号端口分配的真实端口"
+    base = f"http://{actual_host}:{actual_port}"
+    boot_observer.server("serve_start", host=actual_host, port=actual_port, base=base,
+                         serve_thread_alive=serve_thread.is_alive())
+    if args.boot_diagnostic == "disabled-listener":
+        # 受控红证明：显式关闭监听套接字，浏览器建连必须失败且诊断保留 no_accept 分支。
+        boot_observer.server("injected_disabled_listener", base=base)
+        server.server_close()
+        boot_observer.server("listener_closed",
+                             serve_thread_alive=serve_thread.is_alive())
+    elif args.boot_diagnostic == "stalled-response":
+        # 受控红证明：只让本验证 host 第一次处理请求线程前显式等待 35 秒。
+        # 35 秒超过默认导航超时（30 秒），第一次 goto 必因超时失败并留下首失败；
+        # 第二次尝试不再延迟、正常成功，证明“重试成功不关闭首个失败”。
+        # 仍调用原产品 finish_request/product handler 写出路径；仅对本 server 实例的
+        # process_request_thread 再包一层，不改产品文件、不改已加载类的其他实例/方法。
+        stalled_state = {"done": False}
+        _diagnostic_process_request_thread = server.process_request_thread
+
+        def _stalled_process_request_thread(request, client_address) -> None:
+            if not stalled_state["done"]:
+                stalled_state["done"] = True
+                boot_observer.server("injected_stalled_response",
+                                     peer=str(client_address))
+                time.sleep(35)
+            return _diagnostic_process_request_thread(request, client_address)
+
+        server.process_request_thread = _stalled_process_request_thread
 
     submit_requests: list[dict] = []
     status_requests: list[str] = []
@@ -427,6 +651,41 @@ def main() -> int:
                 page.on("console", lambda message: console_errors.append(message.text)
                         if message.type == "error" else None)
                 page.on("pageerror", lambda error: page_errors.append(str(error)))
+                if args.boot_diagnostic == "stalled-ui-boot":
+                    # 受控红证明：响应正常到达，但页面启动门永远不满足（pending 保持可见）。
+                    # 用 context 级 init script 把 hidden 钉死为 false：产品 boot 代码仍原样
+                    # 运行到 hidden=true 写出，只是写出不生效，门条件永远不成立。
+                    # page 级 add_init_script 在持久 context 下不生效，必须用 context 级注册。
+                    context.add_init_script("""
+                        const pin = () => {
+                            const pending = document.getElementById('boot-pending');
+                            if (!pending) return false;
+                            pending.hidden = false;
+                            try {
+                                Object.defineProperty(pending, 'hidden', {
+                                    configurable: true, get: () => false, set: () => {},
+                                });
+                            } catch (err) { /* 钉死失败则保持单次写回 */ }
+                            return true;
+                        };
+                        if (document.documentElement) {
+                            if (!pin()) {
+                                new MutationObserver((_, observer) => {
+                                    if (pin()) observer.disconnect();
+                                }).observe(document.documentElement, {childList: true, subtree: true});
+                            }
+                        } else {
+                            document.addEventListener('DOMContentLoaded', () => {
+                                if (!pin() && document.documentElement) {
+                                    new MutationObserver((_, observer) => {
+                                        if (pin()) observer.disconnect();
+                                    }).observe(document.documentElement, {childList: true, subtree: true});
+                                }
+                            }, {once: true});
+                        }
+                    """)
+                    boot_observer.browser("injected_stalled_ui_boot")
+
 
                 def payload_of(request) -> dict:
                     try:
@@ -467,43 +726,97 @@ def main() -> int:
                 page.on("response", on_response)
 
                 failed_requests: list[str] = []
-                page.on("requestfailed", lambda request: failed_requests.append(
-                    request.url + " :: " + str(request.failure)))
 
-                # Windows 回环上偶发同源模块请求被 RST（net::ERR_CONNECTION_REFUSED）：
-                # 实测 7 次运行中 4 次出现（URL 已留证），服务器端口仍在监听（裸连接可达），
-                # 且用 40 并发裸连接、端口复用、CPU 争用 ×2（queue=5/128）都无法复现 → 环境级瞬态，
-                # 与产品启动逻辑无关（产品自检 run_self_check 对同一现象也只做一次连接级重试）。
-                # 处置：加载/重载后必须等"启动完成"门；失败记录原因并在同一次验证内重试一次，
-                # 重试仍失败才是真失败（不隐藏产品缺陷：门本身仍必须通过）。
+                def _record_request_failed(request) -> None:
+                    text = _redact_url(request.url) + " :: " + str(request.failure)
+                    failed_requests.append(text)
+                    boot_observer.browser("requestfailed", url=text,
+                                          failure=str(request.failure)[:240])
+
+                def _record_response(response) -> None:
+                    # 启动诊断只记同源文档/模块响应的状态与 URL 形状，不读正文。
+                    try:
+                        url = str(response.url)
+                    except Exception:  # noqa: BLE001 - 响应对象异常时保留最小可定位信息
+                        url = "<unknown-response-url>"
+                    if url.startswith(base):
+                        boot_observer.browser("response", url=_redact_url(url),
+                                              status=response.status)
+
+                page.on("requestfailed", _record_request_failed)
+                page.on("response", _record_response)
+
+                # 启动诊断：加载/重载后必须等“启动完成”门；导航异常与 ready 失败都要捕获。
+                # 不做环境/产品归因：观测只记录首个失败的 URL、时间、阶段、控制台、
+                # requestfailed/response、UI 启动里程碑及同窗 host 事件；后一次成功不关闭首个失败。
                 boot_retries: list[str] = []
 
                 def load_page(url: str | None = None, attempts: int = 2) -> None:
                     for attempt in range(attempts):
                         before = len(failed_requests)
-                        if url is None:
-                            page.reload(wait_until="networkidle")
-                        else:
-                            page.goto(url, wait_until="networkidle")
+                        navigation_target = url if url is not None else page.url
+                        attempt_record: dict = {
+                            "load": url if url is not None else "<reload>",
+                            "attempt": attempt,
+                            "navigation_target": _redact_url(navigation_target),
+                            "start_ms": boot_observer.now_ms(),
+                            "ready": False,
+                            "phase": "navigation",
+                            "console_tail": list(console_errors[-3:]),
+                            "page_error_tail": list(page_errors[-3:]),
+                        }
+                        boot_observer.browser("navigation_start",
+                                              target=attempt_record["navigation_target"],
+                                              mode="goto" if url is not None else "reload",
+                                              attempt=attempt)
                         try:
-                            page.wait_for_function(
-                                """() => {
-                                    const el = (id) => document.getElementById(id);
-                                    const pending = el('boot-pending');
-                                    const error = el('boot-error');
-                                    const projectView = el('project-view');
-                                    const create = el('new-project-name');
-                                    const bootError = Boolean(error && !error.hidden
-                                        && (error.textContent || '').trim().length > 0);
-                                    return Boolean(pending && pending.hidden && !bootError
-                                        && ((create && !create.disabled)
-                                            || (projectView && !projectView.hidden)));
-                                }""", timeout=20_000)
+                            if url is None:
+                                page.reload(wait_until="networkidle")
+                            else:
+                                page.goto(url, wait_until="networkidle")
+                            attempt_record["phase"] = "ready_wait"
+                            page.wait_for_function(BOOT_GATE_JS, timeout=20_000)
+                            attempt_record["ready"] = True
+                            attempt_record["phase"] = "ready"
+                            attempt_record["end_ms"] = boot_observer.now_ms()
+                            attempt_record["actual_url"] = _redact_url(page.url)
+                            attempt_record["boot"] = _boot_snapshot(page)
+                            boot_observer.attempts.append(attempt_record)
+                            boot_observer.browser(
+                                "navigation_ready",
+                                actual_url=attempt_record["actual_url"], attempt=attempt)
                             return
                         except Exception as error:  # noqa: BLE001
+                            attempt_record["end_ms"] = boot_observer.now_ms()
+                            try:
+                                attempt_record["actual_url"] = _redact_url(page.url)
+                            except Exception:  # noqa: BLE001 - 页面对象已不可用时保留导航前目标
+                                attempt_record["actual_url"] = attempt_record["navigation_target"]
+                            attempt_record["error"] = (
+                                f"{type(error).__name__}: {str(error)[:500]}")
+                            attempt_record["boot"] = _boot_snapshot(page)
+                            attempt_record["failed_requests"] = list(
+                                failed_requests[before:before + 8])
+                            attempt_record["server_thread_alive"] = serve_thread.is_alive()
+                            attempt_record["server_address"] = list(
+                                server.server_address[:2])
+                            window = boot_observer.window(
+                                float(attempt_record["start_ms"]),
+                                float(attempt_record["end_ms"]))
+                            attempt_record["server_events"] = window["server_events"]
+                            attempt_record["browser_events"] = window["browser_events"]
+                            attempt_record["causal_branch"] = boot_observer.causal_branch(
+                                attempt_record)
+                            boot_observer.attempts.append(attempt_record)
+                            boot_observer.browser(
+                                "navigation_failed",
+                                phase=attempt_record["phase"],
+                                error=attempt_record["error"], attempt=attempt)
                             boot_retries.append(
-                                f"attempt={attempt} {type(error).__name__} "
-                                f"refused={failed_requests[before:before + 3]}")
+                                f"attempt={attempt} phase={attempt_record['phase']} "
+                                f"{attempt_record['error']} "
+                                f"branch={attempt_record['causal_branch']} "
+                                f"refused={attempt_record['failed_requests'][:3]}")
                             if attempt == attempts - 1:
                                 raise
                             page.wait_for_timeout(500)
@@ -671,6 +984,24 @@ def main() -> int:
                 confirm_generation(shot_ids)
                 ui["base_shots"] = shot_ids
                 ui["boot_retries"] = list(boot_retries)
+                ui["boot_diagnosis"] = boot_observer.summary()
+                first_boot_failure = boot_observer.first_failure()
+                # 首个失败即使被后一次加载掩盖，也必须显式判红：重试成功不关闭首个失败。
+                # 受控诊断模式里第一次 prep 加载被显式注入破坏：-03b 在诊断模式下期望红
+                # （首失败保留），默认路径仍期望绿（无首失败）。
+                check("V2.4.4-03b", "启动诊断：首次加载失败不可被重试成功掩盖（首失败保留因果分支）",
+                      (first_boot_failure is not None) if args.boot_diagnostic else (first_boot_failure is None),
+                      {"first_failure": first_boot_failure,
+                       "causal_branch": boot_observer.summary()["causal_branch"],
+                       "boot_retries": list(boot_retries)})
+                if args.boot_diagnostic:
+                    diagnosis = boot_observer.summary()
+                    check("V2.4.4-03d",
+                          f"诊断红证明（{args.boot_diagnostic}）：受控注入必须留下首失败与分支",
+                          first_boot_failure is not None,
+                          {"mode": args.boot_diagnostic,
+                           "first_failure": first_boot_failure,
+                           "causal_branch": diagnosis["causal_branch"]})
                 check("V2.4.4-03",
                       "就绪：首批摘要范围=未提交全集（4 张）、候选栏为空且只有参考图字节",
                       len(ready["ui"]["rows"]) == 4
@@ -908,17 +1239,54 @@ def main() -> int:
     except Exception as error:  # noqa: BLE001 - 中断也要留下证据文件
         interrupted = f"[{stage}] {type(error).__name__}: {error}"
     finally:
+        boot_observer.server("shutdown_start", stage=stage,
+                             serve_thread_alive=serve_thread.is_alive())
         try:
             server.shutdown()
             server.server_close()
-        except Exception:  # noqa: BLE001
-            pass
+            boot_observer.server("shutdown_finish", closed=True,
+                                 serve_thread_alive=serve_thread.is_alive())
+        except Exception as shutdown_error:  # noqa: BLE001
+            boot_observer.server("shutdown_finish", closed=False,
+                                 error=f"{type(shutdown_error).__name__}: {shutdown_error}")
+    # 中断/完成都保留完整诊断：首个失败独立于后一次成功存在。
+    ui["boot_diagnosis_final"] = boot_observer.summary()
+    ui["boot_retries_final"] = list(boot_retries) if "boot_retries" in locals() else []
+    if "failed_requests" in locals():
+        ui["failed_requests_final"] = list(failed_requests)
 
     if interrupted:
+        diagnosis = boot_observer.summary()
+        failed_loads = boot_observer.failing_attempts()
         check("V2.4.4-99", "浏览器闭环在完成前中断", False,
-              interrupted + f"\nfailed_requests={failed_requests[:8]}"
-              + f"\npage_url={locals().get('page') and page.url}\nbase={base}"
-              + f"\npages={[item.url for item in context.pages]}")
+              {"interrupted": interrupted,
+               "stage": stage,
+               "first_boot_failure": boot_observer.first_failure(),
+               "failed_loads": failed_loads,
+               "causal_branch": diagnosis["causal_branch"],
+               "failed_requests": (list(failed_requests[:8])
+                                   if "failed_requests" in locals() else []),
+               "page_url": (_redact_url(page.url) if "page" in locals() else None),
+               "base": base,
+               "server_events": boot_observer.server_events[-40:],
+               "browser_events": boot_observer.browser_events[-40:]})
+
+    # 全部加载完成后再次核对首个失败：后一次成功不能使整轮全绿。
+    # 受控诊断模式本身期望红：-03c 只在默认路径要求“无首失败”，诊断模式由 -03d 证明判红能力。
+    final_first_failure = boot_observer.first_failure()
+    final_branch = boot_observer.summary()["causal_branch"]
+    if not args.boot_diagnostic:
+        check("V2.4.4-03c", "启动诊断终核：整轮任一次加载失败都保留并判红（observer 证明，非因果修复）",
+              final_first_failure is None,
+              {"first_failure": final_first_failure,
+               "causal_branch": final_branch,
+               "attempts": boot_observer.summary()["attempts"]})
+    else:
+        check("V2.4.4-03e", f"诊断红证明终核（{args.boot_diagnostic}）：受控失败必须保留到整轮结束",
+              final_first_failure is not None,
+              {"mode": args.boot_diagnostic,
+               "first_failure": final_first_failure,
+               "causal_branch": final_branch})
 
     expected_noise = ("Failed to load resource: the server responded with a status of 504",
                       "Failed to load resource: the server responded with a status of 502",
@@ -946,7 +1314,8 @@ def main() -> int:
         "并给出「清出空间后重试」指引；整套批次只提交剩余图一次、全部成功且候选全部"
         "入库，进度不再显示待保存候选。本批不做审核、单图返工与导出（Phase 5）；0 次真实模型调用、"
         "0 次外部网络；图像 provider 是注入的假替身（按 Prompt 标记决定取回场景），只证明候选"
-        "持久化语义，不证明真实出图质量。"
+        "持久化语义，不证明真实出图质量。启动诊断只证明观测能力（首个失败的 URL/阶段/分支与同窗"
+        "host/浏览器事件被保留并判红），不证明 RC19 根因；诊断红不是因果修复，RC19 仍需现象—机制对应。"
     )
     report = {
         "task": "V2.4.4",

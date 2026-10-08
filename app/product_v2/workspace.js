@@ -578,6 +578,10 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
     })),
     promptsSheet: (ids) => prompts.sheet(ids ?? null),
     imageEnvironment: (saved) => /** @type {unknown} */ (saved ?? modelSettings.imageEnvironment()),
+    promptAbility: {
+      compile: (shotId, options) => prompts.compile(shotId, options),
+      compileAndSave: (shotId, options) => prompts.compileAndSave(shotId, options),
+    },
   });
   const selectionAdoption = createSelectionAdoptionModule({
     repository: /** @type {import("./storage/validate.js").ProjectRepository} */ (/** @type {unknown} */ (repository)),
@@ -832,7 +836,6 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
     },
     deps: {
       inputs,
-      prompts,
       generation,
       selectionAdoption,
       beginAction,
@@ -846,17 +849,7 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
       showAttemptError: (/** @type {string} */ message) => { generationView?.showAttemptError(message); },
       renderPrompts: () => generationView?.renderPrompts(),
       renderConfirm: () => generationView?.renderConfirm(),
-      promptRecordOf: (/** @type {string|null} */ shotId) => generationView?.promptRecordOf(shotId) ?? null,
-      focusPromptEditor: (/** @type {string} */ shotId) => {
-        const area = /** @type {HTMLTextAreaElement|null} */ (elements.promptList.querySelector(
-          '[data-shot-id="' + shotId + '"] textarea.prompt-edit-text'));
-        if (area) {
-          area.scrollIntoView({ block: "center" });
-          area.focus();
-        }
-      },
       readAsset: (/** @type {string} */ pid, /** @type {string} */ sha256) => repository.assets.get(pid, sha256),
-      queueShotIsCurrent: (/** @type {import("./generation.js").ConfirmationQueue} */ queue, /** @type {string} */ shotId) => generationView?.queueShotIsCurrent(queue, shotId) ?? false,
       deriveState: deriveAndApplyState,
       reportError: handleInternalError,
       suffixedErrorMessage: errorMessageSuffixed,

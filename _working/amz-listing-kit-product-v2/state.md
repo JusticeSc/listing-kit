@@ -3,6 +3,13 @@
 > CONTROL-STATUS: current · AUTHORITY: execution-state
 > 只保存进度、证据、阻塞/未知与下一动作；目标和任务定义只在 `docs/product-v2-refactor-plan.md`。
 > prepared 是未绑定新 Goal 的本地准备态，不是系统 paused。旧读数与完成记录只见 superseded 基线。
+> **2026-10-09基线收敛第1批闭合（追加1/5）**：H1返工owner缺口已闭合。产品改动：generation新增prepareRework/confirmRework窄契约（向prompts借compile/compileAndSave窄能力，ReworkIntent冻结所见来源/输入/Prompt/配置/编译预览），compare-view卡片返工/采用精确绑定显示candidateId（openCompare/openReworkPanel显式目标，缺失可见阻断零外发不回退），submitRework编排收归owner，view删prompts/queueShotIsCurrent等越权依赖，workspace注入promptAbility窄能力；改TS同包生成JS。验证器对齐：5_3夹具走真实saveCandidate来源链+13b卡片返工精确绑定断言，5_4双击按真实点击+飞行禁用判据。受影响门全绿：check:types/check:generated/test:domain231/--check52/5_3/5_4/4_4/P08-26/26（共26项26/26，两份p08证据均为26/26全绿）。H1 failing-before（5_3-13b用上次查看v2而非显示最新v3）经本批修复后同入口全绿，证据 `evals/product-v2/v2.5.3-compare-panel-20261009-010647baseline-compare.json`。诊断能力：自检传输中断留签名（server/attempts/error-class，已提交6e50ca5）。main保护已由false启用为true（Control plane and Product V2 + Docker image, smoke test, and main deploy，strict，enforce_admins，approving_count=0）。本批0模型调用/0付费，预算账本未动。下一批：B1凭据精确接收/B2辅助整链按§11.6.4推进，或冻结同候选两轮（§11.6.6）—由下一轮用户指令定。
+> **2026-10-08可信基线详细实施计划（仅规划）**：用户追问详细实施方案，已将文件级落点、原依赖、RC19诊断分支、卡片精确候选/采用标记与返工owner闭合、精确凭据/完整辅助路径、旧面精确退休守卫、最终冻结及现有CD复用写入 `docs/product-v2-refactor-design.md` §11.6，并更新§12恢复文本；分析记录入口见 `evals/product-v2/refactor/human-factors-analysis-20261008.md` §11。只修真实差量，已解决的reviewAccess/setter等不重做，大布局改善后置但原结构/安全/用户合同不豁免。仅核对文档与恢复路由，不产品施工、模型、浏览器、PR或部署；追加实施仍0/5，原Goal正文/任务状态/依赖/预算与R5.1 blockers不变。
+> **2026-10-08人因分析与基线优先讨论**：用户要求将人因问题记录在案，并提出先收敛可信基线的倾向；建议先沿原工程前沿闭合真实准出缺口与必要安全交互，再集中改善第四/第五步布局和非必需机械步骤。分析、截图与优先级见 `evals/product-v2/refactor/human-factors-analysis-20261008.md` §6–9；人因问题完整保留，卡片返工对象/发送范围/Unknown风险及原合同必需项不因“先基线”豁免。当前main仅为已发布候选，未宣布可信基线或Goal完成；旧运行面清退仍在原授权范围、按原依赖收口。本次仅记录与规划，不施工；追加实施0/5、原Goal/任务/准出/预算不变，R5.1与现有blockers保持原状。
+> **2026-10-08审计后的明确授权**：用户在本轮ask选择“恢复，追加最多5批”及“纳入旧运行面清退”。沿原Goal和既有记录追加最多5个连贯实施批次，新增批次当前0/5，不重置原批次/费用/调用账本、不降低验收；额度用尽仍未交付则再次停止申请。pre-V1 `run.py/web` 等纳入用途/消费者核对及必要清退，先迁移必要控制面、建立代码/同版本数据恢复材料，保护共享P治理/规则/历史/用户原件，不仅改名legacy或直接误删。当前用户转而询问成品观察方式、人因工程及界面交互思路，本响应先说明和评估，不进行产品改动；R5.1仍因RC19与其余准出缺证blocked，不把解除用户停工等同于缺证已解决。原审计停工门与批次结论保留为授权前历史。
+> **2026-10-08审计时停工门（已被上方追加授权更新）**：用户在R7.3中途明确“结束当前工作”，当时仅要求审计、确定状态和后续规划，尚未解除停工。实时系统Goal `159d03ed410f9ff9`仍active、正文匹配计划§2.1；不伪造paused/complete，也不把active当施工许可。R5.1改blocked，Phase5保留未完成归属；唯一下一动作只可处理本任务停止/准出门。下文“继续吧”和8/10均是此前时点记录。
+> 当前检出main `0572b5c`；其main发布run37764592110已成功（真实Docker/TLS页面/指纹/finalize，工件11545870528），85文件runtime指纹`44f2e9b9…`；本次可信HTTPS只读首页/API与8份静态字节匹配工件。完整工程Goal未完成：RC19因果、最终辅助/秘密/结构证据、删后最终两轮/矩阵仍有缺口；main保护=false、PR5 reviews=[]不能称受保护审查成立。R7.3现场仅本地分支`feat/v1-sunset-20261008`@`15faa65`，114删/3改/9新增恢复材料，未收尾不可合并。分支专有ZIP/manifest在main物理路径不存在，但Git blob哈希已核实可恢复。
+> 批次数重新按既有独立消费者段保守核算：原8/10后另有发布probe(986a6df)、4_3取样(300c1c4)、构建下载类(639661c/9a461fb同类计一段)、R7.3 WIP(15faa65)，保守占12而非声称唯一精确历史次数；原10轮门已达到，恢复前必须用户核定追加/继续，不能默认尚余两轮。本次只读审计/状态纠正不计实施轮，预算不重置；准确证据与规划见latest_audit。
 > **2026-10-08最新恢复门**：用户明确“继续吧”，要求做过的工作不重做、积累成资产、逐步减少工作量与复杂性。相同产品Goal `159d03ed410f9ff9`已真实resume为active，正文与计划§2.1一致；原停止指令保留历史。绑定后的工作按5个独立消费者工作段保守占用原10轮，本次HTTP差量为第6轮，原预算/计数不清零；Phase5/R5.1 active。已有实现、真链和本地完整流程/两包资产保留，相关合同未改不重跑。差量快照`_stage-amz-control/asset-continuation-20261008T054352Z/manifest.json`复用原全量代码/数据恢复材料，不再重建整套基线。
 > 2026-10-08 远程 CD 收口轮（本机 Windows vs CI ubuntu 的 Linux 时序差逐个定位）：PR #4 推上去的
 > 5段提交暴露4个跨平台红结点；当时曾称“全部实测修复”，最新审计收窄为对应等待改动/诊断与后续绿，不作为全部间歇根治证明——
@@ -71,7 +78,7 @@ goal_binding_evidence: evals/product-v2/refactor/goal-observation-continuation-2
 system_goal_observed_status: active
 system_goal_observed_at: '2026-10-08T05:43:52.105Z'
 plan_ref: docs/product-v2-refactor-plan.md
-latest_audit: evals/product-v2/refactor/audit-current-state-20261008.md
+latest_audit: evals/product-v2/refactor/audit-after-stop-20261008.md
 phase_progress:
   '0':
     status: done
@@ -280,7 +287,7 @@ task_progress:
     - evals/product-v2/v2.1.3-project-package-20261005-184649.json
     - evals/product-v2/v2.1.3-project-package-20261005-184649.txt
   V2.R5.1:
-    status: active
+    status: blocked
     evidence:
     - evals/product-v2/refactor/final-delivery-20261007.md
     - evals/product-v2/refactor/goal-observation-final-delivery-20261007.json
@@ -437,7 +444,9 @@ task_progress:
     - app/product_v2/domain/config-export.ts
     - tools/build_product_v2_ts.mjs
 next_action_task: V2.R5.1
-blockers: []
+blockers:
+  - V2.R5.1_RC19_boot_load_intermittent_still_lacks_phenomenon_mechanism_correspondence_and_controlled_fix_no_repeated_green_or_retry_waiver
+  - V2.R5.1_final_assisted_BYOK_structural_and_cleanup_acceptance_scope_not_closed_follow_latest_audit_no_early_R73_R71_R74_completion
 unknowns:
   - historical_r74_closeout_volc_adopt_export_222253_pass_spent_1_15_of_5_image_8_of_8_matrix_CI_37136575625_deploy_24a3561_origin_https_47_115_172_233_8080_paid_online_probes_0_evidence_completion-matrix-20261003-r74_not_current_completion
   - historical_r71_regression_r71f_semlive_vlm_dashscope194526_volc195600_spent_0_91_of_5_evidence_full-verification-20261003-r71_not_current_G6_or_design_proof
@@ -480,7 +489,7 @@ unknowns:
   - lower_model_preparation_20261006_design_r2_section10_frozen_reservation_action_preservation_lifecycle_report_ZIP_emit_release_algorithms_section11_11_internal_packets_atomic_group_A_01_03_section12_start_text_only_no_product_edits_runtime_browser_model_git_deploy_or_status_change_user_stop_R51_unchanged_follow_lower-model-preparation-20261006
   - historical_packet11_earlier_closeout_20261007_bind_zero_port_race_fix_and_individual_passes_retained_later_4_3_diag4_pass_supersedes_unverified_note_4_4_boot_after_bind_zero_and_check06_still_failed_3_5_six_reds_5_3_15_weak_oracle_settings_three_empty_proofs_and_final_two_rounds_unclosed_follow_audit-current-state-20261007
   - historical_planning_only_stop_20261007_later_superseded_by_user_explicit_full_delivery_resume_and_native_product_Goal_159d03ed410f9ff9_not_planning_Goal_binding_follow_goal-observation-final-delivery-20261007
-  - current_structural_residual_generation_reviewAccess_setters_and_workspace_report_fill_UI_summary_and_render_callbacks_targeted_current_round_no_second_whole_architecture_refactor_follow_design_11_5
+  - historical_structural_residual_reviewAccess_setters_description_current_source_has_removed_these_do_not_repeat_owner_migration_remaining_rework_view_compile_save_confirm_sequence_to_close_under_original_structure_gate_follow_design_11_6
   - historical_R51_packet11_carried_failures_from_20261007_4_4_3_5_5_3_packet08_and_release_proof_gaps_later_convergence_has_scope_limited_passes_not_current_all_red_or_final_closure_follow_latest_audit
   - historical_delivery_batches_0_of_10_was_binding_baseline_only_implementation_and_work_regression_since_then_not_counted_accurate_used_batches_unreconciled_do_not_reset_or_infer_ten_remaining_follow_latest_audit_and_plan_stop_conditions
   - current_V1_engineering_cleanup_authorized_after_G6_types_coverage_consumer_cutover_code_and_current_format_data_recovery_R73_before_final_R71_two_rounds_not_dependent_on_unperformed_independent_human_R72
@@ -508,5 +517,11 @@ unknowns:
   - current_20261008_v1_sunset_r73_inventory_product_v1_has_no_unique_purpose_v2_covers_all_but_local_folder_workspace_and_its_http_api_superseded_by_sel014_sel018_pre_v1_m_series_layer_has_v2_uncovered_purposes_local_renderers_cutout_slot_registry_data_policy_review_checklist_pilot_registry_eval_dataset_m7_workbench_no_v1_data_on_disk_no_v1_to_v2_migration_by_design_five_deletion_blockers_verify_v2_1_2_project_home_V2_1_2_10_app_server_v1_branch_check_project_state_J5_J6_superseded_v1_state_evidence_check_docs_run_py_docs_cards_and_registry_schema_gen_slot_cards_plan_section_2_3_wording_vs_16_1_follow_refactor_v1-sunset_baseline_before_any_deletion
   - current_20261008_two_ci_infra_download_timeouts_same_class_different_steps_run_37760499569_docker_build_pillow_30s_and_run_37762306228_host_uv_sync_httpcore2_mirror_tuna_retries_exhausted_not_product_regression_same_tree_passed_previous_round_fix_by_class_workflow_env_UV_HTTP_TIMEOUT_300_UV_HTTP_RETRIES_5_plus_dockerfile_env_index_lock_and_product_untouched_var_names_verified_by_uv_parse_error_if_same_class_recurs_report_as_infrastructure_not_rerun_for_green
   - current_20261008_v1_sunset_baseline_captured_stage_amz_control_v1_sunset_20261008T100045Z_head_8a9e3bd_tree_d6a937c5_tracked_3282_manifest_digest_a6269682_representative_project_zip_sha256_4007b9b1_62_members_55_documents_6_assets_import_verified_real_file_input_and_real_open_click_idb_55_docs_6_assets_revision_8_screenshot_86196277_simulated_not_c15_c17
-updated_at: '2026-10-08T10:20:30.000Z'
+  - audit_after_stop_20261008_system_goal_get_active_same_159d03ed410f9ff9_user_stop_remains_next_R51_blocked_not_system_paused_observations_in_latest_audit
+  - audit_after_stop_20261008_main_0572b5c_run37764592110_success_docker_selftest32_32_offline13_13_live_PS10_10_fingerprint_image_ce90236c_runtime44f2e9b9_files85_finalize_rc0_previous_cleaned_not_final_Goal_completion
+  - audit_after_stop_20261008_Github_main_protected_false_rules_empty_PR5_reviews_empty_reviewDecision_empty_no_independent_review_or_enforced_protection_claim
+  - audit_after_stop_20261008_r73_WIP15faa65_local_only_114_deleted_3_modified_9_snapshot_additions_add_A_breached_precise_promotion_main_branch_specific_baseline_paths_absent_blob_zip4007b9b1_manifesta6269682_verified
+  - audit_after_stop_20261008_r73_data_probe_checks_identity_counts_asset_hashes_project_ZIP_only_no_document_payload_adoption_current_rework_or_delivery_ZIP_do_not_claim_full_R73_acceptance
+  - audit_after_stop_20261008_rounds_original8_then_release_probe_batch_oracle_build_download_class_and_R73_work_conservative12_exact_historical_grouping_not_unique_10_gate_reached_no_auto_continuation
+updated_at: '2026-10-08T13:49:06.013Z'
 ```

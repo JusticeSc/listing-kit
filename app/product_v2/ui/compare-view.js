@@ -6,13 +6,13 @@
  * 边界（设计 §10.1）：这里只持比较/返工/采用三区的 DOM 与就地内存态（当前查看的
  * 图与候选、跨项目记忆、返工草稿与在飞标识），不写库、不发网络、不重算业务判定。
  * 候选链与尝试链的唯一所有者是 generation，采用记录与单图报告的唯一所有者是
- * selectionAdoption，Prompt 版本/编译的唯一所有者是 prompts；落库/派生/跨区渲染
- * 都经 deps 回到工作区。比较排序与默认目标由 domain/compare.js 决定，这里只投影。
+ * selectionAdoption；返工意图的编译/落版/确认收归 generation（它向 prompts 借窄能力）。
+ * 落库/派生/跨区渲染都经 deps 回到工作区。比较排序与默认目标由 domain/compare.js 决定，这里只投影。
  *
  * TypeScript 迁移（计划 §9 V2.R7.5）：本文件是唯一手工维护实现；同名 `compare-view.js`
  * 由 `npm run build:frontend` 生成，浏览器只消费生成的 `.js`。
  */
-import { ATTEMPT_STATES, COMPARE_CONTRACT_VERSION, COMPARE_SEVERITY_TEXT, COMPARE_STATE_TEXT, REWORK_CONTRACT_VERSION, REWORK_PROBLEMS, attemptStateLabel, buildReworkDirective, compareCounts, compareRowHeadline, compareRows, defaultCompareTargetId, newActionId, nextPendingShotId, reviewChecklist, reviewIsCurrent, reviewSummaryText, selectionSetText, sortFindings, suggestReworkProblems, suggestedReworkDirection, suitePlanSummary, } from "../domain/index.js";
+import { ATTEMPT_STATES, COMPARE_CONTRACT_VERSION, COMPARE_SEVERITY_TEXT, COMPARE_STATE_TEXT, REWORK_CONTRACT_VERSION, REWORK_PROBLEMS, attemptStateLabel, compareCounts, compareRowHeadline, compareRows, defaultCompareTargetId, nextPendingShotId, reviewChecklist, reviewIsCurrent, reviewSummaryText, selectionSetText, sortFindings, suggestReworkProblems, suggestedReworkDirection, suitePlanSummary, } from "../domain/index.js";
 import { COMPARE_STATE_BADGE, ROLE_TEXT, SEVERITY_BADGE, appendTech, clearError, createElement, errorMessageOf, showError, techDetails, } from "./dom.js";
 /**
  * 审核视图工厂。
@@ -20,7 +20,7 @@ import { COMPARE_STATE_BADGE, ROLE_TEXT, SEVERITY_BADGE, appendTech, clearError,
  * @param args.deps 窄依赖：业务命令/投影 + 装配期注入的投影回调
  */
 export function createCompareView({ elements, deps }) {
-    const { inputs, generation, selectionAdoption, prompts } = deps;
+    const { inputs, generation, selectionAdoption } = deps;
     // 比较区就地状态：当前打开的图与候选、异步图片请求的代次、跨项目记忆、放大关闭后恢复焦点。
     let compareShotId = null;
     let compareCandidateId = null;
@@ -38,14 +38,6 @@ export function createCompareView({ elements, deps }) {
     function shotSummaries() {
         const plan = inputs.suitePlan();
         return plan ? suitePlanSummary(plan, inputs.suiteContext()).shots : [];
-    }
-    /**
-     * 这张图的返工确认是否仍然有效：与整套确认同一套「快照逐字比对」判定，
-     * 只是作用域只有这一张图——改别的图不会让它失效，改这张图一定会失效。
-     */
-    function reworkConfirmationIsCurrent(shotId) {
-        const entry = generation.reworkEntry(shotId);
-        return Boolean(entry && deps.queueShotIsCurrent(entry, shotId));
     }
     /**
      * 面板只是投影：候选、报告、参考图全部来自 IndexedDB 已经存在的事实，
@@ -110,11 +102,25 @@ export function createCompareView({ elements, deps }) {
     }
     function openCompare(shotId, options = {}) {
         compareShotId = shotId;
-        const previous = compareViews.get(deps.currentProjectId() + ":" + shotId);
-        compareCandidateId = options.candidateId || previous?.candidateId || null;
-        compareBaselineId = previous?.baselineId || null;
-        deps.selectStage("review");
-        renderCompare();
+        const requested = options.candidateId === undefined ? undefined : options.candidateId;
+        if (requested !== undefined) {
+            // 卡片动作显式交给哪条候选就看哪条：无效目标不静默回退，面板保持可解释的空选择。
+            const rows = compareInventory().rowsByShotId[shotId] || [];
+            const exists = requested === null || rows.some((row) => row.candidate_id === requested);
+            compareCandidateId = exists ? requested : null;
+            compareBaselineId = null;
+            deps.selectStage("review");
+            renderCompare();
+            if (!exists)
+                elements.compareStatus.textContent = "这条候选已经不在了，先重新选择候选。";
+        }
+        else {
+            const previous = compareViews.get(deps.currentProjectId() + ":" + shotId);
+            compareCandidateId = previous?.candidateId || null;
+            compareBaselineId = previous?.baselineId || null;
+            deps.selectStage("review");
+            renderCompare();
+        }
         if (options.focus === true) {
             const active = elements.compareCandidates.querySelector('[role="tab"][aria-selected="true"]');
             if (active)
@@ -574,8 +580,7 @@ export function createCompareView({ elements, deps }) {
             draft = {
                 problems: suggestReworkProblems(row ? row.report : null),
                 direction: suggestedReworkDirection(row ? row.report : null),
-                directive: null,
-                preview: null,
+                intent: null,
             };
             reworkDrafts.set(shotId, draft);
         }
@@ -584,10 +589,13 @@ export function createCompareView({ elements, deps }) {
     function reworkShotRow(shotId, candidateId) {
         const inventory = compareInventory();
         const rows = inventory.rowsByShotId[shotId] || [];
-        return rows.find((item) => item.candidate_id === candidateId) || rows[0] || null;
+        // 显式目标必须精确命中：缺失时返回 null 并由调用方阻断，不回退到另一条候选。
+        if (candidateId)
+            return rows.find((item) => item.candidate_id === candidateId) || null;
+        return rows[0] || null;
     }
     function reworkSummaryOf(draft) {
-        if (draft && draft.preview) {
+        if (draft && draft.intent) {
             return "预览已就绪：确认并生成会把它保存为 Prompt 新版本（旧版本保留），"
                 + "只重新生成这张图；改过问题或方向后需要重新预览。";
         }
@@ -600,31 +608,30 @@ export function createCompareView({ elements, deps }) {
             || String(elements.reworkDirection.value || "").trim().length > 0;
         const busy = reworkInFlight;
         elements.reworkPreview.disabled = busy || !hasReason;
-        elements.reworkEdit.disabled = busy || !draft.preview;
-        elements.reworkSubmit.disabled = busy || !draft.preview;
+        elements.reworkEdit.disabled = true;
+        elements.reworkSubmit.disabled = busy || !draft.intent;
         elements.reworkReset.disabled = busy;
         elements.reworkCancel.disabled = busy;
         elements.reworkSummary.textContent = reworkSummaryOf(draft);
     }
-    /** 输入变了：旧预览不再代表将要发送的内容，必须重新预览。 */
+    /** 输入变了：旧意图不再代表将要发送的内容，必须重新预览。 */
     function dirtyReworkDraft(draft) {
-        if (!draft || !draft.preview)
+        if (!draft || !draft.intent)
             return;
-        draft.preview = null;
-        draft.directive = null;
+        draft.intent = null;
         elements.reworkPreviewBox.hidden = true;
         elements.reworkStatus.hidden = true;
     }
     function renderReworkPreviewBox(draft) {
-        if (!draft || !draft.preview) {
+        if (!draft || !draft.intent) {
             elements.reworkPreviewBox.hidden = true;
             return;
         }
         elements.reworkPreviewBox.hidden = false;
         elements.reworkPreviewMeta.textContent =
             "将保存为 Prompt 新版本（旧版本保留）并只重新生成这张图 · 参考图 "
-                + draft.preview.references + " 张 · 全文 " + draft.preview.text.length + " 字";
-        elements.reworkPreviewText.textContent = draft.preview.text;
+                + draft.intent.preview.references + " 张 · 全文 " + draft.intent.preview.text.length + " 字";
+        elements.reworkPreviewText.textContent = draft.intent.preview.text;
     }
     function renderReworkProblems(shotId, draft) {
         const box = elements.reworkProblems;
@@ -656,16 +663,22 @@ export function createCompareView({ elements, deps }) {
             host.append(label);
         }
     }
-    /** 入口：把当前正看着的候选（candidate_id + sha256）交给返工表单；只改内存状态。 */
-    function openReworkPanel() {
-        const shotId = elements.reworkOpen.dataset.shotId || compareShotId;
-        const candidateId = elements.reworkOpen.dataset.candidateId || compareCandidateId;
+    /** 入口：只接受显式候选身份；缺失时可见阻断，不回退到另一条候选。 */
+    function openReworkPanel(options = {}) {
+        const shotId = options.shotId !== undefined ? options.shotId : (elements.reworkOpen.dataset.shotId || compareShotId);
+        const candidateId = options.candidateId !== undefined ? options.candidateId : (elements.reworkOpen.dataset.candidateId || compareCandidateId);
         if (!shotId || !candidateId || reworkInFlight)
             return;
         const row = reworkShotRow(shotId, candidateId);
-        if (!row || !row.record) {
+        if (!row || !row.record || row.candidate_id !== candidateId) {
             elements.compareStatus.textContent = "这条候选已经不在了，先重新选择候选。";
             return;
+        }
+        // 同一意图不跨候选复用：来源变化时旧意图作废，必须重新预览。
+        if (reworkShotId !== null && (reworkShotId !== shotId || reworkSource?.candidate_id !== row.candidate_id)) {
+            const staleDraft = reworkDrafts.get(reworkShotId);
+            if (staleDraft)
+                staleDraft.intent = null;
         }
         reworkShotId = shotId;
         reworkSource = {
@@ -681,8 +694,6 @@ export function createCompareView({ elements, deps }) {
         const basis = ["返工依据：候选 v" + (reworkSource.version === null ? "?" : reworkSource.version)];
         if (row.top_finding)
             basis.push("先看：" + row.top_finding.title);
-        if (reworkConfirmationIsCurrent(shotId))
-            basis.push("这张图的返工确认仍然有效");
         elements.reworkBasis.textContent = basis.join(" · ");
         if (elements.reworkTech && elements.reworkTechBody) {
             elements.reworkTech.hidden = false;
@@ -702,7 +713,7 @@ export function createCompareView({ elements, deps }) {
             first.focus();
         panel.scrollIntoView({ block: "nearest" });
     }
-    /** 收起返工区：清掉未确认的预览；草稿（问题与方向）按图保留。 */
+    /** 收起返工区：清掉未确认的意图；草稿（问题与方向）按图保留。 */
     function closeReworkPanel({ focusCandidate = false } = {}) {
         const shotId = reworkShotId;
         const candidateId = reworkSource ? reworkSource.candidate_id : null;
@@ -714,8 +725,7 @@ export function createCompareView({ elements, deps }) {
         clearError(elements.reworkError);
         const draft = shotId ? reworkDrafts.get(shotId) : null;
         if (draft) {
-            draft.preview = null;
-            draft.directive = null;
+            draft.intent = null;
         }
         if (focusCandidate && shotId)
             focusCompareCandidate(shotId, candidateId);
@@ -766,14 +776,19 @@ export function createCompareView({ elements, deps }) {
         dirtyReworkDraft(draft);
         updateReworkControls(shotId, draft);
     }
-    /** 预览：按当前问题与方向编译一次；只显示，不写记录。 */
+    /** 预览：owner 编译一次只读意图；视图只持有并显示，不写记录。 */
     async function previewRework() {
         if (!deps.currentProjectId() || !reworkShotId || reworkInFlight)
             return;
         const shotId = reworkShotId;
+        const sourceCandidateId = reworkSource ? reworkSource.candidate_id : null;
         clearError(elements.reworkError);
-        const row = reworkShotRow(shotId, reworkSource ? reworkSource.candidate_id : null);
-        if (!row || !row.record) {
+        if (!sourceCandidateId) {
+            showError(elements.reworkError, "返工依据已经不在，先回到比较区重新选择候选。");
+            return;
+        }
+        const row = reworkShotRow(shotId, sourceCandidateId);
+        if (!row || !row.record || row.candidate_id !== sourceCandidateId) {
             showError(elements.reworkError, "返工依据已经不在，先回到比较区重新选择候选。");
             return;
         }
@@ -782,29 +797,18 @@ export function createCompareView({ elements, deps }) {
         reworkInFlight = true;
         updateReworkControls(shotId, draft);
         try {
-            const directive = buildReworkDirective({
-                directiveId: newActionId(),
-                shotId: shotId,
-                candidate: row.record,
-                report: row.report,
-                problems: draft.problems,
-                direction: draft.direction,
-                at: new Date().toISOString(),
+            draft.intent = await generation.prepareRework({
+                shotId, candidateId: sourceCandidateId, problems: [...draft.problems], direction: draft.direction,
+                report: row.report || null,
             });
-            const result = await prompts.compile(shotId, { rework: directive });
-            draft.directive = directive;
-            draft.preview = {
-                directive_id: directive.directive_id,
-                payload: result.compiled,
-                references: result.references.length,
-                text: result.compiled.text,
-            };
             renderReworkPreviewBox(draft);
             elements.reworkStatus.hidden = false;
             elements.reworkStatus.textContent = "预览已就绪：确认并生成时会先把它保存为新版本，"
                 + "再只提交这一张图；预览本身没有写入任何记录。";
         }
         catch (error) {
+            draft.intent = null;
+            renderReworkPreviewBox(draft);
             showError(elements.reworkError, deps.suffixedErrorMessage(error, "预览没有生成，旧版本与输入保留。", "（预览未生成，旧版本与输入保留）"));
         }
         finally {
@@ -814,50 +818,20 @@ export function createCompareView({ elements, deps }) {
                 updateReworkControls(shotId, current);
         }
     }
-    /** 查看/编辑完整 Prompt：把这次预览落成版本，再把焦点交给这张图的人工编辑区。 */
+    /** 查看/编辑完整 Prompt 已收归确认路径：不再提供预览直落版的中间入口。 */
     async function editRework() {
-        if (!deps.currentProjectId() || !reworkShotId || reworkInFlight)
-            return;
         const shotId = reworkShotId;
-        const draft = reworkDrafts.get(shotId);
+        const draft = shotId ? reworkDrafts.get(shotId) : null;
         clearError(elements.reworkError);
-        if (!draft || !draft.preview) {
-            showError(elements.reworkError, "先预览返工 Prompt，再查看或编辑全文。");
+        if (!shotId || !draft || !draft.intent) {
+            showError(elements.reworkError, "先预览返工 Prompt，再确认生成。");
             return;
         }
-        reworkInFlight = true;
-        updateReworkControls(shotId, draft);
-        try {
-            const latest = deps.promptRecordOf(shotId) || null;
-            let version = latest ? latest.version : 0;
-            const fromPreview = Boolean(latest && latest.record.compiled.rework
-                && latest.record.compiled.rework.directive_id === draft.preview.directive_id);
-            if (!fromPreview) {
-                if (!draft.directive)
-                    throw new Error("先预览返工 Prompt，再查看或编辑全文。");
-                const saved = await prompts.compileAndSave(shotId, { rework: draft.directive });
-                version = saved.saved.version;
-            }
-            deps.renderPrompts();
-            deps.renderConfirm();
-            deps.focusPromptEditor(shotId);
-            elements.reworkStatus.hidden = false;
-            elements.reworkStatus.textContent = "已保存为 Prompt v" + version
-                + "；可以在下方「Prompt 预览与版本」里编辑全文并另存新版本。";
-        }
-        catch (error) {
-            showError(elements.reworkError, errorMessageOf(error, "没有打开编辑区。"));
-        }
-        finally {
-            reworkInFlight = false;
-            const current = reworkDrafts.get(shotId);
-            if (current)
-                updateReworkControls(shotId, current);
-        }
+        showError(elements.reworkError, "返工全文只在确认生成时由 owner 落成新版本；人工全文请到 Prompt 列表显式编辑。");
     }
     /**
-     * 确认并生成这张图：先确保这次返工已经落成 Prompt 版本（发送的永远是这张图最新的版本），
-     * 再写「只覆盖这张图」的确认记录、新建 Attempt 并核对一次结论；失败不影响旧候选。
+     * 确认并生成这张图：只把预览时 owner 给的意图原样交回确认。
+     * 当前性、Prompt 落版、确认/预约/提交都在 owner 内部；视图不重算、不猜版本。
      */
     async function submitRework() {
         if (!deps.currentProjectId() || !reworkShotId || reworkInFlight)
@@ -867,50 +841,49 @@ export function createCompareView({ elements, deps }) {
         const sourceCandidateId = reworkSource ? reworkSource.candidate_id : null;
         const draft = reworkDrafts.get(shotId);
         clearError(elements.reworkError);
-        if (!draft || !draft.preview || !draft.directive) {
+        if (!draft || !draft.intent) {
             showError(elements.reworkError, "先预览返工 Prompt，再确认生成。");
+            return;
+        }
+        const currentSource = reworkShotRow(shotId, sourceCandidateId);
+        if (!sourceCandidateId || !currentSource || currentSource.candidate_id !== sourceCandidateId) {
+            draft.intent = null;
+            renderReworkPreviewBox(draft);
+            showError(elements.reworkError, "返工依据已经不在，先回到比较区重新选择候选。");
             return;
         }
         reworkInFlight = true;
         updateReworkControls(shotId, draft);
         try {
-            const latest = deps.promptRecordOf(shotId) || null;
-            let promptVersion = latest ? latest.version : 0;
-            const fromPreview = Boolean(latest && latest.record.compiled.rework
-                && latest.record.compiled.rework.directive_id === draft.preview.directive_id);
-            if (!fromPreview) {
-                if (!draft.directive)
-                    throw new Error("先预览返工 Prompt，再确认生成。");
-                const saved = await prompts.compileAndSave(shotId, { rework: draft.directive, action });
-                promptVersion = saved.saved.version;
-            }
-            if (!action.alive())
-                return;
-            // 所见摘要由 generation 准备（授权文档/所见版本/返工 scope 都在 owner 内部）；
-            // 视图只保存并原样交回，提交前不重算、不猜版本，也不决定持久化与外发的先后。
-            const intent = generation.reworkIntent(shotId);
-            const result = await generation.confirmAndRun({ intent });
+            const intent = draft.intent;
+            const result = await generation.confirmRework({ intent });
             if (!action.alive())
                 return;
             if (result.stale) {
-                // owner 已算出新摘要且零外发：只呈现，不自动确认、不自动重提。
-                const fresh = result.intent?.sheet?.external_summary?.statement || "";
-                showError(elements.reworkError, (result.message || "摘要已变化；请核对新摘要后再确认返工。") + (fresh ? "当前摘要：" + fresh : ""));
+                // owner 已判过期且零外发：只呈现，不自动确认、不自动重提；旧意图作废。
+                draft.intent = null;
+                renderReworkPreviewBox(draft);
+                showError(elements.reworkError, result.message || "返工意图已过期；请重新预览后再确认返工。");
+                return;
+            }
+            if (result.skipped) {
+                showError(elements.reworkError, result.message || "返工没有提交；旧候选与旧 Prompt 不受影响。");
                 return;
             }
             const latestAttempt = generation.latestAttemptOf(shotId);
             const state = latestAttempt ? latestAttempt.record.state : null;
-            draft.directive = null;
-            draft.preview = null;
+            draft.intent = null;
             reworkShotId = null;
             reworkSource = null;
             elements.reworkPanel.hidden = true;
             elements.reworkPreviewBox.hidden = true;
             elements.reworkStatus.hidden = true;
             deps.renderAttempts();
+            deps.renderPrompts();
+            deps.renderConfirm();
             await deps.deriveState();
             focusCompareCandidate(shotId, sourceCandidateId);
-            elements.compareStatus.textContent = "返工已提交（Prompt v" + promptVersion + " · "
+            elements.compareStatus.textContent = "返工已提交（Prompt v" + (result.promptVersion || "?") + " · "
                 + attemptStateLabel(state) + "）；旧候选保留，只有这张图新增了版本。";
             // 与生成区单张提交同一语义：unknown 成功返回也要如实提示定位（只增显示调用，不改控制流与返回）。
             if (state === ATTEMPT_STATES.unknown) {
@@ -996,8 +969,12 @@ export function createCompareView({ elements, deps }) {
             showError(elements.adoptError, errorMessageOf(error, "存储失败，请重试。"));
         }
         finally {
-            if (action.alive())
+            // 行内采用后立即重画审核卡：data-selection-state 与已采用按钮都来自重画，
+            // 走查里“等待 current”才有稳定的可观测终态；只读投影，不写库不发请求。
+            if (action.alive()) {
                 deps.renderAttempts();
+                renderReviewList();
+            }
         }
     }
     /**
@@ -1018,8 +995,15 @@ export function createCompareView({ elements, deps }) {
         const inventory = reviewable.length ? compareInventory() : { rowsByShotId: {} };
         for (const shot of reviewable) {
             const chain = generation.candidateChainOf(shot.shot_id);
+            // 卡片显示最新 Attempt 的已保存候选（latestStoredCandidateOf）：只有它才满足
+            // 采用前置（计划§14.5：确定性合法 + 当前采用依据 + 明确 actor=user；存储 commitSelection
+            // 要求候选/Attempt 观察/当前报告三方精确匹配）。链上版本号最高但 Attempt 已不在的
+            // 直接注入候选，只能看、不能采用——按 UI 合同§5规则如实说明原因，不暗改身份。
             const stored = generation.latestStoredCandidateOf(shot.shot_id);
             const state = selectionStateOf(shot.shot_id);
+            const adopted = adoptedMarkOf(shot.shot_id);
+            const shownCandidateId = stored ? stored.record.candidate_id : null;
+            const displayedIsAdopted = Boolean(shownCandidateId && adopted && adopted.candidate_id === shownCandidateId && adopted.state === "current");
             const rows = inventory.rowsByShotId[shot.shot_id] || [];
             const shownRow = stored
                 ? (rows.find((row) => row.candidate_id === stored.record.candidate_id) || null)
@@ -1031,8 +1015,9 @@ export function createCompareView({ elements, deps }) {
             const head = createElement("div", { className: "review-card-head" });
             head.append(createElement("span", { className: "name", text: shot.label }));
             head.append(createElement("span", {
-                className: "badge " + (state === "current" ? "is-adopted" : (state === "stale" ? "is-review-warn" : "is-empty")),
-                text: state === "current" ? "已采用" : (state === "stale" ? "已采用（已过期）" : "未采用"),
+                className: "badge " + (displayedIsAdopted ? "is-adopted" : (state === "stale" && adopted ? "is-review-warn" : "is-empty")),
+                attrs: { "data-adopted-candidate-id": adopted?.candidate_id || "" },
+                text: displayedIsAdopted ? "已采用" : (adopted && adopted.state === "stale" && adopted.candidate_id === shownCandidateId ? "已采用（已过期）" : "未采用此候选"),
             }));
             head.append(createElement("span", { className: "meta", text: "候选 " + chain.length + " 个" }));
             card.append(head);
@@ -1048,9 +1033,20 @@ export function createCompareView({ elements, deps }) {
                     .catch(() => { });
             }
             else {
-                card.append(createElement("p", {
-                    className: "meta", text: "最新一次生成还没有保存到本地的候选；到「生成」里核对或重试。",
-                }));
+                if (chain.length) {
+                    // 链上有候选但最新 Attempt 没有已保存候选：例如直接注入的候选（Attempt 观察缺失），
+                    // 按计划§14.5与存储 commitSelection 精确来源链要求不可采用；如实说明，不显示“采用候选”。
+                    card.append(createElement("p", {
+                        className: "meta", text: "这条候选缺少原动作观察，暂不能采用；到「生成」里用已有动作重新生成后再采用。",
+                    }));
+                }
+                else {
+                    card.append(createElement("p", {
+                        className: "meta", text: "这张图还没有已保存的候选；到「生成」里生成后再比较。",
+                    }));
+                }
+                elements.reviewList.append(card);
+                continue;
             }
             const check = createElement("div", {
                 className: "review-card-check",
@@ -1111,24 +1107,26 @@ export function createCompareView({ elements, deps }) {
             compareButton.addEventListener("click", () => { openCompare(shot.shot_id, { focus: true }); });
             actions.append(compareButton);
             const reworkButton = createElement("button", { text: "按问题返工", attrs: { type: "button" } });
-            reworkButton.disabled = !stored;
+            reworkButton.disabled = !stored || !shownCandidateId;
             reworkButton.addEventListener("click", () => {
-                openCompare(shot.shot_id, {});
-                openReworkPanel();
+                // 点击时捕获本卡实际显示的候选身份：晚到候选不得改目标，缺失时阻断不回退。
+                if (!shownCandidateId)
+                    return;
+                openCompare(shot.shot_id, { candidateId: shownCandidateId });
+                openReworkPanel({ shotId: shot.shot_id, candidateId: shownCandidateId });
             });
             actions.append(reworkButton);
-            const alreadyAdopted = state === "current";
             const adoptButton = createElement("button", {
-                text: alreadyAdopted ? "已采用" : "采用候选", attrs: { type: "button" },
+                text: displayedIsAdopted ? "已采用" : "采用候选", attrs: { type: "button" },
             });
-            if (!alreadyAdopted)
+            if (!displayedIsAdopted)
                 adoptButton.className = "primary";
-            if (alreadyAdopted)
+            if (displayedIsAdopted)
                 adoptButton.title = "已采用这条候选；换用其他候选请点「比较候选」。";
-            adoptButton.disabled = !stored || alreadyAdopted;
+            adoptButton.disabled = !stored || !shownCandidateId || displayedIsAdopted;
             adoptButton.addEventListener("click", () => {
-                if (stored)
-                    void adoptCandidate("select", shot.shot_id, stored.record.candidate_id);
+                if (shownCandidateId)
+                    void adoptCandidate("select", shot.shot_id, shownCandidateId);
             });
             actions.append(adoptButton);
             card.append(actions);

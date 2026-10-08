@@ -337,7 +337,10 @@ def main() -> int:
     check(f"{APP_NAME}-00", "server.py 与 product_v2_server.py 通过语法自检",
           all(item["rc"] == 0 for item in compile_results), compile_results)
 
-    # --- 2/3/4. 入口自检与体检（都在磁盘审计开始前）---
+    # 子进程端口无法 bind-0 读回；先分配本轮空闲端口，后续 doctor 与正式进程共用。
+    # --doctor 默认检查 8780 是否可用；该端口可能被长驻进程占用，此时失败是环境
+    # 前提不满足，不是产品回归。改走已分配的空闲端口。
+    port = free_port()
     v2_check = run_entry(["--check"])
     check(f"{APP_NAME}-01", "正式入口自检全过（静态资源 / health / 无状态 API / 拒绝 V1 API 与目录逃逸）",
           v2_check["rc"] == 0 and any("通过。" in line for line in v2_check["tail"])
@@ -347,15 +350,13 @@ def main() -> int:
     check(f"{APP_NAME}-02", "Product V1 回归自检 6/6 保持（--legacy-v1）",
           v1_check["rc"] == 0 and any(line.strip() == "OK" for line in v1_check["tail"]), v1_check)
 
-    doctor = run_entry(["--doctor"])
+    doctor = run_entry(["--doctor", "--port", str(port)])
     check(f"{APP_NAME}-03", "V2 体检通过且声明服务器无用户状态",
           doctor["rc"] == 0 and any("可以启动" in line for line in doctor["tail"]), doctor)
 
     # --- 5. 磁盘审计开始：正式进程 + 浏览器完整会话前后零差异 ---
     before_fp = fingerprint()
 
-    # 子进程端口无法 bind-0 读回；冲突时会健康检查失败，已记录为已知 flake 面
-    port = free_port()
     temp_root = Path(tempfile.mkdtemp(prefix="amz-v2-formal-"))
     profile_a = temp_root / "profile-a"
     profile_b = temp_root / "profile-b"

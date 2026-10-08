@@ -157,3 +157,132 @@ test('old candidate cannot hide the current action result still needing retrieva
   assert.deepEqual(module.deriveBatch().fetch_queue, [],
     'retrieval ends only after the current action candidate is stored');
 });
+
+function reworkCandidateEntry({ actionId, taskId, sha, version }) {
+  const pending = submitted(actionId, taskId);
+  const attempt = nextFromStatusEnvelope(pending,
+    { ok: true, unknown: false, task: { provider, task_id: taskId, status: 'SUCCEEDED',
+      result_count: 1, error: null, request_id: null, unknown: false } },
+    { at: '2026-10-08T10:00:00Z' }).record;
+  return { document_id: 'shot_main_clean', version, payload: buildCandidateRecord({
+    shotId: 'shot_main_clean', attempt, assetSha256: sha, byteSize: png.byteLength,
+    width: 1, height: 1, at: '2026-10-08T10:00:00Z',
+  }) };
+}
+
+function reworkModuleHarness({ candidates, promptEntry, fence, seenProfile = null, compileCalls = null } = {}) {
+  let currentProject = 'project-rework';
+  let generation = 1;
+  const saves = [];
+  const prompts = new Map();
+  const repository = {
+    documents: {
+      listLatest: async () => [],
+      listVersions: async (_pid, kind, _doc) => kind === CANDIDATE_DOCUMENT_KIND ? candidates : [],
+      save: async (projectId, input) => {
+        if (input.kind === 'prompt_version') {
+          const entry = prompts.get(input.documentId) || { version: 0, record: null };
+          const version = entry.version + 1;
+          prompts.set(input.documentId, { version, record: input.payload });
+          saves.push({ projectId, kind: input.kind, documentId: input.documentId, version });
+          return { version, payload: input.payload };
+        }
+        saves.push({ projectId, kind: input.kind, documentId: input.documentId });
+        return { version: candidates.length + saves.length };
+      },
+      get: async () => null,
+    },
+    assets: { get: async () => null, put: async () => ({ sha256: '0'.repeat(64), byte_size: 1 }) },
+    reserveGenerationAttempt: async () => { throw new Error('not covered by this consumer'); },
+    appendAttemptObservation: async () => { throw new Error('not covered by this consumer'); },
+    saveCandidate: async () => { throw new Error('not covered by this consumer'); },
+  };
+  const beginAction = () => {
+    const projectId = currentProject, epoch = generation;
+    return { projectId, generation: epoch, alive: () => projectId === currentProject && epoch === generation };
+  };
+  const profile = seenProfile || { provider_id: provider.provider_id, model_id: provider.model_id };
+  const promptAbility = {
+    compile: async (shotId, options = {}) => {
+      compileCalls?.push({ shotId, directive: options.rework });
+      return { payload: { hash: 'p'.repeat(64) }, compiled: { text: 'rework preview text' }, references: [{ sha256: 'r'.repeat(64) }] };
+    },
+    compileAndSave: async (shotId, options = {}) => {
+      const saveInput = { kind: 'prompt_version', documentId: shotId, payload: { shot_id: shotId } };
+      const saved = await repository.documents.save(options.action?.projectId || currentProject, saveInput);
+      return { saved };
+    },
+  };
+  const module = createGenerationModule({ repository, beginAction,
+    projectIdReader: () => currentProject, environmentReader: () => environment,
+    requestHeaders: () => ({}), suitePlanReader: () => ({ shots: [{ shot_id: 'shot_main_clean', role_id: 'main' }] }),
+    suiteSummaryReader: () => ({ shots: [{ shot_id: 'shot_main_clean', label: '主图' }] }),
+    promptEntryReader: (shotId) => prompts.get(shotId) || promptEntry,
+    confirmationReader: () => null, promptBasisReader: () => null,
+    fenceReader: () => fence, referenceSourceReader: () => [],
+    promptsSheet: () => null, imageEnvironment: () => profile,
+    promptAbility,
+  });
+  return { module, beginAction, saves, switchProject: () => { currentProject = 'project-other'; generation += 1; } };
+}
+
+test('prepareRework binds the explicit source candidate and freezes its seen inputs', async () => {
+  const first = reworkCandidateEntry({ actionId: 'act-rework-a', taskId: 'task-rework-a', sha: 'd'.repeat(64), version: 3 });
+  const promptEntry = { version: 7, record: { hash: 'h'.repeat(64), origin: 'system', compiled: {} } };
+  const fence = { sources: [{ kind: 'suite_plan', documentId: 'suite', version: 2 }],
+    projectionJson: '{"shot":"shot_main_clean"}', assetSha256: ['a'.repeat(64)] };
+  const compileCalls = [];
+  const { module, beginAction, saves } = reworkModuleHarness({ candidates: [first], promptEntry, fence, compileCalls });
+  await module.restore(beginAction());
+  const intent = await module.prepareRework({ shotId: 'shot_main_clean', candidateId: 'act-rework-a',
+    problems: ['scene'], direction: '只把背景换成纯白，其余保持不变。' });
+  assert.equal(intent.source.candidateId, 'act-rework-a');
+  assert.equal(intent.source.assetSha256, 'd'.repeat(64));
+  assert.equal(intent.source.version, 3);
+  assert.equal(intent.directive.candidate_id, 'act-rework-a');
+  assert.equal(intent.seenPromptVersion, 7);
+  assert.equal(intent.preview.text, 'rework preview text');
+  assert.equal(saves.length, 0);
+  assert.equal(compileCalls.length, 1);
+  assert.equal(compileCalls[0].directive.shot_id, 'shot_main_clean');
+});
+
+test('prepareRework rejects an explicit source that is no longer in the chain', async () => {
+  const first = reworkCandidateEntry({ actionId: 'act-rework-a', taskId: 'task-rework-a', sha: 'd'.repeat(64), version: 3 });
+  const promptEntry = { version: 7, record: { hash: 'h'.repeat(64), origin: 'system', compiled: {} } };
+  const { module, beginAction } = reworkModuleHarness({ candidates: [first], promptEntry,
+    fence: { sources: [], projectionJson: '{}', assetSha256: [] } });
+  await module.restore(beginAction());
+  await assert.rejects(() => module.prepareRework({ shotId: 'shot_main_clean', candidateId: 'cand-gone',
+    problems: ['scene'], direction: '只把背景换成纯白，其余保持不变。' }), /已经不在/);
+});
+
+test('confirmRework refuses a session-switched intent without persistence or submission', async () => {
+  const first = reworkCandidateEntry({ actionId: 'act-rework-a', taskId: 'task-rework-a', sha: 'd'.repeat(64), version: 3 });
+  const promptEntry = { version: 7, record: { hash: 'h'.repeat(64), origin: 'system', compiled: {} } };
+  const harness = reworkModuleHarness({ candidates: [first], promptEntry,
+    fence: { sources: [], projectionJson: '{}', assetSha256: [] } });
+  await harness.module.restore(harness.beginAction());
+  const intent = await harness.module.prepareRework({ shotId: 'shot_main_clean', candidateId: 'act-rework-a',
+    problems: ['scene'], direction: '只把背景换成纯白，其余保持不变。' });
+  harness.switchProject();
+  const result = await harness.module.confirmRework({ intent });
+  assert.equal(result.stale, true);
+  assert.equal(result.reason, 'stale_session');
+  assert.equal(result.confirmation, undefined);
+  assert.equal(harness.saves.length, 0);
+});
+
+test('confirmRework protects an advanced manual prompt instead of overwriting it', async () => {
+  const first = reworkCandidateEntry({ actionId: 'act-rework-a', taskId: 'task-rework-a', sha: 'd'.repeat(64), version: 3 });
+  const manual = { version: 8, record: { hash: 'm'.repeat(64), origin: 'manual_edit', compiled: { text: 'manual text' } } };
+  const harness = reworkModuleHarness({ candidates: [first], promptEntry: manual,
+    fence: { sources: [], projectionJson: '{}', assetSha256: [] } });
+  await harness.module.restore(harness.beginAction());
+  const intent = await harness.module.prepareRework({ shotId: 'shot_main_clean', candidateId: 'act-rework-a',
+    problems: ['scene'], direction: '只把背景换成纯白，其余保持不变。' });
+  const result = await harness.module.confirmRework({ intent });
+  assert.equal(result.stale, true);
+  assert.equal(result.reason, 'manual_edit');
+  assert.equal(harness.saves.length, 0);
+});
