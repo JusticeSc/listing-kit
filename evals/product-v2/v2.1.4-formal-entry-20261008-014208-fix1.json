@@ -1,0 +1,519 @@
+{
+  "task": "V2.1.4",
+  "suite": "v2.1.4-formal-entry",
+  "status": "passed",
+  "finished_at": "2026-10-08T01:42:26",
+  "port": 25381,
+  "checks": [
+    {
+      "id": "V2.1.4-00",
+      "title": "server.py 与 product_v2_server.py 通过语法自检",
+      "ok": true,
+      "detail": [
+        {
+          "file": "app/server.py",
+          "rc": 0,
+          "stderr": ""
+        },
+        {
+          "file": "app/product_v2_server.py",
+          "rc": 0,
+          "stderr": ""
+        }
+      ]
+    },
+    {
+      "id": "V2.1.4-01",
+      "title": "正式入口自检全过（静态资源 / health / 无状态 API / 拒绝 V1 API 与目录逃逸）",
+      "ok": true,
+      "detail": {
+        "args": [
+          "--check"
+        ],
+        "rc": 0,
+        "tail": [
+          "  PASS  复核图片哈希与字节不一致 → input_rejected/400（不调用模型）                  status=400 error={'family': 'input_rejected', 'code': 'INPUT_INVALID', 'message': '候选图的 sha256 与收到的字节不一致；拒绝把身份不明的图片送模型。', 'retry_policy': 'fatal', 'http_status': None, 'request_id': None, 'details': {'problems': [{'path': '$'}]}}",
+          "  PASS  复核 provider 不可用时 capabilities 仍 200 且 configured=false    review={'kind': 'dependency', 'detail': 'RuntimeError: 自检：复核 provider 构造失败'}",
+          "  PASS  复核 provider 不可用时复核路由 503 且错误分类明确                          status=503 error={'family': 'internal', 'code': 'PROVIDER_NOT_CONFIGURED', 'message': '语义 provider 不可用：检查注册表、依赖与 DASHSCOPE_API_KEY。', 'retry_policy': 'fatal', 'http_status': 503, 'request_id': None, 'details': {'kind': 'dependency', 'detail': 'RuntimeError: 自检：复核 provider 构造失败'}}",
+          "  PASS  整套复核 provider 不可用时 capabilities 仍 200 且 configured=false  suite_review={'kind': 'dependency', 'detail': 'RuntimeError: 自检：整套复核 provider 构造失败'}",
+          "  PASS  整套复核 provider 不可用时路由 503 且错误分类明确                          status=503 error={'family': 'internal', 'code': 'PROVIDER_NOT_CONFIGURED', 'message': '语义 provider 不可用：检查注册表、依赖与 DASHSCOPE_API_KEY。', 'retry_policy': 'fatal', 'http_status': 503, 'request_id': None, 'details': {'kind': 'dependency', 'detail': 'RuntimeError: 自检：整套复核 provider 构造失败'}}",
+          "V2 正式入口自检：47/47 通过。"
+        ]
+      }
+    },
+    {
+      "id": "V2.1.4-02",
+      "title": "Product V1 回归自检 6/6 保持（--legacy-v1）",
+      "ok": true,
+      "detail": {
+        "args": [
+          "--legacy-v1",
+          "--check"
+        ],
+        "rc": 0,
+        "tail": [
+          "ok",
+          "",
+          "----------------------------------------------------------------------",
+          "Ran 6 tests in 1.575s",
+          "",
+          "OK"
+        ]
+      }
+    },
+    {
+      "id": "V2.1.4-03",
+      "title": "V2 体检通过且声明服务器无用户状态",
+      "ok": true,
+      "detail": {
+        "args": [
+          "--doctor"
+        ],
+        "rc": 0,
+        "tail": [
+          "[通过] 运行依赖：锁定运行依赖可导入：PIL、requests、pydantic、langchain_openai",
+          "[通过] 模型接入：商品理解、生图和复核均由用户明确发起；客户端按用途配置自己的 key，默认付费档缺省关闭，不配置理解/复核 key 仍可走人工事实与采用路径。",
+          "[通过] 端口：127.0.0.1:8780 可用",
+          "[通过] 用户数据位置：Product V2 的项目与图片保存在浏览器 IndexedDB；服务器没有工作空间目录，也不写最近项目索引",
+          "------------------------------------------------------------------------",
+          "结果：可以启动（0 条提醒）。"
+        ]
+      }
+    },
+    {
+      "id": "V2.1.4-04",
+      "title": "正式进程 HTTP 契约：产品资源可取，V1 工作空间 API / harness / 写接口不可达",
+      "ok": true,
+      "detail": {
+        "/": {
+          "status": 200,
+          "type": "text/html; charset=utf-8",
+          "ok": true
+        },
+        "/app.js": {
+          "status": 200,
+          "type": "text/javascript; charset=utf-8",
+          "ok": true
+        },
+        "/styles.css": {
+          "status": 200,
+          "type": "text/css; charset=utf-8",
+          "ok": true
+        },
+        "/storage/index.js": {
+          "status": 200,
+          "type": "text/javascript; charset=utf-8",
+          "ok": true
+        },
+        "/api/health": {
+          "status": 200,
+          "type": "application/json; charset=utf-8",
+          "ok": true
+        },
+        "/api/workspaces/recent": {
+          "status": 404,
+          "type": "application/json; charset=utf-8",
+          "ok": true
+        },
+        "/harness/storage-contract.html": {
+          "status": 404,
+          "type": "text/plain; charset=utf-8",
+          "ok": true
+        },
+        "/evals/probes/project_state.py": {
+          "status": 404,
+          "type": "text/plain; charset=utf-8",
+          "ok": true
+        },
+        "POST /api/workspaces": {
+          "status": 404,
+          "ok": true
+        }
+      }
+    },
+    {
+      "id": "V2.1.4-05",
+      "title": "正式入口空白启动：无项目、无指针、无预填内容",
+      "ok": true,
+      "detail": {
+        "db": {
+          "projects": 0,
+          "documents": 0,
+          "assets": 0
+        },
+        "pointer_keys": []
+      }
+    },
+    {
+      "id": "V2.1.4-06",
+      "title": "新建项目并写入文档与资产（正式入口下走产品 storage 代码）",
+      "ok": true,
+      "detail": {
+        "seed": {
+          "version": 1,
+          "sha256": "80d9a9504faea9747c162796ccf6dc40dc9f6300392cc23709f5bc9bb50818f0"
+        },
+        "counts": {
+          "projects": 1,
+          "documents": 1,
+          "assets": 1
+        }
+      }
+    },
+    {
+      "id": "V2.1.4-07",
+      "title": "关浏览器重开后项目与资产 hash 恢复（IndexedDB 持久化）",
+      "ok": true,
+      "detail": {
+        "counts": {
+          "projects": 1,
+          "documents": 1,
+          "assets": 1
+        },
+        "sha256": "80d9a9504faea9747c162796ccf6dc40dc9f6300392cc23709f5bc9bb50818f0"
+      }
+    },
+    {
+      "id": "V2.1.4-08",
+      "title": "重启服务器后刷新：项目与资产 hash 仍一致",
+      "ok": true,
+      "detail": {
+        "counts": {
+          "projects": 1,
+          "documents": 1,
+          "assets": 1
+        },
+        "server_log_tail": [
+          "项目与历史保存在这台浏览器里；服务器不保存工作空间，也不保存最近项目记录。",
+          "商品资料、事实确认、套图生成、比较返工和交付均通过浏览器工作台操作。",
+          "按 Ctrl+C 停止。"
+        ]
+      }
+    },
+    {
+      "id": "V2.1.4-09",
+      "title": "两个独立浏览器配置文件项目列表不同",
+      "ok": true,
+      "detail": {
+        "profile_b": {
+          "projects": 0,
+          "documents": 0,
+          "assets": 0
+        },
+        "profile_a": {
+          "projects": 1,
+          "documents": 1,
+          "assets": 1
+        }
+      }
+    },
+    {
+      "id": "V2.1.4-10",
+      "title": "网络审计：无 directory 参数、无 V1 工作空间 API、无 harness、全部同源",
+      "ok": true,
+      "detail": {
+        "requests": 233,
+        "bad": [],
+        "api": [
+          "http://127.0.0.1:25381/api/v2/capabilities"
+        ],
+        "sample": [
+          "http://127.0.0.1:25381/",
+          "http://127.0.0.1:25381/styles.css",
+          "http://127.0.0.1:25381/entry.js",
+          "http://127.0.0.1:25381/app.js",
+          "http://127.0.0.1:25381/storage/index.js",
+          "http://127.0.0.1:25381/session.js"
+        ]
+      }
+    },
+    {
+      "id": "V2.1.4-11",
+      "title": "浏览器会话零 console error / page error",
+      "ok": true,
+      "detail": {
+        "console": [],
+        "page": []
+      }
+    },
+    {
+      "id": "V2.1.4-12",
+      "title": "磁盘审计：正式进程 + 浏览器会话前后仓库与最近项目索引零差异",
+      "ok": true,
+      "detail": {
+        "diff": {
+          "added": [],
+          "removed": [],
+          "changed": [],
+          "root_added": [],
+          "root_removed": [],
+          "recent_index_changed": false,
+          "clean": true
+        },
+        "scanned": {
+          "repo_dirs": [
+            "app",
+            "demo",
+            "src",
+            "tools",
+            "config"
+          ],
+          "root_entries": 42,
+          "files": 344,
+          "recent_index_exists": true
+        }
+      }
+    }
+  ],
+  "console_errors": [],
+  "page_errors": [],
+  "request_urls": [
+    "http://127.0.0.1:25381/",
+    "http://127.0.0.1:25381/styles.css",
+    "http://127.0.0.1:25381/entry.js",
+    "http://127.0.0.1:25381/app.js",
+    "http://127.0.0.1:25381/storage/index.js",
+    "http://127.0.0.1:25381/session.js",
+    "http://127.0.0.1:25381/workspace.js",
+    "http://127.0.0.1:25381/model-settings.js",
+    "http://127.0.0.1:25381/storage/errors.js",
+    "http://127.0.0.1:25381/storage/schema.js",
+    "http://127.0.0.1:25381/storage/validate.js",
+    "http://127.0.0.1:25381/storage/db.js",
+    "http://127.0.0.1:25381/storage/capabilities.js",
+    "http://127.0.0.1:25381/storage/migrations.js",
+    "http://127.0.0.1:25381/storage/pointer.js",
+    "http://127.0.0.1:25381/storage/repository.js",
+    "http://127.0.0.1:25381/storage/zip.js",
+    "http://127.0.0.1:25381/storage/package.js",
+    "http://127.0.0.1:25381/storage/package-schema.js",
+    "http://127.0.0.1:25381/storage/transfer.js",
+    "http://127.0.0.1:25381/domain/index.js",
+    "http://127.0.0.1:25381/generation.js",
+    "http://127.0.0.1:25381/project-inputs.js",
+    "http://127.0.0.1:25381/prompts.js",
+    "http://127.0.0.1:25381/review-delivery.js",
+    "http://127.0.0.1:25381/selection-adoption.js",
+    "http://127.0.0.1:25381/ui/compare-view.js",
+    "http://127.0.0.1:25381/ui/delivery-view.js",
+    "http://127.0.0.1:25381/ui/generation-view.js",
+    "http://127.0.0.1:25381/ui/input-view.js",
+    "http://127.0.0.1:25381/ui/stage-shell.js",
+    "http://127.0.0.1:25381/ui/dom.js",
+    "http://127.0.0.1:25381/vendor/fflate.browser.js",
+    "http://127.0.0.1:25381/domain/errors.js",
+    "http://127.0.0.1:25381/domain/shared.js",
+    "http://127.0.0.1:25381/domain/slots.js",
+    "http://127.0.0.1:25381/domain/intake.js",
+    "http://127.0.0.1:25381/domain/brief.js",
+    "http://127.0.0.1:25381/domain/invalidation.js",
+    "http://127.0.0.1:25381/domain/suite-plan.js",
+    "http://127.0.0.1:25381/domain/suite.js",
+    "http://127.0.0.1:25381/domain/specs.js",
+    "http://127.0.0.1:25381/domain/prompt.js",
+    "http://127.0.0.1:25381/domain/confirm.js",
+    "http://127.0.0.1:25381/domain/attempt.js",
+    "http://127.0.0.1:25381/domain/config-export.js",
+    "http://127.0.0.1:25381/domain/batch.js",
+    "http://127.0.0.1:25381/domain/candidate.js",
+    "http://127.0.0.1:25381/domain/review.js",
+    "http://127.0.0.1:25381/domain/compare.js",
+    "http://127.0.0.1:25381/domain/rework.js",
+    "http://127.0.0.1:25381/domain/selection.js",
+    "http://127.0.0.1:25381/domain/suite-review.js",
+    "http://127.0.0.1:25381/domain/export-gate.js",
+    "http://127.0.0.1:25381/semantic-analysis.js",
+    "http://127.0.0.1:25381/api/v2/capabilities",
+    "http://127.0.0.1:25381/api/v2/capabilities",
+    "http://127.0.0.1:25381/api/v2/capabilities",
+    "http://127.0.0.1:25381/api/v2/capabilities",
+    "http://127.0.0.1:25381/",
+    "http://127.0.0.1:25381/styles.css",
+    "http://127.0.0.1:25381/entry.js",
+    "http://127.0.0.1:25381/app.js",
+    "http://127.0.0.1:25381/storage/index.js",
+    "http://127.0.0.1:25381/session.js",
+    "http://127.0.0.1:25381/workspace.js",
+    "http://127.0.0.1:25381/model-settings.js",
+    "http://127.0.0.1:25381/storage/errors.js",
+    "http://127.0.0.1:25381/storage/schema.js",
+    "http://127.0.0.1:25381/storage/validate.js",
+    "http://127.0.0.1:25381/storage/db.js",
+    "http://127.0.0.1:25381/storage/capabilities.js",
+    "http://127.0.0.1:25381/storage/migrations.js",
+    "http://127.0.0.1:25381/storage/pointer.js",
+    "http://127.0.0.1:25381/storage/repository.js",
+    "http://127.0.0.1:25381/storage/zip.js",
+    "http://127.0.0.1:25381/storage/package.js",
+    "http://127.0.0.1:25381/storage/package-schema.js",
+    "http://127.0.0.1:25381/storage/transfer.js",
+    "http://127.0.0.1:25381/domain/index.js",
+    "http://127.0.0.1:25381/generation.js",
+    "http://127.0.0.1:25381/project-inputs.js",
+    "http://127.0.0.1:25381/prompts.js",
+    "http://127.0.0.1:25381/review-delivery.js",
+    "http://127.0.0.1:25381/selection-adoption.js",
+    "http://127.0.0.1:25381/ui/compare-view.js",
+    "http://127.0.0.1:25381/ui/delivery-view.js",
+    "http://127.0.0.1:25381/ui/generation-view.js",
+    "http://127.0.0.1:25381/ui/input-view.js",
+    "http://127.0.0.1:25381/ui/stage-shell.js",
+    "http://127.0.0.1:25381/ui/dom.js",
+    "http://127.0.0.1:25381/vendor/fflate.browser.js",
+    "http://127.0.0.1:25381/domain/errors.js",
+    "http://127.0.0.1:25381/domain/shared.js",
+    "http://127.0.0.1:25381/domain/slots.js",
+    "http://127.0.0.1:25381/domain/intake.js",
+    "http://127.0.0.1:25381/domain/brief.js",
+    "http://127.0.0.1:25381/domain/invalidation.js",
+    "http://127.0.0.1:25381/domain/suite-plan.js",
+    "http://127.0.0.1:25381/domain/suite.js",
+    "http://127.0.0.1:25381/domain/specs.js",
+    "http://127.0.0.1:25381/domain/prompt.js",
+    "http://127.0.0.1:25381/domain/confirm.js",
+    "http://127.0.0.1:25381/domain/attempt.js",
+    "http://127.0.0.1:25381/domain/config-export.js",
+    "http://127.0.0.1:25381/domain/batch.js",
+    "http://127.0.0.1:25381/domain/candidate.js",
+    "http://127.0.0.1:25381/domain/review.js",
+    "http://127.0.0.1:25381/domain/compare.js",
+    "http://127.0.0.1:25381/domain/rework.js",
+    "http://127.0.0.1:25381/domain/selection.js",
+    "http://127.0.0.1:25381/domain/suite-review.js",
+    "http://127.0.0.1:25381/domain/export-gate.js",
+    "http://127.0.0.1:25381/semantic-analysis.js",
+    "http://127.0.0.1:25381/api/v2/capabilities",
+    "http://127.0.0.1:25381/api/v2/capabilities",
+    "http://127.0.0.1:25381/",
+    "http://127.0.0.1:25381/styles.css",
+    "http://127.0.0.1:25381/entry.js",
+    "http://127.0.0.1:25381/app.js",
+    "http://127.0.0.1:25381/storage/index.js",
+    "http://127.0.0.1:25381/session.js",
+    "http://127.0.0.1:25381/workspace.js",
+    "http://127.0.0.1:25381/model-settings.js",
+    "http://127.0.0.1:25381/storage/errors.js",
+    "http://127.0.0.1:25381/storage/schema.js",
+    "http://127.0.0.1:25381/storage/validate.js",
+    "http://127.0.0.1:25381/storage/db.js",
+    "http://127.0.0.1:25381/storage/capabilities.js",
+    "http://127.0.0.1:25381/storage/migrations.js",
+    "http://127.0.0.1:25381/storage/pointer.js",
+    "http://127.0.0.1:25381/storage/repository.js",
+    "http://127.0.0.1:25381/storage/zip.js",
+    "http://127.0.0.1:25381/storage/package.js",
+    "http://127.0.0.1:25381/storage/package-schema.js",
+    "http://127.0.0.1:25381/storage/transfer.js",
+    "http://127.0.0.1:25381/domain/index.js",
+    "http://127.0.0.1:25381/generation.js",
+    "http://127.0.0.1:25381/project-inputs.js",
+    "http://127.0.0.1:25381/prompts.js",
+    "http://127.0.0.1:25381/review-delivery.js",
+    "http://127.0.0.1:25381/selection-adoption.js",
+    "http://127.0.0.1:25381/ui/compare-view.js",
+    "http://127.0.0.1:25381/ui/delivery-view.js",
+    "http://127.0.0.1:25381/ui/generation-view.js",
+    "http://127.0.0.1:25381/ui/input-view.js",
+    "http://127.0.0.1:25381/ui/stage-shell.js",
+    "http://127.0.0.1:25381/ui/dom.js",
+    "http://127.0.0.1:25381/vendor/fflate.browser.js",
+    "http://127.0.0.1:25381/domain/errors.js",
+    "http://127.0.0.1:25381/domain/shared.js",
+    "http://127.0.0.1:25381/domain/slots.js",
+    "http://127.0.0.1:25381/domain/intake.js",
+    "http://127.0.0.1:25381/domain/brief.js",
+    "http://127.0.0.1:25381/domain/invalidation.js",
+    "http://127.0.0.1:25381/domain/suite-plan.js",
+    "http://127.0.0.1:25381/domain/suite.js",
+    "http://127.0.0.1:25381/domain/specs.js",
+    "http://127.0.0.1:25381/domain/prompt.js",
+    "http://127.0.0.1:25381/domain/confirm.js",
+    "http://127.0.0.1:25381/domain/attempt.js",
+    "http://127.0.0.1:25381/domain/config-export.js",
+    "http://127.0.0.1:25381/domain/batch.js",
+    "http://127.0.0.1:25381/domain/candidate.js",
+    "http://127.0.0.1:25381/domain/review.js",
+    "http://127.0.0.1:25381/domain/compare.js",
+    "http://127.0.0.1:25381/domain/rework.js",
+    "http://127.0.0.1:25381/domain/selection.js",
+    "http://127.0.0.1:25381/domain/suite-review.js",
+    "http://127.0.0.1:25381/domain/export-gate.js",
+    "http://127.0.0.1:25381/semantic-analysis.js",
+    "http://127.0.0.1:25381/api/v2/capabilities",
+    "http://127.0.0.1:25381/api/v2/capabilities",
+    "http://127.0.0.1:25381/api/v2/capabilities",
+    "http://127.0.0.1:25381/api/v2/capabilities",
+    "http://127.0.0.1:25381/",
+    "http://127.0.0.1:25381/styles.css",
+    "http://127.0.0.1:25381/entry.js",
+    "http://127.0.0.1:25381/app.js",
+    "http://127.0.0.1:25381/storage/index.js",
+    "http://127.0.0.1:25381/session.js",
+    "http://127.0.0.1:25381/workspace.js",
+    "http://127.0.0.1:25381/model-settings.js",
+    "http://127.0.0.1:25381/storage/errors.js",
+    "http://127.0.0.1:25381/storage/schema.js",
+    "http://127.0.0.1:25381/storage/validate.js",
+    "http://127.0.0.1:25381/storage/db.js",
+    "http://127.0.0.1:25381/storage/capabilities.js",
+    "http://127.0.0.1:25381/storage/migrations.js",
+    "http://127.0.0.1:25381/storage/pointer.js",
+    "http://127.0.0.1:25381/storage/repository.js",
+    "http://127.0.0.1:25381/storage/zip.js",
+    "http://127.0.0.1:25381/storage/package.js",
+    "http://127.0.0.1:25381/storage/package-schema.js",
+    "http://127.0.0.1:25381/storage/transfer.js",
+    "http://127.0.0.1:25381/domain/index.js",
+    "http://127.0.0.1:25381/generation.js",
+    "http://127.0.0.1:25381/project-inputs.js",
+    "http://127.0.0.1:25381/prompts.js",
+    "http://127.0.0.1:25381/review-delivery.js",
+    "http://127.0.0.1:25381/selection-adoption.js",
+    "http://127.0.0.1:25381/ui/compare-view.js",
+    "http://127.0.0.1:25381/ui/delivery-view.js",
+    "http://127.0.0.1:25381/ui/generation-view.js",
+    "http://127.0.0.1:25381/ui/input-view.js",
+    "http://127.0.0.1:25381/ui/stage-shell.js",
+    "http://127.0.0.1:25381/ui/dom.js",
+    "http://127.0.0.1:25381/vendor/fflate.browser.js",
+    "http://127.0.0.1:25381/domain/errors.js",
+    "http://127.0.0.1:25381/domain/shared.js",
+    "http://127.0.0.1:25381/domain/slots.js",
+    "http://127.0.0.1:25381/domain/intake.js",
+    "http://127.0.0.1:25381/domain/brief.js",
+    "http://127.0.0.1:25381/domain/invalidation.js",
+    "http://127.0.0.1:25381/domain/suite-plan.js",
+    "http://127.0.0.1:25381/domain/suite.js",
+    "http://127.0.0.1:25381/domain/specs.js",
+    "http://127.0.0.1:25381/domain/prompt.js",
+    "http://127.0.0.1:25381/domain/confirm.js",
+    "http://127.0.0.1:25381/domain/attempt.js",
+    "http://127.0.0.1:25381/domain/config-export.js",
+    "http://127.0.0.1:25381/domain/batch.js",
+    "http://127.0.0.1:25381/domain/candidate.js",
+    "http://127.0.0.1:25381/domain/review.js",
+    "http://127.0.0.1:25381/domain/compare.js",
+    "http://127.0.0.1:25381/domain/rework.js",
+    "http://127.0.0.1:25381/domain/selection.js",
+    "http://127.0.0.1:25381/domain/suite-review.js",
+    "http://127.0.0.1:25381/domain/export-gate.js",
+    "http://127.0.0.1:25381/semantic-analysis.js",
+    "http://127.0.0.1:25381/api/v2/capabilities",
+    "http://127.0.0.1:25381/api/v2/capabilities",
+    "http://127.0.0.1:25381/api/v2/capabilities"
+  ],
+  "screenshots": [
+    "evals/product-v2/v2.1.4-formal-blank-20261008-014208.png",
+    "evals/product-v2/v2.1.4-formal-project-20261008-014208.png"
+  ],
+  "disk_diff": {
+    "added": [],
+    "removed": [],
+    "changed": [],
+    "root_added": [],
+    "root_removed": [],
+    "recent_index_changed": false,
+    "clean": true
+  },
+  "boundary": "证明默认正式入口 `python app/server.py` 以无状态方式提供 Product V2 页面：服务器不读写工作空间与最近项目索引、无 directory 参数、会话前后磁盘零差异；浏览器项目在关浏览器重开与服务器重启后从 IndexedDB 恢复；两个独立配置文件互不可见；Product V1 以 --legacy-v1 保留为回归入口且自检 6/6。不证明商品资料之后的业务链、真实模型调用、交付包、跨机器迁移与首次使用者可用性。"
+}

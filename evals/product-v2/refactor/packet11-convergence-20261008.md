@@ -175,7 +175,9 @@ state 历史行里的 `6677a680…` 是重写前文本，只能当历史，不�
 - V1 清理、删后两轮、最终完成矩阵、真实模型补证：未执行。
 - RC19（Windows 回环间歇）**根因仍未定**：本轮只是把一类症状（死端口被代理伪装成 502）从
   诊断链上移除，并对 harness 页载入卡住加了传输签名重试 + 留痕；不得据此声称间歇已根治。
-- 本轮未提交/未推送/未部署/未付费。
+- 本机没有 docker daemon：Docker 构建/烟测、镜像 origin 页面、真实回退与可信 HTTPS/同 origin 数据恢复
+  **一律由远程 CD（GitHub Actions）证明**（用户指令：不用本机 docker）；本报告与 §9 只声明已运行的远程判据。
+- 付费模型调用：本轮 **0 次**（未部署亦未付费）。提交/推送/PR 见 §9。
 
 ## 8. 恢复点与文件
 
@@ -188,10 +190,33 @@ state 历史行里的 `6677a680…` 是重写前文本，只能当历史，不�
   `tools/verify_v2_4_2_generation_attempt.py`（同端口重启 + `-20` 原始载荷证据）、
   `tools/verify_v2_1_4_formal_entry.py`、`tools/verify_v2_2_3_intake_understanding.py`、
   `tools/verify_v2_5_2_vlm_review.py`、`tools/verify_v2_6_1_selection.py`（悬挂引用）。
-- 工作树里同批但更早定稿的改动（未提交，本轮已复跑验证）：3_5/4_4/5_3/8设置验证器、
+- 工作树里同批但更早定稿的改动（同批已提交，本轮已复跑验证）：3_5/4_4/5_3/8设置验证器、
   `generation.ts/.js` 与 `ui/generation-view.ts/.js`、`app/product_v2_server.py`、
   `tools/release_transaction_probe.py`、`.github/workflows/ci-cd.yml`（源码钉→行为证据）、
   `docs/`、`AGENTS.md`、`README.md`。
 - 一次性探针（本地，忽略入库）：`_working/p11fix/_probe_*.py`；同套件重复判定的中途证据在
   `_working/p11fix/scratch/`。
-- 全部改动**未提交、未推送**（工作树 27 个已跟踪文件为 M，另有既有未跟踪快照目录）。
+
+## 9. 提交、远程 CD 与首次 CI 判红（2026-10-08）
+
+用户指令：**不用本机 docker，容器与发布单位由 CD 的远程服务证明**（本机也无 docker daemon）。
+
+- 提交（`feat/v2-r51-packet-05` → `origin`，draft PR #4 → `main`，**未合并**）：
+  `6b37145` 入口按 HTTP/1.1 复用连接并容忍客户端中止；`8d0320d` 设置草稿/候选配额受阻/取回按钮；
+  `22db254` 验证器与 CI（`--offline-rollback` 行为证据、packet08 三件套进 CI）；
+  `179e8da` 守卫 J6 未入库证据告警；`8c35e64` 控制面与证据、两个事前快照。
+- 触发面：`.github/workflows/ci-cd.yml` 只在 `main` push 与 **PR→main** 上运行；本分支此前无 CI 门
+  （`db0ec47` 已记录），本轮开 PR 才第一次拿到远程判据。
+- 首次运行 `37712743152`（head `22db254`）在「Check control plane」判红 **13 条 J6**：state 里
+  V2.R4.3/V2.R4.4 的 evidence 指向 `evals/product-v2/*.txt|*.json` 运行日志——这些路径被 `.gitignore`
+  默认拦住，本地工作树里存在、干净检出后不存在。**属控制面缺陷（证据指针指向不可能入库的路径），
+  不是产品缺陷。** 修复：13 份按仓库既有约定 `git add -f` 晋级；`tools/check_project_state.py`
+  的 `_evidence_ok` 复用已有 `_tracked`，对「存在但未入库」发 `[J6-warn]`（不判失败——pre-commit 阶段
+  通常还没 add）。实测：临时撤出 1 份 → 警告出现且 rc=0；重新 add → 警告消失。
+- 快照入库的字节事实：整树快照自带 `.gitattributes`，更靠下的规则优先 → 其文本文件仍按仓库行尾政策
+  入库。实测 423 份中 **366 份逐字节一致**，57 份**只差 CRLF→LF**（每份字节差 == 其 CRLF 行数；抽样
+  `.dockerignore` 28/28、`Dockerfile` 40/40、`generation.ts` 1524/1524、state.md 440/440），内容不变；
+  manifest 哈希按采集机字节校验。新增 `_stage-amz-control/** -text` 让不带嵌套属性的快照按原字节入库。
+- 交由远程 CD 证明（本机不做，也不以静态核对冒充）：Docker 构建与烟测、
+  `tools/release_transaction_probe.py --selftest`、被测镜像 origin 的页面、真实不同版本服务回退、
+  可信 HTTPS/静态资源/隔离页面主链与同 origin 数据恢复。

@@ -137,6 +137,27 @@ def _exists(rel: str) -> bool:
     return (ROOT / rel).exists()
 
 
+_TRACKED: set[str] | bool | None = None  # None=还没问过 git；False=不是 git 工作树
+
+
+def _tracked_index() -> set[str] | None:
+    """一次问清整个签入集（不是逐条 `ls-files --error-unmatch`——那样每份证据一次子进程，
+    守卫会从秒级掉到几十秒，探针跑几十遍直接拖垮 CI 的 30 分钟上限）。"""
+    global _TRACKED
+    if _TRACKED is None:
+        try:
+            proc = subprocess.run(["git", "-C", str(ROOT), "ls-files", "-z"],
+                                  capture_output=True, text=True)
+        except OSError:
+            _TRACKED = False
+        else:
+            if proc.returncode != 0 or "not a git repository" in (proc.stderr or ""):
+                _TRACKED = False
+            else:
+                _TRACKED = {item for item in proc.stdout.split("\0") if item}
+    return _TRACKED or None
+
+
 def _tracked(rel: str) -> bool | None:
     """证据文件进版本库了吗；不是 git 工作树 / git 不可用时返回 None（不做判断）。
 
@@ -144,17 +165,15 @@ def _tracked(rel: str) -> bool | None:
     本地 J6 全绿、CI 的同一判据把这次推送判红。这里只对「存在但未入库」发警告不判失败 ——
     pre-commit 阶段证据通常还没 git add，硬判会逼人绕过检查。
     """
-    try:
-        proc = subprocess.run(
-            ["git", "-C", str(ROOT), "ls-files", "--error-unmatch", "--", rel],
-            capture_output=True, text=True)
-    except OSError:
+    index = _tracked_index()
+    if index is None:
         return None
-    if proc.returncode == 0:
+    if rel in index:
         return True
-    if "not a git repository" in (proc.stderr or ""):
-        return None
-    return False
+    # 目录型 evidence（如 evals/product-v2/fixtures/v2.5.2/）：`ls-files` 只列文件，
+    # 目录本身永远不在集合里 —— 只要它下面有签入文件，干净检出后就存在，不算「未入库」。
+    prefix = rel if rel.endswith("/") else rel + "/"
+    return any(item.startswith(prefix) for item in index)
 
 
 def _plan_tasks(plan_text: str) -> tuple[list[str], dict[str, list[str]]]:

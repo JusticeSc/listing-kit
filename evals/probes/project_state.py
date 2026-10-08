@@ -64,6 +64,23 @@ for source in (CODE_ROOT / "_working").glob("*/state.md"):
         r"```yaml\r?\n(.*?)```", source.read_text(encoding="utf-8"), re.S)
     if not match:
         continue
+    def _kind(path: Path) -> str | None:
+        """这句话是文件/目录吗；不是路径就返回 None。
+
+        YAML 里的长句（blockers/next_action 等）也会被当成候选路径，而 Linux 上
+        os.stat 对超长名字直接抛 OSError(ENAMETOOLONG)——2026-10-08 远程 CI 首次跑本探针
+        就崩在这里（本地 Windows 返回 False，所以两边结论不同）。判不出来就跳过：
+        探针要证的是守卫判据，不是文件名合法性。
+        """
+        try:
+            if path.is_file():
+                return "file"
+            if path.is_dir():
+                return "dir"
+        except OSError:
+            return None
+        return None
+
     def copy_references(value):
         if isinstance(value, dict):
             for item in value.values():
@@ -73,11 +90,14 @@ for source in (CODE_ROOT / "_working").glob("*/state.md"):
                 copy_references(item)
         elif isinstance(value, str):
             original = (CODE_ROOT / value).resolve()
-            if original.is_file() and CODE_ROOT in original.parents:
+            kind = _kind(original)
+            if kind is None or CODE_ROOT not in original.parents:
+                return
+            if kind == "file":
                 copied = ROOT / original.relative_to(CODE_ROOT)
                 copied.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(original, copied)
-            elif original.is_dir() and CODE_ROOT in original.parents:
+            else:
                 # evidence 也可以是目录（如 evals/product-v2/fixtures/v2.5.2/ 这类夹具集）；
                 # 守卫用 exists() 判存在，临时副本必须复制整棵目录，否则真库里存在的
                 # 引用会在副本里变成 J6「指向不存在」，把受控基线和每个反例都污染成假红。
