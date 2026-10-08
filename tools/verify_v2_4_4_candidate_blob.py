@@ -741,7 +741,14 @@ def main() -> int:
                       and ((row_of(after_reload, ok_shot) or {}).get("preview") or {})
                       .get("natural_width", 0) > 0,
                       {"result_requests_before": requests_before_reload,
-                       "result_requests_after": len(result_requests)})
+                       "result_requests_after": len(result_requests),
+                       "candidate_changed": candidate_json(after_reload, ok_shot)
+                       != candidate_json(before_reload, ok_shot),
+                       "candidate_before": candidate_json(before_reload, ok_shot)[:2200],
+                       "candidate_after": candidate_json(after_reload, ok_shot)[:2200],
+                       "assets_before": len(before_reload["asset_rows"]),
+                       "assets_after": len(after_reload["asset_rows"]),
+                       "preview": (row_of(after_reload, ok_shot) or {})})
 
                 # ---------------- 取回失败一次：无半份记录、可恢复、重试后 sha 一致 ----------------
                 stage = "check06-fetch-fail"
@@ -975,6 +982,12 @@ def main() -> int:
         mark = "PASS" if item["ok"] else "FAIL"
         lines.append(f"- [{mark}] {item['id']} {item['title']}")
     lines += ["", "BOUNDARY", boundary]
+    failed = [item for item in checks if not item["ok"]]
+    if failed:
+        # 失败时把判据实测值打进日志与文本证据（同 4_3 的 FAILED DETAILS）。
+        lines += ["", "FAILED DETAILS"]
+        lines += [f"- {item['id']} " + json.dumps(item["detail"], ensure_ascii=False, default=str)[:4000]
+                  for item in failed]
     txt_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
     for line in lines:
