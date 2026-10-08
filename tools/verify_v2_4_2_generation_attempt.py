@@ -578,6 +578,14 @@ def main() -> int:
                 status_before = len([item for item in status_requests
                                      if item["task_id"] == expected_task])
                 if final["state"] != "succeeded":
+                    # 「核对任务」按钮可能因批次自带的轮询重渲染短暂禁用（页面重绘时先 disabled 再接上）：
+                    # 有界等到可点击再点，超时仍按原样抛错（fail-closed，不吞）。
+                    row(shot_main).locator('button:has-text("核对任务")').first
+                    try:
+                        expect(row(shot_main).locator('button:has-text("核对任务")')).to_be_enabled(
+                            timeout=15_000)
+                    except AssertionError:
+                        pass  # click() 自己也会等待并与 disabled/脱联重开；这里只留一个短的窗口
                     row(shot_main).locator('button:has-text("核对任务")').click()
                 wait_state(shot_main, "succeeded", timeout=20_000)
                 reconciled = probe()
