@@ -211,7 +211,12 @@ def main() -> int:
                 """() => document.querySelectorAll(
                     '#attempt-list .attempt-row[data-attempt-state]').length > 0""",
                 timeout=30_000)
-            page.wait_for_timeout(500)
+            wait_terminal(page, shots)
+            # 全局保存状态是异步派生显示：有界等「已保存」再读，避免与批次收尾竞速。
+            page.wait_for_function(
+                """() => { const n = document.getElementById('save-state');
+                      return Boolean(n && String(n.textContent || '').startsWith('已保存')); }""",
+                timeout=15_000)
             states = page.evaluate(ATTEMPT_STATES)
             focus_batch = page.evaluate(FOCUS_PROBE)
             save_state = page.locator("#save-state").inner_text()
