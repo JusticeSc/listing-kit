@@ -28,6 +28,7 @@ import subprocess
 import sys
 import tempfile
 import threading
+import time
 import zlib
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -256,6 +257,28 @@ PROJECT_STATE_JS = """async (expected) => {
 }"""
 
 
+STATE_SAMPLE_JS = """async () => {
+  const db = await new Promise((resolve, reject) => {
+    const request = indexedDB.open("amz-listing-kit-v2");
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+  const rows = await new Promise((resolve, reject) => {
+    const request = db.transaction("projects", "readonly").objectStore("projects").getAll();
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+  db.close();
+  const latest = rows.slice().sort((left, right) =>
+    String(right.updated_at || "").localeCompare(String(left.updated_at || "")))[0];
+  const progress = document.getElementById("batch-progress");
+  return { state: latest ? latest.state : null,
+           revision: latest ? (latest.revision ?? null) : null,
+           updated_at: latest ? latest.updated_at : null,
+           progress: progress ? progress.textContent : "" };
+}"""
+
+
 def wait_project_state(page, expected: str, wait_ms: int = 20_000) -> bool:
     """有界等待项目状态推进到 expected。
 
@@ -268,6 +291,37 @@ def wait_project_state(page, expected: str, wait_ms: int = 20_000) -> bool:
         return True
     except Exception:
         return False
+
+
+def wait_batch_settled(page, expected_progress: str, wait_ms: int = 60_000,
+                       interval_ms: int = 200) -> tuple[bool, list]:
+    """有界等到「批次落定且项目状态前进」在同一次取样里同时成立，并记录状态时间线。
+
+    这两个后置条件都是异步写回：批次逐张核对后写回、项目状态由 changed 订阅并发派生。
+    分开取样会把「批次还在核对」或「派生正并发写回」误判成断言失败——2026-10-08 CI 的
+    V2.4.3-04 就是这样红的（state_wait 已为真，随后完整探针读到 PLAN_REVIEW 且进度
+    仍是「已成功 3 · 处理中 1」）。这里不放宽判据：两个条件都必须成立，超时仍按实际值
+    判红；时间线（state/revision/进度）进证据，用来区分「没写回」与「写回又被改回」。
+    """
+    deadline = time.time() + wait_ms / 1000
+    timeline: list = []
+    settled = False
+    while True:
+        try:
+            sample = page.evaluate(STATE_SAMPLE_JS) or {}
+        except Exception:  # noqa: BLE001 - 取样失败按「未落定」继续等，超时判红
+            sample = {}
+        entry = {"state": sample.get("state"), "revision": sample.get("revision"),
+                 "progress": (sample.get("progress") or "")[:60]}
+        if not timeline or timeline[-1] != entry:
+            timeline.append(entry)
+        if entry["state"] == "READY_TO_GENERATE" and expected_progress in entry["progress"]:
+            settled = True
+            break
+        if time.time() >= deadline:
+            break
+        page.wait_for_timeout(interval_ms)
+    return settled, timeline
 
 
 def save_edit(page, shot_id: str, text: str, reason: str, wait_ms: int = 600) -> None:
@@ -583,6 +637,10 @@ def main() -> int:
                 assert gate["ok"]
                 # 状态推进有界等待后再取样：探针读库与派生写回曾竞速（详见 wait_project_state）。
                 advanced = wait_project_state(page, "READY_TO_GENERATE")
+                # 「状态前进」与「批次落定」必须同一次取样里同时成立再判：两者都是异步写回，
+                # 分开取样会把「批次还在核对」误判成红（2026-10-08 CI 的 -04）。判据不放宽：
+                # 超时仍按实际值判红；时间线进证据用于区分「没写回」与「写回又被改回」。
+                settled, state_timeline = wait_batch_settled(page, "已成功 4")
                 done = probe()
                 captured = gate["captured"]
                 captured_actions = gate["captured_actions"]
@@ -602,13 +660,14 @@ def main() -> int:
                       "正常批次：一次确认即整套提交、各提交一次并核对到全部成功，确认后状态前进",
                       len(captured) == 4 and per_action_once and order_ok
                       and polled_ok and final_states_ok
-                      and done["project_state"] == "READY_TO_GENERATE"
+                      and settled
                       and "已成功 4" in done["ui"]["batch"]["progress"],
                       {"captured": len(captured), "order_ok": order_ok,
                        "per_action_once": per_action_once, "polled_ok": polled_ok,
-                       "state_wait": advanced,
+                       "state_wait": advanced, "settled": settled,
                        "project_state": done["project_state"],
-                       "progress": done["ui"]["batch"]["progress"]})
+                       "progress": done["ui"]["batch"]["progress"],
+                       "state_timeline": state_timeline})
                 phase_a_records = {shot: chain_json(done, shot) for shot in shot_ids}
 
                 # ---------------- 部分失败：一张失败不阻塞，其余成功 ----------------
