@@ -1,0 +1,16 @@
+{
+  "schema": "amz-listing-kit/archetype-registry@1",
+  "version": 1,
+  "archetypes": [
+    {"id":"hero","purpose":"Show the actual sellable product as the primary listing image.","suggested_evidence":["product identity","included quantity"],"evidence_policy":"reference_asset"},
+    {"id":"feature","purpose":"Explain a user-relevant feature that is supported by confirmed product information.","suggested_evidence":["confirmed selling point"],"evidence_policy":"confirmed_fact"},
+    {"id":"detail","purpose":"Show a useful close-up or construction detail visible in the supplied references.","suggested_evidence":["reference image detail"],"evidence_policy":"reference_asset"},
+    {"id":"lifestyle","purpose":"Place the product in a use context that helps the buyer understand its role.","suggested_evidence":["user intent","confirmed use context"],"evidence_policy":"user_intent_or_fact_or_reference"},
+    {"id":"scale","purpose":"Communicate product dimensions or scale using confirmed measurements or a clear comparison.","suggested_evidence":["confirmed dimensions"],"evidence_policy":"confirmed_fact"},
+    {"id":"how_to","purpose":"Show a real setup, use, or care step when that step is supported by product information.","suggested_evidence":["confirmed instructions"],"evidence_policy":"confirmed_fact"},
+    {"id":"package","purpose":"Show included contents or packaging when they are part of the offer.","suggested_evidence":["confirmed included items"],"evidence_policy":"confirmed_fact"},
+    {"id":"comparison","purpose":"Compare only supported attributes of this product without inventing competitor claims.","suggested_evidence":["confirmed comparison facts"],"evidence_policy":"confirmed_fact"},
+    {"id":"variant","purpose":"Present a selectable color, size, or configuration that belongs to this listing.","suggested_evidence":["confirmed variant identity"],"evidence_policy":"confirmed_fact"},
+    {"id":"custom","purpose":"Express a product-specific visual task not covered by another archetype. Define its title, purpose, reason, preserved elements, and intended changes in the ShotSpec rather than adding a product-category template.","suggested_evidence":["current ProductBrief","user intent or explicit task requirement"],"evidence_policy":"user_intent_or_fact_or_reference"}
+  ]
+}

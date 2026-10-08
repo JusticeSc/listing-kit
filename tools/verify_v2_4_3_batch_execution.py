@@ -37,6 +37,11 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 
 import v2_stage_nav as stage_nav  # noqa: E402  （V2.UI.2 六阶段工作台导航）
+import v2_verify_shared as shared  # noqa: E402  （正式 server/夹具/共同业务操作）
+from v2_verify_shared import (  # noqa: E402
+    png_bytes, load_server_module, run_entry, read_suite, compile_all,
+)
+
 
 PRODUCT_DIR = ROOT / "app" / "product_v2"
 HARNESS_DIR = ROOT / "evals" / "product-v2" / "harness"
@@ -189,12 +194,22 @@ async () => {
       locked_hidden: lockedNode ? lockedNode.hidden : null,
       editor_hidden: editorNode ? editorNode.hidden : null,
       rows: rows,
+      confirm: {
+        disabled: (document.getElementById("confirm-action") || {}).disabled ?? null,
+        text: (document.getElementById("confirm-action") || {}).textContent || "",
+        status: (document.getElementById("confirm-status") || {}).textContent || "",
+        record: (document.getElementById("confirm-record") || {}).textContent || "",
+      },
       batch_visible: batchNode ? !batchNode.hidden : null,
       batch: {
         progress: progressNode ? progressNode.textContent : "",
         hint: hintNode ? hintNode.textContent : "",
         hint_hidden: hintNode ? hintNode.hidden : null,
-        run: buttonInfo("batch-run"),
+        queues: [...document.querySelectorAll(".generation-queue")].map((node) => ({
+          text: node.textContent,
+          buttons: [...node.querySelectorAll("button")].map((item) =>
+            ({ text: item.textContent, disabled: item.disabled })),
+        })),
         stop: buttonInfo("batch-stop"),
         reconcile: buttonInfo("batch-reconcile"),
         retry: buttonInfo("batch-retry"),
@@ -205,41 +220,9 @@ async () => {
 """
 
 
-def png_bytes(width: int, height: int, color: tuple[int, int, int]) -> bytes:
-    raw = b"".join(b"\x00" + bytes(color) * width for _ in range(height))
-
-    def chunk(tag: bytes, payload: bytes) -> bytes:
-        return (struct.pack(">I", len(payload)) + tag + payload
-                + struct.pack(">I", zlib.crc32(tag + payload) & 0xFFFFFFFF))
-
-    header = struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)
-    return (b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", header)
-            + chunk(b"IDAT", zlib.compress(raw)) + chunk(b"IEND", b""))
 
 
-def load_server_module():
-    spec = importlib.util.spec_from_file_location(
-        "product_v2_server_under_test", ROOT / "app" / "product_v2_server.py")
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
 
-
-def free_port() -> int:
-    with socket.socket() as probe:
-        probe.bind(("127.0.0.1", 0))
-        return probe.getsockname()[1]
-
-
-def run_entry(args: list[str], timeout: int = 180) -> dict:
-    env = {**os.environ, "PYTHONUTF8": "1", "PYTHONDONTWRITEBYTECODE": "1"}
-    completed = subprocess.run(
-        [sys.executable, "-B", str(ROOT / "app" / "server.py"), *args],
-        cwd=str(ROOT), env=env, capture_output=True, text=True,
-        encoding="utf-8", errors="replace", timeout=timeout, check=False,
-    )
-    return {"args": args, "rc": completed.returncode,
-            "tail": (completed.stdout + completed.stderr).strip().splitlines()[-10:]}
 
 
 def run_node_checks() -> dict:
@@ -252,68 +235,44 @@ def run_node_checks() -> dict:
     return {"files": results, "ok": all(item["rc"] == 0 for item in results)}
 
 
-class HarnessHandler(BaseHTTPRequestHandler):
-    def log_message(self, format, *args):  # noqa: A002
-        return
-
-    def _send(self, payload: bytes, ctype: str) -> None:
-        self.send_response(200)
-        self.send_header("Content-Type", ctype)
-        self.send_header("Content-Length", str(len(payload)))
-        self.send_header("Cache-Control", "no-store")
-        self.end_headers()
-        self.wfile.write(payload)
-
-    def do_GET(self):  # noqa: N802
-        path = self.path.split("?", 1)[0]
-        if path.startswith("/harness/"):
-            candidate = (HARNESS_DIR / path[len("/harness/"):]).resolve()
-            if str(candidate).startswith(str(HARNESS_DIR.resolve())) and candidate.is_file():
-                self._send(candidate.read_bytes(),
-                           MIME.get(candidate.suffix, "application/octet-stream"))
-                return
-        else:
-            candidate = (PRODUCT_DIR / path.lstrip("/")).resolve()
-            if str(candidate).startswith(str(PRODUCT_DIR.resolve())) and candidate.is_file():
-                self._send(candidate.read_bytes(),
-                           MIME.get(candidate.suffix, "application/octet-stream"))
-                return
-        self.send_error(404)
 
 
-def start_static_server() -> tuple[ThreadingHTTPServer, str]:
-    server = ThreadingHTTPServer(("127.0.0.1", 0), HarnessHandler)
-    threading.Thread(target=server.serve_forever, daemon=True).start()
-    return server, f"http://127.0.0.1:{server.server_address[1]}"
+
+PROJECT_STATE_JS = """async (expected) => {
+  const db = await new Promise((resolve, reject) => {
+    const request = indexedDB.open("amz-listing-kit-v2");
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+  const rows = await new Promise((resolve, reject) => {
+    const request = db.transaction("projects", "readonly").objectStore("projects").getAll();
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+  db.close();
+  const latest = rows.slice().sort((left, right) =>
+    String(right.updated_at || "").localeCompare(String(left.updated_at || "")))[0];
+  return Boolean(latest) && latest.state === expected;
+}"""
 
 
-def read_suite(browser, url: str, variable: str, console_errors: list, page_errors: list) -> dict:
-    page = browser.new_page()
+def wait_project_state(page, expected: str, wait_ms: int = 20_000) -> bool:
+    """有界等待项目状态推进到 expected。
+
+    确认写库后的状态派生是异步的（点击处理器在批次结束后才写回），而探针直接读
+    IndexedDB——按「读一次就断言」会把「还没写回」误判成「不前进」（CI 的 Linux
+    时序下必红，本机常绿）。等待只把这两种情况分开：超时仍按实际状态判红。
+    """
     try:
-        page.on("console", lambda message: console_errors.append("[suite] " + message.text)
-                if message.type == "error" else None)
-        page.on("pageerror", lambda error: page_errors.append("[suite] " + str(error)))
-        page.goto(url, wait_until="domcontentloaded")
-        page.wait_for_function(
-            f"() => window.{variable} && ['passed','failed','crashed'].includes(window.{variable}.status)",
-            timeout=90_000,
-        )
-        return page.evaluate(f"() => window.{variable}")
-    finally:
-        page.close()
-
-
-def compile_all(page, shot_ids: list, wait_ms: int = 200) -> None:
-    stage_nav.goto(page, "generate")
-    for shot_id in shot_ids:
-        card = f'#prompt-list .shot-spec[data-shot-id="{shot_id}"]'
-        page.click(card + " .toolbar button")
-        page.wait_for_selector(card + '[data-prompt-state="saved"]', timeout=15_000)
-        page.wait_for_timeout(wait_ms)
+        page.wait_for_function(PROJECT_STATE_JS, arg=expected, timeout=wait_ms)
+        return True
+    except Exception:
+        return False
 
 
 def save_edit(page, shot_id: str, text: str, reason: str, wait_ms: int = 600) -> None:
     stage_nav.goto(page, "generate")
+    stage_nav.reveal(page, "#prompt-editor")
     card = f'#prompt-list .shot-spec[data-shot-id="{shot_id}"]'
     page.fill(card + " textarea.prompt-edit-text", text)
     page.fill(card + " input.prompt-edit-reason", reason)
@@ -354,7 +313,7 @@ def main() -> int:
           node_result["ok"],
           {"failed": [item for item in node_result["files"] if item["rc"] != 0][:3]})
 
-    static_server, static_url = start_static_server()
+    static_server, static_url = shared.start_static_server()
     suites: dict = {}
     try:
         with sync_playwright() as pw:
@@ -416,6 +375,8 @@ def main() -> int:
             elif MARK_UNKNOWN in prompt:
                 scenario = "unknown"
             task_id = FakeImageProvider.task_id_for(request.action_id)
+            # 场景表必须按 task_id 落盘：status() 只读 mode["tasks"]，不写的话
+            # 「按 Prompt 标记决定失败」永远退化成成功，-05 的部分失败路径不可达。
             mode["tasks"][task_id] = scenario
             if scenario == "unknown":
                 raise ImageFailure(
@@ -439,19 +400,19 @@ def main() -> int:
     def image_factory():
         return MarkerImageProvider(scenario="ok")
 
-    def make_server():
+    def make_server(port: int = 0):
         return module.create_product_v2_server(
             "127.0.0.1", port,
             provider_factory=lambda: FakeSemanticProvider(scenario="ok"),
             image_provider_factory=image_factory)
 
-    port = free_port()
-    server = make_server()
+    server = make_server(0)
     threading.Thread(target=server.serve_forever, daemon=True).start()
-    base = f"http://127.0.0.1:{port}"
+    base = f"http://127.0.0.1:{server.server_address[1]}"
 
     submit_requests: list[dict] = []
     status_requests: list[str] = []
+    failed_requests: list[str] = []
     ui: dict = {}
     interrupted: str | None = None
     EVIDENCE_DIR.mkdir(parents=True, exist_ok=True)
@@ -469,6 +430,9 @@ def main() -> int:
                 page.on("console", lambda message: console_errors.append(message.text)
                         if message.type == "error" else None)
                 page.on("pageerror", lambda error: page_errors.append(str(error)))
+                # 被拒请求单独留证：混进 console_errors 会污染 -12 的“零意外 console error”判据。
+                page.on("requestfailed", lambda request: failed_requests.append(
+                    f"{request.failure} {request.url}"))
 
                 def on_request(request) -> None:
                     if request.method != "POST":
@@ -504,22 +468,48 @@ def main() -> int:
                         "data-attempt-state", state, timeout=timeout)
 
                 def wait_states(expectations: dict, timeout: int = 90_000) -> None:
-                    page.wait_for_function(
-                        """(wanted) => {
-                            const rows = [...document.querySelectorAll('#attempt-list .attempt-row')];
-                            return Object.entries(wanted).every(([id, state]) => {
-                                const node = rows.find((item) =>
-                                    item.getAttribute('data-shot-id') === id);
-                                return node && node.getAttribute('data-attempt-state') === state;
-                            });
-                        }""",
-                        arg=expectations, timeout=timeout)
+                    try:
+                        page.wait_for_function(
+                            """(wanted) => {
+                                const rows = [...document.querySelectorAll('#attempt-list .attempt-row')];
+                                return Object.entries(wanted).every(([id, state]) => {
+                                    const node = rows.find((item) =>
+                                        item.getAttribute('data-shot-id') === id);
+                                    return node && node.getAttribute('data-attempt-state') === state;
+                                });
+                            }""",
+                            arg=expectations, timeout=timeout)
+                    except Exception as error:  # noqa: BLE001 - 超时也要报出真实观测
+                        observed = [{"shot": node.get_attribute("data-shot-id"),
+                                     "state": node.get_attribute("data-attempt-state"),
+                                     "text": (node.inner_text() or "")[:120]}
+                                    for node in page.locator(
+                                        "#attempt-list .attempt-row").all()]
+                        raise AssertionError(
+                            f"等待状态落定超时：wanted={expectations} observed={observed} "
+                            f"progress={page.locator('#batch-progress').inner_text()!r}"
+                        ) from error
 
-                def confirm_generation() -> None:
-                    stage_nav.goto(page, "generate")
-                    expect(page.locator("#confirm-action")).to_be_enabled()
-                    page.click("#confirm-action")
-                    expect(page.locator("#confirm-record")).to_contain_text("已确认 v")
+                def click_row_button(shot_id: str, text: str) -> None:
+                    # 行内"重试/新建 action"只切 scope/mode 并聚焦摘要
+                    # （generation-view.js:960-965），提交走随后的 confirm_and_submit。
+                    row(shot_id).locator(f'button:has-text("{text}")').first.click()
+
+                def current_shots() -> list:
+                    # 授权集合必须是"本次确认将消费的图"：套图增删/Prompt 重编译后
+                    # 摘要范围会变，禁止复用首批快照（否则 confirm_and_submit 在
+                    # "set(authorized)==set(shot_ids)" 恒假，120s 后报"消费未落定"）。
+                    return list(probe()["shot_ids"])
+
+                def confirm_generation(wanted: list | None = None) -> dict:
+                    # 确认即提交：本次授权版本/shot/action 的新增消费证明（非旧行存在）。
+                    # wanted 省略时取当前套图全集；增量轮次调用方须显式传新增图。
+                    scope = list(wanted) if wanted is not None else current_shots()
+                    gate = shared.confirm_and_submit(page, expect, probe, submit_requests,
+                                                     shot_ids=scope)
+                    assert gate["ok"], f"确认必须产生本次授权的新消费：{gate['after_actions']}"
+                    return gate
+
 
                 def add_shots(template_id: str, count: int = 1) -> list:
                     stage_nav.goto(page, "plan")
@@ -531,9 +521,13 @@ def main() -> int:
                     after = list(probe()["shot_ids"])
                     return [shot for shot in after if shot not in before]
 
-                def click_row_button(shot_id: str, text: str) -> None:
+                def click_queue_resume(text: str = "按原摘要继续未提交队列") -> None:
+                    # 当前产品语义：停止/刷新后不再有点 #batch-run；剩余提交走
+                    # .generation-queue 里的“按原摘要继续未提交队列”按钮（runBatch 原确认）。
                     stage_nav.goto(page, "generate")
-                    row(shot_id).locator(f'button:has-text("{text}")').first.click()
+                    page.locator(
+                        f'.generation-queue button:has-text("{text}")').first.click()
+
 
                 def submits_for(action_id: str) -> int:
                     return len([item for item in submit_requests
@@ -563,32 +557,35 @@ def main() -> int:
                 page.click("#suite-seed")
                 expect(page.locator("#shot-list .shot-row")).to_have_count(4)
                 stage_nav.goto(page, "generate")
+                stage_nav.reveal(page, "#prompt-editor")
                 expect(page.locator("#prompt-editor")).to_be_visible()
-                expect(page.locator("#prompt-list .shot-spec")).to_have_count(4)
                 initial = probe()
                 shot_ids = initial["shot_ids"]
                 compile_all(page, shot_ids)
-                confirm_generation()
+                # 新流程一次确认即提交：先断言确认可用（4 张就绪），再点确认并等全部成功。
+                # submits/status 计数在点确认之前，提交顺序/次数/核对判据与旧 04 相同。
                 ready = probe()
                 ui["base_shots"] = shot_ids
-                check("V2.4.3-03", "批次条就绪：4 张待提交、整套生成按钮可见",
+                check("V2.4.3-03", "确认前就绪：4 张待提交、确认按钮可用且标注 4 张",
                       len(ready["ui"]["rows"]) == 4
                       and all(item["state"] == "none" for item in ready["ui"]["rows"])
-                      and ready["ui"]["batch_visible"] is True
-                      and "整套生成（4 张）" in (ready["ui"]["batch"]["run"] or {}).get("text", "")
-                      and (ready["ui"]["batch"]["stop"] or {}).get("hidden") is True
-                      and ready["project_state"] == "READY_TO_GENERATE",
-                      {"run": (ready["ui"]["batch"]["run"] or {}).get("text"),
+                      # 项目状态在「确认并生成」写库后派生（PLAN_REVIEW → READY_TO_GENERATE），
+                      # 所以这里断言按钮的就绪与标注，状态推进由 -04 在点击之后断言。
+                      and ready["ui"]["confirm"]["disabled"] is False
+                      and "4 张" in ready["ui"]["confirm"]["text"],
+                      {"rows": len(ready["ui"]["rows"]),
+                       "states": [item["state"] for item in ready["ui"]["rows"]],
+                       "confirm": ready["ui"]["confirm"],
+                       "project_state": ready["project_state"],
                        "progress": ready["ui"]["batch"]["progress"]})
-
-                # ---------------- 正常批次：4 张按顺序各一次，自动核对全部成功 ----------------
-                submits_before = len(submit_requests)
                 status_before = len(status_requests)
-                page.click("#batch-run")
-                wait_states({shot: "succeeded" for shot in shot_ids})
+                gate = confirm_generation()
+                assert gate["ok"]
+                # 状态推进有界等待后再取样：探针读库与派生写回曾竞速（详见 wait_project_state）。
+                advanced = wait_project_state(page, "READY_TO_GENERATE")
                 done = probe()
-                captured = submit_requests[submits_before:]
-                captured_actions = [item["action_id"] for item in captured]
+                captured = gate["captured"]
+                captured_actions = gate["captured_actions"]
                 latest_actions = [chain_of(done, shot)[-1]["payload"]["action_id"]
                                   for shot in shot_ids]
                 order_ok = captured_actions == latest_actions
@@ -602,12 +599,15 @@ def main() -> int:
                     and chain_of(done, shot)[-1]["payload"]["error"] is None
                     for shot in shot_ids)
                 check("V2.4.3-04",
-                      "正常批次：按套图顺序各提交一次，自动核对到全部成功，进度文本一致",
+                      "正常批次：一次确认即整套提交、各提交一次并核对到全部成功，确认后状态前进",
                       len(captured) == 4 and per_action_once and order_ok
                       and polled_ok and final_states_ok
+                      and done["project_state"] == "READY_TO_GENERATE"
                       and "已成功 4" in done["ui"]["batch"]["progress"],
                       {"captured": len(captured), "order_ok": order_ok,
                        "per_action_once": per_action_once, "polled_ok": polled_ok,
+                       "state_wait": advanced,
+                       "project_state": done["project_state"],
                        "progress": done["ui"]["batch"]["progress"]})
                 phase_a_records = {shot: chain_json(done, shot) for shot in shot_ids}
 
@@ -621,9 +621,10 @@ def main() -> int:
                           fail_base_text + "\n\n" + MARK_FAIL
                           + "：这张图在正式批次的提交必须失败（验证部分失败隔离）。",
                           "验证部分失败")
-                confirm_generation()
                 submits_before = len(submit_requests)
-                page.click("#batch-run")
+                confirm_generation([fail_shot, ok_shot])
+                # 确认即提交：confirmAndRun 已把两张新图整套提交并轮询到终态，
+                # 不再点已删除的 #batch-run；判据只看落库/提交计数/进度行为。
                 wait_states({fail_shot: "failed", ok_shot: "succeeded"})
                 partial = probe()
                 captured = submit_requests[submits_before:]
@@ -650,15 +651,15 @@ def main() -> int:
                 # ---------------- 失败重试：旧记录零改写、无关记录零改写 ----------------
                 challenge = probe()["prompts"][fail_shot]["text"]
                 save_edit(page, fail_shot, challenge.replace(MARK_FAIL, ""), "移除验证标记")
-                confirm_generation()
-                before_retry = probe()
-                failed_prefix = chain_json(before_retry, fail_shot)
-                failed_prefix_len = len(chain_of(before_retry, fail_shot))
-                ok_before = chain_json(before_retry, ok_shot)
-                failed_action = chain_of(before_retry, fail_shot)[-1]["payload"]["action_id"]
+                digest = probe()
+                failed_prefix = chain_json(digest, fail_shot)
+                failed_prefix_len = len(chain_of(digest, fail_shot))
+                ok_before = chain_json(digest, ok_shot)
+                failed_action = chain_of(digest, fail_shot)[-1]["payload"]["action_id"]
+                # 失败重试语义 = 显式新动作：先行内"重试"把摘要 scope/mode 切到
+                # failed_retry，再按该摘要确认提交（4_2 同模式：先点行内再 confirm）。
                 click_row_button(fail_shot, "重试")
-                wait_state(fail_shot, "submitted")
-                click_row_button(fail_shot, "核对任务")
+                confirm_generation([fail_shot])
                 wait_state(fail_shot, "succeeded")
                 after_retry = probe()
                 retry_chain = chain_of(after_retry, fail_shot)
@@ -683,8 +684,8 @@ def main() -> int:
                           unknown_base_text + "\n\n" + MARK_UNKNOWN
                           + "：这次提交的结果必须未知（验证不自动重提）。",
                           "验证未知")
-                confirm_generation()
-                page.click("#batch-run")
+                confirm_generation([unknown_shot])
+                # 确认即提交：confirmAndRun 已提交并落成 unknown，不再点已删除的 #batch-run。
                 wait_state(unknown_shot, "unknown")
                 unknown_after = probe()
                 unknown_chain = chain_of(unknown_after, unknown_shot)
@@ -712,56 +713,91 @@ def main() -> int:
 
                 unknown_text = probe()["prompts"][unknown_shot]["text"]
                 save_edit(page, unknown_shot, unknown_text.replace(MARK_UNKNOWN, ""), "移除未知标记")
-                confirm_generation()
+                # 无任务编号的 Unknown 只能「另发新请求」这一危险次操作创建新动作
+                # （ui-contract §4.6 第 193 行）：产品按「Unknown 不自动重提」把发送集合算成 0 张并禁用
+                # 「确认并生成」，这里先断言该拒绝，再走行内显式新建 action + 摘要确认。
+                refused = probe()["ui"]["confirm"]
                 click_row_button(unknown_shot, "新建 action")
-                wait_state(unknown_shot, "submitted")
-                click_row_button(unknown_shot, "核对任务")
+                confirm_generation([unknown_shot])
                 wait_state(unknown_shot, "succeeded")
                 unknown_fixed = probe()
                 fixed_chain = chain_of(unknown_fixed, unknown_shot)
                 fixed_prefix = json.dumps(fixed_chain[:unknown_prefix_len],
                                           ensure_ascii=False, sort_keys=True)
                 check("V2.4.3-08",
-                      "未知显式新建 action 后成功；旧未知记录逐字保留",
+                      "未知显式新建 action 后成功；旧未知记录逐字保留；摘要按不自动重提拒绝发送",
                       fixed_prefix == unknown_record_before
                       and fixed_chain[-1]["payload"]["state"] == "succeeded"
                       and fixed_chain[-1]["payload"]["action_id"] != unknown_action
-                      and len(fixed_chain) > unknown_prefix_len,
-                      {"chain": [entry["payload"]["state"] for entry in fixed_chain]})
+                      and len(fixed_chain) > unknown_prefix_len
+                      # 另发新动作只能显式发起（ui-contract §4.6 第 193 行）：产品把发送集合算成 0 张并禁用确认。
+                      and refused["disabled"] is True and "0 张" in refused["text"]
+                      and "Unknown 不自动重提" in refused["status"],
+                      {"chain": [entry["payload"]["state"] for entry in fixed_chain],
+                       "confirm_refusal": refused})
 
                 # ---------------- 停止：只停新增提交，已提交身份核对一次 ----------------
                 added = add_shots("detail_material", 1) + add_shots("infographic_benefits", 1) \
                     + add_shots("detail_material", 1)
                 compile_all(page, probe()["shot_ids"])
-                confirm_generation()
                 stop_first, stop_second, stop_third = added[0], added[1], added[2]
+                submits_before = len(submit_requests)
+                # 停止语义要求批次"在飞"（#batch-stop 仅 running 可见）：
+                # 用 submit 门闩 deterministic 地停在"第一张已提交、第二张未开始"处——
+                # 产品批次是顺序 for 循环（generation.ts runBatch：await 每张后再 poll），
+                # 所以门闩住第一张的响应即可让第二/三张保持零提交。
+                # 这里不能经 confirm_and_submit 的消费门：它要求本次授权的每张都已被外发，
+                # 而"停在第一张"恰恰与"全部外发"互斥（旧写法因此在门闩超时后才点停止）。
                 mode["arrived"] = threading.Event()
                 mode["hold"] = threading.Event()
-                submits_before = len(submit_requests)
-                page.click("#batch-run")
+                authority_before_stop = page.evaluate(shared.AUTHORIZATION_PROBE)
+                known_confirmations = {(row["project_id"], row["document_id"], row["version"])
+                                       for row in authority_before_stop["confirmations"]}
+                expect(page.locator("#confirm-action")).to_be_enabled()
+                page.click("#confirm-action")
                 arrived = mode["arrived"].wait(20)
-                page.click("#batch-stop")
+                stop_clicked_before_release = False
+                if arrived:
+                    page.click("#batch-stop")
+                    stop_clicked_before_release = True
                 mode["hold"].set()
                 mode["hold"] = None
                 wait_state(stop_first, "succeeded")
                 stopped = probe()
+                authority_after_stop = page.evaluate(shared.AUTHORIZATION_PROBE)
+                fresh_confirmations = [
+                    row for row in authority_after_stop["confirmations"]
+                    if (row["project_id"], row["document_id"], row["version"])
+                    not in known_confirmations]
                 stop_window = list(submit_requests[submits_before:])
                 check("V2.4.3-09",
                       "停止：只提交了已开始的一张；停止后不再新增提交；已提交身份仍核对出结论",
                       arrived
+                      and stop_clicked_before_release
+                      and len(fresh_confirmations) == 1
                       and len(stop_window) == 1
                       and chain_of(stopped, stop_second) == []
                       and chain_of(stopped, stop_third) == []
                       and chain_of(stopped, stop_first)[-1]["payload"]["state"] == "succeeded"
-                      and "批次已停止" in stopped["ui"]["status"],
+                      # 停止提示由 #batch-progress 渲染（generation-view.ts:1183-1187：
+                      # 「已停止新增提交；已提交的记录全部保留」）。合同 ui-contract §按钮与确认规则
+                      # 「停止新增提交」要求：不假称取消上游、已提交任务继续观察；旧断言读
+                      # #attempt-status 的「批次已停止」是过期元素与文案。
+                      and "已停止新增提交" in stopped["ui"]["batch"]["progress"]
+                      and "已提交的记录全部保留" in stopped["ui"]["batch"]["progress"],
                       {"arrived": arrived, "window": stop_window,
-                       "status": stopped["ui"]["status"]})
+                       "status": stopped["ui"]["status"],
+                       "progress": stopped["ui"]["batch"]["progress"],
+                       "fresh_confirmations": len(fresh_confirmations)})
 
                 # ---------------- 刷新恢复：身份保留、无第二次提交；继续生成剩余 ----------------
+                # 停止后 stop_second/stop_third 的原授权仍有效：点“按原摘要继续未提交队列”
+                # 走同一原确认的 runBatch；第一张 submit 到达上游后刷新，验证
+                # pending_submit 身份保留且不自动重提（submit 计数仍为 1）。
                 mode["arrived"] = threading.Event()
                 mode["hold"] = threading.Event()
                 submits_before = len(submit_requests)
-                page.click("#batch-run")
+                click_queue_resume()
                 arrived = mode["arrived"].wait(20)
                 pre_reload = probe()
                 pending_chain = chain_of(pre_reload, stop_second)
@@ -774,8 +810,9 @@ def main() -> int:
                 restored_chain = chain_of(restored, stop_second)
                 restored_row = row_of(restored, stop_second) or {}
                 restored_buttons = [item["text"] for item in restored_row.get("buttons") or []]
+                restored_queues = restored["ui"]["batch"]["queues"]
                 check("V2.4.3-10",
-                      "刷新恢复：被中断的提交保留身份、不自动重提；批次条按记录重算剩余",
+                      "刷新恢复：被中断的提交保留身份、不自动重提；未提交队列按记录重算剩余",
                       arrived
                       and len(pending_chain) == 1
                       and pending_chain[0]["payload"]["state"] == "pending_submit"
@@ -785,16 +822,23 @@ def main() -> int:
                       and submits_for(restored_chain[0]["payload"]["action_id"]) == 1
                       and chain_of(restored, stop_third) == []
                       and any("新建 action" in text for text in restored_buttons)
-                      and "继续生成剩余（1 张）" in (restored["ui"]["batch"]["run"] or {}).get("text", "")
+                      and any("按原摘要继续未提交队列" in "".join(
+                          item.get("text", "") for item in queue.get("buttons") or [])
+                          for queue in restored_queues)
+                      and "尚未提交" in "".join(queue.get("text", "") for queue in restored_queues)
                       and "没有任务编号" in restored["ui"]["batch"]["hint"],
                       {"restored_state": restored_chain[0]["payload"]["state"],
-                       "run": (restored["ui"]["batch"]["run"] or {}).get("text"),
+                       "queues": [queue.get("text", "")[:80] for queue in restored_queues],
                        "hint": restored["ui"]["batch"]["hint"]})
 
                 stuck_action = restored_chain[0]["payload"]["action_id"]
+                # 卡住的 pending 无任务编号：行内"新建 action"切 explicit_new 再摘要确认；
+                # 剩余提交走原队列的"按原摘要继续未提交队列"（同一原确认 runBatch）。
+                # 判据：attempt 行终态 + 进度文本 + 卡住身份只提交一次。
                 click_row_button(stop_second, "新建 action")
-                wait_state(stop_second, "submitted")
-                page.click("#batch-run")
+                confirm_generation([stop_second])
+                wait_state(stop_second, "succeeded")
+                click_queue_resume()
                 wait_states({stop_second: "succeeded", stop_third: "succeeded"})
                 finished = probe()
                 final_rows = finished["ui"]["rows"]
@@ -829,6 +873,23 @@ def main() -> int:
             pass
 
     if interrupted:
+        try:
+            gate = page.evaluate("""() => {
+              const el = (id) => document.getElementById(id);
+              return {
+                create_disabled: el("create-project").disabled,
+                create_data_ready: el("create-project").dataset.ready ?? null,
+                boot_pending_hidden: el("boot-pending").hidden,
+                boot_error: (el("boot-error").textContent || "").trim().slice(0, 200),
+                home_read_error: (el("home-read-error").textContent || "").trim().slice(0, 200),
+                capability_gap: el("capability-notice").dataset.errorGap ?? null,
+                phase: window.__v2SessionProbe ? window.__v2SessionProbe.phase : "no-probe",
+              };
+            }""")
+            interrupted = f"{interrupted}\ngate={gate}\nfailed_requests={failed_requests[:5]}"
+        except Exception as error:  # noqa: BLE001 - 诊断本身失败不能盖掉原始中断
+            interrupted = (f"{interrupted}\ngate=unavailable({type(error).__name__})"
+                           f"\nfailed_requests={failed_requests[:5]}")
         check("V2.4.3-99", "浏览器闭环在完成前中断", False, interrupted)
 
     expected_noise = ("Failed to load resource: the server responded with a status of 504",
@@ -891,6 +952,10 @@ def main() -> int:
         mark = "PASS" if item["ok"] else "FAIL"
         lines.append(f"- [{mark}] {item['id']} {item['title']}")
     lines += ["", "BOUNDARY", boundary]
+    if failed:
+        lines += ["", "FAILED DETAILS"]
+        lines += [f"- {item['id']} " + json.dumps(item["detail"], ensure_ascii=False)[:4000]
+                  for item in failed]
     txt_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
     for line in lines:
@@ -901,6 +966,14 @@ def main() -> int:
     print(" -", txt_path.relative_to(ROOT).as_posix())
     for shot in screenshots:
         print(" -", shot)
+    if failed:
+        # 失败时把判据的实测值打到日志里：远程 CI 只回日志，不传证据文件——
+        # 没有 detail 就只能靠猜机制（2026-10-08 的 V2.4.3-04 就是这样赔了一轮 CI）。
+        print("")
+        print("FAILED DETAILS")
+        for item in failed:
+            print(" -", item["id"], json.dumps(item["detail"], ensure_ascii=False)[:4000],
+                  flush=True)
     return 0 if status == "passed" else 1
 
 

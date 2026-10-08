@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * Product V2 项目工作区（V2.2.3）：参考图 → 商品资料 → 分析 → 商品理解。
  *
@@ -14,624 +15,938 @@
  */
 
 import {
-  ATTEMPT_DOCUMENT_KIND,
-  ATTEMPT_ACTIVE_STATES,
-  ATTEMPT_RECONCILE_MODES,
   ATTEMPT_STATES,
-  CANDIDATE_DOCUMENT_KIND,
-  COMPARE_CONTRACT_VERSION,
-  COMPARE_SEVERITY_TEXT,
-  COMPARE_STATE_TEXT,
-  CONFIRM_DOCUMENT_ID,
-  CORE_SLOT_REGISTRY,
-  DOMAIN_DOCUMENT_KINDS,
-  EXPORT_GATE_CONTRACT_VERSION,
-  FACT_SLOT_SCHEMA_VERSION,
   MAX_REFERENCES,
-  MANUAL_EDIT_REASON_MAX,
   PRODUCT_INPUT_SCHEMA_VERSION,
-  PLATFORM_PROFILES,
-  imagePromptProfile,
   REFERENCE_ROLES,
-  REVIEW_REPORT_DOCUMENT_KIND,
-  REVIEW_SEVERITY_ORDER,
-  REWORK_CONTRACT_VERSION,
-  REWORK_PROBLEMS,
-  SELECTION_CONTRACT_VERSION,
-  SHOT_TEMPLATES,
-  SUITE_PLAN_DOCUMENT_ID,
-  STYLE_SPEC_DOCUMENT_ID,
-  acknowledgementDocumentIdOf,
-  addCustomShotToPlan,
-  addShotFromTemplate,
-  applySlotAction,
-  assertShotSpec,
-  assertSelectionRecord,
-  assertStyleSpec,
-  assembleSuiteReview,
-  attemptPromptStaleness,
-  attemptReconcileMode,
-  attemptStateLabel,
-  batchProgressText,
-  briefReadiness,
-  buildAcknowledgement,
-  buildConfirmationRecord,
-  buildConfirmationSheet,
-  buildDeliveryEntries,
-  buildEditedPromptRecord,
-  buildExportRecord,
-  buildPromptRecord,
-  buildProductBrief,
-  buildReworkDirective,
-  buildReviewReport,
-  buildSelectionRecord,
-  buildSelectionSet,
-  canAddSlot,
-  canConfirmSlot,
-  canDeleteSlot,
-  canEditValue,
-  candidateMatchesAttempt,
-  checkConfirmationRecord,
-  checkFactSlot,
-  checkPromptRecord,
-  compareCounts,
-  compareRowHeadline,
-  compareRows,
-  compilePrompt,
-  confirmationSnapshot,
-  confirmationStaleness,
-  copyShot,
-  coreSlotDefinition,
-  defaultCompareTargetId,
-  deliveryImagePathOf,
-  deliveryFileName,
-  deriveSelectionState,
-  emptyShotSpecFromShot,
-  emptyStyleSpec,
-  emptyProductInput,
-  evaluateDeliveryGate,
-  exportRecordDocumentIdOf,
   intakeReadiness,
-  moveShot,
-  newActionId,
-  nextPendingShotId,
-  previousVersionOf,
-  promptHash,
-  promptStaleness,
-  recommendPlan,
-  referenceFromAsset,
-  reviewChecklist,
   reviewIsCurrent,
-  reviewSummaryText,
-  reworkIsCurrent,
-  reworkSummaryText,
-  removeShot,
-  requestSnapshotOf,
-  selectReferences,
-  seedSuitePlan,
-  selectionSetText,
-  selectionStateLabel,
-  selectionSummaryText,
-  specChangeProjection,
-  sortFindings,
-  suggestReworkProblems,
-  suggestedReworkDirection,
-  selectionFingerprintOf,
-  inputsFingerprintOf,
-  suiteReviewIsCurrent,
-  suiteReviewSummaryText,
-  SUITE_MAX_IMAGES,
-  SUITE_REVIEW_DOCUMENT_ID,
   suitePlanSummary,
-  suiteSpecDigest,
-  styleSpecDiff,
-  topFinding,
-  validateSuitePlan,
 } from "./domain/index.js";
-import { sha256Hex } from "./storage/db.js";
-import { STORAGE_ERROR_CODES } from "./storage/errors.js";
-import { buildZip, exportProjectPackage } from "./storage/index.js";
 import { createGenerationModule } from "./generation.js";
+import { consumptionFence, createProjectInputsModule } from "./project-inputs.js";
+import { createPromptModule } from "./prompts.js";
+import { createReviewDeliveryModule } from "./review-delivery.js";
+import { createSelectionAdoptionModule } from "./selection-adoption.js";
+import { createCompareView } from "./ui/compare-view.js";
+import { createDeliveryView } from "./ui/delivery-view.js";
+import { createGenerationView } from "./ui/generation-view.js";
+import { createInputView } from "./ui/input-view.js";
 import { createStageShell } from "./ui/stage-shell.js";
-
-const INTAKE_DOCUMENT_ID = "intake";
-const INTAKE_KIND = DOMAIN_DOCUMENT_KINDS.product_input;
-const SLOT_KIND = DOMAIN_DOCUMENT_KINDS.fact_slot;
-const SUITE_KIND = DOMAIN_DOCUMENT_KINDS.suite_plan;
-const STYLE_KIND = DOMAIN_DOCUMENT_KINDS.style_spec;
-const SHOT_SPEC_KIND = DOMAIN_DOCUMENT_KINDS.shot_spec;
-const PROMPT_KIND = DOMAIN_DOCUMENT_KINDS.prompt_version;
-const CONFIRM_KIND = DOMAIN_DOCUMENT_KINDS.generation_confirm;
-const ATTEMPT_KIND = ATTEMPT_DOCUMENT_KIND;
-const CANDIDATE_KIND = CANDIDATE_DOCUMENT_KIND;
-const REVIEW_KIND = REVIEW_REPORT_DOCUMENT_KIND;
-
-const CAPABILITIES_PATH = "/api/v2/capabilities";
-const ANALYZE_PATH = "/api/v2/semantic/analyze";
-const REVIEW_PATH = "/api/v2/review/candidate";
-const SUITE_REVIEW_PATH = "/api/v2/review/suite";
-const SUITE_REVIEW_KIND = DOMAIN_DOCUMENT_KINDS.suite_review;
-const MAX_SUITE_IMAGE_BYTES = 4 * 1024 * 1024;
-const REWORK_CONFIRM_PREFIX = "rework:";
-const SELECTION_KIND = DOMAIN_DOCUMENT_KINDS.selection;
-const REVIEW_ACK_KIND = DOMAIN_DOCUMENT_KINDS.review_acknowledgement;
-const EXPORT_RECORD_KIND = DOMAIN_DOCUMENT_KINDS.export_record;
-
-const DRAFT_DEBOUNCE_MS = 600;
-const ANALYZE_MAX_SLOTS = 12;
-const MAX_REVIEW_IMAGE_BYTES = 4 * 1024 * 1024;
-const MAX_REVIEW_REFERENCES = 3;
-// 单张参考图上限：与图像提交体上限（48MB，3 张 base64 后 ≈40MB）配套；
-// 上游 qwen-image 对输入图也有约 10MB 的量级限制。
-const MAX_REFERENCE_IMAGE_BYTES = 10 * 1024 * 1024;
-const ANALYZE_LOCALE = "zh-CN";
-const ANALYZE_PLATFORM = "amazon_us";
-const DEFAULT_ANALYZE_FIELDS = Object.freeze([
-  "product_name", "description", "selling_points", "focus", "references",
-  "locale", "platform", "max_slots", "existing_slot_ids",
-]);
-
-const STATUS_TEXT = Object.freeze({
-  confirmed: "已确认", proposed: "模型提案", missing: "缺失",
-  conflict: "冲突", unknown: "未知", superseded: "已移除",
-});
-
-const AUTHORITY_TEXT = Object.freeze({
-  core_fixed: "系统固定", category_dynamic: "品类动态", user_custom: "自定义", derived: "派生",
-});
-
-const ROLE_TEXT = Object.freeze({
-  primary: "商品主图", detail: "细节图", packaging: "包装图", scene: "场景参考",
-  competitor: "竞品参考", other: "其他",
-});
-
-const EVIDENCE_TEXT = Object.freeze({
-  user: "用户输入", asset: "参考图", model: "模型", rule: "规则",
-});
-
-/** 严重度与复核状态 → 徽标样式；颜色只表达优先级，不改变任何规则判定。 */
-const SEVERITY_BADGE = Object.freeze({
-  BLOCK: "is-review-block", HIGH_RISK: "is-review-high", WARNING: "is-review-warn",
-  UNKNOWN: "is-review-unknown", PASS: "is-review-pass",
-});
-
-const COMPARE_STATE_BADGE = Object.freeze({
-  pending: "is-review-high", unknown: "is-review-unknown", clean: "is-review-pass",
-  unchecked: "is-review-unchecked",
-});
-
-/** 审核优先级：冲突 → 未知 → 缺失 → 未确认 → 已确认 → 已移除。 */
-const REVIEW_ORDER = Object.freeze({
-  conflict: 0, unknown: 1, missing: 2, proposed: 3, confirmed: 4, superseded: 5,
-});
+import {
+  ROLE_TEXT,
+  STATUS_TEXT,
+  appendTech,
+  clearError,
+  createElement,
+  errorMessageOf,
+  showError,
+  splitLines,
+} from "./ui/dom.js";
+/**
+ * 本文件 JSDoc 类型说明（V2.R7.5 调用方严格化，不改运行时）：
+ *  - 领域/存储/会话/模型设置/生成/语义分析的权威类型分别来自
+ *    `domain/type-contracts.js`、`storage/validate.js`、`session.js`、
+ *    `model-settings.js`、`generation.js`、`semantic-analysis.js` 的 TS 声明；
+ *    这里只做调用面的局部收口，不建第二套业务约定。
+ *  - DOM 句柄一律收窄到真实元素类型（按 index.html 标签断言非空；全部 id 已核对存在，
+ *    既有运行时守卫保留为纵深防御）。
+ *  - 未经校验的持久化读出在消费边界收窄（`unknown` → 守卫/断言），不伪造形状；
+ *    已校验记录在验证边界注明来源后允许收窄。
+ * @typedef {import("./domain/type-contracts.js").FactSlot} FactSlot
+ * @typedef {import("./domain/type-contracts.js").FactSlotValue} FactSlotValue
+ * @typedef {import("./domain/type-contracts.js").SlotEntry} SlotEntry
+ * @typedef {import("./domain/type-contracts.js").SlotStatus} SlotStatus
+ * @typedef {import("./domain/type-contracts.js").ProductInput} ProductInput
+ * @typedef {import("./domain/type-contracts.js").ProductReference} ProductReference
+ * @typedef {import("./domain/type-contracts.js").ReferenceRole} ReferenceRole
+ * @typedef {import("./domain/type-contracts.js").SemanticProposal} SemanticProposal
+ * @typedef {import("./domain/type-contracts.js").SemanticAnalysisSource} SemanticAnalysisSource
+ * @typedef {import("./domain/type-contracts.js").PlanShot} PlanShot
+ * @typedef {import("./domain/type-contracts.js").SuitePlan} SuitePlan
+ * @typedef {import("./domain/type-contracts.js").SuitePlanSummary} SuitePlanSummary
+ * @typedef {import("./domain/type-contracts.js").StyleSpec} StyleSpec
+ * @typedef {import("./domain/type-contracts.js").ShotSpec} ShotSpec
+ * @typedef {import("./domain/type-contracts.js").PromptRecord} PromptRecord
+ * @typedef {import("./domain/type-contracts.js").ConfirmationRecord} ConfirmationRecord
+ * @typedef {import("./domain/type-contracts.js").ConfirmationSnapshot} ConfirmationSnapshot
+ * @typedef {import("./domain/type-contracts.js").AttemptRecord} AttemptRecord
+ * @typedef {import("./domain/type-contracts.js").AttemptState} AttemptState
+ * @typedef {import("./domain/type-contracts.js").CandidateRecord} CandidateRecord
+ * @typedef {import("./domain/type-contracts.js").SelectionRecord} SelectionRecord
+ * @typedef {import("./domain/type-contracts.js").SelectionState} SelectionState
+ * @typedef {import("./domain/type-contracts.js").SuiteReviewReport} SuiteReviewReport
+ * @typedef {import("./ui/compare-view.js").CompareView} CompareView
+ * @typedef {import("./ui/delivery-view.js").DeliveryView} DeliveryView
+ * @typedef {import("./ui/generation-view.js").GenerationView} GenerationView
+ * @typedef {import("./ui/input-view.js").InputView} InputView
+ * @typedef {import("./domain/type-contracts.js").UnknownItem} UnknownItem
+ * @typedef {import("./domain/type-contracts.js").GateFinding} GateFinding
+ * @typedef {import("./domain/type-contracts.js").ImagePromptProfile} ImagePromptProfile
+ * @typedef {import("./domain/type-contracts.js").DomainProblem} DomainProblem
+ * @typedef {import("./storage/validate.js").ProjectRepository} ProjectRepository
+ * @typedef {import("./storage/validate.js").StoredProjectRecord} StoredProjectRecord
+ * @typedef {import("./storage/validate.js").StoredDocumentRecord} StoredDocumentRecord
+ * @typedef {import("./storage/validate.js").StoredAssetRecord} StoredAssetRecord
+ * @typedef {import("./session.js").Session} Session
+ * @typedef {import("./session.js").ActionSnapshot} ActionSnapshot
+ * @typedef {import("./model-settings.js").ModelSettings} ModelSettings
+ * @typedef {import("./model-settings.js").EffectiveCapabilities} EffectiveCapabilities
+ * @typedef {import("./generation.js").GenerationModule} GenerationModule
+ * @typedef {import("./generation.js").ReviewReportEntry} ReviewReportEntry
+ * @typedef {import("./generation.js").PromptEntry} PromptEntry
+ * @typedef {import("./semantic-analysis.js").AnalysisOutcome} AnalysisOutcome
+ * @typedef {import("./semantic-analysis.js").SemanticRequestBody} SemanticRequestBody
+ */
 
 /**
- * 列表排序键：把「必须确认（critical）且尚未收尾」提到冲突/未知之后、缺失之前。
- *
- * critical 是推进阶段门禁的真阻塞项，而 `missing` 大多只是待补的可选事实
- * （品牌、包装内容物等不参与解锁）。只按 REVIEW_ORDER 排，4 个不阻塞的 missing
- * 会压在 3 个阻塞的 proposed+critical 前面，与页面文案「先处理冲突、未知与必须确认
- * 的槽位」相反：读者按视觉顺序走，会先做几件不影响推进的事才碰到真正的门槛。
+ * 生成前确认单：domain/confirm.js `buildConfirmationSheet` 的确定性输出。领域层不导出该结构
+ * 类型，工作区按实际消费的字段在本地收窄。
+ * @typedef {{
+ *   schema_version: number, total: number, ready: number, blocked: number, can_submit: boolean,
+ *   platform: {platform_id: string, version: string, label?: string},
+ *   provider: {provider_id: string, model_id: string, version: string, protocol: string, size: string,
+ *              n: number, prompt_extend: boolean, watermark: boolean, output_format: string},
+ *   external_summary: {model: string, size: string, n: number, prompt_extend: boolean, watermark: boolean,
+ *                      output_format: string, reference_count: number, reference_roles: string[],
+ *                      prompt_chars: number, on_image_text_language?: string, statement: string},
+ *   shots: Array<ConfirmationSheetShot>,
+ *   scope_shot_ids?: string[],
+ *   blockers: Array<{shot_id: string, label: string, order: number, code: string, message: string,
+ *                    fix: {region: string, shot_id: string|null, label: string, action: string}}>,
+ *   risks: Array<{code: string, message: string, shot_id?: string, label?: string}>,
+ * }} ConfirmationSheetView
  */
-function reviewRankOf(entry) {
-  const status = entry.slot.status;
-  if (status !== "confirmed" && status !== "superseded" && entry.slot.critical === true) {
-    return 2;
-  }
-  const base = REVIEW_ORDER[status] ?? 9;
-  // 冲突/未知仍然最先；缺失及之后的普通状态整体后移一位，给 critical 让位。
-  return base < 2 ? base : base + 1;
-}
+
+/**
+ * 确认单中的单张图片行（字段与 confirm.js 输出逐项对应）。
+ * @typedef {{
+ *   shot_id: string, order: number, label: string, role_id: string|null, role_label: string|null,
+ *   intent: string|null, template_id: string|null, required: boolean, satisfied: boolean,
+ *   prompt: {version: number|null, hash: string|null, chars: number|null},
+ *   references: Array<{role: string, sha256_prefix: string}>,
+ *   risks: Array<{code: string, message: string, shot_id: string, label: string}>,
+ *   blockers: Array<{code: string, message: string,
+ *                    fix: {region: string, shot_id: string|null, label: string, action: string}}>,
+ * }} ConfirmationSheetShot
+ */
+
+/**
+ * 当前编辑中的商品资料：保存/出站前各字段都已落成具体值（不再是可选项）。
+ * @typedef {{schema_version: number, product_name: string, description: string, selling_points: string[], focus: string, references: ProductReference[]}} CompleteProductInput
+ */
+
+/**
+ * 元素表：按 index.html 实际标签收窄；全部 id 均在 index.html 中核对存在，
+ * 因此句柄为非空（缺失即装配错误）；bind/render 的既有运行时守卫保留为纵深防御。
+ * @typedef {object} WorkspaceElements
+ * @property {HTMLElement} error
+ * @property {HTMLElement} scope
+ * @property {HTMLButtonElement} refAdd
+ * @property {HTMLInputElement} refFile
+ * @property {HTMLElement} refCount
+ * @property {HTMLElement} refError
+ * @property {HTMLElement} refEmpty
+ * @property {HTMLElement} refList
+ * @property {HTMLInputElement} intakeName
+ * @property {HTMLTextAreaElement} intakeDescription
+ * @property {HTMLTextAreaElement} intakePoints
+ * @property {HTMLInputElement} intakeFocus
+ * @property {HTMLButtonElement} intakeSave
+ * @property {HTMLElement} intakeDraft
+ * @property {HTMLElement} intakeError
+ * @property {HTMLButtonElement} manualFacts
+ * @property {HTMLButtonElement} analyzeRun
+ * @property {HTMLElement} analyzeGate
+ * @property {HTMLElement} analyzeResult
+ * @property {HTMLElement} analyzeError
+ * @property {HTMLButtonElement} analyzeNewAfterUnknown
+ * @property {HTMLElement} slotsProgress
+ * @property {HTMLButtonElement} slotsToggle
+ * @property {HTMLElement} slotsEmpty
+ * @property {HTMLElement} slotList
+ * @property {HTMLInputElement} slotAddId
+ * @property {HTMLInputElement} slotAddLabel
+ * @property {HTMLSelectElement} slotAddType
+ * @property {HTMLTextAreaElement} slotAddValue
+ * @property {HTMLInputElement} slotAddAllowModel
+ * @property {HTMLButtonElement} slotAddSave
+ * @property {HTMLElement} slotAddStatus
+ * @property {HTMLElement} slotsError
+ * @property {HTMLElement} suiteLocked
+ * @property {HTMLElement} suiteEditor
+ * @property {HTMLButtonElement} suiteSeed
+ * @property {HTMLSelectElement} suiteTemplate
+ * @property {HTMLElement} suiteTemplateHint
+ * @property {HTMLButtonElement} suiteAddTemplate
+ * @property {HTMLButtonElement} suiteCustomToggle
+ * @property {HTMLElement} suiteStatus
+ * @property {HTMLElement} suiteCustomPanel
+ * @property {HTMLInputElement} suiteCustomLabel
+ * @property {HTMLInputElement} suiteCustomIntent
+ * @property {HTMLButtonElement} suiteCustomSave
+ * @property {HTMLElement} suiteCustomStatus
+ * @property {HTMLElement} suiteEmpty
+ * @property {HTMLElement} shotList
+ * @property {HTMLElement} suiteError
+ * @property {HTMLElement} specsLocked
+ * @property {HTMLElement} specsEditor
+ * @property {HTMLInputElement} styleBackground
+ * @property {HTMLInputElement} styleLighting
+ * @property {HTMLInputElement} styleColorTone
+ * @property {HTMLInputElement} styleComposition
+ * @property {HTMLTextAreaElement} styleAvoid
+ * @property {HTMLButtonElement} styleSave
+ * @property {HTMLButtonElement} styleRestore
+ * @property {HTMLElement} styleVersion
+ * @property {HTMLElement} styleEffect
+ * @property {HTMLElement} styleStatus
+ * @property {HTMLElement} styleError
+ * @property {HTMLElement} shotSpecsEmpty
+ * @property {HTMLElement} shotSpecList
+ * @property {HTMLElement} specsError
+ * @property {HTMLElement} promptLocked
+ * @property {HTMLElement} promptEditor
+ * @property {HTMLElement} localPreparationStatus
+ * @property {HTMLElement} promptStatus
+ * @property {HTMLElement} promptList
+ * @property {HTMLElement} promptError
+ * @property {HTMLElement} confirmLocked
+ * @property {HTMLElement} confirmEditor
+ * @property {HTMLElement} confirmStatus
+ * @property {HTMLElement} confirmSummary
+ * @property {HTMLElement} confirmBlockers
+ * @property {HTMLElement} confirmRisks
+ * @property {HTMLElement} confirmList
+ * @property {HTMLButtonElement} confirmAction
+ * @property {HTMLElement} confirmRecord
+ * @property {HTMLElement} confirmError
+ * @property {HTMLElement} attemptLocked
+ * @property {HTMLElement} attemptEditor
+ * @property {HTMLElement} attemptStatus
+ * @property {HTMLElement} attemptProvider
+ * @property {HTMLElement} batchBar
+ * @property {HTMLElement} queueList
+ * @property {HTMLButtonElement} batchStop
+ * @property {HTMLButtonElement} batchReconcile
+ * @property {HTMLButtonElement} batchRetry
+ * @property {HTMLElement} batchProgress
+ * @property {HTMLElement} batchHint
+ * @property {HTMLElement} attemptList
+ * @property {HTMLElement} attemptError
+ * @property {HTMLElement} comparePanel
+ * @property {HTMLElement} compareSubject
+ * @property {HTMLButtonElement} compareJump
+ * @property {HTMLButtonElement} compareClose
+ * @property {HTMLElement} compareBasisTitle
+ * @property {HTMLElement} compareReferences
+ * @property {HTMLElement} compareCandidates
+ * @property {HTMLElement} compareChecklist
+ * @property {HTMLElement} compareStatus
+ * @property {HTMLImageElement} compareViewedImage
+ * @property {HTMLElement} compareViewedCaption
+ * @property {HTMLButtonElement} compareViewedZoom
+ * @property {HTMLImageElement} compareBaselineImage
+ * @property {HTMLSelectElement} compareBaselineSelect
+ * @property {HTMLButtonElement} compareBaselineZoom
+ * @property {HTMLButtonElement} compareReview
+ * @property {HTMLDialogElement} imageZoomDialog
+ * @property {HTMLElement} imageZoomTitle
+ * @property {HTMLImageElement} imageZoomContent
+ * @property {HTMLButtonElement} imageZoomNative
+ * @property {HTMLButtonElement} imageZoomClose
+ * @property {HTMLButtonElement} reworkOpen
+ * @property {HTMLElement} reworkPanel
+ * @property {HTMLElement} reworkBasis
+ * @property {HTMLElement} reworkProblems
+ * @property {HTMLTextAreaElement} reworkDirection
+ * @property {HTMLButtonElement} reworkPreview
+ * @property {HTMLButtonElement} reworkEdit
+ * @property {HTMLButtonElement} reworkSubmit
+ * @property {HTMLButtonElement} reworkReset
+ * @property {HTMLButtonElement} reworkCancel
+ * @property {HTMLElement} reworkPreviewBox
+ * @property {HTMLElement} reworkPreviewMeta
+ * @property {HTMLElement} reworkPreviewText
+ * @property {HTMLElement} reworkTech
+ * @property {HTMLElement} reworkTechBody
+ * @property {HTMLElement} reworkSummary
+ * @property {HTMLElement} reworkStatus
+ * @property {HTMLElement} reworkError
+ * @property {HTMLButtonElement} adoptOpen
+ * @property {HTMLButtonElement} adoptClear
+ * @property {HTMLElement} adoptStatus
+ * @property {HTMLElement} adoptError
+ * @property {HTMLElement} adoptProgress
+ * @property {HTMLElement} generateError
+ * @property {HTMLElement} stageNav
+ * @property {HTMLElement} stagePanels
+ * @property {HTMLElement} stageSummary
+ * @property {HTMLButtonElement} stageNextUnderstand
+ * @property {HTMLElement} stageNextUnderstandNote
+ * @property {HTMLButtonElement} stageNextPlan
+ * @property {HTMLElement} stageNextPlanNote
+ * @property {HTMLButtonElement} stageNextReview
+ * @property {HTMLElement} stageNextReviewNote
+ * @property {HTMLButtonElement} stageNextDeliver
+ * @property {HTMLElement} stageNextDeliverNote
+ * @property {HTMLElement} reviewList
+ * @property {HTMLElement} reviewEmpty
+ * @property {HTMLElement} suiteReviewStatus
+ * @property {HTMLButtonElement} suiteReviewRun
+ * @property {HTMLButtonElement} suiteAiReviewRun
+ * @property {HTMLElement} suiteReviewNote
+ * @property {HTMLElement} suiteReviewFindings
+ * @property {HTMLElement} suiteReviewError
+ * @property {HTMLElement} deliveryGate
+ * @property {HTMLElement} deliverySuiteStatus
+ * @property {HTMLElement} deliverySuiteFindings
+ * @property {HTMLElement} deliveryUnknowns
+ * @property {HTMLButtonElement} deliverExport
+ * @property {HTMLButtonElement} deliverProjectPackage
+ * @property {HTMLElement} deliverStatus
+ * @property {HTMLElement} deliverResult
+ * @property {HTMLElement} deliverError
+ */
 
 const SCOPE_TEXT = "这一版覆盖“商品资料 → 商品理解 → 套图规划 → 规格 → Prompt → 生成前确认 → 整套生成与逐图进度（含单张核对）→ 审核 → 单图返工 → 人工采用”；整套一致性报告与导出交付尚未接入。";
 
-function createElement(tag, options = {}, children = []) {
-  const node = document.createElement(tag);
-  if (options.className) node.className = options.className;
-  if (options.text !== undefined) node.textContent = options.text;
-  if (options.attrs) {
-    for (const [name, value] of Object.entries(options.attrs)) {
-      if (value !== null && value !== undefined) node.setAttribute(name, String(value));
-    }
-  }
-  if (options.props) Object.assign(node, options.props);
-  for (const child of children) if (child) node.append(child);
-  return node;
-}
-
-function splitLines(text) {
-  return String(text || "").split("\n").map((item) => item.trim()).filter((item) => item.length > 0);
-}
-
 /**
- * V2.6.4 渐进披露：工程字段（sha256 / action / task / 指纹）默认收进「技术详情」。
- * 业务判读所需信息留在主行；技术字段不删除、展开即可见，也仍可从 dataset 读取。
+ * 工作区工厂：会话提供 repository/session/onProjectChanged；模型设置由外层装配透传。
+ * 返回句柄只暴露 open/close/isOpen/setProject，不感知内部渲染状态。
+ * @param {{repository: ProjectRepository, session: Session|null, modelSettings: ModelSettings, onProjectChanged?: ((project: StoredProjectRecord|null) => void)|null}} args
+ * @returns {import("./session.js").WorkspaceHandle}
  */
-function techDetails(lines, label = "技术详情") {
-  const items = (Array.isArray(lines) ? lines : [lines]).filter(
-    (item) => typeof item === "string" && item.length > 0);
-  if (!items.length) return null;
-  const details = createElement("details", { className: "tech-details" });
-  details.append(createElement("summary", { text: label }));
-  details.append(createElement("p", { className: "meta tech-body", text: items.join(" · ") }));
-  return details;
-}
-
-function formatValue(slot) {
-  const value = slot.value;
-  if (value === null || value === undefined) return "";
-  if (Array.isArray(value)) return value.join("；");
-  if (typeof value === "boolean") return value ? "是" : "否";
-  return String(value);
-}
-
-function describeBlocking(blocking, mapMessage = null) {
-  return (blocking || [])
-    .map((item) => (mapMessage ? mapMessage(item.message) : item.message))
-    .join("；");
-}
-
-export function createWorkspace({ repository, session = null, onProjectChanged = null }) {
+export function createWorkspace({ repository, session = null, modelSettings, onProjectChanged = null }) {
   if (!session) {
     throw new Error("createWorkspace 需要 session（V2.R3.3 会话 Module）。");
   }
+  /** @type {WorkspaceElements} */
   const elements = {
-    error: document.getElementById("workspace-error"),
-    scope: document.getElementById("project-scope"),
-    refAdd: document.getElementById("ref-add"),
-    refFile: document.getElementById("ref-file"),
-    refCount: document.getElementById("ref-count"),
-    refError: document.getElementById("ref-error"),
-    refEmpty: document.getElementById("ref-empty"),
-    refList: document.getElementById("ref-list"),
-    intakeName: document.getElementById("intake-name"),
-    intakeDescription: document.getElementById("intake-description"),
-    intakePoints: document.getElementById("intake-selling-points"),
-    intakeFocus: document.getElementById("intake-focus"),
-    intakeSave: document.getElementById("intake-save"),
-    intakeDraft: document.getElementById("intake-draft"),
-    intakeError: document.getElementById("intake-error"),
-    analyzeRun: document.getElementById("analyze-run"),
-    analyzeGate: document.getElementById("analyze-gate"),
-    analyzeResult: document.getElementById("analyze-result"),
-    analyzeError: document.getElementById("analyze-error"),
-    slotsProgress: document.getElementById("slots-progress"),
-    slotsToggle: document.getElementById("slots-toggle"),
-    slotsEmpty: document.getElementById("slots-empty"),
-    slotList: document.getElementById("slot-list"),
-    slotAddId: document.getElementById("slot-add-id"),
-    slotAddLabel: document.getElementById("slot-add-label"),
-    slotAddType: document.getElementById("slot-add-type"),
-    slotAddValue: document.getElementById("slot-add-value"),
-    slotAddAllowModel: document.getElementById("slot-add-allow-model"),
-    slotAddSave: document.getElementById("slot-add-save"),
-    slotAddStatus: document.getElementById("slot-add-status"),
-    slotsError: document.getElementById("slots-error"),
-    suiteLocked: document.getElementById("suite-locked"),
-    suiteEditor: document.getElementById("suite-editor"),
-    suiteSeed: document.getElementById("suite-seed"),
-    suiteTemplate: document.getElementById("suite-template"),
-    suiteTemplateHint: document.getElementById("suite-template-hint"),
-    suiteAddTemplate: document.getElementById("suite-add-template"),
-    suiteCustomToggle: document.getElementById("suite-custom-toggle"),
-    suiteStatus: document.getElementById("suite-status"),
-    suiteCustomPanel: document.getElementById("suite-custom-panel"),
-    suiteCustomLabel: document.getElementById("suite-custom-label"),
-    suiteCustomIntent: document.getElementById("suite-custom-intent"),
-    suiteCustomSave: document.getElementById("suite-custom-save"),
-    suiteCustomStatus: document.getElementById("suite-custom-status"),
-    suiteEmpty: document.getElementById("suite-empty"),
-    shotList: document.getElementById("shot-list"),
-    suiteError: document.getElementById("suite-error"),
-    specsLocked: document.getElementById("specs-locked"),
-    specsEditor: document.getElementById("specs-editor"),
-    styleBackground: document.getElementById("style-background"),
-    styleLighting: document.getElementById("style-lighting"),
-    styleColorTone: document.getElementById("style-color-tone"),
-    styleComposition: document.getElementById("style-composition"),
-    styleAvoid: document.getElementById("style-avoid"),
-    styleSave: document.getElementById("style-save"),
-    styleRestore: document.getElementById("style-restore"),
-    styleVersion: document.getElementById("style-version"),
-    styleEffect: document.getElementById("style-effect"),
-    styleStatus: document.getElementById("style-status"),
-    styleError: document.getElementById("style-error"),
-    shotSpecsEmpty: document.getElementById("shot-specs-empty"),
-    shotSpecList: document.getElementById("shot-spec-list"),
-    specsError: document.getElementById("specs-error"),
-    promptLocked: document.getElementById("prompt-locked"),
-    promptEditor: document.getElementById("prompt-editor"),
-    promptStatus: document.getElementById("prompt-status"),
-    promptList: document.getElementById("prompt-list"),
-    promptError: document.getElementById("prompt-error"),
-    confirmLocked: document.getElementById("confirm-locked"),
-    confirmEditor: document.getElementById("confirm-editor"),
-    confirmStatus: document.getElementById("confirm-status"),
-    confirmSummary: document.getElementById("confirm-summary"),
-    confirmBlockers: document.getElementById("confirm-blockers"),
-    confirmRisks: document.getElementById("confirm-risks"),
-    confirmList: document.getElementById("confirm-list"),
-    confirmAction: document.getElementById("confirm-action"),
-    confirmRecord: document.getElementById("confirm-record"),
-    confirmError: document.getElementById("confirm-error"),
-    attemptLocked: document.getElementById("attempt-locked"),
-    attemptEditor: document.getElementById("attempt-editor"),
-    attemptStatus: document.getElementById("attempt-status"),
-    attemptProvider: document.getElementById("attempt-provider"),
-    batchBar: document.getElementById("attempt-batch"),
-    batchRun: document.getElementById("batch-run"),
-    batchStop: document.getElementById("batch-stop"),
-    batchReconcile: document.getElementById("batch-reconcile"),
-    batchRetry: document.getElementById("batch-retry"),
-    batchProgress: document.getElementById("batch-progress"),
-    batchHint: document.getElementById("batch-hint"),
-    attemptList: document.getElementById("attempt-list"),
-    attemptError: document.getElementById("attempt-error"),
-    comparePanel: document.getElementById("compare-panel"),
-    compareSubject: document.getElementById("compare-subject"),
-    compareJump: document.getElementById("compare-jump"),
-    compareClose: document.getElementById("compare-close"),
-    compareBasisTitle: document.getElementById("compare-basis-title"),
-    compareReferences: document.getElementById("compare-references"),
-    compareCandidates: document.getElementById("compare-candidates"),
-    compareChecklist: document.getElementById("compare-checklist"),
-    compareStatus: document.getElementById("compare-status"),
-    reworkOpen: document.getElementById("rework-open"),
-    reworkPanel: document.getElementById("rework-panel"),
-    reworkBasis: document.getElementById("rework-basis"),
-    reworkProblems: document.getElementById("rework-problems"),
-    reworkDirection: document.getElementById("rework-direction"),
-    reworkPreview: document.getElementById("rework-preview"),
-    reworkEdit: document.getElementById("rework-edit"),
-    reworkSubmit: document.getElementById("rework-submit"),
-    reworkReset: document.getElementById("rework-reset"),
-    reworkCancel: document.getElementById("rework-cancel"),
-    reworkPreviewBox: document.getElementById("rework-preview-box"),
-    reworkPreviewMeta: document.getElementById("rework-preview-meta"),
-    reworkPreviewText: document.getElementById("rework-preview-text"),
-    reworkTech: document.getElementById("rework-tech"),
-    reworkTechBody: document.getElementById("rework-tech-body"),
-    reworkSummary: document.getElementById("rework-summary"),
-    reworkStatus: document.getElementById("rework-status"),
-    reworkError: document.getElementById("rework-error"),
-    adoptOpen: document.getElementById("adopt-open"),
-    adoptPanel: document.getElementById("adopt-panel"),
-    adoptBasis: document.getElementById("adopt-basis"),
-    adoptCancel: document.getElementById("adopt-cancel"),
-    adoptCurrent: document.getElementById("adopt-current"),
-    adoptFingerprint: document.getElementById("adopt-fingerprint"),
-    adoptTech: document.getElementById("adopt-tech"),
-    adoptTechBody: document.getElementById("adopt-tech-body"),
-    adoptSubmit: document.getElementById("adopt-submit"),
-    adoptClear: document.getElementById("adopt-clear"),
-    adoptReadiness: document.getElementById("adopt-readiness"),
-    adoptStatus: document.getElementById("adopt-status"),
-    adoptError: document.getElementById("adopt-error"),
-    adoptProgress: document.getElementById("adopt-progress"),
-    generateError: document.getElementById("generate-error"),
-    stageNav: document.getElementById("stage-nav"),
-    stagePanels: document.getElementById("stage-panels"),
-    stageSummary: document.getElementById("stage-summary"),
-    stageNextUnderstand: document.getElementById("stage-next-understand"),
-    stageNextUnderstandNote: document.getElementById("stage-next-understand-note"),
-    stageNextPlan: document.getElementById("stage-next-plan"),
-    stageNextPlanNote: document.getElementById("stage-next-plan-note"),
-    stageNextReview: document.getElementById("stage-next-review"),
-    stageNextReviewNote: document.getElementById("stage-next-review-note"),
-    stageNextDeliver: document.getElementById("stage-next-deliver"),
-    stageNextDeliverNote: document.getElementById("stage-next-deliver-note"),
-    reviewList: document.getElementById("review-list"),
-    reviewEmpty: document.getElementById("review-empty"),
-    suiteReviewStatus: document.getElementById("suite-review-status"),
-    suiteReviewRun: document.getElementById("suite-review-run"),
-    suiteReviewNote: document.getElementById("suite-review-note"),
-    suiteReviewFindings: document.getElementById("suite-review-findings"),
-    suiteReviewError: document.getElementById("suite-review-error"),
-    deliveryGate: document.getElementById("delivery-gate"),
-    deliverySuiteStatus: document.getElementById("delivery-suite-status"),
-    deliverySuiteFindings: document.getElementById("delivery-suite-findings"),
-    deliveryUnknowns: document.getElementById("delivery-unknowns"),
-    deliverExport: document.getElementById("deliver-export"),
-    deliverProjectPackage: document.getElementById("deliver-project-package"),
-    deliverStatus: document.getElementById("deliver-status"),
-    deliverResult: document.getElementById("delivery-result"),
-    deliverError: document.getElementById("deliver-error"),
+    error: /** @type {HTMLElement} */ (document.getElementById("workspace-error")),
+    scope: /** @type {HTMLElement} */ (document.getElementById("project-scope")),
+    refAdd: /** @type {HTMLButtonElement} */ (document.getElementById("ref-add")),
+    refFile: /** @type {HTMLInputElement} */ (document.getElementById("ref-file")),
+    refCount: /** @type {HTMLElement} */ (document.getElementById("ref-count")),
+    refError: /** @type {HTMLElement} */ (document.getElementById("ref-error")),
+    refEmpty: /** @type {HTMLElement} */ (document.getElementById("ref-empty")),
+    refList: /** @type {HTMLElement} */ (document.getElementById("ref-list")),
+    intakeName: /** @type {HTMLInputElement} */ (document.getElementById("intake-name")),
+    intakeDescription: /** @type {HTMLTextAreaElement} */ (document.getElementById("intake-description")),
+    intakePoints: /** @type {HTMLTextAreaElement} */ (document.getElementById("intake-selling-points")),
+    intakeFocus: /** @type {HTMLInputElement} */ (document.getElementById("intake-focus")),
+    intakeSave: /** @type {HTMLButtonElement} */ (document.getElementById("intake-save")),
+    intakeDraft: /** @type {HTMLElement} */ (document.getElementById("intake-draft")),
+    intakeError: /** @type {HTMLElement} */ (document.getElementById("intake-error")),
+    manualFacts: /** @type {HTMLButtonElement} */ (document.getElementById("manual-facts")),
+    analyzeRun: /** @type {HTMLButtonElement} */ (document.getElementById("analyze-run")),
+    analyzeGate: /** @type {HTMLElement} */ (document.getElementById("analyze-gate")),
+    analyzeResult: /** @type {HTMLElement} */ (document.getElementById("analyze-result")),
+    analyzeError: /** @type {HTMLElement} */ (document.getElementById("analyze-error")),
+    analyzeNewAfterUnknown: /** @type {HTMLButtonElement} */ (document.getElementById("analyze-new-after-unknown")),
+    slotsProgress: /** @type {HTMLElement} */ (document.getElementById("slots-progress")),
+    slotsToggle: /** @type {HTMLButtonElement} */ (document.getElementById("slots-toggle")),
+    slotsEmpty: /** @type {HTMLElement} */ (document.getElementById("slots-empty")),
+    slotList: /** @type {HTMLElement} */ (document.getElementById("slot-list")),
+    slotAddId: /** @type {HTMLInputElement} */ (document.getElementById("slot-add-id")),
+    slotAddLabel: /** @type {HTMLInputElement} */ (document.getElementById("slot-add-label")),
+    slotAddType: /** @type {HTMLSelectElement} */ (document.getElementById("slot-add-type")),
+    slotAddValue: /** @type {HTMLTextAreaElement} */ (document.getElementById("slot-add-value")),
+    slotAddAllowModel: /** @type {HTMLInputElement} */ (document.getElementById("slot-add-allow-model")),
+    slotAddSave: /** @type {HTMLButtonElement} */ (document.getElementById("slot-add-save")),
+    slotAddStatus: /** @type {HTMLElement} */ (document.getElementById("slot-add-status")),
+    slotsError: /** @type {HTMLElement} */ (document.getElementById("slots-error")),
+    suiteLocked: /** @type {HTMLElement} */ (document.getElementById("suite-locked")),
+    suiteEditor: /** @type {HTMLElement} */ (document.getElementById("suite-editor")),
+    suiteSeed: /** @type {HTMLButtonElement} */ (document.getElementById("suite-seed")),
+    suiteTemplate: /** @type {HTMLSelectElement} */ (document.getElementById("suite-template")),
+    suiteTemplateHint: /** @type {HTMLElement} */ (document.getElementById("suite-template-hint")),
+    suiteAddTemplate: /** @type {HTMLButtonElement} */ (document.getElementById("suite-add-template")),
+    suiteCustomToggle: /** @type {HTMLButtonElement} */ (document.getElementById("suite-custom-toggle")),
+    suiteStatus: /** @type {HTMLElement} */ (document.getElementById("suite-status")),
+    suiteCustomPanel: /** @type {HTMLElement} */ (document.getElementById("suite-custom-panel")),
+    suiteCustomLabel: /** @type {HTMLInputElement} */ (document.getElementById("suite-custom-label")),
+    suiteCustomIntent: /** @type {HTMLInputElement} */ (document.getElementById("suite-custom-intent")),
+    suiteCustomSave: /** @type {HTMLButtonElement} */ (document.getElementById("suite-custom-save")),
+    suiteCustomStatus: /** @type {HTMLElement} */ (document.getElementById("suite-custom-status")),
+    suiteEmpty: /** @type {HTMLElement} */ (document.getElementById("suite-empty")),
+    shotList: /** @type {HTMLElement} */ (document.getElementById("shot-list")),
+    suiteError: /** @type {HTMLElement} */ (document.getElementById("suite-error")),
+    specsLocked: /** @type {HTMLElement} */ (document.getElementById("specs-locked")),
+    specsEditor: /** @type {HTMLElement} */ (document.getElementById("specs-editor")),
+    styleBackground: /** @type {HTMLInputElement} */ (document.getElementById("style-background")),
+    styleLighting: /** @type {HTMLInputElement} */ (document.getElementById("style-lighting")),
+    styleColorTone: /** @type {HTMLInputElement} */ (document.getElementById("style-color-tone")),
+    styleComposition: /** @type {HTMLInputElement} */ (document.getElementById("style-composition")),
+    styleAvoid: /** @type {HTMLTextAreaElement} */ (document.getElementById("style-avoid")),
+    styleSave: /** @type {HTMLButtonElement} */ (document.getElementById("style-save")),
+    styleRestore: /** @type {HTMLButtonElement} */ (document.getElementById("style-restore")),
+    styleVersion: /** @type {HTMLElement} */ (document.getElementById("style-version")),
+    styleEffect: /** @type {HTMLElement} */ (document.getElementById("style-effect")),
+    styleStatus: /** @type {HTMLElement} */ (document.getElementById("style-status")),
+    styleError: /** @type {HTMLElement} */ (document.getElementById("style-error")),
+    shotSpecsEmpty: /** @type {HTMLElement} */ (document.getElementById("shot-specs-empty")),
+    shotSpecList: /** @type {HTMLElement} */ (document.getElementById("shot-spec-list")),
+    specsError: /** @type {HTMLElement} */ (document.getElementById("specs-error")),
+    promptLocked: /** @type {HTMLElement} */ (document.getElementById("prompt-locked")),
+    promptEditor: /** @type {HTMLElement} */ (document.getElementById("prompt-editor")),
+    localPreparationStatus: /** @type {HTMLElement} */ (document.getElementById("local-preparation-status")),
+    promptStatus: /** @type {HTMLElement} */ (document.getElementById("prompt-status")),
+    promptList: /** @type {HTMLElement} */ (document.getElementById("prompt-list")),
+    promptError: /** @type {HTMLElement} */ (document.getElementById("prompt-error")),
+    confirmLocked: /** @type {HTMLElement} */ (document.getElementById("confirm-locked")),
+    confirmEditor: /** @type {HTMLElement} */ (document.getElementById("confirm-editor")),
+    confirmStatus: /** @type {HTMLElement} */ (document.getElementById("confirm-status")),
+    confirmSummary: /** @type {HTMLElement} */ (document.getElementById("confirm-summary")),
+    confirmBlockers: /** @type {HTMLElement} */ (document.getElementById("confirm-blockers")),
+    confirmRisks: /** @type {HTMLElement} */ (document.getElementById("confirm-risks")),
+    confirmList: /** @type {HTMLElement} */ (document.getElementById("confirm-list")),
+    confirmAction: /** @type {HTMLButtonElement} */ (document.getElementById("confirm-action")),
+    confirmRecord: /** @type {HTMLElement} */ (document.getElementById("confirm-record")),
+    confirmError: /** @type {HTMLElement} */ (document.getElementById("confirm-error")),
+    attemptLocked: /** @type {HTMLElement} */ (document.getElementById("attempt-locked")),
+    attemptEditor: /** @type {HTMLElement} */ (document.getElementById("attempt-editor")),
+    attemptStatus: /** @type {HTMLElement} */ (document.getElementById("attempt-status")),
+    attemptProvider: /** @type {HTMLElement} */ (document.getElementById("attempt-provider")),
+    batchBar: /** @type {HTMLElement} */ (document.getElementById("attempt-batch")),
+    queueList: /** @type {HTMLElement} */ (document.getElementById("generation-queues")),
+    batchStop: /** @type {HTMLButtonElement} */ (document.getElementById("batch-stop")),
+    batchReconcile: /** @type {HTMLButtonElement} */ (document.getElementById("batch-reconcile")),
+    batchRetry: /** @type {HTMLButtonElement} */ (document.getElementById("batch-retry")),
+    batchProgress: /** @type {HTMLElement} */ (document.getElementById("batch-progress")),
+    batchHint: /** @type {HTMLElement} */ (document.getElementById("batch-hint")),
+    attemptList: /** @type {HTMLElement} */ (document.getElementById("attempt-list")),
+    attemptError: /** @type {HTMLElement} */ (document.getElementById("attempt-error")),
+    comparePanel: /** @type {HTMLElement} */ (document.getElementById("compare-panel")),
+    compareSubject: /** @type {HTMLElement} */ (document.getElementById("compare-subject")),
+    compareJump: /** @type {HTMLButtonElement} */ (document.getElementById("compare-jump")),
+    compareClose: /** @type {HTMLButtonElement} */ (document.getElementById("compare-close")),
+    compareBasisTitle: /** @type {HTMLElement} */ (document.getElementById("compare-basis-title")),
+    compareReferences: /** @type {HTMLElement} */ (document.getElementById("compare-references")),
+    compareCandidates: /** @type {HTMLElement} */ (document.getElementById("compare-candidates")),
+    compareChecklist: /** @type {HTMLElement} */ (document.getElementById("compare-checklist")),
+    compareStatus: /** @type {HTMLElement} */ (document.getElementById("compare-status")),
+    compareViewedImage: /** @type {HTMLImageElement} */ (document.getElementById("compare-viewed-image")),
+    compareViewedCaption: /** @type {HTMLElement} */ (document.getElementById("compare-viewed-caption")),
+    compareViewedZoom: /** @type {HTMLButtonElement} */ (document.getElementById("compare-viewed-zoom")),
+    compareBaselineImage: /** @type {HTMLImageElement} */ (document.getElementById("compare-baseline-image")),
+    compareBaselineSelect: /** @type {HTMLSelectElement} */ (document.getElementById("compare-baseline-select")),
+    compareBaselineZoom: /** @type {HTMLButtonElement} */ (document.getElementById("compare-baseline-zoom")),
+    compareReview: /** @type {HTMLButtonElement} */ (document.getElementById("compare-review")),
+    imageZoomDialog: /** @type {HTMLDialogElement} */ (document.getElementById("image-zoom-dialog")),
+    imageZoomTitle: /** @type {HTMLElement} */ (document.getElementById("image-zoom-title")),
+    imageZoomContent: /** @type {HTMLImageElement} */ (document.getElementById("image-zoom-content")),
+    imageZoomNative: /** @type {HTMLButtonElement} */ (document.getElementById("image-zoom-native")),
+    imageZoomClose: /** @type {HTMLButtonElement} */ (document.getElementById("image-zoom-close")),
+    reworkOpen: /** @type {HTMLButtonElement} */ (document.getElementById("rework-open")),
+    reworkPanel: /** @type {HTMLElement} */ (document.getElementById("rework-panel")),
+    reworkBasis: /** @type {HTMLElement} */ (document.getElementById("rework-basis")),
+    reworkProblems: /** @type {HTMLElement} */ (document.getElementById("rework-problems")),
+    reworkDirection: /** @type {HTMLTextAreaElement} */ (document.getElementById("rework-direction")),
+    reworkPreview: /** @type {HTMLButtonElement} */ (document.getElementById("rework-preview")),
+    reworkEdit: /** @type {HTMLButtonElement} */ (document.getElementById("rework-edit")),
+    reworkSubmit: /** @type {HTMLButtonElement} */ (document.getElementById("rework-submit")),
+    reworkReset: /** @type {HTMLButtonElement} */ (document.getElementById("rework-reset")),
+    reworkCancel: /** @type {HTMLButtonElement} */ (document.getElementById("rework-cancel")),
+    reworkPreviewBox: /** @type {HTMLElement} */ (document.getElementById("rework-preview-box")),
+    reworkPreviewMeta: /** @type {HTMLElement} */ (document.getElementById("rework-preview-meta")),
+    reworkPreviewText: /** @type {HTMLElement} */ (document.getElementById("rework-preview-text")),
+    reworkTech: /** @type {HTMLElement} */ (document.getElementById("rework-tech")),
+    reworkTechBody: /** @type {HTMLElement} */ (document.getElementById("rework-tech-body")),
+    reworkSummary: /** @type {HTMLElement} */ (document.getElementById("rework-summary")),
+    reworkStatus: /** @type {HTMLElement} */ (document.getElementById("rework-status")),
+    reworkError: /** @type {HTMLElement} */ (document.getElementById("rework-error")),
+    adoptOpen: /** @type {HTMLButtonElement} */ (document.getElementById("adopt-open")),
+    adoptClear: /** @type {HTMLButtonElement} */ (document.getElementById("adopt-clear")),
+    adoptStatus: /** @type {HTMLElement} */ (document.getElementById("adopt-status")),
+    adoptError: /** @type {HTMLElement} */ (document.getElementById("adopt-error")),
+    adoptProgress: /** @type {HTMLElement} */ (document.getElementById("adopt-progress")),
+    generateError: /** @type {HTMLElement} */ (document.getElementById("generate-error")),
+    stageNav: /** @type {HTMLElement} */ (document.getElementById("stage-nav")),
+    stagePanels: /** @type {HTMLElement} */ (document.getElementById("stage-panels")),
+    stageSummary: /** @type {HTMLElement} */ (document.getElementById("stage-summary")),
+    stageNextUnderstand: /** @type {HTMLButtonElement} */ (document.getElementById("stage-next-understand")),
+    stageNextUnderstandNote: /** @type {HTMLElement} */ (document.getElementById("stage-next-understand-note")),
+    stageNextPlan: /** @type {HTMLButtonElement} */ (document.getElementById("stage-next-plan")),
+    stageNextPlanNote: /** @type {HTMLElement} */ (document.getElementById("stage-next-plan-note")),
+    stageNextReview: /** @type {HTMLButtonElement} */ (document.getElementById("stage-next-review")),
+    stageNextReviewNote: /** @type {HTMLElement} */ (document.getElementById("stage-next-review-note")),
+    stageNextDeliver: /** @type {HTMLButtonElement} */ (document.getElementById("stage-next-deliver")),
+    stageNextDeliverNote: /** @type {HTMLElement} */ (document.getElementById("stage-next-deliver-note")),
+    reviewList: /** @type {HTMLElement} */ (document.getElementById("review-list")),
+    reviewEmpty: /** @type {HTMLElement} */ (document.getElementById("review-empty")),
+    suiteReviewStatus: /** @type {HTMLElement} */ (document.getElementById("suite-review-status")),
+    suiteReviewRun: /** @type {HTMLButtonElement} */ (document.getElementById("suite-review-run")),
+    suiteAiReviewRun: /** @type {HTMLButtonElement} */ (document.getElementById("suite-ai-review-run")),
+    suiteReviewNote: /** @type {HTMLElement} */ (document.getElementById("suite-review-note")),
+    suiteReviewFindings: /** @type {HTMLElement} */ (document.getElementById("suite-review-findings")),
+    suiteReviewError: /** @type {HTMLElement} */ (document.getElementById("suite-review-error")),
+    deliveryGate: /** @type {HTMLElement} */ (document.getElementById("delivery-gate")),
+    deliverySuiteStatus: /** @type {HTMLElement} */ (document.getElementById("delivery-suite-status")),
+    deliverySuiteFindings: /** @type {HTMLElement} */ (document.getElementById("delivery-suite-findings")),
+    deliveryUnknowns: /** @type {HTMLElement} */ (document.getElementById("delivery-unknowns")),
+    deliverExport: /** @type {HTMLButtonElement} */ (document.getElementById("deliver-export")),
+    deliverProjectPackage: /** @type {HTMLButtonElement} */ (document.getElementById("deliver-project-package")),
+    deliverStatus: /** @type {HTMLElement} */ (document.getElementById("deliver-status")),
+    deliverResult: /** @type {HTMLElement} */ (document.getElementById("delivery-result")),
+    deliverError: /** @type {HTMLElement} */ (document.getElementById("deliver-error")),
   };
 
+  // 交付视图（设计 §2.1 第四个视图）持 DOM、展开与自己的对象 URL；先声明后装配：
+  // 下面的 onSelect 与两个 Module 的 changed 都只在装配完成后触发，不在装配期回调。
+  /** @type {DeliveryView|null} */
+  let deliveryView = null;
+  // 输入视图（设计 §10.1 第一个视图）持资料/理解/方案的 DOM 与就地状态；同样先声明后装配。
+  /** @type {InputView|null} */
+  let inputView = null;
+  // 生成视图（设计 §10.1 第二个视图）持 Prompt/确认/尝试三区的 DOM 与命令；同样先声明后装配。
+  /** @type {GenerationView|null} */
+  let generationView = null;
+  // 审核视图（设计 §10.1 第三个视图）持比较/返工/采用三区的 DOM 与就地状态；同样先声明后装配。
+  /** @type {CompareView|null} */
+  let compareView = null;
+
   const stageShell = createStageShell({
-    nav: elements.stageNav,
-    panelRoot: elements.stagePanels,
-    summary: elements.stageSummary,
-    onSelect: (id) => { if (id === "deliver") requestDeliveryGateRefresh(); },
-  });
-
-  let project = null;
-  let projectId = null;
-  // R3.3：动作身份冻结的本地别名——所有状态变更动作统一经 session.beginAction()。
-  const beginAction = () => session.beginAction();
-
-  // V2.R5.1：生成执行 Module——单张提交/核对/候选保存/VLM 复核/整套批次的唯一执行权威。
-  // workspace 保留只读输入的读者与投影回调；持久化顺序全部由 Module 决定。
-  const generation = createGenerationModule({
-    repository: repository,
-    beginAction: beginAction,
-    projectIdReader: () => projectId,
-    environmentReader: () => (capabilities && capabilities.images ? capabilities.images : null),
-    suitePlanReader: () => suitePlan,
-    suiteSummaryReader: () => (suitePlan ? suitePlanSummary(suitePlan, suiteContext()) : null),
-    promptEntryReader: (shotId) => promptRecordOf(shotId),
-    shotConfirmationReader: (shotId) => confirmationIsCurrentForShot(shotId),
-    wholeConfirmationReader: () => confirmationIsCurrent(),
-    referenceSourceReader: () => intake.references.map((item) => ({
-      role: item.role, sha256: item.asset_sha256,
-    })),
-    reviewRequestBuilder: (shotId, candidate) => buildReviewRequest(shotId, candidate),
-    renderAttempts: renderAttempts,
-    renderBatch: renderBatch,
-    status: (text) => { elements.attemptStatus.textContent = text; },
-    attemptError: showAttemptError,
-    clearAttemptError: clearAttemptError,
-    focusAfterBatch: () => {
-      requestFocus(() => {
-        const rows = [...document.querySelectorAll("#attempt-list .attempt-row")];
-        const problem = rows.find((row) => ["failed", "unknown"].includes(
-          row.getAttribute("data-attempt-state")));
-        return problem || rows[0] || elements.attemptStatus;
-      });
-      flushPendingFocus();
+    nav: /** @type {HTMLElement} */ (elements.stageNav),
+    panelRoot: /** @type {HTMLElement} */ (elements.stagePanels),
+    summary: /** @type {HTMLElement} */ (elements.stageSummary),
+    onSelect: (/** @type {string} */ id) => {
+      if (id === "deliver") deliveryView?.requestGateRefresh();
+      if (id === "understand" && projectId) void inputView?.prepareManualFacts();
+      if (id === "generate" && projectId) void generationView?.prepareSystemPrompts();
     },
   });
 
-  let intake = emptyProductInput();
-  let intakeVersion = 0;
-  let intakeFingerprint = "";
-  let slots = new Map();
+  /** @type {StoredProjectRecord|null} */
+  let project = null;
+  /** @type {string|null} */
+  let projectId = null;
+  // R3.3：动作身份冻结的本地别名——所有状态变更动作统一经 session.beginAction()。
+  /** @type {() => ActionSnapshot} */
+  const beginAction = () => session.beginAction();
+
+  // 输入面唯一所有者（包04 收口）：资料/事实/方案/风格/单图规格与语义分析执行都在这里，
+  // workspace 只保留 DOM 草稿编辑状态、装配与视图渲染，不再持有第二份输入状态。
+  const inputs = createProjectInputsModule({
+    repository,
+    beginAction,
+    settings: modelSettings,
+    capabilities: () => capabilities,
+    projectIdReader: () => projectId,
+    projectNameReader: () => (project && project.name) || "",
+    draftInput: draftInputPayload,
+    changed: () => {
+      void deriveAndApplyState().then(() => {
+        inputView?.renderAnalyze();
+        inputView?.renderDraftStatus();
+        inputView?.renderConflictEditor();
+        renderHeaderText(project);
+      });
+    },
+  });
+  /** 跨 Module 只读文档投影：唯一来源是 inputs.sources()（不传闭包、不留第二份投影）。 */
+  const projectSources = () => inputs.sources();
+
+  const prompts = createPromptModule({
+    repository: /** @type {import("./storage/validate.js").ProjectRepository} */ (/** @type {unknown} */ (repository)),
+    beginAction, sources: projectSources,
+    imageEnvironment: () => /** @type {unknown} */ (capabilities && capabilities.images),
+  });
+  // 装配顺序固定为 prompts → generation → selection → delivery（设计§10.1）。
+  // selection/delivery 的 generation 依赖是已装配实例，不传 null 占位。
+  // 授权队列/scope/mode 的唯一所有者是 generation（设计§2.1）；确认单投影归 prompts。
+  /** @type {GenerationModule} */
+  const generation = createGenerationModule({
+    // workspace 的 repository 即 storage ProjectRepository（权威面）；生成 Module 只消费
+    // 其 documents.save/get/listLatest/listVersions + assets.get/put 子集，这里按消费面收窄（同一运行时对象）。
+    repository: /** @type {import("./generation.js").GenerationRepository} */ (/** @type {unknown} */ (repository)),
+    beginAction: beginAction,
+    projectIdReader: () => projectId,
+    environmentReader: /** @param {unknown} saved */ (saved) => modelSettings.imageEnvironment(
+      (/** @type {{provider?: {provider_id?: string}, payload?: {fingerprint?: {snapshot?: {execution_target?: {provider_id?: string}}}}}} */ (saved))?.provider?.provider_id || (/** @type {{payload?: {fingerprint?: {snapshot?: {execution_target?: {provider_id?: string}}}}}} */ (saved))?.payload?.fingerprint?.snapshot?.execution_target?.provider_id,
+      (/** @type {{execution_identity?: {credential_reference?: {source?: string}}, payload?: {fingerprint?: {snapshot?: {execution_target?: {credential_source?: string}}}}}} */ (saved))?.execution_identity?.credential_reference?.source || (/** @type {{payload?: {fingerprint?: {snapshot?: {execution_target?: {credential_source?: string}}}}}} */ (saved))?.payload?.fingerprint?.snapshot?.execution_target?.credential_source),
+    requestHeaders: /** @param {import("./model-settings.js").Purpose} purpose */ (purpose, providerId, source) => modelSettings.headers(purpose, providerId, source),
+    suitePlanReader: () => inputs.suitePlan(),
+    suiteSummaryReader: () => {
+      const plan = inputs.suitePlan();
+      return plan ? /** @type {SuitePlanSummary} */ (suitePlanSummary(plan, inputs.suiteContext())) : null;
+    },
+    promptEntryReader: (shotId, version) => prompts.entryOf(shotId, version ?? null),
+    confirmationReader: (shotId) => generation.confirmationFor(shotId),
+    promptBasisReader: (shotId, provider) => prompts.basis(shotId, provider, projectSources()),
+    fenceReader: (shotId) => consumptionFence(projectSources(), [shotId]),
+    referenceSourceReader: () => inputs.references().map((item) => ({
+      role: item.role, sha256: item.asset_sha256,
+    })),
+    promptsSheet: (ids) => prompts.sheet(ids ?? null),
+    imageEnvironment: (saved) => /** @type {unknown} */ (saved ?? modelSettings.imageEnvironment()),
+    renderAttempts: () => generationView?.renderAttempts(),
+    renderBatch: () => generationView?.renderBatch(),
+    status: (/** @type {string} */ text) => { generationView?.setAttemptStatus(text); },
+    attemptError: (/** @type {string|undefined} */ message) => { generationView?.showAttemptError(message); },
+    clearAttemptError: () => generationView?.clearAttemptError(),
+  });
+  const selectionAdoption = createSelectionAdoptionModule({
+    repository: /** @type {import("./storage/validate.js").ProjectRepository} */ (/** @type {unknown} */ (repository)),
+    generation,
+    prompts,
+    settings: modelSettings,
+    beginAction, sources: projectSources,
+    changed: () => { deliveryView?.render(); generationView?.renderAttempts(); },
+  });
+  generation.setReviewFlightReader(
+    (/** @type {string} */ shotId) => selectionAdoption.isReviewInFlight(shotId));
+  generation.setReviewAccess(selectionAdoption);
+  const reviewDelivery = createReviewDeliveryModule({
+    repository: /** @type {import("./storage/validate.js").ProjectRepository} */ (/** @type {unknown} */ (repository)),
+    generation,
+    adoption: selectionAdoption,
+    settings: modelSettings,
+    beginAction, sources: projectSources,
+    changed: () => { deliveryView?.render(); },
+  });
+
+  // 交付视图只持 DOM、展开与自己的对象 URL；逐图采用状态、门禁、整套结论与两类导出
+  // 都读 owner 投影，视图不写库、不重算判定、不组 manifest/ZIP。
+  deliveryView = createDeliveryView({
+    elements: {
+      reviewList: elements.reviewList,
+      suiteReviewStatus: elements.suiteReviewStatus,
+      suiteReviewRun: elements.suiteReviewRun,
+      suiteAiReviewRun: elements.suiteAiReviewRun,
+      suiteReviewNote: elements.suiteReviewNote,
+      suiteReviewFindings: elements.suiteReviewFindings,
+      suiteReviewError: elements.suiteReviewError,
+      deliveryGate: elements.deliveryGate,
+      deliverySuiteStatus: elements.deliverySuiteStatus,
+      deliverySuiteFindings: elements.deliverySuiteFindings,
+      deliveryUnknowns: elements.deliveryUnknowns,
+      deliverExport: elements.deliverExport,
+      deliverStatus: elements.deliverStatus,
+      deliverResult: elements.deliverResult,
+      deliverError: elements.deliverError,
+    },
+    deps: {
+      reviewDelivery,
+      selectionAdoption,
+      inputs,
+      beginAction,
+      currentProjectId: () => projectId,
+      capabilities: () => capabilities,
+      shotSummaries: shotSummariesNow,
+      shotLabelOf,
+      localizeShotIds,
+      selectionStateOf: (/** @type {string} */ shotId) => compareView?.selectionStateOf(shotId) ?? "none",
+      selectStage: (/** @type {string} */ id) => stageShell.select(id),
+    },
+  });
+
+  // 输入视图只持资料/理解/方案的 DOM、展开与就地编辑态；资料/事实/方案/风格/单图规格的
+  // 读写都在 inputs（唯一所有者），落库/派生/跨视图刷新经下面的窄回调回到工作区。
+  inputView = createInputView({
+    elements: {
+      intakeName: elements.intakeName,
+      intakeDescription: elements.intakeDescription,
+      intakePoints: elements.intakePoints,
+      intakeFocus: elements.intakeFocus,
+      intakeDraft: elements.intakeDraft,
+      intakeError: elements.intakeError,
+      analyzeNewAfterUnknown: elements.analyzeNewAfterUnknown,
+      analyzeRun: elements.analyzeRun,
+      analyzeGate: elements.analyzeGate,
+      analyzeResult: elements.analyzeResult,
+      analyzeError: elements.analyzeError,
+      slotsProgress: elements.slotsProgress,
+      slotsToggle: elements.slotsToggle,
+      slotsEmpty: elements.slotsEmpty,
+      slotList: elements.slotList,
+      slotAddId: elements.slotAddId,
+      slotAddLabel: elements.slotAddLabel,
+      slotAddType: elements.slotAddType,
+      slotAddValue: elements.slotAddValue,
+      slotAddAllowModel: elements.slotAddAllowModel,
+      slotAddStatus: elements.slotAddStatus,
+      slotsError: elements.slotsError,
+      suiteLocked: elements.suiteLocked,
+      suiteEditor: elements.suiteEditor,
+      suiteTemplate: elements.suiteTemplate,
+      suiteTemplateHint: elements.suiteTemplateHint,
+      suiteCustomToggle: elements.suiteCustomToggle,
+      suiteCustomPanel: elements.suiteCustomPanel,
+      suiteCustomLabel: elements.suiteCustomLabel,
+      suiteCustomIntent: elements.suiteCustomIntent,
+      suiteCustomStatus: elements.suiteCustomStatus,
+      suiteStatus: elements.suiteStatus,
+      suiteEmpty: elements.suiteEmpty,
+      shotList: elements.shotList,
+      suiteError: elements.suiteError,
+      specsLocked: elements.specsLocked,
+      specsEditor: elements.specsEditor,
+      styleBackground: elements.styleBackground,
+      styleLighting: elements.styleLighting,
+      styleColorTone: elements.styleColorTone,
+      styleComposition: elements.styleComposition,
+      styleAvoid: elements.styleAvoid,
+      styleVersion: elements.styleVersion,
+      styleRestore: elements.styleRestore,
+      styleEffect: elements.styleEffect,
+      styleStatus: elements.styleStatus,
+      styleError: elements.styleError,
+      shotSpecsEmpty: elements.shotSpecsEmpty,
+      shotSpecList: elements.shotSpecList,
+      specsError: elements.specsError,
+    },
+    deps: {
+      inputs,
+      beginAction,
+      currentProjectId: () => projectId,
+      capabilities: () => capabilities,
+      understandingBlocking: () => understandingBlocking,
+      draftInput: draftInputPayload,
+      deriveState: deriveAndApplyState,
+      renderWorkspace: renderAll,
+      renderGenerationSections,
+      renderHeader: () => renderHeaderText(project),
+      refreshStageShell,
+      selectStage: (/** @type {string} */ id, /** @type {{focusHeading?: boolean}|undefined} */ options) => stageShell.select(id, options),
+      reportError: handleInternalError,
+      localizeSlotTerms,
+      suiteBlockingText,
+    },
+  });
+
+  // 生成视图只持 Prompt/确认/尝试三区的 DOM 与命令；Prompt 版本/依据读写都在 prompts、
+  // 确认队列与尝试链都在 generation，采用记录只读投影走 selectionAdoption，
+  // 落库/派生/跨区渲染经下面的窄回调回到工作区。
+  generationView = createGenerationView({
+    elements: {
+      promptLocked: elements.promptLocked,
+      promptEditor: elements.promptEditor,
+      localPreparationStatus: elements.localPreparationStatus,
+      promptStatus: elements.promptStatus,
+      promptList: elements.promptList,
+      promptError: elements.promptError,
+      generateError: elements.generateError,
+      confirmLocked: elements.confirmLocked,
+      confirmEditor: elements.confirmEditor,
+      confirmStatus: elements.confirmStatus,
+      confirmSummary: elements.confirmSummary,
+      confirmBlockers: elements.confirmBlockers,
+      confirmRisks: elements.confirmRisks,
+      confirmList: elements.confirmList,
+      confirmAction: elements.confirmAction,
+      confirmRecord: elements.confirmRecord,
+      confirmError: elements.confirmError,
+      attemptLocked: elements.attemptLocked,
+      attemptEditor: elements.attemptEditor,
+      attemptProvider: elements.attemptProvider,
+      attemptStatus: elements.attemptStatus,
+      attemptError: elements.attemptError,
+      attemptList: elements.attemptList,
+      batchBar: elements.batchBar,
+      batchProgress: elements.batchProgress,
+      batchHint: elements.batchHint,
+      queueList: elements.queueList,
+      batchStop: elements.batchStop,
+      batchReconcile: elements.batchReconcile,
+      batchRetry: elements.batchRetry,
+    },
+    deps: {
+      prompts,
+      inputs,
+      generation,
+      selectionAdoption,
+      modelSettings,
+      beginAction,
+      currentProjectId: () => projectId,
+      capabilities: () => capabilities,
+      understandingReady: () => understandingReady,
+      deriveState: deriveAndApplyState,
+      selectStage: (stageId) => stageShell.select(stageId),
+      shotLabelOf,
+      ensurePreviewUrl,
+      isComparing: (/** @type {string} */ shotId) => compareView?.isComparing(shotId) ?? false,
+      openCompare: (/** @type {string} */ shotId, /** @type {{focus?: boolean}|undefined} */ options) => compareView?.openCompare(shotId, options),
+      renderCompare: () => compareView?.renderCompare(),
+      renderSelectionProgress: () => compareView?.renderSelectionProgress(),
+      refreshDerived,
+      localizeSlotTerms,
+      suiteBlockingText,
+      suffixedErrorMessage: errorMessageSuffixed,
+    },
+  });
+
+  /** @type {EffectiveCapabilities|null} */
   let capabilities = null;
-  let capabilitiesError = null;
+  /** @type {import("./domain/type-contracts.js").BriefReadiness["blocking"]} */
   let understandingBlocking = [];
+  /** @type {unknown} */
   let understandingError = null;
-  let lastAnalyze = null;
-  let analyzeProblems = [];
-  // UI.3：异步结束后的焦点落点（结果标题 / 首个问题 / 错误摘要）。
-  let pendingFocus = null;
-  let showAll = false;
-  let interaction = { slotId: null, mode: null };
-  let suitePlan = null;
-  let suiteVersion = 0;
+  /** @type {boolean} */
   let understandingReady = false;
-  let styleSpec = emptyStyleSpec();
-  let styleVersion = 0;
-  let shotSpecs = new Map();
-  let promptVersions = new Map();
-  let confirmRecord = null;
-  let suiteReports = new Map();
-  let suiteRunInFlight = false;
-  // V2.6.2：交付门禁结果与交付记录（记录只追加，不新增第二套状态）。
-  let deliveryGateState = null;
-  let deliveryGateTimer = null;
-  let deliveryInFlight = false;
-  let deliveryRecord = null;
-  let acknowledgements = new Map();
-  let compareShotId = null;
-  let compareCandidateId = null;
-  let compareToken = 0;
-  let reworkDrafts = new Map();
-  let reworkConfirmations = new Map();
-  let reworkInFlight = false;
-  let reworkShotId = null;
-  let reworkSource = null;
-  let selections = new Map();
-  let adoptInFlight = false;
-  let adoptShotId = null;
-  let adoptCandidateId = null;
-  let adoptSource = null;
-  let previewUrls = new Map();
-  let busy = false;
-  let saveTimer = null;
+  // 审核视图只持比较/返工/采用三区的 DOM 与就地状态；候选/报告读写都在 generation /
+  // selectionAdoption（唯一所有者），Prompt 版本/编译在 prompts，跨区刷新经下面的窄回调回到工作区。
+  compareView = createCompareView({
+    elements: {
+      comparePanel: elements.comparePanel,
+      compareSubject: elements.compareSubject,
+      compareJump: elements.compareJump,
+      compareClose: elements.compareClose,
+      compareBasisTitle: elements.compareBasisTitle,
+      compareReferences: elements.compareReferences,
+      compareCandidates: elements.compareCandidates,
+      compareChecklist: elements.compareChecklist,
+      compareStatus: elements.compareStatus,
+      compareViewedImage: elements.compareViewedImage,
+      compareViewedCaption: elements.compareViewedCaption,
+      compareViewedZoom: elements.compareViewedZoom,
+      compareBaselineImage: elements.compareBaselineImage,
+      compareBaselineSelect: elements.compareBaselineSelect,
+      compareBaselineZoom: elements.compareBaselineZoom,
+      compareReview: elements.compareReview,
+      imageZoomDialog: elements.imageZoomDialog,
+      imageZoomTitle: elements.imageZoomTitle,
+      imageZoomContent: elements.imageZoomContent,
+      imageZoomNative: elements.imageZoomNative,
+      imageZoomClose: elements.imageZoomClose,
+      reworkOpen: elements.reworkOpen,
+      reworkPanel: elements.reworkPanel,
+      reworkBasis: elements.reworkBasis,
+      reworkProblems: elements.reworkProblems,
+      reworkDirection: elements.reworkDirection,
+      reworkPreview: elements.reworkPreview,
+      reworkEdit: elements.reworkEdit,
+      reworkSubmit: elements.reworkSubmit,
+      reworkReset: elements.reworkReset,
+      reworkCancel: elements.reworkCancel,
+      reworkPreviewBox: elements.reworkPreviewBox,
+      reworkPreviewMeta: elements.reworkPreviewMeta,
+      reworkPreviewText: elements.reworkPreviewText,
+      reworkTech: elements.reworkTech,
+      reworkTechBody: elements.reworkTechBody,
+      reworkSummary: elements.reworkSummary,
+      reworkStatus: elements.reworkStatus,
+      reworkError: elements.reworkError,
+      adoptOpen: elements.adoptOpen,
+      adoptClear: elements.adoptClear,
+      adoptStatus: elements.adoptStatus,
+      adoptError: elements.adoptError,
+      adoptProgress: elements.adoptProgress,
+      reviewList: elements.reviewList,
+      reviewEmpty: elements.reviewEmpty,
+    },
+    deps: {
+      inputs,
+      prompts,
+      generation,
+      selectionAdoption,
+      beginAction,
+      currentProjectId: () => projectId,
+      shotLabelOf,
+      shortTime: (/** @type {unknown} */ iso) => generationView?.shortTime(iso) ?? "",
+      ensurePreviewUrl,
+      selectStage: (/** @type {string} */ stageId) => stageShell.select(stageId),
+      focusReviewEntry: focusCompareEntry,
+      renderAttempts: () => generationView?.renderAttempts(),
+      showAttemptError: (/** @type {string} */ message) => { generationView?.showAttemptError(message); },
+      renderPrompts: () => generationView?.renderPrompts(),
+      renderConfirm: () => generationView?.renderConfirm(),
+      promptRecordOf: (/** @type {string|null} */ shotId) => generationView?.promptRecordOf(shotId) ?? null,
+      focusPromptEditor: (/** @type {string} */ shotId) => {
+        const area = /** @type {HTMLTextAreaElement|null} */ (elements.promptList.querySelector(
+          '[data-shot-id="' + shotId + '"] textarea.prompt-edit-text'));
+        if (area) {
+          area.scrollIntoView({ block: "center" });
+          area.focus();
+        }
+      },
+      readAsset: (/** @type {string} */ pid, /** @type {string} */ sha256) => repository.assets.get(pid, sha256),
+      queueShotIsCurrent: (/** @type {import("./generation.js").ConfirmationQueue} */ queue, /** @type {string} */ shotId) => generationView?.queueShotIsCurrent(queue, shotId) ?? false,
+      deriveState: deriveAndApplyState,
+      reportError: handleInternalError,
+      suffixedErrorMessage: errorMessageSuffixed,
+    },
+  });
+  // Prompt 版本/历史/准备状态 → prompts Module；确认队列/scope/mode → generation Module；
+  // 采用记录 → selectionAdoption Module；整套报告/门禁/交付包 → reviewDelivery Module；
+  // 资料/事实/方案/风格/单图规格 → project-inputs Module（唯一所有者）。
+  // 本闭包不再持有上述可变状态，只保留 DOM 草稿编辑状态、视图装配与生命周期。
+  /** @type {string[]} */
   let objectUrls = [];
+  /** @type {Map<string, string>} */
+  let previewUrls = new Map();
+  /** @type {boolean} */
   let bound = false;
-  /**
-   * R3.3：不再自管递增 token；每个动作经 session.beginAction() 冻结
-   * { generation, projectId }，alive() 同时判断"会话代未变"与"仍是同一项目"。
-   */
-  let intakeConflict = null;
-  /* 双标签陈旧编辑的三态（V2.R3.3）：
-   * - merged=true：已按三路合并落库（本地输入优先），视图已同步到新版本；
-   * - unresolved 非空：合并仍冲突，冲突编辑器打开中，必须人工逐项解决后再次保存；
-   * - 仅 version/at：合并失败的旧路径，就地报冲突并不覆盖，等待再次保存追加新版本。 */
   /* ------------------------------------------------------ 公共读写与工具 */
 
-  function showError(element, message) {
-    element.textContent = message;
-    element.hidden = false;
+  /**
+   * 有后缀的抛出信息：有 message 即 message + suffix，否则原样返回 fallback（与旧三元输出一致）。
+   * @param {unknown} error
+   * @param {string} fallback
+   * @param {string} suffix
+   * @returns {string}
+   */
+  function errorMessageSuffixed(error, fallback, suffix) {
+    if (error instanceof Error && typeof error.message === "string" && error.message) return error.message + suffix;
+    if (error !== null && typeof error === "object" && "message" in error
+      && typeof error.message === "string" && error.message) return error.message + suffix;
+    return fallback;
   }
 
-  function clearError(element) {
-    element.textContent = "";
-    element.hidden = true;
-  }
-
-  function requestFocus(target) {
-    pendingFocus = target;
-  }
-
-  function flushPendingFocus() {
-    const target = pendingFocus;
-    pendingFocus = null;
-    if (!target) return;
-    const node = typeof target === "function" ? target() : target;
-    if (!node || typeof node.focus !== "function") return;
-    if (!node.hasAttribute("tabindex")
-        && !["BUTTON", "A", "INPUT", "TEXTAREA", "SELECT"].includes(node.tagName)) {
-      node.setAttribute("tabindex", "-1");
-    }
-    node.focus();
-  }
-
-  /** 生成与审核两个阶段都可能发起提交/核对：错误就近显示在对应阶段，两处同一份文本。 */
-  function showAttemptError(message) {
-    showError(elements.generateError, message);
-    showError(elements.attemptError, message);
-  }
-
-  function clearAttemptError() {
-    clearError(elements.generateError);
-    clearError(elements.attemptError);
-  }
-
+  /**
+   * @returns {void}
+   */
   function revokeObjectUrls() {
     for (const url of objectUrls) URL.revokeObjectURL(url);
     objectUrls = [];
   }
 
+  /**
+   * @returns {void}
+   */
   function revokePreviewUrls() {
     for (const url of previewUrls.values()) URL.revokeObjectURL(url);
     previewUrls = new Map();
   }
 
-  function currentIntakePayload() {
+  /**
+   * DOM 草稿编辑区是 workspace 唯一保留的输入状态：所有者通过 draftInput 依赖读取它，
+   * 落库/合并/指纹一律由 project-inputs 负责，这里不持有第二份资料状态。
+   * @returns {CompleteProductInput}
+   */
+  function draftInputPayload() {
     return {
       schema_version: PRODUCT_INPUT_SCHEMA_VERSION,
       product_name: elements.intakeName.value.trim(),
       description: elements.intakeDescription.value.trim(),
       selling_points: splitLines(elements.intakePoints.value),
       focus: elements.intakeFocus.value.trim(),
-      references: intake.references.map((item) => ({ ...item })),
+      references: inputs.references().map((item) => ({ ...item })),
     };
   }
 
-  function fingerprintOf(payload) {
-    return JSON.stringify([
-      payload.product_name, payload.description, payload.selling_points,
-      payload.focus, payload.references,
-    ]);
-  }
-
-  function slotEntries() {
-    return [...slots.values()].map((entry) => ({ slot: entry.slot, version: entry.version }));
-  }
-
-  function dependencyCountOf(slotId) {
-    let count = 0;
-    for (const entry of slots.values()) {
-      if ((entry.slot.depends_on || []).includes(slotId)) count += 1;
-    }
-    return count;
-  }
-
+  /**
+   * @param {unknown} error
+   * @returns {void}
+   */
   function handleInternalError(error) {
-    showError(elements.error, (error && error.message) || "操作没有完成，请重试。");
+    showError(elements.error, errorMessageOf(error, "操作没有完成，请重试。"));
   }
 
   /* ------------------------------------------------------------ 参考图 */
 
+  /**
+   * @returns {Promise<void>}
+   */
   async function renderReferences() {
     // 先异步取齐资产、只在最后一刻替换 DOM：重叠渲染不会把同一行插两次。
-    const entries = intake.references.map((item) => ({ ...item }));
+    const pid = projectId;
+    if (!pid) return;
+    const entries = inputs.references();
     const rows = [];
     const urls = [];
     for (const [index, entry] of entries.entries()) {
-      const asset = await repository.assets.get(projectId, entry.asset_sha256);
+      const asset = await repository.assets.get(pid, entry.asset_sha256);
       const row = createElement("li", { className: "ref-row" });
       row.dataset.sha = entry.asset_sha256;
 
@@ -656,7 +971,7 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
            (asset.width && asset.height ? asset.width + "×" + asset.height : "尺寸未知")].join(" · ")
         : "资产记录缺失";
       main.append(createElement("span", { className: "meta", text: info }));
-      main.append(techDetails(["sha256 " + entry.asset_sha256.slice(0, 12) + "…"]));
+      appendTech(main, ["sha256 " + entry.asset_sha256.slice(0, 12) + "…"]);
 
       const actions = createElement("div", { className: "ref-actions" });
       const select = createElement("select", {
@@ -665,11 +980,11 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
       });
       for (const role of REFERENCE_ROLES) {
         select.append(createElement("option", {
-          text: ROLE_TEXT[role] || role, attrs: { value: role },
+          text: /** @type {Record<string, string>} */ (ROLE_TEXT)[role] || role, attrs: { value: role },
         }));
       }
       select.value = entry.role;
-      select.addEventListener("change", () => { handleRoleChange(index, select.value); });
+      select.addEventListener("change", () => { handleRoleChange(index, /** @type {ReferenceRole} */ (select.value)); });
       const remove = createElement("button", {
         className: "danger", text: "删除", attrs: { type: "button" },
       });
@@ -688,684 +1003,72 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
     elements.refEmpty.hidden = entries.length > 0;
   }
 
+  /**
+   * @param {number} index
+   * @param {import("./domain/type-contracts.js").ReferenceRole} role
+   * @returns {Promise<void>}
+   */
   async function handleRoleChange(index, role) {
-    const entry = intake.references[index];
-    if (!entry) return;
     const action = beginAction();
-    entry.role = role;
     clearError(elements.refError);
-    await saveIntakeNow();
+    if (inputs) await inputs.setReferenceRole(index, role);
     if (!action.alive()) return;
     renderAll();
   }
 
+  /**
+   * @param {number} index
+   * @returns {Promise<void>}
+   */
   async function handleRemoveReference(index) {
-    if (!intake.references[index]) return;
     const action = beginAction();
-    intake.references.splice(index, 1);
     clearError(elements.refError);
-    await saveIntakeNow();
+    if (inputs) await inputs.removeReference(index);
     if (!action.alive()) return;
     renderAll();
   }
 
+  /**
+   * @param {FileList|File[]|null|undefined} fileList
+   * @returns {Promise<void>}
+   */
   async function handleFiles(fileList) {
     const files = [...(fileList || [])];
     if (!files.length) return;
     const action = beginAction();
     if (!action.projectId) return;
     clearError(elements.refError);
-    const known = new Set(intake.references.map((item) => item.asset_sha256));
-    let wantsPrimary = !intake.references.some((item) => item.role === "primary");
-    let added = 0;
-    for (const file of files) {
-      if (intake.references.length >= MAX_REFERENCES) {
-        if (action.alive()) {
-          showError(elements.refError, "参考图最多 " + MAX_REFERENCES + " 张，多出的文件没有加入。");
-        }
-        break;
-      }
-      if (file.size > MAX_REFERENCE_IMAGE_BYTES) {
-        if (action.alive()) {
-          showError(elements.refError,
-            "“" + file.name + "”超过单张参考图上限 10MB，已跳过；请压缩后再上传。");
-        }
-        continue;
-      }
-      let width = null;
-      let height = null;
-      try {
-        const bitmap = await createImageBitmap(file);
-        width = bitmap.width;
-        height = bitmap.height;
-        bitmap.close();
-      } catch (error) {
-        if (action.alive()) {
-          showError(elements.refError, "“" + file.name + "”不是可读取的图片，已跳过。");
-        }
-        continue;
-      }
-      if (!action.alive()) break;   // 会话已切换：不再向仓库继续写参考图
-      const role = wantsPrimary ? "primary" : "other";
-      const asset = await repository.assets.put(action.projectId, {
-        blob: file,
-        mediaType: file.type || "application/octet-stream",
-        originalName: file.name,
-        role,
-        width,
-        height,
-      });
-      if (known.has(asset.sha256)) {
-        if (action.alive()) {
-          showError(elements.refError, "“" + file.name + "”与已有参考图内容相同，已跳过。");
-        }
-        continue;
-      }
-      known.add(asset.sha256);
-      if (action.alive()) {
-        intake.references.push(referenceFromAsset(asset, { role }));
-      }
-      wantsPrimary = false;
-      added += 1;
-    }
-    if (added) {
-      await saveIntakeNow();
-      if (action.alive()) renderAll();
-    }
+    const added = await inputs.addReferences(files, (kind, file) => {
+      if (!action.alive()) return;
+      if (kind === "too_many") showError(elements.refError, "参考图最多 " + MAX_REFERENCES + " 张，多出的文件没有加入。");
+      else if (kind === "too_large") showError(elements.refError, "“" + file.name + "”超过单张参考图上限 10MB，已跳过；请压缩后再上传。");
+      else if (kind === "unreadable") showError(elements.refError, "“" + file.name + "”不是可读取的图片，已跳过。");
+      else showError(elements.refError, "“" + file.name + "”与已有参考图内容相同，已跳过。");
+    });
+    if (added && action.alive()) renderAll();
   }
 
-  /* ---------------------------------------------------------- 商品资料 */
 
-  function updateDraftStatus() {
-    if (intakeConflict) {
-      // R3.3 双标签陈旧编辑：就地报冲突，不静默胜出。文档历史是 append-only。
-      if (intakeConflict.merged === true) {
-        elements.intakeDraft.textContent = "另一个标签页已保存版本 v" + intakeConflict.version
-          + "：你的输入已按本地优先自动合并为新版本；请核对内容后再次保存确认。";
-      } else if (Array.isArray(intakeConflict.unresolved) && intakeConflict.unresolved.length > 0) {
-        elements.intakeDraft.textContent = "另一个标签页已保存版本 v" + intakeConflict.version
-          + "：有 " + intakeConflict.unresolved.length + " 项需要你逐项解决，请在冲突编辑器里处理。";
-      } else {
-        elements.intakeDraft.textContent = "检测到另一个标签页已保存版本 v" + intakeConflict.version
-          + "：你正在编辑的内容没有覆盖它；再次保存会追加为新版本。";
-      }
-      return;
-    }
-    elements.intakeDraft.textContent = intakeVersion
-      ? "草稿已保存 · 版本 " + intakeVersion + (intake.product_name ? "" : "（尚未填写商品名称）")
-      : "还没有保存过草稿。";
-  }
 
-  function scheduleDraftSave() {
-    clearTimeout(saveTimer);
-    // 冻结动作归属：这个定时器属于当前会话/项目；换项目或换会话后不再写。
-    const scheduled = beginAction();
-    elements.intakeDraft.textContent = "正在编辑…";
-    renderAnalyze();
-    saveTimer = setTimeout(() => {
-      saveTimer = null;
-      if (!scheduled.alive()) return;
-      saveIntakeNow()
-        .then(() => deriveAndApplyState())
-        .then(() => { if (scheduled.alive()) { renderAnalyze(); renderHeaderText(project); } })
-        .catch(handleInternalError);
-    }, DRAFT_DEBOUNCE_MS);
-  }
-
-  function saveIntakeNow() {
-    if (saveTimer !== null) {
-      clearTimeout(saveTimer);
-      saveTimer = null;
-    }
-    const action = beginAction();
-    if (!action.projectId) {
-      // 会话已关闭后的迟到调用：不动仓库，编辑器里的输入原样保留给用户。
-      return Promise.resolve(false);
-    }
-    const pid = action.projectId;
-    const payload = currentIntakePayload();
-    const fingerprint = fingerprintOf(payload);
-    if (fingerprint === intakeFingerprint) {
-      updateDraftStatus();
-      return Promise.resolve(false);
-    }
-    return (async () => {
-      let record;
-      try {
-        record = await repository.documents.save(pid, {
-          kind: INTAKE_KIND,
-          documentId: INTAKE_DOCUMENT_ID,
-          payload,
-          // R3.3 OCC：编辑传观察版本。另一标签页已前进时按 REVISION_CONFLICT 就地报冲突。
-          expectedVersion: intakeVersion > 0 ? intakeVersion : null,
-        });
-      } catch (error) {
-        if (error && error.code === STORAGE_ERROR_CODES.REVISION_CONFLICT) {
-          const latest = await repository.documents.getLatest(pid, INTAKE_KIND, INTAKE_DOCUMENT_ID);
-          if (!action.alive()) return false;
-          const latestPayload = latest && latest.payload ? latest.payload : null;
-          const latestVersion = latest ? latest.version : 0;
-          const basePayload = intake;
-          const baseVersion = intakeVersion;
-          const merged = latestPayload ? mergeIntakePayloads(basePayload, payload, latestPayload) : null;
-          if (merged && merged.merged && merged.record) {
-            const mergedRecord = await repository.documents.save(pid, {
-              kind: INTAKE_KIND,
-              documentId: INTAKE_DOCUMENT_ID,
-              payload: merged.record,
-              expectedVersion: latestVersion,
-            });
-            if (!action.alive()) return false;
-            intake = merged.record;
-            intakeVersion = mergedRecord.version;
-            intakeFingerprint = fingerprintOf(merged.record);
-            intakeConflict = {
-              version: latestVersion,
-              at: new Date().toISOString(),
-              merged: true,
-            };
-            updateDraftStatus();
-            renderIntake();
-            return false;
-          }
-          if (merged && Array.isArray(merged.unresolved) && merged.unresolved.length > 0) {
-            if (!action.alive()) return false;
-            intakeConflict = {
-              version: latestVersion,
-              at: new Date().toISOString(),
-              merged: false,
-              unresolved: merged.unresolved,
-            };
-            updateDraftStatus();
-            renderConflictEditor(basePayload, baseVersion, latestPayload, latestVersion, merged.unresolved);
-            return false;
-          }
-          intakeConflict = {
-            version: latest && latest.payload ? latest.version : 0,
-            at: new Date().toISOString(),
-          };
-          updateDraftStatus();
-          return false;
-        }
-        throw error;
-      }
-      // 记录已按冻结项目落库；界面状态只属于还活着的会话。
-      if (!action.alive()) return false;
-      intake = payload;
-      intakeVersion = record.version;
-      intakeFingerprint = fingerprint;
-      intakeConflict = null;
-      updateDraftStatus();
-      return true;
-    })();
-  }
 
   /**
-   * 双标签三路合并（V2.R3.3）：base=本标签页上次成功读取的版本，mine=本次想保存的
-   * 输入，theirs=另一个标签页已落库的最新版本。字段级规则：
-   * - 文本字段：以本地输入为准；theirs 单独改过且 mine 没改的字段并入（不丢对方输入）；
-   * - 卖点：单方改动直接取改动方；双方都改则按本地优先并集；
-   * - 参考图：按 asset_sha256 并集，role 以本地为准、本地没有的沿用对方；
-   * - 同一文本字段 base/theirs/mine 三方互不相同 => 不自动合并，逐项进冲突编辑器。
-   * 返回 { merged:true, record } 或 { merged:false, unresolved:[{field, mine, theirs}] }；
-   * 全部失败返回 null（走旧的就地报冲突路径）。
+   * @returns {Promise<void>}
    */
-  function mergeIntakePayloads(base, mine, theirs) {
-    if (!mine || typeof mine !== "object" || !theirs || typeof theirs !== "object") return null;
-    const baseSafe = base && typeof base === "object" ? base : {};
-    const mineRefs = Array.isArray(mine.references) ? mine.references : [];
-    const theirRefs = Array.isArray(theirs.references) ? theirs.references : [];
-    const refBySha = new Map();
-    for (const ref of theirRefs) {
-      if (ref && ref.asset_sha256) refBySha.set(ref.asset_sha256, ref);
-    }
-    for (const ref of mineRefs) {
-      if (ref && ref.asset_sha256) refBySha.set(ref.asset_sha256, ref);
-    }
-    const textFields = ["product_name", "description", "focus"];
-    const unresolved = [];
-    const mergedTexts = {};
-    for (const field of textFields) {
-      const b = baseSafe[field] === undefined ? "" : baseSafe[field];
-      const m = mine[field] === undefined ? "" : mine[field];
-      const h = theirs[field] === undefined ? "" : theirs[field];
-      if (m === h) { mergedTexts[field] = m; continue; }
-      if (m === b) { mergedTexts[field] = h; continue; }
-      if (h === b) { mergedTexts[field] = m; continue; }
-      unresolved.push({ field: field, mine: m, theirs: h });
-    }
-    const basePoints = Array.isArray(baseSafe.selling_points) ? baseSafe.selling_points : [];
-    const minePoints = Array.isArray(mine.selling_points) ? mine.selling_points : [];
-    const theirPoints = Array.isArray(theirs.selling_points) ? theirs.selling_points : [];
-    const joins = (list) => list.join("\u0000");
-    let mergedPoints = null;
-    if (joins(minePoints) === joins(theirPoints)) mergedPoints = minePoints;
-    else if (joins(minePoints) === joins(basePoints)) mergedPoints = theirPoints;
-    else if (joins(theirPoints) === joins(basePoints)) mergedPoints = minePoints;
-    else {
-      mergedPoints = [...minePoints];
-      for (const point of theirPoints) {
-        if (!mergedPoints.includes(point)) mergedPoints.push(point);
-      }
-    }
-    if (unresolved.length > 0) {
-      return { merged: false, unresolved: unresolved };
-    }
-    return {
-      merged: true,
-      record: {
-        product_name: mergedTexts.product_name,
-        description: mergedTexts.description,
-        focus: mergedTexts.focus,
-        selling_points: mergedPoints,
-        references: [...refBySha.values()],
-      },
-    };
-  }
-
-  /** 冲突编辑器：三方互不相同的字段逐项展示，只能二选一；解决后保存为新版本。 */
-  function renderConflictEditor(basePayload, baseVersion, latestPayload, latestVersion, unresolved) {
-    const editor = document.createElement("div");
-    editor.className = "conflict-editor";
-    editor.setAttribute("role", "group");
-    editor.setAttribute("aria-label", "双标签编辑冲突，需要人工逐项解决");
-    const title = document.createElement("p");
-    title.className = "meta";
-    title.textContent = "另一个标签页已保存版本 v" + latestVersion
-      + "（你的版本 v" + baseVersion + "）：以下字段两边都改了，请逐项选择保留哪一边。";
-    editor.append(title);
-    const picks = new Map();
-    for (const item of unresolved) {
-      const row = document.createElement("div");
-      row.className = "conflict-row";
-      row.dataset.field = item.field;
-      const label = document.createElement("p");
-      label.className = "name";
-      label.textContent = "字段：" + item.field;
-      const mineBtn = document.createElement("button");
-      mineBtn.type = "button";
-      mineBtn.textContent = "保留我的";
-      mineBtn.setAttribute("aria-pressed", "true");
-      const theirsBtn = document.createElement("button");
-      theirsBtn.type = "button";
-      theirsBtn.textContent = "用对方的";
-      theirsBtn.setAttribute("aria-pressed", "false");
-      picks.set(item.field, "mine");
-      mineBtn.addEventListener("click", () => {
-        picks.set(item.field, "mine");
-        mineBtn.setAttribute("aria-pressed", "true");
-        theirsBtn.setAttribute("aria-pressed", "false");
-      });
-      theirsBtn.addEventListener("click", () => {
-        picks.set(item.field, "theirs");
-        mineBtn.setAttribute("aria-pressed", "false");
-        theirsBtn.setAttribute("aria-pressed", "true");
-      });
-      const mineText = document.createElement("p");
-      mineText.className = "meta";
-      mineText.textContent = "我的：" + String(item.mine === "" ? "（空）" : item.mine);
-      const theirsText = document.createElement("p");
-      theirsText.className = "meta";
-      theirsText.textContent = "对方 v" + latestVersion + "：" + String(item.theirs === "" ? "（空）" : item.theirs);
-      row.append(label, theirsText, mineText, mineBtn, theirsBtn);
-      editor.append(row);
-    }
-    const saveBtn = document.createElement("button");
-    saveBtn.type = "button";
-    saveBtn.className = "primary";
-    saveBtn.textContent = "按我的选择保存为新版本";
-    saveBtn.addEventListener("click", () => {
-      const resolved = {};
-      for (const item of unresolved) {
-        resolved[item.field] = picks.get(item.field) === "theirs" ? item.theirs : item.mine;
-      }
-      const base = latestPayload && typeof latestPayload === "object" ? latestPayload : {};
-      const merged = mergeIntakePayloads(base, Object.assign({}, base, resolved), base);
-      const record = merged && merged.merged
-        ? merged.record
-        : Object.assign({}, base, resolved);
-      const action = beginAction();
-      repository.documents.save(action.projectId, {
-        kind: INTAKE_KIND,
-        documentId: INTAKE_DOCUMENT_ID,
-        payload: record,
-        expectedVersion: latestVersion,
-      }).then((saved) => {
-        if (!action.alive()) return;
-        intake = record;
-        intakeVersion = saved.version;
-        intakeFingerprint = fingerprintOf(record);
-        intakeConflict = null;
-        editor.remove();
-        updateDraftStatus();
-        renderIntake();
-      }).catch((error) => {
-        if (!action.alive()) return;
-        showError(elements.intakeError, (error && error.message) || "冲突解决没有保存，请重试。");
-      });
-    });
-    const cancelBtn = document.createElement("button");
-    cancelBtn.type = "button";
-    cancelBtn.textContent = "稍后处理";
-    cancelBtn.addEventListener("click", () => { editor.remove(); });
-    editor.append(saveBtn, cancelBtn);
-    elements.intakeError.textContent = "";
-    elements.intakeError.hidden = true;
-    elements.intakeError.before(editor);
-  }
-
-  function renderIntake() {
-    elements.intakeName.value = intake.product_name || "";
-    elements.intakeDescription.value = intake.description || "";
-    elements.intakePoints.value = (intake.selling_points || []).join("\n");
-    elements.intakeFocus.value = intake.focus || "";
-    updateDraftStatus();
-  }
-  /* -------------------------------------------------------------- 分析 */
-
-  function gateProblems() {
-    return intakeReadiness(currentIntakePayload()).blocking;
-  }
-
-  function renderAnalyze() {
-    const problems = gateProblems();
-    const ready = problems.length === 0;
-    elements.analyzeRun.textContent = lastAnalyze ? "重新分析" : "分析商品资料";
-    elements.analyzeRun.disabled = busy || !ready;
-    elements.analyzeGate.textContent = busy
-      ? "分析中…"
-      : ready
-        ? (capabilitiesError ? "分析服务状态：" + capabilitiesError : "资料已就绪。")
-        : "还缺：" + describeBlocking(problems, localizeSlotTerms);
-
-    if (lastAnalyze) {
-      elements.analyzeResult.hidden = false;
-      elements.analyzeResult.textContent = "最近一次分析：" + lastAnalyze.slots + " 个提案，写入 "
-        + lastAnalyze.applied + " 个槽位 · " + lastAnalyze.provider
-        + (lastAnalyze.model ? "（" + lastAnalyze.model + "）" : "")
-        + " · " + lastAnalyze.at + (lastAnalyze.summary ? " · " + lastAnalyze.summary : "");
-    } else {
-      elements.analyzeResult.hidden = true;
-      elements.analyzeResult.textContent = "";
-    }
-
-    if (analyzeProblems.length) {
-      const list = createElement("ul", { className: "inline-list" });
-      for (const item of analyzeProblems) list.append(createElement("li", { text: item }));
-      elements.analyzeError.replaceChildren(
-        createElement("span", { text: "部分提案没有写入：" }), list);
-      elements.analyzeError.hidden = false;
-    }
-  }
-
-  function reportAnalyzeFailure(status, result) {
-    const error = result && result.error ? result.error : null;
-    const parts = [];
-    if (error) {
-      parts.push(error.message || error.code || "分析失败");
-      parts.push("分类：" + (error.family || "internal") + " / " + (error.code || "INTERNAL_ERROR"));
-      if (error.retry_policy) parts.push("重试策略：" + error.retry_policy);
-      if (error.request_id) parts.push("请求 ID：" + error.request_id);
-    } else {
-      parts.push("分析服务返回 HTTP " + status + "，响应不是本产品约定的错误结构。");
-    }
-    if (result && result.unknown === true) {
-      parts.push("结果未知：这次请求可能已经产生结果。系统不会自动重试，请确认后再手动点击“重新分析”。");
-    } else if (status === 503) {
-      parts.push("语义 provider 当前不可用：检查 config/product-v2/providers.json、依赖与 DASHSCOPE_API_KEY。");
-    } else if (status === 400) {
-      parts.push("服务端拒绝了这份请求；按提示修改资料后可以再试。");
-    }
-    showError(elements.analyzeError, parts.join(" "));
-    requestFocus(elements.analyzeError);
-  }
-
-  async function buildAnalyzeBody(pid = projectId) {
-    const payload = currentIntakePayload();
-    const references = [];
-    for (const entry of payload.references) {
-      const asset = await repository.assets.get(pid, entry.asset_sha256);
-      if (!asset) {
-        throw new Error("参考图资产缺失（sha256 " + entry.asset_sha256.slice(0, 12) + "…），请重新上传。");
-      }
-      references.push({
-        sha256: asset.sha256,
-        media_type: asset.media_type || "application/octet-stream",
-        role: entry.role,
-        original_name: asset.original_name || null,
-      });
-    }
-    const body = {
-      product_name: payload.product_name,
-      description: payload.description,
-      selling_points: payload.selling_points,
-      focus: payload.focus,
-      references,
-      locale: ANALYZE_LOCALE,
-      platform: ANALYZE_PLATFORM,
-      max_slots: ANALYZE_MAX_SLOTS,
-      existing_slot_ids: [],
-    };
-    const allowed = capabilities && Array.isArray(capabilities.analyze_fields)
-      && capabilities.analyze_fields.length
-      ? capabilities.analyze_fields
-      : DEFAULT_ANALYZE_FIELDS;
-    const filtered = {};
-    for (const field of allowed) if (field in body) filtered[field] = body[field];
-    return filtered;
-  }
-
-  /** pid 必须来自动作冻结的 projectId：旧回调只写自己项目，绝不写换会话后的当前项目。 */
-  async function persistSlot(slot, pid, action = null) {
-    const record = await repository.documents.save(pid, {
-      kind: SLOT_KIND, documentId: slot.slot_id, payload: slot,
-    });
-    // 槽位缓存属于当前会话；动作已过期时只保留落库结果，不污染新项目的缓存。
-    if (!action || action.alive()) {
-      slots.set(slot.slot_id, { slot: record.payload, version: record.version });
-    }
-    return record;
-  }
-
-  async function ensureCoreSlots(pid, action) {
-    let created = 0;
-    for (const definition of CORE_SLOT_REGISTRY) {
-      if (slots.has(definition.slot_id)) continue;
-      await persistSlot({
-        schema_version: FACT_SLOT_SCHEMA_VERSION,
-        slot_id: definition.slot_id,
-        label: definition.label,
-        authority: "core_fixed",
-        value_type: definition.value_type,
-        value: null,
-        source: "system_default",
-        status: "missing",
-        confidence: null,
-        evidence: [],
-        depends_on: [],
-        critical: definition.critical,
-      }, pid, action);
-      created += 1;
-    }
-    return created;
-  }
-
-  function baseSlotFor(raw, proposalIds) {
-    const definition = raw.authority === "core_fixed" ? coreSlotDefinition(raw.slot_id) : null;
-    if (raw.authority === "core_fixed" && !definition) return null;
-    const known = new Set(slots.keys());
-    const base = {
-      schema_version: FACT_SLOT_SCHEMA_VERSION,
-      slot_id: raw.slot_id,
-      label: definition ? definition.label : raw.label,
-      authority: raw.authority,
-      value_type: definition ? definition.value_type : raw.value_type,
-      value: null,
-      source: "system_default",
-      status: "missing",
-      confidence: null,
-      evidence: [],
-      depends_on: (raw.depends_on || []).filter((id) => proposalIds.has(id) || known.has(id)),
-      critical: definition ? definition.critical : raw.critical === true,
-    };
-    if (base.value_type === "enum") {
-      base.enum_values = Array.isArray(raw.enum_values) ? raw.enum_values.slice() : [];
-    }
-    if (base.authority === "user_custom") base.allow_model_proposal = true;
-    return base;
-  }
-
-  async function applyProposal(proposal, pid, action) {
-    const rawSlots = Array.isArray(proposal.slots) ? proposal.slots : [];
-    const proposalIds = new Set(rawSlots.map((item) => item && item.slot_id).filter(Boolean));
-    const problems = [];
-    let applied = 0;
-    for (const raw of rawSlots) {
-      try {
-        const existing = slots.get(raw.slot_id);
-        const base = existing ? existing.slot : baseSlotFor(raw, proposalIds);
-        if (!base) {
-          problems.push(raw.slot_id + "：模型把未知槽位标成系统固定槽位，已拒绝。");
-          continue;
-        }
-        const next = applySlotAction(base, {
-          action: "propose", actor: "model",
-          value: raw.value, confidence: raw.confidence, evidence: raw.evidence,
-        });
-        if (typeof raw.model_id === "string") next.model_id = raw.model_id;
-        await persistSlot(next, pid, action);
-        applied += 1;
-      } catch (error) {
-        const slotId = raw && raw.slot_id ? raw.slot_id : "未知槽位";
-        problems.push(slotId + "：" + ((error && error.message) || "提案被拒绝"));
-      }
-    }
-    return { applied, problems };
-  }
-
-  async function runAnalyze() {
-    if (busy) return;
-    const action = beginAction();
-    busy = true;
-    analyzeProblems = [];
-    clearError(elements.analyzeError);
-    renderAnalyze();
-    try {
-      await saveIntakeNow();
-      if (!action.alive()) return;
-      const readiness = intakeReadiness(intake);
-      if (!readiness.ready) {
-        showError(elements.analyzeError, "商品资料还不完整："
-          + describeBlocking(readiness.blocking, localizeSlotTerms));
-        requestFocus(elements.analyzeError);
-        return;
-      }
-      await ensureCoreSlots(action.projectId, action);
-      if (!action.alive()) return;
-      let body;
-      try {
-        body = await buildAnalyzeBody(action.projectId);
-      } catch (error) {
-        showError(elements.analyzeError, "本地资料不完整：" + ((error && error.message) || "未知错误"));
-        requestFocus(elements.analyzeError);
-        return;
-      }
-      if (!action.alive()) return;
-      let response;
-      try {
-        response = await fetch(ANALYZE_PATH, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
-      } catch (error) {
-        showError(elements.analyzeError,
-          "无法连接分析服务（本机服务是否在运行？）。这次调用可能已经发送，系统不会自动重试；"
-          + "需要时请手动再次点击。");
-        requestFocus(elements.analyzeError);
-        return;
-      }
-      if (!action.alive()) return;
-      let result = null;
-      try {
-        result = await response.json();
-      } catch (error) {
-        result = null;
-      }
-      if (!action.alive()) return;
-      if (!response.ok || !result || result.ok !== true) {
-        reportAnalyzeFailure(response.status, result);
-        return;
-      }
-      const proposal = result.proposal || {};
-      const applied = await applyProposal(proposal, action.projectId, action);
-      const meta = proposal.meta || {};
-      analyzeProblems = applied.problems;
-      lastAnalyze = {
-        at: new Date().toLocaleString("zh-CN", { hour12: false }),
-        provider: meta.provider_id || "未声明 provider",
-        model: meta.model_id || "",
-        slots: Array.isArray(proposal.slots) ? proposal.slots.length : 0,
-        applied: applied.applied,
-        summary: proposal.summary || "",
-      };
-      if (Array.isArray(proposal.questions) && proposal.questions.length) {
-        analyzeProblems.push("模型提出的问题：" + proposal.questions.join(" / "));
-      }
-      // 会话已切换：分析结果已按冻结项目落库，但不得重置新项目的视图或抢焦点。
-      if (!action.alive()) return;
-      requestFocus(analyzeProblems.length
-        ? () => elements.analyzeError
-        : () => document.getElementById("stage-understand-title"));
-      stageShell.select("understand");
-    } catch (error) {
-      if (action.alive()) handleInternalError(error);
-    } finally {
-      busy = false;
-      if (action.alive()) {
-        try {
-          await deriveAndApplyState();
-        } catch (error) {
-          handleInternalError(error);
-        }
-        renderAll();
-        flushPendingFocus();
-      }
-    }
-  }
-
   async function loadCapabilities() {
-    capabilities = null;
-    capabilitiesError = null;
-    try {
-      const response = await fetch(CAPABILITIES_PATH, { headers: { Accept: "application/json" } });
-      let payload = null;
-      try {
-        payload = await response.json();
-      } catch (error) {
-        payload = null;
-      }
-      if (response.ok && payload && payload.ok === true) {
-        capabilities = payload;
-        if (payload.provider && payload.provider.configured === false) {
-          capabilitiesError = "当前的语义 provider 未配置完成，请检查密钥与依赖。";
-        }
-      } else {
-        capabilitiesError = "capabilities 接口返回 HTTP " + response.status + "。";
-      }
-    } catch (error) {
-      capabilitiesError = (error && error.message) || "无法访问 capabilities 接口。";
-    }
+    capabilities = await modelSettings.refresh();
   }
-  /* ---------------------------------------------------------- 商品理解 */
 
   /**
    * 渲染层本地化：domain 的阻塞消息只认 slot_id 与英文状态词，展示前换成用户认得的
    * 槽位名与中文状态（V2.6.9 走查发现「关键槽位 product_name 仍是 proposed」直接上屏）。
    */
+  /**
+   * @param {unknown} message
+   * @returns {string}
+   */
   function localizeSlotTerms(message) {
     let out = String(message == null ? "" : message);
-    const labels = slotEntries()
+    const labels = inputs.slotEntries()
       .map((entry) => ({
         id: String((entry.slot && entry.slot.slot_id) || ""),
         label: String((entry.slot && entry.slot.label) || ""),
@@ -1381,2541 +1084,45 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
     return out;
   }
 
-  function renderSlots() {
-    elements.slotList.replaceChildren();
-    const entries = slotEntries();
-    const critical = entries.filter((entry) => entry.slot.critical === true);
-    const confirmedCritical = critical.filter((entry) => entry.slot.status === "confirmed");
-    const open = entries.filter(
-      (entry) => entry.slot.status !== "confirmed" && entry.slot.status !== "superseded");
-
-    elements.slotsProgress.textContent = entries.length
-      ? "必须确认的槽位 " + confirmedCritical.length + " / " + critical.length + " 已确认 · 待处理 "
-        + open.length + " 项 · 共 " + entries.length + " 项"
-        + (understandingBlocking.length
-          ? " · 还缺：" + describeBlocking(understandingBlocking, localizeSlotTerms) : "")
-      : "还没有槽位。";
-    elements.slotsToggle.textContent = showAll ? "只看待处理项" : "显示全部事实";
-    elements.slotsToggle.setAttribute("aria-expanded", showAll ? "true" : "false");
-    elements.slotsEmpty.hidden = entries.length > 0;
-
-    const list = (showAll ? entries : open).slice();
-    list.sort((left, right) => {
-      const byRank = reviewRankOf(left) - reviewRankOf(right);
-      if (byRank !== 0) return byRank;
-      return left.slot.slot_id.localeCompare(right.slot.slot_id);
-    });
-    for (const entry of list) elements.slotList.append(slotRow(entry));
-  }
-
-  /** 某个 slot_id 的中文名（找不到就退回原样）；依赖与来源引用用它去掉工程感。 */
-  function slotLabelOfId(slotId) {
-    for (const entry of slotEntries()) {
-      if (entry.slot && entry.slot.slot_id === slotId) return entry.slot.label || slotId;
-    }
-    return slotId;
-  }
-
-  /** 主行只放人话：来源档 + 置信（「必须确认」已经是徽标，不再重复一次）。 */
-  function slotMetaText(entry) {
-    const slot = entry.slot;
-    const parts = [AUTHORITY_TEXT[slot.authority] || slot.authority];
-    if (slot.confidence !== null && slot.confidence !== undefined) {
-      parts.push("置信 " + Number(slot.confidence).toFixed(2));
-    }
-    return parts.join(" · ");
-  }
-
   /**
-   * 事实卡的工程标识（V2.6.16）：slot_id、版本、依赖、证据来源引用（字段名 / 资产哈希 /
-   * 模型 id）一律进折叠的技术详情，主行只留人能判断的信息；追溯链不减，只是换了位置。
+   * 套图依据缺口的连接文本（与 domain/confirm.js blockingText 同形状输入，只做展示连接，
+   * 不做门禁判定）。提示词分区仍在使用，故实现留在工作区，输入视图经依赖注入复用同一份。
+   * @param {import("./domain/type-contracts.js").DependencyBlocking[]|null|undefined} blocking
+   * @returns {string}
    */
-  function slotTechLines(entry) {
-    const slot = entry.slot;
-    const lines = ["标识 " + slot.slot_id, "版本 v" + entry.version];
-    if (slot.depends_on && slot.depends_on.length) {
-      lines.push("依赖 " + slot.depends_on.map((id) => slotLabelOfId(id)).join("、"));
-    }
-    const refs = (Array.isArray(slot.evidence) ? slot.evidence : [])
-      .map((item) => (item && item.ref ? String(item.ref) : ""))
-      .filter((ref) => ref !== "");
-    if (refs.length) lines.push("来源引用 " + refs.join("、"));
-    return lines;
-  }
-
-  function slotRow(entry) {
-    const slot = entry.slot;
-    const status = slot.status;
-    const row = createElement("li", { className: "slot-row", attrs: { "data-status": status } });
-    row.dataset.slotId = slot.slot_id;
-    // 验证用：必须确认是「推进阶段门禁」的判据之一，断言要能区分它与普通待补项。
-    row.dataset.critical = slot.critical === true ? "1" : "0";
-
-    const head = createElement("div", { className: "slot-head" });
-    head.append(createElement("span", {
-      className: "badge is-" + status, text: STATUS_TEXT[status] || status,
-    }));
-    head.append(createElement("span", { className: "name", text: slot.label }));
-    if (slot.critical === true) {
-      head.append(createElement("span", { className: "badge is-critical", text: "必须确认" }));
-    }
-    head.append(createElement("span", { className: "meta", text: slotMetaText(entry) }));
-    row.append(head);
-
-    const valueText = formatValue(slot);
-    if (valueText) {
-      row.append(createElement("div", { className: "slot-value", text: valueText }));
-    } else {
-      const hint = status === "conflict"
-        ? "模型提案与已确认值不一致；请给出裁决值。"
-        : status === "unknown" ? "已标记为未知；需要时再补值确认。"
-          : status === "superseded" ? "已移除（历史版本保留）。" : "还没有值。";
-      row.append(createElement("div", { className: "slot-value is-empty", text: hint }));
-    }
-
-    if (Array.isArray(slot.evidence) && slot.evidence.length) {
-      const list = createElement("ul", { className: "evidence" });
-      for (const item of slot.evidence) {
-        const label = EVIDENCE_TEXT[item.kind] || item.kind;
-        list.append(createElement("li", {
-          className: "meta",
-          text: item.note ? label + "：" + item.note : label,
-        }));
-      }
-      row.append(list);
-    }
-
-    if (interaction.slotId === slot.slot_id) row.append(slotEditor(entry, interaction.mode));
-    row.append(slotActions(entry));
-    const tech = techDetails(slotTechLines(entry));
-    if (tech) row.append(tech);
-    return row;
-  }
-
-  function slotActions(entry) {
-    const slot = entry.slot;
-    const actions = createElement("div", { className: "slot-actions" });
-    const editing = interaction.slotId === slot.slot_id && interaction.mode === "edit";
-
-    if (canConfirmSlot(slot, "user")) {
-      const direct = slot.status === "proposed";
-      const confirm = createElement("button", {
-        className: "primary", text: direct ? "确认" : "填值并确认", attrs: { type: "button" },
-      });
-      confirm.addEventListener("click", () => {
-        if (direct) {
-          handleSlotAction(entry, { action: "confirm", actor: "user" });
-        } else {
-          interaction = { slotId: slot.slot_id, mode: "confirm" };
-          renderSlots();
-        }
-      });
-      actions.append(confirm);
-    }
-
-    if (canEditValue(slot, "user")) {
-      const edit = createElement("button", {
-        text: editing ? "取消修改" : "修改", attrs: { type: "button" },
-      });
-      edit.addEventListener("click", () => {
-        interaction = editing
-          ? { slotId: null, mode: null }
-          : { slotId: slot.slot_id, mode: "edit" };
-        renderSlots();
-      });
-      actions.append(edit);
-    }
-
-    if (slot.status !== "unknown" && slot.status !== "superseded") {
-      const unknown = createElement("button", { text: "标记未知", attrs: { type: "button" } });
-      unknown.addEventListener("click", () => {
-        handleSlotAction(entry, { action: "mark_unknown", actor: "user" });
-      });
-      actions.append(unknown);
-    }
-
-    if (canDeleteSlot(slot, { dependencyCount: dependencyCountOf(slot.slot_id) })) {
-      const remove = createElement("button", {
-        className: "danger", text: "删除（保留历史）", attrs: { type: "button" },
-      });
-      remove.addEventListener("click", () => {
-        handleSlotAction(entry, { action: "supersede", actor: "user" });
-      });
-      actions.append(remove);
-    }
-    return actions;
-  }
-
-  function suggestedValue(slot) {
-    for (const item of slot.evidence || []) {
-      if (item && item.ref === "model_proposal" && typeof item.note === "string") {
-        try {
-          return JSON.parse(item.note);
-        } catch (error) {
-          return null;
-        }
-      }
-    }
-    return null;
-  }
-
-  function slotEditor(entry, mode) {
-    const slot = entry.slot;
-    const editor = createElement("div", { className: "slot-editor" });
-    const field = createElement("div", { className: "field" });
-    field.append(createElement("label", {
-      text: mode === "confirm" ? "给出裁决值后确认" : "修改后的值",
-      attrs: { for: "slot-editor-value" },
-    }));
-
-    const suggestion = suggestedValue(slot);
-    let node;
-    if (slot.value_type === "text_list") {
-      const initial = Array.isArray(slot.value) ? slot.value
-        : (Array.isArray(suggestion) ? suggestion : []);
-      node = createElement("textarea", { attrs: { id: "slot-editor-value", rows: 3 } });
-      node.value = initial.join("\n");
-    } else if (slot.value_type === "boolean") {
-      node = createElement("select", { attrs: { id: "slot-editor-value" } });
-      node.append(createElement("option", { text: "是", attrs: { value: "true" } }));
-      node.append(createElement("option", { text: "否", attrs: { value: "false" } }));
-      node.value = String(slot.value === true || (slot.value === null && suggestion === true));
-    } else if (slot.value_type === "enum") {
-      node = createElement("select", { attrs: { id: "slot-editor-value" } });
-      for (const item of slot.enum_values || []) {
-        node.append(createElement("option", { text: item, attrs: { value: item } }));
-      }
-      node.value = typeof slot.value === "string" ? slot.value
-        : (typeof suggestion === "string" ? suggestion : "");
-    } else {
-      const initial = slot.value !== null && slot.value !== undefined ? String(slot.value)
-        : (suggestion !== null && suggestion !== undefined ? String(suggestion) : "");
-      node = createElement("input", {
-        attrs: {
-          id: "slot-editor-value",
-          type: slot.value_type === "number" ? "number" : "text",
-          step: slot.value_type === "number" ? "any" : null,
-        },
-      });
-      node.value = initial;
-    }
-    node.dataset.role = "value";
-    field.append(node);
-    editor.append(field);
-
-    const toolbar = createElement("div", { className: "toolbar" });
-    const submit = createElement("button", {
-      className: "primary", text: mode === "confirm" ? "确认" : "保存", attrs: { type: "button" },
-    });
-    submit.addEventListener("click", () => {
-      let value;
-      try {
-        value = readEditorValue(slot, node);
-      } catch (error) {
-        showError(elements.slotsError, (error && error.message) || "值不合法。");
-        return;
-      }
-      clearError(elements.slotsError);
-      handleSlotAction(entry, mode === "confirm"
-        ? { action: "confirm", actor: "user", value, source: "user_input" }
-        : { action: "edit", actor: "user", value, source: "user_input" });
-    });
-    const cancel = createElement("button", { text: "取消", attrs: { type: "button" } });
-    cancel.addEventListener("click", () => {
-      interaction = { slotId: null, mode: null };
-      renderSlots();
-    });
-    toolbar.append(submit, cancel);
-    editor.append(toolbar);
-    return editor;
-  }
-
-  function readEditorValue(slot, node) {
-    const raw = node.value;
-    if (slot.value_type === "text_list") {
-      const items = splitLines(raw);
-      if (!items.length) throw new Error("文本列表至少要有一条。");
-      return items;
-    }
-    if (slot.value_type === "number") {
-      const text = String(raw).trim();
-      if (!text) throw new Error("请填写数字。");
-      const value = Number(text);
-      if (!Number.isFinite(value)) throw new Error("请填写合法的数字。");
-      return value;
-    }
-    if (slot.value_type === "boolean") return raw === "true";
-    const text = String(raw).trim();
-    if (!text) throw new Error("值不能为空。");
-    return text;
-  }
-
-  async function handleSlotAction(entry, spec) {
-    const action = beginAction();
-    clearError(elements.slotsError);
-    try {
-      const next = applySlotAction(entry.slot, spec);
-      await persistSlot(next, action.projectId, action);
-      if (!action.alive()) return;
-      interaction = { slotId: null, mode: null };
-      await deriveAndApplyState();
-      renderAll();
-    } catch (error) {
-      if (action.alive()) {
-        showError(elements.slotsError, (error && error.message) || "这个动作没有完成。");
-      }
-    }
-  }
-
-  async function handleAddSlot() {
-    clearError(elements.slotsError);
-    elements.slotAddStatus.textContent = "";
-    const slotId = elements.slotAddId.value.trim().toLowerCase();
-    const label = elements.slotAddLabel.value.trim();
-    const valueType = elements.slotAddType.value;
-    const rawValue = elements.slotAddValue.value;
-    let value;
-    try {
-      if (valueType === "text_list") {
-        value = splitLines(rawValue);
-        if (!value.length) throw new Error("文本列表至少要有一条。");
-      } else if (valueType === "number") {
-        value = Number(String(rawValue).trim());
-        if (!Number.isFinite(value)) throw new Error("请填写合法的数字。");
-      } else if (valueType === "boolean") {
-        const text = String(rawValue).trim().toLowerCase();
-        value = text === "是" || text === "true" || text === "1";
-      } else {
-        value = String(rawValue).trim();
-        if (!value) throw new Error("值不能为空。");
-      }
-    } catch (error) {
-      showError(elements.slotsError, (error && error.message) || "值不合法。");
-      return;
-    }
-    const candidate = {
-      schema_version: FACT_SLOT_SCHEMA_VERSION,
-      slot_id: slotId,
-      label,
-      authority: "user_custom",
-      value_type: valueType,
-      value,
-      source: "user_input",
-      status: "confirmed",
-      confidence: null,
-      evidence: [{ kind: "user", ref: "user_input" }],
-      depends_on: [],
-      critical: false,
-      allow_model_proposal: elements.slotAddAllowModel.checked,
-    };
-    const problems = checkFactSlot(candidate);
-    if (problems.length) {
-      showError(elements.slotsError, problems.map((item) => item.message).join("；"));
-      return;
-    }
-    if (!canAddSlot(candidate, "user", { existingSlots: slotEntries().map((item) => item.slot) })) {
-      showError(elements.slotsError, "槽位标识已存在，或这个槽位不允许新增。");
-      return;
-    }
-    const action = beginAction();
-    try {
-      await persistSlot(candidate, action.projectId, action);
-      if (!action.alive()) return;
-      elements.slotAddId.value = "";
-      elements.slotAddLabel.value = "";
-      elements.slotAddValue.value = "";
-      elements.slotAddAllowModel.checked = false;
-      elements.slotAddStatus.textContent = "已新增 " + candidate.slot_id;
-      await deriveAndApplyState();
-      renderAll();
-    } catch (error) {
-      if (action.alive()) {
-        showError(elements.slotsError, (error && error.message) || "新增槽位失败。");
-      }
-    }
-  }
-  /* ------------------------------------------------------ 状态派生与装载 */
-
-  /* ------------------------------------------------------------ 套图规划 */
-
-  function suiteContext() {
-    return {
-      facts: [...slots.values()].map((entry) => ({
-        slot_id: entry.slot.slot_id,
-        status: entry.slot.status,
-        value: entry.slot.value,
-      })),
-      assets: intake.references.map((item) => ({ role: item.role, sha256: item.asset_sha256 })),
-    };
-  }
-
   function suiteBlockingText(blocking) {
-    return (blocking || []).map((item) => item.reason || item.message).join("；");
+    return (blocking || []).map((item) => item.reason || "").join("；");
   }
 
-  function updateTemplateHint(recommendation) {
-    const instance = recommendation.instances
-      .find((item) => item.template_id === elements.suiteTemplate.value);
-    if (!instance) {
-      elements.suiteTemplateHint.textContent = "";
-      return;
-    }
-    elements.suiteTemplateHint.textContent = instance.satisfied
-      ? "该模板依据已满足。"
-      : "该模板暂时缺依据：" + suiteBlockingText(instance.blocking);
-  }
-
-  function renderSuite() {
-    elements.suiteLocked.hidden = understandingReady;
-    elements.suiteEditor.hidden = !understandingReady;
-    if (!understandingReady) return;
-    const recommendation = recommendPlan(suiteContext());
-    if (elements.suiteTemplate.options.length !== SHOT_TEMPLATES.length) {
-      elements.suiteTemplate.innerHTML = "";
-      for (const template of SHOT_TEMPLATES) {
-        const option = document.createElement("option");
-        option.value = template.template_id;
-        option.textContent = template.label;
-        elements.suiteTemplate.append(option);
-      }
-    }
-    updateTemplateHint(recommendation);
-    const summary = suitePlan ? suitePlanSummary(suitePlan, suiteContext()) : null;
-    elements.suiteStatus.textContent = summary
-      ? "共 " + summary.total + " 张，依据已满足 " + summary.satisfiable + " 张"
-        + (summary.blocked ? "；" + summary.blocked + " 张缺依据" : "")
-      : "还没有套图方案。";
-    elements.suiteEmpty.hidden = Boolean(summary);
-    elements.shotList.innerHTML = "";
-    if (!summary) return;
-    summary.shots.forEach((item, index) => {
-      const row = createElement("li", {
-        className: "shot-row",
-        attrs: { "data-shot-id": item.shot_id, "data-blocked": String(!item.satisfied) },
-      });
-      const head = createElement("div", { className: "shot-head" });
-      head.append(createElement("span", { className: "badge", text: String(index + 1) }));
-      head.append(createElement("span", { className: "name", text: item.label }));
-      const roleText = item.role_label || item.role_id;
-      if (!item.custom && roleText && !String(item.label).startsWith(roleText)) {
-        head.append(createElement("span", { className: "meta", text: roleText }));
-      }
-      head.append(createElement("span", {
-        className: item.required ? "badge is-critical" : "badge",
-        text: item.required ? "必需" : (item.custom ? "自定义" : "可选"),
-      }));
-      row.append(head);
-      row.append(createElement("p", {
-        className: "meta",
-        text: item.satisfied ? "依据已满足。" : "暂时缺依据：" + suiteBlockingText(item.blocking),
-      }));
-      const actions = createElement("div", { className: "shot-actions" });
-      const up = createElement("button", { text: "上移", attrs: { type: "button" } });
-      up.disabled = index === 0;
-      up.addEventListener("click", () => {
-        handleSuiteOp(() => moveShot(suitePlan, item.shot_id, -1));
-      });
-      const down = createElement("button", { text: "下移", attrs: { type: "button" } });
-      down.disabled = index === summary.shots.length - 1;
-      down.addEventListener("click", () => {
-        handleSuiteOp(() => moveShot(suitePlan, item.shot_id, 1));
-      });
-      const copy = createElement("button", { text: "复制", attrs: { type: "button" } });
-      copy.addEventListener("click", () => {
-        handleSuiteOp(() => copyShot(suitePlan, item.shot_id));
-      });
-      const remove = createElement("button", {
-        text: "删除", className: "danger", attrs: { type: "button" },
-      });
-      remove.addEventListener("click", () => {
-        handleSuiteOp(() => removeShot(suitePlan, item.shot_id));
-      });
-      actions.append(up, down, copy, remove);
-      row.append(actions);
-      elements.shotList.append(row);
-    });
-  }
-
-  async function handleSuiteOp(run) {
-    if (!understandingReady || !projectId) return false;
-    const action = beginAction();
-    clearError(elements.suiteError);
-    try {
-      const result = run();
-      const nextPlan = result && result.plan ? result.plan : result;
-      const problems = validateSuitePlan(nextPlan);
-      if (problems.length > 0) throw new Error(problems[0].message);
-      const saved = await repository.documents.save(action.projectId, {
-        kind: SUITE_KIND,
-        documentId: SUITE_PLAN_DOCUMENT_ID,
-        payload: nextPlan,
-      });
-      if (!action.alive()) return false;
-      suitePlan = nextPlan;
-      suiteVersion = saved && typeof saved.version === "number" ? saved.version : suiteVersion + 1;
-      renderSuite();
-      renderStyleSpec();
-      renderShotSpecs();
-      renderPrompts();
-      renderConfirm();
-      renderAttempts();
-      await deriveAndApplyState();
-      return true;
-    } catch (error) {
-      if (action.alive()) {
-        showError(elements.suiteError, (error && error.message) || "操作没有完成，请重试。");
-      }
-      return false;
-    }
-  }
-
-  async function handleSuiteAddCustom() {
-    const label = elements.suiteCustomLabel.value.trim();
-    const intent = elements.suiteCustomIntent.value.trim();
-    const ok = await handleSuiteOp(() => addCustomShotToPlan(suitePlan, { label, intent }));
-    if (ok) {
-      elements.suiteCustomLabel.value = "";
-      elements.suiteCustomIntent.value = "";
-      elements.suiteCustomStatus.textContent = "已添加。";
-    }
-  }
-
-  /* -------------------------------------------------- 风格与单图规格 */
-
-  function styleFormPayload() {
-    return {
-      ...emptyStyleSpec(),
-      background: elements.styleBackground.value.trim(),
-      lighting: elements.styleLighting.value.trim(),
-      color_tone: elements.styleColorTone.value.trim(),
-      composition: elements.styleComposition.value.trim(),
-      avoid: splitLines(elements.styleAvoid.value),
-    };
-  }
-
-  function fillStyleForm(spec) {
-    const pairs = [
-      [elements.styleBackground, spec.background || ""],
-      [elements.styleLighting, spec.lighting || ""],
-      [elements.styleColorTone, spec.color_tone || ""],
-      [elements.styleComposition, spec.composition || ""],
-      [elements.styleAvoid, Array.isArray(spec.avoid) ? spec.avoid.join("\n") : ""],
-    ];
-    for (const [node, value] of pairs) {
-      if (document.activeElement !== node) node.value = value;
-    }
-  }
-
-  function renderStyleSpec() {
-    const ready = understandingReady && Boolean(suitePlan);
-    elements.specsLocked.hidden = ready;
-    elements.specsEditor.hidden = !ready;
-    if (!ready) return;
-    fillStyleForm(styleSpec);
-    elements.styleVersion.textContent = styleVersion > 0
-      ? "版本 v" + styleVersion
-      : "尚未保存";
-    elements.styleRestore.disabled = styleVersion <= 1;
-    const projection = specChangeProjection("style_changed", {
-      shotCount: suitePlan.shots.length,
-    });
-    elements.styleEffect.textContent = "保存后影响：" + projection.affects_text
-      + "；失效：" + projection.invalidates_text + "；保留：" + projection.preserves_text + "。";
-  }
-
-  function shotSpecEntry(shotId) {
-    return shotSpecs.get(shotId) || null;
-  }
-
-  function renderShotSpecs() {
-    const ready = understandingReady && Boolean(suitePlan);
-    elements.specsLocked.hidden = ready;
-    elements.specsEditor.hidden = !ready;
-    elements.shotSpecList.innerHTML = "";
-    if (!ready) return;
-    elements.shotSpecsEmpty.hidden = suitePlan.shots.length > 0;
-    const byId = {};
-    for (const [shotId, entry] of shotSpecs.entries()) byId[shotId] = entry;
-    const digest = suiteSpecDigest(suitePlan, { styleSpec, shotSpecsById: byId });
-    digest.shots.forEach((item, index) => {
-      const shot = suitePlan.shots[index];
-      const entry = shotSpecEntry(item.shot_id);
-      const spec = entry ? entry.spec : emptyShotSpecFromShot(shot);
-      const card = createElement("div", {
-        className: "shot-spec", attrs: { "data-shot-id": item.shot_id },
-      });
-      const head = createElement("div", { className: "shot-spec-head" });
-      head.append(createElement("span", {
-        className: "name", text: (index + 1) + ". " + item.label,
-      }));
-      head.append(createElement("span", {
-        className: "meta", text: entry ? "规格 v" + entry.version : "默认（未保存）",
-      }));
-      card.append(head);
-
-      const purposeField = createElement("div", { className: "field" });
-      const purposeId = "spec-purpose-" + item.shot_id;
-      const purposeLabel = createElement("label", { text: "目的" });
-      purposeLabel.setAttribute("for", purposeId);
-      const purposeInput = createElement("input", { attrs: { id: purposeId, maxlength: "200" } });
-      purposeInput.value = spec.purpose;
-      purposeField.append(purposeLabel, purposeInput);
-      card.append(purposeField);
-
-      const keepField = createElement("div", { className: "field" });
-      const keepId = "spec-keep-" + item.shot_id;
-      const keepLabel = createElement("label", { text: "必须保持（一行一条）" });
-      keepLabel.setAttribute("for", keepId);
-      const keepArea = createElement("textarea", { attrs: { id: keepId, rows: "2" } });
-      keepArea.value = spec.keep.join("\n");
-      keepField.append(keepLabel, keepArea);
-      card.append(keepField);
-
-      const changeField = createElement("div", { className: "field" });
-      const changeId = "spec-change-" + item.shot_id;
-      const changeLabel = createElement("label", { text: "允许变化（一行一条）" });
-      changeLabel.setAttribute("for", changeId);
-      const changeArea = createElement("textarea", { attrs: { id: changeId, rows: "2" } });
-      changeArea.value = spec.change_allowed.join("\n");
-      changeField.append(changeLabel, changeArea);
-      card.append(changeField);
-
-      const toolbar = createElement("div", { className: "toolbar" });
-      const saveButton = createElement("button", { text: "保存", attrs: { type: "button" } });
-      saveButton.addEventListener("click", () => {
-        handleSaveShotSpec(item.shot_id, {
-          purpose: purposeInput.value.trim(),
-          keep: splitLines(keepArea.value),
-          change_allowed: splitLines(changeArea.value),
-        });
-      });
-      const restoreButton = createElement("button", {
-        text: "恢复上一版本", attrs: { type: "button" },
-      });
-      restoreButton.disabled = !entry || entry.version <= 1;
-      restoreButton.addEventListener("click", () => { handleRestoreShotSpec(item.shot_id); });
-      toolbar.append(saveButton, restoreButton);
-      card.append(toolbar);
-
-      const checklist = createElement("details", { className: "slot-detail" });
-      checklist.append(createElement("summary", { text: "审核清单" }));
-      const list = createElement("ul", { className: "checklist" });
-      for (const section of item.checklist.sections) {
-        if (section.items.length === 0) continue;
-        const li = createElement("li");
-        li.append(createElement("strong", { text: section.label + "：" }));
-        li.append(createElement("span", { className: "meta", text: section.items.join("；") }));
-        list.append(li);
-      }
-      checklist.append(list);
-      card.append(checklist);
-      elements.shotSpecList.append(card);
-    });
-  }
-
-  async function handleSaveStyle() {
-    if (!projectId || !suitePlan) return;
-    const action = beginAction();
-    clearError(elements.styleError);
-    elements.styleStatus.hidden = true;
-    try {
-      const next = styleFormPayload();
-      assertStyleSpec(next);
-      const diffs = styleSpecDiff(styleSpec, next);
-      const record = await repository.documents.save(action.projectId, {
-        kind: STYLE_KIND,
-        documentId: STYLE_SPEC_DOCUMENT_ID,
-        payload: next,
-        expectedVersion: styleVersion > 0 ? styleVersion : null,
-      });
-      if (!action.alive()) return;
-      styleSpec = next;
-      styleVersion = record.version;
-      renderStyleSpec();
-      renderShotSpecs();
-      renderPrompts();
-      renderConfirm();
-      renderAttempts();
-      await deriveAndApplyState();
-      if (!action.alive()) return;
-      elements.styleStatus.hidden = false;
-      elements.styleStatus.textContent = "已保存 v" + record.version
-        + (diffs.length > 0
-          ? "（改动：" + diffs.map((item) => item.label).join("、") + "）"
-          : "（没有字段变化）");
-    } catch (error) {
-      if (action.alive()) {
-        showError(elements.styleError, (error && error.message) || "保存没有完成，请重试。");
-      }
-    }
-  }
-
-  async function handleRestoreStyle() {
-    if (!projectId || styleVersion <= 1) return;
-    const action = beginAction();
-    clearError(elements.styleError);
-    try {
-      const versions = await repository.documents.listVersions(
-        action.projectId, STYLE_KIND, STYLE_SPEC_DOCUMENT_ID);
-      const target = previousVersionOf(versions, styleVersion);
-      if (!target) {
-        showError(elements.styleError, "没有更早的版本可以恢复。");
-        return;
-      }
-      const record = await repository.documents.save(action.projectId, {
-        kind: STYLE_KIND,
-        documentId: STYLE_SPEC_DOCUMENT_ID,
-        payload: target.payload,
-        expectedVersion: styleVersion,
-      });
-      if (!action.alive()) return;
-      styleSpec = { ...emptyStyleSpec(), ...target.payload };
-      styleVersion = record.version;
-      renderStyleSpec();
-      renderShotSpecs();
-      renderPrompts();
-      renderConfirm();
-      renderAttempts();
-      await deriveAndApplyState();
-      if (!action.alive()) return;
-      elements.styleStatus.hidden = false;
-      elements.styleStatus.textContent = "已恢复 v" + target.version
-        + " 的内容，写为新版本 v" + record.version + "。";
-    } catch (error) {
-      if (action.alive()) {
-        showError(elements.styleError, (error && error.message) || "恢复没有完成，请重试。");
-      }
-    }
-  }
-
-  async function handleSaveShotSpec(shotId, changes) {
-    if (!projectId || !suitePlan) return;
-    const action = beginAction();
-    clearError(elements.specsError);
-    try {
-      const shot = suitePlan.shots.find((item) => item.shot_id === shotId);
-      if (!shot) throw new Error("找不到这张图，可能已被删除。");
-      const entry = shotSpecEntry(shotId);
-      const base = entry ? entry.spec : emptyShotSpecFromShot(shot);
-      const next = {
-        ...base,
-        purpose: changes.purpose,
-        keep: changes.keep,
-        change_allowed: changes.change_allowed,
-      };
-      assertShotSpec(next);
-      const record = await repository.documents.save(action.projectId, {
-        kind: SHOT_SPEC_KIND,
-        documentId: shotId,
-        payload: next,
-        expectedVersion: entry ? entry.version : null,
-      });
-      if (!action.alive()) return;
-      shotSpecs.set(shotId, { spec: next, version: record.version });
-      renderShotSpecs();
-      renderPrompts();
-      renderConfirm();
-      renderAttempts();
-      await deriveAndApplyState();
-    } catch (error) {
-      if (action.alive()) {
-        showError(elements.specsError, (error && error.message) || "保存没有完成，请重试。");
-      }
-    }
-  }
-
-  async function handleRestoreShotSpec(shotId) {
-    if (!projectId) return;
-    const action = beginAction();
-    clearError(elements.specsError);
-    try {
-      const entry = shotSpecEntry(shotId);
-      if (!entry || entry.version <= 1) {
-        showError(elements.specsError, "没有更早的版本可以恢复。");
-        return;
-      }
-      const versions = await repository.documents.listVersions(
-        action.projectId, SHOT_SPEC_KIND, shotId);
-      const target = previousVersionOf(versions, entry.version);
-      if (!target) {
-        showError(elements.specsError, "没有更早的版本可以恢复。");
-        return;
-      }
-      const record = await repository.documents.save(action.projectId, {
-        kind: SHOT_SPEC_KIND,
-        documentId: shotId,
-        payload: target.payload,
-        expectedVersion: entry.version,
-      });
-      if (!action.alive()) return;
-      shotSpecs.set(shotId, { spec: target.payload, version: record.version });
-      renderShotSpecs();
-      renderPrompts();
-      renderConfirm();
-      renderAttempts();
-      await deriveAndApplyState();
-    } catch (error) {
-      if (action.alive()) {
-        showError(elements.specsError, (error && error.message) || "恢复没有完成，请重试。");
-      }
-    }
-  }
-
-  /* --------------------------------------------------------- Prompt 编译 */
-
-  function currentImageProfile() {
-    try {
-      return imagePromptProfile(capabilities && capabilities.images);
-    } catch (error) {
-      return null;
-    }
-  }
-
-  function promptCurrentBasis(shotId) {
-    let briefBasis = [];
-    try {
-      briefBasis = buildProductBrief(slotEntries()).basis;
-    } catch (error) {
-      briefBasis = [];
-    }
-    const specEntry = shotSpecEntry(shotId);
-    return {
-      briefBasis: briefBasis,
-      suite_version: suiteVersion > 0 ? suiteVersion : null,
-      style_version: styleVersion > 0 ? styleVersion : null,
-      shot_spec_version: specEntry ? specEntry.version : null,
-      platform: { version: PLATFORM_PROFILES.amazon_us.version },
-      provider: currentImageProfile(),
-    };
-  }
-
-  function promptRecordOf(shotId) {
-    const entry = promptVersions.get(shotId) || null;
-    if (!entry || !entry.record || !entry.record.compiled) return null;
-    return entry;
-  }
-
-  /** 未保存的编辑草稿：重渲染时保留用户输入，不让界面动作吞掉正在写的文本。 */
-  function capturePromptEdits() {
-    const drafts = new Map();
-    for (const area of elements.promptList.querySelectorAll("textarea.prompt-edit-text")) {
-      const shotId = area.getAttribute("data-shot-id");
-      const reason = area.parentElement
-        ? area.parentElement.querySelector("input.prompt-edit-reason") : null;
-      if (shotId) drafts.set(shotId, { text: area.value, reason: reason ? reason.value : "" });
-    }
-    return drafts;
-  }
-
-  function renderPrompts() {
-    const drafts = capturePromptEdits();
-    const ready = understandingReady && Boolean(suitePlan);
-    elements.promptLocked.hidden = ready;
-    elements.promptEditor.hidden = !ready;
-    elements.promptList.innerHTML = "";
-    if (!ready) return;
-    const summary = suitePlanSummary(suitePlan, suiteContext());
-    elements.promptStatus.textContent = summary
-      ? "共 " + summary.total + " 张，依据已满足 " + summary.satisfiable + " 张可编译。"
-      : "";
-    if (!summary) return;
-    summary.shots.forEach((item, index) => {
-      const entry = promptRecordOf(item.shot_id);
-      const stale = entry ? promptStaleness(entry.record, promptCurrentBasis(item.shot_id)) : null;
-      const card = createElement("div", {
-        className: "shot-spec",
-        attrs: {
-          "data-shot-id": item.shot_id,
-          "data-prompt-state": entry ? (stale && stale.stale ? "stale" : "saved") : "none",
-        },
-      });
-      const head = createElement("div", { className: "shot-spec-head" });
-      head.append(createElement("span", { className: "name", text: (index + 1) + ". " + item.label }));
-      head.append(createElement("span", {
-        className: "meta", text: entry ? "版本 v" + entry.version : "未编译",
-      }));
-      head.append(createElement("span", {
-        className: item.satisfied ? "badge" : "badge is-critical",
-        text: item.satisfied ? "可编译" : "缺依据",
-      }));
-      if (stale && stale.stale) {
-        head.append(createElement("span", { className: "badge is-critical", text: "已过期" }));
-      }
-      if (entry && entry.record.origin === "manual_edit") {
-        head.append(createElement("span", { className: "badge is-proposed", text: "人工编辑" }));
-      }
-      card.append(head);
-      if (entry) {
-        card.append(createElement("pre", {
-          className: "prompt-text", text: entry.record.compiled.text,
-        }));
-        const refs = entry.record.compiled.source_refs || [];
-        const provider = entry.record.compiled.provider || {};
-        card.append(createElement("p", {
-          className: "meta",
-          text: "请求：" + (provider.model_id || "?") + " · " + (provider.size || "?")
-            + " · 参考图 " + (entry.record.request_snapshot.references || []).length + " 张",
-        }));
-        card.append(createElement("p", {
-          className: "meta prompt-meta",
-          text: "来源 " + refs.length + " 条 · " + entry.record.compiled.text.length
-            + " 字 · hash " + entry.record.hash.slice(0, 12) + "…",
-        }));
-        card.append(createElement("p", { className: "meta prompt-hash", text: entry.record.hash }));
-        for (const warning of entry.record.compiled.warnings || []) {
-          card.append(createElement("p", {
-            className: "meta prompt-warning",
-            text: "提示：" + localizeSlotTerms(warning.message),
-          }));
-        }
-        if (entry.record.origin === "manual_edit") {
-          card.append(createElement("p", {
-            className: "meta",
-            text: "人工编辑 v" + entry.version + "（原因：" + entry.record.edit_reason + "；被编辑版本 v"
-              + (entry.record.edited_from ? entry.record.edited_from.version : "?") + " 保留）",
-          }));
-        }
-        if (stale && stale.stale) {
-          card.append(createElement("p", {
-            className: "meta prompt-warning",
-            text: "已过期（" + stale.reasons.map((reason) => reason.field).join("、") + "），请重新编译。",
-          }));
-        }
-      } else if (!item.satisfied) {
-        card.append(createElement("p", {
-          className: "meta", text: "暂时缺依据：" + suiteBlockingText(item.blocking),
-        }));
-      }
-      const toolbar = createElement("div", { className: "toolbar" });
-      const compileButton = createElement("button", {
-        text: "编译并保存版本", className: "primary", attrs: { type: "button" },
-      });
-      compileButton.disabled = !item.satisfied || busy;
-      compileButton.addEventListener("click", () => { handleCompilePrompt(item.shot_id); });
-      toolbar.append(compileButton);
-      card.append(toolbar);
-      if (entry) {
-        const draft = drafts.get(item.shot_id) || null;
-        const unsaved = Boolean(draft) && draft.text !== entry.record.compiled.text;
-        const block = createElement("div", { className: "prompt-edit-block" });
-        block.append(createElement("label", {
-          className: "meta",
-          attrs: { for: "prompt-edit-" + item.shot_id },
-          text: "人工编辑全文（保存为新版本；原版本保留）",
-        }));
-        const area = createElement("textarea", {
-          className: "prompt-edit-text",
-          attrs: { id: "prompt-edit-" + item.shot_id, "data-shot-id": item.shot_id, rows: "6" },
-        });
-        area.value = unsaved ? draft.text : entry.record.compiled.text;
-        block.append(area);
-        block.append(createElement("label", {
-          className: "meta",
-          attrs: { for: "prompt-edit-reason-" + item.shot_id },
-          text: "编辑原因（必填，写入版本记录）",
-        }));
-        const reason = createElement("input", {
-          className: "prompt-edit-reason",
-          attrs: {
-            id: "prompt-edit-reason-" + item.shot_id, type: "text", autocomplete: "off",
-            maxlength: String(MANUAL_EDIT_REASON_MAX),
-          },
-        });
-        if (unsaved && draft.reason) reason.value = draft.reason;
-        block.append(reason);
-        const saveEdit = createElement("button", { text: "保存为新版本", attrs: { type: "button" } });
-        saveEdit.disabled = busy;
-        saveEdit.addEventListener("click", () => { handleSaveEditedPrompt(item.shot_id); });
-        block.append(saveEdit);
-        card.append(block);
-      }
-      elements.promptList.append(card);
-    });
-  }
-
-  /**
-   * 纯编译一张图的 Prompt（不写记录）：预览、保存与提交共用同一条编译路径。
-   */
-  async function compileShotPrompt(shotId, options = {}) {
-    const shot = suitePlan.shots.find((item) => item.shot_id === shotId);
-    if (!shot) throw new Error("找不到这张图，可能已被删除。");
-    const brief = buildProductBrief(slotEntries());
-    const specEntry = shotSpecEntry(shotId);
-    const providerProfile = currentImageProfile();
-    if (!providerProfile) throw new Error("尚未取得有效图像能力，请恢复模型服务后再编译；不会猜测模型参数。");
-    const compiled = compilePrompt({
-      brief: brief,
-      shot: shot,
-      styleSpec: styleSpec,
-      shotSpec: specEntry ? specEntry.spec : null,
-      context: suiteContext(),
-      providerProfile: providerProfile,
-      versions: {
-        suite_version: suiteVersion,
-        style_version: styleVersion,
-        shot_spec_version: specEntry ? specEntry.version : null,
-      },
-      ...(options.rework ? { rework: options.rework } : {}),
-    });
-    const references = selectReferences(shot, intake.references.map((item) => ({
-      role: item.role, sha256: item.asset_sha256,
-    })), { maxReferences: providerProfile.max_reference_images });
-    const snapshot = requestSnapshotOf(compiled, { references: references });
-    const hash = await promptHash(snapshot, { digest: sha256Hex });
-    const payload = buildPromptRecord({ compiled: compiled, snapshot: snapshot, hash: hash });
-    const problems = checkPromptRecord(payload);
-    if (problems.length > 0) throw new Error(problems[0].message);
-    return { payload: payload, compiled: compiled, references: references };
-  }
-
-  /** 保存一条已编译的 Prompt 版本；版本号由 repository 递增，旧版本保留。 */
-  async function savePromptPayload(shotId, payload, action = null) {
-    const pid = action ? action.projectId : projectId;
-    const saved = await repository.documents.save(pid, {
-      kind: PROMPT_KIND, documentId: shotId, payload: payload,
-    });
-    if (!action || action.alive()) {
-      promptVersions.set(shotId, { record: payload, version: saved.version });
-    }
-    return saved;
-  }
-
-  /**
-   * 编译并保存一张图的 Prompt 版本（V2.5.4 起可选带返工指令）。
-   * 纯编译 + 保存；失败抛错交给调用方，界面文案不在这一层写死。
-   */
-  async function compileAndSavePrompt(shotId, options = {}) {
-    const result = await compileShotPrompt(shotId, options);
-    const saved = await savePromptPayload(shotId, result.payload, options.action || null);
-    return { saved: saved, payload: result.payload, compiled: result.compiled,
-             references: result.references };
-  }
-
-  async function handleCompilePrompt(shotId) {
-    if (!projectId || !suitePlan || !understandingReady) return;
-    const action = beginAction();
-    clearError(elements.promptError);
-    try {
-      const result = await compileAndSavePrompt(shotId, { action });
-      if (!action.alive()) return;
-      renderPrompts();
-      renderConfirm();
-      renderAttempts();
-      await deriveAndApplyState();
-      if (!action.alive()) return;
-      elements.promptStatus.textContent = "已保存 " + shotId + " 的 Prompt 版本 v"
-        + result.saved.version + "。";
-    } catch (error) {
-      if (!action.alive()) return;
-      showError(elements.promptError,
-        (error && error.message) ? error.message + "（旧版本已保留）" : "编译未完成，旧版本已保留。");
-      renderPrompts();
-      renderConfirm();
-      renderAttempts();
-    }
-  }
-
-  /** 人工编辑：保存为新版本；失败时保留旧版本与用户输入，不清空文本区。 */
-  async function handleSaveEditedPrompt(shotId) {
-    if (!projectId || !suitePlan || !understandingReady) return;
-    const action = beginAction();
-    clearError(elements.promptError);
-    const entry = promptRecordOf(shotId);
-    if (!entry) {
-      showError(elements.promptError, "先编译并保存这张图的 Prompt，再编辑。");
-      return;
-    }
-    const area = document.getElementById("prompt-edit-" + shotId);
-    const reasonInput = document.getElementById("prompt-edit-reason-" + shotId);
-    try {
-      const context = suiteContext();
-      context.brief = buildProductBrief(slotEntries());
-      const record = await buildEditedPromptRecord({
-        base: entry.record,
-        baseVersion: entry.version,
-        text: area ? area.value : "",
-        reason: reasonInput ? reasonInput.value : "",
-        editedAt: new Date().toISOString(),
-        context: context,
-        digest: sha256Hex,
-      });
-      const saved = await repository.documents.save(action.projectId, {
-        kind: PROMPT_KIND, documentId: shotId, payload: record,
-      });
-      if (!action.alive()) return;
-      promptVersions.set(shotId, { record: record, version: saved.version });
-      renderPrompts();
-      renderConfirm();
-      renderAttempts();
-      await deriveAndApplyState();
-      if (!action.alive()) return;
-      elements.promptStatus.textContent = "已保存 " + shotId + " 的人工编辑版本 v" + saved.version
-        + "（被编辑版本 v" + entry.version + " 保留）。";
-    } catch (error) {
-      if (action.alive()) {
-        showError(elements.promptError,
-          (error && error.message) ? error.message + "（旧版本与输入已保留）" : "编辑未保存，旧版本与输入已保留。");
-      }
-    }
-  }
-
-  /* ---------------------------------------------------------- 生成前确认 */
-
-  /**
-   * 确认单投影：界面、状态派生与提交都读同一份，不各自重算。
-   * shotIds 给定时只投影这些图（V2.5.4 单图返工），否则是整套。
-   */
-  function buildScopedSheet(shotIds) {
-    if (!suitePlan) return null;
-    const providerProfile = currentImageProfile();
-    if (!providerProfile) return null;
-    const entries = [...promptVersions.entries()].map(([shotId, entry]) => ({
-      shot_id: shotId, record: entry.record, version: entry.version,
-    }));
-    const basisByShot = {};
-    for (const shot of suitePlan.shots) {
-      basisByShot[shot.shot_id] = promptCurrentBasis(shot.shot_id);
-    }
-    return buildConfirmationSheet({
-      suitePlan: suitePlan,
-      promptEntries: entries,
-      providerProfile: providerProfile,
-      context: suiteContext(),
-      currentBasisByShot: basisByShot,
-      shotIds: shotIds,
-    });
-  }
-
-  function buildCurrentSheet() {
-    return buildScopedSheet(null);
-  }
-
-  /** 确认记录是否仍然对得上「这一批将要提交的东西」。 */
-  function confirmationIsCurrent() {
-    if (!confirmRecord) return false;
-    try {
-      const sheet = buildCurrentSheet();
-      if (!sheet || !sheet.can_submit) return false;
-      return !confirmationStaleness(confirmRecord.payload, confirmationSnapshot(sheet)).stale;
-    } catch (error) {
-      return false;
-    }
-  }
-
-  /**
-   * 这张图的返工确认是否仍然有效：与整套确认同一套「快照逐字比对」判定，
-   * 只是作用域只有这一张图——改别的图不会让它失效，改这张图一定会失效。
-   */
-  function reworkConfirmationIsCurrent(shotId) {
-    const entry = reworkConfirmations.get(shotId);
-    if (!entry) return false;
-    try {
-      const sheet = buildScopedSheet([shotId]);
-      if (!sheet || !sheet.can_submit) return false;
-      return !confirmationStaleness(entry.payload, confirmationSnapshot(sheet)).stale;
-    } catch (error) {
-      return false;
-    }
-  }
-
-  /** 提交这张图的条件：整套确认有效，或这张图有自己有效的返工确认。 */
-  function confirmationIsCurrentForShot(shotId) {
-    return confirmationIsCurrent() || reworkConfirmationIsCurrent(shotId);
-  }
-
-  function renderConfirm() {
-    const ready = understandingReady && Boolean(suitePlan);
-    elements.confirmLocked.hidden = ready;
-    elements.confirmEditor.hidden = !ready;
-    elements.confirmSummary.innerHTML = "";
-    elements.confirmBlockers.innerHTML = "";
-    elements.confirmRisks.innerHTML = "";
-    elements.confirmList.innerHTML = "";
-    elements.confirmRecord.textContent = "";
-    elements.confirmAction.disabled = true;
-    if (!ready) return;
-    let sheet = null;
-    try {
-      sheet = buildCurrentSheet();
-    } catch (error) {
-      showError(elements.confirmError,
-        "生成前确认投影失败：" + ((error && error.message) || "未知错误"));
-      return;
-    }
-    if (!sheet) {
-      elements.confirmStatus.textContent = "尚未取得有效图像能力；恢复服务后再确认，不会提交未经核对的请求。";
-      return;
-    }
-    elements.confirmStatus.textContent = "共 " + sheet.total + " 张；就绪 " + sheet.ready
-      + " 张；阻断 " + sheet.blocked + " 张" + (sheet.can_submit ? "；可以确认。" : "。");
-    elements.confirmSummary.append(createElement("p", {
-      className: "confirm-summary", text: sheet.external_summary.statement,
-    }));
-    elements.confirmSummary.append(createElement("p", {
-      className: "meta",
-      text: "每张图发送自己的 Prompt 文本与上列参考图；不发送本地文件本身、历史候选或其他项目数据。",
-    }));
-    for (const blocker of sheet.blockers) {
-      const row = createElement("p", { className: "confirm-blocker" });
-      row.append(createElement("span", { text: "#" + blocker.order + " " + blocker.label + " · " + blocker.code }));
-      row.append(createElement("span", { className: "meta", text: localizeSlotTerms(blocker.message) }));
-      row.append(createElement("span", {
-        className: "meta", text: "返回：" + blocker.fix.region + " · " + blocker.fix.action,
-      }));
-      elements.confirmBlockers.append(row);
-    }
-    for (const risk of sheet.risks) {
-      elements.confirmRisks.append(createElement("p", {
-        className: "confirm-risk",
-        text: risk.label + " · " + risk.code + "：" + localizeSlotTerms(risk.message),
-      }));
-    }
-    for (const item of sheet.shots) {
-      const row = createElement("div", {
-        className: "confirm-shot",
-        attrs: { "data-shot-id": item.shot_id, "data-blocked": String(item.blockers.length > 0) },
-      });
-      const head = createElement("div", { className: "confirm-shot-head" });
-      head.append(createElement("span", { className: "name", text: item.order + ". " + item.label }));
-      head.append(createElement("span", {
-        className: "badge",
-        text: (item.role_label || item.role_id || "未分类") + (item.required ? " · 必需" : " · 可选"),
-      }));
-      head.append(createElement("span", {
-        className: item.blockers.length > 0 ? "badge is-critical" : "badge is-confirmed",
-        text: item.blockers.length > 0 ? "阻断 " + item.blockers.length + " 项" : "就绪",
-      }));
-      head.append(createElement("span", {
-        className: "meta",
-        text: item.prompt.version === null
-          ? "未编译"
-          : "Prompt v" + item.prompt.version + " · " + String(item.prompt.hash).slice(0, 12) + "…",
-      }));
-      row.append(head);
-      if (item.intent) row.append(createElement("p", { className: "meta", text: "任务：" + item.intent }));
-      row.append(createElement("p", {
-        className: "meta",
-        text: "参考图 " + item.references.length + " 张（"
-          + (item.references.map((ref) => ROLE_TEXT[ref.role] || ref.role).join("、") || "无") + "）"
-          + (item.prompt.chars === null ? "" : " · 提示词 " + item.prompt.chars + " 字"),
-      }));
-      const referenceTech = techDetails(item.references.map(
-        (ref) => (ROLE_TEXT[ref.role] || ref.role) + " sha256 " + ref.sha256_prefix));
-      if (referenceTech) row.append(referenceTech);
-      if (item.risks.length > 0) {
-        row.append(createElement("p", {
-          className: "meta prompt-warning",
-          attrs: { title: item.risks.map((risk) => risk.code).join("、") },
-          text: "风险：" + item.risks
-            .map((risk) => localizeSlotTerms(risk.message || risk.code)).join("；"),
-        }));
-      }
-      elements.confirmList.append(row);
-    }
-    elements.confirmAction.disabled = !sheet.can_submit || busy;
-    if (confirmRecord) {
-      const staleness = confirmationStaleness(confirmRecord.payload, confirmationSnapshot(sheet));
-      elements.confirmRecord.textContent = staleness.stale
-        ? "已确认 v" + confirmRecord.version + " 已失效（"
-          + staleness.reasons.map((reason) => reason.field).join("、") + "），需要重新确认。"
-        : "已确认 v" + confirmRecord.version + "（" + confirmRecord.payload.confirmed_at
-          + "）；本版尚未调用图片模型。";
-    } else {
-      elements.confirmRecord.textContent = "尚未确认。";
-    }
-  }
-
-  async function handleConfirmGeneration() {
-    if (!projectId || !suitePlan) return;
-    const action = beginAction();
-    clearError(elements.confirmError);
-    try {
-      const sheet = buildCurrentSheet();
-      if (!sheet) throw new Error("还没有可确认的套图方案。");
-      if (!sheet.can_submit) {
-        throw new Error("还有 " + sheet.blocked + " 张图未就绪，不能确认生成。");
-      }
-      const snapshot = confirmationSnapshot(sheet);
-      const hash = await promptHash(snapshot, { digest: sha256Hex });
-      const payload = buildConfirmationRecord({
-        sheet: sheet, hash: hash, confirmedAt: new Date().toISOString(),
-      });
-      const problems = checkConfirmationRecord(payload);
-      if (problems.length > 0) throw new Error(problems[0].message);
-      const saved = await repository.documents.save(action.projectId, {
-        kind: CONFIRM_KIND, documentId: CONFIRM_DOCUMENT_ID, payload: payload,
-      });
-      if (!action.alive()) return;
-      confirmRecord = { payload: payload, version: saved.version };
-      renderConfirm();
-      renderAttempts();
-      elements.confirmRecord.textContent = "已确认 v" + saved.version + "（" + payload.confirmed_at
-        + "）；本版尚未调用图片模型。";
-      await deriveAndApplyState();
-    } catch (error) {
-      if (!action.alive()) return;
-      showError(elements.confirmError, (error && error.message) || "确认没有完成，请重试。");
-      renderConfirm();
-    }
-  }
 
   /* ------------------------------------------------------------ 生成执行 */
 
-  function currentPromptPointer(shotId) {
-    const entry = promptRecordOf(shotId);
-    return entry ? { version: entry.version, hash: entry.record.hash } : null;
-  }
-
-  function imageProviderBlock() {
-    const images = capabilities && capabilities.images ? capabilities.images : null;
-    return images && images.provider ? images.provider : null;
-  }
-
-  function attemptBadgeClass(state) {
-    if (state === ATTEMPT_STATES.succeeded) return "is-attempt-done";
-    if (state === ATTEMPT_STATES.failed) return "is-attempt-failed";
-    if (state === ATTEMPT_STATES.unknown) return "is-attempt-unknown";
-    return "is-attempt-active";
-  }
-
-  function shortTime(iso) {
-    if (!iso) return "?";
-    try {
-      return new Date(iso).toLocaleString("zh-CN", { hour12: false });
-    } catch (error) {
-      return String(iso);
-    }
-  }
-
-  async function blobToBase64(blob) {
-    const buffer = await blob.arrayBuffer();
-    const bytes = new Uint8Array(buffer);
-    let binary = "";
-    const chunk = 0x8000;
-    for (let index = 0; index < bytes.length; index += chunk) {
-      binary += String.fromCharCode.apply(null, bytes.subarray(index, index + chunk));
-    }
-    return btoa(binary);
-  }
-
-  /**
-   * V2.5.2：把目标 Shot 的最新候选投影成一次复核请求。
-   * 图片字节只从 IndexedDB 读；资料缺失或超上限时抛错（调用方转为未完成，不送半份资料）。
-   */
-  async function buildReviewRequest(shotId, candidate) {
-    const asset = await repository.assets.get(projectId, candidate.asset_sha256);
-    if (!asset || !(asset.blob instanceof Blob)) {
-      throw new Error("候选字节缺失，无法复核；请重新生成或重新导入项目。");
-    }
-    if (asset.blob.size > MAX_REVIEW_IMAGE_BYTES) {
-      throw new Error("候选字节超过复核上限（" + MAX_REVIEW_IMAGE_BYTES + " 字节），未发起复核。");
-    }
-    const shot = (suitePlan && Array.isArray(suitePlan.shots) ? suitePlan.shots : [])
-      .find((item) => item && item.shot_id === shotId) || null;
-    const specEntry = shotSpecEntry(shotId);
-    const spec = specEntry ? specEntry.spec : (shot ? emptyShotSpecFromShot(shot) : null);
-    const references = shot
-      ? selectReferences(shot, (Array.isArray(intake.references) ? intake.references : [])
-          .map((item) => ({ role: item.role, sha256: item.asset_sha256 })))
-        .slice(0, MAX_REVIEW_REFERENCES)
-      : [];
-    const referencePayload = await generation.buildReferencePayload(references, projectId);
-    const facts = confirmedFactPayloads();
-    return {
-      candidate: {
-        media_type: candidate.media_type || "image/png",
-        sha256: candidate.asset_sha256,
-        data_base64: await blobToBase64(asset.blob),
-      },
-      references: referencePayload.map((item) => ({
-        media_type: item.media_type,
-        sha256: item.sha256,
-        data_base64: item.data_base64,
-      })),
-      shot: {
-        title: String((shot && (shot.role_label || shot.role_id)) || "图片任务").slice(0, 200),
-        purpose: spec ? String(spec.purpose || "").slice(0, 500) : "",
-        keep_items: spec ? spec.keep.slice(0, 8) : [],
-        allow_changes: spec ? spec.change_allowed.slice(0, 8) : [],
-      },
-      platform: ANALYZE_PLATFORM,
-      product_facts: facts,
-      locale: ANALYZE_LOCALE,
-    };
-  }
-
-  /** 单张「保存候选图片」按钮入口：只翻译结果，不做批次策略。 */
-  async function handleStoreCandidate(shotId) {
-    clearAttemptError();
-    const result = await generation.storeCandidate(shotId);
-    if (result.stored) {
-      elements.attemptStatus.textContent = "候选已保存（" + result.width + "×" + result.height + "）。"
-        + (result.review ? " " + result.review : "");
-    } else if (result.failed) {
-      showAttemptError( result.message);
-    } else if (result.reason === "already_stored") {
-      elements.attemptStatus.textContent = "这条记录的候选已在本地，无需重复保存。";
-    } else if (result.reason === "not_succeeded") {
-      showAttemptError( "这次生成还没有成功结论，暂不能保存候选。");
-    } else if (result.reason === "no_task_id") {
-      showAttemptError( "这条记录没有任务编号，无法取回候选。");
-    } else if (result.reason === "no_attempt") {
-      showAttemptError( "这张图还没有生成记录。");
-    }
-    return result;
-  }
-
   /** 预览 URL 缓存：每个候选一个 object URL，关闭项目时统一撤销。 */
+  /** 预览 URL 缓存：每个候选一个 object URL，关闭项目时统一撤销。
+   * @param {string} shotId
+   * @param {string} actionId
+   * @param {string} assetSha256
+   * @returns {Promise<string|null>}
+   */
   async function ensurePreviewUrl(shotId, actionId, assetSha256) {
     const key = shotId + ":" + actionId;
-    if (previewUrls.has(key)) return previewUrls.get(key);
-    const asset = await repository.assets.get(projectId, assetSha256);
-    if (!asset || !(asset.blob instanceof Blob)) return null;
+    const cached = previewUrls.get(key);
+    if (cached) return cached;
+    const pid = projectId;
+    if (!pid) return null;
+    const asset = await repository.assets.get(pid, assetSha256);
+    if (pid !== projectId || !asset || !(asset.blob instanceof Blob)) return null;
     const url = URL.createObjectURL(asset.blob);
     previewUrls.set(key, url);
     return url;
   }
 
-  /* ------------------------------------------- 候选比较与审核清单（V2.5.3） */
-
   /**
-   * 面板只是投影：候选、报告、参考图全部来自 IndexedDB 已经存在的事实，
-   * 排序与默认目标由 domain/compare.js 决定（唯一权威），这里不重算报告、不写任何记录。
+   * @param {string} shotId
+   * @returns {string}
    */
-  function attemptsByActionId() {
-    const map = {};
-    for (const record of generation.allAttemptRecords()) {
-      if (record && typeof record.action_id === "string") map[record.action_id] = record;
-    }
-    return map;
-  }
-
-  /** 每张图的候选行（异常优先）+ 计划顺序；报告只在 reviewIsCurrent 为真时参与。 */
-  function compareInventory() {
-    const shots = suitePlan ? suitePlanSummary(suitePlan, suiteContext()).shots : [];
-    const rowsByShotId = {};
-    const attempts = attemptsByActionId();
-    for (const item of shots) {
-      const chain = generation.candidateChainOf(item.shot_id);
-      const reports = {};
-      for (const entry of chain) {
-        const candidate = entry && entry.record ? entry.record : entry;
-        if (!candidate || typeof candidate.candidate_id !== "string") continue;
-        const existing = generation.reviewReportOf(candidate.candidate_id);
-        if (existing && reviewIsCurrent(existing.report, candidate)) {
-          reports[candidate.candidate_id] = existing.report;
-        }
-      }
-      rowsByShotId[item.shot_id] = compareRows({
-        candidates: chain, reportsByCandidateId: reports, attemptsByActionId: attempts,
-      });
-    }
-    return { shots, rowsByShotId };
-  }
-
-  function compareTabId(candidateId) {
-    return "compare-tab-" + String(candidateId).replace(/[^A-Za-z0-9_-]/g, "-");
-  }
-
-  function compareStateLabel(row) {
-    return COMPARE_STATE_TEXT[row.review_state] || row.review_state;
-  }
-
-  /**
-   * 返工入口的状态：只有「正看着一条有字节的候选」才可发起。
-   * 这里只投影 candidate_id + sha256，不写任何记录（写记录在相邻的独立返工区）。
-   */
-  function updateReworkEntry(shot, row) {
-    const available = Boolean(shot && row && row.record && row.asset_sha256);
-    elements.reworkOpen.disabled = !available;
-    if (available) {
-      elements.reworkOpen.dataset.shotId = shot.shot_id;
-      elements.reworkOpen.dataset.candidateId = row.candidate_id;
-      elements.reworkOpen.dataset.candidateSha256 = row.asset_sha256;
-    } else {
-      delete elements.reworkOpen.dataset.shotId;
-      delete elements.reworkOpen.dataset.candidateId;
-      delete elements.reworkOpen.dataset.candidateSha256;
-    }
-  }
-
-  function openCompare(shotId, options = {}) {
-    compareShotId = shotId;
-    compareCandidateId = options.candidateId || null;
-    stageShell.select("review");
-    renderCompare();
-    if (options.focus === true) {
-      const active = elements.compareCandidates.querySelector('[role="tab"][aria-selected="true"]');
-      if (active) active.focus();
-    }
-  }
-
-  /** 切换查看目标：不改规则、不写存储，只换清单与 aria 选中态，避免重建列表时丢焦点。 */
-  function selectCompareCandidate(candidateId, options = {}) {
-    // 换一条候选时收起返工区（它绑定打开那一刻的候选身份），草稿保留。
-    if (reworkShotId !== null && candidateId !== compareCandidateId) {
-      closeReworkPanel({ focusCandidate: false });
-    }
-    if (adoptShotId !== null && candidateId !== compareCandidateId) {
-      closeAdoptPanel({ focusCandidate: false });
-    }
-    compareCandidateId = candidateId;
-    const tabs = elements.compareCandidates.querySelectorAll('[role="tab"]');
-    for (const tab of tabs) {
-      const selected = tab.dataset.candidateId === candidateId;
-      tab.setAttribute("aria-selected", selected ? "true" : "false");
-      tab.tabIndex = selected ? 0 : -1;
-      if (selected && options.focus === true) tab.focus();
-    }
-    const inventory = compareInventory();
-    const rows = inventory.rowsByShotId[compareShotId] || [];
-    const shot = ((suitePlan && suitePlan.shots) || [])
-      .find((item) => item && item.shot_id === compareShotId) || null;
-      const row = rows.find((item) => item.candidate_id === candidateId) || null;
-      renderCompareChecklist(shot, row);
-    updateReworkEntry(shot, row);
-    updateAdoptEntry(shot, row);
-    elements.compareStatus.textContent = "";
-  }
-
-  function renderCompare() {
-    const ready = understandingReady && Boolean(suitePlan);
-    if (!ready || !compareShotId) {
-      elements.comparePanel.hidden = true;
-      elements.compareCandidates.innerHTML = "";
-      elements.compareChecklist.innerHTML = "";
-      elements.compareReferences.innerHTML = "";
-      elements.compareBasisTitle.textContent = "";
-      closeReworkPanel({ focusCandidate: false });
-      updateReworkEntry(null, null);
-      closeAdoptPanel({ focusCandidate: false });
-      updateAdoptEntry(null, null);
-      return;
-    }
-    const shot = ((suitePlan && suitePlan.shots) || [])
-      .find((item) => item && item.shot_id === compareShotId) || null;
-    if (!shot) {
-      compareShotId = null;
-      renderCompare();
-      return;
-    }
-    const inventory = compareInventory();
-    const rows = inventory.rowsByShotId[compareShotId] || [];
-    if (!rows.length) {
-      compareShotId = null;
-      renderCompare();
-      return;
-    }
-    const targetId = rows.some((row) => row.candidate_id === compareCandidateId)
-      ? compareCandidateId : defaultCompareTargetId(rows);
-    compareCandidateId = targetId;
-    elements.comparePanel.dataset.compareContract = COMPARE_CONTRACT_VERSION;
-    elements.comparePanel.dataset.shotId = compareShotId;
-    elements.comparePanel.hidden = false;
-    const counts = compareCounts(rows);
-    const parts = ["候选 " + counts.total];
-    if (counts.pending) parts.push("待处理 " + counts.pending);
-    if (counts.unknown) parts.push("未知 " + counts.unknown);
-    if (counts.unchecked) parts.push("未检查 " + counts.unchecked);
-    elements.compareSubject.textContent = shotLabelOf(compareShotId) + " · " + parts.join(" · ");
-    const nextShot = nextPendingShotId({
-      rowsByShotId: inventory.rowsByShotId,
-      shotOrder: inventory.shots.map((item) => item.shot_id),
-      currentShotId: compareShotId,
-    });
-    elements.compareJump.disabled = !nextShot;
-    elements.compareJump.dataset.targetShot = nextShot || "";
-    elements.compareStatus.textContent = "";
-    renderCompareCandidates(rows, targetId);
-    const targetRow = rows.find((row) => row.candidate_id === targetId) || null;
-    renderCompareChecklist(shot, targetRow);
-    updateReworkEntry(shot, targetRow);
-    updateAdoptEntry(shot, targetRow);
-    refreshCompareReferences(shot).catch(handleInternalError);
-  }
-
-  function renderCompareCandidates(rows, targetId) {
-    const list = elements.compareCandidates;
-    list.innerHTML = "";
-    for (const row of rows) {
-      const card = createElement("button", {
-        className: "compare-card",
-        attrs: {
-          type: "button", role: "tab", id: compareTabId(row.candidate_id),
-          "aria-selected": row.candidate_id === targetId ? "true" : "false",
-          "aria-controls": "compare-checklist",
-          "data-candidate-id": row.candidate_id,
-          "data-review-state": row.review_state,
-          tabindex: row.candidate_id === targetId ? "0" : "-1",
-        },
-      });
-      const thumb = createElement("img", {
-        attrs: { alt: "候选 v" + (row.version || "?") + " 预览", loading: "lazy" },
-      });
-      ensurePreviewUrl(row.shot_id, row.candidate_id, row.asset_sha256).then((url) => {
-        if (url && card.isConnected) thumb.setAttribute("src", url);
-      }).catch(() => {});
-      card.append(thumb);
-      const main = createElement("div", { className: "compare-card-main" });
-      const head = createElement("div", { className: "compare-card-head" });
-      head.append(createElement("span", {
-        className: "name", text: "候选 v" + (row.version === null ? "?" : row.version),
-      }));
-      head.append(createElement("span", {
-        className: "badge " + (COMPARE_STATE_BADGE[row.review_state] || "is-review-unchecked"),
-        text: compareStateLabel(row),
-      }));
-      const adopted = compareShotId ? adoptedMarkOf(compareShotId) : null;
-      if (adopted && adopted.candidate_id === row.candidate_id) {
-        head.append(createElement("span", {
-          className: "badge is-adopted",
-          attrs: { "data-adopted": adopted.state },
-          text: adopted.state === "current" ? "已采用" : "已采用（已过期）",
-        }));
-      }
-      main.append(head);
-      const business = [];
-      if (row.width && row.height) business.push(row.width + "×" + row.height);
-      if (row.created_at) business.push(shortTime(row.created_at));
-      main.append(createElement("span", { className: "meta", text: business.join(" · ") }));
-      main.append(createElement("p", { className: "compare-headline", text: compareRowHeadline(row) }));
-      card.append(main);
-      card.addEventListener("click", () => { selectCompareCandidate(row.candidate_id); });
-      // tablist 的直接子节点必须是 tab；技术详情放在右侧 tabpanel 的清单底部，
-      // 既不嵌套交互控件，也不破坏 tabs 语义。
-      list.append(card);
-    }
-  }
-
-  function compareFindingRow(finding) {
-    const item = createElement("li", {
-      className: "compare-finding",
-      attrs: { "data-severity": finding.severity, "data-rule-id": finding.rule_id },
-    });
-    const head = createElement("div", { className: "compare-card-head" });
-    head.append(createElement("span", {
-      className: "badge " + (SEVERITY_BADGE[finding.severity] || "is-review-unknown"),
-      text: COMPARE_SEVERITY_TEXT[finding.severity] || finding.severity,
-    }));
-    head.append(createElement("span", { className: "name", text: finding.title }));
-    head.append(createElement("span", {
-      className: "meta", text: finding.rule_id + " · v" + finding.rule_version,
-    }));
-    item.append(head);
-    item.append(createElement("p", { className: "meta", text: finding.detail }));
-    if (finding.measured !== null && finding.measured !== undefined) {
-      item.append(createElement("p", {
-        className: "meta", text: "实测：" + JSON.stringify(finding.measured).slice(0, 160),
-      }));
-    }
-    return item;
-  }
-
-  /** 审核清单 = 当前候选的待处理发现（异常优先）+ 这张图的验收依据 + 按需展开的完整报告。 */
-  function renderCompareChecklist(shot, row) {
-    const box = elements.compareChecklist;
-    box.innerHTML = "";
-    box.setAttribute("aria-labelledby", row ? compareTabId(row.candidate_id) : "compare-title");
-    if (!row) {
-      box.append(createElement("p", { className: "meta", text: "先选择一个候选。" }));
-      return;
-    }
-    box.dataset.compareState = row.review_state;
-    box.dataset.candidateId = row.candidate_id;
-    const report = row.report;
-    if (report) {
-      const findings = sortFindings(report.findings);
-      const actionable = findings.filter((item) => item.severity !== "PASS");
-      if (actionable.length) {
-        box.append(createElement("h5", { text: "先看这些（" + actionable.length + "）" }));
-        const list = createElement("ul", { className: "compare-findings" });
-        for (const finding of actionable) list.append(compareFindingRow(finding));
-        box.append(list);
-      } else {
-        // 没有待处理项时，这里一句话说明状态就够；细节在完整报告里。
-        box.append(createElement("p", {
-          className: "meta", text: compareRowHeadline(row),
-        }));
-      }
-      const details = createElement("details", { className: "compare-report" });
-      details.append(createElement("summary", {
-        text: "完整报告（合同 " + report.review_contract_version + " · " + findings.length + " 条）",
-      }));
-      details.append(createElement("p", {
-        className: "compare-report-row",
-        text: "候选 sha256 " + String(row.asset_sha256).slice(0, 16) + "… · 报告生成 "
-          + shortTime(report.created_at),
-      }));
-      const vlm = report.vlm;
-      const vlmText = vlm
-        ? (vlm.outcome === "checked" ? "已完成" : "未完成（结果未知，不阻断人工审核）")
-        : "未检查";
-      details.append(createElement("p", {
-        className: "compare-report-row",
-        attrs: { "data-compare-vlm": vlm ? vlm.outcome : "absent" },
-        text: "视觉复核：" + vlmText + (vlm && vlm.model_id ? " · " + vlm.model_id : ""),
-      }));
-      const all = createElement("ul", { className: "compare-findings" });
-      for (const finding of findings) all.append(compareFindingRow(finding));
-      details.append(all);
-      box.append(details);
-    } else {
-      box.append(createElement("p", { className: "meta", text: compareRowHeadline(row) }));
-    }
-    box.append(createElement("h5", { text: "这张图的验收依据" }));
-    const specEntry = shotSpecEntry(shot.shot_id);
-    const checklist = reviewChecklist(shot, {
-      shotSpec: specEntry ? specEntry.spec : null, styleSpec: styleSpec,
-    });
-    const criteria = createElement("ul", { className: "compare-basis-list" });
-    criteria.append(createElement("li", { text: "目的：" + checklist.purpose }));
-    if (checklist.must_keep.length) {
-      criteria.append(createElement("li", { text: "必须保持：" + checklist.must_keep.join("；") }));
-    }
-    if (checklist.may_change.length) {
-      criteria.append(createElement("li", { text: "允许变化：" + checklist.may_change.join("；") }));
-    }
-    if (checklist.style_lines.length) {
-      criteria.append(createElement("li", { text: "公共风格：" + checklist.style_lines.join("；") }));
-    }
-    if (!checklist.saved) {
-      criteria.append(createElement("li", {
-        className: "meta", text: "单图规格尚未保存，这里用的是默认派生值。",
-      }));
-    }
-    box.append(criteria);
-    const techLines = [
-      "candidate " + String(row.candidate_id),
-      "sha256 " + String(row.asset_sha256).slice(0, 12) + "…",
-    ];
-    if (row.task_id) techLines.push("task " + String(row.task_id).slice(0, 8));
-    else if (row.attempt_action_id) techLines.push("action " + String(row.attempt_action_id).slice(0, 8));
-    const tech = techDetails(techLines);
-    if (tech) box.append(tech);
-  }
-
-  /** 这张图实际会发送的参考图（与提交时同一选择函数），用作比较的左边一栏。 */
-  async function refreshCompareReferences(shot) {
-    const token = ++compareToken;
-    const references = selectReferences(shot, (Array.isArray(intake.references) ? intake.references : [])
-      .map((item) => ({ role: item.role, sha256: item.asset_sha256 })));
-    const entries = [];
-    for (const reference of references) {
-      const asset = await repository.assets.get(projectId, reference.sha256);
-      entries.push({ reference, asset });
-    }
-    if (token !== compareToken) return;
-    const list = elements.compareReferences;
-    list.innerHTML = "";
-    if (!entries.length) {
-      elements.compareBasisTitle.textContent = "这张图没有可用参考图（现在提交会被拒绝）。";
-      return;
-    }
-    elements.compareBasisTitle.textContent = "这张图实际发送的参考图（" + entries.length + " 张）";
-    for (const entry of entries) {
-      const item = createElement("li", { attrs: { "data-reference-sha256": entry.reference.sha256 } });
-      const url = await ensurePreviewUrl("参考图", entry.reference.sha256, entry.reference.sha256);
-      if (token !== compareToken) return;
-      if (url) {
-        item.append(createElement("img", {
-          attrs: { src: url, alt: "参考图 " + entry.reference.role, loading: "lazy" },
-        }));
-      } else {
-        item.append(createElement("span", { className: "meta", text: "资产缺失" }));
-      }
-      item.append(createElement("span", {
-        className: "meta", text: ROLE_TEXT[entry.reference.role] || entry.reference.role,
-      }));
-      item.append(techDetails(["sha256 " + String(entry.reference.sha256).slice(0, 8) + "…"]));
-      list.append(item);
-    }
-  }
-
-  function handleCompareKeydown(event) {
-    const tabs = Array.from(elements.compareCandidates.querySelectorAll('[role="tab"]'));
-    if (!tabs.length) return;
-    const current = tabs.findIndex((tab) => tab.getAttribute("aria-selected") === "true");
-    const index = current === -1 ? 0 : current;
-    let next = null;
-    if (event.key === "ArrowRight" || event.key === "ArrowDown") next = (index + 1) % tabs.length;
-    else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
-      next = (index - 1 + tabs.length) % tabs.length;
-    } else if (event.key === "Home") next = 0;
-    else if (event.key === "End") next = tabs.length - 1;
-    else if (event.key === "Escape") {
-      event.preventDefault();
-      focusCompareEntry(compareShotId);
-      return;
-    } else {
-      return;
-    }
-    event.preventDefault();
-    selectCompareCandidate(tabs[next].dataset.candidateId, { focus: true });
-  }
-
-  function renderAttempts() {
-    const ready = understandingReady && Boolean(suitePlan);
-    elements.attemptLocked.hidden = ready;
-    elements.attemptEditor.hidden = !ready;
-    elements.attemptList.innerHTML = "";
-    if (!ready) { renderBatch(); renderCompare(); renderSelectionProgress(); return; }
-    const summary = suitePlanSummary(suitePlan, suiteContext());
-    const confirmed = confirmationIsCurrent();
-    const provider = imageProviderBlock();
-    elements.attemptProvider.textContent = provider
-      ? "图像 provider：" + (provider.provider_id || "未声明") + " · " + (provider.model_id || "未声明")
-        + (provider.configured === false ? " · 未配置（提交会被拒绝，不会调用模型）" : " · 已配置")
-      : "图像 provider：尚未读到能力信息；提交前请确认服务端可用。";
-    const counts = { total: 0, none: 0, active: 0, succeeded: 0, failed: 0, unknown: 0 };
-    const shots = summary ? summary.shots : [];
-    for (const item of shots) {
-      const chain = generation.attemptChainOf(item.shot_id);
-      const latest = chain.length ? chain[chain.length - 1] : null;
-      const record = latest ? latest.record : null;
-      const state = record ? record.state : null;
-      const entry = promptRecordOf(item.shot_id);
-      const stale = record ? attemptPromptStaleness(record, currentPromptPointer(item.shot_id)) : null;
-      counts.total += 1;
-      if (!record) counts.none += 1;
-      else if (state === ATTEMPT_STATES.succeeded) counts.succeeded += 1;
-      else if (state === ATTEMPT_STATES.failed) counts.failed += 1;
-      else if (state === ATTEMPT_STATES.unknown) counts.unknown += 1;
-      else counts.active += 1;
-
-      const row = createElement("div", {
-        className: "attempt-row",
-        attrs: { "data-shot-id": item.shot_id, "data-attempt-state": state || "none",
-                 "tabindex": "-1" },
-      });
-      const head = createElement("div", { className: "attempt-head" });
-      head.append(createElement("span", { className: "name", text: item.label }));
-      head.append(createElement("span", {
-        className: "badge " + (record ? attemptBadgeClass(state) : "is-missing"),
-        text: record ? attemptStateLabel(state) : "尚未生成",
-      }));
-      head.append(createElement("span", {
-        className: "meta",
-        text: entry ? "Prompt v" + entry.version : "未编译 Prompt",
-      }));
-      if (stale && stale.stale) {
-        head.append(createElement("span", {
-          className: "badge is-attempt-stale",
-          text: "基于旧版本 v" + stale.attempt_version,
-        }));
-      }
-      row.append(head);
-      if (entry) {
-        const promptTech = techDetails(["hash " + String(entry.record.hash).slice(0, 12) + "…"]);
-        if (promptTech) row.append(promptTech);
-      }
-      if (record) {
-        const parts = ["提交 " + shortTime(record.created_at)];
-        if (record.updated_at !== record.created_at) parts.push("更新 " + shortTime(record.updated_at));
-        row.append(createElement("p", { className: "meta attempt-task", text: parts.join(" · ") }));
-        const attemptTech = ["action " + record.action_id];
-        if (record.task_id) attemptTech.push("task " + record.task_id);
-        row.append(techDetails(attemptTech));
-        const note = record.change_log.length
-          ? record.change_log[record.change_log.length - 1].note : null;
-        if (note) row.append(createElement("p", { className: "meta", text: "最近一次变化：" + note }));
-        if (record.error) {
-          row.append(createElement("p", {
-            className: "attempt-error-text",
-            text: (state === ATTEMPT_STATES.unknown ? "未知原因：" : "失败原因：")
-              + record.error.family + " / " + record.error.code + "：" + record.error.message
-              + "（重试策略 " + record.error.retry_policy + "）",
-          }));
-        }
-        if (state === ATTEMPT_STATES.succeeded) {
-          const stored = generation.candidateForAttemptOf(item.shot_id, record.action_id);
-          if (stored && candidateMatchesAttempt(stored, record)) {
-            const candidate = stored.record;
-            const thumb = createElement("div", { className: "attempt-preview" });
-            const img = createElement("img", {
-              attrs: { alt: item.label + " 的候选", loading: "lazy" },
-            });
-            thumb.append(img);
-            row.append(thumb);
-            ensurePreviewUrl(item.shot_id, record.action_id, candidate.asset_sha256)
-              .then((url) => {
-                if (url && img.isConnected) img.src = url;
-              })
-              .catch(() => {});
-            row.append(createElement("p", {
-              className: "meta attempt-candidate",
-              text: "候选已保存到本地 · " + candidate.width + "×" + candidate.height + " · "
-                + candidate.media_type + " · "
-                + Math.max(1, Math.round(candidate.byte_size / 1024)) + " KB（预览来自本地字节）",
-            }));
-            row.append(techDetails(["sha256 " + candidate.asset_sha256.slice(0, 12) + "…"]));
-            const reviewEntry = generation.reviewReportOf(candidate.candidate_id);
-            if (reviewEntry && reviewIsCurrent(reviewEntry.report, candidate)) {
-              const top = topFinding(reviewEntry.report);
-              row.append(createElement("p", {
-                className: "meta attempt-review",
-                attrs: {
-                  "data-review-summary": reviewSummaryText(reviewEntry.report),
-                  "data-review-contract": reviewEntry.report.review_contract_version,
-                  "data-review-candidate": candidate.candidate_id,
-                },
-                text: reviewSummaryText(reviewEntry.report)
-                  + (top ? " · 先看：" + top.title + " — " + top.detail : " · 无待处理项"),
-              }));
-            } else {
-              row.append(createElement("p", {
-                className: "meta attempt-review",
-                attrs: { "data-review-summary": "missing" },
-                text: "自动检查报告尚未生成（候选保存时自动生成；旧候选会在重新打开项目时补建）。",
-              }));
-            }
-            const reviewButton = createElement("button", {
-              text: generation.isReviewInFlight(item.shot_id) ? "复核中…" : "自动复核（VLM）",
-              attrs: {
-                type: "button",
-                "data-review-action": candidate.candidate_id,
-                title: "调用视觉语言模型找可疑问题；只提示，不自动采纳",
-              },
-            });
-            reviewButton.disabled = generation.isReviewInFlight(item.shot_id);
-            reviewButton.addEventListener("click", async () => {
-              const outcome = await generation.reviewCandidate(item.shot_id);
-              if (outcome && outcome.failed) {
-                elements.attemptStatus.textContent = "复核未完成：" + outcome.message
-                  + "（候选与报告保持不变）";
-              }
-            });
-            row.append(reviewButton);
-          } else if (stored) {
-            row.append(createElement("p", {
-              className: "meta attempt-note",
-              text: "候选记录与来源 Attempt 不一致：不显示预览（记录保留，等待复核）。",
-            }));
-          } else {
-            row.append(createElement("p", {
-              className: "meta attempt-note",
-              text: "上游已完成，候选字节尚未保存到本地。",
-            }));
-          }
-        }
-        // 比较区只看候选链：最新一次尝试是失败/未知时，历史候选仍然可以比较与返工。
-        if (generation.candidateChainOf(item.shot_id).length) {
-          const compareButton = createElement("button", {
-            text: "比较候选（" + generation.candidateChainOf(item.shot_id).length + "）",
-            attrs: {
-              type: "button",
-              "data-compare-action": item.shot_id,
-              "aria-expanded": String(compareShotId === item.shot_id),
-              title: "对比这张图的参考图、历史候选与审核清单",
-            },
-          });
-          compareButton.addEventListener("click", (event) => {
-            openCompare(item.shot_id, { focus: event.detail === 0 });
-          });
-          row.append(compareButton);
-        }
-        const selectionEntry = selections.get(item.shot_id) || null;
-        const selectionState = deriveSelectionState(selectionEntry ? selectionEntry.record : null,
-          generation.candidateChainOf(item.shot_id).map((entry) => entry.record));
-        if (selectionEntry || generation.candidateChainOf(item.shot_id).length) {
-          row.append(createElement("p", {
-            className: "meta attempt-selection",
-            attrs: {
-              "data-selection-state": selectionState,
-              "data-selection-shot": item.shot_id,
-            },
-            text: selectionSummaryText(selectionEntry ? selectionEntry.record : null, selectionState),
-          }));
-        }
-        if ((state === ATTEMPT_STATES.pending_submit || state === ATTEMPT_STATES.unknown)
-            && !record.task_id) {
-          row.append(createElement("p", {
-            className: "meta attempt-note",
-            text: "这次提交没有留下任务编号（可能已到达上游）。系统不会自动重提；可以显式新建 action，或先核对（若已有编号）。",
-          }));
-        }
-      }
-      if (stale && stale.stale) {
-        row.append(createElement("p", {
-          className: "meta attempt-note",
-          text: "这条记录基于 Prompt v" + stale.attempt_version + "；当前是 v" + stale.current_version
-            + "。要按新版出图，请先重新确认，再新建 action。",
-        }));
-      }
-      const actions = createElement("div", { className: "toolbar attempt-actions" });
-      const batchState = generation.batchStateReader();
-      const batchActive = Boolean(batchState && batchState.active);
-      const inFlight = generation.isAttemptInFlight(item.shot_id) || busy || batchActive;
-      const shotConfirmed = confirmationIsCurrentForShot(item.shot_id);
-      const canSubmit = shotConfirmed && Boolean(entry) && !inFlight;
-      const reconcileMode = record ? attemptReconcileMode(record) : ATTEMPT_RECONCILE_MODES.none;
-      const stuckPending = state === ATTEMPT_STATES.pending_submit && !record.task_id;
-      if (reconcileMode === ATTEMPT_RECONCILE_MODES.by_task) {
-        const button = createElement("button", { text: "核对任务", attrs: { type: "button" } });
-        button.disabled = inFlight;
-        button.addEventListener("click", () => { handleReconcileAttempt(item.shot_id); });
-        actions.append(button);
-      }
-      if (!record) {
-        const button = createElement("button", {
-          className: "primary", text: "生成这张图", attrs: { type: "button" },
-        });
-        button.disabled = !canSubmit;
-        button.addEventListener("click", () => { handleSubmitAttempt(item.shot_id); });
-        actions.append(button);
-      } else if (stuckPending || state === ATTEMPT_STATES.unknown) {
-        const button = createElement("button", {
-          text: "新建 action（放弃核对）", attrs: { type: "button" },
-        });
-        button.disabled = !canSubmit;
-        button.addEventListener("click", () => {
-          handleSubmitAttempt(item.shot_id, { explicitNew: true });
-        });
-        actions.append(button);
-      } else if (state === ATTEMPT_STATES.failed) {
-        const button = createElement("button", {
-          text: "重试（新建 action）", attrs: { type: "button" },
-        });
-        button.disabled = !canSubmit;
-        button.addEventListener("click", () => {
-          handleSubmitAttempt(item.shot_id, { explicitNew: true });
-        });
-        actions.append(button);
-      } else if (state === ATTEMPT_STATES.succeeded) {
-        const stored = generation.candidateForAttemptOf(item.shot_id, record.action_id);
-        if (!stored) {
-          const save = createElement("button", {
-            className: "primary", text: "保存候选图片", attrs: { type: "button" },
-          });
-          save.disabled = inFlight || generation.isCandidateInFlight(item.shot_id);
-          save.addEventListener("click", () => { handleStoreCandidate(item.shot_id); });
-          actions.append(save);
-        }
-        const button = createElement("button", {
-          text: "再生成一张（新建 action）", attrs: { type: "button" },
-        });
-        button.disabled = !canSubmit;
-        button.addEventListener("click", () => {
-          handleSubmitAttempt(item.shot_id, { explicitNew: true });
-        });
-        actions.append(button);
-      } else if (ATTEMPT_ACTIVE_STATES.includes(state)) {
-        const label = inFlight ? "提交中…" : "上游处理中，先核对";
-        const button = createElement("button", { text: label, attrs: { type: "button" } });
-        button.disabled = true;
-        actions.append(button);
-      }
-      if (!shotConfirmed) {
-        actions.append(createElement("span", {
-          className: "meta",
-          text: "这张图还没有有效的生成前确认：先在「生成前确认」确认整套，或在候选比较面板里走一次返工确认。",
-        }));
-      } else if (!entry) {
-        actions.append(createElement("span", { className: "meta", text: "先编译并保存这张图的 Prompt。" }));
-      }
-      row.append(actions);
-      if (chain.length > 1) {
-        const details = createElement("details", { className: "attempt-history" });
-        details.append(createElement("summary", { text: "历史 " + chain.length + " 次提交（只追加，不覆盖）" }));
-        for (const item2 of chain.slice().reverse()) {
-          const itemRecord = item2.record;
-          details.append(createElement("p", {
-            className: "attempt-history-row",
-            text: "v" + item2.version + " · " + attemptStateLabel(itemRecord.state)
-              + " · action " + itemRecord.action_id
-              + (itemRecord.task_id ? " · task " + itemRecord.task_id : "")
-              + " · " + shortTime(itemRecord.updated_at),
-          }));
-        }
-        row.append(details);
-      }
-      elements.attemptList.append(row);
-    }
-    const activeText = counts.active > 0 ? "进行中 " + counts.active + " 张；" : "";
-    elements.attemptStatus.textContent = "共 " + counts.total + " 张；未生成 " + counts.none + " 张；"
-      + activeText + "已成功 " + counts.succeeded + " 张；结果未知 " + counts.unknown + " 张；失败 "
-      + counts.failed + " 张。" + (confirmed ? "可以整套生成或逐张提交。" : "确认缺失或已过期，暂不能提交。");
-    renderBatch();
-    renderCompare();
-    renderSelectionProgress();
-    refreshDerived();
-  }
-
-  /** 单张提交（按钮入口）：只负责把核心结果翻译成界面反馈，执行顺序在生成 Module。 */
-  async function handleSubmitAttempt(shotId, options = {}) {
-    const action = options.action || beginAction();
-    clearAttemptError();
-    const outcome = await generation.submitAttempt(shotId, { ...options, action });
-    if (!action.alive()) return outcome;
-    if (outcome.skipped) {
-      if (outcome.reason === "no_confirmation") {
-        showAttemptError(
-          "生成前确认缺失或已过期：先回到「生成前确认」重新确认，再提交。");
-      } else if (outcome.reason === "blocked") {
-        const blocking = outcome.blocking;
-        showAttemptError( "同一张图已经有一条进行中的生成（"
-          + attemptStateLabel(blocking.state) + "，action " + blocking.action_id
-          + "）。先核对并按结论处理，再新建 action。");
-      } else if (outcome.reason === "no_prompt") {
-        showAttemptError( "这张图还没有可用的 Prompt 版本：先编译并保存。");
-      } else if (outcome.reason === "shot_missing") {
-        showAttemptError( "这张图已不在套图方案里，先刷新套图规划。");
-      } else if (outcome.reason === "no_references") {
-        showAttemptError( "这张图没有可用参考图（至少需要一张）。");
-      } else if (outcome.reason === "reference_read_failed") {
-        showAttemptError( outcome.message);
-      } else if (outcome.reason === "environment_unknown") {
-        showAttemptError( outcome.message
-          || "提交前读不到有效的图像环境身份；不猜身份，先确认服务端可用。");
-      }
-      return outcome;
-    }
-    if (outcome.thrown) {
-      showAttemptError( outcome.message);
-      return outcome;
-    }
-    const record = outcome.record;
-    elements.attemptStatus.textContent = "action " + record.action_id + "：" + attemptStateLabel(record.state)
-      + (record.task_id ? "（task " + record.task_id + "）" : "") + "。";
-    if (record.state === ATTEMPT_STATES.unknown) {
-      showAttemptError( "这次提交的结果没有确认：不要重复提交。"
-        + (record.task_id ? "可以按任务编号核对。" : "没有任务编号，只能显式新建 action。"));
-    } else if (record.state === ATTEMPT_STATES.failed) {
-      showAttemptError( "这次提交明确失败：" + record.error.message
-        + "（重试策略 " + record.error.retry_policy + "）。");
-    }
-    if (outcome.candidate && outcome.candidate.failed) {
-      showAttemptError( outcome.candidate.message);
-    } else if (outcome.candidate && outcome.candidate.stored) {
-      elements.attemptStatus.textContent += " 候选已保存到本地（sha256 "
-        + outcome.candidate.sha256.slice(0, 12) + "…）。";
-    }
-    return outcome;
-  }
-
-  /** 单张核对（按钮入口）：只负责把核心结果翻译成界面反馈，执行顺序在生成 Module。 */
-  async function handleReconcileAttempt(shotId, options = {}) {
-    const action = options.action || beginAction();
-    clearAttemptError();
-    const result = await generation.reconcileAttempt(shotId, { ...options, action });
-    if (!action.alive()) return result;
-    if (result.skipped) {
-      if (result.reason === "no_task") {
-        showAttemptError( "这条记录没有任务编号，无法核对；只能显式新建 action。");
-      } else if (result.reason === "environment_blocked") {
-        showAttemptError(result.message || "当前环境与冻结身份不一致，未发出核对请求。");
-      } else if (result.reason === "no_identity") {
-        showAttemptError(result.message || "这条 Attempt 没有冻结执行身份，不能按原身份核对。");
-      }
-      return result;
-    }
-    if (result.failed) {
-      showAttemptError( result.message);
-      return result;
-    }
-    if (result.advanced) {
-      elements.attemptStatus.textContent = "已核对 task " + result.task_id + "："
-        + attemptStateLabel(result.state) + "。";
-      if (result.candidate && result.candidate.failed) {
-        showAttemptError( result.candidate.message);
-      } else if (result.candidate && result.candidate.stored) {
-        elements.attemptStatus.textContent += " 候选已保存到本地（sha256 "
-          + result.candidate.sha256.slice(0, 12) + "…）。";
-      }
-    } else {
-      elements.attemptStatus.textContent = "已核对 task " + result.task_id + "：没有新结论（"
-        + result.note + "）。";
-    }
-    return result;
-  }
-
-  /* --------------------------------------------- 单图返工闭环（V2.5.4） */
-
-  /**
-   * 返工区与比较区相邻但独立：比较区只投影、只读；这里才写 Prompt 版本、
-   * 单图确认与新的生成尝试。草稿按图留在内存，预览只有用户确认时才落成版本。
-   */
-
-  function reworkConfirmId(shotId) {
-    return REWORK_CONFIRM_PREFIX + shotId;
-  }
-
-  /** 返工草稿按图保存；第一次打开时用报告的先看项预选问题与方向，之后保留用户改动。 */
-  function reworkDraftOf(shotId, row) {
-    let draft = reworkDrafts.get(shotId);
-    if (!draft) {
-      draft = {
-        problems: suggestReworkProblems(row ? row.report : null),
-        direction: suggestedReworkDirection(row ? row.report : null),
-        directive: null,
-        preview: null,
-      };
-      reworkDrafts.set(shotId, draft);
-    }
-    return draft;
-  }
-
-  function reworkShotRow(shotId, candidateId) {
-    const inventory = compareInventory();
-    const rows = inventory.rowsByShotId[shotId] || [];
-    return rows.find((item) => item.candidate_id === candidateId) || rows[0] || null;
-  }
-
-  function reworkSummaryOf(draft) {
-    if (draft && draft.preview) {
-      return "预览已就绪：确认并生成会把它保存为 Prompt 新版本（旧版本保留），"
-        + "只重新生成这张图；改过问题或方向后需要重新预览。";
-    }
-    return "选好问题或写下方向 → 预览返工 Prompt → 确认并生成这张图。";
-  }
-
-  function updateReworkControls(shotId, draft) {
-    if (!draft) return;
-    const hasReason = draft.problems.length > 0
-      || String(elements.reworkDirection.value || "").trim().length > 0;
-    const busy = reworkInFlight;
-    elements.reworkPreview.disabled = busy || !hasReason;
-    elements.reworkEdit.disabled = busy || !draft.preview;
-    elements.reworkSubmit.disabled = busy || !draft.preview;
-    elements.reworkReset.disabled = busy;
-    elements.reworkCancel.disabled = busy;
-    elements.reworkSummary.textContent = reworkSummaryOf(draft);
-  }
-
-  /** 输入变了：旧预览不再代表将要发送的内容，必须重新预览。 */
-  function dirtyReworkDraft(draft) {
-    if (!draft || !draft.preview) return;
-    draft.preview = null;
-    draft.directive = null;
-    elements.reworkPreviewBox.hidden = true;
-    elements.reworkStatus.hidden = true;
-  }
-
-  function renderReworkPreviewBox(draft) {
-    if (!draft || !draft.preview) {
-      elements.reworkPreviewBox.hidden = true;
-      return;
-    }
-    elements.reworkPreviewBox.hidden = false;
-    elements.reworkPreviewMeta.textContent =
-      "将保存为 Prompt 新版本（旧版本保留）并只重新生成这张图 · 参考图 "
-      + draft.preview.references + " 张 · 全文 " + draft.preview.text.length + " 字";
-    elements.reworkPreviewText.textContent = draft.preview.text;
-  }
-
-  function renderReworkProblems(shotId, draft) {
-    const box = elements.reworkProblems;
-    const host = box.querySelector(".rework-problem-options") || box;
-    for (const node of Array.from(host.querySelectorAll("label.rework-problem"))) node.remove();
-    for (const problem of REWORK_PROBLEMS) {
-      const label = createElement("label", {
-        className: "check rework-problem",
-        attrs: { title: problem.hint, "data-problem-id": problem.id },
-      });
-      const input = createElement("input", {
-        attrs: { id: "rework-problem-" + problem.id, type: "checkbox", value: problem.id },
-      });
-      input.checked = draft.problems.indexOf(problem.id) >= 0;
-      input.addEventListener("change", () => {
-        if (input.checked) {
-          if (draft.problems.indexOf(problem.id) === -1) {
-            draft.problems = draft.problems.concat([problem.id]);
-          }
-        } else {
-          draft.problems = draft.problems.filter((id) => id !== problem.id);
-        }
-        dirtyReworkDraft(draft);
-        updateReworkControls(shotId, draft);
-      });
-      label.append(input, document.createTextNode(" " + problem.label));
-      host.append(label);
-    }
-  }
-
-  /** 入口：把当前正看着的候选（candidate_id + sha256）交给返工表单；只改内存状态。 */
-  function openReworkPanel() {
-    const shotId = elements.reworkOpen.dataset.shotId || compareShotId;
-    const candidateId = elements.reworkOpen.dataset.candidateId || compareCandidateId;
-    if (!shotId || !candidateId || reworkInFlight) return;
-    const row = reworkShotRow(shotId, candidateId);
-    if (!row || !row.record) {
-      elements.compareStatus.textContent = "这条候选已经不在了，先重新选择候选。";
-      return;
-    }
-    reworkShotId = shotId;
-    reworkSource = {
-      shot_id: shotId, candidate_id: row.candidate_id, asset_sha256: row.asset_sha256,
-      version: row.version === null || row.version === undefined ? null : row.version,
-    };
-    const draft = reworkDraftOf(shotId, row);
-    const panel = elements.reworkPanel;
-    panel.hidden = false;
-    panel.dataset.reworkContract = REWORK_CONTRACT_VERSION;
-    panel.dataset.shotId = shotId;
-    panel.dataset.candidateId = row.candidate_id;
-    const basis = ["返工依据：候选 v" + (reworkSource.version === null ? "?" : reworkSource.version)];
-    if (row.top_finding) basis.push("先看：" + row.top_finding.title);
-    if (reworkConfirmationIsCurrent(shotId)) basis.push("这张图的返工确认仍然有效");
-    elements.reworkBasis.textContent = basis.join(" · ");
-    if (elements.reworkTech && elements.reworkTechBody) {
-      elements.reworkTech.hidden = false;
-      elements.reworkTechBody.textContent = "sha256 "
-        + String(reworkSource.asset_sha256).slice(0, 12) + "… · candidate " + row.candidate_id;
-    }
-    renderReworkProblems(shotId, draft);
-    if (elements.reworkDirection.value !== draft.direction) {
-      elements.reworkDirection.value = draft.direction;
-    }
-    renderReworkPreviewBox(draft);
-    elements.reworkStatus.hidden = true;
-    clearError(elements.reworkError);
-    updateReworkControls(shotId, draft);
-    const first = elements.reworkProblems.querySelector('input[type="checkbox"]');
-    if (first) first.focus();
-    panel.scrollIntoView({ block: "nearest" });
-  }
-
-  /** 收起返工区：清掉未确认的预览；草稿（问题与方向）按图保留。 */
-  function closeReworkPanel({ focusCandidate = false } = {}) {
-    const shotId = reworkShotId;
-    const candidateId = reworkSource ? reworkSource.candidate_id : null;
-    reworkShotId = null;
-    reworkSource = null;
-    elements.reworkPanel.hidden = true;
-    elements.reworkPreviewBox.hidden = true;
-    elements.reworkStatus.hidden = true;
-    clearError(elements.reworkError);
-    const draft = shotId ? reworkDrafts.get(shotId) : null;
-    if (draft) {
-      draft.preview = null;
-      draft.directive = null;
-    }
-    if (focusCandidate && shotId) focusCompareCandidate(shotId, candidateId);
-  }
-
-  /** 收起后把焦点还给原候选：比较区还在就回到候选页签，否则回到该图的比较入口。 */
-  function focusCompareCandidate(shotId, candidateId) {
-    const tab = candidateId ? elements.compareCandidates.querySelector(
-      '[role="tab"][data-candidate-id="' + candidateId + '"]') : null;
-    if (tab) {
-      tab.focus();
-      return;
-    }
-    focusCompareEntry(shotId);
-  }
-
-  /**
-   * 焦点只能落到用户当前看得见的比较入口。
-   * V2.UI.2 起阶段分屏：尝试行在「生成」、审核卡在「审核返工」，跨阶段的入口是隐藏的，
-   * 直接 focus 会被浏览器丢成 body。顺序：审核卡入口 → 尝试行入口 → 阶段条当前阶段 → 面板内关闭键。
-   */
-  function focusCompareEntry(shotId) {
-    const isVisible = (node) => Boolean(node && node.offsetParent !== null);
-    const reviewEntry = elements.reviewList
-      ? elements.reviewList.querySelector('.review-card[data-shot-id="' + shotId + '"] button')
-      : null;
-    const attemptEntry = elements.attemptList.querySelector(
-      'button[data-compare-action="' + shotId + '"]');
-    const stageButton = elements.stageNav.querySelector("[data-stage-nav].is-current");
-    const target = [reviewEntry, attemptEntry, stageButton, elements.compareClose]
-      .find(isVisible);
-    if (target) target.focus();
-  }
-
-  /** 按建议重填：问题与方向回到报告先看项的默认值，预览作废。 */
-  function resetReworkDraft() {
-    const shotId = reworkShotId;
-    if (!shotId || reworkInFlight) return;
-    const row = reworkShotRow(shotId, reworkSource ? reworkSource.candidate_id : null);
-    reworkDrafts.delete(shotId);
-    const draft = reworkDraftOf(shotId, row);
-    renderReworkProblems(shotId, draft);
-    if (elements.reworkDirection.value !== draft.direction) {
-      elements.reworkDirection.value = draft.direction;
-    }
-    elements.reworkPreviewBox.hidden = true;
-    elements.reworkStatus.hidden = true;
-    clearError(elements.reworkError);
-    updateReworkControls(shotId, draft);
-  }
-
-  function handleReworkCancel() {
-    if (reworkInFlight) return;
-    closeReworkPanel({ focusCandidate: true });
-  }
-
-  /** 预览：按当前问题与方向编译一次；只显示，不写记录。 */
-  async function handleReworkPreview() {
-    if (!projectId || !reworkShotId || reworkInFlight) return;
-    const shotId = reworkShotId;
-    clearError(elements.reworkError);
-    const row = reworkShotRow(shotId, reworkSource ? reworkSource.candidate_id : null);
-    if (!row || !row.record) {
-      showError(elements.reworkError, "返工依据已经不在，先回到比较区重新选择候选。");
-      return;
-    }
-    const draft = reworkDraftOf(shotId, row);
-    draft.direction = elements.reworkDirection.value;
-    reworkInFlight = true;
-    updateReworkControls(shotId, draft);
-    try {
-      const directive = buildReworkDirective({
-        directiveId: newActionId(),
-        shotId: shotId,
-        candidate: row.record,
-        report: row.report,
-        problems: draft.problems,
-        direction: draft.direction,
-        at: new Date().toISOString(),
-      });
-      const result = await compileShotPrompt(shotId, { rework: directive });
-      draft.directive = directive;
-      draft.preview = {
-        directive_id: directive.directive_id,
-        payload: result.payload,
-        references: result.references.length,
-        text: result.payload.compiled.text,
-      };
-      renderReworkPreviewBox(draft);
-      elements.reworkStatus.hidden = false;
-      elements.reworkStatus.textContent = "预览已就绪：确认并生成时会先把它保存为新版本，"
-        + "再只提交这一张图；预览本身没有写入任何记录。";
-    } catch (error) {
-      showError(elements.reworkError, (error && error.message)
-        ? error.message + "（预览未生成，旧版本与输入保留）"
-        : "预览没有生成，旧版本与输入保留。");
-    } finally {
-      reworkInFlight = false;
-      const current = reworkDrafts.get(shotId);
-      if (current) updateReworkControls(shotId, current);
-    }
-  }
-
-  /** 查看/编辑完整 Prompt：把这次预览落成版本，再把焦点交给这张图的人工编辑区。 */
-  async function handleReworkEdit() {
-    if (!projectId || !reworkShotId || reworkInFlight) return;
-    const shotId = reworkShotId;
-    const draft = reworkDrafts.get(shotId);
-    clearError(elements.reworkError);
-    if (!draft || !draft.preview) {
-      showError(elements.reworkError, "先预览返工 Prompt，再查看或编辑全文。");
-      return;
-    }
-    reworkInFlight = true;
-    updateReworkControls(shotId, draft);
-    try {
-      const latest = promptVersions.get(shotId) || null;
-      let version = latest ? latest.version : 0;
-      const fromPreview = Boolean(latest && latest.record.rework
-        && latest.record.rework.directive_id === draft.preview.directive_id);
-      if (!fromPreview) {
-        const saved = await savePromptPayload(shotId, draft.preview.payload);
-        version = saved.version;
-      }
-      renderPrompts();
-      renderConfirm();
-      const area = elements.promptList.querySelector(
-        '[data-shot-id="' + shotId + '"] textarea.prompt-edit-text');
-      elements.reworkStatus.hidden = false;
-      elements.reworkStatus.textContent = "已保存为 Prompt v" + version
-        + "；可以在下方「Prompt 预览与版本」里编辑全文并另存新版本。";
-      if (area) {
-        area.scrollIntoView({ block: "center" });
-        area.focus();
-      }
-    } catch (error) {
-      showError(elements.reworkError, (error && error.message) || "没有打开编辑区。");
-    } finally {
-      reworkInFlight = false;
-      const current = reworkDrafts.get(shotId);
-      if (current) updateReworkControls(shotId, current);
-    }
-  }
-
-  /**
-   * 确认并生成这张图：先确保这次返工已经落成 Prompt 版本（发送的永远是这张图最新的版本），
-   * 再写「只覆盖这张图」的确认记录、新建 Attempt 并核对一次结论；失败不影响旧候选。
-   */
-  async function handleReworkSubmit() {
-    if (!projectId || !reworkShotId || reworkInFlight) return;
-    const action = beginAction();
-    const shotId = reworkShotId;
-    const sourceCandidateId = reworkSource ? reworkSource.candidate_id : null;
-    const draft = reworkDrafts.get(shotId);
-    clearError(elements.reworkError);
-    if (!draft || !draft.preview || !draft.directive) {
-      showError(elements.reworkError, "先预览返工 Prompt，再确认生成。");
-      return;
-    }
-    reworkInFlight = true;
-    updateReworkControls(shotId, draft);
-    try {
-      const latest = promptVersions.get(shotId) || null;
-      let version = latest ? latest.version : 0;
-      const fromPreview = Boolean(latest && latest.record.rework
-        && latest.record.rework.directive_id === draft.preview.directive_id);
-      if (!fromPreview) {
-        const saved = await savePromptPayload(shotId, draft.preview.payload, action);
-        version = saved.version;
-      }
-      if (!action.alive()) return;
-      const sheet = buildScopedSheet([shotId]);
-      if (!sheet || !Array.isArray(sheet.shots) || sheet.shots.length === 0) {
-        throw new Error("这张图已经不在套图方案里，返工没有提交。");
-      }
-      if (!sheet.can_submit) throw new Error("这张图当前还有阻断，不能提交返工。");
-      const snapshot = confirmationSnapshot(sheet);
-      const hash = await promptHash(snapshot, { digest: sha256Hex });
-      const payload = buildConfirmationRecord({
-        sheet: sheet, hash: hash, confirmedAt: new Date().toISOString(),
-      });
-      const problems = checkConfirmationRecord(payload);
-      if (problems.length > 0) throw new Error(problems[0].message);
-      const savedConfirm = await repository.documents.save(action.projectId, {
-        kind: CONFIRM_KIND, documentId: reworkConfirmId(shotId), payload: payload,
-      });
-      if (action.alive()) {
-        reworkConfirmations.set(shotId, { payload: payload, version: savedConfirm.version });
-      }
-      const outcome = await handleSubmitAttempt(shotId, {
-        note: "单图返工：" + reworkSummaryText(draft.directive).slice(0, 120),
-        action,
-      });
-      if (outcome && outcome.skipped) {
-        throw new Error("返工提交被跳过（" + outcome.reason + "）。");
-      }
-      if (outcome && outcome.thrown) throw new Error(outcome.message);
-      await handleReconcileAttempt(shotId, { action });
-      if (!action.alive()) return;
-      const latestAttempt = generation.latestAttemptOf(shotId);
-      const state = latestAttempt ? latestAttempt.record.state : null;
-      draft.directive = null;
-      draft.preview = null;
-      reworkShotId = null;
-      reworkSource = null;
-      elements.reworkPanel.hidden = true;
-      elements.reworkPreviewBox.hidden = true;
-      elements.reworkStatus.hidden = true;
-      renderAttempts();
-      await deriveAndApplyState();
-      focusCompareCandidate(shotId, sourceCandidateId);
-      elements.compareStatus.textContent = "返工已提交（Prompt v" + version + " · "
-        + attemptStateLabel(state) + "）；旧候选保留，只有这张图新增了版本。";
-    } catch (error) {
-      if (action.alive()) {
-        showError(elements.reworkError,
-          (error && error.message) || "返工没有提交；旧候选与旧 Prompt 不受影响。");
-      }
-    } finally {
-      if (action.alive()) {
-        reworkInFlight = false;
-        const current = reworkDrafts.get(shotId);
-        if (current) updateReworkControls(shotId, current);
-      }
-    }
-  }
-
   function shotLabelOf(shotId) {
-    const summary = suitePlan ? suitePlanSummary(suitePlan, suiteContext()) : null;
+    const summary = inputs.suitePlan() ? suitePlanSummary(inputs.suitePlan(), inputs.suiteContext()) : null;
     const item = (summary ? summary.shots : []).find((shot) => shot.shot_id === shotId);
     return item ? item.label : shotId;
   }
@@ -3924,9 +1131,13 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
    * 渲染层本地化：domain 的门禁/报告文案里 shot_id 是机器标识，展示时替换成用户认得的图名。
    * 只改投影、不改 domain 数据（导出与存档仍保留 shot_id）；长 id 先替换，避免互为子串时误伤。
    */
+  /**
+   * @param {unknown} text
+   * @returns {string}
+   */
   function localizeShotIds(text) {
     let out = String(text == null ? "" : text);
-    const summary = suitePlan ? suitePlanSummary(suitePlan, suiteContext()) : null;
+    const summary = inputs.suitePlan() ? suitePlanSummary(inputs.suitePlan(), inputs.suiteContext()) : null;
     const shots = (summary ? summary.shots : []).slice().sort((left, right) =>
       String(right.shot_id).length - String(left.shot_id).length);
     for (const item of shots) {
@@ -3937,314 +1148,32 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
     return out;
   }
 
-  function renderBatch() {
-    if (!elements.batchBar) return;
-    const ready = understandingReady && Boolean(suitePlan);
-    elements.batchBar.hidden = !ready;
-    if (!ready) return;
-    const state = generation.deriveBatch();
-    const batchState = generation.batchStateReader();
-    const running = Boolean(batchState && batchState.active);
-    const confirmed = confirmationIsCurrent();
-    const progress = [batchProgressText(state)];
-    if (running) {
-      if (batchState.phase === "poll") {
-        progress.push("批次进行中：正在按任务编号核对上游进度");
-      } else {
-        progress.push(batchState.currentShotId
-          ? "批次进行中：正在提交「" + shotLabelOf(batchState.currentShotId) + "」"
-          : "批次进行中");
-      }
-    }
-    if (batchState && batchState.halted) {
-      progress.push("已停止新增提交（" + batchState.haltReason + "）；已提交的记录全部保留");
-    }
-    if (batchState && batchState.stopped) {
-      progress.push("已停止新增提交；已提交的记录全部保留");
-    }
-    elements.batchProgress.textContent = progress.join("；") + "。";
-
-    const hints = [];
-    if (!confirmed) hints.push("生成前确认缺失或已过期：先回到「生成前确认」重新确认。");
-    if (state.counts.blocked_no_prompt > 0) {
-      hints.push("有 " + state.counts.blocked_no_prompt + " 张还没编译 Prompt。");
-    }
-    if (state.review_queue.length > 0) {
-      hints.push("有 " + state.review_queue.length
-        + " 张没有任务编号、无法核对：系统不会自动重提，需要显式新建 action。");
-    }
-    if (state.fetch_queue.length > 0) {
-      hints.push("有 " + state.fetch_queue.length
-        + " 张已生成但候选还没保存到本地：可以点「保存候选图片」逐张保存，或点「保存候选」一次保存剩余。");
-    }
-    if (batchState && batchState.fetchBlocked) {
-      hints.push("候选保存受阻：" + batchState.fetchBlocked);
-    }
-    elements.batchHint.textContent = hints.join(" ");
-    elements.batchHint.hidden = hints.length === 0;
-
-    elements.batchRun.hidden = running;
-    const queueReady = state.queue.length > 0;
-    const fetchOnly = !queueReady && state.fetch_queue.length > 0;
-    elements.batchRun.disabled = running || (queueReady ? !confirmed : !fetchOnly);
-    if (queueReady) {
-      elements.batchRun.textContent = state.started
-        ? "继续生成剩余（" + state.queue.length + " 张）"
-        : "整套生成（" + state.queue.length + " 张）";
-    } else if (fetchOnly) {
-      elements.batchRun.textContent = "保存候选（" + state.fetch_queue.length + " 张）";
-    } else if (state.counts.total > 0 && state.all_succeeded) {
-      elements.batchRun.textContent = "已全部生成";
-    } else {
-      elements.batchRun.textContent = "没有待生成的图";
-    }
-    elements.batchStop.hidden = !running;
-    elements.batchReconcile.hidden = state.reconcile_queue.length === 0;
-    elements.batchReconcile.disabled = running || state.reconcile_queue.length === 0;
-    elements.batchReconcile.textContent = "核对进行中（" + state.reconcile_queue.length + " 张）";
-    elements.batchRetry.hidden = state.retry_queue.length === 0;
-    elements.batchRetry.disabled = running || !confirmed || state.retry_queue.length === 0;
-    elements.batchRetry.textContent = "重试失败（" + state.retry_queue.length + " 张）";
-  }
-
-  /* ----------------------------------------------- 人工选择与失效（V2.6.1） */
-
-  function selectionEntryOf(shotId) {
-    return selections.get(shotId) || null;
-  }
-
-  function candidatePayloadsOf(shotId) {
-    return generation.candidateChainOf(shotId).map((entry) => entry.record);
-  }
-
-  function selectionStateOf(shotId) {
-    const entry = selectionEntryOf(shotId);
-    return deriveSelectionState(entry ? entry.record : null, candidatePayloadsOf(shotId));
-  }
-
-  /** 某张图当前采用的候选（含过期标记）：只读投影，供比较列表做徽标。 */
-  function adoptedMarkOf(shotId) {
-    const entry = selectionEntryOf(shotId);
-    if (!entry || !entry.record || entry.record.action !== "select") return null;
-    return { candidate_id: entry.record.candidate_id, state: selectionStateOf(shotId) };
-  }
-
-  /** SelectionSet 投影：V2.5.5 / V2.6.2 的唯一输入集合；这里只报告数量，不拦导出。 */
-  function selectionSetNow() {
-    const summaries = suitePlan ? suitePlanSummary(suitePlan, suiteContext()).shots : [];
-    const shots = summaries.map((shot) => ({
-      shot_id: shot.shot_id, required: shot.required === true,
-    }));
-    const selectionsByShot = {};
-    for (const [shotId, entry] of selections) selectionsByShot[shotId] = entry.record;
-    const candidatesByShotId = {};
-    for (const shot of shots) candidatesByShotId[shot.shot_id] = candidatePayloadsOf(shot.shot_id);
-    return buildSelectionSet({
-      shots: shots, selections: selectionsByShot, candidatesByShotId: candidatesByShotId,
-      at: new Date().toISOString(),
-    });
-  }
-
-  function renderSelectionProgress() {
-    if (!suitePlan) {
-      elements.adoptProgress.textContent = "";
-      return;
-    }
-    const set = selectionSetNow();
-    elements.adoptProgress.textContent = set.summary.required_total > 0
-      ? selectionSetText(set) + "采用只引用候选（candidate_id + sha256），不复制图片。"
-      : "";
-  }
-
-  /** 比较区入口的状态：只投影候选身份，不写任何记录（写记录在相邻的独立采用区）。 */
-  function updateAdoptEntry(shot, row) {
-    const available = Boolean(shot && row && row.record && row.asset_sha256);
-    elements.adoptOpen.disabled = !available;
-    if (available) {
-      elements.adoptOpen.dataset.shotId = shot.shot_id;
-      elements.adoptOpen.dataset.candidateId = row.candidate_id;
-      elements.adoptOpen.dataset.candidateSha256 = row.asset_sha256;
-    } else {
-      delete elements.adoptOpen.dataset.shotId;
-      delete elements.adoptOpen.dataset.candidateId;
-      delete elements.adoptOpen.dataset.candidateSha256;
-    }
-  }
-
-  /** 采用目标：把「正看着的候选」解析成候选记录 + 文档版本 + 当前审核报告。 */
-  function adoptSourceOf(shotId, candidateId) {
-    for (const entry of generation.candidateChainOf(shotId)) {
-      if (entry.record && entry.record.candidate_id === candidateId) {
-        const stored = generation.reviewReportOf(candidateId);
-        const report = stored && reviewIsCurrent(stored.report, entry.record)
-          ? stored.report : null;
-        return { candidate: entry.record, version: entry.version, report: report };
-      }
-    }
-    return null;
-  }
-
-  function selectionTextOf(shotId) {
-    const entry = selectionEntryOf(shotId);
-    return selectionSummaryText(entry ? entry.record : null, selectionStateOf(shotId));
-  }
-
-  function renderAdoptPanel() {
-    if (!adoptShotId || !adoptSource) return;
-    const shotId = adoptShotId;
-    const source = adoptSource;
-    const entry = selectionEntryOf(shotId);
-    const state = selectionStateOf(shotId);
-    const summary = suitePlan ? suitePlanSummary(suitePlan, suiteContext()).shots
-      .find((item) => item.shot_id === shotId) : null;
-    elements.adoptBasis.textContent = shotLabelOf(shotId) + " · 当前" + selectionStateLabel(state)
-      + " · 候选 v" + source.version;
-    if (elements.adoptTechBody) {
-      elements.adoptTechBody.textContent = "sha256 "
-        + String(source.candidate.asset_sha256).slice(0, 12) + "… · candidate "
-        + String(source.candidate.candidate_id);
-    }
-    if (elements.adoptTech) elements.adoptTech.hidden = false;
-    elements.adoptCurrent.textContent = selectionTextOf(shotId);
-    elements.adoptFingerprint.textContent = source.report
-      ? "将绑定当前审核报告：" + reviewSummaryText(source.report)
-        + "（审核合同 " + String(source.report.review_contract_version) + "）"
-      : "这条候选还没有当前审核报告：采用会明确记下「没有报告」，导出前仍需补一份当前报告。";
-    const already = Boolean(entry && entry.record && entry.record.action === "select"
-      && entry.record.candidate_id === source.candidate.candidate_id && state === "current");
-    elements.adoptSubmit.disabled = adoptInFlight || already;
-    elements.adoptSubmit.textContent = already ? "已采用这条候选" : "采用这条候选";
-    elements.adoptClear.disabled = adoptInFlight
-      || !(entry && entry.record && entry.record.action === "select");
-    elements.adoptReadiness.textContent = summary && summary.required
-      ? "这张图是必需图：导出前必须有当前有效的选择。"
-      : "这张图是可选图：采用后仍可改选或取消。";
-  }
-
-  function openAdoptPanel() {
-    const shotId = elements.adoptOpen.dataset.shotId || null;
-    const candidateId = elements.adoptOpen.dataset.candidateId || null;
-    if (!shotId || !candidateId) return;
-    const source = adoptSourceOf(shotId, candidateId);
-    if (!source) {
-      elements.compareStatus.textContent = "这条候选已经不在本地候选链里，无法采用。";
-      return;
-    }
-    adoptShotId = shotId;
-    adoptCandidateId = candidateId;
-    adoptSource = source;
-    elements.adoptPanel.hidden = false;
-    elements.adoptPanel.dataset.adoptContract = SELECTION_CONTRACT_VERSION;
-    elements.adoptPanel.dataset.shotId = shotId;
-    elements.adoptPanel.dataset.candidateId = candidateId;
-    elements.adoptStatus.textContent = "";
-    elements.adoptStatus.hidden = true;
-    clearError(elements.adoptError);
-    renderAdoptPanel();
-    const target = elements.adoptSubmit.disabled ? elements.adoptCancel : elements.adoptSubmit;
+  /**
+   * 焦点只能落到用户当前看得见的比较入口。
+   * V2.UI.2 起阶段分屏：尝试行在「生成」、审核卡在「审核返工」，跨阶段的入口是隐藏的，
+   * 直接 focus 会被浏览器丢成 body。顺序：审核卡入口 → 尝试行入口 → 阶段条当前阶段 → 面板内关闭键。
+   */
+  /** 收起后把焦点还给原候选：比较区还在就回到候选页签，否则回到该图的比较入口。
+   * @param {string|null} shotId
+   * @returns {void}
+   */
+  function focusCompareEntry(shotId) {
+    const isVisible = (/** @type {HTMLElement|null|undefined} */ node) => Boolean(node && node.offsetParent !== null);
+    const reviewEntry = elements.reviewList
+      ? /** @type {HTMLButtonElement|null} */ (elements.reviewList.querySelector('.review-card[data-shot-id="' + shotId + '"] button'))
+      : null;
+    const attemptEntry = /** @type {HTMLButtonElement|null} */ (elements.attemptList.querySelector(
+      'button[data-compare-action="' + shotId + '"]'));
+    const stageButton = /** @type {HTMLButtonElement|null} */ (elements.stageNav.querySelector("[data-stage-nav].is-current"));
+    const target = [reviewEntry, attemptEntry, stageButton, elements.compareClose]
+      .find(isVisible);
     if (target) target.focus();
   }
 
-  function closeAdoptPanel({ focusCandidate = false } = {}) {
-    const shotId = adoptShotId;
-    const candidateId = adoptCandidateId;
-    adoptShotId = null;
-    adoptCandidateId = null;
-    adoptSource = null;
-    elements.adoptPanel.hidden = true;
-    elements.adoptStatus.textContent = "";
-    elements.adoptStatus.hidden = true;
-    clearError(elements.adoptError);
-    if (focusCandidate && shotId && candidateId) focusCompareCandidate(shotId, candidateId);
-  }
-
-  /** 写一条选择记录：select = 采用 / 改选；clear = 取消采用。失败时不改内存里的旧选择。 */
-  async function writeSelectionRecord(action) {
-    if (!projectId || !adoptShotId || !adoptSource) return null;
-    const writeAction = beginAction();
-    const shotId = adoptShotId;
-    const source = adoptSource;
-    const record = buildSelectionRecord({
-      selectionId: newActionId(),
-      action: action,
-      shotId: shotId,
-      candidate: action === "select" ? source.candidate : null,
-      candidateVersion: action === "select" ? source.version : null,
-      report: action === "select" ? source.report : null,
-      at: new Date().toISOString(),
-    });
-    assertSelectionRecord(record);
-    const saved = await repository.documents.save(writeAction.projectId, {
-      kind: SELECTION_KIND, documentId: shotId, payload: record,
-    });
-    if (writeAction.alive()) {
-      const previous = selectionEntryOf(shotId);
-      selections.set(shotId, { record: record, version: saved.version });
-      return { record: record, version: saved.version, previous: previous };
-    }
-    // 已过期动作：记录已按冻结项目落库；不提供内存结果给界面。
-    return null;
-  }
-
-  async function handleAdoptSubmit() {
-    if (adoptInFlight) return;
-    const action = beginAction();
-    adoptInFlight = true;
-    elements.adoptStatus.textContent = "";
-    elements.adoptStatus.hidden = true;
-    clearError(elements.adoptError);
-    renderAdoptPanel();
-    try {
-      const source = adoptSource;
-      const result = await writeSelectionRecord("select");
-      if (!result || !action.alive()) return;
-      const replaced = result.previous && result.previous.record
-        && result.previous.record.action === "select" ? result.previous.record : null;
-      elements.adoptStatus.hidden = false;
-      elements.adoptStatus.textContent = "已采用候选 v" + (source ? source.version : "?")
-        + "（选择记录 v" + result.version + "）。"
-        + (replaced ? "上一次选择保留在历史里。" : "")
-        + "改选或取消采用只会追加新记录。";
-    } catch (error) {
-      if (action.alive()) {
-        showError(elements.adoptError, (error && error.message) || "选择没有保存，请重试。");
-      }
-    } finally {
-      if (action.alive()) {
-        adoptInFlight = false;
-        renderAttempts();
-        renderAdoptPanel();
-      }
-    }
-  }
-
-  async function handleAdoptClear() {
-    if (adoptInFlight) return;
-    const action = beginAction();
-    adoptInFlight = true;
-    elements.adoptStatus.textContent = "";
-    elements.adoptStatus.hidden = true;
-    clearError(elements.adoptError);
-    renderAdoptPanel();
-    try {
-      const result = await writeSelectionRecord("clear");
-      if (!result || !action.alive()) return;
-      elements.adoptStatus.hidden = false;
-      elements.adoptStatus.textContent = "已取消采用（选择记录 v" + result.version
-        + "）；历史保留，可以重新采用任一候选。";
-    } catch (error) {
-      if (action.alive()) {
-        showError(elements.adoptError, (error && error.message) || "取消采用没有保存，请重试。");
-      }
-    } finally {
-      if (action.alive()) {
-        adoptInFlight = false;
-        renderAttempts();
-        renderAdoptPanel();
-      }
-    }
-  }
-
+  /**
+   * @param {StoredProjectRecord|null} projectRecord
+   * @returns {void}
+   */
   function renderHeaderText(projectRecord) {
     const state = projectRecord ? projectRecord.state : null;
     if (state === "READY_TO_GENERATE") {
@@ -4256,24 +1185,23 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
     }
   }
 
+  /**
+   * @returns {Promise<void>}
+   */
   async function deriveAndApplyState() {
     const action = beginAction();
     if (!action.projectId) return;
-    understandingBlocking = [];
-    understandingError = null;
-    understandingReady = false;
-    try {
-      const brief = buildProductBrief(slotEntries());
-      const readiness = briefReadiness(brief);
-      understandingReady = readiness.ready;
-      understandingBlocking = readiness.blocking;
-    } catch (error) {
-      understandingError = error;
-    }
-    const state = slots.size === 0
-      ? (intakeReadiness(intake).ready ? "INTAKE_READY" : "EMPTY")
+    await inputs.deriveState();
+    const understood = inputs.understanding();
+    understandingBlocking = understood.blocking;
+    understandingError = understood.error;
+    understandingReady = understood.ready;
+    const entryCount = inputs.slotEntries().length;
+    const draftPayload = inputs.intakeSnapshot();
+    const state = entryCount === 0
+      ? (intakeReadiness(draftPayload).ready ? "INTAKE_READY" : "EMPTY")
       : (understandingReady
-        ? (confirmationIsCurrent() ? "READY_TO_GENERATE" : "PLAN_REVIEW")
+        ? (generationView?.confirmationIsCurrent() ? "READY_TO_GENERATE" : "PLAN_REVIEW")
         : "UNDERSTANDING_REVIEW");
     if (project && project.state !== state) {
       try {
@@ -4285,7 +1213,7 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
         }
       } catch (error) {
         if (action.alive()) {
-          showError(elements.error, (error && error.message) || "状态写回失败。");
+          showError(elements.error, errorMessageOf(error, "状态写回失败。"));
         }
       }
     }
@@ -4294,20 +1222,26 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
 
   /* ---------------------------------------------------------- 六阶段投影与交付门禁（V2.UI.2） */
 
+  /**
+   * @returns {import("./domain/type-contracts.js").SuitePlanSummary["shots"]}
+   */
   function shotSummariesNow() {
-    return suitePlan ? suitePlanSummary(suitePlan, suiteContext()).shots : [];
+    return inputs.suitePlan() ? suitePlanSummary(inputs.suitePlan(), inputs.suiteContext()).shots : [];
   }
 
   /**
    * 每个阶段的完成 / 可用 / 摘要只在这里派生一次；外壳只负责画出来。
    * available=false 表示阶段条上的入口不可用（前置未完成），不是错误。
    */
+  /**
+   * @returns {Record<string, {status?: string, summary?: string, hint?: string, available?: boolean}>}
+   */
   function computeStageStates() {
     const shots = shotSummariesNow();
-    const entries = slotEntries();
+    const entries = inputs.slotEntries();
     const confirmed = entries.filter((item) => item.slot.status === "confirmed").length;
     const unknownSlots = entries.filter((item) => item.slot.status === "unknown").length;
-    const hasSlots = slots.size > 0;
+    const hasSlots = inputs.slotEntries().length > 0;
     const withCandidate = shots.filter((shot) =>
       Boolean(generation.latestStoredCandidateOf(shot.shot_id)));
     const settled = shots.filter((shot) => {
@@ -4320,10 +1254,10 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
       return Boolean(latest && latest.record.state === ATTEMPT_STATES.unknown);
     });
     const requiredShots = shots.filter((shot) => shot.required === true);
-    const requiredSelected = requiredShots.filter((shot) => selectionStateOf(shot.shot_id) === "current");
-    const selectedShots = shots.filter((shot) => selectionStateOf(shot.shot_id) === "current");
+    const requiredSelected = requiredShots.filter((shot) => (compareView?.selectionStateOf(shot.shot_id) ?? "none") === "current");
+    const selectedShots = shots.filter((shot) => (compareView?.selectionStateOf(shot.shot_id) ?? "none") === "current");
     const projectName = project ? project.name : "";
-    const referenceCount = Array.isArray(intake.references) ? intake.references.length : 0;
+    const referenceCount = inputs.references().length;
     const intakeSummary = [projectName, referenceCount ? "参考图 " + referenceCount + " 张" : ""]
       .filter(Boolean).join(" · ");
 
@@ -4331,13 +1265,13 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
       intake: {
         available: true,
         status: hasSlots ? "complete" : "current",
-        hint: hasSlots ? "" : "上传参考图、填写商品资料，然后点“分析商品资料”。",
+        hint: hasSlots ? "" : "上传参考图，自己填写商品事实；AI 理解是可选辅助。",
         summary: hasSlots ? intakeSummary : "",
       },
       understand: {
         available: hasSlots,
         status: understandingReady ? "complete" : "current",
-        hint: hasSlots ? "" : "先在「资料」里分析商品资料。",
+        hint: hasSlots ? "" : "可直接填写并确认核心事实，不需要先调用模型。",
         summary: understandingReady
           ? "已确认 " + confirmed + " 项" + (unknownSlots ? " · 未知 " + unknownSlots + " 项" : "")
           : "",
@@ -4378,6 +1312,10 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
   }
 
   /** 默认停靠：最靠后的“可用且未完成”的阶段；全部完成则停在交付。 */
+  /** 默认停靠：最靠后的“可用且未完成”的阶段；全部完成则停在交付。
+   * @param {Record<string, {status?: string, summary?: string, hint?: string, available?: boolean}>|null} [states]
+   * @returns {string}
+   */
   function defaultStageId(states = null) {
     const map = states || computeStageStates();
     for (const id of ["intake", "understand", "plan", "generate", "review", "deliver"]) {
@@ -4387,25 +1325,33 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
   }
 
   /** 阶段底部的推进按钮：禁用时说明缺什么；不改变任何数据。 */
+  /** 阶段底部的推进按钮：禁用时说明缺什么；不改变任何数据。
+   * @param {Record<string, {status?: string, summary?: string, hint?: string, available?: boolean}>} states
+   * @returns {void}
+   */
   function renderStageFoot(states) {
     const shots = shotSummariesNow();
-    elements.stageNextUnderstand.disabled = !understandingReady;
+    elements.stageNextUnderstand.disabled = false;
     elements.stageNextUnderstandNote.textContent = understandingReady
-      ? "" : "关键事实全部确认后才能进入方案。";
-    elements.stageNextPlan.disabled = shots.length === 0;
+      ? "" : "可以先规划图片任务；缺失的核心事实只阻断生成。";
+    elements.stageNextPlan.disabled = false;
     elements.stageNextPlanNote.textContent = shots.length
       ? "" : "先生成或添加至少一张图片。";
     const candidates = states && states.review ? states.review.available : false;
-    elements.stageNextReview.disabled = !candidates;
+    elements.stageNextReview.disabled = false;
     elements.stageNextReviewNote.textContent = candidates ? "" : "先产生至少一张候选。";
     const requiredShots = shots.filter((shot) => shot.required === true);
-    const pending = requiredShots.filter((shot) => selectionStateOf(shot.shot_id) !== "current");
-    elements.stageNextDeliver.disabled = pending.length > 0 || shots.length === 0;
+    const pending = requiredShots.filter((shot) => (compareView?.selectionStateOf(shot.shot_id) ?? "none") !== "current");
+    elements.stageNextDeliver.disabled = false;
     elements.stageNextDeliverNote.textContent = shots.length === 0
       ? "先生成候选。"
       : (pending.length ? "还有 " + pending.length + " 张必需图没有采用候选。" : "");
   }
 
+  /**
+   * @param {{reset?: boolean}} [options]
+   * @returns {Record<string, {status?: string, summary?: string, hint?: string, available?: boolean}>}
+   */
   function refreshStageShell({ reset = false } = {}) {
     const states = computeStageStates();
     if (reset) stageShell.select(defaultStageId(states));
@@ -4418,1140 +1364,102 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
    * 业务状态变化后的统一收尾：派生投影（审核列表 / 交付门禁）与阶段外壳一起刷新。
    * 所有会改变套图、Attempt、候选与采用状态的处理函数都经 renderAttempts 落到这里，
    * 避免阶段条与阶段脚注停留在旧状态（例如生成推荐方案后仍显示「先生成或添加至少一张图片」）。
+   * @returns {Record<string, {status?: string, summary?: string, hint?: string, available?: boolean}>}
    */
   function refreshDerived() {
-    renderReviewList();
-    renderSuitePanel();
-    requestDeliveryGateRefresh();
+    compareView?.renderReviewList();
+    deliveryView?.render();
+    deliveryView?.requestGateRefresh();
     return refreshStageShell();
   }
 
-  /**
-   * 审核阶段的逐图入口：图片 + 候选数 + 采用状态 + 逐图检查摘要 + 比较/返工/采用。
-   *
-   * 卡片右栏此前只有图名与徽标，真实链路走查（2026-10-01 自审）里一大片空白——
-   * 人只能点开比较面板才知道这张图「查出了什么」。这里复读同一份当前报告
-   * （compareInventory 已按 reviewIsCurrent 过滤），把状态、机器结论与「先看哪一条」
-   * 摆到卡片上；不新增第二套规则，也不改变任何选择语义。
-   */
-  function renderReviewList() {
-    if (!elements.reviewList) return;
-    elements.reviewList.innerHTML = "";
-    const shots = shotSummariesNow();
-    const reviewable = shots.filter((shot) => generation.candidateChainOf(shot.shot_id).length > 0);
-    elements.reviewEmpty.hidden = reviewable.length > 0;
-    const inventory = reviewable.length ? compareInventory() : { rowsByShotId: {} };
-    for (const shot of reviewable) {
-      const chain = generation.candidateChainOf(shot.shot_id);
-      const stored = generation.latestStoredCandidateOf(shot.shot_id);
-      const state = selectionStateOf(shot.shot_id);
-      const rows = inventory.rowsByShotId[shot.shot_id] || [];
-      const shownRow = stored
-        ? (rows.find((row) => row.candidate_id === stored.record.candidate_id) || null)
-        : null;
-      const card = createElement("div", {
-        className: "review-card",
-        attrs: { "data-shot-id": shot.shot_id, "data-selection-state": state },
-      });
-      const head = createElement("div", { className: "review-card-head" });
-      head.append(createElement("span", { className: "name", text: shot.label }));
-      head.append(createElement("span", {
-        className: "badge " + (state === "current" ? "is-adopted" : (state === "stale" ? "is-review-warn" : "is-empty")),
-        text: state === "current" ? "已采用" : (state === "stale" ? "已采用（已过期）" : "未采用"),
-      }));
-      head.append(createElement("span", { className: "meta", text: "候选 " + chain.length + " 个" }));
-      card.append(head);
-      if (stored) {
-        const candidate = stored.record;
-        const preview = createElement("div", { className: "review-preview" });
-        const img = createElement("img", { attrs: { alt: shot.label + " 的最新候选", loading: "lazy" } });
-        preview.append(img);
-        card.append(preview);
-        ensurePreviewUrl(shot.shot_id, stored.record.action_id, candidate.asset_sha256)
-          .then((url) => { if (url && img.isConnected) img.src = url; })
-          .catch(() => {});
-      } else {
-        card.append(createElement("p", {
-          className: "meta", text: "最新一次生成还没有保存到本地的候选；到「生成」里核对或重试。",
-        }));
-      }
-      const check = createElement("div", {
-        className: "review-card-check",
-        attrs: {
-          "data-shot-id": shot.shot_id,
-          "data-review-state": shownRow ? shownRow.review_state : "unchecked",
-          "data-candidate-id": shownRow ? shownRow.candidate_id : "",
-        },
-      });
-      if (shownRow) {
-        check.append(createElement("span", {
-          className: "badge " + (COMPARE_STATE_BADGE[shownRow.review_state] || "is-review-unchecked"),
-          text: compareStateLabel(shownRow),
-        }));
-        if (shownRow.report) {
-          check.append(createElement("span", {
-            className: "meta review-check-summary", text: reviewSummaryText(shownRow.report),
-          }));
-        }
-        check.append(createElement("p", {
-          className: "meta review-check-headline", text: compareRowHeadline(shownRow),
-        }));
-      } else {
-        check.append(createElement("span", {
-          className: "badge is-review-unchecked",
-          text: COMPARE_STATE_TEXT.unchecked,
-        }));
-        check.append(createElement("p", {
-          className: "meta", text: "这张图还没有当前审核报告；打开「比较候选」可查看或补建。",
-        }));
-      }
-      card.append(check);
-      const actions = createElement("div", { className: "review-card-actions" });
-      const compareButton = createElement("button", {
-        text: "比较候选（" + chain.length + "）", attrs: { type: "button" },
-      });
-      compareButton.addEventListener("click", () => { openCompare(shot.shot_id, { focus: true }); });
-      actions.append(compareButton);
-      const reworkButton = createElement("button", { text: "按问题返工", attrs: { type: "button" } });
-      reworkButton.disabled = !stored;
-      reworkButton.addEventListener("click", () => {
-        openCompare(shot.shot_id, {});
-        openReworkPanel();
-      });
-      actions.append(reworkButton);
-      // 已采用就不再邀请重复采用（与 #adopt-submit 的「已采用这条候选」同一语义）；
-      // 换用其他候选走「比较候选」，因此这里保持禁用而不是换成第二个主操作。
-      const alreadyAdopted = state === "current";
-      const adoptButton = createElement("button", {
-        text: alreadyAdopted ? "已采用" : "采用候选", attrs: { type: "button" },
-      });
-      if (!alreadyAdopted) adoptButton.className = "primary";
-      if (alreadyAdopted) adoptButton.title = "已采用这条候选；换用其他候选请点「比较候选」。";
-      adoptButton.disabled = !stored || alreadyAdopted;
-      adoptButton.addEventListener("click", () => {
-        openCompare(shot.shot_id, {});
-        openAdoptPanel();
-      });
-      actions.append(adoptButton);
-      card.append(actions);
-      elements.reviewList.append(card);
-    }
-  }
-
-  /* ------------------------------------------------------- 整套一致性（V2.5.5） */
-
-  /** 已确认事实的最小投影（单图复核与整套复核共用，唯一来源）。 */
-  function confirmedFactPayloads() {
-    const facts = [];
-    for (const entry of slots.values()) {
-      const slot = entry && entry.slot ? entry.slot : null;
-      if (!slot || slot.status !== "confirmed") continue;
-      const value = Array.isArray(slot.value) ? slot.value.join("；") : String(slot.value);
-      facts.push({
-        label: String(slot.label || slot.slot_id).slice(0, 60),
-        value: value.slice(0, 200),
-      });
-      if (facts.length >= 20) break;
-    }
-    return facts;
-  }
-
-  function suiteReportEntry() {
-    return suiteReports.get(SUITE_REVIEW_DOCUMENT_ID) || null;
-  }
-
-  function suiteShotSpecsById() {
-    const byId = {};
-    for (const [shotId, entry] of shotSpecs) {
-      if (entry && entry.spec) byId[shotId] = entry.spec;
-    }
-    return byId;
-  }
-
-  function suiteReportsByCandidate() {
-    const map = {};
-    for (const entry of generation.reviewReportsNow()) {
-      const candidateId = entry[0];
-      const value = entry[1];
-      if (value && value.report) map[candidateId] = value.report;
-    }
-    return map;
-  }
-
-  function suiteSelectionMap() {
-    const map = {};
-    for (const [shotId, entry] of selections) {
-      if (entry && entry.record && entry.record.action === "select") {
-        map[shotId] = entry.record.candidate_id;
-      }
-    }
-    return map;
-  }
-
-  function suiteCandidatesByShot() {
-    const map = {};
-    for (const shot of shotSummariesNow()) map[shot.shot_id] = candidatePayloadsOf(shot.shot_id);
-    return map;
-  }
-
-  function suiteAttemptsByShot() {
-    const map = {};
-    for (const [shotId, chain] of generation.attemptChainsNow()) {
-      map[shotId] = chain.map((item) => item.record);
-    }
-    return map;
-  }
-
-  function suiteFactsById() {
-    const map = {};
-    for (const [slotId, entry] of slots) {
-      if (entry && entry.slot) map[slotId] = entry.slot;
-    }
-    return map;
-  }
-
-  /** 当前选择与输入的指纹（报告当前性唯一依据；与 domain 的规范化逐字一致）。 */
-  function suiteFingerprintsNow() {
-    const selectionSet = selectionSetNow();
-    const selectionFingerprint = selectionFingerprintOf(selectionSet);
-    const inputsFingerprint = inputsFingerprintOf({
-      selectionFingerprint: selectionFingerprint,
-      suitePlan: suitePlan,
-      styleSpec: styleSpec,
-      shotSpecsById: suiteShotSpecsById(),
-      reportsByCandidate: suiteReportsByCandidate(),
-    });
-    return { selectionSet, selectionFingerprint, inputsFingerprint };
-  }
-
-  function suiteStyleSummaryText() {
-    if (!styleSpec) return "";
-    const parts = [];
-    if (styleSpec.background) parts.push("背景：" + styleSpec.background);
-    if (styleSpec.lighting) parts.push("光线：" + styleSpec.lighting);
-    if (styleSpec.color_tone) parts.push("色调：" + styleSpec.color_tone);
-    if (styleSpec.composition) parts.push("构图：" + styleSpec.composition);
-    if (Array.isArray(styleSpec.avoid) && styleSpec.avoid.length) {
-      parts.push("避免：" + styleSpec.avoid.join("、"));
-    }
-    return parts.join("；").slice(0, 500);
-  }
 
   /**
-   * 送审集合与请求体：图片字节只从 IndexedDB 读；任何一张缺字节/超上限都不送半份资料。
-   * 返回 {request, requested, submitted, shaByShot, reason}；reason 非空时 request 为 null。
+   * @returns {void}
    */
-  async function suiteVlmRequestFor(selectionMap, pid = projectId) {
-    const requested = [];
-    for (const shot of shotSummariesNow()) {
-      if (selectionStateOf(shot.shot_id) === "current") requested.push(shot.shot_id);
-    }
-    if (requested.length === 0) {
-      return { reason: "no_selection", requested: [], submitted: [], shaByShot: {}, request: null };
-    }
-    if (requested.length > SUITE_MAX_IMAGES) {
-      return { reason: "over_limit", requested: requested, submitted: [], shaByShot: {}, request: null };
-    }
-    const images = [];
-    const submitted = [];
-    const shaByShot = {};
-    const planShots = suitePlan && Array.isArray(suitePlan.shots) ? suitePlan.shots : [];
-    for (const shotId of requested) {
-      const candidateId = selectionMap[shotId];
-      const chain = candidatePayloadsOf(shotId);
-      const candidate = chain.find((item) => item && item.candidate_id === candidateId) || null;
-      if (!candidate) {
-        return { reason: "missing_bytes", requested: requested, submitted: [], shaByShot: {}, request: null };
-      }
-      let asset = null;
-      try {
-        asset = await repository.assets.get(pid, candidate.asset_sha256);
-      } catch (error) {
-        asset = null;
-      }
-      if (!asset || !(asset.blob instanceof Blob)) {
-        return { reason: "missing_bytes", requested: requested, submitted: [], shaByShot: {}, request: null };
-      }
-      if (asset.blob.size > MAX_SUITE_IMAGE_BYTES) {
-        return { reason: "image_too_large", requested: requested, submitted: [], shaByShot: {}, request: null };
-      }
-      const shot = planShots.find((item) => item && item.shot_id === shotId) || null;
-      const specEntry = shotSpecs.get(shotId) || null;
-      const spec = specEntry && specEntry.spec
-        ? specEntry.spec : (shot ? emptyShotSpecFromShot(shot) : null);
-      submitted.push(shotId);
-      shaByShot[shotId] = candidate.asset_sha256;
-      images.push({
-        shot_id: shotId,
-        title: String((shot && (shot.label || shot.role_label || shot.role_id)) || "图片任务").slice(0, 200),
-        purpose: spec ? String(spec.purpose || "").slice(0, 500) : "",
-        keep_items: spec ? spec.keep.slice(0, 8) : [],
-        allow_changes: spec ? spec.change_allowed.slice(0, 8) : [],
-        image: {
-          media_type: candidate.media_type || "image/png",
-          sha256: candidate.asset_sha256,
-          data_base64: await blobToBase64(asset.blob),
-        },
-      });
-    }
-    return {
-      reason: null, requested: requested, submitted: submitted, shaByShot: shaByShot,
-      request: {
-        images: images,
-        platform: ANALYZE_PLATFORM,
-        locale: ANALYZE_LOCALE,
-        style_summary: suiteStyleSummaryText(),
-        product_facts: confirmedFactPayloads(),
-      },
-    };
-  }
-
-  /**
-   * 运行一次整套检查：确定性（suite.* + 复用 export.*）无论如何都跑；视觉层最多 8 张，
-   * 失败只落 Unknown。报告以 suite_review 文档写入 IndexedDB（append-only，每条版本一记录）。
-   */
-  async function runSuiteReview() {
-    const action = beginAction();
-    if (!action.projectId) return { skipped: true, reason: "no_project" };
-    if (suiteRunInFlight) return { skipped: true, reason: "in_flight" };
-    if (!suitePlan) return { failed: true, reason: "no_plan", message: "还没有套图方案。" };
-    suiteRunInFlight = true;
-    clearError(elements.suiteReviewError);
-    renderSuitePanel();
-    try {
-      const at = new Date().toISOString();
-      const fingerprints = suiteFingerprintsNow();
-      const selectionMap = suiteSelectionMap();
-      const prepared = await suiteVlmRequestFor(selectionMap, action.projectId);
-      if (!action.alive()) return { skipped: true, reason: "stale_session" };
-      let envelope = null;
-      let reason = prepared.reason;
-      if (prepared.request) {
-        try {
-          const response = await fetch(SUITE_REVIEW_PATH, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(prepared.request),
-          });
-          envelope = await response.json().catch(() => null);
-        } catch (error) {
-          envelope = null;
-        }
-        reason = !envelope || typeof envelope !== "object"
-          ? "transport" : (envelope.ok === true ? null : "server");
-      }
-      const vlmRun = {
-        envelope: envelope,
-        reason: reason || null,
-        requested_shot_ids: prepared.requested,
-        submitted_shot_ids: prepared.reason ? [] : prepared.submitted,
-        asset_sha256_by_shot: prepared.reason ? {} : prepared.shaByShot,
-      };
-      const report = await assembleSuiteReview({
-        selectionSet: fingerprints.selectionSet,
-        suitePlan: suitePlan,
-        styleSpec: styleSpec,
-        shotSpecsById: suiteShotSpecsById(),
-        context: suiteContext(),
-        factsById: suiteFactsById(),
-        sellingPoints: Array.isArray(intake.selling_points) ? intake.selling_points : [],
-        shots: shotSummariesNow(),
-        selections: selectionMap,
-        candidatesByShot: suiteCandidatesByShot(),
-        attemptsByShot: suiteAttemptsByShot(),
-        reportsByCandidate: suiteReportsByCandidate(),
-        readBytes: async (sha) => {
-          const asset = await repository.assets.get(action.projectId, sha);
-          return asset && asset.blob instanceof Blob
-            ? new Uint8Array(await asset.blob.arrayBuffer()) : null;
-        },
-        digest: sha256Hex,
-        vlmRun: vlmRun,
-        at: at,
-      });
-      let version = 0;
-      try {
-        const saved = await repository.documents.save(action.projectId, {
-          kind: SUITE_REVIEW_KIND, documentId: SUITE_REVIEW_DOCUMENT_ID, payload: report,
-        });
-        version = saved.version;
-      } catch (error) {
-        version = 0;
-      }
-      if (action.alive()) {
-        suiteReports.set(SUITE_REVIEW_DOCUMENT_ID, { report: report, version: version });
-      }
-      return {
-        ok: true,
-        summary: suiteReviewSummaryText(report),
-        vlm: report.vlm ? report.vlm.outcome : "not_run",
-      };
-    } catch (error) {
-      return {
-        failed: true, reason: "assemble_invalid",
-        message: (error && error.message) || "整套检查无法完成。",
-      };
-    } finally {
-      if (action.alive()) {
-        suiteRunInFlight = false;
-        renderSuitePanel();
-        requestDeliveryGateRefresh();
-      }
-    }
-  }
-
-  function jumpToReviewShot(shotId) {
-    stageShell.select("review");
-    if (!elements.reviewList) return;
-    const row = elements.reviewList.querySelector('.review-card[data-shot-id="' + shotId + '"]');
-    if (!row) return;
-    row.scrollIntoView({ block: "center" });
-    const button = row.querySelector("button");
-    if (button) button.focus({ preventScroll: true });
-  }
-
-  /** 门禁：整套一致性阻断不属于任何一张图，定位回审核阶段的整套检查运行按钮。 */
-  function jumpToSuiteCheck() {
-    stageShell.select("review");
-    if (!elements.suiteReviewRun) return;
-    elements.suiteReviewRun.scrollIntoView({ block: "center" });
-    elements.suiteReviewRun.focus({ preventScroll: true });
-  }
-
-  /** 整套一致性分区：状态行 + 运行按钮 + 按严重度分组的发现（每条可跳到对应图行）。 */
-  function renderSuitePanel() {
-    if (!elements.suiteReviewStatus || !elements.suiteReviewFindings) return;
-    const entry = suiteReportEntry();
-    const report = entry ? entry.report : null;
-    const current = report && projectId
-      ? suiteReviewIsCurrent(report, suiteFingerprintsNow()) : false;
-    elements.suiteReviewRun.disabled = !projectId || !suitePlan || suiteRunInFlight;
-    elements.suiteReviewRun.textContent = suiteRunInFlight ? "检查中…" : "运行整套检查";
-    if (!report) {
-      elements.suiteReviewStatus.textContent = projectId && suitePlan
-        ? "尚未运行整套检查。"
-        : "先在「方案」生成套图方案，再运行整套检查。";
-      elements.suiteReviewNote.textContent = "";
-    } else if (!current) {
-      elements.suiteReviewStatus.textContent = "整套检查已过期：选择或输入在报告之后发生了变化，请重新运行。"
-        + " 上一版：" + suiteReviewSummaryText(report);
-      elements.suiteReviewNote.textContent = "";
-    } else {
-      elements.suiteReviewStatus.textContent = suiteReviewSummaryText(report);
-      const vlm = report.vlm && report.vlm.outcome === "checked" ? report.vlm : null;
-      elements.suiteReviewNote.textContent = vlm
-        ? ("视觉复核：" + String(vlm.model_id || vlm.provider_id || "已完成")
-           + (vlm.checked_at ? " · " + vlm.checked_at : ""))
-        : "";
-    }
-    elements.suiteReviewFindings.innerHTML = "";
-    if (!report) return;
-    appendSuiteFindings(elements.suiteReviewFindings, report);
-  }
-
-  /**
-   * 整套发现的单一投影（审核阶段与交付阶段共用，避免两套写法 / 两个事实来源）。
-   * 只读传入的报告，重排成「严重度分组 + 逐条定位」；不写任何状态。
-   */
-  function appendSuiteFindings(container, report) {
-    const findings = Array.isArray(report.findings) ? report.findings : [];
-    const shown = findings.filter((item) => item && item.severity !== "PASS");
-    if (shown.length === 0) {
-      container.append(createElement("p", {
-        className: "meta", text: "没有需要人工处理的整套发现。",
-      }));
-    }
-    for (const severity of REVIEW_SEVERITY_ORDER) {
-      const group = shown.filter((item) => item.severity === severity);
-      if (!group.length) continue;
-      container.append(createElement("p", {
-        className: "meta suite-group", text: COMPARE_SEVERITY_TEXT[severity] || severity,
-      }));
-      for (const finding of group) {
-        const row = createElement("div", {
-          className: "suite-finding",
-          attrs: { "data-rule-id": finding.rule_id, "data-severity": finding.severity },
-        });
-        row.append(createElement("span", {
-          className: "badge " + (SEVERITY_BADGE[finding.severity] || "is-review-unknown"),
-          text: COMPARE_SEVERITY_TEXT[finding.severity] || finding.severity,
-        }));
-        row.append(createElement("span", {
-          className: "name", text: String(finding.title || finding.rule_id),
-        }));
-        row.append(createElement("p", { className: "meta", text: localizeShotIds(finding.detail) }));
-        for (const shotId of (Array.isArray(finding.affected_shot_ids) ? finding.affected_shot_ids : [])) {
-          const jump = createElement("button", {
-            text: "定位：" + shotLabelOf(shotId), attrs: { type: "button", "data-shot-id": shotId },
-          });
-          jump.addEventListener("click", () => { jumpToReviewShot(shotId); });
-          row.append(jump);
-        }
-        container.append(row);
-      }
-    }
-    const passCount = findings.filter((item) => item && item.severity === "PASS").length;
-    if (passCount > 0) {
-      container.append(createElement("p", {
-        className: "meta", text: "另 " + passCount + " 项确定性检查通过（细节在候选审核清单里）。",
-      }));
-    }
-  }
-
-  /* -------------------------------------------------- 交付门禁与交付包（V2.6.2） */
-
-  /** 读取已采用候选的字节（IndexedDB Blob → Uint8Array）；缺失返回 null。 */
-  async function readCandidateBytes(sha256, pid = projectId) {
-    const asset = await repository.assets.get(pid, sha256);
-    return asset && asset.blob instanceof Blob
-      ? new Uint8Array(await asset.blob.arrayBuffer()) : null;
-  }
-
-  /** 交付门禁的输入投影：与整套检查共用同一批只读投影，不重做第二套测量。 */
-  function deliveryGateInputs(pid = projectId) {
-    const suiteEntry = suiteReportEntry();
-    return {
-      shots: shotSummariesNow().map((shot) => ({
-        shot_id: shot.shot_id, required: shot.required === true,
-      })),
-      selections: suiteSelectionMap(),
-      candidatesByShot: suiteCandidatesByShot(),
-      reportsByCandidate: suiteReportsByCandidate(),
-      attemptsByShot: suiteAttemptsByShot(),
-      suiteReport: suiteEntry ? suiteEntry.report : null,
-      suiteFingerprints: suiteFingerprintsNow(),
-      acknowledgements: [...acknowledgements.values()].map((entry) => entry.record),
-      readBytes: (sha) => readCandidateBytes(sha, pid),
-      digest: sha256Hex,
-    };
-  }
-
-  /** 去抖重算：任何影响交付的写入之后都走这里；界面只能读 deliveryGateState。 */
-  function requestDeliveryGateRefresh() {
-    clearTimeout(deliveryGateTimer);
-    deliveryGateTimer = setTimeout(() => {
-      deliveryGateTimer = null;
-      refreshDeliveryGate().catch(() => {});
-    }, 60);
-  }
-
-  /** 门禁结果只保存在内存里：检查失败不写任何存储，也不产生交付记录。 */
-  async function refreshDeliveryGate() {
-    const action = beginAction();
-    if (!action.projectId) {
-      if (action.alive()) {
-        deliveryGateState = null;
-        renderDeliveryGate();
-      }
-      return;
-    }
-    let next = null;
-    let failure = null;
-    try {
-      next = await evaluateDeliveryGate(deliveryGateInputs(action.projectId));
-    } catch (error) {
-      failure = (error && error.message) || "交付门禁无法完成。";
-    }
-    if (!action.alive()) return;
-    deliveryGateState = next
-      ? { ...next, failed: false, checked_at: new Date().toISOString() }
-      : { failed: true, message: failure, ready_to_export: false,
-          findings: [], blocking: [], unknowns: [], unresolved_unknowns: [] };
-    renderDeliveryGate();
-  }
-
-  /** 门禁展示顺序：阻断优先，PASS 收在最后；不改判定，只改阅读顺序。 */
-  const GATE_SEVERITY_RANK = Object.freeze({
-    BLOCK: 0, HIGH_RISK: 1, WARNING: 2, UNKNOWN: 3, PASS: 4,
-  });
-
-  /** 门禁逐条：严重度徽标 + 说明 + 受影响 Shot 的定位入口。 */
-  function renderDeliveryFindings() {
-    const state = deliveryGateState;
-    const findings = state && Array.isArray(state.findings) ? state.findings : [];
-    if (!findings.length) {
-      elements.deliveryGate.append(createElement("p", {
-        className: "meta",
-        text: state && state.failed
-          ? ("门禁检查失败：" + (state.message || "未知错误"))
-          : "正在核对交付门禁…",
-      }));
-      return;
-    }
-    const ordered = findings.slice().sort((left, right) =>
-      (GATE_SEVERITY_RANK[left.severity] === undefined ? 9 : GATE_SEVERITY_RANK[left.severity])
-      - (GATE_SEVERITY_RANK[right.severity] === undefined ? 9 : GATE_SEVERITY_RANK[right.severity]));
-    for (const item of ordered) {
-      const passed = item.severity === "PASS";
-      const row = createElement("div", {
-        className: "gate-finding" + (passed ? " is-pass" : ""),
-        attrs: { "data-rule-id": item.rule_id, "data-severity": item.severity },
-      });
-      row.append(createElement("span", {
-        className: "badge " + (SEVERITY_BADGE[item.severity] || "is-review-unknown"),
-        text: COMPARE_SEVERITY_TEXT[item.severity] || item.severity,
-      }));
-      row.append(createElement("span", { className: "name", text: String(item.title || item.rule_id) }));
-      // 通过项压成一行（信息不减、占位减半）；阻断项保留独立说明行便于逐条处理。
-      row.append(createElement(passed ? "span" : "p", {
-        className: "meta", text: localizeShotIds(item.detail),
-      }));
-      // Unknown 的处置入口就是下面的「确认已知悉」；这里不再给会误导的跳图按钮。
-      const jumpable = !passed && item.rule_id !== "export.unknown_acknowledged";
-      for (const shotId of (jumpable && Array.isArray(item.affected_shot_ids)
-        ? item.affected_shot_ids : [])) {
-        const jump = createElement("button", {
-          text: "去处理：" + shotLabelOf(shotId), attrs: { type: "button", "data-shot-id": shotId },
-        });
-        jump.addEventListener("click", () => { jumpToReviewShot(shotId); });
-        row.append(jump);
-      }
-      // 整套一致性阻断不是某一张图的问题：给「去运行整套检查」把使用者送回审核阶段的运行按钮。
-      if (!passed && item.rule_id === "export.suite_review_current") {
-        const jump = createElement("button", {
-          text: "去运行整套检查", attrs: { type: "button", "data-suite-action": "run" },
-        });
-        jump.addEventListener("click", () => { jumpToSuiteCheck(); });
-        row.append(jump);
-      }
-      elements.deliveryGate.append(row);
-    }
-  }
-
-  /**
-   * 交付页的整套检查投影（V2.6.15）：交付是最后决策点，门禁全绿只说明「硬检查通过」，
-   * 不代表没有风险 —— 这里复读同一份 suite review 报告（单一权威），把非阻断的
-   * 高风险/提醒连同定位入口摆到导出按钮前面；过期报告如实说明，阻断仍由门禁负责。
-   */
-  function renderDeliverySuite() {
-    if (!elements.deliverySuiteStatus || !elements.deliverySuiteFindings) return;
-    elements.deliverySuiteStatus.textContent = "";
-    elements.deliverySuiteFindings.innerHTML = "";
-    const entry = suiteReportEntry();
-    const report = entry ? entry.report : null;
-    if (!report) {
-      elements.deliverySuiteStatus.textContent = projectId && suitePlan
-        ? "尚未运行整套检查；交付门禁会在缺失或不当前时阻断导出。"
-        : "先在「方案」生成套图方案，再运行整套检查。";
-      return;
-    }
-    const current = projectId ? suiteReviewIsCurrent(report, suiteFingerprintsNow()) : false;
-    elements.deliverySuiteStatus.textContent = current
-      ? suiteReviewSummaryText(report)
-      : ("整套检查已过期：选择或输入在报告之后发生了变化，请回审核阶段重新运行。上一版："
-         + suiteReviewSummaryText(report));
-    appendSuiteFindings(elements.deliverySuiteFindings, report);
-  }
-
-  /** 待确认 Unknown：每条一个「确认已知悉」按钮；确认是 append-only 记录，不改写报告。 */
-  function renderDeliveryUnknowns() {
-    if (!elements.deliveryUnknowns) return;
-    elements.deliveryUnknowns.innerHTML = "";
-    const state = deliveryGateState;
-    const unknowns = state && Array.isArray(state.unknowns) ? state.unknowns : [];
-    if (!unknowns.length) return;
-    elements.deliveryUnknowns.append(createElement("p", {
-      className: "meta", text: "未知项（模型无法判定）：逐条确认已知悉后才允许交付。",
-    }));
-    for (const unknown of unknowns) {
-      const row = createElement("div", {
-        className: "gate-unknown",
-        attrs: { "data-rule-id": unknown.rule_id, "data-target-id": unknown.target_id },
-      });
-      row.append(createElement("span", { className: "name", text: String(unknown.title || unknown.rule_id) }));
-      row.append(createElement("p", { className: "meta", text: String(unknown.detail || "") }));
-      const button = createElement("button", {
-        text: unknown.acknowledged === true ? "已确认" : "确认已知悉", attrs: { type: "button" },
-      });
-      button.disabled = unknown.acknowledged === true;
-      button.addEventListener("click", () => { acknowledgeUnknown(unknown, button); });
-      row.append(button);
-      elements.deliveryUnknowns.append(row);
-    }
-  }
-
-  /** 确认只追加：document_id 由未知项身份派生，重复确认只新增版本。 */
-  async function acknowledgeUnknown(unknown, button) {
-    if (!projectId) return;
-    const action = beginAction();
-    clearError(elements.deliverError);
-    button.disabled = true;
-    try {
-      const at = new Date().toISOString();
-      const record = buildAcknowledgement({ unknown: unknown, at: at });
-      const documentId = acknowledgementDocumentIdOf(record);
-      const saved = await repository.documents.save(action.projectId, {
-        kind: REVIEW_ACK_KIND, documentId: documentId, payload: record,
-      });
-      if (!action.alive()) return;
-      acknowledgements.set(documentId, { record: record, version: saved.version });
-      await refreshDeliveryGate();
-      if (!action.alive()) return;
-      elements.deliverStatus.textContent = "已记录「已知悉」（append-only，不作为通过证据）。";
-    } catch (error) {
-      if (action.alive()) {
-        button.disabled = false;
-        showError(elements.deliverError, (error && error.message) || "确认没有保存，请重试。");
-      }
-    }
-  }
-
-  /** 最近一次交付包结果：刷新后仍有记录（无 blob 时只显示身份，不伪装可下载）。 */
-  function renderDeliveryResult() {
-    if (!elements.deliverResult) return;
-    elements.deliverResult.innerHTML = "";
-    if (!deliveryRecord) {
-      elements.deliverResult.hidden = true;
-      return;
-    }
-    elements.deliverResult.hidden = false;
-    elements.deliverResult.append(createElement("p", {
-      className: "meta",
-      text: "最近一次交付包：" + deliveryRecord.file_name + "（"
-        + Math.round(deliveryRecord.byte_size / 1024) + " KB）",
-    }));
-    elements.deliverResult.append(techDetails(
-      ["sha256 " + String(deliveryRecord.sha256).slice(0, 16) + "…"]));
-    if (deliveryRecord.url) {
-      elements.deliverResult.append(createElement("a", {
-        text: "下载交付包",
-        attrs: { href: deliveryRecord.url, download: deliveryRecord.file_name },
-      }));
-    }
-  }
-
-  /** 交付阶段：逐图采用状态 + 门禁清单 + Unknown 确认 + 生成交付包入口。 */
-  function renderDeliveryGate() {
-    if (!elements.deliveryGate) return;
-    elements.deliveryGate.innerHTML = "";
-    const shots = shotSummariesNow();
-    for (const shot of shots) {
-      const state = selectionStateOf(shot.shot_id);
-      const row = createElement("div", {
-        className: "gate-row", attrs: { "data-shot-id": shot.shot_id, "data-selection-state": state },
-      });
-      row.append(createElement("span", { className: "name", text: shot.label }));
-      row.append(createElement("span", {
-        className: "badge " + (state === "current" ? "is-adopted" : (state === "stale" ? "is-review-warn" : "is-empty")),
-        text: state === "current" ? "已采用" : (state === "stale" ? "已采用（已过期）" : "未采用"),
-      }));
-      row.append(createElement("span", {
-        className: "meta", text: shot.required === true ? "必需图" : "可选图",
-      }));
-      if (state !== "current") {
-        const jump = createElement("button", { text: "去审核", attrs: { type: "button" } });
-        jump.addEventListener("click", () => { stageShell.select("review"); });
-        row.append(jump);
-      }
-      elements.deliveryGate.append(row);
-    }
-    renderDeliveryFindings();
-    renderDeliverySuite();
-    renderDeliveryUnknowns();
-    renderDeliveryResult();
-    const requiredShots = shots.filter((shot) => shot.required === true);
-    const pending = requiredShots.filter((shot) => selectionStateOf(shot.shot_id) !== "current");
-    const state = deliveryGateState;
-    elements.deliverExport.disabled = !(state && state.ready_to_export === true) || deliveryInFlight;
-    elements.deliverStatus.textContent = !shots.length
-      ? "还没有套图方案。"
-      : (deliveryInFlight
-        ? "正在生成交付包…"
-        : (pending.length
-          ? "还差 " + pending.length + " 张必需图没有当前有效的采用。"
-          : (!state || state.failed || !state.findings.length
-            ? "正在核对交付门禁…"
-            : (state.ready_to_export
-              ? "交付门禁通过：可以生成交付包（只包含已采用的候选）。"
-              : "交付门禁未通过：" + state.blocking.length + " 条阻断，逐条处理后才能生成。"))));
-  }
-
-  function stageFileName(manifest) {
-    const safe = ((project && project.name) || "project")
-      .replace(/[\\/:*?"<>|\s]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "project";
-    const stamp = String((manifest && manifest.exported_at) || new Date().toISOString())
-      .replace(/[-:]/g, "").replace("T", "-").slice(0, 13);
-    return safe + "-" + stamp + ".zip";
-  }
-
-  async function handleExportFromWorkspace() {
-    const action = beginAction();
-    if (!action.projectId) return;
-    clearError(elements.deliverError);
-    elements.deliverStatus.textContent = "正在打包完整项目…";
-    try {
-      const { bytes, manifest } = await exportProjectPackage(repository, action.projectId);
-      if (!action.alive()) return;
-      const blob = new Blob([bytes], { type: "application/zip" });
-      const url = URL.createObjectURL(blob);
-      const anchor = document.createElement("a");
-      anchor.href = url;
-      anchor.download = stageFileName(manifest);
-      document.body.append(anchor);
-      anchor.click();
-      anchor.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 10_000);
-      elements.deliverStatus.textContent = "已导出项目包（含完整历史，可在别的浏览器导入）。";
-    } catch (error) {
-      if (action.alive()) {
-        elements.deliverStatus.textContent = "";
-        showError(elements.deliverError, (error && error.message) || "导出失败，请重试。");
-      }
-    }
-  }
-
-  /* ------------------------------------------------------ 交付包生成（V2.6.2） */
-
-  /** 交付包 manifest：选择与输入指纹 + 每图身份（含 PromptVersion 与 Attempt）。 */
-  function buildDeliveryManifest({ at, files, selectionFingerprint, inputsFingerprint }) {
-    return {
-      schema_version: 1,
-      contract_version: EXPORT_GATE_CONTRACT_VERSION,
-      project_id: projectId,
-      project_name: (project && project.name) || "",
-      exported_at: at,
-      selection_fingerprint: selectionFingerprint,
-      inputs_fingerprint: inputsFingerprint,
-      images: files.map((file) => ({
-        shot_id: file.shot_id,
-        shot_label: file.shot_label,
-        candidate_id: file.candidate_id,
-        attempt_action_id: file.attempt_action_id,
-        attempt_state: file.attempt_state,
-        asset_sha256: file.asset_sha256,
-        media_type: file.media_type,
-        byte_size: file.byte_size,
-        file: file.path,
-        prompt_version: file.prompt_version,
-        prompt_hash: file.prompt_hash,
-      })),
-    };
-  }
-
-  /** 交付包 checks：当前门禁发现 + 每张采用候选的单图报告投影 + Unknown 确认记录。 */
-  function buildDeliveryChecks({ at, gate, files }) {
-    const suiteEntry = suiteReportEntry();
-    const countsOf = (findings) => {
-      const counts = { block: 0, warning: 0, unknown: 0, pass: 0 };
-      findings.forEach((item) => {
-        if (!item || typeof item.severity !== "string") return;
-        const key = item.severity.toLowerCase();
-        if (Object.prototype.hasOwnProperty.call(counts, key)) counts[key] += 1;
-      });
-      return counts;
-    };
-    return {
-      schema_version: 1,
-      contract_version: EXPORT_GATE_CONTRACT_VERSION,
-      generated_at: at,
-      gate_status: gate.status,
-      findings: gate.findings.map((item) => ({
-        rule_id: item.rule_id, rule_version: item.rule_version, severity: item.severity,
-        title: item.title, detail: item.detail, measured: item.measured,
-        affected_shot_ids: [...item.affected_shot_ids],
-      })),
-      per_shot: files.map((file) => {
-        const entry = generation.reviewReportOf(file.candidate_id);
-        const findings = entry && entry.report && Array.isArray(entry.report.findings)
-          ? entry.report.findings : [];
-        return {
-          shot_id: file.shot_id,
-          candidate_id: file.candidate_id,
-          report_version: entry ? entry.version : null,
-          counts: countsOf(findings),
-          findings: findings.filter((item) => item && item.severity !== "PASS").map((item) => ({
-            rule_id: item.rule_id, severity: item.severity,
-            title: item.title, detail: item.detail,
-          })),
-        };
-      }),
-      suite_review: suiteEntry ? {
-        document_id: SUITE_REVIEW_DOCUMENT_ID,
-        version: suiteEntry.version,
-        selection_fingerprint: suiteEntry.report.selection_fingerprint,
-        inputs_fingerprint: suiteEntry.report.inputs_fingerprint,
-        counts: countsOf(Array.isArray(suiteEntry.report.findings) ? suiteEntry.report.findings : []),
-      } : null,
-      acknowledgements: [...acknowledgements.values()].map((entry) => ({
-        document_id: entry.record.target_id,
-        rule_id: entry.record.rule_id,
-        target_kind: entry.record.target_kind,
-        shot_ids: Array.isArray(entry.record.shot_ids) ? [...entry.record.shot_ids] : [],
-        acknowledged_at: entry.record.acknowledged_at,
-      })),
-    };
-  }
-
-  /** 交付包 README：直接给人看的小抄（不替代 manifest/checks）。 */
-  function buildDeliveryReadme({ at, files }) {
-    const lines = [
-      "商品套图交付包",
-      "",
-      "项目：" + ((project && project.name) || "(未命名)"),
-      "生成时间：" + at,
-      "包含图片：" + files.length + " 张（每张一个已采用候选）",
-      "",
-      "清单：",
-    ];
-    files.forEach((file) => {
-      lines.push("- " + file.shot_label + "：" + file.path
-        + "（candidate " + file.candidate_id + " · sha256 "
-        + String(file.asset_sha256).slice(0, 12) + "…）");
-    });
-    lines.push("");
-    lines.push("manifest.json 记录每张图的来源与指纹；checks.json 记录门禁与审核发现。");
-    lines.push("本包只包含已采用的候选；未采用候选与完整历史请用「导出项目包」。");
-    return lines.join("\n");
-  }
-
-  /** 生成交付包：门禁通过才打包；任何一步失败都不写 export_record。 */
-  async function handleDeliverExport() {
-    if (!projectId || deliveryInFlight) return;
-    const action = beginAction();
-    clearError(elements.deliverError);
-    deliveryInFlight = true;
-    renderDeliveryGate();
-    try {
-      await refreshDeliveryGate();
-      if (!action.alive()) return;
-      const state = deliveryGateState;
-      if (!state || state.failed || state.ready_to_export !== true) {
-        showError(elements.deliverError, state && state.failed
-          ? ("门禁检查失败：" + (state.message || "未知错误"))
-          : "交付门禁未通过：先处理阻断项并确认 Unknown。");
-        elements.deliverStatus.textContent = "交付门禁未通过，没有生成交付包。";
-        return;
-      }
-      const selectionMap = suiteSelectionMap();
-      const images = [];
-      const files = [];
-      for (const shot of shotSummariesNow()) {
-        if (!action.alive()) return;
-        const candidateId = selectionMap[shot.shot_id];
-        if (!candidateId) continue;
-        const candidate = candidatePayloadsOf(shot.shot_id)
-          .find((item) => item && item.candidate_id === candidateId) || null;
-        if (!candidate) {
-          if (action.alive()) {
-            showError(elements.deliverError, shot.label + " 的选择指向的候选不存在，不能打包。");
-            elements.deliverStatus.textContent = "交付包未生成。";
-          }
-          return;
-        }
-        const bytes = await readCandidateBytes(candidate.asset_sha256, action.projectId);
-        if (!bytes) {
-          if (action.alive()) {
-            showError(elements.deliverError, shot.label + " 的候选字节缺失，不能打包。");
-            elements.deliverStatus.textContent = "交付包未生成。";
-          }
-          return;
-        }
-        const mediaType = candidate.media_type || "image/png";
-        images.push({
-          shot_id: shot.shot_id, candidate_id: candidateId,
-          media_type: mediaType, bytes: bytes,
-        });
-        // B01/RC16：manifest 的 Prompt 溯源必须读被采用候选原 action Attempt 冻结的
-        // prompt{version,hash}，不读当前编辑头 promptRecordOf。旧候选 + 新编译头并存时，
-        // 若仍取当前头，同一 candidate/action/asset 会被记下错误的当前 Prompt 版本。
-        const attemptRecord = attemptsByActionId()[candidate.action_id] || null;
-        const frozenPrompt = attemptRecord && attemptRecord.prompt ? attemptRecord.prompt : null;
-        files.push({
-          shot_id: shot.shot_id, shot_label: shot.label,
-          candidate_id: candidateId, attempt_action_id: candidate.action_id,
-          attempt_state: attemptRecord ? attemptRecord.state : "",
-          asset_sha256: candidate.asset_sha256, media_type: mediaType,
-          byte_size: bytes.length,
-          path: deliveryImagePathOf({
-            shotId: shot.shot_id, candidateId: candidateId, mediaType: mediaType,
-          }),
-          prompt_version: frozenPrompt ? frozenPrompt.version : null,
-          prompt_hash: frozenPrompt ? frozenPrompt.hash : null,
-        });
-      }
-      if (!images.length) {
-        showError(elements.deliverError, "没有可交付的已采用候选。");
-        elements.deliverStatus.textContent = "交付包未生成。";
-        return;
-      }
-      const at = new Date().toISOString();
-      const fingerprints = suiteFingerprintsNow();
-      const manifest = buildDeliveryManifest({
-        at: at, files: files,
-        selectionFingerprint: fingerprints.selectionFingerprint,
-        inputsFingerprint: fingerprints.inputsFingerprint,
-      });
-      const checks = buildDeliveryChecks({ at: at, gate: state, files: files });
-      const readme = buildDeliveryReadme({ at: at, files: files });
-      const entries = buildDeliveryEntries({
-        images: images, manifest: manifest, checks: checks, readme: readme,
-      });
-      const zipBytes = buildZip(entries, { modifiedAt: new Date(at) });
-      const zipSha256 = await sha256Hex(zipBytes);
-      const projectName = (project && project.name) || "";
-      const record = buildExportRecord({
-        projectId: action.projectId, projectName: projectName,
-        zipSha256: zipSha256, zipBytes: zipBytes.length, entries: entries,
-        gate: state,
-        selectionFingerprint: fingerprints.selectionFingerprint,
-        inputsFingerprint: fingerprints.inputsFingerprint,
-        includedShotIds: images.map((item) => item.shot_id), at: at,
-      });
-      await repository.documents.save(action.projectId, {
-        kind: EXPORT_RECORD_KIND,
-        documentId: exportRecordDocumentIdOf({ at: at, zipSha256: zipSha256 }),
-        payload: record,
-      });
-      if (!action.alive()) return;
-      const url = URL.createObjectURL(new Blob([zipBytes], { type: "application/zip" }));
-      objectUrls.push(url);
-      deliveryRecord = {
-        file_name: deliveryFileName({ projectName: projectName, at: at }),
-        byte_size: zipBytes.length, sha256: zipSha256, at: at, url: url,
-      };
-      const anchor = document.createElement("a");
-      anchor.href = url;
-      anchor.download = deliveryRecord.file_name;
-      document.body.append(anchor);
-      anchor.click();
-      anchor.remove();
-      elements.deliverStatus.textContent = "已生成交付包（" + images.length
-        + " 张图；记录已追加，不覆盖历史）。";
-    } catch (error) {
-      if (action.alive()) {
-        elements.deliverStatus.textContent = "交付包未生成。";
-        showError(elements.deliverError, (error && error.message) || "生成交付包失败，请重试。");
-      }
-    } finally {
-      if (action.alive()) {
-        deliveryInFlight = false;
-        renderDeliveryGate();
-      }
-    }
-  }
-
   function renderAll() {
     clearError(elements.error);
     if (understandingError) {
       showError(elements.error,
-        "商品理解投影失败：" + ((understandingError && understandingError.message) || "未知错误"));
+        "商品理解投影失败：" + errorMessageOf(understandingError, "未知错误"));
     }
     renderReferences().catch(handleInternalError);
-    renderIntake();
-    renderAnalyze();
-    renderSlots();
-    renderSuite();
-    renderStyleSpec();
-    renderShotSpecs();
-    renderPrompts();
-    renderConfirm();
-    renderAttempts();
+    inputView?.render();
+    renderGenerationSections();
     renderHeaderText(project);
     refreshDerived();
   }
 
+  /** 生成/确认/尝试三个分区的同轮刷新：全量渲染与输入侧命令收尾共用一处，避免三份写法。 */
+  function renderGenerationSections() {
+    generationView?.render();
+  }
+
+  /**
+   * @returns {void}
+   */
   function bind() {
     if (bound) return;
     bound = true;
     elements.refAdd.addEventListener("click", () => elements.refFile.click());
-    elements.refFile.addEventListener("change", (event) => {
-      handleFiles(event.target.files).finally(() => { elements.refFile.value = ""; });
+    elements.refFile.addEventListener("change", (/** @type {Event} */ event) => {
+      handleFiles(/** @type {HTMLInputElement} */ (event.target).files).finally(() => { elements.refFile.value = ""; });
     });
     for (const node of [elements.intakeName, elements.intakeDescription,
                         elements.intakePoints, elements.intakeFocus]) {
-      node.addEventListener("input", scheduleDraftSave);
+      node.addEventListener("input", () => { inputView?.scheduleDraftSave(); });
     }
-    elements.intakeSave.addEventListener("click", () => {
-      saveIntakeNow()
-        .then(() => deriveAndApplyState())
-        .then(() => { renderAnalyze(); renderHeaderText(project); })
-        .catch(handleInternalError);
-    });
-    elements.analyzeRun.addEventListener("click", () => { runAnalyze(); });
-    elements.slotsToggle.addEventListener("click", () => {
-      showAll = !showAll;
-      renderSlots();
-    });
-    elements.slotAddSave.addEventListener("click", () => { handleAddSlot(); });
-    elements.suiteSeed.addEventListener("click", () => {
-      handleSuiteOp(() => seedSuitePlan(suiteContext()));
-    });
-    elements.suiteAddTemplate.addEventListener("click", () => {
-      handleSuiteOp(() => addShotFromTemplate(
-        suitePlan, elements.suiteTemplate.value, { context: suiteContext() }));
-    });
-    elements.suiteTemplate.addEventListener("change", () => {
-      updateTemplateHint(recommendPlan(suiteContext()));
-    });
-    elements.suiteCustomToggle.addEventListener("click", () => {
-      const opening = elements.suiteCustomPanel.hidden;
-      elements.suiteCustomPanel.hidden = !opening;
-      elements.suiteCustomToggle.setAttribute("aria-expanded", String(opening));
-    });
-    elements.suiteCustomSave.addEventListener("click", () => { handleSuiteAddCustom(); });
-    elements.styleSave.addEventListener("click", () => { handleSaveStyle(); });
-    elements.styleRestore.addEventListener("click", () => { handleRestoreStyle(); });
-    elements.confirmAction.addEventListener("click", () => { handleConfirmGeneration(); });
-    elements.batchRun.addEventListener("click", () => { generation.runBatch(); });
+    elements.intakeSave.addEventListener("click", () => { void inputView?.handleSaveIntake(); });
+    elements.analyzeRun.addEventListener("click", () => { void inputView?.runAnalyze(); });
+    elements.analyzeNewAfterUnknown.addEventListener("click", () => { void inputView?.runAnalyze({ allowNewAfterUnknown: true }); });
+    elements.manualFacts.addEventListener("click", () => { void inputView?.handleManualFacts(); });
+    elements.slotsToggle.addEventListener("click", () => { inputView?.toggleAllSlots(); });
+    elements.slotAddSave.addEventListener("click", () => { void inputView?.addSlot(); });
+    elements.suiteSeed.addEventListener("click", () => { void inputView?.seedSuite(); });
+    elements.suiteAddTemplate.addEventListener("click", () => { void inputView?.addTemplateShot(); });
+    elements.suiteTemplate.addEventListener("change", () => { inputView?.refreshTemplateHint(); });
+    elements.suiteCustomToggle.addEventListener("click", () => { inputView?.toggleCustomPanel(); });
+    elements.suiteCustomSave.addEventListener("click", () => { void inputView?.addCustomShot(); });
+    elements.styleSave.addEventListener("click", () => { void inputView?.saveStyle(); });
+    elements.styleRestore.addEventListener("click", () => { void inputView?.restoreStyle(); });
+    elements.confirmAction.addEventListener("click", () => { void generationView?.handleConfirmGeneration(); });
     elements.batchStop.addEventListener("click", () => { generation.stopBatch(); });
     elements.batchReconcile.addEventListener("click", () => { generation.reconcileOnce(); });
-    elements.batchRetry.addEventListener("click", () => { generation.runRetryOnce(); });
+    elements.batchRetry.addEventListener("click", () => {
+      generation.enterFailedRetry(generation.deriveBatch().retry_queue);
+      stageShell.select("generate"); generationView?.renderConfirm();
+    });
     elements.compareJump.addEventListener("click", () => {
       const target = elements.compareJump.dataset.targetShot;
       if (!target) {
         elements.compareStatus.textContent = "这套图没有待处理的候选。";
         return;
       }
-      openCompare(target, { focus: true });
-      const row = elements.attemptList.querySelector('.attempt-row[data-shot-id="' + target + '"]');
+      compareView?.openCompare(target, { focus: true });
+      const row = /** @type {HTMLElement|null} */ (elements.attemptList.querySelector('.attempt-row[data-shot-id="' + target + '"]'));
       if (row) row.scrollIntoView({ block: "nearest" });
     });
-    elements.compareClose.addEventListener("click", () => {
-      const previous = compareShotId;
-      compareShotId = null;
-      compareCandidateId = null;
-      renderCompare();
-      const entry = elements.attemptList.querySelector(
-        'button[data-compare-action="' + previous + '"]');
-      if (entry) entry.focus();
-    });
-    elements.compareCandidates.addEventListener("keydown", handleCompareKeydown);
-    elements.reworkOpen.addEventListener("click", () => { openReworkPanel(); });
-    elements.reworkPreview.addEventListener("click", () => { handleReworkPreview(); });
-    elements.reworkEdit.addEventListener("click", () => { handleReworkEdit(); });
-    elements.reworkSubmit.addEventListener("click", () => { handleReworkSubmit(); });
-    elements.reworkReset.addEventListener("click", () => { resetReworkDraft(); });
-    elements.reworkCancel.addEventListener("click", () => { handleReworkCancel(); });
-    elements.reworkPanel.addEventListener("keydown", (event) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        handleReworkCancel();
-      }
-    });
-    elements.adoptOpen.addEventListener("click", () => { openAdoptPanel(); });
-    elements.adoptSubmit.addEventListener("click", () => { handleAdoptSubmit(); });
-    elements.adoptClear.addEventListener("click", () => { handleAdoptClear(); });
-    elements.adoptCancel.addEventListener("click", () => {
-      closeAdoptPanel({ focusCandidate: true });
-    });
-    elements.adoptPanel.addEventListener("keydown", (event) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        closeAdoptPanel({ focusCandidate: true });
-      }
-    });
-    elements.reworkDirection.addEventListener("input", () => {
-      const shotId = reworkShotId;
-      const draft = shotId ? reworkDrafts.get(shotId) : null;
-      if (!draft) return;
-      draft.direction = elements.reworkDirection.value;
-      dirtyReworkDraft(draft);
-      updateReworkControls(shotId, draft);
-    });
+    elements.compareClose.addEventListener("click", () => { compareView?.closeCompare(); });
+    elements.compareCandidates.addEventListener("keydown", /** @type {(event: KeyboardEvent) => void} */ ((/** @type {KeyboardEvent} */ event) => compareView?.handleCompareKeydown(event)));
+    elements.compareBaselineSelect.addEventListener("change", () => { compareView?.handleBaselineChange(); });
+    elements.compareViewedZoom.addEventListener("click", () => compareView?.zoomViewed());
+    elements.compareBaselineZoom.addEventListener("click", () => compareView?.zoomBaseline());
+    elements.imageZoomClose.addEventListener("click", () => compareView?.closeImageZoom());
+    elements.imageZoomDialog.addEventListener("cancel", (/** @type {Event} */ event) => { event.preventDefault(); compareView?.closeImageZoom(); });
+    elements.imageZoomNative.addEventListener("click", () => { compareView?.toggleZoomNative(); });
+    elements.compareReview.addEventListener("click", () => { void compareView?.handleCompareReview(); });
+    elements.reworkOpen.addEventListener("click", () => { compareView?.openReworkPanel(); });
+    elements.reworkPreview.addEventListener("click", () => { void compareView?.previewRework(); });
+    elements.reworkEdit.addEventListener("click", () => { void compareView?.editRework(); });
+    elements.reworkSubmit.addEventListener("click", () => { void compareView?.submitRework(); });
+    elements.reworkReset.addEventListener("click", () => { compareView?.resetRework(); });
+    elements.reworkCancel.addEventListener("click", () => { compareView?.cancelRework(); });
+    elements.reworkPanel.addEventListener("keydown", (/** @type {KeyboardEvent} */ event) => { compareView?.handleReworkKeydown(event); });
+    elements.adoptOpen.addEventListener("click", () => { void compareView?.adoptCandidate("select"); });
+    elements.adoptClear.addEventListener("click", () => { void compareView?.adoptCandidate("clear"); });
+    elements.reworkDirection.addEventListener("input", () => { compareView?.handleReworkDirectionInput(); });
     document.addEventListener("visibilitychange", () => {
-      if (document.visibilityState === "hidden" && saveTimer !== null) {
-        saveIntakeNow().catch(() => {});
-      }
+      if (document.visibilityState === "hidden") inputView?.saveIntakeNow().catch(() => {});
     });
     elements.stageNextUnderstand.addEventListener("click", () => {
       stageShell.select("plan", { focusHeading: true });
@@ -5565,189 +1473,59 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
     elements.stageNextDeliver.addEventListener("click", () => {
       stageShell.select("deliver", { focusHeading: true });
     });
-    elements.deliverProjectPackage.addEventListener("click", () => { handleExportFromWorkspace(); });
-    elements.deliverExport.addEventListener("click", () => { handleDeliverExport(); });
+    elements.deliverProjectPackage.addEventListener("click", () => { void deliveryView?.handleProjectExport(); });
+    elements.deliverExport.addEventListener("click", () => { void deliveryView?.handleDeliveryExport(); });
     if (elements.suiteReviewRun) {
-      elements.suiteReviewRun.addEventListener("click", () => { runSuiteReview(); });
+      elements.suiteReviewRun.addEventListener("click", () => { void deliveryView?.runSuiteReview(); });
+      elements.suiteAiReviewRun.addEventListener("click", () => { void deliveryView?.runSuiteReview({ ai: true }); });
     }
   }
 
+  /**
+   * @returns {Promise<void>}
+   */
   async function loadWorkspace() {
     const action = beginAction();
-    intake = emptyProductInput();
-    intakeVersion = 0;
-    intakeFingerprint = "";
-    intakeConflict = null;
-    busy = false;
-    slots = new Map();
-    lastAnalyze = null;
-    analyzeProblems = [];
-    suitePlan = null;
-    suiteVersion = 0;
+    const pid = projectId && action.projectId && projectId === action.projectId ? projectId : null;
+    if (!pid) return;
+    inputView?.resetViewState();
     understandingReady = false;
-    styleSpec = emptyStyleSpec();
-    styleVersion = 0;
-    shotSpecs = new Map();
-    promptVersions = new Map();
-    confirmRecord = null;
-    // V2.R5.1：生成执行侧链/飞行集合/报告全部在 Module 里,loadWorkspace 统一重灌。
+    // 资料/事实/方案/风格/单图规格的唯一所有者是 project-inputs：reset+restore 一次灌入。
+    inputs.reset();
+    await inputs.restore(action);
+    if (!action.alive()) return;
+    prompts.reset();
+    // V2.R5.1：生成执行侧链/飞行集合/报告/授权队列全部在 Module 里，loadWorkspace 统一重灌。
     generation.reset();
-    suiteReports = new Map();
-    suiteRunInFlight = false;
-    deliveryGateState = null;
-    deliveryInFlight = false;
-    deliveryRecord = null;
-    acknowledgements = new Map();
+    selectionAdoption.reset();
+    reviewDelivery.reset();
     revokePreviewUrls();
-    compareShotId = null;
-    compareCandidateId = null;
-    compareToken += 1;
-    reworkDrafts = new Map();
-    reworkConfirmations = new Map();
-    reworkInFlight = false;
-    reworkShotId = null;
-    reworkSource = null;
-    selections = new Map();
-    adoptInFlight = false;
-    adoptShotId = null;
-    adoptCandidateId = null;
-    adoptSource = null;
-    elements.comparePanel.hidden = true;
-    elements.reworkPanel.hidden = true;
-    elements.reworkPreviewBox.hidden = true;
-    elements.adoptPanel.hidden = true;
-    showAll = false;
-    interaction = { slotId: null, mode: null };
+    revokeObjectUrls();
+    deliveryView?.dispose();
+    compareView?.resetViewState();
 
-    const intakeDoc = await repository.documents.getLatest(projectId, INTAKE_KIND, INTAKE_DOCUMENT_ID);
+    // Prompt 版本/历史恢复归 prompts.restore 所有；授权/尝试/候选链恢复归 generation.restore。
+    await prompts.restore(action);
     if (!action.alive()) return;
-    if (intakeDoc && intakeDoc.payload && typeof intakeDoc.payload === "object") {
-      intake = { ...emptyProductInput(), ...intakeDoc.payload };
-      if (!Array.isArray(intake.references)) intake.references = [];
-      if (!Array.isArray(intake.selling_points)) intake.selling_points = [];
-      intakeVersion = intakeDoc.version;
-    }
-    intakeFingerprint = fingerprintOf(intake);
-    const slotDocs = await repository.documents.listLatest(action.projectId, SLOT_KIND);
+    await generation.restore(action);
     if (!action.alive()) return;
-    for (const record of slotDocs) {
-      if (record.kind === SLOT_KIND && record.payload && typeof record.payload === "object") {
-        slots.set(record.document_id, { slot: record.payload, version: record.version });
-      }
-    }
-    const suiteDoc = await repository.documents.getLatest(
-      projectId, SUITE_KIND, SUITE_PLAN_DOCUMENT_ID);
+    // 采用记录+已知悉+单图报告由 selectionAdoption.restore 恢复（生成链已在上先灌入）。
+    await selectionAdoption.restore(action);
     if (!action.alive()) return;
-    if (suiteDoc && suiteDoc.payload && Array.isArray(suiteDoc.payload.shots)) {
-      suitePlan = suiteDoc.payload;
-      suiteVersion = suiteDoc.version;
-    }
-    const styleDoc = await repository.documents.getLatest(
-      projectId, STYLE_KIND, STYLE_SPEC_DOCUMENT_ID);
+    // 整套报告与交付记录由 reviewDelivery.restore 恢复（suite+export；ack 已由 adoption.restore 恢复）。
+    await reviewDelivery.restore(action);
     if (!action.alive()) return;
-    if (styleDoc && styleDoc.payload && typeof styleDoc.payload === "object") {
-      styleSpec = { ...emptyStyleSpec(), ...styleDoc.payload };
-      styleVersion = styleDoc.version;
-    }
-    const specDocs = await repository.documents.listLatest(action.projectId, SHOT_SPEC_KIND);
-    if (!action.alive()) return;
-    for (const record of specDocs) {
-      if (record.payload && typeof record.payload === "object") {
-        shotSpecs.set(record.document_id, { spec: record.payload, version: record.version });
-      }
-    }
-    const promptDocs = await repository.documents.listLatest(action.projectId, PROMPT_KIND);
-    if (!action.alive()) return;
-    for (const record of promptDocs) {
-      if (record.payload && typeof record.payload === "object" && record.payload.compiled) {
-        promptVersions.set(record.document_id, { record: record.payload, version: record.version });
-      }
-    }
-    const confirmDocs = await repository.documents.listLatest(action.projectId, CONFIRM_KIND);
-    if (!action.alive()) return;
-    for (const record of confirmDocs) {
-      if (record.document_id === CONFIRM_DOCUMENT_ID && record.payload && record.payload.fingerprint) {
-        confirmRecord = { payload: record.payload, version: record.version };
-      } else if (record.document_id.startsWith(REWORK_CONFIRM_PREFIX)
-                 && record.payload && record.payload.fingerprint) {
-        reworkConfirmations.set(
-          record.document_id.slice(REWORK_CONFIRM_PREFIX.length),
-          { payload: record.payload, version: record.version });
-      }
-    }
-    for (const shot of (suitePlan && Array.isArray(suitePlan.shots) ? suitePlan.shots : [])) {
-      const attemptDocs = await repository.documents.listVersions(action.projectId, ATTEMPT_KIND, shot.shot_id);
-      if (!action.alive()) return;
-      generation.loadAttemptChain(shot.shot_id, attemptDocs.slice().reverse()
-        .map((record) => ({ record: record.payload, version: record.version })));
-    }
-    for (const shot of (suitePlan && Array.isArray(suitePlan.shots) ? suitePlan.shots : [])) {
-      const candidateDocs = await repository.documents.listVersions(action.projectId, CANDIDATE_KIND, shot.shot_id);
-      if (!action.alive()) return;
-      generation.loadCandidateChain(shot.shot_id, candidateDocs.slice().reverse()
-        .map((record) => ({ record: record.payload, version: record.version })));
-    }
-    const selectionDocs = await repository.documents.listLatest(action.projectId, SELECTION_KIND);
-    if (!action.alive()) return;
-    for (const record of selectionDocs) {
-      if (record.payload && typeof record.payload === "object") {
-        selections.set(record.document_id, { record: record.payload, version: record.version });
-      }
-    }
-    const reviewDocs = await repository.documents.listLatest(action.projectId, REVIEW_KIND);
-    if (!action.alive()) return;
-    for (const record of reviewDocs) {
-      if (record.payload && typeof record.payload === "object") {
-        generation.setReviewReport(record.document_id, { report: record.payload, version: record.version });
-      }
-    }
-    const suiteDocs = await repository.documents.listLatest(action.projectId, SUITE_REVIEW_KIND);
-    if (!action.alive()) return;
-    for (const record of suiteDocs) {
-      if (record.document_id === SUITE_REVIEW_DOCUMENT_ID
-          && record.payload && typeof record.payload === "object") {
-        suiteReports.set(SUITE_REVIEW_DOCUMENT_ID, {
-          report: record.payload, version: record.version,
-        });
-      }
-    }
-    const ackDocs = await repository.documents.listLatest(action.projectId, REVIEW_ACK_KIND);
-    if (!action.alive()) return;
-    for (const record of ackDocs) {
-      if (record.payload && typeof record.payload === "object") {
-        acknowledgements.set(record.document_id,
-          { record: record.payload, version: record.version });
-      }
-    }
-    const exportDocs = await repository.documents.listLatest(action.projectId, EXPORT_RECORD_KIND);
-    if (!action.alive()) return;
-    if (exportDocs.length) {
-      const payloads = exportDocs.map((item) => item.payload)
-        .filter((item) => item && typeof item === "object")
-        .sort((left, right) => String(left.exported_at || "")
-          .localeCompare(String(right.exported_at || "")));
-      const latest = payloads.length ? payloads[payloads.length - 1] : null;
-      if (latest && typeof latest === "object") {
-        deliveryRecord = {
-          file_name: deliveryFileName({
-            projectName: (project && project.name) || "", at: latest.exported_at,
-          }),
-          byte_size: Number(latest.zip_bytes) || 0,
-          sha256: String(latest.zip_sha256 || ""),
-          at: latest.exported_at || "",
-          url: null,
-        };
-      }
-    }
-    for (const shot of (suitePlan && Array.isArray(suitePlan.shots) ? suitePlan.shots : [])) {
-      const latest = generation.latestStoredCandidateOf(shot.shot_id);
+    const plan = inputs.suitePlan();
+    for (const shot of (plan && Array.isArray(plan.shots) ? plan.shots : [])) {
+      // 落库套图 shot_id 恒为 string（见上；此处同）。
+      const latest = generation.latestStoredCandidateOf(/** @type {string} */ (shot.shot_id));
       if (!latest) continue;
       const candidate = latest.record;
-      const stored = generation.reviewReportOf(candidate.candidate_id);
+      const stored = selectionAdoption.reportOf(candidate.candidate_id);
       // 重开只补建缺失/过期报告：内存面已有当前报告则跳过，避免 review_report 版本无意义 +1。
       if (stored && reviewIsCurrent(stored.report, candidate)) continue;
       try {
-        await generation.ensureReviewReport(shot.shot_id, candidate, null, action.projectId);
+        await selectionAdoption.ensureReport(/** @type {string} */ (shot.shot_id), candidate, null, action.projectId);
       } catch (error) {
         // 打开项目时的报告补建是尽力而为；失败不阻塞工作区。
       }
@@ -5756,7 +1534,7 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
     renderAll();
     await loadCapabilities();
     if (!action.alive()) return;
-    // capabilities 是渲染输入（renderAnalyze 读 capabilitiesError、renderAttempts 读
+    // capabilities 是渲染输入（input-view 经 deps.capabilities() 读能力、renderAttempts 读
     // 图像 provider），必须在它到位后重新投影，否则初次打开会留下"尚未读到能力信息"
     // 的陈旧文案，直到下一次用户动作触发渲染才消失。
     // 确认有效性依赖 capabilities 投影的有效档：能力到位后再做唯一一次状态派生；
@@ -5768,7 +1546,21 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
     renderAll();
   }
 
+  modelSettings.subscribe(() => {
+    capabilities = modelSettings.capabilities;
+    if (!projectId) return;
+    // 设置变化会整体重渲染（含商品资料的输入框）：先把还在防抖里的草稿落盘再渲染，
+    // 否则用户刚输入、尚未到落盘时点的文本会被按存储值重画掉——等于静默丢用户输入。
+    // 只落盘草稿（inputs.saveIntakeNow 无脏数据即 no-op，真落盘时经 changed 走派生），
+    // 不在这里派生状态：能力/会话就绪前派生会把中途结论写回项目记录
+    //（重开项目变成 PLAN_REVIEW、revision 无谓 +1，UI2-17 整库逐字判据必红）。
+    Promise.resolve()
+      .then(() => inputs.saveIntakeNow())
+      .catch(() => {})
+      .then(() => { renderAll(); });
+  });
   return {
+    /** @param {StoredProjectRecord} projectRecord @returns {Promise<void>} */
     async open(projectRecord) {
       bind();
       project = projectRecord;
@@ -5780,33 +1572,28 @@ export function createWorkspace({ repository, session = null, onProjectChanged =
         handleInternalError(error);
       }
     },
+    /** @returns {boolean} */
     isOpen() {
       return projectId !== null;
     },
+    /** @returns {Promise<void>} */
     async close() {
       // 会话代由 session 统一推进；这里只做关闭时的收尾：
       // 先把未保存的草稿按当前（旧）会话落库，再清理本地资源与项目引用。
       // 不承诺取消上游：已发出的请求与已提交的任务照常完成，结果记录仍会写入。
-      if (saveTimer !== null) {
-        try {
-          await saveIntakeNow();
-        } catch (error) {
-          handleInternalError(error);
-        }
-      }
+      await inputView?.saveIntakeNow();
       revokeObjectUrls();
       revokePreviewUrls();
+      deliveryView?.dispose();
       project = null;
       projectId = null;
     },
+    /** @param {StoredProjectRecord} projectRecord @returns {void} */
     setProject(projectRecord) {
       if (projectRecord && projectRecord.project_id === projectId) {
         project = projectRecord;
         renderHeaderText(project);
       }
-    },
-    async reviewLatestCandidate(shotId) {
-      return generation.reviewCandidate(shotId);
     },
   };
 }

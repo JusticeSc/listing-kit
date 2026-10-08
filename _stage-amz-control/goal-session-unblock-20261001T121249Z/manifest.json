@@ -1,0 +1,55 @@
+{
+  "observed_at": "2026-10-01T12:12:49.755Z",
+  "files": [
+    {
+      "path": "AGENTS.md",
+      "sha256": "5931f0789ad7e6f9037e85ae2f5ad16c94768dae74069b11703bd6fbf1fefee7",
+      "bytes": 11652
+    },
+    {
+      "path": "README.md",
+      "sha256": "767581637d1f46c81d2ffc5c77195890df1e18d719de05e6dc3b07c2951341a1",
+      "bytes": 18123
+    },
+    {
+      "path": "docs/INDEX.md",
+      "sha256": "89c160be2b540a8a06ccac3ddcee9a067043103b9c389797ad0e7e9daf0aa3a6",
+      "bytes": 20481
+    },
+    {
+      "path": "docs/product-v2-project-context.md",
+      "sha256": "8a2c8f1e519fccf69d0348cdaf0a9e38922864288f32c36b02363c812fcc1b85",
+      "bytes": 30736
+    },
+    {
+      "path": "docs/product-v2-refactor-plan.md",
+      "sha256": "0cee3290196ac8869a14d1c215a1e646eba9f49c52d56b5e6e3023d9d925f591",
+      "bytes": 48859
+    },
+    {
+      "path": "tools/check_project_state.py",
+      "sha256": "af8c332743c44d110f8bac53d17d4c1f0ae8323daf52bba55345035ed8321206",
+      "bytes": 29804
+    },
+    {
+      "path": "evals/probes/project_state.py",
+      "sha256": "f3a76fd8da6fdb342c5eb505bca6c1c9d654f49e4a9a43f25c7e19a09e726db8",
+      "bytes": 20963
+    },
+    {
+      "path": "tools/refactor_resume.py",
+      "sha256": "4bb4d574828ccbdab876d6f871c463e98e8f9a0fd247c2b43ac0b5c1d3b22195",
+      "bytes": 6309
+    },
+    {
+      "path": "tools/v2_test_server.py",
+      "sha256": "7e0bfa2861596a92f57795c6b0ef07e004f23e52cfe0fe2b7c30270802668a17",
+      "bytes": 2178
+    },
+    {
+      "path": "_working/amz-listing-kit-product-v2/state.md",
+      "sha256": "87ea9c72facb1d420735a084cee0ac111971e6b52c85ca9a6e8a2a13843641b0",
+      "bytes": 3933
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "AGENTS.md": "291aca00e5d8d46ebc0dbcc868e9dace27e654cea41ae0da4a8edcbd3ccbb6ab",
+  "README.md": "f7f77716c42e1577e3156feaf4009daa4c9242802ed8193527a1142362c5d2b8",
+  "docs/INDEX.md": "89cb7b248ee6c7dd4c3d4787ff03b73472163ad73fc89357a35ddff97b16dfab",
+  "docs/product-v2-refactor-plan.md": "a1c94bdf17dc2272bd3635940bd0aaf6a4b7a55cd4eea528fc193fd2168be41e",
+  "docs/product-v2-project-context.md": "08283a4ddc1a015c3bc419d53da5fbbf43bad3a94a2588a815352ddb81d4e127",
+  "docs/product-v2-ui-contract.md": "6b6671e3543286a750dbaeb37984d47c33b2b7fbdd3a254b2b740af1d5545d09",
+  "_working/amz-listing-kit-product-v2/state.md": "102344d30e16ca1cb4fcb37c8e792fc3af2450113d68ce205911f1650742d817",
+  "tools/check_project_state.py": "2725f1a7fd77f873cb6c9cfc86d13a8bc1a360d66cbef849428afa06fc523fd0",
+  "tools/refactor_resume.py": "14db745ef517727742c7975b83b3960f812e07e9be1e07348d11ef5f1b4974f2",
+  "evals/probes/project_state.py": "d85b6d11f971c52ddba91618bb5b6c7de1d5441de8d60fb74e67d9ea80d14e98"
+}

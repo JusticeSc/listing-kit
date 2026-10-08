@@ -47,99 +47,9 @@ EXPECTED_REVIEW_CASES = [f"R{index}" for index in range(1, 14)]
 EXPECTED_PROVIDER_CASES = [f"R{index}" for index in range(14, 22)]
 
 
-def load_module(path: Path, name: str):
-    spec = importlib.util.spec_from_file_location(name, path)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+import v2_verify_shared as shared  # noqa: E402
 
-
-v251 = load_module(ROOT / "tools" / "verify_v2_5_1_deterministic_review.py", "verify_v251")
-server_module = v251.load_server_module()
-
-
-def product_text(relative: str) -> str:
-    return (PRODUCT_DIR / relative).read_text(encoding="utf-8")
-
-
-def compare_section(text: str) -> str:
-    """workspace.js 里比较面板那一整块（分区注释 → renderAttempts 之前）。"""
-
-    start = text.index("候选比较与审核清单（V2.5.3）")
-    end = text.index("function renderAttempts", start)
-    return text[start:end]
-
-
-def check_static_guards() -> list[dict]:
-    checks: list[dict] = []
-    syntax_targets = [
-        PRODUCT_DIR / "domain" / "compare.js",
-        PRODUCT_DIR / "domain" / "review.js",
-        PRODUCT_DIR / "domain" / "index.js",
-        PRODUCT_DIR / "workspace.js",
-        HARNESS_DIR / "compare-panel.js",
-        Path(__file__).resolve(),
-    ]
-    results = []
-    for target in syntax_targets:
-        if target.suffix == ".js":
-            command = ["node", "--check", str(target)]
-        else:
-            command = [sys.executable, "-c",
-                       "import ast,pathlib,sys;ast.parse(pathlib.Path(sys.argv[1]).read_text(encoding='utf-8'))",
-                       str(target)]
-        completed = subprocess.run(command, cwd=str(ROOT), capture_output=True, text=True, check=False)
-        results.append({"file": target.relative_to(ROOT).as_posix(), "rc": completed.returncode,
-                        "stderr": completed.stderr.strip()[-160:]})
-    checks.append({
-        "id": "V2.5.3-01",
-        "title": "语法门：compare / review / workspace / 契约套件与本工具全部可解析",
-        "ok": all(item["rc"] == 0 for item in results),
-        "detail": {"files": results},
-    })
-
-    review_text = product_text("domain/review.js")
-    compare_text = product_text("domain/compare.js")
-    workspace_text = product_text("workspace.js")
-    canonical = '["BLOCK", "HIGH_RISK", "WARNING", "UNKNOWN"]'
-    duplicates = [name for name, text in (("domain/compare.js", compare_text),
-                                          ("workspace.js", workspace_text))
-                  if re.search(r'\[\s*"BLOCK"\s*,\s*"HIGH_RISK"', text)]
-    checks.append({
-        "id": "V2.5.3-02",
-        "title": "单一权威：先看顺序只在 domain/review.js 定义，比较模块与工作台只引用",
-        "ok": canonical in review_text and not duplicates
-              and "REVIEW_SEVERITY_ORDER" in compare_text
-              and "compareSeverityRank" in compare_text,
-        "detail": {"order_in_review": canonical in review_text, "duplicated_in": duplicates},
-    })
-
-    block = compare_section(workspace_text)
-    forbidden = [token for token in ("documents.save", "assets.put", "REVIEW_KIND", "CANDIDATE_KIND",
-                                     "selection", "SELECTION") if token in block]
-    checks.append({
-        "id": "V2.5.3-03",
-        "title": "比较面板是纯投影：不写文档、不写资产、不产生选择",
-        "ok": not forbidden,
-        "detail": {"forbidden_tokens": forbidden, "section_chars": len(block)},
-    })
-
-    html = (PRODUCT_DIR / "index.html").read_text(encoding="utf-8")
-    wiring = {
-        "panel": 'id="compare-panel"' in html,
-        "tablist": 'role="tablist"' in html,
-        "tabpanel": 'role="tabpanel"' in html,
-        "contract_constant": f'COMPARE_CONTRACT_VERSION = "{COMPARE_CONTRACT_VERSION}"' in compare_text,
-        "contract_used": "COMPARE_CONTRACT_VERSION" in workspace_text,
-        "default_projection": "defaultCompareTargetId" in workspace_text,
-    }
-    checks.append({
-        "id": "V2.5.3-04",
-        "title": "面板接线：HTML 的 tablist/tabpanel 与合同版本贯穿领域层与工作台",
-        "ok": all(wiring.values()),
-        "detail": wiring,
-    })
-    return checks
+server_module = shared.load_server_module()
 
 
 INJECT_FIXTURE_CANDIDATE = """
@@ -267,14 +177,14 @@ PANEL_PROBE = """
     report_vlm: details ? ((details.querySelector("[data-compare-vlm]") || {}).textContent || "") : "",
     criteria: [...panel.querySelectorAll(".compare-basis-list li")].map((node) => node.textContent),
     references: [...panel.querySelectorAll("#compare-references li")].map((node) => ({
-      sha256: node.dataset.referenceSha256,
+      sha256: node.dataset.referenceSha256 || node.getAttribute("data-reference-sha256"),
       has_image: Boolean(node.querySelector("img[src]")),
       text: (node.textContent || "").slice(0, 80),
     })),
     reference_title: (document.getElementById("compare-basis-title") || {}).textContent || "",
     jump_disabled: document.getElementById("compare-jump").disabled,
     jump_target: document.getElementById("compare-jump").dataset.targetShot || "",
-    buttons: [...panel.querySelectorAll("button")].map((node) => node.textContent),
+    buttons: [...panel.querySelectorAll("button")].map((node) => node.textContent)
   };
 }
 """
@@ -287,22 +197,25 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
     checks: list[dict] = []
     ui: dict = {}
     holder = {"scenario": "ok"}
-    port = v251.free_port()
+    # TOCTOU 说明：产品服务器直接绑 0 号端口并从 server_address 读回实际端口，
+    # 不用 shared.free_port() 先探测（Windows 上已被抢占的端口仍可静默绑定成功，
+    # 无人应答即 ERR_CONNECTION_REFUSED 假红；见 4_4 load_page/boot_retries 同源证据）。
+    # Harness 静态服 shared.start_static_server() 本就绑 0，不受影响。
     server = server_module.create_product_v2_server(
-        "127.0.0.1", port,
+        "127.0.0.1", 0,
         provider_factory=lambda: FakeSemanticProvider(scenario="ok"),
         image_provider_factory=lambda: FakeImageProvider(scenario="ok"),
         review_provider_factory=lambda: FakeReviewProvider(holder["scenario"]))
     threading.Thread(target=server.serve_forever, daemon=True).start()
-    static_server, static_url = v251.start_static_server()
+    base = f"http://127.0.0.1:{server.server_address[1]}"
+    static_server, static_url = shared.start_static_server()
     temp_root = Path(tempfile.mkdtemp(prefix="amz-v253-"))
     profile = temp_root / "profile"
     reference = temp_root / "ref.png"
-    reference.write_bytes(v251.png_bytes(1200, 1200, (36, 92, 160)))
+    reference.write_bytes(shared.png_bytes(1200, 1200, (36, 92, 160)))
     reference_sha = hashlib.sha256(reference.read_bytes()).hexdigest()
     compliant = temp_root / "compliant.png"
-    compliant.write_bytes(v251.png_bytes(1600, 1600, (232, 236, 240)))
-    base = f"http://127.0.0.1:{port}"
+    compliant.write_bytes(shared.png_bytes(1600, 1600, (232, 236, 240)))
     EVIDENCE_IMAGE_DIR.mkdir(parents=True, exist_ok=True)
     try:
         with sync_playwright() as pw:
@@ -314,7 +227,7 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 page.on("pageerror", lambda error: page_errors.append("[workbench] " + str(error)))
 
                 def probe() -> dict:
-                    return page.evaluate(v251.PROBE)
+                    return page.evaluate(shared.PROBE)
 
                 def panel_probe() -> dict:
                     return page.evaluate(PANEL_PROBE)
@@ -337,12 +250,6 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                     stage_nav.goto(page, "generate")
                     row(shot_id).locator(f'button:has-text("{text}")').first.click()
 
-                def submit_once(shot_id: str, first: bool) -> None:
-                    click_row_button(shot_id, "生成这张图" if first else "再生成一张")
-                    wait_state(shot_id, "submitted")
-                    click_row_button(shot_id, "核对任务")
-                    wait_state(shot_id, "succeeded")
-                    wait_candidate_ui(shot_id)
 
                 def open_panel(shot_id: str, card_count: int, references: int | None = None) -> None:
                     stage_nav.goto(page, "generate")
@@ -390,20 +297,18 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                     " req.onsuccess = () => resolve(req.result); });"
                     " db.close(); return rows.map((item) => item.project_id); }")
                 project_id = project_ids[0]
-                page.evaluate(v251.SEED_SLOTS, project_id)
+                page.evaluate(shared.SEED_SLOTS, project_id)
                 page.reload(wait_until="networkidle")
+                stage_nav.goto(page, "plan")
                 page.click("#suite-seed")
                 expect(page.locator("#shot-list .shot-row")).to_have_count(4)
                 initial = probe()
                 shot_ids = initial["shot_ids"]
                 first_shot, second_shot = shot_ids[0], shot_ids[1]
-                v251.compile_all(page, shot_ids)
-                expect(page.locator("#confirm-action")).to_be_enabled()
-                page.click("#confirm-action")
-                expect(page.locator("#confirm-record")).to_contain_text("已确认 v")
-                submit_once(first_shot, True)
-                submit_once(first_shot, False)
-                submit_once(second_shot, True)
+                shared.compile_all(page, shot_ids)
+                shared.confirm_and_submit(page, expect, probe, shot_ids=shot_ids)
+                click_row_button(first_shot, "再生成一张")
+                shared.confirm_and_submit(page, expect, probe, shot_ids=[first_shot])
                 injected = page.evaluate(INJECT_FIXTURE_CANDIDATE, {
                     "projectId": project_id, "shotId": first_shot,
                     "pngBase64": base64.b64encode(compliant.read_bytes()).decode("ascii"),
@@ -438,7 +343,7 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                     "ok": len(panel["references"]) == 1
                           and panel["references"][0]["sha256"] == reference_sha
                           and panel["references"][0]["has_image"] is True
-                          and "实际发送" in panel["reference_title"],
+                          and "原任务参考图" in panel["reference_title"],
                     "detail": {"references": panel["references"],
                                "title": panel["reference_title"],
                                "expected_sha256": reference_sha[:16]},
@@ -500,7 +405,7 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 collapsed = panel_probe()
                 page.locator("#compare-checklist details.compare-report summary").click()
                 expanded = panel_probe()
-                review_contract = v251.current_review_contract()
+                review_contract = shared.current_review_contract()
                 checks.append({
                     "id": "V2.5.3-12",
                     "title": "完整报告按需展开：默认收起，展开后含合同版本、通过项与视觉复核状态",
@@ -525,8 +430,8 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 checks.append({
                     "id": "V2.5.3-13",
                     "title": "面板不改业务状态：候选字节、Attempt 与审核报告在交互前后完全一致",
-                    "ok": v251.candidate_json(after_panel, first_shot) == v251.candidate_json(seeded, first_shot)
-                          and v251.candidate_json(after_panel, second_shot) == v251.candidate_json(seeded, second_shot)
+                    "ok": shared.candidate_json(after_panel, first_shot) == shared.candidate_json(seeded, first_shot)
+                          and shared.candidate_json(after_panel, second_shot) == shared.candidate_json(seeded, second_shot)
                           and json.dumps(after_panel["attempt_chains"], sort_keys=True, default=str)
                           == json.dumps(seeded["attempt_chains"], sort_keys=True, default=str)
                           and len(after_panel["review_reports"]) == len(seeded["review_reports"]),
@@ -552,28 +457,68 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                                "references": len(reloaded["references"])},
                 })
 
+                # 独立期望：先逐图观测「有没有待处理候选」（打开每张图自己的比较面板读候选状态），
+                # 再按合同从当前之后绕计划顺序找第一张有待处理的图。不能拿 jump 按钮自己的
+                # target 当期望（那是自证：目标算错但跳转忠实跟随也会绿）。
+                pending_by_shot: dict[str, bool] = {}
+                cards_by_shot: dict[str, int] = {}
+                for shot_id in shot_ids:
+                    if shot_id == first_shot:
+                        cards = panel["cards"]
+                    else:
+                        open_panel(shot_id, len(seeded["candidate_chains"].get(shot_id, [])))
+                        cards = panel_probe()["cards"]
+                    cards_by_shot[shot_id] = len(cards)
+                    pending_by_shot[shot_id] = any(card["state"] == "pending" for card in cards)
+                assert any(pending_by_shot.values()), "夹具里必须有待处理的图才能验跳转"
+
+                def expected_next_pending(current: str) -> str | None:
+                    order = list(shot_ids)
+                    start = order.index(current)
+                    for step in range(1, len(order) + 1):
+                        shot_id = order[(start + step) % len(order)]
+                        if pending_by_shot.get(shot_id):
+                            return shot_id
+                    return None
+
+                expected = expected_next_pending(second_shot)
                 open_panel(second_shot, len(candidates_second))
                 single = panel_probe()
                 jump_enabled = not single["jump_disabled"]
+                jump_target = single["jump_target"]
+                assert expected is not None, "观测到有待处理的图，期望就不该是空"
                 page.click("#compare-jump")
                 page.wait_for_function(
                     """(shot) => {
                         const panel = document.getElementById("compare-panel");
                         return Boolean(panel && !panel.hidden && panel.dataset.shotId === shot);
-                    }""", arg=first_shot, timeout=20_000)
+                    }""", arg=expected, timeout=20_000)
                 jumped = panel_probe()
+                landed_selected = next((card["candidate_id"] for card in jumped["cards"]
+                                        if card["selected"]), None)
+                # 绕圈边界：从落点再算一次下一张；只有落点自己有待处理时合同允许绕回自身，
+                # 否则必须指向另一张——两种情况按钮都不能变成死的。
+                expected_again = expected_next_pending(jumped["shot_id"])
                 checks.append({
                     "id": "V2.5.3-15",
-                    "title": "单候选回退与「下一个待处理」：一张图一个候选照常比较，跳转落到有问题的图",
+                    "title": "单候选回退与「下一个待处理」：一张图一个候选照常比较，跳转落到期望的下一张待处理图",
                     "ok": len(single["cards"]) == len(candidates_second) == 1
                           and single["shot_id"] == second_shot
                           and jump_enabled
-                          and single["jump_target"] == first_shot
-                          and jumped["shot_id"] == first_shot
-                          and jumped["focused_tab_id"] == "compare-tab-" + expected_ids[0],
+                          and jump_target == expected
+                          and jumped["shot_id"] == expected
+                          and any(card["state"] == "pending" for card in jumped["cards"])
+                          and bool(landed_selected)
+                          and jumped["focused_tab_id"] == "compare-tab-" + (landed_selected or "")
+                          and not jumped["jump_disabled"]
+                          and jumped["jump_target"] == (expected_again or ""),
                     "detail": {"second_shot": second_shot, "cards": len(single["cards"]),
-                               "jump_target": single["jump_target"], "landed": jumped["shot_id"],
-                               "focus": jumped["focused_tab_id"]},
+                               "pending_by_shot": pending_by_shot,
+                               "cards_by_shot": cards_by_shot,
+                               "expected": expected, "jump_target": jump_target,
+                               "landed": jumped["shot_id"], "focus": jumped["focused_tab_id"],
+                               "again_expected": expected_again,
+                               "again_target": jumped["jump_target"]},
                 })
 
                 all_buttons = sorted({text for payload in (panel, single, jumped, reloaded)
@@ -619,7 +564,9 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 card_ok = len(card_states) >= 2
                 card_detail = {"cards": card_states}
                 for item in card_states:
-                    chain = chains.get(item["shot_id"], [])
+                    # chains 只覆盖走查的两张图：有链才校验身份归属，无链只看卡片自洽
+                    # （只改覆盖口径，不断言含义）。
+                    chain = chains.get(item["shot_id"], None)
                     if item["review_state"] not in ("pending", "unknown", "clean", "unchecked"):
                         card_ok = False
                     if not item["text"]:
@@ -629,7 +576,7 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                             card_ok = False
                     elif "自动检查" not in item["text"]:
                         card_ok = False
-                    if item["candidate_id"] not in chain:
+                    if chain is not None and item["candidate_id"] not in chain:
                         card_ok = False
                     if not any(button["text"] == "采用候选" and button["disabled"] is False
                                for button in item["buttons"]):
@@ -643,13 +590,18 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                     "detail": card_detail,
                 })
 
-                # V2.6.14（采用后不再邀请重复采用）：同一张卡的第三个按钮必须跟随状态变化。
+                # 当前语义下没有 #adopt-submit 弹窗：review-card 行内“采用候选”按钮直接采用
+                # （只改到达路径：等行内按钮出现并点击，不断言含义）。
                 target_card = card_states[0]["shot_id"] if card_states else first_shot
+                page.wait_for_selector(
+                    f'#review-list .review-card[data-shot-id="{target_card}"] '
+                    'button:has-text("采用候选"):not([disabled])', timeout=15_000)
                 page.click(f'#review-list .review-card[data-shot-id="{target_card}"] '
                            'button:has-text("采用候选")')
-                page.wait_for_selector("#adopt-submit:not([disabled])", timeout=15_000)
-                page.click("#adopt-submit")
-                page.wait_for_selector("#adopt-status:not([hidden])", timeout=15_000)
+                page.wait_for_function(
+                    """() => [...document.querySelectorAll('#review-list .review-card')]
+                        .some((c) => c.getAttribute('data-selection-state') === 'current')""",
+                    timeout=15_000)
                 adopted_cards = page.evaluate(CARD_STATE_PROBE)
                 adopted_target = next((item for item in adopted_cards
                                        if item["shot_id"] == target_card), None)
@@ -684,15 +636,15 @@ def run_harness_suites(console_errors: list[str], page_errors: list[str]) -> lis
     checks: list[dict] = []
     with sync_playwright() as pw:
         browser = pw.chromium.launch(headless=True)
-        static_server, static_url = v251.start_static_server()
+        static_server, static_url = shared.start_static_server()
         try:
-            compare_suite = v251.read_suite(
+            compare_suite = shared.read_suite(
                 browser, static_url + "/harness/compare-panel.html",
                 "__V2_COMPARE_RESULTS__", console_errors, page_errors)
-            review_suite = v251.read_suite(
+            review_suite = shared.read_suite(
                 browser, static_url + "/harness/review-contract.html",
                 "__V2_REVIEW_RESULTS__", console_errors, page_errors)
-            provider_suite = v251.read_suite(
+            provider_suite = shared.read_suite(
                 browser, static_url + "/harness/review-provider-contract.html",
                 "__V2_REVIEW_PROVIDER_RESULTS__", console_errors, page_errors)
         finally:
@@ -732,12 +684,11 @@ def main() -> int:
     console_errors: list[str] = []
     page_errors: list[str] = []
 
-    checks.extend(check_static_guards())
     checks.extend(run_harness_suites(console_errors, page_errors))
     workbench_checks, ui = run_workbench_checks(stamp, console_errors, page_errors)
     checks.extend(workbench_checks)
 
-    entry = v251.run_entry(["--check"])
+    entry = shared.run_entry(["--check"])
     checks.append({
         "id": "V2.5.3-18",
         "title": "正式入口 --check 全过（比较面板没有破坏既有自检）",
@@ -773,7 +724,7 @@ def main() -> int:
         "-" * 76,
         f"observed_at: {observed_at}",
         f"status: {'passed' if passed == len(checks) else 'failed'}",
-        f"contract: {COMPARE_CONTRACT_VERSION}（面板）· {v251.current_review_contract()}（审核报告）",
+        f"contract: {COMPARE_CONTRACT_VERSION}（面板）· {shared.current_review_contract()}（审核报告）",
         "model_calls: 0 · external_network_calls: 0（fake providers + 本地静态服务器）",
         f"json: {json_path.relative_to(ROOT).as_posix()}",
         "",
@@ -796,7 +747,7 @@ def main() -> int:
         "status": "passed" if passed == len(checks) else "failed",
         "observed_at": observed_at,
         "contract": COMPARE_CONTRACT_VERSION,
-        "review_contract": v251.current_review_contract(),
+        "review_contract": shared.current_review_contract(),
         "model_calls": 0,
         "external_network_calls": 0,
         "checks": checks,

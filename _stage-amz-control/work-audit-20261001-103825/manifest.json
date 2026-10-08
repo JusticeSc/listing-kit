@@ -1,0 +1,122 @@
+{
+  "observed_at": "2026-10-01T10:38:25.179Z",
+  "head": "ed363d329de7111d2cae07c56a30f228150d3fbe",
+  "files": [
+    {
+      "path": "AGENTS.md",
+      "bytes": 11652,
+      "sha256": "5931f0789ad7e6f9037e85ae2f5ad16c94768dae74069b11703bd6fbf1fefee7"
+    },
+    {
+      "path": "README.md",
+      "bytes": 18123,
+      "sha256": "767581637d1f46c81d2ffc5c77195890df1e18d719de05e6dc3b07c2951341a1"
+    },
+    {
+      "path": "_working/amz-listing-kit-product-v2/tasks/v273-walkthrough-kit.md",
+      "bytes": 4607,
+      "sha256": "8c12bae2a3ded874965c7a5a9223f2795ff79431816c08d73140382e567993b5"
+    },
+    {
+      "path": "app/product_v2/workspace.js",
+      "bytes": 264316,
+      "sha256": "9101172bb106c00a1c7f9829e1b294a3168d73559a438467c8f5d8e52298aa0c"
+    },
+    {
+      "path": "docs/INDEX.md",
+      "bytes": 20481,
+      "sha256": "89c160be2b540a8a06ccac3ddcee9a067043103b9c389797ad0e7e9daf0aa3a6"
+    },
+    {
+      "path": "docs/product-v2-goal-and-implementation-plan.md",
+      "bytes": 175588,
+      "sha256": "d62b5fe1718eb17b6334b9c54f062606ec2541d0adbaa544feb7ad1d96b2e374"
+    },
+    {
+      "path": "docs/product-v2-project-context.md",
+      "bytes": 30736,
+      "sha256": "8a2c8f1e519fccf69d0348cdaf0a9e38922864288f32c36b02363c812fcc1b85"
+    },
+    {
+      "path": "docs/product-v2-ui-contract.md",
+      "bytes": 20395,
+      "sha256": "e9aa6a75bdfc72b8f036591f44f60b3d69cf5c819eb7684ab5101efb4ddef62f"
+    },
+    {
+      "path": "evals/probes/docs_index.py",
+      "bytes": 15010,
+      "sha256": "bf567bde7e8bf27b03f24ce968b14681f8235406b173df86f030a261c8f7b0fd"
+    },
+    {
+      "path": "evals/probes/project_state.py",
+      "bytes": 20963,
+      "sha256": "f3a76fd8da6fdb342c5eb505bca6c1c9d654f49e4a9a43f25c7e19a09e726db8"
+    },
+    {
+      "path": "tools/check_project_state.py",
+      "bytes": 29804,
+      "sha256": "af8c332743c44d110f8bac53d17d4c1f0ae8323daf52bba55345035ed8321206"
+    },
+    {
+      "path": "tools/verify_v2_1_2_project_home.py",
+      "bytes": 25627,
+      "sha256": "01e04faf938f3bc92fc349f70f77c3a9a2012aa597ed9f96a310aaac36dc1a39"
+    },
+    {
+      "path": "tools/verify_v2_2_3_intake_understanding.py",
+      "bytes": 37834,
+      "sha256": "b9af31e1cbf5c1dbf0e4f6eae229d7d687527871f5763019897032f7e34dbba4"
+    },
+    {
+      "path": "_working/amz-listing-kit-product-v2-baseline/state.md",
+      "bytes": 53808,
+      "sha256": "47b3a6343725f16dd6513e6a2553dc88d2e3382651c90a52f2821c78d6077d37"
+    },
+    {
+      "path": "docs/product-v2-refactor-plan.md",
+      "bytes": 48859,
+      "sha256": "0cee3290196ac8869a14d1c215a1e646eba9f49c52d56b5e6e3023d9d925f591"
+    },
+    {
+      "path": "tools/refactor_resume.py",
+      "bytes": 6309,
+      "sha256": "4bb4d574828ccbdab876d6f871c463e98e8f9a0fd247c2b43ac0b5c1d3b22195"
+    },
+    {
+      "path": "evals/product-v2/refactor/control-preparation-20261001.md",
+      "bytes": 10088,
+      "sha256": "12ce96392789a08f1ce77faada74402d47685bae047fa93236f201c69a8ce867"
+    },
+    {
+      "path": "evals/product-v2/refactor/goal-binding-20261001-094520.md",
+      "bytes": 3413,
+      "sha256": "5cfc40dfdf6288c4234581bfb246936a4f52812ed15707b97ef87ae1d358a1b4"
+    },
+    {
+      "path": "evals/product-v2/refactor/baseline-and-boot-20261001-095710.md",
+      "bytes": 9363,
+      "sha256": "5c11c171a3b0897082bb2db79efa63632ad1774cbfff4bb833d7c74fd8449385"
+    },
+    {
+      "path": "evals/product-v2/refactor/audit-protocol-20261001-095948.md",
+      "bytes": 6511,
+      "sha256": "261e107a8dbffd1df9a3b1605c3442ca05af94258c0f4e23a60c2e8951279454"
+    }
+  ],
+  "historical_project": {
+    "source": "C:/Users/31368/AppData/Local/Temp/amz-remote-e2e-dl-qzpom6bi/夹式-LED-阅读灯-·-远程真实链路预演-20261001-0117.zip",
+    "bytes_observed": 6974188,
+    "sha256_observed": "a98e2b0b589a3ae2eb68914bd294f08de10399359b4f28fc4931ac862dadc470",
+    "saved": false,
+    "limitation": "Temporary directory became unavailable during attempted byte preservation; source read initially succeeded and later tool read reports not found"
+  },
+  "patch": {
+    "path": "tracked-worktree.patch",
+    "bytes": 121556,
+    "sha256": "968dc5592798e9e0931b6a12e5bfed7ec06398341a6dd59dde766045ae963d30"
+  },
+  "original_state": {
+    "path": "state.md",
+    "sha256": "5d47f0e908d314025702508332d5005dc1ffa6d3c27e68d81fe466b4f7550806"
+  }
+}

@@ -1,0 +1,97 @@
+V2.7.1 Product V2 全回归 · 20261008-p11close2
+命令数 44 · 轮数 2 · 指纹 f971df6abdd031e6（两轮一致）
+
+== 第 1 轮 · 指纹 f971df6abdd031e617d081a9b89ab23e22064471f7e774a6c2a64dd23a9a39ba
+[PASS] tools/check_docs.py --no-run -> rc=0 · 0.9s · 1 信号
+[PASS] tools/check_project_state.py  -> rc=0 · 1.8s · 1 信号
+[PASS] evals/probes/project_state.py  -> rc=0 · 117.7s · 1 信号
+[PASS] evals/probes/docs_index.py  -> rc=0 · 11.7s · 1 信号
+[PASS] tools/check_verification.py  -> rc=0 · 0.2s · 1 信号
+[PASS] evals/probes/verification_policy.py  -> rc=0 · 2.1s · 15 信号
+[PASS] npm:check:versions  -> rc=0 · 0.6s · 1 信号
+[PASS] npm:check:types  -> rc=0 · 2.1s · 1 信号
+[PASS] npm:check:generated  -> rc=0 · 3.2s · 1 信号
+[PASS] npm:test:domain  -> rc=0 · 1.0s · 1 信号
+[PASS] app/server.py --check -> rc=0 · 1.4s · 6 信号
+[PASS] tools/verify_v2_1_1_indexeddb.py  -> rc=0 · 4.2s · 6 信号
+[PASS] tools/verify_v2_1_2_project_home.py  -> rc=0 · 7.5s · 11 信号
+[PASS] tools/verify_v2_1_3_project_package.py  -> rc=0 · 4.8s · 8 信号
+[PASS] tools/verify_v2_1_4_formal_entry.py  -> rc=0 · 16.0s · 13 信号
+[PASS] tools/verify_v2_2_1_product_contracts.py  -> rc=0 · 3.1s · 6 信号
+[PASS] tools/verify_v2_2_2_semantic_provider.py  -> rc=0 · 2.0s · 10 信号
+[PASS] tools/verify_v2_2_3_intake_understanding.py  -> rc=0 · 13.5s · 22 信号
+[PASS] tools/verify_v2_3_1_suite_registry.py  -> rc=0 · 3.1s · 6 信号
+[PASS] tools/verify_v2_3_2_suite_editor.py  -> rc=0 · 8.1s · 11 信号
+[PASS] tools/verify_v2_3_3_session_lifecycle.py  -> rc=0 · 12.3s · 15 信号
+[PASS] tools/verify_v2_3_3_spec_versions.py  -> rc=0 · 8.6s · 12 信号
+[PASS] tools/verify_v2_3_4_prompt_compiler.py  -> rc=0 · 9.8s · 12 信号
+[PASS] tools/verify_v2_3_5_pre_generation_confirm.py  -> rc=0 · 11.1s · 18 信号
+[PASS] tools/verify_v2_3_6_prompt_manual_edit.py  -> rc=0 · 18.3s · 17 信号
+[PASS] tools/verify_v2_4_1_image_gateway.py  -> rc=0 · 7.2s · 33 信号
+[PASS] tools/verify_v2_4_2_generation_attempt.py  -> rc=0 · 15.4s · 1 信号
+[PASS] tools/verify_v2_4_3_batch_execution.py  -> rc=0 · 26.0s · 1 信号
+[PASS] tools/verify_v2_4_4_candidate_blob.py  -> rc=0 · 18.7s · 1 信号
+[PASS] tools/verify_v2_5_1_deterministic_review.py  -> rc=0 · 9.7s · 1 信号
+[PASS] tools/verify_v2_5_2_vlm_review.py  -> rc=0 · 8.7s · 20 信号
+[PASS] tools/verify_v2_r5_2_two_adapters.py  -> rc=0 · 16.8s · 1 信号
+[PASS] tools/verify_v2_5_3_compare_panel.py  -> rc=0 · 11.1s · 17 信号
+[PASS] tools/verify_v2_5_4_rework_loop.py  -> rc=0 · 10.4s · 15 信号
+[PASS] tools/verify_v2_5_5_suite_review.py  -> rc=0 · 28.9s · 12 信号
+[PASS] tools/verify_v2_6_1_selection.py  -> rc=0 · 61.3s · 23 信号
+[PASS] tools/verify_v2_6_2_delivery.py  -> rc=0 · 33.4s · 13 信号
+[PASS] tools/verify_v2_6_3_project_transfer.py  -> rc=0 · 18.9s · 11 信号
+[PASS] tools/verify_v2_6_4_accessibility.py  -> rc=0 · 34.9s · 18 信号
+[PASS] tools/verify_v2_ui_2_interaction_visual.py  -> rc=0 · 12.7s · 16 信号
+[PASS] tools/verify_v2_ui_3_frontend.py  -> rc=0 · 33.2s · 16 信号
+[PASS] tools/verify_v2_packet08_settings_vision.py  -> rc=0 · 15.4s · 23 信号
+[PASS] tools/verify_v2_packet08_adoption_ai.py  -> rc=0 · 14.9s · 11 信号
+[PASS] tools/verify_v2_packet08_delivery_ai.py  -> rc=0 · 15.9s · 16 信号
+
+== 第 2 轮 · 指纹 f971df6abdd031e617d081a9b89ab23e22064471f7e774a6c2a64dd23a9a39ba
+[PASS] tools/check_docs.py --no-run -> rc=0 · 0.8s · 1 信号
+[PASS] tools/check_project_state.py  -> rc=0 · 1.7s · 1 信号
+[PASS] evals/probes/project_state.py  -> rc=0 · 118.3s · 1 信号
+[PASS] evals/probes/docs_index.py  -> rc=0 · 9.1s · 1 信号
+[PASS] tools/check_verification.py  -> rc=0 · 0.2s · 1 信号
+[PASS] evals/probes/verification_policy.py  -> rc=0 · 2.0s · 15 信号
+[PASS] npm:check:versions  -> rc=0 · 0.5s · 1 信号
+[PASS] npm:check:types  -> rc=0 · 2.1s · 1 信号
+[PASS] npm:check:generated  -> rc=0 · 3.2s · 1 信号
+[PASS] npm:test:domain  -> rc=0 · 1.0s · 1 信号
+[PASS] app/server.py --check -> rc=0 · 1.4s · 6 信号
+[PASS] tools/verify_v2_1_1_indexeddb.py  -> rc=0 · 4.1s · 6 信号
+[PASS] tools/verify_v2_1_2_project_home.py  -> rc=0 · 7.5s · 11 信号
+[PASS] tools/verify_v2_1_3_project_package.py  -> rc=0 · 4.7s · 8 信号
+[PASS] tools/verify_v2_1_4_formal_entry.py  -> rc=0 · 15.8s · 13 信号
+[PASS] tools/verify_v2_2_1_product_contracts.py  -> rc=0 · 3.0s · 6 信号
+[PASS] tools/verify_v2_2_2_semantic_provider.py  -> rc=0 · 2.0s · 10 信号
+[PASS] tools/verify_v2_2_3_intake_understanding.py  -> rc=0 · 13.7s · 22 信号
+[PASS] tools/verify_v2_3_1_suite_registry.py  -> rc=0 · 3.2s · 6 信号
+[PASS] tools/verify_v2_3_2_suite_editor.py  -> rc=0 · 8.2s · 11 信号
+[PASS] tools/verify_v2_3_3_session_lifecycle.py  -> rc=0 · 12.3s · 15 信号
+[PASS] tools/verify_v2_3_3_spec_versions.py  -> rc=0 · 8.7s · 12 信号
+[PASS] tools/verify_v2_3_4_prompt_compiler.py  -> rc=0 · 9.8s · 12 信号
+[PASS] tools/verify_v2_3_5_pre_generation_confirm.py  -> rc=0 · 11.0s · 18 信号
+[PASS] tools/verify_v2_3_6_prompt_manual_edit.py  -> rc=0 · 18.2s · 17 信号
+[PASS] tools/verify_v2_4_1_image_gateway.py  -> rc=0 · 7.0s · 33 信号
+[PASS] tools/verify_v2_4_2_generation_attempt.py  -> rc=0 · 15.6s · 1 信号
+[PASS] tools/verify_v2_4_3_batch_execution.py  -> rc=0 · 26.2s · 1 信号
+[PASS] tools/verify_v2_4_4_candidate_blob.py  -> rc=0 · 18.6s · 1 信号
+[PASS] tools/verify_v2_5_1_deterministic_review.py  -> rc=0 · 9.6s · 1 信号
+[PASS] tools/verify_v2_5_2_vlm_review.py  -> rc=0 · 8.7s · 20 信号
+[PASS] tools/verify_v2_r5_2_two_adapters.py  -> rc=0 · 16.9s · 1 信号
+[PASS] tools/verify_v2_5_3_compare_panel.py  -> rc=0 · 11.1s · 17 信号
+[PASS] tools/verify_v2_5_4_rework_loop.py  -> rc=0 · 10.2s · 15 信号
+[PASS] tools/verify_v2_5_5_suite_review.py  -> rc=0 · 29.0s · 12 信号
+[PASS] tools/verify_v2_6_1_selection.py  -> rc=0 · 61.4s · 23 信号
+[PASS] tools/verify_v2_6_2_delivery.py  -> rc=0 · 33.7s · 13 信号
+[PASS] tools/verify_v2_6_3_project_transfer.py  -> rc=0 · 18.9s · 11 信号
+[PASS] tools/verify_v2_6_4_accessibility.py  -> rc=0 · 34.6s · 18 信号
+[PASS] tools/verify_v2_ui_2_interaction_visual.py  -> rc=0 · 12.8s · 16 信号
+[PASS] tools/verify_v2_ui_3_frontend.py  -> rc=0 · 33.2s · 16 信号
+[PASS] tools/verify_v2_packet08_settings_vision.py  -> rc=0 · 15.5s · 23 信号
+[PASS] tools/verify_v2_packet08_adoption_ai.py  -> rc=0 · 14.9s · 11 信号
+[PASS] tools/verify_v2_packet08_delivery_ai.py  -> rc=0 · 15.9s · 16 信号
+
+== 结论
+OK：2 轮连续全绿，指纹一致（f971df6abdd031e6）。

@@ -1,0 +1,1965 @@
+diff --git a/AGENTS.md b/AGENTS.md
+index 3284ab7..313e291 100644
+--- a/AGENTS.md
++++ b/AGENTS.md
+@@ -1,10 +1,14 @@
+ # Repository Guidelines
+ 
+ > CONTROL-STATUS: current · AUTHORITY: agent-rules
+-> 本文件是仓库工作规则的唯一权威。目标与完成判据看 `docs/product-v2-goal-and-implementation-plan.md`；
++> 本文件是仓库工作规则的唯一权威。目标与完成判据看 `docs/product-v2-refactor-plan.md`；
+ > 项目边界与技术栈看 `docs/product-v2-project-context.md`；当前进度看
+ > `_working/amz-listing-kit-product-v2/state.md`。进入项目按 `docs/INDEX.md` 的路由顺序读，不复制正文。
+ 
++当前 state 的 `prepared` 仅表示未绑定新 Goal 的准备态：下一动作按计划核对/绑定门，
++不得直接恢复旧 V2.7.3、执行产品重构、付费模型调用、部署或 V1 日落。
++`uv run --locked python tools/refactor_resume.py` 只读输出持久恢复路由；不使用聊天或内存 todo 代替 state。
++
+ ## Project Structure & Module Organization
+ 
+ - `app/` — 产品入口与前端：`server.py`（默认 Product V2 无状态入口，8780）、`product_v2_server.py`、
+@@ -99,9 +103,11 @@ ASCII。前端是原生 ESM，**无构建步骤**；DOM 只做投影，业务状
+ 
+ ## Security & Configuration Tips
+ 
+-密钥只从服务器环境变量读取（`DASHSCOPE_API_KEY`、`SEMANTIC_MODEL`、`IMAGE_MODEL`），不进浏览器、
+-Git、项目包、日志与证据。服务器不保存用户项目状态；浏览器 IndexedDB 是业务状态的权威，
+-`localStorage` 只放当前项目指针。
++当前已实现凭据仍只来自服务器环境变量（`DASHSCOPE_API_KEY` 等）。重构目标为 SEL-015 的
++BYOK 为主、默认档受限试用：部署默认 key 永不下发、不发送到用户自定义目标；用户 key 仅在经批准
++的内存会话/HTTPS 请求路径使用，不进 IndexedDB、localStorage、Git、项目包、日志、错误或诊断。
++持久保存用户 key 需另行授权；准备计划不代表 BYOK 已实现或允许调用。服务器不保存用户项目状态；
++IndexedDB 是项目权威，localStorage 只放当前项目指针和无秘密界面偏好。
+ 
+ ## Selection Gate (Reuse-first)
+ 
+diff --git a/README.md b/README.md
+index d05337c..1694f3a 100644
+--- a/README.md
++++ b/README.md
+@@ -2,7 +2,7 @@
+ 
+ > CONTROL-STATUS: current · AUTHORITY: implemented-behavior
+ > 本文件只回答“当前代码实际能做什么、怎样启动和验证”。产品目标见
+-> [`docs/product-v2-goal-and-implementation-plan.md`](docs/product-v2-goal-and-implementation-plan.md)，
++> [`docs/product-v2-refactor-plan.md`](docs/product-v2-refactor-plan.md)，
+ > 当前进度与下一动作见
+ > [`_working/amz-listing-kit-product-v2/state.md`](_working/amz-listing-kit-product-v2/state.md)，
+ > 文档身份和读取顺序见 [`docs/INDEX.md`](docs/INDEX.md)。
+diff --git a/_working/amz-listing-kit-product-v2/state.md b/_working/amz-listing-kit-product-v2/state.md
+index f41368d..3aafcd0 100644
+--- a/_working/amz-listing-kit-product-v2/state.md
++++ b/_working/amz-listing-kit-product-v2/state.md
+@@ -1,1051 +1,120 @@
+-# amz-listing-kit Product V2 执行状态
++# Product V2 定向重构执行状态
+ 
+ > CONTROL-STATUS: current · AUTHORITY: execution-state
+-> 这里只保存进度、证据指针、阻塞、未知和唯一下一动作。目标、范围、阶段、Gate、任务定义与依赖只在
+-> `docs/product-v2-goal-and-implementation-plan.md` 维护；本文件中的 ID 都是对计划的外键。
++> 只保存进度、证据、阻塞/未知与下一动作；目标和任务定义只在 `docs/product-v2-refactor-plan.md`。
++> prepared 是未绑定新 Goal 的本地准备态，不是系统 paused。旧读数与完成记录只见 superseded 基线。
+ 
+ ```yaml
+ state_schema: amz-project-state/v2
+-task_id: amz-listing-kit-product-v2
+-status: paused
+-goal_binding: required
+-goal_id: 01a0ca17-2179-7eb0-969a-af9c79c4d8ca
+-goal_pending_reason: system_goal_paused_await_user_resume
+-system_goal_observed_status: paused
+-system_goal_observed_at: 2026-10-01T11:01:24+08:00
+-plan_ref: docs/product-v2-goal-and-implementation-plan.md
+-latest_audit: evals/product-v2/pre-goal-control-closeout-20261001-115805.md
+-
++task_id: amz-listing-kit-product-v2-refactor
++status: prepared
++goal_binding: optional
++goal_id: null
++goal_pending_reason: "系统Goal正文已是重构objective且active（goal工具2026-10-01T09:45Z实测），但接口不返回Goal ID，无法按J3写入required锚；用旧ID/自造ID均属伪造。R1.1保持pending待真实ID，期间仅只读核对与只读侦察，无产品施工。证据见goal-binding-20261001-094520。"
++system_goal_observed_status: null
++system_goal_observed_at: null
++plan_ref: docs/product-v2-refactor-plan.md
++latest_audit: evals/product-v2/refactor/audit-protocol-20261001-095948.md
+ phase_progress:
+   "0":
+     status: done
+     evidence:
+-      - docs/INDEX.md
+-      - docs/product-v2-project-context.md
+-      - docs/product-v2-goal-and-implementation-plan.md
+-      - evals/product-v2/control-plane-calibration-20260929.txt
+-      - evals/product-v2/pre-goal-readiness-20260929.txt
+-      - evals/product-v2/standards-mapping-gate-20260929.txt
++      - evals/product-v2/refactor/control-preparation-20261001.md
+   "1":
+-    status: done
+-    evidence:
+-      - evals/product-v2/v2.1.1-indexeddb-20260929-205946-pre-goal-baseline.txt
+-      - evals/product-v2/v2.1.2-project-home-20260929-205951-pre-goal-baseline.txt
+-      - evals/product-v2/v2.1.3-project-package-20260929-205957-pre-goal-baseline.txt
+-      - evals/product-v2/v2.1.4-formal-entry-20260929-205919-pre-goal-verify.txt
++    status: pending
+   "2":
+-    status: done
+-    evidence:
+-      - evals/product-v2/reuse-gate-negative-probe-20260929.txt
+-      - evals/product-v2/dependency-authority-migration-20260930.txt
+-      - evals/product-v2/sel-records-sync-20260930.txt
+-      - evals/product-v2/v2.2.2-semantic-provider-20260930-013134.txt
+-      - evals/product-v2/v2.2.2-semantic-provider-20260930-013041-live.txt
+-      - evals/product-v2/v2-domain-primitive-cleanup-20260930.txt
+-      - evals/product-v2/v2.2.3-intake-understanding-20260930-015817.txt
+-      - evals/product-v2/v2.2.3-intake-understanding-20260930-015817.json
+-      - evals/product-v2/evidence/v2.2.3-workspace-20260930-015817.png
+-      - evals/product-v2/evidence/v2.2.3-narrow-20260930-015817.png
+-      - evals/product-v2/v2.1.1-indexeddb-20260930-015729.txt
+-      - evals/product-v2/v2.1.2-project-home-20260930-015239.txt
+-      - evals/product-v2/v2.1.3-project-package-20260930-015253.txt
+-      - evals/product-v2/v2.1.4-formal-entry-20260930-015304.txt
+-      - evals/product-v2/v2.2.1-product-contracts-20260930-015405.txt
+-      - evals/product-v2/v2.2.2-semantic-provider-20260930-015334.txt
+-      - evals/product-v2/sel008-fflate-vendoring-20260930.txt
+-      - evals/product-v2/v2.2.4-category-generality-20260930-021709.txt
+-      - evals/product-v2/v2.2.4-category-generality-20260930-021709.json
+-      - evals/product-v2/v2.2.4-category-generality-20260930-021048.txt
+-      - evals/product-v2/v2.2.4-category-generality-20260930-021404.txt
+-      - evals/product-v2/v2.2.2-semantic-provider-20260930-021554.txt
+-      - evals/product-v2/v2.2.1-product-contracts-20260930-021554.txt
+-      - evals/product-v2/v2.2.4-max-tokens-acceptance-20260930.txt
+-      - evals/product-v2/v2.2.2-semantic-provider-20261001-010715-arrears-map.txt
++    status: pending
+   "3":
+-    status: done
+-    evidence:
+-      - evals/product-v2/v2.3.1-suite-registry-20260930-025255.txt
+-      - evals/product-v2/v2.3.2-suite-editor-20260930-025222.txt
+-      - evals/product-v2/v2.3.3-spec-versions-20260930-025205.txt
+-      - evals/product-v2/v2.3.4-prompt-compiler-20260930-031626-final.txt
+-      - evals/product-v2/v2.3.5-pre-generation-confirm-20260930-033626-final.txt
+-      - evals/product-v2/v2.3.6-prompt-manual-edit-20260930-035000-final.txt
+-      - evals/product-v2/v2.3.6-prompt-manual-edit-20260930-035000-final.json
+-      - evals/product-v2/evidence/v2.3.6-prompt-manual-edit-20260930-035000.png
+-      - evals/product-v2/v2.3.5-pre-generation-confirm-20260930-035020-v236-regression.txt
+-      - evals/product-v2/v2.3.4-prompt-compiler-20260930-035020-v236-regression.txt
+-      - evals/product-v2/v2.3.2-suite-editor-20260930-035037-v236-regression.txt
+-      - evals/product-v2/v2.2.3-intake-understanding-20260930-035038-v236-regression.txt
++    status: pending
+   "4":
+-    status: done
+-    evidence:
+-      - evals/product-v2/v2.4.1-image-gateway-20260930-091224-final.txt
+-      - evals/product-v2/v2.4.1-image-gateway-20260930-091224-final.json
+-      - evals/product-v2/v2.4.2-generation-attempt-20260930-112423-final.txt
+-      - evals/product-v2/v2.4.2-generation-attempt-20260930-112423-final.json
+-      - evals/product-v2/evidence/v2.4.2-generation-attempt-20260930-112423.png
+-      - evals/product-v2/v2.4.3-batch-suite-20260930-114918-final.txt
+-      - evals/product-v2/v2.4.3-batch-suite-20260930-114918-final.json
+-      - evals/product-v2/evidence/v2.4.3-batch-suite-20260930-114918.png
+-      - evals/product-v2/v2.4.4-candidate-blob-20260930-131856-final.txt
+-      - evals/product-v2/v2.4.4-candidate-blob-20260930-131856-final.json
+-      - evals/product-v2/evidence/v2.4.4-candidate-blob-20260930-131856.png
+-      - evals/product-v2/v2.4.5-live-reference-20260930-134540-final.txt
+-      - evals/product-v2/v2.4.5-live-reference-20260930-134540-final.json
+-      - evals/product-v2/evidence/v2.4.5-live-reference-20260930-134540.png
+-      - evals/product-v2/v2.4.1-image-gateway-20260930-134149-v245-transport-fix.txt
+-
++    status: pending
+   "5":
+-    status: done
+-    evidence:
+-      - evals/product-v2/v2.5.4-rework-loop-20260930-172722final.txt
+-      - evals/product-v2/v2.5.4-rework-loop-20260930-172722final.json
+-      - evals/product-v2/evidence/v2.5.4-rework-loop-20260930-172722.png
+-      - evals/product-v2/evidence/v2.5.4-rework-loop-20260930-172722-detail.png
+-      - evals/product-v2/v2.5.2-vlm-review-20260930-150502final.txt
+-      - evals/product-v2/v2.5.2-vlm-review-20260930-150502final.json
+-      - evals/product-v2/evidence/v2.5.2-vlm-review-20260930-150502.png
+-      - evals/product-v2/v2.5.2-review-live-20260930-150012final.txt
+-      - evals/product-v2/v2.5.2-review-live-20260930-150012final.json
+-      - evals/product-v2/v2.5.1-deterministic-review-20260930-142836-final.txt
+-      - evals/product-v2/v2.5.1-deterministic-review-20260930-142836-final.json
+-      - evals/product-v2/evidence/v2.5.1-deterministic-review-20260930-142836.png
+-      - evals/product-v2/v2.6.1-selection-20260930-183606final.txt
+-      - evals/product-v2/v2.6.1-selection-20260930-183606final.json
+-      - evals/product-v2/evidence/v2.6.1-selection-20260930-183606.png
+-      - evals/product-v2/evidence/v2.6.1-selection-20260930-183606-detail.png
+-      - evals/product-v2/v2.ui.1-remote-entry-20260930-213048-final.txt
+-      - evals/product-v2/v2.ui.1-remote-entry-20260930-213048-final.json
+-      - evals/product-v2/evidence/v2.ui.1-remote-entry-20260930-213048-localhost.png
+-      - evals/product-v2/evidence/v2.ui.1-remote-entry-20260930-213048-chrome.png
+-      - evals/product-v2/evidence/v2.ui.1-remote-entry-20260930-213048-edge.png
+-      - evals/product-v2/evidence/v2.ui.1-remote-entry-20260930-213048-http-negative.png
+-      - evals/product-v2/v2.ui.2-interaction-visual-20260930-232009final.txt
+-      - evals/product-v2/v2.ui.2-interaction-visual-20260930-232009final.json
+-      - evals/product-v2/evidence/v2.ui.2-review-20260930-232009.png
+-      - evals/product-v2/evidence/v2.ui.2-narrow-20260930-232009.png
+-      - tools/verify_v2_ui_2_interaction_visual.py
+-      - evals/product-v2/v2.6.2-delivery-20261001-042122-final.txt
+-      - evals/product-v2/v2.6.2-delivery-20261001-042122-final.json
+-      - evals/product-v2/evidence/v2.6.2-delivery-20261001-042122-final-gate-pass.png
+-      - evals/product-v2/evidence/v2.6.2-delivery-20261001-042122-final-unknown-blocked.png
+-      - tools/verify_v2_6_2_delivery.py
+-      - evals/product-v2/v2.6.3-transfer-20261001-050133-final.txt
+-      - evals/product-v2/v2.6.3-transfer-20261001-050133-final.json
+-      - evals/product-v2/v2.1.3-project-package-20261001-050001.txt
+-      - tools/verify_v2_6_3_project_transfer.py
+-      - evals/product-v2/v2.6.4-a11y-20261001-052757-final.txt
+-      - evals/product-v2/v2.6.4-a11y-20261001-052757-final.json
+-      - tools/verify_v2_6_4_accessibility.py
+-
++    status: pending
+   "6":
+-    status: done
+-    evidence:
+-      - evals/product-v2/v2.6.1-selection-20260930-183606final.txt
+-      - evals/product-v2/v2.6.1-selection-20260930-183606final.json
+-      - evals/product-v2/v2.6.2-delivery-20261001-042122-final.txt
+-      - evals/product-v2/v2.6.2-delivery-20261001-042122-final.json
+-      - evals/product-v2/evidence/v2.6.2-delivery-20261001-042122-final-gate-pass.png
+-      - evals/product-v2/evidence/v2.6.2-delivery-20261001-042122-final-unknown-blocked.png
+-      - tools/verify_v2_6_2_delivery.py
+-      - evals/product-v2/v2.6.3-transfer-20261001-050133-final.txt
+-      - evals/product-v2/v2.6.3-transfer-20261001-050133-final.json
+-      - tools/verify_v2_6_3_project_transfer.py
+-      - evals/product-v2/v2.6.4-a11y-20261001-052757-final.txt
+-      - evals/product-v2/v2.6.4-a11y-20261001-052757-final.json
+-      - tools/verify_v2_6_4_accessibility.py
+-      - evals/product-v2/v2.6.4-a11y-20261001-055317-v265-final.txt
+-      - evals/product-v2/v2.6.4-a11y-20261001-055317-v265-final.json
+-      - evals/product-v2/v2.6.4-a11y-20261001-055253-red-proof-old-layout.txt
+-      - evals/product-v2/evidence/v2.6.4-a11y-20261001-055317-v265-final-ref-card-1440.png
+-      - evals/product-v2/v2.6.4-a11y-20261001-060452-v266-red-proof.txt
+-      - evals/product-v2/v2.6.4-a11y-20261001-060920-v266-final4.txt
+-      - evals/product-v2/v2.6.4-a11y-20261001-060920-v266-final4.json
+-      - evals/product-v2/v2.ui.3-frontend-20261001-065851-v267-red.txt
+-      - evals/product-v2/v2.ui.3-frontend-20261001-065959-v267-green.txt
+-      - evals/product-v2/v2.ui.3-frontend-20261001-065959-v267-green.json
+-      - evals/product-v2/v2.5.5-suite-review-20261001-065917-v267-red.txt
+-      - evals/product-v2/v2.5.5-suite-review-20261001-070024-v267-green.txt
+-      - evals/product-v2/v2.5.5-suite-review-20261001-070024-v267-green.json
+-      - evals/product-v2/v2.4.1-large-ref-red-proof-20261001-073024.json
+-      - evals/product-v2/v2.4.1-image-gateway-20261001-073247-v268-green.txt
+-      - evals/product-v2/v2.4.1-image-gateway-20261001-073247-v268-green.json
+-      - evals/product-v2/v273-rehearsal-20261001-072035-crash.json
+-      - evals/product-v2/v273-rehearsal-20261001-073329.md
+-      - evals/product-v2/v273-rehearsal-20261001-073329.json
+-      - evals/product-v2/v2.ui.3-frontend-20261001-073741-v269-red.txt
+-      - evals/product-v2/v2.ui.3-frontend-20261001-073811-v269-green.txt
+-      - evals/product-v2/v2.ui.3-frontend-20261001-073811-v269-green.json
+-      - evals/product-v2/v2.2.3-intake-understanding-20261001-073929-v269.txt
+-      - evals/product-v2/v2.6.4-a11y-20261001-073942-v269.txt
+-      - evals/product-v2/v273-rehearsal-20261001-074015.md
+-      - evals/product-v2/v2.3.5-pre-generation-confirm-20261001-074628-v2610-red.txt
+-      - evals/product-v2/v2.3.5-pre-generation-confirm-20261001-074714-v2610-green.txt
+-      - evals/product-v2/v2.3.5-pre-generation-confirm-20261001-074714-v2610-green.json
+-      - evals/product-v2/v2.ui.3-frontend-20261001-074726-v2610.txt
+-      - evals/product-v2/v273-rehearsal-20261001-074743.md
+-
++    status: pending
+   "7":
+     status: pending
+-    evidence:
+-      - evals/product-v2/v2.7.1-regression-20261001-0633-final.txt
+-      - evals/product-v2/v2.7.1-regression-20261001-0633-final.json
+-      - evals/product-v2/v2.7.1-regression-20261001-061430-final.txt
+-      - tools/verify_v2_7_1_regression.py
+-      - evals/probes/docs_index.py
+-      - evals/product-v2/v2.7.2-remote-real-e2e-20261001-091400.txt
+-      - evals/product-v2/v2.7.2-remote-real-e2e-20261001-091400.json
+-
+ task_progress:
+-  V2.0.1:
++  V2.R0.1:
+     status: done
+     evidence:
++      - docs/product-v2-refactor-plan.md
+       - docs/INDEX.md
+       - docs/product-v2-project-context.md
+-      - docs/product-v2-goal-and-implementation-plan.md
+-      - evals/product-v2/pre-goal-readiness-20260929.txt
+-  V2.0.2:
++      - _working/amz-listing-kit-product-v2-baseline/state.md
++  V2.R0.2:
+     status: done
+     evidence:
+-      - _working/amz-listing-kit-product-v2/state.md
++      - evals/product-v2/refactor/control-preparation-20261001.md
+       - tools/check_project_state.py
+-      - evals/product-v2/control-plane-calibration-20260929.txt
+-  V2.0.3:
+-    status: done
+-    evidence:
+-      - evals/product-demo/d4.12-product-regression-2026-09-29.md
+-      - evals/product-v2/pre-goal-readiness-20260929.txt
+-  V2.1.1:
+-    status: done
+-    evidence:
+-      - evals/product-v2/v2.1.1-indexeddb-20260929-201212.txt
+-      - evals/product-v2/v2.1.1-indexeddb-20260929-201431-fresh-20260929.txt
+-      - evals/product-v2/v2.1.1-indexeddb-20260929-202722-final.txt
+-      - evals/product-v2/v2.1.1-indexeddb-20260929-204543-after-v214.txt
+-      - evals/product-v2/v2.1.1-indexeddb-20260929-205946-pre-goal-baseline.txt
+-      - evals/product-v2/v2.1.1-indexeddb-20260929-225228.txt
+-      - evals/product-v2/v2.1.1-indexeddb-20260930-022356.txt
+-  V2.1.2:
+-    status: done
+-    evidence:
+-      - evals/product-v2/v2.1.2-project-home-20260929-202041.txt
+-      - evals/product-v2/v2.1.2-project-home-20260929-202403-repro2.txt
+-      - evals/product-v2/v2.1.2-project-home-20260929-202728-final.txt
+-      - evals/product-v2/v2.1.2-project-home-20260929-204548-after-v214.txt
+-      - evals/product-v2/v2.1.2-project-home-20260929-205951-pre-goal-baseline.txt
+-      - evals/product-v2/v2.1.2-project-home-20260929-225234.txt
+-  V2.1.3:
+-    status: done
+-    evidence:
+-      - evals/product-v2/v2.1.3-project-package-20260929-203215.txt
+-      - evals/product-v2/v2.1.3-project-package-20260929-203215.json
+-      - evals/product-v2/v2.1.1-indexeddb-20260929-203229-after-v213.txt
+-      - evals/product-v2/v2.1.2-project-home-20260929-203233-after-v213.txt
+-      - evals/product-v2/v2.1.3-project-package-20260929-204555-after-v214.txt
+-      - evals/product-v2/v2.1.3-project-package-20260929-205957-pre-goal-baseline.txt
+-      - evals/product-v2/v2.1.3-project-package-20260929-225243.txt
+-      - evals/product-v2/v2.1.3-project-package-20260930-020609.txt
+-      - evals/product-v2/v2.1.3-project-package-20260930-020609.json
+-      - evals/product-v2/sel008-fflate-vendoring-20260930.txt
+-  V2.1.4:
+-    status: done
+-    evidence:
+-      - evals/product-v2/v2.1.4-formal-entry-20260929-204134.txt
+-      - evals/product-v2/v2.1.4-formal-entry-20260929-204134.json
+-      - evals/product-v2/v2.1.4-formal-entry-20260929-205919-pre-goal-verify.txt
+-      - evals/product-v2/v2.1.4-formal-entry-20260929-225248.txt
+-      - evals/product-v2/v2.1.4-formal-entry-20260930-024511.txt
+-      - evals/product-v2/v2.1.4-formal-entry-20260930-024511.json
+-      - evals/product-v2/v2.1.4-formal-entry-20260930-025255.txt
+-      - evals/product-v2/v2.1.4-formal-entry-20260930-025255.json
+-  V2.CI.1:
+-    status: done
+-    evidence:
+-      - evals/product-v2/v2.ci.1-docker-cd-20260929.txt
+-      - .github/workflows/ci-cd.yml
+-      - Dockerfile
+-  V2.2.1:
+-    status: done
+-    evidence:
+-      - evals/product-v2/v2.2.1-product-contracts-20260929-211211.txt
+-      - evals/product-v2/v2.2.1-product-contracts-20260929-211211.json
+-      - evals/product-v2/v2.2.1-product-contracts-20260929-225304.txt
+-      - evals/product-v2/v2.2.1-product-contracts-20260930-023543.txt
+-      - evals/product-v2/v2.2.1-product-contracts-20260930-024511.txt
+-      - evals/product-v2/v2.2.1-product-contracts-20260930-024511.json
+-      - evals/product-v2/v2.2.1-product-contracts-20260930-025257.txt
+-      - evals/product-v2/v2.2.1-product-contracts-20260930-025257.json
+-  V2.2.2:
+-    status: done
+-    evidence:
+-      - evals/product-v2/v2.2.2-semantic-provider-20260930-013134.txt
+-      - evals/product-v2/v2.2.2-semantic-provider-20260930-013134.json
+-      - evals/product-v2/v2.2.2-semantic-provider-20260930-013041-live.txt
+-      - evals/product-v2/v2.2.2-semantic-provider-20260930-013041-live.json
+-      - tools/verify_v2_2_2_semantic_provider.py
+-      - config/product-v2/providers.json
+-      - evals/product-v2/v2.2.2-semantic-provider-20260930-023603.txt
+-      - evals/product-v2/v2.2.2-semantic-provider-20261001-010715-arrears-map.txt
+-      - evals/product-v2/provider-recovery-probe-20261001.txt
+-  V2.2.3:
+-    status: done
+-    evidence:
+-      - evals/product-v2/v2.2.3-intake-understanding-20260930-015817.txt
+-      - evals/product-v2/v2.2.3-intake-understanding-20260930-015817.json
+-      - tools/verify_v2_2_3_intake_understanding.py
+-      - app/product_v2/workspace.js
+-      - app/product_v2/app.js
+-      - app/product_v2/index.html
+-      - app/product_v2/styles.css
+-      - app/product_v2/storage/repository.js
+-      - app/product_v2_server.py
+-      - src/providers/v2_fake_semantic.py
+-      - tools/v2_test_server.py
+-      - Dockerfile
+-      - .dockerignore
+-      - .github/workflows/ci-cd.yml
+-      - evals/product-v2/v2.2.3-intake-understanding-20260930-023544.txt
+-      - evals/product-v2/v2.2.3-intake-understanding-20260930-023544.json
+-      - evals/product-v2/evidence/v2.2.3-workspace-20260930-023544.png
+-      - evals/product-v2/evidence/v2.2.3-narrow-20260930-023544.png
+-      - evals/product-v2/v2.2.3-intake-understanding-20260930-024451.txt
+-      - evals/product-v2/v2.2.3-intake-understanding-20260930-024451.json
+-      - evals/product-v2/evidence/v2.2.3-workspace-20260930-024451.png
+-      - evals/product-v2/evidence/v2.2.3-narrow-20260930-024451.png
+-      - evals/product-v2/v2.2.3-intake-understanding-20260930-024645.txt
+-      - evals/product-v2/v2.2.3-intake-understanding-20260930-024645.json
+-      - evals/product-v2/v2.2.3-intake-understanding-20260930-025231.txt
+-      - evals/product-v2/v2.2.3-intake-understanding-20260930-025231.json
+-      - evals/product-v2/v2.2.3-intake-understanding-20260930-184523.txt
+-      - evals/product-v2/v2.2.3-intake-understanding-20260930-184523.json
+-      - evals/product-v2/evidence/v2.2.3-workspace-20260930-184523.png
+-      - evals/product-v2/evidence/v2.2.3-narrow-20260930-184523.png
+-  V2.2.4:
+-    status: done
+-    evidence:
+-      - evals/product-v2/v2.2.4-category-generality-20260930-021709.txt
+-      - evals/product-v2/v2.2.4-category-generality-20260930-021709.json
+-      - evals/product-v2/v2.2.4-category-generality-20260930-021048.txt
+-      - evals/product-v2/v2.2.4-category-generality-20260930-021404.txt
+-      - tools/verify_v2_2_4_category_generality.py
+-      - evals/product-v2/v2.2.2-semantic-provider-20260930-021554.txt
+-      - evals/product-v2/v2.2.4-max-tokens-acceptance-20260930.txt
+-      - evals/product-v2/v2.1.1-indexeddb-20260930-022356.txt
+-  V2.3.1:
+-    status: done
+-    evidence:
+-      - evals/product-v2/v2.3.1-suite-registry-20260930-023528.txt
+-      - evals/product-v2/v2.3.1-suite-registry-20260930-023528.json
+-      - evals/product-v2/v2.3.1-suite-registry-20260930-024514.txt
+-      - evals/product-v2/v2.3.1-suite-registry-20260930-024514.json
+-      - evals/product-v2/v2.3.1-suite-registry-20260930-025255.txt
+-      - evals/product-v2/v2.3.1-suite-registry-20260930-025255.json
+-      - tools/verify_v2_3_1_suite_registry.py
+-      - evals/product-v2/harness/suite-plan-contract.js
+-      - evals/product-v2/harness/suite-plan-contract.html
+-      - app/product_v2/domain/suite-plan.js
+-      - app/product_v2/domain/intake.js
+-      - app/product_v2/domain/index.js
+-      - app/product_v2/workspace.js
+-  V2.3.2:
+-    status: done
+-    evidence:
+-      - evals/product-v2/v2.3.2-suite-editor-20260930-024451.txt
+-      - evals/product-v2/v2.3.2-suite-editor-20260930-024451.json
+-      - evals/product-v2/evidence/v2.3.2-suite-editor-20260930-024451.png
+-      - evals/product-v2/v2.3.2-suite-editor-20260930-024629.txt
+-      - evals/product-v2/v2.3.2-suite-editor-20260930-024629.json
+-      - evals/product-v2/evidence/v2.3.2-suite-editor-20260930-024629.png
+-      - evals/product-v2/v2.3.2-suite-editor-20260930-025222.txt
+-      - evals/product-v2/v2.3.2-suite-editor-20260930-025222.json
+-      - evals/product-v2/evidence/v2.3.2-suite-editor-20260930-025222.png
+-      - evals/product-v2/v2.3.2-oversize-drain-20260930.txt
+-      - tools/verify_v2_3_2_suite_editor.py
+-      - evals/product-v2/harness/suite-editor-contract.js
+-      - evals/product-v2/harness/suite-editor-contract.html
+-      - app/product_v2/domain/suite.js
+-      - app/product_v2/domain/shared.js
+-      - app/product_v2/domain/index.js
+-      - app/product_v2/workspace.js
+-      - app/product_v2/index.html
+-      - app/product_v2/styles.css
+-      - app/product_v2_server.py
+-      - docs/product-v2-goal-and-implementation-plan.md
+-  V2.3.3:
+-    status: done
+-    evidence:
+-      - evals/product-v2/v2.3.3-spec-versions-20260930-025205.txt
+-      - evals/product-v2/v2.3.3-spec-versions-20260930-025205.json
+-      - evals/product-v2/evidence/v2.3.3-spec-versions-20260930-025205.png
+-      - tools/verify_v2_3_3_spec_versions.py
+-      - evals/product-v2/harness/specs-contract.js
+-      - evals/product-v2/harness/specs-contract.html
+-      - app/product_v2/domain/specs.js
+-      - app/product_v2/domain/shared.js
+-      - app/product_v2/domain/index.js
+-      - app/product_v2/workspace.js
+-      - app/product_v2/index.html
+-      - app/product_v2/styles.css
+-      - docs/product-v2-goal-and-implementation-plan.md
+-  V2.3.4:
+-    status: done
+-    evidence:
+-      - evals/product-v2/v2.3.4-prompt-compiler-20260930-031626-final.txt
+-      - evals/product-v2/v2.3.4-prompt-compiler-20260930-031626-final.json
+-      - evals/product-v2/evidence/v2.3.4-prompt-compiler-20260930-031626.png
+-      - tools/verify_v2_3_4_prompt_compiler.py
+-      - evals/product-v2/harness/prompt-contract.js
+-      - evals/product-v2/harness/prompt-contract.html
+-      - app/product_v2/domain/prompt.js
+-      - app/product_v2/domain/suite.js
+-      - app/product_v2/domain/shared.js
+-      - app/product_v2/domain/index.js
+-      - app/product_v2/workspace.js
+-      - app/product_v2/index.html
+-      - app/product_v2/styles.css
+-      - README.md
+-      - docs/product-v2-project-context.md
+-      - docs/product-v2-goal-and-implementation-plan.md
+-      - docs/product-v2-goal-and-implementation-plan.md
+-      - .github/workflows/ci-cd.yml
+-      - evals/product-v2/v2.1.4-formal-entry-20260930-031657-v234-regression.txt
+-      - evals/product-v2/v2.2.1-product-contracts-20260930-031713-v234-regression.txt
+-      - evals/product-v2/v2.2.2-semantic-provider-20260930-031723-v234-regression.txt
+-      - evals/product-v2/v2.2.3-intake-understanding-20260930-031724-v234-regression.txt
+-      - evals/product-v2/v2.3.1-suite-registry-20260930-031737-v234-regression.txt
+-      - evals/product-v2/v2.3.2-suite-editor-20260930-031740-v234-regression.txt
+-      - evals/product-v2/v2.3.3-spec-versions-20260930-031748-v234-regression.txt
+-  V2.3.5:
+-    status: done
+-    evidence:
+-      - evals/product-v2/v2.3.5-pre-generation-confirm-20260930-033626-final.txt
+-      - evals/product-v2/v2.3.5-pre-generation-confirm-20260930-033626-final.json
+-      - evals/product-v2/evidence/v2.3.5-pre-generation-confirm-20260930-033626.png
+-      - tools/verify_v2_3_5_pre_generation_confirm.py
+-      - evals/product-v2/harness/confirm-contract.js
+-      - evals/product-v2/harness/confirm-contract.html
+-      - app/product_v2/domain/confirm.js
+-      - app/product_v2/domain/shared.js
+-      - app/product_v2/domain/index.js
+-      - app/product_v2/workspace.js
+-      - app/product_v2/index.html
+-      - app/product_v2/styles.css
+-      - README.md
+-      - docs/product-v2-project-context.md
+-      - docs/product-v2-goal-and-implementation-plan.md
+-      - .github/workflows/ci-cd.yml
+-      - evals/product-v2/v2.1.1-indexeddb-20260930-033530-v235-regression.txt
+-      - evals/product-v2/v2.1.4-formal-entry-20260930-033505-v235-regression.txt
+-      - evals/product-v2/v2.2.1-product-contracts-20260930-033505-v235-regression.txt
+-      - evals/product-v2/v2.2.2-semantic-provider-20260930-033528-v235-regression.txt
+-      - evals/product-v2/v2.2.3-intake-understanding-20260930-033421-v235-regression.txt
+-      - evals/product-v2/v2.3.1-suite-registry-20260930-033527-v235-regression.txt
+-      - evals/product-v2/v2.3.2-suite-editor-20260930-033442-v235-regression.txt
+-      - evals/product-v2/v2.3.3-spec-versions-20260930-033442-v235-regression.txt
+-      - evals/product-v2/v2.3.4-prompt-compiler-20260930-033421-v235-regression.txt
+-
+-  V2.3.6:
+-    status: done
+-    evidence:
+-      - evals/product-v2/v2.3.6-prompt-manual-edit-20260930-035000-final.txt
+-      - evals/product-v2/v2.3.6-prompt-manual-edit-20260930-035000-final.json
+-      - evals/product-v2/evidence/v2.3.6-prompt-manual-edit-20260930-035000.png
+-      - tools/verify_v2_3_6_prompt_manual_edit.py
+-      - evals/product-v2/harness/prompt-edit-contract.js
+-      - evals/product-v2/harness/prompt-edit-contract.html
+-      - app/product_v2/domain/prompt.js
+-      - app/product_v2/workspace.js
+-      - app/product_v2/index.html
+-      - app/product_v2/styles.css
+-      - README.md
+-      - docs/product-v2-project-context.md
+-      - docs/product-v2-goal-and-implementation-plan.md
+-      - .github/workflows/ci-cd.yml
+-      - evals/product-v2/v2.3.5-pre-generation-confirm-20260930-035020-v236-regression.txt
+-      - evals/product-v2/v2.3.4-prompt-compiler-20260930-035020-v236-regression.txt
+-      - evals/product-v2/v2.3.2-suite-editor-20260930-035037-v236-regression.txt
+-      - evals/product-v2/v2.2.3-intake-understanding-20260930-035038-v236-regression.txt
+-
+-  V2.4.1:
+-    status: done
+-    evidence:
+-      - evals/product-v2/v2.4.1-image-gateway-20260930-091224-final.txt
+-      - evals/product-v2/v2.4.1-image-gateway-20260930-091224-final.json
+-      - tools/verify_v2_4_1_image_gateway.py
+-      - app/product_v2_server.py
+-      - src/providers/v2_image.py
+-      - src/providers/v2_dashscope_image.py
+-      - src/providers/v2_fake_image.py
+-      - src/providers/v2_errors.py
+-      - src/providers/v2_registry.py
+-      - config/product-v2/providers.json
+-      - evals/product-v2/sel010-image-gateway-transport-poc-20260930.txt
+-      - README.md
+-      - docs/product-v2-project-context.md
+-      - docs/product-v2-goal-and-implementation-plan.md
+-      - .github/workflows/ci-cd.yml
+-      - evals/product-v2/v2.2.2-semantic-provider-20260930-091150-v241-regression.txt
+-      - evals/product-v2/v2.3.6-prompt-manual-edit-20260930-091203-v241-regression.txt
+-
+-  V2.4.2:
+-    status: done
+-    evidence:
+-      - evals/product-v2/v2.4.2-generation-attempt-20260930-112423-final.txt
+-      - evals/product-v2/v2.4.2-generation-attempt-20260930-112423-final.json
+-      - evals/product-v2/evidence/v2.4.2-generation-attempt-20260930-112423.png
+-      - tools/verify_v2_4_2_generation_attempt.py
+-      - app/product_v2/domain/attempt.js
+-      - app/product_v2/workspace.js
+-      - app/product_v2/index.html
+-      - app/product_v2/styles.css
+-      - evals/product-v2/harness/attempt-contract.js
+-      - evals/product-v2/harness/attempt-contract.html
+-      - README.md
+-      - docs/product-v2-goal-and-implementation-plan.md
+-      - .github/workflows/ci-cd.yml
+-
+-  V2.4.3:
+-    status: done
+-    evidence:
+-      - evals/product-v2/v2.4.3-batch-suite-20260930-114918-final.txt
+-      - evals/product-v2/v2.4.3-batch-suite-20260930-114918-final.json
+-      - evals/product-v2/evidence/v2.4.3-batch-suite-20260930-114918.png
+-      - tools/verify_v2_4_3_batch_execution.py
+-      - app/product_v2/domain/batch.js
+-      - app/product_v2/domain/index.js
+-      - app/product_v2/workspace.js
+-      - app/product_v2/index.html
+-      - app/product_v2/styles.css
+-      - app/product_v2_server.py
+-      - evals/product-v2/harness/batch-contract.js
+-      - evals/product-v2/harness/batch-contract.html
+-      - README.md
+-      - docs/product-v2-goal-and-implementation-plan.md
+-      - .github/workflows/ci-cd.yml
+-  V2.4.4:
+-    status: done
+-    evidence:
+-      - evals/product-v2/v2.4.4-candidate-blob-20260930-131856-final.txt
+-      - evals/product-v2/v2.4.4-candidate-blob-20260930-131856-final.json
+-      - evals/product-v2/evidence/v2.4.4-candidate-blob-20260930-131856.png
+-      - tools/verify_v2_4_4_candidate_blob.py
+-      - app/product_v2/domain/candidate.js
+-      - app/product_v2/domain/batch.js
+-      - app/product_v2/domain/shared.js
+-      - app/product_v2/domain/index.js
+-      - app/product_v2/workspace.js
+-      - app/product_v2/index.html
+-      - app/product_v2/styles.css
+-      - evals/product-v2/harness/candidate-contract.js
+-      - evals/product-v2/harness/candidate-contract.html
+-      - README.md
+-      - docs/product-v2-goal-and-implementation-plan.md
+-      - .github/workflows/ci-cd.yml
+-
+-  V2.4.5:
+-    status: done
+-    evidence:
+-      - evals/product-v2/v2.4.5-live-reference-20260930-134540-final.txt
+-      - evals/product-v2/v2.4.5-live-reference-20260930-134540-final.json
+-      - evals/product-v2/evidence/v2.4.5-live-reference-20260930-134540.png
+-      - tools/verify_v2_4_5_live_reference.py
+-      - src/providers/v2_dashscope_image.py
+-      - tools/verify_v2_4_1_image_gateway.py
+-      - docs/product-v2-goal-and-implementation-plan.md
+-
+-  V2.5.1:
+-    status: done
+-    evidence:
+-      - evals/product-v2/v2.5.1-deterministic-review-20260930-142836-final.txt
+-      - evals/product-v2/v2.5.1-deterministic-review-20260930-142836-final.json
+-      - evals/product-v2/evidence/v2.5.1-deterministic-review-20260930-142836.png
+-      - tools/verify_v2_5_1_deterministic_review.py
+-      - app/product_v2/domain/review.js
+-      - app/product_v2/domain/candidate.js
+-      - app/product_v2/domain/shared.js
+-      - app/product_v2/domain/index.js
+-      - app/product_v2/workspace.js
+-      - evals/product-v2/harness/review-contract.js
+-      - evals/product-v2/harness/review-contract.html
+-      - README.md
+-      - docs/product-v2-project-context.md
+-      - docs/product-v2-goal-and-implementation-plan.md
+-      - .github/workflows/ci-cd.yml
+-
+-  V2.5.2:
+-    status: done
+-    evidence:
+-      - evals/product-v2/v2.5.2-vlm-review-20260930-150502final.txt
+-      - evals/product-v2/v2.5.2-vlm-review-20260930-150502final.json
+-      - evals/product-v2/evidence/v2.5.2-vlm-review-20260930-150502.png
+-      - evals/product-v2/v2.5.2-review-live-20260930-150012final.txt
+-      - evals/product-v2/v2.5.2-review-live-20260930-150012final.json
+-      - tools/verify_v2_5_2_vlm_review.py
+-      - tools/probe_v2_5_2_review_live.py
+-      - src/providers/v2_review.py
+-      - src/providers/v2_dashscope_review.py
+-      - src/providers/v2_langchain_chat.py
+-      - src/providers/v2_fake_review.py
+-      - src/providers/v2_registry.py
+-      - config/product-v2/providers.json
+-      - app/product_v2_server.py
+-      - app/product_v2/domain/review.js
+-      - app/product_v2/workspace.js
+-      - evals/product-v2/harness/review-provider-contract.js
+-      - evals/product-v2/harness/review-provider-contract.html
+-      - evals/product-v2/fixtures/v2.5.2/
+-      - README.md
+-      - docs/product-v2-project-context.md
+-      - docs/product-v2-goal-and-implementation-plan.md
+-      - .github/workflows/ci-cd.yml
+-
+-  V2.5.3:
+-    status: done
+-    evidence:
+-      - evals/product-v2/v2.5.3-compare-panel-20260930-153012final.txt
+-      - evals/product-v2/v2.5.3-compare-panel-20260930-153012final.json
+-      - evals/product-v2/evidence/v2.5.3-compare-panel-20260930-153012.png
+-      - evals/product-v2/evidence/v2.5.3-compare-panel-20260930-153012-detail.png
+-      - tools/verify_v2_5_3_compare_panel.py
+-      - app/product_v2/domain/compare.js
+-      - app/product_v2/domain/review.js
+-      - app/product_v2/domain/index.js
+-      - app/product_v2/workspace.js
+-      - app/product_v2/index.html
+-      - app/product_v2/styles.css
+-      - evals/product-v2/harness/compare-panel.js
+-      - evals/product-v2/harness/compare-panel.html
+-      - README.md
+-      - docs/product-v2-project-context.md
+-      - docs/product-v2-goal-and-implementation-plan.md
+-      - .github/workflows/ci-cd.yml
+-
+-  V2.5.4:
+-    status: done
+-    evidence:
+-      - evals/product-v2/v2.5.4-rework-loop-20260930-172722final.txt
+-      - evals/product-v2/v2.5.4-rework-loop-20260930-172722final.json
+-      - evals/product-v2/evidence/v2.5.4-rework-loop-20260930-172722.png
+-      - evals/product-v2/evidence/v2.5.4-rework-loop-20260930-172722-detail.png
+-      - evals/product-v2/v2.5.3-compare-panel-20260930-170502-v254reorg.txt
+-      - tools/verify_v2_5_4_rework_loop.py
+-      - app/product_v2/domain/rework.js
+-      - app/product_v2/domain/compare.js
+-      - app/product_v2/domain/confirm.js
+-      - app/product_v2/domain/prompt.js
+-      - app/product_v2/domain/index.js
+-      - app/product_v2/workspace.js
+-      - app/product_v2/index.html
+-      - app/product_v2/styles.css
+-      - evals/product-v2/harness/rework-contract.js
+-      - evals/product-v2/harness/rework-contract.html
+-      - README.md
+-      - docs/product-v2-project-context.md
+-      - docs/product-v2-goal-and-implementation-plan.md
+-      - .github/workflows/ci-cd.yml
+-
+-  V2.6.1:
+-    status: done
+-    evidence:
+-      - evals/product-v2/v2.6.1-selection-20260930-183606final.txt
+-      - evals/product-v2/v2.6.1-selection-20260930-183606final.json
+-      - evals/product-v2/evidence/v2.6.1-selection-20260930-183606.png
+-      - evals/product-v2/evidence/v2.6.1-selection-20260930-183606-detail.png
+-      - evals/product-v2/v2.5.4-rework-loop-20260930-183415-v261final.txt
+-      - tools/verify_v2_6_1_selection.py
+-      - app/product_v2/domain/selection.js
+-      - app/product_v2/domain/shared.js
+-      - app/product_v2/domain/index.js
+-      - app/product_v2/workspace.js
+-      - app/product_v2/index.html
+-      - app/product_v2/styles.css
+-      - evals/product-v2/harness/selection-contract.js
+-      - evals/product-v2/harness/selection-contract.html
+-      - README.md
+-      - docs/product-v2-project-context.md
+-      - .github/workflows/ci-cd.yml
+-
+-  V2.UI.1:
+-    status: done
+-    evidence:
+-      - evals/product-v2/v2.ui.1-remote-entry-20260930-213048-final.txt
+-      - evals/product-v2/v2.ui.1-remote-entry-20260930-213048-final.json
+-      - evals/product-v2/evidence/v2.ui.1-remote-entry-20260930-213048-localhost.png
+-      - evals/product-v2/evidence/v2.ui.1-remote-entry-20260930-213048-chrome.png
+-      - evals/product-v2/evidence/v2.ui.1-remote-entry-20260930-213048-edge.png
+-      - evals/product-v2/evidence/v2.ui.1-remote-entry-20260930-213048-http-negative.png
+-      - tools/verify_v2_ui_1_remote_entry.py
+-      - deploy/caddy/Caddyfile
+-      - app/product_v2/storage/capabilities.js
+-      - app/product_v2/storage/errors.js
+-      - app/product_v2/storage/db.js
+-      - app/product_v2/storage/index.js
+-      - app/product_v2/app.js
+-      - app/product_v2/index.html
+-      - app/product_v2/styles.css
+-      - .github/workflows/ci-cd.yml
+-      - README.md
+-      - docs/product-v2-project-context.md
+-  V2.UI.2:
+-    status: done
+-    evidence:
+-      - evals/product-v2/v2.ui.2-interaction-visual-20260930-232009final.txt
+-      - evals/product-v2/v2.ui.2-interaction-visual-20260930-232009final.json
+-      - evals/product-v2/evidence/v2.ui.2-home-20260930-232009.png
+-      - evals/product-v2/evidence/v2.ui.2-review-20260930-232009.png
+-      - evals/product-v2/evidence/v2.ui.2-deliver-20260930-232009.png
+-      - evals/product-v2/evidence/v2.ui.2-narrow-20260930-232009.png
+-      - evals/product-v2/evidence/v2.ui.2-zoom200-20260930-232009.png
+-      - tools/verify_v2_ui_2_interaction_visual.py
+-      - tools/v2_stage_nav.py
+-      - app/product_v2/index.html
+-      - app/product_v2/styles.css
+-      - app/product_v2/ui/stage-shell.js
+-      - app/product_v2/workspace.js
+-      - evals/product-v2/v2.7.2-remote-real-e2e-20261001-013714-real01.txt
+-      - evals/product-v2/remote-persistence-20261001-020726-pre-restart.txt
+-      - evals/product-v2/remote-persistence-20261001-021516-post-restart.txt
+-      - evals/product-v2/evidence/self-review-remote-390-20261001.png
+-      - evals/product-v2/evidence/self-review-remote-zoom200-20261001.png
+-      - evals/product-v2/evidence/self-review-remote-empty-390-20261001.png
+-      - evals/product-v2/v2.ui.2-walkthrough-record.md
+-      - docs/product-v2-ui-contract.md
+-      - README.md
+-      - .github/workflows/ci-cd.yml
+-  V2.UI.3:
+-    status: done
+-    evidence:
+-      - evals/product-v2/v2.ui.3-frontend-20261001-025613-final.txt
+-      - evals/product-v2/v2.ui.3-frontend-20261001-025613-final.json
+-      - evals/product-v2/v2.ui.3-frontend-20261001-030253.txt
+-      - evals/product-v2/evidence/v2.ui.3-frontend-20261001-025613-final-home.png
+-      - evals/product-v2/evidence/v2.ui.3-frontend-20261001-025613-final-drill.png
+-      - evals/product-v2/evidence/v2.ui.3-frontend-20261001-025613-final-narrow.png
+-      - tools/verify_v2_ui_3_frontend.py
+-      - app/product_v2/app.js
+-      - app/product_v2/index.html
+-      - app/product_v2/styles.css
+-      - app/product_v2/ui/stage-shell.js
+-      - app/product_v2/workspace.js
+-      - .github/workflows/ci-cd.yml
+-  V2.5.5:
+-    status: done
+-    evidence:
+-      - evals/product-v2/v2.5.5-suite-review-20261001-034436-final.txt
+-      - evals/product-v2/v2.5.5-suite-review-20261001-034436-final.json
+-      - evals/product-v2/evidence/v2.5.5-suite-review-20261001-034436-final-current.png
+-      - evals/product-v2/evidence/v2.5.5-suite-review-20261001-034436-final-rerun.png
+-      - evals/product-v2/evidence/v2.5.5-suite-review-20261001-034436-final-unknown.png
+-      - tools/verify_v2_5_5_suite_review.py
+-      - evals/product-v2/harness/suite-review-contract.js
+-      - app/product_v2/domain/suite-review.js
+-      - app/product_v2/workspace.js
+-      - app/product_v2_server.py
+-      - src/providers/v2_suite_review.py
+-      - src/providers/v2_dashscope_suite_review.py
+-      - src/providers/v2_fake_suite_review.py
+-      - .github/workflows/ci-cd.yml
+-  V2.6.2:
+-    status: done
+-    evidence:
+-      - evals/product-v2/v2.6.2-delivery-20261001-042122-final.txt
+-      - evals/product-v2/v2.6.2-delivery-20261001-042122-final.json
+-      - evals/product-v2/evidence/v2.6.2-delivery-20261001-042122-final-gate-pass.png
+-      - evals/product-v2/evidence/v2.6.2-delivery-20261001-042122-final-unknown-blocked.png
+-      - evals/product-v2/evidence/v2.6.2-delivery-20261001-042122-final-unknown-confirmed.png
+-      - evals/product-v2/evidence/v2.6.2-delivery-20261001-042122-final-after-reload.png
+-      - evals/product-v2/evidence/v2.6.2-delivery-20261001-042122-final-hash-missing.png
+-      - README.md
+-      - tools/verify_v2_6_2_delivery.py
+-      - evals/product-v2/harness/delivery-gate-contract.js
+-      - evals/product-v2/harness/delivery-gate-contract.html
+-      - app/product_v2/domain/export-gate.js
+-      - app/product_v2/domain/review.js
+-      - app/product_v2/domain/shared.js
+-      - app/product_v2/domain/index.js
+-      - app/product_v2/workspace.js
+-      - app/product_v2/index.html
+-      - app/product_v2/styles.css
+-      - src/providers/v2_fake_image.py
+-      - .github/workflows/ci-cd.yml
+-  V2.6.3:
+-    status: done
+-    evidence:
+-      - evals/product-v2/v2.6.3-transfer-20261001-050133-final.txt
+-      - evals/product-v2/v2.6.3-transfer-20261001-050133-final.json
+-      - evals/product-v2/evidence/v2.6.3-transfer-20261001-050133-final-a-exported.png
+-      - evals/product-v2/evidence/v2.6.3-transfer-20261001-050133-final-b-imported.png
+-      - evals/product-v2/evidence/v2.6.3-transfer-20261001-050133-final-b-opened.png
+-      - evals/product-v2/evidence/v2.6.3-transfer-20261001-050133-final-b-rework-form.png
+-      - evals/product-v2/evidence/v2.6.3-transfer-20261001-050133-final-b-reworked.png
+-      - evals/product-v2/evidence/v2.6.3-transfer-20261001-050133-final-b-deliver.png
+-      - tools/verify_v2_6_3_project_transfer.py
+-      - evals/product-v2/harness/project-package-contract.js
+-      - evals/product-v2/harness/project-package-contract.html
+-      - app/product_v2/storage/package.js
+-      - app/product_v2/storage/package-migrations.js
+-      - app/product_v2/storage/transfer.js
+-      - app/product_v2/storage/index.js
+-      - app/product_v2/app.js
+-      - tools/verify_v2_1_3_project_package.py
+-      - evals/product-v2/v2.1.3-project-package-20261001-050001.txt
+-      - .github/workflows/ci-cd.yml
+-      - README.md
+-  V2.6.4:
+-    status: done
+-    evidence:
+-      - evals/product-v2/v2.6.4-a11y-20261001-052757-final.txt
+-      - evals/product-v2/v2.6.4-a11y-20261001-052757-final.json
+-      - evals/product-v2/evidence/v2.6.4-a11y-20261001-052757-final-home.png
+-      - evals/product-v2/evidence/v2.6.4-a11y-20261001-052757-final-keyboard-created.png
+-      - evals/product-v2/evidence/v2.6.4-a11y-20261001-052757-final-busy.png
+-      - evals/product-v2/evidence/v2.6.4-a11y-20261001-052757-final-review.png
+-      - evals/product-v2/evidence/v2.6.4-a11y-20261001-052757-final-deliver.png
+-      - evals/product-v2/evidence/v2.6.4-a11y-20261001-052757-final-narrow-390.png
+-      - evals/product-v2/evidence/v2.6.4-a11y-20261001-052757-final-zoom-200.png
+-      - evals/product-v2/evidence/v2.6.4-a11y-20261001-052757-final-drill.png
+-      - tools/verify_v2_6_4_accessibility.py
+-      - evals/product-v2/vendor/axe-core.min.js
+-      - evals/product-v2/vendor/axe-core.LICENSE.txt
+-      - tools/check_docs.py
+-      - docs/product-v2-project-context.md
+-      - app/product_v2/workspace.js
+-      - app/product_v2/index.html
+-      - app/product_v2/styles.css
+-      - .github/workflows/ci-cd.yml
+-      - README.md
+-  V2.6.5:
+-    status: done
+-    evidence:
+-      - evals/product-v2/v2.6.4-a11y-20261001-055317-v265-final.txt
+-      - evals/product-v2/v2.6.4-a11y-20261001-055317-v265-final.json
+-      - evals/product-v2/v2.6.4-a11y-20261001-055253-red-proof-old-layout.txt
+-      - evals/product-v2/evidence/v2.6.4-a11y-20261001-055317-v265-final-ref-card-1440.png
+-      - evals/product-v2/evidence/remote-real-e2e-20261001-054352-v2.7.2-arrears-retry-failure.png
+-      - tools/verify_v2_6_4_accessibility.py
+-      - app/product_v2/styles.css
+-  V2.6.6:
+-    status: done
+-    evidence:
+-      - evals/product-v2/v2.6.4-a11y-20261001-060452-v266-red-proof.txt
+-      - evals/product-v2/v2.6.4-a11y-20261001-060452-v266-red-proof.json
+-      - evals/product-v2/v2.6.4-a11y-20261001-060920-v266-final4.txt
+-      - evals/product-v2/v2.6.4-a11y-20261001-060920-v266-final4.json
+-      - evals/product-v2/evidence/v2.6.4-a11y-20261001-060920-v266-final4-review.png
+-      - evals/product-v2/evidence/v2.6.4-a11y-20261001-060920-v266-final4-review-390.png
+-      - tools/verify_v2_6_4_accessibility.py
+-      - app/product_v2/styles.css
+-  V2.6.7:
+-    status: done
+-    evidence:
+-      - evals/product-v2/v2.ui.3-frontend-20261001-065851-v267-red.txt
+-      - evals/product-v2/v2.ui.3-frontend-20261001-065851-v267-red.json
+-      - evals/product-v2/v2.ui.3-frontend-20261001-065959-v267-green.txt
+-      - evals/product-v2/v2.ui.3-frontend-20261001-065959-v267-green.json
+-      - evals/product-v2/v2.5.5-suite-review-20261001-065917-v267-red.txt
+-      - evals/product-v2/v2.5.5-suite-review-20261001-070024-v267-green.txt
+-      - evals/product-v2/v2.5.5-suite-review-20261001-070024-v267-green.json
+-      - evals/product-v2/evidence/v2.ui.3-frontend-20261001-065959-v267-green-deliver.png
+-      - app/product_v2/workspace.js
+-      - tools/verify_v2_ui_3_frontend.py
+-      - tools/verify_v2_5_5_suite_review.py
+-  V2.6.8:
+-    status: done
+-    evidence:
+-      - evals/product-v2/v2.4.1-large-ref-red-proof-20261001-073024.json
+-      - evals/product-v2/v2.4.1-image-gateway-20261001-073247-v268-green.txt
+-      - evals/product-v2/v2.4.1-image-gateway-20261001-073247-v268-green.json
+-      - evals/product-v2/v273-rehearsal-20261001-072035-crash.json
+-      - evals/product-v2/v273-rehearsal-20261001-073329.md
+-      - evals/product-v2/v273-rehearsal-20261001-073329.json
+-      - tools/rehearse_v273_walkthrough.py
+-      - tools/verify_v2_4_1_image_gateway.py
+-      - app/product_v2_server.py
+-      - app/product_v2/workspace.js
+-  V2.6.9:
+-    status: done
+-    evidence:
+-      - evals/product-v2/v2.ui.3-frontend-20261001-073741-v269-red.txt
+-      - evals/product-v2/v2.ui.3-frontend-20261001-073741-v269-red.json
+-      - evals/product-v2/v2.ui.3-frontend-20261001-073811-v269-green.txt
+-      - evals/product-v2/v2.ui.3-frontend-20261001-073811-v269-green.json
+-      - evals/product-v2/evidence/v2.ui.3-frontend-20261001-073811-v269-green-understand.png
+-      - evals/product-v2/v2.2.3-intake-understanding-20261001-073929-v269.txt
+-      - evals/product-v2/v2.2.3-intake-understanding-20261001-073929-v269.json
+-      - evals/product-v2/v2.6.4-a11y-20261001-073942-v269.txt
+-      - evals/product-v2/v2.6.4-a11y-20261001-073942-v269.json
+-      - evals/product-v2/v273-rehearsal-20261001-074015.md
+-      - evals/product-v2/v273-rehearsal-20261001-074015.json
+-      - app/product_v2/workspace.js
+-      - tools/verify_v2_ui_3_frontend.py
+-  V2.6.10:
+-    status: done
+-    evidence:
+-      - evals/product-v2/v2.3.5-pre-generation-confirm-20261001-074628-v2610-red.txt
+-      - evals/product-v2/v2.3.5-pre-generation-confirm-20261001-074628-v2610-red.json
+-      - evals/product-v2/v2.3.5-pre-generation-confirm-20261001-074714-v2610-green.txt
+-      - evals/product-v2/v2.3.5-pre-generation-confirm-20261001-074714-v2610-green.json
+-      - evals/product-v2/v2.ui.3-frontend-20261001-074726-v2610.txt
+-      - evals/product-v2/v2.ui.3-frontend-20261001-074726-v2610.json
+-      - evals/product-v2/v273-rehearsal-20261001-074743.md
+-      - evals/product-v2/v273-rehearsal-20261001-074743.json
+-      - evals/product-v2/evidence/v273-rehearsal-20261001-074743-generate-confirm.png
+-      - app/product_v2/workspace.js
+-      - tools/verify_v2_3_5_pre_generation_confirm.py
+-  V2.6.11:
+-    status: done
+-    evidence:
+-      - evals/product-v2/v273-rehearsal-20261001-080059.json
+-      - evals/product-v2/evidence/v273-rehearsal-20261001-080059-deliver.png
+-      - evals/product-v2/v2.6.2-delivery-20261001-080658.txt
+-      - evals/product-v2/v2.6.2-delivery-20261001-080658.json
+-      - evals/product-v2/evidence/v2.6.2-delivery-20261001-080658-suite-missing.png
+-      - evals/product-v2/v273-rehearsal-20261001-083137.md
+-      - evals/product-v2/v273-rehearsal-20261001-083137.json
+-      - evals/product-v2/v273-rehearsal-20261001-083209.md
+-      - evals/product-v2/v273-rehearsal-20261001-083209.json
+-      - evals/product-v2/v273-rehearsal-20261001-083223.md
+-      - evals/product-v2/v273-rehearsal-20261001-083223.json
+-      - evals/product-v2/evidence/v273-rehearsal-20261001-083137-vlm-review.png
+-      - evals/product-v2/evidence/v273-rehearsal-20261001-083137-rework-compare.png
+-      - evals/product-v2/evidence/v273-rehearsal-20261001-083137-deliver-exported.png
+-      - evals/product-v2/v2.ui.3-frontend-20261001-080422-v273-prep.txt
+-      - evals/product-v2/v2.ui.3-frontend-20261001-080422-v273-prep.json
+-      - evals/product-v2/v2.5.5-suite-review-20261001-080457.txt
+-      - evals/product-v2/v2.5.5-suite-review-20261001-080457.json
+-      - evals/product-v2/v2.5.4-rework-loop-20261001-080740v273-prep.txt
+-      - evals/product-v2/v2.5.4-rework-loop-20261001-080740v273-prep.json
+-      - evals/product-v2/v2.6.1-selection-20261001-080751.txt
+-      - evals/product-v2/v2.6.1-selection-20261001-080751.json
+-      - evals/product-v2/v2.5.3-compare-panel-20261001-080809.txt
+-      - evals/product-v2/v2.5.3-compare-panel-20261001-080809.json
+-      - app/product_v2/workspace.js
+-      - tools/verify_v2_6_2_delivery.py
+-      - tools/verify_v2_ui_3_frontend.py
+-      - tools/rehearse_v273_walkthrough.py
+-  V2.6.12:
+-    status: done
+-    evidence:
+-      - evals/product-v2/v2.6.2-delivery-20261001-081609-v2612-red.txt
+-      - evals/product-v2/v2.6.2-delivery-20261001-081609-v2612-red.json
+-      - evals/product-v2/v2.6.2-delivery-20261001-081642-v2612-green.txt
+-      - evals/product-v2/v2.6.2-delivery-20261001-081642-v2612-green.json
+-      - evals/product-v2/v273-rehearsal-20261001-083137.md
+-      - evals/product-v2/v273-rehearsal-20261001-083137.json
+-      - evals/product-v2/v273-rehearsal-20261001-083209.json
+-      - evals/product-v2/v273-rehearsal-20261001-083223.json
+-      - app/product_v2/workspace.js
+-      - tools/verify_v2_6_2_delivery.py
+-      - tools/rehearse_v273_walkthrough.py
+-  V2.6.13:
+-    status: done
+-    evidence:
+-      - evals/product-v2/v2.3.5-pre-generation-confirm-20261001-083557-v2613-red.txt
+-      - evals/product-v2/v2.3.5-pre-generation-confirm-20261001-083557-v2613-red.json
+-      - evals/product-v2/v2.3.5-pre-generation-confirm-20261001-083623-v2613-green.txt
+-      - evals/product-v2/v2.3.5-pre-generation-confirm-20261001-083623-v2613-green.json
+-      - evals/product-v2/v2.3.4-prompt-compiler-20261001-083641.txt
+-      - evals/product-v2/v2.3.6-prompt-manual-edit-20261001-083650.txt
+-      - evals/product-v2/v2.ui.3-frontend-20261001-083746-v2613.txt
+-      - evals/product-v2/v2.ui.3-frontend-20261001-083746-v2613.json
+-      - evals/product-v2/v273-rehearsal-20261001-083716.md
+-      - evals/product-v2/v273-rehearsal-20261001-083716.json
+-      - evals/product-v2/evidence/v273-rehearsal-20261001-083716-generate-confirm.png
+-      - app/product_v2/domain/prompt.js
+-      - tools/verify_v2_3_5_pre_generation_confirm.py
+-  V2.6.14:
+-    status: done
+-    evidence:
+-      - evals/product-v2/v2.5.3-compare-panel-20261001-093846v2614-red.txt
+-      - evals/product-v2/v2.5.3-compare-panel-20261001-093846v2614-red.json
+-      - evals/product-v2/v2.5.3-compare-panel-20261001-094436v2614-final.txt
+-      - evals/product-v2/v2.5.3-compare-panel-20261001-094436v2614-final.json
+-      - evals/product-v2/v2.ui.3-frontend-20261001-094610-v2614-reg.txt
+-      - evals/product-v2/v2.ui.2-interaction-visual-20261001-094630.txt
+-      - evals/product-v2/v2.6.4-a11y-20261001-094713.txt
+-      - evals/product-v2/v2.5.5-suite-review-20261001-094921-v2614-reg.txt
+-      - evals/product-v2/v2.5.4-rework-loop-20261001-094937v2614-reg.txt
+-      - evals/product-v2/v2.6.1-selection-20261001-094733.txt
+-      - evals/product-v2/v273-rehearsal-20261001-095045.md
+-      - evals/product-v2/evidence/v2.5.3-compare-panel-20261001-094436.png
+-      - app/product_v2/workspace.js
+-      - app/product_v2/styles.css
+-      - tools/verify_v2_5_3_compare_panel.py
+-  V2.6.15:
+-    status: done
+-    evidence:
+-      - evals/product-v2/v2.6.2-delivery-20261001-093813-v2615-red.txt
+-      - evals/product-v2/v2.6.2-delivery-20261001-093813-v2615-red.json
+-      - evals/product-v2/v2.6.2-delivery-20261001-094448-v2615-final.txt
+-      - evals/product-v2/v2.6.2-delivery-20261001-094448-v2615-final.json
+-      - evals/product-v2/evidence/v2.6.2-delivery-20261001-094448-v2615-final-gate-pass.png
+-      - app/product_v2/workspace.js
+-      - app/product_v2/index.html
+-      - app/product_v2/styles.css
+-      - tools/verify_v2_6_2_delivery.py
+-      - tools/verify_v2_6_3_project_transfer.py
+-      - evals/product-v2/v2.6.3-transfer-20261001-102204.txt
+-      - evals/product-v2/v2.7.1-regression-20261001-v261617-reg-final.txt
+-  V2.6.16:
+-    status: done
+-    evidence:
+-      - evals/product-v2/v2.2.3-intake-understanding-20261001-100041-v2616-red.txt
+-      - evals/product-v2/v2.2.3-intake-understanding-20261001-100041-v2616-red.json
+-      - evals/product-v2/v2.2.3-intake-understanding-20261001-100144-v2616-green.txt
+-      - evals/product-v2/v2.2.3-intake-understanding-20261001-100144-v2616-green.json
+-      - evals/product-v2/evidence/v2.2.3-workspace-20261001-100144-v2616-green.png
+-      - tools/check_project_state.py
+-      - evals/product-v2/v2.ui.3-frontend-20261001-100211-v2616-reg.txt
+-      - evals/product-v2/v2.ui.2-interaction-visual-20261001-100240.txt
+-      - evals/product-v2/v2.6.4-a11y-20261001-100253.txt
+-      - evals/product-v2/v2.2.4-category-generality-20261001-100229-v2616-reg.txt
+-      - evals/product-v2/v2.7.1-regression-20261001-v261617-reg-final.txt
+-      - app/product_v2/workspace.js
+-      - tools/verify_v2_2_3_intake_understanding.py
+-  V2.6.17:
+-    status: done
++      - tools/refactor_resume.py
++      - evals/probes/project_state.py
++      - evals/probes/docs_index.py
++  V2.R1.1:
++    status: pending
+     evidence:
+-      - evals/product-v2/v2.3.5-pre-generation-confirm-20261001-100629-v2617-red.txt
+-      - evals/product-v2/v2.3.5-pre-generation-confirm-20261001-100629-v2617-red.json
+-      - evals/product-v2/v2.3.5-pre-generation-confirm-20261001-100709-v2617-green.txt
+-      - evals/product-v2/v2.3.5-pre-generation-confirm-20261001-100709-v2617-green.json
+-      - evals/product-v2/v2.7.1-regression-20261001-v261617-reg-final.txt
+-      - app/product_v2/domain/prompt.js
+-      - tools/verify_v2_3_5_pre_generation_confirm.py
+-  V2.7.1:
+-    status: done
++      - evals/product-v2/refactor/goal-binding-20261001-094520.md
++  V2.R1.2:
++    status: pending
+     evidence:
+-      - evals/product-v2/v2.7.1-regression-20261001-0633-final.txt
+-      - evals/product-v2/v2.7.1-regression-20261001-0633-final.json
+-      - evals/product-v2/v2.7.1-regression-20261001-061430-final.txt
+-      - evals/product-v2/v2.7.1-regression-20261001-061430-final.json
+-      - tools/verify_v2_7_1_regression.py
+-      - evals/probes/docs_index.py
+-      - evals/probes/project_state.py
+-      - tools/verify_v2_1_2_project_home.py
+-  V2.7.2:
+-    status: done
++      - evals/product-v2/refactor/baseline-and-boot-20261001-095710.md
++  V2.R1.3:
++    status: pending
+     evidence:
+-      - evals/product-v2/v2.7.2-remote-real-e2e-20261001-091400.txt
+-      - evals/product-v2/v2.7.2-remote-real-e2e-20261001-091400.json
+-      - evals/product-v2/evidence/remote-real-e2e-20261001-091400-home.png
+-      - evals/product-v2/evidence/remote-real-e2e-20261001-091400-intake.png
+-      - evals/product-v2/evidence/remote-real-e2e-20261001-091400-understand.png
+-      - evals/product-v2/evidence/remote-real-e2e-20261001-091400-plan.png
+-      - evals/product-v2/evidence/remote-real-e2e-20261001-091400-generate.png
+-      - evals/product-v2/evidence/remote-real-e2e-20261001-091400-review.png
+-      - evals/product-v2/evidence/remote-real-e2e-20261001-091400-suite-review.png
+-      - evals/product-v2/evidence/remote-real-e2e-20261001-091400-deliver.png
+-      - evals/product-v2/evidence/remote-real-e2e-20261001-091400-delivery-package.png
+-      - evals/product-v2/evidence/remote-real-e2e-20261001-091400-after-reload.png
+-      - tools/run_remote_real_e2e.py
+-      - tools/audit_v2_7_4_completion.py
+-      - evals/product-v2/v2.7.4-completion-matrix-20261001-092307.md
+-      - evals/product-v2/v2.7.4-completion-matrix-20261001-092307.json
+-next_action_task: V2.7.3
+-blockers: []
++      - evals/product-v2/refactor/audit-protocol-20261001-095948.md
++  V2.R2.1:
++    status: pending
++  V2.R2.2:
++    status: pending
++  V2.R2.3:
++    status: pending
++  V2.R3.1:
++    status: pending
++  V2.R3.2:
++    status: pending
++  V2.R3.3:
++    status: pending
++  V2.R4.1:
++    status: pending
++  V2.R4.2:
++    status: pending
++  V2.R4.3:
++    status: pending
++  V2.R4.4:
++    status: pending
++  V2.R5.1:
++    status: pending
++  V2.R5.2:
++    status: pending
++  V2.R5.3:
++    status: pending
++  V2.R6.1:
++    status: pending
++  V2.R6.2:
++    status: pending
++  V2.R6.3:
++    status: pending
++  V2.R6.4:
++    status: pending
++  V2.R7.1:
++    status: pending
++  V2.R7.2:
++    status: pending
++  V2.R7.3:
++    status: pending
++  V2.R7.4:
++    status: pending
++next_action_task: V2.R1.1
++blockers:
++  - goal_interface_returns_no_id_cannot_write_required_anchor_without_fabrication
++  - new_goal_not_created_or_bound_only_planning_and_control_checks_authorized
+ unknowns:
+-  - visual_language_review_detection_quality_is_uncalibrated_channels_and_binding_only_proven_in_V2.5.2
+-  - ui_information_hierarchy_primary_action_image_comparison_and_visual_direction_self_reviewed_20261001_owner_walkthrough_deferred_to_final_human_gate
+-updated_at: 2026-10-01T11:59:15+08:00
++  - boot_intermittent_failure_reported_by_user_no_timeline_failure_sample_root_cause_unproven_follow_V2.R1.2_and_V2.R3.3
++  - second_image_model_protocol_quality_cost_and_budget_unselected_follow_V2.R4.1_and_V2.R4.2
++  - frontend_tool_versions_framework_and_build_selection_pending_follow_V2.R3.1
++  - default_profile_access_and_spending_limits_pending_follow_V2.R4.1_and_V2.R4.3
++  - actual_ui_ergonomics_audit_not_run_follow_V2.R2.1
++  - vlm_detection_quality_uncalibrated_do_not_infer_accuracy_from_contract_pass
++  - final_owner_and_first_user_reviews_and_deployment_permissions_pending
++updated_at: 2026-10-01T10:01:00.000+00:00
+ ```
+diff --git a/_working/amz-listing-kit-product-v2/tasks/v273-walkthrough-kit.md b/_working/amz-listing-kit-product-v2/tasks/v273-walkthrough-kit.md
+index c5527a3..28064fc 100644
+--- a/_working/amz-listing-kit-product-v2/tasks/v273-walkthrough-kit.md
++++ b/_working/amz-listing-kit-product-v2/tasks/v273-walkthrough-kit.md
+@@ -1,8 +1,8 @@
+ # V2.7.3 走查工具包（陌生人 / 产品发起人）
+ 
+-> CONTROL-STATUS: draft · AUTHORITY: V2.7.3 施工任务书
+-> 生效条件：V2.7.3 走查期间使用；走查结论与观察表归档后改登记为 `superseded`。
+-> 通过线只在计划 §10.1 / §11（C15、C17）里定义；本文件只管「怎么把这两条走完」。
++> CONTROL-STATUS: superseded · AUTHORITY: historical-walkthrough-kit
++> 被 `docs/product-v2-refactor-plan.md` 的 V2.R7.2 接管最终走查；本文件仅保留旧脚本参考。
++> 旧 C15/C17 尚未闭合，本次归档不表示通过；不从此工具包恢复施工。
+ 
+ ## 1. 这次要证明什么
+ 
+diff --git a/app/product_v2/workspace.js b/app/product_v2/workspace.js
+index a681f73..c84dd66 100644
+--- a/app/product_v2/workspace.js
++++ b/app/product_v2/workspace.js
+@@ -218,6 +218,24 @@ const REVIEW_ORDER = Object.freeze({
+   conflict: 0, unknown: 1, missing: 2, proposed: 3, confirmed: 4, superseded: 5,
+ });
+ 
++/**
++ * 列表排序键：把「必须确认（critical）且尚未收尾」提到冲突/未知之后、缺失之前。
++ *
++ * critical 是推进阶段门禁的真阻塞项，而 `missing` 大多只是待补的可选事实
++ * （品牌、包装内容物等不参与解锁）。只按 REVIEW_ORDER 排，4 个不阻塞的 missing
++ * 会压在 3 个阻塞的 proposed+critical 前面，与页面文案「先处理冲突、未知与必须确认
++ * 的槽位」相反：读者按视觉顺序走，会先做几件不影响推进的事才碰到真正的门槛。
++ */
++function reviewRankOf(entry) {
++  const status = entry.slot.status;
++  if (status !== "confirmed" && status !== "superseded" && entry.slot.critical === true) {
++    return 2;
++  }
++  const base = REVIEW_ORDER[status] ?? 9;
++  // 冲突/未知仍然最先；缺失及之后的普通状态整体后移一位，给 critical 让位。
++  return base < 2 ? base : base + 1;
++}
++
+ const SCOPE_TEXT = "这一版覆盖“商品资料 → 商品理解 → 套图规划 → 规格 → Prompt → 生成前确认 → 整套生成与逐图进度（含单张核对）→ 审核 → 单图返工 → 人工采用”；整套一致性报告与导出交付尚未接入。";
+ 
+ function createElement(tag, options = {}, children = []) {
+@@ -1090,10 +1108,8 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
+ 
+     const list = (showAll ? entries : open).slice();
+     list.sort((left, right) => {
+-      const byStatus = (REVIEW_ORDER[left.slot.status] ?? 9) - (REVIEW_ORDER[right.slot.status] ?? 9);
+-      if (byStatus !== 0) return byStatus;
+-      const byCritical = Number(right.slot.critical === true) - Number(left.slot.critical === true);
+-      if (byCritical !== 0) return byCritical;
++      const byRank = reviewRankOf(left) - reviewRankOf(right);
++      if (byRank !== 0) return byRank;
+       return left.slot.slot_id.localeCompare(right.slot.slot_id);
+     });
+     for (const entry of list) elements.slotList.append(slotRow(entry));
+@@ -1139,6 +1155,8 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
+     const status = slot.status;
+     const row = createElement("li", { className: "slot-row", attrs: { "data-status": status } });
+     row.dataset.slotId = slot.slot_id;
++    // 验证用：必须确认是「推进阶段门禁」的判据之一，断言要能区分它与普通待补项。
++    row.dataset.critical = slot.critical === true ? "1" : "0";
+ 
+     const head = createElement("div", { className: "slot-head" });
+     head.append(createElement("span", {
+@@ -6088,7 +6106,10 @@ export function createWorkspace({ repository, onProjectChanged = null }) {
+     refreshStageShell({ reset: true });
+     await loadCapabilities();
+     if (token !== openToken) return;
+-    renderAnalyze();
++    // capabilities 是渲染输入（renderAnalyze 读 capabilitiesError、renderAttempts 读
++    // 图像 provider），必须在它到位后重新投影，否则初次打开会留下"尚未读到能力信息"
++    // 的陈旧文案，直到下一次用户动作触发渲染才消失。
++    renderAll();
+   }
+ 
+   return {
+diff --git a/docs/INDEX.md b/docs/INDEX.md
+index d7a0eb7..4dd8e42 100644
+--- a/docs/INDEX.md
++++ b/docs/INDEX.md
+@@ -11,9 +11,9 @@
+ 
+ | 要回答的问题 | 唯一权威 | 其他地方只允许 |
+ |---|---|---|
+-| Goal 现在运行、暂停还是完成 | 系统 Goal `01a0ca17-2179-7eb0-969a-af9c79c4d8ca`；最近读数记录在 `_working/amz-listing-kit-product-v2/state.md` | 文档只记录 Goal 身份和最近读数，不自行改写生命周期 |
++| Goal 现在运行、暂停还是完成 | 系统 Goal；绑定状态与最近实际读数只在 `_working/amz-listing-kit-product-v2/state.md`，旧 Goal 读数见 superseded 基线 | `prepared` 是未绑定新 Goal 的本地准备态，不冒充系统 paused/active；不据旧读数继续旧发布 |
+ | 项目是什么、运行边界、数据与目录归谁 | `docs/product-v2-project-context.md` | 计划和 README 只链接，不复制项目身份、目标运行时或数据所有权 |
+-| 要做成什么、什么算完成、阶段/任务怎样依赖 | `docs/product-v2-goal-and-implementation-plan.md` | 按 ID 引用，不复制目标、Gate、任务定义或依赖 |
++| 要做成什么、什么算完成、阶段/任务怎样依赖 | `docs/product-v2-refactor-plan.md` | 按 ID 引用，不复制目标、Gate、任务定义或依赖；旧计划仅作基线合同来源 |
+ | 当前做到哪、证据在哪、唯一下一动作是什么 | `_working/amz-listing-kit-product-v2/state.md` | 历史审计只能保存当时快照，不发布“当前状态” |
+ | 现有代码实际上能做什么 | `README.md` 指向的代码、配置与验证入口 | 目标计划不得把未实现能力写成当前实现 |
+ | 哪份文档有效、历史还是待删 | 本文件 | 各文件只声明自己的 CONTROL-STATUS，不建立另一张总表 |
+@@ -21,6 +21,10 @@
+ 
+ 恢复工作时只按这个顺序读：**本文件 → Product V2 项目上下文 → 当前 state → state 指向的下一任务在产品计划中的任务卡 → 该任务证据 → 相关代码**。默认不读 `standards-template/`、`drafts/`、旧计划、旧 state 或横切面文档。
+ 
++重构恢复不依赖聊天：state 为 `prepared` 时，读取计划 §2 的拟建 Goal 原文及 §9 的下一任务卡，
++先执行 `V2.R1.1` 的 Goal 核对/绑定门；未绑定前禁止产品施工、真实模型调用、发布或 V1 日落。
++当前目标以计划为准，计划准备完成不等于重构完成，也不自动改变旧系统 Goal 生命周期。
++
+ ---
+ 
+ ## 2. 登记表
+@@ -40,13 +44,15 @@
+ | `docs/product-demo-goal-and-implementation-plan.md` | Product V1 v2.6 | `历史证据` | `superseded` | 被 `docs/product-v2-goal-and-implementation-plan.md` 取代；服务器文件夹工作空间与 D4.13/D4.14 不再驱动当前开发 |
+ | `_working/amz-listing-kit-product-demo/state.md` | Product V1 v2.6 | `历史证据` | `superseded` | 被 `_working/amz-listing-kit-product-v2/state.md` 取代；保留 D-1 至 D4.12 的完成证据，不据此继续 D4.13 |
+ | `docs/product-v2-project-context.md` | Product V2 | `架构设计` | `current` | Product V2 项目身份、运行边界、数据所有权、技术栈、目录地图和质量门槛的唯一上下文入口 |
+-| `docs/product-v2-goal-and-implementation-plan.md` | Product V2 | `产品目标` | `current` | Product V2 目标合同、需求、状态、不变量、详细任务、Gate、验收矩阵与系统 Goal 绑定文本的唯一权威 |
++| `docs/product-v2-goal-and-implementation-plan.md` | Product V2 重构前基线 | `历史证据` | `superseded` | 被 `docs/product-v2-refactor-plan.md` 接管未来目标与任务；保留旧合同、C1–C17 和旧 Goal 原文，不据此继续 V2.7.3 |
++| `docs/product-v2-refactor-plan.md` | Product V2 定向重构 | `产品目标` | `current` | 详细任务、UI任务审计、模型评估、迁移与验收、权限门及拟建 Goal 原文的唯一权威；新 Goal 尚待绑定 |
++| `_working/amz-listing-kit-product-v2-baseline/state.md` | Product V2 重构前基线 | `历史证据` | `superseded` | 被 current state 接管；保留旧进度与旧 Goal 的最近实际读数，不发布下一动作 |
+ | `docs/product-v2-ui-contract.md` | Product V2 V2.UI.2 | `设计草案` | `draft` | V2.UI.2 交互与视觉契约：六阶段信息架构、逐视图对象/信息/行为/状态/规则/反馈与表现层基线；生效条件：产品发起人走查确认后转 `架构设计`/`current` 并补入 §1 路由表 |
+-| `_working/amz-listing-kit-product-v2/state.md` | Product V2 | `执行状态` | `current` | Product V2 当前进度、证据指针、阻塞、未知与唯一下一动作；不复制计划正文 |
++| `_working/amz-listing-kit-product-v2/state.md` | Product V2 定向重构 | `执行状态` | `current` | 唯一进度、证据、未绑定原因与下一动作；prepared 不冒充系统 Goal 状态 |
+ | `_working/amz-listing-kit-product-v2/tasks/v255-server.md` | Product V2 V2.5.5 | `历史证据` | `superseded` | V2.5.5 已完成；任务书只保留当时的服务端施工边界，不再据此执行 |
+ | `_working/amz-listing-kit-product-v2/tasks/v255-verifier.md` | Product V2 V2.5.5 | `历史证据` | `superseded` | V2.5.5 已完成；任务书只保留当时的验证施工边界，不再据此执行 |
+ | `_working/amz-listing-kit-product-v2/tasks/v2ui2-interaction-visual.md` | Product V2 V2.UI.2 | `历史证据` | `superseded` | V2.UI.2 已完成；任务书只保留当时的交互与视觉施工边界，不再据此执行 |
+-| `_working/amz-listing-kit-product-v2/tasks/v273-walkthrough-kit.md` | Product V2 V2.7.3 | `设计草案` | `draft` | V2.7.3 陌生人 / 产品发起人走查工具包（前置条件、任务脚本、观察表、归档要求）；生效条件：V2.7.3 走查期间；走查结论归档后改登记为 `superseded` |
++| `_working/amz-listing-kit-product-v2/tasks/v273-walkthrough-kit.md` | Product V2 V2.7.3 基线 | `历史证据` | `superseded` | 被重构计划 V2.R7.2 最终人审任务接管；旧脚本仅供任务参考，旧人审未完成、不转为通过 |
+ | `_working/amz-listing-kit-product-demo/tasks/brief-d42-usability-a11y.md` | Product V1 D4.2 | `历史证据` | `superseded` | D4.2 已完成；任务书只保留当时边界和执行约束，不再驱动当前施工 |
+ | `_working/amz-listing-kit-product-demo/tasks/brief-d43-backup-restore.md` | Product V1 D4.3 | `历史证据` | `superseded` | D4.3 已完成；任务书只保留当时边界和执行约束，不再驱动当前施工 |
+ | `_working/amz-listing-kit-product-demo/tasks/d4.13-first-user-walkthrough-kit.md` | Product V1 D4.13 | `历史证据` | `superseded` | 被 Product V2 的 V2.7.3 首次使用者走查取代；旧工具包只保留任务设计参考 |
+diff --git a/docs/product-v2-goal-and-implementation-plan.md b/docs/product-v2-goal-and-implementation-plan.md
+index b6e33b6..f536f9b 100644
+--- a/docs/product-v2-goal-and-implementation-plan.md
++++ b/docs/product-v2-goal-and-implementation-plan.md
+@@ -1,10 +1,10 @@
+ # amz-listing-kit Product V2 Goal 与详细实施计划
+ 
+-> CONTROL-STATUS: current · AUTHORITY: product-goal-plan
+-> **版本：v3.1 · 2026-09-30**
+-> 本文件是 Product V2 的目标、需求、行为、状态、任务、依赖、Gate 和完成证据的唯一权威。
+-> 项目运行边界见 [`product-v2-project-context.md`](product-v2-project-context.md)；当前进度只见
+-> [`../_working/amz-listing-kit-product-v2/state.md`](../_working/amz-listing-kit-product-v2/state.md)。
++> CONTROL-STATUS: superseded · AUTHORITY: historical-product-goal-plan
++> **冻结基线：v3.1；2026-10-01 被 `product-v2-refactor-plan.md` 接管未来目标与任务。**
++> 本文保留旧合同、任务、C1–C17、故障轨迹和旧系统 Goal 原文，不发布当前下一动作。
++> 系统 Goal 生命周期未因文档归档改变；实际核对与新绑定只按当前计划 V2.R1.1。
++> 旧未完成人审与后续回归失败不能被旧 done 记录覆盖；当前进度只看唯一 current state。
+ 
+ ## 0. 一页结论
+ 
+diff --git a/docs/product-v2-project-context.md b/docs/product-v2-project-context.md
+index 5eaa06f..0dd8728 100644
+--- a/docs/product-v2-project-context.md
++++ b/docs/product-v2-project-context.md
+@@ -2,7 +2,7 @@
+ 
+ > CONTROL-STATUS: current · AUTHORITY: project-context
+ > 本文件回答“项目是什么、怎样运行、数据归谁、目录与质量门槛是什么”。产品目标、验收与任务图只在
+-> [`product-v2-goal-and-implementation-plan.md`](product-v2-goal-and-implementation-plan.md) 维护；执行位置只在
++> [`product-v2-refactor-plan.md`](product-v2-refactor-plan.md) 维护；执行位置只在
+ > [`../_working/amz-listing-kit-product-v2/state.md`](../_working/amz-listing-kit-product-v2/state.md) 维护。
+ 
+ ## 1. 项目身份
+@@ -17,7 +17,7 @@
+ 
+ | 层 | 稳定边界 | 事实从哪里读 |
+ |---|---|---|
+-| Product V1 | 本机文件夹工作空间与旧完整生图闭环冻结为回归基线；只复用业务语义、Provider 经验和测试案例，不继续扩展服务器工作空间；V2.7.4 冻结后由 V2.7.5 专批删除（SEL-009） | 当前仍可运行的行为见 `README.md` 的历史入口；设计与完成轨迹从 `docs/INDEX.md` 的 superseded 文档进入 |
++| Product V1 | 本机文件夹工作空间与旧完整生图闭环冻结为回归基线；只复用业务语义、Provider 经验和测试案例；重构最终人审与日落前回退审计后由 V2.R7.3 专批删除（SEL-009） | 当前仍可运行的行为见 `README.md` 的历史入口；设计与完成轨迹从 `docs/INDEX.md` 的 superseded 文档进入 |
+ | Product V2 | 浏览器拥有用户项目，Python 服务无业务状态；所有新能力都必须在这一所有权边界内实现 | 已落地行为只看 `README.md` 与代码；当前进度和证据只看 Product V2 state；目标只看 Product V2 计划 |
+ | 参考模板 | `docs/standards-template/` 是外部课程模板的原样副本，不是本项目运行规范 | 采纳映射、未采纳项与复访条件只在 `AGENTS.md` §Standards Mapping |
+ 
+@@ -98,7 +98,7 @@ Python 无状态 AI 服务
+ 
+ | ID | 范围 | 决策 | 被拒方案 | 复访条件 |
+ |---|---|---|---|---|
+-| SEL-000 | 依赖政策 | 分层：Python 侧允许登记过的 pinned 依赖，依赖管理与锁的唯一权威是 `pyproject.toml` + `uv.lock`（新增一律 `uv add`，CI 用 `uv sync --locked`）；浏览器侧保持无构建步骤，只允许 vendor 单文件库；领域规则（槽位注册表、错误归口、状态语义）自研，通用原语优先复用 | 全层放开 npm 构建链；全零新增依赖；requirements.txt 与 pyproject 双份手工维护 | 前端需要组件框架或状态管理，或离线安装条件变化 |
++| SEL-000 | 依赖政策 | Python pinned 依赖仍由 `pyproject.toml` + `uv.lock` 管理；浏览器当前原生 ESM，无产品构建。渐进前端工程化已确认方向（SEL-016），开发工具/锁/构建/框架由 V2.R3.1 PoC 后批准，不把低依赖变成拒绝类型检查的理由；领域规则自研、通用原语复用 | 未经选型直接放开 npm/全仓 TS/框架；全零工具；requirements 与 pyproject 双权威 | 工具 PoC、实际 DOM 维护痛点、离线安装约束变化时 |
+ | SEL-001 | 编排层 | 不引入 LangGraph 与 Agent/Memory 编排，服务端保持无状态（业务状态权威是浏览器 IndexedDB）；引入 `langchain-core` / `langchain-openai` 仅作提示词、模型调用与结构化解析原语（见 SEL-003），不承担状态与编排 | LangGraph checkpointer + 服务端状态；Agent/Memory 编排 | 出现服务端自主多步编排，或需要跨进程恢复的长任务 |
+ | SEL-002 | 服务端 HTTP | 暂保留 stdlib `http.server`（零运行时依赖、端点少、单进程） | Flask / FastAPI + uvicorn | V2.4 图片上传/下载需要 multipart 与流式响应时重开 |
+ | SEL-003 | 语义/视觉调用传输层 | 用户已确认（2026-09-30）：`langchain-core` + `langchain-openai` 的 `ChatOpenAI` 指向百炼 OpenAI 兼容端点（`deepseek-v4.1-flash`）；显式 timeout、`max_retries=0`（禁止隐藏重试）；失败映射进 `v2_semantic` 四类归口。版本：langchain-core 1.6.6、langchain-openai 1.6.6（均 MIT）；依赖实测与 PoC 报告见 `evals/product-v2/sel003-transport-selection-20260929.txt` | LiteLLM（59 包，为单一兼容协议付 4 倍依赖）；`requests` 手写适配器（重复造 HTTP/重试轮子）；OpenAI SDK 直连（已含于 langchain-openai，不建双轨） | 接入第二个供应商或需要路由/降级/成本统计时评估 LiteLLM；需要 OpenAI 专有能力时评估直连。PoC 已发现：`deepseek-v4.1-flash` 为推理型输出，需给 reasoning 留预算 |
+@@ -107,11 +107,19 @@ Python 无状态 AI 服务
+ | SEL-006 | 语义契约表示 | Python 侧契约表示权威 = Pydantic（langchain-core 自带，锁定 2.13.5）：请求 / 原始提案 / 提案槽位三类模型 + 跨字段校验；校验作用在模型原始输出；错误四类归口、归一化映射、浏览器侧 `checkFactSlot` 与 `CORE_SLOT_REGISTRY` 保留 | Python 侧继续手写形状/不变量校验（重复造轮子，违反复用门）；浏览器改吃 schema（受 SEL-000 无构建约束，且与 SEL-001 状态权威错位） | V2.6.3 项目包跨版本迁移需要 schema 版本与迁移器时，以“契约权威”为题重开（评估 JSON Schema 作中立权威 + 双语言消费者） |
+ | SEL-007 | LangChain 使用边界 | v1 直调形态：`ChatOpenAI.with_structured_output(原始提案模型, method="json_mode", include_raw=True)`；系统/用户消息直接构造，JSON 格式说明由 Pydantic schema 生成并注入系统提示；LCEL 管道、ChatPromptTemplate、Agent/Memory 均不使用（保留为库内可用能力，不是本项目范式）；装配与错误分类的操作细节见计划 §9.1 | LCEL 管道（0.x 主推范式）；默认 `method="json_schema"`（百炼对自定义模型名的支持未证实；不支持时 400 且会被误分类）；`method="function_calling"`（依赖该模型在百炼的函数调用支持）；ChatPromptTemplate | 百炼确认支持 `response_format: json_schema` 时把 method 切换回默认（改一个装配参数 + 重跑契约测试）；需要多步编排时按 SEL-001 的复访条件另立决策 |
+ | SEL-008 | 浏览器 ZIP 能力 | 用户已定（2026-09-30）：vendor fflate 0.8.3（MIT）替换自研 ZIP 容器；vendored 单文件 = `esm/browser.js`（90,922B，自包含 ESM，上游 sha256 前 16 位 `B7CA4450B19559A1`），随附许可证文件并登记 vendor 表；`storage/zip.js` 退化为薄适配器：保持 buildZip/readZip 接口与我方错误码及上限检查，格式校验委托 fflate | 继续自研 ZIP 容器（8.7KB：CRC32 + 本地头/中央目录/EOCD）；minified UMD 33KB（全局脚本、非 ESM）；jszip（体积更大） | 上游发布修复版需升级时（重跑包合同与 V2.1.3 往返验证）；fflate 停更或许可变化时重选 |
+-| SEL-009 | V1 日落 | 用户已定（2026-09-30）：V2.7.4 发布候选冻结后，专批删除 Product V1 代码与随之失效的依赖（含自造重试/退避/文件锁：`src/imagegen.py` `_retry`、`src/application_service.py` 限流退避、`src/workspace_store.py` 文件锁）；git 历史保留，V1 证据不删除 | 边跑边删 V1；把 V1 主路径保留到 V2 完成 | V2.7.4 冻结时执行 V2.7.5；届时逐项复核依赖与工具引用 |
++| SEL-009 | V1 日落 | 已批准方向不变：先通过重构最终人审（V2.R7.2），形成日落前可回退基线，再由 V2.R7.3 经专批删除 V1 和真实失效依赖；保留历史证据，删后重跑完整回归/主链及最终指纹 | 边重构边删；跳过人审/基线；沿用删除前发布指纹 | V2.R7.2 与日落前审计通过时逐项核对引用；本轮未授权删除 |
+ | SEL-010 | 图像网关传输层 | 复用 `requests`（V1 已在用的锁定直接依赖）+ 三条无状态路由（submit / status / result）；协议与错误映射按 §9.10 自写，但请求形状沿用 V1 冻结合同（`src/providers/dashscope_image.py`）；PoC 与依赖实测见 `evals/product-v2/sel010-image-gateway-transport-poc-20260930.txt` | 官方 `dashscope` SDK（0.27.x→1.27.7 实测解析 32 包，拖入 aiohttp / typer / websocket-client 等）；`httpx`（第二套 HTTP 客户端，无协议收益）；OpenAI 兼容图像端点（百炼图像合成不是该形状） | 需要批量并发、取消、多供应商路由或成本统计时重估 SDK；百炼改协议时按冻结合同重测并更新 §9.10 |
+ | SEL-011 | 复核（VLM）通道与模型 | 用户已定（2026-09-30）：复核复用 SEL-003 的 langchain 通道（`ChatOpenAI` + json_mode 结构化输出 + `map_openai_exception` 四归口），默认模型 `qwen-vl-max`（`REVIEW_MODEL` 可覆盖，registry 条目 `dashscope-review`）；输入 = 候选 + ≤3 参考图 + ShotSpec 摘要 + 已确认事实；输出只允许 7 个 check + evidence + confidence；VLM 只提示、不得 BLOCK、失败落 Unknown、不产生采纳 | 新建第二套 HTTP 客户端/适配器层（重复造轮子）；官方 SDK（拖包）；让模型自带严重度或采纳结论；把审美判断升级为平台硬阻断 | 需要多模态模型路由/降级或成本统计；百炼模型命名/能力变化；检出质量校准需要模型对比时（后续任务） |
+ | SEL-012 | 浏览器支持与安全 origin | 首版保证当前稳定版桌面 Chrome/Edge；远程正式入口必须是可信 HTTPS secure context，TLS 由现有穿透/反向代理终止，应用容器保持无状态 HTTP。保留 IndexedDB + 原生 WebCrypto；不为远程明文 HTTP 或嵌入式浏览器自研 UUID/SHA-256、引入浏览器密码学 polyfill或服务器项目存储。能力失败必须区分 IndexedDB、WebCrypto、schema、配额与事务并给恢复动作 | 在浏览器手写 UUID/SHA-256 降级；新增 hash/UUID 服务端接口；把项目迁回服务器；把所有宿主纳入保证范围 | 目标客户必须使用不可提供 secure context 的受控宿主，或 Chrome/Edge 支持策略发生业务变化时重开；先证明真实环境约束再选替代 |
+ | SEL-013 | 可访问性扫描 | 用户已定（2026-10-01，自审授权范围内）：vendor axe-core 4.13.0（MPL-2.0）单文件到测试侧 `evals/product-v2/vendor/`，由 `tools/verify_v2_6_4_accessibility.py` 注入正式入口页面运行扫描；不新增构建链、不进产品运行时 | 运行时 CDN 引入（不可离线复现）；npm/pip 构建依赖（违反 SEL-000 无构建链）；自写规则引擎（重复造轮子） | axe 上游大版本升级（重跑可访问性终验）；MPL 许可变化；需要运行时无障碍报告时重估 |
++| SEL-014 | 重构运行形态与模型范围 | 用户确认：浏览器本地优先 + 无业务持久化 Python 网关；模型不是核心卖点，仅有限模型解耦；第二生图模型尚未选，按 V2.R4.1/R4.2 评估/获批真实 PoC，不迁 Node 或引入服务端项目库 | 胖后端/账户数据库、全栈 TS、任意模型平台、仅换 model 字符串冒充生图兼容 | 跨设备/协作/后台持续执行成为实际需求，或有限协议维护成本实测不可接受时 |
++| SEL-015 | 凭据产品政策 | 用户确认：BYOK 为主，部署默认档仅受限试用；默认 key 不下发、不附到用户 endpoint。BYOK 首轮目标为内存会话 + HTTPS 请求级使用、不进本地持久化/包/日志/错误/诊断；当前产品仍 env-only，具体出站/访问/费用策略由 V2.R4.1/R4.3 闭合，非本轮调用授权 | 无限公开默认付费 key、默认 key 透传任意地址、secret 跟配置导出、先持久保存再补安全 | 需要持久凭据或扩大试用范围时明确风险/权限；第二协议认证方式确定后复访实现 |
++| SEL-016 | 前端工程化与 UI | 用户确认渐进类型检查/验证分层与 UI 人体工程审计方向；先实际任务基线，再原型和目标合同；保留既有 domain/repository，不预定布局、六强制步骤、React/Vue、构建工具或全仓 TS | 先换皮/拆文件、框架即工程化、机械降低点击而取消必要确认、Skill 代替真页面证据 | V2.R2/R3.1 的问题/原型/PoC 提供明确收益时选择工具与布局 |
++| SEL-017 | 新 Goal 准备与旧控制面冻结 | 用户要求先准备计划及拟建 Goal；采用 prepared 本地状态表达尚未绑定，旧 plan/state 转历史且保留实际旧读数；唯一下一动作是 V2.R1.1 核对/绑定，不擅自改系统旧 Goal 或恢复旧发布 | 假 paused/active、用旧 ID 绑定新文本、双 current 目标/state、依赖聊天恢复 | 有真实 Goal 操作接口及授权后绑定，缺接口/旧 active 冲突先明确处置 |
++
++SEL-000..013 中对旧计划 §9.x 的操作设计引用仍指冻结的
++`product-v2-goal-and-implementation-plan.md`，不把历史操作说明当未来任务。
++SEL-014..017 是本轮已确认方向/控制选择；具体库版本、第二模型、预算、框架与部署尚未批准。
+ 
+ 状态：SEL-000 至 SEL-011 已定案（2026-09-30）。依赖权威已从 `requirements.txt` 迁移到
+ `pyproject.toml` + `uv.lock`，守卫、CI、README 同步（证据见
+@@ -182,7 +190,7 @@ amz-listing-kit/
+ ├─ docs/
+ │  ├─ INDEX.md                          # 文档身份和读取路由
+ │  ├─ product-v2-project-context.md     # 本文件
+-│  └─ product-v2-goal-and-implementation-plan.md
++│  └─ product-v2-refactor-plan.md        # 当前目标/任务；旧 goal-and-implementation-plan 是历史基线
+ ├─ _working/amz-listing-kit-product-v2/
+ │  └─ state.md                          # 唯一执行状态
+ ├─ evals/product-v2/                    # V2 验证证据（目标）
+@@ -205,7 +213,7 @@ amz-listing-kit/
+ 8. VLM 负责发现问题，人工负责最终采纳；硬规则只来自可复现的确定性检查。
+ 9. 主流程不需要主体分割或抠图；抠图仅可作为未来独立、显式选择的专项能力。
+ 10. 服务器不保存用户项目状态；浏览器清理数据或 origin 变化造成的迁移由项目包解决。
+-11. 密钥只从服务器环境变量读取，不进入浏览器、Git、项目包或证据文件。
++11. 部署默认密钥只在服务器使用；BYOK 重构目标按 SEL-015：仅获批内存会话/HTTPS 请求级使用，不进入浏览器持久化、Git、项目包、日志、错误或证据；当前产品未实现 BYOK。
+ 12. 远程正式入口必须来自可信 HTTPS secure context；本机 localhost 是唯一明文开发例外。
+ 13. 默认界面投影业务任务而非工程结构；Prompt/hash/task id 可查但必须渐进披露。
+ 
+@@ -220,8 +228,8 @@ amz-listing-kit/
+ | 生成系统 | 真实参考图、真实 Prompt、真实 task ID、候选和报告可追溯 | Provider 请求快照、模型记录、候选哈希、ReviewReport |
+ | 产品完成 | 陌生使用者能够独立完成不同品类任务 | 首次使用者走查、完成矩阵；Mock 或自评不能替代 |
+ | 格式检查 | 暂无 ruff/eslint：本仓库没有格式化工具链，格式由 `.gitattributes` 与评审保证 | 引入格式化工具需先过选型门（SEL 记录） |
+-| 静态检查 | 暂无静态检查器；等价手段是守卫脚本（`tools/check_*.py`）与 `node --check` 语法门 | 同上 |
+-| 单元测试 | 以验证入口（`tools/verify_*.py`）与反向探针为主，不以 pytest 收集为门槛 | 证据要求见计划 §12 与 `AGENTS.md` |
++| 静态检查 | 当前仅守卫与 `node --check` 语法门，不能称等价类型检查；渐进类型工具按 SEL-016 / V2.R3.1 选型后落锁接线 | 新工具未实施前不宣称通过类型门 |
++| 单元测试 | 当前以 `tools/verify_*.py` 与反向探针为主；目标验证分层按重构计划 §7.3 / V2.R3.2，不把已规划入口当现有工具 | 行为/边界/转换与宿主验证分工；规则见 `AGENTS.md` |
+ | 覆盖率 | 暂不设阈值：本项目的判据是“证据能判红”，不是行覆盖率 | 若引入覆盖率门槛，先立 SEL 决策并说明理由 |
+ | 应用构建 | 前端无需编译；Python 可直接运行；正式交付物是 CI 构建的 Docker 镜像 | `python app/server.py --check`、`docker build` |
+ | 容器交付 | 镜像只含正式 V2 运行资源；健康检查通过；部署失败可恢复上一容器 | `docker build`、容器 `/api/health`、GitHub Actions run 与部署日志 |
+diff --git a/docs/product-v2-ui-contract.md b/docs/product-v2-ui-contract.md
+index 1313b77..e2d91b8 100644
+--- a/docs/product-v2-ui-contract.md
++++ b/docs/product-v2-ui-contract.md
+@@ -2,8 +2,9 @@
+ 
+ > CONTROL-STATUS: draft · AUTHORITY: ui-interaction-contract（产品发起人走查确认前为设计草案；确认后转 current 并补入 INDEX 路由）
+ > 本文件只定义“用户看到什么、能做什么、什么状态下能做什么、操作后系统如何反馈”，以及支撑它的表现层基线。
+-> 目标、对象、数据所有权与状态机由 `docs/product-v2-goal-and-implementation-plan.md` 与
+-> `docs/product-v2-project-context.md` 管辖；本文件不改写它们，只做投影。
++> 目标、对象、数据所有权与状态机由 `docs/product-v2-refactor-plan.md` 与
++> `docs/product-v2-project-context.md` 管辖；本文保留待审的旧六阶段设计，不作为重构布局已获确认的证据。
++> 新 UI 审计、原型和合同复访按 V2.R2.1/V2.R2.2；最终人审按 V2.R7.2，不由自审替代。
+ 
+ ## 1. 目的与边界
+ 
+diff --git a/evals/probes/docs_index.py b/evals/probes/docs_index.py
+index 0bdf346..8d5be17 100644
+--- a/evals/probes/docs_index.py
++++ b/evals/probes/docs_index.py
+@@ -40,7 +40,6 @@ r"""文档守卫的反向对照（每向只改一个变量，改完即还原）
+     K 写死解释器路径         README 塞回绝对路径          → 1，须报「解释器的绝对路径」
+     L vendor 未登记          往 vendor 目录丢一个文件     → 1，须报「没有登记」
+     M README 抄探针方向数    README 写回 N 向植入对照     → 1，须报「不得手抄探针方向数」
+-    N 完成任务书仍 draft     同改 INDEX 与文件头          → 1，须报「任务书身份漂移」
+ 
+ 判据分两层，缺一不可：
+     ① 退出码与预期一致；
+@@ -66,12 +65,11 @@ INDEX = ROOT / "docs" / "INDEX.md"
+ README = ROOT / "README.md"
+ GUARD = ROOT / "tools" / "check_docs.py"
+ VENDOR_PROBE = ROOT / "app" / "product_v2" / "vendor" / "zz_probe_ghost.js"
+-TASK_PROBE = ROOT / "_working" / "amz-listing-kit-product-v2" / "tasks" / "v255-server.md"
+ 
+ # 备份留**字节**：仓库里同时存在 CRLF（README / 卡片）与 LF（计划、新工具）两种行尾，
+ # 而**没有任何守卫管这件事**。用 read_text() 备份、write_text() 还原，在 Windows 上
+ # 会把 LF 文件悄悄变成 CRLF ——「已还原」这句话就成了假的。所以存 bytes，还原后比一次。
+-WATCHED = (INDEX, README, TASK_PROBE)
++WATCHED = (INDEX, README)
+ ORIG = {p: p.read_text(encoding="utf-8") for p in WATCHED}
+ ORIG_BYTES = {p: p.read_bytes() for p in WATCHED}
+ 
+@@ -87,7 +85,6 @@ ABS_INTERP = "解释器的绝对路径"
+ VENDOR_UNREG = "没有登记"
+ VENDOR_GHOST = "登记了、目录里却没有"
+ README_NUMBER = "不得手抄探针方向数"
+-TASK_STATUS_DRIFT = "任务书身份漂移"
+ 
+ GHOST_DOC = "docs/zz_probe_ghost.md"
+ GHOST_STATE = "_working/zz_probe_state.md"
+@@ -156,12 +153,10 @@ def build_cases() -> list[tuple[str, list, int, list[str], list[str]]]:
+                        if n >= 2 and kind not in ("实现", "产品目标", "执行状态", "项目规则")), "")
+     plan_doc = pick_row("产品目标")
+     state_doc = pick_row("执行状态")
+-    task_doc = TASK_PROBE.relative_to(ROOT).as_posix()
+     missing = [name for name, value in (("设计草案/draft 行", draft),
+                                         ("≥2 份的管辖事实", multi_kind),
+                                         ("产品目标 行", plan_doc),
+-                                        ("执行状态 行", state_doc),
+-                                        ("完成任务书 行", task_doc if task_doc in ROWS else "")) if not value]
++                                        ("执行状态 行", state_doc)) if not value]
+     if missing:
+         raise ProbeOutdated("登记表里找不到：" + "、".join(missing) + " —— 探针需要更新")
+ 
+@@ -206,12 +201,6 @@ def build_cases() -> list[tuple[str, list, int, list[str], list[str]]]:
+         ("M README 抄探针方向数（写回 N 向植入对照）",
+          [("append", README, "（13 向植入对照）")], 1,
+          [README_NUMBER], [MISSING_OF, NOT_IN_REPO, BAD_STATE]),
+-        ("N 完成任务书仍 draft（INDEX 与文件头同时退回）",
+-         [("text", INDEX, row_line(task_doc),
+-           rebuild(task_doc, kind="设计草案", state="draft", note="探针：模拟仍在施工")),
+-          ("text", TASK_PROBE, "CONTROL-STATUS: superseded", "CONTROL-STATUS: draft")], 1,
+-         [TASK_STATUS_DRIFT, "V2.5.5"],
+-         [MISSING_OF, NOT_IN_REPO, BAD_STATE, EMPTY_NOTE, BAD_KIND]),
+     ]
+ 
+ 
+@@ -303,7 +292,7 @@ def main() -> int:
+             print(f"✗ 还原后与原始状态不一致：{drift} —— 「已还原」不成立（行尾、编码或残留文件）")
+             bad += 1
+         else:
+-            print("已还原 docs/INDEX.md / README.md / 任务书 / vendor 探针文件（字节一致）")
++            print("已还原 docs/INDEX.md / README.md / vendor 探针文件（字节一致）")
+ 
+     print()
+     if bad:
+diff --git a/evals/probes/project_state.py b/evals/probes/project_state.py
+index e953f1d..a9bd1e5 100644
+--- a/evals/probes/project_state.py
++++ b/evals/probes/project_state.py
+@@ -1,6 +1,6 @@
+ #!/usr/bin/env python
+ # -*- coding: utf-8 -*-
+-r"""项目状态守卫的十九向反向对照。
++r"""项目状态守卫的反向对照。
+ 
+ 当前状态使用 `amz-project-state/v2`：计划拥有阶段、Gate、任务和依赖；state 只保存
+ 进度、证据与下一动作。本探针逐向植入一种漂移，要求守卫**只**报对应的 J0–J9 tag，
+@@ -38,7 +38,7 @@ from console import enable_utf8  # noqa: E402
+ 
+ enable_utf8()
+ 
+-from check_project_state import _plan_tasks  # noqa: E402  （「计划里谁依赖谁」只此一处实现）
++from check_project_state import PHASE_HEAD, _plan_tasks  # noqa: E402
+ 
+ GUARD = ROOT / "tools" / "check_project_state.py"
+ YAML_BLOCK = re.compile(r"```yaml\r?\n(.*?)```", re.S)
+@@ -50,7 +50,7 @@ def _current_state() -> Path:
+     for path in sorted((ROOT / "_working").glob("*/state.md")):
+         text = path.read_text(encoding="utf-8")
+         if ("state_schema: amz-project-state/v2" in text
+-                and re.search(r"^status: (?:active|paused)$", text, re.M)):
++                and re.search(r"^status: (?:prepared|active|paused)$", text, re.M)):
+             candidates.append(path)
+     if len(candidates) != 1:
+         raise RuntimeError(f"需要恰好一份 current v2 状态，实际 {len(candidates)}：{candidates}")
+@@ -80,12 +80,17 @@ def _normalize(data: dict) -> dict:
+     O/P 这类「制造相位矛盾」的探针也不会因为目标相位已经存在而变成空操作。
+     """
+     result = copy.deepcopy(data)
+-    result["status"] = "paused"
+-    result["system_goal_observed_status"] = "paused"
+-    phases = result.setdefault("phase_progress", {})
+-    for pid, row in list(phases.items()):
+-        if isinstance(row, dict) and row.get("status") == "active":
+-            phases[pid] = {**row, "status": "pending"}
++    result["status"] = "prepared"
++    result["goal_binding"] = "optional"
++    result["goal_id"] = None
++    result["goal_pending_reason"] = "探针受控基线尚未绑定 Goal"
++    result["system_goal_observed_status"] = None
++    result["system_goal_observed_at"] = None
++    for key in ("phase_progress", "task_progress"):
++        rows = result.setdefault(key, {})
++        for identity, row in list(rows.items()):
++            if isinstance(row, dict) and row.get("status") == "active":
++                rows[identity] = {**row, "status": "pending"}
+     return result
+ 
+ 
+@@ -115,6 +120,9 @@ def _make_active(data: dict) -> dict:
+     result = copy.deepcopy(data)
+     result["status"] = "active"
+     result["system_goal_observed_status"] = "active"
++    result["goal_binding"] = "required"
++    result["goal_id"] = "00000000-0000-4000-8000-000000000001"  # 仅本地反向探针的合成身份
++    result["system_goal_observed_at"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
+     phases = result.setdefault("phase_progress", {})
+     heads = PLAN_PHASE_HEAD.findall(PLAN_TEXT)
+     open_phase = next((pid for pid in heads
+@@ -153,7 +161,7 @@ def _pick_task_with_unmet_dep(data: dict) -> str:
+     raise RuntimeError("计划里找不到「依赖未完成」的未完成任务，探针需要更新")
+ 
+ 
+-PLAN_PHASE_HEAD = re.compile(r"^###\s+Phase\s+(-?\d+(?:\.\d+)?)\s*[：:]", re.M)
++PLAN_PHASE_HEAD = PHASE_HEAD
+ 
+ 
+ def _pick_skipped_phase(data: dict) -> tuple[str, str]:
+@@ -185,6 +193,10 @@ def _pick_skipped_phase(data: dict) -> tuple[str, str]:
+     if not open_phases:
+         raise RuntimeError("所有阶段都已完成，这条探针无法构造 —— 要更新探针，不是放宽判据")
+     tip = open_phases[-1]
++    # prepared 的多个 pending 阶段无需退回已完成门禁；直接跳过前一个 pending。
++    pending_before = [pid for pid in heads[:heads.index(tip)] if status(pid) == "pending"]
++    if pending_before:
++        return pending_before[-1], tip
+     na_deps = set(PLAN_DEPS.get(str(data.get("next_action_task") or "")) or [])
+     moved = [tid for tid in PLAN_TASKS
+              if ((data.get("task_progress") or {}).get(tid) or {}).get("status") in ("active", "done")]
+@@ -237,7 +249,11 @@ def _mutate(case: str) -> tuple[list[str], bool]:
+     elif case == "E":
+         data.setdefault("phase_progress", {})["999"] = {"status": "pending", "evidence": []}
+     elif case == "F":
+-        data.setdefault("phase_progress", {})["1"] = {"status": "done", "evidence": []}
++        phases = data.setdefault("phase_progress", {})
++        heads = PLAN_PHASE_HEAD.findall(PLAN_TEXT)
++        picked = next((pid for pid in heads
++                       if (phases.get(pid) or {}).get("status") == "done"), heads[0])
++        phases[picked] = {"status": "done", "evidence": []}
+     elif case == "G":
+         data["status"] = "active"
+         data["system_goal_observed_status"] = "active"
+@@ -248,7 +264,10 @@ def _mutate(case: str) -> tuple[list[str], bool]:
+     elif case == "H":
+         data.setdefault("task_progress", {})["D999.1"] = {"status": "pending", "evidence": []}
+     elif case == "I":
+-        data.setdefault("task_progress", {})["D1.C1"] = {"status": "done", "evidence": []}
++        tasks = data.setdefault("task_progress", {})
++        picked = next(tid for tid in PLAN_TASKS
++                      if (tasks.get(tid) or {}).get("status") == "done")
++        tasks[picked] = {"status": "done", "evidence": []}
+     elif case == "J":
+         picked = _pick_task_with_unmet_dep(data)
+         if picked == BASE.get("next_action_task"):
+@@ -274,6 +293,7 @@ def _mutate(case: str) -> tuple[list[str], bool]:
+         # next_action 的依赖仍然满足，否则这条会连带触发 J7，违反「只报该报的」。
+         data = _make_active(data)
+         data["status"] = "paused"
++        data["system_goal_observed_status"] = "paused"
+     elif case == "P":
+         data["status"] = "active"
+         data["system_goal_observed_status"] = "active"
+@@ -284,6 +304,64 @@ def _mutate(case: str) -> tuple[list[str], bool]:
+                               + timedelta(days=2)).isoformat(timespec="seconds")
+     elif case == "S":
+         data["updated_at"] = datetime.now().isoformat(timespec="seconds")
++    elif case == "T":
++        data["goal_binding"] = "required"
++        data["goal_id"] = "00000000-0000-4000-8000-000000000001"
++    elif case == "U":
++        data["goal_id"] = "00000000-0000-4000-8000-000000000001"
++    elif case == "V":
++        data["system_goal_observed_status"] = "active"
++    elif case == "W":
++        data["system_goal_observed_at"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
++    elif case == "X":
++        data = _make_active(data)
++        data["status"] = "prepared"
++        data["goal_binding"] = "optional"
++        data["goal_id"] = None
++        data["system_goal_observed_status"] = None
++        data["system_goal_observed_at"] = None
++    elif case == "Y":
++        # 偷开尚有未完成依赖的非 next_action 任务：J6/J9 必须同时拒绝。
++        ready = _pick_task_with_unmet_dep(data)
++        data.setdefault("task_progress", {})[ready] = {"status": "active", "evidence": []}
++    elif case == "Z":
++        data.pop("next_action_task", None)
++    elif case == "AA":
++        data.setdefault("task_progress", {})[str(data["next_action_task"])] = {
++            "status": "active", "evidence": []}
++    elif case == "AB":
++        data.setdefault("task_progress", {})[str(data["next_action_task"])] = {
++            "status": "blocked", "evidence": []}
++    elif case == "AC":
++        data.pop("state_schema", None)
++        phases = data.pop("phase_progress", {})
++        tasks = data.pop("task_progress", {})
++        data["phases"] = [
++            {"id": pid, "gate": f"G{pid}", "status": (phases.get(pid) or {}).get("status", "pending"),
++             "gate_evidence": (phases.get(pid) or {}).get("evidence", [])}
++            for pid in PLAN_PHASE_HEAD.findall(PLAN_TEXT)]
++        data["tasks"] = [
++            {"id": tid, "status": (tasks.get(tid) or {}).get("status", "pending"),
++             # legacy 的 depends_on 只接受任务引用；Gate 是 v2 的计划语义。
++             "depends_on": [dep for dep in PLAN_DEPS.get(tid, []) if dep in PLAN_TASKS],
++             "evidence": (tasks.get(tid) or {}).get("evidence", [])}
++            for tid in PLAN_TASKS]
++    elif case == "AD":
++        data["next_action_task"] = next(
++            tid for tid in PLAN_TASKS
++            if ((data.get("task_progress") or {}).get(tid) or {}).get("status") == "done")
++    elif case == "AE":
++        data = _make_active(data)
++        data["system_goal_observed_status"] = "blocked"
++    elif case == "AF":
++        data = _make_active(data)
++        data["status"] = "paused"
++        data["phase_progress"] = copy.deepcopy(BASE.get("phase_progress") or {})
++    elif case == "AG":
++        data = _make_active(data)
++        data["status"] = "paused"
++        data["system_goal_observed_status"] = "blocked"
++        data["phase_progress"] = copy.deepcopy(BASE.get("phase_progress") or {})
+     else:
+         problems.append(f"未知 case {case}")
+ 
+@@ -312,6 +390,20 @@ CASES = [
+     ("Q", "靠改记录宣布 completed", 1, {"J9"}),
+     ("R", "updated_at 写在两天以后", 1, {"J10"}),
+     ("S", "updated_at 没有时区", 1, {"J10"}),
++    ("T", "prepared 冒充 required 绑定", 1, {"J3"}),
++    ("U", "prepared optional 却保存 Goal ID", 1, {"J3"}),
++    ("V", "prepared 保存系统 Goal 状态读数", 1, {"J9"}),
++    ("W", "prepared 保存系统 Goal 观察时刻", 1, {"J9"}),
++    ("X", "prepared 混入 active 阶段", 1, {"J9"}),
++    ("Y", "prepared 偷开依赖未满足的非 next_action 任务", 1, {"J6", "J9"}),
++    ("Z", "prepared 缺少 next_action", 1, {"J7"}),
++    ("AA", "prepared next_action 已 active", 1, {"J7", "J9"}),
++    ("AB", "prepared next_action 已 blocked", 1, {"J7"}),
++    ("AC", "legacy 结构不能声明 prepared", 1, {"J9"}),
++    ("AD", "prepared next_action 已 done", 1, {"J7"}),
++    ("AE", "active 与系统 blocked 读数不匹配", 1, {"J9"}),
++    ("AF", "paused 与系统 active 读数不匹配", 1, {"J9"}),
++    ("AG", "paused 与系统 blocked 合法映射", 0, set()),
+ ]
+ 
+ 
+diff --git a/tools/check_project_state.py b/tools/check_project_state.py
+index 058e57d..9aa1c72 100644
+--- a/tools/check_project_state.py
++++ b/tools/check_project_state.py
+@@ -14,7 +14,7 @@
+     [J1] 活动工作记录唯一：`_working/*/state.md` 里 status=active 的恰好一份
+     [J2] 状态取值闭集合（记录 / 阶段 / 任务三处都算）
+     [J3] Goal 绑定：goal_binding=required 时 goal_id 必须是真 ID；
+-         optional 时必须写明 goal_pending_reason
++         optional 时必须写明 goal_pending_reason；prepared 只能 optional、无 Goal ID
+     [J4] 状态引用的阶段 / 任务身份必须存在于计划；阶段图、Gate 和任务依赖只由计划定义
+     [J5] 阶段推进合法：最多一个 active；active/done 的前置阶段必须 done；
+          done 必须带 gate_evidence，且证据文件真实存在
+@@ -25,7 +25,8 @@
+          state.md 只许引用
+     [J9] 记录与阶段一致（记录状态值本身非法时归 J2，J9 不重复计数）：
+          有 active 阶段 ⇒ 记录必须 active；记录 active ⇒ 至少一相在跑
+-         （最多一相由 J5 管）；记录 completed ⇒ 没有未收尾的阶段与任务
++         （最多一相由 J5 管）；prepared 仅限 v2、无系统 Goal 读数或 active 项；
++         记录 completed ⇒ 没有未收尾的阶段与任务
+     [J10] 执行记录的时刻不许是编的：updated_at 必须存在、带时区，且不晚于这个文件
+          最后写入的时刻（容差 10 分钟）。
+ 
+@@ -68,7 +69,7 @@ enable_utf8()
+ 
+ WORKING = ROOT / "_working"
+ 
+-RECORD_STATUSES = {"active", "paused", "completed", "superseded"}
++RECORD_STATUSES = {"prepared", "active", "paused", "completed", "superseded"}
+ ITEM_STATUSES = {"pending", "active", "done", "blocked", "dropped", "superseded"}
+ UPDATED_AT_TOLERANCE_SEC = 600          # 容忍四舍五入，不容忍「未来读数」
+ STATE_SCHEMA_V2 = "amz-project-state/v2"
+@@ -296,7 +297,7 @@ def _check_v2(rep: Report, rel: str, d: dict, plan_text: str,
+     record_status = d.get("status")
+     # Superseded/completed records are evidence snapshots, not resumable work.  Requiring a
+     # next action there would force a false instruction into history just to satisfy J7.
+-    if record_status in ("active", "paused"):
++    if record_status in ("prepared", "active", "paused"):
+         na = d.get("next_action_task")
+         if not na:
+             rep.problem(f"[J7] {rel} 没有 next_action_task。")
+@@ -304,7 +305,8 @@ def _check_v2(rep: Report, rel: str, d: dict, plan_text: str,
+             rep.problem(f"[J7] {rel} 的 next_action_task={na!r} 不在计划任务表。")
+         else:
+             nst = task_status.get(str(na), "pending")
+-            if nst not in ("pending", "active"):
++            allowed_next = {"pending"} if record_status == "prepared" else {"pending", "active"}
++            if nst not in allowed_next:
+                 rep.problem(f"[J7] {rel} 的 next_action_task={na!r} 当前是 {nst}。")
+             undone = [dep for dep in task_deps.get(str(na), []) if not dep_done(dep)]
+             if undone:
+@@ -316,8 +318,14 @@ def _check_v2(rep: Report, rel: str, d: dict, plan_text: str,
+         rep.problem(f"[J9] {rel} 记录 status={record_status!r}，但最近系统 Goal 读数是 {observed!r}。")
+     if record_status == "active" and not active_phases:
+         rep.problem(f"[J9] {rel} 记录 active，但 phase_progress 没有 active 阶段。")
+-    if record_status != "active" and active_phases:
++    if record_status in RECORD_STATUSES and record_status != "active" and active_phases:
+         rep.problem(f"[J9] {rel} 记录 {record_status!r}，却有 active 阶段 {active_phases}。")
++    if record_status == "prepared":
++        active_tasks = [tid for tid, st in task_status.items() if st == "active"]
++        if active_tasks:
++            rep.problem(f"[J9] {rel} 记录 prepared，却有 active 任务 {active_tasks}。")
++        if observed not in (None, "") or d.get("system_goal_observed_at") not in (None, ""):
++            rep.problem(f"[J9] {rel} 记录 prepared，却保存了系统 Goal 读数；未绑定不能冒充已观察。")
+     if record_status == "completed":
+         open_phases = [pid for pid, st in phase_status.items() if st != "done"]
+         open_tasks = [tid for tid, st in task_status.items()
+@@ -412,6 +420,12 @@ def _check(rep: Report) -> None:
+         else:
+             rep.problem(f"[J3] {rel} 的 goal_binding={binding!r} 不在取值域："
+                         f"required / optional")
++        if st == "prepared":
++            if (binding != "optional" or gid not in (None, "")
++                    or not str(d.get("goal_pending_reason") or "").strip()):
++                rep.problem(f"[J3] {rel} 记录 prepared，必须 optional、goal_id 为空且有未绑定理由。")
++            if d.get("state_schema") != STATE_SCHEMA_V2:
++                rep.problem(f"[J9] {rel} 记录 prepared 只允许 {STATE_SCHEMA_V2}。")
+ 
+         if d.get("state_schema") == STATE_SCHEMA_V2:
+             _check_v2(rep, rel, d, plan_text, plan_phases, plan_gates)
+diff --git a/tools/verify_v2_1_2_project_home.py b/tools/verify_v2_1_2_project_home.py
+index 21edc78..7406fa6 100644
+--- a/tools/verify_v2_1_2_project_home.py
++++ b/tools/verify_v2_1_2_project_home.py
+@@ -80,6 +80,68 @@ POINTER_SNAPSHOT = """
+ })
+ """
+ 
++# 刷新后失败时，boot_error 为空 + 项目行数 0 + 指针仍在 这三种现象同时成立，
++# 既可能是「脚本没执行」，也可能是「执行了但卡在某一步」——两者对判据都表现为
++# #project-view 不出现。这段只在失败时读取，用来区分它们：
++#   - 时间线里出现过 disabled=true  => boot() 确实执行过（HTML 默认无 disabled 属性）
++#   - 没出现过                      => 模块没加载/没跑到第一行
++#   - view_hidden / empty_hidden / project_view_seen 用来区分「卡在 refresh 之前」与
++#     「refresh 完成了但 showProject 没跑」。
++BOOT_TRAIL_SCRIPT = """
++(() => {
++  const trail = [];
++  window.__bootTrail = trail;
++  const now = () => Math.round(performance.now());
++  // 必须从 init script 起就观察，不能等 DOMContentLoaded：模块脚本是 deferred，
++  // 在 DOMContentLoaded 之前就已执行，boot() 的第一次 setHomeControlsBlocked(true)
++  // 同步跑完后立刻 await；若观察器起晚了，true→false 这条轨迹会整段丢失，
++  // 把「boot 已执行」误判成「脚本没执行」。
++  const observer = new MutationObserver((records) => {
++    for (const r of records) {
++      if (r.target && r.target.id === 'create-project') {
++        trail.push(['attr', r.oldValue, r.target.disabled, now()]);
++      }
++      if (r.target && r.target.id === 'project-view' && !r.target.hidden) {
++        trail.push(['view-shown', now()]);
++      }
++    }
++  });
++  const attach = () => {
++    if (document.documentElement) {
++      observer.observe(document.documentElement, { subtree: true, attributes: true,
++        attributeOldValue: true, attributeFilter: ['disabled', 'hidden'] });
++      trail.push(['observing', document.readyState, now()]);
++    } else {
++      setTimeout(attach, 0);
++    }
++  };
++  attach();
++  window.addEventListener('error', (e) => {
++    trail.push(['err', String((e && e.message) || e), now()]);
++  });
++  window.addEventListener('unhandledrejection', (e) => {
++    trail.push(['reject', String((e && e.reason) || e), now()]);
++  });
++})();
++"""
++
++BOOT_STAGE_SNAPSHOT = """
++() => ({
++  trail: (window.__bootTrail || []).slice(-60),
++  ready_state: document.readyState,
++  create_has_disabled_attr: (document.getElementById('create-project') || {}).hasAttribute
++    ? document.getElementById('create-project').hasAttribute('disabled') : null,
++  project_view_hidden: (document.getElementById('project-view') || {}).hidden,
++  empty_state_hidden: (document.getElementById('empty-state') || {}).hidden,
++  rows: document.querySelectorAll('#project-list .project-row').length,
++  // 直接回答「模块加载了吗」：本次文档里 app.js / workspace.js 有没有真的取到。
++  resources: (performance.getEntriesByType('resource') || [])
++    .filter((r) => /app\\.js|workspace\\.js|storage\\/index\\.js/.test(r.name))
++    .map((r) => ({ name: r.name.split('/').pop(), ms: Math.round(r.duration),
++                   bytes: r.transferSize || r.encodedBodySize || 0 })),
++})
++"""
++
+ SEED_DOCUMENT_AND_ASSET = """
+ async (projectId) => {
+   const mod = await import("/storage/index.js");
+@@ -161,6 +223,10 @@ def main() -> int:
+             browser = pw.chromium.launch(headless=True)
+             try:
+                 context = browser.new_context(viewport={"width": 1280, "height": 900})
++                # 失败时唯一能区分「boot 没跑」「boot 卡住」「boot 完成但视图没切」的证据。
++                # 只观测，不参与任何判据：boot() 第一行 setHomeControlsBlocked(true) 会把
++                # #create-project 置 disabled，HTML 默认无该属性，所以这条轨迹能证明脚本执行过。
++                context.add_init_script(BOOT_TRAIL_SCRIPT)
+                 page = context.new_page()
+                 page.on("console", lambda message: console_errors.append(message.text)
+                         if message.type == "error" else None)
+@@ -224,6 +290,32 @@ def main() -> int:
+                              pointer_keys: Object.keys(localStorage).sort(),
+                              pointer: localStorage.getItem('amz-listing-kit-v2:current-project'),
+                            })""")
++                    diagnostics.update(page.evaluate(BOOT_STAGE_SNAPSHOT))
++                    diagnostics["console_errors"] = console_errors
++                    diagnostics["page_errors"] = page_errors
++                    # 判读规则写进证据本身，避免下一次再靠猜：
++                    #   boot 执行过 => 时间线含 'attr'（#create-project 的 disabled 变过，
++                    #                   HTML 默认无该属性，只有 boot() 的
++                    #                   setHomeControlsBlocked 会写它）
++                    #   boot 没执行 => 只有 'observing'，且 has_disabled_attr 恒为 false
++                    #   卡在哪一步  => 有 'view-shown' 说明 showProject 跑过；
++                    #                   有 'err'/'reject' 说明模块期抛错
++                    trail = diagnostics.get("trail") or []
++                    seen = {entry[0] for entry in trail}
++                    if "attr" in seen:
++                        diagnostics["boot_judged"] = ("boot 执行过；"
++                                                      + ("但项目视图从未可见 => 卡在 showProject 之前"
++                                                         if "view-shown" not in seen
++                                                         else "项目视图曾可见 => 与断言存在时序竞争"))
++                    elif "view-shown" in seen:
++                        diagnostics["boot_judged"] = "boot 执行过且视图曾可见"
++                    elif "err" in seen or "reject" in seen:
++                        diagnostics["boot_judged"] = "脚本抛错 => 见 trail 的 err/reject"
++                    else:
++                        diagnostics["boot_judged"] = "boot 未执行（模块没加载或没跑到第一行）"
++                    diagnostics["module_loaded"] = any(
++                        r.get("name") == "app.js" and r.get("bytes", 0) > 0
++                        for r in diagnostics.get("resources") or [])
+                     diag_path = EVIDENCE_DIR / f"v2.1.2-reload-diagnostics-{stamp}.json"
+                     diag_path.write_text(json.dumps(diagnostics, ensure_ascii=False, indent=1),
+                                          encoding="utf-8")
+diff --git a/tools/verify_v2_2_3_intake_understanding.py b/tools/verify_v2_2_3_intake_understanding.py
+index 86b6a3d..dae911d 100644
+--- a/tools/verify_v2_2_3_intake_understanding.py
++++ b/tools/verify_v2_2_3_intake_understanding.py
+@@ -214,12 +214,27 @@ def run_entry(args: list[str], timeout: int = 180) -> dict:
+ STATUS_ORDER = {"conflict": 0, "unknown": 1, "missing": 2, "proposed": 3, "confirmed": 4, "superseded": 5}
+ 
+ 
++def review_rank(row: dict) -> int:
++    """与 workspace.js `reviewRankOf` 同一条规则：必须确认（且未收尾）排在缺失之前。
++
++    计划 §5 / V2.2.3 验收要求默认列表突出「冲突、未知、低置信和必确认项」，
++    页面文案也承诺「先处理冲突、未知与必须确认的槽位」；只按 STATUS_ORDER 排会把
++    不阻塞门禁的 missing 顶到必确认项前面。
++    """
++    status = row["status"]
++    if status not in ("confirmed", "superseded") and row["critical"] == "1":
++        return 2
++    base = STATUS_ORDER[status]
++    return base if base < 2 else base + 1
++
++
+ def eval_rows(page) -> list[dict]:
+     return page.eval_on_selector_all(
+         "#slot-list .slot-row",
+         """nodes => nodes.map((node) => ({
+              slot_id: node.dataset.slotId,
+              status: node.dataset.status,
++             critical: node.dataset.critical || "0",
+              actions: [...node.querySelectorAll('.slot-actions button')]
+                .map((button) => button.textContent.trim()),
+            }))""",
+@@ -369,10 +384,22 @@ def main() -> int:
+                   and all(item["status"] in ("missing", "proposed", "confirmed") for item in analyzed["slots"]),
+                   {"core": len(CORE_SLOT_REGISTRY), "slots": len(analyzed["slots"]), "proposed": len(proposed)})
+ 
+-            statuses = [item["status"] for item in eval_rows(page)]
+-            check(f"{APP_NAME}-09", "异常优先：默认列表按 冲突 → 未知 → 缺失 → 未确认 排序，已确认事实默认折叠",
+-                  statuses == sorted(statuses, key=lambda item: STATUS_ORDER[item])
+-                  and "confirmed" not in statuses and "missing" in statuses, statuses)
++            rows_09 = eval_rows(page)
++            statuses = [item["status"] for item in rows_09]
++            ranks = [review_rank(item) for item in rows_09]
++            critical_idx = [i for i, item in enumerate(rows_09) if item["critical"] == "1"]
++            # 计划要求「必确认项」被突出；missing/proposed 里不阻塞门禁的普通项不得插到它们前面。
++            blocking_idx = [i for i, item in enumerate(rows_09)
++                            if item["critical"] != "1" and item["status"] in ("missing", "proposed")]
++            critical_first = (not critical_idx or not blocking_idx
++                              or max(critical_idx) < min(blocking_idx))
++            check(f"{APP_NAME}-09",
++                  "异常优先：默认列表按 冲突 → 未知 → 必须确认 → 缺失 → 未确认 排序，"
++                  "必须确认项压在不阻塞门禁的缺失项之前，已确认事实默认折叠",
++                  ranks == sorted(ranks) and critical_first
++                  and "confirmed" not in statuses and "missing" in statuses,
++                  {"statuses": statuses, "ranks": ranks, "critical_idx": critical_idx,
++                   "blocking_idx": blocking_idx})
+ 
+             # V2.6.16：事实卡片只把人话放主行；slot_id / 版本 / 证据来源（字段名、哈希、模型 id）
+             # 一律收进该卡折叠的「技术详情」。判据用「删掉 details 后的可见文本」自证，不看样式。

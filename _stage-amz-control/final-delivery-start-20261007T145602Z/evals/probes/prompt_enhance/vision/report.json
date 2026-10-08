@@ -1,0 +1,77 @@
+{
+  "probe": "prompt_enhance",
+  "arm": "vision",
+  "arm_meaning": "文本资料 + VLM 读图描述",
+  "text_model": "qwen-plus-latest",
+  "text_elapsed_s": 19.1,
+  "text_usage": {
+    "completion_tokens": 841,
+    "prompt_tokens": 1472,
+    "total_tokens": 2313
+  },
+  "text_tried": [],
+  "vlm": {
+    "model": "qwen-vl-max",
+    "elapsed_s": 13.0,
+    "usage": {
+      "prompt_tokens": 1210,
+      "completion_tokens": 316,
+      "total_tokens": 1526,
+      "completion_tokens_details": {
+        "text_tokens": 316
+      },
+      "prompt_tokens_details": {
+        "image_tokens": 1026,
+        "text_tokens": 184,
+        "cached_tokens": 0
+      }
+    },
+    "tried": [
+      {
+        "model": "qwen-vl-max-latest",
+        "error": "qwen-vl-max-latest 调用失败: HTTP 403: {\"error\":{\"message\":\"Access denied. For details, see: https://help.aliyun.com/zh/model-studio/error-code#access-denied\",\"type\":\"access_denied\",\"param\":null,\"code\":\"a"
+      },
+      {
+        "model": "qwen-vl-plus-latest",
+        "error": "qwen-vl-plus-latest 调用失败: HTTP 403: {\"error\":{\"message\":\"Access denied. For details, see: https://help.aliyun.com/zh/model-studio/error-code#access-denied\",\"type\":\"access_denied\",\"param\":null,\"code\":\""
+      }
+    ],
+    "characters": 1456
+  },
+  "lock_chars": 1446,
+  "comparison_baseline": {
+    "arm_B_human_lock_chars": 820
+  },
+  "used_facts": [
+    "specs: 容量: 500ml",
+    "specs: 材质: 316不锈钢",
+    "specs: 重量: 320g",
+    "specs: 高度: 22 cm",
+    "specs: 宽度: 7 cm",
+    "description of the reference image: Height:width ratio approximately 3:1",
+    "description of the reference image: Top section (0 to 0.15): metallic ring with polished interior and brushed exterior, slightly tapered inward",
+    "description of the reference image: Middle section (0.15 to 0.85): cylindrical stainless steel body with brushed finish, vertical striations visible",
+    "description of the reference image: Bottom section (0.85 to 1.0): dark brown rubber or silicone base with matte finish, slightly textured with minor scratches",
+    "description of the reference image: Top section: silver metallic",
+    "description of the reference image: Middle section: silver metallic",
+    "description of the reference image: Bottom section: dark brown",
+    "description of the reference image: Innermost: circular metallic rim with reflective interior",
+    "description of the reference image: Middle layer: black rubber seal around the inner rim",
+    "description of the reference image: Outermost: threaded metallic collar with no cap attached, open at the top",
+    "description of the reference image: Does NOT have: handle, side grip, spout, straw, second cap, printed pattern, label, text, logo, decoration"
+  ],
+  "unknowns": [
+    "exact shade or formulation of 'dark brown' (e.g., Pantone, RGB, or material-specific tone)",
+    "whether the 'rubber or silicone' base is vulcanized rubber or food-grade TPE/silicone (material identity beyond 'rubber or silicone')",
+    "precise thread pitch or number of threads on the metallic collar",
+    "exact reflectivity value or gloss level of the polished inner rim",
+    "whether the brushed finish on middle section is linear grain, circular grain, or random abrasive pattern",
+    "presence/absence of subtle chamfer or radius at top/bottom edges of metallic ring or base"
+  ],
+  "unknowns_count": 6,
+  "validation_problems": [],
+  "validation_advisories": [],
+  "validation_passed": true,
+  "lock_segment": "1. Height-to-diameter ratio exactly 3.14:1 (22 cm height ÷ 7 cm width = 3.142..., rounded to 3.14:1 for precise reproducibility). 2. Top section occupies 0–15% of total height: a metallic ring with polished interior surface and brushed exterior surface, slightly tapered inward. 3. Middle section occupies 15–85% of total height: cylindrical stainless steel body with uniform brushed finish and visible vertical striations. 4. Bottom section occupies 85–100% of total height: dark brown rubber or silicone base with matte finish and fine surface scratches. 5. Lid assembly is open and unattached; consists of three concentric layers from inside out: (i) innermost circular metallic rim with reflective interior surface, (ii) middle black rubber seal encircling the inner rim, (iii) outermost threaded metallic collar with no cap present. 6. Entire surface is free of any text, pattern, logo, label, barcode, or decoration. HARD CONSTRAINTS: NO handle, NO side grip, NO carrying handle, NO strap, NO spout, NO pouring lip, NO straw, NO straw lid, NO second cap, NO flip top, NO text, NO letters, NO numbers, NO logo, NO brand mark, NO label, NO tag, NO barcode, Preserve the exact height-to-diameter ratio; do not make it shorter, wider, taller or slimmer, Keep the lid assembly's layered structure exactly as shown; do not simplify, merge or recolour its rings, Do not substitute a similar-looking item; this is the exact item from the reference.",
+  "facts_chars": 1850
+}

@@ -1,0 +1,19 @@
+{
+  "schema": "amz-control-verification-observation/v1",
+  "not_authority": "Observed completed command results, not a complete raw stdout capture or product completion evidence.",
+  "commands": [
+    "uv run --locked python tools/check_docs.py --no-run",
+    "uv run --locked python tools/check_project_state.py",
+    "uv run --locked python evals/probes/docs_index.py",
+    "uv run --locked python evals/probes/project_state.py",
+    "uv run --locked python tools/refactor_resume.py"
+  ],
+  "observed_results": {
+    "docs_guard": "passed; 60 registered/60 actual documents; --no-run does not prove execution of every documented command",
+    "state_guard": "passed",
+    "docs_probes": "15 variants matched expected result; INDEX/README/manifest-lock/vendor probe files restored byte-for-byte",
+    "state_probes": "62 variants matched expected result; state and temporary evidence fixtures restored byte-for-byte",
+    "resume": {"status": "active", "stages": 8, "tasks": 26, "next_action_task": "V2.R6.4", "goal_id": "1595e928a065b786", "binding": "required"}
+  },
+  "raw_output_limit": "Completed background job output was delivered in the conversation. The process record was no longer reachable at proc://bg_35; no raw-output artifact path was provided. No rerun was used to replace the observed result."
+}

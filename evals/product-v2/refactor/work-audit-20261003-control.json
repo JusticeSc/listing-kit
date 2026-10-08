@@ -1,0 +1,38 @@
+{
+  "schema": "amz-work-audit-control/v1",
+  "not_authority": "point-in-time evidence",
+  "observed_at": "2026-10-02T18:08:28.698Z",
+  "command": "uv run --locked python tools/check_docs.py && uv run --locked python tools/check_project_state.py && uv run --locked python evals/probes/project_state.py && uv run --locked python tools/refactor_resume.py",
+  "result": "PASS",
+  "checks": {
+    "docs": {
+      "exit_code": 0,
+      "executed_commands": 7
+    },
+    "state": {
+      "exit_code": 0
+    },
+    "project_state_probes": {
+      "result": "62向全部与预期一致",
+      "restored_state_byte_for_byte": true
+    },
+    "resume": {
+      "status": "active",
+      "phases": 8,
+      "tasks": 26,
+      "next_action_task": "V2.R6.4",
+      "task_card_line": 450,
+      "goal_id": "1595e928a065b786",
+      "goal_binding": "required",
+      "goal_binding_evidence": "evals/product-v2/refactor/goal-observation-20261003-audit.json",
+      "goal_objective_sha256": "e5a10fd4b69cdde75c510e96dd309ed2e724690f1ca5f49ef2ef78ecb938080f"
+    }
+  },
+  "not_proven": [
+    "R6.4补测完成",
+    "R4.2真实PoC获批或通过",
+    "boot间歇根治",
+    "最终完整产品回归",
+    "部署或人审"
+  ]
+}

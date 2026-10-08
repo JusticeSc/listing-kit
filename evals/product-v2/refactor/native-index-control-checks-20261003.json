@@ -1,0 +1,64 @@
+{
+  "schema": "amz-control-verification-observation/v1",
+  "not_authority": "Observed completed command results; not whole Product V2 completion or a full raw stdout capture.",
+  "observed_at": "2026-10-02T19:40:16.702Z",
+  "commands": [
+    "uv run --locked python tools/check_docs.py --no-run",
+    "uv run --locked python tools/check_project_state.py",
+    "uv run --locked python evals/probes/docs_index.py",
+    "uv run --locked python evals/probes/project_state.py",
+    "uv run --locked python tools/refactor_resume.py"
+  ],
+  "results": {
+    "exit_code": 0,
+    "docs_guard": "passed; no-run does not verify all documented commands",
+    "state_guard": "passed",
+    "docs_probe_directions": 15,
+    "state_probe_directions": 64,
+    "probe_bytes_restored": true,
+    "blocked_route_positive": "BL passed rc=0",
+    "blocked_route_missing_matching_blocker": "BM passed rc=1 tags J7",
+    "resume": {
+      "status": "active",
+      "next_action_task": "V2.R4.2",
+      "next_action_status": "blocked",
+      "restricted_execution_forbidden": true
+    }
+  },
+  "failing_before": {
+    "positive_blocked_route_rejected": true,
+    "tag": "J7",
+    "output": "========================================================================\n项目状态守卫\n========================================================================\n判据：J0 记录可读 / J1 活动记录唯一 / J2 取值闭集合 / J3 Goal 绑定\n      J4 状态 ID 引用计划 / J5 阶段门与顺序 / J6 任务进度与证据\n      J7 next_action 按计划可执行 / J8 单一权威不重抄 / J9 Goal 读数与记录一致\n      J10 updated_at 不许写在未来、不许缺时区\n\n  · 工作记录 5 份 · v2 状态从 plan_ref 读取阶段、任务与依赖，不在 state 重复定义\n\nproblems（1 条）：\n  ✗ [J7] _working/amz-listing-kit-product-v2/state.md 的 next_action_task='V2.R6.4' 当前是 blocked。\n\n结果：有漂移（退出码 1）。\n\n\n\nWall time: 2.29 seconds"
+  },
+  "before_control_sha256": {
+    "tools/check_project_state.py": "2725f1a7fd77f873cb6c9cfc86d13a8bc1a360d66cbef849428afa06fc523fd0",
+    "_working/amz-listing-kit-product-v2/state.md": "5c2cd41fa551fa290c3fa2dab500f18532eea1f4c5887fcfdc04f32333ac5aaa"
+  },
+  "after_control_sha256": {
+    "tools/check_project_state.py": "23b01fad897f2c9a8ed74223bdd0f5bfe2f6dad69b029cb30ec61812e5c411c8",
+    "tools/refactor_resume.py": "4a5409679785f15902decc81f4396388a63b50fb8eb23073368e470223796d1a",
+    "evals/probes/project_state.py": "88cd52a7ce82d27e5907518a937ad216265dbdb31415b8d786fe20f2c67d7fbb",
+    "README.md": "de6042e855f80aa6b3787eb21b1cd1d46b98107a201ca4553c5411ad8995c6d9",
+    "_working/amz-listing-kit-product-v2/state.md": "cf3a49b9a881ad5db28c1c7f6e00712e97289bb8fcea651c70655a20d593afd9"
+  },
+  "rollback_storage": {
+    "app/product_v2/storage/repository.js": {
+      "sha256": "c18f3095d6647f64d07474769e46f615e7fd0441118c9fd0799b0584119f5656",
+      "provenance": "Reconstructed after edit; bytes match earlier physically measured SHA256. Not a pre-edit capture."
+    },
+    "app/product_v2/storage/schema.js": {
+      "sha256": "77deeafa61bf89a83165c7bece78576ea33a268c357e4522a8efd4e3964f131f",
+      "provenance": "Reconstructed after edit; bytes match earlier physically measured SHA256. Not a pre-edit capture."
+    },
+    "app/product_v2/storage/migrations.js": {
+      "sha256": "b271104b48fc8a4850680be650297216010be0bbf300322914996514e84925b2",
+      "provenance": "Reconstructed after edit; bytes match earlier physically measured SHA256. Not a pre-edit capture."
+    }
+  },
+  "runtime_shutdown": {
+    "chrome_tab": "native-index-headless released; spawned application kill requested",
+    "local_service": "NativeIndexSmoke stopped; state exited",
+    "supplier_calls": 0
+  },
+  "raw_stdout_limit": "Completed command output was delivered in the conversation; no recoverable raw-output artifact path was provided. This JSON records only the observed results, not a substitute raw stdout capture."
+}

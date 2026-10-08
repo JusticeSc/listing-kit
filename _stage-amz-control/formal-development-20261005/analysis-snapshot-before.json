@@ -1,0 +1,402 @@
+{
+  "label": "before",
+  "request_product_name": "旧资料蜂蜜罐",
+  "current_name": "新资料陶瓷杯",
+  "result": "最近一次分析：3 个提案，写入 3 个槽位 · fake-semantic（fake-deepseek-v4.1-flash） · 2026/10/5 20:04:22 · 假 Provider 提案：仅用于契约测试与界面开发。",
+  "error": "部分提案没有写入：\n模型提出的问题：这个商品最不能出错的卖点是哪一条？",
+  "records": {
+    "project": {
+      "project_id": "c5bf5f97-a720-4916-ac4c-d4fb80bf0826",
+      "schema_version": 1,
+      "name": "分析原快照隔离-before",
+      "state": "UNDERSTANDING_REVIEW",
+      "revision": 3,
+      "created_at": "2026-10-05T12:04:21.576Z",
+      "updated_at": "2026-10-05T12:04:22.336Z"
+    },
+    "documents": [
+      {
+        "document_key": "c5bf5f97-a720-4916-ac4c-d4fb80bf0826:fact_slot:brand:1",
+        "project_id": "c5bf5f97-a720-4916-ac4c-d4fb80bf0826",
+        "kind": "fact_slot",
+        "document_id": "brand",
+        "version": 1,
+        "schema_version": 1,
+        "payload": {
+          "schema_version": 1,
+          "slot_id": "brand",
+          "label": "品牌",
+          "authority": "core_fixed",
+          "value_type": "text",
+          "value": null,
+          "source": "system_default",
+          "status": "missing",
+          "confidence": null,
+          "evidence": [],
+          "depends_on": [],
+          "critical": false
+        },
+        "created_at": "2026-10-05T12:04:22.181Z",
+        "updated_at": "2026-10-05T12:04:22.181Z"
+      },
+      {
+        "document_key": "c5bf5f97-a720-4916-ac4c-d4fb80bf0826:fact_slot:color_summary:1",
+        "project_id": "c5bf5f97-a720-4916-ac4c-d4fb80bf0826",
+        "kind": "fact_slot",
+        "document_id": "color_summary",
+        "version": 1,
+        "schema_version": 1,
+        "payload": {
+          "schema_version": 1,
+          "slot_id": "color_summary",
+          "label": "颜色概览",
+          "authority": "core_fixed",
+          "value_type": "text",
+          "value": null,
+          "source": "system_default",
+          "status": "missing",
+          "confidence": null,
+          "evidence": [],
+          "depends_on": [],
+          "critical": false
+        },
+        "created_at": "2026-10-05T12:04:22.188Z",
+        "updated_at": "2026-10-05T12:04:22.188Z"
+      },
+      {
+        "document_key": "c5bf5f97-a720-4916-ac4c-d4fb80bf0826:fact_slot:description_digest:1",
+        "project_id": "c5bf5f97-a720-4916-ac4c-d4fb80bf0826",
+        "kind": "fact_slot",
+        "document_id": "description_digest",
+        "version": 1,
+        "schema_version": 1,
+        "payload": {
+          "schema_version": 1,
+          "slot_id": "description_digest",
+          "label": "介绍摘要",
+          "authority": "category_dynamic",
+          "value_type": "text",
+          "value": "旧资料：透明玻璃罐，金属盖。",
+          "source": "model_inference",
+          "status": "proposed",
+          "confidence": 0.9,
+          "evidence": [
+            {
+              "kind": "model",
+              "ref": "fake-deepseek-v4.1-flash",
+              "note": "来自商品介绍。"
+            }
+          ],
+          "depends_on": [
+            "product_category"
+          ],
+          "critical": false,
+          "model_id": "fake-deepseek-v4.1-flash"
+        },
+        "created_at": "2026-10-05T12:04:22.559Z",
+        "updated_at": "2026-10-05T12:04:22.559Z"
+      },
+      {
+        "document_key": "c5bf5f97-a720-4916-ac4c-d4fb80bf0826:fact_slot:key_material:1",
+        "project_id": "c5bf5f97-a720-4916-ac4c-d4fb80bf0826",
+        "kind": "fact_slot",
+        "document_id": "key_material",
+        "version": 1,
+        "schema_version": 1,
+        "payload": {
+          "schema_version": 1,
+          "slot_id": "key_material",
+          "label": "主要材质",
+          "authority": "core_fixed",
+          "value_type": "text",
+          "value": null,
+          "source": "system_default",
+          "status": "missing",
+          "confidence": null,
+          "evidence": [],
+          "depends_on": [],
+          "critical": false
+        },
+        "created_at": "2026-10-05T12:04:22.185Z",
+        "updated_at": "2026-10-05T12:04:22.185Z"
+      },
+      {
+        "document_key": "c5bf5f97-a720-4916-ac4c-d4fb80bf0826:fact_slot:package_contents:1",
+        "project_id": "c5bf5f97-a720-4916-ac4c-d4fb80bf0826",
+        "kind": "fact_slot",
+        "document_id": "package_contents",
+        "version": 1,
+        "schema_version": 1,
+        "payload": {
+          "schema_version": 1,
+          "slot_id": "package_contents",
+          "label": "包装内容物",
+          "authority": "core_fixed",
+          "value_type": "text_list",
+          "value": null,
+          "source": "system_default",
+          "status": "missing",
+          "confidence": null,
+          "evidence": [],
+          "depends_on": [],
+          "critical": false
+        },
+        "created_at": "2026-10-05T12:04:22.191Z",
+        "updated_at": "2026-10-05T12:04:22.191Z"
+      },
+      {
+        "document_key": "c5bf5f97-a720-4916-ac4c-d4fb80bf0826:fact_slot:product_category:1",
+        "project_id": "c5bf5f97-a720-4916-ac4c-d4fb80bf0826",
+        "kind": "fact_slot",
+        "document_id": "product_category",
+        "version": 1,
+        "schema_version": 1,
+        "payload": {
+          "schema_version": 1,
+          "slot_id": "product_category",
+          "label": "商品品类",
+          "authority": "core_fixed",
+          "value_type": "text",
+          "value": null,
+          "source": "system_default",
+          "status": "missing",
+          "confidence": null,
+          "evidence": [],
+          "depends_on": [],
+          "critical": true
+        },
+        "created_at": "2026-10-05T12:04:22.179Z",
+        "updated_at": "2026-10-05T12:04:22.179Z"
+      },
+      {
+        "document_key": "c5bf5f97-a720-4916-ac4c-d4fb80bf0826:fact_slot:product_category:2",
+        "project_id": "c5bf5f97-a720-4916-ac4c-d4fb80bf0826",
+        "kind": "fact_slot",
+        "document_id": "product_category",
+        "version": 2,
+        "schema_version": 1,
+        "payload": {
+          "schema_version": 1,
+          "slot_id": "product_category",
+          "label": "商品品类",
+          "authority": "core_fixed",
+          "value_type": "text",
+          "value": "通用品类（假数据）",
+          "source": "model_inference",
+          "status": "proposed",
+          "confidence": 0.9,
+          "evidence": [
+            {
+              "kind": "model",
+              "ref": "fake-deepseek-v4.1-flash",
+              "note": "假 Provider 的品类占位，需人工确认。"
+            }
+          ],
+          "depends_on": [],
+          "critical": true,
+          "model_id": "fake-deepseek-v4.1-flash"
+        },
+        "created_at": "2026-10-05T12:04:22.557Z",
+        "updated_at": "2026-10-05T12:04:22.557Z"
+      },
+      {
+        "document_key": "c5bf5f97-a720-4916-ac4c-d4fb80bf0826:fact_slot:product_name:1",
+        "project_id": "c5bf5f97-a720-4916-ac4c-d4fb80bf0826",
+        "kind": "fact_slot",
+        "document_id": "product_name",
+        "version": 1,
+        "schema_version": 1,
+        "payload": {
+          "schema_version": 1,
+          "slot_id": "product_name",
+          "label": "商品名称",
+          "authority": "core_fixed",
+          "value_type": "text",
+          "value": null,
+          "source": "system_default",
+          "status": "missing",
+          "confidence": null,
+          "evidence": [],
+          "depends_on": [],
+          "critical": true
+        },
+        "created_at": "2026-10-05T12:04:22.168Z",
+        "updated_at": "2026-10-05T12:04:22.168Z"
+      },
+      {
+        "document_key": "c5bf5f97-a720-4916-ac4c-d4fb80bf0826:fact_slot:product_name:2",
+        "project_id": "c5bf5f97-a720-4916-ac4c-d4fb80bf0826",
+        "kind": "fact_slot",
+        "document_id": "product_name",
+        "version": 2,
+        "schema_version": 1,
+        "payload": {
+          "schema_version": 1,
+          "slot_id": "product_name",
+          "label": "商品名称",
+          "authority": "core_fixed",
+          "value_type": "text",
+          "value": "旧资料蜂蜜罐",
+          "source": "model_inference",
+          "status": "proposed",
+          "confidence": 0.9,
+          "evidence": [
+            {
+              "kind": "model",
+              "ref": "fake-deepseek-v4.1-flash",
+              "note": "取自本次商品资料。"
+            }
+          ],
+          "depends_on": [],
+          "critical": true,
+          "model_id": "fake-deepseek-v4.1-flash"
+        },
+        "created_at": "2026-10-05T12:04:22.551Z",
+        "updated_at": "2026-10-05T12:04:22.551Z"
+      },
+      {
+        "document_key": "c5bf5f97-a720-4916-ac4c-d4fb80bf0826:fact_slot:signature_features:1",
+        "project_id": "c5bf5f97-a720-4916-ac4c-d4fb80bf0826",
+        "kind": "fact_slot",
+        "document_id": "signature_features",
+        "version": 1,
+        "schema_version": 1,
+        "payload": {
+          "schema_version": 1,
+          "slot_id": "signature_features",
+          "label": "必须保持的商品特征",
+          "authority": "core_fixed",
+          "value_type": "text_list",
+          "value": null,
+          "source": "system_default",
+          "status": "missing",
+          "confidence": null,
+          "evidence": [],
+          "depends_on": [],
+          "critical": true
+        },
+        "created_at": "2026-10-05T12:04:22.180Z",
+        "updated_at": "2026-10-05T12:04:22.180Z"
+      },
+      {
+        "document_key": "c5bf5f97-a720-4916-ac4c-d4fb80bf0826:fact_slot:size_dimensions:1",
+        "project_id": "c5bf5f97-a720-4916-ac4c-d4fb80bf0826",
+        "kind": "fact_slot",
+        "document_id": "size_dimensions",
+        "version": 1,
+        "schema_version": 1,
+        "payload": {
+          "schema_version": 1,
+          "slot_id": "size_dimensions",
+          "label": "尺寸规格（对象/轴向/数值/单位）",
+          "authority": "core_fixed",
+          "value_type": "dimension_list",
+          "value": null,
+          "source": "system_default",
+          "status": "missing",
+          "confidence": null,
+          "evidence": [],
+          "depends_on": [],
+          "critical": false
+        },
+        "created_at": "2026-10-05T12:04:22.190Z",
+        "updated_at": "2026-10-05T12:04:22.190Z"
+      },
+      {
+        "document_key": "c5bf5f97-a720-4916-ac4c-d4fb80bf0826:fact_slot:size_summary:1",
+        "project_id": "c5bf5f97-a720-4916-ac4c-d4fb80bf0826",
+        "kind": "fact_slot",
+        "document_id": "size_summary",
+        "version": 1,
+        "schema_version": 1,
+        "payload": {
+          "schema_version": 1,
+          "slot_id": "size_summary",
+          "label": "尺寸概览",
+          "authority": "core_fixed",
+          "value_type": "text",
+          "value": null,
+          "source": "system_default",
+          "status": "missing",
+          "confidence": null,
+          "evidence": [],
+          "depends_on": [],
+          "critical": false
+        },
+        "created_at": "2026-10-05T12:04:22.189Z",
+        "updated_at": "2026-10-05T12:04:22.189Z"
+      },
+      {
+        "document_key": "c5bf5f97-a720-4916-ac4c-d4fb80bf0826:product_input:intake:1",
+        "project_id": "c5bf5f97-a720-4916-ac4c-d4fb80bf0826",
+        "kind": "product_input",
+        "document_id": "intake",
+        "version": 1,
+        "schema_version": 1,
+        "payload": {
+          "schema_version": 1,
+          "product_name": "",
+          "description": "",
+          "selling_points": [],
+          "focus": "",
+          "references": [
+            {
+              "asset_sha256": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461",
+              "role": "primary"
+            }
+          ]
+        },
+        "created_at": "2026-10-05T12:04:21.847Z",
+        "updated_at": "2026-10-05T12:04:21.847Z"
+      },
+      {
+        "document_key": "c5bf5f97-a720-4916-ac4c-d4fb80bf0826:product_input:intake:2",
+        "project_id": "c5bf5f97-a720-4916-ac4c-d4fb80bf0826",
+        "kind": "product_input",
+        "document_id": "intake",
+        "version": 2,
+        "schema_version": 1,
+        "payload": {
+          "schema_version": 1,
+          "product_name": "旧资料蜂蜜罐",
+          "description": "旧资料：透明玻璃罐，金属盖。",
+          "selling_points": [],
+          "focus": "",
+          "references": [
+            {
+              "asset_sha256": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461",
+              "role": "primary"
+            }
+          ]
+        },
+        "created_at": "2026-10-05T12:04:22.101Z",
+        "updated_at": "2026-10-05T12:04:22.101Z"
+      },
+      {
+        "document_key": "c5bf5f97-a720-4916-ac4c-d4fb80bf0826:product_input:intake:3",
+        "project_id": "c5bf5f97-a720-4916-ac4c-d4fb80bf0826",
+        "kind": "product_input",
+        "document_id": "intake",
+        "version": 3,
+        "schema_version": 1,
+        "payload": {
+          "schema_version": 1,
+          "product_name": "新资料陶瓷杯",
+          "description": "新资料：陶瓷杯，不是玻璃罐。",
+          "selling_points": [],
+          "focus": "",
+          "references": [
+            {
+              "asset_sha256": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461",
+              "role": "primary"
+            }
+          ]
+        },
+        "created_at": "2026-10-05T12:04:22.334Z",
+        "updated_at": "2026-10-05T12:04:22.334Z"
+      }
+    ]
+  },
+  "page_errors": [],
+  "boundary": "Isolated headless Chrome; real local gateway fake semantic only; no paid calls"
+}

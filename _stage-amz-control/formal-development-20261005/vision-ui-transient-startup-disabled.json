@@ -1,0 +1,14 @@
+{
+  "NOT-AUTHORITY": "point-in-time UI and outbound evidence",
+  "mode": "offline-replay",
+  "observed_at": "2026-10-05T14:05:25.626170+00:00",
+  "model_calls": 0,
+  "status": "failed",
+  "asset_sha256": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461",
+  "upstream": [],
+  "local_posts": [],
+  "page_errors": [],
+  "origin": "http://127.0.0.1:2641",
+  "error_kind": "AssertionError",
+  "error_line": 111
+}

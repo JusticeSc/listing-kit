@@ -1,0 +1,30 @@
+{
+  "schema": "amz-work-audit-authority/v1",
+  "not_authority": "point-in-time evidence",
+  "observed_at": "2026-10-02T18:07:13.009Z",
+  "snapshot_root": "_stage-amz-control/work-audit-20261003-2026-10-02T17-55-22-190Z",
+  "authority_before_sha256": {
+    "docs/product-v2-refactor-plan.md": "dbdbf61acb8a2c3f5eb6d2891d80d5ec971db9be83a79bac44d53185b3861355",
+    "_working/amz-listing-kit-product-v2/state.md": "07de7d7be95d2e0f92c896a031004ca40b45a9139f9f33d042c61480738e8d08"
+  },
+  "authority_after_sha256": {
+    "docs/product-v2-refactor-plan.md": "4afb86c05aaeb6db6e0aa26fcb6c33f30b32b7c05adb4dbbe5351935c9570f80",
+    "_working/amz-listing-kit-product-v2/state.md": "9b41da8b3af60ff37c6cc8d1afb502b5eba689bb540fef69ca2d7b3264611ede"
+  },
+  "goal_objective_unchanged": true,
+  "goal_identity": "1595e928a065b786",
+  "changes": [
+    "live Goal observation reference refreshed",
+    "R4.2 pending -> blocked: no external PoC approval",
+    "R6.4 done -> pending: raw/open/peak evidence incomplete",
+    "next_action_task -> V2.R6.4 (G3 prerequisite satisfied)",
+    "manifest blocker corrected RC18 -> RC16",
+    "unresolved formal-entry reopen failure preserved",
+    "plan section8.1 added; task dependency table unchanged; R4.2 local env PoC avoids R4.3 dependency cycle"
+  ],
+  "not_claimed": [
+    "product implementation fixed",
+    "final regression green",
+    "current remote CI or deployment"
+  ]
+}

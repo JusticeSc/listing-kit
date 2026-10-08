@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>商品套图工作台</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main-workbench">跳到工作区</a>
+
+  <header class="app-header" aria-labelledby="page-title">
+    <div class="brand-block">
+      <p class="eyebrow">Amazon US Listing · 单人工作台</p>
+      <h1 id="page-title">商品套图</h1>
+    </div>
+    <div class="header-actions">
+      <span class="status-pill" id="stage-chip">阶段：资料接入</span>
+      <span class="boundary-badge" id="mock-badge">演示环境 · 不调用模型 · 不写文件</span>
+      <span class="boundary-badge" id="fiction-note">虚构示例仅用于走查，不用于真实上架</span>
+    </div>
+  </header>
+
+  <main id="main-workbench" class="workbench" tabindex="-1">
+    <section class="panel left-panel" aria-labelledby="left-heading">
+      <div class="panel-heading">
+        <div>
+          <p class="step-label">01 · 生成依据</p>
+          <h2 id="left-heading">商品资料与套图方案</h2>
+        </div>
+        <span class="status-pill" id="input-status">待填写</span>
+      </div>
+      <div id="input-view"></div>
+      <div class="panel-section">
+        <div class="section-heading">
+          <h3 id="plan-heading">安排整套图片</h3>
+          <span class="status-pill" id="plan-status">未生成</span>
+        </div>
+        <div id="plan-view" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <section class="panel canvas-panel" aria-labelledby="canvas-heading">
+      <div class="panel-heading">
+        <div>
+          <p class="step-label">02 · 候选画布</p>
+          <h2 id="canvas-heading">当前图片的候选</h2>
+        </div>
+      </div>
+      <div id="canvas-view"></div>
+    </section>
+
+    <section class="panel inspector-panel" aria-labelledby="inspector-heading">
+      <div class="panel-heading">
+        <div>
+          <p class="step-label">03 · 单图工作区</p>
+          <h2 id="inspector-heading">核对、提示词与返工</h2>
+        </div>
+      </div>
+      <div id="inspector-view"></div>
+    </section>
+  </main>
+
+  <footer class="delivery-bar" aria-labelledby="delivery-heading">
+    <div>
+      <p class="step-label">04 · 交付</p>
+      <h2 id="delivery-heading">套图导出</h2>
+    </div>
+    <div id="delivery-view" class="delivery-content"></div>
+  </footer>
+
+  <dialog id="export-dialog" aria-labelledby="export-dialog-title">
+    <div class="dialog-heading">
+      <div>
+        <p class="step-label">导出预览</p>
+        <h2 id="export-dialog-title">交付清单</h2>
+      </div>
+      <button class="icon-button" type="button" data-action="close-export" aria-label="关闭导出预览">×</button>
+    </div>
+    <div id="export-dialog-body"></div>
+  </dialog>
+
+  <div class="live-region" id="live-status" role="status" aria-live="polite" aria-atomic="true"></div>
+  <div class="live-region" id="live-error" role="alert" aria-live="assertive" aria-atomic="true"></div>
+
+  <script type="module" src="/static/workbench.js"></script>
+</body>
+</html>

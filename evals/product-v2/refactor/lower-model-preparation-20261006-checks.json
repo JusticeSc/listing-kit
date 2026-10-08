@@ -1,0 +1,51 @@
+{
+  "observed_at": "2026-10-06T03:26:34.891Z",
+  "snapshot": "_stage-amz-control/lower-model-preparation-2026-10-06T03-18-11-801Z",
+  "goal_text_sha256": "6677a6803003f0894dd522bdd7102b53ca30c866532ff48fdc79e4b148d7c495",
+  "plan_sections": [
+    {
+      "section": 2,
+      "unchanged": true,
+      "sha256": "16f3c2ca33a617e208d94049745015520fcf91edf88a05d5465d7e5572dfd124"
+    },
+    {
+      "section": 3,
+      "unchanged": true,
+      "sha256": "314b8a0133ae7fcd538595a87bcf7cf25c6716d2bb6c03330bc971bc9205b4b9"
+    },
+    {
+      "section": 6,
+      "unchanged": true,
+      "sha256": "8520e19ca8bcd80ec081817b7c1387af902ab384526a1162d149c345f4c3acfc"
+    },
+    {
+      "section": 7,
+      "unchanged": true,
+      "sha256": "cf7136b2497b3439988565b394c1f1ed8f647440c453752db0357ac580b39b9b"
+    },
+    {
+      "section": 9,
+      "unchanged": true,
+      "sha256": "db4657a8ecbbb8bb7a11afe9e6fb75744bd9798f202e8084ca33179fe0bdb0c0"
+    },
+    {
+      "section": 10,
+      "unchanged": true,
+      "sha256": "d9e8a4ea2af396a206b83da6b13b324ac9cdea427ebf197ad61696afcdd01c1c"
+    },
+    {
+      "section": 14,
+      "unchanged": true,
+      "sha256": "55898e9abb1dac012cf4a1ec9a2668d081095fdab8d8bb06ff1f5802d3714197"
+    },
+    {
+      "section": 16,
+      "unchanged": true,
+      "sha256": "8519bd42c39c4d29bf2e0c1a6be55e903f08cb83e9f0429240d7ca7a00b07fe6"
+    }
+  ],
+  "state_all_fields_except_one_preparation_note_and_updated_at_unchanged": true,
+  "current_goal_live_observation": "not_available_this_preparation_round; historical observation not promoted",
+  "product_runtime_checks": "not_run; design_only",
+  "construction": "not_started; user_stop_unchanged"
+}

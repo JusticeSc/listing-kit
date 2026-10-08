@@ -1,0 +1,76 @@
+{
+  "evidence_kind": "NOT-AUTHORITY",
+  "hypotheses": [
+    "Native Tab may visit browser chrome at the last control: BODY active and document.hasFocus false, dialog stays modal.",
+    "The app may close/rebuild its dialog: open/modal flag would disappear; a minimal native dialog would not reproduce.",
+    "The page may be backgrounded: document.hasFocus would be false throughout, not just at the boundary."
+  ],
+  "native_tab": [
+    {
+      "step": 0,
+      "id": "direction",
+      "tag": "TEXTAREA",
+      "document_has_focus": true,
+      "dialog_open": true,
+      "dialog_modal": true
+    },
+    {
+      "step": 1,
+      "id": "preview",
+      "tag": "BUTTON",
+      "document_has_focus": true,
+      "dialog_open": true,
+      "dialog_modal": true
+    },
+    {
+      "step": 2,
+      "id": "",
+      "tag": "BODY",
+      "document_has_focus": false,
+      "dialog_open": true,
+      "dialog_modal": true
+    },
+    {
+      "step": 3,
+      "id": "direction",
+      "tag": "TEXTAREA",
+      "document_has_focus": true,
+      "dialog_open": true,
+      "dialog_modal": true
+    },
+    {
+      "step": 4,
+      "id": "preview",
+      "tag": "BUTTON",
+      "document_has_focus": true,
+      "dialog_open": true,
+      "dialog_modal": true
+    },
+    {
+      "step": 5,
+      "id": "",
+      "tag": "BODY",
+      "document_has_focus": false,
+      "dialog_open": true,
+      "dialog_modal": true
+    },
+    {
+      "step": 6,
+      "id": "direction",
+      "tag": "TEXTAREA",
+      "document_has_focus": true,
+      "dialog_open": true,
+      "dialog_modal": true
+    },
+    {
+      "step": 7,
+      "id": "preview",
+      "tag": "BUTTON",
+      "document_has_focus": true,
+      "dialog_open": true,
+      "dialog_modal": true
+    }
+  ],
+  "background_focus_blocked": true,
+  "browser": "154.0.8037.93"
+}

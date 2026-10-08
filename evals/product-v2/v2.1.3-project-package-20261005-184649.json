@@ -1,0 +1,305 @@
+{
+  "task": "V2.1.3",
+  "suite": "v2.1.3-project-package",
+  "status": "passed",
+  "finished_at": "2026-10-05T18:46:54",
+  "checks": [
+    {
+      "id": "V2.1.3-00",
+      "title": "storage 模块与 app.js 通过 node --check",
+      "ok": true,
+      "detail": {
+        "files": [
+          {
+            "file": "app/product_v2/storage/capabilities.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/storage/db.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/storage/errors.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/storage/index.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/storage/migrations.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/storage/package-schema.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/storage/package.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/storage/pointer.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/storage/repository.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/storage/schema.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/storage/transfer.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/storage/validate.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/storage/zip.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/app.js",
+            "rc": 0,
+            "stderr": ""
+          }
+        ],
+        "ok": true
+      }
+    },
+    {
+      "id": "V2.1.3-01",
+      "title": "包契约套件全部通过且用例清单完整",
+      "ok": true,
+      "detail": {
+        "status": "passed",
+        "cases": 8,
+        "failed": [],
+        "missing": []
+      }
+    },
+    {
+      "id": "V2.1.3-02",
+      "title": "界面导出产生下载文件且给出结果提示",
+      "ok": true,
+      "detail": {
+        "suggested_filename": "打包验证项目-20261005-1046.zip",
+        "bytes": 2628
+      }
+    },
+    {
+      "id": "V2.1.3-03",
+      "title": "导出包是标准 ZIP：CRC 全过、manifest 与资产哈希一致",
+      "ok": true,
+      "detail": {
+        "bad_crc_entry": null,
+        "names": [
+          "assets/1959a09799845921af3fe113de1463718c32f451d9641b8b92c2bfdd687e59ec",
+          "assets/b056a640cd0596c46156641830412f3c8fe416db67a4f14e6100e7d70450ba9f",
+          "documents/0000.json",
+          "documents/0001.json",
+          "manifest.json"
+        ],
+        "format": "amz-listing-kit-project",
+        "format_version": 2,
+        "project_id": "2b9e9462-e0e8-4810-8c7c-db4d53574a03",
+        "documents": 2,
+        "assets": 2,
+        "asset_checks": [
+          {
+            "path": "assets/1959a09799845921af3fe113de1463718c32f451d9641b8b92c2bfdd687e59ec",
+            "declared": "1959a09799845921af3fe113de1463718c32f451d9641b8b92c2bfdd687e59ec",
+            "computed": "1959a09799845921af3fe113de1463718c32f451d9641b8b92c2bfdd687e59ec",
+            "bytes": 10,
+            "ok": true
+          },
+          {
+            "path": "assets/b056a640cd0596c46156641830412f3c8fe416db67a4f14e6100e7d70450ba9f",
+            "declared": "b056a640cd0596c46156641830412f3c8fe416db67a4f14e6100e7d70450ba9f",
+            "computed": "b056a640cd0596c46156641830412f3c8fe416db67a4f14e6100e7d70450ba9f",
+            "bytes": 26,
+            "ok": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "V2.1.3-04",
+      "title": "清空状态后导入：业务记录、文档与资产哈希与导出前一致",
+      "ok": true,
+      "detail": {
+        "before_projects": [
+          {
+            "project_id": "2b9e9462-e0e8-4810-8c7c-db4d53574a03",
+            "name": "打包验证项目",
+            "state": "EMPTY",
+            "revision": 1,
+            "created_at": "2026-10-05T10:46:51.921Z",
+            "updated_at": "2026-10-05T10:46:51.921Z"
+          }
+        ],
+        "after_projects": [
+          {
+            "project_id": "2b9e9462-e0e8-4810-8c7c-db4d53574a03",
+            "name": "打包验证项目",
+            "state": "EMPTY",
+            "revision": 1,
+            "created_at": "2026-10-05T10:46:51.921Z",
+            "updated_at": "2026-10-05T10:46:51.921Z"
+          }
+        ],
+        "documents_equal": true,
+        "assets_equal": true
+      }
+    },
+    {
+      "id": "V2.1.3-05",
+      "title": "重复导入分配新 project_id，两份内容一致且互不覆盖",
+      "ok": true,
+      "detail": {
+        "project_ids": [
+          "2b9e9462-e0e8-4810-8c7c-db4d53574a03",
+          "8fa900a0-e64f-4a63-90ce-d38a228bdce4"
+        ],
+        "assets": 4,
+        "documents_each": [
+          2,
+          2
+        ]
+      }
+    },
+    {
+      "id": "V2.1.3-06",
+      "title": "损坏包被拒绝：界面报错且项目数量不变",
+      "ok": true,
+      "detail": {
+        "error": "这个文件不是有效的项目包（可能已损坏或被改动过），没有导入任何数据。",
+        "projects": 2
+      }
+    },
+    {
+      "id": "V2.1.3-07",
+      "title": "全程无 console error / page error",
+      "ok": true,
+      "detail": {
+        "console_errors": [],
+        "page_errors": []
+      }
+    }
+  ],
+  "suite_cases": [
+    {
+      "id": "Z04",
+      "title": "项目包往返：文档版本与资产哈希一致",
+      "ok": true,
+      "detail": {
+        "documents": 2,
+        "assets": 2,
+        "zip_bytes": 2541
+      },
+      "ms": 25
+    },
+    {
+      "id": "Z05",
+      "title": "篡改资产内容：PACKAGE_HASH_MISMATCH",
+      "ok": true,
+      "detail": {
+        "message": "资产内容与清单不符：54557906a0ce2b6da21349778d1f3ac43127fdd0f32038ed8ed19c5ce97f48c9 实际为 5800e28daf90491ed3e40463e362722c480765f64b73ae962c8e1c348ee88116。"
+      },
+      "ms": 6
+    },
+    {
+      "id": "Z06",
+      "title": "包版本高于代码支持：PACKAGE_UNSUPPORTED_VERSION",
+      "ok": true,
+      "detail": {
+        "message": "项目包版本 99 高于当前支持的 2。"
+      },
+      "ms": 6
+    },
+    {
+      "id": "Z07",
+      "title": "导入到空库：同 id 恢复；重复导入自动分配新 id",
+      "ok": true,
+      "detail": {
+        "first_id": "72868a81-9f33-4f6f-9c09-9ea8d1930cbe",
+        "second_id": "63f9b6c1-6486-4f74-95e7-d2cf08afde09",
+        "documents": 2,
+        "assets": 2
+      },
+      "ms": 10
+    },
+    {
+      "id": "Z08",
+      "title": "导入中途失败：整笔事务回滚，目标库不留残留",
+      "ok": true,
+      "detail": {
+        "code": "DUPLICATE_RECORD",
+        "projects": 0,
+        "assets": 0
+      },
+      "ms": 10
+    },
+    {
+      "id": "Z09",
+      "title": "导出→清空→导入：文档载荷与资产字节逐字节一致",
+      "ok": true,
+      "detail": {
+        "versions": [
+          2,
+          1
+        ],
+        "sha256": "54557906a0ce2b6da21349778d1f3ac43127fdd0f32038ed8ed19c5ce97f48c9"
+      },
+      "ms": 9
+    },
+    {
+      "id": "Z10",
+      "title": "执行身份包往返：attempt（含冻结身份）导出→导入后逐字一致",
+      "ok": true,
+      "detail": {
+        "identity": {
+          "schema_version": 1,
+          "protocol": "v2.4.1",
+          "capability_version": 2,
+          "credential_reference": {
+            "source": "default"
+          },
+          "sync": false
+        },
+        "documents": 3
+      },
+      "ms": 10
+    },
+    {
+      "id": "Z11",
+      "title": "反向：schema 1 的 attempt 记录（无冻结身份）整包原子拒绝",
+      "ok": true,
+      "detail": {
+        "code": "PACKAGE_UNSUPPORTED_VERSION",
+        "documents_in_repo": 1
+      },
+      "ms": 6
+    }
+  ],
+  "console_errors": [],
+  "page_errors": [],
+  "boundary": "证明完整项目包的导出与导入：标准 ZIP、CRC/哈希校验、清空浏览器状态后逐项一致、重复导入 id 冲突处理、损坏包拒绝且不污染数据、导入事务回滚。不证明交付包（导出 ZIP）、正式入口、商品资料之后的业务链与首次使用者可用性。"
+}

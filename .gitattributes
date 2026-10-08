@@ -11,6 +11,7 @@
 *.yml text eol=lf
 *.yaml text eol=lf
 *.patch text eol=lf
+*.sh text eol=lf
 *.bat text eol=crlf
 
 *.png binary
@@ -19,3 +20,9 @@
 *.webp binary
 *.gif binary
 *.zip binary
+
+# 事前快照目录按「原字节」保存（manifest.json 记录采集时的 SHA256）：默认不做行尾/编码转换。
+# 例外：整树快照自带 .gitattributes，其中更靠下的规则优先，那些文本文件仍按仓库行尾政策入库
+# ——2026-10-08 实测：423 份里 366 份逐字节一致，57 份只差 CRLF→LF（每份字节差 == 其 CRLF 行数），
+# 内容不变；manifest 哈希按采集机字节校验，不要拿干净检出反向判它损坏。
+_stage-amz-control/** -text

@@ -271,11 +271,10 @@ def main() -> int:
     def provider_factory():
         return FakeSemanticProvider(scenario=scenario["value"])
 
-    port = free_port()
     server = module.create_product_v2_server(
-        "127.0.0.1", port, provider_factory=provider_factory)
+        "127.0.0.1", 0, provider_factory=provider_factory)
     threading.Thread(target=server.serve_forever, daemon=True).start()
-    base = f"http://127.0.0.1:{port}"
+    base = f"http://127.0.0.1:{server.server_address[1]}"
     before_fp = fingerprint()
     try:
         with urllib.request.urlopen(base + "/api/v2/capabilities", timeout=10) as response:
@@ -365,6 +364,9 @@ def main() -> int:
             page.click("#analyze-run")
             expect(page.locator("#slots-progress")).to_contain_text("必须确认的槽位")
             page.wait_for_timeout(500)
+            # V2.UI.2 起异步完成不自动切阶段（UI 契约 §1.6/§3）：槽位在「理解」，由用户明确导航。
+            stage_nav.goto(page, "understand")
+            page.wait_for_selector("#slot-list .slot-row", timeout=30_000)
             analyzed = page.evaluate(DB_SNAPSHOT)
             body = json.loads(analyze_posts[-1]) if analyze_posts else {}
             check(f"{APP_NAME}-07", "分析：一次点击只发一次 POST，请求字段等于 capabilities.analyze_fields，existing_slot_ids 为空",
@@ -592,6 +594,7 @@ def main() -> int:
 
     # 21：上面的浏览器检查用的是注入 fake provider 的进程；这里再证明默认注册表（真实 provider）
     # 下正式进程也能启动，且 capabilities 不会因为缺密钥而把进程打崩。
+    # 子进程端口无法 bind-0 读回；冲突时会健康检查失败，已记录为已知 flake 面
     entry_port = free_port()
     entry_env = {**os.environ, "PYTHONUTF8": "1", "PYTHONDONTWRITEBYTECODE": "1"}
     entry_proc = subprocess.Popen(
@@ -649,7 +652,7 @@ def main() -> int:
         "suite": "v2.2.3-intake-understanding",
         "status": status,
         "finished_at": finished_at,
-        "port": port,
+        "port": server.server_address[1],
         "checks": checks,
         "console_errors": console_errors,
         "page_errors": page_errors,
@@ -670,7 +673,7 @@ def main() -> int:
         f"observed_at: {finished_at}",
         f"status: {status}",
         f"json: {json_path.relative_to(ROOT).as_posix()}",
-        f"port: {port}",
+        f"port: {server.server_address[1]}",
         "",
         "CHECKS",
     ]

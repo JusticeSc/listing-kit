@@ -1,0 +1,358 @@
+{
+  "at500": {
+    "rows": [
+      {
+        "id": "product_category",
+        "status": "proposed",
+        "actions": [
+          "确认",
+          "修改",
+          "标记未知"
+        ]
+      },
+      {
+        "id": "product_name",
+        "status": "proposed",
+        "actions": [
+          "确认",
+          "修改",
+          "标记未知"
+        ]
+      },
+      {
+        "id": "signature_features",
+        "status": "proposed",
+        "actions": [
+          "确认",
+          "修改",
+          "标记未知"
+        ]
+      },
+      {
+        "id": "brand",
+        "status": "missing",
+        "actions": [
+          "填值并确认",
+          "修改",
+          "标记未知"
+        ]
+      },
+      {
+        "id": "color_summary",
+        "status": "missing",
+        "actions": [
+          "填值并确认",
+          "修改",
+          "标记未知"
+        ]
+      },
+      {
+        "id": "key_material",
+        "status": "missing",
+        "actions": [
+          "填值并确认",
+          "修改",
+          "标记未知"
+        ]
+      },
+      {
+        "id": "package_contents",
+        "status": "missing",
+        "actions": [
+          "填值并确认",
+          "修改",
+          "标记未知"
+        ]
+      },
+      {
+        "id": "size_dimensions",
+        "status": "missing",
+        "actions": [
+          "填值并确认",
+          "修改",
+          "标记未知"
+        ]
+      },
+      {
+        "id": "size_summary",
+        "status": "missing",
+        "actions": [
+          "填值并确认",
+          "修改",
+          "标记未知"
+        ]
+      },
+      {
+        "id": "description_digest",
+        "status": "proposed",
+        "actions": [
+          "确认",
+          "修改",
+          "标记未知",
+          "删除（保留历史）"
+        ]
+      }
+    ],
+    "result": "最近一次分析：4 个提案，写入 4 个槽位 · fake-semantic（fake-deepseek-v4.1-flash） · 原资料 v2 · 未发送图片字节 · 2026/10/5 20:40:06 · 假 Provider 提案：仅用于契约测试与界面开发。"
+  },
+  "role_probe": {
+    "role_exact": 0,
+    "role_plain": 0,
+    "buttons": {
+      "offsetParentNull": true,
+      "display": "list-item",
+      "ariaHiddenAncestor": false,
+      "hiddenAncestor": true,
+      "buttons": [
+        {
+          "text": "确认",
+          "aria": null,
+          "title": "",
+          "type": "button",
+          "offsetParentNull": true
+        },
+        {
+          "text": "修改",
+          "aria": null,
+          "title": "",
+          "type": "button",
+          "offsetParentNull": true
+        },
+        {
+          "text": "标记未知",
+          "aria": null,
+          "title": "",
+          "type": "button",
+          "offsetParentNull": true
+        }
+      ],
+      "ancestors": [
+        {
+          "tag": "UL",
+          "id": "slot-list",
+          "cls": "slot-list",
+          "hiddenAttr": false,
+          "display": "flex",
+          "editable": null
+        },
+        {
+          "tag": "SECTION",
+          "id": "",
+          "cls": "card",
+          "hiddenAttr": false,
+          "display": "block",
+          "editable": null
+        },
+        {
+          "tag": "SECTION",
+          "id": "",
+          "cls": "stage-panel",
+          "hiddenAttr": true,
+          "display": "none",
+          "editable": null
+        },
+        {
+          "tag": "DIV",
+          "id": "stage-panels",
+          "cls": "stage-panels",
+          "hiddenAttr": false,
+          "display": "block",
+          "editable": null
+        },
+        {
+          "tag": "SECTION",
+          "id": "project-view",
+          "cls": "workspace",
+          "hiddenAttr": false,
+          "display": "block",
+          "editable": null
+        },
+        {
+          "tag": "MAIN",
+          "id": "",
+          "cls": "",
+          "hiddenAttr": false,
+          "display": "block",
+          "editable": null
+        },
+        {
+          "tag": "BODY",
+          "id": "",
+          "cls": "",
+          "hiddenAttr": false,
+          "display": "block",
+          "editable": null
+        }
+      ]
+    }
+  },
+  "posts": 1,
+  "result": "最近一次分析：4 个提案，写入 4 个槽位 · fake-semantic（fake-deepseek-v4.1-flash） · 原资料 v2 · 未发送图片字节 · 2026/10/5 20:40:06 · 假 Provider 提案：仅用于契约测试与界面开发。",
+  "error": "",
+  "gate": "将发给 fake-deepseek-v4.1-flash：当前名称、介绍、卖点与重点，仅参考图元数据，不发送图片字节。供应商按实际调用计费；不能据元数据宣称已经看图。",
+  "rows": [
+    {
+      "id": "product_category",
+      "status": "proposed",
+      "actions": [
+        "确认",
+        "修改",
+        "标记未知"
+      ]
+    },
+    {
+      "id": "product_name",
+      "status": "proposed",
+      "actions": [
+        "确认",
+        "修改",
+        "标记未知"
+      ]
+    },
+    {
+      "id": "signature_features",
+      "status": "proposed",
+      "actions": [
+        "确认",
+        "修改",
+        "标记未知"
+      ]
+    },
+    {
+      "id": "brand",
+      "status": "missing",
+      "actions": [
+        "填值并确认",
+        "修改",
+        "标记未知"
+      ]
+    },
+    {
+      "id": "color_summary",
+      "status": "missing",
+      "actions": [
+        "填值并确认",
+        "修改",
+        "标记未知"
+      ]
+    },
+    {
+      "id": "key_material",
+      "status": "missing",
+      "actions": [
+        "填值并确认",
+        "修改",
+        "标记未知"
+      ]
+    },
+    {
+      "id": "package_contents",
+      "status": "missing",
+      "actions": [
+        "填值并确认",
+        "修改",
+        "标记未知"
+      ]
+    },
+    {
+      "id": "size_dimensions",
+      "status": "missing",
+      "actions": [
+        "填值并确认",
+        "修改",
+        "标记未知"
+      ]
+    },
+    {
+      "id": "size_summary",
+      "status": "missing",
+      "actions": [
+        "填值并确认",
+        "修改",
+        "标记未知"
+      ]
+    },
+    {
+      "id": "description_digest",
+      "status": "proposed",
+      "actions": [
+        "确认",
+        "修改",
+        "标记未知",
+        "删除（保留历史）"
+      ]
+    }
+  ],
+  "slots": [
+    [
+      "brand",
+      "missing"
+    ],
+    [
+      "color_summary",
+      "missing"
+    ],
+    [
+      "description_digest",
+      "proposed"
+    ],
+    [
+      "key_material",
+      "missing"
+    ],
+    [
+      "package_contents",
+      "missing"
+    ],
+    [
+      "product_category",
+      "missing"
+    ],
+    [
+      "product_category",
+      "proposed"
+    ],
+    [
+      "product_name",
+      "missing"
+    ],
+    [
+      "product_name",
+      "proposed"
+    ],
+    [
+      "signature_features",
+      "missing"
+    ],
+    [
+      "signature_features",
+      "proposed"
+    ],
+    [
+      "size_dimensions",
+      "missing"
+    ],
+    [
+      "size_summary",
+      "missing"
+    ]
+  ],
+  "analyses": [
+    [
+      "pending_submit",
+      "not_applied",
+      null
+    ],
+    [
+      "succeeded",
+      "stored",
+      null
+    ],
+    [
+      "succeeded",
+      "applied",
+      null
+    ]
+  ],
+  "page_errors": []
+}

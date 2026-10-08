@@ -68,6 +68,7 @@ from datetime import datetime
 from pathlib import Path, PurePosixPath, PureWindowsPath
 
 ROOT = Path(__file__).resolve().parent.parent
+CODE_ROOT = ROOT
 sys.path.insert(0, str(ROOT / "src"))          # 只为取 console（见 src/console.py）
 from console import enable_utf8  # noqa: E402
 enable_utf8()
@@ -136,6 +137,27 @@ def _exists(rel: str) -> bool:
     return (ROOT / rel).exists()
 
 
+_TRACKED: set[str] | bool | None = None  # None=还没问过 git；False=不是 git 工作树
+
+
+def _tracked_index() -> set[str] | None:
+    """一次问清整个签入集（不是逐条 `ls-files --error-unmatch`——那样每份证据一次子进程，
+    守卫会从秒级掉到几十秒，探针跑几十遍直接拖垮 CI 的 30 分钟上限）。"""
+    global _TRACKED
+    if _TRACKED is None:
+        try:
+            proc = subprocess.run(["git", "-C", str(ROOT), "ls-files", "-z"],
+                                  capture_output=True, text=True)
+        except OSError:
+            _TRACKED = False
+        else:
+            if proc.returncode != 0 or "not a git repository" in (proc.stderr or ""):
+                _TRACKED = False
+            else:
+                _TRACKED = {item for item in proc.stdout.split("\0") if item}
+    return _TRACKED or None
+
+
 def _tracked(rel: str) -> bool | None:
     """证据文件进版本库了吗；不是 git 工作树 / git 不可用时返回 None（不做判断）。
 
@@ -143,17 +165,15 @@ def _tracked(rel: str) -> bool | None:
     本地 J6 全绿、CI 的同一判据把这次推送判红。这里只对「存在但未入库」发警告不判失败 ——
     pre-commit 阶段证据通常还没 git add，硬判会逼人绕过检查。
     """
-    try:
-        proc = subprocess.run(
-            ["git", "-C", str(ROOT), "ls-files", "--error-unmatch", "--", rel],
-            capture_output=True, text=True)
-    except OSError:
+    index = _tracked_index()
+    if index is None:
         return None
-    if proc.returncode == 0:
+    if rel in index:
         return True
-    if "not a git repository" in (proc.stderr or ""):
-        return None
-    return False
+    # 目录型 evidence（如 evals/product-v2/fixtures/v2.5.2/）：`ls-files` 只列文件，
+    # 目录本身永远不在集合里 —— 只要它下面有签入文件，干净检出后就存在，不算「未入库」。
+    prefix = rel if rel.endswith("/") else rel + "/"
+    return any(item.startswith(prefix) for item in index)
 
 
 def _plan_tasks(plan_text: str) -> tuple[list[str], dict[str, list[str]]]:
@@ -226,6 +246,11 @@ def _evidence_ok(rep: Report, rel: str, owner: str, row: dict, tag: str) -> None
     for item in ev:
         if not _exists(str(item)):
             rep.problem(f"[{tag}] {rel} 的 {owner} evidence 指向不存在的文件：{item}")
+        elif _tracked(str(item)) is False:
+            # 本地看得见、CI 检出后看不见（evals/ 默认不进库）——2026-10-08 实例：R4.3/R4.4
+            # 的 13 份运行日志被 .gitignore 拦住，本地 J6 全绿而 PR 上的同一判据判红。
+            rep.note(f"[{tag}-warn] {rel} 的 {owner} evidence 存在但还没进版本库：{item} "
+                     f"—— 提交前先 git add -f（网关只认签入集）。")
 
 
 def _check_updated_at(rep: Report, rel: str, path: Path, d: dict) -> None:
@@ -762,8 +787,13 @@ def _check(rep: Report) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
+    global ROOT, WORKING
     ap = argparse.ArgumentParser(description="项目状态守卫：让「做到哪了」有人守")
-    ap.parse_known_args(argv)          # 容忍调用方多塞的参数
+    ap.add_argument("--root", type=Path, default=CODE_ROOT,
+                    help="只读被验项目根；反向探针使用独立临时副本")
+    args, _ = ap.parse_known_args(argv)
+    ROOT = args.root.resolve()
+    WORKING = ROOT / "_working"
     rep = Report()
     _check(rep)
     print("=" * 72)

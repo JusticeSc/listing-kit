@@ -1,0 +1,732 @@
+{
+  "suite_id": "v2.ui.2-interaction-visual",
+  "status": "passed",
+  "observed_at": "2026-10-08T01:55:39",
+  "contract": "v2.ui.2",
+  "model_calls": 0,
+  "external_network_calls": 0,
+  "checks": [
+    {
+      "id": "UI2-07",
+      "title": "空白首页：只突出一个创建入口，导入是次级动作，空态可见且没有预填商品",
+      "ok": true,
+      "detail": {
+        "home": {
+          "empty_visible": true,
+          "project_rows": 0,
+          "visible_primary": [
+            "create-project"
+          ],
+          "import_class": "ghost",
+          "name_value": "",
+          "home_visible": true
+        },
+        "screenshot": "evals/product-v2/evidence/v2.ui.2-home-20261008-015527.png"
+      }
+    },
+    {
+      "id": "UI2-08",
+      "title": "新建后默认停靠「资料」：唯一 current 阶段带 aria-current，六个任务入口始终可达（不禁用、不锁定）",
+      "ok": true,
+      "detail": {
+        "keyboard_open": true,
+        "keyboard_create": true,
+        "stage": {
+          "buttons": [
+            {
+              "id": "intake",
+              "label": "资料",
+              "number": "1",
+              "disabled": false,
+              "current": true,
+              "complete": false,
+              "locked": false,
+              "aria": "step"
+            },
+            {
+              "id": "understand",
+              "label": "理解",
+              "number": "2",
+              "disabled": false,
+              "current": false,
+              "complete": false,
+              "locked": false,
+              "aria": null
+            },
+            {
+              "id": "plan",
+              "label": "方案",
+              "number": "3",
+              "disabled": false,
+              "current": false,
+              "complete": false,
+              "locked": false,
+              "aria": null
+            },
+            {
+              "id": "generate",
+              "label": "生成",
+              "number": "4",
+              "disabled": false,
+              "current": false,
+              "complete": false,
+              "locked": false,
+              "aria": null
+            },
+            {
+              "id": "review",
+              "label": "审核返工",
+              "number": "5",
+              "disabled": false,
+              "current": false,
+              "complete": false,
+              "locked": false,
+              "aria": null
+            },
+            {
+              "id": "deliver",
+              "label": "交付",
+              "number": "6",
+              "disabled": false,
+              "current": false,
+              "complete": false,
+              "locked": false,
+              "aria": null
+            }
+          ],
+          "panels": [
+            {
+              "id": "intake",
+              "hidden": false,
+              "title": "商品资料"
+            },
+            {
+              "id": "understand",
+              "hidden": true,
+              "title": "商品理解"
+            },
+            {
+              "id": "plan",
+              "hidden": true,
+              "title": "套图方案"
+            },
+            {
+              "id": "generate",
+              "hidden": true,
+              "title": "生成"
+            },
+            {
+              "id": "review",
+              "hidden": true,
+              "title": "审核与返工"
+            },
+            {
+              "id": "deliver",
+              "hidden": true,
+              "title": "交付"
+            }
+          ],
+          "visible": [
+            "intake"
+          ],
+          "summary": "上传参考图，自己填写商品事实；AI 理解是可选辅助。"
+        },
+        "storage": {
+          "db_exists": true,
+          "projects": 1,
+          "documents": 0,
+          "assets": 0,
+          "digest": "26e040bece35c71a94816998da055bab22114558b189537a7dd12c57ff3c099f"
+        }
+      }
+    },
+    {
+      "id": "UI2-09",
+      "title": "阶段可达性：六入口可逐个打开且面板跟随；切换阶段不改用户事实、不授予门外主操作权限",
+      "ok": true,
+      "detail": {
+        "visited": [
+          [
+            "understand"
+          ],
+          [
+            "plan"
+          ],
+          [
+            "generate"
+          ],
+          [
+            "review"
+          ],
+          [
+            "deliver"
+          ]
+        ],
+        "visible": [
+          "intake"
+        ],
+        "storage_unchanged": true,
+        "focus_digest": {
+          "projects": 1,
+          "user_docs": []
+        },
+        "out_of_gate_primary": {
+          "confirm_disabled": true,
+          "deliver_disabled": true
+        }
+      }
+    },
+    {
+      "id": "UI2-10",
+      "title": "资料阶段：缺输入时可选 AI 理解禁用并在按钮旁说明缺什么；人工填写入口始终可用",
+      "ok": true,
+      "detail": {
+        "disabled": true,
+        "gate": "还缺：商品名称必填。；至少需要一张参考图。",
+        "manual_facts_visible": true,
+        "ref_count": 0
+      }
+    },
+    {
+      "id": "UI2-11",
+      "title": "分析商品资料（键盘 Enter 触发）成功后不自动切阶段；用户明确导航到「理解」后槽位进入待处理列表",
+      "ok": true,
+      "detail": {
+        "keyboard_analyze": true,
+        "stayed": [
+          "intake"
+        ],
+        "stage": {
+          "buttons": [
+            {
+              "id": "intake",
+              "label": "资料",
+              "number": "1",
+              "disabled": false,
+              "current": false,
+              "complete": true,
+              "locked": false,
+              "aria": null
+            },
+            {
+              "id": "understand",
+              "label": "理解",
+              "number": "2",
+              "disabled": false,
+              "current": true,
+              "complete": false,
+              "locked": false,
+              "aria": "step"
+            },
+            {
+              "id": "plan",
+              "label": "方案",
+              "number": "3",
+              "disabled": false,
+              "current": false,
+              "complete": false,
+              "locked": false,
+              "aria": null
+            },
+            {
+              "id": "generate",
+              "label": "生成",
+              "number": "4",
+              "disabled": false,
+              "current": false,
+              "complete": false,
+              "locked": false,
+              "aria": null
+            },
+            {
+              "id": "review",
+              "label": "审核返工",
+              "number": "5",
+              "disabled": false,
+              "current": false,
+              "complete": false,
+              "locked": false,
+              "aria": null
+            },
+            {
+              "id": "deliver",
+              "label": "交付",
+              "number": "6",
+              "disabled": false,
+              "current": false,
+              "complete": false,
+              "locked": false,
+              "aria": null
+            }
+          ],
+          "panels": [
+            {
+              "id": "intake",
+              "hidden": true,
+              "title": "商品资料"
+            },
+            {
+              "id": "understand",
+              "hidden": false,
+              "title": "商品理解"
+            },
+            {
+              "id": "plan",
+              "hidden": true,
+              "title": "套图方案"
+            },
+            {
+              "id": "generate",
+              "hidden": true,
+              "title": "生成"
+            },
+            {
+              "id": "review",
+              "hidden": true,
+              "title": "审核与返工"
+            },
+            {
+              "id": "deliver",
+              "hidden": true,
+              "title": "交付"
+            }
+          ],
+          "visible": [
+            "understand"
+          ],
+          "summary": ""
+        },
+        "slots": 10
+      }
+    },
+    {
+      "id": "UI2-12",
+      "title": "理解到方案：确认全部待处理槽位后可推进，推荐方案生成 1..N 张图片任务，阶段条随之前移",
+      "ok": true,
+      "detail": {
+        "shots": [
+          "shot_main_clean",
+          "shot_infographic_benefits",
+          "shot_scene_lifestyle",
+          "shot_detail_material"
+        ],
+        "confirm_rounds": 4,
+        "stage": {
+          "buttons": [
+            {
+              "id": "intake",
+              "label": "资料",
+              "number": "1",
+              "disabled": false,
+              "current": false,
+              "complete": true,
+              "locked": false,
+              "aria": null
+            },
+            {
+              "id": "understand",
+              "label": "理解",
+              "number": "2",
+              "disabled": false,
+              "current": false,
+              "complete": true,
+              "locked": false,
+              "aria": null
+            },
+            {
+              "id": "plan",
+              "label": "方案",
+              "number": "3",
+              "disabled": false,
+              "current": true,
+              "complete": false,
+              "locked": false,
+              "aria": "step"
+            },
+            {
+              "id": "generate",
+              "label": "生成",
+              "number": "4",
+              "disabled": false,
+              "current": false,
+              "complete": false,
+              "locked": false,
+              "aria": null
+            },
+            {
+              "id": "review",
+              "label": "审核返工",
+              "number": "5",
+              "disabled": false,
+              "current": false,
+              "complete": false,
+              "locked": false,
+              "aria": null
+            },
+            {
+              "id": "deliver",
+              "label": "交付",
+              "number": "6",
+              "disabled": false,
+              "current": false,
+              "complete": false,
+              "locked": false,
+              "aria": null
+            }
+          ],
+          "panels": [
+            {
+              "id": "intake",
+              "hidden": true,
+              "title": "商品资料"
+            },
+            {
+              "id": "understand",
+              "hidden": true,
+              "title": "商品理解"
+            },
+            {
+              "id": "plan",
+              "hidden": false,
+              "title": "套图方案"
+            },
+            {
+              "id": "generate",
+              "hidden": true,
+              "title": "生成"
+            },
+            {
+              "id": "review",
+              "hidden": true,
+              "title": "审核与返工"
+            },
+            {
+              "id": "deliver",
+              "hidden": true,
+              "title": "交付"
+            }
+          ],
+          "visible": [
+            "plan"
+          ],
+          "summary": "4 张图片任务"
+        }
+      }
+    },
+    {
+      "id": "UI2-13",
+      "title": "生成阶段：整套生成后逐图进入成功态，并在阶段脚注开放「去审核与返工」入口",
+      "ok": true,
+      "detail": {
+        "attempt_rows": 4,
+        "shots": 4,
+        "summary": "4/4 张有候选"
+      }
+    },
+    {
+      "id": "UI2-14",
+      "title": "审核阶段以图片为中心：每张图一张审核卡（候选大图 + 采用状态 + 三个行内动作），「生成」转为已完成",
+      "ok": true,
+      "detail": {
+        "keyboard_stage_switch": true,
+        "cards": 4,
+        "images": 4,
+        "screenshot": "evals/product-v2/evidence/v2.ui.2-review-20261008-015527.png",
+        "summary": "已采用 0/4 · 必需图 0/1"
+      }
+    },
+    {
+      "id": "UI2-15",
+      "title": "逐图人工采用：每张图点审核卡「采用候选」即落一条当前选择，卡片徽标同步为已采用",
+      "ok": true,
+      "detail": {
+        "adopted": [
+          {
+            "shot_id": "shot_main_clean",
+            "state": "current",
+            "badge": "已采用"
+          },
+          {
+            "shot_id": "shot_infographic_benefits",
+            "state": "current",
+            "badge": "已采用"
+          },
+          {
+            "shot_id": "shot_scene_lifestyle",
+            "state": "current",
+            "badge": "已采用"
+          },
+          {
+            "shot_id": "shot_detail_material",
+            "state": "current",
+            "badge": "已采用"
+          }
+        ]
+      }
+    },
+    {
+      "id": "UI2-16",
+      "title": "交付阶段：门禁清单逐图列出采用状态；有阻断（本流程未跑整套检查）时交付包按钮禁用并说明原因，项目包导出可用",
+      "ok": true,
+      "detail": {
+        "gate_rows": 4,
+        "status": "交付门禁未通过：2 条阻断，逐条处理后才能生成。",
+        "findings": 7,
+        "blocking": 2,
+        "screenshot": "evals/product-v2/evidence/v2.ui.2-deliver-20261008-015527.png"
+      }
+    },
+    {
+      "id": "UI2-17",
+      "title": "刷新恢复：重开页面落在最靠后的未完成阶段「交付」，项目与记录逐字不变",
+      "ok": true,
+      "detail": {
+        "visible": [
+          "deliver"
+        ],
+        "digest": {
+          "db_exists": true,
+          "projects": 1,
+          "documents": 52,
+          "assets": 5,
+          "digest": "8c56fa93cd1c5f3936ca27e2b0f47aa46d26b439a289a1b5f7e2e54bfeeddaa0"
+        },
+        "before_reload": {
+          "db_exists": true,
+          "projects": 1,
+          "documents": 52,
+          "assets": 5,
+          "digest": "8c56fa93cd1c5f3936ca27e2b0f47aa46d26b439a289a1b5f7e2e54bfeeddaa0"
+        },
+        "current": [
+          "deliver"
+        ],
+        "buttons": [
+          {
+            "id": "intake",
+            "label": "资料",
+            "number": "1",
+            "disabled": false,
+            "current": false,
+            "complete": true,
+            "locked": false,
+            "aria": null
+          },
+          {
+            "id": "understand",
+            "label": "理解",
+            "number": "2",
+            "disabled": false,
+            "current": false,
+            "complete": true,
+            "locked": false,
+            "aria": null
+          },
+          {
+            "id": "plan",
+            "label": "方案",
+            "number": "3",
+            "disabled": false,
+            "current": false,
+            "complete": true,
+            "locked": false,
+            "aria": null
+          },
+          {
+            "id": "generate",
+            "label": "生成",
+            "number": "4",
+            "disabled": false,
+            "current": false,
+            "complete": true,
+            "locked": false,
+            "aria": null
+          },
+          {
+            "id": "review",
+            "label": "审核返工",
+            "number": "5",
+            "disabled": false,
+            "current": false,
+            "complete": true,
+            "locked": false,
+            "aria": null
+          },
+          {
+            "id": "deliver",
+            "label": "交付",
+            "number": "6",
+            "disabled": false,
+            "current": true,
+            "complete": false,
+            "locked": false,
+            "aria": "step"
+          }
+        ],
+        "diff": {},
+        "reload_writes": [],
+        "complete": [
+          "intake",
+          "understand",
+          "plan",
+          "generate",
+          "review"
+        ]
+      }
+    },
+    {
+      "id": "UI2-18",
+      "title": "390px：单列布局无横向溢出，阶段条可横向滚动且当前阶段保持在可视区内",
+      "ok": true,
+      "detail": {
+        "probe": {
+          "document_scroll_width": 390,
+          "document_client_width": 390,
+          "body_scroll_width": 390,
+          "nav_scrollable": true,
+          "current_stage_visible": true,
+          "current_stage": "deliver",
+          "rects": {
+            "create": {
+              "x": 0,
+              "y": 0,
+              "width": 0,
+              "height": 0,
+              "visible": false
+            },
+            "analyze": {
+              "x": 0,
+              "y": 0,
+              "width": 0,
+              "height": 0,
+              "visible": false
+            },
+            "nav": {
+              "x": 14,
+              "y": 244,
+              "width": 362,
+              "height": 56,
+              "visible": true
+            },
+            "deliver_export": {
+              "x": 33,
+              "y": 1747,
+              "width": 146,
+              "height": 44,
+              "visible": true
+            }
+          }
+        },
+        "screenshot": "evals/product-v2/evidence/v2.ui.2-narrow-20261008-015527.png"
+      }
+    },
+    {
+      "id": "UI2-19",
+      "title": "200% 缩放等价视口（1440 窗口缩到 720×450 CSS 像素）：无横向滚动条，阶段条可见",
+      "ok": true,
+      "detail": {
+        "probe": {
+          "document_scroll_width": 720,
+          "document_client_width": 720,
+          "body_scroll_width": 720,
+          "nav_scrollable": false,
+          "current_stage_visible": true,
+          "current_stage": "deliver",
+          "rects": {
+            "create": {
+              "x": 0,
+              "y": 0,
+              "width": 0,
+              "height": 0,
+              "visible": false
+            },
+            "analyze": {
+              "x": 0,
+              "y": 0,
+              "width": 0,
+              "height": 0,
+              "visible": false
+            },
+            "nav": {
+              "x": 14,
+              "y": -7,
+              "width": 692,
+              "height": 56,
+              "visible": true
+            },
+            "deliver_export": {
+              "x": 33,
+              "y": 1252,
+              "width": 146,
+              "height": 44,
+              "visible": true
+            }
+          }
+        },
+        "screenshot": "evals/product-v2/evidence/v2.ui.2-zoom200-20261008-015527.png"
+      }
+    },
+    {
+      "id": "UI2-20",
+      "title": "键盘路径：新建、打开、分析、阶段推进与阶段切换五个关键动作都由键盘触发并断言焦点落点",
+      "ok": true,
+      "detail": {
+        "keyboard": {
+          "create": true,
+          "open": true,
+          "analyze": true,
+          "plan_to_generate": true,
+          "stage_switch": true
+        }
+      }
+    },
+    {
+      "id": "UI2-21",
+      "title": "正式入口 --check 全过（六阶段外壳没有破坏无状态自检）",
+      "ok": true,
+      "detail": {
+        "rc": 0,
+        "retried_after_connection_reset": false,
+        "tail": [
+          "  PASS  整套复核 provider 不可用时 capabilities 仍 200 且 configured=false  suite_review={'kind': 'dependency', 'detail': 'RuntimeError: 自检：整套复核 provider 构造失败'}",
+          "  PASS  整套复核 provider 不可用时路由 503 且错误分类明确                          status=503 error={'family': 'internal', 'code': 'PROVIDER_NOT_CONFIGURED', 'message': '语义 provider 不可用：检查注册表、依赖与 DASHSCOPE_API_KEY。', 'retry_policy': 'fatal', 'http_status': 503, 'request_id': None, 'details': {'kind': 'dependency', 'detail': 'RuntimeError: 自检：整套复核 provider 构造失败'}}",
+          "V2 正式入口自检：47/47 通过。"
+        ]
+      }
+    },
+    {
+      "id": "UI2-22",
+      "title": "零意外 console error / page error（界面重写不得引入运行时错误）",
+      "ok": true,
+      "detail": {
+        "console_errors": [],
+        "page_errors": []
+      }
+    }
+  ],
+  "ui": {
+    "keyboard": {
+      "create": true,
+      "open": true,
+      "analyze": true,
+      "plan_to_generate": true,
+      "stage_switch": true
+    },
+    "screenshots": [
+      "evals/product-v2/evidence/v2.ui.2-home-20261008-015527.png",
+      "evals/product-v2/evidence/v2.ui.2-review-20261008-015527.png",
+      "evals/product-v2/evidence/v2.ui.2-deliver-20261008-015527.png",
+      "evals/product-v2/evidence/v2.ui.2-narrow-20261008-015527.png",
+      "evals/product-v2/evidence/v2.ui.2-zoom200-20261008-015527.png"
+    ],
+    "stage_summary": "必需图已采用 1/1",
+    "shots": [
+      "shot_main_clean",
+      "shot_infographic_benefits",
+      "shot_scene_lifestyle",
+      "shot_detail_material"
+    ]
+  },
+  "console_errors": [],
+  "page_errors": []
+}

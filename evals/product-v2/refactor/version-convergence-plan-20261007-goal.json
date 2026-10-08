@@ -1,0 +1,52 @@
+{
+  "schema": "amz-planning-goal-observation/v1",
+  "not_authority": true,
+  "source": "goal-tool",
+  "observed_at": "2026-10-07T13:59:18.089Z",
+  "pre_creation_observation": {
+    "text": "No active goal.",
+    "details": {
+      "op": "get",
+      "goal": null,
+      "remainingTokens": null,
+      "completionBudgetReport": null
+    }
+  },
+  "planning_goal_creation": {
+    "text": "Goal: ## Objective\n完善 amz-listing-kit 当前 Product V2 工程收口方案，使下一轮能够沿用可信资产、按明确模块职责完成既有工程交付与可信 HTTPS 发布；本轮仅规划，不恢复产品施工。保留现有产品目标中的人工/图文辅助完整任务、三用途 BYOK、可选 AI、确定性硬门、Unknown 保护、ZIP/恢复、必要结构收口和工程发布验收，不将完成标准降为局部 smoke 或缩水版本。\n\n## Success criteria\n1. 现有计划和详细设计中明确列出可复用资产及证据适用/失效条件、已知剩余缺口、唯一状态所有者/模块接口、顺序与依赖、精确验证命令/动作和退出/升级条件；每个已知阻断都有明确承接与可观察后置，无占位成功或重复权威。\n2. 明确收口终点是既有适用 RC 的完整工程交付，不预留第二轮总体重构；C17/C15 真人验收与 V1 专批删除继续为本轮工程交付之外，不冒充通过。\n3. 文档守卫与正式冷恢复命令均退出 0；Goal 原文/正式任务/依赖/RC及状态如有必要调整，保持权威一致并准确记录理由，不伪造系统绑定或未发生验收。\n4. 保存最少事前快照与本轮规划证据，记录检查次数/结果、实际系统 Goal 观察及准确恢复门；所有产品源码、生成产物、测试和验证工具保持未修改。\n\n## Verification\n在仓库根依次执行：\n- uv run --locked python tools/check_docs.py --no-run\n- uv run --locked python tools/refactor_resume.py\n核对文件中的资产/缺口/模块/验证/停止条件均有明确条目和现有来源，且引用路径存在。只检查规划及恢复一致性，不运行产品、浏览器、单元/回归测试或模型。\n\n## Boundaries\n允许修改方案所需的 Goal 可读文本、计划、详细设计、项目上下文、README/AGENTS/INDEX登记和状态记录；必要快照、观察与证据沿用现有 _stage-amz-control/、evals/product-v2/refactor/ 目录。仅在实有必要时扩大文档修改；不为整理而重写历史材料。\n不修改产品代码、TS/JS产物、测试/验证工具、依赖锁、配置/发布脚本；不调用模型、使用凭据、上传素材、运行产品/浏览器、提交/推送/开PR/合并/部署、删除V1或用户数据。不把规划Goal绑定成产品施工Goal，不把未验证任务标完成，不伪造系统生命周期；规划不解除停工或提供施工/付费/发布许可。\n\n## Stop conditions\n最多 3 轮方案实质修订加对应串行校验；同一轮包括上述两个命令，不无修改反复重跑碰绿。达到上限仍未满足成功条件时停止并报告具体阻塞。\n规范冲突无法由权威与证据解决、需扩大上述权限、需要产品/工具修改或新付费证据、无法取得必要权威时停止对应动作并向用户升级；先完成不受该阻塞影响的可达规划，不自行缩小验收或冒充完成。\n用户要求停止时只做必要收尾与恢复记录。\nStatus: active\nTokens: 0 used",
+    "details": {
+      "op": "create",
+      "goal": {
+        "id": "159cf706a99024ae",
+        "objective": "## Objective\n完善 amz-listing-kit 当前 Product V2 工程收口方案，使下一轮能够沿用可信资产、按明确模块职责完成既有工程交付与可信 HTTPS 发布；本轮仅规划，不恢复产品施工。保留现有产品目标中的人工/图文辅助完整任务、三用途 BYOK、可选 AI、确定性硬门、Unknown 保护、ZIP/恢复、必要结构收口和工程发布验收，不将完成标准降为局部 smoke 或缩水版本。\n\n## Success criteria\n1. 现有计划和详细设计中明确列出可复用资产及证据适用/失效条件、已知剩余缺口、唯一状态所有者/模块接口、顺序与依赖、精确验证命令/动作和退出/升级条件；每个已知阻断都有明确承接与可观察后置，无占位成功或重复权威。\n2. 明确收口终点是既有适用 RC 的完整工程交付，不预留第二轮总体重构；C17/C15 真人验收与 V1 专批删除继续为本轮工程交付之外，不冒充通过。\n3. 文档守卫与正式冷恢复命令均退出 0；Goal 原文/正式任务/依赖/RC及状态如有必要调整，保持权威一致并准确记录理由，不伪造系统绑定或未发生验收。\n4. 保存最少事前快照与本轮规划证据，记录检查次数/结果、实际系统 Goal 观察及准确恢复门；所有产品源码、生成产物、测试和验证工具保持未修改。\n\n## Verification\n在仓库根依次执行：\n- uv run --locked python tools/check_docs.py --no-run\n- uv run --locked python tools/refactor_resume.py\n核对文件中的资产/缺口/模块/验证/停止条件均有明确条目和现有来源，且引用路径存在。只检查规划及恢复一致性，不运行产品、浏览器、单元/回归测试或模型。\n\n## Boundaries\n允许修改方案所需的 Goal 可读文本、计划、详细设计、项目上下文、README/AGENTS/INDEX登记和状态记录；必要快照、观察与证据沿用现有 _stage-amz-control/、evals/product-v2/refactor/ 目录。仅在实有必要时扩大文档修改；不为整理而重写历史材料。\n不修改产品代码、TS/JS产物、测试/验证工具、依赖锁、配置/发布脚本；不调用模型、使用凭据、上传素材、运行产品/浏览器、提交/推送/开PR/合并/部署、删除V1或用户数据。不把规划Goal绑定成产品施工Goal，不把未验证任务标完成，不伪造系统生命周期；规划不解除停工或提供施工/付费/发布许可。\n\n## Stop conditions\n最多 3 轮方案实质修订加对应串行校验；同一轮包括上述两个命令，不无修改反复重跑碰绿。达到上限仍未满足成功条件时停止并报告具体阻塞。\n规范冲突无法由权威与证据解决、需扩大上述权限、需要产品/工具修改或新付费证据、无法取得必要权威时停止对应动作并向用户升级；先完成不受该阻塞影响的可达规划，不自行缩小验收或冒充完成。\n用户要求停止时只做必要收尾与恢复记录。",
+        "status": "active",
+        "tokensUsed": 0,
+        "timeUsedSeconds": 0,
+        "createdAt": 1791381392038,
+        "updatedAt": 1791381392038
+      },
+      "remainingTokens": null,
+      "completionBudgetReport": null
+    }
+  },
+  "product_binding": "Historical product goal 1599c9600ae01cb7 retained. This planning goal MUST NOT replace or satisfy its objective binding.",
+  "authorization": "User confirmed planning only; all necessary planning/control documents may change, including goal text if required; maximum 3 revision/check rounds. No product/test/tool changes, model calls, git mutations, or deployment.",
+  "planning_goal_completion": {
+    "text": "Goal: ## Objective\n完善 amz-listing-kit 当前 Product V2 工程收口方案，使下一轮能够沿用可信资产、按明确模块职责完成既有工程交付与可信 HTTPS 发布；本轮仅规划，不恢复产品施工。保留现有产品目标中的人工/图文辅助完整任务、三用途 BYOK、可选 AI、确定性硬门、Unknown 保护、ZIP/恢复、必要结构收口和工程发布验收，不将完成标准降为局部 smoke 或缩水版本。\n\n## Success criteria\n1. 现有计划和详细设计中明确列出可复用资产及证据适用/失效条件、已知剩余缺口、唯一状态所有者/模块接口、顺序与依赖、精确验证命令/动作和退出/升级条件；每个已知阻断都有明确承接与可观察后置，无占位成功或重复权威。\n2. 明确收口终点是既有适用 RC 的完整工程交付，不预留第二轮总体重构；C17/C15 真人验收与 V1 专批删除继续为本轮工程交付之外，不冒充通过。\n3. 文档守卫与正式冷恢复命令均退出 0；Goal 原文/正式任务/依赖/RC及状态如有必要调整，保持权威一致并准确记录理由，不伪造系统绑定或未发生验收。\n4. 保存最少事前快照与本轮规划证据，记录检查次数/结果、实际系统 Goal 观察及准确恢复门；所有产品源码、生成产物、测试和验证工具保持未修改。\n\n## Verification\n在仓库根依次执行：\n- uv run --locked python tools/check_docs.py --no-run\n- uv run --locked python tools/refactor_resume.py\n核对文件中的资产/缺口/模块/验证/停止条件均有明确条目和现有来源，且引用路径存在。只检查规划及恢复一致性，不运行产品、浏览器、单元/回归测试或模型。\n\n## Boundaries\n允许修改方案所需的 Goal 可读文本、计划、详细设计、项目上下文、README/AGENTS/INDEX登记和状态记录；必要快照、观察与证据沿用现有 _stage-amz-control/、evals/product-v2/refactor/ 目录。仅在实有必要时扩大文档修改；不为整理而重写历史材料。\n不修改产品代码、TS/JS产物、测试/验证工具、依赖锁、配置/发布脚本；不调用模型、使用凭据、上传素材、运行产品/浏览器、提交/推送/开PR/合并/部署、删除V1或用户数据。不把规划Goal绑定成产品施工Goal，不把未验证任务标完成，不伪造系统生命周期；规划不解除停工或提供施工/付费/发布许可。\n\n## Stop conditions\n最多 3 轮方案实质修订加对应串行校验；同一轮包括上述两个命令，不无修改反复重跑碰绿。达到上限仍未满足成功条件时停止并报告具体阻塞。\n规范冲突无法由权威与证据解决、需扩大上述权限、需要产品/工具修改或新付费证据、无法取得必要权威时停止对应动作并向用户升级；先完成不受该阻塞影响的可达规划，不自行缩小验收或冒充完成。\n用户要求停止时只做必要收尾与恢复记录。\nStatus: complete\nTokens: 221175 used\n\nGoal achieved. Report final budget usage to the user: time used: 1324 seconds.",
+    "details": {
+      "op": "complete",
+      "goal": {
+        "id": "159cf706a99024ae",
+        "objective": "## Objective\n完善 amz-listing-kit 当前 Product V2 工程收口方案，使下一轮能够沿用可信资产、按明确模块职责完成既有工程交付与可信 HTTPS 发布；本轮仅规划，不恢复产品施工。保留现有产品目标中的人工/图文辅助完整任务、三用途 BYOK、可选 AI、确定性硬门、Unknown 保护、ZIP/恢复、必要结构收口和工程发布验收，不将完成标准降为局部 smoke 或缩水版本。\n\n## Success criteria\n1. 现有计划和详细设计中明确列出可复用资产及证据适用/失效条件、已知剩余缺口、唯一状态所有者/模块接口、顺序与依赖、精确验证命令/动作和退出/升级条件；每个已知阻断都有明确承接与可观察后置，无占位成功或重复权威。\n2. 明确收口终点是既有适用 RC 的完整工程交付，不预留第二轮总体重构；C17/C15 真人验收与 V1 专批删除继续为本轮工程交付之外，不冒充通过。\n3. 文档守卫与正式冷恢复命令均退出 0；Goal 原文/正式任务/依赖/RC及状态如有必要调整，保持权威一致并准确记录理由，不伪造系统绑定或未发生验收。\n4. 保存最少事前快照与本轮规划证据，记录检查次数/结果、实际系统 Goal 观察及准确恢复门；所有产品源码、生成产物、测试和验证工具保持未修改。\n\n## Verification\n在仓库根依次执行：\n- uv run --locked python tools/check_docs.py --no-run\n- uv run --locked python tools/refactor_resume.py\n核对文件中的资产/缺口/模块/验证/停止条件均有明确条目和现有来源，且引用路径存在。只检查规划及恢复一致性，不运行产品、浏览器、单元/回归测试或模型。\n\n## Boundaries\n允许修改方案所需的 Goal 可读文本、计划、详细设计、项目上下文、README/AGENTS/INDEX登记和状态记录；必要快照、观察与证据沿用现有 _stage-amz-control/、evals/product-v2/refactor/ 目录。仅在实有必要时扩大文档修改；不为整理而重写历史材料。\n不修改产品代码、TS/JS产物、测试/验证工具、依赖锁、配置/发布脚本；不调用模型、使用凭据、上传素材、运行产品/浏览器、提交/推送/开PR/合并/部署、删除V1或用户数据。不把规划Goal绑定成产品施工Goal，不把未验证任务标完成，不伪造系统生命周期；规划不解除停工或提供施工/付费/发布许可。\n\n## Stop conditions\n最多 3 轮方案实质修订加对应串行校验；同一轮包括上述两个命令，不无修改反复重跑碰绿。达到上限仍未满足成功条件时停止并报告具体阻塞。\n规范冲突无法由权威与证据解决、需扩大上述权限、需要产品/工具修改或新付费证据、无法取得必要权威时停止对应动作并向用户升级；先完成不受该阻塞影响的可达规划，不自行缩小验收或冒充完成。\n用户要求停止时只做必要收尾与恢复记录。",
+        "status": "complete",
+        "tokensUsed": 221175,
+        "timeUsedSeconds": 1324,
+        "createdAt": 1791381392038,
+        "updatedAt": 1791382717015
+      },
+      "remainingTokens": null,
+      "completionBudgetReport": "Goal achieved. Report final budget usage to the user: time used: 1324 seconds."
+    }
+  },
+  "completion_recorded_at": "2026-10-07T14:18:37.016Z"
+}

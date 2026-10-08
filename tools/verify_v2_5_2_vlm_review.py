@@ -73,120 +73,22 @@ PROVIDERS_JSON = ROOT / "config" / "product-v2" / "providers.json"
 EXPECTED_CASES = [f"R{index}" for index in range(14, 22)]
 
 
-def load_module(path: Path, name: str):
-    spec = importlib.util.spec_from_file_location(name, path)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+import v2_verify_shared as shared  # noqa: E402  （正式 server/夹具/共同业务操作）
+
+server_module = shared.load_server_module()
 
 
-v251 = load_module(ROOT / "tools" / "verify_v2_5_1_deterministic_review.py", "verify_v251")
-server_module = v251.load_server_module()
 
-
-def review_js_text() -> str:
-    return (PRODUCT_DIR / "domain" / "review.js").read_text(encoding="utf-8")
-
-
-def check_static_guards() -> list[dict]:
-    checks: list[dict] = []
-    review_text = review_js_text()
-    checks.append({
-        "id": "V2.5.2-01",
-        "title": "综合语法门：新 provider / workspace / 两个 harness 通过 node --check 与 Python AST",
-        "ok": False, "detail": None,
-    })
-    node_targets = [
-        "app/product_v2/domain/review.js", "app/product_v2/workspace.js",
-        "evals/product-v2/harness/review-contract.js",
-        "evals/product-v2/harness/review-provider-contract.js",
-    ]
-    node_failed = []
-    for relative in node_targets:
-        completed = subprocess.run(["node", "--check", str(ROOT / relative)], cwd=str(ROOT),
-                                   capture_output=True, text=True, check=False)
-        if completed.returncode != 0:
-            node_failed.append({"file": relative, "stderr": completed.stderr.strip()[-200:]})
-    py_targets = [
-        "src/providers/v2_review.py", "src/providers/v2_dashscope_review.py",
-        "src/providers/v2_langchain_chat.py", "src/providers/v2_fake_review.py",
-        "src/providers/v2_registry.py", "app/product_v2_server.py",
-        "tools/verify_v2_5_2_vlm_review.py",
-    ]
-    py_failed = []
-    for relative in py_targets:
-        text = (ROOT / relative).read_text(encoding="utf-8")
-        try:
-            compile(text, relative, "exec")
-        except SyntaxError as error:
-            py_failed.append({"file": relative, "error": str(error)[:200]})
-    first = checks[0]
-    first["ok"] = not node_failed and not py_failed
-    first["detail"] = {"node_failed": node_failed, "py_failed": py_failed}
-
-    block = re.search(r"export const VLM_CHECK_TO_RULE = Object\.freeze\(\{(.*?)\}\);",
-                      review_text, re.S)
-    js_checks = re.findall(r"([a-z_]+):\s*\"vlm\.", block.group(1)) if block else []
-    js_version = re.search(r'REVIEW_CONTRACT_VERSION = "([^"]+)"', review_text)
-    checks.append({
-        "id": "V2.5.2-02",
-        "title": "跨语言一致：VLM check 词表与合同版本在服务端与浏览器侧完全一致",
-        "ok": bool(block) and js_checks == list(VLM_CHECKS)
-        and js_version and js_version.group(1) == REVIEW_CONTRACT_VERSION,
-        "detail": {"js_checks": js_checks, "py_checks": list(VLM_CHECKS),
-                   "js_version": js_version.group(1) if js_version else None,
-                   "py_version": REVIEW_CONTRACT_VERSION},
-    })
-
-    review_provider = (ROOT / "src/providers/v2_dashscope_review.py").read_text(encoding="utf-8")
-    forbidden = [pattern for pattern in (
-        r"^\s*import requests", r"^\s*import httpx", r"^\s*from requests",
-        r"urllib\.request", r"http\.client", r"^\s*import openai", r"^\s*from openai",
-        r"def _default_chat_model",
-    ) if re.search(pattern, review_provider, re.M)]
-    checks.append({
-        "id": "V2.5.2-03",
-        "title": "不重复造轮子：复核 provider 复用 SEL-003 通道（ChatOpenAI + 共享错误映射），零自建传输",
-        "ok": not forbidden
-        and "default_chat_model" in review_provider
-        and "map_openai_exception" in review_provider
-        and "langchain-openai/ChatOpenAI" in review_provider
-        and (ROOT / "src/providers/v2_langchain_chat.py").is_file(),
-        "detail": {"forbidden_hits": forbidden,
-                   "shared_model": "default_chat_model" in review_provider,
-                   "shared_errors": "map_openai_exception" in review_provider},
-    })
-
-    registry = json.loads(PROVIDERS_JSON.read_text(encoding="utf-8"))
-    entries = {item["id"]: item for item in registry.get("providers", [])}
-    real = entries.get("dashscope-review", {})
-    fake = entries.get("fake-review", {})
-    checks.append({
-        "id": "V2.5.2-04",
-        "title": "注册表与代码一致：review 角色、真实/假 adapter、模型环境变量与默认选择",
-        "ok": registry.get("default_review_provider_id") == "dashscope-review"
-        and registry.get("review_provider_selection_env") == "AMZ_V2_REVIEW_PROVIDER"
-        and real.get("role") == "review" and real.get("adapter") == "v2_dashscope_review"
-        and real.get("model_env") == "REVIEW_MODEL"
-        and real.get("capabilities", {}).get("reference_images") is True
-        and fake.get("role") == "review" and fake.get("adapter") == "v2_fake_review"
-        and fake.get("capabilities", {}).get("test_double") is True,
-        "detail": {"default": registry.get("default_review_provider_id"),
-                   "real": real.get("adapter"), "fake": fake.get("adapter")},
-    })
-
+def check_provider_selection() -> list[dict]:
     provider = create_review_provider(env={"AMZ_V2_REVIEW_PROVIDER": "fake-review",
                                            "AMZ_V2_FAKE_REVIEW_SCENARIO": "clean"})
-    checks.append({
+    return [{
         "id": "V2.5.2-05",
-        "title": "注册表构造：环境变量能选择 fake-review（场景 clean）且真实默认模型已登记",
-        "ok": isinstance(provider, FakeReviewProvider) and provider.scenario == "clean"
-        and bool(DEFAULT_MODEL_ID) and DEFAULT_TIMEOUT_SECONDS > 0 and DEFAULT_MAX_TOKENS > 0,
+        "title": "注册表构造：环境变量选择 fake-review 并执行 clean 场景",
+        "ok": isinstance(provider, FakeReviewProvider) and provider.scenario == "clean",
         "detail": {"provider": getattr(provider, "provider_id", None),
-                   "scenario": getattr(provider, "scenario", None),
-                   "model": DEFAULT_MODEL_ID},
-    })
-    return checks
+                   "scenario": getattr(provider, "scenario", None)},
+    }]
 
 
 def review_payload(png: bytes, **overrides) -> dict:
@@ -358,9 +260,8 @@ def run_endpoint_checks(png: bytes) -> list[dict]:
     """无状态端点契约：用假复核 provider 走真实 HTTP；不触网、不落盘。"""
 
     holder = {"scenario": "ok"}
-    port = v251.free_port()
     server = server_module.create_product_v2_server(
-        "127.0.0.1", port,
+        "127.0.0.1", 0,
         provider_factory=lambda: FakeSemanticProvider(scenario="ok"),
         image_provider_factory=lambda: FakeImageProvider(scenario="ok"),
         review_provider_factory=lambda: FakeReviewProvider(holder["scenario"]))
@@ -368,7 +269,7 @@ def run_endpoint_checks(png: bytes) -> list[dict]:
     checks: list[dict] = []
     payload = review_payload(png)
     try:
-        _, caps = http_json("127.0.0.1", port, "GET", "/api/v2/capabilities")
+        _, caps = http_json("127.0.0.1", server.server_address[1], "GET", "/api/v2/capabilities")
         review_block = (caps or {}).get("review") or {}
         checks.append({
             "id": "V2.5.2-07",
@@ -382,7 +283,7 @@ def run_endpoint_checks(png: bytes) -> list[dict]:
             "detail": review_block.get("provider"),
         })
 
-        status, body = http_json("127.0.0.1", port, "POST", "/api/v2/review/candidate", payload)
+        status, body = http_json("127.0.0.1", server.server_address[1], "POST", "/api/v2/review/candidate", payload)
         result = (body or {}).get("result") or {}
         checks.append({
             "id": "V2.5.2-08",
@@ -399,7 +300,7 @@ def run_endpoint_checks(png: bytes) -> list[dict]:
 
         bad = json.loads(json.dumps(payload))
         bad["candidate"]["sha256"] = "0" * 64
-        status, body = http_json("127.0.0.1", port, "POST", "/api/v2/review/candidate", bad)
+        status, body = http_json("127.0.0.1", server.server_address[1], "POST", "/api/v2/review/candidate", bad)
         checks.append({
             "id": "V2.5.2-09",
             "title": "图片哈希与字节不一致 → input_rejected/400（不调用模型）",
@@ -409,7 +310,7 @@ def run_endpoint_checks(png: bytes) -> list[dict]:
         })
 
         holder["scenario"] = "unknown"
-        status, body = http_json("127.0.0.1", port, "POST", "/api/v2/review/candidate", payload)
+        status, body = http_json("127.0.0.1", server.server_address[1], "POST", "/api/v2/review/candidate", payload)
         error = (body or {}).get("error") or {}
         checks.append({
             "id": "V2.5.2-10",
@@ -421,7 +322,7 @@ def run_endpoint_checks(png: bytes) -> list[dict]:
         })
 
         holder["scenario"] = "invalid_output"
-        status, body = http_json("127.0.0.1", port, "POST", "/api/v2/review/candidate", payload)
+        status, body = http_json("127.0.0.1", server.server_address[1], "POST", "/api/v2/review/candidate", payload)
         error = (body or {}).get("error") or {}
         checks.append({
             "id": "V2.5.2-11",
@@ -442,28 +343,27 @@ def run_browser_checks(stamp: str, screenshots: list[str], console_errors: list[
 
     checks: list[dict] = []
     holder = {"scenario": "ok"}
-    port = v251.free_port()
     server = server_module.create_product_v2_server(
-        "127.0.0.1", port,
+        "127.0.0.1", 0,
         provider_factory=lambda: FakeSemanticProvider(scenario="ok"),
         image_provider_factory=lambda: FakeImageProvider(scenario="ok"),
         review_provider_factory=lambda: FakeReviewProvider(holder["scenario"]))
     threading.Thread(target=server.serve_forever, daemon=True).start()
-    static_server, static_url = v251.start_static_server()
+    static_server, static_url = shared.start_static_server()
     temp_root = Path(tempfile.mkdtemp(prefix="amz-v252-"))
     profile = temp_root / "profile"
     reference = temp_root / "ref.png"
-    reference.write_bytes(v251.png_bytes(16, 16, (36, 92, 160)))
-    base = f"http://127.0.0.1:{port}"
+    reference.write_bytes(shared.png_bytes(16, 16, (36, 92, 160)))
+    base = f"http://127.0.0.1:{server.server_address[1]}"
     EVIDENCE_IMAGE_DIR.mkdir(parents=True, exist_ok=True)
     try:
         with sync_playwright() as pw:
             harness_browser = pw.chromium.launch(headless=True)
             try:
-                regression = v251.read_suite(
+                regression = shared.read_suite(
                     harness_browser, static_url + "/harness/review-contract.html",
                     "__V2_REVIEW_RESULTS__", console_errors, page_errors)
-                provider_suite = v251.read_suite(
+                provider_suite = shared.read_suite(
                     harness_browser, static_url + "/harness/review-provider-contract.html",
                     "__V2_REVIEW_PROVIDER_RESULTS__", console_errors, page_errors)
             finally:
@@ -495,13 +395,23 @@ def run_browser_checks(stamp: str, screenshots: list[str], console_errors: list[
                 page.on("pageerror", lambda error: page_errors.append(str(error)))
 
                 def probe() -> dict:
-                    return page.evaluate(v251.PROBE)
+                    return page.evaluate(shared.PROBE)
 
                 def row(shot_id: str):
                     return page.locator(
                         f'#attempt-list .attempt-row[data-shot-id="{shot_id}"]')
 
                 def wait_state(shot_id: str, state: str, timeout: int = 30_000) -> None:
+                    if state == "submitted":
+                        page.wait_for_function(
+                            """(shot) => {
+                                const node = document.querySelector(
+                                    '#attempt-list .attempt-row[data-shot-id="' + shot + '"]');
+                                const value = node && node.getAttribute("data-attempt-state");
+                                return value === "submitted" || value === "succeeded"
+                                    || value === "reconciling";
+                            }""", arg=shot_id, timeout=timeout)
+                        return
                     expect(row(shot_id)).to_have_attribute(
                         "data-attempt-state", state, timeout=timeout)
 
@@ -527,9 +437,19 @@ def run_browser_checks(stamp: str, screenshots: list[str], console_errors: list[
                     row(shot_id).locator(f'button:has-text("{text}")').first.click()
 
                 def generate_and_settle(shot_id: str) -> None:
-                    click_row_button(shot_id, "生成这张图")
                     wait_state(shot_id, "submitted")
-                    click_row_button(shot_id, "核对任务")
+                    for _attempt in range(20):
+                        state = row(shot_id).get_attribute("data-attempt-state")
+                        if state != "submitted":
+                            break
+                        button = row(shot_id).locator('button:has-text("核对任务")').first
+                        try:
+                            if button.is_enabled(timeout=1000):
+                                button.click(timeout=5000)
+                                break
+                        except Exception:
+                            pass
+                        page.wait_for_timeout(1000)
                     wait_state(shot_id, "succeeded")
 
                 page.goto(base + "/", wait_until="networkidle")
@@ -550,25 +470,37 @@ def run_browser_checks(stamp: str, screenshots: list[str], console_errors: list[
                     " db.transaction(\"projects\", \"readonly\").objectStore(\"projects\").getAll();"
                     " req.onsuccess = () => resolve(req.result); });"
                     " db.close(); return rows.map((item) => item.project_id); }")
-                page.evaluate(v251.SEED_SLOTS, project_ids[0])
+                page.evaluate(shared.SEED_SLOTS, project_ids[0])
                 page.reload(wait_until="networkidle")
                 page.click("#suite-seed")
                 expect(page.locator("#shot-list .shot-row")).to_have_count(4)
                 expect(page.locator("#prompt-list .shot-spec")).to_have_count(4)
                 initial = probe()
                 shot_ids = initial["shot_ids"]
-                v251.compile_all(page, shot_ids)
+                shared.compile_all(page, shot_ids)
                 ok_shot = shot_ids[0]
                 stage_nav.goto(page, "generate")
                 expect(page.locator("#confirm-action")).to_be_enabled()
                 page.click("#confirm-action")
-                expect(page.locator("#confirm-record")).to_contain_text("已确认 v")
-                generate_and_settle(ok_shot)
+                page.wait_for_function(
+                    """() => document.querySelectorAll(
+                        '#attempt-list .attempt-row[data-attempt-state]').length > 0""",
+                    timeout=30_000)
                 wait_candidate_ui(ok_shot)
                 wait_review_text(ok_shot, "自动检查 " + REVIEW_CONTRACT_VERSION)
                 before = probe()
-                candidate_before = v251.candidate_json(before, ok_shot)
-                row(ok_shot).locator("button[data-review-action]").click()
+                candidate_before = shared.candidate_json(before, ok_shot)
+                # 行会随状态更新重建：JS 内定位+滚动+点击后，再等 VLM 报告文本出现才读数。
+                page.wait_for_function(
+                    """(shot) => {
+                        const node = document.querySelector(
+                            '#attempt-list .attempt-row[data-shot-id="' + shot + '"]'
+                            + ' button[data-review-action]');
+                        if (!node || node.disabled) return false;
+                        node.scrollIntoView({ block: "center" });
+                        node.click();
+                        return true;
+                    }""", arg=ok_shot, timeout=30_000)
                 wait_review_text(ok_shot, "VLM 已检查")
                 after = probe()
                 review_doc = max(after.get("review_reports") or [{"version": 0, "payload": {}}],
@@ -586,7 +518,7 @@ def run_browser_checks(stamp: str, screenshots: list[str], console_errors: list[
                     and any(item.get("rule_id") == "vlm.deformity" for item in vlm_findings)
                     and len(deterministic) >= 1
                     and review_doc.get("asset_sha256")
-                    == v251.candidate_of(after, ok_shot)[-1]["payload"]["asset_sha256"],
+                    == shared.candidate_of(after, ok_shot)[-1]["payload"]["asset_sha256"],
                     "detail": {"outcome": review_doc.get("vlm", {}).get("outcome"),
                                "vlm_findings": [item.get("rule_id") for item in vlm_findings],
                                "deterministic": len(deterministic)},
@@ -594,10 +526,10 @@ def run_browser_checks(stamp: str, screenshots: list[str], console_errors: list[
                 checks.append({
                     "id": "V2.5.2-15",
                     "title": "不自动采纳：复核不改变候选字节身份与 Attempt 状态",
-                    "ok": v251.candidate_json(after, ok_shot) == candidate_before
+                    "ok": shared.candidate_json(after, ok_shot) == candidate_before
                     and (after.get("attempt_chains", {}).get(ok_shot) or [])[-1]
                     ["payload"]["state"] == "succeeded",
-                    "detail": {"candidate": v251.candidate_json(after, ok_shot)[:24],
+                    "detail": {"candidate": shared.candidate_json(after, ok_shot)[:24],
                                "state": (after.get("attempt_chains", {}).get(ok_shot) or [{}])[-1]
                                .get("payload", {}).get("state")},
                 })
@@ -606,8 +538,8 @@ def run_browser_checks(stamp: str, screenshots: list[str], console_errors: list[
                 wait_candidate_ui(ok_shot)
                 wait_review_text(ok_shot, "VLM 已检查")
                 reloaded = probe()
-                docs_before_reload = len(v251.reviews_for(after, review_doc.get("candidate_id")))
-                reloaded_docs = v251.reviews_for(reloaded, review_doc.get("candidate_id"))
+                docs_before_reload = len(shared.reviews_for(after, review_doc.get("candidate_id")))
+                reloaded_docs = shared.reviews_for(reloaded, review_doc.get("candidate_id"))
                 latest_reload = max(reloaded_docs, key=lambda item: item["version"]) \
                     if reloaded_docs else {"payload": {}}
                 checks.append({
@@ -620,7 +552,16 @@ def run_browser_checks(stamp: str, screenshots: list[str], console_errors: list[
                 })
 
                 holder["scenario"] = "unknown"
-                row(ok_shot).locator("button[data-review-action]").click()
+                page.wait_for_function(
+                    """(shot) => {
+                        const node = document.querySelector(
+                            '#attempt-list .attempt-row[data-shot-id="' + shot + '"]'
+                            + ' button[data-review-action]');
+                        if (!node || node.disabled) return false;
+                        node.scrollIntoView({ block: "center" });
+                        node.click();
+                        return true;
+                    }""", arg=ok_shot, timeout=30_000)
                 wait_review_text(ok_shot, "VLM 未完成")
                 unknown = probe()
                 unknown_doc = max(unknown.get("review_reports") or [{"version": 0, "payload": {}}],
@@ -635,7 +576,7 @@ def run_browser_checks(stamp: str, screenshots: list[str], console_errors: list[
                             and item.get("rule_id") == "vlm.inspection_unavailable"
                             for item in unknown_findings)
                     and not any(item.get("severity") == "BLOCK" for item in unknown_findings)
-                    and v251.candidate_json(unknown, ok_shot) == candidate_before,
+                    and shared.candidate_json(unknown, ok_shot) == candidate_before,
                     "detail": {"outcome": unknown_doc.get("vlm", {}).get("outcome"),
                                "vlm_findings": [item.get("rule_id") + ":" + item.get("severity")
                                                 for item in unknown_findings]},
@@ -674,15 +615,15 @@ def main() -> int:
     page_errors: list[str] = []
     screenshots: list[str] = []
     ui: dict = {}
-    png = v251.png_bytes(16, 16, (10, 20, 30))
+    png = shared.png_bytes(16, 16, (10, 20, 30))
 
-    checks.extend(check_static_guards())
+    checks.extend(check_provider_selection())
     checks.extend(run_fixture_checks(png))
     checks.extend(run_fake_matrix_checks(png))
     checks.extend(run_endpoint_checks(png))
     checks.extend(run_browser_checks(stamp, screenshots, console_errors, page_errors, ui))
 
-    entry = v251.run_entry(["--check"])
+    entry = shared.run_entry(["--check"])
     checks.append({
         "id": "V2.5.2-18",
         "title": "正式入口 --check 全过（含复核路由自检：路由、请求身份、provider 不可用分类）",

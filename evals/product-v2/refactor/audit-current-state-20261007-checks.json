@@ -1,0 +1,42 @@
+{
+  "evidence_type": "NOT-AUTHORITY: bounded audit observations",
+  "repository_baseline": {
+    "branch": "feat/v2-r51-packet-05",
+    "head_short": "e7ce5c5",
+    "tracked_dirty_files_before_audit": ["_working/amz-listing-kit-product-v2/state.md"],
+    "dirty_delta": "one added narrative line; no product changes",
+    "pull_request": null,
+    "branch_actions_runs": []
+  },
+  "executed_commands": [
+    {"command": "uv run --locked python tools/refactor_resume.py", "exit_code": 0, "next_action_task": "V2.R5.1", "state_status": "active", "phase_count": 8, "task_count": 27, "goal_sha256": "6677a6803003f0894dd522bdd7102b53ca30c866532ff48fdc79e4b148d7c495", "queries_system_goal": false},
+    {"command": "npm run check:types", "exit_code": 0},
+    {"command": "npm run check:generated", "exit_code": 0, "generated_ts_files_checked": 15},
+    {"command": "uv run --locked python app/server.py --check", "exit_code": 0, "passed": 45, "total": 45, "provider_mode": "injected local fake providers"},
+    {"command": "gh pr status", "exit_code": 0, "current_branch_pr": null, "open_created_prs": []},
+    {"command": "gh run list --branch feat/v2-r51-packet-05 --limit 5 --json databaseId,status,conclusion,headSha,event,workflowName", "exit_code": 0, "result": []}
+  ],
+  "browser_smoke": {
+    "browser": "managed headless Chromium, isolated temporary origin and project",
+    "origin": "http://127.0.0.1:46137",
+    "viewport_css_px": {"width": 1440, "height": 1000},
+    "device_scale_factor": 1.25,
+    "device_scale_factor_is_not_browser_zoom_evidence": true,
+    "project_name": "审计隔离项目",
+    "project_id": "8d90eb36-0339-4fb6-a3b9-36a57cfd5bd4",
+    "product_name": "审计商品—人工草稿",
+    "actions": ["create project through page", "open workbench", "fill product name", "save draft through page", "reload", "observe restored product name", "inspect IndexedDB read-only", "capture workbench screenshot"],
+    "indexeddb": {"database": "amz-listing-kit-v2", "version": 2, "projects": 1, "documents": 1, "assets": 0, "product_input_version": 1, "restored_product_name_matches": true},
+    "observed_requests": 118,
+    "nonlocal_requests": [],
+    "non_get_requests": [],
+    "page_error_entries": [],
+    "screenshot": "evals/product-v2/refactor/audit-current-state-20261007-workbench.png",
+    "observation_error": "Attempt to wait for guessed #product-name selector timed out because that selector does not exist. Subsequent observation showed the opened workbench, then the save/reload/IndexedDB scenario succeeded. This is an audit selector mistake, not an observed product failure.",
+    "limits": "No reference upload, generation, adoption, model review, ZIP export, browser zoom matrix, or full task was exercised in this audit smoke. Does not prove intermittent startup failure is fixed.",
+    "audit_tab_closed": true,
+    "audit_service_stopped": true
+  },
+  "runtime_system_goal": "not observed: no system Goal tool mounted in this session",
+  "scope": "Audit and planning only; no product or authoritative-state edits, no regression reruns, no paid/model operation, no commit/push/PR/merge/deployment. Historical known failures were inspected, not rerun."
+}

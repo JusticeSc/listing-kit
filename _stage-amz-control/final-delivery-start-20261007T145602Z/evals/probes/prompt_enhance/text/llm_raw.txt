@@ -1,0 +1,22 @@
+{
+  "lock_segment": "1. A cylindrical vacuum-insulated tumbler with height exactly 22 cm and diameter exactly 7 cm, giving a height-to-diameter ratio of 22:7 (≈3.14:1). 2. Seamless double-walled body constructed entirely of 316 stainless steel, with no visible seams or welds on the main body. 3. Single-piece lid assembly featuring a centered push-button mechanism for one-handed opening; lid is flush-mounted with no protruding hinge, no flip-top lever, no secondary cap, and no external strap or loop. 4. Smooth, uniform anti-slip matte spray coating applied to the entire outer surface of the cup body — no gloss patches, no texture variation, no grip ribs or raised patterns. 5. No handle, no side grip, no carrying handle, no strap. 6. No spout, no pouring lip, no straw, no straw lid, no second cap, no flip top. 7. Preserve the exact height-to-diameter ratio; do not make it shorter, wider, taller or slimmer. 8. Keep the lid assembly's layered structure exactly as shown; do not simplify, merge or recolour its rings. 9. NO text, NO letters, NO numbers, NO logo, NO brand mark, NO label, NO tag, NO barcode. 10. Do not substitute a similar-looking item; this is the exact item from the reference.",
+  "used_facts": [
+    "title: 316不锈钢真空保温杯 500ml 家用办公便携水杯",
+    "specs: 容量: 500ml",
+    "specs: 材质: 316不锈钢",
+    "specs: 重量: 320g",
+    "specs: 高度: 22 cm",
+    "specs: 宽度: 7 cm",
+    "selling points: 一键弹盖单手开，开车办公都方便",
+    "selling points: 杯身防滑喷涂，湿手握持也不打滑"
+  ],
+  "unknowns": [
+    "exact visual appearance of the lid assembly (e.g., number of concentric rings, their relative heights or finishes)",
+    "presence/absence of threading on the lid or body",
+    "surface finish of the stainless steel (e.g., brushed, polished, matte) beyond 'seamless' and '316 stainless steel'",
+    "color of the anti-slip spray coating (fact only states 'anti-slip', not hue or tone)",
+    "exact shape/profile of the base (e.g., flat, recessed, beveled)",
+    "whether the cup has a silicone foot or bottom gasket",
+    "visual distinction between inner and outer wall at the rim or base"
+  ]
+}

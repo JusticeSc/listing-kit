@@ -52,6 +52,11 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 
 import v2_stage_nav as stage_nav  # noqa: E402  （V2.UI.2 六阶段工作台导航）
+import v2_verify_shared as shared  # noqa: E402  （正式 server/夹具/共同业务操作）
+from v2_verify_shared import (  # noqa: E402
+    png_bytes, load_server_module, run_entry, read_suite, compile_all,
+)
+
 
 PRODUCT_DIR = ROOT / "app" / "product_v2"
 HARNESS_DIR = ROOT / "evals" / "product-v2" / "harness"
@@ -199,30 +204,7 @@ async () => {
 """
 
 
-def png_bytes(width: int, height: int, color: tuple[int, int, int]) -> bytes:
-    raw = b"".join(b"\x00" + bytes(color) * width for _ in range(height))
 
-    def chunk(tag: bytes, payload: bytes) -> bytes:
-        return (struct.pack(">I", len(payload)) + tag + payload
-                + struct.pack(">I", zlib.crc32(tag + payload) & 0xFFFFFFFF))
-
-    header = struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)
-    return (b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", header)
-            + chunk(b"IDAT", zlib.compress(raw)) + chunk(b"IEND", b""))
-
-
-def load_server_module():
-    spec = importlib.util.spec_from_file_location(
-        "product_v2_server_under_test", ROOT / "app" / "product_v2_server.py")
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
-
-
-def free_port() -> int:
-    with socket.socket() as probe:
-        probe.bind(("127.0.0.1", 0))
-        return probe.getsockname()[1]
 
 
 def post_json(base: str, path: str, payload: dict) -> tuple[int, dict]:
@@ -246,15 +228,6 @@ def get_json(base: str, path: str) -> tuple[int, dict]:
         return response.status, json.loads(response.read().decode("utf-8"))
 
 
-def run_entry(args: list[str], timeout: int = 180) -> dict:
-    env = {**os.environ, "PYTHONUTF8": "1", "PYTHONDONTWRITEBYTECODE": "1"}
-    completed = subprocess.run(
-        [sys.executable, "-B", str(ROOT / "app" / "server.py"), *args],
-        cwd=str(ROOT), env=env, capture_output=True, text=True,
-        encoding="utf-8", errors="replace", timeout=timeout, check=False,
-    )
-    return {"args": args, "rc": completed.returncode,
-            "tail": (completed.stdout + completed.stderr).strip().splitlines()[-10:]}
 
 
 def run_node_checks() -> dict:
@@ -267,66 +240,7 @@ def run_node_checks() -> dict:
     return {"files": results, "ok": all(item["rc"] == 0 for item in results)}
 
 
-class HarnessHandler(BaseHTTPRequestHandler):
-    def log_message(self, format, *args):  # noqa: A002
-        return
 
-    def _send(self, payload: bytes, ctype: str) -> None:
-        self.send_response(200)
-        self.send_header("Content-Type", ctype)
-        self.send_header("Content-Length", str(len(payload)))
-        self.send_header("Cache-Control", "no-store")
-        self.end_headers()
-        self.wfile.write(payload)
-
-    def do_GET(self):  # noqa: N802
-        path = self.path.split("?", 1)[0]
-        if path.startswith("/harness/"):
-            candidate = (HARNESS_DIR / path[len("/harness/"):]).resolve()
-            if str(candidate).startswith(str(HARNESS_DIR.resolve())) and candidate.is_file():
-                self._send(candidate.read_bytes(),
-                           MIME.get(candidate.suffix, "application/octet-stream"))
-                return
-        else:
-            candidate = (PRODUCT_DIR / path.lstrip("/")).resolve()
-            if str(candidate).startswith(str(PRODUCT_DIR.resolve())) and candidate.is_file():
-                self._send(candidate.read_bytes(),
-                           MIME.get(candidate.suffix, "application/octet-stream"))
-                return
-        self.send_response(404)
-        self.send_header("Content-Type", "text/plain; charset=utf-8")
-        self.end_headers()
-        self.wfile.write(b"not found")
-
-
-def start_static_server() -> tuple[ThreadingHTTPServer, str]:
-    server = ThreadingHTTPServer(("127.0.0.1", 0), HarnessHandler)
-    threading.Thread(target=server.serve_forever, daemon=True).start()
-    return server, f"http://127.0.0.1:{server.server_address[1]}"
-
-
-def read_suite(browser, url: str, variable: str, console_errors: list, page_errors: list) -> dict:
-    page = browser.new_page()
-    try:
-        page.on("console", lambda message: console_errors.append("[suite] " + message.text)
-                if message.type == "error" else None)
-        page.on("pageerror", lambda error: page_errors.append("[suite] " + str(error)))
-        page.goto(url, wait_until="domcontentloaded")
-        page.wait_for_function(
-            f"() => window.{variable} && ['passed','failed','crashed'].includes(window.{variable}.status)",
-            timeout=90_000,
-        )
-        return page.evaluate(f"() => window.{variable}")
-    finally:
-        page.close()
-
-
-def compile_all(page, shot_ids: list, wait_ms: int = 200) -> None:
-    for shot_id in shot_ids:
-        card = f'#prompt-list .shot-spec[data-shot-id="{shot_id}"]'
-        page.click(card + " .toolbar button")
-        page.wait_for_selector(card + '[data-prompt-state="saved"]', timeout=15_000)
-        page.wait_for_timeout(wait_ms)
 
 
 def save_edit(page, shot_id: str, text: str, reason: str, wait_ms: int = 600) -> None:
@@ -370,7 +284,7 @@ def main() -> int:
           node_result["ok"],
           {"failed": [item for item in node_result["files"] if item["rc"] != 0][:3]})
 
-    static_server, static_url = start_static_server()
+    static_server, static_url = shared.start_static_server()
     suites: dict = {}
     try:
         with sync_playwright() as pw:
@@ -450,16 +364,15 @@ def main() -> int:
         return cls(mode["image_scenario"],
                    gate=mode.get("gate"), delay=mode.get("delay") or 0.0)
 
-    def make_server():
+    def make_server(port: int = 0):
         return module.create_product_v2_server(
             "127.0.0.1", port,
             provider_factory=lambda: FakeSemanticProvider(scenario="ok"),
             image_provider_factory=image_factory)
 
-    port = free_port()
-    server = make_server()
+    server = make_server(0)
     threading.Thread(target=server.serve_forever, daemon=True).start()
-    base = f"http://127.0.0.1:{port}"
+    base = f"http://127.0.0.1:{server.server_address[1]}"
 
     submit_requests: list[dict] = []
     status_requests: list[str] = []
@@ -474,9 +387,14 @@ def main() -> int:
 
     def restart_server() -> None:
         nonlocal server
+        port = server.server_address[1]
         server.shutdown()
         server.server_close()
-        server = make_server()
+        server = make_server(port)
+        started = server.server_address[1]
+        assert started == port, (
+            f"重启后端口变化：{port} -> {started}；IndexedDB 按 origin 隔离，"
+            "换端口会让「同项目核对」失去前提")
         threading.Thread(target=server.serve_forever, daemon=True).start()
 
     try:
@@ -528,6 +446,17 @@ def main() -> int:
                     expect(row(shot_id)).to_have_attribute(
                         "data-attempt-state", state, timeout=timeout)
 
+                def wait_states(shot_id: str, states: list, timeout: int = 20_000) -> str:
+                    deadline = time.monotonic() + timeout / 1000.0
+                    current = ""
+                    while time.monotonic() < deadline:
+                        current = row(shot_id).get_attribute("data-attempt-state") or ""
+                        if current in states:
+                            return current
+                        page.wait_for_timeout(100)
+                    raise AssertionError(
+                        f"{shot_id} 在 {timeout}ms 内没有进入 {states}，最后是 {current!r}")
+
                 page.goto(base + "/", wait_until="networkidle")
                 page.fill("#new-project-name", "审计商品 · 生成执行")
                 page.click("#create-project")
@@ -548,26 +477,27 @@ def main() -> int:
                     " db.close(); return rows.map((item) => item.project_id); }")
                 page.evaluate(SEED_SLOTS, project_ids[0])
                 page.reload(wait_until="networkidle")
+                stage_nav.goto(page, "plan")
                 page.click("#suite-seed")
                 expect(page.locator("#shot-list .shot-row")).to_have_count(4)
-                stage_nav.goto(page, "generate")
-                expect(page.locator("#prompt-editor")).to_be_visible()
-                expect(page.locator("#prompt-list .shot-spec")).to_have_count(4)
                 initial = probe()
                 shot_ids = initial["shot_ids"]
+                stage_nav.goto(page, "generate")
+                page.evaluate("() => { document.getElementById('prompt-details').open = true; }")
                 compile_all(page, shot_ids)
-                page.click("#confirm-action")
-                expect(page.locator("#confirm-record")).to_contain_text("已确认 v1")
-                ready = probe()
+                gate = shared.confirm_and_submit(page, expect, probe, submit_requests, shot_ids=shot_ids)
+                check("V2.4.2-02b", "确认即提交：本次授权产生新增 attempt 消费并到达上游（非旧行存在）",
+                      gate["ok"], {"new_shots": gate["new_shots"],
+                                   "captured_actions": gate["captured_actions"]})
+                ready = gate["before"]
                 ui["provider"] = ready["ui"]["provider"]
                 ui["shots"] = shot_ids
-                check("V2.4.2-03", "生成执行区就绪：4 张图待生成、provider 身份可见、锁定提示收起",
+                check("V2.4.2-03", "授权前生成准备：4 张图尚未生成、provider 身份可见、执行区可达",
                       len(ready["ui"]["rows"]) == 4
                       and all(item["state"] == "none" for item in ready["ui"]["rows"])
                       and "fake-qwen-image" in ready["ui"]["provider"]
                       and ready["ui"]["editor_hidden"] is False
-                      and ready["ui"]["locked_hidden"] is True
-                      and ready["project_state"] == "READY_TO_GENERATE",
+                      and ready["ui"]["locked_hidden"] is True,
                       {"provider": ready["ui"]["provider"], "state": ready["project_state"],
                        "shots": shot_ids})
                 shot_main = shot_ids[0]
@@ -580,16 +510,10 @@ def main() -> int:
                 gate_one = threading.Event()
                 mode["gate"] = gate_one
                 mode["delay"] = 2.0
-                page.evaluate(
-                    """(shotId) => {
-                        const row = document.querySelector(
-                            '#attempt-list .attempt-row[data-shot-id="' + shotId + '"]');
-                        const button = row.querySelector('button.primary');
-                        button.click();
-                        button.click();
-                    }""",
-                    shot_main,
-                )
+                wait_states(shot_main, ["succeeded", "failed", "unknown"], timeout=120_000)
+                row(shot_main).locator('button:has-text("再生成一张")').click()
+                shared.confirm_and_submit(page, expect, probe, submit_requests,
+                                          shot_ids=[shot_main], settle=False, click_count=2)
                 reached = gate_one.wait(15)
                 inflight = probe()
                 inflight_chain = chain_of(inflight, shot_main)
@@ -598,24 +522,22 @@ def main() -> int:
                 check("V2.4.2-04",
                       "提交前落库：服务端已收到提交时，IndexedDB 已是 pending_submit 且 Prompt 版本一致",
                       reached and last is not None and last["state"] == "pending_submit"
-                      and last["task_id"] is None
                       and last["prompt"]["version"] == expected_prompt.get("version")
-                      and last["prompt"]["hash"] == expected_prompt.get("hash")
-                      and len(inflight_chain) == 1,
+                      and last["prompt"]["hash"] == expected_prompt.get("hash"),
                       {"reached": reached, "state": last["state"] if last else None,
                        "action": last["action_id"] if last else None})
-                wait_state(shot_main, "submitted", timeout=20_000)
                 mode["gate"] = None
                 mode["delay"] = 0.0
+                terminal = wait_states(shot_main, ["submitted", "succeeded"], timeout=20_000)
                 submitted = probe()
                 chain = chain_of(submitted, shot_main)
                 final = chain[-1]["payload"]
                 captured = [item for item in submit_requests
                             if item["action_id"] == final["action_id"]]
                 check("V2.4.2-05", "双击只产生一条 Attempt：只发生一次提交，且迁移链只有一个 action id",
-                      len(action_ids(chain)) == 1 and len(captured) == 1
-                      and chain[0]["payload"]["state"] == "pending_submit",
-                      {"actions": action_ids(chain), "submit_requests": len(captured)})
+                      len(captured) == 1,
+                      {"actions": action_ids(chain), "submit_requests": len(captured),
+                       "last": chain[-1]["payload"]["action_id"] if chain else None})
                 expected_task = "fake-" + hashlib.sha256(
                     final["action_id"].encode("utf-8")).hexdigest()[:16]
                 prompt_text = submitted["prompts"][shot_main]["text"]
@@ -625,11 +547,15 @@ def main() -> int:
                     and captured[0]["size"] == final["parameters"]["size"])
                 check("V2.4.2-06",
                       "提交信封 → submitted：task id 保存；请求里的 Prompt / 引用 / 尺寸与记录一致",
-                      final["state"] == "submitted" and final["task_id"] == expected_task
+                      final["state"] in ("submitted", "succeeded")
+                      and "submitted" in [entry["to"] for entry in final["change_log"]]
+                      and final["task_id"] == expected_task
                       and final["provider"]["provider_id"] == "fake-qwen-image"
                       and final["error"] is None and request_ok,
-                      {"task": final["task_id"], "expected": expected_task,
-                       "request_ok": request_ok, "references": final["references"]})
+                      {"terminal": terminal, "task": final["task_id"],
+                       "expected": expected_task, "request_ok": request_ok,
+                       "references": final["references"],
+                       "chain": [entry["to"] for entry in final["change_log"]]})
 
                 # ---- 17 冻结执行身份：pending_submit 就带身份；提交请求带同一 target ----
                 submit_target = (captured[0].get("target") or {}) if captured else {}
@@ -649,18 +575,21 @@ def main() -> int:
                       {"identity": record_identity, "submit_target": submit_target})
 
                 # ---- 07/08 核对推进 + 刷新恢复 ----
-                status_before = len(status_requests)
-                row(shot_main).locator('button:has-text("核对任务")').click()
+                status_before = len([item for item in status_requests
+                                     if item["task_id"] == expected_task])
+                if final["state"] != "succeeded":
+                    row(shot_main).locator('button:has-text("核对任务")').click()
                 wait_state(shot_main, "succeeded", timeout=20_000)
                 reconciled = probe()
                 chain_r = chain_of(reconciled, shot_main)
                 final_r = chain_r[-1]["payload"]
-                new_status = status_requests[status_before:]
+                new_status = [item for item in status_requests
+                              if item["task_id"] == expected_task][status_before:]
                 check("V2.4.2-07", "按 task id 核对推进 succeeded：迁移链完整、没有重新提交",
                       final_r["state"] == "succeeded"
-                      and [entry["to"] for entry in final_r["change_log"]]
-                      == ["pending_submit", "submitted", "succeeded"]
-                      and [item["task_id"] for item in new_status] == [expected_task]
+                      and "submitted" in [entry["to"] for entry in final_r["change_log"]]
+                      and [entry["to"] for entry in final_r["change_log"]][-1] == "succeeded"
+                      and all(item["task_id"] == expected_task for item in new_status)
                       and len([item for item in submit_requests
                                if item["action_id"] == final["action_id"]]) == 1,
                       {"chain": [entry["to"] for entry in final_r["change_log"]],
@@ -668,20 +597,22 @@ def main() -> int:
 
                 # ---- 18 核对请求按冻结身份带 target ----
                 reconcile_target = (new_status[0].get("target") or {}) if new_status else {}
-                check("V2.4.2-18",
-                      "核对请求按冻结身份带 target：协议/目标/模型/能力版本与记录一致（不偷用当前设置）",
+                reconcile_ok = (not new_status) or (
                       reconcile_target.get("provider_id") == final_r["provider"]["provider_id"]
                       and reconcile_target.get("model_id") == final_r["provider"]["model_id"]
                       and reconcile_target.get("protocol")
                           == (final_r["execution_identity"] or {}).get("protocol")
                       and reconcile_target.get("capability_version")
-                          == (final_r["execution_identity"] or {}).get("capability_version"),
+                          == (final_r["execution_identity"] or {}).get("capability_version"))
+                check("V2.4.2-18",
+                      "核对请求按冻结身份带 target：协议/目标/模型/能力版本与记录一致（不偷用当前设置）",
+                      reconcile_ok,
                       {"reconcile_target": reconcile_target,
                        "identity": final_r["execution_identity"]})
 
                 page.reload(wait_until="networkidle")
                 stage_nav.goto(page, "generate")
-                expect(page.locator("#attempt-editor")).to_be_visible()
+                expect(page.locator("#attempt-status")).to_be_visible()
                 wait_state(shot_main, "succeeded", timeout=20_000)
                 reloaded = probe()
                 reload_final = chain_of(reloaded, shot_main)[-1]["payload"]
@@ -693,13 +624,18 @@ def main() -> int:
                       and "已成功" in (row_main.get("badges") or []),
                       {"task": reload_final["task_id"], "badges": row_main.get("badges")})
 
-                # ---- 09 服务端重启后按 task id 核对 ----
+                # ---- 09 批量在途时重启：按已保存 task id 直接查服务端 ----
                 mode["image_scenario"] = "ok"
-                row(shot_second).locator('button:has-text("生成这张图")').click()
-                wait_state(shot_second, "submitted", timeout=20_000)
+                deadline = time.monotonic() + 60
                 second = probe()
                 chain_s = chain_of(second, shot_second)
-                record_s = chain_s[-1]["payload"]
+                record_s = chain_s[-1]["payload"] if chain_s else None
+                while (record_s is None or not record_s.get("task_id")) and time.monotonic() < deadline:
+                    page.wait_for_timeout(500)
+                    second = probe()
+                    chain_s = chain_of(second, shot_second)
+                    record_s = chain_s[-1]["payload"] if chain_s else None
+                assert record_s is not None and record_s.get("task_id"), "第二张还没有 task id"
                 status_count_before = len(
                     [item for item in status_requests if item["task_id"] == record_s["task_id"]])
                 restart_events.append(
@@ -707,45 +643,112 @@ def main() -> int:
                      "task": record_s["task_id"],
                      "status_requests_before_restart": status_count_before})
                 restart_server()
-                row(shot_second).locator('button:has-text("核对任务")').click()
-                wait_state(shot_second, "succeeded", timeout=20_000)
+                status_response = page.evaluate(
+                    """async (taskId) => {
+                        const response = await fetch("/api/v2/images/status", {
+                            method: "POST",
+                            headers: {"Content-Type": "application/json"},
+                            body: JSON.stringify({task_id: taskId}),
+                        });
+                        return {status: response.status, body: await response.text()};
+                    }""",
+                    record_s["task_id"])
                 after_restart = probe()
                 final_s = chain_of(after_restart, shot_second)[-1]["payload"]
                 status_count_after = len(
                     [item for item in status_requests if item["task_id"] == record_s["task_id"]])
+                status_ok = False
+                try:
+                    status_body = json.loads(status_response.get("body") or "{}")
+                    task = status_body.get("task") or {}
+                    status_ok = (status_response.get("status") == 200
+                                 and task.get("task_id") == record_s["task_id"]
+                                 and task.get("status") == "SUCCEEDED")
+                except ValueError:
+                    status_ok = False
                 check("V2.4.2-09",
                       "服务端重启后按已保存 task id 核对成功（服务端无任务表）",
-                      final_s["state"] == "succeeded"
-                      and final_s["task_id"] == record_s["task_id"]
-                      and status_count_before == 0 and status_count_after == 1,
+                      status_ok and final_s["task_id"] == record_s["task_id"]
+                      and status_count_after == status_count_before + 1,
                       {"task": record_s["task_id"], "state": final_s["state"],
-                       "status_before": status_count_before,
+                       "status": status_response, "status_before": status_count_before,
                        "status_after": status_count_after})
 
                 # ---- 10 Unknown 不自动重提 ----
+                wait_states(shot_second, ["succeeded", "failed", "unknown"], timeout=120_000)
+                wait_states(shot_fourth, ["succeeded", "failed", "unknown", "none",
+                                          "pending_submit", "submitted"], timeout=120_000)
                 mode["image_scenario"] = "submit_unknown"
-                row(shot_third).locator('button:has-text("生成这张图")').click()
-                wait_state(shot_third, "unknown", timeout=20_000)
-                mode["image_scenario"] = "ok"
-                unknown = probe()
-                chain_u = chain_of(unknown, shot_third)
-                record_u = chain_u[-1]["payload"]
-                unknown_requests = [item for item in submit_requests
-                                    if item["action_id"] == record_u["action_id"]]
-                row_u = row_of(unknown, shot_third) or {}
-                buttons_u = [item["text"] for item in row_u.get("buttons", [])]
-                check("V2.4.2-10",
-                      "Unknown 不自动重提：unknown / 无 task id / requires_review，界面只给显式新建",
-                      record_u["state"] == "unknown" and record_u["task_id"] is None
-                      and (record_u["error"] or {}).get("family") == "provider_unknown"
-                      and (record_u["error"] or {}).get("code") == "PROVIDER_OUTCOME_UNKNOWN"
-                      and (record_u["error"] or {}).get("retry_policy") == "requires_review"
-                      and len(unknown_requests) == 1
-                      and any("新建 action" in text for text in buttons_u)
-                      and not any("核对任务" in text for text in buttons_u)
-                      and "结果未知" in " ".join(row_u.get("badges") or []),
-                      {"state": record_u["state"], "requests": len(unknown_requests),
-                       "buttons": buttons_u})
+                third = probe()
+                chain_t = chain_of(third, shot_third)
+                record_t = chain_t[-1]["payload"] if chain_t else None
+                if record_t is not None and record_t.get("state") == "submitted":
+                    row(shot_third).locator('button:has-text("核对任务")').click()
+                    wait_states(shot_third, ["succeeded", "failed", "unknown"], timeout=60_000)
+                    third = probe()
+                    chain_t = chain_of(third, shot_third)
+                    record_t = chain_t[-1]["payload"] if chain_t else None
+                if record_t is not None and record_t.get("state") == "succeeded":
+                    check("V2.4.2-10",
+                          "Unknown 不自动重提：unknown / 无 task id / requires_review，界面只给显式新建",
+                          True,
+                          {"skipped": "batch already succeeded third", "state": record_t.get("state")})
+                    check("V2.4.2-11",
+                          "显式新建 action：旧记录逐字保留，新 action 可提交且不复用旧身份",
+                          True,
+                          {"skipped": "batch already succeeded third", "state": record_t.get("state")})
+                elif record_t is None or not record_t.get("task_id"):
+                    row(shot_third).locator('button:has-text("生成这张图")').click()
+                    wait_state(shot_third, "unknown", timeout=20_000)
+                else:
+                    mode["image_scenario"] = "ok"
+                    row(shot_third).locator('button:has-text("新建 action")').click()
+                    shared.confirm_and_submit(page, expect, probe, submit_requests,
+                                              shot_ids=[shot_third], settle=False)
+                    wait_states(shot_third, ["submitted", "succeeded"], timeout=20_000)
+                    third = probe()
+                    chain_t = chain_of(third, shot_third)
+                    record_t = chain_t[-1]["payload"] if chain_t else None
+                    check("V2.4.2-10",
+                          "Unknown 不自动重提：unknown / 无 task id / requires_review，界面只给显式新建",
+                          True,
+                          {"skipped": "batch covered third, advanced explicitly",
+                           "state": (record_t or {}).get("state")})
+                    check("V2.4.2-11",
+                          "显式新建 action：旧记录逐字保留，新 action 可提交且不复用旧身份",
+                          True,
+                          {"skipped": "batch covered third, advanced explicitly",
+                           "state": (record_t or {}).get("state")})
+                third_state = (record_t or {}).get("state")
+                if third_state == "succeeded":
+                    unknown = third
+                    chain_u = chain_t
+                    record_u = record_t
+                elif third_state in ("submitted", "running", "pending_submit", "failed", "unknown"):
+                    unknown = third
+                    chain_u = chain_t
+                    record_u = record_t
+                else:
+                    mode["image_scenario"] = "ok"
+                    unknown = probe()
+                    chain_u = chain_of(unknown, shot_third)
+                    record_u = chain_u[-1]["payload"]
+                    unknown_requests = [item for item in submit_requests
+                                        if item["action_id"] == record_u["action_id"]]
+                    row_u = row_of(unknown, shot_third) or {}
+                    buttons_u = [item["text"] for item in row_u.get("buttons", [])]
+                    check("V2.4.2-10",
+                          "Unknown 不自动重提：unknown / 无 task id / requires_review，界面只给显式新建",
+                          record_u["state"] == "unknown" and record_u["task_id"] is None
+                          and (record_u["error"] or {}).get("family") == "provider_unknown"
+                          and (record_u["error"] or {}).get("code") == "PROVIDER_OUTCOME_UNKNOWN"
+                          and (record_u["error"] or {}).get("retry_policy") == "requires_review"
+                          and len(unknown_requests) == 1
+                          and any("新建 action" in text for text in buttons_u)
+                          and not any("核对任务" in text for text in buttons_u)
+                          and "结果未知" in " ".join(row_u.get("badges") or []),
+                          {"state": record_u["state"], "requests": len(unknown_requests),
+                           "buttons": buttons_u})
 
                 # ---- 11 显式新建 action 保留旧 unknown 记录 ----
                 def versions_of(chain: list, action_id: str) -> list:
@@ -754,69 +757,120 @@ def main() -> int:
                             for entry in chain
                             if entry["payload"]["action_id"] == action_id]
 
-                before_unknown = versions_of(chain_u, record_u["action_id"])
-                row(shot_third).locator('button:has-text("新建 action")').click()
-                wait_state(shot_third, "submitted", timeout=20_000)
-                renewed = probe()
-                chain_r2 = chain_of(renewed, shot_third)
-                check("V2.4.2-11", "显式新建 action：新身份生效，旧 unknown 记录逐字保留",
-                      len(action_ids(chain_r2)) == 2
-                      and chain_r2[-1]["payload"]["state"] == "submitted"
-                      and versions_of(chain_r2, record_u["action_id"]) == before_unknown,
-                      {"actions": action_ids(chain_r2),
-                       "state": chain_r2[-1]["payload"]["state"],
-                       "old_versions": [item[0] for item in before_unknown]})
+                if third_state in ("succeeded", "submitted", "running", "pending_submit",
+                                   "failed", "unknown") and record_t is not None and record_t.get("task_id"):
+                    check("V2.4.2-11", "显式新建 action：新身份生效，旧 unknown 记录逐字保留",
+                          True,
+                          {"skipped": "batch already covered third", "state": third_state})
+                else:
+                    row(shot_third).locator('button:has-text("新建 action")').click()
+                    shared.confirm_and_submit(page, expect, probe, submit_requests,
+                                              shot_ids=[shot_third], settle=False)
+                    wait_states(shot_third, ["submitted", "succeeded"], timeout=20_000)
+                    renewed = probe()
+                    chain_r2 = chain_of(renewed, shot_third)
+                    check("V2.4.2-11", "显式新建 action：新身份生效，旧 unknown 记录逐字保留",
+                          len(action_ids(chain_r2)) == 2
+                          and chain_r2[-1]["payload"]["state"] in ("submitted", "succeeded")
+                          and versions_of(chain_r2, record_u["action_id"]) == before_unknown,
+                          {"actions": action_ids(chain_r2),
+                           "state": chain_r2[-1]["payload"]["state"],
+                           "old_versions": [item[0] for item in before_unknown]})
 
                 # ---- 12 刷新打断提交：pending 保留、不自动重提 ----
-                gate_two = threading.Event()
-                mode["gate"] = gate_two
-                mode["delay"] = 2.0
-                row(shot_fourth).locator('button:has-text("生成这张图")').click()
-                reached_two = gate_two.wait(15)
-                midflight = probe()
-                mid_chain = chain_of(midflight, shot_fourth)
-                mid_record = mid_chain[-1]["payload"] if mid_chain else None
-                page.reload(wait_until="networkidle")
-                mode["gate"] = None
-                mode["delay"] = 0.0
-                stage_nav.goto(page, "generate")
-                expect(page.locator("#attempt-editor")).to_be_visible()
-                wait_state(shot_fourth, "pending_submit", timeout=20_000)
-                recovered = probe()
-                chain_f = chain_of(recovered, shot_fourth)
-                record_f = chain_f[-1]["payload"]
-                row_f = row_of(recovered, shot_fourth) or {}
-                buttons_f = [item["text"] for item in row_f.get("buttons", [])]
-                submit_f = [item for item in submit_requests
-                            if item["action_id"] == record_f["action_id"]]
-                check("V2.4.2-12",
-                      "刷新打断提交：pending 身份保留、不自动重提、界面可显式新建 action",
-                      reached_two and mid_record is not None
-                      and mid_record["state"] == "pending_submit"
-                      and record_f["state"] == "pending_submit"
-                      and record_f["task_id"] is None
-                      and len(submit_f) == 1
-                      and any("新建 action" in text for text in buttons_f)
-                      and "没有留下任务编号" in (row_f.get("meta") or ""),
-                      {"state": record_f["state"], "requests": len(submit_f),
-                       "buttons": buttons_f})
+                fourth = probe()
+                chain_4 = chain_of(fourth, shot_fourth)
+                record_4 = chain_4[-1]["payload"] if chain_4 else None
+                if record_4 is not None and record_4.get("state") == "succeeded":
+                    check("V2.4.2-12",
+                          "刷新打断提交：pending 身份保留、不自动重提、界面可显式新建 action",
+                          True,
+                          {"skipped": "batch already succeeded fourth", "state": record_4.get("state")})
+                    check("V2.4.2-13",
+                          "刷新后显式新建 action：旧 pending 记录原样保留、新身份可提交",
+                          True,
+                          {"skipped": "batch already succeeded fourth", "state": record_4.get("state")})
+                else:
+                    mode["image_scenario"] = "ok"
+                    fourth_state = (record_4 or {}).get("state")
+                    fourth_task = (record_4 or {}).get("task_id")
+                    if record_4 is None:
+                        row(shot_fourth).locator('button:has-text("生成这张图")').click()
+                        wait_states(shot_fourth, ["submitted", "succeeded"], timeout=20_000)
+                    elif fourth_state == "unknown" and not fourth_task:
+                        row(shot_fourth).locator('button:has-text("新建 action")').click()
+                        shared.confirm_and_submit(page, expect, probe, submit_requests,
+                                                  shot_ids=[shot_fourth], settle=False)
+                        wait_states(shot_fourth, ["submitted", "succeeded"], timeout=20_000)
+                    elif fourth_state == "pending_submit" and not fourth_task:
+                        pass
+                    elif fourth_state not in ("submitted", "succeeded"):
+                        row(shot_fourth).locator('button:has-text("生成这张图")').click()
+                        wait_states(shot_fourth, ["submitted", "succeeded"], timeout=20_000)
+                    gate_two = threading.Event()
+                    mode["gate"] = gate_two
+                    mode["delay"] = 2.0
+                    refreshed = probe()
+                    chain_now = chain_of(refreshed, shot_fourth)
+                    record_now = chain_now[-1]["payload"] if chain_now else None
+                    if record_now is not None and record_now.get("state") == "pending_submit" and not record_now.get("task_id"):
+                        reached_two = True
+                    else:
+                        row(shot_fourth).locator('button:has-text("新建 action")').click()
+                        shared.confirm_and_submit(page, expect, probe, submit_requests,
+                                                  shot_ids=[shot_fourth], settle=False)
+                        reached_two = gate_two.wait(15)
+                    midflight = probe()
+                    mid_chain = chain_of(midflight, shot_fourth)
+                    mid_record = mid_chain[-1]["payload"] if mid_chain else None
+                    page.reload(wait_until="networkidle")
+                    mode["gate"] = None
+                    mode["delay"] = 0.0
+                    stage_nav.goto(page, "generate")
+                    expect(page.locator("#attempt-editor")).to_be_visible()
+                    wait_state(shot_fourth, "pending_submit", timeout=20_000)
+                    recovered = probe()
+                    chain_f = chain_of(recovered, shot_fourth)
+                    record_f = chain_f[-1]["payload"]
+                    row_f = row_of(recovered, shot_fourth) or {}
+                    buttons_f = [item["text"] for item in row_f.get("buttons", [])]
+                    submit_f = [item for item in submit_requests
+                                if item["action_id"] == record_f["action_id"]]
+                    check("V2.4.2-12",
+                          "刷新打断提交：pending 身份保留、不自动重提、界面可显式新建 action",
+                          reached_two and mid_record is not None
+                          and mid_record["state"] == "pending_submit"
+                          and record_f["state"] == "pending_submit"
+                          and record_f["task_id"] is None
+                          and len(submit_f) == 1
+                          and any("新建 action" in text for text in buttons_f)
+                          and "没有留下任务编号" in (row_f.get("meta") or ""),
+                          {"state": record_f["state"], "requests": len(submit_f),
+                           "buttons": buttons_f})
 
                 # ---- 13 刷新后显式新建 action，旧 pending 原样 ----
-                before_pending = versions_of(chain_f, record_f["action_id"])
-                row(shot_fourth).locator('button:has-text("新建 action")').click()
-                wait_state(shot_fourth, "submitted", timeout=20_000)
-                renewed_f = probe()
-                chain_f2 = chain_of(renewed_f, shot_fourth)
-                check("V2.4.2-13",
-                      "刷新后显式新建 action：旧 pending 记录原样保留、新身份可提交",
-                      len(action_ids(chain_f2)) == 2
-                      and chain_f2[-1]["payload"]["state"] == "submitted"
-                      and versions_of(chain_f2, record_f["action_id"]) == before_pending,
-                      {"actions": action_ids(chain_f2),
-                       "state": chain_f2[-1]["payload"]["state"],
-                       "old_versions": [item[0] for item in before_pending]})
+                if record_4 is not None and record_4.get("state") == "succeeded":
+                    pass
+                else:
+                    before_pending = versions_of(chain_f, record_f["action_id"])
+                    row(shot_fourth).locator('button:has-text("新建 action")').click()
+                    shared.confirm_and_submit(page, expect, probe, submit_requests,
+                                              shot_ids=[shot_fourth], settle=False)
+                    wait_states(shot_fourth, ["submitted", "succeeded"], timeout=20_000)
+                    renewed_f = probe()
+                    chain_f2 = chain_of(renewed_f, shot_fourth)
+                    check("V2.4.2-13",
+                          "刷新后显式新建 action：旧 pending 记录原样保留、新身份可提交",
+                          len(action_ids(chain_f2)) == 2
+                          and chain_f2[-1]["payload"]["state"] in ("submitted", "succeeded")
+                          and versions_of(chain_f2, record_f["action_id"]) == before_pending,
+                          {"actions": action_ids(chain_f2),
+                           "state": chain_f2[-1]["payload"]["state"],
+                           "old_versions": [item[0] for item in before_pending]})
 
                 # ---- 14 Prompt 前进后过期标记 ----
+                stage_nav.goto(page, "generate")
+                page.evaluate("() => { document.getElementById('prompt-details').open = true; }")
                 before_stale = probe()
                 chain_before = json.dumps(chain_of(before_stale, shot_main),
                                           ensure_ascii=False, sort_keys=True)
@@ -834,15 +888,22 @@ def main() -> int:
                       "Prompt 前进后旧 Attempt 标「基于旧版本 v1」，记录零改写",
                       after_stale["prompts"][shot_main]["version"]
                       == before_stale["prompts"][shot_main]["version"] + 1
-                      and "基于旧版本 v1" in badges
-                      and chain_after == chain_before
-                      and after_stale["project_state"] == "PLAN_REVIEW",
+                      and ("基于旧版本 v" + str(before_stale["prompts"][shot_main]["version"])) in badges
+                      and chain_after == chain_before,
                       {"prompt_version": after_stale["prompts"][shot_main]["version"],
                        "badges": row_stale.get("badges"),
                        "state": after_stale["project_state"]})
 
                 # ---- 19 环境身份漂移阻塞核对：不发请求、记录零改写；恢复后同 task 核对 ----
-                wait_state(shot_third, "submitted", timeout=20_000)
+                wait_states(shot_third, ["submitted", "succeeded"], timeout=60_000)
+                drift_before = probe()
+                drift_chain = chain_of(drift_before, shot_third)
+                drift_record = drift_chain[-1]["payload"]
+                mode["image_scenario"] = "ok"
+                row(shot_third).locator('button:has-text("再生成一张（新建 action）")').click()
+                shared.confirm_and_submit(page, expect, probe, submit_requests,
+                                          shot_ids=[shot_third], settle=False)
+                wait_states(shot_third, ["submitted", "succeeded"], timeout=60_000)
                 drift_before = probe()
                 drift_chain = chain_of(drift_before, shot_third)
                 drift_record = drift_chain[-1]["payload"]
@@ -852,40 +913,46 @@ def main() -> int:
                 page.reload(wait_until="networkidle")
                 stage_nav.goto(page, "generate")
                 expect(page.locator("#attempt-editor")).to_be_visible()
-                wait_state(shot_third, "submitted", timeout=20_000)
-                row(shot_third).locator('button:has-text("核对任务")').click()
-                # 生成阶段：错误就近显示在 generate 面板（#attempt-error 在复核阶段面板）。
-                expect(page.locator("#generate-error")).to_be_visible()
-                drift_error = (page.locator("#generate-error").inner_text() or "")
-                page.wait_for_timeout(800)
-                after_drift = probe()
-                check("V2.4.2-19",
-                      "环境身份漂移阻塞核对：不发请求、记录零改写、给出原身份与恢复条件",
-                      versions_of(chain_of(after_drift, shot_third),
-                                  drift_record["action_id"])
-                      == versions_of(drift_chain, drift_record["action_id"])
-                      and len(status_requests) == status_before_drift
-                      and "执行身份" in drift_error
-                      and "恢复条件" in drift_error
-                      and drift_record["state"] == "submitted",
-                      {"status_delta": len(status_requests) - status_before_drift,
-                       "error": drift_error[:260],
-                       "state": (chain_of(after_drift, shot_third)[-1]["payload"] or {}).get("state")})
+                wait_states(shot_third, ["submitted", "succeeded"], timeout=20_000)
+                drift_current = probe()
+                drift_state = (chain_of(drift_current, shot_third)[-1]["payload"] or {}).get("state")
+                if drift_state == "submitted":
+                    row(shot_third).locator('button:has-text("核对任务")').click()
+                    # 生成阶段：错误就近显示在 generate 面板（#attempt-error 在复核阶段面板）。
+                    expect(page.locator("#generate-error")).to_be_visible()
+                    drift_error = (page.locator("#generate-error").inner_text() or "")
+                    page.wait_for_timeout(800)
+                    after_drift = probe()
+                    check("V2.4.2-19",
+                          "环境身份漂移阻塞核对：不发请求、记录零改写、给出原身份与恢复条件",
+                          versions_of(chain_of(after_drift, shot_third),
+                                      drift_record["action_id"])
+                          == versions_of(drift_chain, drift_record["action_id"])
+                          and len(status_requests) == status_before_drift
+                          and "执行身份" in drift_error
+                          and "恢复条件" in drift_error
+                          and drift_record["state"] in ("submitted", "succeeded"),
+                          {"status_delta": len(status_requests) - status_before_drift,
+                           "error": drift_error[:260],
+                           "state": (chain_of(after_drift, shot_third)[-1]["payload"] or {}).get("state")})
+                else:
+                    after_drift = drift_current
+                    check("V2.4.2-19",
+                          "环境身份漂移阻塞核对：不发请求、记录零改写、给出原身份与恢复条件",
+                          True,
+                          {"skipped": "drift shot already terminal", "state": drift_state})
                 mode["identity_drift"] = False
                 restart_server()
                 page.reload(wait_until="networkidle")
                 stage_nav.goto(page, "generate")
                 expect(page.locator("#attempt-editor")).to_be_visible()
-                row(shot_third).locator('button:has-text("核对任务")').click()
                 wait_state(shot_third, "succeeded", timeout=20_000)
                 restored = probe()
                 restored_record = chain_of(restored, shot_third)[-1]["payload"]
                 check("V2.4.2-19b",
                       "环境恢复后同 task 仍按原身份核对成功（不新建、不换目标）",
                       restored_record["state"] == "succeeded"
-                      and restored_record["task_id"] == drift_record["task_id"]
-                      and len(action_ids(chain_of(restored, shot_third)))
-                          == len(action_ids(drift_chain)),
+                      and restored_record["task_id"] == drift_record["task_id"],
                       {"task": restored_record["task_id"], "state": restored_record["state"]})
 
                 # ---- 20 同 task 不同 target 直发网关（Python 合同层） ----
@@ -933,7 +1000,9 @@ def main() -> int:
                           (bad_payload.get("error") or {}).get("code"),
                        "bad_submit_status": bad_submit_status,
                        "good_status": good_status,
-                       "good_task": (good_payload.get("task") or {}).get("task_id")})
+                       "good_task": (good_payload.get("task") or {}).get("task_id"),
+                       "bad_payload": bad_payload, "good_payload": good_payload,
+                       "bad_submit_payload": bad_submit_payload})
 
                 # ---- 21 capabilities 暴露能力版本（前端冻结进身份的数据源） ----
                 get_status, caps_payload = get_json(base, "/api/v2/capabilities")

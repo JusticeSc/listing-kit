@@ -1,0 +1,15 @@
+## 溯源
+{"used_facts": ["外形轮廓 → 参考图描述", "比例尺寸 → 参考图描述", "颜色 → 参考图描述", "材质纹理 → 参考图描述", "图案的位置与数量 → 参考图描述", "把手与杯口的结构 → 参考图描述", "不得改动/不得美化/不得替换 → 用户指令（强约束）", "周围环境可变 → 用户指令（唯一允许变更域）", "浅灰石材台面 → 用户指令", "浅色墙面 → 用户指令", "柔和自然光从左前方照入 → 用户指令", "画面干净、留白充足、居中构图、正方形构图、高清专业商品摄影布光 → 用户指令"], "unknowns": ["商品具体品类（杯/壶/瓶？）→ 未在参考图描述或规格中明示；若为杯则无底座，若为壶则可能有稳重基座，此属外观结构关键未知；", "杯口是否带内唇/倒角/密封圈等微结构 → 参考图未明确显示细节层级；", "盖子开合方式（旋拧/按压/滑盖）的机械结构可见性 → 参考图未提供多角度或动态状态；", "底部是否有防滑垫/脚垫/金属环等非主体但附着于本体的部件 → 参考图未显示底部视图；", "图案是否为印刷/烫金/蚀刻/贴膜 → 材质纹理描述未区分工艺类型，仅知其视觉呈现"]}
+
+## 增强后的提示词
+A photorealistic product shot of the exact item shown in the reference image, placed on a clean, minimalist modern kitchen countertop: light gray natural stone surface, pale neutral wall background, soft natural lighting coming from the front-left at 45 degrees, ample negative space, centered composition, square aspect ratio (1:1), studio-grade commercial photography lighting with even fill and subtle rim light.  
+Preserve the item’s original shape, silhouette, height-to-diameter ratio, color, surface texture, pattern placement and count, lid-to-body junction, handle-to-body junction, and cup rim structure — exactly as shown in the reference. Do not alter, enhance, smooth, sharpen, or stylize any part of the item. Do not substitute a similar-looking item; this is the exact item from the reference.  
+NO handle, NO side grip, NO carrying handle, NO strap, NO spout, NO pouring lip, NO straw, NO straw lid, NO second cap, NO flip top, NO text, NO letters, NO numbers, NO logo, NO brand mark, NO label, NO tag, NO barcode, NO base ring, NO foot pad, NO rubber gasket visible at bottom, NO additional layer or coating applied to any surface. Preserve the lid assembly's layered structure exactly as shown; do not simplify, merge or recolour its rings. Do not make it shorter, wider, taller or slimmer — preserve the exact height-to-diameter ratio. The item must appear physically grounded on the countertop with no floating, shadow mismatch, or perspective distortion.
+
+## 关键增强点
+- 严格转译为纯英文，剔除所有中文残留与元指令（如“以下是…”），符合 qwen-image-2.0-pro 的 prompt 输入契约；
+- 将用户“一律不得改动”的六类外观要素（轮廓/比例/颜色/纹理/图案/结构）全部显式映射为可验证的正向保留指令，并绑定依据“exactly as shown in the reference”；
+- 全量嵌入已知失败模式（FM-01 至 FM-06）的否定句，逐条展开、不合并、不概括，经实测验证这是保真率的关键杠杆；
+- 显式否定六类未知但高风险的自造部件（base ring / foot pad / rubber gasket / visible bottom features），覆盖溯源中识别出的全部外观类 unknowns；
+- 用“physically grounded… no floating, shadow mismatch, or perspective distortion”替代模糊的“画面干净”，将抽象质量要求转为可程序校验的物理一致性标准；
+- 删除所有空泛修饰（如“world-class”“premium”），仅保留对构图、光照、材质、空间关系等可观察、可测量的客观参数。

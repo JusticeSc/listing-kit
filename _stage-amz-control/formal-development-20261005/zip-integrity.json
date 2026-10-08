@@ -1,0 +1,27 @@
+{
+  "delivery_hashes": [
+    {
+      "shot": "shot_main_clean",
+      "candidate": "act-144e4fba7b214ffdadecf9453e7b02ad",
+      "sha256": "9d34b3e53e06250b60c06248c7848383e5771867b8c8f3954156679d9e8e4cd5"
+    },
+    {
+      "shot": "shot_scene_lifestyle",
+      "candidate": "act-73499842a25441c6be9a3f48d9205923",
+      "sha256": "63aac5275511fba00cb93ebe33369fe462256f3a175d7f5fda31d389f3fd0467"
+    }
+  ],
+  "preserved_documents": 44,
+  "preserved_assets": 4,
+  "new_export_records": 1,
+  "checks_keys": [
+    "schema_version",
+    "contract_version",
+    "generated_at",
+    "gate_status",
+    "findings",
+    "per_shot",
+    "suite_review",
+    "acknowledgements"
+  ]
+}

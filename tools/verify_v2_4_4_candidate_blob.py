@@ -9,9 +9,10 @@
   4) Blob hash：IndexedDB 字节重算 sha256 == 候选记录 == 响应头 X-Image-Sha256；
      媒体信息（64×64 PNG、字节数）与字节本身一致。
   5) 刷新预览：刷新后候选不重复、不重新下载，预览从 IndexedDB 恢复（naturalWidth>0）。
-  6) 取回失败一次：候选未保存、错误可见、不产生半份记录；重试后成功且 sha 稳定。
-  7) 配额异常：asset 写入 QUOTA_EXCEEDED 时没有半份记录，界面给可恢复指引；
-     清出空间（解除注入）后重试成功。
+  6) 取回失败一次：候选未保存、批次提示给出原因与下一步、不产生半份记录；
+     停止新增提交后按提示手动保存成功且 sha 稳定。
+  7) 配额异常：批次立即停（不空转）、没有半份记录、提示给可恢复指引；
+     清出空间（解除注入）后手动重试成功。
   8) 整套批次：剩余图片自动保存候选，进度含「已成功 4」且无「待保存候选」残留。
   9) 零意外 console error / page error；截图落盘；正式入口 --check 全过。
 
@@ -39,6 +40,11 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 
 import v2_stage_nav as stage_nav  # noqa: E402  （V2.UI.2 六阶段工作台导航）
+import v2_verify_shared as shared  # noqa: E402  （正式 server/夹具/共同业务操作）
+from v2_verify_shared import (  # noqa: E402
+    png_bytes, load_server_module, run_entry, read_suite, compile_all,
+)
+
 
 PRODUCT_DIR = ROOT / "app" / "product_v2"
 HARNESS_DIR = ROOT / "evals" / "product-v2" / "harness"
@@ -82,41 +88,9 @@ REGRESSION_SUITES = (
 )
 
 
-def png_bytes(width: int, height: int, color: tuple[int, int, int]) -> bytes:
-    raw = b"".join(b"\x00" + bytes(color) * width for _ in range(height))
-
-    def chunk(tag: bytes, payload: bytes) -> bytes:
-        return (struct.pack(">I", len(payload)) + tag + payload
-                + struct.pack(">I", zlib.crc32(tag + payload) & 0xFFFFFFFF))
-
-    header = struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)
-    return (b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", header)
-            + chunk(b"IDAT", zlib.compress(raw)) + chunk(b"IEND", b""))
 
 
-def load_server_module():
-    spec = importlib.util.spec_from_file_location(
-        "product_v2_server_under_test", ROOT / "app" / "product_v2_server.py")
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
 
-
-def free_port() -> int:
-    with socket.socket() as probe:
-        probe.bind(("127.0.0.1", 0))
-        return probe.getsockname()[1]
-
-
-def run_entry(args: list[str], timeout: int = 180) -> dict:
-    env = {**os.environ, "PYTHONUTF8": "1", "PYTHONDONTWRITEBYTECODE": "1"}
-    completed = subprocess.run(
-        [sys.executable, "-B", str(ROOT / "app" / "server.py"), *args],
-        cwd=str(ROOT), env=env, capture_output=True, text=True,
-        encoding="utf-8", errors="replace", timeout=timeout, check=False,
-    )
-    return {"args": args, "rc": completed.returncode,
-            "tail": (completed.stdout + completed.stderr).strip().splitlines()[-10:]}
 
 
 def run_node_checks() -> dict:
@@ -129,63 +103,7 @@ def run_node_checks() -> dict:
     return {"files": results, "ok": all(item["rc"] == 0 for item in results)}
 
 
-class HarnessHandler(BaseHTTPRequestHandler):
-    def log_message(self, format, *args):  # noqa: A002
-        return
 
-    def _send(self, payload: bytes, ctype: str) -> None:
-        self.send_response(200)
-        self.send_header("Content-Type", ctype)
-        self.send_header("Content-Length", str(len(payload)))
-        self.send_header("Cache-Control", "no-store")
-        self.end_headers()
-        self.wfile.write(payload)
-
-    def do_GET(self):  # noqa: N802
-        path = self.path.split("?", 1)[0]
-        if path.startswith("/harness/"):
-            candidate = (HARNESS_DIR / path[len("/harness/"):]).resolve()
-            if str(candidate).startswith(str(HARNESS_DIR.resolve())) and candidate.is_file():
-                self._send(candidate.read_bytes(),
-                           MIME.get(candidate.suffix, "application/octet-stream"))
-                return
-        else:
-            candidate = (PRODUCT_DIR / path.lstrip("/")).resolve()
-            if str(candidate).startswith(str(PRODUCT_DIR.resolve())) and candidate.is_file():
-                self._send(candidate.read_bytes(),
-                           MIME.get(candidate.suffix, "application/octet-stream"))
-                return
-        self.send_error(404)
-
-
-def start_static_server() -> tuple[ThreadingHTTPServer, str]:
-    server = ThreadingHTTPServer(("127.0.0.1", 0), HarnessHandler)
-    threading.Thread(target=server.serve_forever, daemon=True).start()
-    return server, f"http://127.0.0.1:{server.server_address[1]}"
-
-
-def read_suite(browser, url: str, variable: str, console_errors: list, page_errors: list) -> dict:
-    page = browser.new_page()
-    try:
-        page.on("console", lambda message: console_errors.append("[suite] " + message.text)
-                if message.type == "error" else None)
-        page.on("pageerror", lambda error: page_errors.append("[suite] " + str(error)))
-        page.goto(url, wait_until="domcontentloaded")
-        page.wait_for_function(
-            f"() => window.{variable} && ['passed','failed','crashed'].includes(window.{variable}.status)",
-            timeout=90_000,
-        )
-        return page.evaluate(f"() => window.{variable}")
-    finally:
-        page.close()
-
-
-def compile_all(page, shot_ids: list, wait_ms: int = 200) -> None:
-    for shot_id in shot_ids:
-        card = f'#prompt-list .shot-spec[data-shot-id="{shot_id}"]'
-        page.click(card + " .toolbar button")
-        page.wait_for_selector(card + '[data-prompt-state="saved"]', timeout=15_000)
-        page.wait_for_timeout(wait_ms)
 
 
 SEED_SLOTS = """
@@ -277,11 +195,6 @@ async () => {
         ({ text: item.textContent, disabled: item.disabled })),
     };
   });
-  const buttonInfo = (id) => {
-    const node = document.getElementById(id);
-    if (!node) return null;
-    return { text: node.textContent, disabled: node.disabled, hidden: node.hidden };
-  };
   const errorNode = document.getElementById("attempt-error");
   const progressNode = document.getElementById("batch-progress");
   const hintNode = document.getElementById("batch-hint");
@@ -302,7 +215,6 @@ async () => {
       batch: {
         progress: progressNode ? progressNode.textContent : "",
         hint: hintNode ? hintNode.textContent : "",
-        run: buttonInfo("batch-run"),
       },
     },
   };
@@ -419,7 +331,7 @@ def main() -> int:
           node_result["ok"],
           {"failed": [item for item in node_result["files"] if item["rc"] != 0][:3]})
 
-    static_server, static_url = start_static_server()
+    static_server, static_url = shared.start_static_server()
     suites: dict = {}
     try:
         with sync_playwright() as pw:
@@ -461,7 +373,7 @@ def main() -> int:
     from src.providers.v2_fake_semantic import FakeSemanticProvider  # noqa: PLC0415
     from src.providers.v2_image import ImageFailure, ImageTaskResult  # noqa: PLC0415
 
-    mode: dict = {"tasks": {}, "failed_once": set()}
+    mode: dict = {"tasks": {}, "fetch_fault": False}
 
     class MarkerImageProvider(FakeImageProvider):
         """按 Prompt 标记决定这张图的取回场景；替身保持无状态：场景表放在验证器里。"""
@@ -471,29 +383,28 @@ def main() -> int:
             prompt = request.prompt or ""
             task_id = FakeImageProvider.task_id_for(request.action_id)
             if MARK_FETCH_FAIL in prompt:
-                mode["tasks"][task_id] = "fetch_fail_once"
+                mode["tasks"][task_id] = "fetch_fail"
             return ImageTaskResult(
                 provider_id=self.provider_id, model_id=self.model_id,
                 task_id=task_id, status="RUNNING")
 
         def result(self, request):
             self.calls["result"] += 1
-            if (mode["tasks"].get(request.task_id) == "fetch_fail_once"
-                    and request.task_id not in mode["failed_once"]):
-                mode["failed_once"].add(request.task_id)
+            # 取回故障在验证器解除前一直生效：批次会自动重试取回，只失败一次的话
+            # 产品在第一轮就重试成功，用户根本看不到失败（实测 progress 已成功 5/待提交 0）。
+            if mode["fetch_fault"] and mode["tasks"].get(request.task_id) == "fetch_fail":
                 raise ImageFailure(
                     "provider_failed", "RESULT_DOWNLOAD_FAILED",
                     "结果图片下载失败；没有产生可用的候选字节。",
                     retry_policy="retryable")
             return FakeImageProvider.result(self, request)
 
-    port = free_port()
     server = module.create_product_v2_server(
-        "127.0.0.1", port,
+        "127.0.0.1", 0,
         provider_factory=lambda: FakeSemanticProvider(scenario="ok"),
         image_provider_factory=lambda: MarkerImageProvider(scenario="ok"))
     threading.Thread(target=server.serve_forever, daemon=True).start()
-    base = f"http://127.0.0.1:{port}"
+    base = f"http://127.0.0.1:{server.server_address[1]}"
 
     submit_requests: list[dict] = []
     status_requests: list[str] = []
@@ -555,6 +466,48 @@ def main() -> int:
                 page.on("request", on_request)
                 page.on("response", on_response)
 
+                failed_requests: list[str] = []
+                page.on("requestfailed", lambda request: failed_requests.append(
+                    request.url + " :: " + str(request.failure)))
+
+                # Windows 回环上偶发同源模块请求被 RST（net::ERR_CONNECTION_REFUSED）：
+                # 实测 7 次运行中 4 次出现（URL 已留证），服务器端口仍在监听（裸连接可达），
+                # 且用 40 并发裸连接、端口复用、CPU 争用 ×2（queue=5/128）都无法复现 → 环境级瞬态，
+                # 与产品启动逻辑无关（产品自检 run_self_check 对同一现象也只做一次连接级重试）。
+                # 处置：加载/重载后必须等"启动完成"门；失败记录原因并在同一次验证内重试一次，
+                # 重试仍失败才是真失败（不隐藏产品缺陷：门本身仍必须通过）。
+                boot_retries: list[str] = []
+
+                def load_page(url: str | None = None, attempts: int = 2) -> None:
+                    for attempt in range(attempts):
+                        before = len(failed_requests)
+                        if url is None:
+                            page.reload(wait_until="networkidle")
+                        else:
+                            page.goto(url, wait_until="networkidle")
+                        try:
+                            page.wait_for_function(
+                                """() => {
+                                    const el = (id) => document.getElementById(id);
+                                    const pending = el('boot-pending');
+                                    const error = el('boot-error');
+                                    const projectView = el('project-view');
+                                    const create = el('new-project-name');
+                                    const bootError = Boolean(error && !error.hidden
+                                        && (error.textContent || '').trim().length > 0);
+                                    return Boolean(pending && pending.hidden && !bootError
+                                        && ((create && !create.disabled)
+                                            || (projectView && !projectView.hidden)));
+                                }""", timeout=20_000)
+                            return
+                        except Exception as error:  # noqa: BLE001
+                            boot_retries.append(
+                                f"attempt={attempt} {type(error).__name__} "
+                                f"refused={failed_requests[before:before + 3]}")
+                            if attempt == attempts - 1:
+                                raise
+                            page.wait_for_timeout(500)
+
                 def probe() -> dict:
                     return page.evaluate(PROBE)
 
@@ -604,21 +557,66 @@ def main() -> int:
                             return Boolean(node && node.querySelector('.attempt-candidate'));
                         }""", arg=shot_id, timeout=timeout)
 
-                def wait_error_contains(text: str, timeout: int = 30_000) -> None:
-                    page.wait_for_function(
-                        """(wanted) => {
-                            const node = document.getElementById('attempt-error');
-                            return Boolean(node && !node.hidden
-                                && node.textContent.includes(wanted));
-                        }""", arg=text, timeout=timeout)
+                def wait_hint_contains(text: str, timeout: int = 30_000) -> None:
+                    # 批次路径的失败原因在批次提示区（generation-view renderBatch → batchHint），
+                    # 不是单张路径的 #attempt-error。
+                    try:
+                        page.wait_for_function(
+                            """(wanted) => {
+                                const node = document.getElementById('batch-hint');
+                                return Boolean(node && !node.hidden
+                                    && node.textContent.includes(wanted));
+                            }""", arg=text, timeout=timeout)
+                    except Exception as error:  # noqa: BLE001 - 超时也要报出真实观测
+                        area = page.evaluate("""() => {
+                          const el = (id) => document.getElementById(id);
+                          return {
+                            hint: (el('batch-hint') || {}).textContent || '',
+                            hint_hidden: el('batch-hint') ? el('batch-hint').hidden : null,
+                            progress: (el('batch-progress') || {}).textContent || '',
+                            error: (el('attempt-error') || {}).textContent || '',
+                            status: (el('attempt-status') || {}).textContent || '',
+                          };
+                        }""")
+                        raise AssertionError(f"等待批次提示「{text}」超时：{area}") from error
 
-                def confirm_generation() -> None:
-                    expect(page.locator("#confirm-action")).to_be_enabled()
-                    page.click("#confirm-action")
-                    expect(page.locator("#confirm-record")).to_contain_text("已确认 v")
+                def wait_batch_idle(timeout: int = 90_000) -> None:
+                    # 批次运行中 renderBatch 会追加「批次进行中：…」；批次结束后只剩计数。
+                    # 单张按钮在批次 active 期间是禁用的（generation-view inFlight 含 batchActive），
+                    # 所以点「保存候选图片」之前必须等批次真的结束。
+                    page.wait_for_function(
+                        """() => {
+                            const node = document.getElementById('batch-progress');
+                            return Boolean(node && !node.textContent.includes('批次进行中'));
+                        }""", timeout=timeout)
+
+                def confirm_generation(wanted: list | None = None) -> dict:
+                    # 授权集合必须是"本次确认将消费的图"（4_3 同因：禁止复用首批快照，
+                    # 否则 confirm_and_submit 在 set(authorized)==set(shot_ids) 恒假）。
+                    scope = list(wanted) if wanted is not None else list(probe()["shot_ids"])
+                    gate = shared.confirm_and_submit(page, expect, probe, submit_requests,
+                                                     shot_ids=scope)
+                    assert gate["ok"], f"确认必须产生本次授权的新消费：{gate['after_actions']}"
+                    return gate
+
+                def add_shots(template_id: str, count: int = 1) -> list:
+                    stage_nav.goto(page, "plan")
+                    before = list(probe()["shot_ids"])
+                    for _ in range(count):
+                        page.select_option("#suite-template", template_id)
+                        page.click("#suite-add-template")
+                        page.wait_for_timeout(250)
+                    after = list(probe()["shot_ids"])
+                    return [shot for shot in after if shot not in before]
 
                 def click_row_button(shot_id: str, text: str) -> None:
                     row(shot_id).locator(f'button:has-text("{text}")').first.click()
+
+                def wait_save_enabled(shot_id: str, timeout: int = 30_000) -> None:
+                    # 「保存候选图片」是本地动作：批次运行中也可用，只有同一张的取回在途时短暂禁用。
+                    # 故障解除后按用户可见路径点它，不再依赖批次自己重试（用户看得到的是按钮 + 提示）。
+                    expect(row(shot_id).locator('button:has-text("保存候选图片")')
+                           .first).to_be_enabled(timeout=timeout)
 
                 def submits_for(action_id: str) -> int:
                     return len([item for item in submit_requests
@@ -628,15 +626,9 @@ def main() -> int:
                     return [item for item in result_requests
                             if item["task_id"] == task_id]
 
-                def generate_and_settle(shot_id: str) -> None:
-                    click_row_button(shot_id, "生成这张图")
-                    wait_state(shot_id, "submitted")
-                    click_row_button(shot_id, "核对任务")
-                    wait_state(shot_id, "succeeded")
-
                 # ---------------- 项目准备：空白项目 → 参考图 → 资料 → 槽位 → 套图 → 确认 ----------------
                 stage = "prep"
-                page.goto(base + "/", wait_until="networkidle")
+                load_page(base + "/")
                 page.fill("#new-project-name", "审计商品 · 候选字节")
                 page.click("#create-project")
                 expect(page.locator("#project-view")).to_be_visible()
@@ -655,7 +647,8 @@ def main() -> int:
                     " req.onsuccess = () => resolve(req.result); });"
                     " db.close(); return rows.map((item) => item.project_id); }")
                 page.evaluate(SEED_SLOTS, project_ids[0])
-                page.reload(wait_until="networkidle")
+                load_page()
+                stage_nav.goto(page, "plan")
                 page.click("#suite-seed")
                 expect(page.locator("#shot-list .shot-row")).to_have_count(4)
                 stage_nav.goto(page, "generate")
@@ -663,26 +656,40 @@ def main() -> int:
                 initial = probe()
                 shot_ids = initial["shot_ids"]
                 compile_all(page, shot_ids)
-                ok_shot, fail_shot, quota_shot, batch_shot = shot_ids
-                append_prompt_mark(page, fail_shot, MARK_FETCH_FAIL, "验证取回失败一次")
-                confirm_generation()
+                ok_shot = shot_ids[0]
+                # 摘要默认范围=未提交全集（ui-contract §4.6「主按钮只提交摘要明确列出的集合。
+                # 默认是未提交的图；成功、在途、Unknown 不混入」）：空白项目首批就是 4 张。
+                # 逐图场景不靠产品的"单图摘要开关"（不存在），而是每个场景前 add_shots 新增一张，
+                # 新增图是当时唯一未提交图 → 摘要范围天然为 1 张，语义仍与合同一致。
                 ready = probe()
+                confirm_scope = page.evaluate(
+                    """() => [...document.querySelectorAll('#confirm-list .confirm-shot')]
+                         .map((node) => ({shot: node.getAttribute('data-shot-id'),
+                                          badges: [...node.querySelectorAll('.badge')]
+                                            .map((item) => item.textContent)}))""")
+                confirm_status = page.locator("#confirm-status").inner_text()
+                confirm_generation(shot_ids)
                 ui["base_shots"] = shot_ids
+                ui["boot_retries"] = list(boot_retries)
                 check("V2.4.4-03",
-                      "就绪：4 张待提交、整套生成按钮可见、候选栏为空且只有参考图字节",
+                      "就绪：首批摘要范围=未提交全集（4 张）、候选栏为空且只有参考图字节",
                       len(ready["ui"]["rows"]) == 4
                       and all(item["state"] == "none" for item in ready["ui"]["rows"])
                       and all(item["preview"] is None for item in ready["ui"]["rows"])
-                      and "整套生成（4 张）" in (ready["ui"]["batch"]["run"] or {}).get("text", "")
                       and len(ready["asset_rows"]) == 1
-                      and ready["candidate_chains"] == {},
-                      {"run": (ready["ui"]["batch"]["run"] or {}).get("text"),
-                       "assets": len(ready["asset_rows"])})
-
+                      and ready["candidate_chains"] == {}
+                      and [item["shot"] for item in confirm_scope] == shot_ids
+                      and all("本次发送" in item["badges"] for item in confirm_scope)
+                      and "发送 4 张" in confirm_status,
+                      {"rows": len(ready["ui"]["rows"]),
+                       "assets": len(ready["asset_rows"]),
+                       "scope": [item["shot"] for item in confirm_scope],
+                       "status": confirm_status})
                 # ---------------- 单张成功：候选自动入库，三方 sha256 一致 ----------------
                 stage = "check04-single"
-                generate_and_settle(ok_shot)
-                wait_preview(ok_shot)
+                # 首批摘要已提交 ok 单张：confirm_and_submit 内 settle 已等到终态；
+                # 这里只等行状态投影与预览（禁止再点已消费的单图按钮）。
+                wait_state(ok_shot, "succeeded")
                 single = probe()
                 att4_chain = chain_of(single, ok_shot)
                 att4 = att4_chain[-1]["payload"] if att4_chain else {}
@@ -722,7 +729,7 @@ def main() -> int:
                 stage = "check05-reload"
                 requests_before_reload = len(result_requests)
                 before_reload = probe()
-                page.reload(wait_until="networkidle")
+                load_page()
                 stage_nav.goto(page, "generate")
                 wait_preview(ok_shot)
                 after_reload = probe()
@@ -734,20 +741,47 @@ def main() -> int:
                       and ((row_of(after_reload, ok_shot) or {}).get("preview") or {})
                       .get("natural_width", 0) > 0,
                       {"result_requests_before": requests_before_reload,
-                       "result_requests_after": len(result_requests)})
+                       "result_requests_after": len(result_requests),
+                       "candidate_changed": candidate_json(after_reload, ok_shot)
+                       != candidate_json(before_reload, ok_shot),
+                       "candidate_before": candidate_json(before_reload, ok_shot)[:2200],
+                       "candidate_after": candidate_json(after_reload, ok_shot)[:2200],
+                       "assets_before": len(before_reload["asset_rows"]),
+                       "assets_after": len(after_reload["asset_rows"]),
+                       "preview": (row_of(after_reload, ok_shot) or {})})
 
                 # ---------------- 取回失败一次：无半份记录、可恢复、重试后 sha 一致 ----------------
                 stage = "check06-fetch-fail"
+                fail_shot = add_shots("detail_material", 1)[0]
+                compile_all(page, [fail_shot])
+                append_prompt_mark(page, fail_shot, MARK_FETCH_FAIL, "验证取回失败一次")
+                # 保存必须真的落库：请求文本要带上标记，否则替身不会进入取回失败场景。
+                card6 = f'#prompt-list .shot-spec[data-shot-id="{fail_shot}"]'
+                saved6 = page.input_value(card6 + " textarea.prompt-edit-text")
+                assert MARK_FETCH_FAIL in saved6, "人工文本没有保存到 Prompt 卡"
+                mode["fetch_fault"] = True
                 before6 = probe()
                 assets6_before = len(before6["asset_rows"])
-                generate_and_settle(fail_shot)
-                wait_error_contains("RESULT_DOWNLOAD_FAILED")
+                confirm_generation([fail_shot])
+                wait_state(fail_shot, "succeeded")
+                wait_hint_contains("RESULT_DOWNLOAD_FAILED")
+                # 取回故障期间批次会一直自己重试（每轮 4s），故障不解除它不会结束：
+                # 用户按提示走的是「先停止新增提交，再点这一行的保存候选图片」。
+                page.click("#batch-stop")
+                wait_batch_idle()
                 failed_try = probe()
                 att6_chain = chain_of(failed_try, fail_shot)
                 att6 = att6_chain[-1]["payload"] if att6_chain else {}
-                err6 = failed_try["ui"]["error"]
+                hint6 = failed_try["ui"]["batch"]["hint"]
+                sent6 = [item for item in submit_requests
+                         if item["action_id"] == att6.get("action_id")]
+                # 批次语义：取回故障时 attempt 已 succeeded（提交结论不受掩盖），
+                # 候选缺失走 fetch_queue + hint（含失败原因与下一步），无半份记录。
                 no_half6 = (candidate_of(failed_try, fail_shot) == []
-                            and len(failed_try["asset_rows"]) == assets6_before)
+                            and len(failed_try["asset_rows"]) == assets6_before
+                            and att6.get("state") == "succeeded")
+                mode["fetch_fault"] = False
+                wait_save_enabled(fail_shot)
                 click_row_button(fail_shot, "保存候选图片")
                 wait_candidate_ui(fail_shot)
                 recovered6 = probe()
@@ -759,33 +793,46 @@ def main() -> int:
                 declared6 = next((item["declared_sha"] for item in resolved6
                                   if item["status"] == 200 and item["declared_sha"]), "")
                 check("V2.4.4-06",
-                      "取回失败一次：不产生半份记录、错误可恢复、重试成功且 sha 与响应头一致",
+                      "取回失败：提交结论不受掩盖、原因与下一步可见、无半份记录、停止后手动保存 sha 与响应头一致",
                       bool(att6) and bool(rec6)
                       and no_half6
-                      and "取回候选失败" in err6 and "RESULT_DOWNLOAD_FAILED" in err6
+                      and bool(sent6) and MARK_FETCH_FAIL in (sent6[0]["prompt"] or "")
+                      and "取回候选失败" in hint6 and "RESULT_DOWNLOAD_FAILED" in hint6
+                      and "保存候选图片" in hint6
                       and len(candidate_of(recovered6, fail_shot)) == 1
                       and rec6.get("action_id") == att6["action_id"]
                       and hashed6.get("found") is True
                       and hashed6.get("sha256") == rec6.get("asset_sha256")
                       and declared6 == rec6.get("asset_sha256")
                       and submits_for(att6["action_id"]) == 1
-                      and [item["status"] for item in resolved6] == [502, 200],
-                      {"error": err6[:120], "statuses": [item["status"] for item in resolved6],
+                      # 批次会自动重试取回：故障期间全部 502，解除后最后一次 200（同一 task id）。
+                      and len(resolved6) >= 2
+                      and all(item["status"] == 502 for item in resolved6[:-1])
+                      and resolved6[-1]["status"] == 200,
+                      {"hint": hint6[:200], "statuses": [item["status"] for item in resolved6],
                        "attempt_chain": len(att6_chain), "candidate_chain": len(rec6_chain),
                        "half_record": not no_half6, "rec6": bool(rec6)})
 
                 # ---------------- 配额异常：无半份记录、指引可恢复、解除后保存成功 ----------------
                 stage = "check07-quota"
+                # 新增图是当时唯一未提交图：摘要范围=1 张，配额故障只影响这一张。
+                quota_shot = add_shots("infographic_benefits", 1)[0]
+                compile_all(page, [quota_shot])
                 before7 = probe()
                 assets7_before = len(before7["asset_rows"])
                 page.evaluate(INSTALL_IDB_FAULT)
                 page.evaluate(SET_IDB_FAULT, True)
-                generate_and_settle(quota_shot)
-                wait_error_contains("浏览器存储空间不足")
+                confirm_generation([quota_shot])
+                wait_state(quota_shot, "succeeded")
+                # 候选保存被本地存储挡住：批次必须立刻停（不再空转），原因与下一步在提示区。
+                wait_batch_idle()
                 quota_failed = probe()
+                quota_hint = quota_failed["ui"]["batch"]["hint"]
+                quota_progress = quota_failed["ui"]["batch"]["progress"]
                 quota_no_half = (candidate_of(quota_failed, quota_shot) == []
                                  and len(quota_failed["asset_rows"]) == assets7_before)
                 page.evaluate(SET_IDB_FAULT, False)
+                wait_save_enabled(quota_shot)
                 click_row_button(quota_shot, "保存候选图片")
                 wait_candidate_ui(quota_shot)
                 quota_ok = probe()
@@ -794,55 +841,62 @@ def main() -> int:
                 hashed7 = (page.evaluate(HASH_ASSET, {"sha256": rec7["asset_sha256"]})
                            if rec7 else {"found": False})
                 check("V2.4.4-07",
-                      "配额异常：不留半份记录、错误给出可恢复指引；解除后同一 action 保存成功",
+                      "配额异常：批次停而不空转、不留半份记录、提示含原因与下一步；解除后同一 action 保存成功",
                       bool(rec7) and hashed7.get("found") is True
                       and quota_no_half
-                      and "浏览器存储空间不足" in quota_failed["ui"]["error"]
-                      and "重试" in quota_failed["ui"]["error"]
+                      and "浏览器存储空间不足" in quota_hint
+                      and "保存候选图片" in quota_hint
+                      and "已停止新增提交" in quota_progress
+                      and "批次进行中" not in quota_progress
                       and len(candidate_of(quota_ok, quota_shot)) == 1
                       and hashed7.get("sha256") == rec7.get("asset_sha256"),
-                      {"error": quota_failed["ui"]["error"][:120],
+                      {"hint": quota_hint[:200], "progress": quota_progress[:200],
                        "candidate_chain": len(rec7_chain),
                        "half_record": not quota_no_half})
 
                 # ---------------- 整套批次：只提交剩余图一次；全部成功且候选全部入库 ----------------
                 stage = "check08-batch"
+                # 剩余 2 张新图是当时全部未提交图：摘要范围=2（"发送 2 张"），
+                # 已成功/已入库的图不得混入这次提交（ui-contract §4.6）。
+                batch_shots = add_shots("detail_material", 1) + add_shots("scene_lifestyle", 1)
+                compile_all(page, batch_shots)
                 submits_before8 = len(submit_requests)
-                page.click("#batch-run")
-                wait_states({shot: "succeeded" for shot in shot_ids})
-                wait_candidate_ui(batch_shot)
+                confirm_generation(batch_shots)
+                wait_states({shot: "succeeded" for shot in batch_shots})
+                for shot in batch_shots:
+                    wait_candidate_ui(shot)
                 finished = probe()
                 final_rows = finished["ui"]["rows"]
-                all_stored = all(candidate_of(finished, shot) for shot in shot_ids)
+                all_ids = [*shot_ids, fail_shot, quota_shot, *batch_shots]
+                all_stored = all(candidate_of(finished, shot) for shot in all_ids)
                 chains_ok = all(
                     bool(chain_of(finished, shot))
                     and chain_of(finished, shot)[-1]["payload"]["state"] == "succeeded"
                     and bool(candidate_of(finished, shot))
                     and candidate_of(finished, shot)[-1]["payload"]["action_id"]
                     == chain_of(finished, shot)[-1]["payload"]["action_id"]
-                    for shot in shot_ids)
+                    for shot in all_ids)
                 captured8 = submit_requests[submits_before8:]
-                attempt8_chain = chain_of(finished, batch_shot)
-                attempt8 = attempt8_chain[-1]["payload"] if attempt8_chain else {}
+                expected8 = [chain_of(finished, shot)[-1]["payload"]["action_id"]
+                             for shot in batch_shots]
                 check("V2.4.4-08",
                       "整套批次：只提交剩余图一次；全部成功且候选全部入库；进度与提示一致",
-                      len(captured8) == 1
-                      and bool(attempt8)
-                      and captured8[0]["action_id"] == attempt8.get("action_id")
-                      and len(final_rows) == 4
+                      len(captured8) == len(batch_shots)
+                      and [item["action_id"] for item in captured8] == expected8
+                      and len(final_rows) == len(all_ids)
                       and all(item["state"] == "succeeded" for item in final_rows)
                       and all_stored and chains_ok
-                      and "已成功 4" in finished["ui"]["batch"]["progress"]
+                      and f"已成功 {len(all_ids)}" in finished["ui"]["batch"]["progress"]
                       and "待保存候选" not in finished["ui"]["batch"]["progress"]
-                      and "候选还没保存" not in finished["ui"]["batch"]["hint"]
-                      and "已全部生成" in (finished["ui"]["batch"]["run"] or {}).get("text", ""),
+                      and "候选还没保存" not in finished["ui"]["batch"]["hint"],
                       {"captured": len(captured8),
+                       "rows": len(final_rows),
                        "progress": finished["ui"]["batch"]["progress"],
                        "hint": finished["ui"]["batch"]["hint"]})
                 ui["final"] = {
                     "attempt_states": {item["shot_id"]: item["state"] for item in final_rows},
                     "candidate_versions": {shot: len(candidate_of(finished, shot))
-                                           for shot in shot_ids},
+                                           for shot in all_ids},
                     "result_requests": len(result_requests),
                     "submit_requests": len(submit_requests),
                 }
@@ -861,7 +915,10 @@ def main() -> int:
             pass
 
     if interrupted:
-        check("V2.4.4-99", "浏览器闭环在完成前中断", False, interrupted)
+        check("V2.4.4-99", "浏览器闭环在完成前中断", False,
+              interrupted + f"\nfailed_requests={failed_requests[:8]}"
+              + f"\npage_url={locals().get('page') and page.url}\nbase={base}"
+              + f"\npages={[item.url for item in context.pages]}")
 
     expected_noise = ("Failed to load resource: the server responded with a status of 504",
                       "Failed to load resource: the server responded with a status of 502",
@@ -884,8 +941,9 @@ def main() -> int:
         "证明候选字节在真实浏览器与真实 IndexedDB 上是可持久、可校验、可恢复的：成功结论在同一步"
         "把结果字节存进内容寻址的 assets 仓，候选记录的 sha256 与重算值、服务端 X-Image-Sha256 "
         "响应头三方一致；刷新后预览来自本地字节、零新增取回请求且不重复保存；取回失败一次不产生"
-        "半份记录、错误可恢复、重试成功；IndexedDB 配额异常在协议层注入（产品代码无测试钩子），"
-        "失败不留半份记录并给出「清理后重试」指引；整套批次只提交剩余图一次、全部成功且候选全部"
+        "半份记录、批次提示给出原因与下一步，停止新增提交后按提示手动保存成功；IndexedDB 配额"
+        "异常在协议层注入（产品代码无测试钩子），保存被挡住时批次立即停而不空转、失败不留半份记录"
+        "并给出「清出空间后重试」指引；整套批次只提交剩余图一次、全部成功且候选全部"
         "入库，进度不再显示待保存候选。本批不做审核、单图返工与导出（Phase 5）；0 次真实模型调用、"
         "0 次外部网络；图像 provider 是注入的假替身（按 Prompt 标记决定取回场景），只证明候选"
         "持久化语义，不证明真实出图质量。"
@@ -924,6 +982,12 @@ def main() -> int:
         mark = "PASS" if item["ok"] else "FAIL"
         lines.append(f"- [{mark}] {item['id']} {item['title']}")
     lines += ["", "BOUNDARY", boundary]
+    failed = [item for item in checks if not item["ok"]]
+    if failed:
+        # 失败时把判据实测值打进日志与文本证据（同 4_3 的 FAILED DETAILS）。
+        lines += ["", "FAILED DETAILS"]
+        lines += [f"- {item['id']} " + json.dumps(item["detail"], ensure_ascii=False, default=str)[:4000]
+                  for item in failed]
     txt_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
     for line in lines:

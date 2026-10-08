@@ -1,0 +1,178 @@
+{
+  "schema": "amz-version-convergence-planning-checks/v1",
+  "not_authority": true,
+  "started_at": "2026-10-07T13:59:18.089Z",
+  "finished_at": "2026-10-07T14:17:39.818Z",
+  "planning_goal_id": "159cf706a99024ae",
+  "attempt_cap": 3,
+  "revision_rounds_used": 1,
+  "rounds": [
+    {
+      "round": 1,
+      "started_at": "2026-10-07T14:13:47.491Z",
+      "finished_at": "2026-10-07T14:14:17.048Z",
+      "checks": [
+        {
+          "command": "uv run --locked python tools/check_docs.py --no-run",
+          "exit_code": 0,
+          "wall_time_ms": 9588.892199999653,
+          "tool_result": {
+            "text": "========================================================================\n文档守卫\n========================================================================\n受管：README.md + docs/cards/ 下 8 份 legacy 生成卡（当前实现边界 / 命令入口 / 生成产物一致性）\n　　　+ 文档权威登记（docs/INDEX.md：双向比对 + 管辖事实唯一）—— 回答「哪一份有效」和「哪一类事实归谁」\n　　　+ 选型门禁（AGENTS.md ↔ 项目上下文 §4 依赖/vendor 登记）—— 回答「实现之前先找过现成能力没有」\n　　　+ 模板映射（AGENTS.md §Standards Mapping ↔ docs/standards-template/）—— 回答「外部模板的每份规范有没有采纳落点」\n表：7 个坑位 · 6 个渲染器\n\n  · 文档登记：已登记 65 份，仓库里实际 65 份（产品目标 1、历史证据 33、实现 1、执行状态 1、架构设计 2、生成产物 8、设计草案 18、项目规则 1）\n  · 依赖登记：pyproject 直接依赖 11 个（锁定 11）↔ uv.lock 68 包 ↔ 登记表 13 行\n  · 前端开发依赖：manifest/lock/登记 1 包\n  · 模板映射：standards-template 14 份，映射章节覆盖 14 份\n\n注意：本次 --no-run，**命令执行未被验证** —— 文档里的命令这次没被真跑过，别把它当成『命令没问题』的证明。\n\n结果：全过（退出码 0）。\n\n\nWall time: 9.59 seconds",
+            "details": {
+              "timeoutSeconds": 120,
+              "wallTimeMs": 9588.892199999653
+            }
+          }
+        },
+        {
+          "command": "uv run --locked python tools/refactor_resume.py",
+          "exit_code": 0,
+          "wall_time_ms": 2619.683899999596,
+          "tool_result": {
+            "text": "[PASS] 冷恢复：8 阶段 / 27 任务；状态 active\n目标：docs/product-v2-refactor-plan.md；状态：_working/amz-listing-kit-product-v2/state.md\n唯一下一动作：V2.R5.1\n下一任务被阻塞；只可解决以下权限/输入门，不得开始该任务的受限执行：\n  V2.R5.1_user_authorized_planning_only_no_product_resume_require_explicit_user_resume_and_live_product_Goal_match_plan_2_1_do_not_bind_planning_Goal\n任务卡：docs/product-v2-refactor-plan.md:420\nGoal 原文：计划 §2.1；sha256=6677a6803003f0894dd522bdd7102b53ca30c866532ff48fdc79e4b148d7c495\n仓库保存的最近 Goal 观察：active；绑定：required；goal_id=1599c9600ae01cb7；证据：evals/product-v2/refactor/goal-observation-20261006-combined-refactor.json\n本脚本不查询系统 Goal；恢复会话仍须读取真实当前 Goal 核对。\n### V2.R5.1 · 生成执行Module\n\n输入：G4、workspace提交/批量/核对/执行身份、domain状态机。触发后离线实现的前置为 R4.4，不以未实测 R4.2 的 G4 停工；最终通过仍需 G4/G5/G6 及两模型真实证明。\n动作：按 `product-v2-refactor-design.md` §2–4合并生成授权队列及消费到执行Module，统一单张/批量/返工Interface；跨标签原子登记本次授权+Shot消费后外发，冻结动作归属、核对/下载/容量处理；UI不拼持久化顺序；全部调用方/JS/恢复同步迁移并删除独立授权层、旧执行路径和pass-through别名。\n输出：执行Module及全部调用方、`refactor/generation-module-<timestamp>.md`。\n验收：双击/跨标签同授权、partial、停止新增、刷新、超时/Unknown、服务重启、配额失败均保留正确身份/历史；当前性按实际消费版本核对，旧attempt不充当新授权消费；停止观察不被当上游取消。按详细设计§9.1同时证明业务所有权和调用方时序收口，不以移文件或语法绿灯准出。\n失败：切片原子回退，不丢在途任务或保存的候选。\n\n\nWall time: 2.62 seconds",
+            "details": {
+              "timeoutSeconds": 120,
+              "wallTimeMs": 2619.683899999596
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "baseline_manifest": "_stage-amz-control/version-convergence-plan-20261007T135918Z/manifest.json",
+  "documents_before": {
+    "docs/product-v2-refactor-plan.md": {
+      "sha256": "7e1bc063c5a56febde416b12ee3e010d05a324c0cf1c300838334a5b9662434d",
+      "bytes": 155583
+    },
+    "docs/product-v2-refactor-design.md": {
+      "sha256": "ad57b8e9b28536cdd0e60b6ae3cbcc1927761eadf4b879e687f6d6c602221005",
+      "bytes": 71139
+    },
+    "docs/product-v2-project-context.md": {
+      "sha256": "19b8b6487b71c0423b99b080164d53d1894375c5d8e58a262dd0950cd20dff54",
+      "bytes": 42393
+    },
+    "docs/INDEX.md": {
+      "sha256": "521f7dc67d97916f6b3a72caef947b7e6e369c541db6496899045b21fe95d229",
+      "bytes": 22763
+    },
+    "AGENTS.md": {
+      "sha256": "a819964f98e4a656e17c18391fd13ebc4731ad68abbe3c859a1e9614f49d6598",
+      "bytes": 16086
+    },
+    "README.md": {
+      "sha256": "474080726ce7b4be6e88fa248305d38818b66e85ca9531a4a611e531cd0aaa5d",
+      "bytes": 20625
+    },
+    "_working/amz-listing-kit-product-v2/state.md": {
+      "sha256": "e5f4c4cba16f7c07e5e9062ffb9bf77d231be9f16ecd5cede073da691409b53c",
+      "bytes": 43702
+    }
+  },
+  "documents_after": {
+    "docs/product-v2-refactor-plan.md": {
+      "sha256": "c64bda9e7a26e9e66de4e7d9368e2b699ca1f17a0729fd9b0f31e43700d8ac8c",
+      "bytes": 164927
+    },
+    "docs/product-v2-refactor-design.md": {
+      "sha256": "e5764ae95cc9d0136b9118fb00d34b611e9080c4a2f3f8f9990f0bf5e352a4df",
+      "bytes": 86655
+    },
+    "docs/product-v2-project-context.md": {
+      "sha256": "8bd54dd57d77b16013a8a8f7054a839a8f58278886dabd927b844047da0d36ad",
+      "bytes": 42811
+    },
+    "docs/INDEX.md": {
+      "sha256": "85eb0fed4d71ac9c301b26469afa242aa6a8b54324d43c1828a792f78502280d",
+      "bytes": 22897
+    },
+    "AGENTS.md": {
+      "sha256": "20ea848c17a6d40fa8d03c93be6d56d58607b8e9a4fe96a4ae157d9da9823682",
+      "bytes": 16056
+    },
+    "README.md": {
+      "sha256": "bb53f79df69b093e05e4a7ecad92f7aa13bc5532a124803e35599dd9e59dbfe7",
+      "bytes": 21161
+    },
+    "_working/amz-listing-kit-product-v2/state.md": {
+      "sha256": "7ba6ab315ac18f4e35ed7003f921b3b854a68cd156131169852c4ee0711b683c",
+      "bytes": 46225
+    }
+  },
+  "protected_scope_count": 415,
+  "contract_checks": {
+    "product_goal_text_unchanged": true,
+    "task_dependency_section_unchanged": true,
+    "completion_RC_section_unchanged": true,
+    "protected_file_changes": [],
+    "protected_files_added": [],
+    "protected_files_missing": [],
+    "task_state_changes": [
+      {
+        "task": "V2.R5.1",
+        "before": "active",
+        "after": "blocked"
+      }
+    ],
+    "task_count": 27,
+    "phase_states_unchanged": true,
+    "historical_product_binding_unchanged": true,
+    "user_closeout_line_preserved": true,
+    "compilation_source_count_is_prior_audit_not_rerun": true,
+    "all_task_evidence_and_other_progress_unchanged": true,
+    "next_action_unchanged": true
+  },
+  "missing_references": [],
+  "coverage": [
+    {
+      "item": "结束状态及外部门",
+      "authority": "docs/product-v2-refactor-plan.md §15.6.1",
+      "criterion": "Full original engineering acceptance retained; no second overall redesign; C17/C15/V1 excluded explicitly."
+    },
+    {
+      "item": "可信资产与证据失效",
+      "authority": "docs/product-v2-refactor-plan.md §15.6.2",
+      "criterion": "Seven existing asset rows and contract/input/current consumer/premise/reuse-vs-supplement rule."
+    },
+    {
+      "item": "所有已知缺口承接",
+      "authority": "docs/product-v2-refactor-plan.md §15.6.3; docs/product-v2-refactor-design.md §11.5.3",
+      "criterion": "Distinct boot/result failures, owner/UI residuals, 3_5/5_3 oracles, settings/credentials/old ZIP, full tasks, release conditions/container origin and final evidence."
+    },
+    {
+      "item": "模块组合与单向接缝",
+      "authority": "docs/product-v2-refactor-design.md §11.5.2",
+      "criterion": "Unique inputs/prompts/generation/adoption/delivery/session/view ownership and explicit removal of reverse setters/UI transaction callback; report failure preserves candidate and hard gates."
+    },
+    {
+      "item": "精确验证与恢复入口",
+      "authority": "docs/product-v2-refactor-design.md §11.5.4; §12",
+      "criterion": "Existing flags read from current CLI declarations; concrete local, Linux container and HTTPS commands plus actual page/ZIP/zoom/keyboard scenarios; no execution this planning round."
+    },
+    {
+      "item": "停止/费用/扩大范围条件",
+      "authority": "docs/product-v2-refactor-plan.md §15.6, §15.6.4; docs/product-v2-refactor-design.md §11.5.5",
+      "criterion": "Planning cap3, no blind rerun, explicit permission stop, no new image calls, only one combined VLM call historically remaining; ambiguity/new architecture/escalation."
+    }
+  ],
+  "restoration": {
+    "task": "V2.R5.1",
+    "status": "blocked",
+    "record_status": "active",
+    "historical_goal_id": "1599c9600ae01cb7",
+    "historical_observed_at": "2026-10-05T18:44:51.649Z",
+    "blockers": [
+      "V2.R5.1_user_authorized_planning_only_no_product_resume_require_explicit_user_resume_and_live_product_Goal_match_plan_2_1_do_not_bind_planning_Goal"
+    ],
+    "live_product_goal_not_inferred_from_historical_record": true
+  },
+  "limits": [
+    "Only document guard --no-run and cold resume were exercised this planning round; these do not verify commands listed for future product work.",
+    "No product/browser/unit/regression/model/Docker/CI/git mutation/deployment was run.",
+    "Existing audit runtime proof remains scoped and historical; current engineering delivery is still incomplete.",
+    "Protected byte verification covers only 415 explicitly collected files, not every repository file; Python caches excluded.",
+    "Scratch checks with multiline end-of-line section regex and status-text regex were rejected; recorded formal-section comparison uses full sections, state comparisons use native YAML parse."
+  ],
+  "product_goal_sha256": "6677a6803003f0894dd522bdd7102b53ca30c866532ff48fdc79e4b148d7c495"
+}

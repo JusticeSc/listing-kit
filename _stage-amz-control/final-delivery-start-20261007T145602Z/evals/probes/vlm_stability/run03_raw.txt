@@ -1,0 +1,27 @@
+{
+  "product_type": "thermos",
+  "height_to_width_ratio": "2.15:1",
+  "sections_top_to_bottom": [
+    {
+      "name": "upper body",
+      "starts_at_height_frac": "0.00",
+      "ends_at_height_frac": "0.73",
+      "colour": "silver",
+      "finish": "brushed metal"
+    },
+    {
+      "name": "base",
+      "starts_at_height_frac": "0.73",
+      "ends_at_height_frac": "1.00",
+      "colour": "dark brown",
+      "finish": "matte"
+    }
+  ],
+  "lid_layers": ["black rubber ring", "metal rim"],
+  "has_handle": false,
+  "has_spout": false,
+  "has_second_cap": false,
+  "has_printed_text_or_logo": false,
+  "prop_present": ["folded cloth"],
+  "uncertain": ["exact material of base"]
+}

@@ -1,0 +1,495 @@
+{
+  "suite_id": "v2.6.1-selection",
+  "status": "passed",
+  "observed_at": "2026-10-08T01:43:50",
+  "contract": "v2.6.1",
+  "model_calls": 0,
+  "external_network_calls": 0,
+  "checks": [
+    {
+      "id": "V2.6.1-01",
+      "title": "语法门：selection / shared / workspace / 选择契约套件与本工具全部可解析",
+      "ok": true,
+      "detail": {
+        "files": [
+          {
+            "file": "app/product_v2/domain/selection.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/domain/shared.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "app/product_v2/workspace.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "evals/product-v2/harness/selection-contract.js",
+            "rc": 0,
+            "stderr": ""
+          },
+          {
+            "file": "tools/verify_v2_6_1_selection.py",
+            "rc": 0,
+            "stderr": ""
+          }
+        ]
+      }
+    },
+    {
+      "id": "V2.6.1-02",
+      "title": "单一权威：选择记录形状、词表与合同版本只在 domain/selection.js 定义，消费者只引用",
+      "ok": true,
+      "detail": {
+        "duplicated_in_workspace": [],
+        "defined_outside_domain": [],
+        "module_uses_domain_builders": true
+      }
+    },
+    {
+      "id": "V2.6.1-03",
+      "title": "界面责任：采用入口就地放在比较区（无第二个重复确认面板），主次按钮与反馈区就位",
+      "ok": true,
+      "detail": {
+        "no_duplicate_panel": true,
+        "entries_in_compare": true,
+        "feedback_adjacent": true,
+        "single_click_wiring": true,
+        "clear_secondary_in_compare": true
+      }
+    },
+    {
+      "id": "V2.6.1-04",
+      "title": "写路径唯一：采用只经仓储追加选择记录（Module 拥有记录），视图只转发、失败走错误提示",
+      "ok": true,
+      "detail": {
+        "forbidden_tokens": [],
+        "saves_selection": true,
+        "memory_after_save": true,
+        "no_auto_select": true,
+        "view": {
+          "direct_writes": [],
+          "forwards_to_module": true,
+          "error_path_kept": true
+        },
+        "negative_probe": {
+          "selections_save_guard_red": true,
+          "compare_purity_guard_red": true,
+          "rework_purity_guard_red": true,
+          "view_forward_guard_red": true,
+          "ok": true
+        },
+        "section_chars": 3085
+      }
+    },
+    {
+      "id": "V2.6.1-05",
+      "title": "不回退：比较区仍是纯投影、返工区未被采用逻辑污染（V2.5.3 / V2.5.4 判据保持）",
+      "ok": true,
+      "detail": {
+        "compare_forbidden": [],
+        "rework_forbidden": []
+      }
+    },
+    {
+      "id": "V2.6.1-06",
+      "title": "SL-01–SL-18 选择契约套件：跨图候选、缺身份、非法 sha、过高 schema 版本、过期投影全部守住",
+      "ok": true,
+      "detail": {
+        "status": "passed",
+        "failed": [],
+        "cases": 18
+      }
+    },
+    {
+      "id": "V2.6.1-07",
+      "title": "既有套件回归：RW-01–RW-15、CP-01–CP-15、R01–R13 与复核 provider 在采用落地后仍全过",
+      "ok": true,
+      "detail": {
+        "rework": "passed",
+        "compare": "passed",
+        "review": "passed",
+        "provider": "passed"
+      }
+    },
+    {
+      "id": "V2.6.1-08",
+      "title": "自动审核只提供依据：种子阶段已有候选与报告，但没有任何选择记录，行内摘要仍是「尚未采用」",
+      "ok": true,
+      "detail": {
+        "selection_rows": 0,
+        "progress": {
+          "current": 0,
+          "required": 1,
+          "stale": 0,
+          "missing": 1
+        },
+        "candidates": [
+          "act-eec04917de3a4ba0b0558e6b2f59cae6",
+          "act-e5bbae58498749ac95858059c6caaf48"
+        ],
+        "row": {
+          "shot_id": "shot_main_clean",
+          "attempt_state": "succeeded",
+          "selection_state": "none",
+          "selection_text": "尚未采用候选：在候选比较里选一条，点「采用此候选」。"
+        }
+      }
+    },
+    {
+      "id": "V2.6.1-09",
+      "title": "入口：采用主按钮始终绑定比较区「正看着的候选」，换卡后身份随之变化",
+      "ok": true,
+      "detail": {
+        "default": "act-eec04917de3a4ba0b0558e6b2f59cae6",
+        "switched": "act-e5bbae58498749ac95858059c6caaf48",
+        "entry": {
+          "in_compare": true,
+          "disabled": false,
+          "shot_id": null,
+          "candidate_id": null,
+          "candidate_sha256": null
+        },
+        "selected": "act-e5bbae58498749ac95858059c6caaf48"
+      }
+    },
+    {
+      "id": "V2.6.1-10",
+      "title": "采用入口：主按钮绑定「当前查看候选」且就地保存（无确认面板），次按钮状态与之相称",
+      "ok": true,
+      "detail": {
+        "selected_candidate": "act-e5bbae58498749ac95858059c6caaf48",
+        "open_disabled": false,
+        "clear_disabled": true,
+        "compare_visible": true
+      }
+    },
+    {
+      "id": "V2.6.1-11",
+      "title": "查看/切换候选不改写任何记录，焦点落在被切换的候选标签",
+      "ok": true,
+      "detail": {
+        "selected_candidate": "act-eec04917de3a4ba0b0558e6b2f59cae6",
+        "focus": "compare-tab-act-eec04917de3a4ba0b0558e6b2f59cae6",
+        "records_unchanged": true
+      }
+    },
+    {
+      "id": "V2.6.1-12",
+      "title": "采用：追加一条选择记录（绑定候选身份/版本/审核指纹），行摘要、候选徽标与整套进度同步更新",
+      "ok": true,
+      "detail": {
+        "selection": {
+          "kind": "selection",
+          "document_id": "shot_main_clean",
+          "version": 1,
+          "payload_sha256": "bf67b9e05c894f261789514a2887b2703e8f0ef2847fd65b8f8370780ee349a5",
+          "action": "select",
+          "candidate_id": "act-e5bbae58498749ac95858059c6caaf48",
+          "candidate_version": 2,
+          "candidate_sha256": "8b02d541a25b1f19af25ae75f2c5292198ee073a8251b02129fc050db06e7111",
+          "selection_id": "act-6180d7d0bac54b15a7bb3226db86797a",
+          "has_fingerprint": true,
+          "payload_keys": "action,candidate_id,candidate_sha256,candidate_version,contract_version,created_at,review_fingerprint,schema_version,selection_id,shot_id",
+          "payload_chars": 671
+        },
+        "progress": {
+          "current": 1,
+          "required": 1,
+          "stale": 0,
+          "missing": 0
+        },
+        "badges": [
+          {
+            "state": "current",
+            "text": "已采用",
+            "candidate_id": "act-e5bbae58498749ac95858059c6caaf48"
+          }
+        ],
+        "status": "主图·干净背景 已采用候选；旧候选和旧采用保留在历史中。确定性硬阻断仍会阻止交付。"
+      }
+    },
+    {
+      "id": "V2.6.1-13",
+      "title": "采用只写选择：Prompt/Attempt/Candidate/Review/确认与图片资产逐字不变，无关图零变化",
+      "ok": true,
+      "detail": {
+        "others_untouched": true,
+        "second_shot_untouched": true,
+        "assets": 6
+      }
+    },
+    {
+      "id": "V2.6.1-14",
+      "title": "改选：追加新版本而不是覆盖，旧记录逐字保留，徽标与摘要随之移动",
+      "ok": true,
+      "detail": {
+        "version": 2,
+        "kept_prefix": true,
+        "badges": [
+          {
+            "state": "current",
+            "text": "已采用",
+            "candidate_id": "act-eec04917de3a4ba0b0558e6b2f59cae6"
+          }
+        ],
+        "progress": {
+          "current": 1,
+          "required": 1,
+          "stale": 0,
+          "missing": 0
+        }
+      }
+    },
+    {
+      "id": "V2.6.1-15",
+      "title": "返工后不自动失效：新候选追加到链上，旧采用保持 current（新候选≠人的决定失效）",
+      "ok": true,
+      "detail": {
+        "newest_candidate": "act-175bb887ed90448aad6fdcb7c3d203ee",
+        "chain_grew": 3,
+        "row": {
+          "shot_id": "shot_main_clean",
+          "attempt_state": "succeeded",
+          "selection_state": "current",
+          "selection_text": "已采用候选 v1（选择记录 act-f5604b085875447c9b09905d51917ec9）；当前仍有效（自动审核只提供依据，选择由人做出）。"
+        },
+        "progress": {
+          "current": 1,
+          "required": 1,
+          "stale": 0,
+          "missing": 0
+        },
+        "badges": {
+          "act-eec04917de3a4ba0b0558e6b2f59cae6": {
+            "state": "current",
+            "text": "已采用",
+            "candidate_id": "act-eec04917de3a4ba0b0558e6b2f59cae6"
+          }
+        },
+        "selection_version": 2
+      }
+    },
+    {
+      "id": "V2.6.1-16",
+      "title": "返工后改选：追加新版本指向所选候选，徽标随之移动，历史全部保留",
+      "ok": true,
+      "detail": {
+        "selection": {
+          "kind": "selection",
+          "document_id": "shot_main_clean",
+          "version": 3,
+          "payload_sha256": "9a4779a1ebacf3113a8a5a7361ddb797cb7bdedac6d26081874e23747fe90b45",
+          "action": "select",
+          "candidate_id": "act-e5bbae58498749ac95858059c6caaf48",
+          "candidate_version": 2,
+          "candidate_sha256": "8b02d541a25b1f19af25ae75f2c5292198ee073a8251b02129fc050db06e7111",
+          "selection_id": "act-8396d329466d450c8309dc44af4bacac",
+          "has_fingerprint": true,
+          "payload_keys": "action,candidate_id,candidate_sha256,candidate_version,contract_version,created_at,review_fingerprint,schema_version,selection_id,shot_id",
+          "payload_chars": 671
+        },
+        "progress": {
+          "current": 1,
+          "required": 1,
+          "stale": 0,
+          "missing": 0
+        },
+        "badges": [
+          {
+            "state": "current",
+            "text": "已采用",
+            "candidate_id": "act-e5bbae58498749ac95858059c6caaf48"
+          }
+        ]
+      }
+    },
+    {
+      "id": "V2.6.1-17",
+      "title": "写入失败不改旧选择：明确报错、不新增记录、旧选择与进度不变；恢复后重试能追加",
+      "ok": true,
+      "detail": {
+        "error": "注入的写入失败",
+        "version_after_failure": 3,
+        "recovered_version": 4
+      }
+    },
+    {
+      "id": "V2.6.1-18",
+      "title": "双击防护：连点「采用当前候选」只追加一条记录、一次版本推进",
+      "ok": true,
+      "detail": {
+        "selection_rows": 5,
+        "version": 5
+      }
+    },
+    {
+      "id": "V2.6.1-19",
+      "title": "取消采用：追加一条不带候选身份的 clear 记录，摘要与进度回到缺选，历史 select 记录保留",
+      "ok": true,
+      "detail": {
+        "selection": {
+          "kind": "selection",
+          "document_id": "shot_main_clean",
+          "version": 6,
+          "payload_sha256": "7eb78f7505efe2f6db14de4a7979073f7343b8ee4652a1d2dd5b7a4a79ff07dc",
+          "action": "clear",
+          "candidate_id": null,
+          "candidate_version": null,
+          "candidate_sha256": null,
+          "selection_id": "act-7a9f77d5d8254e43a57dd67e51f77df6",
+          "has_fingerprint": false,
+          "payload_keys": "action,candidate_id,candidate_sha256,candidate_version,contract_version,created_at,review_fingerprint,schema_version,selection_id,shot_id",
+          "payload_chars": 282
+        },
+        "progress": {
+          "current": 0,
+          "required": 1,
+          "stale": 0,
+          "missing": 1
+        },
+        "history_kept": true,
+        "row": {
+          "shot_id": "shot_main_clean",
+          "attempt_state": "succeeded",
+          "selection_state": "cleared",
+          "selection_text": "已取消采用（历史保留）；可以重新采用任一候选。"
+        }
+      }
+    },
+    {
+      "id": "V2.6.1-20",
+      "title": "刷新恢复：选择状态、行摘要、整套进度与候选徽标从 IndexedDB 恢复，刷新不写任何记录",
+      "ok": true,
+      "detail": {
+        "records_same": true,
+        "row": {
+          "shot_id": "shot_main_clean",
+          "attempt_state": "succeeded",
+          "selection_state": "cleared",
+          "selection_text": "已取消采用（历史保留）；可以重新采用任一候选。"
+        },
+        "progress": {
+          "current": 0,
+          "required": 1,
+          "stale": 0,
+          "missing": 1
+        }
+      }
+    },
+    {
+      "id": "V2.6.1-21",
+      "title": "视觉证据：整页与比较区采用入口特写落盘；选择记录只引用内容寻址身份，不含图片字节",
+      "ok": true,
+      "detail": {
+        "screenshots": {
+          "evals/product-v2/evidence/v2.6.1-selection-20261008-014250.png": 264280,
+          "evals/product-v2/evidence/v2.6.1-selection-20261008-014250-detail.png": 107178
+        },
+        "selection_payloads": [
+          {
+            "keys": "action,candidate_id,candidate_sha256,candidate_version,contract_version,created_at,review_fingerprint,schema_version,selection_id,shot_id",
+            "chars": 671
+          },
+          {
+            "keys": "action,candidate_id,candidate_sha256,candidate_version,contract_version,created_at,review_fingerprint,schema_version,selection_id,shot_id",
+            "chars": 671
+          },
+          {
+            "keys": "action,candidate_id,candidate_sha256,candidate_version,contract_version,created_at,review_fingerprint,schema_version,selection_id,shot_id",
+            "chars": 671
+          },
+          {
+            "keys": "action,candidate_id,candidate_sha256,candidate_version,contract_version,created_at,review_fingerprint,schema_version,selection_id,shot_id",
+            "chars": 671
+          },
+          {
+            "keys": "action,candidate_id,candidate_sha256,candidate_version,contract_version,created_at,review_fingerprint,schema_version,selection_id,shot_id",
+            "chars": 671
+          },
+          {
+            "keys": "action,candidate_id,candidate_sha256,candidate_version,contract_version,created_at,review_fingerprint,schema_version,selection_id,shot_id",
+            "chars": 282
+          },
+          {
+            "keys": "action,candidate_id,candidate_sha256,candidate_version,contract_version,created_at,review_fingerprint,schema_version,selection_id,shot_id",
+            "chars": 671
+          }
+        ],
+        "selection_rows": 7,
+        "adopt_status": "主图·干净背景 已采用候选；旧候选和旧采用保留在历史中。确定性硬阻断仍会阻止交付。"
+      }
+    },
+    {
+      "id": "V2.6.1-22",
+      "title": "正式入口 --check 全过（采用闭环没有破坏既有自检）",
+      "ok": true,
+      "detail": {
+        "rc": 0,
+        "tail": [
+          "  PASS  整套复核 provider 不可用时 capabilities 仍 200 且 configured=false  suite_review={'kind': 'dependency', 'detail': 'RuntimeError: 自检：整套复核 provider 构造失败'}",
+          "  PASS  整套复核 provider 不可用时路由 503 且错误分类明确                          status=503 error={'family': 'internal', 'code': 'PROVIDER_NOT_CONFIGURED', 'message': '语义 provider 不可用：检查注册表、依赖与 DASHSCOPE_API_KEY。', 'retry_policy': 'fatal', 'http_status': 503, 'request_id': None, 'details': {'kind': 'dependency', 'detail': 'RuntimeError: 自检：整套复核 provider 构造失败'}}",
+          "V2 正式入口自检：47/47 通过。"
+        ]
+      }
+    },
+    {
+      "id": "V2.6.1-23",
+      "title": "零意外 console error / page error（唯一允许项：Unknown 路径的 504 资源日志）",
+      "ok": true,
+      "detail": {
+        "unexpected_console": [],
+        "expected_unknown_path_504": [],
+        "page_errors": []
+      }
+    }
+  ],
+  "ui": {
+    "seeded": {
+      "shots": [
+        "shot_main_clean",
+        "shot_infographic_benefits",
+        "shot_scene_lifestyle",
+        "shot_detail_material"
+      ],
+      "first": "shot_main_clean",
+      "second": "shot_infographic_benefits",
+      "candidates": [
+        "act-eec04917de3a4ba0b0558e6b2f59cae6",
+        "act-e5bbae58498749ac95858059c6caaf48"
+      ],
+      "reference_sha": "88bcc17af574e50d447d09bc06d9636033a215d738a8a13768ba63dd0d1a38d2"
+    },
+    "screenshot": "evals/product-v2/evidence/v2.6.1-selection-20261008-014250.png",
+    "screenshot_detail": "evals/product-v2/evidence/v2.6.1-selection-20261008-014250-detail.png",
+    "selection_rows": 7,
+    "progress": {
+      "current": 1,
+      "required": 1,
+      "stale": 0,
+      "missing": 0
+    },
+    "checks": [
+      "V2.6.1-08",
+      "V2.6.1-09",
+      "V2.6.1-10",
+      "V2.6.1-11",
+      "V2.6.1-12",
+      "V2.6.1-13",
+      "V2.6.1-14",
+      "V2.6.1-15",
+      "V2.6.1-16",
+      "V2.6.1-17",
+      "V2.6.1-18",
+      "V2.6.1-19",
+      "V2.6.1-20",
+      "V2.6.1-21"
+    ]
+  },
+  "console_errors": [],
+  "page_errors": []
+}

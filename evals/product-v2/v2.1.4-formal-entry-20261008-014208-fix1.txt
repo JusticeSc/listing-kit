@@ -1,0 +1,28 @@
+amz-listing-kit Product V2 V2.1.4 formal entry (stateless server, browser-owned projects)
+NOT-AUTHORITY: point-in-time verification evidence only
+observed_at: 2026-10-08T01:42:26
+status: passed
+json: evals/product-v2/v2.1.4-formal-entry-20261008-014208-fix1.json
+port: 25381
+
+CHECKS
+- [PASS] V2.1.4-00 server.py 与 product_v2_server.py 通过语法自检
+- [PASS] V2.1.4-01 正式入口自检全过（静态资源 / health / 无状态 API / 拒绝 V1 API 与目录逃逸）
+- [PASS] V2.1.4-02 Product V1 回归自检 6/6 保持（--legacy-v1）
+- [PASS] V2.1.4-03 V2 体检通过且声明服务器无用户状态
+- [PASS] V2.1.4-04 正式进程 HTTP 契约：产品资源可取，V1 工作空间 API / harness / 写接口不可达
+- [PASS] V2.1.4-05 正式入口空白启动：无项目、无指针、无预填内容
+- [PASS] V2.1.4-06 新建项目并写入文档与资产（正式入口下走产品 storage 代码）
+- [PASS] V2.1.4-07 关浏览器重开后项目与资产 hash 恢复（IndexedDB 持久化）
+- [PASS] V2.1.4-08 重启服务器后刷新：项目与资产 hash 仍一致
+- [PASS] V2.1.4-09 两个独立浏览器配置文件项目列表不同
+- [PASS] V2.1.4-10 网络审计：无 directory 参数、无 V1 工作空间 API、无 harness、全部同源
+- [PASS] V2.1.4-11 浏览器会话零 console error / page error
+- [PASS] V2.1.4-12 磁盘审计：正式进程 + 浏览器会话前后仓库与最近项目索引零差异
+
+SCREENSHOTS
+- evals/product-v2/v2.1.4-formal-blank-20261008-014208.png
+- evals/product-v2/v2.1.4-formal-project-20261008-014208.png
+
+BOUNDARY
+证明默认正式入口 `python app/server.py` 以无状态方式提供 Product V2 页面：服务器不读写工作空间与最近项目索引、无 directory 参数、会话前后磁盘零差异；浏览器项目在关浏览器重开与服务器重启后从 IndexedDB 恢复；两个独立配置文件互不可见；Product V1 以 --legacy-v1 保留为回归入口且自检 6/6。不证明商品资料之后的业务链、真实模型调用、交付包、跨机器迁移与首次使用者可用性。

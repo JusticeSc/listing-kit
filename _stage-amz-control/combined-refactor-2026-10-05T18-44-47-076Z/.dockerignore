@@ -1,0 +1,19 @@
+**
+!Dockerfile
+!pyproject.toml
+!uv.lock
+!app/
+!app/server.py
+!app/product_v2_server.py
+!app/product_v2/
+!app/product_v2/**
+# 渐进 TS 迁移（计划 §9 V2.R7.5）：TS 源与类型声明不进运行镜像；
+# 浏览器和正式入口只消费 `npm run build:frontend` 生成的同目录 .js。
+app/product_v2/**/*.ts
+!src/
+!src/**
+!config/**
+!deploy/
+!deploy/caddy/
+!deploy/caddy/Caddyfile
+!deploy/release-transaction.sh

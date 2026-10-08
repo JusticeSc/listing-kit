@@ -1,0 +1,75 @@
+{
+  "probe": "prompt_enhance",
+  "arm": "compiler",
+  "arm_meaning": "通用编译器 L1（用户原文）+ 本域 context L2；输入 = 臂 A 那版 84 字粗提示词",
+  "raw_prompt_chars": 169,
+  "text_model": "qwen-plus-latest",
+  "text_elapsed_s": 21.5,
+  "text_usage": {
+    "completion_tokens": 944,
+    "prompt_tokens": 2352,
+    "total_tokens": 3296
+  },
+  "text_tried": [],
+  "vlm": {
+    "model": "qwen-vl-max",
+    "elapsed_s": 12.5,
+    "usage": {
+      "prompt_tokens": 1210,
+      "completion_tokens": 372,
+      "total_tokens": 1582,
+      "completion_tokens_details": {
+        "text_tokens": 372
+      },
+      "prompt_tokens_details": {
+        "image_tokens": 1026,
+        "text_tokens": 184,
+        "cached_tokens": 0
+      }
+    },
+    "tried": [
+      {
+        "model": "qwen-vl-max-latest",
+        "error": "qwen-vl-max-latest 调用失败: HTTP 403: {\"error\":{\"message\":\"Access denied. For details, see: https://help.aliyun.com/zh/model-studio/error-code#access-denied\",\"type\":\"access_denied\",\"param\":null,\"code\":\"a"
+      },
+      {
+        "model": "qwen-vl-plus-latest",
+        "error": "qwen-vl-plus-latest 调用失败: HTTP 403: {\"error\":{\"message\":\"Access denied. For details, see: https://help.aliyun.com/zh/model-studio/error-code#access-denied\",\"type\":\"access_denied\",\"param\":null,\"code\":\""
+      }
+    ],
+    "characters": 1669
+  },
+  "lock_chars": 1475,
+  "comparison_baseline": {
+    "arm_B_human_lock_chars": 820
+  },
+  "used_facts": [
+    "外形轮廓 → 参考图描述",
+    "比例尺寸 → 参考图描述",
+    "颜色 → 参考图描述",
+    "材质纹理 → 参考图描述",
+    "图案的位置与数量 → 参考图描述",
+    "把手与杯口的结构 → 参考图描述",
+    "不得改动/不得美化/不得替换 → 用户指令（强约束）",
+    "周围环境可变 → 用户指令（唯一允许变更域）",
+    "浅灰石材台面 → 用户指令",
+    "浅色墙面 → 用户指令",
+    "柔和自然光从左前方照入 → 用户指令",
+    "画面干净、留白充足、居中构图、正方形构图、高清专业商品摄影布光 → 用户指令"
+  ],
+  "unknowns": [
+    "商品具体品类（杯/壶/瓶？）→ 未在参考图描述或规格中明示；若为杯则无底座，若为壶则可能有稳重基座，此属外观结构关键未知；",
+    "杯口是否带内唇/倒角/密封圈等微结构 → 参考图未明确显示细节层级；",
+    "盖子开合方式（旋拧/按压/滑盖）的机械结构可见性 → 参考图未提供多角度或动态状态；",
+    "底部是否有防滑垫/脚垫/金属环等非主体但附着于本体的部件 → 参考图未显示底部视图；",
+    "图案是否为印刷/烫金/蚀刻/贴膜 → 材质纹理描述未区分工艺类型，仅知其视觉呈现"
+  ],
+  "unknowns_count": 5,
+  "validation_problems": [],
+  "validation_advisories": [
+    "没有 `HARD CONSTRAINTS` 标题（只影响机器定位否定段；语义覆盖已按上文判定）"
+  ],
+  "validation_passed": true,
+  "lock_segment": "A photorealistic product shot of the exact item shown in the reference image, placed on a clean, minimalist modern kitchen countertop: light gray natural stone surface, pale neutral wall background, soft natural lighting coming from the front-left at 45 degrees, ample negative space, centered composition, square aspect ratio (1:1), studio-grade commercial photography lighting with even fill and subtle rim light.  \nPreserve the item’s original shape, silhouette, height-to-diameter ratio, color, surface texture, pattern placement and count, lid-to-body junction, handle-to-body junction, and cup rim structure — exactly as shown in the reference. Do not alter, enhance, smooth, sharpen, or stylize any part of the item. Do not substitute a similar-looking item; this is the exact item from the reference.  \nNO handle, NO side grip, NO carrying handle, NO strap, NO spout, NO pouring lip, NO straw, NO straw lid, NO second cap, NO flip top, NO text, NO letters, NO numbers, NO logo, NO brand mark, NO label, NO tag, NO barcode, NO base ring, NO foot pad, NO rubber gasket visible at bottom, NO additional layer or coating applied to any surface. Preserve the lid assembly's layered structure exactly as shown; do not simplify, merge or recolour its rings. Do not make it shorter, wider, taller or slimmer — preserve the exact height-to-diameter ratio. The item must appear physically grounded on the countertop with no floating, shadow mismatch, or perspective distortion.",
+  "facts_chars": 2063
+}

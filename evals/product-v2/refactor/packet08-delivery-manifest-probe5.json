@@ -1,0 +1,390 @@
+{
+  "label": "packet08-delivery-manifest-probe5",
+  "at": "2026-10-07T05:08:51.701754+00:00",
+  "checks": [
+    {
+      "code": "P08D-01a",
+      "title": "未发起整套 AI 时零外发（suite calls==0）",
+      "ok": true,
+      "detail": {
+        "calls": 0
+      }
+    },
+    {
+      "code": "P08D-01b",
+      "title": "未发起整套 AI 时面板明说未做 AI 复核（不伪装模型判断）",
+      "ok": true,
+      "detail": {
+        "note": "未做 AI 复核；当前确定性检查与人工采用仍是交付硬门。"
+      }
+    },
+    {
+      "code": "P08D-01c",
+      "title": "未做整套 AI 时交付门仍通过（not_run 不阻断）",
+      "ok": true,
+      "detail": {
+        "status": "交付门禁通过：可以生成交付包（只包含已采用的候选）。",
+        "findings": [
+          [
+            "export.selection_complete",
+            "PASS"
+          ],
+          [
+            "export.chain_integrity",
+            "PASS"
+          ],
+          [
+            "export.report_current",
+            "PASS"
+          ],
+          [
+            "export.no_blocking_findings",
+            "PASS"
+          ],
+          [
+            "export.asset_hash_matches",
+            "PASS"
+          ],
+          [
+            "export.suite_review_current",
+            "PASS"
+          ],
+          [
+            "export.unknown_acknowledged",
+            "PASS"
+          ]
+        ]
+      }
+    },
+    {
+      "code": "P08D-01d",
+      "title": "未做整套 AI 仍可导出，且清单整套/逐图 ai_review 全为 not_reviewed",
+      "ok": true,
+      "detail": {
+        "ai_review": {
+          "status": "not_reviewed",
+          "reason": "not_run",
+          "checked_at": null
+        },
+        "images": [
+          [
+            "shot_main_clean",
+            {
+              "status": "not_reviewed",
+              "reason": "not_run",
+              "checked_at": null,
+              "request_id": null
+            },
+            1,
+            "baa381a49c4f"
+          ],
+          [
+            "shot_infographic_benefits",
+            {
+              "status": "not_reviewed",
+              "reason": "not_run",
+              "checked_at": null,
+              "request_id": null
+            },
+            1,
+            "7a866ff714cb"
+          ],
+          [
+            "shot_scene_lifestyle",
+            {
+              "status": "not_reviewed",
+              "reason": "not_run",
+              "checked_at": null,
+              "request_id": null
+            },
+            1,
+            "b69c1cd1b2da"
+          ],
+          [
+            "shot_detail_material",
+            {
+              "status": "not_reviewed",
+              "reason": "not_run",
+              "checked_at": null,
+              "request_id": null
+            },
+            1,
+            "33f6f0e41f1f"
+          ]
+        ]
+      }
+    },
+    {
+      "code": "P08D-02a",
+      "title": "显式整套 AI 后 exactly 1 次套路外发（不自动重提）",
+      "ok": true,
+      "detail": {
+        "calls": 1
+      }
+    },
+    {
+      "code": "P08D-02b",
+      "title": "显式整套 AI 后报告 vlm.outcome=checked（真实成功）",
+      "ok": true,
+      "detail": {
+        "outcome": "checked"
+      }
+    },
+    {
+      "code": "P08D-02c",
+      "title": "显式整套 AI 后清单整套 ai_review=reviewed（与报告一致）",
+      "ok": true,
+      "detail": {
+        "ai_review": {
+          "status": "reviewed",
+          "reason": null,
+          "checked_at": "2026-10-01T00:00:00Z"
+        },
+        "images": [
+          [
+            "shot_main_clean",
+            {
+              "status": "not_reviewed",
+              "reason": "not_run",
+              "checked_at": null,
+              "request_id": null
+            }
+          ],
+          [
+            "shot_infographic_benefits",
+            {
+              "status": "not_reviewed",
+              "reason": "not_run",
+              "checked_at": null,
+              "request_id": null
+            }
+          ],
+          [
+            "shot_scene_lifestyle",
+            {
+              "status": "not_reviewed",
+              "reason": "not_run",
+              "checked_at": null,
+              "request_id": null
+            }
+          ],
+          [
+            "shot_detail_material",
+            {
+              "status": "not_reviewed",
+              "reason": "not_run",
+              "checked_at": null,
+              "request_id": null
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "code": "P08D-03a",
+      "title": "真实失败才记 unknown（outcome=unknown，不伪造 PASS）",
+      "ok": true,
+      "detail": {
+        "outcome": "unknown"
+      }
+    },
+    {
+      "code": "P08D-03b",
+      "title": "unknown 未确认时门禁阻断（unknown_acknowledged BLOCK）",
+      "ok": true,
+      "detail": {
+        "status": "交付门禁未通过：1 条阻断，逐条处理后才能生成。",
+        "unknowns": [
+          {
+            "rule": "vlm.suite_inspection_unavailable",
+            "label": "确认已知悉",
+            "disabled": false
+          }
+        ]
+      }
+    },
+    {
+      "code": "P08D-03c",
+      "title": "逐条确认已知悉后门禁通过（append-only，不改写报告）",
+      "ok": true,
+      "detail": {
+        "guards": 1,
+        "status": "已记录「已知悉」（append-only，不作为通过证据）。"
+      }
+    },
+    {
+      "code": "P08D-03d",
+      "title": "unknown 确认后可导出，且清单整套 ai_review=unknown（如实保留）",
+      "ok": true,
+      "detail": {
+        "ai_review": {
+          "status": "unknown",
+          "reason": "server",
+          "checked_at": "2026-10-07T05:08:49.633Z"
+        }
+      }
+    },
+    {
+      "code": "P08D-04",
+      "title": "真硬门缺口（字节缺失）仍被拦：按钮禁用、无新 export_record",
+      "ok": true,
+      "detail": {
+        "dropped": "0648105c736d",
+        "records": 3,
+        "blocking": [
+          {
+            "rule": "export.asset_hash_matches",
+            "severity": "BLOCK",
+            "jumps": 1
+          }
+        ]
+      }
+    },
+    {
+      "code": "P08D-06",
+      "title": "零意外 console / page / HTTP 错误",
+      "ok": true,
+      "detail": {
+        "console": [],
+        "page": [],
+        "http": []
+      }
+    },
+    {
+      "code": "P08D-05a",
+      "title": "工作台不组 manifest（workspace.js 无组装调用）",
+      "ok": true,
+      "detail": {
+        "hits": false
+      }
+    },
+    {
+      "code": "P08D-05b",
+      "title": "交付视图不组 manifest/ZIP（只转发命令）",
+      "ok": true,
+      "detail": {
+        "hits": false
+      }
+    },
+    {
+      "code": "P08D-05c",
+      "title": "manifest/ZIP 唯一组装点在 review-delivery owner 内",
+      "ok": true,
+      "detail": {
+        "owner": true
+      }
+    }
+  ],
+  "captures": {
+    "shots": [
+      "shot_main_clean",
+      "shot_infographic_benefits",
+      "shot_scene_lifestyle",
+      "shot_detail_material"
+    ],
+    "suite_calls_before_ai": 0,
+    "suite_note_before": "未做 AI 复核；当前确定性检查与人工采用仍是交付硬门。",
+    "manifest_no_ai": {
+      "ai_review": {
+        "status": "not_reviewed",
+        "reason": "not_run",
+        "checked_at": null
+      },
+      "images": [
+        [
+          "shot_main_clean",
+          {
+            "status": "not_reviewed",
+            "reason": "not_run",
+            "checked_at": null,
+            "request_id": null
+          },
+          1,
+          "baa381a49c4f"
+        ],
+        [
+          "shot_infographic_benefits",
+          {
+            "status": "not_reviewed",
+            "reason": "not_run",
+            "checked_at": null,
+            "request_id": null
+          },
+          1,
+          "7a866ff714cb"
+        ],
+        [
+          "shot_scene_lifestyle",
+          {
+            "status": "not_reviewed",
+            "reason": "not_run",
+            "checked_at": null,
+            "request_id": null
+          },
+          1,
+          "b69c1cd1b2da"
+        ],
+        [
+          "shot_detail_material",
+          {
+            "status": "not_reviewed",
+            "reason": "not_run",
+            "checked_at": null,
+            "request_id": null
+          },
+          1,
+          "33f6f0e41f1f"
+        ]
+      ]
+    },
+    "suite_calls_after_ai": 1,
+    "suite_vlm_checked": "checked",
+    "manifest_ai": {
+      "ai_review": {
+        "status": "reviewed",
+        "reason": null,
+        "checked_at": "2026-10-01T00:00:00Z"
+      },
+      "images": [
+        [
+          "shot_main_clean",
+          {
+            "status": "not_reviewed",
+            "reason": "not_run",
+            "checked_at": null,
+            "request_id": null
+          }
+        ],
+        [
+          "shot_infographic_benefits",
+          {
+            "status": "not_reviewed",
+            "reason": "not_run",
+            "checked_at": null,
+            "request_id": null
+          }
+        ],
+        [
+          "shot_scene_lifestyle",
+          {
+            "status": "not_reviewed",
+            "reason": "not_run",
+            "checked_at": null,
+            "request_id": null
+          }
+        ],
+        [
+          "shot_detail_material",
+          {
+            "status": "not_reviewed",
+            "reason": "not_run",
+            "checked_at": null,
+            "request_id": null
+          }
+        ]
+      ]
+    },
+    "suite_vlm_unknown": "unknown"
+  },
+  "note": "fake-suite-review 替身经显式注入接缝（holder 切换 ok/unknown）；0 真实模型调用；未做整套 AI 可导出且清单 not_reviewed；显式 AI exactly 1 次；unknown 需知悉；硬门缺口仍拦。"
+}

@@ -1,0 +1,37 @@
+# Amazon Listing Kit — 远程正式入口的 TLS 终止层（V2.UI.1）
+#
+# 背景：Product V2 把项目数据放在浏览器 IndexedDB，并用原生 WebCrypto 生成 UUID 与
+# SHA-256；这些 API 只在安全上下文可用，所以远程正式入口必须是 HTTPS。
+# 应用容器继续提供无状态 HTTP（127.0.0.1:8780），本文件只负责 TLS 与明文跳转。
+#
+# 站点名使用裸 IP + Let's Encrypt shortlived profile（RFC 8738 IP 证书）：
+#   - 大陆云主机对“未备案域名”的 80 端口请求做拦截（403 Non-compliance ICP Filing，
+#     Server: Beaver），域名类证书（sslip.io / nip.io / 自备域名）无法通过 HTTP-01；
+#   - 裸 IP 的 Host 不在该拦截范围内，且浏览器把 https://<公网 IP> 视为可信安全上下文；
+#   - shortlived 证书有效期约 160 小时，Caddy 会自动续期，续期结果落在 caddy-data 卷。
+# 阿里云安全组当前丢弃 443，因此 HTTPS 对外监听 8080；若日后放行 443，把 8080 改成
+# 443（或追加站点地址）即可，无需改应用。
+# 80 端口留给 ACME HTTP-01 挑战与明文跳转（挑战路径由 Caddy 优先于 redir 处理）。
+
+{
+	admin off
+	# 浏览器访问 https://<IP>:8080 时不会按 RFC 6066 发送域名 SNI，
+	# 用 default_sni 把 IP 证书作为“无 SNI”握手的默认证书。
+	default_sni 47.115.172.233
+}
+
+https://47.115.172.233:8080 {
+	tls {
+		issuer acme {
+			profile shortlived
+			disable_tlsalpn_challenge
+		}
+	}
+	reverse_proxy 127.0.0.1:8780 {
+		header_up X-Forwarded-Proto "https"
+	}
+}
+
+http://47.115.172.233 {
+	redir https://47.115.172.233:8080{uri} permanent
+}

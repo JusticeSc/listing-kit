@@ -1,0 +1,57 @@
+Traceback (most recent call last):
+  File "E:\workbuddy_workspace\2026-09-20-16-38-19\amz-listing-kit\tools\verify_v2_ui_2_interaction_visual.py", line 757, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "E:\workbuddy_workspace\2026-09-20-16-38-19\amz-listing-kit\tools\verify_v2_ui_2_interaction_visual.py", line 665, in main
+    workbench_checks, ui = run_workbench_checks(stamp, console_errors, page_errors)
+                           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\workbuddy_workspace\2026-09-20-16-38-19\amz-listing-kit\tools\verify_v2_ui_2_interaction_visual.py", line 428, in run_workbench_checks
+    page.fill("#intake-name", "便携保温杯")
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\workbuddy_workspace\2026-09-20-16-38-19\amz-listing-kit\.venv\Lib\site-packages\playwright\sync_api\_generated.py", line 11332, in fill
+    self._sync(
+    ~~~~~~~~~~^
+        self._impl_obj.fill(
+        ^^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+        )
+        ^
+    )
+    ^
+  File "E:\workbuddy_workspace\2026-09-20-16-38-19\amz-listing-kit\.venv\Lib\site-packages\playwright\_impl\_sync_base.py", line 115, in _sync
+    return task.result()
+           ~~~~~~~~~~~^^
+  File "E:\workbuddy_workspace\2026-09-20-16-38-19\amz-listing-kit\.venv\Lib\site-packages\playwright\_impl\_page.py", line 930, in fill
+    return await self._main_frame.fill(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\workbuddy_workspace\2026-09-20-16-38-19\amz-listing-kit\.venv\Lib\site-packages\playwright\_impl\_frame.py", line 637, in fill
+    await self._fill(**locals_to_params(locals()))
+  File "E:\workbuddy_workspace\2026-09-20-16-38-19\amz-listing-kit\.venv\Lib\site-packages\playwright\_impl\_frame.py", line 649, in _fill
+    await self._channel.send("fill", self._timeout, locals_to_params(locals()))
+  File "E:\workbuddy_workspace\2026-09-20-16-38-19\amz-listing-kit\.venv\Lib\site-packages\playwright\_impl\_connection.py", line 76, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "E:\workbuddy_workspace\2026-09-20-16-38-19\amz-listing-kit\.venv\Lib\site-packages\playwright\_impl\_connection.py", line 632, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+playwright._impl._errors.TimeoutError: Page.fill: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator("#intake-name")
+    - locator resolved to <input maxlength="120" id="intake-name" autocomplete="off"/>
+    - fill("便携保温杯")
+  - attempting fill action
+    2 × waiting for element to be visible, enabled and editable
+      - element is not visible
+    - retrying fill action
+    - waiting 20ms
+    2 × waiting for element to be visible, enabled and editable
+      - element is not visible
+    - retrying fill action
+      - waiting 100ms
+    59 × waiting for element to be visible, enabled and editable
+       - element is not visible
+     - retrying fill action
+       - waiting 500ms
+

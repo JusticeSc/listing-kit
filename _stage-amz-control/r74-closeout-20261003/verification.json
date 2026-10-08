@@ -1,0 +1,392 @@
+{
+  "schema": "amz-verification-registry/v1",
+  "entrypoints": {
+    "app/server.py": [
+      {
+        "args": [
+          "--check"
+        ],
+        "category": "gateway",
+        "ci": true
+      }
+    ],
+    "evals/probes/docs_index.py": [
+      {
+        "args": [],
+        "category": "control",
+        "ci": true
+      }
+    ],
+    "evals/probes/project_state.py": [
+      {
+        "args": [],
+        "category": "control",
+        "ci": true
+      }
+    ],
+    "evals/probes/verification_policy.py": [
+      {
+        "args": [],
+        "category": "control",
+        "ci": true
+      }
+    ],
+    "npm:check:types": [
+      {
+        "args": [],
+        "category": "types",
+        "ci": true
+      }
+    ],
+    "npm:check:versions": [
+      {
+        "args": [],
+        "category": "control",
+        "ci": true
+      }
+    ],
+    "npm:test:domain": [
+      {
+        "args": [],
+        "category": "domain",
+        "ci": true
+      }
+    ],
+    "tools/check_docs.py": [
+      {
+        "args": [
+          "--no-run"
+        ],
+        "category": "control",
+        "ci": true
+      }
+    ],
+    "tools/check_project_state.py": [
+      {
+        "args": [],
+        "category": "control",
+        "ci": true
+      }
+    ],
+    "tools/check_verification.py": [
+      {
+        "args": [],
+        "category": "control",
+        "ci": true
+      }
+    ],
+    "tools/verify_v2_1_1_indexeddb.py": [
+      {
+        "args": [],
+        "category": "browser",
+        "ci": true
+      }
+    ],
+    "tools/verify_v2_1_2_project_home.py": [
+      {
+        "args": [],
+        "category": "browser",
+        "ci": true
+      }
+    ],
+    "tools/verify_v2_1_3_project_package.py": [
+      {
+        "args": [],
+        "category": "browser",
+        "ci": true
+      }
+    ],
+    "tools/verify_v2_1_4_formal_entry.py": [
+      {
+        "args": [],
+        "category": "browser",
+        "ci": true
+      }
+    ],
+    "tools/verify_v2_2_1_product_contracts.py": [
+      {
+        "args": [],
+        "category": "browser",
+        "ci": true
+      }
+    ],
+    "tools/verify_v2_2_2_semantic_provider.py": [
+      {
+        "args": [],
+        "category": "gateway",
+        "ci": true
+      },
+      {
+        "args": [
+          "--live"
+        ],
+        "category": "paid",
+        "ci": false,
+        "reason": "真实外发与计费必须另外取得模型、材料、地区及预算授权；绝不接 CI。"
+      }
+    ],
+    "tools/verify_v2_2_3_intake_understanding.py": [
+      {
+        "args": [],
+        "category": "browser",
+        "ci": true
+      }
+    ],
+    "tools/verify_v2_2_4_category_generality.py": [
+      {
+        "args": [],
+        "category": "paid",
+        "ci": false,
+        "reason": "真实品类模型路径需材料/预算批准；旧离线 fixture/source 断言不算新产品验收，迁移中不接 CI。"
+      },
+      {
+        "args": [
+          "--live"
+        ],
+        "category": "paid",
+        "ci": false,
+        "reason": "真实外发与计费必须另外取得模型、材料、地区及预算授权；绝不接 CI。"
+      }
+    ],
+    "tools/verify_v2_3_1_suite_registry.py": [
+      {
+        "args": [],
+        "category": "browser",
+        "ci": true,
+        "reason": "真实品类模型路径需材料/预算批准；旧离线 fixture/source 断言不算新产品验收，迁移中不接 CI。"
+      }
+    ],
+    "tools/verify_v2_3_2_suite_editor.py": [
+      {
+        "args": [],
+        "category": "browser",
+        "ci": true,
+        "reason": "真实品类模型路径需材料/预算批准；旧离线 fixture/source 断言不算新产品验收，迁移中不接 CI。"
+      }
+    ],
+    "tools/verify_v2_3_3_session_lifecycle.py": [
+      {
+        "args": [],
+        "category": "browser",
+        "ci": true,
+        "reason": "V2.R3.3 会话/启动/OCC 门：真 Chromium + IndexedDB + 可控延迟，无模型调用，离线可跑。"
+      }
+    ],
+    "tools/verify_v2_3_3_spec_versions.py": [
+      {
+        "args": [],
+        "category": "browser",
+        "ci": true,
+        "reason": "真实品类模型路径需材料/预算批准；旧离线 fixture/source 断言不算新产品验收，迁移中不接 CI。"
+      }
+    ],
+    "tools/verify_v2_3_4_prompt_compiler.py": [
+      {
+        "args": [],
+        "category": "browser",
+        "ci": true,
+        "reason": "真实品类模型路径需材料/预算批准；旧离线 fixture/source 断言不算新产品验收，迁移中不接 CI。"
+      }
+    ],
+    "tools/verify_v2_3_5_pre_generation_confirm.py": [
+      {
+        "args": [],
+        "category": "browser",
+        "ci": true,
+        "reason": "真实品类模型路径需材料/预算批准；旧离线 fixture/source 断言不算新产品验收，迁移中不接 CI。"
+      }
+    ],
+    "tools/verify_v2_3_6_prompt_manual_edit.py": [
+      {
+        "args": [],
+        "category": "browser",
+        "ci": true,
+        "reason": "真实品类模型路径需材料/预算批准；旧离线 fixture/source 断言不算新产品验收，迁移中不接 CI。"
+      }
+    ],
+    "tools/verify_v2_4_1_image_gateway.py": [
+      {
+        "args": [],
+        "category": "gateway",
+        "ci": true,
+        "reason": "真实品类模型路径需材料/预算批准；旧离线 fixture/source 断言不算新产品验收，迁移中不接 CI。"
+      }
+    ],
+    "tools/verify_v2_4_2_generation_attempt.py": [
+      {
+        "args": [],
+        "category": "browser",
+        "ci": true,
+        "reason": "真实品类模型路径需材料/预算批准；旧离线 fixture/source 断言不算新产品验收，迁移中不接 CI。"
+      }
+    ],
+    "tools/verify_v2_4_3_batch_execution.py": [
+      {
+        "args": [],
+        "category": "browser",
+        "ci": true,
+        "reason": "真实品类模型路径需材料/预算批准；旧离线 fixture/source 断言不算新产品验收，迁移中不接 CI。"
+      }
+    ],
+    "tools/verify_v2_4_4_candidate_blob.py": [
+      {
+        "args": [],
+        "category": "browser",
+        "ci": true,
+        "reason": "真实品类模型路径需材料/预算批准；旧离线 fixture/source 断言不算新产品验收，迁移中不接 CI。"
+      }
+    ],
+    "tools/verify_v2_4_5_live_reference.py": [
+      {
+        "args": [],
+        "category": "paid",
+        "ci": false,
+        "reason": "真实材料与计费，当前入口需按新模型/材料/预算门重做；默认不执行不是通过证据。"
+      },
+      {
+        "args": [
+          "--live"
+        ],
+        "category": "paid",
+        "ci": false,
+        "reason": "真实外发与计费必须另外取得模型、材料、地区及预算授权；绝不接 CI。"
+      }
+    ],
+    "tools/verify_v2_5_1_deterministic_review.py": [
+      {
+        "args": [],
+        "category": "browser",
+        "ci": true,
+        "reason": "真实材料与计费，当前入口需按新模型/材料/预算门重做；默认不执行不是通过证据。"
+      }
+    ],
+    "tools/verify_v2_5_2_vlm_review.py": [
+      {
+        "args": [],
+        "category": "browser",
+        "ci": true,
+        "reason": "真实材料与计费，当前入口需按新模型/材料/预算门重做；默认不执行不是通过证据。"
+      }
+    ],
+    "tools/verify_v2_r5_2_two_adapters.py": [
+      {
+        "args": [],
+        "category": "browser",
+        "ci": true,
+        "reason": "离线 transport 注入 + 浏览器 E2E；真实付费链按 R4.2/R7.1 另行授权。"
+      }
+    ],
+    "tools/verify_v2_5_3_compare_panel.py": [
+      {
+        "args": [],
+        "category": "browser",
+        "ci": true,
+        "reason": "真实材料与计费，当前入口需按新模型/材料/预算门重做；默认不执行不是通过证据。"
+      }
+    ],
+    "tools/verify_v2_5_4_rework_loop.py": [
+      {
+        "args": [],
+        "category": "browser",
+        "ci": true,
+        "reason": "真实材料与计费，当前入口需按新模型/材料/预算门重做；默认不执行不是通过证据。"
+      }
+    ],
+    "tools/verify_v2_5_5_suite_review.py": [
+      {
+        "args": [],
+        "category": "browser",
+        "ci": true,
+        "reason": "真实材料与计费，当前入口需按新模型/材料/预算门重做；默认不执行不是通过证据。"
+      }
+    ],
+    "tools/verify_v2_6_1_selection.py": [
+      {
+        "args": [],
+        "category": "browser",
+        "ci": true,
+        "reason": "真实材料与计费，当前入口需按新模型/材料/预算门重做；默认不执行不是通过证据。"
+      }
+    ],
+    "tools/verify_v2_6_2_delivery.py": [
+      {
+        "args": [],
+        "category": "browser",
+        "ci": true,
+        "reason": "真实材料与计费，当前入口需按新模型/材料/预算门重做；默认不执行不是通过证据。"
+      }
+    ],
+    "tools/verify_v2_6_3_project_transfer.py": [
+      {
+        "args": [],
+        "category": "browser",
+        "ci": true,
+        "reason": "真实材料与计费，当前入口需按新模型/材料/预算门重做；默认不执行不是通过证据。"
+      }
+    ],
+    "tools/verify_v2_6_4_accessibility.py": [
+      {
+        "args": [],
+        "category": "browser",
+        "ci": true,
+        "reason": "真实材料与计费，当前入口需按新模型/材料/预算门重做；默认不执行不是通过证据。"
+      }
+    ],
+    "tools/verify_v2_7_1_regression.py": [
+      {
+        "args": [],
+        "category": "aggregate",
+        "ci": false,
+        "reason": "读取 CI 运行两轮；接入自身会递归，不在 CI 再执行。"
+      }
+    ],
+    "tools/verify_v2_ui_1_remote_entry.py": [
+      {
+        "args": [],
+        "category": "remote",
+        "ci": false,
+        "reason": "真实远程入口，仅当前 Chrome 接受范围；对应部署/远程走查授权后执行，不能替代本地 fake 浏览器验证。"
+      }
+    ],
+    "tools/verify_v2_ui_2_interaction_visual.py": [
+      {
+        "args": [],
+        "category": "browser",
+        "ci": true,
+        "reason": "真实远程入口，仅当前 Chrome 接受范围；对应部署/远程走查授权后执行，不能替代本地 fake 浏览器验证。"
+      }
+    ],
+    "tools/verify_v2_ui_3_frontend.py": [
+      {
+        "args": [],
+        "category": "browser",
+        "ci": true,
+        "reason": "真实远程入口，仅当前 Chrome 接受范围；对应部署/远程走查授权后执行，不能替代本地 fake 浏览器验证。"
+      }
+    ],
+    "tools/verify_v2_volc_adopt_export.py": [
+      {
+        "args": [],
+        "category": "paid",
+        "ci": false,
+        "reason": "火山真实采用导出闭环：默认零外呼自检；--live 按预算门走一次同步生图并采用导出，绝不接 CI。"
+      },
+      {
+        "args": [
+          "--live"
+        ],
+        "category": "paid",
+        "ci": false,
+        "reason": "真实外发与计费必须另外取得模型、材料、地区及预算授权；绝不接 CI。"
+      }
+    ]
+  },
+  "human_gates": {
+    "C17": {
+      "category": "manual"
+    },
+    "C15": {
+      "category": "manual"
+    }
+  }
+}

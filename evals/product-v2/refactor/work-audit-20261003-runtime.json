@@ -1,0 +1,198 @@
+{
+  "schema": "amz-work-audit-runtime/v1",
+  "not_authority": "point-in-time evidence",
+  "observed_at": "2026-10-02T17:56:35.288Z",
+  "scope": "正式入口本地新建→草稿保存→刷新；不是生成/模型/发布完成证据",
+  "browser": "Chrome/154.0.8037.93",
+  "mode": "headless isolated omp-owned temporary profile",
+  "origin": "http://127.0.0.1:18783",
+  "viewport": {
+    "width": 1440,
+    "height": 1000
+  },
+  "server_health": {
+    "app": "amz-listing-kit",
+    "product": "v2",
+    "server_state": "none",
+    "user_data": "browser-indexeddb"
+  },
+  "records_before_reload": [
+    {
+      "store": "projects",
+      "rows": [
+        {
+          "project_id": "52c064bf-6134-4873-a626-28e92e28dac2",
+          "schema_version": 1,
+          "name": "审计隔离项目",
+          "state": "EMPTY",
+          "revision": 1,
+          "created_at": "2026-10-02T17:51:46.230Z",
+          "updated_at": "2026-10-02T17:51:46.230Z"
+        }
+      ]
+    },
+    {
+      "store": "documents",
+      "rows": [
+        {
+          "document_key": "52c064bf-6134-4873-a626-28e92e28dac2:product_input:intake:1",
+          "project_id": "52c064bf-6134-4873-a626-28e92e28dac2",
+          "kind": "product_input",
+          "document_id": "intake",
+          "version": 1,
+          "schema_version": 1,
+          "payload": {
+            "schema_version": 1,
+            "product_name": "隔离审计保温杯",
+            "description": "仅验证本地草稿与恢复，不调用模型。",
+            "selling_points": [],
+            "focus": "",
+            "references": []
+          },
+          "created_at": "2026-10-02T17:52:11.816Z",
+          "updated_at": "2026-10-02T17:52:11.816Z"
+        }
+      ]
+    },
+    {
+      "store": "assets",
+      "rows": []
+    }
+  ],
+  "records_after_reload": [
+    {
+      "store": "projects",
+      "rows": [
+        {
+          "project_id": "52c064bf-6134-4873-a626-28e92e28dac2",
+          "schema_version": 1,
+          "name": "审计隔离项目",
+          "state": "EMPTY",
+          "revision": 1,
+          "created_at": "2026-10-02T17:51:46.230Z",
+          "updated_at": "2026-10-02T17:51:46.230Z"
+        }
+      ]
+    },
+    {
+      "store": "documents",
+      "rows": [
+        {
+          "document_key": "52c064bf-6134-4873-a626-28e92e28dac2:product_input:intake:1",
+          "project_id": "52c064bf-6134-4873-a626-28e92e28dac2",
+          "kind": "product_input",
+          "document_id": "intake",
+          "version": 1,
+          "schema_version": 1,
+          "payload": {
+            "schema_version": 1,
+            "product_name": "隔离审计保温杯",
+            "description": "仅验证本地草稿与恢复，不调用模型。",
+            "selling_points": [],
+            "focus": "",
+            "references": []
+          },
+          "created_at": "2026-10-02T17:52:11.816Z",
+          "updated_at": "2026-10-02T17:52:11.816Z"
+        }
+      ]
+    },
+    {
+      "store": "assets",
+      "rows": []
+    }
+  ],
+  "records_unchanged": true,
+  "restored_name": "隔离审计保温杯",
+  "restored_description": "仅验证本地草稿与恢复，不调用模型。",
+  "page_errors": [],
+  "console_errors": [],
+  "supplier_calls": 0,
+  "screenshots": [
+    "evals/product-v2/refactor/audit-20261003-home.webp",
+    "evals/product-v2/refactor/audit-20261003-draft.webp"
+  ],
+  "checks": [
+    {
+      "command": "uv run --locked python tools/refactor_resume.py",
+      "result": "PASS",
+      "detail": "8阶段/26任务，旧state next=V2.R4.2"
+    },
+    {
+      "command": "uv run --locked python tools/check_docs.py",
+      "result": "PASS",
+      "detail": "真跑7命令（非--no-run）"
+    },
+    {
+      "command": "uv run --locked python tools/check_project_state.py",
+      "result": "PASS"
+    },
+    {
+      "command": "uv run --locked python app/server.py --check",
+      "result": "PASS",
+      "passed": 38,
+      "total": 38
+    },
+    {
+      "command": "npm run check:versions",
+      "result": "PASS",
+      "detail": "Node24.19.0/npm11.17.0/TS6.0.3"
+    },
+    {
+      "command": "npm run check:types",
+      "result": "PASS",
+      "detail": "只覆盖 jsconfig include 的2个文件"
+    },
+    {
+      "command": "npm run test:domain",
+      "result": "PASS",
+      "passed": 223,
+      "total": 223,
+      "raw_output": "artifact://3 (session transcript)"
+    },
+    {
+      "command": "uv run --locked python tools/check_verification.py",
+      "result": "PASS",
+      "detail": "43入口/39CI模式"
+    },
+    {
+      "command": "uv run --locked python evals/probes/verification_policy.py",
+      "result": "PASS",
+      "detail": "14组反例按标签拒绝"
+    }
+  ],
+  "automation_limit": "初次等待错误地查询body[data-ready]超时；实际ready位于#create-project/#project-view。检查真实marker后工作流通过；不将该查询错误记成产品boot缺陷。",
+  "not_proven": [
+    "原boot间歇根因",
+    "完整回归两轮",
+    "真实模型效果与费用",
+    "最终UI所有尺寸/缩放/键盘",
+    "C17/C15",
+    "远程部署与访问/消费策略"
+  ],
+  "snapshot_root": "_stage-amz-control/work-audit-20261003-2026-10-02T17-55-22-190Z",
+  "authority_before_sha256": {
+    "docs/product-v2-refactor-plan.md": "dbdbf61acb8a2c3f5eb6d2891d80d5ec971db9be83a79bac44d53185b3861355",
+    "_working/amz-listing-kit-product-v2/state.md": "07de7d7be95d2e0f92c896a031004ca40b45a9139f9f33d042c61480738e8d08"
+  },
+  "code_config_sha256": {
+    "app/product_v2/app.js": "bbd150c9c13c9cebce5d8907aba6f52745362eacafe7ac33393e7ffd141901e0",
+    "app/product_v2/session.js": "81aff815a92d9dc667a94810f7dfd678b9b838b658f672976f29372bcb213e22",
+    "app/product_v2/workspace.js": "9d087b0a0dec757122972aa2a99cfd014615fc6c3d26fed83cd5f8b0eaade86d",
+    "app/product_v2/storage/repository.js": "708ce8419e5df30922782c94acce3d8e77c2f32bd14c36884e405535c9be38fc",
+    "app/product_v2/domain/export-gate.js": "cf5b1f90a73813fb180a0db25c4f294c37bc8c2d16a3f14807ff03067b023aee",
+    "app/product_v2_server.py": "c0f2833be1f88eed09e243e0e83a77da8013f9903343cab9a9477b732fdb2d07",
+    "config/product-v2/providers.json": "d6f4a9fd9b8fb32c8876c267dc23e12a332915182083f55677c31b58145343a1",
+    "jsconfig.json": "6845c0f4678476206295ee20e5f33eb141672049a0cf7315d260b1884aaf8083",
+    "package-lock.json": "b97fbe2e3d44b45a4987f84b621a54bcc407455e9d4c27105f15d3c65d063db6",
+    ".github/workflows/ci-cd.yml": "5fde5ff5d2a6f98b3a17230d84a88580d09c2aa28f7d5862c80342e45006ecb9"
+  },
+  "repository_baseline_before_audit": {
+    "branch": "main...origin/main",
+    "staged": 0,
+    "unstaged": 55,
+    "untracked": 28,
+    "diff_stat": "55 files +1994 -2358",
+    "source": "git status --short --branch && git diff --stat；用于事实盘点，不提交"
+  }
+}

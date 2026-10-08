@@ -1,0 +1,332 @@
+name: Product V2 CI and Docker CD
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: product-v2-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Control plane and Product V2
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Set up locked frontend tools
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0, MIT
+        with:
+          node-version-file: package.json
+          package-manager-cache: false
+
+      - name: Install approved frontend checker
+        run: |
+          npm install --global "npm@$(node -p 'require("./package.json").engines.npm')" --ignore-scripts
+          npm ci --ignore-scripts
+
+      - name: Install uv and locked dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install uv==0.9.18
+          uv sync --locked
+          uv run playwright install --with-deps chromium
+
+      - name: Check control plane
+        run: |
+          uv run python tools/check_docs.py --no-run
+          uv run python tools/check_project_state.py
+          uv run python evals/probes/project_state.py
+          uv run python evals/probes/docs_index.py
+          uv run python tools/check_verification.py
+          uv run python evals/probes/verification_policy.py
+
+      - name: Check frontend versions types and direct behavior
+        run: |
+          npm run check:versions
+          npm run check:types
+          npm run check:generated
+          npm run test:domain
+
+      - name: Check formal entry and browser contracts
+        run: |
+          uv run python app/server.py --check
+          uv run python tools/verify_v2_1_1_indexeddb.py
+          uv run python tools/verify_v2_1_2_project_home.py
+          uv run python tools/verify_v2_1_3_project_package.py
+          uv run python tools/verify_v2_1_4_formal_entry.py
+          uv run python tools/verify_v2_2_1_product_contracts.py
+          uv run python tools/verify_v2_2_2_semantic_provider.py
+          uv run python tools/verify_v2_2_3_intake_understanding.py
+          uv run python tools/verify_v2_3_1_suite_registry.py
+          uv run python tools/verify_v2_3_2_suite_editor.py
+          uv run python tools/verify_v2_3_3_session_lifecycle.py
+          uv run python tools/verify_v2_3_3_spec_versions.py
+          uv run python tools/verify_v2_3_4_prompt_compiler.py
+          uv run python tools/verify_v2_3_5_pre_generation_confirm.py
+          uv run python tools/verify_v2_3_6_prompt_manual_edit.py
+          uv run python tools/verify_v2_4_1_image_gateway.py
+          uv run python tools/verify_v2_4_2_generation_attempt.py
+          uv run python tools/verify_v2_4_3_batch_execution.py
+          uv run python tools/verify_v2_4_4_candidate_blob.py
+          uv run python tools/verify_v2_5_1_deterministic_review.py
+          uv run python tools/verify_v2_5_2_vlm_review.py
+          uv run python tools/verify_v2_r5_2_two_adapters.py
+          uv run python tools/verify_v2_5_3_compare_panel.py
+          uv run python tools/verify_v2_5_4_rework_loop.py
+          uv run python tools/verify_v2_5_5_suite_review.py
+          uv run python tools/verify_v2_6_1_selection.py
+          uv run python tools/verify_v2_6_2_delivery.py
+          uv run python tools/verify_v2_6_3_project_transfer.py
+          uv run python tools/verify_v2_6_4_accessibility.py
+          uv run python tools/verify_v2_ui_2_interaction_visual.py
+          uv run python tools/verify_v2_ui_3_frontend.py
+
+      - name: Reject verification side effects
+        run: |
+          dirty="$(git status --porcelain --untracked-files=all)"
+          if [ -n "$dirty" ]; then
+            printf '%s\n' "$dirty"
+            echo "Verification changed tracked files or created non-ignored files."
+            exit 1
+          fi
+
+  container:
+    name: Docker image, smoke test, and main deploy
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      IMAGE_NAME: amz-listing-kit
+      CONTAINER_NAME: amz-listing-kit
+      APP_PORT: "8780"
+      APP_PUBLIC_IP: "47.115.172.233"
+      APP_HTTPS_PORT: "8080"
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up release acceptance tooling
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install locked acceptance dependencies
+        run: |
+          python -m pip install uv==0.9.18
+          uv sync --locked
+          uv run playwright install --with-deps chromium
+
+      - name: Build immutable image
+        run: docker build --pull --tag "${IMAGE_NAME}:${GITHUB_SHA}" .
+
+      - name: Smoke-test container health
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          docker run --detach --name amz-listing-kit-smoke --publish 127.0.0.1:8780:8780 "${IMAGE_NAME}:${GITHUB_SHA}"
+          for attempt in $(seq 1 30); do
+            status="$(docker inspect --format '{{.State.Health.Status}}' amz-listing-kit-smoke)"
+            if [ "$status" = healthy ]; then
+              python - <<'PY'
+          import json
+          import urllib.request
+
+          with urllib.request.urlopen("http://127.0.0.1:8780/api/health", timeout=5) as response:
+              body = json.load(response)
+          assert body["product"] == "v2", body
+          assert body["server_state"] == "none", body
+          PY
+              exit 0
+            fi
+            if [ "$status" = unhealthy ]; then
+              break
+            fi
+            sleep 2
+          done
+          docker logs amz-listing-kit-smoke
+          exit 1
+
+      - name: Remove smoke container
+        if: always()
+        run: docker rm --force amz-listing-kit-smoke >/dev/null 2>&1 || true
+
+      - name: Release transaction selftest (real disposable containers)
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          # PR 与 main push 都真实执行事务脚本与一次性容器（已批准的 Linux
+          # Docker runner + 锁依赖 Playwright Chromium）；缺守护进程/拉取失败
+          # 按 missing_prereq（exit 2）如实红，不伪造绿。远程发布前先过机制门。
+          uv run --locked python tools/release_transaction_probe.py --selftest
+
+      - name: Prepare SSH
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        run: |
+          set -Eeuo pipefail
+          install -m 700 -d "$HOME/.ssh"
+          printf '%s\n' "$SSH_PRIVATE_KEY" > "$HOME/.ssh/id_ed25519"
+          chmod 600 "$HOME/.ssh/id_ed25519"
+          ssh-keyscan -H "$SSH_HOST" >> "$HOME/.ssh/known_hosts"
+
+      - name: Sync provider secrets to server env file
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          DASHSCOPE_API_KEY: ${{ secrets.DASHSCOPE_API_KEY }}
+          # 第二 provider（火山 Ark，R4.3 只做运行环境接线；适配器本体属 R5.2）。
+          ARK_API_KEY: ${{ secrets.VOLCENGINE_API_KEY }}
+        run: |
+          set -Eeuo pipefail
+          if [ -z "${DASHSCOPE_API_KEY:-}" ] && [ -z "${ARK_API_KEY:-}" ]; then
+            echo "两个 provider 密钥都未配置：跳过同步，远程容器按未配置 provider 运行。" >&2
+            exit 0
+          fi
+          target="${SSH_USER}@${SSH_HOST}"
+          staging="$(mktemp)"
+          chmod 600 "$staging"
+          trap 'rm -f -- "$staging"' EXIT
+          {
+            if [ -n "${DASHSCOPE_API_KEY:-}" ]; then printf 'DASHSCOPE_API_KEY=%s\n' "$DASHSCOPE_API_KEY"; fi
+            if [ -n "${ARK_API_KEY:-}" ]; then printf 'ARK_API_KEY=%s\n' "$ARK_API_KEY"; fi
+          } > "$staging"
+          scp -o ConnectTimeout=15 "$staging" "$target:/tmp/amz-listing-kit-secrets.env"
+          ssh -o ConnectTimeout=15 -o ServerAliveInterval=15 "$target" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          umask 077
+          staging="/tmp/amz-listing-kit-secrets.env"
+          file="$HOME/.config/amz-listing-kit/app.env"
+          install -d -m 700 "$HOME/.config/amz-listing-kit"
+          touch "$file"
+          tmp="$(mktemp)"
+          grep -v -e '^DASHSCOPE_API_KEY=' -e '^ARK_API_KEY=' "$file" > "$tmp" || true
+          cat "$staging" >> "$tmp"
+          mv "$tmp" "$file"
+          chmod 600 "$file"
+          rm -f -- "$staging"
+          echo "app.env 已更新：$(wc -l < "$file") 行（密钥值不回显）"
+          REMOTE
+
+      - name: Build on remote Docker and deploy (full release transaction)
+        id: release_deploy
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+        run: |
+          set -Eeuo pipefail
+          target="${SSH_USER}@${SSH_HOST}"
+          context="/tmp/amz-listing-kit-${GITHUB_SHA}"
+          script="deploy/release-transaction.sh"
+          ssh -o ConnectTimeout=15 -o ServerAliveInterval=15 "$target" \
+            "case '$context' in /tmp/amz-listing-kit-[0-9a-f]*) rm -rf -- '$context';; *) exit 2;; esac; install -d -m 700 '$context'"
+          # 事务脚本随构建上下文一起上传：远程 deploy 入口先装一份到
+          # ~/.config/amz-listing-kit/release-transaction.sh，供后续
+          # finalize/rollback 会话复用同一身份与逻辑。
+          tar -czf - Dockerfile .dockerignore pyproject.toml uv.lock \
+            app/server.py app/product_v2_server.py app/product_v2 src config deploy \
+            | ssh -o ConnectTimeout=15 -o ServerAliveInterval=15 "$target" "tar -xzf - -C '$context'"
+          ssh -o ConnectTimeout=15 -o ServerAliveInterval=15 "$target" 'bash -s' -- \
+            "${IMAGE_NAME}:${GITHUB_SHA}" "${CONTAINER_NAME}" "${APP_PORT}" "$context" \
+            "${APP_PUBLIC_IP}" "${APP_HTTPS_PORT}" "$script" <<'REMOTE'
+          set -Eeuo pipefail
+          image="$1"
+          name="$2"
+          port="$3"
+          context="$4"
+          public_ip="$5"
+          https_port="$6"
+          script="$7"
+          # 旧版本恢复点（完整事务语义见 deploy/release-transaction.sh）：
+          # previous 应用容器与 Caddy 配置备份至少保留到容器健康、外部 HTTPS、
+          # 静态资源与约定页面主链全部验收结束；提前删除 previous 是已核对的
+          # 回退缺口，这里绝不提前删除。deploy 只做容器健康 + TLS 收敛 +
+          # 受信 HTTPS 入口检查；静态资源/页面主链验收见后一步，全部通过才
+          # finalize 清理；任一必要失败走 rollback 恢复上一已知可用状态。
+          case "$context" in
+            /tmp/amz-listing-kit-[0-9a-f]*) ;;
+            *) echo "refusing unexpected build context: $context" >&2; exit 2 ;;
+          esac
+          bash "$context/$script" deploy "$image" "$name" "$port" "$context" \
+            "$public_ip" "$https_port"
+          REMOTE
+
+      - name: Release acceptance (static assets and page main chain)
+        id: release_acceptance
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          # 受信 HTTPS 上的真实资源/页面验收：健康、能力、静态字节与已批准
+          # Playwright 无头 Chromium 实际启动/状态就绪/主链，不带 BYOK、
+          # 不做任何付费调用。失败绝不直接清理 previous，由下一步 rollback
+          # 按事务身份恢复上一已知可用状态并核对实际可用性。
+          uv run --locked python tools/release_transaction_probe.py --page-smoke \
+            --base "https://${APP_PUBLIC_IP}:${APP_HTTPS_PORT}"
+
+      - name: Finalize release (cleanup previous only after all acceptance)
+        id: release_finalize
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+        run: |
+          set +e
+          target="${SSH_USER}@${SSH_HOST}"
+          context="/tmp/amz-listing-kit-${GITHUB_SHA}"
+          # 只有全部验收通过才走到 finalize：按事务身份核对镜像一致后，
+          # 才删除 previous 与备份。finalize 仍重验容器健康 + 受信 HTTPS +
+          # 静态首页/样式/脚本（任一失败 exit 1，事务保持开放，rollback 恢复）。
+          # - 重验证失败（exit 1：新容器缺失/不健康、HTTPS/静态失败）是必要失败，
+          #   事务保持开放，由 rollback 门恢复；
+          # - 收尾失败（exit 4：新版本健康但删 previous/备份/事务文件失败，
+          #   或无有效开放事务）绝不自动回滚，需人工清理。
+          ssh -o ConnectTimeout=15 -o ServerAliveInterval=15 "$target" "bash ~/.config/amz-listing-kit/release-transaction.sh finalize '${IMAGE_NAME}:${GITHUB_SHA}' '${CONTAINER_NAME}' '${APP_PORT}' '$context' '${APP_PUBLIC_IP}' '${APP_HTTPS_PORT}'"
+          finalize_rc="$?"
+          echo "release_finalize_rc=$finalize_rc"
+          if [ "$finalize_rc" -eq 1 ]; then
+            echo "recoverable=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "recoverable=false" >> "$GITHUB_OUTPUT"
+          fi
+          if [ "$finalize_rc" -eq 4 ]; then
+            echo "finalize_cleanup_failed: new version healthy, manual cleanup needed (exit 4)" >&2
+          fi
+          exit "$finalize_rc"
+
+      - name: Roll back to previous known working state
+        if: failure() && github.event_name == 'push' && github.ref == 'refs/heads/main' && (steps.release_deploy.outcome == 'failure' || steps.release_acceptance.outcome == 'failure' || (steps.release_finalize.outcome == 'failure' && steps.release_finalize.outputs.recoverable == 'true'))
+        shell: bash
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+        run: |
+          set -Eeuo pipefail
+          target="${SSH_USER}@${SSH_HOST}"
+          context="/tmp/amz-listing-kit-${GITHUB_SHA}"
+          # 任一必要环节失败都进入明确回退：恢复 previous 应用容器与
+          # Caddy 配置并核对受信 HTTPS 实际可用。回退本身失败则报
+          # unrecovered_failed_release（exit 3），绝不把失败报成成功。
+          ssh -o ConnectTimeout=15 -o ServerAliveInterval=15 "$target" "bash ~/.config/amz-listing-kit/release-transaction.sh rollback '${IMAGE_NAME}:${GITHUB_SHA}' '${CONTAINER_NAME}' '${APP_PORT}' '$context' '${APP_PUBLIC_IP}' '${APP_HTTPS_PORT}' acceptance_failed"

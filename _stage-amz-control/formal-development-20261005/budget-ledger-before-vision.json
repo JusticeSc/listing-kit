@@ -1,0 +1,146 @@
+{
+ "budget_cap_cny": 5.0,
+ "cap_source": "current Goal §2.1/§16.1 (2026-10-05, goal 1599c9600ae01cb7); historical cap/spent/reservations retained",
+ "count_cap": {
+  "image_max": 8,
+  "image_per_call": 1,
+  "semantic_vlm_max": 6,
+  "total_max": 14
+ },
+ "supplement_authorization": {
+  "goal_id": "1599c9600ae01cb7",
+  "source": "docs/product-v2-refactor-plan.md §16.1; user formally started and manually activated full Goal",
+  "authorized_at": "2026-10-05T02:44:33.539Z",
+  "max_new_semantic_vlm_calls": 3,
+  "max_incremental_spent_and_unsettled_cny": 1.0,
+  "baseline_semantic_vlm_calls": 3,
+  "baseline_spent_cny": 1.15,
+  "additional_image_calls": 0,
+  "rule": "沿用全部历史记录；至少一次真实图文理解，其他只补改变且缺证能力；先预留，Unknown不释放；新增额度不是已调用或供应商余额。"
+ },
+ "price_origin": {
+  "flash": "r.jina.ai proxy of https://www.volcengine.com/docs/ark/model-pricing lines ~1630-1655: doubao-seedream-5-0-flash input free, output 0.12 yuan/image; verified 2026-10-03 this session",
+  "qwen": "https://help.aliyun.com/zh/model-studio/qwen-image-3-0.md Beijing: input 0.02 + output 0.18 per image; verified 2026-10-03 this session",
+  "semantic": "https://help.aliyun.com/zh/model-studio/model-pricing Beijing: deepseek-v4.1-flash input busy 2/inactive 1 per M, output busy 8/inactive 4 per M; verified 2026-10-03 (conservative busy rate)",
+  "review": "https://help.aliyun.com/zh/model-studio/model-pricing Beijing: qwen-vl-max input 1.6/M, output 4/M; verified 2026-10-03"
+ },
+ "reservations": [
+  {
+   "calls": 1,
+   "note": "qwen-image-3.0 Beijing single-ref n=1 actual 1344x1344: 0.02+0.18",
+   "provider": "dashscope-image",
+   "reserve_cny": 0.2,
+   "status": "spent",
+   "evidence": "evals/product-v2/v2.4.5-live-reference-20261003-145223-r42-dashscope-run5.json"
+  },
+  {
+   "calls": 1,
+   "note": "flash 1344x1344 single-ref n=1 sync b64_json direct probe (transport fix verification): output 0.12, input free; no evidence file, shell output only",
+   "provider": "volcengine-ark",
+   "reserve_cny": 0.12,
+   "status": "spent"
+  },
+  {
+   "calls": 1,
+   "note": "flash 1344x1344 single-ref n=1 sync b64_json via product path (submit succeeded, verifier wait_state raced on sync terminal): output 0.12, input free",
+   "provider": "volcengine-ark",
+   "reserve_cny": 0.12,
+   "status": "spent",
+   "evidence": "evals/product-v2/v2.4.5-live-reference-20261003-154037-r42-volcengine-run2.json"
+  },
+  {
+   "calls": 1,
+   "note": "flash 1344x1344 single-ref n=1 sync b64_json via product path, full pass (5/5 checks): output 0.12, input free",
+   "provider": "volcengine-ark",
+   "reserve_cny": 0.12,
+   "status": "spent",
+   "evidence": "evals/product-v2/v2.4.5-live-reference-20261003-154157-r42-volcengine-run3.json"
+  },
+  {
+   "calls": 1,
+   "note": "deepseek-v4.1-flash semantic positive L1: prompt 1231 + completion 2127 tokens (reasoning 1663); busy-rate 0.0025+0.0170≈0.0195, reserve 0.02 conservative",
+   "provider": "dashscope-semantic",
+   "reserve_cny": 0.02,
+   "status": "spent",
+   "evidence": "evals/product-v2/v2.2.2-semantic-provider-20261003-194132-r71-semlive.json"
+  },
+  {
+   "calls": 1,
+   "note": "L2 invalid-key negative: upstream auth rejected, 0 billed tokens, 0 cost; counts toward semantic_vlm attempts only",
+   "provider": "dashscope-semantic",
+   "reserve_cny": 0.0,
+   "status": "spent",
+   "evidence": "evals/product-v2/v2.2.2-semantic-provider-20261003-194132-r71-semlive.json"
+  },
+  {
+   "calls": 1,
+   "note": "qwen-vl-max review live: prompt 3101 + completion 38 tokens; 0.0050+0.0002≈0.0051, reserve 0.01 conservative; binding_ok true",
+   "provider": "dashscope-review",
+   "reserve_cny": 0.01,
+   "status": "spent",
+   "evidence": "evals/product-v2/v2.5.2-review-live-20261003-194238r71-vlm.json"
+  },
+  {
+   "calls": 0,
+   "note": "r71-dashscope (194502) fail-closed probe: AMZ_V2_DEFAULT_TRIAL unset, provider unconfigured, 0 upstream calls, 0 cost; kept as fail-closed evidence",
+   "provider": "dashscope-image",
+   "reserve_cny": 0.0,
+   "status": "spent",
+   "evidence": "evals/product-v2/v2.4.5-live-reference-20261003-194502-r71-dashscope.json"
+  },
+  {
+   "calls": 1,
+   "note": "qwen-image-3.0 Beijing single-ref n=1 current-tree re-proof (AMZ_V2_DEFAULT_TRIAL=open): 0.02+0.18; honey-jar-antique.jpg c024b7cf",
+   "provider": "dashscope-image",
+   "reserve_cny": 0.2,
+   "status": "spent",
+   "evidence": "evals/product-v2/v2.4.5-live-reference-20261003-194526-r71-dashscope2.json"
+  },
+  {
+   "calls": 0,
+   "note": "run1 (153732) submit reached gateway but provider transport bug returned 500 before upstream; no upstream call, 0 cost; kept as failure evidence only",
+   "provider": "volcengine-ark",
+   "reserve_cny": 0.0,
+   "status": "spent",
+   "evidence": "evals/product-v2/v2.4.5-live-reference-20261003-153732-r42-volcengine-run1.json"
+  },
+  {
+   "calls": 1,
+   "note": "flash 1344x1344 single-ref n=1 current-tree re-proof via product path (AMZ_V2_DEFAULT_TRIAL=open): sync b64_json one-shot succeeded, task_id null, 0 status calls; output 0.12, input free",
+   "provider": "volcengine-ark",
+   "reserve_cny": 0.12,
+   "status": "spent",
+   "evidence": "evals/product-v2/v2.4.5-live-reference-20261003-195600-r71-volc2.json"
+  },
+  {
+   "calls": 1,
+   "note": "flash 1344x1344 single-ref n=1 volc adopt-export attempt 222140 via product path (AMZ_V2_DEFAULT_TRIAL=open): sync submit succeeded + candidate stored (sha a73b857b), verifier script VE-06 probe syntax failed before adopt; output 0.12 billed, input free; failure evidence only, no retry on this result",
+   "provider": "volcengine-ark",
+   "reserve_cny": 0.12,
+   "status": "spent",
+   "evidence": "evals/product-v2/v2.4.5-volc-adopt-export-20261003-222140.json"
+  },
+  {
+   "calls": 1,
+   "note": "flash 1344x1344 single-ref n=1 volc adopt-export closeout (AMZ_V2_DEFAULT_TRIAL=open): sync one-shot succeeded, task_id null, adopted + suite-checked + delivery-exported; output 0.12, input free",
+   "provider": "volcengine-ark",
+   "reserve_cny": 0.12,
+   "status": "spent",
+   "evidence": "evals/product-v2/v2.4.5-volc-adopt-export-20261003-222253.json"
+  }
+ ],
+ "runtime_wiring": {
+  "ARK_API_KEY": "present in refreshed shell process 2026-10-03 (length 36, value never logged); VOLCENGINE_API_KEY absent; refreshed env enabled r71-volc2",
+  "DASHSCOPE_API_KEY": "present in local process env (presence only, value never logged)",
+  "default_trial": "both r71 image re-proofs used AMZ_V2_DEFAULT_TRIAL=open inline; bare process trial unset (fail-closed confirmed by 194502)",
+  "material": "honey-jar-antique.jpg sha256 c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461, CC BY 2.0 Cindy Shebley, SOURCES.txt"
+ },
+ "spent_calls": {
+  "image": 8,
+  "semantic_vlm": 3
+ },
+ "spent_cny": 1.15,
+ "stop_rule": "先到即停(金额或次数);未知计费保留预留不释放;追加预算需授权;不用付费调用调试错误和边界",
+ "total_reserved_cny": 1.15,
+ "updated_at": "2026-10-05T02:44:33.539Z"
+ }

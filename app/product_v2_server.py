@@ -57,11 +57,14 @@ SUITE_REVIEW_PATH = "/api/v2/review/suite"
 ANALYZE_FIELDS = ("product_name", "description", "selling_points", "focus", "references",
                   "locale", "platform", "max_slots", "existing_slot_ids")
 IMAGE_SUBMIT_FIELDS = ("action_id", "prompt", "references", "size", "seed", "model_id")
-# BYOK（V2.R4.3）：浏览器内存里的用户密钥随单次请求进 HTTP 头；服务器只在本次请求内
-# 转发给适配器，不落盘、不进日志、不进注册表。缺省等价于没有 BYOK：provider 按部署
-# 配置解析，默认档开关关闭时就是 503 PROVIDER_NOT_CONFIGURED。
+# 三用途请求头（V2.6.0）：Provider 选择 + 请求级 BYOK。图像键名保持既有通道（无垫片）；
+# 语义/复核是新增有限头。密钥只在本次请求内存里出现，不落盘、不进日志、不进注册表。
+SEMANTIC_PROVIDER_HEADER = "X-AMZ-Listing-Provider-Semantic"
+IMAGE_PROVIDER_HEADER = "X-AMZ-Listing-Provider-Image"
+REVIEW_PROVIDER_HEADER = "X-AMZ-Listing-Provider-Review"
+SEMANTIC_BYOK_HEADER = "X-AMZ-Listing-Key-Semantic"
 IMAGE_BYOK_HEADER = "X-AMZ-Listing-Key-Image"
-
+REVIEW_BYOK_HEADER = "X-AMZ-Listing-Key-Review"
 MIME = {
     ".html": "text/html; charset=utf-8",
     ".css": "text/css; charset=utf-8",
@@ -72,6 +75,9 @@ MIME = {
     ".ico": "image/x-icon",
     ".webmanifest": "application/manifest+json",
 }
+# 渐进 TS 迁移（计划 §9 V2.R7.5）：浏览器只消费生成的 .js；.ts / .d.ts 源码一律不外放，
+# 避免把唯一手工维护的 TS 源当静态资源发出去（Docker 里也已排除 .ts）。
+STATIC_DENY_SUFFIXES = frozenset({".ts"})
 
 HEALTH = {
     "app": "amz-listing-kit",
@@ -133,10 +139,24 @@ _SECRET_PATTERN = re.compile(r"(sk-|Bearer\s+|x-amz-listing-key-[a-z]+\s*[:=]\s*
                              r"[A-Za-z0-9._\-]+", re.IGNORECASE)
 
 
-def redact(text: str, limit: int = 300) -> str:
-    """错误消息只保留可诊断信息：不出现密钥片段（含 BYOK 头携带的值）或请求正文。"""
+def redact(text: str, limit: int = 300, *, secrets: Any = None) -> str:
+    """错误消息只保留可诊断信息：不出现密钥片段（含 BYOK 头携带的值）或请求正文。
 
-    return _SECRET_PATTERN.sub("***", str(text))[:limit]
+    secrets：本次请求出现过的请求级密钥原文（任意非 sk 字节也照样遮蔽）；逐字替换后
+    再走通用模式遮蔽。密钥只在内存里比对，不进日志、不进响应以外的任何地方。
+    """
+
+    safe = str(text)
+    candidates: list[str] = []
+    if isinstance(secrets, str):
+        candidates = [secrets]
+    elif isinstance(secrets, (list, tuple, set)):
+        candidates = [item for item in secrets if isinstance(item, str)]
+    for secret in candidates:
+        token = secret.strip()
+        if len(token) >= 4:
+            safe = safe.replace(token, "***")
+    return _SECRET_PATTERN.sub("***", safe)[:limit]
 
 
 def default_trial_state() -> str:
@@ -199,9 +219,34 @@ def provider_capabilities(provider: Any) -> dict[str, Any]:
 
 
 class ProductV2Handler(BaseHTTPRequestHandler):
-    """无状态：请求里没有任何东西会被当成服务器路径；用户数据全在浏览器。"""
+    """无状态：请求里没有任何东西会被当成服务器路径；用户数据全在浏览器。
+
+    连接复用：产品所有响应（静态、JSON、图片字节、send_error 错误页）都带 Content-Length，
+    所以按 HTTP/1.1 保持连接是安全的，浏览器不必为每条模块请求新建连接——实测 150 次页面
+    加载里，HTTP/1.0 的 8544 次建连出现 3 次 net::ERR_CONNECTION_REFUSED（服务器从未收到
+    该请求，端口仍在监听），HTTP/1.1 的 150 次加载 0 次失败。保持连接的前提是本条请求的
+    正文必须被读完；读不完的请求一律 `_drop_connection()`，绝不让残留字节被当成下一条请求。
+    """
 
     server_version = "AMZListingKitV2/2"
+    protocol_version = "HTTP/1.1"
+
+    def _drop_connection(self) -> None:
+        """本请求还有未消费的正文：关掉连接，下一条请求必须在新连接上重新开始。"""
+
+        self.close_connection = True
+
+    def handle(self) -> None:
+        """客户端中止连接是正常断连（Windows 回环上表现为 WinError 10053），不是服务器错误。
+
+        这类异常只说明这条连接结束了：不打印 traceback、不影响其它连接或任何结论。
+        """
+
+        try:
+            super().handle()
+        except ConnectionError:
+            self.close_connection = True
+            return
 
     def log_message(self, fmt, *args):  # noqa: A003 (http.server 接口名)
         """产品输出保持干净：请求日志不混进终端。"""
@@ -227,19 +272,129 @@ class ProductV2Handler(BaseHTTPRequestHandler):
         factory = getattr(self.server, "suite_review_provider_factory", None)
         return factory if callable(factory) else default_suite_review_provider_factory
 
-    def _send_bytes(self, code: int, payload: bytes, ctype: str) -> None:
+    def _request_headers(self) -> dict[str, str]:
+        """把本次请求的 headers 收成普通 dict（只读快照；密钥不存别处）。"""
+
+        return {str(key): str(value) for key, value in self.headers.items()}
+
+    def _is_default_factory(self, factory: Callable[[], Any], default: Callable[[], Any]) -> bool:
+        """区分显式注入 factory 与默认 factory：只有默认才允许走注册表覆盖同名实例。"""
+
+        return factory is default or getattr(factory, "__name__", "") == getattr(
+            default, "__name__", "\0default")
+
+    def _effective_semantic(self) -> tuple[Any, dict[str, Any]]:
+        """语义有效元组：同一解析供能力投影与执行共用；BYOK 只在本次请求内存里。"""
+
+        from src.providers.v2_registry import (
+            SEMANTIC_KEY_HEADER,
+            SEMANTIC_PROVIDER_HEADER,
+            create_semantic_provider,
+            resolve_effective,
+            resolve_provider_id,
+        )
+
+        headers = self._request_headers()
+        factory = self.provider_factory
+        try:
+            return resolve_effective(
+                purpose="semantic", role="semantic",
+                provider_header=SEMANTIC_PROVIDER_HEADER, key_header=SEMANTIC_KEY_HEADER,
+                default_resolver=resolve_provider_id, create=create_semantic_provider,
+                env=dict(os.environ), headers=headers, factory=factory,
+                is_default_factory=self._is_default_factory(factory, default_provider_factory))
+        except Exception as error:  # noqa: BLE001 - 注册表/头校验失败转分类错误
+            if type(error).__name__ in ("ByokHeaderError", "ProviderRegistryError"):
+                from src.providers.v2_semantic import SemanticFailure
+                code = "BYOK_HEADER_INVALID" if type(error).__name__ == "ByokHeaderError" else "INPUT_INVALID"
+                secrets = [headers.get(SEMANTIC_KEY_HEADER, ""),
+                           headers.get(IMAGE_BYOK_HEADER, ""),
+                           headers.get(REVIEW_BYOK_HEADER, "")]
+                raise SemanticFailure("input_rejected", code,
+                                      redact(str(error)[:200], secrets=secrets),
+                                      retry_policy="fatal") from None
+            raise
+
+    def _effective_image(self) -> tuple[Any, dict[str, Any]]:
+        """图像有效元组：原任务核对用同一元组的凭据来源，不偷用当前配置查旧任务。"""
+        from src.providers.v2_image import ImageFailure
+        from src.providers.v2_registry import (
+            IMAGE_KEY_HEADER,
+            IMAGE_PROVIDER_HEADER,
+            create_image_provider,
+            resolve_effective,
+            resolve_image_provider_id,
+        )
+
+        headers = self._request_headers()
+        factory = self.image_provider_factory
+        try:
+            return resolve_effective(
+                purpose="image", role="image",
+                provider_header=IMAGE_PROVIDER_HEADER, key_header=IMAGE_KEY_HEADER,
+                default_resolver=resolve_image_provider_id, create=create_image_provider,
+                env=dict(os.environ), headers=headers, factory=factory,
+                is_default_factory=self._is_default_factory(factory, default_image_provider_factory))
+        except Exception as error:  # noqa: BLE001
+            if type(error).__name__ in ("ByokHeaderError", "ProviderRegistryError"):
+                code = "BYOK_HEADER_INVALID" if type(error).__name__ == "ByokHeaderError" else "INPUT_INVALID"
+                raise ImageFailure("input_rejected", code, str(error)[:200],
+                                   retry_policy="fatal", http_status=400) from None
+            raise
+
+    def _effective_review(self, *, suite: bool = False) -> tuple[Any, dict[str, Any]]:
+        """复核有效元组：单图与整套共用同一 review 条目与模型通道，只换适配器类。"""
+
+        from src.providers.v2_registry import (
+            REVIEW_KEY_HEADER,
+            REVIEW_PROVIDER_HEADER,
+            create_review_provider,
+            create_suite_review_provider,
+            resolve_effective,
+            resolve_review_provider_id,
+        )
+        from src.providers.v2_semantic import SemanticFailure
+
+        headers = self._request_headers()
+        factory = self.suite_review_provider_factory if suite else self.review_provider_factory
+        default_factory = (default_suite_review_provider_factory if suite
+                           else default_review_provider_factory)
+        create = create_suite_review_provider if suite else create_review_provider
+        try:
+            return resolve_effective(
+                purpose="review", role="review",
+                provider_header=REVIEW_PROVIDER_HEADER, key_header=REVIEW_KEY_HEADER,
+                default_resolver=resolve_review_provider_id, create=create,
+                env=dict(os.environ), headers=headers, factory=factory,
+                is_default_factory=self._is_default_factory(factory, default_factory))
+        except Exception as error:  # noqa: BLE001
+            if type(error).__name__ in ("ByokHeaderError", "ProviderRegistryError"):
+                code = "BYOK_HEADER_INVALID" if type(error).__name__ == "ByokHeaderError" else "INPUT_INVALID"
+                raise SemanticFailure("input_rejected", code, str(error)[:200],
+                                      retry_policy="fatal") from None
+            raise
+
+    def _send_bytes(self, code: int, payload: bytes, ctype: str,
+                    extra_headers: tuple[tuple[str, str], ...] = ()) -> None:
         self.send_response(code)
         self.send_header("Content-Type", ctype)
         self.send_header("Content-Length", str(len(payload)))
         self.send_header("Cache-Control", "no-store")
         self.send_header("X-Content-Type-Options", "nosniff")
+        for name, value in extra_headers:
+            self.send_header(name, value)
+        if self.close_connection:
+            # 这条响应之后就要关连接（未读完的正文、未知路由、写坏的连接）：必须告诉客户端，
+            # 否则 HTTP/1.1 客户端会以为连接还能复用。
+            self.send_header("Connection", "close")
         self.end_headers()
         try:
             self.wfile.write(payload)
         except (ConnectionError, OSError):
             # 客户端在响应写出前断开（例如刷新打断了正在等待的提交）：这只是这一次连接的失败。
             # 服务端无状态，不因此改变或撤销任何结论；浏览器侧按「没有收到响应」处理。
-            pass
+            # 这条连接已经写坏了，不能继续复用它等下一条请求。
+            self._drop_connection()
 
     def _send_json(self, code: int, body: object) -> None:
         payload = json.dumps(body, ensure_ascii=False).encode("utf-8")
@@ -257,6 +412,9 @@ class ProductV2Handler(BaseHTTPRequestHandler):
         candidate = (PRODUCT_DIR / relative).resolve()
         if candidate == PRODUCT_DIR or PRODUCT_DIR not in candidate.parents:
             return None
+        if candidate.suffix.lower() in STATIC_DENY_SUFFIXES:
+            # TS 源码（含 .d.ts）不是运行时资源：浏览器只能取同目录生成的 .js。
+            return None
         if not candidate.is_file():
             return None
         return candidate
@@ -264,7 +422,10 @@ class ProductV2Handler(BaseHTTPRequestHandler):
     def _read_body(self, max_bytes: int = MAX_BODY_BYTES) -> tuple[bytes | None, int, dict[str, Any] | None]:
         """返回 (body, status, payload)；payload 非空表示已经可以结束这个请求。"""
         raw_length = self.headers.get("Content-Length")
-        if raw_length is None or not str(raw_length).strip().isdigit():
+        if raw_length is None:
+            return None, 400, input_rejected_payload("请求必须带合法的 Content-Length。")
+        if not str(raw_length).strip().isdigit():
+            self._drop_connection()          # 长度不可知：残留正文无法安全跳过
             return None, 400, input_rejected_payload("请求必须带合法的 Content-Length。")
         length = int(str(raw_length).strip())
         if length <= 0:
@@ -273,24 +434,32 @@ class ProductV2Handler(BaseHTTPRequestHandler):
             # 先把已声明的正文读完再回 400：不读完就关闭连接会让浏览器 fetch 丢掉
             # 已经写出的 400（表现为 network error → 客户端误判 unknown，2026-10-01
             # 走查预演在 679KB 参考图上实测）。只有超过 DRAIN_ABSOLUTE_MAX 的荒谬
-            # 长度才提前收手，避免被超大 Content-Length 拖住。
+            # 长度才提前收手，避免被超大 Content-Length 拖住；收手时正文没读完，
+            # 这条连接只能关闭，不能让残留字节被当成下一条请求。
             drain_budget = min(length, DRAIN_ABSOLUTE_MAX)
             while drain_budget > 0:
                 chunk = self.rfile.read(min(65536, drain_budget))
                 if not chunk:
                     break
                 drain_budget -= len(chunk)
+            if drain_budget > 0:
+                self._drop_connection()
             return None, 400, input_rejected_payload(
                 f"请求体超过上限 {max_bytes} 字节。",
                 {"content_length": length, "limit": max_bytes})
         body = self.rfile.read(length)
         if len(body) != length:
+            self._drop_connection()          # 正文没读满：连接已不可信
             return None, 400, input_rejected_payload("请求体在读满之前就结束了。")
         return body, 200, None
 
     def do_GET(self):  # noqa: N802 (http.server 接口名)
         parsed = urllib.parse.urlsplit(self.path)
         path = urllib.parse.unquote(parsed.path)
+        # GET 不消费正文：带正文的 GET 是异常请求，读完才复用不安全。
+        raw_length = self.headers.get("Content-Length")
+        if raw_length is not None and str(raw_length).strip().isdigit() and int(str(raw_length).strip()) > 0:
+            self._drop_connection()
         # 查询参数在这里没有语义：不存在 directory / workspace 之类的服务端读取。
         if path == "/api/health":
             self._send_json(200, HEALTH)
@@ -331,11 +500,18 @@ class ProductV2Handler(BaseHTTPRequestHandler):
         if path == SUITE_REVIEW_PATH:
             self._suite_review()
             return
+        # 未知路由也可能带正文：这里不读正文，读完才复用不安全，所以关掉这条连接。
+        self._drop_connection()
         self._send_not_found(path)
 
     def _capabilities(self) -> None:
+        from src.providers.v2_registry import load_registry, provider_choices
         from src.providers.v2_semantic import SEMANTIC_CONTRACT_VERSION
 
+        try:
+            registry = load_registry()
+        except Exception:
+            registry = None
         payload: dict[str, Any] = {
             "ok": True,
             "semantic_contract": SEMANTIC_CONTRACT_VERSION,
@@ -349,8 +525,10 @@ class ProductV2Handler(BaseHTTPRequestHandler):
             },
             "unavailable": None,
         }
+        if registry is not None:
+            payload["provider_choices"] = provider_choices(registry, active_ids=self._seam_ids())
         try:
-            provider = self.provider_factory()
+            _provider, effective = self._effective_semantic()
         except Exception as error:  # noqa: BLE001 - 能力查询必须给出可用性而不是 5xx
             payload["unavailable"] = {
                 "kind": _provider_error_kind(error),
@@ -359,15 +537,36 @@ class ProductV2Handler(BaseHTTPRequestHandler):
             self._send_json(200, payload)
             return
         payload["provider"] = {
-            "provider_id": getattr(provider, "provider_id", None),
-            "model_id": getattr(provider, "model_id", None),
-            "configured": True,
-            "credential_source": getattr(provider, "credential_source", None),
-            "capabilities": provider_capabilities(provider),
+            "provider_id": effective.get("provider_id"),
+            "model_id": effective.get("model_id"),
+            "protocol": effective.get("protocol"),
+            "capability_version": None,
+            "configured": bool(effective.get("configured")),
+            "credential_source": effective.get("credential_source"),
+            "capabilities": provider_capabilities(_provider),
         }
         self._send_json(200, payload)
 
-    # ---------------------------------------------------------- 图像网关（V2.4.1）
+    def _seam_ids(self) -> set[str]:
+        """显式注入接缝的 active 身份：fake 只在该接缝的目录里可见，生产目录永不含 fake。"""
+
+        found: set[str] = set()
+        for factory in (self.provider_factory, self.image_provider_factory,
+                        self.review_provider_factory, self.suite_review_provider_factory):
+            try:
+                instance = factory()
+            except Exception:  # noqa: BLE001 - 造不出就不按接缝处理
+                continue
+            method = getattr(instance, "capabilities", None)
+            try:
+                capabilities = method() if callable(method) else None
+            except Exception:  # noqa: BLE001
+                continue
+            if isinstance(capabilities, Mapping):
+                value = capabilities.get("provider_id")
+                if isinstance(value, str) and value:
+                    found.add(value)
+        return found
 
     def _image_capabilities(self) -> dict[str, Any]:
         from src.providers.v2_image import IMAGE_CONTRACT_VERSION, IMAGES_CAPABILITY_VERSION
@@ -382,7 +581,7 @@ class ProductV2Handler(BaseHTTPRequestHandler):
             "unavailable": None,
         }
         try:
-            provider = self.image_provider_factory()
+            provider, effective = self._effective_image()
         except Exception as error:  # noqa: BLE001 - 能力查询必须给出可用性而不是 5xx
             block["unavailable"] = {
                 "kind": _provider_error_kind(error),
@@ -391,30 +590,26 @@ class ProductV2Handler(BaseHTTPRequestHandler):
             block["default_trial"] = default_trial_state()
             return block
         block["provider"] = {
-            "provider_id": getattr(provider, "provider_id", None),
-            "model_id": getattr(provider, "model_id", None),
+            "provider_id": effective.get("provider_id"),
+            "model_id": effective.get("model_id"),
+            "protocol": IMAGE_CONTRACT_VERSION,
             "capability_version": IMAGES_CAPABILITY_VERSION,
-            "configured": bool(getattr(provider, "configured", True)),
-            "credential_source": getattr(provider, "credential_source", None),
+            "configured": bool(effective.get("configured")),
+            "credential_source": effective.get("credential_source"),
             "capabilities": provider_capabilities(provider),
         }
         block["default_trial"] = default_trial_state()
         return block
 
-    def _image_provider(self) -> Any:
+    def _image_provider(self) -> tuple[Any, dict[str, Any]]:
+        """图像有效元组：同一解析供提交/状态/结果共用；BYOK 只在本次请求内存里。"""
+
         from src.providers.v2_image import ImageFailure
 
-        raw_byok = self.headers.get(IMAGE_BYOK_HEADER)
-        if raw_byok is not None:
-            byok = raw_byok.strip()
-            if not byok or len(byok) > 512:
-                raise ImageFailure("input_rejected", "BYOK_HEADER_INVALID",
-                                   "图像网关 BYOK 请求头为空或超出可用长度；这次请求没有调用模型。",
-                                   retry_policy="fatal", http_status=400)
-        else:
-            byok = None
         try:
-            provider = self.image_provider_factory()
+            return self._effective_image()
+        except ImageFailure:
+            raise
         except Exception as error:  # noqa: BLE001 - 构造失败 = 明确的未配置，而不是 500
             raise ImageFailure(
                 "internal", "PROVIDER_NOT_CONFIGURED",
@@ -422,20 +617,15 @@ class ProductV2Handler(BaseHTTPRequestHandler):
                 retry_policy="fatal", http_status=503,
                 details={"kind": _provider_error_kind(error),
                          "detail": redact(type(error).__name__ + ": " + str(error))}) from None
-        if byok is not None:
-            apply = getattr(provider, "apply_credentials", None)
-            if not callable(apply):
-                raise ImageFailure("input_rejected", "BYOK_UNSUPPORTED",
-                                   "当前 provider 不支持 BYOK 凭据；这次请求没有调用模型。",
-                                   retry_policy="fatal", http_status=400)
-            apply(api_key=byok)
-        return provider
 
-    def _verify_execution_target(self, request: Any, provider: Any) -> None:
-        """按冻结身份核对目标（V2.R4.4）：不匹配就 400，绝不转发到别的目标。
+    def _verify_execution_target(self, request: Any, provider: Any, *,
+                                 effective: dict[str, Any] | None = None) -> None:
+        """按冻结身份核对目标（V2.R4.4/R6.0）：不匹配就 400，绝不转发到别的目标。
 
-        已提交任务保留原协议/目标/模型/能力版本；同 task 不同 target 不串，
-        不偷用当前配置查询旧任务。target 缺省（老验证工具）保持既有语义。
+        已提交任务保留原协议/目标/模型/能力版本；原任务核对走请求头选中的原目标
+        provider（请求头带原 provider id），不偷用新动作模型查旧任务。target 缺省
+        （老验证工具）保持既有语义。credential_source 随 target 一起发送时才核对
+        （缺省跳过）；失配即 400 CREDENTIAL_REFERENCE_MISMATCH，不调用模型。
         """
         from src.providers.v2_image import (
             EXECUTION_PROTOCOL_PATTERN, IMAGE_CONTRACT_VERSION, IMAGES_CAPABILITY_VERSION,
@@ -466,6 +656,18 @@ class ProductV2Handler(BaseHTTPRequestHandler):
                                             "model_id": expected[1],
                                             "protocol": expected[2],
                                             "capability_version": expected[3]}})
+        wanted = getattr(target, "credential_source", None)
+        if wanted is not None:
+            current_source = (effective or {}).get("credential_source", getattr(
+                provider, "credential_source", None))
+            if wanted != current_source:
+                raise ImageFailure(
+                    "input_rejected", "CREDENTIAL_REFERENCE_MISMATCH",
+                    "冻结凭据引用与当前有效凭据不一致：请用原目标的凭据重带请求头；"
+                    "本次请求没有转发、没有调用模型。",
+                    retry_policy="fatal", http_status=400,
+                    details={"frozen_credential_source": wanted,
+                             "current_credential_source": current_source})
 
     def _image_request(self, model: Any, *,
                        max_bytes: int = MAX_BODY_BYTES) -> tuple[Any, int, dict[str, Any] | None]:
@@ -524,8 +726,8 @@ class ProductV2Handler(BaseHTTPRequestHandler):
             self._send_json(status, payload)
             return
         try:
-            provider = self._image_provider()
-            self._verify_execution_target(request, provider)
+            provider, effective = self._image_provider()
+            self._verify_execution_target(request, provider, effective=effective)
             self._verify_request_profile(request, provider)
             task = provider.submit(request)
         except ImageFailure as failure:
@@ -568,8 +770,8 @@ class ProductV2Handler(BaseHTTPRequestHandler):
             self._send_json(status, payload)
             return
         try:
-            provider = self._image_provider()
-            self._verify_execution_target(request, provider)
+            provider, effective = self._image_provider()
+            self._verify_execution_target(request, provider, effective=effective)
             task = provider.status(request)
         except ImageFailure as failure:
             self._image_failure_response(failure)
@@ -588,8 +790,8 @@ class ProductV2Handler(BaseHTTPRequestHandler):
             self._send_json(status, payload)
             return
         try:
-            provider = self._image_provider()
-            self._verify_execution_target(request, provider)
+            provider, effective = self._image_provider()
+            self._verify_execution_target(request, provider, effective=effective)
             content, media_type = provider.result(request)
         except ImageFailure as failure:
             self._image_failure_response(failure)
@@ -598,20 +800,32 @@ class ProductV2Handler(BaseHTTPRequestHandler):
             self._send_json(500, internal_error_payload(
                 redact(type(error).__name__ + ": " + str(error))))
             return
-        self.send_response(200)
-        self.send_header("Content-Type", media_type)
-        self.send_header("Content-Length", str(len(content)))
-        self.send_header("Cache-Control", "no-store")
-        self.send_header("X-Content-Type-Options", "nosniff")
-        self.send_header("X-Image-Sha256", hashlib.sha256(content).hexdigest())
-        self.send_header("X-Provider-Id", str(getattr(provider, "provider_id", "")))
-        self.send_header("X-Model-Id", str(getattr(provider, "model_id", "")))
-        self.send_header("X-Task-Id", request.task_id)
-        self.end_headers()
-        self.wfile.write(content)
+        self._send_bytes(200, content, media_type, (
+            ("X-Image-Sha256", hashlib.sha256(content).hexdigest()),
+            ("X-Provider-Id", str(getattr(provider, "provider_id", ""))),
+            ("X-Model-Id", str(getattr(provider, "model_id", ""))),
+            ("X-Task-Id", request.task_id),
+        ))
 
     def _analyze(self) -> None:
-        body, status, payload = self._read_body()
+        try:
+            from src.providers.v2_semantic import (
+                MAX_VISION_IMAGES,
+                MAX_VISION_IMAGE_BYTES,
+                SemanticFailure,
+                decode_vision_images,
+                parse_request,
+                problems_from_parse_error,
+            )
+        except Exception as error:  # noqa: BLE001
+            self._send_json(503, provider_unavailable_payload(
+                "dependency", redact(type(error).__name__ + ": " + str(error))))
+            return
+        # 语义分析支持纯文本与看图两种有效配置：请求头选用途 provider，
+        # 看图配置才接受 reference_images 图片字节（decode+复算哈希后才出网）。
+        # 三张 4MiB 图的 base64 上界 + 原文字元数据余量；单图/合计/哈希仍由合同校验。
+        max_body_bytes = MAX_BODY_BYTES + MAX_VISION_IMAGES * 4 * ((MAX_VISION_IMAGE_BYTES + 2) // 3)
+        body, status, payload = self._read_body(max_body_bytes)
         if payload is not None:
             self._send_json(status, payload)
             return
@@ -620,18 +834,19 @@ class ProductV2Handler(BaseHTTPRequestHandler):
         except (UnicodeDecodeError, json.JSONDecodeError):
             self._send_json(400, input_rejected_payload("请求体不是合法 JSON。"))
             return
-        try:
-            from src.providers.v2_semantic import (
-                SemanticFailure,
-                parse_request,
-                problems_from_parse_error,
-            )
-        except Exception as error:  # noqa: BLE001
-            self._send_json(503, provider_unavailable_payload(
-                "dependency", redact(type(error).__name__ + ": " + str(error))))
+        raw_vision = decoded.get("reference_images") if isinstance(decoded, Mapping) else None
+        if raw_vision is None:
+            vision_items: list[Any] = []
+        elif isinstance(raw_vision, list):
+            vision_items = list(raw_vision)
+        else:
+            self._send_json(400, input_rejected_payload(
+                "reference_images 必须是数组；没有调用模型。"))
             return
+        base_payload = dict(decoded) if isinstance(decoded, Mapping) else {}
+        base_payload.pop("reference_images", None)
         try:
-            request = parse_request(decoded)
+            request = parse_request(base_payload)
         except Exception as error:  # noqa: BLE001 - 契约问题一律归 input_rejected
             try:
                 problems = problems_from_parse_error(error)
@@ -641,14 +856,65 @@ class ProductV2Handler(BaseHTTPRequestHandler):
                 "请求字段不符合语义请求契约；没有调用模型。", problems))
             return
         try:
-            provider = self.provider_factory()
+            provider, _effective = self._effective_semantic()
+        except SemanticFailure as failure:
+            self._send_json(status_for_failure(failure), {
+                "ok": False,
+                "unknown": getattr(failure, "family", None) == "provider_unknown",
+                "error": failure.to_dict(),
+            })
+            return
         except Exception as error:  # noqa: BLE001
             self._send_json(503, provider_unavailable_payload(
                 _provider_error_kind(error),
                 redact(type(error).__name__ + ": " + str(error))))
             return
+        sees_images = bool(getattr(provider, "supports_images", False))
+        if vision_items and not sees_images:
+            self._send_json(400, input_rejected_payload(
+                "当前语义模型不支持图片字节：纯文本配置收到 reference_images；没有调用模型。"))
+            return
+        if sees_images and not vision_items:
+            self._send_json(400, {
+                "ok": False,
+                "unknown": False,
+                "error": {
+                    "family": "input_rejected",
+                    "code": "VISION_BYTES_REQUIRED",
+                    "message": "看图理解需要至少一张已校验的参考图字节（reference_images 1..3 张）；"
+                    "这次请求没有调用模型。",
+                    "retry_policy": "fatal",
+                    "http_status": 400,
+                    "request_id": None,
+                    "details": None,
+                },
+            })
+            return
+        images: tuple[Any, ...] = ()
+        if sees_images:
+            if len(vision_items) > MAX_VISION_IMAGES:
+                self._send_json(400, input_rejected_payload(
+                    f"reference_images 一次最多 {MAX_VISION_IMAGES} 张；没有调用模型。"))
+                return
+            try:
+                images = decode_vision_images(vision_items)
+            except ValueError as error:
+                self._send_json(400, input_rejected_payload(
+                    str(error)[:200] + "没有调用模型。"))
+                return
+            except Exception as error:  # noqa: BLE001
+                try:
+                    problems = problems_from_parse_error(error)
+                except Exception:  # noqa: BLE001
+                    problems = None
+                self._send_json(400, input_rejected_payload(
+                    "reference_images 不满足看图契约；没有调用模型。", problems))
+                return
         try:
-            proposal = provider.analyze(request)
+            if sees_images:
+                proposal = provider.analyze(request, images)
+            else:
+                proposal = provider.analyze(request)
         except SemanticFailure as failure:
             body_out = failure.to_dict()
             self._send_json(status_for_failure(failure), {
@@ -676,7 +942,7 @@ class ProductV2Handler(BaseHTTPRequestHandler):
             "unavailable": None,
         }
         try:
-            provider = self.review_provider_factory()
+            provider, effective = self._effective_review()
         except Exception as error:  # noqa: BLE001 - 能力查询必须给出可用性而不是 5xx
             block["unavailable"] = {
                 "kind": _provider_error_kind(error),
@@ -684,10 +950,11 @@ class ProductV2Handler(BaseHTTPRequestHandler):
             }
             return block
         block["provider"] = {
-            "provider_id": getattr(provider, "provider_id", None),
-            "model_id": getattr(provider, "model_id", None),
-            "configured": bool(getattr(provider, "configured", True)),
-            "credential_source": getattr(provider, "credential_source", None),
+            "provider_id": effective.get("provider_id"),
+            "model_id": effective.get("model_id"),
+            "protocol": effective.get("protocol"),
+            "configured": bool(effective.get("configured")),
+            "credential_source": effective.get("credential_source"),
             "capabilities": provider_capabilities(provider),
         }
         return block
@@ -722,7 +989,14 @@ class ProductV2Handler(BaseHTTPRequestHandler):
                 "复核请求字段不符合契约；没有调用模型。", problems))
             return
         try:
-            provider = self.review_provider_factory()
+            provider, _effective = self._effective_review()
+        except SemanticFailure as failure:
+            self._send_json(status_for_failure(failure), {
+                "ok": False,
+                "unknown": getattr(failure, "family", None) == "provider_unknown",
+                "error": failure.to_dict(),
+            })
+            return
         except Exception as error:  # noqa: BLE001
             self._send_json(503, provider_unavailable_payload(
                 _provider_error_kind(error),
@@ -757,7 +1031,7 @@ class ProductV2Handler(BaseHTTPRequestHandler):
             "unavailable": None,
         }
         try:
-            provider = self.suite_review_provider_factory()
+            provider, effective = self._effective_review(suite=True)
         except Exception as error:  # noqa: BLE001 - 能力查询必须给出可用性而不是 5xx
             block["unavailable"] = {
                 "kind": _provider_error_kind(error),
@@ -765,10 +1039,11 @@ class ProductV2Handler(BaseHTTPRequestHandler):
             }
             return block
         block["provider"] = {
-            "provider_id": getattr(provider, "provider_id", None),
-            "model_id": getattr(provider, "model_id", None),
-            "configured": bool(getattr(provider, "configured", True)),
-            "credential_source": getattr(provider, "credential_source", None),
+            "provider_id": effective.get("provider_id"),
+            "model_id": effective.get("model_id"),
+            "protocol": effective.get("protocol"),
+            "configured": bool(effective.get("configured")),
+            "credential_source": effective.get("credential_source"),
             "capabilities": provider_capabilities(provider),
         }
         return block
@@ -803,7 +1078,14 @@ class ProductV2Handler(BaseHTTPRequestHandler):
                 "整套复核请求字段不符合契约；没有调用模型。", problems))
             return
         try:
-            provider = self.suite_review_provider_factory()
+            provider, _effective = self._effective_review(suite=True)
+        except SemanticFailure as failure:
+            self._send_json(status_for_failure(failure), {
+                "ok": False,
+                "unknown": getattr(failure, "family", None) == "provider_unknown",
+                "error": failure.to_dict(),
+            })
+            return
         except Exception as error:  # noqa: BLE001
             self._send_json(503, provider_unavailable_payload(
                 _provider_error_kind(error),
@@ -844,17 +1126,31 @@ def create_product_v2_server(host: str = "127.0.0.1", port: int = 8780,
 def run_self_check() -> int:
     """正式入口自检：静态资源可取、两个无状态 API 行为正确、失败被分类、越权路径被拒。"""
     import http.client
+    import io
+
+    from PIL import Image
 
     from src.providers.v2_fake_image import FakeImageProvider
     from src.providers.v2_fake_review import FakeReviewProvider
     from src.providers.v2_fake_suite_review import FakeSuiteReviewProvider
     from src.providers.v2_fake_semantic import FakeSemanticProvider
+    from src.providers.v2_semantic import MAX_VISION_IMAGE_BYTES, MAX_VISION_IMAGES
 
     mode = {"value": "fake"}
+    vision_calls = {"count": 0}
+
+    class VisionFakeProvider(FakeSemanticProvider):
+        supports_images = True
+
+        def analyze(self, request, images):
+            vision_calls["count"] += 1
+            return super().analyze(request)
 
     def factory():
         if mode["value"] == "broken":
             raise RuntimeError("自检：语义 provider 构造失败")
+        if mode["value"] == "vision":
+            return VisionFakeProvider(scenario="ok")
         return FakeSemanticProvider(scenario="ok")
 
     def image_factory():
@@ -921,13 +1217,12 @@ def run_self_check() -> int:
 
     try:
         status, ctype, body = request("GET", "/")
-        text = body.decode("utf-8", "replace")
-        check("首页可取且是 V2 产品页", status == 200 and "text/html" in ctype
-              and "Amazon US 商品套图" in text and "./app.js" in text,
+        check("正式入口返回 HTML 文档", status == 200 and "text/html" in ctype,
               f"status={status} type={ctype}")
 
         for asset, expect in (("/app.js", "javascript"), ("/styles.css", "css"),
-                              ("/storage/index.js", "javascript")):
+                              ("/storage/index.js", "javascript"),
+                              ("/domain/attempt.js", "javascript")):
             status, ctype, _ = request("GET", asset)
             check(f"产品资源 {asset}", status == 200 and expect in ctype,
                   f"status={status} type={ctype}")
@@ -938,13 +1233,47 @@ def run_self_check() -> int:
               and health.get("server_state") == "none", f"status={status} body={health}")
 
         for path in ("/harness/storage-contract.html", "/api/workspaces/recent",
-                     "/api/workspace?directory=C%3A%5CUsers", "/evals/probes/project_state.py"):
+                     "/api/workspace?directory=C%3A%5CUsers", "/evals/probes/project_state.py",
+                     "/domain/attempt.ts", "/domain/config-export.ts",
+                     "/domain/type-contracts.d.ts"):
             status, _, _ = request("GET", path)
             check(f"正式入口不外放：{path}", status == 404, f"status={status}")
 
         for path in ("/../README.md", "/%2e%2e/README.md", "/storage/../../app/server.py"):
             status, _, _ = request("GET", path)
             check(f"目录逃逸被拒：{path}", status == 404, f"status={status}")
+
+        # 连接复用：产品按 HTTP/1.1 保持连接，因此每条响应必须自带 Content-Length，
+        # 且没读完正文的请求必须关掉连接——否则残留字节会被当成下一条请求错解。
+        connection = http.client.HTTPConnection(host, port, timeout=20)
+        try:
+            reused: list[tuple[int, str]] = []
+            for _ in range(2):
+                connection.request("GET", "/api/health")
+                response = connection.getresponse()
+                reused.append((response.status, response.getheader("Content-Length") or ""))
+                response.read()
+            check("同一连接连续两次请求都按序返回（连接复用）",
+                  all(status == 200 and length.isdigit() for status, length in reused),
+                  f"{reused}")
+        finally:
+            connection.close()
+
+        connection = http.client.HTTPConnection(host, port, timeout=20)
+        try:
+            connection.request("POST", "/api/v2/not-a-route", body=b"{}",
+                               headers={"Content-Type": "application/json"})
+            response = connection.getresponse()
+            status = response.status
+            close_header = (response.getheader("Connection") or "").lower()
+            response.read()
+            # http.client 会因为 Connection: close 直接丢掉 socket；否则由读端确认对端已关闭。
+            closed = connection.sock is None or connection.sock.recv(1) == b""
+            check("未知 POST 路由回 404 且关闭留有未读正文的连接",
+                  status == 404 and close_header == "close" and closed,
+                  f"status={status} connection={close_header} closed={closed}")
+        finally:
+            connection.close()
 
         status, _, _ = request("POST", "/api/anything")
         check("不存在其它服务端写接口", status == 404, f"status={status}")
@@ -981,11 +1310,14 @@ def run_self_check() -> int:
               status == 400 and payload.get("error", {}).get("family") == "input_rejected"
               and payload.get("unknown") is False, f"status={status} error={payload.get('error')}")
 
-        oversized = json.dumps({"product_name": "x" * (MAX_BODY_BYTES + 512)}).encode("utf-8")
+        analyze_limit = MAX_BODY_BYTES + MAX_VISION_IMAGES * 4 * ((MAX_VISION_IMAGE_BYTES + 2) // 3)
+        oversized = json.dumps({"product_name": "x" * (analyze_limit + 512)}).encode("utf-8")
         status, _, body = request("POST", ANALYZE_PATH, oversized)
         payload = json_body(body)
-        check("超过字节上限的请求体被拒（400 input_rejected）",
-              status == 400 and payload.get("error", {}).get("family") == "input_rejected",
+        check("超过理解路由传输上限被拒且返回实际字节边界",
+              status == 400 and payload.get("error", {}).get("family") == "input_rejected"
+              and payload.get("error", {}).get("details", {}).get("problems")
+              == {"content_length": len(oversized), "limit": analyze_limit},
               f"status={status} bytes={len(oversized)}")
 
         incomplete = json.dumps({
@@ -997,6 +1329,44 @@ def run_self_check() -> int:
         check("合法 JSON 但字段越界归 input_rejected/400（不调用模型）",
               status == 400 and payload.get("error", {}).get("family") == "input_rejected",
               f"status={status} error={payload.get('error')}")
+
+        with io.BytesIO() as buffer:
+            Image.new("RGB", (512, 512), color=(64, 96, 128)).save(buffer, format="PNG", compress_level=0)
+            vision_bytes = buffer.getvalue()
+        vision_digest = hashlib.sha256(vision_bytes).hexdigest()
+        vision_metadata = {"sha256": vision_digest, "media_type": "image/png", "role": "primary"}
+        vision_input = json.loads(analyze_body)
+        vision_input["references"] = [vision_metadata]
+        vision_input["reference_images"] = [{
+            **vision_metadata, "data_base64": base64.b64encode(vision_bytes).decode("ascii"),
+        }]
+        vision_body = json.dumps(vision_input).encode("utf-8")
+        mode["value"] = "vision"
+        status, _, body = request("POST", ANALYZE_PATH, vision_body)
+        payload = json_body(body)
+        check("合法大图理解不受旧文字256KB传输上限阻断",
+              len(vision_body) > MAX_BODY_BYTES and status == 200
+              and payload.get("ok") is True and vision_calls["count"] == 1,
+              f"status={status} bytes={len(vision_body)}")
+
+        vision_input["reference_images"][0]["sha256"] = "b" * 64
+        status, _, body = request("POST", ANALYZE_PATH, json.dumps(vision_input).encode("utf-8"))
+        payload = json_body(body)
+        check("大图身份哈希不符仍在模型调用前拒绝",
+              status == 400 and payload.get("error", {}).get("family") == "input_rejected"
+              and vision_calls["count"] == 1, f"status={status} calls={vision_calls['count']}")
+
+        too_large_image = vision_bytes + bytes(MAX_VISION_IMAGE_BYTES + 1 - len(vision_bytes))
+        vision_input["reference_images"][0] = {
+            **vision_metadata, "sha256": hashlib.sha256(too_large_image).hexdigest(),
+            "data_base64": base64.b64encode(too_large_image).decode("ascii"),
+        }
+        status, _, body = request("POST", ANALYZE_PATH, json.dumps(vision_input).encode("utf-8"))
+        payload = json_body(body)
+        check("单图字节越界仍在模型调用前拒绝",
+              status == 400 and payload.get("error", {}).get("family") == "input_rejected"
+              and vision_calls["count"] == 1, f"status={status} calls={vision_calls['count']}")
+        mode["value"] = "fake"
 
         mode["value"] = "broken"
         status, _, body = request("GET", CAPABILITIES_PATH)
