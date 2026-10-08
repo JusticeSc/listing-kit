@@ -1,0 +1,1001 @@
+{
+  "schema": "amz-readonly-audit-observation/v1",
+  "source": "goal-tool-and-gh-cli",
+  "observed_at": "2026-10-08T05:02:57.662Z",
+  "user_request": "审计之前的工作，确定当前状态，设计后续规划；不恢复产品施工",
+  "goal": {
+    "id": "159d03ed410f9ff9",
+    "objective": "## Objective\n在 amz-listing-kit 中沿用已实现资产与既有原生ESM/IndexedDB/Python栈，尽最大努力交付完整 Product V2 工程产品，并经现有受保护流程发布到既有可信HTTPS环境；本轮明确恢复施工，不停留在规划或局部MVP。将必要V1清理纳入本轮工程收口：先核对独有用途与共享消费者，在V2覆盖要求、正式消费者切换、精确代码/同版本数据恢复材料成立后删除旧运行路径，不以保留未经验证V1当可靠回退。\n维护复杂性的约束：该加的成熟能力加、该删的失效实现删；优先复用已有资产、成熟库及原协议，不重复造轮子。以唯一状态所有者、深Interface、变更局部性和低认知负担收口，不通过文件搬家、薄wrapper、兼容alias、双维护TS/JS、回调环、通用编排/重试平台或另一轮总体重构代替交付。\n\n## Success criteria\n1. 当前正式产品从空页面经合法参考图/商品资料完成纯人工与显式图文辅助任务：人工确认事实、用途与精确缺项、本地Prompt准备与摘要一次明确发送、partial比较、目标返工、保留或改选、人工采用、无需AI复核的实际交付ZIP及完整项目ZIP下载/导入/刷新；请求/原action/IDB版本/Blob/hash/原Prompt来源一致，返工不改变无关shot或自动改选，模型不自动确认事实。真实图文传原图片字节、提议合法且可追溯；高级人工文本不被自动覆盖。\n2. 有限模型选择与自己的key贯通理解、生图和单图/整套复核，配置/能力/参数/协议/凭据分开；默认付费档closed，BYOK仅当前标签页内存及HTTPS请求级，无持久化/包/日志/错误/诊断/公开DOM投影泄漏。旧task按原目标补key核对而不是切新模型或新submit。AI仅显式按需，not_run不伪造PASS或Unknown；确定性当前报告、硬检查、人工采用、字节与来源链始终为强制门。\n3. 原工程验收与详细设计结构六项准出全部有范围匹配直接证据：跨标签预约/OCC、原动作Unknown不自动重提、迟到结果保全及新动作阻断、停止仅停新增不假称取消、容量/候选失败恢复、生命周期隔离、两类ZIP单快照/交付围栏和无服务器业务持久化均成立。修正4_4两层失败、3_5/5_3失效判据、设置空证及发布自证/目标错配；已报告启动/重开间歇须有现象—机制对应和受控修复证明，不能连续绿/重试/加时/另一机制代替，不由代理接受发布风险。\n4. 用户授权模拟真人端到端验收：独立临时profile与隔离项目的Chrome无头，以实际页面点击、输入、上传、键盘、滚动、下载/导入/刷新操作验证完整任务，保留请求、IDB、ZIP字节、截图及实际读图结果；不种候选或直接调用内部函数替代用户路径，不用fake证明真图质量。原1440/1366、实际125%/200%浏览器缩放、390px关键可达与纯键盘仍覆盖。明确模拟性质，不冒充独立真人C17/C15；这两项真人验收继续单列未完成。\n5. 所有实际改变的Module和调用方严格类型/完整生成集合一致；适用完整离线命令两轮各项通过，必要判据无失败，SKIP只保留其范围、不作为缺少能力通过。原RC及本次V1工程清理适用项有直接证据；V1独有用途明确处理、共享依赖不误删、旧消费者/失效源码/配置/测试同包清除，删后回归与最终指纹成立，历史失败/账本/许可及用户原件保留。\n6. 当前候选提交的现有PR/CI、实际Docker构建与镜像origin页面、真实不同版本服务回退、可信HTTPS/静态资源/隔离页面主链、同origin数据恢复、完整源码/配置/镜像指纹和finalize均有可查证据；满足审查/分支保护后合并发布。previous及必要恢复材料留到全部必要验收结束，服务回退不冒充浏览器数据恢复。交付可运行成品、必要说明、恢复材料和准确限制；所有必要验收未成立不宣布产品完成。\n\n## Verification\n按当前权威计划/详细设计修订后的验收、实际CLI及config/product-v2/verification.json消费已有入口，不新建验证平台。连贯改动完成后只运行受影响消费者和实际路径，失败以证据定位并因果修复，不为确认用户已报告失败重跑。\n- 静态/领域：npm run check:types；修改TS时npm run build:frontend及npm run check:generated；npm run test:domain；uv run --locked python app/server.py --check。\n- 控制与恢复：uv run --locked python tools/check_docs.py --no-run；uv run --locked python tools/refactor_resume.py；更改正式任务/依赖/状态后按已有evals/probes/project_state.py反例核对。\n- 具体已知消费者：uv run --locked python tools/verify_v2_4_4_candidate_blob.py；tools/verify_v2_3_5_pre_generation_confirm.py；tools/verify_v2_5_3_compare_panel.py；tools/verify_v2_packet08_settings_vision.py及实际受影响adoption/delivery既有入口，均通过当前正式装配，捕获独立业务后置而非常量/source/mock回声。\n- 最终候选：对当前登记/CI与既有packet11离线清单中全部适用离线入口逐项串行两轮，命令按正式脚本及其CLI参数执行，证据标签含候选/入口/轮次不覆盖；不额外买两轮真实模型。\n- 真实页面：上述模拟真人动作，独立观测console/network/IDB、下载包内对象/Blob/hash与视觉/键盘/真实缩放，人工与辅助共用正式业务消费者；实际真实图像与参考图独立观察，不以HTTP/schema证明忠实度。\n- 现有受保护CI/部署：实际docker build/smoke；获批Linux运行uv run --locked python tools/release_transaction_probe.py --selftest，页面必须是被测镜像origin；发布/恢复在https://47.115.172.233:8080/用同probe --page-smoke --base及--fingerprint --runtime-root .验证，保留可信TLS，不忽略证书。最终矩阵逐项proven且范围匹配，无必要missing/indirect/contradicted。\n\n## Boundaries\n允许修改本轮实际受影响产品代码、Module/Interface、必要测试/验证器、配置/构建/现有CI发布脚本、依赖与权威文档/Goal文本/正式任务依赖和状态；必要新增成熟依赖须先核对官方合同/许可、复用价值与维护/退出成本，不为了方便重搭总体栈或造新平台。用户允许必要增删及V1工程清理；先证明覆盖、迁消费者和代码/数据恢复基线，不静默丢独有用途/用户数据。允许仅本轮相关提交/推送/PR、现有审查/CI/分支保护成立后的合并与既有环境发布；不强推/绕保护、不擅改origin、不删除无关材料、不开公共默认付费档。\n本轮新增模型付费额度最多3元，沿原账本不清零；累计仍以现有5元上限为门，新增生图最多5次且每次1张、理解/复核合计最多2次；按实际当前账本更新相应累计次数上限并逐笔先预留。上述是最大许可而非必须花完：优先复用未受影响真链，失败路径本地替身，不用付费调试接线。真实调用前核实官方价格上界/最大输入参数、余额/预算、公开许可素材/hash和现有安全注入，失败/Unknown也占次数并保留可能计费预留，不自动重提。只用原有限模型/官方目标与获批凭据通道，不读取/导出GitHub Secrets明文、不要求用户贴key、不上传私有素材；预算/次数不足或费用无法界定即停相应调用并向用户申请。\n浏览器仅独立Chrome无头/隔离数据，不启动Edge或可见窗口、不抢桌面焦点、不发OS键鼠/Windows文件对话框、不改日常浏览器设置或清用户库。模拟验收不冒充独立真人；账户/服务器项目库、云同步、自主Agent/路由/降级/自动重试平台及无关功能不纳入。\n\n## Stop conditions\n最多10轮连贯实施批次加对应验证；一轮为明确消费者/不变量/实际改动与其必要运行证据，最终两轮完整离线回归计一个验收批次。每轮在原state/证据记录次数、交付范围、失败及下一动作，不以反复同命令洗绿绕计数。第10轮仍未交付时停止施工，保存成果/可恢复材料、报告具体阻塞并向用户申请继续；不得自行降低验收。\n无法由权威/代码/现有证据解开的产品歧义、需扩大预算/凭据/素材/部署信任/浏览器/保护权限、未经明确决策的不可逆用户数据操作或总体架构替换、无法建立必要间歇因果证明、缺真实能力而无获批补证通道时，及时向用户提出事实、已尝试路径及最小决策，不盲试/伪造/降级。只停止对应受限动作，继续其他已授权且依赖满足的工程；权限或前置确认后再继续。用户要求停止时仅做必要收尾、保存准确恢复点和释放资源。",
+    "status": "paused",
+    "tokensUsed": 2841409,
+    "timeUsedSeconds": 37957,
+    "createdAt": 1791384773892,
+    "updatedAt": 1791422731071
+  },
+  "plan_goal_sha256": "bac1155dbef21876391328dafd50a5624dee8461388754021a31aa59ff1c6fc6",
+  "objective_matches_plan": true,
+  "head": "132884d3a50a1188896111385eaaf6edf46c36b8",
+  "workflow_runs": [
+    {
+      "conclusion": "cancelled",
+      "createdAt": "2026-10-08T04:55:22Z",
+      "databaseId": 37729804595,
+      "headSha": "132884d3a50a1188896111385eaaf6edf46c36b8",
+      "status": "completed",
+      "updatedAt": "2026-10-08T04:57:33Z",
+      "url": "https://github.com/JusticeSc/listing-kit/actions/runs/37729804595"
+    },
+    {
+      "conclusion": "cancelled",
+      "createdAt": "2026-10-08T04:45:44Z",
+      "databaseId": 37729035340,
+      "headSha": "c31213ac6980b6e8d81096f73549cee8b1793489",
+      "status": "completed",
+      "updatedAt": "2026-10-08T04:56:01Z",
+      "url": "https://github.com/JusticeSc/listing-kit/actions/runs/37729035340"
+    },
+    {
+      "conclusion": "failure",
+      "createdAt": "2026-10-08T04:38:17Z",
+      "databaseId": 37728436213,
+      "headSha": "b9ae6f0938b14c9cfff3c71ef9ee4b96c64dcf73",
+      "status": "completed",
+      "updatedAt": "2026-10-08T04:43:09Z",
+      "url": "https://github.com/JusticeSc/listing-kit/actions/runs/37728436213"
+    },
+    {
+      "conclusion": "failure",
+      "createdAt": "2026-10-08T04:31:36Z",
+      "databaseId": 37727901657,
+      "headSha": "844726c9bd3e8e1de9b8dd82b22153dc2437ba32",
+      "status": "completed",
+      "updatedAt": "2026-10-08T04:35:43Z",
+      "url": "https://github.com/JusticeSc/listing-kit/actions/runs/37727901657"
+    },
+    {
+      "conclusion": "success",
+      "createdAt": "2026-10-08T04:16:09Z",
+      "databaseId": 37726671328,
+      "headSha": "92d88c1a67293e5245f503b029992f5c68a336f9",
+      "status": "completed",
+      "updatedAt": "2026-10-08T04:29:46Z",
+      "url": "https://github.com/JusticeSc/listing-kit/actions/runs/37726671328"
+    },
+    {
+      "conclusion": "failure",
+      "createdAt": "2026-10-08T04:02:52Z",
+      "databaseId": 37725600616,
+      "headSha": "6a69b045dd32ec463c5c4f7b90c44e4aeb1cf5c3",
+      "status": "completed",
+      "updatedAt": "2026-10-08T04:07:31Z",
+      "url": "https://github.com/JusticeSc/listing-kit/actions/runs/37725600616"
+    },
+    {
+      "conclusion": "success",
+      "createdAt": "2026-10-08T03:40:54Z",
+      "databaseId": 37723870895,
+      "headSha": "206c8c84b96f8424cddbc7b1aa46693930233759",
+      "status": "completed",
+      "updatedAt": "2026-10-08T03:58:43Z",
+      "url": "https://github.com/JusticeSc/listing-kit/actions/runs/37723870895"
+    },
+    {
+      "conclusion": "failure",
+      "createdAt": "2026-10-08T03:29:25Z",
+      "databaseId": 37722956684,
+      "headSha": "f8651fae16419092fa5682226868c6dce92c3c79",
+      "status": "completed",
+      "updatedAt": "2026-10-08T03:32:39Z",
+      "url": "https://github.com/JusticeSc/listing-kit/actions/runs/37722956684"
+    },
+    {
+      "conclusion": "success",
+      "createdAt": "2026-10-08T03:12:02Z",
+      "databaseId": 37721581892,
+      "headSha": "f6ee1559b2024321ab949cf6c246efe56fe18caf",
+      "status": "completed",
+      "updatedAt": "2026-10-08T03:25:44Z",
+      "url": "https://github.com/JusticeSc/listing-kit/actions/runs/37721581892"
+    },
+    {
+      "conclusion": "failure",
+      "createdAt": "2026-10-08T03:04:11Z",
+      "databaseId": 37720945917,
+      "headSha": "ab3d84b46a6c973abbca7c0e87e6ed005a4e03ee",
+      "status": "completed",
+      "updatedAt": "2026-10-08T03:09:16Z",
+      "url": "https://github.com/JusticeSc/listing-kit/actions/runs/37720945917"
+    },
+    {
+      "conclusion": "failure",
+      "createdAt": "2026-10-08T02:39:11Z",
+      "databaseId": 37718916552,
+      "headSha": "7fa052faab68887bec591be61d1a2b90edb0e9a6",
+      "status": "completed",
+      "updatedAt": "2026-10-08T02:49:19Z",
+      "url": "https://github.com/JusticeSc/listing-kit/actions/runs/37718916552"
+    },
+    {
+      "conclusion": "failure",
+      "createdAt": "2026-10-08T02:14:23Z",
+      "databaseId": 37716884122,
+      "headSha": "b764740f7ddc64198ab1b18765761e8ade40ca99",
+      "status": "completed",
+      "updatedAt": "2026-10-08T02:19:14Z",
+      "url": "https://github.com/JusticeSc/listing-kit/actions/runs/37716884122"
+    }
+  ],
+  "pr": {
+    "mergeCommit": {
+      "oid": "f8651fae16419092fa5682226868c6dce92c3c79"
+    },
+    "mergedAt": "2026-10-08T03:29:23Z",
+    "number": 4,
+    "reviewDecision": "",
+    "state": "MERGED",
+    "statusCheckRollup": [
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-10-08T03:22:34Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/JusticeSc/listing-kit/actions/runs/37721581892/job/113130210395",
+        "name": "Control plane and Product V2",
+        "startedAt": "2026-10-08T03:12:04Z",
+        "status": "COMPLETED",
+        "workflowName": "Product V2 CI and Docker CD"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-10-08T03:25:43Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/JusticeSc/listing-kit/actions/runs/37721581892/job/113132884718",
+        "name": "Docker image, smoke test, and main deploy",
+        "startedAt": "2026-10-08T03:22:36Z",
+        "status": "COMPLETED",
+        "workflowName": "Product V2 CI and Docker CD"
+      }
+    ],
+    "url": "https://github.com/JusticeSc/listing-kit/pull/4"
+  },
+  "state_before": {
+    "path": "_stage-amz-control/audit-stop-state-20261008/state-before.md",
+    "sha256": "fbcf479a87494df462d73dfc18377c12c35cce1c1032bbe7d80f095725d8ab6b"
+  },
+  "run_details": [
+    {
+      "conclusion": "cancelled",
+      "databaseId": 37729804595,
+      "headSha": "132884d3a50a1188896111385eaaf6edf46c36b8",
+      "jobs": [
+        {
+          "completedAt": "2026-10-08T04:57:32Z",
+          "conclusion": "cancelled",
+          "databaseId": 113156278610,
+          "name": "Control plane and Product V2",
+          "startedAt": "2026-10-08T04:56:03Z",
+          "status": "completed",
+          "steps": [
+            {
+              "completedAt": "2026-10-08T04:56:04Z",
+              "conclusion": "success",
+              "name": "Set up job",
+              "number": 1,
+              "startedAt": "2026-10-08T04:56:03Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-08T04:56:08Z",
+              "conclusion": "success",
+              "name": "Check out repository",
+              "number": 2,
+              "startedAt": "2026-10-08T04:56:04Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-08T04:56:08Z",
+              "conclusion": "success",
+              "name": "Set up Python",
+              "number": 3,
+              "startedAt": "2026-10-08T04:56:08Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-08T04:56:13Z",
+              "conclusion": "success",
+              "name": "Set up locked frontend tools",
+              "number": 4,
+              "startedAt": "2026-10-08T04:56:08Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-08T04:56:18Z",
+              "conclusion": "success",
+              "name": "Install approved frontend checker",
+              "number": 5,
+              "startedAt": "2026-10-08T04:56:13Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-08T04:56:57Z",
+              "conclusion": "success",
+              "name": "Install uv and locked dependencies",
+              "number": 6,
+              "startedAt": "2026-10-08T04:56:18Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-08T04:57:11Z",
+              "conclusion": "success",
+              "name": "Check control plane",
+              "number": 7,
+              "startedAt": "2026-10-08T04:56:57Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-08T04:57:16Z",
+              "conclusion": "success",
+              "name": "Check frontend versions types and direct behavior",
+              "number": 8,
+              "startedAt": "2026-10-08T04:57:11Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-08T04:57:30Z",
+              "conclusion": "cancelled",
+              "name": "Check formal entry and browser contracts",
+              "number": 9,
+              "startedAt": "2026-10-08T04:57:16Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-08T04:57:30Z",
+              "conclusion": "skipped",
+              "name": "Reject verification side effects",
+              "number": 10,
+              "startedAt": "2026-10-08T04:57:30Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-08T04:57:30Z",
+              "conclusion": "skipped",
+              "name": "Post Set up locked frontend tools",
+              "number": 18,
+              "startedAt": "2026-10-08T04:57:30Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-08T04:57:30Z",
+              "conclusion": "skipped",
+              "name": "Post Set up Python",
+              "number": 19,
+              "startedAt": "2026-10-08T04:57:30Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-08T04:57:31Z",
+              "conclusion": "success",
+              "name": "Post Check out repository",
+              "number": 20,
+              "startedAt": "2026-10-08T04:57:30Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-08T04:57:31Z",
+              "conclusion": "success",
+              "name": "Complete job",
+              "number": 21,
+              "startedAt": "2026-10-08T04:57:31Z",
+              "status": "completed"
+            }
+          ],
+          "url": "https://github.com/JusticeSc/listing-kit/actions/runs/37729804595/job/113156278610"
+        },
+        {
+          "completedAt": "2026-10-08T04:57:33Z",
+          "conclusion": "cancelled",
+          "databaseId": 113156656575,
+          "name": "Docker image, smoke test, and main deploy",
+          "startedAt": "2026-10-08T04:57:33Z",
+          "status": "completed",
+          "steps": [],
+          "url": "https://github.com/JusticeSc/listing-kit/actions/runs/37729804595/job/113156656575"
+        }
+      ],
+      "status": "completed",
+      "url": "https://github.com/JusticeSc/listing-kit/actions/runs/37729804595"
+    },
+    {
+      "conclusion": "cancelled",
+      "databaseId": 37729035340,
+      "headSha": "c31213ac6980b6e8d81096f73549cee8b1793489",
+      "jobs": [
+        {
+          "completedAt": "2026-10-08T04:56:00Z",
+          "conclusion": "cancelled",
+          "databaseId": 113153707344,
+          "name": "Control plane and Product V2",
+          "startedAt": "2026-10-08T04:45:46Z",
+          "status": "completed",
+          "steps": [
+            {
+              "completedAt": "2026-10-08T04:45:47Z",
+              "conclusion": "success",
+              "name": "Set up job",
+              "number": 1,
+              "startedAt": "2026-10-08T04:45:47Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-08T04:45:51Z",
+              "conclusion": "success",
+              "name": "Check out repository",
+              "number": 2,
+              "startedAt": "2026-10-08T04:45:47Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-08T04:45:51Z",
+              "conclusion": "success",
+              "name": "Set up Python",
+              "number": 3,
+              "startedAt": "2026-10-08T04:45:51Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-08T04:45:55Z",
+              "conclusion": "success",
+              "name": "Set up locked frontend tools",
+              "number": 4,
+              "startedAt": "2026-10-08T04:45:51Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-08T04:46:00Z",
+              "conclusion": "success",
+              "name": "Install approved frontend checker",
+              "number": 5,
+              "startedAt": "2026-10-08T04:45:55Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-08T04:46:43Z",
+              "conclusion": "success",
+              "name": "Install uv and locked dependencies",
+              "number": 6,
+              "startedAt": "2026-10-08T04:46:00Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-08T04:47:06Z",
+              "conclusion": "success",
+              "name": "Check control plane",
+              "number": 7,
+              "startedAt": "2026-10-08T04:46:43Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-08T04:47:13Z",
+              "conclusion": "success",
+              "name": "Check frontend versions types and direct behavior",
+              "number": 8,
+              "startedAt": "2026-10-08T04:47:06Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-08T04:55:59Z",
+              "conclusion": "cancelled",
+              "name": "Check formal entry and browser contracts",
+              "number": 9,
+              "startedAt": "2026-10-08T04:47:13Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-08T04:55:59Z",
+              "conclusion": "skipped",
+              "name": "Reject verification side effects",
+              "number": 10,
+              "startedAt": "2026-10-08T04:55:59Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-08T04:55:59Z",
+              "conclusion": "skipped",
+              "name": "Post Set up locked frontend tools",
+              "number": 18,
+              "startedAt": "2026-10-08T04:55:59Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-08T04:55:59Z",
+              "conclusion": "skipped",
+              "name": "Post Set up Python",
+              "number": 19,
+              "startedAt": "2026-10-08T04:55:59Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-08T04:55:59Z",
+              "conclusion": "success",
+              "name": "Post Check out repository",
+              "number": 20,
+              "startedAt": "2026-10-08T04:55:59Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-08T04:55:59Z",
+              "conclusion": "success",
+              "name": "Complete job",
+              "number": 21,
+              "startedAt": "2026-10-08T04:55:59Z",
+              "status": "completed"
+            }
+          ],
+          "url": "https://github.com/JusticeSc/listing-kit/actions/runs/37729035340/job/113153707344"
+        },
+        {
+          "completedAt": "2026-10-08T04:56:01Z",
+          "conclusion": "cancelled",
+          "databaseId": 113156277806,
+          "name": "Docker image, smoke test, and main deploy",
+          "startedAt": "2026-10-08T04:56:01Z",
+          "status": "completed",
+          "steps": [],
+          "url": "https://github.com/JusticeSc/listing-kit/actions/runs/37729035340/job/113156277806"
+        }
+      ],
+      "status": "completed",
+      "url": "https://github.com/JusticeSc/listing-kit/actions/runs/37729035340"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 37726671328,
+      "headSha": "92d88c1a67293e5245f503b029992f5c68a336f9",
+      "jobs": [
+        {
+          "completedAt": "2026-10-08T04:25:41Z",
+          "conclusion": "success",
+          "databaseId": 113146296141,
+          "name": "Control plane and Product V2",
+          "startedAt": "2026-10-08T04:16:11Z",
+          "status": "completed",
+          "steps": [
+            {
+              "completedAt": "2026-10-08T04:16:12Z",
+              "conclusion": "success",
+              "name": "Set up job",
+              "number": 1,
+              "startedAt": "2026-10-08T04:16:12Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-08T04:16:17Z",
+              "conclusion": "success",
+              "name": "Check out repository",
+              "number": 2,
+              "startedAt": "2026-10-08T04:16:12Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-08T04:16:17Z",
+              "conclusion": "success",
+              "name": "Set up Python",
+              "number": 3,
+              "startedAt": "2026-10-08T04:16:17Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-08T04:16:21Z",
+              "conclusion": "success",
+              "name": "Set up locked frontend tools",
+              "number": 4,
+              "startedAt": "2026-10-08T04:16:17Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-08T04:16:26Z",
+              "conclusion": "success",
+              "name": "Install approved frontend checker",
+              "number": 5,
+              "startedAt": "2026-10-08T04:16:21Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-08T04:17:03Z",
+              "conclusion": "success",
+              "name": "Install uv and locked dependencies",
+              "number": 6,
+              "startedAt": "2026-10-08T04:16:26Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-08T04:17:18Z",
+              "conclusion": "success",
+              "name": "Check control plane",
+              "number": 7,
+              "startedAt": "2026-10-08T04:17:03Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-08T04:17:23Z",
+              "conclusion": "success",
+              "name": "Check frontend versions types and direct behavior",
+              "number": 8,
+              "startedAt": "2026-10-08T04:17:18Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-08T04:25:38Z",
+              "conclusion": "success",
+              "name": "Check formal entry and browser contracts",
+              "number": 9,
+              "startedAt": "2026-10-08T04:17:23Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-08T04:25:38Z",
+              "conclusion": "success",
+              "name": "Reject verification side effects",
+              "number": 10,
+              "startedAt": "2026-10-08T04:25:38Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-08T04:25:38Z",
+              "conclusion": "success",
+              "name": "Post Set up locked frontend tools",
+              "number": 18,
+              "startedAt": "2026-10-08T04:25:38Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-08T04:25:38Z",
+              "conclusion": "success",
+              "name": "Post Set up Python",
+              "number": 19,
+              "startedAt": "2026-10-08T04:25:38Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-08T04:25:38Z",
+              "conclusion": "success",
+              "name": "Post Check out repository",
+              "number": 20,
+              "startedAt": "2026-10-08T04:25:38Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-08T04:25:38Z",
+              "conclusion": "success",
+              "name": "Complete job",
+              "number": 21,
+              "startedAt": "2026-10-08T04:25:38Z",
+              "status": "completed"
+            }
+          ],
+          "url": "https://github.com/JusticeSc/listing-kit/actions/runs/37726671328/job/113146296141"
+        },
+        {
+          "completedAt": "2026-10-08T04:29:45Z",
+          "conclusion": "success",
+          "databaseId": 113148676139,
+          "name": "Docker image, smoke test, and main deploy",
+          "startedAt": "2026-10-08T04:25:43Z",
+          "status": "completed",
+          "steps": [
+            {
+              "completedAt": "2026-10-08T04:25:45Z",
+              "conclusion": "success",
+              "name": "Set up job",
+              "number": 1,
+              "startedAt": "2026-10-08T04:25:44Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-08T04:25:49Z",
+              "conclusion": "success",
+              "name": "Check out repository",
+              "number": 2,
+              "startedAt": "2026-10-08T04:25:45Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-08T04:25:49Z",
+              "conclusion": "success",
+              "name": "Set up release acceptance tooling",
+              "number": 3,
+              "startedAt": "2026-10-08T04:25:49Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-08T04:26:31Z",
+              "conclusion": "success",
+              "name": "Install locked acceptance dependencies",
+              "number": 4,
+              "startedAt": "2026-10-08T04:25:49Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-08T04:26:54Z",
+              "conclusion": "success",
+              "name": "Build immutable image",
+              "number": 5,
+              "startedAt": "2026-10-08T04:26:31Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-08T04:27:01Z",
+              "conclusion": "success",
+              "name": "Smoke-test container health",
+              "number": 6,
+              "startedAt": "2026-10-08T04:26:54Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-08T04:27:01Z",
+              "conclusion": "success",
+              "name": "Remove smoke container",
+              "number": 7,
+              "startedAt": "2026-10-08T04:27:01Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-08T04:28:20Z",
+              "conclusion": "success",
+              "name": "Release transaction selftest (real disposable containers)",
+              "number": 8,
+              "startedAt": "2026-10-08T04:27:01Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-08T04:28:22Z",
+              "conclusion": "success",
+              "name": "Release failure classes (real script, no containers)",
+              "number": 9,
+              "startedAt": "2026-10-08T04:28:20Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-08T04:28:25Z",
+              "conclusion": "success",
+              "name": "Prepare SSH",
+              "number": 10,
+              "startedAt": "2026-10-08T04:28:22Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-08T04:28:34Z",
+              "conclusion": "success",
+              "name": "Sync provider secrets to server env file",
+              "number": 11,
+              "startedAt": "2026-10-08T04:28:25Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-08T04:29:05Z",
+              "conclusion": "success",
+              "name": "Build on remote Docker and deploy (full release transaction)",
+              "number": 12,
+              "startedAt": "2026-10-08T04:28:34Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-08T04:29:26Z",
+              "conclusion": "success",
+              "name": "Release acceptance (static assets and page main chain)",
+              "number": 13,
+              "startedAt": "2026-10-08T04:29:05Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-08T04:29:38Z",
+              "conclusion": "success",
+              "name": "Verify runtime and configuration fingerprints before cleanup",
+              "number": 14,
+              "startedAt": "2026-10-08T04:29:26Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-08T04:29:41Z",
+              "conclusion": "success",
+              "name": "Finalize release (cleanup previous only after all acceptance)",
+              "number": 15,
+              "startedAt": "2026-10-08T04:29:38Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-08T04:29:42Z",
+              "conclusion": "success",
+              "name": "Upload release evidence",
+              "number": 16,
+              "startedAt": "2026-10-08T04:29:41Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-08T04:29:42Z",
+              "conclusion": "skipped",
+              "name": "Roll back to previous known working state",
+              "number": 17,
+              "startedAt": "2026-10-08T04:29:42Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-08T04:29:42Z",
+              "conclusion": "success",
+              "name": "Post Set up release acceptance tooling",
+              "number": 33,
+              "startedAt": "2026-10-08T04:29:42Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-08T04:29:43Z",
+              "conclusion": "success",
+              "name": "Post Check out repository",
+              "number": 34,
+              "startedAt": "2026-10-08T04:29:42Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-08T04:29:43Z",
+              "conclusion": "success",
+              "name": "Complete job",
+              "number": 35,
+              "startedAt": "2026-10-08T04:29:43Z",
+              "status": "completed"
+            }
+          ],
+          "url": "https://github.com/JusticeSc/listing-kit/actions/runs/37726671328/job/113148676139"
+        }
+      ],
+      "status": "completed",
+      "url": "https://github.com/JusticeSc/listing-kit/actions/runs/37726671328"
+    }
+  ],
+  "smoke": {
+    "cold_resume": {
+      "rc": 0,
+      "status": "active at pre-audit baseline",
+      "next_action": "V2.R5.1",
+      "goal_read": "historical active only"
+    },
+    "formal_entry": {
+      "command": "uv run --locked python app/server.py --check",
+      "rc": 0,
+      "passed": 47,
+      "total": 47,
+      "scope": "local actual HTTP, injected fake providers; not complete UI or live models"
+    },
+    "live_public_reads": {
+      "health": {
+        "product": "v2",
+        "server_state": "none",
+        "user_data": "browser-indexeddb"
+      },
+      "capabilities": {
+        "ok": true,
+        "image_default_trial": "closed",
+        "image_provider": "dashscope-qwen-image"
+      },
+      "scope": "trusted HTTPS GET only; not fresh image identity or browser full-task acceptance"
+    }
+  },
+  "release_evidence": {
+    "source_run": 37726671328,
+    "artifact_id": 11528238313,
+    "source_directory": "releases/run5/release-evidence-92d88c1a67293e5245f503b029992f5c68a336f9/",
+    "release": {
+      "caddy_configuration_sha256": "e375655dcf81ada9a4ac315ceaf1791bbdf1c9ba3bb0aab0f529fc6eae4de176",
+      "commit": "92d88c1a67293e5245f503b029992f5c68a336f9",
+      "image_id": "sha256:31cc5ec62aa2170b9f134f1256b453e03a39d9e6933cc4c7d1d1db826896d163",
+      "image_tag": "amz-listing-kit:92d88c1a67293e5245f503b029992f5c68a336f9",
+      "public_configuration_sha256": "752430317ec03bc99e24ea2ef0bfadddd200ae7694f6c61844ef0e1dc885af51",
+      "runtime_sha256": "591f2b8322d84902e2d4ed6ea227fad4f38e031dfa6f44108fa650d4049239c6"
+    },
+    "runtime_fingerprint": {
+      "default_trial": "closed",
+      "files": {
+        "app/__init__.py": "4ba4fc89091358fa2ac992aecf4e88dc08292c7bb4ebe2deb7cb62458c34ca2d",
+        "app/offline.py": "58c60d17d46790e096326ea5b9bb2e3ca7637c1fd99071c85292ef4ca8a44ab4",
+        "app/offline_fixture.py": "0cccb7c7c9b09cdf4e90430c3657df08e3dc74277447cbcf9b4c0ea702d4dac6",
+        "app/product_v1/index.html": "232e455e3fe37b8bf6d6cdec5e53ee515e1b29caa1f8820897dc6bbce3e6722f",
+        "app/product_v1/product.js": "be1cb23b6ef64585e9037e24f983348c2643728273cb06d46c1800c3e87486ba",
+        "app/product_v1/styles.css": "f45ade900562452bcff433f796cc90af2c8caa8c0aefb2fe7cc8d7d9358f9808",
+        "app/product_v1_server.py": "9c840a3bbf0323fcba3b2dc74875c5e9d73635646d92f3f86b0d4eb09d440f1c",
+        "app/product_v2/app.js": "c0624ef9fac5648d7b23bdace1d12558156ff84e5c9258e20dccb65cb1c35119",
+        "app/product_v2/domain/attempt.js": "3dab95e7121c472f3bc49d9579d78c078560c8a2a67cbd9800d2faf9681c4c47",
+        "app/product_v2/domain/batch.js": "b5b3abec8dc6ccb406adc1545c35302f6a1f576bc345f6ddb3faffca27eedb95",
+        "app/product_v2/domain/brief.js": "75a06dc6ee88e504557bccdfbc9e6181f7126a3292d29f1b6e8ac0a63980ce7f",
+        "app/product_v2/domain/candidate.js": "cc4efccc9d285ab0053262e11ff9203f2d6d9b857840fd1eb6fa288258abb349",
+        "app/product_v2/domain/compare.js": "2c10bd1eb663f4030c59c5d38499ed2a4e7f5c5680ab0e671da8da475735e97b",
+        "app/product_v2/domain/config-export.js": "ba28cbb82362f2d7b29150ae1e806958b8fcf895d62ac13627d6ace7a905b5dd",
+        "app/product_v2/domain/confirm.js": "6d7307c89532ba268d3d4bfe480c5f1e71b65ceee32dbee872af6d541c9288e5",
+        "app/product_v2/domain/errors.js": "3169b668f2da9ab848a69a3a6110d2a7940b455cd3c2de83674941ddfebf046a",
+        "app/product_v2/domain/export-gate.js": "6b7a831e5bd736842aa0303156ce7dc2fa7ef592f4d316891a3c11d8791502c3",
+        "app/product_v2/domain/index.js": "0e4e9d5538b71f262441c4fb7756c067fe2dcac121a111d1cb39f1590e499a1e",
+        "app/product_v2/domain/intake.js": "2299cc2359dbbaba122f4d029b26b9addbee491820e6e24519c5b35acb6bea81",
+        "app/product_v2/domain/invalidation.js": "9a879a569d6b645ea4b8bb9c6dfe8e539b97173fa9927b3e77bdf170075a80ee",
+        "app/product_v2/domain/prompt.js": "d8461ed63a4cfaf9d26f7a70482df45eb05d05d0f0595033ecd516e78a8e307f",
+        "app/product_v2/domain/review.js": "6456d171cf56b26dff83c7c4638ea259cd1f297df1614de6c512e72dc2592fdb",
+        "app/product_v2/domain/rework.js": "fe243af53de6943f9e8c07919acaf52b628fec635b52162f2189ee9855242a00",
+        "app/product_v2/domain/selection.js": "29aacc9181438df48419969a7c37e2130f8626a68bcc1860385546b5d96b589c",
+        "app/product_v2/domain/shared.js": "5338b7b530889eea27b656595f01c72b82639d90eeb59fb30e3afeea3177a32d",
+        "app/product_v2/domain/slots.js": "04d4f7599e60a907e5d95ab10d7d0ff716d4d13b5a793d18fa266264c099a767",
+        "app/product_v2/domain/specs.js": "6728c4492d34d4148f6cde8d9ddd5c2cb30d3c3ff3db6f11114fe8043c488bb2",
+        "app/product_v2/domain/suite-plan.js": "278de1c3fa704f8b9a237d819bbad03f6acacfcc5a32ad10c9f328736dc2b292",
+        "app/product_v2/domain/suite-review.js": "fe92fd83b2cc19fd904af1d4191e237c38ebea15b5d7c011d7a59e2660b5614b",
+        "app/product_v2/domain/suite.js": "1bd98df73a25b231a6b1d53f5a2fc16d403b580a5cd52d09d0d91082db42bb62",
+        "app/product_v2/entry.js": "8ef37dd380fb1a75d5e66c60c017c0f3af25a6e0601e8bee825859e8f09b6c9d",
+        "app/product_v2/generation.js": "72b6ef03d513ca3b63c41013312b5d0002cdffac2723217b499ad47543bd5861",
+        "app/product_v2/index.html": "a62b84c796e0ca7112e1772127cc29f08c7aa398d96cdf53145afb5432c676eb",
+        "app/product_v2/model-settings.js": "39a4dfc0c6910c9bb8da34fdde96a55ad650b0d06bec27a6e4477387d40e175f",
+        "app/product_v2/package.json": "609158e6c5fbc237939fa3ddf7faab80ab690bdc0c8d584414a885130103c4e8",
+        "app/product_v2/project-inputs.js": "f050c2eae8b6b6fb7be748ab465ebeecf0bac8b4ea968d0b21e94878231304f6",
+        "app/product_v2/prompts.js": "40100c27b4605204ecb5bbf62c15b3c3747530482f2fa5b1416479aae49a0ecc",
+        "app/product_v2/review-delivery.js": "17b53656b988295217770d7dbcdadfa04399959bca6f815e8d91f4688e3c2965",
+        "app/product_v2/selection-adoption.js": "4d1c9984e53cd204f2d7ddaeb242fa1d0f9f8af2f3d700b9f0ac2ce5361ffe56",
+        "app/product_v2/semantic-analysis.js": "a2e7c002967a0a4cb3bf8e68ed4a9fe5c8a492ea88e9547445b7419d1c8e6b8a",
+        "app/product_v2/session.js": "d6a231e283f7f40f53568360170139b2854814a4f83721cb5b21518d2ea3b57d",
+        "app/product_v2/storage/capabilities.js": "1e2614ab3c260ad19498cad099e8c1ee3b1d90264450bd1e8efeadabd2d08b33",
+        "app/product_v2/storage/db.js": "bac2e194a8e84c19dffaa5a1ad08da3cc3a643ba9152953bb1af9c5e97ccbc29",
+        "app/product_v2/storage/errors.js": "b7941724719c0e2cb5bd81f93577ab2e527d4e6c0601715935a3c875769195f7",
+        "app/product_v2/storage/index.js": "14d35f3675ad90adee7170948a207613134c8ad1e3dd6f26e7282c791189b12f",
+        "app/product_v2/storage/migrations.js": "df09566037241540771bd49fd92a6b9c487eeb14a800a6d85ebfbd70991c3644",
+        "app/product_v2/storage/package-schema.js": "c325f5687c768cadb2303559b6cf49c2213363cf7c9f70ab2b58f6f7c75d7a30",
+        "app/product_v2/storage/package.js": "6de70282b6ea6d0ec4733b69256da422c71f4c999377e6d37eccefc5d47cb437",
+        "app/product_v2/storage/pointer.js": "68e70ba2dbbb2954be5cefe4d6a93768259551f5a72a10ae3365517f6c800e18",
+        "app/product_v2/storage/repository.js": "f260575b4188145972961afed73aa0e5239ecd653522459253f8a30c6d563273",
+        "app/product_v2/storage/schema.js": "bde5c53428e0c6823bec484345588e15368af3db5154e4b2497997d1e186e736",
+        "app/product_v2/storage/transfer.js": "0b7e2fc055994a246044e2b501d56d17cbb379353e071da19f305bd9b4251d16",
+        "app/product_v2/storage/validate.js": "ae100066b19c49606b85dc56f8e6f9f9a186bfb5032c5bcc98c85ea14e2d906a",
+        "app/product_v2/storage/zip.js": "e79183fa8219edbcbac45aba6f9fb14d82f5240b0c7550f6c699f560b08d4b3f",
+        "app/product_v2/styles.css": "212bca9c29c45c9629c9700bc580cb0981f9742010dea943af1db9a022ce3dac",
+        "app/product_v2/ui/compare-view.js": "bed9fac65bf081eca24b787914464c098ae73a41b852327a84c203c6a0d0af3c",
+        "app/product_v2/ui/delivery-view.js": "8dfca28244449f6805ed248ab7abd54209fe7e48226ea6d2c2794cab5620733f",
+        "app/product_v2/ui/dom.js": "140131962f96bf99904279a2f3fb81a77a8123477250196d9e89d1738cb99979",
+        "app/product_v2/ui/generation-view.js": "0aa0a8f4dce08f8e6b97dc3f4a33c32c7f7ee97209860a942425e691b4fe6765",
+        "app/product_v2/ui/input-view.js": "7043516a01523017b2213bbb100ebe57a51a0525b2c34d8edf7f42c5615bdc89",
+        "app/product_v2/ui/stage-shell.js": "afb44b070ecd281784e3d8895d46e8b013d6d26424a3d351c19d0c74ab0c3a8c",
+        "app/product_v2/vendor/fflate.LICENSE.txt": "0a1df3a083d0c010560aa342e87959c8c1070e6fd54545741f083f22d0c8b551",
+        "app/product_v2/vendor/fflate.browser.js": "b7ca4450b19559a1d50eb381adcee94b82449674be4cd17789d9beba7e6122a1",
+        "app/product_v2/workspace.js": "2b2435ee6af2db142de4487c019121b57bbbc21acb44257f657d99a7312ac5bd",
+        "app/product_v2_server.py": "67a470f982e8cfb42770a46b972242a028143339007d4e4b90fe9770141f664f",
+        "app/server.py": "59bd01f58dc79e500bdcd07a854da9b86124239ceb46d7e4fb37c359b4a2b098",
+        "app/static/index.html": "02fc6e1cf439a74e0b663cf95c79cb92c1397ba76f020264fe2a2e52b6be440b",
+        "app/static/mock-service.js": "b6e8f2c24ee34d87d8c3399adad918467031ccd3187750afba0a793ead8f3e40",
+        "app/static/package.json": "609158e6c5fbc237939fa3ddf7faab80ab690bdc0c8d584414a885130103c4e8",
+        "app/static/service.js": "1ea81a9c9cdb7c44aa7ae8d562c1cc8dd7dddf387a1d2537d737a7cba27058d4",
+        "app/static/styles.css": "8a2e7b08e27c02af2e0830b9ab9521a40a112ce8f6eefe094dbfe9f9b1fe0448",
+        "app/static/workbench.js": "d60c32149498bb462b7fd723a963e5e4a3a6afc346692cee5ce705045bb16abe",
+        "app/views.py": "7f979692b2879d015f6c2705ab25c04c1cba8a4b0ea0e4cc53c704e119d5790e",
+        "config/brand.json": "742863ef6afdc90f76e16acb2998ba7529055b545380133b5fa61ab66a6cccf5",
+        "config/catalog/home_kitchen.yaml": "ecccc908976e56dc4a21a321f001b554e6c24d7cb9492cf7bb6e4566c8c9bf6c",
+        "config/product-v1/archetypes.json": "360bd19a7e282845c5a6700965f2f1c24948260b21de4a1335592cf49f4aa028",
+        "config/product-v1/platforms/amazon-us.json": "ad516171e1cb056388976940ed0509050bb634795c5f94539af25628b085f93e",
+        "config/product-v1/providers.json": "6dbe090ac654db2d51687ef7ebbf58259b34c180b996f0127968efe68d372913",
+        "config/product-v2/providers.json": "64e0c9a45a1189f1518d707e47b790ad9358c0ef959332ac5b6065cda5da6c7a",
+        "config/slots.yaml": "7232b2841b656217b27a7c766bedd7b2761e132a0c5799dbee9140427418527e",
+        "pyproject.toml": "e4a95ac06dc4266a08c1be26a6114afbcac0ceabcf78e730d54892ee2034a378",
+        "src/application_service.py": "6583a622bcead343806328584749ddafa6873b8a687cc6a71674c93ac3c40026",
+        "src/assets.py": "09fcc7aa93259866fe69b29bd76ad8af9359fe4e1cf25cf53ed4ca755d00f4cb",
+        "src/console.py": "8b570661c3c6069d9b56d7827b54d597430620bb5c818e746a07b74e695c4eaf",
+        "src/cutouts.py": "2220b7477764913e5a1976748984c51507482375bf04a6ecb9e1c6442e053e09",
+        "src/data_policy.py": "6f350aa073c09899a2a293d016daf1a36f9ae968bedebd2322ef2817db475af0",
+        "src/eval_dataset.py": "c3d9d15ce579e2577de28c885616e244fbfdcbfb38b6fe82c9ad125e0b616304",
+        "src/fixers.py": "8df6b4016c5e7a9e89a87ec78e876c73ef2238fbe99935a6771596a4f9c6bc2d",
+        "src/imagegen.py": "0467f4c2f06c2f06d5b007d8c8321092e8dc61c0c7ff0cb0adc7f0a4ab1d1df0",
+        "src/intake.py": "37d09664c1cf3d6949a19502009bb8d42b5c7f74ee572d90a7b15e1480aa5637",
+        "src/kit_config.py": "115691419468f025228d7a3bdebf45b2865f053ea304ab7fadbf3122d1ca082b",
+        "src/orchestrator.py": "0b258e5ecc9bfeb80145b84ace8fbfe485d39ad7922c5edea806b185a94946d5",
+        "src/pilot_registry.py": "7284bdfead82d8c171e0ce0ed3108c6d3e553da4c0752fcc272abd4f6051d42b",
+        "src/placement.py": "a854309ba3744494fe00d2e60513ab5b82d3304ab60eee2559b9b8929a6916b1",
+        "src/planner.py": "5e876a76c12bca6c4d47213b4a27154848ef7936811662eb495d6f10edc2577d",
+        "src/platform_checks.py": "7f7b09983787b6e7de7b24dea92e6a70c9cc2c0afeae4c2e6fd18ee2c2c2595b",
+        "src/product_brief.py": "5776b921a33ab1a9a47f8d3e908d153be5f58626f809d9fa1da93793d3fcba9b",
+        "src/product_export.py": "33d3a976ca4aa22c827a022124733a3f7fb961a918e5bf90da26e196a93f8726",
+        "src/product_facts.py": "74371d47fe90fce3843bdd61abcaeb435d7a99ec2cb4a61f36b600cd06764961",
+        "src/product_plan.py": "5f49fdd88acb0b243b741567ce7c0427d114376747ea1f089bee3f9147e05079",
+        "src/product_prompt.py": "e107a3653cf422e6218378c04397d56d29c692f045c150590260f18fd06c555f",
+        "src/product_v1_contracts.py": "e20b730ee2f1cd3797e9d99da3cec3d056dbd3a0152d93b18a099cef29098e51",
+        "src/providers/__init__.py": "3743463fc3f9994c6585d7159ddf00fc5305a5637e9b30e55f8d378c143f1b33",
+        "src/providers/dashscope_image.py": "40e6847abf20347738ca8ad445573cae6b4908620ff07432b8549d7d8bc56c9a",
+        "src/providers/dashscope_semantic.py": "7d106b60d17b6ba706a165588dbd554dd786bd1222ce9f98759b6ff2dd60d4b0",
+        "src/providers/fake_semantic.py": "c75ef15f3f9eea0afd36b208f3873f7293b0bc0711c263a657fe59e3f82e7106",
+        "src/providers/image.py": "b3fe1e1e49917283527cf5f0a0a2b43413dfafaa61a69e3630d8af7bfe5712a0",
+        "src/providers/semantic.py": "5105730865f147ecf64defb363360c4d15388fe7d179693aa032eb7d0b82202d",
+        "src/providers/v2_credentials.py": "bcc9a81b10271a2f2cd1d2a357c4b2414d2623080ede011eb0f836015a4a651a",
+        "src/providers/v2_dashscope_image.py": "aee42413dfe8ac2ea5d93b6abd3c97626fd6c4c99894728c47fe6f3028cb766b",
+        "src/providers/v2_dashscope_review.py": "bccad4005f8395b68ed3ff2d6e85a7e2f6cb8c03e54bbf8d345aad1a48d22398",
+        "src/providers/v2_dashscope_semantic.py": "00ed91cc1552eb1e3ebfc16e35111133e2d42b850ac2fc0b011d7a4e50be7769",
+        "src/providers/v2_dashscope_suite_review.py": "adf1fc2c589e388869f4318b7c79ac75b1dd871ede1b283f927182d1a57f7ce7",
+        "src/providers/v2_dashscope_vision_semantic.py": "6b0f38035c626de2b66f9310bc292ea624e952d30b0e64be88e818f3cbca1c59",
+        "src/providers/v2_errors.py": "0793faa4512798eb1b5c6dbd29f7b8a603330a7d5959c5da4ff15cf43b31eb68",
+        "src/providers/v2_fake_image.py": "0cce122ca3096e3e46af803ba6a5d3389afcffd47bf5956f729bbcaf674ec6f2",
+        "src/providers/v2_fake_review.py": "489b79a945804ca48f45a32ea8c1c816264da13d32c56ebeff97ecd645078017",
+        "src/providers/v2_fake_semantic.py": "c88db472903cf100230b45c9015d7b31eb21470abbdc96b8279d15f9d67e3bf6",
+        "src/providers/v2_fake_suite_review.py": "12ab42ae4b72a05476f7fd9eb326b8f371d1d06a237e4737d332589b25fce800",
+        "src/providers/v2_fake_vision_semantic.py": "dd0f91c6548a893f6a0e85749522f92a41a42359b78b54f48bed88b9686218dd",
+        "src/providers/v2_image.py": "e2ba09b8cc3f1a0e73bcfdcaa51f5d6a0b24772466753b45f6d5c47e80c5e78c",
+        "src/providers/v2_langchain_chat.py": "1bbc99cfaf2600cece1839bfc3973480c19515e245e506b3c18573426327695c",
+        "src/providers/v2_outbound.py": "ed1e108dbbb875d66eb8d4f8ecbf79b1757109eeeeeb6c1acbb83e52f8592de4",
+        "src/providers/v2_registry.py": "e054b6a6729ec1b9df2f7d4ff560e34851c6805fd360d65d2d985b7d32391e1d",
+        "src/providers/v2_review.py": "4163f6db3ce678cf29bf1873506042dfa96bb8725d4af715555d173ff6325a86",
+        "src/providers/v2_semantic.py": "040f0c413a522f40e490ceb6dc17af7405a5dcce59d16b3f986334457b4ff305",
+        "src/providers/v2_suite_review.py": "9ddf20ee08e5f97ec2edc33459e6445746714e1caeada81f9bf63faaf64f962d",
+        "src/providers/v2_volcengine_image.py": "7372afa1b0e3c2568581737d6d8e45b165fa7561748844430bd5da6f7884e3a8",
+        "src/registry.py": "7ac699dd2a0611a97ee268ddc66ea62965187475ccfb91ab68f74924334a47ee",
+        "src/renderers/_placeholder.py": "2d4617c5f09bb5e40defb895848772ed3948fa374e7ee1fff165c2af2ff7df4f",
+        "src/renderers/closeup_crop.py": "537da13fa43ae37021bf5b606972122f560032c5d71bc4a7697852e0d3ec3a3f",
+        "src/renderers/compare_side.py": "c65040c95bdfe6dc83b6b2cbdce2080276f93467a8b174f6ebdec55471c86f5e",
+        "src/renderers/compose_white.py": "aed4538ff6acba5b4234057346cf967d1a4b3fc5c480ec5e28a4f344616f7d5f",
+        "src/renderers/contents_compose.py": "b3c9b91ae68f5724e9654d341b000faa31b9f0b41ac22a626845e9f9b548a9ac",
+        "src/renderers/flat_overlay.py": "37e967ff196f3c3a063d147dc306c10cefd9ec9c0cb325bc4aef70f92c974f71",
+        "src/renderers/gen_bg_paste.py": "5fa022be4a3978caf8fb988739d3f0ba2c507c81c0ee480d870793e3e4663ff6",
+        "src/review_contract.py": "7f314da9d4d89d2b10598dd4ba03647717cffada9896046adfaf19903e2da179",
+        "src/schema.py": "5795fe06a441c242fb36b8adc432f55804020f5658b54911291a9995780707c0",
+        "src/semantic_drafts.py": "6c854b78ca2786dc760091571f91d4b43faa4fe51c45822d3dab8a8e8a7e0016",
+        "src/subject.py": "ac398967fa19b9d6d27e2f984d5273fa25505249f772ac155bde42de4fcee222",
+        "src/synth.py": "40678da71d9d7da5ca913e01df1dcb73d932275928aa751a4e12369788f96fc9",
+        "src/textlayer.py": "8d745167d3a11bb77dd611d87f1588e48068c8b871593e0446b51fb5cd7e30f3",
+        "src/validators.py": "000ba63ca7f1ffb3b96b4c8397e24b3f882269e2cb05f235ad619ddc548f9cd9",
+        "src/workspace_store.py": "2d82f46209be03cf4234d0d1708a9ac08c21c7665418508faed72c546ff49da4",
+        "uv.lock": "a1bc8edb29c97ef3ef3e519f2bc8f8515bfb032f914458e7be0aec54308ee62a"
+      },
+      "public_configuration_sha256": "752430317ec03bc99e24ea2ef0bfadddd200ae7694f6c61844ef0e1dc885af51",
+      "runtime_sha256": "591f2b8322d84902e2d4ed6ea227fad4f38e031dfa6f44108fa650d4049239c6",
+      "schema_version": "amz-runtime-fingerprint/v1",
+      "served_scripts_sha256": {
+        "/app.js": "c0624ef9fac5648d7b23bdace1d12558156ff84e5c9258e20dccb65cb1c35119",
+        "/entry.js": "8ef37dd380fb1a75d5e66c60c017c0f3af25a6e0601e8bee825859e8f09b6c9d"
+      }
+    },
+    "image_txt": "sha256:31cc5ec62aa2170b9f134f1256b453e03a39d9e6933cc4c7d1d1db826896d163 amz-listing-kit:92d88c1a67293e5245f503b029992f5c68a336f9\n",
+    "caddy_sha256_txt": "e375655dcf81ada9a4ac315ceaf1791bbdf1c9ba3bb0aab0f529fc6eae4de176  /etc/caddy/Caddyfile\n"
+  },
+  "post_audit_verification": {
+    "command": "uv run --locked python tools/refactor_resume.py && uv run --locked python evals/probes/project_state.py",
+    "exit_code": 0,
+    "elapsed_seconds": 34.7,
+    "cold_resume": {
+      "status": "paused",
+      "next_action": "V2.R5.1",
+      "task_status": "blocked",
+      "explicit_stop_gate": true,
+      "goal_observed_status": "paused"
+    },
+    "project_state_reverse_probe": {
+      "cases": 64,
+      "all_matched": true,
+      "authority_state_mutated_by_probe": false
+    },
+    "state_after_sha256": "4b88acc2f3cb7fe06ed32755a507e81e8e17c4907095d32a3e07ed4442250f20"
+  },
+  "http_framing_smoke": {
+    "scenario": "actual local HTTP/1.1 chunked body followed by health GET",
+    "results": [
+      {
+        "unexpected_suffix_bytes": 356,
+        "unexpected_suffix_preview": "<!DOCTYPE HTML>\n<html lang=\"en\">\n    <head>\n        <meta charset=\"utf-8\">\n        <title>",
+        "method": "POST",
+        "path": "/api/v2/semantic/analyze",
+        "response_status_lines": [
+          "HTTP/1.1 400 Bad Request"
+        ],
+        "first_response_connection_close": false,
+        "socket_eof": true
+      },
+      {
+        "unexpected_suffix_bytes": 356,
+        "unexpected_suffix_preview": "<!DOCTYPE HTML>\n<html lang=\"en\">\n    <head>\n        <meta charset=\"utf-8\">\n        <title>",
+        "method": "GET",
+        "path": "/api/health",
+        "response_status_lines": [
+          "HTTP/1.1 200 OK"
+        ],
+        "first_response_connection_close": false,
+        "socket_eof": true
+      }
+    ],
+    "provider_constructions": 0,
+    "model_calls": 0,
+    "external_network_calls": 0
+  }
+}

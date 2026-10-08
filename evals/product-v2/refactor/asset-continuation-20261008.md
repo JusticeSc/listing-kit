@@ -59,3 +59,7 @@ NOT-AUTHORITY：本文件记录本次实际工作与复用边界；目标/权限
 第8轮`.dockerignore`已改精确子树排除/重纳入，`release_transaction_probe.py --selftest`的ST-LIVE现对真实container origin执行，复用原正式Dockerfile/不同image ID/markerA-B/故障回退；代表项目经真实文件输入建立，切换/回退/收口使用同一持久profile及origin、独立IDB/Blob/采用前缀核对。预测88文件只是静态闭包，不冒充实际镜像；workflow原接线保留，无新发布平台。真实Linux/Docker运行尚待受保护PR的CI，RC19及最终发布门仍未闭合，当前未发布新版本。
 
 
+## 现有PR/CI首次结果
+
+草稿[PR #5](https://github.com/JusticeSc/listing-kit/pull/5)，候选`ef8cda1`；未合并/未部署。[run 37745335928](https://github.com/JusticeSc/listing-kit/actions/runs/37745335928)在控制状态J8失败：已提交state的`latest_audit`指向既有但尚未纳入Git的`audit-current-state-20261008.md`；Docker job因此未运行。最早失败是证据依赖没有随状态发布，不是Docker或产品行为。只晋级原有相关审计/原生观察资产，不重做审计、不改守卫、不换latest_audit掩盖缺文件；HTTP前红的原来源JSON也据原引用一起保存。
+
