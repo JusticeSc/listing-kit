@@ -1,0 +1,123 @@
+{
+  "schema": "amz-product-v2-zoom-keyboard-evidence/v1",
+  "observed_at": "2026-10-08T09:2x+08:00",
+  "what_this_proves": "正式本地产品入口在 1440/1366/390 CSS 像素、实际浏览器页面缩放 125%/200% 下，交付阶段关键操作可达、可点、不被遮挡；并证明这两项关键操作可以只用键盘完成（无鼠标点击）。",
+  "what_this_does_not_prove": "不冒充独立真人 C15/C17 走查；不证明商品图与参考图的忠实度；不证明远端部署环境（HTTPS 97.115… 侧）的同等几何，该侧由 CI 的 page-smoke 与后续发布验收覆盖；不含付费模型调用。",
+  "method": {
+    "browser": "系统 Chrome（--headless=new）独立临时 user-data-dir，非用户日常配置；不启动 Edge、不抢桌面焦点、不发 OS 键鼠",
+    "profile": "C:/Users/31368/AppData/Local/Temp/omp-zoom-kbd-1791451390037（一次性，采集后删除）",
+    "origin": "http://127.0.0.1:8780（本地正式 app/server.py，stateless Product V2 入口）",
+    "project": "用真实文件输入导入仓库内既有合法项目包 project-before.zip（正式开发—人工套图主链）",
+    "gate": "导入后整套一致性报告已过期，按真实用户路径在页面上点『运行本地确定性检查』重跑（v2.5.5 阻断 0 · 高风险 0 · 提醒 1 · 未知 0 · 视觉复核未运行（可选）），交付门禁转为通过",
+    "zoom": "chrome://settings/appearance 的 Page zoom 选择器（真实浏览器页面缩放，等价于 Ctrl+/-），非 CSS zoom/transform，也非 launch 期 device-scale 开关",
+    "widths": "viewport 仿真设置 CSS 视口尺寸；devicePixelRatio 反映系统显示缩放 1.25 × 页面缩放",
+    "controls_checked": ["#deliver-export（生成交付包 ZIP）", "#deliver-project-package（导出项目包 完整历史）", "六个 [data-stage-nav] 阶段导航"],
+    "occlusion_test": "elementFromPoint 命中控件或其子节点（not_occluded）"
+  },
+  "levels": [
+    {
+      "name": "1440",
+      "mode": "viewport_emulation",
+      "viewport": {"width": 1440, "height": 1000},
+      "page_zoom": 1,
+      "measured": {"innerWidth": 1440, "innerHeight": 1000, "dpr": 1.25, "visual_viewport_scale": 1,
+                   "doc_scroll_width": 1425, "doc_client_width": 1425, "scrollY": 362,
+                   "css_zoom_property": "", "css_transform": ""},
+      "nav": {"scrollWidth": 1070, "clientWidth": 1070, "buttons_in_view": ["intake", "understand", "plan", "generate", "review", "deliver"]},
+      "controls": {
+        "deliver_export": {"left": 262, "right": 408, "top": 798, "bottom": 838, "width": 146, "height": 40, "enabled": true, "in_viewport": true, "not_occluded": true},
+        "deliver_project_package": {"left": 416, "right": 598, "top": 798, "bottom": 838, "width": 182, "height": 40, "enabled": true, "in_viewport": true, "not_occluded": true}
+      },
+      "screenshot": "evals/product-v2/evidence/asset-continuation-20261008-zoom-1440.png"
+    },
+    {
+      "name": "1366",
+      "mode": "viewport_emulation",
+      "viewport": {"width": 1366, "height": 768},
+      "page_zoom": 1,
+      "measured": {"innerWidth": 1366, "innerHeight": 768, "dpr": 1.25, "visual_viewport_scale": 1,
+                   "doc_scroll_width": 1351, "doc_client_width": 1351, "scrollY": 594,
+                   "css_zoom_property": "", "css_transform": ""},
+      "nav": {"scrollWidth": 1070, "clientWidth": 1070, "buttons_in_view": ["intake", "understand", "plan", "generate", "review", "deliver"]},
+      "controls": {
+        "deliver_export": {"left": 225, "right": 371, "top": 566, "bottom": 606, "width": 146, "height": 40, "enabled": true, "in_viewport": true, "not_occluded": true},
+        "deliver_project_package": {"left": 379, "right": 561, "top": 566, "bottom": 606, "width": 182, "height": 40, "enabled": true, "in_viewport": true, "not_occluded": true}
+      },
+      "screenshot": "evals/product-v2/evidence/asset-continuation-20261008-zoom-1366.png"
+    },
+    {
+      "name": "390",
+      "mode": "viewport_emulation",
+      "viewport": {"width": 390, "height": 844},
+      "page_zoom": 1,
+      "measured": {"innerWidth": 390, "innerHeight": 844, "dpr": 1.25, "visual_viewport_scale": 1,
+                   "doc_scroll_width": 375, "doc_client_width": 375, "scrollY": 1152,
+                   "css_zoom_property": "", "css_transform": ""},
+      "nav": {"scrollWidth": 550, "clientWidth": 345, "buttons_in_view": []},
+      "nav_note": "阶段导航一行在 390px 需要横向滚动（550>345），这是计划允许的边界：390px 只承诺关键操作/信息可达不遮挡，不承诺完整手机产品",
+      "controls": {
+        "deliver_export": {"left": 33, "right": 179, "top": 527, "bottom": 571, "width": 146, "height": 44, "enabled": true, "in_viewport": true, "not_occluded": true},
+        "deliver_project_package": {"left": 33, "right": 215, "top": 579, "bottom": 623, "width": 182, "height": 44, "enabled": true, "in_viewport": true, "not_occluded": true}
+      },
+      "document_horizontal_overflow": false,
+      "screenshot": "evals/product-v2/evidence/asset-continuation-20261008-zoom-390.png"
+    },
+    {
+      "name": "125",
+      "mode": "real_browser_page_zoom",
+      "viewport": {"width": 1440, "height": 1000},
+      "page_zoom": 1.25,
+      "measured": {"innerWidth": 1152, "innerHeight": 800, "dpr": 1.5625, "visual_viewport_scale": 1,
+                   "doc_scroll_width": 1140, "doc_client_width": 1140, "scrollY": 552,
+                   "css_zoom_property": "", "css_transform": ""},
+      "expectation": "1440 CSS 视口在 125% 页面缩放下布局宽度应为 1440/1.25 = 1152；实测一致，证明是真实页面缩放而非 CSS 缩放",
+      "nav": {"scrollWidth": 1070, "clientWidth": 1070, "buttons_in_view": ["intake", "understand", "plan", "generate", "review", "deliver"]},
+      "controls": {
+        "deliver_export": {"left": 119, "right": 265, "top": 598, "bottom": 637, "width": 146, "height": 39, "enabled": true, "in_viewport": true, "not_occluded": true},
+        "deliver_project_package": {"left": 273, "right": 454, "top": 598, "bottom": 637, "width": 182, "height": 39, "enabled": true, "in_viewport": true, "not_occluded": true}
+      },
+      "screenshot": "evals/product-v2/evidence/asset-continuation-20261008-zoom-125.png"
+    },
+    {
+      "name": "200",
+      "mode": "real_browser_page_zoom",
+      "viewport": {"width": 1440, "height": 1000},
+      "page_zoom": 2,
+      "measured": {"innerWidth": 720, "innerHeight": 500, "dpr": 2.5, "visual_viewport_scale": 1,
+                   "doc_scroll_width": 712, "doc_client_width": 712, "scrollY": 901.5,
+                   "css_zoom_property": "", "css_transform": ""},
+      "expectation": "1440 CSS 视口在 200% 页面缩放下布局宽度应为 720；实测一致",
+      "nav": {"scrollWidth": 683, "clientWidth": 683, "buttons_in_view": ["intake", "understand", "plan", "generate", "review", "deliver"]},
+      "controls": {
+        "deliver_export": {"left": 33, "right": 179, "top": 274, "bottom": 318, "width": 146, "height": 44, "enabled": true, "in_viewport": true, "not_occluded": true},
+        "deliver_project_package": {"left": 187, "right": 369, "top": 274, "bottom": 318, "width": 182, "height": 44, "enabled": true, "in_viewport": true, "not_occluded": true}
+      },
+      "screenshot": "evals/product-v2/evidence/asset-continuation-20261008-zoom-200.png"
+    }
+  ],
+  "keyboard_only": {
+    "page_zoom": 2,
+    "viewport": {"width": 1440, "height": 1000},
+    "start": "重新加载页面后 document.activeElement = body，之后只用 Tab/Enter，全程无鼠标点击",
+    "tab_sequence_to_delivery_export": ["model-settings-open", "back-home", "SUMMARY:项目信息", "intake", "understand", "plan", "generate", "review", "deliver"],
+    "stage_switch": "焦点到 [data-stage-nav=deliver] 后按 Enter 切换阶段（键盘可切阶段）",
+    "then": ["BUTTON:去审核", "deliver-export"],
+    "delivery_export_enter_result": {
+      "status_before": "交付门禁通过：可以生成交付包（只包含已采用的候选）。",
+      "delivery_result_after": "最近一次交付包：正式开发—人工套图主链-交付包-20261008-0927.zip（30 KB）技术详情sha256 cb4bceff33a3040b…下载交付包",
+      "deliver_error": ""
+    },
+    "project_package_enter_result": {
+      "focus_next_tab": "deliver-project-package",
+      "deliver_status_after": "已导出项目包（含完整历史，可在别的浏览器导入）。",
+      "deliver_error": ""
+    },
+    "note": "本文件只记录应用层结果（交付包文件名/大小/sha256 前缀、状态文案）；ZIP 实际字节/成员/hash 的浏览器层证据由 tools/release_transaction_probe.py --page-smoke 的 PS-07-package（真实 download 事件保存文件并算 sha256）承担"
+  },
+  "limitations": [
+    "模拟性质：这是授权范围内的无头独立 profile 模拟，不冒充独立真人 C17/C15",
+    "390px 只承诺关键操作可达不遮挡；阶段导航行需要横向滚动",
+    "devicePixelRatio 含宿主系统 1.25 显示缩放，非产品行为",
+    "本轮未在远端 HTTPS 环境重复该几何测量"
+  ]
+}
