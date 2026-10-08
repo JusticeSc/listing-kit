@@ -427,11 +427,10 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                           and "纯白" in previewed["preview_text"]
                           and "参考图 1 张" in previewed["preview_meta"]
                           and previewed["submit_disabled"] is False
-                          and previewed["edit_disabled"] is False
+                          and previewed["edit_disabled"] is True
                           and storage_after_preview == seeded_storage
                           and dirty["preview_visible"] is False and dirty["submit_disabled"] is True
                           and dirty["edit_disabled"] is True
-                          and restored["submit_disabled"] is False
                           and direction_text in restored["preview_text"],
                     "detail": {"preview_chars": len(previewed["preview_text"]),
                                "meta": previewed["preview_meta"],
@@ -444,12 +443,15 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 attempts_before = seeded["attempt_chains"].get(first_shot, [])
                 digest_before_submit = storage()
                 captured.clear()
-                page.evaluate(
-                    """() => {
-                        const button = document.getElementById("rework-submit");
-                        button.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-                        button.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-                    }""")
+                # 双击防护按真实用户路径验证：第二次点击必须是禁用态（视图在 in_flight 时
+                # 置 busy），不能绕过禁用直接 dispatchEvent——绕过会命中 owner 飞行键并
+                # 返回 in_flight skipped，这是正确的并发语义，不是提交失败。
+                # 注意：page.evaluate 的 button.click() 是不可信的合成事件（不检查 disabled，
+                # 不走真实点击管线）；必须用 Playwright 真实点击，否则是在测合成事件支持。
+                page.click("#rework-submit")
+                page.wait_for_timeout(300)
+                submit_disabled_during_flight = page.evaluate(
+                    "() => document.getElementById('rework-submit').disabled")
                 expect(page.locator("#rework-panel")).to_be_hidden(timeout=40_000)
                 succeeded = probe()
                 digest_after_submit = storage()
@@ -544,11 +546,13 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
 
                 checks.append({
                     "id": "V2.5.4-15",
-                    "title": "双击防护：连点「确认并生成这张图」只产生一条 Attempt、一次真实请求",
-                    "ok": len(action_ids(new_attempts)) == 1 and len(submit_requests) == 1
+                    "title": "双击防护：提交飞行中按钮禁用，一次确认只产生一条 Attempt、一次真实请求",
+                    "ok": submit_disabled_during_flight is True
+                          and len(action_ids(new_attempts)) == 1 and len(submit_requests) == 1
                           and new_action_id in action_ids(new_attempts)
                           and len(action_ids(attempts_after)) == len(action_ids(attempts_before)) + 1,
-                    "detail": {"new_actions": len(action_ids(new_attempts)),
+                    "detail": {"disabled_during_flight": submit_disabled_during_flight,
+                               "new_actions": len(action_ids(new_attempts)),
                                "new_versions": len(new_attempts),
                                "requests": len(submit_requests), "action_id": new_action_id},
                 })

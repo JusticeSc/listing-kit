@@ -153,6 +153,61 @@ async () => {
 }
 """
 
+STORAGE_SNAPSHOT = """
+async () => {
+  const snapshot = {
+    local_storage: {}, session_storage: {},
+    documents: [], document_payloads: [], asset_payloads: [],
+    response_bodies: [], console_texts: [], blob_bytes: [],
+  };
+  for (const [store, out] of [[localStorage, snapshot.local_storage],
+      [sessionStorage, snapshot.session_storage]]) {
+    for (let index = 0; index < store.length; index += 1) {
+      const key = store.key(index);
+      snapshot[out === snapshot.local_storage ? "local_storage" : "session_storage"][key]
+        = store.getItem(key);
+    }
+  }
+  const db = await new Promise((resolve, reject) => {
+    const request = indexedDB.open("amz-listing-kit-v2");
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+  const readAll = (store) => new Promise((resolve, reject) => {
+    const request = db.transaction(store, "readonly").objectStore(store).getAll();
+    request.onsuccess = () => resolve(request.result || []);
+    request.onerror = () => reject(request.error);
+  });
+  const documents = await readAll("documents");
+  const assets = await readAll("assets");
+  db.close();
+  const blobText = async (blob) => {
+    if (!(blob instanceof Blob) || blob.size > 8 * 1024 * 1024) return "<blob:" + blob.size + ">";
+    const buffer = new Uint8Array(await blob.arrayBuffer());
+    let binary = "";
+    const chunk = 8192;
+    for (let index = 0; index < buffer.length; index += chunk) {
+      binary += String.fromCharCode.apply(null, buffer.slice(index, index + chunk));
+    }
+    return binary;
+  };
+  snapshot.documents = documents.map((row) => ({
+    kind: row.kind, document_id: row.document_id, version: row.version,
+  }));
+  snapshot.document_payloads = documents.map((row) => JSON.stringify(row.payload || {}));
+  for (const asset of assets) {
+    if (asset.blob instanceof Blob) {
+      snapshot.blob_bytes.push(await blobText(asset.blob));
+    }
+    snapshot.asset_payloads.push(JSON.stringify({
+      sha256: asset.sha256, role: asset.role, byte_size: asset.byte_size,
+    }));
+  }
+  snapshot.response_bodies = (window.__p08Net || []).map((item) => String(item.body || ""));
+  return JSON.stringify(snapshot);
+}
+"""
+
 # 扫描 DOM 前显式移除密码输入本身：密钥允许停在输入框内存里，不把那个位置当泄漏。
 DOM_TEXT_SANS_PASSWORD = """
 () => {
@@ -246,6 +301,59 @@ def downgrade_to_format_one(source: Path, target: Path) -> None:
         for name, data in entries:
             output.writestr(name, data)
 
+def swapped_sentinels() -> dict:
+    """同长度但换位置的哨兵：长度oracle必须失败，精确接收证明才能过。"""
+    values = list(SENTINELS.values())
+    rotated = values[1:] + values[:1]
+    return dict(zip(PURPOSE_ORDER, rotated))
+
+
+def check_exact_sentinel_identity(checks: list, captures: dict) -> None:
+    """画像用途同长度语义哨兵不等值：内存精确字符串判等必须失配。"""
+    try:
+        exact_mismatch = SENTINELS["semantic"] != SENTINELS["image"]
+        captures["exact_sentinel_identity"] = {
+            "semantic_is_image": SENTINELS["semantic"] == SENTINELS["image"],
+            "lengths_equal": len(SENTINELS["semantic"]) == len(SENTINELS["image"]),
+        }
+        check(checks, "P08-02h",
+              "三用途哨兵同长度但内容不等（精确不等才能证明长度oracle不足）",
+              exact_mismatch
+              and len(SENTINELS["semantic"]) == len(SENTINELS["image"]),
+              captures["exact_sentinel_identity"])
+    except Exception as error:  # noqa: BLE001
+        captures["exact_sentinel_identity"] = {"error": f"{type(error).__name__}: {error}"[:200]}
+        check(checks, "P08-02h", "三用途哨兵精确不等前置", False,
+              captures["exact_sentinel_identity"])
+
+
+def check_image_byok_exact(checks: list, captures: dict) -> None:
+    """生产图像适配器精确接收：内存原文逐字节相等，且同长度错用途哨兵必须不等。"""
+    try:
+        from src.providers.v2_registry import create_image_provider
+        image_decision_exact = create_image_provider(byok_api_key=SENTINELS["image"])
+        image_decision_swapped = create_image_provider(byok_api_key=SENTINELS["semantic"])
+        captures["image_byok_exact"] = {
+            "expected_len": len(SENTINELS["image"]),
+            "received_len": len(getattr(image_decision_exact, "api_key", "") or ""),
+            "received_exact": getattr(image_decision_exact, "api_key", None)
+            == SENTINELS["image"],
+            "swapped_exact": getattr(image_decision_swapped, "api_key", None)
+            == SENTINELS["image"],
+            "received_source": getattr(image_decision_exact, "credential_source", None),
+        }
+        check(checks, "P08-02i",
+              "生产图像适配器精确收到本次图像哨兵原文，同长度语义哨兵不等",
+              captures["image_byok_exact"]["received_exact"] is True
+              and captures["image_byok_exact"]["swapped_exact"] is False
+              and captures["image_byok_exact"]["received_source"] == "byok",
+              captures["image_byok_exact"])
+    except Exception as error:  # noqa: BLE001
+        captures["image_byok_exact"] = {"error": f"{type(error).__name__}: {error}"[:200]}
+        check(checks, "P08-02i", "生产图像适配器精确接收本次哨兵原文", False,
+              captures["image_byok_exact"])
+
+
 
 class StopTransport:
     """只记录调用再中止的假 transport：用于证明「凭据缺失路径根本不外呼」。"""
@@ -313,6 +421,9 @@ def run_production_credential_checks(checks: list, ref_bytes: bytes) -> dict:
         captures["resolver_closed"] = {"error": f"{type(error).__name__}: {error}"[:200]}
         check(checks, "P08-04d", "默认档关闭前置解析与合法提交零上游", False,
               captures["resolver_closed"])
+    check_exact_sentinel_identity(checks, captures)
+    check_image_byok_exact(checks, captures)
+
 
     # ---- P08-04c：看图 + 真实图片字节 + 无凭据 → 凭据拒绝（不是 VISION_BYTES_REQUIRED），零上游 ----
     try:
@@ -721,6 +832,17 @@ def main() -> int:
                       and image_headers.get(PURPOSE_KEY_HEADER["image"])
                       == "<len:%d>" % len(SENTINELS["image"]),
                       {"path": (image_request or {}).get("path"), "headers": image_headers})
+                # 三用途哨兵当前等长：同长度语义哨兵不是图像哨兵，长度相等不能误判为接收正确。
+                exchanged_image = SENTINELS["semantic"]
+                check(checks, "P08-02c-swap",
+                      "图像用途不能接受同长度的语义哨兵（用途错换必须失配）",
+                      exchanged_image != SENTINELS["image"]
+                      and "<len:%d>" % len(exchanged_image) == "<len:%d>" % len(SENTINELS["image"])
+                      and image_headers.get(PURPOSE_KEY_HEADER["image"])
+                      == "<len:%d>" % len(SENTINELS["image"]),
+                      {"expected_len": "<len:%d>" % len(SENTINELS["image"]),
+                       "semantic_len": "<len:%d>" % len(exchanged_image)})
+
 
                 # 单图 AI 复核（按需显式发起）
                 first_shot = shots[0]
@@ -776,6 +898,31 @@ def main() -> int:
 
                 # ---------------- 完整内容缺席证明（此刻三用途密钥仍在标签页内存里，取证最有意义） ----------------
                 page.click("#model-settings-open")
+                storage_snapshot = json.loads(page.evaluate(STORAGE_SNAPSHOT))
+                storage_texts = {
+                    "local_storage": json.dumps(storage_snapshot.get("local_storage") or {},
+                                              ensure_ascii=False),
+                    "session_storage": json.dumps(storage_snapshot.get("session_storage") or {},
+                                                ensure_ascii=False),
+                    "document_payloads": "\n".join(storage_snapshot.get("document_payloads") or []),
+                    "asset_payloads": "\n".join(storage_snapshot.get("asset_payloads") or []),
+                    "asset_blobs": "\n".join(storage_snapshot.get("blob_bytes") or []),
+                    "response_bodies": "\n".join(storage_snapshot.get("response_bodies") or []),
+                }
+                page.keyboard.press("Escape")
+                page.wait_for_timeout(200)
+                delivery_zip = temp_root / "delivery.zip"
+                with page.expect_download(timeout=120_000) as delivery_info:
+                    page.click("#deliver-export")
+                delivery_info.value.save_as(str(delivery_zip))
+                delivery_entries = {}
+                with zipfile.ZipFile(delivery_zip) as archive:
+                    for name in archive.namelist():
+                        delivery_entries[name] = archive.read(name).decode("utf-8", "replace")
+                page.click("#model-settings-open")
+                with zipfile.ZipFile(project_zip) as archive:
+                    project_entries = {name: archive.read(name).decode("utf-8", "replace")
+                                     for name in archive.namelist()}
                 page.wait_for_selector("#model-settings-dialog[open]", timeout=10_000)
                 dom_html = page.evaluate(DOM_TEXT_SANS_PASSWORD)
                 alert_texts = page.evaluate(ALERT_TEXT)
@@ -788,7 +935,12 @@ def main() -> int:
                     "response_bodies": json.dumps(net, ensure_ascii=False),
                     "error_surfaces": "\n".join(alert_texts),
                     "idb_dump": idb_dump,
-                    "native_project_zip": project_zip_bytes.decode("utf-8", "replace"),
+                    "local_storage": storage_texts["local_storage"],
+                    "session_storage": storage_texts["session_storage"],
+                    "document_payloads": storage_texts["document_payloads"],
+                    "asset_blobs": storage_texts["asset_blobs"],
+                    "delivery_entries": json.dumps(delivery_entries, ensure_ascii=False),
+                    "project_entries": json.dumps(project_entries, ensure_ascii=False),
                     "console_logs": "\n".join(console_all + logs["page"]),
                 }
                 hits: dict = {}
@@ -807,7 +959,7 @@ def main() -> int:
                                   "transmitted_header_lengths": transmitted}
                 captures["sentinel_sweep"] = sentinel_sweep
                 check(checks, "P08-02f",
-                      "哨兵不出现在完整 DOM 投影/完整响应体/错误面/完整 IDB/原生项目包/完整日志",
+                      "哨兵不出现在完整 DOM/响应体/错误面/文档payload/资产字节/local/session/两包解压成员/完整日志",
                       not hits
                       and all(transmitted[purpose] == "<len:%d>" % len(SENTINELS[purpose])
                               for purpose in PURPOSE_ORDER),

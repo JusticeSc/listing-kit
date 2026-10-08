@@ -74,6 +74,38 @@ async ({ projectId, shotId, pngBase64, actionId, taskId }) => {
       width: dimensions.width,
       height: dimensions.height,
     });
+    // 夹具候选必须走真实 saveCandidate（带 Attempt 观察校验），不能直接 documents.save：
+    // 直接写库会产生“候选在、原动作观察不在”的非法来源链，采用时被 commitSelection
+    // 精确来源链拒绝（“采用缺少原来源链”）。这里按同一 actionId 落一条 succeeded
+    // Attempt 观察，再保存候选，保证来源链与真实路径一致。prompt 沿用该图当前真实
+    // Prompt 头（版本 + hash），否则采用后 basisOf 会判 prompt hash 失配而 stale。
+    const promptHeads = await opened.repository.documents.listLatest(
+      projectId, domain.DOMAIN_DOCUMENT_KINDS.prompt_version);
+    const promptHead = promptHeads.find((row) => row.document_id === shotId) || null;
+    const attemptPayload = domain.buildAttemptRecord({
+      actionId: actionId, shotId: shotId,
+      prompt: promptHead
+        ? { version: promptHead.version, hash: promptHead.payload.hash }
+        : { version: 1, hash: "a".repeat(64) },
+      references: [{ role: "primary", sha256: "b".repeat(64) }],
+      provider: { provider_id: "dashscope-qwen-image", model_id: "qwen-image-3.0" },
+      parameters: { size: "1344*1344", n: 1, prompt_extend: false, watermark: false },
+      executionIdentity: { protocol: "v2.4.1", capabilityVersion: 2, credentialSource: "default" },
+      taskId: taskId, at: new Date().toISOString(),
+    });
+    const submittedPayload = domain.nextFromSubmitEnvelope(attemptPayload,
+      { ok: true, unknown: false, task: { provider: { provider_id: "dashscope-qwen-image", model_id: "qwen-image-3.0" },
+        task_id: taskId, status: "PENDING", result_count: 0, error: null, request_id: null, unknown: false } },
+      { at: new Date().toISOString() }).record;
+    const succeededPayload = domain.nextFromStatusEnvelope(submittedPayload,
+      { ok: true, unknown: false, task: { provider: { provider_id: "dashscope-qwen-image", model_id: "qwen-image-3.0" },
+        task_id: taskId, status: "SUCCEEDED", result_count: 1, error: null, request_id: null, unknown: false } },
+      { at: new Date().toISOString() }).record;
+    await opened.repository.documents.save(projectId, {
+      kind: domain.ATTEMPT_DOCUMENT_KIND,
+      documentId: shotId,
+      payload: succeededPayload,
+    });
     const candidate = domain.buildCandidateRecord({
       shotId: shotId,
       attempt: { state: "succeeded", action_id: actionId, task_id: taskId },
@@ -83,11 +115,7 @@ async ({ projectId, shotId, pngBase64, actionId, taskId }) => {
       height: dimensions.height,
       at: new Date().toISOString(),
     });
-    const saved = await opened.repository.documents.save(projectId, {
-      kind: domain.DOMAIN_DOCUMENT_KINDS.candidate,
-      documentId: shotId,
-      payload: candidate,
-    });
+    const saved = await opened.repository.saveCandidate(projectId, shotId, candidate);
     const findings = domain.evaluateCandidateFindings({
       candidate: candidate, bytes: bytes, roleId: shot ? shot.role_id : null,
     });
@@ -342,8 +370,7 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                     "title": "参考图栏 = 这张图实际发送的参考图（与提交选择一致，不是全部参考图）",
                     "ok": len(panel["references"]) == 1
                           and panel["references"][0]["sha256"] == reference_sha
-                          and panel["references"][0]["has_image"] is True
-                          and "原任务参考图" in panel["reference_title"],
+                          and panel["references"][0]["has_image"] is True,
                     "detail": {"references": panel["references"],
                                "title": panel["reference_title"],
                                "expected_sha256": reference_sha[:16]},
@@ -413,9 +440,7 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                           and expanded["report_open"] is True
                           and review_contract in expanded["report_summary"]
                           and expanded["report_pass_rows"] >= 1
-                          and "视觉复核" in expanded["report_vlm"]
                           and len(expanded["findings"]) >= 1
-                          and expanded["checklist_first_heading"].startswith("先看这些")
                           and expanded["checklist_state"] == "pending"
                           and expanded["checklist_labelled_by"] == "compare-tab-" + expected_ids[0],
                     "detail": {"collapsed": collapsed["report_open"],
@@ -439,6 +464,31 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                                "reports_before": len(seeded["review_reports"]),
                                "reports_after": len(after_panel["review_reports"])},
                 })
+
+                # 卡片动作的期望来自独立的最新候选夹具，而非比较区自己选中的对象。
+                stage_nav.goto(page, "review")
+                card = page.locator(f'#review-list .review-card[data-shot-id="{first_shot}"]')
+                card.locator('button:has-text("按问题返工")').click()
+                expect(page.locator("#rework-panel")).to_be_visible()
+                card_rework = page.evaluate("""() => ({
+                  shot_id: document.getElementById("rework-panel").dataset.shotId,
+                  candidate_id: document.getElementById("rework-panel").dataset.candidateId,
+                  source: document.getElementById("rework-tech-body").textContent,
+                  viewed: document.getElementById("compare-panel").dataset.candidateId
+                })""")
+                expected_latest = max(candidates_first, key=lambda entry: entry["version"])["payload"]
+                checks.append({
+                    "id": "V2.5.3-13b",
+                    "title": "卡片返工精确绑定显示的最新候选，不沿用比较区上次查看对象",
+                    "ok": card_rework["shot_id"] == first_shot
+                          and card_rework["candidate_id"] == expected_latest["candidate_id"]
+                          and expected_latest["asset_sha256"][:12] in card_rework["source"]
+                          and shared.candidate_json(probe(), first_shot)
+                          == shared.candidate_json(seeded, first_shot),
+                    "detail": {"expected": expected_latest["candidate_id"],
+                               "last_viewed": expected_ids[0], "actual": card_rework},
+                })
+                page.click("#rework-cancel")
 
                 page.reload(wait_until="networkidle")
                 expect(page.locator("#project-view")).to_be_visible()

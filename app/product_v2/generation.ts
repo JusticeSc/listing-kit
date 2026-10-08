@@ -17,61 +17,66 @@
  * 由 `npm run build:frontend` 从本文件生成，浏览器只消费生成的 `.js`（import 说明符保持 `.js`）。
  */
 
- import {
-   ATTEMPT_DOCUMENT_KIND,
-   ATTEMPT_RECONCILE_MODES,
-   ATTEMPT_STATES,
-   attemptCurrentEnvironmentIdentity,
-   attemptExecutionIdentityFromEnvironment,
-   attemptReconcileBlockedMessage,
-   attemptReconcileEnvironment,
-   attemptReconcileRequestOf,
-   currentAttempt,
-   buildAttemptRecord,
-   checkAttemptRecord,
-   newActionId,
-   nextFromStatusEnvelope,
-   nextFromSubmitEnvelope,
-   selectReferences,
-   CANDIDATE_DOCUMENT_KIND,
-   CONFIRM_DOCUMENT_ID,
-   MAX_CANDIDATE_BYTES,
-   buildCandidateRecord,
-   candidateForAttempt,
-   candidateStoreDecision,
-   checkCandidateRecord,
-   parsePngDimensions,
-  imagePromptProfile,
-  canonicalJson,
-  checkPromptRecord,
-  checkConfirmationRecord,
-  buildConfirmationRecord,
-  confirmationSnapshot,
-  DOMAIN_DOCUMENT_KINDS,
-  promptStaleness,
-  promptHash,
-  batchProgressText,
-  batchSubmitHalts,
-  deriveBatchState,
-  isNonEmptyString,
- } from "./domain/index.js";
- import { sha256Hex } from "./storage/db.js";
- import type { ConfirmationSheet } from "./prompts.js";
- import type { AttemptReconcileResult } from "./domain/attempt.js";
+import {
+  ATTEMPT_DOCUMENT_KIND,
+  ATTEMPT_RECONCILE_MODES,
+  ATTEMPT_STATES,
+  attemptCurrentEnvironmentIdentity,
+  attemptExecutionIdentityFromEnvironment,
+  attemptReconcileBlockedMessage,
+  attemptReconcileEnvironment,
+  attemptReconcileRequestOf,
+  currentAttempt,
+  buildAttemptRecord,
+  buildReworkDirective,
+  checkAttemptRecord,
+  checkReworkDirective,
+  newActionId,
+  nextFromStatusEnvelope,
+  nextFromSubmitEnvelope,
+  selectReferences,
+  CANDIDATE_DOCUMENT_KIND,
+  CONFIRM_DOCUMENT_ID,
+  MAX_CANDIDATE_BYTES,
+  buildCandidateRecord,
+  candidateForAttempt,
+  candidateStoreDecision,
+  checkCandidateRecord,
+  parsePngDimensions,
+ imagePromptProfile,
+ canonicalJson,
+ checkPromptRecord,
+ checkConfirmationRecord,
+ buildConfirmationRecord,
+ confirmationSnapshot,
+ DOMAIN_DOCUMENT_KINDS,
+ promptStaleness,
+ promptHash,
+ batchProgressText,
+ batchSubmitHalts,
+ deriveBatchState,
+ isNonEmptyString,
+} from "./domain/index.js";
+import { sha256Hex } from "./storage/db.js";
+import type { CompiledPromptResult, ConfirmationSheet } from "./prompts.js";
+import type { AttemptReconcileResult } from "./domain/attempt.js";
 import type { ConsumptionFence, ProjectRepository } from "./storage/validate.js";
- import type {
+import type {
   AttemptCurrentEnvironmentIdentity,
   AttemptError,
   AttemptRecord,
   AttemptState,
   BatchState,
   CandidateRecord,
+  CompiledPrompt,
   ConfirmationRecord,
   ConfirmationSnapshot,
   ConfirmationSubmissionMode,
   ImagePromptProfile,
   PromptRecord,
   PromptReferenceSelection,
+  ReworkDirective,
+  ReviewReport,
   Sha256Hex,
   SuitePlan,
   SuitePlanSummary,
@@ -155,6 +160,12 @@ export type GenerationRepository = {
   };
 } & Pick<ProjectRepository, "reserveGenerationAttempt" | "appendAttemptObservation" | "saveCandidate">;
 
+/** generation 向 prompts 借用的窄能力：只编译/只落版，不拥有 Prompt 版本语义。 */
+export type GenerationPromptAbility = {
+  compile(shotId: string, options?: { rework?: ReworkDirective }): Promise<CompiledPromptResult>;
+  compileAndSave(shotId: string, options?: { action?: ActionSnapshot | null; rework?: ReworkDirective }): Promise<{ saved: { version: number } }>;
+};
+
 /** workspace 注入的只读输入读者与投影回调；持久化顺序全部由本 Module 决定。 */
 export type GenerationDependencies = {
   repository: GenerationRepository;
@@ -171,6 +182,8 @@ export type GenerationDependencies = {
   referenceSourceReader(): ReferenceSource[];
   promptsSheet(shotIds?: string[] | null): ConfirmationSheet | null;
   imageEnvironment(saved?: unknown): unknown;
+  /** 返工编译/落版的唯一 Prompt 入口（workspace 注入 prompts 的窄能力）。 */
+  promptAbility?: GenerationPromptAbility | null;
 };
 
 /** 批次运行状态（Module 内存面；不做第二份状态）。 */
@@ -258,6 +271,37 @@ export type ConfirmAndRunResult = {
   confirmation?: ConfirmationQueue;
 };
 
+/** 单图返工的领域输入：只接受既有 domain 数据，不接受 DOM/状态回调/任意队列。 */
+export type PrepareReworkInput = {
+  readonly shotId: string;
+  readonly candidateId: string;
+  readonly problems: readonly string[];
+  readonly direction: string;
+  readonly report?: ReviewReport | null;
+  readonly directiveId?: string;
+  readonly at?: string;
+};
+
+/** 返工意图：只读，所见来源/输入/Prompt/配置与编译预览全部冻结在 owner 内部。 */
+export type ReworkIntent = {
+  readonly projectId: string;
+  readonly generation: number;
+  readonly shotId: string;
+  readonly source: { readonly candidateId: string; readonly assetSha256: string; readonly version: number };
+  readonly directive: ReworkDirective;
+  readonly seenPromptVersion: number | null;
+  readonly seenPromptHash: string | null;
+  readonly seenFence: ConsumptionFence;
+  readonly seenProvider: ImagePromptProfile | null;
+  readonly preview: { readonly text: string; readonly references: number; readonly hash: string };
+};
+export type ConfirmReworkInput = { intent: ReworkIntent };
+export type ConfirmReworkResult = {
+  skipped?: true; stale?: true; reason?: string; message?: string;
+  promptVersion?: number;
+  confirmation?: ConfirmationQueue;
+};
+
 /** owner 只读状态投影：旁路动作的用户可见文案，不参与任何业务判定。 */
 export type GenerationNotice = { readonly status: string; readonly error: string };
 
@@ -293,8 +337,9 @@ export type GenerationModule = {
   queues(): AuthorizationQueueView[];
   /** 所见摘要（整套/失败重试/显式另发）：只消费 owner 自己的 scope/mode 与批次队列。 */
   prepareSummary(): GenerationIntent | null;
-  /** 所见摘要（单图返工）。 */
-  reworkIntent(shotId: string): GenerationIntent;
+  /** 单图返工：准备只读意图（编译预览），确认拥有当前性与提交；预览/取消零持久化零外发。 */
+  prepareRework(input: PrepareReworkInput): Promise<ReworkIntent>;
+  confirmRework(input: ConfirmReworkInput): Promise<ConfirmReworkResult>;
   isAttemptInFlight(shotId: string): boolean;
   isCandidateInFlight(shotId: string): boolean;
   attemptChainsNow(): [string, AttemptEntry[]][];
@@ -369,6 +414,10 @@ export function createGenerationModule(deps: GenerationDependencies): Generation
   }
   if (!deps.repository) {
     throw new Error("生成执行 Module 缺少依赖：repository。");
+  }
+  if (deps.promptAbility !== undefined && deps.promptAbility !== null
+    && (typeof deps.promptAbility.compile !== "function" || typeof deps.promptAbility.compileAndSave !== "function")) {
+    throw new Error("生成执行 Module 缺少依赖：promptAbility。");
   }
 
   const repository = deps.repository;
@@ -621,11 +670,158 @@ export function createGenerationModule(deps: GenerationDependencies): Generation
     const batch = deriveBatch();
     return intentOf({ queue: batch.queue, retry_queue: batch.retry_queue });
   }
-  function reworkIntentOf(shotId: string): GenerationIntent {
-    const all = deps.promptsSheet(null);
-    const sheet = deps.promptsSheet([shotId]);
-    if (!all || !sheet?.can_submit) throw new Error("这张图当前还有阻断，返工没有外发。");
-    return intentForScope([shotId], "rework", all);
+
+  function reworkSourceOf(shotId: string, candidateId: string): CandidateEntry {
+    const entry = candidateChainOf(shotId).find((item) => item.record.candidate_id === candidateId) || null;
+    if (!entry) throw new Error("这条返工依据候选已经不在了，先重新选择候选。");
+    return entry;
+  }
+
+  function fenceJsonOf(fence: ConsumptionFence): string {
+    return canonicalJson({ sources: fence.sources, projection: fence.projectionJson, assets: [...fence.assetSha256].sort() });
+  }
+
+  /**
+   * 返工意图准备：只读当前候选/输入/Prompt/配置并编译预览，不持久化、不外发。
+   * 报告是调用方显式传入的既有 domain 数据（可空），owner 不读库、不触发补建。
+   */
+  async function prepareRework(input: PrepareReworkInput): Promise<ReworkIntent> {
+    const action = deps.beginAction();
+    if (!action.projectId || !action.alive()) throw new Error("缺少项目上下文，返工预览没有生成。");
+    const ability = deps.promptAbility || null;
+    if (!ability) throw new Error("返工编译能力缺失，预览没有生成。");
+    const source = reworkSourceOf(input.shotId, input.candidateId);
+    const directive = buildReworkDirective({
+      directiveId: input.directiveId || newActionId(),
+      shotId: input.shotId,
+      candidate: source.record,
+      report: input.report === undefined ? null : input.report,
+      problems: [...input.problems],
+      direction: input.direction,
+      at: input.at || new Date().toISOString(),
+    });
+    const compiled = await ability.compile(input.shotId, { rework: directive });
+    if (!action.alive()) throw new Error("项目或会话已切换；这份预览不再有效，没有写入。");
+    const prompt = deps.promptEntryReader(input.shotId);
+    const fence = deps.fenceReader(input.shotId);
+    const profile = (() => {
+      try { return imagePromptProfile(deps.imageEnvironment()); } catch { return null; }
+    })();
+    return {
+      projectId: action.projectId, generation: action.generation, shotId: input.shotId,
+      source: {
+        candidateId: source.record.candidate_id, assetSha256: source.record.asset_sha256, version: source.version,
+      },
+      directive, seenPromptVersion: prompt ? prompt.version : null, seenPromptHash: prompt ? prompt.record.hash : null,
+      seenFence: { sources: [...fence.sources], projectionJson: fence.projectionJson, assetSha256: [...fence.assetSha256] },
+      seenProvider: profile ? { ...profile } : null,
+      preview: { text: compiled.compiled.text, references: compiled.references.length, hash: compiled.payload.hash },
+    };
+  }
+
+  function reworkStaleReason(intent: ReworkIntent, options: { afterSaveVersion?: number | null } = {}): { reason: string; message: string } | null {
+    const action = deps.beginAction();
+    if (!action.projectId || intent.projectId !== action.projectId || intent.generation !== action.generation) {
+      return { reason: "stale_session", message: "项目或会话已切换；这份返工意图不再有效，没有外发。" };
+    }
+    const current = candidateChainOf(intent.shotId).find((item) => item.record.candidate_id === intent.source.candidateId) || null;
+    if (!current || current.record.asset_sha256 !== intent.source.assetSha256 || current.version !== intent.source.version) {
+      return { reason: "source_changed", message: "返工依据的候选已变化或不在；请重新选择候选，没有外发。" };
+    }
+    if (checkReworkDirective(intent.directive).length) {
+      return { reason: "directive_invalid", message: "返工指令不合法；请重新预览，没有外发。" };
+    }
+    const prompt = deps.promptEntryReader(intent.shotId);
+    if (prompt && prompt.record.origin === "manual_edit") {
+      return { reason: "manual_edit", message: "这张图当前是人工全文；返工不会覆盖它，请先明确保留或丢弃后再重新预览。" };
+    }
+    const version = prompt ? prompt.version : null;
+    const hash = prompt ? prompt.record.hash : null;
+    const savedVersion = options.afterSaveVersion === undefined ? null : options.afterSaveVersion;
+    const promptIsCurrent = savedVersion === null
+      ? (version === intent.seenPromptVersion && hash === intent.seenPromptHash)
+      : (version === savedVersion && Boolean(prompt?.record.compiled.rework)
+        && prompt?.record.compiled.rework?.directive_id === intent.directive.directive_id);
+    if (!promptIsCurrent) {
+      return { reason: "prompt_changed", message: "这张图的 Prompt 已变化；请重新预览后再确认，没有外发。" };
+    }
+    if (fenceJsonOf(deps.fenceReader(intent.shotId)) !== fenceJsonOf(intent.seenFence)) {
+      return { reason: "inputs_changed", message: "这张图实际消费的输入已变化；请重新预览后再确认，没有外发。" };
+    }
+    const profile = (() => {
+      try { return imagePromptProfile(deps.imageEnvironment()); } catch { return null; }
+    })();
+    if (canonicalJson(profile) !== canonicalJson(intent.seenProvider)) {
+      return { reason: "config_changed", message: "图像配置已变化；请重新预览后再确认，没有外发。" };
+    }
+    return null;
+  }
+
+  /**
+   * 返工确认：先核对所见意图的当前性，再沿既有 Prompt 落版/OCC 与确认/预约/提交路径执行。
+   * 过期意图零持久化、零外发、不自动确认；合法追加 Prompt 后旧意图仍按所见事实判过期。
+   */
+  async function confirmRework({ intent }: ConfirmReworkInput): Promise<ConfirmReworkResult> {
+    const action = deps.beginAction();
+    const ability = deps.promptAbility || null;
+    if (!ability) return { skipped: true, reason: "no_prompt_ability", message: "返工编译能力缺失，没有外发。" };
+    // 提交飞行键必须与确认文档键区分：外层占住 rework:<shot> 会让内层 confirmAndRun
+    // 见同键直接 in_flight，造成自己等自己、单次提交也永远 skipped。外层用独立键，
+    // 双击仍被外层键挡住，内层键只挡确认/执行的并发。
+    const flightKey = "rework-submit:" + intent.shotId;
+    if (authorizationInFlight.has(flightKey) || authorizationInFlight.has(REWORK_CONFIRM_PREFIX + intent.shotId)
+      || attemptInFlight.has(intent.shotId) || batchState?.active) {
+      return { skipped: true, reason: "in_flight", message: "返工正在提交；不要重复提交。" };
+    }
+    const stale = reworkStaleReason(intent);
+    if (stale) return { stale: true, reason: stale.reason, message: stale.message };
+    authorizationInFlight.add(flightKey);
+    try {
+      if (!action.alive()) return { skipped: true, reason: "stale_session" };
+      const latest = deps.promptEntryReader(intent.shotId);
+      let promptVersion = latest ? latest.version : 0;
+      const samePreview = Boolean(latest && latest.record.compiled.rework
+        && latest.record.compiled.rework.directive_id === intent.directive.directive_id);
+      if (!samePreview) {
+        let savedVersion = 0;
+        try {
+          const saved = await ability.compileAndSave(intent.shotId, { rework: intent.directive, action });
+          savedVersion = saved.saved.version;
+        } catch (error) {
+          const staleError = reworkStaleReason(intent);
+          if (staleError) return { stale: true, reason: staleError.reason, message: staleError.message };
+          throw error;
+        }
+        promptVersion = savedVersion;
+        const reread = deps.promptEntryReader(intent.shotId);
+        const laned = reread && reread.version === savedVersion && reread.record.compiled.rework
+          && reread.record.compiled.rework.directive_id === intent.directive.directive_id;
+        if (!reread || !laned) {
+          return { stale: true, reason: "prompt_lane_changed", message: "落版后 Prompt 不是本次预览；没有外发。", promptVersion };
+        }
+        if (!action.alive()) return { skipped: true, reason: "stale_session", promptVersion };
+        const staleAfterSave = reworkStaleReason(intent, { afterSaveVersion: savedVersion });
+        if (staleAfterSave) {
+          return { stale: true, reason: staleAfterSave.reason, message: staleAfterSave.message, promptVersion };
+        }
+      }
+      // 所见摘要与提交仍走冻结的确认/预约/执行路径；跨标签与 Unknown 语义保持不变。
+      const all = deps.promptsSheet(null);
+      const sheet = deps.promptsSheet([intent.shotId]);
+      if (!all || !sheet?.can_submit) {
+        return { stale: true, reason: "summary_not_ready", message: "这张图当前还有阻断，返工没有外发。", promptVersion };
+      }
+      const summary = intentForScope([intent.shotId], "rework", all);
+      const result = await confirmAndRun({ intent: summary });
+      if (result.stale) return { stale: true, reason: result.reason || "summary_changed",
+        message: result.message || "摘要已变化；请核对新摘要后再确认返工。", promptVersion };
+      if (result.skipped) return { skipped: true, reason: result.reason || "not_ready",
+        message: result.message || "返工没有提交；旧候选与已保存 Prompt 不受影响。", promptVersion,
+        confirmation: result.confirmation };
+      return { confirmation: result.confirmation, promptVersion };
+    } finally {
+      authorizationInFlight.delete(flightKey);
+    }
   }
 
   /* ------------------------------------------------------------ 传输层 */
@@ -1557,7 +1753,7 @@ export function createGenerationModule(deps: GenerationDependencies): Generation
     confirmationFor: confirmationForOf,
     queues: queuesView,
     prepareSummary,
-    reworkIntent: reworkIntentOf,
+    prepareRework, confirmRework,
     // 只读文案投影与投影变化通知（视图订阅；不注入 DOM 回调）
     notice: () => ({ status: noticeStatus, error: noticeError }),
     subscribe: (listener) => {
