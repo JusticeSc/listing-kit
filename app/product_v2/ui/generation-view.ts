@@ -15,7 +15,6 @@ import {
   ATTEMPT_ACTIVE_STATES,
   ATTEMPT_RECONCILE_MODES,
   ATTEMPT_STATES,
-  CONFIRM_DOCUMENT_ID,
   MANUAL_EDIT_REASON_MAX,
   attemptCurrentEnvironmentIdentity,
   attemptPromptStaleness,
@@ -158,10 +157,10 @@ export type GenerationView = {
   render(): void;
   renderAttempts(): void;
   renderBatch(): void;
-  /** 尝试状态行与两处错误位的写入（语义分析 Module 的装配回调也经这里）。 */
-  setAttemptStatus(text: string): void;
+  /** 应用 owner 只读文案投影（状态行/错误位）；由工作区订阅 generation 后调用，视图不退订。 */
+  applyNotice(): void;
+  /** 生成与尝试两处错误位的就近写入（比较视图经工作区复用同一实现）。 */
   showAttemptError(message?: string): void;
-  clearAttemptError(): void;
   /** 时间戳短格式：尝试历史与比较区共用同一实现。 */
   shortTime(iso: unknown): string;
 };
@@ -506,27 +505,14 @@ export function createGenerationView(
 
   /* ---------------------------------------------------------- 生成前确认 */
 
-  /**
-   * 意图装配（薄装配层）：scope/mode/队列所有权在 generation Module，确认单投影归 prompts；
-   * 当前性/环境匹配的唯一判据也在 generation，这里只转发，不重建规则。
-   */
-  function buildGenerationIntent(): GenerationIntent | null {
-    const batch = generation.deriveBatch();
-    const intent = generation.intent({ queue: batch.queue, retry_queue: batch.retry_queue });
-    if (!intent) return null;
-    return intent;
-  }
-
   /** 单图当前性：转发 generation.isConfirmedShotCurrent（执行与按钮同一判据）。 */
   function queueShotIsCurrent(queue: ConfirmationQueue, shotId: string): boolean {
     return generation.isConfirmedShotCurrent(queue, shotId);
   }
 
-  /** 确认记录是否仍然对得上「这一批将要提交的东西」。 */
+  /** 确认记录是否仍然对得上「这一批将要提交的东西」（owner 只读投影）。 */
   function confirmationIsCurrent(): boolean {
-    const queue = generation.confirmed();
-    return Boolean(queue?.payload?.fingerprint?.snapshot?.execution_target
-      && queue.payload.shots.some((shot) => queueShotIsCurrent(queue, shot.shot_id)));
+    return generation.hasCurrent();
   }
 
   /** 提交这张图的条件：这张图在某个现存授权队列里仍有效（generation 统一判据）。 */
@@ -549,7 +535,8 @@ export function createGenerationView(
     if (!ready) return;
     let sheet: ConfirmationSheet | null = null;
     try {
-      displayedGenerationIntent = buildGenerationIntent();
+      // 所见摘要由 generation 准备：视图只保存并原样交回，不重算、不猜版本。
+      displayedGenerationIntent = generation.prepareSummary();
       sheet = displayedGenerationIntent ? displayedGenerationIntent.all : null;
     } catch (error) {
       showError(elements.confirmError,
@@ -568,7 +555,7 @@ export function createGenerationView(
     elements.confirmSummary.append(createElement("p", {
       className: "confirm-summary", text: sending ? sending.external_summary.statement : "当前没有可新增发送的已就绪图片任务。",
     }));
-    if (generation.mode() === "explicit_new") {
+    if (intent.mode === "explicit_new") {
       elements.confirmSummary.append(createElement("p", {
         className: "prompt-warning",
         text: "这是另一个新动作，不是核对原任务。原 Unknown 可能已经被受理，另发可能重复扣费；原记录与采用不删除、不覆盖。",
@@ -649,7 +636,7 @@ export function createGenerationView(
     elements.confirmAction.disabled = !sending?.can_submit || !identity?.configured || inputs.isAnalysisRunning()
       || prompts.isPreparing() || submissionInFlight || modelSettings.refreshing
       || Boolean(generation.batchStateReader()?.active);
-    elements.confirmAction.textContent = (generation.mode() === "explicit_new" ? "确认并另发 " : "确认并生成 ")
+    elements.confirmAction.textContent = (intent.mode === "explicit_new" ? "确认并另发 " : "确认并生成 ")
       + (sending?.total || 0) + " 张";
     elements.confirmRecord.textContent = identity?.configured
       ? "一次点击先保存这份授权，再按摘要外发；不会要求第二次提交。"
@@ -660,16 +647,21 @@ export function createGenerationView(
     if (!deps.currentProjectId() || !inputs.suitePlan() || submissionInFlight
       || prompts.isPreparing() || modelSettings.refreshing) return;
     const authorized = displayedGenerationIntent;
+    if (!authorized) return;
     const action = beginAction();
-    const expectedVersion = generation.confirmed()?.version || 0;
     submissionInFlight = true;
     elements.confirmAction.disabled = true;
     clearError(elements.confirmError);
     try {
-      await generation.confirmAndRun({
-        intent: authorized, readIntent: buildGenerationIntent,
-        documentId: CONFIRM_DOCUMENT_ID, expectedVersion, action,
-      });
+      // 只交出用户看过的那份摘要：授权文档/所见版本/当前性核对都在 owner 内部完成。
+      const result = await generation.confirmAndRun({ intent: authorized });
+      // stale：owner 已算出新摘要并零外发；把新摘要直接读给用户，避免"只说过期、不知道变成什么"。
+      // 不自动确认、不自动重提；下面 finally 的 renderConfirm 会按 owner 当前投影重新呈现。
+      if (result.stale && action.alive()) {
+        const fresh = result.intent?.sheet?.external_summary?.statement || "";
+        showError(elements.confirmError,
+          (result.message || "摘要已变化；请核对新摘要后再确认。") + (fresh ? "当前摘要：" + fresh : ""));
+      }
     } catch (error) {
       if (action.alive()) showError(elements.confirmError, errorMessageOf(error, "生成没有完成；授权与历史保留。"));
     } finally {
@@ -683,9 +675,26 @@ export function createGenerationView(
 
   /* ------------------------------------------------------------ 生成执行 */
 
-  /** 尝试状态行：语义分析 Module 的装配回调也经这里写入，只有一处实现。 */
+  /** 尝试状态行：命令结果就近写入的唯一实现；owner 旁路文案也经 applyNotice 落到这里。 */
   function setAttemptStatus(text: string): void {
     elements.attemptStatus.textContent = text;
+  }
+
+  /** 上一份已应用的 owner 错误文本：只在 owner 从"有错误"变回"无错误"时同步清 DOM。 */
+  let appliedOwnerError = "";
+
+  /**
+   * owner 投影变化的应用（订阅 generation 后由工作区调用）：先按只读投影重渲染尝试/候选行
+   * 与批次进度（含跨区刷新），再写 owner 的旁路文案——顺序与旧回调一致（render 后 status），
+   * 否则状态行会被计数摘要盖掉。忙碌/进度仍只读飞行标识与批次投影，不解读业务状态。
+   */
+  function applyNotice(): void {
+    renderAttempts();
+    const notice = generation.notice();
+    if (notice.status) setAttemptStatus(notice.status);
+    if (notice.error) showAttemptError(notice.error);
+    else if (appliedOwnerError) clearAttemptError();
+    appliedOwnerError = notice.error;
   }
 
   /** 生成与尝试两个位置共用同一份错误文本：错误就近显示在对应阶段。 */
@@ -735,8 +744,11 @@ export function createGenerationView(
     clearAttemptError();
     const result = await generation.storeCandidate(shotId);
     if (result.stored) {
+      // 报告摘要只读 adoption 的投影（确定性报告由 adoption 单向消费）；未建好就不显示摘要。
+      const candidateId = result.candidate_id;
+      const entry = candidateId ? selectionAdoption.reportOf(candidateId) : null;
       setAttemptStatus("候选已保存（" + result.width + "×" + result.height + "）。"
-        + (result.review ? " " + result.review : ""));
+        + (entry ? " " + reviewSummaryText(entry.report) : ""));
     } else if (result.failed) {
       showAttemptError(result.message);
     } else if (result.reason === "already_stored") {
@@ -861,10 +873,19 @@ export function createGenerationView(
                   + (top ? " · 先看：" + top.title + " — " + top.detail : " · 无待处理项"),
               }));
             } else {
+              // 确定性报告缺失与"补建失败"必须分开：失败要如实显示原因，不能伪装成"AI 未复核"。
+              const reportFailure = selectionAdoption.reportBuildFailure(candidate.candidate_id);
               row.append(createElement("p", {
                 className: "meta attempt-review",
-                attrs: { "data-review-summary": "missing", "data-review-vlm": "not_run" },
-                text: "自动检查报告尚未生成（候选保存时自动生成；旧候选会在重新打开项目时补建）。AI 复核未运行：按需发起才会调用，未复核不阻断人工采用。",
+                attrs: {
+                  "data-review-summary": reportFailure ? "failed" : "missing",
+                  "data-review-vlm": "not_run",
+                },
+                text: (reportFailure
+                  ? "自动检查报告补建失败：" + reportFailure
+                    + "（候选与本地图片保留，原采用不受影响;采用或重新打开项目会再补建，不需要 AI）"
+                  : "自动检查报告尚未生成（候选保存或重新打开项目后由本地补建，不调用模型）")
+                  + " AI 复核未运行：按需发起才会调用，未复核不阻断人工采用。",
               }));
             }
             const reviewButton = createElement("button", {
@@ -1269,9 +1290,8 @@ export function createGenerationView(
     render,
     renderAttempts,
     renderBatch,
-    setAttemptStatus,
+    applyNotice,
     showAttemptError,
-    clearAttemptError,
     shortTime,
   };
 }

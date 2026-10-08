@@ -1,0 +1,86 @@
+{
+  "schema": "amz-http-framing-fix/v1",
+  "observed_at": "2026-10-08T06:00:11.470Z",
+  "baseline_head": "132884d3a50a1188896111385eaaf6edf46c36b8",
+  "before_source": "evals/product-v2/refactor/audit-current-state-20261008-observations.json#http_framing_smoke",
+  "before": {
+    "scenario": "actual local HTTP/1.1 chunked body followed by health GET",
+    "results": [
+      {
+        "unexpected_suffix_bytes": 356,
+        "unexpected_suffix_preview": "<!DOCTYPE HTML>\n<html lang=\"en\">\n    <head>\n        <meta charset=\"utf-8\">\n        <title>",
+        "method": "POST",
+        "path": "/api/v2/semantic/analyze",
+        "response_status_lines": [
+          "HTTP/1.1 400 Bad Request"
+        ],
+        "first_response_connection_close": false,
+        "socket_eof": true
+      },
+      {
+        "unexpected_suffix_bytes": 356,
+        "unexpected_suffix_preview": "<!DOCTYPE HTML>\n<html lang=\"en\">\n    <head>\n        <meta charset=\"utf-8\">\n        <title>",
+        "method": "GET",
+        "path": "/api/health",
+        "response_status_lines": [
+          "HTTP/1.1 200 OK"
+        ],
+        "first_response_connection_close": false,
+        "socket_eof": true
+      }
+    ],
+    "provider_constructions": 0,
+    "model_calls": 0,
+    "external_network_calls": 0
+  },
+  "after": {
+    "scenario": "actual local HTTP/1.1 chunked body followed by health GET",
+    "results": [
+      {
+        "unexpected_suffix_bytes": 0,
+        "unexpected_suffix_preview": "",
+        "method": "POST",
+        "path": "/api/v2/semantic/analyze",
+        "response_status_lines": [
+          "HTTP/1.1 400 Bad Request"
+        ],
+        "first_response_connection_close": true,
+        "socket_eof": true
+      },
+      {
+        "unexpected_suffix_bytes": 0,
+        "unexpected_suffix_preview": "",
+        "method": "GET",
+        "path": "/api/health",
+        "response_status_lines": [
+          "HTTP/1.1 200 OK"
+        ],
+        "first_response_connection_close": true,
+        "socket_eof": true
+      }
+    ],
+    "provider_constructions": 0,
+    "model_calls": 0,
+    "external_network_calls": 0
+  },
+  "drain_boundary": {
+    "scenario": "declared length exceeds drain cutoff, exactly cutoff prefix supplied",
+    "cutoff_bytes": 134217728,
+    "prefix_bytes": 134217728,
+    "status": "HTTP/1.1 400 Bad Request",
+    "connection_close": true,
+    "bounded_response": true,
+    "socket_eof": true,
+    "provider_constructions": 0
+  },
+  "formal_check": {
+    "command": "uv run --locked python app/server.py --check",
+    "exit_code": 0,
+    "checks_passed": 52,
+    "checks_total": 52,
+    "output_artifact": "artifact://727"
+  },
+  "server_sha256": "60236342b11ca3e016f7a4d7cb57aea9277d4696dda65339048715b751235263",
+  "model_calls": 0,
+  "new_permanent_verifier_entries": 0
+}

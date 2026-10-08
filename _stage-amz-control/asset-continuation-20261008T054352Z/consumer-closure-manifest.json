@@ -1,0 +1,31 @@
+{
+  "note": "OwnerClosure 切片在 consumer-manifest.json 之外实际改到的文件的原字节快照（git HEAD 原样导出，未经过编辑）。consumer-manifest.json 覆盖的 generation.ts/selection-adoption.ts/workspace.js/ui-generation-view.ts/jsconfig.json 在本次改动前与该 manifest 记录的 HEAD 字节一致，故不重复快照。",
+  "source_head": "132884d3a50a1188896111385eaaf6edf46c36b8",
+  "byte_provenance": "git show HEAD:<path> 导出 orig；diff vs HEAD 只包含本次切片改动（见 diffstat）",
+  "files": [
+    {
+      "path": "app/product_v2/ui/compare-view.ts",
+      "snapshot": "closure-app_product_v2_ui_compare-view.ts.orig",
+      "sha256": "5d79429bab329974eb6f30f86ad434890022b945c47260b8e90af7261a93cc35",
+      "bytes": 61544,
+      "diffstat": "17 ++++++++---------",
+      "edited_hunks": ["submitRework: confirmAndRun 改传冻结 intent（去 readIntent/documentId/expectedVersion/action 与 reworkDocumentId 取用），stale 分支呈现提示"]
+    },
+    {
+      "path": "evals/product-v2/node/generation-isolation.test.mjs",
+      "snapshot": "closure-evals_product-v2_node_generation-isolation.test.mjs.orig",
+      "sha256": "4c60b01ab8be8982d0fcc88d5d4a69f5c9310ec9d0d3c11976514e59c9e7f24e",
+      "bytes": 9566,
+      "diffstat": "6 ++----",
+      "edited_hunks": ["两处 createGenerationModule 测试替身删除已不存在的 renderAttempts/renderBatch/status/attemptError/clearAttemptError"]
+    },
+    {
+      "path": "tools/verify_v2_r5_2_two_adapters.py",
+      "snapshot": "closure-tools_verify_v2_r5_2_two_adapters.py.orig",
+      "sha256": "80592ff875acd60b54ea3bf30ea93244a4dfea56ef72859eca73e53bc2f06023",
+      "bytes": 55262,
+      "diffstat": "3 ---",
+      "edited_hunks": ["测试替身删除同样五项已删除的 deps 回调与随之无用的 noop"]
+    }
+  ]
+}

@@ -1,28 +1,63 @@
+# Product V2 生产运行闭包（唯一允许清单）。
+#
+# 为什么不能只写 `!app/`：Docker 的 patternmatcher 在 `MatchesUsingParentResults`
+# 里把「目录例外的命中」继承给整棵子树，所以 `!app/` 会把 app/ 下所有文件重新放回
+# 构建上下文——这正是已发布工件的 145 文件指纹里混入 app/product_v1、app/static、
+# app/offline_fixture.py、V1 业务 src 与 config/product-v1 的机制。
+# 因此本例程的规则是：父目录先 `!目录/` 使其可遍历，紧接着用 `目录/**` 把子项
+# 重新排除，再逐条精准放行真正进入镜像的运行文件。
+#
+# 本文件只表达“构建上下文应当包含什么”；真实构建与镜像内文件枚举由现有受保护
+# CI（docker build + 容器内 `release_transaction_probe.py --fingerprint`）证明，
+# 不在此处用静态匹配器自证通过。
 **
 !Dockerfile
 !pyproject.toml
 !uv.lock
+
+# app/：正式入口、无状态适配器与 V2 产品静态资源。
+# V1 入口/旧离线 fixture/旧静态页不在运行闭包内。
 !app/
+app/**
+!app/__init__.py
 !app/server.py
 !app/product_v2_server.py
 !app/product_v2/
+# 必须显式递归放行：`!目录/` 只放行目录本身，子项仍被上面的 `app/**` 排除；
+# 只写 `!app/product_v2/` 会让 ui/、domain/、storage/、renderers/ 等子树整个丢失。
 !app/product_v2/**
 # 渐进 TS 迁移（计划 §9 V2.R7.5）：TS 源与类型声明不进运行镜像；
-# 浏览器和正式入口只消费 `npm run build:frontend` 生成的同目录 .js。
+# 浏览器和正式入口只消费 `npm run build:frontend` 生成的同目录 .js
+# （product_v2_server 也按 STATIC_DENY_SUFFIXES 拒绝 .ts）。
 app/product_v2/**/*.ts
+
+# src/：只放行正式入口实际 import 的 console 与 V2 provider 适配器。
+# V1 业务核心、渲染器与 V1 适配器（dashscope_*.py / semantic.py / image.py 等）不进镜像。
 !src/
+src/**
 !src/console.py
 !src/providers/
+src/providers/**
 !src/providers/__init__.py
 !src/providers/v2_*.py
-**/__pycache__/
-**/*.pyc
+
+# config/：只发布 product-v2 模型配置；
+# verification.json 只服务 CI 登记校验，不属于运行依赖。
 !config/
+config/**
 !config/product-v2/
-!config/product-v2/**
-config/product-v2/verification.json
-# 只发布 product-v2 模型配置；验证登记不属于运行依赖。
+config/product-v2/**
+!config/product-v2/providers.json
+
+# deploy/：事务脚本与 TLS 收敛配置（CI 按目录整体上传构建上下文，
+# 远程脚本从上下文目录读取这两项；Dockerfile 不 COPY 它们进镜像）。
 !deploy/
+deploy/**
 !deploy/caddy/
+deploy/caddy/**
 !deploy/caddy/Caddyfile
 !deploy/release-transaction.sh
+
+# 运行产物绝不带字节码。
+**/__pycache__/
+**/*.pyc

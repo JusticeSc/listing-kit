@@ -1,0 +1,125 @@
+{
+  "schema": "amz-asset-continuation-manual/v1",
+  "observed_at": "2026-10-08T07:27:43.427Z",
+  "entry": "create_product_v2_server with four explicit local Fake factories",
+  "scope": "actual DOM/keyboard/file-input path; fake image bytes do not prove image fidelity or C15/C17 humans",
+  "reference": {
+    "sha256": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461",
+    "bytes": 2239735,
+    "license": "Cindy Shebley / CC BY 2.0 / walkthrough-assets/SOURCES.txt:8"
+  },
+  "actions": [
+    "empty page: name+Enter",
+    "upload licensed honey jar",
+    "manual facts: product_name/product_category/signature_features/key_material",
+    "recommended four-shot plan",
+    "auto local prompts: one confirm-action",
+    "manual adopt four",
+    "explicit main-shot composition rework",
+    "native main-realm report-write QuotaExceededError",
+    "explicitly adopt new candidate after clearing fault",
+    "run local deterministic suite check, no AI button",
+    "download both ZIPs",
+    "same-origin server restart and reload"
+  ],
+  "fault_observed": {
+    "native_rejections": 1,
+    "candidates": 5,
+    "persisted_reports": 4,
+    "selections": 4,
+    "all_old_documents_preserved": true,
+    "all_asset_digests_valid": true,
+    "old_adoption_state": "current",
+    "visible_reason": "isolated-smoke: report write quota"
+  },
+  "recovery": {
+    "documents_exact": true,
+    "assets_exact": true,
+    "all_blob_digests_valid": true,
+    "report_versions": [
+      {
+        "id": "act-3235b3c73a5d4c75b1a8a835fc603b16",
+        "version": 1
+      },
+      {
+        "id": "act-516d83cbf2824ae6a5c743cb85123c99",
+        "version": 1
+      },
+      {
+        "id": "act-77d17b8e91ee4c92809c0e39ca91b920",
+        "version": 1
+      },
+      {
+        "id": "act-860d41d7ca8c48b49188a3c4fef31a83",
+        "version": 1
+      },
+      {
+        "id": "act-e67c7dd57f1b41d6a4925d1445a39c15",
+        "version": 1
+      }
+    ],
+    "suite_ai": [
+      {
+        "kind": "suite_review",
+        "outcome": "not_run",
+        "provider_id": null,
+        "model_id": null,
+        "request_id": null,
+        "submitted_shot_ids": []
+      }
+    ],
+    "reference": {
+      "sha256": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461",
+      "byte_size": 2239735,
+      "digest": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461"
+    }
+  },
+  "zip": {
+    "files": [
+      {
+        "path": "_stage-amz-control/asset-continuation-20261008T054352Z/data/manual-delivery.zip",
+        "bytes": 65895,
+        "sha256": "6383bad36869a74f8c8af3abf7b0113a814b54e89d9b949aa1651bbe377c9041"
+      },
+      {
+        "path": "_stage-amz-control/asset-continuation-20261008T054352Z/data/manual-project.zip",
+        "bytes": 2417036,
+        "sha256": "4007b9b1a3b2f14c1fa4e851bdc1ab52ebc690fc02d4556f65b81a1ff4e3ff39"
+      }
+    ],
+    "delivery_crc": null,
+    "project_crc": null,
+    "images": 4,
+    "all_image_digests_match": true,
+    "ai_review": {
+      "status": "not_reviewed",
+      "reason": "not_run",
+      "checked_at": null
+    },
+    "project_integrity": {
+      "documents": 55,
+      "assets": 6,
+      "document_bytes": 99986,
+      "asset_bytes": 2295695
+    }
+  },
+  "limitations": [
+    "The first fault injection ran in tab.run page isolated realm: zero rejections; discarded as fault proof. Corrected injection used tab.evaluate main realm and rejected one real report write.",
+    "One download wait held the tab command lock; Eval worker reset closed the disposable server. Client-local ZIP export still succeeded. Server restarted explicitly at the same origin before the equality/reload proof. This known shutdown is not the unexplained RC19.",
+    "Network history currently available starts at target rework; it is not promoted to a full initial-batch request trace."
+  ],
+  "readonly_library_source": "tools/verify_v2_6_3_project_transfer.py:READ_LIBRARY",
+  "observed_document_kinds": [
+    "candidate",
+    "export_record",
+    "fact_slot",
+    "generation_attempt",
+    "generation_confirm",
+    "product_input",
+    "prompt_version",
+    "review_report",
+    "selection",
+    "suite_plan",
+    "suite_review"
+  ]
+}

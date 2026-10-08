@@ -3,7 +3,7 @@
 > CONTROL-STATUS: current · AUTHORITY: execution-state
 > 只保存进度、证据、阻塞/未知与下一动作；目标和任务定义只在 `docs/product-v2-refactor-plan.md`。
 > prepared 是未绑定新 Goal 的本地准备态，不是系统 paused。旧读数与完成记录只见 superseded 基线。
-> **2026-10-08最新恢复门**：用户明确“继续吧”，要求做过的工作不重做、积累成资产、逐步减少工作量与复杂性。相同产品Goal `159d03ed410f9ff9`已真实resume为active，正文与计划§2.1一致；原停止指令保留历史。绑定后的工作按5个独立消费者工作段保守占用原10轮，本次HTTP差量为第6轮，原预算/计数不清零；Phase5/R5.1 active。已有实现、真链和本地完整流程/两包资产保留，相关合同未改不重跑。差量快照`_stage-amz-control/asset-continuation-20261008T054352Z/manifest.json`复用原全量代码/数据恢复材料，不再重建整套基线。
+> **2026-10-08最新审计停工门**：用户此前要求立即结束；本轮只授权审计与规划。真实Goal `159d03ed410f9ff9`实读为paused，正文与计划§2.1一致；未resume/新建/完成Goal。当前记录paused、Phase5/R5.1 blocked，next仍R5.1；只能核对恢复门，不施工/付费/提交/推送/部署/V1删除。最新审计与原生观察取下方latest_audit/goal_binding_evidence；以下收口段是历史时点，不覆盖本门。
 > 2026-10-08 远程 CD 收口轮（本机 Windows vs CI ubuntu 的 Linux 时序差逐个定位）：PR #4 推上去的
 > 5段提交暴露4个跨平台红结点；当时曾称“全部实测修复”，最新审计收窄为对应等待改动/诊断与后续绿，不作为全部间歇根治证明——
 > 4_3 -04 的确认写库后状态派生是异步落库，探针直读 IndexedDB 与之竞速（Linux 时序下必读 PLAN_REVIEW；
@@ -33,7 +33,7 @@
 > **历史2026-10-07恢复观察**：当时用户恢复完整交付、增删/复用、V1工程条件清理、隔离Chrome模拟真人、受保护PR/发布、新增3元和10轮门；当时423份原字节与当前项目包基线已保存，页面导入/打开/比较及IDB/ZIP比较证明45份原文档、4份Blob、2个人工采用保留。完整E2E/最终验收仍未成立；本段不解除最新停工门。
 > Goal原文口径提醒（2026-10-08 收口轮核对）：当前生效的 Goal 正文是计划 §2.1 的**重写版**（Objective/Success criteria/Verification/Boundaries/Stop conditions），sha256=`bac1155dbef21876391328dafd50a5624dee8461388754021a31aa59ff1c6fc6`；系统 Goal 观察（`evals/product-v2/refactor/goal-observation-final-delivery-20261007.json` 的 `objective_sha256`）与 `tools/refactor_resume.py` 的实时计算一致。下文历史行里出现的 `6677a680…` 是重写前文本，只作历史，不得用于绑定/一致性比对。
 > 真实系统产品Goal `159d03ed410f9ff9`于2026-10-07T14:52:53.892Z创建为active；创建前真实No active goal。本次原生观察见 `evals/product-v2/refactor/goal-observation-final-delivery-20261007.json`；不借旧产品ID或独立规划Goal绑定。旧规划已完成、报告/原绑定保留历史，不能拿旧停工门覆盖本次授权。
-> 实施计数：旧“0/10”是过时启动读数。历史未逐批登记，两个明确大批按消费者保守占用5/10，分组/身份/证据在`evals/product-v2/refactor/asset-continuation-20261008.md`，不宣称唯一精确历史次数。第6轮HTTP闭合：异常后缀356→0、模型构造0、自检52/52；第7轮用户要求父接管，两个子代理已停止，父直接修Interface/报告单飞行失败与会话边界并统一emit15根，types/generated、Node227及3_5/4_2/5_1/6_3实际路径通过。空页面人工事实/一次提交/目标返工/原生报告写失败保全/明确采用恢复/无AI两包/同origin重启逐条恢复已直接证明，范围与限制见同前缀`-manual.json`。第8轮镜像allowlist/container-origin selftest与代表项目恢复源码已收口，真实Linux/Docker证明待现有PR/CI；未发布新版本。占用至8/10，最终R7.1两轮仍未发生。原预算/计数不重置。
+> 旧“0/10”仅是启动前读数，实施与工作回归随后已经发生，不能再当当前剩余额度。准确已用批次数尚未随轨迹更新；恢复前按计划§2.1/§16.1核算，不默许重置10轮。本轮审计不计产品实施批次。
 
 ## 历史实现与收尾观察（各段只保留原时点范围）
 
@@ -59,13 +59,13 @@
 ```yaml
 state_schema: amz-project-state/v2
 task_id: amz-listing-kit-product-v2-refactor
-status: active
+status: paused
 goal_binding: required
 goal_id: "159d03ed410f9ff9"
 goal_pending_reason: null
-goal_binding_evidence: evals/product-v2/refactor/goal-observation-continuation-20261008.json
-system_goal_observed_status: active
-system_goal_observed_at: '2026-10-08T05:43:52.105Z'
+goal_binding_evidence: evals/product-v2/refactor/goal-observation-audit-20261008.json
+system_goal_observed_status: paused
+system_goal_observed_at: '2026-10-08T05:02:57.662Z'
 plan_ref: docs/product-v2-refactor-plan.md
 latest_audit: evals/product-v2/refactor/audit-current-state-20261008.md
 phase_progress:
@@ -102,7 +102,7 @@ phase_progress:
     - evals/product-v2/v2.4.5-live-reference-20261003-154157-r42-volcengine-run3.json
     - evals/product-v2/refactor/formal-start-20261005.json
   '5':
-    status: active
+    status: blocked
     evidence:
     - evals/product-v2/refactor/generation-module-20261003-084705.md
     - evals/product-v2/refactor/two-image-adapters-20261003-094600.md
@@ -276,7 +276,7 @@ task_progress:
     - evals/product-v2/v2.1.3-project-package-20261005-184649.json
     - evals/product-v2/v2.1.3-project-package-20261005-184649.txt
   V2.R5.1:
-    status: active
+    status: blocked
     evidence:
     - evals/product-v2/refactor/final-delivery-20261007.md
     - evals/product-v2/refactor/goal-observation-final-delivery-20261007.json
@@ -300,7 +300,6 @@ task_progress:
     - evals/product-v2/refactor/r51-page-evidence-20261007.md
     - evals/product-v2/refactor/r51-packet-07-views-20261007.md
     - evals/product-v2/refactor/packet11-convergence-20261008.md
-    - evals/product-v2/refactor/asset-continuation-20261008.md
     - evals/product-v2/v2.7.1-regression-20261008-p11close2-final.txt
     - evals/product-v2/v2.7.1-regression-20261008-p11close2-final.json
     - evals/product-v2/v2.ui.2-interaction-visual-20261008-015527fix6.json
@@ -433,7 +432,8 @@ task_progress:
     - app/product_v2/domain/config-export.ts
     - tools/build_product_v2_ts.mjs
 next_action_task: V2.R5.1
-blockers: []
+blockers:
+  - V2.R5.1_user_immediate_stop_remains_current_request_audit_and_planning_only_actual_goal_paused_require_explicit_resume_and_batch_count_reconciliation_before_product_execution
 unknowns:
   - historical_r74_closeout_volc_adopt_export_222253_pass_spent_1_15_of_5_image_8_of_8_matrix_CI_37136575625_deploy_24a3561_origin_https_47_115_172_233_8080_paid_online_probes_0_evidence_completion-matrix-20261003-r74_not_current_completion
   - historical_r71_regression_r71f_semlive_vlm_dashscope194526_volc195600_spent_0_91_of_5_evidence_full-verification-20261003-r71_not_current_G6_or_design_proof
@@ -496,5 +496,5 @@ unknowns:
   - current_20261008_audit_4_2_99_observed_Locator_click_TimeoutError_runs_37727901657_37728436213_c31213a_catches_AssertionError_only_expect_to_click_race_unclosed_self_reconciled_succeeded_cause_is_inference_not_observed_local_green_not_remote_fix_proof
   - current_20261008_remote_runs_37729035340_c31213a_and_37729804595_132884d_completed_cancelled_deploy_job_zero_steps_latest_confirmed_successful_release_37726671328_92d88c1_image31cc5ec6_runtime591f2b83_live_health_ok_default_trial_closed_no_new_container_identity_read
   - current_20261008_audit_prior_todo_16_of_16_was_stop_cleanup_not_acceptance_remaining_formal_tasks_pending_preserved_C15_C17_unperformed_no_product_Goal_completion
-updated_at: '2026-10-08T07:33:54.524Z'
+updated_at: '2026-10-08T05:02:57.662Z'
 ```

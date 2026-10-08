@@ -107,10 +107,6 @@ profile 自动续期），应用容器仍只提供无状态 HTTP，当前试用�
 `dashscope-review`（`qwen-vl-max`），只由用户明确发起，不随生成、比较或采用自动调用。
 缺可用凭据时返回分类错误，不伪造结果；显式离线验证才使用测试替身。
 
-候选与图片字节由 generation 保存，本地确定性报告由 selection-adoption 补齐；
-已有当前报告在刷新／重开时不重复写版本。报告写入失败会显示原因，保留候选与原采用；
-再次明确采用或重新打开项目可重建本地报告，不会因此自动调用 AI。
-
 凭据口径（V2.R4.3）：部署密钥受默认档开关 `AMZ_V2_DEFAULT_TRIAL` 约束，未设置或 `closed/off/0/false`
 时不会把部署密钥传入模型；无独立 BYOK 的有效调用请求返回 503 PROVIDER_NOT_CONFIGURED，
 capabilities 给出 `credential_source` 与 `default_trial` 状态；显式 `open/on/1/true` 才沿用部署密钥。
@@ -119,10 +115,6 @@ capabilities 给出 `credential_source` 与 `default_trial` 状态；显式 `ope
 部署侧 DashScope 使用 `DASHSCOPE_API_KEY`，火山使用 `ARK_API_KEY`；默认档开关不限制独立 BYOK。
 出站统一走白名单（`v2_outbound.py`：`aliyuncs.com` + `volces.com` 后缀），非白名单、
 私网与非 https 目标在传输前被拒绝。
-
-HTTP 请求正文只支持明确的 `Content-Length`，不支持 `Transfer-Encoding`（包括 chunked）。
-不支持或无法读完的正文以 `Connection: close` 结束，避免残留字节被解析成下一条请求；
-无正文的 GET、完整读取的合法请求仍可复用连接。边界验证并入现有 `app/server.py --check`。
 
 ## 实际运行链
 

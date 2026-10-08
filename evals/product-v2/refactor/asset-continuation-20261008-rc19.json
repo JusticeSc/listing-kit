@@ -1,0 +1,13 @@
+{
+  "schema": "amz-rc19-network-layer-diagnostic/v1",
+  "source": "_working/rc19-netlog-20261008.json",
+  "summary_source": "_working/rc19-netlog-summary-20261008.json",
+  "event_count": 464740,
+  "refused_events": [],
+  "negative_error_counts": {
+    "-109": 24,
+    "-3": 2
+  },
+  "proxy_configuration_events": [],
+  "conclusion": "No refusal captured; this run does not establish causal mechanism or close RC19. Do not rerun without a new hypothesis or change."
+}

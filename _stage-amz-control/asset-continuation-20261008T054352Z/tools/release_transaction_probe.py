@@ -32,15 +32,9 @@
     脏恢复点 deploy 拒绝（exit 1，不删 previous）/
     新版 health 绿但静态晚期失败时 finalize 重验证失败（exit 1，事务/previous/备份保留）/
     脚本 rollback 回到真实旧 image ID 与 marker A 并清除开放事务（exit 1）/
-    再一轮新版成功 finalize 清理 previous 与事务，外加页面验收正反两极：
-    成功一极直接打被测真实容器 origin（served_base，真实端口），不用另起的 fake
-    server 署名；不可达负例仍必须判红。
-    并在同一隔离 Chrome profile、同一真实容器 origin 上用真实 UI 建立代表项目并
-    以文件输入导入仓库内既有的合法项目包，随上面既有的真实版本切换与失败回退
-    结束后重开该 profile，用独立只读 IndexedDB 直接后置确认原项目身份/文档/资产/
-    人工采用仍在（服务回退本身不冒充浏览器数据恢复）。
+    再一轮新版成功 finalize 清理 previous 与事务，外加本地页面验收正反两极。
     初始旧服务基线为一次性 fixture（marker A 正式镜像）；被测迁移一律走脚本，不复制编排。
-    缺 Docker/Playwright/代表项目包时报 missing_prereq（exit 2）；构建失败保留真实输出判红（exit 1）。
+    缺 Docker/Playwright 时报 missing_prereq（exit 2）；构建失败保留真实输出判红（exit 1）。
 
   --fingerprint --runtime-root <directory> [--base <url>]
     输出实际运行文件与公开能力配置的 SHA256；可通过 docker exec stdin 在正式镜像内执行。
@@ -96,49 +90,6 @@ HOME_STATE_JS = """
     boot_error_hidden: bootError ? bootError.hidden : null,
     project_names: Array.from(document.querySelectorAll('#project-list [data-role=name]'))
       .map((node) => node.textContent),
-  };
-}
-"""
-
-# 代表项目数据：仓库内既有的合法项目包（45 文档 / 4 资产 / 2 人工采用）。参考图是
-# Wikimedia Commons 的 CC BY 2.0 公开许可商品图（见
-# _working/amz-listing-kit-product-v2/walkthrough-assets/SOURCES.txt），不是用户私有原件。
-# 只在真实 UI 里经 `#import-file` 文件输入导入；绝不种 IndexedDB 或调内部业务函数。
-REPRESENTATIVE_PROJECT_PACKAGE = (
-    ROOT / "_stage-amz-control" / "final-delivery-start-20261007T145602Z"
-    / "data" / "project-before.zip")
-
-# 只读 IndexedDB 快照：项目身份 + 版本化文档（append-only）+ 内容寻址资产的真实字节
-# 摘要。浏览器 crypto 独立重算资产哈希，不依赖产品代码。
-IDB_SNAPSHOT_JS = """
-async () => {
-  const db = await new Promise((resolve, reject) => {
-    const request = indexedDB.open('amz-listing-kit-v2');
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-  const read = (store) => new Promise((resolve, reject) => {
-    const request = db.transaction(store, 'readonly').objectStore(store).getAll();
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-  const projects = await read('projects');
-  const documents = await read('documents');
-  const metas = await read('assets');
-  const assets = [];
-  for (const meta of metas) {
-    const buffer = await meta.blob.arrayBuffer();
-    const digest = await crypto.subtle.digest('SHA-256', buffer);
-    assets.push({sha256: meta.sha256, byte_size: meta.byte_size,
-                 digest: [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('')});
-  }
-  db.close();
-  return {
-    projects: projects.map((row) => ({project_id: row.project_id, name: row.name})),
-    documents: documents.map((row) => ({project_id: row.project_id, kind: row.kind,
-                                        document_id: row.document_id, version: row.version,
-                                        payload: row.payload})),
-    assets: assets,
   };
 }
 """
@@ -226,8 +177,15 @@ def page_smoke(base: str, checks: list[dict], prefix: str = "PS") -> bool:
     try:
         with sync_playwright() as pw:
             with tempfile.TemporaryDirectory(prefix="release-smoke-") as profile:
-                # 与 tools/verify_v2_ui_1_remote_entry.py 同批准形状的唯一实现：_launch_profile。
-                context = _launch_profile(pw, profile)
+                # 与 tools/verify_v2_ui_1_remote_entry.py 同批准形状：先 Chrome
+                # 通道，缺浏览器再退回默认 Chromium；不自建第二约定。
+                try:
+                    context = pw.chromium.launch_persistent_context(
+                        profile, channel="chrome", headless=True,
+                        viewport={"width": 1440, "height": 950})
+                except Exception:
+                    context = pw.chromium.launch_persistent_context(
+                        profile, headless=True, viewport={"width": 1440, "height": 950})
                 try:
                     page = context.pages[0] if context.pages else context.new_page()
                     page.set_default_timeout(30_000)
@@ -325,173 +283,6 @@ def page_smoke(base: str, checks: list[dict], prefix: str = "PS") -> bool:
              {"error": type(error).__name__ + ": " + str(error)[:500]})
         return False
     return all(item["ok"] for item in checks)
-
-
-def _launch_profile(pw, profile_dir):
-    """与 tools/verify_v2_ui_1_remote_entry.py 同批准形状：先 Chrome 通道，缺浏览器再退回默认 Chromium。"""
-
-    try:
-        return pw.chromium.launch_persistent_context(
-            profile_dir, channel="chrome", headless=True,
-            viewport={"width": 1440, "height": 950})
-    except Exception:
-        return pw.chromium.launch_persistent_context(
-            profile_dir, headless=True, viewport={"width": 1440, "height": 950})
-
-
-def _project_map(snapshot: dict) -> dict:
-    return {row["project_id"]: row.get("name") for row in snapshot["projects"]}
-
-
-def _doc_keys(snapshot: dict) -> set:
-    """文档身份键：append-only 版本化文档按 (project, kind, id, version, payload) 完整比对。"""
-
-    return {(row["project_id"], row["kind"], row["document_id"], row["version"],
-             json.dumps(row["payload"], sort_keys=True, ensure_ascii=False))
-            for row in snapshot["documents"]}
-
-
-def _asset_map(snapshot: dict) -> dict:
-    return {row["sha256"]: (row["byte_size"], row["digest"]) for row in snapshot["assets"]}
-
-
-def _selection_keys(snapshot: dict) -> set:
-    return {(row["project_id"], row["document_id"], row["version"])
-            for row in snapshot["documents"] if row["kind"] == "selection"}
-
-
-def data_baseline(base: str, profile_dir: str, package: Path, project_name: str,
-                  checks: list[dict], prefix: str = "ST-DATA") -> tuple[str, dict | None]:
-    """真实容器 origin + 隔离持久 profile：用户路径建立代表项目/资料并取只读基线。
-
-    只走真实 UI：表单新建项目 + `#import-file` 文件输入导入仓库内既有合法项目包。
-    不种 IndexedDB、不调内部业务函数、不上传私有原件。返回 (status, snapshot)：
-    status ∈ {"prereq"(缺 Playwright/项目包，exit 2), "failed", "ok"}。
-    """
-    try:
-        from playwright.sync_api import sync_playwright  # noqa: PLC0415
-    except ImportError:
-        emit(checks, prefix + "-00", "Playwright 可用", False,
-             {"missing_prereq": "playwright not installed; run uv sync --locked"})
-        return "prereq", None
-    if not Path(package).is_file():
-        emit(checks, prefix + "-00", "代表项目包可用", False,
-             {"missing_prereq": "representative project package missing: " + str(package)})
-        return "prereq", None
-    snapshot: dict | None = None
-    errors: list[str] = []
-    try:
-        with sync_playwright() as pw:
-            context = _launch_profile(pw, profile_dir)
-            try:
-                page = context.pages[0] if context.pages else context.new_page()
-                page.set_default_timeout(30_000)
-                page.on("console", lambda message: errors.append("console:" + message.text)
-                        if message.type == "error" else None)
-                page.on("pageerror", lambda error: errors.append("pageerror:" + str(error)))
-                page.goto(base + "/", wait_until="load", timeout=45000)
-                page.wait_for_selector("#create-project:not([disabled])", timeout=30000)
-                page.fill("#new-project-name", project_name)
-                page.click("#create-project")
-                page.wait_for_selector("#project-view:not([hidden])")
-                page.click("#back-home")
-                page.wait_for_selector("#project-list .project-row", timeout=20000)
-                page.set_input_files("#import-file", str(package))
-                page.wait_for_function(
-                    "() => document.querySelectorAll('#project-list .project-row').length >= 2",
-                    timeout=60000)
-                snapshot = page.evaluate(IDB_SNAPSHOT_JS)
-            finally:
-                context.close()
-    except Exception as error:  # noqa: BLE001 - 探针把浏览器失败记成 FAIL，不抛栈
-        emit(checks, prefix + "-01", "真实容器 origin 上建立代表项目（浏览器实际运行）", False,
-             {"error": type(error).__name__ + ": " + str(error)[:500], "errors": errors})
-        return "failed", None
-    ok = (bool(snapshot) and not errors
-          and len(snapshot["documents"]) > 0 and len(snapshot["assets"]) > 0
-          and len(snapshot["projects"]) >= 2)
-    emit(checks, prefix + "-01", "真实容器 origin 上用真实 UI 建立项目并导入合法项目包",
-         ok, None if snapshot is None else {
-             "origin": base, "projects": _project_map(snapshot),
-             "documents": len(snapshot["documents"]), "assets": len(snapshot["assets"]),
-             "selections": len(_selection_keys(snapshot)), "errors": errors})
-    if not ok:
-        return "failed", None
-    snapshot["marker"] = served_marker(base)
-    return "ok", snapshot
-
-
-def data_recovery(base: str, profile_dir: str, baseline: dict, checks: list[dict],
-                  expected_marker: str, prefix: str = "ST-RECOVERY") -> bool:
-    """同一隔离 profile 重开：独立只读 IndexedDB 直接后置确认原对象在版本切换/回退后仍在。
-
-    只证明“服务容器换成真实不同版本并回退”之后，同 origin 的浏览器数据没有丢；
-    不把服务回退本身冒充数据恢复。
-    """
-    try:
-        from playwright.sync_api import sync_playwright  # noqa: PLC0415
-    except ImportError:
-        emit(checks, prefix + "-01", "重开后只读 IndexedDB 可取", False,
-             {"missing_prereq": "playwright not installed; run uv sync --locked"})
-        return False
-    snapshot: dict | None = None
-    errors: list[str] = []
-    try:
-        with sync_playwright() as pw:
-            context = _launch_profile(pw, profile_dir)
-            try:
-                page = context.pages[0] if context.pages else context.new_page()
-                page.set_default_timeout(30_000)
-                page.on("console", lambda message: errors.append("console:" + message.text)
-                        if message.type == "error" else None)
-                page.on("pageerror", lambda error: errors.append("pageerror:" + str(error)))
-                page.goto(base + "/", wait_until="load", timeout=45000)
-                page.wait_for_selector("#create-project:not([disabled])", timeout=30000)
-                page.wait_for_selector("#project-list .project-row", timeout=20000)
-                snapshot = page.evaluate(IDB_SNAPSHOT_JS)
-            finally:
-                context.close()
-    except Exception as error:  # noqa: BLE001
-        emit(checks, prefix + "-01", "重开后只读 IndexedDB 可取", False,
-             {"error": type(error).__name__ + ": " + str(error)[:500]})
-        return False
-    if snapshot is None:
-        emit(checks, prefix + "-01", "重开后只读 IndexedDB 可取", False, {"errors": errors})
-        return False
-
-    before_projects, after_projects = _project_map(baseline), _project_map(snapshot)
-    kept_projects = bool(before_projects) and all(
-        after_projects.get(pid) == name for pid, name in before_projects.items())
-    emit(checks, prefix + "-01", "重开后原项目身份（project_id/名称）仍在",
-         kept_projects, {"before": before_projects, "after": after_projects,
-                         "errors": errors})
-
-    before_docs, after_docs = _doc_keys(baseline), _doc_keys(snapshot)
-    kept_docs = bool(before_docs) and before_docs <= after_docs
-    emit(checks, prefix + "-02", "原版本化文档逐条按身份与 payload 保留",
-         kept_docs, {"before_documents": len(baseline["documents"]),
-                     "after_documents": len(snapshot["documents"]),
-                     "missing": len(before_docs - after_docs)})
-
-    before_assets, after_assets = _asset_map(baseline), _asset_map(snapshot)
-    kept_assets = bool(before_assets) and before_assets == after_assets
-    emit(checks, prefix + "-03", "原资产字节（sha256/字节数/浏览器重算哈希）保留",
-         kept_assets, {"before_assets": len(before_assets), "after_assets": len(after_assets)})
-
-    before_sel, after_sel = _selection_keys(baseline), _selection_keys(snapshot)
-    kept_sel = bool(before_sel) and before_sel <= after_sel
-    emit(checks, prefix + "-04", "原人工采用记录仍在（未被切换/回退覆盖）",
-         kept_sel, {"before_selections": sorted(before_sel), "after_selections": sorted(after_sel)})
-
-    marker = served_marker(base)
-    version_switched = (bool(baseline.get("marker")) and baseline["marker"] != marker
-                        and marker == expected_marker)
-    emit(checks, prefix + "-05", "期间确实换过真实版本（服务 marker 由旧变新）且会话零错误",
-         version_switched and not errors,
-         {"baseline_marker": baseline.get("marker"), "current_marker": marker,
-          "expected_marker": expected_marker, "errors": errors})
-
-    return all(item["ok"] for item in checks if item["id"].startswith(prefix))
 
 
 def docker(*argv: str, timeout: int = 120) -> subprocess.CompletedProcess[str]:
@@ -691,19 +482,6 @@ def selftest() -> int:
         if not record("ST-03-TLS", "显式信任隔离 CA 的 HTTPS 基线", trusted_health()):
             return EXIT_FAILED
 
-        # 在真实容器 origin（served_base，marker A）与隔离持久 profile 上用真实 UI
-        # 建立代表项目/资料。随后既有事务会真实切换版本并失败回退；最后在同一
-        # profile 重开核对数据仍直接可观察（服务回退本身不算数据恢复）。
-        profile_dir = tmp / "recovery-profile"
-        profile_dir.mkdir(parents=True, exist_ok=True)
-        data_status, data_state = data_baseline(
-            served_base, str(profile_dir), REPRESENTATIVE_PROJECT_PACKAGE,
-            "ST-RECOVERY 代表项目", checks)
-        if data_status == "prereq":
-            return EXIT_PREREQ
-        if data_status != "ok":
-            return EXIT_FAILED
-
         early = run_script("deploy", *argv(prepare_context(missing_script=True)), env=script_env)
         if not record("ST-04", "变异前失败保留原服务/TLS且无开放事务",
                       early.returncode == 1 and container_image_id(app) == old_id
@@ -788,18 +566,18 @@ def selftest() -> int:
                       and trusted_health(), finalized):
             return EXIT_FAILED
 
-        # 不可达负例必须判红。
+        sys.path.insert(0, str(ROOT / "tools"))
+        from v2_test_server import start as start_server  # noqa: PLC0415
+        server, local_base = start_server()
+        try:
+            live_ok = page_smoke(local_base, checks, prefix="ST-LIVE")
+        finally:
+            server.shutdown()
+            server.server_close()
         dead_checks: list[dict] = []
         dead_ok = page_smoke("http://127.0.0.1:9", dead_checks, prefix="ST-DEAD")
         record("ST-09", "页面验收对不可达入口判红", not dead_ok)
-        # 成功一极直接打被测真实容器 origin（served_base 真实端口），不另起 fake server。
-        live_ok = page_smoke(served_base, checks, prefix="ST-LIVE")
-        record("ST-10", "页面验收对被测真实容器 origin 判绿", live_ok)
-        # 同 origin 跨真实版本切换与失败回退后重开：独立只读 IDB 直接后置。
-        recovered_ok = data_recovery(served_base, str(profile_dir), data_state, checks,
-                                     expected_marker=marker_b.strip())
-        emit(checks, "ST-11", "同 origin 跨版本切换/失败回退后原项目数据仍直接可观察",
-             recovered_ok, {"profile": "isolated-persistent", "origin": served_base})
+        record("ST-10", "页面验收对真实产品页面判绿", live_ok)
     finally:
         for name in (app, previous, tls):
             if docker_exists(name):

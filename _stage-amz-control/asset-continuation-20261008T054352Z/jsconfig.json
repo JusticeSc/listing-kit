@@ -30,7 +30,6 @@
     "app/product_v2/selection-adoption.ts",
     "app/product_v2/review-delivery.ts",
     "app/product_v2/ui/dom.ts",
-    "app/product_v2/ui/input-view.ts",
     "app/product_v2/ui/delivery-view.ts",
     "app/product_v2/ui/compare-view.ts",
     "app/product_v2/ui/generation-view.ts",
