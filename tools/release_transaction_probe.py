@@ -59,6 +59,7 @@ import hashlib
 import json
 import os
 import shutil
+import socket
 import subprocess
 import sys
 import tempfile
@@ -98,6 +99,20 @@ HOME_STATE_JS = """
       .map((node) => node.textContent),
   };
 }
+"""
+
+# 失败定位探针：只在探针自身异常时读公开 UI 文案与行集合，判断是产品报错还是
+# 探针动作没落到位；不读凭据、不读业务内部对象。
+HOME_DIAG_JS = """
+() => ({
+  home_error: (document.getElementById('home-error') || {}).textContent || '',
+  home_status: (document.getElementById('home-status') || {}).textContent || '',
+  home_read_error: (document.getElementById('home-read-error') || {}).textContent || '',
+  project_view_hidden: (document.getElementById('project-view') || {}).hidden,
+  rows: Array.from(document.querySelectorAll('#project-list .project-row')).map(
+    (row) => row.dataset.projectId + ':' +
+      ((row.querySelector('[data-role=name]') || {}).textContent || '')),
+})
 """
 
 # 代表项目数据：仓库内既有的合法项目包（45 文档 / 4 资产 / 2 人工采用）。参考图是
@@ -163,6 +178,17 @@ def fetch(base: str, path: str, timeout: int = 10) -> tuple[int, str, bytes]:
         return 0, "", ("connection_failed:" + type(error).__name__).encode("utf-8")
 
 
+def closed_loopback_port() -> int:
+    """取一个刚释放的 loopback 端口做“可连但无人监听”的负例。
+
+    不能用 1/7/9 这类端口：Chromium 对它们直接以 ERR_UNSAFE_PORT 拒发请求，
+    红的机制就变成浏览器策略而不是“入口不可达”，证据会指向错误的原因。
+    """
+    with socket.socket() as probe:
+        probe.bind(("127.0.0.1", 0))
+        return int(probe.getsockname()[1])
+
+
 def expected_capable(base: str) -> bool:
     split = urllib.parse.urlsplit(base)
     if split.scheme == "https":
@@ -223,6 +249,7 @@ def page_smoke(base: str, checks: list[dict], prefix: str = "PS") -> bool:
 
     capable = expected_capable(base)
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    diagnosis: dict = {"stage": "browser-launch"}
     try:
         with sync_playwright() as pw:
             with tempfile.TemporaryDirectory(prefix="release-smoke-") as profile:
@@ -277,9 +304,16 @@ def page_smoke(base: str, checks: list[dict], prefix: str = "PS") -> bool:
                         source_ids = page.locator("#project-list .project-row").evaluate_all(
                             "rows => rows.map(row => row.dataset.projectId)")
                         row = page.locator("#project-list .project-row").filter(has_text=name)
-                        with page.expect_download(timeout=30000) as pending_download:
-                            row.locator('button[data-action="export"]').focus()
-                            page.keyboard.press("Enter")
+                        diagnosis["stage"] = "export-download"
+                        try:
+                            # 真实鼠标点击行内导出按钮：点击后 showHome→refresh 会重渲染列表，
+                            # 先 focus 再按 Enter 会打到已被替换的旧节点上，什么也不触发。
+                            with page.expect_download(timeout=60000) as pending_download:
+                                row.locator('button[data-action="export"]').click()
+                        except Exception:
+                            diagnosis["session"] = page.evaluate(HOME_DIAG_JS)
+                            raise
+                        diagnosis["stage"] = "import"
                         download = pending_download.value
                         package = Path(profile) / "downloaded-project.zip"
                         download.save_as(str(package))
@@ -321,8 +355,10 @@ def page_smoke(base: str, checks: list[dict], prefix: str = "PS") -> bool:
                 finally:
                     context.close()
     except Exception as error:  # noqa: BLE001 - 探针必须把浏览器失败记成 FAIL，不抛栈
-        emit(checks, prefix + "-06", "页面主链（浏览器实际运行）", False,
-             {"error": type(error).__name__ + ": " + str(error)[:500]})
+        emit(checks, prefix + "-99", "浏览器探针异常（主链未执行完毕）", False,
+             {"stage": diagnosis.get("stage"),
+              "error": type(error).__name__ + ": " + str(error)[:500],
+              "session": diagnosis.get("session")})
         return False
     return all(item["ok"] for item in checks)
 
@@ -404,7 +440,7 @@ def data_baseline(base: str, profile_dir: str, package: Path, project_name: str,
             finally:
                 context.close()
     except Exception as error:  # noqa: BLE001 - 探针把浏览器失败记成 FAIL，不抛栈
-        emit(checks, prefix + "-01", "真实容器 origin 上建立代表项目（浏览器实际运行）", False,
+        emit(checks, prefix + "-90", "建立基线时浏览器探针异常（未取得只读快照）", False,
              {"error": type(error).__name__ + ": " + str(error)[:500], "errors": errors})
         return "failed", None
     ok = (bool(snapshot) and not errors
@@ -446,17 +482,28 @@ def data_recovery(base: str, profile_dir: str, baseline: dict, checks: list[dict
                         if message.type == "error" else None)
                 page.on("pageerror", lambda error: errors.append("pageerror:" + str(error)))
                 page.goto(base + "/", wait_until="load", timeout=45000)
-                page.wait_for_selector("#create-project:not([disabled])", timeout=30000)
+                # 重开的是上一次用过的同一 profile：应用会直接恢复到上次打开的项目，
+                # 首页新建控件此时是 hidden。wait_for_selector 传选择器列表时只校验
+                # 第一个匹配项（这里恰好是 hidden 的 #create-project），会误判超时，
+                # 所以按“谁真正可见”分支，而不是列表选择器。
+                page.wait_for_function(
+                    "() => { const view = document.getElementById('project-view');"
+                    " const ready = document.querySelector('#create-project[data-ready=\"1\"]');"
+                    " return !!((view && !view.hidden) || ready); }",
+                    timeout=30000)
+                if page.locator("#project-view:not([hidden])").count() > 0:
+                    page.click("#back-home")
                 page.wait_for_selector("#project-list .project-row", timeout=20000)
                 snapshot = page.evaluate(IDB_SNAPSHOT_JS)
             finally:
                 context.close()
     except Exception as error:  # noqa: BLE001
-        emit(checks, prefix + "-01", "重开后只读 IndexedDB 可取", False,
+        emit(checks, prefix + "-90", "重开浏览器探针异常（未取得只读快照）", False,
              {"error": type(error).__name__ + ": " + str(error)[:500]})
         return False
     if snapshot is None:
-        emit(checks, prefix + "-01", "重开后只读 IndexedDB 可取", False, {"errors": errors})
+        emit(checks, prefix + "-90", "重开浏览器探针异常（未取得只读快照）", False,
+             {"errors": errors})
         return False
 
     before_projects, after_projects = _project_map(baseline), _project_map(snapshot)
@@ -788,10 +835,20 @@ def selftest() -> int:
                       and trusted_health(), finalized):
             return EXIT_FAILED
 
-        # 不可达负例必须判红。
+        # 不可达负例必须判红，且红的机制必须是“入口连不上”，不是浏览器策略拒发请求。
+        dead_base = "http://127.0.0.1:%d" % closed_loopback_port()
         dead_checks: list[dict] = []
-        dead_ok = page_smoke("http://127.0.0.1:9", dead_checks, prefix="ST-DEAD")
-        record("ST-09", "页面验收对不可达入口判红", not dead_ok)
+        dead_ok = page_smoke(dead_base, dead_checks, prefix="ST-DEAD")
+        dead_failures = [item["id"] for item in dead_checks if not item["ok"]]
+        dead_evidence = json.dumps([item.get("detail") for item in dead_checks],
+                                   ensure_ascii=False)
+        dead_error = " ".join(str((item.get("detail") or {}).get("error", ""))
+                              for item in dead_checks)
+        emit(checks, "ST-09", "页面验收对不可达入口判红（机制为连接失败，非浏览器策略）",
+             (not dead_ok) and bool(dead_failures) and "ERR_UNSAFE_PORT" not in dead_evidence
+             and "ERR_CONNECTION_REFUSED" in dead_error,
+             {"base": dead_base, "failed_checks": dead_failures,
+              "browser_error": dead_error[:300], "checks": len(dead_checks)})
         # 成功一极直接打被测真实容器 origin（served_base 真实端口），不另起 fake server。
         live_ok = page_smoke(served_base, checks, prefix="ST-LIVE")
         record("ST-10", "页面验收对被测真实容器 origin 判绿", live_ok)
