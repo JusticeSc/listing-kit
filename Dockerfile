@@ -4,11 +4,12 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     UV_PROJECT_ENVIRONMENT=/opt/amz-listing-kit/.venv \
     UV_LINK_MODE=copy \
-    UV_HTTP_TIMEOUT=120 \
+    UV_HTTP_TIMEOUT=300 \
+    UV_HTTP_RETRIES=5 \
     PATH=/opt/amz-listing-kit/.venv/bin:/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin
 
 # 依赖权威是 pyproject.toml + uv.lock：镜像里也用同一套锁定依赖装，不用 pip 手写清单。
-# UV_HTTP_TIMEOUT 只影响构建期从 PyPI 取锁定 wheel（运行时 CMD 用 python，不经 uv）：
+# UV_HTTP_* 只影响构建期从 pyproject 固定的镜像索引取锁定 wheel（运行时 CMD 用 python，不经 uv）：
 # 2026-10-08 CI run 37760499569 在 `uv sync` 拉 pillow 12.3.0 / numpy(15.9MiB) 时按 uv 默认
 # 30s 每请求超时失败（`Failed to download distribution due to network timeout. Try increasing
 # UV_HTTP_TIMEOUT (current value: 30s)`），同一 tree 的上一轮构建通过 ⇒ 是下载层超时，不是产品行为。

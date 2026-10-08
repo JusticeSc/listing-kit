@@ -125,3 +125,17 @@ NOT-AUTHORITY：本文件记录本次实际工作与复用边界；目标/权限
 
 部署类步骤（10–17：SSH、远端构建部署、静态资源与页面主链验收、指纹、finalize、证据上传、回滚）在本轮**按设计 skip**：这是 PR 运行（`event=pull_request`），发布只在 main push 发生。因此本轮只证明“机制与镜像级发布事务”，**不冒充已完成线上发布**；线上发布/指纹/finalize 由合并后的 main 运行承担。
 
+## 第四/五次CI：同一类下载超时，两次落在不同步骤（基础设施，非产品）
+
+| run | 候选 | 失败步骤 | 原文机制 |
+|---|---|---|---|
+| [37760499569](https://github.com/JusticeSc/listing-kit/actions/runs/37760499569) | `8a9e3bd`（只加 docs/state） | Docker job `Build immutable image` → `uv sync --locked --no-dev` | `Failed to download distribution due to network timeout. Try increasing UV_HTTP_TIMEOUT (current value: 30s)`（`pillow==12.3.0`） |
+| [37762306228](https://github.com/JusticeSc/listing-kit/actions/runs/37762306228) | `639661c`（Dockerfile 加超时） | 控制面 `Install uv and locked dependencies` → host `uv sync --locked` | `Failed to fetch: https://mirrors.tuna.tsinghua.edu.cn/…/httpcore2-2.13.1-py3-none-any.whl`、`Request failed after 3 retries`、`operation timed out` |
+
+两次都发生在**依赖下载层**，索引是 `pyproject.toml` 里固定的清华镜像（`[[tool.uv.index]] default = true`）；同一 tree 的前一轮构建/安装通过，故不是代码回归，也不是产品行为。第一次的修法只覆盖了 Docker 构建路径，第二次证明同一类故障还会落在 runner 的 host `uv sync` 上——所以改为**按类修**：
+
+- `.github/workflows/ci-cd.yml` 增加 workflow 级 `env: UV_HTTP_TIMEOUT=300 / UV_HTTP_RETRIES=5`（覆盖所有 job 的 `uv sync`/`uv run`）。
+- `Dockerfile` 的 `ENV` 同步为 `UV_HTTP_TIMEOUT=300 / UV_HTTP_RETRIES=5`（覆盖镜像构建，包括远端服务器上的构建）。
+
+两个变量名用 `uv` 自身解析错误实测确认存在（`Failed to parse environment variable UV_HTTP_TIMEOUT/UV_HTTP_RETRIES with invalid value`），不改索引、不改 `uv.lock`、不碰产品代码。**边界**：这是构建期下载超时，不是产品/启动间歇；不能用“连续绿”当证明，因此这里只声明“机制对应的受控放宽”，若再次出现同类失败则按基础设施问题如实报告，不靠重跑洗绿。
+
