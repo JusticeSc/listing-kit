@@ -227,6 +227,11 @@ def _evidence_ok(rep: Report, rel: str, owner: str, row: dict, tag: str) -> None
     for item in ev:
         if not _exists(str(item)):
             rep.problem(f"[{tag}] {rel} 的 {owner} evidence 指向不存在的文件：{item}")
+        elif _tracked(str(item)) is False:
+            # 本地看得见、CI 检出后看不见（evals/ 默认不进库）——2026-10-08 实例：R4.3/R4.4
+            # 的 13 份运行日志被 .gitignore 拦住，本地 J6 全绿而 PR 上的同一判据判红。
+            rep.note(f"[{tag}-warn] {rel} 的 {owner} evidence 存在但还没进版本库：{item} "
+                     f"—— 提交前先 git add -f（网关只认签入集）。")
 
 
 def _check_updated_at(rep: Report, rel: str, path: Path, d: dict) -> None:
