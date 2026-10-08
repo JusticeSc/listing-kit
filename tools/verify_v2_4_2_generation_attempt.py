@@ -578,16 +578,18 @@ def main() -> int:
                 status_before = len([item for item in status_requests
                                      if item["task_id"] == expected_task])
                 if final["state"] != "succeeded":
-                    # 「核对任务」按钮可能因批次自带的轮询重渲染短暂禁用（页面重绘时先 disabled 再接上）：
-                    # 有界等到可点击再点，超时仍按原样抛错（fail-closed，不吞）。
-                    row(shot_main).locator('button:has-text("核对任务")').first
+                    # 「核对任务」按钮在页面后台重绘时会先禁用/移除（行可能已自行核对到
+                    # succeeded）：先有界等可点；等不到且行已 succeeded 就不再点击；
+                    # 否则按原样抛错（fail-closed）。后续 wait_state 仍必须见到 succeeded。
+                    row_button = row(shot_main).locator('button:has-text("核对任务")')
                     try:
-                        expect(row(shot_main).locator('button:has-text("核对任务")')).to_be_enabled(
-                            timeout=15_000)
+                        expect(row_button).to_be_enabled(timeout=15_000)
+                        row_button.click()
                     except AssertionError:
-                        pass  # click() 自己也会等待并与 disabled/脱联重开；这里只留一个短的窗口
-                    row(shot_main).locator('button:has-text("核对任务")').click()
-                wait_state(shot_main, "succeeded", timeout=20_000)
+                        state_now = (row(shot_main).get_attribute("data-attempt-state") or "")
+                        if state_now != "succeeded":
+                            raise
+                wait_state(shot_main, "succeeded", timeout=30_000)
                 reconciled = probe()
                 chain_r = chain_of(reconciled, shot_main)
                 final_r = chain_r[-1]["payload"]
