@@ -219,9 +219,34 @@ def provider_capabilities(provider: Any) -> dict[str, Any]:
 
 
 class ProductV2Handler(BaseHTTPRequestHandler):
-    """无状态：请求里没有任何东西会被当成服务器路径；用户数据全在浏览器。"""
+    """无状态：请求里没有任何东西会被当成服务器路径；用户数据全在浏览器。
+
+    连接复用：产品所有响应（静态、JSON、图片字节、send_error 错误页）都带 Content-Length，
+    所以按 HTTP/1.1 保持连接是安全的，浏览器不必为每条模块请求新建连接——实测 150 次页面
+    加载里，HTTP/1.0 的 8544 次建连出现 3 次 net::ERR_CONNECTION_REFUSED（服务器从未收到
+    该请求，端口仍在监听），HTTP/1.1 的 150 次加载 0 次失败。保持连接的前提是本条请求的
+    正文必须被读完；读不完的请求一律 `_drop_connection()`，绝不让残留字节被当成下一条请求。
+    """
 
     server_version = "AMZListingKitV2/2"
+    protocol_version = "HTTP/1.1"
+
+    def _drop_connection(self) -> None:
+        """本请求还有未消费的正文：关掉连接，下一条请求必须在新连接上重新开始。"""
+
+        self.close_connection = True
+
+    def handle(self) -> None:
+        """客户端中止连接是正常断连（Windows 回环上表现为 WinError 10053），不是服务器错误。
+
+        这类异常只说明这条连接结束了：不打印 traceback、不影响其它连接或任何结论。
+        """
+
+        try:
+            super().handle()
+        except ConnectionError:
+            self.close_connection = True
+            return
 
     def log_message(self, fmt, *args):  # noqa: A003 (http.server 接口名)
         """产品输出保持干净：请求日志不混进终端。"""
@@ -349,19 +374,27 @@ class ProductV2Handler(BaseHTTPRequestHandler):
                                       retry_policy="fatal") from None
             raise
 
-    def _send_bytes(self, code: int, payload: bytes, ctype: str) -> None:
+    def _send_bytes(self, code: int, payload: bytes, ctype: str,
+                    extra_headers: tuple[tuple[str, str], ...] = ()) -> None:
         self.send_response(code)
         self.send_header("Content-Type", ctype)
         self.send_header("Content-Length", str(len(payload)))
         self.send_header("Cache-Control", "no-store")
         self.send_header("X-Content-Type-Options", "nosniff")
+        for name, value in extra_headers:
+            self.send_header(name, value)
+        if self.close_connection:
+            # 这条响应之后就要关连接（未读完的正文、未知路由、写坏的连接）：必须告诉客户端，
+            # 否则 HTTP/1.1 客户端会以为连接还能复用。
+            self.send_header("Connection", "close")
         self.end_headers()
         try:
             self.wfile.write(payload)
         except (ConnectionError, OSError):
             # 客户端在响应写出前断开（例如刷新打断了正在等待的提交）：这只是这一次连接的失败。
             # 服务端无状态，不因此改变或撤销任何结论；浏览器侧按「没有收到响应」处理。
-            pass
+            # 这条连接已经写坏了，不能继续复用它等下一条请求。
+            self._drop_connection()
 
     def _send_json(self, code: int, body: object) -> None:
         payload = json.dumps(body, ensure_ascii=False).encode("utf-8")
@@ -389,7 +422,10 @@ class ProductV2Handler(BaseHTTPRequestHandler):
     def _read_body(self, max_bytes: int = MAX_BODY_BYTES) -> tuple[bytes | None, int, dict[str, Any] | None]:
         """返回 (body, status, payload)；payload 非空表示已经可以结束这个请求。"""
         raw_length = self.headers.get("Content-Length")
-        if raw_length is None or not str(raw_length).strip().isdigit():
+        if raw_length is None:
+            return None, 400, input_rejected_payload("请求必须带合法的 Content-Length。")
+        if not str(raw_length).strip().isdigit():
+            self._drop_connection()          # 长度不可知：残留正文无法安全跳过
             return None, 400, input_rejected_payload("请求必须带合法的 Content-Length。")
         length = int(str(raw_length).strip())
         if length <= 0:
@@ -398,24 +434,32 @@ class ProductV2Handler(BaseHTTPRequestHandler):
             # 先把已声明的正文读完再回 400：不读完就关闭连接会让浏览器 fetch 丢掉
             # 已经写出的 400（表现为 network error → 客户端误判 unknown，2026-10-01
             # 走查预演在 679KB 参考图上实测）。只有超过 DRAIN_ABSOLUTE_MAX 的荒谬
-            # 长度才提前收手，避免被超大 Content-Length 拖住。
+            # 长度才提前收手，避免被超大 Content-Length 拖住；收手时正文没读完，
+            # 这条连接只能关闭，不能让残留字节被当成下一条请求。
             drain_budget = min(length, DRAIN_ABSOLUTE_MAX)
             while drain_budget > 0:
                 chunk = self.rfile.read(min(65536, drain_budget))
                 if not chunk:
                     break
                 drain_budget -= len(chunk)
+            if drain_budget > 0:
+                self._drop_connection()
             return None, 400, input_rejected_payload(
                 f"请求体超过上限 {max_bytes} 字节。",
                 {"content_length": length, "limit": max_bytes})
         body = self.rfile.read(length)
         if len(body) != length:
+            self._drop_connection()          # 正文没读满：连接已不可信
             return None, 400, input_rejected_payload("请求体在读满之前就结束了。")
         return body, 200, None
 
     def do_GET(self):  # noqa: N802 (http.server 接口名)
         parsed = urllib.parse.urlsplit(self.path)
         path = urllib.parse.unquote(parsed.path)
+        # GET 不消费正文：带正文的 GET 是异常请求，读完才复用不安全。
+        raw_length = self.headers.get("Content-Length")
+        if raw_length is not None and str(raw_length).strip().isdigit() and int(str(raw_length).strip()) > 0:
+            self._drop_connection()
         # 查询参数在这里没有语义：不存在 directory / workspace 之类的服务端读取。
         if path == "/api/health":
             self._send_json(200, HEALTH)
@@ -456,6 +500,8 @@ class ProductV2Handler(BaseHTTPRequestHandler):
         if path == SUITE_REVIEW_PATH:
             self._suite_review()
             return
+        # 未知路由也可能带正文：这里不读正文，读完才复用不安全，所以关掉这条连接。
+        self._drop_connection()
         self._send_not_found(path)
 
     def _capabilities(self) -> None:
@@ -754,17 +800,12 @@ class ProductV2Handler(BaseHTTPRequestHandler):
             self._send_json(500, internal_error_payload(
                 redact(type(error).__name__ + ": " + str(error))))
             return
-        self.send_response(200)
-        self.send_header("Content-Type", media_type)
-        self.send_header("Content-Length", str(len(content)))
-        self.send_header("Cache-Control", "no-store")
-        self.send_header("X-Content-Type-Options", "nosniff")
-        self.send_header("X-Image-Sha256", hashlib.sha256(content).hexdigest())
-        self.send_header("X-Provider-Id", str(getattr(provider, "provider_id", "")))
-        self.send_header("X-Model-Id", str(getattr(provider, "model_id", "")))
-        self.send_header("X-Task-Id", request.task_id)
-        self.end_headers()
-        self.wfile.write(content)
+        self._send_bytes(200, content, media_type, (
+            ("X-Image-Sha256", hashlib.sha256(content).hexdigest()),
+            ("X-Provider-Id", str(getattr(provider, "provider_id", ""))),
+            ("X-Model-Id", str(getattr(provider, "model_id", ""))),
+            ("X-Task-Id", request.task_id),
+        ))
 
     def _analyze(self) -> None:
         try:
@@ -1201,6 +1242,38 @@ def run_self_check() -> int:
         for path in ("/../README.md", "/%2e%2e/README.md", "/storage/../../app/server.py"):
             status, _, _ = request("GET", path)
             check(f"目录逃逸被拒：{path}", status == 404, f"status={status}")
+
+        # 连接复用：产品按 HTTP/1.1 保持连接，因此每条响应必须自带 Content-Length，
+        # 且没读完正文的请求必须关掉连接——否则残留字节会被当成下一条请求错解。
+        connection = http.client.HTTPConnection(host, port, timeout=20)
+        try:
+            reused: list[tuple[int, str]] = []
+            for _ in range(2):
+                connection.request("GET", "/api/health")
+                response = connection.getresponse()
+                reused.append((response.status, response.getheader("Content-Length") or ""))
+                response.read()
+            check("同一连接连续两次请求都按序返回（连接复用）",
+                  all(status == 200 and length.isdigit() for status, length in reused),
+                  f"{reused}")
+        finally:
+            connection.close()
+
+        connection = http.client.HTTPConnection(host, port, timeout=20)
+        try:
+            connection.request("POST", "/api/v2/not-a-route", body=b"{}",
+                               headers={"Content-Type": "application/json"})
+            response = connection.getresponse()
+            status = response.status
+            close_header = (response.getheader("Connection") or "").lower()
+            response.read()
+            # http.client 会因为 Connection: close 直接丢掉 socket；否则由读端确认对端已关闭。
+            closed = connection.sock is None or connection.sock.recv(1) == b""
+            check("未知 POST 路由回 404 且关闭留有未读正文的连接",
+                  status == 404 and close_header == "close" and closed,
+                  f"status={status} connection={close_header} closed={closed}")
+        finally:
+            connection.close()
 
         status, _, _ = request("POST", "/api/anything")
         check("不存在其它服务端写接口", status == 404, f"status={status}")
