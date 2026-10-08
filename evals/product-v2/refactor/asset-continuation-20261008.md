@@ -98,3 +98,30 @@ NOT-AUTHORITY：本文件记录本次实际工作与复用边界；目标/权限
 
 纯键盘（200%，重新加载后 `activeElement=body`，全程只用 Tab/Enter）：焦点序列 `model-settings-open → back-home → 项目信息 → intake → understand → plan → generate → review → deliver`，在 `deliver` 按 Enter 切阶段，再到 `deliver-export` 按 Enter ⇒ 真实产出交付包 `正式开发—人工套图主链-交付包-20261008-0927.zip（30 KB）sha256 cb4bceff33a3040b…`；下一 Tab 到 `deliver-project-package` 按 Enter ⇒ “已导出项目包（含完整历史，可在别的浏览器导入）。”本文件只记应用层结果；ZIP 实际字节/成员/hash 的浏览器层证据由 `--page-smoke` 的 PS-07-package（真实 download 事件落盘并算 sha256）承担。明确模拟性质，不冒充独立真人 C15/C17；dpr 含宿主 1.25 显示缩放；未在远端 HTTPS 环境重复该几何。
 
+## 第三次CI结果：全绿（控制面 + 真实镜像自检 32/32 + 离线回退 13/13）
+
+候选`4847ed9`，[run 37758524774](https://github.com/JusticeSc/listing-kit/actions/runs/37758524774)：**两个 job 都 success**。上一轮的 -04 取样竞态与探针三修都由这一轮独立复核，不再是我本机结论。
+
+**控制面 job**（`Check formal entry and browser contracts`）：V2 正式入口自检 52/52；`V2.1.2-10`（旧 Product V1 路由未被破坏）PASS；`V2.4.3-03..-13` 全 PASS，其中 **`V2.4.3-04`「正常批次：一次确认即整套提交、各提交一次并核对到」PASS**——即我改的 `wait_batch_settled()` 同次取样判据在 CI 时序下成立（本机复现不到该竞态，故以 CI 为准）；`V2.4.4-00..-10`、`V2.5.1/2/3/4/5`、`V2.6.1/2/3/4`、`UI2-*`、`V2.1.1/1.2/1.3/1.4/2.2.1/2.2.3/2.3.x/2.4.1/2.4.2` 全 PASS。
+
+**Docker job**（真实一次性容器 + 锁依赖 Playwright Chromium）：
+
+| 步骤 | 结果 |
+|---|---|
+| 5 `Build immutable image` | success（`docker build` 真跑，非静态闭包） |
+| 6 `Smoke-test container health` | success |
+| 8 `Release transaction selftest (real disposable containers)` | **32/32 通过，0 失败** |
+| 9 `Release failure classes (real script, no containers)` | **13/13 通过，0 失败** |
+
+自检里与验收判据直接对应的原始行：
+
+- `ST-02-A` 旧版正式 Dockerfile 独立上下文真实构建（marker A）、`ST-02-B` 新版（marker B）、**`ST-02-IDs` 两轮真实 image ID 不同**（不用同一 image 换 tag 充数）。
+- `ST-03` 隔离旧服务基线健康且实际 marker 为 A、**`ST-03-TLS` 显式信任隔离 CA 的 HTTPS 基线**。
+- **`ST-DATA-01` 在真实容器 origin 上用真实 UI 建立项目并导入合法项目包**。
+- `ST-04` 变异前失败保留原服务/TLS 且无开放事务；`ST-05` 真实 deploy 开放事务并保留旧容器/配置；`ST-05-stale` 过期 finalize 拒绝且保留真实恢复点；`ST-05-dirty` 脏恢复点拒绝部署且不删任一容器；`ST-06` 新版 health 绿但坏静态 finalize 判红且 previous/journal/备份保留；**`ST-07` 实际回退回到真实旧 image ID/marker A 并清除事务**；`ST-08` 成功 finalize 清除恢复点且保留健康新服务（真实新 image ID/marker B）。
+- `ST-LIVE-01..08`（真实产品 origin：health 无业务状态、能力且默认付费档关闭、首页外壳、样式/`entry.js`/`app.js`、页面实际启动且无工程诊断、隔离项目新建后刷新仍在、原生下载/导入分配独立身份并刷新恢复、会话零 console/page/网络错误）、`ST-10` 页面验收对被测真实容器 origin 判绿。
+- **`ST-RECOVERY-01..05` + `ST-11`**：期间确实换过真实版本（marker 由旧变新）且原项目身份/版本化文档/资产字节/人工采用记录逐条保留——**同 origin 跨版本切换与失败回退后的浏览器数据恢复**，与服务回退分开记。
+- `ST-09` 与 `ST-DEAD-01..05/99`：负例基线按设计判红（`[FAIL]` 行是期望中的不可达入口结果），机制为 `net::ERR_CONNECTION_REFUSED`（`ST-DEAD-99` 原文 `Page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:43807/`），**不是 `ERR_UNSAFE_PORT`**——即上一轮 ST-09 的机制修复在 Linux runner 上同样成立。
+
+部署类步骤（10–17：SSH、远端构建部署、静态资源与页面主链验收、指纹、finalize、证据上传、回滚）在本轮**按设计 skip**：这是 PR 运行（`event=pull_request`），发布只在 main push 发生。因此本轮只证明“机制与镜像级发布事务”，**不冒充已完成线上发布**；线上发布/指纹/finalize 由合并后的 main 运行承担。
+
