@@ -705,6 +705,10 @@ def main() -> int:
             gate = shared.confirm_and_submit(page, expect, None, submit_requests,
                                              shot_ids=authorized_scope)
             assert gate["ok"], f"确认必须产生本次授权的新消费：{gate['after_actions']}"
+            # 项目状态推进是确认写库后的异步派生（同 4_3 -04 的竞速）：
+            # 有界等待 READY_TO_GENERATE 后再取样；超时仍按实际状态判红。
+            from verify_v2_4_3_batch_execution import wait_project_state  # noqa: PLC0415
+            state_wait = wait_project_state(page, "READY_TO_GENERATE")
             submits = len(submit_requests)
             confirmed = page.evaluate(CONFIRM_PROBE, {"shotIds": authorized_scope})
             record = confirmed["record"]
@@ -757,6 +761,7 @@ def main() -> int:
                    == confirmed["recomputed_hash"],
                    "environment_identity": confirmed["environment_identity"],
                    "recorded_target": confirmed["recorded_target"],
+                   "state_wait": state_wait,
                    "stale_fields": None if confirmed["staleness"] is None
                    else [reason["field"] for reason in confirmed["staleness"]["reasons"]][:6]})
 
