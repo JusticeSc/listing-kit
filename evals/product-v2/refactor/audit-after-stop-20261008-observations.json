@@ -1,0 +1,1103 @@
+{
+  "observed_at": "2026-10-08T11:01:58.101Z",
+  "base": "https://47.115.172.233:8080",
+  "scope": "read-only audit after explicit user stop; no product writes/models/deploy",
+  "live": {
+    "url": "https://47.115.172.233:8080/",
+    "status": 200,
+    "secureContext": true,
+    "health": {
+      "status": 200,
+      "body": {
+        "app": "amz-listing-kit",
+        "product": "v2",
+        "server_state": "none",
+        "user_data": "browser-indexeddb"
+      }
+    },
+    "capabilities": {
+      "status": 200,
+      "body": {
+        "ok": true,
+        "semantic_contract": "v2.2.2",
+        "analyze_fields": [
+          "product_name",
+          "description",
+          "selling_points",
+          "focus",
+          "references",
+          "locale",
+          "platform",
+          "max_slots",
+          "existing_slot_ids"
+        ],
+        "images": {
+          "contract": "v2.4.1",
+          "endpoints": [
+            "/api/v2/images/submit",
+            "/api/v2/images/status",
+            "/api/v2/images/result"
+          ],
+          "submit_fields": [
+            "action_id",
+            "prompt",
+            "references",
+            "size",
+            "seed",
+            "model_id"
+          ],
+          "provider": {
+            "provider_id": "dashscope-qwen-image",
+            "model_id": "qwen-image-3.0",
+            "protocol": "v2.4.1",
+            "capability_version": 3,
+            "configured": false,
+            "credential_source": "none",
+            "capabilities": {
+              "contract": "v2.4.1",
+              "reference_images": true,
+              "max_reference_images": 3,
+              "async_tasks": true,
+              "n_per_submit": 1,
+              "prompt_extend": false,
+              "watermark": false,
+              "stateless": true,
+              "test_double": false,
+              "size": "1344*1344",
+              "credential_source": "none",
+              "request_profile": {
+                "size": "1344*1344",
+                "n": 1,
+                "prompt_extend": false,
+                "watermark": false,
+                "output_format": "png",
+                "supports_negative_prompt_field": false,
+                "max_reference_images": 3,
+                "reference_media_types": [
+                  "image/png",
+                  "image/jpeg"
+                ],
+                "min_side": 384,
+                "max_side": 2048,
+                "min_area": 262144,
+                "max_area": 4194304,
+                "min_ratio": 0.125,
+                "max_ratio": 8,
+                "max_prompt_chars": 4000
+              }
+            }
+          },
+          "unavailable": null,
+          "default_trial": "closed"
+        },
+        "review": {
+          "contract": "v2.5.2",
+          "endpoint": "/api/v2/review/candidate",
+          "provider": {
+            "provider_id": "dashscope-review",
+            "model_id": "qwen-vl-max",
+            "protocol": "v2.5.2",
+            "configured": false,
+            "credential_source": "none",
+            "capabilities": {
+              "provider_id": "dashscope-review",
+              "model_id": "qwen-vl-max",
+              "review_contract": "v2.5.2",
+              "supports_reference_images": true,
+              "configured": false,
+              "credential_source": "none",
+              "endpoint_host": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+              "timeout_seconds": 60,
+              "max_tokens": 2000,
+              "structured_output": "json_mode",
+              "transport": "langchain-openai/ChatOpenAI"
+            }
+          },
+          "unavailable": null
+        },
+        "suite_review": {
+          "contract": "v2.5.5",
+          "endpoint": "/api/v2/review/suite",
+          "max_images": 8,
+          "provider": {
+            "provider_id": "dashscope-review",
+            "model_id": "qwen-vl-max",
+            "protocol": "v2.5.5",
+            "configured": false,
+            "credential_source": "none",
+            "capabilities": {
+              "provider_id": "dashscope-review",
+              "model_id": "qwen-vl-max",
+              "suite_review_contract": "v2.5.5",
+              "max_images": 8,
+              "configured": false,
+              "credential_source": "none",
+              "endpoint_host": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+              "timeout_seconds": 90,
+              "max_tokens": 2400,
+              "structured_output": "json_mode",
+              "transport": "langchain-openai/ChatOpenAI"
+            }
+          },
+          "unavailable": null
+        },
+        "provider": {
+          "provider_id": "dashscope-semantic",
+          "model_id": "deepseek-v4.1-flash",
+          "protocol": "v2.2.2",
+          "capability_version": null,
+          "configured": false,
+          "credential_source": "none",
+          "capabilities": {
+            "provider_id": "dashscope-semantic",
+            "model_id": "deepseek-v4.1-flash",
+            "semantic_contract": "v2.2.2",
+            "supports_images": false,
+            "vision": false,
+            "analyze_fields": [
+              "product_name",
+              "description",
+              "selling_points",
+              "focus",
+              "references",
+              "locale",
+              "platform",
+              "max_slots",
+              "existing_slot_ids"
+            ],
+            "configured": false,
+            "credential_source": "none",
+            "endpoint_host": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+            "timeout_seconds": 60,
+            "max_tokens": 5000,
+            "structured_output": "json_mode",
+            "transport": "langchain-openai/ChatOpenAI"
+          }
+        },
+        "unavailable": null,
+        "provider_choices": {
+          "semantic": [
+            {
+              "id": "dashscope-semantic",
+              "label": "DeepSeek 理解",
+              "model_id": "deepseek-v4.1-flash",
+              "vision": false
+            },
+            {
+              "id": "dashscope-vision",
+              "label": "通义千问 VL 理解",
+              "model_id": "qwen-vl-max",
+              "vision": true
+            }
+          ],
+          "image": [
+            {
+              "id": "dashscope-qwen-image",
+              "label": "通义千问图像",
+              "model_id": "qwen-image-3.0"
+            },
+            {
+              "id": "volcengine-ark",
+              "label": "火山方舟闪速",
+              "model_id": "doubao-seedream-5-0-flash-260915"
+            }
+          ],
+          "review": [
+            {
+              "id": "dashscope-review",
+              "label": "通义千问复核",
+              "model_id": "qwen-vl-max"
+            }
+          ]
+        }
+      }
+    },
+    "ready": "complete",
+    "title": "Amazon US 商品套图",
+    "createEnabled": true,
+    "failures": [],
+    "pageErrors": [],
+    "consoleErrors": [],
+    "served_bytes": [
+      {
+        "path": "/",
+        "status": 200,
+        "bytes": 31405,
+        "sha256": "a62b84c796e0ca7112e1772127cc29f08c7aa398d96cdf53145afb5432c676eb",
+        "expected": "a62b84c796e0ca7112e1772127cc29f08c7aa398d96cdf53145afb5432c676eb",
+        "match": true
+      },
+      {
+        "path": "/styles.css",
+        "status": 200,
+        "bytes": 27621,
+        "sha256": "212bca9c29c45c9629c9700bc580cb0981f9742010dea943af1db9a022ce3dac",
+        "expected": "212bca9c29c45c9629c9700bc580cb0981f9742010dea943af1db9a022ce3dac",
+        "match": true
+      },
+      {
+        "path": "/entry.js",
+        "status": 200,
+        "bytes": 811,
+        "sha256": "8ef37dd380fb1a75d5e66c60c017c0f3af25a6e0601e8bee825859e8f09b6c9d",
+        "expected": "8ef37dd380fb1a75d5e66c60c017c0f3af25a6e0601e8bee825859e8f09b6c9d",
+        "match": true
+      },
+      {
+        "path": "/app.js",
+        "status": 200,
+        "bytes": 36152,
+        "sha256": "c0624ef9fac5648d7b23bdace1d12558156ff84e5c9258e20dccb65cb1c35119",
+        "expected": "c0624ef9fac5648d7b23bdace1d12558156ff84e5c9258e20dccb65cb1c35119",
+        "match": true
+      },
+      {
+        "path": "/workspace.js",
+        "status": 200,
+        "bytes": 83895,
+        "sha256": "d9765c1e4b7fcc08e5d3333553ea5d0049f603154257704397933630a516ff89",
+        "expected": "d9765c1e4b7fcc08e5d3333553ea5d0049f603154257704397933630a516ff89",
+        "match": true
+      },
+      {
+        "path": "/generation.js",
+        "status": 200,
+        "bytes": 69790,
+        "sha256": "355cace6c6641f2f3a390a62f0df0dbbc98e49cf31c62898551f0da8f2a9a53d",
+        "expected": "355cace6c6641f2f3a390a62f0df0dbbc98e49cf31c62898551f0da8f2a9a53d",
+        "match": true
+      },
+      {
+        "path": "/selection-adoption.js",
+        "status": 200,
+        "bytes": 29003,
+        "sha256": "16ed148e15626ce61e647d10faaf438378812f712c9edbd1789eebdc71b6a5a9",
+        "expected": "16ed148e15626ce61e647d10faaf438378812f712c9edbd1789eebdc71b6a5a9",
+        "match": true
+      },
+      {
+        "path": "/review-delivery.js",
+        "status": 200,
+        "bytes": 30206,
+        "sha256": "17b53656b988295217770d7dbcdadfa04399959bca6f815e8d91f4688e3c2965",
+        "expected": "17b53656b988295217770d7dbcdadfa04399959bca6f815e8d91f4688e3c2965",
+        "match": true
+      }
+    ]
+  },
+  "fingerprint": {
+    "default_trial": "closed",
+    "files": {
+      "app/__init__.py": "4ba4fc89091358fa2ac992aecf4e88dc08292c7bb4ebe2deb7cb62458c34ca2d",
+      "app/product_v2/app.js": "c0624ef9fac5648d7b23bdace1d12558156ff84e5c9258e20dccb65cb1c35119",
+      "app/product_v2/domain/attempt.js": "3dab95e7121c472f3bc49d9579d78c078560c8a2a67cbd9800d2faf9681c4c47",
+      "app/product_v2/domain/batch.js": "b5b3abec8dc6ccb406adc1545c35302f6a1f576bc345f6ddb3faffca27eedb95",
+      "app/product_v2/domain/brief.js": "75a06dc6ee88e504557bccdfbc9e6181f7126a3292d29f1b6e8ac0a63980ce7f",
+      "app/product_v2/domain/candidate.js": "cc4efccc9d285ab0053262e11ff9203f2d6d9b857840fd1eb6fa288258abb349",
+      "app/product_v2/domain/compare.js": "2c10bd1eb663f4030c59c5d38499ed2a4e7f5c5680ab0e671da8da475735e97b",
+      "app/product_v2/domain/config-export.js": "ba28cbb82362f2d7b29150ae1e806958b8fcf895d62ac13627d6ace7a905b5dd",
+      "app/product_v2/domain/confirm.js": "6d7307c89532ba268d3d4bfe480c5f1e71b65ceee32dbee872af6d541c9288e5",
+      "app/product_v2/domain/errors.js": "3169b668f2da9ab848a69a3a6110d2a7940b455cd3c2de83674941ddfebf046a",
+      "app/product_v2/domain/export-gate.js": "6b7a831e5bd736842aa0303156ce7dc2fa7ef592f4d316891a3c11d8791502c3",
+      "app/product_v2/domain/index.js": "0e4e9d5538b71f262441c4fb7756c067fe2dcac121a111d1cb39f1590e499a1e",
+      "app/product_v2/domain/intake.js": "2299cc2359dbbaba122f4d029b26b9addbee491820e6e24519c5b35acb6bea81",
+      "app/product_v2/domain/invalidation.js": "9a879a569d6b645ea4b8bb9c6dfe8e539b97173fa9927b3e77bdf170075a80ee",
+      "app/product_v2/domain/prompt.js": "d8461ed63a4cfaf9d26f7a70482df45eb05d05d0f0595033ecd516e78a8e307f",
+      "app/product_v2/domain/review.js": "6456d171cf56b26dff83c7c4638ea259cd1f297df1614de6c512e72dc2592fdb",
+      "app/product_v2/domain/rework.js": "fe243af53de6943f9e8c07919acaf52b628fec635b52162f2189ee9855242a00",
+      "app/product_v2/domain/selection.js": "29aacc9181438df48419969a7c37e2130f8626a68bcc1860385546b5d96b589c",
+      "app/product_v2/domain/shared.js": "5338b7b530889eea27b656595f01c72b82639d90eeb59fb30e3afeea3177a32d",
+      "app/product_v2/domain/slots.js": "04d4f7599e60a907e5d95ab10d7d0ff716d4d13b5a793d18fa266264c099a767",
+      "app/product_v2/domain/specs.js": "6728c4492d34d4148f6cde8d9ddd5c2cb30d3c3ff3db6f11114fe8043c488bb2",
+      "app/product_v2/domain/suite-plan.js": "278de1c3fa704f8b9a237d819bbad03f6acacfcc5a32ad10c9f328736dc2b292",
+      "app/product_v2/domain/suite-review.js": "fe92fd83b2cc19fd904af1d4191e237c38ebea15b5d7c011d7a59e2660b5614b",
+      "app/product_v2/domain/suite.js": "1bd98df73a25b231a6b1d53f5a2fc16d403b580a5cd52d09d0d91082db42bb62",
+      "app/product_v2/entry.js": "8ef37dd380fb1a75d5e66c60c017c0f3af25a6e0601e8bee825859e8f09b6c9d",
+      "app/product_v2/generation.js": "355cace6c6641f2f3a390a62f0df0dbbc98e49cf31c62898551f0da8f2a9a53d",
+      "app/product_v2/index.html": "a62b84c796e0ca7112e1772127cc29f08c7aa398d96cdf53145afb5432c676eb",
+      "app/product_v2/model-settings.js": "39a4dfc0c6910c9bb8da34fdde96a55ad650b0d06bec27a6e4477387d40e175f",
+      "app/product_v2/package.json": "609158e6c5fbc237939fa3ddf7faab80ab690bdc0c8d584414a885130103c4e8",
+      "app/product_v2/project-inputs.js": "f050c2eae8b6b6fb7be748ab465ebeecf0bac8b4ea968d0b21e94878231304f6",
+      "app/product_v2/prompts.js": "40100c27b4605204ecb5bbf62c15b3c3747530482f2fa5b1416479aae49a0ecc",
+      "app/product_v2/review-delivery.js": "17b53656b988295217770d7dbcdadfa04399959bca6f815e8d91f4688e3c2965",
+      "app/product_v2/selection-adoption.js": "16ed148e15626ce61e647d10faaf438378812f712c9edbd1789eebdc71b6a5a9",
+      "app/product_v2/semantic-analysis.js": "a2e7c002967a0a4cb3bf8e68ed4a9fe5c8a492ea88e9547445b7419d1c8e6b8a",
+      "app/product_v2/session.js": "d6a231e283f7f40f53568360170139b2854814a4f83721cb5b21518d2ea3b57d",
+      "app/product_v2/storage/capabilities.js": "1e2614ab3c260ad19498cad099e8c1ee3b1d90264450bd1e8efeadabd2d08b33",
+      "app/product_v2/storage/db.js": "bac2e194a8e84c19dffaa5a1ad08da3cc3a643ba9152953bb1af9c5e97ccbc29",
+      "app/product_v2/storage/errors.js": "b7941724719c0e2cb5bd81f93577ab2e527d4e6c0601715935a3c875769195f7",
+      "app/product_v2/storage/index.js": "14d35f3675ad90adee7170948a207613134c8ad1e3dd6f26e7282c791189b12f",
+      "app/product_v2/storage/migrations.js": "df09566037241540771bd49fd92a6b9c487eeb14a800a6d85ebfbd70991c3644",
+      "app/product_v2/storage/package-schema.js": "c325f5687c768cadb2303559b6cf49c2213363cf7c9f70ab2b58f6f7c75d7a30",
+      "app/product_v2/storage/package.js": "6de70282b6ea6d0ec4733b69256da422c71f4c999377e6d37eccefc5d47cb437",
+      "app/product_v2/storage/pointer.js": "68e70ba2dbbb2954be5cefe4d6a93768259551f5a72a10ae3365517f6c800e18",
+      "app/product_v2/storage/repository.js": "f260575b4188145972961afed73aa0e5239ecd653522459253f8a30c6d563273",
+      "app/product_v2/storage/schema.js": "bde5c53428e0c6823bec484345588e15368af3db5154e4b2497997d1e186e736",
+      "app/product_v2/storage/transfer.js": "0b7e2fc055994a246044e2b501d56d17cbb379353e071da19f305bd9b4251d16",
+      "app/product_v2/storage/validate.js": "ae100066b19c49606b85dc56f8e6f9f9a186bfb5032c5bcc98c85ea14e2d906a",
+      "app/product_v2/storage/zip.js": "e79183fa8219edbcbac45aba6f9fb14d82f5240b0c7550f6c699f560b08d4b3f",
+      "app/product_v2/styles.css": "212bca9c29c45c9629c9700bc580cb0981f9742010dea943af1db9a022ce3dac",
+      "app/product_v2/ui/compare-view.js": "5187abd8c6d8711d9ff72d74e1f3898aeab697b81781fbdfa2877a3d1666588f",
+      "app/product_v2/ui/delivery-view.js": "8dfca28244449f6805ed248ab7abd54209fe7e48226ea6d2c2794cab5620733f",
+      "app/product_v2/ui/dom.js": "140131962f96bf99904279a2f3fb81a77a8123477250196d9e89d1738cb99979",
+      "app/product_v2/ui/generation-view.js": "31cad8ab5463f6de51e29f1f1028af3e049dc84a25a09e5d0289a9df0d653316",
+      "app/product_v2/ui/input-view.js": "7043516a01523017b2213bbb100ebe57a51a0525b2c34d8edf7f42c5615bdc89",
+      "app/product_v2/ui/stage-shell.js": "afb44b070ecd281784e3d8895d46e8b013d6d26424a3d351c19d0c74ab0c3a8c",
+      "app/product_v2/vendor/fflate.LICENSE.txt": "0a1df3a083d0c010560aa342e87959c8c1070e6fd54545741f083f22d0c8b551",
+      "app/product_v2/vendor/fflate.browser.js": "b7ca4450b19559a1d50eb381adcee94b82449674be4cd17789d9beba7e6122a1",
+      "app/product_v2/workspace.js": "d9765c1e4b7fcc08e5d3333553ea5d0049f603154257704397933630a516ff89",
+      "app/product_v2_server.py": "60236342b11ca3e016f7a4d7cb57aea9277d4696dda65339048715b751235263",
+      "app/server.py": "59bd01f58dc79e500bdcd07a854da9b86124239ceb46d7e4fb37c359b4a2b098",
+      "config/product-v2/providers.json": "64e0c9a45a1189f1518d707e47b790ad9358c0ef959332ac5b6065cda5da6c7a",
+      "pyproject.toml": "e4a95ac06dc4266a08c1be26a6114afbcac0ceabcf78e730d54892ee2034a378",
+      "src/console.py": "8b570661c3c6069d9b56d7827b54d597430620bb5c818e746a07b74e695c4eaf",
+      "src/providers/__init__.py": "3743463fc3f9994c6585d7159ddf00fc5305a5637e9b30e55f8d378c143f1b33",
+      "src/providers/v2_credentials.py": "bcc9a81b10271a2f2cd1d2a357c4b2414d2623080ede011eb0f836015a4a651a",
+      "src/providers/v2_dashscope_image.py": "aee42413dfe8ac2ea5d93b6abd3c97626fd6c4c99894728c47fe6f3028cb766b",
+      "src/providers/v2_dashscope_review.py": "bccad4005f8395b68ed3ff2d6e85a7e2f6cb8c03e54bbf8d345aad1a48d22398",
+      "src/providers/v2_dashscope_semantic.py": "00ed91cc1552eb1e3ebfc16e35111133e2d42b850ac2fc0b011d7a4e50be7769",
+      "src/providers/v2_dashscope_suite_review.py": "adf1fc2c589e388869f4318b7c79ac75b1dd871ede1b283f927182d1a57f7ce7",
+      "src/providers/v2_dashscope_vision_semantic.py": "6b0f38035c626de2b66f9310bc292ea624e952d30b0e64be88e818f3cbca1c59",
+      "src/providers/v2_errors.py": "0793faa4512798eb1b5c6dbd29f7b8a603330a7d5959c5da4ff15cf43b31eb68",
+      "src/providers/v2_fake_image.py": "0cce122ca3096e3e46af803ba6a5d3389afcffd47bf5956f729bbcaf674ec6f2",
+      "src/providers/v2_fake_review.py": "489b79a945804ca48f45a32ea8c1c816264da13d32c56ebeff97ecd645078017",
+      "src/providers/v2_fake_semantic.py": "c88db472903cf100230b45c9015d7b31eb21470abbdc96b8279d15f9d67e3bf6",
+      "src/providers/v2_fake_suite_review.py": "12ab42ae4b72a05476f7fd9eb326b8f371d1d06a237e4737d332589b25fce800",
+      "src/providers/v2_fake_vision_semantic.py": "dd0f91c6548a893f6a0e85749522f92a41a42359b78b54f48bed88b9686218dd",
+      "src/providers/v2_image.py": "e2ba09b8cc3f1a0e73bcfdcaa51f5d6a0b24772466753b45f6d5c47e80c5e78c",
+      "src/providers/v2_langchain_chat.py": "1bbc99cfaf2600cece1839bfc3973480c19515e245e506b3c18573426327695c",
+      "src/providers/v2_outbound.py": "ed1e108dbbb875d66eb8d4f8ecbf79b1757109eeeeeb6c1acbb83e52f8592de4",
+      "src/providers/v2_registry.py": "e054b6a6729ec1b9df2f7d4ff560e34851c6805fd360d65d2d985b7d32391e1d",
+      "src/providers/v2_review.py": "4163f6db3ce678cf29bf1873506042dfa96bb8725d4af715555d173ff6325a86",
+      "src/providers/v2_semantic.py": "040f0c413a522f40e490ceb6dc17af7405a5dcce59d16b3f986334457b4ff305",
+      "src/providers/v2_suite_review.py": "9ddf20ee08e5f97ec2edc33459e6445746714e1caeada81f9bf63faaf64f962d",
+      "src/providers/v2_volcengine_image.py": "7372afa1b0e3c2568581737d6d8e45b165fa7561748844430bd5da6f7884e3a8",
+      "uv.lock": "a1bc8edb29c97ef3ef3e519f2bc8f8515bfb032f914458e7be0aec54308ee62a"
+    },
+    "public_configuration_sha256": "752430317ec03bc99e24ea2ef0bfadddd200ae7694f6c61844ef0e1dc885af51",
+    "runtime_sha256": "44f2e9b9a00c2d8fd870ed0adf71baf7bdd6b2cabaa2f059c2b0870b75e43d30",
+    "schema_version": "amz-runtime-fingerprint/v1",
+    "served_scripts_sha256": {
+      "/app.js": "c0624ef9fac5648d7b23bdace1d12558156ff84e5c9258e20dccb65cb1c35119",
+      "/entry.js": "8ef37dd380fb1a75d5e66c60c017c0f3af25a6e0601e8bee825859e8f09b6c9d"
+    }
+  },
+  "release": {
+    "caddy_configuration_sha256": "e375655dcf81ada9a4ac315ceaf1791bbdf1c9ba3bb0aab0f529fc6eae4de176",
+    "commit": "0572b5c9c042502b77fb2a5e302f5775bbfd46fc",
+    "image_id": "sha256:ce90236c206c8a87d7ee41d53926b62cf23d2e6aa781f75f80a6f957a63c5649",
+    "image_tag": "amz-listing-kit:0572b5c9c042502b77fb2a5e302f5775bbfd46fc",
+    "public_configuration_sha256": "752430317ec03bc99e24ea2ef0bfadddd200ae7694f6c61844ef0e1dc885af51",
+    "runtime_sha256": "44f2e9b9a00c2d8fd870ed0adf71baf7bdd6b2cabaa2f059c2b0870b75e43d30"
+  },
+  "screenshot": "evals/product-v2/evidence/audit-after-stop-20261008-home.png",
+  "resources_released": true,
+  "goal_raw": {
+    "text": "Goal: ## Objective\n在 amz-listing-kit 中沿用已实现资产与既有原生ESM/IndexedDB/Python栈，尽最大努力交付完整 Product V2 工程产品，并经现有受保护流程发布到既有可信HTTPS环境；本轮明确恢复施工，不停留在规划或局部MVP。将必要V1清理纳入本轮工程收口：先核对独有用途与共享消费者，在V2覆盖要求、正式消费者切换、精确代码/同版本数据恢复材料成立后删除旧运行路径，不以保留未经验证V1当可靠回退。\n维护复杂性的约束：该加的成熟能力加、该删的失效实现删；优先复用已有资产、成熟库及原协议，不重复造轮子。以唯一状态所有者、深Interface、变更局部性和低认知负担收口，不通过文件搬家、薄wrapper、兼容alias、双维护TS/JS、回调环、通用编排/重试平台或另一轮总体重构代替交付。\n\n## Success criteria\n1. 当前正式产品从空页面经合法参考图/商品资料完成纯人工与显式图文辅助任务：人工确认事实、用途与精确缺项、本地Prompt准备与摘要一次明确发送、partial比较、目标返工、保留或改选、人工采用、无需AI复核的实际交付ZIP及完整项目ZIP下载/导入/刷新；请求/原action/IDB版本/Blob/hash/原Prompt来源一致，返工不改变无关shot或自动改选，模型不自动确认事实。真实图文传原图片字节、提议合法且可追溯；高级人工文本不被自动覆盖。\n2. 有限模型选择与自己的key贯通理解、生图和单图/整套复核，配置/能力/参数/协议/凭据分开；默认付费档closed，BYOK仅当前标签页内存及HTTPS请求级，无持久化/包/日志/错误/诊断/公开DOM投影泄漏。旧task按原目标补key核对而不是切新模型或新submit。AI仅显式按需，not_run不伪造PASS或Unknown；确定性当前报告、硬检查、人工采用、字节与来源链始终为强制门。\n3. 原工程验收与详细设计结构六项准出全部有范围匹配直接证据：跨标签预约/OCC、原动作Unknown不自动重提、迟到结果保全及新动作阻断、停止仅停新增不假称取消、容量/候选失败恢复、生命周期隔离、两类ZIP单快照/交付围栏和无服务器业务持久化均成立。修正4_4两层失败、3_5/5_3失效判据、设置空证及发布自证/目标错配；已报告启动/重开间歇须有现象—机制对应和受控修复证明，不能连续绿/重试/加时/另一机制代替，不由代理接受发布风险。\n4. 用户授权模拟真人端到端验收：独立临时profile与隔离项目的Chrome无头，以实际页面点击、输入、上传、键盘、滚动、下载/导入/刷新操作验证完整任务，保留请求、IDB、ZIP字节、截图及实际读图结果；不种候选或直接调用内部函数替代用户路径，不用fake证明真图质量。原1440/1366、实际125%/200%浏览器缩放、390px关键可达与纯键盘仍覆盖。明确模拟性质，不冒充独立真人C17/C15；这两项真人验收继续单列未完成。\n5. 所有实际改变的Module和调用方严格类型/完整生成集合一致；适用完整离线命令两轮各项通过，必要判据无失败，SKIP只保留其范围、不作为缺少能力通过。原RC及本次V1工程清理适用项有直接证据；V1独有用途明确处理、共享依赖不误删、旧消费者/失效源码/配置/测试同包清除，删后回归与最终指纹成立，历史失败/账本/许可及用户原件保留。\n6. 当前候选提交的现有PR/CI、实际Docker构建与镜像origin页面、真实不同版本服务回退、可信HTTPS/静态资源/隔离页面主链、同origin数据恢复、完整源码/配置/镜像指纹和finalize均有可查证据；满足审查/分支保护后合并发布。previous及必要恢复材料留到全部必要验收结束，服务回退不冒充浏览器数据恢复。交付可运行成品、必要说明、恢复材料和准确限制；所有必要验收未成立不宣布产品完成。\n\n## Verification\n按当前权威计划/详细设计修订后的验收、实际CLI及config/product-v2/verification.json消费已有入口，不新建验证平台。连贯改动完成后只运行受影响消费者和实际路径，失败以证据定位并因果修复，不为确认用户已报告失败重跑。\n- 静态/领域：npm run check:types；修改TS时npm run build:frontend及npm run check:generated；npm run test:domain；uv run --locked python app/server.py --check。\n- 控制与恢复：uv run --locked python tools/check_docs.py --no-run；uv run --locked python tools/refactor_resume.py；更改正式任务/依赖/状态后按已有evals/probes/project_state.py反例核对。\n- 具体已知消费者：uv run --locked python tools/verify_v2_4_4_candidate_blob.py；tools/verify_v2_3_5_pre_generation_confirm.py；tools/verify_v2_5_3_compare_panel.py；tools/verify_v2_packet08_settings_vision.py及实际受影响adoption/delivery既有入口，均通过当前正式装配，捕获独立业务后置而非常量/source/mock回声。\n- 最终候选：对当前登记/CI与既有packet11离线清单中全部适用离线入口逐项串行两轮，命令按正式脚本及其CLI参数执行，证据标签含候选/入口/轮次不覆盖；不额外买两轮真实模型。\n- 真实页面：上述模拟真人动作，独立观测console/network/IDB、下载包内对象/Blob/hash与视觉/键盘/真实缩放，人工与辅助共用正式业务消费者；实际真实图像与参考图独立观察，不以HTTP/schema证明忠实度。\n- 现有受保护CI/部署：实际docker build/smoke；获批Linux运行uv run --locked python tools/release_transaction_probe.py --selftest，页面必须是被测镜像origin；发布/恢复在https://47.115.172.233:8080/用同probe --page-smoke --base及--fingerprint --runtime-root .验证，保留可信TLS，不忽略证书。最终矩阵逐项proven且范围匹配，无必要missing/indirect/contradicted。\n\n## Boundaries\n允许修改本轮实际受影响产品代码、Module/Interface、必要测试/验证器、配置/构建/现有CI发布脚本、依赖与权威文档/Goal文本/正式任务依赖和状态；必要新增成熟依赖须先核对官方合同/许可、复用价值与维护/退出成本，不为了方便重搭总体栈或造新平台。用户允许必要增删及V1工程清理；先证明覆盖、迁消费者和代码/数据恢复基线，不静默丢独有用途/用户数据。允许仅本轮相关提交/推送/PR、现有审查/CI/分支保护成立后的合并与既有环境发布；不强推/绕保护、不擅改origin、不删除无关材料、不开公共默认付费档。\n本轮新增模型付费额度最多3元，沿原账本不清零；累计仍以现有5元上限为门，新增生图最多5次且每次1张、理解/复核合计最多2次；按实际当前账本更新相应累计次数上限并逐笔先预留。上述是最大许可而非必须花完：优先复用未受影响真链，失败路径本地替身，不用付费调试接线。真实调用前核实官方价格上界/最大输入参数、余额/预算、公开许可素材/hash和现有安全注入，失败/Unknown也占次数并保留可能计费预留，不自动重提。只用原有限模型/官方目标与获批凭据通道，不读取/导出GitHub Secrets明文、不要求用户贴key、不上传私有素材；预算/次数不足或费用无法界定即停相应调用并向用户申请。\n浏览器仅独立Chrome无头/隔离数据，不启动Edge或可见窗口、不抢桌面焦点、不发OS键鼠/Windows文件对话框、不改日常浏览器设置或清用户库。模拟验收不冒充独立真人；账户/服务器项目库、云同步、自主Agent/路由/降级/自动重试平台及无关功能不纳入。\n\n## Stop conditions\n最多10轮连贯实施批次加对应验证；一轮为明确消费者/不变量/实际改动与其必要运行证据，最终两轮完整离线回归计一个验收批次。每轮在原state/证据记录次数、交付范围、失败及下一动作，不以反复同命令洗绿绕计数。第10轮仍未交付时停止施工，保存成果/可恢复材料、报告具体阻塞并向用户申请继续；不得自行降低验收。\n无法由权威/代码/现有证据解开的产品歧义、需扩大预算/凭据/素材/部署信任/浏览器/保护权限、未经明确决策的不可逆用户数据操作或总体架构替换、无法建立必要间歇因果证明、缺真实能力而无获批补证通道时，及时向用户提出事实、已尝试路径及最小决策，不盲试/伪造/降级。只停止对应受限动作，继续其他已授权且依赖满足的工程；权限或前置确认后再继续。用户要求停止时仅做必要收尾、保存准确恢复点和释放资源。\nStatus: active\nTokens: 6404173 used",
+    "details": {
+      "op": "get",
+      "goal": {
+        "id": "159d03ed410f9ff9",
+        "objective": "## Objective\n在 amz-listing-kit 中沿用已实现资产与既有原生ESM/IndexedDB/Python栈，尽最大努力交付完整 Product V2 工程产品，并经现有受保护流程发布到既有可信HTTPS环境；本轮明确恢复施工，不停留在规划或局部MVP。将必要V1清理纳入本轮工程收口：先核对独有用途与共享消费者，在V2覆盖要求、正式消费者切换、精确代码/同版本数据恢复材料成立后删除旧运行路径，不以保留未经验证V1当可靠回退。\n维护复杂性的约束：该加的成熟能力加、该删的失效实现删；优先复用已有资产、成熟库及原协议，不重复造轮子。以唯一状态所有者、深Interface、变更局部性和低认知负担收口，不通过文件搬家、薄wrapper、兼容alias、双维护TS/JS、回调环、通用编排/重试平台或另一轮总体重构代替交付。\n\n## Success criteria\n1. 当前正式产品从空页面经合法参考图/商品资料完成纯人工与显式图文辅助任务：人工确认事实、用途与精确缺项、本地Prompt准备与摘要一次明确发送、partial比较、目标返工、保留或改选、人工采用、无需AI复核的实际交付ZIP及完整项目ZIP下载/导入/刷新；请求/原action/IDB版本/Blob/hash/原Prompt来源一致，返工不改变无关shot或自动改选，模型不自动确认事实。真实图文传原图片字节、提议合法且可追溯；高级人工文本不被自动覆盖。\n2. 有限模型选择与自己的key贯通理解、生图和单图/整套复核，配置/能力/参数/协议/凭据分开；默认付费档closed，BYOK仅当前标签页内存及HTTPS请求级，无持久化/包/日志/错误/诊断/公开DOM投影泄漏。旧task按原目标补key核对而不是切新模型或新submit。AI仅显式按需，not_run不伪造PASS或Unknown；确定性当前报告、硬检查、人工采用、字节与来源链始终为强制门。\n3. 原工程验收与详细设计结构六项准出全部有范围匹配直接证据：跨标签预约/OCC、原动作Unknown不自动重提、迟到结果保全及新动作阻断、停止仅停新增不假称取消、容量/候选失败恢复、生命周期隔离、两类ZIP单快照/交付围栏和无服务器业务持久化均成立。修正4_4两层失败、3_5/5_3失效判据、设置空证及发布自证/目标错配；已报告启动/重开间歇须有现象—机制对应和受控修复证明，不能连续绿/重试/加时/另一机制代替，不由代理接受发布风险。\n4. 用户授权模拟真人端到端验收：独立临时profile与隔离项目的Chrome无头，以实际页面点击、输入、上传、键盘、滚动、下载/导入/刷新操作验证完整任务，保留请求、IDB、ZIP字节、截图及实际读图结果；不种候选或直接调用内部函数替代用户路径，不用fake证明真图质量。原1440/1366、实际125%/200%浏览器缩放、390px关键可达与纯键盘仍覆盖。明确模拟性质，不冒充独立真人C17/C15；这两项真人验收继续单列未完成。\n5. 所有实际改变的Module和调用方严格类型/完整生成集合一致；适用完整离线命令两轮各项通过，必要判据无失败，SKIP只保留其范围、不作为缺少能力通过。原RC及本次V1工程清理适用项有直接证据；V1独有用途明确处理、共享依赖不误删、旧消费者/失效源码/配置/测试同包清除，删后回归与最终指纹成立，历史失败/账本/许可及用户原件保留。\n6. 当前候选提交的现有PR/CI、实际Docker构建与镜像origin页面、真实不同版本服务回退、可信HTTPS/静态资源/隔离页面主链、同origin数据恢复、完整源码/配置/镜像指纹和finalize均有可查证据；满足审查/分支保护后合并发布。previous及必要恢复材料留到全部必要验收结束，服务回退不冒充浏览器数据恢复。交付可运行成品、必要说明、恢复材料和准确限制；所有必要验收未成立不宣布产品完成。\n\n## Verification\n按当前权威计划/详细设计修订后的验收、实际CLI及config/product-v2/verification.json消费已有入口，不新建验证平台。连贯改动完成后只运行受影响消费者和实际路径，失败以证据定位并因果修复，不为确认用户已报告失败重跑。\n- 静态/领域：npm run check:types；修改TS时npm run build:frontend及npm run check:generated；npm run test:domain；uv run --locked python app/server.py --check。\n- 控制与恢复：uv run --locked python tools/check_docs.py --no-run；uv run --locked python tools/refactor_resume.py；更改正式任务/依赖/状态后按已有evals/probes/project_state.py反例核对。\n- 具体已知消费者：uv run --locked python tools/verify_v2_4_4_candidate_blob.py；tools/verify_v2_3_5_pre_generation_confirm.py；tools/verify_v2_5_3_compare_panel.py；tools/verify_v2_packet08_settings_vision.py及实际受影响adoption/delivery既有入口，均通过当前正式装配，捕获独立业务后置而非常量/source/mock回声。\n- 最终候选：对当前登记/CI与既有packet11离线清单中全部适用离线入口逐项串行两轮，命令按正式脚本及其CLI参数执行，证据标签含候选/入口/轮次不覆盖；不额外买两轮真实模型。\n- 真实页面：上述模拟真人动作，独立观测console/network/IDB、下载包内对象/Blob/hash与视觉/键盘/真实缩放，人工与辅助共用正式业务消费者；实际真实图像与参考图独立观察，不以HTTP/schema证明忠实度。\n- 现有受保护CI/部署：实际docker build/smoke；获批Linux运行uv run --locked python tools/release_transaction_probe.py --selftest，页面必须是被测镜像origin；发布/恢复在https://47.115.172.233:8080/用同probe --page-smoke --base及--fingerprint --runtime-root .验证，保留可信TLS，不忽略证书。最终矩阵逐项proven且范围匹配，无必要missing/indirect/contradicted。\n\n## Boundaries\n允许修改本轮实际受影响产品代码、Module/Interface、必要测试/验证器、配置/构建/现有CI发布脚本、依赖与权威文档/Goal文本/正式任务依赖和状态；必要新增成熟依赖须先核对官方合同/许可、复用价值与维护/退出成本，不为了方便重搭总体栈或造新平台。用户允许必要增删及V1工程清理；先证明覆盖、迁消费者和代码/数据恢复基线，不静默丢独有用途/用户数据。允许仅本轮相关提交/推送/PR、现有审查/CI/分支保护成立后的合并与既有环境发布；不强推/绕保护、不擅改origin、不删除无关材料、不开公共默认付费档。\n本轮新增模型付费额度最多3元，沿原账本不清零；累计仍以现有5元上限为门，新增生图最多5次且每次1张、理解/复核合计最多2次；按实际当前账本更新相应累计次数上限并逐笔先预留。上述是最大许可而非必须花完：优先复用未受影响真链，失败路径本地替身，不用付费调试接线。真实调用前核实官方价格上界/最大输入参数、余额/预算、公开许可素材/hash和现有安全注入，失败/Unknown也占次数并保留可能计费预留，不自动重提。只用原有限模型/官方目标与获批凭据通道，不读取/导出GitHub Secrets明文、不要求用户贴key、不上传私有素材；预算/次数不足或费用无法界定即停相应调用并向用户申请。\n浏览器仅独立Chrome无头/隔离数据，不启动Edge或可见窗口、不抢桌面焦点、不发OS键鼠/Windows文件对话框、不改日常浏览器设置或清用户库。模拟验收不冒充独立真人；账户/服务器项目库、云同步、自主Agent/路由/降级/自动重试平台及无关功能不纳入。\n\n## Stop conditions\n最多10轮连贯实施批次加对应验证；一轮为明确消费者/不变量/实际改动与其必要运行证据，最终两轮完整离线回归计一个验收批次。每轮在原state/证据记录次数、交付范围、失败及下一动作，不以反复同命令洗绿绕计数。第10轮仍未交付时停止施工，保存成果/可恢复材料、报告具体阻塞并向用户申请继续；不得自行降低验收。\n无法由权威/代码/现有证据解开的产品歧义、需扩大预算/凭据/素材/部署信任/浏览器/保护权限、未经明确决策的不可逆用户数据操作或总体架构替换、无法建立必要间歇因果证明、缺真实能力而无获批补证通道时，及时向用户提出事实、已尝试路径及最小决策，不盲试/伪造/降级。只停止对应受限动作，继续其他已授权且依赖满足的工程；权限或前置确认后再继续。用户要求停止时仅做必要收尾、保存准确恢复点和释放资源。",
+        "status": "active",
+        "tokensUsed": 6404173,
+        "timeUsedSeconds": 57321,
+        "createdAt": 1791384773892,
+        "updatedAt": 1791457445443
+      },
+      "remainingTokens": null,
+      "completionBudgetReport": null
+    }
+  },
+  "state_before_sha256": "2555cfcb00fac971d00a28963a79a87c5ca420c9556118ffc9b16853a0dd7e7e",
+  "state_before_backup": "amz-listing-kit/_stage-amz-control/audit-after-stop-20261008/state-before.md",
+  "publication_run": {
+    "conclusion": "success",
+    "createdAt": "2026-10-08T10:36:33Z",
+    "headSha": "0572b5c9c042502b77fb2a5e302f5775bbfd46fc",
+    "jobs": [
+      {
+        "completedAt": "2026-10-08T10:53:17Z",
+        "conclusion": "success",
+        "databaseId": 113269004736,
+        "name": "Control plane and Product V2",
+        "startedAt": "2026-10-08T10:36:36Z",
+        "status": "completed",
+        "steps": [
+          {
+            "completedAt": "2026-10-08T10:36:37Z",
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "startedAt": "2026-10-08T10:36:37Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-08T10:36:42Z",
+            "conclusion": "success",
+            "name": "Check out repository",
+            "number": 2,
+            "startedAt": "2026-10-08T10:36:37Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-08T10:36:42Z",
+            "conclusion": "success",
+            "name": "Set up Python",
+            "number": 3,
+            "startedAt": "2026-10-08T10:36:42Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-08T10:36:47Z",
+            "conclusion": "success",
+            "name": "Set up locked frontend tools",
+            "number": 4,
+            "startedAt": "2026-10-08T10:36:42Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-08T10:36:52Z",
+            "conclusion": "success",
+            "name": "Install approved frontend checker",
+            "number": 5,
+            "startedAt": "2026-10-08T10:36:47Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-08T10:43:18Z",
+            "conclusion": "success",
+            "name": "Install uv and locked dependencies",
+            "number": 6,
+            "startedAt": "2026-10-08T10:36:52Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-08T10:43:42Z",
+            "conclusion": "success",
+            "name": "Check control plane",
+            "number": 7,
+            "startedAt": "2026-10-08T10:43:18Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-08T10:43:50Z",
+            "conclusion": "success",
+            "name": "Check frontend versions types and direct behavior",
+            "number": 8,
+            "startedAt": "2026-10-08T10:43:42Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-08T10:53:13Z",
+            "conclusion": "success",
+            "name": "Check formal entry and browser contracts",
+            "number": 9,
+            "startedAt": "2026-10-08T10:43:50Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-08T10:53:13Z",
+            "conclusion": "success",
+            "name": "Reject verification side effects",
+            "number": 10,
+            "startedAt": "2026-10-08T10:53:13Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-08T10:53:14Z",
+            "conclusion": "success",
+            "name": "Post Set up locked frontend tools",
+            "number": 18,
+            "startedAt": "2026-10-08T10:53:13Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-08T10:53:14Z",
+            "conclusion": "success",
+            "name": "Post Set up Python",
+            "number": 19,
+            "startedAt": "2026-10-08T10:53:14Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-08T10:53:14Z",
+            "conclusion": "success",
+            "name": "Post Check out repository",
+            "number": 20,
+            "startedAt": "2026-10-08T10:53:14Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-08T10:53:14Z",
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 21,
+            "startedAt": "2026-10-08T10:53:14Z",
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/JusticeSc/listing-kit/actions/runs/37764592110/job/113269004736"
+      },
+      {
+        "completedAt": "2026-10-08T10:58:43Z",
+        "conclusion": "success",
+        "databaseId": 113275111577,
+        "name": "Docker image, smoke test, and main deploy",
+        "startedAt": "2026-10-08T10:53:19Z",
+        "status": "completed",
+        "steps": [
+          {
+            "completedAt": "2026-10-08T10:53:20Z",
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "startedAt": "2026-10-08T10:53:20Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-08T10:53:24Z",
+            "conclusion": "success",
+            "name": "Check out repository",
+            "number": 2,
+            "startedAt": "2026-10-08T10:53:20Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-08T10:53:24Z",
+            "conclusion": "success",
+            "name": "Set up release acceptance tooling",
+            "number": 3,
+            "startedAt": "2026-10-08T10:53:24Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-08T10:54:12Z",
+            "conclusion": "success",
+            "name": "Install locked acceptance dependencies",
+            "number": 4,
+            "startedAt": "2026-10-08T10:53:24Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-08T10:54:37Z",
+            "conclusion": "success",
+            "name": "Build immutable image",
+            "number": 5,
+            "startedAt": "2026-10-08T10:54:12Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-08T10:54:43Z",
+            "conclusion": "success",
+            "name": "Smoke-test container health",
+            "number": 6,
+            "startedAt": "2026-10-08T10:54:37Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-08T10:54:44Z",
+            "conclusion": "success",
+            "name": "Remove smoke container",
+            "number": 7,
+            "startedAt": "2026-10-08T10:54:43Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-08T10:56:11Z",
+            "conclusion": "success",
+            "name": "Release transaction selftest (real disposable containers)",
+            "number": 8,
+            "startedAt": "2026-10-08T10:54:44Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-08T10:56:12Z",
+            "conclusion": "success",
+            "name": "Release failure classes (real script, no containers)",
+            "number": 9,
+            "startedAt": "2026-10-08T10:56:11Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-08T10:56:16Z",
+            "conclusion": "success",
+            "name": "Prepare SSH",
+            "number": 10,
+            "startedAt": "2026-10-08T10:56:12Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-08T10:56:25Z",
+            "conclusion": "success",
+            "name": "Sync provider secrets to server env file",
+            "number": 11,
+            "startedAt": "2026-10-08T10:56:16Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-08T10:58:01Z",
+            "conclusion": "success",
+            "name": "Build on remote Docker and deploy (full release transaction)",
+            "number": 12,
+            "startedAt": "2026-10-08T10:56:25Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-08T10:58:24Z",
+            "conclusion": "success",
+            "name": "Release acceptance (static assets and page main chain)",
+            "number": 13,
+            "startedAt": "2026-10-08T10:58:01Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-08T10:58:36Z",
+            "conclusion": "success",
+            "name": "Verify runtime and configuration fingerprints before cleanup",
+            "number": 14,
+            "startedAt": "2026-10-08T10:58:24Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-08T10:58:40Z",
+            "conclusion": "success",
+            "name": "Finalize release (cleanup previous only after all acceptance)",
+            "number": 15,
+            "startedAt": "2026-10-08T10:58:36Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-08T10:58:41Z",
+            "conclusion": "success",
+            "name": "Upload release evidence",
+            "number": 16,
+            "startedAt": "2026-10-08T10:58:40Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-08T10:58:41Z",
+            "conclusion": "skipped",
+            "name": "Roll back to previous known working state",
+            "number": 17,
+            "startedAt": "2026-10-08T10:58:41Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-08T10:58:41Z",
+            "conclusion": "success",
+            "name": "Post Set up release acceptance tooling",
+            "number": 33,
+            "startedAt": "2026-10-08T10:58:41Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-08T10:58:41Z",
+            "conclusion": "success",
+            "name": "Post Check out repository",
+            "number": 34,
+            "startedAt": "2026-10-08T10:58:41Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-08T10:58:41Z",
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 35,
+            "startedAt": "2026-10-08T10:58:41Z",
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/JusticeSc/listing-kit/actions/runs/37764592110/job/113275111577"
+      }
+    ],
+    "status": "completed",
+    "updatedAt": "2026-10-08T10:58:44Z",
+    "url": "https://github.com/JusticeSc/listing-kit/actions/runs/37764592110"
+  },
+  "branch": {
+    "name": "main",
+    "commit": {
+      "sha": "0572b5c9c042502b77fb2a5e302f5775bbfd46fc",
+      "node_id": "C_kwDOUyayfdoAKDA1NzJiNWM5YzA0MjUwMmI3N2ZiMmE1ZTMwMmY1Nzc1YmJmZDQ2ZmM",
+      "commit": {
+        "author": {
+          "name": "JusticeSc",
+          "email": "102967154+JusticeSc@users.noreply.github.com",
+          "date": "2026-10-08T10:36:30Z"
+        },
+        "committer": {
+          "name": "GitHub",
+          "email": "noreply@github.com",
+          "date": "2026-10-08T10:36:30Z"
+        },
+        "message": "fix(v2): consumer ownership, HTTP framing, release proof and CI download-timeout hardening (#5)\n\nfix(v2): consumer ownership, HTTP framing and actual-origin release proof",
+        "tree": {
+          "sha": "d88f0ecbdbcfd768c984ad459f9cf4a4a46ad340",
+          "url": "https://api.github.com/repos/JusticeSc/listing-kit/git/trees/d88f0ecbdbcfd768c984ad459f9cf4a4a46ad340"
+        },
+        "url": "https://api.github.com/repos/JusticeSc/listing-kit/git/commits/0572b5c9c042502b77fb2a5e302f5775bbfd46fc",
+        "comment_count": 0,
+        "verification": {
+          "verified": true,
+          "reason": "valid",
+          "signature": "-----BEGIN PGP SIGNATURE-----\n\nwsFcBAABCAAQBQJqx3IuCRC1aQ7uu5UhlAAADXAQAFrQ0G+8O0EOCVseA7rnA81U\n+kl/w1+/gi/NDOggLxLmcr2SHAKjBJMGB4+ch1g7NO9pdMRYWzONNufaJCRytovd\nIM9iKSCqnopKTVZgkRG8Qt4pbvq2x075omqpYwb38Bc7sXayAKrUh0Be7gI0ITMz\nfkezwT+TEQuJs0x1SC03GDnTabPpwC9nfV7fJ9QbB+OmPjUdFXX/4ApMvtL4qp7a\ne4yMvtN8MeAzY/mxLtOnx9mNwyus6abkITaIJSICV6bPIjStc1ZHi3DiKbixIkhQ\nZ9GZE3fdoLhzdZN9fX2p0ow7WDg8VVmBZMDKq79TQSANPbqJ787g/lK5ykN/xOt7\nmATpyu5XBkqKsRdCeN9OBqW87a/+YK3RDg12zRuG/ZykH6BW9Ngkhte7TI8eOptl\nuHN9pz6UmD/SNgwkhges8abNHfTNI983aHuogL2ubFQjgdyAByya8LMa4QIG9OkC\nnonN+LZ5T1W6BXwYoJb0IpGnhEO216hu7SPHENQSeDgy9OxpSfgBEtk5b+YJro/b\nLllEOLKsQ5JNk8b2zxQ4AbfEpzj/uhgdyGqjd810dcjvcqox7Ap3eJP/r6X6E1GE\ngRhtGCxwI/egerRG5O0tAmJ0jIkdTfNq1ElmakSWgAt44y1U46JGQNKav5BJy7xv\nHronAFBn9v0+j0MawyT2\n=pXot\n-----END PGP SIGNATURE-----\n",
+          "payload": "tree d88f0ecbdbcfd768c984ad459f9cf4a4a46ad340\nparent 132884d3a50a1188896111385eaaf6edf46c36b8\nparent 9a461fb596299c8d89f508444b224c9ee24b3d65\nauthor JusticeSc <102967154+JusticeSc@users.noreply.github.com> 1791455790 +0800\ncommitter GitHub <noreply@github.com> 1791455790 +0800\n\nfix(v2): consumer ownership, HTTP framing, release proof and CI download-timeout hardening (#5)\n\nfix(v2): consumer ownership, HTTP framing and actual-origin release proof",
+          "verified_at": "2026-10-08T10:36:30Z"
+        }
+      },
+      "url": "https://api.github.com/repos/JusticeSc/listing-kit/commits/0572b5c9c042502b77fb2a5e302f5775bbfd46fc",
+      "html_url": "https://github.com/JusticeSc/listing-kit/commit/0572b5c9c042502b77fb2a5e302f5775bbfd46fc",
+      "comments_url": "https://api.github.com/repos/JusticeSc/listing-kit/commits/0572b5c9c042502b77fb2a5e302f5775bbfd46fc/comments",
+      "author": {
+        "login": "JusticeSc",
+        "id": 102967154,
+        "node_id": "U_kgDOBiMncg",
+        "avatar_url": "https://avatars.githubusercontent.com/u/102967154?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/JusticeSc",
+        "html_url": "https://github.com/JusticeSc",
+        "followers_url": "https://api.github.com/users/JusticeSc/followers",
+        "following_url": "https://api.github.com/users/JusticeSc/following{/other_user}",
+        "gists_url": "https://api.github.com/users/JusticeSc/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/JusticeSc/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/JusticeSc/subscriptions",
+        "organizations_url": "https://api.github.com/users/JusticeSc/orgs",
+        "repos_url": "https://api.github.com/users/JusticeSc/repos",
+        "events_url": "https://api.github.com/users/JusticeSc/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/JusticeSc/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "committer": {
+        "login": "web-flow",
+        "id": 19864447,
+        "node_id": "MDQ6VXNlcjE5ODY0NDQ3",
+        "avatar_url": "https://avatars.githubusercontent.com/u/19864447?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/web-flow",
+        "html_url": "https://github.com/web-flow",
+        "followers_url": "https://api.github.com/users/web-flow/followers",
+        "following_url": "https://api.github.com/users/web-flow/following{/other_user}",
+        "gists_url": "https://api.github.com/users/web-flow/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/web-flow/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/web-flow/subscriptions",
+        "organizations_url": "https://api.github.com/users/web-flow/orgs",
+        "repos_url": "https://api.github.com/users/web-flow/repos",
+        "events_url": "https://api.github.com/users/web-flow/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/web-flow/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "parents": [
+        {
+          "sha": "132884d3a50a1188896111385eaaf6edf46c36b8",
+          "url": "https://api.github.com/repos/JusticeSc/listing-kit/commits/132884d3a50a1188896111385eaaf6edf46c36b8",
+          "html_url": "https://github.com/JusticeSc/listing-kit/commit/132884d3a50a1188896111385eaaf6edf46c36b8"
+        },
+        {
+          "sha": "9a461fb596299c8d89f508444b224c9ee24b3d65",
+          "url": "https://api.github.com/repos/JusticeSc/listing-kit/commits/9a461fb596299c8d89f508444b224c9ee24b3d65",
+          "html_url": "https://github.com/JusticeSc/listing-kit/commit/9a461fb596299c8d89f508444b224c9ee24b3d65"
+        }
+      ]
+    },
+    "_links": {
+      "self": "https://api.github.com/repos/JusticeSc/listing-kit/branches/main",
+      "html": "https://github.com/JusticeSc/listing-kit/tree/main"
+    },
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "enforcement_level": "off",
+        "contexts": [],
+        "checks": []
+      }
+    },
+    "protection_url": "https://api.github.com/repos/JusticeSc/listing-kit/branches/main/protection"
+  },
+  "rules": [],
+  "pr": {
+    "baseRefName": "main",
+    "headRefName": "feat/asset-continuation-20261008",
+    "headRefOid": "9a461fb596299c8d89f508444b224c9ee24b3d65",
+    "mergeCommit": {
+      "oid": "0572b5c9c042502b77fb2a5e302f5775bbfd46fc"
+    },
+    "mergedAt": "2026-10-08T10:36:30Z",
+    "number": 5,
+    "reviewDecision": "",
+    "reviews": [],
+    "state": "MERGED",
+    "url": "https://github.com/JusticeSc/listing-kit/pull/5"
+  },
+  "runtime_file_count": 85,
+  "batch_audit": {
+    "historical_conservative_used": 8,
+    "post_baseline_slices": [
+      {
+        "commit": "986a6df",
+        "consumer": "release probe",
+        "invariant": "real export-node/dead-port/reopen branch mechanisms"
+      },
+      {
+        "commit": "300c1c4",
+        "consumer": "batch verifier",
+        "invariant": "same-sample state and completed progress"
+      },
+      {
+        "commits": [
+          "639661c",
+          "9a461fb"
+        ],
+        "consumer": "CI and Docker dependency downloads",
+        "invariant": "one infrastructure class in both hosts"
+      },
+      {
+        "commit": "15faa65",
+        "consumer": "V1 cutover",
+        "invariant": "partial deletion/entry/guard changes; stopped unfinished"
+      }
+    ],
+    "conservative_total": 12,
+    "unique_exact_historical_count": false,
+    "conclusion": "Original 10-batch allowance cannot be treated as having remaining quota; explicit user continuation/limit decision required. Read-only audit does not consume implementation batches."
+  },
+  "baseline": {
+    "git_commit": "15faa65",
+    "zip_blob": "_stage-amz-control/v1-sunset-20261008T100045Z/data/representative-project.zip",
+    "zip_sha256": "4007b9b1a3b2f14c1fa4e851bdc1ab52ebc690fc02d4556f65b81a1ff4e3ff39",
+    "manifest_sha256": "a626968275f408a02aae77801a58956c5be4cd2dbb755c4b515be2e60d7a7a90",
+    "main_path_present": false,
+    "scope": "Immutable Git blob hash verified, no fresh import or full data recovery claim."
+  },
+  "state_after_sha256": "55a8faa9fbd88352c38a494e8d32d99e047d70438d92fdf8ce7c75cd77680eb9",
+  "goal_objective_sha256": "bac1155dbef21876391328dafd50a5624dee8461388754021a31aa59ff1c6fc6",
+  "verification": {
+    "formal_entry": {
+      "command": "uv run --locked python app/server.py --check",
+      "rc": 0,
+      "passed": 52,
+      "scope": "formal local gateway/HTTP contracts with explicit doubles, no paid models"
+    },
+    "corrected_stop_record": {
+      "commands": [
+        "uv run --locked python tools/check_docs.py --no-run",
+        "uv run --locked python evals/probes/project_state.py",
+        "uv run --locked python tools/refactor_resume.py"
+      ],
+      "rc": 0,
+      "probe_scenarios": 64,
+      "resume_phases": 8,
+      "resume_tasks": 27,
+      "next": "V2.R5.1",
+      "next_status": "blocked",
+      "product_goal_status": "active",
+      "scope": "Only execution record changed; authoritative plan/Goal and product source unchanged"
+    },
+    "not_exercised": [
+      "parked WIP failure rerun",
+      "RC19 repeated diagnostic",
+      "final two-round regression",
+      "paid models",
+      "production data writes or rollback"
+    ]
+  },
+  "observation_finished_at": "2026-10-08T11:12:38.528Z",
+  "independent_reviews": {
+    "standards": {
+      "text": "{\n  \"overall_correctness\": \"incorrect\",\n  \"confidence\": 0.9,\n  \"explanation\": \"审计范围事实核验通过：diff 126=114删+3改+9新增；114 删全部在 tracked-manifest.tsv 且与 8a9e3bd 逐文件 sha 一致（manifest 全 3282 行与树 0 不符）；representative-project.zip 2417036B/sha4007b9b1（62成员：55文档+6资产+manifest，与 main 已跟踪 asset-continuation 的 manual-project.zip 同 sha，重载荷在 main 可复原）；import-check-png sha86196277 与 baseline 一致；head=8a9e3bd 是 main 祖先；无代码悬挂（AST 扫 133 个 py：引向被删集的 import=0；.github/verification.json/package/jsconfig/deploy/v2_server 均 0 引用；check_verification 按 verify_v2* 盘点、注册表无幽灵项）。已披露未完项（非发现）：README.md:229-237 与 AGENTS.md:60 仍教 --legacy-v1/regress_product_v1/--offline-fixture；docs/product-v2-project-context.md:66/84/111/197-198、design §9.1:233「不执行V1日落」、pyproject.toml:8+uv.lock+context:146 jsonschema 未重登（唯一 importer 是已删的 product_v1_contracts/semantic_drafts，删除…\n  \"findings\": [\n    {\n      \"title\": \"接线 superseded 降级：_evidence_ok 新参数无任何调用点传入\",\n      \"body\": \"硬规范（守卫/探针/CI 合同）。tools/check_project_state.py:241-242 给 _evidence_ok 增加 superseded: bool = False 与 249-256 降级分支，但唯一两个调用点 467、497（_check_v2）都未传该参数，全库没有任何 superseded=True。结果：该参数与分支是死代码，而唯一需要降级的记录 _working/amz-listing-kit-product-demo/state.md（state_schema v2、status superseded、15 个 done 任务）仍按原判据报 30 条 [J6] … 指向不存在的文件（按守卫语义静态复算；交接文档写 10 条，实为 30）。消费者同红：tools/check_project_state.py rc=1；evals/probes/project_state.py 的 A 基线期望 rc=0/tags=∅，把 10 组反向对照全部污染；CI verify job 同时跑两者（.github/workflows/ci-cd.yml:60-61）。这是 WIP 无法变绿的主因。最小改法：两个调用点补上 superseded=(d.get(\\\"status\\\") == \\\"superseded\\\")，再按计划重跑守卫与探针。\",\n      \"priority\": 1,\n      \"confidence\": 0.95,\n      \"file_path\": \"tools/check_project_state.py\",\n      \"line_start\": 241,\n      \"line_end\": 242\n    },\n    {\n      \"title\": \"历史降级过宽且 note 断言未经核对的删除成因\",\n      \"body\": \"possible smell。三处新降级（249-256、710-720、750-759）对 superseded 记录里任何 _exists 为假的门/任务证据一律降为 note，且 note 文案断言「指向 R7.3 已删除的路径」——代码从不核对路径是否曾入库、是否由 R7.3 删除。任何拼写错误、从未提交的路径或他因删除都会被静默改写成「R7.3 已删除」，J5/J6「证据文件真实存在」的不变量对 superseded 记录整体豁免且无边界；历史指针漂移将只留一条措辞失真的 note，而非可发现的红。今日该风险落在 legacy 两处（product-v1 记录当前恰好 0 失效，属未触发），v2 处修好接线后同样生效。最小改法：降级仅限能在删前基线里找到的路径（如用 _stage-amz-control/v1-sunset-20261008T100045Z/baseline.json 的 head=8a9e3bd 做 git cat-file -e 逐条核对），否则维持 problem；至少把成因断言从 note 里去掉（只报「不存在」）。\",\n      \"priority\": 2,\n      \"confidence\": 0.6,\n      \"file_path\": \"tools/check_project_state.py\",\n      \"line_start\": 249,\n      \"line_end\": 256\n    },\n    {\n      \"title\": \"停机提交把整个未跟踪快照目录纳入 WIP，交接文档与事实相反\",\n      \"body\": \"硬规范（AGENTS.md:104-105：证据提升只许 git add -f -- <精确路径>，禁止 git add -A 或整目录强制纳入）。事实：15faa65 的 9 个新增文件即两个此前未跟踪的整个目录——v1-sunset-20261008T100045Z/（8 文件：baseline.json、head.txt、tracked-manifest.{tsv,sha256}、untracked_count.txt、data/representative-project.zip 2.4MB、.sha256、import-check png）与 audit-stop-state-20261008/state-before.md；因此「快照入 WIP」为真，handoff §1「仅两个未跟踪快照目录」为假；main 上这两条路径不存在（checkout 移除了 WIP 独有文件，实测磁盘无此目录）。分支 feat/v1-sunset-20261008 upstream=origin/main ahead 1、未推送，恢复材料只在本地；若停机确用 git add -A，则直接违反上述禁令，即使不是整目录收录也超出「精确路径」口径。附带：state-before.md 实测等于 state.md@132884d（main 祖先），是冗余副本；重载荷可通过 main 已跟踪的 asset-continuation manual-project.zip 复原。最小改法：恢复材料如需长期保存，按逐文件精确路径纳入并同步 handoff 的路径可达性说明；不要以目录级 add 收尾。\",\n      \"priority\": 2,\n      \"confidence\": 0.6,\n      \"file_path\": \"_stage-amz-control/v1-sunset-20261008T100045Z/head.txt\",\n      \"line_start\": 1,\n      \"line_end\": 1\n    }\n  ]\n}\n\n[Some lines truncated to 768 chars]",
+      "details": {
+        "totalLines": 34,
+        "displayContent": {
+          "text": "{\n  \"overall_correctness\": \"incorrect\",\n  \"confidence\": 0.9,\n  \"explanation\": \"审计范围事实核验通过：diff 126=114删+3改+9新增；114 删全部在 tracked-manifest.tsv 且与 8a9e3bd 逐文件 sha 一致（manifest 全 3282 行与树 0 不符）；representative-project.zip 2417036B/sha4007b9b1（62成员：55文档+6资产+manifest，与 main 已跟踪 asset-continuation 的 manual-project.zip 同 sha，重载荷在 main 可复原）；import-check-png sha86196277 与 baseline 一致；head=8a9e3bd 是 main 祖先；无代码悬挂（AST 扫 133 个 py：引向被删集的 import=0；.github/verification.json/package/jsconfig/deploy/v2_server 均 0 引用；check_verification 按 verify_v2* 盘点、注册表无幽灵项）。已披露未完项（非发现）：README.md:229-237 与 AGENTS.md:60 仍教 --legacy-v1/regress_product_v1/--offline-fixture；docs/product-v2-project-context.md:66/84/111/197-198、design §9.1:233「不执行V1日落」、pyproject.toml:8+uv.lock+context:146 jsonschema 未重登（唯一 importer 是已删的 product_v1_contracts/semantic_drafts，删除…\n  \"findings\": [\n    {\n      \"title\": \"接线 superseded 降级：_evidence_ok 新参数无任何调用点传入\",\n      \"body\": \"硬规范（守卫/探针/CI 合同）。tools/check_project_state.py:241-242 给 _evidence_ok 增加 superseded: bool = False 与 249-256 降级分支，但唯一两个调用点 467、497（_check_v2）都未传该参数，全库没有任何 superseded=True。结果：该参数与分支是死代码，而唯一需要降级的记录 _working/amz-listing-kit-product-demo/state.md（state_schema v2、status superseded、15 个 done 任务）仍按原判据报 30 条 [J6] … 指向不存在的文件（按守卫语义静态复算；交接文档写 10 条，实为 30）。消费者同红：tools/check_project_state.py rc=1；evals/probes/project_state.py 的 A 基线期望 rc=0/tags=∅，把 10 组反向对照全部污染；CI verify job 同时跑两者（.github/workflows/ci-cd.yml:60-61）。这是 WIP 无法变绿的主因。最小改法：两个调用点补上 superseded=(d.get(\\\"status\\\") == \\\"superseded\\\")，再按计划重跑守卫与探针。\",\n      \"priority\": 1,\n      \"confidence\": 0.95,\n      \"file_path\": \"tools/check_project_state.py\",\n      \"line_start\": 241,\n      \"line_end\": 242\n    },\n    {\n      \"title\": \"历史降级过宽且 note 断言未经核对的删除成因\",\n      \"body\": \"possible smell。三处新降级（249-256、710-720、750-759）对 superseded 记录里任何 _exists 为假的门/任务证据一律降为 note，且 note 文案断言「指向 R7.3 已删除的路径」——代码从不核对路径是否曾入库、是否由 R7.3 删除。任何拼写错误、从未提交的路径或他因删除都会被静默改写成「R7.3 已删除」，J5/J6「证据文件真实存在」的不变量对 superseded 记录整体豁免且无边界；历史指针漂移将只留一条措辞失真的 note，而非可发现的红。今日该风险落在 legacy 两处（product-v1 记录当前恰好 0 失效，属未触发），v2 处修好接线后同样生效。最小改法：降级仅限能在删前基线里找到的路径（如用 _stage-amz-control/v1-sunset-20261008T100045Z/baseline.json 的 head=8a9e3bd 做 git cat-file -e 逐条核对），否则维持 problem；至少把成因断言从 note 里去掉（只报「不存在」）。\",\n      \"priority\": 2,\n      \"confidence\": 0.6,\n      \"file_path\": \"tools/check_project_state.py\",\n      \"line_start\": 249,\n      \"line_end\": 256\n    },\n    {\n      \"title\": \"停机提交把整个未跟踪快照目录纳入 WIP，交接文档与事实相反\",\n      \"body\": \"硬规范（AGENTS.md:104-105：证据提升只许 git add -f -- <精确路径>，禁止 git add -A 或整目录强制纳入）。事实：15faa65 的 9 个新增文件即两个此前未跟踪的整个目录——v1-sunset-20261008T100045Z/（8 文件：baseline.json、head.txt、tracked-manifest.{tsv,sha256}、untracked_count.txt、data/representative-project.zip 2.4MB、.sha256、import-check png）与 audit-stop-state-20261008/state-before.md；因此「快照入 WIP」为真，handoff §1「仅两个未跟踪快照目录」为假；main 上这两条路径不存在（checkout 移除了 WIP 独有文件，实测磁盘无此目录）。分支 feat/v1-sunset-20261008 upstream=origin/main ahead 1、未推送，恢复材料只在本地；若停机确用 git add -A，则直接违反上述禁令，即使不是整目录收录也超出「精确路径」口径。附带：state-before.md 实测等于 state.md@132884d（main 祖先），是冗余副本；重载荷可通过 main 已跟踪的 asset-continuation manual-project.zip 复原。最小改法：恢复材料如需长期保存，按逐文件精确路径纳入并同步 handoff 的路径可达性说明；不要以目录级 add 收尾。\",\n      \"priority\": 2,\n      \"confidence\": 0.6,\n      \"file_path\": \"_stage-amz-control/v1-sunset-20261008T100045Z/head.txt\",\n      \"line_start\": 1,\n      \"line_end\": 1\n    }\n  ]\n}",
+          "startLine": 1,
+          "lineNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+            24,
+            25,
+            26,
+            27,
+            28,
+            29,
+            30,
+            31,
+            32,
+            33,
+            34
+          ]
+        },
+        "fileSize": 6994,
+        "meta": {
+          "source": {
+            "type": "internal",
+            "value": "agent://StandardsCleanupAudit"
+          },
+          "limits": {
+            "columnTruncated": {
+              "maxColumn": 768,
+              "unit": "chars"
+            }
+          }
+        },
+        "resolvedPath": "C:\\Users\\31368\\.omp\\agent\\sessions\\--E--workbuddy_workspace-2026-09-20-16-38-19--\\2026-10-07T12-55-14-903Z_01a1166e-aed7-72cc-80e1-ef346d5c5cd3\\StandardsCleanupAudit.md",
+        "contentType": "text/markdown"
+      }
+    },
+    "spec": {
+      "text": "{\n  \"overall_correctness\": \"incorrect\",\n  \"explanation\": \"裁决：main@0572b5c 的工程机制与发布链已大幅收敛（CI/部署/真实镜像自检/指纹/finalize 全绿，线上壳字节与工件一致），但按 Goal 与 plan r13 尚不能宣布 Goal 完成：R7.3 V1 日落、RC19、最终两轮/冻结指纹、审查/分支保护子句、10 轮上限五项未闭合；SC2 因新发现的无泄漏断言范围缺口（F7：同长度哨兵+只比长度、ZIP 未解压直扫、缺 localStorage/交付ZIP/服务端日志、IDB Blob 占位；测试范围不足而非产品泄漏）由 proven 下调为 partial，其余 SC1/SC3/SC4/SC5/SC6 亦为 partial。已修、无需重复的旧问题：HTTP 未读正文复用（server --check 52/52 + http.json 356→0）、145 文件镜像混入 V1（部署指纹 85 文件 V2-only）、ST-LIVE 目标错配（served_base 真实容器 origin + ST-DATA/ST-RECOVERY）、报告反向依赖/setter（grep 无残留，readIntent 仅注释）、4_2 -07 缺陷修（catch TimeoutError + DOM+IDB 双证才算接受；注意此为验证器侧接受规则，Linux CI 绿只是普通绿灯，非受控时序因果，RC19/§7.6 仍缺）、packet08 三个空证与设置草稿缺陷、3_5/5_3/4_4/4_3 结转红、CI 下载超时同类两处、端口 TOCTOU/代理掩盖/4_2 陈旧 base、jsconfig input-view 登记。完整报告（含六项 proof-map、path:line、BYOK 范围结论、辅助任务 miss…\n  \"confidence\": 0.85,\n  \"findings\": [\n    {\n      \"title\": \"Goal 六项 success criteria 证据覆盖图（proven/partial/missing）\",\n      \"body\": \"SC1 partial：空页面人工全链已证（asset-continuation-20261008-manual.json：事实确认→推荐4张→一次确认→逐张采用→定向返工→原生报告写失败保全→明确采用恢复→无AI两包下载/导入/同origin重启逐条恢复；fake上游，IDB/ZIP/hash独立核对）；真实链分列成立（dashscope run5/volcengine 3次、volc adopt/export 2026-10-03、qwen-vl真实看图1次2026-10-05原字节2,239,735B+完整sha、12提议未确认）；缺：单条显式图文辅助任务端到端到两包+原生导出。SC2 partial：三用途/单图整套复核主路径已证（packet08 P08-02*/P08-04*、adoption/delivery AI、main CI绿），但无泄漏断言范围不足（F7）。SC3 partial：结构操作项在main CI有范围匹配绿；RC19未闭（F2）。SC4 partial：模拟走查+1440/1366/390、真实缩放125%/200%、纯键盘已证；辅助分支走查缺；不冒充C15/C17。SC5 partial：types/generated/CI绿；两轮p11close2早于0572b5c后续改动；V1清理未做、删后两轮+最终指纹缺。SC6 partial：main run 37764592110全步骤success、image ce90236c、指纹85文件/44f2e9b9、default_trial closed、HTTPS page-smoke+finalize+工件；selftest真实两image/markerA-B/容器origin页面/同origin跨…\n      \"priority\": 2,\n      \"confidence\": 0.95,\n      \"file_path\": \"amz-listing-kit/docs/product-v2-refactor-plan.md\",\n      \"line_start\": 40,\n      \"line_end\": 46\n    },\n    {\n      \"title\": \"R7.3 V1日落未完成：main仍含V1活路径，最终两轮/指纹前置未成立\",\n      \"body\": \"Goal Objective与§6/§16.1（V1工程清理=本轮授权，删后验收适用）要求删除V1活路径；main 0572b5c仍存在 app/product_v1_server.py、app/product_v1/、app/static/、app/offline*.py、app/views.py、config/product-v1/；WIP 15faa65（仅本地、不可合并）已删114文件但六项收尾未做（check_project_state J6红、文档/INDEX/依赖登记未同步、删后数据往返与报告未做）。design:233『不执行V1日落』是旧文，与plan r13冲突须对齐；§12历史行（如646）不覆盖后续修订。主代理不能自行宣布run.py/web出范围：pre-V1管线被活控制面check_docs引用，只能记录为待用户决策残留。最小路径：完成WIP收尾（superseded降级调用、文档、.dockerignore/Dockerfile注释、pyproject去jsonschema+lock、删后_probe_r73_data_recovery+server --check/check_docs/check_project_state）或用户明确范围决定；no paid/debug。\",\n      \"priority\": 1,\n      \"confidence\": 0.9,\n      \"file_path\": \"amz-listing-kit/docs/product-v2-refactor-plan.md\",\n      \"line_start\": 502,\n      \"line_end\": 508\n    },\n    {\n      \"title\": \"RC19未闭合：间歇缺现象—机制对应，诊断明确未成立因果\",\n      \"body\": \"asset-continuation-20261008-rc19.json:5-11结论：600次/34800请求、464740网络事件无-102/10061，『does not establish causal mechanism or close RC19』；§7.6要求机制—现象对应，连续绿/另一机制/重试不可关闭；state unknowns仍保留load-stall、vision-ui-transient-startup-disabled、4_4 -05家族。4_2 -07缺陷修在main代码可读（catch TimeoutError+仅当DOM与独立IDB同一action/task成功才接受），但那是验证器侧接受规则+普通绿灯，不是受控时序因果；启动/重开根因未定。最小路径：新假设下受控复现并记录最早失效层+消费者前后后置，或如实保留未知不宣布完成；no paid/debug。\",\n      \"priority\": 1,\n      \"confidence\": 0.9,\n      \"file_path\": \"amz-listing-kit/evals/product-v2/refactor/asset-continuation-20261008-rc19.json\",\n      \"line_start\": 5,\n      \"line_end\": 11\n    },\n    {\n      \"title\": \"最终两轮与最终源码/镜像指纹未在冻结候选上成立\",\n      \"body\": \"R7.1 pending；最后两轮证据p11close2（44条×2、同信号指纹f971df6a）早于0572b5c及其后续合并内容；f971df6a是命令/退出码/结果信号hash（tools/verify_v2_7_1_regression.py:104-107），不是源码/产物hash；main run指纹44f2e9b9是当前发布的运行指纹，但§R7.1/§R7.4要求最后消费者/V1修改后冻结同候选两轮并分别登记信号与代码/镜像指纹。最小路径：R7.3收尾后冻结候选→verify_v2_7_1_regression.py --rounds 2→两轮指纹与镜像/运行指纹分列；no paid/debug。\",\n      \"priority\": 1,\n      \"confidence\": 0.9,\n      \"file_path\": \"amz-listing-kit/docs/product-v2-refactor-plan.md\",\n      \"line_start\": 486,\n      \"line_end\": 491\n    },\n    {\n      \"title\": \"合并未满足现有审查/分支保护子句，SC6该子句无证据\",\n      \"body\": \"§16.1发布合并行（plan:1043）：『须满足现有审查/分支保护，不绕过、不强推。不能满足则保留具体外部门』；新鲜事实：main protected:false、protection.enabled:false、required checks空、rules=[]、PR#5 reviews=[]、reviewDecision空、mergedAt10:36:30Z。已合并的依据是用户当轮『绿了就合并发布』（停工交接§2.1），但该授权变更未在计划/state登记；SC6『满足审查/分支保护后合并发布』不能标proven。最小路径：对后续R7.4候选启用保护并取得独立审查，或在计划/state记录用户明确豁免；no code/no paid。\",\n      \"priority\": 1,\n      \"confidence\": 0.85,\n      \"file_path\": \"amz-listing-kit/docs/product-v2-refactor-plan.md\",\n      \"line_start\": 1043,\n      \"line_end\": 1043\n    },\n    {\n      \"title\": \"10轮上限按保守口径已到达；恢复需用户扩轮/重核，state未同步停止与发布事实\",\n      \"body\": \"§2.1 Stop conditions（plan:63-64）：最多10轮，第10轮仍未交付须停止施工、保存材料并向用户申请继续，不得自行降验收。state记8/10后，ef8cda1..15faa65另有986a6df（发布probe三机制）、300c1c4（取样竞态）、639661c/9a461fb（下载超时同类）、15faa65（清理WIP）四个独立消费者段→保守8+4=12≥10（即使probe+取样合一仍≥10）。仓库state（updated10:20:30Z）仍为next=R5.1、『未发布新版本』，未记录PR#5合并/main发布/停工（交接在repo外）。最小路径：用户扩轮或明确重核后再恢复；恢复先同步state；no paid/debug。\",\n      \"priority\": 1,\n      \"confidence\": 0.85,\n      \"file_path\": \"amz-listing-kit/docs/product-v2-refactor-plan.md\",\n      \"line_start\": 63,\n      \"line_end\": 64\n    },\n    {\n      \"title\": \"显式图文辅助任务无端到端到两包的证据\",\n      \"body\": \"10-08 manual.json明确未点击理解/单图AI/整套AI按钮，只用四类Fake；10-05真实看图只有理解（12提议未确认）且未原生导出（generation-module-20261005-formal.md:73『不能把这一成功宣称为完整图文辅助任务』）；state unknown full_assisted_task pending。SC1要求纯人工与显式图文辅助两条都完成。最小路径：冻结候选上按同一模拟走查运行辅助分支（fake-vision证流程；真能力按§15.6.2复用判定），捕获请求/IDB/ZIP/截图；若判定需真能力补证再走预算门；本轮no paid。\",\n      \"priority\": 2,\n      \"confidence\": 0.85,\n      \"file_path\": \"amz-listing-kit/evals/product-v2/refactor/generation-module-20261005-formal.md\",\n      \"line_start\": 72,\n      \"line_end\": 75\n    },\n    {\n      \"title\": \"P08-02f无泄漏断言范围不足：同长度哨兵只比长度、ZIP未解压、缺表面\",\n      \"body\": \"tools/verify_v2_packet08_settings_vision.py:61-65三用途SENTINELS同长度；:524-530出站头对-key-只保留<len:N>；:672-677/:717-722/:741-746/:761-766只比较长度→用途间key交换仍会通过，不能证明『本次该用途原key精确值』。:791把project_zip_bytes按utf-8 decode直扫压缩ZIP（未解压成员）；haystacks无localStorage/交付ZIP/服务端日志；IDB_DUMP:148-150把Blob换成<blob:N>占位。结论：P08-02f非全表面无泄漏完整证明（测试范围不足，非产品实际泄漏）；正式真实输入/真实图缺key/旧schema上传确已修，不全否定。最小路径：不同长度+不同前缀哨兵、按用途断言精确头值、解压成员扫描、补localStorage/交付ZIP/服务端日志面、Blob读字节——仅在恢复施工时改该验证器；no paid/debug。\",\n      \"priority\": 2,\n      \"confidence\": 0.9,\n      \"file_path\": \"amz-listing-kit/tools/verify_v2_packet08_settings_vision.py\",\n      \"line_start\": 524,\n      \"line_end\": 530\n    }\n  ]\n}\n\n[Some lines truncated to 768 chars]",
+      "details": {
+        "totalLines": 79,
+        "displayContent": {
+          "text": "{\n  \"overall_correctness\": \"incorrect\",\n  \"explanation\": \"裁决：main@0572b5c 的工程机制与发布链已大幅收敛（CI/部署/真实镜像自检/指纹/finalize 全绿，线上壳字节与工件一致），但按 Goal 与 plan r13 尚不能宣布 Goal 完成：R7.3 V1 日落、RC19、最终两轮/冻结指纹、审查/分支保护子句、10 轮上限五项未闭合；SC2 因新发现的无泄漏断言范围缺口（F7：同长度哨兵+只比长度、ZIP 未解压直扫、缺 localStorage/交付ZIP/服务端日志、IDB Blob 占位；测试范围不足而非产品泄漏）由 proven 下调为 partial，其余 SC1/SC3/SC4/SC5/SC6 亦为 partial。已修、无需重复的旧问题：HTTP 未读正文复用（server --check 52/52 + http.json 356→0）、145 文件镜像混入 V1（部署指纹 85 文件 V2-only）、ST-LIVE 目标错配（served_base 真实容器 origin + ST-DATA/ST-RECOVERY）、报告反向依赖/setter（grep 无残留，readIntent 仅注释）、4_2 -07 缺陷修（catch TimeoutError + DOM+IDB 双证才算接受；注意此为验证器侧接受规则，Linux CI 绿只是普通绿灯，非受控时序因果，RC19/§7.6 仍缺）、packet08 三个空证与设置草稿缺陷、3_5/5_3/4_4/4_3 结转红、CI 下载超时同类两处、端口 TOCTOU/代理掩盖/4_2 陈旧 base、jsconfig input-view 登记。完整报告（含六项 proof-map、path:line、BYOK 范围结论、辅助任务 miss…\n  \"confidence\": 0.85,\n  \"findings\": [\n    {\n      \"title\": \"Goal 六项 success criteria 证据覆盖图（proven/partial/missing）\",\n      \"body\": \"SC1 partial：空页面人工全链已证（asset-continuation-20261008-manual.json：事实确认→推荐4张→一次确认→逐张采用→定向返工→原生报告写失败保全→明确采用恢复→无AI两包下载/导入/同origin重启逐条恢复；fake上游，IDB/ZIP/hash独立核对）；真实链分列成立（dashscope run5/volcengine 3次、volc adopt/export 2026-10-03、qwen-vl真实看图1次2026-10-05原字节2,239,735B+完整sha、12提议未确认）；缺：单条显式图文辅助任务端到端到两包+原生导出。SC2 partial：三用途/单图整套复核主路径已证（packet08 P08-02*/P08-04*、adoption/delivery AI、main CI绿），但无泄漏断言范围不足（F7）。SC3 partial：结构操作项在main CI有范围匹配绿；RC19未闭（F2）。SC4 partial：模拟走查+1440/1366/390、真实缩放125%/200%、纯键盘已证；辅助分支走查缺；不冒充C15/C17。SC5 partial：types/generated/CI绿；两轮p11close2早于0572b5c后续改动；V1清理未做、删后两轮+最终指纹缺。SC6 partial：main run 37764592110全步骤success、image ce90236c、指纹85文件/44f2e9b9、default_trial closed、HTTPS page-smoke+finalize+工件；selftest真实两image/markerA-B/容器origin页面/同origin跨…\n      \"priority\": 2,\n      \"confidence\": 0.95,\n      \"file_path\": \"amz-listing-kit/docs/product-v2-refactor-plan.md\",\n      \"line_start\": 40,\n      \"line_end\": 46\n    },\n    {\n      \"title\": \"R7.3 V1日落未完成：main仍含V1活路径，最终两轮/指纹前置未成立\",\n      \"body\": \"Goal Objective与§6/§16.1（V1工程清理=本轮授权，删后验收适用）要求删除V1活路径；main 0572b5c仍存在 app/product_v1_server.py、app/product_v1/、app/static/、app/offline*.py、app/views.py、config/product-v1/；WIP 15faa65（仅本地、不可合并）已删114文件但六项收尾未做（check_project_state J6红、文档/INDEX/依赖登记未同步、删后数据往返与报告未做）。design:233『不执行V1日落』是旧文，与plan r13冲突须对齐；§12历史行（如646）不覆盖后续修订。主代理不能自行宣布run.py/web出范围：pre-V1管线被活控制面check_docs引用，只能记录为待用户决策残留。最小路径：完成WIP收尾（superseded降级调用、文档、.dockerignore/Dockerfile注释、pyproject去jsonschema+lock、删后_probe_r73_data_recovery+server --check/check_docs/check_project_state）或用户明确范围决定；no paid/debug。\",\n      \"priority\": 1,\n      \"confidence\": 0.9,\n      \"file_path\": \"amz-listing-kit/docs/product-v2-refactor-plan.md\",\n      \"line_start\": 502,\n      \"line_end\": 508\n    },\n    {\n      \"title\": \"RC19未闭合：间歇缺现象—机制对应，诊断明确未成立因果\",\n      \"body\": \"asset-continuation-20261008-rc19.json:5-11结论：600次/34800请求、464740网络事件无-102/10061，『does not establish causal mechanism or close RC19』；§7.6要求机制—现象对应，连续绿/另一机制/重试不可关闭；state unknowns仍保留load-stall、vision-ui-transient-startup-disabled、4_4 -05家族。4_2 -07缺陷修在main代码可读（catch TimeoutError+仅当DOM与独立IDB同一action/task成功才接受），但那是验证器侧接受规则+普通绿灯，不是受控时序因果；启动/重开根因未定。最小路径：新假设下受控复现并记录最早失效层+消费者前后后置，或如实保留未知不宣布完成；no paid/debug。\",\n      \"priority\": 1,\n      \"confidence\": 0.9,\n      \"file_path\": \"amz-listing-kit/evals/product-v2/refactor/asset-continuation-20261008-rc19.json\",\n      \"line_start\": 5,\n      \"line_end\": 11\n    },\n    {\n      \"title\": \"最终两轮与最终源码/镜像指纹未在冻结候选上成立\",\n      \"body\": \"R7.1 pending；最后两轮证据p11close2（44条×2、同信号指纹f971df6a）早于0572b5c及其后续合并内容；f971df6a是命令/退出码/结果信号hash（tools/verify_v2_7_1_regression.py:104-107），不是源码/产物hash；main run指纹44f2e9b9是当前发布的运行指纹，但§R7.1/§R7.4要求最后消费者/V1修改后冻结同候选两轮并分别登记信号与代码/镜像指纹。最小路径：R7.3收尾后冻结候选→verify_v2_7_1_regression.py --rounds 2→两轮指纹与镜像/运行指纹分列；no paid/debug。\",\n      \"priority\": 1,\n      \"confidence\": 0.9,\n      \"file_path\": \"amz-listing-kit/docs/product-v2-refactor-plan.md\",\n      \"line_start\": 486,\n      \"line_end\": 491\n    },\n    {\n      \"title\": \"合并未满足现有审查/分支保护子句，SC6该子句无证据\",\n      \"body\": \"§16.1发布合并行（plan:1043）：『须满足现有审查/分支保护，不绕过、不强推。不能满足则保留具体外部门』；新鲜事实：main protected:false、protection.enabled:false、required checks空、rules=[]、PR#5 reviews=[]、reviewDecision空、mergedAt10:36:30Z。已合并的依据是用户当轮『绿了就合并发布』（停工交接§2.1），但该授权变更未在计划/state登记；SC6『满足审查/分支保护后合并发布』不能标proven。最小路径：对后续R7.4候选启用保护并取得独立审查，或在计划/state记录用户明确豁免；no code/no paid。\",\n      \"priority\": 1,\n      \"confidence\": 0.85,\n      \"file_path\": \"amz-listing-kit/docs/product-v2-refactor-plan.md\",\n      \"line_start\": 1043,\n      \"line_end\": 1043\n    },\n    {\n      \"title\": \"10轮上限按保守口径已到达；恢复需用户扩轮/重核，state未同步停止与发布事实\",\n      \"body\": \"§2.1 Stop conditions（plan:63-64）：最多10轮，第10轮仍未交付须停止施工、保存材料并向用户申请继续，不得自行降验收。state记8/10后，ef8cda1..15faa65另有986a6df（发布probe三机制）、300c1c4（取样竞态）、639661c/9a461fb（下载超时同类）、15faa65（清理WIP）四个独立消费者段→保守8+4=12≥10（即使probe+取样合一仍≥10）。仓库state（updated10:20:30Z）仍为next=R5.1、『未发布新版本』，未记录PR#5合并/main发布/停工（交接在repo外）。最小路径：用户扩轮或明确重核后再恢复；恢复先同步state；no paid/debug。\",\n      \"priority\": 1,\n      \"confidence\": 0.85,\n      \"file_path\": \"amz-listing-kit/docs/product-v2-refactor-plan.md\",\n      \"line_start\": 63,\n      \"line_end\": 64\n    },\n    {\n      \"title\": \"显式图文辅助任务无端到端到两包的证据\",\n      \"body\": \"10-08 manual.json明确未点击理解/单图AI/整套AI按钮，只用四类Fake；10-05真实看图只有理解（12提议未确认）且未原生导出（generation-module-20261005-formal.md:73『不能把这一成功宣称为完整图文辅助任务』）；state unknown full_assisted_task pending。SC1要求纯人工与显式图文辅助两条都完成。最小路径：冻结候选上按同一模拟走查运行辅助分支（fake-vision证流程；真能力按§15.6.2复用判定），捕获请求/IDB/ZIP/截图；若判定需真能力补证再走预算门；本轮no paid。\",\n      \"priority\": 2,\n      \"confidence\": 0.85,\n      \"file_path\": \"amz-listing-kit/evals/product-v2/refactor/generation-module-20261005-formal.md\",\n      \"line_start\": 72,\n      \"line_end\": 75\n    },\n    {\n      \"title\": \"P08-02f无泄漏断言范围不足：同长度哨兵只比长度、ZIP未解压、缺表面\",\n      \"body\": \"tools/verify_v2_packet08_settings_vision.py:61-65三用途SENTINELS同长度；:524-530出站头对-key-只保留<len:N>；:672-677/:717-722/:741-746/:761-766只比较长度→用途间key交换仍会通过，不能证明『本次该用途原key精确值』。:791把project_zip_bytes按utf-8 decode直扫压缩ZIP（未解压成员）；haystacks无localStorage/交付ZIP/服务端日志；IDB_DUMP:148-150把Blob换成<blob:N>占位。结论：P08-02f非全表面无泄漏完整证明（测试范围不足，非产品实际泄漏）；正式真实输入/真实图缺key/旧schema上传确已修，不全否定。最小路径：不同长度+不同前缀哨兵、按用途断言精确头值、解压成员扫描、补localStorage/交付ZIP/服务端日志面、Blob读字节——仅在恢复施工时改该验证器；no paid/debug。\",\n      \"priority\": 2,\n      \"confidence\": 0.9,\n      \"file_path\": \"amz-listing-kit/tools/verify_v2_packet08_settings_vision.py\",\n      \"line_start\": 524,\n      \"line_end\": 530\n    }\n  ]\n}",
+          "startLine": 1,
+          "lineNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+            24,
+            25,
+            26,
+            27,
+            28,
+            29,
+            30,
+            31,
+            32,
+            33,
+            34,
+            35,
+            36,
+            37,
+            38,
+            39,
+            40,
+            41,
+            42,
+            43,
+            44,
+            45,
+            46,
+            47,
+            48,
+            49,
+            50,
+            51,
+            52,
+            53,
+            54,
+            55,
+            56,
+            57,
+            58,
+            59,
+            60,
+            61,
+            62,
+            63,
+            64,
+            65,
+            66,
+            67,
+            68,
+            69,
+            70,
+            71,
+            72,
+            73,
+            74,
+            75,
+            76,
+            77,
+            78,
+            79
+          ]
+        },
+        "fileSize": 10391,
+        "meta": {
+          "source": {
+            "type": "internal",
+            "value": "agent://SpecReleaseAudit"
+          },
+          "limits": {
+            "columnTruncated": {
+              "maxColumn": 768,
+              "unit": "chars"
+            }
+          }
+        },
+        "resolvedPath": "C:\\Users\\31368\\.omp\\agent\\sessions\\--E--workbuddy_workspace-2026-09-20-16-38-19--\\2026-10-07T12-55-14-903Z_01a1166e-aed7-72cc-80e1-ef346d5c5cd3\\SpecReleaseAudit.md",
+        "contentType": "text/markdown"
+      }
+    }
+  },
+  "final_audit_scope": {
+    "report": "amz-listing-kit/evals/product-v2/refactor/audit-after-stop-20261008.md",
+    "success_criteria": [
+      "partial",
+      "partial",
+      "partial",
+      "partial",
+      "partial",
+      "partial"
+    ],
+    "standards_entries": 5,
+    "spec_entries": 5,
+    "no_product_changes": true,
+    "no_model_calls": true,
+    "no_commit_push_deploy": true,
+    "worktree_corrections": [
+      "authoritative stop/recovery state",
+      "audit records and observed screenshot"
+    ],
+    "recovery_archive_main": "amz-listing-kit/_stage-amz-control/asset-continuation-20261008T054352Z/data/manual-project.zip",
+    "recovery_archive_sha256": "4007b9b1a3b2f14c1fa4e851bdc1ab52ebc690fc02d4556f65b81a1ff4e3ff39",
+    "recovery_probe_workspace_path": "_working/_probe_r73_data_recovery.py",
+    "final_record_at": "2026-10-08T11:22:28.135Z"
+  }
+}
