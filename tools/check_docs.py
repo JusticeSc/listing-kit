@@ -440,6 +440,18 @@ def _check_docs_index(rep: Report) -> None:
     # by ExportVersion, not governance documents.  They live below _working only
     # because evaluation workspaces are retained there.  Registering every
     # immutable export would make the control index depend on runtime output.
+    # gitignored 的本地历史（未跟踪）不进登记比对：登记表只管仓库里的文档；
+    # 否则本地与 CI 看到不同文件集，同一份表两边互斥变红。
+    try:
+        import subprocess as _sp
+        _out = _sp.run(["git", "-c", "core.quotepath=false", "ls-files", "-z",
+                        "--", "*.md", "docs/*.md", "_working/*.md"],
+                       capture_output=True, cwd=str(ROOT), timeout=30).stdout.decode("utf-8")
+        _tracked = set(_out.split("\0")) - {""}
+        if _tracked:
+            actual &= _tracked
+    except Exception:
+        pass
     actual = {
         path for path in actual
         if not (path.startswith("_working/") and "/exports/" in path and path.endswith("/README.md"))

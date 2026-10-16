@@ -55,8 +55,6 @@
 | `_working/amz-listing-kit-product-v2-baseline/state.md` | Product V2 重构前基线 | `历史证据` | `superseded` | 被 current state 接管；保留旧进度与旧 Goal 的最近实际读数，不发布下一动作 |
 | `docs/product-v2-ui-contract.md` | Product V2 V2.UI.2 | `设计草案` | `draft` | 人工/辅助共享任务及有限设置投影；§8区分设计范围、工程与C17/C15，业务合同取计划§14。转current需产品发起人实际走查，之后转 `架构设计` 并补§1路由；工程自审不冒充签署 |
 | `_working/amz-listing-kit-product-v2/state.md` | Product V2 定向重构 | `执行状态` | `current` | 唯一进度、证据、真实 Goal 绑定与下一动作；prepared 仅表示真正未观察/未确认，不冒充系统状态；旧观察不等于本会话重读 |
-| `_working/amz-listing-kit-next-version-design/discussion.md` | 下一版本设计与实施准备历史 | `设计草案` | `draft` | 历史独立设计/本地基线/0付费准备与证据入口，当前正式启动后进度/计数只取原产品state；设计只见refactor-design §13，实施/权限取refactor-plan §17/§2.1，不维护第二份Goal或state |
-| `_working/amz-listing-kit-next-version-design/pause-20261013.md` | 下一版本实施停工交接 | `历史证据` | `superseded` | 被 2026-10-13 正式启动与 current state 接管；只保留停工事实、父代理未验证清单与当时恢复指令，不据此施工 |
 | `_working/amz-listing-kit-product-v2/tasks/r42-r52-volcengine-closure-20261003.md` | Product V2 R4.2/R5.2 火山真实链 | `历史证据` | `superseded` | R4.2/R5.2 已完成并记录进 current state；笔记保留本轮付费/修复/验证事实与证据指针，不据此执行 |
 | `_working/amz-listing-kit-product-v2/tasks/v255-server.md` | Product V2 V2.5.5 | `历史证据` | `superseded` | V2.5.5 已完成；任务书只保留当时的服务端施工边界，不再据此执行 |
 | `_working/amz-listing-kit-product-v2/tasks/v255-verifier.md` | Product V2 V2.5.5 | `历史证据` | `superseded` | V2.5.5 已完成；任务书只保留当时的验证施工边界，不再据此执行 |
