@@ -17,7 +17,7 @@
 
 | 层 | 稳定边界 | 事实从哪里读 |
 |---|---|---|
-| Product V1 | 本机文件夹工作空间与旧完整生图闭环冻结为回归基线；只复用业务语义、Provider 经验和测试案例；重构最终人审与日落前回退审计后由 V2.R7.3 专批删除（SEL-009） | 当前仍可运行的行为见 `README.md` 的历史入口；设计与完成轨迹从 `docs/INDEX.md` 的 superseded 文档进入 |
+| Product V1 | 旧文件夹工作空间与生图闭环只作业务/Provider/案例来源；按V2.R7.3在覆盖、消费者切换及代码/当前数据基线成立后清退（SEL-009），不等待独立C15/C17，不新增历史兼容服务 | 当前尚存入口以README/代码为准；保留历史证据和用户原件不等于继续维护旧产品，当前停工不授权执行清退 |
 | Product V2 | 浏览器拥有用户项目，Python 服务无业务状态；所有新能力都必须在这一所有权边界内实现 | 已落地行为只看 `README.md` 与代码；当前进度和证据只看 Product V2 state；目标只看 Product V2 计划 |
 | 参考模板 | `docs/standards-template/` 是外部课程模板的原样副本，不是本项目运行规范 | 采纳映射、未采纳项与复访条件只在 `AGENTS.md` §Standards Mapping |
 
@@ -102,8 +102,8 @@ Python 无状态 AI 服务
 | SEL-001 | 编排层 | 不引入 LangGraph 与 Agent/Memory 编排，服务端保持无状态（业务状态权威是浏览器 IndexedDB）；引入 `langchain-core` / `langchain-openai` 仅作提示词、模型调用与结构化解析原语（见 SEL-003），不承担状态与编排 | LangGraph checkpointer + 服务端状态；Agent/Memory 编排 | 出现服务端自主多步编排，或需要跨进程恢复的长任务 |
 | SEL-002 | 服务端 HTTP | 暂保留 stdlib `http.server`（零运行时依赖、端点少、单进程） | Flask / FastAPI + uvicorn | V2.4 图片上传/下载需要 multipart 与流式响应时重开 |
 | SEL-003 | 语义/视觉调用传输层 | 用户已确认（2026-09-30）：`langchain-core` + `langchain-openai` 的 `ChatOpenAI` 指向百炼 OpenAI 兼容端点（`deepseek-v4.1-flash`）；显式 timeout、`max_retries=0`（禁止隐藏重试）；失败映射进 `v2_semantic` 四类归口。版本：langchain-core 1.6.6、langchain-openai 1.6.6（均 MIT）；依赖实测与 PoC 报告见 `evals/product-v2/sel003-transport-selection-20260929.txt` | LiteLLM（59 包，为单一兼容协议付 4 倍依赖）；`requests` 手写适配器（重复造 HTTP/重试轮子）；OpenAI SDK 直连（已含于 langchain-openai，不建双轨） | 接入第二个供应商或需要路由/降级/成本统计时评估 LiteLLM；需要 OpenAI 专有能力时评估直连。PoC 已发现：`deepseek-v4.1-flash` 为推理型输出，需给 reasoning 留预算 |
-| SEL-004 | 项目管理规范 | 采纳 `docs/standards-template/` 的**要求**，落进现有五份权威（映射见 `AGENTS.md` §Standards Mapping），不新建 `standards/` 平行目录 | 复制模板另立一套 standards/（会与计划/state 形成双权威） | 需要对外交付独立规范包时重开 |
-| SEL-005 | 持续交付 | 沿用GitHub Actions + Docker：PR-to-main/main push/manual触发既有CI，只有main push才在现有远端构建SHA镜像并发布，固定origin/端口。当前release事务实现已保留previous至acceptance/指纹/finalize后，离线stage证据不等于真实Docker/HTTPS。R7.4剩余实际容器页面、可信发布及同origin数据恢复按计划§7.4/§7.7与设计§11.5证明，不重建CD | 新镜像仓库/编排平台、healthy冒充用户主链、容器回退冒充浏览器数据恢复、源码token自匹配冒充条件真值 | 发布验收范围或数据格式改变时；合并授权取AGENTS/计划§16和最新停止门，不绕过保护 |
+| SEL-004 | 项目管理规范 | 采纳`docs/standards-template/`的要求而不复制目录；产品终点/正式依赖、项目工作规则、具体Issue/PR、产品权限/恢复分工按INDEX，映射见AGENTS。具体问题使用Issue不构成第二份完整产品Goal或本地进度表 | 复制模板另建standards/，或以防双权威为由禁用产品Issue；在state/报告重抄工单明细 | 需要对外交付独立规范包或协作分工改变时重开 |
+| SEL-005 | 持续交付 | 沿用GitHub Actions + Docker：PR-to-main/main push/manual触发既有CI，只有main push才触发既有受保护发布，固定origin/端口。release事务保留previous至acceptance/指纹/finalize后，离线stage证据不等于真实Docker/HTTPS；R7.4按当前候选证明实际容器页面、可信发布及同origin恢复，不重建CD | 新镜像仓库/编排平台、healthy冒充用户主链、容器回退冒充浏览器数据恢复、源码token自匹配冒充条件真值 | 发布验收范围或数据格式改变时；合并/发布权限取AGENTS、计划§17最新修订与state，不绕保护或最新停工 |
 | SEL-006 | 语义契约表示 | Python 侧契约表示权威 = Pydantic（langchain-core 自带，锁定 2.13.5）：请求 / 原始提案 / 提案槽位三类模型 + 跨字段校验；校验作用在模型原始输出；错误四类归口、归一化映射、浏览器侧 `checkFactSlot` 与 `CORE_SLOT_REGISTRY` 保留 | Python 侧继续手写形状/不变量校验（重复造轮子，违反复用门）；浏览器改吃 schema（受 SEL-000 无构建约束，且与 SEL-001 状态权威错位） | V2.6.3 项目包跨版本迁移需要 schema 版本与迁移器时，以“契约权威”为题重开（评估 JSON Schema 作中立权威 + 双语言消费者） |
 | SEL-007 | LangChain 使用边界 | v1 直调形态：`ChatOpenAI.with_structured_output(原始提案模型, method="json_mode", include_raw=True)`；系统/用户消息直接构造，JSON 格式说明由 Pydantic schema 生成并注入系统提示；LCEL 管道、ChatPromptTemplate、Agent/Memory 均不使用（保留为库内可用能力，不是本项目范式）；装配与错误分类的操作细节见计划 §9.1 | LCEL 管道（0.x 主推范式）；默认 `method="json_schema"`（百炼对自定义模型名的支持未证实；不支持时 400 且会被误分类）；`method="function_calling"`（依赖该模型在百炼的函数调用支持）；ChatPromptTemplate | 百炼确认支持 `response_format: json_schema` 时把 method 切换回默认（改一个装配参数 + 重跑契约测试）；需要多步编排时按 SEL-001 的复访条件另立决策 |
 | SEL-008 | 浏览器 ZIP 能力 | 用户已定（2026-09-30）：vendor fflate 0.8.3（MIT）替换自研 ZIP 容器；vendored 单文件 = `esm/browser.js`（90,922B，自包含 ESM，上游 sha256 前 16 位 `B7CA4450B19559A1`），随附许可证文件并登记 vendor 表；`storage/zip.js` 退化为薄适配器：保持 buildZip/readZip 接口与我方错误码及上限检查，格式校验委托 fflate | 继续自研 ZIP 容器（8.7KB：CRC32 + 本地头/中央目录/EOCD）；minified UMD 33KB（全局脚本、非 ESM）；jszip（体积更大） | 上游发布修复版需升级时（重跑包合同与 V2.1.3 往返验证）；fflate 停更或许可变化时重选 |
@@ -115,7 +115,7 @@ Python 无状态 AI 服务
 | SEL-014 | 重构运行形态与模型范围 | 用户确认：浏览器本地优先 + 无业务持久化 Python 网关；模型不是核心卖点，仅有限模型解耦；第二生图已锁定大陆火山 `doubao-seedream-5-0-flash-260915`（R4.1 锁方向 / R4.2 真链 / R5.2 同步 Adapter `v2_volcengine_image.py`），`providers.json` 双 image 条目 `dashscope-image` + `volcengine-ark`，不迁 Node 或引入服务端项目库 | 胖后端/账户数据库、全栈 TS、任意模型平台、仅换 model 字符串冒充生图兼容 | 跨设备/协作/后台持续执行成为实际需求，或有限协议维护成本实测不可接受时 |
 | SEL-015 | 凭据产品政策 | BYOK 为主，部署默认档仅受限试用且缺省 closed。理解、生图、单图/整套复核共用 registry/credentials 的请求级有效配置；有限 Provider 选择与三用途 key 仅当前标签页内存及 HTTPS 请求，不进持久化/包/日志/错误/诊断；默认 key 不下发、不附到自定义目标。旧任务补原目标/来源凭据，不切新动作模型、不借默认 key 恢复 | 持久化 key、任意目标、Provider 业务分支、替旧任务补造当前身份 | 持久化凭据、账户/云同步或新增供应商协议需求时另获授权 |
 | SEL-016 | 前端工程化与 UI | 用户确认渐进类型检查/验证分层与 UI 人体工程审计方向；先实际任务基线，再原型和目标合同；复用已有业务语义但不将现有 domain/repository 或页面结构设为不可替换；不预定布局、六强制步骤、React/Vue、构建工具或全仓 TS；按 SEL-018 允许激进 clean cutover | 先换皮/拆文件、框架即工程化、机械降低点击而取消必要确认、Skill 代替真页面证据 | V2.R2/R3.1 的问题/原型/PoC 提供明确收益时选择工具与布局 |
-| SEL-017 | Goal历史与当前绑定 | 本轮2026-10-07真实产品Goal已由工具创建，正文/当前授权只取计划§2.1/§16.1及state原生观察；旧2026-10-05绑定与独立规划只留原范围。新会话重读工具ID/正文，不重复创建、不把context变成第二份预算/进度 | 旧ID承担新正文、假生命周期、双计划/进度、规划完成冒充产品完成 | 新会话或目标变化时核对实际返回，按计划§16.2同步绑定/受影响状态 |
+| SEL-017 | Goal历史与当前绑定 | 真实产品Goal绑定/原生观察只取state，原生全文取计划§2.1，最新用户修订取§17.13；旧2026-10-05/07与独立规划仅保留原范围。新会话核对真实返回，不在上下文固定另一份当前ID/预算/进度，不重复创建或伪称原生正文已改 | 旧ID承担新正文、假生命周期、双计划/进度、规划/规约完成冒充产品完成 | 新会话或目标变化时按INDEX核对实际返回与最新用户修订，再同步绑定/受影响状态；未明确恢复则保持停工 |
 | SEL-018 | 开发态兼容与设计自由度 | 用户明确：“不用考虑历史兼容性，现在仍在开发阶段，允许你做激进的设计。”旧版本/schema/包迁移及真实旧工件恢复不再要求；按计划 §2.3 clean cutover，可重做 Module/Interface/UI/记录格式、移除被替代路径；新开发库/旧格式拒绝须显式，不静默删除浏览器数据。同版本候选历史、人工选择、任务冻结身份、刷新恢复、ZIP哈希及安全不变量保留；其余权限门不变 | 为缺失旧测试包停工、保留向后兼容 shim/迁移层、将激进设计当作静默丢数据或付费/部署/V1删除授权 | 首次正式发布/存在需支持的历史用户数据时，重新定义版本兼容承诺；开发期不预建设迁移层 |
 | SEL-019 | 问题导向参考系统研究 | V2.R2.3 已核查 pi `88ff80b`/0.99.2（MIT）、ComfyUI `2d6b7328`/0.38.0（GPL v3）、Open WebUI `8bd8b4f`/0.11.4（自定义品牌约束许可），固定全文 SHA/路径见 `evals/product-v2/refactor/reference-review-20261001.md`。仅采纳概念：用途/能力/协议 Adapter/凭据分层；交付只读采用候选原 action 的冻结 Prompt，不读当前编辑头；同 Shot 直接图片对照与稳定候选导航；Unknown 分身份恢复、状态/影响/下一动作先于技术详情。BYOK 仍仅内存，概念不等于新依赖或真实能力证明，布局由 R2.2 原型冻结 | 复制三套平台/代码/样式/品牌、账户或服务器项目库、pi 聊天兼容冒充图片协议、上游持久凭据照搬 IndexedDB、Comfy 元数据新功能、隐式自动重提/采用/付费、未选型新运行依赖 | R2.2/R4.1/R4.2 的原型/能力/费用证据；确需复制代码或引入库时重开许可/依赖门 |
 | SEL-020 | 电商参考 skill 问题导向复核 | V2.R2.2 只读核查工作区根三目录：`ecommerce-image-suite-main/`（Apache-2.0 但 README 陈旧矛盾、占位符未填、模特/实拍无许可）、`ecom-details-image-main/`（自称 MIT 但无 LICENSE 文件，`.env.example` 含第三方代理明文 key 泄漏样本）、`ecommerce-skills-main/`（MIT 2026 dlazy，实读 platform-compliance/detect-task/item-detail＋shared 脚本/测试/规格）。结论：三者只提供流程编排与规格清单（批次 manifest、参考图锁定、先单图后整套、客观像素机检＋主观 VLM 质检分层、固定质检 prompt、中文排版四条件、逐轮 manifest、dry-run、不伪造测量），均无图片结果验收实现（保真/文字/事实/尺寸/齐全性须 amz 自建）；零字节复制，不复制代码/模板/样式/品牌/资产/凭据，不引入 Node 脚本链与真实调用/付费；证据 `evals/product-v2/refactor/prototype-review-20261002.md` §5 | 未经许可复制代码/模板原文、样式/模特/实拍资产、品牌与联系方式；硬编码供应商分支冒充解耦；真实模型调用/付费上传；把 prompt 自述或人工观感当验收结论；复用泄漏凭据 | R6 验收自建时复用 rubric/阈值数据；确需复制代码或引入依赖时重开许可/依赖门 |
@@ -194,7 +194,7 @@ fflate，只保留产品上限/错误码与逐条 CRC32 完整性校验（fflate
 ```text
 amz-listing-kit/
 ├─ app/
-│  ├─ server.py                         # 正式服务入口：默认 V2；--legacy-v1 回 V1；--offline-fixture 旧 Mock
+│  ├─ server.py                         # 正式服务入口：默认 V2；--legacy-v1 回 V1；旧 Mock 可执行入口已本地退役
 │  ├─ product_v1_server.py              # Product V1 历史实现，迁移期保留（--legacy-v1）
 │  ├─ product_v2_server.py              # 无状态HTTP装配：静态/health/capabilities、文字/商品图文 semantic/analyze、生图、单图及整套复核
 │  └─ product_v2/                       # V2 前端静态资源；domain/prompt.js 是 Prompt 编译与人工编辑唯一权威（V2.3.4 / V2.3.6）、domain/confirm.js 是生成前确认唯一权威（V2.3.5）、domain/review.js 是确定性校验与 VLM 复核映射（规则注册表 / ReviewReport）唯一权威（V2.5.1 / V2.5.2）、domain/compare.js 是候选比较与审核清单排序的视图模型唯一权威（先看顺序仍取自 review.js 的 REVIEW_SEVERITY_ORDER，V2.5.3）、domain/rework.js 是九类返工问题与 ReworkDirective 返工指令合同的唯一权威（比较区保持只读，V2.5.4）、domain/selection.js 是人工选择（SelectionRecord/SelectionSet、采用/改选/取消与失效判断）唯一权威（V2.6.1）；domain/attempt.ts 与 domain/config-export.ts 是生成 Attempt 与可分享配置的唯一手工源码（同名 `.js` 是 `npm run build:frontend` 产物，V2.R7.5）；vendor/ 已 vendored fflate 0.8.3（SEL-008）
@@ -215,6 +215,8 @@ amz-listing-kit/
 └─ tools/                               # 控制面、契约、浏览器和回归验证入口；v2_test_server.py 复用产品处理器 + fake provider
 ```
 
+2026-10-12本地清退仅覆盖旧Mock/demo可执行闭包及其过期bootstrap验证，不是完整V1日落或线上发布。历史JSON、许可、用户资产与证据保留；精确原字节/退役清单见 `_stage-amz-control/next-version-design-20261012/baseline/`，当前局部进度见 `discussion.md`。仍有实际消费者的V1/治理工具和旧槽卡生产链不按文件名批量删除。
+
 新增目录前先判断它属于实现、目标、状态还是证据；不能归类的目录先不建。目录地图描述的是目标落点，尚未存在的均标为“目标”，不能据此声称已经实现。
 
 ### 5.1 业务模块与承接边界
@@ -231,11 +233,11 @@ amz-listing-kit/
 | 比较与采用 | selection-adoption；domain/compare、selection、review | 单图确定性/显式AI报告与采用归同一所有者，generation只提供候选/动作投影；查看/对照归视图，Selection只由人改变 |
 | 交付与恢复 | review-delivery；domain/suite-review、export-gate；storage/package、transfer及ZIP | 整套报告/交付门/记录/构包由业务Module完成；一致快照与原动作追溯按详细设计，不由UI组manifest |
 | 模型边界 | product_v2_server；providers/semantic、review、suite_review、image及registry/credentials/outbound/langchain_chat | 无业务落盘；请求级有限有效配置/凭据，共享传输不共享错误业务schema。商品看图理解需要独立提议合同，不复用要求candidate的复核请求 |
-| UI投影 | workspace、现有input/generation/compare/delivery-view、index、ui/stage-shell及styles | 目标为装配/生命周期与纯投影；当前generation仍注入渲染/错误callback，摘要/报告部分时序仍泄漏。差量闭合见详细设计§11.5，不把四文件存在当职责准出 |
+| UI投影 | workspace、现有input/generation/compare/delivery-view、index、ui/stage-shell及styles | 装配/生命周期与业务投影，不复制owner命令。已成立的单向装配不重做；当前实际差量按源码、state与关联Issue判断，不把历史§11.5的callback/report清单当现行施工任务 |
 
 Interface是可调用的业务动作及可渲染快照，不等于HTTP或额外转发层；Seam是可替换协议/凭据/传输/存储等边界。fake仅替外部模型，保持正式装配和领域消费，不能以fake出图证明真模型理解/忠实度。
 
-基础配置与现有三用途消费者、商品图文Adapter均已有实现；范围匹配的行为/秘密/真实能力证据各自判断，不用“其他用途仍仅目标”的旧描述恢复，也不据静态接线宣称全部验收。唯一模块/组合设计及剩余反向report依赖、UI摘要编排按详细设计§11.5收口；正式依赖/验收仍取计划，当前前沿/停止门只取state。
+基础配置与现有三用途消费者、商品图文Adapter均已有实现；范围匹配的行为/秘密/真实能力证据各自判断，不据静态接线宣称全部验收。单一模块/组合设计取详细设计§13及仍适用的§2–4；历史§11.5仅追溯未解决且仍有实际证据的差量，不从旧清单重做已完成owner。正式依赖/验收取计划，当前前沿/权限取state，具体改造/验收取Issue #10及关联工单。
 
 
 ## 6. 不变约束
@@ -252,18 +254,18 @@ Interface是可调用的业务动作及可渲染快照，不等于HTTP或额外�
 10. 服务器不保存用户项目状态；浏览器清理数据或 origin 变化造成的迁移由项目包解决。
 11. 默认密钥只在服务器；三用途 BYOK 仅当前标签页内存/HTTPS 请求级，秘密不进持久化、Git、包、日志、错误或证据。理解、生图、复核各有有限 Provider/key 头，共用有效配置和错误边界；默认档缺省 closed，运行权限仍以实际配置及计划为准。
 12. 远程正式入口必须来自可信 HTTPS secure context；本机 localhost 是唯一明文开发例外。
-13. 默认界面投影业务任务而非工程结构；Prompt/hash/task id 可查但必须渐进披露。
+13. 桌面主场景的界面投影业务任务，信息与滚动层级按设计§13.3；Prompt/hash/task等内部信息按需可查而不常驻，不以“可追溯”要求普通用户阅读工程结构。
 
 ## 7. 质量门槛
 
 | 层 | 必须证明什么 | 主要证据 |
 |---|---|---|
-| 控制面 | 唯一目标、唯一状态、唯一下一动作、文档全部登记 | `tools/check_docs.py`、`tools/check_project_state.py` |
+| 控制面 | 产品Goal/依赖、工作规则、Issue/PR、产品权限/恢复各自归属清楚；最新修订可从冷入口找到，不被旧指令覆盖 | `tools/check_docs.py`、`tools/check_project_state.py`、`tools/refactor_resume.py`及不带聊天背景的读取核对；通过不等于产品完成 |
 | 领域与存储 | 当前 schema、事务、依赖失效、Blob 生命周期与同版本往返正确；旧版本兼容按 SEL-018 不要求 | 单元测试、反向探针、导入/导出哈希比对 |
 | 服务合同 | 无服务器业务持久化；错误、Unknown 与 Provider 身份可恢复 | API 契约测试、服务器重启轨迹、磁盘差异审计 |
-| 浏览器产品 | 正式入口从空白用户动作走通人工和辅助路径、比较/恢复/实际导出；真实视口/缩放/键盘及人因后置 | 支持契约/自动化权限以计划§3/§7.2为准；§14.9任务、浏览器请求/IDB/ZIP及真实读图，UI草图不算运行证据 |
-| 生成系统 | 真实参考图、实际Prompt及原action/request/task（若协议存在）与候选可追溯；图文理解真的发送原图 | 出站捕获、Provider记录、候选hash及独立质量观察；HTTP/schema成功不能代替忠实度或文字质量 |
-| 工程与真人验收 | 工程主链按计划§14.8–14.9/§10证明；目标用户可用性和独立首次使用是另一层证据 | UI§8区分设计确认、工程浏览器验证、C17/C15；真人门本轮之外，不能冒充通过，也不能用其未发生否定工程范围定义 |
+| 浏览器产品 | 正式入口以真实内容走通人工/辅助、比较/恢复/导出；普通用户动作、视觉层级、认知负担、精确对象与反馈/恢复可用；长内容和实际视口/缩放/键盘不破坏关键操作 | 计划§14.9任务、真实画面/动作、浏览器请求/IDB/ZIP；具体缺口须工程修正，不以草图/空数据/自动化绿灯代替 |
+| 生成系统 | 普通输入由程序形成协调视觉简报，并与事实/准确文案/图序一致；实际Prompt来源、原action/request/task与原候选可追溯 | 设计§13.9；编译稿与专家人工稿分开，核实际出站及原像素。HTTP/schema/hash正确或人工稿成功不证明程序稿品质 |
+| 工程与真人验收 | 工程主链及显著人因问题按计划§14.8–14.9/§10与当前修订直接闭合；独立首次使用另列 | 工程画面/操作/成品不由C15/C17替代；C15/C17本轮之外且未发生，不冒充通过，也不据此将可达设计修正无限后置 |
 | 格式检查 | 暂无 ruff/eslint：本仓库没有格式化工具链，格式由 `.gitattributes` 与评审保证 | 引入格式化工具需先过选型门（SEL 记录） |
 | 静态检查 | 采用SEL-021的渐进TypeScript：已迁 Module 以 `.ts` 源做 strict 检查，保留的 JS 逐个 `// @ts-check` 自愿纳入（errors.js/invalidation.js）；`npm run check:types` / `build:frontend` / `check:generated` 与 jsconfig include 是实际覆盖 | 不将node语法检查、选型批准或历史绿灯写成当前全仓类型通过；jsconfig `checkJs` 关闭是覆盖范围声明，被依赖拉入但未列出的 JS 不在保障内 |
 | 行为验证 | 原生node领域行为与Python合同/宿主验证分层，按计划§7.3及实际已接线入口 | 行为/边界/转换与IDB/网络/浏览器后置分工；规则见AGENTS，不因规约修订新增验证框架 |

@@ -250,21 +250,34 @@ def main() -> int:
                 )
 
                 # --- 新建（R3.3：新建即打开——写指针并进入工作台，与 handleOpen 同路径） ---
+                # 打开后阶段停靠会自动准备 9 个核心事实槽位并派生状态（prepareManualFacts 异步）：
+                # 断言时可能正好在其前后，因此接受两种稳定态，但两种都要求“指针已写对”。
                 page.fill("#new-project-name", "蓝色保温杯 秋季主图")
                 page.click("#create-project")
                 expect(page.locator("#project-view")).to_be_visible()
                 expect(page.locator("#project-title")).to_have_text("蓝色保温杯 秋季主图")
+                # 等自动准备落定：槽位数稳定（0 或 9）且 revision 不再变化。
+                last_counts = None
+                for _ in range(20):
+                    probe = page.evaluate(DB_SNAPSHOT)
+                    key = (probe["counts"]["documents"], probe["projects"][0]["revision"] if probe["projects"] else -1)
+                    if key == last_counts:
+                        break
+                    last_counts = key
+                    page.wait_for_timeout(250)
                 created_db = page.evaluate(DB_SNAPSHOT)
                 created_pointer = page.evaluate(POINTER_SNAPSHOT)
                 project_id = created_db["projects"][0]["project_id"]
+                created_state = created_db["projects"][0]["state"]
                 check(
                     "V2.1.2-02",
-                    "新建即打开：IndexedDB 恰有一条 EMPTY 记录且当前指针已写入",
+                    "新建即打开：IndexedDB 恰有一条记录且当前指针已写入",
                     created_db["counts"]["projects"] == 1
-                    and created_db["projects"][0]["state"] == "EMPTY"
+                    and created_state in ("EMPTY", "UNDERSTANDING_REVIEW")
                     and created_pointer["current"] is not None
                     and json.loads(created_pointer["current"])["project_id"] == project_id,
-                    {"counts": created_db["counts"], "pointer": created_pointer["current"]},
+                    {"counts": created_db["counts"], "project": created_db["projects"][0],
+                     "pointer": created_pointer["current"]},
                 )
 
                 # --- 回首页 + 打开 + 刷新（R3.3：boot 自动恢复指针项目并进入工作台） ---
@@ -340,6 +353,8 @@ def main() -> int:
 
                 # --- 重命名 ---
                 page.click("#back-home")
+                before_rename = page.evaluate(DB_SNAPSHOT)
+                before_revision = before_rename["projects"][0]["revision"]
                 page.click("#project-list .project-row [data-action='rename']")
                 page.fill("#project-list .rename-input", "蓝色保温杯 主图套装")
                 page.click("#project-list [data-action='rename-save']")
@@ -349,12 +364,19 @@ def main() -> int:
                 check(
                     "V2.1.2-04",
                     "重命名：界面与 IndexedDB 一致且 revision 递增",
-                    renamed["name"] == "蓝色保温杯 主图套装" and renamed["revision"] == 2,
-                    {"project": renamed},
+                    renamed["name"] == "蓝色保温杯 主图套装"
+                    and renamed["revision"] == before_revision + 1,
+                    {"project": renamed, "before_revision": before_revision},
                 )
 
                 # --- 复制（先给原项目塞入文档与资产） ---
                 seeded = page.evaluate(SEED_DOCUMENT_AND_ASSET, project_id)
+                source_before = page.evaluate(DB_SNAPSHOT)
+                source_docs_before = sorted(
+                    (item["kind"], item["document_id"], item["version"])
+                    for item in source_before["documents"] if item["project_id"] == project_id)
+                source_assets_before = sorted(
+                    item["sha256"] for item in source_before["assets"] if item["project_id"] == project_id)
                 page.reload(wait_until="networkidle")
                 page.click("#back-home")
                 page.click("#project-list .project-row [data-action='duplicate']")
@@ -364,21 +386,30 @@ def main() -> int:
                                if item["project_id"] != project_id)
                 copy_docs = [item for item in copied_db["documents"] if item["project_id"] == copy_id]
                 copy_assets = [item for item in copied_db["assets"] if item["project_id"] == copy_id]
-                source_assets = [item for item in copied_db["assets"] if item["project_id"] == project_id]
-                list_png = EVIDENCE_DIR / f"v2.1.2-home-list-{stamp}.png"
-                page.screenshot(path=str(list_png))
-                screenshots.append(list_png.relative_to(ROOT).as_posix())
+                source_docs_after = sorted(
+                    (item["kind"], item["document_id"], item["version"])
+                    for item in copied_db["documents"] if item["project_id"] == project_id)
+                source_assets_after = sorted(
+                    item["sha256"] for item in copied_db["assets"] if item["project_id"] == project_id)
+                copy_doc_keys = sorted((item["kind"], item["document_id"], item["version"]) for item in copy_docs)
                 check(
                     "V2.1.2-05",
                     "复制：文档版本与资产在新 project_id 下各一份，原项目不变",
-                    len(copy_docs) == 1 and len(copy_assets) == 1
-                    and copy_assets[0]["sha256"] == seeded["sha256"]
-                    and len(source_assets) == 1,
-                    {"seed": seeded, "copy_docs": copy_docs, "copy_assets": copy_assets,
-                     "source_assets": len(source_assets)},
+                    copy_doc_keys == source_docs_after
+                    and len(copy_assets) == len(source_assets_after)
+                    and seeded["sha256"] in [item["sha256"] for item in copy_assets]
+                    and source_docs_after == source_docs_before
+                    and source_assets_after == source_assets_before,
+                    {"seed": seeded, "copy_docs": len(copy_docs), "copy_assets": len(copy_assets),
+                     "source_docs": len(source_docs_after), "source_assets": len(source_assets_after)},
                 )
 
                 # --- 删除（当前项目） ---
+                survivor_docs_before = sorted(
+                    (item["kind"], item["document_id"], item["version"])
+                    for item in copied_db["documents"] if item["project_id"] == project_id)
+                survivor_assets_before = sorted(
+                    item["sha256"] for item in copied_db["assets"] if item["project_id"] == project_id)
                 page.click(
                     f"#project-list .project-row[data-project-id='{copy_id}'] [data-action='open']")
                 expect(page.locator("#project-view")).to_be_visible()
@@ -390,10 +421,18 @@ def main() -> int:
                 expect(page.locator("#project-list .project-row")).to_have_count(1)
                 deleted_db = page.evaluate(DB_SNAPSHOT)
                 deleted_pointer = page.evaluate(POINTER_SNAPSHOT)
+                deleted_doc_keys = sorted(
+                    (item["kind"], item["document_id"], item["version"])
+                    for item in deleted_db["documents"])
+                deleted_asset_shas = sorted(item["sha256"] for item in deleted_db["assets"])
                 check(
                     "V2.1.2-06",
                     "删除：记录、文档与资产一起消失，当前指针被清除",
-                    deleted_db["counts"] == {"projects": 1, "documents": 1, "assets": 1}
+                    deleted_db["counts"]["projects"] == 1
+                    and deleted_doc_keys == survivor_docs_before
+                    and deleted_asset_shas == survivor_assets_before
+                    and all(item["project_id"] == project_id
+                            for item in deleted_db["documents"] + deleted_db["assets"])
                     and deleted_pointer["keys"] == [],
                     {"counts": deleted_db["counts"], "pointer_keys": deleted_pointer["keys"]},
                 )

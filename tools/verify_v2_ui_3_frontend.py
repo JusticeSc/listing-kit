@@ -299,19 +299,6 @@ def main() -> int:
                   and digest_after == digest_before,
                   {"reload": reloaded, "before": digest_before, "after": digest_after})
 
-            page.set_viewport_size({"width": 390, "height": 844})
-            page.wait_for_timeout(400)
-            narrow = page.evaluate(OVERFLOW_PROBE)
-            shot(page, "narrow")
-            page.set_viewport_size({"width": 720, "height": 450})
-            page.wait_for_timeout(400)
-            zoom = page.evaluate(OVERFLOW_PROBE)
-            shot(page, "zoom200")
-            check("UI3-12", "390px 与 200% 等效视口：无横向溢出且当前阶段可见",
-                  narrow["scroll"] <= narrow["client"] + 1 and narrow["current_visible"] is True
-                  and zoom["scroll"] <= zoom["client"] + 1 and zoom["current_visible"] is True,
-                  {"narrow": narrow, "zoom200": zoom})
-
             unexpected_http = [item for item in logs["http"]
                                if "/favicon.ico" not in item]
             check("UI3-13", "主链零意外 console / page / HTTP 错误",

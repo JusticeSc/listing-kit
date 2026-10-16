@@ -1,0 +1,33 @@
+{
+  "authority": "NOT-AUTHORITY",
+  "schema": "amz-next-version-start/v1",
+  "status": "activated_verified",
+  "source": "current-user-and-native-goal-observation",
+  "goal_id": "15a42a4b52b70942",
+  "goal_observation": "evals/product-v2/refactor/goal-observation-next-version-20261013T040950Z.json",
+  "snapshot": "_stage-amz-control/next-version-start-20261013T040950Z/before/",
+  "user_confirmation": "继续；承接已完整落盘§17/§17.8的正式启动下一步",
+  "original_gate_carried": ["RC19 final frozen candidate two rounds", "assisted/BYOK/structure/retirement final acceptance"],
+  "dependency_table_changed": false,
+  "next_action": "V2.R4.4",
+  "reopened_reason": "new payload and frozen references consumers; retain original identity and history evidence",
+  "new_round_batches_used": 0,
+  "new_round_batches_max": 10,
+  "paid_calls_this_round": 0,
+  "incremental_paid_cap_cny": 5,
+  "image_calls_max": 12,
+  "image_per_call": 1,
+  "semantic_vlm_calls_max": 4,
+  "legacy_count_fields_stale": true,
+  "legacy_conservative_upper_bound_including_planned_reservations": {"image": 17, "semantic_vlm": 10},
+  "legacy_upper_bound_is_not_actual_spent_calls": true,
+  "no_legacy_reservation_released": true,
+  "legacy_count_reconciliation_required_before_paid_call": true,
+  "activation_red": {"exit_code": 1, "problems": ["J3 native Goal JSON missing inside repo: Eval relative write resolved workspace parent", "J8 latest_audit missing NOT-AUTHORITY"], "fix": "move original bytes into repo and mark audit; no weakened guard"},
+  "verification": [
+    {"command": "uv run --locked python tools/check_project_state.py", "exit_code": 0},
+    {"command": "uv run --locked python evals/probes/project_state.py", "exit_code": 0, "observed": "64 expected directions"},
+    {"command": "uv run --locked python tools/check_docs.py --no-run", "exit_code": 0, "limit": "No product commands executed"},
+    {"command": "uv run --locked python tools/refactor_resume.py", "exit_code": 0, "next_action": "V2.R4.4", "goal_id": "15a42a4b52b70942", "objective_sha256": "d01d2f8c90b0278b80824d1e8766946b7d2813d6b60944b8e9848db697a03411"}
+  ]
+}

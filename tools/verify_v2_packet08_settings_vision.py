@@ -823,6 +823,7 @@ def main() -> int:
                         f'#review-list .review-card[data-shot-id="{shot_id}"][data-selection-state="current"]',
                         timeout=15_000)
 
+
                 image_request = last_request(requests_log, "/api/v2/images/submit")
                 image_headers = (image_request or {}).get("headers") or {}
                 check(checks, "P08-02c",
@@ -895,6 +896,123 @@ def main() -> int:
                     page.click("#deliver-project-package")
                 info.value.save_as(str(project_zip))
                 project_zip_bytes = project_zip.read_bytes()
+                delivery_zip = temp_root / "delivery.zip"
+                with page.expect_download(timeout=120_000) as delivery_info:
+                    page.click("#deliver-export")
+                delivery_info.value.save_as(str(delivery_zip))
+                delivery_entries = {}
+                with zipfile.ZipFile(delivery_zip) as archive:
+                    for name in archive.namelist():
+                        delivery_entries[name] = archive.read(name).decode("utf-8", "replace")
+                # ---------------- P5：原任务凭据隔离连接（第二项目单链） ----------------
+                page.click("#back-home")
+                page.wait_for_selector("#new-project-name:not([disabled])", timeout=20_000)
+
+                # 主项目已终态；切 status_unknown 建第二项目，把单任务停在 unknown 在途态：
+                # 清 key → 核对被阻 → 补原凭据 → 可核对 → 切回 ok 达终态。
+                # 批次自动 poll 的 status 与用户点击不做归因硬断言。
+                image_provider.scenario = "status_unknown"
+                shared.create_project(page, "P08 P5 隔离连接", reference)
+                stage_nav.goto(page, "intake")
+                page.wait_for_selector('#stage-panels [data-stage-panel="intake"]:not([hidden])',
+                                       timeout=20_000)
+                page.click("#analyze-run")
+                stage_nav.goto(page, "understand")
+                page.wait_for_selector("#slot-list .slot-row", timeout=60_000)
+                shared.confirm_slots(page)
+                page.click("#stage-next-understand")
+                page.click("#suite-seed")
+                page.wait_for_selector("#shot-list .shot-row", timeout=20_000)
+                page.click("#stage-next-plan")
+                p5_shots = page.evaluate(shared.SHOT_IDS)
+                assert p5_shots, "P5 走查没有产出 shot"
+                shared.compile_all(page, p5_shots)
+                p5_submitted = shared.confirm_and_submit(
+                    page, expect, shot_ids=p5_shots, submitted_shots=[p5_shots[0]], settle=False)
+                assert p5_submitted["ok"], f"P5 提交未落定：{p5_submitted}"
+                stage_nav.goto(page, "generate")
+                page.click("#batch-stop")
+                page.wait_for_timeout(400)
+                p5_shot = p5_shots[0]
+                p5_row = f'#attempt-list .attempt-row[data-shot-id="{p5_shot}"]'
+                submit_before_p5 = len([r for r in requests_log if r["path"].endswith("/api/v2/images/submit")])
+                page.click("#model-settings-open")
+                page.wait_for_selector("#model-settings-dialog[open]", timeout=10_000)
+                cleared = page.evaluate("""() => {
+                  const dialog = document.getElementById("model-settings-dialog");
+                  const sections = [...dialog.querySelectorAll("fieldset")];
+                  const imageSection = sections.find((s) =>
+                    ((s.querySelector("legend") || {}).textContent || "").includes("图片生成"));
+                  if (!imageSection) return "no-image-section";
+                  const clear = [...imageSection.querySelectorAll("button")]
+                    .find((b) => (b.textContent || "").includes("清除此模型密钥"));
+                  if (!clear) return "no-clear";
+                  clear.click();
+                  const apply = document.getElementById("model-settings-apply");
+                  if (!apply) return "no-apply";
+                  apply.click();
+                  return "image-section:true";
+                }""")
+
+
+
+                page.wait_for_timeout(400)
+
+                check(checks, "P08-05a",
+                      "image 用途 key 已清除（面板清除入口真实可用）",
+                      cleared == "image-section:true", {"cleared": cleared})
+                stage_nav.goto(page, "generate")
+                page.wait_for_selector(p5_row, timeout=20_000)
+                page.wait_for_timeout(500)
+                cred_visible = page.locator(f"{p5_row} button[data-original-credentials]").is_visible()
+                reconcile_btn = page.locator(f"{p5_row} button:has-text('核对任务')")
+                reconcile_disabled = (not reconcile_btn.count()) or reconcile_btn.is_disabled()
+                check(checks, "P08-05b",
+                      "凭据缺失时核对被阻：出现补原凭据入口、核对按钮禁用",
+                      cred_visible is True and reconcile_disabled,
+                      {"cred_visible": cred_visible, "reconcile_disabled": reconcile_disabled})
+                submit_before_p5b = len([r for r in requests_log if r["path"].endswith("/api/v2/images/submit")])
+                page.click(f"{p5_row} button[data-original-credentials]")
+                page.wait_for_selector("#model-key-original", timeout=10_000)
+                page.fill("#model-key-original", SENTINELS["image"])
+                page.evaluate("""() => {
+                  const apply = document.getElementById("model-settings-apply");
+                  if (apply) apply.click();
+                }""")
+
+                page.wait_for_timeout(400)
+                for _ in range(30):
+                    probe_btn = page.locator(f"{p5_row} button:has-text('核对任务')")
+                    if probe_btn.count() > 0 and probe_btn.is_enabled():
+                        break
+                    page.wait_for_timeout(200)
+                reconcile_btn2 = page.locator(f"{p5_row} button:has-text('核对任务')")
+                reconcile_enabled = reconcile_btn2.count() > 0 and reconcile_btn2.is_enabled()
+                check(checks, "P08-05c",
+                      "补原凭据后核对恢复可用",
+                      reconcile_enabled is True, {"reconcile_enabled": reconcile_enabled})
+                page.click(f"{p5_row} button:has-text('核对任务')")
+                page.wait_for_timeout(1500)
+                submit_after_p5 = len([r for r in requests_log if r["path"].endswith("/api/v2/images/submit")])
+                check(checks, "P08-05c2",
+                      "用户核对不重提：零新 submit",
+                      submit_after_p5 == submit_before_p5b,
+                      {"submit_delta": submit_after_p5 - submit_before_p5})
+                image_provider.scenario = "ok"
+                page.click(f"{p5_row} button:has-text('核对任务')")
+                page.wait_for_function(
+                    f"() => (document.querySelector('{p5_row}') || {{}})"
+                    ".getAttribute('data-attempt-state') === 'succeeded'", timeout=60_000)
+                shared.wait_terminal(page, [p5_shot])
+                p5_state = page.evaluate(
+                    f"() => (document.querySelector('{p5_row}') || {{}})"
+                    ".getAttribute('data-attempt-state')")
+                submit_after_ok = len([r for r in requests_log if r["path"].endswith("/api/v2/images/submit")])
+                check(checks, "P08-05d",
+                      "切回 ok 后同 task 达终态 succeeded 且零新 submit",
+                      p5_state == "succeeded" and submit_after_ok == submit_before_p5,
+                      {"state": p5_state, "submit_delta": submit_after_ok - submit_before_p5})
+
 
                 # ---------------- 完整内容缺席证明（此刻三用途密钥仍在标签页内存里，取证最有意义） ----------------
                 page.click("#model-settings-open")
@@ -911,14 +1029,6 @@ def main() -> int:
                 }
                 page.keyboard.press("Escape")
                 page.wait_for_timeout(200)
-                delivery_zip = temp_root / "delivery.zip"
-                with page.expect_download(timeout=120_000) as delivery_info:
-                    page.click("#deliver-export")
-                delivery_info.value.save_as(str(delivery_zip))
-                delivery_entries = {}
-                with zipfile.ZipFile(delivery_zip) as archive:
-                    for name in archive.namelist():
-                        delivery_entries[name] = archive.read(name).decode("utf-8", "replace")
                 page.click("#model-settings-open")
                 with zipfile.ZipFile(project_zip) as archive:
                     project_entries = {name: archive.read(name).decode("utf-8", "replace")

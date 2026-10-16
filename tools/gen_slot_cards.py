@@ -35,9 +35,7 @@ r"""坑位卡生成器 —— 把「跨切面文档」换成「一份对应一�
 生成而不是手写
 --------------
 手写 7 张卡 = 7 份会漂移的副本。所以：卡**由 `slots.yaml` 生成**，
-带横幅、由 `tools/check_docs.py` 校验一致性。
-改一格的行为 → 改 `slots.yaml` 那一行 → 重跑本脚本。
-
+带横幅，先用本脚本 `--check` 自检一致性。
 卡里没有一句是新的知识
 ----------------------
 每一行的来源都是可指认的：
@@ -78,8 +76,8 @@ OUT_DIR = ROOT / "docs" / "cards"
 BANNER = ("<!-- ⚠️ 由 tools/gen_slot_cards.py 从 config/slots.yaml 生成，"
           "不要直接改这里。 -->")
 BANNER2 = ("<!-- 改这一格 → 改 config/slots.yaml → 跑 "
-           "`python tools/gen_slot_cards.py`；一致性由 "
-           "`python tools/check_docs.py` 守卫。 -->")
+           "`python tools/gen_slot_cards.py`；一致性先用 "
+           "`python tools/gen_slot_cards.py --check` 自检。 -->")
 
 # 每张卡的行数上限。**上限本身就是一条判据**：
 # 卡一旦长起来，它就退化成文档 —— 而卡存在的理由恰恰是"短到能一次读完"。
@@ -292,7 +290,7 @@ def _index(cards: list[tuple[dict, str]], cfg: dict) -> str:
     L.append("")
     L.append("- **卡是生成的，不要直接改。** 改 `config/slots.yaml` 那一行，"
              "再跑 `python tools/gen_slot_cards.py`。"
-             "不一致会被 `python tools/check_docs.py` 报成 `stale`。")
+             "不一致会被 `python tools/gen_slot_cards.py --check` 报出。")
     L.append(f"- **围栏有语义**：```bash 里的命令守卫**会真跑**"
              f"（缺 `--dry-run` 就自动补上，守卫不替人花钱调模型）；"
              f"```text 里的是给人看的示例，不执行。"

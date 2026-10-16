@@ -1,0 +1,113 @@
+{
+  "schema": "amz-issue-tracking-handoff/v1",
+  "authority": "NOT-AUTHORITY — remote Issue creation and local recovery handoff only; product Goal and state remain authoritative.",
+  "created_at": "2026-10-16T02:52:07.812Z",
+  "authorization_interpretation": "用户要求实际建立Issue、不再只描述流程；落实既有工程、Prompt、UI议题到GitHub并回写入口，不据此恢复产品/收费/推送/部署。",
+  "repository": {
+    "name": "JusticeSc/listing-kit",
+    "visibility": "PUBLIC"
+  },
+  "public_content_policy": "Only software problems, generic acceptance, non-secret UI dimensions and governance were published. No customer images, project packages, original prompts, project identity, credentials or local evidence dumps uploaded.",
+  "prior_governance_audit": "_stage-amz-control/governance-maintenance-20261016T021335Z/verification.json",
+  "original_product_closeout": "_stage-amz-control/formal-resume-20261015T125651Z/real-wire/stop-closeout.json",
+  "baseline": {
+    "state_before_sha256": "28cec271013f197d139616c5ff039d4693b912da22f9f8b90fa7dcfedd8c1642",
+    "budget_sha256": "4aa0f8b585395986b85d013a6acf63e70f6035eb8254ea94483c275eac1820dc"
+  },
+  "before_snapshot": "_stage-amz-control/issue-tracking-20261016T025000Z/before.zip",
+  "remote_read_back": "_stage-amz-control/issue-tracking-20261016T025000Z/remote-issues.json",
+  "issues": [
+    {
+      "number": 7,
+      "title": "[工程交付] 将 Issue、早期 PR、独立审查和实际验收接成可执行闭环",
+      "url": "https://github.com/JusticeSc/listing-kit/issues/7",
+      "observed_state": "OPEN",
+      "assignees": [
+        "JusticeSc"
+      ],
+      "labels": [
+        "enhancement"
+      ]
+    },
+    {
+      "number": 8,
+      "title": "[界面与人因] 修正真实内容下制作审图页异常横向溢出并验证关键操作",
+      "url": "https://github.com/JusticeSc/listing-kit/issues/8",
+      "observed_state": "OPEN",
+      "assignees": [
+        "JusticeSc"
+      ],
+      "labels": [
+        "bug"
+      ]
+    },
+    {
+      "number": 9,
+      "title": "[程序 Prompt] 从普通输入生成协调视觉简报，消除专家手写代替产品能力",
+      "url": "https://github.com/JusticeSc/listing-kit/issues/9",
+      "observed_state": "OPEN",
+      "assignees": [
+        "JusticeSc"
+      ],
+      "labels": [
+        "enhancement"
+      ]
+    }
+  ],
+  "live_engineering_settings": {
+    "strict": true,
+    "required_checks": [
+      "Control plane and Product V2",
+      "Docker image, smoke test, and main deploy"
+    ],
+    "required_approvals": 0,
+    "enforce_admins": true,
+    "allow_force_pushes": false,
+    "open_issues_before": 0,
+    "open_pull_requests_before": 0,
+    "limits": "These are configuration observations, not independent-review enforcement or this-version CI/release acceptance."
+  },
+  "not_done": [
+    "All three issues remain open; no product fix or full workflow completion claimed.",
+    "No new branch/commit/push/PR/merge, protection/CI change, browser/server or model call, deployment, or product Goal resume."
+  ],
+  "verification": [
+    {
+      "command": "uv run --locked python tools/check_docs.py --no-run",
+      "exit_code": 0,
+      "output_path": "_stage-amz-control/issue-tracking-20261016T025000Z/docs.json"
+    },
+    {
+      "command": "uv run --locked python tools/check_project_state.py",
+      "exit_code": 0,
+      "output_path": "_stage-amz-control/issue-tracking-20261016T025000Z/state.json"
+    },
+    {
+      "command": "uv run --locked python tools/refactor_resume.py",
+      "exit_code": 0,
+      "output_path": "_stage-amz-control/issue-tracking-20261016T025000Z/cold_resume.json"
+    }
+  ],
+  "completion": "actual_issues_created_remote_read_back_verified_and_recovery_handoff_verified_only",
+  "plan_baseline": {
+    "path": "docs/product-v2-refactor-plan.md",
+    "before_sha256": "0830771709a09ddc9555bc2261a1876b82cb6c0bb204f1d385ddf3931e415d33",
+    "snapshot": "_stage-amz-control/issue-tracking-20261016T025000Z/before-plan.zip"
+  },
+  "invariants": {
+    "product_status": "paused",
+    "product_next_action": "V2.R5.1",
+    "product_next_status": "blocked",
+    "machine_statuses_binding_and_dependencies_unchanged": true,
+    "budget_unchanged": true,
+    "goal_text_unchanged": true,
+    "state_after_sha256": "080ea5538b9137ef560c058ce739ee18fd410125707c7116b8d117694d4f4abc",
+    "plan_after_sha256": "2b51f7038174267e403dec11739f8d8b28a23431efd7c64ed7e895702ef1e626"
+  },
+  "completed_at": "2026-10-16T02:54:18.798Z",
+  "notes": [
+    "All three Issues were read back OPEN with exact expected body/title, existing labels and current maintainer account assignee; they are not marked fixed.",
+    "Existing document/state/cold-resume commands exited 0; existing untracked-evidence warnings remain and were not staged.",
+    "Only state recovery prose/evidence pointers and the R5.1 task-card existing-Issue pointer changed locally; product code and CI/protection were not modified."
+  ]
+}

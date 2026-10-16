@@ -147,8 +147,9 @@ def _tracked_index() -> set[str] | None:
     if _TRACKED is None:
         try:
             proc = subprocess.run(["git", "-C", str(ROOT), "ls-files", "-z"],
-                                  capture_output=True, text=True)
-        except OSError:
+                                  capture_output=True, text=True, encoding="utf-8",
+                                  errors="strict")
+        except (OSError, UnicodeDecodeError):
             _TRACKED = False
         else:
             if proc.returncode != 0 or "not a git repository" in (proc.stderr or ""):

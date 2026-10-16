@@ -90,12 +90,12 @@ from console import enable_utf8  # noqa: E402  （控制台编码归一：见 sr
 enable_utf8()
 sys.path.insert(0, str(ROOT / "tools"))
 
-import registry      # noqa: E402
-import schema        # noqa: E402
-import gen_slot_cards as gsc  # noqa: E402
+
+# 的 build）。旧卡生成一致性/幽灵文件检查的明确入口是
+# `python tools/gen_slot_cards.py --check`，见 Issue #10 P1。
 
 README = ROOT / "README.md"
-CARDS_DIR = gsc.OUT_DIR
+CARDS_DIR = ROOT / "docs" / "cards"
 
 MANAGED_HAND = [README]                     # 手写的受管文档
 MANAGED_GEN = sorted(CARDS_DIR.glob("*.md"))  # 生成的受管文档
@@ -314,160 +314,7 @@ def _check_commands(rep: Report) -> None:
         rep.det(f"跳过     {rel}  `{ln[:60]}` —— {why}")
 
 
-# ---------------------------------------------------------------- 数字一致
 
-_CN_DIGITS = {"〇": 0, "一": 1, "二": 2, "三": 3, "四": 4, "五": 5,
-              "六": 6, "七": 7, "八": 8, "九": 9}
-
-
-def _cn_int(s: str) -> int | None:
-    """把 README 里那种数字读成 int：`12` / `十` / `十二` / `二十` 都收。"""
-    s = s.strip()
-    if s.isdigit():
-        return int(s)
-    if "十" not in s:
-        return _CN_DIGITS.get(s)
-    head, _, tail = s.partition("十")
-    if head and head not in _CN_DIGITS:
-        return None
-    if tail and tail not in _CN_DIGITS:
-        return None
-    tens = _CN_DIGITS.get(head, 1) if head else 1
-    return tens * 10 + (_CN_DIGITS.get(tail, 0) if tail else 0)
-
-
-def _probe_count(rel: str) -> int | None:
-    """问探针自己有几向：`--count` 打的就是它的 build_cases() 条数。"""
-    p = ROOT / rel
-    if not p.exists():
-        return None
-    r = subprocess.run([sys.executable, str(p), "--count"], cwd=str(ROOT),
-                       capture_output=True, text=True, encoding="utf-8",
-                       errors="replace", timeout=120)
-    if r.returncode != 0:
-        return None
-    lines = [ln for ln in (r.stdout or "").splitlines() if ln.strip()]
-    if not lines:
-        return None
-    try:
-        return int(lines[-1].strip())
-    except ValueError:
-        return None
-
-
-def _check_numbers(rep: Report, cfg: dict) -> None:
-    """⑤ README 里抄下来的数字必须等于真实的值。
-
-    ★ 已退役（2026-10-01）：本函数**不在主清单里调用**。退役理由不是判据无效，而是
-    被测对象不存在了 —— Product V2 上下文重组后 README 只投影当前实现边界，那两句
-    「（N 项 / 可 --fresh…」与「probes/<x>.py … N 向植入对照」的副本都被删掉了，
-    没有副本就没有漂移（`_check_readme_scope()` 现在反向禁止这两类副本回流）。
-    谁要重新把运行结果抄进 README，就必须先把这个函数接回主清单 —— 否则
-    「没有人比对」这件事不会有人知道，而它上一次就是这样悄悄发生的。
-
-    这条检查的形态值得说清：它不是"文档里的 1600 与表里的 1600 对齐"那种自我循环 ——
-    它比对的是**文档抄下来的运行结果**与**现在真算出来的结果**。两者来源不同
-    （一个是人上次抄的，一个是这次算的），所以它是能真的失败的。
-    """
-    text = README.read_text(encoding="utf-8")
-
-    n_slots = len(cfg["slots"])
-    n_renderers = len(registry.known())
-    long_side = cfg["export"]["long_side_px"]
-
-    m = re.search(r"OK:\s*(\d+)\s*slots,\s*(\d+)\s*renderers registered", text)
-    if not m:
-        rep.problem("README 里找不到 `OK: N slots, M renderers registered` 这句话。"
-                    "它是 `python -m src.schema` 的输出，也是读者核对表的一处锚点 —— "
-                    "要么补回来，要么连它引用的那段话一起删掉（不要留半句）。")
-    else:
-        claimed = (int(m.group(1)), int(m.group(2)))
-        if claimed != (n_slots, n_renderers):
-            rep.problem(f"README 抄的 schema 输出是 {claimed[0]} slots / "
-                        f"{claimed[1]} renderers，而真实是 {n_slots} / {n_renderers} —— "
-                        f"这句话是人抄的，改了表它不会自己跟着改。")
-
-    m = re.search(r"原生出\s*(\d+)\s*px", text)
-    if m and int(m.group(1)) != long_side:
-        rep.problem(f"README 说模型『原生出 {m.group(1)}px』，而表里 export.long_side_px "
-                    f"= {long_side} —— 两处必须同一个数（出图参数与校验判据共用一个阈值）。")
-
-    # ---- 回归项数：README 抄的「N 项」必须等于 regress_all 里真实的项数
-    #
-    # 形态与上面那条相同（文档 vs 代码），但它漂过：加过一项之后 README 还写着 12，
-    # 而 TOOLS 里实际是 13 —— 一句话静默变成了假情报，而没有任何东西会响。
-    #
-    # 为什么不 import regress_all 直接取 len(TOOLS)：TOOLS 是 main() 里的局部变量。
-    # 所以从源码里数条目行（每个条目占一行、以 `(` 开头）。
-    # **解析不出来必须报错，不许静默通过** —— 守卫自己解析失败而不响，
-    # 等于这一项断言被悄悄关掉，而那是最坏的一种绿。
-    src = (ROOT / "tools" / "regress_all.py").read_text(encoding="utf-8")
-    blk = re.search(r"TOOLS\s*=\s*\[(.*?)^\s*\]", src, re.M | re.S)
-    if not blk:
-        rep.problem("在 tools/regress_all.py 里找不到 TOOLS 列表 —— 本守卫要用它"
-                    "核对 README 的『N 项』。解析不出来就说出来，不静默通过。")
-        return
-    n_real = len(re.findall(r"^\s*\(", blk.group(1), re.M))
-    if n_real == 0:
-        rep.problem("tools/regress_all.py 的 TOOLS 解析出 0 项 —— 格式变了？"
-                    "本守卫的这一项已经失效，必须修它，不能当成通过。")
-        return
-
-    m = re.search(r"全套回归\*{0,2}（(\d+)\s*项", text)
-    if not m:
-        rep.problem("README 里找不到『跑全套回归（N 项）』这句话 —— 它引用的是 "
-                    "tools/regress_all.py 的项数。要么补回来，要么连它引用的那段"
-                    "一起删掉（不要留半句）。")
-    elif int(m.group(1)) != n_real:
-        rep.problem(f"README 说回归有 {m.group(1)} 项，而 tools/regress_all.py 的 "
-                    f"TOOLS 里有 {n_real} 项 —— 这个数字是人抄的，"
-                    f"改了 TOOLS 它不会自己跟着改。")
-
-    m = re.search(r"^#\s*(\d+)\s*项", text, re.M)
-    if m and int(m.group(1)) != n_real:
-        rep.problem(f"README 的命令注释里写着『{m.group(1)} 项』，而 TOOLS 里有 "
-                    f"{n_real} 项 —— 同一件事在 README 里有两个数字，"
-                    f"读者会挑对他方便的那个。")
-
-    # “现在的状态”段落是读者最先看到的当前结论。它曾长期写 13，而表格与命令注释
-    # 已经是 16；只守后两处仍会让入口第一屏说谎。历史章节中的 12/14 是事故证据，
-    # 所以只匹配这个明确句式，不做全文件数字扫荡。
-    m = re.search(r"（(\d+)\s*项验收一次跑完；加\s*`--fresh`", text)
-    if not m:
-        rep.problem("README 的『现在的状态』里找不到『（N 项验收一次跑完；加 `--fresh`』"
-                    "这句话 —— 当前回归数量必须有一个受守卫约束的入口结论。")
-    elif int(m.group(1)) != n_real:
-        rep.problem(f"README 的『现在的状态』说回归有 {m.group(1)} 项，而 "
-                    f"tools/regress_all.py 的 TOOLS 里有 {n_real} 项 —— "
-                    "入口结论与实际验收集不一致。")
-
-    # ---- 探针方向数：README 说「N 向植入对照」，N 必须等于那条探针真跑出来的方向数
-    #
-    # 这一条以前没人守，于是漂了：README 写着「十向」，而 docs_index.py 的
-    # build_cases() 早就长到十二向，括号里还列着旧的几项。形态与上面那条相同 ——
-    # 文档抄的是探针的输出，探针自己报数（`--count`）。
-    #
-    # 只对**能自己报数**的探针生效。invariants.py 的「N 条判据里 M 条带对照」是运行时
-    # 算出来的，skip_cause.py 的「三向」是三种退出码，都不是方向表 —— 那两处本文不核对，
-    # 也不假装核对过。
-    for probe in ("project_state", "docs_index"):
-        rel = f"evals/probes/{probe}.py"
-        m = re.search(rf"probes/{probe}\.py[^\n]*?"
-                      rf"([0-9]+|[〇一二三四五六七八九十]+)\s*向植入对照", text)
-        if not m:
-            rep.problem(f"README 里找不到 `{rel}` 的『N 向植入对照』这句话 —— "
-                        f"反向对照的方向数必须有一个受守卫约束的入口。")
-            continue
-        want = _cn_int(m.group(1))
-        got = _probe_count(rel)
-        if got is None:
-            rep.problem(f"数不出 {rel} 的方向数（`--count` 没跑通）—— "
-                        f"本守卫的这一项不能静默关掉。")
-        elif want is None:
-            rep.problem(f"README 里 `{rel}` 的方向数写的是 {m.group(1)!r}，读不出来。")
-        elif want != got:
-            rep.problem(f"README 说 {rel} 有 {want} 向植入对照，而它现在真跑的是 "
-                        f"{got} 向 —— 这个数字是人抄的，探针加了方向它不会自己跟着改。")
 
 
 def _check_readme_scope(rep: Report) -> None:
@@ -481,122 +328,35 @@ def _check_readme_scope(rep: Report) -> None:
         r"^\s*(?:[-*>]\s*)?(?:next_action_task|下一任务|下一动作)\s*[：:]\s*`?"
         r"(?:V2\.[0-9A-Za-z.-]+|D[-0-9A-Za-z.]+)\b":
             "README 不得复制 state 的下一动作赋值",
-        r"^##\s*\d*\.?\s*七坑位表": "固定七坑位表属于 legacy，不得继续占据当前实现入口",
         r"跑全套回归（\d+\s*项": "README 不得手抄会漂移的回归项数",
-        # 2026-10-01：`_check_numbers()` 退役后（README 不再抄任何运行结果），
-        # 「抄进来的数字」没有守卫再比对。要么别抄，要么把 `_check_numbers()`
-        # 接回主清单再抄 —— 这条就是那个岔路口的红灯，防止判据被悄悄摘掉之后
-        # 副本又悄悄长回来。
+        # 退役的 README 数字/七坑位检查已删除。如需重新抄数字或引入该表，
+        # 先恢复对应的直接比对检查，不能只恢复副本而不守。
         r"\d+\s*向植入对照": "README 不得手抄探针方向数：方向数由探针 `--count` 给出，"
-                             "写进文档就得有守卫比对（`_check_numbers()` 已退役，"
-                             "重新抄之前先把它接回主清单）",
+                             "写进文档就得有守卫比对；"
+                             "重新抄之前先恢复被删除的直接比对检查",
     }
     for pattern, message in forbidden.items():
         if re.search(pattern, text, re.M):
             rep.problem(message)
 
 
-# ---------------------------------------------------------------- README 七坑位表
-
-def _check_readme_slot_table(rep: Report, cfg: dict) -> None:
-    """④ README 的"七坑位表"与表 + registry 一致。
-
-    为什么专盯这一张：**它是手写的副本**。卡片是生成的（漂不了），而这七行是人写的。
-    "第四行到底调不调模型"这件事，如果有两个答案，读者会挑那个对他方便的。
-    """
-    text = README.read_text(encoding="utf-8")
-    m = re.search(r"^##\s*6\.", text, re.M)
-    if not m:
-        rep.problem("README 里找不到 `## 6.` 那一节（七坑位表）。"
-                    "要么补回来，要么把对它的引用一起删掉。")
-        return
-    rest = text[m.end():]
-    nxt = re.search(r"^##\s*7\.", rest, re.M)
-    section = rest[:nxt.start()] if nxt else rest
-
-    rows: list[list[str]] = []
-    for raw in section.splitlines():
-        ln = raw.strip()
-        if not ln.startswith("|") or not ln.endswith("|"):
-            continue
-        cells = [c.strip() for c in ln.strip("|").split("|")]
-        if len(cells) != 8 or not re.fullmatch(r"\**\d+\**", cells[0]):
-            continue
-        rows.append([c.replace("*", "").replace("`", "").strip() for c in cells])
-
-    by_id = {s["id"]: s for s in cfg["slots"]}
-    if len(rows) != len(by_id):
-        rep.problem(f"README 七坑位表有 {len(rows)} 行，表里有 {len(by_id)} 个坑位 —— "
-                    f"两个数字必须相等（加一格就要加一行，否则那张表会开始说谎）。")
-        return
-
-    for cells in rows:
-        sid = int(cells[0])
-        slot = by_id.get(sid)
-        if slot is None:
-            rep.problem(f"README 七坑位表里的坑位 {sid} 在 slots.yaml 里不存在")
-            continue
-        want_renderer = slot["renderer"]
-        if cells[2] != want_renderer:
-            rep.problem(f"README 坑位 {sid} 的 renderer 写作 `{cells[2]}`，"
-                        f"表里是 `{want_renderer}`")
-        if cells[3] != (slot.get("text") or ""):
-            rep.problem(f"README 坑位 {sid} 的 text 写作 `{cells[3]}`，"
-                        f"表里是 `{slot.get('text')}`")
-        want_needs = set(slot.get("needs") or [])
-        got_needs = set(re.findall(r"[a-z_]+", cells[4]))
-        if got_needs != want_needs:
-            rep.problem(f"README 坑位 {sid} 的素材写作 {sorted(got_needs)}，"
-                        f"表里是 {sorted(want_needs)}")
-        # 判据取自 registry 的**声明**，不是那张表里的符号 —— 否则就成了"用文档验文档"。
-        want_calls = registry.calls_model(want_renderer)
-        got_calls = ("✗" not in cells[6]) and bool(re.search(r"★|是", cells[6]))
-        verdict = "是" if got_calls else "否"
-        if got_calls != want_calls:
-            rep.problem(f"README 坑位 {sid} 的『调模型』列与 registry 声明不符："
-                        f"文档写 `{cells[6]}`（判为 {verdict}），而 "
-                        f"registry.calls_model({want_renderer!r}) = {want_calls}")
-        if cells[7] != slot.get("validate_level"):
-            rep.problem(f"README 坑位 {sid} 的校验强度写作 `{cells[7]}`，"
-                        f"表里是 `{slot.get('validate_level')}`")
-
 
 # ---------------------------------------------------------------- 铁律
 
 
 
-# ---------------------------------------------------------------- 卡
+# ---------------------------------------------------------------- 旧槽卡
 
+# P1：旧卡生成一致性/幽灵文件检查已迁出 check_docs，明确入口是
+# `python tools/gen_slot_cards.py --check`。这里只保留仍属文档守卫的
+# 卡数/行数结构检查，不再 build 旧业务链。
 def _check_cards(rep: Report, cfg: dict) -> None:
-    """①②③ 卡与生成器一致（stale）+ 卡的结构（problems）。"""
-    want = gsc.build()
-    n_slots = len(cfg["slots"])
-
-    for name, text in sorted(want.items()):
-        p = CARDS_DIR / name
-        cur = p.read_text(encoding="utf-8") if p.exists() else None
-        if cur is None:
-            rep.stale_(f"缺卡：docs/cards/{name}（跑 python tools/gen_slot_cards.py 生成）")
-        elif cur != text:
-            rep.stale_(f"卡与表不一致：docs/cards/{name}"
-                       f"（跑 python tools/gen_slot_cards.py）")
-
-    known = set(want)
-    for p in sorted(CARDS_DIR.glob("*.md")):
-        if p.name not in known:
-            rep.stale_(f"幽灵卡：docs/cards/{p.name} —— 表里已无对应坑位，请确认后删除"
-                       f"（删了坑位却留着卡 = 一个不存在的交付单元）")
-
-    card_files = list(CARDS_DIR.glob("slot-*.md"))
-    if len(card_files) != n_slots:
-        rep.problem(f"docs/cards/ 里有 {len(card_files)} 张坑位卡，表里有 {n_slots} 个坑位"
-                    f" —— 每个坑位必须恰好一张卡。")
-
-    # 行数上限：卡长了就退化成文档，而卡存在的理由恰恰是"短到能一次读完"。
-    over = [n for n, t in want.items() if len(t.splitlines()) > gsc.MAX_CARD_LINES]
-    if over:
-        rep.problem(f"卡超过 {gsc.MAX_CARD_LINES} 行上限：{'、'.join(over)} —— "
-                    f"卡长了就退化成文档；拆成两张卡，或把细节留给代码。")
+     """③ 卡数与行数结构（problems）。一致性见 gen_slot_cards --check。"""
+     n_slots = len(cfg["slots"])
+     card_files = list(CARDS_DIR.glob("slot-*.md"))
+     if len(card_files) != n_slots:
+         rep.problem(f"docs/cards/ 里有 {len(card_files)} 张坑位卡，表里有 {n_slots} 个坑位"
+                     f" —— 每个坑位必须恰好一张卡。")
 
 
 # ---------------------------------------------------------------- 文档登记
@@ -680,6 +440,18 @@ def _check_docs_index(rep: Report) -> None:
     # by ExportVersion, not governance documents.  They live below _working only
     # because evaluation workspaces are retained there.  Registering every
     # immutable export would make the control index depend on runtime output.
+    # gitignored 的本地历史（未跟踪）不进登记比对：登记表只管仓库里的文档；
+    # 否则本地与 CI 看到不同文件集，同一份表两边互斥变红。
+    try:
+        import subprocess as _sp
+        _out = _sp.run(["git", "-c", "core.quotepath=false", "ls-files", "-z",
+                        "--", "*.md", "docs/*.md", "_working/*.md"],
+                       capture_output=True, cwd=str(ROOT), timeout=30).stdout.decode("utf-8")
+        _tracked = set(_out.split("\0")) - {""}
+        if _tracked:
+            actual &= _tracked
+    except Exception:
+        pass
     actual = {
         path for path in actual
         if not (path.startswith("_working/") and "/exports/" in path and path.endswith("/README.md"))
@@ -1127,7 +899,11 @@ def main(argv: list[str] | None = None) -> int:
     STANDARDS_DIR = ROOT / "docs" / "standards-template"
 
     rep = Report()
-    cfg = schema.assert_valid(ROOT / schema.SLOTS_REL)
+    # P1：slots 表校验的明确入口是 `python -m src.schema`（或 gen_slot_cards
+    # --check 连带校验）。check_docs 只读已校验表的槽位数做卡数对照，不再
+    # 直调旧业务 schema.assert_valid。
+    import yaml as _yaml
+    cfg = _yaml.safe_load((ROOT / "config/slots.yaml").read_text(encoding="utf-8"))
 
     _check_cards(rep, cfg)
     _check_readme_scope(rep)
@@ -1149,7 +925,7 @@ def main(argv: list[str] | None = None) -> int:
           "—— 回答「实现之前先找过现成能力没有」")
     print("　　　+ 模板映射（AGENTS.md §Standards Mapping ↔ docs/standards-template/）"
           "—— 回答「外部模板的每份规范有没有采纳落点」")
-    print(f"表：{len(cfg['slots'])} 个坑位 · {len(registry.known())} 个渲染器")
+    print(f"表：{len(cfg['slots'])} 个坑位（渲染器数见 python -m src.schema）")
     print()
 
     for n in rep.notes:

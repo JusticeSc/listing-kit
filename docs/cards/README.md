@@ -1,5 +1,5 @@
 <!-- ⚠️ 由 tools/gen_slot_cards.py 从 config/slots.yaml 生成，不要直接改这里。 -->
-<!-- 改这一格 → 改 config/slots.yaml → 跑 `python tools/gen_slot_cards.py`；一致性由 `python tools/check_docs.py` 守卫。 -->
+<!-- 改这一格 → 改 config/slots.yaml → 跑 `python tools/gen_slot_cards.py`；一致性先用 `python tools/gen_slot_cards.py --check` 自检。 -->
 
 # 坑位卡索引
 
@@ -38,5 +38,5 @@
 
 ## 两条约定
 
-- **卡是生成的，不要直接改。** 改 `config/slots.yaml` 那一行，再跑 `python tools/gen_slot_cards.py`。不一致会被 `python tools/check_docs.py` 报成 `stale`。
+- **卡是生成的，不要直接改。** 改 `config/slots.yaml` 那一行，再跑 `python tools/gen_slot_cards.py`。不一致会被 `python tools/gen_slot_cards.py --check` 报出。
 - **围栏有语义**：```bash 里的命令守卫**会真跑**（缺 `--dry-run` 就自动补上，守卫不替人花钱调模型）；```text 里的是给人看的示例，不执行。所以往卡里写命令时，能跑的放 bash，需要前置状态的放 text。
