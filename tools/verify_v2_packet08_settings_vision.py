@@ -959,6 +959,7 @@ def main() -> int:
                 page.wait_for_timeout(400)
 
                 check(checks, "P08-05a",
+                      "image 用途 key 已清除（面板清除入口真实可用）",
                       cleared == "image-section:true", {"cleared": cleared})
                 stage_nav.goto(page, "generate")
                 page.wait_for_selector(p5_row, timeout=20_000)
@@ -999,12 +1000,18 @@ def main() -> int:
                       {"submit_delta": submit_after_p5 - submit_before_p5})
                 image_provider.scenario = "ok"
                 page.click(f"{p5_row} button:has-text('核对任务')")
+                page.wait_for_function(
+                    f"() => (document.querySelector('{p5_row}') || {{}})"
+                    ".getAttribute('data-attempt-state') === 'succeeded'", timeout=60_000)
                 shared.wait_terminal(page, [p5_shot])
+                p5_state = page.evaluate(
+                    f"() => (document.querySelector('{p5_row}') || {{}})"
+                    ".getAttribute('data-attempt-state')")
                 submit_after_ok = len([r for r in requests_log if r["path"].endswith("/api/v2/images/submit")])
                 check(checks, "P08-05d",
-                      "切回 ok 后同 task 达终态且零新 submit",
-                      submit_after_ok == submit_before_p5,
-                      {"submit_delta": submit_after_ok - submit_before_p5})
+                      "切回 ok 后同 task 达终态 succeeded 且零新 submit",
+                      p5_state == "succeeded" and submit_after_ok == submit_before_p5,
+                      {"state": p5_state, "submit_delta": submit_after_ok - submit_before_p5})
 
 
                 # ---------------- 完整内容缺席证明（此刻三用途密钥仍在标签页内存里，取证最有意义） ----------------

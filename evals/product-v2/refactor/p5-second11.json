@@ -551,5 +551,5 @@
       }
     ]
   },
-  "note": "test-only：fake-vision/fake-image/fake-review 替身经显式注入接缝；生产凭据 fail-closed 用生产适配器 + 假 transport（零上游）证明。非秘密哨兵只出现在输入框内存与本次出站头，证据只记长度与计数；生产注册表未改（config/product-v2/providers.json 无 diff）。"
+  "note": "NOT-AUTHORITY: point-in-time evidence; not a plan, current state, or product completion. test-only：fake-vision/fake-image/fake-review 替身经显式注入接缝；生产凭据 fail-closed 用生产适配器 + 假 transport（零上游）证明。非秘密哨兵只出现在输入框内存与本次出站头，证据只记长度与计数；生产注册表未改（config/product-v2/providers.json 无 diff）。"
 }

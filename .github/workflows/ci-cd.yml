@@ -97,6 +97,7 @@ jobs:
           uv run python evals/probes/project_state.py
           uv run python evals/probes/docs_index.py
           uv run python tools/check_verification.py
+          uv run python tools/gen_slot_cards.py --check
           uv run python evals/probes/verification_policy.py
 
       - name: Check frontend versions types and direct behavior
