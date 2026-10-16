@@ -90,6 +90,15 @@
         "ci": true
       }
     ],
+    "tools/gen_slot_cards.py": [
+      {
+        "args": [
+          "--check"
+        ],
+        "category": "control",
+        "ci": true
+      }
+    ],
     "tools/verify_v2_1_1_indexeddb.py": [
       {
         "args": [],
