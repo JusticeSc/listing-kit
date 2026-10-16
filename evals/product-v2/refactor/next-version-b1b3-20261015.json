@@ -1,0 +1,58 @@
+{
+  "authority": "NOT-AUTHORITY",
+  "goal_id": "15a42a4b52b70942",
+  "recorded_at": "2026-10-14T23:51:26.787Z",
+  "batch": 1,
+  "scope": "B1–B3 atomic engineering vertical delivery; fake images, not real five-image product acceptance",
+  "result": "vertical_path_proven",
+  "visible_behaviors": [
+    "Manual fact confirmation without model calls",
+    "Shared presentation and per-shot override consumed by local prompts",
+    "Only explicitly confirmed/current print text; updated source blocks only affected shot",
+    "Default edit sends problem candidate first plus product reference; original regenerate excludes candidate",
+    "Explicit adoption and two actual ZIP downloads; fresh profile import plus reload preserves JSON/Blob identity",
+    "Original baseline native package opens/reloads with original payloads/hash/bytes unchanged"
+  ],
+  "evidence": [
+    "evals/product-v2/v2.5.4-rework-loop-20261015-074537fixer-shared2.json",
+    "evals/product-v2/v2.6.3-transfer-20261015-074943-b1b3-native-reload.json",
+    "_stage-amz-control/next-version-b1b3-20261015/ordinary-decisions.json",
+    "_stage-amz-control/next-version-b1b3-20261015/ordinary-network.json",
+    "_stage-amz-control/next-version-b1b3-20261015/adapter-dual-mode.json",
+    "_stage-amz-control/next-version-b1b3-20261015/legacy-preservation.json",
+    "_stage-amz-control/next-version-b1b3-20261015/legacy-diagnostics.json"
+  ],
+  "actual_packages": "evals/product-v2/evidence/v2.6.3-transfer-20261015-074943-b1b3-native-reload-downloads/",
+  "production_check": {
+    "types": "passed",
+    "generated": "passed",
+    "domain": {
+      "passed": 248,
+      "failed": 0
+    },
+    "output": "artifact://516"
+  },
+  "carried_unverified_consumers": [
+    "3_4",
+    "3_6",
+    "4_2",
+    "4_3",
+    "4_4",
+    "5_3",
+    "6_1",
+    "r5_2_full_browser_entry"
+  ],
+  "verification_posture": "Their required-spec setup migrated; no claim of full script pass. Latest user directs no ancillary checks now; execute final registered regression after workbench/cleanup.",
+  "fees_cny": 0,
+  "real_model_calls": 0,
+  "commits": 0,
+  "deploys": 0,
+  "not_proven": [
+    "B4 workbench",
+    "B5 real Adapter live modes and five qualified images",
+    "B6 final RC/structure/cleanup/two-round acceptance",
+    "B7 current HTTPS publication and same-origin rollback",
+    "C15/C17 human external gates"
+  ],
+  "next": "B4 fixed A workbench; original task envelope R5.1 remains active, original acceptance gaps retained"
+}
