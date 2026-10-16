@@ -53,13 +53,13 @@
         "ci": true
       }
     ],
-     "npm:check:versions": [
-       {
-         "args": [],
-         "category": "control",
-         "ci": true
-       }
-     ],
+    "npm:check:versions": [
+      {
+        "args": [],
+        "category": "control",
+        "ci": true
+      }
+    ],
     "npm:test:domain": [
       {
         "args": [],
@@ -168,7 +168,7 @@
         "args": [],
         "category": "browser",
         "ci": true,
-        "reason": "真实品类模型路径需材料/预算批准；旧离线 fixture/source 断言不算新产品验收，迁移中不接 CI。"
+        "reason": "离线领域/浏览器套件：注册表形状与必需阻断，零模型调用。"
       }
     ],
     "tools/verify_v2_3_2_suite_editor.py": [
@@ -176,7 +176,7 @@
         "args": [],
         "category": "browser",
         "ci": true,
-        "reason": "真实品类模型路径需材料/预算批准；旧离线 fixture/source 断言不算新产品验收，迁移中不接 CI。"
+        "reason": "离线浏览器套件：套图编辑器更新与指纹，零模型调用。"
       }
     ],
     "tools/verify_v2_3_3_session_lifecycle.py": [
@@ -192,7 +192,7 @@
         "args": [],
         "category": "browser",
         "ci": true,
-        "reason": "真实品类模型路径需材料/预算批准；旧离线 fixture/source 断言不算新产品验收，迁移中不接 CI。"
+        "reason": "离线浏览器套件：规格版本与迁移边界，零模型调用。"
       }
     ],
     "tools/verify_v2_3_4_prompt_compiler.py": [
@@ -200,7 +200,7 @@
         "args": [],
         "category": "browser",
         "ci": true,
-        "reason": "真实品类模型路径需材料/预算批准；旧离线 fixture/source 断言不算新产品验收，迁移中不接 CI。"
+        "reason": "离线浏览器套件：Prompt编译形状与冻结身份，零模型调用。"
       }
     ],
     "tools/verify_v2_3_5_pre_generation_confirm.py": [
@@ -208,7 +208,7 @@
         "args": [],
         "category": "browser",
         "ci": true,
-        "reason": "真实品类模型路径需材料/预算批准；旧离线 fixture/source 断言不算新产品验收，迁移中不接 CI。"
+        "reason": "离线浏览器套件：生成前确认摘要与阻断，零模型调用。"
       }
     ],
     "tools/verify_v2_3_6_prompt_manual_edit.py": [
@@ -216,7 +216,7 @@
         "args": [],
         "category": "browser",
         "ci": true,
-        "reason": "真实品类模型路径需材料/预算批准；旧离线 fixture/source 断言不算新产品验收，迁移中不接 CI。"
+        "reason": "离线浏览器套件：人工Prompt编辑归属与确认，零模型调用。"
       }
     ],
     "tools/verify_v2_4_1_image_gateway.py": [
@@ -224,7 +224,7 @@
         "args": [],
         "category": "gateway",
         "ci": true,
-        "reason": "真实品类模型路径需材料/预算批准；旧离线 fixture/source 断言不算新产品验收，迁移中不接 CI。"
+        "reason": "离线网关套件：假provider全链与拒绝矩阵，零真实调用。"
       }
     ],
     "tools/verify_v2_4_2_generation_attempt.py": [
@@ -232,7 +232,7 @@
         "args": [],
         "category": "browser",
         "ci": true,
-        "reason": "真实品类模型路径需材料/预算批准；旧离线 fixture/source 断言不算新产品验收，迁移中不接 CI。"
+        "reason": "离线浏览器/网关套件：Attempt身份与Unknown恢复，零真实调用。"
       }
     ],
     "tools/verify_v2_4_3_batch_execution.py": [
@@ -240,7 +240,7 @@
         "args": [],
         "category": "browser",
         "ci": true,
-        "reason": "真实品类模型路径需材料/预算批准；旧离线 fixture/source 断言不算新产品验收，迁移中不接 CI。"
+        "reason": "离线浏览器套件：批量执行与部分失败保留，零真实调用。"
       }
     ],
     "tools/verify_v2_4_4_candidate_blob.py": [
@@ -248,7 +248,7 @@
         "args": [],
         "category": "browser",
         "ci": true,
-        "reason": "真实品类模型路径需材料/预算批准；旧离线 fixture/source 断言不算新产品验收，迁移中不接 CI。"
+        "reason": "离线浏览器套件：候选Blob归属与字节一致，零真实调用。"
       }
     ],
     "tools/verify_v2_4_5_live_reference.py": [
@@ -272,7 +272,7 @@
         "args": [],
         "category": "browser",
         "ci": true,
-        "reason": "真实材料与计费，当前入口需按新模型/材料/预算门重做；默认不执行不是通过证据。"
+        "reason": "离线浏览器套件：确定性单图报告与当前性，零真实调用。"
       }
     ],
     "tools/verify_v2_5_2_vlm_review.py": [
@@ -280,7 +280,7 @@
         "args": [],
         "category": "browser",
         "ci": true,
-        "reason": "真实材料与计费，当前入口需按新模型/材料/预算门重做；默认不执行不是通过证据。"
+        "reason": "离线浏览器套件：显式VLM复核可选路径与not_run/Unknown语义，零真实调用。"
       }
     ],
     "tools/verify_v2_r5_2_two_adapters.py": [
@@ -296,7 +296,7 @@
         "args": [],
         "category": "browser",
         "ci": true,
-        "reason": "真实材料与计费，当前入口需按新模型/材料/预算门重做；默认不执行不是通过证据。"
+        "reason": "离线浏览器套件：对照面板来源与候选比较，零真实调用。"
       }
     ],
     "tools/verify_v2_5_4_rework_loop.py": [
@@ -304,7 +304,7 @@
         "args": [],
         "category": "browser",
         "ci": true,
-        "reason": "真实材料与计费，当前入口需按新模型/材料/预算门重做；默认不执行不是通过证据。"
+        "reason": "离线浏览器套件：返工事务与草稿归属，零真实调用。"
       }
     ],
     "tools/verify_v2_5_5_suite_review.py": [
@@ -312,7 +312,7 @@
         "args": [],
         "category": "browser",
         "ci": true,
-        "reason": "真实材料与计费，当前入口需按新模型/材料/预算门重做；默认不执行不是通过证据。"
+        "reason": "离线浏览器套件：整套一致性报告与过期重算，零真实调用。"
       }
     ],
     "tools/verify_v2_6_1_selection.py": [
@@ -320,7 +320,7 @@
         "args": [],
         "category": "browser",
         "ci": true,
-        "reason": "真实材料与计费，当前入口需按新模型/材料/预算门重做；默认不执行不是通过证据。"
+        "reason": "离线浏览器套件：人工采用硬门与重复采用阻断，零真实调用。"
       }
     ],
     "tools/verify_v2_6_2_delivery.py": [
@@ -328,7 +328,7 @@
         "args": [],
         "category": "browser",
         "ci": true,
-        "reason": "真实材料与计费，当前入口需按新模型/材料/预算门重做；默认不执行不是通过证据。"
+        "reason": "离线浏览器套件：交付门禁与两包快照，零真实调用。"
       }
     ],
     "tools/verify_v2_6_3_project_transfer.py": [
@@ -336,7 +336,7 @@
         "args": [],
         "category": "browser",
         "ci": true,
-        "reason": "真实材料与计费，当前入口需按新模型/材料/预算门重做；默认不执行不是通过证据。"
+        "reason": "离线浏览器套件：项目导入导出与刷新恢复，零真实调用。"
       }
     ],
     "tools/verify_v2_6_4_accessibility.py": [
@@ -344,7 +344,7 @@
         "args": [],
         "category": "browser",
         "ci": true,
-        "reason": "真实材料与计费，当前入口需按新模型/材料/预算门重做；默认不执行不是通过证据。"
+        "reason": "本地浏览器套件：键盘/窄视口/缩放可达基线，零真实调用。"
       }
     ],
     "tools/verify_v2_7_1_regression.py": [
@@ -368,7 +368,7 @@
         "args": [],
         "category": "browser",
         "ci": true,
-        "reason": "真实远程入口，仅当前 Chrome 接受范围；对应部署/远程走查授权后执行，不能替代本地 fake 浏览器验证。"
+        "reason": "本地浏览器套件：四段外壳/工作台交互与窄视口基线，零真实调用。"
       }
     ],
     "tools/verify_v2_ui_3_frontend.py": [
@@ -376,7 +376,7 @@
         "args": [],
         "category": "browser",
         "ci": true,
-        "reason": "真实远程入口，仅当前 Chrome 接受范围；对应部署/远程走查授权后执行，不能替代本地 fake 浏览器验证。"
+        "reason": "本地浏览器套件：首页到交付主链走查与窄视口基线，零真实调用。"
       }
     ],
     "tools/verify_v2_packet08_settings_vision.py": [

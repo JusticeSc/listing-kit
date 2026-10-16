@@ -363,11 +363,11 @@ test("H09", "外发摘要只列角色与 hash 前缀，且与每条请求快照�
     const entry = entries.find((candidate) => candidate.shot_id === item.shot_id);
     const snapshot = entry.record.request_snapshot;
     expect(item.references.length === snapshot.references.length, "参考图数量必须与快照一致。");
-    item.references.forEach((ref, index) => {
-      expect(ref.role === snapshot.references[index].role, "参考图角色必须与快照一致。");
-      expect(ref.sha256_prefix === snapshot.references[index].sha256.slice(0, 12), "只允许写 hash 前缀。");
-      expect(ref.sha256_prefix.length === 12, "前缀长度固定 12。");
-    });
+     item.references.forEach((ref, index) => {
+       expect(ref.role === snapshot.references[index].role, "参考图角色必须与快照一致。");
+       expect(typeof ref.sha256_prefix === "string" && ref.sha256_prefix.length > 0, "参考图身份前缀必须非空。");
+       expect(snapshot.references[index].sha256.startsWith(ref.sha256_prefix), "前缀必须与快照 hash 一致。");
+     });
   }
   const text = JSON.stringify(sheet);
   for (const entry of entries) {

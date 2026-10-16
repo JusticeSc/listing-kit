@@ -5,9 +5,9 @@
 > 项目边界与技术栈看 `docs/product-v2-project-context.md`；当前进度看
 > `_working/amz-listing-kit-product-v2/state.md`。进入项目按 `docs/INDEX.md` 的路由顺序读，不复制正文。
 
-当前 state 的 `prepared` 仅表示真正未观察到/未经用户确认 Goal 的准备态（绑定语义与证据合同以计划 §2.2 为准，不复制到此）：下一动作按计划做 R1.1 当前 Goal 重读核对与会话绑定；会话绑定完成前不开始产品施工。用户已确认当前 Goal 后，离线本地实现已获授权；付费模型调用、私有上传、提交/推送、部署、V1 日落、新依赖选型仍各自单独设门。
-`uv run --locked python tools/refactor_resume.py` 只读输出持久恢复路由；不使用聊天或内存 todo 代替 state。
-产品工程Goal原文与启动编制来源只读计划§2.1/§16；当前有限收口入口为计划§15.6及详细设计§11.5。真实绑定、停止门和恢复点取state，不据历史active、规划Goal或文档pass施工/发布。任务验收变化按§7.5一次核对，缺陷准出按§7.6，发布/数据回退按§7.4/§7.7；本文件不复制合同。
+权限按操作分别核对：当前用户指令与state的停止/恢复边界先于历史启动记录；`prepared`时按计划§2.2完成绑定，产品实施前核对真实Goal及计划§2.1/§17的最新修订。用户仅授权维护规约时，只修改规约与恢复记录、运行相应守卫，不恢复产品、收费调用或GitHub远程写入。
+`uv run --locked python tools/refactor_resume.py`只读输出持久恢复路由；不使用聊天或内存todo代替state。换会话先按`docs/INDEX.md`§1读取当前入口，不从旧任务卡直接开工。
+产品Goal的原生观察正文只取计划§2.1；执行同时读取§17.13用户纠偏，规格取设计§13。旧§16/§15.6及设计§11.5仅按未决证据定向承接；规则、Goal或最新用户要求实质冲突时先修正/明确冲突，不能选旧条文继续施工或伪称原生Goal已更新。
 
 ## Project Structure & Module Organization
 
@@ -23,24 +23,24 @@
 `docs/standards-template/` 是外部课程模板的原样副本（身份见 `docs/INDEX.md`）；**本表是它的采纳判定**。
 模板会被整目录重新同步（07 就是后加的一份），所以规则是：**模板里出现一份新文件，本表就必须有
 一行落点，否则 `tools/check_docs.py` 报红**。采纳方式是落进既有权威（SEL-004，不另建 `standards/`
-平行目录）：需求只在计划、进度只在 state、决策只在项目上下文 §4.1、依赖只在项目上下文 §4.2。
+平行目录）：产品终点与正式依赖只在计划，具体问题及验收在GitHub Issue，产品门/权限/恢复入口在state，选型与依赖在项目上下文§4。按职责链接，不复制工单明细状态。
 
 | 模板 | 本项目落点 | 适配差异 |
 |---|---|---|
 | `README.md` | 本表；进入项目的读取顺序以 `docs/INDEX.md` §1 为准 | 不复制 `standards/` 目录（未采纳清单） |
 | `00-project-context.md` | `docs/product-v2-project-context.md`（§3.3 运行取值、§4.1 选型、§4.2 依赖、§5 目录地图、§7 质量门槛） | Docker、GitHub Actions 与 SSH 取值由 SEL-005 固定 |
-| `01-requirements.md` | Product V2 计划（§14业务合同、§6/§9任务与验收、§10完成矩阵） | 不另起PRD或第二份进度表 |
-| `PROGRESS.md` | `_working/amz-listing-kit-product-v2/state.md` + 项目上下文 §4.1 | state 只存进度/证据/下一动作；决策（含被拒方案与复访条件）在 §4.1，故障在证据文件 |
+| `01-requirements.md` | Product V2计划（终点、边界、正式依赖/准出）+ GitHub Issue（具体问题、设计与验收） | 工单关联原任务，不复制完整Goal或另起PRD |
+| `PROGRESS.md` | GitHub Issue/PR + `_working/amz-listing-kit-product-v2/state.md` | Issue管理具体工作；state保留产品门、权限、恢复指针和证据，不再建立本地工单明细副本 |
 | `02-coding-standards.md` | 本文件 Coding Style | 未采用 ruff（无格式化工具链，理由在项目上下文 §7）；命名/注释/错误处理/提交前自检按本文件 |
 | `03-testing-standards.md` | 本文件 Testing Guidelines + 计划§7.3/§15.3 | 用例AAA/Given-When-Then；不靠重跑关闭缺陷，准出统一按§7.6；不设覆盖率阈值 |
-| `04-git-workflow.md` | 本文件 Commit & Pull Request Guidelines + GitHub分支/PR | `<类型>/<短描述>`分支；CI/审查/保护满足后按该节授权方式合并main |
-| `05-cicd-standards.md` | `.github/workflows/ci-cd.yml`、`Dockerfile`、README 部署说明（SEL-005） | CI 校验控制面、浏览器合同和镜像；`main` 传最小构建上下文，由远程 Docker 构建、健康检查并失败回滚 |
-| `06-ai-collab-protocol.md` | ②.5 选型门 = 本文件 §Selection Gate（机器可查）；确认门 = 推进到 state 唯一下一动作后等用户确认；故障反哺 = 证据写 `evals/` + 守卫固化 | 建仓/Secrets/PR/CI/CD 已落地；业务确认仍由 state 唯一下一动作控制 |
+| `04-git-workflow.md` | 本文件 Commit & Pull Request Guidelines + GitHub Issue/分支/PR | 一个可验收问题对应可审查改动；最小完整改动即开Draft PR，不积压整轮本地WIP |
+| `05-cicd-standards.md` | `.github/workflows/ci-cd.yml`、Dockerfile及本文件提交/PR规则 | PR持续检查并留审查证据；main按保护和既有发布事务部署；流程配置不等于本版通过 |
+| `06-ai-collab-protocol.md` | 本文件Agent skills与提交/PR规则；产品权限只取state及当次授权 | 确认门适配为缺权限/需用户决定的重大取舍先停对应动作；已获授权内匹配skill并产出结果、主动推进，不逐任务等待确认 |
 | `07-dependency-standards.md` | §Selection Gate（复用阶梯、选型四问、禁止自造清单）+ 项目上下文 §4.2（版本锁定、许可证、移除成本） | 漏洞扫描周期未启用，见未采纳清单 |
 | `templates/TECH_SELECTION.md` | §Selection Gate 的报告字段（约束/已有能力/候选/权衡/推荐/被拒/复访条件/PoC 判定） | 不单独立文件 |
 | `templates/ADR_TEMPLATE.md` | 项目上下文 §4.1 的 SEL 行（含被拒方案与复访条件） | 不建 `docs/adr/` |
-| `templates/ISSUE_TEMPLATE.md` | 未启用（产品任务仍以计划任务卡验收为准；工程技能 Issue 流程见 `docs/agents/issue-tracker.md`） | 复访：启用 GitHub Issue 做产品排期时 |
-| `templates/PR_TEMPLATE.md` | 暂不复制模板；PR 的最小内容与门禁见本文件 Commit & Pull Request Guidelines | 复访：多人协作需要结构化表单时 |
+| `templates/ISSUE_TEMPLATE.md` | 内容要求采纳到本文件提交/PR规则；GitHub Issue为具体问题载体 | CLI参考见`docs/agents/issue-tracker.md`，不以避免双权威为由停用产品Issue |
+| `templates/PR_TEMPLATE.md` | 内容要求采纳到本文件提交/PR规则；正文用可用的`pr` skill | 不复制表单文件；前后证据、已知边界、合并风险及回退必须可审查 |
 
 **未采纳清单**（模板有、本项目明确不做；每项带复访条件）：
 
@@ -50,7 +50,7 @@
 | ruff / 格式化工具链 | 无构建步骤；引入需先过选型门（项目上下文 §7） | 引入第一个格式化/lint 工具 |
 | 覆盖率阈值（≥80%） | 判据是“证据能判红”而非行覆盖率（项目上下文 §7） | 引入覆盖率工具并立 SEL 决策 |
 | 依赖漏洞扫描周期（`07` §6） | 依赖少而锁定，尚无扫描工具 | 新增依赖或准备对外交付时执行并记录 |
-| Issue 编号分支 | 产品任务权威在 Product V2 计划/state，另建 Issue 会重复任务状态；工程技能 Issue 只做技能驱动的议题/规格载体（见 `docs/agents/issue-tracker.md`） | 出现第二位协作者或需要公开排期 |
+| 并行本地工单系统 | 与GitHub Issue重复维护具体问题状态；state只承接产品门/权限/恢复指针 | 确有离线协作需求且明确同步归属时再评估 |
 
 ## Build, Test, and Development Commands
 
@@ -81,25 +81,26 @@ ASCII。前端运行时是原生 ESM、无打包器；已迁 TS Module 按 SEL-0
 
 ### Proactive Refactor Review
 
-非平凡改动必须主动审查本次依赖闭包，不等用户点名；详细处理与准出见 `docs/product-v2-refactor-design.md` §6–9。
+非平凡改动由开发者主动审查实际依赖闭包并给出取舍，不等用户教方法或挑删除清单。以用户结果和维护成本选择复用、收口或删除；已成立的结构按未变前提复用，不因“全面改造”重写全仓。详细设计与准出见 `docs/product-v2-refactor-design.md` §6–9、§13；当前跨切片要求见Issue #10。
 - 找出可变状态和规则的唯一所有者；检查UI是否仍拼保存/授权/外发顺序、跨Module可变context、回调环和过宽Interface。迁入完整业务命令，不只移函数。
 - 真重复先确认语义一致再合并；薄wrapper、pass-through、旧alias/re-export及失效注释在全部消费者迁移的同包删除，不建立兼容双路径。
 - 检查浏览器实际加载的JS、唯一手写TS、实际emit/新鲜度集合及类型消费者；compiler program读到不是产物一致，语法通过不是功能通过。
 - 编辑/采用首次写入expectedVersion为0，不能用null关闭OCC；单页Set不证明跨标签授权消费原子性，冻结旧快照不证明当前性。
-- 测试固定源码/命名/文案/纯转发回声即删除，不重钉；共享真实前置与稳定业务Interface，原有消费者行为/事务/Unknown/秘密/字节反例不得丢。
+- 测试通过稳定业务Interface保护行为；必要性、删留和本次运行集合统一按下方Testing Guidelines，不让重构迫使无关测试机械改写。
 - 旧源码、当前产物、历史证据、失败/费用/许可和用户原件分别处理；不以全部归档/清库/V1删除代替治理。有权限的旧实现同包清除，未知或用户材料不得擅删。
 - 包结束记录实际合并/删除/保留的理由及最小行为证明；不得用文件数、代码行数、测试数或设计文档存在作为重构准出。
 
 ### Low-model Implementation Entry
 
-执行前定向读计划§15.6与设计§11.5、§10及§9.1。先核对用户明确恢复和真实产品Goal，不把独立规划Goal或已完成准备当施工许可；已完成组A/owner/视图不重做。原§11.2是职责索引，按state前沿及当前差量推进，每个对象迁全部读写/restore/通知消费者并同包删除旧实现、setter/alias/双轨。事务/action保全/生命周期/报告ZIP/emit/发布仍沿冻结算法；遇新架构/schema/权限/预算或规格冲突停止对应动作并精确升级，不自行替代、降级或配置/切换模型。
+软件工程取舍是开发者责任：先应用任务分析、深Module/单一所有权、成熟实现复用和风险匹配验证，再说明关键取舍与实际结果；只向用户升级产品选择、事实、权限或重大不可逆风险。现行规则未贯彻不能一概归因于上下文，也不能把用户的启发直接升级为普适规则。
+
+用户要求产品实施且state允许时，按INDEX恢复并先应用计划§17.13，再读设计§13及受影响旧合同。已有owner、人工稿保护、五图原件与原生恢复证据按未变前提复用；修复新暴露的设计/交互缺口，不重跑已完成批次。当前格式自身的记录/Blob恢复必须可靠，不新增旧版本/schema/项目包迁移兼容；原件归档不等于维护旧运行链。超过授权的总体架构/模型/不可逆数据或费用变更再精确升级。
 
 ## Testing Guidelines
 
-每个任务交付「用户可观察行为 + 数据合同 + 验证证据」。证据写进 `evals/`，首行 `NOT-AUTHORITY`，
-并写清证明了什么、不证明什么。浏览器断言必须同时检查 console/network 与 IndexedDB 后置条件，
-只查 DOM 不算通过。真实模型调用只用于适配器最小探针和完成证据；超时是 `UNKNOWN`，已知 task ID
-先核对，无 task ID 不自动重提。新增守卫必须附一次能判红的反向探针。
+每个任务交付与请求相符的结果和范围匹配的证据。浏览器验证按变更选择：布局/焦点观察真实表面和交互；持久化核IndexedDB/Blob；外发核实际请求；跨边界主链才联合核后置。纯文案或布局修改不强制重跑数据库/模型/导出，DOM也不能替代本应证明的存储或外发。
+真实模型只用于缺失或受改动影响的真实能力/品质证明，不用于调试可离线定位的问题。超时是 `UNKNOWN`，已知task先核对，无task不自动重提。新增必要守卫应有能抓具体错误的反例，优先纳入现有入口，不逐条新建探针。
+必要证据写入 `evals/`，首行 `NOT-AUTHORITY`，说明证明范围；已有证据前提未受影响就复用，不为每次小改另起报告。
 验证器新生成的 Product V2 报告默认是被 `.gitignore` 排除的本地过程材料；只有被 state、当前完成矩阵
 或任务验收选中的最小集合，才按计划§7.1用 `git add -f -- <精确路径>` 提升。完成矩阵不得读取未跟踪
 报告；禁止 `git add -A` 或整目录强制纳入。
@@ -107,22 +108,28 @@ ASCII。前端运行时是原生 ESM、无打包器；已迁 TS Module 按 SEL-0
 该探针以实时 state 为基线构造反向对照，进度推进会让旧构造连带误报或退化成空操作
 （2026-10-01实例：CI连续4红，历史失败来源保留在原任务证据，不按失效章节号恢复）。
 
-用例按 AAA / Given-When-Then 写，一个用例只测一件事，必须有真断言而不是 `assert x is not None`；
-偶发失败必须根治，不靠“重跑一次”掩盖（常见根因：时间、随机数、用例顺序、网络、共享状态）。
-验证按风险选择，连贯批次结束实际运行改变路径；默认不新增验证入口、接线/mock回声或文案/源码形状断言。新增永久用例须抓具体消费者行为、边界、权限或状态转换；最小检查、扩大条件及最终两轮回归只读计划§15.3，不把每层验证变成每批全跑清单。
+必要测试保护明确的用户结果或合理的高代价风险，有独立错误判据，并以适当边界提供可信反馈；能说明防什么错、损失、判错方式与不可替代性即可，不另建打分/登记平台。
+- **保留与复用**：稳定、可重复且有意义的现有行为用例默认保留；“长期没改”是信号，不是充分条件。无新影响就不重新审计/重写整套用例。
+- **删除与合并**：删无业务理由的源码/私有调用/旧DOM/普通措辞/纯转发回声断言，不重新钉到新实现。准确印字、协议、安全与可达性等真实合同仍须验证。同前提/同边界/同判据才合并；不同事务、浏览器或外发风险不因名称相同误删。
+- **层级与时点**：永久回归、一次性smoke、本次运行集合分开；规则走小范围行为，事务/序列化/Adapter走对应真实消费者，浏览器行为走页面，少量全链检验连接。不把所有动作永久测试化；保留测试不等于每次全跑。
+- **失败与完成**：用AAA/Given-When-Then表达行为并断言结果，替身回声、非空或不抛异常不足。red先定位并保留；无新事实/修改/诊断假设不重跑到绿。人因和成品品质由相应真实观察判断，不能靠堆断言代签。
+局部改变只运行受影响的现有门并实际smoke；扩大条件和既定最终两轮见计划§15.3。具体清理证据/验收归Issue #7，不按用例数、覆盖率或报告数声明产品改善。
 
 ## Commit & Pull Request Guidelines
 
-提交信息用 `feat(v2): …`、`docs(control): …`、`evidence(vX.Y.Z): …` 前缀，正文写任务 ID 与证据路径；
-一次提交只做一件事。提交前跑文档守卫与状态守卫，红了先修再走。功能分支推送后创建 PR；说明必须写
-结果、验证证据、已知边界和回退方式，CI及现有审查/分支保护满足后才合并 `main`。默认人工合并；本轮已正式启动，代理合并权限取计划§16.1且仅覆盖本轮相关PR，不绕过保护、不强推。`main`的CD自动部署Docker镜像，
-不在 PR 阶段部署。改权威文档前先留快照到 `_stage-amz-control/<用途>-<时间戳>/`，并把前后哈希写进证据。
+1. **问题先行**：产品实施及GitHub协作授权成立后，先读取或创建对应Issue，写清用户问题/现象、目标行为、可观察验收、范围外事项、依赖/权限门及现有证据。已有Issue直接更新，不为每个微小修改重复建单。权限不足只停对应远程写入；规约维护不自动授权建单、推送或部署。`gh`操作参考`docs/agents/issue-tracker.md`。
+2. **可审查改变**：分支用`<类型>/<Issue号>-<短描述>`；提交正文关联Issue和原任务ID。一个提交只做一个自包含改变，必要读写消费者同组切换；无关重构另分。形成最小完整改动就推送并开Draft PR，持续更新，不等整轮本地工作做完才开放审查。
+3. **PR证据**：说明结果、Before/After、实际执行的验证、未证/失败、影响范围及回退方式；界面必须有真实内容的画面/关键操作证据，Prompt必须有程序编译产物及来源，人工全文不能替代程序能力。审查材料只用获准素材和脱敏产物，不整目录外发原项目/原图/秘密。
+4. **独立审查**：可用`code-review`及独立审查上下文检查确切改动，处理意见后再确认。CI绿和零强制审批不等于已审查；代理审查不冒称真人C15/C17，普通工程/设计问题也不转交用户代做。
+5. **持续验证**：每个PR运行现有适用CI，保留确切commit与运行链接及必要失败证据；本地只跑受影响验证，最终两轮留给冻结候选。失败需定位并修正，不能用重跑绿替代解释。截图、自动测试、原像素各证明其范围。
+6. **交付关闭**：满足CI/审查/实时保护后才按授权合并main；CD只在既有main流程发布。用户问题所需的后置真正成立才关闭Issue；线上交付问题须附当前镜像/HTTPS/实际路径/恢复证据，PR合并或容器healthy本身不算关闭依据。不要对尚待线上验证的Issue使用会提前自动关闭的关联语句。
+提交前运行文档/状态守卫；红了先修。合并/发布权限取真实Goal、计划§17及state，不直推main/强推/绕保护。改权威文档前保留精确快照及前后hash；CLI调用本身不充当业务完成证据。
 
 ## Security & Configuration Tips
 
 当前无状态网关支持理解、生图、单图/整套复核的请求级 BYOK 头；三用途设置与准确实现边界见 README/context，目标在计划§14.7。
 默认key永不下发、不发送到用户自定义目标；BYOK仅经批准的当前标签页内存/HTTPS请求路径，不进IndexedDB、localStorage、Git、项目包、日志、错误或诊断。
-持久保存key需另行授权；方案确认或现有图像头不代表其他用途已实现，当前调用准入按计划§16.1及账本逐项核对。服务器不保存用户项目状态；
+持久保存key需另行授权；方案确认或现有图像头不代表其他用途已验收，当前调用准入按真实Goal§2.1/计划§17和当前账本lane逐项核对。服务器不保存用户项目状态；
 IndexedDB 是项目权威，localStorage 只放当前项目指针和无秘密界面偏好。
 
 ## Selection Gate (Reuse-first)
@@ -155,7 +162,7 @@ vendor 与登记逐一对应；产品目录只保留 ESM 身份，不建第二�
 
 ### Issue tracker
 
-Issues live as GitHub issues (`gh` CLI). See `docs/agents/issue-tracker.md`.
+产品问题与工程议题统一使用GitHub Issue；流程唯一取本文件Commit & Pull Request Guidelines，`docs/agents/issue-tracker.md`仅提供按权限使用的CLI/技能操作参考。
 
 ### Triage labels
 
@@ -164,3 +171,10 @@ Five canonical roles map 1:1 to default label strings. See `docs/agents/triage-l
 ### Domain docs
 
 Single-context layout (root `GLOSSARY.md` + `docs/adr/` when created); project decisions currently as SEL rows in project context §4.1. See `docs/agents/domain.md`.
+
+### Skill使用与成品质量
+
+- 承接新类型任务时先读匹配skill，再使用其方法产出结果：界面/人因用`ui-ux-pro-max`与必要`prototype`；结构用`codebase-design`；规则/上下文用`writing-for-agents`；缺陷用`diagnosing-bugs`；改动用`code-review`独立审查，PR用`pr`组织证据，完成前用`completion-evidence`核对边界。只读skill或复述原则不算产出，不无差别叠加全套skill。
+- 界面先定义用户要完成的动作、对象、反馈与恢复，再实现；普通流程不要求理解内部版本/task/hash或专业Prompt。视觉层级、默认值、认知负担和真实长内容下的布局与功能正确同等验收；明显问题不能等C15/C17才处理。
+- Prompt先建立协调的视觉简报（用途、构图、光线/质感、配色、排版/准确文案及参考保真），再施加事实与安全边界；用程序实际编译的样稿证明普通输入的消费，手工专家稿/HTTP成功/旧成功图不证明新编译器品质。
+- 反思落到现有Issue的明确问题、必要修改与修后证据；不以再写一份总结或新增守卫替代产品修正。只让用户决定不可替代的产品取舍、事实与权限，不让用户教工具、写工单或指挥每个工程步骤。
