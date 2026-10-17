@@ -1,15 +1,15 @@
-# P4 标准前端构建（SEL-023）：浏览器静态产物唯一来源是 `npm run build:frontend`
-# 生成的 dist/product-v2；运行镜像不再消费源码旁同目录 .js（已退役）。
-FROM node:22-bookworm-slim AS frontend
-WORKDIR /build
-COPY package.json package-lock.json ./
-RUN npm ci --no-audit --no-fund
-COPY app/product_v2/ ./app/product_v2/
-COPY vite.config.mjs tsconfig.json ./
-RUN npm run build:frontend
-
-
-FROM python:3.13-slim-bookworm
+# Product V2 生产镜像（SEL-023/SEL-025）：Python 无状态网关 + Vite 标准构建产物。
+#
+# 阶段：
+#   python-deps     锁依赖 venv（pyproject.toml + uv.lock，--no-dev）：schema 导出与
+#                   运行时共用这一层，构建只下载一次锁定 wheel。
+#   envelope-schema 信封 schema 构建期导出：从 src/providers/v2_image.py 导出唯一结构投影。
+#                   domain/generated/ 是 gitignored 构建产物，干净检出没有，必须在这里重建。
+#   frontend        Node 锁依赖（package.json engines：node 24.19.0 / npm 11.17.0）生成
+#                   validator 并执行 Vite 标准构建，产出 dist/product-v2。
+#   runtime（末段） 正式运行闭包：4 个入口 Python 文件 + src/config 白名单 + 构建产物。
+#                   无 Node、无前端源码、无测试替身、无 dev 依赖；缺 dist 即启动失败。
+FROM python:3.13-slim-bookworm AS python-deps
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -32,18 +32,38 @@ WORKDIR /opt/amz-listing-kit
 COPY pyproject.toml uv.lock ./
 RUN uv sync --locked --no-dev --no-install-project
 
-# Product V2 运行时:正式入口、构建后静态产物、V2 provider 注册表/适配器与无状态网关的依赖。
-# 目录 COPY + .dockerignore 排除旧业务(无字面文件钉):V1 入口/旧 fixture/M 系列实现、
-# 非 v2_* provider、旧 config 均已随 P1 退出仓库，不在镜像里。
-# 导入集合从当前代码推导:product_v2_server只触及src/console.py与src/providers/{__init__,v2_*}、
-# 其第三方依赖(requests/Pillow/langchain/pydantic,见uv.lock)与config/product-v2/providers.json;
-# config/product-v2/verification.json 只服务 CI 登记校验，由 .dockerignore 排除。
-# 渐进 TS 迁移(计划 §9 V2.R7.5):domain/*.ts 与 .d.ts 由 .dockerignore 排除,镜像里只带
-# `npm run build:frontend` 生成的 dist/product-v2;生产运行时没有 TS 编译器,也没有第二份源码。
-COPY app/ ./app/
+
+FROM python-deps AS envelope-schema
+
+# 结构权威是 src/providers/v2_image.py 的 ImageWire* 模型；只导出，不校验业务。
+COPY src/ ./src/
+COPY tools/export_image_envelope_schema.py ./tools/export_image_envelope_schema.py
+RUN python tools/export_image_envelope_schema.py --out /out/image-task-envelope.schema.json
+
+
+FROM node:24.19.0-bookworm-slim AS frontend
+
+WORKDIR /build
+# npm 安装禁 scripts（与 CI 同策略）；版本由 package.json engines 钉死。
+COPY package.json package-lock.json ./
+RUN npm install --global "npm@$(node -p 'require("./package.json").engines.npm')" --ignore-scripts --no-audit --no-fund \
+    && npm ci --ignore-scripts --no-audit --no-fund
+COPY app/product_v2/ ./app/product_v2/
+COPY vite.config.mjs tsconfig.json ./
+COPY tools/generate_image_envelope_validator.mjs ./tools/generate_image_envelope_validator.mjs
+COPY --from=envelope-schema /out/image-task-envelope.schema.json ./app/product_v2/domain/generated/image-task-envelope.schema.json
+RUN npm run build:envelope-validator && npm run build:frontend
+
+
+FROM python-deps AS runtime
+
+WORKDIR /opt/amz-listing-kit
+
+# app/ 用显式文件 COPY：.dockerignore 必须放行完整前端源码给构建器，运行时只取这 4 个；
+# src/ 与 config/ 用目录 COPY + .dockerignore 白名单（假 provider 物理排除，verification.json 不进镜像）。
+COPY app/__init__.py app/server.py app/product_v2_server.py app/product_v2_http.py ./app/
 COPY src/ ./src/
 COPY config/ ./config/
-# 运行镜像只带构建产物，不带前端源码回退：缺 dist 即启动失败（正式入口已 fail-closed）。
 COPY --from=frontend /build/dist/product-v2/ ./dist/product-v2/
 
 RUN useradd --create-home --uid 10001 appuser \
