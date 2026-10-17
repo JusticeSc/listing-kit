@@ -96,7 +96,7 @@
 | `docs/standards-template/templates/ADR_TEMPLATE.md` | 外部参考模板 | `设计草案` | `draft` | ADR 模板；本项目以项目上下文 §4.1 的 SEL 行（含复访条件）代替独立 `docs/adr/` 目录 |
 | `docs/agents/issue-tracker.md` | 工程技能操作参考 | `设计草案` | `draft` | 只提供GitHub/gh及可选wayfinder操作；生效条件：AGENTS当前流程需要该操作且授权允许时核对采用，不再要求用户先启用技能；不独立授权或禁止产品Issue |
 | `docs/agents/triage-labels.md` | 工程技能 | `设计草案` | `draft` | 可选triage角色映射；生效条件：实际任务需要且可用的triage技能被匹配、对应远程操作已获授权时采用，不要求用户先手工启用 |
-| `docs/agents/ai-coding-loop.md` | 工程技能 | `项目规则` | `current` | 用户亲授AI协作六环（选→说→切→验→因→学）；AGENTS一行指针引用，六环切法为用户归纳、四条定律有据可查 |
+| `docs/agents/ai-coding-loop.md` | 工程技能操作参考 | `设计草案` | `draft` | 用户亲授AI协作六环（选→说→切→验→因→学）；AGENTS一行指针引用，六环切法为用户归纳、四条定律有据可查，不独立授权 |
 
 ---
 

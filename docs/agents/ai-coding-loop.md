@@ -1,6 +1,6 @@
 # AI Coding Loop（选 → 说 → 切 → 验 → 因 → 学）
 
-> CONTROL-STATUS: current · AUTHORITY: agent-method
+> CONTROL-STATUS: draft · AUTHORITY: agent-method-reference
 > 用户 2026-10-17 亲授的 AI 协作方法论原文沉淀。六环切法与定律映射是用户归纳（未经对照实验）；
 > 四条定律与各环节出处（Boehm/Fagan/Endsley/Parasuraman/Shewhart/Cohen/METR/SQLite/OSS-Fuzz/
 > Therac-25/Ariane 5/737 MAX）是有据可查的研究与事故结论。能力边界类判断随模型换代重测，
