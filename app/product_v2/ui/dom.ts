@@ -1,11 +1,10 @@
 /**
- * 视图层共享的**无状态** DOM/格式化助手与词表（设计 §2.1 的「四个视图」共同基础设施）。
+ * 视图共享的无状态格式化、排序助手与展示词表。
  *
- * 边界：这里不放任何业务状态、订阅、DOM 查询或网络；只做「输入 → 节点/字符串」的纯投影，
- * 供各视图与工作台装配复用。业务判据仍归 domain 与各业务 Module。
+ * 不放业务状态、订阅、DOM 或网络；规则判据仍归 domain 与业务 owner，
+ * 节点和交互由各视图的声明式模板负责。
  *
- * TypeScript 迁移（计划 §9 V2.R7.5）：本文件是唯一手工维护实现；同名 `dom.js` 由
- * `npm run build:frontend` 生成，浏览器只消费生成的 `.js`。
+ * 本文件是唯一手工维护实现；浏览器只消费 Vite 构建产物。
  */
 
 /** 严重度 → 徽标样式；颜色只表达优先级，不改变任何规则判定。 */
@@ -63,58 +62,11 @@ export function reviewRankOf(entry: RankableSlot): number {
   return base < 2 ? base : base + 1;
 }
 
-export type ElementOptions = {
-  className?: string;
-  text?: string;
-  attrs?: Record<string, string | number | null | undefined>;
-  props?: Record<string, unknown>;
-};
-
-/** 全工作台唯一的 DOM 构造工具；只设置显式给出的 className/text/attrs/props。 */
-export function createElement<T extends keyof HTMLElementTagNameMap>(
-  tag: T,
-  options: ElementOptions = {},
-  children: Array<string | Node | null | false | undefined> = [],
-): HTMLElementTagNameMap[T] {
-  const node = document.createElement(tag);
-  if (options.className) node.className = options.className;
-  if (options.text !== undefined) node.textContent = options.text;
-  if (options.attrs) {
-    for (const [name, value] of Object.entries(options.attrs)) {
-      if (value !== null && value !== undefined) node.setAttribute(name, String(value));
-    }
-  }
-  if (options.props) Object.assign(node, options.props);
-  for (const child of children) if (child) node.append(child);
-  return node;
-}
 
 export function splitLines(text: unknown): string[] {
   return String(text || "").split("\n").map((item) => item.trim()).filter((item) => item.length > 0);
 }
 
-/**
- * V2.6.4 渐进披露：工程字段（sha256 / action / task / 指纹）默认收进「技术详情」。
- * 业务判读所需信息留在主行；技术字段不删除、展开即可见，也仍可从 dataset 读取。
- */
-export function techDetails(
-  lines: string | string[],
-  label = "技术详情",
-): HTMLElementTagNameMap["details"] | null {
-  const items = (Array.isArray(lines) ? lines : [lines]).filter(
-    (item) => typeof item === "string" && item.length > 0);
-  if (!items.length) return null;
-  const details = createElement("details", { className: "tech-details" });
-  details.append(createElement("summary", { text: label }));
-  details.append(createElement("p", { className: "meta tech-body", text: items.join(" · ") }));
-  return details;
-}
-
-/** 追加技术详情节点：无内容时是空操作，保持既有「有内容才出现」的渲染行为。 */
-export function appendTech(parent: HTMLElement, lines: string | string[], label?: string): void {
-  const node = techDetails(lines, label);
-  if (node) parent.append(node);
-}
 
 export function formatValue(slot: { value?: unknown }): string {
   const value = slot.value;
@@ -143,13 +95,3 @@ export function errorMessageOf(error: unknown, fallback: string): string {
   return fallback;
 }
 
-/** 就地报错：写进指定元素并显示；错误文案不自动消失，避免被下一次渲染悄悄抹掉。 */
-export function showError(element: HTMLElement, message: string): void {
-  element.textContent = message;
-  element.hidden = false;
-}
-
-export function clearError(element: HTMLElement): void {
-  element.textContent = "";
-  element.hidden = true;
-}
