@@ -316,10 +316,10 @@ Interface是可调用的业务动作及可渲染快照，不等于HTTP或额外�
 | 生成系统 | 普通输入由程序形成协调视觉简报，并与事实/准确文案/图序一致；实际Prompt来源、原action/request/task与原候选可追溯 | 设计§13.9；编译稿与专家人工稿分开，核实际出站及原像素。HTTP/schema/hash正确或人工稿成功不证明程序稿品质 |
 | 工程与真人验收 | 工程主链及显著人因问题按计划§14.8–14.9/§10与当前修订直接闭合；独立首次使用另列 | 工程画面/操作/成品不由C15/C17替代；C15/C17本轮之外且未发生，不冒充通过，也不据此将可达设计修正无限后置 |
 | 格式检查 | 暂无 ruff/eslint：本仓库没有格式化工具链，格式由 `.gitattributes` 与评审保证 | 引入格式化工具需先过选型门（SEL 记录） |
-| 静态检查 | 采用SEL-021的渐进TypeScript：已迁 Module 以 `.ts` 源做 strict 检查，保留的 JS 逐个 `// @ts-check` 自愿纳入（errors.js/invalidation.js）；`npm run check:types` / `build:frontend` / `check:generated` 与 jsconfig include 是实际覆盖 | 不将node语法检查、选型批准或历史绿灯写成当前全仓类型通过；jsconfig `checkJs` 关闭是覆盖范围声明，被依赖拉入但未列出的 JS 不在保障内 |
+| 静态检查 | 采用SEL-021的渐进TypeScript：已迁 Module 以 `.ts` 源做 strict 检查，保留的 JS 逐个 `// @ts-check` 自愿纳入（errors.js/invalidation.js）；`npm run check:types` / `npm run build:frontend` / `npm run build:frontend-node` 与 tsconfig include 是实际覆盖 | 不将node语法检查、选型批准或历史绿灯写成当前全仓类型通过；jsconfig `checkJs` 关闭是覆盖范围声明，被依赖拉入但未列出的 JS 不在保障内 |
 | 行为验证 | 原生node领域行为与Python合同/宿主验证分层，按计划§7.3及实际已接线入口 | 行为/边界/转换与IDB/网络/浏览器后置分工；规则见AGENTS，不因规约修订新增验证框架 |
 | 覆盖率 | 暂不设阈值：本项目的判据是“证据能判红”，不是行覆盖率 | 若引入覆盖率门槛，先立 SEL 决策并说明理由 |
-| 应用构建 | 产品运行时仍是原生 ESM、无打包器；已迁 TS Module 由 `npm run build:frontend` 生成同目录 `.js` 且产物提交（CI `check:generated` 防漂移）；Python 可直接运行；正式交付物仍是 CI 构建的 Docker 镜像（排除 TS 源、无编译器） | `python app/server.py --check`、`npm run build:frontend`、`docker build` |
+| 应用构建 | Vite 标准构建唯一产物 `dist/product-v2`（`npm run build:frontend`），信封校验器由 `npm run build:envelope` 从 `src/providers/v2_image.py` 生成进 `domain/generated/`（gitignored，不提交）；正式入口只服务构建产物，生产无 Node/编译器、无 TS 源码回退 | `python app/server.py --check`、`npm run build:frontend`、`docker build` |
 | 容器交付 | 区分现有完整事务实现、stage替身证据与当前实际Docker/HTTPS发布结果；healthy不代表页面可用 | 计划§7.7/R7.4及详细设计§11.5；真实镜像origin页面、可信HTTPS/资源/主链、服务回退及同origin数据恢复分别证明，规划不运行发布 |
 
 ## 8. 上下文读取与写入路由
