@@ -9,7 +9,7 @@
 - **此前2026-10-15也曾停工，随后有过正式恢复，但已被上面的2026-10-16新停工取代。**旧观察 `evals/product-v2/refactor/goal-observation-stop-20261015.json` 和旧过早closeout不代表当前许可/完成。原七项目、失败与恢复材料仍在 `_stage-amz-control/next-version-b5-20261015/reconciliation.json`、`stop-closeout.json`，不重抓、不重生、不清零。
 - **此前“先更新维护项目规约”的本地维护已核验完成。**快照、独立读取/审查及守卫证据见本次latest_audit引用的prior_governance_audit；当时未建远程工单，不将规约通过当成工程闭环已落实。原生Goal仍paused、R5.1仍blocked，轮数/账本不变；换会话先读INDEX与计划§17.13。
 - **GitHub协作与代码事实分开**：#7工程/测试、#8完整人因、#9程序Prompt及#10基线仍为现有工单；#11/#12已合并，审计时远程main为`4bf6d037e516d6f0a0c2c85df2d9a1e350056ef7`，验证run38984977644、main发布/恢复run38986192730保留其实际范围。不能再将main说成尚未提交/发布，也不能把这些证据外推到封存下一版WIP或原产品最终完成。
-- **独立main基线第5/10批：补齐既有PR的依赖闭包并交付干净候选。**此前第1批P0/P1、第2批P2/P3/P4、第3批P5、第4批P2/P5残余及P6–P8本地集成均保留；既有证据在 `_stage-amz-control/main-baseline-execution-20261017/`，局部green只证明当时含未提交修改的工作树。已推Draft PR #13，分支 `feat/p8-baseline-20261017`，精确候选为`a278044`（`c751ee3`完整源码/锁/网关/两类测试/V1清退、`f839212`构建在真实信封契约检查之前、`8f1ea7c`显式根ESM、`b4f5b6b`镜像内信封codegen+运行时收窄、`eb706a4`静态启动三节点、`8df7ace`退役命令清理（围栏外）、`7132843`选择器未解析名exit2、`a278044`围栏内Goal原文逐字节恢复；PR正文与#10评论已同步到该候选）；远程main仍`4bf6d03`。精确候选的CI `39035149699`已success（control plane+Product V2全绿、Docker构建/冒烟/自测/失败分类全绿，远端v2指纹`a1e73bdc`已上传）；旧红`39033126782`/`39034753449`保留不洗绿；原产品paused、7/10批、52/52和费用账本不变；用户已授权本PR合并+部署到finalize，真人门用户稍后亲自走。旧state全文及旧“完成”叙事已保存在上述快照，不再作当前完成依据。
+- **独立main基线第5/10批完成：PR #13+#14 已合并发布，main `9c835dc` 线上服务中。**合并链：`a278044`（CI `39035149699`）→`77c84aa`（CI `39036915488`）→`a06bd34`（CI `39038112521`）→merge `82dc0ff`（PR#13）→`274fea2`（PR#14行尾）→merge `9c835dc`。发布：CRLF污染致首次指纹3文件不同，rollback后按标准流程（git archive仓库字节+新attributes）重建，acceptance 12/12，指纹与CI候选全等（runtime `a1e73bdc`），finalize完成，previous已清，线上`9c835dc` healthy。旧红保留不洗绿；原产品paused、7/10批、52/52和费用账本不变，本轮零新增付费。#10前6项已勾（评论6235232113），第7项待本条发布后勾；C15/C17真人门待用户亲自走。
 - 历史停工启动快照为`fix/byok-receipt-20261009`、`48bb3c1e2f3751a984170a01361a2fba5f6e4ae4`加当时WIP，不再作为当前main身份。下一版WIP已另行封存，保留原用户材料/五图/两包及证据，不因main审计而重生/重抓或整包恢复；当前main仍六入口和既有返工合同，不能把WIP能力当已上线。
 - 当前新Goal按连贯工作保守登记 **7/10批已占用**：原5批历史不变，第6批完成原bearing-main有据事实/普通决定/五用途/Prompt一致消费、零模型POST；第7批完成真实五图采用、两包下载和独立导入刷新/再导出证明后按用户要求停工。不把一张图/一次检查/本次收尾拆为新批；B6/B7工程准出与发布仍未执行完成。
 - **旧账和所有失败/Unknown保留，生图累计次数门已满。**原保守image35/semantic-VLM10、安全上界8.46元及历史spent_cny2.69不清零；本次实际百炼8、火山9（包含§17.12.6单次追加），新增语义0，新增安全上界2.74元（百炼1.66、火山1.08），累计安全上界11.20/16元，非账单实结。保守累计生图52/52；两平台reserved_image_calls均0，没有自动续提权限。
@@ -512,5 +512,6 @@ unknowns:
   - audit_after_stop_20261008_r73_data_probe_checks_identity_counts_asset_hashes_project_ZIP_only_no_document_payload_adoption_current_rework_or_delivery_ZIP_do_not_claim_full_R73_acceptance
   - current_20261017_baseline_candidate_a278044_PR13_CI_39035149699_success_verify_docker_smoke_selftest_green_v2fingerprint_a1e73bdc_old_reds_retained_both_reviews_integrated_no_merge_no_deploy
   - current_20261017_tip77c84aa_state_auth_only_CI39036915488_rerun_infra_httpx403_pending_v23507_closed_by_causal_doc_dev_residues_cleaned_walkthrough_packet08_prototype_deleted_doc_gaps_fixed_pending_push
-updated_at: '2026-10-17T13:48:22.000Z'
+  - current_20261017_baseline_finalized_main_9c835dc_PR13_PR14_merged_deploy_acceptance12of12_fingerprint_a1e73bdc_equal_finalize_done_previous_cleaned_CRLF_rollback_rebuild_lesson_git_archive_plus_attributes_zero_new_paid_calls
+updated_at: '2026-10-17T15:29:44.000Z'
 ```
