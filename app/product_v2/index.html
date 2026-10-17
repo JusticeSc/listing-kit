@@ -18,7 +18,7 @@
 
 <main>
   <!-- 启动反馈在模块尚未加载时也可见；app 首次接管挂载点后由模板投影启动状态。 -->
-  <div id="boot-mount"><p id="boot-pending" class="meta" role="status">正在启动本地项目库…</p></div>
+  <div id="boot-mount"><p id="boot-pending" class="meta" role="status">正在启动本地项目库…</p><p id="boot-error" class="error" role="alert" hidden></p><p id="boot-retry-row" hidden><button id="boot-retry" type="button">重试启动</button></p></div>
   <section id="capability-notice" class="error diag" role="alert" hidden>
   </section>
 

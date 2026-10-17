@@ -911,8 +911,8 @@ function boot() {
   return bootPromise;
 }
 
-// Bootstrap fallback transfer: #boot-mount ships a static boot-pending fallback so a
-// never-loaded/failed module still shows 启动中; take template ownership once here.
+// Bootstrap fallback transfer: #boot-mount 的静态启动三节点只覆盖 app 未加载的窗口；
+// 一旦装配成功，模板接管同一挂载点（无残留无重复 id），后续状态走 notices 渲染。
 elements.bootMount.replaceChildren();
 renderBoot();
 renderNotices();
