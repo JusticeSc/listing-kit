@@ -106,8 +106,8 @@ jobs:
           npm run check:versions
           npm run build:envelope
           npm run check:types
-          npm run check:envelope
           npm run build:frontend
+          npm run check:envelope
           npm run build:frontend-node
           npm run test:domain
 

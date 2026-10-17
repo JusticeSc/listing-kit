@@ -82,8 +82,8 @@ uv sync --locked
 npm ci --ignore-scripts
 npm run build:envelope      # 由 ImageWire* 模型重建 Schema + standalone 校验器
 npm run check:types         # 严格类型检查；实际覆盖由 tsconfig.json include 决定
-npm run check:envelope      # 归一化图像信封 Python↔JS 同拒（P6/SEL-025）
 npm run build:frontend      # 标准 Vite 构建 dist/product-v2
+npm run check:envelope      # 真实网关 + Python↔JS 同拒；必须先有生产静态产物
 npm run build:frontend-node # 标准 tsc emit 的 Node 测试消费树
 npm run test:domain         # 领域行为的 node 原生测试
 uv run --locked python app/server.py --check
