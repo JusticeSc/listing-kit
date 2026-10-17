@@ -38,9 +38,9 @@ import {
   selectReferences,
   suggestReworkProblems,
   suggestedReworkDirection,
-} from "../../../app/product_v2/domain/index.js";
+} from "../../../build/frontend-node/app/product_v2/domain/index.js";
 
-import { sha256Hex } from "../../../app/product_v2/storage/db.js";
+import { sha256Hex } from "../../../build/frontend-node/app/product_v2/storage/db.js";
 import { IMAGE_PROMPT_PROFILE, expect, expectCode, serializeError } from "./harness-core.mjs";
 
 const cases = [];

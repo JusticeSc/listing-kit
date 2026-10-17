@@ -39,8 +39,9 @@ export type ReviewDeliveryDependencies = {
   settings: ModelSettings;
   beginAction(): ActionSnapshot;
   sources(): ProjectSources;
-  changed(): void;
 };
+/** owner 投影变化通知：与 generation.subscribe 同一习惯（owner-local 订阅，无参数、监听者只读投影）。 */
+export type ReviewDeliveryListener = () => void;
 export type ReviewDeliveryProjection = {
   suite: SuiteReportEntry | null; suiteCurrent: boolean; gate: GateState | null;
   running: boolean; exporting: boolean; record: DeliveryRecord | null;
@@ -49,6 +50,8 @@ export type SuiteFingerprints = { selectionFingerprint: string; inputsFingerprin
 export interface ReviewDeliveryModule {
   reset(): void;
   restore(action: ActionSnapshot): Promise<void>;
+  /** owner-local 投影变化订阅：监听者只读投影并渲染，不触发业务写；返回退订函数。 */
+  subscribe(listener: ReviewDeliveryListener): () => void;
   projection(): ReviewDeliveryProjection;
   fingerprints(): SuiteFingerprints;
   runSuiteReview(options?: { ai?: boolean }): Promise<ReviewOutcome>;
@@ -159,6 +162,12 @@ export function createReviewDeliveryModule(deps: ReviewDeliveryDependencies): Re
   let record: DeliveryRecord | null = null;
   let gateRevision = 0;
   let gateTimer: ReturnType<typeof setTimeout> | null = null;
+  // owner-local 投影变化通知（generation.subscribe 同一习惯）：监听者只读投影，不执行业务写。
+  // 订阅者生命周期归 workspace 装配；reset 只清业务状态，不退订。
+  const listeners = new Set<ReviewDeliveryListener>();
+  function notify(): void {
+    for (const listener of [...listeners]) listener();
+  }
 
   function reset() {
     suite = null; running = null; exporting = null; gate = null; record = null; gateRevision += 1;
@@ -251,7 +260,7 @@ export function createReviewDeliveryModule(deps: ReviewDeliveryDependencies): Re
     }
     // 凭据只属于这一请求的内存快照，永不进入 snap、报告或 ZIP。
     const headers = ai ? deps.settings.headers("review") : {};
-    const flight = {}; running = flight; deps.changed();
+    const flight = {}; running = flight; notify();
     try {
       let vlmRun: unknown = null;
       if (ai) {
@@ -289,7 +298,7 @@ export function createReviewDeliveryModule(deps: ReviewDeliveryDependencies): Re
         message: error instanceof Error ? error.message : "整套检查没有保存；之前的报告保留。" };
     } finally {
       if (running === flight) running = null;
-      if (action.alive()) { requestGateRefresh(); deps.changed(); }
+      if (action.alive()) { requestGateRefresh(); notify(); }
     }
   }
   async function evaluate(snap: SuiteSnapshot, projectId: string,
@@ -301,7 +310,7 @@ export function createReviewDeliveryModule(deps: ReviewDeliveryDependencies): Re
   }
   async function refreshGate(): Promise<GateState | null> {
     const action = deps.beginAction(), revision = ++gateRevision;
-    if (!action.projectId) { gate = null; deps.changed(); return null; }
+    if (!action.projectId) { gate = null; notify(); return null; }
     const snap = snapshot(true);
     let next: GateState;
     try { next = { ...await evaluate(snap, action.projectId), failed: false, checked_at: new Date().toISOString() }; }
@@ -312,7 +321,7 @@ export function createReviewDeliveryModule(deps: ReviewDeliveryDependencies): Re
     if (now.selectionFingerprint !== snap.fingerprints.selectionFingerprint || now.inputsFingerprint !== snap.fingerprints.inputsFingerprint) {
       requestGateRefresh(); return null;
     }
-    gate = next; deps.changed(); return next;
+    gate = next; notify(); return next;
   }
   function requestGateRefresh() {
     gateRevision += 1; gate = null;
@@ -327,7 +336,7 @@ export function createReviewDeliveryModule(deps: ReviewDeliveryDependencies): Re
   async function exportDelivery(): Promise<DeliveryOutcome> {
     const action = deps.beginAction();
     if (!action.projectId || exporting) return { skipped: true, currentSession: action.alive() };
-    const flight = {}; exporting = flight; deps.changed();
+    const flight = {}; exporting = flight; notify();
     try {
       const stored = await deps.repository.readProjectSnapshot(action.projectId);
       const { snap, ref, attempts } = deliverySnapshot(stored);
@@ -344,7 +353,7 @@ export function createReviewDeliveryModule(deps: ReviewDeliveryDependencies): Re
         return bytes;
       };
       const checked = await evaluate(snap, action.projectId, snapshotBytes);
-      if (action.alive()) { gate = { ...checked, failed: false, checked_at: new Date().toISOString() }; deps.changed(); }
+      if (action.alive()) { gate = { ...checked, failed: false, checked_at: new Date().toISOString() }; notify(); }
       if (!checked.ready_to_export) throw new Error("交付门禁未通过：先处理阻断项并确认 Unknown。没有生成交付包。");
       const files: DeliveryFile[] = [];
       const images: { shot_id: string; candidate_id: string; media_type: string; bytes: Uint8Array }[] = [];
@@ -424,7 +433,7 @@ export function createReviewDeliveryModule(deps: ReviewDeliveryDependencies): Re
       if (action.alive()) record = { file_name, byte_size: bytes.length, sha256: sha, at };
       return { currentSession: action.alive(), artifact: { bytes, file_name, sha256: sha, at },
         includedShots: images.length, projectId: action.projectId };
-    } finally { if (exporting === flight) exporting = null; if (action.alive()) deps.changed(); }
+    } finally { if (exporting === flight) exporting = null; if (action.alive()) notify(); }
   }
   async function exportProject(): Promise<DeliveryOutcome> {
     const action = deps.beginAction();
@@ -454,6 +463,10 @@ export function createReviewDeliveryModule(deps: ReviewDeliveryDependencies): Re
       byte_size: latest.zip_bytes, sha256: latest.zip_sha256, at: latest.exported_at };
   }
   return { reset, restore, runSuiteReview, requestGateRefresh, refreshGate, exportDelivery, exportProject,
+    subscribe: (listener: ReviewDeliveryListener): (() => void) => {
+      listeners.add(listener);
+      return () => { listeners.delete(listener); };
+    },
     fingerprints: () => snapshot().fingerprints,
     projection() {
       const snap = snapshot();

@@ -23,10 +23,11 @@ import threading
 import time
 from datetime import datetime
 from functools import partial
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "tools"))
+from v2_test_server import resolve_static_root, start_static  # noqa: E402
 STORAGE_DIR = ROOT / "app" / "product_v2" / "storage"
 VENDOR_DIR = ROOT / "app" / "product_v2" / "vendor"
 HARNESS_DIR = ROOT / "evals" / "product-v2" / "harness"
@@ -54,56 +55,12 @@ EXPECTED_CASE_IDS = [
 ]
 
 
-class StaticHandler(BaseHTTPRequestHandler):
-    """只服务测试需要的四类路径：/storage/*、/vendor/*、/harness/* 与 /domain/*。
-
-    /vendor/* 是 SEL-008 之后 storage/zip.js 的新依赖（fflate）；
-    /domain/* 是 storage/repository.js 的依赖（../domain/index.js）；
-    漏放行时表现为页面模块加载失败、套件结果永远不出现。
-    """
-
-    roots = {
-        "/storage/": STORAGE_DIR,
-        "/vendor/": VENDOR_DIR,
-        "/harness/": HARNESS_DIR,
-        "/domain/": DOMAIN_DIR,
-    }
-
-    def log_message(self, *_args):  # 关掉 stderr 噪音
-        return
-
-    def do_GET(self):  # noqa: N802 (http.server 接口名)
-        path = self.path.split("?", 1)[0]
-        if path in ("/", "/index.html"):
-            self.send_response(302)
-            self.send_header("Location", "/harness/storage-contract.html")
-            self.end_headers()
-            return
-        for prefix, root in self.roots.items():
-            if path.startswith(prefix):
-                relative = path[len(prefix):]
-                candidate = (root / relative).resolve()
-                if not str(candidate).startswith(str(root.resolve())) or not candidate.is_file():
-                    break
-                payload = candidate.read_bytes()
-                self.send_response(200)
-                self.send_header("Content-Type", MIME.get(candidate.suffix, "application/octet-stream"))
-                self.send_header("Content-Length", str(len(payload)))
-                self.send_header("Cache-Control", "no-store")
-                self.end_headers()
-                self.wfile.write(payload)
-                return
-        self.send_response(404)
-        self.send_header("Content-Type", "text/plain; charset=utf-8")
-        self.end_headers()
-        self.wfile.write("not found".encode("utf-8"))
 
 
-def start_static_server() -> tuple[ThreadingHTTPServer, str]:
-    server = ThreadingHTTPServer(("127.0.0.1", 0), partial(StaticHandler))
-    thread = threading.Thread(target=server.serve_forever, daemon=True)
-    thread.start()
-    return server, f"http://127.0.0.1:{server.server_address[1]}"
+def start_static_server():
+    root = resolve_static_root()
+    return start_static({"/harness": HARNESS_DIR, "/": root},
+                        redirect="/harness/storage-contract.html")
 
 
 def run_node_check() -> dict:
@@ -276,8 +233,7 @@ def main() -> int:
                     {"first": first, "second": second},
                 )
     finally:
-        server.shutdown()
-        server.server_close()
+        server.stop()
 
     failed = [item["id"] for item in checks if not item["ok"]]
     status = "passed" if not failed else "failed"

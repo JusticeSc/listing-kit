@@ -38,7 +38,6 @@ import urllib.error
 import urllib.request
 import zlib
 from datetime import datetime
-from http.server import ThreadingHTTPServer
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -188,12 +187,6 @@ def diff_fingerprints(before: dict, after: dict) -> dict:
             "clean": not (added or removed or changed or index_changed)}
 
 
-def load_server_module():
-    spec = importlib.util.spec_from_file_location(
-        "product_v2_server_under_test", ROOT / "app" / "product_v2_server.py")
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
 
 
 def free_port() -> int:
@@ -262,7 +255,7 @@ def main() -> int:
     check(f"{APP_NAME}-01", "正式入口自检全过（含 capabilities / analyze 与拒绝 V1 API、目录逃逸）",
           entry["rc"] == 0 and any("通过。" in line for line in entry["tail"]), entry)
 
-    module = load_server_module()
+    from app.product_v2_server import create_product_v2_server  # noqa: PLC0415
     from src.providers.v2_fake_semantic import FakeSemanticProvider
     from src.providers.v2_semantic import CORE_SLOT_REGISTRY
 
@@ -271,10 +264,10 @@ def main() -> int:
     def provider_factory():
         return FakeSemanticProvider(scenario=scenario["value"])
 
-    server = module.create_product_v2_server(
+    server = create_product_v2_server(
         "127.0.0.1", 0, provider_factory=provider_factory)
-    threading.Thread(target=server.serve_forever, daemon=True).start()
-    base = f"http://127.0.0.1:{server.server_address[1]}"
+    server.start()
+    base = f"http://127.0.0.1:{server.port}"
     before_fp = fingerprint()
     try:
         with urllib.request.urlopen(base + "/api/v2/capabilities", timeout=10) as response:
@@ -545,8 +538,7 @@ def main() -> int:
                    "page": page_errors[:5], "slots": len(open_after["slots"])})
             context.close()
     finally:
-        server.shutdown()
-        server.server_close()
+        server.stop()
 
     after_fp = fingerprint()
     disk_diff = diff_fingerprints(before_fp, after_fp)
@@ -652,7 +644,7 @@ def main() -> int:
         "suite": "v2.2.3-intake-understanding",
         "status": status,
         "finished_at": finished_at,
-        "port": server.server_address[1],
+        "port": server.port,
         "checks": checks,
         "console_errors": console_errors,
         "page_errors": page_errors,
@@ -673,7 +665,7 @@ def main() -> int:
         f"observed_at: {finished_at}",
         f"status: {status}",
         f"json: {json_path.relative_to(ROOT).as_posix()}",
-        f"port: {server.server_address[1]}",
+        f"port: {server.port}",
         "",
         "CHECKS",
     ]

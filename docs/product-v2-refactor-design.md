@@ -540,7 +540,7 @@ type CommitDeliveryInput = Readonly<{
 ```text
 # 改过TS的同包闭合：build包含strict检查，随后只读产物比较
 npm run build:frontend
-npm run check:generated
+npm run build:frontend-node
 # 未改TS但改变受检查调用方时用 npm run check:types；不重复同包相同诊断
 
 # 对应差量修复后选其入口串行单跑，不为确认已有失败重跑
@@ -867,7 +867,7 @@ Verification核实现合同；Validation核真实用户目的；Acceptance按明
 
 | 改变的前提 | 最小复用门 | 不变时不重做 |
 |---|---|---|
-| 类型/TS源 | check:types＋build:frontend＋check:generated，实际消费者smoke | 全库所有浏览器套件 |
+| 类型/TS源 | check:types＋build:frontend＋build:frontend-node，实际消费者smoke | 全库所有浏览器套件 |
 | 展示决定/编译/refs/版本合同 | 现有specs/prompt/rework/confirm/attempt业务测试；相同非法值同时过生产parser；相关正式页面/Transport后置 | 新源码字符串/文案/转发/mock回声测试 |
 | 授权/采用/报告/ZIP/OCC | 对应现有真实事务消费者，边界/跨tab/晚到/故障及原生包核对 | 改一段布局即重新买模型或两轮全量 |
 | 视图层级/草稿/焦点 | 实际Chrome无头表面用真实长内容核主动作/视觉层级、精确对象、反馈/恢复、键盘/部分成功；页面级非预期横向溢出与关键控制遮挡必须解释/修正 | 只跑类型、空数据布局或用Screenshot数量代替易用性；不能将工程人因问题全推到C15/C17 |

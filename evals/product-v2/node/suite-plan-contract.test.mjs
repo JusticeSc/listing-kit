@@ -36,7 +36,7 @@ import {
   recommendPlan,
   templateDefinition,
   validateSuiteRegistry,
-} from "../../../app/product_v2/domain/index.js";
+} from "../../../build/frontend-node/app/product_v2/domain/index.js";
 
 import { expect, expectCode, serializeError } from "./harness-core.mjs";
 

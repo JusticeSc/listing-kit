@@ -30,6 +30,13 @@ def ci_commands(workflow: Path = WORKFLOW) -> list[tuple[str, list[str]]]:
                     rest = rest[1:]
                 if len(rest) >= 2 and rest[0] == "python" and rest[1].endswith(".py"):
                     commands.append((rest[1], rest[2:]))
+                elif rest[:3] == ["python", "-m", "pytest"] and len(rest) >= 4:
+                    # pytest 组级登记：collection 参数（tests/…）各自登记，共享其余旗标。
+                    rest_args = rest[3:]
+                    suites = [token for token in rest_args if token.startswith("tests/")]
+                    flags = tuple(token for token in rest_args if token not in suites)
+                    for suite in suites:
+                        commands.append(("pytest:" + suite, list(flags)))
             elif len(tokens) >= 3 and tokens[:2] == ["npm", "run"]:
                 args = tokens[3:]
                 if args[:1] == ["--"]:
@@ -56,7 +63,13 @@ def check_policy(registry: dict, commands: list[tuple[str, list[str]]], root: Pa
     allowed = set()
     required = set()
     for entrypoint, modes in entries.items():
-        exists = entrypoint[4:] in scripts if entrypoint.startswith("npm:") else (root / entrypoint).is_file()
+        if entrypoint.startswith("pytest:"):
+            target = root / entrypoint[len("pytest:"):]
+            exists = target.is_dir() or target.is_file()
+        elif entrypoint.startswith("npm:"):
+            exists = entrypoint[4:] in scripts
+        else:
+            exists = (root / entrypoint).is_file()
         if not exists:
             problems.append(("VCLASS_GHOST", f"登记入口不存在：{entrypoint}"))
         if not isinstance(modes, list) or not modes:

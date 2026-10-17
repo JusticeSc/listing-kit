@@ -28,9 +28,9 @@ import {
   resolveUnknowns,
   selectionFingerprintOf,
   suiteReviewIsCurrent,
-} from "../../../app/product_v2/domain/index.js";
-import { sha256Hex } from "../../../app/product_v2/storage/db.js";
-import { buildZip, crc32, readZip } from "../../../app/product_v2/storage/zip.js";
+} from "../../../build/frontend-node/app/product_v2/domain/index.js";
+import { sha256Hex } from "../../../build/frontend-node/app/product_v2/storage/db.js";
+import { buildZip, crc32, readZip } from "../../../build/frontend-node/app/product_v2/storage/zip.js";
 import { expect, serializeError } from "./harness-core.mjs";
 
 const cases = [];

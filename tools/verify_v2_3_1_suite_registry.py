@@ -22,10 +22,11 @@ import subprocess
 import sys
 import threading
 from datetime import datetime
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "tools"))
+from v2_test_server import start_static  # noqa: E402
 PRODUCT_DIR = ROOT / "app" / "product_v2"
 HARNESS_DIR = ROOT / "evals" / "product-v2" / "harness"
 EVIDENCE_DIR = ROOT / "evals" / "product-v2"
@@ -87,43 +88,10 @@ async () => {
 """
 
 
-class HarnessHandler(BaseHTTPRequestHandler):
-    def log_message(self, format, *args):  # noqa: A002
-        return
-
-    def _send(self, payload: bytes, ctype: str) -> None:
-        self.send_response(200)
-        self.send_header("Content-Type", ctype)
-        self.send_header("Content-Length", str(len(payload)))
-        self.send_header("Cache-Control", "no-store")
-        self.end_headers()
-        self.wfile.write(payload)
-
-    def do_GET(self):  # noqa: N802
-        path = self.path.split("?", 1)[0]
-        if path in ("/", "/index.html"):
-            self._send((HARNESS_DIR / "suite-plan-contract.html").read_bytes(), MIME[".html"])
-            return
-        if path.startswith("/harness/"):
-            candidate = (HARNESS_DIR / path[len("/harness/"):]).resolve()
-            if str(candidate).startswith(str(HARNESS_DIR.resolve())) and candidate.is_file():
-                self._send(candidate.read_bytes(), MIME.get(candidate.suffix, "application/octet-stream"))
-                return
-        else:
-            candidate = (PRODUCT_DIR / path.lstrip("/")).resolve()
-            if str(candidate).startswith(str(PRODUCT_DIR.resolve())) and candidate.is_file():
-                self._send(candidate.read_bytes(), MIME.get(candidate.suffix, "application/octet-stream"))
-                return
-        self.send_response(404)
-        self.send_header("Content-Type", "text/plain; charset=utf-8")
-        self.end_headers()
-        self.wfile.write(b"not found")
 
 
-def start_server() -> tuple[ThreadingHTTPServer, str]:
-    server = ThreadingHTTPServer(("127.0.0.1", 0), HarnessHandler)
-    threading.Thread(target=server.serve_forever, daemon=True).start()
-    return server, f"http://127.0.0.1:{server.server_address[1]}"
+def start_server():
+    return start_static(index_document=HARNESS_DIR / "suite-plan-contract.html")
 
 
 def run_node_checks() -> dict:
@@ -235,8 +203,7 @@ def main() -> int:
             finally:
                 browser.close()
     finally:
-        server.shutdown()
-        server.server_close()
+        server.stop()
 
     entry = run_entry_check()
     check("V2.3.1-05", "正式入口自检仍全过（V2.3.1 不破坏 V2.1.4）", entry["ok"], entry)

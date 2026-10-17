@@ -14,7 +14,7 @@
 - `app/` — 产品入口与前端：`server.py`（默认 Product V2 无状态入口，8780）、`product_v2_server.py`、
   `product_v2/`（`app.js`、`styles.css`、`storage/` IndexedDB、`domain/` 槽位与简报契约）。
 - `src/` — Python 侧实现：`providers/` 模型适配器、规则与验证模块。
-- `config/` — `product-v1/`、`product-v2/providers.json`、`slots.yaml`。
+- `config/` — 当前 `product-v2/` 的 Provider 与验证用途登记。
 - `tools/` — 守卫与验证入口；`evals/` — 时点证据（带 `NOT-AUTHORITY`）；`docs/` — INDEX、计划、
   项目上下文；`_working/` — 唯一执行状态。
 
@@ -57,7 +57,6 @@
 ```bash
 uv run --locked python app/server.py                  # 启动产品（默认 8780，Product V2）
 uv run --locked python app/server.py --check          # 正式入口自检
-uv run --locked python app/server.py --legacy-v1      # 旧 V1 回归入口
 uv run --locked python tools/check_docs.py            # 文档守卫
 uv run --locked python tools/check_project_state.py   # 状态守卫
 uv run --locked python evals/probes/project_state.py  # 反向探针
@@ -69,11 +68,10 @@ uv run --locked python evals/probes/project_state.py  # 反向探针
 ## Coding Style & Naming Conventions
 
 Python 3.13；`snake_case` 变量与函数，模块用短小写名；注释与界面文案用中文，标识符与文件名保持
-ASCII。前端运行时是原生 ESM、无打包器；已迁 TS Module 按 SEL-021 编译为同目录 JS，浏览器不加载 TS。DOM 只做投影，业务状态一律走 `storage/` 的 repository 接口。
+ASCII。前端源码通过标准Vite构建到唯一`dist/product-v2`，正式Python入口只服务该目录；类型检查读`tsconfig.json`。视图按SEL-023使用lit-html投影，草稿由对应视图持有，业务状态由既有owner经`storage/` repository维护。
 换行服从 `.gitattributes`（`.py`/`.js`/`.md` 为 LF，`.bat` 为 CRLF）。Python 依赖由
 `pyproject.toml` + `uv.lock` 管理（uv add）；前端开发依赖由根 `package.json` + `package-lock.json`
-管理（已批准包、精确版本、禁安装 scripts）。TS strict、逐文件 JSDoc/checkJs、编译产物一致性与 Node 原生行为验证按 SEL-021，
-不把 node --check 当类型门；工具版本、实际覆盖和登记只见项目上下文 §4.2/§7、`jsconfig.json`。
+管理（已批准包、精确版本、禁安装scripts）。TS strict与逐文件JSDoc/checkJs覆盖看`tsconfig.json`；构建与依赖决策看项目上下文§4.2/§7、SEL-021/023，不把node --check当类型门。
 
 类用 `PascalCase`，常量用 `UPPER_SNAKE`，私有实现加 `_` 前缀；命名必须表达意图，禁止 `tmp_final`
 这类无法审查的名字。函数按业务决策和变化原因组织，不按行数机械拆分；注释只写“为什么与权衡”，
@@ -174,7 +172,7 @@ Single-context layout (root `GLOSSARY.md` + `docs/adr/` when created); project d
 
 ### Skill使用与成品质量
 
-- 承接新类型任务时先读匹配skill，再使用其方法产出结果：界面/人因用`ui-ux-pro-max`与必要`prototype`；结构用`codebase-design`；规则/上下文用`writing-for-agents`；缺陷用`diagnosing-bugs`；改动用`code-review`独立审查，PR用`pr`组织证据，完成前用`completion-evidence`核对边界。只读skill或复述原则不算产出，不无差别叠加全套skill。
+- AI 协作按 `docs/agents/ai-coding-loop.md` 六环（选→说→切→验→因→学）：验证便宜才交、验收写成命令、切到读得动、分层独立验证、先分偶然系统、预测核对记层。
 - 界面先定义用户要完成的动作、对象、反馈与恢复，再实现；普通流程不要求理解内部版本/task/hash或专业Prompt。视觉层级、默认值、认知负担和真实长内容下的布局与功能正确同等验收；明显问题不能等C15/C17才处理。
 - Prompt先建立协调的视觉简报（用途、构图、光线/质感、配色、排版/准确文案及参考保真），再施加事实与安全边界；用程序实际编译的样稿证明普通输入的消费，手工专家稿/HTTP成功/旧成功图不证明新编译器品质。
 - 反思落到现有Issue的明确问题、必要修改与修后证据；不以再写一份总结或新增守卫替代产品修正。只让用户决定不可替代的产品取舍、事实与权限，不让用户教工具、写工单或指挥每个工程步骤。

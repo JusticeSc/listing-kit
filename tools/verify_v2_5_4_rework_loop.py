@@ -51,7 +51,7 @@ BUSINESS_KINDS = {"prompt_version", "generation_attempt", "candidate", "review_r
 import v2_verify_shared as shared  # noqa: E402
 from v2_verify_shared import digest_untouched, digest_kept_prefix  # noqa: E402
 
-server_module = shared.load_server_module()
+from app.product_v2_server import create_product_v2_server  # noqa: E402
 
 
 
@@ -195,19 +195,19 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
     ui: dict = {}
     holder = {"scenario": "ok"}
     captured: list[dict] = []
-    server = server_module.create_product_v2_server(
+    server = create_product_v2_server(
         "127.0.0.1", 0,
         provider_factory=lambda: FakeSemanticProvider(scenario="ok"),
         image_provider_factory=lambda: FakeImageProvider(scenario=holder["scenario"]),
         review_provider_factory=lambda: FakeReviewProvider("ok"))
-    threading.Thread(target=server.serve_forever, daemon=True).start()
+    server.start()
     static_server, static_url = shared.start_static_server()
     temp_root = Path(tempfile.mkdtemp(prefix="amz-v254-"))
     profile = temp_root / "profile"
     reference = temp_root / "ref.png"
     reference.write_bytes(shared.png_bytes(1200, 1200, (36, 92, 160)))
     reference_sha = hashlib.sha256(reference.read_bytes()).hexdigest()
-    base = f"http://127.0.0.1:{server.server_address[1]}"
+    base = f"http://127.0.0.1:{server.port}"
     EVIDENCE_IMAGE_DIR.mkdir(parents=True, exist_ok=True)
     try:
         with sync_playwright() as pw:
@@ -678,9 +678,8 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
             finally:
                 context.close()
     finally:
-        static_server.shutdown()
-        server.shutdown()
-        server.server_close()
+        static_server.stop()
+        server.stop()
     return checks, ui
 
 
@@ -705,7 +704,7 @@ def run_harness_suites(console_errors: list[str], page_errors: list[str]) -> lis
                 browser, static_url + "/harness/review-provider-contract.html",
                 "__V2_REVIEW_PROVIDER_RESULTS__", console_errors, page_errors)
         finally:
-            static_server.shutdown()
+            static_server.stop()
             browser.close()
 
     checks.append({
@@ -751,7 +750,7 @@ def main() -> int:
         "title": "正式入口 --check 全过（返工闭环没有破坏既有自检）",
         # 自检条目会随批次增加：断言只看「全过」这一语义，不写死条数。
         "ok": entry["rc"] == 0 and any(
-            re.search(r"V2 正式入口自检：\d+/\d+ 通过", line) for line in entry["tail"]),
+            re.search(r"V2 正式入口(轻量)?自检：\d+/\d+ 通过", line) for line in entry["tail"]),
         "detail": {"rc": entry["rc"], "tail": entry["tail"][-3:]},
     })
     expected_console = [item for item in console_errors if "status of 504" in item]

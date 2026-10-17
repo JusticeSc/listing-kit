@@ -23,6 +23,12 @@ out/
 out_prev/
 out_verify_m7/
 _trash/
+build/
+dist/
+# P6 信封结构投影的生成物（构建期产物，不是源码）：JSON Schema 来自
+# tools/export_image_envelope_schema.py，Ajv standalone 校验器来自
+# tools/generate_image_envelope_validator.mjs。取回源码后必须重跑 codegen。
+app/product_v2/domain/generated/
 
 # Working records are versioned; generated workspaces and run logs are not
 _working/**

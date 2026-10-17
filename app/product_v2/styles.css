@@ -594,6 +594,36 @@ input:disabled, textarea:disabled, select:disabled { background: var(--surface-s
   }
 }
 
+/* 审核主动作：任务列表与当前图片并排；只有列表过长时独立滚动，不锁整页滚动。 */
+.review-workbench { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; align-items: start; }
+.review-workbench:has(#compare-panel:not([hidden])) { grid-template-columns: 220px minmax(0, 1fr); }
+.review-task-list, .review-detail, .review-card > * { min-width: 0; }
+.review-task-list { margin: 0; }
+.review-detail .compare-panel { margin-top: 0; box-shadow: none; }
+.review-workbench .review-card {
+  grid-template-columns: 56px minmax(0, 1fr);
+  gap: 6px 10px;
+  padding: 10px;
+}
+.review-workbench .review-card .review-preview { width: 56px; }
+.review-workbench .review-card .review-preview img { height: 64px; object-fit: contain; }
+.review-workbench .review-card-head { grid-column: 2; grid-row: 1; }
+.review-workbench .review-card-actions { grid-column: 1 / -1; grid-row: 2; }
+.review-workbench .review-card-check { grid-column: 1 / -1; grid-row: 3; overflow-wrap: anywhere; }
+.review-workbench:has(#compare-panel:not([hidden])) .review-list { max-height: calc(100dvh - 300px); overflow-y: auto; }
+.review-workbench .compare-image-grid { gap: 10px; }
+.review-workbench .compare-image-grid figure > img,
+.review-workbench .compare-references img { height: clamp(160px, 28dvh, 260px); }
+.review-workbench .compare-head-actions { margin-left: 0; }
+.review-workbench .compare-card { width: 128px; }
+.review-workbench .compare-card > img { height: 76px; }
+.review-workbench p, .review-workbench figcaption { overflow-wrap: anywhere; }
+@media (max-width: 900px) {
+  .review-workbench:has(#compare-panel:not([hidden])) { grid-template-columns: minmax(0, 1fr); }
+  .review-workbench:has(#compare-panel:not([hidden])) .review-list { max-height: none; overflow: visible; }
+  .review-task-list .review-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); }
+}
+
 .compare-panel, .rework-panel {
   background: var(--surface);
   border: 1px solid var(--border-strong);

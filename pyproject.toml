@@ -5,21 +5,14 @@ description = "Local-first Amazon listing image workbench"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "jsonschema==4.26.0",
+    "fastapi==0.143.3",
     "langchain-core==1.6.6",
     "langchain-openai==1.6.6",
-    "numpy==2.4.6",
-    "pillow==12.3.0",
-    "python-dotenv==1.2.3",
-    "pyyaml==6.0.3",
+    "pydantic==2.13.5",
     "requests==2.34.2",
+    "uvicorn==0.54.0",
 ]
 
-[project.optional-dependencies]
-cutout = [
-    "onnxruntime==1.30.0",
-    "rembg==2.0.84",
-]
 
 # 依赖权威：pyproject 声明直接依赖（精确版本），uv.lock 锁定完整解析结果。
 # 镜像用清华源：本机与 CI 都通过锁定来源取包，避免"本机通了 CI 挂"。
@@ -28,6 +21,18 @@ url = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple/"
 default = true
 
 [dependency-groups]
+# 开发验证依赖：生产镜像 `uv sync --locked --no-dev` 不含这些包（pytest、浏览器、
+# Pillow 与 YAML 只在开发/验证用；正式入口 --check 不导入它们）。
 dev = [
+    "pillow==12.3.0",
     "playwright==1.63.0",
+    "pytest==9.1.1",
+    "pyyaml==6.0.3",
 ]
+
+# pytest 只自动发现 tests/；付费/远程/人工门各自有独立入口，不进默认发现。
+# cacheprovider 关掉：验证不能被自身缓存目录的影响面污染（CI 也拒绝验证副作用）。
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = ["-p", "no:cacheprovider"]
+

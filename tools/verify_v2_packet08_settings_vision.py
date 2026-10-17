@@ -8,26 +8,36 @@
          由正式产品消费者（semantic-analysis / generation / selection-adoption / review-delivery）
          发出真实请求；在独立网络层捕获三用途出站头（purpose=Provider-*，source=凭据 byok），
          证明哨兵只出现在输入框内存与本次出站头，且不出现于完整 DOM 投影/完整响应体/错误面/
-         完整 IDB 快照/原生项目包字节/完整控制台日志（扫描 DOM 前显式剔除密码输入本身）。
+         服务器错误输出/完整 IDB 快照（文档与资产载荷 + 每个资产的原字节）/
+         两包解压成员/完整控制台日志（扫描 DOM 前显式剔除密码输入本身）。
+         较大资产（>8MiB 跳过线且在产品单图 10MiB 内）按原字节读齐；同一扫描器对故意含哨兵的
+         有效大图必须判红，对无泄漏的最大资产不得误报。
   P08-03 一致性可证：页面所示配置与 fake-vision 替身实际收到的 provider/model/图片字节身份逐字一致。
   P08-04 旧格式包经正式 UI 导入被拒绝（不迁移、不半写，IDB 计数不变）；生产 provider 前置
          （凭据来源 none）下带着真实图片字节的合法看图请求被拒为凭据缺失（PROVIDER_NOT_CONFIGURED，
          不是 VISION_BYTES_REQUIRED）且零上游；默认档关闭时合法请求同样零上游。
          假 provider 绕过凭据，故凭据 fail-closed 一律用生产适配器 + 假 transport 证明。
+  P08-05 原任务凭据隔离连接：原任务冻结在 fake-qwen-image/byok 后，清 key 被阻；把“当前设置”
+         切到另一个图像 provider（与原目标不同）仍按冻结目标判凭据未就绪而不外发；
+         经正式 DOM 补原目标凭据后恢复核对，状态请求头带原 Provider + 本次密钥原文、
+         target 与冻结身份逐字段一致，task/action 不变、零新 submit、当前动作选择不被改变。
+  P08-06 取消/关闭不应用草稿：草稿哨兵不进任何出站头；查看/应用设置与取消/关闭零供应商外呼。
 
 运行（仓库根 amz-listing-kit 下）：
   uv run --locked python tools/verify_v2_packet08_settings_vision.py
   uv run --locked python tools/verify_v2_packet08_settings_vision.py --label <tag>
 
 产物：控制台 PASS/FAIL 行；证据片段写入 evals/product-v2/refactor/<label>.json
-（哨兵明文永不落盘：证据只记计数与长度；出站密钥头只记名称与长度）。
+（哨兵明文永不落盘：证据只记精确匹配布尔值、计数与长度）。
 """
 from __future__ import annotations
 
 import argparse
 import base64
+import contextlib
 import hashlib
 import http.client
+import io
 import json
 import os
 import sys
@@ -74,6 +84,11 @@ PURPOSE_PROVIDER_HEADER = {
     "image": "x-amz-listing-provider-image",
     "review": "x-amz-listing-provider-review",
 }
+# 只用于「取消/关闭不应用草稿」的草稿哨兵：与已应用的哨兵不同，必须在任何出站头里缺席。
+DRAFT_SENTINELS = {
+    "image": "pk-p08-draft-image-2a7c4e",
+    "semantic": "pk-p08-draft-sem-6b1d9f",
+}
 
 # 在页面自己的 fetch 上做行为透明的观测：记录请求头（密钥头只记长度）与 JSON 端点完整响应体。
 # 不参与业务逻辑，只被测产品消费者（semantic-analysis / generation / selection-adoption /
@@ -98,8 +113,12 @@ FETCH_SPY = """
       });
     } catch (error) { /* 观测失败不改行为 */ }
     const response = await orig(input, init);
+    let requestBody = null;
+    try {
+      if (init && typeof init.body === "string") requestBody = init.body;
+    } catch (error) { /* 观测失败不改行为 */ }
     const record = { path: path, method: (init && init.method) || "GET",
-      headers: headers, body: null };
+      headers: headers, body: null, request_body: requestBody };
     window.__p08Net.push(record);
     if (JSON_PATHS.some((item) => path.endsWith(item))) {
       try { record.body = await response.clone().text(); } catch (error) { record.body = null; }
@@ -158,7 +177,8 @@ async () => {
   const snapshot = {
     local_storage: {}, session_storage: {},
     documents: [], document_payloads: [], asset_payloads: [],
-    response_bodies: [], console_texts: [], blob_bytes: [],
+    response_bodies: [], console_texts: [], blob_bytes: [], blob_byte_sizes: [],
+    asset_total: 0,
   };
   for (const [store, out] of [[localStorage, snapshot.local_storage],
       [sessionStorage, snapshot.session_storage]]) {
@@ -182,7 +202,7 @@ async () => {
   const assets = await readAll("assets");
   db.close();
   const blobText = async (blob) => {
-    if (!(blob instanceof Blob) || blob.size > 8 * 1024 * 1024) return "<blob:" + blob.size + ">";
+    if (!(blob instanceof Blob)) throw new Error("资产不是 Blob，无法证明字节缺席");
     const buffer = new Uint8Array(await blob.arrayBuffer());
     let binary = "";
     const chunk = 8192;
@@ -195,10 +215,12 @@ async () => {
     kind: row.kind, document_id: row.document_id, version: row.version,
   }));
   snapshot.document_payloads = documents.map((row) => JSON.stringify(row.payload || {}));
+  snapshot.asset_total = assets.length;
   for (const asset of assets) {
-    if (asset.blob instanceof Blob) {
-      snapshot.blob_bytes.push(await blobText(asset.blob));
-    }
+    // 每个资产都必须读出真实字节：不是 Blob 就报错，不用大小占位冒充内容。
+    snapshot.blob_byte_sizes.push(
+      asset.blob instanceof Blob ? asset.blob.size : -1);
+    snapshot.blob_bytes.push(await blobText(asset.blob));
     snapshot.asset_payloads.push(JSON.stringify({
       sha256: asset.sha256, role: asset.role, byte_size: asset.byte_size,
     }));
@@ -233,7 +255,9 @@ def utc_now() -> str:
 
 def check(checks: list, code: str, title: str, ok: bool, detail: object = None) -> None:
     checks.append({"code": code, "title": title, "ok": bool(ok), "detail": detail})
-    print(f"[{'PASS' if ok else 'FAIL'}] {code} {title}" + ("" if ok else f" :: {detail}"), flush=True)
+    message = redact_test_lines(f"[{'PASS' if ok else 'FAIL'}] {code} {title}"
+                                + ("" if ok else f" :: {detail}"))
+    print(message, flush=True)
 
 
 def read_docs(page, kind: str) -> list:
@@ -272,6 +296,18 @@ def find_net_body(net: list, suffix: str, predicate) -> object:
             return body
     return None
 
+def find_net_request_body(net: list, suffix: str, predicate) -> object:
+    for item in net:
+        if not str(item.get("path", "")).endswith(suffix) or not item.get("request_body"):
+            continue
+        try:
+            body = json.loads(item["request_body"])
+        except (ValueError, TypeError):
+            continue
+        if predicate(body):
+            return body
+    return None
+
 
 def text_of(page, element_id: str) -> str:
     return page.evaluate("(id) => (document.getElementById(id) || {}).textContent || ''",
@@ -301,31 +337,6 @@ def downgrade_to_format_one(source: Path, target: Path) -> None:
         for name, data in entries:
             output.writestr(name, data)
 
-def swapped_sentinels() -> dict:
-    """同长度但换位置的哨兵：长度oracle必须失败，精确接收证明才能过。"""
-    values = list(SENTINELS.values())
-    rotated = values[1:] + values[:1]
-    return dict(zip(PURPOSE_ORDER, rotated))
-
-
-def check_exact_sentinel_identity(checks: list, captures: dict) -> None:
-    """画像用途同长度语义哨兵不等值：内存精确字符串判等必须失配。"""
-    try:
-        exact_mismatch = SENTINELS["semantic"] != SENTINELS["image"]
-        captures["exact_sentinel_identity"] = {
-            "semantic_is_image": SENTINELS["semantic"] == SENTINELS["image"],
-            "lengths_equal": len(SENTINELS["semantic"]) == len(SENTINELS["image"]),
-        }
-        check(checks, "P08-02h",
-              "三用途哨兵同长度但内容不等（精确不等才能证明长度oracle不足）",
-              exact_mismatch
-              and len(SENTINELS["semantic"]) == len(SENTINELS["image"]),
-              captures["exact_sentinel_identity"])
-    except Exception as error:  # noqa: BLE001
-        captures["exact_sentinel_identity"] = {"error": f"{type(error).__name__}: {error}"[:200]}
-        check(checks, "P08-02h", "三用途哨兵精确不等前置", False,
-              captures["exact_sentinel_identity"])
-
 
 def check_image_byok_exact(checks: list, captures: dict) -> None:
     """生产图像适配器精确接收：内存原文逐字节相等，且同长度错用途哨兵必须不等。"""
@@ -353,6 +364,90 @@ def check_image_byok_exact(checks: list, captures: dict) -> None:
         check(checks, "P08-02i", "生产图像适配器精确接收本次哨兵原文", False,
               captures["image_byok_exact"])
 
+
+
+def redact_test_lines(text: str) -> str:
+    """为控制台/日志转述脱敏：只替换本次测试哨兵原文，不改其它诊断内容。"""
+    safe = str(text)
+    for sentinel in SENTINELS.values():
+        safe = safe.replace(sentinel, "<redacted-test-sentinel>")
+    return safe
+
+
+def sentinel_hits(surfaces: dict[str, str]) -> dict[str, list[str]]:
+    """扫描实际表面内容；返回用途而非哨兵原文。"""
+    return {name: found for name, text in surfaces.items()
+            if (found := [purpose for purpose, sentinel in SENTINELS.items()
+                          if sentinel in text])}
+
+
+def supplier_calls(vision, image_provider, review_provider, suite_provider) -> dict:
+    """离线替身的调用计数：证明「查看/应用设置」「取消/关闭」零供应商外呼。"""
+    return {"vision": len(vision.calls), "image": dict(image_provider.calls),
+            "review": len(review_provider.calls), "suite": len(suite_provider.calls)}
+
+
+def password_dialog_state(page) -> dict:
+    """设置对话框状态：是否打开 + 是否还留着未应用的草稿（密码框值）。"""
+    return page.evaluate("""() => {
+      const dialog = document.getElementById("model-settings-dialog");
+      const inputs = [...dialog.querySelectorAll("input[type=password]")];
+      return { open: dialog.open, values: inputs.filter((node) => node.value !== "").length };
+    }""")
+
+
+def attempt_of(page, shot_id: str, project_id: str = "") -> dict:
+    """该项目该 Shot 最新 Attempt 文档的 payload：冻结身份/动作/task 的只读入口。"""
+    rows = [row for row in read_docs(page, "generation_attempt")
+            if row.get("document_id") == shot_id
+            and (not project_id or row.get("project_id") == project_id)]
+    if not rows:
+        return {}
+    return max(rows, key=lambda row: row.get("version") or 0).get("payload") or {}
+
+
+def project_id_of(page, name: str) -> str:
+    """按项目名读项目 ID（只读存储）：同 Shot ID 在不同项目里合法重复，取 Attempt 必须按项目取。"""
+    return page.evaluate("""(name) => (async () => {
+      const db = await new Promise((resolve, reject) => {
+        const request = indexedDB.open("amz-listing-kit-v2");
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+      const rows = await new Promise((resolve, reject) => {
+        const tx = db.transaction("projects", "readonly").objectStore("projects").getAll();
+        tx.onsuccess = () => resolve(tx.result);
+        tx.onerror = () => reject(tx.error);
+      });
+      db.close();
+      const hit = rows.find((row) => row.name === name);
+      return hit ? String(hit.project_id || "") : "";
+    })()""", arg=name)
+
+
+def read_current_image_provider(page) -> str:
+    """重新打开设置面板读「现有模型」的当前选择（纯查看，不外呼）。"""
+    page.click("#model-settings-open")
+    page.wait_for_selector("#model-settings-dialog[open]", timeout=10_000)
+    value = page.evaluate(
+        "() => (document.getElementById('model-provider-image') || {}).value || ''")
+    page.keyboard.press("Escape")
+    page.wait_for_timeout(200)
+    return value
+
+
+def blob_byte_facts(snapshot: dict) -> dict:
+    """资产字节取证：每个资产都读了真实字节，最大那份是原字节（PNG 头）而非大小占位。"""
+    sizes = list(snapshot.get("blob_byte_sizes") or [])
+    texts = list(snapshot.get("blob_bytes") or [])
+    total = int(snapshot.get("asset_total") or 0)
+    largest = max(sizes) if sizes else 0
+    index = sizes.index(largest) if largest > 0 else -1
+    head = texts[index][:8] if 0 <= index < len(texts) else ""
+    return {"assets": total, "viewed": len(sizes),
+            "reads_every_asset": bool(sizes) and len(sizes) == total and -1 not in sizes,
+            "largest_bytes": largest,
+            "largest_head_is_png": head == "\x89PNG\r\n\x1a\n"}
 
 
 class StopTransport:
@@ -421,7 +516,6 @@ def run_production_credential_checks(checks: list, ref_bytes: bytes) -> dict:
         captures["resolver_closed"] = {"error": f"{type(error).__name__}: {error}"[:200]}
         check(checks, "P08-04d", "默认档关闭前置解析与合法提交零上游", False,
               captures["resolver_closed"])
-    check_exact_sentinel_identity(checks, captures)
     check_image_byok_exact(checks, captures)
 
 
@@ -492,8 +586,7 @@ def run_production_credential_checks(checks: list, ref_bytes: bytes) -> dict:
               "生产适配器 BYOK：图像出站鉴权只带本次密钥、语义档来源身份 byok 且错误面不回显密钥",
               byok_image.credential_source == "byok"
               and len(byok_transport.calls) >= 1
-              and authorization.startswith("Bearer ")
-              and len(authorization) == len("Bearer ") + len(SENTINELS["image"])
+              and authorization == "Bearer " + SENTINELS["image"]
               and SENTINELS["image"] not in failure_text
               and vision_byok.credential_source == "byok"
               and vision_byok.api_key == SENTINELS["semantic"],
@@ -510,10 +603,10 @@ def run_production_credential_checks(checks: list, ref_bytes: bytes) -> dict:
         os.environ["AMZ_V2_SEMANTIC_PROVIDER"] = "dashscope-vision"
         os.environ["DASHSCOPE_API_KEY"] = "sk-p08-deploy-dummy"
         os.environ["AMZ_V2_DEFAULT_TRIAL"] = "closed"
-        module = shared.load_server_module("product_v2_server_p08_gateway")
+        from app import product_v2_server as module
         server = module.create_product_v2_server("127.0.0.1", 0)
-        threading.Thread(target=server.serve_forever, daemon=True).start()
-        host, port = server.server_address[:2]
+        serve_in_background(server)
+        host, port = "127.0.0.1", server_port(server)
         analyze_body = json.dumps({
             "product_name": "P08 生产前置", "description": "看图请求体合法、字节为真实 PNG。",
             "selling_points": ["真实字节"], "focus": "验证凭据 fail-closed",
@@ -546,8 +639,7 @@ def run_production_credential_checks(checks: list, ref_bytes: bytes) -> dict:
     finally:
         if server is not None:
             try:
-                server.shutdown()
-                server.server_close()
+                stop_server(server)
             except Exception:  # noqa: BLE001
                 pass
         for key, value in saved_env.items():
@@ -581,7 +673,30 @@ def http_get(host: str, port: int, path: str) -> tuple[int, bytes]:
         connection.close()
 
 
-def main() -> int:
+# 服务器生命周期：P3 后产品网关唯一是 ASGI 句柄（start/stop/.port）。
+# 旧 ThreadingHTTPServer 手柄已随产品退出，不再兼容。
+def serve_in_background(server):
+    """后台启动服务器句柄（仅 ASGI 新句柄）。"""
+    starter = getattr(server, "start", None)
+    if not callable(starter):
+        raise RuntimeError("不支持的服务器句柄（只要 ASGI start/stop 句柄）。")
+    starter()
+
+def server_port(server) -> int:
+    """读服务器真实监听端口（仅 .port）。"""
+    port = getattr(server, "port", None)
+    if isinstance(port, int) and port > 0:
+        return port
+    raise RuntimeError("不支持的服务器句柄（只要 .port）。")
+
+def stop_server(server) -> None:
+    """停止服务器句柄（仅 stop()）。"""
+    stopper = getattr(server, "stop", None)
+    if not callable(stopper):
+        raise RuntimeError("不支持的服务器句柄（只要 stop()）。")
+    stopper()
+
+def main(*, server_logs: tuple[io.StringIO, io.StringIO]) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--label", default="")
     args = parser.parse_args()
@@ -591,8 +706,27 @@ def main() -> int:
     reference.write_bytes(shared.png_bytes(640, 640, (36, 92, 160)))
     ref_bytes = reference.read_bytes()
     ref_sha = hashlib.sha256(ref_bytes).hexdigest()
+    # 有效 PNG、原字节超过旧扫描器的 8MiB 跳过线，但仍在产品单图 10MiB 内。
+    from PIL import Image, PngImagePlugin
+    large_reference = temp_root / "large-reference.png"
+    large_image = Image.new("RGB", (1800, 1800), (36, 92, 160))
+    large_image.save(large_reference, compress_level=0)
+    large_bytes = large_reference.stat().st_size
+    leak_reference = temp_root / "intentional-leak-probe.png"
+    metadata = PngImagePlugin.PngInfo()
+    metadata.add_text("p08-deliberate-negative", SENTINELS["image"])
+    large_image.save(leak_reference, compress_level=0, pnginfo=metadata)
     checks: list = []
     captures: dict = {}
+    # 夹具本身必须先成立：真实有效 PNG、超过旧跳过线、在产品单图上限内，负例确实含哨兵字节。
+    check(checks, "P08-08a",
+          "较大资产与负例夹具是真实有效 PNG、超过旧扫掠跳过线且在产品单图上限内",
+          8 * 1024 * 1024 < large_bytes < 10 * 1024 * 1024
+          and Image.open(large_reference).size == (1800, 1800)
+          and leak_reference.read_bytes()[:8] == b"\x89PNG\r\n\x1a\n"
+          and SENTINELS["image"].encode("latin-1") in leak_reference.read_bytes(),
+          {"large_bytes": large_bytes, "leak_bytes": leak_reference.stat().st_size,
+           "skip_line": 8 * 1024 * 1024, "product_limit": 10 * 1024 * 1024})
     vision_calls: list = []
     requests_log: list = []
     console_all: list = []
@@ -616,7 +750,7 @@ def main() -> int:
         server, _ = shared.start_product_server(
             0, semantic_factory=lambda: vision, image_factory=lambda: image_provider,
             review_factory=lambda: review_provider, suite_factory=lambda: suite_provider)
-        port = server.server_address[1]
+        port = server_port(server)
         try:
             context = pw.chromium.launch_persistent_context(
                 str(temp_root / "profile"), headless=True,
@@ -637,8 +771,21 @@ def main() -> int:
                         if not lower.startswith("x-amz-listing-") and lower != "content-type":
                             continue
                         captured[lower] = ("<len:%d>" % len(value or "")) if "-key-" in lower else value
+                    key_matches = {
+                        purpose: request.headers.get(header) == SENTINELS[purpose]
+                        for purpose, header in PURPOSE_KEY_HEADER.items()
+                    }
+                    image_matches_semantic = (
+                        request.headers.get(PURPOSE_KEY_HEADER["image"]) == SENTINELS["semantic"])
+                    # 取消/关闭时的草稿哨兵若被应用，任何一次出站都会带着它：只记用途，不记原文。
+                    draft_headers = sorted({
+                        purpose for purpose, sentinel in DRAFT_SENTINELS.items()
+                        for name, value in request.headers.items()
+                        if "-key-" in name.lower() and value == sentinel})
                     requests_log.append({"path": url.split("?")[0], "method": request.method,
-                                         "headers": captured})
+                                         "headers": captured, "key_matches": key_matches,
+                                         "image_matches_semantic": image_matches_semantic,
+                                         "draft_headers": draft_headers})
                 except Exception:  # noqa: BLE001 - 观测失败不改行为
                     pass
 
@@ -646,6 +793,15 @@ def main() -> int:
             page.add_init_script(FETCH_SPY)
             try:
                 page.goto(f"http://127.0.0.1:{port}/", wait_until="domcontentloaded")
+                spa_probe = page.evaluate("""() => fetch("/pages/定义-不存在-p08", { headers: { Accept: "text/html" } })
+                  .then((response) => response.text().then((text) => ({
+                    status: response.status, looks_like_app: text.indexOf("model-settings-open") >= 0,
+                  }))).catch((error) => ({ status: -1, looks_like_app: false,
+                    error: String(error && error.message || error) }))""")
+                check(checks, "P08-08b",
+                      "非 API 未知路由明确 404（不猜测业务、不回退应用入口）",
+                      spa_probe.get("status") == 404 and spa_probe.get("looks_like_app") is False,
+                      spa_probe)
                 shared.create_project(page, "P08 设置贯通", reference)
 
                 caps_probe = page.evaluate("""() => fetch("/api/v2/capabilities").then((r) => r.json()).then((j) => ({
@@ -781,11 +937,10 @@ def main() -> int:
                 analyze_request = last_request(requests_log, "/api/v2/semantic/analyze")
                 analyze_headers = (analyze_request or {}).get("headers") or {}
                 check(checks, "P08-02b",
-                      "正式语义消费者出站携带 purpose=Provider-Semantic + 本次哨兵密钥头（长度一致）",
+                      "正式语义消费者的用途、Provider与本次密钥原文精确一致",
                       bool(analyze_request)
                       and analyze_headers.get(PURPOSE_PROVIDER_HEADER["semantic"]) == FAKE_VISION_PROVIDER_ID
-                      and analyze_headers.get(PURPOSE_KEY_HEADER["semantic"])
-                      == "<len:%d>" % len(SENTINELS["semantic"]),
+                      and (analyze_request or {}).get("key_matches", {}).get("semantic") is True,
                       {"path": (analyze_request or {}).get("path"), "headers": analyze_headers})
                 check(checks, "P08-03b", "页面所示配置与实际请求一致（模型行 + 已发送图片行含 role/sha 前缀）",
                       FAKE_VISION_MODEL_ID in result_text
@@ -827,22 +982,18 @@ def main() -> int:
                 image_request = last_request(requests_log, "/api/v2/images/submit")
                 image_headers = (image_request or {}).get("headers") or {}
                 check(checks, "P08-02c",
-                      "正式生成消费者出站携带 purpose=Provider-Image + 本次哨兵密钥头（长度一致）",
+                      "正式生成消费者的用途、Provider与本次密钥原文精确一致",
                       bool(image_request)
                       and image_headers.get(PURPOSE_PROVIDER_HEADER["image"]) == "fake-qwen-image"
-                      and image_headers.get(PURPOSE_KEY_HEADER["image"])
-                      == "<len:%d>" % len(SENTINELS["image"]),
-                      {"path": (image_request or {}).get("path"), "headers": image_headers})
-                # 三用途哨兵当前等长：同长度语义哨兵不是图像哨兵，长度相等不能误判为接收正确。
-                exchanged_image = SENTINELS["semantic"]
+                      and (image_request or {}).get("key_matches", {}).get("image") is True,
+                      {"path": (image_request or {}).get("path"), "headers": image_headers,
+                       "exact_key": (image_request or {}).get("key_matches", {}).get("image")})
                 check(checks, "P08-02c-swap",
-                      "图像用途不能接受同长度的语义哨兵（用途错换必须失配）",
-                      exchanged_image != SENTINELS["image"]
-                      and "<len:%d>" % len(exchanged_image) == "<len:%d>" % len(SENTINELS["image"])
-                      and image_headers.get(PURPOSE_KEY_HEADER["image"])
-                      == "<len:%d>" % len(SENTINELS["image"]),
-                      {"expected_len": "<len:%d>" % len(SENTINELS["image"]),
-                       "semantic_len": "<len:%d>" % len(exchanged_image)})
+                      "实际图像请求的密钥不能被同长度语义密钥冒充",
+                      (image_request or {}).get("key_matches", {}).get("image") is True
+                      and (image_request or {}).get("image_matches_semantic") is False,
+                      {"actual_image_equals_semantic":
+                       (image_request or {}).get("image_matches_semantic")})
 
 
                 # 单图 AI 复核（按需显式发起）
@@ -862,11 +1013,10 @@ def main() -> int:
                 review_request = last_request(requests_log, "/api/v2/review/candidate")
                 review_headers = (review_request or {}).get("headers") or {}
                 check(checks, "P08-02d",
-                      "正式单图复核消费者出站携带 purpose=Provider-Review + 本次哨兵密钥头（长度一致）",
+                      "正式单图复核消费者的用途、Provider与本次密钥原文精确一致",
                       bool(review_request)
                       and review_headers.get(PURPOSE_PROVIDER_HEADER["review"]) == "fake-review"
-                      and review_headers.get(PURPOSE_KEY_HEADER["review"])
-                      == "<len:%d>" % len(SENTINELS["review"]),
+                      and (review_request or {}).get("key_matches", {}).get("review") is True,
                       {"path": (review_request or {}).get("path"), "headers": review_headers})
 
                 # 整套确定性检查 + 整套 AI 复核（按需显式发起）
@@ -882,11 +1032,10 @@ def main() -> int:
                 suite_request = last_request(requests_log, "/api/v2/review/suite")
                 suite_headers = (suite_request or {}).get("headers") or {}
                 check(checks, "P08-02e",
-                      "正式整套复核消费者出站携带 purpose=Provider-Review + 本次哨兵密钥头（长度一致）",
+                      "正式整套复核消费者的用途、Provider与本次密钥原文精确一致",
                       bool(suite_request)
                       and suite_headers.get(PURPOSE_PROVIDER_HEADER["review"]) == "fake-review"
-                      and suite_headers.get(PURPOSE_KEY_HEADER["review"])
-                      == "<len:%d>" % len(SENTINELS["review"]),
+                      and (suite_request or {}).get("key_matches", {}).get("review") is True,
                       {"path": (suite_request or {}).get("path"), "headers": suite_headers})
 
                 # 交付阶段导出原生项目包（完整历史 ZIP）
@@ -904,6 +1053,35 @@ def main() -> int:
                 with zipfile.ZipFile(delivery_zip) as archive:
                     for name in archive.namelist():
                         delivery_entries[name] = archive.read(name).decode("utf-8", "replace")
+
+                # ---------------- P08-06：取消/关闭不应用草稿；查看与设置不供应商外呼 ----------------
+                # 此刻三用途 already 各真跑过一次上游调用，计数才有意义（0 → 0 不能证明任何事）。
+                idb_before_cancel = page.evaluate(IDB_COUNTS)
+                suppliers_before = supplier_calls(vision, image_provider, review_provider, suite_provider)
+                page.click("#model-settings-open")
+                page.wait_for_selector("#model-settings-dialog[open]", timeout=10_000)
+                page.fill("#model-key-image", DRAFT_SENTINELS["image"])
+                page.click("#model-settings-cancel")
+                page.wait_for_timeout(200)
+                cancel_state = password_dialog_state(page)
+                page.click("#model-settings-open")
+                page.wait_for_selector("#model-settings-dialog[open]", timeout=10_000)
+                page.fill("#model-key-semantic", DRAFT_SENTINELS["semantic"])
+                page.keyboard.press("Escape")
+                page.wait_for_timeout(200)
+                close_state = password_dialog_state(page)
+                suppliers_after = supplier_calls(vision, image_provider, review_provider, suite_provider)
+                idb_after_cancel = page.evaluate(IDB_COUNTS)
+                check(checks, "P08-06a",
+                      "取消/关闭不应用草稿：对话框关闭、输入清空、供应商零外呼、存储与文档不变",
+                      cancel_state == {"open": False, "values": 0}
+                      and close_state == {"open": False, "values": 0}
+                      and suppliers_before == suppliers_after
+                      and idb_before_cancel == idb_after_cancel,
+                      {"cancel": cancel_state, "close": close_state,
+                       "suppliers_before": suppliers_before, "suppliers_after": suppliers_after,
+                       "idb_unchanged": idb_before_cancel == idb_after_cancel})
+
                 # ---------------- P5：原任务凭据隔离连接（第二项目单链） ----------------
                 page.click("#back-home")
                 page.wait_for_selector("#new-project-name:not([disabled])", timeout=20_000)
@@ -935,6 +1113,18 @@ def main() -> int:
                 page.wait_for_timeout(400)
                 p5_shot = p5_shots[0]
                 p5_row = f'#attempt-list .attempt-row[data-shot-id="{p5_shot}"]'
+                # 冻结身份：原任务真正提交时的 provider/target/task 与动作，后面逐步核对不变。
+                p5_project = project_id_of(page, "P08 P5 隔离连接")
+                frozen_attempt = attempt_of(page, p5_shot, p5_project)
+                frozen_provider = (frozen_attempt.get("provider") or {}).get("provider_id")
+                frozen_source = (((frozen_attempt.get("execution_identity") or {})
+                                  .get("credential_reference") or {}).get("source"))
+                frozen_target = {"provider_id": frozen_provider,
+                                 "model_id": (frozen_attempt.get("provider") or {}).get("model_id"),
+                                 "task_id": frozen_attempt.get("task_id"),
+                                 "action_id": frozen_attempt.get("action_id"),
+                                 "credential_source": frozen_source}
+                captures["p5_frozen_target"] = frozen_target
                 submit_before_p5 = len([r for r in requests_log if r["path"].endswith("/api/v2/images/submit")])
                 page.click("#model-settings-open")
                 page.wait_for_selector("#model-settings-dialog[open]", timeout=10_000)
@@ -971,6 +1161,54 @@ def main() -> int:
                       "凭据缺失时核对被阻：出现补原凭据入口、核对按钮禁用",
                       cred_visible is True and reconcile_disabled,
                       {"cred_visible": cred_visible, "reconcile_disabled": reconcile_disabled})
+
+                # 让「当前设置」与原任务目标不同：改用另一个图像 provider 后再补原凭据，
+                # 若客户端偷用当前模型/Provider 去核对旧任务，状态请求头与目标核对都会暴露。
+                suppliers_before_switch = supplier_calls(
+                    vision, image_provider, review_provider, suite_provider)
+                page.click("#model-settings-open")
+                page.wait_for_selector("#model-provider-image", timeout=10_000)
+                switched = page.evaluate("""() => {
+                  const select = document.getElementById("model-provider-image");
+                  if (!select) return { ok: false, reason: "no-select" };
+                  const before = select.value;
+                  const other = [...select.options].map((node) => node.value)
+                    .find((value) => value && value !== before);
+                  if (!other) return { ok: false, reason: "no-other", before: before };
+                  select.value = other;
+                  select.dispatchEvent(new Event("change", { bubbles: true }));
+                  document.getElementById("model-settings-apply").click();
+                  return { ok: true, before: before, chosen: other };
+                }""")
+                page.wait_for_function(
+                    "() => !document.getElementById('model-settings-dialog').open", timeout=10_000)
+                page.wait_for_timeout(500)
+                current_provider = read_current_image_provider(page)
+                suppliers_after_switch = supplier_calls(
+                    vision, image_provider, review_provider, suite_provider)
+                stage_nav.goto(page, "generate")
+                page.wait_for_selector(f"{p5_row} button[data-original-credentials]", timeout=20_000)
+                page.wait_for_timeout(500)
+                cred_visible_after = page.locator(
+                    f"{p5_row} button[data-original-credentials]").is_visible()
+                reconcile_now = page.locator(f"{p5_row} button:has-text('核对任务')")
+                reconcile_blocked_after = (not reconcile_now.count()) or reconcile_now.is_disabled()
+                submit_after_switch = len(
+                    [r for r in requests_log if r["path"].endswith("/api/v2/images/submit")])
+                check(checks, "P08-05e",
+                      "当前设置已切到另一个图像 provider，原任务仍按冻结目标判「凭据未就绪」而不外发",
+                      switched.get("ok") is True
+                      and bool(current_provider) and current_provider != frozen_provider
+                      and bool(frozen_provider) and frozen_source == "byok"
+                      and cred_visible_after is True and reconcile_blocked_after
+                      and suppliers_before_switch == suppliers_after_switch
+                      and submit_after_switch == submit_before_p5,
+                      {"switch": switched, "current_provider": current_provider,
+                       "frozen_provider": frozen_provider, "frozen_source": frozen_source,
+                       "reconcile_blocked": reconcile_blocked_after,
+                       "suppliers_unchanged": suppliers_before_switch == suppliers_after_switch,
+                       "submit_delta": submit_after_switch - submit_before_p5})
+
                 submit_before_p5b = len([r for r in requests_log if r["path"].endswith("/api/v2/images/submit")])
                 page.click(f"{p5_row} button[data-original-credentials]")
                 page.wait_for_selector("#model-key-original", timeout=10_000)
@@ -997,7 +1235,42 @@ def main() -> int:
                 check(checks, "P08-05c2",
                       "用户核对不重提：零新 submit",
                       submit_after_p5 == submit_before_p5b,
-                      {"submit_delta": submit_after_p5 - submit_before_p5})
+                      {"submit_delta": submit_after_p5 - submit_before_p5b})
+
+                # 冻结目标/用途的精确核：状态请求带原 Provider、原用途的本次凭据原文，目标体与
+                # 冻结身份逐字段一致；当前动作选择与冻结 action/task 都不被改变。
+                frozen_identity = frozen_attempt.get("execution_identity") or {}
+                status_request = last_request(requests_log, "/api/v2/images/status")
+                status_headers = (status_request or {}).get("headers") or {}
+                status_body = find_net_request_body(
+                    list(reversed(page.evaluate("() => window.__p08Net"))),
+                    "/api/v2/images/status",
+                    lambda body: bool((body.get("target") or {}).get("provider_id"))) or {}
+                status_target = status_body.get("target") or {}
+                frozen_now = attempt_of(page, p5_shot, p5_project)
+                current_provider_after = read_current_image_provider(page)
+                check(checks, "P08-05f",
+                      "原任务核对只按冻结目标/来源外发：Provider=原目标、密钥原文精确、target 逐字段一致；"
+                      "当前动作选择与冻结 action/task 不变",
+                      bool(status_request)
+                      and bool(frozen_provider) and frozen_provider != current_provider_after
+                      and status_headers.get(PURPOSE_PROVIDER_HEADER["image"]) == frozen_provider
+                      and (status_request or {}).get("key_matches", {}).get("image") is True
+                      and status_target.get("provider_id") == frozen_provider
+                      and status_target.get("model_id") == frozen_target.get("model_id")
+                      and status_target.get("protocol") == frozen_identity.get("protocol")
+                      and status_target.get("capability_version") == frozen_identity.get("capability_version")
+                      and status_target.get("credential_source") == frozen_source
+                      and status_body.get("task_id") == frozen_target.get("task_id")
+                      and (frozen_now.get("action_id"), frozen_now.get("task_id")) == (
+                          frozen_target.get("action_id"), frozen_target.get("task_id"))
+                      and current_provider_after == current_provider,
+                      {"status_headers": status_headers, "status_target": status_target,
+                       "status_task_id": status_body.get("task_id"), "frozen_target": frozen_target,
+                       "current_provider": current_provider,
+                       "current_provider_after": current_provider_after,
+                       "frozen_now": {"action_id": frozen_now.get("action_id"),
+                                      "task_id": frozen_now.get("task_id")}})
                 image_provider.scenario = "ok"
                 page.click(f"{p5_row} button:has-text('核对任务')")
                 page.wait_for_function(
@@ -1012,7 +1285,23 @@ def main() -> int:
                       "切回 ok 后同 task 达终态 succeeded 且零新 submit",
                       p5_state == "succeeded" and submit_after_ok == submit_before_p5,
                       {"state": p5_state, "submit_delta": submit_after_ok - submit_before_p5})
+                current_provider_final = read_current_image_provider(page)
+                check(checks, "P08-05g",
+                      "原任务达终态后当前动作模型选择仍未被切回（新动作照旧用当前设置）",
+                      current_provider_final == current_provider
+                      and current_provider != frozen_provider,
+                      {"current_provider": current_provider, "after": current_provider_final,
+                       "frozen_provider": frozen_provider})
 
+                stage_nav.goto(page, "intake")
+                page.set_input_files("#ref-file", str(large_reference))
+                page.wait_for_selector("#ref-list .ref-row:has-text('large-reference.png')")
+
+                # 服务器正常/失败输出走同一进程流（产品处理器不打印请求日志，异常才写 stderr）；
+                # 另发一个契约非法的图像提交体，取回正式处理器真实生成的 400 错误面一起进扫描。
+                server_error_status, server_error_raw = http_post(
+                    "127.0.0.1", port, "/api/v2/images/submit", b'{"action_id":"short"}',
+                    {"Content-Type": "application/json"})
 
                 # ---------------- 完整内容缺席证明（此刻三用途密钥仍在标签页内存里，取证最有意义） ----------------
                 page.click("#model-settings-open")
@@ -1043,37 +1332,73 @@ def main() -> int:
                 haystacks = {
                     "dom": dom_html,
                     "response_bodies": json.dumps(net, ensure_ascii=False),
+                    "server_error_response": server_error_raw.decode("utf-8", "replace"),
                     "error_surfaces": "\n".join(alert_texts),
                     "idb_dump": idb_dump,
                     "local_storage": storage_texts["local_storage"],
                     "session_storage": storage_texts["session_storage"],
                     "document_payloads": storage_texts["document_payloads"],
+                    "asset_payloads": storage_texts["asset_payloads"],
                     "asset_blobs": storage_texts["asset_blobs"],
                     "delivery_entries": json.dumps(delivery_entries, ensure_ascii=False),
                     "project_entries": json.dumps(project_entries, ensure_ascii=False),
                     "console_logs": "\n".join(console_all + logs["page"]),
+                    "server_stdout": server_logs[0].getvalue(),
+                    "server_stderr": server_logs[1].getvalue(),
                 }
-                hits: dict = {}
-                for name, text in haystacks.items():
-                    found = [purpose for purpose, sentinel in SENTINELS.items() if sentinel in text]
-                    if found:
-                        hits[name] = found
+                hits = sentinel_hits(haystacks)
                 endpoints = {"semantic": "/api/v2/semantic/analyze", "image": "/api/v2/images/submit",
                              "review": "/api/v2/review/candidate"}
                 transmitted = {
-                    purpose: ((last_request(requests_log, endpoints[purpose]) or {})
-                              .get("headers") or {}).get(PURPOSE_KEY_HEADER[purpose])
+                    purpose: (last_request(requests_log, endpoints[purpose]) or {})
+                    .get("key_matches", {}).get(purpose) is True
                     for purpose in PURPOSE_ORDER}
+                blob_facts = blob_byte_facts(storage_snapshot)
+                draft_requests = [item for item in requests_log if item.get("draft_headers")]
                 sentinel_sweep = {"hits": hits,
                                   "lengths": {name: len(text) for name, text in haystacks.items()},
-                                  "transmitted_header_lengths": transmitted}
+                                  "transmitted_keys_exact": transmitted,
+                                  "largest_reference_bytes": large_reference.stat().st_size,
+                                  "asset_bytes": blob_facts,
+                                  "server_error_status": server_error_status,
+                                  "draft_headers_seen": len(draft_requests),
+                                  "zip_members": {"project": len(project_entries),
+                                                  "delivery": len(delivery_entries)}}
                 captures["sentinel_sweep"] = sentinel_sweep
                 check(checks, "P08-02f",
-                      "哨兵不出现在完整 DOM/响应体/错误面/文档payload/资产字节/local/session/两包解压成员/完整日志",
+                      "哨兵不出现在 DOM/响应体/服务器错误面/文档与资产payload/资产原字节/"
+                      "local/session/两包解压成员/控制台与服务器输出，且三用途出站密钥原文精确",
                       not hits
-                      and all(transmitted[purpose] == "<len:%d>" % len(SENTINELS[purpose])
-                              for purpose in PURPOSE_ORDER),
+                      and all(transmitted.values())
+                      and server_error_status == 400
+                      and '"INPUT_INVALID"' in haystacks["server_error_response"]
+                      and blob_facts["reads_every_asset"] is True
+                      and blob_facts["largest_bytes"] == large_bytes
+                      and blob_facts["largest_head_is_png"] is True,
                       sentinel_sweep)
+                check(checks, "P08-06b",
+                      "本次运行没有任何出站请求携带取消/关闭时的草稿哨兵",
+                      not draft_requests, {"draft_requests": len(draft_requests)})
+
+                # 正式上传一个故意含非秘密哨兵的有效大图；同一扫描器必须在真实 Blob 中报出。
+                page.set_input_files("#ref-file", str(leak_reference))
+                page.wait_for_selector("#ref-list .ref-row:has-text('intentional-leak-probe.png')")
+                negative_snapshot = json.loads(page.evaluate(STORAGE_SNAPSHOT))
+                leak_facts = blob_byte_facts(negative_snapshot)
+                clean_blobs = [text for text in (storage_snapshot.get("blob_bytes") or [])
+                               if len(text) == large_bytes]
+                negative_hits = sentinel_hits({
+                    "asset_blobs": "\n".join(negative_snapshot.get("blob_bytes") or []),
+                })
+                check(checks, "P08-02f-negative",
+                      "正式上传的故意泄漏大图使同一字节扫描器判红（非秘密负例），"
+                      "且同一扫描器对无泄漏的最大资产不报",
+                      negative_hits.get("asset_blobs") == ["image"]
+                      and leak_facts["largest_bytes"] == leak_reference.stat().st_size
+                      and bool(clean_blobs) and not sentinel_hits({"asset_blobs": "\n".join(clean_blobs)}),
+                      {"detected": negative_hits, "fixture_bytes": leak_reference.stat().st_size,
+                       "read_bytes": leak_facts["largest_bytes"],
+                       "clean_large_blobs": len(clean_blobs)})
 
                 # ---------------- P08-04a：旧格式包经正式 UI 导入被拒绝（不半写） ----------------
                 before = page.evaluate(IDB_COUNTS)
@@ -1111,8 +1436,7 @@ def main() -> int:
             finally:
                 context.close()
         finally:
-            server.shutdown()
-            server.server_close()
+            stop_server(server)
 
     captures["production"] = run_production_credential_checks(checks, ref_bytes)
 
@@ -1134,7 +1458,8 @@ def main() -> int:
         },
         "note": "test-only：fake-vision/fake-image/fake-review 替身经显式注入接缝；生产凭据 fail-closed "
                 "用生产适配器 + 假 transport（零上游）证明。非秘密哨兵只出现在输入框内存与本次出站头，"
-                "证据只记长度与计数；生产注册表未改（config/product-v2/providers.json 无 diff）。",
+                "证据只记精确匹配布尔值、计数与长度；服务器正常/失败输出与验证器共用同一进程流。"
+                "生产注册表未改（config/product-v2/providers.json 无 diff）。",
     }
     EVIDENCE_DIR.mkdir(parents=True, exist_ok=True)
     (EVIDENCE_DIR / f"{label}.json").write_text(
@@ -1144,7 +1469,12 @@ def main() -> int:
     print(f"RESULT {'PASS' if not failed else 'FAIL'} "
           f"{len(checks) - len(failed)}/{len(checks)}", flush=True)
     return 0 if not failed else 1
-
-
 if __name__ == "__main__":
-    raise SystemExit(main())
+    stdout, stderr = io.StringIO(), io.StringIO()
+    with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+        result = main(server_logs=(stdout, stderr))
+    for stream, target in ((stdout, sys.stdout), (stderr, sys.stderr)):
+        target.write(redact_test_lines(stream.getvalue()))
+    raise SystemExit(result)
+
+

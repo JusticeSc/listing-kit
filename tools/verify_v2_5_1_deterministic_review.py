@@ -29,7 +29,6 @@ import tempfile
 import threading
 import zlib
 from datetime import datetime
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -38,7 +37,7 @@ sys.path.insert(0, str(ROOT / "tools"))
 import v2_stage_nav as stage_nav  # noqa: E402  （V2.UI.2 六阶段工作台导航）
 import v2_verify_shared as shared  # noqa: E402  （正式 server/夹具/共同业务操作）
 from v2_verify_shared import (  # noqa: E402
-    read_suite, load_server_module, png_bytes, PROBE, SEED_SLOTS,
+    read_suite, png_bytes, PROBE, SEED_SLOTS,
     compile_all, candidate_of, reviews_for, row_of, run_entry, candidate_json, review_json,
 )
 from src.providers.v2_review import REVIEW_CONTRACT_VERSION  # noqa: E402
@@ -120,8 +119,7 @@ def main() -> int:
             finally:
                 browser.close()
     finally:
-        static_server.shutdown()
-        static_server.server_close()
+        static_server.stop()
 
     suite = suites["review"]
     case_ids = [item["id"] for item in suite.get("cases", [])]
@@ -142,16 +140,16 @@ def main() -> int:
           all(item["status"] == "passed" and not item["failed"] for item in regression.values()),
           regression)
 
-    module = load_server_module()
+    from app.product_v2_server import create_product_v2_server  # noqa: PLC0415
     from src.providers.v2_fake_image import FakeImageProvider  # noqa: PLC0415
     from src.providers.v2_fake_semantic import FakeSemanticProvider  # noqa: PLC0415
 
-    server = module.create_product_v2_server(
+    server = create_product_v2_server(
         "127.0.0.1", 0,
         provider_factory=lambda: FakeSemanticProvider(scenario="ok"),
         image_provider_factory=lambda: FakeImageProvider(scenario="ok"))
-    threading.Thread(target=server.serve_forever, daemon=True).start()
-    base = f"http://127.0.0.1:{server.server_address[1]}"
+    server.start()
+    base = f"http://127.0.0.1:{server.port}"
 
     stage = "setup"
     interrupted: str | None = None
@@ -338,8 +336,7 @@ def main() -> int:
         interrupted = f"[{stage}] {type(error).__name__}: {error}"
     finally:
         try:
-            server.shutdown()
-            server.server_close()
+            server.stop()
         except Exception:  # noqa: BLE001
             pass
 

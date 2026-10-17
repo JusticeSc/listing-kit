@@ -1,0 +1,49 @@
+{
+  // P4 标准 TypeScript 检查/开发编译唯一配置；`npm run check:types`（noEmit）与
+  // Node 测试消费的标准 emit 都读这份 include。
+  // checkJs 关闭是**明确的覆盖范围声明**，不是全局忽略：已迁 Module（.ts）始终严格检查；
+  // 保留的 JS 基线逐个用文件头 `// @ts-check` 自愿纳入（errors.js / invalidation.js /
+  // app.js / workspace.js）；
+  // 作为依赖被拉进来的旧 JS 只做类型推断、不被检查——所以「检查通过」不代表未列出的 JS
+  // 有类型保障，实际纳入范围就是下面 include 里的文件。
+  //
+  // 浏览器产物由标准 Vite 打包（vite.config.mjs，root=app/product_v2，outDir=dist/product-v2）；
+  // 这份配置只承担严格类型检查与 Node 侧标准 tsc emit（build/frontend-node/），
+  // 不再生成源码旁的同名 .js（旧自研 build_product_v2_ts.mjs 链已退役）。
+  // vendor/fflate.browser.js 仅为 emit 透传（Node 树 zip.js 的相对导入目标），无 @ts-check，
+  // 不纳入类型检查。
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": false,
+    "strict": true,
+    "noEmit": true,
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2022", "DOM"],
+    "rootDir": "."
+  },
+  "include": [
+    "app/product_v2/vendor/fflate.browser.js",
+    "app/product_v2/domain/errors.js",
+    "app/product_v2/domain/invalidation.js",
+    "app/product_v2/domain/attempt.ts",
+    "app/product_v2/domain/image-envelope.ts",
+    "app/product_v2/domain/config-export.ts",
+    "app/product_v2/project-inputs.ts",
+    "app/product_v2/semantic-analysis.ts",
+    "app/product_v2/session.ts",
+    "app/product_v2/model-settings.ts",
+    "app/product_v2/generation.ts",
+    "app/product_v2/prompts.ts",
+    "app/product_v2/selection-adoption.ts",
+    "app/product_v2/review-delivery.ts",
+    "app/product_v2/ui/dom.ts",
+    "app/product_v2/ui/input-view.ts",
+    "app/product_v2/ui/delivery-view.ts",
+    "app/product_v2/ui/compare-view.ts",
+    "app/product_v2/ui/generation-view.ts",
+    "app/product_v2/app.js",
+    "app/product_v2/workspace.js"
+  ]
+}

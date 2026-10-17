@@ -49,7 +49,7 @@ EXPECTED_PROVIDER_CASES = [f"R{index}" for index in range(14, 22)]
 
 import v2_verify_shared as shared  # noqa: E402
 
-server_module = shared.load_server_module()
+from app.product_v2_server import create_product_v2_server  # noqa: E402
 
 
 INJECT_FIXTURE_CANDIDATE = """
@@ -225,17 +225,17 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
     checks: list[dict] = []
     ui: dict = {}
     holder = {"scenario": "ok"}
-    # TOCTOU 说明：产品服务器直接绑 0 号端口并从 server_address 读回实际端口，
-    # 不用 shared.free_port() 先探测（Windows 上已被抢占的端口仍可静默绑定成功，
+    # 端口说明：产品服务器在构造时真实绑定 0 号端口并用 server.port 读回实际端口，
+    # 不用 free_port() 先探测（Windows 上已被抢占的端口仍可静默绑定成功，
     # 无人应答即 ERR_CONNECTION_REFUSED 假红；见 4_4 load_page/boot_retries 同源证据）。
     # Harness 静态服 shared.start_static_server() 本就绑 0，不受影响。
-    server = server_module.create_product_v2_server(
+    server = create_product_v2_server(
         "127.0.0.1", 0,
         provider_factory=lambda: FakeSemanticProvider(scenario="ok"),
         image_provider_factory=lambda: FakeImageProvider(scenario="ok"),
         review_provider_factory=lambda: FakeReviewProvider(holder["scenario"]))
-    threading.Thread(target=server.serve_forever, daemon=True).start()
-    base = f"http://127.0.0.1:{server.server_address[1]}"
+    server.start()
+    base = f"http://127.0.0.1:{server.port}"
     static_server, static_url = shared.start_static_server()
     temp_root = Path(tempfile.mkdtemp(prefix="amz-v253-"))
     profile = temp_root / "profile"
@@ -674,9 +674,8 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
             finally:
                 context.close()
     finally:
-        static_server.shutdown()
-        server.shutdown()
-        server.server_close()
+        static_server.stop()
+        server.stop()
     return checks, ui
 
 
@@ -698,7 +697,7 @@ def run_harness_suites(console_errors: list[str], page_errors: list[str]) -> lis
                 browser, static_url + "/harness/review-provider-contract.html",
                 "__V2_REVIEW_PROVIDER_RESULTS__", console_errors, page_errors)
         finally:
-            static_server.shutdown()
+            static_server.stop()
             browser.close()
 
     checks.append({
@@ -744,7 +743,7 @@ def main() -> int:
         "title": "正式入口 --check 全过（比较面板没有破坏既有自检）",
         # 自检条目会随批次增加：断言只看「全过」这一语义，不写死条数。
         "ok": entry["rc"] == 0 and any(
-            re.search(r"V2 正式入口自检：\d+/\d+ 通过", line) for line in entry["tail"]),
+            re.search(r"V2 正式入口(轻量)?自检：\d+/\d+ 通过", line) for line in entry["tail"]),
         "detail": {"rc": entry["rc"], "tail": entry["tail"][-3:]},
     })
     checks.append({

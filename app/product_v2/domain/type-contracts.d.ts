@@ -1014,3 +1014,53 @@ export type DomainDocumentPayloadByKind = {
   export_record: ExportRecordPayload;
   review_acknowledgement: AcknowledgementRecord;
 };
+
+/* ------------------------------------------- image gateway normalized envelope (P6) */
+
+/**
+ * Compile-time projection of the image submit/status normalized envelope.
+ *
+ * RUNTIME authority is the JSON Schema exported from `src/providers/v2_image.py`
+ * (`ImageWire*` Pydantic models) and compiled to a standalone validator at build time;
+ * `domain/image-envelope.ts` is the only browser entry that consults it. These types
+ * exist so strict TS consumers can read a *validated* envelope without re-deriving the
+ * shape; they carry no validation logic and must not be used as a runtime check.
+ */
+export type ImageWireTaskStatus =
+  | "PENDING" | "RUNNING" | "SUCCEEDED" | "FAILED" | "CANCELED" | "UNKNOWN";
+
+/** Task projection inside the envelope (mirrors `ImageTaskResult.to_dict()`). */
+export type ImageWireTask = {
+  provider: { provider_id: string; model_id: string };
+  task_id: string | null;
+  status: ImageWireTaskStatus;
+  result_count: number;
+  error: string | null;
+  request_id: string | null;
+  unknown: boolean;
+  sync: boolean;
+};
+
+/** Failure block inside the envelope; http_status/request_id/details may be absent. */
+export type ImageWireError = {
+  family: AttemptError["family"];
+  code: string;
+  message: string;
+  retry_policy: AttemptError["retry_policy"];
+  http_status?: number | null;
+  request_id?: string | null;
+  details?: Record<string, unknown> | null;
+};
+
+/** `{ok:true, task[, image_*]}` or `{ok:false, error}` — the only two envelope branches. */
+export type ImageEnvelopeWire =
+  | {
+      ok: true;
+      unknown: boolean;
+      task: ImageWireTask;
+      image_base64?: string | null;
+      image_media_type?: string | null;
+      image_sha256?: string | null;
+    }
+  | { ok: false; unknown: boolean; error: ImageWireError };
+

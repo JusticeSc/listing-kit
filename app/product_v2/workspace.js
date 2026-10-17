@@ -13,12 +13,11 @@
  *    全部由契约决定；界面只负责投影与保存，失败时旧计划与存储版本都不变。
  *  - “删除”槽位实现为 supersede：退出活动事实集合，历史版本保留。
  */
+import { html, render } from "lit-html";
 
 import {
   ATTEMPT_STATES,
-  MAX_REFERENCES,
   PRODUCT_INPUT_SCHEMA_VERSION,
-  REFERENCE_ROLES,
   intakeReadiness,
   suitePlanSummary,
 } from "./domain/index.js";
@@ -33,14 +32,8 @@ import { createGenerationView } from "./ui/generation-view.js";
 import { createInputView } from "./ui/input-view.js";
 import { createStageShell } from "./ui/stage-shell.js";
 import {
-  ROLE_TEXT,
   STATUS_TEXT,
-  appendTech,
-  clearError,
-  createElement,
   errorMessageOf,
-  showError,
-  splitLines,
 } from "./ui/dom.js";
 /**
  * 本文件 JSDoc 类型说明（V2.R7.5 调用方严格化，不改运行时）：
@@ -140,142 +133,26 @@ import {
  * @typedef {object} WorkspaceElements
  * @property {HTMLElement} error
  * @property {HTMLElement} scope
- * @property {HTMLButtonElement} refAdd
- * @property {HTMLInputElement} refFile
- * @property {HTMLElement} refCount
- * @property {HTMLElement} refError
- * @property {HTMLElement} refEmpty
- * @property {HTMLElement} refList
- * @property {HTMLInputElement} intakeName
- * @property {HTMLTextAreaElement} intakeDescription
- * @property {HTMLTextAreaElement} intakePoints
- * @property {HTMLInputElement} intakeFocus
- * @property {HTMLButtonElement} intakeSave
- * @property {HTMLElement} intakeDraft
- * @property {HTMLElement} intakeError
- * @property {HTMLButtonElement} manualFacts
- * @property {HTMLButtonElement} analyzeRun
- * @property {HTMLElement} analyzeGate
- * @property {HTMLElement} analyzeResult
- * @property {HTMLElement} analyzeError
- * @property {HTMLButtonElement} analyzeNewAfterUnknown
- * @property {HTMLElement} slotsProgress
- * @property {HTMLButtonElement} slotsToggle
- * @property {HTMLElement} slotsEmpty
- * @property {HTMLElement} slotList
- * @property {HTMLInputElement} slotAddId
- * @property {HTMLInputElement} slotAddLabel
- * @property {HTMLSelectElement} slotAddType
- * @property {HTMLTextAreaElement} slotAddValue
- * @property {HTMLInputElement} slotAddAllowModel
- * @property {HTMLButtonElement} slotAddSave
- * @property {HTMLElement} slotAddStatus
- * @property {HTMLElement} slotsError
- * @property {HTMLElement} suiteLocked
- * @property {HTMLElement} suiteEditor
- * @property {HTMLButtonElement} suiteSeed
- * @property {HTMLSelectElement} suiteTemplate
- * @property {HTMLElement} suiteTemplateHint
- * @property {HTMLButtonElement} suiteAddTemplate
- * @property {HTMLButtonElement} suiteCustomToggle
- * @property {HTMLElement} suiteStatus
- * @property {HTMLElement} suiteCustomPanel
- * @property {HTMLInputElement} suiteCustomLabel
- * @property {HTMLInputElement} suiteCustomIntent
- * @property {HTMLButtonElement} suiteCustomSave
- * @property {HTMLElement} suiteCustomStatus
- * @property {HTMLElement} suiteEmpty
- * @property {HTMLElement} shotList
- * @property {HTMLElement} suiteError
- * @property {HTMLElement} specsLocked
- * @property {HTMLElement} specsEditor
- * @property {HTMLInputElement} styleBackground
- * @property {HTMLInputElement} styleLighting
- * @property {HTMLInputElement} styleColorTone
- * @property {HTMLInputElement} styleComposition
- * @property {HTMLTextAreaElement} styleAvoid
- * @property {HTMLButtonElement} styleSave
- * @property {HTMLButtonElement} styleRestore
- * @property {HTMLElement} styleVersion
- * @property {HTMLElement} styleEffect
- * @property {HTMLElement} styleStatus
- * @property {HTMLElement} styleError
- * @property {HTMLElement} shotSpecsEmpty
- * @property {HTMLElement} shotSpecList
- * @property {HTMLElement} specsError
+ * @property {HTMLElement} intakeAnchor
+ * @property {HTMLElement} analyzeAnchor
+ * @property {HTMLElement} slotsAnchor
+ * @property {HTMLElement} suiteAnchor
+ * @property {HTMLElement} specsAnchor
+ * @property {HTMLElement} refsAnchor
  * @property {HTMLElement} promptLocked
  * @property {HTMLElement} promptEditor
  * @property {HTMLElement} localPreparationStatus
- * @property {HTMLElement} promptStatus
- * @property {HTMLElement} promptList
+ * @property {HTMLDetailsElement} promptDetails
  * @property {HTMLElement} promptError
  * @property {HTMLElement} confirmLocked
  * @property {HTMLElement} confirmEditor
- * @property {HTMLElement} confirmStatus
- * @property {HTMLElement} confirmSummary
- * @property {HTMLElement} confirmBlockers
- * @property {HTMLElement} confirmRisks
- * @property {HTMLElement} confirmList
- * @property {HTMLButtonElement} confirmAction
- * @property {HTMLElement} confirmRecord
  * @property {HTMLElement} confirmError
  * @property {HTMLElement} attemptLocked
  * @property {HTMLElement} attemptEditor
- * @property {HTMLElement} attemptStatus
- * @property {HTMLElement} attemptProvider
- * @property {HTMLElement} batchBar
- * @property {HTMLElement} queueList
- * @property {HTMLButtonElement} batchStop
- * @property {HTMLButtonElement} batchReconcile
- * @property {HTMLButtonElement} batchRetry
- * @property {HTMLElement} batchProgress
- * @property {HTMLElement} batchHint
- * @property {HTMLElement} attemptList
  * @property {HTMLElement} attemptError
  * @property {HTMLElement} comparePanel
- * @property {HTMLElement} compareSubject
- * @property {HTMLButtonElement} compareJump
- * @property {HTMLButtonElement} compareClose
- * @property {HTMLElement} compareBasisTitle
- * @property {HTMLElement} compareReferences
- * @property {HTMLElement} compareCandidates
- * @property {HTMLElement} compareChecklist
- * @property {HTMLElement} compareStatus
- * @property {HTMLImageElement} compareViewedImage
- * @property {HTMLElement} compareViewedCaption
- * @property {HTMLButtonElement} compareViewedZoom
- * @property {HTMLImageElement} compareBaselineImage
- * @property {HTMLSelectElement} compareBaselineSelect
- * @property {HTMLButtonElement} compareBaselineZoom
- * @property {HTMLButtonElement} compareReview
  * @property {HTMLDialogElement} imageZoomDialog
- * @property {HTMLElement} imageZoomTitle
- * @property {HTMLImageElement} imageZoomContent
- * @property {HTMLButtonElement} imageZoomNative
- * @property {HTMLButtonElement} imageZoomClose
- * @property {HTMLButtonElement} reworkOpen
  * @property {HTMLElement} reworkPanel
- * @property {HTMLElement} reworkBasis
- * @property {HTMLElement} reworkProblems
- * @property {HTMLTextAreaElement} reworkDirection
- * @property {HTMLButtonElement} reworkPreview
- * @property {HTMLButtonElement} reworkEdit
- * @property {HTMLButtonElement} reworkSubmit
- * @property {HTMLButtonElement} reworkReset
- * @property {HTMLButtonElement} reworkCancel
- * @property {HTMLElement} reworkPreviewBox
- * @property {HTMLElement} reworkPreviewMeta
- * @property {HTMLElement} reworkPreviewText
- * @property {HTMLElement} reworkTech
- * @property {HTMLElement} reworkTechBody
- * @property {HTMLElement} reworkSummary
- * @property {HTMLElement} reworkStatus
- * @property {HTMLElement} reworkError
- * @property {HTMLButtonElement} adoptOpen
- * @property {HTMLButtonElement} adoptClear
- * @property {HTMLElement} adoptStatus
- * @property {HTMLElement} adoptError
- * @property {HTMLElement} adoptProgress
  * @property {HTMLElement} generateError
  * @property {HTMLElement} stageNav
  * @property {HTMLElement} stagePanels
@@ -289,25 +166,11 @@ import {
  * @property {HTMLButtonElement} stageNextDeliver
  * @property {HTMLElement} stageNextDeliverNote
  * @property {HTMLElement} reviewList
- * @property {HTMLElement} reviewEmpty
- * @property {HTMLElement} suiteReviewStatus
- * @property {HTMLButtonElement} suiteReviewRun
- * @property {HTMLButtonElement} suiteAiReviewRun
- * @property {HTMLElement} suiteReviewNote
- * @property {HTMLElement} suiteReviewFindings
- * @property {HTMLElement} suiteReviewError
- * @property {HTMLElement} deliveryGate
- * @property {HTMLElement} deliverySuiteStatus
- * @property {HTMLElement} deliverySuiteFindings
- * @property {HTMLElement} deliveryUnknowns
- * @property {HTMLButtonElement} deliverExport
- * @property {HTMLButtonElement} deliverProjectPackage
- * @property {HTMLElement} deliverStatus
- * @property {HTMLElement} deliverResult
- * @property {HTMLElement} deliverError
+ * @property {HTMLElement} suiteReviewCard
+ * @property {HTMLElement} deliveryCard
  */
 
-const SCOPE_TEXT = "这一版覆盖“商品资料 → 商品理解 → 套图规划 → 规格 → Prompt → 生成前确认 → 整套生成与逐图进度（含单张核对）→ 审核 → 单图返工 → 人工采用”；整套一致性报告与导出交付尚未接入。";
+const SCOPE_TEXT = "商品资料 → 商品理解 → 套图规划与规格 → 生成前确认 → 审核与单图返工 → 人工采用与交付；外发由你明确确认，交付仍需通过当前门禁。";
 
 /**
  * 工作区工厂：会话提供 repository/session/onProjectChanged；模型设置由外层装配透传。
@@ -321,145 +184,29 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
   }
   /** @type {WorkspaceElements} */
   const elements = {
-    error: /** @type {HTMLElement} */ (document.getElementById("workspace-error")),
+    error: /** @type {HTMLElement} */ (document.getElementById("workspace-error-mount")),
     scope: /** @type {HTMLElement} */ (document.getElementById("project-scope")),
-    refAdd: /** @type {HTMLButtonElement} */ (document.getElementById("ref-add")),
-    refFile: /** @type {HTMLInputElement} */ (document.getElementById("ref-file")),
-    refCount: /** @type {HTMLElement} */ (document.getElementById("ref-count")),
-    refError: /** @type {HTMLElement} */ (document.getElementById("ref-error")),
-    refEmpty: /** @type {HTMLElement} */ (document.getElementById("ref-empty")),
-    refList: /** @type {HTMLElement} */ (document.getElementById("ref-list")),
-    intakeName: /** @type {HTMLInputElement} */ (document.getElementById("intake-name")),
-    intakeDescription: /** @type {HTMLTextAreaElement} */ (document.getElementById("intake-description")),
-    intakePoints: /** @type {HTMLTextAreaElement} */ (document.getElementById("intake-selling-points")),
-    intakeFocus: /** @type {HTMLInputElement} */ (document.getElementById("intake-focus")),
-    intakeSave: /** @type {HTMLButtonElement} */ (document.getElementById("intake-save")),
-    intakeDraft: /** @type {HTMLElement} */ (document.getElementById("intake-draft")),
-    intakeError: /** @type {HTMLElement} */ (document.getElementById("intake-error")),
-    manualFacts: /** @type {HTMLButtonElement} */ (document.getElementById("manual-facts")),
-    analyzeRun: /** @type {HTMLButtonElement} */ (document.getElementById("analyze-run")),
-    analyzeGate: /** @type {HTMLElement} */ (document.getElementById("analyze-gate")),
-    analyzeResult: /** @type {HTMLElement} */ (document.getElementById("analyze-result")),
-    analyzeError: /** @type {HTMLElement} */ (document.getElementById("analyze-error")),
-    analyzeNewAfterUnknown: /** @type {HTMLButtonElement} */ (document.getElementById("analyze-new-after-unknown")),
-    slotsProgress: /** @type {HTMLElement} */ (document.getElementById("slots-progress")),
-    slotsToggle: /** @type {HTMLButtonElement} */ (document.getElementById("slots-toggle")),
-    slotsEmpty: /** @type {HTMLElement} */ (document.getElementById("slots-empty")),
-    slotList: /** @type {HTMLElement} */ (document.getElementById("slot-list")),
-    slotAddId: /** @type {HTMLInputElement} */ (document.getElementById("slot-add-id")),
-    slotAddLabel: /** @type {HTMLInputElement} */ (document.getElementById("slot-add-label")),
-    slotAddType: /** @type {HTMLSelectElement} */ (document.getElementById("slot-add-type")),
-    slotAddValue: /** @type {HTMLTextAreaElement} */ (document.getElementById("slot-add-value")),
-    slotAddAllowModel: /** @type {HTMLInputElement} */ (document.getElementById("slot-add-allow-model")),
-    slotAddSave: /** @type {HTMLButtonElement} */ (document.getElementById("slot-add-save")),
-    slotAddStatus: /** @type {HTMLElement} */ (document.getElementById("slot-add-status")),
-    slotsError: /** @type {HTMLElement} */ (document.getElementById("slots-error")),
-    suiteLocked: /** @type {HTMLElement} */ (document.getElementById("suite-locked")),
-    suiteEditor: /** @type {HTMLElement} */ (document.getElementById("suite-editor")),
-    suiteSeed: /** @type {HTMLButtonElement} */ (document.getElementById("suite-seed")),
-    suiteTemplate: /** @type {HTMLSelectElement} */ (document.getElementById("suite-template")),
-    suiteTemplateHint: /** @type {HTMLElement} */ (document.getElementById("suite-template-hint")),
-    suiteAddTemplate: /** @type {HTMLButtonElement} */ (document.getElementById("suite-add-template")),
-    suiteCustomToggle: /** @type {HTMLButtonElement} */ (document.getElementById("suite-custom-toggle")),
-    suiteStatus: /** @type {HTMLElement} */ (document.getElementById("suite-status")),
-    suiteCustomPanel: /** @type {HTMLElement} */ (document.getElementById("suite-custom-panel")),
-    suiteCustomLabel: /** @type {HTMLInputElement} */ (document.getElementById("suite-custom-label")),
-    suiteCustomIntent: /** @type {HTMLInputElement} */ (document.getElementById("suite-custom-intent")),
-    suiteCustomSave: /** @type {HTMLButtonElement} */ (document.getElementById("suite-custom-save")),
-    suiteCustomStatus: /** @type {HTMLElement} */ (document.getElementById("suite-custom-status")),
-    suiteEmpty: /** @type {HTMLElement} */ (document.getElementById("suite-empty")),
-    shotList: /** @type {HTMLElement} */ (document.getElementById("shot-list")),
-    suiteError: /** @type {HTMLElement} */ (document.getElementById("suite-error")),
-    specsLocked: /** @type {HTMLElement} */ (document.getElementById("specs-locked")),
-    specsEditor: /** @type {HTMLElement} */ (document.getElementById("specs-editor")),
-    styleBackground: /** @type {HTMLInputElement} */ (document.getElementById("style-background")),
-    styleLighting: /** @type {HTMLInputElement} */ (document.getElementById("style-lighting")),
-    styleColorTone: /** @type {HTMLInputElement} */ (document.getElementById("style-color-tone")),
-    styleComposition: /** @type {HTMLInputElement} */ (document.getElementById("style-composition")),
-    styleAvoid: /** @type {HTMLTextAreaElement} */ (document.getElementById("style-avoid")),
-    styleSave: /** @type {HTMLButtonElement} */ (document.getElementById("style-save")),
-    styleRestore: /** @type {HTMLButtonElement} */ (document.getElementById("style-restore")),
-    styleVersion: /** @type {HTMLElement} */ (document.getElementById("style-version")),
-    styleEffect: /** @type {HTMLElement} */ (document.getElementById("style-effect")),
-    styleStatus: /** @type {HTMLElement} */ (document.getElementById("style-status")),
-    styleError: /** @type {HTMLElement} */ (document.getElementById("style-error")),
-    shotSpecsEmpty: /** @type {HTMLElement} */ (document.getElementById("shot-specs-empty")),
-    shotSpecList: /** @type {HTMLElement} */ (document.getElementById("shot-spec-list")),
-    specsError: /** @type {HTMLElement} */ (document.getElementById("specs-error")),
+    intakeAnchor: /** @type {HTMLElement} */ (document.getElementById("intake-card")),
+    analyzeAnchor: /** @type {HTMLElement} */ (document.getElementById("analyze-card")),
+    slotsAnchor: /** @type {HTMLElement} */ (document.getElementById("slots-card")),
+    suiteAnchor: /** @type {HTMLElement} */ (document.getElementById("suite-card")),
+    specsAnchor: /** @type {HTMLElement} */ (document.getElementById("specs-section")),
+    refsAnchor: /** @type {HTMLElement} */ (document.getElementById("references-card")),
     promptLocked: /** @type {HTMLElement} */ (document.getElementById("prompt-locked")),
     promptEditor: /** @type {HTMLElement} */ (document.getElementById("prompt-editor")),
     localPreparationStatus: /** @type {HTMLElement} */ (document.getElementById("local-preparation-status")),
-    promptStatus: /** @type {HTMLElement} */ (document.getElementById("prompt-status")),
-    promptList: /** @type {HTMLElement} */ (document.getElementById("prompt-list")),
-    promptError: /** @type {HTMLElement} */ (document.getElementById("prompt-error")),
+    promptDetails: /** @type {HTMLDetailsElement} */ (document.getElementById("prompt-details")),
+    promptError: /** @type {HTMLElement} */ (document.getElementById("prompt-error-mount")),
     confirmLocked: /** @type {HTMLElement} */ (document.getElementById("confirm-locked")),
     confirmEditor: /** @type {HTMLElement} */ (document.getElementById("confirm-editor")),
-    confirmStatus: /** @type {HTMLElement} */ (document.getElementById("confirm-status")),
-    confirmSummary: /** @type {HTMLElement} */ (document.getElementById("confirm-summary")),
-    confirmBlockers: /** @type {HTMLElement} */ (document.getElementById("confirm-blockers")),
-    confirmRisks: /** @type {HTMLElement} */ (document.getElementById("confirm-risks")),
-    confirmList: /** @type {HTMLElement} */ (document.getElementById("confirm-list")),
-    confirmAction: /** @type {HTMLButtonElement} */ (document.getElementById("confirm-action")),
-    confirmRecord: /** @type {HTMLElement} */ (document.getElementById("confirm-record")),
-    confirmError: /** @type {HTMLElement} */ (document.getElementById("confirm-error")),
+    confirmError: /** @type {HTMLElement} */ (document.getElementById("confirm-error-mount")),
     attemptLocked: /** @type {HTMLElement} */ (document.getElementById("attempt-locked")),
     attemptEditor: /** @type {HTMLElement} */ (document.getElementById("attempt-editor")),
-    attemptStatus: /** @type {HTMLElement} */ (document.getElementById("attempt-status")),
-    attemptProvider: /** @type {HTMLElement} */ (document.getElementById("attempt-provider")),
-    batchBar: /** @type {HTMLElement} */ (document.getElementById("attempt-batch")),
-    queueList: /** @type {HTMLElement} */ (document.getElementById("generation-queues")),
-    batchStop: /** @type {HTMLButtonElement} */ (document.getElementById("batch-stop")),
-    batchReconcile: /** @type {HTMLButtonElement} */ (document.getElementById("batch-reconcile")),
-    batchRetry: /** @type {HTMLButtonElement} */ (document.getElementById("batch-retry")),
-    batchProgress: /** @type {HTMLElement} */ (document.getElementById("batch-progress")),
-    batchHint: /** @type {HTMLElement} */ (document.getElementById("batch-hint")),
-    attemptList: /** @type {HTMLElement} */ (document.getElementById("attempt-list")),
-    attemptError: /** @type {HTMLElement} */ (document.getElementById("attempt-error")),
+    attemptError: /** @type {HTMLElement} */ (document.getElementById("attempt-error-mount")),
     comparePanel: /** @type {HTMLElement} */ (document.getElementById("compare-panel")),
-    compareSubject: /** @type {HTMLElement} */ (document.getElementById("compare-subject")),
-    compareJump: /** @type {HTMLButtonElement} */ (document.getElementById("compare-jump")),
-    compareClose: /** @type {HTMLButtonElement} */ (document.getElementById("compare-close")),
-    compareBasisTitle: /** @type {HTMLElement} */ (document.getElementById("compare-basis-title")),
-    compareReferences: /** @type {HTMLElement} */ (document.getElementById("compare-references")),
-    compareCandidates: /** @type {HTMLElement} */ (document.getElementById("compare-candidates")),
-    compareChecklist: /** @type {HTMLElement} */ (document.getElementById("compare-checklist")),
-    compareStatus: /** @type {HTMLElement} */ (document.getElementById("compare-status")),
-    compareViewedImage: /** @type {HTMLImageElement} */ (document.getElementById("compare-viewed-image")),
-    compareViewedCaption: /** @type {HTMLElement} */ (document.getElementById("compare-viewed-caption")),
-    compareViewedZoom: /** @type {HTMLButtonElement} */ (document.getElementById("compare-viewed-zoom")),
-    compareBaselineImage: /** @type {HTMLImageElement} */ (document.getElementById("compare-baseline-image")),
-    compareBaselineSelect: /** @type {HTMLSelectElement} */ (document.getElementById("compare-baseline-select")),
-    compareBaselineZoom: /** @type {HTMLButtonElement} */ (document.getElementById("compare-baseline-zoom")),
-    compareReview: /** @type {HTMLButtonElement} */ (document.getElementById("compare-review")),
     imageZoomDialog: /** @type {HTMLDialogElement} */ (document.getElementById("image-zoom-dialog")),
-    imageZoomTitle: /** @type {HTMLElement} */ (document.getElementById("image-zoom-title")),
-    imageZoomContent: /** @type {HTMLImageElement} */ (document.getElementById("image-zoom-content")),
-    imageZoomNative: /** @type {HTMLButtonElement} */ (document.getElementById("image-zoom-native")),
-    imageZoomClose: /** @type {HTMLButtonElement} */ (document.getElementById("image-zoom-close")),
-    reworkOpen: /** @type {HTMLButtonElement} */ (document.getElementById("rework-open")),
     reworkPanel: /** @type {HTMLElement} */ (document.getElementById("rework-panel")),
-    reworkBasis: /** @type {HTMLElement} */ (document.getElementById("rework-basis")),
-    reworkProblems: /** @type {HTMLElement} */ (document.getElementById("rework-problems")),
-    reworkDirection: /** @type {HTMLTextAreaElement} */ (document.getElementById("rework-direction")),
-    reworkPreview: /** @type {HTMLButtonElement} */ (document.getElementById("rework-preview")),
-    reworkEdit: /** @type {HTMLButtonElement} */ (document.getElementById("rework-edit")),
-    reworkSubmit: /** @type {HTMLButtonElement} */ (document.getElementById("rework-submit")),
-    reworkReset: /** @type {HTMLButtonElement} */ (document.getElementById("rework-reset")),
-    reworkCancel: /** @type {HTMLButtonElement} */ (document.getElementById("rework-cancel")),
-    reworkPreviewBox: /** @type {HTMLElement} */ (document.getElementById("rework-preview-box")),
-    reworkPreviewMeta: /** @type {HTMLElement} */ (document.getElementById("rework-preview-meta")),
-    reworkPreviewText: /** @type {HTMLElement} */ (document.getElementById("rework-preview-text")),
-    reworkTech: /** @type {HTMLElement} */ (document.getElementById("rework-tech")),
-    reworkTechBody: /** @type {HTMLElement} */ (document.getElementById("rework-tech-body")),
-    reworkSummary: /** @type {HTMLElement} */ (document.getElementById("rework-summary")),
-    reworkStatus: /** @type {HTMLElement} */ (document.getElementById("rework-status")),
-    reworkError: /** @type {HTMLElement} */ (document.getElementById("rework-error")),
-    adoptOpen: /** @type {HTMLButtonElement} */ (document.getElementById("adopt-open")),
-    adoptClear: /** @type {HTMLButtonElement} */ (document.getElementById("adopt-clear")),
-    adoptStatus: /** @type {HTMLElement} */ (document.getElementById("adopt-status")),
-    adoptError: /** @type {HTMLElement} */ (document.getElementById("adopt-error")),
-    adoptProgress: /** @type {HTMLElement} */ (document.getElementById("adopt-progress")),
-    generateError: /** @type {HTMLElement} */ (document.getElementById("generate-error")),
+    generateError: /** @type {HTMLElement} */ (document.getElementById("generate-error-mount")),
     stageNav: /** @type {HTMLElement} */ (document.getElementById("stage-nav")),
     stagePanels: /** @type {HTMLElement} */ (document.getElementById("stage-panels")),
     stageSummary: /** @type {HTMLElement} */ (document.getElementById("stage-summary")),
@@ -471,23 +218,9 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
     stageNextReviewNote: /** @type {HTMLElement} */ (document.getElementById("stage-next-review-note")),
     stageNextDeliver: /** @type {HTMLButtonElement} */ (document.getElementById("stage-next-deliver")),
     stageNextDeliverNote: /** @type {HTMLElement} */ (document.getElementById("stage-next-deliver-note")),
-    reviewList: /** @type {HTMLElement} */ (document.getElementById("review-list")),
-    reviewEmpty: /** @type {HTMLElement} */ (document.getElementById("review-empty")),
-    suiteReviewStatus: /** @type {HTMLElement} */ (document.getElementById("suite-review-status")),
-    suiteReviewRun: /** @type {HTMLButtonElement} */ (document.getElementById("suite-review-run")),
-    suiteAiReviewRun: /** @type {HTMLButtonElement} */ (document.getElementById("suite-ai-review-run")),
-    suiteReviewNote: /** @type {HTMLElement} */ (document.getElementById("suite-review-note")),
-    suiteReviewFindings: /** @type {HTMLElement} */ (document.getElementById("suite-review-findings")),
-    suiteReviewError: /** @type {HTMLElement} */ (document.getElementById("suite-review-error")),
-    deliveryGate: /** @type {HTMLElement} */ (document.getElementById("delivery-gate")),
-    deliverySuiteStatus: /** @type {HTMLElement} */ (document.getElementById("delivery-suite-status")),
-    deliverySuiteFindings: /** @type {HTMLElement} */ (document.getElementById("delivery-suite-findings")),
-    deliveryUnknowns: /** @type {HTMLElement} */ (document.getElementById("delivery-unknowns")),
-    deliverExport: /** @type {HTMLButtonElement} */ (document.getElementById("deliver-export")),
-    deliverProjectPackage: /** @type {HTMLButtonElement} */ (document.getElementById("deliver-project-package")),
-    deliverStatus: /** @type {HTMLElement} */ (document.getElementById("deliver-status")),
-    deliverResult: /** @type {HTMLElement} */ (document.getElementById("delivery-result")),
-    deliverError: /** @type {HTMLElement} */ (document.getElementById("deliver-error")),
+    reviewList: /** @type {HTMLElement} */ (document.getElementById("review-list-mount")),
+    suiteReviewCard: /** @type {HTMLElement} */ (document.getElementById("suite-review-card")),
+    deliveryCard: /** @type {HTMLElement} */ (document.getElementById("delivery-card")),
   };
 
   // 交付视图（设计 §2.1 第四个视图）持 DOM、展开与自己的对象 URL；先声明后装配：
@@ -519,12 +252,25 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
   let project = null;
   /** @type {string|null} */
   let projectId = null;
+  /** @type {EffectiveCapabilities|null} */
+  let capabilities = null;
+  /** @type {import("./domain/type-contracts.js").BriefReadiness["blocking"]} */
+  let understandingBlocking = [];
+  /** @type {unknown} */
+  let understandingError = null;
+  /** @type {boolean} */
+  let understandingReady = false;
+  /** @type {Map<string, string>} */
+  let previewUrls = new Map();
+  /** @type {boolean} */
+  let bound = false;
+  // 视图在装配时即可读取投影；所有读取闭包依赖先完成初始化。
   // R3.3：动作身份冻结的本地别名——所有状态变更动作统一经 session.beginAction()。
   /** @type {() => ActionSnapshot} */
   const beginAction = () => session.beginAction();
 
   // 输入面唯一所有者（包04 收口）：资料/事实/方案/风格/单图规格与语义分析执行都在这里，
-  // workspace 只保留 DOM 草稿编辑状态、装配与视图渲染，不再持有第二份输入状态。
+  // workspace 只装配读取视图草稿的边界，不持有第二份输入状态。
   const inputs = createProjectInputsModule({
     repository,
     beginAction,
@@ -532,15 +278,10 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
     capabilities: () => capabilities,
     projectIdReader: () => projectId,
     projectNameReader: () => (project && project.name) || "",
-    draftInput: draftInputPayload,
-    changed: () => {
-      void deriveAndApplyState().then(() => {
-        inputView?.renderAnalyze();
-        inputView?.renderDraftStatus();
-        inputView?.renderConflictEditor();
-        renderHeaderText(project);
-      });
-    },
+    draftInput: () => inputView?.draftInputPayload() ?? ({
+      schema_version: PRODUCT_INPUT_SCHEMA_VERSION,
+      product_name: "", description: "", selling_points: [], focus: "", references: [],
+    }),
   });
   /** 跨 Module 只读文档投影：唯一来源是 inputs.sources()（不传闭包、不留第二份投影）。 */
   const projectSources = () => inputs.sources();
@@ -560,9 +301,7 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
     repository: /** @type {import("./generation.js").GenerationRepository} */ (/** @type {unknown} */ (repository)),
     beginAction: beginAction,
     projectIdReader: () => projectId,
-    environmentReader: /** @param {unknown} saved */ (saved) => modelSettings.imageEnvironment(
-      (/** @type {{provider?: {provider_id?: string}, payload?: {fingerprint?: {snapshot?: {execution_target?: {provider_id?: string}}}}}} */ (saved))?.provider?.provider_id || (/** @type {{payload?: {fingerprint?: {snapshot?: {execution_target?: {provider_id?: string}}}}}} */ (saved))?.payload?.fingerprint?.snapshot?.execution_target?.provider_id,
-      (/** @type {{execution_identity?: {credential_reference?: {source?: string}}, payload?: {fingerprint?: {snapshot?: {execution_target?: {credential_source?: string}}}}}} */ (saved))?.execution_identity?.credential_reference?.source || (/** @type {{payload?: {fingerprint?: {snapshot?: {execution_target?: {credential_source?: string}}}}}} */ (saved))?.payload?.fingerprint?.snapshot?.execution_target?.credential_source),
+    environmentReader: (saved) => modelSettings.environmentFor(saved),
     requestHeaders: /** @param {import("./model-settings.js").Purpose} purpose */ (purpose, providerId, source) => modelSettings.headers(purpose, providerId, source),
     suitePlanReader: () => inputs.suitePlan(),
     suiteSummaryReader: () => {
@@ -589,9 +328,6 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
     prompts,
     settings: modelSettings,
     beginAction, sources: projectSources,
-    // 采用/报告侧变化要同时刷新：交付门（deliveryView）、生成区尝试行（reportBuildFailure 显示）
-    // 与审核列表（报告出现/补建失败）。三者都只读投影，不写库、不触发业务变更。
-    changed: () => { deliveryView?.render(); generationView?.renderAttempts(); compareView?.renderReviewList(); },
   });
   const reviewDelivery = createReviewDeliveryModule({
     repository: /** @type {import("./storage/validate.js").ProjectRepository} */ (/** @type {unknown} */ (repository)),
@@ -599,28 +335,14 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
     adoption: selectionAdoption,
     settings: modelSettings,
     beginAction, sources: projectSources,
-    changed: () => { deliveryView?.render(); },
   });
 
   // 交付视图只持 DOM、展开与自己的对象 URL；逐图采用状态、门禁、整套结论与两类导出
   // 都读 owner 投影，视图不写库、不重算判定、不组 manifest/ZIP。
   deliveryView = createDeliveryView({
     elements: {
-      reviewList: elements.reviewList,
-      suiteReviewStatus: elements.suiteReviewStatus,
-      suiteReviewRun: elements.suiteReviewRun,
-      suiteAiReviewRun: elements.suiteAiReviewRun,
-      suiteReviewNote: elements.suiteReviewNote,
-      suiteReviewFindings: elements.suiteReviewFindings,
-      suiteReviewError: elements.suiteReviewError,
-      deliveryGate: elements.deliveryGate,
-      deliverySuiteStatus: elements.deliverySuiteStatus,
-      deliverySuiteFindings: elements.deliverySuiteFindings,
-      deliveryUnknowns: elements.deliveryUnknowns,
-      deliverExport: elements.deliverExport,
-      deliverStatus: elements.deliverStatus,
-      deliverResult: elements.deliverResult,
-      deliverError: elements.deliverError,
+      suiteReviewCard: elements.suiteReviewCard,
+      deliveryCard: elements.deliveryCard,
     },
     deps: {
       reviewDelivery,
@@ -634,6 +356,15 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
       localizeShotIds,
       selectionStateOf: (/** @type {string} */ shotId) => compareView?.selectionStateOf(shotId) ?? "none",
       selectStage: (/** @type {string} */ id) => stageShell.select(id),
+      // 跨视图定位：审核卡/整套检查按钮的 DOM 归审核视图与交付视图各自持有，
+      // 交付视图只发意图，滚动与焦点收敛在这里（P5 不留跨视图 querySelector）。
+      focusReviewShot: (/** @type {string} */ shotId) => focusCompareEntry(shotId),
+      focusSuiteCheck: () => {
+        const button = /** @type {HTMLButtonElement|null} */ (elements.suiteReviewCard.querySelector("#suite-review-run"));
+        if (!button) return;
+        button.scrollIntoView({ block: "center" });
+        button.focus({ preventScroll: true });
+      },
     },
   });
 
@@ -641,56 +372,12 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
   // 读写都在 inputs（唯一所有者），落库/派生/跨视图刷新经下面的窄回调回到工作区。
   inputView = createInputView({
     elements: {
-      intakeName: elements.intakeName,
-      intakeDescription: elements.intakeDescription,
-      intakePoints: elements.intakePoints,
-      intakeFocus: elements.intakeFocus,
-      intakeDraft: elements.intakeDraft,
-      intakeError: elements.intakeError,
-      analyzeNewAfterUnknown: elements.analyzeNewAfterUnknown,
-      analyzeRun: elements.analyzeRun,
-      analyzeGate: elements.analyzeGate,
-      analyzeResult: elements.analyzeResult,
-      analyzeError: elements.analyzeError,
-      slotsProgress: elements.slotsProgress,
-      slotsToggle: elements.slotsToggle,
-      slotsEmpty: elements.slotsEmpty,
-      slotList: elements.slotList,
-      slotAddId: elements.slotAddId,
-      slotAddLabel: elements.slotAddLabel,
-      slotAddType: elements.slotAddType,
-      slotAddValue: elements.slotAddValue,
-      slotAddAllowModel: elements.slotAddAllowModel,
-      slotAddStatus: elements.slotAddStatus,
-      slotsError: elements.slotsError,
-      suiteLocked: elements.suiteLocked,
-      suiteEditor: elements.suiteEditor,
-      suiteTemplate: elements.suiteTemplate,
-      suiteTemplateHint: elements.suiteTemplateHint,
-      suiteCustomToggle: elements.suiteCustomToggle,
-      suiteCustomPanel: elements.suiteCustomPanel,
-      suiteCustomLabel: elements.suiteCustomLabel,
-      suiteCustomIntent: elements.suiteCustomIntent,
-      suiteCustomStatus: elements.suiteCustomStatus,
-      suiteStatus: elements.suiteStatus,
-      suiteEmpty: elements.suiteEmpty,
-      shotList: elements.shotList,
-      suiteError: elements.suiteError,
-      specsLocked: elements.specsLocked,
-      specsEditor: elements.specsEditor,
-      styleBackground: elements.styleBackground,
-      styleLighting: elements.styleLighting,
-      styleColorTone: elements.styleColorTone,
-      styleComposition: elements.styleComposition,
-      styleAvoid: elements.styleAvoid,
-      styleVersion: elements.styleVersion,
-      styleRestore: elements.styleRestore,
-      styleEffect: elements.styleEffect,
-      styleStatus: elements.styleStatus,
-      styleError: elements.styleError,
-      shotSpecsEmpty: elements.shotSpecsEmpty,
-      shotSpecList: elements.shotSpecList,
-      specsError: elements.specsError,
+      intakeAnchor: elements.intakeAnchor,
+      analyzeAnchor: elements.analyzeAnchor,
+      slotsAnchor: elements.slotsAnchor,
+      suiteAnchor: elements.suiteAnchor,
+      specsAnchor: elements.specsAnchor,
+      refsAnchor: elements.refsAnchor,
     },
     deps: {
       inputs,
@@ -698,7 +385,7 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
       currentProjectId: () => projectId,
       capabilities: () => capabilities,
       understandingBlocking: () => understandingBlocking,
-      draftInput: draftInputPayload,
+      readAsset: (/** @type {string} */ pid, /** @type {string} */ sha256) => repository.assets.get(pid, sha256),
       deriveState: deriveAndApplyState,
       renderWorkspace: renderAll,
       renderGenerationSections,
@@ -719,33 +406,15 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
       promptLocked: elements.promptLocked,
       promptEditor: elements.promptEditor,
       localPreparationStatus: elements.localPreparationStatus,
-      promptStatus: elements.promptStatus,
-      promptList: elements.promptList,
+      promptDetails: elements.promptDetails,
       promptError: elements.promptError,
       generateError: elements.generateError,
       confirmLocked: elements.confirmLocked,
       confirmEditor: elements.confirmEditor,
-      confirmStatus: elements.confirmStatus,
-      confirmSummary: elements.confirmSummary,
-      confirmBlockers: elements.confirmBlockers,
-      confirmRisks: elements.confirmRisks,
-      confirmList: elements.confirmList,
-      confirmAction: elements.confirmAction,
-      confirmRecord: elements.confirmRecord,
       confirmError: elements.confirmError,
       attemptLocked: elements.attemptLocked,
       attemptEditor: elements.attemptEditor,
-      attemptProvider: elements.attemptProvider,
-      attemptStatus: elements.attemptStatus,
       attemptError: elements.attemptError,
-      attemptList: elements.attemptList,
-      batchBar: elements.batchBar,
-      batchProgress: elements.batchProgress,
-      batchHint: elements.batchHint,
-      queueList: elements.queueList,
-      batchStop: elements.batchStop,
-      batchReconcile: elements.batchReconcile,
-      batchRetry: elements.batchRetry,
     },
     deps: {
       prompts,
@@ -771,68 +440,15 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
       suffixedErrorMessage: errorMessageSuffixed,
     },
   });
-  // owner 只读文案投影的唯一订阅口（工作区一次装配，与下面的 modelSettings.subscribe 同一风格）：
-  // generation 不再注入 DOM 回调；忙碌/进度仍读飞行标识与批次投影，视图不解读业务状态。
-  generation.subscribe(() => { generationView?.applyNotice(); });
 
-  /** @type {EffectiveCapabilities|null} */
-  let capabilities = null;
-  /** @type {import("./domain/type-contracts.js").BriefReadiness["blocking"]} */
-  let understandingBlocking = [];
-  /** @type {unknown} */
-  let understandingError = null;
-  /** @type {boolean} */
-  let understandingReady = false;
   // 审核视图只持比较/返工/采用三区的 DOM 与就地状态；候选/报告读写都在 generation /
   // selectionAdoption（唯一所有者），Prompt 版本/编译在 prompts，跨区刷新经下面的窄回调回到工作区。
   compareView = createCompareView({
     elements: {
       comparePanel: elements.comparePanel,
-      compareSubject: elements.compareSubject,
-      compareJump: elements.compareJump,
-      compareClose: elements.compareClose,
-      compareBasisTitle: elements.compareBasisTitle,
-      compareReferences: elements.compareReferences,
-      compareCandidates: elements.compareCandidates,
-      compareChecklist: elements.compareChecklist,
-      compareStatus: elements.compareStatus,
-      compareViewedImage: elements.compareViewedImage,
-      compareViewedCaption: elements.compareViewedCaption,
-      compareViewedZoom: elements.compareViewedZoom,
-      compareBaselineImage: elements.compareBaselineImage,
-      compareBaselineSelect: elements.compareBaselineSelect,
-      compareBaselineZoom: elements.compareBaselineZoom,
-      compareReview: elements.compareReview,
-      imageZoomDialog: elements.imageZoomDialog,
-      imageZoomTitle: elements.imageZoomTitle,
-      imageZoomContent: elements.imageZoomContent,
-      imageZoomNative: elements.imageZoomNative,
-      imageZoomClose: elements.imageZoomClose,
-      reworkOpen: elements.reworkOpen,
       reworkPanel: elements.reworkPanel,
-      reworkBasis: elements.reworkBasis,
-      reworkProblems: elements.reworkProblems,
-      reworkDirection: elements.reworkDirection,
-      reworkPreview: elements.reworkPreview,
-      reworkEdit: elements.reworkEdit,
-      reworkSubmit: elements.reworkSubmit,
-      reworkReset: elements.reworkReset,
-      reworkCancel: elements.reworkCancel,
-      reworkPreviewBox: elements.reworkPreviewBox,
-      reworkPreviewMeta: elements.reworkPreviewMeta,
-      reworkPreviewText: elements.reworkPreviewText,
-      reworkTech: elements.reworkTech,
-      reworkTechBody: elements.reworkTechBody,
-      reworkSummary: elements.reworkSummary,
-      reworkStatus: elements.reworkStatus,
-      reworkError: elements.reworkError,
-      adoptOpen: elements.adoptOpen,
-      adoptClear: elements.adoptClear,
-      adoptStatus: elements.adoptStatus,
-      adoptError: elements.adoptError,
-      adoptProgress: elements.adoptProgress,
+      imageZoomDialog: elements.imageZoomDialog,
       reviewList: elements.reviewList,
-      reviewEmpty: elements.reviewEmpty,
     },
     deps: {
       inputs,
@@ -855,16 +471,26 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
       suffixedErrorMessage: errorMessageSuffixed,
     },
   });
+  compareView.bind();
+  // 业务owner只发布投影变化；工作区一次订阅并路由到视图，不把DOM回调注入owner。
+  inputs.subscribe(() => {
+    void deriveAndApplyState().then(() => {
+      inputView?.renderAnalyze();
+      inputView?.renderIntake();
+      renderHeaderText(project);
+    }).catch(handleInternalError);
+  });
+  generation.subscribe(() => { generationView?.applyNotice(); });
+  selectionAdoption.subscribe(() => {
+    deliveryView?.render();
+    generationView?.renderAttempts();
+    compareView?.renderReviewList();
+  });
+  reviewDelivery.subscribe(() => { deliveryView?.render(); });
   // Prompt 版本/历史/准备状态 → prompts Module；确认队列/scope/mode → generation Module；
   // 采用记录 → selectionAdoption Module；整套报告/门禁/交付包 → reviewDelivery Module；
   // 资料/事实/方案/风格/单图规格 → project-inputs Module（唯一所有者）。
-  // 本闭包不再持有上述可变状态，只保留 DOM 草稿编辑状态、视图装配与生命周期。
-  /** @type {string[]} */
-  let objectUrls = [];
-  /** @type {Map<string, string>} */
-  let previewUrls = new Map();
-  /** @type {boolean} */
-  let bound = false;
+  // 本闭包只保留视图装配、生命周期、导航与跨 owner 协调。
   /* ------------------------------------------------------ 公共读写与工具 */
 
   /**
@@ -881,13 +507,6 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
     return fallback;
   }
 
-  /**
-   * @returns {void}
-   */
-  function revokeObjectUrls() {
-    for (const url of objectUrls) URL.revokeObjectURL(url);
-    objectUrls = [];
-  }
 
   /**
    * @returns {void}
@@ -897,20 +516,10 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
     previewUrls = new Map();
   }
 
-  /**
-   * DOM 草稿编辑区是 workspace 唯一保留的输入状态：所有者通过 draftInput 依赖读取它，
-   * 落库/合并/指纹一律由 project-inputs 负责，这里不持有第二份资料状态。
-   * @returns {CompleteProductInput}
-   */
-  function draftInputPayload() {
-    return {
-      schema_version: PRODUCT_INPUT_SCHEMA_VERSION,
-      product_name: elements.intakeName.value.trim(),
-      description: elements.intakeDescription.value.trim(),
-      selling_points: splitLines(elements.intakePoints.value),
-      focus: elements.intakeFocus.value.trim(),
-      references: inputs.references().map((item) => ({ ...item })),
-    };
+
+  /** @param {string} message 工作区协调错误（不拥有各视图内部错误）。 */
+  function renderWorkspaceError(message) {
+    render(html`<p id="workspace-error" class="error" role="alert" ?hidden=${!message}>${message}</p>`, elements.error);
   }
 
   /**
@@ -918,126 +527,8 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
    * @returns {void}
    */
   function handleInternalError(error) {
-    showError(elements.error, errorMessageOf(error, "操作没有完成，请重试。"));
+    renderWorkspaceError(errorMessageOf(error, "操作没有完成，请重试。"));
   }
-
-  /* ------------------------------------------------------------ 参考图 */
-
-  /**
-   * @returns {Promise<void>}
-   */
-  async function renderReferences() {
-    // 先异步取齐资产、只在最后一刻替换 DOM：重叠渲染不会把同一行插两次。
-    const pid = projectId;
-    if (!pid) return;
-    const entries = inputs.references();
-    const rows = [];
-    const urls = [];
-    for (const [index, entry] of entries.entries()) {
-      const asset = await repository.assets.get(pid, entry.asset_sha256);
-      const row = createElement("li", { className: "ref-row" });
-      row.dataset.sha = entry.asset_sha256;
-
-      const thumb = createElement("div", { className: "ref-thumb" });
-      if (asset && asset.blob instanceof Blob) {
-        const url = URL.createObjectURL(asset.blob);
-        urls.push(url);
-        thumb.append(createElement("img", {
-          attrs: { src: url, alt: (asset.original_name || "参考图"), loading: "lazy" },
-        }));
-      } else {
-        thumb.append(createElement("span", { className: "meta", text: "资产缺失" }));
-      }
-
-      const main = createElement("div", { className: "ref-main" });
-      main.append(createElement("span", {
-        className: "name",
-        text: (asset && asset.original_name) || ("参考图 " + (index + 1)),
-      }));
-      const info = asset
-        ? [asset.media_type, asset.byte_size + " 字节",
-           (asset.width && asset.height ? asset.width + "×" + asset.height : "尺寸未知")].join(" · ")
-        : "资产记录缺失";
-      main.append(createElement("span", { className: "meta", text: info }));
-      appendTech(main, ["sha256 " + entry.asset_sha256.slice(0, 12) + "…"]);
-
-      const actions = createElement("div", { className: "ref-actions" });
-      const select = createElement("select", {
-        attrs: { "aria-label": "参考图角色" },
-        props: { value: entry.role },
-      });
-      for (const role of REFERENCE_ROLES) {
-        select.append(createElement("option", {
-          text: /** @type {Record<string, string>} */ (ROLE_TEXT)[role] || role, attrs: { value: role },
-        }));
-      }
-      select.value = entry.role;
-      select.addEventListener("change", () => { handleRoleChange(index, /** @type {ReferenceRole} */ (select.value)); });
-      const remove = createElement("button", {
-        className: "danger", text: "删除", attrs: { type: "button" },
-      });
-      remove.addEventListener("click", () => { handleRemoveReference(index); });
-      actions.append(select, remove);
-
-      row.append(thumb, main, actions);
-      rows.push(row);
-    }
-    revokeObjectUrls();
-    objectUrls = urls;
-    elements.refList.replaceChildren(...rows);
-    elements.refCount.textContent = entries.length
-      ? entries.length + " / " + MAX_REFERENCES + " 张"
-      : "";
-    elements.refEmpty.hidden = entries.length > 0;
-  }
-
-  /**
-   * @param {number} index
-   * @param {import("./domain/type-contracts.js").ReferenceRole} role
-   * @returns {Promise<void>}
-   */
-  async function handleRoleChange(index, role) {
-    const action = beginAction();
-    clearError(elements.refError);
-    if (inputs) await inputs.setReferenceRole(index, role);
-    if (!action.alive()) return;
-    renderAll();
-  }
-
-  /**
-   * @param {number} index
-   * @returns {Promise<void>}
-   */
-  async function handleRemoveReference(index) {
-    const action = beginAction();
-    clearError(elements.refError);
-    if (inputs) await inputs.removeReference(index);
-    if (!action.alive()) return;
-    renderAll();
-  }
-
-  /**
-   * @param {FileList|File[]|null|undefined} fileList
-   * @returns {Promise<void>}
-   */
-  async function handleFiles(fileList) {
-    const files = [...(fileList || [])];
-    if (!files.length) return;
-    const action = beginAction();
-    if (!action.projectId) return;
-    clearError(elements.refError);
-    const added = await inputs.addReferences(files, (kind, file) => {
-      if (!action.alive()) return;
-      if (kind === "too_many") showError(elements.refError, "参考图最多 " + MAX_REFERENCES + " 张，多出的文件没有加入。");
-      else if (kind === "too_large") showError(elements.refError, "“" + file.name + "”超过单张参考图上限 10MB，已跳过；请压缩后再上传。");
-      else if (kind === "unreadable") showError(elements.refError, "“" + file.name + "”不是可读取的图片，已跳过。");
-      else showError(elements.refError, "“" + file.name + "”与已有参考图内容相同，已跳过。");
-    });
-    if (added && action.alive()) renderAll();
-  }
-
-
-
 
   /**
    * @returns {Promise<void>}
@@ -1139,7 +630,7 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
   /**
    * 焦点只能落到用户当前看得见的比较入口。
    * V2.UI.2 起阶段分屏：尝试行在「生成」、审核卡在「审核返工」，跨阶段的入口是隐藏的，
-   * 直接 focus 会被浏览器丢成 body。顺序：审核卡入口 → 尝试行入口 → 阶段条当前阶段 → 面板内关闭键。
+   * 直接 focus 会被浏览器丢成 body。顺序：审核卡入口 → 尝试行入口 → 阶段条当前阶段。
    */
   /** 收起后把焦点还给原候选：比较区还在就回到候选页签，否则回到该图的比较入口。
    * @param {string|null} shotId
@@ -1147,13 +638,18 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
    */
   function focusCompareEntry(shotId) {
     const isVisible = (/** @type {HTMLElement|null|undefined} */ node) => Boolean(node && node.offsetParent !== null);
-    const reviewEntry = elements.reviewList
-      ? /** @type {HTMLButtonElement|null} */ (elements.reviewList.querySelector('.review-card[data-shot-id="' + shotId + '"] button'))
+    const reviewCard = elements.reviewList
+      ? /** @type {HTMLElement|null} */ (elements.reviewList.querySelector('.review-card[data-shot-id="' + shotId + '"]'))
       : null;
-    const attemptEntry = /** @type {HTMLButtonElement|null} */ (elements.attemptList.querySelector(
+    if (reviewCard) {
+      reviewCard.scrollIntoView({ block: "center" });
+      const reviewEntry = /** @type {HTMLButtonElement|null} */ (reviewCard.querySelector("button"));
+      if (reviewEntry && isVisible(reviewEntry)) { reviewEntry.focus(); return; }
+    }
+    const attemptEntry = /** @type {HTMLButtonElement|null} */ (elements.attemptEditor.querySelector(
       'button[data-compare-action="' + shotId + '"]'));
     const stageButton = /** @type {HTMLButtonElement|null} */ (elements.stageNav.querySelector("[data-stage-nav].is-current"));
-    const target = [reviewEntry, attemptEntry, stageButton, elements.compareClose]
+    const target = [attemptEntry, stageButton]
       .find(isVisible);
     if (target) target.focus();
   }
@@ -1164,13 +660,12 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
    */
   function renderHeaderText(projectRecord) {
     const state = projectRecord ? projectRecord.state : null;
-    if (state === "READY_TO_GENERATE") {
-      elements.scope.textContent = "生成前确认已通过：可以整套生成或逐张提交，并按任务编号核对进度；可以审核、单图返工与采用候选；整套一致性报告与导出交付仍未接入。";
-    } else if (state === "PLAN_REVIEW") {
-      elements.scope.textContent = "商品理解已就绪，可以编辑套图规划、规格、Prompt 与生成前确认；通过确认后才能提交生成。";
-    } else {
-      elements.scope.textContent = SCOPE_TEXT;
-    }
+    const text = state === "READY_TO_GENERATE"
+      ? "生成前确认已通过：可整套或逐张提交，并按任务编号核对进度；审核、返工与采用后，按当前交付门禁处理整套检查和导出。"
+      : state === "PLAN_REVIEW"
+        ? "商品理解已就绪，可以编辑套图规划、规格、Prompt 与生成前确认；通过确认后才能提交生成。"
+        : SCOPE_TEXT;
+    render(html`${text}`, elements.scope);
   }
 
   /**
@@ -1186,12 +681,21 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
     understandingReady = understood.ready;
     const entryCount = inputs.slotEntries().length;
     const draftPayload = inputs.intakeSnapshot();
+    // 「确认是否仍当前」的判定输入包含图像能力投影（generation.isConfirmedShotCurrent →
+    // environmentFor(saved) → imagePromptProfile）。模型设置刷新窗口内 capabilities=null、
+    // imageEnvironments 已清空（model-settings.refresh 开头），此时该判定恒为「不当前」——
+    // 那是「还不知道」，不是「已失效」。把不确定当失效会回写 PLAN_REVIEW，而授权其实没过期
+    // （boot 路径已单独规避同一竞态：loadWorkspace「能力到位后再做唯一一次状态派生」）。
+    // 这里是同一收口的唯一实现处：判定输入不确定时保留既有派生结论，不写库、不伪造「需重新确认」。
+    const confirmationDecidable = !modelSettings.refreshing;
     const state = entryCount === 0
       ? (intakeReadiness(draftPayload).ready ? "INTAKE_READY" : "EMPTY")
       : (understandingReady
-        ? (generationView?.confirmationIsCurrent() ? "READY_TO_GENERATE" : "PLAN_REVIEW")
+        ? (confirmationDecidable
+          ? (generationView?.confirmationIsCurrent() ? "READY_TO_GENERATE" : "PLAN_REVIEW")
+          : null)
         : "UNDERSTANDING_REVIEW");
-    if (project && project.state !== state) {
+    if (state !== null && project && project.state !== state) {
       try {
         // 状态写按冻结项目落库（保存派生结论）；已过期动作不回写界面状态。
         const updated = await repository.projects.setState(action.projectId, state);
@@ -1201,7 +705,7 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
         }
       } catch (error) {
         if (action.alive()) {
-          showError(elements.error, errorMessageOf(error, "状态写回失败。"));
+          renderWorkspaceError(errorMessageOf(error, "状态写回失败。"));
         }
       }
     }
@@ -1366,12 +870,9 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
    * @returns {void}
    */
   function renderAll() {
-    clearError(elements.error);
-    if (understandingError) {
-      showError(elements.error,
-        "商品理解投影失败：" + errorMessageOf(understandingError, "未知错误"));
-    }
-    renderReferences().catch(handleInternalError);
+    renderWorkspaceError(understandingError
+      ? "商品理解投影失败：" + errorMessageOf(understandingError, "未知错误")
+      : "");
     inputView?.render();
     renderGenerationSections();
     renderHeaderText(project);
@@ -1389,63 +890,6 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
   function bind() {
     if (bound) return;
     bound = true;
-    elements.refAdd.addEventListener("click", () => elements.refFile.click());
-    elements.refFile.addEventListener("change", (/** @type {Event} */ event) => {
-      handleFiles(/** @type {HTMLInputElement} */ (event.target).files).finally(() => { elements.refFile.value = ""; });
-    });
-    for (const node of [elements.intakeName, elements.intakeDescription,
-                        elements.intakePoints, elements.intakeFocus]) {
-      node.addEventListener("input", () => { inputView?.scheduleDraftSave(); });
-    }
-    elements.intakeSave.addEventListener("click", () => { void inputView?.handleSaveIntake(); });
-    elements.analyzeRun.addEventListener("click", () => { void inputView?.runAnalyze(); });
-    elements.analyzeNewAfterUnknown.addEventListener("click", () => { void inputView?.runAnalyze({ allowNewAfterUnknown: true }); });
-    elements.manualFacts.addEventListener("click", () => { void inputView?.handleManualFacts(); });
-    elements.slotsToggle.addEventListener("click", () => { inputView?.toggleAllSlots(); });
-    elements.slotAddSave.addEventListener("click", () => { void inputView?.addSlot(); });
-    elements.suiteSeed.addEventListener("click", () => { void inputView?.seedSuite(); });
-    elements.suiteAddTemplate.addEventListener("click", () => { void inputView?.addTemplateShot(); });
-    elements.suiteTemplate.addEventListener("change", () => { inputView?.refreshTemplateHint(); });
-    elements.suiteCustomToggle.addEventListener("click", () => { inputView?.toggleCustomPanel(); });
-    elements.suiteCustomSave.addEventListener("click", () => { void inputView?.addCustomShot(); });
-    elements.styleSave.addEventListener("click", () => { void inputView?.saveStyle(); });
-    elements.styleRestore.addEventListener("click", () => { void inputView?.restoreStyle(); });
-    elements.confirmAction.addEventListener("click", () => { void generationView?.handleConfirmGeneration(); });
-    elements.batchStop.addEventListener("click", () => { generation.stopBatch(); });
-    elements.batchReconcile.addEventListener("click", () => { generation.reconcileOnce(); });
-    elements.batchRetry.addEventListener("click", () => {
-      generation.enterFailedRetry(generation.deriveBatch().retry_queue);
-      stageShell.select("generate"); generationView?.renderConfirm();
-    });
-    elements.compareJump.addEventListener("click", () => {
-      const target = elements.compareJump.dataset.targetShot;
-      if (!target) {
-        elements.compareStatus.textContent = "这套图没有待处理的候选。";
-        return;
-      }
-      compareView?.openCompare(target, { focus: true });
-      const row = /** @type {HTMLElement|null} */ (elements.attemptList.querySelector('.attempt-row[data-shot-id="' + target + '"]'));
-      if (row) row.scrollIntoView({ block: "nearest" });
-    });
-    elements.compareClose.addEventListener("click", () => { compareView?.closeCompare(); });
-    elements.compareCandidates.addEventListener("keydown", /** @type {(event: KeyboardEvent) => void} */ ((/** @type {KeyboardEvent} */ event) => compareView?.handleCompareKeydown(event)));
-    elements.compareBaselineSelect.addEventListener("change", () => { compareView?.handleBaselineChange(); });
-    elements.compareViewedZoom.addEventListener("click", () => compareView?.zoomViewed());
-    elements.compareBaselineZoom.addEventListener("click", () => compareView?.zoomBaseline());
-    elements.imageZoomClose.addEventListener("click", () => compareView?.closeImageZoom());
-    elements.imageZoomDialog.addEventListener("cancel", (/** @type {Event} */ event) => { event.preventDefault(); compareView?.closeImageZoom(); });
-    elements.imageZoomNative.addEventListener("click", () => { compareView?.toggleZoomNative(); });
-    elements.compareReview.addEventListener("click", () => { void compareView?.handleCompareReview(); });
-    elements.reworkOpen.addEventListener("click", () => { compareView?.openReworkPanel(); });
-    elements.reworkPreview.addEventListener("click", () => { void compareView?.previewRework(); });
-    elements.reworkEdit.addEventListener("click", () => { void compareView?.editRework(); });
-    elements.reworkSubmit.addEventListener("click", () => { void compareView?.submitRework(); });
-    elements.reworkReset.addEventListener("click", () => { compareView?.resetRework(); });
-    elements.reworkCancel.addEventListener("click", () => { compareView?.cancelRework(); });
-    elements.reworkPanel.addEventListener("keydown", (/** @type {KeyboardEvent} */ event) => { compareView?.handleReworkKeydown(event); });
-    elements.adoptOpen.addEventListener("click", () => { void compareView?.adoptCandidate("select"); });
-    elements.adoptClear.addEventListener("click", () => { void compareView?.adoptCandidate("clear"); });
-    elements.reworkDirection.addEventListener("input", () => { compareView?.handleReworkDirectionInput(); });
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "hidden") inputView?.saveIntakeNow().catch(() => {});
     });
@@ -1461,12 +905,6 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
     elements.stageNextDeliver.addEventListener("click", () => {
       stageShell.select("deliver", { focusHeading: true });
     });
-    elements.deliverProjectPackage.addEventListener("click", () => { void deliveryView?.handleProjectExport(); });
-    elements.deliverExport.addEventListener("click", () => { void deliveryView?.handleDeliveryExport(); });
-    if (elements.suiteReviewRun) {
-      elements.suiteReviewRun.addEventListener("click", () => { void deliveryView?.runSuiteReview(); });
-      elements.suiteAiReviewRun.addEventListener("click", () => { void deliveryView?.runSuiteReview({ ai: true }); });
-    }
   }
 
   /**
@@ -1487,8 +925,9 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
     generation.reset();
     selectionAdoption.reset();
     reviewDelivery.reset();
+    // P5：未保存草稿/呈现基线按 project 精确归属，项目切换/关闭统一从视图状态回收。
+    generationView?.resetViewState();
     revokePreviewUrls();
-    revokeObjectUrls();
     deliveryView?.dispose();
     compareView?.resetViewState();
 
@@ -1522,15 +961,8 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
   modelSettings.subscribe(() => {
     capabilities = modelSettings.capabilities;
     if (!projectId) return;
-    // 设置变化会整体重渲染（含商品资料的输入框）：先把还在防抖里的草稿落盘再渲染，
-    // 否则用户刚输入、尚未到落盘时点的文本会被按存储值重画掉——等于静默丢用户输入。
-    // 只落盘草稿（inputs.saveIntakeNow 无脏数据即 no-op，真落盘时经 changed 走派生），
-    // 不在这里派生状态：能力/会话就绪前派生会把中途结论写回项目记录
-    //（重开项目变成 PLAN_REVIEW、revision 无谓 +1，UI2-17 整库逐字判据必红）。
-    Promise.resolve()
-      .then(() => inputs.saveIntakeNow())
-      .catch(() => {})
-      .then(() => { renderAll(); });
+    // 能力变化只更新投影；未保存输入由输入视图唯一持有，不再为了重绘提前落盘。
+    renderAll();
   });
   return {
     /** @param {StoredProjectRecord} projectRecord @returns {Promise<void>} */
@@ -1555,9 +987,11 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
       // 先把未保存的草稿按当前（旧）会话落库，再清理本地资源与项目引用。
       // 不承诺取消上游：已发出的请求与已提交的任务照常完成，结果记录仍会写入。
       await inputView?.saveIntakeNow();
-      revokeObjectUrls();
       revokePreviewUrls();
       deliveryView?.dispose();
+      inputView?.resetViewState();
+      generationView?.resetViewState();
+      compareView?.resetViewState();
       project = null;
       projectId = null;
     },

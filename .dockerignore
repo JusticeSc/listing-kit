@@ -1,11 +1,18 @@
-# Product V2 生产运行闭包（唯一允许清单）。
+# Product V2 生产构建上下文（唯一允许清单）。
 #
 # 为什么不能只写 `!app/`：Docker 的 patternmatcher 在 `MatchesUsingParentResults`
 # 里把「目录例外的命中」继承给整棵子树，所以 `!app/` 会把 app/ 下所有文件重新放回
 # 构建上下文——这正是已发布工件的 145 文件指纹里混入 app/product_v1、app/static、
 # app/offline_fixture.py、V1 业务 src 与 config/product-v1 的机制。
-# 因此本例程的规则是：父目录先 `!目录/` 使其可遍历，紧接着用 `目录/**` 把子项
-# 重新排除，再逐条精准放行真正进入镜像的运行文件。
+# 因此本文件的规则是：父目录先 `!目录/` 使其可遍历，紧接着用 `目录/**` 把子项
+# 重新排除，再逐条精准放行真正需要的构建输入。
+#
+# 输入归三段 Dockerfile 阶段消费（见 Dockerfile 头注释）：
+#   python-deps/envelope-schema：pyproject.toml、uv.lock、src/ 白名单、信封导出脚本；
+#   frontend：package.json、package-lock.json、vite.config.mjs、tsconfig.json、
+#             完整 app/product_v2/ 前端源码（含 TS）、validator 生成脚本；
+#   runtime：正式入口 4 个 Python 文件、src/ 白名单、config 白名单（Dockerfile 用显式
+#            文件/目录 COPY 收口，前端源码不进运行时；假 provider 物理排除）。
 #
 # 本文件只表达“构建上下文应当包含什么”；真实构建与镜像内文件枚举由现有受保护
 # CI（docker build + 容器内 `release_transaction_probe.py --fingerprint`）证明，
@@ -14,25 +21,30 @@
 !Dockerfile
 !pyproject.toml
 !uv.lock
+!package.json
+!package-lock.json
+!vite.config.mjs
+!tsconfig.json
 
-# app/：正式入口、无状态适配器与 V2 产品静态资源。
-# V1 入口/旧离线 fixture/旧静态页不在运行闭包内。
+# app/：正式入口 4 文件（运行时）+ 完整前端源码（构建器输入，含 TS）。
+# V1 入口/旧离线 fixture/旧静态页不在构建闭包内。
 !app/
 app/**
 !app/__init__.py
 !app/server.py
 !app/product_v2_server.py
+!app/product_v2_http.py
 !app/product_v2/
 # 必须显式递归放行：`!目录/` 只放行目录本身，子项仍被上面的 `app/**` 排除；
-# 只写 `!app/product_v2/` 会让 ui/、domain/、storage/、renderers/ 等子树整个丢失。
+# 只写 `!app/product_v2/` 会让 ui/、domain/、storage/ 等子树整个丢失。
 !app/product_v2/**
-# 渐进 TS 迁移（计划 §9 V2.R7.5）：TS 源与类型声明不进运行镜像；
-# 浏览器和正式入口只消费 `npm run build:frontend` 生成的同目录 .js
-# （product_v2_server 也按 STATIC_DENY_SUFFIXES 拒绝 .ts）。
-app/product_v2/**/*.ts
+# 本地构建产物永不作为输入：干净上下文也能从锁重建（.gitignore 同理忽略它们）。
+app/product_v2/domain/generated/**
 
-# src/：只放行正式入口实际 import 的 console 与 V2 provider 适配器。
-# V1 业务核心、渲染器与 V1 适配器（dashscope_*.py / semantic.py / image.py 等）不进镜像。
+# src/：正式入口实际 import 的 console、V2 真实适配器与其中立合同。
+# 假 provider（v2_fake_*）是测试替身：生产注册表拒绝 fake id，构建上下文直接排除，
+# 运行时 registry 惰性 import 的 fake 分支落到“模块缺失”分类错误，不改变真实行为。
+# V1 业务核心、渲染器与 V1 适配器不进镜像。
 !src/
 src/**
 !src/console.py
@@ -40,6 +52,13 @@ src/**
 src/providers/**
 !src/providers/__init__.py
 !src/providers/v2_*.py
+src/providers/v2_fake_*.py
+
+# tools/：只有信封 codegen 两脚本是构建输入；其余验证器/探针不进上下文、不进镜像。
+!tools/
+tools/**
+!tools/export_image_envelope_schema.py
+!tools/generate_image_envelope_validator.mjs
 
 # config/：只发布 product-v2 模型配置；
 # verification.json 只服务 CI 登记校验，不属于运行依赖。

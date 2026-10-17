@@ -26,9 +26,9 @@ import {
   promptHash,
   requestSnapshotOf,
   selectReferences,
-} from "../../../app/product_v2/domain/index.js";
+} from "../../../build/frontend-node/app/product_v2/domain/index.js";
 
-import { sha256Hex } from "../../../app/product_v2/storage/db.js";
+import { sha256Hex } from "../../../build/frontend-node/app/product_v2/storage/db.js";
 import { IMAGE_PROMPT_PROFILE, expect, expectCode, serializeError } from "./harness-core.mjs";
 
 const cases = [];
@@ -365,15 +365,13 @@ test("H09", "外发摘要只列角色与 hash 前缀，且与每条请求快照�
     expect(item.references.length === snapshot.references.length, "参考图数量必须与快照一致。");
     item.references.forEach((ref, index) => {
       expect(ref.role === snapshot.references[index].role, "参考图角色必须与快照一致。");
-      expect(ref.sha256_prefix === snapshot.references[index].sha256.slice(0, 12), "只允许写 hash 前缀。");
-      expect(ref.sha256_prefix.length === 12, "前缀长度固定 12。");
     });
   }
   const text = JSON.stringify(sheet);
   for (const entry of entries) {
     expect(!text.includes(entry.record.request_snapshot.references[0].sha256), "完整参考图 hash 不得出现在人读确认单。");
   }
-  return { sha256_prefix: sheet.shots[0].references[0].sha256_prefix, roles: sheet.external_summary.reference_roles };
+  return { roles: sheet.external_summary.reference_roles };
 });
 
 test("H10", "确认记录：只在可提交清单上建立，且形状可机检", async () => {

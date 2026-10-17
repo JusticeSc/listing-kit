@@ -82,8 +82,8 @@ def main() -> int:
 
     node_ws = run_node_check(ROOT / "app" / "product_v2" / "workspace.js")
     node_app = run_node_check(ROOT / "app" / "product_v2" / "app.js")
-    node_session = run_node_check(ROOT / "app" / "product_v2" / "session.js")
-    check("V2.3.3-00", "workspace/app/session 通过 node --check",
+    node_session = run_node_check(ROOT / "build" / "frontend-node" / "app" / "product_v2" / "session.js")
+    check("V2.3.3-00", "workspace/app/session（session 取标准 tsc emit 树）通过 node --check",
           all(item["rc"] == 0 for item in (node_ws, node_app, node_session)),
           {"workspace": node_ws, "app": node_app, "session": node_session})
 
@@ -480,8 +480,7 @@ def main() -> int:
             finally:
                 browser.close()
     finally:
-        server.shutdown()
-        server.server_close()
+        server.stop()
 
     check("V2.3.3-10", "全程零 console error / page error",
           not console_errors and not page_errors,

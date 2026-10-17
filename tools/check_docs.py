@@ -1,77 +1,12 @@
-r"""文档守卫 —— 让文档里的话有人守。
+r"""当前文档、权威登记、依赖登记与模板采纳守卫。
 
-为什么必须有它
---------------
-本项目反复踩过同类事故：文档复制了实现数字、阶段或旧架构结论，却没有任何东西守住它。
+README 的可执行 Python 示例按原参数运行；长驻服务和独立验证入口明确跳过。
+历史文档只核身份登记，不执行旧产品、生成卡片或要求旧源码继续存在。
 
-    1. 卡里写"秒级 / 零模型"，实际是 0.06s。数字当时是对的，但**没有任何东西守着它** ——
-       下一次改动会让它变成错话，而错话被人当成事实使用。
-    2. README 曾复制固定七坑位表、回归项数、探针方向数和“下一任务”。这些值即使写下时正确，
-       也会随代码和 state 变化，最终让实现入口同时扮演历史档案、进度表和产品说明。
-
-参考库里对应的是 `evals` 的 L1 断言：**"文档里的命令必须真能跑"。** 本文件就是这条断言。
-
-受管范围（这条边界是刻意的）
---------------------------
-    受管内容 = README.md（当前实现入口）+ docs/cards/*.md（legacy 生成产物）
-              —— README 只保留真实启动、已实现边界和历史回归入口；卡片逐字对齐生成器
-    受管登记 = 仓库里**每一份** *.md（根目录 + docs/ + _working/）
-              —— 管"哪一份有效"：状态必须是闭集合里的一个（见 _check_docs_index）
-
-两类失败必须分开报（这是本守卫最有用的一处设计）
-----------------------------------------------
-    stale    —— **产物未同步**。卡与源不一致，跑一次生成器即可。它不代表有人说错话，
-                只代表有人改了表还没重新生成。→ 退出码 2。
-    problems —— **写错了**。文档里的话与表 / 代码矛盾，或命令根本跑不通。生成器修不了它
-                （改了也会被下次生成覆盖），必须有人去改。→ 退出码 1。
-
-    混报的后果很具体：人看到一屏红会以为文档烂了，而实际上九成是"该跑生成器了"。
-    分开之后，"跑一下生成器"与"去改句子"变成两个不同的动作。
-
-十项检查
---------
-    ① 卡与 gen_slot_cards.build() 逐字一致                → stale
-    ② 幽灵卡（目录里有、表里已无对应坑位）                 → stale
-    ③ 卡数 = 坑位数、每卡 ≤ 行数上限                       → problems
-    ④ README 明确默认 V2 已实现边界与 V1 回归边界            → problems
-    ⑤ README 不复制 next_action、任务 ID 或固定七坑位表       → problems
-    ⑥ 受管文档 bash 围栏里的 python 命令**真跑**，rc 必须 0  → problems
-    ⑦ 仓库里每一份 *.md 都在 docs/INDEX.md 里登记、管辖事实与状态都是闭集合之一；
-       非生成文档顶部的 CONTROL-STATUS 必须与 INDEX 相同；已完成任务的任务书不能仍是 draft
-       → problems
-       —— 本项管两件事：「哪一份有效」，以及「哪一类事实归谁」。前六项都是单向的
-          （文档 vs 表 / 卡 vs 生成器），没有一项能发现「两份文档互相矛盾」：
-          那不是一个"值不相等"的问题，是**权威没有登记**。见 _check_docs_index。
-       管辖事实里，「实现 / 产品目标 / 执行状态」三类**全表唯一**（政出一门）。
-
-    ⑧ 受管文档里不得出现写死的解释器绝对路径 → problems
-       —— 这不是风格问题，是**换台机器就废**：README 曾经写着
-          PY="C:/Users/31368/.workbuddy/.../python.exe"，那是开发机的一次快照，
-          却被放在「怎么跑」的位置上。见 _check_no_abs_interpreter。
-
-    ⑨ 选型门禁有落点、依赖有登记，且登记表与 pyproject.toml + uv.lock / vendor 目录
-       双向一致 → problems
-       —— 前八项管不住「实现之前有没有先找现成能力」。句子拦不住重复造轮子，
-          登记 + 双向比对能：新增依赖必须同时改 pyproject.toml（uv add 落锁）与项目上下文 §4，
-           少一处就报红。见 _check_reuse_first_gate。
-
-    ⑩ 外部模板（docs/standards-template/）的每份文件都在 AGENTS.md 的采纳映射
-       章节里有落点 → problems
-       —— 模板是整目录重新同步的（07 就是后加的一份）。映射表说「已按模板适配」
-          而少了行时，没有任何东西能证伪。本项只做存在性比对：宁可粗，也不能沉默。
-          见 _check_standards_mapping。
-
-另有一项铁律检查由守卫自己实现、**不 exec 外部命令**（见 _check_orchestrator_rule）：
-
-    为什么不能直接跑文档里那句 grep：`grep` 在"零匹配"时退出码是 **1**，而这条铁律的
-    判据恰恰是"零匹配才算过"。照抄命令行，判据会整个反过来 —— 通过变失败、失败变通过。
-    （"命令要真跑"的前提是命令与判据同向；不同向时，正确做法是**把判据实现一遍**。）
-
-用法
-----
-    python tools/check_docs.py              # 全查（含真跑命令）
-    python tools/check_docs.py --no-run     # 跳过命令执行（快，但会明说哪些没被验）
-    python tools/check_docs.py --explain    # 连"跳过了哪些命令、为什么"一起打印
+用法：
+    python tools/check_docs.py
+    python tools/check_docs.py --no-run
+    python tools/check_docs.py --explain
 """
 from __future__ import annotations
 
@@ -91,27 +26,17 @@ enable_utf8()
 sys.path.insert(0, str(ROOT / "tools"))
 
 
-# 的 build）。旧卡生成一致性/幽灵文件检查的明确入口是
-# `python tools/gen_slot_cards.py --check`，见 Issue #10 P1。
-
 README = ROOT / "README.md"
-CARDS_DIR = ROOT / "docs" / "cards"
-
-MANAGED_HAND = [README]                     # 手写的受管文档
-MANAGED_GEN = sorted(CARDS_DIR.glob("*.md"))  # 生成的受管文档
+MANAGED_HAND = [README]
 
 
 class Report:
-    """两类失败分开装 —— 混在一起报，就等于把"跑生成器"与"改句子"当成同一件事。"""
+    """收集当前文档错误及本次实际检查范围。"""
 
     def __init__(self) -> None:
-        self.stale: list[str] = []
         self.problems: list[str] = []
         self.notes: list[str] = []
         self.detail: list[str] = []
-
-    def stale_(self, msg: str) -> None:
-        self.stale.append(msg)
 
     def problem(self, msg: str) -> None:
         self.problems.append(msg)
@@ -128,34 +53,12 @@ class Report:
 FENCE_RE = re.compile(r"^```([A-Za-z0-9_+-]*)[ \t]*\n(.*?)^```[ \t]*$",
                       re.M | re.S)
 
-# 围栏语义（与 gen_slot_cards 的约定一致，见那边的模块头）：
-#     bash → 守卫**会执行**（缺 --dry-run 自动补）
-#     text → 不执行：只给人看的示例（例如重做需要先有一轮产物）
+# 只有 bash 围栏中的命令进入执行判据。
 EXEC_LANGS = {"bash"}
 
 # 不执行的命令及**理由**。理由必填 —— 一个没有理由的跳过就是一条被悄悄关掉的断言。
 SKIP_RULES: list[tuple[str, str]] = [
-    (r"web[/\\]server\.py",
-     "起服务会阻塞（它是常驻进程），由 tools/verify_m7.py 的真服务段覆盖"),
-    (r"tools[/\\]check_pilot_ready\.py",
-     "这是 G1 的门禁入口：它的红表示『试点样本还没齐』（业务未完成），"
-     "不是文档写错了 —— 守卫去跑它，会把业务未完成误报成文档问题；"
-     "判据的反向证据在 tools/verify_p1_4_registry.py"),
-    (r"tools[/\\]check_dataset_ready\.py",
-     "同上一个门禁入口：它的红表示『真实样本或标签人还没齐』（业务未完成），"
-     "不是文档写错了；判据的反向证据在 tools/verify_p1_5_dataset.py"),
-    (r"tools[/\\]fill_pilot_registry\.py",
-     "它是**写文件**的工具（重写 pilot/pilot-registry.yaml）：守卫去跑它就会改仓库内容。"
-     "只读复核是 --check；它自己的会红会绿在 tools/verify_p1_4_registry.py 的 J 段证明"),
-    (r"tools[/\\]add_dataset_sample\.py",
-     "同上：它往 evals/product-v1/dataset/manifest.jsonl **追加**样本，守卫去跑它就会改仓库内容。"
-     "不加 --sku 时它只会报参数错误；会红会绿在 tools/verify_p1_5_dataset.py 的 I 段证明"),
-    (r"tools[/\\]sign_allowlist\.py",
-     "同上：不带 --approve/--revoke 时它只打印现状（退出码 0），但带上就会改 "
-     "contracts/data-policy-v1.yaml 并写版本存档 —— 守卫去跑它有改仓库的风险。"
-     "它自己的会红会绿在 tools/verify_p1_2_policy.py 的 I 段证明"),
-    (r"tools[/\\](?:verify_\w+|check_docs|check_project_state|check_table_guards|"
-     r"check_forbidden_rules|gen_slot_cards|regress_all)\.py",
+    (r"tools[/\\](?:verify_\w+|check_docs|check_project_state)\.py",
      "守卫与验收脚本本身就是判据入口，跑它 = 把验收整跑一遍；"
      "而且 check_docs 去跑 check_docs 会自我递归"),
     (r"evals[/\\]",
@@ -220,7 +123,7 @@ def _entry_of(argv: list[str]) -> tuple[str | None, str | None]:
     if argv[1] == "-m":
         if len(argv) < 3:
             return None, "`-m` 后面没有模块名"
-        # python -m src.schema → 当作 src/schema.py 去套跳过规则
+        # 模块名映射到脚本路径，以应用相同的跳过规则。
         return argv[2].replace(".", "/") + ".py", None
     if not argv[1].endswith(".py"):
         return None, f"第一个参数不是 .py 脚本（{argv[1]!r}）"
@@ -231,53 +134,38 @@ def _skip_reason(script: str, argv: list[str]) -> str | None:
     for pat, why in SKIP_RULES:
         if re.search(pat, script):
             return why
-    if script.endswith("run.py") and "--redo" in argv:
-        return "--redo 需要上一轮的产物，没有前置状态就跑不通"
+    if script == "app/server.py" and not {"--check", "--doctor", "--help"} & set(argv):
+        return "常驻产品服务器由实际页面/网关验证覆盖，不在文档守卫中启动"
     return None
 
 
-def _plan_command(ln: str) -> tuple[list[str] | None, str, bool]:
-    """把一行命令变成"这次真要执行的 argv"。返回 (argv|None, 跳过理由, 是否补过参数)。"""
+def _plan_command(ln: str) -> tuple[list[str] | None, str]:
+    """保留文档命令的原参数，不代补可能改变执行含义的选项。"""
     argv = _to_argv(ln)
     script, why = _entry_of(argv)
     if script is None:
-        return None, why or "", False
+        return None, why or ""
     why = _skip_reason(script, argv)
-    if why:
-        return None, why, False
-    if script.endswith("run.py") and "--dry-run" not in argv:
-        # ★ 自动补 --dry-run：卡里的"照抄"给了两条命令（干跑 + 真跑），而真跑那条会调模型、
-        #   要花钱。守卫的职责是"验这句话成立"，不是"替人花那笔钱"。
-        #   但**补过参数这件事必须说出来** —— 验的毕竟是"改了参数的命令"，
-        #   悄悄改掉再宣布通过，就成了另一种假证明。
-        return argv + ["--dry-run"], "", True
-    return argv, "", False
+    return (None, why) if why else (argv, "")
 
 
 def _check_commands(rep: Report) -> None:
     """⑥ 受管文档 bash 围栏里的命令真跑，rc 必须 0。"""
     seen: dict[tuple[str, ...], list[str]] = {}
-    adjusted: dict[tuple[str, ...], str] = {}
-    plain: set[tuple[str, ...]] = set()
     skipped: list[tuple[str, str, str]] = []
 
-    for path in MANAGED_HAND + MANAGED_GEN:
+    for path in MANAGED_HAND:
         rel = path.relative_to(ROOT).as_posix()
         for line_no, ln in _iter_bash_commands(path):
-            argv, why, was_adjusted = _plan_command(ln)
+            argv, why = _plan_command(ln)
             if argv is None:
                 skipped.append((rel, ln, why))
                 continue
             key = tuple(argv)
             seen.setdefault(key, []).append(f"{rel}:{line_no}")
-            if was_adjusted:
-                adjusted[key] = ln
-            else:
-                plain.add(key)
 
     for argv, where in seen.items():
-        # 同一行命令在 7 张卡里重复出现（它们本就是同一份模板）—— 去重后只跑一次，
-        # 但把"谁引用了它"全列出来：出问题时才能定位到文档，而不是只看到一个 rc。
+        # 同一命令只执行一次，保留所有引用位置以便定位。
         try:
             p = subprocess.run(argv, cwd=str(ROOT), capture_output=True,
                                text=True, encoding="utf-8", timeout=240, errors="replace")
@@ -299,17 +187,8 @@ def _check_commands(rep: Report) -> None:
                 f"          出现在：{'、'.join(where)}\n"
                 + "".join(f"          | {t}\n" for t in tail))
 
-    # 只报"在文档里**没有**干跑形式"的那几条 —— 那才是"守卫替人换了参数才敢跑"的命令。
-    # 卡里的 `--only N` 与 `--only N --dry-run` 会去重成同一个 key，把两条都算成"补过参数"
-    # 会虚报（其中一条本来就在文档里写着）。
-    need_adj = {k: v for k, v in adjusted.items() if k not in plain}
     rep.note(f"真跑了 {len(seen)} 条去重后的命令，跳过 {len(skipped)} 条"
              f"（各有理由，见 --explain）")
-    if need_adj:
-        rep.note(f"其中 {len(need_adj)} 条在文档里只有『会花钱』的形式，"
-                 f"守卫补 --dry-run 后才执行 —— 验的是链路成立，不是替人花那笔钱")
-    for argv, orig in need_adj.items():
-        rep.det(f"补参执行  `{orig}`  →  实际跑 `{' '.join(argv)}`")
     for rel, ln, why in skipped:
         rep.det(f"跳过     {rel}  `{ln[:60]}` —— {why}")
 
@@ -318,11 +197,7 @@ def _check_commands(rep: Report) -> None:
 
 
 def _check_readme_scope(rep: Report) -> None:
-    """④⑤ README 只投影当前实现，不再兼任 state、计划或 legacy 控制表。
-
-    旧守卫试图让 README 里的每一份复制值都同步；更稳的修复是消除这些副本。legacy 卡片继续
-    由生成器逐字守住，当前阶段与下一动作只允许从 state 读取。
-    """
+    """README 只描述当前实现，不复制执行状态和一次性检查数字。"""
     text = README.read_text(encoding="utf-8")
     forbidden = {
         r"^\s*(?:[-*>]\s*)?(?:next_action_task|下一任务|下一动作)\s*[：:]\s*`?"
@@ -339,24 +214,6 @@ def _check_readme_scope(rep: Report) -> None:
         if re.search(pattern, text, re.M):
             rep.problem(message)
 
-
-
-# ---------------------------------------------------------------- 铁律
-
-
-
-# ---------------------------------------------------------------- 旧槽卡
-
-# P1：旧卡生成一致性/幽灵文件检查已迁出 check_docs，明确入口是
-# `python tools/gen_slot_cards.py --check`。这里只保留仍属文档守卫的
-# 卡数/行数结构检查，不再 build 旧业务链。
-def _check_cards(rep: Report, cfg: dict) -> None:
-     """③ 卡数与行数结构（problems）。一致性见 gen_slot_cards --check。"""
-     n_slots = len(cfg["slots"])
-     card_files = list(CARDS_DIR.glob("slot-*.md"))
-     if len(card_files) != n_slots:
-         rep.problem(f"docs/cards/ 里有 {len(card_files)} 张坑位卡，表里有 {n_slots} 个坑位"
-                     f" —— 每个坑位必须恰好一张卡。")
 
 
 # ---------------------------------------------------------------- 文档登记
@@ -670,9 +527,18 @@ def _check_frontend_dependencies(rep: Report, context: str) -> None:
     if not isinstance(direct, dict) or not isinstance(packages, dict):
         rep.problem("前端依赖 devDependencies/lock.packages 必须是对象")
         return
+    full_direct = dict(direct)
+    for runtime_name in ("lit-html", "@types/trusted-types"):
+        runtime_record = packages.get("node_modules/" + runtime_name)
+        if isinstance(runtime_record, dict) and isinstance(runtime_record.get("version"), str):
+            full_direct[runtime_name] = runtime_record["version"]
     if manifest.get("private") is not True or any(
-            manifest.get(key) for key in ("dependencies", "optionalDependencies", "peerDependencies")):
-        rep.problem("前端工具 manifest 必须 private 且只有已登记开发依赖")
+            manifest.get(key) for key in ("optionalDependencies", "peerDependencies")):
+        rep.problem("前端工具 manifest 必须 private，不得有可选/同级依赖")
+    runtime_declared = {name: version for name, version in manifest.get("dependencies", {}).items()
+        if name in ("lit-html",)}
+    if runtime_declared != {"lit-html": full_direct.get("lit-html")}:
+        rep.problem("前端生产运行依赖只允许已登记的 lit-html 精确版本")
     rows = _marked_rows(context, "<!-- frontend-dependency-registry:begin -->",
                         "<!-- frontend-dependency-registry:end -->")
     if rows is None:
@@ -688,22 +554,33 @@ def _check_frontend_dependencies(rep: Report, context: str) -> None:
             continue
         name = path.removeprefix("node_modules/")
         locked[name] = (record.get("version"), record.get("license"))
-        if (record.get("dev") is not True or not record.get("integrity")
+        if name in ("lit-html", "@types/trusted-types"):
+            if (not record.get("integrity")
+                    or not str(record.get("resolved", "")).startswith("https://")):
+                rep.problem(f"前端依赖 {name} 缺HTTPS 来源或完整性指纹")
+        elif (record.get("dev") is not True or not record.get("integrity")
                 or not str(record.get("resolved", "")).startswith("https://")):
             rep.problem(f"前端依赖 {name} 缺开发范围、HTTPS 来源或完整性指纹")
-    if set(direct) != set(declared) or locked != declared:
-        rep.problem("前端依赖 manifest/lock/登记不一致")
+    # 登记表要覆盖完整锁闭包（直接 dev 依赖、生产运行依赖 + 其全部传递依赖）；
+    # manifest 的直接声明仍是唯一口径：dev 走 devDependencies，lit-html 走 dependencies。
+    if declared.keys() != locked.keys():
+        rep.problem("前端依赖登记/锁 name 集合不一致："
+                    + "、".join(sorted(set(declared) ^ set(locked))))
+    if any(declared[name] != locked.get(name) for name in declared if name in locked):
+        rep.problem("前端依赖登记版本/许可与锁不一致")
     if any(not re.fullmatch(r"\d+\.\d+\.\d+", str(version))
-           or version != declared.get(name, (None, None))[0] for name, version in direct.items()):
-        rep.problem("前端开发依赖必须与登记一致且锁定精确版本")
+           or version != declared.get(name, (None, None))[0] for name, version in full_direct.items()):
+        rep.problem("前端直接依赖必须与登记一致且锁定精确版本")
     root = packages.get("")
     if not isinstance(root, dict) or root.get("devDependencies") != direct:
         rep.problem("前端依赖 lock 根声明与 manifest 不一致")
+    elif root.get("dependencies", {}) != manifest.get("dependencies", {}):
+        rep.problem("前端生产运行依赖 lock 根声明与 manifest 不一致")
     elif root.get("engines") != manifest.get("engines"):
         rep.problem("前端 Node/npm 版本在 manifest 与 lock 不一致")
     if any(product_manifest.get(key) for key in ("dependencies", "devDependencies")):
         rep.problem("产品 ESM manifest 不得建立第二份前端依赖权威")
-    rep.note(f"前端开发依赖：manifest/lock/登记 {len(direct)} 包")
+    rep.note(f"前端直接依赖：manifest/lock/登记 {len(full_direct)} 包")
 
 
 def _check_reuse_first_gate(rep: Report) -> None:
@@ -822,7 +699,7 @@ def _check_no_abs_interpreter(rep: Report) -> None:
     只认带盘符的 `python.exe` / `pythonw.exe`：正文里说清某个目录放什么
     （例如 .env.example 的 REMBG_MODEL_DIR）是合法的 —— 它不负责启动进程。
     """
-    for path in MANAGED_HAND + MANAGED_GEN:
+    for path in MANAGED_HAND:
         rel = path.relative_to(ROOT).as_posix()
         for i, ln in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
             m = ABS_INTERP.search(ln)
@@ -881,14 +758,12 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--root", type=Path, default=CODE_ROOT,
                     help="只读被验项目根；反向探针使用独立临时副本")
     args = ap.parse_args(argv)
-    global ROOT, README, CARDS_DIR, MANAGED_HAND, MANAGED_GEN
+    global ROOT, README, MANAGED_HAND
     global INDEX, CURRENT_STATE, AGENTS_FILE, PYPROJECT_FILE, UV_LOCK_FILE
     global CONTEXT_FILE, VENDOR_DIRS, STANDARDS_DIR
     ROOT = args.root.resolve()
     README = ROOT / "README.md"
-    CARDS_DIR = ROOT / "docs" / "cards"
     MANAGED_HAND = [README]
-    MANAGED_GEN = sorted(CARDS_DIR.glob("*.md"))
     INDEX = ROOT / "docs" / "INDEX.md"
     CURRENT_STATE = ROOT / "_working" / "amz-listing-kit-product-v2" / "state.md"
     AGENTS_FILE = ROOT / "AGENTS.md"
@@ -899,13 +774,6 @@ def main(argv: list[str] | None = None) -> int:
     STANDARDS_DIR = ROOT / "docs" / "standards-template"
 
     rep = Report()
-    # P1：slots 表校验的明确入口是 `python -m src.schema`（或 gen_slot_cards
-    # --check 连带校验）。check_docs 只读已校验表的槽位数做卡数对照，不再
-    # 直调旧业务 schema.assert_valid。
-    import yaml as _yaml
-    cfg = _yaml.safe_load((ROOT / "config/slots.yaml").read_text(encoding="utf-8"))
-
-    _check_cards(rep, cfg)
     _check_readme_scope(rep)
     _check_docs_index(rep)
     _check_reuse_first_gate(rep)
@@ -917,15 +785,13 @@ def main(argv: list[str] | None = None) -> int:
     print("=" * 72)
     print("文档守卫")
     print("=" * 72)
-    print(f"受管：README.md + docs/cards/ 下 {len(MANAGED_GEN)} 份 legacy 生成卡"
-          f"（当前实现边界 / 命令入口 / 生成产物一致性）")
+    print("受管：README.md（当前实现边界与命令）")
     print("　　　+ 文档权威登记（docs/INDEX.md：双向比对 + 管辖事实唯一）"
           "—— 回答「哪一份有效」和「哪一类事实归谁」")
     print("　　　+ 选型门禁（AGENTS.md ↔ 项目上下文 §4 依赖/vendor 登记）"
           "—— 回答「实现之前先找过现成能力没有」")
     print("　　　+ 模板映射（AGENTS.md §Standards Mapping ↔ docs/standards-template/）"
           "—— 回答「外部模板的每份规范有没有采纳落点」")
-    print(f"表：{len(cfg['slots'])} 个坑位（渲染器数见 python -m src.schema）")
     print()
 
     for n in rep.notes:
@@ -934,14 +800,8 @@ def main(argv: list[str] | None = None) -> int:
         for d in rep.detail:
             print(f"  {d}")
 
-    if rep.stale:
-        print(f"\nstale（产物未同步 · {len(rep.stale)} 条）—— 跑生成器即可，不是写错了：")
-        for s in rep.stale:
-            print(f"  ↻ {s}")
-
     if rep.problems:
-        print(f"\nproblems（写错了 · {len(rep.problems)} 条）—— "
-              f"需要有人去改，生成器修不了：")
+        print(f"\nproblems（{len(rep.problems)} 条）：")
         for s in rep.problems:
             print(f"  ✗ {s}")
 
@@ -953,9 +813,6 @@ def main(argv: list[str] | None = None) -> int:
     if rep.problems:
         print("结果：有 problems（退出码 1）。")
         return 1
-    if rep.stale:
-        print("结果：仅 stale（退出码 2）—— 跑 `python tools/gen_slot_cards.py` 即可。")
-        return 2
     print("结果：全过（退出码 0）。")
     return 0
 

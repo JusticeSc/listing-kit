@@ -42,18 +42,6 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def load_server_module():
-    spec = importlib.util.spec_from_file_location(
-        "product_v2_server_live_under_test", ROOT / "app" / "product_v2_server.py")
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
-
-
-def free_port() -> int:
-    with socket.socket() as probe:
-        probe.bind(("127.0.0.1", 0))
-        return probe.getsockname()[1]
 
 
 SEED_SLOTS = """
@@ -134,20 +122,19 @@ def main() -> int:
     def check(check_id: str, title: str, ok: bool, detail: object = None) -> None:
         checks.append({"id": check_id, "title": title, "ok": bool(ok), "detail": detail})
 
-    module = load_server_module()
+    from app.product_v2_server import create_product_v2_server  # noqa: PLC0415
     from src.providers.v2_fake_semantic import FakeSemanticProvider  # noqa: PLC0415
 
     # 图像 provider 选择：默认走注册表默认（dashscope-image）；
     # --image-provider volcengine-ark 时走火山同步链。这就是本次真实调用本身。
     if args.image_provider.strip():
         os.environ["AMZ_V2_IMAGE_PROVIDER"] = args.image_provider.strip()
-    port = free_port()
-    server = module.create_product_v2_server(
-        "127.0.0.1", port,
+    server = create_product_v2_server(
+        "127.0.0.1", 0,
         provider_factory=lambda: FakeSemanticProvider(scenario="ok"),
         image_provider_factory=None)
-    threading.Thread(target=server.serve_forever, daemon=True).start()
-    base = f"http://127.0.0.1:{port}"
+    server.start()
+    base = server.base_url
 
     submit_requests: list[dict] = []
     status_requests: list[str] = []
@@ -459,8 +446,7 @@ def main() -> int:
         interrupted = f"{type(error).__name__}: {error}"
     finally:
         try:
-            server.shutdown()
-            server.server_close()
+            server.stop()
         except Exception:  # noqa: BLE001
             pass
 

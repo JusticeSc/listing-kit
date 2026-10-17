@@ -42,11 +42,40 @@
       {
         "args": [],
         "category": "types",
-        "ci": false,
-        "reason": "写产物命令：CI 只跑 check:generated 校验新鲜度，不在 CI 里写文件；本地改 TS 后跑 build:frontend 再提交产物。"
+        "ci": true
       }
     ],
-    "npm:check:generated": [
+    "npm:build:envelope": [
+      {
+        "args": [],
+        "category": "types",
+        "ci": true
+      }
+    ],
+    "npm:build:envelope-schema": [
+      {
+        "args": [],
+        "category": "types",
+        "ci": false,
+        "reason": "build:envelope 的第一步；CI 只认组合入口 build:envelope，不单独执行子步骤。"
+      }
+    ],
+    "npm:build:envelope-validator": [
+      {
+        "args": [],
+        "category": "types",
+        "ci": false,
+        "reason": "build:envelope 的第二步；CI 只认组合入口 build:envelope，不单独执行子步骤。"
+      }
+    ],
+    "npm:check:envelope": [
+      {
+        "args": [],
+        "category": "types",
+        "ci": true
+      }
+    ],
+    "npm:build:frontend-node": [
       {
         "args": [],
         "category": "types",
@@ -86,15 +115,6 @@
     "tools/check_verification.py": [
       {
         "args": [],
-        "category": "control",
-        "ci": true
-      }
-    ],
-    "tools/gen_slot_cards.py": [
-      {
-        "args": [
-          "--check"
-        ],
         "category": "control",
         "ci": true
       }
@@ -228,12 +248,24 @@
         "reason": "离线浏览器套件：人工Prompt编辑归属与确认，零模型调用。"
       }
     ],
-    "tools/verify_v2_4_1_image_gateway.py": [
+    "pytest:tests/gateway": [
       {
-        "args": [],
+        "args": [
+          "-q"
+        ],
         "category": "gateway",
         "ci": true,
-        "reason": "离线网关套件：假provider全链与拒绝矩阵，零真实调用。"
+        "reason": "网关 pytest 组（tests/gateway/test_server_contract.py + test_image_gateway.py 共52项，真实TCP、假provider、零真实调用）。工具旧 verify_v2_4_1_image_gateway.py 已随 P3 迁移删除。"
+      }
+    ],
+    "pytest:tests/dev": [
+      {
+        "args": [
+          "-q"
+        ],
+        "category": "gateway",
+        "ci": true,
+        "reason": "正式入口自检矩阵 pytest 组（tests/dev/test_selfcheck_matrix.py 27项，真实TCP）。"
       }
     ],
     "tools/verify_v2_4_2_generation_attempt.py": [

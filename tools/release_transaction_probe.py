@@ -17,7 +17,7 @@
 
   --page-smoke --base <url>
     对正式入口做真实验收：/api/health、/api/v2/capabilities、静态资源
-    （/、styles.css、entry.js、app.js）的状态/类型/字节，再用已批准的 Playwright
+    （首页声明的构建脚本/样式）的状态/类型/字节，再用已批准的 Playwright
     Chromium 无头 + 隔离临时配置验证实际启动/状态就绪/页面主链
     （安全上下文、WebCrypto、IndexedDB、新建/刷新、原生项目包下载/导入、零错误）。
     http(s)://127.0.0.1 或 localhost 按安全来源例外验收；
@@ -69,9 +69,13 @@ import urllib.parse
 import urllib.request
 import zipfile
 from datetime import datetime
+from html.parser import HTMLParser
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+try:
+    ROOT = Path(__file__).resolve().parents[1]
+except NameError:  # `python -` 经 stdin 执行（容器内 --fingerprint）：无 __file__，调用方显式传 root
+    ROOT = Path.cwd()
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
@@ -196,6 +200,25 @@ def expected_capable(base: str) -> bool:
     return split.hostname in ("127.0.0.1", "localhost", "::1")
 
 
+class _EntryAssets(HTMLParser):
+    """只枚举首页实际引用的本地构建入口；不假设 bundler 产物名。"""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.resources: dict[str, str] = {}
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        values = dict(attrs)
+        if tag == "script" and values.get("src"):
+            self.resources[values["src"]] = "javascript"
+        elif tag == "link" and values.get("href"):
+            relation = (values.get("rel") or "").split()
+            if "stylesheet" in relation:
+                self.resources[values["href"]] = "text/css"
+            elif "modulepreload" in relation:
+                self.resources[values["href"]] = "javascript"
+
+
 def page_smoke(base: str, checks: list[dict], prefix: str = "PS") -> bool:
     """对 base 做真实的健康/资源/页面验收；返回是否全过。"""
     status, _, body = fetch(base, "/api/health")
@@ -228,16 +251,24 @@ def page_smoke(base: str, checks: list[dict], prefix: str = "PS") -> bool:
          {"status": status, "content_type": ctype, "bytes": len(body),
           "sha256": hashlib.sha256(body).hexdigest()})
 
-    status, ctype, body = fetch(base, "/styles.css")
-    emit(checks, prefix + "-04", "样式资源可达、类型正确且非空",
-         status == 200 and "text/css" in ctype and len(body) > 0,
-         {"status": status, "content_type": ctype, "bytes": len(body),
-          "sha256": hashlib.sha256(body).hexdigest()})
-
-    for resource in ("/entry.js", "/app.js"):
+    entry_assets = _EntryAssets()
+    entry_assets.feed(html)
+    emit(checks, prefix + "-04", "首页声明构建脚本与样式入口",
+         "javascript" in entry_assets.resources.values()
+         and "text/css" in entry_assets.resources.values(),
+         {"resources": entry_assets.resources})
+    origin = urllib.parse.urlsplit(base)
+    for index, (reference, expected_type) in enumerate(entry_assets.resources.items()):
+        target = urllib.parse.urlsplit(urllib.parse.urljoin(base.rstrip("/") + "/", reference))
+        same_origin = (target.scheme, target.netloc) == (origin.scheme, origin.netloc)
+        if not same_origin:
+            emit(checks, prefix + f"-05-{index}", "构建资源必须同源", False,
+                 {"resource": reference})
+            continue
+        resource = urllib.parse.urlunsplit(("", "", target.path, target.query, ""))
         status, ctype, body = fetch(base, resource)
-        emit(checks, prefix + "-05-" + resource[1:], "启动脚本可达且类型正确",
-             status == 200 and "javascript" in ctype and len(body) > 0,
+        emit(checks, prefix + f"-05-{index}", "实际构建入口可达且类型正确",
+             status == 200 and expected_type in ctype and len(body) > 0,
              {"resource": resource, "status": status, "content_type": ctype,
               "bytes": len(body), "sha256": hashlib.sha256(body).hexdigest()})
     try:
@@ -650,15 +681,21 @@ def selftest() -> int:
     def prepare_context(*, missing_script: bool = False, marker: str | None = None) -> Path:
         context = Path(tempfile.mkdtemp(prefix="amz-listing-kit-0", dir="/tmp"))
         contexts.append(context)
-        for name in ("Dockerfile", ".dockerignore", "pyproject.toml", "uv.lock"):
+        for name in ("Dockerfile", ".dockerignore", "pyproject.toml", "uv.lock",
+                     "package.json", "package-lock.json", "vite.config.mjs", "tsconfig.json"):
             shutil.copy2(ROOT / name, context / name)
-        for name in ("app", "src", "config", "deploy"):
+        for name in ("app", "src", "config", "deploy", "tools"):
+            # generated/ 是构建期产物（gitignored）：故意不带进上下文，证明构建器只从锁
+            # 重建信封输入，不依赖本机残留的生成文件（Dockerfile envelope-schema/frontend 段）。
             shutil.copytree(ROOT / name, context / name,
-                            ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
+                            ignore=shutil.ignore_patterns("__pycache__", "*.pyc", "generated"))
         # 独立上下文的唯一有意差异：实际服务的静态 marker A/B。
-        # marker 文件必须落进正式 PRODUCT_DIR（app/product_v2/），使构建产物与服务字节真实不同。
+        # marker 必须落进 Vite publicDir（app/product_v2/public/），随标准构建原样拷贝进
+        # dist/product-v2/ 并在 /release-marker.txt 被服务；直接丢在 app/product_v2/ 根下的
+        # 文件永远不会进入构建产物（前端源码不进运行时，无源码回退）。
         if marker is not None:
-            (context / "app" / "product_v2" / "release-marker.txt").write_text(marker, encoding="utf-8")
+            (context / "app" / "product_v2" / "public" / "release-marker.txt").write_text(
+                marker, encoding="utf-8")
         candidate = context / "deploy" / "caddy" / "Caddyfile"
         candidate.write_text(caddy_config("new"), encoding="utf-8")
         if missing_script:
@@ -877,8 +914,10 @@ def selftest() -> int:
 def runtime_fingerprint(root: Path, base: str) -> int:
     """生产容器内执行的只读指纹；不存在的必需运行文件不能变成空树成功。
 
-    覆盖：全部 Python 网关/适配器（src）、公开模型配置与锁文件、
-    公开能力配置，再核对实际服务且已生成的浏览器 JS、服务镜像 ID/tag、Caddy hash。
+    覆盖正式运行闭包：4 个入口 Python 文件、src 白名单（物理排除假 provider）、
+    公开配置与锁，以及唯一构建目录 dist/product-v2 的每个文件；构建目录的每个
+    文件都与实际 HTTP 字节核对，包括非首页入口的动态 chunk 与许可文件。
+    运行边界断言：前端源码（app/product_v2/）与假 provider 不得出现在运行时。
     secret 永不取 hash、不输出。
     """
     root = root.resolve()
@@ -886,37 +925,70 @@ def runtime_fingerprint(root: Path, base: str) -> int:
 
     def include(path: Path) -> None:
         relative = path.relative_to(root).as_posix()
+        lowered = relative.lower()
+        if "secret" in lowered or "app.env" in lowered or path.name.lower().startswith(".env"):
+            raise RuntimeError("refusing to fingerprint secret material: " + relative)
         if relative not in files:
             with path.open("rb") as stream:
                 files[relative] = hashlib.file_digest(stream, "sha256").hexdigest()
 
-    # 显式必需运行文件：缺任一都直接失败，不变成空树成功。
     required = ("pyproject.toml", "uv.lock", "app/server.py",
-                "app/product_v2_server.py", "app/product_v2/entry.js",
-                "config/product-v2/providers.json")
+                "app/product_v2_server.py", "app/product_v2_http.py",
+                "config/product-v2/providers.json", "dist/product-v2/index.html")
     missing = [name for name in required if not (root / name).is_file()]
     if missing:
         raise RuntimeError("required runtime files missing: " + ",".join(missing))
     for name in required:
         include(root / name)
+    # 运行时边界：前端源码不进镜像（只服务构建产物），假 provider 物理不存在。
+    forbidden: list[str] = []
+    frontend_sources = root / "app" / "product_v2"
+    if frontend_sources.exists():
+        forbidden += sorted(path.relative_to(root).as_posix()
+                            for path in frontend_sources.rglob("*") if path.is_file())
+    provider_dir = root / "src" / "providers"
+    if provider_dir.is_dir():
+        forbidden += sorted(path.relative_to(root).as_posix()
+                            for path in provider_dir.glob("v2_fake_*.py") if path.is_file())
+    if forbidden:
+        raise RuntimeError("forbidden runtime material present: " + ",".join(forbidden))
     suffixes = {".py", ".js", ".mjs", ".css", ".html", ".json", ".yaml", ".yml",
                 ".toml", ".svg", ".png", ".webp", ".ico", ".woff", ".woff2", ".ttf", ".txt"}
     for directory in ("app", "src", "config"):
         for path in (root / directory).rglob("*"):
             if path.is_file() and path.suffix in suffixes and "__pycache__" not in path.parts:
-                # 运行产物集合：TS 源与类型声明不在 suffixes 内，不进镜像也不进指纹。
-                relative = path.relative_to(root).as_posix()
-                lowered = relative.lower()
-                if "secret" in lowered or "app.env" in lowered:
-                    raise RuntimeError("refusing to fingerprint secret material: " + relative)
+                # 运行产物集合：TS 源只在构建输入里出现，运行时只有构建产物。
                 include(path)
-    # 实际服务且已生成的浏览器 JS：只认 HTTP 200 的真实服务字节，不认本地同名文件。
-    served_scripts: dict[str, str] = {}
-    for resource in ("/entry.js", "/app.js"):
-        status, ctype, body = fetch(base, resource)
-        if status != 200 or "javascript" not in ctype or not body:
-            raise RuntimeError("served generated script unavailable: " + resource)
-        served_scripts[resource] = hashlib.sha256(body).hexdigest()
+    static_root = root / "dist" / "product-v2"
+    static_files = sorted(path for path in static_root.rglob("*") if path.is_file())
+    for path in static_files:
+        include(path)
+    # 首页声明验证入口来源与 MIME；目录枚举另覆盖动态导入及公共资源。
+    status, _, body = fetch(base, "/")
+    if status != 200 or not body:
+        raise RuntimeError("formal home page unavailable for entry enumeration: /")
+    entries = _EntryAssets()
+    entries.feed(body.decode("utf-8", "replace"))
+    entry_types: dict[str, str] = {}
+    origin = urllib.parse.urlsplit(base)
+    for reference, expected_type in entries.resources.items():
+        target = urllib.parse.urlsplit(urllib.parse.urljoin(base.rstrip("/") + "/", reference))
+        if (target.scheme, target.netloc) != (origin.scheme, origin.netloc):
+            raise RuntimeError("fingerprint entry not same-origin: " + reference)
+        resource = urllib.parse.urlunsplit(("", "", target.path, target.query, ""))
+        entry_types[resource] = expected_type
+    served_assets: dict[str, str] = {}
+    for path in static_files:
+        resource = "/" + urllib.parse.quote(path.relative_to(static_root).as_posix(), safe="/")
+        status, ctype, resp_body = fetch(base, resource)
+        if status != 200 or (resource in entry_types and entry_types[resource] not in ctype):
+            raise RuntimeError("served build asset unavailable: " + resource)
+        digest = hashlib.sha256(resp_body).hexdigest()
+        if digest != files[path.relative_to(root).as_posix()]:
+            raise RuntimeError("served build asset differs from image bytes: " + resource)
+        served_assets[resource] = digest
+    if not entry_types or not entry_types.keys() <= served_assets.keys():
+        raise RuntimeError("home declares unavailable build entries")
     status, _, body = fetch(base, "/api/v2/capabilities")
     capabilities = json.loads(body)
     if status != 200 or capabilities.get("ok") is not True:
@@ -926,10 +998,10 @@ def runtime_fingerprint(root: Path, base: str) -> int:
     runtime = hashlib.sha256(json.dumps(
         files, sort_keys=True, separators=(",", ":")).encode("utf-8")).hexdigest()
     print(json.dumps({
-        "schema_version": "amz-runtime-fingerprint/v1",
+        "schema_version": "amz-runtime-fingerprint/v2",
         "runtime_sha256": runtime, "public_configuration_sha256": configuration,
         "default_trial": (capabilities.get("images") or {}).get("default_trial"),
-        "served_scripts_sha256": served_scripts,
+        "served_assets_sha256": served_assets,
         "files": files,
     }, sort_keys=True, indent=2))
     return EXIT_OK
@@ -1170,6 +1242,8 @@ esac
                                ).replace("${RELEASE_TX_NEW_DIGEST:?}", new_digest))
     write_stage("curl", """#!/usr/bin/env bash
 # 最小 stage curl：-f 成功即 exit 0；body 按 URL 影射到 stage 文件（health/marker/静态）。
+# 首页声明 Vite 嵌套构建入口（与真实 dist 布局同形）；脚本必须从 HTML 动态提取，
+# 不得钉死旧根路径（/styles.css、/entry.js、/app.js 已无分支，命中即 404 → 旧判据直接判红）。
 # https_mode=broken_static 时静态入口返回 404，使 finalize 晚期失败但 health 仍绿。
 set -uo pipefail
 STATE_DIR="${RELEASE_TX_STATE:?missing state}"
@@ -1180,9 +1254,9 @@ mode="$(cat "${STATE_DIR}/https_mode.txt" 2>/dev/null || printf ok)"
 body=""
 case "$path" in
   /api/health) body='{"product":"v2","server_state":"none"}';;
-  /) body='<html><body><div id="project-list"></div></body></html>';;
-  /styles.css) body='body{}'; [ "$mode" = "broken_static" ] && exit 22;;
-  /entry.js|/app.js) body='console.log(1)'; [ "$mode" = "broken_static" ] && exit 22;;
+  /) body='<html><head><link rel="icon" href="data:,"><script type="module" crossorigin src="./_virtual/_vite/modulepreload-polyfill.js"></script><script type="module" crossorigin src="./_virtual/_vite/preload-helper.js"></script><script type="module" crossorigin src="./app/product_v2/entry.js"></script><link rel="stylesheet" crossorigin href="./app/product_v2/styles.css"></head><body><div id="project-list"></div></body></html>';;
+  /_virtual/_vite/modulepreload-polyfill.js|/_virtual/_vite/preload-helper.js|/app/product_v2/entry.js) body='console.log(1)'; [ "$mode" = "broken_static" ] && exit 22;;
+  /app/product_v2/styles.css) body='body{}'; [ "$mode" = "broken_static" ] && exit 22;;
   /release-marker.txt) body="$(cat "${STATE_DIR}/served_marker.txt" 2>/dev/null || true)";;
   *) exit 22;;
 esac

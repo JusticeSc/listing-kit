@@ -11,6 +11,7 @@
 import {
   ATTEMPT_RECONCILE_MODES,
   ATTEMPT_STATES,
+  BATCH_HALT_CODES,
   advanceAttempt,
   attemptCurrentEnvironmentIdentity,
   attemptNeedsReconcile,
@@ -29,7 +30,7 @@ import {
   newActionId,
   nextFromStatusEnvelope,
   nextFromSubmitEnvelope,
-} from "../../../app/product_v2/domain/index.js";
+} from "../../../build/frontend-node/app/product_v2/domain/index.js";
 import { expect, expectCode } from "./harness-core.mjs";
 
 const cases = [];
@@ -604,6 +605,46 @@ test("A19", "同步协议（V2.R5.2）：task_id 为空的同步成功可入库�
     && failedSync.record.error && failedSync.record.error.code === "SYNC_FAILED",
     "同步协议明确 CANCELED/FAILED 落 failed（provider_failed，无字节可存）");
   return { sync_ok: true, refused: refused.record.state, failed: failedSync.record.state };
+});
+
+test("A20", "归一化信封结构门（P6/SEL-025）：读不出来不推进、不回显载荷、仍命中批次停止码", async () => {
+  const created = attemptFixture();
+  const submitted = nextFromSubmitEnvelope(created,
+    taskEnvelope({ task: { status: "PENDING" } }), { at: AT2 }).record;
+  const MARKER = "sk-live-MARKER-9f8e7d6c5b4a";
+  const shaped = taskEnvelope({ task: { status: "SUCCEEDED", result_count: 1 } });
+
+  // 多出字段：真实服务端不会发，但中间层/伪造响应可能加；必须当作「读不出来」。
+  const extra = classifySubmitEnvelope({ ...shaped, workspace: MARKER });
+  expect(extra.state === ATTEMPT_STATES.unknown, "信封多出未知字段必须落 unknown（不许当成成功）");
+  expect(extra.task_id === null, "读不出来就不许伪造任务身份");
+  expect(BATCH_HALT_CODES.includes(extra.error.code),
+    "结构不合契约仍必须命中批次停止码，否则批次会带着未知结果继续跑");
+  expect(!JSON.stringify(extra).includes(MARKER),
+    "诊断不得回显载荷字段（可能含密钥/图片/提示词/工作空间）");
+
+  // 计数被发成字符串：严格契约必须拒绝，不许把 "1" 当 1 用。
+  const loose = classifySubmitEnvelope(taskEnvelope({ task: { result_count: "1" } }));
+  expect(loose.state === ATTEMPT_STATES.unknown, "计数类型不对就是读不出来，不许自动转数字");
+  expect(loose.error.retry_policy === "requires_review", "读不出来的提交结果必须 requires_review");
+
+  // 缺必需结构（provider 块缺失）：同上。
+  const noProvider = classifySubmitEnvelope({ ok: true, unknown: false,
+    task: { task_id: "task-abc-001", status: "RUNNING" } });
+  expect(noProvider.state === ATTEMPT_STATES.unknown, "缺 provider 块的响应必须落 unknown");
+
+  // 查询侧：读不出来的响应不是结论，记录必须原样不动（也不许改成 Unknown）。
+  const query = nextFromStatusEnvelope(submitted, { ...shaped, workspace: MARKER }, { at: AT3 });
+  expect(query.record === submitted, "结构不合契约的查询响应不得推进记录");
+  expect(query.outcome.advanced === false && query.outcome.state === null,
+    "查询读不出来时不得给出任何状态，记录因此不会被改成 Unknown");
+  expect(!JSON.stringify(query.outcome).includes(MARKER), "查询诊断同样不得回显载荷字段");
+
+  // 正向对照：合法查询必须照常推进，结构门不许误伤既有链路。
+  const fine = nextFromStatusEnvelope(submitted,
+    taskEnvelope({ task: { status: "SUCCEEDED" } }), { at: AT3 });
+  expect(fine.record.state === ATTEMPT_STATES.succeeded, "合法查询仍要落 succeeded");
+  return { submit_read_failure: extra.error.code, status_no_advance: query.outcome.advanced };
 });
 
 /* ---------------------------------------------------------------- 运行器 */

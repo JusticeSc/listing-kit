@@ -12,7 +12,7 @@ import {
   buildShareableConfig,
   checkShareableConfig,
   findSecretShapeKeys,
-} from "../../../app/product_v2/domain/index.js";
+} from "../../../build/frontend-node/app/product_v2/domain/index.js";
 import { expect, expectCode } from "./harness-core.mjs";
 
 const cases = [];

@@ -3,7 +3,7 @@
 
 主链：空白首页五态 → 键盘创建/打开 → 资料门禁 → 分析（焦点落结果标题）→ 槽位确认
 → 方案阶段（增删排序）→ 编译与生成前确认 → 整套生成（焦点落首个问题/结果行）
-→ 审核采用 → 交付门禁 → 刷新恢复（IndexedDB 摘要一致）→ 390px / 200% 无横向溢出
+→ 审核采用 → 交付门禁 → 刷新恢复（IndexedDB 摘要一致）
 → 全局保存状态可见。
 
 演练：脚本化 provider（成功/失败/Unknown）验证失败与 Unknown 可见、有下一步动作、不自动重提；
@@ -48,20 +48,20 @@ from v2_verify_shared import (  # noqa: E402
 from walkthrough_server import WalkthroughImageProvider  # noqa: E402
 
 
-server_module = shared.load_server_module("ui3_server")
+from app.product_v2_server import create_product_v2_server  # noqa: E402
 
 
 def start_server(host: str, port: int, *, semantic=None, image=None, review=None,
                  suite_review=None):
-    """起正式入口（fake provider 可注入）；服务线程 daemon 化，返回 (server, port) 供 server_close。"""
-    server = server_module.create_product_v2_server(
+    """起正式入口（fake provider 可注入）；返回 (server, port) 供 server.stop() 收尾。"""
+    server = create_product_v2_server(
         host, port,
         provider_factory=semantic or (lambda: FakeSemanticProvider(scenario="ok")),
         image_provider_factory=image or (lambda: FakeImageProvider(scenario="ok")),
         review_provider_factory=review or (lambda: FakeReviewProvider(scenario="ok")),
         suite_review_provider_factory=suite_review)
-    threading.Thread(target=server.serve_forever, daemon=True).start()
-    return server, server.server_address[1]
+    server.start()
+    return server, server.port
 
 STORAGE_DIGEST = """async () => {
   const db = await new Promise((resolve, reject) => {

@@ -85,12 +85,7 @@ def main() -> int:
     print(f"走查入口：http://{args.host}:{args.port}/"
           "（第 1 张成功 / 第 2 张明确失败 / 第 3 张 Unknown，重试与新建 action 均可恢复）",
           flush=True)
-    try:
-        server.serve_forever()
-    except KeyboardInterrupt:
-        pass
-    finally:
-        server.server_close()
+    server.run()
     return 0
 
 

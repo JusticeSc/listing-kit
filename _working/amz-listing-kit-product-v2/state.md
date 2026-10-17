@@ -5,17 +5,17 @@
 > prepared 是未绑定新 Goal 的本地准备态,不是系统 paused。旧读数与完成记录只见 superseded 基线。
 ## 当前恢复边界
 
-- **当前以2026-10-16用户“结束当前任务，做好收尾工作”为最高执行边界。**同一原生Goal `15a42a4b52b70942` 已实际观察为paused，见 `evals/product-v2/refactor/goal-observation-stop-20261016.json`；未complete/drop/新建。停止施工、模型调用、提交/推送与部署；只有用户明确恢复后才能沿原绑定继续，不能由旧授权或系统自动提示恢复。
+- **原下一版产品仍按2026-10-16停工保持paused；独立main可信基线已获2026-10-17本轮收口授权，并于同日用户触发器追加合并+部署到finalize授权。**用户明确“授权，由你全权负责尽最大努力交付可信基线”，触发器已选：PR #13转正合并+部署链跟到finalize（失败回滚）、范围仅本轮基线、真人门用户稍后亲自走。授权含必要源码/锁/构建/CI/旧链清退/文档修复，独立干净检出验证、独立审查、提交推送现有PR #13及CI，以及本次PR合并与main部署finalize；仍不含收费/真实模型/供应商外发或封存下一版WIP。原生Goal `15a42a4b52b70942` 的最近实际观察仍取 `evals/product-v2/refactor/goal-observation-stop-20261016.json`，本轮不恢复/完成它；下方机器块只记录原产品。
 - **此前2026-10-15也曾停工，随后有过正式恢复，但已被上面的2026-10-16新停工取代。**旧观察 `evals/product-v2/refactor/goal-observation-stop-20261015.json` 和旧过早closeout不代表当前许可/完成。原七项目、失败与恢复材料仍在 `_stage-amz-control/next-version-b5-20261015/reconciliation.json`、`stop-closeout.json`，不重抓、不重生、不清零。
 - **此前“先更新维护项目规约”的本地维护已核验完成。**快照、独立读取/审查及守卫证据见本次latest_audit引用的prior_governance_audit；当时未建远程工单，不将规约通过当成工程闭环已落实。原生Goal仍paused、R5.1仍blocked，轮数/账本不变；换会话先读INDEX与计划§17.13。
-- **本轮按用户要求实际落实GitHub工单，未恢复产品。**已建立[工程交付闭环#7](https://github.com/JusticeSc/listing-kit/issues/7)、[真实内容界面/人因#8](https://github.com/JusticeSc/listing-kit/issues/8)、[程序Prompt创作表达#9](https://github.com/JusticeSc/listing-kit/issues/9)，包含验收、边界及关联，已逐一远程读回核对；具体进展只取Issue，不复制明细。此次仅工单创建/必要更新与恢复入口维护，不创建代码PR、不提交推送、不收费或发布，不将建单算作问题修复。后续相关实施须关联对应Issue，仍服从明确产品恢复与各操作权限，不能因Issue被分配而自动施工。
-- **可信基线的详细实施计划已落实[Issue #10](https://github.com/JusticeSc/listing-kit/issues/10)，测试删留/运行调度细项在#7。**项目清理和测试清理是前置显式交付；明确恢复后的第一个动作是#10的P1工程入口/工具依赖/上下文清理，承接已知闭包，不从全库审计或生命周期旧失败重跑开始。P1–P6仅是Issue内依赖工作包，不替代正式任务ID/另造六批额度；原7/10及最终验收批次门仍守计划。候选/原字节与本次计划维护依据见 `_stage-amz-control/engineering-practices-20261016T090016Z/baseline-preparation/prepared.json`。本轮只制定详细计划并同步工单/恢复入口，产品未复工；原生Goal/机器状态、批次及账本不变，不改产品/测试/CI、不删除材料、不启动产品/浏览器/模型、不提交推送或部署。问题若不能从现有代码/证据取得，及时提出具体取舍；准备完成不等于基线或最终产品通过。
-- 启动快照身份为 `fix/byok-receipt-20261009`、HEAD `48bb3c1e2f3751a984170a01361a2fba5f6e4ae4`加当时81处未暂存/19处未跟踪工作树；已保存当前字节后适配，不回滚用户/WIP。当前尚未提交/推送/部署，历史main成功不代表这版已上线。
+- **GitHub协作与代码事实分开**：#7工程/测试、#8完整人因、#9程序Prompt及#10基线仍为现有工单；#11/#12已合并，审计时远程main为`4bf6d037e516d6f0a0c2c85df2d9a1e350056ef7`，验证run38984977644、main发布/恢复run38986192730保留其实际范围。不能再将main说成尚未提交/发布，也不能把这些证据外推到封存下一版WIP或原产品最终完成。
+- **独立main基线第5/10批：补齐既有PR的依赖闭包并交付干净候选。**此前第1批P0/P1、第2批P2/P3/P4、第3批P5、第4批P2/P5残余及P6–P8本地集成均保留；既有证据在 `_stage-amz-control/main-baseline-execution-20261017/`，局部green只证明当时含未提交修改的工作树。已推Draft PR #13，分支 `feat/p8-baseline-20261017`，精确候选为`a278044`（`c751ee3`完整源码/锁/网关/两类测试/V1清退、`f839212`构建在真实信封契约检查之前、`8f1ea7c`显式根ESM、`b4f5b6b`镜像内信封codegen+运行时收窄、`eb706a4`静态启动三节点、`8df7ace`退役命令清理（围栏外）、`7132843`选择器未解析名exit2、`a278044`围栏内Goal原文逐字节恢复；PR正文与#10评论已同步到该候选）；远程main仍`4bf6d03`。精确候选的CI `39035149699`已success（control plane+Product V2全绿、Docker构建/冒烟/自测/失败分类全绿，远端v2指纹`a1e73bdc`已上传）；旧红`39033126782`/`39034753449`保留不洗绿；原产品paused、7/10批、52/52和费用账本不变；用户已授权本PR合并+部署到finalize，真人门用户稍后亲自走。旧state全文及旧“完成”叙事已保存在上述快照，不再作当前完成依据。
+- 历史停工启动快照为`fix/byok-receipt-20261009`、`48bb3c1e2f3751a984170a01361a2fba5f6e4ae4`加当时WIP，不再作为当前main身份。下一版WIP已另行封存，保留原用户材料/五图/两包及证据，不因main审计而重生/重抓或整包恢复；当前main仍六入口和既有返工合同，不能把WIP能力当已上线。
 - 当前新Goal按连贯工作保守登记 **7/10批已占用**：原5批历史不变，第6批完成原bearing-main有据事实/普通决定/五用途/Prompt一致消费、零模型POST；第7批完成真实五图采用、两包下载和独立导入刷新/再导出证明后按用户要求停工。不把一张图/一次检查/本次收尾拆为新批；B6/B7工程准出与发布仍未执行完成。
 - **旧账和所有失败/Unknown保留，生图累计次数门已满。**原保守image35/semantic-VLM10、安全上界8.46元及历史spent_cny2.69不清零；本次实际百炼8、火山9（包含§17.12.6单次追加），新增语义0，新增安全上界2.74元（百炼1.66、火山1.08），累计安全上界11.20/16元，非账单实结。保守累计生图52/52；两平台reserved_image_calls均0，没有自动续提权限。
-- 当前源码已实现单向owner装配、候选报告消费、卡片精确对象与返工owner收口；历史“当前仍有setter/编排残留”不再作为重复施工指令。连续事实更新与人工草稿保护的本地证明见 `evals/product-v2/manual-mug-assist/auto-preparation-fix-20261010.md`，不等于远程部署。
-- 本次局部退役旧Mock/demo可执行闭包，保留仍有正式消费者的V1/槽卡/治理工具及全部许可、历史、用户与恢复材料；原工程完整清退门不因此关闭。
-- **局部实物有直接证据，完整工程/体验未验收。**撤回此前“准则1–6本地实证已保存”可被理解为整体通过的表述：五张原像素合格采用与两包恢复保留其实际证明范围，不能签程序Prompt创作表达或完整准则4人因/界面通过。适用RC/辅助BYOK/结构、V1清退、最终同候选两轮、受保护发布与HTTPS/不同旧image同origin恢复仍未闭合；R5.1 blocked的首要阻塞仍是用户停工。
+- 原停工WIP的单向owner、候选报告、精确返工等成果保留原版本证明，不能自动外推main已包含全部下一版能力。main现有owner在本次实际代码评估中按真实差量复用，不从旧清单重建；连续事实更新/草稿保护的本地历史证明仍见`evals/product-v2/manual-mug-assist/auto-preparation-fix-20261010.md`。
+- main既有局部Mock/demo清理成果继续复用；本轮按现有产品合同清退V1及更早退役活链，先处置必要当前消费者，不为“仍被旧工具引用”长期保留两套系统。用户材料、许可、历史失败、费用与选中恢复原件不删。
+- **实物与未完边界分开**：main旧版本发布/代表恢复已有直接证据；本地V1/H09/调度、长内容和秘密扫描等成果取既有证据，不等于当前PR完整交付。#10/#7验收必须对应独立可重建候选，旧本地全绿不得外推远程CI；完整体验/程序稿品质及封存WIP原产品最终准出另行未完成。原五图和两包不作废，亦不代签当前main候选或C15/C17。下方机器块保持原产品paused / R5.1 blocked，不作为本轮main工程进度表。
 - **不再等待重复原图，不把截图当所有事实。**原用户2026-10-15T07:31:58.079Z已明确“1按截图开打”，原PNG sha `90de3c617d1379532ac303fd992994b976d956f43e4c434a8e3aac474a5e06f5`与商品JPEG sha `4c4ed76c61c959ace082f8f3698f1b10bf0e1c942c2b1e524b1e62086d4df1e1`已保全、同57704原库已实际重开。截图只证INDONESIA/608Z/NSK及可见外观，不能证轴承钢/608ZZ/真实量测或不可见结构；尺寸槽v3另取NSK608官方公称d8/D22/B7mm，不冒称用户实测。qwen-vl-max精确ID/现价仍未重新核到，不新增其收费理解/复核、不静默换型；人工路径不因此阻断。
 - **所有临时运行资源已释放。**付费观察host `bearing-real-wire-20261015`已停止、临时 `_working/_bearing_real_wire.py`已删除；之后同57704默认closed普通host亦已停止。两个独立无头Chrome均已原生关闭，实际进程及57704监听为空，见 `real-wire/resource-closeout.json`（相对上述stage目录）。原profile/用户原件保留；只有本次新建的独立故障副本profile在核对进程消失后删除。
 - **五张不同用途原像素合格且均已正式采用。**主图v3、信息图v7、场景v1、细节v2、尺寸v5；最后火山第9次尺寸原照补图 action `act-04a84b645ec44047b550ef18740e1241`，原PNG sha `ffa3ed2449e02cfec93fee828e0fc58bda056149354520bd53528fc3acc4d40e`，四行官方公称参数与not measured正确、无额外灰框/箭头/乱码。见 `real-wire/five-adopted-pixel-proof.json`。信息图右侧留白未达内部40px偏好但商品未裁断，保留布局偏差，不声称每条指令完美遵循；此前所有错误原字节及费用均保留。
@@ -183,7 +183,7 @@ task_progress:
     - evals/product-v2/refactor/session-lifecycle-20261002-r33-update.md
     - evals/product-v2/v2.3.3-session-lifecycle-20261002-231308-run2.json
     - evals/product-v2/v2.3.3-session-lifecycle-20261002-231354-run3.json
-    - app/product_v2/session.js
+    - app/product_v2/session.ts  # P4第2阶段已删生成兄弟.js；源文件才是当前权威身份
     - tools/verify_v2_3_3_session_lifecycle.py
     - evals/product-v2/refactor/home-read-recovery-20261003.json
     - evals/product-v2/v2.3.3-session-lifecycle-20261003-025221-home-read-recovery-shutdown.json
@@ -510,6 +510,7 @@ unknowns:
   - current_20261009_rc19_bounded_capture_started_working_probe_rc19_capture_py_60_rounds_each_4_4_and_v2_1_2_first_real_failure_persists_native_boot_diagnosis_and_stops_no_600_run_pass_rate_no_green_streak_closes_rc19_per_design_11_6_2
   - audit_after_stop_20261008_r73_WIP15faa65_local_only_114_deleted_3_modified_9_snapshot_additions_add_A_breached_precise_promotion_main_branch_specific_baseline_paths_absent_blob_zip4007b9b1_manifesta6269682_verified
   - audit_after_stop_20261008_r73_data_probe_checks_identity_counts_asset_hashes_project_ZIP_only_no_document_payload_adoption_current_rework_or_delivery_ZIP_do_not_claim_full_R73_acceptance
-  - audit_after_stop_20261008_rounds_original8_then_release_probe_batch_oracle_build_download_class_and_R73_work_conservative12_exact_historical_grouping_not_unique_10_gate_reached_no_auto_continuation
-updated_at: '2026-10-16T02:51:21.118Z'
+  - current_20261017_baseline_candidate_a278044_PR13_CI_39035149699_success_verify_docker_smoke_selftest_green_v2fingerprint_a1e73bdc_old_reds_retained_both_reviews_integrated_no_merge_no_deploy
+  - current_20261017_tip77c84aa_state_auth_only_CI39036915488_rerun_infra_httpx403_pending_v23507_closed_by_causal_doc_dev_residues_cleaned_walkthrough_packet08_prototype_deleted_doc_gaps_fixed_pending_push
+updated_at: '2026-10-17T13:48:22.000Z'
 ```

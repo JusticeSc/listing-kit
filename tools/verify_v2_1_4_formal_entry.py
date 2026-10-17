@@ -3,16 +3,18 @@
 
 检查：
   1) app/server.py 与 app/product_v2_server.py 通过语法自检。
-  2) `python app/server.py --check` 正式入口自检全过（静态资源、health、拒绝 V1 工作空间 API 与目录逃逸）。
-  3) `python app/server.py --legacy-v1 --check` Product V1 回归 6/6 保持。
-  4) `python app/server.py --doctor` Product V2 体检 0 失败。
-  5) 正式进程 HTTP 契约：/、/app.js、/storage/index.js 可取；V1 工作空间 API、harness、写接口 404。
-  6) 磁盘审计：正式进程 + 浏览器完整会话前后，仓库受管目录与 %LOCALAPPDATA%/AMZ Listing Kit 零差异。
-  7) 浏览器走查（真实 Chromium 持久 profile）：空白启动 → 新建项目 → 写入文档/资产 →
+  2) `python app/server.py --check` 正式入口自检全过（静态资源、health、拒绝旧工作空间 API 与目录逃逸）。
+  3) `python app/server.py --doctor` Product V2 体检 0 失败。
+  4) 正式进程 HTTP 契约：/、/app/product_v2/entry.js、/app/product_v2/styles.css、/storage/index.js 可取；旧工作空间 API、harness、写接口 404。
+  5) 磁盘审计：正式进程 + 浏览器完整会话前后，仓库受管目录与 %LOCALAPPDATA%/AMZ Listing Kit 零差异。
+  6) 浏览器走查（真实 Chromium 持久 profile）：空白启动 → 新建项目 → 写入文档/资产 →
      关浏览器重开仍在 → 重启服务器后仍在。
-  8) 网络审计：整个会话没有带 directory 的请求、没有 /api/workspaces、没有 /harness/，全部同源。
-  9) 两个独立浏览器配置文件项目列表不同。
- 10) 全程零 console error / page error；截图留证。
+  7) 网络审计：整个会话没有带 directory 的请求、没有 /api/workspaces、没有 /harness/，全部同源。
+  8) 两个独立浏览器配置文件项目列表不同。
+  9) 全程零 console error / page error；截图留证。
+
+编号说明：V2.1.4-02（旧 Product V1 回归自检）随 V1 退出退役，不再执行；
+后续编号保持不变，不向前填补，避免历史证据与回归指纹漂移。
 
 运行：
   uv run --locked python tools/verify_v2_1_4_formal_entry.py
@@ -38,7 +40,7 @@ EVIDENCE_DIR = ROOT / "evals" / "product-v2"
 APP_NAME = "V2.1.4"
 PY = sys.executable
 
-SCAN_DIRS = ("app", "demo", "src", "tools", "config")
+SCAN_DIRS = ("app", "src", "tools", "config")
 SKIP_PARTS = {"__pycache__", ".uv-cache", ".git"}
 
 DB_SNAPSHOT = """
@@ -293,7 +295,7 @@ def main() -> int:
                 "console_errors": console_errors, "page_errors": page_errors,
                 "code_sha256": {
                     path: sha256_file(ROOT / path) for path in (
-                        "app/product_v2/app.js", "app/product_v2/session.js",
+                        "app/product_v2/app.js", "app/product_v2/session.ts",
                         "app/product_v2/storage/repository.js")},
             }
             try:
@@ -342,13 +344,9 @@ def main() -> int:
     # 前提不满足，不是产品回归。改走已分配的空闲端口。
     port = free_port()
     v2_check = run_entry(["--check"])
-    check(f"{APP_NAME}-01", "正式入口自检全过（静态资源 / health / 无状态 API / 拒绝 V1 API 与目录逃逸）",
+    check(f"{APP_NAME}-01", "正式入口自检全过（静态资源 / health / 无状态 API / 拒绝旧 API 与目录逃逸）",
           v2_check["rc"] == 0 and any("通过。" in line for line in v2_check["tail"])
           and not any("FAIL" in line for line in v2_check["tail"]), v2_check)
-
-    v1_check = run_entry(["--legacy-v1", "--check"])
-    check(f"{APP_NAME}-02", "Product V1 回归自检 6/6 保持（--legacy-v1）",
-          v1_check["rc"] == 0 and any(line.strip() == "OK" for line in v1_check["tail"]), v1_check)
 
     doctor = run_entry(["--doctor", "--port", str(port)])
     check(f"{APP_NAME}-03", "V2 体检通过且声明服务器无用户状态",
@@ -366,7 +364,8 @@ def main() -> int:
     server.start()
     try:
         contract = {}
-        for path, expect_code in (("/", 200), ("/app.js", 200), ("/styles.css", 200),
+        for path, expect_code in (("/", 200), ("/app/product_v2/entry.js", 200),
+                                  ("/app/product_v2/styles.css", 200),
                                   ("/storage/index.js", 200), ("/api/health", 200),
                                   ("/api/workspaces/recent", 404),
                                   ("/harness/storage-contract.html", 404),
@@ -378,7 +377,7 @@ def main() -> int:
         _, home_type = http_status(server.base_url, "/")
         with urllib.request.urlopen(server.base_url + "/", timeout=10) as response:
             home_body = response.read().decode("utf-8", "replace")
-        check(f"{APP_NAME}-04", "正式进程 HTTP 契约：产品资源可取，V1 工作空间 API / harness / 写接口不可达",
+        check(f"{APP_NAME}-04", "正式进程 HTTP 契约：产品资源可取，旧工作空间 API / harness / 写接口不可达",
               all(item["ok"] for item in contract.values())
               and "Amazon US 商品套图" in home_body and "text/html" in home_type,
               contract)
@@ -487,7 +486,7 @@ def main() -> int:
             allowed_api = {server.base_url + "/api/health",
                            server.base_url + "/api/v2/capabilities",
                            server.base_url + "/api/v2/semantic/analyze"}
-            check(f"{APP_NAME}-10", "网络审计：无 directory 参数、无 V1 工作空间 API、无 harness、全部同源",
+            check(f"{APP_NAME}-10", "网络审计：无 directory 参数、无旧工作空间 API、无 harness、全部同源",
                   same_origin and not bad_urls and set(api_calls) <= allowed_api,
                   {"requests": len(request_urls), "bad": bad_urls, "api": sorted(set(api_calls)),
                    "sample": request_urls[:6]})
@@ -514,8 +513,7 @@ def main() -> int:
     boundary = (
         "证明默认正式入口 `python app/server.py` 以无状态方式提供 Product V2 页面："
         "服务器不读写工作空间与最近项目索引、无 directory 参数、会话前后磁盘零差异；"
-        "浏览器项目在关浏览器重开与服务器重启后从 IndexedDB 恢复；两个独立配置文件互不可见；"
-        "Product V1 以 --legacy-v1 保留为回归入口且自检 6/6。"
+        "浏览器项目在关浏览器重开与服务器重启后从 IndexedDB 恢复；两个独立配置文件互不可见。"
         "不证明商品资料之后的业务链、真实模型调用、交付包、跨机器迁移与首次使用者可用性。"
     )
     report = {

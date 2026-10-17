@@ -10,7 +10,7 @@
      出站白名单、BYOK 替换、注册表装配。
   4) Python HTTP 网关层：capabilities → volcengine-ark；提交 → 200 信封（字节 + sha 可复核、
      transport 恰一次调用）；status → 501；能力版本漂移 → 400 不转发。
-  5) 浏览器 harness A01–A19 全过 + 3 个既有契约套件回归（真实 Chromium）。
+   5) 浏览器 harness A01–A20 全过 + 3 个既有契约套件回归（真实 Chromium；A20 为 P6/SEL-025 归一化信封结构门）。
   6) 浏览器 e2e（fake transport × 同步 Adapter）：整流到候选入库、刷新恢复、显式新建
      再成功、fresh module 缺字节明确补救、0 status 外呼、零 console error，截图落盘。
   7) 正式入口 --check 全过。
@@ -32,10 +32,11 @@ import tempfile
 import threading
 import zlib
 from datetime import datetime
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "tools"))
+from v2_test_server import start_static  # noqa: E402
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(ROOT / "tools"))
@@ -44,6 +45,12 @@ import v2_verify_shared as shared  # noqa: E402
 from console import enable_utf8  # noqa: E402
 
 enable_utf8()
+
+# 本机 http_proxy=127.0.0.1:7897 会劫持回环 urllib（v2_verify_shared 同一处理）；
+# 只给本进程/子进程设回环 no_proxy，不改真实上游调用。
+_LOOPBACK_NO_PROXY = "127.0.0.1,localhost,::1"
+os.environ.setdefault("no_proxy", _LOOPBACK_NO_PROXY)
+os.environ.setdefault("NO_PROXY", _LOOPBACK_NO_PROXY)
 
 PRODUCT_DIR = ROOT / "app" / "product_v2"
 HARNESS_DIR = ROOT / "evals" / "product-v2" / "harness"
@@ -67,18 +74,18 @@ DOMAIN_FILES = [
     "app/product_v2/domain/specs.js",
     "app/product_v2/domain/prompt.js",
     "app/product_v2/domain/confirm.js",
-    "app/product_v2/domain/attempt.js",
+    "build/frontend-node/app/product_v2/domain/attempt.js",
     "app/product_v2/domain/candidate.js",
     "app/product_v2/domain/batch.js",
     "app/product_v2/domain/index.js",
-    "app/product_v2/generation.js",
+    "build/frontend-node/app/product_v2/generation.js",
     "app/product_v2/workspace.js",
     "evals/product-v2/harness/attempt-contract.js",
     "evals/product-v2/harness/candidate-contract.js",
     "evals/product-v2/harness/batch-contract.js",
 ]
 
-EXPECTED_CASES = [f"A{index:02d}" for index in range(1, 20)]
+EXPECTED_CASES = [f"A{index:02d}" for index in range(1, 21)]
 REGRESSION_SUITES = (
     ("confirm", "confirm-contract.html", "__V2_CONFIRM_RESULTS__"),
     ("prompt_edit", "prompt-edit-contract.html", "__V2_PROMPT_EDIT_RESULTS__"),
@@ -281,12 +288,6 @@ def png_bytes(width: int, height: int, color: tuple[int, int, int]) -> bytes:
             + chunk(b"IDAT", zlib.compress(raw)) + chunk(b"IEND", b""))
 
 
-def load_server_module():
-    spec = importlib.util.spec_from_file_location(
-        "product_v2_server_under_test", ROOT / "app" / "product_v2_server.py")
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
 
 
 
@@ -340,49 +341,14 @@ def run_node_domain_tests() -> dict:
     return {"rc": completed.returncode, "tail": summary[-6:]}
 
 
-class HarnessHandler(BaseHTTPRequestHandler):
-    def log_message(self, format, *args):  # noqa: A002
-        return
-
-    def do_GET(self) -> None:
-        path = self.path.split("?", 1)[0]
-        if path.startswith("/harness/"):
-            candidate = (HARNESS_DIR / path[len("/harness/"):]).resolve()
-            if str(candidate).startswith(str(HARNESS_DIR.resolve())) and candidate.is_file():
-                body = candidate.read_bytes()
-                self.send_response(200)
-                self.send_header(
-                    "Content-Type", MIME.get(candidate.suffix, "application/octet-stream"))
-                self.send_header("Content-Length", str(len(body)))
-                self.send_header("Cache-Control", "no-store")
-                self.end_headers()
-                self.wfile.write(body)
-                return
-        candidate = (PRODUCT_DIR / path.lstrip("/")).resolve()
-        if str(candidate).startswith(str(PRODUCT_DIR.resolve())) and candidate.is_file():
-            body = candidate.read_bytes()
-            self.send_response(200)
-            self.send_header(
-                "Content-Type", MIME.get(candidate.suffix, "application/octet-stream"))
-            self.send_header("Content-Length", str(len(body)))
-            self.send_header("Cache-Control", "no-store")
-            self.end_headers()
-            self.wfile.write(body)
-            return
-        self.send_response(404)
-        self.send_header("Content-Type", "text/plain; charset=utf-8")
-        self.end_headers()
-        self.wfile.write(b"not found")
 
     def do_HEAD(self) -> None:
         self.send_response(200)
         self.end_headers()
 
 
-def start_static_server() -> tuple[ThreadingHTTPServer, str]:
-    server = ThreadingHTTPServer(("127.0.0.1", 0), HarnessHandler)
-    threading.Thread(target=server.serve_forever, daemon=True).start()
-    return server, f"http://127.0.0.1:{server.server_address[1]}"
+def start_static_server():
+    return start_static()
 
 
 def read_suite(browser, url: str, variable: str, console_errors: list, page_errors: list) -> dict:
@@ -642,13 +608,13 @@ def gateway_e2e_checks(check) -> None:
         return VolcengineImageProvider(api_key="test-double-key",
                                        credential_source="test_double", transport=transport)
 
-    module = load_server_module()
-    server = module.create_product_v2_server(
+    from app.product_v2_server import create_product_v2_server  # noqa: PLC0415
+    server = create_product_v2_server(
         "127.0.0.1", 0,
         provider_factory=lambda: FakeSemanticProvider(scenario="ok"),
         image_provider_factory=image_factory)
-    threading.Thread(target=server.serve_forever, daemon=True).start()
-    base = f"http://127.0.0.1:{server.server_address[1]}"
+    server.start()
+    base = f"http://127.0.0.1:{server.port}"
     try:
         status, caps = get_json(base, "/api/v2/capabilities")
         provider_block = caps.get("images", {}).get("provider", {})
@@ -729,8 +695,7 @@ def gateway_e2e_checks(check) -> None:
                   {"parameters": changes, "status": rejected_status,
                    "calls": len(transport.calls)})
     finally:
-        server.shutdown()
-        server.server_close()
+        server.stop()
 
 
 def browser_e2e_checks(check, screenshots: list[str], console_errors: list,
@@ -745,7 +710,7 @@ def browser_e2e_checks(check, screenshots: list[str], console_errors: list,
 
     reference = png_bytes(48, 48, (60, 120, 180))
     transport = TransportRecorder()
-    module = load_server_module()
+    from app.product_v2_server import create_product_v2_server  # noqa: PLC0415
 
     mode = {"credential_source": "test_double", "provider": "volcengine"}
     def image_factory():
@@ -757,12 +722,12 @@ def browser_e2e_checks(check, screenshots: list[str], console_errors: list,
                                        credential_source=mode["credential_source"],
                                        transport=transport)
 
-    server = module.create_product_v2_server(
+    server = create_product_v2_server(
         "127.0.0.1", 0,
         provider_factory=lambda: FakeSemanticProvider(scenario="ok"),
         image_provider_factory=image_factory)
-    threading.Thread(target=server.serve_forever, daemon=True).start()
-    base = f"http://127.0.0.1:{server.server_address[1]}"
+    server.start()
+    base = f"http://127.0.0.1:{server.port}"
     temp_root = tempfile.mkdtemp(prefix="amz-r52-")
     profile = Path(temp_root) / "profile"
     reference_file = Path(temp_root) / "reference.png"
@@ -996,8 +961,7 @@ def browser_e2e_checks(check, screenshots: list[str], console_errors: list,
             finally:
                 context.close()
     finally:
-        server.shutdown()
-        server.server_close()
+        server.stop()
 
 
 def main() -> int:
@@ -1046,14 +1010,13 @@ def main() -> int:
             finally:
                 browser.close()
     finally:
-        static_server.shutdown()
-        static_server.server_close()
+        static_server.stop()
 
     suite = suites["attempt"]
     case_ids = [item["id"] for item in suite.get("cases", [])]
     missing = [case for case in EXPECTED_CASES if case not in case_ids]
     failed_cases = [item for item in suite.get("cases", []) if not item.get("ok")]
-    check("R52-02", "A01–A19 契约套件全过（含 A19 同步协议合同）",
+    check("R52-02", "A01–A20 契约套件全过（含 A19 同步协议合同、A20 归一化信封结构门）",
           suite.get("status") == "passed" and not missing and not failed_cases,
           {"status": suite.get("status"), "missing": missing,
            "failed": [{"id": item["id"], "error": item.get("error")}

@@ -9,6 +9,11 @@
 
 契约的权威表示是 Pydantic（SEL-006 的同一选择）；错误词表来自 ``v2_errors.py`` 的唯一一份，
 本文件不复制第二套 family / retry_policy。
+
+P6/SEL-025：本文件末尾的 ``ImageWire*`` 模型是 submit/status **归一化信封**的唯一结构权威，
+构建期导出 JSON Schema 并生成浏览器用的 standalone 校验器（见
+``tools/export_image_envelope_schema.py`` 与 ``tools/generate_image_envelope_validator.mjs``）；
+业务身份、当前性与 Unknown 策略不进这些模型。
 """
 from __future__ import annotations
 
@@ -18,9 +23,9 @@ import hashlib
 import re
 from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Any, Literal
+from typing import Any, Literal, get_args
 
-from pydantic import BaseModel, ConfigDict, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, RootModel, field_validator, model_validator
 
 from src.providers.v2_errors import (ERROR_FAMILIES, RETRY_POLICIES, UNKNOWN_FAMILY,
                                      assert_vocabulary)
@@ -119,6 +124,16 @@ EXECUTION_PROTOCOL_PATTERN = re.compile(r"^v[0-9A-Za-z._-]{1,40}$")
 
 IMAGE_ROLES = ("primary", "detail", "packaging", "scene", "competitor", "other")
 TASK_STATUSES = ("PENDING", "RUNNING", "SUCCEEDED", "FAILED", "CANCELED", "UNKNOWN")
+
+# 词表的类型投影（P6/SEL-025）：Literal 与上面的元组、以及 v2_errors 的词表必须同源，
+# 否则「类型上合法、运行时被拒」又会分叉。导入时自检，不做静默降级。
+ERROR_FAMILY = Literal["input_rejected", "provider_failed", "provider_unknown", "internal"]
+RETRY_POLICY = Literal["retryable", "requires_review", "fatal"]
+TASK_STATUS = Literal["PENDING", "RUNNING", "SUCCEEDED", "FAILED", "CANCELED", "UNKNOWN"]
+for _vocab, _literal in (("ERROR_FAMILIES", ERROR_FAMILY), ("RETRY_POLICIES", RETRY_POLICY),
+                         ("TASK_STATUSES", TASK_STATUS)):
+    if set(get_args(_literal)) != set(globals()[_vocab]):
+        raise RuntimeError(f"图像信封词表 {_vocab} 的 Literal 投影与元组不一致。")
 
 _MEDIA_SIGNATURES: dict[str, tuple[bytes, ...]] = {
     "image/png": (b"\x89PNG\r\n\x1a\n",),
@@ -399,7 +414,7 @@ class ImageTaskResult:
     provider_id: str
     model_id: str
     task_id: str | None
-    status: Literal["PENDING", "RUNNING", "SUCCEEDED", "FAILED", "CANCELED", "UNKNOWN"]
+    status: TASK_STATUS
     result_count: int = 0
     error: str | None = None
     request_id: str | None = None
@@ -411,15 +426,115 @@ class ImageTaskResult:
             raise ValueError(f"未知任务状态：{self.status}")
 
     def to_dict(self) -> dict[str, Any]:
-        return {
-            "provider": {"provider_id": self.provider_id, "model_id": self.model_id},
-            "task_id": self.task_id,
-            "status": self.status,
-            "result_count": int(self.result_count),
-            "error": self.error,
-            "request_id": self.request_id,
-            "unknown": bool(self.unknown),
+        """归一化信封里的任务形状：由 ``ImageWireTask`` 唯一决定（不再手写第二份字典）。
+
+        P6/SEL-025：这个字典同时是导出 JSON Schema 的模型输入，因此生产者与结构权威
+        是同一个模型；形状漂移不可能只改一边。``sync_result`` 字节既不进模型也不进字典。
+        """
+        return ImageWireTask(
+            provider=ImageWireProvider(provider_id=self.provider_id, model_id=self.model_id),
+            task_id=self.task_id,
+            status=self.status,
+            result_count=self.result_count,
+            error=self.error,
+            request_id=self.request_id,
+            unknown=bool(self.unknown),
             # V2.R5.2 同步协议标志：只在同步协议出现（浏览器靠它承认「task_id 为空 +
-            # 明确状态」的提交信封；异步 provider 的响应不携带这个键）。
-            "sync": bool(self.sync_result is not None),
-        }
+            # 明确状态」的提交信封；异步 provider 的响应按 False 处理）。
+            sync=bool(self.sync_result is not None),
+        ).model_dump(mode="json")
+
+
+# ------------------------------------------------------------ 归一化信封形状（P6/SEL-025）
+#
+# 结构权威：下面这组模型是 image submit/status **归一化信封**的唯一形状来源。
+# 构建期 tools/export_image_envelope_schema.py 导出 JSON Schema，
+# tools/generate_image_envelope_validator.mjs 再用 Ajv 生成浏览器用的 standalone ESM 校验器；
+# 浏览器不再手写第二份形状/词表镜像。
+#
+# 边界：这里只描述「线上实际出现的形状」。业务身份与当前性（sync 与 task_id 的耦合、
+# 状态词到 Attempt 状态的映射、Unknown/不重提策略）仍归 app/product_v2/domain/attempt.ts；
+# Blob/OCC 校验归存储层。因此本文件不复制那些规则。
+#
+# 两条硬约束（P6 的验收就压在这两条上）：
+#   1) 约束必须是**声明式**的（Field(pattern=...)/Literal/ge=...）。field_validator 不进
+#      JSON Schema，会立刻造出「schema 放行、真实 parser 拒绝」的分叉。
+#   2) strict=True：线缆信封是外部输入，不做 "1"→1、1→true 这类宽松强制，否则同一份字节
+#      在 Python 与浏览器会得到不同的值。业务侧仍按原样读（该宽松的地方在 attempt.ts）。
+
+
+class ImageWireProvider(BaseModel):
+    """信封里的目标投影（非秘密）：provider/model 标识沿用同一份 MODEL_ID_PATTERN。
+
+    约束必须是**声明式**的：``field_validator`` 里的检查不会进入 JSON Schema，会造成
+    「schema 放行、真实 parser 拒绝」的分叉（P6 的整条理由就是消灭这种分叉）。
+    ``pattern`` 走 ``Field``，运行时与导出 schema 用的是同一个正则。
+    """
+
+    model_config = ConfigDict(extra="forbid", strict=True)
+
+    provider_id: str = Field(pattern=MODEL_ID_PATTERN.pattern)
+    model_id: str = Field(pattern=MODEL_ID_PATTERN.pattern)
+
+
+class ImageWireTask(BaseModel):
+    """一次提交/查询归一化后的任务视图；默认值与 ``ImageTaskResult`` 的字段默认值逐字一致。"""
+
+    model_config = ConfigDict(extra="forbid", strict=True)
+
+    provider: ImageWireProvider
+    # 故意不做 TASK_ID_PATTERN 校验：上游返回的编号可以是任意非空字符串，浏览器必须能原样读进记录；
+    # 真正不合契约时由后续查询侧的 TaskRequest 拒绝，落到既有 input_rejected 分支
+    # （「本地记录的 task id 被网关拒绝，无法核对」）。结构过滤器在这里收紧会吃掉那条既有路径。
+    task_id: str | None
+    status: TASK_STATUS
+    result_count: int = Field(default=0, ge=0)
+    error: str | None = None
+    request_id: str | None = None
+    unknown: bool = False
+    sync: bool = False
+
+
+class ImageWireError(BaseModel):
+    """失败信封里的错误块；http_status/request_id/details 可缺省（浏览器合成的信封没有它们）。"""
+
+    model_config = ConfigDict(extra="forbid", strict=True)
+
+    family: ERROR_FAMILY
+    code: str
+    message: str
+    retry_policy: RETRY_POLICY
+    http_status: int | None = None
+    request_id: str | None = None
+    details: dict[str, Any] | None = None
+
+
+class ImageSuccessEnvelope(BaseModel):
+    """成功信封：``{ok: true, unknown, task}`` + 同步协议的字节块（只在同步提交出现）。"""
+
+    model_config = ConfigDict(extra="forbid", strict=True)
+
+    ok: Literal[True]
+    unknown: bool = False
+    task: ImageWireTask
+    image_base64: str | None = None
+    image_media_type: str | None = None
+    # 同 ImageWireProvider：声明式 pattern 才与导出 schema 同源（SHA256_PATTERN 自带 ^...$）。
+    image_sha256: str | None = Field(default=None, pattern=SHA256_PATTERN.pattern)
+
+
+class ImageFailureEnvelope(BaseModel):
+    """失败信封：请求被拒、上游失败、Unknown 与服务端故障都走同一支。"""
+
+    model_config = ConfigDict(extra="forbid", strict=True)
+
+    ok: Literal[False]
+    unknown: bool = False
+    error: ImageWireError
+
+
+class ImageWireEnvelope(RootModel[ImageSuccessEnvelope | ImageFailureEnvelope]):
+    """submit/status 归一化信封的唯一形状：成功支或失败支。
+
+    根上不加 ``additionalProperties``：两支各自 forbid 额外字段，根只做二选一。
+    """

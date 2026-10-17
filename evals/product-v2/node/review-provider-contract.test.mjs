@@ -20,7 +20,7 @@ import {
   mergeVlmReview,
   reviewSummaryText,
   topFinding,
-} from "../../../app/product_v2/domain/index.js";
+} from "../../../build/frontend-node/app/product_v2/domain/index.js";
 import { expect, serializeError } from "./harness-core.mjs";
 
 const cases = [];

@@ -1,6 +1,7 @@
 {
   "name": "amz-listing-kit",
   "private": true,
+  "type": "module",
   "packageManager": "npm@11.17.0",
   "engines": {
     "node": "24.19.0",
@@ -8,12 +9,21 @@
   },
   "scripts": {
     "check:versions": "node tools/check_frontend_versions.mjs",
-    "check:types": "tsc --noEmit -p jsconfig.json",
-    "build:frontend": "node tools/build_product_v2_ts.mjs",
-    "check:generated": "node tools/build_product_v2_ts.mjs --check",
+    "check:types": "tsc --noEmit -p tsconfig.json",
+    "check:envelope": "uv run --locked python tools/verify_image_envelope_contract.py",
+    "build:envelope-schema": "uv run --locked python tools/export_image_envelope_schema.py",
+    "build:envelope-validator": "node tools/generate_image_envelope_validator.mjs",
+    "build:envelope": "npm run build:envelope-schema && npm run build:envelope-validator",
+    "build:frontend": "vite build",
+    "build:frontend-node": "tsc -p tsconfig.json --noEmit false --outDir build/frontend-node",
     "test:domain": "node --test evals/product-v2/node/*.test.mjs"
   },
   "devDependencies": {
-    "typescript": "6.0.3"
+    "ajv": "8.20.0",
+    "typescript": "6.0.3",
+    "vite": "8.3.4"
+  },
+  "dependencies": {
+    "lit-html": "3.3.3"
   }
 }

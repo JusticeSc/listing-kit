@@ -22,7 +22,7 @@
 from __future__ import annotations
 
 import argparse
-import importlib.util
+import asyncio
 import json
 import os
 import socket
@@ -35,7 +35,6 @@ import time
 import urllib.parse
 import zlib
 from datetime import datetime
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -44,7 +43,7 @@ sys.path.insert(0, str(ROOT / "tools"))
 import v2_stage_nav as stage_nav  # noqa: E402  （V2.UI.2 六阶段工作台导航）
 import v2_verify_shared as shared  # noqa: E402  （正式 server/夹具/共同业务操作）
 from v2_verify_shared import (  # noqa: E402
-    png_bytes, load_server_module, run_entry, read_suite, compile_all,
+    png_bytes, run_entry, read_suite, compile_all,
 )
 
 
@@ -71,7 +70,7 @@ DOMAIN_FILES = [
     "app/product_v2/domain/specs.js",
     "app/product_v2/domain/prompt.js",
     "app/product_v2/domain/confirm.js",
-    "app/product_v2/domain/attempt.js",
+    "build/frontend-node/app/product_v2/domain/attempt.js",
     "app/product_v2/domain/batch.js",
     "app/product_v2/domain/candidate.js",
     "app/product_v2/domain/index.js",
@@ -486,8 +485,7 @@ def main() -> int:
             finally:
                 browser.close()
     finally:
-        static_server.shutdown()
-        static_server.server_close()
+        static_server.stop()
 
     suite = suites["candidate"]
     case_ids = [item["id"] for item in suite.get("cases", [])]
@@ -507,7 +505,8 @@ def main() -> int:
           all(item["status"] == "passed" and not item["failed"] for item in regression.values()),
           regression)
 
-    module = load_server_module()
+    from app.product_v2_http import ProductV2Server  # noqa: PLC0415
+    from app.product_v2_server import create_app  # noqa: PLC0415
     from src.providers.v2_fake_image import FakeImageProvider  # noqa: PLC0415
     from src.providers.v2_fake_semantic import FakeSemanticProvider  # noqa: PLC0415
     from src.providers.v2_image import ImageFailure, ImageTaskResult  # noqa: PLC0415
@@ -539,97 +538,62 @@ def main() -> int:
             return FakeImageProvider.result(self, request)
 
     boot_observer = BootCausalObserver()
-    server = module.create_product_v2_server(
-        "127.0.0.1", 0,
-        provider_factory=lambda: FakeSemanticProvider(scenario="ok"),
-        image_provider_factory=lambda: MarkerImageProvider(scenario="ok"))
-    # 本地显式验证 host 的最小诊断包装：标准库子类/实例级包装，不改产品处理器语义。
-    # 只记 bind/listen/accept/请求处理进入与完成/关闭与线程状态，不记任何业务内容。
-    bound_host, bound_port = server.server_address[:2]
-    boot_observer.server("bind", host=bound_host, port=bound_port,
-                         listening=bool(getattr(server, "socket", None)))
-    _native_get_request = server.get_request
-    _native_close_request = server.close_request
-    _native_process_request = server.process_request
-    _accepted_sequence = {"next": 0}
+    image_provider = MarkerImageProvider(scenario="ok")
 
-    def _instrumented_get_request():
-        outcome = _native_get_request()
-        _accepted_sequence["next"] += 1
-        boot_observer.server("accept", accepted=_accepted_sequence["next"],
-                             active_threads=threading.active_count())
-        return outcome
+    class BootObserverMiddleware:
+        """启动诊断观测：只看 ASGI 边界，不改产品语义。
 
-    def _instrumented_close_request(request) -> None:
-        try:
-            _native_close_request(request)
-        finally:
-            boot_observer.server("close", active_threads=threading.active_count())
+        P3 换框架后不再包装标准库 socketserver 的内部方法（get_request/finish_request
+        等已不存在）；观测点改为 ASGI 边界，事件含义保持同族：
+        ``accept``/``request_start`` = 连接已被服务器接收并进入应用，
+        ``request_finish`` = 该请求处理结束。
+        """
 
-    def _instrumented_process_request(request, client_address) -> None:
-        boot_observer.server("handler_start", peer=str(client_address),
-                             active_threads=threading.active_count())
-        try:
-            _native_process_request(request, client_address)
-        finally:
-            boot_observer.server("handler_finish", peer=str(client_address),
+        def __init__(self, app, observer) -> None:
+            self.app = app
+            self.observer = observer
+            self.stall_next = False
+
+        async def __call__(self, scope, receive, send) -> None:
+            if scope.get("type") != "http":
+                await self.app(scope, receive, send)
+                return
+            path = str(scope.get("path", ""))
+            if self.stall_next:
+                self.stall_next = False
+                self.observer.server("injected_stalled_response", path=path)
+                await asyncio.sleep(35)
+            self.observer.server("accept", path=path,
                                  active_threads=threading.active_count())
+            self.observer.server("request_start", path=path,
+                                 active_threads=threading.active_count())
+            try:
+                await self.app(scope, receive, send)
+            finally:
+                self.observer.server("request_finish", path=path,
+                                     active_threads=threading.active_count())
 
-    server.get_request = _instrumented_get_request
-    server.close_request = _instrumented_close_request
-    server.process_request = _instrumented_process_request
-    _finish_request = server.finish_request
-
-    def _instrumented_finish_request(request, client_address) -> None:
-        # 诊断包装只记录一次 handler 身份/生命周期，不改动产品请求处理本身。
-        boot_observer.server("request_start", peer=str(client_address))
-        try:
-            _finish_request(request, client_address)
-        finally:
-            boot_observer.server("request_finish", peer=str(client_address))
-
-    def _instrumented_process_request_thread(request, client_address) -> None:
-        boot_observer.server("request_start", peer=str(client_address))
-        try:
-            _finish_request(request, client_address)
-        finally:
-            boot_observer.server("request_finish", peer=str(client_address))
-
-    server.process_request_thread = _instrumented_process_request_thread
-
-    server.finish_request = _instrumented_finish_request
-    serve_thread = threading.Thread(target=server.serve_forever, daemon=True)
-    serve_thread.start()
-    actual_host, actual_port = server.server_address[:2]
+    observer_app = BootObserverMiddleware(create_app(
+        provider_factory=lambda: FakeSemanticProvider(scenario="ok"),
+        image_provider_factory=lambda: image_provider), boot_observer)
+    server = ProductV2Server(observer_app, "127.0.0.1", 0)
+    server.start()
+    actual_host, actual_port = server.host, server.port
     assert int(actual_port) != 0, "验证 host 必须读回 0 号端口分配的真实端口"
-    base = f"http://{actual_host}:{actual_port}"
+    base = server.base_url
+    boot_observer.server("bind", host=actual_host, port=actual_port, listening=True)
     boot_observer.server("serve_start", host=actual_host, port=actual_port, base=base,
-                         serve_thread_alive=serve_thread.is_alive())
+                         running=server.running)
     if args.boot_diagnostic == "disabled-listener":
-        # 受控红证明：显式关闭监听套接字，浏览器建连必须失败且诊断保留 no_accept 分支。
+        # 受控红证明：显式关闭监听，浏览器建连必须失败且诊断保留 no_accept 分支。
         boot_observer.server("injected_disabled_listener", base=base)
-        server.server_close()
-        boot_observer.server("listener_closed",
-                             serve_thread_alive=serve_thread.is_alive())
+        server.stop()
+        boot_observer.server("listener_closed", running=server.running)
     elif args.boot_diagnostic == "stalled-response":
-        # 受控红证明：只让本验证 host 第一次处理请求线程前显式等待 35 秒。
+        # 受控红证明：只让本验证 host 第一次请求前显式等待 35 秒。
         # 35 秒超过默认导航超时（30 秒），第一次 goto 必因超时失败并留下首失败；
         # 第二次尝试不再延迟、正常成功，证明“重试成功不关闭首个失败”。
-        # 仍调用原产品 finish_request/product handler 写出路径；仅对本 server 实例的
-        # process_request_thread 再包一层，不改产品文件、不改已加载类的其他实例/方法。
-        stalled_state = {"done": False}
-        _diagnostic_process_request_thread = server.process_request_thread
-
-        def _stalled_process_request_thread(request, client_address) -> None:
-            if not stalled_state["done"]:
-                stalled_state["done"] = True
-                boot_observer.server("injected_stalled_response",
-                                     peer=str(client_address))
-                time.sleep(35)
-            return _diagnostic_process_request_thread(request, client_address)
-
-        server.process_request_thread = _stalled_process_request_thread
-
+        observer_app.stall_next = True
     submit_requests: list[dict] = []
     status_requests: list[str] = []
     result_requests: list[dict] = []
@@ -797,9 +761,8 @@ def main() -> int:
                             attempt_record["boot"] = _boot_snapshot(page)
                             attempt_record["failed_requests"] = list(
                                 failed_requests[before:before + 8])
-                            attempt_record["server_thread_alive"] = serve_thread.is_alive()
-                            attempt_record["server_address"] = list(
-                                server.server_address[:2])
+                            attempt_record["server_running"] = server.running
+                            attempt_record["server_address"] = [server.host, server.port]
                             window = boot_observer.window(
                                 float(attempt_record["start_ms"]),
                                 float(attempt_record["end_ms"]))
@@ -1240,12 +1203,11 @@ def main() -> int:
         interrupted = f"[{stage}] {type(error).__name__}: {error}"
     finally:
         boot_observer.server("shutdown_start", stage=stage,
-                             serve_thread_alive=serve_thread.is_alive())
+                             running=server.running)
         try:
-            server.shutdown()
-            server.server_close()
+            server.stop()
             boot_observer.server("shutdown_finish", closed=True,
-                                 serve_thread_alive=serve_thread.is_alive())
+                                 running=server.running)
         except Exception as shutdown_error:  # noqa: BLE001
             boot_observer.server("shutdown_finish", closed=False,
                                  error=f"{type(shutdown_error).__name__}: {shutdown_error}")

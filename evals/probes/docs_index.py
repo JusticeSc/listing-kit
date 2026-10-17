@@ -75,6 +75,13 @@ for relative in ("README.md", "AGENTS.md", "package.json", "package-lock.json",
     shutil.copy2(source, target)
 for directory in ("docs", "_working"):
     for source in (CODE_ROOT / directory).rglob("*.md"):
+        # 受管比对只认 git 跟踪的仓库文档：gitignored 本地历史（未跟踪）不进守卫判据；
+        # 探针夹具若全量复制，会把守卫在仓库里看不见的文件带进临时目录，基线恒红。
+        matched = subprocess.run(
+            ["git", "-c", "core.quotepath=false", "ls-files", "--", source.relative_to(CODE_ROOT).as_posix()],
+            capture_output=True, cwd=str(CODE_ROOT), timeout=30).stdout.decode("utf-8").strip()
+        if not matched:
+            continue
         target = ROOT / source.relative_to(CODE_ROOT)
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source, target)

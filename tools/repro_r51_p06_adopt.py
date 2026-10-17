@@ -220,8 +220,7 @@ def main() -> int:
                 finally:
                     context.close()
     finally:
-        server.shutdown()
-        server.server_close()
+        server.stop()
 
     stamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
     out_dir = ROOT / "evals" / "product-v2"

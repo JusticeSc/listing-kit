@@ -283,8 +283,7 @@ def main() -> int:
             finally:
                 browser.close()
     finally:
-        server.shutdown()
-        server.server_close()
+        server.stop()
 
     failed = [item["id"] for item in checks if not item["ok"]]
     status = "passed" if not failed else "failed"

@@ -23,16 +23,14 @@
 from __future__ import annotations
 
 import argparse
-import importlib.util
 import json
 import struct
 import subprocess
 import sys
 import tempfile
-import threading
+import time
 import zlib
 from datetime import datetime
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -40,17 +38,10 @@ sys.path.insert(0, str(ROOT / "tools"))
 
 import v2_stage_nav as stage_nav  # noqa: E402  （V2.UI.2 六阶段工作台导航）
 import v2_verify_shared as shared  # noqa: E402  （自动本地准备的等待口径与其它验证器一致）
+from v2_test_server import start_static  # noqa: E402
 
-PRODUCT_DIR = ROOT / "app" / "product_v2"
 HARNESS_DIR = ROOT / "evals" / "product-v2" / "harness"
 EVIDENCE_DIR = ROOT / "evals" / "product-v2"
-
-MIME = {
-    ".html": "text/html; charset=utf-8",
-    ".js": "text/javascript; charset=utf-8",
-    ".css": "text/css; charset=utf-8",
-    ".json": "application/json; charset=utf-8",
-}
 
 DOMAIN_FILES = [
     "app/product_v2/domain/shared.js",
@@ -157,14 +148,14 @@ async (input) => {
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
+  const transaction = db.transaction(["documents", "projects", "assets"], "readonly");
   const readAll = (store) => new Promise((resolve, reject) => {
-    const request = db.transaction(store, "readonly").objectStore(store).getAll();
+    const request = transaction.objectStore(store).getAll();
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
-  const documents = await readAll("documents");
-  const projects = await readAll("projects");
-  const assets = await readAll("assets");
+  const [documents, projects, assets] = await Promise.all(
+    ["documents", "projects", "assets"].map(readAll));
   db.close();
   const rows = (kind) => documents.filter((item) => item.kind === kind);
   const latest = (kind, documentId) => rows(kind)
@@ -264,6 +255,10 @@ async (input) => {
     attempts_by_shot: attemptsByShot,
     reference_asset_shas: assets.map((item) => item.sha256),
     project_state: project ? project.state : null,
+    project_revision: project ? project.revision : null,
+    project_updated_at: project ? project.updated_at : null,
+    sampled_at_ms: performance.now(),
+    batch_progress: document.getElementById("batch-progress")?.textContent || "",
     ui: {
       status: document.getElementById("confirm-status").textContent,
       record: document.getElementById("confirm-record").textContent,
@@ -294,12 +289,9 @@ def png_bytes(width: int, height: int, color: tuple[int, int, int]) -> bytes:
             + chunk(b"IDAT", zlib.compress(raw)) + chunk(b"IEND", b""))
 
 
-def load_server_module():
-    spec = importlib.util.spec_from_file_location(
-        "product_v2_server_under_test", ROOT / "app" / "product_v2_server.py")
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+def start_static_server() -> tuple[object, str]:
+    """只读静态装置：从 dist 根服务模块,首页返回 harness 契约页。"""
+    return start_static(index_document=HARNESS_DIR / "confirm-contract.html")
 
 
 
@@ -324,45 +316,6 @@ def run_node_checks() -> dict:
         results.append({"file": relative, "rc": completed.returncode,
                         "stderr": completed.stderr.strip()[-200:]})
     return {"files": results, "ok": all(item["rc"] == 0 for item in results)}
-
-
-class HarnessHandler(BaseHTTPRequestHandler):
-    def log_message(self, format, *args):  # noqa: A002
-        return
-
-    def _send(self, payload: bytes, ctype: str) -> None:
-        self.send_response(200)
-        self.send_header("Content-Type", ctype)
-        self.send_header("Content-Length", str(len(payload)))
-        self.send_header("Cache-Control", "no-store")
-        self.end_headers()
-        self.wfile.write(payload)
-
-    def do_GET(self):  # noqa: N802
-        path = self.path.split("?", 1)[0]
-        if path in ("/", "/index.html"):
-            self._send((HARNESS_DIR / "confirm-contract.html").read_bytes(), MIME[".html"])
-            return
-        if path.startswith("/harness/"):
-            candidate = (HARNESS_DIR / path[len("/harness/"):]).resolve()
-            if str(candidate).startswith(str(HARNESS_DIR.resolve())) and candidate.is_file():
-                self._send(candidate.read_bytes(), MIME.get(candidate.suffix, "application/octet-stream"))
-                return
-        else:
-            candidate = (PRODUCT_DIR / path.lstrip("/")).resolve()
-            if str(candidate).startswith(str(PRODUCT_DIR.resolve())) and candidate.is_file():
-                self._send(candidate.read_bytes(), MIME.get(candidate.suffix, "application/octet-stream"))
-                return
-        self.send_response(404)
-        self.send_header("Content-Type", "text/plain; charset=utf-8")
-        self.end_headers()
-        self.wfile.write(b"not found")
-
-
-def start_static_server() -> tuple[ThreadingHTTPServer, str]:
-    server = ThreadingHTTPServer(("127.0.0.1", 0), HarnessHandler)
-    threading.Thread(target=server.serve_forever, daemon=True).start()
-    return server, f"http://127.0.0.1:{server.server_address[1]}"
 
 
 def read_suite(browser, url: str, variable: str, console_errors: list, page_errors: list) -> dict:
@@ -450,8 +403,7 @@ def main() -> int:
             finally:
                 browser.close()
     finally:
-        static_server.shutdown()
-        static_server.server_close()
+        static_server.stop()
 
     suite = suites["confirm"]
     case_ids = [item["id"] for item in suite.get("cases", [])]
@@ -471,21 +423,16 @@ def main() -> int:
           all(item["status"] == "passed" and not item["failed"] for item in regression.values()),
           regression)
 
-    module = load_server_module()
+    from app.product_v2_server import create_product_v2_server  # noqa: PLC0415
     from src.providers.v2_fake_image import FakeImageProvider  # noqa: PLC0415
     from src.providers.v2_fake_semantic import FakeSemanticProvider  # noqa: PLC0415
 
-    # TOCTOU 说明：产品服务器直接绑 0 号端口并从 server_address 读回实际端口，
-    # 不用 free_port() 先探测（Windows 上已被抢占的端口仍可静默绑定成功，
-    # 无人应答即 ERR_CONNECTION_REFUSED 假红；见 4_4 load_page/boot_retries 同源证据）。
-    # Harness 静态服 start_static_server() 本就绑 0（见本文件 :282），不受影响。
-    server = module.create_product_v2_server(
+    # 端口说明：构造时真实绑定 0 号端口并用 server.port 读回实际端口（不再 free_port 预探测）。
+    server = create_product_v2_server(
         "127.0.0.1", 0, provider_factory=lambda: FakeSemanticProvider(scenario="ok"),
         image_provider_factory=lambda: FakeImageProvider(scenario="ok"))
-    # 工厂只建服务器不启动；少了这一行页面拿不到响应，异常又会被下面 finally 的
-    # server.shutdown() 永久阻塞吞掉（无输出、无证据、无 traceback）。与 3_6 同形。
-    threading.Thread(target=server.serve_forever, daemon=True).start()
-    base = f"http://127.0.0.1:{server.server_address[1]}"
+    server.start()
+    base = server.base_url
 
     submit_requests: list[dict] = []
     ui: dict = {}
@@ -705,12 +652,51 @@ def main() -> int:
             gate = shared.confirm_and_submit(page, expect, None, submit_requests,
                                              shot_ids=authorized_scope)
             assert gate["ok"], f"确认必须产生本次授权的新消费：{gate['after_actions']}"
-            # 项目状态推进是确认写库后的异步派生（同 4_3 -04 的竞速）：
-            # 有界等待 READY_TO_GENERATE 后再取样；超时仍按实际状态判红。
-            from verify_v2_4_3_batch_execution import wait_project_state  # noqa: PLC0415
-            state_wait = wait_project_state(page, "READY_TO_GENERATE")
-            submits = len(submit_requests)
-            confirmed = page.evaluate(CONFIRM_PROBE, {"shotIds": authorized_scope})
+            # T3：沿用原20秒上限，不把新增等待当修复。项目、授权、Attempt取同一只读事务，
+            # 等待样本本身就是下面断言的样本；保留未落定/回退的时间线，不另读一次覆盖它。
+            # 落定后再多采一小段：只找「已落定又回退」的反例。确认与四条提交都在、状态已经
+            # READY_TO_GENERATE 之后又被改回 PLAN_REVIEW，是错结论（授权没过期时 PLAN_REVIEW
+            # 的语义是「需要重新确认」）；反之不回退也不额外判红，所以这不是放宽判据。
+            # 批次完成与状态写回本来就是两次异步写：落定之前的 PLAN_REVIEW 是「还没派生」，
+            # 不算回退；只有先读到落定样本、之后再读到非落定样本才算。
+            deadline = time.monotonic() + 20
+            watch_until: float | None = None
+            state_timeline = []
+            settled_sample = None
+            regression_sample = None
+            while True:
+                confirmed = page.evaluate(CONFIRM_PROBE, {"shotIds": authorized_scope})
+                submits = len(submit_requests)
+                latest_attempts = {
+                    shot_id: (confirmed["attempts_by_shot"].get(shot_id) or [{}])[-1].get("state")
+                    for shot_id in authorized_scope
+                }
+                sample = {
+                    "sampled_at_ms": confirmed["sampled_at_ms"],
+                    "state": confirmed["project_state"],
+                    "revision": confirmed["project_revision"],
+                    "updated_at": confirmed["project_updated_at"],
+                    "attempts": latest_attempts,
+                    "submits": submits,
+                    "progress": confirmed["batch_progress"],
+                }
+                state_timeline.append(sample)
+                state_settled = (
+                    sample["state"] == "READY_TO_GENERATE"
+                    and submits == len(authorized_scope)
+                    and all(state == "succeeded" for state in latest_attempts.values())
+                )
+                if state_settled:
+                    if settled_sample is None:
+                        settled_sample = sample
+                        watch_until = time.monotonic() + 1.0
+                elif settled_sample is not None and regression_sample is None:
+                    regression_sample = sample
+                if regression_sample is not None or time.monotonic() >= deadline:
+                    break
+                if settled_sample is not None and time.monotonic() >= watch_until:
+                    break
+                page.wait_for_timeout(200)
             record = confirmed["record"]
             record_shots = ({item["shot_id"]: item for item in record["payload"]["shots"]}
                             if record else {})
@@ -745,6 +731,7 @@ def main() -> int:
                   and record["payload"]["fingerprint"]["hash"] == confirmed["recomputed_hash"]
                   and confirmed["staleness"]["stale"] is False
                   and confirmed["project_state"] == "READY_TO_GENERATE"
+                  and settled_sample is not None and regression_sample is None
                   and len(record["payload"]["shots"]) == 4
                   and set(record_shots) == set(authorized_scope)
                   and submits == 4 and per_shot_ok,
@@ -761,7 +748,12 @@ def main() -> int:
                    == confirmed["recomputed_hash"],
                    "environment_identity": confirmed["environment_identity"],
                    "recorded_target": confirmed["recorded_target"],
-                   "state_wait": state_wait,
+                   "state_settled": state_settled,
+                   "settled_sample": settled_sample,
+                   "regressed_sample": regression_sample,
+                   "state_timeline": state_timeline[-8:],
+                   "project_revision": confirmed.get("project_revision"),
+                   "project_updated_at": confirmed.get("project_updated_at"),
                    "stale_fields": None if confirmed["staleness"] is None
                    else [reason["field"] for reason in confirmed["staleness"]["reasons"]][:6]})
 
@@ -880,8 +872,7 @@ def main() -> int:
                            "prompt_versions": reloaded["prompt_versions"]}
             context.close()
     finally:
-        server.shutdown()
-        server.server_close()
+        server.stop()
 
     check("V2.3.5-12", "契约会话与 UI 会话零 console error / page error",
           not console_errors and not page_errors,

@@ -64,7 +64,7 @@ STAGE_LABELS = {"intake": "资料", "understand": "理解", "plan": "方案",
 sys.path.insert(0, str(ROOT / "tools"))
 import v2_verify_shared as shared  # noqa: E402
 
-server_module = shared.load_server_module()
+from app.product_v2_server import create_product_v2_server  # noqa: E402
 
 
 STAGE_PROBE = """
@@ -246,17 +246,17 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
 
     checks: list[dict] = []
     ui: dict = {"keyboard": {}}
-    server = server_module.create_product_v2_server(
+    server = create_product_v2_server(
         "127.0.0.1", 0,
         provider_factory=lambda: FakeSemanticProvider(scenario="ok"),
         image_provider_factory=lambda: FakeImageProvider(scenario="ok"),
         review_provider_factory=lambda: FakeReviewProvider("ok"))
-    threading.Thread(target=server.serve_forever, daemon=True).start()
+    server.start()
     temp_root = Path(tempfile.mkdtemp(prefix="amz-ui2-"))
     profile = temp_root / "profile"
     reference = temp_root / "ref.png"
     reference.write_bytes(shared.png_bytes(1200, 1200, (36, 92, 160)))
-    base = f"http://127.0.0.1:{server.server_address[1]}"
+    base = f"http://127.0.0.1:{server.port}"
     EVIDENCE_IMAGE_DIR.mkdir(parents=True, exist_ok=True)
 
     def shot(name: str) -> str:
@@ -664,8 +664,7 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
             finally:
                 context.close()
     finally:
-        server.shutdown()
-        server.server_close()
+        server.stop()
     return checks, ui
 
 def main() -> int:

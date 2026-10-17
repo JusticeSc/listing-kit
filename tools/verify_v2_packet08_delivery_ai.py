@@ -107,7 +107,7 @@ def main() -> int:
         suite.review = scenario_review  # type: ignore[method-assign]
         server, _ = shared.start_product_server(
             0, suite_factory=lambda: suite)
-        port = server.server_address[1]
+        port = server.port
         try:
             context = pw.chromium.launch_persistent_context(
                 str(temp_root / "profile"), headless=True,
@@ -294,8 +294,7 @@ def main() -> int:
             finally:
                 context.close()
         finally:
-            server.shutdown()
-            server.server_close()
+            server.stop()
 
     # ---- P08D-05：工作台不组 manifest（静态守卫） ----
     import re as _re
