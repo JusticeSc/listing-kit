@@ -69,11 +69,14 @@ export type InputsDependencies = {
   projectIdReader(): string | null;
   projectNameReader(): string;
   draftInput(): CompleteProductInput;
-  changed?(): void;
 };
+/** owner 投影变化通知：与 generation.subscribe 同一习惯（owner-local 订阅，无参数、无业务写回）。 */
+export type InputsListener = () => void;
 export type InputsModule = {
   reset(): void;
   restore(action: ActionSnapshot): Promise<void>;
+  /** owner-local 投影变化订阅：监听者只读投影并渲染，不触发业务写；返回退订函数。 */
+  subscribe(listener: InputsListener): () => void;
   scheduleDraftSave(): void;
   saveIntakeNow(): Promise<boolean>;
   currentIntakePayload(): CompleteProductInput;
@@ -253,6 +256,12 @@ export function createProjectInputsModule(deps: InputsDependencies): InputsModul
   let styleSpec: StyleSpec = emptyStyleSpec();
   let styleVersion = 0;
   let shotSpecs = new Map<string, InputShotSpecEntry>();
+  // owner-local 投影变化通知（generation.subscribe 同一习惯）：监听者只读投影，不执行业务写。
+  // 订阅者生命周期归 workspace 装配；reset 只清业务状态，不退订。
+  const listeners = new Set<InputsListener>();
+  function notify(): void {
+    for (const listener of [...listeners]) listener();
+  }
   let saveTimer: ReturnType<typeof setTimeout> | null = null;
   let intakeConflict: IntakeConflict = null;
 
@@ -444,19 +453,19 @@ export function createProjectInputsModule(deps: InputsDependencies): InputsModul
           intakeVersion = mergedRecord.version;
           intakeFingerprint = fingerprintOf(mergedRecord.payload as CompleteProductInput);
           intakeConflict = { version: latestVersion, at: new Date().toISOString(), merged: true };
-          deps.changed?.();
+          notify();
           return false;
         }
         if (merged && !merged.merged && Array.isArray(merged.unresolved) && merged.unresolved.length > 0) {
           if (!action.alive()) return false;
           intakeConflict = { version: latestVersion, at: new Date().toISOString(),
             merged: false, unresolved: merged.unresolved };
-          deps.changed?.();
+          notify();
           return false;
         }
         intakeConflict = { version: latest && latest.payload ? latest.version : 0,
           at: new Date().toISOString() };
-        deps.changed?.();
+        notify();
         return false;
       }
       throw error;
@@ -466,7 +475,7 @@ export function createProjectInputsModule(deps: InputsDependencies): InputsModul
     intakeVersion = record.version;
     intakeFingerprint = fingerprint;
     intakeConflict = null;
-    deps.changed?.();
+    notify();
     return true;
   }
 
@@ -476,7 +485,7 @@ export function createProjectInputsModule(deps: InputsDependencies): InputsModul
     saveTimer = setTimeout(() => {
       saveTimer = null;
       if (!scheduled.alive()) return;
-      void saveIntakeNow().then(() => deriveState()).then(() => deps.changed?.());
+      void saveIntakeNow().then(() => deriveState()).then(() => notify());
     }, DRAFT_DEBOUNCE_MS);
   }
 
@@ -506,7 +515,7 @@ export function createProjectInputsModule(deps: InputsDependencies): InputsModul
     intakeVersion = saved.version;
     intakeFingerprint = fingerprintOf(record as CompleteProductInput);
     intakeConflict = null;
-    deps.changed?.();
+    notify();
     return true;
   }
 
@@ -760,7 +769,7 @@ export function createProjectInputsModule(deps: InputsDependencies): InputsModul
     } finally {
       if (action.alive()) {
         try { await deriveState(); } catch { /* 派生失败由调用方渲染既有错误面。 */ }
-        deps.changed?.();
+        notify();
       }
     }
   }
@@ -783,7 +792,7 @@ export function createProjectInputsModule(deps: InputsDependencies): InputsModul
     await persistSlot(next, pid, action);
     if (!action.alive()) return;
     await deriveState();
-    deps.changed?.();
+    notify();
   }
 
   async function addCustomSlot(candidate: FactSlot): Promise<void> {
@@ -798,7 +807,7 @@ export function createProjectInputsModule(deps: InputsDependencies): InputsModul
     await persistSlot(candidate, pid, action);
     if (!action.alive()) return;
     await deriveState();
-    deps.changed?.();
+    notify();
   }
 
   async function applySuiteOp(run: () => { plan: SuitePlan } & Record<string, unknown>): Promise<boolean> {
@@ -817,7 +826,7 @@ export function createProjectInputsModule(deps: InputsDependencies): InputsModul
     suitePlan = nextPlan;
     suiteVersion = typeof saved.version === "number" ? saved.version : suiteVersion + 1;
     await deriveState();
-    deps.changed?.();
+    notify();
     return true;
   }
 
@@ -865,7 +874,7 @@ export function createProjectInputsModule(deps: InputsDependencies): InputsModul
     if (!action.alive()) return;
     styleSpec = next;
     styleVersion = record.version;
-    deps.changed?.();
+    notify();
   }
   async function restoreStyle(): Promise<number> {
     const action = deps.beginAction();
@@ -882,7 +891,7 @@ export function createProjectInputsModule(deps: InputsDependencies): InputsModul
     if (!action.alive()) return 0;
     styleSpec = restored;
     styleVersion = record.version;
-    deps.changed?.();
+    notify();
     return record.version;
   }
   async function saveShotSpec(shotId: string, changes: Partial<ShotSpec>): Promise<void> {
@@ -901,7 +910,7 @@ export function createProjectInputsModule(deps: InputsDependencies): InputsModul
     });
     if (!action.alive()) return;
     shotSpecs.set(shotId, { spec: next, version: record.version });
-    deps.changed?.();
+    notify();
   }
   async function restoreShotSpec(shotId: string): Promise<void> {
     const action = deps.beginAction();
@@ -918,7 +927,7 @@ export function createProjectInputsModule(deps: InputsDependencies): InputsModul
     });
     if (!action.alive()) return;
     shotSpecs.set(shotId, { spec: restored, version: record.version });
-    deps.changed?.();
+    notify();
   }
 
   async function deriveState(): Promise<void> {
@@ -945,6 +954,10 @@ export function createProjectInputsModule(deps: InputsDependencies): InputsModul
 
   return {
     reset, restore, scheduleDraftSave, saveIntakeNow, currentIntakePayload,
+    subscribe: (listener: InputsListener): (() => void) => {
+      listeners.add(listener);
+      return () => { listeners.delete(listener); };
+    },
     intakeSnapshot,
     draftVersion, conflict, resolveConflict, addReferences, setReferenceRole,
     removeReference, references, ensureCoreSlots, slotAction, addCustomSlot,

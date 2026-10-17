@@ -37,18 +37,21 @@ export type SelectionProjection = {
   states: Record<string, SelectionState>;
 };
  export type AdoptionReportEntry = { report: ReviewReport; version: number };
- export type SelectionDependencies = {
-   repository: ProjectRepository;
-   generation: GenerationModule;
-   prompts: PromptModule;
-   settings: ModelSettings;
-   beginAction(): ActionSnapshot;
-   sources(): ProjectSources;
-   changed?(): void;
- };
+export type SelectionDependencies = {
+  repository: ProjectRepository;
+  generation: GenerationModule;
+  prompts: PromptModule;
+  settings: ModelSettings;
+  beginAction(): ActionSnapshot;
+  sources(): ProjectSources;
+};
+/** owner 投影变化通知：与 generation.subscribe 同一习惯（owner-local 订阅，无参数、监听者只读投影）。 */
+export type SelectionListener = () => void;
 export interface SelectionAdoptionModule {
   reset(): void;
   restore(action: ActionSnapshot): Promise<void>;
+  /** owner-local 投影变化订阅：监听者只读投影并渲染，不触发业务写；返回退订函数。 */
+  subscribe(listener: SelectionListener): () => void;
   entryOf(shotId: string | null): SelectionEntry | null;
   stateOf(shotId: string): SelectionState;
   adoptedMark(shotId: string | null): { candidate_id: string | null; state: SelectionState } | null;
@@ -81,6 +84,12 @@ export function createSelectionAdoptionModule(deps: SelectionDependencies): Sele
   // 并如实对外显示"补建失败"——它不是熔断,任何显式消费/重新打开/新版本都会重新补建。
   let reportFlights = new Map<string, Promise<AdoptionReportEntry | null>>();
   let reportFailures = new Map<string, { key: string; reason: string }>();
+  // owner-local 投影变化通知（generation.subscribe 同一习惯）：监听者只读投影，不执行业务写。
+  // 订阅者生命周期归 workspace 装配；reset 只清业务状态，不退订。
+  const listeners = new Set<SelectionListener>();
+  function notify(): void {
+    for (const listener of [...listeners]) listener();
+  }
   function messageOf(error: unknown): string {
     if (error !== null && typeof error === "object" && "message" in error
       && typeof error.message === "string") return error.message;
@@ -125,7 +134,7 @@ export function createSelectionAdoptionModule(deps: SelectionDependencies): Sele
     }
     // 新增/更新了报告、或补建失败(需要如实显示失败原因)就刷一次视图投影(订阅异步补建时必需)；
     // 恢复路径不刷，由 loadWorkspace 之后的 renderAll 统一呈现，避免加载中途触发阶段外壳/渲染副作用。
-    if (notifyViews && changed && action.alive()) deps.changed?.();
+    if (notifyViews && changed && action.alive()) notify();
   }
   async function runBackfill(notifyViews = true): Promise<void> {
     if (backfillFlight) { backfillAgain = true; return backfillFlight; }
@@ -187,7 +196,7 @@ export function createSelectionAdoptionModule(deps: SelectionDependencies): Sele
     if (!action.projectId || !shotId || selecting) return { skipped: true, reason: "in_flight", currentSession: action.alive() };
     const source = sourceOf(shotId, candidateId);
     const previous = selections.get(shotId);
-    const flight = {}; selecting = flight;
+    const flight = {}; selecting = flight; notify();
     const roleId = deps.sources().suitePlan?.shots.find(shot => shot.shot_id === shotId)?.role_id || null;
     const consumedSource = deps.sources();
     try {
@@ -226,7 +235,7 @@ export function createSelectionAdoptionModule(deps: SelectionDependencies): Sele
       });
       if (action.alive()) selections.set(shotId, { record, version: saved.version });
       return { record, version: saved.version, candidateVersion: source?.version || null, currentSession: action.alive() };
-    } finally { if (selecting === flight) selecting = null; }
+    } finally { if (selecting === flight) { selecting = null; if (action.alive()) notify(); } }
   }
   async function acknowledge(unknown: UnknownItem) {
     const action = deps.beginAction();
@@ -234,7 +243,7 @@ export function createSelectionAdoptionModule(deps: SelectionDependencies): Sele
     const record = buildAcknowledgement({ unknown, at: new Date().toISOString() });
     const documentId = acknowledgementDocumentIdOf(record);
     await deps.repository.documents.save(action.projectId, { kind: "review_acknowledgement", documentId, payload: record });
-    if (action.alive()) acknowledgements.set(documentId, record);
+    if (action.alive()) { acknowledgements.set(documentId, record); notify(); }
     return { record, currentSession: action.alive() };
   }
   async function restore(action: ActionSnapshot) {
@@ -412,7 +421,7 @@ export function createSelectionAdoptionModule(deps: SelectionDependencies): Sele
     const headers = deps.settings.headers("review");
     const consumedSource = deps.sources();
     flights.add(shotId);
-    deps.changed?.();
+    notify();
     try {
       const stored = deps.generation.candidateChainOf(shotId).find((entry) => entry.record.candidate_id === candidateId);
       const candidate: CandidateRecord | null = stored ? stored.record : null;
@@ -476,11 +485,15 @@ export function createSelectionAdoptionModule(deps: SelectionDependencies): Sele
       return { ok: envelopeOk, outcome: vlmBlock.outcome, candidate_id: candidate.candidate_id, summary: reviewSummaryText(merged) };
     } finally {
       flights.delete(shotId);
-      if (action.alive()) deps.changed?.();
+      if (action.alive()) notify();
     }
   }
   return {
     reset, restore, stateOf, sourceOf, projection, select, acknowledge, candidateReviewRequest, reviewCandidate,
+    subscribe: (listener: SelectionListener): (() => void) => {
+      listeners.add(listener);
+      return () => { listeners.delete(listener); };
+    },
     reportOf: (candidateId) => reviewReports.get(candidateId) || null,
     reportBuildFailure: (candidateId) => reportFailures.get(candidateId)?.reason || null,
     reviewStatusOf: (candidateId) => {

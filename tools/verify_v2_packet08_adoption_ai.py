@@ -109,7 +109,7 @@ def main() -> int:
         review.review = scenario_review  # type: ignore[method-assign]
         server, instances = shared.start_product_server(
             0, review_factory=lambda: review)
-        port = server.server_address[1]
+        port = server.port
         try:
             context = pw.chromium.launch_persistent_context(
                 str(temp_root / "profile"), headless=True,
@@ -253,8 +253,7 @@ def main() -> int:
             finally:
                 context.close()
         finally:
-            server.shutdown()
-            server.server_close()
+            server.stop()
 
     failed = [item for item in checks if not item["ok"]]
     evidence = {

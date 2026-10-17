@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createGenerationModule } from '../../../app/product_v2/generation.js';
-import { buildAttemptRecord, buildCandidateRecord, nextFromSubmitEnvelope, nextFromStatusEnvelope, CANDIDATE_DOCUMENT_KIND } from '../../../app/product_v2/domain/index.js';
-import { sha256Hex } from '../../../app/product_v2/storage/db.js';
+import { createGenerationModule } from '../../../build/frontend-node/app/product_v2/generation.js';
+import { buildAttemptRecord, buildCandidateRecord, nextFromSubmitEnvelope, nextFromStatusEnvelope, CANDIDATE_DOCUMENT_KIND } from '../../../build/frontend-node/app/product_v2/domain/index.js';
+import { sha256Hex } from '../../../build/frontend-node/app/product_v2/storage/db.js';
 
 const provider = { provider_id: 'dashscope-qwen-image', model_id: 'qwen-image-3.0' };
 const environment = { contract: 'v2.4.1', provider: { ...provider,

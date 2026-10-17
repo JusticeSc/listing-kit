@@ -118,7 +118,7 @@ class SuiteLoadStall(RuntimeError):
     """harness 页在 90s 内没有落定结论（载入卡住）；携带页面级诊断。"""
 
     def __init__(self, diag: dict) -> None:
-        super().__init__("harness 页载入卡住")
+        super().__init__(f"harness 页载入卡住：{diag}")
         self.diag = diag
 
 
@@ -166,31 +166,8 @@ def read_suite(browser, url: str, variable: str,
         finally:
             page.close()
 
-    try:
-        return load_once()[0]
-    except SuiteLoadStall as stall:
-        # 只对**可识别的传输层卡住**（有资源请求失败、且页面自身没抛错）重载一次，
-        # 并把重试与诊断记进结果：本机回环偶发连接抖动不是产品结论，
-        # 但也不能被悄悄吞掉（指纹/证据必须保留这次症状）。
-        diag = stall.diag
-        if not diag.get("failed_requests") or diag.get("page_errors"):
-            raise RuntimeError(
-                f"harness 页未落定且不是传输层抖动：{url} · 诊断 {diag}") from stall.__cause__
-        for label, item in (("console", diag.get("console")),
-                            ("page_errors", diag.get("page_errors"))):
-            if item:
-                print(f"[suite-load-stall] {url} {label}: {item[:2]}")
-        print(f"[suite-load-stall] {url} 重载一次 · 失败请求 "
-              f"{diag['failed_requests'][:3]} · readyState {diag.get('ready_state')}")
-        suite = load_once()[0]
-        suite = dict(suite)
-        suite["load_stall_retried"] = True
-        suite["load_stall_evidence"] = {
-            "failed_requests": diag["failed_requests"][:3],
-            "ready_state": diag.get("ready_state"),
-            "scripts": (diag.get("scripts") or [])[:8],
-        }
-        return suite
+    # 首次模块/传输失败也是本次验证结果，保留诊断并失败；不得重载后用成功覆盖。
+    return load_once()[0]
 
 
 

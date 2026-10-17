@@ -45,7 +45,6 @@ import urllib.error
 import urllib.request
 import zlib
 from datetime import datetime
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -54,7 +53,7 @@ sys.path.insert(0, str(ROOT / "tools"))
 import v2_stage_nav as stage_nav  # noqa: E402  （V2.UI.2 六阶段工作台导航）
 import v2_verify_shared as shared  # noqa: E402  （正式 server/夹具/共同业务操作）
 from v2_verify_shared import (  # noqa: E402
-    png_bytes, load_server_module, run_entry, read_suite, compile_all,
+    png_bytes, run_entry, read_suite, compile_all,
 )
 
 
@@ -83,7 +82,7 @@ DOMAIN_FILES = [
     "app/product_v2/domain/specs.js",
     "app/product_v2/domain/prompt.js",
     "app/product_v2/domain/confirm.js",
-    "app/product_v2/domain/attempt.js",
+    "build/frontend-node/app/product_v2/domain/attempt.js",
     "app/product_v2/domain/index.js",
     "app/product_v2/workspace.js",
     "evals/product-v2/harness/attempt-contract.js",
@@ -301,8 +300,7 @@ def main() -> int:
             finally:
                 browser.close()
     finally:
-        static_server.shutdown()
-        static_server.server_close()
+        static_server.stop()
 
     suite = suites["attempt"]
     case_ids = [item["id"] for item in suite.get("cases", [])]
@@ -322,7 +320,7 @@ def main() -> int:
           all(item["status"] == "passed" and not item["failed"] for item in regression.values()),
           regression)
 
-    module = load_server_module()
+    from app.product_v2_server import create_product_v2_server  # noqa: PLC0415
     from src.providers.v2_fake_image import FakeImageProvider  # noqa: PLC0415
     from src.providers.v2_fake_semantic import FakeSemanticProvider  # noqa: PLC0415
     from src.providers.v2_image import (IMAGE_CONTRACT_VERSION, IMAGES_CAPABILITY_VERSION,
@@ -366,14 +364,14 @@ def main() -> int:
                    gate=mode.get("gate"), delay=mode.get("delay") or 0.0)
 
     def make_server(port: int = 0):
-        return module.create_product_v2_server(
+        return create_product_v2_server(
             "127.0.0.1", port,
             provider_factory=lambda: FakeSemanticProvider(scenario="ok"),
             image_provider_factory=image_factory)
 
     server = make_server(0)
-    threading.Thread(target=server.serve_forever, daemon=True).start()
-    base = f"http://127.0.0.1:{server.server_address[1]}"
+    server.start()
+    base = f"http://127.0.0.1:{server.port}"
 
     submit_requests: list[dict] = []
     status_requests: list[str] = []
@@ -388,15 +386,14 @@ def main() -> int:
 
     def restart_server() -> None:
         nonlocal server
-        port = server.server_address[1]
-        server.shutdown()
-        server.server_close()
+        port = server.port
+        server.stop()
         server = make_server(port)
-        started = server.server_address[1]
+        started = server.port
         assert started == port, (
             f"重启后端口变化：{port} -> {started}；IndexedDB 按 origin 隔离，"
             "换端口会让「同项目核对」失去前提")
-        threading.Thread(target=server.serve_forever, daemon=True).start()
+        server.start()
 
     try:
         with sync_playwright() as pw:
@@ -1056,8 +1053,7 @@ def main() -> int:
         interrupted = f"{type(error).__name__}: {error}"
     finally:
         try:
-            server.shutdown()
-            server.server_close()
+            server.stop()
         except Exception:  # noqa: BLE001
             pass
 

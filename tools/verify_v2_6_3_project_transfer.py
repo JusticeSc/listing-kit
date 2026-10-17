@@ -232,8 +232,7 @@ def main() -> int:
             finally:
                 browser.close()
     finally:
-        static_server.shutdown()
-        static_server.server_close()
+        static_server.stop()
     suite = suites.get("transfer", {})
     case_ids = [item.get("id") for item in suite.get("cases", [])]
     failed = [item for item in suite.get("cases", []) if item.get("status") != "passed"]
@@ -255,7 +254,7 @@ def main() -> int:
     walkthrough: dict = {}
     with sync_playwright() as pw:
         server, _suite_instance = shared.start_product_server(0, review_scenario="ok")
-        port = server.server_address[1]
+        port = server.port
         try:
             context_a = pw.chromium.launch_persistent_context(
                 str(temp_root / "profile-a"), headless=True,
@@ -501,8 +500,7 @@ def main() -> int:
             finally:
                 context_a.close()
         finally:
-            server.shutdown()
-            server.server_close()
+            server.stop()
 
     completed = subprocess.run([sys.executable, "app/server.py", "--check"], cwd=str(ROOT),
                                capture_output=True, text=True, check=False, encoding="utf-8",

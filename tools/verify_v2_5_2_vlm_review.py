@@ -75,7 +75,7 @@ EXPECTED_CASES = [f"R{index}" for index in range(14, 22)]
 
 import v2_verify_shared as shared  # noqa: E402  （正式 server/夹具/共同业务操作）
 
-server_module = shared.load_server_module()
+from app.product_v2_server import create_product_v2_server  # noqa: E402
 
 
 
@@ -260,16 +260,16 @@ def run_endpoint_checks(png: bytes) -> list[dict]:
     """无状态端点契约：用假复核 provider 走真实 HTTP；不触网、不落盘。"""
 
     holder = {"scenario": "ok"}
-    server = server_module.create_product_v2_server(
+    server = create_product_v2_server(
         "127.0.0.1", 0,
         provider_factory=lambda: FakeSemanticProvider(scenario="ok"),
         image_provider_factory=lambda: FakeImageProvider(scenario="ok"),
         review_provider_factory=lambda: FakeReviewProvider(holder["scenario"]))
-    threading.Thread(target=server.serve_forever, daemon=True).start()
+    server.start()
     checks: list[dict] = []
     payload = review_payload(png)
     try:
-        _, caps = http_json("127.0.0.1", server.server_address[1], "GET", "/api/v2/capabilities")
+        _, caps = http_json("127.0.0.1", server.port, "GET", "/api/v2/capabilities")
         review_block = (caps or {}).get("review") or {}
         checks.append({
             "id": "V2.5.2-07",
@@ -283,7 +283,7 @@ def run_endpoint_checks(png: bytes) -> list[dict]:
             "detail": review_block.get("provider"),
         })
 
-        status, body = http_json("127.0.0.1", server.server_address[1], "POST", "/api/v2/review/candidate", payload)
+        status, body = http_json("127.0.0.1", server.port, "POST", "/api/v2/review/candidate", payload)
         result = (body or {}).get("result") or {}
         checks.append({
             "id": "V2.5.2-08",
@@ -300,7 +300,7 @@ def run_endpoint_checks(png: bytes) -> list[dict]:
 
         bad = json.loads(json.dumps(payload))
         bad["candidate"]["sha256"] = "0" * 64
-        status, body = http_json("127.0.0.1", server.server_address[1], "POST", "/api/v2/review/candidate", bad)
+        status, body = http_json("127.0.0.1", server.port, "POST", "/api/v2/review/candidate", bad)
         checks.append({
             "id": "V2.5.2-09",
             "title": "图片哈希与字节不一致 → input_rejected/400（不调用模型）",
@@ -310,7 +310,7 @@ def run_endpoint_checks(png: bytes) -> list[dict]:
         })
 
         holder["scenario"] = "unknown"
-        status, body = http_json("127.0.0.1", server.server_address[1], "POST", "/api/v2/review/candidate", payload)
+        status, body = http_json("127.0.0.1", server.port, "POST", "/api/v2/review/candidate", payload)
         error = (body or {}).get("error") or {}
         checks.append({
             "id": "V2.5.2-10",
@@ -322,7 +322,7 @@ def run_endpoint_checks(png: bytes) -> list[dict]:
         })
 
         holder["scenario"] = "invalid_output"
-        status, body = http_json("127.0.0.1", server.server_address[1], "POST", "/api/v2/review/candidate", payload)
+        status, body = http_json("127.0.0.1", server.port, "POST", "/api/v2/review/candidate", payload)
         error = (body or {}).get("error") or {}
         checks.append({
             "id": "V2.5.2-11",
@@ -332,8 +332,7 @@ def run_endpoint_checks(png: bytes) -> list[dict]:
             "detail": {"status": status, "error": error},
         })
     finally:
-        server.shutdown()
-        server.server_close()
+        server.stop()
     return checks
 
 
@@ -343,18 +342,18 @@ def run_browser_checks(stamp: str, screenshots: list[str], console_errors: list[
 
     checks: list[dict] = []
     holder = {"scenario": "ok"}
-    server = server_module.create_product_v2_server(
+    server = create_product_v2_server(
         "127.0.0.1", 0,
         provider_factory=lambda: FakeSemanticProvider(scenario="ok"),
         image_provider_factory=lambda: FakeImageProvider(scenario="ok"),
         review_provider_factory=lambda: FakeReviewProvider(holder["scenario"]))
-    threading.Thread(target=server.serve_forever, daemon=True).start()
+    server.start()
     static_server, static_url = shared.start_static_server()
     temp_root = Path(tempfile.mkdtemp(prefix="amz-v252-"))
     profile = temp_root / "profile"
     reference = temp_root / "ref.png"
     reference.write_bytes(shared.png_bytes(16, 16, (36, 92, 160)))
-    base = f"http://127.0.0.1:{server.server_address[1]}"
+    base = f"http://127.0.0.1:{server.port}"
     EVIDENCE_IMAGE_DIR.mkdir(parents=True, exist_ok=True)
     try:
         with sync_playwright() as pw:
@@ -596,9 +595,8 @@ def run_browser_checks(stamp: str, screenshots: list[str], console_errors: list[
             finally:
                 context.close()
     finally:
-        static_server.shutdown()
-        server.shutdown()
-        server.server_close()
+        static_server.stop()
+        server.stop()
     return checks
 
 
@@ -629,7 +627,7 @@ def main() -> int:
         "title": "正式入口 --check 全过（含复核路由自检：路由、请求身份、provider 不可用分类）",
         # 自检条目会随批次增加（33 → 38 → …）：断言只看「全过」这一语义，不写死条数。
         "ok": entry["rc"] == 0 and any(
-            re.search(r"V2 正式入口自检：\d+/\d+ 通过", line) for line in entry["tail"]),
+            re.search(r"V2 正式入口(轻量)?自检：\d+/\d+ 通过", line) for line in entry["tail"]),
         "detail": {"rc": entry["rc"], "tail": entry["tail"][-3:]},
     })
     expected_console = [item for item in console_errors if "status of 504" in item]

@@ -31,10 +31,11 @@ import tempfile
 import threading
 import zlib
 from datetime import datetime
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "tools"))
+from v2_test_server import start_static  # noqa: E402
 PRODUCT_DIR = ROOT / "app" / "product_v2"
 HARNESS_DIR = ROOT / "evals" / "product-v2" / "harness"
 EVIDENCE_DIR = ROOT / "evals" / "product-v2"
@@ -150,12 +151,6 @@ def png_bytes(width: int, height: int, color: tuple[int, int, int]) -> bytes:
             + chunk(b"IDAT", zlib.compress(raw)) + chunk(b"IEND", b""))
 
 
-def load_server_module():
-    spec = importlib.util.spec_from_file_location(
-        "product_v2_server_under_test", ROOT / "app" / "product_v2_server.py")
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
 
 
 
@@ -180,43 +175,10 @@ def run_node_checks() -> dict:
     return {"files": results, "ok": all(item["rc"] == 0 for item in results)}
 
 
-class HarnessHandler(BaseHTTPRequestHandler):
-    def log_message(self, format, *args):  # noqa: A002
-        return
-
-    def _send(self, payload: bytes, ctype: str) -> None:
-        self.send_response(200)
-        self.send_header("Content-Type", ctype)
-        self.send_header("Content-Length", str(len(payload)))
-        self.send_header("Cache-Control", "no-store")
-        self.end_headers()
-        self.wfile.write(payload)
-
-    def do_GET(self):  # noqa: N802
-        path = self.path.split("?", 1)[0]
-        if path in ("/", "/index.html"):
-            self._send((HARNESS_DIR / "suite-editor-contract.html").read_bytes(), MIME[".html"])
-            return
-        if path.startswith("/harness/"):
-            candidate = (HARNESS_DIR / path[len("/harness/"):]).resolve()
-            if str(candidate).startswith(str(HARNESS_DIR.resolve())) and candidate.is_file():
-                self._send(candidate.read_bytes(), MIME.get(candidate.suffix, "application/octet-stream"))
-                return
-        else:
-            candidate = (PRODUCT_DIR / path.lstrip("/")).resolve()
-            if str(candidate).startswith(str(PRODUCT_DIR.resolve())) and candidate.is_file():
-                self._send(candidate.read_bytes(), MIME.get(candidate.suffix, "application/octet-stream"))
-                return
-        self.send_response(404)
-        self.send_header("Content-Type", "text/plain; charset=utf-8")
-        self.end_headers()
-        self.wfile.write(b"not found")
 
 
-def start_static_server() -> tuple[ThreadingHTTPServer, str]:
-    server = ThreadingHTTPServer(("127.0.0.1", 0), HarnessHandler)
-    threading.Thread(target=server.serve_forever, daemon=True).start()
-    return server, f"http://127.0.0.1:{server.server_address[1]}"
+def start_static_server():
+    return start_static(index_document=HARNESS_DIR / "suite-editor-contract.html")
 
 
 def main() -> int:
@@ -264,8 +226,7 @@ def main() -> int:
             finally:
                 browser.close()
     finally:
-        static_server.shutdown()
-        static_server.server_close()
+        static_server.stop()
 
     case_ids = [item["id"] for item in suite.get("cases", [])]
     missing = [case for case in EXPECTED_CASES if case not in case_ids]
@@ -281,13 +242,14 @@ def main() -> int:
           negative_seen == NEGATIVE_CASES and not failed_cases,
           {"expected": NEGATIVE_CASES, "seen": negative_seen})
 
-    module = load_server_module()
+    from app.product_v2_server import create_product_v2_server  # noqa: PLC0415
     from src.providers.v2_fake_semantic import FakeSemanticProvider  # noqa: PLC0415
 
-    server = module.create_product_v2_server(
+    server = create_product_v2_server(
         "127.0.0.1", 0, provider_factory=lambda: FakeSemanticProvider(scenario="ok"))
-    threading.Thread(target=server.serve_forever, daemon=True).start()
-    base = f"http://127.0.0.1:{server.server_address[1]}"
+    # 工厂只建服务器不启动；goto 前显式 start()（与 verify_v2_3_5/3_6 同形）。
+    server.start()
+    base = f"http://127.0.0.1:{server.port}"
 
     ui: dict = {}
     EVIDENCE_DIR.mkdir(parents=True, exist_ok=True)
@@ -417,8 +379,7 @@ def main() -> int:
             ui["version"] = version_before_reload
             context.close()
     finally:
-        server.shutdown()
-        server.server_close()
+        server.stop()
 
     check("V2.3.2-09", "契约会话与 UI 会话零 console error / page error",
           not console_errors and not page_errors,

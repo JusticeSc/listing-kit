@@ -10,7 +10,6 @@
   6) 复制：文档版本与资产 Blob 在新 project_id 下各存一份，原项目不变。
   7) 删除：记录与其文档/资产一起消失；作为当前项目时指针被清除。
   8) 两个独立浏览器配置文件互不可见；控制台零错误；390px 无横向溢出。
-  9) 旧 Product V1 路由回归：默认入口页面与其静态资源仍可取（V2.1.2 不得破坏旧入口）。
 
 运行：
   uv run --locked python tools/verify_v2_1_2_project_home.py
@@ -166,36 +165,6 @@ def run_node_check(path: Path) -> dict:
     completed = subprocess.run(["node", "--check", str(path)], cwd=ROOT, capture_output=True, text=True)
     return {"file": path.relative_to(ROOT).as_posix(), "rc": completed.returncode,
             "stderr": completed.stderr.strip()}
-
-
-def check_v1_route() -> dict:
-    """旧 Product V1 入口回归：在真实 V1 服务器上取默认页面与静态资源；只读，不碰工作空间。"""
-    import threading
-    import urllib.request
-
-    if str(ROOT) not in sys.path:
-        sys.path.insert(0, str(ROOT))
-    from app.product_v1_server import create_product_server  # noqa: PLC0415
-
-    server = create_product_server("127.0.0.1", 0)
-    threading.Thread(target=server.serve_forever, daemon=True).start()
-    try:
-        base = f"http://127.0.0.1:{server.server_port}"
-        with urllib.request.urlopen(base + "/", timeout=10) as response:
-            page_status = response.status
-            page_type = response.headers.get("Content-Type", "")
-            page_body = response.read().decode("utf-8", "replace")
-        with urllib.request.urlopen(base + "/product-assets/product.js", timeout=10) as response:
-            asset_status = response.status
-            asset_type = response.headers.get("Content-Type", "")
-        ok = (page_status == 200 and asset_status == 200
-              and "text/html" in page_type and "javascript" in asset_type
-              and "/product-assets/product.js" in page_body)
-        return {"ok": ok, "page_status": page_status, "asset_status": asset_status,
-                "page_type": page_type, "asset_type": asset_type}
-    finally:
-        server.shutdown()
-        server.server_close()
 
 
 def main() -> int:
@@ -476,13 +445,7 @@ def main() -> int:
             finally:
                 browser.close()
     finally:
-        server.shutdown()
-        server.server_close()
-
-    # --- 旧 Product V1 路由回归（V2.1.2 不得破坏旧入口） ---
-    v1_route = check_v1_route()
-    check("V2.1.2-10", "旧 Product V1 路由未被破坏：默认入口页面与静态资源仍可取",
-          v1_route["ok"], v1_route)
+        server.stop()
 
     failed = [item["id"] for item in checks if not item["ok"]]
     status = "passed" if not failed else "failed"
@@ -498,7 +461,7 @@ def main() -> int:
         "page_errors": page_errors,
         "boundary": (
             "证明项目首页与本机项目 CRUD：空白启动、列表、新建、打开、重命名、复制、删除、"
-            "跨配置文件隔离、IndexedDB 后置条件与旧 Product V1 路由未被破坏。不证明项目 ZIP 导入导出、正式入口、"
+            "跨配置文件隔离与 IndexedDB 后置条件。不证明项目 ZIP 导入导出、正式入口、"
             "商品资料/理解/套图/生成/交付，也不证明首次使用者可用性。"
         ),
     }

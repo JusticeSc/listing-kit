@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { evaluateSuiteFindings } from '../../../app/product_v2/domain/suite-review.js';
+import { evaluateSuiteFindings } from '../../../build/frontend-node/app/product_v2/domain/suite-review.js';
 
 function dependencies(required = false, candidateId = null) {
   const common = { role_id: 'primary', role_label: '商品主图', custom: true,

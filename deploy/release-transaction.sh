@@ -110,25 +110,95 @@ wait_https() {
 }
 
 check_static() {
-  # 与 finalize/acceptance 同判据：首页外壳标记与样式/脚本字节。
-  local public_ip="$1" https_port="$2" html=""
+  # 与 finalize/acceptance 同判据：首页外壳标记 + 首页声明的同源构建入口字节。
+  # 入口从实际 HTML 动态提取（Vite 嵌套产物路径），不钉死文件名；JS 与 CSS 入口
+  # 必须都非空，逐个经同一受信 HTTPS 取回非空字节；外部 scheme/协议相对/逃逸路径
+  # 直接判红。旧根路径（/styles.css、/entry.js、/app.js）已退役，不再逐个硬编码。
+  # 纯 shell 提取（远端宿主自带 grep/sed/tr，无新增依赖）：只认双引号属性的受控
+  # 生成标签；src/href 存在但解析不出的标签直接判红，不静默跳过。
+  local public_ip="$1" https_port="$2" html="" base=""
+  local one_line="" tags="" tag="" url="" scripts="" styles=""
+  local resource="" raw_path="" path="" query="" body=""
+  base="https://${public_ip}:${https_port}"
   # 完整读取再判外壳；grep -q 提前退出在 pipefail 下会把正常大页面变成 curl 23。
-  if ! html="$(curl -fsS --max-time 8 "https://${public_ip}:${https_port}/" 2>/dev/null)"; then
+  if ! html="$(curl -fsS --max-time 8 "${base}/" 2>/dev/null)"; then
     return 1
   fi
   case "$html" in
     *'id="project-list"'*) ;;
     *) return 1 ;;
   esac
-  if ! curl -fsS --max-time 8 "https://${public_ip}:${https_port}/styles.css" >/dev/null 2>&1; then
+  # 压成一行再提标签：跨行标签也不漏网；属性名按 HTML 大小写不敏感匹配，
+  # 取出的 URL 保持原大小写（路径大小写敏感）。
+  one_line="$(printf '%s' "$html" | tr '\n' ' ')"
+  tags="$(printf '%s' "$one_line" | grep -oi '<script[^>]*>' || true)"
+  if [ -n "$tags" ]; then
+    while IFS= read -r tag; do
+      [ -n "$tag" ] || continue
+      # 无 src 即内联脚本，不是外部入口，跳过。
+      if ! printf '%s' "$tag" | grep -qi '[[:space:]]src[[:space:]]*='; then
+        continue
+      fi
+      url="$(printf '%s' "$tag" | sed -n 's/.*[[:space:]][sS][rR][cC][[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p')"
+      if [ -z "$url" ]; then
+        return 1
+      fi
+      scripts="${scripts}${url}
+"
+    done <<< "$tags"
+  fi
+  tags="$(printf '%s' "$one_line" | grep -oi '<link[^>]*>' || true)"
+  if [ -n "$tags" ]; then
+    while IFS= read -r tag; do
+      [ -n "$tag" ] || continue
+      # 只有 rel 含 stylesheet 的 link 才是样式入口（icon 等跳过）。
+      if ! printf '%s' "$tag" | grep -qi '[[:space:]]rel[[:space:]]*=[[:space:]]*"[^"]*stylesheet[^"]*"'; then
+        continue
+      fi
+      url="$(printf '%s' "$tag" | sed -n 's/.*[[:space:]][hH][rR][eE][fF][[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p')"
+      if [ -z "$url" ]; then
+        return 1
+      fi
+      styles="${styles}${url}
+"
+    done <<< "$tags"
+  fi
+  if [ -z "$scripts" ] || [ -z "$styles" ]; then
     return 1
   fi
-  if ! curl -fsS --max-time 8 "https://${public_ip}:${https_port}/entry.js" >/dev/null 2>&1; then
-    return 1
-  fi
-  if ! curl -fsS --max-time 8 "https://${public_ip}:${https_port}/app.js" >/dev/null 2>&1; then
-    return 1
-  fi
+  while IFS= read -r resource; do
+    [ -n "$resource" ] || continue
+    # 外部地址：任何 scheme（http:/data:/…）与协议相对（//…）一律拒绝；
+    # 同源只认相对路径与绝对路径（Vite base './' 只产出相对路径）。
+    case "$resource" in
+      *:*|//*) return 1 ;;
+    esac
+    resource="${resource%%#*}"
+    [ -n "$resource" ] || return 1
+    raw_path="${resource%%\?*}"
+    # 非法字符与目录逃逸一律拒绝（.. 按子串拒：Vite 产物名永不含它）。
+    case "$resource" in
+      *[[:space:]]*|*\"*|*"<"*|*">"*|*\\*|*"'"*) return 1 ;;
+    esac
+    case "$raw_path" in
+      *..*) return 1 ;;
+    esac
+    case "$raw_path" in
+      /*) path="$raw_path" ;;
+      ./*) path="/${raw_path#./}" ;;
+      *) path="/${raw_path}" ;;
+    esac
+    if [ -z "$path" ] || [ "$path" = "/" ]; then
+      return 1
+    fi
+    query="${resource:${#raw_path}}"
+    if ! body="$(curl -fsS --max-time 8 "${base}${path}${query}" 2>/dev/null)"; then
+      return 1
+    fi
+    if [ -z "$body" ]; then
+      return 1
+    fi
+  done <<< "$(printf '%s\n%s' "$scripts" "$styles")"
   return 0
 }
 

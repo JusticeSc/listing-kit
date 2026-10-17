@@ -35,7 +35,7 @@
 
 v2 状态模式实行「政出一门」：计划拥有完整阶段图、Gate、任务和依赖；状态文件只保存
 非 pending 的进度、证据和一个 next_action。状态中的 ID 是外键，不再复制计划结构。
-旧的 superseded 记录仍按 legacy 结构只读校验，避免改写历史证据。
+superseded 记录只保留可读身份，不重新解释旧产品阶段、证据路径或要求旧源码存在。
 
 为什么 J5 要「前置必须 done」：计划写着「任一时刻最多一个阶段处于 active；只有阶段
 门禁取得权威证据后，下一阶段才能开始」。跳着来等于没门。
@@ -599,6 +599,15 @@ def _check(rep: Report) -> None:
             rep.problem(f"[J2] {rel} 的 status={st!r} 不在取值域："
                         f"{'/'.join(sorted(RECORD_STATUSES))}")
 
+        if st == "superseded":
+            continue
+        if d.get("state_schema") != STATE_SCHEMA_V2:
+            if st == "completed":
+                continue
+            rep.problem(f"[J0] {rel} 的可恢复记录必须声明 {STATE_SCHEMA_V2}，"
+                        "旧格式只允许保留为 completed/superseded 历史。")
+            continue
+
         for k in FORBIDDEN_KEYS:
             if k in d:
                 rep.problem(f"[J8] {rel} 里出现顶层键 {k!r} —— 这类事实的正文只有一处"
@@ -621,13 +630,10 @@ def _check(rep: Report) -> None:
             if not (isinstance(gid, str) and GOAL_ID_RE.fullmatch(gid)):
                 rep.problem(f"[J3] {rel} 声明 goal_binding=required，但 goal_id={gid!r} "
                             f"不是工具支持的原样 Goal 标识。")
-            elif d.get("state_schema") == STATE_SCHEMA_V2 and st != "superseded":
+            else:
                 _check_goal_evidence(rep, rel, d, str(ref), plan_text)
         elif binding == "session":
-            if d.get("state_schema") != STATE_SCHEMA_V2:
-                rep.problem(f"[J3] {rel} 的 goal_binding=session 只属于 v2 执行状态，"
-                            f"legacy 记录不许借用 session 绕过 Goal 绑定合同。")
-            elif st == "prepared":
+            if st == "prepared":
                 rep.problem(f"[J3] {rel} 记录 prepared，不允许 session 绑定。")
             elif d.get("goal_id") is not None:
                 rep.problem(f"[J3] {rel} 声明 goal_binding=session，但 goal_id={gid!r} —— "
@@ -648,141 +654,11 @@ def _check(rep: Report) -> None:
             if (binding != "optional" or gid not in (None, "")
                     or not str(d.get("goal_pending_reason") or "").strip()):
                 rep.problem(f"[J3] {rel} 记录 prepared，必须 optional、goal_id 为空且有未绑定理由。")
-            if d.get("state_schema") != STATE_SCHEMA_V2:
-                rep.problem(f"[J9] {rel} 记录 prepared 只允许 {STATE_SCHEMA_V2}。")
 
-        if d.get("state_schema") == STATE_SCHEMA_V2:
-            if d.get("goal_binding") == "session":
-                rep.note(f"session 绑定以 goal_binding_evidence 的 amz-goal-observation/v1 "
-                         f"记录为锚；goal_id 保持 null，不冒充真实 Goal ID")
-            _check_v2(rep, rel, d, str(ref), plan_text, plan_phases, plan_gates)
-            continue
-
-        phases = [ph for ph in (d.get("phases") or []) if isinstance(ph, dict)]
-        ids = [str(ph.get("id")) for ph in phases]
-        if ids != plan_phases:
-            rep.problem(f"[J4] {rel} 的阶段图与计划不一致：状态里是 {ids}，"
-                        f"计划里是 {plan_phases} —— 计划加/删了一相而状态没跟，"
-                        f"或者状态多出一个不存在的相。")
-        for ph in phases:
-            pid = str(ph.get("id"))
-            gate = ph.get("gate")
-            want = f"G{pid}"
-            if gate != want:
-                rep.problem(f"[J4] {rel} 阶段 {pid} 的 gate={gate!r}，应为 {want!r}")
-            elif want not in plan_gates:
-                rep.problem(f"[J4] {rel} 阶段 {pid} 引用的 Gate {want} 在计划里没有声明"
-                            f" —— 门的判据不在计划里，那这道门是谁定的？")
-
-        tot_active = [ph for ph in phases if ph.get("status") == "active"]
-        if len(tot_active) > 1:
-            rep.problem(f"[J5] {rel} 有 {len(tot_active)} 个 active 阶段 —— "
-                        f"同时开两相，门禁就形同虚设。")
-        for i, ph in enumerate(phases):
-            pid = str(ph.get("id"))
-            pst = ph.get("status")
-            if pst not in ITEM_STATUSES:
-                rep.problem(f"[J2] {rel} 阶段 {pid} 的 status={pst!r} 不在取值域。")
-                continue
-            if pst in ("active", "done"):
-                nd = [str(phases[j].get("id")) for j in range(i)
-                      if phases[j].get("status") != "done"]
-                if nd:
-                    rep.problem(f"[J5] {rel} 阶段 {pid} 是 {pst}，但前置阶段 {nd} 还没 done"
-                                f" —— 阶段门禁是顺序的，跳着来等于没门。")
-            if pst == "done":
-                ev = ph.get("gate_evidence") or []
-                if not ev:
-                    rep.problem(f"[J5] {rel} 阶段 {pid} 标成 done，但 gate_evidence 是空的"
-                                f" —— 门过了却没有证据，那不是过了，是说了。")
-                else:
-                    for e in ev:
-                        if not _exists(str(e)):
-                            rep.problem(f"[J5] {rel} 阶段 {pid} 的 gate_evidence "
-                                        f"指向不存在的文件：{e}")
-
-        tasks = [t for t in (d.get("tasks") or []) if isinstance(t, dict)]
-        ids_all = [str(t.get("id")) for t in tasks]
-        dup = sorted({x for x in ids_all if ids_all.count(x) > 1})
-        if dup:
-            rep.problem(f"[J6] {rel} 里任务 id 重复：{dup}")
-        done_ids = {str(t.get("id")) for t in tasks if t.get("status") == "done"}
-        for t in tasks:
-            tid = str(t.get("id"))
-            tst = t.get("status")
-            if tst not in ITEM_STATUSES:
-                rep.problem(f"[J2] {rel} 任务 {tid} 的 status={tst!r} 不在取值域。")
-                continue
-            deps = [str(x) for x in (t.get("depends_on") or [])]
-            missing = [x for x in deps if x not in ids_all]
-            if missing:
-                rep.problem(f"[J6] {rel} 任务 {tid} 依赖了不存在的任务：{missing}")
-            if tst in ("active", "done"):
-                nd = [x for x in deps if x not in done_ids]
-                if nd:
-                    rep.problem(f"[J6] {rel} 任务 {tid} 是 {tst}，但依赖 {nd} 还没 done。")
-            if tst == "done":
-                ev = t.get("evidence") or []
-                if not ev:
-                    rep.problem(f"[J6] {rel} 任务 {tid} 标成 done 却没有 evidence —— "
-                                f"进度是证据换来的，不是时间换来的。")
-                else:
-                    for e in ev:
-                        if not _exists(str(e)):
-                            rep.problem(f"[J6] {rel} 任务 {tid} 的 evidence "
-                                        f"指向不存在的文件：{e}")
-                        elif _tracked(str(e)) is False:
-                            rep.note(f"[J6-warn] {rel} 任务 {tid} 的 evidence 存在但还没进版本库："
-                                     f"{e} —— 本地检查看得见、CI 检出后看不见；提交前先 git add。")
-
-        # [J9] 记录状态与阶段/任务状态必须一致。
-        # 记录状态值本身不在取值域时由 J2 独占报出：两个判据同时响，既让「只报
-        # 该报的那一类」失效，也让人分不清该改哪一处。
-        # 「记录说 paused、阶段在跑」两句话单独看都合法，合起来是谎 ——
-        # 开工要同时改三处，只改一处时必须有东西响。
-        if tot_active and st in RECORD_STATUSES and st != "active":
-            rep.problem(f"[J9] {rel} 有 {len(tot_active)} 个阶段是 active，"
-                        f"但记录 status={st!r} —— 记录说停了、阶段在跑，"
-                        f"接手的人读到的是哪一个？")
-        if st == "active" and not tot_active:
-            rep.problem(f"[J9] {rel} 记录 status=active，但没有任何阶段是 active"
-                        f" —— 记录说在跑、没有一相在动。开工要把三处一起改。")
-        if st == "completed":
-            open_items = ([f"阶段 {ph.get('id')}" for ph in phases
-                           if ph.get("status") != "done"]
-                          + [f"任务 {t.get('id')}" for t in tasks
-                             if t.get("status") not in ("done", "dropped", "superseded")])
-            if open_items:
-                rep.problem(f"[J9] {rel} 记录 status=completed，但还有未收尾的 "
-                            f"{'、'.join(open_items)} —— 完成是证据换来的，"
-                            f"把记录改成 completed 不算数。")
-
-        # 历史记录已经被取代，不再伪造一个“下一步”；J7 只约束仍可能恢复或推进的记录。
-        if st not in ("active", "paused"):
-            continue
-        na = d.get("next_action_task")
-        if not na:
-            rep.problem(f"[J7] {rel} 没有 next_action_task —— "
-                        f"接手的人不知道从哪一步继续。")
-            continue
-        na = str(na)
-        by_id = {str(t.get("id")): t for t in tasks}
-        t = by_id.get(na)
-        if t is None:
-            rep.problem(f"[J7] {rel} 的 next_action_task={na!r} 不是本文件里的任务。")
-            continue
-        tst = t.get("status")
-        if tst == "done":
-            rep.problem(f"[J7] {rel} 的 next_action_task={na!r} 已经 done —— "
-                        f"下一步不可能是一件已完成的事。")
-        elif tst != "pending":
-            rep.problem(f"[J7] {rel} 的 next_action_task={na!r} 的 status={tst!r}，"
-                        f"只有 pending 才可能是下一步。")
-        nd = [x for x in (str(y) for y in (t.get("depends_on") or []))
-              if x not in done_ids]
-        if nd:
-            rep.problem(f"[J7] {rel} 的 next_action_task={na!r} 依赖 {nd} 还没 done —— "
-                        f"报一个现在做不了的下一步，等于没有下一步。")
+        if d.get("goal_binding") == "session":
+            rep.note("session 绑定以 goal_binding_evidence 的 amz-goal-observation/v1 "
+                     "记录为锚；goal_id 保持 null，不冒充真实 Goal ID")
+        _check_v2(rep, rel, d, str(ref), plan_text, plan_phases, plan_gates)
 
     rep.note(f"工作记录 {len(records)} 份 · v2 状态从 plan_ref 读取阶段、任务与依赖，不在 state 重复定义")
 

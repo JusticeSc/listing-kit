@@ -103,7 +103,9 @@ for source in (CODE_ROOT / "_working").glob("*/state.md"):
                 # 引用会在副本里变成 J6「指向不存在」，把受控基线和每个反例都污染成假红。
                 shutil.copytree(original, ROOT / original.relative_to(CODE_ROOT),
                                 dirs_exist_ok=True)
-    copy_references(yaml.safe_load(match.group(1)))
+    record = yaml.safe_load(match.group(1))
+    if isinstance(record, dict) and record.get("status") != "superseded":
+        copy_references(record)
 YAML_BLOCK = re.compile(r"```yaml\r?\n(.*?)```", re.S)
 TAG = re.compile(r"\[J(\d+)\]")
 
@@ -479,20 +481,6 @@ def _mutate(case: str) -> tuple[list[str], bool]:
     elif case == "AB":
         data.setdefault("task_progress", {})[str(data["next_action_task"])] = {
             "status": "blocked", "evidence": []}
-    elif case == "AC":
-        data.pop("state_schema", None)
-        phases = data.pop("phase_progress", {})
-        tasks = data.pop("task_progress", {})
-        data["phases"] = [
-            {"id": pid, "gate": f"G{pid}", "status": (phases.get(pid) or {}).get("status", "pending"),
-             "gate_evidence": (phases.get(pid) or {}).get("evidence", [])}
-            for pid in PLAN_PHASE_HEAD.findall(PLAN_TEXT)]
-        data["tasks"] = [
-            {"id": tid, "status": (tasks.get(tid) or {}).get("status", "pending"),
-             # legacy 的 depends_on 只接受任务引用；Gate 是 v2 的计划语义。
-             "depends_on": [dep for dep in PLAN_DEPS.get(tid, []) if dep in PLAN_TASKS],
-             "evidence": (tasks.get(tid) or {}).get("evidence", [])}
-            for tid in PLAN_TASKS]
     elif case == "AD":
         data["next_action_task"] = next(
             tid for tid in PLAN_TASKS
@@ -575,20 +563,6 @@ def _mutate(case: str) -> tuple[list[str], bool]:
         data = _sessionize(
             data, status="active",
             evidence_rel=_write_tmp_evidence(observed_objective=PLAN_GOAL + "多出来的尾巴。"))
-    elif case == "AZ":
-        data = _sessionize(data, status="active", evidence_rel=REAL_EVIDENCE_REL)
-        data.pop("state_schema", None)
-        phases = data.pop("phase_progress", {})
-        tasks = data.pop("task_progress", {})
-        data["phases"] = [
-            {"id": pid, "gate": f"G{pid}", "status": (phases.get(pid) or {}).get("status", "pending"),
-             "gate_evidence": (phases.get(pid) or {}).get("evidence", [])}
-            for pid in PLAN_PHASE_HEAD.findall(PLAN_TEXT)]
-        data["tasks"] = [
-            {"id": tid, "status": (tasks.get(tid) or {}).get("status", "pending"),
-             "depends_on": [dep for dep in PLAN_DEPS.get(tid, []) if dep in PLAN_TASKS],
-             "evidence": (tasks.get(tid) or {}).get("evidence", [])}
-            for tid in PLAN_TASKS]
     elif case == "BA":
         # state 的读数车道要跟证据一致（paused），让冲突落在「记录 active vs 观察 paused」
         # —— 那是 J9 的地盘；不然这条会连带 J3，失去「只报该报的」。
@@ -647,6 +621,8 @@ def _mutate(case: str) -> tuple[list[str], bool]:
         data.setdefault("task_progress", {})[tid] = {"status": "blocked", "evidence": []}
         data["blockers"] = ([tid + "_awaits_owner_permission"] if case == "BL"
                             else ["another_task_awaits_owner_permission"])
+    elif case == "BN":
+        data["state_schema"] = "amz-project-state/unsupported"
     else:
         problems.append(f"未知 case {case}")
 
@@ -684,7 +660,6 @@ CASES = [
     ("Z", "prepared 缺少 next_action", 1, {"J7"}),
     ("AA", "prepared next_action 已 active", 1, {"J7", "J9"}),
     ("AB", "prepared next_action 已 blocked", 1, {"J7"}),
-    ("AC", "legacy 结构不能声明 prepared", 1, {"J9"}),
     ("AD", "prepared next_action 已 done", 1, {"J7"}),
     ("AE", "active 与系统 blocked 读数不匹配", 1, {"J9"}),
     ("AF", "paused 与系统 active 读数不匹配", 1, {"J9"}),
@@ -706,7 +681,6 @@ CASES = [
     ("AV", "prepared 冒充 session 绑定", 1, {"J3"}),
     ("AW", "required 身份与观察 Goal ID 不一致", 1, {"J3"}),
     ("AY", "session 证据正文被追加改动（展示归一后不等）", 1, {"J3"}),
-    ("AZ", "legacy 结构借用 session 绑定", 1, {"J3"}),
     ("BA", "session 证据 paused 与记录 active 冲突", 1, {"J9"}),
     ("BB", "session 证据是坏 JSON", 1, {"J3"}),
     ("BC", "session 证据缺 id_unavailable", 1, {"J3"}),
@@ -720,6 +694,7 @@ CASES = [
     ("BK", "required 有 ID 却声称 ID 不可用", 1, {"J3"}),
     ("BL", "active 阻塞恢复点具有对应阻塞记录 · 合法", 0, set()),
     ("BM", "active 阻塞恢复点没有对应阻塞记录", 1, {"J7"}),
+    ("BN", "可恢复状态的未知格式必须拒绝", 1, {"J0"}),
 ]
 
 

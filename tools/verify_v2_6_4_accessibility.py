@@ -51,7 +51,7 @@ import v2_verify_shared as shared  # noqa: E402
 import v2_stage_nav as stage_nav  # noqa: E402  （六阶段导航：分析后必须先进入商品理解面板）
 from walkthrough_server import WalkthroughImageProvider  # noqa: E402
 
-server_module = shared.load_server_module("v264_server")
+from app.product_v2_server import create_product_v2_server  # noqa: E402
 
 
 AXE_RUN = """async () => {
@@ -159,14 +159,14 @@ def sha256_of(path: Path) -> str:
 def start_server(host: str, port: int, *, image_factory=None):
     """正式入口 + fake provider（含整套复核），与 V2.6.2 走查同一装配。"""
     suite = shared.FakeSuiteReviewProvider(scenario="drift")
-    server = server_module.create_product_v2_server(
+    server = create_product_v2_server(
         host, port,
         provider_factory=lambda: shared.FakeSemanticProvider(scenario="ok"),
         image_provider_factory=(image_factory
                                 or (lambda: shared.FakeImageProvider(scenario="ok", size=1200))),
         review_provider_factory=lambda: shared.FakeReviewProvider(scenario="ok"),
         suite_review_provider_factory=lambda: suite)
-    threading.Thread(target=server.serve_forever, daemon=True).start()
+    server.start()
     return server, suite
 
 
@@ -250,8 +250,8 @@ def main() -> int:
     reference.write_bytes(shared.png_bytes(900, 900, (36, 92, 160)))
 
     with sync_playwright() as pw:
-        port = shared.free_port()
-        server, _suite = start_server("127.0.0.1", port)
+        server, _suite = start_server("127.0.0.1", 0)
+        port = server.port
         try:
             context = pw.chromium.launch_persistent_context(
                 str(temp_root / "profile-main"), headless=True,
@@ -473,13 +473,12 @@ def main() -> int:
             finally:
                 context.close()
         finally:
-            server.shutdown()
-            server.server_close()
+            server.stop()
 
         # ---------------- 演练：成功 / 失败 / Unknown 三态 + 下一步 ----------------
-        port2 = shared.free_port()
         drill_image = WalkthroughImageProvider()
-        server2, _ = start_server("127.0.0.1", port2, image_factory=lambda: drill_image)
+        server2, _ = start_server("127.0.0.1", 0, image_factory=lambda: drill_image)
+        port2 = server2.port
         try:
             context2 = pw.chromium.launch_persistent_context(
                 str(temp_root / "profile-drill"), headless=True,
@@ -552,8 +551,7 @@ def main() -> int:
             finally:
                 context2.close()
         finally:
-            server2.shutdown()
-            server2.server_close()
+            server2.stop()
 
     completed = subprocess.run([sys.executable, "app/server.py", "--check"], cwd=str(ROOT),
                                capture_output=True, text=True, check=False, encoding="utf-8",

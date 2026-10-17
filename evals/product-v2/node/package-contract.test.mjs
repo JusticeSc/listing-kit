@@ -7,7 +7,7 @@
 
 import { expect, expectCode, serializeError, utf8Bytes } from "./harness-core.mjs";
 
-import { buildZip, crc32, readZip } from "../../../app/product_v2/storage/zip.js";
+import { buildZip, crc32, readZip } from "../../../build/frontend-node/app/product_v2/storage/zip.js";
 
 const cases = [];
 

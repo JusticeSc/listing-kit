@@ -40,7 +40,7 @@
 
 | 路径 | 世代 | 管辖事实 | 状态 | 说明 |
 |---|---|---|---|---|
-| `README.md` | Product V2 + V1 回归入口 | `实现` | `current` | 当前实现的人读入口：默认 V2 的已落地边界、真实启动/验证方式及 V1 回归入口；不复制进度和下一任务 |
+| `README.md` | Product V2 | `实现` | `current` | 当前实现的人读入口：唯一V2、锁定构建/启动/验证及同版本恢复；main/分支/发布身份只取state和实际PR证据 |
 | `AGENTS.md` | Product V2 | `项目规则` | `current` | Agent 工作规则与选型门禁（Reuse-first）的唯一权威；目标、技术栈、状态分别链接到各自权威，不复制正文 |
 | `docs/product-v1-goal-and-implementation-plan.md` | Product V1 | `历史证据` | `superseded` | 被 `docs/product-demo-goal-and-implementation-plan.md` 取代；真实试点假设不再作为当前完成标准 |
 | `_working/amz-listing-kit-product-v1/state.md` | Product V1 | `历史证据` | `superseded` | 被 `_working/amz-listing-kit-product-demo/state.md` 取代；保留上一轮执行位置，不据以继续开工 |
@@ -96,6 +96,7 @@
 | `docs/standards-template/templates/ADR_TEMPLATE.md` | 外部参考模板 | `设计草案` | `draft` | ADR 模板；本项目以项目上下文 §4.1 的 SEL 行（含复访条件）代替独立 `docs/adr/` 目录 |
 | `docs/agents/issue-tracker.md` | 工程技能操作参考 | `设计草案` | `draft` | 只提供GitHub/gh及可选wayfinder操作；生效条件：AGENTS当前流程需要该操作且授权允许时核对采用，不再要求用户先启用技能；不独立授权或禁止产品Issue |
 | `docs/agents/triage-labels.md` | 工程技能 | `设计草案` | `draft` | 可选triage角色映射；生效条件：实际任务需要且可用的triage技能被匹配、对应远程操作已获授权时采用，不要求用户先手工启用 |
+| `docs/agents/domain.md` | 工程技能 | `设计草案` | `draft` | 单上下文术语/ADR的条件参考；实际需要且创建后才采用。当前决策仍取项目上下文SEL行，不为使用技能另建目录 |
 | `docs/agents/ai-coding-loop.md` | 工程技能操作参考 | `设计草案` | `draft` | 用户亲授AI协作六环（选→说→切→验→因→学）；AGENTS一行指针引用，六环切法为用户归纳、四条定律有据可查，不独立授权 |
 
 ---

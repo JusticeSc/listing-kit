@@ -31,7 +31,6 @@ import threading
 import time
 import zlib
 from datetime import datetime
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -40,7 +39,7 @@ sys.path.insert(0, str(ROOT / "tools"))
 import v2_stage_nav as stage_nav  # noqa: E402  （V2.UI.2 六阶段工作台导航）
 import v2_verify_shared as shared  # noqa: E402  （正式 server/夹具/共同业务操作）
 from v2_verify_shared import (  # noqa: E402
-    png_bytes, load_server_module, run_entry, read_suite, compile_all,
+    png_bytes, run_entry, read_suite, compile_all,
 )
 
 
@@ -67,7 +66,7 @@ DOMAIN_FILES = [
     "app/product_v2/domain/specs.js",
     "app/product_v2/domain/prompt.js",
     "app/product_v2/domain/confirm.js",
-    "app/product_v2/domain/attempt.js",
+    "build/frontend-node/app/product_v2/domain/attempt.js",
     "app/product_v2/domain/batch.js",
     "app/product_v2/domain/index.js",
     "app/product_v2/workspace.js",
@@ -383,8 +382,7 @@ def main() -> int:
             finally:
                 browser.close()
     finally:
-        static_server.shutdown()
-        static_server.server_close()
+        static_server.stop()
 
     suite = suites["batch"]
     case_ids = [item["id"] for item in suite.get("cases", [])]
@@ -404,7 +402,7 @@ def main() -> int:
           all(item["status"] == "passed" and not item["failed"] for item in regression.values()),
           regression)
 
-    module = load_server_module()
+    from app.product_v2_server import create_product_v2_server  # noqa: PLC0415
     from src.providers.v2_fake_image import FakeImageProvider  # noqa: PLC0415
     from src.providers.v2_fake_semantic import FakeSemanticProvider  # noqa: PLC0415
     from src.providers.v2_image import ImageFailure, ImageTaskResult  # noqa: PLC0415
@@ -455,14 +453,14 @@ def main() -> int:
         return MarkerImageProvider(scenario="ok")
 
     def make_server(port: int = 0):
-        return module.create_product_v2_server(
+        return create_product_v2_server(
             "127.0.0.1", port,
             provider_factory=lambda: FakeSemanticProvider(scenario="ok"),
             image_provider_factory=image_factory)
 
     server = make_server(0)
-    threading.Thread(target=server.serve_forever, daemon=True).start()
-    base = f"http://127.0.0.1:{server.server_address[1]}"
+    server.start()
+    base = f"http://127.0.0.1:{server.port}"
 
     submit_requests: list[dict] = []
     status_requests: list[str] = []
@@ -926,8 +924,7 @@ def main() -> int:
         interrupted = f"{type(error).__name__}: {error}"
     finally:
         try:
-            server.shutdown()
-            server.server_close()
+            server.stop()
         except Exception:  # noqa: BLE001
             pass
 

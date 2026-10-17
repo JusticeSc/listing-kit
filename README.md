@@ -9,7 +9,7 @@
 
 只读冷恢复入口：`uv run --locked python tools/refactor_resume.py`。它核对仓库计划、状态与观察证据，
 输出下一任务及可读 Goal；显示的是仓库保存的最近观察，不会查询系统 Goal。恢复会话须另读真实 Goal，
-不能把历史观察当当前读数。当前2026-10-07完整交付恢复授权/产品Goal只见计划§2.1/§16.1，绑定与已用轮数只看state；有限差量入口见§15.6/设计§11.5。早期独立规划完成不是产品验收，当前完整任务/最终发布仍须实际证明。
+不能把历史观察当当前读数。当前原产品终点/停工及main基线规划边界只见计划§2.1/§17.13，绑定与历史计数只看state；main现有能力的清理/依赖替换计划取#10/#7，封存下一版WIP不算当前实现。规划完成不是产品验收或恢复施工。
 
 ## 当前可用边界
 
@@ -53,9 +53,9 @@
   「停止」只停新增提交、保留全部已有记录，再点「继续生成剩余」接着走；单张明确失败不阻塞其余图片，
   可单独重试（重试 = 显式新建 action，旧记录逐字保留）；没有 task id 的记录永不自动重提，只能人工核对。
 
-两类ZIP与人工任务链已有独立Chrome无头、真实页面和native下载的同版本证据，完整项目包保留全部版本与资产；原运行范围见 `evals/product-v2/refactor/generation-module-20261005-formal.md`。当前代码只接受当前格式，旧格式/缺身份应明确原子拒绝、不补造迁移或静默删库；但packet08旧ZIP/秘密探针存在空证，不能用其旧pass宣称这些要求已验证。
+两类ZIP与人工任务链已有独立Chrome无头、真实页面和native下载的同版本证据；main `4bf6d03` 的同树验证run38984977644还覆盖项目导入/返工/再导出，发布run38986192730包含实际容器/可信HTTPS页面与受控不同镜像同origin恢复。证据各有场景范围，不代表完整下一版产品验收或服务此刻状态。
 
-实现与证据分别说明：本地fake候选证明其实际运行的交互/顺序/恢复/完整性，不证明真图质量；真实供应商按原Adapter/输入/路径复用，不因报告更新重复付费。最新审计只运行新建/草稿保存/刷新及正式入口检查，当前完整任务、间歇根治、最终两轮/CI/容器发布仍未闭合，具体前沿取state。C15/C17真人验收仍未发生，属于本轮外部门，不冒充自动化通过。
+当前格式自身应可恢复，旧格式/缺身份明确原子拒绝，不补造迁移或静默删库。本次基线的V1清退、ASGI/Vite/lit-html及验证治理属于当前分支候选；已有本地路径证据不等于远程main已更新。冻结目标/精确凭据、较大Blob、服务器日志与扫描负例的既有证明按#7选中证据复用，干净候选及CI结论只取关联PR与state。fake只证明工程路径，不证明真实模型品质；C15/C17真人验收仍未发生。
 
 理解 Adapter 分开业务合同：`v2_dashscope_semantic.py` 使用 `deepseek-v4.1-flash` 处理文字，`v2_dashscope_vision_semantic.py` 使用 `qwen-vl-max` 发送实际商品图片并返回可追溯提案；单图/整套图片复核不复用商品理解提案 schema。`v2_registry.py` 装配有限配置，测试替身仅用于离线验证，不代表模型能力或质量。
 
@@ -63,27 +63,34 @@
 
 环境要求：Python 3.13、uv 0.9+、现代桌面浏览器；依赖权威是 `pyproject.toml` + `uv.lock`。
 
-前端开发期检查（渐进 TS 迁移，计划 §9 V2.R7.5）用仓库根 `package.json` + `package-lock.json` 锁定的
-TypeScript 6.0.3（Node 24.19.0 / npm 11.17.0），只在开发与 CI 使用，不进产品运行时。`app/product_v2/`
-下每个已迁移 Module 只有一份手工维护的源码：`.ts` 是权威，同目录同名 `.js` 是生成产物且 import
-说明符保持 `.js`；浏览器只加载生成的 `.js`，正式入口对 `.ts` / `.d.ts` 一律返回 404，Docker 镜像
-也排除 TS 源，生产运行时没有编译器。
+前端构建（SEL-023，2026-10-17 用户确认）用仓库根 `package.json` + `package-lock.json` 锁定的
+TypeScript 6.0.3 + Vite 8.3.4（Node 24.19.0 / npm 11.17.0），只在开发与 CI 使用，不进产品运行时。
+唯一生产静态目录是 `dist/product-v2/`（`npm run build:frontend` 产出，可从锁重建）；
+`app/product_v2/` 下每个已迁移 Module 只有一份手工维护的源码：`.ts` 是权威，
+正式入口对 `.ts` / `.d.ts` 一律 404、只服务 `dist/product-v2`，Docker 最终镜像只带构建产物，
+生产运行时没有编译器、Node 或第二份源码。
 
-现有TS源码包括 `domain/attempt`、`domain/config-export`、`semantic-analysis`、`session`、`model-settings`、五个业务owner（project-inputs/prompts/generation/selection-adoption/review-delivery）、`ui/dom`与四视图；本次之前的审计已校验15个TS产物，范围见其checks。实际strict集合/调用方取 `jsconfig.json`及各JS的opt-in，emit/新鲜度取compiler program批准范围内全部TS（含传递import的input-view），不能把文件存在或检查绿灯等同全仓类型/业务保障。
+界面模板使用受锁的lit-html 3.3.3，随Vite构建为本地静态ESM；许可随产物
+`lit-html.LICENSE.txt`提供，不从CDN下载，也没有第二份全局store。输入、生成、比较、交付视图
+分别持有自己的临时草稿；持久业务状态仍归既有owner。owner-local `subscribe`由工作区统一装配，
+项目关闭/切换时回收草稿及预览URL，不用重绘前抓取DOM来恢复编辑内容。
+
+先安装锁定的 Python 依赖，再生成协议校验器及构建前端；全程不需要模型 key：
 
 ```bash
+uv sync --locked
 npm ci --ignore-scripts
-npm run check:types        # 严格类型检查；实际覆盖由 jsconfig.json 决定，未纳入的文件不在保障内
-npm run build:frontend     # 类型检查并生成同目录 .js（改过 TS 必须重跑并提交）
-npm run check:generated    # 只校验生成产物与 TS 源码一致（CI 用，防止静默服务旧 JS）
-npm run test:domain        # 领域行为的 node 原生测试
+npm run build:envelope      # 由 ImageWire* 模型重建 Schema + standalone 校验器
+npm run check:types         # 严格类型检查；实际覆盖由 tsconfig.json include 决定
+npm run check:envelope      # 归一化图像信封 Python↔JS 同拒（P6/SEL-025）
+npm run build:frontend      # 标准 Vite 构建 dist/product-v2
+npm run build:frontend-node # 标准 tsc emit 的 Node 测试消费树
+npm run test:domain         # 领域行为的 node 原生测试
+uv run --locked python app/server.py --check
+uv run --locked python app/server.py
 ```
 
-```powershell
-uv sync --locked
-uv run python app\server.py --check
-uv run python app\server.py --open
-```
+`--check`仅做正式入口轻量检查（真实TCP健康与唯一静态产物）；完整离线合同在下方验证入口，不装进生产镜像。缺少`dist/product-v2`时启动明确失败，不回退服务源码目录。`--open`会打开系统默认浏览器，自动化验证不使用该选项。
 
 默认地址为 `http://127.0.0.1:8780/`。若需要让内网或穿透工具访问，可显式设置监听地址；暴露范围和访问控制由运行者负责：
 
@@ -120,9 +127,7 @@ capabilities 给出 `credential_source` 与 `default_trial` 状态；显式 `ope
 出站统一走白名单（`v2_outbound.py`：`aliyuncs.com` + `volces.com` 后缀），非白名单、
 私网与非 https 目标在传输前被拒绝。
 
-HTTP 请求正文只支持明确的 `Content-Length`，不支持 `Transfer-Encoding`（包括 chunked）。
-不支持或无法读完的正文以 `Connection: close` 结束，避免残留字节被解析成下一条请求；
-无正文的 GET、完整读取的合法请求仍可复用连接。边界验证并入现有 `app/server.py --check`。
+HTTP连接/协议解析由Uvicorn/h11承担；FastAPI路由保留逐用途正文上限、JSON合同和脱敏错误，未知提交结果不自动重试。异常正文与断连的实际边界由`tests/gateway`真实TCP合同验证，不依赖旧手写HTTP解析器或静态自检文案。
 
 ## 实际运行链
 
@@ -170,7 +175,7 @@ uv run python tools\verify_v2_3_3_spec_versions.py
 uv run python tools\verify_v2_3_4_prompt_compiler.py
 uv run python tools\verify_v2_3_5_pre_generation_confirm.py
 uv run python tools\verify_v2_3_6_prompt_manual_edit.py
-uv run python tools\verify_v2_4_1_image_gateway.py
+uv run --locked python -m pytest tests/gateway tests/dev -q
 uv run python tools\verify_v2_4_2_generation_attempt.py
 uv run python tools\verify_v2_4_3_batch_execution.py
 uv run python tools\verify_v2_4_4_candidate_blob.py
@@ -222,32 +227,21 @@ IndexedDB、API、真实 Provider 和首次使用者证据，具体门槛由产�
 这套流程存在不等于已经部署成功；是否真实上线必须以对应的 GitHub Actions run 和目标机
 `GET /api/health` 为证据。
 
-## 历史 Product V1
+## 已退役入口（P1 随 main 基线退出仓库）
 
-旧Product V1源码与显式入口暂存，描述的是历史服务器文件夹工作空间实现，**不是当前已验收可用的回归/回退基线**。本轮计划R7.3在V2用途覆盖、正式消费者切换及代码/同版本数据恢复基线后清除其活路径；共享依赖与必要历史/用户原件保留。当前默认入口是V2，未执行V1清理前的历史启动方式如下：
-
-```powershell
-uv run python app\server.py --legacy-v1 --check
-uv run python app\server.py --legacy-v1 --open
-uv run python tools\regress_product_v1.py
-```
-
-旧离线 Mock 只用于历史状态轨迹回归：
-
-```powershell
-uv run python app\server.py --offline-fixture demo\fixture\aster-01 --check
-```
-
-Product V1 的设计和完成轨迹已登记为 `superseded`；需要追溯时从 `docs/INDEX.md` 进入，不把固定七坑位、
-服务器工作空间或抠图路线重新带回 Product V2。
+V1（Product V1 文件夹工作空间）与旧离线 Mock 回归分支已删除，不再提供
+`--legacy-v1` / `--offline-fixture` / `--project` 参数；旧能力不可回退启动。
+唯一可执行产品是 Product V2（`python app/server.py --check` / `--open`）。
+旧设计与完成轨迹仍登记为 `superseded`；需要追溯时从 `docs/INDEX.md` 进入、
+按 Git 历史查旧代码，不把固定七坑位、服务器工作空间或抠图路线带回 Product V2。
 
 ## 代码地图
 
 ```text
 app/server.py                    正式启动入口；默认 V2
 app/product_v2_server.py         V2 无状态 HTTP 装配：静态、能力、文字/商品图文理解、生图、单图/整套复核
-app/product_v2/                  V2 页面、IndexedDB、会话/设置/理解/生成 Module；TS 唯一手工源，同名 JS 为编译产物
-app/product_v2/domain/           领域合同；prompt.js / confirm.js 各为唯一权威，attempt.ts / config-export.ts 由 npm run build:frontend 生成同名 JS
+ app/product_v2/                  V2 页面、IndexedDB、会话/设置/理解/生成 Module；已迁 TS 唯一手工源，浏览器产物由 npm run build:frontend 进 dist/product-v2，Node 消费树由 build:frontend-node 进 build/frontend-node
+ app/product_v2/domain/           领域合同；归一化图像信封的结构权威是 src/providers/v2_image.py，浏览器唯一入口 domain/image-envelope.ts，生成校验器在 domain/generated/（构建期产物，不手改）
 src/providers/                   有限语义/图文/生图/复核 Adapter、共享 langchain 图文传输、registry/credentials/errors/outbound；出站白名单 aliyuncs.com + volces.com
 config/product-v2/               provider 注册表与选择环境变量；当前实现依赖它，是否已提交以 git status 为准
 tools/                           自检、契约验证和控制面守卫

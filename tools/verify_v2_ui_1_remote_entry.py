@@ -297,8 +297,7 @@ def main() -> int:
             browser.close()
     finally:
         if server is not None:
-            server.shutdown()
-            server.server_close()
+            server.stop()
 
     passed = sum(1 for item in checks if item["ok"])
     failed = len(checks) - passed

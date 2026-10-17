@@ -14,27 +14,30 @@
  * 由 `npm run build:frontend` 从本文件生成，浏览器只消费生成的 `.js`。
  */
 
-import { DOMAIN_ERROR_CODES, illegal, invalid } from "./errors.js";
-import {
-  DOMAIN_DOCUMENT_KINDS,
-  SLOT_ID_PATTERN,
-  checkSchemaVersion,
-  isIsoTimestamp,
-  isNonEmptyString,
-  isPlainObject,
-  isSha256Hex,
-  pushProblem,
-} from "./shared.js";
-import { REFERENCE_ROLES } from "./intake.js";
-import { canonicalJson } from "./prompt.js";
-import type {
-  AttemptCurrentEnvironmentIdentity,
-  AttemptError,
-  AttemptExecutionIdentity,
-  AttemptRecord,
-  AttemptState,
-  DomainProblem,
-} from "./type-contracts.js";
+ import { DOMAIN_ERROR_CODES, illegal, invalid } from "./errors.js";
+ import { validateImageEnvelope } from "./image-envelope.js";
+ import {
+   DOMAIN_DOCUMENT_KINDS,
+   SLOT_ID_PATTERN,
+   checkSchemaVersion,
+   isIsoTimestamp,
+   isNonEmptyString,
+   isPlainObject,
+   isSha256Hex,
+   pushProblem,
+ } from "./shared.js";
+ import { REFERENCE_ROLES } from "./intake.js";
+ import { canonicalJson } from "./prompt.js";
+ import type {
+   AttemptCurrentEnvironmentIdentity,
+   AttemptError,
+   AttemptExecutionIdentity,
+   AttemptRecord,
+   AttemptState,
+   DomainProblem,
+   ImageEnvelopeWire,
+   ImageWireTask,
+ } from "./type-contracts.js";
 
 export const ATTEMPT_SCHEMA_VERSION = 2;
 export const ATTEMPT_DOCUMENT_KIND = DOMAIN_DOCUMENT_KINDS.generation_attempt;
@@ -858,22 +861,21 @@ export type StatusOutcome = AttemptTaskIdentity & {
   error: AttemptError | null;
 };
 
-function readTask(envelope: unknown): Record<string, unknown> | null {
-  return isPlainObject(envelope) && isPlainObject(envelope.task) ? envelope.task : null;
-}
-
-function readIdentity(task: Record<string, unknown> | null): AttemptTaskIdentity {
-  const view: Record<string, unknown> = task === null ? {} : task;
-  const provider: Record<string, unknown> = isPlainObject(view.provider) ? view.provider : {};
-  const taskId = view.task_id;
-  const requestId = view.request_id;
+/**
+ * 已通过结构守卫的信封任务视图 → 身份投影。
+ *
+ * P6/SEL-025：形状不再在这里手写判读（构建期生成的校验器是唯一形状权威，且与 Python 生产者
+ * 同源）。这里只做取值归一：空白 request_id 与缺席等价（与旧行为逐字一致），其余字段按
+ * schema 保证直接读，不猜、不补造。
+ */
+function identityOf(task: ImageWireTask): AttemptTaskIdentity {
   return {
-    task_id: isNonEmptyString(taskId) ? taskId : null,
-    request_id: isNonEmptyString(requestId) ? requestId : null,
-    provider_id: isNonEmptyString(provider.provider_id) ? String(provider.provider_id) : null,
-    model_id: isNonEmptyString(provider.model_id) ? String(provider.model_id) : null,
-    // V2.R5.2：同步协议标志只从响应本身读；异步 provider 的响应没有这个键 → false。
-    sync: view.sync === true,
+    task_id: task.task_id,
+    request_id: isNonEmptyString(task.request_id) ? task.request_id : null,
+    provider_id: task.provider.provider_id,
+    model_id: task.provider.model_id,
+    // V2.R5.2：同步协议标志只从响应本身读；异步 provider 的响应按 false 处理。
+    sync: task.sync === true,
   };
 }
 
@@ -899,88 +901,49 @@ function unknownError(raw: unknown, defaults: AttemptError): AttemptError {
 
 /**
  * 提交响应 → Attempt 状态。界面不许另写一套判断。
+ *
+ * P6/SEL-025：结构前置由构建期生成的校验器唯一判定（同一份 JSON Schema 也约束 Python
+ * 生产者，浏览器没有第二份形状/词表镜像）。结构不合契约 = 读不出来 = Unknown（绝不当作
+ * 失败、绝不自动重提），且与「连接中断」共用 SUBMIT_OUTCOME_UNKNOWN 码——批次停止判据
+ * （domain/batch.js 的 BATCH_HALT_CODES）因此照旧生效。
+ *
  *  - 拿到任务身份（PENDING/RUNNING）→ submitted；上游说成功/失败就直接落终态；
- *  - 没拿到任务身份、连接中断、无法解析 → unknown（绝不当作失败，也绝不自动重提）；
- *  - 请求本身被拒（input_rejected）与未配置密钥 → failed，因为这一定没有提交到上游。
+ *  - 请求本身被拒（input_rejected）与未配置密钥 → failed，因为这一定没有提交到上游；
+ *  - 其余（无响应、信封不合契约、服务端故障、上游 UNKNOWN）→ unknown，绝不自动重提。
  */
 export function classifySubmitEnvelope(envelope: unknown): SubmitOutcome {
   const env = isPlainObject(envelope) ? envelope : null;
-  const task = readTask(env);
-  if (task && env && env.ok === true) {
-    const identity = readIdentity(task);
-    const status = String(task.status || "").toUpperCase();
-    // V2.R5.2 同步协议：提交即终态；结果字节在同一个信封里，浏览器侧独立复核哈希。
-    // 这里只承认不可伪造的形状：task_id 为空 + task.sync 为 true + 明确的状态值。
-    if (!task.task_id && task.sync === true) {
-      if (status === "SUCCEEDED") {
-        return { ...identity, state: ATTEMPT_STATES.succeeded, error: null,
-                 note: "同步结果已返回" };
-      }
-      if (status === "FAILED" || status === "CANCELED") {
-        return {
-          ...identity, state: ATTEMPT_STATES.failed,
-          note: "同步生成明确未成功（" + status + "）",
-          error: normalizedError(null, {
-            family: "provider_failed", code: "SYNC_FAILED",
-            message: "同步生成没有成功（" + status + "）。", retry_policy: "fatal",
-          }),
-        };
-      }
-      return {
-        ...identity, state: ATTEMPT_STATES.unknown,
-        note: "同步响应状态无法识别：" + status,
-        error: unknownError(null, {
-          family: ATTEMPT_UNKNOWN_FAMILY, code: "SYNC_STATUS_UNRECOGNIZED",
-          message: "同步响应的状态无法识别；结果未知，不要自动重提。",
-          retry_policy: "requires_review",
-        }),
-      };
-    }
-    if (!identity.task_id) {
-      return {
-        ...identity, state: ATTEMPT_STATES.unknown, note: "提交响应缺少任务编号",
-        error: unknownError(null, {
-          family: ATTEMPT_UNKNOWN_FAMILY, code: "TASK_ID_MISSING",
-          message: "上游没有返回任务编号，无法核对这次提交；不要自动重提。",
-          retry_policy: "requires_review",
-        }),
-      };
-    }
-    if (status === "PENDING" || status === "RUNNING") {
-      return { ...identity, state: ATTEMPT_STATES.submitted, error: null,
-               note: "上游已受理（" + status + "）" };
-    }
-    if (status === "SUCCEEDED") {
-      return { ...identity, state: ATTEMPT_STATES.succeeded, error: null, note: "上游返回 SUCCEEDED" };
-    }
-    if (status === "FAILED" || status === "CANCELED") {
-      return {
-        ...identity, state: ATTEMPT_STATES.failed,
-        note: "上游明确未成功（" + status + "）",
-        error: normalizedError({
-          family: "provider_failed", code: "TASK_" + status,
-          message: isNonEmptyString(task.error) ? String(task.error) : "上游任务没有成功（" + status + "）。",
-          retry_policy: "retryable",
-        }, {
-          family: "provider_failed", code: "TASK_FAILED",
-          message: "上游任务没有成功。", retry_policy: "retryable",
-        }),
-      };
-    }
+  if (env === null) {
     return {
-      ...identity, state: ATTEMPT_STATES.unknown,
-      note: "上游状态无法识别：" + status,
+      task_id: null, request_id: null, provider_id: null, model_id: null,
+      state: ATTEMPT_STATES.unknown, note: "没有拿到可用响应",
       error: unknownError(null, {
-        family: ATTEMPT_UNKNOWN_FAMILY, code: "TASK_STATUS_UNRECOGNIZED",
-        message: "上游返回了无法识别的任务状态：" + status + "；先核对，不要自动重提。",
+        family: ATTEMPT_UNKNOWN_FAMILY, code: "SUBMIT_OUTCOME_UNKNOWN",
+        message: "提交结果没有确认，无法判断上游是否受理；先核对，不要自动重提。",
         retry_policy: "requires_review",
       }),
     };
   }
-  const raw = env ? env.error : null;
-  const family = isPlainObject(raw) ? raw.family : null;
-  const code = isPlainObject(raw) ? String(raw.code || "") : "";
-  if ((env && env.unknown === true) || family === ATTEMPT_UNKNOWN_FAMILY) {
+  if (!validateImageEnvelope(env)) {
+    // 诊断固定且脱敏：载荷字段（可能含提示词/图片/密钥）一律不回显、不记录。
+    return {
+      task_id: null, request_id: null, provider_id: null, model_id: null,
+      state: ATTEMPT_STATES.unknown, note: "提交响应不是约定的归一化信封",
+      error: unknownError(null, {
+        family: ATTEMPT_UNKNOWN_FAMILY, code: "SUBMIT_OUTCOME_UNKNOWN",
+        message: "提交响应不符合图像网关信封契约；无法判断上游是否受理，先核对，不要自动重提。",
+        retry_policy: "requires_review",
+      }),
+    };
+  }
+  if (env.ok === false) return submitFailureOutcome(env);
+  return submitTaskOutcome(env);
+}
+
+/** 失败信封 → 提交结论：归口与重试语义仍是 §9.10 词表在前端的同一份投影。 */
+function submitFailureOutcome(failure: Extract<ImageEnvelopeWire, { ok: false }>): SubmitOutcome {
+  const raw = failure.error;
+  if (failure.unknown === true || raw.family === ATTEMPT_UNKNOWN_FAMILY) {
     return {
       task_id: null, request_id: null, provider_id: null, model_id: null,
       state: ATTEMPT_STATES.unknown, note: "提交结果未确认",
@@ -991,7 +954,7 @@ export function classifySubmitEnvelope(envelope: unknown): SubmitOutcome {
       }),
     };
   }
-  if (family === "input_rejected") {
+  if (raw.family === "input_rejected") {
     return {
       task_id: null, request_id: null, provider_id: null, model_id: null,
       state: ATTEMPT_STATES.failed, note: "请求被拒绝，没有调用上游",
@@ -1001,7 +964,7 @@ export function classifySubmitEnvelope(envelope: unknown): SubmitOutcome {
       }),
     };
   }
-  if (family === "provider_failed") {
+  if (raw.family === "provider_failed") {
     return {
       task_id: null, request_id: null, provider_id: null, model_id: null,
       state: ATTEMPT_STATES.failed, note: "上游明确拒绝或失败",
@@ -1011,7 +974,7 @@ export function classifySubmitEnvelope(envelope: unknown): SubmitOutcome {
       }),
     };
   }
-  if (family === "internal" && code === "PROVIDER_NOT_CONFIGURED") {
+  if (raw.family === "internal" && raw.code === "PROVIDER_NOT_CONFIGURED") {
     return {
       task_id: null, request_id: null, provider_id: null, model_id: null,
       state: ATTEMPT_STATES.failed, note: "provider 未配置，请求没有发出",
@@ -1025,7 +988,7 @@ export function classifySubmitEnvelope(envelope: unknown): SubmitOutcome {
   return {
     task_id: null, request_id: null, provider_id: null, model_id: null,
     state: ATTEMPT_STATES.unknown,
-    note: family === "internal" ? "服务端没有给出结论" : "没有拿到可用响应",
+    note: raw.family === "internal" ? "服务端没有给出结论" : "没有拿到可用响应",
     error: unknownError(raw, {
       family: ATTEMPT_UNKNOWN_FAMILY, code: "SUBMIT_OUTCOME_UNKNOWN",
       message: "提交结果没有确认，无法判断上游是否受理；先核对，不要自动重提。",
@@ -1034,50 +997,111 @@ export function classifySubmitEnvelope(envelope: unknown): SubmitOutcome {
   };
 }
 
-/**
- * 查询响应 → Attempt 状态。查询永远不会「重提」：没有结论时 state 为 null（记录不推进）。
- */
-export function classifyStatusEnvelope(envelope: unknown): StatusOutcome {
-  const env = isPlainObject(envelope) ? envelope : null;
-  const task = readTask(env);
-  if (task && env && env.ok === true) {
-    const identity = readIdentity(task);
-    const status = String(task.status || "").toUpperCase();
-    if (status === "PENDING") {
-      return { ...identity, state: ATTEMPT_STATES.submitted, error: null, note: "上游仍在排队" };
+/** 成功信封 → 提交结论（可能一步到终态）。状态词到 Attempt 状态的映射仍是本层唯一权威。 */
+function submitTaskOutcome(envelope: Extract<ImageEnvelopeWire, { ok: true }>): SubmitOutcome {
+  const task = envelope.task;
+  const identity = identityOf(task);
+  // V2.R5.2 同步协议：提交即终态；结果字节在同一个信封里（image_base64/image_sha256 已由同一份
+  // schema 覆盖），浏览器侧独立复核哈希。这里只承认不可伪造的形状：task_id 为空 +
+  // task.sync 为 true + 明确的状态值。
+  if (task.task_id === null && task.sync === true) {
+    if (task.status === "SUCCEEDED") {
+      return { ...identity, state: ATTEMPT_STATES.succeeded, error: null,
+               note: "同步结果已返回" };
     }
-    if (status === "RUNNING") {
-      return { ...identity, state: ATTEMPT_STATES.running, error: null, note: "上游处理中" };
-    }
-    if (status === "SUCCEEDED") {
-      return { ...identity, state: ATTEMPT_STATES.succeeded, error: null, note: "上游已完成" };
-    }
-    if (status === "FAILED" || status === "CANCELED") {
+    if (task.status === "FAILED" || task.status === "CANCELED") {
       return {
-        ...identity, state: ATTEMPT_STATES.failed, note: "上游明确未成功（" + status + "）",
-        error: normalizedError({
-          family: "provider_failed", code: "TASK_" + status,
-          message: isNonEmptyString(task.error) ? String(task.error) : "上游任务没有成功（" + status + "）。",
-          retry_policy: "retryable",
-        }, {
-          family: "provider_failed", code: "TASK_FAILED",
-          message: "上游任务没有成功。", retry_policy: "retryable",
+        ...identity, state: ATTEMPT_STATES.failed,
+        note: "同步生成明确未成功（" + task.status + "）",
+        error: normalizedError(null, {
+          family: "provider_failed", code: "SYNC_FAILED",
+          message: "同步生成没有成功（" + task.status + "）。", retry_policy: "fatal",
         }),
       };
     }
     return {
       ...identity, state: ATTEMPT_STATES.unknown,
-      note: "上游状态无法识别：" + status,
+      note: "同步响应状态无法识别：" + task.status,
       error: unknownError(null, {
-        family: ATTEMPT_UNKNOWN_FAMILY, code: "TASK_STATUS_UNRECOGNIZED",
-        message: "上游返回了无法识别的任务状态：" + status + "；先核对，不要自动重提。",
+        family: ATTEMPT_UNKNOWN_FAMILY, code: "SYNC_STATUS_UNRECOGNIZED",
+        message: "同步响应的状态无法识别；结果未知，不要自动重提。",
         retry_policy: "requires_review",
       }),
     };
   }
-  const raw = env ? env.error : null;
-  const family = isPlainObject(raw) ? raw.family : null;
-  if ((env && env.unknown === true) || family === ATTEMPT_UNKNOWN_FAMILY) {
+  if (identity.task_id === null) {
+    return {
+      ...identity, state: ATTEMPT_STATES.unknown, note: "提交响应缺少任务编号",
+      error: unknownError(null, {
+        family: ATTEMPT_UNKNOWN_FAMILY, code: "TASK_ID_MISSING",
+        message: "上游没有返回任务编号，无法核对这次提交；不要自动重提。",
+        retry_policy: "requires_review",
+      }),
+    };
+  }
+  if (task.status === "PENDING" || task.status === "RUNNING") {
+    return { ...identity, state: ATTEMPT_STATES.submitted, error: null,
+             note: "上游已受理（" + task.status + "）" };
+  }
+  if (task.status === "SUCCEEDED") {
+    return { ...identity, state: ATTEMPT_STATES.succeeded, error: null, note: "上游返回 SUCCEEDED" };
+  }
+  if (task.status === "FAILED" || task.status === "CANCELED") {
+    return {
+      ...identity, state: ATTEMPT_STATES.failed,
+      note: "上游明确未成功（" + task.status + "）",
+      error: normalizedError({
+        family: "provider_failed", code: "TASK_" + task.status,
+        message: isNonEmptyString(task.error) ? task.error : "上游任务没有成功（" + task.status + "）。",
+        retry_policy: "retryable",
+      }, {
+        family: "provider_failed", code: "TASK_FAILED",
+        message: "上游任务没有成功。", retry_policy: "retryable",
+      }),
+    };
+  }
+  // 归一化信封把 status 限制在词表内；异步支到这里只剩上游明确给出的 UNKNOWN。
+  return {
+    ...identity, state: ATTEMPT_STATES.unknown, note: "上游返回 UNKNOWN",
+    error: unknownError(null, {
+      family: ATTEMPT_UNKNOWN_FAMILY, code: "TASK_STATUS_UNKNOWN",
+      message: "上游把这次生成标为 UNKNOWN：结果未确认，先核对，不要自动重提。",
+      retry_policy: "requires_review",
+    }),
+  };
+}
+
+/**
+ * 查询响应 → Attempt 状态。查询永远不会「重提」：没有结论时 state 为 null（记录不推进）。
+ *
+ * P6/SEL-025：结构前置与提交侧共用同一个生成校验器。结构不合契约时同样不推进——读不出来的
+ * 响应不是结论，更不能把记录改成 Unknown（那会丢掉「上游其实还在跑」的可能性）。
+ */
+export function classifyStatusEnvelope(envelope: unknown): StatusOutcome {
+  const env = isPlainObject(envelope) ? envelope : null;
+  if (env === null) {
+    return {
+      task_id: null, request_id: null, provider_id: null, model_id: null,
+      state: null, error: null,
+      note: "查询没有拿到响应；记录不推进，不要重新提交。",
+    };
+  }
+  if (!validateImageEnvelope(env)) {
+    // 固定、脱敏的诊断：不打印载荷，也不把未知结构当成任何一种状态。
+    return {
+      task_id: null, request_id: null, provider_id: null, model_id: null,
+      state: null, error: null,
+      note: "查询响应不符合图像网关信封契约；记录不推进，稍后再查。",
+    };
+  }
+  if (env.ok === false) return statusFailureOutcome(env);
+  return statusTaskOutcome(env);
+}
+
+/** 失败信封 → 查询结论：只有明确失败/被拒才算结论，其余一律不推进记录。 */
+function statusFailureOutcome(failure: Extract<ImageEnvelopeWire, { ok: false }>): StatusOutcome {
+  const raw = failure.error;
+  if (failure.unknown === true || raw.family === ATTEMPT_UNKNOWN_FAMILY) {
     return {
       task_id: null, request_id: null, provider_id: null, model_id: null,
       state: ATTEMPT_STATES.unknown, note: "查询没有结论",
@@ -1088,7 +1112,7 @@ export function classifyStatusEnvelope(envelope: unknown): StatusOutcome {
       }),
     };
   }
-  if (family === "provider_failed") {
+  if (raw.family === "provider_failed") {
     return {
       task_id: null, request_id: null, provider_id: null, model_id: null,
       state: ATTEMPT_STATES.failed, note: "上游明确失败",
@@ -1098,7 +1122,7 @@ export function classifyStatusEnvelope(envelope: unknown): StatusOutcome {
       }),
     };
   }
-  if (family === "input_rejected") {
+  if (raw.family === "input_rejected") {
     return {
       task_id: null, request_id: null, provider_id: null, model_id: null,
       state: ATTEMPT_STATES.unknown, note: "本地记录的 task id 被网关拒绝，无法核对",
@@ -1112,9 +1136,46 @@ export function classifyStatusEnvelope(envelope: unknown): StatusOutcome {
   return {
     task_id: null, request_id: null, provider_id: null, model_id: null,
     state: null, error: null,
-    note: family === "internal"
+    note: raw.family === "internal"
       ? "服务端没有给出结论；记录不推进，稍后再查。"
       : "查询没有拿到响应；记录不推进，不要重新提交。",
+  };
+}
+
+/** 成功信封 → 查询结论：状态词到 Attempt 状态的映射仍只在本层写一次。 */
+function statusTaskOutcome(envelope: Extract<ImageEnvelopeWire, { ok: true }>): StatusOutcome {
+  const task = envelope.task;
+  const identity = identityOf(task);
+  if (task.status === "PENDING") {
+    return { ...identity, state: ATTEMPT_STATES.submitted, error: null, note: "上游仍在排队" };
+  }
+  if (task.status === "RUNNING") {
+    return { ...identity, state: ATTEMPT_STATES.running, error: null, note: "上游处理中" };
+  }
+  if (task.status === "SUCCEEDED") {
+    return { ...identity, state: ATTEMPT_STATES.succeeded, error: null, note: "上游已完成" };
+  }
+  if (task.status === "FAILED" || task.status === "CANCELED") {
+    return {
+      ...identity, state: ATTEMPT_STATES.failed, note: "上游明确未成功（" + task.status + "）",
+      error: normalizedError({
+        family: "provider_failed", code: "TASK_" + task.status,
+        message: isNonEmptyString(task.error) ? task.error : "上游任务没有成功（" + task.status + "）。",
+        retry_policy: "retryable",
+      }, {
+        family: "provider_failed", code: "TASK_FAILED",
+        message: "上游任务没有成功。", retry_policy: "retryable",
+      }),
+    };
+  }
+  // 异步支只剩上游明确给出的 UNKNOWN：这是「上游说不知道」，不是本地读不出来。
+  return {
+    ...identity, state: ATTEMPT_STATES.unknown, note: "上游返回 UNKNOWN",
+    error: unknownError(null, {
+      family: ATTEMPT_UNKNOWN_FAMILY, code: "TASK_STATUS_UNKNOWN",
+      message: "上游把这次生成标为 UNKNOWN：结果未确认，先核对，不要自动重提。",
+      retry_policy: "requires_review",
+    }),
   };
 }
 

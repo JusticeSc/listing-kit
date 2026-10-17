@@ -30,9 +30,9 @@ function pureRewrite(name) {
     " * 直接运行：node --test evals/product-v2/node/\n",
   );
   head = head
-    .replaceAll('from "/domain/index.js"', 'from "../../../app/product_v2/domain/index.js"')
-    .replaceAll('from "/storage/db.js"', 'from "../../../app/product_v2/storage/db.js"')
-    .replaceAll('from "/storage/zip.js"', 'from "../../../app/product_v2/storage/zip.js"')
+    .replaceAll('from "/domain/index.js"', 'from "../../../build/frontend-node/app/product_v2/domain/index.js"')
+    .replaceAll('from "/storage/db.js"', 'from "../../../build/frontend-node/app/product_v2/storage/db.js"')
+    .replaceAll('from "/storage/zip.js"', 'from "../../../build/frontend-node/app/product_v2/storage/zip.js"')
     .replaceAll('from "./harness-api.js"', 'from "./harness-core.mjs"');
   return (
     head + "\n/* Node 原生运行器：与原浏览器版同一批 cases，断言不改写。 */\n" +
@@ -68,9 +68,9 @@ function mixedRewrite(name, keepIds, mid, raw) {
     " * 直接运行：node --test evals/product-v2/node/\n",
   );
   head = head
-    .replaceAll('from "/domain/index.js"', 'from "../../../app/product_v2/domain/index.js"')
-    .replaceAll('from "/storage/db.js"', 'from "../../../app/product_v2/storage/db.js"')
-    .replaceAll('from "/storage/zip.js"', 'from "../../../app/product_v2/storage/zip.js"');
+    .replaceAll('from "/domain/index.js"', 'from "../../../build/frontend-node/app/product_v2/domain/index.js"')
+    .replaceAll('from "/storage/db.js"', 'from "../../../build/frontend-node/app/product_v2/storage/db.js"')
+    .replaceAll('from "/storage/zip.js"', 'from "../../../build/frontend-node/app/product_v2/storage/zip.js"');
   // 单块 import 只删/换自己这一块（[^{}]* 不跨 import列表），防误吞 domain import。
   head = head.replace(/import \{[^{}]*\} from "\/storage\/index\.js";\n?/, "");
   if (head.includes('from "/storage/index.js')) {
@@ -204,7 +204,7 @@ const NODE_CORE_IMPORTS = {
 };
 /* Node 版仍需要的纯能力单独立项（package 的 ZIP 往返测试直接打 app/product_v2/storage/zip.js）。 */
 const NODE_EXTRA_IMPORTS = {
-  "package-contract.js": 'import { buildZip, crc32, readZip } from "../../../app/product_v2/storage/zip.js";',
+  "package-contract.js": 'import { buildZip, crc32, readZip } from "../../../build/frontend-node/app/product_v2/storage/zip.js";',
 };
 fs.mkdirSync(NODE_DIR, { recursive: true });
 for (const name of PURE_ONLY) {

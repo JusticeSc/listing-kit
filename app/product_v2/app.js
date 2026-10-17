@@ -5,6 +5,7 @@
  *
  * 页面只通过 storage repository 访问 IndexedDB；localStorage 里只有当前项目指针。
  * 这里不提供示例商品、不预填数据、不读服务器最近项目。
+ * 首页动态子树（项目行/能力诊断）由 lit-html 模板渲染；静态容器、命令与就绪语义不变。
  */
 
 import {
@@ -16,6 +17,8 @@ import {
 import { createSession } from "./session.js";
 import { createWorkspace } from "./workspace.js";
 import { createModelSettings } from "./model-settings.js";
+import { html, nothing, render } from "lit-html";
+import { repeat } from "lit-html/directives/repeat.js";
 
 /**
  * 首页行内模式：idle 常态 / rename 改名中 / delete 删除确认中；projectId 指向目标行（无目标为 null）。
@@ -47,17 +50,6 @@ function requiredElement(id, ctor) {
   return node;
 }
 /**
- * 必需子节点断言（命中固定结构；缺失即页面损坏）。
- * @param {ParentNode} parent 父节点
- * @param {string} selector 选择器
- * @returns {Element}
- */
-function requiredNode(parent, selector) {
-  const node = parent.querySelector(selector);
-  if (!node) throw new Error("缺少必需的界面节点：" + selector);
-  return node;
-}
-/**
  * 未知错误的 message（缺失或非字符串时返回 null，兜底文案由调用方决定）。
  * @param {unknown} error 捕获的未知错误
  * @returns {string | null}
@@ -70,15 +62,13 @@ function errorMessage(error) {
   return null;
 }
 /**
- * 首页 DOM 句柄集合：ID 全部来自 index.html 静态结构，按标签收窄为真实元素接口。
+ * 首页 DOM 句柄集合：只保留模板挂载锚点与真实命令/输入控件；
+ * 错误/状态/空库/重试行全部是 homeNotices/bootMount 模板的内投影，不再散列句柄。
  * 必需节点由 requiredElement 在模块加载时断言（缺失即抛错），故这里不再可空。
  * @typedef {object} HomeElements
- * @property {HTMLParagraphElement} bootError 启动错误文案
- * @property {HTMLParagraphElement} bootRetryRow 启动重试行
- * @property {HTMLButtonElement} bootRetry 启动重试按钮
- * @property {HTMLParagraphElement} bootPending 启动中横幅
+ * @property {HTMLElement} bootMount 启动区挂载点
  * @property {HTMLElement} capabilityNotice 能力缺口诊断区
- * @property {HTMLParagraphElement} homeError 首页错误文案
+ * @property {HTMLElement} homeNotices 首页通知区挂载点
  * @property {HTMLElement} homeView 首页区
  * @property {HTMLElement} projectView 工作台区
  * @property {HTMLFormElement} createForm 新建表单
@@ -87,13 +77,6 @@ function errorMessage(error) {
  * @property {HTMLButtonElement} importTrigger 导入触发按钮
  * @property {HTMLInputElement} importFile 导入文件选择
  * @property {HTMLUListElement} projectList 项目列表
- * @property {HTMLParagraphElement} emptyState 空库提示
- * @property {HTMLParagraphElement} homeStatus 首页状态
- * @property {HTMLParagraphElement} homeReadStatus 列表读取中
- * @property {HTMLParagraphElement} homeReadError 列表读取错误
- * @property {HTMLParagraphElement} homeReadRetryRow 列表重试行
- * @property {HTMLButtonElement} homeReadRetry 列表重试按钮
- * @property {HTMLTemplateElement} rowTemplate 项目行模板
  * @property {HTMLButtonElement} backHome 返回列表按钮
  * @property {HTMLHeadingElement} projectTitle 项目标题
  * @property {HTMLSpanElement} projectState 项目状态徽标
@@ -131,15 +114,12 @@ const ERROR_MESSAGES = {
   PACKAGE_TOO_LARGE: "项目包过大，超出当前浏览器处理上限。",
 };
 
-/** @type {HomeElements} */
+/** @type {HomeElements} 首页静态锚点（容器本身不动；内容由模板 render 进去） */
 const elements = {
   // 每个 ID 在 index.html 里是固定标签；requiredElement 在模块加载时断言存在并按标签收窄。
-  bootError: requiredElement("boot-error", HTMLParagraphElement),
-  bootRetryRow: requiredElement("boot-retry-row", HTMLParagraphElement),
-  bootRetry: requiredElement("boot-retry", HTMLButtonElement),
-  bootPending: requiredElement("boot-pending", HTMLParagraphElement),
+  bootMount: requiredElement("boot-mount", HTMLElement),
   capabilityNotice: requiredElement("capability-notice", HTMLElement),
-  homeError: requiredElement("home-error", HTMLParagraphElement),
+  homeNotices: requiredElement("home-notices", HTMLElement),
   homeView: requiredElement("home-view", HTMLElement),
   projectView: requiredElement("project-view", HTMLElement),
   createForm: requiredElement("create-form", HTMLFormElement),
@@ -148,13 +128,6 @@ const elements = {
   importTrigger: requiredElement("import-trigger", HTMLButtonElement),
   importFile: requiredElement("import-file", HTMLInputElement),
   projectList: requiredElement("project-list", HTMLUListElement),
-  emptyState: requiredElement("empty-state", HTMLParagraphElement),
-  homeStatus: requiredElement("home-status", HTMLParagraphElement),
-  homeReadStatus: requiredElement("home-read-status", HTMLParagraphElement),
-  homeReadError: requiredElement("home-read-error", HTMLParagraphElement),
-  homeReadRetryRow: requiredElement("home-read-retry-row", HTMLParagraphElement),
-  homeReadRetry: requiredElement("home-read-retry", HTMLButtonElement),
-  rowTemplate: requiredElement("project-row-template", HTMLTemplateElement),
   backHome: requiredElement("back-home", HTMLButtonElement),
   projectTitle: requiredElement("project-title", HTMLHeadingElement),
   projectState: requiredElement("project-state", HTMLSpanElement),
@@ -170,8 +143,10 @@ let repository = null;
 let projects = [];
 /** @type {string | null} 当前打开项目 ID（未打开为 null；权威在 IndexedDB 指针，内存仅镜像） */
 let currentProjectId = null;
-/** @type {RowMode} */
+/** @type {RowMode} 行内模式（进入/取消走 enter/cancel 收尾走 reset） */
 let rowMode = { mode: "idle", projectId: null };
+/** @type {Map<string, string>} 改名草稿（project_id → 输入值；refresh 重渲染不丢用户已输入） */
+const renameDrafts = new Map();
 /** @type {number} 列表读取代次（过期响应丢弃，只渲染最新代） */
 let projectListGeneration = 0;
 /** @type {Promise<void> | null} 完整应用启动只允许一轮在途；Session 只拥有存储/工作区启动。 */
@@ -216,39 +191,66 @@ function describeError(error) {
 }
 
 /**
- * @param {HTMLElement} element 错误容器
- * @param {string} message 已本地化的错误文案
- * @returns {void}
+ * 首页通知投影状态：空串 = 不投影该行（模板渲染 nothing + hidden），非空 = 投影文案。
+ * reading=true 时投影“正在读取…”；readError 非空时投影错误+重试行。
+ * @typedef {object} HomeNotices
+ * @property {string} homeError 首页错误
+ * @property {string} homeStatus 首页状态
+ * @property {string} readError 列表读取错误
+ * @property {boolean} reading 列表读取中
+ * @property {string} bootError 启动错误
+ * @property {boolean} bootPending 启动中横幅
+ * @property {boolean} bootRetry 可重试启动
+ * @property {CapabilityGapCode | null} diagGap 能力缺口（首个）
+ * @property {string} diagOrigin 探针来源
  */
-function showError(element, message) {
-  element.textContent = message;
-  element.hidden = false;
+/** @type {HomeNotices} */
+const notices = { homeError: "", homeStatus: "", readError: "", reading: false, bootError: "", bootPending: true, bootRetry: false, diagGap: null, diagOrigin: "" };
+
+/** @type {string} 全局保存状态文案（空串 = 不投影；工作区写入包装的唯一投影源） */
+let saveState = "";
+
+/**
+ * 启动区模板：错误/重试/横幅由 notices 驱动；验证器读 #boot-error/#boot-retry-row/#boot-pending。
+ * @returns {unknown}
+ */
+function bootTemplate() {
+  return html`
+    <p id="boot-error" class="error" role="alert" ?hidden=${!notices.bootError}>${notices.bootError}</p>
+    <p id="boot-retry-row" ?hidden=${!notices.bootRetry}><button id="boot-retry" type="button" @click=${() => { void boot(); }}>重试启动</button></p>
+    <p id="boot-pending" class="meta" role="status" ?hidden=${!notices.bootPending}>正在启动本地项目库…</p>`;
 }
 
 /**
- * @param {HTMLElement} element 错误容器
- * @returns {void}
+ * 首页通知区模板：错误/状态/读取中/读取错误+重试/空库全部由 notices+projects 驱动；
+ * 验证器读 #home-error/#home-status/#home-read-status/#home-read-error/#home-read-retry-row/#home-read-retry/#empty-state。
+ * @returns {unknown}
  */
-function clearError(element) {
-  element.textContent = "";
-  element.hidden = true;
+function homeNoticesTemplate() {
+  const empty = projects.length === 0 && !notices.reading;
+  return html`
+    <p id="home-error" class="error" role="alert" ?hidden=${!notices.homeError}>${notices.homeError}</p>
+    <p id="home-status" class="status" role="status" ?hidden=${!notices.homeStatus}>${notices.homeStatus}</p>
+    <p id="home-read-status" class="meta" role="status" ?hidden=${!notices.reading}>正在读取本机项目…</p>
+    <p id="home-read-error" class="error" role="alert" ?hidden=${!notices.readError}>${notices.readError}</p>
+    <p id="home-read-retry-row" ?hidden=${!notices.readError}><button id="home-read-retry" type="button" @click=${() => { void refresh(); }}>重试读取项目</button></p>
+    <p id="empty-state" class="empty" ?hidden=${!empty}>这台浏览器还没有项目。填写名称后点“新建项目”开始。</p>`;
 }
 
-/**
- * @param {string} message 首页状态文案
- * @returns {void}
- */
-function showStatus(message) {
-  elements.homeStatus.textContent = message;
-  elements.homeStatus.hidden = false;
+/** @returns {void} 启动区重渲染 */
+function renderBoot() {
+  render(bootTemplate(), elements.bootMount);
 }
 
-/**
- * @returns {void}
- */
-function clearStatus() {
-  elements.homeStatus.textContent = "";
-  elements.homeStatus.hidden = true;
+/** @returns {void} 首页通知区重渲染 */
+function renderNotices() {
+  render(homeNoticesTemplate(), elements.homeNotices);
+}
+
+/** @returns {void} 保存状态重渲染（空串不投影） */
+function renderSaveState() {
+  const node = document.getElementById("save-state");
+  if (node) render(saveState ? html`${saveState}` : nothing, node);
 }
 
 /**
@@ -299,37 +301,55 @@ const CAPABILITY_DIAGNOSES = Object.freeze({
 
 /**
  * 首个缺口 → 界面投影；无缺口时清空诊断（正常可用不渲染工程信息）。
+ * 模板拥有 #capability-notice 的子树（含重试按钮 @click）；容器本身仍是静态节点。
  * @param {CapabilityProbeView} capabilities 探针结果（本页只消费 gaps/origin）
  * @returns {void}
  */
 function renderCapabilityDiagnosis(capabilities) {
-  const notice = elements.capabilityNotice;
-  const gap = capabilities.gaps.length > 0 ? capabilities.gaps[0] : null;
-  if (!gap) {
-    clearCapabilityDiagnosis();
-    return;
-  }
+  setNotice({
+    diagGap: capabilities.gaps.length > 0 ? capabilities.gaps[0] : null,
+    diagOrigin: capabilities.origin || "",
+  });
+}
+
+/**
+ * 能力诊断模板：首个缺口 + 来源；无缺口渲染 nothing 且容器 hidden。
+ * 模板拥有 #capability-notice 的子树（含重试按钮 @click）；容器本身仍是静态节点。
+ * @returns {unknown}
+ */
+function diagnosisTemplate() {
+  const gap = notices.diagGap;
+  if (!gap) return nothing;
   const diagnosis = CAPABILITY_DIAGNOSES[gap];
-  notice.hidden = false;
-  notice.dataset.errorCode = diagnosis.code;
-  notice.dataset.errorGap = gap;
-  requiredNode(notice, '[data-role="diag-title"]').textContent = diagnosis.title;
-  requiredNode(notice, '[data-role="diag-detail"]').textContent = diagnosis.detail;
-  requiredNode(notice, '[data-role="diag-origin"]').textContent = capabilities.origin || "（未知）";
-  requiredNode(notice, '[data-role="diag-action"]').textContent = diagnosis.action;
+  return html`
+    <p class="diag-title" data-role="diag-title">${diagnosis.title}</p>
+    <p class="diag-detail" data-role="diag-detail">${diagnosis.detail}</p>
+    <p class="diag-meta">当前来源：<code data-role="diag-origin">${notices.diagOrigin || "（未知）"}</code></p>
+    <p class="diag-action" data-role="diag-action">${diagnosis.action}</p>
+    <button type="button" data-role="diag-retry" @click=${() => { void boot(); }}>重新检测</button>
+  `;
+}
+
+/** @returns {void} 能力诊断重渲染（显隐与 dataset 由模板状态派生） */
+function renderDiagnosis() {
+  const notice = elements.capabilityNotice;
+  const gap = notices.diagGap;
+  render(diagnosisTemplate(), notice);
+  notice.hidden = !gap;
+  if (gap) {
+    notice.dataset.errorCode = CAPABILITY_DIAGNOSES[gap].code;
+    notice.dataset.errorGap = gap;
+  } else {
+    delete notice.dataset.errorCode;
+    delete notice.dataset.errorGap;
+  }
 }
 
 /**
  * @returns {void}
  */
 function clearCapabilityDiagnosis() {
-  const notice = elements.capabilityNotice;
-  notice.hidden = true;
-  delete notice.dataset.errorCode;
-  delete notice.dataset.errorGap;
-  for (const role of ["diag-title", "diag-detail", "diag-origin", "diag-action"]) {
-    requiredNode(notice, '[data-role="' + role + '"]').textContent = "";
-  }
+  setNotice({ diagGap: null, diagOrigin: "" });
 }
 
 /**
@@ -373,9 +393,8 @@ function showHome() {
  * @returns {void}
  */
 function instrumentSaveState(repo) {
-  const node = document.getElementById("save-state");
-/** @type {(text: string) => void} 保存状态投影（节点缺失时跳过，不抛错） */
-  const mark = (text) => { if (node) node.textContent = text; };
+/** @type {(text: string) => void} 保存状态投影（状态+模板渲染；节点缺失时跳过，不抛错） */
+  const mark = (text) => { saveState = text; renderSaveState(); };
 /** @type {() => string} */
   const stamp = () => new Date().toLocaleTimeString("zh-CN", { hour12: false });
 /**
@@ -412,8 +431,8 @@ function instrumentSaveState(repo) {
  * @returns {void}
  */
 function resetSaveState() {
-  const node = document.getElementById("save-state");
-  if (node) node.textContent = "";
+  saveState = "";
+  renderSaveState();
 }
 
 /**
@@ -421,75 +440,135 @@ function resetSaveState() {
  * @returns {void}
  */
 function showProject(project) {
+  renderProjectHeader(project);
   elements.homeView.hidden = true;
   elements.projectView.hidden = false;
   // R3.3：视图可见 = 工作区已完整装载；验证器以此区分"仅切视图"与"可交互"。
   elements.projectView.dataset.ready = "1";
-  elements.projectTitle.textContent = project.name;
-  elements.projectState.textContent = stateLabel(project.state);
-  elements.projectCreated.textContent = formatTime(project.created_at);
-  elements.projectUpdated.textContent = formatTime(project.updated_at);
 }
 
 /**
- * 行元素来自模板克隆（断言为 HTML 元素后才可读写 dataset/classList）。
- * @param {import("./storage/validate.js").StoredProjectRecord} project 已验证的项目记录（列表项投影，不改记录）
- * @returns {HTMLElement} 行元素（模板克隆；改名/删除模式就地替换动作区）
+ * 工作台头模板投影：标题/状态/时间由记录驱动渲染；视图显隐仍是生命周期切换。
+ * @param {import("./storage/validate.js").StoredProjectRecord} project 已验证的项目记录
+ * @returns {void}
  */
-function buildRow(project) {
-  const templateRow = elements.rowTemplate.content.firstElementChild;
-  if (!(templateRow instanceof HTMLElement)) throw new Error("项目行模板缺少元素。");
-  const cloned = templateRow.cloneNode(true);
-  if (!(cloned instanceof HTMLElement)) throw new Error("项目行模板不是 HTML 元素。");
-  const row = cloned;
-  row.dataset.projectId = project.project_id;
-  row.classList.toggle("is-current", project.project_id === currentProjectId);
-  requiredNode(row, '[data-role="state"]').textContent = stateLabel(project.state);
-  requiredNode(row, '[data-role="updated"]').textContent = "更新于 " + formatTime(project.updated_at);
+function renderProjectHeader(project) {
+  render(html`${project.name}`, elements.projectTitle);
+  render(html`${stateLabel(project.state)}`, elements.projectState);
+  render(html`${formatTime(project.created_at)}`, elements.projectCreated);
+  render(html`${formatTime(project.updated_at)}`, elements.projectUpdated);
+}
 
-  const main = requiredNode(row, ".row-main");
-  const actions = requiredNode(row, '[data-role="actions"]');
-  const nameNode = requiredNode(row, '[data-role="name"]');
+/**
+ * 退出行内模式并丢弃改名草稿（新建/复制/删除/导入/改名收尾用；取消走 cancelRowMode 以回焦）。
+ * @returns {void}
+ */
+function resetRowMode() {
+  rowMode = { mode: "idle", projectId: null };
+  renameDrafts.clear();
+}
 
-  if (rowMode.mode === "rename" && rowMode.projectId === project.project_id) {
-    const input = document.createElement("input");
-    input.className = "rename-input";
-    input.value = project.name;
-    input.maxLength = 120;
-    input.setAttribute("aria-label", "新名称");
-    main.replaceChild(input, nameNode);
-    actions.replaceChildren();
-    const save = document.createElement("button");
-    save.type = "button";
-    save.dataset.action = "rename-save";
-    save.textContent = "保存";
-    save.className = "primary";
-    const cancel = document.createElement("button");
-    cancel.type = "button";
-    cancel.dataset.action = "cancel";
-    cancel.textContent = "取消";
-    actions.append(save, cancel);
-    queueMicrotask(() => input.focus());
-  } else if (rowMode.mode === "delete" && rowMode.projectId === project.project_id) {
-    nameNode.textContent = project.name;
-    actions.replaceChildren();
-    const prompt = document.createElement("span");
-    prompt.className = "meta";
-    prompt.textContent = "确认删除这个项目？";
-    const confirm = document.createElement("button");
-    confirm.type = "button";
-    confirm.dataset.action = "delete-confirm";
-    confirm.className = "danger";
-    confirm.textContent = "确认删除";
-    const cancel = document.createElement("button");
-    cancel.type = "button";
-    cancel.dataset.action = "cancel";
-    cancel.textContent = "取消";
-    actions.append(prompt, confirm, cancel);
-  } else {
-    nameNode.textContent = project.name;
+/**
+ * 项目行模板：模板拥有 #project-list 子树，行身份按 project_id keyed；
+ * async 刷新只更新文本/行集合，不换行、不丢改名草稿、不抢焦点。
+ * @param {import("./storage/validate.js").StoredProjectRecord} project 已验证的项目记录（列表项投影，不改记录）
+ * @returns {unknown} 行模板（改名/删除模式就地替换名称与动作区）
+ */
+function projectRow(project) {
+  const projectId = project.project_id;
+  const renaming = rowMode.mode === "rename" && rowMode.projectId === projectId;
+  const deleting = rowMode.mode === "delete" && rowMode.projectId === projectId;
+  return html`
+    <li class="project-row${projectId === currentProjectId ? " is-current" : ""}" data-project-id=${projectId}>
+      <div class="row-main">
+        <span class="badge" data-role="state">${stateLabel(project.state)}</span>
+        ${renaming
+          ? html`<input class="rename-input" aria-label="新名称" maxlength="120" data-project-id=${projectId}
+              .value=${renameDrafts.get(projectId) ?? project.name}
+              @input=${(/** @type {Event} */ event) => {
+                if (event.target instanceof HTMLInputElement) renameDrafts.set(projectId, event.target.value);
+              }}>`
+          : html`<span class="name" data-role="name">${project.name}</span>`}
+        <span class="meta" data-role="updated">更新于 ${formatTime(project.updated_at)}</span>
+      </div>
+      <div class="row-actions" data-role="actions">
+        ${renaming
+          ? html`
+            <button type="button" data-action="rename-save" class="primary"
+              @click=${() => {
+                void handleRename(projectId, renameDrafts.get(projectId) ?? project.name);
+              }}>保存</button>
+            <button type="button" data-action="cancel"
+              @click=${() => cancelRowMode(projectId, "rename")}>取消</button>`
+          : deleting
+            ? html`
+              <span class="meta">确认删除这个项目？</span>
+              <button type="button" data-action="delete-confirm" class="danger"
+                @click=${() => { void handleDelete(projectId); }}>确认删除</button>
+              <button type="button" data-action="cancel"
+                @click=${() => cancelRowMode(projectId, "delete")}>取消</button>`
+            : html`
+              <button type="button" data-action="open" class="primary"
+                @click=${() => { void handleOpen(projectId); }}>打开</button>
+              <button type="button" data-action="rename"
+                @click=${() => enterRename(project)}>重命名</button>
+              <button type="button" data-action="duplicate"
+                @click=${() => { void handleDuplicate(projectId); }}>复制</button>
+              <button type="button" data-action="export"
+                @click=${() => { void handleExport(projectId); }}>导出项目包</button>
+              <button type="button" data-action="delete" class="danger"
+                @click=${() => enterDelete(projectId)}>删除</button>`}
+      </div>
+    </li>`;
+}
+
+/**
+ * 进入改名模式：已有草稿保留（refresh 重渲染不丢），否则用当前名播种；渲染后聚焦输入框。
+ * @param {import("./storage/validate.js").StoredProjectRecord} project 已验证的项目记录
+ * @returns {void}
+ */
+function enterRename(project) {
+  if (!renameDrafts.has(project.project_id)) renameDrafts.set(project.project_id, project.name);
+  rowMode = { mode: "rename", projectId: project.project_id };
+  renderList();
+  focusRowControl(project.project_id, ".rename-input");
+}
+
+/**
+ * 进入删除确认模式；渲染后不抢焦点（确认/取消都在行内 Tab 序）。
+ * @param {string} projectId 项目 ID
+ * @returns {void}
+ */
+function enterDelete(projectId) {
+  rowMode = { mode: "delete", projectId };
+  renderList();
+}
+
+/**
+ * 取消行内模式并把焦点还给触发按钮（改名/删除）；草稿丢弃。
+ * @param {string} projectId 项目 ID
+ * @param {"rename" | "delete"} trigger 触发模式
+ * @returns {void}
+ */
+function cancelRowMode(projectId, trigger) {
+  resetRowMode();
+  renderList();
+  focusRowControl(projectId, 'button[data-action="' + trigger + '"]');
+}
+
+/**
+ * 行内控件聚焦（按 dataset 找行，不拼 ID 选择器）。
+ * @param {string} projectId 项目 ID
+ * @param {string} selector 行内选择器
+ * @returns {void}
+ */
+function focusRowControl(projectId, selector) {
+  for (const row of elements.projectList.children) {
+    if (!(row instanceof HTMLElement) || row.dataset.projectId !== projectId) continue;
+    const control = row.querySelector(selector);
+    if (control instanceof HTMLElement) control.focus();
+    return;
   }
-  return row;
 }
 
 /**
@@ -497,10 +576,12 @@ function buildRow(project) {
  * @returns {void}
  */
 function renderList(nextProjects = projects) {
-  const rows = nextProjects.map(buildRow);
-  elements.projectList.replaceChildren(...rows);
   projects = nextProjects;
-  elements.emptyState.hidden = projects.length !== 0;
+  render(
+    repeat(projects, (project) => project.project_id, (project) => projectRow(project)),
+    elements.projectList,
+  );
+  renderNotices();
 }
 
 /**
@@ -510,10 +591,7 @@ function renderList(nextProjects = projects) {
 async function refresh({ required = false } = {}) {
   const generation = ++projectListGeneration;
   elements.projectList.setAttribute("aria-busy", "true");
-  elements.homeReadStatus.hidden = false;
-  elements.emptyState.hidden = true;
-  clearError(elements.homeReadError);
-  elements.homeReadRetryRow.hidden = true;
+  setNotice({ reading: true, readError: "" });
   try {
     const repo = repository;
     if (!repo) throw new Error("本地数据库还在初始化，请稍候再操作。");
@@ -521,16 +599,27 @@ async function refresh({ required = false } = {}) {
     if (generation === projectListGeneration) renderList(nextProjects);
   } catch (error) {
     if (generation === projectListGeneration) {
-      showError(elements.homeReadError, describeError(error));
-      elements.homeReadRetryRow.hidden = false;
+      setNotice({ readError: describeError(error) });
     }
     if (required) throw error;
   } finally {
     if (generation === projectListGeneration) {
       elements.projectList.setAttribute("aria-busy", "false");
-      elements.homeReadStatus.hidden = true;
+      setNotice({ reading: false });
     }
   }
+}
+
+/**
+ * 合并更新通知状态并重渲染全部通知模板（启动区 + 首页区 + 能力诊断）。
+ * @param {Partial<HomeNotices>} patch 状态增量
+ * @returns {void}
+ */
+function setNotice(patch) {
+  Object.assign(notices, patch);
+  renderBoot();
+  renderNotices();
+  renderDiagnosis();
 }
 
 /**
@@ -538,15 +627,15 @@ async function refresh({ required = false } = {}) {
  * @returns {Promise<import("./storage/validate.js").StoredProjectRecord | null>} 新建记录，失败返回 null（错误已投影，不抛）
  */
 async function handleCreate(name) {
-  clearError(elements.homeError);
+  setNotice({ homeError: "" });
   if (!session || !session.repository) {
-    showError(elements.homeError, "本地数据库还在初始化，请稍候再操作。");
+    setNotice({ homeError: "本地数据库还在初始化，请稍候再操作。" });
     return null;
   }
   try {
     const project = await session.repository.projects.create({ name });
     elements.nameInput.value = "";
-    rowMode = { mode: "idle", projectId: null };
+    resetRowMode();
     // R3.3：新建即打开——与 handleOpen 走同一条"完整恢复完成后才切视图"的路径。
     const opened = await session.openProject(project);
     currentProjectId = opened.project_id;
@@ -555,7 +644,7 @@ async function handleCreate(name) {
     await refresh();
     return project;
   } catch (error) {
-    showError(elements.homeError, describeError(error));
+    setNotice({ homeError: describeError(error) });
     await refresh();
     return null;
   }
@@ -567,9 +656,9 @@ async function handleCreate(name) {
  * @returns {Promise<void>}
  */
 async function handleOpen(projectId) {
-  clearError(elements.homeError);
+  setNotice({ homeError: "" });
   if (!session || !session.repository) {
-    showError(elements.homeError, "本地数据库还在初始化，请稍候再操作。");
+    setNotice({ homeError: "本地数据库还在初始化，请稍候再操作。" });
     return;
   }
   try {
@@ -583,7 +672,7 @@ async function handleOpen(projectId) {
     resetSaveState();
     renderList();
   } catch (error) {
-    showError(elements.homeError, describeError(error));
+    setNotice({ homeError: describeError(error) });
   }
 }
 
@@ -594,10 +683,10 @@ async function handleOpen(projectId) {
  * @returns {Promise<void>}
  */
 async function handleRename(projectId, name) {
-  clearError(elements.homeError);
+  setNotice({ homeError: "" });
   const repo = repository;
   if (!repo) {
-    showError(elements.homeError, "本地数据库还在初始化，请稍候再操作。");
+    setNotice({ homeError: "本地数据库还在初始化，请稍候再操作。" });
     return;
   }
   try {
@@ -606,7 +695,7 @@ async function handleRename(projectId, name) {
     const updated = await repo.projects.rename(projectId, name, {
       expectedRevision: project.revision,
     });
-    rowMode = { mode: "idle", projectId: null };
+    resetRowMode();
     await refresh();
     if (currentProjectId === projectId) {
       showProject(updated);
@@ -615,9 +704,12 @@ async function handleRename(projectId, name) {
       if (active) active.updateProjectMetadata(updated);
     }
   } catch (error) {
-    rowMode = { mode: "idle", projectId: null };
+    // 失败保留改名模式与草稿：refresh 重渲染不丢用户输入，焦点回到输入框以便修正。
+    renameDrafts.set(projectId, name);
+    rowMode = { mode: "rename", projectId };
     await refresh();
-    showError(elements.homeError, describeError(error));
+    setNotice({ homeError: describeError(error) });
+    focusRowControl(projectId, ".rename-input");
   }
 }
 
@@ -626,18 +718,18 @@ async function handleRename(projectId, name) {
  * @returns {Promise<void>} 复制后整帧刷新；失败投影错误，不抛
  */
 async function handleDuplicate(projectId) {
-  clearError(elements.homeError);
+  setNotice({ homeError: "" });
   const repo = repository;
   if (!repo) {
-    showError(elements.homeError, "本地数据库还在初始化，请稍候再操作。");
+    setNotice({ homeError: "本地数据库还在初始化，请稍候再操作。" });
     return;
   }
   try {
     await repo.projects.duplicate(projectId);
-    rowMode = { mode: "idle", projectId: null };
+    resetRowMode();
     await refresh();
   } catch (error) {
-    showError(elements.homeError, describeError(error));
+    setNotice({ homeError: describeError(error) });
   }
 }
 
@@ -647,10 +739,10 @@ async function handleDuplicate(projectId) {
  * @returns {Promise<void>}
  */
 async function handleDelete(projectId) {
-  clearError(elements.homeError);
+  setNotice({ homeError: "" });
   const repo = repository;
   if (!repo) {
-    showError(elements.homeError, "本地数据库还在初始化，请稍候再操作。");
+    setNotice({ homeError: "本地数据库还在初始化，请稍候再操作。" });
     return;
   }
   try {
@@ -660,10 +752,10 @@ async function handleDelete(projectId) {
       if (session) void session.closeProject();
       showHome();
     }
-    rowMode = { mode: "idle", projectId: null };
+    resetRowMode();
     await refresh();
   } catch (error) {
-    showError(elements.homeError, describeError(error));
+    setNotice({ homeError: describeError(error) });
   }
 }
 
@@ -673,11 +765,10 @@ async function handleDelete(projectId) {
  * @returns {Promise<void>}
  */
 async function handleExport(projectId) {
-  clearError(elements.homeError);
-  clearStatus();
+  setNotice({ homeError: "", homeStatus: "" });
   const repo = repository;
   if (!repo) {
-    showError(elements.homeError, "本地数据库还在初始化，请稍候再操作。");
+    setNotice({ homeError: "本地数据库还在初始化，请稍候再操作。" });
     return;
   }
   try {
@@ -694,9 +785,9 @@ async function handleExport(projectId) {
     anchor.click();
     anchor.remove();
     setTimeout(() => URL.revokeObjectURL(url), 10_000);
-    showStatus("已导出项目包：" + anchor.download + "（含完整历史，可在别的浏览器导入）");
+    setNotice({ homeStatus: "已导出项目包：" + anchor.download + "（含完整历史，可在别的浏览器导入）" });
   } catch (error) {
-    showError(elements.homeError, describeError(error));
+    setNotice({ homeError: describeError(error) });
   }
 }
 
@@ -707,24 +798,23 @@ async function handleExport(projectId) {
  * @returns {Promise<void>}
  */
 async function handleImport(file) {
-  clearError(elements.homeError);
-  clearStatus();
+  setNotice({ homeError: "", homeStatus: "" });
   if (!file) return;
   if (!session || !session.db || !repository) {
     elements.importFile.value = "";
-    showError(elements.homeError, "本地数据库还在初始化，请稍候再导入。");
+    setNotice({ homeError: "本地数据库还在初始化，请稍候再导入。" });
     return;
   }
   try {
     const bytes = new Uint8Array(await file.arrayBuffer());
     const result = await importProjectPackage(session.db, bytes);
-    rowMode = { mode: "idle", projectId: null };
+    resetRowMode();
     await refresh();
-    showStatus(result.id_assigned
+    setNotice({ homeStatus: result.id_assigned
       ? "已导入「" + result.project.name + "」（同 id 项目已存在，已作为新项目导入）"
-      : "已导入「" + result.project.name + "」");
+      : "已导入「" + result.project.name + "」" });
   } catch (error) {
-    showError(elements.homeError, describeError(error));
+    setNotice({ homeError: describeError(error) });
   } finally {
     elements.importFile.value = "";
   }
@@ -745,44 +835,11 @@ elements.importFile.addEventListener("change", (event) => {
   handleImport(file);
 });
 
-elements.projectList.addEventListener("click", (event) => {
-  const target = event.target;
-  if (!(target instanceof Element)) return;
-  const button = target.closest("button[data-action]");
-  if (!(button instanceof HTMLElement)) return;
-  const row = button.closest(".project-row");
-  if (!(row instanceof HTMLElement)) return;
-  const projectId = row.dataset.projectId;
-  if (!projectId) return;
-  const action = button.dataset.action;
-  if (action === "open") handleOpen(projectId);
-  else if (action === "rename") { rowMode = { mode: "rename", projectId }; renderList(); }
-  else if (action === "rename-save") {
-    const input = row.querySelector(".rename-input");
-    handleRename(projectId, input instanceof HTMLInputElement ? input.value : "");
-  } else if (action === "duplicate") handleDuplicate(projectId);
-  else if (action === "export") handleExport(projectId);
-  else if (action === "delete") { rowMode = { mode: "delete", projectId }; renderList(); }
-  else if (action === "delete-confirm") handleDelete(projectId);
-  else if (action === "cancel") { rowMode = { mode: "idle", projectId: null }; renderList(); }
-});
-
 elements.backHome.addEventListener("click", () => {
   showHome();
   void refresh();
 });
 
-elements.homeReadRetry.addEventListener("click", () => {
-  void refresh();
-});
-
-requiredNode(elements.capabilityNotice, '[data-role="diag-retry"]').addEventListener("click", () => {
-  void boot();
-});
-
-elements.bootRetry.addEventListener("click", () => {
-  void boot();
-});
 
 /**
  * R3.3：ready = 完整恢复完成。首页控件默认禁用（HTML），boot 全程保持禁用，
@@ -796,9 +853,7 @@ elements.bootRetry.addEventListener("click", () => {
  */
 async function bootstrap() {
   setHomeControlsBlocked(true);
-  elements.bootRetryRow.hidden = true;
-  elements.bootPending.hidden = false;
-  clearError(elements.bootError);
+  setNotice({ bootRetry: false, bootPending: true, bootError: "" });
 
   try {
     const capabilities = await probeBrowserCapabilities();
@@ -828,7 +883,7 @@ async function bootstrap() {
     // UI.3 全局保存状态：R3.3 重构时漏接——恢复 boot 成功后的单点投影接线。
     instrumentSaveState(ready);
     await refresh({ required: true });
-    elements.bootPending.hidden = true;
+    setNotice({ bootPending: false });
     if (blocked) {
       setHomeControlsBlocked(true);
       if (restored.project) await active.closeProject();
@@ -844,12 +899,8 @@ async function bootstrap() {
     }
     setHomeControlsBlocked(false);
   } catch (error) {
-    elements.bootPending.hidden = true;
-    clearError(elements.homeReadError);
-    elements.homeReadRetryRow.hidden = true;
+    setNotice({ bootPending: false, readError: "", bootRetry: true, bootError: describeError(error) });
     setHomeControlsBlocked(true);
-    elements.bootRetryRow.hidden = false;
-    showError(elements.bootError, describeError(error));
   }
 }
 
@@ -860,5 +911,12 @@ function boot() {
   return bootPromise;
 }
 
+// Bootstrap fallback transfer: #boot-mount ships a static boot-pending fallback so a
+// never-loaded/failed module still shows 启动中; take template ownership once here.
+elements.bootMount.replaceChildren();
+renderBoot();
+renderNotices();
+renderDiagnosis();
+renderSaveState();
 boot();
 void modelSettings.refresh();

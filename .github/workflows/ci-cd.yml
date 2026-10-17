@@ -45,12 +45,12 @@ jobs:
           fi
           base="${{ github.event.pull_request.base.sha }}"
           head="${{ github.event.pull_request.head.sha }}"
-          changed="$(git diff --name-only "$base" "$head" -- || true)"
+          changed="$(git diff --name-only "$base" "$head" --)"
           if [ -z "$changed" ]; then
             echo "docs-only=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          rest="$(echo "$changed" | grep -vE '^docs/|\.md$' || true)"
+          rest="$(echo "$changed" | grep -vE '^((docs|_working)/.*\.md|[^/]+\.md)$' || true)"
           if [ -z "$rest" ]; then
             echo "docs-only=true" >> "$GITHUB_OUTPUT"
           else
@@ -99,14 +99,16 @@ jobs:
           uv run python evals/probes/project_state.py
           uv run python evals/probes/docs_index.py
           uv run python tools/check_verification.py
-          uv run python tools/gen_slot_cards.py --check
           uv run python evals/probes/verification_policy.py
 
       - name: Check frontend versions types and direct behavior
         run: |
           npm run check:versions
+          npm run build:envelope
           npm run check:types
-          npm run check:generated
+          npm run check:envelope
+          npm run build:frontend
+          npm run build:frontend-node
           npm run test:domain
 
       - name: Check formal entry and browser contracts
@@ -127,7 +129,7 @@ jobs:
           uv run python tools/verify_v2_3_4_prompt_compiler.py
           uv run python tools/verify_v2_3_5_pre_generation_confirm.py
           uv run python tools/verify_v2_3_6_prompt_manual_edit.py
-          uv run python tools/verify_v2_4_1_image_gateway.py
+          uv run --locked python -m pytest tests/gateway tests/dev -q
           uv run python tools/verify_v2_4_2_generation_attempt.py
           uv run python tools/verify_v2_4_3_batch_execution.py
           uv run python tools/verify_v2_4_4_candidate_blob.py
@@ -185,13 +187,20 @@ jobs:
           uv sync --locked
           uv run playwright install --with-deps chromium
 
+      - name: Skip container chain for docs-only PR
+        if: github.event_name == 'pull_request' && needs.changes.outputs.docs-only == 'true'
+        run: echo "docs-only PR：构建/冒烟/事务探针不适用，未执行容器链（非容器已验）。"
+
       - name: Build immutable image
+        if: github.event_name != 'pull_request' || needs.changes.outputs.docs-only != 'true'
         run: docker build --pull --tag "${IMAGE_NAME}:${GITHUB_SHA}" .
 
       - name: Smoke-test container health
+        if: github.event_name != 'pull_request' || needs.changes.outputs.docs-only != 'true'
         shell: bash
         run: |
           set -Eeuo pipefail
+          mkdir -p release-evidence
           docker run --detach --name amz-listing-kit-smoke --publish 127.0.0.1:8780:8780 "${IMAGE_NAME}:${GITHUB_SHA}"
           for attempt in $(seq 1 30); do
             status="$(docker inspect --format '{{.State.Health.Status}}' amz-listing-kit-smoke)"
@@ -205,6 +214,9 @@ jobs:
           assert body["product"] == "v2", body
           assert body["server_state"] == "none", body
           PY
+              docker exec -i amz-listing-kit-smoke python - \
+                --fingerprint --runtime-root . --base http://127.0.0.1:8780 \
+                < tools/release_transaction_probe.py > release-evidence/candidate-runtime-fingerprint.json
               exit 0
             fi
             if [ "$status" = unhealthy ]; then
@@ -220,6 +232,7 @@ jobs:
         run: docker rm --force amz-listing-kit-smoke >/dev/null 2>&1 || true
 
       - name: Release transaction selftest (real disposable containers)
+        if: github.event_name != 'pull_request' || needs.changes.outputs.docs-only != 'true'
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -229,6 +242,7 @@ jobs:
           uv run --locked python tools/release_transaction_probe.py --selftest
 
       - name: Release failure classes (real script, no containers)
+        if: github.event_name != 'pull_request' || needs.changes.outputs.docs-only != 'true'
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -312,8 +326,8 @@ jobs:
           # finalize/rollback 会话复用同一身份与逻辑。
           # 上下文按目录整体上传，与 Dockerfile 的目录 COPY 和 .dockerignore 白名单对齐：
           # 不再字面钉单个源文件，避免新增运行文件漏传或旧文件被显式带入镜像。
-          tar -czf - Dockerfile .dockerignore pyproject.toml uv.lock \
-            app src config deploy \
+          tar -czf - Dockerfile .dockerignore pyproject.toml uv.lock package.json package-lock.json \
+            vite.config.mjs tsconfig.json tools app src config deploy \
             | ssh -o ConnectTimeout=15 -o ServerAliveInterval=15 "$target" "tar -xzf - -C '$context'"
           ssh -o ConnectTimeout=15 -o ServerAliveInterval=15 "$target" 'bash -s' -- \
             "${IMAGE_NAME}:${GITHUB_SHA}" "${CONTAINER_NAME}" "${APP_PORT}" "$context" \
@@ -385,19 +399,28 @@ jobs:
 
           evidence = Path("release-evidence")
           data = json.loads((evidence / "runtime-fingerprint.json").read_text(encoding="utf-8"))
-          assert data["schema_version"] == "amz-runtime-fingerprint/v1", "unexpected fingerprint schema"
+          assert data["schema_version"] == "amz-runtime-fingerprint/v2", "unexpected fingerprint schema"
           assert data["default_trial"] == "closed", "default trial must remain closed"
           assert re.fullmatch(r"[0-9a-f]{64}", data["runtime_sha256"])
           assert re.fullmatch(r"[0-9a-f]{64}", data["public_configuration_sha256"])
-          # 实际服务且已生成的浏览器 JS：只认 HTTP 200 服务字节的 hash，不认本地同名文件。
-          for resource, digest in data["served_scripts_sha256"].items():
+          # 构建资源逐项绑定到本job真实启动过的候选镜像；
+          # 源码/配置另与checkout核对，不要求被忽略的dist存在于源码工作区。
+          served = data["served_assets_sha256"]
+          assert isinstance(served, dict) and served, "no served browser assets recorded"
+          for resource, digest in served.items():
               assert re.fullmatch(r"[0-9a-f]{64}", digest), f"bad served script digest: {resource}"
+          candidate = json.loads((evidence / "candidate-runtime-fingerprint.json").read_text(encoding="utf-8"))
+          assert candidate["schema_version"] == data["schema_version"], "candidate schema differs"
+          assert candidate["files"] == data["files"], "serving bytes differ from the CI-tested image"
+          assert candidate["runtime_sha256"] == data["runtime_sha256"], "serving runtime differs"
           root = Path.cwd().resolve()
           for name, actual in data["files"].items():
               lowered = name.lower()
               assert "secret" not in lowered and "app.env" not in lowered, f"secret in fingerprint: {name}"
               source = (root / name).resolve()
               assert source.is_relative_to(root), f"invalid runtime path: {name}"
+              if name.startswith("dist/product-v2/"):
+                  continue  # 构建产物已逐字节绑定到本job构建且真实服务过的候选镜像。
               with source.open("rb") as stream:
                   expected = hashlib.file_digest(stream, "sha256").hexdigest()
               assert actual == expected, f"runtime/source mismatch: {name}"
@@ -450,8 +473,8 @@ jobs:
           fi
           exit "$finalize_rc"
 
-      - name: Upload release evidence
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      - name: Upload candidate and release fingerprints
+        if: always() && hashFiles('release-evidence/*.json') != ''
         uses: actions/upload-artifact@v7
         with:
           name: release-evidence-${{ github.sha }}

@@ -1,4 +1,4 @@
-"""External model provider adapters for Product V1."""
+"""External model provider adapters for the current product (V2 stateless gateway)."""
 from __future__ import annotations
 
 

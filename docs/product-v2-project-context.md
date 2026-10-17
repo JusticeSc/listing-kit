@@ -17,7 +17,7 @@
 
 | 层 | 稳定边界 | 事实从哪里读 |
 |---|---|---|
-| Product V1 | 旧文件夹工作空间与生图闭环只作业务/Provider/案例来源；按V2.R7.3在覆盖、消费者切换及代码/当前数据基线成立后清退（SEL-009），不等待独立C15/C17，不新增历史兼容服务 | 当前尚存入口以README/代码为准；保留历史证据和用户原件不等于继续维护旧产品，当前停工不授权执行清退 |
+| Product V1 | 旧文件夹工作空间与专属执行链已在本次候选中清退；保留Git历史、用户原件与选中恢复材料，不提供旧入口或旧格式迁移服务 | 当前实现取README/代码；候选验证与main/发布身份分别取state和关联PR，不以本地删除冒充线上已切换 |
 | Product V2 | 浏览器拥有用户项目，Python 服务无业务状态；所有新能力都必须在这一所有权边界内实现 | 已落地行为只看 `README.md` 与代码；当前进度和证据只看 Product V2 state；目标只看 Product V2 计划 |
 | 参考模板 | `docs/standards-template/` 是外部课程模板的原样副本，不是本项目运行规范 | 采纳映射、未采纳项与复访条件只在 `AGENTS.md` §Standards Mapping |
 
@@ -63,7 +63,7 @@ Python 无状态 AI 服务
 
 | 占位符 | 本项目取值 | 说明 |
 |---|---|---|
-| 入口 | `python app/server.py` | 默认启动 Product V2 无状态服务；`--legacy-v1` 回 V1 回归入口 |
+| 入口 | `python app/server.py` | 唯一 Product V2 无状态入口；旧`--legacy-v1`/离线fixture参数已退出 |
 | 端口 | `8780`（默认） | 可用启动参数覆盖；内网穿透与否由使用者自行控制 |
 | 健康检查 | `GET /api/health` | 返回 `product=v2`、`server_state=none` |
 | 宿主 | 本机 Python 开发入口；远程服务器 Docker 正式运行 | 默认 Python 启动仍绑定回环地址；远程容器固定监听 `0.0.0.0:8780`，暴露范围由服务器和使用者控制 |
@@ -79,9 +79,9 @@ Python 无状态 AI 服务
 
 | 层 | 当前选择 | 边界 |
 |---|---|---|
-| 前端 | 原生 HTML、CSS、JavaScript | 延续现有低依赖路线；业务状态通过 repository/service 接口访问，不让 DOM 成为状态源 |
+| 前端 | HTML/CSS、混合JS/TS源码，lit-html视图、Vite构建 | 业务状态通过既有Module/repository访问，唯一生产静态目录`dist/product-v2`；DOM不是业务状态源 |
 | 浏览器持久化 | IndexedDB + Blob；localStorage 只放轻量指针 | 当前格式事务、容量提示、项目导入/导出；开发态旧版本兼容不要求（SEL-018）；不把图片 Base64 塞进 localStorage |
-| 服务端 | Python；正式入口 `app/server.py` 默认启动 Product V2 无状态适配器（`--legacy-v1` 回 V1） | 服务方法无用户工作空间参数；请求进、模型响应出；正式入口不读写工作空间或最近项目索引 |
+| 服务端 | Python FastAPI + Uvicorn；正式入口`app/server.py`，HTTP宿主`product_v2_http.py` | 无旧HTTP fallback；请求级无状态路由不读写用户项目、工作空间或最近项目索引 |
 | 商品理解 | `deepseek-v4.1-flash`文字／`qwen-vl-max`商品图文提议，各自SemanticProvider | 文字不发原图；看图Adapter发送实际字节并保留source，输出仍待人工确认。现有真图文子步不等于当前辅助完整任务已验收 |
 | 图片模型 | `qwen-image-3.0` 与大陆火山 `doubao-seedream-5-0-flash-260915` | 两个有限协议Adapter消费参考图；同步/异步归一业务结果，主流程不抠图、不部署本地分割模型 |
 | 视觉复核 | `qwen-vl-max`，候选及整套各自业务合同 | 当前多模态传输可复用，复核schema不能冒充商品理解；可选辅助/交付政策以计划§14.8为准 |
@@ -98,9 +98,9 @@ Python 无状态 AI 服务
 
 | ID | 范围 | 决策 | 被拒方案 | 复访条件 |
 |---|---|---|---|---|
-| SEL-000 | 依赖政策 | Python pinned 依赖由 pyproject.toml + uv.lock 管理；浏览器运行时原生 ESM、无打包器。SEL-021 已批准开发期严格检查及逐文件 TS→JS 编译，工具锁根 package.json/package-lock.json；新框架/依赖仍须选型，不把低依赖变成拒绝类型检查的理由；领域规则自研、通用原语复用 | 未经选型放开 npm/全仓 TS/框架；全零工具；多份 manifest/lock 权威 | 工具 PoC、实际 DOM 维护痛点、离线安装约束变化时 |
+| SEL-000 | 依赖政策 | Python pinned依赖由pyproject.toml + uv.lock管理；前端根package.json/package-lock.json为唯一工具/浏览器依赖权威。SEL-021/023已切到标准tsc检查、Vite构建及lit-html视图；生产仅Python与构建后静态ESM。新框架/依赖仍须选型；领域规则自研、通用原语复用 | 未经选型放开npm/全仓TS/框架；全零工具；多份manifest/lock权威 | 实际维护痛点、离线安装或工具约束变化时 |
 | SEL-001 | 编排层 | 不引入 LangGraph 与 Agent/Memory 编排，服务端保持无状态（业务状态权威是浏览器 IndexedDB）；引入 `langchain-core` / `langchain-openai` 仅作提示词、模型调用与结构化解析原语（见 SEL-003），不承担状态与编排 | LangGraph checkpointer + 服务端状态；Agent/Memory 编排 | 出现服务端自主多步编排，或需要跨进程恢复的长任务 |
-| SEL-002 | 服务端 HTTP | 暂保留 stdlib `http.server`（零运行时依赖、端点少、单进程） | Flask / FastAPI + uvicorn | V2.4 图片上传/下载需要 multipart 与流式响应时重开 |
+| SEL-002 | 服务端 HTTP | SEL-022已在本次候选落实FastAPI/Uvicorn，旧stdlib HTTP实现退出；产品保留正文限额、错误/凭据/出站/Unknown政策 | 无实际收益引框架；新旧HTTP双运行链 | HTTP政策或宿主约束变化时，运行真实TCP与页面验证 |
 | SEL-003 | 语义/视觉调用传输层 | 用户已确认（2026-09-30）：`langchain-core` + `langchain-openai` 的 `ChatOpenAI` 指向百炼 OpenAI 兼容端点（`deepseek-v4.1-flash`）；显式 timeout、`max_retries=0`（禁止隐藏重试）；失败映射进 `v2_semantic` 四类归口。版本：langchain-core 1.6.6、langchain-openai 1.6.6（均 MIT）；依赖实测与 PoC 报告见 `evals/product-v2/sel003-transport-selection-20260929.txt` | LiteLLM（59 包，为单一兼容协议付 4 倍依赖）；`requests` 手写适配器（重复造 HTTP/重试轮子）；OpenAI SDK 直连（已含于 langchain-openai，不建双轨） | 接入第二个供应商或需要路由/降级/成本统计时评估 LiteLLM；需要 OpenAI 专有能力时评估直连。PoC 已发现：`deepseek-v4.1-flash` 为推理型输出，需给 reasoning 留预算 |
 | SEL-004 | 项目管理规范 | 采纳`docs/standards-template/`的要求而不复制目录；产品终点/正式依赖、项目工作规则、具体Issue/PR、产品权限/恢复分工按INDEX，映射见AGENTS。具体问题使用Issue不构成第二份完整产品Goal或本地进度表 | 复制模板另建standards/，或以防双权威为由禁用产品Issue；在state/报告重抄工单明细 | 需要对外交付独立规范包或协作分工改变时重开 |
 | SEL-005 | 持续交付 | 沿用GitHub Actions + Docker：PR-to-main/main push/manual触发既有CI，只有main push才触发既有受保护发布，固定origin/端口。release事务保留previous至acceptance/指纹/finalize后，离线stage证据不等于真实Docker/HTTPS；R7.4按当前候选证明实际容器页面、可信发布及同origin恢复，不重建CD | 新镜像仓库/编排平台、healthy冒充用户主链、容器回退冒充浏览器数据恢复、源码token自匹配冒充条件真值 | 发布验收范围或数据格式改变时；合并/发布权限取AGENTS、计划§17最新修订与state，不绕保护或最新停工 |
@@ -119,11 +119,15 @@ Python 无状态 AI 服务
 | SEL-018 | 开发态兼容与设计自由度 | 用户明确：“不用考虑历史兼容性，现在仍在开发阶段，允许你做激进的设计。”旧版本/schema/包迁移及真实旧工件恢复不再要求；按计划 §2.3 clean cutover，可重做 Module/Interface/UI/记录格式、移除被替代路径；新开发库/旧格式拒绝须显式，不静默删除浏览器数据。同版本候选历史、人工选择、任务冻结身份、刷新恢复、ZIP哈希及安全不变量保留；其余权限门不变 | 为缺失旧测试包停工、保留向后兼容 shim/迁移层、将激进设计当作静默丢数据或付费/部署/V1删除授权 | 首次正式发布/存在需支持的历史用户数据时，重新定义版本兼容承诺；开发期不预建设迁移层 |
 | SEL-019 | 问题导向参考系统研究 | V2.R2.3 已核查 pi `88ff80b`/0.99.2（MIT）、ComfyUI `2d6b7328`/0.38.0（GPL v3）、Open WebUI `8bd8b4f`/0.11.4（自定义品牌约束许可），固定全文 SHA/路径见 `evals/product-v2/refactor/reference-review-20261001.md`。仅采纳概念：用途/能力/协议 Adapter/凭据分层；交付只读采用候选原 action 的冻结 Prompt，不读当前编辑头；同 Shot 直接图片对照与稳定候选导航；Unknown 分身份恢复、状态/影响/下一动作先于技术详情。BYOK 仍仅内存，概念不等于新依赖或真实能力证明，布局由 R2.2 原型冻结 | 复制三套平台/代码/样式/品牌、账户或服务器项目库、pi 聊天兼容冒充图片协议、上游持久凭据照搬 IndexedDB、Comfy 元数据新功能、隐式自动重提/采用/付费、未选型新运行依赖 | R2.2/R4.1/R4.2 的原型/能力/费用证据；确需复制代码或引入库时重开许可/依赖门 |
 | SEL-020 | 电商参考 skill 问题导向复核 | V2.R2.2 只读核查工作区根三目录：`ecommerce-image-suite-main/`（Apache-2.0 但 README 陈旧矛盾、占位符未填、模特/实拍无许可）、`ecom-details-image-main/`（自称 MIT 但无 LICENSE 文件，`.env.example` 含第三方代理明文 key 泄漏样本）、`ecommerce-skills-main/`（MIT 2026 dlazy，实读 platform-compliance/detect-task/item-detail＋shared 脚本/测试/规格）。结论：三者只提供流程编排与规格清单（批次 manifest、参考图锁定、先单图后整套、客观像素机检＋主观 VLM 质检分层、固定质检 prompt、中文排版四条件、逐轮 manifest、dry-run、不伪造测量），均无图片结果验收实现（保真/文字/事实/尺寸/齐全性须 amz 自建）；零字节复制，不复制代码/模板/样式/品牌/资产/凭据，不引入 Node 脚本链与真实调用/付费；证据 `evals/product-v2/refactor/prototype-review-20261002.md` §5 | 未经许可复制代码/模板原文、样式/模特/实拍资产、品牌与联系方式；硬编码供应商分支冒充解耦；真实模型调用/付费上传；把 prompt 自述或人工观感当验收结论；复用泄漏凭据 | R6 验收自建时复用 rubric/阈值数据；确需复制代码或引入依赖时重开许可/依赖门 |
-| SEL-021 | 前端开发检查与渐进TS迁移 | 根package.json/package-lock.json锁typescript 6.0.3（Apache-2.0，无传递安装依赖），安装禁scripts；Node 24.19.0/npm 11.17.0，行为复用node:test。已迁domain/attempt、config-export、session、settings、semantic与五业务owner、ui/dom/四视图以TS为唯一手工源码，同名JS按ESM生成；当前产物集合取compiler program批准范围全部TS，不仅parsed.fileNames。jsconfig及opt-in调用方定义严格检查范围，CI check:generated防漂移，静态服务/Docker拒绝TS源码，生产无Node/编译器；不承诺全仓TS或未纳入JS有类型保障 | 全仓TS强迁移、框架先行、node --check冒充类型检查、compiler进生产、多份Implementation、any/忽略/假断言洗诊断、隐式npx取包 | 功能批次先确定owner/调用方及实际emit覆盖；新依赖另过门，撤销工具需同步源码/产物/配置/CI，原生ESM与业务不变 |
+| SEL-021 | 前端开发检查与渐进TS迁移 | 根manifest/lock锁typescript 6.0.3（Apache-2.0），安装禁scripts；Node24.19.0/npm11.17.0，行为复用node:test。已迁TS为唯一手工源码，保留JS调用方用逐文件@ts-check，实际覆盖取tsconfig.json；SEL-023现承接Vite浏览器产物，Node验证树用标准tsc emit到build/frontend-node，不再同目录生成JS或运行check:generated。正式静态入口拒绝TS源码，生产无Node/编译器；不承诺全仓TS或未纳入JS有类型保障 | 全仓TS强迁移、node --check冒充类型检查、compiler进生产、多份Implementation、any/忽略/假断言洗诊断、隐式npx取包 | 受影响owner/调用方实际类型与运行验证；新依赖另过门，撤销工具需同步源码/产物/配置/CI |
+| SEL-022 | main基线HTTP替换（已确认，本地候选已切换） | FastAPI 0.143.3（MIT）＋Uvicorn 0.54.0（BSD-3-Clause），直接Pydantic 2.13.5（MIT），不装standard extras。`app/product_v2_server.py`装配路由，`product_v2_http.py`负责ASGI生命周期/静态策略，旧HTTP实现退出；registry/credentials/outbound/Unknown政策保留。隔离PoC见`_stage-amz-control/main-baseline-execution-20261017/http-poc/http_selection_poc.json`，干净候选/镜像结论另取PR证据 | 手写HTTP层、async handler阻塞SDK、新旧server fallback、无关CLI/遥测SDK | 真实路由/TCP/Chrome/限额/退出及生产镜像需随对应变更验证，PoC不代签发布 |
+| SEL-023 | main基线前端构建/渲染（已确认，本地切换中） | 用户2026-10-17已确认Vite 8.3.4（MIT，dev-only）＋标准tsc及lit-html 3.3.3（BSD-3-Clause）；Vite传递含dev-only MPL-2.0 lightningcss。P4已切到标准Vite唯一产物`dist/product-v2`，旧同目录emit/check:generated退出；P5视图迁移使用lit-html，业务状态保持原owner、UI草稿只归视图。实际进度/证据取state与#10，不把隔离PoC或已安装当正式验收 | 自建转译/打包器、React/Vue并用、第二全局store、产物回退源码、Node生产服务 | 正式清洁构建、Python静态入口/镜像资源及真实工作区任务通过；PoC不能替代正式视图迁移 |
+| SEL-024 | main基线Python验证组织（已确认，本地候选已迁移） | pytest 9.1.1（MIT，dev-only）管理`tests/gateway`及`tests/dev`，已替换对应旧网关runner；CI/登记/选择器/聚合走`python -m pytest`，付费/远程/人工入口不在发现集合。继续复用node:test与Playwright，未受影响入口不机械迁移 | pytest外套永久CLI、双runner、自动重跑、paid/remote/manual自动发现 | 正式首组需证明实际判错及退出清理；依赖或分类变化时局部重验 |
+ | SEL-025 | main基线共享通信结构（已确认，已落地） | 结构权威 = `src/providers/v2_image.py` 的 `ImageWire*` Pydantic 模型；构建期 `tools/export_image_envelope_schema.py` 导出 JSON Schema，`tools/generate_image_envelope_validator.mjs` 用 Ajv 8.20.0（MIT，仅构建期 codegen）生成 standalone ESM 校验器 `domain/generated/image-task-envelope.validate.js`；浏览器唯一入口 `domain/image-envelope.ts`（类型投影见 `domain/type-contracts.d.ts`，分类/状态语义仍归 `domain/attempt.ts`）。`npm run check:envelope` 以 199 案例（真实响应 7 + 变异 192）证 Python↔JS 同拒（分歧 0、误放行 0），R52-02 要求 harness A20 结构门；dist 合同入口含 `generation.js`/`domain/attempt.js`，浏览器产物真实消费生成模块 | Zod第三份权威、全领域Schema化、浏览器动态eval、生成校验与旧镜像长期并行 | 真实非法输入同拒、脱敏错误、真实结构来源及净收益；不额外收紧业务合同换取PoC通过，不留下半成品 |
 
 SEL-000..013 中对旧计划 §9.x 的操作设计引用仍指冻结的
 `product-v2-goal-and-implementation-plan.md`，不把历史操作说明当未来任务。
-SEL-014..021保存技术方向和固定来源；SEL-021工具已批准，第二生图及旧授权来源在计划§12，本轮启动方案在§16。当前执行绑定与前沿取state，不据历史工程/发布授权施工；新框架或依赖仍过选型门。
+SEL-014..021保存既有技术方向和固定来源；SEL-022..025已于2026-10-17 02:00:36Z获用户四项明确确认（会话`01a13065-2097-721b-9d1f-35bb099947f3`的ask原始答复），无需再次询问。确认不等于已安装/已切换；当前依赖权威/实际运行仍取§4.2及代码。当前执行绑定与前沿取state，不据历史工程/发布授权施工。
 
 状态：SEL-000 至 SEL-011 已定案（2026-09-30）。依赖权威已从 `requirements.txt` 迁移到
 `pyproject.toml` + `uv.lock`，守卫、CI、README 同步（证据见
@@ -143,18 +147,16 @@ SEL-014..021保存技术方向和固定来源；SEL-021工具已批准，第二�
 <!-- dependency-registry:begin -->
 | 包 | 版本 | 许可 | 用途 | 引入决策 | 移除成本 |
 |---|---|---|---|---|---|
-| jsonschema | 4.26.0 | MIT | Draft 2020-12 结构契约校验（V1 合同与验证器） | V1 基线；V2 提案校验权威是 Pydantic（SEL-006），去留随 V1 日落逐项核实 | 小 |
 | langchain-core | 1.6.6 | MIT | 语义调用与结构化输出原语 | SEL-003/007 引入（2026-09-30） | 中：换回直连要重写适配器 |
 | langchain-openai | 1.6.6 | MIT | ChatOpenAI 指向百炼兼容端点 | SEL-003 引入 | 中 |
-| numpy | 2.4.6 | BSD-3-Clause | V1 像素与数组运算 | V1 基线 | 中：V1 图像链路依赖 |
-| pillow | 12.3.0 | MIT-CMU | 图像读写、尺寸与校验 | V1 基线；V2 图像链路继续使用 | 中 |
-| python-dotenv | 1.2.3 | BSD-3-Clause | `.env` 本地加载 | V1 基线；V2.2.2 正式入口接线复用 | 小 |
-| pyyaml | 6.0.3 | MIT | YAML 配置读取（V1 配置与守卫） | V1 基线 | 小 |
-| requests | 2.34.2 | Apache-2.0 | V1 外部模型 HTTP 调用与验证工具 | V1 基线；V2 语义改经 langchain-openai（SEL-003）；V2 图像网关客户端在 V2.4.1 选型 | 小：集中在 V1 链路与 `tools/` |
-| onnxruntime | 1.30.0 | MIT | 抠图可选组（cutout，不默认安装） | V1 基线；随 V1 日落后复核 | 小：optional 组 |
-| rembg | 2.0.84 | MIT | 抠图可选组（cutout，不默认安装） | V1 基线；随 V1 日落后复核 | 小：optional 组 |
+| fastapi | 0.143.3 | MIT | 正式HTTP路由/装配 | SEL-022；替换旧stdlib HTTP，无fallback | 小：随网关模块 |
+| uvicorn | 0.54.0 | BSD-3-Clause | ASGI服务器生命周期/静态策略 | SEL-022；同上 | 小 |
+| pillow | 12.3.0 | MIT-CMU | dev组：离线图像夹具和验证，不进生产运行依赖 | V1来源保留到开发验证；正式V2仅转发/校验协议字节 | 中：开发验证消费者 |
+| pydantic | 2.13.5 | MIT | 语义契约模型（SEL-006 直接声明） | SEL-006；P1 由传递提升为直接依赖 | 小 |
+| pyyaml | 6.0.3 | MIT | dev组：控制面YAML守卫，不进生产运行依赖 | 原配置消费者已清退，保留当前开发守卫 | 小：开发守卫 |
+| requests | 2.34.2 | Apache-2.0 | V2 图像网关 HTTP 客户端 | SEL-010；V2 语义改经 langchain-openai（SEL-003） | 小：集中在 V2 网关与 `tools/` |
 | playwright | 1.63.0 | Apache-2.0 | dev 组：浏览器合同验证 | SEL-005 CI 引入 | 小：dev 组 |
-| pydantic | 2.13.5 | MIT | 语义契约模型（SEL-006 锁定的传递依赖） | SEL-006 | 小：随 langchain-core 传递 |
+| pytest | 9.1.1 | MIT | dev组：网关合同与自检矩阵 | SEL-024；仅发现tests，不进生产镜像 | 小：dev组 |
 | openai | 3.20.0 | Apache-2.0 | 兼容客户端（langchain-openai 传递依赖） | SEL-003 链路传递引入 | 小：随 langchain-openai 传递 |
 <!-- dependency-registry:end -->
 
@@ -163,16 +165,63 @@ GitHub Actions 复用官方 actions/checkout@v6、actions/setup-python@v6（SEL-
 官方 [setup-node v6.4.0](https://github.com/actions/setup-node/tree/v6.4.0)，固定 commit
 `48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e`（MIT，已核 LICENSE/API tag；SEL-021）。
 Node 从根 engines 读精确版本，CI 安装同 engines 的 npm 后 npm ci 禁 scripts；禁自动缓存。
-开发期编译按 SEL-021；不引入产品 Node 运行时、打包器或认证框架。uv sync --locked 与 uv run 继续执行 Python/浏览器验证。
+开发期标准类型检查与Vite构建按SEL-021/023；不引入产品Node运行时或认证框架。uv sync --locked 与 uv run 继续执行Python/浏览器验证。
 
-前端开发期版本合同：Node `24.19.0`、npm `11.17.0`，来源为本机已安装工具；根 manifest/lock 锁定，
-R3.2 CI 已声明接线；Node 仅用于开发期检查/编译/验证，Python 与静态 ESM 是产品运行时。安装只允许已批准包，使用
-`npm ci --ignore-scripts`，不通过 npx 隐式下载工具。当前依赖仅 typescript，一个 dev 包，无传递安装依赖。
+ 前端开发期版本合同：Node `24.19.0`、npm `11.17.0`，来源为本机已安装工具；根 manifest/lock 锁定，
+ R3.2 CI 已声明接线；Node 仅用于开发期检查/编译/验证，Python 与静态 ESM 是产品运行时。安装只允许已批准包，使用
+ 直接开发依赖为typescript、vite和ajv（ajv 仅构建期 codegen，不进浏览器运行图）；lit-html为受锁生产运行依赖（生产只消费构建后本地ESM）。
 
 <!-- frontend-dependency-registry:begin -->
 | 包 | 版本 | 许可 | 用途 | 引入决策 | 移除成本 |
 |---|---|---|---|---|---|
-| typescript | 6.0.3 | Apache-2.0 | dev-only strict TS、逐文件 JSDoc/checkJs/noEmit、TS→同目录 ESM JS | SEL-021；用户明确批准 | 小：保留生成 JS，删除 TS 源/声明、开发依赖/锁条目、编译检查配置及 CI 一步 |
+ | @types/trusted-types | 2.0.7 | MIT | lit-html传递类型依赖；仅编译，不进浏览器运行图 | SEL-023（2026-10-17 用户确认） | 小：随lit-html移除 |
+| ajv | 8.20.0 | MIT | 构建期 standalone ESM codegen（SEL-025）；不进浏览器运行图 | SEL-025（2026-10-17 用户确认） | 小：dev 依赖/锁条目/生成器一步删除 |
+ | fast-deep-equal | 3.1.3 | MIT | ajv/SEL-025 传递依赖（dev-only，不进生产） | SEL-025（2026-10-17 用户确认） | 小：dev-only 锁条目，随 ajv 移除同步消失 |
+ | fast-uri | 3.1.8 | BSD-3-Clause | ajv/SEL-025 传递依赖（dev-only，不进生产） | SEL-025（2026-10-17 用户确认） | 小：dev-only 锁条目，随 ajv 移除同步消失 |
+ | json-schema-traverse | 1.0.0 | MIT | ajv/SEL-025 传递依赖（dev-only，不进生产） | SEL-025（2026-10-17 用户确认） | 小：dev-only 锁条目，随 ajv 移除同步消失 |
+ | require-from-string | 2.0.2 | MIT | ajv/SEL-025 传递依赖（dev-only，不进生产） | SEL-025（2026-10-17 用户确认） | 小：dev-only 锁条目，随 ajv 移除同步消失 |
+| @oxc-project/types | 0.154.0 | MIT | vite/SEL-023 传递依赖（dev-only，不进生产） | SEL-023（2026-10-17 用户确认） | 小：dev-only 锁条目，随 vite 移除同步消失 |
+| @rolldown/binding-android-arm-eabi | 1.2.14 | MIT | vite/SEL-023 传递依赖（dev-only，不进生产） | SEL-023（2026-10-17 用户确认） | 小：dev-only 锁条目，随 vite 移除同步消失 |
+| @rolldown/binding-android-arm64 | 1.2.14 | MIT | vite/SEL-023 传递依赖（dev-only，不进生产） | SEL-023（2026-10-17 用户确认） | 小：dev-only 锁条目，随 vite 移除同步消失 |
+| @rolldown/binding-darwin-arm64 | 1.2.14 | MIT | vite/SEL-023 传递依赖（dev-only，不进生产） | SEL-023（2026-10-17 用户确认） | 小：dev-only 锁条目，随 vite 移除同步消失 |
+| @rolldown/binding-darwin-x64 | 1.2.14 | MIT | vite/SEL-023 传递依赖（dev-only，不进生产） | SEL-023（2026-10-17 用户确认） | 小：dev-only 锁条目，随 vite 移除同步消失 |
+| @rolldown/binding-freebsd-x64 | 1.2.14 | MIT | vite/SEL-023 传递依赖（dev-only，不进生产） | SEL-023（2026-10-17 用户确认） | 小：dev-only 锁条目，随 vite 移除同步消失 |
+| @rolldown/binding-linux-arm-gnueabihf | 1.2.14 | MIT | vite/SEL-023 传递依赖（dev-only，不进生产） | SEL-023（2026-10-17 用户确认） | 小：dev-only 锁条目，随 vite 移除同步消失 |
+| @rolldown/binding-linux-arm64-gnu | 1.2.14 | MIT | vite/SEL-023 传递依赖（dev-only，不进生产） | SEL-023（2026-10-17 用户确认） | 小：dev-only 锁条目，随 vite 移除同步消失 |
+| @rolldown/binding-linux-arm64-musl | 1.2.14 | MIT | vite/SEL-023 传递依赖（dev-only，不进生产） | SEL-023（2026-10-17 用户确认） | 小：dev-only 锁条目，随 vite 移除同步消失 |
+| @rolldown/binding-linux-ppc64-gnu | 1.2.14 | MIT | vite/SEL-023 传递依赖（dev-only，不进生产） | SEL-023（2026-10-17 用户确认） | 小：dev-only 锁条目，随 vite 移除同步消失 |
+| @rolldown/binding-linux-s390x-gnu | 1.2.14 | MIT | vite/SEL-023 传递依赖（dev-only，不进生产） | SEL-023（2026-10-17 用户确认） | 小：dev-only 锁条目，随 vite 移除同步消失 |
+| @rolldown/binding-linux-x64-gnu | 1.2.14 | MIT | vite/SEL-023 传递依赖（dev-only，不进生产） | SEL-023（2026-10-17 用户确认） | 小：dev-only 锁条目，随 vite 移除同步消失 |
+| @rolldown/binding-linux-x64-musl | 1.2.14 | MIT | vite/SEL-023 传递依赖（dev-only，不进生产） | SEL-023（2026-10-17 用户确认） | 小：dev-only 锁条目，随 vite 移除同步消失 |
+| @rolldown/binding-openharmony-arm64 | 1.2.14 | MIT | vite/SEL-023 传递依赖（dev-only，不进生产） | SEL-023（2026-10-17 用户确认） | 小：dev-only 锁条目，随 vite 移除同步消失 |
+| @rolldown/binding-win32-arm64-msvc | 1.2.14 | MIT | vite/SEL-023 传递依赖（dev-only，不进生产） | SEL-023（2026-10-17 用户确认） | 小：dev-only 锁条目，随 vite 移除同步消失 |
+| @rolldown/binding-win32-x64-msvc | 1.2.14 | MIT | vite/SEL-023 传递依赖（dev-only，不进生产） | SEL-023（2026-10-17 用户确认） | 小：dev-only 锁条目，随 vite 移除同步消失 |
+| @rolldown/pluginutils | 1.0.1 | MIT | vite/SEL-023 传递依赖（dev-only，不进生产） | SEL-023（2026-10-17 用户确认） | 小：dev-only 锁条目，随 vite 移除同步消失 |
+| detect-libc | 2.1.2 | Apache-2.0 | vite/SEL-023 传递依赖（dev-only，不进生产） | SEL-023（2026-10-17 用户确认） | 小：dev-only 锁条目，随 vite 移除同步消失 |
+| fdir | 6.5.0 | MIT | vite/SEL-023 传递依赖（dev-only，不进生产） | SEL-023（2026-10-17 用户确认） | 小：dev-only 锁条目，随 vite 移除同步消失 |
+| fsevents | 2.3.3 | MIT | vite/SEL-023 传递依赖（dev-only，不进生产） | SEL-023（2026-10-17 用户确认） | 小：dev-only 锁条目，随 vite 移除同步消失 |
+| lightningcss | 1.33.0 | MPL-2.0 | vite/SEL-023 传递依赖（dev-only，不进生产） | SEL-023（2026-10-17 用户确认） | 小：dev-only 锁条目，随 vite 移除同步消失 |
+| lightningcss-android-arm64 | 1.33.0 | MPL-2.0 | vite/SEL-023 传递依赖（dev-only，不进生产） | SEL-023（2026-10-17 用户确认） | 小：dev-only 锁条目，随 vite 移除同步消失 |
+| lightningcss-darwin-arm64 | 1.33.0 | MPL-2.0 | vite/SEL-023 传递依赖（dev-only，不进生产） | SEL-023（2026-10-17 用户确认） | 小：dev-only 锁条目，随 vite 移除同步消失 |
+| lightningcss-darwin-x64 | 1.33.0 | MPL-2.0 | vite/SEL-023 传递依赖（dev-only，不进生产） | SEL-023（2026-10-17 用户确认） | 小：dev-only 锁条目，随 vite 移除同步消失 |
+| lightningcss-freebsd-x64 | 1.33.0 | MPL-2.0 | vite/SEL-023 传递依赖（dev-only，不进生产） | SEL-023（2026-10-17 用户确认） | 小：dev-only 锁条目，随 vite 移除同步消失 |
+| lightningcss-linux-arm-gnueabihf | 1.33.0 | MPL-2.0 | vite/SEL-023 传递依赖（dev-only，不进生产） | SEL-023（2026-10-17 用户确认） | 小：dev-only 锁条目，随 vite 移除同步消失 |
+| lightningcss-linux-arm64-gnu | 1.33.0 | MPL-2.0 | vite/SEL-023 传递依赖（dev-only，不进生产） | SEL-023（2026-10-17 用户确认） | 小：dev-only 锁条目，随 vite 移除同步消失 |
+| lightningcss-linux-arm64-musl | 1.33.0 | MPL-2.0 | vite/SEL-023 传递依赖（dev-only，不进生产） | SEL-023（2026-10-17 用户确认） | 小：dev-only 锁条目，随 vite 移除同步消失 |
+| lightningcss-linux-x64-gnu | 1.33.0 | MPL-2.0 | vite/SEL-023 传递依赖（dev-only，不进生产） | SEL-023（2026-10-17 用户确认） | 小：dev-only 锁条目，随 vite 移除同步消失 |
+| lightningcss-linux-x64-musl | 1.33.0 | MPL-2.0 | vite/SEL-023 传递依赖（dev-only，不进生产） | SEL-023（2026-10-17 用户确认） | 小：dev-only 锁条目，随 vite 移除同步消失 |
+| lightningcss-win32-arm64-msvc | 1.33.0 | MPL-2.0 | vite/SEL-023 传递依赖（dev-only，不进生产） | SEL-023（2026-10-17 用户确认） | 小：dev-only 锁条目，随 vite 移除同步消失 |
+| lightningcss-win32-x64-msvc | 1.33.0 | MPL-2.0 | vite/SEL-023 传递依赖（dev-only，不进生产） | SEL-023（2026-10-17 用户确认） | 小：dev-only 锁条目，随 vite 移除同步消失 |
+| lit-html | 3.3.3 | BSD-3-Clause | 声明式视图模板；构建为本地静态ESM，无CDN/第二store | SEL-023（2026-10-17 用户确认）；发布许可随public/lit-html.LICENSE.txt | 中：迁走模板后删除依赖/锁条目/许可；不保留手工DOM fallback |
+| nanoid | 3.3.20 | MIT | vite/SEL-023 传递依赖（dev-only，不进生产） | SEL-023（2026-10-17 用户确认） | 小：dev-only 锁条目，随 vite 移除同步消失 |
+| picocolors | 1.1.1 | ISC | vite/SEL-023 传递依赖（dev-only，不进生产） | SEL-023（2026-10-17 用户确认） | 小：dev-only 锁条目，随 vite 移除同步消失 |
+| picomatch | 4.0.7 | MIT | vite/SEL-023 传递依赖（dev-only，不进生产） | SEL-023（2026-10-17 用户确认） | 小：dev-only 锁条目，随 vite 移除同步消失 |
+| postcss | 8.5.30 | MIT | vite/SEL-023 传递依赖（dev-only，不进生产） | SEL-023（2026-10-17 用户确认） | 小：dev-only 锁条目，随 vite 移除同步消失 |
+| rolldown | 1.2.14 | MIT | vite/SEL-023 传递依赖（dev-only，不进生产） | SEL-023（2026-10-17 用户确认） | 小：dev-only 锁条目，随 vite 移除同步消失 |
+| source-map-js | 1.2.2 | BSD-3-Clause | vite/SEL-023 传递依赖（dev-only，不进生产） | SEL-023（2026-10-17 用户确认） | 小：dev-only 锁条目，随 vite 移除同步消失 |
+| tinyglobby | 0.2.17 | MIT | vite/SEL-023 传递依赖（dev-only，不进生产） | SEL-023（2026-10-17 用户确认） | 小：dev-only 锁条目，随 vite 移除同步消失 |
+| typescript | 6.0.3 | Apache-2.0 | dev-only strict TS + Node 树标准 tsc emit（SEL-021/023） | SEL-021；用户 2026-10-17 再次确认 SEL-023 批准 | 小：dev 依赖/锁条目/配置/CI 一步删除 |
+| vite | 8.3.4 | MIT | dev-only 单一生产静态构建 dist/product-v2（SEL-023） | SEL-023（2026-10-17 用户确认）；dev-only，生产无 Node/编译器 | 小：删除构建配置与 dev 依赖/锁条目，恢复已提交生成 JS 服务 |
 <!-- frontend-dependency-registry:end -->
 
 <!-- vendor-registry:begin -->

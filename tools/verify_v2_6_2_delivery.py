@@ -190,8 +190,7 @@ def main() -> int:
             finally:
                 browser.close()
     finally:
-        static_server.shutdown()
-        static_server.server_close()
+        static_server.stop()
     suite = suites.get("delivery", {})
     case_ids = [item.get("id") for item in suite.get("cases", [])]
     failed = [item for item in suite.get("cases", []) if item.get("status") != "passed"]
@@ -213,7 +212,7 @@ def main() -> int:
     walkthrough: dict = {}
     with sync_playwright() as pw:
         server, _suite_instance = start_product_server(0, review_scenario="ok")
-        port = server.server_address[1]
+        port = server.port
         try:
             context = pw.chromium.launch_persistent_context(
                 str(temp_root / "profile-main"), headless=True,
@@ -371,12 +370,11 @@ def main() -> int:
             finally:
                 context.close()
         finally:
-            server.shutdown()
-            server.server_close()
+            server.stop()
 
         # ---------------- Unknown 确认解锁（反向；可选 AI 缺席记 not_run 不阻断交付） ----------------
         server2, _ = start_product_server(0, review_scenario="unknown")
-        port2 = server2.server_address[1]
+        port2 = server2.port
         try:
             context2 = pw.chromium.launch_persistent_context(
                 str(temp_root / "profile-unknown"), headless=True,
@@ -418,8 +416,7 @@ def main() -> int:
             finally:
                 context2.close()
         finally:
-            server2.shutdown()
-            server2.server_close()
+            server2.stop()
 
     # ---------------- 正式入口自检 ----------------
     completed = subprocess.run([sys.executable, "app/server.py", "--check"], cwd=str(ROOT),
