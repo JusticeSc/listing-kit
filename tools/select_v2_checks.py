@@ -39,8 +39,8 @@ CI verify job 与本地完整回归此前对所有变更跑同一套完整命令
 
 退出码
 ----
-0 = 选择成功（未 --run 时只打印）；2 = 登记/命令清单校验失败（fail-closed）；
-其它 = `--run` 时首个失败命令的真实退出码。
+0 = 选择成功（未 --run 时只打印）；2 = 登记/命令清单校验失败，或选择名在当前命令清单里
+找不到（fail-closed：重命名/退出 CI 后不静默少跑）；
 """
 from __future__ import annotations
 
@@ -270,6 +270,11 @@ def main(argv: list[str] | None = None) -> int:
             reason += "；所选集合为空，已回退到完整离线集合"
     # 选择名在当前命令清单里找不到时，必须显式说出来（重命名/退出 CI 后不能静默少跑）。
     unresolved = sorted(wanted - {script for script, _ in full})
+    if unresolved:
+        print(("[FAIL] SELECT-INPUT 选择名不在当前命令清单里（可能已改名或退出 CI）："
+               + "、".join(unresolved) + " —— 先同步分类表与真实命令，不静默少跑。")
+              .encode("utf-8", "replace").decode("utf-8"))
+        return INPUT_EXIT
 
     if args.emit_github:
         print(json.dumps({
@@ -285,17 +290,6 @@ def main(argv: list[str] | None = None) -> int:
     print(f"完整离线集合 {len(full)} 条，本次选择 {len(selected)} 条"
           f"（受限 paid/remote/aggregate 模式 {len(restricted)} 条已排除）"
           .encode("utf-8", "replace").decode("utf-8"))
-    if unresolved:
-        print(("提示：这些入口名不在当前命令清单里（可能已改名或退出 CI）："
-               + "、".join(unresolved)).encode("utf-8", "replace").decode("utf-8"))
-    def render(script: str, extra: list[str]) -> str:
-        if script.startswith("npm:"):
-            return f"npm run {script[4:]}{' ' + ' '.join(extra) if extra else ''}"
-        if script.startswith("pytest:"):
-            return f"uv run --locked python -m pytest {script[len('pytest:'):]}{' ' + ' '.join(extra) if extra else ''}"
-        return f"uv run --locked python {script}{' ' + ' '.join(extra) if extra else ''}"
-    for script, extra in selected:
-        print(("  " + render(script, extra)).encode("utf-8", "replace").decode("utf-8"))
     if not args.run:
         return 0
     for script, extra in selected:
