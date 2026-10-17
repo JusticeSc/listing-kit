@@ -1175,7 +1175,7 @@ actor是动作操作者，应能从权限动作/版本记录追溯，不要求�
 
 | 改变的合同 | 复用入口与实际后置 | 不变时不重做 |
 |---|---|---|
-| TS/产物 | `npm run check:types`；TS改动后`npm run build:frontend`/`npm run check:generated`；真实消费生成ESM | 不另维护JS实现或全仓机械TS化 |
+| TS/产物 | `npm run check:types`；TS改动后`npm run build:frontend`；真实消费生成ESM | 不另维护JS实现或全仓机械TS化 |
 | payload/展示/编译 | 现有domain行为及3_3/3_4/3_6、生产parser与正式输入→Prompt当前性 | 不钉字符串/源码位置，不重复已证人工稿机制 |
 | 执行/返工/授权 | 4_1–4_4/5_4及两正式Adapter解码出站、partial/Unknown/精确无关对象后置 | 不把所有网关/浏览器项变成每批全量 |
 | 报告/采用/包/历史 | 5_1/6_1–6_3及真实IDB、报告故障、实际下载/独立导入/刷新 | 不用包非空/hash数量替代逐条与字节一致 |

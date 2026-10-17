@@ -243,8 +243,7 @@ fflate，只保留产品上限/错误码与逐条 CRC32 完整性校验（fflate
 ```text
 amz-listing-kit/
 ├─ app/
-│  ├─ server.py                         # 正式服务入口：默认 V2；--legacy-v1 回 V1；旧 Mock 可执行入口已本地退役
-│  ├─ product_v1_server.py              # Product V1 历史实现，迁移期保留（--legacy-v1）
+│  ├─ server.py                         # 正式服务入口：唯一 V2（旧 --legacy-v1/V1/Mock 可执行入口已随 main 基线 P1 退出）
 │  ├─ product_v2_server.py              # 无状态HTTP装配：静态/health/capabilities、文字/商品图文 semantic/analyze、生图、单图及整套复核
 │  └─ product_v2/                       # V2 前端静态资源；domain/prompt.js 是 Prompt 编译与人工编辑唯一权威（V2.3.4 / V2.3.6）、domain/confirm.js 是生成前确认唯一权威（V2.3.5）、domain/review.js 是确定性校验与 VLM 复核映射（规则注册表 / ReviewReport）唯一权威（V2.5.1 / V2.5.2）、domain/compare.js 是候选比较与审核清单排序的视图模型唯一权威（先看顺序仍取自 review.js 的 REVIEW_SEVERITY_ORDER，V2.5.3）、domain/rework.js 是九类返工问题与 ReworkDirective 返工指令合同的唯一权威（比较区保持只读，V2.5.4）、domain/selection.js 是人工选择（SelectionRecord/SelectionSet、采用/改选/取消与失效判断）唯一权威（V2.6.1）；domain/attempt.ts 与 domain/config-export.ts 是生成 Attempt 与可分享配置的唯一手工源码（同名 `.js` 是 `npm run build:frontend` 产物，V2.R7.5）；vendor/ 已 vendored fflate 0.8.3（SEL-008）
 ├─ src/
@@ -264,7 +263,7 @@ amz-listing-kit/
 └─ tools/                               # 控制面、契约、浏览器和回归验证入口；v2_test_server.py 复用产品处理器 + fake provider
 ```
 
-2026-10-12本地清退仅覆盖旧Mock/demo可执行闭包及其过期bootstrap验证，不是完整V1日落或线上发布。历史JSON、许可、用户资产与证据保留；精确原字节/退役清单见 `_stage-amz-control/next-version-design-20261012/baseline/`，当前局部进度见 `discussion.md`。仍有实际消费者的V1/治理工具和旧槽卡生产链不按文件名批量删除。
+2026-10-12本地清退仅覆盖旧Mock/demo可执行闭包及其过期bootstrap验证，不是完整V1日落或线上发布。历史JSON、许可、用户资产与证据保留；精确原字节/退役清单见 `_stage-amz-control/next-version-design-20261012/baseline/`，当前局部进度见 `discussion.md`。本轮 P1 已按真实消费者闭包完成 V1/旧槽卡生产链删除（177 项，见 `main-baseline-execution-20261017/v1-retirement/deletion-record.json`），六类消费者同包迁移；用户原件、许可、失败/账本与选中恢复包保留。
 
 新增目录前先判断它属于实现、目标、状态还是证据；不能归类的目录先不建。目录地图描述的是目标落点，尚未存在的均标为“目标”，不能据此声称已经实现。
 

@@ -673,45 +673,28 @@ def http_get(host: str, port: int, path: str) -> tuple[int, bytes]:
         connection.close()
 
 
-# 外形稳定的服务器生命周期：P3 后产品网关是 ASGI 句柄（start/stop/.port），
-# 不再是 ThreadingHTTPServer（serve_forever/shutdown/server_close/server_address）。
-# 本工具只用这几个包装，宿主实现仍由产品拥有。
+# 服务器生命周期：P3 后产品网关唯一是 ASGI 句柄（start/stop/.port）。
+# 旧 ThreadingHTTPServer 手柄已随产品退出，不再兼容。
 def serve_in_background(server):
-    """后台启动服务器句柄：新句柄 start()，旧句柄 serve_forever。"""
-
+    """后台启动服务器句柄（仅 ASGI 新句柄）。"""
     starter = getattr(server, "start", None)
-    if callable(starter):
-        starter()
-        return
-    serve_forever = getattr(server, "serve_forever", None)
-    if not callable(serve_forever):
-        raise RuntimeError("不支持的服务器句柄（无 start/serve_forever）。")
-    threading.Thread(target=serve_forever, daemon=True).start()
+    if not callable(starter):
+        raise RuntimeError("不支持的服务器句柄（只要 ASGI start/stop 句柄）。")
+    starter()
 
 def server_port(server) -> int:
-    """读服务器真实监听端口：优先 .port，退回 .server_address。"""
-
+    """读服务器真实监听端口（仅 .port）。"""
     port = getattr(server, "port", None)
     if isinstance(port, int) and port > 0:
         return port
-    address = getattr(server, "server_address", None)
-    if address:
-        return int(address[1])
-    raise RuntimeError("不支持的服务器句柄（无 port/server_address）。")
+    raise RuntimeError("不支持的服务器句柄（只要 .port）。")
 
 def stop_server(server) -> None:
-    """停止服务器句柄：新句柄 stop()，旧句柄 shutdown()/server_close()。"""
-
+    """停止服务器句柄（仅 stop()）。"""
     stopper = getattr(server, "stop", None)
-    if callable(stopper):
-        stopper()
-        return
-    shutdown = getattr(server, "shutdown", None)
-    if callable(shutdown):
-        shutdown()
-    closer = getattr(server, "server_close", None)
-    if callable(closer):
-        closer()
+    if not callable(stopper):
+        raise RuntimeError("不支持的服务器句柄（只要 stop()）。")
+    stopper()
 
 def main(*, server_logs: tuple[io.StringIO, io.StringIO]) -> int:
     parser = argparse.ArgumentParser()
