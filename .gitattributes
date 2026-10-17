@@ -13,6 +13,9 @@
 *.patch text eol=lf
 *.sh text eol=lf
 *.bat text eol=crlf
+*.toml text eol=lf
+*.lock text eol=lf
+*.txt text eol=lf
 
 *.png binary
 *.jpg binary
