@@ -208,9 +208,10 @@ IndexedDB、API、真实 Provider 和首次使用者证据，具体门槛由产�
 
 ## CI/CD
 
-  `.github/workflows/ci-cd.yml` 在 PR 和 push 上执行控制面守卫、当前 Product V2 浏览器验证、Docker 构建、
+  `.github/workflows/ci-cd.yml` 在 PR 与手动触发执行控制面守卫、当前 Product V2 浏览器验证、Docker 构建、
   容器健康检查和发布事务自检（真实一次性容器，`tools/release_transaction_probe.py --selftest`，缺 Docker/构建/
-  Playwright 按 exit 2 报 missing_prereq，不伪造绿）。本机不承担正式容器运行。只有 `main` push 会部署：
+  Playwright 按 exit 2 报 missing_prereq，不伪造绿）。`main` push 不重跑已绿分支头的全量验证，只做 Docker 构建、
+  容器健康检查和发布事务自检。本机不承担正式容器运行。只有 `main` push 会部署：
   Actions 使用仓库中的 `SSH_HOST`、`SSH_USER`、`SSH_PRIVATE_KEY`，把最小 Product V2 构建上下文传到远程
   服务器，由远程 Docker 构建以 Git SHA 标记的镜像并按 `deploy/release-transaction.sh` 做完整发布事务
   （previous 与 TLS 配置备份保留到容器健康、外部 HTTPS、静态资源/页面主链全部验收结束；全部通过才清理，

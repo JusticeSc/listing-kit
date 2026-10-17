@@ -62,7 +62,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     needs: [changes]
-    if: always() && (needs.changes.result == 'success' || needs.changes.result == 'skipped')
+    # verify 全量门在 PR 与手动触发跑：main push 的树与已绿分支头一致，重跑不产生新信息；
+    # main 只做构建+冒烟+部署（container）。docs-only 分流保留给 PR。
+    if: (github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch') && (needs.changes.result == 'success' || needs.changes.result == 'skipped')
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
@@ -156,7 +158,10 @@ jobs:
 
   container:
     name: Docker image, smoke test, and main deploy
-    needs: verify
+    needs: [verify, changes]
+    # changes 炸则不跑（fail-closed，不部署）：skipped 只接受 verify 的 main-push/手动外有意跳过，
+    # 不接受上游失败的连带跳过。main push 时 verify 被事件守卫跳过，构建+冒烟+部署照常跑。
+    if: always() && needs.changes.result == 'success' && (needs.verify.result == 'success' || needs.verify.result == 'skipped')
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
