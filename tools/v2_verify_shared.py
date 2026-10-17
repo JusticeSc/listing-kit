@@ -45,6 +45,7 @@ from src.providers.v2_fake_image import FakeImageProvider  # noqa: E402
 from src.providers.v2_fake_review import FakeReviewProvider  # noqa: E402
 from src.providers.v2_fake_semantic import FakeSemanticProvider  # noqa: E402
 from src.providers.v2_fake_suite_review import FakeSuiteReviewProvider  # noqa: E402
+from app.product_v2_server import create_product_v2_server  # noqa: E402
 
 
 def current_review_contract() -> str:
@@ -88,16 +89,6 @@ def free_port() -> int:
         return probe.getsockname()[1]
 
 
-def load_server_module(name: str = "product_v2_server_under_test"):
-    """正式产品 server 模块（app/product_v2_server.py），与产品入口同一处理器。"""
-    spec = importlib.util.spec_from_file_location(
-        name, ROOT / "app" / "product_v2_server.py")
-    module = importlib.util.module_from_spec(spec)
-    assert spec.loader is not None
-    spec.loader.exec_module(module)
-    return module
-
-
 def start_product_server(port: int, *, image_scenario: str = "ok",
                          semantic_scenario: str = "ok",
                          review_scenario: str = "ok",
@@ -105,20 +96,20 @@ def start_product_server(port: int, *, image_scenario: str = "ok",
                          image_size: int = 1200,
                          image_factory=None, semantic_factory=None,
                          review_factory=None, suite_factory=None,
-                         module=None):
-    """正式处理器 + 显式离线 Provider；自定义工厂只用于有状态场景装置。"""
-    server_module = module or load_server_module()
+                         static_dir=None):
+    """正式 app + 显式离线 Provider（已启动句柄, 替身实例）；`.port` 可读。"""
     image = FakeImageProvider(scenario=image_scenario, size=image_size)
     semantic = FakeSemanticProvider(scenario=semantic_scenario)
     review = FakeReviewProvider(scenario=review_scenario)
     suite = FakeSuiteReviewProvider(scenario=suite_scenario)
-    server = server_module.create_product_v2_server(
+    server = create_product_v2_server(
         "127.0.0.1", port,
         provider_factory=semantic_factory or (lambda: semantic),
         image_provider_factory=image_factory or (lambda: image),
         review_provider_factory=review_factory or (lambda: review),
-        suite_review_provider_factory=suite_factory or (lambda: suite))
-    threading.Thread(target=server.serve_forever, daemon=True).start()
+        suite_review_provider_factory=suite_factory or (lambda: suite),
+        static_dir=static_dir)
+    server.start()
     return server, {"image": image, "semantic": semantic,
                     "review": review, "suite": suite}
 
@@ -381,43 +372,11 @@ async () => {
 """
 
 
-class HarnessHandler(__import__("http.server", fromlist=["BaseHTTPRequestHandler"]).BaseHTTPRequestHandler):
-    def log_message(self, format, *args):  # noqa: A002
-        return
+def start_static_server(*, static_dir=None):
+    """同 origin 测试装置（产品 app + /harness/）；返回（已启动句柄, base_url）。"""
+    from v2_test_server import start as start_harness
 
-    def _send(self, payload: bytes, ctype: str) -> None:
-        self.send_response(200)
-        self.send_header("Content-Type", ctype)
-        self.send_header("Content-Length", str(len(payload)))
-        self.send_header("Cache-Control", "no-store")
-        self.end_headers()
-        self.wfile.write(payload)
-
-    def do_GET(self):  # noqa: N802
-        path = self.path.split("?", 1)[0]
-        product_dir = ROOT / "app" / "product_v2"
-        harness_dir = ROOT / "evals" / "product-v2" / "harness"
-        if path.startswith("/harness/"):
-            candidate = (harness_dir / path[len("/harness/"):]).resolve()
-            if str(candidate).startswith(str(harness_dir.resolve())) and candidate.is_file():
-                self._send(candidate.read_bytes(),
-                           MIME.get(candidate.suffix, "application/octet-stream"))
-                return
-        else:
-            candidate = (product_dir / path.lstrip("/")).resolve()
-            if str(candidate).startswith(str(product_dir.resolve())) and candidate.is_file():
-                self._send(candidate.read_bytes(),
-                           MIME.get(candidate.suffix, "application/octet-stream"))
-                return
-        self.send_error(404)
-
-
-def start_static_server():
-    import threading as _threading
-    from http.server import ThreadingHTTPServer as _Server
-    server = _Server(("127.0.0.1", 0), HarnessHandler)
-    _threading.Thread(target=server.serve_forever, daemon=True).start()
-    return server, f"http://127.0.0.1:{server.server_address[1]}"
+    return start_harness(static_dir=static_dir)
 
 
 def run_entry(args: list[str], timeout: int = 180) -> dict:

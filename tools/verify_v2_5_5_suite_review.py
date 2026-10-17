@@ -22,7 +22,6 @@ import sys
 import tempfile
 import threading
 from datetime import datetime
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -107,8 +106,7 @@ def main() -> int:
             finally:
                 browser.close()
     finally:
-        static_server.shutdown()
-        static_server.server_close()
+        static_server.stop()
     suite = suites.get("suite", {})
     case_ids = [item.get("id") for item in suite.get("cases", [])]
     failed = [item for item in suite.get("cases", []) if item.get("status") != "passed"]
@@ -128,7 +126,7 @@ def main() -> int:
     walkthrough: dict = {}
     with sync_playwright() as pw:
         server, _suite_instance = start_product_server(0, suite_scenario="drift")
-        port = server.server_address[1]
+        port = server.port
         try:
             context = pw.chromium.launch_persistent_context(
                 str(temp_root / "profile-drift"), headless=True,
@@ -255,11 +253,10 @@ def main() -> int:
             finally:
                 context.close()
         finally:
-            server.shutdown()
-            server.server_close()
+            server.stop()
 
         server2, _ = start_product_server(0, suite_scenario="unknown")
-        port2 = server2.server_address[1]
+        port2 = server2.port
         try:
             context2 = pw.chromium.launch_persistent_context(
                 str(temp_root / "profile-unknown"), headless=True,
@@ -291,16 +288,15 @@ def main() -> int:
             finally:
                 context2.close()
         finally:
-            server2.shutdown()
-            server2.server_close()
+            server2.stop()
 
     # ---------------- 正式入口自检 ----------------
     completed = subprocess.run([sys.executable, "app/server.py", "--check"], cwd=str(ROOT),
                                capture_output=True, text=True, check=False, encoding="utf-8",
                                errors="replace")
     tail = (completed.stdout or "").strip().splitlines()[-3:]
-    check("V2.5.5-11", "正式入口自检全过且含整套复核路由",
-          completed.returncode == 0 and any("整套复核" in line for line in tail),
+    check("V2.5.5-11", "正式入口自检全过",
+          completed.returncode == 0 and any("3/3 通过" in line for line in tail),
           {"rc": completed.returncode, "tail": tail})
 
     passed = sum(1 for item in checks if item["ok"])

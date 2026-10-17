@@ -22,8 +22,8 @@ import {
   suiteReviewIsCurrent,
   suiteReviewStatusOf,
   registeredRule,
-} from "../../../app/product_v2/domain/index.js";
-import { sha256Hex } from "../../../app/product_v2/storage/db.js";
+} from "../../../build/frontend-node/app/product_v2/domain/index.js";
+import { sha256Hex } from "../../../build/frontend-node/app/product_v2/storage/db.js";
 import { expect, serializeError } from "./harness-core.mjs";
 
 const cases = [];

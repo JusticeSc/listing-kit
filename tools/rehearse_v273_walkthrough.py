@@ -16,7 +16,6 @@ import hashlib
 import importlib.util
 import io
 import json
-import socket
 import sys
 import time
 import zipfile
@@ -34,16 +33,8 @@ EVIDENCE = ROOT / "evals" / "product-v2"
 IMG = EVIDENCE / "evidence"
 
 
-sys.path.insert(0, str(ROOT / "tools"))
 import v2_verify_shared as shared  # noqa: E402
-
-from src.providers.v2_fake_suite_review import FakeSuiteReviewProvider  # noqa: E402
-
-
-def free_port() -> int:
-    with socket.socket() as sock:
-        sock.bind(("127.0.0.1", 0))
-        return sock.getsockname()[1]
+import v2_stage_nav as stage_nav  # noqa: E402
 
 
 def main() -> int:
@@ -83,11 +74,11 @@ def main() -> int:
         item.update(extra)
         timeline.append(item)
 
-    port = free_port()
-    server = shared.start_server(
-        "127.0.0.1", port,
-        image=lambda: shared.FakeImageProvider(scenario="ok", size=args.image_size),
-        suite_review=lambda: FakeSuiteReviewProvider(scenario="ok"))
+    server, _doubles = shared.start_product_server(
+        0,
+        image_factory=lambda: shared.FakeImageProvider(scenario="ok", size=args.image_size),
+        suite_factory=lambda: shared.FakeSuiteReviewProvider(scenario="ok"))
+    port = server.port
     try:
         with sync_playwright() as pw:
             profile = ROOT / "_working" / f"rehearsal-profile-{args.label}-{stamp}"
@@ -123,6 +114,8 @@ def main() -> int:
 
                 started = time.monotonic()
                 page.click("#analyze-run")
+                # 分析后产品不自动切页：按 V2.UI.2 纪律点阶段条进入理解页（用户真实路径）。
+                stage_nav.goto(page, "understand")
                 page.wait_for_selector("#slot-list .slot-row", timeout=60_000)
                 page.wait_for_timeout(400)
                 probes["slot_rows"] = page.locator("#slot-list .slot-row").count()
@@ -258,10 +251,12 @@ def main() -> int:
                     mark("rework", started)
                 for shot_id in shots_ids:
                     page.click(f'#review-list .review-card[data-shot-id="{shot_id}"] '
-                               'button:has-text("采用候选")')
-                    expect(page.locator("#adopt-submit")).to_be_enabled(timeout=10_000)
-                    page.click("#adopt-submit")
+                               'button:has-text("比较候选")')
+                    expect(page.locator("#compare-panel")).to_be_visible(timeout=10_000)
+                    expect(page.locator("#adopt-open")).to_be_enabled(timeout=10_000)
+                    page.click("#adopt-open")
                     page.wait_for_selector("#adopt-status:not([hidden])", timeout=15_000)
+                    page.click("#compare-close")
                 probes["review_states_after"] = page.evaluate(
                     """() => [...document.querySelectorAll('#review-list .review-card')]
                          .map((node) => node.getAttribute('data-selection-state'))""")
@@ -366,8 +361,7 @@ def main() -> int:
             finally:
                 context.close()
     finally:
-        server.shutdown()
-        server.server_close()
+        server.stop()
 
     report = EVIDENCE / f"v273-rehearsal-{stamp}.md"
     lines = [
