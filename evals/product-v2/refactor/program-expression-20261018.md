@@ -127,7 +127,7 @@ npm run test:domain                              # 域套件（含 P 系列：�
 
 ### 6.1 Python 验证器（最终构建，全部本地、替身 provider、零付费）
 
-**18/18 退出码 0**，全部跑在含本条改动（含尺寸简报措辞修正）的最终构建上：3_4 / 3_5 / 3_6 于 17:52–17:53 重跑，其余 15 条于 17:59–18:03 串行重跑；逐条日志见 `_stage-amz-control/issue9-expression-20261018T080410Z/verifier-rerun/`（`postbrief-*.log`）。
+**18/18 退出码 0**。`postbrief-*.log` 保存较早的尺寸简报措辞修正轮（3_4 / 3_5 / 3_6 于17:52–17:53，其余15条于17:59–18:03）；独立审查再补两处门后，全部18条于18:22–18:30串行复核，最终构建依据是同目录`gatefix-*.log`（见§6.3），不能把较早轮次代称最后修改后的证据。逐条日志见`_stage-amz-control/issue9-expression-20261018T080410Z/verifier-rerun/`。
 
 | 验证器 | 结果 | 验证器 | 结果 |
 |---|---|---|---|
@@ -179,7 +179,7 @@ npm run test:domain                              # 域套件（含 P 系列：�
 
 ### 6.4 交付
 
-以 4 个提交推送到 `feat/9-program-expression-20261018`，Draft PR **#18**（`https://github.com/JusticeSc/listing-kit/pull/18`，`isDraft=true`，base `main`，169 文件 / +7840 −161）；PR 正文含真实差量验证、独立审查收口、未证范围与 Issue #9 关联。CI：`Classify changed paths` 通过，`Control plane and Product V2` 见 PR checks。**未合并、未部署、无真实模型调用。**
+已推送到`feat/9-program-expression-20261018`并创建 Draft PR **#18**（`https://github.com/JusticeSc/listing-kit/pull/18`）。截至受审固定版本`3dc0018689dad39fb81294a9c76c99c97dc15e8f`，实际8提交、186文件 / +9146 −161，`isDraft=true`、base `main`；PR正文含真实差量验证、审查范围、未证范围和Issue #9关联。[CI run 39121148778](https://github.com/JusticeSc/listing-kit/actions/runs/39121148778)三项检查均SUCCESS，实际部署/finalize步骤skipped。该统计只描述固定受审版本，不包含后续说明修订。**未合并、未部署、无真实模型调用。**
 
 ---
 

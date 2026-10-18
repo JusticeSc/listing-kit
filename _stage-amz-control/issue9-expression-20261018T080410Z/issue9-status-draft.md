@@ -35,4 +35,4 @@
 
 ## 交付状态
 
-已按授权提交并推送 4 个提交、创建 Draft PR [#18](https://github.com/JusticeSc/listing-kit/pull/18)（`isDraft=true`，base `main`，169 个文件 / +7840 −161）。CI 已触发（`Classify changed paths` 通过；`Control plane and Product V2` 见 PR checks）。**未合并、未部署、无真实模型调用**；像素品质与真人验收仍在本轮之外。
+已按授权提交推送并创建 Draft PR [#18](https://github.com/JusticeSc/listing-kit/pull/18)。截至本次审查固定版本 `3dc0018689dad39fb81294a9c76c99c97dc15e8f`，实际为 **8 个提交、186 个文件 / +9146 −161**，`isDraft=true`、base `main`；[CI run 39121148778](https://github.com/JusticeSc/listing-kit/actions/runs/39121148778) 三项检查均 SUCCESS，pull_request 的实际部署和 finalize 步骤均 skipped。以上数量绑定该受审版本，不把后续说明修订混入其统计。**未合并、未部署、无真实模型调用**；像素品质与真人验收仍在本切片之外。
