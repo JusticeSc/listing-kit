@@ -110,6 +110,7 @@ def main() -> int:
     import sys as _sys
     _sys.path.insert(0, str(ROOT / "tools"))
     import v2_stage_nav as stage_nav
+    import v2_verify_shared as shared  # noqa: PLC0415  （Issue #9 普通决定共用函数）
     from playwright.sync_api import expect, sync_playwright  # noqa: PLC0415
 
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -286,6 +287,8 @@ def main() -> int:
                 stage_nav.goto(page, "plan")
                 page.click("#suite-seed")
                 expect(page.locator("#shot-list .shot-row")).to_have_count(4)
+                # Issue #9：编译前先做普通决定（用户真实路径）；choices 进 ui 证据。
+                ui["decisions"] = shared.decide_for_compile(page, probe()["shot_ids"])
                 stage_nav.goto(page, "generate")
                 expect(page.locator("#prompt-list .shot-spec")).to_have_count(4)
                 shot_ids = probe()["shot_ids"]

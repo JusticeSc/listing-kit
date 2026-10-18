@@ -460,6 +460,8 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 expect(page.locator("#shot-list .shot-row")).to_have_count(4)
                 shot_ids = attempt_probe()["shot_ids"]
                 first_shot, second_shot = shot_ids[0], shot_ids[1]
+                # Issue #9：编译前先做普通决定（用户真实路径）；choices 进 ui 证据。
+                ui["decisions"] = shared.decide_for_compile(page, shot_ids)
                 shared.compile_all(page, shot_ids)
                 gate = shared.confirm_and_submit(
                     page, expect, lambda: attempt_probe(), shot_ids=shot_ids)

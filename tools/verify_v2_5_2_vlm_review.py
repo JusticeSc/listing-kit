@@ -476,6 +476,8 @@ def run_browser_checks(stamp: str, screenshots: list[str], console_errors: list[
                 expect(page.locator("#prompt-list .shot-spec")).to_have_count(4)
                 initial = probe()
                 shot_ids = initial["shot_ids"]
+                # Issue #9：编译前先做普通决定（用户真实路径）；choices 进 ui 证据。
+                ui["decisions"] = shared.decide_for_compile(page, shot_ids)
                 shared.compile_all(page, shot_ids)
                 ok_shot = shot_ids[0]
                 stage_nav.goto(page, "generate")

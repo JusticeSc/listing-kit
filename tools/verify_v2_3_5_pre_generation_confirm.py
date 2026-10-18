@@ -215,6 +215,21 @@ async (input) => {
       provider: imageProfile,
     };
   }
+  // 普通决定（展示/印字/版面）也进确认单：产品侧 prompts.ts 把 brief/styleSpec/shotSpecs 一起交给
+  // 同一构造，探针少给这些就只剩「风格缺没缺」之类的表层结论，决定类阻断与消息会漏。
+  const brief = domain.buildProductBrief(
+    slots.map((item) => ({ slot: item.payload, version: item.version })));
+  const styleSpec = styleRow ? (styleRow.payload && styleRow.payload.style
+    ? styleRow.payload.style : styleRow.payload) : null;
+  const shotSpecsById = {};
+  for (const shot of plan.payload.shots) {
+    const spec = latest("shot_spec", shot.shot_id);
+    if (!spec) continue;
+    // 同 suite-review.specPayloadOf：文档 payload 可能是规格本身，也可能是 { spec } 包装。
+    const payload = spec.payload && !Array.isArray(spec.payload) && typeof spec.payload === "object"
+      && spec.payload.spec && typeof spec.payload.spec === "object" ? spec.payload.spec : spec.payload;
+    shotSpecsById[shot.shot_id] = { spec: payload, version: spec.version };
+  }
   const sheet = domain.buildConfirmationSheet({
     suitePlan: plan.payload,
     promptEntries: entries,
@@ -224,6 +239,7 @@ async (input) => {
     },
     currentBasisByShot: basisByShot,
     providerProfile: imageProfile,
+    brief: brief, styleSpec: styleSpec, shotSpecsById: shotSpecsById,
     ...(scope ? { shotIds: scope } : {}),
   });
   // 指纹与失效判据都按产品同一构造：执行身份从服务端正式能力块现算
@@ -488,6 +504,12 @@ def main() -> int:
             stage_nav.goto(page, "plan")
             page.click("#suite-seed")
             expect(page.locator("#shot-list .shot-row")).to_have_count(4)
+            # Issue #9：编译前先做普通决定（用户真实路径）；choices 进 ui 证据。
+            # 信息图走「只印所选文案」+ 勾 signature_features（列表 2 元素 → 2 条）+ 分栏版面：
+            ui["decisions"] = shared.decide_for_compile(page, page.evaluate(shared.SHOT_IDS))
+            ui["decisions"]["shots"]["shot_infographic_benefits"] = shared.decide_shot_decision(
+                page, "shot_infographic_benefits", print_intent="selected",
+                layout="product_left_text_right", texts=["signature_features"])
             stage_nav.goto(page, "generate")
             wait_prepare_settled(page)
             expect(page.locator("#confirm-editor")).to_be_visible()
@@ -620,28 +642,40 @@ def main() -> int:
                 language_messages.setdefault(risk["shot_id"], []).append(risk["message"])
             duplicate_counts = {shot: len(items) - len(set(items))
                                 for shot, items in language_messages.items()}
-            signature_messages = [message for items in language_messages.values()
-                                  for message in items if "signature_features" in message]
+            # Issue #9 元素粒度口径：信息图走 selected，勾 signature_features（列表 2 元素）→
+            # 语言风险按所选条目出具，共 2 条（t_signature_features_1/_2 各一条），逐图去重零重复。
+            # 旧「signature_features 槽位 + 2 条自动枚举」消息形状已随设计作废；新口径是用户选择+
+            # 元素粒度：若回退成自动枚举，消息形状（槽位 id / 条数句式）即变红。
+            selected_messages = [message for items in language_messages.values()
+                                 for message in items if "t_signature_features_" in message]
+            expected_ids = {"t_signature_features_1", "t_signature_features_2"}
             check("V2.3.5-15",
-                  "同一槽位的语言风险按槽位去重：逐图只出现一条，多值（夹具 2 条）时给出条数",
-                  bool(signature_messages)
+                  "所选文案的语言风险按条目去重：信息图共 2 条且指向所选 2 个条目（不按事实自动枚举）",
+                  len(language_messages) == 1
                   and all(count == 0 for count in duplicate_counts.values())
-                  and all("2 条" in message for message in signature_messages),
-                  {"messages": signature_messages[:4], "duplicates": duplicate_counts})
+                  and all(len(items) == 2 for items in language_messages.values())
+                  and len(selected_messages) == 2
+                  and all(any(text_id in message for message in selected_messages)
+                          for text_id in expected_ids),
+                  {"messages": selected_messages[:4], "duplicates": duplicate_counts})
 
             # V2.6.17：语言风险只对「允许图中文字」的角色成立 —— 场景图/细节图不排文字，
-            # 报「图中将逐字保留原文」是误报；同时有文字的角色要给可操作建议。
+            # 报「图中将逐字保留原文」是误报；同时有文字的角色要给可操作指引。
+            # Issue #9 新口径：selected 消息形如「所选图中文字「t_…」不是 en，…请人工确认是否使用」，
+            # 不再带旧 facts_auto 的「建议…改成英文」句式；可操作性改认「请人工确认」。
             role_by_shot = {item["shot_id"]: item["role_id"] for item in ready["plan_shots"]}
             text_roles = set(ready["text_roles"])
             language_risks = [risk for risk in ready["sheet"]["risks"]
                               if risk["code"] == "ON_IMAGE_TEXT_NOT_PLATFORM_LANGUAGE"]
             false_positive = [risk for risk in language_risks
                               if role_by_shot.get(risk["shot_id"]) not in text_roles]
-            actionable = [risk for risk in language_risks if "建议" in risk["message"]]
+            actionable = [risk for risk in language_risks if "请人工确认" in risk["message"]]
+            selected_named = [risk for risk in language_risks if "所选图中文字" in risk["message"]]
             check("V2.3.5-16",
-                  "语言风险只出现在允许图中文字的角色（文字角色带可操作建议，无文字角色不误报）",
+                  "语言风险只出现在允许图中文字的角色（所选条目带可操作确认指引，无文字角色不误报）",
                   bool(language_risks) and not false_positive
-                  and len(actionable) == len(language_risks),
+                  and len(actionable) == len(language_risks)
+                  and len(selected_named) == len(language_risks),
                   {"false_positive": [risk["shot_id"] for risk in false_positive],
                    "roles": role_by_shot, "text_roles": sorted(text_roles),
                    "messages": [risk["message"] for risk in language_risks][:3]})

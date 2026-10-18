@@ -608,6 +608,9 @@ def main() -> int:
                 page.reload(wait_until="networkidle")
                 page.click("#suite-seed")
                 expect(page.locator("#shot-list .shot-row")).to_have_count(4)
+                # Issue #9：编译前先做普通决定（用户真实路径）；choices 进 ui 证据。
+                # 后续 add_shots 新增图在各自轮次内再做印字决定（新图无已存规格=未决定）。
+                ui["decisions"] = shared.decide_for_compile(page, probe()["shot_ids"])
                 stage_nav.goto(page, "generate")
                 stage_nav.reveal(page, "#prompt-editor")
                 expect(page.locator("#prompt-editor")).to_be_visible()
@@ -670,6 +673,8 @@ def main() -> int:
 
                 # ---------------- 部分失败：一张失败不阻塞，其余成功 ----------------
                 added = add_shots("detail_material", 1) + add_shots("infographic_benefits", 1)
+                # Issue #9：新增图是全新印字决定（未决定），须先做决定再编译。
+                shared.decide_for_compile(page, added)
                 compile_all(page, probe()["shot_ids"])
                 fail_shot = added[0]
                 ok_shot = added[1]
@@ -735,6 +740,8 @@ def main() -> int:
 
                 # ---------------- 未知：不自动重提；显式新建 action 后成功 ----------------
                 unknown_shot = add_shots("detail_material", 1)[0]
+                # Issue #9：新增图先做印字决定再编译（decide_for_compile 对无控件图返回 False）。
+                shared.decide_for_compile(page, [unknown_shot])
                 compile_all(page, probe()["shot_ids"])
                 unknown_base_text = probe()["prompts"][unknown_shot]["text"]
                 save_edit(page, unknown_shot,
@@ -796,6 +803,8 @@ def main() -> int:
                 # ---------------- 停止：只停新增提交，已提交身份核对一次 ----------------
                 added = add_shots("detail_material", 1) + add_shots("infographic_benefits", 1) \
                     + add_shots("detail_material", 1)
+                # Issue #9：新增图先做印字决定再编译。
+                shared.decide_for_compile(page, added)
                 compile_all(page, probe()["shot_ids"])
                 stop_first, stop_second, stop_third = added[0], added[1], added[2]
                 submits_before = len(submit_requests)

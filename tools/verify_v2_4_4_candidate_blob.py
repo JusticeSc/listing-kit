@@ -927,6 +927,8 @@ def main() -> int:
                 stage_nav.goto(page, "plan")
                 page.click("#suite-seed")
                 expect(page.locator("#shot-list .shot-row")).to_have_count(4)
+                # Issue #9：编译前先做普通决定（用户真实路径）；choices 进 ui 证据。
+                ui["decisions"] = shared.decide_for_compile(page, probe()["shot_ids"])
                 stage_nav.goto(page, "generate")
                 expect(page.locator("#prompt-list .shot-spec")).to_have_count(4)
                 initial = probe()
@@ -1047,6 +1049,8 @@ def main() -> int:
                 # ---------------- 取回失败一次：无半份记录、可恢复、重试后 sha 一致 ----------------
                 stage = "check06-fetch-fail"
                 fail_shot = add_shots("detail_material", 1)[0]
+                # Issue #9：新增图先做印字决定再编译（无控件图返回 False）。
+                shared.decide_for_compile(page, [fail_shot])
                 compile_all(page, [fail_shot])
                 append_prompt_mark(page, fail_shot, MARK_FETCH_FAIL, "验证取回失败一次")
                 # 保存必须真的落库：请求文本要带上标记，否则替身不会进入取回失败场景。
@@ -1111,6 +1115,8 @@ def main() -> int:
                 stage = "check07-quota"
                 # 新增图是当时唯一未提交图：摘要范围=1 张，配额故障只影响这一张。
                 quota_shot = add_shots("infographic_benefits", 1)[0]
+                # Issue #9：新增印字图先做决定再编译。
+                shared.decide_for_compile(page, [quota_shot])
                 compile_all(page, [quota_shot])
                 before7 = probe()
                 assets7_before = len(before7["asset_rows"])
@@ -1153,6 +1159,8 @@ def main() -> int:
                 # 剩余 2 张新图是当时全部未提交图：摘要范围=2（"发送 2 张"），
                 # 已成功/已入库的图不得混入这次提交（ui-contract §4.6）。
                 batch_shots = add_shots("detail_material", 1) + add_shots("scene_lifestyle", 1)
+                # Issue #9：新增图先做印字决定再编译（无控件图返回 False）。
+                shared.decide_for_compile(page, batch_shots)
                 compile_all(page, batch_shots)
                 submits_before8 = len(submit_requests)
                 confirm_generation(batch_shots)

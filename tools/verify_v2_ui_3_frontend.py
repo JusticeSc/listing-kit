@@ -204,6 +204,8 @@ def main() -> int:
             page.click("#stage-next-plan")
             expect(page.locator('[data-stage-panel="generate"]')).to_be_visible()
             shots = page.evaluate(SHOT_IDS)
+            # Issue #9：编译前先做普通决定（用户真实路径）。
+            shared.decide_for_compile(page, shots)
             compile_all(page, shots)
             page.click("#confirm-action")
             # 新流程一次确认直接整套进批次：等 attempt 行出现（不再写“已确认 vN”），不再点已删除的 #batch-run。
@@ -337,6 +339,8 @@ def main() -> int:
                 guard += 1
             page2.click("#stage-next-plan")
             drill_ids = page2.evaluate(SHOT_IDS)
+            # Issue #9：编译前先做普通决定（用户真实路径）。
+            shared.decide_for_compile(page2, drill_ids)
             compile_all(page2, drill_ids)
             page2.click("#confirm-action")
             page2.wait_for_function(

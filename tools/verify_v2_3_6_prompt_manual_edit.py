@@ -39,6 +39,7 @@ from v2_test_server import start_static  # noqa: E402
 sys.path.insert(0, str(ROOT / "tools"))
 
 import v2_stage_nav as stage_nav  # noqa: E402  （V2.UI.2 六阶段工作台导航）
+import v2_verify_shared as shared  # noqa: E402  （Issue #9 普通决定共用函数）
 
 PRODUCT_DIR = ROOT / "app" / "product_v2"
 HARNESS_DIR = ROOT / "evals" / "product-v2" / "harness"
@@ -451,6 +452,8 @@ def main() -> int:
             stage_nav.goto(page, "plan")
             page.click("#suite-seed")
             expect(page.locator("#shot-list .shot-row")).to_have_count(4)
+            # Issue #9：编译前先做普通决定（用户真实路径）；choices 进 ui 证据。
+            ui["decisions"] = shared.decide_for_compile(page, page.evaluate(shared.SHOT_IDS))
             stage_nav.goto(page, "generate")
             stage_nav.reveal(page, "#prompt-editor")
             expect(page.locator("#prompt-editor")).to_be_visible()

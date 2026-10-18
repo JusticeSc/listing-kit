@@ -28,6 +28,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "src"))
+sys.path.insert(0, str(ROOT / "tools"))
+import v2_verify_shared as shared  # noqa: E402  （Issue #9 普通决定共用函数）
 from console import enable_utf8  # noqa: E402
 
 enable_utf8()
@@ -275,6 +277,8 @@ def main() -> int:
                   {"shots": shots, "removed": removed})
 
             step = time.monotonic()
+            # Issue #9：编译前先做普通决定（用户真实路径；远程真实链路同样先决定再编译）。
+            shared.decide_for_compile(page, [item["id"] for item in shots])
             page.click("#stage-next-plan")
             expect(page.locator('[data-stage-panel="generate"]')).to_be_visible()
             for item in shots:

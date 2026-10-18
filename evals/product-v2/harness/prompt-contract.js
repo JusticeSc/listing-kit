@@ -10,6 +10,7 @@
 
 import {
   DOMAIN_ERROR_CODES,
+  ROLE_VISUAL_BRIEF,
   buildPromptRecord,
   canonicalJson,
   checkCompiledPrompt,
@@ -121,6 +122,8 @@ function styleFixture(overrides = {}) {
     color_tone: "自然",
     composition: "商品居中，留白充足",
     avoid: ["文字水印"],
+    // 夹具的显式展示决定：外观按原样保持、不给内容物用途添决定（主图/信息图不消费内容物）。
+    presentation: { appearance_state: "as_shown", contents_state: "not_applicable" },
     ...overrides,
   };
 }
@@ -148,10 +151,15 @@ function resolveRef(ref, brief, context) {
     "style_spec.color_tone": true,
     "style_spec.composition": true,
     "style_spec.avoid": true,
+    "style_spec.presentation.appearance_state": true,
+    "style_spec.presentation.contents_state": true,
     "shot_spec.purpose": true,
     "shot_spec.keep": true,
     "shot_spec.change_allowed": true,
     "shot_spec.notes": true,
+    "shot_spec.layout": true,
+    "shot_spec.presentation.appearance_state": true,
+    "shot_spec.presentation.contents_state": true,
   };
   if (Object.prototype.hasOwnProperty.call(known, ref)) return known[ref];
   if (/^platform:[a-z_]+@[0-9]+$/.test(ref)) return true;
@@ -164,6 +172,7 @@ function resolveRef(ref, brief, context) {
     const slotId = ref.slice("product_brief.fact:".length);
     return brief.confirmed_facts.some((item) => item.slot_id === slotId);
   }
+  if (/^shot_spec\.on_image_text:/.test(ref)) return true;
   return false;
 }
 
@@ -173,7 +182,7 @@ test("G01", "主图：分段顺序固定，平台纯白/无文字规则进入正
   const compiled = compileMain();
   const keys = compiled.sections.map((item) => item.key);
   expect(json(keys) === json([
-    "product_fidelity", "style_shared", "shot_task", "platform_rules",
+    "product_fidelity", "style_shared", "visual_brief", "shot_task", "platform_rules",
     "provider_contract", "negative_constraints",
   ]), "主图段落顺序必须固定：" + json(keys));
   expect(compiled.text.includes("纯白无缝背景「RGB(255,255,255)」"), "主图必须写明纯白背景。");
@@ -198,6 +207,78 @@ test("G02", "每个段落的来源都能解析到当前输入；来源并集与�
     .filter((ref, index, all) => all.indexOf(ref) === index)),
   "source_refs 必须是并按出现顺序去重。");
   return { refs: compiled.source_refs };
+});
+
+test("G13", "展示决定缺失必须阻断：消费外观状态的图不能默选清洁或保留（抓默认放行回归）", async () => {
+  const brief = briefFixture();
+  const shot = mainShot();
+  const error = await expectCode(() => compileMain({
+    brief: brief, shot: shot,
+    // 消费 appearance_state 的用途缺展示决定 → 必须阻断，而不是默选原样/清洁。
+    styleSpec: styleFixture({ presentation: undefined }),
+  }), DOMAIN_ERROR_CODES.CONTRACT_INVALID, "缺展示决定");
+  expect(/还要先决定/.test(error.message) && /外观状态/.test(error.message),
+    "阻断消息必须指向外观状态且说明要先决定：" + error.message);
+  return { message: error.message };
+});
+test("G14", "展示决定写进商品一致性段：干净展示给去污例外，原样保持不给清洁例外（抓段落漂移回归）", async () => {
+  const clean = compileMain({
+    styleSpec: styleFixture({ presentation: { appearance_state: "clean_display", contents_state: "not_applicable" } }),
+  });
+  const cleanFidelity = clean.sections.find((item) => item.key === "product_fidelity");
+  expect(cleanFidelity.text.includes("允许去掉临时使用痕迹"),
+    "干净展示必须在商品一致性段给出污例外：" + cleanFidelity.text);
+  expect(cleanFidelity.source_refs.includes("style_spec.presentation.appearance_state"),
+    "去污例外的来源必须指向共用展示决定：" + json(cleanFidelity.source_refs));
+  const shown = compileMain();
+  const shownFidelity = shown.sections.find((item) => item.key === "product_fidelity");
+  expect(shownFidelity.text.includes("允许去掉临时使用痕迹") === false,
+    "原样保持不得出现清洁例外：" + shownFidelity.text);
+  return { clean_refs: cleanFidelity.source_refs };
+});
+
+test("G15", "画面简报按用途正向表达且不冒充事实：删段/串味/事实污染必红（抓简报漂移回归）", async () => {
+  const main = compileMain();
+  const mainBrief = main.sections.find((item) => item.key === "visual_brief");
+  expect(Boolean(mainBrief), "主图必须有画面简报段：删段必红。");
+  for (const sentence of ROLE_VISUAL_BRIEF.main) {
+    expect(main.text.includes(sentence), "主图正文必须逐字含主图简报句：" + sentence);
+  }
+  for (const sentence of ROLE_VISUAL_BRIEF.infographic) {
+    expect(main.text.includes(sentence) === false, "主图正文不得串入信息图简报句：" + sentence);
+  }
+  // 信息图用所选文案 spec 让编译通过（G10 同款），只看画面简报部分。
+  const infoShot = infographicShot();
+  const infoCompiled = compilePrompt({
+    brief: briefFixture(), shot: infoShot, styleSpec: styleFixture(),
+    shotSpec: { ...emptyShotSpecFromShot(infoShot),
+      print_intent: "selected",
+      layout: "product_left_text_right",
+      on_image_texts: [{
+        text_id: "t_sig_1", text: "304不锈钢内胆",
+        source_slot_id: "signature_features", source_slot_version: 1,
+        status: "confirmed", origin: "user",
+      }],
+    },
+    context: contextFixture(),
+    versions: { suite_version: 3, style_version: 1, shot_spec_version: 1 },
+    providerProfile: IMAGE_PROMPT_PROFILE,
+  });
+  const infoBrief = infoCompiled.sections.find((item) => item.key === "visual_brief");
+  expect(Boolean(infoBrief), "信息图必须有画面简报段：删段必红。");
+  for (const sentence of ROLE_VISUAL_BRIEF.infographic) {
+    expect(infoCompiled.text.includes(sentence), "信息图正文必须逐字含信息图简报句：" + sentence);
+  }
+  for (const sentence of ROLE_VISUAL_BRIEF.detail) {
+    expect(infoCompiled.text.includes(sentence) === false, "信息图正文不得串入特写简报句：" + sentence);
+  }
+  for (const section of [mainBrief, infoBrief]) {
+    for (const ref of section.source_refs) {
+      expect(/^suite_plan\.shot:/.test(ref), "画面简报来源只能是套图计划：" + ref);
+      expect(ref.includes("product_brief.fact:") === false, "画面简报不得把商品事实写成画面设定：" + ref);
+    }
+  }
+  return { main_refs: mainBrief.source_refs, info_refs: infoBrief.source_refs };
 });
 
 test("G03", "hash 稳定：同输入同 hash；改一个字段即变化；不修改输入", async () => {
@@ -282,7 +363,8 @@ test("G06", "缺依据的图必须阻断编译并给出原因（复用依赖注�
   const shot = infographicShot();
   const blocked = await expectCode(() => compilePrompt({
     brief: brief, shot: shot, styleSpec: styleFixture(),
-    shotSpec: emptyShotSpecFromShot(shot),
+    // 只测依赖门：显式不印新增文字，避免「未决定」门干扰本用例真正要测的阻断；原断言不变。
+    shotSpec: { ...emptyShotSpecFromShot(shot), print_intent: "none" },
     context: {
       facts: [{ slot_id: "signature_features", status: "proposed", value: ["304不锈钢"] }],
       assets: [{ role: "primary", sha256: SHA_PRIMARY }],
@@ -302,7 +384,8 @@ test("G07", "绑定事实未确认必须阻断；编译失败不产半成品", a
   const before = json(brief);
   const error = await expectCode(() => compilePrompt({
     brief: brief, shot: shot, styleSpec: styleFixture(),
-    shotSpec: emptyShotSpecFromShot(shot),
+    // 只测绑定门：显式不印新增文字，避免「未决定」门干扰本用例真正要测的阻断；原断言不变。
+    shotSpec: { ...emptyShotSpecFromShot(shot), print_intent: "none" },
     context: contextFixture([{ slot_id: "key_material", status: "confirmed", value: "304不锈钢" }]),
     versions: { suite_version: 1, style_version: 0, shot_spec_version: 0 },
     providerProfile: IMAGE_PROMPT_PROFILE,
@@ -353,24 +436,59 @@ test("G09", "主图平台覆盖与忽略警告：风格背景被覆盖、绑定�
 test("G10", "图中文字：逐字引用、语言警告、非逐字必被抓住", async () => {
   const brief = briefFixture();
   const shot = infographicShot();
+  // 新语义：只印用户明确选择并确认的条目；单条所选文案逐字进入正文。
+  const shotSpec = { ...emptyShotSpecFromShot(shot),
+    purpose: "呈现核心卖点",
+    print_intent: "selected",
+    layout: "product_left_text_right",
+    on_image_texts: [{
+      text_id: "t_sig_1", text: "304不锈钢内胆",
+      source_slot_id: "signature_features", source_slot_version: 1,
+      status: "confirmed", origin: "user",
+    }],
+  };
   const compiled = compilePrompt({
     brief: brief, shot: shot, styleSpec: styleFixture(),
-    shotSpec: { ...emptyShotSpecFromShot(shot), purpose: "呈现两条核心卖点" },
+    shotSpec: shotSpec,
     context: contextFixture(),
     versions: { suite_version: 3, style_version: 1, shot_spec_version: 1 },
     providerProfile: IMAGE_PROMPT_PROFILE,
   });
   const literal = compiled.sections.find((item) => item.key === "on_image_text");
   expect(Boolean(literal), "卖点信息图必须有图中文字段。");
-  expect(literal.items.length === 2, "两条已确认卖点都要逐字进入：" + json(literal.items));
+  expect(json(literal.items.map((item) => item.text)) === json(["「304不锈钢内胆」"]),
+    "所选文案必须逐字进入：" + json(literal.items));
   expect(literal.items.every((item) => item.text.startsWith("「") && item.text.endsWith("」")),
     "文字条目必须带引用。");
-  expect(checkLiteralVerbatim(compiled.sections, brief).length === 0, "默认必须逐字通过。");
-  const tampered = [{ ...literal, items: [{ text: "「304不锈钢内胆，超长续航」", language: "zh",
-    source_ref: "product_brief.fact:signature_features" }] }];
-  expect(checkLiteralVerbatim(tampered, brief).length > 0, "改写后的文字必须被抓住。");
+  expect(json(literal.items.map((item) => item.source_ref))
+    === json(["shot_spec.on_image_text:t_sig_1"]),
+    "文字条目必须带所选条目引用：" + json(literal.items));
+  expect(checkLiteralVerbatim(compiled.sections, brief, shotSpec).length === 0, "默认必须逐字通过。");
+  const tamperedText = [{ ...literal, items: [{ ...literal.items[0], text: "「304不锈钢内胆plus」" }] }];
+  expect(checkLiteralVerbatim(tamperedText, brief, shotSpec).length > 0, "改写后的文字必须被抓住。");
+  const tamperedRef = [{ ...literal, items: [{ ...literal.items[0], source_ref: "shot_spec.on_image_text:nope" }] }];
+  expect(checkLiteralVerbatim(tamperedRef, brief, shotSpec).length > 0, "指向不存在条目必须被抓住。");
   expect(json(compiled.warnings.map((item) => item.code)).includes("ON_IMAGE_TEXT_NOT_PLATFORM_LANGUAGE"),
     "中文文案与 en 平台不一致时必须给警告。");
+  expect(compiled.sections.some((item) => item.key === "shot_layout"), "selected 必须排出正向版面段。");
+  // 反向探针：待确认的所选文案必须阻断编译，且消息说明是待确认。
+  const proposedError = await expectCode(() => compilePrompt({
+    brief: brief, shot: shot, styleSpec: styleFixture(),
+    shotSpec: { ...shotSpec, on_image_texts: [{ ...shotSpec.on_image_texts[0], status: "proposed" }] },
+    context: contextFixture(),
+    versions: { suite_version: 3, style_version: 1, shot_spec_version: 1 },
+    providerProfile: IMAGE_PROMPT_PROFILE,
+  }), DOMAIN_ERROR_CODES.CONTRACT_INVALID, "待确认文案");
+  expect(/待确认|确认/.test(proposedError.message), "阻断消息必须说明是待确认：" + proposedError.message);
+  // 反向探针：来源版本与依据不一致必须阻断。
+  const staleError = await expectCode(() => compilePrompt({
+    brief: brief, shot: shot, styleSpec: styleFixture(),
+    shotSpec: { ...shotSpec, on_image_texts: [{ ...shotSpec.on_image_texts[0], source_slot_version: 2 }] },
+    context: contextFixture(),
+    versions: { suite_version: 3, style_version: 1, shot_spec_version: 1 },
+    providerProfile: IMAGE_PROMPT_PROFILE,
+  }), DOMAIN_ERROR_CODES.CONTRACT_INVALID, "来源版本不一致");
+  expect(/版本/.test(staleError.message), "阻断消息必须说明版本不一致：" + staleError.message);
   return { items: literal.items, warnings: compiled.warnings.map((item) => item.code) };
 });
 
@@ -446,7 +564,9 @@ test("G12", "过期机检：只认这张图实际消费的依据；无关槽位�
     "当前档缺字段必须过期：" + json(missingField));
   // 消费该槽位的图：它消费的槽位版本前进 → 过期；它没消费的槽位前进 → 不过期。
   const infoShot = infographicShot();
-  const infoCompiled = compileMain({ shot: infoShot, shotSpec: emptyShotSpecFromShot(infoShot) });
+  // 只测过期机检：显式不印新增文字，避免被「未决定」门阻断；原断言不变。
+  const infoCompiled = compileMain({
+    shot: infoShot, shotSpec: { ...emptyShotSpecFromShot(infoShot), print_intent: "none" } });
   const infoSnapshot = requestSnapshotOf(infoCompiled,
     { references: [{ role: "primary", sha256: SHA_PRIMARY }] });
   const infoRecord = buildPromptRecord({

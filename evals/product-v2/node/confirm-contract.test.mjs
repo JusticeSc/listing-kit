@@ -140,7 +140,8 @@ function styleFixture(overrides = {}) {
     lighting: "柔和顶光",
     color_tone: "自然",
     composition: "商品居中，留白充足",
-    avoid: ["文字水印"],
+    // 夹具的显式展示决定：缺失会被新门阻断（「还要先决定『外观状态』」），与印字决定无关。
+    presentation: { appearance_state: "as_shown", contents_state: "not_applicable" },
     ...overrides,
   };
 }
@@ -156,6 +157,32 @@ function basisFixture(options = {}) {
   };
 }
 
+/** 不印新增文字的规格：只关心 Prompt 就绪/计数/摘要/失效的用例用它，把印字决定显式设为 none，避免未决定门干扰它们真正要测的东西。 */
+function noPrintSpec(shot, overrides = {}) {
+  return { ...emptyShotSpecFromShot(shot), print_intent: "none", ...overrides };
+}
+
+/** 明确选择的图中文案：来源必须是本套件 briefFixture() 的已确认事实（slot 与版本精确一致），用于走「用户所选文案」真实路径。 */
+function chosenPrintSpec(shot, overrides = {}) {
+  return {
+    ...emptyShotSpecFromShot(shot),
+    print_intent: "selected",
+    // 新门：要印文案必须同时给出能承载文字的版面；该用例测的是语言风险传播，不测版面选择，所以固定给左图右文。
+    layout: "product_left_text_right",
+    on_image_texts: [
+      {
+        text_id: "t_sig_1",
+        text: "304不锈钢内胆",
+        source_slot_id: "signature_features",
+        source_slot_version: 1,
+        status: "confirmed",
+        origin: "user",
+      },
+    ],
+    ...overrides,
+  };
+}
+
 /** 编译 + 快照 + hash + 版本记录：与 workspace.js 的真实链路同一套调用。 */
 async function compileEntry(shot, options = {}) {
   const context = options.context || contextFixture();
@@ -163,7 +190,7 @@ async function compileEntry(shot, options = {}) {
     brief: briefFixture(),
     shot: shot,
     styleSpec: options.styleSpec || styleFixture(),
-    shotSpec: emptyShotSpecFromShot(shot),
+    shotSpec: options.shotSpec || emptyShotSpecFromShot(shot),
     context: context,
     providerProfile: IMAGE_PROMPT_PROFILE,
     versions: {
@@ -225,7 +252,8 @@ function copyRecord(entry, mutate) {
 
 test("H01", "全部就绪：can_submit、计数与外发摘要与请求快照一致", async () => {
   const plan = planFixture();
-  const entries = [await compileEntry(plan.shots[0]), await compileEntry(plan.shots[1])];
+  // 只测就绪/计数/摘要，不关心印字：信息图用不印新增文字显式决定，避免未决定门干扰。
+  const entries = [await compileEntry(plan.shots[0]), await compileEntry(plan.shots[1], { shotSpec: noPrintSpec(plan.shots[1]) })];
   const sheet = sheetOf({ plan: plan, entries: entries });
   const problems = checkConfirmationSheet(sheet);
   expect(problems.length === 0, "确认单自检必须通过：" + JSON.stringify(problems.slice(0, 2)));
@@ -242,7 +270,8 @@ test("H01", "全部就绪：can_submit、计数与外发摘要与请求快照一
 
 test("H02", "确定性：同一输入两次构建与键序变化产生相同指纹", async () => {
   const plan = planFixture();
-  const entries = [await compileEntry(plan.shots[0]), await compileEntry(plan.shots[1])];
+  // 只测指纹确定性，不关心印字：信息图用不印新增文字显式决定。
+  const entries = [await compileEntry(plan.shots[0]), await compileEntry(plan.shots[1], { shotSpec: noPrintSpec(plan.shots[1]) })];
   const first = sheetOf({ plan: plan, entries: entries });
   const second = sheetOf({ plan: plan, entries: entries });
   const reorderShot = (shot) => {
@@ -275,7 +304,8 @@ test("H03", "缺 Prompt：阻断并定位到具体图片与 Prompt 区", async (
 
 test("H04", "Prompt 过期：风格前进后阻断并定位到风格区", async () => {
   const plan = planFixture();
-  const entries = [await compileEntry(plan.shots[0]), await compileEntry(plan.shots[1])];
+  // 只测风格过期，不关心印字：信息图用不印新增文字显式决定。
+  const entries = [await compileEntry(plan.shots[0]), await compileEntry(plan.shots[1], { shotSpec: noPrintSpec(plan.shots[1]) })];
   const fresh = sheetOf({ plan: plan, entries: entries });
   expect(fresh.can_submit === true, "前置条件：先有一张可提交清单。");
   const stale = sheetOf({ plan: plan, entries: entries, styleVersion: 2 });
@@ -290,9 +320,10 @@ test("H05", "缺依赖：对比图没有竞品素材时阻断并定位到套图�
   const fullContext = contextFixture({
     assets: [{ role: "primary", sha256: SHA_PRIMARY }, { role: "competitor", sha256: SHA_COMPETITOR }],
   });
+  // 只测缺依赖阻断，不关心印字：信息图用不印新增文字显式决定。
   const entries = [
     await compileEntry(plan.shots[0], { context: fullContext }),
-    await compileEntry(plan.shots[1]),
+    await compileEntry(plan.shots[1], { shotSpec: noPrintSpec(plan.shots[1]) }),
     await compileEntry(plan.shots[2], { context: fullContext }),
   ];
   const sheet = sheetOf({ plan: plan, entries: entries });
@@ -341,7 +372,8 @@ test("H07", "参考图越界：0 张与 4 张都不能提交", async () => {
 
 test("H08", "风险传播：编译警告进入确认单且带归口图片", async () => {
   const plan = planFixture();
-  const entries = [await compileEntry(plan.shots[0]), await compileEntry(plan.shots[1])];
+  // 语言风险必须来自「用户所选文案」：信息图显式选择一条中文已确认事实原文（signature_features/版本1），而不是旧自动枚举事实。
+  const entries = [await compileEntry(plan.shots[0]), await compileEntry(plan.shots[1], { shotSpec: chosenPrintSpec(plan.shots[1]) })];
   const withExtra = entries.map((item) => item.shot_id === "shot_main_clean"
     ? copyRecord(item, (record) => {
         record.compiled.warnings = record.compiled.warnings.concat([{ code: "STYLE_OVERRIDDEN_BY_PLATFORM", message: "平台规则覆盖了风格背景。" }]);
@@ -357,7 +389,8 @@ test("H08", "风险传播：编译警告进入确认单且带归口图片", asyn
 
 test("H09", "外发摘要只列角色与 hash 前缀，且与每条请求快照一致", async () => {
   const plan = planFixture();
-  const entries = [await compileEntry(plan.shots[0]), await compileEntry(plan.shots[1])];
+  // 只测摘要形状，不关心印字：信息图用不印新增文字显式决定。
+  const entries = [await compileEntry(plan.shots[0]), await compileEntry(plan.shots[1], { shotSpec: noPrintSpec(plan.shots[1]) })];
   const sheet = sheetOf({ plan: plan, entries: entries });
   for (const item of sheet.shots) {
     const entry = entries.find((candidate) => candidate.shot_id === item.shot_id);
@@ -376,7 +409,8 @@ test("H09", "外发摘要只列角色与 hash 前缀，且与每条请求快照�
 
 test("H10", "确认记录：只在可提交清单上建立，且形状可机检", async () => {
   const plan = planFixture();
-  const entries = [await compileEntry(plan.shots[0]), await compileEntry(plan.shots[1])];
+  // 只测确认记录形状，不关心印字：信息图用不印新增文字显式决定。
+  const entries = [await compileEntry(plan.shots[0]), await compileEntry(plan.shots[1], { shotSpec: noPrintSpec(plan.shots[1]) })];
   const sheet = sheetOf({ plan: plan, entries: entries });
   const hash = await promptHash(confirmationSnapshot(sheet), DIGEST);
   const record = buildConfirmationRecord({ sheet: sheet, hash: hash, confirmedAt: new Date().toISOString() });
@@ -396,7 +430,9 @@ test("H10", "确认记录：只在可提交清单上建立，且形状可机检"
 
 test("H11", "确认失效：上游变化或 Prompt 前进后必须重新确认", async () => {
   const plan = planFixture();
-  const entries = [await compileEntry(plan.shots[0]), await compileEntry(plan.shots[1])];
+  // 只测确认失效，不关心印字：前后编译都用不印新增文字显式决定。
+  const noPrint = noPrintSpec(plan.shots[1]);
+  const entries = [await compileEntry(plan.shots[0]), await compileEntry(plan.shots[1], { shotSpec: noPrint })];
   const sheet = sheetOf({ plan: plan, entries: entries });
   const hash = await promptHash(confirmationSnapshot(sheet), DIGEST);
   const record = buildConfirmationRecord({ sheet: sheet, hash: hash, confirmedAt: new Date().toISOString() });
@@ -406,7 +442,7 @@ test("H11", "确认失效：上游变化或 Prompt 前进后必须重新确认",
   expect(bumped.stale === true, "风格前进后确认必须失效。");
   const fields = bumped.reasons.map((reason) => reason.field);
   expect(fields.some((field) => field === "shots.shot_main_clean"), "失效原因必须指到具体图片，实际 " + JSON.stringify(fields));
-  const recompiled = [await compileEntry(plan.shots[0], { styleVersion: 2, version: 2 }), await compileEntry(plan.shots[1], { styleVersion: 2, version: 2 })];
+  const recompiled = [await compileEntry(plan.shots[0], { styleVersion: 2, version: 2 }), await compileEntry(plan.shots[1], { styleVersion: 2, version: 2, shotSpec: noPrintSpec(plan.shots[1]) })];
   const afterSheet = sheetOf({ plan: plan, entries: recompiled, styleVersion: 2 });
   const afterBump = confirmationStaleness(record, confirmationSnapshot(afterSheet));
   expect(afterBump.stale === true, "重新编译后相对旧确认仍应判定为变化。");
@@ -424,7 +460,8 @@ test("H11", "确认失效：上游变化或 Prompt 前进后必须重新确认",
 
 test("H12", "反向探针：计数、fix、摘要与输入错误都必须变红", async () => {
   const plan = planFixture();
-  const entries = [await compileEntry(plan.shots[0]), await compileEntry(plan.shots[1])];
+  // 只测反向探针，不关心印字：信息图用不印新增文字显式决定。
+  const entries = [await compileEntry(plan.shots[0]), await compileEntry(plan.shots[1], { shotSpec: noPrintSpec(plan.shots[1]) })];
   const sheet = sheetOf({ plan: plan, entries: entries });
   const badCount = JSON.parse(JSON.stringify(sheet));
   badCount.total = 5;

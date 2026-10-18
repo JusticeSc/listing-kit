@@ -37,6 +37,7 @@ from v2_test_server import start_static  # noqa: E402
 sys.path.insert(0, str(ROOT / "tools"))
 
 import v2_stage_nav as stage_nav  # noqa: E402  （V2.UI.2 六阶段工作台导航）
+import v2_verify_shared as shared  # noqa: E402  （Issue #9 普通决定共用函数）
 
 PRODUCT_DIR = ROOT / "app" / "product_v2"
 HARNESS_DIR = ROOT / "evals" / "product-v2" / "harness"
@@ -204,6 +205,9 @@ async ({ shotId }) => {
     literal_items: (record.payload.compiled.sections || [])
       .filter((item) => item.kind === "literal")
       .flatMap((item) => item.items.map((entry) => entry.text)),
+    literal_refs: (record.payload.compiled.sections || [])
+      .filter((item) => item.kind === "literal")
+      .flatMap((item) => item.items.map((entry) => entry.source_ref)),
     references: record.payload.request_snapshot.references,
     basis: record.payload.basis,
   };
@@ -337,6 +341,13 @@ def main() -> int:
             expect(page.locator("#prompt-editor")).to_be_hidden()
             page.click("#suite-seed")
             expect(page.locator("#shot-list .shot-row")).to_have_count(4)
+            # Issue #9：编译前先做普通决定（用户真实路径）。
+            # 主图/场景/细节走默认不印；信息图走「只印所选文案」+ 勾 signature_features（列表 2 元素）+ 分栏版面
+            ui["decisions"] = shared.decide_for_compile(
+                page, ["shot_main_clean", "shot_scene_lifestyle", "shot_detail_material"])
+            ui["decisions"]["shots"]["shot_infographic_benefits"] = shared.decide_shot_decision(
+                page, "shot_infographic_benefits", print_intent="selected",
+                layout="product_left_text_right", texts=["signature_features"])
             stage_nav.goto(page, "generate")
             # #prompt-editor 在 <details id="prompt-details">（默认闭合）内：hidden 属性已随套图就绪打开，
             # 视觉可见还需展开 details（用户真实路径；只改“怎么到达断言”，不断言内容）。
@@ -379,14 +390,22 @@ def main() -> int:
             page.click(info_card + " button")
             expect(page.locator(info_card)).to_have_attribute("data-prompt-state", "saved")
             info_v1 = page.evaluate(RECOMPUTE, {"shotId": "shot_infographic_benefits"})
-            check("V2.3.4-05", "卖点信息图：图中文案逐字来自已确认事实，语言警告可见",
+            # Issue #9 元素粒度口径：信息图默认「未决定」阻断，不再把绑定事实自动印上图。
+            # 前置真实用户选择 print_intent="selected" + 勾 signature_features（列表 2 元素）：
+            # 勾选列表槽位 → literal_items 条数 = 该槽位元素数（2），逐条 text 等于元素原文、
+            # 每条 ref 指向对应 shot_spec.on_image_text:t_signature_features_<i>；语言警告仍可见。
+            # 旧「len==2 自动印全部事实」口径已随设计作废；新口径是用户选择+元素粒度，有意保留
+            # 列表槽位以覆盖多元素展开形态。
+            check("V2.3.4-05", "卖点信息图按元素印出所选列表槽位的全部元素且逐字（未选不印、语言警告仍可见）",
                   info_v1["found"] and info_v1["version"] == (seeded_info_v0["version"] or 0) + 1
-                  and len(info_v1["literal_items"]) == 2
-                  and all(item.startswith("「") and item.endswith("」") for item in info_v1["literal_items"])
+                  and info_v1["literal_items"] == ["「304不锈钢内胆」", "「12小时保温」"]
+                  and info_v1["literal_refs"] == ["shot_spec.on_image_text:t_signature_features_1",
+                                                   "shot_spec.on_image_text:t_signature_features_2"]
                   and "ON_IMAGE_TEXT_NOT_PLATFORM_LANGUAGE" in info_v1["warnings"]
                   and "提示：" in info_v1["ui_meta"]
                   and info_v1["ui_text"] == info_v1["text"],
-                  {"items": info_v1["literal_items"], "warnings": info_v1["warnings"]})
+                  {"items": info_v1["literal_items"], "refs": info_v1["literal_refs"],
+                   "warnings": info_v1["warnings"]})
 
             # “改风格前”的旧版本快照：必须在 plan 改风格之前取（改后自动本地准备会把卡片直接写成新版，
             # 到那时已无从区分“旧文本是什么”。只改取样口径，不断言含义）。
