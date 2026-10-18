@@ -1,0 +1,1 @@
+{"schema_version":1,"kind":"fact_slot","document_id":"color_summary","version":1,"payload":{"schema_version":1,"slot_id":"color_summary","label":"颜色概览","authority":"core_fixed","value_type":"text","value":null,"source":"system_default","status":"missing","confidence":null,"evidence":[],"depends_on":[],"critical":false}}

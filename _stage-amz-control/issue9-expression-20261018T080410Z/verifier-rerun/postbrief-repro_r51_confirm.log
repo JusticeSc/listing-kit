@@ -1,0 +1,7 @@
+PASS R51GA-01 推荐方案4张shot行
+PASS R51GA-02 4张Prompt编译保存
+PASS R51GA-03 确认按钮可用
+PASS R51GA-04 确认授权落库
+PASS R51GA-05 确认/生成无错误
+PASS R51GA-06 零console错误
+证据：E:\workbuddy_workspace\2026-09-20-16-38-19\amz-listing-kit-issue9-expression\evals\product-v2\v2.r51ga-group-a-20261018-100339.txt

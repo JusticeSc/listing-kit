@@ -1,0 +1,288 @@
+{
+  "schema_version": 1,
+  "source_project_zip": "_stage-amz-control/asset-continuation-20261008T054352Z/data/manual-project.zip",
+  "source_documents": {
+    "intake": "0037.json",
+    "suite_plan": "0053.json",
+    "prompt_versions": {
+      "shot_infographic_benefits": "0039.json",
+      "shot_main_clean": "0040.json",
+      "shot_scene_lifestyle": "0042.json",
+      "shot_detail_material": "0038.json"
+    }
+  },
+  "ordinary_input": {
+    "schema_version": 1,
+    "product_name": "透明玻璃蜂蜜罐样例",
+    "description": "参考图可见玻璃罐、HONEY 浮雕和蜂窝纹；旧化金属色盖。不声称容量、尺寸或密封性能。素材：Cindy Shebley / CC BY 2.0，Commons 31009798197。",
+    "selling_points": [
+      "罐身 HONEY 浮雕",
+      "蜂窝纹理",
+      "透明罐身"
+    ],
+    "focus": "",
+    "references": [
+      {
+        "asset_sha256": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461",
+        "role": "primary"
+      }
+    ]
+  },
+  "confirmed_facts": [
+    {
+      "slot_id": "key_material",
+      "label": "主要材质",
+      "value": "透明玻璃罐身，金属色盖",
+      "source": "user_input"
+    },
+    {
+      "slot_id": "product_category",
+      "label": "商品品类",
+      "value": "玻璃储物罐",
+      "source": "user_input"
+    },
+    {
+      "slot_id": "product_name",
+      "label": "商品名称",
+      "value": "透明玻璃蜂蜜罐样例",
+      "source": "user_input"
+    },
+    {
+      "slot_id": "signature_features",
+      "label": "必须保持的商品特征",
+      "value": [
+        "HONEY 浮雕",
+        "蜂窝纹理",
+        "透明罐身"
+      ],
+      "source": "user_input"
+    }
+  ],
+  "provider_profile_note": "项目记录里的 fake-qwen-image 档不是产品档；本次用同型号的有效档（数值取测试夹具）",
+  "shots": [
+    {
+      "shot_id": "shot_main_clean",
+      "role_id": "main",
+      "label": "主图·干净背景",
+      "old_record": {
+        "document_version": 1,
+        "text": "以提供的商品参考图为唯一外观依据：保持商品的轮廓、比例、颜色、材质、标识与现有部件不变；不要添加、删除、复制、换色或重新设计商品特征。不要在图片上叠加文字、参数、徽标或水印。\n\n公共风格（整套一致）：主图背景纯白无缝背景「RGB(255,255,255)」。\n\n本图任务「主图·干净背景」，目的「完整展示商品主体，背景干净，不添加资料里没有的部件」。必须保持：「商品外观、颜色与比例」、「标识与文字」。允许变化：「背景」。\n\n平台规则「亚马逊美国站」：主图必须使用纯白无缝背景「RGB(255,255,255)」，商品主体至少占画面 85%，不得出现文字、水印或边框。整套图片不得出现水印、边框、联系方式或与商品无关的叠加元素。只能使用已确认的商品事实，不添加未确认的参数、功效或承诺。\n\n输出规格：一张「1344*1344」的「png」格式高清商品图，不添加水印。\n\n必须避免：「水印」、「文字错乱或文字变形」、「商品变形、多出部件或与参考图不符的颜色和标识」、「任何叠加文字、参数徽标或边框」。",
+        "sections": [
+          "product_fidelity",
+          "style_shared",
+          "shot_task",
+          "platform_rules",
+          "provider_contract",
+          "negative_constraints"
+        ],
+        "warnings": []
+      },
+      "new_choices": {
+        "shot_spec": {
+          "schema_version": 1,
+          "purpose": "完整展示商品主体，背景干净，不添加资料里没有的部件",
+          "keep": [
+            "商品外观、颜色与比例",
+            "标识与文字"
+          ],
+          "change_allowed": [
+            "背景"
+          ],
+          "notes": "",
+          "layout": "product_only"
+        },
+        "style_presentation": {
+          "appearance_state": "clean_display",
+          "contents_state": "empty"
+        }
+      },
+      "new_text": "以提供的商品参考图为唯一外观依据：保持商品的轮廓、比例、颜色、材质、标识与现有部件不变；不要添加、删除、复制、换色或重新设计商品特征。商品按干净展示状态呈现：允许去掉临时使用痕迹（水渍、指纹、残留），但材质、结构、标识与颜色仍与商品依据一致。不要在图片上叠加文字、参数、徽标或水印。\n\n公共风格（整套一致）：主图背景纯白无缝背景「RGB(255,255,255)」。\n\n画面概念：干净的商品展示图，主体是商品本身，没有干扰元素。主体：商品完整入画、居中放置，任何边角都不被裁断；四周留白均匀，商品主体占画面大部分。视角：沿用商品依据里可见的视角平视拍摄，不虚构背面、内部或未见的部件。光线：柔和均匀的布光，商品受光完整、颜色准确，投影干净不浑浊。\n\n本图任务「主图·干净背景」，目的「完整展示商品主体，背景干净，不添加资料里没有的部件」。必须保持：「商品外观、颜色与比例」、「标识与文字」。允许变化：「背景」。\n\n本图版面：画面只呈现商品主体：主体完整入画、位置突出，四周保留干净留白，不叠加标题或参数文字。\n\n平台规则「亚马逊美国站」：主图必须使用纯白无缝背景「RGB(255,255,255)」，商品主体至少占画面 85%，不得出现文字、水印或边框。整套图片不得出现水印、边框、联系方式或与商品无关的叠加元素。只能使用已确认的商品事实，不添加未确认的参数、功效或承诺。\n\n输出规格：一张「1344*1344」的「png」格式高清商品图，不添加水印。\n\n必须避免：「水印」、「文字错乱或文字变形」、「商品变形、多出部件或与参考图不符的颜色和标识」、「任何叠加文字、参数徽标或边框」。",
+      "new_sections": [
+        "product_fidelity",
+        "style_shared",
+        "visual_brief",
+        "shot_task",
+        "shot_layout",
+        "platform_rules",
+        "provider_contract",
+        "negative_constraints"
+      ],
+      "new_warnings": []
+    },
+    {
+      "shot_id": "shot_infographic_benefits",
+      "role_id": "infographic",
+      "label": "卖点信息图",
+      "old_record": {
+        "document_version": 1,
+        "text": "以提供的商品参考图为唯一外观依据：保持商品的轮廓、比例、颜色、材质、标识与现有部件不变；不要添加、删除、复制、换色或重新设计商品特征。图中如需出现文字，只能逐字使用后面列出的已确认文案。\n\n本图任务「卖点信息图」，目的「用简短标注呈现已确认卖点，不写入未确认参数」。必须保持：「已确认卖点文字」。允许变化：「标注排版与配色」。\n\n图中文字（只允许逐字使用以下已确认文案，不翻译、不改写、不新增；文字语言应为「en」）：\n- 「HONEY 浮雕」\n- 「蜂窝纹理」\n- 「透明罐身」\n\n平台规则「亚马逊美国站」：整套图片不得出现水印、边框、联系方式或与商品无关的叠加元素。只能使用已确认的商品事实，不添加未确认的参数、功效或承诺。\n\n输出规格：一张「1344*1344」的「png」格式高清商品图，不添加水印。\n\n必须避免：「水印」、「文字错乱或文字变形」、「商品变形、多出部件或与参考图不符的颜色和标识」。",
+        "sections": [
+          "product_fidelity",
+          "shot_task",
+          "on_image_text",
+          "platform_rules",
+          "provider_contract",
+          "negative_constraints"
+        ],
+        "warnings": [
+          "ON_IMAGE_TEXT_NOT_PLATFORM_LANGUAGE"
+        ]
+      },
+      "new_choices": {
+        "shot_spec": {
+          "schema_version": 1,
+          "purpose": "用简短标注呈现已确认卖点，不写入未确认参数",
+          "keep": [
+            "已确认卖点文字"
+          ],
+          "change_allowed": [
+            "标注排版与配色"
+          ],
+          "notes": "",
+          "print_intent": "selected",
+          "on_image_texts": [
+            {
+              "text_id": "t_signature_features_1",
+              "text": "HONEY 浮雕",
+              "source_slot_id": "signature_features",
+              "source_slot_version": 2,
+              "status": "confirmed",
+              "origin": "user"
+            },
+            {
+              "text_id": "t_signature_features_2",
+              "text": "蜂窝纹理",
+              "source_slot_id": "signature_features",
+              "source_slot_version": 2,
+              "status": "confirmed",
+              "origin": "user"
+            },
+            {
+              "text_id": "t_signature_features_3",
+              "text": "透明罐身",
+              "source_slot_id": "signature_features",
+              "source_slot_version": 2,
+              "status": "confirmed",
+              "origin": "user"
+            }
+          ],
+          "layout": "product_left_text_right"
+        },
+        "style_presentation": {
+          "appearance_state": "clean_display",
+          "contents_state": "empty"
+        }
+      },
+      "new_text": "以提供的商品参考图为唯一外观依据：保持商品的轮廓、比例、颜色、材质、标识与现有部件不变；不要添加、删除、复制、换色或重新设计商品特征。商品按干净展示状态呈现：允许去掉临时使用痕迹（水渍、指纹、残留），但材质、结构、标识与颜色仍与商品依据一致。图中如需出现文字，只能逐字使用后面列出的已确认文案。\n\n画面概念：用少量标注讲清卖点的信息图，商品是主体，文字服务卖点且不遮盖商品。主体：商品完整入画、位置突出；文案区放在留白一侧，与商品之间留出干净空隙。文字层级：一行标题加若干要点，字号按层级递减、行距清晰，与背景对比充分，不压在商品细节上。排版：对齐一致、边距统一，文字水平排布，不使用旋转、变形或装饰性字体。\n\n本图任务「卖点信息图」，目的「用简短标注呈现已确认卖点，不写入未确认参数」。必须保持：「已确认卖点文字」。允许变化：「标注排版与配色」。\n\n本图版面：商品完整放在画面左侧约三分之二区域，关键部位不被裁切也不被文字遮挡；右侧保留干净留白放置下方给定的文字。\n\n图中文字（只允许逐字使用以下已确认文案，不翻译、不改写、不新增；文字语言应为「en」）：\n- 「HONEY 浮雕」\n- 「蜂窝纹理」\n- 「透明罐身」\n\n平台规则「亚马逊美国站」：整套图片不得出现水印、边框、联系方式或与商品无关的叠加元素。只能使用已确认的商品事实，不添加未确认的参数、功效或承诺。\n\n输出规格：一张「1344*1344」的「png」格式高清商品图，不添加水印。\n\n必须避免：「水印」、「文字错乱或文字变形」、「商品变形、多出部件或与参考图不符的颜色和标识」。",
+      "new_sections": [
+        "product_fidelity",
+        "visual_brief",
+        "shot_task",
+        "shot_layout",
+        "on_image_text",
+        "platform_rules",
+        "provider_contract",
+        "negative_constraints"
+      ],
+      "new_warnings": [
+        "ON_IMAGE_TEXT_NOT_PLATFORM_LANGUAGE",
+        "ON_IMAGE_TEXT_NOT_PLATFORM_LANGUAGE",
+        "ON_IMAGE_TEXT_NOT_PLATFORM_LANGUAGE"
+      ]
+    },
+    {
+      "shot_id": "shot_scene_lifestyle",
+      "role_id": "scene",
+      "label": "场景图·使用中",
+      "old_record": {
+        "document_version": 1,
+        "text": "以提供的商品参考图为唯一外观依据：保持商品的轮廓、比例、颜色、材质、标识与现有部件不变；不要添加、删除、复制、换色或重新设计商品特征。不要在图片上叠加文字、参数、徽标或水印。\n\n本图任务「场景图·使用中」，目的「把商品放进符合用途的真实场景，场景不改变商品外观」。必须保持：「商品外观与颜色」、「标识与文字」。允许变化：「环境、道具与光线」。\n\n平台规则「亚马逊美国站」：整套图片不得出现水印、边框、联系方式或与商品无关的叠加元素。只能使用已确认的商品事实，不添加未确认的参数、功效或承诺。\n\n输出规格：一张「1344*1344」的「png」格式高清商品图，不添加水印。\n\n必须避免：「水印」、「文字错乱或文字变形」、「商品变形、多出部件或与参考图不符的颜色和标识」、「任何叠加文字、参数徽标或边框」。",
+        "sections": [
+          "product_fidelity",
+          "shot_task",
+          "platform_rules",
+          "provider_contract",
+          "negative_constraints"
+        ],
+        "warnings": []
+      },
+      "new_choices": {
+        "shot_spec": {
+          "schema_version": 1,
+          "purpose": "把商品放进符合用途的真实场景，场景不改变商品外观",
+          "keep": [
+            "商品外观与颜色",
+            "标识与文字"
+          ],
+          "change_allowed": [
+            "环境、道具与光线"
+          ],
+          "notes": "",
+          "layout": "product_only"
+        },
+        "style_presentation": {
+          "appearance_state": "clean_display",
+          "contents_state": "empty"
+        }
+      },
+      "new_text": "以提供的商品参考图为唯一外观依据：保持商品的轮廓、比例、颜色、材质、标识与现有部件不变；不要添加、删除、复制、换色或重新设计商品特征。商品按干净展示状态呈现：允许去掉临时使用痕迹（水渍、指纹、残留），但材质、结构、标识与颜色仍与商品依据一致。内容物为空：内腔与瓶口干净、无残留，也不添加资料里没有的内容物。不要在图片上叠加文字、参数、徽标或水印。\n\n画面概念：商品在真实使用场景里的样子，场景说明用途但不抢商品焦点。主体：商品居中偏前、完整入画，与场景里的道具保持自然比例关系。光线与环境：符合场景的自然光线，方向明确、明暗过渡自然；背景轻微虚化以突出商品。一致性：场景与道具不出现其它品牌标识，也不与商品的材质、颜色冲突。\n\n本图任务「场景图·使用中」，目的「把商品放进符合用途的真实场景，场景不改变商品外观」。必须保持：「商品外观与颜色」、「标识与文字」。允许变化：「环境、道具与光线」。\n\n本图版面：画面只呈现商品主体：主体完整入画、位置突出，四周保留干净留白，不叠加标题或参数文字。\n\n平台规则「亚马逊美国站」：整套图片不得出现水印、边框、联系方式或与商品无关的叠加元素。只能使用已确认的商品事实，不添加未确认的参数、功效或承诺。\n\n输出规格：一张「1344*1344」的「png」格式高清商品图，不添加水印。\n\n必须避免：「水印」、「文字错乱或文字变形」、「商品变形、多出部件或与参考图不符的颜色和标识」、「任何叠加文字、参数徽标或边框」。",
+      "new_sections": [
+        "product_fidelity",
+        "visual_brief",
+        "shot_task",
+        "shot_layout",
+        "platform_rules",
+        "provider_contract",
+        "negative_constraints"
+      ],
+      "new_warnings": []
+    },
+    {
+      "shot_id": "shot_detail_material",
+      "role_id": "detail",
+      "label": "细节图·材质工艺",
+      "old_record": {
+        "document_version": 1,
+        "text": "以提供的商品参考图为唯一外观依据：保持商品的轮廓、比例、颜色、材质、标识与现有部件不变；不要添加、删除、复制、换色或重新设计商品特征。不要在图片上叠加文字、参数、徽标或水印。\n\n本图任务「细节图·材质工艺」，目的「近距离呈现材质、做工或结构细节，颜色与标识与参考图一致」。必须保持：「材质与工艺细节」、「颜色」。允许变化：「对焦、景别与光线」。\n\n平台规则「亚马逊美国站」：整套图片不得出现水印、边框、联系方式或与商品无关的叠加元素。只能使用已确认的商品事实，不添加未确认的参数、功效或承诺。\n\n输出规格：一张「1344*1344」的「png」格式高清商品图，不添加水印。\n\n必须避免：「水印」、「文字错乱或文字变形」、「商品变形、多出部件或与参考图不符的颜色和标识」、「任何叠加文字、参数徽标或边框」。",
+        "sections": [
+          "product_fidelity",
+          "shot_task",
+          "platform_rules",
+          "provider_contract",
+          "negative_constraints"
+        ],
+        "warnings": []
+      },
+      "new_choices": {
+        "shot_spec": {
+          "schema_version": 1,
+          "purpose": "近距离呈现材质、做工或结构细节，颜色与标识与参考图一致",
+          "keep": [
+            "材质与工艺细节",
+            "颜色"
+          ],
+          "change_allowed": [
+            "对焦、景别与光线"
+          ],
+          "notes": "",
+          "layout": "product_only"
+        },
+        "style_presentation": {
+          "appearance_state": "clean_display",
+          "contents_state": "empty"
+        }
+      },
+      "new_text": "以提供的商品参考图为唯一外观依据：保持商品的轮廓、比例、颜色、材质、标识与现有部件不变；不要添加、删除、复制、换色或重新设计商品特征。商品按干净展示状态呈现：允许去掉临时使用痕迹（水渍、指纹、残留），但材质、结构、标识与颜色仍与商品依据一致。不要在图片上叠加文字、参数、徽标或水印。\n\n画面概念：近距离特写，让材质、工艺或关键部件的细节看得清。主体：特写区域占画面主要部分，边缘不切断关键结构。光线：侧向或斜上方柔和光线，突出纹理与层次，避免过曝和死黑。清晰度：焦点落在细节上，背景自然虚化。\n\n本图任务「细节图·材质工艺」，目的「近距离呈现材质、做工或结构细节，颜色与标识与参考图一致」。必须保持：「材质与工艺细节」、「颜色」。允许变化：「对焦、景别与光线」。\n\n本图版面：画面只呈现商品主体：主体完整入画、位置突出，四周保留干净留白，不叠加标题或参数文字。\n\n平台规则「亚马逊美国站」：整套图片不得出现水印、边框、联系方式或与商品无关的叠加元素。只能使用已确认的商品事实，不添加未确认的参数、功效或承诺。\n\n输出规格：一张「1344*1344」的「png」格式高清商品图，不添加水印。\n\n必须避免：「水印」、「文字错乱或文字变形」、「商品变形、多出部件或与参考图不符的颜色和标识」、「任何叠加文字、参数徽标或边框」。",
+      "new_sections": [
+        "product_fidelity",
+        "visual_brief",
+        "shot_task",
+        "shot_layout",
+        "platform_rules",
+        "provider_contract",
+        "negative_constraints"
+      ],
+      "new_warnings": []
+    }
+  ]
+}

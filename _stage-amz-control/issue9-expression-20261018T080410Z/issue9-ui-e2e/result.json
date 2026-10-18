@@ -1,0 +1,907 @@
+{
+  "schema_version": 1,
+  "name": "issue9-ui-e2e",
+  "page": "http://127.0.0.1:38169/",
+  "project_zip": "_stage-amz-control/asset-continuation-20261008T054352Z/data/manual-project.zip",
+  "primary_sha256": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461",
+  "finished_at": "2026-10-18T10:33:08.686732+00:00",
+  "status": "passed",
+  "checks": [
+    {
+      "id": "SETUP-asset",
+      "statement": "上传的真实商品图按 sha256 落库 primary 资产且字节一致",
+      "actual": {
+        "found": true,
+        "sha256": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461",
+        "byte_size": 2239735
+      },
+      "passed": true
+    },
+    {
+      "id": "SETUP-facts",
+      "statement": "5 条事实手工确认落库（含 signature_features 三条卖点原文 + size_dimensions 一条结构化测量）",
+      "actual": {
+        "key_material": {
+          "id": "key_material",
+          "v": 2,
+          "status": "confirmed",
+          "value": "透明玻璃罐身，金属色盖"
+        },
+        "product_category": {
+          "id": "product_category",
+          "v": 2,
+          "status": "confirmed",
+          "value": "玻璃储物罐"
+        },
+        "product_name": {
+          "id": "product_name",
+          "v": 2,
+          "status": "confirmed",
+          "value": "透明玻璃蜂蜜罐样例"
+        },
+        "signature_features": {
+          "id": "signature_features",
+          "v": 2,
+          "status": "confirmed",
+          "value": [
+            "HONEY 浮雕",
+            "蜂窝纹理",
+            "透明罐身"
+          ]
+        },
+        "size_dimensions": {
+          "id": "size_dimensions",
+          "v": 2,
+          "status": "confirmed",
+          "value": [
+            {
+              "object": "罐身",
+              "axis": "height",
+              "value": 12,
+              "unit": "cm",
+              "source_basis": "参考图可见比例"
+            }
+          ]
+        }
+      },
+      "passed": true
+    },
+    {
+      "id": "SETUP-plan",
+      "statement": "推荐方案生成 5 张图（含主图、卖点信息图与尺寸图）",
+      "actual": [
+        "shot_main_clean",
+        "shot_infographic_benefits",
+        "shot_scene_lifestyle",
+        "shot_detail_material",
+        "shot_size_dimensions"
+      ],
+      "passed": true
+    },
+    {
+      "id": "A1-radios-unchecked",
+      "statement": "未决定时风格区两组 radio 均不预选（5 个选项 checked 全为 false）",
+      "actual": [
+        {
+          "id": "style-appearance_state-as_shown",
+          "checked": false
+        },
+        {
+          "id": "style-appearance_state-clean_display",
+          "checked": false
+        },
+        {
+          "id": "style-contents_state-empty",
+          "checked": false
+        },
+        {
+          "id": "style-contents_state-as_shown",
+          "checked": false
+        },
+        {
+          "id": "style-contents_state-not_applicable",
+          "checked": false
+        }
+      ],
+      "passed": true
+    },
+    {
+      "id": "A2a-print-undecided",
+      "statement": "未决定时信息图印字不预选，且文案候选区不出现",
+      "actual": {
+        "print": [
+          {
+            "id": "spec-print-none-shot_infographic_benefits",
+            "checked": false
+          },
+          {
+            "id": "spec-print-selected-shot_infographic_benefits",
+            "checked": false
+          }
+        ],
+        "texts_visible": 0
+      },
+      "passed": true
+    },
+    {
+      "id": "A2b-layout-undecided",
+      "statement": "未决定时信息图版面三组 radio 均不预选（新语义回归验证）",
+      "actual": {
+        "layout": [
+          {
+            "id": "spec-layout-shot_infographic_benefits-product_only",
+            "checked": false
+          },
+          {
+            "id": "spec-layout-shot_infographic_benefits-product_left_text_right",
+            "checked": false
+          },
+          {
+            "id": "spec-layout-shot_infographic_benefits-product_right_text_left",
+            "checked": false
+          }
+        ]
+      },
+      "passed": true
+    },
+    {
+      "id": "A3-no-presentation-key",
+      "statement": "未决定保存后 style_spec 无 presentation 键（程序不替用户默认）",
+      "actual": {
+        "version": 1,
+        "payload": {
+          "schema_version": 1,
+          "background": "",
+          "lighting": "",
+          "color_tone": "",
+          "composition": "",
+          "avoid": []
+        }
+      },
+      "passed": true
+    },
+    {
+      "id": "B-presentation-saved",
+      "statement": "style_spec.payload.presentation == {appearance_state: clean_display, contents_state: empty}（逐字）",
+      "actual": {
+        "version": 2,
+        "payload": {
+          "schema_version": 1,
+          "background": "",
+          "lighting": "",
+          "color_tone": "",
+          "composition": "",
+          "avoid": [],
+          "presentation": {
+            "appearance_state": "clean_display",
+            "contents_state": "empty"
+          }
+        }
+      },
+      "passed": true
+    },
+    {
+      "id": "C1-candidates",
+      "statement": "印字选「只印所选文案」后候选区出现，1 条候选且默认不勾选",
+      "actual": [
+        {
+          "id": "spec-text-shot_infographic_benefits-signature_features",
+          "checked": false,
+          "disabled": false,
+          "label": "必须保持的商品特征：HONEY 浮雕；蜂窝纹理；透明罐身"
+        }
+      ],
+      "passed": true
+    },
+    {
+      "id": "C5a-dimension-not-candidate",
+      "statement": "size_dimensions 已确认并绑到信息图，但候选区仍只有 signature 1 条 （无 #spec-text-<shot>-size_dimensions，避免印出非文字值）",
+      "actual": {
+        "candidates": [
+          "spec-text-shot_infographic_benefits-signature_features"
+        ],
+        "dim_box": 0,
+        "suite_error": ""
+      },
+      "passed": true
+    },
+    {
+      "id": "C5b-zero-candidate-hint",
+      "statement": "信息图只绑尺寸时：候选为 0 且提示含「文字类事实才能上图」",
+      "actual": {
+        "region_text": "所选文案（逐字印上图，最多 4 条）\n\n这张图还没有绑定可印的已确认事实：先去「图片任务」里绑定；文字类事实才能上图。",
+        "checkboxes": 0
+      },
+      "passed": true
+    },
+    {
+      "id": "C5c-binding-restored",
+      "statement": "恢复绑定后候选区回到 signature 1 条且仍未勾选（主路起点干净）",
+      "actual": [
+        {
+          "id": "spec-text-shot_infographic_benefits-signature_features",
+          "checked": false
+        }
+      ],
+      "passed": true
+    },
+    {
+      "id": "C0a-save-without-layout",
+      "statement": "selected+已选文案+未选版面时保存能成功，且 shot_spec 不写 layout 键",
+      "actual": {
+        "shotspec": {
+          "version": 1,
+          "payload": {
+            "schema_version": 1,
+            "purpose": "用简短标注呈现已确认卖点，不写入未确认参数",
+            "keep": [
+              "已确认卖点文字"
+            ],
+            "change_allowed": [
+              "标注排版与配色"
+            ],
+            "notes": "",
+            "print_intent": "selected",
+            "on_image_texts": [
+              {
+                "text_id": "t_signature_features_1",
+                "text": "HONEY 浮雕",
+                "source_slot_id": "signature_features",
+                "source_slot_version": 2,
+                "status": "confirmed",
+                "origin": "user"
+              },
+              {
+                "text_id": "t_signature_features_2",
+                "text": "蜂窝纹理",
+                "source_slot_id": "signature_features",
+                "source_slot_version": 2,
+                "status": "confirmed",
+                "origin": "user"
+              },
+              {
+                "text_id": "t_signature_features_3",
+                "text": "透明罐身",
+                "source_slot_id": "signature_features",
+                "source_slot_version": 2,
+                "status": "confirmed",
+                "origin": "user"
+              }
+            ]
+          }
+        },
+        "specs_error": ""
+      },
+      "passed": true
+    },
+    {
+      "id": "C0b-gate-missing-layout",
+      "statement": "缺 layout 时编译被拦：确认单出现 DECISION_REQUIRED 且消息含「还得先决定版面」",
+      "actual": {
+        "confirm_status": "本次明确发送 4 张；用途缺项／过期任务不外发；已有成功、进行中或 Unknown 不自动重提。",
+        "blockers": [
+          "#2 卖点信息图 · DECISION_REQUIRED 这张图要印文案，还得先决定版面：「商品在左，文字在右」或「商品在右，文字在左」；程序不替你默认文字放哪边。 返回：shot_spec · 到「风格与单图规格」为这张图做完印字与展示决定，再重新编译。 去补足此项"
+        ]
+      },
+      "passed": true
+    },
+    {
+      "id": "C0c-gate-product-only",
+      "statement": "layout=只放商品+selected 时编译被拦：消息含「不能选『只放商品』版面」",
+      "actual": {
+        "confirm_status": "本次明确发送 4 张；用途缺项／过期任务不外发；已有成功、进行中或 Unknown 不自动重提。",
+        "blockers": [
+          "#2 卖点信息图 · DECISION_REQUIRED 要印文案的图不能选「只放商品」版面：那样会同时要求「不出现文字」和「印出文字」。请改成商品在左或商品在右的版面。 返回：shot_spec · 到「风格与单图规格」为这张图做完印字与展示决定，再重新编译。 去补足此项"
+        ]
+      },
+      "passed": true
+    },
+    {
+      "id": "C2-shotspec-keys",
+      "statement": "shot_spec 三键逐字正确：print_intent=selected、layout=product_left_text_right、on_image_texts 按元素各一条 （3 条，text 逐一等于 fact_slot 确认值元素，不写死字符串）",
+      "actual": {
+        "shotspec": {
+          "version": 3,
+          "payload": {
+            "schema_version": 1,
+            "purpose": "用简短标注呈现已确认卖点，不写入未确认参数",
+            "keep": [
+              "已确认卖点文字"
+            ],
+            "change_allowed": [
+              "标注排版与配色"
+            ],
+            "notes": "",
+            "print_intent": "selected",
+            "on_image_texts": [
+              {
+                "text_id": "t_signature_features_1",
+                "text": "HONEY 浮雕",
+                "source_slot_id": "signature_features",
+                "source_slot_version": 2,
+                "status": "confirmed",
+                "origin": "user"
+              },
+              {
+                "text_id": "t_signature_features_2",
+                "text": "蜂窝纹理",
+                "source_slot_id": "signature_features",
+                "source_slot_version": 2,
+                "status": "confirmed",
+                "origin": "user"
+              },
+              {
+                "text_id": "t_signature_features_3",
+                "text": "透明罐身",
+                "source_slot_id": "signature_features",
+                "source_slot_version": 2,
+                "status": "confirmed",
+                "origin": "user"
+              }
+            ],
+            "layout": "product_left_text_right"
+          }
+        },
+        "fact_slot": {
+          "id": "signature_features",
+          "v": 2,
+          "status": "confirmed",
+          "value": [
+            "HONEY 浮雕",
+            "蜂窝纹理",
+            "透明罐身"
+          ]
+        },
+        "expect_texts": [
+          "HONEY 浮雕",
+          "蜂窝纹理",
+          "透明罐身"
+        ]
+      },
+      "passed": true
+    },
+    {
+      "id": "C3a-stale-hint",
+      "statement": "来源事实前进后（v2→v3），规格区出现旧版提示且仍勾选旧条目",
+      "actual": {
+        "hint_count": 1,
+        "hint_text": "已选的是旧版「HONEY 浮雕；蜂窝纹理；透明罐身」（v2）， 当前事实已是 v3：重新勾选这条即按新值重新确认。",
+        "checked": true,
+        "fact_slot": {
+          "id": "signature_features",
+          "v": 3,
+          "status": "confirmed",
+          "value": [
+            "HONEY 浮雕",
+            "蜂窝纹理",
+            "透明罐身",
+            "新增卖点"
+          ]
+        }
+      },
+      "passed": true
+    },
+    {
+      "id": "C3b-no-silent-upgrade",
+      "statement": "未重新勾选即保存：on_image_texts 仍是旧版 3 条旧值 + 旧版本号 v2 （不静默换值）",
+      "actual": {
+        "shotspec": {
+          "version": 4,
+          "payload": {
+            "schema_version": 1,
+            "purpose": "用简短标注呈现已确认卖点，不写入未确认参数",
+            "keep": [
+              "已确认卖点文字"
+            ],
+            "change_allowed": [
+              "标注排版与配色"
+            ],
+            "notes": "",
+            "print_intent": "selected",
+            "on_image_texts": [
+              {
+                "text_id": "t_signature_features_1",
+                "text": "HONEY 浮雕",
+                "source_slot_id": "signature_features",
+                "source_slot_version": 2,
+                "status": "confirmed",
+                "origin": "user"
+              },
+              {
+                "text_id": "t_signature_features_2",
+                "text": "蜂窝纹理",
+                "source_slot_id": "signature_features",
+                "source_slot_version": 2,
+                "status": "confirmed",
+                "origin": "user"
+              },
+              {
+                "text_id": "t_signature_features_3",
+                "text": "透明罐身",
+                "source_slot_id": "signature_features",
+                "source_slot_version": 2,
+                "status": "confirmed",
+                "origin": "user"
+              }
+            ],
+            "layout": "product_left_text_right"
+          }
+        },
+        "expect_texts": [
+          "HONEY 浮雕",
+          "蜂窝纹理",
+          "透明罐身"
+        ]
+      },
+      "passed": true
+    },
+    {
+      "id": "C3c-stale-blocked",
+      "statement": "旧版文案编译被拦：阻断消息含「来源已不是当初确认的版本」",
+      "actual": {
+        "confirm_status": "本次明确发送 4 张；用途缺项／过期任务不外发；已有成功、进行中或 Unknown 不自动重提。",
+        "blockers": [
+          "#2 卖点信息图 · DECISION_REQUIRED 图中文字「HONEY 浮雕」的来源已不是当初确认的版本：请重新核对这条文案，程序不会静默改用新值。 返回：shot_spec · 到「风格与单图规格」为这张图做完印字与展示决定，再重新编译。 去补足此项"
+        ]
+      },
+      "passed": true
+    },
+    {
+      "id": "C4a-goto-label",
+      "statement": "确认单阻断项「去补足此项」按钮有正确文案（非空按钮）",
+      "actual": {
+        "goto_count": 1,
+        "goto_text": "去补足此项"
+      },
+      "passed": true
+    },
+    {
+      "id": "C4b-goto-lands-on-texts",
+      "statement": "点击「去补足此项」后切到方案阶段、规格区展开，文案候选区在视口内",
+      "actual": {
+        "stage": "plan",
+        "landed": {
+          "exists": true,
+          "top": 641,
+          "visible": true
+        },
+        "specs_open": true
+      },
+      "passed": true
+    },
+    {
+      "id": "C3d-recheck-recovers",
+      "statement": "重新勾选并保存后：on_image_texts 按新值 v3 确认（4 条元素），旧版提示消失",
+      "actual": {
+        "shotspec": {
+          "version": 5,
+          "payload": {
+            "schema_version": 1,
+            "purpose": "用简短标注呈现已确认卖点，不写入未确认参数",
+            "keep": [
+              "已确认卖点文字"
+            ],
+            "change_allowed": [
+              "标注排版与配色"
+            ],
+            "notes": "",
+            "print_intent": "selected",
+            "on_image_texts": [
+              {
+                "text_id": "t_signature_features_1",
+                "text": "HONEY 浮雕",
+                "source_slot_id": "signature_features",
+                "source_slot_version": 3,
+                "status": "confirmed",
+                "origin": "user"
+              },
+              {
+                "text_id": "t_signature_features_2",
+                "text": "蜂窝纹理",
+                "source_slot_id": "signature_features",
+                "source_slot_version": 3,
+                "status": "confirmed",
+                "origin": "user"
+              },
+              {
+                "text_id": "t_signature_features_3",
+                "text": "透明罐身",
+                "source_slot_id": "signature_features",
+                "source_slot_version": 3,
+                "status": "confirmed",
+                "origin": "user"
+              },
+              {
+                "text_id": "t_signature_features_4",
+                "text": "新增卖点",
+                "source_slot_id": "signature_features",
+                "source_slot_version": 3,
+                "status": "confirmed",
+                "origin": "user"
+              }
+            ],
+            "layout": "product_left_text_right"
+          }
+        },
+        "fact_slot": {
+          "id": "signature_features",
+          "v": 3,
+          "status": "confirmed",
+          "value": [
+            "HONEY 浮雕",
+            "蜂窝纹理",
+            "透明罐身",
+            "新增卖点"
+          ]
+        },
+        "hint_count": 0
+      },
+      "passed": true
+    },
+    {
+      "id": "C6a1-print-none-hides-texts",
+      "statement": "印字改成「不印新增文字」后文案候选区隐藏（草稿所选仍在，只是不再印）",
+      "actual": {
+        "texts_visible": 0
+      },
+      "passed": true
+    },
+    {
+      "id": "C6a2-saved-print-none",
+      "statement": "保存后 shot_spec 记录 print_intent=none、版面仍是 product_left_text_right、on_image_texts 已清空",
+      "actual": {
+        "shotspec": {
+          "version": 6,
+          "payload": {
+            "schema_version": 1,
+            "purpose": "用简短标注呈现已确认卖点，不写入未确认参数",
+            "keep": [
+              "已确认卖点文字"
+            ],
+            "change_allowed": [
+              "标注排版与配色"
+            ],
+            "notes": "",
+            "print_intent": "none",
+            "on_image_texts": [],
+            "layout": "product_left_text_right"
+          }
+        }
+      },
+      "passed": true
+    },
+    {
+      "id": "C6a3-layout-gate-blocks",
+      "statement": "不印+文字版面时编译被拦：阻断消息是 $.shot_spec.layout 那条（含「不会有图上文字」「只放商品」）",
+      "actual": {
+        "confirm_status": "本次明确发送 4 张；用途缺项／过期任务不外发；已有成功、进行中或 Unknown 不自动重提。",
+        "blockers": [
+          "#2 卖点信息图 · DECISION_REQUIRED 这张图不会有图上文字，不能选「商品在左、文字在右」版面：正文会写「放置下方给定的文字」，而本次没有文案可放。请改成「只放商品」版面，或先决定并选择要印的文案。 返回：shot_spec · 到「风格与单图规格」为这张图做完印字与展示决定，再重新编译。 去补足此项"
+        ]
+      },
+      "passed": true
+    },
+    {
+      "id": "C6a4-layout-hint-visible",
+      "statement": "页面上能看到 #spec-layout-needs-text-<shotId> 提示（选了文字版面但现在没有要印的文案）",
+      "actual": {
+        "hint_count": 1,
+        "hint_text": "选了文字版面，但这张图现在没有要印的文案：编译会被拦，请改成「只放商品」， 或回到上面勾选要印的文案。"
+      },
+      "passed": true
+    },
+    {
+      "id": "C6a5-product-only-recovers",
+      "statement": "版面改成「只放商品」并保存后：确认单不再出现「不会有图上文字」阻断（门恢复）",
+      "actual": {
+        "confirm_status": "本次明确发送 5 张；用途缺项／过期任务不外发；已有成功、进行中或 Unknown 不自动重提。",
+        "blockers": []
+      },
+      "passed": true
+    },
+    {
+      "id": "C6b0-selected-saved",
+      "statement": "解绑前起点干净：shot_spec 已是 (selected, 左文右) + 4 条 v3 文案",
+      "actual": {
+        "shotspec": {
+          "version": 8,
+          "payload": {
+            "schema_version": 1,
+            "purpose": "用简短标注呈现已确认卖点，不写入未确认参数",
+            "keep": [
+              "已确认卖点文字"
+            ],
+            "change_allowed": [
+              "标注排版与配色"
+            ],
+            "notes": "",
+            "print_intent": "selected",
+            "on_image_texts": [
+              {
+                "text_id": "t_signature_features_1",
+                "text": "HONEY 浮雕",
+                "source_slot_id": "signature_features",
+                "source_slot_version": 3,
+                "status": "confirmed",
+                "origin": "user"
+              },
+              {
+                "text_id": "t_signature_features_2",
+                "text": "蜂窝纹理",
+                "source_slot_id": "signature_features",
+                "source_slot_version": 3,
+                "status": "confirmed",
+                "origin": "user"
+              },
+              {
+                "text_id": "t_signature_features_3",
+                "text": "透明罐身",
+                "source_slot_id": "signature_features",
+                "source_slot_version": 3,
+                "status": "confirmed",
+                "origin": "user"
+              },
+              {
+                "text_id": "t_signature_features_4",
+                "text": "新增卖点",
+                "source_slot_id": "signature_features",
+                "source_slot_version": 3,
+                "status": "confirmed",
+                "origin": "user"
+              }
+            ],
+            "layout": "product_left_text_right"
+          }
+        },
+        "fact_slot": {
+          "id": "signature_features",
+          "v": 3,
+          "status": "confirmed",
+          "value": [
+            "HONEY 浮雕",
+            "蜂窝纹理",
+            "透明罐身",
+            "新增卖点"
+          ]
+        }
+      },
+      "passed": true
+    },
+    {
+      "id": "C6b1-orphan-visible",
+      "statement": "解绑后之前保存的文案仍然可见：#spec-text-orphan-<shotId>-signature_features 存在且保持勾选，文案内容照旧（4 条 v3，不是凭空消失）",
+      "actual": {
+        "orphan_count": 1,
+        "orphan_checked": true,
+        "orphan_text": "\n            \n            必须保持的商品特征：HONEY 浮雕；蜂窝纹理；透明罐身；新增卖点\n            来源已不在这张图的绑定里：勾掉即移除这条文案，或先把它重新绑定到这张图（编译会拦下未解除的条目）。\n          ",
+        "fact_slot": {
+          "id": "signature_features",
+          "v": 3,
+          "status": "confirmed",
+          "value": [
+            "HONEY 浮雕",
+            "蜂窝纹理",
+            "透明罐身",
+            "新增卖点"
+          ]
+        }
+      },
+      "passed": true
+    },
+    {
+      "id": "C6b2-unbound-blocked",
+      "statement": "解绑后编译被拦：阻断消息含「不在这张图的绑定里」",
+      "actual": {
+        "confirm_status": "本次明确发送 4 张；用途缺项／过期任务不外发；已有成功、进行中或 Unknown 不自动重提。",
+        "blockers": [
+          "#2 卖点信息图 · DECISION_REQUIRED 图中文字「HONEY 浮雕」的来源事实已经不在这张图的绑定里：请把该事实重新绑定到这张图，或重新选择这张图的文案。 返回：shot_spec · 到「风格与单图规格」为这张图做完印字与展示决定，再重新编译。 去补足此项"
+        ]
+      },
+      "passed": true
+    },
+    {
+      "id": "C6b3-orphan-removed-empties",
+      "statement": "勾掉孤儿行并保存后：shot_spec.on_image_texts 变空（读 shot_spec 记录；孤儿行同步消失）",
+      "actual": {
+        "shotspec": {
+          "version": 9,
+          "payload": {
+            "schema_version": 1,
+            "purpose": "用简短标注呈现已确认卖点，不写入未确认参数",
+            "keep": [
+              "已确认卖点文字"
+            ],
+            "change_allowed": [
+              "标注排版与配色"
+            ],
+            "notes": "",
+            "print_intent": "selected",
+            "on_image_texts": [],
+            "layout": "product_left_text_right"
+          }
+        },
+        "orphan_count": 0
+      },
+      "passed": true
+    },
+    {
+      "id": "C6b4-rebind-recovers",
+      "statement": "重新绑定 + 勾选 + 保存后：确认单不再出现「不在这张图的绑定里」阻断（编译恢复）",
+      "actual": {
+        "confirm_status": "本次明确发送 5 张；用途缺项／过期任务不外发；已有成功、进行中或 Unknown 不自动重提。",
+        "blockers": []
+      },
+      "passed": true
+    },
+    {
+      "id": "SETUP-confirm-ready",
+      "statement": "本地准备完成后可提交 5 张（无阻断）",
+      "actual": {
+        "status": "本次明确发送 5 张；用途缺项／过期任务不外发；已有成功、进行中或 Unknown 不自动重提。",
+        "action_disabled": false,
+        "blockers": 0
+      },
+      "passed": true
+    },
+    {
+      "id": "D1-infographic-brief-verbatim",
+      "statement": "信息图 Prompt 预览逐字包含 ROLE_VISUAL_BRIEF.infographic 全部句子（4 句，从页面 /domain/index.js 取常量）与 product_fidelity 干净展示状态句",
+      "actual": {
+        "sentences": [
+          "画面概念：用少量标注讲清卖点的信息图，商品是主体，文字服务卖点且不遮盖商品。",
+          "主体：商品完整入画、位置突出；文案区放在留白一侧，与商品之间留出干净空隙。",
+          "文字层级：一行标题加若干要点，字号按层级递减、行距清晰，与背景对比充分，不压在商品细节上。",
+          "排版：对齐一致、边距统一，文字水平排布，不使用旋转、变形或装饰性字体。"
+        ],
+        "missing": [],
+        "fidelity_present": true,
+        "preview_chars": 682
+      },
+      "passed": true
+    },
+    {
+      "id": "D2-no-cross-role-leak",
+      "statement": "信息图预览不含其他用途的画面简报句，主图预览含本用途 4 句且不含信息图句子（跨用途串味即红）",
+      "actual": {
+        "leaked_into_info": [],
+        "leaked_into_main": [],
+        "main_missing": []
+      },
+      "passed": true
+    },
+    {
+      "id": "D3-layout-and-verbatim-text",
+      "statement": "信息图预览含左文右版面句，且所选 4 条元素逐条以「」逐字出现 （fact_slot 值，不写死）",
+      "actual": {
+        "layout_present": true,
+        "quoted": [
+          true,
+          true,
+          true,
+          true
+        ],
+        "expect_texts": [
+          "HONEY 浮雕",
+          "蜂窝纹理",
+          "透明罐身",
+          "新增卖点"
+        ]
+      },
+      "passed": true
+    },
+    {
+      "id": "D4-no-layout-section-without-decision",
+      "statement": "主图预览不含「本图版面」段（未做版面决定即不排段，旧规格正文不变）",
+      "actual": {
+        "has_layout_section": false
+      },
+      "passed": true
+    },
+    {
+      "id": "E1-terminal",
+      "statement": "提交后按现有流程轮询到终态：5 张图全部 succeeded",
+      "actual": {
+        "shot_main_clean": "succeeded",
+        "shot_infographic_benefits": "succeeded",
+        "shot_scene_lifestyle": "succeeded",
+        "shot_detail_material": "succeeded",
+        "shot_size_dimensions": "succeeded"
+      },
+      "passed": true
+    },
+    {
+      "id": "E2-request-equals-compiled",
+      "statement": "每张图的提交请求 prompt 与页面编译产物逐字相等，且含该用途全部画面简报句（证明程序把编译稿发出去，不是硬编码）",
+      "actual": [
+        {
+          "action_id": "act-1240f2d0ebfb483299137aac64fd678a",
+          "shot_id": "shot_main_clean",
+          "prompt_equal_compiled": true,
+          "has_role_brief": true,
+          "prompt_chars": 643
+        },
+        {
+          "action_id": "act-fe2cbd56c5a34c22823f2c83c930790b",
+          "shot_id": "shot_infographic_benefits",
+          "prompt_equal_compiled": true,
+          "has_role_brief": true,
+          "prompt_chars": 682
+        },
+        {
+          "action_id": "act-2cb69f20f835494b81eb68d472ddf173",
+          "shot_id": "shot_scene_lifestyle",
+          "prompt_equal_compiled": true,
+          "has_role_brief": true,
+          "prompt_chars": 576
+        },
+        {
+          "action_id": "act-67404fb2fe5a4ceba43b9ff2bf67cb64",
+          "shot_id": "shot_detail_material",
+          "prompt_equal_compiled": true,
+          "has_role_brief": true,
+          "prompt_chars": 511
+        },
+        {
+          "action_id": "act-a3806f333de0409a8925760fe9372187",
+          "shot_id": "shot_size_dimensions",
+          "prompt_equal_compiled": true,
+          "has_role_brief": true,
+          "prompt_chars": 545
+        }
+      ],
+      "passed": true
+    },
+    {
+      "id": "F-zero-errors",
+      "statement": "零 console error / page error（白名单：无；本轮未登记任何已知问题）",
+      "actual": {
+        "console": [],
+        "page": [],
+        "http": [],
+        "whitelist": []
+      },
+      "passed": true
+    },
+    {
+      "id": "G-screenshots",
+      "statement": "至少 4 张截图落盘（风格决定区、单图印字/版面区、Prompt 预览含画面简报、提交后候选）",
+      "actual": [
+        {
+          "file": "1-style-undecided.png",
+          "bytes": 65404
+        },
+        {
+          "file": "2-style-decided.png",
+          "bytes": 63035
+        },
+        {
+          "file": "3-infographic-decisions.png",
+          "bytes": 48881
+        },
+        {
+          "file": "4-prompt-preview.png",
+          "bytes": 101464
+        },
+        {
+          "file": "5-candidates.png",
+          "bytes": 106317
+        },
+        {
+          "file": "6a-layout-needs-text.png",
+          "bytes": 48219
+        },
+        {
+          "file": "6b-orphan-unbound.png",
+          "bytes": 55867
+        }
+      ],
+      "passed": true
+    }
+  ],
+  "honest_boundary": "只验证提示词编译/请求消费/页面行为；未验证图像像素、印字渲染位置与模型质量。",
+  "not_covered": [
+    "像素层面印字是否出现、位置是否在留白区：替身 provider 只回固定 PNG，不可验，需真实模型 + 人工看图（工单第 6 条）。",
+    "英文站点文案语言：本轮文案逐字取自中文事实值，ON_IMAGE_TEXT_NOT_PLATFORM_LANGUAGE 警告预期存在，未纳入通过门。",
+    "返工/重提路径：本轮只走首次提交，未覆盖返工编译。"
+  ]
+}

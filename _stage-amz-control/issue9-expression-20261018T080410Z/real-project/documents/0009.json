@@ -1,0 +1,1 @@
+{"schema_version":1,"kind":"fact_slot","document_id":"key_material","version":2,"payload":{"schema_version":1,"slot_id":"key_material","label":"主要材质","authority":"core_fixed","value_type":"text","value":"透明玻璃罐身，金属色盖","source":"user_input","status":"confirmed","confidence":null,"evidence":[],"depends_on":[],"critical":false}}
