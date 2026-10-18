@@ -154,6 +154,8 @@ export function createPromptModule(deps: PromptDependencies): PromptModule {
       suitePlan: source.suitePlan, providerProfile: provider, context: sourceContext(source),
       promptEntries: [...versions].map(([shot_id, entry]) => ({ shot_id, ...entry })),
       currentBasisByShot, shotIds,
+      // 普通决定的阻断必须能指到具体控件，所以把决定所依赖的规格与简报一并交给确认单。
+      brief: buildProductBrief(source.slots), styleSpec: source.styleSpec, shotSpecsById: source.shotSpecs,
     });
     assertConfirmationSheet(result);
     return result as ConfirmationSheet;

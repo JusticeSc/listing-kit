@@ -4,7 +4,8 @@
  * 唯一权威：平台档、Provider 档、分段规则、语言策略、冲突判定、来源引用与请求快照都在本文件。
  * 三条不可协商的规则：
  *  1) 指令段统一中文；任何非中文原文必须来自输入并以「」逐字引用——没有无规则的中英混杂；
- *  2) 只有已确认且被该图绑定的事实可以作为图中文案，逐字使用，不翻译、不改写、不新增；
+ *  2) 图中文案只印用户明确选择并确认的条目（`shot_spec.on_image_texts`），逐字使用、不翻译、
+ *     不改写、不新增；信息图默认「未决定」时阻断，而不是把绑定事实自动印上图；
  *  3) 编译是纯函数：失败抛 CONTRACT_INVALID 并给出精确问题，不产半成品、不修改输入。
  *
  * 复用而不是重写：依赖判定用 suite-plan.js 的 evaluateShot；规格校验用 specs.js；
@@ -15,10 +16,19 @@ import { DOMAIN_ERROR_CODES, invalid } from "./errors.js";
 import { assertReworkDirective, reworkProblemLabel } from "./rework.js";
 import { checkShotDraft, consumedSlotIdsOf, evaluateShot, roleDefinition, shotSignatureOf } from "./suite-plan.js";
 import {
+  PRESENTATION_CONSUMERS,
+  PRESENTATION_FIELDS,
+  PRINT_DECISION_ROLES,
+  SHOT_LAYOUTS,
+  SHOT_PRINT_INTENTS,
   assertShotSpec,
   assertStyleSpec,
+  effectivePrintIntentOf,
   emptyShotSpecFromShot,
   emptyStyleSpec,
+  layoutLabelOf,
+  presentationStateOf,
+  printDecisionRoleOf,
 } from "./specs.js";
 import { invalidationsFor } from "./invalidation.js";
 import { isNonEmptyString, isPlainObject, isSha256Hex, pushProblem } from "./shared.js";
@@ -26,6 +36,266 @@ import { isNonEmptyString, isPlainObject, isSha256Hex, pushProblem } from "./sha
 export const PROMPT_SCHEMA_VERSION = 1;
 export const PROMPT_LANGUAGE_POLICY_ID = "zh-instruction-v1";
 export const MAX_PROMPT_CHARS = 4000;
+
+/** 逐字条目允许的语言标签；`neutral` 用于纯数字/符号文案（例如「30」「500 ml」这类无字母内容）。 */
+export const PROMPT_LITERAL_LANGUAGES = Object.freeze(["zh", "en", "mixed", "neutral"]);
+
+/**
+ * 这张图的有效印字决定与版面。选择只在规格里明确存过时才生效；没存过时：
+ * 需要该决定的角色（如信息图）是「未决定」，由编译器阻断并让用户做一次普通选择；
+ * 其他角色沿用既有合同（该印的事实照旧印，例如尺寸图），本切片不改它们的表达。
+ * @param {unknown} shotSpec
+ * @param {unknown} shot
+ * @returns {{intent: string, layout: string, texts: import("./type-contracts.js").OnImageText[], decision_role: boolean}}
+ */
+export function effectivePrinting(shotSpec, shot) {
+  const spec = isPlainObject(shotSpec) ? shotSpec : {};
+  return {
+    intent: effectivePrintIntentOf(shotSpec, shot),
+    layout: SHOT_LAYOUTS.includes(spec.layout) ? spec.layout : "product_only",
+    texts: (Array.isArray(spec.on_image_texts) ? spec.on_image_texts : []).filter(isPlainObject),
+    decision_role: printDecisionRoleOf(shot),
+  };
+}
+
+/**
+ * 这张图的有效展示决定：单图覆盖优先，其次共用默认；缺失即「未决定」。
+ * `consumes` 是「问不问」的投影依据：不消费该决定的用途既不被拦截，也不产出对应正文。
+ * @param {unknown} styleSpec
+ * @param {unknown} shotSpec
+ * @param {unknown} shot
+ * @returns {{appearance_state: {state: string, source: string}, contents_state: {state: string, source: string}, consumes: {appearance_state: boolean, contents_state: boolean}}}
+ */
+export function effectivePresentation(styleSpec, shotSpec, shot) {
+  const roleId = isPlainObject(shot) && typeof shot.role_id === "string" ? shot.role_id : "";
+  /** @param {string} key */
+  const pick = (key) => {
+    const own = presentationStateOf(shotSpec, key);
+    if (own !== "undecided") return { state: own, source: "shot" };
+    const shared = presentationStateOf(styleSpec, key);
+    if (shared !== "undecided") return { state: shared, source: "style" };
+    return { state: "undecided", source: "none" };
+  };
+  return {
+    appearance_state: pick("appearance_state"),
+    contents_state: pick("contents_state"),
+    consumes: {
+      appearance_state: PRESENTATION_CONSUMERS.appearance_state.includes(roleId),
+      contents_state: PRESENTATION_CONSUMERS.contents_state.includes(roleId),
+    },
+  };
+}
+
+/**
+ * 普通决定的阻断集合（#9）：印字决定与展示决定的可判定性检查，唯一权威。
+ * 编译器在编译前调用它；生成前确认单也调用它，好把用户指到真正该改的地方，
+ * 而不是笼统地说「还没有 Prompt」。只返回问题，不抛错、不修改输入。
+ * @param {{shot: unknown, shotSpec?: unknown, styleSpec?: unknown, brief?: unknown}} input
+ * @returns {import("./type-contracts.js").DomainProblem[]}
+ */
+export function decisionProblems(input = {}) {
+  const shot = isPlainObject(input.shot) ? input.shot : {};
+  const shotSpec = isPlainObject(input.shotSpec) ? input.shotSpec : {};
+  const brief = isPlainObject(input.brief) ? input.brief : null;
+  /** @type {import("./type-contracts.js").DomainProblem[]} */
+  const problems = [];
+  const confirmed = new Map((brief && Array.isArray(brief.confirmed_facts) ? brief.confirmed_facts : [])
+    .filter((item) => isPlainObject(item)).map((item) => [item.slot_id, item]));
+  const boundIds = Array.isArray(shot.fact_slot_ids) ? shot.fact_slot_ids : [];
+  const allowsText = (PLATFORM_PROFILES[input.platformId || "amazon_us"] || PLATFORM_PROFILES.amazon_us)
+    .on_image_text_roles.includes(shot.role_id);
+  const printing = effectivePrinting(shotSpec, shot);
+  const boundCount = brief ? boundIds.filter((slotId) => confirmed.has(slotId)).length : boundIds.length;
+  // 只有确实有可印内容（绑定了已确认事实）时才需要这个决定；没有可印内容时未决定不产生歧义。
+  if (printing.intent === "undecided" && allowsText && boundCount > 0) {
+    problems.push({
+      code: DOMAIN_ERROR_CODES.CONTRACT_INVALID, path: "$.shot_spec.print_intent",
+      message: "这张图还没有决定要不要印文字：请明确选择要印的文案（或选择不印新增文字），"
+        + "程序不会把绑定的 " + boundCount + " 条商品事实自动印上图。",
+    });
+  }
+  if (printing.intent === "selected") {
+    if (!allowsText) {
+      problems.push({
+        code: DOMAIN_ERROR_CODES.CONTRACT_INVALID, path: "$.shot_spec.print_intent",
+        message: "该角色的图片不允许新增文字，不能选择要印的文案；请改用不印新增文字，或换成允许图上文字的角色。",
+      });
+    }
+    // 版面与印字必须自洽：选了要印文案却用「仅商品」版面会在同一份提示词里给出互相矛盾的指令
+    // （「不叠加标题或参数文字」+「图中文案」），所以这里拦下并要求用户明确选一次版面。
+    const layoutValue = isPlainObject(shotSpec) && isNonEmptyString(shotSpec.layout)
+      ? shotSpec.layout : "";
+    if (!layoutValue) {
+      problems.push({
+        code: DOMAIN_ERROR_CODES.CONTRACT_INVALID, path: "$.shot_spec.layout",
+        message: "这张图要印文案，还得先决定版面：「商品在左，文字在右」或「商品在右，文字在左」；"
+          + "程序不替你默认文字放哪边。",
+      });
+    } else if (!TEXT_LAYOUTS.includes(layoutValue)) {
+      problems.push({
+        code: DOMAIN_ERROR_CODES.CONTRACT_INVALID, path: "$.shot_spec.layout",
+        message: "要印文案的图不能选「" + layoutLabelOf(layoutValue)
+          + "」版面：那样会同时要求「不出现文字」和「印出文字」。请改成商品在左或商品在右的版面。",
+      });
+    }
+    if (printing.texts.length === 0) {
+      problems.push({
+        code: DOMAIN_ERROR_CODES.CONTRACT_INVALID, path: "$.shot_spec.on_image_texts",
+        message: "选择了要印的文案，但还没有任何条目：请先选择并确认至少一条图中文字。",
+      });
+    }
+    const basisVersions = new Map((brief && Array.isArray(brief.basis) ? brief.basis : [])
+      .filter((item) => isPlainObject(item) && isNonEmptyString(item.slot_id))
+      .map((item) => [item.slot_id, item.version]));
+    printing.texts.forEach((item, index) => {
+      const path = "$.shot_spec.on_image_texts[" + index + "]";
+      const text = isNonEmptyString(item.text) ? item.text.trim() : "";
+      if (!isNonEmptyString(item.text_id)) {
+        problems.push({ code: DOMAIN_ERROR_CODES.CONTRACT_INVALID, path: path + ".text_id",
+          message: "图中文字缺少稳定的条目 id。" });
+      }
+      if (!text) {
+        problems.push({ code: DOMAIN_ERROR_CODES.CONTRACT_INVALID, path: path + ".text",
+          message: "图中文字不能为空。" });
+      }
+      if (item.status !== "confirmed") {
+        problems.push({ code: DOMAIN_ERROR_CODES.CONTRACT_INVALID, path: path + ".status",
+          message: "图中文字「" + text + "」还是待确认状态：确认后才能发送，程序不会替你确认或跳过。",
+        });
+      }
+      const sourceId = item.source_slot_id;
+      if (!brief || !isNonEmptyString(sourceId) || !confirmed.has(sourceId)) {
+        problems.push({ code: DOMAIN_ERROR_CODES.CONTRACT_INVALID, path: path + ".source_slot_id",
+          message: "图中文字「" + text + "」的来源事实没有确认值：" + String(sourceId || "（未指定）") + "。",
+        });
+      } else if (!basisVersions.has(sourceId)
+        || basisVersions.get(sourceId) !== item.source_slot_version) {
+        problems.push({ code: DOMAIN_ERROR_CODES.CONTRACT_INVALID, path: path + ".source_slot_version",
+          message: "图中文字「" + text + "」的来源已不是当初确认的版本：请重新核对这条文案，"
+            + "程序不会静默改用新值。",
+        });
+      } else if (!boundIds.includes(sourceId)) {
+        // 界面只提供「这张图绑定的事实」当候选：来源被解绑后条目会从界面上消失，
+        // 若还继续印，就等于印了用户在这张图上已经移除的依据。拦下并要求重新绑定或重选。
+        problems.push({ code: DOMAIN_ERROR_CODES.CONTRACT_INVALID, path: path + ".source_slot_id",
+          message: "图中文字「" + text + "」的来源事实已经不在这张图的绑定里："
+            + "请把该事实重新绑定到这张图，或重新选择这张图的文案。",
+        });
+      }
+    });
+  }
+  // 版面与印字必须自洽，两个方向都拦：
+  // - 要印文案却用「仅商品」版面（上面在 selected 分支里拦）——同一份提示词会同时要求
+  //   「不叠加标题或参数文字」与「印出文字」；
+  // - 没有要印的文字却用文字版面——版面正文会写「放置下方给定的文字」，而本次没有任何文案，
+  //   等于让模型为不存在的文字留位置。
+  const layoutValue = isPlainObject(shotSpec) && isNonEmptyString(shotSpec.layout)
+    ? shotSpec.layout : "";
+  const printableBoundCount = boundIds.filter((slotId) => {
+    const fact = confirmed.get(slotId);
+    return Boolean(fact) && factTexts(fact).length > 0;
+  }).length;
+  if (TEXT_LAYOUTS.includes(layoutValue) && printing.intent !== "selected"
+    && printing.intent !== "undecided") {
+    // facts_auto（非印字决定角色）下只有「用途允许文字且确实有可印的已确认事实值」才算真有文字。
+    const textWillPrint = printing.intent === "facts_auto" && allowsText && printableBoundCount > 0;
+    if (!textWillPrint) {
+      problems.push({
+        code: DOMAIN_ERROR_CODES.CONTRACT_INVALID, path: "$.shot_spec.layout",
+        message: "这张图不会有图上文字，不能选「" + layoutLabelOf(layoutValue) + "」版面："
+          + "正文会写「放置下方给定的文字」，而本次没有文案可放。"
+          + "请改成「" + layoutLabelOf("product_only") + "」版面，或先决定并选择要印的文案。",
+      });
+    }
+  }
+  // 展示决定：未决定且被本图消费时阻断，不默选清洁/倒空；不消费的用途不拦截。
+  const presentation = effectivePresentation(input.styleSpec, shotSpec, shot);
+  for (const field of PRESENTATION_FIELDS) {
+    if (!presentation.consumes[field.key]) continue;
+    if (presentation[field.key].state !== "undecided") continue;
+    problems.push({
+      code: DOMAIN_ERROR_CODES.CONTRACT_INVALID, path: "$.presentation." + field.key,
+      message: "这张图还要先决定「" + field.label + "」："
+        + field.options.filter((item) => item.value !== "undecided")
+          .map((item) => item.label).join("／")
+        + "；程序不替你默认"
+        + (field.key === "appearance_state" ? "清洁或保留使用痕迹" : "倒空或保留内容物") + "。",
+    });
+  }
+  return problems;
+}
+
+/** 能承载图中文字的版面（与「只放商品」互斥）；界面与编译门共用这一份。 */
+export const TEXT_LAYOUTS = Object.freeze(["product_left_text_right", "product_right_text_left"]);
+
+/**
+ * 角色 → 正向画面简报（画面概念/主体位置与大小/视角/留白/光线/清晰度）。
+ * 这是「专业表达由系统承担」的落点：普通用户只需要做用途与普通选择，不需要写摄影术语。
+ * 只写该用途的通用视觉方法，不声称任何商品事实，也不补造不可见结构。
+ * @type {Readonly<Record<string, readonly string[]>>}
+ */
+export const ROLE_VISUAL_BRIEF = Object.freeze({
+  main: Object.freeze([
+    "画面概念：干净的商品展示图，主体是商品本身，没有干扰元素。",
+    "主体：商品完整入画、居中放置，任何边角都不被裁断；四周留白均匀，商品主体占画面大部分。",
+    "视角：沿用商品依据里可见的视角平视拍摄，不虚构背面、内部或未见的部件。",
+    "光线：柔和均匀的布光，商品受光完整、颜色准确，投影干净不浑浊。",
+  ]),
+  infographic: Object.freeze([
+    "画面概念：用少量标注讲清卖点的信息图，商品是主体，文字服务卖点且不遮盖商品。",
+    "主体：商品完整入画、位置突出；文案区放在留白一侧，与商品之间留出干净空隙。",
+    "文字层级：一行标题加若干要点，字号按层级递减、行距清晰，与背景对比充分，不压在商品细节上。",
+    "排版：对齐一致、边距统一，文字水平排布，不使用旋转、变形或装饰性字体。",
+  ]),
+  scene: Object.freeze([
+    "画面概念：商品在真实使用场景里的样子，场景说明用途但不抢商品焦点。",
+    "主体：商品居中偏前、完整入画，与场景里的道具保持自然比例关系。",
+    "光线与环境：符合场景的自然光线，方向明确、明暗过渡自然；背景轻微虚化以突出商品。",
+    "一致性：场景与道具不出现其它品牌标识，也不与商品的材质、颜色冲突。",
+  ]),
+  detail: Object.freeze([
+    "画面概念：近距离特写，让材质、工艺或关键部件的细节看得清。",
+    "主体：特写区域占画面主要部分，边缘不切断关键结构。",
+    "光线：侧向或斜上方柔和光线，突出纹理与层次，避免过曝和死黑。",
+    "清晰度：焦点落在细节上，背景自然虚化。",
+  ]),
+  size: Object.freeze([
+    "画面概念：说明尺寸的图，商品完整入画，标注指向对应部位。",
+    "主体：商品居中、比例不变形，四周留出标注空间。",
+    "标注：尺寸线指向对应部位；数值与单位只允许逐字使用已确认尺寸；取不到可逐字引用的数值时就不标数字，不编造数字与单位。字号可读，颜色与背景对比充分。",
+    "光线：均匀柔和，避免投影盖住标注区域。",
+  ]),
+  comparison: Object.freeze([
+    "画面概念：商品与参照物同框对比，差异一眼可见。",
+    "主体：双方对齐摆放、比例真实、背景一致，不美化其中任意一方。",
+    "标注：对比项逐字使用已确认文案，指向明确、不遮挡商品。",
+    "光线：同一光源、同一方向，避免一侧过亮一侧过暗。",
+  ]),
+  ingredient: Object.freeze([
+    "画面概念：呈现成分或材质构成的图，商品与成分元素清爽排布。",
+    "主体：商品完整清晰，成分元素按类别分组摆放、不相互遮挡。",
+    "标注：名称逐字使用已确认文案，指向明确、字号可读。",
+    "光线：柔和顶光，材质质感清楚、颜色准确。",
+  ]),
+  packaging: Object.freeze([
+    "画面概念：呈现包装形态与随附物品的图，物品摆放整齐、形态完整。",
+    "主体：包装与随附物品都完整入画，彼此不遮挡，也不添加未确认的赠品。",
+    "背景与光线：干净背景、柔和光线，包装表面反光控制得当，标识清晰。",
+    "视角：正面或轻微俯视，让包装与内容物一眼可辨。",
+  ]),
+  custom: Object.freeze([
+    "画面概念：按这张图的用途清晰呈现商品，画面元素服务用途。",
+    "主体：商品完整入画、位置突出，四周留白干净。",
+    "光线：柔和自然，颜色与材质准确。",
+  ]),
+});
+
+/** 版面段落正文：正向描述商品与文字的分布，不靠一堆禁止来暗示排版。 */
+const LAYOUT_SENTENCES = Object.freeze({
+  product_only: "画面只呈现商品主体：主体完整入画、位置突出，四周保留干净留白，不叠加标题或参数文字。",
+  product_left_text_right: "商品完整放在画面左侧约三分之二区域，关键部位不被裁切也不被文字遮挡；右侧保留干净留白放置下方给定的文字。",
+  product_right_text_left: "商品完整放在画面右侧约三分之二区域，关键部位不被裁切也不被文字遮挡；左侧保留干净留白放置下方给定的文字。",
+});
 
 /** 语言策略的机读声明：指令中文；图中文字语言随平台。 */
 export const PROMPT_LANGUAGE_POLICY = Object.freeze({
@@ -35,7 +305,8 @@ export const PROMPT_LANGUAGE_POLICY = Object.freeze({
   verbatim_only: true,
   rules: Object.freeze([
     "指令段只写中文；非中文原文必须用「」引用。",
-    "图中文字逐字等于已确认事实值，禁止翻译、改写或补全。",
+    "图中文字逐字等于用户所选并确认的文案（来源可为已确认事实值），禁止翻译、改写或补全。",
+    "所选文案的来源事实版本前进后必须重新确认，程序不静默改用新值。",
     "事实值语言与平台语言不一致时给警告，交人工决定。",
   ]),
 });
@@ -454,7 +725,7 @@ export function checkPromptLanguage(sections) {
             "文中文字必须逐字放在「」里。");
           continue;
         }
-        if (entry.language !== "zh" && entry.language !== "en" && entry.language !== "mixed") {
+        if (!PROMPT_LITERAL_LANGUAGES.includes(entry.language)) {
           pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, path, "文字条目缺少语言标签。");
         }
         if (!isNonEmptyString(entry.source_ref)) {
@@ -517,23 +788,45 @@ export function checkPromptLeaks(sections, contextFacts, options = {}) {
   return problems;
 }
 
-/** 图中文字必须逐字等于某条已确认事实值，并带一致的语言标签。 @param {unknown} sections @param {unknown} brief @returns {import("./type-contracts.js").DomainProblem[]} */
-export function checkLiteralVerbatim(sections, brief) {
+/** 图中文字必须与它声明的来源一致：所选文案对 `shot_spec.on_image_texts`（确认状态+原文），
+ * 旧路径对已确认事实的逐字值；语言标签与内容一致。
+ * @param {unknown} sections
+ * @param {unknown} brief
+ * @param {unknown} [shotSpec]
+ * @returns {import("./type-contracts.js").DomainProblem[]}
+ */
+export function checkLiteralVerbatim(sections, brief, shotSpec) {
   const problems = [];
   const confirmed = new Map(
     ((brief && brief.confirmed_facts) || [])
       .filter((item) => isPlainObject(item))
       .map((item) => [item.slot_id, item]));
+  const selected = new Map(
+    (isPlainObject(shotSpec) && Array.isArray(shotSpec.on_image_texts) ? shotSpec.on_image_texts : [])
+      .filter((item) => isPlainObject(item) && isNonEmptyString(item.text_id))
+      .map((item) => [item.text_id, item]));
   for (const item of Array.isArray(sections) ? sections : []) {
     if (!isPlainObject(item) || item.kind !== "literal") continue;
     for (const entry of Array.isArray(item.items) ? item.items : []) {
-      const slotId = String(entry.source_ref || "").replace(/^product_brief\.fact:/, "");
-      const fact = confirmed.get(slotId);
+      const sourceRef = String(entry.source_ref || "");
       const inner = String(entry.text || "").replace(/^「/, "").replace(/」$/, "");
-      if (!fact || !factTexts(fact).includes(inner)) {
-        pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID,
-          "$.sections[" + item.key + "]", "图中文字不是已确认事实的逐字值：" + entry.text);
-        continue;
+      if (sourceRef.startsWith("shot_spec.on_image_text:")) {
+        const textId = sourceRef.slice("shot_spec.on_image_text:".length);
+        const chosen = selected.get(textId);
+        if (!chosen || chosen.status !== "confirmed" || String(chosen.text).trim() !== inner) {
+          pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID,
+            "$.sections[" + item.key + "]",
+            "图中文字与所选条目不一致或尚未确认：" + entry.text);
+          continue;
+        }
+      } else {
+        const slotId = sourceRef.replace(/^product_brief\.fact:/, "");
+        const fact = confirmed.get(slotId);
+        if (!fact || !factTexts(fact).includes(inner)) {
+          pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID,
+            "$.sections[" + item.key + "]", "图中文字不是已确认事实的逐字值：" + entry.text);
+          continue;
+        }
       }
       const language = languageOf(inner);
       if (language !== "neutral" && entry.language !== language) {
@@ -562,6 +855,13 @@ export function promptBasisOf(input, platform, provider) {
     .filter((item) => isPlainObject(item) && isNonEmptyString(item.slot_id))
     .map((item) => item.slot_id);
   const consumed = shot ? consumedSlotIdsOf(shot, confirmedIds) : [];
+  // 所选图中文案的来源事实也在这张图的消费范围内：来源版本前进时这张图必须过期。
+  const selectedSources = effectivePrinting(input.shotSpec, shot).texts
+    .filter((item) => isNonEmptyString(item.source_slot_id))
+    .map((item) => item.source_slot_id);
+  for (const slotId of selectedSources) {
+    if (!consumed.includes(slotId)) consumed.push(slotId);
+  }
   const consumedSet = new Set(consumed);
   // V2.R6.2：只冻结这张图实际消费的槽位版本，无关槽位变化不再使这张图的 Prompt 过期。
   const consumedBasis = (Array.isArray(brief.basis) ? brief.basis : [])
@@ -653,15 +953,50 @@ export function compilePrompt(input) {
   const boundFacts = boundIds.map((slotId) => confirmed.get(slotId)).filter(Boolean);
   const allowsText = platform.on_image_text_roles.includes(shot.role_id);
   const isMain = shot.role_id === "main";
-
+  const printing = effectivePrinting(shotSpec, shot);
+  problems.push(...decisionProblems({
+    shot: shot, shotSpec: shotSpec, styleSpec: styleSpec, brief: brief,
+    platformId: input.platformId,
+  }));
+  if (problems.length > 0) {
+    invalid("Prompt 编译未通过：" + problems[0].message
+      + (problems.length > 1 ? "（共 " + problems.length + " 项）" : ""),
+      { problems: problems.slice(0, 6) });
+  }
+  const presentation = effectivePresentation(styleSpec, shotSpec, shot);
   let fidelity = "以提供的商品参考图为唯一外观依据：保持商品的轮廓、比例、颜色、材质、标识与现有部件不变；不要添加、删除、复制、换色或重新设计商品特征。";
+  // 展示决定（#9）：把「干净展示／原样保持、倒空／保留内容物」写成正向的表面状态陈述；
+  // 选择干净展示时才给出去污例外，避免与「保持商品不变」互相矛盾。
+  const presentationRefs = [];
+  const presentationLines = [];
+  if (presentation.consumes.appearance_state) {
+    presentationRefs.push(presentation.appearance_state.source === "shot"
+      ? "shot_spec.presentation.appearance_state" : "style_spec.presentation.appearance_state");
+    presentationLines.push(presentation.appearance_state.state === "clean_display"
+      ? "商品按干净展示状态呈现：允许去掉临时使用痕迹（水渍、指纹、残留），但材质、结构、标识与颜色仍与商品依据一致。"
+      : "商品按商品依据里的原样状态呈现：可见的使用痕迹也照原样保留，不做清洁或去污。");
+  }
+  if (presentation.consumes.contents_state) {
+    presentationRefs.push(presentation.contents_state.source === "shot"
+      ? "shot_spec.presentation.contents_state" : "style_spec.presentation.contents_state");
+    if (presentation.contents_state.state === "empty") {
+      presentationLines.push("内容物为空：内腔与瓶口干净、无残留，也不添加资料里没有的内容物。");
+    } else if (presentation.contents_state.state === "as_shown") {
+      presentationLines.push("内容物保持原样：保留商品依据里可见的内容物，不倒空也不添加。");
+    } else {
+      presentationRefs.pop();
+    }
+  }
+  if (presentationLines.length > 0) {
+    fidelity += presentationLines.join("");
+  }
   if (allowsText && boundFacts.length > 0) {
     fidelity += "图中如需出现文字，只能逐字使用后面列出的已确认文案。";
   } else if (!allowsText) {
     fidelity += "不要在图片上叠加文字、参数、徽标或水印。";
   }
   sections.push(section("product_fidelity", "商品一致性", "instruction", fidelity,
-    ["intake.references", shotRef, shotRef + ".role", platformRef]));
+    ["intake.references", shotRef, shotRef + ".role", platformRef].concat(presentationRefs)));
 
   const styleLines = [];
   const styleRefs = [];
@@ -694,6 +1029,12 @@ export function compilePrompt(input) {
       "公共风格（整套一致）：" + styleLines.join("；") + "。", styleRefs));
   }
 
+  // 画面简报（#9）：专业表达由系统承担 —— 用用途（角色）给出正向画面概念、主体位置与大小、
+  // 视角、留白与光线，普通用户不需要写摄影术语；不带任何未确认的商品事实。
+  const roleBrief = ROLE_VISUAL_BRIEF[shot.role_id] || ROLE_VISUAL_BRIEF.custom;
+  sections.push(section("visual_brief", "画面简报", "instruction", roleBrief.join(""),
+    [shotRef + ".role", shotRef]));
+
   const taskLines = ["本图任务" + quoteLiteral(roleLabel)
     + "，目的" + quoteLiteral(shotSpec.purpose || shot.intent || role.purpose || roleLabel) + "。"];
   const taskRefs = [shotRef, "shot_spec.purpose"];
@@ -711,6 +1052,15 @@ export function compilePrompt(input) {
   }
   sections.push(section("shot_task", "本图任务", "instruction", taskLines.join(""), taskRefs));
 
+  // 版面：只有用户真的选过版面、或明确选择了要印的文案时才排段；
+  // 未决定版面的普通图正文不变（不靠程序补一个版面）。
+  const layoutExplicit = isPlainObject(input.shotSpec) && isNonEmptyString(input.shotSpec.layout);
+  if (layoutExplicit || printing.intent === "selected") {
+    sections.push(section("shot_layout", "版面", "instruction",
+      "本图版面：" + LAYOUT_SENTENCES[printing.layout],
+      ["shot_spec.layout", shotRef]));
+  }
+
   if (rework) {
     // 用户方向按「逐字引用」处理：括号内允许任意语言，语言策略仍然成立。
     const problemText = rework.problems.map(reworkProblemLabel).join("、");
@@ -725,10 +1075,30 @@ export function compilePrompt(input) {
   const textItems = [];
   const textRefs = [];
   // V2.6.17：只有「允许图中文字」的角色才会排出文字段落 —— 无文字角色（场景图/细节图等）
-  // 报「图中将逐字保留原文」是误报。同一槽位的多条非目标语言文案仍合并为一条风险
-  //（给出条数），消息里补上可操作建议（改英文后重新确认）。
+  // 报「图中将逐字保留原文」是误报。
+  // #9：图中文案只来自用户明确选择的条目；旧「把绑定事实全部印上图」只作为该角色未做
+  // 选择时的既有合同保留（facts_auto），信息图默认走「未决定」并由上面的门阻断。
   const languageRisks = new Map();
-  if (allowsText) {
+  if (printing.intent === "selected") {
+    for (const item of printing.texts) {
+      const text = String(item.text).trim();
+      const language = languageOf(text);
+      const sourceRef = "shot_spec.on_image_text:" + item.text_id;
+      textItems.push({ text: quoteLiteral(text), language: language, source_ref: sourceRef });
+      textRefs.push(sourceRef);
+      if (language !== platform.on_image_text_language) {
+        languageRisks.set(item.text_id, 1);
+      }
+    }
+    for (const textId of languageRisks.keys()) {
+      warnings.push({
+        code: "ON_IMAGE_TEXT_NOT_PLATFORM_LANGUAGE",
+        message: "所选图中文字「" + textId + "」不是 " + platform.on_image_text_language
+          + "，图中将逐字保留原文，请人工确认是否使用。",
+        source_refs: ["shot_spec.on_image_text:" + textId, platformRef],
+      });
+    }
+  } else if (printing.intent === "facts_auto" && allowsText) {
     for (const fact of boundFacts) {
       for (const value of factTexts(fact)) {
         const language = languageOf(value);
@@ -751,6 +1121,12 @@ export function compilePrompt(input) {
         source_refs: ["product_brief.fact:" + slotId, platformRef],
       });
     }
+  } else if (printing.intent === "none" && boundFacts.length > 0) {
+    warnings.push({
+      code: "ON_IMAGE_TEXT_NONE_FACTS_SKIPPED",
+      message: "这张图选择不印新增文字：绑定的 " + boundFacts.length + " 条商品事实不会出现在画面上。",
+      source_refs: ["shot_spec.print_intent"].concat(boundFacts.map((fact) => "product_brief.fact:" + fact.slot_id)),
+    });
   }
   if (allowsText && textItems.length > 0) {
     const header = "图中文字（只允许逐字使用以下已确认文案，不翻译、不改写、不新增；文字语言应为"
@@ -819,7 +1195,7 @@ export function compilePrompt(input) {
   };
   const selfCheck = [
     ...checkCompiledPrompt(compiled),
-    ...checkLiteralVerbatim(sections, brief),
+    ...checkLiteralVerbatim(sections, brief, shotSpec),
     ...checkPromptLeaks(sections, context.facts),
   ];
   if (text.length > provider.max_prompt_chars) {

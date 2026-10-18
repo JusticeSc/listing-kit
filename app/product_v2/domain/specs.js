@@ -30,6 +30,56 @@ export const MAX_SHOT_PURPOSE = 200;
 export const MAX_SHOT_ITEMS = 8;
 /** @type {number} */
 export const MAX_SHOT_ITEM_LENGTH = 60;
+/** 一张图最多明确几条图中文字；超出应让用户挑必要的，而不是自动截断。 @type {number} */
+export const MAX_ON_IMAGE_TEXTS = 4;
+/** 需要用户明确印字决定的角色：印字不是这些角色的固定目的，而是这张图的表达选择。 */
+export const PRINT_DECISION_ROLES = Object.freeze(["infographic"]);
+/** @type {readonly import("./type-contracts.js").ShotPrintIntent[]} */
+export const SHOT_PRINT_INTENTS = Object.freeze(["none", "selected", "undecided"]);
+/** @type {readonly import("./type-contracts.js").ShotLayout[]} */
+export const SHOT_LAYOUTS = Object.freeze(["product_only", "product_left_text_right", "product_right_text_left"]);
+/** @type {readonly import("./type-contracts.js").OnImageTextStatus[]} */
+export const ON_IMAGE_TEXT_STATUSES = Object.freeze(["proposed", "confirmed"]);
+/** @type {readonly import("./type-contracts.js").OnImageTextOrigin[]} */
+export const ON_IMAGE_TEXT_ORIGINS = Object.freeze(["user", "model", "reuse"]);
+
+/** 外观状态取值；「原样保持」是证据忠实的默认建议，清洁是用户的明确例外。 */
+export const APPEARANCE_STATES = Object.freeze(["as_shown", "clean_display", "undecided"]);
+/** 内容物状态取值；不适用用于不看内容物的用途（例如只量尺寸）。 */
+export const CONTENTS_STATES = Object.freeze(["as_shown", "empty", "not_applicable", "undecided"]);
+/**
+ * 展示决定的字段定义与建议值。建议只是界面预选，存下来的「未决定」一律阻断消费该决定的图，
+ * 程序不替用户默选清洁或倒空。
+ */
+export const PRESENTATION_FIELDS = Object.freeze([
+  Object.freeze({ key: "appearance_state", label: "外观状态", states: APPEARANCE_STATES,
+    suggestion: "as_shown",
+    options: Object.freeze([
+      Object.freeze({ value: "as_shown", label: "保持原样", hint: "连同原照里可见的使用痕迹一起保留，不做清洁。" }),
+      Object.freeze({ value: "clean_display", label: "干净展示", hint: "允许去除临时使用痕迹（水渍、残留），不改材质、结构、标识与颜色。" }),
+      Object.freeze({ value: "undecided", label: "还没决定", hint: "未决定时这张图不会发送。" }),
+    ]) }),
+  Object.freeze({ key: "contents_state", label: "内容物", states: CONTENTS_STATES,
+    suggestion: "empty",
+    options: Object.freeze([
+      Object.freeze({ value: "empty", label: "倒空", hint: "内容物为空、瓶口干净，不添加资料里没有的内容物。" }),
+      Object.freeze({ value: "as_shown", label: "保持原样", hint: "保留原照里可见的内容物。" }),
+      Object.freeze({ value: "not_applicable", label: "不适用", hint: "这个用途不看内容物（例如只量尺寸、只看材质）。" }),
+      Object.freeze({ value: "undecided", label: "还没决定", hint: "未决定时这张图不会发送。" }),
+    ]) }),
+]);
+/**
+ * 哪些角色消费哪项展示决定 —— 「问不问」的投影依据：不消费的用途不因未决定而拦截。
+ * 外观状态：所有呈现商品表面的用途都要表达真实表面状态。
+ * 内容物：只有会看到内部/随附物/使用中的用途才需要这项决定。
+ */
+export const PRESENTATION_CONSUMERS = Object.freeze({
+  appearance_state: Object.freeze([
+    "main", "infographic", "scene", "detail", "size", "comparison", "ingredient", "packaging",
+    "custom",
+  ]),
+  contents_state: Object.freeze(["scene", "ingredient", "packaging", "custom"]),
+});
 
 /** @type {readonly import("./type-contracts.js").StyleSpecField[]} */
 export const STYLE_SPEC_FIELDS = Object.freeze([
@@ -41,9 +91,11 @@ export const STYLE_SPEC_FIELDS = Object.freeze([
 ]);
 
 /** @type {readonly string[]} */
-const STYLE_KEYS = Object.freeze(["schema_version", ...STYLE_SPEC_FIELDS.map((item) => item.key)]);
+const STYLE_KEYS = Object.freeze(["schema_version", ...STYLE_SPEC_FIELDS.map((item) => item.key),
+  "presentation"]);
 /** @type {readonly string[]} */
-const SHOT_KEYS = Object.freeze(["schema_version", "purpose", "keep", "change_allowed", "notes"]);
+const SHOT_KEYS = Object.freeze(["schema_version", "purpose", "keep", "change_allowed", "notes",
+  "print_intent", "layout", "on_image_texts", "presentation"]);
 
 /** 失效目标的人读名字；投影文本与界面提示共用这一份。 @type {Readonly<Record<string, string>>} */
 export const ARTIFACT_LABELS = Object.freeze({
@@ -154,6 +206,7 @@ export function checkStyleSpec(spec) {
       }
     });
   }
+  checkPresentation(problems, spec, "$.presentation");
   return problems;
 }
 
@@ -192,7 +245,108 @@ export function styleSpecSummary(spec) {
     items.push({ key: field.key, label: field.label, kind: "list",
       value: list, text: field.label + "：" + list.join("、") });
   }
+  for (const field of PRESENTATION_FIELDS) {
+    const state = presentationStateOf(spec, field.key);
+    if (state === "undecided") continue;
+    items.push({ key: field.key, label: field.label, kind: "text",
+      value: presentationLabel(field, state),
+      text: field.label + "：" + presentationLabel(field, state) });
+  }
   return items;
+}
+
+/**
+ * 展示决定的取值：只认允许列表内的值，其余（含缺失）一律视为未决定。
+ * @param {Record<string, unknown> | null | undefined} spec
+ * @param {string} key
+ * @returns {string}
+ */
+export function presentationStateOf(spec, key) {
+  const field = PRESENTATION_FIELDS.find((item) => item.key === key);
+  if (!field) return "undecided";
+  const presentation = isPlainObject(spec) ? spec.presentation : null;
+  const state = isPlainObject(presentation) ? presentation[key] : undefined;
+  return field.states.includes(state) ? state : "undecided";
+}
+
+/**
+ * 这张图是否需要用户明确印字决定（决定权在角色，不在单个规格）。
+ * @param {unknown} shot
+ * @returns {boolean}
+ */
+export function printDecisionRoleOf(shot) {
+  const roleId = isPlainObject(shot) ? shot.role_id : null;
+  return PRINT_DECISION_ROLES.includes(roleId);
+}
+
+/**
+ * 有效印字决定（只由本文件定义，编译器与清单共用一份）：存过就照存，
+ * 没存过时「需要该决定的角色」是未决定，「其他角色」沿用既有自动枚举事实的旧合同。
+ * @param {unknown} shotSpec
+ * @param {unknown} shot
+ * @returns {"none" | "selected" | "undecided" | "facts_auto"}
+ */
+export function effectivePrintIntentOf(shotSpec, shot) {
+  const stored = isPlainObject(shotSpec) ? shotSpec.print_intent : null;
+  if (SHOT_PRINT_INTENTS.includes(stored)) return /** @type {never} */ (stored);
+  return printDecisionRoleOf(shot) ? "undecided" : "facts_auto";
+}
+
+/** 印字决定的人读名字（界面与清单共用）。 @param {string} intent @returns {string} */
+export function printIntentLabelOf(intent) {
+  if (intent === "none") return "不印新增文字";
+  if (intent === "selected") return "只印所选文案";
+  if (intent === "undecided") return "还没决定";
+  return "按角色既有合同";
+}
+
+/** 版面的人读名字（界面与清单共用）。 @param {unknown} layout @returns {string} */
+export function layoutLabelOf(layout) {
+  if (layout === "product_left_text_right") return "商品在左、文字在右";
+  if (layout === "product_right_text_left") return "商品在右、文字在左";
+  return "只放商品";
+}
+
+/**
+ * 展示决定取值的人读名字（界面与摘要共用一份词表）。
+ * @param {import("./type-contracts.js").StyleSpecField | { key: string, label: string, options?: readonly { value: string, label: string }[] }} field
+ * @param {string} state
+ * @returns {string}
+ */
+export function presentationLabel(field, state) {
+  const option = (field.options || []).find((item) => item.value === state);
+  return option ? option.label : state;
+}
+
+/**
+ * 展示决定的校验：形状、取值；未给出的键视为「未决定」，不填建议值也不拦截保存。
+ * @param {import("./type-contracts.js").DomainProblem[]} problems
+ * @param {Record<string, unknown>} spec
+ * @param {string} path
+ * @returns {void}
+ */
+function checkPresentation(problems, spec, path) {
+  const value = spec.presentation;
+  if (value === undefined || value === null) return;
+  if (!isPlainObject(value)) {
+    pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, path,
+      "展示决定必须是对象（外观状态/内容物）。");
+    return;
+  }
+  for (const key of Object.keys(value)) {
+    if (!PRESENTATION_FIELDS.some((field) => field.key === key)) {
+      pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, path + "." + key,
+        "字段 " + key + " 不在展示决定内。");
+    }
+  }
+  for (const field of PRESENTATION_FIELDS) {
+    const state = value[field.key];
+    if (state === undefined || state === null) continue;
+    if (!field.states.includes(state)) {
+      pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, path + "." + field.key,
+        field.label + "取值不在允许列表内。");
+    }
+  }
 }
 
 /**
@@ -221,6 +375,13 @@ export function styleSpecDiff(previous, next) {
     const before = normalizedStyleValue(field, previous);
     const after = normalizedStyleValue(field, next);
     if (JSON.stringify(before) !== JSON.stringify(after)) {
+      diffs.push({ field: field.key, label: field.label, before, after });
+    }
+  }
+  for (const field of PRESENTATION_FIELDS) {
+    const before = presentationStateOf(previous, field.key);
+    const after = presentationStateOf(next, field.key);
+    if (before !== after) {
       diffs.push({ field: field.key, label: field.label, before, after });
     }
   }
@@ -257,6 +418,9 @@ const DEFAULT_ALLOW_BY_ROLE = Object.freeze({
 
 /**
  * 从 Shot 派生一份默认单图规格（目的取 intent/label，keep/change_allowed 按角色默认）。
+ *
+ * 印字决定只在需要该决定的角色上投影：信息图默认「未决定」，让用户明确选择要印的文案，
+ * 而不是把这张图绑定的全部事实自动印上图；其他角色不出现该字段，编译时沿用其既有合同。
  * @param {unknown} shot
  * @returns {import("./type-contracts.js").ShotSpec}
  */
@@ -265,13 +429,22 @@ export function emptyShotSpecFromShot(shot) {
   const purpose = isPlainObject(shot) && isNonEmptyString(shot.intent)
     ? shot.intent.trim()
     : (isPlainObject(shot) && isNonEmptyString(shot.label) ? shot.label.trim() : "这张图要达成什么");
-  return {
+  /** @type {import("./type-contracts.js").ShotSpec} */
+  const spec = {
     schema_version: SHOT_SPEC_SCHEMA_VERSION,
     purpose,
     keep: [...(DEFAULT_KEEP_BY_ROLE[roleId] || DEFAULT_KEEP_BY_ROLE.custom)],
     change_allowed: [...(DEFAULT_ALLOW_BY_ROLE[roleId] || DEFAULT_ALLOW_BY_ROLE.custom)],
     notes: "",
   };
+  if (PRINT_DECISION_ROLES.includes(roleId)) {
+    spec.print_intent = "undecided";
+    // 版面同样是用户决定：未决定就不写这个键（与 presentation 的「缺失＝未决定」一致，
+    // 也避免把空串当成非法取值）。少了它只会让「要印文案」的图在编译门被拦下，
+    // 不会静默替用户选一个版面。
+    spec.on_image_texts = [];
+  }
+  return spec;
 }
 
 /**
@@ -350,6 +523,9 @@ export function checkShotSpec(spec) {
   }
   checkShotItems(problems, spec, "keep", "必须保持", { required: true });
   checkShotItems(problems, spec, "change_allowed", "允许变化", { required: true });
+  checkShotPrintIntent(problems, spec);
+  checkShotOnImageTexts(problems, spec);
+  checkPresentation(problems, spec, "$.presentation");
   if (spec.notes !== undefined && spec.notes !== null && typeof spec.notes !== "string") {
     pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.notes", "备注必须是文本。");
   } else if (typeof spec.notes === "string" && spec.notes.length > MAX_STYLE_TEXT) {
@@ -357,6 +533,80 @@ export function checkShotSpec(spec) {
       "备注最长 " + MAX_STYLE_TEXT + " 字。");
   }
   return problems;
+}
+
+/**
+ * 印字决定与布局的取值校验；两个字段都可缺失（缺失=按角色既有合同）。
+ * @param {import("./type-contracts.js").DomainProblem[]} problems
+ * @param {Record<string, unknown>} spec
+ * @returns {void}
+ */
+function checkShotPrintIntent(problems, spec) {
+  if (spec.print_intent !== undefined && spec.print_intent !== null
+    && !SHOT_PRINT_INTENTS.includes(spec.print_intent)) {
+    pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.print_intent",
+      "印字决定只能是 none／selected／undecided。");
+  }
+  if (spec.layout !== undefined && spec.layout !== null && !SHOT_LAYOUTS.includes(spec.layout)) {
+    pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.layout",
+      "布局取值不在允许列表内。");
+  }
+}
+
+/**
+ * 所选图中文字的校验：形状、条数、唯一 id、原文长度与来源版本。
+ * 只校验形状与可判定性；「来源是否是当前确认值」由编译期按当前事实核对。
+ * @param {import("./type-contracts.js").DomainProblem[]} problems
+ * @param {Record<string, unknown>} spec
+ * @returns {void}
+ */
+function checkShotOnImageTexts(problems, spec) {
+  const value = spec.on_image_texts;
+  if (value === undefined || value === null) return;
+  if (!Array.isArray(value)) {
+    pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.on_image_texts",
+      "所选图中文字必须是列表。");
+    return;
+  }
+  if (value.length > MAX_ON_IMAGE_TEXTS) {
+    pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.on_image_texts",
+      "一张图最多 " + MAX_ON_IMAGE_TEXTS + " 条图中文字。");
+  }
+  const seen = new Set();
+  value.forEach((item, index) => {
+    const path = "$.on_image_texts[" + index + "]";
+    if (!isPlainObject(item)) {
+      pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, path, "每条图中文字必须是对象。");
+      return;
+    }
+    if (!isNonEmptyString(item.text_id)) {
+      pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, path + ".text_id", "缺少稳定的条目 id。");
+    } else if (seen.has(item.text_id)) {
+      pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, path + ".text_id", "条目 id 不允许重复。");
+    } else {
+      seen.add(item.text_id);
+    }
+    if (!isNonEmptyString(item.text) || item.text.length > MAX_SHOT_ITEM_LENGTH) {
+      pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, path + ".text",
+        "原文不能为空且最多 " + MAX_SHOT_ITEM_LENGTH + " 字。");
+    }
+    if (!isNonEmptyString(item.source_slot_id)) {
+      pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, path + ".source_slot_id",
+        "必须指明这条文案来自哪个已确认事实。");
+    }
+    if (!Number.isInteger(item.source_slot_version) || item.source_slot_version < 1) {
+      pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, path + ".source_slot_version",
+        "来源版本必须是正整数。");
+    }
+    if (!ON_IMAGE_TEXT_STATUSES.includes(item.status)) {
+      pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, path + ".status",
+        "状态只能是 proposed／confirmed。");
+    }
+    if (!ON_IMAGE_TEXT_ORIGINS.includes(item.origin)) {
+      pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, path + ".origin",
+        "来源只能是 user／model／reuse。");
+    }
+  });
 }
 
 /**
@@ -390,7 +640,40 @@ export function shotSpecDiff(previous, next) {
       diffs.push({ field: key, label, before, after });
     }
   }
+  const prevIntent = previous && isNonEmptyString(previous.print_intent) ? previous.print_intent : "";
+  const nextIntent = next && isNonEmptyString(next.print_intent) ? next.print_intent : "";
+  if (prevIntent !== nextIntent) {
+    diffs.push({ field: "print_intent", label: "图中文字", before: prevIntent, after: nextIntent });
+  }
+  const prevLayout = previous && isNonEmptyString(previous.layout) ? previous.layout : "";
+  const nextLayout = next && isNonEmptyString(next.layout) ? next.layout : "";
+  if (prevLayout !== nextLayout) {
+    diffs.push({ field: "layout", label: "版面", before: prevLayout, after: nextLayout });
+  }
+  const prevTexts = onImageTextLines(previous);
+  const nextTexts = onImageTextLines(next);
+  if (JSON.stringify(prevTexts) !== JSON.stringify(nextTexts)) {
+    diffs.push({ field: "on_image_texts", label: "所选图中文字", before: prevTexts, after: nextTexts });
+  }
+  for (const field of PRESENTATION_FIELDS) {
+    const before = presentationLabel(field, presentationStateOf(previous, field.key));
+    const after = presentationLabel(field, presentationStateOf(next, field.key));
+    if (before !== after) {
+      diffs.push({ field: field.key, label: field.label, before, after });
+    }
+  }
   return diffs;
+}
+
+/**
+ * 所选图中文字的人读比较形态；未确认项带状态后缀，便于界面说清「还要确认什么」。
+ * @param {Record<string, unknown> | null | undefined} spec
+ * @returns {string[]}
+ */
+function onImageTextLines(spec) {
+  const list = spec && Array.isArray(spec.on_image_texts) ? spec.on_image_texts : [];
+  return list.filter((item) => isPlainObject(item) && isNonEmptyString(item.text))
+    .map((item) => item.text + (item.status === "confirmed" ? "" : "（待确认）"));
 }
 
 /* -------------------------------------------------------- 失效投影与版本 */
@@ -461,6 +744,45 @@ export function reviewChecklist(shot, options = {}) {
   const spec = savedSpec || emptyShotSpecFromShot(shot);
   const style = options.styleSpec || emptyStyleSpec();
   const styleItems = styleSpecSummary(style).map((item) => item.text);
+  // #9：程序表达的决定必须出现在人读清单里（用户复核的就是这些决定），而不仅存在于编译内部。
+  const printIntent = effectivePrintIntentOf(spec, shot);
+  const decision = [
+    { key: "presentation_appearance", label: "外观状态", items: [] },
+    { key: "presentation_contents", label: "内容物", items: [] },
+  ];
+  const sections = [
+    { key: "purpose", label: "这张图的目的", items: [spec.purpose] },
+    { key: "keep", label: "必须保持", items: [...spec.keep] },
+    { key: "change", label: "允许变化", items: [...spec.change_allowed] },
+    { key: "style", label: "公共风格", items: styleItems },
+  ];
+  if (PRINT_DECISION_ROLES.includes(shot.role_id)) {
+    sections.push({ key: "print", label: "图中文字",
+      items: [printIntent === "undecided" ? "还没决定（未决定时这张图不会发送）"
+        : printIntentLabelOf(printIntent)] });
+    if (printIntent === "selected") {
+      // 记录可能来自导入/手改而没有 on_image_texts：清单只报事实，不在这里抛错（编译门会给可操作消息）。
+      const texts = Array.isArray(spec.on_image_texts) ? spec.on_image_texts.filter((item) => isPlainObject(item)) : [];
+      sections.push({ key: "on_image_texts", label: "所选文案",
+        items: texts.length > 0
+          ? texts.map((item) => item.text + (item.status === "confirmed" ? "" : "（待确认）"))
+          : ["（还没有所选文案：去规格区勾选已确认文案）"] });
+    }
+    if (isNonEmptyString(spec.layout)) {
+      sections.push({ key: "layout", label: "版面", items: [layoutLabelOf(spec.layout)] });
+    }
+  }
+  for (const field of PRESENTATION_FIELDS) {
+    if (!PRESENTATION_CONSUMERS[field.key].includes(shot.role_id)) continue;
+    const state = presentationStateOf(spec, field.key);
+    const target = decision.find((item) => field.key === "appearance_state"
+      ? item.key === "presentation_appearance" : item.key === "presentation_contents");
+    target.items.push(state === "undecided"
+      ? "还没决定（未决定时这张图不会发送）" : presentationLabel(field, state));
+  }
+  for (const item of decision) {
+    if (item.items.length > 0) sections.push(item);
+  }
   return {
     shot_id: typeof shot.shot_id === "string" ? shot.shot_id : null,
     label: isNonEmptyString(shot.label) ? shot.label : "",
@@ -473,12 +795,7 @@ export function reviewChecklist(shot, options = {}) {
     may_change: [...spec.change_allowed],
     style_configured: styleItems.length > 0,
     style_lines: styleItems,
-    sections: [
-      { key: "purpose", label: "这张图的目的", items: [spec.purpose] },
-      { key: "keep", label: "必须保持", items: [...spec.keep] },
-      { key: "change", label: "允许变化", items: [...spec.change_allowed] },
-      { key: "style", label: "公共风格", items: styleItems },
-    ],
+    sections: sections,
   };
 }
 

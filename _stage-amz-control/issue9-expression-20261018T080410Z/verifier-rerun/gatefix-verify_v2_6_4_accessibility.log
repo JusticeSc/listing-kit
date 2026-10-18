@@ -1,0 +1,25 @@
+  [PASS] V2.6.4-00 ESM 语法门（workspace / app / stage-shell）
+  [PASS] V2.6.4-02 axe-core vendor 文件完整可执行（字节/sha/许可证）
+  [PASS] V2.6.4-03 空白首页 axe（WCAG 2.0/2.1 A/AA）0 violations
+  [PASS] V2.6.4-04 空白首页键盘路径：Tab 可达主操作且每步焦点可见
+  [PASS] V2.6.4-05 纯键盘创建并打开：Tab + 输入 + Enter 进入工作台
+  [PASS] V2.6.4-06 生成阶段四态之空/忙：未生成可见、整套生成中可观察
+  [PASS] V2.6.4-07 生成阶段技术详情：attempt 行默认收起且主行不含 sha256/action/task
+  [PASS] V2.6.4-17 审核卡片候选预览受限（宽 ≤460px、高 ≤480px）
+  [PASS] V2.6.4-18 390px 审核卡片：单列回退、预览受限、操作可见、无横向溢出
+  [PASS] V2.6.4-08 审核阶段：axe 0 violations、可见按钮都有可访问名、比较清单技术详情默认收起
+  [PASS] V2.6.4-09 交付阶段：axe 0 violations、交付结果技术详情默认收起
+  [PASS] V2.6.4-10 采用后比较清单技术详情默认收起且主行不含 sha256
+  [PASS] V2.6.4-16 技术详情摘要全阶段横排可读（不竖排、不挤压）
+  [PASS] V2.6.4-11 390px 与 200% 等效视口：无横向溢出且当前阶段可见
+  [PASS] V2.6.4-12 主链零意外 console / page / HTTP 错误
+  [PASS] V2.6.4-13 演练三态：成功/失败/Unknown 可见且各有下一步动作，不自动重提
+  [PASS] V2.6.4-14 演练链：除剧本内的 504 明确失败外无意外 console / page / HTTP 错误
+  [PASS] V2.6.4-15 正式入口自检全过
+- evals/product-v2/evidence/v2.6.4-a11y-20261018-182547-review-390.png
+- evals/product-v2/evidence/v2.6.4-a11y-20261018-182547-review.png
+- evals/product-v2/evidence/v2.6.4-a11y-20261018-182547-deliver.png
+- evals/product-v2/evidence/v2.6.4-a11y-20261018-182547-narrow-390.png
+- evals/product-v2/evidence/v2.6.4-a11y-20261018-182547-zoom-200.png
+- evals/product-v2/evidence/v2.6.4-a11y-20261018-182547-drill.png
+证据：evals/product-v2/v2.6.4-a11y-20261018-182547.txt

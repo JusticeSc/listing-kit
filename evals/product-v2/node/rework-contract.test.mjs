@@ -125,6 +125,8 @@ function planFixture(shots) {
   return { schema_version: 1, shots: shots || [mainShot()] };
 }
 
+// 夹具的显式展示决定：外观按原样、内容不适用（主图/信息图不消费 contents_state），
+// 让基座先过新的展示决定门，断言只测返工与确认隔离规则。
 function styleFixture(overrides = {}) {
   return {
     ...emptyStyleSpec(),
@@ -133,6 +135,7 @@ function styleFixture(overrides = {}) {
     color_tone: "自然",
     composition: "商品居中，留白充足",
     avoid: ["文字水印"],
+    presentation: { appearance_state: "as_shown", contents_state: "not_applicable" },
     ...overrides,
   };
 }
@@ -145,6 +148,29 @@ function basisFixture() {
     shot_spec_version: null,
     platform: { version: PLATFORM_PROFILES[PLATFORM_ID].version },
     provider: IMAGE_PROMPT_PROFILE,
+  };
+}
+// 基座编译默认不替用户做印字决定：信息图用 none 显式关闭程序自动印字，
+// 把基座固定下来，确认隔离的断言才只测 scope 投影，不被编译门干扰。
+function noPrintSpec(shot, overrides = {}) {
+  return { ...emptyShotSpecFromShot(shot), print_intent: "none", ...overrides };
+}
+// 需要 selected 基座时用：选一条已确认事实文案，来源版本与该套件 basis 一致，
+// 只证明基座能显式带文案；本套件 RW-14/RW-15 不需要，走 noPrint。
+function chosenPrintSpec(shot, overrides = {}) {
+  return {
+    ...emptyShotSpecFromShot(shot),
+    print_intent: "selected",
+    layout: "product_left_text_right",
+    on_image_texts: [{
+      text_id: "t1",
+      text: "12小时保温",
+      source_slot_id: "signature_features",
+      source_slot_version: 1,
+      status: "confirmed",
+      origin: "user",
+    }],
+    ...overrides,
   };
 }
 
@@ -191,7 +217,7 @@ async function compiledEntry(shot, options = {}) {
     brief: briefFixture(),
     shot: shot,
     styleSpec: options.styleSpec || styleFixture(),
-    shotSpec: emptyShotSpecFromShot(shot),
+    shotSpec: options.shotSpec || emptyShotSpecFromShot(shot),
     context: context,
     providerProfile: IMAGE_PROMPT_PROFILE,
     versions: {
@@ -464,11 +490,12 @@ test("RW-13", "对照与拦截：无返工的编译没有返工段；非法指�
 
 /* ---------------------------------------------------------------- 确认隔离 */
 
+// RW-14 用 noPrint 基座：确认隔离只测 scope 投影，不测印字选择。
 test("RW-14", "单图确认隔离：scope=[X] 只投影 X；X 变让确认过期，Y 变不影响", async () => {
   const x = mainShot();
   const y = infographicShot();
   const xEntry = await compiledEntry(x);
-  const yEntry = await compiledEntry(y);
+  const yEntry = await compiledEntry(y, { shotSpec: noPrintSpec(y) });
   const sheetX = sheetFixture(x, xEntry.record, {
     secondShot: y, secondRecord: yEntry.record, shotIds: [x.shot_id],
   });
@@ -485,7 +512,7 @@ test("RW-14", "单图确认隔离：scope=[X] 只投影 X；X 变让确认过期
   });
   const staleX = confirmationStaleness(recordX, confirmationSnapshot(sheetXChanged));
   expect(staleX.stale === true, "目标图 Prompt 变化必须让单图确认过期。");
-  const changedY = await compiledEntry(y, { styleSpec: styleFixture({ lighting: "硬顶光，明显投影" }) });
+  const changedY = await compiledEntry(y, { styleSpec: styleFixture({ lighting: "硬顶光，明显投影" }), shotSpec: noPrintSpec(y) });
   const sheetXWithChangedY = sheetFixture(x, xEntry.record, {
     secondShot: y, secondRecord: changedY.record, shotIds: [x.shot_id],
   });
@@ -498,7 +525,7 @@ test("RW-15", "整套确认不受影响：无 scope 字段，快照与单图确�
   const x = mainShot();
   const y = infographicShot();
   const xEntry = await compiledEntry(x);
-  const yEntry = await compiledEntry(y);
+  const yEntry = await compiledEntry(y, { shotSpec: noPrintSpec(y) });
   const sheetAll = sheetFixture(x, xEntry.record, { secondShot: y, secondRecord: yEntry.record });
   expect(sheetAll.scope_shot_ids === undefined, "整套确认不能带 scope 字段。");
   expect(sheetAll.shots.length === 2, "整套确认必须投影全部图。");

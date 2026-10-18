@@ -3,7 +3,8 @@
 
 归属：tools/verify_v2_*.py 之间不再互相 load_module 当共享库；
 真正共享的正式 server 装置、数据夹具（PNG/端口/读套件/静态 harness 服务/正式入口）
-与少数共同 UI 业务操作（compile_all、confirm_and_submit 新增消费证明）集中在此。
+与少数共同 UI 业务操作（compile_all、confirm_and_submit 新增消费证明、Issue #9
+普通决定 open_specs/decide_presentation/decide_shot_decision/decide_for_compile）集中在此。
 数据探针（SEED_SLOTS / PROBE / HASH_ASSET / chain_of / candidate_of / row_of /
 reviews_for / candidate_json / review_json）也只在此一份定义：验证器直接用
 shared.<name>，不互相 import、不复制、不包一层同名壳。
@@ -178,6 +179,113 @@ MIME = {
     ".css": "text/css; charset=utf-8",
     ".json": "application/json; charset=utf-8",
 }
+
+
+def open_specs(page) -> None:
+    """到计划阶段、展开规格区（已展开则幂等；用户真实路径）。"""
+    import v2_stage_nav as stage_nav
+
+    stage_nav.goto(page, "plan")
+    stage_nav.reveal(page, "#specs-editor")
+
+
+def decide_presentation(page, appearance: str = "clean_display",
+                        contents: str = "empty") -> dict:
+    """做共用展示决定：控件不存在就跳过，返回实际点了什么。
+
+    radio change 会整区重绘：每次点击后重新查询元素，不复用旧 locator。
+    返回 {"appearance": <实际值|None>, "contents": <实际值|None>, "saved": bool}。
+    """
+    open_specs(page)
+    decided: dict = {"appearance": None, "contents": None, "saved": False}
+    page.wait_for_selector("#specs-editor:not([hidden])", timeout=15_000)
+    appearance_id = f"#style-appearance_state-{appearance}"
+    if page.locator(appearance_id).count() > 0:
+        page.click(appearance_id)
+        decided["appearance"] = appearance
+    contents_id = f"#style-contents_state-{contents}"
+    if page.locator(contents_id).count() > 0:
+        page.click(contents_id)
+        decided["contents"] = contents
+    if decided["appearance"] is None and decided["contents"] is None:
+        return decided
+    version_text = page.locator("#style-version").inner_text()
+    page.click("#style-save")
+    page.wait_for_function(
+        """(before) => {
+          const node = document.getElementById("style-version");
+          const text = node ? node.textContent : "";
+          if (text !== before) return true;
+          const status = document.getElementById("style-status");
+          return Boolean(status && !status.hidden && status.textContent.includes("已保存"));
+        }""", arg=version_text, timeout=15_000)
+    decided["saved"] = True
+    return decided
+
+
+def decide_shot_decision(page, shot_id: str, *, print_intent: str = "none",
+                         layout: str | None = None, texts: list[str] | None = None) -> bool:
+    """做单图印字决定：该图没有决定控件返回 False（调用方据此跳过）。
+
+    print_intent="selected" 时先勾选指定候选 checkbox（texts 为空则勾前 1 个），
+    再按 layout（如给）选版面，最后点该卡保存。radio change 整区重绘，每步重查。
+    """
+    open_specs(page)
+    card = f'#shot-spec-list .shot-spec[data-shot-id="{shot_id}"]'
+    page.wait_for_selector(card, timeout=15_000)
+    group = page.locator(f"#spec-print-{shot_id}")
+    if group.count() == 0:
+        return False
+    if print_intent not in ("none", "selected"):
+        raise AssertionError(f"未知印字决定：{print_intent}")
+    radio = f"#spec-print-{print_intent}-{shot_id}"
+    if page.locator(radio).count() == 0:
+        raise AssertionError(f"印字决定控件缺失：{radio}")
+    page.click(radio)
+    if print_intent == "selected":
+        wanted = list(texts or [])
+        boxes = page.locator(f"#spec-texts-{shot_id} input[type='checkbox']")
+        if boxes.count() == 0:
+            raise AssertionError(f"该图没有可印候选文案：{shot_id}")
+        if wanted:
+            for slot_id in wanted:
+                box = f"#spec-text-{shot_id}-{slot_id}"
+                if page.locator(box).count() == 0:
+                    raise AssertionError(f"候选文案不存在：{box}")
+                if not page.locator(box).is_checked():
+                    page.click(box)
+        elif not any(boxes.nth(index).is_checked() for index in range(boxes.count())):
+            boxes.first.click()
+        if layout is not None:
+            layout_radio = f"#spec-layout-{shot_id}-{layout}"
+            if page.locator(layout_radio).count() == 0:
+                raise AssertionError(f"版面控件缺失：{layout_radio}")
+            page.click(layout_radio)
+    page.click(card + ' button:has-text("保存")')
+    page.wait_for_function(
+        """(id) => {
+          const card = document.querySelector(
+            '#shot-spec-list .shot-spec[data-shot-id="' + id + '"]');
+          const meta = card ? card.querySelector(".shot-spec-head .meta") : null;
+          return Boolean(meta && meta.textContent.includes("规格 v"));
+        }""", arg=shot_id, timeout=15_000)
+    return True
+
+
+def decide_for_compile(page, shot_ids: list, *, print_intent: str = "none") -> dict:
+    """编译前置普通决定：先共用展示决定，再对带印字控件的图逐个做印字决定。
+
+    返回 {"presentation": decide_presentation(...), "shots": {shot_id: bool}}。
+    """
+    presentation = decide_presentation(page)
+    shots: dict = {}
+    for shot_id in shot_ids:
+        open_specs(page)
+        if page.locator(f"#spec-print-{shot_id}").count() == 0:
+            shots[shot_id] = False
+            continue
+        shots[shot_id] = decide_shot_decision(page, shot_id, print_intent=print_intent)
+    return {"presentation": presentation, "shots": shots}
 
 
 def compile_all(page, shot_ids: list, wait_ms: int = 120, *, force: bool = False) -> None:
@@ -697,6 +805,8 @@ def walk_to_adoption(page, name: str, reference: Path, *, run_vlm: bool = False)
     page.wait_for_selector("#shot-list .shot-row", timeout=20_000)
     page.click("#stage-next-plan")
     shots = page.evaluate(SHOT_IDS)
+    # Issue #9：编译前先做普通决定（用户真实路径），否则编译被阻断。
+    decide_for_compile(page, shots)
     compile_all(page, shots)
     result = confirm_and_submit(page, expect, shot_ids=shots)
     assert result["ok"], f"新授权与逐图消费不一致：{result}"

@@ -141,6 +141,8 @@ def main() -> int:
                 page.click("#stage-next-plan")
                 expect(page.locator('[data-stage-panel="generate"]')).to_be_visible()
                 shots_ids = page.evaluate(shared.SHOT_IDS)
+                # Issue #9：编译前先做普通决定（用户真实路径）。
+                shared.decide_for_compile(page, shots_ids)
                 shared.compile_all(page, shots_ids)
                 snap(page, "generate-confirm")
                 page.click("#confirm-action")

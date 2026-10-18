@@ -103,6 +103,13 @@ export const DETERMINISTIC_RULES = Object.freeze([
     blocker_codes: [CONFIRM_BLOCKER_CODES.DEPENDENCY_UNSATISFIED],
   }),
   rule({
+    rule_id: "generation.decisions_made", version: 1, layer: "generation", title: "普通决定已完成",
+    severity: "BLOCK", consumer: "review-panel@V2.5.3",
+    measurement: "确认单 blockers 中 DECISION_REQUIRED（domain/prompt.js decisionProblems 为唯一测量）",
+    unknown_policy: "hint",
+    blocker_codes: [CONFIRM_BLOCKER_CODES.DECISION_REQUIRED],
+  }),
+  rule({
     rule_id: "generation.platform_provider_match", version: 1, layer: "generation",
     title: "平台/Provider 档匹配", severity: "BLOCK", consumer: "review-panel@V2.5.3",
     measurement: "确认单 blockers 中 PLATFORM_MISMATCH / PROVIDER_MISMATCH（prompt 档比较为唯一测量）",

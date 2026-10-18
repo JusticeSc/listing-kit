@@ -269,6 +269,30 @@ export type StyleSpec = {
   color_tone: string;
   composition: string;
   avoid: string[];
+  /** 共用展示决定；缺失=未决定，消费该决定的图会被阻断并让用户做一次普通选择。 */
+  presentation?: Presentation;
+};
+export type ShotPrintIntent = "none" | "selected" | "undecided";
+export type ShotLayout = "product_only" | "product_left_text_right" | "product_right_text_left";
+export type OnImageTextStatus = "proposed" | "confirmed";
+export type OnImageTextOrigin = "user" | "model" | "reuse";
+/** 外观状态：原样保持（含已见使用痕迹）／干净展示（允许去除临时残留）／未决定。 */
+export type AppearanceState = "as_shown" | "clean_display" | "undecided";
+/** 内容物状态：原样保持／已倒空／不适用（不看内容物的用途）／未决定。 */
+export type ContentsState = "as_shown" | "empty" | "not_applicable" | "undecided";
+/** 展示决定：StyleSpec 提供共用默认，ShotSpec 只存明确单图覆盖；缺失=未决定。 */
+export type Presentation = {
+  appearance_state?: AppearanceState;
+  contents_state?: ContentsState;
+};
+/** 明确选择的图中文字：原文 + 精确来源事实版本与确认状态；编译器只消费 confirmed 且来源当前者。 */
+export type OnImageText = {
+  text_id: string;
+  text: string;
+  source_slot_id: string;
+  source_slot_version: number;
+  status: OnImageTextStatus;
+  origin: OnImageTextOrigin;
 };
 export type ShotSpec = {
   schema_version: number;
@@ -276,6 +300,12 @@ export type ShotSpec = {
   keep: string[];
   change_allowed: string[];
   notes: string;
+  /** 印字决定；只在需要该决定的角色上存在，缺失表示按该角色既有合同。 */
+  print_intent?: ShotPrintIntent;
+  layout?: ShotLayout;
+  on_image_texts?: OnImageText[];
+  /** 单图展示决定覆盖；未覆盖则继承 StyleSpec.presentation。 */
+  presentation?: Presentation;
 };
 export type StyleSpecField = { key: string; label: string; kind: "text" | "list" };
 export type SpecDiffItem = {

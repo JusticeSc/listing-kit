@@ -1,0 +1,1 @@
+{"schema_version":1,"kind":"fact_slot","document_id":"size_dimensions","version":1,"payload":{"schema_version":1,"slot_id":"size_dimensions","label":"尺寸规格（对象/轴向/数值/单位）","authority":"core_fixed","value_type":"dimension_list","value":null,"source":"system_default","status":"missing","confidence":null,"evidence":[],"depends_on":[],"critical":false}}

@@ -1,0 +1,1 @@
+{"schema_version":1,"kind":"fact_slot","document_id":"product_category","version":2,"payload":{"schema_version":1,"slot_id":"product_category","label":"商品品类","authority":"core_fixed","value_type":"text","value":"玻璃储物罐","source":"user_input","status":"confirmed","confidence":null,"evidence":[],"depends_on":[],"critical":true}}

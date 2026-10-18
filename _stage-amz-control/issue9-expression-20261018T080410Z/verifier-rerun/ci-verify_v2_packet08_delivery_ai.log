@@ -1,0 +1,18 @@
+[PASS] P08D-01a 未发起整套 AI 时零外发（suite calls==0）
+[PASS] P08D-01b 未发起整套 AI 时面板明说未做 AI 复核（不伪装模型判断）
+[PASS] P08D-01c 未做整套 AI 时交付门仍通过（not_run 不阻断）
+[PASS] P08D-01d 未做整套 AI 仍可导出，且清单整套/逐图 ai_review 全为 not_reviewed
+[PASS] P08D-02a 显式整套 AI 后 exactly 1 次套路外发（不自动重提）
+[PASS] P08D-02b 显式整套 AI 后报告 vlm.outcome=checked（真实成功）
+[PASS] P08D-02c 显式整套 AI 后清单整套 ai_review=reviewed（与报告一致）
+[PASS] P08D-03a 真实失败才记 unknown（outcome=unknown，不伪造 PASS）
+[PASS] P08D-03b unknown 未确认时门禁阻断（unknown_acknowledged BLOCK）
+[PASS] P08D-03c 逐条确认已知悉后门禁通过（append-only，不改写报告）
+[PASS] P08D-03d unknown 确认后可导出，且清单整套 ai_review=unknown（如实保留）
+[PASS] P08D-04 真硬门缺口（字节缺失）仍被拦：按钮禁用、无新 export_record
+[PASS] P08D-06 零意外 console / page / HTTP 错误
+[PASS] P08D-05a 工作台不组 manifest（workspace.js 无组装调用）
+[PASS] P08D-05b 交付视图不组 manifest/ZIP（只转发命令）
+[PASS] P08D-05c manifest/ZIP 唯一组装点在 review-delivery owner 内
+evidence: evals/product-v2/refactor/packet08-delivery-manifest-20261018T104754Z.json
+RESULT PASS 16/16

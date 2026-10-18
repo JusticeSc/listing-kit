@@ -333,6 +333,8 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 initial = probe()
                 shot_ids = initial["shot_ids"]
                 first_shot, second_shot = shot_ids[0], shot_ids[1]
+                # Issue #9：编译前先做普通决定（用户真实路径）；choices 进 ui 证据。
+                ui["decisions"] = shared.decide_for_compile(page, shot_ids)
                 shared.compile_all(page, shot_ids)
                 shared.confirm_and_submit(page, expect, probe, shot_ids=shot_ids)
                 click_row_button(first_shot, "再生成一张")

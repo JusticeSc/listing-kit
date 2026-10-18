@@ -967,6 +967,8 @@ def main(*, server_logs: tuple[io.StringIO, io.StringIO]) -> int:
                 page.click("#stage-next-plan")
                 shots = page.evaluate(shared.SHOT_IDS)
                 assert shots, "走查没有产出 shot"
+                # Issue #9：编译前先做普通决定（用户真实路径）。
+                shared.decide_for_compile(page, shots)
                 shared.compile_all(page, shots)
                 submitted = shared.confirm_and_submit(page, expect, shot_ids=shots)
                 assert submitted["ok"], f"提交与逐图消费不一致：{submitted}"
@@ -1104,6 +1106,8 @@ def main(*, server_logs: tuple[io.StringIO, io.StringIO]) -> int:
                 page.click("#stage-next-plan")
                 p5_shots = page.evaluate(shared.SHOT_IDS)
                 assert p5_shots, "P5 走查没有产出 shot"
+                # Issue #9：编译前先做普通决定（用户真实路径）。
+                shared.decide_for_compile(page, p5_shots)
                 shared.compile_all(page, p5_shots)
                 p5_submitted = shared.confirm_and_submit(
                     page, expect, shot_ids=p5_shots, submitted_shots=[p5_shots[0]], settle=False)

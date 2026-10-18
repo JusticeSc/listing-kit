@@ -122,6 +122,8 @@ function planFixture(shots) {
   return { schema_version: 1, shots: shots || [mainShot()] };
 }
 
+// 夹具的显式展示决定：外观按原样、内容不适用（主图/信息图不消费 contents_state），
+// 让基座先过新的展示决定门，断言只测人工编辑规则。
 function styleFixture(overrides = {}) {
   return {
     ...emptyStyleSpec(),
@@ -130,6 +132,7 @@ function styleFixture(overrides = {}) {
     color_tone: "自然",
     composition: "商品居中，留白充足",
     avoid: ["文字水印"],
+    presentation: { appearance_state: "as_shown", contents_state: "not_applicable" },
     ...overrides,
   };
 }
@@ -144,6 +147,29 @@ function basisFixture(options = {}) {
     provider: IMAGE_PROMPT_PROFILE,
   };
 }
+// 基座编译默认不替用户做印字决定：信息图用 none 显式关闭程序自动印字，
+// 把基座固定下来，人工编辑引用规则的断言才只测编辑入口，不被编译门干扰。
+function noPrintSpec(shot, overrides = {}) {
+  return { ...emptyShotSpecFromShot(shot), print_intent: "none", ...overrides };
+}
+// 需要 selected 基座时用：选一条已确认事实文案，来源版本与该套件 basis 一致，
+// 只证明基座能显式带文案；本套件 M07/M08 不需要，走 noPrint。
+function chosenPrintSpec(shot, overrides = {}) {
+  return {
+    ...emptyShotSpecFromShot(shot),
+    print_intent: "selected",
+    layout: "product_left_text_right",
+    on_image_texts: [{
+      text_id: "t1",
+      text: "12小时保温",
+      source_slot_id: "signature_features",
+      source_slot_version: 1,
+      status: "confirmed",
+      origin: "user",
+    }],
+    ...overrides,
+  };
+}
 
 /** 编译 + 快照 + hash + 版本记录：与 workspace.js 的真实链路同一套调用。 */
 async function compiledEntry(shot, options = {}) {
@@ -152,7 +178,7 @@ async function compiledEntry(shot, options = {}) {
     brief: briefFixture(),
     shot: shot,
     styleSpec: options.styleSpec || styleFixture(),
-    shotSpec: emptyShotSpecFromShot(shot),
+    shotSpec: options.shotSpec || emptyShotSpecFromShot(shot),
     context: context,
     providerProfile: IMAGE_PROMPT_PROFILE,
     versions: {
@@ -293,7 +319,8 @@ test("M07", "新增引用必须来自已确认事实：未授权引用阻断，�
   await expectCode(async () => {
     await edited(main, main.record.compiled.text + "\n补充：画面里写「限时特惠」。", { context: context });
   }, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "未授权新增引用必须阻断");
-  const info = await compiledEntry(infographicShot(), { context: context });
+  const infoShot = infographicShot();
+  const info = await compiledEntry(infoShot, { context: context, shotSpec: noPrintSpec(infoShot) });
   const allowed = await edited(info, info.record.compiled.text + "\n补充：图中文字加一条「304不锈钢内胆」，逐字不改。",
     { context: context, reason: "补一条已确认卖点" });
   expect(checkPromptRecord(allowed).length === 0, "文字角色的已确认引用必须允许。");
@@ -309,7 +336,8 @@ test("M08", "平台文字规则仍然阻断：主图不能新增文案，文字�
   }, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "主图新增文案必须阻断");
   expect(mainError.details && mainError.details.reason_code === MANUAL_EDIT_REASON_CODES.PLATFORM_TEXT_RULE,
     "阻断原因码必须是平台文字规则，实际 " + JSON.stringify(mainError.details));
-  const info = await compiledEntry(infographicShot(), { context: context });
+  const infoShot = infographicShot();
+  const info = await compiledEntry(infoShot, { context: context, shotSpec: noPrintSpec(infoShot) });
   const infoRecord = await edited(info, info.record.compiled.text + "\n补充：图中文字写「12小时保温」。",
     { context: context, reason: "补文案" });
   expect(checkPromptRecord(infoRecord).length === 0, "文字角色的已确认文案必须允许。");

@@ -165,15 +165,82 @@ export type GenerationView = {
   resetViewState(): void;
 };
 
-/** 确认单缺项的返回停靠：region → 阶段外壳 id（字面量映射；region 的唯一权威是 prompts 的 fix）。 */
+/** 确认单缺项的返回停靠：region → 阶段外壳 id（字面量映射；region 的唯一权威是 prompts 的 fix）。
+ * 规格与风格的控件住在计划阶段的 `#specs-section`（输入视图渲染），
+ * 因此 `style` / `shot_spec` 必须停靠 `plan`，不能把人送到生成页的 Prompt 预览。
+ * 旧映射曾把两者指向 `generate`，DECISION_REQUIRED 会走错地方。 */
 const BLOCKER_STAGE_BY_REGION: Record<string, string> = {
   intake: "intake",
   understanding: "understand",
   suite: "plan",
-  style: "generate",
-  shot_spec: "generate",
+  style: "plan",
+  shot_spec: "plan",
   prompt: "generate",
 };
+
+/**
+ * 规格区导航：展开计划阶段里包住 `#specs-section` 的 `<details>` 并滚动到目标。
+ * `style` 落到规格区顶部，`shot_spec` 尽量落到该图的单图规格卡
+ * （`#shot-spec-list .shot-spec[data-shot-id]`，输入视图拥有，输入视图的内部控件 id 不在这里硬编码）。
+ * 输入视图与 domain 都不在本片改动范围内，这里只做只读 DOM 定位；找不到就停在规格区顶部。
+ */
+function revealSpecsTarget(shotId: string | null, region: string, targetId: string | null = null): void {
+  try {
+    const specsSection = document.getElementById("specs-section");
+    if (!specsSection) return;
+    const details = specsSection.closest("details");
+    if (details instanceof HTMLDetailsElement) details.open = true;
+    let target: Element | null = null;
+    // 决定控件的精确落点（与输入视图分片约定的 id；该分片未落地时 getElementById 为空，
+    // 自动回退到卡片/区顶部，不抛错不卡死）。
+    if (targetId) {
+      const anchored = document.getElementById(targetId);
+      if (anchored && specsSection.contains(anchored)) target = anchored;
+    }
+    if (!target && region === "shot_spec" && shotId) {
+      // 不拼选择器：shot_id 字符集不受本片控制，逐个比对 data-shot-id 更稳。
+      const cards = specsSection.querySelectorAll("[data-shot-id]");
+      for (const card of cards) {
+        if (card.getAttribute("data-shot-id") === shotId) { target = card; break; }
+      }
+    }
+    const node = target instanceof HTMLElement ? target : specsSection;
+    node.scrollIntoView({ block: "nearest" });
+    // 精确控件落点命中时把键盘焦点也交过去（radio/checkbox 可直接操作）；
+    // 失败不抛错，停在滚动位置即可。
+    if (target !== null && target !== specsSection && node instanceof HTMLElement) {
+      try { node.focus({ preventScroll: true }); } catch { /* 焦点是辅助，不吞业务 */ }
+    }
+  } catch { /* 导航辅助失败不吞业务：停在计划阶段即可 */ }
+}
+
+/**
+ * DECISION_REQUIRED 的精确控件落点：按 decisions 第一个问题的 path 映射到输入视图的决定控件 id。
+ * 只做只读映射，不复制 domain 判断；path 不在表里时返回 null（调用方回退到卡片/区顶部）。
+ * domain 侧 details 是运行时携带（类型未声明），这里用 in/typeof 收窄后只读，不做内联断言。
+ */
+function decisionAnchorOf(blocker: { code: string }, shotId: string | null): string | null {
+  if (blocker.code !== "DECISION_REQUIRED" || !shotId || shotId.length === 0) return null;
+  if (!blocker || typeof blocker !== "object" || !("details" in blocker)) return null;
+  const details: unknown = blocker.details;
+  if (!Array.isArray(details)) return null;
+  let first = "";
+  for (const item of details) {
+    if (item && typeof item === "object" && "path" in item && typeof item.path === "string"
+      && item.path.length > 0) {
+      first = item.path;
+      break;
+    }
+  }
+  if (first.indexOf("$.presentation.appearance_state") === 0) return "style-presentation-appearance_state";
+  if (first.indexOf("$.presentation.contents_state") === 0) return "style-presentation-contents_state";
+  if (first.indexOf("$.shot_spec.print_intent") === 0) return "spec-print-" + shotId;
+  if (first.indexOf("$.shot_spec.on_image_texts") === 0) return "spec-texts-" + shotId;
+  if (first.indexOf("$.shot_spec.layout") === 0 || first.indexOf("$.layout") === 0) {
+    return "spec-layout-" + shotId;
+  }
+  return null;
+}
 
 /* ------------------------------------------- 三区模板投影形状（视图只读，不重算判定） */
 
@@ -201,6 +268,7 @@ type PromptRowView = {
   showReconfirm: boolean;
   canReconfirm: boolean;
   canSaveEdit: boolean;
+  compileError: string;
 };
 
 /** 只有文案与 class 的行（摘要/风险），模板不重算。 */
@@ -211,10 +279,22 @@ type ConfirmBlockerView = {
   label: string;
   code: string;
   message: string;
+  shotId: string | null;
+  region: string;
   regionLabel: string;
   action: string;
   stage: string | undefined;
   openPromptDetails: boolean;
+  decisionAnchorId: string | null;
+};
+
+type ConfirmShotBlockerLine = {
+  code: string;
+  message: string;
+  shotId: string;
+  region: string;
+  stage: string | undefined;
+  decisionAnchorId: string | null;
 };
 
 type ConfirmShotView = {
@@ -223,6 +303,7 @@ type ConfirmShotView = {
   label: string;
   roleText: string;
   blocked: boolean;
+  hasDecisionBlock: boolean;
   stateText: string;
   stateClass: string;
   promptLine: string;
@@ -231,6 +312,7 @@ type ConfirmShotView = {
   techLines: string[];
   risksText: string | null;
   risksTitle: string;
+  blockerLines: ConfirmShotBlockerLine[];
 };
 
 type ConfirmView = {
@@ -375,8 +457,10 @@ export function createGenerationView(
   const previewPending = new Set<string>();
 
   // ---- 四个错误位各一份 UI 状态：空串＝无错误（模板用 ?hidden 收起），非空即当前文案 ----
-  /** Prompt 区错误（编译/保存/重新确认/丢弃）。 */
+  /** Prompt 区错误（自动准备等整区命令的汇总；逐图错误见 promptCardErrors）。 */
   let promptErrorText = "";
+  /** 按图卡投影的编译错误：shot_id → domain 给的可操作消息；渲染时直接投影到对应图卡。 */
+  let promptCardErrors = new Map<string, string>();
   /** 确认单错误（投影失败/授权已变化/外发失败）。 */
   let confirmErrorText = "";
   /** 生成执行位错误；与尝试位共用同一份文本（旧实现同时写这两个位置）。 */
@@ -433,6 +517,28 @@ export function createGenerationView(
   function setConfirmError(message: string): void { confirmErrorText = message; renderConfirmError(); }
   function setGenerateError(message: string): void { generateErrorText = message; renderGenerateError(); }
   function setAttemptError(message: string): void { attemptErrorText = message; renderAttemptError(); }
+
+  /** 逐图编译错误写入：只改状态，由下一轮 renderPrompts 投影到对应图卡。 */
+  function setPromptCardError(shotId: string, message: string): void {
+    if (message) promptCardErrors.set(shotId, message);
+    else promptCardErrors.delete(shotId);
+  }
+
+  /** 自动准备的汇总错误按「标签：消息」前坠分发到各图卡；坠不上标签的整串原文返回。 */
+  function distributePreparationErrors(errors: string[]): string[] {
+    const leftovers: string[] = [];
+    for (const raw of errors) {
+      const text = String(raw || "");
+      const hit = promptRows.find((row) => text.indexOf(row.label + "：") === 0
+        || text.indexOf(row.label + ":") === 0);
+      if (hit) {
+        const cut = text.indexOf("：") >= 0 ? text.indexOf("：") : text.indexOf(":");
+        // 图卡上只放 domain 给的可操作消息，不复述标签；标签已在卡头。
+        setPromptCardError(hit.shotId, cut >= 0 ? text.slice(cut + 1) : text);
+      } else leftovers.push(text);
+    }
+    return leftovers;
+  }
 
   function promptRecordOf(shotId: string | null): PromptEntry | null {
     return prompts.entryOf(shotId, null);
@@ -520,6 +626,7 @@ export function createGenerationView(
         showReconfirm: isManual && Boolean(stale && stale.stale),
         canReconfirm: item.satisfied && !running && !dirty,
         canSaveEdit: !running,
+        compileError: promptCardErrors.get(shotId) || "",
       });
     });
     return rows;
@@ -537,6 +644,7 @@ export function createGenerationView(
           ${row.stale && row.stale.stale ? html`<span class="badge is-critical">已过期</span>` : nothing}
           ${row.isManual ? html`<span class="badge is-proposed">人工编辑</span>` : nothing}
         </div>
+        <p id=${"prompt-card-error-" + row.shotId} class="error prompt-card-error" role="alert" ?hidden=${!row.compileError}>${row.compileError}</p>
         ${entry ? html`
           <pre class="prompt-text">${entry.record.compiled.text}</pre>
           <p class="meta">${row.requestLine}</p>
@@ -609,11 +717,12 @@ export function createGenerationView(
   }
 
   function renderPrompts(): void {
-    // 项目切换的精确归属：上一项目的草稿/基线不再参与本项目的任何判据或恢复。
+    // 项目切换的精确归属：上一项目的草稿/基线/逐图错误不再参与本项目的任何判据或恢复。
     const currentProjectId = deps.currentProjectId();
     if (currentProjectId !== draftOwnerProjectId) {
       promptDrafts.clear();
       promptBaselineText.clear();
+      promptCardErrors.clear();
       draftOwnerProjectId = currentProjectId;
     }
     promptReady = Boolean(inputs.suitePlan());
@@ -683,6 +792,7 @@ export function createGenerationView(
       setLocalPreparationStatus(gate);
       return;
     }
+    promptCardErrors.clear();
     setLocalPreparationStatus("正在本地准备已就绪图片任务；不会调用模型…");
     renderConfirm();
     try {
@@ -703,8 +813,11 @@ export function createGenerationView(
           "本地准备结果：各图片任务的依据没有变化，无需重试；未调用模型。");
         return;
       }
-      setLocalPreparationStatus(result.errors.length
-        ? "部分任务尚未准备：" + result.errors.join("；")
+      // 错误直接进各图卡：文案是 prompts.prepare 按「标签：domain 消息」拼的可操作消息，
+      // 这里只按标签分发，不自己拼一句模糊汇总代替；分发不上的才留在状态行。
+      const leftovers = distributePreparationErrors(result.errors);
+      setLocalPreparationStatus(leftovers.length
+        ? "部分任务尚未准备：" + leftovers.join("；")
         : "本地准备完成" + (result.prepared ? "（更新 " + result.prepared + " 张）" : "")
           + "；未调用模型。人工文本保留，提交前请核对下面的摘要。");
       await deps.deriveState();
@@ -719,10 +832,14 @@ export function createGenerationView(
     const action = beginAction();
     // P5：草稿单一来源——脏判据与文本都从视图状态读，textarea 可能已随上一轮重绘清空。
     if (isPromptDirty(shotId)) {
-      setPromptError("此全文有未保存修改；先保存，再重新确认，不会确认另一份旧文本。");
+      const dirtyMessage = "此全文有未保存修改；先保存，再重新确认，不会确认另一份旧文本。";
+      setPromptCardError(shotId, dirtyMessage);
+      setPromptError(dirtyMessage);
+      renderPrompts();
       return;
     }
     setPromptError("");
+    setPromptCardError(shotId, "");
     try {
       const visibleText = currentDraftCell(shotId, entry.record.compiled.text).text;
       const saved = await prompts.reconfirm(shotId, visibleText, action);
@@ -732,7 +849,13 @@ export function createGenerationView(
       renderPrompts(); renderConfirm(); renderAttempts();
       setPromptStatus("人工全文原文保留，已按当前依据重新确认为 v" + saved.version + "；未调用模型。");
     } catch (error) {
-      if (action.alive()) setPromptError(errorMessageOf(error, "重新确认失败；原人工全文保留。"));
+      if (action.alive()) {
+        // 图卡是权威落点；全局 #prompt-error 回显同样文案，保住既有“编译失败 #prompt-error 可见”断言。
+        const message = errorMessageOf(error, "重新确认失败；原人工全文保留。");
+        setPromptCardError(shotId, message);
+        setPromptError(message);
+        renderPrompts();
+      }
     }
   }
 
@@ -741,6 +864,7 @@ export function createGenerationView(
     if (!entry || entry.record.origin !== "manual_edit") return;
     const action = beginAction();
     setPromptError("");
+    setPromptCardError(shotId, "");
     try {
       const payload = await prompts.discard(shotId, action);
       if (!action.alive() || !payload) return;
@@ -749,7 +873,12 @@ export function createGenerationView(
       renderPrompts(); renderConfirm(); renderAttempts();
       setPromptStatus("已明确丢弃人工覆盖并恢复当前系统 Prompt；历史全文保留，未调用模型。");
     } catch (error) {
-      if (action.alive()) setPromptError(errorMessageOf(error, "丢弃未完成；原全文与输入保留。"));
+      if (action.alive()) {
+        const message = errorMessageOf(error, "丢弃未完成；原全文与输入保留。");
+        setPromptCardError(shotId, message);
+        setPromptError(message);
+        renderPrompts();
+      }
     }
   }
 
@@ -757,6 +886,7 @@ export function createGenerationView(
     if (!deps.currentProjectId() || !inputs.suitePlan() || !deps.understandingReady()) return;
     const action = beginAction();
     setPromptError("");
+    setPromptCardError(shotId, "");
     try {
       const result = await prompts.compileAndSave(shotId, { action });
       if (!action.alive()) return;
@@ -768,8 +898,11 @@ export function createGenerationView(
       setPromptStatus("已保存 " + shotId + " 的 Prompt 版本 v" + result.saved.version + "。");
     } catch (error) {
       if (!action.alive()) return;
-      setPromptError(
-        suffixedErrorMessage(error, "编译未完成，旧版本已保留。", "（旧版本已保留）"));
+      // 逐图错误投影：文案就是 domain 抛出的可操作消息（缺哪个决定、去哪里选），
+      // 图卡是权威落点；全局 #prompt-error 回显同样文案，保住既有可见断言。
+      const message = suffixedErrorMessage(error, "编译未完成，旧版本已保留。", "（旧版本已保留）");
+      setPromptCardError(shotId, message);
+      setPromptError(message);
       renderPrompts();
       renderConfirm();
       renderAttempts();
@@ -781,9 +914,13 @@ export function createGenerationView(
     if (!deps.currentProjectId() || !inputs.suitePlan() || !deps.understandingReady()) return;
     const action = beginAction();
     setPromptError("");
+    setPromptCardError(shotId, "");
     const entry = promptRecordOf(shotId);
     if (!entry) {
-      setPromptError("先编译并保存这张图的 Prompt，再编辑。");
+      const missingMessage = "先编译并保存这张图的 Prompt，再编辑。";
+      setPromptCardError(shotId, missingMessage);
+      setPromptError(missingMessage);
+      renderPrompts();
       return;
     }
     // P5：保存读的是视图状态里用户看见的文本/理由；textarea 不再是数据来源，
@@ -802,8 +939,10 @@ export function createGenerationView(
         + "（被编辑版本 v" + entry.version + " 保留）。");
     } catch (error) {
       if (action.alive()) {
-        setPromptError(
-          suffixedErrorMessage(error, "编辑未保存，旧版本与输入已保留。", "（旧版本与输入已保留）"));
+        const message = suffixedErrorMessage(error, "编辑未保存，旧版本与输入已保留。", "（旧版本与输入已保留）");
+        setPromptCardError(shotId, message);
+        setPromptError(message);
+        renderPrompts();
       }
     }
   }
@@ -866,37 +1005,56 @@ export function createGenerationView(
       label: blocker.label,
       code: blocker.code,
       message: localizeSlotTerms(blocker.message),
+      shotId: blocker.shot_id,
+      region: blocker.fix.region,
       regionLabel: blocker.fix.region,
       action: blocker.fix.action,
       stage: BLOCKER_STAGE_BY_REGION[blocker.fix.region],
       openPromptDetails: blocker.fix.region === "prompt",
+      decisionAnchorId: decisionAnchorOf(blocker, blocker.shot_id),
     }));
     const risks: ConfirmLineView[] = sheet.risks.map((risk) => ({
       className: "confirm-risk",
       text: risk.label + " · " + risk.code + "：" + localizeSlotTerms(risk.message),
     }));
-    const shots: ConfirmShotView[] = sheet.shots.map((item) => ({
-      shotId: item.shot_id,
-      order: item.order,
-      label: item.label,
-      roleText: (item.role_label || item.role_id || "未分类") + (item.required ? " · 必需" : " · 可选"),
-      blocked: item.blockers.length > 0,
-      stateClass: item.blockers.length > 0 ? "badge is-critical" : "badge is-confirmed",
-      stateText: sendingIds.has(item.shot_id) ? "本次发送"
-        : item.blockers.length ? "本次不发送：缺项／过期" : "本次不重复提交",
-      promptLine: item.prompt.version === null
-        ? "未编译"
-        : "Prompt v" + item.prompt.version + " · " + String(item.prompt.hash).slice(0, 12) + "…",
-      intent: item.intent,
-      referencesLine: "参考图 " + item.references.length + " 张（"
-        + (item.references.map((ref) => ROLE_TEXT[ref.role] || ref.role).join("、") || "无") + "）"
-        + (item.prompt.chars === null ? "" : " · 提示词 " + item.prompt.chars + " 字"),
-      techLines: item.references.map((ref) => (ROLE_TEXT[ref.role] || ref.role) + " sha256 " + ref.sha256_prefix),
-      risksText: item.risks.length > 0
-        ? "风险：" + item.risks.map((risk) => localizeSlotTerms(risk.message || risk.code)).join("；")
-        : null,
-      risksTitle: item.risks.map((risk) => risk.code).join("、"),
-    }));
+    const shots: ConfirmShotView[] = sheet.shots.map((item) => {
+      // 逐图阻断行：文案就是确认单上该图的 blocker.message（domain 可操作消息），
+      // 这里只投影、不重写，避免第二套判断/词表。
+      const blockerLines: ConfirmShotBlockerLine[] = item.blockers.map((blocker) => ({
+        code: blocker.code,
+        message: localizeSlotTerms(blocker.message),
+        shotId: item.shot_id,
+        region: blocker.fix.region,
+        stage: BLOCKER_STAGE_BY_REGION[blocker.fix.region],
+        decisionAnchorId: decisionAnchorOf(blocker, item.shot_id),
+      }));
+      const hasDecisionBlock = item.blockers.some((blocker) => blocker.code === "DECISION_REQUIRED");
+      return {
+        shotId: item.shot_id,
+        order: item.order,
+        label: item.label,
+        roleText: (item.role_label || item.role_id || "未分类") + (item.required ? " · 必需" : " · 可选"),
+        blocked: item.blockers.length > 0,
+        hasDecisionBlock,
+        stateClass: item.blockers.length > 0 ? "badge is-critical" : "badge is-confirmed",
+        stateText: sendingIds.has(item.shot_id) ? "本次发送"
+          : hasDecisionBlock ? "还没决定印字／展示：先去规格区选一次"
+          : item.blockers.length ? "本次不发送：缺项／过期" : "本次不重复提交",
+        promptLine: item.prompt.version === null
+          ? "未编译"
+          : "Prompt v" + item.prompt.version + " · " + String(item.prompt.hash).slice(0, 12) + "…",
+        intent: item.intent,
+        referencesLine: "参考图 " + item.references.length + " 张（"
+          + (item.references.map((ref) => ROLE_TEXT[ref.role] || ref.role).join("、") || "无") + "）"
+          + (item.prompt.chars === null ? "" : " · 提示词 " + item.prompt.chars + " 字"),
+        techLines: item.references.map((ref) => (ROLE_TEXT[ref.role] || ref.role) + " sha256 " + ref.sha256_prefix),
+        risksText: item.risks.length > 0
+          ? "风险：" + item.risks.map((risk) => localizeSlotTerms(risk.message || risk.code)).join("；")
+          : null,
+        risksTitle: item.risks.map((risk) => risk.code).join("、"),
+        blockerLines,
+      };
+    });
     const identity = intent.identity;
     return {
       status: "本次明确发送 " + (sending ? sending.total : 0) + " 张；"
@@ -916,6 +1074,21 @@ export function createGenerationView(
     };
   }
 
+  /** 阻断项导航：先切阶段，再按 region 展开对应 <details> 并滚动到目标控件。 */
+  function gotoBlockerTarget(
+    shotId: string | null, region: string, openPromptDetails: boolean, anchorId: string | null = null,
+  ): void {
+    const stage = BLOCKER_STAGE_BY_REGION[region];
+    if (stage) deps.selectStage(stage);
+    // P5：#prompt-details 归属装配层（工作区一次性注入），视图不全局查询。
+    if (openPromptDetails) elements.promptDetails.open = true;
+    // 规格与风格的控件在计划阶段的 #specs-section 里（输入视图渲染）：
+    // DECISION_REQUIRED 的 style / shot_spec 必须展开该 details 并滚动过去，
+    // 有精确控件落点时直达该控件（输入视图分片未落地则回退到卡片/区顶部），
+    // 不能停在 Prompt 预览。
+    if (region === "style" || region === "shot_spec") revealSpecsTarget(shotId, region, anchorId);
+  }
+
   /** 确认单模板：摘要/阻断项/风险/逐图行与确认按钮全部由模板拥有。 */
   function confirmRegionTemplate(): TemplateResult {
     const view = confirmView;
@@ -926,18 +1099,19 @@ export function createGenerationView(
       </div>
       <div id="confirm-blockers">
         ${view.blockers.map((blocker) => html`
-          <p class="confirm-blocker">
+          <p class="confirm-blocker" data-shot-id=${blocker.shotId || ""} data-region=${blocker.region}>
             <span>${"#" + blocker.order + " " + blocker.label + " · " + blocker.code}</span>
             <span class="meta">${blocker.message}</span>
             <span class="meta">${"返回：" + blocker.regionLabel + " · " + blocker.action}</span>
             <button
               type="button"
+              class="confirm-blocker-goto"
+              data-shot-id=${blocker.shotId || ""}
+              data-region=${blocker.region}
               @click=${() => {
-                if (blocker.stage) deps.selectStage(blocker.stage);
-                // P5：#prompt-details 归属装配层（工作区一次性注入），视图不全局查询。
-                if (blocker.openPromptDetails) elements.promptDetails.open = true;
+                gotoBlockerTarget(blocker.shotId, blocker.region, blocker.openPromptDetails, blocker.decisionAnchorId);
               }}
-            >去补足此项</button>
+            >${"去补足此项"}</button>
           </p>`)}
       </div>
       <div id="confirm-risks">
@@ -954,6 +1128,19 @@ export function createGenerationView(
             </div>
             ${row.intent ? html`<p class="meta">${"任务：" + row.intent}</p>` : nothing}
             <p class="meta">${row.referencesLine}</p>
+            ${row.blockerLines.map((line) => html`
+              <p class="confirm-shot-blocker" data-shot-id=${line.shotId} data-region=${line.region}>
+                <span class="meta">${line.code + "：" + line.message}</span>
+                <button
+                  type="button"
+                  class="confirm-shot-goto"
+                  data-shot-id=${line.shotId}
+                  data-region=${line.region}
+                  @click=${() => {
+                    gotoBlockerTarget(line.shotId, line.region, line.region === "prompt", line.decisionAnchorId);
+                  }}
+                >${line.region === "style" || line.region === "shot_spec" ? "去规格区补足" : "去补足此项"}</button>
+              </p>`)}
             ${techDetailsTemplate(row.techLines)}
             ${row.risksText === null ? nothing
               : html`<p class="meta prompt-warning" title=${row.risksTitle}>${row.risksText}</p>`}
@@ -1746,6 +1933,7 @@ export function createGenerationView(
     appliedOwnerError = "";
     // 四个错误位也按项目归属回收：清状态并在同一轮把挂载点里的模板收起（不自持旧文案）。
     promptErrorText = "";
+    promptCardErrors.clear();
     confirmErrorText = "";
     generateErrorText = "";
     attemptErrorText = "";

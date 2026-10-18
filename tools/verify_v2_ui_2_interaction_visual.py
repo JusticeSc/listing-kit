@@ -484,6 +484,8 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 page.keyboard.press("Enter")
                 expect(page.locator('[data-stage-panel="generate"]')).to_be_visible()
                 ui["keyboard"]["plan_to_generate"] = bool(focused_plan_next)
+                # Issue #9：编译前先做普通决定（用户真实路径）；choices 进 ui 证据。
+                ui["decisions"] = shared.decide_for_compile(page, shots)
                 shared.compile_all(page, shots)
                 expect(page.locator("#confirm-action")).to_be_enabled(timeout=30_000)
                 page.click("#confirm-action")

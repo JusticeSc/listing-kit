@@ -20,6 +20,7 @@ spec = importlib.util.spec_from_file_location("stage_nav", TOOLS / "v2_stage_nav
 stage_nav = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(stage_nav)
 
+import v2_verify_shared as shared  # noqa: E402  （Issue #9 普通决定共用函数）
 
 def png_bytes():
     width, height, color = 16, 16, (36, 92, 160)
@@ -141,6 +142,8 @@ def main() -> int:
                     page.wait_for_selector("#shot-list .shot-row", timeout=15000)
                     shot_count = page.locator("#shot-list .shot-row").count()
                     record("R51GA-01", "推荐方案4张shot行", shot_count == 4, shot_count)
+                    # Issue #9：编译前先做普通决定（用户真实路径）。
+                    shared.decide_for_compile(page, page.evaluate(shared.SHOT_IDS))
                     stage_nav.goto(page, "generate")
                     stage_nav.reveal(page, "#prompt-editor")
                     shot_ids = page.evaluate(

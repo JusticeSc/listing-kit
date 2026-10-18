@@ -221,7 +221,13 @@ test("F10", "审核清单：默认规格标默认，保存规格标已保存，�
   const shot = mainShot();
   const withoutSpec = reviewChecklist(shot, { styleSpec: styleFixture() });
   expect(withoutSpec.saved === false, "未保存规格必须标默认。");
-  expect(withoutSpec.sections.length === 4, "清单固定四段：" + json(withoutSpec.sections.map((s) => s.key)));
+  expect(withoutSpec.sections.length === 5,
+    "清单固定五段（含被消费的展示决定）：" + json(withoutSpec.sections.map((s) => s.key)));
+  const decision = withoutSpec.sections.find((item) => item.key === "presentation_appearance");
+  expect(Boolean(decision) && decision.items.length === 1,
+    "被消费的展示决定必须进清单，让用户看到还没决定：" + json(withoutSpec.sections));
+  expect(withoutSpec.sections.every((item) => item.key !== "presentation_contents"),
+    "不消费内容物的角色不该出现内容物行：" + json(withoutSpec.sections.map((s) => s.key)));
   expect(withoutSpec.style_lines.some((item) => item.includes("浅灰无缝背景")), "风格行必须投影公共风格。");
   const savedSpec = emptyShotSpecFromShot(shot);
   savedSpec.purpose = "主图：完整展示保温杯";
@@ -229,6 +235,12 @@ test("F10", "审核清单：默认规格标默认，保存规格标已保存，�
   expect(withSpec.saved === true && withSpec.purpose === "主图：完整展示保温杯", "保存规格必须如实投影。");
   expect(withSpec.style_configured === false && withSpec.sections[3].items.length === 0,
     "未设置公共风格时风格段为空。");
+  const decidedSpec = emptyShotSpecFromShot(shot);
+  decidedSpec.presentation = { appearance_state: "clean_display" };
+  const decided = reviewChecklist(shot, { shotSpec: decidedSpec, styleSpec: emptyStyleSpec() });
+  const decidedRow = decided.sections.find((item) => item.key === "presentation_appearance");
+  expect(decidedRow.items[0] === "干净展示",
+    "决定过就显示人读取值，而不是未决定：" + json(decidedRow));
   return { default_saved: withoutSpec.saved, sections: withoutSpec.sections.map((s) => s.key) };
 });
 

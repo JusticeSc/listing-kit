@@ -25,6 +25,7 @@ import {
   canonicalJson,
   checkImagePromptProfile,
   checkPromptRecord,
+  decisionProblems,
   promptStaleness,
 } from "./prompt.js";
 import { evaluateShot, roleDefinition } from "./suite-plan.js";
@@ -42,6 +43,8 @@ export const CONFIRM_BLOCKER_CODES = Object.freeze({
   PLATFORM_MISMATCH: "PLATFORM_MISMATCH",
   PROVIDER_MISMATCH: "PROVIDER_MISMATCH",
   REFERENCE_COUNT_INVALID: "REFERENCE_COUNT_INVALID",
+  /** 普通决定（印字/展示）没做完：编译不出 Prompt，必须先让用户做一次明确选择。 */
+  DECISION_REQUIRED: "DECISION_REQUIRED",
 });
 
 /** 精确修改位置：阻断必须能指回一个可操作区域。 */
@@ -139,7 +142,32 @@ export function buildConfirmationSheet(input = {}) {
     const prompt = { version: null, hash: null, chars: null };
     let references = [];
     const entry = entries.get(shotId) || null;
-    if (!entry) {
+    // 普通决定没做完时，编译必然失败：直接说清「缺哪个决定」并指向对应控件，
+    // 而不是笼统报「还没有 Prompt 版本」把用户送错地方。
+    // 只有当调用方把决定所依据的规格交进来时才检查（否则无从判断，不得凭猜测阻断）。
+    const decisionInputsGiven = input.styleSpec !== undefined || input.shotSpecsById !== undefined;
+    const shotSpec = isPlainObject(input.shotSpecsById) && isPlainObject(input.shotSpecsById[shotId])
+      ? input.shotSpecsById[shotId].spec : null;
+    const decisions = decisionInputsGiven
+      ? decisionProblems({
+        shot: shot, shotSpec: shotSpec, styleSpec: input.styleSpec, brief: input.brief,
+        platformId: input.platformId,
+      })
+      : [];
+    if (decisions.length > 0) {
+      const first = decisions[0];
+      const shotLevel = String(first.path || "").indexOf("$.shot_spec") === 0;
+      blockers.push({
+        code: CONFIRM_BLOCKER_CODES.DECISION_REQUIRED,
+        message: first.message,
+        details: decisions.slice(0, 3),
+        fix: shotLevel
+          ? fixTarget("shot_spec", shotId, label,
+            "到「风格与单图规格」为这张图做完印字与展示决定，再重新编译。")
+          : fixTarget("style", shotId, label,
+            "到「风格与单图规格」做完共用展示决定（整套共用，做完这张图就跟着走），再重新编译。"),
+      });
+    } else if (!entry) {
       blockers.push({
         code: CONFIRM_BLOCKER_CODES.PROMPT_MISSING,
         message: "还没有 Prompt 版本，无法生成。",

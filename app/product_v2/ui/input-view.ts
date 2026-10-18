@@ -23,11 +23,14 @@ import {
   DIMENSION_UNITS,
   FACT_SLOT_SCHEMA_VERSION,
   MAX_DIMENSIONS,
+  MAX_ON_IMAGE_TEXTS,
   MAX_REFERENCES,
   PRODUCT_INPUT_SCHEMA_VERSION,
   REFERENCE_ROLES,
+  SHOT_LAYOUTS,
   SHOT_TEMPLATES,
   SLOT_VALUE_TYPES,
+  TEXT_LAYOUTS,
   addCustomShotToPlan,
   addShotFromTemplate,
   canAddSlot,
@@ -35,13 +38,19 @@ import {
   canDeleteSlot,
   canEditValue,
   checkFactSlot,
-  coreSlotDefinition,
   copyShot,
+  coreSlotDefinition,
   emptyShotSpecFromShot,
   emptyStyleSpec,
   intakeReadiness,
   isPlainObject,
+  layoutLabelOf,
   moveShot,
+  PRESENTATION_CONSUMERS,
+  PRESENTATION_FIELDS,
+  presentationStateOf,
+  printDecisionRoleOf,
+  printIntentLabelOf,
   recommendPlan,
   removeShot,
   seedSuitePlan,
@@ -160,8 +169,9 @@ export type InputView = {
 
 /** 资料表单草稿：字符串原样保留用户输入（trim 只发生在落库 payload 上）。 */
 type IntakeDraft = { product_name: string; description: string; selling_points: string; focus: string };
-/** 风格表单草稿（同资料：原文进草稿，payload 再规范化）。 */
-type StyleDraft = { background: string; lighting: string; color_tone: string; composition: string; avoid: string };
+/** 风格表单草稿（同资料：原文进草稿，payload 再规范化）。展示决定空串=未选（不预选、不写值）。 */
+type StyleDraft = { background: string; lighting: string; color_tone: string; composition: string; avoid: string;
+  appearance_state: string; contents_state: string };
 /** 新增槽位表单草稿。 */
 type SlotAddDraft = { id: string; label: string; type: string; value: string; allowModel: boolean };
 /** 单条测量草稿（select/input 的原字符串，读取时再按词表收窄）。 */
@@ -172,10 +182,14 @@ type SlotEditorDraft = {
 };
 /** 单图事实绑定草稿：baseline 是上次从计划采纳的值，用于判断用户是否改过。 */
 type BindingDraft = { values: string[]; baseline: string[] };
-/** 单图规格草稿（原文）+ 采纳基线。 */
+/** 勾选过的图中文案：记用户勾选当时看到的逐字值（列表按元素）与来源版本，保存时按这份写。 */
+type SelectedText = { slot_id: string; texts: string[]; version: number };
+/** 单图规格草稿（原文）+ 采纳基线。印字决定与版面空串=未选；selected 存勾选当时的槽位/逐字值/版本。 */
 type ShotSpecDraft = {
   purpose: string; keep: string; change_allowed: string;
-  baseline: { purpose: string; keep: string; change_allowed: string };
+  print_intent: string; layout: string; selected: SelectedText[];
+  baseline: { purpose: string; keep: string; change_allowed: string;
+    print_intent: string; layout: string; selected: SelectedText[] };
 };
 /** 错误文案按分区持有：渲染是唯一写 DOM 的一侧，命令侧只改状态。 */
 type RegionKey = "refs" | "intake" | "analyze" | "slots" | "suite" | "style" | "specs";
@@ -228,8 +242,8 @@ function createDraft(scope: string | null): ViewDraft {
     scope,
     intake: { product_name: "", description: "", selling_points: "", focus: "" },
     intakeBaseline: { product_name: "", description: "", selling_points: "", focus: "" },
-    style: { background: "", lighting: "", color_tone: "", composition: "", avoid: "" },
-    styleBaseline: { background: "", lighting: "", color_tone: "", composition: "", avoid: "" },
+    style: { background: "", lighting: "", color_tone: "", composition: "", avoid: "", appearance_state: "", contents_state: "" },
+    styleBaseline: { background: "", lighting: "", color_tone: "", composition: "", avoid: "", appearance_state: "", contents_state: "" },
     slotAdd: { id: "", label: "", type: "text", value: "", allowModel: false },
     slotAddStatus: "",
     slot: null,
@@ -251,12 +265,17 @@ function intakeDraftFrom(stored: CompleteProductInput | null | undefined): Intak
   };
 }
 function styleDraftFrom(spec: StyleSpec): StyleDraft {
+  // 存过的值进草稿供选中回填；没存过保持空串，界面显示「还没决定」而不预选。
+  const appearance = presentationStateOf(spec, "appearance_state");
+  const contents = presentationStateOf(spec, "contents_state");
   return {
     background: spec.background || "",
     lighting: spec.lighting || "",
     color_tone: spec.color_tone || "",
     composition: spec.composition || "",
     avoid: Array.isArray(spec.avoid) ? spec.avoid.join("\n") : "",
+    appearance_state: appearance === "undecided" ? "" : String(appearance),
+    contents_state: contents === "undecided" ? "" : String(contents),
   };
 }
 function equalIntake(left: IntakeDraft, right: IntakeDraft): boolean {
@@ -266,19 +285,57 @@ function equalIntake(left: IntakeDraft, right: IntakeDraft): boolean {
 function equalStyle(left: StyleDraft, right: StyleDraft): boolean {
   return left.background === right.background && left.lighting === right.lighting
     && left.color_tone === right.color_tone && left.composition === right.composition
-    && left.avoid === right.avoid;
+    && left.avoid === right.avoid
+    && left.appearance_state === right.appearance_state && left.contents_state === right.contents_state;
+}
+/** 勾选文案的同一性：槽位、逐字值（含元素顺序）、来源版本三者都要一致才算没改。 */
+function selectedTextsKey(items: SelectedText[]): string {
+  return items.map((item) => item.slot_id + "\u0000" + item.version + "\u0000" + item.texts.join("\u0002"))
+    .join("\u0001");
 }
 function equalShotSpec(left: ShotSpecDraft["baseline"], right: ShotSpecDraft["baseline"]): boolean {
   return left.purpose === right.purpose && left.keep === right.keep
-    && left.change_allowed === right.change_allowed;
+    && left.change_allowed === right.change_allowed
+    && left.print_intent === right.print_intent && left.layout === right.layout
+    && selectedTextsKey(left.selected) === selectedTextsKey(right.selected);
 }
 function shotSpecDraftFrom(spec: ShotSpec): ShotSpecDraft {
+  // print_intent "undecided" 与缺失都表示未决定：草稿归一为空串，界面不预选；
+  // 所选文案回填的是「用户当初确认过的那一版」（逐字值 + 来源版本），
+  // 不按当前事实重取——来源前进时要让用户重新勾选确认，而不是静默换值。
+  const printIntent = typeof spec.print_intent === "string" && spec.print_intent !== "undecided" ? spec.print_intent : "";
+  const selected: SelectedText[] = [];
+  if (Array.isArray(spec.on_image_texts)) {
+    for (const item of spec.on_image_texts) {
+      if (!isPlainObject(item)) continue;
+      const record: Record<string, unknown> = item as Record<string, unknown>;
+      if (typeof record.source_slot_id !== "string" || record.source_slot_id.length === 0
+        || typeof record.text !== "string"
+        || typeof record.source_slot_version !== "number" || !Number.isInteger(record.source_slot_version)) {
+        continue;
+      }
+      // 同一槽位的多条（列表按元素各一条）在草稿里合成一项，勾选状态才是「这一个来源」。
+      const existing = selected.find((entry) => entry.slot_id === record.source_slot_id
+        && entry.version === record.source_slot_version);
+      if (existing) {
+        existing.texts.push(record.text);
+      } else {
+        selected.push({
+          slot_id: record.source_slot_id, texts: [record.text],
+          version: record.source_slot_version,
+        });
+      }
+    }
+  }
   const baseline = {
     purpose: spec.purpose || "",
     keep: Array.isArray(spec.keep) ? spec.keep.join("\n") : "",
     change_allowed: Array.isArray(spec.change_allowed) ? spec.change_allowed.join("\n") : "",
+    print_intent: printIntent,
+    layout: typeof spec.layout === "string" ? spec.layout : "",
+    selected: selected,
   };
-  return { ...baseline, baseline: { ...baseline } };
+  return { ...baseline, selected: [...selected], baseline: { ...baseline, selected: [...selected] } };
 }
 function measurementToDraft(measurement: DimensionMeasurement | Record<string, unknown>): DimensionDraft {
   const fields = measurement as Record<string, unknown>;
@@ -1456,7 +1513,7 @@ export function createInputView(
   /* ------------------------------------------------------------ 风格与规格 */
 
   function stylePayloadFromDraft(): StyleSpec {
-    return {
+    const next: StyleSpec = {
       ...emptyStyleSpec(),
       background: draft.style.background.trim(),
       lighting: draft.style.lighting.trim(),
@@ -1464,7 +1521,201 @@ export function createInputView(
       composition: draft.style.composition.trim(),
       avoid: splitLines(draft.style.avoid),
     };
+    // 只写用户明确选中的键；没选中的键保持缺失（=未决定），不写 "undecided" 占位。
+    const appearance = draft.style.appearance_state.trim();
+    const contents = draft.style.contents_state.trim();
+    const appearanceOk = appearance === "as_shown" || appearance === "clean_display";
+    const contentsOk = contents === "as_shown" || contents === "empty" || contents === "not_applicable";
+    if (appearanceOk || contentsOk) {
+      next.presentation = {
+        ...(appearanceOk ? { appearance_state: appearance as "as_shown" | "clean_display" } : {}),
+        ...(contentsOk ? { contents_state: contents as "as_shown" | "empty" | "not_applicable" } : {}),
+      };
+    }
+    return next;
   }
+  /* ---------------- 普通决定（#9）：展示/印字/版面 —— 判断与词表归 domain/specs.js，界面只读 */
+
+  /** 是否至少一张图消费该展示决定键（不消费则不问、不显示）。 */
+  function presentationKeyAsked(plan: SuitePlan, key: string): boolean {
+    if (!isPlainObject(PRESENTATION_CONSUMERS) || !(key in PRESENTATION_CONSUMERS)) return false;
+    const consumers = PRESENTATION_CONSUMERS[key as keyof typeof PRESENTATION_CONSUMERS];
+    if (!Array.isArray(consumers)) return false;
+    return plan.shots.some((shot) => (consumers as readonly string[]).includes(shot.role_id));
+  }
+
+  /**
+   * 可印候选：只取已确认且绑到这张图的事实，并把值拆成能逐字上图的最小单元。
+   * 文本列表按元素各印一行（旧程序也是这样逐条印的），标量按整值；结构化尺寸这类
+   * 还不是图上文字的表示形式，先不提供候选而不是印出「[object Object]」。
+   */
+  function printableCandidatesOf(shotId: string): {
+    entry: InputSlotEntry; texts: string[] }[] {
+    const plan = inputs.suitePlan();
+    const shot = plan ? plan.shots.find((item) => item.shot_id === shotId) : null;
+    const bound = new Set(Array.isArray(shot?.fact_slot_ids) ? shot.fact_slot_ids : []);
+    const candidates: { entry: InputSlotEntry; texts: string[] }[] = [];
+    for (const entry of inputs.slotEntries()) {
+      if (entry.slot.status !== "confirmed" || !bound.has(entry.slot.slot_id)) continue;
+      const value: unknown = entry.slot.value;
+      let texts: string[] = [];
+      if (Array.isArray(value)) {
+        texts = value.filter((item) => typeof item === "string" && item.trim().length > 0)
+          .map((item) => String(item).trim());
+      } else if (typeof value === "string" && value.trim().length > 0) {
+        texts = [value.trim()];
+      } else if (typeof value === "number" && Number.isFinite(value)) {
+        texts = [String(value)];
+      }
+      if (texts.length === 0) continue;
+      candidates.push({ entry: entry, texts: texts });
+    }
+    return candidates;
+  }
+
+  /**
+   * 保存 payload：逐字写用户勾选当时看到的值与版本，不按当前事实重写
+   * （来源前进时由编译门要求重新确认）。列表值按元素各成一条。
+   */
+  function onImageTextsFromDraft(spec: ShotSpecDraft): ShotSpec["on_image_texts"] {
+    const items: ShotSpec["on_image_texts"] = [];
+    let index = 0;
+    for (const item of spec.selected) {
+      for (const text of item.texts) {
+        index += 1;
+        items.push({
+          // 稳定条目 id：同一选择重复保存不变（序号按勾选顺序重算）。
+          text_id: "t_" + item.slot_id + "_" + String(index),
+          text: text,
+          source_slot_id: item.slot_id,
+          source_slot_version: item.version,
+          status: "confirmed",
+          origin: "user",
+        });
+      }
+    }
+    return items;
+  }
+  /** 印字决定 + 候选文案 + 版面（仅印字决定角色）：未决定时不预选任何值。 */
+  function printDecisionTemplate(shotId: string, spec: ShotSpecDraft): TemplateResult {
+    const candidates = printableCandidatesOf(shotId);
+    const decided = spec.print_intent === "none" || spec.print_intent === "selected";
+    const showTexts = spec.print_intent === "selected";
+    const wanted = new Map(spec.selected.map((item) => [item.slot_id, item]));
+    const selectedCount = spec.selected.reduce((total, item) => total + item.texts.length, 0);
+    const layouts: readonly string[] = SHOT_LAYOUTS;
+    // 已勾选但来源槽位已经不在这张图的绑定里的条目：界面上必须仍然可见、可移除，
+    // 否则用户看不见「还在印的文案」，编译门也只会给出一条指不到控件的消息。
+    const boundSlotIds = new Set(candidates.map((item) => item.entry.slot.slot_id));
+    const orphans = spec.selected.filter((item) => !boundSlotIds.has(item.slot_id));
+    const textWillPrint = spec.print_intent === "selected" && spec.selected.length > 0;
+    const layoutNeedsText = TEXT_LAYOUTS.includes(spec.layout) && !textWillPrint;
+    return html`
+      <div class="field" id=${"spec-print-" + shotId} role="radiogroup" aria-label="要不要在图上印文字">
+        <span class="label">要不要在图上印文字</span>
+        <label class="choice"><input type="radio" name=${"spec-print-" + shotId}
+          id=${"spec-print-none-" + shotId} value="none"
+          .checked=${live(spec.print_intent === "none")}
+          @change=${shotDecisionInput(shotId, "print_intent", "none")}>${printIntentLabelOf("none")}</label>
+        <label class="choice"><input type="radio" name=${"spec-print-" + shotId}
+          id=${"spec-print-selected-" + shotId} value="selected"
+          .checked=${live(spec.print_intent === "selected")}
+          @change=${shotDecisionInput(shotId, "print_intent", "selected")}>${printIntentLabelOf("selected")}</label>
+        ${decided ? nothing : html`<p class="meta" id=${"spec-print-undecided-" + shotId}>还没决定：选一个，保存后才生效。</p>`}
+      </div>
+      ${showTexts ? html`
+        <div class="field" id=${"spec-texts-" + shotId}>
+          <span class="label">所选文案（逐字印上图，最多 ${MAX_ON_IMAGE_TEXTS} 条）</span>
+          ${candidates.map(({ entry, texts }) => {
+            const captured: SelectedText | undefined = wanted.get(entry.slot.slot_id);
+            const currentText = texts.join("；");
+            const advanced: SelectedText | null = captured
+              && (captured.version !== entry.version || captured.texts.join("；") !== currentText)
+              ? captured : null;
+            return html`<label class="choice">
+              <input type="checkbox" id=${"spec-text-" + shotId + "-" + entry.slot.slot_id}
+                value=${entry.slot.slot_id}
+                .checked=${live(Boolean(captured))}
+                ?disabled=${!captured && selectedCount + texts.length > MAX_ON_IMAGE_TEXTS}
+                @change=${shotTextToggle(shotId, entry)}>
+              <span>${entry.slot.label}：${currentText}</span>
+              ${advanced ? html`<span class="meta" id=${"spec-text-advanced-" + shotId + "-" + entry.slot.slot_id}
+                >已选的是旧版「${advanced.texts.join("；")}」（v${advanced.version}），
+                当前事实已是 v${entry.version}：重新勾选这条即按新值重新确认。</span>` : nothing}
+            </label>`;
+          })}
+          ${orphans.map((item) => html`<label class="choice">
+            <input type="checkbox" id=${"spec-text-orphan-" + shotId + "-" + item.slot_id}
+              value=${item.slot_id} .checked=${live(true)}
+              @change=${shotOrphanToggle(shotId, item.slot_id)}>
+            <span>${slotLabelOfId(item.slot_id)}：${item.texts.join("；")}</span>
+            <span class="meta" id=${"spec-text-unbound-" + shotId + "-" + item.slot_id}
+              >来源已不在这张图的绑定里：勾掉即移除这条文案，或先把它重新绑定到这张图（编译会拦下未解除的条目）。</span>
+          </label>`)}
+          ${candidates.length === 0 && orphans.length === 0
+            ? html`<p class="meta">这张图还没有绑定可印的已确认事实：先去「图片任务」里绑定；文字类事实才能上图。</p>` : nothing}
+        </div>` : nothing}
+      <div class="field" id=${"spec-layout-" + shotId} role="radiogroup" aria-label="版面">
+        <span class="label">版面</span>
+        ${layouts.map((layout) => html`<label class="choice"><input type="radio"
+          name=${"spec-layout-" + shotId} id=${"spec-layout-" + shotId + "-" + layout} value=${layout}
+          .checked=${live(spec.layout === layout)}
+          @change=${shotDecisionInput(shotId, "layout", layout)}>${layoutLabelOf(layout)}</label>`)}
+        ${layoutNeedsText
+          ? html`<p class="meta" id=${"spec-layout-needs-text-" + shotId}
+            >选了文字版面，但这张图现在没有要印的文案：编译会被拦，请改成「${layoutLabelOf("product_only")}」，
+            或回到上面勾选要印的文案。</p>` : nothing}
+        ${spec.layout ? nothing : html`<p class="meta">还没决定：选一个版面，保存后才生效。</p>`}
+      </div>
+    `;
+  }
+
+  function shotDecisionInput(shotId: string, key: "print_intent" | "layout", value: string): (event: Event) => void {
+    return () => {
+      const spec = draft.shotSpecs[shotId];
+      if (!spec) return;
+      spec[key] = value;
+      renderSpecsCard();
+    };
+  }
+
+  /** 移除一条「来源已解绑」的文案：勾掉即从草稿里删掉该槽位的全部条目。 */
+  function shotOrphanToggle(shotId: string, slotId: string): (event: Event) => void {
+    return (event: Event) => {
+      const node = event.currentTarget as HTMLInputElement;
+      const spec = draft.shotSpecs[shotId];
+      if (!spec || node.checked) return;
+      spec.selected = spec.selected.filter((item) => item.slot_id !== slotId);
+      renderSpecsCard();
+    };
+  }
+
+  function shotTextToggle(shotId: string, entry: InputSlotEntry): (event: Event) => void {
+    return (event: Event) => {
+      const node = event.currentTarget as HTMLInputElement;
+      const spec = draft.shotSpecs[shotId];
+      if (!spec) return;
+      if (node.checked) {
+        if (!spec.selected.some((item) => item.slot_id === entry.slot.slot_id)) {
+          // 记下用户此刻看到的逐字值（列表按元素）与来源版本：保存写的是这一版，不是「保存那一刻的当前值」。
+          const value: unknown = entry.slot.value;
+          const texts = Array.isArray(value)
+            ? value.filter((item) => typeof item === "string" && item.trim().length > 0)
+              .map((item) => String(item).trim())
+            : (typeof value === "string" || typeof value === "number" ? [String(value).trim()] : []);
+          if (texts.length === 0) return;
+          spec.selected.push({
+            slot_id: entry.slot.slot_id, texts: texts, version: entry.version,
+          });
+        }
+      } else {
+        spec.selected = spec.selected.filter((item) => item.slot_id !== entry.slot.slot_id);
+      }
+      renderSpecsCard();
+    };
+  }
+
+
 
   function shotSpecCardTemplate(
     item: { shot_id: string | null; label: string; checklist: { sections: { label: string; items: string[] }[] } },
@@ -1496,6 +1747,7 @@ export function createInputView(
           <textarea id=${"spec-change-" + shotId} rows="2" .value=${live(spec.change_allowed)}
             @input=${shotSpecInput(shotId, "change_allowed")}></textarea>
         </div>
+        ${printDecisionRoleOf(shot) ? printDecisionTemplate(shotId, spec) : nothing}
         <div class="toolbar">
           <button type="button" @click=${() => void handleSaveShotSpec(shotId)}>保存</button>
           <button type="button" ?disabled=${!entry || entry.version <= 1}
@@ -1561,6 +1813,7 @@ export function createInputView(
           <textarea id="style-avoid" rows="2" .value=${live(draft.style.avoid)}
             @input=${styleInput("avoid")}></textarea>
         </div>
+        ${plan ? stylePresentationTemplate(plan) : nothing}
         <div class="toolbar">
           <button id="style-save" class="primary" type="button" @click=${() => void handleSaveStyle()}>保存风格</button>
           <button id="style-restore" type="button" ?disabled=${version <= 1}
@@ -1582,6 +1835,42 @@ export function createInputView(
       <p id="specs-error" class="error" role="alert" ?hidden=${!draft.errors.specs}>${draft.errors.specs}</p>
     `;
   }
+  /** 共用展示决定：选项 label/hint 直接读 PRESENTATION_FIELDS，不另写词表；未选不预选。 */
+  function stylePresentationTemplate(plan: SuitePlan): TemplateResult {
+    return html`
+      <div class="field" id="style-presentation">
+        <span class="label">展示决定（全部图片共用）</span>
+        ${PRESENTATION_FIELDS.filter((field) => presentationKeyAsked(plan, field.key))
+          .map((field) => {
+            const key = field.key === "appearance_state" || field.key === "contents_state" ? field.key : null;
+            if (!key) return nothing;
+            const current = draft.style[key];
+            return html`
+            <div class="field" id=${"style-presentation-" + key}
+              role="radiogroup" aria-label=${field.label}>
+              <span class="label">${field.label}</span>
+              ${field.options.filter((option) => option.value !== "undecided").map((option) => html`
+                <label class="choice"><input type="radio" name=${"style-" + key}
+                  id=${"style-" + key + "-" + option.value} value=${option.value}
+                  .checked=${live(current === option.value)}
+                  @change=${styleDecisionInput(key)}>${option.label}
+                  <span class="meta">${option.hint}</span></label>`)}
+              ${current ? nothing
+                : html`<p class="meta">还没决定：选一个，保存风格后才生效。</p>`}
+            </div>`;
+          })}
+      </div>
+    `;
+  }
+
+  function styleDecisionInput(key: "appearance_state" | "contents_state"): (event: Event) => void {
+    return (event: Event) => {
+      const node = event.currentTarget as HTMLInputElement;
+      draft.style[key] = node.value;
+      renderSpecsCard();
+    };
+  }
+
 
   function styleInput(key: keyof StyleDraft): (event: Event) => void {
     return (event: Event) => {
@@ -1661,11 +1950,23 @@ export function createInputView(
     draft.errors.specs = "";
     renderSpecsCard();
     try {
-      await inputs.saveShotSpec(shotId, {
+      // 新字段与旧字段一次性保存：选了就带上，没选的不写键（不写 "none"/"undecided" 占位，不静默丢已选字段）。
+      const changes: Partial<ShotSpec> = {
         purpose: spec.purpose.trim(),
         keep: splitLines(spec.keep),
         change_allowed: splitLines(spec.change_allowed),
-      });
+      };
+      if (spec.print_intent === "none" || spec.print_intent === "selected") {
+        changes.print_intent = spec.print_intent;
+      }
+      if (spec.layout === "product_only" || spec.layout === "product_left_text_right"
+        || spec.layout === "product_right_text_left") changes.layout = spec.layout;
+      if (spec.print_intent === "selected") {
+        changes.on_image_texts = onImageTextsFromDraft(spec);
+      } else if (spec.print_intent === "none") {
+        changes.on_image_texts = [];
+      }
+      await inputs.saveShotSpec(shotId, changes);
       if (!action.alive()) return;
       renderSpecsCard();
       deps.renderGenerationSections();

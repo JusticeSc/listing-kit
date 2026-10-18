@@ -757,9 +757,10 @@ TS/生成JS、elements绑定、stage-shell导航/焦点、订阅释放、现有�
 专业表达由系统承担；已有人工全文仍保护。新字段写入现有StyleSpec/ShotSpec与版本化Prompt链，不创建“意图包”、另一商品事实库或聊天Agent。
 
 1. **事实**仍是现有FactSlot：用户输入/原照观察/模型提议/默认/派生有来源和状态；model只能propose，不能confirm。明确用户确认一次覆盖同一值，不让已确认值因换图重复录入；保存草稿不等于确认。
-2. **展示决定**：StyleSpec的新 `presentation` 提供共用默认；ShotSpec同名字段只存明确单图覆盖，未覆盖则继承。字段为 `appearance_state: "as_shown" | "clean_display" | "undecided"`、`contents_state: "as_shown" | "empty" | "not_applicable" | "undecided"`、`viewpoint: "reference_visible" | "front" | "side" | "top"`。共用“洗净、倒空”同时设置前两项，不代表新物性；非容器不展示倒空问题。非原可见视角还须绑定可支持该视角的商品依据；仅文件名/角色不能证明视角。
+2. **展示决定**：StyleSpec的新 `presentation` 提供共用默认；ShotSpec同名字段只存明确单图覆盖，未覆盖则继承。字段为 `appearance_state: "as_shown" | "clean_display" | "undecided"`、`contents_state: "as_shown" | "empty" | "not_applicable" | "undecided"`、`viewpoint: "reference_visible" | "front" | "side" | "top"`。共用“洗净、倒空”同时设置前两项，不代表新物性；非容器不展示倒空问题。非原可见视角还须绑定可支持该视角的商品依据；仅文件名/角色不能证明视角。**本轮（#9）实施状态**：只落了 `appearance_state` 与 `contents_state`；`viewpoint` 暂未开放——程序在处理时统一写「沿用商品依据里可见的视角，不虚构背面/内部/未见部件」，因为「可支持某视角的商品依据」还没有可核验的数据模型，宁可先固定为已见视角，也不做一个没有证据门的视角选项。
 3. **问不问**是用途及证据投影：相关展示状态有歧义且会改变请求时才问；没有歧义/不消费该决定的用途不拦截。未回答的必要项为undecided并阻断对应图，不默选清洁。用户选顶视但无支持图时给“补图/使用已证视角/暂不做此图”，不补造隐藏结构。
 4. **上图文案**明确选择，不遍历所有事实自动印字。ShotSpec新增 `on_image_texts`，每项有稳定text_id、原文text、源FactSlot精确DocumentRef、status（proposed/confirmed）和origin（user/model/reuse）；只消费confirmed且来源当前的项。品牌按原文保留，数字/单位/维度对应原事实；说明指令与实际印字分段。系统可在一次已明确外发的理解中提出英文文案，人工确认；纯人工路线可用已有文案或明确选无字，不强制AI/翻译/专业Prompt。自由文本与事实的语义关系需人工对照，Schema绿不证明文案真实。
+   **版面与印字必须自洽（两个方向都拦）**：版面（`shot_spec.layout`）同样是用户决定，未决定就不写这个键、正文不排版面段。①选了「只印所选文案」却缺版面、或用「只放商品」版面 → 阻断，否则同一份提示词会同时要求「不出现文字」和「印出文字」；②选了文字版面却没有文案（不印新增文字，或该用途在绑定事实里拿不到可逐字印出的事实值）→ 阻断，否则正文会为不存在的文字留位置。程序不替用户默认文字放哪边，也不静默改写成能放文字的版面。所选文案的来源槽位必须仍在这张图的 `fact_slot_ids` 里：解绑后编译阻断，界面上该条目仍以便于移除的形式可见，不静默继续印用户已经移出这张图的依据。
 5. **推荐**仍由 `domain/suite-plan.js` 消费用途/事实/参考；每项输出目标相关性、依据、缺口及替代动作。只默认选目标相关且有依据的图；无尺寸不凑尺寸图，无竞品不凑对比图。未知非消费者不成为全项目填资料义务；用户可以显式建未就绪图，但不能偷偷生成。
 
 系统建议的背景/光照等可逆创意标明“建议”；用户明确意图优先，商品事实/平台硬约束不得覆盖。已存在手写keep/change_allowed/notes原文保留；结构决定与其冲突时展示给人，不能声称字符串相交或万能LLM自评已消除全部语义冲突。

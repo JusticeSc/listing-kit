@@ -1,0 +1,11 @@
+ app/product_v2/domain/confirm.js              |  30 +-
+ app/product_v2/domain/prompt.js               | 379 ++++++++++++++++++++++++--
+ app/product_v2/domain/review.js               |   7 +
+ app/product_v2/domain/specs.js                | 335 ++++++++++++++++++++++-
+ app/product_v2/domain/type-contracts.d.ts     |  30 ++
+ app/product_v2/prompts.ts                     |   2 +
+ app/product_v2/ui/generation-view.ts          | 272 +++++++++++++++---
+ app/product_v2/ui/input-view.ts               | 297 +++++++++++++++++++-
+ docs/product-v2-refactor-design.md            |   3 +-
+ tools/verify_v2_3_5_pre_generation_confirm.py |  54 +++-
+ 10 files changed, 1316 insertions(+), 93 deletions(-)

@@ -753,6 +753,8 @@ def browser_e2e_checks(check, screenshots: list[str], console_errors: list,
         page.reload(wait_until="networkidle")
         page.click("#suite-seed")
         expect(page.locator("#shot-list .shot-row")).to_have_count(4)
+        # Issue #9：编译前先做普通决定（用户真实路径）。
+        shared.decide_for_compile(page, page.evaluate(shared.SHOT_IDS))
         stage_nav.goto(page, "generate")
         # Prompt 编辑区在「查看／编辑完整 Prompt（高级）」折叠块里：默认收起，需按真实入口展开。
         if page.evaluate("() => !document.getElementById('prompt-details').open"):

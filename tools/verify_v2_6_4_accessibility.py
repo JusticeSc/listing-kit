@@ -307,6 +307,8 @@ def main() -> int:
                 page.wait_for_selector("#shot-list .shot-row", timeout=20_000)
                 page.click("#stage-next-plan")
                 shots = page.evaluate(shared.SHOT_IDS)
+                # Issue #9：编译前先做普通决定（用户真实路径）。
+                shared.decide_for_compile(page, shots)
                 shared.compile_all(page, shots)
                 empty = page.evaluate(EMPTY_STATE)
                 import v2_verify_shared as _shared
@@ -508,6 +510,8 @@ def main() -> int:
                     guard += 1
                 page2.click("#stage-next-plan")
                 drill_ids = page2.evaluate(shared.SHOT_IDS)
+                # Issue #9：编译前先做普通决定（用户真实路径）。
+                shared.decide_for_compile(page2, drill_ids)
                 shared.compile_all(page2, drill_ids)
                 gate2 = _shared.confirm_and_submit(page2, _expect,
                                                    lambda: page2.evaluate(shared.PROBE),

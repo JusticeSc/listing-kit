@@ -339,6 +339,8 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 expect(page.locator("#shot-list .shot-row")).to_have_count(4)
                 shot_ids = probe()["shot_ids"]
                 first_shot, second_shot = shot_ids[0], shot_ids[1]
+                # Issue #9：编译前先做普通决定（用户真实路径）；choices 进 ui 证据。
+                ui["decisions"] = shared.decide_for_compile(page, shot_ids)
                 shared.compile_all(page, shot_ids)
                 expect(page.locator("#confirm-action")).to_be_enabled()
                 page.click("#confirm-action")

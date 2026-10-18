@@ -480,6 +480,8 @@ def main() -> int:
                 expect(page.locator("#shot-list .shot-row")).to_have_count(4)
                 initial = probe()
                 shot_ids = initial["shot_ids"]
+                # Issue #9：编译前先做普通决定（用户真实路径）；choices 进 ui 证据。
+                ui["decisions"] = shared.decide_for_compile(page, shot_ids)
                 stage_nav.goto(page, "generate")
                 page.evaluate("() => { document.getElementById('prompt-details').open = true; }")
                 compile_all(page, shot_ids)
