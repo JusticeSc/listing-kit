@@ -1,7 +1,7 @@
 # Issue #9 状态（草稿，等全部绿灯后发布）
 
 > 目标：普通输入 + 程序协调的正向视觉简报；不遍历事实自动印字；生成前把表达写清楚。
-> 分支：`feat/9-program-expression-20261018`（本次改动尚在工作树，未提交/未推送）
+> 分支：`feat/9-program-expression-20261018` → Draft PR [#18](https://github.com/JusticeSc/listing-kit/pull/18)（已推送，等待 CI 与人工审阅；未合并）
 
 ## 已实现
 
@@ -31,6 +31,6 @@
 - `viewpoint` 未开放（设计 §13.4 已记实施状态）；单图 `presentation` 覆盖只有域层与测试，页面暂无入口（确认单文案已改为「整套共用」）。
 - 返工/重提路径本轮未覆盖。
 
-## 待办（需要授权）
+## 交付状态
 
-本次改动仍在工作树（未 `git add`/提交/推送）。要发布需要明确授权：提交到 `feat/9-program-expression-20261018` → 推送 → 开 Draft PR（PR 正文用本文件）→ 等 CI → 由人审阅。**未经授权不动远程。**
+已按授权提交并推送 4 个提交、创建 Draft PR [#18](https://github.com/JusticeSc/listing-kit/pull/18)（`isDraft=true`，base `main`，169 个文件 / +7840 −161）。CI 已触发（`Classify changed paths` 通过；`Control plane and Product V2` 见 PR checks）。**未合并、未部署、无真实模型调用**；像素品质与真人验收仍在本轮之外。

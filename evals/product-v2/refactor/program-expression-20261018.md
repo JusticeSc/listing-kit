@@ -167,6 +167,10 @@ npm run test:domain                              # 域套件（含 P 系列：�
 
 改门后重跑全部 18 条 Python 验证器（18:22–18:30，逐条 `gatefix-*.log`）与页面 E2E，见 §6.1 / §6.2。
 
+### 6.4 交付
+
+以 4 个提交推送到 `feat/9-program-expression-20261018`，Draft PR **#18**（`https://github.com/JusticeSc/listing-kit/pull/18`，`isDraft=true`，base `main`，169 文件 / +7840 −161）；PR 正文含真实差量验证、独立审查收口、未证范围与 Issue #9 关联。CI：`Classify changed paths` 通过，`Control plane and Product V2` 见 PR checks。**未合并、未部署、无真实模型调用。**
+
 ---
 
 ## 7. 本轮改动的产品行为边界
