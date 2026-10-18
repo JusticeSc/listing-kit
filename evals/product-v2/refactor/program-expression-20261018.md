@@ -171,6 +171,12 @@ npm run test:domain                              # 域套件（含 P 系列：�
 
 本切片改动公共编译链与 input-view，故把 CI `verify` 作业里**另外 16 条**未在 §6.1 覆盖的验证器也在本机跑了一遍（`uv run --locked python tools/<name>.py`，逐条日志 `_stage-amz-control/issue9-expression-20261018T080410Z/verifier-rerun/ci-<name>.log`）：`2_1_1` `2_1_2` `2_1_3` `2_1_4` `2_2_1` `2_2_2` `2_2_3` `2_3_1` `2_3_2` `2_3_3-session-lifecycle` `2_3_3-spec-versions` `2_5_5` `2_6_2` `2_6_3` `packet08-adoption-ai` `packet08-delivery-ai`。**16/16 退出码 0**（本机 Windows + 无头 Chromium，替身 provider）。加上 §6.1 的 18 条，CI `verify` 列举的 32 条验证器本机全绿；CI 自身结果仍以 PR #18 的 check 为准。
 
+### 6.6 交付前复核（本分支门，非其他工作树）
+
+- 复核对象是 **PR 分支 `feat/9-program-expression-20261018` 自己的工作树**（`amz-listing-kit-issue9-expression`），不是修隔离用例时用的旧工作树。
+- 本分支 CI PR 作业的前端门逐条重跑：`check:versions`、`build:envelope`、`check:types`、`build:frontend`、`check:envelope`、`build:frontend-node`、`test:domain` —— **7/7 退出码 0**（`verifier-rerun/ci-frontend-gates.log`；域套件 tests 254 / pass 254 / fail 0）。跑完工作树无源码改动（生成的 envelope 产物与提交一致）。
+- 口径提醒：本分支 `package.json` **没有** `check:generated` 脚本（那是另一工作树/分支的脚本）；本分支的生成物新鲜度门是 `check:envelope`（含 `ENVELOPE-CODEGEN-REPRODUCIBLE` 与 199 案例跨语言等价），已 rc=0。
+
 ### 6.4 交付
 
 以 4 个提交推送到 `feat/9-program-expression-20261018`，Draft PR **#18**（`https://github.com/JusticeSc/listing-kit/pull/18`，`isDraft=true`，base `main`，169 文件 / +7840 −161）；PR 正文含真实差量验证、独立审查收口、未证范围与 Issue #9 关联。CI：`Classify changed paths` 通过，`Control plane and Product V2` 见 PR checks。**未合并、未部署、无真实模型调用。**
