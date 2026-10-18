@@ -1,0 +1,20 @@
+  [PASS] V2.6.2-00 ESM 语法门（domain / workspace / 契约套件）
+  [PASS] V2.6.2-02 契约套件 D01–D06 全过
+  [PASS] V2.6.2-03 工作台交付门禁：无阻断、按钮可用、逐图行完整
+  [PASS] V2.6.2-13 交付页投影整套检查结论：摘要 + 非 PASS 发现（带定位）与存储报告逐条一致；可选 AI 未跑记 not_run 不阻断
+  [PASS] V2.6.2-04 交付包下载成功，Python 独立核对 ZIP 内容与哈希
+  [PASS] V2.6.2-05 export_record 以 append-only 文档写入 IndexedDB
+  [PASS] V2.6.2-06 重复生成只追加：两条记录、document_id 与包哈希各自独立
+  [PASS] V2.6.2-07 刷新后：记录仍在、门禁仍无阻断、最近交付包可见
+  [PASS] V2.6.2-08 候选字节缺失：门禁阻断、按钮禁用、不产生新记录
+  [PASS] V2.6.2-12 整套一致性阻断（非图级）：带「去运行整套检查」定位入口并把焦点落到运行按钮
+  [PASS] V2.6.2-09 主链零意外 console / page / HTTP 错误
+  [PASS] V2.6.2-10 Unknown 未确认不可导出；逐条确认后门禁通过并可交付
+  [PASS] V2.6.2-11 正式入口自检全过
+- evals/product-v2/evidence/v2.6.2-delivery-20261018-184645-gate-pass.png
+- evals/product-v2/evidence/v2.6.2-delivery-20261018-184645-after-reload.png
+- evals/product-v2/evidence/v2.6.2-delivery-20261018-184645-hash-missing.png
+- evals/product-v2/evidence/v2.6.2-delivery-20261018-184645-suite-missing.png
+- evals/product-v2/evidence/v2.6.2-delivery-20261018-184645-unknown-blocked.png
+- evals/product-v2/evidence/v2.6.2-delivery-20261018-184645-unknown-confirmed.png
+证据：evals/product-v2/v2.6.2-delivery-20261018-184645.txt

@@ -28,7 +28,12 @@
      #spec-text-orphan-<shotId>-signature_features 且内容照旧；(ii) 编译被拦，消息含
      「不在这张图的绑定里」；(iii) 勾掉该行并保存 → shot_spec.on_image_texts 变空
      （读记录）；(iv) 重新绑定 + 勾选 + 保存 → 阻断消失。
-用法：
+  E3. 提交请求图像参数与页面冻结 request_snapshot 逐项相等（size、n 及携带的
+     prompt_extend/watermark/output_format/model_id/target；negative_prompt 未被
+     请求携带，如实报 absent）。期望值只读记录，不手抄。
+  E4. 提交请求 references 按序与冻结记录一致：同长度、按序同 role/media_type，
+     base64 解码 sha256 同时等于请求自带 sha256 与记录 sha256，且 primary 位
+     独立等于 PRIMARY_SHA256 夹具值。期望值只读记录与资产行，不手抄。
   uv run --locked python _stage-amz-control/issue9-expression-20261018T080410Z/verify_issue9_ui_e2e.py
   uv run --locked python .../verify_issue9_ui_e2e.py --base-url http://127.0.0.1:38169
 
@@ -40,6 +45,7 @@
 from __future__ import annotations
 
 import argparse
+import base64
 import hashlib
 import json
 import sys
@@ -981,6 +987,149 @@ def main() -> int:
                 "每张图的提交请求 prompt 与页面编译产物逐字相等，且含该用途"
                 "全部画面简报句（证明程序把编译稿发出去，不是硬编码）",
                 e2_rows, e2_ok and len(e2_rows) == len(shots))
+            # E3：请求图像参数与冻结记录逐项相等（期望值只读页面 prompt_version
+            # 记录的 request_snapshot，不手抄；body 携带才比，未携带如实报 absent）
+            e3_rows = []
+            e3_ok = True
+            for body in requests:
+                shot_id = action_to_shot.get(body.get("action_id"))
+                doc = (prompt_docs.get(shot_id) or {}) if shot_id else None
+                record = (doc or {}).get("record") or {}
+                snapshot = record.get("request_snapshot") or {}
+                compared: dict = {}
+                absent: list = []
+                for key in ("size", "n", "negative_prompt", "prompt_extend",
+                            "watermark", "output_format"):
+                    if key not in body:
+                        absent.append({"key": key, "where": "request_body",
+                                       "record_value": snapshot.get(key)})
+                        continue
+                    if key not in snapshot:
+                        compared[key] = {"request": body.get(key),
+                                         "record": None,
+                                         "equal": False,
+                                         "note": "record无此字段，不可验证"}
+                        e3_ok = False
+                        continue
+                    same = body.get(key) == snapshot.get(key)
+                    compared[key] = {"request": body.get(key),
+                                     "record": snapshot.get(key),
+                                     "equal": same}
+                    e3_ok = e3_ok and same
+                # model_id 对快照 model；target 对快照 target 的四个身份键
+                # （credential_source 是运行时凭据标签，快照无此字段，只记录不比）
+                if "model_id" in body:
+                    same = body.get("model_id") == snapshot.get("model")
+                    compared["model_id"] = {"request": body.get("model_id"),
+                                            "record": snapshot.get("model"),
+                                            "equal": same}
+                    e3_ok = e3_ok and same
+                else:
+                    absent.append({"key": "model_id", "where": "request_body",
+                                   "record_value": snapshot.get("model")})
+                snap_target = snapshot.get("target") or {}
+                raw_target = body.get("target")
+                body_target = raw_target if isinstance(raw_target, dict) else None
+                if body_target is None:
+                    absent.append({"key": "target", "where": "request_body",
+                                   "record_value": snap_target or None})
+                else:
+                    target_compared = {}
+                    for key in ("provider_id", "model_id", "protocol",
+                                "capability_version"):
+                        same = body_target.get(key) == snap_target.get(key)
+                        target_compared[key] = {"request": body_target.get(key),
+                                                "record": snap_target.get(key),
+                                                "equal": same}
+                        e3_ok = e3_ok and same
+                    compared["target"] = {
+                        "compared": target_compared,
+                        "credential_source": body_target.get("credential_source"),
+                        "note": "credential_source只记录（快照无此字段），四身份键逐项比",
+                    }
+                e3_rows.append({"action_id": body.get("action_id"),
+                                "shot_id": shot_id,
+                                "compared": compared, "absent": absent})
+            evidence.add(
+                "E3-request-parameters-match-record",
+                "每张提交请求的图像参数（size、n 及携带的 prompt_extend/watermark/"
+                "output_format/model_id/target）与页面冻结 request_snapshot 逐项"
+                "相等；negative_prompt 未被请求携带（服务端契约亦无此字段），如实报 absent",
+                {"compared_keys": ["size", "n", "prompt_extend", "watermark",
+                                   "output_format", "model_id", "target"],
+                 "absent_keys": ["negative_prompt"],
+                 "rows": e3_rows},
+                e3_ok and len(e3_rows) == len(shots))
+            # E4：请求 references 按序与冻结记录一致，且字节身份可独立验证
+            # （期望 role/sha256 只读 request_snapshot.references；期望 media_type
+            # 只读页面资产行 asset_rows；解码用标准 base64+sha256，不手抄期望值）
+            asset_media = {}
+            for row in (data.get("asset_rows") or []):
+                if row.get("sha256"):
+                    asset_media[row["sha256"]] = row.get("media_type")
+            e4_rows = []
+            e4_ok = True
+            for body in requests:
+                shot_id = action_to_shot.get(body.get("action_id"))
+                doc = (prompt_docs.get(shot_id) or {}) if shot_id else None
+                record = (doc or {}).get("record") or {}
+                frozen_refs = ((record.get("request_snapshot") or {})
+                               .get("references") or [])
+                body_refs = body.get("references") or []
+                positions = []
+                for index, ref in enumerate(body_refs):
+                    raw = ref.get("data_base64") or ""
+                    try:
+                        digest = hashlib.sha256(
+                            base64.b64decode(raw, validate=True)).hexdigest()
+                    except Exception:
+                        digest = None
+                    frozen = frozen_refs[index] if index < len(frozen_refs) else None
+                    exp_media = (asset_media.get((frozen or {}).get("sha256"))
+                                 if frozen else None)
+                    role_equal = (frozen is not None
+                                  and ref.get("role") == frozen.get("role"))
+                    media_equal = (exp_media is not None
+                                   and ref.get("media_type") == exp_media)
+                    matches_field = (digest is not None
+                                     and digest == ref.get("sha256"))
+                    matches_record = (frozen is not None and digest is not None
+                                      and digest == frozen.get("sha256"))
+                    primary_ok = (ref.get("role") != "primary"
+                                  or digest == PRIMARY_SHA256)
+                    positions.append({
+                        "index": index,
+                        "role": ref.get("role"),
+                        "role_expected": (frozen or {}).get("role"),
+                        "role_equal": role_equal,
+                        "media_type": ref.get("media_type"),
+                        "media_type_expected": exp_media,
+                        "media_type_equal": media_equal,
+                        "sha256_field": ref.get("sha256"),
+                        "sha256_decoded": digest,
+                        "matches_field": matches_field,
+                        "matches_record": matches_record,
+                        "primary_fixture_match": (
+                            digest == PRIMARY_SHA256
+                            if ref.get("role") == "primary" else None),
+                    })
+                    e4_ok = (e4_ok and role_equal and media_equal
+                             and matches_field and matches_record and primary_ok)
+                length_equal = len(body_refs) == len(frozen_refs)
+                e4_ok = e4_ok and length_equal
+                e4_rows.append({"action_id": body.get("action_id"),
+                                "shot_id": shot_id,
+                                "length_equal": length_equal,
+                                "body_count": len(body_refs),
+                                "record_count": len(frozen_refs),
+                                "positions": positions})
+            evidence.add(
+                "E4-reference-identity-order",
+                "每张提交请求的 references 与冻结记录同长度、按序同 role/media_type，"
+                "且 base64 解码 sha256 同时等于请求自带 sha256 与记录 sha256；"
+                "primary 位解码值独立等于 PRIMARY_SHA256 夹具值",
+                {"primary_sha256": PRIMARY_SHA256, "rows": e4_rows},
+                e4_ok and len(e4_rows) == len(shots))
 
             # F：零 console error / page error
             unexpected_console = [line for line in logs["console"]

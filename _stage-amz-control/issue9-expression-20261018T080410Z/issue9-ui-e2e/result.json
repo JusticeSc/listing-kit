@@ -4,7 +4,7 @@
   "page": "http://127.0.0.1:38169/",
   "project_zip": "_stage-amz-control/asset-continuation-20261008T054352Z/data/manual-project.zip",
   "primary_sha256": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461",
-  "finished_at": "2026-10-18T10:33:08.686732+00:00",
+  "finished_at": "2026-10-18T10:48:06.653309+00:00",
   "status": "passed",
   "checks": [
     {
@@ -814,41 +814,532 @@
       "statement": "每张图的提交请求 prompt 与页面编译产物逐字相等，且含该用途全部画面简报句（证明程序把编译稿发出去，不是硬编码）",
       "actual": [
         {
-          "action_id": "act-1240f2d0ebfb483299137aac64fd678a",
+          "action_id": "act-c036b7236fd84ba89a0f2d2726829a18",
           "shot_id": "shot_main_clean",
           "prompt_equal_compiled": true,
           "has_role_brief": true,
           "prompt_chars": 643
         },
         {
-          "action_id": "act-fe2cbd56c5a34c22823f2c83c930790b",
+          "action_id": "act-5b48d104965c444eadc7fd565652d327",
           "shot_id": "shot_infographic_benefits",
           "prompt_equal_compiled": true,
           "has_role_brief": true,
           "prompt_chars": 682
         },
         {
-          "action_id": "act-2cb69f20f835494b81eb68d472ddf173",
+          "action_id": "act-012fd20e2ff5406b800ede4ac3d6cd07",
           "shot_id": "shot_scene_lifestyle",
           "prompt_equal_compiled": true,
           "has_role_brief": true,
           "prompt_chars": 576
         },
         {
-          "action_id": "act-67404fb2fe5a4ceba43b9ff2bf67cb64",
+          "action_id": "act-f7d41c9ea69f49b39e526f8748714ef1",
           "shot_id": "shot_detail_material",
           "prompt_equal_compiled": true,
           "has_role_brief": true,
           "prompt_chars": 511
         },
         {
-          "action_id": "act-a3806f333de0409a8925760fe9372187",
+          "action_id": "act-456d5656e58f4bb08d020799c113b60a",
           "shot_id": "shot_size_dimensions",
           "prompt_equal_compiled": true,
           "has_role_brief": true,
           "prompt_chars": 545
         }
       ],
+      "passed": true
+    },
+    {
+      "id": "E3-request-parameters-match-record",
+      "statement": "每张提交请求的图像参数（size、n 及携带的 prompt_extend/watermark/output_format/model_id/target）与页面冻结 request_snapshot 逐项相等；negative_prompt 未被请求携带（服务端契约亦无此字段），如实报 absent",
+      "actual": {
+        "compared_keys": [
+          "size",
+          "n",
+          "prompt_extend",
+          "watermark",
+          "output_format",
+          "model_id",
+          "target"
+        ],
+        "absent_keys": [
+          "negative_prompt"
+        ],
+        "rows": [
+          {
+            "action_id": "act-c036b7236fd84ba89a0f2d2726829a18",
+            "shot_id": "shot_main_clean",
+            "compared": {
+              "size": {
+                "request": "1344*1344",
+                "record": "1344*1344",
+                "equal": true
+              },
+              "n": {
+                "request": 1,
+                "record": 1,
+                "equal": true
+              },
+              "prompt_extend": {
+                "request": false,
+                "record": false,
+                "equal": true
+              },
+              "watermark": {
+                "request": false,
+                "record": false,
+                "equal": true
+              },
+              "output_format": {
+                "request": "png",
+                "record": "png",
+                "equal": true
+              },
+              "model_id": {
+                "request": "qwen-image-3.0",
+                "record": "qwen-image-3.0",
+                "equal": true
+              },
+              "target": {
+                "compared": {
+                  "provider_id": {
+                    "request": "fake-qwen-image",
+                    "record": "fake-qwen-image",
+                    "equal": true
+                  },
+                  "model_id": {
+                    "request": "qwen-image-3.0",
+                    "record": "qwen-image-3.0",
+                    "equal": true
+                  },
+                  "protocol": {
+                    "request": "v2.4.1",
+                    "record": "v2.4.1",
+                    "equal": true
+                  },
+                  "capability_version": {
+                    "request": 3,
+                    "record": 3,
+                    "equal": true
+                  }
+                },
+                "credential_source": "test_double",
+                "note": "credential_source只记录（快照无此字段），四身份键逐项比"
+              }
+            },
+            "absent": [
+              {
+                "key": "negative_prompt",
+                "where": "request_body",
+                "record_value": null
+              }
+            ]
+          },
+          {
+            "action_id": "act-5b48d104965c444eadc7fd565652d327",
+            "shot_id": "shot_infographic_benefits",
+            "compared": {
+              "size": {
+                "request": "1344*1344",
+                "record": "1344*1344",
+                "equal": true
+              },
+              "n": {
+                "request": 1,
+                "record": 1,
+                "equal": true
+              },
+              "prompt_extend": {
+                "request": false,
+                "record": false,
+                "equal": true
+              },
+              "watermark": {
+                "request": false,
+                "record": false,
+                "equal": true
+              },
+              "output_format": {
+                "request": "png",
+                "record": "png",
+                "equal": true
+              },
+              "model_id": {
+                "request": "qwen-image-3.0",
+                "record": "qwen-image-3.0",
+                "equal": true
+              },
+              "target": {
+                "compared": {
+                  "provider_id": {
+                    "request": "fake-qwen-image",
+                    "record": "fake-qwen-image",
+                    "equal": true
+                  },
+                  "model_id": {
+                    "request": "qwen-image-3.0",
+                    "record": "qwen-image-3.0",
+                    "equal": true
+                  },
+                  "protocol": {
+                    "request": "v2.4.1",
+                    "record": "v2.4.1",
+                    "equal": true
+                  },
+                  "capability_version": {
+                    "request": 3,
+                    "record": 3,
+                    "equal": true
+                  }
+                },
+                "credential_source": "test_double",
+                "note": "credential_source只记录（快照无此字段），四身份键逐项比"
+              }
+            },
+            "absent": [
+              {
+                "key": "negative_prompt",
+                "where": "request_body",
+                "record_value": null
+              }
+            ]
+          },
+          {
+            "action_id": "act-012fd20e2ff5406b800ede4ac3d6cd07",
+            "shot_id": "shot_scene_lifestyle",
+            "compared": {
+              "size": {
+                "request": "1344*1344",
+                "record": "1344*1344",
+                "equal": true
+              },
+              "n": {
+                "request": 1,
+                "record": 1,
+                "equal": true
+              },
+              "prompt_extend": {
+                "request": false,
+                "record": false,
+                "equal": true
+              },
+              "watermark": {
+                "request": false,
+                "record": false,
+                "equal": true
+              },
+              "output_format": {
+                "request": "png",
+                "record": "png",
+                "equal": true
+              },
+              "model_id": {
+                "request": "qwen-image-3.0",
+                "record": "qwen-image-3.0",
+                "equal": true
+              },
+              "target": {
+                "compared": {
+                  "provider_id": {
+                    "request": "fake-qwen-image",
+                    "record": "fake-qwen-image",
+                    "equal": true
+                  },
+                  "model_id": {
+                    "request": "qwen-image-3.0",
+                    "record": "qwen-image-3.0",
+                    "equal": true
+                  },
+                  "protocol": {
+                    "request": "v2.4.1",
+                    "record": "v2.4.1",
+                    "equal": true
+                  },
+                  "capability_version": {
+                    "request": 3,
+                    "record": 3,
+                    "equal": true
+                  }
+                },
+                "credential_source": "test_double",
+                "note": "credential_source只记录（快照无此字段），四身份键逐项比"
+              }
+            },
+            "absent": [
+              {
+                "key": "negative_prompt",
+                "where": "request_body",
+                "record_value": null
+              }
+            ]
+          },
+          {
+            "action_id": "act-f7d41c9ea69f49b39e526f8748714ef1",
+            "shot_id": "shot_detail_material",
+            "compared": {
+              "size": {
+                "request": "1344*1344",
+                "record": "1344*1344",
+                "equal": true
+              },
+              "n": {
+                "request": 1,
+                "record": 1,
+                "equal": true
+              },
+              "prompt_extend": {
+                "request": false,
+                "record": false,
+                "equal": true
+              },
+              "watermark": {
+                "request": false,
+                "record": false,
+                "equal": true
+              },
+              "output_format": {
+                "request": "png",
+                "record": "png",
+                "equal": true
+              },
+              "model_id": {
+                "request": "qwen-image-3.0",
+                "record": "qwen-image-3.0",
+                "equal": true
+              },
+              "target": {
+                "compared": {
+                  "provider_id": {
+                    "request": "fake-qwen-image",
+                    "record": "fake-qwen-image",
+                    "equal": true
+                  },
+                  "model_id": {
+                    "request": "qwen-image-3.0",
+                    "record": "qwen-image-3.0",
+                    "equal": true
+                  },
+                  "protocol": {
+                    "request": "v2.4.1",
+                    "record": "v2.4.1",
+                    "equal": true
+                  },
+                  "capability_version": {
+                    "request": 3,
+                    "record": 3,
+                    "equal": true
+                  }
+                },
+                "credential_source": "test_double",
+                "note": "credential_source只记录（快照无此字段），四身份键逐项比"
+              }
+            },
+            "absent": [
+              {
+                "key": "negative_prompt",
+                "where": "request_body",
+                "record_value": null
+              }
+            ]
+          },
+          {
+            "action_id": "act-456d5656e58f4bb08d020799c113b60a",
+            "shot_id": "shot_size_dimensions",
+            "compared": {
+              "size": {
+                "request": "1344*1344",
+                "record": "1344*1344",
+                "equal": true
+              },
+              "n": {
+                "request": 1,
+                "record": 1,
+                "equal": true
+              },
+              "prompt_extend": {
+                "request": false,
+                "record": false,
+                "equal": true
+              },
+              "watermark": {
+                "request": false,
+                "record": false,
+                "equal": true
+              },
+              "output_format": {
+                "request": "png",
+                "record": "png",
+                "equal": true
+              },
+              "model_id": {
+                "request": "qwen-image-3.0",
+                "record": "qwen-image-3.0",
+                "equal": true
+              },
+              "target": {
+                "compared": {
+                  "provider_id": {
+                    "request": "fake-qwen-image",
+                    "record": "fake-qwen-image",
+                    "equal": true
+                  },
+                  "model_id": {
+                    "request": "qwen-image-3.0",
+                    "record": "qwen-image-3.0",
+                    "equal": true
+                  },
+                  "protocol": {
+                    "request": "v2.4.1",
+                    "record": "v2.4.1",
+                    "equal": true
+                  },
+                  "capability_version": {
+                    "request": 3,
+                    "record": 3,
+                    "equal": true
+                  }
+                },
+                "credential_source": "test_double",
+                "note": "credential_source只记录（快照无此字段），四身份键逐项比"
+              }
+            },
+            "absent": [
+              {
+                "key": "negative_prompt",
+                "where": "request_body",
+                "record_value": null
+              }
+            ]
+          }
+        ]
+      },
+      "passed": true
+    },
+    {
+      "id": "E4-reference-identity-order",
+      "statement": "每张提交请求的 references 与冻结记录同长度、按序同 role/media_type，且 base64 解码 sha256 同时等于请求自带 sha256 与记录 sha256；primary 位解码值独立等于 PRIMARY_SHA256 夹具值",
+      "actual": {
+        "primary_sha256": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461",
+        "rows": [
+          {
+            "action_id": "act-c036b7236fd84ba89a0f2d2726829a18",
+            "shot_id": "shot_main_clean",
+            "length_equal": true,
+            "body_count": 1,
+            "record_count": 1,
+            "positions": [
+              {
+                "index": 0,
+                "role": "primary",
+                "role_expected": "primary",
+                "role_equal": true,
+                "media_type": "image/jpeg",
+                "media_type_expected": "image/jpeg",
+                "media_type_equal": true,
+                "sha256_field": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461",
+                "sha256_decoded": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461",
+                "matches_field": true,
+                "matches_record": true,
+                "primary_fixture_match": true
+              }
+            ]
+          },
+          {
+            "action_id": "act-5b48d104965c444eadc7fd565652d327",
+            "shot_id": "shot_infographic_benefits",
+            "length_equal": true,
+            "body_count": 1,
+            "record_count": 1,
+            "positions": [
+              {
+                "index": 0,
+                "role": "primary",
+                "role_expected": "primary",
+                "role_equal": true,
+                "media_type": "image/jpeg",
+                "media_type_expected": "image/jpeg",
+                "media_type_equal": true,
+                "sha256_field": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461",
+                "sha256_decoded": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461",
+                "matches_field": true,
+                "matches_record": true,
+                "primary_fixture_match": true
+              }
+            ]
+          },
+          {
+            "action_id": "act-012fd20e2ff5406b800ede4ac3d6cd07",
+            "shot_id": "shot_scene_lifestyle",
+            "length_equal": true,
+            "body_count": 1,
+            "record_count": 1,
+            "positions": [
+              {
+                "index": 0,
+                "role": "primary",
+                "role_expected": "primary",
+                "role_equal": true,
+                "media_type": "image/jpeg",
+                "media_type_expected": "image/jpeg",
+                "media_type_equal": true,
+                "sha256_field": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461",
+                "sha256_decoded": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461",
+                "matches_field": true,
+                "matches_record": true,
+                "primary_fixture_match": true
+              }
+            ]
+          },
+          {
+            "action_id": "act-f7d41c9ea69f49b39e526f8748714ef1",
+            "shot_id": "shot_detail_material",
+            "length_equal": true,
+            "body_count": 1,
+            "record_count": 1,
+            "positions": [
+              {
+                "index": 0,
+                "role": "primary",
+                "role_expected": "primary",
+                "role_equal": true,
+                "media_type": "image/jpeg",
+                "media_type_expected": "image/jpeg",
+                "media_type_equal": true,
+                "sha256_field": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461",
+                "sha256_decoded": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461",
+                "matches_field": true,
+                "matches_record": true,
+                "primary_fixture_match": true
+              }
+            ]
+          },
+          {
+            "action_id": "act-456d5656e58f4bb08d020799c113b60a",
+            "shot_id": "shot_size_dimensions",
+            "length_equal": true,
+            "body_count": 1,
+            "record_count": 1,
+            "positions": [
+              {
+                "index": 0,
+                "role": "primary",
+                "role_expected": "primary",
+                "role_equal": true,
+                "media_type": "image/jpeg",
+                "media_type_expected": "image/jpeg",
+                "media_type_equal": true,
+                "sha256_field": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461",
+                "sha256_decoded": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461",
+                "matches_field": true,
+                "matches_record": true,
+                "primary_fixture_match": true
+              }
+            ]
+          }
+        ]
+      },
       "passed": true
     },
     {
@@ -884,7 +1375,7 @@
         },
         {
           "file": "5-candidates.png",
-          "bytes": 106317
+          "bytes": 106322
         },
         {
           "file": "6a-layout-needs-text.png",
