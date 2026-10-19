@@ -1,0 +1,13 @@
+{
+  "number": 19,
+  "headRefOid": "9bd2b9d1e7663039a37189b6e16caff0cc400af6",
+  "state": "MERGED",
+  "mergedAt": "2026-10-19T15:25:33Z",
+  "mergeCommit": "689c6b08b8ebb937eb4af457b912d4d874ecd6ab",
+  "url": "https://github.com/JusticeSc/listing-kit/pull/19",
+  "required_checks_on_head": {
+    "Control plane and Product V2": "SUCCESS",
+    "Docker image, smoke test, and main deploy": "SUCCESS"
+  },
+  "ci_run": "https://github.com/JusticeSc/listing-kit/actions/runs/39275366557"
+}

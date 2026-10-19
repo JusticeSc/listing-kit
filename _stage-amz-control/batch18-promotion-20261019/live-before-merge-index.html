@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Amazon US 商品套图</title>
+<link rel="icon" href="data:,">
+  <script type="module" crossorigin src="./_virtual/_vite/modulepreload-polyfill.js"></script>
+  <script type="module" crossorigin src="./_virtual/_vite/preload-helper.js"></script>
+  <script type="module" crossorigin src="./app/product_v2/entry.js"></script>
+  <link rel="stylesheet" crossorigin href="./app/product_v2/styles.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <h1 class="brand">Amazon US 商品套图</h1>
+    <p class="topbar-note">项目保存在这台浏览器；服务器不保存你的项目，也不保存最近使用记录。</p>
+    <button id="model-settings-open" type="button" aria-haspopup="dialog" aria-controls="model-settings-dialog">模型设置</button>
+  </div>
+</header>
+
+<main>
+  <!-- 启动反馈在模块尚未加载时也可见；app 首次接管挂载点后由模板投影启动状态。 -->
+  <div id="boot-mount"><p id="boot-pending" class="meta" role="status">正在启动本地项目库…</p><p id="boot-error" class="error" role="alert" hidden></p><p id="boot-retry-row" hidden><button id="boot-retry" type="button">重试启动</button></p></div>
+  <section id="capability-notice" class="error diag" role="alert" hidden>
+  </section>
+
+
+  <!-- ================= 项目首页 ================= -->
+  <section id="home-view" class="home" aria-labelledby="home-title">
+    <div class="home-head">
+      <h2 id="home-title" class="section-title">本机项目</h2>
+      <p class="meta">从空白开始：给项目起个名字、上传商品参考图，其余交给系统。</p>
+    </div>
+    <form id="create-form" class="create-form" autocomplete="off">
+      <label class="visually-hidden" for="new-project-name">新项目名称</label>
+      <input id="new-project-name" name="name" maxlength="120" disabled
+             placeholder="商品或任务名称，例如：蓝色保温杯 秋季主图">
+      <button id="create-project" class="primary" type="submit" disabled>新建项目</button>
+    </form>
+    <div class="import-row">
+      <button id="import-trigger" class="ghost" type="button" disabled>导入项目包（.zip）</button>
+      <input id="import-file" type="file" accept=".zip,application/zip" hidden>
+      <span class="meta">项目包包含完整历史，可在另一台机器或另一个浏览器里恢复。</span>
+    </div>
+    <div id="home-notices"></div>
+    <ul id="project-list" class="project-list"></ul>
+  </section>
+
+  <!-- ================= 工作台（六阶段） ================= -->
+  <section id="project-view" class="workspace" hidden>
+    <header class="workspace-head">
+      <button id="back-home" class="link-button" type="button">← 项目列表</button>
+      <div class="workspace-title">
+        <h2 id="project-title" class="section-title"></h2>
+        <span id="project-state" class="badge"></span>
+      </div>
+      <p id="save-state" class="meta save-state" role="status"></p>
+      <details class="project-meta">
+        <summary>项目信息</summary>
+        <dl class="facts">
+          <div><dt>创建时间</dt><dd id="project-created"></dd></div>
+          <div><dt>最近更新</dt><dd id="project-updated"></dd></div>
+          <div><dt>当前范围</dt><dd id="project-scope" class="note"></dd></div>
+        </dl>
+      </details>
+    </header>
+
+    <nav id="stage-nav" class="stage-nav" aria-label="生产阶段">
+      <button type="button" class="stage" data-stage-nav="intake">
+        <span class="stage-index">1</span><span class="stage-label">资料</span></button>
+      <button type="button" class="stage" data-stage-nav="understand">
+        <span class="stage-index">2</span><span class="stage-label">理解</span></button>
+      <button type="button" class="stage" data-stage-nav="plan">
+        <span class="stage-index">3</span><span class="stage-label">方案</span></button>
+      <button type="button" class="stage" data-stage-nav="generate">
+        <span class="stage-index">4</span><span class="stage-label">生成</span></button>
+      <button type="button" class="stage" data-stage-nav="review">
+        <span class="stage-index">5</span><span class="stage-label">审核返工</span></button>
+      <button type="button" class="stage" data-stage-nav="deliver">
+        <span class="stage-index">6</span><span class="stage-label">交付</span></button>
+    </nav>
+    <p id="stage-summary" class="stage-summary" role="status"></p>
+
+    <div id="workspace-error-mount"></div>
+
+    <div id="stage-panels" class="stage-panels">
+
+      <!-- 阶段 1：资料 -->
+      <section class="stage-panel" data-stage-panel="intake" aria-labelledby="stage-intake-title">
+        <div class="stage-head">
+          <h3 id="stage-intake-title" tabindex="-1">商品资料</h3>
+          <p class="meta">上传参考图并填写商品信息；分析后的推断写在「理解」里，不覆盖你填的内容。</p>
+        </div>
+
+        <section id="references-card" class="card" aria-labelledby="refs-title"></section>
+
+        <section id="intake-card" class="card" aria-labelledby="intake-title"></section>
+
+        <section id="analyze-card" class="card" aria-labelledby="analyze-title"></section>
+      </section>
+
+      <!-- 阶段 2：理解 -->
+      <section class="stage-panel" data-stage-panel="understand" hidden aria-labelledby="stage-understand-title">
+        <div class="stage-head">
+          <h3 id="stage-understand-title" tabindex="-1">商品理解</h3>
+          <p class="meta">先处理冲突、未知与必须确认的槽位；已确认的事实默认折叠。</p>
+        </div>
+
+        <section id="slots-card" class="card" aria-labelledby="slots-title"></section>
+
+        <footer class="stage-foot">
+          <button id="stage-next-understand" class="primary" type="button" disabled>进入套图方案</button>
+          <span id="stage-next-understand-note" class="meta"></span>
+        </footer>
+      </section>
+
+      <!-- 阶段 3：方案 -->
+      <section class="stage-panel" data-stage-panel="plan" hidden aria-labelledby="stage-plan-title">
+        <div class="stage-head">
+          <h3 id="stage-plan-title" tabindex="-1">套图方案</h3>
+          <p class="meta">列表顺序就是最终顺序；先定拍哪些图，再按需调整公共风格与单图规格。</p>
+        </div>
+
+        <section id="suite-card" class="card" aria-labelledby="suite-title"></section>
+
+        <details class="card sub-card">
+          <summary>公共风格与单图规格</summary>
+          <section id="specs-section" aria-labelledby="specs-title"></section>
+        </details>
+
+        <footer class="stage-foot">
+          <button id="stage-next-plan" class="primary" type="button" disabled>进入生成准备</button>
+          <span id="stage-next-plan-note" class="meta"></span>
+        </footer>
+      </section>
+
+      <!-- 阶段 4：生成 -->
+      <section class="stage-panel" data-stage-panel="generate" hidden aria-labelledby="stage-generate-title">
+        <div class="stage-head">
+          <h3 id="stage-generate-title" tabindex="-1">生成</h3>
+          <p class="meta">系统自动本地准备提示词。核对实际发送摘要后，明确点击一次生成；费用由供应商按实际调用计算，无法核实的金额不作估算。</p>
+        </div>
+
+        <p id="local-preparation-status" class="meta" role="status"></p>
+        <details id="prompt-details" class="card sub-card">
+          <summary id="prompt-title">查看／编辑完整 Prompt（高级）</summary>
+          <p id="prompt-locked" class="empty" hidden>先在方案里添加图片任务；系统会本地准备已就绪的任务，不调用模型。</p>
+          <div id="prompt-editor" hidden></div>
+          <div id="prompt-error-mount"></div>
+        </details>
+
+        <section class="card" aria-labelledby="confirm-title">
+          <div class="card-head">
+            <h4 id="confirm-title">实际发送摘要</h4>
+            <p class="meta">这次发送的图片、资料、模型与参数以下面当前摘要为准。缺项只阻断对应图片，不会自动重提未知结果。</p>
+          </div>
+          <p id="confirm-locked" class="empty" hidden>先添加图片任务，再按用途补足所需事实。</p>
+          <div id="confirm-editor" hidden></div>
+          <div id="confirm-error-mount"></div>
+        </section>
+
+        <section class="card" aria-labelledby="attempt-title">
+          <div class="card-head">
+            <h4 id="attempt-title">生成执行</h4>
+            <p class="meta">上面的「确认并生成」一次保存授权并外发已就绪任务。停止仅阻止后续新增提交；刷新后仍可按原模型、Prompt 和凭据来源继续未提交队列。成功图片立即存入本地，失败不丢成功结果，Unknown 不自动重提。</p>
+          </div>
+          <p id="attempt-locked" class="empty" hidden>先添加图片任务，再补足核心事实与本图用途的依据。</p>
+          <div id="attempt-editor" hidden></div>
+          <div id="generate-error-mount"></div>
+        </section>
+
+        <footer class="stage-foot">
+          <button id="stage-next-review" type="button" disabled>去审核与返工</button>
+          <span id="stage-next-review-note" class="meta"></span>
+        </footer>
+      </section>
+
+      <!-- 阶段 5：审核返工 -->
+      <section class="stage-panel" data-stage-panel="review" hidden aria-labelledby="stage-review-title">
+        <div class="stage-head">
+          <h3 id="stage-review-title" tabindex="-1">审核与返工</h3>
+          <p class="meta">以图片为中心：比较参考图、历史候选与新候选，按问题返工，然后逐图人工采用。</p>
+        </div>
+
+        <div class="review-workbench">
+        <section class="card review-task-list" aria-labelledby="review-list-title">
+          <div class="card-head">
+            <h4 id="review-list-title">逐图审核</h4>
+          </div>
+          <div id="review-list-mount"></div>
+        </section>
+        <div class="review-detail">
+
+
+        <section id="compare-panel" class="compare-panel" hidden aria-labelledby="compare-title"></section>
+        <section id="rework-panel" class="rework-panel" hidden aria-labelledby="rework-title"></section>
+        </div>
+        </div>
+        <div id="attempt-error-mount"></div>
+
+        <section id="suite-review-card" class="card" aria-labelledby="suite-review-title"></section>
+        <footer class="stage-foot">
+          <button id="stage-next-deliver" class="primary" type="button" disabled>去交付</button>
+          <span id="stage-next-deliver-note" class="meta"></span>
+        </footer>
+      </section>
+
+      <!-- 阶段 6：交付 -->
+      <section class="stage-panel" data-stage-panel="deliver" hidden aria-labelledby="stage-deliver-title">
+        <div class="stage-head">
+          <h3 id="stage-deliver-title" tabindex="-1">交付</h3>
+          <p class="meta">确认每张必需图都已人工采用、没有待核对的未知项，再导出交付包。</p>
+        </div>
+
+        <section id="delivery-card" class="card" aria-labelledby="deliver-gate-title"></section>
+      </section>
+
+    </div>
+  </section>
+</main>
+
+<dialog id="image-zoom-dialog" class="image-zoom" aria-labelledby="image-zoom-title"></dialog>
+
+<dialog id="model-settings-dialog" class="model-settings" aria-labelledby="model-settings-title" aria-describedby="model-settings-note">
+  <form id="model-settings-form" autocomplete="off">
+    <h2 id="model-settings-title">模型设置</h2>
+    <p id="model-settings-note" class="note">只选择已有模型。密钥只保留在当前标签页内存，不写入项目、浏览器存储或导出包；刷新后需重新提供。查看或应用设置不调用供应商，配置完成也不会自动提交任务。</p>
+    <div id="model-settings-rows"></div>
+    <section id="model-settings-original" hidden></section>
+    <p id="model-settings-error" class="error" role="alert" hidden></p>
+    <p id="model-settings-status" class="meta" role="status"></p>
+    <div class="toolbar">
+      <button id="model-settings-apply" class="primary" type="submit">应用设置</button>
+      <button id="model-settings-cancel" type="button">取消</button>
+    </div>
+  </form>
+</dialog>
+
+</body>
+</html>

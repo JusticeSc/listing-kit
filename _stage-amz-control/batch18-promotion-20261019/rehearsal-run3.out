@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "E:\workbuddy_workspace\2026-09-20-16-38-19\amz-listing-kit-complete-product-15ab22\tools\rehearse_v273_walkthrough.py", line 524, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "E:\workbuddy_workspace\2026-09-20-16-38-19\amz-listing-kit-complete-product-15ab22\tools\rehearse_v273_walkthrough.py", line 183, in main
+    raise AssertionError(
+        "确认后待处理项未清零：" + repr(probes["intake_progress_text"]))
+AssertionError: 确认后待处理项未清零：'必须确认的槽位 3 / 3 已确认 · 待处理 5 项 · 共 11 项'

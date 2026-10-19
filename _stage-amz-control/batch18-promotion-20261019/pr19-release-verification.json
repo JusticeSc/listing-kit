@@ -1,0 +1,237 @@
+{
+  "schema": "amz-pr19-release-verification/v1",
+  "pr": {
+    "number": 19,
+    "headRefOid": "9bd2b9d1e7663039a37189b6e16caff0cc400af6",
+    "state": "MERGED",
+    "mergedAt": "2026-10-19T15:25:33Z",
+    "mergeCommit": "689c6b08b8ebb937eb4af457b912d4d874ecd6ab",
+    "url": "https://github.com/JusticeSc/listing-kit/pull/19",
+    "required_checks_on_head": {
+      "Control plane and Product V2": "SUCCESS",
+      "Docker image, smoke test, and main deploy": "SUCCESS"
+    },
+    "ci_run": "https://github.com/JusticeSc/listing-kit/actions/runs/39275366557"
+  },
+  "protection": {
+    "enforce_admins": true,
+    "require_pr_before_merge": true,
+    "required_contexts": [
+      "Control plane and Product V2",
+      "Docker image, smoke test, and main deploy"
+    ],
+    "strict": true
+  },
+  "pr_ci_run": {
+    "run": "39275366557",
+    "jobs": {
+      "Classify changed paths": "success",
+      "Control plane and Product V2": "success",
+      "Docker image, smoke test, and main deploy": "success"
+    }
+  },
+  "main_run": {
+    "run": "39277855632",
+    "conclusion": "success",
+    "steps": {
+      "Build immutable image": "success",
+      "Smoke-test container health": "success",
+      "Release transaction selftest": "success",
+      "Release failure classes": "success",
+      "Prepare SSH": "success",
+      "Sync provider secrets to server env file": "success",
+      "Build on remote Docker and deploy": "success",
+      "Release acceptance (static assets and page main chain)": "success",
+      "Verify runtime and configuration fingerprints before cleanup": "success",
+      "Finalize release": "success",
+      "Roll back": "skipped"
+    },
+    "verify_job": "skipped (push 事件按设计只构建+部署)"
+  },
+  "release": {
+    "caddy_configuration_sha256": "e375655dcf81ada9a4ac315ceaf1791bbdf1c9ba3bb0aab0f529fc6eae4de176",
+    "commit": "689c6b08b8ebb937eb4af457b912d4d874ecd6ab",
+    "image_id": "sha256:cb3857eb813046216036c64a2622c26cab5d31e2eafeacbc99aa125ed4cae89a",
+    "image_tag": "amz-listing-kit:689c6b08b8ebb937eb4af457b912d4d874ecd6ab",
+    "public_configuration_sha256": "652b120166ae07d8d3e89d1fbb53c414272d243701a4fb27cd0cc22feab3ced2",
+    "runtime_sha256": "48002dc42f054e4d90d1699ed5844a85a464fd3f792fc12719f8e9d671350714"
+  },
+  "release_evidence_files": [
+    "caddy.sha256",
+    "candidate-runtime-fingerprint.json",
+    "image.txt",
+    "release.json",
+    "runtime-fingerprint.json"
+  ],
+  "served_assets_in_image": {
+    "/.vite/manifest.json": "068cd7e4592dde390270a2b6a6a5a1aa73c9a989e6aa0c3cac7a4108b5c26323",
+    "/_virtual/_vite/modulepreload-polyfill.js": "418c206484b89b68ef5f067277831e583fc9193a62aadf4de269acaaeb12a85f",
+    "/_virtual/_vite/preload-helper.js": "c5c408d04c1661fbae34033656261fa16068b8036049a1a26f590e3575557e70",
+    "/app/product_v2/app.js": "c20c8687156a36dbfc20b811362a5d973b41563acb142a0f8e592bef62383910",
+    "/app/product_v2/domain/batch.js": "75e362224860516eb27a95f1a5bc374f88f75fab634c4065facbd97154ea05bb",
+    "/app/product_v2/domain/brief.js": "50b2ae9c8decaa13085142eeb783e17d5bce62b5424580f1b2b5d1fc11c5ddc8",
+    "/app/product_v2/domain/candidate.js": "87101afad898be4da95487d0d5b33a29440292f251208acac9246eb187ca039b",
+    "/app/product_v2/domain/compare.js": "609a3110e8600e26f86eda27ae83f3423f9e1b31d78e2ce917444317261b556c",
+    "/app/product_v2/domain/config-export.js": "8b38093b9f11567c8dc1d35d94e690d185d3e83e7fd78097898908722299344d",
+    "/app/product_v2/domain/confirm.js": "f0aea6bb4465e95f7aab309408dd653f7190273125552d5906d0c41f4f4b07fa",
+    "/app/product_v2/domain/errors.js": "96721d78c353d75d603a3fa85efa39d0a05e63d1f10f7a377329a0c62ff94cb7",
+    "/app/product_v2/domain/export-gate.js": "3a51c253863b15d9c901f251186b95e0367c086026a9550dccdc4b9b5cfb1545",
+    "/app/product_v2/domain/frozen-reference.js": "d5f9fdc7db554395baae0d574a83b431447754e651a078a7ec79b0e4c4ead06a",
+    "/app/product_v2/domain/generated/image-task-envelope.validate.js": "a95f0106f254bafd4264463b00fec5c4b833f04c2e3b5157e00c540a59fdaff8",
+    "/app/product_v2/domain/image-cost.js": "ff2aebd61ce543a8297d78ef99d8dcf1fdf7ddc8fe08c89a8ca6de3bb8b21393",
+    "/app/product_v2/domain/image-envelope.js": "80c0c3c9dbc1d9f9b671b1408a1fd8bf0593958549a6cccda0b5f6dffff80f75",
+    "/app/product_v2/domain/intake.js": "d4e159ca79fad759b7e53c216c14155722873369095c99406bf64294f26bb427",
+    "/app/product_v2/domain/invalidation.js": "f7f9863d18e97ddd8070bc2615951055003b2833cbe8bd2e562700d8ada47948",
+    "/app/product_v2/domain/prompt.js": "1c542547d429024d94a1fb497b0b87fe4f7d191e1f8b16374ed1f4a9b8c61f42",
+    "/app/product_v2/domain/review.js": "a52322f07cfc7f6809cb2fb5caf58fe0f85d9e513797250b6f0d3ce100f270da",
+    "/app/product_v2/domain/rework.js": "da7caf2b3084170733f689e3eda1167db33d19b412bdd7faa72b8bd648122781",
+    "/app/product_v2/domain/selection.js": "5d092fbc62002ed601798df3910b2a1d57858469bf6dc2796a6a2b759b0328f3",
+    "/app/product_v2/domain/shared.js": "1abf59ea080c6ca34d0ac9fd8053cfb212d7c23fbb657fa812bbc834965cc95e",
+    "/app/product_v2/domain/slots.js": "56c7415c66028acc2bbaf92e7eeb94d0eca7247cb851b0db5ff5a1d85fc9939f",
+    "/app/product_v2/domain/specs.js": "3941edd19549dd19e84a346e3c3adc339d6b3a461e07732b44a8d27ac14bff50",
+    "/app/product_v2/domain/suite-plan.js": "e7e04f35f015a27edbfc509782ac45f1fdd75a97d2e998ee4b1bbc17a763ffeb",
+    "/app/product_v2/domain/suite-review.js": "4f36e3ea5bf0d79c318620c16a7125a9b87583f40b756edf4ca0c885c973fc33",
+    "/app/product_v2/domain/suite.js": "497b465a1c289015c7e302889e003c77b85297b6b8de9e22647e8c957b6e73b2",
+    "/app/product_v2/entry.js": "1fef02094e6747ad77ac298daf17253d89a8d9c082c038b15df7948322e7a375",
+    "/app/product_v2/model-settings.js": "b6328b2a3e2ba7360b1a60fc2fbd4660e8267380a3aea5d5eff622fc05fd833e",
+    "/app/product_v2/project-inputs.js": "a943a6ef1d3d77ce686b9b30c488b81288f0e292dbc4ede0f40a05159717c7ad",
+    "/app/product_v2/prompts.js": "79f1b467b8e4cf2324b2ff3a5a193a77f7e497b5d0dc9350bbd7c9547b9b3c5d",
+    "/app/product_v2/review-delivery.js": "dbfaa6623855713eb92ef9a63e31f70f3f2ba076c677118be4e95a67353c2c5a",
+    "/app/product_v2/selection-adoption.js": "72861a5846caa07c798a18e7d57ab9a97fb9a26d98d332478e0c207c162acdef",
+    "/app/product_v2/semantic-analysis.js": "7ad3645ec3d0c812cb86a4cff356622f7759c86fcf490b97a5aa04924437d699",
+    "/app/product_v2/session.js": "4a6a2f58762a8688e57106fc81da532b0ba25be3fd8f62f211d77f8d39171886",
+    "/app/product_v2/storage/capabilities.js": "05d8f5b4c6b375440ec7580b9ec8d767919eb71b3f0dca4f892c72568552f802",
+    "/app/product_v2/storage/errors.js": "0baea2c1bec2bd736598f8c2edc745aa0a262b691be063564d8e8ba63beb22f8",
+    "/app/product_v2/storage/migrations.js": "a513b2d537bac8fb5c5903e3267400f0c8ffb91b21d74eed61ca712a3a595520",
+    "/app/product_v2/storage/package-schema.js": "07b2b2ff132c3c9139579f2a511a5301e2915fc5fd7202321f32bdae25c9ad2f",
+    "/app/product_v2/storage/package.js": "8ecedfa9a5dd7b0316fed5d47415a6fc28c7c222b5aa6ef3837b283eed5158a6",
+    "/app/product_v2/storage/pointer.js": "b9f17d98ec6a2d05a70aa603ace138d84df1a62198ddd63aaeb05040376ed7e6",
+    "/app/product_v2/storage/repository.js": "28f2924da3c229d1a25aef3b56ed6e5b2aa61566fa8767197a8f90c231f74356",
+    "/app/product_v2/storage/transfer.js": "e39f4cdcfbc9415fd64bdea061253c92588af3c5ba58ed37b881413ee8a35a81",
+    "/app/product_v2/storage/validate.js": "52d563fe0e4109b60f611b32532c4cbdc398176456240938875dcd426e14b0f8",
+    "/app/product_v2/styles.css": "60d8421a0897d45ba64c466836d941d33e3542709c7824d69cef6cfa246a299a",
+    "/app/product_v2/ui/compare-view.js": "2c819988d33d6e390547c2391d50fed792524e271c1f7f54bcc6d1187cd7b894",
+    "/app/product_v2/ui/delivery-view.js": "a9ea09cec456493bc34f313451bdaf9adde3ef526504e6bdeeb649823cff610a",
+    "/app/product_v2/ui/dom.js": "172d02b0f9b4ccf26dd59b6c2967b463ace242bdc2c02a136cbad78033ec71dd",
+    "/app/product_v2/ui/generation-view.js": "0c0daa38375ec694882cc4c2c99d79cfdfbddd839fca134d814bdbcbb33873a3",
+    "/app/product_v2/ui/input-view.js": "bdd63f0c703518403a058d0068bb11b66388756c874931f344ca8b0b1aff66ad",
+    "/app/product_v2/ui/stage-shell.js": "472ec4d307b436c2cddba53b4d428cbb5dcbb1774788ad4e6cc79380b612310e",
+    "/app/product_v2/vendor/fflate.browser.js": "a227b507f79c95720443763919e9f0387261418e535f2003a55ceac7a2c115ae",
+    "/app/product_v2/workspace.js": "b0eb90717926a357c5190ae4585493cc120be09c130952743b064dfc4db5508e",
+    "/domain/attempt.js": "b49bf002dce120df42fc55acbe45f437688376fafb29b9e60e3b6f0e808ff950",
+    "/domain/index.js": "48a848938fe0843a1fd2a7177514517c649318f8b89ad7f61c0cf8d1acbd7706",
+    "/generation.js": "90e1927aa564501850d7b2b9e539eeb0893300afa29901050e6faf2298fbc765",
+    "/index.html": "992316a7df6b8cf937b4cd1c2732184576cd753d33012a54946dfcd053741d71",
+    "/lit-html.LICENSE.txt": "f3c637cc046d943de48f7de7f4842b039489bb56558b2156118fa428e113fc62",
+    "/node_modules/lit-html/async-directive.js": "76f8eedcd775dcdf7b1f6b68f2404c361cba3549b40b15f5a2e44a4e2cf27dbf",
+    "/node_modules/lit-html/directive-helpers.js": "180eb198dc9484650a43c5b4708f01371f1e61446168b6937c7e4ef7fbae8897",
+    "/node_modules/lit-html/directive.js": "dff8027c10d290e03c75ba0864e81828edb4ed281b37bb9cba920d0b98f117d4",
+    "/node_modules/lit-html/directives/if-defined.js": "14f57eb35b91cea71abec93f855094e757bf6845bc0f80992ba6b58ae6b71abc",
+    "/node_modules/lit-html/directives/live.js": "90d732cd7e8c563a77ccafbff13a6c63b570d5e6d9aa7d6f97c2b569e0645f7a",
+    "/node_modules/lit-html/directives/ref.js": "45934a35382d3174ff06eb487c54d580fd6700db00161c7bff60e9e4a0110efd",
+    "/node_modules/lit-html/directives/repeat.js": "13c65de9c2f7cb21b42665718e58aba29a165649395f742db6364a505be43403",
+    "/node_modules/lit-html/lit-html.js": "43b95120393c41b89aec15884128d4c68c43bb0a76b152c60b62ddd10655a25b",
+    "/storage/db.js": "162deee9cff4b52b974d64a95eeae0b92525c7648a8ba34c718f023c1d61d0d4",
+    "/storage/index.js": "ab026f830062e8d4cb0af91ec13415b3c9c4645b0484ea663c3a8f5c4fc2052f",
+    "/storage/schema.js": "4e322822347fb88e2ecfc8f6a5179bc27c8d6a67de282ad8e9ad3a2cd3e30118",
+    "/storage/zip.js": "441cfe9d5da32caa19b91814a562bf92cf6fe29edafb4055bfcb12bb8c81344c"
+  },
+  "live": {
+    "base": "https://47.115.172.233:8080",
+    "before": {
+      "index_sha256": "5174a01b5b4d426a9fc5eab3801e76ea2a5a4d5918f926c357948f77e424be92",
+      "index_bytes": 12471,
+      "assets": {
+        "/app/product_v2/entry.js": {
+          "status": 200,
+          "bytes": 2501,
+          "sha256": "1bef8eabec7bda2e5d5bbfe278492f52b06fe845c67c5c7eb77c6b016726747c"
+        },
+        "/app/product_v2/styles.css": {
+          "status": 200,
+          "bytes": 23212,
+          "sha256": "73d6948d2a06a8f2902da27c6067a77ea8aae82adb2a24fce4301b31f61216e5"
+        },
+        "/_virtual/_vite/modulepreload-polyfill.js": {
+          "status": 200,
+          "bytes": 670,
+          "sha256": "418c206484b89b68ef5f067277831e583fc9193a62aadf4de269acaaeb12a85f"
+        },
+        "/_virtual/_vite/preload-helper.js": {
+          "status": 200,
+          "bytes": 1546,
+          "sha256": "c5c408d04c1661fbae34033656261fa16068b8036049a1a26f590e3575557e70"
+        }
+      }
+    },
+    "after": {
+      "index_sha256": "992316a7df6b8cf937b4cd1c2732184576cd753d33012a54946dfcd053741d71",
+      "index_bytes": 11469,
+      "assets": {
+        "/app/product_v2/entry.js": {
+          "status": 200,
+          "bytes": 2563,
+          "sha256": "1fef02094e6747ad77ac298daf17253d89a8d9c082c038b15df7948322e7a375"
+        },
+        "/app/product_v2/styles.css": {
+          "status": 200,
+          "bytes": 23867,
+          "sha256": "60d8421a0897d45ba64c466836d941d33e3542709c7824d69cef6cfa246a299a"
+        },
+        "/_virtual/_vite/modulepreload-polyfill.js": {
+          "status": 200,
+          "bytes": 670,
+          "sha256": "418c206484b89b68ef5f067277831e583fc9193a62aadf4de269acaaeb12a85f"
+        },
+        "/_virtual/_vite/preload-helper.js": {
+          "status": 200,
+          "bytes": 1546,
+          "sha256": "c5c408d04c1661fbae34033656261fa16068b8036049a1a26f590e3575557e70"
+        }
+      }
+    },
+    "changes": [
+      {
+        "ref": "/app/product_v2/entry.js",
+        "before": "1bef8eabec7bda2e5d5bbfe278492f52b06fe845c67c5c7eb77c6b016726747c",
+        "after": "1fef02094e6747ad77ac298daf17253d89a8d9c082c038b15df7948322e7a375",
+        "changed": true,
+        "bytes": 2563
+      },
+      {
+        "ref": "/app/product_v2/styles.css",
+        "before": "73d6948d2a06a8f2902da27c6067a77ea8aae82adb2a24fce4301b31f61216e5",
+        "after": "60d8421a0897d45ba64c466836d941d33e3542709c7824d69cef6cfa246a299a",
+        "changed": true,
+        "bytes": 23867
+      },
+      {
+        "ref": "/_virtual/_vite/modulepreload-polyfill.js",
+        "before": "418c206484b89b68ef5f067277831e583fc9193a62aadf4de269acaaeb12a85f",
+        "after": "418c206484b89b68ef5f067277831e583fc9193a62aadf4de269acaaeb12a85f",
+        "changed": false,
+        "bytes": 670
+      },
+      {
+        "ref": "/_virtual/_vite/preload-helper.js",
+        "before": "c5c408d04c1661fbae34033656261fa16068b8036049a1a26f590e3575557e70",
+        "after": "c5c408d04c1661fbae34033656261fa16068b8036049a1a26f590e3575557e70",
+        "changed": false,
+        "bytes": 1546
+      }
+    ],
+    "page_smoke": {
+      "rc": 0,
+      "passed": 12,
+      "failed": 0,
+      "output_sha256": "1e52806c10805ccd6d3623fee53faf1b4b53dae50e8f6c9f7d74cfd675e35c73",
+      "summary": "PS-01..PS-08 全 PASS（健康/能力默认付费档关闭/首页外壳/构建入口/页面启动无工程诊断/项目新建刷新持久/包下载导入独立身份/零 console/page/网络错误）"
+    }
+  },
+  "unverified": [
+    "真实出图品质（第16–17批候选的像素/人因）未验收，本轮零付费调用",
+    "C15/C17 真人门未走，B1–B7 未验收",
+    "线上只核对了发布链自证 + 我自己的静态字节/页面冒烟；未做付费或 BYOK 线上调用"
+  ],
+  "observed_at": "2026-10-20T00:01:15+0800"
+}

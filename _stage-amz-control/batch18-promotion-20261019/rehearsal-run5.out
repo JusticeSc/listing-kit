@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "E:\workbuddy_workspace\2026-09-20-16-38-19\amz-listing-kit-complete-product-15ab22\tools\rehearse_v273_walkthrough.py", line 536, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "E:\workbuddy_workspace\2026-09-20-16-38-19\amz-listing-kit-complete-product-15ab22\tools\rehearse_v273_walkthrough.py", line 266, in main
+    raise AssertionError(
+        "本图执行区 VLM 状态未落到 checked：" + repr(after_attr))
+AssertionError: 本图执行区 VLM 状态未落到 checked：None

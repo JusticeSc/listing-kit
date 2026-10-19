@@ -1,0 +1,238 @@
+{
+  "run": 39270011225,
+  "url": "https://github.com/JusticeSc/listing-kit/actions/runs/39270011225",
+  "event": "pull_request",
+  "head_sha": "8eaecc6c61412a9d99c7ce25368754e00e9dec46",
+  "conclusion": "success",
+  "created_at": "2026-10-19T14:33:23Z",
+  "updated_at": "2026-10-19T14:47:23Z",
+  "jobs": [
+    {
+      "name": "Classify changed paths",
+      "conclusion": "success",
+      "steps": [
+        {
+          "number": 1,
+          "name": "Set up job",
+          "conclusion": "success"
+        },
+        {
+          "number": 2,
+          "name": "Check out repository",
+          "conclusion": "success"
+        },
+        {
+          "number": 3,
+          "name": "Classify changed paths",
+          "conclusion": "success"
+        },
+        {
+          "number": 6,
+          "name": "Post Check out repository",
+          "conclusion": "success"
+        },
+        {
+          "number": 7,
+          "name": "Complete job",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "name": "Control plane and Product V2",
+      "conclusion": "success",
+      "steps": [
+        {
+          "number": 1,
+          "name": "Set up job",
+          "conclusion": "success"
+        },
+        {
+          "number": 2,
+          "name": "Check out repository",
+          "conclusion": "success"
+        },
+        {
+          "number": 3,
+          "name": "Set up Python",
+          "conclusion": "success"
+        },
+        {
+          "number": 4,
+          "name": "Set up locked frontend tools",
+          "conclusion": "success"
+        },
+        {
+          "number": 5,
+          "name": "Install approved frontend checker",
+          "conclusion": "success"
+        },
+        {
+          "number": 6,
+          "name": "Install uv and locked dependencies",
+          "conclusion": "success"
+        },
+        {
+          "number": 7,
+          "name": "Check control plane",
+          "conclusion": "success"
+        },
+        {
+          "number": 8,
+          "name": "Check frontend versions types and direct behavior",
+          "conclusion": "success"
+        },
+        {
+          "number": 9,
+          "name": "Check formal entry and browser contracts",
+          "conclusion": "success"
+        },
+        {
+          "number": 10,
+          "name": "Reject verification side effects",
+          "conclusion": "success"
+        },
+        {
+          "number": 18,
+          "name": "Post Set up locked frontend tools",
+          "conclusion": "success"
+        },
+        {
+          "number": 19,
+          "name": "Post Set up Python",
+          "conclusion": "success"
+        },
+        {
+          "number": 20,
+          "name": "Post Check out repository",
+          "conclusion": "success"
+        },
+        {
+          "number": 21,
+          "name": "Complete job",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "name": "Docker image, smoke test, and main deploy",
+      "conclusion": "success",
+      "steps": [
+        {
+          "number": 1,
+          "name": "Set up job",
+          "conclusion": "success"
+        },
+        {
+          "number": 2,
+          "name": "Check out repository",
+          "conclusion": "success"
+        },
+        {
+          "number": 3,
+          "name": "Set up release acceptance tooling",
+          "conclusion": "success"
+        },
+        {
+          "number": 4,
+          "name": "Install locked acceptance dependencies",
+          "conclusion": "success"
+        },
+        {
+          "number": 5,
+          "name": "Skip container chain for docs-only PR",
+          "conclusion": "skipped"
+        },
+        {
+          "number": 6,
+          "name": "Build immutable image",
+          "conclusion": "success"
+        },
+        {
+          "number": 7,
+          "name": "Smoke-test container health",
+          "conclusion": "success"
+        },
+        {
+          "number": 8,
+          "name": "Remove smoke container",
+          "conclusion": "success"
+        },
+        {
+          "number": 9,
+          "name": "Release transaction selftest (real disposable containers)",
+          "conclusion": "success"
+        },
+        {
+          "number": 10,
+          "name": "Release failure classes (real script, no containers)",
+          "conclusion": "success"
+        },
+        {
+          "number": 11,
+          "name": "Prepare SSH",
+          "conclusion": "skipped"
+        },
+        {
+          "number": 12,
+          "name": "Sync provider secrets to server env file",
+          "conclusion": "skipped"
+        },
+        {
+          "number": 13,
+          "name": "Build on remote Docker and deploy (full release transaction)",
+          "conclusion": "skipped"
+        },
+        {
+          "number": 14,
+          "name": "Release acceptance (static assets and page main chain)",
+          "conclusion": "skipped"
+        },
+        {
+          "number": 15,
+          "name": "Verify runtime and configuration fingerprints before cleanup",
+          "conclusion": "skipped"
+        },
+        {
+          "number": 16,
+          "name": "Finalize release (cleanup previous only after all acceptance)",
+          "conclusion": "skipped"
+        },
+        {
+          "number": 17,
+          "name": "Upload candidate and release fingerprints",
+          "conclusion": "success"
+        },
+        {
+          "number": 18,
+          "name": "Roll back to previous known working state",
+          "conclusion": "skipped"
+        },
+        {
+          "number": 35,
+          "name": "Post Set up release acceptance tooling",
+          "conclusion": "success"
+        },
+        {
+          "number": 36,
+          "name": "Post Check out repository",
+          "conclusion": "success"
+        },
+        {
+          "number": 37,
+          "name": "Complete job",
+          "conclusion": "success"
+        }
+      ]
+    }
+  ],
+  "artifacts": [
+    {
+      "name": "release-evidence-d88686edee33ae22ee9dc180c6ca801902ca031b",
+      "id": 12195153847,
+      "size_in_bytes": 5102
+    }
+  ],
+  "watch_note": "第一次 watch 以 rc=1 结束是 GitHub API 瞬时错误（日志末行：failed to get run），不是运行失败；第二次 watch rc=0，随后 API 读回 conclusion=success。",
+  "deploy_steps_skipped": true
+}
