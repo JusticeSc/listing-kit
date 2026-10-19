@@ -40,7 +40,9 @@ PRODUCT_DIR = ROOT / "app" / "product_v2"
 HARNESS_DIR = ROOT / "evals" / "product-v2" / "harness"
 EVIDENCE_DIR = ROOT / "evals" / "product-v2"
 EVIDENCE_IMAGE_DIR = EVIDENCE_DIR / "evidence"
-REWORK_CONTRACT_VERSION = "v2.5.4"
+# 返工合同版本不再在这里写死：UI 会话里从产品模块读 REWORK_CONTRACT_VERSION（单一权威），
+# 只给静态登记/摘要用的字面量保留同值。
+REWORK_CONTRACT_VERSION = "v2.5.5"
 REWORK_PROBLEM_IDS = ["product_fidelity", "part_error", "scene", "composition",
                       "selling_point", "text", "style", "platform_risk", "other"]
 EXPECTED_REWORK_CASES = [f"RW-{index:02d}" for index in range(1, 16)]
@@ -132,10 +134,11 @@ REWORK_PROBE = """
     problems: [...panel.querySelectorAll("input[type=checkbox]")].map((node) =>
       ({ id: node.id, value: node.value, checked: node.checked })),
     direction: (document.getElementById("rework-direction") || {}).value || "",
-    legend: (panel.querySelector("legend") || {}).textContent || "",
+    legends: [...panel.querySelectorAll("legend")].map((node) => node.textContent || ""),
     direction_label: (document.querySelector('label[for="rework-direction"]') || {}).textContent || "",
     focus_id: active ? (active.id || null) : null,
     focus_is_checkbox: Boolean(active && active.type === "checkbox"),
+    focus_in_panel: Boolean(active && panel.contains(active)),
     entry: {
       in_compare: Boolean(entry && comparePanel && comparePanel.contains(entry)),
       disabled: entry ? entry.disabled : null,
@@ -315,6 +318,10 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                     return rework_probe()
 
                 page.goto(base + "/", wait_until="networkidle")
+                # 合同版本以产品模块为唯一权威（面板 data-rework-contract 就是它），验证器不另立字面量。
+                contract_version = page.evaluate(
+                    "async () => (await import('/app/product_v2/domain/rework.js'))"
+                    ".REWORK_CONTRACT_VERSION")
                 page.fill("#new-project-name", "审计商品 · 单图返工")
                 page.click("#create-project")
                 expect(page.locator("#project-view")).to_be_visible()
@@ -379,17 +386,27 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 opened = open_rework()
                 checks.append({
                     "id": "V2.5.4-09",
-                    "title": "返工表单：独立面板、九类问题 fieldset、显式 label、焦点从入口进入第一个问题",
-                    "ok": opened["visible"] and opened["contract"] == REWORK_CONTRACT_VERSION
+                    "title": "返工表单：独立面板、九类问题 fieldset、显式 label、焦点从入口进入表单第一个控件（改法）",
+                    "ok": opened["visible"] and opened["contract"] == contract_version
                           and opened["shot_id"] == first_shot
                           and opened["candidate_id"] == expected_candidate_id
                           and opened["candidate_id"] == entry["entry"]["candidate_id"]
                           and len(opened["problems"]) == 9
                           and [item["value"] for item in opened["problems"]] == REWORK_PROBLEM_IDS
-                          and "问题分类" in opened["legend"] and "改进方向" in opened["direction_label"]
-                          and opened["focus_is_checkbox"],
+                          # 面板现在有两个 fieldset（改法、问题分类）：两个 legend 都要在。
+                          and any("问题分类" in text for text in opened["legends"])
+                          and any("返工改法" in text for text in opened["legends"])
+                          and "改进方向" in opened["direction_label"]
+                          # 本批新增改法单选，是面板的第一个决策控件；焦点进面板即落在改法上。
+                          and opened["focus_in_panel"]
+                          and (opened["focus_id"] or "").startswith("rework-mode-"),
                     "detail": {"contract": opened["contract"], "problems": len(opened["problems"]),
-                               "legend": opened["legend"], "focus": opened["focus_id"]},
+                               "legends": opened["legends"], "focus": opened["focus_id"],
+                               "focus_in_panel": opened["focus_in_panel"], "visible": opened["visible"],
+                               "shot": opened["shot_id"], "candidate": opened["candidate_id"],
+                               "entry_candidate": entry["entry"]["candidate_id"],
+                               "problems_values": [item["value"] for item in opened["problems"]],
+                               "direction_label": opened["direction_label"]},
                 })
 
                 page.click('label[data-problem-id="product_fidelity"]')
@@ -423,11 +440,13 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 restored = preview_rework(["product_fidelity"], direction_text)
                 checks.append({
                     "id": "V2.5.4-11",
-                    "title": "预览：显示将发送的全文（参考图 1 张）且不写任何记录；改动输入后必须重新预览",
+                    "title": "预览：显示将发送的全文（参考图 2 张，编辑源在首位）且不写任何记录；改动输入后必须重新预览",
                     "ok": previewed["preview_visible"]
                           and "本次返工要求" in previewed["preview_text"]
                           and "纯白" in previewed["preview_text"]
-                          and "参考图 1 张" in previewed["preview_meta"]
+                          # 改这条候选（edit_candidate）按当前合同把固定问题候选放第一位、后接商品依据。
+                          and "参考图 2 张" in previewed["preview_meta"]
+                          and "图1编辑源" in previewed["preview_meta"]
                           and previewed["submit_disabled"] is False
                           and previewed["edit_disabled"] is True
                           and storage_after_preview == seeded_storage
@@ -499,8 +518,12 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                           and new_candidate is not None and len(new_reviews) >= 1
                           and len(submit_requests) == 1
                           and submit_requests[0]["payload"]["prompt"] == preview_text
-                          and len(submit_requests[0]["payload"]["references"]) == 1
-                          and submit_requests[0]["payload"]["references"][0]["sha256"] == reference_sha
+                          # 改这条候选：固定问题候选在第一位（编辑源，出站 role=other），商品依据在后；顺序即实际发送顺序。
+                          and len(submit_requests[0]["payload"]["references"]) == 2
+                          and submit_requests[0]["payload"]["references"][0]["sha256"] == expected_candidate_sha
+                          and submit_requests[0]["payload"]["references"][0]["role"] == "other"
+                          and submit_requests[0]["payload"]["references"][1]["sha256"] == reference_sha
+                          and submit_requests[0]["payload"]["references"][1]["role"] == "primary"
                           and latest_prompt is not None and latest_prompt["has_rework"] is True
                           and latest_prompt["prompt_hash"] == new_attempt["prompt"]["hash"]
                           and latest_prompt["text_chars"] == len(preview_text)
@@ -641,7 +664,7 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                                                           timeout=30_000)
                 reloaded = probe()
                 reloaded_storage = storage()
-                open_panel(first_shot, 2, references=1)
+                open_panel(first_shot, 2, references=2)
                 reloaded_panel = open_rework()
                 screenshot_rel = f"evals/product-v2/evidence/v2.5.4-rework-loop-{stamp}.png"
                 page.screenshot(path=str(ROOT / screenshot_rel), full_page=True)
@@ -661,7 +684,7 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                           and digest_newest(reloaded_storage, "generation_confirm",
                                             "rework:" + first_shot) is not None
                           and reloaded_panel["visible"]
-                          and reloaded_panel["contract"] == REWORK_CONTRACT_VERSION
+                          and reloaded_panel["contract"] == contract_version
                           and len(reloaded_panel["problems"]) == 9
                           and all(path.is_file() and path.stat().st_size > 0
                                   for path in screenshot_paths),
@@ -677,6 +700,7 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 ui["screenshot_detail"] = detail_rel
                 ui["preview_chars"] = len(preview_text)
                 ui["checks"] = [item["id"] for item in checks]
+                ui["contract_version"] = contract_version
             finally:
                 context.close()
     finally:
@@ -770,6 +794,8 @@ def main() -> int:
     failed = [item["id"] for item in checks if not item["ok"]]
     observed_at = datetime.now().isoformat(timespec="seconds")
     label = args.label
+    # 合同版本取工作实际观察值（页面里产品模块的值），字面量只是兜底。
+    contract_label = ui.get("contract_version") or REWORK_CONTRACT_VERSION
     txt_path = EVIDENCE_DIR / f"v2.5.4-rework-loop-{stamp}{label}.txt"
     json_path = EVIDENCE_DIR / f"v2.5.4-rework-loop-{stamp}{label}.json"
 
@@ -786,7 +812,7 @@ def main() -> int:
         "-" * 76,
         f"observed_at: {observed_at}",
         f"status: {'passed' if passed == len(checks) else 'failed'}",
-        f"contract: {REWORK_CONTRACT_VERSION}（返工）· v2.5.3（比较面板）· v2.5.2（复核报告）",
+        f"contract: {contract_label}（返工）· v2.5.3（比较面板）· v2.5.2（复核报告）",
         "model_calls: 0 · external_network_calls: 0（fake providers + 本地静态服务器）",
         f"json: {json_path.relative_to(ROOT).as_posix()}",
         "",
@@ -809,7 +835,7 @@ def main() -> int:
         "suite_id": "v2.5.4-rework-loop",
         "status": "passed" if passed == len(checks) else "failed",
         "observed_at": observed_at,
-        "contract": REWORK_CONTRACT_VERSION,
+        "contract": contract_label,
         "model_calls": 0,
         "external_network_calls": 0,
         "checks": checks,

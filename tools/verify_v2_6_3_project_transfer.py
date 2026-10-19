@@ -1,7 +1,7 @@
 """V2.6.3 当前项目包合同与跨浏览器闭环（0 次真实模型调用）。
 
 检查：
-  1) 契约套件 P01–P08（真实 Chromium）：当前格式往返、身份拒绝、历史报告原样保留、
+  1) 契约套件 P01–P09（真实 Chromium）：当前格式往返、身份拒绝、历史报告/动作原样保留、
      格式/schema/完整性拒绝、旧包原子拒绝且已有库不变。
   2) 双浏览器闭环（fake provider）：浏览器 A 走完整链路并生成交付包 → 导出项目包；
      Python zipfile/hashlib 独立核对；浏览器 B（全新 profile）导入 → 逐文档 payload 哈希与
@@ -217,7 +217,7 @@ def main() -> int:
         page.screenshot(path=str(path), full_page=True)
         screenshots.append(path.relative_to(ROOT).as_posix())
 
-    # ---------------- 契约套件 P01–P08 ----------------
+    # ---------------- 契约套件 P01–P09 ----------------
     suites: dict = {}
     static_server, base = shared.start_static_server()
     try:
@@ -236,9 +236,9 @@ def main() -> int:
     suite = suites.get("transfer", {})
     case_ids = [item.get("id") for item in suite.get("cases", [])]
     failed = [item for item in suite.get("cases", []) if item.get("status") != "passed"]
-    check("V2.6.3-03", "契约套件 P01–P08 全过（真实 Chromium）",
+    check("V2.6.3-03", "契约套件 P01–P09 全过（含新旧动作历史真实往返）",
           suite.get("status") == "passed"
-          and case_ids == [f"P0{index}" for index in range(1, 9)] and not failed,
+          and case_ids == [f"P0{index}" for index in range(1, 10)] and not failed,
           {"status": suite.get("status"), "cases": case_ids,
            "failed": [{"id": item.get("id"), "error": item.get("error")} for item in failed[:3]]})
 

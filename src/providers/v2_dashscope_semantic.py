@@ -21,6 +21,8 @@ from langchain_core.messages import HumanMessage, SystemMessage
 
 from src.providers.v2_semantic import (
     CORE_SLOT_REGISTRY,
+    MAX_COPY_TEXT_LENGTH,
+    RawCopyResponse,
     RawProposal,
     SEMANTIC_CONTRACT_VERSION,
     SemanticFailure,
@@ -31,9 +33,11 @@ from src.providers.v2_semantic import (
     invalid_response,
     map_openai_exception,
     output_truncated,
+    parse_copy_response,
     parse_proposal,
     problems_from_parse_error,
     refused,
+    to_copy_proposals,
     to_fact_slots,
     validate_request,
 )
@@ -99,6 +103,28 @@ def build_system_prompt() -> str:
     ])
 
 
+COPY_SYSTEM_PROMPT_RULES = (
+    "你是跨境电商英文上图文案助手。你的回答必须是单个 JSON 对象，不要输出解释文字、"
+    "Markdown 代码块或额外前后缀。\n"
+    "任务：把给定的已确认中文事实改写成适合印在商品图上的英文短文案（每个目标一条），供人工确认。\n"
+    "硬规则：\n"
+    "1) 只改写给定的目标槽位；slot_id/version 必须原样回显请求里的身份，不许改、不许增、不许减。\n"
+    "2) 不编造数字、单位、品牌、型号与尺寸；不翻译品牌与型号专有名词（保留原文拼写）。\n"
+    "3) 每条英文不超过 60 字符；只用纯英文短语，不加引号、句号与营销后缀。\n"
+    "4) 不输出已确认结论：这只是提议，人工确认后才可能上图。\n"
+)
+
+
+def build_copy_system_prompt() -> str:
+    schema = json.dumps(RawCopyResponse.model_json_schema(), ensure_ascii=False,
+                        separators=(",", ":"))
+    return "\n".join([
+        COPY_SYSTEM_PROMPT_RULES,
+        "输出 JSON 必须满足下面的 JSON Schema，字段名与类型不可改：",
+        schema,
+    ])
+
+
 def build_messages(request: SemanticRequest) -> list[Any]:
     """系统与用户消息直接构造；不使用 ChatPromptTemplate（SEL-007）。"""
 
@@ -117,6 +143,79 @@ def build_messages(request: SemanticRequest) -> list[Any]:
     ]
     return [SystemMessage(content=build_system_prompt()),
             HumanMessage(content="\n".join(user_parts))]
+
+
+def build_copy_messages(request: SemanticRequest) -> list[Any]:
+    """文案提议模式的消息：只带目标槽位的版本化值快照，不带整份商品资料。"""
+
+    lines: list[str] = []
+    for target in request.copy_targets:
+        if isinstance(target.value, list):
+            rendered = "；".join(target.value)
+        else:
+            rendered = target.value
+        lines.append(f"- {target.slot_id}@v{target.version}（{target.label}）：{rendered}")
+    user_parts = [
+        f"站点/平台：{request.platform}；商品名称：{request.product_name}",
+        "改写目标（slot_id@版本：中文值）：\n" + "\n".join(lines),
+        f"每条英文不超过 {MAX_COPY_TEXT_LENGTH} 字符；只返回 JSON。",
+    ]
+    return [SystemMessage(content=build_copy_system_prompt()),
+            HumanMessage(content="\n".join(user_parts))]
+
+
+def to_copy_proposal(result: Any, request: SemanticRequest, *,
+                     provider_id: str, model_id: str, max_tokens: int,
+                     latency_ms: int) -> SemanticProposal:
+    """文案提议模式的响应 → 提案包：两条 DashScope 语义链路共用同一套分类。
+
+    拒绝/截断/空文本/解析失败的判定与文案身份回显规则完全一致；调用方只显式传入
+    自家身份与预算（provider_id/model_id/max_tokens），不共享其他状态。"""
+
+    if not isinstance(result, Mapping):
+        raise internal_failure("结构化输出装配返回了非映射结果。")
+    raw = result.get("raw")
+    parsed = result.get("parsed")
+    parsing_error = result.get("parsing_error")
+    finish_reason = response_finish_reason(raw)
+    request_id = response_request_id(raw)
+    usage = response_usage(raw)
+    if finish_reason == "content_filter":
+        raise refused("模型拒绝生成候选文案（内容策略）。", request_id=request_id)
+    if parsed is None:
+        if finish_reason == "length":
+            raise output_truncated("候选文案输出被 max_tokens 截断。",
+                                   request_id=request_id,
+                                   details={"max_tokens": max_tokens, "usage": usage})
+        if visible_text(raw).strip() == "":
+            raise invalid_response("模型没有产生可见文本；整包拒绝。",
+                                   request_id=request_id,
+                                   details={"max_tokens": max_tokens, "usage": usage,
+                                            "visible_chars": 0})
+        if parsing_error is not None:
+            raise invalid_response(
+                "候选文案输出无法按结构契约解析；整包拒绝。", request_id=request_id,
+                details={"problems": problems_from_parse_error(parsing_error),
+                         "error_type": type(parsing_error).__name__})
+        raise invalid_response("候选文案输出无法按结构契约解析；整包拒绝。",
+                               request_id=request_id,
+                               details={"chars": len(visible_text(raw))})
+    response = parse_copy_response(parsed)
+    copies = to_copy_proposals(response, request)
+    return SemanticProposal(
+        slots=(),
+        questions=(),
+        summary=response.summary,
+        provider_id=provider_id,
+        model_id=model_id,
+        request_id=request_id,
+        usage=usage,
+        latency_ms=latency_ms,
+        inputs_used=("confirmed_slots",),
+        reference_images_sent=False,
+        attempts=1,
+        copy_proposals=copies,
+    )
 
 
 class DashScopeSemanticProvider:
@@ -154,6 +253,7 @@ class DashScopeSemanticProvider:
         self._clock = clock
         self._llm: Any | None = None
         self._structured: Any | None = None
+        self._copy_structured: Any | None = None
 
     # ------------------------------------------------------------ 装配（SEL-007）
     def build_llm(self) -> Any:
@@ -174,6 +274,13 @@ class DashScopeSemanticProvider:
                 extra_body={"max_tokens": self.max_tokens})
         return self._structured
 
+    def build_copy_structured_model(self) -> Any:
+        if self._copy_structured is None:
+            self._copy_structured = self.build_llm().with_structured_output(
+                RawCopyResponse, method="json_mode", include_raw=True,
+                extra_body={"max_tokens": self.max_tokens})
+        return self._copy_structured
+
     # ------------------------------------------------------------ 一次调用
     def analyze(self, request: SemanticRequest) -> SemanticProposal:
         request = validate_request(request)
@@ -186,25 +293,34 @@ class DashScopeSemanticProvider:
             raise SemanticFailure("internal", "PROVIDER_NOT_CONFIGURED",
                                   f"未配置 {DEFAULT_API_KEY_ENV}，无法调用真实语义模型。",
                                   retry_policy="fatal")
+        copy_mode = bool(request.copy_targets)
         started = self._clock()
         try:
-            result = self.build_structured_model().invoke(build_messages(request))
+            if copy_mode:
+                result = self.build_copy_structured_model().invoke(build_copy_messages(request))
+            else:
+                result = self.build_structured_model().invoke(build_messages(request))
         except SemanticFailure:
             raise
         except Exception as error:
             raise self._map_exception(error) from None
         latency_ms = int((self._clock() - started) * 1000)
+        if copy_mode:
+            return to_copy_proposal(result, request, provider_id=self.provider_id,
+                                    model_id=self.model_id, max_tokens=self.max_tokens,
+                                    latency_ms=latency_ms)
         return self._to_proposal(result, request, latency_ms=latency_ms)
 
     def capabilities(self) -> dict[str, Any]:
-        from src.providers.v2_semantic import ANALYZE_BASE_FIELDS
+        from src.providers.v2_semantic import ANALYZE_COPY_FIELDS
         return {
             "provider_id": self.provider_id,
             "model_id": self.model_id,
             "semantic_contract": SEMANTIC_CONTRACT_VERSION,
             "supports_images": self.supports_images,
             "vision": False,
-            "analyze_fields": list(ANALYZE_BASE_FIELDS),
+            "analyze_fields": list(ANALYZE_COPY_FIELDS),
+            "copy_proposals": True,
             "configured": bool(self.api_key),
             "credential_source": self.credential_source,
             "endpoint_host": self.base_url,

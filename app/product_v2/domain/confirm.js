@@ -19,33 +19,29 @@ import {
   isPlainObject,
   isSha256Hex,
   pushProblem,
+  canonicalJson,
 } from "./shared.js";
 import {
   PLATFORM_PROFILES,
-  canonicalJson,
+  checkFrozenReferences,
   checkImagePromptProfile,
   checkPromptRecord,
   decisionProblems,
+  dependencyAssetsOf,
   promptStaleness,
 } from "./prompt.js";
 import { evaluateShot, roleDefinition } from "./suite-plan.js";
 
-export const CONFIRM_SCHEMA_VERSION = 1;
+export const CONFIRM_SCHEMA_VERSION = 3;
+/** 历史1仅角色、历史2含图身份；原载荷只读保留，不补造新用途/来源。 */
+export const CONFIRM_SCHEMA_VERSIONS_LEGACY = Object.freeze([1, 2]);
 export const CONFIRM_DOCUMENT_ID = "generation";
 const SUBMISSION_MODES = Object.freeze(["initial", "failed_retry", "rework", "explicit_new"]);
 
-export const CONFIRM_BLOCKER_CODES = Object.freeze({
-  PROMPT_MISSING: "PROMPT_MISSING",
-  PROMPT_RECORD_INVALID: "PROMPT_RECORD_INVALID",
-  PROMPT_TEXT_MISMATCH: "PROMPT_TEXT_MISMATCH",
-  PROMPT_STALE: "PROMPT_STALE",
-  DEPENDENCY_UNSATISFIED: "DEPENDENCY_UNSATISFIED",
-  PLATFORM_MISMATCH: "PLATFORM_MISMATCH",
-  PROVIDER_MISMATCH: "PROVIDER_MISMATCH",
-  REFERENCE_COUNT_INVALID: "REFERENCE_COUNT_INVALID",
-  /** 普通决定（印字/展示）没做完：编译不出 Prompt，必须先让用户做一次明确选择。 */
-  DECISION_REQUIRED: "DECISION_REQUIRED",
-});
+// 阻断码词表上移 shared.js（review.js 在模块初始化期读取；词表是叶子常量，
+// 不允许把确认单模块拖进跨模块循环初始化）。此处按原路径再导出，既有导入不变。
+export { CONFIRM_BLOCKER_CODES } from "./shared.js";
+import { CONFIRM_BLOCKER_CODES } from "./shared.js";
 
 /** 精确修改位置：阻断必须能指回一个可操作区域。 */
 export const FIX_REGIONS = Object.freeze([
@@ -74,8 +70,19 @@ function fixForStaleReason(reason, shotId, label) {
     return fixTarget("understanding", shotId, label,
       "到「商品理解」确认或修改槽位 " + field.slice("brief.".length) + "，再重新编译这张图的 Prompt。");
   }
-  if (field === "style_version") {
+  if (field === "style_version" || field === "style_signature") {
     return fixTarget("style", shotId, label, "到「风格与单图规格」复核公共风格，再重新编译这张图的 Prompt。");
+  }
+  if (field === "shot_signature") {
+    return fixTarget("suite", shotId, label, "这张图自己的定义（用途/绑定/依赖）已变化，到「套图规划」复核后重新编译。");
+  }
+  if (field === "compiler_rule_version") {
+    return fixTarget("prompt", shotId, label,
+      "程序提示词规则已更新：重新编译这张图的系统全文（人工全文由人确认，不静默覆盖）。");
+  }
+  if (field === "intake_version") {
+    return fixTarget("prompt", shotId, label,
+      "商品资料版本已前进：按当前商品资料重新编译这张图的 Prompt，再确认（不会拿旧资料直接提交）。");
   }
   if (field === "shot_spec_version") {
     return fixTarget("shot_spec", shotId, label, "到「风格与单图规格」复核这张图的单图规格，再重新编译。");
@@ -129,7 +136,12 @@ export function buildConfirmationSheet(input = {}) {
     const role = roleDefinition(shot.role_id);
     const blockers = [];
     const risks = [];
-    const dependency = evaluateShot(shot, context);
+    // 依赖求值按「本图实际会外发的商品依据」判，与提交门共用 dependencyAssetsOf：
+    // 调用方给出本图参考选择时按实际冻结顺序判（竞品图以 style_reference 发货仍算
+    // competitor 角色），未给出时保持既有 intake 上下文（旧调用方兼容）。
+    const selection = isPlainObject(input.referencesByShot) ? input.referencesByShot[shotId] : undefined;
+    const dependency = evaluateShot(shot, Array.isArray(selection)
+      ? { ...context, assets: dependencyAssetsOf(selection) } : context);
     if (!dependency.satisfied) {
       blockers.push({
         code: CONFIRM_BLOCKER_CODES.DEPENDENCY_UNSATISFIED,
@@ -152,6 +164,9 @@ export function buildConfirmationSheet(input = {}) {
       ? decisionProblems({
         shot: shot, shotSpec: shotSpec, styleSpec: input.styleSpec, brief: input.brief,
         platformId: input.platformId,
+        // 视角决定要看本图实际冻结的商品依据：调用方给出时按真实证据判，不给时保持 fail-closed。
+        references: isPlainObject(input.referencesByShot) ? input.referencesByShot[shotId] : undefined,
+        slotEntries: input.slotEntries,
       })
       : [];
     if (decisions.length > 0) {
@@ -226,9 +241,21 @@ export function buildConfirmationSheet(input = {}) {
             fix: fixTarget("intake", shotId, label, "到「商品资料」补齐参考图（至少一张主图）。"),
           });
         }
+        // 冻结用途/来源按实际发送顺序投影到确认单（设计 §13.6/§13.8）：确认页必须说清
+        // 每张图的职责与来源，编辑源与商品原照不能只靠 role 区分；schema 3 起携带完整
+        // 身份（sha256）与来源（含 asset_sha256），确认记录快照按同形状写入。历史简单
+        // 引用不带冻结元数据时不补造，按缺少处理；界面上只见前缀，不外发完整 hash 文案。
         references = snapshotRefs.map((item) => ({
           role: item.role,
+          sha256: item.sha256,
           sha256_prefix: String(item.sha256 || "").slice(0, 12),
+          ...(Array.isArray(item.uses) ? { uses: [...item.uses] } : {}),
+          ...(Array.isArray(item.sources)
+            ? { sources: item.sources.map((source) => (isPlainObject(source)
+              ? { kind: source.kind, document_id: source.document_id, version: source.version,
+                ...(isSha256Hex(source.asset_sha256) ? { asset_sha256: source.asset_sha256 } : {}) }
+              : source)) }
+            : {}),
         }));
         const basis = currentBasisByShot[shotId];
         if (!isPlainObject(basis)) {
@@ -457,7 +484,30 @@ function confirmationExecutionTarget(identity, provider) {
 }
 
 /**
+ * 确认快照的逐图引用：schema 3 起 = 该图新请求的冻结引用（身份+用途+来源），
+ * 与编译产物 request_snapshot.references 同形状（可过 checkFrozenReferences）。
+ * 历史简单引用（旧 Prompt）只有身份，不补造冻结元数据——这只出现在失效比较的临时
+ * 快照里；可提交清单上的记录快照全部来自当前 Prompt，必然带完整元数据。
+ * @param {unknown} ref 确认单上的引用投影
+ * @returns {Record<string, unknown>}
+ */
+function frozenReferenceOf(ref) {
+  if (!isPlainObject(ref)) return ref;
+  const base = { role: ref.role, sha256: ref.sha256 };
+  if (!Array.isArray(ref.uses) || !Array.isArray(ref.sources)) return base;
+  return {
+    ...base,
+    uses: [...ref.uses],
+    sources: ref.sources.map((source) => (isPlainObject(source) ? {
+      kind: source.kind, document_id: source.document_id, version: source.version,
+      ...(isSha256Hex(source.asset_sha256) ? { asset_sha256: source.asset_sha256 } : {}),
+    } : source)),
+  };
+}
+
+/**
  * 指纹输入：覆盖“这一批将要提交的东西”，不包含展示文案。
+ * schema 3（§13.8 一次切换）：逐图带该新请求快照（完整冻结引用）。
  * execution_target/submission_mode 只在给出 executionIdentity 时写入，历史记录可缺。
  * @param {unknown} sheet
  * @param {{executionIdentity?: unknown, submissionMode?: unknown}} [options]
@@ -482,7 +532,7 @@ export function confirmationSnapshot(sheet, { executionIdentity = null, submissi
       prompt_version: item.prompt.version,
       prompt_hash: item.prompt.hash,
       prompt_chars: item.prompt.chars,
-      reference_roles: item.references.map((ref) => ref.role),
+      references: item.references.map((ref) => frozenReferenceOf(ref)),
       blocked: item.blockers.map((blocker) => blocker.code),
     })),
     external_summary: {
@@ -602,15 +652,36 @@ export function buildConfirmationRecord({ sheet, hash, confirmedAt, executionIde
   };
 }
 
+/**
+ * schema 3：记录逐图引用必须是指纹快照冻结引用的展示投影——
+ * 同一 role/sha256/用途/来源，另带 sha256_prefix 供界面展示；不存在第二套事实。
+ * @param {unknown} refs 记录里的展示投影
+ * @param {unknown} frozenRefs 快照里的冻结引用（已过 checkFrozenReferences）
+ * @returns {boolean}
+ */
+function recordReferencesMatchSnapshot(refs, frozenRefs) {
+  if (!Array.isArray(refs) || !Array.isArray(frozenRefs) || refs.length !== frozenRefs.length) return false;
+  return refs.every((ref, index) => {
+    const base = frozenRefs[index];
+    return isPlainObject(ref) && isPlainObject(base)
+      && ref.role === base.role && ref.sha256 === base.sha256
+      && ref.sha256_prefix === String(base.sha256).slice(0, 12)
+      && canonicalJson(ref.uses) === canonicalJson(base.uses)
+      && canonicalJson(ref.sources) === canonicalJson(base.sources);
+  });
+}
+
 export function checkConfirmationRecord(record) {
   const problems = [];
   if (!isPlainObject(record)) {
     pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$", "确认记录必须是对象。");
     return problems;
   }
-  if (record.schema_version !== CONFIRM_SCHEMA_VERSION) {
-    pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.schema_version",
-      "确认记录版本不认识：" + String(record.schema_version));
+  const legacy = CONFIRM_SCHEMA_VERSIONS_LEGACY.includes(record.schema_version);
+  if (record.schema_version !== CONFIRM_SCHEMA_VERSION && !legacy) {
+    pushProblem(problems, record.schema_version > CONFIRM_SCHEMA_VERSION
+      ? DOMAIN_ERROR_CODES.CONTRACT_SCHEMA_TOO_NEW : DOMAIN_ERROR_CODES.CONTRACT_INVALID,
+    "$.schema_version", "确认记录版本不认识：" + String(record.schema_version));
   }
   if (typeof record.confirmed_at !== "string" || Number.isNaN(Date.parse(record.confirmed_at))) {
     pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.confirmed_at", "确认记录缺少 ISO 时间戳。");
@@ -623,6 +694,10 @@ export function checkConfirmationRecord(record) {
     const expected = canonicalJson(record.fingerprint.snapshot);
     if (!isNonEmptyString(expected)) {
       pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.fingerprint.snapshot", "指纹快照不可序列化。");
+    }
+    if (!legacy && record.fingerprint.snapshot.schema_version !== CONFIRM_SCHEMA_VERSION) {
+      pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.fingerprint.snapshot.schema_version",
+        "新确认记录必须绑定同版本的完整冻结快照。");
     }
     if (record.fingerprint.snapshot.can_submit !== true) {
       pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.fingerprint.snapshot.can_submit",
@@ -637,6 +712,16 @@ export function checkConfirmationRecord(record) {
           error.message);
       }
     }
+    // schema 3：按完整冻结合同机检；历史1/2保持角色/身份原形状，只读不追改。
+    if (!legacy && Array.isArray(record.fingerprint.snapshot.shots)) {
+      record.fingerprint.snapshot.shots.forEach((shot, index) => {
+        if (!isPlainObject(shot)) return;
+        for (const problem of checkFrozenReferences(shot.references)) {
+          pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID,
+            "$.fingerprint.snapshot.shots[" + index + "]" + problem.path, problem.message);
+        }
+      });
+    }
   }
   if (!Array.isArray(record.shots) || record.shots.length === 0) {
     pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.shots", "确认记录必须包含每图指纹。");
@@ -645,6 +730,18 @@ export function checkConfirmationRecord(record) {
       if (!isPlainObject(item) || !isNonEmptyString(item.shot_id) || !isSha256Hex(item.prompt_hash)) {
         pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.shots[" + index + "]",
           "每图指纹需要 shot_id 与 prompt_hash。");
+      }
+      // 新记录逐图引用与指纹快照同源；历史1/2保留原形状。
+      if (!legacy && isPlainObject(item)) {
+        const snapshotShots = isPlainObject(record.fingerprint)
+          && Array.isArray(record.fingerprint.snapshot.shots) ? record.fingerprint.snapshot.shots : null;
+        const snapshotShot = Array.isArray(snapshotShots) ? snapshotShots[index] : null;
+        if (!isPlainObject(snapshotShot) || snapshotShot.shot_id !== item.shot_id
+          || !recordReferencesMatchSnapshot(item.references, snapshotShot.references)) {
+          pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID,
+            "$.shots[" + index + "].references",
+            "记录引用必须是指纹快照冻结引用的展示投影（role/sha256/用途/来源一致，另带展示前缀）。");
+        }
       }
     });
   }

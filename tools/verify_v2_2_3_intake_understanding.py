@@ -39,6 +39,7 @@ import urllib.request
 import zlib
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 EVIDENCE_DIR = ROOT / "evals" / "product-v2"
@@ -106,6 +107,38 @@ async (projectId) => {
   } finally {
     opened.close();
   }
+}
+"""
+
+# 文案提议只落 semantic_analysis 记录（disposition=stored），不写事实/规格；
+# 这里读出每条记录的终态与回显的候选，验证「提议不动事实」这条边界。
+COPY_RECORDS_SNAPSHOT = """
+async () => {
+  const db = await new Promise((resolve, reject) => {
+    const request = indexedDB.open("amz-listing-kit-v2");
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+  const docs = await new Promise((resolve, reject) => {
+    const request = db.transaction("documents", "readonly").objectStore("documents").getAll();
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+  db.close();
+  return docs.filter((row) => row.kind === "semantic_analysis")
+    .map((row) => {
+      const proposal = row.payload && row.payload.proposal ? row.payload.proposal : {};
+      return {
+        document_id: row.document_id, version: row.version,
+        state: row.payload.state, disposition: row.payload.disposition,
+        sent_reference_images: row.payload.reference_images_sent === true,
+        copies: (proposal.copy_proposals || []).map((item) => ({
+          text: item.text, source_slot_id: item.source_slot_id,
+          source_slot_version: item.source_slot_version,
+        })),
+        slots: (proposal.slots || []).length,
+      };
+    });
 }
 """
 
@@ -205,6 +238,20 @@ def run_entry(args: list[str], timeout: int = 180) -> dict:
     return {"args": args, "rc": completed.returncode,
             "tail": (completed.stdout + completed.stderr).strip().splitlines()[-8:]}
 STATUS_ORDER = {"conflict": 0, "unknown": 1, "missing": 2, "proposed": 3, "confirmed": 4, "superseded": 5}
+
+
+def wait_slot_version(page: Any, slot_id: str, previous: int,
+                      attempts: int = 40) -> dict | None:
+    """等到某个槽位在库里出现比 previous 更新的版本；超时返回最后一次读数。"""
+
+    latest: dict | None = None
+    for _ in range(attempts):
+        snapshot = page.evaluate(DB_SNAPSHOT)
+        latest = next((item for item in snapshot["slots"] if item["slot_id"] == slot_id), None)
+        if latest and latest["version"] > previous:
+            return latest
+        page.wait_for_timeout(150)
+    return latest
 
 
 def review_rank(row: dict) -> int:
@@ -362,12 +409,17 @@ def main() -> int:
             page.wait_for_selector("#slot-list .slot-row", timeout=30_000)
             analyzed = page.evaluate(DB_SNAPSHOT)
             body = json.loads(analyze_posts[-1]) if analyze_posts else {}
-            check(f"{APP_NAME}-07", "分析：一次点击只发一次 POST，请求字段等于 capabilities.analyze_fields，existing_slot_ids 为空",
+            # copy_targets 是「候选文案提议」专属字段（domain 侧事实理解会拒绝混装）：
+            # 能力清单里它在，但事实理解请求不得携带；其余声明字段一个都不能少。
+            declared = sorted(capabilities.get("analyze_fields") or [])
+            expected_fields = sorted(item for item in declared if item != "copy_targets")
+            check(f"{APP_NAME}-07", "分析：一次点击只发一次 POST，请求字段等于 capabilities.analyze_fields（不含文案提议专属 copy_targets），existing_slot_ids 为空",
                   len(analyze_posts) == posts_before + 1
-                  and sorted(body) == sorted(capabilities.get("analyze_fields") or [])
+                  and sorted(body) == expected_fields
+                  and "copy_targets" not in body
                   and body.get("existing_slot_ids") == [],
                   {"posts": len(analyze_posts), "keys": sorted(body),
-                   "expected": sorted(capabilities.get("analyze_fields") or [])})
+                   "expected": expected_fields, "declared": declared})
 
             slot_map = {item["slot_id"]: item for item in analyzed["slots"]}
             proposed = [item for item in analyzed["slots"] if item["status"] == "proposed"]
@@ -437,6 +489,97 @@ def main() -> int:
             check(f"{APP_NAME}-11", "确认后的槽位离开待处理列表，展开后可见且状态为已确认",
                   confirmed_row.get_attribute("data-status") == "confirmed", None)
 
+            # 文案提议（AI 提议 + 人工确认）：明确点击才外发；一次点击一次 POST；
+            # copy_targets 必须是「用户当初确认过的那一版」快照（槽位身份 + 版本 + 逐字值）。
+            confirmed_before = page.evaluate(DB_SNAPSHOT)
+            name_slot = next(item for item in confirmed_before["slots"]
+                             if item["slot_id"] == "product_name")
+            copy_posts_before = len(analyze_posts)
+            page.click("#slot-copy-product_name")
+            expect(page.locator("#slot-copy-result-product_name-0")).to_be_visible(timeout=20_000)
+            copy_posts = len(analyze_posts)
+            copy_body = json.loads(analyze_posts[-1]) if analyze_posts else {}
+            copy_targets = copy_body.get("copy_targets") if isinstance(copy_body, dict) else None
+            check(f"{APP_NAME}-23",
+                  "文案提议：一次点击只发一次 POST，字段等于 capabilities.analyze_fields（含专属 copy_targets），"
+                  "快照=当前已确认那一版的槽位身份/版本/逐字值，且不带参考图",
+                  copy_posts == copy_posts_before + 1
+                  and sorted(copy_body) == sorted(capabilities.get("analyze_fields") or [])
+                  and isinstance(copy_targets, list) and len(copy_targets) == 1
+                  and set(copy_targets[0]) == {"slot_id", "version", "label", "value_type", "value"}
+                  and copy_targets[0]["slot_id"] == "product_name"
+                  and copy_targets[0]["version"] == name_slot["version"]
+                  and copy_targets[0]["value"] == name_slot["value"]
+                  and copy_targets[0]["value_type"] == "text"
+                  and isinstance(copy_targets[0]["label"], str) and bool(copy_targets[0]["label"])
+                  and copy_body.get("existing_slot_ids") == []
+                  and copy_body.get("references") == [],
+                  {"posts": copy_posts - copy_posts_before, "keys": sorted(copy_body),
+                   "copy_targets": copy_targets, "confirmed": name_slot})
+
+            copy_row_text = (page.locator("#slot-copy-result-product_name-0").text_content()
+                             or "").strip()
+            copy_records = page.evaluate(COPY_RECORDS_SNAPSHOT)
+            copy_record = next((item for item in copy_records if item["copies"]), {})
+            copy_after = page.evaluate(DB_SNAPSHOT)
+            check(f"{APP_NAME}-24",
+                  "提议只是提议：候选行只回显不落事实（槽位与版本不变），分析记录 disposition=stored、"
+                  "不发参考图也不应用槽位，来源版本未变时可采用",
+                  "FAKE PRODUCT NAME" in copy_row_text
+                  and copy_after["slots"] == confirmed_before["slots"]
+                  and copy_record.get("state") == "succeeded"
+                  and copy_record.get("disposition") == "stored"
+                  and copy_record.get("sent_reference_images") is False
+                  and copy_record.get("slots") == 0
+                  and copy_record.get("copies") == [{"text": "FAKE PRODUCT NAME",
+                                                     "source_slot_id": "product_name",
+                                                     "source_slot_version": name_slot["version"]}]
+                  and page.locator("#slot-copy-adopt-product_name-0").is_enabled(),
+                  {"row": copy_row_text[:160], "record": copy_record,
+                   "slots_unchanged": copy_after["slots"] == confirmed_before["slots"]})
+
+            # 来源前进后旧提议必须过期：不可采用；重新提议按新版本快照发送，旧行仍标注过期。
+            name_row = page.locator('#slot-list .slot-row[data-slot-id="product_name"]')
+            name_row.get_by_role("button", name="修改", exact=True).click()
+            page.fill("#slot-editor-value", "便携榨汁杯 二代")
+            name_row.get_by_role("button", name="保存", exact=True).click()
+            advanced = wait_slot_version(page, "product_name", name_slot["version"]) or {}
+            stale_shown = page.locator("#slot-copy-stale-product_name-0").is_visible()
+            stale_adopt_disabled = page.locator("#slot-copy-adopt-product_name-0").is_disabled()
+            copy_posts_before = len(analyze_posts)
+            page.click("#slot-copy-product_name")
+            expect(page.locator("#slot-copy-result-product_name-1")).to_be_visible(timeout=20_000)
+            refresh_body = json.loads(analyze_posts[-1]) if analyze_posts else {}
+            refresh_targets = (refresh_body.get("copy_targets")
+                               if isinstance(refresh_body, dict) else None) or []
+            check(f"{APP_NAME}-25",
+                  "来源前进后：旧提议标为过期且不可采用，重新提议只按新版本/新值快照发送一次，旧行保留过期标记",
+                  advanced.get("version") == name_slot["version"] + 1
+                  and advanced.get("value") == "便携榨汁杯 二代"
+                  and advanced.get("status") == "confirmed"
+                  and stale_shown and stale_adopt_disabled
+                  and len(analyze_posts) == copy_posts_before + 1
+                  and len(refresh_targets) == 1
+                  and refresh_targets[0]["version"] == advanced.get("version")
+                  and refresh_targets[0]["value"] == "便携榨汁杯 二代"
+                  and page.locator("#slot-copy-adopt-product_name-1").is_enabled()
+                  and page.locator("#slot-copy-stale-product_name-0").is_visible(),
+                  {"advanced": advanced, "stale_shown": stale_shown,
+                   "stale_adopt_disabled": stale_adopt_disabled,
+                   "posts": len(analyze_posts) - copy_posts_before,
+                   "refresh_targets": refresh_targets})
+
+            # 复原这次实验改动的值：后续重分析会按原资料再提一次 product_name，
+            # 值若与已确认值不同，按域规则会正确地变成 conflict（那是产品行为，不是本套件要测的路径）。
+            name_row.get_by_role("button", name="修改", exact=True).click()
+            page.fill("#slot-editor-value", str(name_slot["value"]))
+            name_row.get_by_role("button", name="保存", exact=True).click()
+            restored = wait_slot_version(page, "product_name", int(advanced.get("version") or 0)) or {}
+            check(f"{APP_NAME}-26", "实验后复原：改回原确认值仍是同一份已确认事实（版本继续前进，不改变后续判定）",
+                  restored.get("value") == name_slot["value"]
+                  and restored.get("status") == "confirmed",
+                  {"restored": restored, "original": name_slot})
+
             page.locator('#slot-list .slot-row[data-slot-id="product_category"]').get_by_role(
                 "button", name="确认", exact=True).click()
             page.wait_for_timeout(300)
@@ -480,13 +623,15 @@ def main() -> int:
             state_now = resolved["projects"][0]["state"]
             # V2.UI.2 起项目元数据收进 <details>（渐进披露）；文本仍必须正确，只是默认不绘制。
             scope_text = page.locator("#project-scope").text_content() or ""
-            expect(page.locator("#project-state")).to_have_text("待确认套图")
+            state_badge = (page.locator("#project-state").text_content() or "").strip()
             check(f"{APP_NAME}-14", "状态派生到 PLAN_REVIEW，并如实说明套图可编辑、提交需确认",
-                  state_now == "PLAN_REVIEW" and "套图规划" in scope_text
-                  and "通过确认后才能提交生成" in scope_text,
-                  {"state": state_now, "scope": scope_text,
+                  state_now == "PLAN_REVIEW" and state_badge == "待确认套图"
+                  and "套图规划" in scope_text and "通过确认后才能提交生成" in scope_text,
+                  {"state": state_now, "badge": state_badge, "scope": scope_text,
                    "critical_confirmed": [item["slot_id"] for item in resolved["slots"]
-                                          if item["critical"] and item["status"] == "confirmed"]})
+                                          if item["critical"] and item["status"] == "confirmed"],
+                   "critical_unresolved": [item for item in resolved["slots"]
+                                           if item["critical"] and item["status"] != "confirmed"]})
 
             panel_png = EVIDENCE_DIR / f"v2.2.3-workspace-{stamp}.png"
             EVIDENCE_DIR.mkdir(parents=True, exist_ok=True)

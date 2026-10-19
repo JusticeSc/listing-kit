@@ -1,0 +1,55 @@
+{
+  "authority": "NOT-AUTHORITY: point-in-time batch-6 engineering evidence, not full Goal or release acceptance",
+  "goal_id": "15ab22bf3386b9cf",
+  "batch_occupied": 6,
+  "batch_cap": 12,
+  "source_base": "72c33df03514eaedd6f3e6efdf57236f26ada9f6",
+  "source_branch": "feat/complete-product-20261018",
+  "source_identity_limit": "Uncommitted candidate at execution; publication commit and final source/image identity are separate observations. LF-only attempt.ts normalization after build preserved every non-CR byte.",
+  "scope": "B1-B3 current request/history/structured-dimension/copy-adoption engineering consumers, zero paid model calls",
+  "cutover": {
+    "new_prompt": 2,
+    "new_confirmation_and_snapshot": 3,
+    "read_only_confirmation_history": [1, 2],
+    "new_attempt": 3,
+    "read_only_attempt_history": [2],
+    "unsupported_attempt": [1],
+    "storage_schema": 2,
+    "stored_record_envelope": 1,
+    "project_package_envelope": 2,
+    "history_policy": "No rewrite/backfill of original JSON, hashes, frozen requests or Blobs. Manual wholetext rework preserves text while rework identity/source validation remains strict. New attempts cannot consume old authorizations."
+  },
+  "verification": [
+    {"command": "npm run check:types", "exit_code": 0},
+    {"command": "npm run build:frontend", "exit_code": 0},
+    {"command": "npm run build:frontend-node", "exit_code": 0},
+    {"command": "npm run test:domain", "exit_code": 0, "passed": 277, "failed": 0, "evidence": "artifact://2207"},
+    {"command": "uv run --locked python tools/verify_v2_2_2_semantic_provider.py", "exit_code": 0, "passed": 11, "evidence": "evals/product-v2/v2.2.2-semantic-provider-20261019-133338.json"},
+    {"command": "uv run --locked python tools/verify_v2_6_3_project_transfer.py --label b3-integrated-confirm3", "exit_code": 0, "passed": 11, "evidence": "evals/product-v2/v2.6.3-transfer-20261019-133339-b3-integrated-confirm3.json", "actual_surface": "Two independent Chrome profiles: native ZIP download/import, exact history/asset roundtrip, continued rework, no automatic adoption, explicit adoption/delivery/reexport; unsupported package atomic rejection; zero unexpected browser errors. P09 covers mixed attempt2/3 history."},
+    {"command": "uv run --locked python tools/verify_v2_3_7_copy_adoption_chain.py", "exit_code": 0, "passed": 9, "evidence": "evals/product-v2/v2.3.7-copy-adoption-chain-20261019-133359.json", "actual_surface": "Explicit one-POST text-only proposal, draft-only adoption, explicit spec save, exact origin/source/text roundtrip and stale rejection."},
+    {"command": "uv run --locked python tools/verify_v2_2_3_intake_understanding.py", "exit_code": 0, "passed": 26, "evidence": "evals/product-v2/v2.2.3-intake-understanding-20261019-133712.json", "actual_surface": "Formal facts/copy consumers, confirmation/conflict preservation and Unknown no automatic retry after lifecycle consolidation."},
+    {"command": "uv run --locked python tools/verify_v2_packet08_settings_vision.py --label b3-semantic-lifecycle", "exit_code": 0, "passed": 38, "evidence": "evals/product-v2/refactor/b3-semantic-lifecycle.json", "actual_surface": "Real image bytes/provenance, purpose-isolated non-secret BYOK sentinels, original-task target recovery with no new submit, complete storage/asset/ZIP leak negatives and closed-default production adapters."}
+  ],
+  "additional_direct_evidence": {
+    "dimension_page": "_stage-amz-control/b1-b3-vertical-20261019/dimension-vertical/dimension-vertical-evidence.json",
+    "dimension_scope": "Actual bearing reference and official NSK nominal d8/D22/B7mm; exact fact version/measurement binding, deterministic English labels, program compile/confirmation and source-version stale blocking. Stored record envelope1 is not payload schema2. Controlled 8->9 diagnostic did not change original project or claim measurement.",
+    "two_adapters_two_modes": "_stage-amz-control/b1-b3-vertical-20261019/adapter-mode-vertical/adapter-mode-smoke-20261019-132800.json",
+    "transport_scope": "22/22 recorded checks: actual page frozen requests through production gateway/adapters with bounded injected Transport. Decode bytes/order/Prompt/per-adapter params/hash vs snapshot and original IDB Blob. Edit fixed-candidate-first then product; regenerate product-only. All sockets replaced; fake pixels are engineering proof only. Same-byte dual-use merge is covered by existing Node P30, not claimed as an extra Transport scenario. Temporary driver/control deleted after proof; failure trail retained.",
+    "history90": "_stage-amz-control/b1-b3-vertical-20261019/package-after.json",
+    "history232": "_stage-amz-control/b1-b3-vertical-20261019/bearing-history-after.json",
+    "history_scope": "Actual 90docs/9assets export-import-reload, plus real preserved bearing232docs/19Blobs open/reload, identity/version/payload and original Blob digests unchanged. Existing real selections remain visibly stale under current rules, not recertified.",
+    "overflow_cause": "_stage-amz-control/b1-b3-vertical-20261019/overflow/causality.json",
+    "overflow_scope": "Archived original UI plus same real project: 5720->1440->5720 reversible diagnostic-text wrapping intervention, all11 warning texts unchanged. Old reported5712 is preserved; 8px difference unexplained. Current four-stage final matrix not proved.",
+    "eol": "_stage-amz-control/b1-b3-vertical-20261019/eol-publication.json"
+  },
+  "independent_reviews": {
+    "spec_axis": "B3SpecReview, read-only diff since72c33df, no remaining blocking spec finding after independently verifying actual history fixes. P3 measurement-label combined-length diagnostic remains a non-blocking concern; save still rejects overlong entries.",
+    "standards_axis": "B3StandardsReview, read-only: duplicate provider copy classification/builders and facts/copy request lifecycle identified; each consolidated in its existing owner, no new public platform, policies preserved; integration consumers above passed.",
+    "review_limit": "Final independent review must bind the last complete candidate after B4 and any later product changes; these reviews do not pre-sign B6 or release."
+  },
+  "fees_cny": 0,
+  "real_model_calls": 0,
+  "new_allowance_activated": false,
+  "not_proven": ["B4 four-stage final interaction and viewport/native-zoom matrix", "New program-prompt real pixel quality and current five-image adoption", "Final same-candidate two full rounds", "Current candidate protected HTTPS release and actual different-image same-origin recovery", "C15/C17 human external acceptance"],
+  "next_action": "Publish scoped branch snapshot and Draft PR, then batch7 B4 using existing owners and all current consumers; no merge/release acceptance yet."
+}

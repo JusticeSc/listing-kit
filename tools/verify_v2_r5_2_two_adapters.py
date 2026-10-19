@@ -235,6 +235,8 @@ async ({projectId}) => {
       // 但 createGenerationModule 现在要求该依赖存在（generation.ts:366）。
       fenceReader: () => null,
       referenceSourceReader: () => [],
+      intakeVersionReader: () => 1,
+      shotSpecReader: () => null,
       promptsSheet: () => null,
       imageEnvironment: () => null,
       repository,
@@ -244,10 +246,13 @@ async ({projectId}) => {
     // 记录形状由 domain 构造函数收口（schema 演进时本探针不复制字段）：
     // pending_submit 落库 → 按提交响应一步到 succeeded（同步协议没有 task id）。
     const attemptDomain = await import("/domain/attempt.js");
+    // schema 3：引用带完整冻结元数据（身份+用途+来源，§13.8 一次切换）。
     const built = attemptDomain.buildAttemptRecord({
       actionId, shotId: "shot_probe",
       prompt: { version: 1, hash: "a".repeat(64) },
-      references: [{ role: "primary", sha256: "a".repeat(64) }],
+      references: [{ role: "primary", sha256: "a".repeat(64), uses: ["product_truth"],
+        sources: [{ kind: "product_input", document_id: "intake", version: 1,
+                    asset_sha256: "a".repeat(64) }] }],
       provider: { provider_id: "volcengine-ark",
                   model_id: "doubao-seedream-5-0-flash-260915" },
       parameters: { size: "1344*1344", n: 1, prompt_extend: false, watermark: false },
@@ -790,6 +795,7 @@ def browser_e2e_checks(check, screenshots: list[str], console_errors: list,
                 "sync": item["execution_identity"]["sync"]} for item in latest_records])
         prompt_rows = after["prompts"]
         request_matches = []
+        request_clauses: dict[str, dict[str, bool]] = {}
         for shot_id, attempt, call in zip(shot_ids, latest_records, transport.calls):
             prompt = prompt_rows[shot_id]["payload"]
             snapshot = prompt["request_snapshot"]
@@ -797,23 +803,46 @@ def browser_e2e_checks(check, screenshots: list[str], console_errors: list,
                 snapshot, ensure_ascii=False, sort_keys=True,
                 separators=(",", ":")).encode("utf-8")).hexdigest()
             external = call["json"]
-            request_matches.append(
-                prompt["compiled"]["provider"]["model_id"] == VOLCENGINE_MODEL_ID
-                and snapshot["model"] == external["model"] == VOLCENGINE_MODEL_ID
-                and snapshot["prompt"] == external["prompt"] == prompt["compiled"]["text"]
-                and snapshot["size"].replace("*", "x") == external["size"]
-                and snapshot["output_format"] == external["output_format"] == "png"
-                and snapshot["watermark"] == external["watermark"] is False
-                and digest == prompt["hash"] == attempt["prompt"]["hash"]
-                and snapshot["target"]["provider_id"] == attempt["provider"]["provider_id"]
-                and snapshot["target"]["capability_version"]
-                    == attempt["execution_identity"]["capability_version"]
-                and snapshot["references"] == attempt["references"]
-                and hashlib.sha256(base64.b64decode(
-                    external["image"][0].split(",", 1)[1])).hexdigest()
-                    == snapshot["references"][0]["sha256"])
+            # attempt schema 3 保存完整冻结引用（身份+用途+来源），与请求快照逐字一致
+            # （§13.8 一次切换）；不再是 {role, sha256} 身份投影。
+            # 逐条子句留证：失败时能指出具体不一致项，而不是只给一个 false。
+            clauses = {
+                "compiled_model": prompt["compiled"]["provider"]["model_id"]
+                    == VOLCENGINE_MODEL_ID,
+                "model": snapshot["model"] == external["model"] == VOLCENGINE_MODEL_ID,
+                "prompt_text": snapshot["prompt"] == external["prompt"]
+                    == prompt["compiled"]["text"],
+                "size": snapshot["size"].replace("*", "x") == external["size"],
+                "output_format": snapshot["output_format"] == external["output_format"] == "png",
+                "watermark": snapshot["watermark"] is external["watermark"] is False,
+                "hash_chain": digest == prompt["hash"] == attempt["prompt"]["hash"],
+                "provider_id": snapshot["target"]["provider_id"]
+                    == attempt["provider"]["provider_id"],
+                "capability_version": snapshot["target"]["capability_version"]
+                    == attempt["execution_identity"]["capability_version"],
+                "references": attempt["references"] == snapshot["references"],
+                # 快照里的参考图必须带冻结元数据，且来源资产哈希与实际外发的字节一致。
+                "reference_metadata": all(
+                    item.get("uses") and item.get("sources")
+                    and all(source.get("asset_sha256") == item["sha256"]
+                            for source in item["sources"])
+                    for item in snapshot["references"]),
+                "reference_bytes": isinstance(external.get("image"), list)
+                    and len(external["image"]) == len(snapshot["references"])
+                    and all(hashlib.sha256(base64.b64decode(
+                        payload.split(",", 1)[1])).hexdigest() == item["sha256"]
+                        for payload, item in zip(external["image"], snapshot["references"])),
+            }
+            request_clauses[shot_id] = clauses
+            request_matches.append(all(
+                ok for name, ok in clauses.items() if not name.startswith("_")))
         check("R53-E01", "实际火山请求与 Prompt、hash、参考图和冻结执行身份一致（非 qwen 编译冒充）",
-              all(request_matches), {"matches_by_shot": dict(zip(shot_ids, request_matches))})
+              all(request_matches),
+              {"matches_by_shot": dict(zip(shot_ids, request_matches)),
+               "failed_clauses": {shot_id: [name for name, ok in clauses.items() if not ok]
+                                  for shot_id, clauses in request_clauses.items()
+                                  if not all(ok for name, ok in clauses.items()
+                                             if not name.startswith("_"))}})
         candidate_rows = after["candidates"]
         asset_shas = {row["sha256"] for row in after["assets"]}
         check("R52-E03", "每张图候选入库；asset sha256 与 transport 字节一致",

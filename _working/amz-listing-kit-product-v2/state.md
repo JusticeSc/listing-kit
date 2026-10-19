@@ -5,38 +5,50 @@
 > prepared 是未绑定新 Goal 的本地准备态,不是系统 paused。旧读数与完成记录只见 superseded 基线。
 ## 当前恢复边界
 
-- **原下一版产品仍按2026-10-16停工保持paused；独立main可信基线已获2026-10-17本轮收口授权，并于同日用户触发器追加合并+部署到finalize授权。**用户明确“授权，由你全权负责尽最大努力交付可信基线”，触发器已选：PR #13转正合并+部署链跟到finalize（失败回滚）、范围仅本轮基线、真人门用户稍后亲自走。授权含必要源码/锁/构建/CI/旧链清退/文档修复，独立干净检出验证、独立审查、提交推送现有PR #13及CI，以及本次PR合并与main部署finalize；仍不含收费/真实模型/供应商外发或封存下一版WIP。原生Goal `15a42a4b52b70942` 的最近实际观察仍取 `evals/product-v2/refactor/goal-observation-stop-20261016.json`，本轮不恢复/完成它；下方机器块只记录原产品。
+- **2026-10-18完整交付授权仍有效；第6批B1–B3工程差量已于2026-10-19闭合，累计6/12已占用，完整成品未完成。** 前四组与第5批消费者修复/同包切换计数保留，不以未提交记0。相关分支提交/推送、独立审查、实时保护成立后的PR合并及既有环境发布已授权，不重复索取、不代签真人门。授权见`_stage-amz-control/complete-product-authorization-20261018T114240Z/authorization.json`；审计与第5批证据分别见`_stage-amz-control/resume-audit-20261019/verification.json`、`contract-consumer-fix-20261019/verification.json`及`consumer-cutover-20261019/verification.json`（后二者同属`_stage-amz-control/`）；第6批以`evals/product-v2/refactor/b1-b3-consumer-closure-20261019.json`为当前证据入口。
+- **新增模型额度已授权但尚未激活：最多5元，生图最多12次且每次1张；理解/创作辅助/复核合计最多4次，仅现有批准模型。** 历史费用、失败/Unknown及52次生图不清零；正式原生Goal绑定、精确承接最新封存账、官方上界/素材/安全注入预检成立后，才一次激活新增额度。先逐次预留，金额或次数先到即停；不保证额度内必然达标，不因有余额自动重提或换模型。当前未新增调用。
+- **#9零收费切片已按保护规则阶段合并，完整产品仍未完成。** PR [#18](https://github.com/JusticeSc/listing-kit/pull/18)最终head `0ae7df59ff8e41e776195169ce8814f2699db45b`的两项required检查SUCCESS，实际保护未绕过；说明修正已提交，2026-10-18T14:29:26Z以merge commit `72c33df03514eaedd6f3e6efdf57236f26ada9f6`合并。旧受审代码head `3dc0018689dad39fb81294a9c76c99c97dc15e8f`及双审证据仍见`_stage-amz-control/complete-product-authorization-20261018T114240Z/pr18-review-closeout.json`；本轮最终准入/真实合并见`_stage-amz-control/full-product-start-20261018T140710Z/pr18-{merge-admission,merge-receipt,merged-main-run}.json`。**main push run `39136220536` 已实际核对：run 与「Docker image, smoke test, and main deploy」作业均 success，四个真实步骤（部署 → 静态/主链验收 → 清理前指纹核对 → finalize）全部 success**，证据 `_stage-amz-control/full-product-start-20261018T140710Z/pr18-main-release.json`（artifact `12139927165`）。同一次 push 的「Control plane and Product V2」作业是 skipped，因此这次发布不能当作控制面 32 项验证器的远程通过证据；发布身份见 `_stage-amz-control/main-merge-release-20261019/{release.json,image.txt,runtime-fingerprint.json}`（image `sha256:2d5495bf…`、runtime `6849e1cb…`，只描述 72c33df 这一次发布）。不关闭#9或代签像素、#8与完整产品。
+- **原生Goal工具已实际可用，完整产品Goal已真实active。** 本轮直接get返回`No active goal.`，随后真实创建并读回`15ab22bf3386b9cf` active；观察见`evals/product-v2/refactor/goal-observation-full-product-20261018T140710Z.json`。#9作用域`15aacf5fbdd7001f`最后保存active及旧完整Goal`15a42a4b52b70942` paused只保留历史，没有将当前不存在的旧Goal伪结清或伪恢复。本轮原文唯一在计划§2.1，旧原文/状态已按原字节快照保留。
+- **唯一下一动作：提交已验证产品分支快照并开Draft PR，随后第7批实施B4完整四段工作台。** 工作树`amz-listing-kit-complete-product-15ab22`（`feat/complete-product-20261018`，起点72c33df）。真实尺寸页面、两生产Adapter四组合注入Transport、当前格式两包/历史恢复及两轴审查已闭合本批工程缺证；标准轴发现的两处语义真重复已收回既有owner并验证，不扩平台。R4.4当前合同done，R5.1 active继续承接单图/批量scope与B4；之后按计划§17.3–5推进B4→B5→B6→B7，不因局部绿缩减终点。额度尚未激活，不等待收费才做工作台。
+- **第6批恢复纠偏与实际消费者结果（均零收费）。** 此前`consumer-cutover-20261019/verification.json`的“Confirmation2、包MIN3已闭合”已被真实历史包推翻：导出器自己的90/9包曾被MIN3拒绝；真实bearing包的人工全文返工被系统段落形状误拒，已有Confirmation2仅身份引用又被新用途/来源要求误拒。现新Confirmation/Snapshot写3、历史1/2只读，新Attempt3/既有身份2可读、包最低2；人工全文不强加系统段落但仍核返工身份/来源。写者/读者/类型/预约/包同组迁移，新动作不消费旧授权。正式页面90/9下载导入刷新及真实232文档/19Blob重开刷新逐条/原字节不变。最后整理后类型/两构建/Node277项、语义11项、独立profile项目迁移11项、文案采用9项、理解界面26项及设置/图像来源/BYOK/旧task38项均退出0；四组合Transport22项另有直接来源解码证据。精确命令/文件/边界见本批证据入口，非像素或最终发布验收。
+- **行尾收口。**此前两次规范化与17个候选样本的CR0观察保留于`consumer-cutover-20261019/`。本批按实际产品发布清单重新核对，另发现attempt.ts有1256处CRLF，已仅转换为LF，非CR字节与代码语义不变；原/新SHA及等价结果见`_stage-amz-control/b1-b3-vertical-20261019/eol-publication.json`。生效attributes覆盖自身与`*.ts`，后续提交还须核对index与实际检出字节，不能由旧样本推出所有文件正确。
+- **失败和验证资格保留。** 历史`verify_v2_3_6`导航hidden超时、旧临时profile六个Blob不可读原因未明，不用后来绿灯签根治；原26项及诊断见`_stage-amz-control/copy-adoption-contract-20261019/`与第5批证据。第5批回归先因比较夹具缺schema3元数据失败，修正后两轮绿见`evals/product-v2/v2.7.1-regression-20261019-121022-final.json`；之后消费者又改，故不计最终B6。本批H10新增测试先缺canonicalJson import失败，补齐后35/35及`v2.3.5-pre-generation-confirm-20261019-131310-b3-confirmation3-history.txt`退出0；旧9145宿主被实测识别为max2旧产物，排除其结果，当前正式页面宿主为9167。基线HEAD不等于未提交源码身份；当前仍未提交/推送/发布，新增额度未激活、零新收费。
+- **5712px个案已有同原件可逆因果资产，最终人因矩阵尚未完成。** 用停工时归档UI原字节及真实bearing232/19包在1440×1000复放，实测5720px（不改写旧5712读数，也不臆断8px差值）；根因是两类英文语言警告去空格后形成长串，文本绘制越过正常元素边界。只修`.prompt-warning`仍5720，只修`.confirm-risk`剩5523，两处均换行后1440；撤销恢复5720。11段警告原文不变，root/body overflow仍visible，无zoom/transform，图片未裁。当前CSS已有两处换行规则，按未变前提复用；证据`_stage-amz-control/b1-b3-vertical-20261019/overflow/causality.json`及Before/After。归档UI临时宿主/标签页及提取源码已清理，原包/原像素不动；不能以此代签当前四段最终尺寸/缩放交互。
+
+**交接阅读边界**：以上当前边界是门/权限/唯一下一动作，审计原始复现与双审指针见同一审计JSON；不另建执行状态。执行包按计划§17.2–17.5，问题验收分别在#8/#9/#7/#10；下方历史资产只在当前包引用时定向读，不从旧P0–P8/批数/停工叙述恢复施工。此前交接加固见`_stage-amz-control/handoff-hardening-20261018T132906Z/verification.json`；其中指定Mimo override被拒，实际为默认scout冷读，不是指定弱模型验收。真实启动快照见`_stage-amz-control/full-product-start-20261018T140710Z/verification.json`。
+
+- **2026-10-16停工、2026-10-17独立main基线及随后工具不可用均为历史范围。** 本轮用户明确开始且原生完整产品Goal已真实绑定，不再用旧停工/工具错误阻断获批动作。旧Goal paused观察仍保留在`evals/product-v2/refactor/goal-observation-stop-20261016.json`，不改写为本轮Goal状态；main及PR #13–#16工程资产照旧复用，不从零重做。
 - **此前2026-10-15也曾停工，随后有过正式恢复，但已被上面的2026-10-16新停工取代。**旧观察 `evals/product-v2/refactor/goal-observation-stop-20261015.json` 和旧过早closeout不代表当前许可/完成。原七项目、失败与恢复材料仍在 `_stage-amz-control/next-version-b5-20261015/reconciliation.json`、`stop-closeout.json`，不重抓、不重生、不清零。
-- **此前“先更新维护项目规约”的本地维护已核验完成。**快照、独立读取/审查及守卫证据见本次latest_audit引用的prior_governance_audit；当时未建远程工单，不将规约通过当成工程闭环已落实。原生Goal仍paused、R5.1仍blocked，轮数/账本不变；换会话先读INDEX与计划§17.13。
-- **GitHub协作与代码事实分开**：#7工程/测试、#8完整人因、#9程序Prompt及#10基线仍为现有工单；#11/#12已合并，审计时远程main为`4bf6d037e516d6f0a0c2c85df2d9a1e350056ef7`，验证run38984977644、main发布/恢复run38986192730保留其实际范围。不能再将main说成尚未提交/发布，也不能把这些证据外推到封存下一版WIP或原产品最终完成。
-- **独立main基线第5/10批完成：PR #13+#14+#15 已合并发布，main `2c4a33a` 线上服务中。**合并链：`a278044`（CI `39035149699`）→`77c84aa`（CI `39036915488`）→`a06bd34`（CI `39038112521`）→merge `82dc0ff`（PR#13）→`274fea2`（PR#14行尾）→merge `9c835dc`（中间版本已被 `2c4a33a` 取代）→merge `2c4a33a`（PR#15 state同步）。发布：CRLF污染致首次指纹3文件不同，rollback后按标准流程（git archive仓库字节+新attributes）重建，acceptance 12/12指纹与CI候选全等（runtime `a1e73bdc`），finalize完成，previous已清，线上`amz-listing-kit:2c4a33a…` healthy。旧红保留不洗绿；原产品paused、7/10批、52/52和费用账本不变本轮零新增付费。main push run `39045865774` success，CI自带deploy→acceptance 12/12→fingerprint断言`runtime_sha256==候选`（`a1e73bdc3454a994…`，93文件+69 served+pubconf全等）→finalize→previous清理，artifact `12105698120`；权威证据已入库 `evals/product-v2/refactor/baseline-release-20261017T154245Z/`（release.json含commit/image_id/image_tag/runtime指纹+caddy.sha256）。线上`amz-listing-kit:2c4a33a…` healthy，无open事务、无previous残留。#10基线7/7工程侧完成（第7项评论6235888287）；C15按计划合同保持open（须首次参与的独立用户无干预走完，sponsor亲验不等同C15），C17及用户2026-10-17亲自走完的亲验记为强通过信号（原话「我确认过了做好收尾吧」）。
+- **2026-10-18较早阶段仅审计与规划的边界已被上方最新用户恢复决定取代。** 审计证据仍见`evals/product-v2/refactor/status-audit-20261018.md`及`_stage-amz-control/status-audit-20261018/verification.json`；保留其当时事实，不把旧“本轮不恢复”当当前用户意图，也不把最新授权写成原生Goal已恢复。
+- **源码、线上与运行时身份分开记录**：当前产品工作树起点是#18 merge `72c33df03514eaedd6f3e6efdf57236f26ada9f6`，原主工作树分支仍保留`f9b5b4e7e535ba40c1ff89f08e23d6b91d22dbb4`及用户未提交改动；PR #13–#16与#18均已合并。#18的main run `39136220536`发布步骤已成功，见上方保存证据；下条f9b5b4e只证更早发布，不能用“流水线仍在运行”的旧描述覆盖已观察结果。本次未重新探测线上镜像/运行时，不把本地未提交能力说成线上具备。#7/#8/#9/#10仍OPEN，Issue状态不等于代码未交付；#10工程侧7/7只保留原范围，不能签完整Goal。
+- **独立main基线已用5/10批；本次既有main流水线完成发布，非新产品施工批。**main push run`39090266442`成功，真实deploy→HTTPS页面验收→候选/线上指纹比较→finalize均成功；artifact`12122467000`已下载至`_stage-amz-control/status-audit-20261018/release-evidence/`。线上镜像`amz-listing-kit:f9b5b4e7e535ba40c1ff89f08e23d6b91d22dbb4`，image ID`sha256:4774d0c7d2d5d215e1d5d3f9235994114905abad3f8117965040374280067429`，实际容器healthy、可信HTTPS health通过、无previous容器、真实`~/.config/amz-listing-kit/deploy-transaction.env`不存在。runtime仍`a1e73bdc3454a994213fe59b9ae5ea5c3034da20573bca9f2072f040e79d8de1`，与上次相同；这是镜像身份更新，不是功能新增。旧run`39045865774`及入库`evals/product-v2/refactor/baseline-release-20261017T154245Z/`继续证明旧`2c4a33a`事件。main push不因纯文档而跳过发布，旧“#16不部署”和检查`release-transaction.state`的说法均已纠正。C15保持open；用户亲验保留为强信号，C17正式签署范围与最终版本绑定仍须单独核对，不代签。
 - 历史停工启动快照为`fix/byok-receipt-20261009`、`48bb3c1e2f3751a984170a01361a2fba5f6e4ae4`加当时WIP，不再作为当前main身份。下一版WIP已另行封存，保留原用户材料/五图/两包及证据，不因main审计而重生/重抓或整包恢复；当前main仍六入口和既有返工合同，不能把WIP能力当已上线。
-- 当前新Goal按连贯工作保守登记 **7/10批已占用**：原5批历史不变，第6批完成原bearing-main有据事实/普通决定/五用途/Prompt一致消费、零模型POST；第7批完成真实五图采用、两包下载和独立导入刷新/再导出证明后按用户要求停工。不把一张图/一次检查/本次收尾拆为新批；B6/B7工程准出与发布仍未执行完成。
-- **旧账和所有失败/Unknown保留，生图累计次数门已满。**原保守image35/semantic-VLM10、安全上界8.46元及历史spent_cny2.69不清零；本次实际百炼8、火山9（包含§17.12.6单次追加），新增语义0，新增安全上界2.74元（百炼1.66、火山1.08），累计安全上界11.20/16元，非账单实结。保守累计生图52/52；两平台reserved_image_calls均0，没有自动续提权限。
+- **第5批时点的历史读数（不是当前计数）：当时5/12已占用，本地行为已验证、独立复核前业务整批未验收。** 前四组为初始来源/规格合同实现验证、文案提议请求修复验证、采用链修复验证、规格OCC恢复修复验证；第5组为审计后owner/编译消费者及实际页面预览一致性的同组修复验证。理由及证据见审计JSON与第5批`verification.json`。旧7/10、独立main5/10及#9原交付范围保留，不冒充本轮余量；未提交不等于未占用。后续按实际完整批次追加，不按文件/调用拆批；最终同候选两轮合计一批。第12批仍未完整交付即停并交接，不自动追加、不降低验收。
+- **收费前必须承接最新完整账，不可使用当前旧main账本的余量。** 历史保守累计image52/52、安全上界11.20/16元（非结算）、百炼8/火山9及两平台reserved_image_calls均0保留。当前`_working/amz-listing-kit-product-v2/budget-ledger.json`仍是旧main的5元/1.61元/2026-10-07版；最新完整账在stash `2b7a82171c324e75bd2d910f5ae1343799659df5`同路径，sha256 `4aa0f8b585395986b85d013a6acf63e70f6035eb8254ea94483c275eac1820dc`，封存副本见`_stage-amz-control/status-audit-20261018/sealed-budget-ledger.json`。本次5元/12次生图/4次辅助是独立新增授权，未激活；不得整包恢复WIP、释放Unknown、重启旧追加额度或用旧金额余量增加生图。
 - 原停工WIP的单向owner、候选报告、精确返工等成果保留原版本证明，不能自动外推main已包含全部下一版能力。main现有owner在本次实际代码评估中按真实差量复用，不从旧清单重建；连续事实更新/草稿保护的本地历史证明仍见`evals/product-v2/manual-mug-assist/auto-preparation-fix-20261010.md`。
-- main既有局部Mock/demo清理成果继续复用；本轮按现有产品合同清退V1及更早退役活链，先处置必要当前消费者，不为“仍被旧工具引用”长期保留两套系统。用户材料、许可、历史失败、费用与选中恢复原件不删。
-- **实物与未完边界分开**：main旧版本发布/代表恢复已有直接证据；本地V1/H09/调度、长内容和秘密扫描等成果取既有证据，不等于当前PR完整交付。#10/#7验收必须对应独立可重建候选，旧本地全绿不得外推远程CI；完整体验/程序稿品质及封存WIP原产品最终准出另行未完成。原五图和两包不作废，亦不代签当前main候选或C15/C17。下方机器块保持原产品paused / R5.1 blocked，不作为本轮main工程进度表。
+- **V1活运行链及旧专属消费者已在main基线清退，不再安排重复清退。**FastAPI/Uvicorn、Vite单产物、lit-html、共享信封结构及验证治理取当前代码/锁/CI；历史用户原件、许可、失败/账本和恢复材料保留。旧收尾“V1未动”、README“只是分支候选”及冷恢复任务卡P0→P1旧指令已更正；不是恢复旧产品或删除历史。
+- **剩余前沿是完整产品差量，不是再次治理基线。** #9承接PR #18，当前从R4.4/B1剩余合同起闭合程序表达、双模式真实来源及必要界面，再完成#8完整工作台/人因、程序稿真实品质、最终两轮与受保护发布。既有五图/两包/owner/BYOK/秘密/恢复/CD按未变前提复用，不重建或重新收费购买；旧两包hash证明原字节，不证明当前main已读封存schema。机器块现反映本轮真实active绑定和最早可达前沿，不继承旧paused/工具缺失阻塞。
 - **不再等待重复原图，不把截图当所有事实。**原用户2026-10-15T07:31:58.079Z已明确“1按截图开打”，原PNG sha `90de3c617d1379532ac303fd992994b976d956f43e4c434a8e3aac474a5e06f5`与商品JPEG sha `4c4ed76c61c959ace082f8f3698f1b10bf0e1c942c2b1e524b1e62086d4df1e1`已保全、同57704原库已实际重开。截图只证INDONESIA/608Z/NSK及可见外观，不能证轴承钢/608ZZ/真实量测或不可见结构；尺寸槽v3另取NSK608官方公称d8/D22/B7mm，不冒称用户实测。qwen-vl-max精确ID/现价仍未重新核到，不新增其收费理解/复核、不静默换型；人工路径不因此阻断。
-- **所有临时运行资源已释放。**付费观察host `bearing-real-wire-20261015`已停止、临时 `_working/_bearing_real_wire.py`已删除；之后同57704默认closed普通host亦已停止。两个独立无头Chrome均已原生关闭，实际进程及57704监听为空，见 `real-wire/resource-closeout.json`（相对上述stage目录）。原profile/用户原件保留；只有本次新建的独立故障副本profile在核对进程消失后删除。
+- **历史临时运行资源已释放。**付费观察host `bearing-real-wire-20261015`已停止、临时 `_working/_bearing_real_wire.py`已删除；之后同57704默认closed普通host亦已停止。两个历史独立无头Chrome均已原生关闭，实际进程及57704监听为空，见 `real-wire/resource-closeout.json`（相对上述stage目录）。原profile/用户原件保留；只有当时新建的独立故障副本profile在核对进程消失后删除。本轮另启的代表数据基线host/隔离无头profile以新启动stage证据单独记录，不冒称当前没有运行资源。
 - **五张不同用途原像素合格且均已正式采用。**主图v3、信息图v7、场景v1、细节v2、尺寸v5；最后火山第9次尺寸原照补图 action `act-04a84b645ec44047b550ef18740e1241`，原PNG sha `ffa3ed2449e02cfec93fee828e0fc58bda056149354520bd53528fc3acc4d40e`，四行官方公称参数与not measured正确、无额外灰框/箭头/乱码。见 `real-wire/five-adopted-pixel-proof.json`。信息图右侧留白未达内部40px偏好但商品未裁断，保留布局偏差，不声称每条指令完美遵循；此前所有错误原字节及费用均保留。
 - **真实最终两包及独立恢复已成立。**`real-wire/bearing-main-final.delivery.zip` 8739956B/sha `6839e91313089edc354443a1d55a74177054b703f21a26ccc2708ea1b0695a3e`；`bearing-main-final.project.zip` 28098549B/sha `5dd5b7d27d198b788b2aad5dacf193af5dd4e636b0f493bdc407478084717591`。独立空profile真实上传/打开/刷新后232个文档身份-version-payload、19个Blob逐字节一致；再次真实导出仅新增1条export_record，原232/19不变、五张交付图与原action/冻结Prompt完全一致。见 `real-wire/package-recovery-proof.json`。AI复核保持not_run，不伪造PASS。
 - **报告采用硬门实际负例已留存，故障副本不可充当正式项目。**只在独立导入副本删除一条历史Qwen候选报告，再点实际“采用当前候选”，正式事务拒绝“精确来源版本缺失”，旧采用记录完整不变，见 `real-wire/report-loss-adoption-proof.json`。刷新补建本地报告后，该历史候选被一次技术性采用且正确标为已过期v2；等待文案误用未过期形式而超时，并非产品故障。未生成技术QA交付包；用户停工后不再继续该路径。原profile五合格采用及此前两组恢复包未受故障操作影响。
-- **新增质量缺口已保留，不在停工下修产品。**尺寸专家稿实际出站示例见`real-wire/formal-bearing-ark-size-expert-09/outbound.json`，它是助手手工全文，不是程序自动创作表达的验收；既有合格图不作废，程序稿质量仍未证。真实项目数据的独立导入故障副本曾观察到1440×1000视口、页面scrollWidth5712/scrollHeight3465；`artifact://2118`关键字段已稳定保存在前轮规约核验，经latest_audit的prior_governance_audit追溯。根因未定位，不外推原profile所有状态。对应产品问题现由#8/#9承接，不能只补报告结案或直接跳最终回归，不重做既有五图/恢复。
+- **新增质量缺口待完整产品绑定后落实，不因授权或设计收口而视为已修。** 尺寸专家稿实际出站示例见`real-wire/formal-bearing-ark-size-expert-09/outbound.json`，它不是程序自动增强的验收；既有合格图不作废，新程序稿品质仍需直接证明。真实项目独立导入副本曾观察到1440×1000下页面scrollWidth5712/scrollHeight3465，根因尚未定位，不能泛化到所有项目或以隐藏溢出假修。#8/#9承接真实内容交互与表达问题，不只补报告结案，不重做既有五图/恢复。
 
 原长篇时点叙事保留于 `_stage-amz-control/next-version-design-20261012/baseline/before/_working/amz-listing-kit-product-v2/state.md`（SHA256 `af524be0793d16a41d7eb843fe85fef9bfe4b61bccc59d42d1a36d6c1e8dc9cb`）；本次启动前完整机器字节见新启动快照。下方是按计划§7.5重判后的当前机器块，旧证据与历史unknowns保留，不另建当前状态。
 
 ```yaml
 state_schema: amz-project-state/v2
 task_id: amz-listing-kit-product-v2-refactor
-status: paused
+status: active
 goal_binding: required
-goal_id: "15a42a4b52b70942"
+goal_id: "15ab22bf3386b9cf"
 goal_pending_reason: null
-goal_binding_evidence: evals/product-v2/refactor/goal-observation-stop-20261016.json
-system_goal_observed_status: paused
-system_goal_observed_at: '2026-10-16T00:33:55.490Z'
+goal_binding_evidence: evals/product-v2/refactor/goal-observation-full-product-20261018T140710Z.json
+system_goal_observed_status: active
+system_goal_observed_at: '2026-10-18T14:07:10.335Z'
 plan_ref: docs/product-v2-refactor-plan.md
-latest_audit: _stage-amz-control/issue-tracking-20261016T025000Z/verification.json
+latest_audit: _stage-amz-control/full-product-start-20261018T140710Z/verification.json
 phase_progress:
   '0':
     status: done
@@ -64,7 +76,7 @@ phase_progress:
     - evals/product-v2/refactor/home-read-recovery-20261003.md
     - evals/product-v2/v2.3.3-session-lifecycle-20261003-025221-home-read-recovery-shutdown.json
   '4':
-    status: done
+    status: active
     evidence:
     - evals/product-v2/refactor/effective-config-byok-20261003.md
     - evals/product-v2/refactor/execution-identity-package-20261003-072854.md
@@ -72,7 +84,7 @@ phase_progress:
     - evals/product-v2/refactor/formal-start-20261005.json
     - evals/product-v2/refactor/next-version-b1b3-20261015.json
   '5':
-    status: blocked
+    status: pending
     evidence:
     - evals/product-v2/refactor/generation-module-20261003-084705.md
     - evals/product-v2/refactor/two-image-adapters-20261003-094600.md
@@ -254,8 +266,11 @@ task_progress:
     - evals/product-v2/refactor/next-version-b1b3-20261015.json
     - evals/product-v2/v2.5.4-rework-loop-20261015-074537fixer-shared2.json
     - evals/product-v2/v2.6.3-transfer-20261015-074943-b1b3-native-reload.json
+    - evals/product-v2/refactor/b1-b3-consumer-closure-20261019.json
+    - evals/product-v2/v2.6.3-transfer-20261019-133339-b3-integrated-confirm3.json
+    - evals/product-v2/refactor/b3-semantic-lifecycle.json
   V2.R5.1:
-    status: blocked
+    status: active
     evidence:
     - _stage-amz-control/formal-resume-20261015T125651Z/real-wire/remaining-pixel-review.json
     - _stage-amz-control/formal-resume-20261015T125651Z/real-wire/five-adopted-pixel-proof.json
@@ -265,7 +280,7 @@ task_progress:
     - evals/product-v2/refactor/final-delivery-20261007.md
     - evals/product-v2/refactor/goal-observation-final-delivery-20261007.json
     - evals/product-v2/refactor/generation-module-20261003-084705.md
-    - app/product_v2/generation.js
+    - app/product_v2/generation.ts
     - app/product_v2/workspace.js
     - evals/product-v2/v2.4.2-generation-attempt-20261003-084647.json
     - evals/product-v2/v2.4.3-batch-suite-20261003-084705.json
@@ -420,9 +435,9 @@ task_progress:
     - app/product_v2/domain/config-export.ts
     - tools/build_product_v2_ts.mjs
 next_action_task: V2.R5.1
-blockers:
-  - V2.R5.1_user_explicit_stop_20261016_no_construction_paid_calls_commit_push_or_deploy_until_explicit_resume_same_Goal_paused_keep_all_history_and_7_of_10_used_batches
+blockers: []
 unknowns:
+  - current_20261019_native_Goal_15ab22bf3386b9cf_active_cap12_occupied6_B1_B3_engineering_closed_R44_done_R51_active_current_Confirmation3_read1_2_Attempt3_read2_package_MIN2_manual_history_exact_90docs9assets_and_real232docs19Blobs_dimensions_and_two_adapter_two_mode_Transport_proven_integrated277_Node_11_semantic_11_transfer_9_copy_26_intake_38_BYOK_pass_publish_scoped_Draft_then_batch7_B4_no_quota_activation_no_paid_calls_no_current_release
   - current_20261016_actual_Github_issues_7_engineering_workflow_8_real_content_UI_9_program_Prompt_created_and_remote_readback_verified_only_issue_write_and_recovery_handoff_authorized_no_product_Goal_resume_PR_commit_push_paid_or_deploy_no_local_issue_progress_copy
   - current_20261016_withdraw_whole_criteria1_to6_claim_program_creative_prompt_and_criterion4_full_UX_unproven_expert_full_text_success_not_program_quality_independent_import_QA_copy_page_scrollWidth5712_at1440x1000_root_cause_unlocated_follow_latest_audit_reuse_five_adopted_images_and_exact_232docs19Blobs_packages
   - same_bearing_main_five_qualified_adoptions_and_actual_final_delivery_project_ZIPs_now_proven_232_original_document_versions_19_Blob_bytes_exact_after_independent_import_reload_reexport_follow_package_recovery_proof_not_original_four_adopted_snapshot
@@ -514,5 +529,5 @@ unknowns:
   - current_20261017_tip77c84aa_state_auth_only_CI39036915488_rerun_infra_httpx403_pending_v23507_closed_by_causal_doc_dev_residues_cleaned_walkthrough_packet08_prototype_deleted_doc_gaps_fixed_pending_push
   - current_20261017_baseline_finalized_main_9c835dc_PR13_PR14_merged_deploy_acceptance12of12_fingerprint_a1e73bdc_equal_finalize_done_previous_cleaned_CRLF_rollback_rebuild_lesson_git_archive_plus_attributes_zero_new_paid_calls
   - current_20261018_baseline_closeout_main_2c4a33a_CI39045865774_success_autodeploy_acceptance12of12_fingerprint_a1e73bdc_equal_finalize_previous_cleaned_evidence_stage_baseline_release_20261017T154245Z_artifact12105698120_human_gates_C15_C17_user_confirmed_pass_no_new_paid_calls
-updated_at: '2026-10-18T01:02:59.000Z'
+updated_at: '2026-10-19T05:41:58.401Z'
 ```

@@ -69,7 +69,7 @@ REVIEW_PATH = "/api/v2/review/candidate"
 MAX_SUITE_REVIEW_BODY_BYTES = 48 * 1024 * 1024
 SUITE_REVIEW_PATH = "/api/v2/review/suite"
 ANALYZE_FIELDS = ("product_name", "description", "selling_points", "focus", "references",
-                  "locale", "platform", "max_slots", "existing_slot_ids")
+                  "locale", "platform", "max_slots", "existing_slot_ids", "copy_targets")
 IMAGE_SUBMIT_FIELDS = ("action_id", "prompt", "references", "size", "seed", "model_id")
 # 三用途请求头（V2.6.0）：Provider 选择 + 请求级 BYOK。图像键名保持既有通道（无垫片）；
 # 语义/复核是新增有限头。密钥只在本次请求内存里出现，不落盘、不进日志、不进注册表。
@@ -872,10 +872,14 @@ class _RequestScope:
                 _provider_error_kind(error),
                 redact(type(error).__name__ + ": " + str(error))))
         sees_images = bool(getattr(provider, "supports_images", False))
+        copy_mode = bool(getattr(request, "copy_targets", ()))
         if vision_items and not sees_images:
             return json_response(400, input_rejected_payload(
                 "当前语义模型不支持图片字节：纯文本配置收到 reference_images；没有调用模型。"))
-        if sees_images and not vision_items:
+        if copy_mode and vision_items:
+            return json_response(400, input_rejected_payload(
+                "文案提议只改写已确认的中文值，不看图：本次请求不应携带 reference_images；没有调用模型。"))
+        if sees_images and not vision_items and not copy_mode:
             return json_response(400, {
                 "ok": False,
                 "unknown": False,
@@ -891,7 +895,7 @@ class _RequestScope:
                 },
             })
         images: tuple[Any, ...] = ()
-        if sees_images:
+        if sees_images and vision_items:
             if len(vision_items) > MAX_VISION_IMAGES:
                 return json_response(400, input_rejected_payload(
                     f"reference_images 一次最多 {MAX_VISION_IMAGES} 张；没有调用模型。"))

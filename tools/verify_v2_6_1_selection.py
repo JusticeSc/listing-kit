@@ -314,15 +314,48 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                     return page.evaluate(
                         """() => {
                             const panel = document.getElementById("compare-panel");
+                            const selected = panel
+                              ? panel.querySelector('#compare-candidates [role="tab"][aria-selected="true"]')
+                              : null;
+                            const list = panel ? panel.querySelector("#compare-references") : null;
                             return {
                                 visible: Boolean(panel && !panel.hidden),
                                 shot: panel ? (panel.dataset.shotId || null) : null,
                                 cards: panel ? panel.querySelectorAll('#compare-candidates [role="tab"]').length : 0,
                                 references: panel ? panel.querySelectorAll("#compare-references li").length : 0,
+                                selected_candidate_id: selected
+                                  ? (selected.dataset.candidateId || null) : null,
+                                reference_shas: list
+                                  ? [...list.querySelectorAll("li")]
+                                      .map((node) => node.dataset.referenceSha256 || null)
+                                  : [],
                             };
                         }""")
 
-                def open_panel(shot_id: str, card_count: int, references: int = 1) -> None:
+                def frozen_reference_shas(shot_id: str, candidate_id: str | None) -> list | None:
+                    """正看着的候选在原任务里冻结的参考图顺序（只读 IDB 原记录，不重算选择）。
+
+                    编辑源模式（改这条候选）的返工任务合法地有两张：候选原字节在第一位，
+                    商品依据随后。所以这里比对的是身份与顺序，不是写死的张数。
+                    """
+                    if not candidate_id:
+                        return None
+                    data = attempt_probe()
+                    action_id = None
+                    for entry in data["candidate_chains"].get(shot_id, []):
+                        if entry["payload"].get("candidate_id") == candidate_id:
+                            action_id = entry["payload"].get("action_id")
+                    if action_id is None:
+                        return None
+                    newest = None
+                    for entry in data["attempt_chains"].get(shot_id, []):
+                        if entry["payload"].get("action_id") == action_id:
+                            newest = entry  # 链按版本升序：最后一条即当前冻结内容
+                    if newest is None:
+                        return None
+                    return [item["sha256"] for item in (newest["payload"].get("references") or [])]
+
+                def open_panel(shot_id: str, card_count: int) -> None:
                     state = compare_state()
                     if not (state["visible"] and state["shot"] == shot_id):
                         stage_nav.goto(page, "generate")
@@ -334,11 +367,22 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                             if (!panel || panel.hidden) return false;
                             if (panel.dataset.shotId !== payload.shot) return false;
                             const cards = panel.querySelectorAll('#compare-candidates [role="tab"]');
-                            if (cards.length !== payload.cards) return false;
-                            return panel.querySelectorAll("#compare-references li").length
-                              === payload.references;
+                            return cards.length === payload.cards;
                         }""",
-                        arg={"shot": shot_id, "cards": card_count, "references": references},
+                        arg={"shot": shot_id, "cards": card_count},
+                        timeout=20_000)
+                    expected = frozen_reference_shas(shot_id, compare_state()["selected_candidate_id"])
+                    if expected is None:
+                        raise AssertionError("比较面板正看着的候选没有可核对的原任务参考图记录")
+                    page.wait_for_function(
+                        """(payload) => {
+                            const list = document.getElementById("compare-references");
+                            if (!list) return false;
+                            const shas = [...list.querySelectorAll("li")]
+                              .map((node) => node.dataset.referenceSha256 || null);
+                            return JSON.stringify(shas) === JSON.stringify(payload);
+                        }""",
+                        arg=expected,
                         timeout=20_000)
 
                 def select_candidate(candidate_id: str) -> dict:
@@ -435,6 +479,10 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                     wait_candidate_ui(shot_id)
 
                 page.goto(base + "/", wait_until="networkidle")
+                # 返工合同版本以产品模块为唯一权威（报告标签不另立字面量）。
+                ui["rework_contract"] = page.evaluate(
+                    "async () => (await import('/app/product_v2/domain/rework.js'))"
+                    ".REWORK_CONTRACT_VERSION")
                 page.wait_for_selector("#empty-state:not([hidden])", timeout=60_000)
                 page.fill("#new-project-name", "审计商品 · 人工选择")
                 page.click("#create-project")
@@ -473,7 +521,7 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 if not confirmed_rows or confirmed_rows[-1]["version"] < 1:
                     raise AssertionError("一次点击没有先落授权记录：" + repr(confirmed_rows))
                 wait_terminal_all(shot_ids)
-                open_panel(first_shot, 1, references=1)
+                open_panel(first_shot, 1)
                 rework_once(first_shot, "scene", "把背景换成纯白，商品保持不变，不要改标识。")
 
                 seeded = attempt_probe()
@@ -508,7 +556,7 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                                "row": initial_rows[0] if initial_rows else None},
                 })
 
-                open_panel(first_shot, 2, references=1)
+                open_panel(first_shot, 2)
                 opened_compare = probe()
                 default_id = opened_compare["selected_candidate_id"]
                 other_id = [item for item in candidate_ids if item != default_id][0]
@@ -621,7 +669,7 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 rework_once(first_shot, "scene", "把背景换成纯白，商品保持不变，不要改标识。",
                             known_candidates=len(candidate_ids))
                 wait_candidate_ui(first_shot)
-                open_panel(first_shot, 3, references=1)
+                open_panel(first_shot, 3)
                 after_rework = attempt_probe()
                 chain_after = after_rework["candidate_chains"].get(first_shot, [])
                 newest_candidate_id = chain_after[-1]["payload"]["candidate_id"]
@@ -774,7 +822,7 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 expect(page.locator("#project-view")).to_be_visible()
                 reloaded = probe()
                 reloaded_storage = storage()
-                open_panel(first_shot, 3, references=1)
+                open_panel(first_shot, 3)
                 reloaded_open = probe()
                 reloaded_rows = [item for item in reloaded["rows"] if item["shot_id"] == first_shot]
                 checks.append({
@@ -930,7 +978,8 @@ def main() -> int:
         "-" * 76,
         f"observed_at: {observed_at}",
         f"status: {'passed' if passed == len(checks) else 'failed'}",
-        f"contract: {SELECTION_CONTRACT_VERSION}（人工选择）· v2.5.4（返工）· v2.5.3（比较）· v2.5.2（复核）",
+        f"contract: {SELECTION_CONTRACT_VERSION}（人工选择）· "
+        f"{ui.get('rework_contract') or 'v2.5.5'}（返工，页面读值）· v2.5.3（比较）· v2.5.2（复核）",
         "model_calls: 0 · external_network_calls: 0（fake providers + 本地静态服务器）",
         f"json: {json_path.relative_to(ROOT).as_posix()}",
         "",

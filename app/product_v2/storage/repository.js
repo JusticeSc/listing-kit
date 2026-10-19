@@ -23,10 +23,11 @@ import {
 } from "./validate.js";
 import { readPointer, removePointer, writePointer } from "./pointer.js";
 import {
-  attemptActions, ATTEMPT_ACTIVE_STATES, checkAttemptRecord,
+  attemptActions, ATTEMPT_ACTIVE_STATES, ATTEMPT_SCHEMA_VERSION, checkAttemptRecord,
   canAttemptTransition, nextFromSubmitEnvelope, nextFromStatusEnvelope,
   checkConfirmationRecord, checkPromptRecord, promptStaleness, canonicalJson, isPlainObject,
-  shotSignatureOf, evaluateShot, selectReferences, PLATFORM_PROFILES,
+  shotSignatureOf, styleSignatureOf, evaluateShot, selectReferences, dependencyAssetsOf, PLATFORM_PROFILES,
+  CONFIRM_SCHEMA_VERSION, PROMPT_COMPILER_RULE_VERSION, PROMPT_SCHEMA_VERSION,
   checkCandidateRecord, candidateMatchesAttempt,
   assertSelectionRecord, reviewIsCurrent, selectionReviewFingerprint, checkReviewReport, checkSuiteReviewReport,
 } from "../domain/index.js";
@@ -467,6 +468,9 @@ export function createRepository({
   }
 
   /** 所有当前性判据在同一事务里读头，复用 Prompt 的消费范围而不是项目 revision。
+   * 引用核对与编译/运行前核对用同一选择器、同一选项：返工的 mode 与固定候选来自
+   * 冻结依据 basis.rework（无 mode 历史不猜编辑源）；依赖满足只看实际选中的商品
+   * 原照（product_truth 字节），不看全量 intake，也不看合并进来的候选编辑源。
    * @param {IDBTransaction} tx @param {import("./validate.js").ReserveAttemptInput} input
    * @param {import("../domain/type-contracts.js").PromptRecord} prompt */
   async function checkGenerationSources(tx, input, prompt) {
@@ -490,20 +494,54 @@ export function createRepository({
     }
     const provider = prompt.compiled.provider;
     const current = {
+      compiler_rule_version: PROMPT_COMPILER_RULE_VERSION,
       briefBasis: slots.map(item => ({ slot_id: item.slot.slot_id, version: item.version })),
       shot_signature: shotSignatureOf(shot), suite_version: suite?.version || null,
-      style_version: style?.version || null, shot_spec_version: spec?.version || null,
+      style_version: style?.version || null,
+      style_signature: styleSignatureOf(style?.payload || null, spec?.payload || null, shot),
+      shot_spec_version: spec?.version || null, intake_version: intake?.version || null,
       platform: { version: PLATFORM_PROFILES.amazon_us.version }, provider,
     };
     if (promptStaleness(prompt, current).stale) transactionConflict("consumed_sources_changed");
-    const context = { facts: slots.map(item => ({
+    const factContext = slots.map(item => ({
       slot_id: item.slot.slot_id, status: item.slot.status, value: item.slot.value,
-    })), assets: references };
-    if (!evaluateShot(shot, context).satisfied) transactionConflict("shot_blocked");
-    const selected = selectReferences(shot, references, { maxReferences: provider.max_reference_images });
+    }));
+    const frozen = isPlainObject(prompt.basis) && isPlainObject(prompt.basis.rework)
+      ? prompt.basis.rework : null;
+    const rework = frozen && (frozen.mode === "edit_candidate" || frozen.mode === "regenerate_original")
+      && isPlainObject(frozen.problem_candidate) ? {
+        schema_version: 2, shot_id: shotId, candidate_id: frozen.candidate_id,
+        candidate_sha256: frozen.candidate_sha256, mode: frozen.mode,
+        problem_candidate: frozen.problem_candidate,
+      } : null;
+    let selected;
+    try {
+      selected = selectReferences(shot, references, { maxReferences: provider.max_reference_images,
+        intakeVersion: intake?.version || 0, shotSpec: spec?.payload || null,
+        ...(rework ? { rework } : {}) });
+    } catch (error) {
+      transactionConflict("references_changed",
+        { message: error instanceof Error ? error.message : "参考图选择已变化。" });
+    }
+    // 依赖素材必须是「真正会外发的那组商品依据」：竞品图按 style_reference 用途发送，
+    // 仍算 competitor 角色；编辑源候选是待修对象，不算依据。投影与确认单共用
+    // dependencyAssetsOf，避免两处各写一份用途过滤而漂移。
+    const dependencyAssets = dependencyAssetsOf(selected);
+    if (!evaluateShot(shot, { facts: factContext, assets: dependencyAssets }).satisfied) {
+      transactionConflict("shot_blocked");
+    }
     // 请求一致性只核对实际发送快照；消费围栏头/投影由 checkFenceHeads 在同一事务内先行核对。
-    if (canonicalJson(selected) !== canonicalJson(prompt.request_snapshot.references)) {
-      transactionConflict("references_changed");
+    // 历史只读记录（schema1）没有完整冻结元数据：按存储顺序比较 {role,sha256} 身份投影；
+    // 新记录（schema2）比较完整冻结元数据。两条都不重建、不降级比较对象。
+    const stored = prompt.request_snapshot && Array.isArray(prompt.request_snapshot.references)
+      ? prompt.request_snapshot.references : [];
+    if (prompt.schema_version === PROMPT_SCHEMA_VERSION) {
+      if (canonicalJson(selected) !== canonicalJson(stored)) transactionConflict("references_changed");
+    } else {
+      const identityOf = items => items.map(item => ({ role: item.role, sha256: item.sha256 }));
+      if (canonicalJson(identityOf(selected)) !== canonicalJson(identityOf(stored))) {
+        transactionConflict("references_changed");
+      }
     }
     for (const sha of fence.assetSha256) {
       if (!await requestToPromise(tx.objectStore("assets").get(assetKeyOf(projectId, sha)))) {
@@ -545,12 +583,29 @@ export function createRepository({
       const authorized = conf.shots.find(item => item.shot_id === shotId);
       const authorization = pending.authorization;
       const promptHead = await readDocumentHead(store, projectId, prompt.kind, shotId);
-      if (!authorized || authorized.prompt_version !== prompt.version
+      // 参考图核对按记录版本分支（§13.8 一次切换）：schema 3 Attempt 保存完整冻结元数据，
+      // 直接与 Prompt 快照逐项比较（顺序即实际发送顺序）；schema ≤2 旧在途任务按
+      // {role, sha256} 身份投影比较（原任务原身份观察，不改写历史记录）。完整元数据的
+      // 一致性在 checkGenerationSources 里按同粒度比较。
+      const attemptRefs = Array.isArray(pending.references) ? pending.references : [];
+      const frozenRefs = Array.isArray(originalPrompt.request_snapshot.references)
+        ? originalPrompt.request_snapshot.references : [];
+      const identityOf = (items) => items.map(item => ({
+        role: isPlainObject(item) ? item.role : null,
+        sha256: isPlainObject(item) ? item.sha256 : null,
+      }));
+      const refsMismatch = pending.schema_version === ATTEMPT_SCHEMA_VERSION
+        ? canonicalJson(attemptRefs) !== canonicalJson(frozenRefs)
+        : canonicalJson(identityOf(attemptRefs)) !== canonicalJson(identityOf(frozenRefs));
+      if ((pending.schema_version === ATTEMPT_SCHEMA_VERSION
+            && (conf.schema_version !== CONFIRM_SCHEMA_VERSION
+              || originalPrompt.schema_version !== PROMPT_SCHEMA_VERSION))
+          || !authorized || authorized.prompt_version !== prompt.version
           || authorized.prompt_hash !== originalPrompt.hash || promptHead?.version !== prompt.version
           || pending.prompt.version !== prompt.version || pending.prompt.hash !== originalPrompt.hash
           || authorization?.document_id !== confirmation.documentId
           || authorization.version !== confirmation.version || authorization.hash !== conf.fingerprint.hash
-          || canonicalJson(pending.references) !== canonicalJson(originalPrompt.request_snapshot.references)) {
+          || refsMismatch) {
         transactionConflict("authorization_mismatch");
       }
       const target = conf.fingerprint.snapshot.execution_target;

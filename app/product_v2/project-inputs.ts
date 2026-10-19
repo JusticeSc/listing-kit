@@ -4,11 +4,15 @@
 import {
   DOMAIN_DOCUMENT_KINDS, FACT_SLOT_SCHEMA_VERSION, PRODUCT_INPUT_SCHEMA_VERSION,
   MAX_REFERENCES, SUITE_PLAN_DOCUMENT_ID, STYLE_SPEC_DOCUMENT_ID, CORE_SLOT_REGISTRY,
+  REFERENCE_VIEWPOINTS,
+  LEGACY_SHOT_SPEC_SCHEMA_VERSION, LEGACY_STYLE_SPEC_SCHEMA_VERSION,
+  SHOT_SPEC_SCHEMA_VERSION, STYLE_SPEC_SCHEMA_VERSION,
   addCustomShotToPlan, addShotFromTemplate, applySlotAction, canonicalJson, consumedSlotIdsOf,
-  assertShotSpec, assertStyleSpec, briefReadiness, buildProductBrief,
-  canAddSlot, checkFactSlot, coreSlotDefinition, copyShot,
+  briefReadiness, buildProductBrief,
+  canAddSlot, checkFactSlot, checkShotSpec, checkShotSpecV2, checkStyleSpec, checkStyleSpecV2,
+  coreSlotDefinition, copyShot, invalid as invalidSpec,
   emptyProductInput, emptyShotSpecFromShot, emptyStyleSpec,
-  intakeReadiness, isPlainObject, moveShot, previousVersionOf,
+  imageTextSourceOf, intakeReadiness, isPlainObject, isSha256Hex, moveShot, previousVersionOf,
   referenceFromAsset, removeShot, seedSuitePlan, shotSignatureOf, validateSuitePlan,
 } from "./domain/index.js";
 import { STORAGE_ERROR_CODES } from "./storage/errors.js";
@@ -18,15 +22,15 @@ import type {
   ConsumptionFence, DocumentRef, ProjectRepository, ProjectSnapshot, StoredDocumentRecord,
 } from "./storage/validate.js";
 import type {
-  BriefReadiness, FactSlot, PlanShot, ProductInput, ProductReference,
+  BriefReadiness, CopyProposal, FactSlot, PlanShot, ProductInput, ProductReference,
   ReferenceRole, SemanticAnalysisSource, SemanticProposal,
   ShotSpec, SlotActionSpec, SlotEntry, StyleSpec, SuitePlan,
 } from "./domain/type-contracts.js";
 import type { ProjectSources } from "./prompts.js";
 import type {
-  AnalysisOutcome, PreparedAnalysis,
+  AnalysisOutcome, CopyOutcome, CopyProposalDraft, CopyTargetSnapshot, PreparedAnalysis,
 } from "./semantic-analysis.js";
-import { createSemanticAnalysisModule } from "./semantic-analysis.js";
+import { createCopyProposalModule, createSemanticAnalysisModule } from "./semantic-analysis.js";
 import type { EffectiveCapabilities, ModelSettings } from "./model-settings.js";
 
 const INTAKE_DOCUMENT_ID = "intake";
@@ -41,9 +45,12 @@ const ANALYZE_MAX_SLOTS = 12;
 const MAX_REFERENCE_IMAGE_BYTES = 10 * 1024 * 1024;
 const ANALYZE_LOCALE = "zh-CN";
 const ANALYZE_PLATFORM = "amazon_us";
+const MAX_COPY_TARGETS = 4;
+/** 能力声明缺失时的字段过滤兜底：与网关 ANALYZE_FIELDS 同一集合（含 copy_targets，
+ * 事实正文不含该键，混装与否由各自的体构造与网关再拦）。 */
 const DEFAULT_ANALYZE_FIELDS = Object.freeze([
   "product_name", "description", "selling_points", "focus", "references",
-  "locale", "platform", "max_slots", "existing_slot_ids",
+  "locale", "platform", "max_slots", "existing_slot_ids", "copy_targets",
 ]);
 
 export type CompleteProductInput = {
@@ -95,6 +102,11 @@ export type InputsModule = {
   runAnalysis(options?: { allowNewAfterUnknown?: boolean }): Promise<AnalysisOutcome>;
   isAnalysisRunning(): boolean;
   analyzeState(): { requiresConfirmation: boolean; problems: string[]; last: LastAnalyze };
+  runCopyProposals(targets: { slot_id: string; version: number }[]): Promise<CopyOutcome>;
+  isCopyRunning(): boolean;
+  copyState(): { last: CopyProposalDraft[]; problems: string[]; error: string };
+  copyTargetsCurrent(prepared: PreparedAnalysis, action: ActionSnapshot): Promise<boolean>;
+  setViewpointSupport(viewpoints: string[], sha256s: string[]): Promise<void>;
   applySuiteOp(run: () => { plan: SuitePlan } & Record<string, unknown>): Promise<boolean>;
   seedPlan(): Promise<boolean>;
   addShotFromTemplate(templateId: string): Promise<boolean>;
@@ -113,14 +125,19 @@ export type InputsModule = {
   shotSpecsById(): Record<string, InputShotSpecEntry>;
   saveStyle(next: StyleSpec): Promise<void>;
   restoreStyle(): Promise<number>;
+  /** 单图规格保存：changes 传 reference_sha256s: undefined 表示删除该键（沿用角色默认），其余字段浅合并后一次追加为当前版本。 */
   saveShotSpec(shotId: string, changes: Partial<ShotSpec>): Promise<void>;
   restoreShotSpec(shotId: string): Promise<void>;
+  /** 版本冲突后的重新读入：只换 owner 投影与版本，不写库、不改历史；返回读到的最新版本（无记录为 0）。 */
+  reloadShotSpec(shotId: string): Promise<number>;
+  reloadStyle(): Promise<number>;
   understanding(): { ready: boolean; blocking: BriefReadiness["blocking"]; error: unknown };
   deriveState(): Promise<void>;
   prepareAnalysis(action: ActionSnapshot): Promise<PreparedAnalysis>;
   sourceIsCurrent(source: SemanticAnalysisSource, action: ActionSnapshot): Promise<boolean>;
   applyProposal(proposal: SemanticProposal, pid: string, action: ActionSnapshot,
     source: SemanticAnalysisSource): Promise<{ applied: number; problems: string[] }>;
+  prepareCopyAnalysis(action: ActionSnapshot, targets: { slot_id: string; version: number }[]): Promise<PreparedAnalysis>;
 };
 
 function messageOf(error: unknown, fallback: string): string {
@@ -142,6 +159,87 @@ function isProductReference(value: unknown): value is ProductReference {
 }
 function productInputFromStored(payload: unknown): ProductInput {
   return { ...emptyProductInput(), ...(isPlainObject(payload) ? payload as object : {}) };
+}
+function declaredSpecVersion(stored: unknown): unknown {
+  if (!isPlainObject(stored)) return undefined;
+  return stored.schema_version;
+}
+function unsupportedSpecVersion(kind: string, declared: unknown, supported: number[]): never {
+  invalidSpec(kind + "版本不认识：" + String(declared)
+    + "；只接受已发布版本 " + supported.join("／") + "，不支持的版本不追加、不迁移。");
+}
+function assertSupportedStyleVersion(stored: StyleSpec): void {
+  const version = declaredSpecVersion(stored);
+  if (version !== LEGACY_STYLE_SPEC_SCHEMA_VERSION && version !== STYLE_SPEC_SCHEMA_VERSION) {
+    unsupportedSpecVersion("风格规格", version,
+      [LEGACY_STYLE_SPEC_SCHEMA_VERSION, STYLE_SPEC_SCHEMA_VERSION]);
+  }
+  const problems = checkStyleSpec(stored);
+  if (problems.length > 0) {
+    invalidSpec("已存风格规格不合法：这条记录不是已发布可理解的形状，不追加、不迁移。",
+      { problems: problems.slice(0, 3) });
+  }
+}
+function assertSupportedShotVersion(stored: ShotSpec): void {
+  const version = declaredSpecVersion(stored);
+  if (version !== LEGACY_SHOT_SPEC_SCHEMA_VERSION && version !== SHOT_SPEC_SCHEMA_VERSION) {
+    unsupportedSpecVersion("单图规格", version,
+      [LEGACY_SHOT_SPEC_SCHEMA_VERSION, SHOT_SPEC_SCHEMA_VERSION]);
+  }
+  const problems = checkShotSpec(stored);
+  if (problems.length > 0) {
+    invalidSpec("已存单图规格不合法：这条记录不是已发布可理解的形状，不追加、不迁移。",
+      { problems: problems.slice(0, 3) });
+  }
+}
+/** 已发布 v1 风格的当前追加形态：先按旧版本严格读（checkStyleSpec 分派 v1/v2），
+ * 同一文本/展示决定键集合，只把信封版本升到当前写入版本。旧行原样保留，不改写历史。 */
+function styleSpecForAppend(stored: StyleSpec): StyleSpec {
+  assertSupportedStyleVersion(stored);
+  return { ...stored, schema_version: STYLE_SPEC_SCHEMA_VERSION };
+}
+/** 已发布 flat 文案来源的当前追加形态：用领域唯一读口取出文档引用并写成对象 source。 */
+function shotTextForAppend(item: unknown): Record<string, unknown> {
+  if (isPlainObject(item)) {
+    const source = imageTextSourceOf(item);
+    if (source) {
+      const record: Record<string, unknown> = { ...item };
+      delete record.source_slot_id;
+      delete record.source_slot_version;
+      record.source = { kind: source.kind, document_id: source.document_id, version: source.version };
+      return record;
+    }
+    invalidSpec("这条文案的来源不合法：必须指明已确认事实的文档引用，不追加、不丢弃。");
+  }
+  invalidSpec("图中文字必须是对象；这条文案的形状不认识，不追加、不丢弃。");
+}
+/** 已发布 v1 单图规格的当前追加形态：先按旧版本严格读（checkShotSpec 分派 v1/v2），
+ * 逐字保留可理解字段，flat 来源按上条规则改写成对象 source。旧行原样保留，不改写历史。 */
+function shotSpecForAppend(stored: ShotSpec): ShotSpec {
+  assertSupportedShotVersion(stored);
+  const next: Record<string, unknown> = { ...(stored as unknown as Record<string, unknown>) };
+  const texts = next.on_image_texts;
+  if (texts !== undefined && texts !== null) {
+    if (Array.isArray(texts)) {
+      next.on_image_texts = texts.map((entry) => shotTextForAppend(entry));
+    } else {
+      invalidSpec("所选图中文字必须是列表；不支持的形状不追加、不丢弃。");
+    }
+  }
+  next.schema_version = SHOT_SPEC_SCHEMA_VERSION;
+  return next as unknown as ShotSpec;
+}
+function assertStyleSpecForAppend(next: StyleSpec): void {
+  const problems = checkStyleSpecV2(next);
+  if (problems.length > 0) {
+    invalidSpec("风格规格不合法：" + problems[0].message, { problems: problems.slice(0, 3) });
+  }
+}
+function assertShotSpecForAppend(next: ShotSpec): void {
+  const problems = checkShotSpecV2(next);
+  if (problems.length > 0) {
+    invalidSpec("单图规格不合法：" + problems[0].message, { problems: problems.slice(0, 3) });
+  }
 }
 async function blobToBase64(blob: Blob): Promise<string> {
   const buffer = await blob.arrayBuffer();
@@ -253,6 +351,10 @@ export function createProjectInputsModule(deps: InputsDependencies): InputsModul
   let lastAnalyze: LastAnalyze = null;
   let analyzeRequiresConfirmation = false;
   let analyzeProblems: string[] = [];
+  /** 最新一批候选文案（只读投影：提议本身在 semantic_analysis 记录里，这里只记展示用的摘要）。 */
+  let lastCopyProposals: CopyProposalDraft[] = [];
+  let copyProblems: string[] = [];
+  let copyError = "";
   let styleSpec: StyleSpec = emptyStyleSpec();
   let styleVersion = 0;
   let shotSpecs = new Map<string, InputShotSpecEntry>();
@@ -317,6 +419,7 @@ export function createProjectInputsModule(deps: InputsDependencies): InputsModul
     intake = emptyProductInput(); intakeVersion = 0; intakeFingerprint = "";
     slots = new Map(); lastAnalyze = null; analyzeProblems = [];
     analyzeRequiresConfirmation = false;
+    lastCopyProposals = []; copyProblems = []; copyError = "";
     suitePlan = null; suiteVersion = 0; understandingReady = false;
     understandingBlocking = []; understandingError = null;
     styleSpec = emptyStyleSpec(); styleVersion = 0; shotSpecs = new Map();
@@ -733,6 +836,7 @@ export function createProjectInputsModule(deps: InputsDependencies): InputsModul
       ? semanticProvider.capabilities.analyze_fields : undefined) || deps.capabilities()?.analyze_fields;
     const allowed = isStringArray(declared) && declared.length
       ? declared : [...DEFAULT_ANALYZE_FIELDS];
+    // 候选文案与事实提案二选一：事实理解绝不携带 copy_targets（服务端也会拒绝混装的未知字段）。
     const BODY_KEYS = ["product_name", "description", "selling_points", "focus", "references",
       "reference_images", "locale", "platform", "max_slots", "existing_slot_ids"];
     const allowedSet = new Set(allowed);
@@ -782,6 +886,208 @@ export function createProjectInputsModule(deps: InputsDependencies): InputsModul
     return { requiresConfirmation: analyzeRequiresConfirmation, problems: analyzeProblems, last: lastAnalyze };
   }
 
+  /**
+   * 候选文案提议（设计 §13.4.4）：只改写已确认的中文值，不看图、不写事实/规格。
+   * 同一路由/同一记录形状，但产出只是提议：用户在规格区逐条确认后才写入 on_image_texts。
+   * 提议不覆盖任何脏草稿：调用方在 run 之前复核目标当前性，返回后再复核版本。
+   */
+  async function runCopyProposals(targets: { slot_id: string; version: number }[]): Promise<CopyOutcome> {
+    const action = deps.beginAction();
+    copyProblems = [];
+    copyError = "";
+    const pending = copyProposals.run(targets);
+    try {
+      const outcome = await pending;
+      if (!action.alive()) return outcome;
+      if (outcome.kind === "proposed") {
+        lastCopyProposals = [...outcome.proposals];
+      } else if (outcome.kind === "not_sent") {
+        copyError = outcome.message;
+      } else if (outcome.kind === "failed" || outcome.kind === "unknown") {
+        copyError = outcome.error.message;
+      } else if (outcome.kind === "stale") {
+        copyProblems = ["提议已保留在原目标版本 v" + outcome.record.source.version
+          + " 的分析记录中；目标事实已变化，没有展示旧提议。"];
+      }
+      return outcome;
+    } finally {
+      if (action.alive()) notify();
+    }
+  }
+
+  function isCopyRunning(): boolean {
+    return copyProposals.isRunning();
+  }
+
+  function copyState() {
+    return { last: [...lastCopyProposals], problems: [...copyProblems], error: copyError };
+  }
+
+  /**
+   * 候选文案的目标当前性：每个目标槽位必须仍是 confirmed 且版本与快照一致，
+   * 值快照也必须逐字相等（列表按元素顺序）。任一目标变化即整批过期。
+   */
+  async function copyTargetsCurrent(prepared: PreparedAnalysis, action: ActionSnapshot): Promise<boolean> {
+    if (!action.alive() || !action.projectId) return false;
+    const snapshots = Array.isArray(prepared.body.copy_targets) ? prepared.body.copy_targets : [];
+    if (snapshots.length === 0) return false;
+    for (const snapshot of snapshots) {
+      const entry = slots.get(snapshot.slot_id);
+      if (!entry || entry.slot.status !== "confirmed" || entry.version !== snapshot.version) return false;
+      const current = entry.slot.value;
+      const frozen = snapshot.value;
+      if (Array.isArray(frozen)) {
+        if (!Array.isArray(current) || current.length !== frozen.length) return false;
+        for (let index = 0; index < frozen.length; index += 1) {
+          if (current[index] !== frozen[index]) return false;
+        }
+      } else if (current !== frozen) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /**
+   * 候选文案的发送准备：从当前确认槽位取快照，复用商品理解的凭据/能力门。
+   * 纯文本请求：不读资产字节、不携带 reference_images（服务端也会拒绝混装）。
+   */
+  async function prepareCopyAnalysis(
+    action: ActionSnapshot, targets: { slot_id: string; version: number }[],
+  ): Promise<PreparedAnalysis> {
+    if (!Array.isArray(targets) || targets.length === 0 || targets.length > MAX_COPY_TARGETS) {
+      throw new Error("一次最多为 " + MAX_COPY_TARGETS + " 个事实提议文案；没有调用模型。");
+    }
+    const seen = new Set<string>();
+    const snapshots: CopyTargetSnapshot[] = [];
+    for (const target of targets) {
+      if (!target || typeof target.slot_id !== "string" || seen.has(target.slot_id)) {
+        throw new Error("提议目标重复或非法；没有调用模型。");
+      }
+      seen.add(target.slot_id);
+      const entry = slots.get(target.slot_id);
+      if (!entry || entry.slot.status !== "confirmed" || entry.version !== target.version) {
+        throw new Error("目标事实「" + target.slot_id + "」不是当前确认版本；没有调用模型。");
+      }
+      if (entry.slot.value_type !== "text" && entry.slot.value_type !== "text_list") {
+        throw new Error("文案提议只改写文本类事实；没有调用模型。");
+      }
+      const value = entry.slot.value;
+      if (entry.slot.value_type === "text"
+        && (typeof value !== "string" || value.trim().length === 0)) {
+        throw new Error("目标事实「" + target.slot_id + "」没有可改写的中文值；没有调用模型。");
+      }
+      if (entry.slot.value_type === "text_list"
+        && (!Array.isArray(value) || value.length === 0
+          || value.some((item) => typeof item !== "string" || item.trim().length === 0))) {
+        throw new Error("目标事实「" + target.slot_id + "」没有可改写的中文值；没有调用模型。");
+      }
+      snapshots.push({
+        slot_id: target.slot_id, version: entry.version,
+        label: entry.slot.label || target.slot_id,
+        value_type: entry.slot.value_type,
+        value: (Array.isArray(value) ? [...value] : value) as string | string[],
+      });
+    }
+    const provider = deps.capabilities()?.provider;
+    const headers = deps.settings.headers("semantic");
+    if (!provider || provider.configured === false) {
+      throw new Error("此用途缺少有效模型或凭据；人工填写不受影响。");
+    }
+    const caps = provider.capabilities || {};
+    if (caps.copy_proposals !== true) {
+      throw new Error("当前语义模型不支持候选文案提议；没有调用模型。");
+    }
+    const providerId = provider.provider_id;
+    const modelId = provider.model_id;
+    if (typeof providerId !== "string" || typeof modelId !== "string") {
+      throw new Error("此用途缺少有效模型或凭据；人工填写不受影响。");
+    }
+    const pid = action.projectId;
+    if (!pid) throw new Error("缺少项目上下文；没有调用模型，请核对后明确发起。");
+    const declared = caps.analyze_fields;
+    const allowed = isStringArray(declared) && declared.length ? declared : [];
+    if (allowed.length > 0 && !allowed.includes("copy_targets")) {
+      throw new Error("当前语义模型不支持候选文案提议；没有调用模型。");
+    }
+    const payload = currentIntakePayload();
+    return {
+      source: { document_id: INTAKE_DOCUMENT_ID, version: intakeVersion,
+        fingerprint: fingerprintOf(payload), payload },
+      provider: { provider_id: providerId, model_id: modelId,
+        credential_source: provider.credential_source || "none" },
+      body: {
+        product_name: payload.product_name, description: payload.description,
+        selling_points: payload.selling_points, focus: payload.focus,
+        references: [], locale: ANALYZE_LOCALE, platform: ANALYZE_PLATFORM,
+        max_slots: ANALYZE_MAX_SLOTS, existing_slot_ids: [], copy_targets: snapshots,
+      },
+      headers,
+    };
+  }
+
+  /** 参考图视角槽位的稳定标识：一张参考图一个槽位（用户自定义，来源 reference_observation）。 */
+  function referenceObservationSlotId(assetSha: string): string {
+    return "ref_view_" + assetSha.slice(0, 16);
+  }
+
+  /**
+   * 保存若干张参考图能支持的视角（人明确确认；证据绑定每张图完整 SHA）。
+   * 走既有 FactSlot 权限/OCC：user_custom + reference_observation，不新建事实库、不按文件名/角色猜测。
+   * 空视角列表 = 该图暂无可支持视角：已有槽位置 unknown（保留历史），无槽位则不建。
+   */
+  async function setViewpointSupport(viewpoints: string[], sha256s: string[]): Promise<void> {
+    const action = deps.beginAction();
+    const pid = action.projectId;
+    if (!pid) return;
+    const allowed = (Array.isArray(viewpoints) ? viewpoints : [])
+      .filter((item): item is string => typeof item === "string"
+        && (REFERENCE_VIEWPOINTS as readonly string[]).includes(item));
+    const uniqueAllowed = [...new Set(allowed)];
+    const targets = [...new Set(Array.isArray(sha256s) ? sha256s : [])];
+    if (targets.length === 0) throw new Error("请选择至少一张参考图。");
+    for (const sha of targets) {
+      if (!isSha256Hex(sha) || !intake.references.some((item) => item.asset_sha256 === sha)) {
+        throw new Error("参考图不在当前项目内。");
+      }
+    }
+    for (const sha of targets) {
+      const slotId = referenceObservationSlotId(sha);
+      const existing = slots.get(slotId) || null;
+      if (!existing && uniqueAllowed.length === 0) continue;
+      if (existing) {
+        const next = uniqueAllowed.length > 0
+          ? applySlotAction(existing.slot, { actor: "user", action: "edit", value: uniqueAllowed,
+            evidence: [{ kind: "asset", ref: sha }], source: "reference_observation" })
+          : applySlotAction(existing.slot, { actor: "user", action: "mark_unknown" });
+        await persistSlot(next, pid, action, existing.version);
+      } else {
+        const candidate: FactSlot = {
+          schema_version: FACT_SLOT_SCHEMA_VERSION,
+          slot_id: slotId,
+          label: "参考图可支持视角",
+          authority: "user_custom",
+          value_type: "text_list",
+          value: uniqueAllowed,
+          source: "reference_observation",
+          status: "confirmed",
+          confidence: null,
+          evidence: [{ kind: "asset", ref: sha }],
+          depends_on: [],
+          critical: false,
+        };
+        const problems = checkFactSlot(candidate);
+        if (problems.length) throw new Error(problems.map((item) => item.message).join("；"));
+        if (!canAddSlot(candidate, "user", { existingSlots: slotEntries().map((item) => item.slot) })) {
+          throw new Error("参考图视角槽位不允许新增。");
+        }
+        await persistSlot(candidate, pid, action, 0);
+      }
+      if (!action.alive()) return;
+    }
+    await deriveState();
+    notify();
+  }
   async function slotAction(slotId: string, spec: SlotActionSpec): Promise<void> {
     const action = deps.beginAction();
     const pid = action.projectId;
@@ -866,7 +1172,7 @@ export function createProjectInputsModule(deps: InputsDependencies): InputsModul
     const action = deps.beginAction();
     const pid = action.projectId;
     if (!pid) return;
-    assertStyleSpec(next);
+    assertStyleSpecForAppend(next);
     const record = await deps.repository.documents.save(pid, {
       kind: STYLE_KIND, documentId: STYLE_SPEC_DOCUMENT_ID, payload: next,
       expectedVersion: styleVersion,
@@ -883,7 +1189,11 @@ export function createProjectInputsModule(deps: InputsDependencies): InputsModul
     const versions = await deps.repository.documents.listVersions(pid, STYLE_KIND, STYLE_SPEC_DOCUMENT_ID);
     const target = previousVersionOf(versions, styleVersion);
     if (!target) throw new Error("没有更早的版本可以恢复。");
-    const restored = { ...emptyStyleSpec(), ...(target.payload as Partial<StyleSpec>) };
+    if (!isPlainObject(target.payload)) {
+      invalidSpec("要恢复的版本形状不合法；不支持的版本不追加、不迁移。");
+    }
+    const restored = styleSpecForAppend(target.payload as StyleSpec);
+    assertStyleSpecForAppend(restored);
     const record = await deps.repository.documents.save(pid, {
       kind: STYLE_KIND, documentId: STYLE_SPEC_DOCUMENT_ID,
       payload: restored, expectedVersion: styleVersion,
@@ -901,9 +1211,25 @@ export function createProjectInputsModule(deps: InputsDependencies): InputsModul
     const shot = suitePlan.shots.find((item) => (item as PlanShot).shot_id === shotId);
     if (!shot) throw new Error("找不到这张图，可能已被删除。");
     const entry = shotSpecEntry(shotId);
-    const base = entry ? entry.spec : emptyShotSpecFromShot(shot);
-    const next = { ...base, ...changes };
-    assertShotSpec(next);
+    const base = entry ? shotSpecForAppend(entry.spec) : emptyShotSpecFromShot(shot);
+    // 删除语义：只有 reference_sha256s 允许传 undefined 表示沿用角色默认（删键）；
+    // 其它字段传 undefined 一律拒绝，绝不用 undefined 静默清空已存文本/文案/展示决定。
+    const incoming = changes || {};
+    const incomingRecord: Record<string, unknown> = { ...(incoming as Record<string, unknown>) };
+    for (const key of Object.keys(incomingRecord)) {
+      if (key !== "reference_sha256s" && incomingRecord[key] === undefined) {
+        invalidSpec("字段 " + key + " 不能传 undefined；不想改就不要出现在 changes 里。");
+      }
+    }
+    const { reference_sha256s: referenceChoice, ...rest } = incoming;
+    const next: ShotSpec = { ...base, ...rest };
+    if (referenceChoice === undefined && entry
+      && Object.prototype.hasOwnProperty.call(incoming, "reference_sha256s")) {
+      delete next.reference_sha256s;
+    } else if (referenceChoice !== undefined) {
+      next.reference_sha256s = referenceChoice;
+    }
+    assertShotSpecForAppend(next);
     const record = await deps.repository.documents.save(pid, {
       kind: SHOT_SPEC_KIND, documentId: shotId, payload: next,
       expectedVersion: entry ? entry.version : 0,
@@ -921,13 +1247,55 @@ export function createProjectInputsModule(deps: InputsDependencies): InputsModul
     const versions = await deps.repository.documents.listVersions(pid, SHOT_SPEC_KIND, shotId);
     const target = previousVersionOf(versions, entry.version);
     if (!target) throw new Error("没有更早的版本可以恢复。");
-    const restored = target.payload as ShotSpec;
+    if (!isPlainObject(target.payload)) {
+      invalidSpec("要恢复的版本形状不合法；不支持的版本不追加、不迁移。");
+    }
+    const restored = shotSpecForAppend(target.payload as ShotSpec);
+    assertShotSpecForAppend(restored);
     const record = await deps.repository.documents.save(pid, {
       kind: SHOT_SPEC_KIND, documentId: shotId, payload: restored, expectedVersion: entry.version,
     });
     if (!action.alive()) return;
     shotSpecs.set(shotId, { spec: restored, version: record.version });
     notify();
+  }
+
+  /**
+   * 版本冲突后的重新读入（设计 §13.4 OCC）：另一标签页/窗口已写入更新版本时，
+   * 本视图的 owner 投影与基版本仍是旧的；重读只换投影与版本，不写库、不改历史。
+   * 用户的未保存草稿留在视图里，下一次保存按读到的版本追加。
+   */
+  async function reloadShotSpec(shotId: string): Promise<number> {
+    const action = deps.beginAction();
+    const pid = action.projectId;
+    if (!pid) return 0;
+    const record = await deps.repository.documents.getLatest(pid, SHOT_SPEC_KIND, shotId);
+    if (!action.alive()) return 0;
+    if (!record || !isPlainObject(record.payload)) {
+      shotSpecs.delete(shotId);
+      notify();
+      return 0;
+    }
+    shotSpecs.set(shotId, { spec: record.payload as ShotSpec, version: record.version });
+    notify();
+    return record.version;
+  }
+  async function reloadStyle(): Promise<number> {
+    const action = deps.beginAction();
+    const pid = action.projectId;
+    if (!pid) return 0;
+    const record = await deps.repository.documents.getLatest(pid, STYLE_KIND, STYLE_SPEC_DOCUMENT_ID);
+    if (!action.alive()) return 0;
+    if (!record || !isPlainObject(record.payload)) {
+      styleSpec = emptyStyleSpec();
+      styleVersion = 0;
+      notify();
+      return 0;
+    }
+    styleSpec = { ...emptyStyleSpec(), ...(record.payload as Partial<StyleSpec>) };
+    styleVersion = record.version;
+    notify();
+    return record.version;
   }
 
   async function deriveState(): Promise<void> {
@@ -951,6 +1319,10 @@ export function createProjectInputsModule(deps: InputsDependencies): InputsModul
     repository: deps.repository, beginAction: deps.beginAction,
     prepare: prepareAnalysis, sourceIsCurrent, apply: applyProposal,
   });
+  const copyProposals = createCopyProposalModule({
+    repository: deps.repository, beginAction: deps.beginAction,
+    prepareCopy: prepareCopyAnalysis, copyTargetsCurrent,
+  });
 
   return {
     reset, restore, scheduleDraftSave, saveIntakeNow, currentIntakePayload,
@@ -961,13 +1333,15 @@ export function createProjectInputsModule(deps: InputsDependencies): InputsModul
     intakeSnapshot,
     draftVersion, conflict, resolveConflict, addReferences, setReferenceRole,
     removeReference, references, ensureCoreSlots, slotAction, addCustomSlot,
-    slotEntries, runAnalysis, isAnalysisRunning, analyzeState, applySuiteOp,
+    slotEntries, runAnalysis, isAnalysisRunning, analyzeState,
+    runCopyProposals, isCopyRunning, copyState, copyTargetsCurrent, setViewpointSupport,
+    applySuiteOp,
     seedPlan, addShotFromTemplate: addShotFromTemplateCmd, addCustomShot,
     moveShot: moveShotCmd, copyShot: copyShotCmd, removeShot: removeShotCmd,
     suiteContext, sources, suitePlan: () => suitePlan, suiteVersion: () => suiteVersion,
     styleSpec: () => styleSpec, styleVersion: () => styleVersion,
     shotSpecEntry, shotSpecsById, saveStyle, restoreStyle, saveShotSpec,
-    restoreShotSpec, understanding, deriveState,
-    prepareAnalysis, sourceIsCurrent, applyProposal,
+    restoreShotSpec, reloadShotSpec, reloadStyle, understanding, deriveState,
+    prepareAnalysis, sourceIsCurrent, applyProposal, prepareCopyAnalysis,
   };
 }

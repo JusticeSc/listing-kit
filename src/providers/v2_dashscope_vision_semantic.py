@@ -26,15 +26,17 @@ from src.providers.v2_langchain_chat import (
     response_usage,
     visible_text,
 )
+from src.providers import v2_dashscope_semantic as _text_semantic
 from src.providers.v2_outbound import OutboundPolicyError, validate_outbound_url
 from src.providers.v2_semantic import (
-    ANALYZE_BASE_FIELDS,
+    ANALYZE_COPY_FIELDS,
     CORE_SLOT_REGISTRY,
     MAX_VISION_IMAGE_BYTES,
     MAX_VISION_IMAGES,
     SEMANTIC_CONTRACT_VERSION,
     SEMANTIC_VISION_CONTRACT_VERSION,
     DecodedVisionImage,
+    RawCopyResponse,
     RawProposal,
     SemanticFailure,
     SemanticProposal,
@@ -169,6 +171,7 @@ class DashScopeVisionSemanticProvider:
         self._clock = clock
         self._llm: Any | None = None
         self._structured: Any | None = None
+        self._copy_structured: Any | None = None
 
     # ------------------------------------------------------------ 装配（SEL-007）
     def build_llm(self) -> Any:
@@ -189,13 +192,24 @@ class DashScopeVisionSemanticProvider:
                 extra_body={"max_tokens": self.max_tokens})
         return self._structured
 
+    def build_copy_structured_model(self) -> Any:
+        if self._copy_structured is None:
+            self._copy_structured = self.build_llm().with_structured_output(
+                RawCopyResponse, method="json_mode", include_raw=True,
+                extra_body={"max_tokens": self.max_tokens})
+        return self._copy_structured
+
     # ------------------------------------------------------------ 一次调用
     def analyze(self, request: SemanticRequest,
                 images: tuple[DecodedVisionImage, ...]) -> SemanticProposal:
-        """看图理解：文字投影 + 已校验图片字节 → 事实提案（inputs_used 标记 actual_images）。"""
+        """看图理解：文字投影 + 已校验图片字节 → 事实提案（inputs_used 标记 actual_images）。
+
+        文案提议模式不看图：有 copy_targets 时只走纯文本改写（与文字链路同一结构化目标），
+        图片字节一律不发送——候选文案只改写已确认的中文值，不从像素里找新事实。"""
 
         request = validate_request(request)
-        if not images:
+        copy_mode = bool(request.copy_targets)
+        if not images and not copy_mode:
             raise SemanticFailure("input_rejected", "VISION_BYTES_REQUIRED",
                                   "看图理解需要至少一张已校验的参考图字节；"
                                   "这次请求没有调用语义模型。",
@@ -211,12 +225,19 @@ class DashScopeVisionSemanticProvider:
                                   f"未配置 {DEFAULT_API_KEY_ENV}，无法调用真实语义模型。",
                                   retry_policy="fatal")
         try:
-            result = self.build_structured_model().invoke(build_messages(request, images))
+            if copy_mode:
+                result = self.build_copy_structured_model().invoke(_text_semantic.build_copy_messages(request))
+            else:
+                result = self.build_structured_model().invoke(build_messages(request, images))
         except SemanticFailure:
             raise
         except Exception as error:
             raise self._map_exception(error) from None
         latency_ms = int((self._clock() - started) * 1000)
+        if copy_mode:
+            return _text_semantic.to_copy_proposal(result, request, provider_id=self.provider_id,
+                                                   model_id=self.model_id, max_tokens=self.max_tokens,
+                                                   latency_ms=latency_ms)
         return self._to_proposal(result, request, latency_ms=latency_ms)
 
     def capabilities(self) -> dict[str, Any]:
@@ -229,7 +250,8 @@ class DashScopeVisionSemanticProvider:
             "vision": True,
             "max_reference_images": MAX_VISION_IMAGES,
             "max_reference_bytes": MAX_VISION_IMAGE_BYTES,
-            "analyze_fields": [*ANALYZE_BASE_FIELDS, "reference_images"],
+            "analyze_fields": [*ANALYZE_COPY_FIELDS, "reference_images"],
+            "copy_proposals": True,
             "configured": bool(self.api_key),
             "credential_source": self.credential_source,
             "endpoint_host": self.base_url,
@@ -298,6 +320,7 @@ class DashScopeVisionSemanticProvider:
             reference_images_sent=True,
             attempts=1,
         )
+
 
     # ------------------------------------------------------------ 异常 → 分类
     def _redact(self, text: str) -> str:

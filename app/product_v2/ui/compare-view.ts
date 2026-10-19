@@ -28,6 +28,7 @@ import {
   COMPARE_SEVERITY_TEXT,
   COMPARE_STATE_TEXT,
   REWORK_CONTRACT_VERSION,
+  REWORK_MODES,
   REWORK_PROBLEMS,
   attemptStateLabel,
   compareCounts,
@@ -38,6 +39,7 @@ import {
   reviewChecklist,
   reviewIsCurrent,
   reviewSummaryText,
+  reworkModeLabel,
   selectionSetText,
   sortFindings,
   suggestReworkProblems,
@@ -58,6 +60,7 @@ import type {
   PlanShot,
   ReviewFinding,
   ReviewReport,
+  ReworkMode,
   SelectionState,
   SuitePlanSummary,
 } from "../domain/type-contracts.js";
@@ -69,6 +72,7 @@ import type {
 import type {
   GenerationModule,
   ReworkIntent,
+  ReworkPromptChoice,
 } from "../generation.js";
 
 /**
@@ -155,6 +159,8 @@ export type CompareView = {
   cancelRework(): void;
   handleReworkKeydown(event: KeyboardEvent): void;
   handleReworkDirectionInput(value: string): void;
+  handleReworkModeInput(value: ReworkMode): void;
+  handleReworkPromptChoiceInput(value: ReworkPromptChoice | null): void;
   /** 人工采用/取消采用：默认对当前正看着的候选操作（与旧签名一致）。 */
   adoptCandidate(kind: "select" | "clear", shotId?: string | null, candidateId?: string | null): Promise<void>;
   /** 采用记录只读投影（阶段外壳与交付视图经同一入口读）。 */
@@ -167,10 +173,13 @@ export type CompareView = {
   resetViewState(): void;
 };
 
-/** 返工草稿（按候选内存态；意图只在显式预览后产生，视图原样持有并交回，不重算）。 */
+/** 返工草稿（按候选内存态；意图只在显式预览后产生，视图原样持有并交回，不重算）。
+ * mode 默认改这条候选；promptChoice 只在人工全文时由用户明确给出。 */
 export type CompareReworkDraft = {
+  mode: ReworkMode;
   problems: string[];
   direction: string;
+  promptChoice: ReworkPromptChoice | null;
   intent?: ReworkIntent | null;
 };
 
@@ -249,7 +258,8 @@ type CompareUiState = {
   adoptError: string;
 };
 
-/** 返工区就地投影：draftKey 精确到 project/shot/candidate，草稿不跨候选复用。 */
+/** 返工区就地投影：draftKey 精确到 project/shot/candidate 文档版本/字节，草稿不跨候选复用。
+ * 同一候选的多个模式各有独立草稿，由用户显式选择，不做 find-first 静默代选。 */
 type ReworkUiState = {
   shotId: string | null;
   candidateId: string | null;
@@ -655,14 +665,91 @@ export function createCompareView(
     `;
   }
 
-  /** 预览就绪时的一行元信息（与旧投影逐字一致：参考图张数 + 全文长度）。 */
+  /** 预览就绪时的一行元信息：改法 + 实际发送顺序/张数 + 全文长度。
+   * 编辑源（问题候选）在首位时明确标出；重画只列商品原照依据。 */
   function reworkPreviewMetaOf(intent: ReworkIntent): string {
-    return "将保存为 Prompt 新版本（旧版本保留）并只重新生成这张图 · 参考图 "
-      + intent.preview.references + " 张 · 全文 " + intent.preview.text.length + " 字";
+    const order = intent.seenReferences.map((item, index) => {
+      const tag = item.uses.includes("edit_source") ? "编辑源" : (ROLE_TEXT[item.role] || item.role);
+      return "图" + (index + 1) + tag;
+    }).join("、");
+    return reworkModeLabel(intent.mode) + " · 将保存为 Prompt 新版本（旧版本保留）并只重新生成这张图"
+      + " · 参考图 " + intent.preview.references + " 张（" + order + "）"
+      + " · 全文 " + intent.preview.text.length + " 字";
+  }
+
+  /** 返工改法选择：模板按草稿投影；切换改法即切到该改法的独立草稿（问题/方向/意图不混用）。 */
+  function reworkModeTemplate() {
+    const draft = rework.draft;
+    if (!rework.shotId || !draft) return nothing;
+    return repeat(REWORK_MODES, (mode) => mode, (mode) => html`
+      <label class="check rework-mode" data-mode=${mode}>
+        <input
+          id=${"rework-mode-" + mode}
+          type="radio"
+          name="rework-mode"
+          value=${mode}
+          .checked=${live(draft.mode === mode)}
+          @change=${() => handleReworkModeInput(mode as ReworkMode)}
+        >
+        ${mode === "edit_candidate"
+          ? "改这条候选：把问题候选原图放首位当编辑源，再按商品原照改"
+          : "按原资料重画：只发商品原照依据，不发问题候选"}
+      </label>
+    `);
+  }
+
+  /** 本图其它返工草稿：有未确认内容的多草稿必须由用户显式选择，不静默代选。 */
+  function reworkDraftChoiceTemplate() {
+    if (!rework.shotId || !rework.draftKey) return nothing;
+    const projectId = deps.currentProjectId() || "";
+    const prefix = projectId + "::" + rework.shotId + "::";
+    const others: { key: string; label: string }[] = [];
+    for (const [key, value] of reworkDrafts) {
+      if (key === rework.draftKey || !key.startsWith(prefix)) continue;
+      const nonEmpty = value.problems.length > 0 || String(value.direction || "").trim().length > 0
+        || Boolean(value.intent);
+      if (!nonEmpty) continue;
+      const parts = key.slice(prefix.length).split("::");
+      others.push({ key, label: reworkModeLabel(value.mode) + " · 候选 " + (parts[0] || "?") });
+    }
+    if (!others.length) return nothing;
+    return html`
+      <div class="field">
+        <label for="rework-draft-choice">本图其它返工草稿（不会自动代入当前面板）</label>
+        <select id="rework-draft-choice" .value=${live("")}
+          @change=${(event: Event) => { openReworkDraftChoice((event.target as HTMLSelectElement).value); }}>
+          <option value="">不切换，继续当前草稿</option>
+          ${repeat(others, (item) => item.key, (item) => html`
+            <option value=${item.key}>${item.label}</option>`)}
+        </select>
+      </div>
+    `;
+  }
+
+  /** 人工全文被覆盖前的显式选择：系统模板/人工文本二选其一，无默认，不静默覆盖。 */
+  function reworkPromptChoiceTemplate() {
+    const draft = rework.draft;
+    const intent = draft && draft.intent ? draft.intent : null;
+    if (!rework.shotId || !draft
+      || (intent?.seenPromptOrigin !== "manual_edit" && draft.promptChoice === null)) return nothing;
+    return html`
+      <div class="field">
+        <label for="rework-prompt-choice">当前 Prompt 是人工全文：返工落版时如何处理人工文本</label>
+        <select id="rework-prompt-choice" .value=${live(draft.promptChoice || "")}
+          @change=${(event: Event) => {
+            const value = (event.target as HTMLSelectElement).value;
+            handleReworkPromptChoiceInput(value === "" ? null : (value as ReworkPromptChoice));
+          }}>
+          <option value="">先选一种处理方式再确认</option>
+          <option value="rebuild_system">重编系统模板：人工文本不带入新版本</option>
+          <option value="keep_manual">保留人工文本：以人工全文为新版本当前内容</option>
+        </select>
+      </div>
+    `;
   }
 
   /**
-   * 返工面板整块内容：草稿（问题/方向/意图）是唯一状态，勾选、方向、预览、状态与错误都按它投影。
+   * 返工面板整块内容：草稿（改法/问题/方向/意图）是唯一状态，勾选、方向、预览、状态与错误都按它投影。
    * 外墙 <section> 的 hidden 属外壳生命周期（见 projectRoots），这里只投影内部。
    */
   function reworkPanelTemplate() {
@@ -685,6 +772,11 @@ export function createCompareView(
         <summary>技术详情</summary>
         <p id="rework-tech-body" class="meta">${rework.tech}</p>
       </details>
+      ${reworkDraftChoiceTemplate()}
+      <fieldset id="rework-mode" class="rework-mode">
+        <legend class="meta">返工改法（默认改这条候选；切换后用该改法的独立草稿重新预览）</legend>
+        <div class="rework-mode-options">${reworkModeTemplate()}</div>
+      </fieldset>
       <fieldset id="rework-problems" class="rework-problems">
         <legend class="meta">问题分类（可多选；至少要选一类或写一句方向）</legend>
         <div class="rework-problem-options">${reworkProblemsTemplate()}</div>
@@ -693,6 +785,7 @@ export function createCompareView(
         <label for="rework-direction">改进方向（可改写）</label>
         <textarea id="rework-direction" rows="2" maxlength="300" .value=${live(draft ? draft.direction : "")}
           @input=${(event: Event) => { handleReworkDirectionInput((event.target as HTMLTextAreaElement).value); }}></textarea>
+      ${reworkPromptChoiceTemplate()}
       <div class="toolbar">
         <button id="rework-preview" type="button" ?disabled=${rework.inFlight || !hasReason}
           @click=${() => { void previewRework(); }}>预览返工 Prompt</button>
@@ -1134,24 +1227,31 @@ export function createCompareView(
     }
   }
 
-  /* --------------------------------------------- 单图返工闭环（V2.5.4） */
+  /* --------------------------------------------- 单图返工闭环（V2.5.4 返工域 + 双改法） */
 
   /**
    * 返工区与比较区相邻但独立：比较区只投影、只读；这里才写 Prompt 版本、
-   * 单图确认与新的生成尝试。草稿按 project/shot/candidate 留在内存，预览只有用户确认时才落成版本。
+   * 单图确认与新的生成尝试。草稿按 project/shot/候选/文档版本/字节/改法留在内存，
+   * 预览只有用户确认时才落成版本；同一候选的两种改法互不混用草稿。
    */
-  function draftKeyOf(shotId: string, candidateId: string): string {
+  function draftKeyOf(shotId: string, candidateId: string, row: CompareRow | null, mode: ReworkMode): string {
     const projectId = deps.currentProjectId() || "";
-    return projectId + "::" + shotId + "::" + candidateId;
+    const version = row && row.version !== null && row.version !== undefined ? String(row.version) : "?";
+    const sha = row ? row.asset_sha256 : "";
+    return projectId + "::" + shotId + "::" + candidateId + "::" + version + "::" + sha + "::" + mode;
   }
 
-  function reworkDraftOf(shotId: string, candidateId: string, row: CompareRow | null): CompareReworkDraft {
-    const key = draftKeyOf(shotId, candidateId);
+  function reworkDraftOf(
+    shotId: string, candidateId: string, row: CompareRow | null, mode: ReworkMode = "edit_candidate",
+  ): CompareReworkDraft {
+    const key = draftKeyOf(shotId, candidateId, row, mode);
     let draft = reworkDrafts.get(key);
     if (!draft) {
       draft = {
+        mode,
         problems: suggestReworkProblems(row ? row.report : null),
         direction: suggestedReworkDirection(row ? row.report : null),
+        promptChoice: null,
         intent: null,
       };
       reworkDrafts.set(key, draft);
@@ -1169,10 +1269,10 @@ export function createCompareView(
 
   function reworkSummaryOf(draft: CompareReworkDraft | null): string {
     if (draft && draft.intent) {
-      return "预览已就绪：确认并生成会把它保存为 Prompt 新版本（旧版本保留），"
-        + "只重新生成这张图；改过问题或方向后需要重新预览。";
+      return reworkModeLabel(draft.intent.mode) + "预览已就绪：确认并生成会把它保存为 Prompt 新版本（旧版本保留），"
+        + "只重新生成这张图；改过改法、问题或方向后需要重新预览。";
     }
-    return "选好问题或写下方向 → 预览返工 Prompt → 确认并生成这张图。";
+    return "选好改法 → 选好问题或写下方向 → 预览返工 Prompt → 确认并生成这张图。";
   }
 
   /** 输入变了：旧意图不再代表将要发送的内容，必须重新预览。 */
@@ -1209,24 +1309,77 @@ export function createCompareView(
       const stale = rework.draftKey ? reworkDrafts.get(rework.draftKey) : null;
       if (stale) stale.intent = null;
     }
+    const sameTarget = rework.shotId === shotId && rework.candidateId === row.candidate_id;
+    const mode: ReworkMode = sameTarget && rework.draft ? rework.draft.mode : "edit_candidate";
     rework.shotId = shotId;
     rework.candidateId = row.candidate_id;
     rework.assetSha256 = row.asset_sha256;
     rework.version = row.version === null || row.version === undefined ? null : row.version;
-    rework.draftKey = draftKeyOf(shotId, row.candidate_id);
-    rework.draft = reworkDraftOf(shotId, row.candidate_id, row);
+    rework.draftKey = draftKeyOf(shotId, row.candidate_id, row, mode);
+    rework.draft = reworkDraftOf(shotId, row.candidate_id, row, mode);
     rework.status = "";
     rework.error = "";
-    const basis = ["返工依据：候选 v" + (rework.version === null ? "?" : rework.version)];
+    const basis = ["返工依据：候选 v" + (rework.version === null ? "?" : rework.version)
+      + "（" + reworkModeLabel(mode) + "）"];
     if (row.top_finding) basis.push("先看：" + row.top_finding.title);
     rework.basis = basis.join(" · ");
     rework.tech = "sha256 " + String(rework.assetSha256).slice(0, 12) + "… · candidate " + row.candidate_id;
-    // 问题勾选、方向文本、预览与状态全部随模板投影（方向是草稿的投影，不在这里回写节点）。
+    // 改法、问题勾选、方向文本、预览与状态全部随模板投影（方向是草稿的投影，不在这里回写节点）。
     renderComparePanels();
     const first = elements.reworkPanel
-      .querySelector<HTMLInputElement>("#rework-problems input[type=\"checkbox\"]");
+      .querySelector<HTMLInputElement>("#rework-mode input[type=\"radio\"]");
     if (first) first.focus();
     elements.reworkPanel.scrollIntoView({ block: "nearest" });
+  }
+
+  /** 本图其它返工草稿的显式切换：只接受精确 draftKey；空值或未知键不切换、不清当前草稿。 */
+  function openReworkDraftChoice(key: string | null): void {
+    if (rework.inFlight) return;
+    if (!key) {
+      renderReworkPanel();
+      return;
+    }
+    const target = reworkDrafts.get(key);
+    const shotId = rework.shotId;
+    if (!target || !shotId) {
+      renderReworkPanel();
+      return;
+    }
+    const projectId = deps.currentProjectId() || "";
+    if (!key.startsWith(projectId + "::" + shotId + "::")) {
+      setReworkError("这份草稿不属于当前图，不切换。");
+      renderReworkPanel();
+      return;
+    }
+    const parts = key.slice((projectId + "::" + shotId + "::").length).split("::");
+    const candidateId = parts[0] || "";
+    const row = reworkShotRow(shotId, candidateId);
+    if (!row || !row.record || row.candidate_id !== candidateId) {
+      setReworkError("这份草稿的候选已经不在，先回到比较区重新选择候选。");
+      renderReworkPanel();
+      return;
+    }
+    // 精确键必须与当前候选文档版本/字节一致：版本或字节变了就是另一份草稿，不静默代入。
+    const expectedKey = draftKeyOf(shotId, row.candidate_id, row, target.mode);
+    if (expectedKey !== key) {
+      setReworkError("这份草稿的候选版本已变化，请重新打开返工面板。");
+      renderReworkPanel();
+      return;
+    }
+    rework.shotId = shotId;
+    rework.candidateId = row.candidate_id;
+    rework.assetSha256 = row.asset_sha256;
+    rework.version = row.version === null || row.version === undefined ? null : row.version;
+    rework.draftKey = key;
+    rework.draft = target;
+    rework.status = "";
+    rework.error = "";
+    const basis = ["返工依据：候选 v" + (rework.version === null ? "?" : rework.version)
+      + "（" + reworkModeLabel(target.mode) + "）"];
+    if (row.top_finding) basis.push("先看：" + row.top_finding.title);
+    rework.basis = basis.join(" · ");
+    rework.tech = "sha256 " + String(rework.assetSha256).slice(0, 12) + "… · candidate " + row.candidate_id;
+    renderComparePanels();
   }
 
   /** 收起返工区：清掉未确认的意图；草稿（问题与方向）按候选保留。 */
@@ -1260,14 +1413,16 @@ export function createCompareView(
     deps.focusReviewEntry(shotId);
   }
 
-  /** 按建议重填：问题与方向回到报告先看项的默认值，预览作废。 */
+  /** 按建议重填：当前改法的草稿回到报告先看项的默认值，预览作废；另一改法的草稿不动。 */
   function resetRework(): void {
     const shotId = rework.shotId;
     if (!shotId || !rework.candidateId || rework.inFlight) return;
     const row = reworkShotRow(shotId, rework.candidateId);
+    const mode: ReworkMode = rework.draft ? rework.draft.mode : "edit_candidate";
     const key = rework.draftKey;
     if (key) reworkDrafts.delete(key);
-    rework.draft = reworkDraftOf(shotId, rework.candidateId, row);
+    rework.draft = reworkDraftOf(shotId, rework.candidateId, row, mode);
+    rework.draftKey = draftKeyOf(shotId, rework.candidateId, row, mode);
     rework.status = "";
     rework.error = "";
     renderComparePanels();
@@ -1293,6 +1448,39 @@ export function createCompareView(
     renderReworkPanel();
   }
 
+  /** 切换改法：切到该改法的独立草稿；两个草稿的意图互不复用，必须各自重新预览。 */
+  function handleReworkModeInput(value: ReworkMode): void {
+    const shotId = rework.shotId;
+    const candidateId = rework.candidateId;
+    if (!shotId || !candidateId || rework.inFlight) return;
+    if (rework.draft && rework.draft.mode === value) return;
+    const row = reworkShotRow(shotId, candidateId);
+    if (!row || !row.record || row.candidate_id !== candidateId) {
+      setReworkError("返工依据已经不在，先回到比较区重新选择候选。");
+      return;
+    }
+    rework.draftKey = draftKeyOf(shotId, candidateId, row, value);
+    rework.draft = reworkDraftOf(shotId, candidateId, row, value);
+    rework.status = "";
+    rework.error = "";
+    const basis = ["返工依据：候选 v" + (rework.version === null ? "?" : rework.version)
+      + "（" + reworkModeLabel(value) + "）"];
+    if (row.top_finding) basis.push("先看：" + row.top_finding.title);
+    rework.basis = basis.join(" · ");
+    renderReworkPanel();
+  }
+
+  /** 人工全文处理方式决定实际发送全文；切换后旧预览作废，不沿用另一种处理方式的摘要。 */
+  function handleReworkPromptChoiceInput(value: ReworkPromptChoice | null): void {
+    const draft = rework.draft;
+    if (!draft || draft.promptChoice === value) return;
+    draft.promptChoice = value;
+    draft.intent = null;
+    rework.status = "人工全文处理方式已变化，请重新预览实际发送全文。";
+    rework.error = "";
+    renderReworkPanel();
+  }
+
   /** 预览：owner 编译一次只读意图；视图只持有并显示，不写记录。 */
   async function previewRework(): Promise<void> {
     const shotId = rework.shotId;
@@ -1309,22 +1497,27 @@ export function createCompareView(
       setReworkError("返工依据已经不在，先回到比较区重新选择候选。");
       return;
     }
+    const mode = draft.mode;
+    const draftKey = draftKeyOf(shotId, sourceCandidateId, row, mode);
     // 预览前不再从 DOM 现读方向：方向已在每次键入时由模板事件写入草稿。
     rework.inFlight = true;
     renderReworkPanel();
     try {
       draft.intent = await generation.prepareRework({
-        shotId, candidateId: sourceCandidateId, problems: [...draft.problems], direction: draft.direction,
+        shotId, candidateId: sourceCandidateId, mode,
+        problems: [...draft.problems], direction: draft.direction,
+        promptChoice: draft.promptChoice,
         report: row.report || null,
       });
-      rework.status = "预览已就绪：确认并生成时会先把它保存为新版本，"
+      if (draft.intent.seenPromptOrigin !== "manual_edit") draft.promptChoice = null;
+      rework.status = reworkModeLabel(mode) + "预览已就绪：确认并生成时会先把它保存为新版本，"
         + "再只提交这一张图；预览本身没有写入任何记录。";
     } catch (error) {
       draft.intent = null;
       setReworkError(deps.suffixedErrorMessage(error, "预览没有生成，旧版本与输入保留。", "（预览未生成，旧版本与输入保留）"));
     } finally {
       rework.inFlight = false;
-      if (rework.draftKey === draftKeyOf(shotId, sourceCandidateId)) renderReworkPanel();
+      if (rework.draftKey === draftKey) renderReworkPanel();
     }
   }
 
@@ -1340,7 +1533,7 @@ export function createCompareView(
   }
 
   /**
-   * 确认并生成这张图：只把预览时 owner 给的意图原样交回确认。
+   * 确认并生成这张图：只把预览时 owner 给的意图与显式人工全文选择原样交回确认。
    * 当前性、Prompt 落版、确认/预约/提交都在 owner 内部；视图不重算、不猜版本。
    */
   async function submitRework(): Promise<void> {
@@ -1361,11 +1554,16 @@ export function createCompareView(
       setReworkError("返工依据已经不在，先回到比较区重新选择候选。");
       return;
     }
+    if (draft.intent.seenPromptOrigin === "manual_edit" && !draft.promptChoice) {
+      setReworkError("当前 Prompt 是人工全文：先选一种处理方式（重编或保留），再确认生成。");
+      return;
+    }
     rework.inFlight = true;
     renderReworkPanel();
     try {
       const intent = draft.intent;
-      const result = await generation.confirmRework({ intent });
+      const promptChoice = draft.promptChoice;
+      const result = await generation.confirmRework(promptChoice ? { intent, promptChoice } : { intent });
       if (!action.alive()) return;
       if (result.stale) {
         // owner 已判过期且零外发：只呈现，不自动确认、不自动重提；旧意图作废。
@@ -1768,6 +1966,8 @@ export function createCompareView(
     cancelRework,
     handleReworkKeydown,
     handleReworkDirectionInput,
+    handleReworkModeInput,
+    handleReworkPromptChoiceInput,
     adoptCandidate,
     selectionEntryOf,
     selectionStateOf,

@@ -1,16 +1,32 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createGenerationModule } from '../../../build/frontend-node/app/product_v2/generation.js';
-import { buildAttemptRecord, buildCandidateRecord, nextFromSubmitEnvelope, nextFromStatusEnvelope, CANDIDATE_DOCUMENT_KIND } from '../../../build/frontend-node/app/product_v2/domain/index.js';
+import { buildAttemptRecord, buildCandidateRecord, buildReworkDirective, emptyShotSpecFromShot, nextFromSubmitEnvelope, nextFromStatusEnvelope, selectReferences, CANDIDATE_DOCUMENT_KIND } from '../../../build/frontend-node/app/product_v2/domain/index.js';
 import { sha256Hex } from '../../../build/frontend-node/app/product_v2/storage/db.js';
+import { CONFIRM_SCHEMA_VERSION } from '../../../build/frontend-node/app/product_v2/domain/index.js';
 
 const provider = { provider_id: 'dashscope-qwen-image', model_id: 'qwen-image-3.0' };
 const environment = { contract: 'v2.4.1', provider: { ...provider,
   capability_version: 2, credential_source: 'default', configured: true } };
+// 返工预览用的有效图像环境：协议 + 目标 + 完整请求 profile（与产品 workspace 同一注入形状）。
+const REWORK_REQUEST_PROFILE = { size: '1344*1344', n: 1, prompt_extend: false, watermark: false,
+  output_format: 'png', supports_negative_prompt_field: false, max_reference_images: 3,
+  reference_media_types: ['image/png', 'image/jpeg'], min_side: 384, max_side: 2048,
+  min_area: 512 * 512, max_area: 2048 * 2048, min_ratio: 1 / 8, max_ratio: 8, max_prompt_chars: 4000 };
+const reworkEnvironment = { contract: 'v2.4.1', provider: { ...provider,
+  capability_version: 1, credential_source: 'default', configured: true,
+  capabilities: { request_profile: REWORK_REQUEST_PROFILE } } };
+// 参考图来源投影 + 已保存商品资料版本（同一快照读出）；shotSpec 缺失=未决定，走默认依据。
+const REFERENCE_SOURCES = [{ role: 'primary', sha256: 'a'.repeat(64) }];
+const referenceSourceReader = () => REFERENCE_SOURCES.map((item) => ({ ...item }));
+const intakeVersionReader = () => 1;
+const shotSpecReader = () => null;
 const png = Uint8Array.from(Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jkXkAAAAASUVORK5CYII=', 'base64'));
 function submitted(actionId, taskId) {
   const record = buildAttemptRecord({ actionId, shotId: 'shot_main_clean',
-    prompt: { version: 1, hash: 'a'.repeat(64) }, references: [{ role: 'primary', sha256: 'b'.repeat(64) }],
+    prompt: { version: 1, hash: 'a'.repeat(64) },
+    references: [{ role: 'primary', sha256: 'b'.repeat(64), uses: ['product_truth'],
+      sources: [{ kind: 'product_input', document_id: 'intake', version: 1, asset_sha256: 'b'.repeat(64) }] }],
     provider, parameters: { size: '1344*1344', n: 1, prompt_extend: false, watermark: false },
     executionIdentity: { protocol: 'v2.4.1', capabilityVersion: 2, credentialSource: 'default' },
     at: '2026-10-05T10:00:00Z' });
@@ -76,7 +92,7 @@ test('late task success saves original candidate without clearing new project fl
     suiteSummaryReader: () => ({ shots: [] }), promptEntryReader: () => null,
     confirmationReader: () => null, promptBasisReader: () => null,
     fenceReader: () => ({ sources: [], projectionJson: '{"shots":[]}', assetSha256: [] }),
-    referenceSourceReader: () => [],
+    referenceSourceReader, intakeVersionReader, shotSpecReader,
     promptsSheet: () => null, imageEnvironment: () => null,
   });
   const seedAttempt = (projectId, actionId, taskId) => {
@@ -146,7 +162,7 @@ test('old candidate cannot hide the current action result still needing retrieva
     suiteSummaryReader: () => ({ shots: [{ shot_id: 'shot_main_clean', label: '主图' }] }),
     promptEntryReader: () => null, confirmationReader: () => null, promptBasisReader: () => null,
     fenceReader: () => ({ sources: [], projectionJson: '{"shots":[]}', assetSha256: [] }),
-    referenceSourceReader: () => [],
+    referenceSourceReader, intakeVersionReader, shotSpecReader,
     promptsSheet: () => null, imageEnvironment: () => null,
   });
   await module.restore(action);
@@ -170,7 +186,23 @@ function reworkCandidateEntry({ actionId, taskId, sha, version }) {
   }) };
 }
 
-function reworkModuleHarness({ candidates, promptEntry, fence, seenProfile = null, compileCalls = null } = {}) {
+/** 返工预览夹具冻结的预览 hash/正文：compile 与 compileAndSave 必须用同一份，
+ *  否则落版后核对（hash/正文逐字）会判「不是本次预览」，测不到业务路径。 */
+const PREVIEW_HASH = 'ab'.repeat(32);
+const PREVIEW_TEXT = 'rework preview text';
+/** 返工夹具默认的单条预览引用（既有用例按它断言；改动会连带多个契约）。 */
+const DEFAULT_PREVIEW_REFERENCES = [{ role: 'primary', sha256: 'r'.repeat(64), uses: ['product_truth'],
+  sources: [{ kind: 'product_input', document_id: 'intake', version: 1, asset_sha256: 'r'.repeat(64) }] }];
+/** 与真实选择器同序的编辑模式预览引用（新用例注入，防止「冻结引用」与选择器漂移）。 */
+const SEEN_REFERENCES = [
+  { role: 'other', sha256: 'd'.repeat(64), uses: ['edit_source'],
+    sources: [{ kind: 'candidate', document_id: 'shot_main_clean', version: 3, asset_sha256: 'd'.repeat(64) }] },
+  { role: 'primary', sha256: 'a'.repeat(64), uses: ['product_truth'],
+    sources: [{ kind: 'product_input', document_id: 'intake', version: 1, asset_sha256: 'a'.repeat(64) }] },
+];
+
+function reworkModuleHarness({ candidates, promptEntry, fence, compileCalls = null,
+  previewReferences = DEFAULT_PREVIEW_REFERENCES, promptsSheet = () => null } = {}) {
   let currentProject = 'project-rework';
   let generation = 1;
   const saves = [];
@@ -192,7 +224,10 @@ function reworkModuleHarness({ candidates, promptEntry, fence, seenProfile = nul
       },
       get: async () => null,
     },
-    assets: { get: async () => null, put: async () => ({ sha256: '0'.repeat(64), byte_size: 1 }) },
+    // 返工预览要读验将要发送的每一张参考图原字节：候选字节与商品原照都返回非空 Blob。
+    assets: { get: async (_pid, _sha) => ({ blob: new Blob([png]), media_type: 'image/png',
+      byte_size: png.byteLength }),
+      put: async () => ({ sha256: '0'.repeat(64), byte_size: 1 }) },
     reserveGenerationAttempt: async () => { throw new Error('not covered by this consumer'); },
     appendAttemptObservation: async () => { throw new Error('not covered by this consumer'); },
     saveCandidate: async () => { throw new Error('not covered by this consumer'); },
@@ -201,29 +236,59 @@ function reworkModuleHarness({ candidates, promptEntry, fence, seenProfile = nul
     const projectId = currentProject, epoch = generation;
     return { projectId, generation: epoch, alive: () => projectId === currentProject && epoch === generation };
   };
-  const profile = seenProfile || { provider_id: provider.provider_id, model_id: provider.model_id };
+  const previewState = { index: 0, hash: PREVIEW_HASH };
   const promptAbility = {
     compile: async (shotId, options = {}) => {
       compileCalls?.push({ shotId, directive: options.rework });
-      return { payload: { hash: 'p'.repeat(64) }, compiled: { text: 'rework preview text' }, references: [{ sha256: 'r'.repeat(64) }] };
+      // 每次预览都要产生「这一份」的具体字节：递增 hash 让重放与首份预览可区分，
+      // 落版后的 hash/正文逐字核对才有可核对的真实差别。
+      previewState.index += 1;
+      previewState.hash = previewState.index === 1 ? PREVIEW_HASH
+        : previewState.index.toString(16).padStart(2, '0').repeat(32);
+      return { payload: { hash: previewState.hash }, compiled: { text: PREVIEW_TEXT },
+        references: previewReferences.map((item) => ({ ...item, uses: [...item.uses],
+          sources: item.sources.map((source) => ({ ...source })) })) };
     },
     compileAndSave: async (shotId, options = {}) => {
-      const saveInput = { kind: 'prompt_version', documentId: shotId, payload: { shot_id: shotId } };
+      const saveInput = { kind: 'prompt_version', documentId: shotId,
+        payload: { shot_id: shotId, hash: previewState.hash, compiled: {
+            text: PREVIEW_TEXT,
+            rework: options.rework ? { directive_id: options.rework.directive_id,
+              mode: options.rework.mode } : null },
+          origin: 'system', basis: { rework: options.rework ? { ...options.rework } : null } } };
       const saved = await repository.documents.save(options.action?.projectId || currentProject, saveInput);
       return { saved };
     },
+    rebaseManualForRework: async (shotId, options = {}) => {
+      const saveInput = { kind: 'prompt_version', documentId: shotId,
+        payload: { shot_id: shotId, hash: previewState.hash, compiled: {
+            text: PREVIEW_TEXT,
+            rework: options.rework ? { directive_id: options.rework.directive_id,
+              mode: options.rework.mode } : null },
+          origin: 'manual_edit', basis: { rework: options.rework ? { ...options.rework } : null } } };
+      const saved = await repository.documents.save(options.action?.projectId || currentProject, saveInput);
+      return { saved };
+    },
+    // 只读投影：与上面 compile 同形状，不落版（本次套件不测人工稿预览正文）。
+    previewManualForRework: async (shotId, options = {}) => {
+      const preview = await promptAbility.compile(shotId, options);
+      return { payload: preview.payload, compiled: preview.compiled, references: preview.references };
+    },
   };
+  // 主图无 asset_role 依赖时走 primary 回退：来源只给 primary 原照。
+  const shots = [{ shot_id: 'shot_main_clean', role_id: 'main' }];
   const module = createGenerationModule({ repository, beginAction,
     projectIdReader: () => currentProject, environmentReader: () => environment,
-    requestHeaders: () => ({}), suitePlanReader: () => ({ shots: [{ shot_id: 'shot_main_clean', role_id: 'main' }] }),
+    requestHeaders: () => ({}), suitePlanReader: () => ({ shots }),
     suiteSummaryReader: () => ({ shots: [{ shot_id: 'shot_main_clean', label: '主图' }] }),
     promptEntryReader: (shotId) => prompts.get(shotId) || promptEntry,
     confirmationReader: () => null, promptBasisReader: () => null,
-    fenceReader: () => fence, referenceSourceReader: () => [],
-    promptsSheet: () => null, imageEnvironment: () => profile,
+    fenceReader: () => fence, referenceSourceReader, intakeVersionReader, shotSpecReader,
+    promptsSheet: (ids) => promptsSheet(ids), imageEnvironment: () => reworkEnvironment,
     promptAbility,
   });
-  return { module, beginAction, saves, switchProject: () => { currentProject = 'project-other'; generation += 1; } };
+  return { module, beginAction, saves, previewState, prompts,
+    switchProject: () => { currentProject = 'project-other'; generation += 1; } };
 }
 
 test('prepareRework binds the explicit source candidate and freezes its seen inputs', async () => {
@@ -235,11 +300,17 @@ test('prepareRework binds the explicit source candidate and freezes its seen inp
   const { module, beginAction, saves } = reworkModuleHarness({ candidates: [first], promptEntry, fence, compileCalls });
   await module.restore(beginAction());
   const intent = await module.prepareRework({ shotId: 'shot_main_clean', candidateId: 'act-rework-a',
-    problems: ['scene'], direction: '只把背景换成纯白，其余保持不变。' });
+    mode: 'edit_candidate', problems: ['scene'], direction: '只把背景换成纯白，其余保持不变。' });
   assert.equal(intent.source.candidateId, 'act-rework-a');
   assert.equal(intent.source.assetSha256, 'd'.repeat(64));
   assert.equal(intent.source.version, 3);
   assert.equal(intent.directive.candidate_id, 'act-rework-a');
+  assert.equal(intent.directive.mode, 'edit_candidate');
+  assert.equal(intent.mode, 'edit_candidate');
+  // 所见引用冻结自编译预览返回的引用列表（窄能力 compile 的输出）。
+  assert.equal(intent.seenReferences.length, 1);
+  assert.equal(intent.seenReferences[0].sha256, 'r'.repeat(64));
+  assert.deepEqual(intent.seenReferences[0].uses, ['product_truth']);
   assert.equal(intent.seenPromptVersion, 7);
   assert.equal(intent.preview.text, 'rework preview text');
   assert.equal(saves.length, 0);
@@ -254,7 +325,7 @@ test('prepareRework rejects an explicit source that is no longer in the chain', 
     fence: { sources: [], projectionJson: '{}', assetSha256: [] } });
   await module.restore(beginAction());
   await assert.rejects(() => module.prepareRework({ shotId: 'shot_main_clean', candidateId: 'cand-gone',
-    problems: ['scene'], direction: '只把背景换成纯白，其余保持不变。' }), /已经不在/);
+    mode: 'edit_candidate', problems: ['scene'], direction: '只把背景换成纯白，其余保持不变。' }), /已经不在/);
 });
 
 test('confirmRework refuses a session-switched intent without persistence or submission', async () => {
@@ -264,13 +335,117 @@ test('confirmRework refuses a session-switched intent without persistence or sub
     fence: { sources: [], projectionJson: '{}', assetSha256: [] } });
   await harness.module.restore(harness.beginAction());
   const intent = await harness.module.prepareRework({ shotId: 'shot_main_clean', candidateId: 'act-rework-a',
-    problems: ['scene'], direction: '只把背景换成纯白，其余保持不变。' });
+    mode: 'edit_candidate', problems: ['scene'], direction: '只把背景换成纯白，其余保持不变。' });
   harness.switchProject();
   const result = await harness.module.confirmRework({ intent });
   assert.equal(result.stale, true);
   assert.equal(result.reason, 'stale_session');
   assert.equal(result.confirmation, undefined);
   assert.equal(harness.saves.length, 0);
+});
+
+test('confirmRework refuses an intent whose frozen head is not this preview bytes', async () => {
+  const first = reworkCandidateEntry({ actionId: 'act-rework-a', taskId: 'task-rework-a', sha: 'd'.repeat(64), version: 3 });
+  const promptEntry = { version: 7, record: { hash: 'h'.repeat(64), origin: 'system', compiled: {} } };
+  const candidates = [{ ...first, version: 3 }];
+  const fence = { sources: [], projectionJson: '{}', assetSha256: [] };
+  // 这张图的可提交摘要：确认/预约/执行路径要求同一份可提交清单；本用例只测预览字节同一性。
+  const shotIds = ['shot_main_clean'];
+  const sheet = {
+    schema_version: CONFIRM_SCHEMA_VERSION,
+    platform: { platform_id: 'amazon_us', version: 1, label: 'Amazon US' },
+    provider: { provider_id: provider.provider_id, model_id: provider.model_id, version: 1,
+      protocol: 'v2.4.1', size: '1344*1344', n: 1, prompt_extend: false, watermark: false,
+      output_format: 'png' },
+    total: 1, ready: 1, blocked: 0, can_submit: true, risks: [],
+    shots: [],
+    external_summary: { model: provider.model_id, size: '1344*1344', n: 1, prompt_extend: false,
+      watermark: false, output_format: 'png', reference_count: 1, reference_roles: ['other'],
+      prompt_chars: PREVIEW_TEXT.length },
+  };
+  // 可提交摘要必须反映「当前已保存 Prompt」：否则确认会绑定旧版正文/哈希，
+  // 重放场景测不到真实重编路径（首次确认后摘要仍停在 7 号版本）。
+  const sheetNow = (ids) => {
+    const head = harness.prompts.get('shot_main_clean')
+      || { version: promptEntry.version, record: promptEntry.record };
+    const shot = { shot_id: 'shot_main_clean', order: 1, label: '主图', role_id: 'main', role_label: '主图',
+      intent: null, template_id: null, required: true, satisfied: true,
+      prompt: { version: head.version, hash: head.record.hash, chars: PREVIEW_TEXT.length },
+      references: [{ role: 'other', sha256_prefix: 'd'.repeat(12) }], risks: [], blockers: [] };
+    const list = ids === null || ids === undefined ? [shot] : [shot].filter((item) => ids.includes(item.shot_id));
+    return { ...sheet, total: list.length, ready: list.length, can_submit: list.length > 0, shots: list };
+  };
+  // 夹具预览引用必须与真实选择器输出逐项一致：否则 seenReferences 与提交时重算比较会在
+  // 这里悄悄漂移，后面的断言就测不到真正想测的「预览字节同一性」。
+  const directive = buildReworkDirective({ directiveId: 'rework-preview-identity', shotId: 'shot_main_clean',
+    mode: 'edit_candidate',
+    candidate: { candidate_id: first.payload.candidate_id, shot_id: 'shot_main_clean',
+      asset_sha256: first.payload.asset_sha256, media_type: first.payload.media_type,
+      width: 1, height: 1, attempt_action_id: first.payload.attempt_action_id, created_at: '2026-10-08T10:00:00Z' },
+    candidateDocument: { document_id: 'shot_main_clean', version: 3 },
+    problems: ['scene'], direction: '只把背景换成纯白，其余保持不变。', at: '2026-10-08T10:00:00Z' });
+  assert.deepEqual(selectReferences({ shot_id: 'shot_main_clean', role_id: 'main' }, REFERENCE_SOURCES,
+    { maxReferences: REWORK_REQUEST_PROFILE.max_reference_images, intakeVersion: 1,
+      shotSpec: emptyShotSpecFromShot({ shot_id: 'shot_main_clean', role_id: 'main' }), rework: directive }),
+  SEEN_REFERENCES, '夹具预览引用必须等于真实选择器输出');
+  const harness = reworkModuleHarness({ candidates, promptEntry, fence, previewReferences: SEEN_REFERENCES,
+    promptsSheet: sheetNow });
+  await harness.module.restore(harness.beginAction());
+  const intent = await harness.module.prepareRework({ shotId: 'shot_main_clean', candidateId: 'act-rework-a',
+    mode: 'edit_candidate', problems: ['scene'], direction: '只把背景换成纯白，其余保持不变。',
+    directiveId: 'rework-preview-identity' });
+  assert.equal(intent.directive.directive_id, 'rework-preview-identity');
+  assert.equal(intent.preview.hash, PREVIEW_HASH);
+  assert.equal(intent.seenPromptVersion, 7);
+  const firstResult = await harness.module.confirmRework({ intent });
+  assert.equal(firstResult.promptVersion, 1, '第一次确认应落版一版返工 Prompt：' + JSON.stringify(firstResult));
+  assert.equal(harness.saves.filter((row) => row.kind === 'prompt_version').length, 1);
+  // 外部覆盖（同版本号、另一份字节）：预览后确认前 head 被改写。
+  // 第一道核对（版本+所见哈希）必须判 prompt_changed，零新增版本、零外发。
+  const firstBytes = { version: harness.prompts.get('shot_main_clean').version,
+    record: harness.prompts.get('shot_main_clean').record };
+  assert.equal(firstBytes.record.hash, PREVIEW_HASH, '前置：首次落版的字节就是第一份预览');
+  const rewrittenBytes = { version: firstBytes.version, record: { ...firstBytes.record,
+    hash: 'cd'.repeat(32), compiled: { text: 'rewritten elsewhere' } } };
+  harness.prompts.set('shot_main_clean', rewrittenBytes);
+  const replayIntent = await harness.module.prepareRework({ shotId: 'shot_main_clean', candidateId: 'act-rework-a',
+    mode: 'edit_candidate', problems: ['scene'], direction: '只把背景换成纯白，其余保持不变。',
+    directiveId: 'rework-preview-identity' });
+  harness.prompts.set('shot_main_clean', firstBytes);
+  const savesBefore = harness.saves.filter((row) => row.kind === 'prompt_version').length;
+  const replay = await harness.module.confirmRework({ intent: replayIntent });
+  assert.equal(replay.stale, true,
+    '确认时 head 已被外部换成另一份字节时必须判过期：' + JSON.stringify(replay));
+  assert.equal(replay.reason, 'prompt_changed');
+  assert.equal(replay.confirmation, undefined);
+  assert.equal(harness.saves.filter((row) => row.kind === 'prompt_version').length, savesBefore,
+    '被判过期时不得追加 Prompt 版本');
+  // 复现同一改法的再次预览（同 directive_id、同 seen 版本，但编译出的字节与 head 不同）：
+  // 「同预览」必须按字节同一性判断。确认结果要么拒绝，要么绑定的 Prompt 就是本次预览的
+  // 字节；绝不能因为 directive_id 命中就跳过落版、把旧 head 的字节当成已确认内容授权。
+  const recheckIntent = await harness.module.prepareRework({ shotId: 'shot_main_clean', candidateId: 'act-rework-a',
+    mode: 'edit_candidate', problems: ['scene'], direction: '只把背景换成纯白，其余保持不变。',
+    directiveId: 'rework-preview-identity' });
+  assert.notEqual(recheckIntent.preview.hash, PREVIEW_HASH,
+    '前置：这次预览编译出的字节与首次落版的 head 不同');
+  assert.equal(recheckIntent.directive.directive_id, 'rework-preview-identity',
+    '前置：改法身份与 head 冻结的 directive 相同（旧判定会误判为「同预览」）');
+  const savesBeforeReplay = harness.saves.filter((row) => row.kind === 'prompt_version').length;
+  const recheck = await harness.module.confirmRework({ intent: recheckIntent });
+  if (recheck.stale) {
+    assert.equal(recheck.confirmation, undefined);
+    assert.equal(harness.saves.filter((row) => row.kind === 'prompt_version').length, savesBeforeReplay,
+      '被判过期时不得追加 Prompt 版本');
+  } else {
+    const bound = recheck.confirmation?.payload?.fingerprint?.snapshot?.shots?.[0];
+    assert.ok(bound, '确认必须带可核对的冻结摘要：' + JSON.stringify(recheck));
+    assert.equal(bound.prompt_hash, recheckIntent.preview.hash,
+      '确认授权的 Prompt 必须是本次预览的字节，不能是旧 head 的字节：' + JSON.stringify(bound));
+    assert.notEqual(bound.prompt_hash, PREVIEW_HASH,
+      '本次预览不是首发字节：确认不得绑定首发字节');
+    assert.equal(harness.saves.filter((row) => row.kind === 'prompt_version').length, savesBeforeReplay + 1,
+      '按本次预览字节落版恰好一次');
+  }
 });
 
 test('confirmRework protects an advanced manual prompt instead of overwriting it', async () => {
@@ -280,9 +455,9 @@ test('confirmRework protects an advanced manual prompt instead of overwriting it
     fence: { sources: [], projectionJson: '{}', assetSha256: [] } });
   await harness.module.restore(harness.beginAction());
   const intent = await harness.module.prepareRework({ shotId: 'shot_main_clean', candidateId: 'act-rework-a',
-    problems: ['scene'], direction: '只把背景换成纯白，其余保持不变。' });
+    mode: 'edit_candidate', problems: ['scene'], direction: '只把背景换成纯白，其余保持不变。' });
   const result = await harness.module.confirmRework({ intent });
   assert.equal(result.stale, true);
-  assert.equal(result.reason, 'manual_edit');
+  assert.equal(result.reason, 'manual_choice_missing');
   assert.equal(harness.saves.length, 0);
 });

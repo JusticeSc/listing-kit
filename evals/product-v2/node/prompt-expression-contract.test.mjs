@@ -24,8 +24,12 @@ import {
   styleSpecDiff,
   requestSnapshotOf,
   buildPromptRecord,
+  buildReworkDirective,
+  checkManualEditRules,
   promptHash,
   promptStaleness,
+  selectReferences,
+  MANUAL_EDIT_REASON_CODES,
 } from "../../../build/frontend-node/app/product_v2/domain/index.js";
 
 import { IMAGE_PROMPT_PROFILE, DIGEST, expect, serializeError } from "./harness-core.mjs";
@@ -41,7 +45,8 @@ function json(value) {
 }
 
 const SHA_PRIMARY = "a".repeat(64);
-
+// 已保存的商品资料版本（冻结参考图来源的精确版本；与产品调用方同一快照概念）。
+const INTAKE_VERSION = 1;
 /** 已确认事实：中文商品事实，与用户明确选择的英文标题不同字面。 */
 function fact(slotId, label, value, overrides = {}) {
   return { slot_id: slotId, label: label, value: value, source: "user_input", ...overrides };
@@ -117,16 +122,29 @@ function mainShot(overrides = {}) {
   };
 }
 
+/** 所选文案的 schema2 来源引用：指向本套件 briefFixture() 的已确认事实（slot + 精确版本）。 */
+function textSource(slotId, version) {
+  return { kind: "fact_slot", document_id: slotId, version: version };
+}
+
+/** 冻结参考图：走产品自己的选择器，不手写最小引用，保证冻结元数据与产品一致。 */
+function frozenRefs(shot, context, shotSpec) {
+  return selectReferences(shot, context.assets,
+    { intakeVersion: INTAKE_VERSION, shotSpec: shotSpec || emptyShotSpecFromShot(shot) });
+}
+
 /** 明确选择的一条图中文案：原文 + 精确来源版本。默认来源就是这类图会绑定的事实槽。 */
 function selectedText(overrides = {}) {
+  const { source_slot_id, source_slot_version, source, ...rest } = overrides;
   return {
     text_id: "t1",
     text: "CERAMIC MUG",
-    source_slot_id: "signature_features",
-    source_slot_version: 1,
+    source: source !== undefined ? source
+      : textSource(source_slot_id !== undefined ? source_slot_id : "signature_features",
+        source_slot_version !== undefined ? source_slot_version : 1),
     status: "confirmed",
     origin: "user",
-    ...overrides,
+    ...rest,
   };
 }
 
@@ -334,15 +352,17 @@ test("P07", "主图不允许新增印字：选择文案也不得违反平台规�
 
 test("P08", "选择的来源参与消费依据：来源事实版本前进使这张图过期", async () => {
   const shot = infographicShot();
-  const compiled = compile(shot, shotSpec(shot, {
+  const spec = shotSpec(shot, {
     print_intent: "selected",
     layout: "product_left_text_right",
     on_image_texts: [selectedText()],
-  }));
+  });
+  const compiled = compile(shot, spec);
   const consumed = compiled.basis.brief.map((item) => item.slot_id);
   expect(consumed.includes("signature_features"),
     "所选文案的来源事实必须进入消费依据：" + json(compiled.basis.brief));
-  const snapshot = requestSnapshotOf(compiled, { references: [{ role: "primary", sha256: SHA_PRIMARY }] });
+  const snapshot = requestSnapshotOf(compiled,
+    { references: frozenRefs(shot, contextFixture(), spec) });
   const record = buildPromptRecord({
     compiled: compiled, snapshot: snapshot, hash: await promptHash(snapshot, DIGEST),
   });
@@ -492,7 +512,7 @@ test("P14", "单图覆盖优先于共用默认；差异与守卫都看得见", a
   badStyle.presentation = { contents_state: "half" };
   expect(checkStyleSpec(badStyle).length > 0, "非法内容物状态必须变红。");
   const unknownKey = JSON.parse(json(styleFixture()));
-  unknownKey.presentation = { viewpoint: "top" };
+  unknownKey.presentation = { sparkling: "yes" };
   expect(checkStyleSpec(unknownKey).length > 0, "展示决定以外的键必须变红。");
   return { refs: sectionRefs(compiled, "product_fidelity") };
 });
@@ -559,16 +579,17 @@ test("P18", "文字版面必须真的有文字：不印字却选文字版面被�
   const fixed = compile(shot, shotSpec(shot, { print_intent: "none", layout: "product_only" }));
   expect(!fixed.sections.some((item) => item.key === "on_image_text"),
     "改对版面后不得再出现文字段：" + json(fixed.sections.map((item) => item.key)));
-  // (c) 非印字决定角色（尺寸图）若被导入数据写成文字版面，而手上只有不能逐字上图的尺寸值
-  //     （或者这个用途根本不允许文字），同样拦下；换成「只放商品」可编译。
-  const size = roleShot("size");
+  // (c) 尺寸图是印字决定角色：导入数据写成文字版面、但印字决定还没做时，
+  //     由印字决定门先拦下（而不是旧的版面门）；显式不印后再排版面门。
+  const size = roleShot("size", { fact_slot_ids: ["signature_features"] });
   const sizeTextLayout = { ...shotSpec(size), layout: "product_left_text_right" };
   const sizeBlocked = errorOf(() => compile(size, sizeTextLayout));
-  expect(sizeBlocked !== null, "没有可印文字的尺寸图不得排文字版面：" + json(sizeBlocked));
-  const sizeFixed = compile(size, { ...shotSpec(size), layout: "product_only" });
+  expect(sizeBlocked !== null, "印字决定未做时尺寸图必须阻断：" + json(sizeBlocked));
+  expect(/还没有决定要不要印文字/.test(sizeBlocked.message),
+    "未决定必须由印字决定门拦下：" + json(sizeBlocked));
+  const sizeFixed = compile(size, { ...shotSpec(size), print_intent: "none", layout: "product_only" });
   expect(sizeFixed.sections.some((item) => item.key === "visual_brief"),
     "改对版面后尺寸图仍要拿到画面简报：" + json(sizeFixed.sections.map((item) => item.key)));
-  return { infographic: orphanLayout.message, size: sizeBlocked.message };
 });
 
 test("P19", "所选文案的来源必须还在本图绑定里：解绑后不得继续印（界面也不该让它隐形）", async () => {
@@ -584,16 +605,423 @@ test("P19", "所选文案的来源必须还在本图绑定里：解绑后不得�
   const unbound = infographicShot({ fact_slot_ids: [] });
   const error = errorOf(() => compile(unbound, spec));
   expect(error !== null, "来源解绑后必须阻断：" + json(error));
-  expect(/不在这张图的绑定里/.test(error.message), "阻断消息要说明是绑定关系变了：" + json(error));
+  expect(/不在本图绑定里/.test(error.message), "阻断消息要说明是绑定关系变了：" + json(error));
   // 保留一个别的可印事实时也不能替用户改来源：仍然阻断。
   const reboundOther = infographicShot({ fact_slot_ids: ["product_category"] });
   const stillBlocked = errorOf(() => compile(reboundOther, spec));
   expect(stillBlocked !== null, "换成别的绑定不得静默改用其它来源：" + json(stillBlocked));
-  expect(/不在这张图的绑定里/.test(stillBlocked.message), "仍要指回绑定关系：" + json(stillBlocked));
+  expect(/不在本图绑定里/.test(stillBlocked.message), "仍要指回绑定关系：" + json(stillBlocked));
   return { messages: [error.message, stillBlocked.message] };
 });
 
-/* ---------------------------------------------------------------- 运行器 */
+/* --------------------------------- 结构化尺寸绑定：精确索引/标签/来源分类 */
+
+const SIZE_MEASUREMENTS = [
+  { object: "杯身", axis: "height", value: 95, unit: "mm", source_basis: "用户实测记录" },
+  { object: "杯口外缘", axis: "diameter", value: 80, unit: "mm", source_basis: "用户实测记录" },
+];
+
+function dimensionBrief() {
+  return {
+    ...briefFixture(),
+    basis: [...briefFixture().basis, { slot_id: "size_dimensions", version: 2 }],
+    confirmed_facts: [...briefFixture().confirmed_facts,
+      fact("size_dimensions", "商品尺寸", SIZE_MEASUREMENTS)],
+  };
+}
+
+function dimensionText(overrides = {}) {
+  return selectedText({
+    text_id: "t_dim_0",
+    text: "Height: 95 mm (Measured)",
+    source: textSource("size_dimensions", 2),
+    measurement: {
+      object: "杯身", axis: "height", value: 95, unit: "mm", source_basis: "用户实测记录",
+      index: 0, object_label: "", axis_label: "Height", source_kind: "measured",
+    },
+    ...overrides,
+  });
+}
+
+function sizeShot() {
+  return roleShot("size", { fact_slot_ids: ["size_dimensions"] });
+}
+
+function compileSize(spec, overrides = {}) {
+  return compile(sizeShot(), spec, { brief: dimensionBrief(), ...overrides });
+}
+
+test("P20", "尺寸绑定按索引与标签逐字印出：数值/单位/来源标签来自绑定，不手填", async () => {
+  const compiled = compileSize(shotSpec(sizeShot(), {
+    print_intent: "selected", layout: "product_left_text_right",
+    on_image_texts: [dimensionText()],
+  }));
+  expect(json(literalTexts(compiled)) === json(["「Height: 95 mm (Measured)」"]),
+    "绑定条目必须按规范文本逐字印出：" + json(literalTexts(compiled)));
+  return { texts: literalTexts(compiled) };
+});
+
+test("P21", "尺寸绑定错配必须阻断：索引/数值/标签/来源分类任一对不上都不印", async () => {
+  const base = {
+    print_intent: "selected", layout: "product_left_text_right",
+  };
+  const probes = [
+    { why: "索引错配", mutate: (item) => { item.measurement.index = 1; } },
+    { why: "数值被改", mutate: (item) => { item.measurement.value = 96; } },
+    { why: "单位被改", mutate: (item) => { item.measurement.unit = "cm"; } },
+    { why: "原文与绑定不一致",
+      mutate: (item) => { item.text = "Height: 95 mm"; } },
+    { why: "轴向标签缺失",
+      mutate: (item) => {
+        item.measurement.axis_label = "";
+        item.text = "95 mm (Measured)";
+      } },
+    { why: "来源分类缺失",
+      mutate: (item) => {
+        item.measurement.source_kind = "unknown";
+        item.text = "Height: 95 mm (unknown)";
+      } },
+  ];
+  for (const probe of probes) {
+    const item = dimensionText();
+    probe.mutate(item);
+    const error = errorOf(() => compileSize(shotSpec(sizeShot(), {
+      ...base, on_image_texts: [item],
+    })));
+    expect(error !== null, "错配必须阻断而不是印错数字：" + probe.why);
+  }
+  return { probes: probes.map((item) => item.why) };
+});
+
+test("P22", "分组来源标签：全同分类可共用一条统一标签，混合来源必须逐项标注", async () => {
+  const first = dimensionText();
+  const second = dimensionText({
+    text_id: "t_dim_1",
+    text: "Rim outer diameter: 80 mm (Measured)",
+    measurement: {
+      object: "杯口外缘", axis: "diameter", value: 80, unit: "mm", source_basis: "用户实测记录",
+      index: 1, object_label: "Rim outer", axis_label: "diameter", source_kind: "measured",
+    },
+  });
+  const group = selectedText({
+    text_id: "t_group",
+    text: "Measured",
+    source: textSource("size_dimensions", 2),
+    measurement_source: {
+      indices: [0, 1],
+      measurements: SIZE_MEASUREMENTS,
+      source_kind: "measured",
+    },
+  });
+  const compiled = compileSize(shotSpec(sizeShot(), {
+    print_intent: "selected", layout: "product_left_text_right",
+    on_image_texts: [first, second, group],
+  }));
+  expect(literalTexts(compiled).includes("「Measured」"),
+    "统一标签必须印出：" + json(literalTexts(compiled)));
+  // 混合来源：第二项改成公称后，原分组快照与逐项分类不再一致，必须阻断。
+  const mixed = dimensionText({
+    text_id: "t_dim_1",
+    text: "Rim outer diameter: 80 mm (Nominal)",
+    measurement: {
+      object: "杯口外缘", axis: "diameter", value: 80, unit: "mm", source_basis: "官方规格书",
+      index: 1, object_label: "Rim outer", axis_label: "diameter", source_kind: "nominal",
+    },
+  });
+  const mixedError = errorOf(() => compileSize(shotSpec(sizeShot(), {
+    print_intent: "selected", layout: "product_left_text_right",
+    on_image_texts: [first, mixed, group],
+  })));
+  expect(mixedError !== null, "混合来源沿用统一标签必须阻断：" + json(mixedError));
+  return { texts: literalTexts(compiled) };
+});
+
+test("P23", "来源版本前进使绑定过期：不静默换值，必须重新确认", async () => {
+  const moved = {
+    ...dimensionBrief(),
+    basis: [...briefFixture().basis, { slot_id: "size_dimensions", version: 3 }],
+  };
+  const error = errorOf(() => compileSize(shotSpec(sizeShot(), {
+    print_intent: "selected", layout: "product_left_text_right",
+    on_image_texts: [dimensionText()],
+  }), { brief: moved }));
+  expect(error !== null, "来源版本前进后旧绑定必须阻断：" + json(error));
+  expect(/已改变|重新确认|过期/.test(error.message),
+    "阻断消息要说明是来源变了：" + json(error));
+  return { message: error.message };
+});
+
+/* --------------------------------- 显式视角：无依据不得虚构，有依据才放行 */
+
+const SHA_SIDE = "b".repeat(64);
+
+function viewpointContext() {
+  return {
+    facts: [
+      ...contextFixture().facts,
+      { slot_id: "ref_view_side", status: "confirmed", value: ["side"] },
+    ],
+    assets: [
+      { role: "primary", sha256: SHA_PRIMARY },
+      { role: "detail", sha256: SHA_SIDE },
+    ],
+  };
+}
+
+function viewpointEntries() {
+  return [{
+    slot: {
+      slot_id: "ref_view_side", label: "参考图可支持视角", authority: "user_custom",
+      value_type: "text_list", value: ["side"], source: "reference_observation",
+      status: "confirmed", confidence: null,
+      evidence: [{ kind: "asset", ref: SHA_SIDE }], depends_on: [], critical: false,
+    },
+    version: 1,
+  }];
+}
+
+test("P24", "显式视角无依据必须阻断：只影响该图，不牵连默认视角的图", async () => {
+  const shot = mainShot();
+  const spec = shotSpec(shot, { presentation: { viewpoint: "side" } });
+  const error = errorOf(() => compile(shot, spec));
+  expect(error !== null, "无依据的显式视角必须阻断：" + json(error));
+  expect(/视角|依据/.test(error.message), "阻断消息要指向视角依据：" + json(error));
+  // 同一输入改回沿用可见视角即可编译：阻断只针对该图的显式视角。
+  const fixed = compile(shot, shotSpec(shot, {}));
+  expect(fixed.sections.some((item) => item.key === "visual_brief"),
+    "改回默认视角后该图必须可编译。");
+  return { message: error.message };
+});
+
+test("P25", "显式视角有确切证据才放行：证据须是已确认 reference_observation 且哈希在本次依据内", async () => {
+  // 本图同时消费 primary 与 detail 两张照片：证据指向的 detail 图必须在本次冻结依据内才算数。
+  const shot = mainShot({ dependencies: [
+    { kind: "asset_role", role: "primary" }, { kind: "asset_role", role: "detail" },
+  ] });
+  const spec = shotSpec(shot, { presentation: { viewpoint: "side" } });
+  const gone = compile(shot, spec, {
+    context: viewpointContext(), slotEntries: viewpointEntries(),
+    references: frozenRefs(shot, viewpointContext(), spec),
+  });
+  expect(gone.sections.some((item) => item.key === "visual_brief"),
+    "有确切证据时必须放行：" + json(gone.sections.map((item) => item.key)));
+  // 证据哈希不在本次冻结依据内：换一张没被选中的图作证据，必须阻断。
+  const otherEntries = [{
+    slot: { ...viewpointEntries()[0].slot, evidence: [{ kind: "asset", ref: "c".repeat(64) }] },
+    version: 1,
+  }];
+  const error = errorOf(() => compile(shot, spec, {
+    context: viewpointContext(), slotEntries: otherEntries,
+    references: frozenRefs(shot, viewpointContext(), spec),
+  }));
+  expect(error !== null, "证据不在本次依据内必须阻断：" + json(error));
+  return { keys: gone.sections.map((item) => item.key) };
+});
+
+/* --------------------------------- 明确参考子集：按用户所选顺序消费，不过不少 */
+
+test("P26", "明确参考子集：只消费用户所选照片且保持所选顺序；空选明确阻断", async () => {
+  const shot = mainShot();
+  const spec = shotSpec(shot, { reference_sha256s: [SHA_SIDE, SHA_PRIMARY] });
+  const refs = frozenRefs(shot, viewpointContext(), spec);
+  expect(json(refs.map((item) => item.sha256)) === json([SHA_SIDE, SHA_PRIMARY]),
+    "必须按用户所选顺序冻结参考图：" + json(refs.map((item) => item.sha256)));
+  const compiled = compile(shot, spec, {
+    context: viewpointContext(),
+    references: refs,
+  });
+  expect(compiled.sections.some((item) => item.key === "visual_brief"), "显式子集必须可编译。");
+  // 冻结的参考只能走实际请求快照（产品编译路径的最后一道门）出站：顺序必须原样带出。
+  const snapshot = requestSnapshotOf(compiled, { references: refs });
+  expect(json(snapshot.references.map((item) => item.sha256)) === json([SHA_SIDE, SHA_PRIMARY]),
+    "实际请求必须按用户所选顺序携带参考图：" + json(snapshot.references.map((item) => item.sha256)));
+  // 显式空选=明确不选：冻结结果为空，且不能生成实际请求（阻断而非回退全部原图）。
+  const emptySpec = shotSpec(shot, { reference_sha256s: [] });
+  const emptyRefs = frozenRefs(shot, viewpointContext(), emptySpec);
+  expect(emptyRefs.length === 0, "显式空选不得回退默认：" + json(emptyRefs));
+  const emptyCompiled = compile(shot, emptySpec, {
+    context: viewpointContext(),
+    references: emptyRefs,
+  });
+  const error = errorOf(() => requestSnapshotOf(emptyCompiled, { references: emptyRefs }));
+  expect(error !== null, "显式空选必须阻断实际请求：" + json(error));
+  return { order: refs.map((item) => item.sha256.slice(0, 8)) };
+});
+
+test("P27", "已发布历史形状仍可读：schema1 flat 来源与旧记录不因新读写器损坏", async () => {
+  // 已发布 schema1 的 flat 来源形状：手写精确形状，不走 selectedText（它只产 schema2 对象来源）。
+  const legacy = {
+    text_id: "t1",
+    text: "CERAMIC MUG",
+    source_slot_id: "signature_features",
+    source_slot_version: 1,
+    status: "confirmed",
+    origin: "user",
+  };
+  const spec = { ...shotSpec(infographicShot(), {
+    print_intent: "selected", layout: "product_left_text_right",
+    on_image_texts: [legacy],
+  }), schema_version: 1 };
+  expect(checkShotSpec(spec).length === 0,
+    "schema1 flat 文案必须仍合法：" + json(checkShotSpec(spec)));
+  const unknown = { ...spec, schema_version: 99 };
+  expect(checkShotSpec(unknown).length > 0, "未知版本必须拒绝。");
+  const writer = shotSpec(infographicShot(), {
+    print_intent: "selected", layout: "product_left_text_right",
+    on_image_texts: [selectedText()],
+  });
+  expect(checkShotSpec(writer).length === 0,
+    "schema2 对象来源必须合法：" + json(checkShotSpec(writer)));
+  return { legacy: "readable", writer: writer.schema_version };
+});
+
+/* --------------------------------- 显式视角与双模式输入：正文必须真正消费决定 */
+
+const SHA_CANDIDATE_EXPR = "c".repeat(64);
+
+function topViewpointEntries(ref = SHA_PRIMARY) {
+  return [{
+    slot: {
+      slot_id: "ref_view_top", label: "参考图可支持视角", authority: "user_custom",
+      value_type: "text_list", value: ["top"], source: "reference_observation",
+      status: "confirmed", confidence: null,
+      evidence: [{ kind: "asset", ref: ref }], depends_on: [], critical: false,
+    },
+    version: 1,
+  }];
+}
+
+function reworkDirective(shot, mode, overrides = {}) {
+  return buildReworkDirective({
+    directiveId: overrides.directiveId || "rw_expr_" + mode,
+    shotId: shot.shot_id,
+    mode: mode,
+    candidate: {
+      candidate_id: "cand_expr_1", shot_id: shot.shot_id,
+      asset_sha256: overrides.candidateSha || SHA_CANDIDATE_EXPR,
+      media_type: "image/png", width: 1600, height: 1600,
+      attempt_action_id: "act_expr_1", created_at: "2026-10-19T08:00:00Z",
+    },
+    candidateDocument: { document_id: shot.shot_id, version: 1 },
+    problems: ["composition"],
+    direction: "只把文字挪远一些，其他构图保留。",
+    at: "2026-10-19T08:01:00Z",
+  });
+}
+
+test("P28", "显式顶视真正改正文与来源：不再说平视，证据与决定进入来源；无证据仍阻断", async () => {
+  const shot = mainShot();
+  const spec = shotSpec(shot, { presentation: { viewpoint: "top" } });
+  const context = contextFixture();
+  const refs = frozenRefs(shot, context, spec);
+  const inherited = compile(shot, shotSpec(shot));
+  const top = compile(shot, spec, { context, slotEntries: topViewpointEntries(), references: refs });
+  expect(top.text !== inherited.text,
+    "显式顶视必须真正改变正文，而不是只改依据。");
+  const brief = sectionText(top, "visual_brief");
+  expect(/顶视/.test(brief), "正文必须正向写出所选顶视：" + brief);
+  expect(!/平视拍摄/.test(top.text), "选了顶视就不能同时说平视拍摄：" + brief);
+  expect(sectionRefs(top, "visual_brief").includes("shot_spec.presentation.viewpoint"),
+    "顶视决定必须进入画面简报来源：" + json(sectionRefs(top, "visual_brief")));
+  expect(sectionRefs(top, "visual_brief").includes("product_brief.fact:ref_view_top"),
+    "支持视角的证据槽必须进入来源：" + json(sectionRefs(top, "visual_brief")));
+  expect(/平视拍摄/.test(inherited.text), "不显式选择时默认视角句保持不变。");
+  const blocked = errorOf(() => compile(shot, spec, { context, references: refs }));
+  expect(blocked !== null && /视角|依据/.test(blocked.message),
+    "同一选择缺证据仍必须阻断：" + json(blocked));
+  return { brief: brief.length, refs: sectionRefs(top, "visual_brief") };
+});
+
+test("P29", "两种返工模式正文不同：编辑标明候选与原照图号，原照重生成不声称收到候选", async () => {
+  const shot = mainShot({ dependencies: [
+    { kind: "asset_role", role: "primary" }, { kind: "asset_role", role: "detail" },
+  ] });
+  const spec = shotSpec(shot, { reference_sha256s: [SHA_SIDE, SHA_PRIMARY] });
+  const context = viewpointContext();
+  const editDirective = reworkDirective(shot, "edit_candidate");
+  const editRefs = selectReferences(shot, context.assets,
+    { intakeVersion: INTAKE_VERSION, shotSpec: spec, rework: editDirective });
+  const edit = compile(shot, spec, { context, references: editRefs, rework: editDirective });
+  const regenerateDirective = reworkDirective(shot, "regenerate_original");
+  const regenerateRefs = selectReferences(shot, context.assets,
+    { intakeVersion: INTAKE_VERSION, shotSpec: spec, rework: regenerateDirective });
+  const regenerate = compile(shot, spec, { context, references: regenerateRefs, rework: regenerateDirective });
+  expect(edit.text !== regenerate.text, "两种模式的正文必须不同，不能只差依据与模式。");
+  const editText = sectionText(edit, "reference_inputs");
+  const productLabels = editRefs
+    .map((item, index) => (item.uses.includes("product_truth") ? "图" + (index + 1) : null))
+    .filter(Boolean).join("、");
+  expect(/图1[^。]*候选/.test(editText), "编辑模式必须写明图1是待修候选：" + editText);
+  expect(editText.includes(productLabels + "是商品原照"),
+    "商品原照图号必须与实际冻结顺序一致：" + editText + " / " + json(editRefs.map((item) => item.uses)));
+  expect(sectionRefs(edit, "reference_inputs").includes("candidate:" + editDirective.candidate_id),
+    "编辑模式的来源必须指到固定候选：" + json(sectionRefs(edit, "reference_inputs")));
+  expect(/像素完全不变/.test(editText), "编辑模式必须声明不承诺未改像素完全不变：" + editText);
+  const regenerateText = sectionText(regenerate, "reference_inputs");
+  expect(/图1[^。]*商品原照/.test(regenerateText), "原照重生成必须写明图1是商品原照：" + regenerateText);
+  expect(!/图1[^。]*候选/.test(regenerateText), "原照重生成不得声称图1是待修候选：" + regenerateText);
+  expect(!sectionRefs(regenerate, "reference_inputs").some((ref) => ref.startsWith("candidate:")),
+    "原照重生成不得把候选写进来源：" + json(sectionRefs(regenerate, "reference_inputs")));
+  expect(/不发送历史候选图/.test(regenerateText), "原照重生成必须明说不发送历史候选：" + regenerateText);
+  // 实际请求的图序必须与正文写的一致：编辑候选在首位，重生成只发商品原照。
+  const editSnapshot = requestSnapshotOf(edit, { references: editRefs });
+  expect(json(editSnapshot.references.map((item) => item.sha256))
+    === json([SHA_CANDIDATE_EXPR, SHA_SIDE, SHA_PRIMARY]),
+    "编辑请求的实际图序必须与正文图号一致：" + json(editSnapshot.references.map((item) => item.sha256)));
+  const regenerateSnapshot = requestSnapshotOf(regenerate, { references: regenerateRefs });
+  expect(json(regenerateSnapshot.references.map((item) => item.sha256))
+    === json([SHA_SIDE, SHA_PRIMARY]),
+    "原照重生成的实际图序不得包含候选：" + json(regenerateSnapshot.references.map((item) => item.sha256)));
+  return { edit: editText.length, regenerate: regenerateText.length };
+});
+
+test("P30", "同字节双职责合并成一条：图号不重复，候选与商品权威都如实写出", async () => {
+  const shot = mainShot();
+  const spec = shotSpec(shot);
+  const context = contextFixture();
+  const directive = reworkDirective(shot, "edit_candidate", { candidateSha: SHA_PRIMARY });
+  const refs = selectReferences(shot, context.assets,
+    { intakeVersion: INTAKE_VERSION, shotSpec: spec, rework: directive });
+  expect(refs.length === 1
+    && refs[0].uses.includes("edit_source") && refs[0].uses.includes("product_truth"),
+    "同字节必须合并为一条双用途引用：" + json(refs.map((item) => item.uses)));
+  const dual = compile(shot, spec, { context, references: refs, rework: directive });
+  const dualText = sectionText(dual, "reference_inputs");
+  expect(/图1[^。]*候选[^。]*商品原照/.test(dualText),
+    "合并后的图1必须同时写明候选与原照两种职责：" + dualText);
+  expect(!/图2/.test(dualText), "合并后不得引用不存在的图2：" + dualText);
+  expect(sectionRefs(dual, "reference_inputs").includes("candidate:" + directive.candidate_id),
+    "双职责仍要保留候选来源：" + json(sectionRefs(dual, "reference_inputs")));
+  return { text: dualText };
+});
+
+test("P31", "返工指令引用只认冻结血缘：标签/方向放行，任意新引用与无模式历史仍拦", async () => {
+  const shot = mainShot();
+  const systemText = "本次返工要求（只改这张图，其它段落保持不变）：这次的问题属于「构图」；"
+    + "改进方向「只把文字挪远一些，其他构图保留。」；不要重复出现上一条候选里已经被指出的同类问题。";
+  const record = {
+    shot_id: shot.shot_id, role_id: shot.role_id,
+    compiled: { text: systemText, platform: { platform_id: "amazon_us" } },
+    basis: { rework: { mode: "edit_candidate", problems: ["composition"],
+      direction: "只把文字挪远一些，其他构图保留。" } },
+  };
+  // 与 prompts.edit/reconfirm 同形：规则基准的 compiled 是普通现行编译（不含返工段），血缘来自 basis。
+  const ruleBase = { ...record, compiled: { text: "普通现行编译正文，不含返工段。",
+    platform: { platform_id: "amazon_us" } } };
+  const edited = systemText + "保留完整商品轮廓。";
+  const ok = checkManualEditRules({ text: edited, base: ruleBase, brief: briefFixture() });
+  expect(ok.problems.length === 0, "冻结血缘里的问题标签与方向必须放行：" + json(ok.problems));
+  const unknown = checkManualEditRules({ text: edited + "再加一句「随便写的内容」。",
+    base: ruleBase, brief: briefFixture() });
+  expect(unknown.problems.length > 0
+    && unknown.problems[0].reason_code === MANUAL_EDIT_REASON_CODES.UNKNOWN_QUOTE,
+    "血缘之外的任意新引用仍须拦：" + json(unknown.problems));
+  const legacy = checkManualEditRules({ text: edited, brief: briefFixture(),
+    base: { ...ruleBase, basis: { rework: { problems: ["composition"],
+      direction: "只把文字挪远一些，其他构图保留。" } } } });
+  expect(legacy.problems.length > 0, "无明确模式的历史血缘不授权返工引用：" + json(legacy.problems));
+  return { message: unknown.problems[0].message.slice(0, 40) };
+});
 
 import nodeTest from "node:test";
 for (const item of cases) {

@@ -61,12 +61,21 @@ function parameters(overrides = {}) {
   return { size: "1344*1344", n: 1, prompt_extend: false, watermark: false, ...overrides };
 }
 
+/** schema 3 冻结引用：身份+用途+来源（与 Prompt 请求快照同形状，§13.8 一次切换）。 */
+function frozenRefs(sha256 = HASH_B) {
+  return [{
+    role: "primary", sha256: sha256,
+    uses: ["product_truth"],
+    sources: [{ kind: "product_input", document_id: "intake", version: 1, asset_sha256: sha256 }],
+  }];
+}
+
 function attemptFixture(overrides = {}) {
   return buildAttemptRecord({
     actionId: ACTION_A,
     shotId: "shot_main_clean",
     prompt: { version: 1, hash: HASH_A },
-    references: [{ role: "primary", sha256: HASH_B }],
+    references: frozenRefs(),
     provider: provider(),
     parameters: parameters(),
     executionIdentity: { protocol: "v2.4.1", capabilityVersion: 2, credentialSource: "default" },
@@ -124,9 +133,12 @@ test("A02", "反向：缺字段 / 非法参考图 / 非法参数一律拒绝", a
     ["action_id 太短", { actionId: "abc" }],
     ["shot_id 非法", { shotId: "Main Shot" }],
     ["没有参考图", { references: [] }],
-    ["参考图 4 张", { references: [1, 2, 3, 4].map(() => ({ role: "primary", sha256: HASH_B })) }],
-    ["参考图角色不在词表", { references: [{ role: "hero", sha256: HASH_B }] }],
-    ["参考图 sha 不合法", { references: [{ role: "primary", sha256: "zz" }] }],
+    ["参考图 4 张", { references: [1, 2, 3, 4].map(() => frozenRefs()[0]) }],
+    ["参考图角色不在词表", { references: [{ role: "hero", sha256: HASH_B,
+      uses: ["product_truth"], sources: [{ kind: "product_input", document_id: "intake", version: 1, asset_sha256: HASH_B }] }] }],
+    ["参考图 sha 不合法", { references: [{ role: "primary", sha256: "zz",
+      uses: ["product_truth"], sources: [{ kind: "product_input", document_id: "intake", version: 1, asset_sha256: "zz" }] }] }],
+    ["参考图缺冻结元数据", { references: [{ role: "primary", sha256: HASH_B }] }],
     ["尺寸不合法", { parameters: parameters({ size: "1344x1344" }) }],
     ["n 越界", { parameters: parameters({ n: 0 }) }],
     ["prompt hash 不合法", { prompt: { version: 1, hash: "abc" } }],
@@ -660,6 +672,29 @@ test("A20", "归一化信封结构门（P6/SEL-025）：读不出来不推进、
     taskEnvelope({ task: { status: "SUCCEEDED" } }), { at: AT3 });
   expect(fine.record.state === ATTEMPT_STATES.succeeded, "合法查询仍要落 succeeded");
   return { submit_read_failure: extra.error.code, status_no_advance: query.outcome.advanced };
+});
+
+test("A21", "schema 3 一次切换：Attempt 保存完整冻结元数据；旧 schema 2 记录仍可读", async () => {
+  // 新记录：引用与 Prompt 请求快照同形状（身份+用途+来源），不再降采样。
+  const record = attemptFixture();
+  expect(record.schema_version === 3, "新记录必须是 schema 3");
+  expect(JSON.stringify(record.references) === JSON.stringify(frozenRefs()),
+    "schema 3 必须原样保存完整冻结元数据：" + JSON.stringify(record.references));
+  expect(checkAttemptRecord(record).length === 0, "schema 3 记录必须自检通过");
+  expect(attemptExecutionIdentityOf(record) !== null, "schema 3 记录带冻结执行身份");
+
+  // 旧记录：schema 2 身份形状仍可机检（在途旧任务按原身份观察，不改写历史）。
+  const legacy = JSON.parse(JSON.stringify(record));
+  legacy.schema_version = 2;
+  legacy.references = [{ role: "primary", sha256: HASH_B }];
+  expect(checkAttemptRecord(legacy).length === 0, "schema 2 旧记录必须仍自检通过");
+  expect(attemptExecutionIdentityOf(legacy) !== null, "在途旧任务仍按原身份观察");
+  // 缺执行身份的记录（V2.4.1 时代形状）：身份读数 = null；该形状本就不自检通过
+  // （V2.R4.4 起要求冻结执行身份），包导入按精确条目拒绝。
+  const older = { ...legacy, schema_version: 1, execution_identity: undefined };
+  expect(attemptExecutionIdentityOf(older) === null, "schema 1 无身份读数为 null");
+  expect(checkAttemptRecord(older).length > 0, "缺执行身份仍拒绝，不冒充可执行记录");
+  return { schema_version: record.schema_version, refs: record.references.length };
 });
 
 /* ---------------------------------------------------------------- 运行器 */

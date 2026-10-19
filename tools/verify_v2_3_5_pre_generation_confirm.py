@@ -550,7 +550,9 @@ def main() -> int:
                   and blocked_shots == ["shot_comparison_competitor"]
                   and blocked_sheet["can_submit"] is False
                   and "DEPENDENCY_UNSATISFIED" in comparison_codes
-                  and "PROMPT_MISSING" in comparison_codes
+                  # 本批新增印字决定门：新加的图默认「未决定」，缺依赖与待决定一起如实列出；
+                  # 决定门先于编译门，所以这里不再同时给 PROMPT_MISSING（先决定再谈缺 Prompt）。
+                  and comparison_codes == ["DEPENDENCY_UNSATISFIED", "DECISION_REQUIRED"]
                   and dependency_fix["region"] == "suite"
                   and "套图规划" in blocked_probe["ui"]["blockers"],
                   {"codes": comparison_codes, "fix": dependency_fix,

@@ -3,7 +3,7 @@
 
 检查：
   1) domain / workspace / harness 全部通过 node --check（ESM 语法门）。
-  2) 契约套件 M01..M12 在真实 Chromium 全过（记录形状、逐字一致、hash 重算、版本链、
+  2) 契约套件 M01..M13 在真实 Chromium 全过（记录形状、逐字一致、hash 重算、版本链、引用授权基准、
      语言降级提示、失效投影、过期与确认联动、篡改与非法输入反向探针）。
   3) 正式入口：套图就绪后 4 张图缺 Prompt 被阻断；编译全部后可确认，确认写 generation_confirm v1。
   4) 人工编辑主图：保存人工版本 v2，逐字生效、hash 与请求快照一致、失效投影只指向主图、
@@ -69,7 +69,7 @@ DOMAIN_FILES = [
     "evals/product-v2/harness/prompt-edit-contract.js",
 ]
 
-EXPECTED_CASES = [f"M{index:02d}" for index in range(1, 13)]
+EXPECTED_CASES = [f"M{index:02d}" for index in range(1, 14)]
 NEGATIVE_CASES = ["M03", "M04", "M05", "M07", "M08", "M09", "M11", "M12"]
 
 SEED_SLOTS = """
@@ -379,7 +379,7 @@ def main() -> int:
     case_ids = [item["id"] for item in suite.get("cases", [])]
     missing = [case for case in EXPECTED_CASES if case not in case_ids]
     failed_cases = [item for item in suite.get("cases", []) if not item.get("ok")]
-    check("V2.3.6-01", "M01–M12 契约套件全过且用例齐全",
+    check("V2.3.6-01", "M01–M13 契约套件全过且用例齐全",
           suite.get("status") == "passed" and not missing and not failed_cases,
           {"status": suite.get("status"), "missing": missing,
            "failed": [{"id": item["id"], "error": item.get("error")} for item in failed_cases[:3]]})

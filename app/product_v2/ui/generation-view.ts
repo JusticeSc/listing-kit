@@ -38,6 +38,7 @@ import {
   promptStaleness,
   reviewIsCurrent,
   reviewSummaryText,
+  reworkModeLabel,
   selectionSummaryText,
   suitePlanSummary,
   topFinding,
@@ -65,6 +66,7 @@ import type { SelectionAdoptionModule } from "../selection-adoption.js";
 import type {
   DependencyBlocking,
   ImagePromptProfile,
+  PromptRecord,
   PromptStaleness,
   SuitePlanSummary,
 } from "../domain/type-contracts.js";
@@ -234,6 +236,7 @@ function decisionAnchorOf(blocker: { code: string }, shotId: string | null): str
   }
   if (first.indexOf("$.presentation.appearance_state") === 0) return "style-presentation-appearance_state";
   if (first.indexOf("$.presentation.contents_state") === 0) return "style-presentation-contents_state";
+  if (first.indexOf("$.presentation.viewpoint") === 0) return "style-presentation-viewpoint";
   if (first.indexOf("$.shot_spec.print_intent") === 0) return "spec-print-" + shotId;
   if (first.indexOf("$.shot_spec.on_image_texts") === 0) return "spec-texts-" + shotId;
   if (first.indexOf("$.shot_spec.layout") === 0 || first.indexOf("$.layout") === 0) {
@@ -580,6 +583,44 @@ export function createGenerationView(
     return drafts;
   }
 
+  /** 确认单参考图行的人读标签（设计 §13.6/§13.13.3）：先按冻结用途说明这张图的职责
+   * （编辑源/商品原照/风格参考），编辑源再带上固定问题候选版本；用途缺失的历史记录退回
+   * 现有角色词表，不猜职责。用途词表与 domain 冻结值同字面，本视图不另造一套。 */
+  function referenceLabelOf(ref: { role: string; uses?: string[]; sources?: readonly unknown[] }): string {
+    const uses = Array.isArray(ref.uses) ? ref.uses : [];
+    const isEdit = uses.includes("edit_source");
+    const isProduct = uses.includes("product_truth");
+    const isStyle = uses.includes("style_reference");
+    if (!isEdit && !isProduct && !isStyle) return ROLE_TEXT[ref.role] || ref.role;
+    const candidate = (Array.isArray(ref.sources) ? ref.sources : [])
+      .find((source) => source !== null && typeof source === "object"
+        && (source as { kind?: unknown }).kind === "candidate"
+        && Number.isInteger((source as { version?: unknown }).version));
+    const editLabel = isEdit
+      ? "编辑源" + (candidate
+        ? "（问题候选 v" + String((candidate as { version: number }).version) + "）" : "")
+      : "";
+    if (isProduct || isStyle) {
+      const rest = [isProduct ? "商品原照" : null, isStyle ? "风格参考" : null].filter(Boolean).join("、");
+      // 同字节多职责必须合并成一行（设计 §13.6）：合并后的图只能有一个图号，两种职责都要说清。
+      return isEdit ? "编辑源与" + rest + "合并" + (candidate
+        ? "（问题候选 v" + String((candidate as { version: number }).version) + "）" : "")
+        : rest;
+    }
+    return editLabel;
+  }
+
+  /** 返工派生的版本在来源行标明改法与固定问题候选（唯一权威是 basis.rework；
+   * 无 mode 的历史记录不猜模式、不标编辑源）。 */
+  function reworkLineOf(record: PromptRecord): string {
+    const frozen = record.basis ? record.basis.rework : null;
+    if (!frozen) return "";
+    if (frozen.mode !== "edit_candidate" && frozen.mode !== "regenerate_original") return "";
+    const fixed = frozen.problem_candidate;
+    return " · " + reworkModeLabel(frozen.mode)
+      + (fixed ? "，问题候选 v" + fixed.version + "（" + String(fixed.asset_sha256).slice(0, 12) + "…）" : "");
+  }
+
   /** Prompt 行投影：模板只读这里算好的字段，不重算业务判定。 */
   function projectPromptRows(summary: SuitePlanSummary): PromptRowView[] {
     const running = inputs.isAnalysisRunning();
@@ -612,6 +653,7 @@ export function createGenerationView(
         sourceLine: entry
           ? "来源 " + (entry.record.compiled.source_refs || []).length + " 条 · "
             + entry.record.compiled.text.length + " 字 · hash " + entry.record.hash.slice(0, 12) + "…"
+            + reworkLineOf(entry.record)
           : "",
         hashText: entry ? entry.record.hash : "",
         warningTexts: entry
@@ -1044,10 +1086,11 @@ export function createGenerationView(
           ? "未编译"
           : "Prompt v" + item.prompt.version + " · " + String(item.prompt.hash).slice(0, 12) + "…",
         intent: item.intent,
-        referencesLine: "参考图 " + item.references.length + " 张（"
-          + (item.references.map((ref) => ROLE_TEXT[ref.role] || ref.role).join("、") || "无") + "）"
+        referencesLine: "参考图 " + item.references.length + " 张 · 发送顺序："
+          + (item.references.map((ref, index) => (index + 1) + "." + referenceLabelOf(ref)).join("、") || "无")
           + (item.prompt.chars === null ? "" : " · 提示词 " + item.prompt.chars + " 字"),
-        techLines: item.references.map((ref) => (ROLE_TEXT[ref.role] || ref.role) + " sha256 " + ref.sha256_prefix),
+        techLines: item.references.map((ref) => referenceLabelOf(ref)
+          + " sha256 " + ref.sha256_prefix),
         risksText: item.risks.length > 0
           ? "风险：" + item.risks.map((risk) => localizeSlotTerms(risk.message || risk.code)).join("；")
           : null,

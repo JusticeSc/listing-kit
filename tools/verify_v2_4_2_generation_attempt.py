@@ -543,7 +543,9 @@ def main() -> int:
                 prompt_text = submitted["prompts"][shot_main]["text"]
                 request_ok = bool(captured) and (
                     captured[0]["prompt"] == prompt_text
-                    and captured[0]["references"] == final["references"]
+                    and captured[0]["references"] == [
+                        {"role": ref.get("role"), "sha256": ref.get("sha256")}
+                        for ref in final["references"]]
                     and captured[0]["size"] == final["parameters"]["size"])
                 check("V2.4.2-06",
                       "提交信封 → submitted：task id 保存；请求里的 Prompt / 引用 / 尺寸与记录一致",

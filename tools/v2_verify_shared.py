@@ -272,6 +272,34 @@ def decide_shot_decision(page, shot_id: str, *, print_intent: str = "none",
     return True
 
 
+def decide_shot_viewpoint(page, shot_id: str, value: str) -> bool:
+    """做单图视角决定（含「沿用可见视角」）：该图没有视角控件返回 False。
+
+    与其它单图决定共用卡片保存；radios 由 domain 的 PRESENTATION_FIELDS 提供。
+    返回是否真的进行了选择（调用方据此区分「控件缺失」与「已选择」）。
+    """
+    open_specs(page)
+    card = f'#shot-spec-list .shot-spec[data-shot-id="{shot_id}"]'
+    page.wait_for_selector(card, timeout=15_000)
+    group = page.locator(f"#spec-presentation-viewpoint-{shot_id}")
+    if group.count() == 0:
+        return False
+    radio = f"#spec-viewpoint-{value}-{shot_id}"
+    if page.locator(radio).count() == 0:
+        raise AssertionError(f"视角控件缺失：{radio}")
+    if not page.locator(radio).is_checked():
+        page.click(radio)
+    page.click(card + ' button:has-text("保存")')
+    page.wait_for_function(
+        """(id) => {
+          const card = document.querySelector(
+            '#shot-spec-list .shot-spec[data-shot-id="' + id + '"]');
+          const meta = card ? card.querySelector(".shot-spec-head .meta") : null;
+          return Boolean(meta && meta.textContent.includes("规格 v"));
+        }""", arg=shot_id, timeout=15_000)
+    return True
+
+
 def decide_for_compile(page, shot_ids: list, *, print_intent: str = "none") -> dict:
     """编译前置普通决定：先共用展示决定，再对带印字控件的图逐个做印字决定。
 

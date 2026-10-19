@@ -315,11 +315,15 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
     referenceSourceReader: () => inputs.references().map((item) => ({
       role: item.role, sha256: item.asset_sha256,
     })),
+    intakeVersionReader: () => projectSources().intakeVersion,
+    shotSpecReader: (shotId) => projectSources().shotSpecs[shotId] || null,
     promptsSheet: (ids) => prompts.sheet(ids ?? null),
     imageEnvironment: (saved) => /** @type {unknown} */ (saved ?? modelSettings.imageEnvironment()),
     promptAbility: {
       compile: (shotId, options) => prompts.compile(shotId, options),
+      previewManualForRework: (shotId, options) => prompts.previewManualForRework(shotId, options),
       compileAndSave: (shotId, options) => prompts.compileAndSave(shotId, options),
+      rebaseManualForRework: (shotId, options) => prompts.rebaseManualForRework(shotId, options),
     },
   });
   const selectionAdoption = createSelectionAdoptionModule({

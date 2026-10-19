@@ -5,7 +5,7 @@
  * 三条不可协商的规则：
  *  1) 指令段统一中文；任何非中文原文必须来自输入并以「」逐字引用——没有无规则的中英混杂；
  *  2) 图中文案只印用户明确选择并确认的条目（`shot_spec.on_image_texts`），逐字使用、不翻译、
- *     不改写、不新增；信息图默认「未决定」时阻断，而不是把绑定事实自动印上图；
+ *     不改写、不新增；印字决定角色默认「未决定」时阻断，任何角色都不把绑定事实自动印上图；
  *  3) 编译是纯函数：失败抛 CONTRACT_INVALID 并给出精确问题，不产半成品、不修改输入。
  *
  * 复用而不是重写：依赖判定用 suite-plan.js 的 evaluateShot；规格校验用 specs.js；
@@ -16,34 +16,64 @@ import { DOMAIN_ERROR_CODES, invalid } from "./errors.js";
 import { assertReworkDirective, reworkProblemLabel } from "./rework.js";
 import { checkShotDraft, consumedSlotIdsOf, evaluateShot, roleDefinition, shotSignatureOf } from "./suite-plan.js";
 import {
+  MEASUREMENT_SOURCE_LABEL,
   PRESENTATION_CONSUMERS,
   PRESENTATION_FIELDS,
   PRINT_DECISION_ROLES,
   SHOT_LAYOUTS,
   SHOT_PRINT_INTENTS,
+  SHOT_SPEC_SCHEMA_VERSION,
+  STYLE_SPEC_SCHEMA_VERSION,
   assertShotSpec,
   assertStyleSpec,
   effectivePrintIntentOf,
   emptyShotSpecFromShot,
   emptyStyleSpec,
+  formatMeasurementText,
+  imageTextProblems,
+  imageTextSourceOf,
   layoutLabelOf,
   presentationStateOf,
   printDecisionRoleOf,
+  referenceViewpointEvidence,
 } from "./specs.js";
 import { invalidationsFor } from "./invalidation.js";
-import { isNonEmptyString, isPlainObject, isSha256Hex, pushProblem } from "./shared.js";
+import {
+  canonicalJson,
+  isNonEmptyString,
+  isPlainObject,
+  isPositiveInteger,
+  isSha256Hex,
+  pushProblem,
+} from "./shared.js";
 
-export const PROMPT_SCHEMA_VERSION = 1;
+export const PROMPT_SCHEMA_VERSION = 2;
+export const LEGACY_PROMPT_SCHEMA_VERSION = 1;
+export const PROMPT_COMPILER_RULE_VERSION = 3;
 export const PROMPT_LANGUAGE_POLICY_ID = "zh-instruction-v1";
 export const MAX_PROMPT_CHARS = 4000;
+
+// 冻结参考图合同已独立成 frozen-reference.js（attempt 校验复用同一判据，不成环）；
+// 这里原样再导出，既有导入路径保持不变。canonicalJson 的唯一出处是 shared.js。
+export {
+  MAX_REFERENCE_SELECTION,
+  REFERENCE_USES,
+  checkFrozenReferences,
+} from "./frozen-reference.js";
+import {
+  MAX_REFERENCE_SELECTION,
+  REFERENCE_USES,
+  checkFrozenReferences,
+} from "./frozen-reference.js";
 
 /** 逐字条目允许的语言标签；`neutral` 用于纯数字/符号文案（例如「30」「500 ml」这类无字母内容）。 */
 export const PROMPT_LITERAL_LANGUAGES = Object.freeze(["zh", "en", "mixed", "neutral"]);
 
 /**
  * 这张图的有效印字决定与版面。选择只在规格里明确存过时才生效；没存过时：
- * 需要该决定的角色（如信息图）是「未决定」，由编译器阻断并让用户做一次普通选择；
- * 其他角色沿用既有合同（该印的事实照旧印，例如尺寸图），本切片不改它们的表达。
+ * 印字决定角色（信息图/尺寸/对比/成分/包装）是「未决定」，由编译器阻断并让用户做一次普通选择；
+ * 其他角色（主图/场景/细节/自定义）是「不印新增文字」——它们的画面本来就不叠加文案。
+ * 任何角色都不会把绑定事实自动印上图（facts_auto 已退役）。
  * @param {unknown} shotSpec
  * @param {unknown} shot
  * @returns {{intent: string, layout: string, texts: import("./type-contracts.js").OnImageText[], decision_role: boolean}}
@@ -64,26 +94,65 @@ export function effectivePrinting(shotSpec, shot) {
  * @param {unknown} styleSpec
  * @param {unknown} shotSpec
  * @param {unknown} shot
- * @returns {{appearance_state: {state: string, source: string}, contents_state: {state: string, source: string}, consumes: {appearance_state: boolean, contents_state: boolean}}}
+ * @returns {{appearance_state: {state: string, source: string}, contents_state: {state: string, source: string}, viewpoint: {state: string, source: string}, consumes: {appearance_state: boolean, contents_state: boolean, viewpoint: boolean}}}
  */
 export function effectivePresentation(styleSpec, shotSpec, shot) {
   const roleId = isPlainObject(shot) && typeof shot.role_id === "string" ? shot.role_id : "";
   /** @param {string} key */
   const pick = (key) => {
-    const own = presentationStateOf(shotSpec, key);
-    if (own !== "undecided") return { state: own, source: "shot" };
-    const shared = presentationStateOf(styleSpec, key);
-    if (shared !== "undecided") return { state: shared, source: "style" };
-    return { state: "undecided", source: "none" };
+    const own = isPlainObject(shotSpec) && isPlainObject(shotSpec.presentation) ? shotSpec.presentation : {};
+    if (Object.prototype.hasOwnProperty.call(own, key)) {
+      return { state: presentationStateOf(shotSpec, key), source: "shot" };
+    }
+    const shared = isPlainObject(styleSpec) && isPlainObject(styleSpec.presentation) ? styleSpec.presentation : {};
+    if (Object.prototype.hasOwnProperty.call(shared, key)) {
+      return { state: presentationStateOf(styleSpec, key), source: "style" };
+    }
+    return { state: key === "viewpoint" ? "reference_visible" : "undecided", source: "none" };
   };
+  const contents = pick("contents_state");
   return {
     appearance_state: pick("appearance_state"),
-    contents_state: pick("contents_state"),
+    contents_state: contents,
+    viewpoint: pick("viewpoint"),
     consumes: {
       appearance_state: PRESENTATION_CONSUMERS.appearance_state.includes(roleId),
-      contents_state: PRESENTATION_CONSUMERS.contents_state.includes(roleId),
+      contents_state: PRESENTATION_CONSUMERS.contents_state.includes(roleId)
+        || ["empty", "as_shown"].includes(contents.state),
+      viewpoint: true,
     },
   };
+}
+
+/** 本图消费的共用风格签名：只封印本图实际会用到的共用风格字段——
+ * 四个文本字段与 avoid 全量；presentation 仅取「本图消费且未被单图覆盖」的字段。
+ * 被单图覆盖的共用值变化不使本图过期（单图覆盖自身的变化由 shot_spec_version 负责）。
+ * @param {unknown} styleSpec
+ * @param {unknown} shotSpec
+ * @param {unknown} shot
+ * @returns {string}
+ */
+export function styleSignatureOf(styleSpec, shotSpec, shot) {
+  const style = isPlainObject(styleSpec) ? styleSpec : {};
+  const spec = isPlainObject(shotSpec) ? shotSpec : {};
+  const own = isPlainObject(spec.presentation) ? spec.presentation : {};
+  const effective = effectivePresentation(styleSpec, shotSpec, shot);
+  /** @type {Record<string, string>} */
+  const presentation = {};
+  for (const field of PRESENTATION_FIELDS) {
+    if (!effective.consumes[field.key]) continue;
+    if (Object.prototype.hasOwnProperty.call(own, field.key)) continue;
+    const picked = effective[field.key];
+    presentation[field.key] = picked && isNonEmptyString(picked.state) ? picked.state : "undecided";
+  }
+  return canonicalJson({
+    background: isNonEmptyString(style.background) ? style.background : "",
+    lighting: isNonEmptyString(style.lighting) ? style.lighting : "",
+    color_tone: isNonEmptyString(style.color_tone) ? style.color_tone : "",
+    composition: isNonEmptyString(style.composition) ? style.composition : "",
+    avoid: Array.isArray(style.avoid) ? style.avoid.filter((item) => isNonEmptyString(item)) : [],
+    presentation: presentation,
+  });
 }
 
 /**
@@ -163,24 +232,20 @@ export function decisionProblems(input = {}) {
           message: "图中文字「" + text + "」还是待确认状态：确认后才能发送，程序不会替你确认或跳过。",
         });
       }
-      const sourceId = item.source_slot_id;
-      if (!brief || !isNonEmptyString(sourceId) || !confirmed.has(sourceId)) {
-        problems.push({ code: DOMAIN_ERROR_CODES.CONTRACT_INVALID, path: path + ".source_slot_id",
-          message: "图中文字「" + text + "」的来源事实没有确认值：" + String(sourceId || "（未指定）") + "。",
-        });
-      } else if (!basisVersions.has(sourceId)
-        || basisVersions.get(sourceId) !== item.source_slot_version) {
-        problems.push({ code: DOMAIN_ERROR_CODES.CONTRACT_INVALID, path: path + ".source_slot_version",
-          message: "图中文字「" + text + "」的来源已不是当初确认的版本：请重新核对这条文案，"
-            + "程序不会静默改用新值。",
-        });
+      const source = imageTextSourceOf(item);
+      const sourceId = source?.document_id;
+      if (!brief || !source || !confirmed.has(sourceId)) {
+        problems.push({ code: DOMAIN_ERROR_CODES.CONTRACT_INVALID, path: path + ".source",
+          message: "图中文字「" + text + "」的来源事实没有确认值：" + String(sourceId || "（未指定）") + "。" });
+      } else if (basisVersions.get(sourceId) !== source.version) {
+        problems.push({ code: DOMAIN_ERROR_CODES.CONTRACT_INVALID, path: path + ".source.version",
+          message: "图中文字「" + text + "」的来源已改变；请核对后重新确认，不会悄悄替换文案。" });
       } else if (!boundIds.includes(sourceId)) {
-        // 界面只提供「这张图绑定的事实」当候选：来源被解绑后条目会从界面上消失，
-        // 若还继续印，就等于印了用户在这张图上已经移除的依据。拦下并要求重新绑定或重选。
-        problems.push({ code: DOMAIN_ERROR_CODES.CONTRACT_INVALID, path: path + ".source_slot_id",
-          message: "图中文字「" + text + "」的来源事实已经不在这张图的绑定里："
-            + "请把该事实重新绑定到这张图，或重新选择这张图的文案。",
-        });
+        problems.push({ code: DOMAIN_ERROR_CODES.CONTRACT_INVALID, path: path + ".source",
+          message: "图中文字「" + text + "」的来源已不在本图绑定里，请重新绑定或移除该文案。" });
+      }
+      for (const problem of imageTextProblems(item, { brief, shotSpec })) {
+        problems.push({ ...problem, path: path + problem.path.slice(1) });
       }
     });
   }
@@ -191,22 +256,13 @@ export function decisionProblems(input = {}) {
   //   等于让模型为不存在的文字留位置。
   const layoutValue = isPlainObject(shotSpec) && isNonEmptyString(shotSpec.layout)
     ? shotSpec.layout : "";
-  const printableBoundCount = boundIds.filter((slotId) => {
-    const fact = confirmed.get(slotId);
-    return Boolean(fact) && factTexts(fact).length > 0;
-  }).length;
-  if (TEXT_LAYOUTS.includes(layoutValue) && printing.intent !== "selected"
-    && printing.intent !== "undecided") {
-    // facts_auto（非印字决定角色）下只有「用途允许文字且确实有可印的已确认事实值」才算真有文字。
-    const textWillPrint = printing.intent === "facts_auto" && allowsText && printableBoundCount > 0;
-    if (!textWillPrint) {
-      problems.push({
-        code: DOMAIN_ERROR_CODES.CONTRACT_INVALID, path: "$.shot_spec.layout",
-        message: "这张图不会有图上文字，不能选「" + layoutLabelOf(layoutValue) + "」版面："
-          + "正文会写「放置下方给定的文字」，而本次没有文案可放。"
-          + "请改成「" + layoutLabelOf("product_only") + "」版面，或先决定并选择要印的文案。",
-      });
-    }
+  if (TEXT_LAYOUTS.includes(layoutValue) && printing.intent === "none") {
+    problems.push({
+      code: DOMAIN_ERROR_CODES.CONTRACT_INVALID, path: "$.shot_spec.layout",
+      message: "这张图不会有图上文字，不能选「" + layoutLabelOf(layoutValue) + "」版面："
+        + "正文会写「放置下方给定的文字」，而本次没有文案可放。"
+        + "请改成「" + layoutLabelOf("product_only") + "」版面，或先决定并选择要印的文案。",
+    });
   }
   // 展示决定：未决定且被本图消费时阻断，不默选清洁/倒空；不消费的用途不拦截。
   const presentation = effectivePresentation(input.styleSpec, shotSpec, shot);
@@ -214,13 +270,22 @@ export function decisionProblems(input = {}) {
     if (!presentation.consumes[field.key]) continue;
     if (presentation[field.key].state !== "undecided") continue;
     problems.push({
-      code: DOMAIN_ERROR_CODES.CONTRACT_INVALID, path: "$.presentation." + field.key,
+      code: DOMAIN_ERROR_CODES.CONTRACT_INVALID,
+      path: (presentation[field.key].source === "shot" ? "$.shot_spec.presentation." : "$.presentation.") + field.key,
       message: "这张图还要先决定「" + field.label + "」："
         + field.options.filter((item) => item.value !== "undecided")
           .map((item) => item.label).join("／")
         + "；程序不替你默认"
         + (field.key === "appearance_state" ? "清洁或保留使用痕迹" : "倒空或保留内容物") + "。",
     });
+  }
+  if (presentation.viewpoint.state !== "reference_visible") {
+    const proof = viewpointProofOf(input, presentation.viewpoint.state);
+    if (!proof.viewpoints.includes(presentation.viewpoint.state)) {
+      problems.push({ code: DOMAIN_ERROR_CODES.CONTRACT_INVALID,
+        path: presentation.viewpoint.source === "shot" ? "$.shot_spec.presentation.viewpoint" : "$.presentation.viewpoint",
+        message: "所选视角没有本次商品依据支持；请确认相应照片、选入本图依据，或改为沿用可见视角。" });
+    }
   }
   return problems;
 }
@@ -290,6 +355,14 @@ export const ROLE_VISUAL_BRIEF = Object.freeze({
   ]),
 });
 
+/** 显式视角的正向正文（#9）：非默认视角通过依据门后，替换角色简报里的默认视角句，
+ * 正面消费用户所选角度，不用「平视拍摄」这类默认表达与顶视/侧视互相矛盾。 */
+const VIEWPOINT_SENTENCES = Object.freeze({
+  front: "视角：按用户明确选择的正面视角呈现；正面可见的结构、比例与标识以本次商品依据为准，不虚构背面、内部或未见的部件。",
+  side: "视角：按用户明确选择的侧面视角呈现；侧面可见的结构、比例与标识以本次商品依据为准，不虚构其它未见的角度或内部结构。",
+  top: "视角：按用户明确选择的顶视视角呈现；顶面可见的结构与比例以本次商品依据为准，不虚构内部或未见的部件。",
+});
+
 /** 版面段落正文：正向描述商品与文字的分布，不靠一堆禁止来暗示排版。 */
 const LAYOUT_SENTENCES = Object.freeze({
   product_only: "画面只呈现商品主体：主体完整入画、位置突出，四周保留干净留白，不叠加标题或参数文字。",
@@ -332,12 +405,6 @@ export const PLATFORM_PROFILES = Object.freeze({
   }),
 });
 
-/**
- * 参考图选择的产品默认硬上限：与图像网关一次提交的参考图上限一致。
- * 具体上限由调用方按有效 Provider 档显式传入；缺省用它，不做模型查表。
- */
-export const MAX_REFERENCE_SELECTION = 3;
-
 export const IMAGE_PROFILE_VERSION_PATTERN = /^v[0-9A-Za-z._-]{1,40}$/;
 export const IMAGE_SIZE_PATTERN = /^[0-9]{1,4}\*[0-9]{1,4}$/;
 
@@ -357,10 +424,6 @@ export const IMAGE_PROFILE_FIELDS = Object.freeze([
   "min_side", "max_side", "min_area", "max_area", "min_ratio", "max_ratio",
   "max_prompt_chars",
 ]);
-
-function isPositiveInteger(value) {
-  return Number.isInteger(value) && value > 0;
-}
 
 function isPositiveNumber(value) {
   return typeof value === "number" && Number.isFinite(value) && value > 0;
@@ -557,22 +620,6 @@ export function quoteLiteral(value) {
     .trim();
   if (!clean) invalid("引用文本不能为空。");
   return "「" + clean + "」";
-}
-
-/** 稳定序列化：对象键排序、数组保持顺序；hash 与快照比较共用这一份。 @param {unknown} value @returns {string} */
-export function canonicalJson(value) {
-  return JSON.stringify(canonicalize(value));
-}
-
-/** @param {unknown} value @returns {unknown} */
-function canonicalize(value) {
-  if (Array.isArray(value)) return value.map(canonicalize);
-  if (value && typeof value === "object") {
-    const out = {};
-    for (const key of Object.keys(value).sort()) out[key] = canonicalize(value[key]);
-    return out;
-  }
-  return value === undefined ? null : value;
 }
 
 function hasCjk(text) {
@@ -819,6 +866,7 @@ export function checkLiteralVerbatim(sections, brief, shotSpec) {
             "图中文字与所选条目不一致或尚未确认：" + entry.text);
           continue;
         }
+        problems.push(...imageTextProblems(chosen, { brief, shotSpec }));
       } else {
         const slotId = sourceRef.replace(/^product_brief\.fact:/, "");
         const fact = confirmed.get(slotId);
@@ -856,11 +904,22 @@ export function promptBasisOf(input, platform, provider) {
     .map((item) => item.slot_id);
   const consumed = shot ? consumedSlotIdsOf(shot, confirmedIds) : [];
   // 所选图中文案的来源事实也在这张图的消费范围内：来源版本前进时这张图必须过期。
-  const selectedSources = effectivePrinting(input.shotSpec, shot).texts
-    .filter((item) => isNonEmptyString(item.source_slot_id))
-    .map((item) => item.source_slot_id);
+  const printing = effectivePrinting(input.shotSpec, shot);
+  const selectedSources = (printing.intent === "selected" ? printing.texts : [])
+    .map(item => imageTextSourceOf(item)?.document_id).filter(isNonEmptyString);
   for (const slotId of selectedSources) {
     if (!consumed.includes(slotId)) consumed.push(slotId);
+  }
+  const viewpoint = effectivePresentation(input.styleSpec, input.shotSpec, shot).viewpoint.state;
+  if (viewpoint !== "reference_visible") {
+    const truthShas = (Array.isArray(input.references) ? input.references : [])
+      .filter(item => Array.isArray(item.uses) && item.uses.includes("product_truth")).map(item => item.sha256);
+    const relevant = (Array.isArray(input.slotEntries) ? input.slotEntries : []).filter(entry =>
+      isPlainObject(entry) && isPlainObject(entry.slot)
+      && (Array.isArray(entry.slot.value) ? entry.slot.value : [entry.slot.value]).includes(viewpoint));
+    for (const proof of referenceViewpointEvidence(relevant, truthShas).slots) {
+      if (!consumed.includes(proof.slot_id)) consumed.push(proof.slot_id);
+    }
   }
   const consumedSet = new Set(consumed);
   // V2.R6.2：只冻结这张图实际消费的槽位版本，无关槽位变化不再使这张图的 Prompt 过期。
@@ -868,13 +927,18 @@ export function promptBasisOf(input, platform, provider) {
     .filter((item) => isPlainObject(item) && consumedSet.has(item.slot_id))
     .map((item) => ({ slot_id: item.slot_id, version: item.version }));
   return {
+    compiler_rule_version: PROMPT_COMPILER_RULE_VERSION,
     brief: consumedBasis,
     consumed_slot_ids: consumed,
     // 这张图自己的确定性签名（与整份套图文档版本无关）；改别的图不让这张图过期。
     shot_signature: shot ? shotSignatureOf(shot) : null,
     suite_version: positive(versions.suite_version),
     style_version: positive(versions.style_version),
+    style_signature: styleSignatureOf(input.styleSpec, input.shotSpec, shot),
     shot_spec_version: positive(versions.shot_spec_version),
+    // 商品资料版本：冻结引用里嵌了它（sources[].version），提交门按完整元数据全等比较；
+    // 依据里冻结同一版本，确认单才能用同一条判据如实报「商品资料已前进」。
+    intake_version: positive(versions.intake_version),
     platform: { platform_id: platform.platform_id, version: platform.version },
     // 冻结完整有效档（含目标、协议、能力边界与请求参数）；凭据字段从不进入本档。
     provider: { ...provider },
@@ -884,9 +948,89 @@ export function promptBasisOf(input, platform, provider) {
         candidate_id: input.rework.candidate_id,
         candidate_sha256: input.rework.candidate_sha256,
         problems: [...(Array.isArray(input.rework.problems) ? input.rework.problems : [])],
+        mode: input.rework.mode,
+        // 原改进方向随血缘冻结：人工编辑/重新确认要凭它授权返工指令段的逐字引用，
+        // 不能依赖会随新版本失据的旧全文自证。
+        direction: isNonEmptyString(input.rework.direction) ? input.rework.direction : "",
+        problem_candidate: { ...input.rework.problem_candidate },
       },
     } : {}),
   };
+}
+
+/** 本次实际消费的商品原照 SHA 集合（与决定门同一判据：用途含 product_truth 且来源为商品输入）。 */
+function activeTruthShas(references) {
+  return (Array.isArray(references) ? references : [])
+    .filter((item) => isPlainObject(item) && Array.isArray(item.uses) && item.uses.includes("product_truth")
+      && Array.isArray(item.sources)
+      && item.sources.some((source) => isPlainObject(source) && source.kind === "product_input"))
+    .map((item) => item.sha256);
+}
+
+/** 所选非默认视角的参考图证据（决定门与正文来源共用这一份过滤）。 */
+function viewpointProofOf(input, state) {
+  const relevant = (isPlainObject(input) && Array.isArray(input.slotEntries) ? input.slotEntries : [])
+    .filter((entry) => isPlainObject(entry) && isPlainObject(entry.slot)
+      && (Array.isArray(entry.slot.value) ? entry.slot.value : [entry.slot.value]).includes(state));
+  return referenceViewpointEvidence(relevant, activeTruthShas(isPlainObject(input) ? input.references : null));
+}
+
+/** 实际输入图序的职责正文（设计 §13.6/§13.14.5）：图号与用途只由最终冻结数组与明确模式推导，
+ * 同字节双职责合并成同一条（不重复编号、不虚构图号）；数组形状不完整时不产半真正文。
+ * 编辑模式只把候选当待修对象（不是商品事实权威），原照重生成不声称收到历史候选。
+ * @param {unknown} references
+ * @param {unknown} rework
+ * @returns {{text: string, refs: string[], edit_source: boolean, mode: string | null} | null}
+ */
+function referenceInputsOf(references, rework) {
+  if (!Array.isArray(references) || references.length === 0) return null;
+  const items = references.map((item) => (isPlainObject(item) && isSha256Hex(item.sha256)
+    && Array.isArray(item.uses) && item.uses.length > 0 ? { uses: item.uses } : null));
+  if (items.some((item) => item === null)) return null;
+  const indicesOf = (use) => {
+    const list = [];
+    items.forEach((item, index) => { if (item.uses.includes(use)) list.push(index); });
+    return list;
+  };
+  const edits = indicesOf("edit_source");
+  const products = indicesOf("product_truth");
+  const styles = indicesOf("style_reference");
+  const label = (list) => list.map((index) => "图" + (index + 1)).join("、");
+  const dual = edits.filter((index) => products.includes(index));
+  const editOnly = edits.filter((index) => !dual.includes(index));
+  const productOnly = products.filter((index) => !dual.includes(index));
+  const lines = ["输入依据（按实际发送顺序）："];
+  if (dual.length > 0) {
+    lines.push(label(dual)
+      + "是本次要修改的问题候选，同时作为商品原照依据（同一张图片字节）：当前构图来自它，"
+      + "商品的外形、比例、材质与标识也以它为准。");
+  }
+  if (editOnly.length > 0) {
+    lines.push(label(editOnly)
+      + "是本次要修改的问题候选，只提供当前画面构图，不是商品事实权威；商品外形一律以商品原照为准。");
+  }
+  if (productOnly.length > 0) {
+    lines.push(label(productOnly) + "是商品原照，提供真实商品的外形、比例、材质、颜色与标识依据。");
+  }
+  if (styles.length > 0) {
+    lines.push(label(styles) + "只作为风格参考（视觉语言），不作本商品的外观依据。");
+  }
+  const mode = isPlainObject(rework)
+    && (rework.mode === "edit_candidate" || rework.mode === "regenerate_original") ? rework.mode : null;
+  if (mode === "edit_candidate") {
+    lines.push("本次按编辑候选处理：只针对返工要求指出的问题调整，其余满意的部分尽量保留；"
+      + "输出仍是一张新的完整图片，不承诺未修改区域的像素完全不变。");
+  } else if (mode === "regenerate_original") {
+    lines.push("本次按商品原照重新生成完整目标，不发送历史候选图；问题候选只作为问题记录，不作为本次模型输入。");
+  }
+  const refs = ["intake.references"];
+  if (mode === "edit_candidate" && isNonEmptyString(rework.candidate_id)) {
+    refs.push("candidate:" + rework.candidate_id);
+  }
+  if (isPlainObject(rework) && isNonEmptyString(rework.directive_id)) {
+    refs.push("rework:" + rework.directive_id);
+  }
+  return { text: lines.join(""), refs: refs, edit_source: edits.length > 0, mode: mode };
 }
 
 /**
@@ -957,6 +1101,7 @@ export function compilePrompt(input) {
   problems.push(...decisionProblems({
     shot: shot, shotSpec: shotSpec, styleSpec: styleSpec, brief: brief,
     platformId: input.platformId,
+    references: input.references, slotEntries: input.slotEntries,
   }));
   if (problems.length > 0) {
     invalid("Prompt 编译未通过：" + problems[0].message
@@ -964,7 +1109,13 @@ export function compilePrompt(input) {
       { problems: problems.slice(0, 6) });
   }
   const presentation = effectivePresentation(styleSpec, shotSpec, shot);
-  let fidelity = "以提供的商品参考图为唯一外观依据：保持商品的轮廓、比例、颜色、材质、标识与现有部件不变；不要添加、删除、复制、换色或重新设计商品特征。";
+  // 输入图职责（#9/设计§13.6、§13.14.5）：实际图号与用途只从最终冻结数组与明确模式推导；
+  // 编辑模式下商品外观权威只在商品原照，候选只提供待改的当前画面，不能被读成外观依据。
+  const referenceInputs = referenceInputsOf(input.references, rework);
+  const fidelityLead = referenceInputs && referenceInputs.edit_source
+    ? "以本次输入中的商品原照为唯一外观依据"
+    : "以提供的商品参考图为唯一外观依据";
+  let fidelity = fidelityLead + "：保持商品的轮廓、比例、颜色、材质、标识与现有部件不变；不要添加、删除、复制、换色或重新设计商品特征。";
   // 展示决定（#9）：把「干净展示／原样保持、倒空／保留内容物」写成正向的表面状态陈述；
   // 选择干净展示时才给出去污例外，避免与「保持商品不变」互相矛盾。
   const presentationRefs = [];
@@ -1031,9 +1182,23 @@ export function compilePrompt(input) {
 
   // 画面简报（#9）：专业表达由系统承担 —— 用用途（角色）给出正向画面概念、主体位置与大小、
   // 视角、留白与光线，普通用户不需要写摄影术语；不带任何未确认的商品事实。
+  // 显式正/侧/顶视通过依据门后必须真正改正文：替换角色简报里的默认视角句（否则顶视仍会被
+  // 读成「平视拍摄」），并把决定与证据槽写进来源；没显式选择时默认行为不变。
   const roleBrief = ROLE_VISUAL_BRIEF[shot.role_id] || ROLE_VISUAL_BRIEF.custom;
-  sections.push(section("visual_brief", "画面简报", "instruction", roleBrief.join(""),
-    [shotRef + ".role", shotRef]));
+  const viewpointSentence = presentation.viewpoint.state !== "reference_visible"
+    ? VIEWPOINT_SENTENCES[presentation.viewpoint.state] || "" : "";
+  const briefLines = viewpointSentence
+    ? roleBrief.filter((line) => !line.startsWith("视角：")).concat(viewpointSentence)
+    : [...roleBrief];
+  const briefRefs = [shotRef + ".role", shotRef];
+  if (viewpointSentence) {
+    briefRefs.push(presentation.viewpoint.source === "shot"
+      ? "shot_spec.presentation.viewpoint" : "style_spec.presentation.viewpoint");
+    for (const proof of viewpointProofOf(input, presentation.viewpoint.state).slots) {
+      briefRefs.push("product_brief.fact:" + proof.slot_id);
+    }
+  }
+  sections.push(section("visual_brief", "画面简报", "instruction", briefLines.join(""), briefRefs));
 
   const taskLines = ["本图任务" + quoteLiteral(roleLabel)
     + "，目的" + quoteLiteral(shotSpec.purpose || shot.intent || role.purpose || roleLabel) + "。"];
@@ -1051,6 +1216,13 @@ export function compilePrompt(input) {
     taskRefs.push("shot_spec.notes");
   }
   sections.push(section("shot_task", "本图任务", "instruction", taskLines.join(""), taskRefs));
+
+  // 输入依据段（#9/设计§13.6）：有实际冻结数组时才排段，写明每张输入图的职责与本次模式；
+  // 没有参考数组的调用方正文不变（不凭空声称收到或没收到候选）。来源只随实际发送内容走：
+  // 编辑模式指到固定候选，原照重生成不把候选写进来源。
+  if (referenceInputs) {
+    sections.push(section("reference_inputs", "输入依据", "instruction", referenceInputs.text, referenceInputs.refs));
+  }
 
   // 版面：只有用户真的选过版面、或明确选择了要印的文案时才排段；
   // 未决定版面的普通图正文不变（不靠程序补一个版面）。
@@ -1076,8 +1248,8 @@ export function compilePrompt(input) {
   const textRefs = [];
   // V2.6.17：只有「允许图中文字」的角色才会排出文字段落 —— 无文字角色（场景图/细节图等）
   // 报「图中将逐字保留原文」是误报。
-  // #9：图中文案只来自用户明确选择的条目；旧「把绑定事实全部印上图」只作为该角色未做
-  // 选择时的既有合同保留（facts_auto），信息图默认走「未决定」并由上面的门阻断。
+  // #9：图中文案只来自用户明确选择的条目；facts_auto（自动印绑定事实）已退役，
+  // 任何角色都不自动上图，印字决定角色默认「未决定」并由上面的门阻断。
   const languageRisks = new Map();
   if (printing.intent === "selected") {
     for (const item of printing.texts) {
@@ -1098,30 +1270,9 @@ export function compilePrompt(input) {
         source_refs: ["shot_spec.on_image_text:" + textId, platformRef],
       });
     }
-  } else if (printing.intent === "facts_auto" && allowsText) {
-    for (const fact of boundFacts) {
-      for (const value of factTexts(fact)) {
-        const language = languageOf(value);
-        const sourceRef = "product_brief.fact:" + fact.slot_id;
-        textItems.push({ text: quoteLiteral(value), language: language, source_ref: sourceRef });
-        textRefs.push(sourceRef);
-        if (language !== platform.on_image_text_language) {
-          languageRisks.set(fact.slot_id, (languageRisks.get(fact.slot_id) || 0) + 1);
-        }
-      }
-    }
-    for (const [slotId, count] of languageRisks) {
-      warnings.push({
-        code: "ON_IMAGE_TEXT_NOT_PLATFORM_LANGUAGE",
-        message: count > 1
-          ? "商品事实「" + slotId + "」有 " + count + " 条文案不是 " + platform.on_image_text_language
-            + "，图中将逐字保留原文，请人工确认是否使用；建议把这条事实值改成英文后重新确认。"
-          : "商品事实「" + slotId + "」的文案不是 " + platform.on_image_text_language
-            + "，图中将逐字保留原文，请人工确认是否使用；建议把这条事实值改成英文后重新确认。",
-        source_refs: ["product_brief.fact:" + slotId, platformRef],
-      });
-    }
-  } else if (printing.intent === "none" && boundFacts.length > 0) {
+  } else if (printing.intent === "none" && allowsText && boundFacts.length > 0) {
+    // 「不印」只在印字决定角色上是用户选择（其他角色默认不叠加文案，不冒充用户选择）；
+    // 主图另有 MAIN_IMAGE_FACTS_IGNORED，不在这里重复。
     warnings.push({
       code: "ON_IMAGE_TEXT_NONE_FACTS_SKIPPED",
       message: "这张图选择不印新增文字：绑定的 " + boundFacts.length + " 条商品事实不会出现在画面上。",
@@ -1213,35 +1364,132 @@ export function compilePrompt(input) {
 /* --------------------------------------------------- 自检、快照与版本记录 */
 
 /**
- * 参考图选择：先满足该 Shot 声明的 asset_role 依赖，再用主图补齐；
- * 数量不超过调用方给的有效上限（缺省产品硬上限）；同一 sha256 只出现一次。
- * 只做 role/hash 选择，不做模型查表；选不出参考图时由请求快照统一报错。
+ * 本图商品依据的唯一选择规则；不设容量、不拼接候选、不改上传顺序。
+ * 显式空集合不回退；未知/已删除的选择必须由用户修正。
  * @param {unknown} shot
  * @param {unknown} references
- * @param {{maxReferences?: number}} [options]
+ * @param {{shotSpec?: unknown}} [options]
+ * @returns {import("./type-contracts.js").PromptReferenceIdentity[]}
+ */
+export function productReferencesForShot(shot, references, options = {}) {
+  const bySha = new Map();
+  for (const item of Array.isArray(references) ? references : []) {
+    const sha = isPlainObject(item) ? item.sha256 || item.asset_sha256 : null;
+    if (!isPlainObject(item) || !isNonEmptyString(item.role) || !isSha256Hex(sha)) {
+      invalid("商品参考图必须有明确角色与完整资产哈希。");
+    }
+    if (!bySha.has(sha)) bySha.set(sha, { role: item.role, sha256: sha });
+  }
+  const spec = isPlainObject(options.shotSpec) ? options.shotSpec : {};
+  if (Object.prototype.hasOwnProperty.call(spec, "reference_sha256s")) {
+    if (!Array.isArray(spec.reference_sha256s)) invalid("本图参考选择必须是有序列表。");
+    const selected = [];
+    const seen = new Set();
+    for (const sha of spec.reference_sha256s) {
+      if (!isSha256Hex(sha) || seen.has(sha) || !bySha.has(sha)) {
+        invalid("本图选中的商品依据已不存在、重复或身份不合法；请重新选择本图依据。");
+      }
+      seen.add(sha);
+      selected.push(bySha.get(sha));
+    }
+    return selected;
+  }
+  const roles = new Set();
+  const collect = (requirement) => {
+    if (!isPlainObject(requirement)) return;
+    if (requirement.kind === "asset_role" && isNonEmptyString(requirement.role)) {
+      roles.add(requirement.role);
+    } else if (requirement.kind === "any_of" && Array.isArray(requirement.of)) {
+      for (const nested of requirement.of) collect(nested);
+    }
+  };
+  for (const requirement of isPlainObject(shot) && Array.isArray(shot.dependencies) ? shot.dependencies : []) {
+    collect(requirement);
+  }
+  const all = [...bySha.values()];
+  const selected = all.filter(item => roles.has(item.role));
+  return selected.length ? selected : all.filter(item => item.role === "primary");
+}
+
+/**
+ * 依赖求值的素材投影：确认单与提交门必须用同一判据——
+ * 只把本次请求里真正作为商品依据外发的图交给 evaluateShot：商品原照（product_truth）
+ * 与竞品/风格参考（style_reference）按其冻结角色计数；编辑源候选（edit_source）是
+ * 待修对象，不冒充商品依据。竞品图按 style_reference 用途发送，不能因为用途名丢掉
+ * 「对比图需要 competitor 角色」的依赖。
+ * @param {unknown} references 冻结引用选择（selectReferences 的输出或其子集）
+ * @returns {{role: unknown, sha256: unknown}[]}
+ */
+export function dependencyAssetsOf(references) {
+  return (Array.isArray(references) ? references : [])
+    .filter((item) => isPlainObject(item) && Array.isArray(item.uses)
+      && (item.uses.includes("product_truth") || item.uses.includes("style_reference")))
+    .map((item) => ({ role: item.role, sha256: item.sha256 }));
+}
+
+/**
+ * 新请求唯一规范化入口：商品依据按所选顺序，编辑源在首位；同字节合并职责与来源。
+ * @param {unknown} shot
+ * @param {unknown} references
+ * @param {{maxReferences?: number, intakeVersion?: number, shotSpec?: unknown, rework?: unknown}} [options]
  * @returns {import("./type-contracts.js").PromptReferenceSelection[]}
  */
 export function selectReferences(shot, references, options = {}) {
   const limit = options.maxReferences === undefined ? MAX_REFERENCE_SELECTION : options.maxReferences;
-  if (!isPositiveInteger(limit)) invalid("参考图上限必须是正整数。");
-  const list = (Array.isArray(references) ? references : [])
-    .map((item) => ({
-      role: item && item.role,
-      sha256: item && (item.sha256 || item.asset_sha256),
-    }))
-    .filter((item) => isNonEmptyString(item.role) && /^[0-9a-f]{64}$/.test(String(item.sha256 || "")));
-  const requiredRoles = (isPlainObject(shot) && Array.isArray(shot.dependencies) ? shot.dependencies : [])
-    .filter((item) => isPlainObject(item) && item.kind === "asset_role" && isNonEmptyString(item.role))
-    .map((item) => item.role);
-  const order = [...new Set([...requiredRoles, "primary", "detail", "packaging", "scene", "competitor", "other"])];
+  if (!isPositiveInteger(limit) || !isPositiveInteger(options.intakeVersion)) {
+    invalid("冻结参考图需要有效容量和已保存的商品资料版本，不会猜测来源版本。");
+  }
+  /** @type {import("./type-contracts.js").PromptReferenceSelection[]} */
   const picked = [];
-  for (const role of order) {
-    for (const item of list) {
-      if (item.role !== role) continue;
-      if (picked.some((entry) => entry.sha256 === item.sha256)) continue;
-      picked.push({ role: item.role, sha256: item.sha256 });
-      if (picked.length >= limit) return picked;
+  const rework = isPlainObject(options.rework) ? options.rework : null;
+  if (rework) {
+    if (rework.schema_version !== undefined && rework.schema_version !== 2) {
+      invalid("返工指令版本不认识：" + String(rework.schema_version) + "；只接受当前 schema 2。");
     }
+    if (rework.mode !== undefined && !["edit_candidate", "regenerate_original"].includes(rework.mode)) {
+      invalid("返工模式不认识：" + String(rework.mode) + "；不从历史记录猜测模式。");
+    }
+    // 历史 basis.rework（无 mode）只读：保持既有请求图序，不插入候选编辑源；
+    // 新命令必须声明 mode，由写入端（requestSnapshotOf/buildPromptRecord）强制，选择器不猜测。
+    if (rework.mode === "edit_candidate") {
+      const candidate = rework.problem_candidate;
+      if (!isPlainObject(candidate) || !isPlainObject(shot) || candidate.document_id !== shot.shot_id
+          || candidate.candidate_id !== rework.candidate_id || !isPositiveInteger(candidate.version)
+          || !isSha256Hex(candidate.asset_sha256) || candidate.asset_sha256 !== rework.candidate_sha256) {
+        invalid("编辑源必须是本图固定的问题候选及其确切文档版本、原图字节。");
+      }
+      picked.push({ role: "other", sha256: candidate.asset_sha256, uses: ["edit_source"],
+        sources: [{ kind: "candidate", document_id: candidate.document_id,
+          version: candidate.version, asset_sha256: candidate.asset_sha256 }] });
+    }
+  }
+  for (const item of productReferencesForShot(shot, references, { shotSpec: options.shotSpec })) {
+    /** @type {import("./type-contracts.js").PromptReferenceUse} */
+    const use = item.role === "competitor" ? "style_reference" : "product_truth";
+    /** @type {import("./type-contracts.js").PromptReferenceSource} */
+    const source = { kind: "product_input", document_id: "intake",
+      version: options.intakeVersion, asset_sha256: item.sha256 };
+    const existing = picked.find(entry => entry.sha256 === item.sha256);
+    if (existing) {
+      if (!existing.uses.includes(use)) existing.uses.push(use);
+      existing.sources.push(source);
+    } else {
+      picked.push({ role: item.role, sha256: item.sha256, uses: [use], sources: [source] });
+    }
+  }
+  const problems = checkFrozenReferences(picked, { maxReferences: limit });
+  if (problems.length) {
+    // 显式空选（reference_sha256s=[]）是用户明确的本图依据决定：冻结结果就是空，
+    // 由编译/消费门按「缺商品原照依据」阻断，不在这里冒充容量错误、也不回退默认原图。
+    const declared = options.shotSpec;
+    const explicitEmpty = picked.length === 0 && isPlainObject(declared)
+      && Object.prototype.hasOwnProperty.call(declared, "reference_sha256s")
+      && Array.isArray(declared.reference_sha256s) && declared.reference_sha256s.length === 0;
+    if (explicitEmpty) return picked;
+    invalid(problems[0].message, { problems });
+  }
+  if (!picked.some(item => item.uses.includes("product_truth"))) {
+    invalid("这张图缺少商品原照依据；候选、竞品和风格参考不能单独证明商品。");
   }
   return picked;
 }
@@ -1263,12 +1511,16 @@ export function checkCompiledPrompt(compiled) {
         || !isSha256Hex(rework.candidate_sha256)) {
       pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.rework",
         "返工块必须绑定指令与候选身份。");
-    } else if (!(Array.isArray(compiled.sections) ? compiled.sections : [])
-      .some((item) => item && item.key === "rework_directive")) {
-      pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.rework",
-        "带返工块的编译结果必须有「本次返工要求」段落。");
     } else {
-      // 返工块与来源引用必须指向同一条指令与同一条候选，防止只改一处就冒充另一条返工。
+      // 人工全文只保留一个 manual_edit 段，不自动追加系统返工指令；
+      // 历史返工身份仍须校验，不能把段落形状要求套到人工文本上。
+      if (compiled.origin !== "manual_edit"
+          && !(Array.isArray(compiled.sections) ? compiled.sections : [])
+            .some((item) => item && item.key === "rework_directive")) {
+        pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.rework",
+          "带返工块的系统编译结果必须有返工要求段落。");
+      }
+      // 返工块与来源引用必须指向同一条指令与同一条候选。
       const refs = Array.isArray(compiled.source_refs) ? compiled.source_refs : [];
       if (refs.indexOf("rework:" + rework.directive_id) === -1
           || refs.indexOf("candidate:" + rework.candidate_id) === -1) {
@@ -1363,6 +1615,62 @@ function checkSnapshotAgainstProfile(profile, snapshot) {
   return problems;
 }
 
+/** 参考图顺序与返工模式的一致性检查（写入端与记录检查共用；只返回问题，不抛错）。
+ * @param {unknown} references
+ * @param {unknown} rework
+ * @param {unknown} [shotId]
+ * @returns {import("./type-contracts.js").DomainProblem[]}
+ */
+export function referenceModeProblems(references, rework, shotId = null) {
+  const problems = [];
+  const items = Array.isArray(references) ? references : [];
+  const usesOf = (item) => (isPlainObject(item) && Array.isArray(item.uses) ? item.uses : []);
+  const edits = items.filter((item) => usesOf(item).includes("edit_source"));
+  if (!items.some((item) => usesOf(item).includes("product_truth"))) {
+    pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.references",
+      "新请求必须含商品原照依据，不能只发送候选或风格参考。");
+  }
+  if (!isPlainObject(rework)) {
+    if (edits.length) {
+      pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.references",
+        "没有明确编辑模式的新请求不能发送候选编辑源。");
+    }
+    return problems;
+  }
+  if (rework.mode === "regenerate_original") {
+    if (edits.length) {
+      pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.references",
+        "原照重生成不能发送历史候选图。");
+    }
+    return problems;
+  }
+  if (rework.mode !== "edit_candidate") {
+    if (edits.length) {
+      pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.references",
+        "返工模式未声明；请重新准备并核对真实模型来源。");
+    }
+    return problems;
+  }
+  const problem = rework.problem_candidate;
+  const first = items[0];
+  if (!isPlainObject(problem) || !isNonEmptyString(shotId) || problem.document_id !== shotId
+      || edits.length !== 1 || first !== edits[0]
+      || !isSha256Hex(first.sha256) || first.sha256 !== problem.asset_sha256
+      || !(Array.isArray(first.sources) && first.sources.some((source) => isPlainObject(source)
+        && source.kind === "candidate" && source.document_id === problem.document_id
+        && source.version === problem.version && source.asset_sha256 === problem.asset_sha256))) {
+    pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.references",
+      "候选编辑的第一张图必须是本图固定问题候选的确切版本及原字节。");
+  }
+  return problems;
+}
+
+/** 新请求的实际图序必须与明确模式相符；历史只读记录不经过这个新写入门。 */
+function assertReferenceMode(references, rework, shotId) {
+  const problems = referenceModeProblems(references, rework, shotId);
+  if (problems.length > 0) invalid(problems[0].message, { problems });
+}
+
 /** 请求快照：只包含真实会发送的参数与参考图身份，不含图片字节；prompt 必须逐字等于编译文本。
  * @param {unknown} compiled
  * @param {{references?: unknown}} [options]
@@ -1372,16 +1680,16 @@ export function requestSnapshotOf(compiled, options = {}) {
   assertCompiledPrompt(compiled);
   const profile = assertImagePromptProfile(compiled.provider);
   const refs = Array.isArray(options.references) ? options.references : [];
-  if (refs.length < 1 || refs.length > profile.max_reference_images) {
-    invalid("参考图数量必须在 1.." + profile.max_reference_images + " 之间，当前 " + refs.length + " 张。");
-  }
-  const references = refs.map((item) => {
-    if (!isPlainObject(item) || !isNonEmptyString(item.role)
-        || !/^[0-9a-f]{64}$/.test(String(item.sha256 || ""))) {
-      invalid("参考图必须带 role 与 sha256。");
-    }
-    return { role: item.role, sha256: item.sha256 };
-  });
+  const problems = checkFrozenReferences(refs, { maxReferences: profile.max_reference_images });
+  if (problems.length) invalid(problems[0].message, { problems });
+  // basis.rework 是冻结模式权威（compiled.rework 只带合同字段、不带 mode）。
+  const lineage = (compiled.basis && isPlainObject(compiled.basis.rework))
+    ? compiled.basis.rework : (compiled.rework || null);
+  assertReferenceMode(refs, lineage, compiled.shot_id);
+  const references = refs.map(item => ({
+    role: item.role, sha256: item.sha256, uses: [...item.uses],
+    sources: item.sources.map(source => ({ ...source })),
+  }));
   const sizeProblem = sizeScopeProblem(profile, profile.size);
   if (sizeProblem) invalid("冻结档位的默认尺寸不合法：" + sizeProblem);
   return {
@@ -1436,6 +1744,16 @@ export function buildPromptRecord({ compiled, snapshot, hash } = {}) {
   if (typeof hash !== "string" || !/^[0-9a-f]{64}$/.test(hash)) {
     invalid("Prompt 记录缺少有效 hash。");
   }
+  const frozenProblems = checkFrozenReferences(snapshot.references, {
+    maxReferences: compiled.provider.max_reference_images,
+  });
+  if (frozenProblems.length) invalid(frozenProblems[0].message, { problems: frozenProblems });
+  if (compiled.basis?.compiler_rule_version !== PROMPT_COMPILER_RULE_VERSION) {
+    invalid("新 Prompt 必须由当前编译规则产生；历史原记录只能读取，不能冒充新写入。");
+  }
+  const lineage = (compiled.basis && isPlainObject(compiled.basis.rework))
+    ? compiled.basis.rework : (compiled.rework || null);
+  assertReferenceMode(snapshot.references, lineage, compiled.shot_id);
   return {
     schema_version: PROMPT_SCHEMA_VERSION,
     shot_id: compiled.shot_id,
@@ -1464,7 +1782,7 @@ export function checkPromptRecord(record) {
     pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$", "Prompt 记录必须是对象。");
     return problems;
   }
-  if (record.schema_version !== PROMPT_SCHEMA_VERSION) {
+  if (![LEGACY_PROMPT_SCHEMA_VERSION, PROMPT_SCHEMA_VERSION].includes(record.schema_version)) {
     pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.schema_version",
       "Prompt 记录版本不认识：" + String(record.schema_version));
   }
@@ -1475,6 +1793,19 @@ export function checkPromptRecord(record) {
   problems.push(...checkImagePromptProfile(record.compiled && record.compiled.provider));
   problems.push(...checkSnapshotAgainstProfile(
     record.compiled && record.compiled.provider, record.request_snapshot));
+  if (record.schema_version === PROMPT_SCHEMA_VERSION) {
+    const frozen = checkFrozenReferences(record.request_snapshot?.references, {
+      maxReferences: record.compiled?.provider?.max_reference_images,
+    });
+    problems.push(...frozen);
+    if (frozen.length === 0) {
+      const basis = isPlainObject(record.basis) ? record.basis : null;
+      const lineage = basis && isPlainObject(basis.rework) ? basis.rework
+        : (isPlainObject(record.compiled) && isPlainObject(record.compiled.rework)
+          ? record.compiled.rework : null);
+      problems.push(...referenceModeProblems(record.request_snapshot.references, lineage, record.shot_id));
+    }
+  }
   if (!isPlainObject(record.request_snapshot)
       || record.request_snapshot.prompt !== (record.compiled && record.compiled.text)) {
     pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.request_snapshot",
@@ -1556,13 +1887,38 @@ export function checkEditText(text, options = {}) {
   return problems;
 }
 
+/** 图中文案的规范文本：测量条目只按绑定重算（唯一构造在 specs.js），其余取存储原文。
+ * 绑定非法或重算失败时退回存储原文（该条目由 imageTextProblems 报告，本处不抛错）。
+ * @param {unknown} item
+ * @returns {string}
+ */
+function canonicalImageTextOf(item) {
+  if (!isPlainObject(item)) return "";
+  if (isPlainObject(item.measurement)) {
+    try {
+      return String(formatMeasurementText(item.measurement, { includeSource: true }) || "").trim();
+    } catch (error) {
+      return isNonEmptyString(item.text) ? String(item.text).trim() : "";
+    }
+  }
+  if (isPlainObject(item.measurement_source)) {
+    const kind = item.measurement_source.source_kind;
+    return isNonEmptyString(kind) && isNonEmptyString(MEASUREMENT_SOURCE_LABEL[kind])
+      ? MEASUREMENT_SOURCE_LABEL[kind] : "";
+  }
+  return isNonEmptyString(item.text) ? String(item.text).trim() : "";
+}
+
 /**
  * 人工编辑规则：只有语言策略降级为提示；未授权引用与平台文字白名单仍然阻断。
- * 被编辑文本里已经存在的引用视为已授权（编译器产物或用户输入的产物），新增引用必须来自已确认事实。
- * @param {{text?: unknown, base?: unknown, brief?: unknown, platform?: unknown}} [args]
+ * 被编辑文本里已经存在的引用视为已授权（编译器产物或用户输入的产物），新增引用必须来自
+ * 已确认事实值，或本图当前已确认且通过复核的图中文案（shotSpec 给出时）。
+ * 返工派生的版本另认一份冻结授权：`base.basis.rework` 带明确当前模式时，血缘里的原问题标签
+ * 与原改进方向是操作指令引用，逐字相等即放行；这不放宽旧全文、旧事实或无模式历史。
+ * @param {{text?: unknown, base?: unknown, brief?: unknown, platform?: unknown, shotSpec?: unknown}} [args]
  * @returns {{problems: import("./type-contracts.js").DomainProblem[], warnings: import("./type-contracts.js").PromptWarning[]}}
  */
-export function checkManualEditRules({ text, base, brief, platform = null } = {}) {
+export function checkManualEditRules({ text, base, brief, platform = null, shotSpec = null } = {}) {
   const problems = [];
   const warnings = [];
   const baseText = (base && base.compiled && base.compiled.text) || "";
@@ -1577,17 +1933,54 @@ export function checkManualEditRules({ text, base, brief, platform = null } = {}
   const registry = currentRegistry
     || (base && base.compiled && base.compiled.platform
       ? PLATFORM_PROFILES[base.compiled.platform.platform_id] || null : null);
-  const backgroundPhrase = registry ? normalizePhrase(registry.main_image.background_phrase) : "";
+  // 平台背景短语是系统文本自带的表达，永远授权。它在正文里以「纯白无缝背景「RGB(255,255,255)」」
+  // 这类形态出现：整句与句中内层引用都会命中引用正则，逐个形态都要认，不能只比整句。
+  const backgroundPhrases = new Set();
+  if (registry) {
+    const backgroundText = String(registry.main_image.background_phrase);
+    const forms = [backgroundText].concat((backgroundText.match(QUOTE_PATTERN) || []).map((quote) => trimQuotes(quote)));
+    for (const form of forms) {
+      const phrase = normalizePhrase(form);
+      if (phrase !== "") backgroundPhrases.add(phrase);
+    }
+  }
   const roleId = (base && base.role_id) || null;
   const textAllowed = registry ? registry.on_image_text_roles.includes(roleId) : true;
   const confirmed = new Set();
   for (const fact of (brief && Array.isArray(brief.confirmed_facts) ? brief.confirmed_facts : [])) {
     for (const value of factTexts(fact)) confirmed.add(normalizePhrase(value));
   }
+  // 本图当前已确认且通过复核的图中文案（含测量重算文本）同样可作为「」引用来源；
+  // 未确认、来源变动或复核不过的条目不放行。
+  const imageTexts = new Set();
+  for (const item of (isPlainObject(shotSpec) && Array.isArray(shotSpec.on_image_texts)
+    ? shotSpec.on_image_texts : [])) {
+    if (!isPlainObject(item) || item.status !== "confirmed") continue;
+    if (imageTextProblems(item, { brief, shotSpec }).length > 0) continue;
+    const canonical = canonicalImageTextOf(item);
+    if (isNonEmptyString(canonical)) imageTexts.add(normalizePhrase(canonical));
+  }
+  // 返工操作指令的引用来源（#9 真实前置修复）：记录带着**明确当前模式**的冻结返工血缘时，
+  // 血缘里的原问题标签与原改进方向是允许出现的指令「」引用——它们不是商品事实、也不同于新增
+  // 印字，不能被当成「新引用未确认」拒绝。只认血缘里已有的逐字文本：不泛化接受旧全文、
+  // 旧事实，无 mode 的历史记录不授权；其它新引用仍走原有确认门。
+  const lineage = isPlainObject(base) && isPlainObject(base.basis) && isPlainObject(base.basis.rework)
+    ? base.basis.rework : null;
+  const reworkQuotes = new Set();
+  if (lineage && (lineage.mode === "edit_candidate" || lineage.mode === "regenerate_original")) {
+    const labels = (Array.isArray(lineage.problems) ? lineage.problems : [])
+      .filter((id) => isNonEmptyString(id)).map((id) => reworkProblemLabel(id));
+    for (const label of labels) reworkQuotes.add(normalizePhrase(label));
+    // 编译器的返工段把多个分类并成一条逐字引用（「商品失真、构图」），并成形也要同样授权。
+    if (labels.length > 0) reworkQuotes.add(normalizePhrase(labels.join("、")));
+    if (isNonEmptyString(lineage.direction)) reworkQuotes.add(normalizePhrase(lineage.direction));
+  }
   for (const quote of String(text == null ? "" : text).match(QUOTE_PATTERN) || []) {
     const phrase = normalizePhrase(trimQuotes(quote));
-    if (phrase === backgroundPhrase || allowedQuotes.has(phrase)) continue;
-    if (confirmed.has(phrase)) {
+    if (backgroundPhrases.has(phrase) || allowedQuotes.has(phrase)) continue;
+    // 返工指令逐字引用：是操作指令，不算新增印字，也不触发平台文字白名单。
+    if (reworkQuotes.has(phrase)) continue;
+    if (confirmed.has(phrase) || imageTexts.has(phrase)) {
       if (!textAllowed) {
         problems.push({
           code: DOMAIN_ERROR_CODES.CONTRACT_INVALID, path: "$.text",
@@ -1600,7 +1993,8 @@ export function checkManualEditRules({ text, base, brief, platform = null } = {}
     problems.push({
       code: DOMAIN_ERROR_CODES.CONTRACT_INVALID, path: "$.text",
       reason_code: MANUAL_EDIT_REASON_CODES.UNKNOWN_QUOTE,
-      message: "新引用不是任何已确认事实值：" + quote + "；先到「商品理解」确认它，或改成不引用的表述。",
+      message: "新引用不是任何已确认事实值或本图已确认的图中文案：" + quote
+        + "；先到「商品理解」或图中文案处确认它，或改成不引用的表述。",
     });
   }
   for (const problem of checkPromptLanguage([{
@@ -1615,10 +2009,11 @@ export function checkManualEditRules({ text, base, brief, platform = null } = {}
 /** 人工编辑版本：全文直接生效，hash 覆盖真实请求快照；目标身份取调用方给的当前冻结档（不静默沿用旧依据）。
  * 调用方不给 basis 时退化为逐字继承被编辑版本的旧依据（旧行为）；给出当前 basis 时 compiled.provider /
  * platform/language 必须与当前一致，否则确认单按 PROVIDER_MISMATCH/PLATFORM_MISMATCH 拒绝。人工文本逐字保留，不重排版。
- * @param {{base?: unknown, baseVersion?: unknown, text?: unknown, reason?: unknown, editedAt?: unknown, context?: unknown, digest?: unknown, basis?: unknown}} [args]
+ * @param {{base?: unknown, baseVersion?: unknown, text?: unknown, reason?: unknown, editedAt?: unknown, context?: unknown, digest?: unknown, basis?: unknown, references?: unknown, currentCompiled?: unknown}} [args]
  * @returns {Promise<import("./type-contracts.js").PromptRecord>}
  */
-export async function buildEditedPromptRecord({ base, baseVersion, text, reason, editedAt, context, digest, basis = null } = {}) {
+export async function buildEditedPromptRecord({ base, baseVersion, text, reason, editedAt, context, digest, basis = null,
+                                                references = null, currentCompiled = null } = {}) {
   const baseProblems = checkPromptRecord(base);
   if (baseProblems.length > 0) {
     invalid("被编辑的 Prompt 记录不合法：" + baseProblems[0].message, { problems: baseProblems.slice(0, 3) });
@@ -1653,7 +2048,14 @@ export async function buildEditedPromptRecord({ base, baseVersion, text, reason,
   if (leaks.length > 0) {
     invalid("人工编辑未通过：" + leaks[0].message, { problems: leaks.slice(0, 3) });
   }
-  const rules = checkManualEditRules({ text: text, base: base, brief: (context || {}).brief });
+  // 引用授权基准：调用方给出当前编译产物时按「现行表达」判（只保留当前事实/文案/现行系统文本
+  // 仍逐字支持的引用，已失据的旧引用不随新版本进入；与 reconfirm 同一口径）；否则沿用被编辑版本旧文本。
+  // 编译产物是文本形状（text 在顶层），规则基准要的是记录形状（compiled.text / role_id）：
+  // 合并成记录基准——现行文本与平台取当前编译，被编辑身份仍取 base，不能把编译产物直接当记录。
+  const ruleBase = isPlainObject(currentCompiled) && isNonEmptyString(currentCompiled.text)
+    ? { ...base, compiled: currentCompiled } : null;
+  const rules = checkManualEditRules({ text: text, base: ruleBase || base, brief: (context || {}).brief,
+    shotSpec: (context || {}).shotSpec });
   if (rules.problems.length > 0) {
     invalid("人工编辑未通过：" + rules.problems[0].message, {
       problems: rules.problems.slice(0, 3),
@@ -1693,8 +2095,10 @@ export async function buildEditedPromptRecord({ base, baseVersion, text, reason,
   if (problems.length > 0) {
     invalid("人工编辑记录自检未通过：" + problems[0].message, { problems: problems.slice(0, 3) });
   }
+  const frozenReferences = Array.isArray(references)
+    ? references : ((base.request_snapshot && base.request_snapshot.references) || []);
   const snapshot = requestSnapshotOf(compiled, {
-    references: (base.request_snapshot && base.request_snapshot.references) || [],
+    references: frozenReferences,
   });
   const hash = await promptHash(snapshot, { digest: digest });
   const record = {
@@ -1772,11 +2176,13 @@ export async function reconfirmEditedPrompt({ base, baseVersion, reason, at, bas
   // 支撑，否则显式重新确认等于给已失效断言盖新时间戳。调用方给出当前编译产物
   // （currentCompiled）时，用它做规则基准：旧文本里已有、但当前编译/当前事实里都不再逐字
   // 出现的引用视为过期断言，直接拒绝，不自动改写人工文本。edited_from 仍保留原始人工记录。
+  // 同样按记录形状合并：现行文本/平台取当前编译，被编辑身份仍取 base。
   const ruleBase = isPlainObject(currentCompiled) && isNonEmptyString(currentCompiled.text)
-    ? currentCompiled : null;
+    ? { ...base, compiled: currentCompiled } : null;
   const currentRegistry = (isPlainObject(basis.platform) && isNonEmptyString(basis.platform.platform_id)
     ? PLATFORM_PROFILES[basis.platform.platform_id] || null : null);
   const rules = checkManualEditRules({ text: text, base: ruleBase || base, brief: (context || {}).brief,
+    shotSpec: (context || {}).shotSpec,
     platform: currentRegistry || basis.platform });
   if (rules.problems.length > 0) {
     invalid("重新确认未通过：" + rules.problems[0].message, {
@@ -1944,9 +2350,42 @@ export function promptStaleness(record, current = {}) {
         reason: "这张图自己的定义已变化" });
     }
   }
-  const versionKeys = useSignature
-    ? ["style_version", "shot_spec_version"]
-    : ["suite_version", "style_version", "shot_spec_version"];
+  // 编译器规则版本：调用方给出当前版本时，记录必须冻结同一版本；历史记录缺少冻结版本即待准备。
+  if (Object.prototype.hasOwnProperty.call(current, "compiler_rule_version")) {
+    const storedRule = Number.isInteger(basis.compiler_rule_version) ? basis.compiler_rule_version : null;
+    const nowRule = Number.isInteger(current.compiler_rule_version) ? current.compiler_rule_version : null;
+    if (storedRule !== nowRule) {
+      reasons.push({ field: "compiler_rule_version", stored: storedRule, current: nowRule,
+        reason: "编译器规则版本不同；系统稿需按当前规则准备，人工全文由人确认。" });
+    }
+  }
+  // 商品资料版本：冻结引用里嵌了它（sources[].version），提交门按完整元数据全等比较。
+  // 确认单必须用同一条判据，否则会出现「确认单说可提交 → 提交被拒」的分裂（真实缺陷）。
+  if (Object.prototype.hasOwnProperty.call(current, "intake_version")) {
+    const storedIntake = Number.isInteger(basis.intake_version) ? basis.intake_version : null;
+    const nowIntake = Number.isInteger(current.intake_version) ? current.intake_version : null;
+    if (storedIntake !== nowIntake) {
+      reasons.push({ field: "intake_version", stored: storedIntake, current: nowIntake,
+        reason: storedIntake === null
+          ? "记录没有冻结商品资料版本；系统稿需按当前商品资料重新准备。"
+          : "商品资料版本已前进；系统稿需按当前商品资料重新准备并确认。" });
+    }
+  }
+  // 共用风格：记录冻结了本图消费的风格签名且调用方也能给出时按签名比较——只被单图覆盖的
+  // 共用字段变化不使本图过期；否则退回 style_version 版本比较。
+  const useStyleSignature = isNonEmptyString(basis.style_signature)
+    && Object.prototype.hasOwnProperty.call(current, "style_signature");
+  if (useStyleSignature) {
+    const nowStyle = current.style_signature === undefined ? null : current.style_signature;
+    if (basis.style_signature !== nowStyle) {
+      reasons.push({ field: "style_signature", stored: "signed", current: nowStyle ? "signed" : null,
+        reason: "本图消费的共用风格已变化" });
+    }
+  }
+  const versionKeys = [];
+  if (!useSignature) versionKeys.push("suite_version");
+  if (!useStyleSignature) versionKeys.push("style_version");
+  versionKeys.push("shot_spec_version");
   for (const key of versionKeys) {
     const stored = basis[key] === undefined ? null : basis[key];
     const now = current[key] === undefined ? null : current[key];

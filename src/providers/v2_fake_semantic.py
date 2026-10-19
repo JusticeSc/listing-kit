@@ -82,14 +82,15 @@ class FakeSemanticProvider:
 
     def capabilities(self) -> dict[str, Any]:
         """测试替身能力声明；与 config/product-v2/providers.json 的 fake-semantic 条目一致。"""
-        from src.providers.v2_semantic import ANALYZE_BASE_FIELDS
+        from src.providers.v2_semantic import ANALYZE_COPY_FIELDS
         return {
             "provider_id": self.provider_id,
             "model_id": self.model_id,
             "reference_images": False,
             "supports_images": False,
             "vision": False,
-            "analyze_fields": list(ANALYZE_BASE_FIELDS),
+            "analyze_fields": list(ANALYZE_COPY_FIELDS),
+            "copy_proposals": True,
             "structured_output": "local",
             "stateless": True,
             "test_double": True,
@@ -121,7 +122,8 @@ class FakeSemanticProvider:
         existing_values = existing_values if existing_values is not None else self.existing_values
         category_hint = category_hint if category_hint is not None else self.category_hint
         self.calls.append({"scenario": scenario, "product_name": request.product_name,
-                           "vision_images": len(images) if images else 0})
+                           "vision_images": len(images) if images else 0,
+                           "copy_targets": [target.slot_id for target in request.copy_targets]})
         if scenario not in FAKE_SCENARIOS:
             raise invalid_response(f"未知假场景 {scenario!r}。",
                                    details={"allowed": list(FAKE_SCENARIOS)})
@@ -150,6 +152,26 @@ class FakeSemanticProvider:
             raise classify_http_failure(401, "InvalidApiKey", "假 Provider：鉴权失败。")
         if scenario == "internal_error":
             raise internal_failure("假 Provider：内部错误。")
+
+        if request.copy_targets:
+            copies = [{
+                "text": "FAKE " + target.slot_id.upper().replace("_", " ")[:54],
+                "source_slot_id": target.slot_id,
+                "source_slot_version": target.version,
+            } for target in request.copy_targets]
+            return SemanticProposal(
+                slots=(),
+                questions=(),
+                summary="假 Provider 文案提议：仅用于契约测试与界面开发。",
+                provider_id=FAKE_PROVIDER_ID,
+                model_id=FAKE_MODEL_ID,
+                request_id="fake-" + str(len(self.calls)),
+                usage={"prompt_tokens": 0, "completion_tokens": 0},
+                latency_ms=self.latency_ms,
+                inputs_used=("confirmed_slots",),
+                reference_images_sent=False,
+                copy_proposals=tuple(copies),
+            )
 
         confidence = 0.35 if scenario == "low_confidence" else 0.9
         confirmed = dict(existing_values or {})

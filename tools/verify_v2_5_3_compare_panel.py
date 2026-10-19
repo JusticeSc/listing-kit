@@ -87,7 +87,10 @@ async ({ projectId, shotId, pngBase64, actionId, taskId }) => {
       prompt: promptHead
         ? { version: promptHead.version, hash: promptHead.payload.hash }
         : { version: 1, hash: "a".repeat(64) },
-      references: [{ role: "primary", sha256: "b".repeat(64) }],
+      // schema 3：引用带完整冻结元数据（身份+用途+来源，§13.8 一次切换）。
+      references: [{ role: "primary", sha256: "b".repeat(64), uses: ["product_truth"],
+        sources: [{ kind: "product_input", document_id: "intake", version: 1,
+                    asset_sha256: "b".repeat(64) }] }],
       provider: { provider_id: "dashscope-qwen-image", model_id: "qwen-image-3.0" },
       parameters: { size: "1344*1344", n: 1, prompt_extend: false, watermark: false },
       executionIdentity: { protocol: "v2.4.1", capabilityVersion: 2, credentialSource: "default" },

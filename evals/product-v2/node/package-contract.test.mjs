@@ -107,7 +107,6 @@ test("Z03", "能读别的工具用 deflate 压缩的 ZIP", async () => {
            crc_failure: crcFailure.message };
 });
 
-/* ---------- 项目包 ---------- */
 
 
 /* Node 原生运行器：与原浏览器版同一批 cases，断言不改写。 */

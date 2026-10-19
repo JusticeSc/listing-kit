@@ -129,6 +129,8 @@ jobs:
           uv run python tools/verify_v2_3_4_prompt_compiler.py
           uv run python tools/verify_v2_3_5_pre_generation_confirm.py
           uv run python tools/verify_v2_3_6_prompt_manual_edit.py
+          uv run python tools/verify_v2_3_7_copy_adoption_chain.py
+          uv run python tools/verify_v2_3_8_spec_save_occ.py
           uv run --locked python -m pytest tests/gateway tests/dev -q
           uv run python tools/verify_v2_4_2_generation_attempt.py
           uv run python tools/verify_v2_4_3_batch_execution.py

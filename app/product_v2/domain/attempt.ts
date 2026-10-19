@@ -19,6 +19,7 @@
  import {
    DOMAIN_DOCUMENT_KINDS,
    SLOT_ID_PATTERN,
+   canonicalJson,
    checkSchemaVersion,
    isIsoTimestamp,
    isNonEmptyString,
@@ -27,7 +28,7 @@
    pushProblem,
  } from "./shared.js";
  import { REFERENCE_ROLES } from "./intake.js";
- import { canonicalJson } from "./prompt.js";
+ import { checkFrozenReferences } from "./frozen-reference.js";
  import type {
    AttemptCurrentEnvironmentIdentity,
    AttemptError,
@@ -39,7 +40,9 @@
    ImageWireTask,
  } from "./type-contracts.js";
 
-export const ATTEMPT_SCHEMA_VERSION = 2;
+export const ATTEMPT_SCHEMA_VERSION = 3;
+/** schema ≤2 旧 Attempt 仍可读核对（§13.8 一次切换）；在途旧任务按原身份观察，不迁移改写。 */
+export const ATTEMPT_SCHEMA_VERSION_LEGACY_MAX = 2;
 export const ATTEMPT_DOCUMENT_KIND = DOMAIN_DOCUMENT_KINDS.generation_attempt;
 export const ATTEMPT_ACTION_ID_PATTERN = /^[A-Za-z0-9._:-]{8,64}$/;
 export const ATTEMPT_TASK_ID_PATTERN = /^[A-Za-z0-9._:-]{1,256}$/;
@@ -254,6 +257,9 @@ export function checkAttemptRecord(record: unknown): DomainProblem[] {
       "参考图必须是 1.." + MAX_ATTEMPT_REFERENCES + " 项。");
   } else {
     const items: unknown[] = references;
+    const recordedVersion = record.schema_version;
+    const legacy = typeof recordedVersion === "number"
+      && recordedVersion <= ATTEMPT_SCHEMA_VERSION_LEGACY_MAX;
     items.forEach((item, index) => {
       const path = "$.references[" + index + "]";
       if (!isPlainObject(item)) {
@@ -269,6 +275,13 @@ export function checkAttemptRecord(record: unknown): DomainProblem[] {
           "参考图 sha256 不合法。");
       }
     });
+    // schema 3 消费新冻结请求：保存完整冻结元数据（用途/来源与实际字节一致），
+    // 不再降采样成 {role, sha256}；schema ≤2 旧记录保留原身份形状，只读核对。
+    if (!legacy) {
+      for (const problem of checkFrozenReferences(references)) {
+        pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, problem.path, problem.message);
+      }
+    }
   }
   const provider = record.provider;
   if (!isPlainObject(provider) || !isNonEmptyString(provider.provider_id)
@@ -445,13 +458,32 @@ export type AttemptBuildInput = {
  * 执行身份（execution_identity）必须在创建时冻结：换设置后仍按原身份核对，创建时刻之后的
  * 任何环境变化都不回写这条记录。
  */
+/**
+ * Attempt schema 3 的引用投影：保留完整冻结元数据（身份+用途+来源）；
+ * 历史简单引用（无 uses/sources）只保留身份，不补造。来源对象原样浅拷贝。
+ * @param {unknown} item 冻结引用选择项
+ * @returns {unknown}
+ */
+function attemptReferenceOf(item: unknown): unknown {
+  if (!isPlainObject(item)) return item;
+  const base = { role: item.role, sha256: item.sha256 };
+  if (!Array.isArray(item.uses) || !Array.isArray(item.sources)) return base;
+  return {
+    ...base,
+    uses: [...item.uses],
+    sources: item.sources.map((source) => (isPlainObject(source) ? { ...source } : source)),
+  };
+}
+
 export function buildAttemptRecord({
   actionId, shotId, prompt, references, provider, parameters, executionIdentity = null,
   authorization = null, taskId = null, requestId = null, error = null, at,
   note = "用户显式发起生成",
 }: AttemptBuildInput = {}): AttemptRecord {
+  // schema 3 消费新冻结请求：保存完整冻结元数据（用途/来源），不再降采样成 {role, sha256}；
+  // 旧形状（历史简单引用）原样保留身份字段，由 checkAttemptRecord 按记录版本分支核对。
   const referencesList = Array.isArray(references)
-    ? references.map((item) => ({ role: item && item.role, sha256: item && item.sha256 }))
+    ? references.map(attemptReferenceOf)
     : references;
   const identity = isPlainObject(executionIdentity)
     ? {
@@ -577,7 +609,10 @@ function isExecutionIdentity(value: unknown): value is AttemptExecutionIdentity 
 /** 读取记录上的冻结执行身份块；历史记录（schema_version < 2）返回 null，不做 legacy 补造。 */
 export function attemptExecutionIdentityOf(record: unknown): AttemptExecutionIdentity | null {
   if (!isPlainObject(record)) return null;
-  if (record.schema_version !== ATTEMPT_SCHEMA_VERSION) return null;
+  // §13.8 一次切换：schema 2 起记录带冻结执行身份；schema 3 只换引用形状，
+  // 身份块不变。在途旧任务（schema 2）恢复时仍按原模型/protocol/目标核对，不改写历史。
+  const version = record.schema_version;
+  if (typeof version !== "number" || version < 2) return null;
   return isExecutionIdentity(record.execution_identity) ? record.execution_identity : null;
 }
 
