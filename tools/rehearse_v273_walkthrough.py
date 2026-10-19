@@ -11,7 +11,8 @@
 逐图采用、整套检查跳转、导出与独立解包），不在这里另写一套选择器。
 
 判据以「用户看得见的东西」为准：VLM 复核等状态读主行文本/行属性（库只作辅助核对），
-整套检查入口必须真的存在并聚焦、390px 无横向溢出、交付包 manifest 声明与解包字节逐条
+整套检查入口必须真的存在并聚焦、390px 与 125%/200% 实际缩放无横向溢出、200% 下键盘
+可达导出、交付包 manifest 声明与解包字节逐条
 相等，返工后显式选新候选再采用、并核对交付包里的确是那张候选。
 
 运行：uv run --locked python tools/rehearse_v273_walkthrough.py --label lamp
@@ -20,9 +21,11 @@
 from __future__ import annotations
 
 import argparse
+import base64
 import importlib.util
 import json
 import re
+import struct
 import sys
 import time
 from datetime import datetime
@@ -465,7 +468,184 @@ def main() -> int:
                 if overflow:
                     # 只记录不断言的话，这个探针就会在真溢出时也绿着过去。
                     raise AssertionError("390px 出现横向溢出：" + repr(overflow))
+                # 先把窗口恢复成 1440×900，否则缩放覆盖会被 390 宽的窗口钳住（实测 390 宽）。
                 page.set_viewport_size({"width": 1440, "height": 900})
+
+                # 实际浏览器缩放（125%/200%）：合同要求「实际缩放」，只缩 viewport 不算 zoom。
+                # 用 CDP deviceScaleFactor 让 CSS 视口 = 物理 1440×900 ÷ 倍数，截图的物理宽度
+                # 必须仍是 1440 —— 那才证明是缩放而不是换了个更窄的窗口。
+                zoom_session = context.new_cdp_session(page)
+
+                def apply_zoom(factor: float) -> dict:
+                    zoom_session.send("Emulation.setDeviceMetricsOverride", {
+                        "width": round(1440 / factor), "height": round(900 / factor),
+                        "deviceScaleFactor": factor, "mobile": False,
+                        "screenWidth": 1440, "screenHeight": 900})
+                    page.wait_for_timeout(350)
+                    return page.evaluate(
+                        "() => ({inner_width: innerWidth, inner_height: innerHeight,"
+                        " dpr: devicePixelRatio})")
+
+                def focus_probe() -> dict:
+                    # 与 V2.6.4 同一「焦点可见」定义：轮廓或 box-shadow 任一存在。
+                    return page.evaluate("""() => {
+                      const el = document.activeElement;
+                      if (!el || el === document.body) return {id: "", visible: false};
+                      const rect = el.getBoundingClientRect();
+                      const style = getComputedStyle(el);
+                      const cx = rect.left + rect.width / 2;
+                      const cy = rect.top + rect.height / 2;
+                      const hit = document.elementFromPoint(cx, cy);
+                      return {id: el.id || el.tagName,
+                              visible: rect.width > 0 && rect.height > 0,
+                              outline: (style.outlineStyle !== "none"
+                                        && style.outlineWidth !== "0px")
+                                || style.boxShadow !== "none",
+                              in_view: rect.top >= -1 && rect.left >= -1
+                                && rect.bottom <= innerHeight + 1 && rect.right <= innerWidth + 1,
+                              hit_self: !!hit && (hit === el || el.contains(hit))};
+                    }""")
+
+                def png_width(raw: bytes) -> int:
+                    return struct.unpack(">I", raw[16:20])[0]
+
+                def cdp_screenshot() -> bytes:
+                    # Playwright 的 page.screenshot() 会按 context viewport 重设 emulation，
+                    # 把我们的缩放覆盖清掉（实测：截图后 documentElement.clientWidth 回到 1440）。
+                    # 直接走 CDP 截屏，保住缩放后再读布局数字。
+                    data = zoom_session.send("Page.captureScreenshot", {"format": "png"})
+                    return base64.b64decode(data["data"])
+
+                def snap_zoom(node: str) -> None:
+                    name = f"v273-rehearsal-{stamp}-{node}.png"
+                    (IMG / name).write_bytes(cdp_screenshot())
+                    shots.append(name)
+
+                zoom_evidence: dict[str, object] = {}
+                for factor in (1.25, 2.0):
+                    metrics = apply_zoom(factor)
+                    if abs(float(metrics.get("dpr") or 0) - factor) > 1e-6:
+                        raise AssertionError(f"{factor} 倍缩放没有生效：{metrics}")
+                    physical = png_width(cdp_screenshot())
+                    if physical != 1440:
+                        raise AssertionError(
+                            f"{factor} 倍缩放的物理宽度是 {physical}，不是 1440：这不是缩放")
+                    per_stage: dict[str, object] = {}
+                    for stage in ("intake", "plan", "make", "deliver"):
+                        stage_nav.goto(page, stage)
+                        page.wait_for_timeout(400)
+                        live = page.evaluate(
+                            "() => ({dpr: devicePixelRatio, w: innerWidth})")
+                        if abs(float(live.get("dpr") or 0) - factor) > 1e-6:
+                            raise AssertionError(
+                                f"{int(factor * 100)}% 缩放在 {stage} 被重置：{live}")
+                        stage_overflow = page.evaluate(shared.OVERFLOW_PROBE)
+                        per_stage[stage] = {"overflow": stage_overflow, "focus": focus_probe(),
+                                            "metrics": live}
+                        snap_zoom(f"{stage}-zoom{int(round(factor * 100))}")
+                        if (stage_overflow.get("scroll") or 0) > (stage_overflow.get("client") or 0):
+                            raise AssertionError(
+                                f"{int(factor * 100)}% 缩放在 {stage} 出现横向溢出："
+                                + repr(stage_overflow))
+                    # 交付门禁的逐图行带 data-selection-state；面板里的静态说明句也含「已采用」，
+                    # 用文本匹配会恒真（独立复核指出的空转判据），所以按行状态与行宽度判。
+                    gate_rows = page.evaluate("""() => [...document.querySelectorAll(
+                        '[data-stage-panel="deliver"] .gate-row')].map((row) => {
+                          const rect = row.getBoundingClientRect();
+                          return { shot: row.getAttribute('data-shot-id'),
+                                   state: row.getAttribute('data-selection-state'),
+                                   in_width: rect.left >= -1 && rect.right <= innerWidth + 1 };
+                        })""")
+                    not_adopted = [row for row in gate_rows
+                                   if row.get("state") != "current"]
+                    clipped = [row for row in gate_rows if not row.get("in_width")]
+                    zoom_evidence[f"{factor}"] = {
+                        "metrics": metrics, "physical_width": physical, "stages": per_stage,
+                        "gate_rows": gate_rows}
+                    if not gate_rows or not_adopted:
+                        raise AssertionError(
+                            f"{int(factor * 100)}% 缩放下交付门禁没有全部处于已采用："
+                            + repr(not_adopted or "没有门禁行"))
+                    if clipped:
+                        raise AssertionError(
+                            f"{int(factor * 100)}% 缩放下门禁行被横向裁掉：" + repr(clipped))
+
+                # 200% 缩放下用键盘走到交付导出：Tab 全程可达、焦点可见不被遮挡，Enter 真下载。
+                # 从文档头开始走：<body> 本身不可聚焦，直接 body.focus() 是空操作，
+                # 焦点会沿用上一个点击（导航按钮），那样「全程可达」只证明了相邻控件可达。
+                page.evaluate("""() => { document.body.setAttribute('tabindex', '-1');
+                                         document.body.focus(); }""")
+                if page.evaluate("() => document.activeElement === document.body") is not True:
+                    raise AssertionError("无法把键盘起点重置到文档头")
+                key_path: list[dict] = []
+                reached = False
+                for _ in range(160):
+                    page.keyboard.press("Tab")
+                    focus = focus_probe()
+                    if not focus.get("id"):
+                        # Tab 走到文档末尾会掉回 body：这本身就是没到达导出。
+                        break
+                    key_path.append(focus)
+                    if focus.get("id") == "deliver-export":
+                        reached = True
+                        break
+                if not reached:
+                    raise AssertionError(
+                        "200% 缩放下从文档头 Tab 到不了交付导出（" + str(len(key_path)) + " 步）："
+                        + repr([item.get("id") for item in key_path][:40]))
+                if len(key_path) < 6:
+                    raise AssertionError(
+                        "键盘路径过短，像没从文档头开始：" + repr([item.get("id") for item in key_path]))
+                blocked = [item for item in key_path
+                           if not item.get("visible") or not item.get("outline")]
+                last_focus = key_path[-1]
+                if blocked:
+                    raise AssertionError(
+                        "键盘路径上存在不可见或无轮廓的焦点：" + repr(blocked[:6]))
+                if not last_focus.get("in_view") or not last_focus.get("hit_self"):
+                    raise AssertionError("导出按钮获得焦点后被遮挡：" + repr(last_focus))
+                export_key_path = export_dir / f"{stamp}-{args.label}-keyboard.zip"
+                with page.expect_download(timeout=120_000) as keyboard_download:
+                    page.keyboard.press("Enter")
+                saved = keyboard_download.value
+                saved.save_as(str(export_key_path))
+                keyboard_zip = shared.inspect_zip(export_key_path)
+                if keyboard_zip["broken"] is not None:
+                    raise AssertionError("键盘导出的交付包有损坏条目："
+                                         + repr(keyboard_zip["broken"]))
+                key_mismatch = {
+                    name: info for name, info in keyboard_zip["digests"].items()
+                    if info["sha256"] != info["declared"]
+                    or (info["declared_size"] is not None
+                        and info["byte_size"] != info["declared_size"])}
+                if key_mismatch:
+                    raise AssertionError("键盘导出的 manifest 声明与实际字节不一致："
+                                         + repr(key_mismatch))
+                # 不只是数一数：逐图身份（文件名 + sha + 字节数）必须与鼠标导出完全相同。
+                def digest_map(source: dict) -> dict:
+                    return {name: [info["sha256"], info["byte_size"]]
+                            for name, info in source.items()}
+                if digest_map(keyboard_zip["digests"]) != digest_map(
+                        probes["export"]["digests"]):
+                    raise AssertionError(
+                        "键盘导出的包与鼠标导出的采用集不一致："
+                        + repr(sorted(digest_map(keyboard_zip["digests"]).items())
+                               ^ sorted(digest_map(probes["export"]["digests"]).items())))
+                zoom_evidence["keyboard"] = {
+                    "steps": len(key_path),
+                    "focus_ids_tail": [item.get("id") for item in key_path][-6:],
+                    "final_focus": last_focus,
+                    "file_name": saved.suggested_filename,
+                    "bytes": export_key_path.stat().st_size,
+                    "has_manifest": "manifest.json" in keyboard_zip["names"],
+                    "saved_to": str(export_key_path.relative_to(ROOT))}
+                probes["zoom_and_keyboard"] = zoom_evidence
+                zoom_session.send("Emulation.clearDeviceMetricsOverride")
+                page.wait_for_timeout(300)
+                page.set_viewport_size({"width": 1440, "height": 900})
+                restored = page.evaluate("() => ({dpr: devicePixelRatio, w: innerWidth})")
+                if abs(float(restored.get("dpr") or 0) - 1.0) > 1e-6 or restored.get("w") != 1440:
+                    raise AssertionError("缩放没有恢复到 100%：" + repr(restored))
                 probes["console_errors"] = logs["console"]
                 probes["page_errors"] = logs["page"]
                 probes["http_errors"] = [item for item in logs["http"] if "/favicon.ico" not in item]
@@ -496,7 +676,8 @@ def main() -> int:
         f"- 商品/参考图：{args.product_name}（非内置品类）· {reference.name}",
         "- 剧本（四段工作台）：新建项目 → 资料与事实（上传/填写/分析/逐条确认）→ 方案（推荐套图）→",
         "  制作与审图（默认单张范围 → 显式全量批量 → 一次明确提交 → 单图 VLM 复核 →",
-        "  单图返工 → 返工图显式选新候选后逐图采用）→ 交付（整套检查 → 导出 ZIP）→ 390px 四阶段复核",
+        "  单图返工 → 返工图显式选新候选后逐图采用）→ 交付（整套检查 → 导出 ZIP）→ 390px 四阶段复核 →",
+        "  实际 125%/200% 缩放（CDP deviceScaleFactor，物理宽仍 1440）与 200% 下键盘导出",
         "",
         "## 节点耗时",
         "",
@@ -529,6 +710,13 @@ def main() -> int:
           + "；整套检查=" + str(probes.get("suite_status_text"))[:40])
     print("导出=" + str(export.get("file_name")) + " bytes=" + str(export.get("bytes"))
           + " manifest=" + str(export.get("has_manifest")))
+    zoom = probes.get("zoom_and_keyboard") or {}
+    keyboard = zoom.get("keyboard") or {}
+    print("缩放=" + str([round(float(key), 2) for key in zoom if key not in ("keyboard",)])
+          + " 物理宽=" + str([(zoom[key] or {}).get("physical_width")
+                              for key in zoom if key not in ("keyboard",)])
+          + "；键盘导出步数=" + str(keyboard.get("steps"))
+          + " bytes=" + str(keyboard.get("bytes")))
     return 0
 
 

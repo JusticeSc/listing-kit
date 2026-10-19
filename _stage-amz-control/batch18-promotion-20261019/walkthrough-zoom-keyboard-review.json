@@ -1,0 +1,36 @@
+{
+  "reviewer": "ZoomKeyboardReview",
+  "verdict": "1 BLOCKING + 3 MINOR, all fixed",
+  "findings": [
+    {
+      "id": "B1",
+      "issue": "deliver_has_adoption 用面板静态文案正则，恒真；失败也绿",
+      "fix": "改读 .gate-row 的 data-selection-state（必须 current）与行宽度（不被横向裁掉），无行即红",
+      "evidence": "v273-rehearsal-20261020-014125.json 两档缩放下 4 行均 current 且 in_width=true"
+    },
+    {
+      "id": "M2",
+      "issue": "document.body.focus() 是空操作，Tab 只从相邻导航继续，未证明全程可达",
+      "fix": "body 加 tabindex=-1 后聚焦重置起点；Tab 上限 160，掉回 body 视为失败；路径最短 6 步",
+      "evidence": "同一证据 keyboard.steps=10，focus_ids_tail 从文档头走到 deliver-export"
+    },
+    {
+      "id": "M3",
+      "issue": "键盘包只比数量，且未核对 manifest 声明字节",
+      "fix": "逐图 {文件名: [sha, 字节]} 与鼠标导出的完全相同，并对键盘包再跑 declared-vs-actual",
+      "evidence": "同一证据 4 张图身份全等，43,969B"
+    },
+    {
+      "id": "N4",
+      "issue": "Enter 导出超时 30s 与点击导出 120s 不一致",
+      "fix": "统一 120s"
+    }
+  ],
+  "reruns": [
+    {
+      "cmd": "uv run --locked python tools/rehearse_v273_walkthrough.py --label lamp --reference <lamp-3m.jpg>",
+      "rc": 0,
+      "evidence": "evals/product-v2/v273-rehearsal-20261020-014125.json"
+    }
+  ]
+}
