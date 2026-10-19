@@ -1,0 +1,170 @@
+Refreshing run status every 30 seconds. Press Ctrl+C to quit.
+
+* feat/complete-product-20261018 Product V2 CI and Docker CD JusticeSc/listing-kit#19 · 39270011225
+Triggered via pull_request about 13 minutes ago
+
+JOBS
+✓ Classify changed paths in 8s (ID 118119517559)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Classify changed paths
+  ✓ Post Check out repository
+  ✓ Complete job
+✓ Control plane and Product V2 in 11m35s (ID 118119603802)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Set up Python
+  ✓ Set up locked frontend tools
+  ✓ Install approved frontend checker
+  ✓ Install uv and locked dependencies
+  ✓ Check control plane
+  ✓ Check frontend versions types and direct behavior
+  ✓ Check formal entry and browser contracts
+  ✓ Reject verification side effects
+  ✓ Post Set up locked frontend tools
+  ✓ Post Set up Python
+  ✓ Post Check out repository
+  ✓ Complete job
+* Docker image, smoke test, and main deploy (ID 118125700292)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Set up release acceptance tooling
+  ✓ Install locked acceptance dependencies
+  - Skip container chain for docs-only PR
+  ✓ Build immutable image
+  ✓ Smoke-test container health
+  ✓ Remove smoke container
+  * Release transaction selftest (real disposable containers)
+  * Release failure classes (real script, no containers)
+  * Prepare SSH
+  * Sync provider secrets to server env file
+  * Build on remote Docker and deploy (full release transaction)
+  * Release acceptance (static assets and page main chain)
+  * Verify runtime and configuration fingerprints before cleanup
+  * Finalize release (cleanup previous only after all acceptance)
+  * Upload candidate and release fingerprints
+  * Roll back to previous known working state
+  * Post Set up release acceptance tooling
+  * Post Check out repository
+
+ANNOTATIONS
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+Classify changed paths: .github#1
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+Control plane and Product V2: .github#1
+
+Refreshing run status every 30 seconds. Press Ctrl+C to quit.
+
+* feat/complete-product-20261018 Product V2 CI and Docker CD JusticeSc/listing-kit#19 · 39270011225
+Triggered via pull_request about 13 minutes ago
+
+JOBS
+✓ Classify changed paths in 8s (ID 118119517559)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Classify changed paths
+  ✓ Post Check out repository
+  ✓ Complete job
+✓ Control plane and Product V2 in 11m35s (ID 118119603802)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Set up Python
+  ✓ Set up locked frontend tools
+  ✓ Install approved frontend checker
+  ✓ Install uv and locked dependencies
+  ✓ Check control plane
+  ✓ Check frontend versions types and direct behavior
+  ✓ Check formal entry and browser contracts
+  ✓ Reject verification side effects
+  ✓ Post Set up locked frontend tools
+  ✓ Post Set up Python
+  ✓ Post Check out repository
+  ✓ Complete job
+* Docker image, smoke test, and main deploy (ID 118125700292)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Set up release acceptance tooling
+  ✓ Install locked acceptance dependencies
+  - Skip container chain for docs-only PR
+  ✓ Build immutable image
+  ✓ Smoke-test container health
+  ✓ Remove smoke container
+  * Release transaction selftest (real disposable containers)
+  * Release failure classes (real script, no containers)
+  * Prepare SSH
+  * Sync provider secrets to server env file
+  * Build on remote Docker and deploy (full release transaction)
+  * Release acceptance (static assets and page main chain)
+  * Verify runtime and configuration fingerprints before cleanup
+  * Finalize release (cleanup previous only after all acceptance)
+  * Upload candidate and release fingerprints
+  * Roll back to previous known working state
+  * Post Set up release acceptance tooling
+  * Post Check out repository
+
+ANNOTATIONS
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+Classify changed paths: .github#1
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+Control plane and Product V2: .github#1
+
+✓ feat/complete-product-20261018 Product V2 CI and Docker CD JusticeSc/listing-kit#19 · 39270011225
+Triggered via pull_request about 14 minutes ago
+
+JOBS
+✓ Classify changed paths in 8s (ID 118119517559)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Classify changed paths
+  ✓ Post Check out repository
+  ✓ Complete job
+✓ Control plane and Product V2 in 11m35s (ID 118119603802)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Set up Python
+  ✓ Set up locked frontend tools
+  ✓ Install approved frontend checker
+  ✓ Install uv and locked dependencies
+  ✓ Check control plane
+  ✓ Check frontend versions types and direct behavior
+  ✓ Check formal entry and browser contracts
+  ✓ Reject verification side effects
+  ✓ Post Set up locked frontend tools
+  ✓ Post Set up Python
+  ✓ Post Check out repository
+  ✓ Complete job
+✓ Docker image, smoke test, and main deploy in 2m11s (ID 118125700292)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Set up release acceptance tooling
+  ✓ Install locked acceptance dependencies
+  - Skip container chain for docs-only PR
+  ✓ Build immutable image
+  ✓ Smoke-test container health
+  ✓ Remove smoke container
+  ✓ Release transaction selftest (real disposable containers)
+  ✓ Release failure classes (real script, no containers)
+  - Prepare SSH
+  - Sync provider secrets to server env file
+  - Build on remote Docker and deploy (full release transaction)
+  - Release acceptance (static assets and page main chain)
+  - Verify runtime and configuration fingerprints before cleanup
+  - Finalize release (cleanup previous only after all acceptance)
+  ✓ Upload candidate and release fingerprints
+  - Roll back to previous known working state
+  ✓ Post Set up release acceptance tooling
+  ✓ Post Check out repository
+  ✓ Complete job
+
+ANNOTATIONS
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+Classify changed paths: .github#1
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+Control plane and Product V2: .github#1
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+Docker image, smoke test, and main deploy: .github#1
+

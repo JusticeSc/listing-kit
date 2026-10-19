@@ -1,0 +1,248 @@
+{
+  "conclusion": "success",
+  "headSha": "689c6b08b8ebb937eb4af457b912d4d874ecd6ab",
+  "jobs": [
+    {
+      "completedAt": "2026-10-19T15:26:51Z",
+      "conclusion": "success",
+      "databaseId": 118146602977,
+      "name": "Classify changed paths",
+      "startedAt": "2026-10-19T15:25:39Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completedAt": "2026-10-19T15:25:40Z",
+          "conclusion": "success",
+          "name": "Set up job",
+          "number": 1,
+          "startedAt": "2026-10-19T15:25:40Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-19T15:25:46Z",
+          "conclusion": "success",
+          "name": "Check out repository",
+          "number": 2,
+          "startedAt": "2026-10-19T15:25:40Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-19T15:25:46Z",
+          "conclusion": "success",
+          "name": "Classify changed paths",
+          "number": 3,
+          "startedAt": "2026-10-19T15:25:46Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-19T15:25:46Z",
+          "conclusion": "success",
+          "name": "Post Check out repository",
+          "number": 6,
+          "startedAt": "2026-10-19T15:25:46Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-19T15:25:46Z",
+          "conclusion": "success",
+          "name": "Complete job",
+          "number": 7,
+          "startedAt": "2026-10-19T15:25:46Z",
+          "status": "completed"
+        }
+      ],
+      "url": "https://github.com/JusticeSc/listing-kit/actions/runs/39277855632/job/118146602977"
+    },
+    {
+      "completedAt": "2026-10-19T15:33:54Z",
+      "conclusion": "success",
+      "databaseId": 118147008821,
+      "name": "Docker image, smoke test, and main deploy",
+      "startedAt": "2026-10-19T15:26:53Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completedAt": "2026-10-19T15:26:55Z",
+          "conclusion": "success",
+          "name": "Set up job",
+          "number": 1,
+          "startedAt": "2026-10-19T15:26:54Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-19T15:27:01Z",
+          "conclusion": "success",
+          "name": "Check out repository",
+          "number": 2,
+          "startedAt": "2026-10-19T15:26:55Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-19T15:27:01Z",
+          "conclusion": "success",
+          "name": "Set up release acceptance tooling",
+          "number": 3,
+          "startedAt": "2026-10-19T15:27:01Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-19T15:27:38Z",
+          "conclusion": "success",
+          "name": "Install locked acceptance dependencies",
+          "number": 4,
+          "startedAt": "2026-10-19T15:27:01Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-19T15:27:38Z",
+          "conclusion": "skipped",
+          "name": "Skip container chain for docs-only PR",
+          "number": 5,
+          "startedAt": "2026-10-19T15:27:38Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-19T15:27:55Z",
+          "conclusion": "success",
+          "name": "Build immutable image",
+          "number": 6,
+          "startedAt": "2026-10-19T15:27:38Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-19T15:28:02Z",
+          "conclusion": "success",
+          "name": "Smoke-test container health",
+          "number": 7,
+          "startedAt": "2026-10-19T15:27:55Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-19T15:28:02Z",
+          "conclusion": "success",
+          "name": "Remove smoke container",
+          "number": 8,
+          "startedAt": "2026-10-19T15:28:02Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-19T15:28:55Z",
+          "conclusion": "success",
+          "name": "Release transaction selftest (real disposable containers)",
+          "number": 9,
+          "startedAt": "2026-10-19T15:28:02Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-19T15:28:56Z",
+          "conclusion": "success",
+          "name": "Release failure classes (real script, no containers)",
+          "number": 10,
+          "startedAt": "2026-10-19T15:28:55Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-19T15:28:59Z",
+          "conclusion": "success",
+          "name": "Prepare SSH",
+          "number": 11,
+          "startedAt": "2026-10-19T15:28:56Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-19T15:29:09Z",
+          "conclusion": "success",
+          "name": "Sync provider secrets to server env file",
+          "number": 12,
+          "startedAt": "2026-10-19T15:28:59Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-19T15:29:59Z",
+          "conclusion": "success",
+          "name": "Build on remote Docker and deploy (full release transaction)",
+          "number": 13,
+          "startedAt": "2026-10-19T15:29:09Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-19T15:30:14Z",
+          "conclusion": "success",
+          "name": "Release acceptance (static assets and page main chain)",
+          "number": 14,
+          "startedAt": "2026-10-19T15:29:59Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-19T15:30:27Z",
+          "conclusion": "success",
+          "name": "Verify runtime and configuration fingerprints before cleanup",
+          "number": 15,
+          "startedAt": "2026-10-19T15:30:14Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-19T15:30:30Z",
+          "conclusion": "success",
+          "name": "Finalize release (cleanup previous only after all acceptance)",
+          "number": 16,
+          "startedAt": "2026-10-19T15:30:27Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-19T15:30:31Z",
+          "conclusion": "success",
+          "name": "Upload candidate and release fingerprints",
+          "number": 17,
+          "startedAt": "2026-10-19T15:30:30Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-19T15:30:31Z",
+          "conclusion": "skipped",
+          "name": "Roll back to previous known working state",
+          "number": 18,
+          "startedAt": "2026-10-19T15:30:31Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-19T15:30:31Z",
+          "conclusion": "success",
+          "name": "Post Set up release acceptance tooling",
+          "number": 35,
+          "startedAt": "2026-10-19T15:30:31Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-19T15:30:32Z",
+          "conclusion": "success",
+          "name": "Post Check out repository",
+          "number": 36,
+          "startedAt": "2026-10-19T15:30:31Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-19T15:30:32Z",
+          "conclusion": "success",
+          "name": "Complete job",
+          "number": 37,
+          "startedAt": "2026-10-19T15:30:32Z",
+          "status": "completed"
+        }
+      ],
+      "url": "https://github.com/JusticeSc/listing-kit/actions/runs/39277855632/job/118147008821"
+    },
+    {
+      "completedAt": "2026-10-19T15:26:51Z",
+      "conclusion": "skipped",
+      "databaseId": 118148080252,
+      "name": "Control plane and Product V2",
+      "startedAt": "2026-10-19T15:29:19Z",
+      "status": "completed",
+      "steps": [],
+      "url": "https://github.com/JusticeSc/listing-kit/actions/runs/39277855632/job/118148080252"
+    }
+  ],
+  "status": "completed",
+  "url": "https://github.com/JusticeSc/listing-kit/actions/runs/39277855632"
+}

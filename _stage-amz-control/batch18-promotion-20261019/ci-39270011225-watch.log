@@ -1,0 +1,962 @@
+Refreshing run status every 20 seconds. Press Ctrl+C to quit.
+
+* feat/complete-product-20261018 Product V2 CI and Docker CD JusticeSc/listing-kit#19 · 39270011225
+Triggered via pull_request less than a minute ago
+
+JOBS
+✓ Classify changed paths in 8s (ID 118119517559)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Classify changed paths
+  ✓ Post Check out repository
+  ✓ Complete job
+* Control plane and Product V2 (ID 118119603802)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Set up Python
+  * Set up locked frontend tools
+  * Install approved frontend checker
+  * Install uv and locked dependencies
+  * Check control plane
+  * Check frontend versions types and direct behavior
+  * Check formal entry and browser contracts
+  * Reject verification side effects
+  * Post Set up locked frontend tools
+  * Post Set up Python
+  * Post Check out repository
+
+ANNOTATIONS
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+Classify changed paths: .github#1
+
+Refreshing run status every 20 seconds. Press Ctrl+C to quit.
+
+* feat/complete-product-20261018 Product V2 CI and Docker CD JusticeSc/listing-kit#19 · 39270011225
+Triggered via pull_request less than a minute ago
+
+JOBS
+✓ Classify changed paths in 8s (ID 118119517559)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Classify changed paths
+  ✓ Post Check out repository
+  ✓ Complete job
+* Control plane and Product V2 (ID 118119603802)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Set up Python
+  ✓ Set up locked frontend tools
+  ✓ Install approved frontend checker
+  * Install uv and locked dependencies
+  * Check control plane
+  * Check frontend versions types and direct behavior
+  * Check formal entry and browser contracts
+  * Reject verification side effects
+  * Post Set up locked frontend tools
+  * Post Set up Python
+  * Post Check out repository
+
+ANNOTATIONS
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+Classify changed paths: .github#1
+
+Refreshing run status every 20 seconds. Press Ctrl+C to quit.
+
+* feat/complete-product-20261018 Product V2 CI and Docker CD JusticeSc/listing-kit#19 · 39270011225
+Triggered via pull_request about 1 minute ago
+
+JOBS
+✓ Classify changed paths in 8s (ID 118119517559)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Classify changed paths
+  ✓ Post Check out repository
+  ✓ Complete job
+* Control plane and Product V2 (ID 118119603802)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Set up Python
+  ✓ Set up locked frontend tools
+  ✓ Install approved frontend checker
+  ✓ Install uv and locked dependencies
+  * Check control plane
+  * Check frontend versions types and direct behavior
+  * Check formal entry and browser contracts
+  * Reject verification side effects
+  * Post Set up locked frontend tools
+  * Post Set up Python
+  * Post Check out repository
+
+ANNOTATIONS
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+Classify changed paths: .github#1
+
+Refreshing run status every 20 seconds. Press Ctrl+C to quit.
+
+* feat/complete-product-20261018 Product V2 CI and Docker CD JusticeSc/listing-kit#19 · 39270011225
+Triggered via pull_request about 1 minute ago
+
+JOBS
+✓ Classify changed paths in 8s (ID 118119517559)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Classify changed paths
+  ✓ Post Check out repository
+  ✓ Complete job
+* Control plane and Product V2 (ID 118119603802)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Set up Python
+  ✓ Set up locked frontend tools
+  ✓ Install approved frontend checker
+  ✓ Install uv and locked dependencies
+  ✓ Check control plane
+  ✓ Check frontend versions types and direct behavior
+  * Check formal entry and browser contracts
+  * Reject verification side effects
+  * Post Set up locked frontend tools
+  * Post Set up Python
+  * Post Check out repository
+
+ANNOTATIONS
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+Classify changed paths: .github#1
+
+Refreshing run status every 20 seconds. Press Ctrl+C to quit.
+
+* feat/complete-product-20261018 Product V2 CI and Docker CD JusticeSc/listing-kit#19 · 39270011225
+Triggered via pull_request about 1 minute ago
+
+JOBS
+✓ Classify changed paths in 8s (ID 118119517559)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Classify changed paths
+  ✓ Post Check out repository
+  ✓ Complete job
+* Control plane and Product V2 (ID 118119603802)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Set up Python
+  ✓ Set up locked frontend tools
+  ✓ Install approved frontend checker
+  ✓ Install uv and locked dependencies
+  ✓ Check control plane
+  ✓ Check frontend versions types and direct behavior
+  * Check formal entry and browser contracts
+  * Reject verification side effects
+  * Post Set up locked frontend tools
+  * Post Set up Python
+  * Post Check out repository
+
+ANNOTATIONS
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+Classify changed paths: .github#1
+
+Refreshing run status every 20 seconds. Press Ctrl+C to quit.
+
+* feat/complete-product-20261018 Product V2 CI and Docker CD JusticeSc/listing-kit#19 · 39270011225
+Triggered via pull_request about 2 minutes ago
+
+JOBS
+✓ Classify changed paths in 8s (ID 118119517559)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Classify changed paths
+  ✓ Post Check out repository
+  ✓ Complete job
+* Control plane and Product V2 (ID 118119603802)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Set up Python
+  ✓ Set up locked frontend tools
+  ✓ Install approved frontend checker
+  ✓ Install uv and locked dependencies
+  ✓ Check control plane
+  ✓ Check frontend versions types and direct behavior
+  * Check formal entry and browser contracts
+  * Reject verification side effects
+  * Post Set up locked frontend tools
+  * Post Set up Python
+  * Post Check out repository
+
+ANNOTATIONS
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+Classify changed paths: .github#1
+
+Refreshing run status every 20 seconds. Press Ctrl+C to quit.
+
+* feat/complete-product-20261018 Product V2 CI and Docker CD JusticeSc/listing-kit#19 · 39270011225
+Triggered via pull_request about 2 minutes ago
+
+JOBS
+✓ Classify changed paths in 8s (ID 118119517559)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Classify changed paths
+  ✓ Post Check out repository
+  ✓ Complete job
+* Control plane and Product V2 (ID 118119603802)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Set up Python
+  ✓ Set up locked frontend tools
+  ✓ Install approved frontend checker
+  ✓ Install uv and locked dependencies
+  ✓ Check control plane
+  ✓ Check frontend versions types and direct behavior
+  * Check formal entry and browser contracts
+  * Reject verification side effects
+  * Post Set up locked frontend tools
+  * Post Set up Python
+  * Post Check out repository
+
+ANNOTATIONS
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+Classify changed paths: .github#1
+
+Refreshing run status every 20 seconds. Press Ctrl+C to quit.
+
+* feat/complete-product-20261018 Product V2 CI and Docker CD JusticeSc/listing-kit#19 · 39270011225
+Triggered via pull_request about 3 minutes ago
+
+JOBS
+✓ Classify changed paths in 8s (ID 118119517559)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Classify changed paths
+  ✓ Post Check out repository
+  ✓ Complete job
+* Control plane and Product V2 (ID 118119603802)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Set up Python
+  ✓ Set up locked frontend tools
+  ✓ Install approved frontend checker
+  ✓ Install uv and locked dependencies
+  ✓ Check control plane
+  ✓ Check frontend versions types and direct behavior
+  * Check formal entry and browser contracts
+  * Reject verification side effects
+  * Post Set up locked frontend tools
+  * Post Set up Python
+  * Post Check out repository
+
+ANNOTATIONS
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+Classify changed paths: .github#1
+
+Refreshing run status every 20 seconds. Press Ctrl+C to quit.
+
+* feat/complete-product-20261018 Product V2 CI and Docker CD JusticeSc/listing-kit#19 · 39270011225
+Triggered via pull_request about 3 minutes ago
+
+JOBS
+✓ Classify changed paths in 8s (ID 118119517559)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Classify changed paths
+  ✓ Post Check out repository
+  ✓ Complete job
+* Control plane and Product V2 (ID 118119603802)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Set up Python
+  ✓ Set up locked frontend tools
+  ✓ Install approved frontend checker
+  ✓ Install uv and locked dependencies
+  ✓ Check control plane
+  ✓ Check frontend versions types and direct behavior
+  * Check formal entry and browser contracts
+  * Reject verification side effects
+  * Post Set up locked frontend tools
+  * Post Set up Python
+  * Post Check out repository
+
+ANNOTATIONS
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+Classify changed paths: .github#1
+
+Refreshing run status every 20 seconds. Press Ctrl+C to quit.
+
+* feat/complete-product-20261018 Product V2 CI and Docker CD JusticeSc/listing-kit#19 · 39270011225
+Triggered via pull_request about 3 minutes ago
+
+JOBS
+✓ Classify changed paths in 8s (ID 118119517559)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Classify changed paths
+  ✓ Post Check out repository
+  ✓ Complete job
+* Control plane and Product V2 (ID 118119603802)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Set up Python
+  ✓ Set up locked frontend tools
+  ✓ Install approved frontend checker
+  ✓ Install uv and locked dependencies
+  ✓ Check control plane
+  ✓ Check frontend versions types and direct behavior
+  * Check formal entry and browser contracts
+  * Reject verification side effects
+  * Post Set up locked frontend tools
+  * Post Set up Python
+  * Post Check out repository
+
+ANNOTATIONS
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+Classify changed paths: .github#1
+
+Refreshing run status every 20 seconds. Press Ctrl+C to quit.
+
+* feat/complete-product-20261018 Product V2 CI and Docker CD JusticeSc/listing-kit#19 · 39270011225
+Triggered via pull_request about 4 minutes ago
+
+JOBS
+✓ Classify changed paths in 8s (ID 118119517559)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Classify changed paths
+  ✓ Post Check out repository
+  ✓ Complete job
+* Control plane and Product V2 (ID 118119603802)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Set up Python
+  ✓ Set up locked frontend tools
+  ✓ Install approved frontend checker
+  ✓ Install uv and locked dependencies
+  ✓ Check control plane
+  ✓ Check frontend versions types and direct behavior
+  * Check formal entry and browser contracts
+  * Reject verification side effects
+  * Post Set up locked frontend tools
+  * Post Set up Python
+  * Post Check out repository
+
+ANNOTATIONS
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+Classify changed paths: .github#1
+
+Refreshing run status every 20 seconds. Press Ctrl+C to quit.
+
+* feat/complete-product-20261018 Product V2 CI and Docker CD JusticeSc/listing-kit#19 · 39270011225
+Triggered via pull_request about 4 minutes ago
+
+JOBS
+✓ Classify changed paths in 8s (ID 118119517559)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Classify changed paths
+  ✓ Post Check out repository
+  ✓ Complete job
+* Control plane and Product V2 (ID 118119603802)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Set up Python
+  ✓ Set up locked frontend tools
+  ✓ Install approved frontend checker
+  ✓ Install uv and locked dependencies
+  ✓ Check control plane
+  ✓ Check frontend versions types and direct behavior
+  * Check formal entry and browser contracts
+  * Reject verification side effects
+  * Post Set up locked frontend tools
+  * Post Set up Python
+  * Post Check out repository
+
+ANNOTATIONS
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+Classify changed paths: .github#1
+
+Refreshing run status every 20 seconds. Press Ctrl+C to quit.
+
+* feat/complete-product-20261018 Product V2 CI and Docker CD JusticeSc/listing-kit#19 · 39270011225
+Triggered via pull_request about 4 minutes ago
+
+JOBS
+✓ Classify changed paths in 8s (ID 118119517559)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Classify changed paths
+  ✓ Post Check out repository
+  ✓ Complete job
+* Control plane and Product V2 (ID 118119603802)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Set up Python
+  ✓ Set up locked frontend tools
+  ✓ Install approved frontend checker
+  ✓ Install uv and locked dependencies
+  ✓ Check control plane
+  ✓ Check frontend versions types and direct behavior
+  * Check formal entry and browser contracts
+  * Reject verification side effects
+  * Post Set up locked frontend tools
+  * Post Set up Python
+  * Post Check out repository
+
+ANNOTATIONS
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+Classify changed paths: .github#1
+
+Refreshing run status every 20 seconds. Press Ctrl+C to quit.
+
+* feat/complete-product-20261018 Product V2 CI and Docker CD JusticeSc/listing-kit#19 · 39270011225
+Triggered via pull_request about 5 minutes ago
+
+JOBS
+✓ Classify changed paths in 8s (ID 118119517559)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Classify changed paths
+  ✓ Post Check out repository
+  ✓ Complete job
+* Control plane and Product V2 (ID 118119603802)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Set up Python
+  ✓ Set up locked frontend tools
+  ✓ Install approved frontend checker
+  ✓ Install uv and locked dependencies
+  ✓ Check control plane
+  ✓ Check frontend versions types and direct behavior
+  * Check formal entry and browser contracts
+  * Reject verification side effects
+  * Post Set up locked frontend tools
+  * Post Set up Python
+  * Post Check out repository
+
+ANNOTATIONS
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+Classify changed paths: .github#1
+
+Refreshing run status every 20 seconds. Press Ctrl+C to quit.
+
+* feat/complete-product-20261018 Product V2 CI and Docker CD JusticeSc/listing-kit#19 · 39270011225
+Triggered via pull_request about 5 minutes ago
+
+JOBS
+✓ Classify changed paths in 8s (ID 118119517559)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Classify changed paths
+  ✓ Post Check out repository
+  ✓ Complete job
+* Control plane and Product V2 (ID 118119603802)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Set up Python
+  ✓ Set up locked frontend tools
+  ✓ Install approved frontend checker
+  ✓ Install uv and locked dependencies
+  ✓ Check control plane
+  ✓ Check frontend versions types and direct behavior
+  * Check formal entry and browser contracts
+  * Reject verification side effects
+  * Post Set up locked frontend tools
+  * Post Set up Python
+  * Post Check out repository
+
+ANNOTATIONS
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+Classify changed paths: .github#1
+
+Refreshing run status every 20 seconds. Press Ctrl+C to quit.
+
+* feat/complete-product-20261018 Product V2 CI and Docker CD JusticeSc/listing-kit#19 · 39270011225
+Triggered via pull_request about 5 minutes ago
+
+JOBS
+✓ Classify changed paths in 8s (ID 118119517559)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Classify changed paths
+  ✓ Post Check out repository
+  ✓ Complete job
+* Control plane and Product V2 (ID 118119603802)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Set up Python
+  ✓ Set up locked frontend tools
+  ✓ Install approved frontend checker
+  ✓ Install uv and locked dependencies
+  ✓ Check control plane
+  ✓ Check frontend versions types and direct behavior
+  * Check formal entry and browser contracts
+  * Reject verification side effects
+  * Post Set up locked frontend tools
+  * Post Set up Python
+  * Post Check out repository
+
+ANNOTATIONS
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+Classify changed paths: .github#1
+
+Refreshing run status every 20 seconds. Press Ctrl+C to quit.
+
+* feat/complete-product-20261018 Product V2 CI and Docker CD JusticeSc/listing-kit#19 · 39270011225
+Triggered via pull_request about 6 minutes ago
+
+JOBS
+✓ Classify changed paths in 8s (ID 118119517559)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Classify changed paths
+  ✓ Post Check out repository
+  ✓ Complete job
+* Control plane and Product V2 (ID 118119603802)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Set up Python
+  ✓ Set up locked frontend tools
+  ✓ Install approved frontend checker
+  ✓ Install uv and locked dependencies
+  ✓ Check control plane
+  ✓ Check frontend versions types and direct behavior
+  * Check formal entry and browser contracts
+  * Reject verification side effects
+  * Post Set up locked frontend tools
+  * Post Set up Python
+  * Post Check out repository
+
+ANNOTATIONS
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+Classify changed paths: .github#1
+
+Refreshing run status every 20 seconds. Press Ctrl+C to quit.
+
+* feat/complete-product-20261018 Product V2 CI and Docker CD JusticeSc/listing-kit#19 · 39270011225
+Triggered via pull_request about 6 minutes ago
+
+JOBS
+✓ Classify changed paths in 8s (ID 118119517559)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Classify changed paths
+  ✓ Post Check out repository
+  ✓ Complete job
+* Control plane and Product V2 (ID 118119603802)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Set up Python
+  ✓ Set up locked frontend tools
+  ✓ Install approved frontend checker
+  ✓ Install uv and locked dependencies
+  ✓ Check control plane
+  ✓ Check frontend versions types and direct behavior
+  * Check formal entry and browser contracts
+  * Reject verification side effects
+  * Post Set up locked frontend tools
+  * Post Set up Python
+  * Post Check out repository
+
+ANNOTATIONS
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+Classify changed paths: .github#1
+
+Refreshing run status every 20 seconds. Press Ctrl+C to quit.
+
+* feat/complete-product-20261018 Product V2 CI and Docker CD JusticeSc/listing-kit#19 · 39270011225
+Triggered via pull_request about 7 minutes ago
+
+JOBS
+✓ Classify changed paths in 8s (ID 118119517559)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Classify changed paths
+  ✓ Post Check out repository
+  ✓ Complete job
+* Control plane and Product V2 (ID 118119603802)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Set up Python
+  ✓ Set up locked frontend tools
+  ✓ Install approved frontend checker
+  ✓ Install uv and locked dependencies
+  ✓ Check control plane
+  ✓ Check frontend versions types and direct behavior
+  * Check formal entry and browser contracts
+  * Reject verification side effects
+  * Post Set up locked frontend tools
+  * Post Set up Python
+  * Post Check out repository
+
+ANNOTATIONS
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+Classify changed paths: .github#1
+
+Refreshing run status every 20 seconds. Press Ctrl+C to quit.
+
+* feat/complete-product-20261018 Product V2 CI and Docker CD JusticeSc/listing-kit#19 · 39270011225
+Triggered via pull_request about 7 minutes ago
+
+JOBS
+✓ Classify changed paths in 8s (ID 118119517559)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Classify changed paths
+  ✓ Post Check out repository
+  ✓ Complete job
+* Control plane and Product V2 (ID 118119603802)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Set up Python
+  ✓ Set up locked frontend tools
+  ✓ Install approved frontend checker
+  ✓ Install uv and locked dependencies
+  ✓ Check control plane
+  ✓ Check frontend versions types and direct behavior
+  * Check formal entry and browser contracts
+  * Reject verification side effects
+  * Post Set up locked frontend tools
+  * Post Set up Python
+  * Post Check out repository
+
+ANNOTATIONS
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+Classify changed paths: .github#1
+
+Refreshing run status every 20 seconds. Press Ctrl+C to quit.
+
+* feat/complete-product-20261018 Product V2 CI and Docker CD JusticeSc/listing-kit#19 · 39270011225
+Triggered via pull_request about 7 minutes ago
+
+JOBS
+✓ Classify changed paths in 8s (ID 118119517559)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Classify changed paths
+  ✓ Post Check out repository
+  ✓ Complete job
+* Control plane and Product V2 (ID 118119603802)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Set up Python
+  ✓ Set up locked frontend tools
+  ✓ Install approved frontend checker
+  ✓ Install uv and locked dependencies
+  ✓ Check control plane
+  ✓ Check frontend versions types and direct behavior
+  * Check formal entry and browser contracts
+  * Reject verification side effects
+  * Post Set up locked frontend tools
+  * Post Set up Python
+  * Post Check out repository
+
+ANNOTATIONS
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+Classify changed paths: .github#1
+
+Refreshing run status every 20 seconds. Press Ctrl+C to quit.
+
+* feat/complete-product-20261018 Product V2 CI and Docker CD JusticeSc/listing-kit#19 · 39270011225
+Triggered via pull_request about 8 minutes ago
+
+JOBS
+✓ Classify changed paths in 8s (ID 118119517559)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Classify changed paths
+  ✓ Post Check out repository
+  ✓ Complete job
+* Control plane and Product V2 (ID 118119603802)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Set up Python
+  ✓ Set up locked frontend tools
+  ✓ Install approved frontend checker
+  ✓ Install uv and locked dependencies
+  ✓ Check control plane
+  ✓ Check frontend versions types and direct behavior
+  * Check formal entry and browser contracts
+  * Reject verification side effects
+  * Post Set up locked frontend tools
+  * Post Set up Python
+  * Post Check out repository
+
+ANNOTATIONS
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+Classify changed paths: .github#1
+
+Refreshing run status every 20 seconds. Press Ctrl+C to quit.
+
+* feat/complete-product-20261018 Product V2 CI and Docker CD JusticeSc/listing-kit#19 · 39270011225
+Triggered via pull_request about 8 minutes ago
+
+JOBS
+✓ Classify changed paths in 8s (ID 118119517559)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Classify changed paths
+  ✓ Post Check out repository
+  ✓ Complete job
+* Control plane and Product V2 (ID 118119603802)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Set up Python
+  ✓ Set up locked frontend tools
+  ✓ Install approved frontend checker
+  ✓ Install uv and locked dependencies
+  ✓ Check control plane
+  ✓ Check frontend versions types and direct behavior
+  * Check formal entry and browser contracts
+  * Reject verification side effects
+  * Post Set up locked frontend tools
+  * Post Set up Python
+  * Post Check out repository
+
+ANNOTATIONS
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+Classify changed paths: .github#1
+
+Refreshing run status every 20 seconds. Press Ctrl+C to quit.
+
+* feat/complete-product-20261018 Product V2 CI and Docker CD JusticeSc/listing-kit#19 · 39270011225
+Triggered via pull_request about 8 minutes ago
+
+JOBS
+✓ Classify changed paths in 8s (ID 118119517559)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Classify changed paths
+  ✓ Post Check out repository
+  ✓ Complete job
+* Control plane and Product V2 (ID 118119603802)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Set up Python
+  ✓ Set up locked frontend tools
+  ✓ Install approved frontend checker
+  ✓ Install uv and locked dependencies
+  ✓ Check control plane
+  ✓ Check frontend versions types and direct behavior
+  * Check formal entry and browser contracts
+  * Reject verification side effects
+  * Post Set up locked frontend tools
+  * Post Set up Python
+  * Post Check out repository
+
+ANNOTATIONS
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+Classify changed paths: .github#1
+
+Refreshing run status every 20 seconds. Press Ctrl+C to quit.
+
+* feat/complete-product-20261018 Product V2 CI and Docker CD JusticeSc/listing-kit#19 · 39270011225
+Triggered via pull_request about 9 minutes ago
+
+JOBS
+✓ Classify changed paths in 8s (ID 118119517559)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Classify changed paths
+  ✓ Post Check out repository
+  ✓ Complete job
+* Control plane and Product V2 (ID 118119603802)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Set up Python
+  ✓ Set up locked frontend tools
+  ✓ Install approved frontend checker
+  ✓ Install uv and locked dependencies
+  ✓ Check control plane
+  ✓ Check frontend versions types and direct behavior
+  * Check formal entry and browser contracts
+  * Reject verification side effects
+  * Post Set up locked frontend tools
+  * Post Set up Python
+  * Post Check out repository
+
+ANNOTATIONS
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+Classify changed paths: .github#1
+
+Refreshing run status every 20 seconds. Press Ctrl+C to quit.
+
+* feat/complete-product-20261018 Product V2 CI and Docker CD JusticeSc/listing-kit#19 · 39270011225
+Triggered via pull_request about 9 minutes ago
+
+JOBS
+✓ Classify changed paths in 8s (ID 118119517559)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Classify changed paths
+  ✓ Post Check out repository
+  ✓ Complete job
+* Control plane and Product V2 (ID 118119603802)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Set up Python
+  ✓ Set up locked frontend tools
+  ✓ Install approved frontend checker
+  ✓ Install uv and locked dependencies
+  ✓ Check control plane
+  ✓ Check frontend versions types and direct behavior
+  * Check formal entry and browser contracts
+  * Reject verification side effects
+  * Post Set up locked frontend tools
+  * Post Set up Python
+  * Post Check out repository
+
+ANNOTATIONS
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+Classify changed paths: .github#1
+
+Refreshing run status every 20 seconds. Press Ctrl+C to quit.
+
+* feat/complete-product-20261018 Product V2 CI and Docker CD JusticeSc/listing-kit#19 · 39270011225
+Triggered via pull_request about 9 minutes ago
+
+JOBS
+✓ Classify changed paths in 8s (ID 118119517559)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Classify changed paths
+  ✓ Post Check out repository
+  ✓ Complete job
+* Control plane and Product V2 (ID 118119603802)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Set up Python
+  ✓ Set up locked frontend tools
+  ✓ Install approved frontend checker
+  ✓ Install uv and locked dependencies
+  ✓ Check control plane
+  ✓ Check frontend versions types and direct behavior
+  * Check formal entry and browser contracts
+  * Reject verification side effects
+  * Post Set up locked frontend tools
+  * Post Set up Python
+  * Post Check out repository
+
+ANNOTATIONS
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+Classify changed paths: .github#1
+
+Refreshing run status every 20 seconds. Press Ctrl+C to quit.
+
+* feat/complete-product-20261018 Product V2 CI and Docker CD JusticeSc/listing-kit#19 · 39270011225
+Triggered via pull_request about 10 minutes ago
+
+JOBS
+✓ Classify changed paths in 8s (ID 118119517559)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Classify changed paths
+  ✓ Post Check out repository
+  ✓ Complete job
+* Control plane and Product V2 (ID 118119603802)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Set up Python
+  ✓ Set up locked frontend tools
+  ✓ Install approved frontend checker
+  ✓ Install uv and locked dependencies
+  ✓ Check control plane
+  ✓ Check frontend versions types and direct behavior
+  * Check formal entry and browser contracts
+  * Reject verification side effects
+  * Post Set up locked frontend tools
+  * Post Set up Python
+  * Post Check out repository
+
+ANNOTATIONS
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+Classify changed paths: .github#1
+
+Refreshing run status every 20 seconds. Press Ctrl+C to quit.
+
+* feat/complete-product-20261018 Product V2 CI and Docker CD JusticeSc/listing-kit#19 · 39270011225
+Triggered via pull_request about 10 minutes ago
+
+JOBS
+✓ Classify changed paths in 8s (ID 118119517559)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Classify changed paths
+  ✓ Post Check out repository
+  ✓ Complete job
+* Control plane and Product V2 (ID 118119603802)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Set up Python
+  ✓ Set up locked frontend tools
+  ✓ Install approved frontend checker
+  ✓ Install uv and locked dependencies
+  ✓ Check control plane
+  ✓ Check frontend versions types and direct behavior
+  * Check formal entry and browser contracts
+  * Reject verification side effects
+  * Post Set up locked frontend tools
+  * Post Set up Python
+  * Post Check out repository
+
+ANNOTATIONS
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+Classify changed paths: .github#1
+
+Refreshing run status every 20 seconds. Press Ctrl+C to quit.
+
+* feat/complete-product-20261018 Product V2 CI and Docker CD JusticeSc/listing-kit#19 · 39270011225
+Triggered via pull_request about 11 minutes ago
+
+JOBS
+✓ Classify changed paths in 8s (ID 118119517559)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Classify changed paths
+  ✓ Post Check out repository
+  ✓ Complete job
+* Control plane and Product V2 (ID 118119603802)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Set up Python
+  ✓ Set up locked frontend tools
+  ✓ Install approved frontend checker
+  ✓ Install uv and locked dependencies
+  ✓ Check control plane
+  ✓ Check frontend versions types and direct behavior
+  * Check formal entry and browser contracts
+  * Reject verification side effects
+  * Post Set up locked frontend tools
+  * Post Set up Python
+  * Post Check out repository
+
+ANNOTATIONS
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+Classify changed paths: .github#1
+
+Refreshing run status every 20 seconds. Press Ctrl+C to quit.
+
+* feat/complete-product-20261018 Product V2 CI and Docker CD JusticeSc/listing-kit#19 · 39270011225
+Triggered via pull_request about 11 minutes ago
+
+JOBS
+✓ Classify changed paths in 8s (ID 118119517559)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Classify changed paths
+  ✓ Post Check out repository
+  ✓ Complete job
+* Control plane and Product V2 (ID 118119603802)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Set up Python
+  ✓ Set up locked frontend tools
+  ✓ Install approved frontend checker
+  ✓ Install uv and locked dependencies
+  ✓ Check control plane
+  ✓ Check frontend versions types and direct behavior
+  * Check formal entry and browser contracts
+  * Reject verification side effects
+  * Post Set up locked frontend tools
+  * Post Set up Python
+  * Post Check out repository
+
+ANNOTATIONS
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+Classify changed paths: .github#1
+
+failed to get run: Get "https://api.github.com/repos/JusticeSc/listing-kit/actions/runs/39270011225?exclude_pull_requests=true": unexpected EOF

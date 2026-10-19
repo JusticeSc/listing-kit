@@ -1,0 +1,33 @@
+{
+  "base": "https://47.115.172.233:8080",
+  "observed_at": "2026-10-19T23:11:52+0800",
+  "index": {
+    "status": 200,
+    "bytes": 12471,
+    "sha256": "5174a01b5b4d426a9fc5eab3801e76ea2a5a4d5918f926c357948f77e424be92"
+  },
+  "refs": [],
+  "assets": {},
+  "served_assets": {
+    "/app/product_v2/entry.js": {
+      "status": 200,
+      "bytes": 2501,
+      "sha256": "1bef8eabec7bda2e5d5bbfe278492f52b06fe845c67c5c7eb77c6b016726747c"
+    },
+    "/app/product_v2/styles.css": {
+      "status": 200,
+      "bytes": 23212,
+      "sha256": "73d6948d2a06a8f2902da27c6067a77ea8aae82adb2a24fce4301b31f61216e5"
+    },
+    "/_virtual/_vite/modulepreload-polyfill.js": {
+      "status": 200,
+      "bytes": 670,
+      "sha256": "418c206484b89b68ef5f067277831e583fc9193a62aadf4de269acaaeb12a85f"
+    },
+    "/_virtual/_vite/preload-helper.js": {
+      "status": 200,
+      "bytes": 1546,
+      "sha256": "c5c408d04c1661fbae34033656261fa16068b8036049a1a26f590e3575557e70"
+    }
+  }
+}

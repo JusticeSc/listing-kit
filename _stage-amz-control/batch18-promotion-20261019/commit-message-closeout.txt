@@ -1,0 +1,19 @@
+chore(v2): record PR #19 protected merge and the release to finalize
+
+PR #19 (head 9bd2b9d1e766) merged as 689c6b08 after both required contexts
+reported SUCCESS; protection enforced admins/PR/strict, no bypass. The main push
+run 39277855632 completed deploy -> acceptance -> fingerprint -> finalize with
+the rollback step skipped, so the release transaction closed cleanly.
+
+Recorded evidence: the merge receipt, the main-run job/step breakdown, the
+downloaded release-evidence artifact (release.json: image sha256:cb3857eb…,
+runtime 48002dc4…, public configuration 652b1201…, caddy e375655d…, default
+trial closed, 71 served assets), a pre-merge live baseline versus the
+post-deploy live bytes (index 5174a01b -> 992316a7, entry.js 1bef8eab ->
+1fef0209, styles.css 73d6948d -> 60d8421a; the two vite helper modules
+unchanged), and a direct page smoke against https://47.115.172.233:8080
+(12/12 PASS, rc=0).
+
+State records this as the completed promotion and keeps the superseded
+next-action notes marked as such. Still unverified and recorded: real output
+quality, the C15/C17 human gates, and B1-B7 acceptance. Zero paid calls.
