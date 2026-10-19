@@ -40,7 +40,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 
-import v2_stage_nav as stage_nav  # noqa: E402  （V2.UI.2 六阶段工作台导航）
+import v2_stage_nav as stage_nav  # noqa: E402  （B4 四段工作台导航）
 import v2_verify_shared as shared  # noqa: E402  （正式 server/夹具/共同业务操作）
 from v2_verify_shared import (  # noqa: E402
     png_bytes, run_entry, read_suite, compile_all,
@@ -178,11 +178,13 @@ async () => {
   const plans = documents.filter((item) => item.kind === "suite_plan")
     .sort((left, right) => left.version - right.version);
   const plan = plans.length ? plans[plans.length - 1] : null;
-  const rows = [...document.querySelectorAll("#attempt-list .attempt-row")].map((node) => {
-    const img = node.querySelector(".attempt-preview img");
-    const candidateMeta = node.querySelector(".attempt-candidate");
+  const rows = [...document.querySelectorAll("#task-list-mount [data-task-shot]")].map((node) => {
+    const detail = document.querySelector(
+      '#shot-execution [data-shot-id="' + node.getAttribute("data-task-shot") + '"]');
+    const img = (detail || node).querySelector(".attempt-preview img");
+    const candidateMeta = (detail || node).querySelector(".attempt-candidate");
     return {
-      shot_id: node.getAttribute("data-shot-id"),
+      shot_id: node.getAttribute("data-task-shot"),
       state: node.getAttribute("data-attempt-state"),
       badges: [...node.querySelectorAll(".badge")].map((item) => item.textContent),
       meta: [...node.querySelectorAll("p.meta")].map((item) => item.textContent).join(" | "),
@@ -192,8 +194,10 @@ async () => {
         complete: img.complete,
         natural_width: img.naturalWidth,
       } : null,
-      buttons: [...node.querySelectorAll("button")].map((item) =>
-        ({ text: item.textContent, disabled: item.disabled })),
+      buttons: [...node.querySelectorAll("button")]
+        .concat(detail ? [...detail.querySelectorAll(".attempt-actions button")] : [])
+        .filter((item, index, all) => all.indexOf(item) === index)
+        .map((item) => ({ text: item.textContent, disabled: item.disabled })),
     };
   });
   const errorNode = document.getElementById("attempt-error");
@@ -788,36 +792,39 @@ def main() -> int:
                     return page.evaluate(PROBE)
 
                 def row(shot_id: str):
+                    shared.select_make_shot(page, shot_id)
                     return page.locator(
-                        f'#attempt-list .attempt-row[data-shot-id="{shot_id}"]')
+                        f'#shot-execution [data-shot-id="{shot_id}"]')
 
                 def wait_state(shot_id: str, state: str, timeout: int = 30_000) -> None:
-                    expect(row(shot_id)).to_have_attribute(
+                    expect(page.locator(
+                        f'#task-list-mount [data-task-shot="{shot_id}"]')).to_have_attribute(
                         "data-attempt-state", state, timeout=timeout)
 
                 def wait_states(expectations: dict, timeout: int = 90_000) -> None:
                     page.wait_for_function(
                         """(wanted) => {
-                            const rows = [...document.querySelectorAll('#attempt-list .attempt-row')];
+                            const rows = [...document.querySelectorAll('#task-list-mount [data-task-shot]')];
                             return Object.entries(wanted).every(([id, state]) => {
                                 const node = rows.find((item) =>
-                                    item.getAttribute('data-shot-id') === id);
+                                    item.getAttribute('data-task-shot') === id);
                                 return node && node.getAttribute('data-attempt-state') === state;
                             });
                         }""",
                         arg=expectations, timeout=timeout)
 
                 def wait_preview(shot_id: str, timeout: int = 30_000) -> None:
-                    # 预览图带 loading="lazy"：先滚动到这一行（用户也会这样做），
-                    # 否则刷新后页面停在顶部，图片永远不进入加载队列。
+                    # 预览图带 loading="lazy"：先选中该图让本图执行区渲染（用户也会这样做），
+                    # 再滚动到本图行，否则刷新后页面停在顶部，图片永远不进入加载队列。
+                    shared.select_make_shot(page, shot_id)
                     page.locator(
-                        f'#attempt-list .attempt-row[data-shot-id="{shot_id}"]'
+                        f'#shot-execution [data-shot-id="{shot_id}"]'
                         " .attempt-preview img"
                     ).scroll_into_view_if_needed(timeout=timeout)
                     page.wait_for_function(
                         """(shot) => {
                             const node = document.querySelector(
-                                '#attempt-list .attempt-row[data-shot-id="' + shot + '"]');
+                                '#shot-execution [data-shot-id="' + shot + '"]');
                             const img = node && node.querySelector('.attempt-preview img');
                             return Boolean(img && img.complete && img.naturalWidth > 0);
                         }""",
@@ -829,8 +836,12 @@ def main() -> int:
                     page.wait_for_function(
                         """(shot) => {
                             const node = document.querySelector(
-                                '#attempt-list .attempt-row[data-shot-id="' + shot + '"]');
-                            return Boolean(node && node.querySelector('.attempt-candidate'));
+                                '#task-list-mount [data-task-shot="' + shot + '"]');
+                            if (!node) return false;
+                            if (node.querySelector('.attempt-candidate')) return true;
+                            const detail = document.querySelector(
+                                '#shot-execution [data-shot-id="' + shot + '"]');
+                            return Boolean(detail && detail.querySelector('.attempt-candidate'));
                         }""", arg=shot_id, timeout=timeout)
 
                 def wait_hint_contains(text: str, timeout: int = 30_000) -> None:
@@ -869,7 +880,9 @@ def main() -> int:
                 def confirm_generation(wanted: list | None = None) -> dict:
                     # 授权集合必须是"本次确认将消费的图"（4_3 同因：禁止复用首批快照，
                     # 否则 confirm_and_submit 在 set(authorized)==set(shot_ids) 恒假）。
+                    # B4 默认只送正看图：整套/多图授权必须先显式勾选批量范围。
                     scope = list(wanted) if wanted is not None else list(probe()["shot_ids"])
+                    shared.choose_make_batch(page, scope)
                     gate = shared.confirm_and_submit(page, expect, probe, submit_requests,
                                                      shot_ids=scope)
                     assert gate["ok"], f"确认必须产生本次授权的新消费：{gate['after_actions']}"
@@ -929,7 +942,7 @@ def main() -> int:
                 expect(page.locator("#shot-list .shot-row")).to_have_count(4)
                 # Issue #9：编译前先做普通决定（用户真实路径）；choices 进 ui 证据。
                 ui["decisions"] = shared.decide_for_compile(page, probe()["shot_ids"])
-                stage_nav.goto(page, "generate")
+                stage_nav.goto(page, "make")
                 expect(page.locator("#prompt-list .shot-spec")).to_have_count(4)
                 initial = probe()
                 shot_ids = initial["shot_ids"]
@@ -1026,7 +1039,7 @@ def main() -> int:
                 requests_before_reload = len(result_requests)
                 before_reload = probe()
                 load_page()
-                stage_nav.goto(page, "generate")
+                stage_nav.goto(page, "make")
                 wait_preview(ok_shot)
                 after_reload = probe()
                 check("V2.4.4-05",

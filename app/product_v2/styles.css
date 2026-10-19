@@ -40,7 +40,7 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: var(--font);
-  font-size: 14px;
+  font-size: 16px;
   line-height: 1.55;
 }
 
@@ -162,6 +162,7 @@ button {
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-sm);
   padding: 8px 13px;
+  min-height: 44px;
   cursor: pointer;
   transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease;
 }
@@ -188,8 +189,8 @@ button.link-button {
   border: none;
   color: var(--accent);
   padding: 4px 2px;
+  min-height: 44px;
 }
-button.link-button:hover:not(:disabled) { text-decoration: underline; background: transparent; }
 
 input[type="text"], input[type="number"], input:not([type]), textarea, select {
   font: inherit;
@@ -199,8 +200,10 @@ input[type="text"], input[type="number"], input:not([type]), textarea, select {
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-sm);
   padding: 9px 11px;
+  min-height: 44px;
 }
 textarea { resize: vertical; min-height: 56px; }
+input[type="checkbox"], input[type="radio"] { width: auto; min-height: 0; }
 input:disabled, textarea:disabled, select:disabled { background: var(--surface-soft); color: var(--text-muted); }
 
 .field { margin-bottom: 12px; }
@@ -229,7 +232,7 @@ input:disabled, textarea:disabled, select:disabled { background: var(--surface-s
 .badge.is-review-warn, .badge.is-proposed { background: var(--warn-soft); border-color: #eddfb8; color: var(--warn); }
 .badge.is-review-unknown, .badge.is-review-unchecked { background: var(--info-soft); border-color: #c3e0ee; color: var(--info); }
 .badge.is-review-pass { background: var(--success-soft); border-color: #bfe3cd; color: var(--success); }
-.badge.is-attempt-done, .badge.is-adopted { background: var(--success-soft); border-color: #bfe3cd; color: var(--success); }
+.badge.is-attempt-done, .badge.is-adopted, .badge.is-confirmed { background: var(--success-soft); border-color: #bfe3cd; color: var(--success); }
 .badge.is-attempt-failed { background: var(--danger-soft); border-color: rgba(180,35,24,.3); color: var(--danger); }
 .badge.is-attempt-unknown { background: var(--warn-soft); border-color: #eddfb8; color: var(--warn); }
 .badge.is-attempt-active { background: var(--accent-soft); border-color: #c9d8f8; color: var(--accent-strong); }
@@ -542,88 +545,52 @@ input:disabled, textarea:disabled, select:disabled { background: var(--surface-s
 }
 .attempt-batch-actions { margin-bottom: 6px; }
 
-/* ---------------------------------------------------------------- 审核：比较 / 返工 / 采用 */
+/* ---------------------------------------------------------------- 制作与审图：任务列表 / 常驻精看 */
 
-.review-list { display: flex; flex-direction: column; gap: 12px; }
-/* V2.6.6：审核卡片此前**没有任何样式** —— 候选图按容器全宽渲染（1440px 实测
-   902×902），一屏只能看到左上角，「审核」这件人做的主要动作被图片顶出屏幕。
-   这里给它边框、受限预览（≤420px）与操作行；断言在
-   tools/verify_v2_6_4_accessibility.py 的 V2.6.4-17。 */
-.review-card {
+/* B4：旧逐图审核卡（.review-card/.review-list）已随重复列表同包退出。
+ * 左栏任务列表唯一归生成视图（#task-list-mount），右栏常驻精看唯一归比较视图。 */
+
+/* 桌面主场景：双栏并排，任务选择与精看细节同屏；精看区按内容纵向自然生长，
+ * 不给任务列表加第二套独立滚动。 */
+.review-workbench { display: grid; grid-template-columns: 244px minmax(0, 1fr); gap: 16px; align-items: start; }
+.review-task-list, .review-detail { min-width: 0; }
+.review-task-list { margin: 0; }
+.review-detail .compare-panel { margin-top: 0; box-shadow: none; }
+.review-workbench p, .review-workbench figcaption { overflow-wrap: anywhere; }
+
+/* 左栏任务行：图名就是查看入口，徽标只投影最高优先级状态。 */
+.task-list { display: flex; flex-direction: column; gap: 8px; }
+.task-row {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  gap: 6px 10px;
+  align-items: start;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background: var(--surface);
-  padding: 12px 14px;
-  display: grid;
-  grid-template-columns: minmax(0, 420px) minmax(0, 1fr);
-  gap: 10px 16px;
-  align-items: start;
-}
-.review-card-head { grid-column: 2; grid-row: 1; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-.review-card-head .name { font-weight: 600; }
-.review-card .review-preview { grid-column: 1; grid-row: 1; max-width: 420px; }
-.review-card .review-preview img {
-  width: 100%;
-  height: auto;
-  max-height: 420px;
-  object-fit: contain;
-  background: #fff;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-}
-.review-card > .meta { grid-column: 2; grid-row: 2; }
-.review-card-check {
-  grid-column: 2;
-  grid-row: 2;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-}
-.review-card-check .review-check-summary { color: var(--text-strong, inherit); }
-.review-card-check .review-check-headline { margin: 0; }
-.review-card-check p { margin: 0; }
-.review-card-actions { grid-column: 1; grid-row: 2; display: flex; gap: 8px; flex-wrap: wrap; align-self: start; }
-.review-card-actions button { padding: 6px 10px; font-size: 13px; }
-@media (max-width: 760px) {
-  .review-card { grid-template-columns: minmax(0, 1fr); }
-  .review-card-head, .review-card .review-preview, .review-card-actions, .review-card > .meta,
-  .review-card-check {
-    grid-column: 1;
-    grid-row: auto;
-  }
-}
-
-/* 审核主动作：任务列表与当前图片并排；只有列表过长时独立滚动，不锁整页滚动。 */
-.review-workbench { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; align-items: start; }
-.review-workbench:has(#compare-panel:not([hidden])) { grid-template-columns: 220px minmax(0, 1fr); }
-.review-task-list, .review-detail, .review-card > * { min-width: 0; }
-.review-task-list { margin: 0; }
-.review-detail .compare-panel { margin-top: 0; box-shadow: none; }
-.review-workbench .review-card {
-  grid-template-columns: 56px minmax(0, 1fr);
-  gap: 6px 10px;
   padding: 10px;
 }
-.review-workbench .review-card .review-preview { width: 56px; }
-.review-workbench .review-card .review-preview img { height: 64px; object-fit: contain; }
-.review-workbench .review-card-head { grid-column: 2; grid-row: 1; }
-.review-workbench .review-card-actions { grid-column: 1 / -1; grid-row: 2; }
-.review-workbench .review-card-check { grid-column: 1 / -1; grid-row: 3; overflow-wrap: anywhere; }
-.review-workbench:has(#compare-panel:not([hidden])) .review-list { max-height: calc(100dvh - 300px); overflow-y: auto; }
-.review-workbench .compare-image-grid { gap: 10px; }
-.review-workbench .compare-image-grid figure > img,
-.review-workbench .compare-references img { height: clamp(160px, 28dvh, 260px); }
-.review-workbench .compare-head-actions { margin-left: 0; }
-.review-workbench .compare-card { width: 128px; }
-.review-workbench .compare-card > img { height: 76px; }
-.review-workbench p, .review-workbench figcaption { overflow-wrap: anywhere; }
-@media (max-width: 900px) {
-  .review-workbench:has(#compare-panel:not([hidden])) { grid-template-columns: minmax(0, 1fr); }
-  .review-workbench:has(#compare-panel:not([hidden])) .review-list { max-height: none; overflow: visible; }
-  .review-task-list .review-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); }
-}
+.task-row[data-viewed="true"] { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+.task-thumb { width: 56px; height: 64px; border-radius: var(--radius-sm); object-fit: contain; background: var(--surface-soft); border: 1px solid var(--border); }
+.task-thumb.is-empty { display: block; }
+.task-row-main { min-width: 0; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.task-view { min-width: 0; overflow-wrap: anywhere; text-align: left; }
+.task-view[aria-current="true"] { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-strong); font-weight: 600; }
+.task-row .task-state { flex-basis: 100%; margin: 0; }
+.task-batch { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; min-height: 44px; }
+.task-batch input[type="checkbox"] { width: 20px; height: 20px; flex-shrink: 0; }
+.task-row .task-batch { grid-column: 1 / -1; }
+.task-scope { display: grid; gap: 8px; margin-bottom: 10px; }
+.task-scope .choice { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; min-height: 44px; }
+.task-scope .choice input[type="radio"] { width: 20px; height: 20px; flex-shrink: 0; }
+.task-scope .meta { margin: 0; }
+.task-shot-label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px; }
+.task-shot-select { margin-bottom: 10px; }
+.task-list.is-compact .task-batch .name { font-weight: 600; overflow-wrap: anywhere; }
 
+/* 精看区两图：左默认商品依据、右固定当前候选。图片永远原比例 contain，
+ * 高图/窄屏/放大时允许必要页面滚动，不裁商品、不锁根滚动。 */
+.review-workbench .compare-image-grid { gap: 10px; }
 .compare-panel, .rework-panel {
   background: var(--surface);
   border: 1px solid var(--border-strong);
@@ -642,17 +609,20 @@ input:disabled, textarea:disabled, select:disabled { background: var(--surface-s
 .compare-head h4, .rework-head h4 { font-size: 15px; font-weight: 600; }
 .compare-head-actions, .rework-head-actions { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
 
-.compare-image-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin: 12px 0; }
+/* 精看区只有左右两图：左商品依据（或显式历史对照）、右固定当前候选。
+ * 固定高度只定展示框，图本身 contain 原比例；缺字节给文字恢复提示，不用另一张图顶替。 */
+.compare-image-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 12px 0; }
 .compare-image-grid figure { min-width: 0; display: flex; flex-direction: column; gap: 8px; }
 .compare-image-grid figcaption { min-height: 52px; font-weight: 600; font-size: 13px; }
+.compare-image-grid figcaption label { display: block; margin-bottom: 6px; }
 .compare-image-grid select { width: 100%; min-width: 0; }
 .compare-image-grid figure > img, .compare-references img {
   width: 100%; height: 280px; object-fit: contain; background: var(--surface-soft);
   border-radius: var(--radius-sm); border: 1px solid var(--border);
 }
 .compare-references { display: grid; gap: 12px; }
-.compare-references li { min-width: 0; font-size: 12px; color: var(--text-muted); }
-.compare-references button { margin: 8px 0; }
+.compare-references li { min-width: 0; display: flex; flex-direction: column; gap: 8px; font-size: 12px; color: var(--text-muted); }
+.compare-references button { margin: 8px 0; align-self: start; }
 .image-zoom {
   width: min(1200px, calc(100vw - 24px)); max-height: calc(100dvh - 24px);
   padding: 16px; margin: auto; color: var(--text); background: var(--surface);
@@ -677,14 +647,29 @@ input:disabled, textarea:disabled, select:disabled { background: var(--surface-s
 .compare-card[aria-selected="true"] { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
 .compare-card > img { width: 100%; height: 96px; object-fit: contain; background: var(--surface); border-radius: var(--radius-sm); }
 .compare-card-head { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
-.checklist { margin-top: 8px; display: flex; flex-direction: column; gap: 8px; }
+.compare-card-main { min-width: 0; }
+.compare-card .compare-headline { margin-top: 6px; overflow-wrap: anywhere; }
+.compare-findings { display: flex; flex-direction: column; gap: 8px; }
 .compare-finding { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 12px; background: var(--surface-soft); }
-.compare-headline { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-weight: 600; }
+.compare-finding .meta { overflow-wrap: anywhere; word-break: break-word; }
 .compare-report { margin-top: 6px; }
-.compare-report-row { font-size: 12.5px; color: var(--text-muted); }
+.compare-report-row { font-size: 12.5px; color: var(--text-muted); overflow-wrap: anywhere; word-break: break-word; }
+.compare-basis { margin-top: 10px; }
+.compare-basis-list { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
+.compare-basis-list li { overflow-wrap: anywhere; word-break: break-word; }
+.compare-history { margin-top: 10px; }
+.compare-history > summary { cursor: pointer; font-weight: 600; font-size: 13px; }
+.compare-history label { display: block; margin: 8px 0 5px; }
 
 .rework-problems { border: none; padding: 0; margin: 0 0 10px; }
-.rework-problem { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; margin: 4px 12px 4px 0; }
+.rework-problem { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; margin: 4px 12px 4px 0; min-height: 44px; }
+.rework-problem input[type="checkbox"] { width: 20px; height: 20px; flex-shrink: 0; }
+fieldset.rework-mode { border: none; padding: 0; margin: 0 0 10px; }
+fieldset.rework-mode legend, .rework-problems legend { padding: 0; }
+.rework-mode-options { display: grid; gap: 4px; margin-top: 6px; }
+label.rework-mode { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; min-height: 44px; }
+label.rework-mode input[type="radio"] { width: 20px; height: 20px; flex-shrink: 0; }
+.rework-problem-options { margin-top: 6px; }
 .rework-preview { margin-top: 10px; }
 
 .prompt-text {
@@ -767,13 +752,32 @@ input:disabled, textarea:disabled, select:disabled { background: var(--surface-s
 
 /* ---------------------------------------------------------------- 响应式 */
 
+/* B4 制作与审图不断 940px 表单限宽：宽屏最大 1440、页边 24；901–1100 左栏 210；
+ * ≤900 同一精看单列 + 带 label 原生选图器（生成视图按同一 900 断点切换模板）。 */
+@media (min-width: 901px) {
+  /* 制作与审图按 1440 桌面基线：main（1120）与 .stage-panels（940）都只约束常规表单页，
+   * 制作页在这两层之外再放开到 1440；页边 24 与其它页一致。 */
+  main:has(.stage-panel[data-stage-panel="make"]:not([hidden])) { max-width: 1488px; }
+  main:has(.stage-panel[data-stage-panel="make"]:not([hidden])) .stage-panels { max-width: 1440px; }
+  .stage-panel[data-stage-panel="make"] { max-width: 1440px; margin: 0 auto; }
+}
+@media (min-width: 901px) and (max-width: 1100px) {
+  .review-workbench { grid-template-columns: 210px minmax(0, 1fr); }
+}
+@media (max-width: 900px) {
+  .review-workbench { grid-template-columns: minmax(0, 1fr); }
+  .compare-image-grid { grid-template-columns: minmax(0, 1fr); }
+  .compare-body { grid-template-columns: minmax(0, 1fr); }
+  .compare-image-grid figure > img, .compare-references img { height: auto; max-height: 60dvh; }
+  .compare-card { width: 100%; max-width: 320px; }
+}
+
 @media (max-width: 760px) {
   main { padding: 16px 14px 64px; }
   .topbar-inner { padding: 10px 14px; }
   .create-form { flex-direction: column; }
-  .create-form button, .stage-foot button, .toolbar button, .row-actions button { min-height: 44px; }
   .stage-nav { flex-wrap: nowrap; }
-  .stage-nav .stage { padding: 10px 12px; }
+  .stage-nav .stage { padding: 10px 12px; min-height: 44px; }
   .project-row { flex-direction: column; align-items: stretch; }
   .project-row .row-actions { justify-content: flex-start; }
   .compare-body { grid-template-columns: 1fr; }

@@ -1,0 +1,1132 @@
+{
+ "started_at": "2026-10-19T09:08:48.027443+00:00",
+ "base": "http://127.0.0.1:2985/",
+ "package_sha256": "5dd5b7d27d198b788b2aad5dacf193af5dd4e636b0f493bdc407478084717591",
+ "package_bytes": 28098549,
+ "real_model_calls": 0,
+ "providers": "FakeSemantic/FakeImage/FakeReview/FakeSuite only",
+ "views": [
+  {
+   "name": "stage-intake-1440",
+   "overflow": {
+    "scroll_width": 1440,
+    "client_width": 1440,
+    "body_scroll_width": 1440,
+    "inner_width": 1440,
+    "device_pixel_ratio": 1,
+    "visual_scale": 1
+   },
+   "stages": {
+    "nav": [
+     {
+      "id": "intake",
+      "label": "资料与事实"
+     },
+     {
+      "id": "plan",
+      "label": "方案"
+     },
+     {
+      "id": "make",
+      "label": "制作与审图"
+     },
+     {
+      "id": "deliver",
+      "label": "交付"
+     }
+    ],
+    "panels": [
+     "intake",
+     "plan",
+     "make",
+     "deliver"
+    ],
+    "next_buttons": [
+     "stage-next-plan",
+     "stage-next-plan-note",
+     "stage-next-make",
+     "stage-next-make-note",
+     "stage-next-deliver",
+     "stage-next-deliver-note"
+    ],
+    "task_list": "ref: <Node>",
+    "task_rows": [
+     {
+      "shot": "shot_main_clean",
+      "state": "succeeded",
+      "selection": "stale",
+      "label": "主图·干净背景\n          已成功\n          主图\n          \n          有候选尚未采用。",
+      "thumb": true,
+      "view_entry": true
+     },
+     {
+      "shot": "shot_infographic_benefits",
+      "state": "succeeded",
+      "selection": "stale",
+      "label": "卖点信息图\n          已成功\n          信息图\n          \n          有候选尚未采用。",
+      "thumb": true,
+      "view_entry": true
+     },
+     {
+      "shot": "shot_scene_lifestyle",
+      "state": "succeeded",
+      "selection": "stale",
+      "label": "场景图·使用中\n          已成功\n          场景图\n          \n          有候选尚未采用。",
+      "thumb": true,
+      "view_entry": true
+     },
+     {
+      "shot": "shot_detail_material",
+      "state": "succeeded",
+      "selection": "stale",
+      "label": "细节图·材质工艺\n          已成功\n          细节图\n          \n          有候选尚未采用。",
+      "thumb": true,
+      "view_entry": true
+     },
+     {
+      "shot": "shot_size_dimensions",
+      "state": "succeeded",
+      "selection": "stale",
+      "label": "尺寸图\n          已成功\n          尺寸图\n          \n          有候选尚未采用。",
+      "thumb": true,
+      "view_entry": true
+     }
+    ],
+    "make_shot_select": null,
+    "mode_single": "ref: <Node>",
+    "mode_batch": "ref: <Node>",
+    "batch_boxes": [],
+    "scope_count": "本次范围 1 张（不可送 0 · 未选 4）",
+    "compare": {
+     "hidden": false,
+     "shot_id": "shot_main_clean"
+    },
+    "rework": {
+     "hidden": true
+    },
+    "shot_execution": {
+     "hidden": false,
+     "shot_id": "shot_main_clean",
+     "actions": [
+      "AI 复核这条候选（按需发起，可选）",
+      "比较候选（3）",
+      "再生成一张（新建 action）"
+     ]
+    },
+    "legacy_review_list": false,
+    "legacy_attempt_list": false,
+    "attempt_editor": true
+   },
+   "screenshot": "stage-intake-1440.png"
+  },
+  {
+   "name": "make-single-1440",
+   "overflow": {
+    "scroll_width": 1440,
+    "client_width": 1440,
+    "body_scroll_width": 1440,
+    "inner_width": 1440,
+    "device_pixel_ratio": 1,
+    "visual_scale": 1
+   },
+   "stages": {
+    "nav": [
+     {
+      "id": "intake",
+      "label": "资料与事实"
+     },
+     {
+      "id": "plan",
+      "label": "方案"
+     },
+     {
+      "id": "make",
+      "label": "制作与审图"
+     },
+     {
+      "id": "deliver",
+      "label": "交付"
+     }
+    ],
+    "panels": [
+     "intake",
+     "plan",
+     "make",
+     "deliver"
+    ],
+    "next_buttons": [
+     "stage-next-plan",
+     "stage-next-plan-note",
+     "stage-next-make",
+     "stage-next-make-note",
+     "stage-next-deliver",
+     "stage-next-deliver-note"
+    ],
+    "task_list": "ref: <Node>",
+    "task_rows": [
+     {
+      "shot": "shot_main_clean",
+      "state": "succeeded",
+      "selection": "stale",
+      "label": "主图·干净背景\n          已成功\n          主图\n          \n          有候选尚未采用。",
+      "thumb": true,
+      "view_entry": true
+     },
+     {
+      "shot": "shot_infographic_benefits",
+      "state": "succeeded",
+      "selection": "stale",
+      "label": "卖点信息图\n          已成功\n          信息图\n          \n          有候选尚未采用。",
+      "thumb": true,
+      "view_entry": true
+     },
+     {
+      "shot": "shot_scene_lifestyle",
+      "state": "succeeded",
+      "selection": "stale",
+      "label": "场景图·使用中\n          已成功\n          场景图\n          \n          有候选尚未采用。",
+      "thumb": true,
+      "view_entry": true
+     },
+     {
+      "shot": "shot_detail_material",
+      "state": "succeeded",
+      "selection": "stale",
+      "label": "细节图·材质工艺\n          已成功\n          细节图\n          \n          有候选尚未采用。",
+      "thumb": true,
+      "view_entry": true
+     },
+     {
+      "shot": "shot_size_dimensions",
+      "state": "succeeded",
+      "selection": "stale",
+      "label": "尺寸图\n          已成功\n          尺寸图\n          \n          有候选尚未采用。",
+      "thumb": true,
+      "view_entry": true
+     }
+    ],
+    "make_shot_select": null,
+    "mode_single": "ref: <Node>",
+    "mode_batch": "ref: <Node>",
+    "batch_boxes": [],
+    "scope_count": "本次范围 1 张（不可送 0 · 未选 4）",
+    "compare": {
+     "hidden": false,
+     "shot_id": "shot_main_clean"
+    },
+    "rework": {
+     "hidden": true
+    },
+    "shot_execution": {
+     "hidden": false,
+     "shot_id": "shot_main_clean",
+     "actions": [
+      "AI 复核这条候选（按需发起，可选）",
+      "比较候选（3）",
+      "再生成一张（新建 action）"
+     ]
+    },
+    "legacy_review_list": false,
+    "legacy_attempt_list": false,
+    "attempt_editor": true
+   },
+   "screenshot": "make-single-1440.png"
+  },
+  {
+   "name": "make-batch-1440",
+   "overflow": {
+    "scroll_width": 1440,
+    "client_width": 1440,
+    "body_scroll_width": 1440,
+    "inner_width": 1440,
+    "device_pixel_ratio": 1,
+    "visual_scale": 1
+   },
+   "stages": {
+    "nav": [
+     {
+      "id": "intake",
+      "label": "资料与事实"
+     },
+     {
+      "id": "plan",
+      "label": "方案"
+     },
+     {
+      "id": "make",
+      "label": "制作与审图"
+     },
+     {
+      "id": "deliver",
+      "label": "交付"
+     }
+    ],
+    "panels": [
+     "intake",
+     "plan",
+     "make",
+     "deliver"
+    ],
+    "next_buttons": [
+     "stage-next-plan",
+     "stage-next-plan-note",
+     "stage-next-make",
+     "stage-next-make-note",
+     "stage-next-deliver",
+     "stage-next-deliver-note"
+    ],
+    "task_list": "ref: <Node>",
+    "task_rows": [
+     {
+      "shot": "shot_main_clean",
+      "state": "succeeded",
+      "selection": "stale",
+      "label": "主图·干净背景\n          已成功\n          主图\n          \n          有候选尚未采用。\n        \n      ",
+      "thumb": true,
+      "view_entry": true
+     },
+     {
+      "shot": "shot_infographic_benefits",
+      "state": "succeeded",
+      "selection": "stale",
+      "label": "卖点信息图\n          已成功\n          信息图\n          \n          有候选尚未采用。\n        \n       ",
+      "thumb": true,
+      "view_entry": true
+     },
+     {
+      "shot": "shot_scene_lifestyle",
+      "state": "succeeded",
+      "selection": "stale",
+      "label": "场景图·使用中\n          已成功\n          场景图\n          \n          有候选尚未采用。\n        \n     ",
+      "thumb": true,
+      "view_entry": true
+     },
+     {
+      "shot": "shot_detail_material",
+      "state": "succeeded",
+      "selection": "stale",
+      "label": "细节图·材质工艺\n          已成功\n          细节图\n          \n          有候选尚未采用。\n        \n    ",
+      "thumb": true,
+      "view_entry": true
+     },
+     {
+      "shot": "shot_size_dimensions",
+      "state": "succeeded",
+      "selection": "stale",
+      "label": "尺寸图\n          已成功\n          尺寸图\n          \n          有候选尚未采用。\n        \n        \n",
+      "thumb": true,
+      "view_entry": true
+     }
+    ],
+    "make_shot_select": null,
+    "mode_single": "ref: <Node>",
+    "mode_batch": "ref: <Node>",
+    "batch_boxes": [
+     "shot_main_clean",
+     "shot_infographic_benefits",
+     "shot_scene_lifestyle",
+     "shot_detail_material",
+     "shot_size_dimensions"
+    ],
+    "scope_count": "本次范围 2 张（不可送 0 · 未选 3）",
+    "compare": {
+     "hidden": false,
+     "shot_id": "shot_scene_lifestyle"
+    },
+    "rework": {
+     "hidden": true
+    },
+    "shot_execution": {
+     "hidden": false,
+     "shot_id": "shot_scene_lifestyle",
+     "actions": [
+      "AI 复核这条候选（按需发起，可选）",
+      "比较候选（1）",
+      "再生成一张（新建 action）"
+     ]
+    },
+    "legacy_review_list": false,
+    "legacy_attempt_list": false,
+    "attempt_editor": true
+   },
+   "screenshot": "make-batch-1440.png"
+  },
+  {
+   "name": "make-batch-empty-1440",
+   "overflow": {
+    "scroll_width": 1440,
+    "client_width": 1440,
+    "body_scroll_width": 1440,
+    "inner_width": 1440,
+    "device_pixel_ratio": 1,
+    "visual_scale": 1
+   },
+   "stages": {
+    "nav": [
+     {
+      "id": "intake",
+      "label": "资料与事实"
+     },
+     {
+      "id": "plan",
+      "label": "方案"
+     },
+     {
+      "id": "make",
+      "label": "制作与审图"
+     },
+     {
+      "id": "deliver",
+      "label": "交付"
+     }
+    ],
+    "panels": [
+     "intake",
+     "plan",
+     "make",
+     "deliver"
+    ],
+    "next_buttons": [
+     "stage-next-plan",
+     "stage-next-plan-note",
+     "stage-next-make",
+     "stage-next-make-note",
+     "stage-next-deliver",
+     "stage-next-deliver-note"
+    ],
+    "task_list": "ref: <Node>",
+    "task_rows": [
+     {
+      "shot": "shot_main_clean",
+      "state": "succeeded",
+      "selection": "stale",
+      "label": "主图·干净背景\n          已成功\n          主图\n          \n          有候选尚未采用。\n        \n      ",
+      "thumb": true,
+      "view_entry": true
+     },
+     {
+      "shot": "shot_infographic_benefits",
+      "state": "succeeded",
+      "selection": "stale",
+      "label": "卖点信息图\n          已成功\n          信息图\n          \n          有候选尚未采用。\n        \n       ",
+      "thumb": true,
+      "view_entry": true
+     },
+     {
+      "shot": "shot_scene_lifestyle",
+      "state": "succeeded",
+      "selection": "stale",
+      "label": "场景图·使用中\n          已成功\n          场景图\n          \n          有候选尚未采用。\n        \n     ",
+      "thumb": true,
+      "view_entry": true
+     },
+     {
+      "shot": "shot_detail_material",
+      "state": "succeeded",
+      "selection": "stale",
+      "label": "细节图·材质工艺\n          已成功\n          细节图\n          \n          有候选尚未采用。\n        \n    ",
+      "thumb": true,
+      "view_entry": true
+     },
+     {
+      "shot": "shot_size_dimensions",
+      "state": "succeeded",
+      "selection": "stale",
+      "label": "尺寸图\n          已成功\n          尺寸图\n          \n          有候选尚未采用。\n        \n        \n",
+      "thumb": true,
+      "view_entry": true
+     }
+    ],
+    "make_shot_select": null,
+    "mode_single": "ref: <Node>",
+    "mode_batch": "ref: <Node>",
+    "batch_boxes": [
+     "shot_main_clean",
+     "shot_infographic_benefits",
+     "shot_scene_lifestyle",
+     "shot_detail_material",
+     "shot_size_dimensions"
+    ],
+    "scope_count": "本次范围 0 张（不可送 0 · 未选 5）",
+    "compare": {
+     "hidden": false,
+     "shot_id": "shot_scene_lifestyle"
+    },
+    "rework": {
+     "hidden": true
+    },
+    "shot_execution": {
+     "hidden": false,
+     "shot_id": "shot_scene_lifestyle",
+     "actions": [
+      "AI 复核这条候选（按需发起，可选）",
+      "比较候选（1）",
+      "再生成一张（新建 action）"
+     ]
+    },
+    "legacy_review_list": false,
+    "legacy_attempt_list": false,
+    "attempt_editor": true
+   },
+   "screenshot": "make-batch-empty-1440.png"
+  },
+  {
+   "name": "stage-plan-1440",
+   "overflow": {
+    "scroll_width": 1440,
+    "client_width": 1440,
+    "body_scroll_width": 1440,
+    "inner_width": 1440,
+    "device_pixel_ratio": 1,
+    "visual_scale": 1
+   },
+   "stages": {
+    "nav": [
+     {
+      "id": "intake",
+      "label": "资料与事实"
+     },
+     {
+      "id": "plan",
+      "label": "方案"
+     },
+     {
+      "id": "make",
+      "label": "制作与审图"
+     },
+     {
+      "id": "deliver",
+      "label": "交付"
+     }
+    ],
+    "panels": [
+     "intake",
+     "plan",
+     "make",
+     "deliver"
+    ],
+    "next_buttons": [
+     "stage-next-plan",
+     "stage-next-plan-note",
+     "stage-next-make",
+     "stage-next-make-note",
+     "stage-next-deliver",
+     "stage-next-deliver-note"
+    ],
+    "task_list": "ref: <Node>",
+    "task_rows": [
+     {
+      "shot": "shot_main_clean",
+      "state": "succeeded",
+      "selection": "stale",
+      "label": "主图·干净背景\n          已成功\n          主图\n          \n          有候选尚未采用。",
+      "thumb": true,
+      "view_entry": true
+     },
+     {
+      "shot": "shot_infographic_benefits",
+      "state": "succeeded",
+      "selection": "stale",
+      "label": "卖点信息图\n          已成功\n          信息图\n          \n          有候选尚未采用。",
+      "thumb": true,
+      "view_entry": true
+     },
+     {
+      "shot": "shot_scene_lifestyle",
+      "state": "succeeded",
+      "selection": "stale",
+      "label": "场景图·使用中\n          已成功\n          场景图\n          \n          有候选尚未采用。",
+      "thumb": true,
+      "view_entry": true
+     },
+     {
+      "shot": "shot_detail_material",
+      "state": "succeeded",
+      "selection": "stale",
+      "label": "细节图·材质工艺\n          已成功\n          细节图\n          \n          有候选尚未采用。",
+      "thumb": true,
+      "view_entry": true
+     },
+     {
+      "shot": "shot_size_dimensions",
+      "state": "succeeded",
+      "selection": "stale",
+      "label": "尺寸图\n          已成功\n          尺寸图\n          \n          有候选尚未采用。",
+      "thumb": true,
+      "view_entry": true
+     }
+    ],
+    "make_shot_select": null,
+    "mode_single": "ref: <Node>",
+    "mode_batch": "ref: <Node>",
+    "batch_boxes": [],
+    "scope_count": "本次范围 1 张（不可送 0 · 未选 4）",
+    "compare": {
+     "hidden": false,
+     "shot_id": "shot_scene_lifestyle"
+    },
+    "rework": {
+     "hidden": true
+    },
+    "shot_execution": {
+     "hidden": false,
+     "shot_id": "shot_scene_lifestyle",
+     "actions": [
+      "AI 复核这条候选（按需发起，可选）",
+      "比较候选（1）",
+      "再生成一张（新建 action）"
+     ]
+    },
+    "legacy_review_list": false,
+    "legacy_attempt_list": false,
+    "attempt_editor": true
+   },
+   "screenshot": "stage-plan-1440.png"
+  },
+  {
+   "name": "stage-deliver-1440",
+   "overflow": {
+    "scroll_width": 1440,
+    "client_width": 1440,
+    "body_scroll_width": 1440,
+    "inner_width": 1440,
+    "device_pixel_ratio": 1,
+    "visual_scale": 1
+   },
+   "stages": {
+    "nav": [
+     {
+      "id": "intake",
+      "label": "资料与事实"
+     },
+     {
+      "id": "plan",
+      "label": "方案"
+     },
+     {
+      "id": "make",
+      "label": "制作与审图"
+     },
+     {
+      "id": "deliver",
+      "label": "交付"
+     }
+    ],
+    "panels": [
+     "intake",
+     "plan",
+     "make",
+     "deliver"
+    ],
+    "next_buttons": [
+     "stage-next-plan",
+     "stage-next-plan-note",
+     "stage-next-make",
+     "stage-next-make-note",
+     "stage-next-deliver",
+     "stage-next-deliver-note"
+    ],
+    "task_list": "ref: <Node>",
+    "task_rows": [
+     {
+      "shot": "shot_main_clean",
+      "state": "succeeded",
+      "selection": "stale",
+      "label": "主图·干净背景\n          已成功\n          主图\n          \n          有候选尚未采用。",
+      "thumb": true,
+      "view_entry": true
+     },
+     {
+      "shot": "shot_infographic_benefits",
+      "state": "succeeded",
+      "selection": "stale",
+      "label": "卖点信息图\n          已成功\n          信息图\n          \n          有候选尚未采用。",
+      "thumb": true,
+      "view_entry": true
+     },
+     {
+      "shot": "shot_scene_lifestyle",
+      "state": "succeeded",
+      "selection": "stale",
+      "label": "场景图·使用中\n          已成功\n          场景图\n          \n          有候选尚未采用。",
+      "thumb": true,
+      "view_entry": true
+     },
+     {
+      "shot": "shot_detail_material",
+      "state": "succeeded",
+      "selection": "stale",
+      "label": "细节图·材质工艺\n          已成功\n          细节图\n          \n          有候选尚未采用。",
+      "thumb": true,
+      "view_entry": true
+     },
+     {
+      "shot": "shot_size_dimensions",
+      "state": "succeeded",
+      "selection": "stale",
+      "label": "尺寸图\n          已成功\n          尺寸图\n          \n          有候选尚未采用。",
+      "thumb": true,
+      "view_entry": true
+     }
+    ],
+    "make_shot_select": null,
+    "mode_single": "ref: <Node>",
+    "mode_batch": "ref: <Node>",
+    "batch_boxes": [],
+    "scope_count": "本次范围 1 张（不可送 0 · 未选 4）",
+    "compare": {
+     "hidden": false,
+     "shot_id": "shot_scene_lifestyle"
+    },
+    "rework": {
+     "hidden": true
+    },
+    "shot_execution": {
+     "hidden": false,
+     "shot_id": "shot_scene_lifestyle",
+     "actions": [
+      "AI 复核这条候选（按需发起，可选）",
+      "比较候选（1）",
+      "再生成一张（新建 action）"
+     ]
+    },
+    "legacy_review_list": false,
+    "legacy_attempt_list": false,
+    "attempt_editor": true
+   },
+   "screenshot": "stage-deliver-1440.png"
+  },
+  {
+   "name": "stage-intake-restored-1440",
+   "overflow": {
+    "scroll_width": 1440,
+    "client_width": 1440,
+    "body_scroll_width": 1440,
+    "inner_width": 1440,
+    "device_pixel_ratio": 1,
+    "visual_scale": 1
+   },
+   "stages": {
+    "nav": [
+     {
+      "id": "intake",
+      "label": "资料与事实"
+     },
+     {
+      "id": "plan",
+      "label": "方案"
+     },
+     {
+      "id": "make",
+      "label": "制作与审图"
+     },
+     {
+      "id": "deliver",
+      "label": "交付"
+     }
+    ],
+    "panels": [
+     "intake",
+     "plan",
+     "make",
+     "deliver"
+    ],
+    "next_buttons": [
+     "stage-next-plan",
+     "stage-next-plan-note",
+     "stage-next-make",
+     "stage-next-make-note",
+     "stage-next-deliver",
+     "stage-next-deliver-note"
+    ],
+    "task_list": "ref: <Node>",
+    "task_rows": [
+     {
+      "shot": "shot_main_clean",
+      "state": "succeeded",
+      "selection": "stale",
+      "label": "主图·干净背景\n          已成功\n          主图\n          \n          有候选尚未采用。",
+      "thumb": true,
+      "view_entry": true
+     },
+     {
+      "shot": "shot_infographic_benefits",
+      "state": "succeeded",
+      "selection": "stale",
+      "label": "卖点信息图\n          已成功\n          信息图\n          \n          有候选尚未采用。",
+      "thumb": true,
+      "view_entry": true
+     },
+     {
+      "shot": "shot_scene_lifestyle",
+      "state": "succeeded",
+      "selection": "stale",
+      "label": "场景图·使用中\n          已成功\n          场景图\n          \n          有候选尚未采用。",
+      "thumb": true,
+      "view_entry": true
+     },
+     {
+      "shot": "shot_detail_material",
+      "state": "succeeded",
+      "selection": "stale",
+      "label": "细节图·材质工艺\n          已成功\n          细节图\n          \n          有候选尚未采用。",
+      "thumb": true,
+      "view_entry": true
+     },
+     {
+      "shot": "shot_size_dimensions",
+      "state": "succeeded",
+      "selection": "stale",
+      "label": "尺寸图\n          已成功\n          尺寸图\n          \n          有候选尚未采用。",
+      "thumb": true,
+      "view_entry": true
+     }
+    ],
+    "make_shot_select": null,
+    "mode_single": "ref: <Node>",
+    "mode_batch": "ref: <Node>",
+    "batch_boxes": [],
+    "scope_count": "本次范围 1 张（不可送 0 · 未选 4）",
+    "compare": {
+     "hidden": false,
+     "shot_id": "shot_scene_lifestyle"
+    },
+    "rework": {
+     "hidden": true
+    },
+    "shot_execution": {
+     "hidden": false,
+     "shot_id": "shot_scene_lifestyle",
+     "actions": [
+      "AI 复核这条候选（按需发起，可选）",
+      "比较候选（1）",
+      "再生成一张（新建 action）"
+     ]
+    },
+    "legacy_review_list": false,
+    "legacy_attempt_list": false,
+    "attempt_editor": true
+   },
+   "screenshot": "stage-intake-restored-1440.png"
+  },
+  {
+   "name": "make-1366",
+   "overflow": {
+    "scroll_width": 1366,
+    "client_width": 1366,
+    "body_scroll_width": 1366,
+    "inner_width": 1366,
+    "device_pixel_ratio": 1,
+    "visual_scale": 1
+   },
+   "stages": {
+    "nav": [
+     {
+      "id": "intake",
+      "label": "资料与事实"
+     },
+     {
+      "id": "plan",
+      "label": "方案"
+     },
+     {
+      "id": "make",
+      "label": "制作与审图"
+     },
+     {
+      "id": "deliver",
+      "label": "交付"
+     }
+    ],
+    "panels": [
+     "intake",
+     "plan",
+     "make",
+     "deliver"
+    ],
+    "next_buttons": [
+     "stage-next-plan",
+     "stage-next-plan-note",
+     "stage-next-make",
+     "stage-next-make-note",
+     "stage-next-deliver",
+     "stage-next-deliver-note"
+    ],
+    "task_list": "ref: <Node>",
+    "task_rows": [
+     {
+      "shot": "shot_main_clean",
+      "state": "succeeded",
+      "selection": "stale",
+      "label": "主图·干净背景\n          已成功\n          主图\n          \n          有候选尚未采用。",
+      "thumb": true,
+      "view_entry": true
+     },
+     {
+      "shot": "shot_infographic_benefits",
+      "state": "succeeded",
+      "selection": "stale",
+      "label": "卖点信息图\n          已成功\n          信息图\n          \n          有候选尚未采用。",
+      "thumb": true,
+      "view_entry": true
+     },
+     {
+      "shot": "shot_scene_lifestyle",
+      "state": "succeeded",
+      "selection": "stale",
+      "label": "场景图·使用中\n          已成功\n          场景图\n          \n          有候选尚未采用。",
+      "thumb": true,
+      "view_entry": true
+     },
+     {
+      "shot": "shot_detail_material",
+      "state": "succeeded",
+      "selection": "stale",
+      "label": "细节图·材质工艺\n          已成功\n          细节图\n          \n          有候选尚未采用。",
+      "thumb": true,
+      "view_entry": true
+     },
+     {
+      "shot": "shot_size_dimensions",
+      "state": "succeeded",
+      "selection": "stale",
+      "label": "尺寸图\n          已成功\n          尺寸图\n          \n          有候选尚未采用。",
+      "thumb": true,
+      "view_entry": true
+     }
+    ],
+    "make_shot_select": null,
+    "mode_single": "ref: <Node>",
+    "mode_batch": "ref: <Node>",
+    "batch_boxes": [],
+    "scope_count": "本次范围 1 张（不可送 0 · 未选 4）",
+    "compare": {
+     "hidden": false,
+     "shot_id": "shot_scene_lifestyle"
+    },
+    "rework": {
+     "hidden": true
+    },
+    "shot_execution": {
+     "hidden": false,
+     "shot_id": "shot_scene_lifestyle",
+     "actions": [
+      "AI 复核这条候选（按需发起，可选）",
+      "比较候选（1）",
+      "再生成一张（新建 action）"
+     ]
+    },
+    "legacy_review_list": false,
+    "legacy_attempt_list": false,
+    "attempt_editor": true
+   },
+   "screenshot": "make-1366.png"
+  },
+  {
+   "name": "make-1024",
+   "overflow": {
+    "scroll_width": 1024,
+    "client_width": 1024,
+    "body_scroll_width": 1024,
+    "inner_width": 1024,
+    "device_pixel_ratio": 1,
+    "visual_scale": 1
+   },
+   "stages": {
+    "nav": [
+     {
+      "id": "intake",
+      "label": "资料与事实"
+     },
+     {
+      "id": "plan",
+      "label": "方案"
+     },
+     {
+      "id": "make",
+      "label": "制作与审图"
+     },
+     {
+      "id": "deliver",
+      "label": "交付"
+     }
+    ],
+    "panels": [
+     "intake",
+     "plan",
+     "make",
+     "deliver"
+    ],
+    "next_buttons": [
+     "stage-next-plan",
+     "stage-next-plan-note",
+     "stage-next-make",
+     "stage-next-make-note",
+     "stage-next-deliver",
+     "stage-next-deliver-note"
+    ],
+    "task_list": "ref: <Node>",
+    "task_rows": [
+     {
+      "shot": "shot_main_clean",
+      "state": "succeeded",
+      "selection": "stale",
+      "label": "主图·干净背景\n          已成功\n          主图\n          \n          有候选尚未采用。",
+      "thumb": true,
+      "view_entry": true
+     },
+     {
+      "shot": "shot_infographic_benefits",
+      "state": "succeeded",
+      "selection": "stale",
+      "label": "卖点信息图\n          已成功\n          信息图\n          \n          有候选尚未采用。",
+      "thumb": true,
+      "view_entry": true
+     },
+     {
+      "shot": "shot_scene_lifestyle",
+      "state": "succeeded",
+      "selection": "stale",
+      "label": "场景图·使用中\n          已成功\n          场景图\n          \n          有候选尚未采用。",
+      "thumb": true,
+      "view_entry": true
+     },
+     {
+      "shot": "shot_detail_material",
+      "state": "succeeded",
+      "selection": "stale",
+      "label": "细节图·材质工艺\n          已成功\n          细节图\n          \n          有候选尚未采用。",
+      "thumb": true,
+      "view_entry": true
+     },
+     {
+      "shot": "shot_size_dimensions",
+      "state": "succeeded",
+      "selection": "stale",
+      "label": "尺寸图\n          已成功\n          尺寸图\n          \n          有候选尚未采用。",
+      "thumb": true,
+      "view_entry": true
+     }
+    ],
+    "make_shot_select": null,
+    "mode_single": "ref: <Node>",
+    "mode_batch": "ref: <Node>",
+    "batch_boxes": [],
+    "scope_count": "本次范围 1 张（不可送 0 · 未选 4）",
+    "compare": {
+     "hidden": false,
+     "shot_id": "shot_scene_lifestyle"
+    },
+    "rework": {
+     "hidden": true
+    },
+    "shot_execution": {
+     "hidden": false,
+     "shot_id": "shot_scene_lifestyle",
+     "actions": [
+      "AI 复核这条候选（按需发起，可选）",
+      "比较候选（1）",
+      "再生成一张（新建 action）"
+     ]
+    },
+    "legacy_review_list": false,
+    "legacy_attempt_list": false,
+    "attempt_editor": true
+   },
+   "screenshot": "make-1024.png"
+  },
+  {
+   "name": "make-390",
+   "overflow": {
+    "scroll_width": 390,
+    "client_width": 390,
+    "body_scroll_width": 390,
+    "inner_width": 390,
+    "device_pixel_ratio": 1,
+    "visual_scale": 1
+   },
+   "stages": {
+    "nav": [
+     {
+      "id": "intake",
+      "label": "资料与事实"
+     },
+     {
+      "id": "plan",
+      "label": "方案"
+     },
+     {
+      "id": "make",
+      "label": "制作与审图"
+     },
+     {
+      "id": "deliver",
+      "label": "交付"
+     }
+    ],
+    "panels": [
+     "intake",
+     "plan",
+     "make",
+     "deliver"
+    ],
+    "next_buttons": [
+     "stage-next-plan",
+     "stage-next-plan-note",
+     "stage-next-make",
+     "stage-next-make-note",
+     "stage-next-deliver",
+     "stage-next-deliver-note"
+    ],
+    "task_list": "ref: <Node>",
+    "task_rows": [],
+    "make_shot_select": {
+     "visible": true,
+     "options": [
+      "shot_main_clean",
+      "shot_infographic_benefits",
+      "shot_scene_lifestyle",
+      "shot_detail_material",
+      "shot_size_dimensions"
+     ]
+    },
+    "mode_single": "ref: <Node>",
+    "mode_batch": "ref: <Node>",
+    "batch_boxes": [],
+    "scope_count": "本次范围 1 张（不可送 0 · 未选 4）",
+    "compare": {
+     "hidden": false,
+     "shot_id": "shot_size_dimensions"
+    },
+    "rework": {
+     "hidden": true
+    },
+    "shot_execution": {
+     "hidden": false,
+     "shot_id": "shot_size_dimensions",
+     "actions": [
+      "AI 复核这条候选（按需发起，可选）",
+      "比较候选（5）",
+      "再生成一张（新建 action）"
+     ]
+    },
+    "legacy_review_list": false,
+    "legacy_attempt_list": false,
+    "attempt_editor": true
+   },
+   "screenshot": "make-390.png"
+  },
+  {
+   "name": "make-longstress-1440",
+   "overflow": {
+    "scroll_width": 1440,
+    "client_width": 1440
+   },
+   "screenshot": "make-longstress-1440.png"
+  }
+ ],
+ "console_errors": [],
+ "page_errors": [],
+ "posts": [],
+ "finished_at": "2026-10-19T09:08:54.155979+00:00"
+}

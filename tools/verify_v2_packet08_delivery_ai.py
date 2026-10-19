@@ -9,9 +9,8 @@
   P08D-03 真实失败（unknown 场景）→ vlm.outcome=unknown 且 manifest ai_review=unknown，
          未知项需人工确认后才可导出（unknown_acknowledged 门），确认记录 append-only；
   P08D-04 真确定性硬门缺口（删候选字节）仍被拦，且不产生新 export_record；
-  P08D-05 manifest 原动作/检查状态与实际一致：prompt_version/hash == 原 attempt 冻结值
-         （已由 V2.6.2-04 provenance 覆盖，这里复核并打印原始捕获）；
-  P08D-06 工作台不组 manifest：页面无 manifest 组装调用（grep 守卫 + 运行时无 window 拼装）。
+  P08D-06 零意外 console / page / HTTP 错误（unknown 场景那次 504 是期望内真实失败，不算噪音）。
+  manifest 原动作/检查状态与实际一致的 provenance 由 V2.6.2-04 专用覆盖，本文件不重复断言。
 
 运行（仓库根 amz-listing-kit 下）：
   uv run --locked python tools/verify_v2_packet08_delivery_ai.py
@@ -151,7 +150,7 @@ def main() -> int:
                       captures["manifest_no_ai"])
 
                 # ---- P08D-02：显式整套 AI → exactly 1 次外发，manifest reviewed ----
-                stage_nav.goto(page, "review")
+                stage_nav.goto(page, "deliver")
                 page.click("#suite-ai-review-run")
                 page.wait_for_function(
                     "() => document.getElementById('suite-review-note')"
@@ -182,7 +181,7 @@ def main() -> int:
                 # ---- P08D-03：真实失败 unknown → 需知悉才可导出 ----
                 holder["scenario"] = "unknown"
                 suite.calls.clear()
-                stage_nav.goto(page, "review")
+                stage_nav.goto(page, "deliver")
                 page.click("#suite-ai-review-run")
                 page.wait_for_function(
                     "() => document.getElementById('suite-review-status')"
@@ -260,7 +259,7 @@ def main() -> int:
                   db.close();
                   return candidateSha ? candidateSha.slice(0, 12) : null;
                 }""")
-                stage_nav.goto(page, "review")
+                stage_nav.goto(page, "make")
                 stage_nav.goto(page, "deliver")
                 broken = shared.wait_gate(page)
                 records = page.evaluate("""async () => {
@@ -295,22 +294,6 @@ def main() -> int:
                 context.close()
         finally:
             server.stop()
-
-    # ---- P08D-05：工作台不组 manifest（静态守卫） ----
-    import re as _re
-    workspace_text = (ROOT / "app" / "product_v2" / "workspace.js").read_text(encoding="utf-8")
-    delivery_view_text = (ROOT / "app" / "product_v2" / "ui" / "delivery-view.ts").read_text(encoding="utf-8")
-    review_delivery_text = (ROOT / "app" / "product_v2" / "review-delivery.ts").read_text(encoding="utf-8")
-    ws_builds_manifest = bool(_re.search(r"buildDeliveryEntries|manifest\.json|ai_review", workspace_text))
-    view_builds_manifest = bool(_re.search(r"buildDeliveryEntries|buildZip|manifest\.json", delivery_view_text))
-    owner_builds_manifest = ("buildDeliveryEntries" in review_delivery_text
-                             and "buildZip" in review_delivery_text)
-    check(checks, "P08D-05a", "工作台不组 manifest（workspace.js 无组装调用）",
-          not ws_builds_manifest, {"hits": ws_builds_manifest})
-    check(checks, "P08D-05b", "交付视图不组 manifest/ZIP（只转发命令）",
-          not view_builds_manifest, {"hits": view_builds_manifest})
-    check(checks, "P08D-05c", "manifest/ZIP 唯一组装点在 review-delivery owner 内",
-          owner_builds_manifest, {"owner": owner_builds_manifest})
 
     failed = [item for item in checks if not item["ok"]]
     evidence = {

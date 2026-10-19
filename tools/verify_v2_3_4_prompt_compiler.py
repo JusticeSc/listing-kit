@@ -36,7 +36,7 @@ sys.path.insert(0, str(ROOT / "tools"))
 from v2_test_server import start_static  # noqa: E402
 sys.path.insert(0, str(ROOT / "tools"))
 
-import v2_stage_nav as stage_nav  # noqa: E402  （V2.UI.2 六阶段工作台导航）
+import v2_stage_nav as stage_nav  # noqa: E402  （B4 四段工作台导航）
 import v2_verify_shared as shared  # noqa: E402  （Issue #9 普通决定共用函数）
 
 PRODUCT_DIR = ROOT / "app" / "product_v2"
@@ -348,13 +348,13 @@ def main() -> int:
             ui["decisions"]["shots"]["shot_infographic_benefits"] = shared.decide_shot_decision(
                 page, "shot_infographic_benefits", print_intent="selected",
                 layout="product_left_text_right", texts=["signature_features"])
-            stage_nav.goto(page, "generate")
+            stage_nav.goto(page, "make")
             # #prompt-editor 在 <details id="prompt-details">（默认闭合）内：hidden 属性已随套图就绪打开，
             # 视觉可见还需展开 details（用户真实路径；只改“怎么到达断言”，不断言内容）。
             stage_nav.reveal(page, "#prompt-editor")
             expect(page.locator("#prompt-editor")).to_be_visible()
             expect(page.locator("#prompt-list .shot-spec")).to_have_count(4)
-            # 切到生成区会触发异步自动本地准备：等它落定后再读“未编译”基线，避免把准备中的瞬态当断言。
+            # 切到制作区会触发异步自动本地准备：等它落定后再读“未编译”基线，避免把准备中的瞬态当断言。
             page.wait_for_function(
                 """() => (document.getElementById("local-preparation-status") || {}).textContent
                     && (document.getElementById("local-preparation-status").textContent.includes("本地准备完成")
@@ -429,8 +429,8 @@ def main() -> int:
             expect(page.locator("#style-version")).not_to_have_text(style_v0)
             style_transition = {"from": style_v0, "to": page.inner_text("#style-version"),
                                 "status": page.inner_text("#style-status")}
-            stage_nav.goto(page, "generate")
-            # 切回生成区会触发一次异步本地准备（stage onSelect → prepareSystemPrompts，会把风格变化后
+            stage_nav.goto(page, "make")
+            # 切回制作区会触发一次异步本地准备（stage onSelect → prepareSystemPrompts，会把风格变化后
             # 过期的图自动重准备成新版本）：先等“本地准备完成/更新 N 张”文案落定，再读目标卡片的真实版本
             # （只改“怎么到达断言”：按“旧版本 +1”断言，不写死 v2；新版本的 hash/文本/历史语义与原来一致）。
             page.wait_for_function(
@@ -466,7 +466,7 @@ def main() -> int:
             page.fill("#style-avoid", "柔光照明")
             page.click("#style-save")
             expect(page.locator(main_card)).to_have_attribute("data-prompt-state", "stale")
-            stage_nav.goto(page, "generate")
+            stage_nav.goto(page, "make")
             page.click(main_card + " button")
             expect(page.locator("#prompt-error")).to_be_visible()
             conflict_text = page.locator("#prompt-error").inner_text()
@@ -484,11 +484,11 @@ def main() -> int:
             screenshots.append(screenshot_rel)
 
             page.reload(wait_until="networkidle")
-            stage_nav.goto(page, "generate")
+            stage_nav.goto(page, "make")
             # 同上：reload 后 details 回到闭合；先展开再断言可见（断言本身不变）。
             stage_nav.reveal(page, "#prompt-editor")
             expect(page.locator("#prompt-editor")).to_be_visible()
-            # reload 切回生成区会再次触发异步自动本地准备：等它落定后再读版本，
+            # reload 切回制作区会再次触发异步自动本地准备：等它落定后再读版本，
             # 否则会把“准备中”的旧版本当成“恢复不一致”。只改到达路径。
             page.wait_for_function(
                 """() => (document.getElementById("local-preparation-status") || {}).textContent
@@ -503,7 +503,7 @@ def main() -> int:
                   and reloaded_main["record_hash"] == main_v2["record_hash"]
                   and reloaded_main["recomputed_hash"] == main_v2["record_hash"]
                   and reloaded_main["ui_hash"] == main_v2["record_hash"]
-                  # reload 切回生成区会触发自动本地准备：信息图若已过期会被补成新版。
+                  # reload 切回制作区会触发自动本地准备：信息图若已过期会被补成新版。
                   # “其他图版本不变”指 reload 后自洽（界面=记录=重算），不指冻结在 reload 前。只改取样口径。
                   and reloaded_info["ui_text"] == reloaded_info["text"]
                   and reloaded_info["record_hash"] == reloaded_info["recomputed_hash"] == reloaded_info["ui_hash"],

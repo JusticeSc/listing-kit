@@ -3,7 +3,7 @@
 
 覆盖验收（全部离线 headless Chrome + 本地 fake provider，无付费调用）：
   P08A-01 未发起复核时页面显示"未复核/未运行"（data-compare-vlm="not_run" /
-         data-review-ai="not_reviewed"），且人工采用可继续（state=current）；
+         data-review-vlm 缺席即未运行），且人工采用可继续（state=current）；
   P08A-02 生成/查看/切换比较/采用本身不产生复核外发（fake review calls==0）；
          显式点击"AI 复核"后才有且仅有 1 次复核请求外发；
   P08A-03 真实失败（unknown 场景）才显示 Unknown（outcome=unknown +
@@ -128,26 +128,27 @@ def main() -> int:
                 candidate_id = cands[-1]["payload"]["candidate_id"]
 
                 # ---- P08A-01：未发起时如实显示未复核，且采用已成立 ----
-                page.click('[data-stage-nav="review"]')
+                stage_nav.goto(page, "make")
+                shared.select_make_shot(page, shot_id)
                 page.wait_for_timeout(400)
                 card_ai = page.evaluate(
                     """(shot) => { const n = document.querySelector(
-                      '#review-list .review-card[data-shot-id="' + shot + '"] .review-check-ai');
-                      return n ? { text: n.textContent, ai: n.getAttribute("data-review-ai") } : null; }""",
+                      '#shot-execution [data-shot-id="' + shot + '"] .attempt-review');
+                      return n ? { text: n.textContent, ai: n.getAttribute("data-review-vlm") } : null; }""",
                     shot_id)
                 state = page.get_attribute(
-                    f'#review-list .review-card[data-shot-id="{shot_id}"]', "data-selection-state")
+                    f'#task-list-mount [data-task-shot="{shot_id}"]', "data-selection-state")
                 adopt_state_before = str(state)
                 ai_line_before = str((card_ai or {}).get("text") or "")
-                check(checks, "P08A-01a", "未发起复核时审核卡显示未复核/未运行（不折叠成 Unknown）",
-                      card_ai is not None and (card_ai or {}).get("ai") == "not_reviewed"
+                check(checks, "P08A-01a", "未发起复核时本图执行区显示未复核/未运行（不折叠成 Unknown）",
+                      card_ai is not None and (card_ai or {}).get("ai") in ("not_run", None)
                       and "未复核" in ai_line_before and "Unknown" not in ai_line_before,
                       card_ai)
                 check(checks, "P08A-01b", "未发起复核时人工采用可继续（state=current，不被复核门阻断）",
                       state == "current", {"state": state})
 
                 # 比较面板的视觉复核行：未发起 = not_run。
-                page.click(f'#review-list .review-card[data-shot-id="{shot_id}"] button:has-text("比较候选")')
+                shared.select_make_shot(page, shot_id)
                 page.wait_for_selector("#compare-panel:not([hidden])", timeout=15_000)
                 page.wait_for_selector("#compare-checklist details.compare-report", timeout=15_000)
                 vlm_row = page.evaluate(
@@ -201,21 +202,20 @@ def main() -> int:
                 page.click("#compare-close")
                 page.wait_for_timeout(300)
                 state3 = page.get_attribute(
-                    f'#review-list .review-card[data-shot-id="{shot_id}"]', "data-selection-state")
+                    f'#task-list-mount [data-task-shot="{shot_id}"]', "data-selection-state")
                 check(checks, "P08A-03b", "复核失败不改变人工采用（仍 current，不自动改选）",
                       state3 == "current", {"state": state3})
 
                 # ---- P08A-04：刷新后如实展示 ----
                 page.reload(wait_until="networkidle")
                 page.wait_for_selector("#project-view:not([hidden])", timeout=20_000)
-                page.click('[data-stage-nav="review"]')
-                page.wait_for_selector(
-                    f'#review-list .review-card[data-shot-id="{shot_id}"]', timeout=20_000)
+                stage_nav.goto(page, "make")
+                shared.select_make_shot(page, shot_id)
                 page.wait_for_timeout(500)
                 card_ai2 = page.evaluate(
                     """(shot) => { const n = document.querySelector(
-                      '#review-list .review-card[data-shot-id="' + shot + '"] .review-check-ai');
-                      return n ? { text: n.textContent, ai: n.getAttribute("data-review-ai") } : null; }""",
+                      '#shot-execution [data-shot-id="' + shot + '"] .attempt-review');
+                      return n ? { text: n.textContent, ai: n.getAttribute("data-review-vlm") } : null; }""",
                     shot_id)
                 docs2 = page.evaluate(PROBE_REPORTS, candidate_id)
                 latest2 = max(docs2, key=lambda item: item["version"]) if docs2 else {}

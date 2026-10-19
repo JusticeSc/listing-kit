@@ -918,7 +918,7 @@ def main(*, server_logs: tuple[io.StringIO, io.StringIO]) -> int:
                                        timeout=20_000)
                 page.click("#analyze-run")
                 page.wait_for_timeout(400)
-                stage_nav.goto(page, "understand")
+                stage_nav.goto(page, "intake")
                 page.wait_for_selector("#slot-list .slot-row", timeout=60_000)
                 page.wait_for_timeout(300)
                 stage_nav.goto(page, "intake")
@@ -957,28 +957,25 @@ def main(*, server_logs: tuple[io.StringIO, io.StringIO]) -> int:
                       and "data_base64" not in json.dumps(last),
                       last.get("image_provenance"))
 
-                # 事实确认在「理解」阶段进行，先回到该阶段（槽位行只在该面板可见）。
-                stage_nav.goto(page, "understand")
+                # 事实确认在「资料与事实」阶段进行，槽位行只在该面板可见。
+                stage_nav.goto(page, "intake")
                 page.wait_for_selector("#slot-list .slot-row", timeout=30_000)
                 shared.confirm_slots(page)
-                page.click("#stage-next-understand")
+                page.click("#stage-next-plan")
                 page.click("#suite-seed")
                 page.wait_for_selector("#shot-list .shot-row", timeout=20_000)
-                page.click("#stage-next-plan")
+                page.click("#stage-next-make")
                 shots = page.evaluate(shared.SHOT_IDS)
                 assert shots, "走查没有产出 shot"
                 # Issue #9：编译前先做普通决定（用户真实路径）。
                 shared.decide_for_compile(page, shots)
                 shared.compile_all(page, shots)
+                shared.choose_make_batch(page, shots)
                 submitted = shared.confirm_and_submit(page, expect, shot_ids=shots)
                 assert submitted["ok"], f"提交与逐图消费不一致：{submitted}"
-                stage_nav.goto(page, "review")
+                stage_nav.goto(page, "make")
                 for shot_id in shots:
-                    page.click(f'#review-list .review-card[data-shot-id="{shot_id}"] '
-                               'button:has-text("采用候选")')
-                    page.wait_for_selector(
-                        f'#review-list .review-card[data-shot-id="{shot_id}"][data-selection-state="current"]',
-                        timeout=15_000)
+                    shared.adopt_make_shot(page, shot_id)
 
 
                 image_request = last_request(requests_log, "/api/v2/images/submit")
@@ -1000,8 +997,7 @@ def main(*, server_logs: tuple[io.StringIO, io.StringIO]) -> int:
 
                 # 单图 AI 复核（按需显式发起）
                 first_shot = shots[0]
-                page.click(f'#review-list .review-card[data-shot-id="{first_shot}"] '
-                           'button:has-text("比较候选")')
+                shared.select_make_shot(page, first_shot)
                 page.wait_for_selector("#compare-panel:not([hidden])", timeout=15_000)
                 page.wait_for_selector("#compare-checklist details.compare-report", timeout=15_000)
                 page.locator("#compare-review").click()
@@ -1021,7 +1017,8 @@ def main(*, server_logs: tuple[io.StringIO, io.StringIO]) -> int:
                       and (review_request or {}).get("key_matches", {}).get("review") is True,
                       {"path": (review_request or {}).get("path"), "headers": review_headers})
 
-                # 整套确定性检查 + 整套 AI 复核（按需显式发起）
+                # 整套确定性检查 + 整套 AI 复核（按需显式发起；整套检查卡在交付阶段）
+                stage_nav.goto(page, "deliver")
                 page.click("#suite-review-run")
                 page.wait_for_function(
                     "() => (document.getElementById('suite-review-status') || {})"
@@ -1097,26 +1094,28 @@ def main(*, server_logs: tuple[io.StringIO, io.StringIO]) -> int:
                 page.wait_for_selector('#stage-panels [data-stage-panel="intake"]:not([hidden])',
                                        timeout=20_000)
                 page.click("#analyze-run")
-                stage_nav.goto(page, "understand")
+                stage_nav.goto(page, "intake")
                 page.wait_for_selector("#slot-list .slot-row", timeout=60_000)
                 shared.confirm_slots(page)
-                page.click("#stage-next-understand")
+                page.click("#stage-next-plan")
                 page.click("#suite-seed")
                 page.wait_for_selector("#shot-list .shot-row", timeout=20_000)
-                page.click("#stage-next-plan")
+                page.click("#stage-next-make")
                 p5_shots = page.evaluate(shared.SHOT_IDS)
                 assert p5_shots, "P5 走查没有产出 shot"
                 # Issue #9：编译前先做普通决定（用户真实路径）。
                 shared.decide_for_compile(page, p5_shots)
                 shared.compile_all(page, p5_shots)
+                shared.choose_make_batch(page, p5_shots)
                 p5_submitted = shared.confirm_and_submit(
                     page, expect, shot_ids=p5_shots, submitted_shots=[p5_shots[0]], settle=False)
                 assert p5_submitted["ok"], f"P5 提交未落定：{p5_submitted}"
-                stage_nav.goto(page, "generate")
+                stage_nav.goto(page, "make")
                 page.click("#batch-stop")
                 page.wait_for_timeout(400)
                 p5_shot = p5_shots[0]
-                p5_row = f'#attempt-list .attempt-row[data-shot-id="{p5_shot}"]'
+                shared.select_make_shot(page, p5_shot)
+                p5_row = f'#shot-execution [data-shot-id="{p5_shot}"]'
                 # 冻结身份：原任务真正提交时的 provider/target/task 与动作，后面逐步核对不变。
                 p5_project = project_id_of(page, "P08 P5 隔离连接")
                 frozen_attempt = attempt_of(page, p5_shot, p5_project)
@@ -1155,7 +1154,7 @@ def main(*, server_logs: tuple[io.StringIO, io.StringIO]) -> int:
                 check(checks, "P08-05a",
                       "image 用途 key 已清除（面板清除入口真实可用）",
                       cleared == "image-section:true", {"cleared": cleared})
-                stage_nav.goto(page, "generate")
+                stage_nav.goto(page, "make")
                 page.wait_for_selector(p5_row, timeout=20_000)
                 page.wait_for_timeout(500)
                 cred_visible = page.locator(f"{p5_row} button[data-original-credentials]").is_visible()
@@ -1190,7 +1189,7 @@ def main(*, server_logs: tuple[io.StringIO, io.StringIO]) -> int:
                 current_provider = read_current_image_provider(page)
                 suppliers_after_switch = supplier_calls(
                     vision, image_provider, review_provider, suite_provider)
-                stage_nav.goto(page, "generate")
+                stage_nav.goto(page, "make")
                 page.wait_for_selector(f"{p5_row} button[data-original-credentials]", timeout=20_000)
                 page.wait_for_timeout(500)
                 cred_visible_after = page.locator(

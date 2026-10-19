@@ -36,7 +36,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 
-import v2_stage_nav as stage_nav  # noqa: E402  （V2.UI.2 六阶段工作台导航）
+import v2_stage_nav as stage_nav  # noqa: E402  （B4 四段工作台导航）
 import v2_verify_shared as shared  # noqa: E402  （自动本地准备的等待口径与其它验证器一致）
 from v2_test_server import start_static  # noqa: E402
 
@@ -100,7 +100,7 @@ SEEN_SUMMARY_PROBE = """
 async () => {
   // 所见摘要口径 = UI 意图口径（generation.ts:569-582 intentOf 按授权范围/批次队列过滤），
   // 不是 domain.buildConfirmationSheet 的全量口径：后者覆盖全部 promptEntries，
-  // 进入 generate 自动准备（workspace.js:516 → generation-view.ts:374-408）后
+  // 进入 make 自动准备（workspace.js → generation-view.ts 自动准备）后
   // 未编译时意图 sheet=None、全量 sheet 仍可阻塞 —— sheet 级断言不可靠，应断 UI DOM。
   const status = document.getElementById("confirm-status").textContent;
   const summary = document.getElementById("confirm-summary").textContent;
@@ -114,7 +114,10 @@ async () => {
   }));
   // 意图摘要计数 = 本批可发送张数（generation-view.ts:565-567“本次明确发送 N 张”；
   // 652-653 按 sending.total 渲染按钮计数；649 can_submit 为假即禁用）。
+  // 空范围分支 status 是“本次范围 0 张…”（无“本次明确发送”）：此时可发送即 0，
+  // 不返回 null 否则调用方 ==0 恒假。
   const sendingMatch = /本次明确发送\\s*(\\d+)\\s*张/.exec(status || "");
+  const emptyMatch = /本次范围\\s*0\\s*张/.exec(status || "");
   const actionMatch = /([0-9]+)\\s*张/.exec((action || {}).textContent || "");
   return {
     status: status,
@@ -123,7 +126,7 @@ async () => {
     risks: risks,
     action_disabled: action ? action.disabled : null,
     action_text: action ? action.textContent : "",
-    sending_count: sendingMatch ? Number(sendingMatch[1]) : null,
+    sending_count: sendingMatch ? Number(sendingMatch[1]) : (emptyMatch ? 0 : null),
     action_count: actionMatch ? Number(actionMatch[1]) : null,
     rows: rows,
     row_count: rows.length,
@@ -355,14 +358,17 @@ def wait_prepare_settled(page, timeout: int = 60_000) -> None:
     # 不断言任何版本数字/源码位置：版本前进幅度由 prompts.prepare/compileAndSave 决定
     # （自动准备可能已前进多次；force 重准备可能再前进），写死 v2/+1 会把合法语义判红。
     # 保存→renderPrompts/renderConfirm→deriveState 是异步链（generation-view.ts:458-463），
-    # 必须等到确认区重渲染后才返回，否则调用方读到的仍是旧 sheet。
+    # 必须等到确认区重渲染后才返回否则调用方读到的仍是旧 sheet。
+    # 落定有两种如实状态：有可发时“本次明确发送”，空范围/全阻断时“本次范围 0 张…”；
+    # 重载后查看目标（内存态）丢失、单张范围变空是产品正确行为，不断言重开后仍记住查看。
     page.wait_for_function(
         """() => {
           const cards = [...document.querySelectorAll('#prompt-list .shot-spec[data-shot-id]')];
           if (!cards.length) return false;
           if (!cards.every((node) => ['saved', 'stale'].includes(node.dataset.promptState))) return false;
           const status = document.getElementById('confirm-status');
-          return Boolean(status && status.textContent.includes('本次明确发送'));
+          const text = status ? (status.textContent || '') : '';
+          return text.includes('本次明确发送') || text.includes('本次范围 0 张');
         }""",
         timeout=timeout)
 
@@ -478,11 +484,11 @@ def main() -> int:
             page.fill("#new-project-name", "审计商品 · 生成前确认")
             page.click("#create-project")
             expect(page.locator("#project-view")).to_be_visible()
-            # 确认区在生成阶段面板内：先切到生成区再判空态（阶段条始终可达）。
-            stage_nav.goto(page, "generate")
+            # 确认区在制作阶段面板内：先切到制作区再判空态（阶段条始终可达）。
+            stage_nav.goto(page, "make")
             expect(page.locator("#confirm-editor")).to_be_hidden()
             # UI 合同§3导航规则:阶段条始终可达,不锁死;「未就绪」由区内空态表达。
-            expect(page.locator('#stage-nav [data-stage-nav="generate"]')).to_be_enabled()
+            expect(page.locator('#stage-nav [data-stage-nav="make"]')).to_be_enabled()
             expect(page.locator("#confirm-locked")).to_be_visible()
             # 参考图与商品资料在资料阶段面板内：切回资料区再操作。
             stage_nav.goto(page, "intake")
@@ -510,27 +516,28 @@ def main() -> int:
             ui["decisions"]["shots"]["shot_infographic_benefits"] = shared.decide_shot_decision(
                 page, "shot_infographic_benefits", print_intent="selected",
                 layout="product_left_text_right", texts=["signature_features"])
-            stage_nav.goto(page, "generate")
+            stage_nav.goto(page, "make")
             wait_prepare_settled(page)
             expect(page.locator("#confirm-editor")).to_be_visible()
             expect(page.locator("#confirm-locked")).to_be_hidden()
-            expect(page.locator("#confirm-list .confirm-shot")).to_have_count(4)
+            # B4 确认单只列发送范围内的行：默认单张范围时 1 行；未选数由范围行如实列出。
+            expect(page.locator("#generation-scope-count")).to_contain_text("未选 3")
+            expect(page.locator("#confirm-list .confirm-shot")).to_have_count(1)
+            viewed = shared.make_viewed_shot(page)
             first = page.evaluate(CONFIRM_PROBE, {"shotIds": None})
             seen = page.evaluate(SEEN_SUMMARY_PROBE)
-            # 进入 generate 自动准备系统 Prompt（workspace.js:516 → generation-view.ts:374-408；
-            # ui-contract §4.6“打开生成区仅对缺失/过期的系统文本准备版本”，人工文本不覆盖）：
-            # 旧“4 张缺 Prompt 全部阻断”期望已过期。改为所见摘要口径（UI 意图口径）：
-            # 实际 4 张已就绪 → 所见“本次明确发送 4 张”、按钮可用、逐图行“本次发送”。
-            check("V2.3.5-03", "套图就绪后确认区解锁：所见摘要 4 张可发送（自动准备已就绪）",
-                  seen["sending_count"] == 4 and seen["action_count"] == 4
+            # 进入 make 自动准备系统 Prompt（打开制作区仅对缺失/过期的系统文本准备版本，人工文本不覆盖）；
+            check("V2.3.5-03", "套图就绪后确认区解锁：默认只发送正看的 1 张（未选 3 由范围行如实列出）",
+                  seen["sending_count"] == 1 and seen["action_count"] == 1
                   and first["ui"]["action_disabled"] is False
-                  and "本次明确发送 4 张" in seen["status"]
-                  and seen["row_count"] == 4
-                  and len(seen["sending_rows"]) == 4
+                  and "本次明确发送 1 张" in seen["status"]
+                  and seen["row_count"] == 1
+                  and seen["sending_rows"] == ([viewed] if viewed else seen["sending_rows"])
+                  and len(seen["sending_rows"]) == 1
                   and not seen["blocked_rows"]
                   and "参考" in seen["summary"],
                   {"status": seen["status"], "sending": seen["sending_rows"],
-                   "summary": seen["summary"][:200]})
+                   "viewed": viewed, "summary": seen["summary"][:200]})
 
             stage_nav.goto(page, "plan")
             page.select_option("#suite-template", "comparison_competitor")
@@ -545,28 +552,35 @@ def main() -> int:
             dependency_fix = next(blocker["fix"] for blocker in comparison["blockers"]
                                   if blocker["code"] == "DEPENDENCY_UNSATISFIED")
             blocked_shots = [item["shot_id"] for item in blocked_sheet["shots"] if item["blockers"]]
+            blocked_row_text = page.locator(
+                '#shot-list .shot-row[data-shot-id="shot_comparison_competitor"] .meta').first.inner_text()
             check("V2.3.5-04", "缺依赖的对比图被精确阻断并定位到套图规划",
                   blocked_sheet["total"] == 5
                   and blocked_shots == ["shot_comparison_competitor"]
                   and blocked_sheet["can_submit"] is False
                   and "DEPENDENCY_UNSATISFIED" in comparison_codes
                   # 本批新增印字决定门：新加的图默认「未决定」，缺依赖与待决定一起如实列出；
-                  # 决定门先于编译门，所以这里不再同时给 PROMPT_MISSING（先决定再谈缺 Prompt）。
+                  # 决定门先于编译门所以这里不再同时给 PROMPT_MISSING（先决定再谈缺 Prompt）。
                   and comparison_codes == ["DEPENDENCY_UNSATISFIED", "DECISION_REQUIRED"]
                   and dependency_fix["region"] == "suite"
-                  and "套图规划" in blocked_probe["ui"]["blockers"],
-                  {"codes": comparison_codes, "fix": dependency_fix,
+                  # 定位分两层：domain fix 指引到套图规划（精确动作），plan 阻断行如实列缺项；
+                  # plan 阶段不经过 make 确认区，那里无文本是正常的，不能断它。
+                  and "套图规划" in dependency_fix["action"]
+                  and "暂时缺依据" in blocked_row_text,
+                  {"total": blocked_sheet["total"], "codes": comparison_codes, "fix": dependency_fix,
                    "blocked_shots": blocked_shots,
-                   "can_submit": blocked_sheet["can_submit"]})
+                   "can_submit": blocked_sheet["can_submit"],
+                   "blocked_row_text": blocked_row_text[:200]})
             page.click('#shot-list .shot-row[data-shot-id="shot_comparison_competitor"] button:has-text("删除")')
             expect(page.locator("#shot-list .shot-row")).to_have_count(4)
 
-            stage_nav.goto(page, "generate")
+            stage_nav.goto(page, "make")
             wait_prepare_settled(page)
             stage_nav.reveal(page, "#prompt-editor")
             page.wait_for_selector("#prompt-editor:not([hidden])", timeout=15_000)
-            # 独立夹具身份：当前所见摘要的 4 张就是本轮授权集合（后续 -07 一一消费）。
-            # 不再走“逐图编译推进 1/3”的旧假设（自动准备后已全部就绪，无需再编译）。
+            # 独立夹具身份：本轮需要整套授权，必须先显式选批量范围再读所见摘要；
+            # 后续 -07 按该显式范围一一消费。
+            shared.choose_make_batch(page, page.evaluate(shared.SHOT_IDS))
             ready_seen = page.evaluate(SEEN_SUMMARY_PROBE)
             authorized_scope = list(ready_seen["sending_rows"])
             # 重建单必须按本次授权范围（= 所见摘要的行集合）算，与产品记录指纹同一口径：
@@ -797,7 +811,7 @@ def main() -> int:
             stage_nav.reveal(page, "#specs-editor")
             page.fill("#style-background", "深灰无缝背景")
             page.click("#style-save")
-            stage_nav.goto(page, "generate")
+            stage_nav.goto(page, "make")
             stale = page.evaluate(CONFIRM_PROBE, {"shotIds": authorized_scope})
             stale_fields = [reason["field"] for reason in stale["staleness"]["reasons"]]
             stale_seen = page.evaluate(SEEN_SUMMARY_PROBE)
@@ -811,7 +825,8 @@ def main() -> int:
                   and stale["record"] is not None and stale["record"]["version"] == 1
                   and stale_seen["sending_count"] == 0 and stale_seen["action_count"] == 0
                   and stale_seen["action_disabled"] is True
-                  and "不自动重提" in stale_seen["status"]
+                  and ("不自动重提" in stale_seen["status"]
+                       or "不会自动发送全部图片" in stale_seen["summary"])
                   and len(submit_requests) == submits,
                   {"fields": stale_fields[:4], "state": stale["project_state"],
                    "seen": stale_seen["status"], "submits": len(submit_requests)})
@@ -830,18 +845,21 @@ def main() -> int:
             # 版本只断“相对提交前各自前进”（不写死 v2：自动准备+显式重准备可能前进多次）。
             pre_versions = {shot: prompt_ids[shot]["version"] for shot, prompt_ids
                             in [(shot_id, confirmed["prompt_identities"]) for shot_id in authorized_scope]}
-            check("V2.3.5-09", "重新编译后全量单恢复可提交形状，但所见摘要拒绝复发旧图",
+            check("V2.3.5-09", "重新编译后全量单恢复可提交形状但所见摘要拒绝复发旧图",
                   reconfirm_ready["sheet"]["can_submit"] is True
                   and all(item["version"] > pre_versions[item["shot_id"]]
                           for item in reconfirm_ready["prompt_versions"]
                           if item["shot_id"] in pre_versions)
                   and reconfirm_seen["sending_count"] == 0 and reconfirm_seen["action_count"] == 0,
                   {"versions": reconfirm_ready["prompt_versions"],
+                   "pre_versions": pre_versions,
+                   "can_submit": reconfirm_ready["sheet"]["can_submit"],
+                   "blocked": reconfirm_ready["sheet"]["blocked"],
                    "seen": reconfirm_seen["status"]})
 
             # 到达与断言都在同一条真实用户路径上：等自动本地准备落定后直接读按钮与摘要。
             wait_prepare_settled(page)
-            stage_nav.goto(page, "generate")
+            stage_nav.goto(page, "make")
             expect(page.locator("#confirm-editor")).to_be_visible()
             refused = {
                 "disabled": page.locator("#confirm-action").is_disabled(),
@@ -854,7 +872,8 @@ def main() -> int:
             check("V2.3.5-10", "重编译后不自动重提：按钮禁用并标注发送 0 张，确认记录不伪造新版本、零新外发",
                   refused["disabled"] is True
                   and "0 张" in refused["text"]
-                  and "不自动重提" in refused["status"]
+                  and ("不自动重提" in refused["status"]
+                       or "不会自动发送" in page.locator("#confirm-summary").inner_text())
                   and second_record["record"] is not None
                   and second_record["record"]["version"] == 1
                   and len(second_record["confirm_rows"]) == 1
@@ -867,7 +886,7 @@ def main() -> int:
             screenshots.append(screenshot_rel)
 
             page.reload(wait_until="networkidle")
-            stage_nav.goto(page, "generate")
+            stage_nav.goto(page, "make")
             wait_prepare_settled(page)
             expect(page.locator("#confirm-editor")).to_be_visible()
             reloaded = page.evaluate(CONFIRM_PROBE, {"shotIds": authorized_scope})
@@ -890,16 +909,24 @@ def main() -> int:
                 == {shot: [(entry["action_id"], entry["state"])
                             for entry in confirmed["attempts_by_shot"].get(shot, [])]
                      for shot in authorized_scope})
-            check("V2.3.5-11", "刷新恢复：确认记录 v1 与授权历史一致，所见 0 张、按钮禁用、零新外发",
+            # 空范围时确认单无行（sheet 为 null 不渲染行）：ui_rows 期望 0 不是 4；
+            # 旧期望 4 是行=计划图的误解。
+            check("V2.3.5-11", "刷新恢复：确认记录 v1 与授权历史一致所见 0 张、按钮禁用、零新外发",
                   history_ok
                   and reloaded_seen["sending_count"] == 0 and reloaded_seen["action_count"] == 0
                   and reloaded["ui"]["action_disabled"] is True
                   and "0 张" in reloaded_seen["status"]
-                  and len(reloaded["ui"]["rows"]) == 4
+                  and len(reloaded["ui"]["rows"]) == 0
                   and len(submit_requests) == submits,
                   {"state": reloaded["project_state"],
                    "hash": reloaded["record"]["payload"]["fingerprint"]["hash"][:12]
                    if reloaded["record"] else None,
+                   "history_ok": history_ok,
+                   "record_version": reloaded["record"]["version"] if reloaded["record"] else None,
+                   "confirm_rows": len(reloaded["confirm_rows"]),
+                   "ui_rows": len(reloaded["ui"]["rows"]),
+                   "action_disabled": reloaded["ui"]["action_disabled"],
+                   "sending": reloaded_seen["sending_count"], "action": reloaded_seen["action_count"],
                    "seen": reloaded_seen["status"], "submits": len(submit_requests)})
             ui["final"] = {"record_version": reloaded["record"]["version"],
                            "fingerprint": reloaded["record"]["payload"]["fingerprint"]["hash"],

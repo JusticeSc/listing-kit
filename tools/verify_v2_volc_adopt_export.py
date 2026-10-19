@@ -221,28 +221,31 @@ def main() -> int:
                     return page.evaluate(PROBE)
 
                 def row(shot_id: str):
+                    shared.select_make_shot(page, shot_id)
                     return page.locator(
-                        f'#attempt-list .attempt-row[data-shot-id="{shot_id}"]')
+                        f'#shot-execution [data-shot-id="{shot_id}"]')
 
                 def wait_state(shot_id: str, state: str, timeout: int = 120_000) -> None:
-                    expect(row(shot_id)).to_have_attribute(
+                    expect(page.locator(
+                        f'#task-list-mount [data-task-shot="{shot_id}"]')).to_have_attribute(
                         "data-attempt-state", state, timeout=timeout)
 
                 def wait_preview(shot_id: str, timeout: int = 60_000) -> None:
+                    shared.select_make_shot(page, shot_id)
                     page.locator(
-                        f'#attempt-list .attempt-row[data-shot-id="{shot_id}"]'
+                        f'#shot-execution [data-shot-id="{shot_id}"]'
                         " .attempt-preview img"
                     ).scroll_into_view_if_needed(timeout=timeout)
                     page.wait_for_function(
                         """(shot) => {
                             const node = document.querySelector(
-                                '#attempt-list .attempt-row[data-shot-id="' + shot + '"]');
+                                '#shot-execution [data-shot-id="' + shot + '"]');
                             const img = node && node.querySelector('.attempt-preview img');
                             return Boolean(img && img.complete && img.naturalWidth > 0);
                         }""", arg=shot_id, timeout=timeout)
 
                 def compile_all(shot_ids: list) -> None:
-                    stage_nav.goto(page, "generate")
+                    stage_nav.goto(page, "make")
                     for shot_id in shot_ids:
                         card = f'#prompt-list .shot-spec[data-shot-id="{shot_id}"]'
                         page.locator(card + " .toolbar button").scroll_into_view_if_needed(timeout=10_000)
@@ -277,17 +280,18 @@ def main() -> int:
                 expect(page.locator("#shot-list .shot-row")).to_have_count(4)
                 # Issue #9：编译前先做普通决定（用户真实路径）；choices 进 ui 证据。
                 ui["decisions"] = shared.decide_for_compile(page, probe()["shot_ids"])
-                stage_nav.goto(page, "generate")
+                stage_nav.goto(page, "make")
                 expect(page.locator("#prompt-list .shot-spec")).to_have_count(4)
                 shot_ids = probe()["shot_ids"]
                 compile_all(shot_ids)
+                shared.choose_make_batch(page, shot_ids)
                 expect(page.locator("#confirm-action")).to_be_enabled()
                 page.click("#confirm-action")
                 # 确认即提交（confirmAndRun 一次保存授权并直接整套提交）：
-                # 等 attempt 行出现（行为判据），不再钉 #confirm-record 实现文案。
+                # 等任务行出现（行为判据），不再钉实现文案。
                 page.wait_for_function(
                     """() => document.querySelectorAll(
-                        '#attempt-list .attempt-row[data-attempt-state]').length > 0""",
+                        '#task-list-mount [data-task-shot][data-attempt-state]').length > 0""",
                     timeout=30_000)
                 ready = probe()
                 provider_text = ready["ui"]["provider"]
@@ -364,18 +368,14 @@ def main() -> int:
                        "recomputed": str(hashed.get("sha256"))[:12]})
 
                 # ---------------- 人工采用（真实用户路径） ----------------
-                page.click("#stage-next-review")
-                page.click(f'#review-list .review-card[data-shot-id="{target}"] '
-                           'button:has-text("采用候选")')
-                page.wait_for_selector("#adopt-submit:not([disabled])", timeout=15_000)
-                fingerprint_text = (
-                    page.locator("#adopt-fingerprint").inner_text(timeout=10_000))
-                check("VE-05", "确定性审核报告当前有效（采用面板显示将绑定当前审核报告）",
-                      "将绑定当前审核报告" in fingerprint_text,
-                      {"fingerprint": fingerprint_text[:160]})
-                page.click("#adopt-submit")
+                shared.adopt_make_shot(page, target)
                 page.wait_for_selector("#adopt-status:not([hidden])", timeout=20_000)
                 page.wait_for_timeout(300)
+                fingerprint_text = (
+                    page.locator("#adopt-status").inner_text(timeout=10_000))
+                check("VE-05", "确定性审核报告当前有效（采用状态如实显示已采用）",
+                      "已采用" in fingerprint_text,
+                      {"fingerprint": fingerprint_text[:160]})
                 selections = page.evaluate(READ_DOCS, "selection")
                 mine = [item for item in selections
                         if (item.get("payload") or {}).get("shot_id") == target]
@@ -384,7 +384,7 @@ def main() -> int:
                 card_text = page.evaluate(
                     """(shot) => {
                         const node = document.querySelector(
-                          '#review-list .review-card[data-shot-id="' + shot + '"]');
+                          '#task-list-mount [data-task-shot="' + shot + '"]');
                         return (node && node.textContent) || "";
                       }""",
                     arg=target)
@@ -397,13 +397,13 @@ def main() -> int:
                           "action", "candidate_id", "candidate_sha256",
                           "candidate_version", "selection_id")}})
 
-                # ---------------- 整套检查 + 交付导出 ----------------
+                # ---------------- 整套检查 + 交付导出（整套检查卡在交付阶段） ----------------
+                stage_nav.goto(page, "deliver")
                 page.click("#suite-review-run")
                 page.wait_for_function(
                     "() => document.getElementById('suite-review-status')"
                     ".textContent.indexOf('整套检查 v') >= 0",
                     timeout=60_000)
-                page.click('[data-stage-nav="deliver"]')
                 page.wait_for_function(
                     "() => document.querySelectorAll('#delivery-gate .gate-finding').length > 0",
                     timeout=30_000)
@@ -504,7 +504,7 @@ def main() -> int:
         "一次真实同步 submit 携带真实商品参考图（sha256 " + reference_sha[:12] + "…，"
         + str(reference_size) + " 字节）与非空 Prompt；提交信封一步到 succeeded，"
         "task_id 为空且 status 零外呼；结果字节入库成 IndexedDB Blob（sha 双边一致）；"
-        "确定性审核随候选自动生成且当前有效；人工在审核页点“采用候选”并提交选择记录；"
+        "确定性审核随候选自动生成且当前有效；人工在制作与审图选中该图后在常驻精看点采用并提交选择记录；"
         "整套检查当前、交付门禁 ready；交付包 manifest 按采用候选原 action 的冻结 "
         "Prompt 版本/hash 溯源，ZIP sha 自洽，export_record append-only。"
         "语义槽位由验证器直接播种（0 语义调用），VLM 未重跑（r71-vlm 已证 binding_ok，"
@@ -591,10 +591,12 @@ async () => {
   const plans = documents.filter((item) => item.kind === "suite_plan")
     .sort((left, right) => left.version - right.version);
   const plan = plans.length ? plans[plans.length - 1] : null;
-  const rows = [...document.querySelectorAll("#attempt-list .attempt-row")].map((node) => {
-    const img = node.querySelector(".attempt-preview img");
+  const rows = [...document.querySelectorAll("#task-list-mount [data-task-shot]")].map((node) => {
+    const detail = document.querySelector(
+      '#shot-execution [data-shot-id="' + node.getAttribute("data-task-shot") + '"]');
+    const img = detail ? detail.querySelector(".attempt-preview img") : null;
     return {
-      shot_id: node.getAttribute("data-shot-id"),
+      shot_id: node.getAttribute("data-task-shot"),
       state: node.getAttribute("data-attempt-state"),
       preview: img ? { complete: img.complete, natural_width: img.naturalWidth } : null,
     };

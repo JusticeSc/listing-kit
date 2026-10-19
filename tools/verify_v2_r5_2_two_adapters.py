@@ -196,11 +196,15 @@ async () => {
   const plans = documents.filter((item) => item.kind === "suite_plan")
     .sort((left, right) => left.version - right.version);
   const plan = plans.length ? plans[plans.length - 1] : null;
-  const rows = [...document.querySelectorAll("#attempt-list .attempt-row")].map((node) => ({
-    shot_id: node.getAttribute("data-shot-id"),
-    state: node.getAttribute("data-attempt-state"),
-    candidate_text: (node.querySelector(".attempt-candidate") || {}).textContent || null,
-  }));
+  const rows = [...document.querySelectorAll("#task-list-mount [data-task-shot]")].map((node) => {
+    const detail = document.querySelector(
+      '#shot-execution [data-shot-id="' + node.getAttribute("data-task-shot") + '"]');
+    return {
+      shot_id: node.getAttribute("data-task-shot"),
+      state: node.getAttribute("data-attempt-state"),
+      candidate_text: ((detail || node).querySelector(".attempt-candidate") || {}).textContent || null,
+    };
+  });
   return {
     shot_ids: plan ? plan.payload.shots.map((shot) => shot.shot_id) : [],
     attempt_chains: chains,
@@ -760,7 +764,7 @@ def browser_e2e_checks(check, screenshots: list[str], console_errors: list,
         expect(page.locator("#shot-list .shot-row")).to_have_count(4)
         # Issue #9：编译前先做普通决定（用户真实路径）。
         shared.decide_for_compile(page, page.evaluate(shared.SHOT_IDS))
-        stage_nav.goto(page, "generate")
+        stage_nav.goto(page, "make")
         # Prompt 编辑区在「查看／编辑完整 Prompt（高级）」折叠块里：默认收起，需按真实入口展开。
         if page.evaluate("() => !document.getElementById('prompt-details').open"):
             page.click("#prompt-title")
@@ -772,10 +776,11 @@ def browser_e2e_checks(check, screenshots: list[str], console_errors: list,
         # 确认即提交：先备齐 4 次同步响应再点确认，确认后直接等 attempt 终态，不再点已删除的旧整套按钮。
         for _ in range(4):
             transport.script_success(reference)
+        shared.choose_make_batch(page, shot_ids)
         page.click("#confirm-action")
         for shot_id in shot_ids:
             page.wait_for_selector(
-                f'#attempt-list .attempt-row[data-shot-id="{shot_id}"]'
+                f'#task-list-mount [data-task-shot="{shot_id}"]'
                 '[data-attempt-state="succeeded"]', timeout=60_000)
         page.wait_for_timeout(1000)
         after = page.evaluate(ID_DB_PROBE)
@@ -864,8 +869,8 @@ def browser_e2e_checks(check, screenshots: list[str], console_errors: list,
 
         # 刷新：字节面为空了，IndexedDB 仍是权威；记录与候选仍然可见。
         page.reload(wait_until="networkidle")
-        stage_nav.goto(page, "generate")
-        page.wait_for_selector("#attempt-list .attempt-row", timeout=30_000)
+        stage_nav.goto(page, "make")
+        page.wait_for_selector("#task-list-mount [data-task-shot]", timeout=30_000)
         refreshed = page.evaluate(ID_DB_PROBE)
         check("R52-E05", "刷新后：4 条 succeeded 记录 + 候选仍在（IndexedDB 权威）",
               len(refreshed["attempt_chains"]) == 4
@@ -878,7 +883,8 @@ def browser_e2e_checks(check, screenshots: list[str], console_errors: list,
 
         # 显式新建 action：同步协议再成功一次（新的第五次 transport 提交）。
         transport.script_success(reference, request_id="req-ark-second")
-        row_selector = f'#attempt-list .attempt-row[data-shot-id="{target_shot}"]'
+        shared.select_make_shot(page, target_shot)
+        row_selector = f'#shot-execution [data-shot-id="{target_shot}"]'
         page.click(row_selector + ' button:has-text("再生成一张")')
         shared.confirm_and_submit(page, expect, shot_ids=[target_shot])
         page.wait_for_selector(row_selector + '[data-attempt-state="succeeded"]',
@@ -912,7 +918,7 @@ def browser_e2e_checks(check, screenshots: list[str], console_errors: list,
         prompts_before_rotation = after_second["prompts"]
         mode["credential_source"] = "env"
         page.reload(wait_until="networkidle")
-        stage_nav.goto(page, "generate")
+        stage_nav.goto(page, "make")
         expect(page.locator("#prompt-list .shot-spec")).to_have_count(4)
         rotated = page.evaluate(ID_DB_PROBE)
         check("R53-E02", "纯凭据轮换保留 Prompt/确认且零新增外呼",
@@ -926,7 +932,7 @@ def browser_e2e_checks(check, screenshots: list[str], console_errors: list,
         # （plan §439/§870、ui-contract:39/167-176：自动准备缺失/过期系统文本，历史不被静默覆盖）。
         mode["provider"] = "dashscope"
         page.reload(wait_until="networkidle")
-        stage_nav.goto(page, "generate")
+        stage_nav.goto(page, "make")
         # 自动准备是异步本地动作：等它落定，再断言（不拿瞬时 stale 当终态）。
         expect(page.locator('#prompt-list [data-prompt-state="saved"]')).to_have_count(4)
         changed = page.evaluate(ID_DB_PROBE)

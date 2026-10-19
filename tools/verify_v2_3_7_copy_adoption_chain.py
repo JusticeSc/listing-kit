@@ -4,8 +4,7 @@
 检查（全部在正式页面走用户真实路径，假 Provider 只替代外部模型响应）：
   1) 提议：明确点一次「提议英文上图候选」只发一次 POST，候选行可见且可采用；
   2) 采用只写规格草稿：规格区对该槽位显示「已采用候选文案」而不是「旧版」，勾选框已勾；
-     持久化规格与 Prompt 记录都没变（采用≠保存）；
-  3) 未保存不生效：生成区本地准备把该图拦在印字决定上，没有任何包含该文案的 Prompt；
+  3) 未保存不生效：制作区本地准备把该图拦在印字决定上，没有任何包含该文案的 Prompt；
      其余图（草稿里同样被写入候选）也不印这条；
   4) 保存规格：新版本 on_image_texts 逐字等于候选文案、来源=该槽位+当前版本、status=confirmed、origin=model；
   5) 刷新后仍是「已采用候选文案」：origin 往返不降级成用户原文（再保存也不会把 model 抹成 user）；
@@ -32,7 +31,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 
-import v2_stage_nav as stage_nav  # noqa: E402  （V2.UI.2 六阶段工作台导航）
+import v2_stage_nav as stage_nav  # noqa: E402  （B4 四段工作台导航）
 import v2_verify_shared as shared  # noqa: E402  （Issue #9 普通决定共用函数）
 
 EVIDENCE_DIR = ROOT / "evals" / "product-v2"
@@ -194,7 +193,7 @@ def wait_documents(page, predicate, attempts: int = 60):
 
 
 def settle_local_preparation(page, timeout_ms: int = 20_000) -> None:
-    """等生成区的异步本地准备落定（避免把准备中的瞬态当断言）。
+    """等制作区的异步本地准备落定（避免把准备中的瞬态当断言）。
 
     状态文案只在真的跑过准备时才出现；已经落定的会话可能什么都不显示，所以超时不判红——
     是否准备好由后面的断言按记录/卡片状态自己判定，这里只负责「别读到半途」。
@@ -231,7 +230,7 @@ def attempt_compile(page, shot_id: str) -> None:
 
 
 def compile_if_needed(page, shot_id: str) -> None:
-    """进入生成区后若还没有记录，显式点一次该图的准备按钮（用户真实路径）。"""
+    """进入制作区后若还没有记录，显式点一次该图的准备按钮（用户真实路径）。"""
 
     result = page.evaluate(RECOMPUTE, {"shotId": shot_id})
     if result.get("found"):
@@ -321,7 +320,7 @@ def main() -> int:
             expect(page.locator("#shot-spec-list .shot-spec")).to_have_count(4)
 
             # ---------------------------------------------------------- 提议 + 采用
-            stage_nav.goto(page, "understand")
+            stage_nav.goto(page, "intake")
             page.click("#slots-toggle")
             slot_row = page.locator('#slot-list .slot-row[data-slot-id="' + SLOT + '"]')
             expect(slot_row).to_be_visible()
@@ -357,7 +356,7 @@ def main() -> int:
                    "persisted_spec": before_save.get(spec_key)})
 
             # ---------------------------------------------------------- 未保存不生效
-            stage_nav.goto(page, "generate")
+            stage_nav.goto(page, "make")
             stage_nav.reveal(page, "#prompt-editor")
             settle_local_preparation(page)
             compile_if_needed(page, SHOT)
@@ -418,7 +417,7 @@ def main() -> int:
                    "origin": reloaded_first.get("origin")})
 
             # ---------------------------------------------------------- 编译/预览逐字
-            stage_nav.goto(page, "generate")
+            stage_nav.goto(page, "make")
             stage_nav.reveal(page, "#prompt-editor")
             settle_local_preparation(page)
             compile_if_needed(page, SHOT)
@@ -444,7 +443,7 @@ def main() -> int:
 
             # ---------------------------------------------------------- 来源前进
             version_before = compiled.get("version")
-            stage_nav.goto(page, "understand")
+            stage_nav.goto(page, "intake")
             page.click("#slots-toggle")
             slot_row_saved_edit = page.locator('#slot-list .slot-row[data-slot-id="' + SLOT + '"]')
             slot_row_saved_edit.get_by_role("button", name="修改", exact=True).click()
@@ -461,7 +460,7 @@ def main() -> int:
             shared.open_specs(page)
             advanced_note_2 = page.locator("#spec-text-advanced-" + SHOT + "-" + SLOT)
             expect(advanced_note_2).to_be_visible()
-            stage_nav.goto(page, "generate")
+            stage_nav.goto(page, "make")
             stage_nav.reveal(page, "#prompt-editor")
             settle_local_preparation(page)
             attempt_compile(page, SHOT)

@@ -351,13 +351,12 @@ def main() -> int:
                            "assets_b": len(asset_set_b), "digests_ok": browser_digest_ok})
                     shot(page_b, "b-opened")
 
-                    # ---- B：按问题返工 → 新候选（当前一站式 reworkSubmit；禁止旧 #adopt-panel 假设） ----
-                    stage_nav.goto(page_b, "review")
+                    # ---- B：按问题返工 -> 新候选（当前一站式 reworkSubmit） ----
+                    stage_nav.goto(page_b, "make")
                     first_shot = shots[0]
                     candidate_before = page_b.evaluate(READ_KIND_COUNT, "candidate")
-                    card = page_b.locator(
-                        f'#review-list .review-card[data-shot-id="{first_shot}"]')
-                    card.locator('button:has-text("按问题返工")').click()
+                    shared.select_make_shot(page_b, first_shot)
+                    page_b.locator('#compare-panel #rework-open').click()
                     page_b.wait_for_selector("#rework-panel:not([hidden])", timeout=15_000)
                     shot(page_b, "b-rework-form")
                     problems = page_b.locator(
@@ -378,13 +377,13 @@ def main() -> int:
                            "attempts": attempt_count, "shots": len(shots)})
                     # 新候选到达不自动改选：旧采用保持 current（不自动指向最新），仍需人工显式采用。
                     pre_adopt_state = page_b.evaluate(
-                        f"() => (document.querySelector('#review-list .review-card[data-shot-id=\"{first_shot}\"]') || {{}}).getAttribute('data-selection-state')")
+                        f"() => (document.querySelector('#task-list-mount [data-task-shot=\"{first_shot}\"]') || {{}}).getAttribute('data-selection-state')")
                     check("V2.6.3-06a", "新候选不自动改选：旧采用保持 current、仍需人工显式采用最新",
                           pre_adopt_state == "current",
                           {"pre_adopt_state": pre_adopt_state})
 
                     # ---- B：显式选中最新候选并一键采用（#adopt-open 单击，无二次确认面板） ----
-                    card.locator('button:has-text("比较候选")').click()
+                    shared.select_make_shot(page_b, first_shot)
                     page_b.wait_for_selector("#compare-panel:not([hidden])", timeout=15_000)
                     latest = page_b.evaluate(READ_LATEST_CANDIDATE, first_shot)
                     if not latest:
@@ -393,12 +392,12 @@ def main() -> int:
                         f'#compare-candidates [role="tab"][data-candidate-id="{latest["candidate_id"]}"]')
                     page_b.click("#adopt-open")
                     page_b.wait_for_function(
-                        f"() => [...document.querySelectorAll('#review-list .review-card')].some((node) => node.getAttribute('data-shot-id') === '{first_shot}' && node.getAttribute('data-selection-state') === 'current')",
+                        f"() => (document.querySelector('#task-list-mount [data-task-shot=\"{first_shot}\"]') || {{}}).getAttribute('data-selection-state') === 'current'",
                         timeout=15_000)
                     page_b.wait_for_timeout(300)
 
-                    # ---- B：整套检查 → 交付门禁 → 交付包（当前阶段显式导航；AI 复核按需可选不自动跑） ----
-                    stage_nav.goto(page_b, "review")
+                    # ---- B：整套检查 → 交付门禁 → 交付包（整套检查卡在交付阶段；AI 复核按需可选不自动跑） ----
+                    stage_nav.goto(page_b, "deliver")
                     page_b.click("#suite-review-run")
                     page_b.wait_for_function(
                         "() => { const node = document.getElementById('suite-review-status');"

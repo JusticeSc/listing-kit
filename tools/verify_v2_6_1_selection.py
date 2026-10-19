@@ -29,7 +29,7 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(ROOT / "tools"))
 
-import v2_stage_nav as stage_nav  # noqa: E402  （V2.UI.2 六阶段工作台导航）
+import v2_stage_nav as stage_nav  # noqa: E402  （B4 四段工作台导航）
 from console import enable_utf8  # noqa: E402
 enable_utf8()
 
@@ -157,13 +157,19 @@ SELECTION_PROBE = """
   const clearButton = document.getElementById("adopt-clear");
   const comparePanel = document.getElementById("compare-panel");
   const active = document.activeElement;
-  const rows = [...document.querySelectorAll("#attempt-list .attempt-row")].map((node) => {
-    const summary = node.querySelector(".attempt-selection");
+  const rows = [...document.querySelectorAll("#task-list-mount [data-task-shot]")].map((node) => {
+    const viewed = document.querySelector(
+      '#shot-execution [data-shot-id="' + node.getAttribute("data-task-shot") + '"]'
+      + ' .attempt-selection');
+    const adopted = [...node.querySelectorAll('.badge')]
+      .some((item) => (item.textContent || '').includes('已采用'));
     return {
-      shot_id: node.getAttribute("data-shot-id"),
+      shot_id: node.getAttribute("data-task-shot"),
       attempt_state: node.getAttribute("data-attempt-state"),
-      selection_state: summary ? summary.getAttribute("data-selection-state") : null,
-      selection_text: summary ? summary.textContent : null,
+      selection_state: viewed ? viewed.getAttribute("data-selection-state")
+        : (node.getAttribute("data-selection-state") || (adopted ? "current" : "none")),
+      selection_text: viewed ? viewed.textContent
+        : ((node.querySelector('.task-state') || {}).textContent || null),
     };
   });
   const badges = [...document.querySelectorAll("#compare-candidates [data-adopted]")].map((node) => {
@@ -290,14 +296,16 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                     return page.evaluate(v251.PROBE)
 
                 def row(shot_id: str):
-                    return page.locator(f'#attempt-list .attempt-row[data-shot-id="{shot_id}"]')
+                    shared.select_make_shot(page, shot_id)
+                    return page.locator(
+                        f'#shot-execution [data-shot-id="{shot_id}"]')
 
 
                 def wait_candidate_ui(shot_id: str, timeout: int = 30_000) -> None:
                     page.wait_for_function(
                         """(shot) => {
                             const node = document.querySelector(
-                                '#attempt-list .attempt-row[data-shot-id="' + shot + '"]');
+                                '#shot-execution [data-shot-id="' + shot + '"]');
                             return Boolean(node && node.querySelector('.attempt-candidate'));
                         }""", arg=shot_id, timeout=timeout)
 
@@ -358,9 +366,8 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 def open_panel(shot_id: str, card_count: int) -> None:
                     state = compare_state()
                     if not (state["visible"] and state["shot"] == shot_id):
-                        stage_nav.goto(page, "generate")
-                        row(shot_id).locator('button[data-compare-action]').first.click()
-                    stage_nav.goto(page, "review")
+                        shared.select_make_shot(page, shot_id)
+                    stage_nav.goto(page, "make")
                     page.wait_for_function(
                         """(payload) => {
                             const panel = document.getElementById("compare-panel");
@@ -466,7 +473,7 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                         page.wait_for_function(
                             """(payload) => {
                                 const rows = document.querySelectorAll(
-                                    '#attempt-list .attempt-row[data-shot-id="' + payload.shot + '"]'
+                                    '#shot-execution [data-shot-id="' + payload.shot + '"]'
                                     + ' .attempt-candidate');
                                 return rows.length > 0;
                             }""", arg={"shot": shot_id}, timeout=40_000)
@@ -511,6 +518,7 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 # Issue #9：编译前先做普通决定（用户真实路径）；choices 进 ui 证据。
                 ui["decisions"] = shared.decide_for_compile(page, shot_ids)
                 shared.compile_all(page, shot_ids)
+                shared.choose_make_batch(page, shot_ids)
                 gate = shared.confirm_and_submit(
                     page, expect, lambda: attempt_probe(), shot_ids=shot_ids)
                 assert gate["ok"], f"确认必须产生本次授权的新消费：{gate['after_actions']}"

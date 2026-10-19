@@ -41,6 +41,7 @@ DB_NAME = "amz-listing-kit-v2"
 
 
 import v2_verify_shared as shared  # noqa: E402
+import v2_stage_nav as stage_nav  # noqa: E402
 from v2_verify_shared import (  # noqa: E402
     ATTEMPT_STATES, FOCUS_PROBE, OVERFLOW_PROBE, SHOT_IDS, collect,
     compile_all, confirm_slots, create_project, fill_intake, wait_terminal,
@@ -153,26 +154,25 @@ def main() -> int:
 
             page.focus("#analyze-run")
             page.keyboard.press("Enter")
-            # slot 面板在 understand 阶段（默认隐藏）：分析完成后切过去再等行可见。
+            # 槽位面板在资料与事实阶段（同面板）：分析完成后直接等行可见。
             page.wait_for_timeout(500)
-            page.click('[data-stage-nav="understand"]')
             page.wait_for_selector("#slot-list .slot-row", timeout=30_000)
             focus_after_analyze = page.evaluate(FOCUS_PROBE)
-            expect(page.locator('[data-stage-panel="understand"]')).to_be_visible()
-            shot(page, "understand")
-            # 新流程 analyze 完成后不自动切 stage、不抢焦点：断理解面板可见即可，不钉焦点位置。
-            check("UI3-05", "分析完成：理解面板可见、槽位行可处理",
+            expect(page.locator('[data-stage-panel="intake"]')).to_be_visible()
+            shot(page, "intake-analyzed")
+            # 新流程 analyze 完成后不自动切 stage、不抢焦点：断资料与事实面板可见即可，不钉焦点位置。
+            check("UI3-05", "分析完成：资料与事实面板可见、槽位行可处理",
                   page.locator("#slot-list .slot-row").count() > 0,
                   {"focus": focus_after_analyze})
 
             progress_text = page.locator("#slots-progress").inner_text()
-            check("UI3-18", "理解页阻塞摘要本地化：不出现裸 slot_id 与英文状态词",
+            check("UI3-18", "资料与事实页阻塞摘要本地化：不出现裸 slot_id 与英文状态词",
                   "product_name" not in progress_text and "proposed" not in progress_text
                   and ("商品名称" in progress_text or "商品品类" in progress_text),
                   {"text": progress_text[:240]})
 
             rounds = confirm_slots(page)
-            page.click("#stage-next-understand")
+            page.click("#stage-next-plan")
             expect(page.locator('[data-stage-panel="plan"]')).to_be_visible()
             focus_plan = page.evaluate(FOCUS_PROBE)
             check("UI3-06", "槽位确认后进入「方案」，焦点落到方案标题",
@@ -201,17 +201,18 @@ def main() -> int:
                   {"before": before, "after_copy": after_copy, "copy_id": copy_id,
                    "after_delete": after_delete, "after_move": after_move})
 
-            page.click("#stage-next-plan")
-            expect(page.locator('[data-stage-panel="generate"]')).to_be_visible()
+            page.click("#stage-next-make")
+            expect(page.locator('[data-stage-panel="make"]')).to_be_visible()
             shots = page.evaluate(SHOT_IDS)
             # Issue #9：编译前先做普通决定（用户真实路径）。
             shared.decide_for_compile(page, shots)
             compile_all(page, shots)
+            shared.choose_make_batch(page, shots)
             page.click("#confirm-action")
-            # 新流程一次确认直接整套进批次：等 attempt 行出现（不再写“已确认 vN”），不再点已删除的 #batch-run。
+            # 新流程一次确认直接整套进批次：等任务行出现（不再写“已确认 vN”），不再点已删除的 #batch-run。
             page.wait_for_function(
                 """() => document.querySelectorAll(
-                    '#attempt-list .attempt-row[data-attempt-state]').length > 0""",
+                    '#task-list-mount [data-task-shot][data-attempt-state]').length > 0""",
                 timeout=30_000)
             wait_terminal(page, shots)
             # 全局保存状态是异步派生显示：有界等「已保存」再读，避免与批次收尾竞速。
@@ -222,30 +223,20 @@ def main() -> int:
             states = page.evaluate(ATTEMPT_STATES)
             focus_batch = page.evaluate(FOCUS_PROBE)
             save_state = page.locator("#save-state").inner_text()
-            shot(page, "generate")
+            shot(page, "make")
             check("UI3-08", "整套生成完成：全部终态、全局保存状态可见",
                   len(states) == len(shots)
                   and all(value == "succeeded" for value in states.values())
                   and save_state.startswith("已保存"),
                   {"states": states, "focus": focus_batch, "save_state": save_state})
 
-            page.click("#stage-next-review")
-            expect(page.locator('[data-stage-panel="review"]')).to_be_visible()
+            stage_nav.goto(page, "make")
             for shot_id in shots:
-                # 新流程直接点卡片“采用候选”即采用（无 #adopt-submit 对话框）：等按钮变“已采用”。
-                page.click(f'#review-list .review-card[data-shot-id="{shot_id}"] '
-                           'button:has-text("采用候选")')
-                page.wait_for_function(
-                    """(shot) => {
-                        const card = document.querySelector(
-                            '#review-list .review-card[data-shot-id="' + shot + '"]');
-                        const btn = card && [...card.querySelectorAll("button")]
-                            .find((item) => (item.textContent || "").indexOf("已采用") >= 0);
-                        return Boolean(btn);
-                    }""", arg=shot_id, timeout=15_000)
+                # B4 只有常驻精看一个采用入口（#adopt-open 单击即采用）；任务行只读投影。
+                shared.adopt_make_shot(page, shot_id)
                 page.wait_for_timeout(120)
             adopted = page.evaluate(
-                """() => [...document.querySelectorAll('#review-list .review-card')]
+                """() => [...document.querySelectorAll('#task-list-mount [data-task-shot]')]
                      .map((node) => node.getAttribute('data-selection-state'))""")
             check("UI3-09", "逐图人工采用：每张图进入 current",
                   len(adopted) == len(shots) and all(state == "current" for state in adopted),
@@ -323,12 +314,11 @@ def main() -> int:
             page2.goto(f"http://127.0.0.1:{port2}/", wait_until="domcontentloaded")
             create_project(page2, "UI3 演练品", reference)
             page2.click("#analyze-run")
-            # slot 面板在 understand 阶段（默认隐藏）：切过去再等行可见。
+            # 槽位面板在资料与事实阶段（同面板）：直接等行可见。
             page2.wait_for_timeout(500)
-            page2.click('[data-stage-nav="understand"]')
             page2.wait_for_selector("#slot-list .slot-row", timeout=30_000)
             confirm_slots(page2)
-            page2.click("#stage-next-understand")
+            page2.click("#stage-next-plan")
             page2.click("#suite-seed")
             page2.wait_for_selector("#shot-list .shot-row", timeout=20_000)
             guard = 0
@@ -337,31 +327,40 @@ def main() -> int:
                 page2.click(f'#shot-list .shot-row[data-shot-id="{ids[-1]}"] button:has-text("删除")')
                 page2.wait_for_timeout(250)
                 guard += 1
-            page2.click("#stage-next-plan")
+            page2.click("#stage-next-make")
             drill_ids = page2.evaluate(SHOT_IDS)
             # Issue #9：编译前先做普通决定（用户真实路径）。
             shared.decide_for_compile(page2, drill_ids)
             compile_all(page2, drill_ids)
+            shared.choose_make_batch(page2, drill_ids)
             page2.click("#confirm-action")
             page2.wait_for_function(
                 """() => document.querySelectorAll(
-                    '#attempt-list .attempt-row[data-attempt-state]').length > 0""",
+                    '#task-list-mount [data-task-shot][data-attempt-state]').length > 0""",
                 timeout=30_000)
             wait_terminal(page2, drill_ids)
             page2.wait_for_timeout(4000)
             drill_states = page2.evaluate(ATTEMPT_STATES)
-            rows = page2.locator("#attempt-list .attempt-row").count()
+            failed_id = next((key for key, value in drill_states.items()
+                              if value == "failed"), None)
+            unknown_id = next((key for key, value in drill_states.items()
+                               if value == "unknown"), None)
+            rows = page2.locator("#task-list-mount [data-task-shot]").count()
+            if failed_id:
+                shared.select_make_shot(page2, failed_id)
             failed_button = page2.locator(
-                '#attempt-list .attempt-row[data-attempt-state="failed"] '
+                '#shot-execution [data-attempt-state="failed"] '
                 'button:has-text("重试（新建 action）")').count()
+            if unknown_id:
+                shared.select_make_shot(page2, unknown_id)
             unknown_new_action = page2.locator(
-                '#attempt-list .attempt-row[data-attempt-state="unknown"] '
+                '#shot-execution [data-attempt-state="unknown"] '
                 'button:has-text("新建 action（放弃核对）")').count()
             unknown_reconcile = page2.locator(
-                '#attempt-list .attempt-row[data-attempt-state="unknown"] '
+                '#shot-execution [data-attempt-state="unknown"] '
                 'button:has-text("核对任务")').count()
             unknown_note = page2.locator(
-                '#attempt-list .attempt-row[data-attempt-state="unknown"] '
+                '#shot-execution [data-attempt-state="unknown"] '
                 'p.attempt-note:has-text("没有留下任务编号")').count()
             shot(page2, "drill")
             check("UI3-14", "演练：明确失败与 Unknown 都可见且有下一步动作（重试 / 核对任务）",
@@ -419,7 +418,7 @@ def main() -> int:
     json_path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
 
     lines = [
-        "amz-listing-kit Product V2 V2.UI.3 前端验收（真实首页 + 六阶段同页工作台）",
+        "amz-listing-kit Product V2 V2.UI.3 前端验收（真实首页 + 四段同页工作台）",
         "NOT-AUTHORITY: point-in-time verification evidence only",
         f"finished_at: {finished_at}",
         f"status: {status}",

@@ -38,7 +38,7 @@ sys.path.insert(0, str(ROOT / "tools"))
 from v2_test_server import start_static  # noqa: E402
 sys.path.insert(0, str(ROOT / "tools"))
 
-import v2_stage_nav as stage_nav  # noqa: E402  （V2.UI.2 六阶段工作台导航）
+import v2_stage_nav as stage_nav  # noqa: E402  （B4 四段工作台导航）
 import v2_verify_shared as shared  # noqa: E402  （Issue #9 普通决定共用函数）
 
 PRODUCT_DIR = ROOT / "app" / "product_v2"
@@ -429,8 +429,8 @@ def main() -> int:
             page.fill("#new-project-name", "审计商品 · 人工编辑")
             page.click("#create-project")
             expect(page.locator("#project-view")).to_be_visible()
-            # Prompt 区在生成阶段面板内：先切到生成区再判空态（阶段条始终可达）。
-            stage_nav.goto(page, "generate")
+            # Prompt 区在制作阶段面板内：先切到制作区再判空态（阶段条始终可达）。
+            stage_nav.goto(page, "make")
             expect(page.locator("#prompt-editor")).to_be_hidden()
             # 参考图与商品资料在资料阶段面板内：切回资料区再操作。
             stage_nav.goto(page, "intake")
@@ -454,7 +454,7 @@ def main() -> int:
             expect(page.locator("#shot-list .shot-row")).to_have_count(4)
             # Issue #9：编译前先做普通决定（用户真实路径）；choices 进 ui 证据。
             ui["decisions"] = shared.decide_for_compile(page, page.evaluate(shared.SHOT_IDS))
-            stage_nav.goto(page, "generate")
+            stage_nav.goto(page, "make")
             stage_nav.reveal(page, "#prompt-editor")
             expect(page.locator("#prompt-editor")).to_be_visible()
             expect(page.locator("#prompt-list .shot-spec")).to_have_count(4)
@@ -464,7 +464,7 @@ def main() -> int:
                         || document.getElementById("local-preparation-status").textContent.includes("部分任务尚未准备"))""",
                 timeout=30_000)
             locked = page.evaluate(EDIT_PROBE)
-            # 切到生成区会触发异步自动本地准备：-03 只断言“Prompt 区解锁可见”，
+            # 切到制作区会触发异步自动本地准备：-03 只断言“Prompt 区解锁可见”，
             # 确认门状态以 -04/-05 的相对口径为准（只改到达路径，不断言含义）。
             check("V2.3.6-03", "套图就绪后 Prompt 区解锁",
                   page.locator("#prompt-editor").is_visible()
@@ -482,8 +482,10 @@ def main() -> int:
                   and ready["main"]["origin"] is None,
                   {"state": ready["project_state"], "hash": ready["main"]["hash"][:12],
                    "main_version": ready["main"]["version"]})
-            # 自动准备/此前动作可能已写好确认：已确认（stale=False）就不再点，
-            # 否则点一次（幂等到达，不断言“必须点一次才有确认”）。
+            # B4 默认只送正看图：-05 要求整套 4 张确认，本轮必须先显式选批量范围。
+            # 选范围会改摘要 scope：重读探针后再决定是否需要点确认（幂等到达）。
+            shared.choose_make_batch(page, page.evaluate(shared.SHOT_IDS))
+            ready = page.evaluate(EDIT_PROBE)
             if ready["staleness"] is not None and ready["staleness"]["stale"] is False:
                 confirmed = ready
             else:
@@ -595,7 +597,7 @@ def main() -> int:
             screenshots.append(screenshot_rel)
 
             page.reload(wait_until="networkidle")
-            stage_nav.goto(page, "generate")
+            stage_nav.goto(page, "make")
             stage_nav.reveal(page, "#prompt-editor")
             page.wait_for_selector(
                 '#prompt-list .shot-spec[data-shot-id="shot_main_clean"] textarea.prompt-edit-text',

@@ -25,9 +25,9 @@ import type { ActionSnapshot } from "../session.js";
 /** 方案投影里的 shot 形状（视图只读 label/required，不重算方案）。 */
 export type SuiteShotSummary = { shot_id: string; label: string; required?: boolean };
 
-/** 本视图只持两个空壳挂载点：整套检查卡（审核阶段）与交付卡（交付阶段）。 */
+/** 本视图只持两个空壳挂载点：整套检查卡与交付卡（B4 起同住交付阶段）。 */
 export type DeliveryElements = {
-  /** 审核阶段的整套检查卡根（内容全归模板）。 */
+  /** 交付阶段的整套检查卡根（内容全归模板）。 */
   suiteReviewCard: HTMLElement;
   /** 交付阶段的交付卡根（门禁/整套结论/Unknown/导出全归模板）。 */
   deliveryCard: HTMLElement;
@@ -209,7 +209,7 @@ export function createDeliveryView(
           <span class="badge ${row.state === "current" ? "is-adopted" : (row.state === "stale" ? "is-review-warn" : "is-empty")}">${row.state === "current" ? "已采用" : (row.state === "stale" ? "已采用（已过期）" : "未采用")}</span>
           <span class="meta">${row.required ? "必需图" : "可选图"}</span>
           ${row.state !== "current"
-            ? html`<button type="button" @click=${() => deps.selectStage("review")}>去审核</button>`
+            ? html`<button type="button" @click=${() => deps.selectStage("make")}>去审核</button>`
             : nothing}
         </div>
       `)}
@@ -273,7 +273,7 @@ export function createDeliveryView(
     `;
   }
 
-  /** 整套一致性卡（审核阶段）：index 只留 `<section id="suite-review-card" class="card">`。 */
+  /** 整套一致性卡（交付阶段）：index 只留 `<section id="suite-review-card" class="card">`。 */
   function suiteCardTemplate() {
     return html`
       <div class="card-head">
@@ -329,7 +329,7 @@ export function createDeliveryView(
   /* ------------------------------------------------------------- 整套结论 */
 
   /**
-   * 整套发现的单一投影（审核阶段与交付阶段共用，避免两套写法 / 两个事实来源）。
+   * 整套发现的单一投影（整套检查卡与交付卡共用，避免两套写法 / 两个事实来源）。
    * 只读传入的报告，重排成「严重度分组 + 逐条定位」；不写任何状态。
    */
   function suiteViewOf(report: SuiteReviewReport | null): SuiteView {
@@ -423,7 +423,7 @@ export function createDeliveryView(
     const current = deps.currentProjectId() ? projection.suiteCurrent : false;
     state.deliverySuiteStatus = current
       ? suiteReviewSummaryText(report)
-      : ("整套检查已过期：选择或输入在报告之后发生了变化，请回审核阶段重新运行。上一版："
+      : ("整套检查已过期：选择或输入在报告之后发生了变化，请回交付阶段的整套检查重新运行。上一版："
          + suiteReviewSummaryText(report));
     state.deliverySuiteView = suiteViewOf(report);
   }
@@ -475,7 +475,7 @@ export function createDeliveryView(
       // Unknown 的处置入口就是下面的「确认已知悉」；这里不再给会误导的跳图按钮。
       shotIds: (item.severity !== "PASS" && item.rule_id !== "export.unknown_acknowledged"
         && Array.isArray(item.affected_shot_ids)) ? item.affected_shot_ids : [],
-      // 整套一致性阻断不是某一张图的问题：给「去运行整套检查」把使用者送回审核阶段的运行按钮。
+      // 整套一致性阻断不是某一张图的问题：给「去运行整套检查」把使用者送到交付阶段的运行按钮。
       suiteAction: item.severity !== "PASS" && item.rule_id === "export.suite_review_current",
     }));
 
@@ -583,13 +583,15 @@ export function createDeliveryView(
    * 不直接抓另一个视图的节点（P5 不留跨视图 querySelector）。
    */
   function jumpToReviewShot(shotId: string): void {
-    deps.selectStage("review");
+    deps.selectStage("make");
     deps.focusReviewShot(shotId);
   }
 
-  /** 门禁：整套一致性阻断不属于任何一张图，定位回审核阶段的整套检查运行按钮。 */
+  /** 门禁：整套一致性阻断不属于任何一张图，定位到交付阶段的整套检查运行按钮。
+   * B4 起 `#suite-review-card` 与整套检查一起住在交付面板（布局 §「阶段 4：交付」），
+   * 与逐图比较/返工同屏的 make 无关；旧 `selectStage("review")` 已随旧阶段退出。 */
   function jumpToSuiteCheck(): void {
-    deps.selectStage("review");
+    deps.selectStage("deliver");
     deps.focusSuiteCheck();
   }
 

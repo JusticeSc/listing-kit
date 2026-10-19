@@ -1623,7 +1623,7 @@ export function createInputView(
                 draft.slotAdd.id = slotId;
                 draft.slotAdd.label = slotId;
               }
-              selectStage("understand");
+              selectStage("intake");
               renderSlotsCard();
             }}>填写／确认：${(slotById.get(slotId)?.label) || (definition?.label) || slotId}</button>`;
           })}${readiness.missing_asset_roles.map((role) => html`<button type="button"
@@ -3109,14 +3109,14 @@ export function createInputView(
     }
   }
 
-  /** 「人工填写事实」：先落库资料，再准备核心槽位，最后停靠理解阶段。 */
+  /** 「人工填写事实」：先落库资料，再准备核心槽位，最后停靠资料与事实阶段（事实与资料同屏）。 */
   async function handleManualFacts(): Promise<void> {
     const action = beginAction();
     try {
       await saveIntakeNow();
       if (!action.alive()) return;
       await prepareManualFacts();
-      if (action.alive()) selectStage("understand", { focusHeading: true });
+      if (action.alive()) selectStage("intake", { focusHeading: true });
     } catch (error) { if (action.alive()) handleInternalError(error); }
   }
 

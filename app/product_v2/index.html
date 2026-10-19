@@ -44,7 +44,7 @@
     <ul id="project-list" class="project-list"></ul>
   </section>
 
-  <!-- ================= 工作台（六阶段） ================= -->
+  <!-- ================= 工作台（四阶段：资料与事实 → 方案 → 制作与审图 → 交付） ================= -->
   <section id="project-view" class="workspace" hidden>
     <header class="workspace-head">
       <button id="back-home" class="link-button" type="button">← 项目列表</button>
@@ -65,17 +65,13 @@
 
     <nav id="stage-nav" class="stage-nav" aria-label="生产阶段">
       <button type="button" class="stage" data-stage-nav="intake">
-        <span class="stage-index">1</span><span class="stage-label">资料</span></button>
-      <button type="button" class="stage" data-stage-nav="understand">
-        <span class="stage-index">2</span><span class="stage-label">理解</span></button>
+        <span class="stage-index">1</span><span class="stage-label">资料与事实</span></button>
       <button type="button" class="stage" data-stage-nav="plan">
-        <span class="stage-index">3</span><span class="stage-label">方案</span></button>
-      <button type="button" class="stage" data-stage-nav="generate">
-        <span class="stage-index">4</span><span class="stage-label">生成</span></button>
-      <button type="button" class="stage" data-stage-nav="review">
-        <span class="stage-index">5</span><span class="stage-label">审核返工</span></button>
+        <span class="stage-index">2</span><span class="stage-label">方案</span></button>
+      <button type="button" class="stage" data-stage-nav="make">
+        <span class="stage-index">3</span><span class="stage-label">制作与审图</span></button>
       <button type="button" class="stage" data-stage-nav="deliver">
-        <span class="stage-index">6</span><span class="stage-label">交付</span></button>
+        <span class="stage-index">4</span><span class="stage-label">交付</span></button>
     </nav>
     <p id="stage-summary" class="stage-summary" role="status"></p>
 
@@ -83,11 +79,11 @@
 
     <div id="stage-panels" class="stage-panels">
 
-      <!-- 阶段 1：资料 -->
+      <!-- 阶段 1：资料与事实（资料输入、理解与事实确认合并） -->
       <section class="stage-panel" data-stage-panel="intake" aria-labelledby="stage-intake-title">
         <div class="stage-head">
-          <h3 id="stage-intake-title" tabindex="-1">商品资料</h3>
-          <p class="meta">上传参考图并填写商品信息；分析后的推断写在「理解」里，不覆盖你填的内容。</p>
+          <h3 id="stage-intake-title" tabindex="-1">资料与事实</h3>
+          <p class="meta">上传参考图并填写商品信息；先处理冲突、未知与必须确认的槽位，已确认的事实默认折叠。</p>
         </div>
 
         <section id="references-card" class="card" aria-labelledby="refs-title"></section>
@@ -95,20 +91,12 @@
         <section id="intake-card" class="card" aria-labelledby="intake-title"></section>
 
         <section id="analyze-card" class="card" aria-labelledby="analyze-title"></section>
-      </section>
-
-      <!-- 阶段 2：理解 -->
-      <section class="stage-panel" data-stage-panel="understand" hidden aria-labelledby="stage-understand-title">
-        <div class="stage-head">
-          <h3 id="stage-understand-title" tabindex="-1">商品理解</h3>
-          <p class="meta">先处理冲突、未知与必须确认的槽位；已确认的事实默认折叠。</p>
-        </div>
 
         <section id="slots-card" class="card" aria-labelledby="slots-title"></section>
 
         <footer class="stage-foot">
-          <button id="stage-next-understand" class="primary" type="button" disabled>进入套图方案</button>
-          <span id="stage-next-understand-note" class="meta"></span>
+          <button id="stage-next-plan" class="primary" type="button" disabled>进入方案</button>
+          <span id="stage-next-plan-note" class="meta"></span>
         </footer>
       </section>
 
@@ -127,25 +115,32 @@
         </details>
 
         <footer class="stage-foot">
-          <button id="stage-next-plan" class="primary" type="button" disabled>进入生成准备</button>
-          <span id="stage-next-plan-note" class="meta"></span>
+          <button id="stage-next-make" type="button" disabled>进入制作与审图</button>
+          <span id="stage-next-make-note" class="meta"></span>
         </footer>
       </section>
 
-      <!-- 阶段 4：生成 -->
-      <section class="stage-panel" data-stage-panel="generate" hidden aria-labelledby="stage-generate-title">
+      <!-- 阶段 3：制作与审图（生成与审核返工合并；左任务列表 + 常驻精看/本图执行） -->
+      <section class="stage-panel" data-stage-panel="make" hidden aria-labelledby="stage-make-title">
         <div class="stage-head">
-          <h3 id="stage-generate-title" tabindex="-1">生成</h3>
-          <p class="meta">系统自动本地准备提示词。核对实际发送摘要后，明确点击一次生成；费用由供应商按实际调用计算，无法核实的金额不作估算。</p>
+          <h3 id="stage-make-title" tabindex="-1">制作与审图</h3>
+          <p class="meta">左侧选图、查看与执行；系统自动本地准备提示词。核对实际发送摘要后，明确点击一次生成；费用由供应商按实际调用计算，无法核实的金额不作估算。</p>
         </div>
 
-        <p id="local-preparation-status" class="meta" role="status"></p>
-        <details id="prompt-details" class="card sub-card">
-          <summary id="prompt-title">查看／编辑完整 Prompt（高级）</summary>
-          <p id="prompt-locked" class="empty" hidden>先在方案里添加图片任务；系统会本地准备已就绪的任务，不调用模型。</p>
-          <div id="prompt-editor" hidden></div>
-          <div id="prompt-error-mount"></div>
-        </details>
+        <div class="review-workbench">
+          <aside class="card review-task-list" aria-labelledby="task-list-title">
+            <div class="card-head">
+              <h4 id="task-list-title">图片任务</h4>
+            </div>
+            <div id="task-list-mount"></div>
+          </aside>
+          <div class="review-detail">
+            <section id="compare-panel" class="compare-panel" hidden aria-labelledby="compare-title"></section>
+            <section id="rework-panel" class="rework-panel" hidden aria-labelledby="rework-title"></section>
+            <section id="shot-execution" class="card" hidden aria-labelledby="shot-execution-title"></section>
+            <div id="attempt-error-mount"></div>
+          </div>
+        </div>
 
         <section class="card" aria-labelledby="confirm-title">
           <div class="card-head">
@@ -167,48 +162,28 @@
           <div id="generate-error-mount"></div>
         </section>
 
-        <footer class="stage-foot">
-          <button id="stage-next-review" type="button" disabled>去审核与返工</button>
-          <span id="stage-next-review-note" class="meta"></span>
-        </footer>
-      </section>
+        <p id="local-preparation-status" class="meta" role="status"></p>
+        <details id="prompt-details" class="card sub-card">
+          <summary id="prompt-title">查看／编辑完整 Prompt（高级）</summary>
+          <p id="prompt-locked" class="empty" hidden>先在方案里添加图片任务；系统会本地准备已就绪的任务，不调用模型。</p>
+          <div id="prompt-editor" hidden></div>
+          <div id="prompt-error-mount"></div>
+        </details>
 
-      <!-- 阶段 5：审核返工 -->
-      <section class="stage-panel" data-stage-panel="review" hidden aria-labelledby="stage-review-title">
-        <div class="stage-head">
-          <h3 id="stage-review-title" tabindex="-1">审核与返工</h3>
-          <p class="meta">以图片为中心：比较参考图、历史候选与新候选，按问题返工，然后逐图人工采用。</p>
-        </div>
-
-        <div class="review-workbench">
-        <section class="card review-task-list" aria-labelledby="review-list-title">
-          <div class="card-head">
-            <h4 id="review-list-title">逐图审核</h4>
-          </div>
-          <div id="review-list-mount"></div>
-        </section>
-        <div class="review-detail">
-
-
-        <section id="compare-panel" class="compare-panel" hidden aria-labelledby="compare-title"></section>
-        <section id="rework-panel" class="rework-panel" hidden aria-labelledby="rework-title"></section>
-        </div>
-        </div>
-        <div id="attempt-error-mount"></div>
-
-        <section id="suite-review-card" class="card" aria-labelledby="suite-review-title"></section>
         <footer class="stage-foot">
           <button id="stage-next-deliver" class="primary" type="button" disabled>去交付</button>
           <span id="stage-next-deliver-note" class="meta"></span>
         </footer>
       </section>
 
-      <!-- 阶段 6：交付 -->
+      <!-- 阶段 4：交付 -->
       <section class="stage-panel" data-stage-panel="deliver" hidden aria-labelledby="stage-deliver-title">
         <div class="stage-head">
           <h3 id="stage-deliver-title" tabindex="-1">交付</h3>
           <p class="meta">确认每张必需图都已人工采用、没有待核对的未知项，再导出交付包。</p>
         </div>
+
+        <section id="suite-review-card" class="card" aria-labelledby="suite-review-title"></section>
 
         <section id="delivery-card" class="card" aria-labelledby="deliver-gate-title"></section>
       </section>

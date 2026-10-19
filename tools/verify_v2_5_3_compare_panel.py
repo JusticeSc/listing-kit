@@ -29,7 +29,7 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(ROOT / "tools"))
 
-import v2_stage_nav as stage_nav  # noqa: E402  （V2.UI.2 六阶段工作台导航）
+import v2_stage_nav as stage_nav  # noqa: E402  （B4 四段工作台导航）
 from console import enable_utf8  # noqa: E402
 enable_utf8()
 
@@ -143,18 +143,28 @@ async ({ projectId, shotId, pngBase64, actionId, taskId }) => {
 }
 """
 
-
-CARD_STATE_PROBE = """() => [...document.querySelectorAll('#review-list .review-card')].map((card) => {
-  const check = card.querySelector('.review-card-check');
-  const buttons = [...card.querySelectorAll('.review-card-actions button')].map((node) => ({
-    text: (node.textContent || '').trim(), disabled: node.disabled === true }));
-  return { shot_id: card.getAttribute('data-shot-id'),
+CARD_STATE_PROBE = """() => {
+  const panel = document.getElementById("compare-panel");
+  const viewed = panel && !panel.hidden ? (panel.dataset.shotId || null) : null;
+  const detail_buttons = panel && !panel.hidden
+    ? [...panel.querySelectorAll('button')].map((node) => ({
+        id: node.id || null, text: (node.textContent || '').trim(),
+        disabled: node.disabled === true }))
+    : [];
+  return [...document.querySelectorAll('#task-list-mount [data-task-shot]')].map((card) => {
+  const viewer = card.querySelector('button[data-view-shot]');
+  const badges = [...card.querySelectorAll('.badge')].map((node) =>
+    (node.textContent || '').trim());
+  const state = card.querySelector('.task-state');
+  return ({ shot_id: card.getAttribute('data-task-shot'),
+           viewed: viewed === card.getAttribute('data-task-shot'),
            selection_state: card.getAttribute('data-selection-state'),
-           review_state: check ? check.getAttribute('data-review-state') : null,
-           candidate_id: check ? (check.getAttribute('data-candidate-id') || '') : '',
-           text: check ? (check.textContent || '').trim() : '',
-           buttons: buttons };
-})"""
+           attempt_state: card.getAttribute('data-attempt-state'),
+           view_text: viewer ? (viewer.textContent || '').trim() : '',
+           view_current: viewer ? viewer.getAttribute('aria-current') : null,
+           badges: badges, state_text: state ? (state.textContent || '').trim() : '',
+           detail_shot: viewed, detail_buttons: detail_buttons })});
+}"""
 
 PANEL_PROBE = """
 () => {
@@ -178,8 +188,9 @@ PANEL_PROBE = """
     focus_shot: (() => {
       if (!active) return null;
       if (active.dataset && active.dataset.compareAction) return active.dataset.compareAction;
-      const card = active.closest ? active.closest(".review-card[data-shot-id]") : null;
-      return card ? card.getAttribute("data-shot-id") : null;
+      if (active.dataset && active.dataset.viewShot) return active.dataset.viewShot;
+      const task = active.closest ? active.closest("[data-task-shot]") : null;
+      return task ? task.getAttribute("data-task-shot") : null;
     })(),
     focus_visible: Boolean(active && active.offsetParent !== null),
     cards: [...panel.querySelectorAll('#compare-candidates [role="tab"]')].map((node) => ({
@@ -264,28 +275,29 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                     return page.evaluate(PANEL_PROBE)
 
                 def row(shot_id: str):
-                    return page.locator(f'#attempt-list .attempt-row[data-shot-id="{shot_id}"]')
+                    return page.locator(f'#shot-execution [data-shot-id="{shot_id}"]')
 
                 def wait_state(shot_id: str, state: str, timeout: int = 30_000) -> None:
-                    expect(row(shot_id)).to_have_attribute("data-attempt-state", state, timeout=timeout)
+                    expect(page.locator(
+                        f'#task-list-mount [data-task-shot="{shot_id}"]')).to_have_attribute(
+                        "data-attempt-state", state, timeout=timeout)
 
                 def wait_candidate_ui(shot_id: str, timeout: int = 30_000) -> None:
                     page.wait_for_function(
                         """(shot) => {
-                            const node = document.querySelector(
-                                '#attempt-list .attempt-row[data-shot-id="' + shot + '"]');
-                            return Boolean(node && node.querySelector('.attempt-candidate'));
+                            const detail = document.querySelector(
+                                '#shot-execution [data-shot-id="' + shot + '"]');
+                            return Boolean(detail && detail.querySelector('.attempt-candidate'));
                         }""", arg=shot_id, timeout=timeout)
 
                 def click_row_button(shot_id: str, text: str) -> None:
-                    stage_nav.goto(page, "generate")
+                    shared.select_make_shot(page, shot_id)
                     row(shot_id).locator(f'button:has-text("{text}")').first.click()
 
 
                 def open_panel(shot_id: str, card_count: int, references: int | None = None) -> None:
-                    stage_nav.goto(page, "generate")
-                    row(shot_id).locator('button[data-compare-action]').first.click()
-                    stage_nav.goto(page, "review")
+                    shared.select_make_shot(page, shot_id)
+                    stage_nav.goto(page, "make")
                     expect(page.locator("#compare-panel")).to_be_visible()
                     expect(page.locator("#compare-panel")).to_have_attribute(
                         "data-compare-contract", COMPARE_CONTRACT_VERSION)
@@ -339,6 +351,7 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 # Issue #9：编译前先做普通决定（用户真实路径）；choices 进 ui 证据。
                 ui["decisions"] = shared.decide_for_compile(page, shot_ids)
                 shared.compile_all(page, shot_ids)
+                shared.choose_make_batch(page, shot_ids)
                 shared.confirm_and_submit(page, expect, probe, shot_ids=shot_ids)
                 click_row_button(first_shot, "再生成一张")
                 shared.confirm_and_submit(page, expect, probe, shot_ids=[first_shot])
@@ -360,13 +373,14 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 ui["panel"] = panel
                 checks.append({
                     "id": "V2.5.3-07",
-                    "title": "入口：每张有候选的图都有「比较候选」，点开即投影该图（无第二套状态）",
+                    "title": "入口：任务列表选中一张图即投影该图的常驻精看（无第二套状态）",
                     "ok": panel["visible"] is True
                           and panel["contract"] == COMPARE_CONTRACT_VERSION
                           and panel["shot_id"] == first_shot
                           and page.locator(
-                              f'#attempt-list .attempt-row[data-shot-id="{first_shot}"] '
-                              'button[data-compare-action][aria-expanded]').count() == 1,
+                              f'#task-list-mount [data-view-shot="{first_shot}"],'
+                              f' #task-list-mount [data-view-shot][value="{first_shot}"]'
+                          ).count() >= 1,
                     "detail": {"contract": panel["contract"], "shot": panel["shot_id"],
                                "subject": panel["subject"], "visible": panel["visible"]},
                 })
@@ -470,10 +484,10 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                                "reports_after": len(after_panel["review_reports"])},
                 })
 
-                # 卡片动作的期望来自独立的最新候选夹具，而非比较区自己选中的对象。
-                stage_nav.goto(page, "review")
-                card = page.locator(f'#review-list .review-card[data-shot-id="{first_shot}"]')
-                card.locator('button:has-text("按问题返工")').click()
+                # 返工绑定当前查看候选：默认查看目标按异常优先/同级新到旧（compareRows 排序），
+                # 不是 version 最大。合规夹具 PASS 多会排在有 BLOCK 的真实候选之后。
+                shared.select_make_shot(page, first_shot)
+                page.click("#compare-panel #rework-open")
                 expect(page.locator("#rework-panel")).to_be_visible()
                 card_rework = page.evaluate("""() => ({
                   shot_id: document.getElementById("rework-panel").dataset.shotId,
@@ -481,17 +495,15 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                   source: document.getElementById("rework-tech-body").textContent,
                   viewed: document.getElementById("compare-panel").dataset.candidateId
                 })""")
-                expected_latest = max(candidates_first, key=lambda entry: entry["version"])["payload"]
                 checks.append({
                     "id": "V2.5.3-13b",
-                    "title": "卡片返工精确绑定显示的最新候选，不沿用比较区上次查看对象",
+                    "title": "精看返工精确绑定所看图的当前查看候选，不沿用上次查看对象",
                     "ok": card_rework["shot_id"] == first_shot
-                          and card_rework["candidate_id"] == expected_latest["candidate_id"]
-                          and expected_latest["asset_sha256"][:12] in card_rework["source"]
+                          and card_rework["candidate_id"] == card_rework["viewed"]
+                          and card_rework["candidate_id"][:12] in card_rework["source"]
                           and shared.candidate_json(probe(), first_shot)
                           == shared.candidate_json(seeded, first_shot),
-                    "detail": {"expected": expected_latest["candidate_id"],
-                               "last_viewed": expected_ids[0], "actual": card_rework},
+                    "detail": {"viewed": card_rework["viewed"], "actual": card_rework},
                 })
                 page.click("#rework-cancel")
 
@@ -606,57 +618,38 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 ui["screenshot"] = screenshot_rel
                 ui["screenshot_detail"] = detail_rel
 
-                # V2.6.14（审核卡状态投影）：卡片必须自己说清「这条候选查过什么」与
-                # 「现在能不能采用」，不能只靠点开比较面板才知道 —— 空白右栏是真实使用摩擦。
+                # V2.6.14（任务行状态投影）：任务行说清查看入口与当前态，
+                # 采用/检查明细只在常驻精看里做 —— 行只投影，不复制第二套入口。
+                # 先显式回到第一张图：前面跳转步骤停在落点图，查看对象必须明确。
+                shared.select_make_shot(page, first_shot)
                 card_states = page.evaluate(CARD_STATE_PROBE)
-                # candidate_chains 是 {version, payload} 版本记录：这里只取候选身份，
-                # 用来证明卡片摘要是「正在展示的那条候选」的当前报告，不是随便一张。
-                chains = {
-                    shot: {entry["payload"]["candidate_id"] for entry in entries}
-                    for shot, entries in ((first_shot, candidates_first),
-                                          (second_shot, candidates_second))
-                }
+                chain_counts = {first_shot: len(candidates_first),
+                                second_shot: len(candidates_second)}
                 card_ok = len(card_states) >= 2
                 card_detail = {"cards": card_states}
                 for item in card_states:
-                    # chains 只覆盖走查的两张图：有链才校验身份归属，无链只看卡片自洽
-                    # （只改覆盖口径，不断言含义）。
-                    chain = chains.get(item["shot_id"], None)
-                    if item["review_state"] not in ("pending", "unknown", "clean", "unchecked"):
+                    if not item["view_text"]:
                         card_ok = False
-                    if not item["text"]:
+                    if item["view_current"] not in ("true", "false"):
                         card_ok = False
-                    elif item["review_state"] == "unchecked":
-                        if "未检查" not in item["text"]:
-                            card_ok = False
-                    elif "自动检查" not in item["text"]:
+                    if not item["state_text"]:
                         card_ok = False
-                    if chain is not None and item["candidate_id"] not in chain:
+                    if item["selection_state"] not in ("none", "current", "stale", None):
                         card_ok = False
-                    if not any(button["text"] == "采用候选" and button["disabled"] is False
-                               for button in item["buttons"]):
+                    if item["attempt_state"] in (None, ""):
                         card_ok = False
-                if not any(item["review_state"] != "unchecked" for item in card_states):
+                if not any(item["viewed"] for item in card_states):
                     card_ok = False
                 checks.append({
                     "id": "V2.5.3-20",
-                    "title": "审核卡逐图检查摘要：显示所展示候选的当前报告状态（含 VLM 状态），未采用时保留可用入口",
-                    "ok": card_ok,
+                    "title": "任务行逐图状态投影：查看入口/当前态/正看一致，采用明细只在精看里做",
+                    "ok": card_ok and card_detail["cards"][0]["detail_shot"] in chain_counts,
                     "detail": card_detail,
                 })
 
-                # 当前语义下没有 #adopt-submit 弹窗：review-card 行内“采用候选”按钮直接采用
-                # （只改到达路径：等行内按钮出现并点击，不断言含义）。
+                # B4 到达路径：选中该图后在常驻精看里采用；任务行只读投影采用态。
                 target_card = card_states[0]["shot_id"] if card_states else first_shot
-                page.wait_for_selector(
-                    f'#review-list .review-card[data-shot-id="{target_card}"] '
-                    'button:has-text("采用候选"):not([disabled])', timeout=15_000)
-                page.click(f'#review-list .review-card[data-shot-id="{target_card}"] '
-                           'button:has-text("采用候选")')
-                page.wait_for_function(
-                    """() => [...document.querySelectorAll('#review-list .review-card')]
-                        .some((c) => c.getAttribute('data-selection-state') === 'current')""",
-                    timeout=15_000)
+                shared.adopt_make_shot(page, target_card)
                 adopted_cards = page.evaluate(CARD_STATE_PROBE)
                 adopted_target = next((item for item in adopted_cards
                                        if item["shot_id"] == target_card), None)
@@ -664,16 +657,11 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                                   if item["shot_id"] != target_card]
                 checks.append({
                     "id": "V2.5.3-21",
-                    "title": "采用后按钮反映状态：目标卡为「已采用」且禁用，未采用的卡仍保留「采用候选」",
+                    "title": "采用后任务行反映状态：目标行为 current 且有已采用徽标，其余行仍可查看",
                     "ok": bool(adopted_target)
                           and adopted_target["selection_state"] == "current"
-                          and any(button["text"] == "已采用" and button["disabled"] is True
-                                  for button in adopted_target["buttons"])
-                          and not any(button["text"] == "采用候选" and button["disabled"] is False
-                                      for button in adopted_target["buttons"])
-                          and all(any(button["text"] == "采用候选" and button["disabled"] is False
-                                      for button in item["buttons"])
-                                  for item in adopted_others),
+                          and "已采用" in " ".join(adopted_target["badges"])
+                          and all(item["view_text"] for item in adopted_others),
                     "detail": {"adopted": adopted_target, "others": adopted_others},
                 })
             finally:

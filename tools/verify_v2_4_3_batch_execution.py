@@ -36,7 +36,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 
-import v2_stage_nav as stage_nav  # noqa: E402  （V2.UI.2 六阶段工作台导航）
+import v2_stage_nav as stage_nav  # noqa: E402  （B4 四段工作台导航）
 import v2_verify_shared as shared  # noqa: E402  （正式 server/夹具/共同业务操作）
 from v2_verify_shared import (  # noqa: E402
     png_bytes, run_entry, read_suite, compile_all,
@@ -160,14 +160,23 @@ async () => {
   const plan = plans.length ? plans[plans.length - 1] : null;
   const project = projects.slice().sort((left, right) =>
     String(right.updated_at || "").localeCompare(String(left.updated_at || "")))[0] || null;
-  const rows = [...document.querySelectorAll("#attempt-list .attempt-row")].map((node) => ({
-    shot_id: node.getAttribute("data-shot-id"),
+  const rows = [...document.querySelectorAll("#task-list-mount [data-task-shot]")].map((node) => {
+    const detail = document.querySelector(
+      '#shot-execution [data-shot-id="' + node.getAttribute("data-task-shot") + '"]');
+    return {
+    shot_id: node.getAttribute("data-task-shot"),
     state: node.getAttribute("data-attempt-state"),
-    badges: [...node.querySelectorAll(".badge")].map((item) => item.textContent),
-    meta: [...node.querySelectorAll("p.meta")].map((item) => item.textContent).join(" | "),
-    buttons: [...node.querySelectorAll("button")].map((item) =>
-      ({ text: item.textContent, disabled: item.disabled })),
-  }));
+    badges: [...node.querySelectorAll(".badge")].map((item) => item.textContent)
+      .concat(detail ? [...detail.querySelectorAll(".badge")].map((item) => item.textContent) : []),
+    meta: [...node.querySelectorAll("p.meta")].map((item) => item.textContent)
+      .concat(detail ? [...detail.querySelectorAll("p.meta")].map((item) => item.textContent) : [])
+      .join(" | "),
+    buttons: [...node.querySelectorAll("button")]
+      .concat(detail ? [...detail.querySelectorAll(".attempt-actions button")] : [])
+      .filter((item, index, all) => all.indexOf(item) === index)
+      .map((item) => ({ text: item.textContent, disabled: item.disabled })),
+    };
+  });
   const buttonInfo = (id) => {
     const node = document.getElementById(id);
     if (!node) return null;
@@ -324,7 +333,7 @@ def wait_batch_settled(page, expected_progress: str, wait_ms: int = 60_000,
 
 
 def save_edit(page, shot_id: str, text: str, reason: str, wait_ms: int = 600) -> None:
-    stage_nav.goto(page, "generate")
+    stage_nav.goto(page, "make")
     stage_nav.reveal(page, "#prompt-editor")
     card = f'#prompt-list .shot-spec[data-shot-id="{shot_id}"]'
     page.fill(card + " textarea.prompt-edit-text", text)
@@ -512,39 +521,41 @@ def main() -> int:
                     return page.evaluate(BATCH_PROBE)
 
                 def row(shot_id: str):
+                    shared.select_make_shot(page, shot_id)
                     return page.locator(
-                        f'#attempt-list .attempt-row[data-shot-id="{shot_id}"]')
+                        f'#shot-execution [data-shot-id="{shot_id}"]')
 
                 def wait_state(shot_id: str, state: str, timeout: int = 30_000) -> None:
-                    expect(row(shot_id)).to_have_attribute(
+                    expect(page.locator(
+                        f'#task-list-mount [data-task-shot="{shot_id}"]')).to_have_attribute(
                         "data-attempt-state", state, timeout=timeout)
 
                 def wait_states(expectations: dict, timeout: int = 90_000) -> None:
                     try:
                         page.wait_for_function(
                             """(wanted) => {
-                                const rows = [...document.querySelectorAll('#attempt-list .attempt-row')];
+                                const rows = [...document.querySelectorAll('#task-list-mount [data-task-shot]')];
                                 return Object.entries(wanted).every(([id, state]) => {
                                     const node = rows.find((item) =>
-                                        item.getAttribute('data-shot-id') === id);
+                                        item.getAttribute('data-task-shot') === id);
                                     return node && node.getAttribute('data-attempt-state') === state;
                                 });
                             }""",
                             arg=expectations, timeout=timeout)
                     except Exception as error:  # noqa: BLE001 - 超时也要报出真实观测
-                        observed = [{"shot": node.get_attribute("data-shot-id"),
+                        observed = [{"shot": node.get_attribute("data-task-shot"),
                                      "state": node.get_attribute("data-attempt-state"),
                                      "text": (node.inner_text() or "")[:120]}
                                     for node in page.locator(
-                                        "#attempt-list .attempt-row").all()]
+                                        "#task-list-mount [data-task-shot]").all()]
                         raise AssertionError(
                             f"等待状态落定超时：wanted={expectations} observed={observed} "
                             f"progress={page.locator('#batch-progress').inner_text()!r}"
                         ) from error
 
                 def click_row_button(shot_id: str, text: str) -> None:
-                    # 行内"重试/新建 action"只切 scope/mode 并聚焦摘要
-                    # （generation-view.js:960-965），提交走随后的 confirm_and_submit。
+                    # 行内"重试/新建 action"只登记单张范围/mode 并聚焦摘要，不直接外发；
+                    # 提交走随后的 confirm_and_submit（与产品 handleSubmitAttempt explicitNew 同语义）。
                     row(shot_id).locator(f'button:has-text("{text}")').first.click()
 
                 def current_shots() -> list:
@@ -553,10 +564,15 @@ def main() -> int:
                     # "set(authorized)==set(shot_ids)" 恒假，120s 后报"消费未落定"）。
                     return list(probe()["shot_ids"])
 
-                def confirm_generation(wanted: list | None = None) -> dict:
+                def confirm_generation(wanted: list | None = None, *, follow_row_mode: bool = False) -> dict:
                     # 确认即提交：本次授权版本/shot/action 的新增消费证明（非旧行存在）。
                     # wanted 省略时取当前套图全集；增量轮次调用方须显式传新增图。
+                    # B4 默认只送正看图：整套/多图授权必须先显式勾选批量范围。
+                    # 行内重试/新建 action 已登记 failed_retry/explicit_new 语义，跟随即可，
+                    # 此时再强制切批量 initial 会把语义洗掉导致 0 张可发（-99 根因）。
                     scope = list(wanted) if wanted is not None else current_shots()
+                    if not follow_row_mode:
+                        shared.choose_make_batch(page, scope)
                     gate = shared.confirm_and_submit(page, expect, probe, submit_requests,
                                                      shot_ids=scope)
                     assert gate["ok"], f"确认必须产生本次授权的新消费：{gate['after_actions']}"
@@ -576,7 +592,7 @@ def main() -> int:
                 def click_queue_resume(text: str = "按原摘要继续未提交队列") -> None:
                     # 当前产品语义：停止/刷新后不再有点 #batch-run；剩余提交走
                     # .generation-queue 里的“按原摘要继续未提交队列”按钮（runBatch 原确认）。
-                    stage_nav.goto(page, "generate")
+                    stage_nav.goto(page, "make")
                     page.locator(
                         f'.generation-queue button:has-text("{text}")').first.click()
 
@@ -611,17 +627,29 @@ def main() -> int:
                 # Issue #9：编译前先做普通决定（用户真实路径）；choices 进 ui 证据。
                 # 后续 add_shots 新增图在各自轮次内再做印字决定（新图无已存规格=未决定）。
                 ui["decisions"] = shared.decide_for_compile(page, probe()["shot_ids"])
-                stage_nav.goto(page, "generate")
+                stage_nav.goto(page, "make")
                 stage_nav.reveal(page, "#prompt-editor")
                 expect(page.locator("#prompt-editor")).to_be_visible()
                 initial = probe()
                 shot_ids = initial["shot_ids"]
                 compile_all(page, shot_ids)
-                # 新流程一次确认即提交：先断言确认可用（4 张就绪），再点确认并等全部成功。
+                # B4 单默认：确认前只送正看 1 张；整套 4 张须先显式选批量范围再判就绪。
                 # submits/status 计数在点确认之前，提交顺序/次数/核对判据与旧 04 相同。
+                ready_single = probe()
+                check("V2.4.3-03a", "B4单默认：确认前只送正看1张（未选3由范围行如实列出）",
+                      len(ready_single["ui"]["rows"]) == 4
+                      and all(item["state"] == "none" for item in ready_single["ui"]["rows"])
+                      and ready_single["ui"]["confirm"]["disabled"] is False
+                      and "1 张" in ready_single["ui"]["confirm"]["text"],
+                      {"rows": len(ready_single["ui"]["rows"]),
+                       "states": [item["state"] for item in ready_single["ui"]["rows"]],
+                       "confirm": ready_single["ui"]["confirm"],
+                       "project_state": ready_single["project_state"],
+                       "progress": ready_single["ui"]["batch"]["progress"]})
+                shared.choose_make_batch(page, shot_ids)
                 ready = probe()
                 ui["base_shots"] = shot_ids
-                check("V2.4.3-03", "确认前就绪：4 张待提交、确认按钮可用且标注 4 张",
+                check("V2.4.3-03", "确认前就绪：显式批量4张待提交、确认按钮可用且标注4张",
                       len(ready["ui"]["rows"]) == 4
                       and all(item["state"] == "none" for item in ready["ui"]["rows"])
                       # 项目状态在「确认并生成」写库后派生（PLAN_REVIEW → READY_TO_GENERATE），
@@ -719,9 +747,9 @@ def main() -> int:
                 ok_before = chain_json(digest, ok_shot)
                 failed_action = chain_of(digest, fail_shot)[-1]["payload"]["action_id"]
                 # 失败重试语义 = 显式新动作：先行内"重试"把摘要 scope/mode 切到
-                # failed_retry，再按该摘要确认提交（4_2 同模式：先点行内再 confirm）。
+                # failed_retry再按该摘要确认提交（4_2 同模式：先点行内再 confirm）。
                 click_row_button(fail_shot, "重试")
-                confirm_generation([fail_shot])
+                confirm_generation([fail_shot], follow_row_mode=True)
                 wait_state(fail_shot, "succeeded")
                 after_retry = probe()
                 retry_chain = chain_of(after_retry, fail_shot)
@@ -756,9 +784,17 @@ def main() -> int:
                 unknown_action = unknown_chain[-1]["payload"]["action_id"]
                 unknown_task = unknown_chain[-1]["payload"]["task_id"]
                 unknown_submits = submits_for(unknown_action)
+                # B4 单详情：行内执行按钮只渲染在正看图执行区；断言前先选中该图再读探针。
+                shared.select_make_shot(page, unknown_shot)
+                unknown_after = probe()
+                unknown_chain = chain_of(unknown_after, unknown_shot)
+                unknown_action = unknown_chain[-1]["payload"]["action_id"]
+                unknown_task = unknown_chain[-1]["payload"]["task_id"]
+                unknown_submits = submits_for(unknown_action)
                 unknown_row = row_of(unknown_after, unknown_shot) or {}
                 buttons = [item["text"] for item in unknown_row.get("buttons") or []]
                 page.wait_for_timeout(5000)
+                shared.select_make_shot(page, unknown_shot)
                 observed = probe()
                 check("V2.4.3-07",
                       "未知：无任务编号、只提交一次、观察窗口内零改写、只提供显式新建 action",
@@ -782,7 +818,7 @@ def main() -> int:
                 # 「确认并生成」，这里先断言该拒绝，再走行内显式新建 action + 摘要确认。
                 refused = probe()["ui"]["confirm"]
                 click_row_button(unknown_shot, "新建 action")
-                confirm_generation([unknown_shot])
+                confirm_generation([unknown_shot], follow_row_mode=True)
                 wait_state(unknown_shot, "succeeded")
                 unknown_fixed = probe()
                 fixed_chain = chain_of(unknown_fixed, unknown_shot)
@@ -794,9 +830,9 @@ def main() -> int:
                       and fixed_chain[-1]["payload"]["state"] == "succeeded"
                       and fixed_chain[-1]["payload"]["action_id"] != unknown_action
                       and len(fixed_chain) > unknown_prefix_len
-                      # 另发新动作只能显式发起（ui-contract §4.6 第 193 行）：产品把发送集合算成 0 张并禁用确认。
-                      and refused["disabled"] is True and "0 张" in refused["text"]
-                      and "Unknown 不自动重提" in refused["status"],
+                      # 另发新动作只能显式发起：产品把发送集合算成 0 张并禁用确认；
+                      # 断言行为（0 张+禁用）不钉具体解释文案。
+                      and refused["disabled"] is True and "0 张" in refused["text"],
                       {"chain": [entry["payload"]["state"] for entry in fixed_chain],
                        "confirm_refusal": refused})
 
@@ -816,6 +852,8 @@ def main() -> int:
                 # 而"停在第一张"恰恰与"全部外发"互斥（旧写法因此在门闩超时后才点停止）。
                 mode["arrived"] = threading.Event()
                 mode["hold"] = threading.Event()
+                # B4 默认只送正看图：停止边界需要三张在途，必须先显式选批量范围。
+                shared.choose_make_batch(page, [stop_first, stop_second, stop_third])
                 authority_before_stop = page.evaluate(shared.AUTHORIZATION_PROBE)
                 known_confirmations = {(row["project_id"], row["document_id"], row["version"])
                                        for row in authority_before_stop["confirmations"]}
@@ -871,7 +909,9 @@ def main() -> int:
                 mode["hold"].set()
                 mode["hold"] = None
                 page.wait_for_timeout(800)
-                stage_nav.goto(page, "generate")
+                stage_nav.goto(page, "make")
+                # B4 单详情：刷新后正看图是 ambient 状态；读执行区按钮前显式选中该图。
+                shared.select_make_shot(page, stop_second)
                 restored = probe()
                 restored_chain = chain_of(restored, stop_second)
                 restored_row = row_of(restored, stop_second) or {}
@@ -892,7 +932,9 @@ def main() -> int:
                           item.get("text", "") for item in queue.get("buttons") or [])
                           for queue in restored_queues)
                       and "尚未提交" in "".join(queue.get("text", "") for queue in restored_queues)
-                      and "没有任务编号" in restored["ui"]["batch"]["hint"],
+                      # hint 行为：有无任务编号待核对需显式新建；不断言具体标点/措辞。
+                      and "无法核对" in restored["ui"]["batch"]["hint"]
+                      and "不会自动重提" in restored["ui"]["batch"]["hint"],
                       {"restored_state": restored_chain[0]["payload"]["state"],
                        "queues": [queue.get("text", "")[:80] for queue in restored_queues],
                        "hint": restored["ui"]["batch"]["hint"]})
@@ -902,7 +944,7 @@ def main() -> int:
                 # 剩余提交走原队列的"按原摘要继续未提交队列"（同一原确认 runBatch）。
                 # 判据：attempt 行终态 + 进度文本 + 卡住身份只提交一次。
                 click_row_button(stop_second, "新建 action")
-                confirm_generation([stop_second])
+                confirm_generation([stop_second], follow_row_mode=True)
                 wait_state(stop_second, "succeeded")
                 click_queue_resume()
                 wait_states({stop_second: "succeeded", stop_third: "succeeded"})

@@ -354,6 +354,11 @@ export type GenerationModule = {
   reworkEntry(shotId: string): ConfirmationQueue | null;
   enterFailedRetry(shotIds: string[]): void;
   enterExplicitNew(shotId: string): void;
+  /** 初始范围的窄命令：只登记用户明确选择的 shot ids（去重保序；空数组合法＝明确空范围，
+   *  绝不回退成全部）。实际可发队列交集、prepare/confirm/重验/预约/外发仍在 owner 内部。
+   *  调用纪律：只有用户明确改变查看对象（单张模式）或明确改变范围/模式时才由视图调用；
+   *  例行重绘不得调用，否则会覆盖 failed_retry/explicit_new 的既有 mode。 */
+  setInitialScope(shotIds: readonly string[]): void;
   hasCurrent(): boolean;
   shotHasCurrent(shotId: string | null): boolean;
   confirmationFor(shotId: string): ConfirmationQueue | null;
@@ -1934,6 +1939,16 @@ export function createGenerationModule(deps: GenerationDependencies): Generation
       const state = latestAttemptOf(shotId)?.record.state;
       authorizationMode = state === ATTEMPT_STATES.succeeded ? "rework"
         : state === ATTEMPT_STATES.failed ? "failed_retry" : "explicit_new";
+    },
+    // 初始范围的窄命令：只登记“用户明确选择的 shot ids”（去重、保序），不在这里算
+    // 可发队列交集、不 prepare/confirm、不发任何请求；空数组就是明确空范围，不回退成全部。
+    setInitialScope: (shotIds) => {
+      const ids: string[] = [];
+      for (const shotId of shotIds) {
+        if (isNonEmptyString(shotId) && !ids.includes(shotId)) ids.push(shotId);
+      }
+      authorizationScope = ids;
+      authorizationMode = "initial";
     },
     hasCurrent: hasCurrentQueue,
     shotHasCurrent: shotHasCurrentQueue,

@@ -215,41 +215,45 @@ def main() -> int:
                     return page.evaluate(PROBE)
 
                 def row(shot_id: str):
+                    shared.select_make_shot(page, shot_id)
                     return page.locator(
-                        f'#attempt-list .attempt-row[data-shot-id="{shot_id}"]')
+                        f'#shot-execution [data-shot-id="{shot_id}"]')
 
                 def wait_state(shot_id: str, state: str, timeout: int = 30_000) -> None:
-                    expect(row(shot_id)).to_have_attribute(
+                    expect(page.locator(
+                        f'#task-list-mount [data-task-shot="{shot_id}"]')).to_have_attribute(
                         "data-attempt-state", state, timeout=timeout)
 
                 def wait_preview(shot_id: str, timeout: int = 60_000) -> None:
+                    shared.select_make_shot(page, shot_id)
                     page.locator(
-                        f'#attempt-list .attempt-row[data-shot-id="{shot_id}"]'
+                        f'#shot-execution [data-shot-id="{shot_id}"]'
                         " .attempt-preview img"
                     ).scroll_into_view_if_needed(timeout=timeout)
                     page.wait_for_function(
                         """(shot) => {
                             const node = document.querySelector(
-                                '#attempt-list .attempt-row[data-shot-id="' + shot + '"]');
+                                '#shot-execution [data-shot-id="' + shot + '"]');
                             const img = node && node.querySelector('.attempt-preview img');
                             return Boolean(img && img.complete && img.naturalWidth > 0);
                         }""", arg=shot_id, timeout=timeout)
 
                 def confirm_generation() -> None:
+                    shared.choose_make_batch(page, probe()["shot_ids"])
                     expect(page.locator("#confirm-action")).to_be_enabled()
                     page.click("#confirm-action")
                     # 确认即提交（confirmAndRun 一次保存授权并直接整套提交）：
-                    # 等 attempt 行出现（行为判据），不再钉 #confirm-record 实现文案。
+                    # 等任务行出现（行为判据），不再钉实现文案。
                     page.wait_for_function(
                         """() => document.querySelectorAll(
-                            '#attempt-list .attempt-row[data-attempt-state]').length > 0""",
+                            '#task-list-mount [data-task-shot][data-attempt-state]').length > 0""",
                         timeout=30_000)
 
                 def click_row_button(shot_id: str, text: str) -> None:
                     row(shot_id).locator(f'button:has-text("{text}")').first.click()
 
                 def compile_all(shot_ids: list) -> None:
-                    stage_nav.goto(page, "generate")
+                    stage_nav.goto(page, "make")
                     for shot_id in shot_ids:
                         card = f'#prompt-list .shot-spec[data-shot-id="{shot_id}"]'
                         page.locator(card + " .toolbar button").scroll_into_view_if_needed(timeout=10_000)
@@ -289,7 +293,7 @@ def main() -> int:
                 expect(page.locator("#shot-list .shot-row")).to_have_count(4)
                 # Issue #9：编译前先做普通决定（用户真实路径）；choices 进 ui 证据。
                 ui["decisions"] = shared.decide_for_compile(page, probe()["shot_ids"])
-                stage_nav.goto(page, "generate")
+                stage_nav.goto(page, "make")
                 expect(page.locator("#prompt-list .shot-spec")).to_have_count(4)
                 shot_ids = probe()["shot_ids"]
                 compile_all(shot_ids)
@@ -584,10 +588,12 @@ async () => {
   const plans = documents.filter((item) => item.kind === "suite_plan")
     .sort((left, right) => left.version - right.version);
   const plan = plans.length ? plans[plans.length - 1] : null;
-  const rows = [...document.querySelectorAll("#attempt-list .attempt-row")].map((node) => {
-    const img = node.querySelector(".attempt-preview img");
+  const rows = [...document.querySelectorAll("#task-list-mount [data-task-shot]")].map((node) => {
+    const detail = document.querySelector(
+      '#shot-execution [data-shot-id="' + node.getAttribute("data-task-shot") + '"]');
+    const img = detail ? detail.querySelector(".attempt-preview img") : null;
     return {
-      shot_id: node.getAttribute("data-shot-id"),
+      shot_id: node.getAttribute("data-task-shot"),
       state: node.getAttribute("data-attempt-state"),
       preview: img ? { complete: img.complete, natural_width: img.naturalWidth } : null,
     };

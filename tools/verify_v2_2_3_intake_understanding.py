@@ -48,7 +48,7 @@ PY = sys.executable
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "tools"))
 
-import v2_stage_nav as stage_nav  # noqa: E402  （V2.UI.2 六阶段工作台导航）
+import v2_stage_nav as stage_nav  # noqa: E402  （B4 四段工作台导航）
 
 SCAN_DIRS = ("app", "src", "config")
 SKIP_PARTS = {"__pycache__", ".uv-cache", ".git"}
@@ -156,7 +156,7 @@ SLOT_TECH_PROBE = """() => [...document.querySelectorAll('#slot-list .slot-row')
 })"""
 
 SLOT_PANEL_MAIN_TEXT = """() => {
-  const panel = document.querySelector('[data-stage-panel="understand"]');
+  const panel = document.querySelector('[data-stage-panel="intake"]');
   if (!panel) return '';
   const clone = panel.cloneNode(true);
   clone.querySelectorAll('details').forEach((node) => node.remove());
@@ -404,8 +404,8 @@ def main() -> int:
             page.click("#analyze-run")
             expect(page.locator("#slots-progress")).to_contain_text("必须确认的槽位")
             page.wait_for_timeout(500)
-            # V2.UI.2 起异步完成不自动切阶段（UI 契约 §1.6/§3）：槽位在「理解」，由用户明确导航。
-            stage_nav.goto(page, "understand")
+            # 四段工作台资料与事实同面板：分析完成后槽位行直接在资料与事实面板内就绪。
+            stage_nav.goto(page, "intake")
             page.wait_for_selector("#slot-list .slot-row", timeout=30_000)
             analyzed = page.evaluate(DB_SNAPSHOT)
             body = json.loads(analyze_posts[-1]) if analyze_posts else {}
@@ -611,7 +611,7 @@ def main() -> int:
                   {"posts_before": unknown_before, "posts_after": len(analyze_posts),
                    "message": unknown_text[:200]})
             category_row = page.locator('#slot-list .slot-row[data-slot-id="product_category"]')
-            stage_nav.goto(page, "understand")
+            stage_nav.goto(page, "intake")
             category_row.get_by_role("button", name="填值并确认", exact=True).click()
             category_row.locator('[data-role="value"]').fill("小家电 · 便携榨汁杯")
             category_row.get_by_role("button", name="确认", exact=True).click()
@@ -649,7 +649,7 @@ def main() -> int:
             check(f"{APP_NAME}-15", "390px 视口无横向溢出", overflow["scroll"] <= overflow["client"] + 1, overflow)
             page.set_viewport_size({"width": 1280, "height": 900})
 
-            stage_nav.goto(page, "understand")
+            stage_nav.goto(page, "intake")
             page.click("#slot-add summary")
             page.evaluate("() => { document.activeElement.blur(); }")
             seen: list[str] = []
@@ -658,20 +658,10 @@ def main() -> int:
                 seen.append(page.evaluate(
                     "() => { const node = document.activeElement;"
                     " return node ? (node.id || node.tagName) : null; }"))
-            stage_nav.goto(page, "intake")
-            page.evaluate("() => { document.activeElement.blur(); }")
-            seen_intake: list[str] = []
-            for _ in range(40):
-                page.keyboard.press("Tab")
-                seen_intake.append(page.evaluate(
-                    "() => { const node = document.activeElement;"
-                    " return node ? (node.id || node.tagName) : null; }"))
             check(f"{APP_NAME}-16",
-                  "键盘可达：每个阶段的控件都在自己阶段的 Tab 顺序内（理解：槽位开关/新增槽位；资料：参考图/保存草稿/分析）",
-                  {"slots-toggle", "slot-add-id"} <= set(seen)
-                  and {"ref-add", "intake-save", "analyze-run"} <= set(seen_intake),
-                  {"understand_stage": [item for item in seen if item][:40],
-                   "intake_stage": [item for item in seen_intake if item][:40]})
+                  "键盘可达：资料与事实阶段的控件都在同一阶段的 Tab 顺序内（参考图/保存草稿/分析/槽位开关/新增槽位）",
+                  {"slots-toggle", "slot-add-id", "ref-add", "intake-save", "analyze-run"} <= set(seen),
+                  {"intake_stage": [item for item in seen if item][:80]})
 
             open_after = page.evaluate(DB_SNAPSHOT)
             # 唯一允许出现的是“故意触发的 Unknown 场景”那条 504：浏览器会把 5xx 记录到控制台。

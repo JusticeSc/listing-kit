@@ -4,7 +4,8 @@
 归属：tools/verify_v2_*.py 之间不再互相 load_module 当共享库；
 真正共享的正式 server 装置、数据夹具（PNG/端口/读套件/静态 harness 服务/正式入口）
 与少数共同 UI 业务操作（compile_all、confirm_and_submit 新增消费证明、Issue #9
-普通决定 open_specs/decide_presentation/decide_shot_decision/decide_for_compile）集中在此。
+普通决定 open_specs/decide_presentation/decide_shot_decision/decide_for_compile、
+B4 制作与审图 select_make_shot/choose_make_batch/adopt_make_shot）集中在此。
 数据探针（SEED_SLOTS / PROBE / HASH_ASSET / chain_of / candidate_of / row_of /
 reviews_for / candidate_json / review_json）也只在此一份定义：验证器直接用
 shared.<name>，不互相 import、不复制、不包一层同名壳。
@@ -12,7 +13,7 @@ shared.<name>，不互相 import、不复制、不包一层同名壳。
 不进产品入口，不新增 registry/CI 登记。
 
 已有公共工具引导复用：
-- 六阶段导航仍用 tools/v2_stage_nav.py（goto/reveal），本文件不另造导航；
+- 四段导航用 tools/v2_stage_nav.py（goto/reveal），本文件不另造导航；
 - 无场景装置的静态走查仍用 tools/v2_test_server.py，本文件只补“可注场景”
   的正式 product server 装置（与 v2_test_server 同一 ProductV2Handler 路径）。
 """
@@ -63,12 +64,6 @@ def current_review_contract() -> str:
     if match is None:
         raise SystemExit("review.js 里找不到 REVIEW_CONTRACT_VERSION。")
     return match.group(1)
-
-
-ATTEMPT_ANY_JS = (
-    "() => document.querySelectorAll("
-    "'#attempt-list .attempt-row[data-attempt-state]').length > 0"
-)
 
 
 def png_bytes(width: int, height: int, color: tuple[int, int, int]) -> bytes:
@@ -320,7 +315,7 @@ def compile_all(page, shot_ids: list, wait_ms: int = 120, *, force: bool = False
     """等待自动本地准备；只重准备过期图，显式版本前进案例用 force。"""
     import v2_stage_nav as stage_nav
 
-    stage_nav.goto(page, "generate")
+    stage_nav.goto(page, "make")
     stage_nav.reveal(page, "#prompt-editor")
     for shot_id in shot_ids:
         card = f'#prompt-list .shot-spec[data-shot-id="{shot_id}"]'
@@ -336,6 +331,115 @@ def compile_all(page, shot_ids: list, wait_ms: int = 120, *, force: bool = False
             page.locator(card + " .toolbar button").first.click()
             page.wait_for_selector(card + '[data-prompt-state="saved"]', timeout=30_000)
         page.wait_for_timeout(wait_ms)
+
+def make_viewed_shot(page):
+    """制作与审图当前正看的图：compare 常驻精看的实际 shot id，无正看返回 None。"""
+    return page.evaluate(
+        """() => {
+          const panel = document.getElementById("compare-panel");
+          if (panel && !panel.hidden && panel.dataset.shotId) return panel.dataset.shotId;
+          const selected = document.querySelector(
+            '#task-list-mount [data-view-shot][aria-current="true"]');
+          if (selected) {
+            return selected.getAttribute("data-view-shot")
+              || (selected instanceof HTMLInputElement || selected instanceof HTMLOptionElement
+                ? selected.value : null);
+          }
+          const narrow = document.getElementById("make-shot-select");
+          if (narrow instanceof HTMLSelectElement && narrow.value) return narrow.value;
+          return null;
+        }""")
+
+
+def select_make_shot(page, shot_id: str, timeout: int = 20_000) -> None:
+    """在制作与审图里选中一张图：点唯一任务行的正看入口，等常驻精看跟到该图。"""
+    import v2_stage_nav as stage_nav
+
+    if not shot_id:
+        raise AssertionError("选中制作图必须给出非空 shot_id")
+    stage_nav.goto(page, "make")
+    entry = page.locator(
+        f'#task-list-mount [data-view-shot="{shot_id}"]'
+        f', #task-list-mount [data-view-shot][value="{shot_id}"]').first
+    narrow = page.locator("#make-shot-select")
+    if entry.count() > 0 and entry.is_visible():
+        entry.scroll_into_view_if_needed(timeout=timeout)
+        entry.click(timeout=timeout)
+    elif narrow.count() > 0 and narrow.is_visible():
+        narrow.select_option(shot_id, timeout=timeout)
+    else:
+        raise AssertionError(
+            f"制作任务的正看入口当前不可操作：{shot_id}"
+            f"（任务行存在={entry.count() > 0}，窄屏选择器存在={narrow.count() > 0}）")
+    page.wait_for_function(
+        """(shot) => {
+          const panel = document.getElementById("compare-panel");
+          return Boolean(panel && !panel.hidden && panel.dataset.shotId === shot);
+        }""", arg=shot_id, timeout=timeout)
+
+
+def choose_make_batch(page, shot_ids: list, timeout: int = 20_000) -> int:
+    """显式选批量范围：开批量模式、把勾选调成与 shot_ids 完全一致，返回实际计数值。
+
+    进入批量会把正看图预勾 1 张（产品语义）：这里先对全量勾选框逐个置位，
+    再按“集合相等 + 计数等于名单长度”等待，避免把预勾残留带进授权。
+    """
+    import v2_stage_nav as stage_nav
+
+    if not shot_ids or len(set(shot_ids)) != len(shot_ids):
+        raise AssertionError("批量范围必须明确指定非空且无重复的 shot_ids")
+    stage_nav.goto(page, "make")
+    mode = page.locator("#make-mode-batch")
+    mode.scroll_into_view_if_needed(timeout=timeout)
+    mode.check(timeout=timeout)
+    wanted = set(shot_ids)
+    boxes = page.locator("input[data-batch-shot]")
+    boxes.first.wait_for(state="visible", timeout=timeout)
+    for index in range(boxes.count()):
+        box = boxes.nth(index)
+        shot_id = box.get_attribute("data-batch-shot")
+        if shot_id is None:
+            raise AssertionError("批量勾选框缺少 data-batch-shot 身份")
+        box.scroll_into_view_if_needed(timeout=timeout)
+        if shot_id in wanted:
+            box.check(timeout=timeout)
+        else:
+            box.uncheck(timeout=timeout)
+    page.wait_for_function(
+        """(wanted) => {
+          const node = document.getElementById("generation-scope-count");
+          if (!node) return false;
+          const checked = [...document.querySelectorAll("input[data-batch-shot]:checked")]
+            .map((item) => item.getAttribute("data-batch-shot"));
+          return checked.length === wanted.length
+            && wanted.every((id) => checked.includes(id))
+            && node.textContent.includes(String(wanted.length));
+        }""", arg=list(shot_ids), timeout=timeout)
+    text = page.locator("#generation-scope-count").inner_text()
+    head = text.split("张", 1)[0]
+    return int("".join(ch for ch in head if ch.isdigit()) or "0")
+
+
+def adopt_make_shot(page, shot_id: str, timeout: int = 30_000) -> None:
+    """逐图人工采用：选中该图后点常驻精看的采用，等该图采用态落定。"""
+    from playwright.sync_api import expect
+
+    select_make_shot(page, shot_id, timeout=timeout)
+    adopt = page.locator("#compare-panel #adopt-open")
+    expect(adopt).to_be_enabled(timeout=timeout)
+    adopt.click(timeout=timeout)
+    page.wait_for_function(
+        """(shot) => {
+          const row = document.querySelector(
+            '#task-list-mount [data-task-shot="' + shot + '"]');
+          if (row && row.getAttribute("data-selection-state") === "current") return true;
+          const panel = document.getElementById("compare-panel");
+          if (panel && !panel.hidden && panel.dataset.shotId === shot) {
+            return [...panel.querySelectorAll(".badge")]
+              .some((node) => (node.textContent || "").includes("已采用"));
+          }
+          return false;
+        }""", arg=shot_id, timeout=timeout)
 
 def attempt_actions(probe_data: dict) -> dict[str, str]:
     """probe 的 attempt_chains → {shot_id: 最新 action_id}（无链时为空）。"""
@@ -582,7 +686,7 @@ async () => {
   const plans = documents.filter((item) => item.kind === "suite_plan")
     .sort((left, right) => left.version - right.version);
   const plan = plans.length ? plans[plans.length - 1] : null;
-  const rows = [...document.querySelectorAll("#attempt-list .attempt-row")].map((node) => {
+  const rows = [...document.querySelectorAll("#shot-execution .attempt-row[data-shot-id]")].map((node) => {
     const img = node.querySelector(".attempt-preview img");
     const candidateMeta = node.querySelector(".attempt-candidate");
     const reviewNode = node.querySelector(".attempt-review");
@@ -697,8 +801,8 @@ SHOT_IDS = """() => [...document.querySelectorAll('#shot-list .shot-row')]
   .map((row) => row.getAttribute('data-shot-id'))"""
 
 ATTEMPT_STATES = """() => Object.fromEntries(
-  [...document.querySelectorAll('#attempt-list .attempt-row[data-shot-id]')]
-    .map((row) => [row.getAttribute('data-shot-id'),
+  [...document.querySelectorAll('#task-list-mount [data-task-shot]')]
+    .map((row) => [row.getAttribute('data-task-shot'),
                    row.getAttribute('data-attempt-state')]))"""
 
 def confirm_slots(page) -> int:
@@ -742,7 +846,7 @@ def wait_terminal(page, ids: list[str], timeout: int = 60_000) -> None:
     page.wait_for_function(
         """(ids) => ids.every((shotId) => {
              const node = document.querySelector(
-               '#attempt-list .attempt-row[data-shot-id="' + shotId + '"]');
+               '#task-list-mount [data-task-shot="' + shotId + '"]');
              const state = node && node.getAttribute('data-attempt-state');
              return state === 'succeeded' || state === 'failed' || state === 'unknown';
            })""", arg=ids, timeout=timeout)
@@ -825,23 +929,23 @@ def walk_to_adoption(page, name: str, reference: Path, *, run_vlm: bool = False)
 
     create_project(page, name, reference)
     page.click("#analyze-run")
-    stage_nav.goto(page, "understand")
     page.wait_for_selector("#slot-list .slot-row:not([hidden])", timeout=30_000)
     confirm_slots(page)
-    page.click("#stage-next-understand")
+    page.click("#stage-next-plan")
     page.click("#suite-seed")
     page.wait_for_selector("#shot-list .shot-row", timeout=20_000)
-    page.click("#stage-next-plan")
+    page.click("#stage-next-make")
     shots = page.evaluate(SHOT_IDS)
     # Issue #9：编译前先做普通决定（用户真实路径），否则编译被阻断。
     decide_for_compile(page, shots)
     compile_all(page, shots)
+    choose_make_batch(page, shots)
     result = confirm_and_submit(page, expect, shot_ids=shots)
     assert result["ok"], f"新授权与逐图消费不一致：{result}"
     if run_vlm:
         for shot_id in shots:
-            button = page.locator(
-                f'#attempt-list .attempt-row[data-shot-id="{shot_id}"] button[data-review-action]')
+            select_make_shot(page, shot_id)
+            button = page.locator('#shot-execution button[data-review-action]')
             expect(button).to_be_enabled()
             button.click()
             page.wait_for_function(
@@ -860,12 +964,9 @@ def walk_to_adoption(page, name: str, reference: Path, *, run_vlm: bool = False)
                   return docs.some((row) => row.kind === "review_report" && row.payload.shot_id === id
                     && row.payload.vlm && row.payload.vlm.outcome !== "not_run");
                 }""", arg=shot_id, timeout=60_000)
-    page.click("#stage-next-review")
+    stage_nav.goto(page, "make")
     for shot_id in shots:
-        page.click(f'#review-list .review-card[data-shot-id="{shot_id}"] button:has-text("采用候选")')
-        page.wait_for_selector(
-            f'#review-list .review-card[data-shot-id="{shot_id}"][data-selection-state="current"]',
-            timeout=15_000)
+        adopt_make_shot(page, shot_id)
     return shots
 
 
@@ -909,18 +1010,21 @@ def wait_gate(page, timeout: int = 30_000) -> dict:
 
 def walk_to_deliver(page, name: str, reference: Path, *,
                     run_vlm: bool = False) -> tuple[list[str], dict]:
-    """走到交付阶段：资料 → 理解 → 方案 → 生成（可选逐个 VLM 复核）→ 采用 → 整套检查。"""
+    """走到交付阶段：资料与事实 → 方案 → 制作与审图（可选逐个 VLM 复核）→ 采用 → 交付整套检查。"""
+    import v2_stage_nav as stage_nav
+
     shots = walk_to_adoption(page, name, reference, run_vlm=run_vlm)
+    stage_nav.goto(page, "deliver")
     page.click("#suite-review-run")
     page.wait_for_function(
         "() => (document.getElementById('suite-review-status') || {}).textContent.indexOf('整套检查 ') >= 0",
         timeout=60_000)
     probes = {"suite_review": page.evaluate(SUITE_PROBE)}
-    # B01/RC16 回归：交付前在生成阶段再次编译首张图（当前 Prompt 头前进），旧采用
+    # B01/RC16 回归：交付前在制作阶段再次编译首张图（当前 Prompt 头前进），旧采用
     # 候选的原 action 冻结 Prompt 不变；交付 manifest 必须记旧冻结版本，不得跟随当前头。
-    page.click('[data-stage-nav="generate"]')
+    stage_nav.goto(page, "make")
     compile_all(page, shots[:1], force=True)
-    page.click('[data-stage-nav="deliver"]')
+    stage_nav.goto(page, "deliver")
     page.wait_for_timeout(400)
     probes["b01_manifest_provenance"] = page.evaluate("""() => {
       const read = (store) => new Promise((resolve, reject) => {

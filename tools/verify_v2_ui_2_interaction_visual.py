@@ -1,16 +1,15 @@
 #!/usr/bin/env python
-"""V2.UI.2 六阶段交互与视觉基线验证：静态契约 + 真实工作台走查 + 响应式/键盘/视觉证据。
+"""V2.UI.2 四段交互与视觉基线验证：静态契约 + 真实工作台走查 + 响应式/键盘/视觉证据。
 
 正向（本套件证明什么）：
-  1) 信息架构：项目首页 + 同页六阶段外壳（资料—理解—方案—生成—审核返工—交付），
-     顺序、标签、标题与导航语义来自唯一权威 `app/product_v2/index.html`。
+  1) 信息架构：项目首页 + 同页四段外壳（资料与事实—方案—制作与审图—交付），
   2) 首页紧凑：空白态只有一个创建入口（primary）与一个次级导入；不预填示例商品。
   3) 外壳纯净：`ui/stage-shell.js` 只做界面投影，不持有业务状态、不读写存储、不发请求。
   4) 表现层：样式来自 `styles.css` 的 `:root` token；无内联样式、无外部 CDN、无新依赖。
-  5) 空白首页 / 新项目默认停靠「资料」/ 缺资料时外发理解禁用并说明缺什么，人工填写入口始终可用。
-  6) 阶段可达性：六个任务入口始终可达（不禁用、不锁定）；切换阶段只换面板与摘要，
+  5) 空白首页 / 新项目默认停靠「资料与事实」/ 缺资料时外发理解禁用并说明缺什么，人工填写入口始终可用。
+  6) 阶段可达性：四个任务入口始终可达（不禁用、不锁定）；切换阶段只换面板与摘要，
      稳态下不写任何 IndexedDB 记录、不授予外发/采用/导出操作权限。
-  7) 完整闭环后：阶段条标记完成与当前，审核阶段以图片为中心列出逐图审核卡，
+  7) 完整闭环后：阶段条标记完成与当前，制作与审图以任务行 + 常驻精看审图，
      交付阶段显示门禁清单与「生成交付包（ZIP）」在 V2.6.2 接入前的真实禁用说明。
   8) 390px 与 200% 缩放等价视口（1440 窗口缩到 720×450 CSS 像素）无横向溢出、关键操作可见。
   9) 键盘路径：新建、打开、分析、切换阶段可全程不用鼠标。
@@ -56,9 +55,6 @@ PRODUCT_DIR = ROOT / "app" / "product_v2"
 EVIDENCE_DIR = ROOT / "evals" / "product-v2"
 EVIDENCE_IMAGE_DIR = EVIDENCE_DIR / "evidence"
 CONTRACT = "v2.ui.2"
-STAGE_IDS = ["intake", "understand", "plan", "generate", "review", "deliver"]
-STAGE_LABELS = {"intake": "资料", "understand": "理解", "plan": "方案",
-                "generate": "生成", "review": "审核返工", "deliver": "交付"}
 
 
 sys.path.insert(0, str(ROOT / "tools"))
@@ -240,7 +236,7 @@ OVERFLOW_PROBE = """
 
 def run_workbench_checks(stamp: str, console_errors: list[str],
                          page_errors: list[str]) -> tuple[list[dict], dict]:
-    """真实工作台走查：空白首页 → 新建 → 六阶段 → 采用 → 交付 → 响应式与键盘。"""
+    """真实工作台走查：空白首页 → 新建 → 四段 → 采用 → 交付 → 响应式与键盘。"""
 
     from playwright.sync_api import expect, sync_playwright  # noqa: PLC0415
 
@@ -298,7 +294,7 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 })
 
                 page.focus("#new-project-name")
-                page.keyboard.type("审计商品 · 六阶段工作台")
+                page.keyboard.type("审计商品 · 四段工作台")
                 page.keyboard.press("Enter")
                 # R3.3：新建即打开——Enter 直接进入工作台。
                 expect(page.locator("#project-view")).to_be_visible()
@@ -312,7 +308,7 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 blank_storage = storage()
                 checks.append({
                     "id": "UI2-08",
-                    "title": "新建后默认停靠「资料」：唯一 current 阶段带 aria-current，六个任务入口始终可达（不禁用、不锁定）",
+                    "title": "新建后默认停靠「资料与事实」：唯一 current 阶段带 aria-current，四个任务入口始终可达（不禁用、不锁定）",
                     "ok": focused_open and workspace["visible"] == ["intake"]
                           and [item["id"] for item in workspace["buttons"] if item["current"]]
                           == ["intake"]
@@ -355,11 +351,10 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 focus_digest = page.evaluate(USER_DIGEST)
                 # 冻结契约：阶段条始终可达；用户明确导航才切换。逐个打开每个阶段，
                 # 断言面板跟随切换、无用户事实写入、门外主操作（生成/交付）仍禁用。
-                # 进入理解会触发 §4.2 允许的本地准备（空核心事实壳 ensureCoreSlots），
-                # 与"进入生成区可触发 §4.6 的本地准备"同类，不是导航授权外发/改事实。
+                # 进入制作可触发 §4.6 允许的本地准备，不是导航授权外发/改事实。
                 visited = []
                 storage_clean = True
-                for stage_id in ("understand", "plan", "generate", "review", "deliver"):
+                for stage_id in ("plan", "make", "deliver"):
                     page.click(f'#stage-nav [data-stage-nav="{stage_id}"]')
                     page.wait_for_selector(
                         f'#stage-panels [data-stage-panel="{stage_id}"]:not([hidden])',
@@ -381,8 +376,8 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                     })""")
                 checks.append({
                     "id": "UI2-09",
-                    "title": "阶段可达性：六入口可逐个打开且面板跟随；切换阶段不改用户事实、不授予门外主操作权限",
-                    "ok": visited == [["understand"], ["plan"], ["generate"], ["review"], ["deliver"]]
+                    "title": "阶段可达性：四入口可逐个打开且面板跟随；切换阶段不改用户事实、不授予门外主操作权限",
+                    "ok": visited == [["plan"], ["make"], ["deliver"]]
                           and locked_state["visible"] == ["intake"]
                           and [item["id"] for item in locked_state["buttons"] if item["current"]]
                           == ["intake"]
@@ -425,29 +420,27 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 focused_analyze = page.evaluate(
                     "() => document.activeElement === document.getElementById('analyze-run')")
                 page.keyboard.press("Enter")
-                # 槽位行在理解面板内（此时仍隐藏）：等 attached 而非 visible；可见性在导航后断言。
+                # 槽位行在资料与事实面板内：等 attached 再数可见行；阶段不自动切换。
                 page.wait_for_selector("#slot-list .slot-row", state="attached", timeout=60_000)
                 page.wait_for_timeout(400)
                 ui["keyboard"]["analyze"] = bool(focused_analyze)
                 stayed = stage_state()
                 # 冻结契约：异步完成仅更新状态，不抢焦点、不自动切任务。分析完成后
-                # 仍停在资料，再由用户明确导航到理解，槽位行在理解面板内就绪。
-                page.click('[data-stage-nav="understand"]')
-                expect(page.locator('[data-stage-panel="understand"]')).to_be_visible()
-                page.wait_for_selector("#slot-list .slot-row", timeout=60_000)
+                # 仍停在资料与事实，槽位行在同一面板内就绪（B4 无独立理解阶段）。
+                analyzed_slots = page.locator("#slot-list .slot-row").count()
                 analyzed = stage_state()
                 checks.append({
                     "id": "UI2-11",
-                    "title": "分析商品资料（键盘 Enter 触发）成功后不自动切阶段；用户明确导航到「理解」后槽位进入待处理列表",
+                    "title": "分析商品资料（键盘 Enter 触发）成功后不自动切阶段；槽位在资料与事实面板内进入待处理列表",
                     "ok": bool(focused_analyze) and stayed["visible"] == ["intake"]
-                          and analyzed["visible"] == ["understand"]
-                          and page.locator("#slot-list .slot-row").count() > 0
+                          and analyzed["visible"] == ["intake"]
+                          and analyzed_slots > 0
                           and [item["id"] for item in analyzed["buttons"] if item["current"]]
-                          == ["understand"],
+                          == ["intake"],
                     "detail": {"keyboard_analyze": bool(focused_analyze),
                                "stayed": stayed["visible"],
                                "stage": analyzed,
-                               "slots": page.locator("#slot-list .slot-row").count()},
+                               "slots": analyzed_slots},
                 })
 
                 guard = 0
@@ -458,8 +451,8 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                      .get_by_role("button", name="确认", exact=True).first.click())
                     page.wait_for_timeout(250)
                     guard += 1
-                expect(page.locator("#stage-next-understand")).to_be_enabled(timeout=20_000)
-                page.focus("#stage-next-understand")
+                expect(page.locator("#stage-next-plan")).to_be_enabled(timeout=20_000)
+                page.focus("#stage-next-plan")
                 page.keyboard.press("Enter")
                 expect(page.locator('[data-stage-panel="plan"]')).to_be_visible()
                 expect(page.locator("#suite-seed")).to_be_enabled(timeout=20_000)
@@ -470,7 +463,7 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 plan_state = stage_state()
                 checks.append({
                     "id": "UI2-12",
-                    "title": "理解到方案：确认全部待处理槽位后可推进，推荐方案生成 1..N 张图片任务，阶段条随之前移",
+                    "title": "资料与事实到方案：确认全部待处理槽位后可推进，推荐方案生成 1..N 张图片任务，阶段条随之前移",
                     "ok": len(shots) >= 1 and guard < 25
                           and plan_state["visible"] == ["plan"]
                           and [item["id"] for item in plan_state["buttons"] if item["current"]]
@@ -478,93 +471,83 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                     "detail": {"shots": shots, "confirm_rounds": guard, "stage": plan_state},
                 })
 
-                page.focus("#stage-next-plan")
+                page.focus("#stage-next-make")
                 focused_plan_next = page.evaluate(
-                    "() => document.activeElement === document.getElementById('stage-next-plan')")
+                    "() => document.activeElement === document.getElementById('stage-next-make')")
                 page.keyboard.press("Enter")
-                expect(page.locator('[data-stage-panel="generate"]')).to_be_visible()
-                ui["keyboard"]["plan_to_generate"] = bool(focused_plan_next)
+                expect(page.locator('[data-stage-panel="make"]')).to_be_visible()
+                ui["keyboard"]["plan_to_make"] = bool(focused_plan_next)
                 # Issue #9：编译前先做普通决定（用户真实路径）；choices 进 ui 证据。
                 ui["decisions"] = shared.decide_for_compile(page, shots)
                 shared.compile_all(page, shots)
+                shared.choose_make_batch(page, shots)
                 expect(page.locator("#confirm-action")).to_be_enabled(timeout=30_000)
                 page.click("#confirm-action")
-                # 新流程一次确认直接整套进批次：等 attempt 行出现（不再写“已确认 vN”记录行，不再有点 #batch-run）。
+                # 新流程一次确认直接整套进批次：等任务行出现（不再写“已确认 vN”记录行，不再有点 #batch-run）。
                 page.wait_for_function(
                     """() => document.querySelectorAll(
-                        '#attempt-list .attempt-row[data-attempt-state]').length > 0""",
+                        '#task-list-mount [data-task-shot][data-attempt-state]').length > 0""",
                     timeout=30_000)
                 page.wait_for_function(
                     """(ids) => ids.every((shotId) => {
                       const node = document.querySelector(
-                        '#attempt-list .attempt-row[data-shot-id="' + shotId + '"]');
+                        '#task-list-mount [data-task-shot="' + shotId + '"]');
                       return Boolean(node
                         && node.getAttribute("data-attempt-state") === "succeeded");
                     })""", arg=shots, timeout=180_000)
                 page.wait_for_timeout(400)
-                generate_state = stage_state()
+                make_state = stage_state()
                 checks.append({
                     "id": "UI2-13",
-                    "title": "生成阶段：整套生成后逐图进入成功态，并在阶段脚注开放「去审核与返工」入口",
-                    "ok": page.locator("#attempt-list .attempt-row").count() == len(shots)
-                          and not page.locator("#stage-next-review").is_disabled()
-                          and page.locator('#attempt-list .attempt-row[data-attempt-state="succeeded"]')
+                    "title": "制作与审图：整套生成后逐图进入成功态，并在阶段脚注开放「去交付」入口",
+                    "ok": page.locator("#task-list-mount [data-task-shot]").count() == len(shots)
+                          and not page.locator("#stage-next-deliver").is_disabled()
+                          and page.locator('#task-list-mount [data-task-shot][data-attempt-state="succeeded"]')
                           .count() == len(shots),
-                    "detail": {"attempt_rows": page.locator("#attempt-list .attempt-row").count(),
+                    "detail": {"attempt_rows": page.locator("#task-list-mount [data-task-shot]").count(),
                                "shots": len(shots),
-                               "summary": generate_state["summary"]},
+                               "summary": make_state["summary"]},
                 })
 
-                page.focus("#stage-next-review")
-                focused_review = page.evaluate(
-                    "() => document.activeElement === document.getElementById('stage-next-review')")
+                page.focus('[data-stage-nav="make"]')
+                focused_make = page.evaluate(
+                    "() => document.activeElement === document.querySelector('[data-stage-nav=\"make\"]')")
                 page.keyboard.press("Enter")
-                expect(page.locator('[data-stage-panel="review"]')).to_be_visible()
-                review_state = stage_state()
-                generate_button = next(item for item in review_state["buttons"]
-                                       if item["id"] == "generate")
-                ui["keyboard"]["stage_switch"] = bool(focused_review)
+                expect(page.locator('[data-stage-panel="make"]')).to_be_visible()
+                ui["keyboard"]["stage_switch"] = bool(focused_make)
+                make_detail = stage_state()
+                make_button = next(item for item in make_detail["buttons"]
+                                   if item["id"] == "make")
                 page.wait_for_timeout(600)
-                review_path = shot("review")
-                page.screenshot(path=str(ROOT / review_path), full_page=True)
-                cards = page.locator("#review-list .review-card")
-                images = page.locator("#review-list .review-card .review-preview img")
+                make_path = shot("make")
+                page.screenshot(path=str(ROOT / make_path), full_page=True)
+                rows = page.locator("#task-list-mount [data-task-shot]")
+                viewed = page.locator("#compare-panel:not([hidden]) #compare-viewed-image")
                 checks.append({
                     "id": "UI2-14",
-                    "title": "审核阶段以图片为中心：每张图一张审核卡（候选大图 + 采用状态 + 三个行内动作），「生成」转为已完成",
-                    "ok": bool(focused_review) and review_state["visible"] == ["review"]
-                          and cards.count() == len(shots) and images.count() == len(shots)
-                          and page.locator("#review-list .review-card button").count()
-                          >= len(shots) * 3
-                          and generate_button["complete"] is True
-                          and (ROOT / review_path).stat().st_size > 0,
-                    "detail": {"keyboard_stage_switch": bool(focused_review),
-                               "cards": cards.count(), "images": images.count(),
-                               "screenshot": review_path,
-                               "summary": review_state["summary"]},
+                    "title": "制作与审图以图片为中心：任务行逐图可查，常驻精看展示正看候选大图",
+                    "ok": make_detail["visible"] == ["make"]
+                          and rows.count() == len(shots)
+                          and viewed.count() >= 1
+                          and make_button["current"] is True
+                          and (ROOT / make_path).stat().st_size > 0,
+                    "detail": {"rows": rows.count(), "viewed": viewed.count(),
+                               "screenshot": make_path,
+                               "summary": make_detail["summary"]},
                 })
                 for shot_id in shots:
-                    # 新流程直接点卡片“采用候选”即采用（无 #adopt-submit 对话框）：等卡片出现“已采用”。
-                    page.click(f'#review-list .review-card[data-shot-id="{shot_id}"] '
-                               'button:has-text("采用候选")')
-                    page.wait_for_function(
-                        """(shot) => {
-                            const card = document.querySelector(
-                                '#review-list .review-card[data-shot-id="' + shot + '"]');
-                            const btn = card && [...card.querySelectorAll("button")]
-                                .find((item) => (item.textContent || "").indexOf("已采用") >= 0);
-                            return Boolean(btn);
-                        }""", arg=shot_id, timeout=40_000)
+                    # B4 只有常驻精看一个采用入口（#adopt-open 单击即采用）；任务行只读投影。
+                    shared.adopt_make_shot(page, shot_id)
                     page.wait_for_timeout(120)
-                # 审核卡“已采用”按钮本身就是反馈；#adopt-status 已随采用面板一并退役。
                 adopted = page.evaluate(
-                    """() => [...document.querySelectorAll("#review-list .review-card")]
-                      .map((node) => ({ shot_id: node.getAttribute("data-shot-id"),
+                    """() => [...document.querySelectorAll("#task-list-mount [data-task-shot]")]
+                      .map((node) => ({ shot_id: node.getAttribute("data-task-shot"),
                         state: node.getAttribute("data-selection-state"),
-                        badge: (node.querySelector(".badge") || {}).textContent || "" }))""")
+                        badge: [...node.querySelectorAll(".badge")]
+                          .map((item) => item.textContent || "").join(" ") }))""")
                 checks.append({
                     "id": "UI2-15",
-                    "title": "逐图人工采用：每张图点审核卡「采用候选」即落一条当前选择，卡片徽标同步为已采用",
+                    "title": "逐图人工采用：每张图在常驻精看采用即落一条当前选择，任务行徽标同步为已采用",
                     "ok": len(adopted) == len(shots)
                           and all(item["state"] == "current" and "已采用" in item["badge"]
                                   for item in adopted),
@@ -659,7 +642,7 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 })
                 page.set_viewport_size({"width": 1440, "height": 900})
 
-                ui["screenshots"] = [home_path, review_path, deliver_path,
+                ui["screenshots"] = [home_path, make_path, deliver_path,
                                      narrow_path, zoom_path]
                 ui["stage_summary"] = reloaded["summary"]
                 ui["shots"] = shots
@@ -670,7 +653,7 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
     return checks, ui
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="V2.UI.2 六阶段交互与视觉基线验证")
+    parser = argparse.ArgumentParser(description="V2.UI.2 四段交互与视觉基线验证")
     parser.add_argument("--label", default="")
     args = parser.parse_args()
 
@@ -689,7 +672,7 @@ def main() -> int:
         "id": "UI2-20",
         "title": "键盘路径：新建、打开、分析、阶段推进与阶段切换五个关键动作都由键盘触发并断言焦点落点",
         "ok": all(keyboard.get(item) is True
-                  for item in ("create", "open", "analyze", "plan_to_generate", "stage_switch")),
+                  for item in ("create", "open", "analyze", "plan_to_make", "stage_switch")),
         "detail": {"keyboard": keyboard},
     })
     entry = shared.run_entry(["--check"])
@@ -701,7 +684,7 @@ def main() -> int:
         entry = shared.run_entry(["--check"])
     checks.append({
         "id": "UI2-21",
-        "title": "正式入口 --check 全过（六阶段外壳没有破坏无状态自检）",
+        "title": "正式入口 --check 全过（四段外壳没有破坏无状态自检）",
         "ok": entry["rc"] == 0,
         "detail": {"rc": entry["rc"], "retried_after_connection_reset": retried,
                    "tail": entry["tail"][-3:]},
@@ -721,7 +704,7 @@ def main() -> int:
     json_path = EVIDENCE_DIR / f"{CONTRACT}-interaction-visual-{stamp}{label}.json"
 
     lines = [
-        "V2.UI.2 六阶段交互与视觉基线验证（静态契约 + 真实工作台走查 + 响应式/键盘/视觉证据）",
+        "V2.UI.2 四段交互与视觉基线验证（静态契约 + 真实工作台走查 + 响应式/键盘/视觉证据）",
         "NOT-AUTHORITY: point-in-time verification evidence only",
         "=" * 76,
     ]
@@ -733,11 +716,11 @@ def main() -> int:
         "-" * 76,
         f"observed_at: {observed_at}",
         f"status: {'passed' if passed == len(checks) else 'failed'}",
-        f"contract: {CONTRACT}（六阶段外壳 + 表现层基线）",
+        f"contract: {CONTRACT}（四段外壳 + 表现层基线）",
         "model_calls: 0 · external_network_calls: 0（fake providers + 本机服务器）",
         f"json: {json_path.relative_to(ROOT).as_posix()}",
         "",
-        "边界：本套件 0 次真实模型调用；它证明「六阶段外壳是界面投影、可达性规则成立、既有业务",
+        "边界：本套件 0 次真实模型调用；它证明「四段外壳是界面投影、可达性规则成立、既有业务",
         "能力仍由真实状态驱动、既有回归不破」，不证明产品发起人走查已通过。本脚本的 fake 轨迹",
         "停在未运行整套检查的阻断态；V2.5.5/V2.6.2 由各自专用验证器与真实链路证明，本批不重复证明。",
         "",

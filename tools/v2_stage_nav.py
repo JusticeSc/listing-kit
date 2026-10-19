@@ -1,7 +1,7 @@
 #!/usr/bin/env python
-"""V2.UI.2 六阶段工作台的验证导航助手。
+"""V2 四段工作台的验证导航助手。
 
-为什么需要单独一处：V2.UI.2 起工作台按「资料—理解—方案—生成—审核返工—交付」分阶段切换，
+为什么需要单独一处：B4 起工作台按「资料与事实—方案—制作与审图—交付」分段切换，
 同一时刻只有一个阶段面板可见（`ui/stage-shell.js`）。任何验证器在操作某个阶段的控件前，
 都必须先切到那个阶段；否则 `page.click` 会一直等一个被隐藏的元素。
 
@@ -11,9 +11,9 @@
 """
 from __future__ import annotations
 
-STAGE_IDS = ("intake", "understand", "plan", "generate", "review", "deliver")
-STAGE_LABELS = {"intake": "资料", "understand": "理解", "plan": "方案",
-                "generate": "生成", "review": "审核返工", "deliver": "交付"}
+STAGE_IDS = ("intake", "plan", "make", "deliver")
+STAGE_LABELS = {"intake": "资料与事实", "plan": "方案",
+                "make": "制作与审图", "deliver": "交付"}
 
 
 def current_stage(page) -> str:

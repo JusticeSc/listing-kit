@@ -28,7 +28,7 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(ROOT / "tools"))
 
-import v2_stage_nav as stage_nav  # noqa: E402  （V2.UI.2 六阶段工作台导航）
+import v2_stage_nav as stage_nav  # noqa: E402  （B4 四段工作台导航）
 from console import enable_utf8  # noqa: E402
 enable_utf8()
 
@@ -241,7 +241,7 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                     return page.evaluate(STORAGE_DIGEST)
 
                 def row(shot_id: str):
-                    return page.locator(f'#attempt-list .attempt-row[data-shot-id="{shot_id}"]')
+                    return page.locator(f'#shot-execution [data-shot-id="{shot_id}"]')
 
                 def wait_state(shot_id: str, state: str, timeout: int = 30_000) -> None:
                     expect(row(shot_id)).to_have_attribute("data-attempt-state", state, timeout=timeout)
@@ -250,30 +250,32 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                     page.wait_for_function(
                         """(shot) => {
                             const node = document.querySelector(
-                                '#attempt-list .attempt-row[data-shot-id="' + shot + '"]');
+                                '#shot-execution [data-shot-id="' + shot + '"]');
                             return Boolean(node && node.querySelector('.attempt-candidate'));
                         }""", arg=shot_id, timeout=timeout)
 
                 def click_row_button(shot_id: str, text: str) -> None:
-                    stage_nav.goto(page, "generate")
+                    shared.select_make_shot(page, shot_id)
                     row(shot_id).locator(f'button:has-text("{text}")').first.click()
 
                 def wait_terminal(shot_id: str, timeout: int = 120_000) -> None:
-                    # 确认即整套提交：runBatch 自动提交并核对，只等终态与候选。
+                    # B4 执行区只渲染当前查看的一张图：等终态前先切正看对象，
+                    # 否则行的 data-attempt-state 不在 DOM 里会超时。行级断言
+                    # 由 task-list 的 data-attempt-state 兜底时仍按单图语义切回。
+                    shared.select_make_shot(page, shot_id)
+                    # 确认即整套提交：runBatch 自动提交并核对只等终态与候选。
                     page.wait_for_function(
                         """(shot) => {
                             const node = document.querySelector(
-                                '#attempt-list .attempt-row[data-shot-id="' + shot + '"]');
+                                '#shot-execution [data-shot-id="' + shot + '"]');
                             const state = node && node.getAttribute('data-attempt-state');
                             return state === 'succeeded' || state === 'failed' || state === 'unknown';
                           }""", arg=shot_id, timeout=timeout)
                     wait_candidate_ui(shot_id)
 
                 def open_panel(shot_id: str, card_count: int, references: int = 1) -> None:
-                    stage_nav.goto(page, "generate")
-                    row(shot_id).locator('button[data-compare-action]').first.click()
-                    stage_nav.goto(page, "review")
-                    expect(page.locator("#compare-panel")).to_be_visible()
+                    shared.select_make_shot(page, shot_id)
+                    stage_nav.goto(page, "make")
                     page.wait_for_function(
                         """(payload) => {
                             const panel = document.getElementById("compare-panel");
@@ -349,9 +351,10 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 # Issue #9：编译前先做普通决定（用户真实路径）；choices 进 ui 证据。
                 ui["decisions"] = shared.decide_for_compile(page, shot_ids)
                 shared.compile_all(page, shot_ids)
+                shared.choose_make_batch(page, shot_ids)
                 expect(page.locator("#confirm-action")).to_be_enabled()
                 page.click("#confirm-action")
-                expect(page.locator("#attempt-list .attempt-row")).to_have_count(4, timeout=30_000)
+                expect(page.locator("#attempt-editor")).to_be_visible(timeout=30_000)
                 wait_terminal(first_shot)
                 wait_terminal(second_shot)
                 for shot_id in shot_ids[2:]:
@@ -418,17 +421,18 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 tab_focus = "compare-tab-" + expected_candidate_id
                 checks.append({
                     "id": "V2.5.4-10",
-                    "title": "比较区保持只读：勾选、填写、取消全程业务记录逐字不变，焦点回到原候选",
+                    "title": "比较区保持只读：勾选、填写、取消全程业务记录逐字不变，焦点回到原触发入口",
                     "ok": any(item["value"] == "product_fidelity" and item["checked"]
                               for item in toggled["problems"])
                           and toggled["preview_disabled"] is False
                           and cancelled["visible"] is False
-                          and cancelled["focus_id"] == tab_focus
+                          # B4 合同：取消只回打开时的原始触发器（返工入口），
+                          # 不抢后来焦点；旧回候选 tab 是旧面板行为。
+                          and cancelled["focus_id"] == "rework-open"
                           and storage_after_cancel == seeded_storage,
                     "detail": {"checked": [item["value"] for item in toggled["problems"]
                                             if item["checked"]],
                                "focus_after_cancel": cancelled["focus_id"],
-                               "expected_focus": tab_focus,
                                "records_unchanged": storage_after_cancel == seeded_storage},
                 })
 
@@ -660,11 +664,12 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
 
                 page.reload(wait_until="networkidle")
                 expect(page.locator("#project-view")).to_be_visible()
+                shared.select_make_shot(page, first_shot)
                 expect(row(first_shot)).to_have_attribute("data-attempt-state", "unknown",
                                                           timeout=30_000)
                 reloaded = probe()
                 reloaded_storage = storage()
-                open_panel(first_shot, 2, references=2)
+                open_panel(first_shot, 2, references=1)
                 reloaded_panel = open_rework()
                 screenshot_rel = f"evals/product-v2/evidence/v2.5.4-rework-loop-{stamp}.png"
                 page.screenshot(path=str(ROOT / screenshot_rel), full_page=True)
