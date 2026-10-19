@@ -1,0 +1,60 @@
+{
+  "authority": "NOT-AUTHORITY: final-delta review and metadata correction evidence, not a native Goal completion return",
+  "pr": "https://github.com/JusticeSc/listing-kit/pull/18",
+  "reviewed_head": "3dc0018689dad39fb81294a9c76c99c97dc15e8f",
+  "existing_review_through": "bcd987e88baafe447beff182c06eeb7c96243555",
+  "final_delta": "23 files +1371 -16; evidence/logs/E2E E3-E4 and screenshot changes only, no product source changes",
+  "standards_review": {
+    "source": "FinalDeltaStandards independent read-only review",
+    "blocking_findings": 0,
+    "coverage": "Through reviewed_head; prior app/tools review identities agree with commit history",
+    "nonblocking": [
+      "The transient E3 probe compares present request fields, but does not reject every future mandatory-key omission. Current captured rows contain all seven mandatory fields; no present-run mismatch was found.",
+      "E4 primary-fixture comparison could vacuously pass if no primary exists; the observed run has primary in all five shots and each equals the independently revalidated fixture.",
+      "Usage-heading omission and report section numbering are editorial, not consumer-visible blockers.",
+      "Delivery commit/file statistics were stale and are corrected below."
+    ]
+  },
+  "spec_review": {
+    "source": "FinalDeltaSpec independent read-only review",
+    "blocking_findings": 0,
+    "evidence": "E3 compares actual submit parameters to persisted request_snapshot; E4 compares ordered roles/media types and decoded image sha256 to request, frozen record, and independently revalidated project asset fixture. Result contains43 passing checks and five primary_fixture_match=true rows. Unverified pixel/EN/rework/size/viewpoint/override scope is explicit.",
+    "accuracy_finding": "PR and same-source local copies still described the initial4-commit/169-file delta, not the reviewed8-commit/186-file head.",
+    "additional_accuracy_finding": "Report6.1 mislabeled the earlier postbrief round as final instead of distinguishing later gatefix logs."
+  },
+  "corrections": {
+    "snapshot": "pr18-records-before.zip",
+    "files": [
+      "amz-listing-kit-issue9-expression/_stage-amz-control/issue9-expression-20261018T080410Z/pr-body-issue9.md",
+      "amz-listing-kit-issue9-expression/_stage-amz-control/issue9-expression-20261018T080410Z/issue9-status-draft.md",
+      "amz-listing-kit-issue9-expression/evals/product-v2/refactor/program-expression-20261018.md"
+    ],
+    "result": "Statements now explicitly pin8 commits/186 files/+9146-161 to reviewed_head, state all three CI checks SUCCESS and actual deploy/finalize skipped; report6.1 distinguishes earlier postbrief from final gatefix round.",
+    "remote_action": "gh pr edit 18 --repo JusticeSc/listing-kit --body-file _stage-amz-control/issue9-expression-20261018T080410Z/pr-body-issue9.md",
+    "remote_exit_code": 0,
+    "readback_exit_code": 0,
+    "readback": {
+      "remote_body_matches_local": true,
+      "copy_delivery_paragraph_matches": true,
+      "head_unchanged": "3dc0018689dad39fb81294a9c76c99c97dc15e8f",
+      "state": "OPEN",
+      "is_draft": true,
+      "commits": 8,
+      "files": 186,
+      "additions": 9146,
+      "deletions": 161,
+      "corrected_files_cr_bytes": 0,
+      "snapshot_crc_ok": true
+    },
+    "local_record_corrections_committed": false,
+    "product_code_changed": false,
+    "merge_or_deployment": false
+  },
+  "slice_goal": {
+    "id": "15aacf5fbdd7001f",
+    "last_saved_status": "active",
+    "acceptance_assessment": "Scoped zero-cost delivery criteria supported by earlier review, final-delta review, final CI and corrected delivery evidence. No additional real-image or complete-product acceptance is implied.",
+    "native_complete_called": false,
+    "reason": "tool.goal returned Unknown tool on this session; cannot observe or change actual lifecycle. Restore native capability, get current state and settle this scope with the actual completion return retained."
+  }
+}

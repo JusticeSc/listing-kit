@@ -1,0 +1,57 @@
+{
+  "path": "app/product_v2/domain/attempt.ts",
+  "before": {
+    "path": "app/product_v2/domain/attempt.ts",
+    "bytes": 58436,
+    "cr": 1256,
+    "sha256": "333bbc593c0ebb9dc07966a41ba7057d58d83391e0d2c8d2a9b38ebc4104646e"
+  },
+  "after": {
+    "bytes": 57180,
+    "cr": 0,
+    "sha256": "8e24c99df9bec5bc85de507f0415e2f1d1c755ea80317851f8d7f12334596d5c"
+  },
+  "only_crlf_to_lf": true,
+  "reports": [
+    {
+      "path": "evals/product-v2/refactor/b3-semantic-lifecycle.json",
+      "before_sha256": "2165ce3b99b254b5877fabf11920c746fe131bb969456c5b7f9742f34d822bd2",
+      "after_sha256": "3c0f30c8a308ebe0b2650472a6086b2b8d2bc22a22c650579faa04bda24ad11e",
+      "cr_before": 723,
+      "cr_after": 0,
+      "payload_unchanged": true
+    },
+    {
+      "path": "evals/product-v2/v2.2.2-semantic-provider-20261019-133338.json",
+      "before_sha256": "abf21d54410a193ae076681c0003d063cb329552beba8d2398aeee7beb99bcd6",
+      "after_sha256": "6dba9500768bf770209e5d95b4a85e64baa27e118a9ea7608a2fef07180280f6",
+      "cr_before": 761,
+      "cr_after": 0,
+      "payload_unchanged": true
+    },
+    {
+      "path": "evals/product-v2/v2.2.3-intake-understanding-20261019-133712.json",
+      "before_sha256": "40b2850e0bcedb6479690cc27c164defdc4f9e266a493156a1f1013748f3ff11",
+      "after_sha256": "00b41fe0072c041b31ae8108bc660e65f4b639a5725ee1570a7e9e32b2659407",
+      "cr_before": 845,
+      "cr_after": 0,
+      "payload_unchanged": true
+    },
+    {
+      "path": "evals/product-v2/v2.3.7-copy-adoption-chain-20261019-133359.json",
+      "before_sha256": "b81904d90ab25eb20c5acf17cd4434b53ceea6aa38d6d76a88220b3650d7a6b3",
+      "after_sha256": "c98183a72e62b5b6b81c2f9b648592ca187cb57ea36c5bb2501356e17d054a7f",
+      "cr_before": 164,
+      "cr_after": 0,
+      "payload_unchanged": true
+    },
+    {
+      "path": "evals/product-v2/v2.6.3-transfer-20261019-133339-b3-integrated-confirm3.json",
+      "before_sha256": "5d954b1f6e8a90b92e7a730177ad0664ba5ec6cfe8437db489d7177cb9b45d4b",
+      "after_sha256": "d22960c148363e99eb1f4f46b07663cfb2e34ccb800b7376d54f4ac55daed6fc",
+      "cr_before": 340,
+      "cr_after": 0,
+      "payload_unchanged": true
+    }
+  ]
+}

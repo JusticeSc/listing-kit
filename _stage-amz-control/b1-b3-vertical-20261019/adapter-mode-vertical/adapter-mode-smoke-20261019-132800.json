@@ -1,0 +1,367 @@
+{
+  "stamp": "20261019-132800",
+  "status": "passed",
+  "failed_ids": [],
+  "results": [
+    {
+      "provider": "volcengine",
+      "checks": [
+        {
+          "id": "volcengine-seed",
+          "title": "初始生成成功并入库候选",
+          "ok": true,
+          "detail": {
+            "candidates": 1,
+            "attempt_state": "succeeded",
+            "attempt_task": null,
+            "transport_calls": 4,
+            "submit_posts": 4,
+            "console": [],
+            "page": []
+          }
+        },
+        {
+          "id": "volcengine-blobs",
+          "title": "商品原照与候选原字节均在库可读",
+          "ok": true,
+          "detail": {
+            "assets": 2
+          }
+        },
+        {
+          "id": "volcengine-edit-post",
+          "title": "编辑模式产生一次适配器提交",
+          "ok": true,
+          "detail": {
+            "submits": 1,
+            "submit_preimage_sha256": [
+              "0c3d47c48dd7b79b43cc6bc2a0976c2b28c989fe9849f4593c153c95acbd91f4"
+            ]
+          }
+        },
+        {
+          "id": "volcengine-edit-wire",
+          "title": "编辑模式浏览器发包与新 action 一一对应",
+          "ok": true,
+          "detail": {
+            "wire": 1
+          }
+        },
+        {
+          "id": "volcengine-edit-decode",
+          "title": "编辑解码图序/字节 == 冻结快照 == 原选中 Blob",
+          "ok": true,
+          "detail": {
+            "decoded": [
+              "164c3e757367",
+              "a698fdb43dba"
+            ],
+            "snapshot": [
+              "164c3e757367",
+              "a698fdb43dba"
+            ],
+            "wire": [
+              "164c3e757367",
+              "a698fdb43dba"
+            ],
+            "fixed": "164c3e757367",
+            "product": "a698fdb43dba"
+          }
+        },
+        {
+          "id": "volcengine-edit-frozen",
+          "title": "编辑 Prompt/参数/冻结身份与快照一致",
+          "ok": true,
+          "detail": {
+            "hash_match": true,
+            "failed_clauses": [],
+            "params_got": {
+              "size": "1344x1344",
+              "watermark": false
+            },
+            "params_expect": {
+              "size": "1344x1344",
+              "watermark": false
+            },
+            "snapshot_keys": [
+              "model",
+              "n",
+              "output_format",
+              "prompt",
+              "prompt_extend",
+              "references",
+              "size",
+              "target",
+              "watermark"
+            ],
+            "output_format": "png",
+            "model": "doubao-seedream-5-0-flash-260915"
+          }
+        },
+        {
+          "id": "volcengine-regen-post",
+          "title": "原照模式产生一次适配器提交",
+          "ok": true,
+          "detail": {
+            "submits": 1,
+            "submit_preimage_sha256": [
+              "503a2aa4a4fc4ffeb9ff2e7b955f2e8d86bca54ed32b81a3a34b6b6a545b90ee"
+            ]
+          }
+        },
+        {
+          "id": "volcengine-regen-wire",
+          "title": "原照模式浏览器发包与新 action 一一对应",
+          "ok": true,
+          "detail": {
+            "wire": 1
+          }
+        },
+        {
+          "id": "volcengine-regen-decode",
+          "title": "原照解码图 == 商品原照且不含候选",
+          "ok": true,
+          "detail": {
+            "decoded": [
+              "a698fdb43dba"
+            ],
+            "fixed_absent": true
+          }
+        },
+        {
+          "id": "volcengine-regen-frozen",
+          "title": "原照 Prompt/参数/冻结身份与快照一致",
+          "ok": true,
+          "detail": {
+            "hash_match": true,
+            "failed_clauses": [],
+            "params_got": {
+              "size": "1344x1344",
+              "watermark": false
+            },
+            "params_expect": {
+              "size": "1344x1344",
+              "watermark": false
+            },
+            "snapshot_keys": [
+              "model",
+              "n",
+              "output_format",
+              "prompt",
+              "prompt_extend",
+              "references",
+              "size",
+              "target",
+              "watermark"
+            ],
+            "output_format": "png",
+            "model": "doubao-seedream-5-0-flash-260915"
+          }
+        },
+        {
+          "id": "volcengine-offline",
+          "title": "零真实外呼（全部注入传输）",
+          "ok": true,
+          "detail": {
+            "transport_calls": 6,
+            "expect_total": 6,
+            "scripted_hosts_only": true
+          }
+        }
+      ],
+      "console_errors": [],
+      "page_errors": [],
+      "fixed_candidate": {
+        "candidate_id": "act-c4921b083d9641709908dbffe5327d45",
+        "version": 1,
+        "sha_prefix": "164c3e757367042b"
+      },
+      "reference_sha_prefix": "a698fdb43dba6850"
+    },
+    {
+      "provider": "dashscope",
+      "checks": [
+        {
+          "id": "dashscope-seed",
+          "title": "初始生成成功并入库候选",
+          "ok": true,
+          "detail": {
+            "candidates": 1,
+            "attempt_state": "succeeded",
+            "attempt_task": "task-init-0",
+            "transport_calls": 16,
+            "submit_posts": 4,
+            "console": [],
+            "page": []
+          }
+        },
+        {
+          "id": "dashscope-blobs",
+          "title": "商品原照与候选原字节均在库可读",
+          "ok": true,
+          "detail": {
+            "assets": 2
+          }
+        },
+        {
+          "id": "dashscope-edit-post",
+          "title": "编辑模式产生一次适配器提交",
+          "ok": true,
+          "detail": {
+            "submits": 1,
+            "submit_preimage_sha256": [
+              "099ffd307c8512ed0802004b5558bc27887a3855bc8f554d4e5b100273fc7d73"
+            ]
+          }
+        },
+        {
+          "id": "dashscope-edit-wire",
+          "title": "编辑模式浏览器发包与新 action 一一对应",
+          "ok": true,
+          "detail": {
+            "wire": 1
+          }
+        },
+        {
+          "id": "dashscope-edit-decode",
+          "title": "编辑解码图序/字节 == 冻结快照 == 原选中 Blob",
+          "ok": true,
+          "detail": {
+            "decoded": [
+              "bb85d5a3cfb9",
+              "a698fdb43dba"
+            ],
+            "snapshot": [
+              "bb85d5a3cfb9",
+              "a698fdb43dba"
+            ],
+            "wire": [
+              "bb85d5a3cfb9",
+              "a698fdb43dba"
+            ],
+            "fixed": "bb85d5a3cfb9",
+            "product": "a698fdb43dba"
+          }
+        },
+        {
+          "id": "dashscope-edit-frozen",
+          "title": "编辑 Prompt/参数/冻结身份与快照一致",
+          "ok": true,
+          "detail": {
+            "hash_match": true,
+            "failed_clauses": [],
+            "params_got": {
+              "size": "1344*1344",
+              "n": 1,
+              "prompt_extend": false,
+              "watermark": false
+            },
+            "params_expect": {
+              "size": "1344*1344",
+              "n": 1,
+              "prompt_extend": false,
+              "watermark": false
+            },
+            "snapshot_keys": [
+              "model",
+              "n",
+              "output_format",
+              "prompt",
+              "prompt_extend",
+              "references",
+              "size",
+              "target",
+              "watermark"
+            ],
+            "output_format": null,
+            "model": "qwen-image-3.0"
+          }
+        },
+        {
+          "id": "dashscope-regen-post",
+          "title": "原照模式产生一次适配器提交",
+          "ok": true,
+          "detail": {
+            "submits": 1,
+            "submit_preimage_sha256": [
+              "eeed50a31bae1f003d792bd0e4779316c653d2450c44e3d045db0a275a770042"
+            ]
+          }
+        },
+        {
+          "id": "dashscope-regen-wire",
+          "title": "原照模式浏览器发包与新 action 一一对应",
+          "ok": true,
+          "detail": {
+            "wire": 1
+          }
+        },
+        {
+          "id": "dashscope-regen-decode",
+          "title": "原照解码图 == 商品原照且不含候选",
+          "ok": true,
+          "detail": {
+            "decoded": [
+              "a698fdb43dba"
+            ],
+            "fixed_absent": true
+          }
+        },
+        {
+          "id": "dashscope-regen-frozen",
+          "title": "原照 Prompt/参数/冻结身份与快照一致",
+          "ok": true,
+          "detail": {
+            "hash_match": true,
+            "failed_clauses": [],
+            "params_got": {
+              "size": "1344*1344",
+              "n": 1,
+              "prompt_extend": false,
+              "watermark": false
+            },
+            "params_expect": {
+              "size": "1344*1344",
+              "n": 1,
+              "prompt_extend": false,
+              "watermark": false
+            },
+            "snapshot_keys": [
+              "model",
+              "n",
+              "output_format",
+              "prompt",
+              "prompt_extend",
+              "references",
+              "size",
+              "target",
+              "watermark"
+            ],
+            "output_format": null,
+            "model": "qwen-image-3.0"
+          }
+        },
+        {
+          "id": "dashscope-offline",
+          "title": "零真实外呼（全部注入传输）",
+          "ok": true,
+          "detail": {
+            "transport_calls": 24,
+            "expect_total": 24,
+            "scripted_hosts_only": true
+          }
+        }
+      ],
+      "console_errors": [],
+      "page_errors": [],
+      "fixed_candidate": {
+        "candidate_id": "act-e38505dea7c04cec91ac18396dd0ff59",
+        "version": 1,
+        "sha_prefix": "bb85d5a3cfb9d0f0"
+      },
+      "reference_sha_prefix": "a698fdb43dba6850"
+    }
+  ],
+  "network": "offline-transport-only; 0 real model calls",
+  "note": "fake pixel bytes are engineering proof only, not quality evidence"
+}

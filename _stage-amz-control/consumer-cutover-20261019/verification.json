@@ -1,0 +1,60 @@
+{
+  "slice": "consumer-cutover-20261019",
+  "boundary": "schema 2/3 one-shot cutover (plan §13.8)",
+  "evidence": {
+    "V2.4.2 attempt verifier 27/27": {
+      "path": "evals/product-v2/v2.4.2-generation-attempt-20261019-114908.json",
+      "exists": true
+    },
+    "V2.3.5 confirm 13/13 (post-review H10 tamper probes)": {
+      "path": "evals/product-v2/v2.3.5-pre-generation-confirm-20261019-125044.txt",
+      "exists": true
+    },
+    "V2.4.3 batch": {
+      "path": "evals/product-v2/v2.4.3-batch-suite-20261019-115042.json",
+      "exists": true
+    },
+    "V2.4.4 candidate": {
+      "path": "evals/product-v2/v2.4.4-candidate-blob-20261019-115116.json",
+      "exists": true
+    },
+    "V2.5.4 rework loop": {
+      "path": "evals/product-v2/v2.5.4-rework-loop-20261019-115136.json",
+      "exists": true
+    },
+    "V2.6.3 project transfer (P01-P08)": {
+      "path": "evals/product-v2/v2.6.3-transfer-20261019-115155.txt",
+      "exists": true
+    },
+    "V2.5.1 deterministic review": {
+      "path": "evals/product-v2/v2.5.1-deterministic-review-20261019-115215.json",
+      "exists": true
+    },
+    "V2.2.1 product contracts": {
+      "path": "evals/product-v2/v2.2.1-product-contracts-20261019-115244.txt",
+      "exists": true
+    },
+    "R5.2 two adapters offline E2E": {
+      "path": "evals/product-v2/PRODUCT-V2-R5.2-offline-e2e-20261019-115713.json",
+      "exists": true
+    },
+    "V2.5.3 compare panel (fixed fixture)": {
+      "path": "evals/product-v2/v2.5.3-compare-panel-20261019-120814.json",
+      "exists": true
+    },
+    "V2.7.1 two-round full green fp e2fc72f3af2ab745": {
+      "path": "evals/product-v2/v2.7.1-regression-20261019-121022-final.json",
+      "exists": true
+    }
+  },
+  "checks": {
+    "npm_check_types_rc0": true,
+    "npm_build_frontend_rc0": true,
+    "npm_build_frontend_node_rc0": true,
+    "npm_test_domain": "277/277 pass",
+    "v2_4_2": "27/27 checks ok",
+    "v2_3_5": "13/13 (rc0, incl. updated H10 tamper probes in browser)",
+    "regression": "2 consecutive full-green rounds, fingerprint e2fc72f3af2ab745, source identity 72c33df",
+    "independent_review": "IntactSkink reviewer: no blocking findings; non-blocking suggestions implemented (H10 tamper cases node+harness, ATTEMPT_SCHEMA_VERSION_LEGACY_MAX wired into legacy predicate, trailing newline)"
+  }
+}

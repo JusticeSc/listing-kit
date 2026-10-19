@@ -1,0 +1,37 @@
+{
+  "authority": "NOT-AUTHORITY",
+  "scope": "Existing real bearing project actual page reopen after current-schema read/write cutover corrections, not new image quality or final release acceptance.",
+  "source": "../amz-listing-kit/_stage-amz-control/formal-resume-20261015T125651Z/real-wire/bearing-main-final.project.zip",
+  "source_sha256": "5dd5b7d27d198b788b2aad5dacf193af5dd4e636b0f493bdc407478084717591",
+  "observed_before": [
+    "Imported package records but workspace restore aborted on four manual_full_text prompt records carrying legitimate rework identity without a generated rework_directive section.",
+    "After manual representation correction, workspace advanced and exposed historical schema2 confirmations rejected for missing NEW uses/sources metadata. The former schema2 cutover claim was based only on baseline HEAD schema1, not actual preserved records."
+  ],
+  "correction": [
+    "Manual whole-text prompts retain rework identity/source binding checks without requiring a generated section; system prompts still require the rework section. No historic payload rewrite.",
+    "New Confirmation/Snapshot schema3 freezes full source metadata; existing schema1(role) and2(identity) records remain exact read-only. Package max Confirmation3, types, browser/node consumers switched together.",
+    "New Attempt3 reservation requires current Confirmation3 and Prompt2. Historic authorization is not re-used for a new action. Existing Attempt2 read/reconciliation identity remains unchanged."
+  ],
+  "after": {
+    "actual_origin": "http://127.0.0.1:9167/",
+    "workspace_opened": true,
+    "real_candidates_and_five_historical_selections_visible": true,
+    "historical_selections_current_under_new_rules": false,
+    "documents": 232,
+    "assets": 19,
+    "missing_document_identity_version": [],
+    "changed_payloads": [],
+    "extra_documents": [],
+    "bad_original_blob_digests": [],
+    "screenshot": "bearing-compare-before.webp"
+  },
+  "checks": {
+    "types_and_two_builds": "exit0",
+    "manual_history_M14": "preserves fulltext/hash and rejects candidate/source mismatch, missing hash, system missing rework section; passed",
+    "confirmation_history_H10": "legacy1/2 preserved and stale vs new authorization; missing/tampered current metadata and old snapshot rejected; passed",
+    "node_affected": "35/35 passed; preceding failure was newly added test missing canonicalJson import, fixed and preserved in tool output",
+    "actual_confirmation_page": "evals/product-v2/v2.3.5-pre-generation-confirm-20261019-131310-b3-confirmation3-history.txt: exit0 including real fake-only submissions, authorization consumption, stale/no-new-POST/reload"
+  },
+  "limits": "Unchanged old expert images are preserved but do not certify new program prompt quality. Full final regression/release pending.",
+  "paid_calls": 0
+}

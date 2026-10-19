@@ -1,0 +1,502 @@
+{
+ "slice": "dimension-vertical",
+ "exit_code": 0,
+ "real_model_calls": 0,
+ "providers": "FakeSemantic/FakeImage/FakeReview only",
+ "bearing": {
+  "sha256": "4c4ed76c61c959ace082f8f3698f1b10bf0e1c942c2b1e524b1e62086d4df1e1",
+  "bytes": 73681,
+  "source": "preserved bearing-main approved original (bearing-user-ref.jpg), verified sha+73681B"
+ },
+ "fact_slot": {
+  "slot_id": "size_dimensions",
+  "confirm_head": [
+   {
+    "version": 1,
+    "status": "missing",
+    "value": null,
+    "source": "system_default"
+   },
+   {
+    "version": 2,
+    "status": "confirmed",
+    "value": [
+     {
+      "object": "内圈",
+      "axis": "diameter",
+      "value": 8,
+      "unit": "mm",
+      "source_basis": "NSK官方608 Series公称规格d8/D22/B7mm；照片608Z按NSK E126h表2.1的Z规则对应。非用户实测。来源：www.nsk.com/engineering（608 Series）。"
+     },
+     {
+      "object": "外圈",
+      "axis": "diameter",
+      "value": 22,
+      "unit": "mm",
+      "source_basis": "NSK官方608 Series公称规格d8/D22/B7mm；照片608Z按NSK E126h表2.1的Z规则对应。非用户实测。来源：www.nsk.com/engineering（608 Series）。"
+     },
+     {
+      "object": "轴承",
+      "axis": "width",
+      "value": 7,
+      "unit": "mm",
+      "source_basis": "NSK官方608 Series公称规格d8/D22/B7mm；照片608Z按NSK E126h表2.1的Z规则对应。非用户实测。来源：www.nsk.com/engineering（608 Series）。"
+     }
+    ],
+    "source": "user_input"
+   }
+  ],
+  "after_change_head": {
+   "version": 3,
+   "status": "confirmed",
+   "value": [
+    {
+     "object": "内圈",
+     "axis": "diameter",
+     "value": 9,
+     "unit": "mm",
+     "source_basis": "NSK官方608 Series公称规格d8/D22/B7mm；照片608Z按NSK E126h表2.1的Z规则对应。非用户实测。来源：www.nsk.com/engineering（608 Series）。"
+    },
+    {
+     "object": "外圈",
+     "axis": "diameter",
+     "value": 22,
+     "unit": "mm",
+     "source_basis": "NSK官方608 Series公称规格d8/D22/B7mm；照片608Z按NSK E126h表2.1的Z规则对应。非用户实测。来源：www.nsk.com/engineering（608 Series）。"
+    },
+    {
+     "object": "轴承",
+     "axis": "width",
+     "value": 7,
+     "unit": "mm",
+     "source_basis": "NSK官方608 Series公称规格d8/D22/B7mm；照片608Z按NSK E126h表2.1的Z规则对应。非用户实测。来源：www.nsk.com/engineering（608 Series）。"
+    }
+   ],
+   "source": "user_input"
+  },
+  "critical": [
+   "product_name",
+   "product_category",
+   "signature_features"
+  ]
+ },
+ "bindings": {
+  "shot": [
+   "shot_main_clean",
+   "shot_infographic_benefits",
+   "shot_scene_lifestyle",
+   "shot_detail_material",
+   "shot_size_dimensions"
+  ],
+  "controls": {
+   "found": true,
+   "count": 4,
+   "labels": [
+    "product_name|0",
+    "product_category|0",
+    "signature_features|0",
+    "size_dimensions|1"
+   ]
+  },
+  "previews": {
+   "0": "上图原文：Inner ring bore diameter: 8 mm (Nominal)",
+   "1": "上图原文：Outer ring outside diameter: 22 mm (Nominal)",
+   "2": "上图原文：Bearing width: 7 mm (Nominal)"
+  },
+  "spec": {
+   "version": 1,
+   "schema_version": 1,
+   "payload": {
+    "schema_version": 2,
+    "purpose": "标注已确认的结构化尺寸（对象/轴向/数值/单位与来源）；不猜数字、不用自由文本冒充测量",
+    "keep": [
+     "尺寸数字与单位"
+    ],
+    "change_allowed": [
+     "标注样式与排版"
+    ],
+    "notes": "",
+    "print_intent": "selected",
+    "on_image_texts": [
+     {
+      "text_id": "t_size_dimensions_1",
+      "text": "Inner ring bore diameter: 8 mm (Nominal)",
+      "source": {
+       "kind": "fact_slot",
+       "document_id": "size_dimensions",
+       "version": 2
+      },
+      "status": "confirmed",
+      "origin": "user",
+      "measurement": {
+       "object": "内圈",
+       "axis": "diameter",
+       "value": 8,
+       "unit": "mm",
+       "source_basis": "NSK官方608 Series公称规格d8/D22/B7mm；照片608Z按NSK E126h表2.1的Z规则对应。非用户实测。来源：www.nsk.com/engineering（608 Series）。",
+       "index": 0,
+       "object_label": "Inner ring",
+       "axis_label": "bore diameter",
+       "source_kind": "nominal"
+      }
+     },
+     {
+      "text_id": "t_size_dimensions_2",
+      "text": "Outer ring outside diameter: 22 mm (Nominal)",
+      "source": {
+       "kind": "fact_slot",
+       "document_id": "size_dimensions",
+       "version": 2
+      },
+      "status": "confirmed",
+      "origin": "user",
+      "measurement": {
+       "object": "外圈",
+       "axis": "diameter",
+       "value": 22,
+       "unit": "mm",
+       "source_basis": "NSK官方608 Series公称规格d8/D22/B7mm；照片608Z按NSK E126h表2.1的Z规则对应。非用户实测。来源：www.nsk.com/engineering（608 Series）。",
+       "index": 1,
+       "object_label": "Outer ring",
+       "axis_label": "outside diameter",
+       "source_kind": "nominal"
+      }
+     },
+     {
+      "text_id": "t_size_dimensions_3",
+      "text": "Bearing width: 7 mm (Nominal)",
+      "source": {
+       "kind": "fact_slot",
+       "document_id": "size_dimensions",
+       "version": 2
+      },
+      "status": "confirmed",
+      "origin": "user",
+      "measurement": {
+       "object": "轴承",
+       "axis": "width",
+       "value": 7,
+       "unit": "mm",
+       "source_basis": "NSK官方608 Series公称规格d8/D22/B7mm；照片608Z按NSK E126h表2.1的Z规则对应。非用户实测。来源：www.nsk.com/engineering（608 Series）。",
+       "index": 2,
+       "object_label": "Bearing",
+       "axis_label": "width",
+       "source_kind": "nominal"
+      }
+     },
+     {
+      "text_id": "t_size_dimensions_4",
+      "text": "Nominal",
+      "source": {
+       "kind": "fact_slot",
+       "document_id": "size_dimensions",
+       "version": 2
+      },
+      "status": "confirmed",
+      "origin": "user",
+      "measurement_source": {
+       "indices": [
+        0,
+        1,
+        2
+       ],
+       "measurements": [
+        {
+         "object": "内圈",
+         "axis": "diameter",
+         "value": 8,
+         "unit": "mm",
+         "source_basis": "NSK官方608 Series公称规格d8/D22/B7mm；照片608Z按NSK E126h表2.1的Z规则对应。非用户实测。来源：www.nsk.com/engineering（608 Series）。"
+        },
+        {
+         "object": "外圈",
+         "axis": "diameter",
+         "value": 22,
+         "unit": "mm",
+         "source_basis": "NSK官方608 Series公称规格d8/D22/B7mm；照片608Z按NSK E126h表2.1的Z规则对应。非用户实测。来源：www.nsk.com/engineering（608 Series）。"
+        },
+        {
+         "object": "轴承",
+         "axis": "width",
+         "value": 7,
+         "unit": "mm",
+         "source_basis": "NSK官方608 Series公称规格d8/D22/B7mm；照片608Z按NSK E126h表2.1的Z规则对应。非用户实测。来源：www.nsk.com/engineering（608 Series）。"
+        }
+       ],
+       "source_kind": "nominal"
+      }
+     }
+    ],
+    "layout": "product_left_text_right"
+   },
+   "versions": [
+    1
+   ]
+  }
+ },
+ "prompt": {
+  "version": 1,
+  "schema_version": 1,
+  "text": null,
+  "compiled": {
+   "sections": [
+    {
+     "key": "product_fidelity",
+     "label": "商品一致性",
+     "kind": "instruction",
+     "text": "以提供的商品参考图为唯一外观依据：保持商品的轮廓、比例、颜色、材质、标识与现有部件不变；不要添加、删除、复制、换色或重新设计商品特征。商品按干净展示状态呈现：允许去掉临时使用痕迹（水渍、指纹、残留），但材质、结构、标识与颜色仍与商品依据一致。内容物为空：内腔与瓶口干净、无残留，也不添加资料里没有的内容物。图中如需出现文字，只能逐字使用后面列出的已确认文案。",
+     "source_refs": [
+      "intake.references",
+      "suite_plan.shot:shot_size_dimensions",
+      "suite_plan.shot:shot_size_dimensions.role",
+      "platform:amazon_us@1",
+      "style_spec.presentation.appearance_state",
+      "style_spec.presentation.contents_state"
+     ]
+    },
+    {
+     "key": "visual_brief",
+     "label": "画面简报",
+     "kind": "instruction",
+     "text": "画面概念：说明尺寸的图，商品完整入画，标注指向对应部位。主体：商品居中、比例不变形，四周留出标注空间。标注：尺寸线指向对应部位；数值与单位只允许逐字使用已确认尺寸；取不到可逐字引用的数值时就不标数字，不编造数字与单位。字号可读，颜色与背景对比充分。光线：均匀柔和，避免投影盖住标注区域。",
+     "source_refs": [
+      "suite_plan.shot:shot_size_dimensions.role",
+      "suite_plan.shot:shot_size_dimensions"
+     ]
+    },
+    {
+     "key": "shot_task",
+     "label": "本图任务",
+     "kind": "instruction",
+     "text": "本图任务「尺寸图」，目的「标注已确认的结构化尺寸（对象/轴向/数值/单位与来源）；不猜数字、不用自由文本冒充测量」。必须保持：「尺寸数字与单位」。允许变化：「标注样式与排版」。",
+     "source_refs": [
+      "suite_plan.shot:shot_size_dimensions",
+      "shot_spec.purpose",
+      "shot_spec.keep",
+      "shot_spec.change_allowed"
+     ]
+    },
+    {
+     "key": "reference_inputs",
+     "label": "输入依据",
+     "kind": "instruction",
+     "text": "输入依据（按实际发送顺序）：图1是商品原照，提供真实商品的外形、比例、材质、颜色与标识依据。",
+     "source_refs": [
+      "intake.references"
+     ]
+    },
+    {
+     "key": "shot_layout",
+     "label": "版面",
+     "kind": "instruction",
+     "text": "本图版面：商品完整放在画面左侧约三分之二区域，关键部位不被裁切也不被文字遮挡；右侧保留干净留白放置下方给定的文字。",
+     "source_refs": [
+      "shot_spec.layout",
+      "suite_plan.shot:shot_size_dimensions"
+     ]
+    },
+    {
+     "key": "on_image_text",
+     "label": "图中文字",
+     "kind": "literal",
+     "text": "图中文字（只允许逐字使用以下已确认文案，不翻译、不改写、不新增；文字语言应为「en」）：\n- 「Inner ring bore diameter: 8 mm (Nominal)」\n- 「Outer ring outside diameter: 22 mm (Nominal)」\n- 「Bearing width: 7 mm (Nominal)」\n- 「Nominal」",
+     "items": [
+      {
+       "text": "「Inner ring bore diameter: 8 mm (Nominal)」",
+       "language": "en",
+       "source_ref": "shot_spec.on_image_text:t_size_dimensions_1"
+      },
+      {
+       "text": "「Outer ring outside diameter: 22 mm (Nominal)」",
+       "language": "en",
+       "source_ref": "shot_spec.on_image_text:t_size_dimensions_2"
+      },
+      {
+       "text": "「Bearing width: 7 mm (Nominal)」",
+       "language": "en",
+       "source_ref": "shot_spec.on_image_text:t_size_dimensions_3"
+      },
+      {
+       "text": "「Nominal」",
+       "language": "en",
+       "source_ref": "shot_spec.on_image_text:t_size_dimensions_4"
+      }
+     ],
+     "source_refs": [
+      "shot_spec.on_image_text:t_size_dimensions_1",
+      "shot_spec.on_image_text:t_size_dimensions_2",
+      "shot_spec.on_image_text:t_size_dimensions_3",
+      "shot_spec.on_image_text:t_size_dimensions_4"
+     ]
+    },
+    {
+     "key": "platform_rules",
+     "label": "平台规则",
+     "kind": "instruction",
+     "text": "平台规则「亚马逊美国站」：整套图片不得出现水印、边框、联系方式或与商品无关的叠加元素。只能使用已确认的商品事实，不添加未确认的参数、功效或承诺。",
+     "source_refs": [
+      "platform:amazon_us@1"
+     ]
+    },
+    {
+     "key": "provider_contract",
+     "label": "输出规格",
+     "kind": "instruction",
+     "text": "输出规格：一张「1344*1344」的「png」格式高清商品图，不添加水印。",
+     "source_refs": [
+      "provider:qwen-image-3.0@3"
+     ]
+    },
+    {
+     "key": "negative_constraints",
+     "label": "必须避免",
+     "kind": "instruction",
+     "text": "必须避免：「水印」、「文字错乱或文字变形」、「商品变形、多出部件或与参考图不符的颜色和标识」。",
+     "source_refs": [
+      "style_spec.avoid",
+      "platform:amazon_us@1",
+      "provider:qwen-image-3.0@3",
+      "shot_spec.keep"
+     ]
+    }
+   ],
+   "text": "以提供的商品参考图为唯一外观依据：保持商品的轮廓、比例、颜色、材质、标识与现有部件不变；不要添加、删除、复制、换色或重新设计商品特征。商品按干净展示状态呈现：允许去掉临时使用痕迹（水渍、指纹、残留），但材质、结构、标识与颜色仍与商品依据一致。内容物为空：内腔与瓶口干净、无残留，也不添加资料里没有的内容物。图中如需出现文字，只能逐字使用后面列出的已确认文案。\n\n画面概念：说明尺寸的图，商品完整入画，标注指向对应部位。主体：商品居中、比例不变形，四周留出标注空间。标注：尺寸线指向对应部位；数值与单位只允许逐字使用已确认尺寸；取不到可逐字引用的数值时就不标数字，不编造数字与单位。字号可读，颜色与背景对比充分。光线：均匀柔和，避免投影盖住标注区域。\n\n本图任务「尺寸图」，目的「标注已确认的结构化尺寸（对象/轴向/数值/单位与来源）；不猜数字、不用自由文本冒充测量」。必须保持：「尺寸数字与单位」。允许变化：「标注样式与排版」。\n\n输入依据（按实际发送顺序）：图1是商品原照，提供真实商品的外形、比例、材质、颜色与标识依据。\n\n本图版面：商品完整放在画面左侧约三分之二区域，关键部位不被裁切也不被文字遮挡；右侧保留干净留白放置下方给定的文字。\n\n图中文字（只允许逐字使用以下已确认文案，不翻译、不改写、不新增；文字语言应为「en」）：\n- 「Inner ring bore diameter: 8 mm (Nominal)」\n- 「Outer ring outside diameter: 22 mm (Nominal)」\n- 「Bearing width: 7 mm (Nominal)」\n- 「Nominal」\n\n平台规则「亚马逊美国站」：整套图片不得出现水印、边框、联系方式或与商品无关的叠加元素。只能使用已确认的商品事实，不添加未确认的参数、功效或承诺。\n\n输出规格：一张「1344*1344」的「png」格式高清商品图，不添加水印。\n\n必须避免：「水印」、「文字错乱或文字变形」、「商品变形、多出部件或与参考图不符的颜色和标识」。",
+   "source_refs": [
+    "intake.references",
+    "suite_plan.shot:shot_size_dimensions",
+    "suite_plan.shot:shot_size_dimensions.role",
+    "platform:amazon_us@1",
+    "style_spec.presentation.appearance_state",
+    "style_spec.presentation.contents_state",
+    "shot_spec.purpose",
+    "shot_spec.keep",
+    "shot_spec.change_allowed",
+    "shot_spec.layout",
+    "shot_spec.on_image_text:t_size_dimensions_1",
+    "shot_spec.on_image_text:t_size_dimensions_2",
+    "shot_spec.on_image_text:t_size_dimensions_3",
+    "shot_spec.on_image_text:t_size_dimensions_4",
+    "provider:qwen-image-3.0@3",
+    "style_spec.avoid"
+   ],
+   "warnings": [],
+   "language": {
+    "policy_id": "zh-instruction-v1",
+    "instruction": "zh",
+    "on_image_text": "en"
+   },
+   "platform": {
+    "platform_id": "amazon_us",
+    "version": 1,
+    "label": "亚马逊美国站"
+   },
+   "provider": {
+    "provider_id": "fake-qwen-image",
+    "model_id": "qwen-image-3.0",
+    "version": 3,
+    "protocol": "v2.4.1",
+    "size": "1344*1344",
+    "n": 1,
+    "prompt_extend": false,
+    "watermark": false,
+    "output_format": "png",
+    "supports_negative_prompt_field": false,
+    "max_reference_images": 3,
+    "reference_media_types": [
+     "image/png",
+     "image/jpeg"
+    ],
+    "min_side": 384,
+    "max_side": 2048,
+    "min_area": 262144,
+    "max_area": 4194304,
+    "min_ratio": 0.125,
+    "max_ratio": 8,
+    "max_prompt_chars": 4000
+   }
+  },
+  "basis": {
+   "compiler_rule_version": 3,
+   "brief": [
+    {
+     "slot_id": "size_dimensions",
+     "version": 2
+    }
+   ],
+   "consumed_slot_ids": [
+    "size_dimensions"
+   ],
+   "shot_signature": "{\"custom\":false,\"dependencies\":[{\"kind\":\"any_of\",\"of\":[{\"kind\":\"fact\",\"slot_id\":\"size_dimensions\"},{\"kind\":\"bound_dimension\"}]}],\"fact_slot_ids\":[\"size_dimensions\"],\"intent\":\"标注已确认的结构化尺寸（对象/轴向/数值/单位与来源）；不猜数字、不用自由文本冒充测量\",\"label\":\"尺寸图\",\"required\":false,\"role_id\":\"size\",\"shot_id\":\"shot_size_dimensions\",\"template_id\":\"size_dimensions\"}",
+   "suite_version": 1,
+   "style_version": 1,
+   "style_signature": "{\"avoid\":[],\"background\":\"\",\"color_tone\":\"\",\"composition\":\"\",\"lighting\":\"\",\"presentation\":{\"appearance_state\":\"clean_display\",\"contents_state\":\"empty\",\"viewpoint\":\"reference_visible\"}}",
+   "shot_spec_version": 1,
+   "intake_version": 2,
+   "platform": {
+    "platform_id": "amazon_us",
+    "version": 1
+   },
+   "provider": {
+    "provider_id": "fake-qwen-image",
+    "model_id": "qwen-image-3.0",
+    "version": 3,
+    "protocol": "v2.4.1",
+    "size": "1344*1344",
+    "n": 1,
+    "prompt_extend": false,
+    "watermark": false,
+    "output_format": "png",
+    "supports_negative_prompt_field": false,
+    "max_reference_images": 3,
+    "reference_media_types": [
+     "image/png",
+     "image/jpeg"
+    ],
+    "min_side": 384,
+    "max_side": 2048,
+    "min_area": 262144,
+    "max_area": 4194304,
+    "min_ratio": 0.125,
+    "max_ratio": 8,
+    "max_prompt_chars": 4000
+   }
+  },
+  "versions": [
+   1
+  ]
+ },
+ "confirm_row": {
+  "shot_id": "shot_size_dimensions",
+  "blocked": "false",
+  "text": "5. 尺寸图\n              尺寸图 · 可选\n              本次发送\n              Prompt v1 · d0214c4572dd…\n            \n            任务：标注已确认的结构化尺寸（对象/轴向/数值/单位与来源）；不猜数字、不用自由文本冒充测量\n            参考图 1 张 · 发送顺序：1.商品原照 · 提示词 870 字\n            \n            \n      \n        技术详情\n        商品原照 sha256 4c4ed76c61c9",
+  "blockers": []
+ },
+ "stale": {
+  "notice": "「尺寸规格（对象/轴向/数值/单位）」第 1 项的来源已变化（绑定的是 v2）： 请取消该绑定后按新值重新确认；保存时会拦下过期绑定。",
+  "save_block": "「尺寸规格（对象/轴向/数值/单位）」第 1 项的来源已变化（绑定的是 v2）：请取消后按新值重新确认。",
+  "spec_versions_before": [
+   1
+  ],
+  "spec_versions_after": [
+   1
+  ],
+  "size_prompt_state": "stale",
+  "main_prompt_after": {
+   "version": 1
+  }
+ },
+ "api_posts": [],
+ "screenshots": [
+  "dimension-binding-surface.png",
+  "dimension-stale-block.png"
+ ],
+ "code_changes": "none (product source untouched; no dimensional behavior defect observed)",
+ "schema_correction": {
+  "shot_spec_envelope_schema_version": 1,
+  "shot_spec_payload_schema_version": 2,
+  "note": "StoredDocumentRecord envelope schema_version=1; domain ShotSpec payload schema_version=2. Envelope 1 is storage-envelope versioning, NOT domain payload/current-contract proof. Earlier slice report wording v1/schema1 referred to the envelope, corrected here.",
+  "prompt_envelope_schema_version": 1,
+  "prompt_payload_schema_version": "not_captured (stored PROBE_PROMPT recorded compiled/basis/text but not payload.schema_version; no domain prompt-payload schema claim made)"
+ },
+ "mutation_note": "Fact v3 value 9 (8->9) is a disposable diagnostic mutation in the isolated probe project only, to exercise the stale-binding gate; NOT a real NSK nominal update. Real nominal remains 8/22/7 per state-selected source."
+}

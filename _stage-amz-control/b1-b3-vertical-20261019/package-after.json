@@ -1,0 +1,38 @@
+{
+  "authority": "NOT-AUTHORITY",
+  "scope": "Current package envelope 2 preserves already-supported schema 2 frozen execution identity history, while new writes remain schema 3. No legacy migration or backfill.",
+  "before": "package-before.json: actual current builder exported 90 documents/9 assets, then current parser rejected its own schema 2 historical actions at the accidental minimum 3 gate.",
+  "change": "Minimum supported attempt schema restored to 2; maximum/new writes remain 3. Identity-less schema 1 and unknown versions remain atomically rejected. P09 exercises mixed 2/3 payloads and real IDB restore, replacing mirror-only Z10.",
+  "verification": {
+    "check_types": "exit 0",
+    "build_frontend": "exit 0",
+    "build_frontend_node": "exit 0",
+    "zip_node_contract": "3 passed, exit 0",
+    "project_transfer": "evals/product-v2/v2.6.3-transfer-20261019-130220-b3-history-floor2.txt: 11/11, P01-P09, independent profiles, import/rework/adopt/delivery/reexport and atomic rejection, exit 0",
+    "actual_page": "http://127.0.0.1:9167/ served max 3/min 2; real file input import, UI download, page reload and stored snapshot re-export",
+    "source_history": "_stage-amz-control/contract-consumer-fix-20261019/post-smoke.project.zip",
+    "source_sha256": "3d0d401343d9ad2d683fa5a160f258f22ecdcc84a733bd45b2d9dd315608880d",
+    "download": "ui-reexport.project.zip",
+    "download_sha256": "2bd51f867fe5f79055845c597031112c18579952d723ac5cf66055aa33e948e8",
+    "original_documents": 90,
+    "downloaded_documents": 90,
+    "original_assets": 9,
+    "downloaded_assets": 9,
+    "changed_document_identity_version_payload": [],
+    "missing_documents": [],
+    "changed_asset_bytes": [],
+    "after_reload_documents": 90,
+    "after_reload_assets": 9,
+    "after_reload_document_changes": [],
+    "after_reload_asset_changes": [],
+    "screenshot": "package-reloaded.webp"
+  },
+  "limits": [
+    "Fake-only engineering data is not five qualified real images or model quality proof.",
+    "Preexisting host 9145 was identified as an older max-schema-2 build and excluded from current smoke claims; correct current host 9167 used.",
+    "Actual UI upload succeeded on current host; two intermediate browser helper errors and the excluded host timeout are not product successes.",
+    "Full final two-round regression still required after final consumer change."
+  ],
+  "paid_calls": 0,
+  "review": "pending focused independent integration review"
+}

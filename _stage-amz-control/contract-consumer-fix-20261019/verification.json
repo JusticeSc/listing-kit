@@ -1,0 +1,262 @@
+{
+  "observed_at": "2026-10-19T02:00:03.117Z",
+  "status": "locally_exercised_pending_independent_review",
+  "goal_id": "15ab22bf3386b9cf",
+  "batch": {
+    "occupied": 5,
+    "cap": 12,
+    "b1_b3_accepted": false
+  },
+  "authority": "_working/amz-listing-kit-product-v2/state.md remains the only execution state",
+  "scope": [
+    "manual keep rework accepts its own frozen basis lineage",
+    "manual editing preserves the exact edit candidate",
+    "published v1 spec current writes preserve history and convert exact provenance",
+    "supported viewpoint affects actual expression",
+    "two rework modes describe actual final reference roles",
+    "manual-policy preview matches the actual saved and sent text; policy changes invalidate preview",
+    "combined spec save and common-style conflict recovery",
+    "remove obsolete setter and enforce TypeScript LF checkout"
+  ],
+  "source_manifest": "candidate-source-manifest.json",
+  "compiler_rule_version": 3,
+  "commands": [
+    {
+      "command": "npm.cmd run check:types && npm.cmd run build:frontend && npm.cmd run build:frontend-node && node --test evals/product-v2/node/prompt-contract.test.mjs evals/product-v2/node/prompt-edit-contract.test.mjs evals/product-v2/node/prompt-expression-contract.test.mjs evals/product-v2/node/prompt-owner-rework.test.mjs evals/product-v2/node/specs-contract.test.mjs",
+      "exit_code": 0,
+      "node_tests": 73,
+      "boundary": "Before the additional exact manual-preview fix; do not treat as final full regression."
+    },
+    {
+      "command": "npm.cmd run check:types && npm.cmd run build:frontend && npm.cmd run build:frontend-node && node --test evals/product-v2/node/prompt-owner-rework.test.mjs evals/product-v2/node/project-inputs-spec-write.test.mjs evals/product-v2/node/generation-isolation.test.mjs",
+      "exit_code": 0,
+      "node_tests": 10
+    },
+    {
+      "command": "npm.cmd run check:types && npm.cmd run build:frontend && npm.cmd run build:frontend-node && node --test evals/product-v2/node/project-inputs-spec-write.test.mjs",
+      "exit_code": 0,
+      "node_tests": 2,
+      "boundary": "After deleting the obsolete setter; no whole-suite claim."
+    },
+    {
+      "command": "uv run --locked python tools/verify_v2_3_8_spec_save_occ.py --label consumer-fix-20261019",
+      "exit_code": 0,
+      "checks": 8,
+      "evidence": "evals/product-v2/v2.3.8-spec-save-occ-20261019-093821-consumer-fix-20261019.json"
+    },
+    {
+      "command": "uv run --locked python _stage-amz-control/spec-save-occ-20261019/diagnose-manual-reload.py --label consumer-fix-20261019",
+      "exit_code": 0,
+      "checks": 17,
+      "evidence": "evals/product-v2/v2.3.6-prompt-manual-edit-20261019-094828-consumer-fix-20261019.json",
+      "boundary": "Current changed consumer passed; historical refresh failure is not causally explained."
+    },
+    {
+      "command": "npm.cmd run check:types && npm.cmd run build:frontend && npm.cmd run build:frontend-node && node --test evals/product-v2/node/*.test.mjs",
+      "exit_code": 0,
+      "node_tests": 274,
+      "boundary": "含新增 RW-16 与确认单投影；不含浏览器完整纵向。"
+    },
+    {
+      "command": "npm.cmd run check:types && npm.cmd run build:frontend && npm.cmd run build:frontend-node && node --test evals/product-v2/node/*.test.mjs",
+      "exit_code": 0,
+      "node_tests": 274,
+      "boundary": "第二轮行尾规范化后的复跑；不含浏览器完整纵向。"
+    }
+  ],
+  "development_failure": {
+    "command": "check:types before capability injection update",
+    "exit_code": 2,
+    "reason": "workspace promptAbility lacked the newly required previewManualForRework capability",
+    "resolution": "The actual workspace injection was migrated; subsequent type/build runs passed."
+  },
+  "direct_page": {
+    "origin": "http://127.0.0.1:9161/",
+    "providers": "FakeSemantic/FakeImage/FakeReview only",
+    "headless_new_native_pid": 15480,
+    "profile": "chrome-profile",
+    "physical_targets": {
+      "primary": "60825ED9B8605824D3BF101B3F5CE339",
+      "peer": "29481D2AF17E62AB6742E7D658A6B2B3"
+    },
+    "baseline_import": "fresh-import-proof.json",
+    "fake_submit_count": 3,
+    "real_model_calls": 0,
+    "terminals": "all-three-action-terminal-proof.json",
+    "all_three_succeeded": true,
+    "wire": [
+      "manual-keep-real-page-wire.json",
+      "regenerate-original-real-page-wire.json",
+      "system-edit-real-page-wire.json"
+    ],
+    "manual_keep": "manual-keep-real-page-proof.json",
+    "manual_preview_before": "before/manual-preview-observation.json",
+    "manual_edit_after": "after-manual-edit-store.json",
+    "combined_occ": [
+      "combined-reference-occ-conflict.json",
+      "combined-reference-occ-recovery.json"
+    ],
+    "common_style_occ": [
+      "common-style-occ-conflict.json",
+      "common-style-occ-recovery.json"
+    ],
+    "visual": "common-style-recovery.png",
+    "wrong_viewport_not_visual_proof": "common-style-occ-conflict.png",
+    "original_55_mismatches": []
+  },
+  "package": {
+    "file": "post-smoke.project.zip",
+    "source": "actual UI-generated download C:/Users/31368/Downloads/蜂蜜玻璃罐·人工事实无AI复核-20261019-0150.zip",
+    "bytes": 2574099,
+    "sha256": "3d0d401343d9ad2d683fa5a160f258f22ecdcc84a733bd45b2d9dd315608880d",
+    "documents": 90,
+    "assets": 9,
+    "crc_failure": null,
+    "all_asset_hashes_match": true,
+    "pre_export_document_identity_schema_payload_mismatches": [],
+    "additional_documents": [],
+    "boundary": "Complete-history engineering package, not five genuine qualified images or a delivery package."
+  },
+  "line_endings": {
+    "policy": "*.ts 与 .gitattributes 现为 text eol=lf；工作树候选源全部 CR0",
+    "before": [
+      "eol-before.json",
+      "before/eol-pre-normalization2.json"
+    ],
+    "after": [
+      "eol-after.json",
+      "eol-after2.json"
+    ],
+    "normalized": [
+      "app/product_v2/prompts.ts",
+      "app/product_v2/generation.ts",
+      "app/product_v2/ui/input-view.ts",
+      "app/product_v2/ui/compare-view.ts",
+      "app/product_v2/ui/generation-view.ts",
+      "app/product_v2/domain/type-contracts.d.ts",
+      "app/product_v2/semantic-analysis.ts"
+    ],
+    "four_source_normalized_hashes_unchanged": true,
+    "second_pass_normalized_content_unchanged": true,
+    "candidate_files": 17,
+    "all_candidate_files_cr0": true,
+    "boundary": "第二轮只规范化本轮实际编辑过的三个 CRLF 源；行尾外内容逐字节未变，重跑类型/两种构建/274 项 Node 仍全绿。eol 政策不改变 Git 提交的规范字节，只保证工作树/检出/Tool 重写后仍一致。"
+  },
+  "preserved_observation_failures": [
+    {
+      "evidence": "manual-keep-real-page-wire.json",
+      "reason": "wait incorrectly compared stable shot ID as if it were action ID; no second submission; correlated persisted terminal proves completion"
+    },
+    {
+      "evidence": "invalid-occ-alias-probe.json",
+      "reason": "two names originally pointed to one physical target; excluded as OCC evidence; records preserved"
+    },
+    {
+      "evidence": "first-reference-save-observation.json",
+      "reason": "observer expected absent wording 已保存 v1; actual saved feedback is 规格 v1; no repeated save"
+    },
+    {
+      "evidence": "combined-reference-occ-inspection.json",
+      "reason": "RAF wait timed out in background tab although the conflict message and unchanged store were present; later recovery used mutation readiness"
+    },
+    {
+      "evidence": "project-export-observation.json",
+      "reason": "managed download tracking stayed empty; exact UI toast filename was located and CRC/hash verified from the actual browser download"
+    },
+    {
+      "evidence": "baseline-integrity.json",
+      "reason": "old temp profile six Blob reads failed; cause not established; intact original package and all 55 metadata versions preserved"
+    }
+  ],
+  "remaining": [
+    "review response acceptance: P1 comparison-gate fix applied with page-level differential proof (see reviewer_finding_response); reviewer/batch acceptance still pending",
+    "Confirmation 1→2 and Attempt 2→3 same-package strict read/write cutover with untouched old records and original in-flight task observation",
+    "two existing production adapters × two modes through actual bounded transports and current package consumers",
+    "B4 full four-stage real-content workflow, B5 genuine program prompt quality/five images, B6 final two full rounds, B7 protected release/recovery",
+    "historical manual refresh failure root cause and retained old temp asset disappearance remain unproven"
+  ],
+  "no_current_batch_commit_push_release": true,
+  "reviewer_finding_response": {
+    "finding": "独立审查 P1：对比图（comparison_competitor）的依赖判定按整库 intake 角色判——确认单与提交门都不看「本图实际会外发的商品依据」；本图显式只选商品原照时，竞品依赖被整库上下文静默满足。审查同时指出既有页面证明只覆盖主图/细节图，该路径无页面级证据。",
+    "fix": [
+      "app/product_v2/domain/prompt.js 新增 dependencyAssetsOf：依赖求值只看真正外发的商品依据（product_truth/style_reference 用途），编辑源候选不算依据；竞品图以 style_reference 发货仍算 competitor 角色。",
+      "app/product_v2/domain/confirm.js 确认单按每张图的实际冻结选择判依赖（product 侧 referencesByShot 来自与编译同一 selectReferences）。",
+      "app/product_v2/storage/repository.js 提交门（checkGenerationSources）用同一投影判 shot_blocked，不再用整库 intake 角色。",
+      "回归测试：evals/product-v2/node/confirm-contract.test.mjs H05b（选区含竞品可提交/不含即阻断 + dependencyAssetsOf 投影钉住）；generation-isolation.test.mjs 同步。"
+    ],
+    "evidence": {
+      "node_red_green": "H05b 在旧确认单投影（evaluateShot(shot, context)）下 FAIL（本图选区不含竞品时未阻断），恢复修复后全绿；276/276 通过。",
+      "page_red": {
+        "file": "p1-gate-negative-prefix.json",
+        "screenshot": "p1-gate-negative-prefix.png",
+        "observed": "未修复 dist：对比图选区只含商品原照时逐图行未阻断、随 5 张批次外发，实际 POST /api/v2/images/submit 的 references 不含竞品字节，Fake 提交成功——缺陷现场如实复现。"
+      },
+      "page_green_negative": {
+        "file": "p1-gate-negative-fix.json",
+        "screenshot": "p1-gate-negative-fix.png",
+        "observed": "修复后：逐图行 blocked=true、DEPENDENCY_UNSATISFIED、修复定位 suite；对比图被排除出确认授权与发送批（本次明确发送 4 张，授权 shots 不含对比图），其余 4 张按授权逐图消费，对比图零请求零 attempt。"
+      },
+      "page_green_positive": {
+        "file": "p1-gate-positive-fix.json",
+        "screenshot": "p1-gate-positive-fix.png",
+        "observed": "本图显式选商品原照+竞品：确认单无该阻断，5 张随批次外发；对比图请求 references 恰为 [(primary,primary),(competitor,competitor)] 按所选顺序，Fake 提交终态 succeeded，授权↔attempt 绑定一致。"
+      },
+      "commands": [
+        {"command": "npm run check:types", "exit_code": 0},
+        {"command": "npm run build:frontend", "exit_code": 0},
+        {"command": "npm run build:frontend-node", "exit_code": 0},
+        {"command": "node --test evals/product-v2/node/*.test.mjs", "exit_code": 0, "tests": 276}
+      ],
+      "dist_identity": "红跑后恢复修复并重建，dist/product-v2/app/product_v2/domain/confirm.js sha256 f940023274f42f64094c4393469cf58774eed00d108d595ad0da1a4c2a84a0b7 与绿跑字节一致；candidate-source-manifest.json 已刷新（17 文件全部 cr_bytes=0）。",
+      "runner": "verify_comparison_gate.py（本目录一次性差分驱动：Fake 三件套、隔离临时 profile、0 次真实模型调用）"
+    },
+    "boundary": "Fake 替身成功只证请求/记录/门行为与页面所见一致性，不证明真实出图品质；C15/C17 真人门不在本轮。绿跑页面口径按产品意图语义：被阻断的图被排除出本次发送批与授权，而不是禁用整个提交按钮。"
+  },
+  "confirmation_reference_projection": {
+    "summary": "Confirmation sheet now projects frozen reference purpose/order/provenance; view renders actual image order with per-image responsibility labels; label logic narrowed to strings so a runtime mistake cannot break rendering.",
+    "scope": [
+      "确认单参考图用途/来源投影",
+      "确认页实际图序人读标签",
+      "合并双职责标签"
+    ],
+    "record_projection": {
+      "domain": "app/product_v2/domain/confirm.js:243-255（uses/sources 按冻结顺序投影，历史简单引用不补造）",
+      "types": "app/product_v2/domain/type-contracts.d.ts:702-704，app/product_v2/prompts.ts:53-56 同步收窄来源形状",
+      "view": "app/product_v2/ui/generation-view.ts:586-611 referenceLabelOf，1062-1066 行渲染；合并双职责按设计 §13.6 成一行"
+    },
+    "gap_found": "设计 §13.8 要求 Confirmation 1→2（该新请求快照）、Attempt 2→3（消费新冻结 request）；当前确认记录指纹仍只含 reference_roles（snapshot 缺 uses/sources），reserveGenerationAttempt 的授权比较仍按 {role,sha256} 身份投影。这不是本次展示修复能替代的读写切换，属第 5 批后必须闭合的剩余合同项。",
+    "commands": [
+      {
+        "command": "npm.cmd run check:types && npm.cmd run build:frontend && npm.cmd run build:frontend-node",
+        "exit_code": 0
+      },
+      {
+        "command": "node --test evals/product-v2/node/*.test.mjs",
+        "exit_code": 0,
+        "node_tests": 274
+      }
+    ],
+    "focused_test": "evals/product-v2/node/rework-contract.test.mjs RW-16（编辑模式确认单含候选编辑源+商品原照并按发送顺序、重生成模式不含候选）",
+    "live_probe": {
+      "host": "consumer-fix-host（Fake 三件套专用端口 9161，重建后启动一次）",
+      "tab": "consumer-confirm-copy（临时无头共享会话）",
+      "observed": {
+        "confirm_region_rendered": true,
+        "console_errors": 0,
+        "confirm_editor_hidden_on_empty_project": true
+      },
+      "boundary": "空项目页渲染路径通过；带返工项目下的一行中文标签待下一次完整纵向运行时复核。"
+    },
+    "cleanup": {
+      "tabs_closed": [
+        "consumer-confirm-copy",
+        "product-baseline-15ab22",
+        "contract-consumer-20261019",
+        "contract-consumer-peer-20261019"
+      ],
+      "host_stopped": true,
+      "killed_unrelated": false,
+      "leftover_before_kill": "pid 24148（同脚本残留监听 9161，已核对命令行后停止）"
+    }
+  }
+}

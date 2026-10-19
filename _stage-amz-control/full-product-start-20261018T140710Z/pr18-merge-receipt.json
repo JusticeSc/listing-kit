@@ -1,0 +1,13 @@
+{
+  "checked_head": "0ae7df59ff8e41e776195169ce8814f2699db45b",
+  "ready": {
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": "✓ Pull request JusticeSc/listing-kit#18 is marked as \"ready for review\"\n"
+  },
+  "merge": {
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": ""
+  }
+}
