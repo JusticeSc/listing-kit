@@ -1,16 +1,16 @@
 amz-listing-kit Product V2 V2.4.4 候选字节流、Blob 持久化与容量管理
 NOT-AUTHORITY: point-in-time verification evidence only
-observed_at: 2026-10-19T22:21:44
+observed_at: 2026-10-19T23:06:54
 status: passed
 model_calls: 0 · external_network_calls: 0 (fake image provider + 本机服务)
-json: evals/product-v2/v2.4.4-candidate-blob-20261019-222121.json
+json: evals/product-v2/v2.4.4-candidate-blob-20261019-230629.json
 
 CHECKS
 - [PASS] V2.4.4-00 domain / workspace / harness 通过 node --check（ESM 语法门）
 - [PASS] V2.4.4-01 C01–C10 契约套件全过且用例齐全
 - [PASS] V2.4.4-02 反向探针确实执行（坏 PNG / 非法身份 / 兼容性参数）
 - [PASS] V2.4.4-02b 既有契约套件回归：Attempt / 批次 / 确认单 / Prompt 编辑 / 套图编辑器全过
-- [PASS] V2.4.4-03a B4单默认：确认前只送正看1张，范围行如实列出未选图
+- [PASS] V2.4.4-03a B4单默认：确认前只送正看1张（换一张仍跟随），范围行如实列出未选图
 - [PASS] V2.4.4-03b 启动诊断：首次加载失败不可被重试成功掩盖（首失败保留因果分支）
 - [PASS] V2.4.4-03 就绪：显式批量范围=未提交全集（4 张）、候选栏为空且只有参考图字节
 - [PASS] V2.4.4-04 单张成功：候选自动入库；记录 sha = 重算 sha = 响应头 sha；64×64 预览可见

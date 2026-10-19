@@ -954,8 +954,8 @@ def main() -> int:
                 ok_shot = shot_ids[0]
                 # B4 明确范围（ui-contract §4.6「主按钮只提交摘要明确列出的集合。成功、在途、
                 # Unknown 不混入」）：默认是「单张（跟随正在查看的图）」，整套 4 张必须先显式
-                # 切到批量范围——与 verify_v2_4_3 的 -03a/-03 同口径。逐图场景不靠隐藏开关：
-                # 每个场景前 add_shots 新增一张，新增图是当时唯一未提交图 → 单张摘要天然 1 张。
+                # 切到批量范围——与 verify_v2_4_3 的 -03a/-03 同口径。这里刻意切到「第二张」
+                # 再看摘要：否则「跟随正看图」与「固定第一张」两种实现都绿。
                 def confirm_scope_now() -> list:
                     return page.evaluate(
                         """() => [...document.querySelectorAll('#confirm-list .confirm-shot')]
@@ -963,21 +963,28 @@ def main() -> int:
                                               badges: [...node.querySelectorAll('.badge')]
                                                 .map((item) => item.textContent)}))""")
 
+                second_shot = shot_ids[1]
+                shared.select_make_shot(page, second_shot)
                 ready_single = probe()
                 single_scope = confirm_scope_now()
                 single_status = page.locator("#confirm-status").inner_text()
                 viewed = [item["shot_id"] for item in ready_single["ui"]["rows"] if item["viewed"]]
-                check("V2.4.4-03a", "B4单默认：确认前只送正看1张，范围行如实列出未选图",
+                check("V2.4.4-03a", "B4单默认：确认前只送正看1张（换一张仍跟随），范围行如实列出未选图",
                       len(ready_single["ui"]["rows"]) == 4
                       and all(item["state"] == "none" for item in ready_single["ui"]["rows"])
                       and len(ready_single["asset_rows"]) == 1
                       and ready_single["candidate_chains"] == {}
-                      and len(single_scope) == 1 and viewed == [single_scope[0]["shot"]]
+                      and viewed == [second_shot]
+                      and len(single_scope) == 1 and single_scope[0]["shot"] == second_shot
                       and "本次选择 1 张，明确发送 1 张" in single_status,
                       {"rows": len(ready_single["ui"]["rows"]),
                        "viewed": viewed,
                        "scope": [item["shot"] for item in single_scope],
+                       "expected": second_shot,
                        "status": single_status})
+                # 后面的 -04/-05 读的是 ok_shot 的行投影（#shot-execution 只渲染正看图），
+                # 所以把正看切回第一张再选批量范围；批量勾选由 choose_make_batch 显式设置。
+                shared.select_make_shot(page, ok_shot)
                 shared.choose_make_batch(page, shot_ids)
                 ready = probe()
                 confirm_scope = confirm_scope_now()

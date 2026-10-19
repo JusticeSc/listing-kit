@@ -2,8 +2,8 @@
   "task": "V2.2.3",
   "suite": "v2.2.3-intake-understanding",
   "status": "passed",
-  "finished_at": "2026-10-19T22:21:05",
-  "port": 40991,
+  "finished_at": "2026-10-19T23:05:06",
+  "port": 42916,
   "checks": [
     {
       "id": "V2.2.3-01",
@@ -516,7 +516,7 @@
       "detail": {
         "row": "FAKE PRODUCT NAME\n            来源 v3 · fake-semantic（fake-deepseek-v4.1-flash）\n            \n            采用这条",
         "record": {
-          "document_id": "act-618ca348de9a440493b7805c4344fe54",
+          "document_id": "act-8c75ae24c50844ce9eeb35024582b5c1",
           "version": 2,
           "state": "succeeded",
           "disposition": "stored",
@@ -806,8 +806,8 @@
   "page_errors": [],
   "analyze_posts": 5,
   "screenshots": [
-    "evals/product-v2/v2.2.3-workspace-20261019-222051.png",
-    "evals/product-v2/v2.2.3-narrow-20261019-222051.png"
+    "evals/product-v2/v2.2.3-workspace-20261019-230452.png",
+    "evals/product-v2/v2.2.3-narrow-20261019-230452.png"
   ],
   "disk_diff": {
     "added": [],

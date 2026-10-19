@@ -320,9 +320,8 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                     return rework_probe()
 
                 page.goto(base + "/", wait_until="networkidle")
-                # 合同版本的期望值取本验证器登记的字面量（判据不拿产品模块值自我印证）；
-                # 产品模块值仍读一次做一致性交叉核对——改了产品值就红在这里，随后面板
-                # data-rework-contract 必须等于该字面量（-03/-11）。
+                # 返工合同版本按本验证器登记的字面量判（不拿产品模块值自我印证）；
+                # 产品模块值只做交叉核对——改了产品值就红在这里。
                 module_version = page.evaluate(
                     "async () => (await import('/app/product_v2/domain/rework.js'))"
                     ".REWORK_CONTRACT_VERSION")

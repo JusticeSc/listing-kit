@@ -1,0 +1,36 @@
+fix(v2): user-visible-first walkthrough criteria; tighten the B4 single-scope checks
+
+Two independent reviews of 8eaecc6 found no blocking issue in the verifier fixes, but the
+migrated V2.7.3 walkthrough judged the VLM step only through IndexedDB and its published
+evidence contradicted its own screenshot; plus four MINORs.
+
+Walkthrough (tools/rehearse_v273_walkthrough.py):
+- VLM step is UI-first: the shot row must read "VLM 已检查" and the compare panel must show
+  [data-compare-vlm=checked]; the report read is auxiliary and only considers rows that
+  actually carry a vlm payload (a deterministic vlm=null report used to be read as result).
+- The suite-review gate entry must exist (count==1), carry the gate's jump label and focus
+  #suite-review-run -- the V2.6.11 red light.
+- Export compares manifest-declared sha256/byte_size against the unpacked bytes and fails on
+  a broken entry; 390px asserts no horizontal overflow; the batch asserts all four attempts
+  succeeded; intake asserts the product's own "必须确认的槽位 X / Y 已确认" and records the
+  remaining non-critical slots honestly.
+- Rework selects the new candidate before adopting it and asserts the delivery ZIP carries
+  that candidate; the timeline separates facts from plan; project creation uses fill + the
+  real button (blind typing was swallowed once by a lit re-render).
+- Evidence v273-rehearsal-20261019-221928 (23 files) is removed and replaced by
+  v273-rehearsal-20261019-230004: 21 screenshots, scope 1 -> batch 4, rework 1 -> 2, suite 0
+  blocking, export 43,970B with manifest bytes matching, zero console/page/http errors,
+  390px clean, adopted rework candidate act-4b101d07 actually delivered.
+
+Verifiers:
+- verify_v2_4_4 -03a views the second shot, so "follows the viewed shot" is discriminated
+  from "always the first"; the view returns to the first shot for -04/-05 row projections.
+- verify_v2_2_3 -02 asserts a non-empty provider model_id (the -22 leak leg was a silent
+  no-op without it) and the main-text clone drops .copy-proposals (by design provider/model
+  bearing).
+- verify_v2_5_4 comment matches the literal-based expectation; ui-contract 4.6 states the
+  scope row lists the count and points at the summary for the reasons.
+- Wording correction: the two V2.2.2 system-prompt assertions already existed at d0462ea;
+  this commit's net effect there is explanatory comments only.
+
+Reruns: 4_4 15/15, 2_2_3 26/26, 5_4 30/30, all rc=0; walkthrough rc=0. Zero paid calls.

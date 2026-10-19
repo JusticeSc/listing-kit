@@ -145,7 +145,9 @@ async () => {
 
 SLOT_TECH_PROBE = """() => [...document.querySelectorAll('#slot-list .slot-row')].map((row) => {
   const clone = row.cloneNode(true);
-  clone.querySelectorAll('details').forEach((node) => node.remove());
+  // 折叠区是工程标识的家；.copy-proposals 行按设计就带「来源 vN · provider（model）」，
+  // 它是文案提议的产地标注而不是事实卡片主行，从主行判据里剔除（-22 判的是事实卡片）。
+  clone.querySelectorAll('details, .copy-proposals').forEach((node) => node.remove());
   const tech = [...row.querySelectorAll('.tech-details')].map((node) => ({
     open: node.open === true,
     summary: (node.querySelector('summary') || {}).textContent || '',
@@ -316,6 +318,10 @@ def main() -> int:
               capabilities.get("ok") is True
               and isinstance(capabilities.get("analyze_fields"), list)
               and capabilities.get("provider", {}).get("configured") is True
+              # -22 的模型 id 泄漏判据按真实身份判，所以身份本身必须非空字符串：
+              # 没有它这条判据会静默变成空转（能力改名/缺字段时不会红）。
+              and isinstance(capabilities.get("provider", {}).get("model_id"), str)
+              and capabilities["provider"]["model_id"] != ""
               and bool(capabilities.get("semantic_contract")), capabilities)
 
         temp_root = Path(tempfile.mkdtemp(prefix="amz-v223-"))
