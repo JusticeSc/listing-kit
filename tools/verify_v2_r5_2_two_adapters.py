@@ -196,15 +196,6 @@ async () => {
   const plans = documents.filter((item) => item.kind === "suite_plan")
     .sort((left, right) => left.version - right.version);
   const plan = plans.length ? plans[plans.length - 1] : null;
-  const rows = [...document.querySelectorAll("#task-list-mount [data-task-shot]")].map((node) => {
-    const detail = document.querySelector(
-      '#shot-execution [data-shot-id="' + node.getAttribute("data-task-shot") + '"]');
-    return {
-      shot_id: node.getAttribute("data-task-shot"),
-      state: node.getAttribute("data-attempt-state"),
-      candidate_text: ((detail || node).querySelector(".attempt-candidate") || {}).textContent || null,
-    };
-  });
   return {
     shot_ids: plan ? plan.payload.shots.map((shot) => shot.shot_id) : [],
     attempt_chains: chains,
@@ -213,7 +204,6 @@ async () => {
     prompt_history: promptHistory,
     confirmations: confirmations,
     assets: assets.map((item) => ({ sha256: item.sha256, byte_size: item.byte_size })),
-    ui_rows: rows,
   };
 }
 """
@@ -855,10 +845,25 @@ def browser_e2e_checks(check, screenshots: list[str], console_errors: list,
               and hashlib.sha256(reference).hexdigest() in asset_shas,
               {"candidates": {key: len(value) for key, value in candidate_rows.items()},
                "asset_shas": len(asset_shas)})
+        # B4：制作与审图的执行区一次只渲染「正看着的那张图」，任务行只给状态徽标。
+        # 所以逐图切过去核对每张的候选行（切图用的是登记验证器同一路径）。
+        candidate_lines = []
+        for shot_id in shot_ids:
+            shared.select_make_shot(page, shot_id)
+            candidate_lines.append({
+                "shot_id": shot_id,
+                "candidate_text": page.evaluate(
+                    """(shot) => {
+                      const node = document.querySelector(
+                        '#shot-execution .attempt-row[data-shot-id="' + shot + '"]');
+                      const meta = node ? node.querySelector('.attempt-candidate') : null;
+                      return meta ? meta.textContent : null;
+                    }""", arg=shot_id),
+            })
         check("R52-E04", "UI 行显示候选已保存（真实字节预览口径）",
               all(row["candidate_text"] and "候选已保存到本地" in row["candidate_text"]
-                  for row in after["ui_rows"]),
-              after["ui_rows"])
+                  for row in candidate_lines),
+              candidate_lines)
         first_actions = {record["action_id"] for record in latest_records}
         target_shot = shot_ids[1]
         target_index = shot_ids.index(target_shot)

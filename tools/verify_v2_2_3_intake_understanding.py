@@ -442,10 +442,13 @@ def main() -> int:
 
             # V2.6.16：事实卡片只把人话放主行；slot_id / 版本 / 证据来源（字段名、哈希、模型 id）
             # 一律收进该卡折叠的「技术详情」。判据用「删掉 details 后的可见文本」自证，不看样式。
+            # 模型 id 与来源引用按能力读到的实际身份判（不写死假 provider 名），仍留在行级而非面板级：
+            # 面板上「将发给 <model>」「最近一次分析：… <model>」是设计上给人读的身份行，不算泄漏。
             tech_rows = page.evaluate(SLOT_TECH_PROBE)
             hex_re = re.compile(r"\b[0-9a-f]{12,}\b")
+            model_id = str((capabilities.get("provider") or {}).get("model_id") or "")
             tech_ok = bool(tech_rows)
-            tech_detail = {"rows": tech_rows[:4], "count": len(tech_rows)}
+            tech_detail = {"rows": tech_rows[:4], "count": len(tech_rows), "model_id": model_id}
             for item in tech_rows:
                 main_text = item["main_text"]
                 if not item["tech"] or any(node["open"] for node in item["tech"]):
@@ -455,6 +458,10 @@ def main() -> int:
                 if item["slot_id"] in main_text or "版本 v" in main_text or "sha256" in main_text.lower():
                     tech_ok = False
                 if hex_re.search(main_text):
+                    tech_ok = False
+                if model_id and model_id in main_text:
+                    tech_ok = False
+                if "product_input" in main_text or "intake@" in main_text:
                     tech_ok = False
             check(f"{APP_NAME}-22",
                   "事实卡片渐进披露：主行无 slot_id/版本/来源引用（字段名、哈希、模型 id），工程标识在技术详情里",

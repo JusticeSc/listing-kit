@@ -1,0 +1,7 @@
+verify_v2_2_2_semantic_provider: rc=0 pass=11 fail=0 3.8s
+verify_v2_2_3_intake_understanding: rc=0 pass=26 fail=0 14.3s
+verify_v2_3_5_pre_generation_confirm: rc=0 pass=18 fail=0 14.8s
+verify_v2_4_4_candidate_blob: rc=0 pass=15 fail=0 24.1s
+verify_v2_5_4_rework_loop: rc=0 pass=30 fail=0 12.6s
+verify_v2_packet08_adoption_ai: rc=0 pass=11 fail=0 16.7s
+verify_v2_r5_2_two_adapters: rc=0 pass=0 fail=0 18.9s

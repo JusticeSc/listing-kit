@@ -2,8 +2,9 @@
 """packet08 第二片：adoption 显式单图 AI（按需发起）页面真跑验证器（test-only）。
 
 覆盖验收（全部离线 headless Chrome + 本地 fake provider，无付费调用）：
-  P08A-01 未发起复核时页面显示"未复核/未运行"（data-compare-vlm="not_run" /
-         data-review-vlm 缺席即未运行），且人工采用可继续（state=current）；
+  P08A-01 未发起复核时页面显示"未复核/未运行"（比较面板 data-compare-vlm="not_run"；
+         本图执行区的确定性报告行写"VLM 未检查"，data-review-vlm 缺席即未运行），
+         且人工采用可继续（state=current）；
   P08A-02 生成/查看/切换比较/采用本身不产生复核外发（fake review calls==0）；
          显式点击"AI 复核"后才有且仅有 1 次复核请求外发；
   P08A-03 真实失败（unknown 场景）才显示 Unknown（outcome=unknown +
@@ -36,6 +37,13 @@ sys.path.insert(0, str(ROOT / "src"))          # 只为取 console（见 src/con
 from console import enable_utf8  # noqa: E402
 
 enable_utf8()
+
+# 确定性报告行里的 VLM 三态短语来自域层唯一来源 app/product_v2/domain/review.js:1157-1158：
+# 「VLM 未检查」未发起 /「VLM 未完成」发起但没结论（Unknown 场景）/「VLM 已检查」有结论。
+# 本文件要证明的是「未发起 ≠ Unknown」「unknown 刷新后不退回未发起」，所以逐字用这两条真实短语，
+# 不用宽泛的近义集合（否则产品换了没声明的新措辞也照样绿）。
+VLM_NOT_RUN_PHRASE = "VLM 未检查"
+VLM_UNKNOWN_PHRASE = "VLM 未完成"
 
 import v2_verify_shared as shared  # noqa: E402
 import v2_stage_nav as stage_nav  # noqa: E402
@@ -128,6 +136,8 @@ def main() -> int:
                 candidate_id = cands[-1]["payload"]["candidate_id"]
 
                 # ---- P08A-01：未发起时如实显示未复核，且采用已成立 ----
+                # B4 后的呈现口径：本图执行区的 `.attempt-review` 是确定性报告行，VLM 状态以
+                # 短语出现（未检查 / 未完成 / 已检查）；未发起时 data-review-vlm 缺席即未运行。
                 stage_nav.goto(page, "make")
                 shared.select_make_shot(page, shot_id)
                 page.wait_for_timeout(400)
@@ -142,7 +152,9 @@ def main() -> int:
                 ai_line_before = str((card_ai or {}).get("text") or "")
                 check(checks, "P08A-01a", "未发起复核时本图执行区显示未复核/未运行（不折叠成 Unknown）",
                       card_ai is not None and (card_ai or {}).get("ai") in ("not_run", None)
-                      and "未复核" in ai_line_before and "Unknown" not in ai_line_before,
+                      and VLM_NOT_RUN_PHRASE in ai_line_before
+                      and VLM_UNKNOWN_PHRASE not in ai_line_before
+                      and "Unknown" not in ai_line_before,
                       card_ai)
                 check(checks, "P08A-01b", "未发起复核时人工采用可继续（state=current，不被复核门阻断）",
                       state == "current", {"state": state})
@@ -219,8 +231,10 @@ def main() -> int:
                     shot_id)
                 docs2 = page.evaluate(PROBE_REPORTS, candidate_id)
                 latest2 = max(docs2, key=lambda item: item["version"]) if docs2 else {}
+                ai_line_after = str((card_ai2 or {}).get("text") or "")
                 check(checks, "P08A-04", "刷新后如实展示（unknown 仍 unknown，不退回未复核/不涨版本链）",
-                      (card_ai2 or {}).get("ai") == "unknown"
+                      VLM_UNKNOWN_PHRASE in ai_line_after
+                      and VLM_NOT_RUN_PHRASE not in ai_line_after
                       and (latest2.get("vlm") or {}).get("outcome") == "unknown"
                       and len(docs2) == len(docs),
                       {"card": card_ai2, "outcome": (latest2.get("vlm") or {}).get("outcome"),

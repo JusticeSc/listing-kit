@@ -526,6 +526,9 @@ def main() -> int:
             expect(page.locator("#generation-scope-count")).to_contain_text("未选 3")
             expect(page.locator("#confirm-list .confirm-shot")).to_have_count(1)
             viewed = shared.make_viewed_shot(page)
+            if not viewed:
+                raise AssertionError(
+                    "读不到「正在查看的图」标记；单张范围的判据不能退化成摘要自证（产品语义：默认单张=正看图）")
             first = page.evaluate(CONFIRM_PROBE, {"shotIds": None})
             seen = page.evaluate(SEEN_SUMMARY_PROBE)
             # 进入 make 自动准备系统 Prompt（打开制作区仅对缺失/过期的系统文本准备版本，人工文本不覆盖）；
@@ -533,7 +536,7 @@ def main() -> int:
                   seen["sending_count"] == 1 and seen["action_count"] == 1
                   and first["ui"]["action_disabled"] is False
                   and seen["row_count"] == 1
-                  and seen["sending_rows"] == ([viewed] if viewed else seen["sending_rows"])
+                  and seen["sending_rows"] == [viewed]
                   and len(seen["sending_rows"]) == 1
                   and not seen["blocked_rows"]
                   and "参考" in seen["summary"],

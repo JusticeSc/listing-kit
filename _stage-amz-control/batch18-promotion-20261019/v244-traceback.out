@@ -1,0 +1,74 @@
+Traceback (most recent call last):
+  File "E:\workbuddy_workspace\2026-09-20-16-38-19\amz-listing-kit-complete-product-15ab22\tools\_diag_v244_throwaway.py", line 1182, in main
+    wait_candidate_ui(shot)
+    ~~~~~~~~~~~~~~~~~^^^^^^
+  File "E:\workbuddy_workspace\2026-09-20-16-38-19\amz-listing-kit-complete-product-15ab22\tools\_diag_v244_throwaway.py", line 836, in wait_candidate_ui
+    page.wait_for_function(
+    ~~~~~~~~~~~~~~~~~~~~~~^
+        """(shot) => {
+        ^^^^^^^^^^^^^^
+    ...<6 lines>...
+            return Boolean(detail && detail.querySelector('.attempt-candidate'));
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        }""", arg=shot_id, timeout=timeout)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\workbuddy_workspace\2026-09-20-16-38-19\amz-listing-kit-complete-product-15ab22\.venv\Lib\site-packages\playwright\sync_api\_generated.py", line 12809, in wait_for_function
+    self._sync(
+    ~~~~~~~~~~^
+        self._impl_obj.wait_for_function(
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+        )
+        ^
+    )
+    ^
+  File "E:\workbuddy_workspace\2026-09-20-16-38-19\amz-listing-kit-complete-product-15ab22\.venv\Lib\site-packages\playwright\_impl\_sync_base.py", line 115, in _sync
+    return task.result()
+           ~~~~~~~~~~~^^
+  File "E:\workbuddy_workspace\2026-09-20-16-38-19\amz-listing-kit-complete-product-15ab22\.venv\Lib\site-packages\playwright\_impl\_page.py", line 1153, in wait_for_function
+    return await self._main_frame.wait_for_function(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\workbuddy_workspace\2026-09-20-16-38-19\amz-listing-kit-complete-product-15ab22\.venv\Lib\site-packages\playwright\_impl\_frame.py", line 941, in wait_for_function
+    await self._channel.send("waitForFunction", self._timeout, params)
+  File "E:\workbuddy_workspace\2026-09-20-16-38-19\amz-listing-kit-complete-product-15ab22\.venv\Lib\site-packages\playwright\_impl\_connection.py", line 76, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "E:\workbuddy_workspace\2026-09-20-16-38-19\amz-listing-kit-complete-product-15ab22\.venv\Lib\site-packages\playwright\_impl\_connection.py", line 632, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+playwright._impl._errors.TimeoutError: Page.wait_for_function: Timeout 30000ms exceeded.
+amz-listing-kit Product V2 V2.4.4 候选字节流、Blob 持久化与容量管理
+NOT-AUTHORITY: point-in-time verification evidence only
+observed_at: 2026-10-19T21:39:11
+status: failed
+model_calls: 0 · external_network_calls: 0 (fake image provider + 本机服务)
+json: evals/product-v2/v2.4.4-candidate-blob-20261019-213820.json
+
+CHECKS
+- [PASS] V2.4.4-00 domain / workspace / harness 通过 node --check（ESM 语法门）
+- [PASS] V2.4.4-01 C01–C10 契约套件全过且用例齐全
+- [PASS] V2.4.4-02 反向探针确实执行（坏 PNG / 非法身份 / 兼容性参数）
+- [PASS] V2.4.4-02b 既有契约套件回归：Attempt / 批次 / 确认单 / Prompt 编辑 / 套图编辑器全过
+- [PASS] V2.4.4-03b 启动诊断：首次加载失败不可被重试成功掩盖（首失败保留因果分支）
+- [FAIL] V2.4.4-03 就绪：首批摘要范围=未提交全集（4 张）、候选栏为空且只有参考图字节
+- [PASS] V2.4.4-04 单张成功：候选自动入库；记录 sha = 重算 sha = 响应头 sha；64×64 预览可见
+- [PASS] V2.4.4-05 刷新恢复：候选记录与字节保留、不重复保存、零新增取回请求、预览仍可见
+- [PASS] V2.4.4-06 取回失败：提交结论不受掩盖、原因与下一步可见、无半份记录、停止后手动保存 sha 与响应头一致
+- [PASS] V2.4.4-07 配额异常：批次停而不空转、不留半份记录、提示含原因与下一步；解除后同一 action 保存成功
+- [FAIL] V2.4.4-99 浏览器闭环在完成前中断
+- [PASS] V2.4.4-03c 启动诊断终核：整轮任一次加载失败都保留并判红（observer 证明，非因果修复）
+- [PASS] V2.4.4-09 零意外 console error / page error（预期内的取回 502 与刷新中断除外）
+- [PASS] V2.4.4-10 正式入口自检仍全过（V2.4.4 不破坏既有入口）
+
+BOUNDARY
+证明候选字节在真实浏览器与真实 IndexedDB 上是可持久、可校验、可恢复的：成功结论在同一步把结果字节存进内容寻址的 assets 仓，候选记录的 sha256 与重算值、服务端 X-Image-Sha256 响应头三方一致；刷新后预览来自本地字节、零新增取回请求且不重复保存；取回失败一次不产生半份记录、批次提示给出原因与下一步，停止新增提交后按提示手动保存成功；IndexedDB 配额异常在协议层注入（产品代码无测试钩子），保存被挡住时批次立即停而不空转、失败不留半份记录并给出「清出空间后重试」指引；整套批次只提交剩余图一次、全部成功且候选全部入库，进度不再显示待保存候选。本批不做审核、单图返工与导出（Phase 5）；0 次真实模型调用、0 次外部网络；图像 provider 是注入的假替身（按 Prompt 标记决定取回场景），只证明候选持久化语义，不证明真实出图质量。启动诊断只证明观测能力（首个失败的 URL/阶段/分支与同窗host/浏览器事件被保留并判红），不证明 RC19 根因；诊断红不是因果修复，RC19 仍需现象—机制对应。
+
+FAILED DETAILS
+- V2.4.4-03 {"rows": 4, "assets": 1, "scope": ["shot_main_clean"], "status": "本次选择 1 张，明确发送 1 张，排除 0 张；排除项只影响本图，已有结果不会自动重提。"}
+- V2.4.4-99 {"interrupted": "[check08-batch] TimeoutError: Page.wait_for_function: Timeout 30000ms exceeded.", "stage": "check08-batch", "first_boot_failure": null, "failed_loads": [], "causal_branch": "no_failure_observed", "failed_requests": [], "page_url": "http://127.0.0.1:36503/", "base": "http://127.0.0.1:36503", "server_events": [{"t_ms": 12444.132, "kind": "request_start", "path": "/api/v2/images/result", "active_threads": 8}, {"t_ms": 12445.512, "kind": "request_finish", "path": "/api/v2/images/result", "active_threads": 8}, {"t_ms": 12698.047, "kind": "accept", "path": "/api/v2/images/result", "active_threads": 8}, {"t_ms": 12698.057, "kind": "request_start", "path": "/api/v2/images/result", "active_threads": 8}, {"t_ms": 12700.114, "kind": "request_finish", "path": "/api/v2/images/result", "active_threads": 8}, {"t_ms": 14055.08, "kind": "accept", "path": "/api/v2/images/submit", "active_threads": 8}, {"t_ms": 14055.089, "kind": "request_start", "path": "/api/v2/images/submit", "active_threads": 8}, {"t_ms": 14056.35, "kind": "request_finish", "path": "/api/v2/images/submit", "active_threads": 8}, {"t_ms": 14071.08, "kind": "accept", "path": "/api/v2/images/status", "active_threads": 8}, {"t_ms": 14071.09, "kind": "request_start", "path": "/api/v2/images/status", "active_threads": 8}, {"t_ms": 14072.537, "kind": "request_finish", "path": "/api/v2/images/status", "active_threads": 8}, {"t_ms": 14074.902, "kind": "accept", "path": "/api/v2/images/result", "active_threads": 8}, {"t_ms": 14074.908, "kind": "request_start", "path": "/api/v2/images/result", "active_threads": 8}, {"t_ms": 14076.305, "kind": "request_finish", "path": "/api/v2/images/result", "active_threads": 8}, {"t_ms": 14094.104, "kind": "accept", "path": "/api/v2/images/result", "active_threads": 8}, {"t_ms": 14094.115, "kind": "request_start", "path": "/api/v2/images/result", "active_threads": 8}, {"t_ms": 14095.768, "kind": "request_finish", "path": "/api/v2/images/result", "active_threads": 8}, {"t_ms": 14430.99, "kind": "accept", "path": "/api/v2/images/result", "active_threads": 8}, {"t_ms": 14431.007, "kind": "request_start", "path": "/api/v2/images/result", "active_threads": 8}, {"t_ms": 14433.207, "kind": "request_finish", "path": "/api/v2/images/result", "active_threads": 8}, {"t_ms": 16277.999, "kind": "accept", "path": "/api/v2/images/submit", "active_threads": 8}, {"t_ms": 16278.009, "kind": "request_start", "path": "/api/v2/images/submit", "active_threads": 8}, {"t_ms": 16280.514, "kind": "request_finish", "path": "/api/v2/images/submit", "active_threads": 3}, {"t_ms": 16297.927, "kind": "accept", "path": "/api/v2/images/status", "active_threads": 3}, {"t_ms": 16297.938, "kind": "request_start", "path": "/api/v2/images/status", "active_threads": 3}, {"t_ms": 16299.547, "kind": "request_finish", "path": "/api/v2/images/status", "active_threads": 3}, {"t_ms": 16304.172, "kind": "accept", "path": "/api/v2/images/result", "active_threads": 3}, {"t_ms": 16304.183, "kind": "request_start", "path": "/api/v2/images/result", "active_threads": 3}, {"t_ms": 16306.143, "kind": "request_finish", "path": "/api/v2/images/result", "active_threads": 3}, {"t_ms": 16381.502, "kind": "accept", "path": "/api/v2/images/submit", "active_threads": 3}, {"t_ms": 16381.514, "kind": "request_start", "path": "/api/v2/images/submit", "active_threads": 3}, {"t_ms": 16383.271, "kind": "request_finish", "path": "/api/v2/images/submit", "active_threads": 3}, {"t_ms": 16401.074, "kind": "accept", "path": "/api/v2/images/status", "active_threads": 3}, {"t_ms": 16401.083, "kind": "request_start", "path": "/api/v2/images/status", "active_threads": 3}, {"t_ms": 16402.602, "kind": "request_finish", "path": "/api/v2/images/status", "active_threads": 3}, {"t_ms": 16406.671, "kind": "accept", "path": "/api/v2/images/result", "active_threads": 3}, {"t_ms": 16406.68, "kind": "request_start", "path": "/api/v2/images/result", "active_threads": 3}, {"t_ms": 16408.178, "kind": "request_finish", "path
+
+证据文件：
+ - evals/product-v2/v2.4.4-candidate-blob-20261019-213820.json
+ - evals/product-v2/v2.4.4-candidate-blob-20261019-213820.txt

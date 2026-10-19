@@ -1,0 +1,24 @@
+fix(v2): align verifier contracts with B4 defaults; migrate the V2.7.3 walkthrough
+
+PR#19 (head d0462ea) CI red was verifier drift, not a product regression: since B4 the
+workbench renders only the shot being viewed, and the confirm summary defaults to a single
+shot (sending four requires the explicit batch scope).
+
+- verify_v2_4_4: select the viewed shot before reading candidate rows; new V2.4.4-03a pins
+  "default = 1 shot, unselected listed"; the 4-shot path uses the explicit batch scope.
+- verify_v2_6_1: the compare panel keeps one image at a time, so assert the reference
+  selector order equals that candidate's frozen reference list and the shown image is in it.
+- verify_v2_2_2: restore the system-prompt assertions (identity echo, 60-char cap) -- the
+  outbound body really does carry role=system with both rules.
+- verify_v2_packet08_adoption_ai: pin the three VLM phrases to their single source
+  (domain/review.js:1157-1158) instead of near-synonym families.
+- verify_v2_3_5 / verify_v2_5_4 / verify_v2_r5_2: no summary self-proof for the single-shot
+  scope, take the rework contract version from the verifier's own literal, read per-shot rows.
+- docs/product-v2-ui-contract.md 4.6 restated per the explicit scope row.
+
+V2.7.3 walkthrough migrated to the current product and ran green (21 screenshots, scope 1 ->
+batch 4, rework 1->2, suite review 0 blocking, export 44,457B with manifest, no console/page/
+http errors, no horizontal overflow at 390px). It replaces the retired R5.1 page fixtures
+tools/repro_r51_*.py (bytes archived in _stage-amz-control).
+
+Zero paid model calls; docs/state/cold-resume guards green; PR#19 body updated.

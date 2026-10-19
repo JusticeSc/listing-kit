@@ -186,6 +186,7 @@ async () => {
     return {
       shot_id: node.getAttribute("data-task-shot"),
       state: node.getAttribute("data-attempt-state"),
+      viewed: node.getAttribute("data-viewed") === "true",
       badges: [...node.querySelectorAll(".badge")].map((item) => item.textContent),
       meta: [...node.querySelectorAll("p.meta")].map((item) => item.textContent).join(" | "),
       candidate_meta: candidateMeta ? candidateMeta.textContent : null,
@@ -831,6 +832,9 @@ def main() -> int:
                         arg=shot_id, timeout=timeout)
 
                 def wait_candidate_ui(shot_id: str, timeout: int = 30_000) -> None:
+                    # 候选取回细节只渲染正看图（左列表按设计只给图名/任务/采用态与缩略图），
+                    # 所以先把该图设为正看——这也是用户查看候选的真实路径。
+                    shared.select_make_shot(page, shot_id)
                     # 只等界面上的候选标记（同步谓词）；字节与身份仍由 probe 重新读 IndexedDB 核对。
                     # 注意：wait_for_function 不会等待 async 谓词（Promise 恒为真值），这里必须同步。
                     page.wait_for_function(
@@ -948,16 +952,35 @@ def main() -> int:
                 shot_ids = initial["shot_ids"]
                 compile_all(page, shot_ids)
                 ok_shot = shot_ids[0]
-                # 摘要默认范围=未提交全集（ui-contract §4.6「主按钮只提交摘要明确列出的集合。
-                # 默认是未提交的图；成功、在途、Unknown 不混入」）：空白项目首批就是 4 张。
-                # 逐图场景不靠产品的"单图摘要开关"（不存在），而是每个场景前 add_shots 新增一张，
-                # 新增图是当时唯一未提交图 → 摘要范围天然为 1 张，语义仍与合同一致。
+                # B4 明确范围（ui-contract §4.6「主按钮只提交摘要明确列出的集合。成功、在途、
+                # Unknown 不混入」）：默认是「单张（跟随正在查看的图）」，整套 4 张必须先显式
+                # 切到批量范围——与 verify_v2_4_3 的 -03a/-03 同口径。逐图场景不靠隐藏开关：
+                # 每个场景前 add_shots 新增一张，新增图是当时唯一未提交图 → 单张摘要天然 1 张。
+                def confirm_scope_now() -> list:
+                    return page.evaluate(
+                        """() => [...document.querySelectorAll('#confirm-list .confirm-shot')]
+                             .map((node) => ({shot: node.getAttribute('data-shot-id'),
+                                              badges: [...node.querySelectorAll('.badge')]
+                                                .map((item) => item.textContent)}))""")
+
+                ready_single = probe()
+                single_scope = confirm_scope_now()
+                single_status = page.locator("#confirm-status").inner_text()
+                viewed = [item["shot_id"] for item in ready_single["ui"]["rows"] if item["viewed"]]
+                check("V2.4.4-03a", "B4单默认：确认前只送正看1张，范围行如实列出未选图",
+                      len(ready_single["ui"]["rows"]) == 4
+                      and all(item["state"] == "none" for item in ready_single["ui"]["rows"])
+                      and len(ready_single["asset_rows"]) == 1
+                      and ready_single["candidate_chains"] == {}
+                      and len(single_scope) == 1 and viewed == [single_scope[0]["shot"]]
+                      and "本次选择 1 张，明确发送 1 张" in single_status,
+                      {"rows": len(ready_single["ui"]["rows"]),
+                       "viewed": viewed,
+                       "scope": [item["shot"] for item in single_scope],
+                       "status": single_status})
+                shared.choose_make_batch(page, shot_ids)
                 ready = probe()
-                confirm_scope = page.evaluate(
-                    """() => [...document.querySelectorAll('#confirm-list .confirm-shot')]
-                         .map((node) => ({shot: node.getAttribute('data-shot-id'),
-                                          badges: [...node.querySelectorAll('.badge')]
-                                            .map((item) => item.textContent)}))""")
+                confirm_scope = confirm_scope_now()
                 confirm_status = page.locator("#confirm-status").inner_text()
                 confirm_generation(shot_ids)
                 ui["base_shots"] = shot_ids
@@ -981,7 +1004,7 @@ def main() -> int:
                            "first_failure": first_boot_failure,
                            "causal_branch": diagnosis["causal_branch"]})
                 check("V2.4.4-03",
-                      "就绪：首批摘要范围=未提交全集（4 张）、候选栏为空且只有参考图字节",
+                      "就绪：显式批量范围=未提交全集（4 张）、候选栏为空且只有参考图字节",
                       len(ready["ui"]["rows"]) == 4
                       and all(item["state"] == "none" for item in ready["ui"]["rows"])
                       and all(item["preview"] is None for item in ready["ui"]["rows"])

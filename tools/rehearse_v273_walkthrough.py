@@ -6,19 +6,20 @@
 走一遍，把每个关键节点的界面原文、耗时与截图落盘，供发布前修复可见摩擦点。
 它不是 C15/C17 的人工证据：执行者是开发者本人，观察表只用于找问题。
 
+剧本按四段工作台（资料与事实 → 方案 → 制作与审图 → 交付）走：每一步的页面交互
+都复用 `v2_verify_shared` 里已被登记验证器使用的惯例（选用批量范围、一次明确提交、
+逐图采用、整套检查跳转、导出与独立解包），不在这里另写一套选择器。
+
 运行：uv run --locked python tools/rehearse_v273_walkthrough.py --label lamp
 参考图默认 `_working/amz-listing-kit-product-demo/real-run-lamp/lamp-3m.jpg`（落地灯，非内置品类）。
 """
 from __future__ import annotations
 
 import argparse
-import hashlib
 import importlib.util
-import io
 import json
 import sys
 import time
-import zipfile
 from datetime import datetime
 from pathlib import Path
 
@@ -48,6 +49,8 @@ def main() -> int:
                         help="假图片边长；默认 1024 才越过「最小长边 1000px」平台阻断。")
     parser.add_argument("--skip-rework", action="store_true",
                         help="跳过单图返工步（默认执行：返工第 1 张并保留旧候选）。")
+    parser.add_argument("--skip-vlm", action="store_true",
+                        help="跳过单图 VLM 复核步（默认执行：对第 1 张跑一次假通道复核）。")
     args = parser.parse_args()
 
     reference = Path(args.reference) if args.reference else (
@@ -73,6 +76,29 @@ def main() -> int:
         item = {"node": node, "seconds": round(time.monotonic() - started, 1)}
         item.update(extra)
         timeline.append(item)
+
+    def review_report(page, shot_id: str) -> dict:
+        """该图最新的复核报告（内存库读取；未跑过返回空对象）。"""
+        return page.evaluate(
+            """async (shot) => {
+              const db = await new Promise((resolve, reject) => {
+                const request = indexedDB.open("amz-listing-kit-v2");
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+              });
+              const documents = await new Promise((resolve, reject) => {
+                const request = db.transaction("documents", "readonly")
+                  .objectStore("documents").getAll();
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+              });
+              db.close();
+              const rows = documents.filter((row) => row.kind === "review_report"
+                && row.payload.shot_id === shot);
+              rows.sort((a, b) => (a.version || 0) - (b.version || 0));
+              const last = rows[rows.length - 1];
+              return last ? { version: last.version, payload: last.payload } : {};
+            }""", arg=shot_id)
 
     server, _doubles = shared.start_product_server(
         0,
@@ -114,21 +140,18 @@ def main() -> int:
 
                 started = time.monotonic()
                 page.click("#analyze-run")
-                # 分析后产品不自动切页：按 V2.UI.2 纪律点阶段条进入理解页（用户真实路径）。
-                stage_nav.goto(page, "understand")
+                # 分析后产品不自动切页：按 V2.UI.2 纪律点阶段条进入「资料与事实」（用户真实路径）。
+                stage_nav.goto(page, "intake")
                 page.wait_for_selector("#slot-list .slot-row", timeout=60_000)
                 page.wait_for_timeout(400)
                 probes["slot_rows"] = page.locator("#slot-list .slot-row").count()
-                probes["understand_panel_text"] = page.locator(
-                    '[data-stage-panel="understand"]').inner_text()[:700]
-                snap(page, "understand")
-                snap(page, "understand-full", full=True)
-                mark("understand", started)
-
-                started = time.monotonic()
+                probes["intake_panel_text"] = page.locator(
+                    '[data-stage-panel="intake"]').inner_text()[:700]
+                snap(page, "facts")
+                snap(page, "facts-full", full=True)
                 rounds = shared.confirm_slots(page)
                 probes["confirm_rounds"] = rounds
-                page.click("#stage-next-understand")
+                page.click("#stage-next-plan")
                 expect(page.locator('[data-stage-panel="plan"]')).to_be_visible()
                 page.click("#suite-seed")
                 page.wait_for_selector("#shot-list .shot-row", timeout=20_000)
@@ -138,96 +161,86 @@ def main() -> int:
                 mark("plan", started, confirm_rounds=rounds)
 
                 started = time.monotonic()
-                page.click("#stage-next-plan")
-                expect(page.locator('[data-stage-panel="generate"]')).to_be_visible()
+                page.click("#stage-next-make")
+                expect(page.locator('[data-stage-panel="make"]')).to_be_visible()
                 shots_ids = page.evaluate(shared.SHOT_IDS)
-                # Issue #9：编译前先做普通决定（用户真实路径）。
-                shared.decide_for_compile(page, shots_ids)
+                # Issue #9 差量：先如实记录「默认只发送正看的 1 张」，再显式选全量批量。
+                page.wait_for_selector("#confirm-editor:not([hidden])", timeout=30_000)
+                page.wait_for_selector("#confirm-list .confirm-shot", timeout=30_000)
+                page.wait_for_timeout(200)
+                probes["default_scope_text"] = page.locator("#generation-scope-count").inner_text()
+                probes["default_scope_rows"] = page.locator("#confirm-list .confirm-shot").count()
+                probes["decisions"] = shared.decide_for_compile(page, shots_ids)
                 shared.compile_all(page, shots_ids)
-                snap(page, "generate-confirm")
-                page.click("#confirm-action")
-                # 确认即提交，无需二步：等 attempt 行出现即视为已提交。
-                page.wait_for_function(
-                    """() => document.querySelectorAll(
-                        '#attempt-list .attempt-row[data-attempt-state]').length > 0""",
-                    timeout=30_000)
-                terminal_ok = True
-                try:
-                    shared.wait_terminal(page, shots_ids, timeout=90_000)
-                except Exception:
-                    terminal_ok = False
+                probes["batch_count"] = shared.choose_make_batch(page, shots_ids)
+                probes["batch_scope_text"] = page.locator("#generation-scope-count").inner_text()
+                snap(page, "make-confirm")
+                # 确认即提交，无需二步：一次明确点击，捕获外发请求并核对授权绑定。
+                submit = shared.confirm_and_submit(page, expect, shot_ids=shots_ids)
+                probes["submit"] = {"ok": submit["ok"], "new_shots": submit["new_shots"],
+                                    "captured_actions": submit["captured_actions"]}
+                shared.wait_terminal(page, shots_ids, timeout=90_000)
                 page.wait_for_timeout(400)
-                probes["generate_terminal_ok"] = terminal_ok
                 probes["attempt_states"] = page.evaluate(shared.ATTEMPT_STATES)
-                if not terminal_ok:
-                    probes["attempt_list_text"] = page.locator("#attempt-list").inner_text()[:800]
-                    probes["batch_bar_text"] = page.locator("#attempt-batch").inner_text()[:300]
-                    probes["console_errors_dump"] = logs["console"][-5:]
-                    probes["http_errors_dump"] = [item for item in logs["http"]
-                                                  if "/favicon.ico" not in item][-5:]
-                probes["review_next_disabled"] = page.locator("#stage-next-review").is_disabled()
-                probes["review_next_note"] = page.locator("#stage-next-review-note").inner_text()
-                probes["attempt_rows"] = page.evaluate(
-                    """() => [...document.querySelectorAll('#attempt-list .attempt-row')]
-                         .map((row) => ({ shot: row.getAttribute('data-shot-id'),
+                probes["batch_progress_text"] = page.locator("#batch-progress").inner_text()[:300]
+                probes["task_rows"] = page.evaluate(
+                    """() => [...document.querySelectorAll('#task-list-mount [data-task-shot]')]
+                         .map((row) => ({ shot: row.getAttribute('data-task-shot'),
                                           state: row.getAttribute('data-attempt-state'),
+                                          selection: row.getAttribute('data-selection-state'),
                                           text: (row.innerText || '').slice(0, 160) }))""")
-                snap(page, "generate-done")
-                snap(page, "generate-done-full", full=True)
-                mark("generate", started)
+                snap(page, "make-done")
+                snap(page, "make-done-full", full=True)
+                mark("make", started)
 
-                # 单图 VLM 复核（假通道返回两条高风险发现）：只提示、不阻断、不改选择。
-                vlm_target = shots_ids[0]
-                vlm_row = f'#attempt-list .attempt-row[data-shot-id="{vlm_target}"]'
-                vlm_button = page.locator("#attempt-list button[data-review-action]").first
-                if vlm_button.count() > 0:
+                if not args.skip_vlm:
+                    # 单图 VLM 复核（假通道返回高风险发现）：只提示、不阻断、不改选择。
                     started = time.monotonic()
-                    before_summary = page.locator(vlm_row + " .attempt-review").inner_text()
+                    vlm_target = shots_ids[0]
+                    shared.select_make_shot(page, vlm_target)
+                    before_report = review_report(page, vlm_target)
+                    before_text = page.locator("#shot-execution").inner_text()[:400]
+                    vlm_button = page.locator("#shot-execution button[data-review-action]")
+                    expect(vlm_button).to_be_enabled(timeout=20_000)
                     vlm_button.click()
                     page.wait_for_function(
-                        """(payload) => {
-                             const row = document.querySelector(payload.row);
-                             const node = row && row.querySelector('.attempt-review');
-                             if (!node) return false;
-                             const text = node.textContent || '';
-                             return text !== payload.before && !text.includes("复核中");
-                           }""",
-                        arg={"row": vlm_row, "before": before_summary}, timeout=90_000)
+                        """async (shot) => {
+                          const db = await new Promise((resolve, reject) => {
+                            const request = indexedDB.open("amz-listing-kit-v2");
+                            request.onsuccess = () => resolve(request.result);
+                            request.onerror = () => reject(request.error);
+                          });
+                          const documents = await new Promise((resolve, reject) => {
+                            const request = db.transaction("documents", "readonly")
+                              .objectStore("documents").getAll();
+                            request.onsuccess = () => resolve(request.result);
+                            request.onerror = () => reject(request.error);
+                          });
+                          db.close();
+                          return documents.some((row) => row.kind === "review_report"
+                            && row.payload.shot_id === shot && row.payload.vlm
+                            && row.payload.vlm.outcome !== "not_run");
+                        }""", arg=vlm_target, timeout=90_000)
+                    after_report = review_report(page, vlm_target)
                     probes["vlm_review"] = {
                         "shot": vlm_target,
-                        "before": before_summary[:200],
-                        "after": page.locator(vlm_row + " .attempt-review").inner_text()[:200],
+                        "before_version": before_report.get("version"),
+                        "after_version": after_report.get("version"),
+                        "outcome": ((after_report.get("payload") or {}).get("vlm") or {}).get("outcome"),
+                        "before_text": before_text,
+                        "after_text": page.locator("#shot-execution").inner_text()[:400],
                     }
                     snap(page, "vlm-review")
                     mark("vlm-review", started)
 
-                started = time.monotonic()
-                page.click("#stage-next-review")
-                expect(page.locator('[data-stage-panel="review"]')).to_be_visible()
-                page.wait_for_timeout(400)
-                snap(page, "review")
-                snap(page, "review-full", full=True)
-                probes["review_states_before"] = page.evaluate(
-                    """() => [...document.querySelectorAll('#review-list .review-card')]
-                         .map((node) => node.getAttribute('data-selection-state'))""")
-                first_card = '#review-list .review-card'
-                compare = page.locator(first_card + ' button:has-text("比较候选")').first
-                if compare.count() > 0:
-                    compare.click()
-                    page.wait_for_timeout(500)
-                    snap(page, "compare")
-                    snap(page, "compare-full", full=True)
                 rework_shot = shots_ids[0]
                 if not args.skip_rework:
                     started = time.monotonic()
-                    if compare.count() == 0:
-                        page.click(f'#review-list .review-card[data-shot-id="{rework_shot}"] '
-                                   'button:has-text("比较候选")')
-                        page.wait_for_timeout(400)
-                    expect(page.locator("#compare-panel")).to_be_visible(timeout=10_000)
+                    shared.select_make_shot(page, rework_shot)
+                    expect(page.locator("#compare-panel")).to_be_visible(timeout=20_000)
                     candidates_before = page.locator(
                         '#compare-candidates [role="tab"]').count()
-                    expect(page.locator("#rework-open")).to_be_enabled(timeout=10_000)
+                    expect(page.locator("#rework-open")).to_be_enabled(timeout=20_000)
                     page.click("#rework-open")
                     expect(page.locator("#rework-panel")).to_be_visible()
                     page.click('label[data-problem-id="product_fidelity"]')
@@ -237,11 +250,13 @@ def main() -> int:
                     expect(page.locator("#rework-preview-box")).to_be_visible(timeout=20_000)
                     snap(page, "rework-preview")
                     page.click("#rework-submit")
-                    shared.wait_terminal(page, [rework_shot], timeout=90_000)
-                    page.wait_for_timeout(400)
-                    page.click(f'#review-list .review-card[data-shot-id="{rework_shot}"] '
-                               'button:has-text("比较候选")')
-                    page.wait_for_timeout(500)
+                    expect(page.locator("#rework-panel")).to_be_hidden(timeout=40_000)
+                    # 返工经单图确认外发：面板关闭只代表提交返回，新候选落库要等候选链增长。
+                    page.wait_for_function(
+                        """(payload) => document.querySelectorAll(
+                             '#compare-candidates [role="tab"]').length > payload""",
+                        arg=candidates_before, timeout=90_000)
+                    page.wait_for_timeout(300)
                     probes["rework"] = {
                         "shot": rework_shot,
                         "candidates_before": candidates_before,
@@ -251,23 +266,19 @@ def main() -> int:
                     }
                     snap(page, "rework-compare")
                     mark("rework", started)
-                for shot_id in shots_ids:
-                    page.click(f'#review-list .review-card[data-shot-id="{shot_id}"] '
-                               'button:has-text("比较候选")')
-                    expect(page.locator("#compare-panel")).to_be_visible(timeout=10_000)
-                    expect(page.locator("#adopt-open")).to_be_enabled(timeout=10_000)
-                    page.click("#adopt-open")
-                    page.wait_for_selector("#adopt-status:not([hidden])", timeout=15_000)
-                    page.click("#compare-close")
-                probes["review_states_after"] = page.evaluate(
-                    """() => [...document.querySelectorAll('#review-list .review-card')]
-                         .map((node) => node.getAttribute('data-selection-state'))""")
-                snap(page, "review-adopted")
-                mark("review", started)
 
                 started = time.monotonic()
-                page.click("#stage-next-deliver")
-                expect(page.locator('[data-stage-panel="deliver"]')).to_be_visible()
+                for shot_id in shots_ids:
+                    shared.adopt_make_shot(page, shot_id)
+                probes["selection_states_after"] = page.evaluate(
+                    """() => [...document.querySelectorAll('#task-list-mount [data-task-shot]')]
+                         .map((row) => ({ shot: row.getAttribute('data-task-shot'),
+                                          selection: row.getAttribute('data-selection-state') }))""")
+                snap(page, "make-adopted")
+                mark("adopt", started)
+
+                started = time.monotonic()
+                stage_nav.goto(page, "deliver")
                 page.wait_for_timeout(500)
                 probes["deliver_gate_text"] = page.locator("#delivery-gate").inner_text()[:900]
                 probes["deliver_jump_buttons"] = page.evaluate(
@@ -278,15 +289,12 @@ def main() -> int:
                 snap(page, "deliver")
                 snap(page, "deliver-full", full=True)
 
-                # 整套一致性阻断应带定位入口：点它回审核阶段的整套检查（假通道 clean）
+                # 整套一致性阻断应带定位入口：点它聚焦交付阶段里的整套检查（假通道 clean）。
                 suite_jump = page.locator('#delivery-gate button[data-suite-action="run"]')
                 probes["deliver_suite_jump_text"] = (
                     suite_jump.first.inner_text() if suite_jump.count() else "")
-                if suite_jump.count() == 0:
-                    page.click('[data-stage-nav="review"]')
-                else:
+                if suite_jump.count():
                     suite_jump.first.click()
-                expect(page.locator('[data-stage-panel="review"]')).to_be_visible()
                 probes["suite_run_focused"] = page.evaluate(
                     "() => (document.activeElement && document.activeElement.id) || ''")
                 page.click("#suite-review-run")
@@ -301,33 +309,24 @@ def main() -> int:
                 probes["suite_note_text"] = page.locator("#suite-review-note").inner_text()
                 probes["suite_findings_text"] = page.locator(
                     "#suite-review-findings").inner_text()[:400]
-                page.click('[data-stage-nav="deliver"]')
-                expect(page.locator('[data-stage-panel="deliver"]')).to_be_visible()
+                stage_nav.goto(page, "deliver")
                 page.wait_for_timeout(600)
                 expect(page.locator("#deliver-export")).to_be_enabled(timeout=30_000)
                 probes["deliver_export_after_suite"] = not page.locator(
                     "#deliver-export").is_disabled()
                 snap(page, "deliver-ready")
-                with page.expect_download(timeout=60_000) as download_info:
-                    page.click("#deliver-export")
-                download = download_info.value
                 export_dir = ROOT / "_working" / "amz-listing-kit-product-v2" / "rehearsal-exports"
                 export_dir.mkdir(parents=True, exist_ok=True)
-                export_path = export_dir / (stamp + "-" + args.label + "-"
-                                            + download.suggested_filename)
-                download.save_as(str(export_path))
-                zip_bytes = export_path.read_bytes()
-                with zipfile.ZipFile(io.BytesIO(zip_bytes)) as archive:
-                    names = sorted(archive.namelist())
-                    manifest = json.loads(archive.read("manifest.json").decode("utf-8"))
+                export_path = export_dir / f"{stamp}-{args.label}-delivery.zip"
+                download = shared.download_delivery(page, export_path)
+                inside = shared.inspect_zip(export_path)
                 probes["export"] = {
-                    "file_name": download.suggested_filename,
-                    "bytes": len(zip_bytes),
-                    "sha256": hashlib.sha256(zip_bytes).hexdigest(),
-                    "entries": names[:12],
-                    "has_manifest": any(name.endswith("manifest.json") for name in names),
-                    "attempt_states": [item.get("attempt_state")
-                                       for item in (manifest.get("images") or [])],
+                    "file_name": download["filename"],
+                    "bytes": download["bytes"],
+                    "sha256": download["sha256"],
+                    "entries": inside["names"][:12],
+                    "has_manifest": "manifest.json" in inside["names"],
+                    "images": inside["images"],
                     "saved_to": str(export_path.relative_to(ROOT)),
                 }
                 page.wait_for_timeout(400)
@@ -336,15 +335,13 @@ def main() -> int:
                 snap(page, "deliver-exported")
                 mark("deliver", started)
 
-                # 390px 复核：理解 / 审核 / 交付三个关键阶段
+                # 390px 复核：四个阶段各看一次有没有横向溢出
                 page.set_viewport_size({"width": 390, "height": 844})
-                for stage, node in (("understand", "understand-390"),
-                                    ("review", "review-390"),
-                                    ("deliver", "deliver-390")):
-                    page.click(f'[data-stage-nav="{stage}"]')
+                for stage in ("intake", "plan", "make", "deliver"):
+                    stage_nav.goto(page, stage)
                     page.wait_for_timeout(400)
                     probes[f"overflow_{stage}_390"] = page.evaluate(shared.OVERFLOW_PROBE)
-                    snap(page, node)
+                    snap(page, f"{stage}-390")
                 page.set_viewport_size({"width": 1440, "height": 900})
                 probes["console_errors"] = logs["console"]
                 probes["page_errors"] = logs["page"]
@@ -374,9 +371,9 @@ def main() -> int:
         "",
         f"- 入口：本机 fake 走查服务器（tools/rehearse_v273_walkthrough.py，label={args.label}）",
         f"- 商品/参考图：{args.product_name}（非内置品类）· {reference.name}",
-        "- 剧本：new → intake → understand(确认全部) → plan(推荐方案) → generate(全部成功) →",
-        "  generate(单图 VLM 复核) → review(比较+单图返工+逐图采用) →"
-        " deliver(整套检查 → 导出 ZIP) → 390px 复核",
+        "- 剧本（四段工作台）：新建项目 → 资料与事实（上传/填写/分析/逐条确认）→ 方案（推荐套图）→",
+        "  制作与审图（默认单张范围 → 显式全量批量 → 一次明确提交 → 单图 VLM 复核 →",
+        "  单图返工 → 逐图采用）→ 交付（整套检查 → 导出 ZIP）→ 390px 四阶段复核",
         "",
         "## 节点耗时",
         "",

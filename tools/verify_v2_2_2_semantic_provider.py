@@ -507,6 +507,8 @@ def check_copy_proposals(check: Any) -> None:
     messages = body["messages"]
     user_text = "\n".join(str(item.get("content")) for item in messages
                           if item.get("role") == "user")
+    # 硬规则必须真的到达模型（message role=system）：身份原样回显与 60 字符上限都写在系统提示里。
+    # 这条断言直接读实际出站正文，不靠产品模块自证。
     system_text = "\n".join(str(item.get("content")) for item in messages
                             if item.get("role") == "system")
     echo = (

@@ -1,0 +1,4 @@
+
+> check:types
+> tsc --noEmit -p tsconfig.json
+

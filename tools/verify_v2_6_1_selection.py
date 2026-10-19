@@ -302,6 +302,9 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
 
 
                 def wait_candidate_ui(shot_id: str, timeout: int = 30_000) -> None:
+                    # B4：执行区一次只渲染「正看着的那张图」；先切到该图再等它的候选行，
+                    # 否则非正看图的等待必然超时（那不是产品没保存候选）。
+                    shared.select_make_shot(page, shot_id, timeout=timeout)
                     page.wait_for_function(
                         """(shot) => {
                             const node = document.querySelector(
@@ -368,29 +371,66 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                     if not (state["visible"] and state["shot"] == shot_id):
                         shared.select_make_shot(page, shot_id)
                     stage_nav.goto(page, "make")
-                    page.wait_for_function(
-                        """(payload) => {
-                            const panel = document.getElementById("compare-panel");
-                            if (!panel || panel.hidden) return false;
-                            if (panel.dataset.shotId !== payload.shot) return false;
-                            const cards = panel.querySelectorAll('#compare-candidates [role="tab"]');
-                            return cards.length === payload.cards;
-                        }""",
-                        arg={"shot": shot_id, "cards": card_count},
-                        timeout=20_000)
+                    try:
+                        page.wait_for_function(
+                            """(payload) => {
+                                const panel = document.getElementById("compare-panel");
+                                if (!panel || panel.hidden) return false;
+                                if (panel.dataset.shotId !== payload.shot) return false;
+                                const cards = panel.querySelectorAll('#compare-candidates [role="tab"]');
+                                return cards.length === payload.cards;
+                            }""",
+                            arg={"shot": shot_id, "cards": card_count},
+                            timeout=20_000)
+                    except Exception as error:
+                        # 超时要留下"实际看到什么"：候选数不符是检查本身要抓的事实，
+                        # 不能只报一句 wait_for_function 超时。
+                        observed = page.evaluate(
+                            """() => {
+                                const panel = document.getElementById("compare-panel");
+                                return {
+                                  panel: panel ? { hidden: panel.hidden,
+                                                   shot: panel.dataset.shotId } : null,
+                                  tabs: [...document.querySelectorAll(
+                                    '#compare-candidates [role="tab"]')]
+                                    .map((node) => node.getAttribute("data-candidate-id")),
+                                };
+                            }""")
+                        raise AssertionError(
+                            "比较面板候选数未达预期 " + str(card_count)
+                            + "（shot=" + shot_id + "）：" + json.dumps(observed, ensure_ascii=False)
+                        ) from error
                     expected = frozen_reference_shas(shot_id, compare_state()["selected_candidate_id"])
                     if expected is None:
                         raise AssertionError("比较面板正看着的候选没有可核对的原任务参考图记录")
-                    page.wait_for_function(
-                        """(payload) => {
-                            const list = document.getElementById("compare-references");
-                            if (!list) return false;
-                            const shas = [...list.querySelectorAll("li")]
-                              .map((node) => node.dataset.referenceSha256 || null);
-                            return JSON.stringify(shas) === JSON.stringify(payload);
-                        }""",
-                        arg=expected,
-                        timeout=20_000)
+                    try:
+                        page.wait_for_function(
+                            """(payload) => {
+                                const panel = document.getElementById("compare-panel");
+                                if (!panel || panel.hidden) return false;
+                                const select = panel.querySelector("#compare-left-select");
+                                if (!select) return false;
+                                const shas = [...select.querySelectorAll("option")]
+                                  .map((node) => node.value)
+                                  .filter((value) => value.startsWith("reference:"))
+                                  .map((value) => value.slice("reference:".length));
+                                if (JSON.stringify(shas) !== JSON.stringify(payload)) return false;
+                                const shown = [...panel.querySelectorAll("#compare-references li")]
+                                  .map((node) => node.dataset.referenceSha256 || null);
+                                return shown.length === 1 && payload.includes(shown[0]);
+                            }""",
+                            arg=expected,
+                            timeout=20_000)
+                    except Exception as error:
+                        # 顺序/身份不符要留下两侧原值：只报超时不构成可定位的失败原因。
+                        raised = compare_state()
+                        raise AssertionError(
+                            "比较面板参考图与冻结身份不一致（shot=" + shot_id
+                            + " 面板=" + json.dumps(raised["reference_shas"], ensure_ascii=False)
+                            + " 冻结=" + json.dumps(expected, ensure_ascii=False)
+                            + " 正看候选=" + str(raised["selected_candidate_id"])
+                            + " 候选数=" + str(raised["cards"])
+                        ) from error
 
                 def select_candidate(candidate_id: str) -> dict:
                     page.click('#compare-candidates [role="tab"][data-candidate-id="'

@@ -320,10 +320,17 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                     return rework_probe()
 
                 page.goto(base + "/", wait_until="networkidle")
-                # 合同版本以产品模块为唯一权威（面板 data-rework-contract 就是它），验证器不另立字面量。
-                contract_version = page.evaluate(
+                # 合同版本的期望值取本验证器登记的字面量（判据不拿产品模块值自我印证）；
+                # 产品模块值仍读一次做一致性交叉核对——改了产品值就红在这里，随后面板
+                # data-rework-contract 必须等于该字面量（-03/-11）。
+                module_version = page.evaluate(
                     "async () => (await import('/app/product_v2/domain/rework.js'))"
                     ".REWORK_CONTRACT_VERSION")
+                if module_version != REWORK_CONTRACT_VERSION:
+                    raise AssertionError(
+                        "产品模块返工合同版本 " + str(module_version)
+                        + " 与本验证器登记值 " + REWORK_CONTRACT_VERSION + " 不一致")
+                contract_version = REWORK_CONTRACT_VERSION
                 page.fill("#new-project-name", "审计商品 · 单图返工")
                 page.click("#create-project")
                 expect(page.locator("#project-view")).to_be_visible()

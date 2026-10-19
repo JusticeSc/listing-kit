@@ -1,0 +1,265 @@
+{
+  "suite_id": "v2.5.4-rework-loop",
+  "status": "passed",
+  "observed_at": "2026-10-19T22:21:56",
+  "contract": "v2.5.5",
+  "model_calls": 0,
+  "external_network_calls": 0,
+  "checks": [
+    {
+      "id": "V2.5.4-06",
+      "title": "RW-01–RW-15 返工契约套件：空理由、未知分类、跨图候选、hash 不符与正反路径全部守住",
+      "ok": true,
+      "detail": {
+        "status": "passed",
+        "failed": [],
+        "cases": 15
+      }
+    },
+    {
+      "id": "V2.5.4-07",
+      "title": "既有套件回归：CP-01–CP-15、R01–R13、R14–R21 在返工闭环落地后仍全过",
+      "ok": true,
+      "detail": {
+        "compare": "passed",
+        "review": "passed",
+        "provider": "passed"
+      }
+    },
+    {
+      "id": "V2.5.4-08",
+      "title": "入口：比较区把当前候选（candidate_id + sha256）交给相邻的独立返工区",
+      "ok": true,
+      "detail": {
+        "in_compare": true,
+        "disabled": false,
+        "shot_id": "shot_main_clean",
+        "candidate_id": "act-29a70c29455549169c3e1f2ade516637",
+        "candidate_sha256": "829b4096dbb00b725b315f7edd531f0ad4b8958edf3fdb27ca84ad7a059f879a"
+      }
+    },
+    {
+      "id": "V2.5.4-09",
+      "title": "返工表单：独立面板、九类问题 fieldset、显式 label、焦点从入口进入表单第一个控件（改法）",
+      "ok": true,
+      "detail": {
+        "contract": "v2.5.5",
+        "problems": 9,
+        "legends": [
+          "返工改法（默认改这条候选；切换后用该改法的独立草稿重新预览）",
+          "问题分类（可多选；至少要选一类或写一句方向）"
+        ],
+        "focus": "rework-mode-edit_candidate",
+        "focus_in_panel": true,
+        "visible": true,
+        "shot": "shot_main_clean",
+        "candidate": "act-29a70c29455549169c3e1f2ade516637",
+        "entry_candidate": "act-29a70c29455549169c3e1f2ade516637",
+        "problems_values": [
+          "product_fidelity",
+          "part_error",
+          "scene",
+          "composition",
+          "selling_point",
+          "text",
+          "style",
+          "platform_risk",
+          "other"
+        ],
+        "direction_label": "改进方向（可改写）"
+      }
+    },
+    {
+      "id": "V2.5.4-10",
+      "title": "比较区保持只读：勾选、填写、取消全程业务记录逐字不变，焦点回到原触发入口",
+      "ok": true,
+      "detail": {
+        "checked": [
+          "product_fidelity",
+          "platform_risk"
+        ],
+        "focus_after_cancel": "rework-open",
+        "records_unchanged": true
+      }
+    },
+    {
+      "id": "V2.5.4-11",
+      "title": "预览：显示将发送的全文（参考图 2 张，编辑源在首位）且不写任何记录；改动输入后必须重新预览",
+      "ok": true,
+      "detail": {
+        "preview_chars": 934,
+        "meta": "改这条候选 · 将保存为 Prompt 新版本（旧版本保留）并只重新生成这张图 · 参考图 2 张（图1编辑源、图2商品主图） · 全文 934 字",
+        "dirty": {
+          "preview": false,
+          "submit_disabled": true
+        },
+        "records_unchanged": true
+      }
+    },
+    {
+      "id": "V2.5.4-12",
+      "title": "确认隔离：返工只写 scope=[目标图] 的单图确认，整套确认与无关图逐字不变",
+      "ok": true,
+      "detail": {
+        "rework_confirm_scope": [
+          "shot_main_clean"
+        ],
+        "suite_confirm_same": true,
+        "second_untouched": true
+      }
+    },
+    {
+      "id": "V2.5.4-13",
+      "title": "成功链：入口预览的全文 == 真实发送的 prompt == 新 Prompt 版本；只给目标图新增 Attempt/Candidate/Review",
+      "ok": true,
+      "detail": {
+        "attempt_state": "succeeded",
+        "prompt_version": 2,
+        "prompt_hash_match": true,
+        "wire_prompt_chars": 934,
+        "preview_chars": 934,
+        "candidates": 2
+      }
+    },
+    {
+      "id": "V2.5.4-14",
+      "title": "影响隔离：无关图的 Prompt/Attempt/Candidate/Blob 零变化；目标图的旧候选与旧 Blob 原样保留",
+      "ok": true,
+      "detail": {
+        "second_candidates_same": true,
+        "old_candidate_kept": true,
+        "old_blob": {
+          "found": true,
+          "hash_match": true
+        },
+        "second_prompt_versions": 1
+      }
+    },
+    {
+      "id": "V2.5.4-15",
+      "title": "双击防护：提交飞行中按钮禁用，一次确认只产生一条 Attempt、一次真实请求",
+      "ok": true,
+      "detail": {
+        "disabled_during_flight": true,
+        "new_actions": 1,
+        "new_versions": 3,
+        "requests": 1,
+        "action_id": "act-7e562e894db54fa8bafe5f4da5646591"
+      }
+    },
+    {
+      "id": "V2.5.4-16",
+      "title": "失败可恢复：明确失败只留失败 Attempt（不产生候选），旧候选与旧 Blob 保留，可再次发起返工",
+      "ok": true,
+      "detail": {
+        "state": "failed",
+        "attempts": 3,
+        "candidates_same": true,
+        "row_state": "failed",
+        "compare_status": "返工已提交（Prompt v3 · 已失败）；旧候选保留，只有这张图新增了版本。",
+        "recovered": true
+      }
+    },
+    {
+      "id": "V2.5.4-17",
+      "title": "Unknown 不自动重提：只留一条无 task id 的未知 Attempt，旧数据与候选不动，界面提示先不重提",
+      "ok": true,
+      "detail": {
+        "state": "unknown",
+        "task_id": null,
+        "attempts": 4,
+        "requests": 1,
+        "row_state": "unknown",
+        "error": "这次返工提交的结果没有确认：不要重复提交。没有任务编号，只能显式新建 action。"
+      }
+    },
+    {
+      "id": "V2.5.4-18",
+      "title": "刷新恢复：候选/Attempt/返工确认从 IndexedDB 恢复，面板可重开（整页 + 返工区截图留档）",
+      "ok": true,
+      "detail": {
+        "candidates": 2,
+        "attempts": 11,
+        "business_records_same": true,
+        "screenshots": {
+          "evals/product-v2/evidence/v2.5.4-rework-loop-20261019-222145.png": 342211,
+          "evals/product-v2/evidence/v2.5.4-rework-loop-20261019-222145-detail.png": 52097
+        },
+        "prompt_chars": 925
+      }
+    },
+    {
+      "id": "V2.5.4-19",
+      "title": "正式入口 --check 全过（返工闭环没有破坏既有自检）",
+      "ok": true,
+      "detail": {
+        "rc": 0,
+        "tail": [
+          "  PASS  唯一静态产物首页可取            status=200 type=text/html; charset=utf-8",
+          "  PASS  未知 API 路由 404（不猜测业务）  status=404",
+          "V2 正式入口轻量自检：3/3 通过。（完整场景矩阵在 tests/dev 与 tests/gateway）"
+        ]
+      }
+    },
+    {
+      "id": "V2.5.4-20",
+      "title": "零意外 console error / page error（唯一允许项：Unknown 路径的 504 资源日志）",
+      "ok": true,
+      "detail": {
+        "unexpected_console": [],
+        "expected_unknown_path_504": [
+          "[workbench] Failed to load resource: the server responded with a status of 504 (Gateway Timeout)"
+        ],
+        "page_errors": []
+      }
+    }
+  ],
+  "ui": {
+    "decisions": {
+      "presentation": {
+        "appearance": "clean_display",
+        "contents": "empty",
+        "saved": true
+      },
+      "shots": {
+        "shot_main_clean": false,
+        "shot_infographic_benefits": true,
+        "shot_scene_lifestyle": false,
+        "shot_detail_material": false
+      }
+    },
+    "seeded": {
+      "shots": [
+        "shot_main_clean",
+        "shot_infographic_benefits",
+        "shot_scene_lifestyle",
+        "shot_detail_material"
+      ],
+      "first": "shot_main_clean",
+      "second": "shot_infographic_benefits",
+      "candidate_sha": "829b4096dbb00b725b315f7edd531f0ad4b8958edf3fdb27ca84ad7a059f879a",
+      "prompt_versions_first": 1
+    },
+    "screenshot": "evals/product-v2/evidence/v2.5.4-rework-loop-20261019-222145.png",
+    "screenshot_detail": "evals/product-v2/evidence/v2.5.4-rework-loop-20261019-222145-detail.png",
+    "preview_chars": 934,
+    "checks": [
+      "V2.5.4-08",
+      "V2.5.4-09",
+      "V2.5.4-10",
+      "V2.5.4-11",
+      "V2.5.4-12",
+      "V2.5.4-13",
+      "V2.5.4-14",
+      "V2.5.4-15",
+      "V2.5.4-16",
+      "V2.5.4-17",
+      "V2.5.4-18"
+    ],
+    "contract_version": "v2.5.5"
+  },
+  "console_errors": [
+    "[workbench] Failed to load resource: the server responded with a status of 504 (Gateway Timeout)"
+  ],
+  "page_errors": []
+}
