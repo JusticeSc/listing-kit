@@ -270,8 +270,8 @@ def decide_shot_decision(page, shot_id: str, *, print_intent: str = "none",
 def decide_shot_viewpoint(page, shot_id: str, value: str) -> bool:
     """做单图视角决定（含「沿用可见视角」）：该图没有视角控件返回 False。
 
-    与其它单图决定共用卡片保存；radios 由 domain 的 PRESENTATION_FIELDS 提供。
-    返回是否真的进行了选择（调用方据此区分「控件缺失」与「已选择」）。
+    只在真正需要切换选项时才点保存：已经是目标值时不做空保存，
+    避免把无变更的规格刷出新版本。返回是否真的进行了选择。
     """
     open_specs(page)
     card = f'#shot-spec-list .shot-spec[data-shot-id="{shot_id}"]'
@@ -282,8 +282,9 @@ def decide_shot_viewpoint(page, shot_id: str, value: str) -> bool:
     radio = f"#spec-viewpoint-{value}-{shot_id}"
     if page.locator(radio).count() == 0:
         raise AssertionError(f"视角控件缺失：{radio}")
-    if not page.locator(radio).is_checked():
-        page.click(radio)
+    if page.locator(radio).is_checked():
+        return True
+    page.click(radio)
     page.click(card + ' button:has-text("保存")')
     page.wait_for_function(
         """(id) => {
@@ -296,13 +297,17 @@ def decide_shot_viewpoint(page, shot_id: str, value: str) -> bool:
 
 
 def decide_for_compile(page, shot_ids: list, *, print_intent: str = "none") -> dict:
-    """编译前置普通决定：先共用展示决定，再对带印字控件的图逐个做印字决定。
+    """编译前置普通决定：先共用展示决定，再逐图做视角与印字决定。
 
     返回 {"presentation": decide_presentation(...), "shots": {shot_id: bool}}。
+    shots 只记录印字决定（沿用旧口径）；视角决定无控件返回 False 也不阻断调用方。
     """
     presentation = decide_presentation(page)
     shots: dict = {}
     for shot_id in shot_ids:
+        # 单图视角：沿用可见视角是安全默认，有控件就显式选一次并保存；
+        # 无控件返回 False，调用方不据此判定阻断。
+        decide_shot_viewpoint(page, shot_id, "reference_visible")
         open_specs(page)
         if page.locator(f"#spec-print-{shot_id}").count() == 0:
             shots[shot_id] = False

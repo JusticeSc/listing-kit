@@ -683,9 +683,39 @@ export type ConfirmationExecutionTarget = {
   credential_source: string;
   sync: boolean;
 };
+
+/** 公共定价事实只绑定已核模型/地区/参数；凭据不进入费用或确认记录。 */
+export type ImagePricing = {
+  version: 1;
+  kind: "official" | "test_double";
+  provider_id: string;
+  model_id: string;
+  size: string;
+  n: 1;
+  output_format: string;
+  currency: "CNY";
+  input_image_fen: number;
+  output_image_fen: number;
+  verified_on: string | null;
+  source_url: string | null;
+  region: "cn-beijing" | "local-test";
+};
+export type ConfirmationCost = {
+  currency: "CNY";
+  upper_fen: number | null;
+  pricing: ImagePricing | null;
+  per_shot: { shot_id: string; input_images: number; upper_fen: number }[];
+  message: string;
+};
+export type ConfirmationSelection = {
+  selected_shot_ids: string[];
+  excluded: { shot_id: string; label: string; reasons: { code: string; message: string }[] }[];
+};
 export type ConfirmationSnapshot = {
   schema_version: number;
   scope_shot_ids?: string[];
+  /** schema 4 起必带；历史只读记录不补造所选范围或排除理由。 */
+  selection?: ConfirmationSelection;
   platform: { platform_id: string; version: number };
   provider: { model_id: string; version: number };
   can_submit: boolean;

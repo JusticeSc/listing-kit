@@ -863,11 +863,19 @@ export function createCompareView(
           @click=${() => { void previewRework(); }}>预览返工 Prompt</button>
         <button id="rework-edit" type="button" disabled
           @click=${() => { void editRework(); }}>查看/编辑完整 Prompt</button>
-        <button id="rework-submit" type="button" class="primary" ?disabled=${rework.inFlight || !intent}
+        <button id="rework-submit" type="button" class="primary"
+          ?disabled=${rework.inFlight || !intent || intent.preview.cost.upper_fen === null}
           @click=${() => { void submitRework(); }}>确认并生成这张图</button>
       </div>
       <div id="rework-preview-box" class="rework-preview" ?hidden=${!intent}>
         <p id="rework-preview-meta" class="meta">${intent ? reworkPreviewMetaOf(intent) : ""}</p>
+        <p id="rework-cost" class="meta">${intent?.preview.cost.message || ""}</p>
+        ${intent?.preview.cost.pricing?.kind === "official" && intent.preview.cost.pricing.source_url ? html`
+          <p class="meta">
+            <a href=${intent.preview.cost.pricing.source_url} target="_blank" rel="noopener noreferrer">官方定价依据</a>
+            · 输入图 ¥${(intent.preview.cost.pricing.input_image_fen / 100).toFixed(2)}/张，
+            输出图 ¥${(intent.preview.cost.pricing.output_image_fen / 100).toFixed(2)}/张
+          </p>` : nothing}
         <pre id="rework-preview-text" class="prompt-text" tabindex="0" aria-label="返工 Prompt 预览">${intent ? intent.preview.text : ""}</pre>
       </div>
       <p id="rework-summary" class="meta">${rework.shotId ? reworkSummaryOf(draft) : ""}</p>

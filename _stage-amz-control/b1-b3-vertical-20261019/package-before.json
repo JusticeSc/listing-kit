@@ -1,0 +1,7 @@
+{
+  "boundary": "Actual current buildProjectPackage consumes preserved real 90-document/9-asset history; current parseProjectPackage rejects its own export.",
+  "code": "PACKAGE_UNSUPPORTED_VERSION",
+  "message": "无法导入：文档 generation_attempt/shot_detail_material/v1 声明的 payload schema_version=2 低于当前要求的 3（该记录缺少冻结执行身份，不做 legacy 映射、不部分写入）；按计划 §2.3 整包拒绝。",
+  "documents": 90,
+  "assets": 9
+}

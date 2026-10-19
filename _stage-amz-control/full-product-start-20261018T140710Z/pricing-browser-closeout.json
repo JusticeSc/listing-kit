@@ -1,0 +1,9 @@
+{
+  "profile": "C:\\Users\\31368\\AppData\\Local\\Temp\\omp-amz-price-15ab22bf3386b9cf-b5474a55-4de2-434c-9ab2-ebb39d63088d",
+  "close": "browser.close name with kill:true",
+  "native_profile_process_check_exit": 0,
+  "native_matching_processes_after_close": [],
+  "profile_remove_exit": 0,
+  "profile_remove_stderr": "",
+  "scope": "Only this task created private public-docs browser/profile; no daily Chrome or unrelated process touched"
+}

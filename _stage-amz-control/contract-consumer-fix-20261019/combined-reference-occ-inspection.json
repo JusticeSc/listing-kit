@@ -1,0 +1,145 @@
+{
+  "rows": [
+    {
+      "document_key": "e1a71503-a3db-4035-96b1-b9cd292459b5:shot_spec:shot_main_clean:1",
+      "project_id": "e1a71503-a3db-4035-96b1-b9cd292459b5",
+      "kind": "shot_spec",
+      "document_id": "shot_main_clean",
+      "version": 1,
+      "schema_version": 1,
+      "payload": {
+        "schema_version": 2,
+        "purpose": "完整展示商品主体，背景干净，不添加资料里没有的部件",
+        "keep": [
+          "商品外观、颜色与比例",
+          "标识与文字"
+        ],
+        "change_allowed": [
+          "背景"
+        ],
+        "notes": "",
+        "reference_sha256s": [
+          "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461"
+        ]
+      },
+      "created_at": "2026-10-19T01:40:05.272Z",
+      "updated_at": "2026-10-19T01:40:05.272Z"
+    },
+    {
+      "document_key": "e1a71503-a3db-4035-96b1-b9cd292459b5:shot_spec:shot_main_clean:2",
+      "project_id": "e1a71503-a3db-4035-96b1-b9cd292459b5",
+      "kind": "shot_spec",
+      "document_id": "shot_main_clean",
+      "version": 2,
+      "schema_version": 1,
+      "payload": {
+        "schema_version": 2,
+        "purpose": "B 已保存：保持完整主体",
+        "keep": [
+          "商品外观、颜色与比例",
+          "标识与文字"
+        ],
+        "change_allowed": [
+          "背景"
+        ],
+        "notes": ""
+      },
+      "created_at": "2026-10-19T01:41:45.442Z",
+      "updated_at": "2026-10-19T01:41:45.442Z"
+    },
+    {
+      "document_key": "e1a71503-a3db-4035-96b1-b9cd292459b5:shot_spec:shot_main_clean:3",
+      "project_id": "e1a71503-a3db-4035-96b1-b9cd292459b5",
+      "kind": "shot_spec",
+      "document_id": "shot_main_clean",
+      "version": 3,
+      "schema_version": 1,
+      "payload": {
+        "schema_version": 2,
+        "purpose": "B 已保存：保持完整主体",
+        "keep": [
+          "商品外观、颜色与比例",
+          "标识与文字"
+        ],
+        "change_allowed": [
+          "背景"
+        ],
+        "notes": ""
+      },
+      "created_at": "2026-10-19T01:41:45.491Z",
+      "updated_at": "2026-10-19T01:41:45.491Z"
+    },
+    {
+      "document_key": "e1a71503-a3db-4035-96b1-b9cd292459b5:shot_spec:shot_main_clean:4",
+      "project_id": "e1a71503-a3db-4035-96b1-b9cd292459b5",
+      "kind": "shot_spec",
+      "document_id": "shot_main_clean",
+      "version": 4,
+      "schema_version": 1,
+      "payload": {
+        "schema_version": 2,
+        "purpose": "B 已保存：保持完整主体",
+        "keep": [
+          "商品外观、颜色与比例",
+          "标识与文字"
+        ],
+        "change_allowed": [
+          "背景"
+        ],
+        "notes": "",
+        "reference_sha256s": [
+          "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461"
+        ]
+      },
+      "created_at": "2026-10-19T01:43:49.747Z",
+      "updated_at": "2026-10-19T01:43:49.747Z"
+    },
+    {
+      "document_key": "e1a71503-a3db-4035-96b1-b9cd292459b5:shot_spec:shot_main_clean:5",
+      "project_id": "e1a71503-a3db-4035-96b1-b9cd292459b5",
+      "kind": "shot_spec",
+      "document_id": "shot_main_clean",
+      "version": 5,
+      "schema_version": 1,
+      "payload": {
+        "schema_version": 2,
+        "purpose": "B 已保存：保留完整主体与商品依据",
+        "keep": [
+          "商品外观、颜色与比例",
+          "标识与文字"
+        ],
+        "change_allowed": [
+          "背景"
+        ],
+        "notes": "",
+        "reference_sha256s": [
+          "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461"
+        ]
+      },
+      "created_at": "2026-10-19T01:44:16.379Z",
+      "updated_at": "2026-10-19T01:44:16.379Z"
+    }
+  ],
+  "dom": {
+    "card_text": "1. 主图·干净背景\n规格 v4\n\n这张图的规格已被另一个标签页或窗口保存为 v5：你的修改还在草稿里，没有保存，也没有覆盖它。点「重新载入最新版本」把它读进来，你的草稿保持不变；再点保存会按 v6 追加。\n\n重新载入最新版本（保留我的修改）\n目的\n必须保持（一行一条）\n允许变化（一行一条）\n本图视角\n沿用照片里能看到的角度 不虚构背面、内部或没拍到的角度；这是安全的默认。\n正面 需要有能看到正面的参考图依据；没有依据会被拦下。\n侧面 需要有能看到侧面的参考图依据；没有依据会被拦下。\n顶视 需要有能看到顶面的参考图依据；没有依据会被拦下。\n本图用的照片\n沿用默认照片\n明确不选（这张图暂不做）\n显式勾选需要的照片\n保存\n恢复上一版本\n审核清单",
+    "card_content": "\n        \n          1. 主图·干净背景\n          规格 v4\n        \n        \n      这张图的规格已被另一个标签页或窗口保存为 v5：你的修改还在草稿里，没有保存，也没有覆盖它。点「重新载入最新版本」把它读进来，你的草稿保持不变；再点保存会按 v6 追加。\n      \n        重新载入最新版本（保留我的修改）\n      \n    \n        \n          目的\n          \n        \n        \n          必须保持（一行一条）\n          \n        \n        \n          允许变化（一行一条）\n          \n        \n        \n        \n      \n        本图视角\n        沿用照片里能看到的角度\n            不虚构背面、内部或没拍到的角度；这是安全的默认。正面\n            需要有能看到正面的参考图依据；没有依据会被拦下。侧面\n            需要有能看到侧面的参考图依据；没有依据会被拦下。顶视\n            需要有能看到顶面的参考图依据；没有依据会被拦下。\n        \n      \n    \n        \n      \n        本图用的照片\n        沿用默认照片\n        明确不选（这张图暂不做）\n        显式勾选需要的照片\n        \n        \n        \n      \n    \n        \n          保存\n          恢复上一版本\n        \n        \n          审核清单\n          这张图的目的：B 已保存：保持完整主体必须保持：商品外观、颜色与比例；标识与文字允许变化：背景公共风格：外观状态：保持原样；内容物：保持原样外观状态：还没决定（未决定时这张图不会发送）\n        \n      ",
+    "details_open": true,
+    "errors": "",
+    "draft": "A 的草稿：完整展示主体与均匀留白",
+    "buttons": [
+      {
+        "id": "spec-reload-latest-shot_main_clean",
+        "text": "重新载入最新版本（保留我的修改）"
+      },
+      {
+        "id": "",
+        "text": "保存"
+      },
+      {
+        "id": "",
+        "text": "恢复上一版本"
+      }
+    ]
+  },
+  "wait_error": "wait expected phrase 你的修改还在草稿里"
+}

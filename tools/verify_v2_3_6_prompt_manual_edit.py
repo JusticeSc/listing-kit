@@ -169,6 +169,8 @@ async () => {
       },
       currentBasisByShot: basisByShot,
       providerProfile: imageProfile,
+      // 有效报价与服务端能力块同形状：缺失或失配即费用未知不可提交不猜其它模型或地区的价格。
+      pricing: capabilities.images ? capabilities.images.pricing : null,
       shotIds: scopeIds,
     });
   }
@@ -504,9 +506,10 @@ def main() -> int:
             save_edit(page, "shot_main_clean", edit_text, "补充标志位置约束")
             # 人工编辑后状态派生也是异步回写：等 PLAN_REVIEW 再读（只等到达，不断言）。
             page.wait_for_function(
-                """() => (document.getElementById("confirm-status") || {}).textContent
-                    && document.getElementById("confirm-status").textContent.includes("本次明确发送 0 张")""",
-                timeout=15_000)
+                """() => {
+                  const node = document.getElementById("confirm-status");
+                  return node && node.dataset.sendingCount === "0";
+                }""", timeout=15_000)
             page.wait_for_timeout(1500)
             edited = page.evaluate(EDIT_PROBE)
             main_card = card_of(edited, "shot_main_clean")

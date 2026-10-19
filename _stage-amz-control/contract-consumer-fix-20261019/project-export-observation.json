@@ -1,0 +1,53 @@
+{
+  "tracked_downloads": [],
+  "asset_reads": [
+    {
+      "sha256": "2049eaa87a3647eac4547b63fda746d007811e79c1ef4dfb60f35972753b722b",
+      "bytes": 11106,
+      "error": null
+    },
+    {
+      "sha256": "229bb8c2c5b2145961b28bc73f130b98c0594f5cf2dfe58c1cdbbbc7cdcc1cd4",
+      "bytes": 6850,
+      "error": null
+    },
+    {
+      "sha256": "7247b9d8809c77d59195323dfb42213ea605aee2a96683802d39492df72ec4b4",
+      "bytes": 11214,
+      "error": null
+    },
+    {
+      "sha256": "7da2cff2b2c2a6f084dcd13783d53f24ffeeb8e26103d8d2a51e5a5323d44dc5",
+      "bytes": 6851,
+      "error": null
+    },
+    {
+      "sha256": "8747ecd9585147e968a4e200659235eb84b02762b10593c8572cd0681df89202",
+      "bytes": 11213,
+      "error": null
+    },
+    {
+      "sha256": "901a6c42317817e0077d4d69183eb8f7c095cc39bbb5b075482da0682a4036e4",
+      "bytes": 6850,
+      "error": null
+    },
+    {
+      "sha256": "aacabc44f2d0a8de265b8f1e0a0ff05cd9c70285cd4ed704fc04fb7a9f0e00db",
+      "bytes": 11214,
+      "error": null
+    },
+    {
+      "sha256": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461",
+      "bytes": 2239735,
+      "error": null
+    },
+    {
+      "sha256": "eb5ab69364d9f318a33a661d0e9341957c744a92b461954f040f82f1c3124a61",
+      "bytes": 11213,
+      "error": null
+    }
+  ],
+  "ui_body": "Amazon US 商品套图\n\n项目保存在这台浏览器；服务器不保存你的项目，也不保存最近使用记录。\n\n模型设置\n本机项目\n\n从空白开始：给项目起个名字、上传商品参考图，其余交给系统。\n\n新项目名称\n新建项目\n导入项目包（.zip）\n项目包包含完整历史，可在另一台机器或另一个浏览器里恢复。\n\n已导出项目包：蜂蜜玻璃罐·人工事实无AI复核-20261019-0150.zip（含完整历史，可在别的浏览器导入）\n\n待确认套图\n蜂蜜玻璃罐·人工事实无AI复核\n更新于 2026-10-19 09:21\n打开\n重命名\n复制\n导出项目包\n删除",
+  "download_wait_timed_out": true,
+  "export_not_yet_verified": true
+}

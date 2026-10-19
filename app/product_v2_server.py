@@ -539,6 +539,8 @@ class _RequestScope:
 
     def _image_capabilities(self) -> dict[str, Any]:
         from src.providers.v2_image import IMAGE_CONTRACT_VERSION, IMAGES_CAPABILITY_VERSION
+        from src.providers.v2_registry import (load_registry, provider_entry,
+                                               resolve_image_pricing)
 
         block: dict[str, Any] = {
             "contract": IMAGE_CONTRACT_VERSION,
@@ -547,6 +549,7 @@ class _RequestScope:
             "provider": {"provider_id": None, "model_id": None,
                          "capability_version": IMAGES_CAPABILITY_VERSION,
                          "configured": False, "capabilities": {}},
+            "pricing": None,
             "unavailable": None,
         }
         try:
@@ -567,6 +570,12 @@ class _RequestScope:
             "credential_source": effective.get("credential_source"),
             "capabilities": provider_capabilities(provider),
         }
+        try:
+            registry = load_registry()
+            entry = provider_entry(registry, str(effective.get("provider_id") or ""))
+            block["pricing"] = resolve_image_pricing(entry=entry, provider=provider)
+        except Exception:  # noqa: BLE001 - 定价查不到就不报价，不改变能力可用性
+            block["pricing"] = None
         block["default_trial"] = default_trial_state()
         return block
 

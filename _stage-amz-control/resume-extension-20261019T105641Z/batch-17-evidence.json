@@ -1,0 +1,95 @@
+{
+  "authority": "NOT-AUTHORITY: observation of batch-17 actions under Goal 15ab22bf3386b9cf",
+  "observed_at": "2026-10-19T13:14:00.000Z",
+  "user_decisions_applied": {
+    "scene_figure": "只保留商品与干净中性背景，不要其它机械零件/设备/道具",
+    "size_figure": "不标数字；只展示商品与中性背景"
+  },
+  "outbound": {
+    "trace": "b16-actual-outbound.json",
+    "rows": [
+      {
+        "row": "b16-scene-neutral-01",
+        "result": "candidate act-c615f547eb624ed6a08b817a12be66c0 sha 9bc9f1d7843ba7c6f471f89cea6063e71e5b60bbdab7e1557fac734479947b24",
+        "verdict": "NOT accepted by user decision: model added fabricated machinery/housing props although the rework direction forbade them"
+      },
+      {
+        "row": "b16-scene-neutral-02",
+        "result": "candidate act-46bd1c08babc460f84f202a546fd8921 sha 1655f53cc27c1b6ad430cc970c7abab088a3dd9d2329e24c8f74fc80cb7e7536",
+        "verdict": "accepted: product only on neutral background, markings preserved"
+      },
+      {
+        "row": "b16-dimensions-nonumber-01",
+        "result": "candidate act-e4fedbb223a846afb7647c9e12d84a15 sha 0a59b8afb1e95c51fc6d6c2ec2a8c2e9c6a89b04a398313d3b0dec34be47a0a1",
+        "verdict": "rejected: model drew fabricated leader lines with garbled mirrored text"
+      },
+      {
+        "row": "b16-dimensions-nonumber-02",
+        "result": "candidate act-d3651138147142a98119ad4e2d46803c sha c68dcdd98d649522df33f5346c064877788a43879509dde7a4f8cf43e145bec0",
+        "verdict": "rejected: edit mode drew six fabricated callouts"
+      },
+      {
+        "row": "b16-dimensions-nonumber-03",
+        "result": "candidate act-d2f33b438dac4a9b806035a4a298bf97 sha 5e0f06aff41b7afa0be03da3bf394656edb2aa19366af0a0108acaa7e448459c",
+        "verdict": "accepted: no lines/arrows/text, clean background"
+      }
+    ],
+    "note": "A local-guard refusal (request shape not in the host's reserved list) surfaced as provider_unknown/INTERNAL_ERROR without any wire POST; trace row count and mtime prove no outbound happened for it. The reserved shape was then registered and the send repeated under the explicit 'new action' control."
+  },
+  "product_fix": {
+    "file": "app/product_v2/domain/prompt.js",
+    "changes": [
+      "scene brief no longer demands props: only evidence-visible objects may appear; neutral background when nothing is evidenced",
+      "size brief: annotation rules only apply to confirmed values; no dimension lines/numbers otherwise",
+      "new size_no_annotation brief selected when print_intent is none, with warning SIZE_ANNOTATION_SKIPPED_PRINT_NONE"
+    ],
+    "contract_test": "evals/product-v2/node/prompt-expression-contract.test.mjs P23b",
+    "proof": "live preview showed the compiled 画面简报 without any 标注 wording before the accepted send; outbound trace prompt of row b16-dimensions-nonumber-03 carries the no-annotation brief"
+  },
+  "verification": {
+    "commands": [
+      "npm run check:types",
+      "npm run build:frontend",
+      "npm run build:frontend-node",
+      "npm run test:domain"
+    ],
+    "result": "280 -> 281 tests pass after P23b; type and both builds exit 0",
+    "delivery_package": {
+      "file": "packages/真实闭环-·-参考图-交付包-20261019-1305.zip",
+      "images": 5,
+      "gate": "交付门禁通过",
+      "selection_states": {
+        "shot_main_clean": "current",
+        "shot_infographic_benefits": "stale",
+        "shot_scene_lifestyle": "current",
+        "shot_detail_material": "stale",
+        "shot_size_dimensions": "current"
+      },
+      "image_sha256": {
+        "shot_main_clean": "4c8c68cf7a0ab0497f71d389e275498fbe3e764520a125731c77d2f28b134435",
+        "shot_infographic_benefits": "921cbd00e5b600246a9ca3b89fe61a981f191c7ad2e0039a937165d0545a349b",
+        "shot_scene_lifestyle": "1655f53cc27c1b6ad430cc970c7abab088a3dd9d2329e24c8f74fc80cb7e7536",
+        "shot_detail_material": "e8ca9875a7749afc93f62e1666e7c7dba45f0af0a2341c5da922af78a3466d59",
+        "shot_size_dimensions": "5e0f06aff41b7afa0be03da3bf394656edb2aa19366af0a0108acaa7e448459c"
+      }
+    },
+    "project_package": {
+      "file": "packages/真实闭环-·-参考图-20261019-1307.zip",
+      "documents": 316,
+      "assets": 26,
+      "clean_origin": "http://127.0.0.1:5506 with empty indexedDB (verified before import); import host refuses provider calls",
+      "import": "已导入「真实闭环 · 参考图」; documents 316, assets 26 after import; refresh still shows the project",
+      "re_export": "packages/真实闭环-·-参考图-20261019-1313.zip: identical 316 document identities/versions/bytes and identical 26 asset shas; no added or changed document"
+    },
+    "budget": {
+      "lane_usage_safety_upper": "10 image calls counted / 1.82 CNY; 2 image calls / 3.18 CNY remain; 4 auxiliary unchanged",
+      "note": "counts are safety upper bounds, not settlement"
+    }
+  },
+  "not_proven": [
+    "upstream acceptance and settlement for each call",
+    "current VLM review of the adopted set (not run, optional)",
+    "the two stale optional adoptions were left as-is deliberately; regenerating them would consume the last two authorized image calls",
+    "release/CI/deploy not performed in this step"
+  ]
+}

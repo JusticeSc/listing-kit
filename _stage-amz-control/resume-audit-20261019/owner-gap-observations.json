@@ -1,0 +1,20 @@
+{
+  "boundary": "Isolated in-memory repository, real compiled product owners; no browser, storage mutation, HTTP or model call. First finding verifies the saved shape used by the actual generation reread predicate, not a full generation submission.",
+  "keep_manual": {
+    "saved_version": 3,
+    "text_preserved": true,
+    "basis_rework_directive": "audit-rework-current",
+    "compiled_rework": null,
+    "generation_reread_predicate_can_match": false
+  },
+  "edit_rework": {
+    "message": "候选编辑的第一张图必须是本图固定问题候选的确切版本及原字节。",
+    "writes_during_failed_edit": 0
+  },
+  "existing_spec": {
+    "schema_version": 1,
+    "message": "单图规格不合法：字段 reference_sha256s 不在单图规格内。",
+    "writes_during_failed_save": 0
+  },
+  "findings_reproduced": true
+}

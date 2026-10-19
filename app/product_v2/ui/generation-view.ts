@@ -335,11 +335,18 @@ type ConfirmShotView = {
   risksText: string | null;
   risksTitle: string;
   blockerLines: ConfirmShotBlockerLine[];
+  exclusionText: string | null;
+  costLine: string | null;
+  promptText: string | null;
 };
 
 type ConfirmView = {
   status: string;
+  selectedCount: number;
+  sendingCount: number;
+  excludedCount: number;
   summary: ConfirmLineView[];
+  costSource: { url: string; detail: string } | null;
   blockers: ConfirmBlockerView[];
   risks: ConfirmLineView[];
   shots: ConfirmShotView[];
@@ -505,7 +512,8 @@ export function createGenerationView(
 
   function emptyConfirmView(): ConfirmView {
     return {
-      status: "", summary: [], blockers: [], risks: [], shots: [],
+      status: "", summary: [], costSource: null, blockers: [], risks: [], shots: [],
+      selectedCount: 0, sendingCount: 0, excludedCount: 0,
       actionLabel: "确认并生成 0 张", actionDisabled: true,
       record: "",
     };
@@ -1057,27 +1065,25 @@ export function createGenerationView(
     }
     const intent = displayedGenerationIntent;
     const sending = intent.sheet;
-    if (!sending) {
-      // 明确空范围（或所选图片全部缺项/已提交）：如实显示 0 张，不退回"能力缺失"，
-      // 也绝不自动发送全部图片。
-      return {
-        ...emptyConfirmView(),
-        status: intent.scope.length > 0
-          ? "本次范围 " + intent.scope.length + " 张里没有可新增发送的图片：缺项、已提交或有未知结果；不会自动重提。"
-          : "本次范围 0 张：没有可新增发送的已就绪图片任务。",
-        summary: [{
-          className: "meta",
-          text: "空范围或所选图片被阻断时不会自动发送全部图片；调整范围或补足缺项后再确认。",
-        }],
-        actionLabel: "确认并生成 0 张",
-        record: "选择范围只更新这份摘要，不会直接提交；0 张时确认按钮不可用。",
-      };
-    }
-    const sendingIds = new Set(sending.shots.map((item) => item.shot_id));
-    const summary: ConfirmLineView[] = [{
-      className: "confirm-summary",
-      text: sending.external_summary.statement,
+    const selectedIds = new Set(intent.selection.selected_shot_ids);
+    const selected = (intent.all?.shots || []).filter(shot => selectedIds.has(shot.shot_id));
+    const excluded = new Map(intent.selection.excluded.map(shot => [shot.shot_id, shot]));
+    const sendingIds = new Set((sending?.shots || []).map(item => item.shot_id));
+    const costs = new Map((sending?.external_summary.cost.per_shot || []).map(item => [item.shot_id, item]));
+    const summary: ConfirmLineView[] = sending ? [{
+      className: "confirm-summary", text: sending.external_summary.statement,
+    }, {
+      className: sending.external_summary.cost.upper_fen === null ? "confirm-blocker" : "meta",
+      text: sending.external_summary.cost.message,
+    }] : [{
+      className: "meta", text: "本次没有可新增发送的图片；所选缺项、已有动作及未知结果均不会自动重提。",
     }];
+    for (const item of intent.selection.excluded) {
+      if (!selected.some(shot => shot.shot_id === item.shot_id)) {
+        summary.push({ className: "confirm-blocker", text: item.label + "："
+          + item.reasons.map(reason => localizeSlotTerms(reason.message)).join("；") });
+      }
+    }
     if (intent.mode === "explicit_new") {
       summary.push({
         className: "prompt-warning",
@@ -1086,26 +1092,26 @@ export function createGenerationView(
     }
     summary.push({
       className: "meta",
-      text: "每张图发送自己的 Prompt 文本与上列参考图；不发送本地文件本身、历史候选或其他项目数据。",
+      text: "只发送下列每张图的提示词与明确列出的参考图；未选候选、其他项目及本地文件名不外发。",
     });
-    const blockers: ConfirmBlockerView[] = sending.blockers.map((blocker) => ({
-      order: blocker.order,
-      label: blocker.label,
+    const blockers: ConfirmBlockerView[] = selected.flatMap(shot => shot.blockers.map((blocker) => ({
+      order: shot.order,
+      label: shot.label,
       code: blocker.code,
       message: localizeSlotTerms(blocker.message),
-      shotId: blocker.shot_id,
+      shotId: shot.shot_id,
       region: blocker.fix.region,
       regionLabel: blocker.fix.region,
       action: blocker.fix.action,
       stage: BLOCKER_STAGE_BY_REGION[blocker.fix.region],
       openPromptDetails: blocker.fix.region === "prompt",
-      decisionAnchorId: decisionAnchorOf(blocker, blocker.shot_id),
-    }));
-    const risks: ConfirmLineView[] = sending.risks.map((risk) => ({
+      decisionAnchorId: decisionAnchorOf(blocker, shot.shot_id),
+    })));
+    const risks: ConfirmLineView[] = (sending?.risks || []).map((risk) => ({
       className: "confirm-risk",
       text: risk.label + " · " + risk.code + "：" + localizeSlotTerms(risk.message),
     }));
-    const shots: ConfirmShotView[] = sending.shots.map((item) => {
+    const shots: ConfirmShotView[] = selected.map((item) => {
       // 逐图阻断行：文案就是确认单上该图的 blocker.message（domain 可操作消息），
       // 这里只投影、不重写，避免第二套判断/词表。
       const blockerLines: ConfirmShotBlockerLine[] = item.blockers.map((blocker) => ({
@@ -1117,24 +1123,26 @@ export function createGenerationView(
         decisionAnchorId: decisionAnchorOf(blocker, item.shot_id),
       }));
       const hasDecisionBlock = item.blockers.some((blocker) => blocker.code === "DECISION_REQUIRED");
+      const exclusion = excluded.get(item.shot_id);
+      const cost = costs.get(item.shot_id);
       return {
         shotId: item.shot_id,
         order: item.order,
         label: item.label,
         roleText: (item.role_label || item.role_id || "未分类") + (item.required ? " · 必需" : " · 可选"),
-        blocked: item.blockers.length > 0,
+        blocked: excluded.has(item.shot_id),
         hasDecisionBlock,
-        stateClass: item.blockers.length > 0 ? "badge is-critical" : "badge is-confirmed",
-        stateText: sendingIds.has(item.shot_id) ? "本次发送"
-          : hasDecisionBlock ? "还没决定印字／展示：先去规格区选一次"
-          : item.blockers.length ? "本次不发送：缺项／过期" : "本次不重复提交",
+        stateClass: sendingIds.has(item.shot_id) ? "badge is-confirmed" : "badge is-critical",
+        stateText: sendingIds.has(item.shot_id) ? "本次发送" : "本次排除",
         promptLine: item.prompt.version === null
           ? "未编译"
           : "Prompt v" + item.prompt.version + " · " + String(item.prompt.hash).slice(0, 12) + "…",
         intent: item.intent,
-        referencesLine: "参考图 " + item.references.length + " 张 · 发送顺序："
-          + (item.references.map((ref, index) => (index + 1) + "." + referenceLabelOf(ref)).join("、") || "无")
-          + (item.prompt.chars === null ? "" : " · 提示词 " + item.prompt.chars + " 字"),
+        referencesLine: sendingIds.has(item.shot_id)
+          ? "参考图 " + item.references.length + " 张 · 发送顺序："
+            + (item.references.map((ref, index) => (index + 1) + "." + referenceLabelOf(ref)).join("、") || "无")
+            + (item.prompt.chars === null ? "" : " · 提示词 " + item.prompt.chars + " 字")
+          : "本次不外发这张图的提示词或参考图。",
         techLines: item.references.map((ref) => referenceLabelOf(ref)
           + " sha256 " + ref.sha256_prefix),
         risksText: item.risks.length > 0
@@ -1142,24 +1150,41 @@ export function createGenerationView(
           : null,
         risksTitle: item.risks.map((risk) => risk.code).join("、"),
         blockerLines,
+        exclusionText: exclusion && !blockerLines.length
+          ? exclusion.reasons.map(reason => localizeSlotTerms(reason.message)).join("；") : null,
+        costLine: cost ? "本图费用上界 ¥" + (cost.upper_fen / 100).toFixed(2)
+          + "（" + cost.input_images + " 张输入图 + 1 张输出）" : null,
+        promptText: sendingIds.has(item.shot_id) ? item.prompt.text : null,
       };
     });
     const identity = intent.identity;
+    const pricing = sending?.external_summary.cost.pricing;
+    const selectedCount = intent.selection.selected_shot_ids.length;
+    const sendingCount = sending?.total || 0;
+    const excludedCount = intent.selection.excluded.length;
     return {
-      status: "本次明确发送 " + sending.total + " 张；"
-        + "用途缺项／过期任务不外发；已有成功、进行中或 Unknown 不自动重提。",
+      status: "本次选择 " + selectedCount + " 张，明确发送 " + sendingCount
+        + " 张，排除 " + excludedCount + " 张；排除项只影响本图，已有结果不会自动重提。",
+      selectedCount, sendingCount, excludedCount,
       summary,
+      costSource: pricing?.kind === "official" && pricing.source_url ? {
+        url: pricing.source_url,
+        detail: pricing.model_id + " · 北京；输入图 ¥"
+          + (pricing.input_image_fen / 100).toFixed(2) + "/张，输出图 ¥"
+          + (pricing.output_image_fen / 100).toFixed(2) + "/张。",
+      } : null,
       blockers,
       risks,
       shots,
       actionLabel: (intent.mode === "explicit_new" ? "确认并另发 " : "确认并生成 ")
-        + sending.total + " 张",
-      actionDisabled: !sending.can_submit || !(identity && identity.configured)
+        + (sending?.total || 0) + " 张",
+      actionDisabled: !sending?.can_submit || !(identity && identity.configured)
         || inputs.isAnalysisRunning() || prompts.isPreparing() || submissionInFlight
         || modelSettings.refreshing || Boolean(generation.batchStateReader()?.active),
-      record: identity && identity.configured
-        ? "一次点击先保存这份授权，再按摘要外发；不会要求第二次提交。"
-        : "原目标凭据未就绪。打开模型设置补凭据；本地事实、Prompt、采用和导出不受影响。",
+      record: !identity?.configured
+        ? "原目标凭据未就绪。打开模型设置补凭据；本地事实、Prompt、采用和导出不受影响。"
+        : !sending?.can_submit ? "摘要未满足发送门，不会写入授权或外发。"
+        : "一次点击先保存这份范围和费用授权，再按摘要外发；不需要第二次提交。",
     };
   }
 
@@ -1182,9 +1207,14 @@ export function createGenerationView(
   function confirmRegionTemplate(): TemplateResult {
     const view = confirmView;
     return html`
-      <p id="confirm-status" class="meta" role="status">${view.status}</p>
+      <p id="confirm-status" class="meta" role="status"
+        data-selected-count=${view.selectedCount} data-sending-count=${view.sendingCount}
+        data-excluded-count=${view.excludedCount}>${view.status}</p>
       <div id="confirm-summary">
         ${view.summary.map((line) => html`<p class=${line.className}>${line.text}</p>`)}
+        ${view.costSource ? html`<p class="meta">${view.costSource.detail}
+          <a href=${view.costSource.url} target="_blank" rel="noopener noreferrer">官方定价依据</a>
+        </p>` : nothing}
       </div>
       <div id="confirm-blockers">
         ${view.blockers.map((blocker) => html`
@@ -1217,6 +1247,13 @@ export function createGenerationView(
             </div>
             ${row.intent ? html`<p class="meta">${"任务：" + row.intent}</p>` : nothing}
             <p class="meta">${row.referencesLine}</p>
+            ${row.exclusionText ? html`<p class="confirm-blocker">${row.exclusionText}</p>` : nothing}
+            ${row.costLine ? html`<p class="meta">${row.costLine}</p>` : nothing}
+            ${row.promptText ? html`
+              <details>
+                <summary>实际发送提示词（逐字）</summary>
+                <pre class="prompt-text">${row.promptText}</pre>
+              </details>` : nothing}
             ${row.blockerLines.map((line) => html`
               <p class="confirm-shot-blocker" data-shot-id=${line.shotId} data-region=${line.region}>
                 <span class="meta">${line.code + "：" + line.message}</span>
@@ -1423,10 +1460,8 @@ export function createGenerationView(
   /** 范围行：显式单张/批量 + 实际选择数量（选择变化只更新摘要，不发请求）。 */
   function scopeRowTemplate(shots: SuitePlanSummary["shots"]): TemplateResult {
     const chosen = chosenScopeIds(shots);
-    const chosenSet = new Set(chosen);
-    const blocked = shots.filter((shot) => chosenSet.has(shot.shot_id) && !shot.satisfied).length;
     const excluded = shots.length - chosen.length;
-    const countText = "本次范围 " + chosen.length + " 张（不可送 " + blocked + " · 未选 " + excluded + "）";
+    const countText = "本次范围 " + chosen.length + " 张（未选 " + excluded + "）；实发与排除原因见发送摘要。";
     return html`
       <div class="task-scope" role="group" aria-label="发送范围">
         <label class="choice"><input type="radio" id="make-mode-single" name="make-mode" value="single"

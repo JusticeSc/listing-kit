@@ -1,0 +1,10 @@
+========================================================================
+V2.3.8 规格保存 OCC 冲突验证
+========================================================================
+  [PASS] V2.3.8-01 准备：A 页改好草稿（目的/印字/版面），该图还没有任何规格记录
+  [PASS] V2.3.8-02 第二标签页保存同一张图：v1 落库，目的=B
+  [FAIL] V2.3.8-99 整套流程未异常中断
+       {"error": "AssertionError: Locator expected to be visible\nActual value: None\nError: element(s) not found \nCall log:\n  - Expect \"to_be_visible\" locator(\"#spec-save-conflict-shot_infographic_benefits\") with timeout 15000ms\n  - waiting for locator(\"#spec-save-conflict-shot_infographic_benefits\")\n\nAria snapshot:\n- banner:\n  - heading \"Amazon US 商品套图\" [level=1]\n  - paragraph: 项目保存在这台浏览器；服务器不保存你的项目，也不保存最近使用记录。\n  - button \"模型设置\"\n- main:\n  - button \"← 项目列表\"\n  - heading \"审计商品 · 规格保存 OCC\" [level=2]\n  - text: 资料已保存\n  - status: 保存失败：文档 shot_spec/shot_infographic_benefits 期望 version=0，当前是 1。（没有丢失输入，可重试）\n  - group: 项目信息 ▾\n  - navigation \"生产阶段\":\n    - button \"1 资料\"\n    - button \"2 理解\"\n    - button \"3 方案\"\n    - button \"4 生成\"\n    - button \"5 审核返工\"\n    - but
+  [PASS] V2.3.8-07 整套流程零 console error / page error
+证据：evals/product-v2/v2.3.8-spec-save-occ-20261019-035750-negative-probe.txt
+结果：有失败（退出码 1）

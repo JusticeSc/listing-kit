@@ -1,0 +1,16 @@
+{
+  "wrong_tree": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit",
+  "reversal": "Only agent-owned exact deltas reversed through surgical edits; all other paths untouched",
+  "rows": [
+    {
+      "path": "evals/product-v2/node/harness-core.mjs",
+      "sha256": "c29b4defb2379114b564449128af1f818356b5dcf58cb0620ab35210c167a908",
+      "exact_original": true
+    },
+    {
+      "path": "evals/product-v2/node/confirm-contract.test.mjs",
+      "sha256": "2d9a98e3643335bf43f2687bc1a6c6bdc0d719a3aad0e3c625d8b60032b6bc7f",
+      "exact_original": true
+    }
+  ]
+}

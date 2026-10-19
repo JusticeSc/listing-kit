@@ -1,0 +1,20 @@
+{
+  "exit_code": 0,
+  "snapshot_crc_and_member_hashes_ok": true,
+  "historical_native_goal_text_unchanged": true,
+  "machine_changed_keys": ["blockers", "latest_audit", "updated_at"],
+  "protected_machine_state_unchanged": true,
+  "new_blocker_is_native_tool_not_user_permission": true,
+  "after_files": {
+    "_working/amz-listing-kit-product-v2/state.md": {"sha256":"cccff8a6e0aba8d4e19e642357b081061f17e27877d560ca95907609f4aa3be2","bytes":54794,"cr_bytes":0},
+    "docs/product-v2-refactor-plan.md": {"sha256":"8e61bb837acb75ae67a9a9ecec8a931b9519adbaaaba337d997c73f3f1041d3a","bytes":226766,"cr_bytes":0},
+    "docs/product-v2-refactor-design.md": {"sha256":"a31c006f0dea4b065e9a8fe51790a60a0a90ed11c0c9d43b291583d3fb6321da","bytes":185675,"cr_bytes":0},
+    "docs/product-v2-ui-contract.md": {"sha256":"c71350c885b14dc43be6434d7bbf507e9587afb1f67dada5d16a088a5b1264bd","bytes":40808,"cr_bytes":0},
+    "_working/amz-listing-kit-next-version-design/discussion.md": {"sha256":"52592966f3051e8335ec7d3b0eee6eddacba042ca4a579d0cad5e1ce732acf81","bytes":29856,"cr_bytes":0}
+  },
+  "script_failures_retained": [
+    "Python Eval backend unavailable; no snapshot created by that attempt; successful snapshot used uv Python via JS kernel.",
+    "First inline verification script failed JavaScript parsing because Python markdown-fence literals ended the JavaScript template string; corrected by constructing the fence with chr(96).",
+    "Next attempt failed because two carriage-return characters were interpolated into Python byte literals; inspected the generated script, replaced the literals with bytes([13]), and the corrected verification exited 0. These were temporary verification-script errors, not product or document-guard failures."
+  ]
+}

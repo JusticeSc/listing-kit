@@ -1,0 +1,341 @@
+{
+ "stamp": "20261019-133339",
+ "label": "b3-integrated-confirm3",
+ "checks": [
+  {
+   "id": "V2.6.3-03",
+   "title": "契约套件 P01–P09 全过（含新旧动作历史真实往返）",
+   "ok": true,
+   "detail": {
+    "status": "passed",
+    "cases": [
+     "P01",
+     "P02",
+     "P03",
+     "P04",
+     "P05",
+     "P06",
+     "P07",
+     "P08",
+     "P09"
+    ],
+    "failed": []
+   }
+  },
+  {
+   "id": "V2.6.3-04",
+   "title": "A 导出项目包：格式 2、记录自描述、完整性计数与逐资产哈希（Python 独立核对）",
+   "ok": true,
+   "detail": {
+    "format_version": 2,
+    "integrity": {
+     "documents": 58,
+     "assets": 5,
+     "document_bytes": 120619,
+     "asset_bytes": 32588
+    },
+    "documents": 58,
+    "assets": 5,
+    "kinds": [
+     "candidate",
+     "export_record",
+     "fact_slot",
+     "generation_attempt",
+     "generation_confirm",
+     "product_input",
+     "prompt_version",
+     "review_report",
+     "selection",
+     "semantic_analysis",
+     "shot_spec",
+     "style_spec",
+     "suite_plan",
+     "suite_review"
+    ],
+    "records_self_described": true
+   }
+  },
+  {
+   "id": "V2.6.3-05",
+   "title": "B 全新 profile 导入：逐文档 payload 哈希与资产 sha256 与 A 包一致（crypto 独立重算）",
+   "ok": true,
+   "detail": {
+    "status": "已导入「V263 迁移品」",
+    "missing": [],
+    "changed": [],
+    "assets_a": 5,
+    "assets_b": 5,
+    "digests_ok": true
+   }
+  },
+  {
+   "id": "V2.6.3-06",
+   "title": "B 导入后按问题返工：新增候选与 Attempt（迁移后的项目可继续生产）",
+   "ok": true,
+   "detail": {
+    "candidate_before": 4,
+    "candidate_after": 5,
+    "attempts": 15,
+    "shots": 4
+   }
+  },
+  {
+   "id": "V2.6.3-06a",
+   "title": "新候选不自动改选：旧采用保持 current、仍需人工显式采用最新",
+   "ok": true,
+   "detail": {
+    "pre_adopt_state": "current"
+   }
+  },
+  {
+   "id": "V2.6.3-07",
+   "title": "B 返工后门禁重新就绪并生成交付包（迁移后的完整闭环）",
+   "ok": true,
+   "detail": {
+    "blocking": [],
+    "status": "交付门禁通过：可以生成交付包（只包含已采用的候选）。",
+    "delivery": {
+     "filename": "V263-迁移品-交付包-20261019-0533.zip",
+     "bytes": 50153,
+     "sha256": "1568c557d04dbc8949d9ccc3b21c5537e3ac966a2ef138becde8216fd5e0c89c"
+    },
+    "images": 4,
+    "delivered": {
+     "shot_id": "shot_main_clean",
+     "candidate_id": "act-0e6c8f44a25f45ef829baebf3fc23baf",
+     "attempt_action_id": "act-0e6c8f44a25f45ef829baebf3fc23baf",
+     "prompt_version": 3
+    }
+   }
+  },
+  {
+   "id": "V2.6.3-08",
+   "title": "B 再导出项目包：A 的记录逐条原样保留，新增返工/交付记录",
+   "ok": true,
+   "detail": {
+    "kept": true,
+    "new_records": 10,
+    "new_kinds": [
+     "candidate",
+     "export_record",
+     "generation_attempt",
+     "generation_confirm",
+     "prompt_version",
+     "review_report",
+     "selection",
+     "suite_review"
+    ],
+    "documents": [
+     58,
+     68
+    ],
+    "assets": [
+     5,
+     6
+    ]
+   }
+  },
+  {
+   "id": "V2.6.3-09",
+   "title": "旧格式 UI 导入拒绝，已有项目和候选不变",
+   "ok": true,
+   "detail": {
+    "error": "项目包版本高于当前页面支持的版本，请用较新版本打开。",
+    "rows": [
+     1,
+     1
+    ],
+    "candidates": [
+     5,
+     5
+    ]
+   }
+  },
+  {
+   "id": "V2.6.3-10",
+   "title": "浏览器 A 主链零意外 console / page / HTTP 错误",
+   "ok": true,
+   "detail": {
+    "console": [],
+    "page": [],
+    "http": []
+   }
+  },
+  {
+   "id": "V2.6.3-11",
+   "title": "浏览器 B 主链零意外 console / page / HTTP 错误",
+   "ok": true,
+   "detail": {
+    "console": [],
+    "page": [],
+    "http": []
+   }
+  },
+  {
+   "id": "V2.6.3-12",
+   "title": "正式入口自检全过",
+   "ok": true,
+   "detail": {
+    "rc": 0,
+    "tail": [
+     "  PASS  唯一静态产物首页可取            status=200 type=text/html; charset=utf-8",
+     "  PASS  未知 API 路由 404（不猜测业务）  status=404",
+     "V2 正式入口轻量自检：3/3 通过。（完整场景矩阵在 tests/dev 与 tests/gateway）"
+    ]
+   }
+  }
+ ],
+ "screenshots": [
+  "evals/product-v2/evidence/v2.6.3-transfer-20261019-133339-b3-integrated-confirm3-a-gate.png",
+  "evals/product-v2/evidence/v2.6.3-transfer-20261019-133339-b3-integrated-confirm3-a-exported.png",
+  "evals/product-v2/evidence/v2.6.3-transfer-20261019-133339-b3-integrated-confirm3-b-imported.png",
+  "evals/product-v2/evidence/v2.6.3-transfer-20261019-133339-b3-integrated-confirm3-b-opened.png",
+  "evals/product-v2/evidence/v2.6.3-transfer-20261019-133339-b3-integrated-confirm3-b-rework-form.png",
+  "evals/product-v2/evidence/v2.6.3-transfer-20261019-133339-b3-integrated-confirm3-b-deliver.png"
+ ],
+ "suite": {
+  "suite": "v2.6.3-project-package",
+  "status": "passed",
+  "cases": [
+   {
+    "id": "P01",
+    "title": "格式 2 往返：记录自描述、完整性计数相符、无需迁移",
+    "status": "passed",
+    "detail": {
+     "integrity": {
+      "documents": 1,
+      "assets": 1,
+      "document_bytes": 128,
+      "asset_bytes": 18
+     }
+    },
+    "duration_ms": 28
+   },
+   {
+    "id": "P02",
+    "title": "记录文件身份被换：按条目拒绝，不静默导入",
+    "status": "passed",
+    "detail": {
+     "message": "记录文件与清单身份不一致：product_input/intake/v1（文件=product_input|other|1|1，清单=product_input|intake|1|1）。"
+    },
+    "duration_ms": 5
+   },
+   {
+    "id": "P03",
+    "title": "格式 1 旧包拒绝，不补造当前身份",
+    "status": "passed",
+    "detail": {
+     "code": "PACKAGE_UNSUPPORTED_VERSION"
+    },
+    "duration_ms": 0
+   },
+   {
+    "id": "P04",
+    "title": "当前格式保留历史复核报告的原始内容",
+    "status": "passed",
+    "detail": {
+     "contract": "v2.5.1"
+    },
+    "duration_ms": 5
+   },
+   {
+    "id": "P05",
+    "title": "格式过高/过低与完整性计数不符：都拒绝",
+    "status": "passed",
+    "detail": {
+     "future": "项目包版本 99 高于当前支持的 2。",
+     "too_old": "manifest 缺少合法的 format_version。",
+     "counted": "项目包完整性计数与清单不符：文档 2/5，资产 1/1。"
+    },
+    "duration_ms": 1
+   },
+   {
+    "id": "P06",
+    "title": "payload schema 高于当前支持：点名条目拒绝",
+    "status": "passed",
+    "detail": {
+     "message": "无法导入：文档 review_report/cand-legacy/v1 声明的 payload schema_version=99 高于当前支持的 1；请用较新版本打开或先导出该记录。"
+    },
+    "duration_ms": 0
+   },
+   {
+    "id": "P07",
+    "title": "旧包拒绝不写入任何项目、文档或资产",
+    "status": "passed",
+    "detail": {
+     "before": [
+      1,
+      1,
+      1
+     ],
+     "after": [
+      1,
+      1,
+      1
+     ]
+    },
+    "duration_ms": 5
+   },
+   {
+    "id": "P08",
+    "title": "Attempt 缺失或无执行身份的旧 schema 拒绝，不猜补身份",
+    "status": "passed",
+    "detail": null,
+    "duration_ms": 0
+   },
+   {
+    "id": "P09",
+    "title": "当前项目混合新旧动作完整往返，保留旧执行身份及原始引用而不迁写",
+    "status": "passed",
+    "detail": {
+     "historical_schema": 2,
+     "current_schema": 3,
+     "documents": 3
+    },
+    "duration_ms": 11
+   }
+  ],
+  "started_at": "2026-10-19T05:33:40.558Z",
+  "finished_at": "2026-10-19T05:33:40.614Z"
+ },
+ "walkthrough": {
+  "a": {
+   "shots": [
+    "shot_main_clean",
+    "shot_infographic_benefits",
+    "shot_scene_lifestyle",
+    "shot_detail_material"
+   ],
+   "gate_blocking": [],
+   "delivery": {
+    "filename": "V263-迁移品-交付包-20261019-0533.zip",
+    "bytes": 50154,
+    "sha256": "5b41c6b02c61aa69b35dea3e48db977109b095b28c47f4b9dc084cef6b81fd32"
+   },
+   "package_bytes": 174880
+  },
+  "b": {
+   "latest_candidate": {
+    "candidate_id": "act-0e6c8f44a25f45ef829baebf3fc23baf",
+    "version": 2
+   },
+   "new_kinds": [
+    "candidate",
+    "export_record",
+    "generation_attempt",
+    "generation_confirm",
+    "prompt_version",
+    "review_report",
+    "selection",
+    "suite_review"
+   ],
+   "delivery": {
+    "filename": "V263-迁移品-交付包-20261019-0533.zip",
+    "bytes": 50153,
+    "sha256": "1568c557d04dbc8949d9ccc3b21c5537e3ac966a2ef138becde8216fd5e0c89c"
+   },
+   "package_bytes": 226594,
+   "format1_rejected": "项目包版本高于当前页面支持的版本，请用较新版本打开。"
+  }
+ }
+}

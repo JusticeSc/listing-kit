@@ -1,0 +1,4 @@
+
+> build:frontend-node
+> tsc -p tsconfig.json --noEmit false --outDir build/frontend-node
+

@@ -1,0 +1,14 @@
+[PASS] P08A-01a 未发起复核时审核卡显示未复核/未运行（不折叠成 Unknown）
+[PASS] P08A-01b 未发起复核时人工采用可继续（state=current，不被复核门阻断）
+[PASS] P08A-01c 比较面板未发起时视觉复核行记 not_run（不是 Unknown）
+[PASS] P08A-02a 生成/查看/切换比较/采用本身不产生复核外发（calls==0）
+[PASS] P08A-02b 切换查看候选不产生复核外发
+[PASS] P08A-02c 显式发起后才有复核请求外发（exactly 1 次，不自动重提）
+[PASS] P08A-03 真实失败才显示 Unknown（outcome=unknown + inspection_unavailable，不伪造 PASS）
+[PASS] P08A-03b 复核失败不改变人工采用（仍 current，不自动改选）
+[PASS] P08A-04 刷新后如实展示（unknown 仍 unknown，不退回未复核/不涨版本链）
+[PASS] P08A-05 交付门仍评估确定性硬门（无 AI 报告不是硬缺口：门禁可读、无 not_run 伪造 BLOCK）
+[PASS] P08A-06 零意外 console / page / HTTP 错误（unknown 演练的 504 路径除外）
+evidence: evals/product-v2/refactor/packet08-adoption-ai-20261018T194905Z.json
+screenshot: C:\Users\31368\AppData\Local\Temp\amz-p08a-03zkgu3_\p08a-adoption.png
+RESULT PASS 11/11

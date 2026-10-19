@@ -1,0 +1,21 @@
+{
+  "batch": 13,
+  "outcome": "failed formal surface scope consistency; safety gate not accepted",
+  "paid_model_calls": 0,
+  "verified": [
+    "npm.cmd run check:types exited 0",
+    "npm.cmd run build:frontend and build:frontend-node exited 0",
+    "pytest tests/gateway/test_server_contract.py tests/gateway/test_image_gateway.py: 55 passed, zero real model calls",
+    "actual image-cost.js source smoke: same reference in two requests costs 40fen, edit with two inputs costs 22fen, missing/mismatched pricing blocked"
+  ],
+  "failure": {
+    "scenario": "isolated actual headless Chrome, real formal product, import preserved bearing project and open make",
+    "left": "本次范围 1 张（未选 4）；实发与排除原因见发送摘要。",
+    "right": "本次选择 0 张，明确发送 0 张，排除 0 张；排除项只影响本图，已有结果不会自动重提。",
+    "cause": "generation.rememberConfirmation cleared authorizationScope while restoring historical authorization after the viewed-shot initialization",
+    "evidence": ["restored-scope-before.json", "restored-scope-before.png", "headless-process.json"]
+  },
+  "repair_batch": 14,
+  "repair": "Preserve current scope when remembering historical authorization; consume explicit mode to initial only on new confirmation. Separate rework preview must disclose and bind its own pricing before persistence/submit.",
+  "unchanged": "Original full Goal, batch18 cap, first two batches zero-paid, original activated model money/count/model/asset boundaries; old failures and Unknown not released."
+}

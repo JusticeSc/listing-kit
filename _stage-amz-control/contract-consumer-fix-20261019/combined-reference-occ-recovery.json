@@ -1,0 +1,45 @@
+{
+  "reload": {
+    "spec_versions": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "purpose_draft": "A 的草稿：完整展示主体与均匀留白",
+    "inherit_draft": true
+  },
+  "versions": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+  ],
+  "saved": {
+    "document_key": "e1a71503-a3db-4035-96b1-b9cd292459b5:shot_spec:shot_main_clean:6",
+    "project_id": "e1a71503-a3db-4035-96b1-b9cd292459b5",
+    "kind": "shot_spec",
+    "document_id": "shot_main_clean",
+    "version": 6,
+    "schema_version": 1,
+    "payload": {
+      "schema_version": 2,
+      "purpose": "A 的草稿：完整展示主体与均匀留白",
+      "keep": [
+        "商品外观、颜色与比例",
+        "标识与文字"
+      ],
+      "change_allowed": [
+        "背景"
+      ],
+      "notes": ""
+    },
+    "created_at": "2026-10-19T01:46:01.927Z",
+    "updated_at": "2026-10-19T01:46:01.927Z"
+  },
+  "prior_rows_unchanged": true,
+  "writes_after_retry": 1
+}

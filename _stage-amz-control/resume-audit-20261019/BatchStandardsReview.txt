@@ -1,0 +1,11 @@
+Acknowledged; three corrections/nuances for the parent’s isolation runs:
+
+1. **keep_manual**: confirmed as reported. Note it is not a one-shot failure: `rebaseManualForRework` saves a new manual version each attempt, then `generation.ts:933-940` returns `prompt_lane_changed`. On retry, `samePreview` is still false (`latest.record.compiled.rework` is null) and `manualHead` is still true, so every click appends another version and still never sends. Expected envelope: stale reason `prompt_lane_changed`, message “落版后 Prompt 不是本次预览（改这条候选）；没有外发。” (mode label varies).
+
+2. **edit(rework)**: the「构图」quote rejection happens earlier in `checkManualEditRules`; with a verified clean manual text that gate passes and the independent refs failure should surface from `requestSnapshotOf`/`assertReferenceMode` (`prompt.js:1617-1625`), message “候选编辑的第一张图必须是本图固定问题候选的确切版本及原字节。”. This is independent of `compiled.rework`; it comes from `prompts.ts:308-315` compiling without rework while attaching `basis.rework`.
+
+3. **v1 shot-spec upconvert**: correct that honey has no `shot_spec` row; seed a legal published v1 record. The user-facing trigger is actually `handleSaveShotSpec`’s select branch → `saveShotSpec` (`project-inputs.ts:1128-1131`) merging `reference_sha256s` into the v1 base; `setShotReferences` is only the inherit/delete branch. Expected failure from the v1 validator: “字段 reference_sha256s 不在单图规格内。”. Keep the claim narrow: v1 accepts most new shapes loosely (object `source`, presentation, measurements), so the save does not fail wholesale; it silently stays `schema_version:1` (mixed format), and per-image reference selection is the hard-blocked new capability. Don’t assert “all v2 saves fail” without the seeded v1 repro.
+
+4. `#8/#9` startup-gate staleness is a remote-issue text inconsistency, not part of my code findings; updating only the gate text without ticking acceptance is the right scope.
+
+No builds/tests/browser runs performed; findings remain static-code + parent-observed.

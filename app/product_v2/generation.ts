@@ -37,6 +37,7 @@ import {
   selectReferences,
   CANDIDATE_DOCUMENT_KIND,
   CONFIRM_DOCUMENT_ID,
+  CONFIRM_SCHEMA_VERSION,
   MAX_CANDIDATE_BYTES,
   buildCandidateRecord,
   candidateForAttempt,
@@ -58,6 +59,9 @@ import {
  deriveBatchState,
  isNonEmptyString,
  reworkModeLabel,
+  frozenImageCost,
+  imageCostOf,
+  submissionModeAllows,
 } from "./domain/index.js";
 import { sha256Hex } from "./storage/db.js";
 import type { CompiledPromptResult, ConfirmationSheet, ProjectSources } from "./prompts.js";
@@ -71,8 +75,10 @@ import type {
   BatchState,
   CandidateRecord,
   CompiledPrompt,
+  ConfirmationCost,
   ConfirmationRecord,
   ConfirmationSnapshot,
+  ConfirmationSelection,
   ConfirmationSubmissionMode,
   ImagePromptProfile,
   PromptRecord,
@@ -265,6 +271,7 @@ export type GenerationIntent = {
   readonly scope: readonly string[];
   readonly documentId: string;
   readonly seenVersion: number;
+  selection: ConfirmationSelection;
   all: ConfirmationSheet | null;
   sheet: ConfirmationSheet | null;
   identity: AttemptCurrentEnvironmentIdentity | null;
@@ -316,7 +323,10 @@ export type ReworkIntent = {
   readonly seenFence: ConsumptionFence;
   readonly seenProvider: ImagePromptProfile | null;
   readonly seenReferences: readonly PromptReferenceSelection[];
-  readonly preview: { readonly text: string; readonly references: number; readonly hash: string };
+  readonly preview: {
+    readonly text: string; readonly references: number; readonly hash: string;
+    readonly cost: ConfirmationCost;
+  };
 };
 export type ConfirmReworkInput = { intent: ReworkIntent; promptChoice?: ReworkPromptChoice };
 export type ConfirmReworkResult = {
@@ -563,15 +573,13 @@ export function createGenerationModule(deps: GenerationDependencies): Generation
   }
   // 授权面：confirmedQueues/confirmed/reworkQueues/authorizationScope/authorizationMode 的
   // 唯一所有者（设计§2.1：显示摘要→明确提交→登记→执行的完整动作归 generation）。
-  // rememberConfirmation 复用旧 authorization.ts:109-117 语义：整套确认更新 scope/mode，
-  // 返工确认按 shot 登记；版本相等时后到覆盖（旧 JS 用 >=，与 TS 的 <= 同义）。
+  // 登记历史授权只更新授权索引，不覆盖当前选择范围；显式模式只在新确认被消费时归初始。
+  // 返工确认按 shot 登记；版本相等时后到覆盖。
   const REWORK_CONFIRM_PREFIX = "rework:";
   function rememberConfirmation(queue: ConfirmationQueue): void {
     confirmedQueues.set(queue.documentId + ":" + queue.version, queue);
     if (queue.documentId === CONFIRM_DOCUMENT_ID && (!confirmed || confirmed.version <= queue.version)) {
       confirmed = queue;
-      authorizationScope = null;
-      authorizationMode = "initial";
     } else if (queue.documentId.startsWith(REWORK_CONFIRM_PREFIX)) {
       const id = queue.documentId.slice(REWORK_CONFIRM_PREFIX.length);
       if ((reworkQueues.get(id)?.version || 0) <= queue.version) reworkQueues.set(id, queue);
@@ -670,9 +678,28 @@ export function createGenerationModule(deps: GenerationDependencies): Generation
   function intentForScope(scope: readonly string[], mode: ConfirmationSubmissionMode,
     all: ConfirmationSheet): GenerationIntent {
     const eligible = new Set(scope);
-    const ids = all.shots.filter((shot) => eligible.has(shot.shot_id) && !shot.blockers.length)
-      .map((shot) => shot.shot_id);
-    const sheet = ids.length ? deps.promptsSheet(ids) : null;
+    const byId = new Map(all.shots.map(shot => [shot.shot_id, shot]));
+    const selection: ConfirmationSelection = { selected_shot_ids: [...scope], excluded: [] };
+    for (const id of scope) {
+      const shot = byId.get(id);
+      const latest = latestAttemptOf(id)?.record || null;
+      if (shot && !shot.blockers.length && submissionModeAllows(mode, latest)) continue;
+      selection.excluded.push({
+        shot_id: id, label: shot?.label || "已移出的图片",
+        reasons: !shot ? [{ code: "SHOT_REMOVED", message: "这张图已不在当前方案中，不会发送。" }]
+          : shot.blockers.length ? shot.blockers.map(({ code, message }) => ({ code, message }))
+          : [{ code: "SUBMISSION_MODE_BLOCKED",
+            message: latest?.state === "unknown" ? "原结果未知：只核对或明确另发，不会自动重提。"
+              : latest?.state === "succeeded" ? "已有成功结果：请明确选择修改或重新生成，不会重复提交。"
+              : latest?.state === "failed" ? "原动作已失败：请明确选择失败重试，不会自动重提。"
+              : "原任务在处理、等待核对或与本次动作不符；不会新增提交。" }],
+      });
+    }
+    const excluded = new Set(selection.excluded.map(shot => shot.shot_id));
+    const ids = all.shots.filter(shot => eligible.has(shot.shot_id) && !excluded.has(shot.shot_id))
+      .map(shot => shot.shot_id);
+    const prepared = ids.length ? deps.promptsSheet(ids) : null;
+    const sheet = prepared ? { ...prepared, selection } : null;
     const identity = attemptCurrentEnvironmentIdentity(deps.imageEnvironment());
     const snapshot = sheet && identity ? snapshotOfSheet(sheet, {
       executionIdentity: identity, submissionMode: mode,
@@ -685,7 +712,7 @@ export function createGenerationModule(deps: GenerationDependencies): Generation
       : (confirmed?.version || 0);
     return {
       projectId: action.projectId || "", generation: action.generation, mode,
-      scope: [...scope], documentId, seenVersion, all, sheet, identity, snapshot,
+      scope: [...scope], selection, documentId, seenVersion, all, sheet, identity, snapshot,
     };
   }
   function intentOf(batch: { queue: string[]; retry_queue: string[] }): GenerationIntent | null {
@@ -747,9 +774,12 @@ export function createGenerationModule(deps: GenerationDependencies): Generation
       ? await ability.previewManualForRework(input.shotId, { rework: directive })
       : await ability.compile(input.shotId, { rework: directive });
     if (!action.alive()) throw new Error("项目或会话已切换；这份预览不再有效，没有写入。");
+    const environment = deps.imageEnvironment();
     const profile = (() => {
-      try { return imagePromptProfile(deps.imageEnvironment()); } catch { return null; }
+      try { return imagePromptProfile(environment); } catch { return null; }
     })();
+    const pricing = environment && typeof environment === "object" && "pricing" in environment
+      ? environment.pricing : null;
     return {
       projectId: action.projectId, generation: action.generation, shotId: input.shotId,
       source: {
@@ -763,7 +793,10 @@ export function createGenerationModule(deps: GenerationDependencies): Generation
       seenProvider: profile ? { ...profile } : null,
       seenReferences: compiled.references.map((item) => ({ ...item,
         uses: [...item.uses], sources: item.sources.map((entry) => ({ ...entry })) })),
-      preview: { text: compiled.compiled.text, references: compiled.references.length, hash: compiled.payload.hash },
+      preview: {
+        text: compiled.compiled.text, references: compiled.references.length, hash: compiled.payload.hash,
+        cost: imageCostOf(profile, [{ shot_id: input.shotId, references: compiled.references }], pricing),
+      },
     };
   }
 
@@ -842,6 +875,10 @@ export function createGenerationModule(deps: GenerationDependencies): Generation
         || fixed.asset_sha256 !== intent.source.assetSha256) {
       return { reason: "source_changed", message: "返工固定的问题候选与当前依据不一致；请重新预览，没有外发。" };
     }
+    if (!submissionModeAllows("rework", latestAttemptOf(intent.shotId)?.record)) {
+      return { reason: "submission_mode_blocked",
+        message: "原动作仍在处理、结果未知或缺少可返工的已知结果；先核对原任务或明确另发，返工没有外发。" };
+    }
     const prompt = deps.promptEntryReader(intent.shotId);
     const choice = options.promptChoice === undefined ? intent.seenPromptChoice : options.promptChoice;
     if (prompt && prompt.record.origin === "manual_edit" && options.afterSaveVersion === undefined) {
@@ -866,11 +903,20 @@ export function createGenerationModule(deps: GenerationDependencies): Generation
     if (fenceJsonOf(deps.fenceReader(intent.shotId)) !== fenceJsonOf(intent.seenFence)) {
       return { reason: "inputs_changed", message: "这张图实际消费的输入已变化；请重新预览后再确认，没有外发。" };
     }
+    const environment = deps.imageEnvironment();
     const profile = (() => {
-      try { return imagePromptProfile(deps.imageEnvironment()); } catch { return null; }
+      try { return imagePromptProfile(environment); } catch { return null; }
     })();
     if (canonicalJson(profile) !== canonicalJson(intent.seenProvider)) {
       return { reason: "config_changed", message: "图像配置已变化；请重新预览后再确认，没有外发。" };
+    }
+    const pricing = environment && typeof environment === "object" && "pricing" in environment
+      ? environment.pricing : null;
+    const cost = imageCostOf(profile, [{ shot_id: intent.shotId, references: intent.seenReferences }], pricing);
+    if (cost.upper_fen === null
+        || canonicalJson(frozenImageCost(cost)) !== canonicalJson(frozenImageCost(intent.preview.cost))) {
+      return { reason: "pricing_changed",
+        message: "本次费用上界或计价依据未核实、或已变化；请重新预览后再确认，没有外发。" };
     }
     // 同一选择器、同一选项重算当前引用：来源/子集/容量任一变化即过期，零外发。
     // 所见引用在预览时冻结；比较的是顺序+用途+来源的完整冻结，不做子集宽容。
@@ -960,6 +1006,15 @@ export function createGenerationModule(deps: GenerationDependencies): Generation
         return { stale: true, reason: "summary_not_ready", message: "这张图当前还有阻断，返工没有外发。", promptVersion };
       }
       const summary = intentForScope([intent.shotId], "rework", all);
+      if (!summary.sheet) {
+        return { stale: true, reason: "summary_not_ready",
+          message: "当前动作状态不允许返工；先核对原任务或明确另发，返工没有外发。", promptVersion };
+      }
+      if (canonicalJson(frozenImageCost(summary.sheet?.external_summary.cost))
+          !== canonicalJson(frozenImageCost(intent.preview.cost))) {
+        return { stale: true, reason: "pricing_changed",
+          message: "正式请求的费用与所见返工预览不一致；请重新预览，没有外发。", promptVersion };
+      }
       const result = await confirmAndRun({ intent: summary });
       if (result.stale) return { stale: true, reason: result.reason || "summary_changed",
         message: result.message || "摘要已变化；请核对新摘要后再确认返工。", promptVersion };
@@ -1339,6 +1394,15 @@ export function createGenerationModule(deps: GenerationDependencies): Generation
     }
     return canonicalJson(references) === canonicalJson(stored);
   }
+  function confirmationCostCurrent(confirmation: ConfirmationQueue, environment: unknown): boolean {
+    if (confirmation.payload.schema_version !== CONFIRM_SCHEMA_VERSION) return false;
+    const pricing = environment && typeof environment === "object" && "pricing" in environment
+      ? environment.pricing : null;
+    const current = imageCostOf(imagePromptProfile(environment), confirmation.payload.shots, pricing);
+    return current.upper_fen !== null
+      && canonicalJson(frozenImageCost(current))
+        === canonicalJson(frozenImageCost(confirmation.payload.external_summary.cost));
+  }
   function isConfirmedShotCurrent(confirmation: ConfirmationQueue | null | undefined, shotId: string): boolean {
     if (!confirmation || !shotId) return false;
     const target = confirmation.payload?.fingerprint?.snapshot?.execution_target;
@@ -1352,6 +1416,7 @@ export function createGenerationModule(deps: GenerationDependencies): Generation
     if (!shot) return false;
     try {
       const environment = deps.environmentReader(confirmation);
+      if (!confirmationCostCurrent(confirmation, environment)) return false;
       const profile = imagePromptProfile(environment);
       if (promptStaleness(entry.record, deps.promptBasisReader(shotId, profile)).stale) return false;
       const rework = reworkContextOf(entry.record);
@@ -1368,7 +1433,8 @@ export function createGenerationModule(deps: GenerationDependencies): Generation
     const snapshot = confirmation?.payload?.fingerprint?.snapshot;
     if (!snapshot?.execution_target) return [];
     // snapshot 来自 confirmation.payload：这条 conf 守卫只收窄类型。
-    if (!confirmation || checkConfirmationRecord(confirmation.payload).length) return [];
+    if (!confirmation || confirmation.payload.schema_version !== CONFIRM_SCHEMA_VERSION
+        || checkConfirmationRecord(confirmation.payload).length) return [];
     const confirmed = confirmation;
     const mode = snapshot.submission_mode;
     const currentIds = new Set((deps.suitePlanReader()?.shots || []).map(shot => shot.shot_id));
@@ -1376,14 +1442,7 @@ export function createGenerationModule(deps: GenerationDependencies): Generation
       const id = shot.shot_id;
       if (!currentIds.has(id) || authorizationUsed(confirmed, id)) return false;
       const latest = latestAttemptOf(id)?.record;
-      if (!latest) return mode !== "failed_retry";
-      if ([ATTEMPT_STATES.pending_submit, ATTEMPT_STATES.submitted, ATTEMPT_STATES.running].includes(latest.state)) {
-        return mode === "explicit_new" && latest.state === ATTEMPT_STATES.pending_submit && !latest.task_id;
-      }
-      if (latest.state === ATTEMPT_STATES.unknown) return mode === "explicit_new";
-      if (mode === "failed_retry") return latest.state === ATTEMPT_STATES.failed;
-      if (mode === "initial") return false;
-      return true;
+      return submissionModeAllows(mode, latest);
     }).map(shot => shot.shot_id);
   }
   async function performSubmitAttempt(shotId: string, options: SubmitAttemptOptions = {}): Promise<SubmitAttemptResult> {
@@ -1502,6 +1561,10 @@ export function createGenerationModule(deps: GenerationDependencies): Generation
       if (promptStaleness(entry.record, deps.promptBasisReader(shotId, profile)).stale) {
         return { skipped: true, reason: "prompt_stale", message: "本图实际消费的依据已变化；原 Prompt 保留，没有外发。" };
       }
+      if (!confirmationCostCurrent(confirmation, deps.environmentReader(confirmation))) {
+        return { skipped: true, reason: "environment_changed",
+          message: "本次费用上界或定价依据已变化；请重新核对摘要后确认，没有外发。" };
+      }
       const parameters = {
         size: snapshot.size, n: snapshot.n,
         prompt_extend: snapshot.prompt_extend, watermark: snapshot.watermark,
@@ -1543,6 +1606,10 @@ export function createGenerationModule(deps: GenerationDependencies): Generation
         rememberAttempt(shotId, { record: record, version: saved.version });
         notify();
         setStatus("已登记 " + actionId + "（pending_submit），正在提交…");
+      }
+      if (!confirmationCostCurrent(confirmation, deps.environmentReader(confirmation))) {
+        return { skipped: true, reason: "environment_changed", record,
+          message: "预留后费用依据已变化，保留原预留但没有发送；请先核对原动作。" };
       }
       const { envelope } = await postImageJson(IMAGE_SUBMIT_PATH, {
         action_id: actionId,
@@ -1744,6 +1811,7 @@ export function createGenerationModule(deps: GenerationDependencies): Generation
       };
       if (!action.alive()) return { confirmation, skipped: true };
       rememberConfirmation(confirmation);
+      authorizationMode = "initial";
       if (!action.alive()) return { confirmation, skipped: true };
       notify();
       await runBatch({ confirmation, action });

@@ -1,0 +1,31 @@
+{
+  "authority": "NOT-AUTHORITY: one-time handoff reading experiment, not a new product plan or model-capability certification",
+  "entry_given_to_reader": "amz-listing-kit/docs/INDEX.md",
+  "chat_history_given_to_reader": false,
+  "requested_reader_model": "opencode-go/mimo-v2.6-flash",
+  "dispatch_result": {
+    "requested_model_selection": "Rejected: `model` is only accepted for the `seance` agent. No requested-model task was started.",
+    "fallback": "Fresh-context scout ColdHandoffReader, dispatched without a model override",
+    "reader_reported_runtime_model": "opencode-go/deepseek-v4.1-flash",
+    "identity_limit": "This label is the reader's report of its harness project-context, not an independently exposed model-resolution field from the task tool. Do not claim the requested Mimo model was exercised or infer autonomous implementation ability."
+  },
+  "model_evidence_rule": "Record requested model and any host-returned resolution separately. If unavailable or unreported, name the actual fallback/identity limit; never label an ordinary strong-context read as weaker-model capability proof.",
+  "reader_actions": "Read only, follow the repository route and existing issues. Do not edit, run checks/product, call providers, change native Goal, commit, merge, or deploy. Return source-linked answers and name missing evidence rather than infer it.",
+  "questions": [
+    "What complete user-visible result is required, and what does not count as delivering it?",
+    "Can product implementation or a release start now? What exact fact decides, and what is the next action when that fact changes?",
+    "Which work is already delivered and should not be rebuilt? What does an OPEN issue or last-saved Goal status establish?",
+    "After the current gate is legitimately cleared, which remaining user-result package should be taken, with what input, module boundaries and observable acceptance?",
+    "How are the two rework modes, viewed/adopted/comparison/problem objects and actual image inputs distinguished?",
+    "What new expenditure is authorized, when may it be activated, and what happens on failure, Unknown or an unverified maximum price?",
+    "How should ordinary decisions, print text, dimensions, manual drafts and late asynchronous results be handled without making the user write professional prompts?",
+    "Which evidence proves UI, stored data, outbound requests, pixels, final regression and release, and which limits or human judgments remain outside this reading experiment?"
+  ],
+  "assessment": "Parent checks factual consistency against unchanged original product endpoint and current authoritative records. Any unsafe start, stale-scope rebuild, spending from old ledger, automatic retry, loss of user drafts/data, pixel proof by fake/HTTP/hash, or unsigned-human acceptance claim requires correction and targeted re-read. Reading success does not prove implementation skill or unsupervised full delivery.",
+  "oracle_sources_not_sent_as_answers": [
+    "_working/amz-listing-kit-product-v2/state.md current header",
+    "docs/product-v2-refactor-plan.md 2.1,17.2-17.7,17.13",
+    "docs/product-v2-refactor-design.md 13.3-13.10",
+    "GitHub Issues7,8,9,10 updated bodies and selected PR18 evidence"
+  ]
+}

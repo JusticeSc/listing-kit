@@ -16,6 +16,7 @@ export * from "./suite.js";
 export * from "./specs.js";
 export * from "./prompt.js";
 export * from "./confirm.js";
+export * from "./image-cost.js";
 export * from "./attempt.js";
 export * from "./image-envelope.js";
 export * from "./config-export.js";

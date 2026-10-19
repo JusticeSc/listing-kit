@@ -1,0 +1,18 @@
+  [PASS] V2.5.5-00 ESM 语法门（domain / workspace / harness）
+  [PASS] V2.5.5-03 契约套件 S01–S06 全过
+  [PASS] V2.5.5-04 工作台整套检查：报告当前、视觉已核对、发现可见
+  [PASS] V2.5.5-05 报告以 suite_review 文档写入 IndexedDB
+  [PASS] V2.5.5-12 整套发现「定位」按钮本地化：按钮带图名、界面不出现裸 shot_id
+  [PASS] V2.5.5-06 发现可跳转到对应图行
+  [PASS] V2.5.5-07 方案变化后报告过期并可重算为当前
+  [PASS] V2.5.5-08 刷新后报告仍在且仍是当前
+  [PASS] V2.5.5-09 主链零意外 console / page / HTTP 错误
+  [PASS] V2.5.5-10 视觉通道失败：只落 UNKNOWN，确定性部分照常
+  [PASS] V2.5.5-11 正式入口自检全过
+[PASS] V2.5.5-11 正式入口自检全过
+       {"rc": 0, "tail": ["  PASS  唯一静态产物首页可取            status=200 type=text/html; charset=utf-8", "  PASS  未知 API 路由 404（不猜测业务）  status=404", "V2 正式入口轻量自检：3/3 通过。（完整场景矩阵在 tests/dev 与 tests/gateway）"]}
+
+SCREENSHOTS
+- evals/product-v2/evidence/v2.5.5-suite-review-20261019-040254-rerun.png
+- evals/product-v2/evidence/v2.5.5-suite-review-20261019-040254-unknown.png
+证据：evals/product-v2/v2.5.5-suite-review-20261019-040254.txt

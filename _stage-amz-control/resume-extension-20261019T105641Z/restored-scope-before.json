@@ -1,0 +1,9 @@
+{
+  "scope": {
+    "left": "本次范围 1 张（未选 4）；实发与排除原因见发送摘要。",
+    "right": "本次选择 0 张，明确发送 0 张，排除 0 张；排除项只影响本图，已有结果不会自动重提。",
+    "viewed": "shot_main_clean"
+  },
+  "real_provider_calls": 0,
+  "cause": "rememberConfirmation discarded current user scope while restoring persisted authorization"
+}

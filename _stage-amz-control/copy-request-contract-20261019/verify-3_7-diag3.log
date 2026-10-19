@@ -1,0 +1,16 @@
+========================================================================
+V2.3.7 文案提议采用链验证
+========================================================================
+  [PASS] V2.3.7-01 提议：明确点一次只发一次请求（零图片外发），候选行可见且可采用
+  [PASS] V2.3.7-02 采用只写规格草稿：卡片显示「已采用候选文案」（不是「旧版」）且已勾选，持久化规格未变
+  [PASS] V2.3.7-03 未保存不生效：该图仍被印字决定拦下，没有任何包含该文案的 Prompt；其余图也不印
+  [PASS] V2.3.7-04 保存规格：条目逐字等于候选文案、来源=该槽位+当前版本、status=confirmed、origin=model
+  [PASS] V2.3.7-05 刷新后仍是「已采用候选文案」：origin 往返不降级成 user
+  [FAIL] V2.3.7-06 编译/预览逐字：界面=记录=快照且含该候选，source_ref 指向该 text_id，非平台语言警告可见
+       {"version": 1, "warnings": [], "refs": ["shot_spec.on_image_text:t_signature_features_1"], "text_len": 702, "found": true, "error": "", "state": "saved"}
+  [FAIL] V2.3.7-07 来源前进：卡片改口为「旧版」提醒，编译被拦且给精确原因，旧记录保留不换值
+       {"advanced_version": 2, "note": "已选的是旧版「FAKE SIGNATURE FEATURES」（v1），\n                当前事实已是 v2：重新勾选这条即按新值重新确认。", "version_kept": 1, "expected_version": 1, "error": "Prompt 编译未通过：图中文字「FAKE SIGNATURE FEATURES」的来源已改变；请核对后重新确认，不会悄悄替换文案。（旧版本已保留）"}
+  [PASS] V2.3.7-99 整套流程未异常中断
+  [PASS] V2.3.7-08 整套流程零 console error / page error
+证据：evals/product-v2/v2.3.7-copy-adoption-chain-20261019-033418-diag3.txt
+结果：有失败（退出码 1）

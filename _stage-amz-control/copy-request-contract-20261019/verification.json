@@ -1,0 +1,54 @@
+{
+  "control_status": "current",
+  "authority": "delta-verification",
+  "scope": "文案提议（copy_targets 模式）请求合同修复 + 页面级回归覆盖；仅本地、零收费、替身 provider",
+  "worktree": "amz-listing-kit-complete-product-15ab22（分支 feat/complete-product-20261018，HEAD 72c33df，改动未提交）",
+  "found": {
+    "symptom": "页面点「提议英文上图候选」后没有候选行：服务端 400 input_rejected「请求字段不符合语义请求契约；没有调用模型。」，页面在槽位卡片内显示同一句话（本会话 job bg_37 实跑观测，2_2_3 运行在等待 #slot-copy-result-* 时超时中止）。",
+    "root_cause": "src/providers/v2_semantic.py 的 SemanticRequest 要求 references 至少 1 项（min_length=1），而页面的文案提议请求体固定送 references: []（app/product_v2/project-inputs.ts:935），于是请求在 parse_request 被拒、从不调用 provider。",
+    "raw_evidence": [
+      "_stage-amz-control/copy-request-contract-20261019/before/pre-fix-raw-evidence.txt（HEAD 基线 references 规则 + 页面请求体原样 + 未提交新增的 copy_targets 字段快照）",
+      "_stage-amz-control/batch.diff（2026-10-18T17:05Z 未提交工作树快照，含 copy_targets 字段新增）"
+    ],
+    "why_not_caught_earlier": [
+      "verify_v2_2_2_semantic_provider.py 覆盖文案提议时复用 analyze_payload（恒带一张参考图元数据），没有覆盖页面的 references: [] 形态。",
+      "verify_v2_2_3_intake_understanding.py 原 22 项检查不含文案提议步骤；evals/product-v2/node/ 全库 grep copy_targets/copyProposal 命中 0（域套件未覆盖该纵向）。",
+      "因此该纵向此前只有 provider 侧契约，没有页面级请求证据，缺陷在浏览器里才显现。"
+    ]
+  },
+  "fix": {
+    "src/providers/v2_semantic.py": "references 由 min_length=1 改为 default=()，并在 _copy_targets_unique 里加模式规则：copy_targets 为空时必须至少一张参考图（事实理解路径行为不变），文案提议模式允许空。",
+    "tests/dev/test_selfcheck_matrix.py": "新增 test_copy_mode_without_references_is_accepted（页面实况 200 + 只回显请求身份 + reference_images_sent=False）与 test_analyze_still_requires_a_reference（同一规则不得被放宽）。",
+    "tools/verify_v2_2_3_intake_understanding.py": "新增页面级检查 V2.2.3-23/24/25/26（详见 evidence.checks）。",
+    "range": "不改前端请求形状、不改服务端 analyze 分支、不改 provider 适配器；SEMANTIC_CONTRACT_VERSION 未动（文案提议扩展此前也未升版，且没有消费者钉值）。"
+  },
+  "evidence": {
+    "delta.diff": "本目录 delta.diff（3 个文件：src/providers/v2_semantic.py、tests/dev/test_selfcheck_matrix.py、tools/verify_v2_2_3_intake_understanding.py）",
+    "page_level": {
+      "log": "本目录 v223-green-26-checks.log",
+      "result": "verify_v2_2_3_intake_understanding.py 26 项全过 rc=0（原 22 项 + 新增 4 项）",
+      "artifact": "evals/product-v2/v2.2.3-intake-understanding-20261019-024709-copy-page4.json / .txt",
+      "checks": {
+        "V2.2.3-23": "一次点击只发一次 POST；请求字段等于 capabilities.analyze_fields（含 copy_targets）；copy_targets 恰为一项且 slot_id/version/value 等于库里当前已确认记录、value_type=text、label 非空；references=[]、existing_slot_ids=[]。",
+        "V2.2.3-24": "候选行回显 provider 文案；槽位集合与版本不变（提议不落事实）；分析记录 state=succeeded、disposition=stored、不发参考图、slots 应用数 0、copies 只含请求身份；采用按钮可用。",
+        "V2.2.3-25": "改值使来源前进后：旧候选行标注过期且采用按钮禁用；再次提议只发一次 POST 且按新版本/新值快照；新行可采用、旧行仍标过期。",
+        "V2.2.3-26": "把实验改动改回原确认值（版本继续前进、状态仍 confirmed），保证后续重分析/状态派生路径不受本检查扰动。"
+      }
+    },
+    "suites": {
+      "verify_v2_2_2_semantic_provider.py": "11/11 全过 rc=0（本目录 v222-after-copy-fix.log）",
+      "pytest tests/gateway tests/dev": "85 passed rc=0（本目录 tests-gateway-dev-after-copy-fix.log；含新增两条）",
+      "verify_v2_6_1_selection.py": "rc=0 全 PASS（本目录 verify_v2_6_1_selection.out，2026-10-19 重跑）"
+    },
+    "earlier_sweep_note": "更正（2026-10-19审计）：_stage-amz-control/source-payload-contract-20261019/sweep2-summary.txt 记录 2_2_3 rc=1 / 6_1 rc=1。即使部分输出有 PASS，也不能据此推断为采集问题或改判成功；原始失败及原因未确证的边界保留。后续有修改/明确诊断后的 2_2_3 26/26 rc=0 与 6_1 rc=0 只证明各自后续受测版本，不覆盖旧失败。"
+  },
+  "boundaries": [
+    "全程替身 provider：没有真实模型调用，候选文案的英文质量、模型是否遵循「只改写、不改身份」仍需真实调用+人工核对（属工单第 6 条与后续 B 批）。",
+    "「提议→采用→保存规格→编译/预览逐字消费」的页面级整段仍缺：本轮证明到「可采用」与请求/记录身份一致；采用后的规格保存与编译消费由域套件与页面上文（on_image_texts）既有证据覆盖，但 AI 提议文本走完整条页面链还没有端到端证据。",
+    "未改动部署/发布；本轮不涉及远程与线上身份。"
+  ],
+  "next": [
+    "补页面级「采用 AI 候选 → 保存规格 → 预览/编译逐字含该文案、来源版本绑定」纵向（同一 2_2_3 或专门纵向，仍用替身 provider）。",
+    "批次收口时把本工作树未提交的整体改动（表达/规格/确认/比较等）与本次合同修复一并纳入分支提交与独立审查。"
+  ]
+}

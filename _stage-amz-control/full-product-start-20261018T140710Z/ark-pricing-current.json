@@ -1,0 +1,18 @@
+{
+  "source": "https://docs.volcengine.com/docs/ark/model-pricing?lang=zh",
+  "title": "模型价格 - 火山方舟 - 火山引擎",
+  "observed_at": "2026-10-18T14:19:54.404Z",
+  "method": "Actual public official document rendered in isolated headless Chrome; no login or model request",
+  "matched_rows": [
+    "doubao-seedream-5-0-pro​\n按生图场景区分定价​\n\t\n首张免费​\n第 2 张起：0.02​\n\t\n单图生成场景：​\n≤ 261 万像素（分辨率 1.5K 及以下）：0.30​\n> 261 万像素（分辨率 1.5K 以上）：0.60​\n图层拆分场景：​\n≤ 261 万像素（分辨率 1.5K 及以下）：0.15​\n> 261 万像素（分辨率 1.5K 以上）：0.30​",
+    "doubao-seedream-5-0-flash​\n\t\n免费​\n\t\n0.12​",
+    "doubao-seedream-5-0-lite​\n\t\n免费​\n\t\n0.22​",
+    "doubao-seedream-4-5​\n\t\n免费​\n\t\n0.25​",
+    "doubao-seedream-4-0​\n\t\n免费​\n\t\n0.20​"
+  ],
+  "body_file": "ark-pricing-current.txt",
+  "native_profile": "C:\\Users\\31368\\AppData\\Local\\Temp\\omp-amz-price-15ab22bf3386b9cf-b5474a55-4de2-434c-9ab2-ebb39d63088d",
+  "native_process_headless_verified": true,
+  "native_process_receipt": "ark-pricing-browser-native.json",
+  "limit": "Price-page row proves the model family price only; exact request model/profile/parameters, allowed asset and safe credentials still require per-call checks. Allowance not activated."
+}

@@ -313,10 +313,10 @@ export const ROLE_VISUAL_BRIEF = Object.freeze({
     "排版：对齐一致、边距统一，文字水平排布，不使用旋转、变形或装饰性字体。",
   ]),
   scene: Object.freeze([
-    "画面概念：商品在真实使用场景里的样子，场景说明用途但不抢商品焦点。",
-    "主体：商品居中偏前、完整入画，与场景里的道具保持自然比例关系。",
-    "光线与环境：符合场景的自然光线，方向明确、明暗过渡自然；背景轻微虚化以突出商品。",
-    "一致性：场景与道具不出现其它品牌标识，也不与商品的材质、颜色冲突。",
+    "画面概念：商品在真实使用环境里的样子；环境只交代使用语境，不抢商品焦点。",
+    "主体：商品居中偏前、完整入画；只有依据里可见的物件才能入画，没有依据时用干净的中性背景，不编造设备、道具或使用对象。",
+    "光线与环境：自然且有方向的柔和光线，明暗过渡自然；背景轻微虚化以突出商品。",
+    "一致性：环境不出现其它品牌标识，也不与商品的材质、颜色冲突。",
   ]),
   detail: Object.freeze([
     "画面概念：近距离特写，让材质、工艺或关键部件的细节看得清。",
@@ -325,10 +325,17 @@ export const ROLE_VISUAL_BRIEF = Object.freeze({
     "清晰度：焦点落在细节上，背景自然虚化。",
   ]),
   size: Object.freeze([
-    "画面概念：说明尺寸的图，商品完整入画，标注指向对应部位。",
-    "主体：商品居中、比例不变形，四周留出标注空间。",
-    "标注：尺寸线指向对应部位；数值与单位只允许逐字使用已确认尺寸；取不到可逐字引用的数值时就不标数字，不编造数字与单位。字号可读，颜色与背景对比充分。",
+    "画面概念：说明尺寸的图，商品完整入画、比例真实；没有可逐字引用的确认数值时，画面不出现任何标注、引线或数字。",
+    "主体：商品居中、比例不变形；只有在存在可逐字引用的确认数值时才在四周留出标注空间。",
+    "标注：只标注已确认尺寸里可逐字引用的数值与单位，尺寸线指向对应部位；没有可逐字引用的确认数值时，不画尺寸线、不出现任何数字或单位。字号可读，颜色与背景对比充分。",
     "光线：均匀柔和，避免投影盖住标注区域。",
+  ]),
+  // 印字决定为「不印」时的尺寸图简报：不出现任何标注、引线、数值相关措辞，
+  // 避免把模型引向「画参数清单」；画面仍是干净的商品图。
+  size_no_annotation: Object.freeze([
+    "画面概念：干净利落的商品展示图，商品完整入画、比例真实。",
+    "主体：商品居中放置，四周留白均匀，画面没有线条、箭头或文字。",
+    "光线：均匀柔和的布光，商品受光完整、颜色准确。",
   ]),
   comparison: Object.freeze([
     "画面概念：商品与参照物同框对比，差异一眼可见。",
@@ -1184,13 +1191,27 @@ export function compilePrompt(input) {
   // 视角、留白与光线，普通用户不需要写摄影术语；不带任何未确认的商品事实。
   // 显式正/侧/顶视通过依据门后必须真正改正文：替换角色简报里的默认视角句（否则顶视仍会被
   // 读成「平视拍摄」），并把决定与证据槽写进来源；没显式选择时默认行为不变。
-  const roleBrief = ROLE_VISUAL_BRIEF[shot.role_id] || ROLE_VISUAL_BRIEF.custom;
+  // 尺寸图的印字决定为「不印」时，不排任何标注版面指令：既然没有要逐字引用的确认数值，
+  // 再要求「标注指向对应部位」只会让模型自行编造引线与数字（本项目实例：qwen-image-3.0
+  // 在两次被明确禁止后仍画出编造的引线文字）。印字决定为未决定时仍走旧门阻断，不在此处兜底。
+  const sizePrintsNothing = shot.role_id === "size" && printing.intent === "none";
+  const roleBrief = sizePrintsNothing
+    ? ROLE_VISUAL_BRIEF.size_no_annotation
+    : (ROLE_VISUAL_BRIEF[shot.role_id] || ROLE_VISUAL_BRIEF.custom);
   const viewpointSentence = presentation.viewpoint.state !== "reference_visible"
     ? VIEWPOINT_SENTENCES[presentation.viewpoint.state] || "" : "";
   const briefLines = viewpointSentence
     ? roleBrief.filter((line) => !line.startsWith("视角：")).concat(viewpointSentence)
     : [...roleBrief];
   const briefRefs = [shotRef + ".role", shotRef];
+  if (sizePrintsNothing) {
+    briefRefs.push("shot_spec.print_intent");
+    warnings.push({
+      code: "SIZE_ANNOTATION_SKIPPED_PRINT_NONE",
+      message: "尺寸图选择不印新增文字：本图不排标注版面，也不要求尺寸线或数字。",
+      source_refs: ["shot_spec.print_intent", shotRef],
+    });
+  }
   if (viewpointSentence) {
     briefRefs.push(presentation.viewpoint.source === "shot"
       ? "shot_spec.presentation.viewpoint" : "style_spec.presentation.viewpoint");

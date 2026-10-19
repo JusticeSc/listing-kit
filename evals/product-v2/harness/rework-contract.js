@@ -41,8 +41,7 @@ import {
 } from "/domain/index.js";
 
 import { sha256Hex } from "/storage/db.js";
-import { IMAGE_PROMPT_PROFILE, expect, expectCode, serializeError } from "./harness-api.js";
-
+import { IMAGE_PRICING, IMAGE_PROMPT_PROFILE, expect, expectCode, serializeError } from "./harness-api.js";
 const cases = [];
 
 function test(id, title, run) {
@@ -265,6 +264,7 @@ function sheetFixture(shot, record, options = {}) {
     context: contextFixture(),
     currentBasisByShot: basisByShot,
     providerProfile: IMAGE_PROMPT_PROFILE,
+    pricing: options.pricing === undefined ? IMAGE_PRICING : options.pricing,
     ...(options.shotIds ? { shotIds: options.shotIds } : {}),
   });
 }

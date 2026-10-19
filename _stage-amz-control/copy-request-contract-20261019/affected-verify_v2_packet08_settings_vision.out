@@ -1,0 +1,41 @@
+[PASS] P08-08a 较大资产与负例夹具是真实有效 PNG、超过旧扫掠跳过线且在产品单图上限内
+[PASS] P08-08b 非 API 未知路由明确 404（不猜测业务、不回退应用入口）
+[PASS] P08-01a 能力投影露出 fake-vision 看图档（注入接缝无头直调即保留实例）
+[PASS] P08-01b 设置面板三用途有效配置行可见（含缺 key 提示语）
+[PASS] P08-01c 面板文案声明密钥仅标签页内存/请求级（非 secret）
+[PASS] P08-02in 非秘密哨兵确实键入设置 DOM 的三用途密码框（值只在输入框内存里，未落盘）
+[PASS] P08-02a 应用设置后正式消费者投影出三用途来源身份 byok（面板文案 + capabilities 响应同源）
+[PASS] P08-01e 应用设置不丢未落盘的商品资料草稿：DOM 保留、已落盘、分析入口未锁
+[PASS] P08-01d 注入看图档后理解区声明将发送实际图片（页面所示配置）
+[PASS] P08-04b 页面分析按钮可用（注入替身已配置，不锁人工主链）
+[PASS] P08-03pre 点击分析前页面仍声明将发送实际图片（与看图档一致）
+[PASS] P08-03a 看图替身收到 exactly 1 张真实图片字节（非空 + sha 与上传原图一致）
+[PASS] P08-02b 正式语义消费者的用途、Provider与本次密钥原文精确一致
+[PASS] P08-03b 页面所示配置与实际请求一致（模型行 + 已发送图片行含 role/sha 前缀）
+[PASS] P08-03c 分析记录写真实图片来源（role/media/sha256，无字节原文）
+[PASS] P08-02c 正式生成消费者的用途、Provider与本次密钥原文精确一致
+[PASS] P08-02c-swap 实际图像请求的密钥不能被同长度语义密钥冒充
+[PASS] P08-02d 正式单图复核消费者的用途、Provider与本次密钥原文精确一致
+[PASS] P08-02e 正式整套复核消费者的用途、Provider与本次密钥原文精确一致
+[PASS] P08-06a 取消/关闭不应用草稿：对话框关闭、输入清空、供应商零外呼、存储与文档不变
+[PASS] P08-05a image 用途 key 已清除（面板清除入口真实可用）
+[PASS] P08-05b 凭据缺失时核对被阻：出现补原凭据入口、核对按钮禁用
+[PASS] P08-05e 当前设置已切到另一个图像 provider，原任务仍按冻结目标判「凭据未就绪」而不外发
+[PASS] P08-05c 补原凭据后核对恢复可用
+[PASS] P08-05c2 用户核对不重提：零新 submit
+[PASS] P08-05f 原任务核对只按冻结目标/来源外发：Provider=原目标、密钥原文精确、target 逐字段一致；当前动作选择与冻结 action/task 不变
+[PASS] P08-05d 切回 ok 后同 task 达终态 succeeded 且零新 submit
+[PASS] P08-05g 原任务达终态后当前动作模型选择仍未被切回（新动作照旧用当前设置）
+[PASS] P08-02f 哨兵不出现在 DOM/响应体/服务器错误面/文档与资产payload/资产原字节/local/session/两包解压成员/控制台与服务器输出，且三用途出站密钥原文精确
+[PASS] P08-06b 本次运行没有任何出站请求携带取消/关闭时的草稿哨兵
+[PASS] P08-02f-negative 正式上传的故意泄漏大图使同一字节扫描器判红（非秘密负例），且同一扫描器对无泄漏的最大资产不报
+[PASS] P08-04f 旧包工件是真实旧格式（format 不变、format_version=1）
+[PASS] P08-04a 旧格式包经正式 UI 导入被拒绝，且无半份项目/文档/资产新增
+[PASS] P08-04d 默认档关闭且环境存在部署密钥：解析 source=none、适配器不持密钥、合法提交被拒且零上游
+[PASS] P08-02i 生产图像适配器精确收到本次图像哨兵原文，同长度语义哨兵不等
+[PASS] P08-04c 生产看图适配器收到真实图片字节但无凭据 → PROVIDER_NOT_CONFIGURED（不是 VISION_BYTES_REQUIRED）且零上游
+[PASS] P08-02g 生产适配器 BYOK：图像出站鉴权只带本次密钥、语义档来源身份 byok 且错误面不回显密钥
+[PASS] P08-04e 生产网关合法看图请求（真实字节、无 BYOK）→ 503 PROVIDER_NOT_CONFIGURED，非校验短路
+evidence: evals/product-v2/refactor/packet08-settings-semantic-20261018T194647Z.json
+screenshot: C:\Users\31368\AppData\Local\Temp\amz-p08-2v2lj3n1\p08-vision.png
+RESULT PASS 38/38

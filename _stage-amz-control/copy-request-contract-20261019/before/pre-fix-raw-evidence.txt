@@ -1,0 +1,27 @@
+# 修复前证据（raw bytes，非重建）
+
+## 1) 提交基线 HEAD=72c33df 的 references 规则（文案提议是本工作树未提交新增，基线里还没有 copy_targets）
+    references: tuple[ReferencedAsset, ...] = Field(min_length=1, max_length=MAX_REFERENCES)
+
+## 2) 页面文案提议请求体（app/product_v2/project-inputs.ts:924-941 原样）
+  924       throw new Error("当前语义模型不支持候选文案提议；没有调用模型。");
+  925     }
+  926     const payload = currentIntakePayload();
+  927     return {
+  928       source: { document_id: INTAKE_DOCUMENT_ID, version: intakeVersion,
+  929         fingerprint: fingerprintOf(payload), payload },
+  930       provider: { provider_id: providerId, model_id: modelId,
+  931         credential_source: provider.credential_source || "none" },
+  932       body: {
+  933         product_name: payload.product_name, description: payload.description,
+  934         selling_points: payload.selling_points, focus: payload.focus,
+  935         references: [], locale: ANALYZE_LOCALE, platform: ANALYZE_PLATFORM,
+  936         max_slots: ANALYZE_MAX_SLOTS, existing_slot_ids: [], copy_targets: snapshots,
+  937       },
+  938       headers,
+  939     };
+  940   }
+  941 
+
+## 3) 本工作树未提交新增的快照 _stage-amz-control/batch.diff（2026-10-18T17:05Z）里新增的 copy_targets 字段
++    copy_targets: tuple[CopyProposalTarget, ...] = Field(default=(), max_length=MAX_COPY_TARGETS)

@@ -1,0 +1,90 @@
+{
+  "authority": "NOT-AUTHORITY: actual pre-B4 page evidence, no completion claim",
+  "observed_at": "2026-10-19T05:30:14.999Z",
+  "origin": "http://127.0.0.1:9167",
+  "browser": {
+    "pid": 14020,
+    "executable": "C:/Program Files/Google/Chrome/Application/chrome.exe",
+    "profile": "C:\\Users\\31368\\AppData\\Local\\Temp/amz-b4-workbench-1792387563844",
+    "native_headless_proven": true,
+    "launch_command_observed_by": "Get-CimInstance Win32_Process -Filter 'ProcessId = 14020' | Select-Object ProcessId,ExecutablePath,CommandLine | ConvertTo-Json -Compress",
+    "launch_command": "\"C:/Program Files/Google/Chrome/Application/chrome.exe\" --headless=new --no-first-run --no-default-browser-check --user-data-dir=C:\\Users\\31368\\AppData\\Local\\Temp\\amz-b4-workbench-1792387563844 --remote-debugging-port=61730",
+    "isolated_profile_before_import": {
+      "innerWidth": 1440,
+      "innerHeight": 1000,
+      "dpr": 1.25,
+      "stores": {
+        "assets": 0,
+        "documents": 0,
+        "projects": 0
+      }
+    }
+  },
+  "project": {
+    "source_sha256": "5dd5b7d27d198b788b2aad5dacf193af5dd4e636b0f493bdc407478084717591",
+    "source_documents": 232,
+    "source_assets": 19,
+    "source_kind": "Preserved real bearing project, historical selections currently stale; not new program-quality proof"
+  },
+  "navigation": [
+    {
+      "stage": "intake",
+      "text": "1资料"
+    },
+    {
+      "stage": "understand",
+      "text": "2理解"
+    },
+    {
+      "stage": "plan",
+      "text": "3方案"
+    },
+    {
+      "stage": "generate",
+      "text": "4生成"
+    },
+    {
+      "stage": "review",
+      "text": "5审核返工"
+    },
+    {
+      "stage": "deliver",
+      "text": "6交付"
+    }
+  ],
+  "surface": {
+    "url": "http://127.0.0.1:9167/",
+    "compareVisible": true,
+    "columns": "217.328px 217.328px 217.328px",
+    "listCards": 5,
+    "viewportWidth": 1440,
+    "rootWidth": 1425,
+    "bodyFont": "14px"
+  },
+  "screenshot": "b4-before.webp",
+  "native_zoom_harness": {
+    "settings_option_values": [
+      "1",
+      "1.25",
+      "2"
+    ],
+    "warmup": {
+      "width": 1152,
+      "height": 800,
+      "dpr": 1.5625,
+      "visualScale": 1,
+      "cssZoom": "1",
+      "transform": "none",
+      "scrollWidth": 1152
+    },
+    "limit": "This warmup measured Chrome settings, not product: two custom-app managed names adopted the same target. Not product zoom acceptance. Later matrix must record product URL, re-establish viewport metrics after navigation, and actual product width/DPR."
+  },
+  "failures_preserved": [
+    "upload with unnormalized ../ path failed though bytes existed; normalized absolute path succeeded",
+    "custom app opening settings reused same native page target; aliases do not prove separate tabs",
+    "after returning product, waiting for home Open button timed out because the app actually auto-restored the workspace; console/errors empty and current product visible"
+  ],
+  "fees_cny": 0,
+  "real_model_calls": 0,
+  "B4_accepted": false
+}

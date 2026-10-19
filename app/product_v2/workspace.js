@@ -91,38 +91,6 @@ import {
  */
 
 /**
- * 生成前确认单：domain/confirm.js `buildConfirmationSheet` 的确定性输出。领域层不导出该结构
- * 类型，工作区按实际消费的字段在本地收窄。
- * @typedef {{
- *   schema_version: number, total: number, ready: number, blocked: number, can_submit: boolean,
- *   platform: {platform_id: string, version: string, label?: string},
- *   provider: {provider_id: string, model_id: string, version: string, protocol: string, size: string,
- *              n: number, prompt_extend: boolean, watermark: boolean, output_format: string},
- *   external_summary: {model: string, size: string, n: number, prompt_extend: boolean, watermark: boolean,
- *                      output_format: string, reference_count: number, reference_roles: string[],
- *                      prompt_chars: number, on_image_text_language?: string, statement: string},
- *   shots: Array<ConfirmationSheetShot>,
- *   scope_shot_ids?: string[],
- *   blockers: Array<{shot_id: string, label: string, order: number, code: string, message: string,
- *                    fix: {region: string, shot_id: string|null, label: string, action: string}}>,
- *   risks: Array<{code: string, message: string, shot_id?: string, label?: string}>,
- * }} ConfirmationSheetView
- */
-
-/**
- * 确认单中的单张图片行（字段与 confirm.js 输出逐项对应）。
- * @typedef {{
- *   shot_id: string, order: number, label: string, role_id: string|null, role_label: string|null,
- *   intent: string|null, template_id: string|null, required: boolean, satisfied: boolean,
- *   prompt: {version: number|null, hash: string|null, chars: number|null},
- *   references: Array<{role: string, sha256_prefix: string}>,
- *   risks: Array<{code: string, message: string, shot_id: string, label: string}>,
- *   blockers: Array<{code: string, message: string,
- *                    fix: {region: string, shot_id: string|null, label: string, action: string}}>,
- * }} ConfirmationSheetShot
- */
-
-/**
  * 当前编辑中的商品资料：保存/出站前各字段都已落成具体值（不再是可选项）。
  * @typedef {{schema_version: number, product_name: string, description: string, selling_points: string[], focus: string, references: ProductReference[]}} CompleteProductInput
  */

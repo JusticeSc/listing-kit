@@ -1,0 +1,38 @@
+{
+  "authority": "NOT-AUTHORITY: public official price/model preflight, not invocation or allowance activation",
+  "checked_at": "2026-10-18T14:25:15.236Z",
+  "models": [
+    {
+      "provider": "dashscope-qwen-image",
+      "model_id": "qwen-image-3.0",
+      "region": "China Beijing",
+      "official_url": "https://help.aliyun.com/zh/model-studio/qwen-image-3-0.md",
+      "observed_input_cny_per_image": 0.02,
+      "observed_output_cny_per_image": 0.18,
+      "n_max_this_authority": 1,
+      "max_reference_images_product_profile": 3,
+      "maximum_cny_for_one_product_call": 0.24,
+      "evidence": "Actual functions.read of official Markdown in this session; original prices, no discount or free-tier deduction"
+    },
+    {
+      "provider": "volcengine-ark",
+      "model_id": "doubao-seedream-5-0-flash-260915",
+      "region": "China Beijing",
+      "official_model_proof": "ark-model-list-current.json",
+      "official_price_proof": "ark-pricing-current.json",
+      "observed_input_cny": 0,
+      "observed_output_cny_per_image": 0.12,
+      "n_max_this_authority": 1,
+      "maximum_cny_for_one_product_call": 0.12
+    }
+  ],
+  "new_allowance_activated": false,
+  "model_calls_made": 0,
+  "outstanding_per_call_prerequisites": [
+    "Necessary missing/changed capability or new program-quality hypothesis",
+    "Exact selected original asset/license/hash and input-count/size/model-parameter check",
+    "Existing approved secure runtime credential channel; never secret extraction",
+    "Sealed full ledger takeover preserving newer working rows, idempotent activation once, per-call reservation before submit"
+  ],
+  "auxiliary_models": "No new qwen-vl-max exact-model/current-price proof or paid auxiliary call made; manual route stays available."
+}

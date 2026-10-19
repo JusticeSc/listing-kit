@@ -1,0 +1,68 @@
+{
+ "observed_at": "2026-10-19T12:22:19.699Z",
+ "project_id": "17b6b29f-6e74-405a-804c-696b746c7c00",
+ "authorization_id": "complete-product-authorization-20261018T114240Z",
+ "goal_id": "15ab22bf3386b9cf",
+ "paid_calls": 2,
+ "safety_upper_cny_added": 0.42,
+ "lane_after": {
+  "image_calls": 5,
+  "aux_calls": 0,
+  "amount_cny": 0.78,
+  "remaining_image": 7,
+  "remaining_aux": 4,
+  "remaining_cny": 4.22
+ },
+ "cumulative_safety_upper_cny": 11.98,
+ "requests": [
+  {
+   "mode": "regenerate_original",
+   "action_id": "act-bb447d3f5c2c4a3990008fe5b5234c55",
+   "prompt_version": 15,
+   "candidate_version": 4,
+   "input_images": 1,
+   "image_sha256": "7ab4d9e0eae3d4d5d005084ed6cdf0875f783c49b6d85c364beb14b79b32316b",
+   "image_bytes": 1288931,
+   "subject_width_share_at_lum200": 0.6354,
+   "http_status": 200,
+   "outcome": "succeeded; kept as evidence, not adopted because coverage is below the compiled 85% platform rule"
+  },
+  {
+   "mode": "edit_candidate",
+   "action_id": "act-02f239357376473d9aa7ff9c8e419cb7",
+   "prompt_version": 16,
+   "candidate_version": 5,
+   "input_images": 2,
+   "image_order": [
+    "candidate",
+    "original"
+   ],
+   "image_sha256": "4c8c68cf7a0ab0497f71d389e275498fbe3e764520a125731c77d2f28b134435",
+   "image_bytes": 1274917,
+   "subject_width_share_at_lum180": 0.85,
+   "http_status": 200,
+   "outcome": "succeeded; adopted as selection v2 act-bb9d9700e5fd4a879352635642281284"
+  }
+ ],
+ "wire_guard": "Host allowed exactly one provider POST per start and only the two pre-reserved shapes; both sends are in b16-actual-outbound.json with prompt/parameters/image identities only.",
+ "downloads": {
+  "delivery_zip": {
+   "sha256": "19fdbea843c7b144062cf61beecd8fd3e844a579ec21bb113d603c511c174158",
+   "bytes": 8376291,
+   "main_image_matches_adopted": true
+  },
+  "project_zip": {
+   "sha256": "3c93dd6af66679e9b63340255a483761b38782245be000d6416046d48081497f",
+   "bytes": 30819550
+  }
+ },
+ "clean_origin_restore": {
+  "documents": 257,
+  "assets": 21,
+  "rows_missing": 0,
+  "rows_added": 0,
+  "asset_metadata_equal": true,
+  "adopted_main_blob_byte_equal": true,
+  "scope": "payload digests and asset metadata for the whole project, plus blob bytes for the newly adopted main image"
+ }
+}

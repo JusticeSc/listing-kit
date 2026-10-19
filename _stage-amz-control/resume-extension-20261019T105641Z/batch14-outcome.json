@@ -1,0 +1,29 @@
+{
+  "observed_at": "2026-10-19T11:42:36.038Z",
+  "batch": 14,
+  "status": "failed",
+  "repair_and_revalidation_batch": 15,
+  "passed": [
+    "types and both frontend builds",
+    "actual formal page historical restore: selected 1, sending 0, excluded 1 with existing-success reason",
+    "single-authorized-submit guard real local HTTP smoke: 1 forwarded, 4 aborted"
+  ],
+  "failed": {
+    "command": "npm.cmd run test:domain",
+    "passed": 276,
+    "failed": 4,
+    "total": 280,
+    "output": "artifact://2927",
+    "cases": [
+      "legacy schema-3 full-reference fixture downcast incorrectly",
+      "rework mode fixture retained two inputs for regenerate-original",
+      "rework identity fixture lacked parent attempt and priced one input instead of two",
+      "synthetic scope fixture omitted required risks and global blockers"
+    ]
+  },
+  "supplier_calls": 0,
+  "paid_calls": 0,
+  "budget_extension": false,
+  "goal_criteria_changed": false,
+  "batch_limit": 18
+}

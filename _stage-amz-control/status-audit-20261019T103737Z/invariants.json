@@ -1,0 +1,35 @@
+{
+  "ledger_only_timestamp_changed": true,
+  "closeout_repairs": {
+    "b10-zero-fee-longitudinal-20261019.json": "only terminal semicolon removed; parses",
+    "b12-final-closeout-20261019.json": "only terminal semicolon removed; parses"
+  },
+  "goal_text_unchanged": true,
+  "state_machine_changed_keys": [
+    "latest_audit",
+    "updated_at"
+  ],
+  "state_task_phase_blockers_unchanged": true,
+  "files": {
+    "_working/amz-listing-kit-product-v2/state.md": {
+      "sha256": "77d3d31d1f73ed5b89a9655b3e85389c8c5ae2d83f0df24341b395e9f1bbf3ad",
+      "CR": 0
+    },
+    "_working/amz-listing-kit-product-v2/budget-ledger.json": {
+      "sha256": "eb6c6d30e2438e7baef81ae611f270df94a03c227916eb1e7dca5088027f5978",
+      "CR": 1437
+    },
+    "docs/product-v2-refactor-plan.md": {
+      "sha256": "b8a63176fdde1d79ff048edd45aff37bfef4c180da41c14e8f7464d0ce159fa7",
+      "CR": 0
+    },
+    "_stage-amz-control/b5-batch8-20261019/b10-zero-fee-longitudinal-20261019.json": {
+      "sha256": "60ee41dfbd6962fabfdf4a8f1e599449d2c5a21f426e8b4d25172ecbb6c5759f",
+      "CR": 0
+    },
+    "_stage-amz-control/b5-batch8-20261019/b12-final-closeout-20261019.json": {
+      "sha256": "d8817c4bf6d3649c5881e991e3a5a4447131e2d084e4cd8d31005bf4e87febd3",
+      "CR": 0
+    }
+  }
+}

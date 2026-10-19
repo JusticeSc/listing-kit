@@ -1,0 +1,63 @@
+{
+  "task": "V2.4.5",
+  "suite_id": "v2.4.5-live-reference",
+  "status": "failed",
+  "finished_at": "2026-10-19T18:08:39",
+  "reference": {
+    "path": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit-complete-product-15ab22\\_stage-amz-control\\b1-b3-vertical-20261019\\bearing-user-ref.jpg",
+    "sha256": "4c4ed76c61c959ace082f8f3698f1b10bf0e1c942c2b1e524b1e62086d4df1e1",
+    "byte_size": 73681
+  },
+  "model_calls": 1,
+  "image_submit_requests": 3,
+  "image_status_requests": 0,
+  "image_result_requests": 0,
+  "checks": [
+    {
+      "id": "V2.4.5-01",
+      "title": "图像 provider 是真实 volcengine-ark 且 configured=true（fake-image 切替不算）",
+      "ok": true,
+      "detail": {
+        "provider": "图像 provider：volcengine-ark · doubao-seedream-5-0-flash-260915 · 已配置"
+      }
+    },
+    {
+      "id": "V2.4.5-99",
+      "title": "真实闭环在完成前中断（记录保持原样，不自动重提）",
+      "ok": false,
+      "detail": "TimeoutError: Locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\"#shot-execution [data-shot-id=\\\"shot_main_clean\\\"]\").locator(\"button:has-text(\\\"生成这张图\\\")\").first\n"
+    },
+    {
+      "id": "V2.4.5-05",
+      "title": "零意外 console error / page error",
+      "ok": true,
+      "detail": {
+        "console": [],
+        "unexpected": [],
+        "page": []
+      }
+    }
+  ],
+  "ui_flow": {
+    "decisions": {
+      "presentation": {
+        "appearance": "clean_display",
+        "contents": "empty",
+        "saved": true
+      },
+      "shots": {
+        "shot_main_clean": false,
+        "shot_infographic_benefits": true,
+        "shot_scene_lifestyle": false,
+        "shot_detail_material": false
+      }
+    },
+    "provider": "图像 provider：volcengine-ark · doubao-seedream-5-0-flash-260915 · 已配置",
+    "image_provider_id": "volcengine-ark",
+    "target_shot": "shot_main_clean"
+  },
+  "console_errors": [],
+  "page_errors": [],
+  "screenshots": [],
+  "boundary": "证明一笔预算内的真实参考图闭环：图像 provider 是 volcengine-ark（configured=true），一次真实同步 submit 携带真实商品参考图（sha256 4c4ed76c61c9…，73681 字节）与非空 Prompt；提交信封一步到 succeeded，task_id 为空且 status 零外呼；结果字节由提交信封一次性取回并存成浏览器 IndexedDB 里的 Blob，sha256 双边一致（候选记录 = 本机重算），尺寸等于请求尺寸。语义槽位由验证器直接播种（0 次语义调用），所以本证据不证明商品理解质量、出图审美质量、跨品类通用性、审核与返工（Phase 5）。"
+}

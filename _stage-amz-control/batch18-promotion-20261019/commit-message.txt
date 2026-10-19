@@ -1,0 +1,21 @@
+feat(v2): batches 8-17 — expression cost gate, consumer cutover, real five-figure vertical
+
+批 8-14:普通决定/冻结返工合同的消费方迁移,提示词编译只认已确认文案+选定布局+精确测量绑定;
+两模式(指定候选编辑/原照重生成)复用 generation owner 的准备-确认-当前性-OCC 预约-提交;新
+Confirmation3/Snapshot3/Attempt3 同组切换,历史 Confirmation1/2 与身份完整 Attempt2 只读原形。
+
+批 15:发送前成本门(逐图费用上界与官方定价依据进确认面,缺定价不放开生成),人工全文保留路径,
+以及 V2.2.3-22 判据修正——原面板级断言会把设计上就要人读的两行(analyze-gate「将发给 <model>」、
+analyze-result 分析记录)当成工程标识泄漏;逐行断言(主行无 slot_id/版本/哈希/模型 id、标识收进
+技术详情)完整保留,面板级断言删除。实证见 _stage-amz-control/ci22-panel-assertion-20261019/。
+
+批 16-17:真实成品路径两段——原项目 17b6b29f 内原照重画+候选编辑各 1 张并采用,交付包/项目包
+往返(316 文档/26 资产按 kind|文档|版本|payload 逐一相等);场景/尺寸按用户两项普通回答重做,
+编译器修复「不标数字时不再邀请自造引线」并留业务合同测试。
+
+退役:tools/verify_v2_volc_adopt_export.py 读取历史 spent 摘要+硬编码旧门,不能继续充当收费入口,
+随账本控制块退役;源字节封存 resume-extension-20261019T105641Z/retired-paid-cli-before.zip。
+
+门(本机实际退出码):npm run check:types / build:frontend / test:domain(281 项)/ check_docs --no-run /
+check_project_state 全 rc=0,见 _stage-amz-control/batch18-promotion-20261019/gates/。
+晋级与排除清单(含 chrome-profile、>20MB 包、根目录临时输出)见同目录 promotion.json。

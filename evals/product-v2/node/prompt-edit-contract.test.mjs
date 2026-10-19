@@ -38,7 +38,7 @@ import {
 } from "../../../build/frontend-node/app/product_v2/domain/index.js";
 
 import { sha256Hex } from "../../../build/frontend-node/app/product_v2/storage/db.js";
-import { IMAGE_PROMPT_PROFILE, expect, expectCode, serializeError } from "./harness-core.mjs";
+import { IMAGE_PRICING, IMAGE_PROMPT_PROFILE, expect, expectCode, serializeError } from "./harness-core.mjs";
 
 const cases = [];
 
@@ -226,6 +226,7 @@ function sheetOf(record, shot, options = {}) {
     context: options.context || contextFixture(),
     currentBasisByShot: basisByShot,
     providerProfile: IMAGE_PROMPT_PROFILE,
+    pricing: options.pricing === undefined ? IMAGE_PRICING : options.pricing,
   });
 }
 

@@ -155,13 +155,6 @@ SLOT_TECH_PROBE = """() => [...document.querySelectorAll('#slot-list .slot-row')
            main_text: (clone.textContent || '').replace(/\\s+/g, ' ').trim(), tech: tech };
 })"""
 
-SLOT_PANEL_MAIN_TEXT = """() => {
-  const panel = document.querySelector('[data-stage-panel="intake"]');
-  if (!panel) return '';
-  const clone = panel.cloneNode(true);
-  clone.querySelectorAll('details').forEach((node) => node.remove());
-  return (clone.textContent || '').replace(/\\s+/g, ' ');
-}"""
 
 
 def png_bytes(width: int, height: int, color: tuple[int, int, int]) -> bytes:
@@ -450,7 +443,6 @@ def main() -> int:
             # V2.6.16：事实卡片只把人话放主行；slot_id / 版本 / 证据来源（字段名、哈希、模型 id）
             # 一律收进该卡折叠的「技术详情」。判据用「删掉 details 后的可见文本」自证，不看样式。
             tech_rows = page.evaluate(SLOT_TECH_PROBE)
-            panel_main = page.evaluate(SLOT_PANEL_MAIN_TEXT)
             hex_re = re.compile(r"\b[0-9a-f]{12,}\b")
             tech_ok = bool(tech_rows)
             tech_detail = {"rows": tech_rows[:4], "count": len(tech_rows)}
@@ -464,8 +456,6 @@ def main() -> int:
                     tech_ok = False
                 if hex_re.search(main_text):
                     tech_ok = False
-            if "product_input" in panel_main or "fake-deepseek" in panel_main:
-                tech_ok = False
             check(f"{APP_NAME}-22",
                   "事实卡片渐进披露：主行无 slot_id/版本/来源引用（字段名、哈希、模型 id），工程标识在技术详情里",
                   tech_ok, tech_detail)

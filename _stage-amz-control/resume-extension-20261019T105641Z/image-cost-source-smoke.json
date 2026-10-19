@@ -1,0 +1,12 @@
+{
+  "command": [
+    "node",
+    "--input-type=module",
+    "--eval",
+    "<code>"
+  ],
+  "code": "import assert from 'node:assert/strict'; import {imageCostOf,imageCostMatches,frozenImageCost} from './app/product_v2/domain/image-cost.js';\nconst provider={provider_id:'dashscope-qwen-image',model_id:'qwen-image-3.0',size:'1344*1344',n:1,output_format:'png'};\nconst pricing={version:1,kind:'official',...provider,currency:'CNY',input_image_fen:2,output_image_fen:18,verified_on:'2026-10-19',source_url:'https://help.aliyun.com/zh/model-studio/qwen-image-generation-and-editing-api-reference',region:'cn-beijing'};\nconst shots=[{shot_id:'main',references:[{sha256:'same'}]},{shot_id:'detail',references:[{sha256:'same'}]}];\nconst both=imageCostOf(provider,shots,pricing); assert.equal(both.upper_fen,40); assert.deepEqual(both.per_shot.map(row=>[row.input_images,row.upper_fen]),[[1,20],[1,20]]);\nconst edit=imageCostOf(provider,[{shot_id:'main',references:[{},{}]}],pricing); assert.equal(edit.upper_fen,22);\nassert.equal(imageCostOf(provider,shots,{...pricing,model_id:'different'}).upper_fen,null); assert.equal(imageCostOf(provider,shots,null).upper_fen,null);\nassert.equal(imageCostMatches({...both,upper_fen:20},provider,shots),false);\nassert.equal(imageCostMatches({...both,message:'presentation changed'},provider,shots),true);\nassert.notDeepEqual(frozenImageCost(imageCostOf(provider,shots,{...pricing,output_image_fen:19})),frozenImageCost(both));\nconsole.log(JSON.stringify({actual_source_module:true,two_same_reference_requests_fen:both.upper_fen,two_input_edit_fen:edit.upper_fen,unknown_or_mismatch:'blocked',tampered_total:'rejected',display_text:'not authorization input',supplier_calls:0}));",
+  "exit_code": 0,
+  "stdout": "{\"actual_source_module\":true,\"two_same_reference_requests_fen\":40,\"two_input_edit_fen\":22,\"unknown_or_mismatch\":\"blocked\",\"tampered_total\":\"rejected\",\"display_text\":\"not authorization input\",\"supplier_calls\":0}\n",
+  "stderr": ""
+}

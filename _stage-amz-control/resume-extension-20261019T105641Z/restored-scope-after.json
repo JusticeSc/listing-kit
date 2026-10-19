@@ -1,0 +1,2349 @@
+{
+  "proof": {
+    "left": "本次范围 1 张（未选 4）；实发与排除原因见发送摘要。",
+    "right": "本次选择 1 张，明确发送 0 张，排除 1 张；排除项只影响本图，已有结果不会自动重提。",
+    "rows": [
+      {
+        "shot": "shot_main_clean",
+        "blocked": "true",
+        "text": "\n            \n              1. 主图·干净背景\n              主图 · 必需\n              本次排除\n              Prompt v13 · 43e832ecf0b6…\n            \n            任务：完整展示商品主体，背景干净，不添加资料里没有的部件\n            本次不外发这张图的提示词或参考图。\n            已有成功结果：请明确选择修改或重新生成，不会重复提交。\n            \n            \n            \n            \n      \n        技术详情\n        商品原照 sha256 4c4ed76c61c9\n      \n            风险：公共风格背景「白底商品图」被主图平台规则覆盖为纯白背景。\n          "
+      }
+    ],
+    "enabled": false
+  },
+  "network": [
+    {
+      "id": "request-73",
+      "seq": 73,
+      "ts": 1792408938140,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/api/v2/capabilities",
+      "resourceType": "fetch",
+      "status": 200,
+      "ok": true,
+      "durationMs": 23,
+      "requestHeaders": {
+        "x-amz-listing-provider-review": "fake-review",
+        "x-amz-listing-provider-semantic": "fake-semantic",
+        "referer": "http://127.0.0.1:5504/",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "accept": "application/json",
+        "x-amz-listing-provider-image": "fake-qwen-image"
+      },
+      "responseHeaders": {
+        "cache-control": "no-store",
+        "content-length": "4261",
+        "content-type": "application/json; charset=utf-8",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 4261
+      }
+    },
+    {
+      "id": "request-74",
+      "seq": 74,
+      "ts": 1792408938163,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/api/v2/capabilities",
+      "resourceType": "fetch",
+      "status": 200,
+      "ok": true,
+      "durationMs": 14,
+      "requestHeaders": {
+        "x-amz-listing-provider-review": "fake-review",
+        "x-amz-listing-provider-semantic": "fake-semantic",
+        "referer": "http://127.0.0.1:5504/",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "accept": "application/json",
+        "x-amz-listing-provider-image": "dashscope-qwen-image"
+      },
+      "responseHeaders": {
+        "cache-control": "no-store",
+        "content-length": "4209",
+        "content-type": "application/json; charset=utf-8",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 4209
+      }
+    },
+    {
+      "id": "request-75",
+      "seq": 75,
+      "ts": 1792408938177,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/api/v2/capabilities",
+      "resourceType": "fetch",
+      "status": 200,
+      "ok": true,
+      "durationMs": 5,
+      "requestHeaders": {
+        "x-amz-listing-provider-review": "fake-review",
+        "x-amz-listing-provider-semantic": "fake-semantic",
+        "referer": "http://127.0.0.1:5504/",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "accept": "application/json",
+        "x-amz-listing-provider-image": "volcengine-ark"
+      },
+      "responseHeaders": {
+        "cache-control": "no-store",
+        "content-length": "4255",
+        "content-type": "application/json; charset=utf-8",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 4255
+      }
+    },
+    {
+      "id": "request-76",
+      "seq": 76,
+      "ts": 1792409380725,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/",
+      "resourceType": "document",
+      "status": 200,
+      "ok": true,
+      "durationMs": 18,
+      "requestHeaders": {
+        "upgrade-insecure-requests": "1",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/jxl,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "11469",
+        "content-type": "text/html; charset=utf-8",
+        "etag": "\"6defb5b6f45dcca0c76555c6b838f2ef\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 11469
+      }
+    },
+    {
+      "id": "request-77",
+      "seq": 77,
+      "ts": 1792409380744,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/_virtual/_vite/modulepreload-polyfill.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 9,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "670",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"ed9e170d4c88d908e8ca728f00a5c42b\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 670
+      }
+    },
+    {
+      "id": "request-78",
+      "seq": 78,
+      "ts": 1792409380744,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/_virtual/_vite/preload-helper.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 9,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "1546",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"f075c5c5089517de5f331593f27b9e30\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 1546
+      }
+    },
+    {
+      "id": "request-79",
+      "seq": 79,
+      "ts": 1792409380744,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/app/product_v2/entry.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 10,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "2563",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"899f684447305a0eb9f423dfed7994b2\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 2563
+      }
+    },
+    {
+      "id": "request-80",
+      "seq": 80,
+      "ts": 1792409380744,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/app/product_v2/styles.css",
+      "resourceType": "stylesheet",
+      "status": 200,
+      "ok": true,
+      "durationMs": 10,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "text/css,*/*;q=0.1"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "23867",
+        "content-type": "text/css; charset=utf-8",
+        "etag": "\"6e430456a57e90582940e88b2ff393e6\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 23867
+      }
+    },
+    {
+      "id": "request-81",
+      "seq": 81,
+      "ts": 1792409380763,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/app/product_v2/app.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 21,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "15531",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"bb02f8c5525811553d3e04f2dd2e24de\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 15531
+      }
+    },
+    {
+      "id": "request-82",
+      "seq": 82,
+      "ts": 1792409380764,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/app/product_v2/storage/errors.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 21,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "2352",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"5baad01b5cd827f7d1d6662ed00dfaaa\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 2352
+      }
+    },
+    {
+      "id": "request-83",
+      "seq": 83,
+      "ts": 1792409380764,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/app/product_v2/storage/capabilities.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 22,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "1668",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"8a5ad9e6d49cd6ba032fd1e01358d383\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 1668
+      }
+    },
+    {
+      "id": "request-84",
+      "seq": 84,
+      "ts": 1792409380764,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/storage/schema.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 21,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "2811",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"fad6f5fe365c3857f04789521176d41c\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 2811
+      }
+    },
+    {
+      "id": "request-85",
+      "seq": 85,
+      "ts": 1792409380765,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/storage/db.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 26,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "2879",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"1adf0b7ce7558ab8b1815a998c20179d\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 2879
+      }
+    },
+    {
+      "id": "request-86",
+      "seq": 86,
+      "ts": 1792409380765,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/app/product_v2/storage/migrations.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 26,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "1026",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"ace483b07c38b857d7a2cb4d6ca44ba5\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 1026
+      }
+    },
+    {
+      "id": "request-87",
+      "seq": 87,
+      "ts": 1792409380765,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/app/product_v2/storage/transfer.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 33,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "2210",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"268985d705bb9218645ea1e446833327\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 2210
+      }
+    },
+    {
+      "id": "request-88",
+      "seq": 88,
+      "ts": 1792409380765,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/app/product_v2/storage/validate.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 33,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "4140",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"bf4befbd8141ddafbc4c4f9a2f8810f0\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 4140
+      }
+    },
+    {
+      "id": "request-89",
+      "seq": 89,
+      "ts": 1792409380766,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/app/product_v2/storage/repository.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 31,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "23922",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"e8a7037d213a7858e25b7bc4e502e723\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 23922
+      }
+    },
+    {
+      "id": "request-90",
+      "seq": 90,
+      "ts": 1792409380766,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/app/product_v2/domain/shared.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 33,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "6102",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"fcb1d6410c3b46e794d1dc991fdb5675\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 6102
+      }
+    },
+    {
+      "id": "request-91",
+      "seq": 91,
+      "ts": 1792409380766,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/app/product_v2/domain/errors.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 35,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "664",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"5f5c2bac66864bf4d78c148f80780e67\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 664
+      }
+    },
+    {
+      "id": "request-92",
+      "seq": 92,
+      "ts": 1792409380766,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/app/product_v2/domain/suite-plan.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 39,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "18695",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"ff7d8bb54c288fa6f09f9d7c5fea1001\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 18695
+      }
+    },
+    {
+      "id": "request-93",
+      "seq": 93,
+      "ts": 1792409380766,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/app/product_v2/domain/slots.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 43,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "12000",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"d5ff65959c50bc14e977cd60ddcffcc7\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 12000
+      }
+    },
+    {
+      "id": "request-94",
+      "seq": 94,
+      "ts": 1792409380767,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/app/product_v2/domain/intake.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 44,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "3224",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"ee04da881e0e6a7bd7c85c130417b58d\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 3224
+      }
+    },
+    {
+      "id": "request-95",
+      "seq": 95,
+      "ts": 1792409380767,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/domain/attempt.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 43,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "24013",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"6a2c82ad0ede76b7a417fbf813d3b243\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 24013
+      }
+    },
+    {
+      "id": "request-96",
+      "seq": 96,
+      "ts": 1792409380767,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/app/product_v2/domain/image-envelope.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 44,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "150",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"4facb090ed2324ea9080e09712019fe0\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 150
+      }
+    },
+    {
+      "id": "request-97",
+      "seq": 97,
+      "ts": 1792409380767,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/app/product_v2/domain/generated/image-task-envelope.validate.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 47,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "19659",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"0f4a7be9243499ed0578452d594e3b1d\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 19659
+      }
+    },
+    {
+      "id": "request-98",
+      "seq": 98,
+      "ts": 1792409380768,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/app/product_v2/domain/frozen-reference.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 49,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "2161",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"371f9006024da2a7d2156b01a39a659c\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 2161
+      }
+    },
+    {
+      "id": "request-99",
+      "seq": 99,
+      "ts": 1792409380768,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/app/product_v2/domain/candidate.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 52,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "4760",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"94cffefb2a06919e42fdd4cadba6f321\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 4760
+      }
+    },
+    {
+      "id": "request-100",
+      "seq": 100,
+      "ts": 1792409380768,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/app/product_v2/domain/review.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 55,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "31245",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"a629a3c780261f685e4d47d6cd293238\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 31245
+      }
+    },
+    {
+      "id": "request-101",
+      "seq": 101,
+      "ts": 1792409380768,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/app/product_v2/domain/prompt.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 55,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "58274",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"3847a577aa09109b21230a2fc2f36b78\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 58274
+      }
+    },
+    {
+      "id": "request-102",
+      "seq": 102,
+      "ts": 1792409380769,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/app/product_v2/domain/invalidation.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 54,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "2470",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"b1491c0a9391bd1057efd8869e2b1852\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 2470
+      }
+    },
+    {
+      "id": "request-103",
+      "seq": 103,
+      "ts": 1792409380769,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/app/product_v2/domain/specs.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 58,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "27655",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"20f47d841216b29a4b0ceb77291c412b\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 27655
+      }
+    },
+    {
+      "id": "request-104",
+      "seq": 104,
+      "ts": 1792409380769,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/app/product_v2/domain/rework.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 61,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "7639",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"370621e059fb03f64884421b9c7a7417\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 7639
+      }
+    },
+    {
+      "id": "request-105",
+      "seq": 105,
+      "ts": 1792409380769,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/app/product_v2/domain/confirm.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 64,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "22114",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"8422cbdc57ae87f00060d97ef521a254\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 22114
+      }
+    },
+    {
+      "id": "request-106",
+      "seq": 106,
+      "ts": 1792409380770,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/app/product_v2/domain/image-cost.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 64,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "2304",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"7ac5e3200c2cbde7d38a11ee4f13671d\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 2304
+      }
+    },
+    {
+      "id": "request-107",
+      "seq": 107,
+      "ts": 1792409380770,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/app/product_v2/domain/selection.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 65,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "6189",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"32a5ef57ae74c4f27efcda55e79b3271\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 6189
+      }
+    },
+    {
+      "id": "request-108",
+      "seq": 108,
+      "ts": 1792409380770,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/app/product_v2/domain/suite-review.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 65,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "19808",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"490dfafa9d263ec21866e2dee03be379\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 19808
+      }
+    },
+    {
+      "id": "request-109",
+      "seq": 109,
+      "ts": 1792409380770,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/app/product_v2/domain/suite.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 71,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "6850",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"f2ee90cf700c2cd14e0cfd9d4a158442\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 6850
+      }
+    },
+    {
+      "id": "request-110",
+      "seq": 110,
+      "ts": 1792409380770,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/domain/index.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 71,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "24090",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"0d203db141f1bf700c45c22a3f3ffa25\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 24090
+      }
+    },
+    {
+      "id": "request-111",
+      "seq": 111,
+      "ts": 1792409380771,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/app/product_v2/domain/brief.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 75,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "6257",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"4c3cd6233fa260d2781816d9f5d5011b\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 6257
+      }
+    },
+    {
+      "id": "request-112",
+      "seq": 112,
+      "ts": 1792409380771,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/app/product_v2/domain/config-export.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 74,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "4206",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"c341ed9a76c6e9a6c64f5acfaee3661a\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 4206
+      }
+    },
+    {
+      "id": "request-113",
+      "seq": 113,
+      "ts": 1792409380771,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/app/product_v2/domain/batch.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 75,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "3330",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"d57b0618ca9fbf2b2144d7737f866298\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 3330
+      }
+    },
+    {
+      "id": "request-114",
+      "seq": 114,
+      "ts": 1792409380771,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/app/product_v2/domain/compare.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 75,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "4327",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"b2cf24ee66685c7217077a37b5d102cc\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 4327
+      }
+    },
+    {
+      "id": "request-115",
+      "seq": 115,
+      "ts": 1792409380772,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/app/product_v2/domain/export-gate.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 85,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "8134",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"420286a55ff57b6c0c3bbdff0751867e\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 8134
+      }
+    },
+    {
+      "id": "request-116",
+      "seq": 116,
+      "ts": 1792409380772,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/app/product_v2/storage/pointer.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 85,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "900",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"6871dad0725097d9a5cf7277f63eda64\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 900
+      }
+    },
+    {
+      "id": "request-117",
+      "seq": 117,
+      "ts": 1792409380772,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/app/product_v2/storage/package.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 91,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "6115",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"86661e247c0ed9b815b679975a93afa6\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 6115
+      }
+    },
+    {
+      "id": "request-118",
+      "seq": 118,
+      "ts": 1792409380772,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/storage/zip.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 91,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "2630",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"001f0ae7a5cfb27fd324c8393e910d9e\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 2630
+      }
+    },
+    {
+      "id": "request-119",
+      "seq": 119,
+      "ts": 1792409380772,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/app/product_v2/vendor/fflate.browser.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 91,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "12440",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"1327e590d826a7c3a4d2d2ef468e6e57\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 12440
+      }
+    },
+    {
+      "id": "request-120",
+      "seq": 120,
+      "ts": 1792409380773,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/app/product_v2/storage/package-schema.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 90,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "1408",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"d4ecc1b6dfcab05f65cd96495dc34984\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 1408
+      }
+    },
+    {
+      "id": "request-121",
+      "seq": 121,
+      "ts": 1792409380773,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/storage/index.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 96,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "3431",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"3f7de351de418fea7baec1c916f0b0f2\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 3431
+      }
+    },
+    {
+      "id": "request-122",
+      "seq": 122,
+      "ts": 1792409380773,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/app/product_v2/session.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 96,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "1537",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"af9fa1b6a114b65465c2ba76745bd922\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 1537
+      }
+    },
+    {
+      "id": "request-123",
+      "seq": 123,
+      "ts": 1792409380773,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/node_modules/lit-html/lit-html.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 101,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "7070",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"203df2ac0217642b5070accaca70ef91\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 7070
+      }
+    },
+    {
+      "id": "request-124",
+      "seq": 124,
+      "ts": 1792409380773,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/node_modules/lit-html/directives/repeat.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 101,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "1452",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"8eced63948da26e63808848562b1e8e7\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 1452
+      }
+    },
+    {
+      "id": "request-125",
+      "seq": 125,
+      "ts": 1792409380774,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/node_modules/lit-html/directive.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 100,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "351",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"7dababbecf58267759e9a31cfccafe8d\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 351
+      }
+    },
+    {
+      "id": "request-126",
+      "seq": 126,
+      "ts": 1792409380774,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/node_modules/lit-html/directive-helpers.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 100,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "714",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"9ff5991d02d5b93557755b059a10f096\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 714
+      }
+    },
+    {
+      "id": "request-127",
+      "seq": 127,
+      "ts": 1792409380774,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/app/product_v2/workspace.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 106,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "14523",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"fe3908742bf48582191a42a0020d4e71\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 14523
+      }
+    },
+    {
+      "id": "request-128",
+      "seq": 128,
+      "ts": 1792409380774,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/generation.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 107,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "39275",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"a73eff62e5ced470ffa8ae1d309d415d\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 39275
+      }
+    },
+    {
+      "id": "request-129",
+      "seq": 129,
+      "ts": 1792409380774,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/app/product_v2/project-inputs.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 113,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "27680",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"556ea525fd10d9c28d611bcdc2a4a17f\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 27680
+      }
+    },
+    {
+      "id": "request-130",
+      "seq": 130,
+      "ts": 1792409380775,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/app/product_v2/semantic-analysis.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 112,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "8014",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"8d764742b8d26fd5efbbf00a246507a4\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 8014
+      }
+    },
+    {
+      "id": "request-131",
+      "seq": 131,
+      "ts": 1792409380775,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/app/product_v2/prompts.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 112,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "8902",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"f6334a196739ffa5d1cc27138e32cdf7\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 8902
+      }
+    },
+    {
+      "id": "request-132",
+      "seq": 132,
+      "ts": 1792409380775,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/app/product_v2/review-delivery.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 112,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "16704",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"28638b03b859a376b67a8bc5f0a72f25\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 16704
+      }
+    },
+    {
+      "id": "request-133",
+      "seq": 133,
+      "ts": 1792409380775,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/app/product_v2/selection-adoption.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 116,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "12506",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"41e7fd47b2c9b7861a805e06c45cd007\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 12506
+      }
+    },
+    {
+      "id": "request-134",
+      "seq": 134,
+      "ts": 1792409380775,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/app/product_v2/ui/dom.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 116,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "1699",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"87885a53c8377245da4d40c0215562e4\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 1699
+      }
+    },
+    {
+      "id": "request-135",
+      "seq": 135,
+      "ts": 1792409380776,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/app/product_v2/ui/compare-view.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 122,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "42135",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"f7f93583dc2addf122ab5eaf09806884\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 42135
+      }
+    },
+    {
+      "id": "request-136",
+      "seq": 136,
+      "ts": 1792409380776,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/node_modules/lit-html/directives/live.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 120,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "791",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"0a7234d3bea3a35c657decb3906189db\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 791
+      }
+    },
+    {
+      "id": "request-137",
+      "seq": 137,
+      "ts": 1792409380776,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/node_modules/lit-html/directives/if-defined.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 122,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "78",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"14f1caa32768535d3b83e0564a832659\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 78
+      }
+    },
+    {
+      "id": "request-138",
+      "seq": 138,
+      "ts": 1792409380776,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/app/product_v2/ui/delivery-view.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 123,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "13167",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"6b3ab6c5cac6938c45181004afd36d26\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 13167
+      }
+    },
+    {
+      "id": "request-139",
+      "seq": 139,
+      "ts": 1792409380776,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/app/product_v2/ui/generation-view.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 127,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "48432",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"b8cbed1377ac805d9512a0b48a583ef5\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 48432
+      }
+    },
+    {
+      "id": "request-140",
+      "seq": 140,
+      "ts": 1792409380776,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/node_modules/lit-html/directives/ref.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 127,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "861",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"e3ae30d0902eaaebc6df4d41768483ad\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 861
+      }
+    },
+    {
+      "id": "request-141",
+      "seq": 141,
+      "ts": 1792409380776,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/node_modules/lit-html/async-directive.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 144,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "1208",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"d2724aba8f28251545a5bb0408fc15b1\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 1208
+      }
+    },
+    {
+      "id": "request-142",
+      "seq": 142,
+      "ts": 1792409380777,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/app/product_v2/ui/input-view.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 144,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "75468",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"2cc60aa65eec5f9ed7e10895046e4287\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 75468
+      }
+    },
+    {
+      "id": "request-143",
+      "seq": 143,
+      "ts": 1792409380777,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/app/product_v2/ui/stage-shell.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 143,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "1542",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"f5711b8b077de46f98d5213d6a6d13b0\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 1542
+      }
+    },
+    {
+      "id": "request-144",
+      "seq": 144,
+      "ts": 1792409380777,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/app/product_v2/model-settings.js",
+      "resourceType": "script",
+      "status": 200,
+      "ok": true,
+      "durationMs": 144,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "origin": "http://127.0.0.1:5504",
+        "referer": "http://127.0.0.1:5504/",
+        "accept": "*/*"
+      },
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "cache-control": "no-store",
+        "content-length": "8315",
+        "content-type": "text/javascript; charset=utf-8",
+        "etag": "\"7aafacbe7841b1677bc3140b5a914dd0\"",
+        "last-modified": "Mon, 19 Oct 2026 11:28:23 GMT",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 8315
+      }
+    },
+    {
+      "id": "request-145",
+      "seq": 145,
+      "ts": 1792409380925,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/api/v2/capabilities",
+      "resourceType": "fetch",
+      "status": 200,
+      "ok": true,
+      "durationMs": 5,
+      "requestHeaders": {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "accept": "application/json",
+        "referer": "http://127.0.0.1:5504/"
+      },
+      "responseHeaders": {
+        "cache-control": "no-store",
+        "content-length": "4261",
+        "content-type": "application/json; charset=utf-8",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 4261
+      }
+    },
+    {
+      "id": "request-146",
+      "seq": 146,
+      "ts": 1792409380931,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/api/v2/capabilities",
+      "resourceType": "fetch",
+      "status": 200,
+      "ok": true,
+      "durationMs": 6,
+      "requestHeaders": {
+        "x-amz-listing-provider-review": "fake-review",
+        "x-amz-listing-provider-semantic": "fake-semantic",
+        "referer": "http://127.0.0.1:5504/",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "accept": "application/json",
+        "x-amz-listing-provider-image": "dashscope-qwen-image"
+      },
+      "responseHeaders": {
+        "cache-control": "no-store",
+        "content-length": "4209",
+        "content-type": "application/json; charset=utf-8",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 4209
+      }
+    },
+    {
+      "id": "request-147",
+      "seq": 147,
+      "ts": 1792409380938,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/api/v2/capabilities",
+      "resourceType": "fetch",
+      "status": 200,
+      "ok": true,
+      "durationMs": 6,
+      "requestHeaders": {
+        "x-amz-listing-provider-review": "fake-review",
+        "x-amz-listing-provider-semantic": "fake-semantic",
+        "referer": "http://127.0.0.1:5504/",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "accept": "application/json",
+        "x-amz-listing-provider-image": "volcengine-ark"
+      },
+      "responseHeaders": {
+        "cache-control": "no-store",
+        "content-length": "4255",
+        "content-type": "application/json; charset=utf-8",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 4255
+      }
+    },
+    {
+      "id": "request-148",
+      "seq": 148,
+      "ts": 1792409381043,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/api/v2/capabilities",
+      "resourceType": "fetch",
+      "status": 200,
+      "ok": true,
+      "durationMs": 16,
+      "requestHeaders": {
+        "x-amz-listing-provider-review": "fake-review",
+        "x-amz-listing-provider-semantic": "fake-semantic",
+        "referer": "http://127.0.0.1:5504/",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "accept": "application/json",
+        "x-amz-listing-provider-image": "fake-qwen-image"
+      },
+      "responseHeaders": {
+        "cache-control": "no-store",
+        "content-length": "4261",
+        "content-type": "application/json; charset=utf-8",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 4261
+      }
+    },
+    {
+      "id": "request-149",
+      "seq": 149,
+      "ts": 1792409381060,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/api/v2/capabilities",
+      "resourceType": "fetch",
+      "status": 200,
+      "ok": true,
+      "durationMs": 5,
+      "requestHeaders": {
+        "x-amz-listing-provider-review": "fake-review",
+        "x-amz-listing-provider-semantic": "fake-semantic",
+        "referer": "http://127.0.0.1:5504/",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "accept": "application/json",
+        "x-amz-listing-provider-image": "dashscope-qwen-image"
+      },
+      "responseHeaders": {
+        "cache-control": "no-store",
+        "content-length": "4209",
+        "content-type": "application/json; charset=utf-8",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 4209
+      }
+    },
+    {
+      "id": "request-150",
+      "seq": 150,
+      "ts": 1792409381065,
+      "method": "GET",
+      "url": "http://127.0.0.1:5504/api/v2/capabilities",
+      "resourceType": "fetch",
+      "status": 200,
+      "ok": true,
+      "durationMs": 6,
+      "requestHeaders": {
+        "x-amz-listing-provider-review": "fake-review",
+        "x-amz-listing-provider-semantic": "fake-semantic",
+        "referer": "http://127.0.0.1:5504/",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+        "accept": "application/json",
+        "x-amz-listing-provider-image": "volcengine-ark"
+      },
+      "responseHeaders": {
+        "cache-control": "no-store",
+        "content-length": "4255",
+        "content-type": "application/json; charset=utf-8",
+        "x-content-type-options": "nosniff"
+      },
+      "sizes": {
+        "requestBody": 0,
+        "responseBody": 4255
+      }
+    }
+  ],
+  "errors": {
+    "entries": [],
+    "nextSeq": 0,
+    "dropped": 0
+  },
+  "supplier_calls": 0
+}

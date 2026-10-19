@@ -28,6 +28,7 @@ import {
   checkConfirmationRecord, checkPromptRecord, promptStaleness, canonicalJson, isPlainObject,
   shotSignatureOf, styleSignatureOf, evaluateShot, selectReferences, dependencyAssetsOf, PLATFORM_PROFILES,
   CONFIRM_SCHEMA_VERSION, PROMPT_COMPILER_RULE_VERSION, PROMPT_SCHEMA_VERSION,
+  submissionModeAllows,
   checkCandidateRecord, candidateMatchesAttempt,
   assertSelectionRecord, reviewIsCurrent, selectionReviewFingerprint, checkReviewReport, checkSuiteReviewReport,
 } from "../domain/index.js";
@@ -631,13 +632,7 @@ export function createRepository({
       if ((current?.record.action_id || null) !== (seenAction?.actionId || null)
           || (current?.version || 0) !== (seenAction?.version || 0)) transactionConflict("action_changed");
       const mode = conf.fingerprint.snapshot.submission_mode;
-      const state = current?.record.state;
-      const allowed = mode === "initial" ? !current
-        : mode === "failed_retry" ? state === "failed"
-        : mode === "rework" ? state === "succeeded" || state === "failed"
-        : mode === "explicit_new" ? state === "unknown"
-          || (state === "pending_submit" && !current?.record.task_id) : false;
-      if (!allowed) transactionConflict("submission_mode_blocked");
+      if (!submissionModeAllows(mode, current?.record || null)) transactionConflict("submission_mode_blocked");
       for (const item of actions) {
         if (!ATTEMPT_ACTIVE_STATES.includes(item.record.state)) continue;
         if (item.record.task_id) transactionConflict("active_task");

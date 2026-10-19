@@ -1,0 +1,11 @@
+{
+  "captured_at": "2026-10-18T11:42:40Z",
+  "snapshot": "before.zip",
+  "files": {
+    "_working/amz-listing-kit-product-v2/state.md": {"sha256":"5cf9b7e2330904e4a64cbc202c5ba450799913cf713fa0e38a98b42fe604f0cb","bytes":53798},
+    "docs/product-v2-refactor-plan.md": {"sha256":"f287bad73457c495bf39f350893cc444a291a28c3c4ffc5150cb4e23218bf35c","bytes":225442},
+    "docs/product-v2-refactor-design.md": {"sha256":"c3b4b946d375eed0a58a7587fedeb8a67df40ac3dd50421e57f9a36e7b91e551","bytes":185124},
+    "docs/product-v2-ui-contract.md": {"sha256":"875c7b3f041019ea1c53730f18b55a08e1f63555a288f3bf72a2b5ac28a91869","bytes":40564},
+    "_working/amz-listing-kit-next-version-design/discussion.md": {"sha256":"02b7a0e96bef44b49b49e119ce9a80ae37077588f56fcb62cc5dd714db09e5c6","bytes":29303}
+  }
+}

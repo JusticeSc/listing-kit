@@ -751,6 +751,25 @@ test("P23", "来源版本前进使绑定过期：不静默换值，必须重新�
   return { message: error.message };
 });
 
+test("P23b", "尺寸图选择不印：不排标注版面，也不出现引线/数字措辞；改为只印时恢复标注要求", async () => {
+  const none = compileSize(shotSpec(sizeShot(), { print_intent: "none" }));
+  const noneBrief = sectionText(none, "visual_brief");
+  expect(!/标注|尺寸线|引线/.test(noneBrief), "不印时不得再排标注版面：" + noneBrief);
+  expect(/画面没有线条、箭头或文字/.test(noneBrief), "不印时要给出正向的干净画面：" + noneBrief);
+  expect((none.warnings || []).some((item) => item.code === "SIZE_ANNOTATION_SKIPPED_PRINT_NONE"),
+    "跳过标注版面必须留下可核对提醒：" + json(none.warnings));
+  expect(sectionText(none, "visual_brief").includes("画面简报") === false,
+    "简报正文不带段标题字样：" + noneBrief);
+  const selected = compileSize(shotSpec(sizeShot(), {
+    print_intent: "selected", layout: "product_left_text_right",
+    on_image_texts: [dimensionText()],
+  }));
+  const selectedBrief = sectionText(selected, "visual_brief");
+  expect(/标注：/.test(selectedBrief) && /尺寸线指向对应部位/.test(selectedBrief),
+    "有可逐字引用的确认数值时仍要保留标注要求：" + selectedBrief);
+  return { none: noneBrief.slice(0, 60), selected: selectedBrief.slice(0, 40) };
+});
+
 /* --------------------------------- 显式视角：无依据不得虚构，有依据才放行 */
 
 const SHA_SIDE = "b".repeat(64);

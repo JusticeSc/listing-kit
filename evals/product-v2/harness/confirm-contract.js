@@ -31,7 +31,8 @@ import {
 } from "/domain/index.js";
 
 import { sha256Hex } from "/storage/db.js";
-import { IMAGE_PROMPT_PROFILE, expect, expectCode, serializeError } from "./harness-api.js";
+
+import { IMAGE_PRICING, IMAGE_PROMPT_PROFILE, expect, expectCode, serializeError } from "./harness-api.js";
 
 const cases = [];
 
@@ -232,6 +233,9 @@ function sheetOf(options = {}) {
     });
   }
   if (options.basisOverride) Object.assign(basisByShot, options.basisOverride);
+  // 报价由调用方按目标档显式给：缺省给 canonical dashscope 官方组合；
+  // provider 换档/失配意图的用例由各 case 用 pricing:null 明确表达缺失。
+  const providerIsCanonical = canonicalJson(providerProfile) === canonicalJson(IMAGE_PROMPT_PROFILE);
   return buildConfirmationSheet({
     suitePlan: plan,
     promptEntries: options.entries || [],
@@ -239,6 +243,9 @@ function sheetOf(options = {}) {
     currentBasisByShot: basisByShot,
     platformId: options.platformId || PLATFORM_ID,
     providerProfile: providerProfile,
+    pricing: options.pricing === undefined
+      ? (providerIsCanonical ? IMAGE_PRICING : null) : options.pricing,
+    ...(options.referencesByShot ? { referencesByShot: options.referencesByShot } : {}),
   });
 }
 
@@ -273,7 +280,8 @@ test("H01", "全部就绪：can_submit、计数与外发摘要与请求快照一
   expect(sheet.external_summary.reference_count === expectedRefs, "参考图数量必须等于快照合计。");
   expect(sheet.external_summary.prompt_chars === expectedChars, "提示词字符数必须等于记录文本合计。");
   expect(sheet.external_summary.model === PROVIDER_ID, "外发摘要必须写真实模型。");
-  expect(sheet.external_summary.statement.includes(PROVIDER_ID), "摘要句必须写明模型。");
+  expect(sheet.external_summary.cost.upper_fen === 40,
+    "两次请求即使复用同一原照，也各计一次输入费和输出费，不能跨请求去重。");
   expect(sheet.shots.every((item) => item.prompt.version === 1 && item.prompt.hash.length === 64), "每图必须带版本与 hash。");
   return { summary: sheet.external_summary };
 });
@@ -377,11 +385,12 @@ test("H06", "Provider 或平台不符：记录被改后不能提交", async () =
   const plan = planFixture([mainShot()]);
   const entry = await compileEntry(plan.shots[0]);
   // 当前有效档前进（能力版本不同）→ 冻结档与当前档不符
+  // 换档同时报价缺失：仍是 PROVIDER_MISMATCH 阻断，费用门不掩盖真正的不一致。
   const bumpedProfile = { ...IMAGE_PROMPT_PROFILE, version: IMAGE_PROMPT_PROFILE.version + 1 };
-  const providerSheet = sheetOf({ plan: plan, entries: [entry], providerProfile: bumpedProfile });
+  const providerSheet = sheetOf({ plan: plan, entries: [entry], providerProfile: bumpedProfile, pricing: null });
   expect(codesOfShot(providerSheet, "shot_main_clean").includes(CONFIRM_BLOCKER_CODES.PROVIDER_MISMATCH), "Provider 版本不符必须阻断。");
-  // 请求参数不同（同版本）同样必须阻断，而不是只看版本号
-  const paramSheet = sheetOf({ plan: plan, entries: [entry], providerProfile: { ...IMAGE_PROMPT_PROFILE, size: "2048*2048" } });
+  // 请求参数不同（同版本）同样必须阻断而不是只看版本号
+  const paramSheet = sheetOf({ plan: plan, entries: [entry], providerProfile: { ...IMAGE_PROMPT_PROFILE, size: "2048*2048" }, pricing: null });
   expect(codesOfShot(paramSheet, "shot_main_clean").includes(CONFIRM_BLOCKER_CODES.PROVIDER_MISMATCH), "请求参数不符必须阻断。");
   // 冻结档被改但快照 target 未同步 → 记录自检必须判红（先于确认单比较）
   const tampered = copyRecord(entry, (record) => { record.compiled.provider.version = 2; });
@@ -390,7 +399,6 @@ test("H06", "Provider 或平台不符：记录被改后不能提交", async () =
   const platformChanged = copyRecord(entry, (record) => { record.compiled.platform.platform_id = "amazon_de"; });
   const platformSheet = sheetOf({ plan: plan, entries: [platformChanged] });
   expect(codesOfShot(platformSheet, "shot_main_clean").includes(CONFIRM_BLOCKER_CODES.PLATFORM_MISMATCH), "平台不符必须阻断。");
-  return { provider: providerSheet.blocked, platform: platformSheet.blocked };
 });
 
 test("H07", "参考图越界：0 张与 4 张都不能提交", async () => {
@@ -487,15 +495,18 @@ test("H10", "确认记录：只在可提交清单上建立，且形状可机检"
     const legacy = structuredClone(record);
     legacy.schema_version = version;
     legacy.fingerprint.snapshot.schema_version = version;
+    delete legacy.fingerprint.snapshot.selection;
+    delete legacy.fingerprint.snapshot.external_summary.cost;
+    delete legacy.external_summary.cost;
     for (const shot of legacy.fingerprint.snapshot.shots) {
       if (version === 1) {
         shot.reference_roles = shot.references.map(ref => ref.role);
         delete shot.references;
-      } else {
+      } else if (version === 2) {
         shot.references = shot.references.map(ref => ({ role: ref.role, sha256: ref.sha256 }));
       }
     }
-    for (const shot of legacy.shots) {
+    if (version < 3) for (const shot of legacy.shots) {
       shot.references = shot.references.map(ref => ({ role: ref.role,
         sha256_prefix: ref.sha256_prefix, ...(version === 2 ? { sha256: ref.sha256 } : {}) }));
     }
@@ -523,6 +534,14 @@ test("H11", "确认失效：上游变化或 Prompt 前进后必须重新确认",
   const record = buildConfirmationRecord({ sheet: sheet, hash: hash, confirmedAt: new Date().toISOString() });
   const same = confirmationStaleness(record, confirmationSnapshot(sheetOf({ plan: plan, entries: entries })));
   expect(same.stale === false, "同一清单必须判定为未失效。");
+  for (const pricing of [
+    { ...IMAGE_PRICING, output_image_fen: IMAGE_PRICING.output_image_fen + 1 },
+    { ...IMAGE_PRICING, source_url: IMAGE_PRICING.source_url + "?revision=2" },
+  ]) {
+    const changed = sheetOf({ plan, entries, pricing });
+    expect(changed.can_submit && confirmationStaleness(record, confirmationSnapshot(changed)).stale,
+      "已核单价或依据来源变化都必须重新确认。");
+  }
   const bumped = confirmationStaleness(record, confirmationSnapshot(sheetOf({ plan: plan, entries: entries, styleVersion: 2 })));
   expect(bumped.stale === true, "风格前进后确认必须失效。");
   const fields = bumped.reasons.map((reason) => reason.field);
@@ -557,10 +576,21 @@ test("H12", "反向探针：计数、fix、摘要与输入错误都必须变红"
   const badSummary = JSON.parse(JSON.stringify(sheet));
   badSummary.external_summary.prompt_chars = badSummary.external_summary.prompt_chars + 1;
   expect(checkConfirmationSheet(badSummary).length > 0, "摘要与逐图不一致必须被机检发现。");
+  const badCost = structuredClone(sheet);
+  badCost.external_summary.cost.upper_fen += 1;
+  expect(checkConfirmationSheet(badCost).length > 0, "手填费用合计必须被重算拒绝。");
+  const badPartition = structuredClone(sheet);
+  badPartition.selection.selected_shot_ids.push("shot_not_accounted_for");
+  expect(checkConfirmationSheet(badPartition).length > 0, "所选图漏出发送/排除分区必须拒绝。");
+  for (const pricing of [null, { ...IMAGE_PRICING, provider_id: "unquoted-provider" }]) {
+    const unquoted = sheetOf({ plan, entries, pricing });
+    expect(!unquoted.can_submit && unquoted.external_summary.cost.upper_fen === null,
+      "缺少报价或报价不属于实际供应商时，不能确认发送。");
+  }
   await expectCode(async () => { buildConfirmationSheet({}); }, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "缺套图计划必须拒绝");
   const noBasis = buildConfirmationSheet({
     suitePlan: plan, promptEntries: entries, context: contextFixture(), currentBasisByShot: {},
-    providerProfile: IMAGE_PROMPT_PROFILE,
+    providerProfile: IMAGE_PROMPT_PROFILE, pricing: IMAGE_PRICING,
   });
   expect(noBasis.can_submit === false, "没有当前依据时不能提交。");
   expect(codesOfShot(noBasis, "shot_main_clean").includes(CONFIRM_BLOCKER_CODES.PROMPT_STALE), "缺依据必须按过期处理。");

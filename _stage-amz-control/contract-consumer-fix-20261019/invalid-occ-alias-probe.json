@@ -1,0 +1,25 @@
+{
+  "accepted_as_two_tab_occ_evidence": false,
+  "primary_target": "60825ED9B8605824D3BF101B3F5CE339",
+  "peer_target": "60825ED9B8605824D3BF101B3F5CE339",
+  "cause": "CDP open without app.target adopted the already driven page. Two named handles were not two physical tabs.",
+  "preserved_spec_versions": [
+    {
+      "version": 1,
+      "purpose": "完整展示商品主体，背景干净，不添加资料里没有的部件",
+      "reference_sha256s": [
+        "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461"
+      ]
+    },
+    {
+      "version": 2,
+      "purpose": "B 已保存：保持完整主体"
+    },
+    {
+      "version": 3,
+      "purpose": "B 已保存：保持完整主体"
+    }
+  ],
+  "no_records_deleted": true,
+  "valid_narrow_observation": "First normal save changed purpose and removed explicit refs together in one v1-to-v2 append; the second click appended v3. No OCC conflict was exercised."
+}

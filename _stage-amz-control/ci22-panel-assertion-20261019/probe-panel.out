@@ -1,0 +1,165 @@
+provider: {"provider_id": "fake-semantic", "model_id": "fake-deepseek-v4.1-flash", "protocol": null, "capability_version": null, "configured": true, "credential_source": "test_double", "capabilities": {"provider_id": "fake-semantic", "model_id": "fake-deepseek-v4.1-flash", "reference_images": false, "supports_images": false, "vision": false, "analyze_fields": ["product_name", "description", "selling_points", "focus", "references", "locale", "platform", "max_slots", "existing_slot_ids", "copy_targets"], "copy_proposals": true, "structured_output": "local", "stateless": true, "test_double": true, "credential_source": "test_double", "scenario": "ok"}}
+== BEFORE analyze ==
+{
+  "panel_excl_details": "资料与事实 上传参考图并填写商品信息；先处理冲突、未知与必须确认的槽位，已确认的事实默认折叠。 参考图 至少一张“商品主图（primary）”；内容相同的图不会重复登记；最多 20 张。 添加参考图… 1 / 20 张 还没有参考图。 ref-one.png image/png · 76 字节 · 12×12 这张照片能看到的角度（确认后才能作为视角依据） 能看到正面 能看到侧面 能看到顶面 商品主图细节图包装图场景参考竞品参考其他 删除 商品资料 只有你填写的内容进这里；模型推断写在“商品理解”，不覆盖这里。 商品名称（必填） 商品介绍 卖点（一行一条） 本次重点 保存草稿 草稿已保存 · 版本 2 确认商品事实 可以直接人工填写。AI 理解只提出待确认的建议，不自动确认事实；仅在你明确点击时外发资料。 自己填写商品事实 仅文字理解（可选） 另发新分析（可能重复计费） 将发给 fake-deepseek-v4.1-flash：当前名称、介绍、卖点与重点，仅参考图元数据，不发送图片字节。供应商按实际调用计费；不能据元数据宣称已经看图。 事实槽位 模型只能提议；确认、修改、标未知与移除都由你决定，历史版本保留。 还没有槽位。 显示全部事实 为已确认文本一次提议候选 正在准备核心事实输入；不需要调用模型。 进入方案 先生成或添加至少一张图片任务。",
+  "hits": [
+    {
+      "tag": "SPAN",
+      "id": "analyze-gate",
+      "cls": "meta",
+      "insideDetails": false,
+      "text": "将发给 fake-deepseek-v4.1-flash：当前名称、介绍、卖点与重点，仅参考图元数据，不发送图片字节。供应商按实际调用计费；不能据元数据宣称已经看图。"
+    }
+  ],
+  "rows": []
+}
+== AFTER analyze ==
+{
+  "panel_excl_details": "资料与事实 上传参考图并填写商品信息；先处理冲突、未知与必须确认的槽位，已确认的事实默认折叠。 参考图 至少一张“商品主图（primary）”；内容相同的图不会重复登记；最多 20 张。 添加参考图… 1 / 20 张 还没有参考图。 ref-one.png image/png · 76 字节 · 12×12 这张照片能看到的角度（确认后才能作为视角依据） 能看到正面 能看到侧面 能看到顶面 商品主图细节图包装图场景参考竞品参考其他 删除 商品资料 只有你填写的内容进这里；模型推断写在“商品理解”，不覆盖这里。 商品名称（必填） 商品介绍 卖点（一行一条） 本次重点 保存草稿 草稿已保存 · 版本 2 确认商品事实 可以直接人工填写。AI 理解只提出待确认的建议，不自动确认事实；仅在你明确点击时外发资料。 自己填写商品事实 再次仅文字理解（可选） 另发新分析（可能重复计费） 将发给 fake-deepseek-v4.1-flash：当前名称、介绍、卖点与重点，仅参考图元数据，不发送图片字节。供应商按实际调用计费；不能据元数据宣称已经看图。 最近一次分析：4 个提案，写入 4 个槽位 · fake-semantic（fake-deepseek-v4.1-flash） · 原资料 v2 · 未发送图片字节 · 2026/10/19 21:20:18 · 假 Provider 提案：仅用于契约测试与界面开发。 事实槽位 模型只能提议；确认、修改、标未知与移除都由你决定，历史版本保留。 必须确认的槽位 0 / 3 已确认 · 待处理 10 项 · 共 10 项 · 还缺：关键槽位 商品名称 仍是 模型提案。；关键槽位 商品品类 仍是 模型提案。；关键槽位 必须保持的商品特征 仍是 模型提案。；还没有任何已确认事实。 显示全部事实 为已确认文本一次提议候选 正在准备核心事实输入；不需要调用模型。 模型提案 商品品类 必须确认 系统固定 · 置信 0.90 通用品类（假数据） 模型：假 Provider 的品类占位，需人工确认。模型：本次提案使用的原资料快照；不是人工确认。 确认 修改 标记未知 模型提案 商品名称 必须确认 系统固定 · 置信 0.90 便携榨汁杯 模型：取自本次商品资料。模型：本次提案使用的原资料快照；不是人工确认。 确认 修改 标记未知 模型提案 必须保持的商品特征 必须确认 系统固定 · 置信 0.90 一键启动；杯身可拆洗；6 片不锈钢刀头 模型：假 Provider 直接引用卖点文本。模型：本次提案使用的原资料快照；不是人工确认。 确认 修改 标记未知 缺失 品牌 系统固定 还没有值。 填值并确认 修改 标记未知 缺失 颜色概览 系统固定 还没有值。 填值并确认 修改 标记未知 缺失 主要材质 系统固定 还没有值。 填值并确认 修改 标记未知",
+  "hits": [
+    {
+      "tag": "SPAN",
+      "id": "analyze-gate",
+      "cls": "meta",
+      "insideDetails": false,
+      "text": "将发给 fake-deepseek-v4.1-flash：当前名称、介绍、卖点与重点，仅参考图元数据，不发送图片字节。供应商按实际调用计费；不能据元数据宣称已经看图。"
+    },
+    {
+      "tag": "P",
+      "id": "analyze-result",
+      "cls": "status",
+      "insideDetails": false,
+      "text": "最近一次分析：4 个提案，写入 4 个槽位 · fake-semantic（fake-deepseek-v4.1-flash） · 原资料 v2 · 未发送图片字节 · 2026/10/19 21:20:18 · 假 Provider 提案：仅用于契约测试与界面开发。"
+    },
+    {
+      "tag": "P",
+      "id": null,
+      "cls": "meta tech-body",
+      "insideDetails": true,
+      "text": "标识 product_category · 版本 v2 · 来源引用 fake-deepseek-v4.1-flash、product_input:intake@v2"
+    },
+    {
+      "tag": "P",
+      "id": null,
+      "cls": "meta tech-body",
+      "insideDetails": true,
+      "text": "标识 product_name · 版本 v2 · 来源引用 fake-deepseek-v4.1-flash、product_input:intake@v2"
+    },
+    {
+      "tag": "P",
+      "id": null,
+      "cls": "meta tech-body",
+      "insideDetails": true,
+      "text": "标识 signature_features · 版本 v2 · 来源引用 fake-deepseek-v4.1-flash、product_input:intake@v2"
+    },
+    {
+      "tag": "P",
+      "id": null,
+      "cls": "meta tech-body",
+      "insideDetails": true,
+      "text": "标识 description_digest · 版本 v1 · 依赖 商品品类 · 来源引用 fake-deepseek-v4.1-flash、product_input:intake@v2"
+    }
+  ],
+  "rows": [
+    {
+      "main_text": "模型提案 商品品类 必须确认 系统固定 · 置信 0.90 通用品类（假数据） 模型：假 Provider 的品类占位，需人工确认。模型：本次提案使用的原资料快照；不是人工确认。 确认 修改 标记未知",
+      "tech": [
+        {
+          "open": false,
+          "summary": "技术详情",
+          "body": "技术详情 标识 product_category · 版本 v2 · 来源引用 fake-deepseek-v4.1-flash、product_input:intake@v2"
+        }
+      ]
+    },
+    {
+      "main_text": "模型提案 商品名称 必须确认 系统固定 · 置信 0.90 便携榨汁杯 模型：取自本次商品资料。模型：本次提案使用的原资料快照；不是人工确认。 确认 修改 标记未知",
+      "tech": [
+        {
+          "open": false,
+          "summary": "技术详情",
+          "body": "技术详情 标识 product_name · 版本 v2 · 来源引用 fake-deepseek-v4.1-flash、product_input:intake@v2"
+        }
+      ]
+    },
+    {
+      "main_text": "模型提案 必须保持的商品特征 必须确认 系统固定 · 置信 0.90 一键启动；杯身可拆洗；6 片不锈钢刀头 模型：假 Provider 直接引用卖点文本。模型：本次提案使用的原资料快照；不是人工确认。 确认 修改 标记未知",
+      "tech": [
+        {
+          "open": false,
+          "summary": "技术详情",
+          "body": "技术详情 标识 signature_features · 版本 v2 · 来源引用 fake-deepseek-v4.1-flash、product_input:intake@v2"
+        }
+      ]
+    },
+    {
+      "main_text": "缺失 品牌 系统固定 还没有值。 填值并确认 修改 标记未知",
+      "tech": [
+        {
+          "open": false,
+          "summary": "技术详情",
+          "body": "技术详情 标识 brand · 版本 v1"
+        }
+      ]
+    },
+    {
+      "main_text": "缺失 颜色概览 系统固定 还没有值。 填值并确认 修改 标记未知",
+      "tech": [
+        {
+          "open": false,
+          "summary": "技术详情",
+          "body": "技术详情 标识 color_summary · 版本 v1"
+        }
+      ]
+    },
+    {
+      "main_text": "缺失 主要材质 系统固定 还没有值。 填值并确认 修改 标记未知",
+      "tech": [
+        {
+          "open": false,
+          "summary": "技术详情",
+          "body": "技术详情 标识 key_material · 版本 v1"
+        }
+      ]
+    },
+    {
+      "main_text": "缺失 包装内容物 系统固定 还没有值。 填值并确认 修改 标记未知",
+      "tech": [
+        {
+          "open": false,
+          "summary": "技术详情",
+          "body": "技术详情 标识 package_contents · 版本 v1"
+        }
+      ]
+    },
+    {
+      "main_text": "缺失 尺寸规格（对象/轴向/数值/单位） 系统固定 还没有值。 填值并确认 修改 标记未知",
+      "tech": [
+        {
+          "open": false,
+          "summary": "技术详情",
+          "body": "技术详情 标识 size_dimensions · 版本 v1"
+        }
+      ]
+    },
+    {
+      "main_text": "缺失 尺寸概览 系统固定 还没有值。 填值并确认 修改 标记未知",
+      "tech": [
+        {
+          "open": false,
+          "summary": "技术详情",
+          "body": "技术详情 标识 size_summary · 版本 v1"
+        }
+      ]
+    },
+    {
+      "main_text": "模型提案 介绍摘要 品类动态 · 置信 0.90 350ml 便携榨汁杯，USB-C 充电，可整杯冲洗。 模型：来自商品介绍。模型：本次提案使用的原资料快照；不是人工确认。 确认 修改 标记未知 删除（保留历史）",
+      "tech": [
+        {
+          "open": false,
+          "summary": "技术详情",
+          "body": "技术详情 标识 description_digest · 版本 v1 · 依赖 商品品类 · 来源引用 fake-deepseek-v4.1-flash、product_input:intake@v2"
+        }
+      ]
+    }
+  ]
+}

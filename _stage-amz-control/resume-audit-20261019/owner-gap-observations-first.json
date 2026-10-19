@@ -1,0 +1,18 @@
+{
+  "boundary": "Isolated in-memory repository, real compiled product owners; no browser, storage mutation, HTTP or model call. First finding verifies the saved shape used by the actual generation reread predicate, not a full generation submission.",
+  "keep_manual": {
+    "saved_version": 3,
+    "text_preserved": true,
+    "basis_rework_directive": "audit-rework-current",
+    "compiled_rework": null,
+    "generation_reread_predicate_can_match": false
+  },
+  "edit_rework": {
+    "message": "人工编辑未通过：新引用不是任何已确认事实值或本图已确认的图中文案：「构图」；先到「商品理解」或图中文案处确认它，或改成不引用的表述。",
+    "writes_during_failed_edit": 0
+  },
+  "existing_spec": {
+    "unexpectedly_saved": true
+  },
+  "findings_reproduced": false
+}

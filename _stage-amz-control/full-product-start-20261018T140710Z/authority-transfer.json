@@ -1,0 +1,61 @@
+{
+  "destination": "amz-listing-kit-complete-product-15ab22",
+  "start": "72c33df03514eaedd6f3e6efdf57236f26ada9f6",
+  "files": [
+    {
+      "path": "AGENTS.md",
+      "bytes": 26597,
+      "sha256": "188eb550193a47dfbb82e80df58a8e0b00bf3b34b95a829953dd1e3c5a3aa11d",
+      "equal": true
+    },
+    {
+      "path": "README.md",
+      "bytes": 22336,
+      "sha256": "42279827469d50397b606c8c7df3f09975d34c54692bc3db1cad1392820fba00",
+      "equal": true
+    },
+    {
+      "path": "docs/INDEX.md",
+      "bytes": 24285,
+      "sha256": "495bde2f4016790f9f3359e1a7e94292255fc297a481c64afb745b35b9299441",
+      "equal": true
+    },
+    {
+      "path": "docs/agents/ai-coding-loop.md",
+      "bytes": 9396,
+      "sha256": "bf6cecfc7aa00191a4d6210accb18107b5f022b3c81c241c9795984d91c12043",
+      "equal": true
+    },
+    {
+      "path": "docs/product-v2-refactor-plan.md",
+      "bytes": 223389,
+      "sha256": "5f508a6aede7bb645d0de96a18da5a410374156a4d577cd8d4063e3c50feb94d",
+      "equal": true
+    },
+    {
+      "path": "docs/product-v2-refactor-design.md",
+      "bytes": 186035,
+      "sha256": "1145cf2d8afed0612e6aae0896ec9561b609dda1708c10a7567c3d32b0d303e0",
+      "equal": true
+    },
+    {
+      "path": "docs/product-v2-ui-contract.md",
+      "bytes": 40808,
+      "sha256": "c71350c885b14dc43be6434d7bbf507e9587afb1f67dada5d16a088a5b1264bd",
+      "equal": true
+    },
+    {
+      "path": "_working/amz-listing-kit-product-v2/state.md",
+      "bytes": 56115,
+      "sha256": "34e3aa2b1ff3463d089147df4ca42002afcf91902b1ff290a93fdd095989b273",
+      "equal": true
+    },
+    {
+      "path": "evals/product-v2/refactor/goal-observation-full-product-20261018T140710Z.json",
+      "bytes": 35596,
+      "sha256": "0c92a23bc988d3ae3a3c46589bb49edc71e20a8383bebb08c9bfc7be874c5025",
+      "equal": true
+    }
+  ],
+  "not_carried": "No sealed WIP applied, no main user code or historical CLOSEOUT overwritten; source and data baseline preserved separately"
+}

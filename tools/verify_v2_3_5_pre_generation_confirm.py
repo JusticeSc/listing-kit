@@ -102,7 +102,8 @@ async () => {
   // 不是 domain.buildConfirmationSheet 的全量口径：后者覆盖全部 promptEntries，
   // 进入 make 自动准备（workspace.js → generation-view.ts 自动准备）后
   // 未编译时意图 sheet=None、全量 sheet 仍可阻塞 —— sheet 级断言不可靠，应断 UI DOM。
-  const status = document.getElementById("confirm-status").textContent;
+  const statusNode = document.getElementById("confirm-status");
+  const status = statusNode.textContent;
   const summary = document.getElementById("confirm-summary").textContent;
   const blockers = document.getElementById("confirm-blockers").textContent;
   const risks = document.getElementById("confirm-risks").textContent;
@@ -112,12 +113,11 @@ async () => {
     blocked: node.getAttribute("data-blocked"),
     text: node.textContent,
   }));
-  // 意图摘要计数 = 本批可发送张数（generation-view.ts:565-567“本次明确发送 N 张”；
-  // 652-653 按 sending.total 渲染按钮计数；649 can_submit 为假即禁用）。
-  // 空范围分支 status 是“本次范围 0 张…”（无“本次明确发送”）：此时可发送即 0，
-  // 不返回 null 否则调用方 ==0 恒假。
-  const sendingMatch = /本次明确发送\\s*(\\d+)\\s*张/.exec(status || "");
-  const emptyMatch = /本次范围\\s*0\\s*张/.exec(status || "");
+  // 读取实际渲染的范围/发送/排除状态，不将特定中文措辞当成行为合同。
+  const count = (key) => {
+    const value = statusNode.dataset[key];
+    return value !== undefined && /^\\d+$/.test(value) ? Number(value) : null;
+  };
   const actionMatch = /([0-9]+)\\s*张/.exec((action || {}).textContent || "");
   return {
     status: status,
@@ -126,14 +126,15 @@ async () => {
     risks: risks,
     action_disabled: action ? action.disabled : null,
     action_text: action ? action.textContent : "",
-    sending_count: sendingMatch ? Number(sendingMatch[1]) : (emptyMatch ? 0 : null),
+    selected_count: count("selectedCount"),
+    sending_count: count("sendingCount"),
+    excluded_count: count("excludedCount"),
     action_count: actionMatch ? Number(actionMatch[1]) : null,
     rows: rows,
     row_count: rows.length,
-    sending_rows: rows.filter((row) => (row.text || "").includes("本次发送")).map((row) => row.shot_id),
+    sending_rows: rows.filter((row) => row.blocked === "false").map((row) => row.shot_id),
     blocked_rows: rows.filter((row) => String(row.blocked || "").toLowerCase() === "true")
       .map((row) => row.shot_id),
-    stale_rows: rows.filter((row) => (row.text || "").includes("本次不重复提交")).map((row) => row.shot_id),
   };
 }
 """
@@ -242,6 +243,8 @@ async (input) => {
     },
     currentBasisByShot: basisByShot,
     providerProfile: imageProfile,
+    // 有效报价与服务端能力块同形状：缺失或失配即费用未知不可提交不猜其它模型或地区的价格。
+    pricing: capabilities.images ? capabilities.images.pricing : null,
     brief: brief, styleSpec: styleSpec, shotSpecsById: shotSpecsById,
     ...(scope ? { shotIds: scope } : {}),
   });
@@ -359,16 +362,15 @@ def wait_prepare_settled(page, timeout: int = 60_000) -> None:
     # （自动准备可能已前进多次；force 重准备可能再前进），写死 v2/+1 会把合法语义判红。
     # 保存→renderPrompts/renderConfirm→deriveState 是异步链（generation-view.ts:458-463），
     # 必须等到确认区重渲染后才返回否则调用方读到的仍是旧 sheet。
-    # 落定有两种如实状态：有可发时“本次明确发送”，空范围/全阻断时“本次范围 0 张…”；
-    # 重载后查看目标（内存态）丢失、单张范围变空是产品正确行为，不断言重开后仍记住查看。
+    # 恢复后查看目标是首张图；范围必须保留，已消费的图应可见地排除而非消失。
     page.wait_for_function(
         """() => {
           const cards = [...document.querySelectorAll('#prompt-list .shot-spec[data-shot-id]')];
           if (!cards.length) return false;
           if (!cards.every((node) => ['saved', 'stale'].includes(node.dataset.promptState))) return false;
           const status = document.getElementById('confirm-status');
-          const text = status ? (status.textContent || '') : '';
-          return text.includes('本次明确发送') || text.includes('本次范围 0 张');
+          return status && ['selectedCount', 'sendingCount', 'excludedCount']
+            .every((key) => /^\\d+$/.test(status.dataset[key] || ''));
         }""",
         timeout=timeout)
 
@@ -530,7 +532,6 @@ def main() -> int:
             check("V2.3.5-03", "套图就绪后确认区解锁：默认只发送正看的 1 张（未选 3 由范围行如实列出）",
                   seen["sending_count"] == 1 and seen["action_count"] == 1
                   and first["ui"]["action_disabled"] is False
-                  and "本次明确发送 1 张" in seen["status"]
                   and seen["row_count"] == 1
                   and seen["sending_rows"] == ([viewed] if viewed else seen["sending_rows"])
                   and len(seen["sending_rows"]) == 1
@@ -620,10 +621,7 @@ def main() -> int:
             check("V2.3.5-06", "可确认态：所见 4 张可发送、无阻断、风险仍可见、无确认记录",
                   ready_seen2["sending_count"] == 4 and ready_seen2["action_count"] == 4
                   and ready["ui"]["action_disabled"] is False
-                  and "发送 4 张" in ready_seen2["status"]
-                  and "确认并生成 4 张" in ready_seen2["action_text"]
                   and all((row["blocked"] or "").lower() == "false" for row in ready["ui"]["rows"])
-                  and all("本次发送" in row["text"] for row in ready["ui"]["rows"])
                   and "ON_IMAGE_TEXT_NOT_PLATFORM_LANGUAGE" in ready_risks
                   and ready["record"] is None and ready["confirm_rows"] == [],
                   {"status": ready_seen2["status"], "risks": ready_risks,
@@ -825,8 +823,6 @@ def main() -> int:
                   and stale["record"] is not None and stale["record"]["version"] == 1
                   and stale_seen["sending_count"] == 0 and stale_seen["action_count"] == 0
                   and stale_seen["action_disabled"] is True
-                  and ("不自动重提" in stale_seen["status"]
-                       or "不会自动发送全部图片" in stale_seen["summary"])
                   and len(submit_requests) == submits,
                   {"fields": stale_fields[:4], "state": stale["project_state"],
                    "seen": stale_seen["status"], "submits": len(submit_requests)})
@@ -866,14 +862,14 @@ def main() -> int:
                 "text": page.locator("#confirm-action").inner_text(),
                 "status": page.locator("#confirm-status").inner_text(),
             }
+            refused_seen = page.evaluate(SEEN_SUMMARY_PROBE)
             second_record = page.evaluate(CONFIRM_PROBE, {"shotIds": authorized_scope})
             # 成功后不自动重提：按钮禁用 + 确认记录保持 v1 单版本（无新授权即无新版本）；
             # 且零新 POST（submit_requests 仍是 -07 的 submits）。
             check("V2.3.5-10", "重编译后不自动重提：按钮禁用并标注发送 0 张，确认记录不伪造新版本、零新外发",
                   refused["disabled"] is True
-                  and "0 张" in refused["text"]
-                  and ("不自动重提" in refused["status"]
-                       or "不会自动发送" in page.locator("#confirm-summary").inner_text())
+                  and refused_seen["sending_count"] == 0
+                  and refused_seen["excluded_count"] == refused_seen["selected_count"]
                   and second_record["record"] is not None
                   and second_record["record"]["version"] == 1
                   and len(second_record["confirm_rows"]) == 1
@@ -909,14 +905,15 @@ def main() -> int:
                 == {shot: [(entry["action_id"], entry["state"])
                             for entry in confirmed["attempts_by_shot"].get(shot, [])]
                      for shot in authorized_scope})
-            # 空范围时确认单无行（sheet 为 null 不渲染行）：ui_rows 期望 0 不是 4；
-            # 旧期望 4 是行=计划图的误解。
-            check("V2.3.5-11", "刷新恢复：确认记录 v1 与授权历史一致所见 0 张、按钮禁用、零新外发",
+            # 恢复历史授权不能清空当前查看范围：首张仍选中，已消费理由可见且零新外发。
+            check("V2.3.5-11", "刷新保留首张范围并可见排除：授权历史不变、按钮禁用、零新外发",
                   history_ok
                   and reloaded_seen["sending_count"] == 0 and reloaded_seen["action_count"] == 0
                   and reloaded["ui"]["action_disabled"] is True
-                  and "0 张" in reloaded_seen["status"]
-                  and len(reloaded["ui"]["rows"]) == 0
+                  and reloaded_seen["selected_count"] == 1
+                  and reloaded_seen["excluded_count"] == 1
+                  and reloaded_seen["row_count"] == 1
+                  and len(reloaded_seen["blocked_rows"]) == 1
                   and len(submit_requests) == submits,
                   {"state": reloaded["project_state"],
                    "hash": reloaded["record"]["payload"]["fingerprint"]["hash"][:12]

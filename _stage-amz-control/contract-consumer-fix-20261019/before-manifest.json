@@ -1,0 +1,42 @@
+[
+  {
+    "path": "app/product_v2/domain/prompt.js",
+    "bytes": 120076,
+    "sha256": "6cbe3ab31c9c49b153e0d4f7c7b6e563f39643f2499baeaa96a2862174f2ea90"
+  },
+  {
+    "path": "app/product_v2/prompts.ts",
+    "bytes": 24199,
+    "sha256": "0361e1be3d3e440fbd96b41094d491b77797feed3479d72b2bdc497412575ea8"
+  },
+  {
+    "path": "app/product_v2/generation.ts",
+    "bytes": 102495,
+    "sha256": "e288730af7cf7569b90b9f164b52bdc161d090db2dba94a98b090bebca6e5a98"
+  },
+  {
+    "path": "app/product_v2/project-inputs.ts",
+    "bytes": 62981,
+    "sha256": "7cb8e46de857e48bbbc5e82485826bc8ad1a014a1a69d1c3afd9fb939fa8dc65"
+  },
+  {
+    "path": "app/product_v2/ui/input-view.ts",
+    "bytes": 159889,
+    "sha256": "1a29ba3ec0987b3cfdcc68f125e3dcb29e67c9b2ee40aac20fda55130457653d"
+  },
+  {
+    "path": "app/product_v2/domain/specs.js",
+    "bytes": 69859,
+    "sha256": "fa45e238f045a6079a86ed8a6ec0cfff2ba9cc0c12426582602c1e72f55f2ee0"
+  },
+  {
+    "path": "evals/product-v2/node/prompt-expression-contract.test.mjs",
+    "bytes": 43695,
+    "sha256": "7ea21329e25096590c683ac69f3202429297a0f2ce463d8069b4cf6e63c25537"
+  },
+  {
+    "path": "_working/amz-listing-kit-product-v2/state.md",
+    "bytes": 58736,
+    "sha256": "bc8700304d4b7eb8a35686ecef0798c331a9040fc1788d37f38c328b63ae40b5"
+  }
+]

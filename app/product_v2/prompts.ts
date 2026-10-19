@@ -11,7 +11,7 @@ import { sha256Hex } from "./storage/db.js";
 import type { ProjectRepository, StoredDocumentRecord } from "./storage/validate.js";
 import type { ActionSnapshot, PromptEntry } from "./generation.js";
 import type {
-  BriefBasisItem, CompiledPrompt, ImagePromptProfile, PromptBasis, PromptRecord,
+  BriefBasisItem, CompiledPrompt, ConfirmationCost, ConfirmationSelection, ImagePromptProfile, PromptBasis, PromptRecord,
   PromptReferenceIdentity, PromptReferenceSelection, ReworkDirective, ShotSpec, SlotEntry,
   StyleSpec, SuitePlan,
 } from "./domain/type-contracts.js";
@@ -50,7 +50,7 @@ export type ConfirmationRisk = { code: string; message: string; shot_id?: string
 export type ConfirmationSheetShot = {
   shot_id: string; order: number; label: string; role_id: string | null; role_label: string | null;
   intent: string | null; template_id: string | null; required: boolean; satisfied: boolean;
-  prompt: { version: number | null; hash: string | null; chars: number | null };
+  prompt: { version: number | null; hash: string | null; chars: number | null; text: string | null };
   references: { role: string; sha256_prefix: string; sha256?: string;
     uses?: string[]; sources?: { kind?: string; document_id?: string; version?: number;
       asset_sha256?: string }[];
@@ -65,8 +65,8 @@ export type ConfirmationSheet = {
   provider: Pick<ImagePromptProfile, "provider_id" | "model_id" | "version" | "protocol" | "size" | "n" | "prompt_extend" | "watermark" | "output_format">;
   external_summary: { model: string; size: string; n: number; prompt_extend: boolean; watermark: boolean;
     output_format: string; reference_count: number; reference_roles: string[]; prompt_chars: number;
-    on_image_text_language?: string; statement: string };
-  shots: ConfirmationSheetShot[]; scope_shot_ids?: string[];
+    on_image_text_language?: string; statement: string; cost: ConfirmationCost };
+  shots: ConfirmationSheetShot[]; scope_shot_ids?: string[]; selection: ConfirmationSelection;
   blockers: (ConfirmationBlocker & { shot_id: string; label: string; order: number })[];
   risks: ConfirmationRisk[];
 };
@@ -214,10 +214,12 @@ export function createPromptModule(deps: PromptDependencies): PromptModule {
         });
       } catch { /* 引用不成立时不带证据，保持阻断而不是换个说法。 */ }
     }
+    const environment = deps.imageEnvironment();
     const result = buildConfirmationSheet({
       suitePlan: source.suitePlan, providerProfile: provider, context: sourceContext(source),
       promptEntries: [...versions].map(([shot_id, entry]) => ({ shot_id, ...entry })),
       currentBasisByShot, shotIds,
+      pricing: environment && typeof environment === "object" && "pricing" in environment ? environment.pricing : null,
       // 普通决定的阻断必须能指到具体控件，所以把决定所依赖的规格、简报与实际依据一并交给确认单。
       brief: buildProductBrief(source.slots), styleSpec: source.styleSpec, shotSpecsById: source.shotSpecs,
       referencesByShot, slotEntries: source.slots,

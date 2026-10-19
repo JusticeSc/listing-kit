@@ -1,9 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createGenerationModule } from '../../../build/frontend-node/app/product_v2/generation.js';
-import { buildAttemptRecord, buildCandidateRecord, buildReworkDirective, emptyShotSpecFromShot, nextFromSubmitEnvelope, nextFromStatusEnvelope, selectReferences, CANDIDATE_DOCUMENT_KIND } from '../../../build/frontend-node/app/product_v2/domain/index.js';
+import { ATTEMPT_DOCUMENT_KIND, buildAttemptRecord, buildCandidateRecord, buildReworkDirective, emptyShotSpecFromShot, nextFromSubmitEnvelope, nextFromStatusEnvelope, selectReferences, CANDIDATE_DOCUMENT_KIND } from '../../../build/frontend-node/app/product_v2/domain/index.js';
 import { sha256Hex } from '../../../build/frontend-node/app/product_v2/storage/db.js';
 import { CONFIRM_SCHEMA_VERSION } from '../../../build/frontend-node/app/product_v2/domain/index.js';
+import { IMAGE_PRICING } from './harness-core.mjs';
 
 const provider = { provider_id: 'dashscope-qwen-image', model_id: 'qwen-image-3.0' };
 const environment = { contract: 'v2.4.1', provider: { ...provider,
@@ -15,7 +16,9 @@ const REWORK_REQUEST_PROFILE = { size: '1344*1344', n: 1, prompt_extend: false, 
   min_area: 512 * 512, max_area: 2048 * 2048, min_ratio: 1 / 8, max_ratio: 8, max_prompt_chars: 4000 };
 const reworkEnvironment = { contract: 'v2.4.1', provider: { ...provider,
   capability_version: 1, credential_source: 'default', configured: true,
-  capabilities: { request_profile: REWORK_REQUEST_PROFILE } } };
+  capabilities: { request_profile: REWORK_REQUEST_PROFILE } },
+  // 有效图像定价与服务端能力块同形状：预览费用按此逐图计，不猜其它模型或地区的价格。
+  pricing: { ...IMAGE_PRICING } };
 // 参考图来源投影 + 已保存商品资料版本（同一快照读出）；shotSpec 缺失=未决定，走默认依据。
 const REFERENCE_SOURCES = [{ role: 'primary', sha256: 'a'.repeat(64) }];
 const referenceSourceReader = () => REFERENCE_SOURCES.map((item) => ({ ...item }));
@@ -183,7 +186,7 @@ function reworkCandidateEntry({ actionId, taskId, sha, version }) {
   return { document_id: 'shot_main_clean', version, payload: buildCandidateRecord({
     shotId: 'shot_main_clean', attempt, assetSha256: sha, byteSize: png.byteLength,
     width: 1, height: 1, at: '2026-10-08T10:00:00Z',
-  }) };
+  }), attempt };
 }
 
 /** 返工预览夹具冻结的预览 hash/正文：compile 与 compileAndSave 必须用同一份，
@@ -202,15 +205,20 @@ const SEEN_REFERENCES = [
 ];
 
 function reworkModuleHarness({ candidates, promptEntry, fence, compileCalls = null,
-  previewReferences = DEFAULT_PREVIEW_REFERENCES, promptsSheet = () => null } = {}) {
+  previewReferences = DEFAULT_PREVIEW_REFERENCES, promptsSheet = () => null,
+  imageEnvironment = () => reworkEnvironment } = {}) {
   let currentProject = 'project-rework';
   let generation = 1;
   const saves = [];
   const prompts = new Map();
+  const attempts = candidates.map((entry) => ({
+    document_id: entry.document_id, version: entry.version, payload: entry.attempt,
+  }));
   const repository = {
     documents: {
       listLatest: async () => [],
-      listVersions: async (_pid, kind, _doc) => kind === CANDIDATE_DOCUMENT_KIND ? candidates : [],
+      listVersions: async (_pid, kind, _doc) => kind === CANDIDATE_DOCUMENT_KIND ? candidates
+        : kind === ATTEMPT_DOCUMENT_KIND ? [...attempts].sort((a, b) => b.version - a.version) : [],
       save: async (projectId, input) => {
         if (input.kind === 'prompt_version') {
           const entry = prompts.get(input.documentId) || { version: 0, record: null };
@@ -245,8 +253,10 @@ function reworkModuleHarness({ candidates, promptEntry, fence, compileCalls = nu
       previewState.index += 1;
       previewState.hash = previewState.index === 1 ? PREVIEW_HASH
         : previewState.index.toString(16).padStart(2, '0').repeat(32);
+      const references = typeof previewReferences === 'function'
+        ? previewReferences(options.rework) : previewReferences;
       return { payload: { hash: previewState.hash }, compiled: { text: PREVIEW_TEXT },
-        references: previewReferences.map((item) => ({ ...item, uses: [...item.uses],
+        references: references.map((item) => ({ ...item, uses: [...item.uses],
           sources: item.sources.map((source) => ({ ...source })) })) };
     },
     compileAndSave: async (shotId, options = {}) => {
@@ -284,10 +294,10 @@ function reworkModuleHarness({ candidates, promptEntry, fence, compileCalls = nu
     promptEntryReader: (shotId) => prompts.get(shotId) || promptEntry,
     confirmationReader: () => null, promptBasisReader: () => null,
     fenceReader: () => fence, referenceSourceReader, intakeVersionReader, shotSpecReader,
-    promptsSheet: (ids) => promptsSheet(ids), imageEnvironment: () => reworkEnvironment,
+    promptsSheet: (ids) => promptsSheet(ids), imageEnvironment,
     promptAbility,
   });
-  return { module, beginAction, saves, previewState, prompts,
+  return { module, beginAction, saves, previewState, prompts, attempts,
     switchProject: () => { currentProject = 'project-other'; generation += 1; } };
 }
 
@@ -316,6 +326,64 @@ test('prepareRework binds the explicit source candidate and freezes its seen inp
   assert.equal(saves.length, 0);
   assert.equal(compileCalls.length, 1);
   assert.equal(compileCalls[0].directive.shot_id, 'shot_main_clean');
+});
+
+test('prepareRework freezes the exact preview cost and regenerate carries fewer refs', async () => {
+  const first = reworkCandidateEntry({ actionId: 'act-rework-a', taskId: 'task-rework-a', sha: 'd'.repeat(64), version: 3 });
+  const promptEntry = { version: 7, record: { hash: 'h'.repeat(64), origin: 'system', compiled: {} } };
+  const fence = { sources: [], projectionJson: '{}', assetSha256: [] };
+  const { module, beginAction } = reworkModuleHarness({ candidates: [first], promptEntry, fence,
+    previewReferences: (directive) => selectReferences({ shot_id: 'shot_main_clean', role_id: 'main' },
+      REFERENCE_SOURCES, { maxReferences: 3, intakeVersion: 1, rework: directive }) });
+  await module.restore(beginAction());
+  // 编辑模式带候选编辑源 + 商品原照共两张实际引用：费用按逐图真实输入计。
+  const edit = await module.prepareRework({ shotId: 'shot_main_clean', candidateId: 'act-rework-a',
+    mode: 'edit_candidate', problems: ['scene'], direction: '只把背景换成纯白其余保持不变。' });
+  assert.equal(edit.preview.references, SEEN_REFERENCES.length);
+  assert.ok(edit.preview.cost && edit.preview.cost.upper_fen === 2 * SEEN_REFERENCES.length + 18,
+    '编辑预览费用必须按实际引用数计：' + JSON.stringify(edit.preview.cost));
+  assert.deepEqual(edit.preview.cost.pricing.provider_id, IMAGE_PRICING.provider_id);
+  // 原照重画只发商品原照：同一报价下费用更低且仍然已核。
+  const again = await module.prepareRework({ shotId: 'shot_main_clean', candidateId: 'act-rework-a',
+    mode: 'regenerate_original', problems: ['scene'], direction: '按原资料重画。' });
+  assert.equal(again.preview.references, DEFAULT_PREVIEW_REFERENCES.length);
+  assert.ok(again.preview.cost && again.preview.cost.upper_fen === 2 * DEFAULT_PREVIEW_REFERENCES.length + 18,
+    '重画预览费用必须按实际引用数计：' + JSON.stringify(again.preview.cost));
+  assert.ok(again.preview.cost.upper_fen < edit.preview.cost.upper_fen, '两引用编辑必须贵于单引用重画');
+});
+
+test('confirmRework rejects a changed fee basis before any persistence', async () => {
+  const first = reworkCandidateEntry({ actionId: 'act-rework-a', taskId: 'task-rework-a', sha: 'd'.repeat(64), version: 3 });
+  const promptEntry = { version: 7, record: { hash: 'h'.repeat(64), origin: 'system', compiled: {} } };
+  const fence = { sources: [], projectionJson: '{}', assetSha256: [] };
+  const currentEnvironment = { ...reworkEnvironment, pricing: { ...IMAGE_PRICING } };
+  const harness = reworkModuleHarness({ candidates: [first], promptEntry, fence,
+    previewReferences: SEEN_REFERENCES, imageEnvironment: () => currentEnvironment });
+  await harness.module.restore(harness.beginAction());
+  const intent = await harness.module.prepareRework({ shotId: 'shot_main_clean', candidateId: 'act-rework-a',
+    mode: 'edit_candidate', problems: ['scene'], direction: '只把背景换成纯白其余保持不变。' });
+  currentEnvironment.pricing.output_image_fen += 1;
+  const result = await harness.module.confirmRework({ intent });
+  assert.equal(result.stale, true);
+  assert.equal(result.reason, 'pricing_changed');
+  assert.equal(harness.saves.length, 0);
+});
+
+test('confirmRework refuses a newly in-flight action before saving instead of blaming pricing', async () => {
+  const first = reworkCandidateEntry({ actionId: 'act-rework-a', taskId: 'task-rework-a', sha: 'd'.repeat(64), version: 3 });
+  const harness = reworkModuleHarness({ candidates: [first],
+    promptEntry: { version: 7, record: { hash: 'h'.repeat(64), origin: 'system', compiled: {} } },
+    fence: { sources: [], projectionJson: '{}', assetSha256: [] } });
+  await harness.module.restore(harness.beginAction());
+  const intent = await harness.module.prepareRework({ shotId: 'shot_main_clean', candidateId: 'act-rework-a',
+    mode: 'edit_candidate', problems: ['scene'], direction: '只换背景。' });
+  harness.attempts.push({ document_id: 'shot_main_clean', version: 4,
+    payload: submitted('act-new-in-flight', 'task-new-in-flight') });
+  await harness.module.restore(harness.beginAction());
+  const result = await harness.module.confirmRework({ intent });
+  assert.equal(result.stale, true);
+  assert.equal(result.reason, 'submission_mode_blocked');
+  assert.equal(harness.saves.length, 0);
 });
 
 test('prepareRework rejects an explicit source that is no longer in the chain', async () => {
@@ -357,11 +425,14 @@ test('confirmRework refuses an intent whose frozen head is not this preview byte
     provider: { provider_id: provider.provider_id, model_id: provider.model_id, version: 1,
       protocol: 'v2.4.1', size: '1344*1344', n: 1, prompt_extend: false, watermark: false,
       output_format: 'png' },
-    total: 1, ready: 1, blocked: 0, can_submit: true, risks: [],
+    total: 1, ready: 1, blocked: 0, can_submit: true, blockers: [], risks: [],
     shots: [],
+    selection: { selected_shot_ids: ['shot_main_clean'], excluded: [] },
     external_summary: { model: provider.model_id, size: '1344*1344', n: 1, prompt_extend: false,
-      watermark: false, output_format: 'png', reference_count: 1, reference_roles: ['other'],
-      prompt_chars: PREVIEW_TEXT.length },
+      watermark: false, output_format: 'png', reference_count: 2, reference_roles: ['other', 'primary'],
+      prompt_chars: PREVIEW_TEXT.length, cost: { currency: 'CNY', upper_fen: 22,
+        pricing: { ...IMAGE_PRICING }, per_shot: [{ shot_id: 'shot_main_clean', input_images: 2, upper_fen: 22 }],
+        message: 'Two exact frozen inputs plus one output' } },
   };
   // 可提交摘要必须反映「当前已保存 Prompt」：否则确认会绑定旧版正文/哈希，
   // 重放场景测不到真实重编路径（首次确认后摘要仍停在 7 号版本）。
@@ -371,9 +442,12 @@ test('confirmRework refuses an intent whose frozen head is not this preview byte
     const shot = { shot_id: 'shot_main_clean', order: 1, label: '主图', role_id: 'main', role_label: '主图',
       intent: null, template_id: null, required: true, satisfied: true,
       prompt: { version: head.version, hash: head.record.hash, chars: PREVIEW_TEXT.length },
-      references: [{ role: 'other', sha256_prefix: 'd'.repeat(12) }], risks: [], blockers: [] };
+      references: SEEN_REFERENCES.map((ref) => ({ ...ref, sha256_prefix: ref.sha256.slice(0, 12) })),
+      risks: [], blockers: [] };
     const list = ids === null || ids === undefined ? [shot] : [shot].filter((item) => ids.includes(item.shot_id));
-    return { ...sheet, total: list.length, ready: list.length, can_submit: list.length > 0, shots: list };
+    // 同一实际清单的逐图参考数与所选范围一起带：子集调用走同一 helper 保持新 validator 同口径。
+    return { ...sheet, total: list.length, ready: list.length, can_submit: list.length > 0, shots: list,
+      selection: { selected_shot_ids: list.map((item) => item.shot_id), excluded: [] } };
   };
   // 夹具预览引用必须与真实选择器输出逐项一致：否则 seenReferences 与提交时重算比较会在
   // 这里悄悄漂移，后面的断言就测不到真正想测的「预览字节同一性」。
@@ -461,3 +535,4 @@ test('confirmRework protects an advanced manual prompt instead of overwriting it
   assert.equal(result.reason, 'manual_choice_missing');
   assert.equal(harness.saves.length, 0);
 });
+
