@@ -1,0 +1,119 @@
+{
+  "authority": "NOT-AUTHORITY: handoff hardening evidence, not product/native Goal completion",
+  "status": "handoff_hardened_verified",
+  "scope": "Five existing entry/plan/design/state files and four existing GitHub Issues; no product implementation or extra plan authority",
+  "baseline": "before-manifest.json",
+  "snapshot": "before.zip",
+  "prior_product_evidence": "_stage-amz-control/complete-product-authorization-20261018T114240Z/verification.json",
+  "changed_files": [
+    "AGENTS.md",
+    "docs/INDEX.md",
+    "docs/product-v2-refactor-plan.md",
+    "docs/product-v2-refactor-design.md",
+    "_working/amz-listing-kit-product-v2/state.md"
+  ],
+  "execution_contract": "docs/INDEX.md §1 → AGENTS/state → plan §17.13 and §17.2–17.5 → selected existing Issue, design/code/evidence; no historical P0–P8 rebuild",
+  "issue_publication": {
+    "issues": [
+      7,
+      8,
+      9,
+      10
+    ],
+    "evidence": "issue-publication.json",
+    "originals": [
+      "issue-7-before.json",
+      "issue-8-before.json",
+      "issue-9-before.json",
+      "issue-10-before.json"
+    ],
+    "published_bodies": [
+      "issue-7-after.md",
+      "issue-8-after.md",
+      "issue-9-after.md",
+      "issue-10-after.md"
+    ],
+    "readback": "All four actual edits/readbacks exited 0; bodies match except one remote trailing newline; titles and OPEN state unchanged. Final independent reviewer also read the live bodies."
+  },
+  "cold_read": {
+    "status": "First independent read completed, identified ambiguities corrected, targeted re-read found no blocking sequence/budget ambiguity",
+    "reader_agent": "ColdHandoffReader (scout)",
+    "requested_model": "opencode-go/mimo-v2.6-flash",
+    "requested_model_selection": "Rejected by task tool: model override only accepted for seance. No requested-model execution.",
+    "actual_dispatch": "scout default, without model override",
+    "reader_reported_runtime_model": "opencode-go/deepseek-v4.1-flash",
+    "identity_limit": "Runtime label reported by reader; no independent model-resolution field returned by parent task tool",
+    "evidence": [
+      "cold-read-protocol.json",
+      "cold-reader-first-read.json",
+      "cold-reader-targeted-reread.json"
+    ],
+    "corrections": [
+      "B1–B3 remaining business vertical and necessary UI precede complete B4 human factors; not navigation-first",
+      "PR18 protected stage merge point, final-head review/CI and actual release transaction distinguished from B7",
+      "Fixed authorization idempotency key, actual product Goal rather than slice Goal, sealed-ledger takeover preserving newer records, no stale-price admission",
+      "Reuse completed parts without exempting remaining B1–B5; preserve pixel/current-format evidence boundaries"
+    ],
+    "limit": "Fresh-context comprehension and targeted re-read only; not proof of weaker-model implementation capability or unsupervised full product delivery"
+  },
+  "independent_review": {
+    "status": "No blocking findings on final amended text",
+    "agent": "HandoffSpecReview (reviewer)",
+    "evidence": "independent-review.json",
+    "scope": "Documentation/Issue consistency only; no product, pixel, human-gate or release acceptance"
+  },
+  "checks": [
+    {
+      "command": "uv run --locked python tools/check_docs.py --no-run",
+      "cwd": "amz-listing-kit",
+      "exit_code": 0,
+      "output": "docs-guard.log"
+    },
+    {
+      "command": "uv run --locked python tools/refactor_resume.py --json",
+      "cwd": "amz-listing-kit",
+      "exit_code": 0,
+      "output": "cold-resume.log"
+    }
+  ],
+  "recovery_observed": {
+    "source": "cold-resume.log",
+    "read_only": true,
+    "local_state_status": "paused",
+    "next_action_task": "V2.R5.1",
+    "next_action_status": "blocked",
+    "blockers": [
+      "V2.R5.1_native_Goal_tool_unavailable_20261018_actual_get_returned_Unknown_tool_no_live_observation_or_closeout_full_product_and_protected_release_plus_5CNY_12image_4assistance_authorized_but_binding_and_budget_activation_pending_preserve_old_lifecycle_history"
+    ],
+    "scope": "Actual repository recovery consumer; not a new native Goal lifecycle observation or a product runtime test"
+  },
+  "byte_proof": {
+    "evidence": "byte-verification.json",
+    "native_goal_fence_unchanged": true,
+    "formal_sections_6_9_10_unchanged": true,
+    "state_machine_changed_keys": [
+      "latest_audit",
+      "updated_at"
+    ],
+    "lifecycle_progress_blockers_and_binding_unchanged": true,
+    "all_changed_markdown_cr_bytes": 0
+  },
+  "native_goal": {
+    "new_observation": false,
+    "lifecycle_changed": false,
+    "existing_blocker_retained": true
+  },
+  "new_allowance": {
+    "activated": false,
+    "new_product_provider_calls_by_this_task": 0
+  },
+  "side_effects": {
+    "product_code_changed_by_this_task": false,
+    "git_commit_push_merge_by_this_task": false,
+    "deployment_by_this_task": false,
+    "remote_issue_metadata_changed": true
+  },
+  "completion_scope": "Requested handoff hardening only; full product Goal and remaining acceptance are not completed",
+  "source_audit_timestamp": "2026-10-18T13:56:22.468Z",
+  "updated_at": "2026-10-18T13:58:58.250Z"
+}

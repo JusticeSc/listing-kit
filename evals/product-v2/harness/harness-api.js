@@ -120,6 +120,27 @@ export const IMAGE_PROMPT_PROFILE = Object.freeze({
   max_ratio: 8,
   max_prompt_chars: 4000,
 });
+/**
+ * 与产品有效能力块上 images.pricing 同形状的固定报价 fixture（纯领域常量不调用模型不读服务端）。
+ * 只给标准 canonical dashscope 档 image-cost.js pricingMatches 能通过的官方组合：
+ * version:1/currency CNY/provider dashscope-qwen-image/model qwen-image-3.0/size 1344*1344/n 1/png。
+ * 任意目标/参数/金额/地区/来源不同都按缺失或失配处理由调用 helper 按测试意图显式覆盖为 null 或其它值。
+ */
+export const IMAGE_PRICING = Object.freeze({
+  version: 1,
+  kind: "official",
+  provider_id: "dashscope-qwen-image",
+  model_id: "qwen-image-3.0",
+  size: "1344*1344",
+  n: 1,
+  output_format: "png",
+  currency: "CNY",
+  input_image_fen: 2,
+  output_image_fen: 18,
+  verified_on: "2026-10-19",
+  source_url: "https://help.aliyun.com/zh/model-studio/qwen-image-3.0.md",
+  region: "cn-beijing",
+});
 
 /* ---- window.v2Harness：Python 侧驱动的窄接口 ---- */
 

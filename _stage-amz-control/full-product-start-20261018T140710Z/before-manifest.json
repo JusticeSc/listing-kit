@@ -1,0 +1,68 @@
+{
+  "main": {
+    "archive": "before-main.zip",
+    "files": {
+      "AGENTS.md": {
+        "sha256": "188eb550193a47dfbb82e80df58a8e0b00bf3b34b95a829953dd1e3c5a3aa11d",
+        "bytes": 26597
+      },
+      "README.md": {
+        "sha256": "42279827469d50397b606c8c7df3f09975d34c54692bc3db1cad1392820fba00",
+        "bytes": 22336
+      },
+      "_working/amz-listing-kit-product-v2/state.md": {
+        "sha256": "06cb1d371b4fde244755975bc2f895a65789c81408d987c9d3c4f2642ef3d452",
+        "bytes": 55588
+      },
+      "docs/INDEX.md": {
+        "sha256": "495bde2f4016790f9f3359e1a7e94292255fc297a481c64afb745b35b9299441",
+        "bytes": 24285
+      },
+      "docs/agents/ai-coding-loop.md": {
+        "sha256": "bf6cecfc7aa00191a4d6210accb18107b5f022b3c81c241c9795984d91c12043",
+        "bytes": 9396
+      },
+      "docs/product-v2-refactor-design.md": {
+        "sha256": "1145cf2d8afed0612e6aae0896ec9561b609dda1708c10a7567c3d32b0d303e0",
+        "bytes": 186035
+      },
+      "docs/product-v2-refactor-plan.md": {
+        "sha256": "6fe05f65c2c14b170df9d291469c33e0792c3efb5e0854b0753a59a387f57801",
+        "bytes": 221018
+      },
+      "docs/product-v2-ui-contract.md": {
+        "sha256": "c71350c885b14dc43be6434d7bbf507e9587afb1f67dada5d16a088a5b1264bd",
+        "bytes": 40808
+      },
+      "evals/probes/verification_policy.py": {
+        "sha256": "71fdd9428a9d8f600402add20b9fe76b383467623a3d294df34ca8cc21c66cf2",
+        "bytes": 18907
+      },
+      "evals/product-v2/refactor/baseline-release-20261017T154245Z/CLOSEOUT.md": {
+        "sha256": "7abc388c70b2e799317cb03c64a165a19889fa8a2cec5943c8513c7e2676f7c1",
+        "bytes": 3782
+      },
+      "tools/select_v2_checks.py": {
+        "sha256": "82ffdfe6e600af291b88da910561a90431037c03373f0a36c81929f7a31b15a4",
+        "bytes": 17140
+      }
+    }
+  },
+  "pr18": {
+    "archive": "before-pr18.zip",
+    "files": {
+      "_stage-amz-control/issue9-expression-20261018T080410Z/issue9-status-draft.md": {
+        "sha256": "bc57fa8d2f1d3c97078a36ed7f11bd91a3b1833b2264b27d4678f95ad49a6d86",
+        "bytes": 8198
+      },
+      "_stage-amz-control/issue9-expression-20261018T080410Z/pr-body-issue9.md": {
+        "sha256": "040bd2d81f651e574c49b77bc224c92aaf808097d9f6df0920fb4755cc8063ed",
+        "bytes": 8276
+      },
+      "evals/product-v2/refactor/program-expression-20261018.md": {
+        "sha256": "5d94a0d31dcccfb14801a3ff2993a3ce5ca63880201b5f6d811e7e86d373a5c4",
+        "bytes": 24844
+      }
+    }
+  }
+}

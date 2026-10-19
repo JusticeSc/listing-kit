@@ -1,0 +1,16 @@
+verify_v2_1_1_indexeddb                          rc=0 5s
+verify_v2_1_2_project_home                       rc=0 8s
+verify_v2_1_3_project_package                    rc=0 5s
+verify_v2_1_4_formal_entry                       rc=0 15s
+verify_v2_2_1_product_contracts                  rc=0 3s
+verify_v2_2_2_semantic_provider                  rc=0 3s
+verify_v2_2_3_intake_understanding               rc=1 13s
+verify_v2_2_4_category_generality                rc=0 1s
+verify_v2_3_1_suite_registry                     rc=0 3s
+verify_v2_3_2_suite_editor                       rc=0 8s
+verify_v2_3_3_session_lifecycle                  rc=0 13s
+verify_v2_5_2_vlm_review                         rc=0 9s
+verify_v2_5_5_suite_review                       rc=0 29s
+verify_v2_6_1_selection                          rc=1 78s
+verify_v2_6_2_delivery                           rc=0 34s
+verify_v2_6_4_accessibility                      rc=0 36s

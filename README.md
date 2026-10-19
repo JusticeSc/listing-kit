@@ -20,7 +20,7 @@
 - 文档最新版与保存时的 OCC 版本头按数值版本索引读取，不加载全部历史；本机数据库升级保留文档历史、资产和项目元数据，完整项目包仍包含全部版本。
 - localStorage 只保存当前项目指针；
 - 启动时先完成本机列表读取再解锁；返回首页遇到慢读取会显示忙碌状态，读取失败保留已有列表并提供键盘可用的重试入口，不把读取失败显示成空项目库。
-- 将完整项目导出为 ZIP，或从 ZIP 导入；导入前校验结构和内容哈希；
+- 将完整项目导出为 ZIP，或从 ZIP 导入；导入前校验结构和内容哈希。当前包保留已有冻结执行身份的 schema 2 历史动作及 schema 3 新动作；新确认记录写 schema 3，历史确认 1/2 与人工全文按原载荷只读恢复，不补造用途/来源或重写历史。缺执行身份的旧动作及未知格式原子拒绝。
 - 在工作区里上传参考图（可选择角色、同内容自动去重）、填写商品资料并自动保存草稿；
 - 不调用 AI 也可人工填写、确认或标记未知商品事实，选择图片用途、编辑结构化尺寸及用途依赖；缺尺寸只阻断消费尺寸的图，不阻断无关主图/场景图。
 - 文字理解与商品看图理解均是显式辅助动作：文字模型只看资料和参考图元数据，看图模型接收上传图片的真实字节；提案保留来源、原资料版本和 action，仍由人工确认。资料变化或项目切换后迟到提案留在原记录，不污染当前事实。
@@ -55,7 +55,7 @@
 
 两类ZIP与人工任务链已有独立Chrome无头、真实页面和native下载的同版本证据；main `4bf6d03` 的同树验证run38984977644还覆盖项目导入/返工/再导出，发布run38986192730包含实际容器/可信HTTPS页面与受控不同镜像同origin恢复。证据各有场景范围，不代表完整下一版产品验收或服务此刻状态。
 
-当前格式自身应可恢复，旧格式/缺身份明确原子拒绝，不补造迁移或静默删库。本次基线的V1清退、ASGI/Vite/lit-html及验证治理属于当前分支候选；已有本地路径证据不等于远程main已更新。冻结目标/精确凭据、较大Blob、服务器日志与扫描负例的既有证明按#7选中证据复用，干净候选及CI结论只取关联PR与state。fake只证明工程路径，不证明真实模型品质；C15/C17真人验收仍未发生。
+当前格式自身应可恢复，旧格式/缺身份明确原子拒绝，不补造迁移或静默删库。V1活运行链清退、FastAPI/Uvicorn、Vite单产物、lit-html及验证治理已随PR #13–#16进入main，不再是未合并分支候选；精确源码/CI/线上镜像身份仍分别取关联PR与state。封存下一版的四段/普通决定/双模式不能据此算作main已实现。fake只证明工程路径，不证明真实模型品质；C15保持open，用户亲验与C17正式签署范围分开核对。
 
 理解 Adapter 分开业务合同：`v2_dashscope_semantic.py` 使用 `deepseek-v4.1-flash` 处理文字，`v2_dashscope_vision_semantic.py` 使用 `qwen-vl-max` 发送实际商品图片并返回可追溯提案；单图/整套图片复核不复用商品理解提案 schema。`v2_registry.py` 装配有限配置，测试替身仅用于离线验证，不代表模型能力或质量。
 
@@ -175,6 +175,7 @@ uv run python tools\verify_v2_3_3_spec_versions.py
 uv run python tools\verify_v2_3_4_prompt_compiler.py
 uv run python tools\verify_v2_3_5_pre_generation_confirm.py
 uv run python tools\verify_v2_3_6_prompt_manual_edit.py
+uv run python tools\verify_v2_3_7_copy_adoption_chain.py
 uv run --locked python -m pytest tests/gateway tests/dev -q
 uv run python tools\verify_v2_4_2_generation_attempt.py
 uv run python tools\verify_v2_4_3_batch_execution.py

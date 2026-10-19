@@ -34,7 +34,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 
-import v2_stage_nav as stage_nav  # noqa: E402  （V2.UI.2 六阶段工作台导航）
+import v2_stage_nav as stage_nav  # noqa: E402  （B4 四段工作台导航）
 import v2_verify_shared as shared  # noqa: E402  （正式 server/夹具/共同业务操作）
 from v2_verify_shared import (  # noqa: E402
     read_suite, png_bytes, PROBE, SEED_SLOTS,
@@ -173,8 +173,13 @@ def main() -> int:
                     return page.evaluate(PROBE)
 
                 def row(shot_id: str):
+                    shared.select_make_shot(page, shot_id)
                     return page.locator(
-                        f'#attempt-list .attempt-row[data-shot-id="{shot_id}"]')
+                        f'#shot-execution [data-shot-id="{shot_id}"]')
+
+                def task_row(shot_id: str):
+                    return page.locator(
+                        f'#task-list-mount [data-task-shot="{shot_id}"]')
 
                 def wait_state(shot_id: str, state: str, timeout: int = 30_000) -> None:
                     # fake 上游同步完成时批次直接到 succeeded，不停 submitted：
@@ -183,27 +188,33 @@ def main() -> int:
                         page.wait_for_function(
                             """(shot) => {
                                 const node = document.querySelector(
-                                    '#attempt-list .attempt-row[data-shot-id="' + shot + '"]');
+                                    '#task-list-mount [data-task-shot="' + shot + '"]');
                                 const value = node && node.getAttribute("data-attempt-state");
                                 return value === "submitted" || value === "succeeded"
                                     || value === "reconciling";
                             }""", arg=shot_id, timeout=timeout)
                         return
-                    expect(row(shot_id)).to_have_attribute(
+                    expect(task_row(shot_id)).to_have_attribute(
                         "data-attempt-state", state, timeout=timeout)
                 def wait_candidate_ui(shot_id: str, timeout: int = 30_000) -> None:
                     page.wait_for_function(
                         """(shot) => {
                             const node = document.querySelector(
-                                '#attempt-list .attempt-row[data-shot-id="' + shot + '"]');
-                            return Boolean(node && node.querySelector('.attempt-candidate'));
+                                '#task-list-mount [data-task-shot="' + shot + '"]');
+                            if (!node) return false;
+                            if (node.querySelector('.attempt-candidate')) return true;
+                            const detail = document.querySelector(
+                                '#shot-execution [data-shot-id="' + shot + '"]');
+                            return Boolean(detail && detail.querySelector('.attempt-candidate'));
                         }""", arg=shot_id, timeout=timeout)
 
                 def wait_review_ui(shot_id: str, timeout: int = 30_000) -> None:
                     page.wait_for_function(
                         """(payload) => {
                             const node = document.querySelector(
-                                '#attempt-list .attempt-row[data-shot-id="' + payload.shot + '"]');
+                                '#shot-execution [data-shot-id="' + payload.shot + '"]')
+                              || document.querySelector(
+                                '#task-list-mount [data-task-shot="' + payload.shot + '"]');
                             const line = node && node.querySelector('.attempt-review');
                             const summary = line && line.getAttribute('data-review-summary');
                             return Boolean(summary
@@ -212,13 +223,15 @@ def main() -> int:
 
                 def confirm_generation() -> dict:
                     # 确认即提交：本次授权的新增 attempt 消费证明（非任意旧行存在）。
+                    # B4 默认只送正看图：本轮整套授权先显式勾选批量范围。
+                    shared.choose_make_batch(page, shot_ids)
                     gate = shared.confirm_and_submit(page, expect, probe, shot_ids=shot_ids)
                     assert gate["ok"], f"确认必须产生本次授权的新消费：{gate['after_actions']}"
                     return gate
 
 
                 def click_row_button(shot_id: str, text: str) -> None:
-                    stage_nav.goto(page, "generate")
+                    shared.select_make_shot(page, shot_id)
                     row(shot_id).locator(f'button:has-text("{text}")').first.click()
 
                 def generate_and_settle(shot_id: str) -> None:
@@ -275,6 +288,8 @@ def main() -> int:
                 # ---------------- 单张成功：候选自动入库 + 当前 ReviewReport + 摘要行 ----------------
                 stage = "review-report"
                 generate_and_settle(ok_shot)
+                # 摘要行只在当前查看图的详情里渲染：先明确选中该图，再读共享 PROBE 的 UI 行。
+                shared.select_make_shot(page, ok_shot)
                 wait_candidate_ui(ok_shot)
                 wait_review_ui(ok_shot)
                 after_store = probe()
@@ -314,6 +329,8 @@ def main() -> int:
                 stage = "reload"
                 before_reload = probe()
                 page.reload(wait_until="networkidle")
+                # 重载后查看目标（内存态）丢失：明确重新选中该图，再读摘要行。
+                shared.select_make_shot(page, ok_shot)
                 wait_candidate_ui(ok_shot)
                 wait_review_ui(ok_shot)
                 after_reload = probe()

@@ -1,0 +1,73 @@
+{
+  "observed_at": "2026-10-19T06:12:04.434Z",
+  "scope": "Ninth authorization activation only (accounting event; no request sent, no model/mode change, no product code).",
+  "authorization_id": "complete-product-authorization-20261018T114240Z",
+  "authorization_source": "_stage-amz-control/complete-product-authorization-20261018T114240Z/authorization.json (user 2026-10-18: 完整交付含受保护发布 + 新增最多5元)",
+  "takeover": {
+    "source_stash": "2b7a82171c324e75bd2d910f5ae1343799659df5",
+    "source_path": "_working/amz-listing-kit-product-v2/budget-ledger.json",
+    "stash_sha256_observed": "4aa0f8b585395986b85d013a6acf63e70f6035eb8254ea94483c275eac1820dc",
+    "sealed_copy": "amz-listing-kit/_stage-amz-control/status-audit-20261018/sealed-budget-ledger.json",
+    "sealed_sha256_observed": "4aa0f8b585395986b85d013a6acf63e70f6035eb8254ea94483c275eac1820dc",
+    "sealed_equals_stash": true,
+    "working_tree_ledger_before_sha256": "f01a7f44e7ca82b9f81a53de515608b2dfbf50348dd911621eb878df9cb5d3f6",
+    "working_tree_ledger_before_reservations": 15,
+    "working_tree_records_absent_from_sealed": 0,
+    "working_tree_ledger_was_strict_subset": true,
+    "evidence_before_copy": "_stage-amz-control/b4-workbench-20261019/before/budget-ledger-working-pre-activation.json",
+    "sealed_copy_in_repo": "_stage-amz-control/b4-workbench-20261019/sealed-budget-ledger.json",
+    "sealed_copy_in_repo_sha256": "4aa0f8b585395986b85d013a6acf63e70f6035eb8254ea94483c275eac1820dc",
+    "old_tree_sealed_copy": "amz-listing-kit/_stage-amz-control/status-audit-20261018/sealed-budget-ledger.json (same bytes, sha 4aa0f8b5...)"
+  },
+  "write": {
+    "method": "surgical text takeover of sealed bytes; only budget_cap_cny/cap_source/count_cap/supplement_authorization_history(+1 entry)/updated_at changed",
+    "ledger_after_sha256": "aad55541e880236ed10b2b09cf2642f0bc92b54dbc1d82238f54901771f6a55d",
+    "ledger_after_bytes": 71635,
+    "cr_bytes": 0,
+    "reservations_deep_equal_sealed": true,
+    "history_entries": 7,
+    "changed_top_level_keys": [
+      "budget_cap_cny",
+      "cap_source",
+      "count_cap",
+      "supplement_authorization_history",
+      "updated_at"
+    ]
+  },
+  "gates": {
+    "lane": {
+      "amount_cny": 5,
+      "image_calls_max": 12,
+      "aux_calls_max": 4,
+      "image_per_call": 1
+    },
+    "cumulative": {
+      "amount_cny": 21,
+      "image_max": 64,
+      "semantic_vlm_max": 22,
+      "total_max": 86
+    },
+    "historical_retained": {
+      "image_52_of_52": true,
+      "safety_upper_cny_11_20": true,
+      "failures_unknowns_reservations": true
+    }
+  },
+  "preconditions_observed": {
+    "native_goal": "15ab22bf3386b9cf active (goal tool get this session)",
+    "official_price_upper_bounds": "evals/product-v2/refactor/complete-product-price-readiness-20261019.md",
+    "asset_channel": "approved public-license bearing reference sha256 4c4ed76c... reused",
+    "credential_channel": "existing approved channels; local env presence only (DASHSCOPE_API_KEY/ARK_API_KEY present), values never read/logged/hashed"
+  },
+  "not_sent_or_changed": {
+    "paid_calls": 0,
+    "provider_posts": 0,
+    "product_source": false,
+    "quota_reactivation": false
+  },
+  "limits": [
+    "Activation is accounting, not permission to spend; every call needs per-call preflight + reservation.",
+    "No claim the allowance suffices to produce acceptable pixels."
+  ],
+  "authority": "NOT-AUTHORITY: accounting activation evidence only; current authority remains state.md/plan; no product completion claim"
+}

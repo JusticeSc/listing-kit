@@ -1,0 +1,342 @@
+{
+  "authority": "NOT-AUTHORITY: read-only status audit observations; product decisions remain plan/state",
+  "observed_at": "2026-10-19T10:39:51.736Z",
+  "baseline": "72c33df03514eaedd6f3e6efdf57236f26ada9f6",
+  "head": "9aedd308e6925ec7880c853bc064fa5fbf335c19",
+  "goal": {
+    "id": "15ab22bf3386b9cf",
+    "status": "active",
+    "objective_sha256": "6c1f59d0df5c6c867dac5aa090bb32ff915c7dfae2140494c653aab7598bf870"
+  },
+  "before_hashes": {
+    "_working/amz-listing-kit-product-v2/state.md": "39f60836e6aeb0c35cfd9a063fadfe9d3cfd2dd18daffbc8ae2b2055f8e55ab6",
+    "_working/amz-listing-kit-product-v2/budget-ledger.json": "39add9f71c6c80ea8c7566fed1fab95b9044e8959b26d0e5637f81d4081a8ed0",
+    "docs/product-v2-refactor-plan.md": "ce99ce016232a4ba4b0589803d0baf6f4090847fb9922cb29e8dfc1e6ef8c7ef",
+    "_stage-amz-control/b5-batch8-20261019/b12-final-closeout-20261019.json": "71f81af95512e706d04f3614c21ad9d620630ff25a84e6af9d78a5edb33cc967",
+    "_stage-amz-control/b5-batch8-20261019/b10-zero-fee-longitudinal-20261019.json": "83575aeb9692803b2c36a6b423e17cbbf156b1e6a86e610275f986cad5e39fb7"
+  },
+  "packages": [
+    {
+      "path": "amz-listing-kit/_stage-amz-control/formal-resume-20261015T125651Z/real-wire/bearing-main-final.project.zip",
+      "bytes": 28098549,
+      "sha256": "5dd5b7d27d198b788b2aad5dacf193af5dd4e636b0f493bdc407478084717591",
+      "crc_bad_member": null,
+      "members": 252
+    },
+    {
+      "path": "amz-listing-kit/_stage-amz-control/formal-resume-20261015T125651Z/real-wire/bearing-main-final.delivery.zip",
+      "bytes": 8739956,
+      "sha256": "6839e91313089edc354443a1d55a74177054b703f21a26ccc2708ea1b0695a3e",
+      "crc_bad_member": null,
+      "members": 8,
+      "images": [
+        {
+          "path": "images/shot_main_clean-act-89267d173ce842f2ae356d7afc49b4f3.png",
+          "sha256": "599f462e9dd20827a9edc6660bf51518a3b9805a9dc2dadcbeb9ec405421a65c"
+        },
+        {
+          "path": "images/shot_infographic_benefits-act-490a5961ab94432e8bb84cd0fbd2b4b1.png",
+          "sha256": "921cbd00e5b600246a9ca3b89fe61a981f191c7ad2e0039a937165d0545a349b"
+        },
+        {
+          "path": "images/shot_scene_lifestyle-act-2633efd1fd854d9c908c1717d84a97ab.png",
+          "sha256": "4d70d5399bc738f66809ac08d2dec3842ff97c4de7992bb16040f0cc8945eccc"
+        },
+        {
+          "path": "images/shot_detail_material-act-e03c2644480d449182a7f0001cc1a8be.png",
+          "sha256": "e8ca9875a7749afc93f62e1666e7c7dba45f0af0a2341c5da922af78a3466d59"
+        },
+        {
+          "path": "images/shot_size_dimensions-act-04a84b645ec44047b550ef18740e1241.png",
+          "sha256": "ffa3ed2449e02cfec93fee828e0fc58bda056149354520bd53528fc3acc4d40e"
+        }
+      ]
+    }
+  ],
+  "pr": {
+    "number": 19,
+    "url": "https://github.com/JusticeSc/listing-kit/pull/19",
+    "state": "OPEN",
+    "isDraft": true,
+    "head": "9aedd308e6925ec7880c853bc064fa5fbf335c19",
+    "mergeStateStatus": "BLOCKED",
+    "reviews": [],
+    "comments": [],
+    "run": 39228244927,
+    "run_url": "https://github.com/JusticeSc/listing-kit/actions/runs/39228244927",
+    "control_plane": "FAILURE",
+    "docker": "SKIPPED",
+    "failed_step": "Check formal entry and browser contracts",
+    "failed_check": "V2.2.3-22 progressive disclosure",
+    "failure_is_not_rerun_this_audit": true
+  },
+  "main": {
+    "sha": "72c33df03514eaedd6f3e6efdf57236f26ada9f6",
+    "run": 39136220536,
+    "conclusion": "success",
+    "issues_open": [
+      7,
+      8,
+      9,
+      10
+    ],
+    "protection": {
+      "strict": true,
+      "required_status_checks": [
+        "Control plane and Product V2",
+        "Docker image, smoke test, and main deploy"
+      ],
+      "required_approving_review_count": 0,
+      "enforce_admins": true,
+      "allow_force_pushes": false
+    }
+  },
+  "live": {
+    "source": "read-only ssh docker inspect/ps plus trusted HTTPS GET /api/health",
+    "image_tag": "amz-listing-kit:72c33df03514eaedd6f3e6efdf57236f26ada9f6",
+    "image_id": "sha256:2d5495bf705278f367468cf0cc36345b68d1e3cc7115ef6bf9927cff07cb16e6",
+    "running": true,
+    "healthy": true,
+    "previous_container_in_ps": false,
+    "release_journal_absent": true,
+    "https_health": {
+      "app": "amz-listing-kit",
+      "product": "v2",
+      "server_state": "none",
+      "user_data": "browser-indexeddb"
+    },
+    "limit": "Health and image identity only; no current five-image UI acceptance or same-origin recovery exercise"
+  },
+  "fees": {
+    "authorization_id": "complete-product-authorization-20261018T114240Z",
+    "activated_once": true,
+    "browser_submit_requests": 3,
+    "supplier_billed_calls": null,
+    "new_lane_reserved_upper_cny": 0.36,
+    "new_lane_image_calls_counted": 3,
+    "new_lane_aux_calls_counted": 0,
+    "new_lane_cap_cny": 5,
+    "new_lane_image_cap": 12,
+    "new_lane_aux_cap": 4,
+    "new_lane_remaining_cny": 4.64,
+    "new_lane_remaining_image_calls": 9,
+    "new_lane_remaining_aux_calls": 4,
+    "conservative_baseline_cny": 11.2,
+    "combined_conservative_upper_cny": 11.56,
+    "root_total_reserved_cny_still_historical": 11.2,
+    "root_spent_cny_historical": 2.69,
+    "limit": "No provider billing reconciliation; all failed/unknown count and remain reserved. Three times 0.12 is 0.36 total, not three times 0.36. Root summaries must not gate new calls."
+  },
+  "corrections": {
+    "ledger_updated_at": "2026-10-19T10:38:08.494Z",
+    "b12": "Removed only trailing semicolon after final JSON object; original bytes in before.zip",
+    "historical_report_time_conflict": "B11 finished_at is naive local18:08:39; ledger copied18:08:39 with UTC suffix while closeout10:15UTC. Do not use that suffix to infer ordering; raw history retained.",
+    "b10": "Removed only trailing semicolon; original bytes appended to before.zip before editing; historical contents unchanged"
+  },
+  "scope": {
+    "product_edits": false,
+    "model_calls": 0,
+    "git_writes": false,
+    "remote_writes": false,
+    "new_batches_authorized": false,
+    "implementation_batches_used": 12,
+    "implementation_batch_cap": 12
+  },
+  "worktree_at_start": {
+    "staged": 0,
+    "modified": 7,
+    "untracked": 227,
+    "limit": "Includes pre-existing governance edits and process artifacts; no bulk staging or deletion"
+  },
+  "acceptance_audit": [
+    {
+      "criterion": 1,
+      "status": "partial",
+      "proven": "B1-B3 confirmed copy, decision/override, exact measurement source and stale gates have current engineering/page evidence",
+      "missing": "New program-draft pixel quality; full completion is not inferred from contract tests"
+    },
+    {
+      "criterion": 2,
+      "status": "contradicted_or_unproven",
+      "proven": "B11 captures three browser image submits",
+      "missing": "One-call reservation did not cover invoked batch path; no per-request provider outcome or valid whole-path summary/price proof; this does not alone prove one-click product duplication"
+    },
+    {
+      "criterion": 3,
+      "status": "partial",
+      "proven": "Production adapter injected-Transport page path covers both modes and both adapters with exact decoded source order/prompt/parameters",
+      "missing": "Required live upstream input and native-pixel consumer proof for changed/missing combinations"
+    },
+    {
+      "criterion": 4,
+      "status": "partial",
+      "proven": "B4 four-stage workbench, task selection and existing width/native zoom observations; archived 5720-to1440-to5720 reversible overflow mechanism",
+      "missing": "Complete critical interaction/focus/draft evidence and explain visually clipped200% screenshot vs clean geometry"
+    },
+    {
+      "criterion": 5,
+      "status": "historical_proof_retained_current_acceptance_missing",
+      "proven": "Five historic adopted image hashes and both ZIP hashes/CRC freshly match; original project/quality proof retained",
+      "missing": "Program-generated prompt quality, currentness and exact new-code five-image acceptance cannot be signed by historic expert-prompt success"
+    },
+    {
+      "criterion": 6,
+      "status": "partial",
+      "proven": "90-document/9-asset download/import/reload and232/19 historic-byte reopening evidence exists; original232/19 project ZIP bytes rechecked",
+      "missing": "Final current adoption, two packages, export fence and final candidate independent roundtrip after remaining consumer edits"
+    },
+    {
+      "criterion": 7,
+      "status": "missing_final_candidate_evidence",
+      "proven": "Prior engineering baseline and unaffected controls remain reusable; no paid calls or product edits in this audit",
+      "missing": "Full two consecutive rounds on same final candidate after all consumers change; latest PR CI is red"
+    },
+    {
+      "criterion": 8,
+      "status": "not_achieved",
+      "proven": "Live72c33df image health and saved main release chain; protected checks still active",
+      "missing": "PR19/new final code not merged/deployed; exact final image full online task and different-image same-origin recovery not exercised"
+    }
+  ],
+  "user_action": {
+    "now": "Decide whether to authorize up to six additional implementation-plus-verification batches; first two zero paid model calls, no new model budget, original complete objective retained",
+    "not_needed": [
+      "resend reference image",
+      "paste or reveal any key",
+      "write expert Prompt",
+      "debug tools/CI",
+      "decide ordinary architecture or layout details",
+      "repeat permission for already-selected existing infrastructure"
+    ],
+    "later": "C15/C17 genuine independent human assessment on a stable version, original scope; not a newly added engineering deployment prerequisite"
+  },
+  "metadata_limit": {
+    "ledger_CRLF_lines_retained": 1437,
+    "reason": "Pre-existing physical line endings retained by timestamp-only edit; no global formatting or financial content change claimed",
+    "closeout_time_limit": "Original naive/local vs UTC event time conflict retained and flagged; updated_at uses actual current UTC"
+  },
+  "spec_review": {
+    "reader": "AuditSpecEvidence",
+    "scope": "Read-only targeted requirements/evidence audit; not exhaustive all-file review",
+    "findings": [
+      {
+        "severity": "blocking_before_paid_calls",
+        "finding": "Selected shots with confirmation blockers are filtered before rebuilding sheet; excluded shot reasons are not retained in visible per-shot confirmation",
+        "sources": [
+          "app/product_v2/generation.ts:670-675",
+          "app/product_v2/ui/generation-view.ts:1091-1100,1149-1156,1423-1429"
+        ],
+        "observed": "make-batch-1440.png shows chosen2 vs sending1 without per-shot exclusion reason;0POST in evidence",
+        "limit": "This alone is not unselected-shot outbound evidence"
+      },
+      {
+        "severity": "blocking_before_paid_calls",
+        "finding": "Actual confirmation summary lacks current verified fee upper bound; this is a product consumer gap, not only a paid-verifier issue",
+        "sources": [
+          "app/product_v2/domain/confirm.js:310-327",
+          "app/product_v2/ui/generation-view.ts confirmation projection",
+          "_stage-amz-control/b4-workbench-20261019/evidence/make-batch-1440.png"
+        ]
+      },
+      {
+        "severity": "unproven_human_factors",
+        "finding": "200% screenshot is visibly clipped on right despite clean root/body width; inner nav horizontal scroll/key accessibility not proved",
+        "sources": [
+          "_stage-amz-control/b4-workbench-20261019/evidence/make-zoom-200.png",
+          "_stage-amz-control/b4-workbench-20261019/evidence/b4-zoom-observed.json",
+          "_stage-amz-control/b4-workbench-20261019/probe_b4_workbench.py:60-66,417",
+          "app/product_v2/styles.css:336-337,349,779"
+        ],
+        "limit": "Not proven to be DPR/CSS capture bug; cannot sign usability from documentElement width alone"
+      },
+      {
+        "severity": "evidence_identity_limit",
+        "finding": "B4 report labels candidate uncommitted; subsequent helper changes mean actual tested source/tool bytes must be bound to publication candidate",
+        "sources": [
+          "_stage-amz-control/b4-workbench-20261019/verification.json",
+          "tools/v2_verify_shared.py worktree delta"
+        ],
+        "recommendation": "Compare source/tool bytes and reuse unchanged qualified proof; exercise changed or missing paths, do not rerun entire old HEAD solely for rebinding"
+      }
+    ],
+    "reusable": [
+      "Confirmed minimum text/source versions/main no added print",
+      "Structured dimension exact measurement-source binding and stale blocking",
+      "Two production adapters/two modes injected-Transport bytes/order/prompt evidence",
+      "Current four-stage workbench and prior native width/zoom observations",
+      "90/9 and232/19 native package history/Blob evidence",
+      "Archived reversible5720 overflow mechanism"
+    ],
+    "live_pixel_or_final_release_signed": false
+  },
+  "plan": {
+    "authority": "docs/product-v2-refactor-plan.md §17.13 停工后审计与待批准的剩余安排",
+    "approved": false,
+    "additional_batch_cap_proposed": 6,
+    "numbering": "13–18, original12 retained",
+    "first_two_zero_paid_calls": true,
+    "stages": [
+      "sending/summary/exclusions/cost/reservation/POST atomic closure",
+      "human-factors gaps and present CI red",
+      "one new program-draft true image vertical",
+      "missing two-mode/whole-suite and native packages",
+      "final same-candidate full two rounds",
+      "protected final deployment and same-origin recovery"
+    ],
+    "new_model_budget_requested": 0,
+    "full_objective_unchanged": true
+  },
+  "standards_review": {
+    "reader": "AuditExecutionEvidence",
+    "scope": "Read-only targeted B8-B12 execution/evidence review",
+    "findings": [
+      {
+        "severity": "P1",
+        "finding": "Paid verifier expands confirmation to four shots then tries another single-shot click; one-call reservation mismatch observed before after-the-fact submit assertion",
+        "sources": [
+          "tools/verify_v2_4_5_live_reference.py:242-244,324,333",
+          "evals/product-v2/v2.4.5-live-reference-20261019-180800-b11-main-regenerate-ark-01.json"
+        ],
+        "limit": "Verifier path error; not evidence of a product transaction duplicating a single-shot click. Three browser submits observed; supplier acceptance/billing/results unknown."
+      },
+      {
+        "severity": "P1",
+        "finding": "Success boundary template chosen by provider not result status; failed/zero-submit runs are described as successful; model_calls1 contradicts submit3",
+        "sources": [
+          "tools/verify_v2_4_5_live_reference.py:478-495",
+          "_stage-amz-control/b5-batch8-20261019/b11-send-attempt-20261019.json"
+        ]
+      },
+      {
+        "severity": "P1_CI_blocker_not_product_leak",
+        "finding": "CI V2.2.3-22 expands probe to entire intake, then matches legitimate recent-analysis provider label as fact-card disclosure",
+        "sources": [
+          "tools/verify_v2_2_3_intake_understanding.py:158-164,450-471",
+          "app/product_v2/ui/input-view.ts:859-868",
+          "https://github.com/JusticeSc/listing-kit/actions/runs/39228244927"
+        ],
+        "minimum_change": "Remove overbroad incidental panel-text assertion/dead probe; keep genuine per-card disclosure behavior checks. No product wording suppression."
+      },
+      {
+        "severity": "P2_metadata",
+        "finding": "B10 and B12 JSON had trailing semicolon; updated_at stale; historical ledger summaries/timezone/source-license labels conflict",
+        "fixed_this_audit": [
+          "B10 and B12 removed only final semicolon; originals snapshotted",
+          "state/ledger updated_at actual UTC; J10 passed",
+          "state/plan stale current claims corrected; financial rows unchanged"
+        ],
+        "remaining": "Root ledger financial summaries and historical time/source attribution semantics require precise reconciliation before paid calls; no invented settled totals."
+      },
+      {
+        "severity": "execution_discipline",
+        "finding": "Repeated zero-submit confirm-disabled credential-gate attempts without effective new conditions observed in B5 closeout",
+        "source": "_stage-amz-control/b5-batch8-20261019/b5-first-vertical-closeout-20261019.json",
+        "effect": "Wasted implementation/validation attempts; zero paid cost does not make this valid diagnostic practice."
+      }
+    ],
+    "judgement_only_code_smells": [],
+    "live_or_goal_completion_signed": false
+  },
+  "verification_scope": "No product behavior changed or new feature smoke claimed. Ran actual current cold resume, state/docs guards, live read-only HTTPS/SSH identity, binary ZIP/hash/CRC checks, and metadata invariants. Existing product tests/known CI failure not rerun; no real model request.",
+  "audit_done_but_product_goal_not_complete": true
+}

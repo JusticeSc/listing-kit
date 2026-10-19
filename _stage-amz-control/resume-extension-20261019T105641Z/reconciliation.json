@@ -1,0 +1,92 @@
+{
+ "authority": "NOT-AUTHORITY: batch13 ledger reconciliation arithmetic; send approval reads the ledger current_control block, not this note",
+ "computed_at": "2026-10-19T11:34:10.177Z",
+ "ledger_path": "_working/amz-listing-kit-product-v2/budget-ledger.json",
+ "before": {
+  "sha256": "eb6c6d30e2438e7baef81ae611f270df94a03c227916eb1e7dca5088027f5978",
+  "bytes": 76356
+ },
+ "after": {
+  "sha256": "02f7087e03369f152fe9ac52e73affb6b876024aad855eeeb5663c30495708aa",
+  "bytes": 81434
+ },
+ "authorizations": {
+  "current": {
+   "goal_id": "15ab22bf3386b9cf",
+   "authorization_id": "complete-product-authorization-20261018T114240Z",
+   "activation": "activated_once",
+   "activated_at": "2026-10-19T06:12:04.434Z",
+   "lane_caps": {
+    "amount_cny_max": 5,
+    "image_calls_max": 12,
+    "aux_calls_max": 4,
+    "image_per_call": 1
+   },
+   "cumulative_caps": {
+    "amount_cny": 21,
+    "image_max": 64,
+    "semantic_vlm_max": 22,
+    "total_max": 86
+   }
+  },
+  "history_entry_index": 6,
+  "activation_count_in_history": 1
+ },
+ "lane_rows": [
+  {
+   "id": "b5-batch8-main-regenerate-ark-01",
+   "authorization_id": "complete-product-authorization-20261018T114240Z",
+   "calls": 3,
+   "reserve_cny": 0.36,
+   "status": "spent_overspent_three_submits_on_one_call_slot_waiting_single_submit_fix",
+   "evidence": "evals/product-v2/v2.4.5-live-reference-20261019-180800-b11-main-regenerate-ark-01.json",
+   "evidence_image_submit_requests": 3,
+   "evidence_image_status_requests": 0,
+   "evidence_image_result_requests": 0,
+   "evidence_finished_at": "2026-10-19T18:08:39",
+   "prooved": "3 browser submits; upstream acceptance/results/settlement unproved"
+  }
+ ],
+ "arithmetic": {
+  "lane_usage": "3 x 0.12 = 0.36",
+  "lane_remaining_image": "12-3=9",
+  "lane_remaining_aux": "4-0=4",
+  "lane_remaining_cny": "5-0.36=4.64",
+  "cumulative_safety_upper": "11.20 + 0.36 = 11.56 (NOT invoice)",
+  "historical_row_sum_all_54": "10.58 (informational only; NOT a gate; mixes spent/reserved/zero rows and planned reservations)"
+ },
+ "settlement": "unknown: no provider billing reconciliation; cumulative 11.56 is a safety upper, not a billed total",
+ "consumers": {
+  "code_readers_spent_fields": [
+   "tools/verify_v2_volc_adopt_export.py:122-127 precheck image<8/total<12/spent+0.12<=5.0; :491-500 writes spent_calls/spent_cny/total_reserved (old paid CLI, plan 17.12.1 says not a current gate)"
+  ],
+  "code_budget_hard_gates_current_lane": "none found in tools/src/app/config/tests",
+  "docs_current_key_references": [
+   "docs/product-v2-refactor-plan.md:1186 activation pattern mentions current_authorization/supplement_authorization_history (historic text; parent owns plan wording)"
+  ]
+ },
+ "preserved": {
+  "history_entries_0_5_sha256_prefix": "0893d06c77c0",
+  "history_entry_6_rest_equal": true,
+  "original_asset_wording": "preserved verbatim in original_asset_channel_observation; sha 4c4ed76c retained in corrected asset_channel",
+  "old_authorization_block_equal": true,
+  "reservations_0_52_equal": true,
+  "row_53_except_scope_note_equal": true,
+  "root_numbers_unchanged": {
+   "spent_cny": 2.69,
+   "spent_calls": {
+    "image": 8,
+    "semantic_vlm": 5
+   },
+   "total_reserved_cny": 11.2,
+   "updated_at": "2026-10-19T10:38:08.494Z"
+  },
+  "no_reactivation": true,
+  "no_money_or_count_increase": true
+ },
+ "line_endings": {
+  "before": "CRLF x1437 (worktree bytes; index lf per git ls-files --eol; attr *.json text eol=lf)",
+  "after": "CRLF preserved, +56 lines; semantic equality proved by JSON-subtree hashes above; line-ending normalization intentionally NOT performed in this edit"
+ },
+ "timestamp_flag": "ledger observed_at 2026-10-19T18:08:39+00:00 retained verbatim; its zone suffix is NOT evidence-file provenance (evidence naive-local 18:08:39; observer note 10:15+00:00); no historical UTC instant fabricated"
+}

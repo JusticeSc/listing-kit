@@ -1,0 +1,90 @@
+{
+  "batch": "copy-adoption-contract-20261019",
+  "authority": "2026-10-18 用户授权：完整交付（_stage-amz-control/complete-product-authorization-20261018T114240Z/authorization.json）；本轮 0 次真实模型调用、未提交/未推送/未部署。",
+  "scope": "B2 剩余业务合同的一条：AI 提议文案 → 采用 → 保存规格 → 编译/预览逐字；同时修掉两处实现与设计不一致（采用候选的来源标记、采用行在规格卡被说成「旧版」），并补商品资料版本过期的统一判据（提交门与确认单同判据）。",
+  "note_about_batch_boundary": "工作树里未提交的整批（表达/规格/确认/比较/输入视图与语义 provider）不在本批次内拆分结算；本文件只记录 2026-10-19 本批新增的差量与验证。",
+  "changed_files": [
+    "app/product_v2/ui/input-view.ts",
+    "app/product_v2/domain/prompt.js",
+    "app/product_v2/domain/confirm.js",
+    "app/product_v2/domain/type-contracts.d.ts",
+    "evals/product-v2/node/confirm-contract.test.mjs",
+    "evals/product-v2/node/prompt-contract.test.mjs",
+    "evals/product-v2/harness/confirm-contract.js",
+    "evals/product-v2/harness/prompt-contract.js",
+    "tools/verify_v2_3_7_copy_adoption_chain.py (新增)",
+    "config/product-v2/verification.json",
+    ".github/workflows/ci-cd.yml",
+    "README.md"
+  ],
+  "changes": {
+    "intake_version_rule": "prompt.js 的编译依据带商品资料版本，promptStaleness 增加 intake_version 项：旧记录的冻结快照与当前资料版本不等即过期；确认单（domain/confirm.js）与提交门（storage/repository.js js-staleness）同判据，并在确认单给「按当前商品资料重新编译」的具体修法。",
+    "adopted_copy_origin": "采用 AI 候选文案写入 on_image_texts 时来源记 model（此前恒为 user）；规格草稿往返（saved→draft→saved）不降级。",
+    "adopted_copy_display": "规格卡把「来源版本前进（旧版）」与「已采用候选文案」分开说；采用行不再被说成旧版、不再邀请用事实原文覆盖英文候选。"
+  },
+  "verification": {
+    "check_types": {
+      "command": "npm run check:types",
+      "rc": 0
+    },
+    "build_frontend": {
+      "command": "npm run build:frontend",
+      "rc": 0
+    },
+    "build_frontend_node": {
+      "command": "npm run build:frontend-node",
+      "rc": 0
+    },
+    "domain_suite": {
+      "command": "npm run test:domain",
+      "rc": 0,
+      "tests": 265,
+      "pass": 265,
+      "fail": 0,
+      "note": "含新增 H13（商品资料前进：确认单与提交门同一判据）与 G12 过期机检"
+    },
+    "new_verifier": {
+      "command": "uv run --locked python tools/verify_v2_3_7_copy_adoption_chain.py",
+      "rc": 0,
+      "checks": "9/9 PASS",
+      "evidence": "evals/product-v2/v2.3.7-copy-adoption-chain-20261019-033959-restored.txt",
+      "checks_all_green_in_sweep": true
+    },
+    "affected_sweep": {
+      "command": "bash _stage-amz-control/copy-request-contract-20261019/run-affected-sweep.sh",
+      "rc": 0,
+      "entries": 21,
+      "all_green": true,
+      "summary": "_stage-amz-control/copy-adoption-contract-20261019/affected-sweep-summary.txt",
+      "note": "更正（2026-10-19审计）：实际 summary 共 21 项，均 rc=0，不是原记录的20项。脚本最终进程退出码只代表其最后一条语句，不独立证明所有子命令通过；本条全绿依据是逐项 rc。2_4_1 与 B6最终两轮不在本次证据范围。"
+    },
+    "verification_policy": {
+      "command": "uv run --locked python tools/check_verification.py",
+      "rc": 0,
+      "note": "56 入口 / 49 CI 模式；新验证器已登记且 CI 清单同源"
+    },
+    "docs_guard": {
+      "command": "uv run --locked python tools/check_docs.py --no-run",
+      "rc": 0
+    }
+  },
+  "negative_probes": [
+    {
+      "probe": "把 onImageTextsFromDraft 的来源标记改回 origin: \"user\" 后重建",
+      "result": "V2.3.7-04/05 变红（origin=user），其余保持",
+      "log": "verify-3_7-negative-probe.log"
+    },
+    {
+      "probe": "把规格卡的 advanced 条件改回「同版本文案不同也算旧版」",
+      "result": "V2.3.7-02 变红（advanced_present=1）",
+      "log": "verify-3_7-negative-probe2.log"
+    },
+    {
+      "probe": "还原修复并按原字节恢复 input-view.ts 后重建",
+      "result": "V2.3.7 全过（rc=0）",
+      "log": "verify-3_7-restored.log"
+    }
+  ],
+  "boundary": "只用假 Provider（fake-semantic）与本地无头 Chromium：0 次真实模型调用、0 付费、未发图、未提交推送部署。本批不证明文案质量、翻译质量或出图效果；真实品质与最终发布仍在 B5/B6/B7。",
+  "observed_at": "2026-10-19T03:40:00Z"
+}

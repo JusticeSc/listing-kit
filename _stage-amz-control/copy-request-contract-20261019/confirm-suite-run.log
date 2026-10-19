@@ -1,0 +1,32 @@
+✔ H01 :: 全部就绪：can_submit、计数与外发摘要与请求快照一致 (17.3337ms)
+✔ H02 :: 确定性：同一输入两次构建与键序变化产生相同指纹 (3.6358ms)
+✔ H03 :: 缺 Prompt：阻断并定位到具体图片与 Prompt 区 (1.384ms)
+✔ H04 :: Prompt 过期：风格前进后阻断并定位到风格区 (2.0879ms)
+✖ H13 :: 商品资料前进：确认单与提交门同一判据，阻断并指到 Prompt 区 (2.2517ms)
+✔ H05 :: 缺依赖：对比图没有竞品素材时阻断并定位到套图规划 (3.8507ms)
+✔ H06 :: Provider 或平台不符：记录被改后不能提交 (1.5916ms)
+✔ H07 :: 参考图越界：0 张与 4 张都不能提交 (1.2007ms)
+✔ H08 :: 风险传播：编译警告进入确认单且带归口图片 (2.5209ms)
+✔ H09 :: 外发摘要只列角色与 hash 前缀，且与每条请求快照一致 (1.6355ms)
+✔ H10 :: 确认记录：只在可提交清单上建立，且形状可机检 (3.6452ms)
+✔ H11 :: 确认失效：上游变化或 Prompt 前进后必须重新确认 (3.8645ms)
+✔ H12 :: 反向探针：计数、fix、摘要与输入错误都必须变红 (1.6902ms)
+ℹ tests 13
+ℹ suites 0
+ℹ pass 12
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 160.038
+
+✖ failing tests:
+
+test at evals\product-v2\node\confirm-contract.test.mjs:535:3
+✖ H13 :: 商品资料前进：确认单与提交门同一判据，阻断并指到 Prompt 区 (2.2517ms)
+  Error: fix 必须指到 Prompt 区并说明是商品资料前进，实际 {"region":"prompt","shot_id":"shot_main_clean","label":"主图·干净背景","action":"商品资料版本已前进：按当前商品资料重新编译这张图的 Prompt，再确认（不会拿旧资料直接提交）。"}
+      at expect (file:///E:/workbuddy_workspace/2026-09-20-16-38-19/amz-listing-kit-complete-product-15ab22/evals/product-v2/node/harness-core.mjs:9:25)
+      at Object.run (file:///E:/workbuddy_workspace/2026-09-20-16-38-19/amz-listing-kit-complete-product-15ab22/evals/product-v2/node/confirm-contract.test.mjs:344:3)
+      at async TestContext.<anonymous> (file:///E:/workbuddy_workspace/2026-09-20-16-38-19/amz-listing-kit-complete-product-15ab22/evals/product-v2/node/confirm-contract.test.mjs:535:77)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7)

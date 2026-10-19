@@ -1,0 +1,56 @@
+{
+  "actual_guard_source_sha256": "44bf93517ff3509c37775ba1387e05be9c72c5bd5764eb42afdebb4727a05408",
+  "no_real_providers_constructed": true,
+  "supplier_calls": 0,
+  "checks": [
+    {
+      "received": false,
+      "error": "TypeError: Failed to fetch"
+    },
+    {
+      "received": false,
+      "error": "TypeError: Failed to fetch"
+    },
+    {
+      "received": true,
+      "status": 200
+    },
+    {
+      "received": false,
+      "error": "TypeError: Failed to fetch"
+    },
+    {
+      "received": false,
+      "error": "TypeError: Failed to fetch"
+    }
+  ],
+  "passed": true,
+  "guard": {
+    "authorized": false,
+    "forwarded": 1,
+    "blocked": [
+      {
+        "action_id": "act-before-confirm",
+        "reason": "尚未完成单张确认"
+      },
+      {
+        "action_id": "act-two-images",
+        "reason": "生成数量不是单张"
+      },
+      {
+        "action_id": "act-extra-submit",
+        "reason": "本验证器只准转发一次生成请求"
+      },
+      {
+        "action_id": "act-after-confirm",
+        "reason": "尚未完成单张确认"
+      }
+    ]
+  },
+  "actual_http_received": [
+    {
+      "action_id": "act-only-forwarded",
+      "n": 1
+    }
+  ]
+}

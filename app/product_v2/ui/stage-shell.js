@@ -1,29 +1,28 @@
 /**
- * 六阶段外壳（V2.UI.2）。
+ * 四阶段外壳（V2.UI.2，B4 四段重组）。
  *
  * 职责边界：
  *  - Only project task navigation, panels and summaries; every task entry stays reachable.
  *  - Operation readiness remains in domain/workspace; opening a task never authorizes its action.
- *  - 阶段顺序与名称是产品合同的一部分（资料—理解—方案—生成—审核返工—交付）。
+ *  - 阶段顺序与名称是产品合同的一部分（资料与事实—方案—制作与审图—交付）；
+ *    旧 understand/generate/review 阶段 id 已同包退出，不留别名。
  */
 
-/** 六阶段定义（顺序是产品合同）。@typedef {{id:string, number:number, label:string}} StageDefinition */
+/** 四阶段定义（顺序是产品合同）。@typedef {{id:string, number:number, label:string}} StageDefinition */
 
 /** 单个阶段的状态投影（由 domain/workspace 派生；shell 只读）。@typedef {{status?:string, summary?:string, hint?:string, [key:string]:unknown}} StageState */
 
 /** @typedef {(stageId:string) => void} StageSelectCallback */
 
 export const STAGE_DEFINITIONS = /** @type {ReadonlyArray<StageDefinition>} */ (Object.freeze([
-  { id: "intake", number: 1, label: "资料" },
-  { id: "understand", number: 2, label: "理解" },
-  { id: "plan", number: 3, label: "方案" },
-  { id: "generate", number: 4, label: "生成" },
-  { id: "review", number: 5, label: "审核返工" },
-  { id: "deliver", number: 6, label: "交付" },
+  { id: "intake", number: 1, label: "资料与事实" },
+  { id: "plan", number: 2, label: "方案" },
+  { id: "make", number: 3, label: "制作与审图" },
+  { id: "deliver", number: 4, label: "交付" },
 ]));
 
 /**
- * 六阶段外壳：只管项目任务导航/面板/摘要，不赋予任何操作就绪。
+ * 四阶段外壳：只管项目任务导航/面板/摘要，不赋予任何操作就绪。
  * @param {{
  *   nav: HTMLElement,
  *   panelRoot: HTMLElement,

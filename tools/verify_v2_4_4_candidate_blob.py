@@ -40,7 +40,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 
-import v2_stage_nav as stage_nav  # noqa: E402  （V2.UI.2 六阶段工作台导航）
+import v2_stage_nav as stage_nav  # noqa: E402  （B4 四段工作台导航）
 import v2_verify_shared as shared  # noqa: E402  （正式 server/夹具/共同业务操作）
 from v2_verify_shared import (  # noqa: E402
     png_bytes, run_entry, read_suite, compile_all,
@@ -178,12 +178,15 @@ async () => {
   const plans = documents.filter((item) => item.kind === "suite_plan")
     .sort((left, right) => left.version - right.version);
   const plan = plans.length ? plans[plans.length - 1] : null;
-  const rows = [...document.querySelectorAll("#attempt-list .attempt-row")].map((node) => {
-    const img = node.querySelector(".attempt-preview img");
-    const candidateMeta = node.querySelector(".attempt-candidate");
+  const rows = [...document.querySelectorAll("#task-list-mount [data-task-shot]")].map((node) => {
+    const detail = document.querySelector(
+      '#shot-execution [data-shot-id="' + node.getAttribute("data-task-shot") + '"]');
+    const img = (detail || node).querySelector(".attempt-preview img");
+    const candidateMeta = (detail || node).querySelector(".attempt-candidate");
     return {
-      shot_id: node.getAttribute("data-shot-id"),
+      shot_id: node.getAttribute("data-task-shot"),
       state: node.getAttribute("data-attempt-state"),
+      viewed: node.getAttribute("data-viewed") === "true",
       badges: [...node.querySelectorAll(".badge")].map((item) => item.textContent),
       meta: [...node.querySelectorAll("p.meta")].map((item) => item.textContent).join(" | "),
       candidate_meta: candidateMeta ? candidateMeta.textContent : null,
@@ -192,8 +195,10 @@ async () => {
         complete: img.complete,
         natural_width: img.naturalWidth,
       } : null,
-      buttons: [...node.querySelectorAll("button")].map((item) =>
-        ({ text: item.textContent, disabled: item.disabled })),
+      buttons: [...node.querySelectorAll("button")]
+        .concat(detail ? [...detail.querySelectorAll(".attempt-actions button")] : [])
+        .filter((item, index, all) => all.indexOf(item) === index)
+        .map((item) => ({ text: item.textContent, disabled: item.disabled })),
     };
   });
   const errorNode = document.getElementById("attempt-error");
@@ -788,49 +793,59 @@ def main() -> int:
                     return page.evaluate(PROBE)
 
                 def row(shot_id: str):
+                    shared.select_make_shot(page, shot_id)
                     return page.locator(
-                        f'#attempt-list .attempt-row[data-shot-id="{shot_id}"]')
+                        f'#shot-execution [data-shot-id="{shot_id}"]')
 
                 def wait_state(shot_id: str, state: str, timeout: int = 30_000) -> None:
-                    expect(row(shot_id)).to_have_attribute(
+                    expect(page.locator(
+                        f'#task-list-mount [data-task-shot="{shot_id}"]')).to_have_attribute(
                         "data-attempt-state", state, timeout=timeout)
 
                 def wait_states(expectations: dict, timeout: int = 90_000) -> None:
                     page.wait_for_function(
                         """(wanted) => {
-                            const rows = [...document.querySelectorAll('#attempt-list .attempt-row')];
+                            const rows = [...document.querySelectorAll('#task-list-mount [data-task-shot]')];
                             return Object.entries(wanted).every(([id, state]) => {
                                 const node = rows.find((item) =>
-                                    item.getAttribute('data-shot-id') === id);
+                                    item.getAttribute('data-task-shot') === id);
                                 return node && node.getAttribute('data-attempt-state') === state;
                             });
                         }""",
                         arg=expectations, timeout=timeout)
 
                 def wait_preview(shot_id: str, timeout: int = 30_000) -> None:
-                    # 预览图带 loading="lazy"：先滚动到这一行（用户也会这样做），
-                    # 否则刷新后页面停在顶部，图片永远不进入加载队列。
+                    # 预览图带 loading="lazy"：先选中该图让本图执行区渲染（用户也会这样做），
+                    # 再滚动到本图行，否则刷新后页面停在顶部，图片永远不进入加载队列。
+                    shared.select_make_shot(page, shot_id)
                     page.locator(
-                        f'#attempt-list .attempt-row[data-shot-id="{shot_id}"]'
+                        f'#shot-execution [data-shot-id="{shot_id}"]'
                         " .attempt-preview img"
                     ).scroll_into_view_if_needed(timeout=timeout)
                     page.wait_for_function(
                         """(shot) => {
                             const node = document.querySelector(
-                                '#attempt-list .attempt-row[data-shot-id="' + shot + '"]');
+                                '#shot-execution [data-shot-id="' + shot + '"]');
                             const img = node && node.querySelector('.attempt-preview img');
                             return Boolean(img && img.complete && img.naturalWidth > 0);
                         }""",
                         arg=shot_id, timeout=timeout)
 
                 def wait_candidate_ui(shot_id: str, timeout: int = 30_000) -> None:
+                    # 候选取回细节只渲染正看图（左列表按设计只给图名/任务/采用态与缩略图），
+                    # 所以先把该图设为正看——这也是用户查看候选的真实路径。
+                    shared.select_make_shot(page, shot_id)
                     # 只等界面上的候选标记（同步谓词）；字节与身份仍由 probe 重新读 IndexedDB 核对。
                     # 注意：wait_for_function 不会等待 async 谓词（Promise 恒为真值），这里必须同步。
                     page.wait_for_function(
                         """(shot) => {
                             const node = document.querySelector(
-                                '#attempt-list .attempt-row[data-shot-id="' + shot + '"]');
-                            return Boolean(node && node.querySelector('.attempt-candidate'));
+                                '#task-list-mount [data-task-shot="' + shot + '"]');
+                            if (!node) return false;
+                            if (node.querySelector('.attempt-candidate')) return true;
+                            const detail = document.querySelector(
+                                '#shot-execution [data-shot-id="' + shot + '"]');
+                            return Boolean(detail && detail.querySelector('.attempt-candidate'));
                         }""", arg=shot_id, timeout=timeout)
 
                 def wait_hint_contains(text: str, timeout: int = 30_000) -> None:
@@ -869,7 +884,9 @@ def main() -> int:
                 def confirm_generation(wanted: list | None = None) -> dict:
                     # 授权集合必须是"本次确认将消费的图"（4_3 同因：禁止复用首批快照，
                     # 否则 confirm_and_submit 在 set(authorized)==set(shot_ids) 恒假）。
+                    # B4 默认只送正看图：整套/多图授权必须先显式勾选批量范围。
                     scope = list(wanted) if wanted is not None else list(probe()["shot_ids"])
+                    shared.choose_make_batch(page, scope)
                     gate = shared.confirm_and_submit(page, expect, probe, submit_requests,
                                                      shot_ids=scope)
                     assert gate["ok"], f"确认必须产生本次授权的新消费：{gate['after_actions']}"
@@ -929,22 +946,48 @@ def main() -> int:
                 expect(page.locator("#shot-list .shot-row")).to_have_count(4)
                 # Issue #9：编译前先做普通决定（用户真实路径）；choices 进 ui 证据。
                 ui["decisions"] = shared.decide_for_compile(page, probe()["shot_ids"])
-                stage_nav.goto(page, "generate")
+                stage_nav.goto(page, "make")
                 expect(page.locator("#prompt-list .shot-spec")).to_have_count(4)
                 initial = probe()
                 shot_ids = initial["shot_ids"]
                 compile_all(page, shot_ids)
                 ok_shot = shot_ids[0]
-                # 摘要默认范围=未提交全集（ui-contract §4.6「主按钮只提交摘要明确列出的集合。
-                # 默认是未提交的图；成功、在途、Unknown 不混入」）：空白项目首批就是 4 张。
-                # 逐图场景不靠产品的"单图摘要开关"（不存在），而是每个场景前 add_shots 新增一张，
-                # 新增图是当时唯一未提交图 → 摘要范围天然为 1 张，语义仍与合同一致。
+                # B4 明确范围（ui-contract §4.6「主按钮只提交摘要明确列出的集合。成功、在途、
+                # Unknown 不混入」）：默认是「单张（跟随正在查看的图）」，整套 4 张必须先显式
+                # 切到批量范围——与 verify_v2_4_3 的 -03a/-03 同口径。这里刻意切到「第二张」
+                # 再看摘要：否则「跟随正看图」与「固定第一张」两种实现都绿。
+                def confirm_scope_now() -> list:
+                    return page.evaluate(
+                        """() => [...document.querySelectorAll('#confirm-list .confirm-shot')]
+                             .map((node) => ({shot: node.getAttribute('data-shot-id'),
+                                              badges: [...node.querySelectorAll('.badge')]
+                                                .map((item) => item.textContent)}))""")
+
+                second_shot = shot_ids[1]
+                shared.select_make_shot(page, second_shot)
+                ready_single = probe()
+                single_scope = confirm_scope_now()
+                single_status = page.locator("#confirm-status").inner_text()
+                viewed = [item["shot_id"] for item in ready_single["ui"]["rows"] if item["viewed"]]
+                check("V2.4.4-03a", "B4单默认：确认前只送正看1张（换一张仍跟随），范围行如实列出未选图",
+                      len(ready_single["ui"]["rows"]) == 4
+                      and all(item["state"] == "none" for item in ready_single["ui"]["rows"])
+                      and len(ready_single["asset_rows"]) == 1
+                      and ready_single["candidate_chains"] == {}
+                      and viewed == [second_shot]
+                      and len(single_scope) == 1 and single_scope[0]["shot"] == second_shot
+                      and "本次选择 1 张，明确发送 1 张" in single_status,
+                      {"rows": len(ready_single["ui"]["rows"]),
+                       "viewed": viewed,
+                       "scope": [item["shot"] for item in single_scope],
+                       "expected": second_shot,
+                       "status": single_status})
+                # 后面的 -04/-05 读的是 ok_shot 的行投影（#shot-execution 只渲染正看图），
+                # 所以把正看切回第一张再选批量范围；批量勾选由 choose_make_batch 显式设置。
+                shared.select_make_shot(page, ok_shot)
+                shared.choose_make_batch(page, shot_ids)
                 ready = probe()
-                confirm_scope = page.evaluate(
-                    """() => [...document.querySelectorAll('#confirm-list .confirm-shot')]
-                         .map((node) => ({shot: node.getAttribute('data-shot-id'),
-                                          badges: [...node.querySelectorAll('.badge')]
-                                            .map((item) => item.textContent)}))""")
+                confirm_scope = confirm_scope_now()
                 confirm_status = page.locator("#confirm-status").inner_text()
                 confirm_generation(shot_ids)
                 ui["base_shots"] = shot_ids
@@ -968,7 +1011,7 @@ def main() -> int:
                            "first_failure": first_boot_failure,
                            "causal_branch": diagnosis["causal_branch"]})
                 check("V2.4.4-03",
-                      "就绪：首批摘要范围=未提交全集（4 张）、候选栏为空且只有参考图字节",
+                      "就绪：显式批量范围=未提交全集（4 张）、候选栏为空且只有参考图字节",
                       len(ready["ui"]["rows"]) == 4
                       and all(item["state"] == "none" for item in ready["ui"]["rows"])
                       and all(item["preview"] is None for item in ready["ui"]["rows"])
@@ -1026,7 +1069,7 @@ def main() -> int:
                 requests_before_reload = len(result_requests)
                 before_reload = probe()
                 load_page()
-                stage_nav.goto(page, "generate")
+                stage_nav.goto(page, "make")
                 wait_preview(ok_shot)
                 after_reload = probe()
                 check("V2.4.4-05",

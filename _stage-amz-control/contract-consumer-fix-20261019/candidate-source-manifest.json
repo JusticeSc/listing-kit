@@ -1,0 +1,104 @@
+[
+  {
+    "path": "app/product_v2/domain/confirm.js",
+    "bytes": 34107,
+    "sha256": "c0e2de1480d1e67c2c15587701a6bade3142b707d150ba76e599cacc5c7dd000",
+    "cr_bytes": 0
+  },
+  {
+    "path": "app/product_v2/domain/prompt.js",
+    "bytes": 129750,
+    "sha256": "837f45e34d3c67db849c81d1e4ced7743b7121aebcafc1cb04a5d959f1f929fd",
+    "cr_bytes": 0
+  },
+  {
+    "path": "app/product_v2/domain/rework.js",
+    "bytes": 16130,
+    "sha256": "503b6298dffe0fc1e718a2f8629b7575fe04da6e0aaa06968037b9955b415a2e",
+    "cr_bytes": 0
+  },
+  {
+    "path": "app/product_v2/domain/specs.js",
+    "bytes": 69859,
+    "sha256": "fa45e238f045a6079a86ed8a6ec0cfff2ba9cc0c12426582602c1e72f55f2ee0",
+    "cr_bytes": 0
+  },
+  {
+    "path": "app/product_v2/domain/suite-plan.js",
+    "bytes": 45302,
+    "sha256": "6cf1c6bac2cde63a5c1bcf346f19e33db4ed9887ec3a07cdb88c0d4ae5be2fd1",
+    "cr_bytes": 0
+  },
+  {
+    "path": "app/product_v2/domain/type-contracts.d.ts",
+    "bytes": 36425,
+    "sha256": "cabc5a0ed3f19b410ab1960d55c1da1a0c016560f5199892892512de9dafc50a",
+    "cr_bytes": 0
+  },
+  {
+    "path": "app/product_v2/generation.ts",
+    "bytes": 100971,
+    "sha256": "c26e047257389f83c449781fbe4e1f7a25f52b9de5e606c5f8fa6d4502b4e874",
+    "cr_bytes": 0
+  },
+  {
+    "path": "app/product_v2/project-inputs.ts",
+    "bytes": 66794,
+    "sha256": "8a0366b4ab8281de1c4ea1f58fa0e065c02ff1090cecffee94386d83ce30f347",
+    "cr_bytes": 0
+  },
+  {
+    "path": "app/product_v2/prompts.ts",
+    "bytes": 24458,
+    "sha256": "5b9aaf95e137c2c29bd8c75bc6806b76a29626f28adeb10760777de47c174326",
+    "cr_bytes": 0
+  },
+  {
+    "path": "app/product_v2/semantic-analysis.ts",
+    "bytes": 18931,
+    "sha256": "e348c07c74be3fa8e877b47c6e395322a3bac394f45405aad93bc6e4a4da99b8",
+    "cr_bytes": 0
+  },
+  {
+    "path": "app/product_v2/storage/package-schema.js",
+    "bytes": 3121,
+    "sha256": "6a83b36a3475559c0eac52210fd486bf9e20c7f810d1111c46e40c1ffceb008e",
+    "cr_bytes": 0
+  },
+  {
+    "path": "app/product_v2/storage/repository.js",
+    "bytes": 60726,
+    "sha256": "dca74abbc7114414f37795142460782fa626bee1ba37fcb4430816f638ca9a33",
+    "cr_bytes": 0
+  },
+  {
+    "path": "app/product_v2/ui/compare-view.ts",
+    "bytes": 88670,
+    "sha256": "b561cb5acab386bce2c72e15b803eeece2cfec37b3b2119220f4bb39fce25c77",
+    "cr_bytes": 0
+  },
+  {
+    "path": "app/product_v2/ui/generation-view.ts",
+    "bytes": 97399,
+    "sha256": "3753828a85d6c9c8f3bd4f464e280b0905e53360c59941f0b4704e53fb9342b1",
+    "cr_bytes": 0
+  },
+  {
+    "path": "app/product_v2/ui/input-view.ts",
+    "bytes": 156267,
+    "sha256": "a5e33a51d49d0b4c242e98955e6c9596507d24009dc70f5839ac7255d850dcc7",
+    "cr_bytes": 0
+  },
+  {
+    "path": "app/product_v2/workspace.js",
+    "bytes": 50152,
+    "sha256": "ad91a8600a951fa7eb83a81e1b17a42a5d0c9d324b687430a428f312bc0bf10e",
+    "cr_bytes": 0
+  },
+  {
+    "path": ".gitattributes",
+    "bytes": 950,
+    "sha256": "eae84f9489fb676c457d43c8d40176dac6783d74cf90ee6fc9023f0d1bff02f1",
+    "cr_bytes": 0
+  }
+]

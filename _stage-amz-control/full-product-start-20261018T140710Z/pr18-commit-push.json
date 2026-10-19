@@ -1,0 +1,13 @@
+{
+  "evidence_type": "Observed tool completion message extract",
+  "job": "bg_14",
+  "command": "Exact add of the three reviewed documentation paths, commit and push to feat/9-program-expression-20261018",
+  "commit": "0ae7df5",
+  "commit_subject": "docs(expression): align final reviewed evidence for #9",
+  "actual_summary": "3 files changed, 4 insertions(+), 4 deletions(-)",
+  "push": "3dc0018..0ae7df5 feat/9-program-expression-20261018 -> feat/9-program-expression-20261018",
+  "remote": "https://github.com/JusticeSc/listing-kit.git",
+  "product_code_changed": false,
+  "merged": false,
+  "deployed": false
+}

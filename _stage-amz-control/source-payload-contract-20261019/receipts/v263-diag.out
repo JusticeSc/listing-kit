@@ -1,0 +1,46 @@
+  [PASS] V2.6.3-03 契约套件 P01–P08 全过（真实 Chromium）
+  [PASS] V2.6.3-04 A 导出项目包：格式 2、记录自描述、完整性计数与逐资产哈希（Python 独立核对）
+---- WAIT TIMEOUT # 1 arg0: () => { const node = document.getElementById('home-status'); return node && node.textContent.indexOf('已导入') >= 0; }
+DOM: {"url": "http://127.0.0.1:16121/", "home_status": "(hidden)", "import_trigger_disabled": false, "project_rows": 0, "body_tail": "Amazon US 商品套图 项目保存在这台浏览器；服务器不保存你的项目，也不保存最近使用记录。 模型设置 本机项目 从空白开始：给项目起个名字、上传商品参考图，其余交给系统。 新项目名称 新建项目 导入项目包（.zip） 项目包包含完整历史，可在另一台机器或另一个浏览器里恢复。 项目包版本高于当前页面支持的版本，请用较新版本打开。 这台浏览器还没有项目。填写名称后点“新建项目”开始。"}
+Traceback (most recent call last):
+  File "E:\workbuddy_workspace\2026-09-20-16-38-19\amz-listing-kit-complete-product-15ab22\_stage-amz-control\diag_v263.py", line 58, in <module>
+    raise SystemExit(module.main())
+                     ~~~~~~~~~~~^^
+  File "E:\workbuddy_workspace\2026-09-20-16-38-19\amz-listing-kit-complete-product-15ab22\tools\verify_v2_6_3_project_transfer.py", line 320, in main
+    page_b.wait_for_function(
+    ~~~~~~~~~~~~~~~~~~~~~~~~^
+        "() => { const node = document.getElementById('home-status');"
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        " return node && node.textContent.indexOf('已导入') >= 0; }",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        timeout=30_000)
+        ^^^^^^^^^^^^^^^
+  File "E:\workbuddy_workspace\2026-09-20-16-38-19\amz-listing-kit-complete-product-15ab22\_stage-amz-control\diag_v263.py", line 41, in _wait_wrapped
+    return _wait(self, *args, **kwargs)
+  File "E:\workbuddy_workspace\2026-09-20-16-38-19\amz-listing-kit-complete-product-15ab22\.venv\Lib\site-packages\playwright\sync_api\_generated.py", line 12809, in wait_for_function
+    self._sync(
+    ~~~~~~~~~~^
+        self._impl_obj.wait_for_function(
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+        )
+        ^
+    )
+    ^
+  File "E:\workbuddy_workspace\2026-09-20-16-38-19\amz-listing-kit-complete-product-15ab22\.venv\Lib\site-packages\playwright\_impl\_sync_base.py", line 115, in _sync
+    return task.result()
+           ~~~~~~~~~~~^^
+  File "E:\workbuddy_workspace\2026-09-20-16-38-19\amz-listing-kit-complete-product-15ab22\.venv\Lib\site-packages\playwright\_impl\_page.py", line 1153, in wait_for_function
+    return await self._main_frame.wait_for_function(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\workbuddy_workspace\2026-09-20-16-38-19\amz-listing-kit-complete-product-15ab22\.venv\Lib\site-packages\playwright\_impl\_frame.py", line 941, in wait_for_function
+    await self._channel.send("waitForFunction", self._timeout, params)
+  File "E:\workbuddy_workspace\2026-09-20-16-38-19\amz-listing-kit-complete-product-15ab22\.venv\Lib\site-packages\playwright\_impl\_connection.py", line 76, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "E:\workbuddy_workspace\2026-09-20-16-38-19\amz-listing-kit-complete-product-15ab22\.venv\Lib\site-packages\playwright\_impl\_connection.py", line 632, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+playwright._impl._errors.TimeoutError: Page.wait_for_function: Timeout 30000ms exceeded.

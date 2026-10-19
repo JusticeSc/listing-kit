@@ -13,9 +13,11 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 SEMANTIC_PROVIDER_HEADER = "X-AMZ-Listing-Provider-Semantic"
 IMAGE_PROVIDER_HEADER = "X-AMZ-Listing-Provider-Image"
@@ -201,6 +203,112 @@ def create_image_provider(*, registry: Mapping[str, Any] | None = None,
         scenario = environment.get(FAKE_IMAGE_SCENARIO_ENV) or "ok"
         return FakeImageProvider(scenario)
     raise ProviderRegistryError(f"provider {chosen} 的图像 adapter 未登记：{adapter!r}。")
+
+
+def _normalized_base_url(value: object) -> str:
+    """注册表 pricing.base_url 与实例 base_url 的同一归一：去空白与末尾斜杠，不猜默认。"""
+
+    return str(value or "").strip().rstrip("/")
+
+
+_PRICING_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+_PRICING_SOURCE_HOSTS = frozenset({"help.aliyun.com", "docs.bailian.console.aliyun.com",
+                                   "www.volcengine.com", "docs.volcengine.com"})
+
+
+def _pricing_source_allowed(value: str) -> bool:
+    """官方定价来源只允许 https 无凭据无端口的官方文档主机（与确认单白名单一致）。"""
+
+    try:
+        parsed = urlsplit(value.strip())
+    except ValueError:
+        return False
+    host = (parsed.hostname or "").lower()
+    return (parsed.scheme == "https" and host in _PRICING_SOURCE_HOSTS
+            and parsed.username is None and parsed.password is None and parsed.port is None)
+
+
+def resolve_image_pricing(*, entry: Mapping[str, Any], provider: Any) -> dict[str, Any] | None:
+    """有效图像 provider 的公开定价；只有注册表条目与当前实例精确一致才返回。
+
+    匹配条件（官方条目）：实例 provider_id/model_id/base_url 与条目 id/model_id/
+    pricing.base_url 逐字相等，且实例 request_profile 的 size/n/output_format 与
+    pricing 的 1344*1344/1/png 逐字相等。替身条目（test_double）：同样核对实例
+    身份与 profile，base_url 不参与匹配（替身没有真实端点）。任一不符、缺
+    request_profile、或条目没有 pricing 都返回 None，不猜其他地区/模型的价格。
+    返回值是新字典，只含确认单需要的公开白名单字段（不含 base_url 推导细节之
+    外的任何秘密；凭据来源不改变它）。
+    """
+
+    provider_id = str(getattr(provider, "provider_id", "") or "")
+    model_id = str(getattr(provider, "model_id", "") or "")
+    if not provider_id or provider_id != str(entry.get("id") or ""):
+        return None
+    if not model_id or model_id != str(entry.get("model_id") or ""):
+        return None
+    pricing = entry.get("pricing")
+    if not isinstance(pricing, Mapping):
+        return None
+    if str(pricing.get("provider_id") or "") != provider_id:
+        return None
+    if str(pricing.get("model_id") or "") != model_id:
+        return None
+    kind = pricing.get("kind")
+    if kind not in ("official", "test_double"):
+        return None
+    if kind == "test_double":
+        if not _entry_is_fake(entry) or not provider_id.startswith("fake-"):
+            return None
+    elif _normalized_base_url(getattr(provider, "base_url", "")) != _normalized_base_url(
+            pricing.get("base_url")) or not _normalized_base_url(pricing.get("base_url")):
+        return None
+    capabilities = getattr(provider, "capabilities", None)
+    try:
+        declared = capabilities() if callable(capabilities) else None
+    except Exception:  # noqa: BLE001 - 能力查询失败就不报价
+        return None
+    profile = declared.get("request_profile") if isinstance(declared, Mapping) else None
+    if not isinstance(profile, Mapping):
+        return None
+    if (profile.get("size") != pricing.get("size")
+            or profile.get("n") != pricing.get("n")
+            or profile.get("output_format") != pricing.get("output_format")):
+        return None
+    input_fen = pricing.get("input_image_fen")
+    output_fen = pricing.get("output_image_fen")
+    if (not isinstance(input_fen, int) or isinstance(input_fen, bool) or input_fen < 0
+            or not isinstance(output_fen, int) or isinstance(output_fen, bool) or output_fen < 0):
+        return None
+    if pricing.get("version") != 1 or pricing.get("currency") != "CNY":
+        return None
+    if kind == "test_double":
+        if (input_fen != 0 or output_fen != 0 or pricing.get("verified_on") is not None
+                or pricing.get("source_url") is not None or pricing.get("region") != "local-test"):
+            return None
+    elif (output_fen <= 0 or pricing.get("region") != "cn-beijing"):
+        return None
+    verified_on = pricing.get("verified_on")
+    source_url = pricing.get("source_url")
+    if kind == "official":
+        if not isinstance(verified_on, str) or not _PRICING_DATE_RE.fullmatch(verified_on):
+            return None
+        if not isinstance(source_url, str) or not _pricing_source_allowed(source_url):
+            return None
+    return {
+        "version": 1,
+        "kind": kind,
+        "provider_id": provider_id,
+        "model_id": model_id,
+        "size": pricing.get("size"),
+        "n": pricing.get("n"),
+        "output_format": pricing.get("output_format"),
+        "currency": "CNY",
+        "input_image_fen": input_fen,
+        "output_image_fen": output_fen,
+        "verified_on": verified_on,
+        "source_url": source_url,
+        "region": pricing.get("region"),
+    }
 
 
 def resolve_review_provider_id(registry: Mapping[str, Any], *,

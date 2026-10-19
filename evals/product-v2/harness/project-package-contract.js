@@ -17,6 +17,7 @@ import {
   parseProjectPackage,
   readZip,
 } from "/storage/index.js";
+import { buildAttemptRecord } from "/domain/index.js";
 import { dropDatabase, expect, expectCode, newDbName, rawCount, serializeError, utf8Bytes }
   from "./harness-api.js";
 
@@ -218,7 +219,7 @@ test("P07", "旧包拒绝不写入任何项目、文档或资产",
     return { before, after };
   }));
 
-test("P08", "Attempt 缺失或旧 schema 拒绝，不把未知身份当当前版本", async () => {
+test("P08", "Attempt 缺失或无执行身份的旧 schema 拒绝，不猜补身份", async () => {
   for (const payload of [{}, { schema_version: 1 }]) {
     const bytes = buildProjectPackage({
       project: legacyManifest().project,
@@ -231,6 +232,53 @@ test("P08", "Attempt 缺失或旧 schema 拒绝，不把未知身份当当前版
       "没有当前身份 schema 的 Attempt 不可导入");
   }
 });
+
+test("P09", "当前项目混合新旧动作完整往返，保留旧执行身份及原始引用而不迁写",
+  () => withRepo(async ({ repository }) => {
+    const { project, asset } = await seedProject(repository);
+    const current = buildAttemptRecord({
+      actionId: "act-package-history",
+      shotId: "shot_main_clean",
+      prompt: { version: 1, hash: "a".repeat(64) },
+      references: [{ role: "primary", sha256: asset.sha256, uses: ["product_truth"],
+        sources: [{ kind: "product_input", document_id: "intake", version: 1,
+          asset_sha256: asset.sha256 }] }],
+      provider: { provider_id: "dashscope-qwen-image", model_id: "qwen-image-3.0" },
+      parameters: { size: "1344*1344", n: 1, prompt_extend: false, watermark: false },
+      executionIdentity: { protocol: "v2.4.1", capabilityVersion: 2, credentialSource: "default" },
+      at: AT,
+    });
+    const historical = {
+      ...current, schema_version: 2,
+      references: [{ role: "primary", sha256: asset.sha256 }],
+    };
+    await repository.documents.save(project.project_id, {
+      kind: "generation_attempt", documentId: "shot_main_clean", payload: historical,
+    });
+    await repository.documents.save(project.project_id, {
+      kind: "generation_attempt", documentId: "shot_main_clean", payload: current,
+    });
+    const source = await collect(repository, project.project_id);
+    const built = buildProjectPackage(source);
+    return withRepo(async ({ db, repository: target }) => {
+      const imported = await importProjectPackage(db, built.bytes);
+      const restored = await target.documents.listAll(imported.project.project_id);
+      const identity = (row) => [row.kind, row.document_id, row.version].join("/");
+      const expected = new Map(source.documents.map(row => [identity(row), JSON.stringify(row.payload)]));
+      expect(restored.length === expected.size, "恢复必须保留完整历史，不能过滤旧动作");
+      for (const row of restored) {
+        expect(JSON.stringify(row.payload) === expected.get(identity(row)),
+          "每份历史的身份、版本及原始载荷不变：" + identity(row));
+      }
+      const originalAsset = source.assets[0].bytes;
+      const restoredAsset = await target.assets.get(imported.project.project_id, asset.sha256);
+      const bytes = new Uint8Array(await restoredAsset.blob.arrayBuffer());
+      expect(bytes.length === originalAsset.length
+        && bytes.every((value, index) => value === originalAsset[index]), "资产原字节不变");
+      return { historical_schema: historical.schema_version, current_schema: current.schema_version,
+        documents: restored.length };
+    }, "amz-v263-history-target");
+  }));
 
 async function runSuite() {
   const results = {

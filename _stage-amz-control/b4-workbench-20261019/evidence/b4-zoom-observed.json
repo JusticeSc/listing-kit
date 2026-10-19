@@ -1,0 +1,69 @@
+{
+ "observed_at": "2026-10-19T08:58:59.412219+00:00",
+ "runs": [
+  {
+   "zoom": 1.25,
+   "window_width": 1440,
+   "metrics": {
+    "innerWidth": 1133,
+    "innerHeight": 641,
+    "outerWidth": 1440,
+    "outerHeight": 900,
+    "dpr": 1.25,
+    "visualScale": 1,
+    "cssZoom": "1",
+    "transform": "none"
+   },
+   "viewport": [
+    1133,
+    1133
+   ],
+   "overflow": {
+    "scroll_width": 1133,
+    "client_width": 1133,
+    "body_scroll_width": 1133,
+    "inner_width": 1133,
+    "device_pixel_ratio": 1.25,
+    "visual_scale": 1
+   },
+   "task_rows": 5,
+   "selected": "shot_main_clean",
+   "console_errors": [],
+   "page_errors": [],
+   "screenshot": "make-zoom-125.png"
+  },
+  {
+   "zoom": 2.0,
+   "window_width": 1366,
+   "metrics": {
+    "innerWidth": 671,
+    "innerHeight": 400,
+    "outerWidth": 1366,
+    "outerHeight": 900,
+    "dpr": 2,
+    "visualScale": 1,
+    "cssZoom": "1",
+    "transform": "none"
+   },
+   "viewport": [
+    671,
+    671
+   ],
+   "overflow": {
+    "scroll_width": 671,
+    "client_width": 671,
+    "body_scroll_width": 671,
+    "inner_width": 671,
+    "device_pixel_ratio": 2,
+    "visual_scale": 1
+   },
+   "task_rows": 0,
+   "selected": "shot_size_dimensions",
+   "console_errors": [],
+   "page_errors": [],
+   "screenshot": "make-zoom-200.png"
+  }
+ ],
+ "real_model_calls": 0,
+ "method": "native-browser-zoom"
+}

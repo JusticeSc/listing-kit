@@ -1,0 +1,36 @@
+{
+  "kind": "batch-5-observed-baseline-evidence",
+  "retained_temp_profile": {
+    "tab": "product-baseline-15ab22",
+    "port": 9145,
+    "asset_records": 6,
+    "successful_blob_reads": 0,
+    "read_failure": "NotFoundError",
+    "project_export_succeeded": false,
+    "cause": "not established",
+    "boundary": "The retained temp profile cannot currently prove readable asset bytes. The missing backing .blob directory is an observation, not a product-root-cause finding. Original profile was not modified or deleted.",
+    "evidence": "retained-baseline-asset-read.json"
+  },
+  "stable_package": {
+    "source": "_stage-amz-control/asset-continuation-20261008T054352Z/data/manual-project.zip",
+    "preserved_copy": "before/smoke-source.project.zip",
+    "bytes": 2417036,
+    "sha256": "4007b9b1a3b2f14c1fa4e851bdc1ab52ebc690fc02d4556f65b81a1ff4e3ff39",
+    "crc_failure": null,
+    "documents": 55,
+    "assets": 6,
+    "all_asset_hashes_match": true,
+    "boundary": "Historical engineering fixture with fake candidate images; not evidence of real model quality or five genuine adopted images. Fresh UI import and subsequent consumer verification have not yet run."
+  },
+  "new_smoke_resources": {
+    "server": "contract-consumer-page-smoke-20261019",
+    "port": 9161,
+    "provider_boundary": "fake-host-capability-boundary.json",
+    "browser_tab": "contract-consumer-20261019",
+    "native_chrome_pid": 15480,
+    "native_headless_new_flag_observed": true,
+    "profile": "_stage-amz-control/contract-consumer-fix-20261019/chrome-profile",
+    "product_page_loaded": false
+  },
+  "model_calls": 0
+}

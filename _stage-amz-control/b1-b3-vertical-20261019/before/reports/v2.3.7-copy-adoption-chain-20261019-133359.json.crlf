@@ -1,0 +1,165 @@
+{
+  "task": "V2.3.7",
+  "suite_id": "v2.3.7-copy-adoption-chain",
+  "status": "passed",
+  "finished_at": "2026-10-19T13:34:28",
+  "model_calls": 0,
+  "checks": [
+    {
+      "id": "V2.3.7-01",
+      "title": "提议：明确点一次只发一次请求（零图片外发），候选行可见且可采用",
+      "ok": true,
+      "detail": {
+        "posts": 1,
+        "image_posts": [],
+        "row": "FAKE SIGNATURE FEATURES\n            来源 v1 · fake-semantic（fake-deepseek-v4.1-flash）\n            \n            采用这条"
+      }
+    },
+    {
+      "id": "V2.3.7-02",
+      "title": "采用只写规格草稿：卡片显示「已采用候选文案」（不是「旧版」）且已勾选，持久化规格未变",
+      "ok": true,
+      "detail": {
+        "note": "已采用候选文案「FAKE SIGNATURE FEATURES」（来源 v1）：保存后按这条逐字印上图；\n                勾掉即不印这条。",
+        "checked": true,
+        "advanced_present": 0,
+        "persisted_spec": null
+      }
+    },
+    {
+      "id": "V2.3.7-03",
+      "title": "未保存不生效：该图仍被印字决定拦下，没有任何包含该文案的 Prompt；其余图也不印",
+      "ok": true,
+      "detail": {
+        "found": false,
+        "error": "Prompt 编译未通过：这张图还没有决定要不要印文字：请明确选择要印的文案（或选择不印新增文字），程序不会把绑定的 1 条商品事实自动印上图。（旧版本已保留）",
+        "others_contain": []
+      }
+    },
+    {
+      "id": "V2.3.7-04",
+      "title": "保存规格：条目逐字等于候选文案、来源=该槽位+当前版本、status=confirmed、origin=model",
+      "ok": true,
+      "detail": {
+        "version": 1,
+        "print_intent": "selected",
+        "layout": "product_left_text_right",
+        "texts": [
+          {
+            "text_id": "t_signature_features_1",
+            "text": "FAKE SIGNATURE FEATURES",
+            "source": {
+              "kind": "fact_slot",
+              "document_id": "signature_features",
+              "version": 1
+            },
+            "status": "confirmed",
+            "origin": "model"
+          }
+        ]
+      }
+    },
+    {
+      "id": "V2.3.7-05",
+      "title": "刷新后仍是「已采用候选文案」：origin 往返不降级成 user",
+      "ok": true,
+      "detail": {
+        "note": "已采用候选文案「FAKE SIGNATURE FEATURES」（来源 v1）：保存后按这条逐字印上图；\n                勾掉即不印这条。",
+        "origin": "model"
+      }
+    },
+    {
+      "id": "V2.3.7-06",
+      "title": "编译/预览逐字：界面=记录=快照且含该候选，source_ref 指向该 text_id，正文声明不翻译不改写",
+      "ok": true,
+      "detail": {
+        "version": 1,
+        "warnings": [],
+        "refs": [
+          "shot_spec.on_image_text:t_signature_features_1"
+        ],
+        "text_len": 750,
+        "found": true,
+        "error": "",
+        "state": "saved"
+      }
+    },
+    {
+      "id": "V2.3.7-07",
+      "title": "来源前进：卡片改口为「旧版」提醒，编译被拦且给精确原因，旧记录保留不换值",
+      "ok": true,
+      "detail": {
+        "advanced_version": 2,
+        "advance_ok": true,
+        "note": "已选的是旧版「FAKE SIGNATURE FEATURES」（v1），\n                当前事实已是 v2：重新勾选这条即按新值重新确认。",
+        "note_ok": true,
+        "version_kept": 1,
+        "expected_version": 1,
+        "version_ok": true,
+        "text_ok": true,
+        "error": "Prompt 编译未通过：图中文字「FAKE SIGNATURE FEATURES」的来源已改变；请核对后重新确认，不会悄悄替换文案。（旧版本已保留）",
+        "error_ok": true
+      }
+    },
+    {
+      "id": "V2.3.7-99",
+      "title": "整套流程未异常中断",
+      "ok": true,
+      "detail": {
+        "error": null
+      }
+    },
+    {
+      "id": "V2.3.7-08",
+      "title": "整套流程零 console error / page error",
+      "ok": true,
+      "detail": {
+        "console": [],
+        "page": []
+      }
+    }
+  ],
+  "ui_flow": {
+    "presentation": {
+      "appearance": "clean_display",
+      "contents": "empty",
+      "saved": true
+    },
+    "adopted_note": "已采用候选文案「FAKE SIGNATURE FEATURES」（来源 v1）：保存后按这条逐字印上图；\n                勾掉即不印这条。",
+    "saved_spec": {
+      "version": 1,
+      "print_intent": "selected",
+      "layout": "product_left_text_right",
+      "texts": [
+        {
+          "text_id": "t_signature_features_1",
+          "text": "FAKE SIGNATURE FEATURES",
+          "source": {
+            "kind": "fact_slot",
+            "document_id": "signature_features",
+            "version": 1
+          },
+          "status": "confirmed",
+          "origin": "model"
+        }
+      ]
+    },
+    "compiled": {
+      "version": 1,
+      "warnings": [],
+      "refs": [
+        "shot_spec.on_image_text:t_signature_features_1"
+      ],
+      "literal_items": [
+        "「FAKE SIGNATURE FEATURES」"
+      ],
+      "text": "以提供的商品参考图为唯一外观依据：保持商品的轮廓、比例、颜色、材质、标识与现有部件不变；不要添加、删除、复制、换色或重新设计商品特征。商品按干净展示状态呈现：允许去掉临时使用痕迹（水渍、指纹、残留），但材质、结构、标识与颜色仍与商品依据一致。内容物为空：内腔与瓶口干净、无残留，也不添加资料里没有的内容物。图中如需出现文字，只能逐字使用后面列出的已确认文案。\n\n画面概念：用少量标注讲清卖点的信息图，商品是主体，文字服务卖点且不遮盖商品。主体：商品完整入画、位置突出；文案区放在留白一侧，与商品之间留出干净空隙。文字层级：一行标题加若干要点，字号按层级递减、行距清晰，与背景对比充分，不压在商品细节上。排版：对齐一致、边距统一，文字水平排布，不使用旋转、变形或装饰性字体。\n\n本图任务「卖点信息图」，目的「用简短标注呈现已确认卖点，不写入未确认参数」。必须保持：「已确认卖点文字」。允许变化：「标注排版与配色」。\n\n输入依据（按实际发送顺序）：图1是商品原照，提供真实商品的外形、比例、材质、颜色与标识依据。\n\n本图版面：商品完整放在画面左侧约三分之二区域，关键部位不被裁切也不被文字遮挡；右侧保留干净留白放置下方给定的文字。\n\n图中文字（只允许逐字使用以下已确认文案，不翻译、不改写、不新增；文字语言应为「en」）：\n- 「FAKE SIGNATURE FEATURES」\n\n平台规则「亚马逊美国站」：整套图片不得出现水印、边框、联系方式或与商品无关的叠加元素。只能使用已确认的商品事实，不添加未确认的参数、功效或承诺。\n\n输出规格：一张「1344*1344」的「png」格式高清商品图，不添加水印。\n\n必须避免：「水印」、「文字错乱或文字变形」、「商品变形、多出部件或与参考图不符的颜色和标识」。"
+    }
+  },
+  "console_errors": [],
+  "page_errors": [],
+  "screenshots": [
+    "evals/product-v2/v2.3.7-copy-adoption-chain-20261019-133359.png"
+  ],
+  "boundary": "证明「AI 提议文案 → 采用 → 保存规格 → 编译/预览」在正式页面是同一份合同：提议只在明确点击后外发一次；采用只写规格草稿（记忆态的「已采用候选文案」与来源前进的「旧版」提醒分开），未保存不进任何 Prompt；保存后 on_image_texts 逐字等于候选文案、来源指向该槽位当时版本、来源标记为 model，刷新不降级；编译产物界面文本=记录文本=请求快照正文，逐字包含该候选且 source_ref 指向该条目，非平台语言只警告不翻译；来源事实前进后编译被精确拦下，旧版本记录保留、不静默换值。假 Provider 只替代外部模型响应，全程 0 次真实模型调用、0 付费；不证明文案质量、翻译质量或出图效果，人工采用与最终交付验收仍在产品门内。"
+}

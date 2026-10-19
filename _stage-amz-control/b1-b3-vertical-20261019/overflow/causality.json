@@ -1,0 +1,410 @@
+{
+  "authority": "NOT-AUTHORITY",
+  "scope": "Controlled replay of archived UI with preserved real bearing project, current fake-only HTTP host; no real model calls. Historical reported 5712px, reproduced5720px with same source/data and1440x1000; exact8px variance not independently attributed.",
+  "source_archive": "../amz-listing-kit/_stage-amz-control/formal-resume-20261015T125651Z/real-wire/stop-code-snapshot.zip",
+  "project_sha256": "5dd5b7d27d198b788b2aad5dacf193af5dd4e636b0f493bdc407478084717591",
+  "origin": "http://127.0.0.1:9171/",
+  "geometry": {
+    "width": 1440,
+    "scrollWidth": 5720,
+    "height": 3722,
+    "scrollX": 0,
+    "overflows": []
+  },
+  "overflow_sources": {
+    "boxes": [
+      {
+        "tag": "MAIN",
+        "id": "",
+        "cls": "",
+        "text": "\n  \n  重试启动\n  \n    \n    \n    当前来源：\n    \n    重新检测\n  \n\n  \n  正在启动本地项目库…\n\n  \n  \n    \n      本机项目\n      从空白开始：给项目起个名字、上传商品参考图，其余交给系统。\n    \n    \n      新项目名称\n      \n      新建项目\n    \n    \n   ",
+        "width": 1120,
+        "right": 1280,
+        "scrollWidth": 5560,
+        "clientWidth": 1120,
+        "display": "block",
+        "overflowX": "visible",
+        "whiteSpace": "normal",
+        "overflowWrap": "normal",
+        "wordBreak": "normal"
+      },
+      {
+        "tag": "SECTION",
+        "id": "project-view",
+        "cls": "workspace",
+        "text": "\n    \n      ← 项目列表\n      \n        真实闭环 · 参考图\n        待确认套图\n      \n      已保存 · 版本 11 · 13:16:34\n      \n        项目信息\n        \n          创建时间2026-10-15 15:44\n          最近更新2026-10-15 ",
+        "width": 1072,
+        "right": 1256,
+        "scrollWidth": 5536,
+        "clientWidth": 1072,
+        "display": "block",
+        "overflowX": "visible",
+        "whiteSpace": "normal",
+        "overflowWrap": "normal",
+        "wordBreak": "normal"
+      },
+      {
+        "tag": "DIV",
+        "id": "stage-panels",
+        "cls": "stage-panels",
+        "text": "\n\n      \n      \n        \n          资料与事实\n          上传参考图并填写商品信息；分析后的推断写在事实槽位里，不覆盖你填的内容。\n        \n\n        \n          \n            参考图\n            先传一张能看清完整商品的整体图。重要结构被遮挡时补侧面或背面；要展示",
+        "width": 940,
+        "right": 1190,
+        "scrollWidth": 5470,
+        "clientWidth": 940,
+        "display": "block",
+        "overflowX": "visible",
+        "whiteSpace": "normal",
+        "overflowWrap": "normal",
+        "wordBreak": "normal"
+      },
+      {
+        "tag": "SECTION",
+        "id": "",
+        "cls": "stage-panel",
+        "text": "\n        \n          制作与审图\n          成功一图立即看、采用；其余任务继续。查看、待发送勾选、采用、对照与返工源互不改变。\n        \n        \n          \n            当前查看的图片\n            主图·干净背景 · 已成功 · 已采用卖点信息图 · 已成功 · 已采用场景图·使",
+        "width": 940,
+        "right": 1190,
+        "scrollWidth": 5470,
+        "clientWidth": 940,
+        "display": "block",
+        "overflowX": "visible",
+        "whiteSpace": "normal",
+        "overflowWrap": "normal",
+        "wordBreak": "normal"
+      },
+      {
+        "tag": "SECTION",
+        "id": "",
+        "cls": "card",
+        "text": "\n          \n            实际发送摘要\n            这次发送的图片、资料、模型与参数以下面当前摘要为准。缺项只阻断对应图片，不会自动重提未知结果。\n          \n          先添加图片任务，再按用途补足所需事实。\n          \n            本次明确发送 0 张；用途缺项／过期任务不外发；已",
+        "width": 940,
+        "right": 1190,
+        "scrollWidth": 5469,
+        "clientWidth": 938,
+        "display": "block",
+        "overflowX": "visible",
+        "whiteSpace": "normal",
+        "overflowWrap": "normal",
+        "wordBreak": "normal"
+      },
+      {
+        "tag": "DIV",
+        "id": "confirm-editor",
+        "cls": "",
+        "text": "\n            本次明确发送 0 张；用途缺项／过期任务不外发；已有成功、进行中或 Unknown 不自动重提。\n            当前没有可新增发送的已就绪图片任务。只发送本次摘要列出的 Prompt 与参考图。候选编辑会发送明确选定的问题候选作为模型源；从原照重生成只发送商品依据。不发送其他历史或其他项目数据。\n            #",
+        "width": 902,
+        "right": 1171,
+        "scrollWidth": 5451,
+        "clientWidth": 902,
+        "display": "block",
+        "overflowX": "visible",
+        "whiteSpace": "normal",
+        "overflowWrap": "normal",
+        "wordBreak": "normal"
+      },
+      {
+        "tag": "DIV",
+        "id": "confirm-risks",
+        "cls": "",
+        "text": "主图·干净背景 · STYLE_OVERRIDDEN_BY_PLATFORM：公共风格背景「白底商品图」被主图平台规则覆盖为纯白背景。卖点信息图 · MANUAL_EDIT_LANGUAGE_RULE：指令段出现未引用的非中文内容：Createonesquareproductidentificationimageusingimageasthesoleprod",
+        "width": 902,
+        "right": 1171,
+        "scrollWidth": 5451,
+        "clientWidth": 902,
+        "display": "block",
+        "overflowX": "visible",
+        "whiteSpace": "normal",
+        "overflowWrap": "normal",
+        "wordBreak": "normal"
+      },
+      {
+        "tag": "P",
+        "id": "",
+        "cls": "confirm-risk",
+        "text": "尺寸图 · MANUAL_EDIT_LANGUAGE_RULE：指令段出现未引用的非中文内容：MakeonecleansquareproductspecificationimageonacontinuouspurewhitecanvasEverycanvasedgeandcorneriswhiteReserveanuninterruptedpixelpure",
+        "width": 902,
+        "right": 1171,
+        "scrollWidth": 5451,
+        "clientWidth": 902,
+        "display": "block",
+        "overflowX": "visible",
+        "whiteSpace": "normal",
+        "overflowWrap": "normal",
+        "wordBreak": "normal"
+      },
+      {
+        "tag": "DIV",
+        "id": "prompt-editor",
+        "cls": "",
+        "text": "\n            共 5 张，依据已满足 5 张可编译。\n            1. 主图·干净背景版本 v13可编译任务：制作亚马逊美国站商品主图·干净背景，输出一张完整图片，不是拼贴或对比页。\n\n输入依据：图1为商品原参考图，提供同一商品的可见形状、结构、涂层、纹理与标识依据。\n\n商品保持：保留参考商品真实轮廓、比例、可见结构、永久涂层、纹理、",
+        "width": 902,
+        "right": 1171,
+        "scrollWidth": 5256,
+        "clientWidth": 902,
+        "display": "block",
+        "overflowX": "visible",
+        "whiteSpace": "normal",
+        "overflowWrap": "normal",
+        "wordBreak": "normal"
+      },
+      {
+        "tag": "DIV",
+        "id": "prompt-list",
+        "cls": "",
+        "text": "1. 主图·干净背景版本 v13可编译任务：制作亚马逊美国站商品主图·干净背景，输出一张完整图片，不是拼贴或对比页。\n\n输入依据：图1为商品原参考图，提供同一商品的可见形状、结构、涂层、纹理与标识依据。\n\n商品保持：保留参考商品真实轮廓、比例、可见结构、永久涂层、纹理、损伤及已有标识；不要增加附件、部件、花纹、文字或性能。\n\n本次展示变化：按参考图原样展示商",
+        "width": 902,
+        "right": 1171,
+        "scrollWidth": 5256,
+        "clientWidth": 902,
+        "display": "block",
+        "overflowX": "visible",
+        "whiteSpace": "normal",
+        "overflowWrap": "normal",
+        "wordBreak": "normal"
+      },
+      {
+        "tag": "DIV",
+        "id": "",
+        "cls": "shot-spec",
+        "text": "5. 尺寸图版本 v14可编译已过期人工编辑Make one clean square product specification image on a continuous pure-white canvas. Every canvas edge and corner is white. Reserve an uninterrupted 40-pixel ",
+        "width": 902,
+        "right": 1171,
+        "scrollWidth": 5255,
+        "clientWidth": 900,
+        "display": "block",
+        "overflowX": "visible",
+        "whiteSpace": "normal",
+        "overflowWrap": "normal",
+        "wordBreak": "normal"
+      },
+      {
+        "tag": "DIV",
+        "id": "confirm-list",
+        "cls": "",
+        "text": "1. 主图·干净背景主图 · 必需本次不发送：缺项／过期Prompt v13 · 53de4c4a7c3d…任务：完整展示商品主体，背景干净，不添加资料里没有的部件参考图 1 张（商品主图） · 提示词 805 字技术详情商品主图 sha256 4c4ed76c61c9风险：公共风格背景「白底商品图」被主图平台规则覆盖为纯白背景。2. 卖点信息图卖点信息图 ",
+        "width": 902,
+        "right": 1171,
+        "scrollWidth": 5254,
+        "clientWidth": 902,
+        "display": "block",
+        "overflowX": "visible",
+        "whiteSpace": "normal",
+        "overflowWrap": "normal",
+        "wordBreak": "normal"
+      },
+      {
+        "tag": "DIV",
+        "id": "",
+        "cls": "confirm-shot",
+        "text": "5. 尺寸图尺寸图 · 可选本次不发送：缺项／过期Prompt v14 · b7fb02162890…任务：标注已确认的结构化尺寸（对象/轴向/数值/单位与来源）；不猜数字、不用自由文本冒充测量参考图 1 张（商品主图） · 提示词 1078 字技术详情商品主图 sha256 4c4ed76c61c9风险：指令段出现未引用的非中文内容：Makeoneclea",
+        "width": 902,
+        "right": 1171,
+        "scrollWidth": 5253,
+        "clientWidth": 900,
+        "display": "block",
+        "overflowX": "visible",
+        "whiteSpace": "normal",
+        "overflowWrap": "normal",
+        "wordBreak": "normal"
+      },
+      {
+        "tag": "P",
+        "id": "",
+        "cls": "meta prompt-warning",
+        "text": "提示：指令段出现未引用的非中文内容：MakeonecleansquareproductspecificationimageonacontinuouspurewhitecanvasEverycanvasedgeandcorneriswhiteReserveanuninterruptedpixelpurewhiteperimeteraroundallconten",
+        "width": 872,
+        "right": 1156,
+        "scrollWidth": 5241,
+        "clientWidth": 872,
+        "display": "block",
+        "overflowX": "visible",
+        "whiteSpace": "normal",
+        "overflowWrap": "normal",
+        "wordBreak": "normal"
+      },
+      {
+        "tag": "P",
+        "id": "",
+        "cls": "meta prompt-warning",
+        "text": "风险：指令段出现未引用的非中文内容：MakeonecleansquareproductspecificationimageonacontinuouspurewhitecanvasEverycanvasedgeandcorneriswhiteReserveanuninterruptedpixelpurewhiteperimeteraroundallconten",
+        "width": 876,
+        "right": 1158,
+        "scrollWidth": 5241,
+        "clientWidth": 876,
+        "display": "block",
+        "overflowX": "visible",
+        "whiteSpace": "normal",
+        "overflowWrap": "normal",
+        "wordBreak": "normal"
+      },
+      {
+        "tag": "P",
+        "id": "",
+        "cls": "confirm-risk",
+        "text": "卖点信息图 · MANUAL_EDIT_LANGUAGE_RULE：指令段出现未引用的非中文内容：CreateonesquareproductidentificationimageusingimageasthesoleproductreferencePreservethisexactbearingitsoriginalobliqueviewinganglev",
+        "width": 902,
+        "right": 1171,
+        "scrollWidth": 4764,
+        "clientWidth": 902,
+        "display": "block",
+        "overflowX": "visible",
+        "whiteSpace": "normal",
+        "overflowWrap": "normal",
+        "wordBreak": "normal"
+      },
+      {
+        "tag": "DIV",
+        "id": "",
+        "cls": "shot-spec",
+        "text": "2. 卖点信息图版本 v17可编译已过期人工编辑Create one square product identification image using image 1 as the sole product reference. Preserve this exact bearing, its original oblique viewing angle,",
+        "width": 902,
+        "right": 1171,
+        "scrollWidth": 4594,
+        "clientWidth": 900,
+        "display": "block",
+        "overflowX": "visible",
+        "whiteSpace": "normal",
+        "overflowWrap": "normal",
+        "wordBreak": "normal"
+      },
+      {
+        "tag": "DIV",
+        "id": "",
+        "cls": "confirm-shot",
+        "text": "2. 卖点信息图卖点信息图 · 可选本次不发送：缺项／过期Prompt v17 · 6301137656e1…任务：用简短标注呈现已确认卖点，不写入未确认参数参考图 1 张（商品主图） · 提示词 959 字技术详情商品主图 sha256 4c4ed76c61c9风险：指令段出现未引用的非中文内容：Createonesquareproductidentifi",
+        "width": 902,
+        "right": 1171,
+        "scrollWidth": 4592,
+        "clientWidth": 900,
+        "display": "block",
+        "overflowX": "visible",
+        "whiteSpace": "normal",
+        "overflowWrap": "normal",
+        "wordBreak": "normal"
+      },
+      {
+        "tag": "P",
+        "id": "",
+        "cls": "meta prompt-warning",
+        "text": "提示：指令段出现未引用的非中文内容：CreateonesquareproductidentificationimageusingimageasthesoleproductreferencePreservethisexactbearingitsoriginalobliqueviewinganglevisibleshapeshieldfinishandexist",
+        "width": 872,
+        "right": 1156,
+        "scrollWidth": 4580,
+        "clientWidth": 872,
+        "display": "block",
+        "overflowX": "visible",
+        "whiteSpace": "normal",
+        "overflowWrap": "normal",
+        "wordBreak": "normal"
+      },
+      {
+        "tag": "P",
+        "id": "",
+        "cls": "meta prompt-warning",
+        "text": "风险：指令段出现未引用的非中文内容：CreateonesquareproductidentificationimageusingimageasthesoleproductreferencePreservethisexactbearingitsoriginalobliqueviewinganglevisibleshapeshieldfinishandexist",
+        "width": 876,
+        "right": 1158,
+        "scrollWidth": 4580,
+        "clientWidth": 876,
+        "display": "block",
+        "overflowX": "visible",
+        "whiteSpace": "normal",
+        "overflowWrap": "normal",
+        "wordBreak": "normal"
+      }
+    ],
+    "text": [
+      {
+        "parent": "<p class=\"confirm-risk\">尺寸图 · MANUAL_EDIT_LANGUAGE_RULE：指令段出现未引用的非中文内容：MakeonecleansquareproductspecificationimageonacontinuouspurewhitecanvasEverycanvasedgeandcorneriswhiteReserveanuninterruptedpixelpurewhiteperimeteraroundallcontentImageistheonlyproductreferencePlaceonecompleteuncroppedcopyofthatsamebearingontherightretainingtheoriginalobliqueviewvisibleshieldgeometryfinishandtheexistingZNSKandI",
+        "right": 5719.9375,
+        "width": 5450.9375,
+        "text": "尺寸图 · MANUAL_EDIT_LANGUAGE_RULE：指令段出现未引用的非中文内容：MakeonecleansquareproductspecificationimageonacontinuouspurewhitecanvasEverycanvasedgeandcorneriswhiteR"
+      },
+      {
+        "parent": "<p class=\"meta prompt-warning\">提示：指令段出现未引用的非中文内容：MakeonecleansquareproductspecificationimageonacontinuouspurewhitecanvasEverycanvasedgeandcorneriswhiteReserveanuninterruptedpixelpurewhiteperimeteraroundallcontentImageistheonlyproductreferencePlaceonecompleteuncroppedcopyofthatsamebearingontherightretainingtheoriginalobliqueviewvisibleshieldgeometryfinishandtheexistingZNSKandINDONESIAengravingsShow",
+        "right": 5525.28125,
+        "width": 5241.28125,
+        "text": "提示：指令段出现未引用的非中文内容：MakeonecleansquareproductspecificationimageonacontinuouspurewhitecanvasEverycanvasedgeandcorneriswhiteReserveanuninterruptedpixelpur"
+      },
+      {
+        "parent": "<p class=\"meta prompt-warning\" title=\"MANUAL_EDIT_LANGUAGE_RULE\">风险：指令段出现未引用的非中文内容：MakeonecleansquareproductspecificationimageonacontinuouspurewhitecanvasEverycanvasedgeandcorneriswhiteReserveanuninterruptedpixelpurewhiteperimeteraroundallcontentImageistheonlyproductreferencePlaceonecompleteuncroppedcopyofthatsamebearingontherightretainingtheoriginalobliqueviewvisibleshieldgeometryfinishandtheexis",
+        "right": 5523.28125,
+        "width": 5241.28125,
+        "text": "风险：指令段出现未引用的非中文内容：MakeonecleansquareproductspecificationimageonacontinuouspurewhitecanvasEverycanvasedgeandcorneriswhiteReserveanuninterruptedpixelpur"
+      },
+      {
+        "parent": "<p class=\"confirm-risk\">卖点信息图 · MANUAL_EDIT_LANGUAGE_RULE：指令段出现未引用的非中文内容：CreateonesquareproductidentificationimageusingimageasthesoleproductreferencePreservethisexactbearingitsoriginalobliqueviewinganglevisibleshapeshieldfinishandexistingengravingsZNSKINDONESIADonotinventhiddenpartsmaterialgradescompatibilityorperformanceUseacleancontinuouswhitecanvasextendingallthewaytoeveryouteredgeandeverycorne",
+        "right": 5032.59375,
+        "width": 4763.59375,
+        "text": "卖点信息图 · MANUAL_EDIT_LANGUAGE_RULE：指令段出现未引用的非中文内容：CreateonesquareproductidentificationimageusingimageasthesoleproductreferencePreservethisexactbearingi"
+      },
+      {
+        "parent": "<p class=\"meta prompt-warning\">提示：指令段出现未引用的非中文内容：CreateonesquareproductidentificationimageusingimageasthesoleproductreferencePreservethisexactbearingitsoriginalobliqueviewinganglevisibleshapeshieldfinishandexistingengravingsZNSKINDONESIADonotinventhiddenpartsmaterialgradescompatibilityorperformanceUseacleancontinuouswhitecanvasextendingallthewaytoeveryouteredgeandeverycornerPlaceonecompleteuncropp",
+        "right": 4864.375,
+        "width": 4580.375,
+        "text": "提示：指令段出现未引用的非中文内容：CreateonesquareproductidentificationimageusingimageasthesoleproductreferencePreservethisexactbearingitsoriginalobliqueviewinganglevi"
+      },
+      {
+        "parent": "<p class=\"meta prompt-warning\" title=\"MANUAL_EDIT_LANGUAGE_RULE\">风险：指令段出现未引用的非中文内容：CreateonesquareproductidentificationimageusingimageasthesoleproductreferencePreservethisexactbearingitsoriginalobliqueviewinganglevisibleshapeshieldfinishandexistingengravingsZNSKINDONESIADonotinventhiddenpartsmaterialgradescompatibilityorperformanceUseacleancontinuouswhitecanvasextendingallthewaytoeveryouteredgeand",
+        "right": 4862.375,
+        "width": 4580.375,
+        "text": "风险：指令段出现未引用的非中文内容：CreateonesquareproductidentificationimageusingimageasthesoleproductreferencePreservethisexactbearingitsoriginalobliqueviewinganglevi"
+      }
+    ]
+  },
+  "controlled_result": {
+    "viewport": 1440,
+    "rows": [
+      {
+        "name": "original",
+        "scrollWidth": 5720,
+        "height": 3722
+      },
+      {
+        "name": "only-prompt-warning",
+        "scrollWidth": 5720,
+        "height": 3897
+      },
+      {
+        "name": "only-confirm-risk",
+        "scrollWidth": 5523,
+        "height": 3904
+      },
+      {
+        "name": "both",
+        "scrollWidth": 1440,
+        "height": 4078
+      },
+      {
+        "name": "revert",
+        "scrollWidth": 5720,
+        "height": 3722
+      },
+      {
+        "name": "restore-both",
+        "scrollWidth": 1440,
+        "height": 4078
+      }
+    ],
+    "textUnchanged": true,
+    "diagnosticCount": 11,
+    "rootOverflowX": "visible",
+    "bodyOverflowX": "visible",
+    "cssZoom": "1",
+    "transform": "none",
+    "allTextStillPresent": true
+  },
+  "diagnosis": "The language warning producer removes interword spaces from English manual text. Both .confirm-risk and .prompt-warning lacked line-breaking rules; text paints far beyond normal-size element boxes. Therefore bounding boxes alone falsely showed no overflow; Range text rectangles isolated the actual right edge5719.9375. Neither image intrinsic width nor oversized grid caused this replay.",
+  "correction": "Wrapping BOTH warning classes, not hiding overflow, reduces width5720→1440. Only prompt warning remains5720; only confirmation risk leaves5523. Reverting reproduces5720. All11 diagnostics retain exact text; root/body overflow visible, no zoom/transform. Current stylesheet already has these two wrapping rules (styles.css:504–505,704); reuse verified existing fix and retain in B4 migration.",
+  "screenshots": [
+    "historical-before.webp",
+    "historical-after-wrap.webp"
+  ],
+  "limits": [
+    "Archived UI is forensic probe, not current product delivery.",
+    "Current final B4 real-content layout matrix still required.",
+    "Historical5720 reproduction causally explains this same preserved long-warning mechanism; exact original5712 measurement is retained, not rewritten."
+  ],
+  "paid_calls": 0
+}

@@ -41,14 +41,16 @@ import {
 } from "../../../build/frontend-node/app/product_v2/domain/index.js";
 
 import { sha256Hex } from "../../../build/frontend-node/app/product_v2/storage/db.js";
-import { IMAGE_PROMPT_PROFILE, expect, expectCode, serializeError } from "./harness-core.mjs";
-
+import { IMAGE_PRICING, IMAGE_PROMPT_PROFILE, expect, expectCode, serializeError } from "./harness-core.mjs";
 const cases = [];
 
 function test(id, title, run) {
   cases.push({ id, title, run });
 }
 
+function json(value) {
+  return JSON.stringify(value);
+}
 const DIGEST = { digest: sha256Hex };
 const PLATFORM_ID = "amazon_us";
 const PROVIDER_ID = "qwen-image-3.0";
@@ -165,14 +167,17 @@ function chosenPrintSpec(shot, overrides = {}) {
     on_image_texts: [{
       text_id: "t1",
       text: "12小时保温",
-      source_slot_id: "signature_features",
-      source_slot_version: 1,
+      source: { kind: "fact_slot", document_id: "signature_features", version: 1 },
       status: "confirmed",
       origin: "user",
     }],
     ...overrides,
   };
 }
+// 已保存的商品资料版本（冻结参考图来源的精确版本；与产品调用方同一快照概念）。
+const INTAKE_VERSION = 1;
+// 问题候选的确切文档版本（夹具候选都已保存为该版本；返工指令绑定它）。
+const CANDIDATE_VERSION = 1;
 
 function candidateFixture(shot, overrides = {}) {
   return {
@@ -203,7 +208,9 @@ function directiveFixture(shot, options = {}) {
   return buildReworkDirective({
     directiveId: options.directiveId || "rw-fixture-01",
     shotId: shot.shot_id,
+    mode: options.mode || "edit_candidate",
     candidate: options.candidate || candidateFixture(shot),
+    candidateDocument: options.candidateDocument || { document_id: shot.shot_id, version: CANDIDATE_VERSION },
     report: options.report === undefined ? reportFixture(shot) : options.report,
     problems: options.problems === undefined ? ["product_fidelity"] : options.problems,
     direction: options.direction === undefined ? "只把背景换成纯白，商品保持不变。" : options.direction,
@@ -213,11 +220,12 @@ function directiveFixture(shot, options = {}) {
 
 async function compiledEntry(shot, options = {}) {
   const context = contextFixture();
+  const shotSpec = options.shotSpec || emptyShotSpecFromShot(shot);
   const compiled = compilePrompt({
     brief: briefFixture(),
     shot: shot,
     styleSpec: options.styleSpec || styleFixture(),
-    shotSpec: options.shotSpec || emptyShotSpecFromShot(shot),
+    shotSpec: shotSpec,
     context: context,
     providerProfile: IMAGE_PROMPT_PROFILE,
     versions: {
@@ -227,7 +235,10 @@ async function compiledEntry(shot, options = {}) {
     },
     ...(options.rework ? { rework: options.rework } : {}),
   });
-  const references = selectReferences(shot, context.assets);
+  // 返工走产品同一选择器与同一选项：edit 模式候选首位，regenerate 只发原照。
+  const references = selectReferences(shot, context.assets,
+    { intakeVersion: INTAKE_VERSION, shotSpec: shotSpec,
+      ...(options.rework ? { rework: options.rework } : {}) });
   const snapshot = requestSnapshotOf(compiled, { references: references });
   const hash = await promptHash(snapshot, DIGEST);
   return {
@@ -253,6 +264,7 @@ function sheetFixture(shot, record, options = {}) {
     context: contextFixture(),
     currentBasisByShot: basisByShot,
     providerProfile: IMAGE_PROMPT_PROFILE,
+    pricing: options.pricing === undefined ? IMAGE_PRICING : options.pricing,
     ...(options.shotIds ? { shotIds: options.shotIds } : {}),
   });
 }
@@ -271,13 +283,18 @@ async function confirmationFixture(sheet) {
 test("RW-01", "空理由被拒：没有分类且方向为空或过短时，产出与自检都不放行", async () => {
   const shot = mainShot();
   const base = {
-    directiveId: "rw-01", shotId: shot.shot_id,
-    candidate: candidateFixture(shot), report: null, at: BASE_TIME,
+    directiveId: "rw-01", shotId: shot.shot_id, mode: "edit_candidate",
+    candidate: candidateFixture(shot),
+    candidateDocument: { document_id: shot.shot_id, version: CANDIDATE_VERSION },
+    report: null, at: BASE_TIME,
   };
   await expectCode(() => buildReworkDirective({ ...base, problems: [], direction: "" }),
     DOMAIN_ERROR_CODES.CONTRACT_INVALID, "空分类 + 空方向");
   await expectCode(() => buildReworkDirective({ ...base, problems: [], direction: "改" }),
     DOMAIN_ERROR_CODES.CONTRACT_INVALID, "空分类 + 过短方向");
+  // 缺模式的新指令同样不能放行：必须明确改这条候选或按原资料重画。
+  await expectCode(() => buildReworkDirective({ ...base, mode: undefined, problems: ["scene"], direction: "" }),
+    DOMAIN_ERROR_CODES.CONTRACT_INVALID, "缺返工模式");
   const problems = checkReworkDirective({
     schema_version: 1, contract_version: REWORK_CONTRACT_VERSION, directive_id: "rw-01",
     shot_id: shot.shot_id, candidate_id: "cand-1", candidate_sha256: SHA_A,
@@ -291,7 +308,9 @@ test("RW-01", "空理由被拒：没有分类且方向为空或过短时，产�
 test("RW-02", "未知分类被拒：词表外的 id 在构建与自检两处都不能通过", async () => {
   const shot = mainShot();
   await expectCode(() => buildReworkDirective({
-    directiveId: "rw-02", shotId: shot.shot_id, candidate: candidateFixture(shot),
+    directiveId: "rw-02", shotId: shot.shot_id, mode: "edit_candidate",
+    candidate: candidateFixture(shot),
+    candidateDocument: { document_id: shot.shot_id, version: CANDIDATE_VERSION },
     report: null, problems: ["product_fidelity", "mystery"], direction: "", at: BASE_TIME,
   }), DOMAIN_ERROR_CODES.CONTRACT_INVALID, "未知分类");
   const problems = checkReworkDirective({
@@ -310,7 +329,9 @@ test("RW-03", "跨图候选被拒：候选的 shot_id 与目标图不一致时�
   const shot = mainShot();
   const other = infographicShot();
   await expectCode(() => buildReworkDirective({
-    directiveId: "rw-03", shotId: shot.shot_id, candidate: candidateFixture(other),
+    directiveId: "rw-03", shotId: shot.shot_id, mode: "edit_candidate",
+    candidate: candidateFixture(other),
+    candidateDocument: { document_id: shot.shot_id, version: CANDIDATE_VERSION },
     report: null, problems: ["scene"], direction: "", at: BASE_TIME,
   }), DOMAIN_ERROR_CODES.CONTRACT_INVALID, "跨图候选");
   const directive = directiveFixture(other);
@@ -327,8 +348,9 @@ test("RW-03", "跨图候选被拒：候选的 shot_id 与目标图不一致时�
 test("RW-04", "候选 sha256 非法被拒：构建与自检都要求 64 位 hex 身份", async () => {
   const shot = mainShot();
   await expectCode(() => buildReworkDirective({
-    directiveId: "rw-04", shotId: shot.shot_id,
+    directiveId: "rw-04", shotId: shot.shot_id, mode: "edit_candidate",
     candidate: candidateFixture(shot, { asset_sha256: "abc123" }),
+    candidateDocument: { document_id: shot.shot_id, version: CANDIDATE_VERSION },
     report: null, problems: ["scene"], direction: "", at: BASE_TIME,
   }), DOMAIN_ERROR_CODES.CONTRACT_INVALID, "非法 sha");
   const problems = checkReworkDirective({
@@ -343,16 +365,20 @@ test("RW-04", "候选 sha256 非法被拒：构建与自检都要求 64 位 hex 
 test("RW-05", "指令失效：候选字节、候选 id 或合同版本变化后 reworkIsCurrent 为 false", async () => {
   const shot = mainShot();
   const directive = directiveFixture(shot);
+  const document = { document_id: shot.shot_id, version: CANDIDATE_VERSION };
   const same = candidateFixture(shot);
-  expect(reworkIsCurrent(directive, same) === true, "同一候选必须仍然有效。");
-  expect(reworkIsCurrent(directive, candidateFixture(shot, { asset_sha256: SHA_B })) === false,
+  expect(reworkIsCurrent(directive, same, document) === true, "同一候选必须仍然有效。");
+  expect(reworkIsCurrent(directive, candidateFixture(shot, { asset_sha256: SHA_B }), document) === false,
     "候选字节变化后指令必须失效。");
-  expect(reworkIsCurrent(directive, candidateFixture(shot, { candidate_id: "cand-2" })) === false,
+  expect(reworkIsCurrent(directive, candidateFixture(shot, { candidate_id: "cand-2" }), document) === false,
     "候选身份变化后指令必须失效。");
-  expect(reworkIsCurrent({ ...directive, contract_version: "v0" }, same) === false,
+  expect(reworkIsCurrent({ ...directive, contract_version: "v0" }, same, document) === false,
     "合同版本变化后指令必须失效。");
-  expect(reworkIsCurrent(directive, candidateFixture(infographicShot())) === false,
+  expect(reworkIsCurrent(directive, candidateFixture(infographicShot()), document) === false,
     "跨图候选必须失效。");
+  // 问题候选的新版本不改变固定的旧依据：指令按固定的确切版本判过期。
+  expect(reworkIsCurrent(directive, same, { document_id: shot.shot_id, version: CANDIDATE_VERSION + 1 }) === false,
+    "候选文档版本前进后指令必须失效。");
   return { directive: directive.directive_id };
 });
 
@@ -408,6 +434,7 @@ test("RW-09", "一行摘要：方向在、不暗示采纳；未知问题 id 原�
     problems: ["product_fidelity", "text"], direction: "把标识改回参考图的样子。",
   });
   const summary = reworkSummaryText(directive);
+  expect(summary.indexOf("改这条候选") >= 0, "摘要必须写明改法（edit 模式）：" + summary);
   expect(summary.indexOf("方向：") >= 0 && summary.indexOf("改回参考图") >= 0, "必须含方向。");
   expect(summary.indexOf("采纳") < 0 && summary.indexOf("已选择") < 0, "摘要不得暗示采纳。");
   expect(reworkProblemLabel("mystery") === "mystery", "未知 id 原样返回，不发明标签。");
@@ -416,8 +443,9 @@ test("RW-09", "一行摘要：方向在、不暗示采纳；未知问题 id 原�
 
 test("RW-10", "编译带返工段：段落、来源引用、compiled.rework 与 basis 绑定同一条指令", async () => {
   const shot = mainShot();
+  const editCandidate = candidateFixture(shot, { asset_sha256: SHA_B });
   const directive = directiveFixture(shot, {
-    problems: ["product_fidelity"], direction: "只把背景换成纯白。",
+    candidate: editCandidate, problems: ["product_fidelity"], direction: "只把背景换成纯白。",
   });
   const entry = await compiledEntry(shot, { rework: directive });
   const compiled = entry.record.compiled;
@@ -432,6 +460,21 @@ test("RW-10", "编译带返工段：段落、来源引用、compiled.rework 与 
     && compiled.rework.candidate_sha256 === directive.candidate_sha256, "编译结果必须绑定同一条指令。");
   expect(canonicalJson(entry.record.basis.rework.problems) === canonicalJson(["product_fidelity"]),
     "basis 必须记录本次返工问题分类。");
+  expect(entry.record.basis.rework.mode === "edit_candidate",
+    "basis 必须冻结本次返工模式：" + json(entry.record.basis.rework));
+  const refs = entry.record.request_snapshot.references;
+  expect(refs[0].sha256 === SHA_B && refs[0].uses.indexOf("edit_source") >= 0,
+    "edit 模式第一张图必须是问题候选：" + json(refs));
+  expect(refs.some((item) => item.uses.indexOf("product_truth") >= 0 && item.sha256 === SHA_A),
+    "商品原照依据必须跟在候选之后：" + json(refs));
+  const redo = directiveFixture(shot, { mode: "regenerate_original", candidate: editCandidate,
+    directiveId: "rw-fixture-regen" });
+  const redoEntry = await compiledEntry(shot, { rework: redo });
+  const redoRefs = redoEntry.record.request_snapshot.references;
+  expect(redoRefs.every((item) => item.uses.indexOf("edit_source") < 0),
+    "原照重画不能发送历史候选图：" + json(redoRefs));
+  expect(redoEntry.record.basis.rework.mode === "regenerate_original",
+    "basis 必须冻结重画模式：" + json(redoEntry.record.basis.rework));
   expect(compiled.provider.model_id === PROVIDER_ID, "Provider 档沿用现有权威。");
   expect(checkCompiledPrompt(compiled).length === 0, "带返工的编译必须自检通过。");
   return { chars: compiled.text.length, sections: compiled.sections.length };
@@ -539,6 +582,41 @@ test("RW-15", "整套确认不受影响：无 scope 字段，快照与单图确�
   expect(canonicalJson(confirmationSnapshot(scoped))
     !== canonicalJson(recordAll.fingerprint.snapshot), "单图确认与整套确认不能互相冒充。");
   return { shots: sheetAll.shots.length };
+});
+
+test("RW-16", "确认页图序与职责：编辑模式确认单带候选编辑源与商品原照，重生成模式不含候选", async () => {
+  const shot = mainShot();
+  const editDirective = directiveFixture(shot, { mode: "edit_candidate" });
+  const editEntry = await compiledEntry(shot, { rework: editDirective });
+  const editSheet = sheetFixture(shot, editEntry.record, { shotIds: [shot.shot_id] });
+  const sheetRefs = editSheet.shots[0].references;
+  const frozenRefs = editEntry.record.request_snapshot.references;
+  expect(sheetRefs.length === frozenRefs.length,
+    "确认单参考图数量必须与冻结请求一致：" + json(sheetRefs));
+  expect(canonicalJson(sheetRefs.map((item) => item.uses)) === canonicalJson(frozenRefs.map((item) => item.uses)),
+    "确认单用途必须与冻结请求同序一致：" + json(sheetRefs.map((item) => item.uses)));
+  expect(canonicalJson(sheetRefs.map((item) => item.sha256_prefix))
+    === canonicalJson(frozenRefs.map((item) => String(item.sha256).slice(0, 12))),
+    "确认单必须按实际发送顺序列出图序：" + json(sheetRefs.map((item) => item.sha256_prefix)));
+  const editSource = sheetRefs.find((item) => (item.uses || []).includes("edit_source"));
+  // schema 2 确认单来源带 asset_sha256（冻结字节身份），与请求快照同形状（§13.8 一次切换）。
+  expect(editSource !== undefined
+    && canonicalJson(editSource.sources) === canonicalJson([{ kind: "candidate",
+      document_id: shot.shot_id, version: CANDIDATE_VERSION, asset_sha256: SHA_A },
+      { kind: "product_input", document_id: "intake", version: INTAKE_VERSION, asset_sha256: SHA_A }]),
+    "编辑源必须标注固定问题候选与商品资料的精确文档版本与资产字节：" + json(editSource));
+  expect(sheetRefs.every((item) => (item.uses || []).includes("edit_source")
+    || (item.uses || []).includes("product_truth")),
+    "编辑模式确认单每张参考图都要有职责说明：" + json(sheetRefs));
+  const regenerateDirective = directiveFixture(shot, { mode: "regenerate_original" });
+  const regenerateEntry = await compiledEntry(shot, { rework: regenerateDirective });
+  const regenerateSheet = sheetFixture(shot, regenerateEntry.record, { shotIds: [shot.shot_id] });
+  const regenerateRefs = regenerateSheet.shots[0].references;
+  expect(regenerateRefs.length === regenerateEntry.record.request_snapshot.references.length,
+    "重生成确认单数量必须与冻结请求一致：" + json(regenerateRefs));
+  expect(regenerateRefs.every((item) => canonicalJson(item.uses) === canonicalJson(["product_truth"])),
+    "原照重生成确认单不得出现候选编辑源：" + json(regenerateRefs));
+  return { edit: sheetRefs.map((item) => item.uses.join("/")), regenerate: regenerateRefs.length };
 });
 
 /* ---------------------------------------------------------------- 运行器 */

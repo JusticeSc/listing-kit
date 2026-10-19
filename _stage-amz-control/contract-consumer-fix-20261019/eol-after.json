@@ -1,0 +1,30 @@
+[
+  {
+    "path": "app/product_v2/prompts.ts",
+    "bytes": 24404,
+    "sha256": "bc07173fa9fbaa711592f45e879540e0267d696c3c797f629c27809cbe66db9b",
+    "cr_bytes": 0,
+    "normalized_content_unchanged": true
+  },
+  {
+    "path": "app/product_v2/generation.ts",
+    "bytes": 100802,
+    "sha256": "dc790f819d10b72fb4df42a00de39d168891d187e251ee43d627719e6b8d6f9f",
+    "cr_bytes": 0,
+    "normalized_content_unchanged": true
+  },
+  {
+    "path": "app/product_v2/ui/input-view.ts",
+    "bytes": 156267,
+    "sha256": "a5e33a51d49d0b4c242e98955e6c9596507d24009dc70f5839ac7255d850dcc7",
+    "cr_bytes": 0,
+    "normalized_content_unchanged": true
+  },
+  {
+    "path": "app/product_v2/ui/compare-view.ts",
+    "bytes": 88670,
+    "sha256": "b561cb5acab386bce2c72e15b803eeece2cfec37b3b2119220f4bb39fce25c77",
+    "cr_bytes": 0,
+    "normalized_content_unchanged": true
+  }
+]

@@ -1,0 +1,55 @@
+{
+  "audit": "2026-10-19-current-batch-before-continuing",
+  "request": "现在什么情况，或许你可以先审计调整一番再继续",
+  "authority": "Existing complete-product authorization retained; audit does not reduce success criteria or activate paid allowance.",
+  "worktree": "amz-listing-kit-complete-product-15ab22",
+  "branch": "feat/complete-product-20261018",
+  "base_commit": "72c33df03514eaedd6f3e6efdf57236f26ada9f6",
+  "native_goal": {"id": "15ab22bf3386b9cf", "observed_status": "active", "objective_sha256": "6c1f59d0df5c6c867dac5aa090bb32ff915c7dfae2140494c653aab7598bf870", "changed": false},
+  "scope_observed": {"tracked_changed_files": 52, "new_source_files": ["tools/verify_v2_3_7_copy_adoption_chain.py", "tools/verify_v2_3_8_spec_save_occ.py"], "tracked_diff_insertions": 5764, "tracked_diff_deletions": 749, "raw_scope_artifacts": ["artifact://1021", "artifact://1094"], "boundary": "Scope captured before audit documentation corrections; untracked directory count is not a source-file count."},
+  "batch_reconciliation": {
+    "cap": 12,
+    "occupied": 4,
+    "prior_zero_with_uncommitted_work": "retracted",
+    "business_acceptance_B1_B3": "not accepted",
+    "rule": "Count implementation plus verification iterations even if failed or uncommitted; do not count every file, check or diagnostic command as a new batch.",
+    "iterations": [
+      {"n": 1, "scope": "Initial source/specification/frozen-reference and two-mode contract implementation plus affected verification", "evidence": ["_stage-amz-control/source-payload-contract-20261019/sweep-summary.txt", "_stage-amz-control/source-payload-contract-20261019/sweep2-summary.txt", "_stage-amz-control/test-domain.out"]},
+      {"n": 2, "scope": "Copy-proposal request contract repair plus page verification", "evidence": ["_stage-amz-control/copy-request-contract-20261019/verification.json"]},
+      {"n": 3, "scope": "Copy adoption/currentness contract repair plus full adoption page chain", "evidence": ["_stage-amz-control/copy-adoption-contract-20261019/verification.json"]},
+      {"n": 4, "scope": "Spec-save OCC user recovery repair plus two-tab page verification", "evidence": ["_stage-amz-control/spec-save-occ-20261019/verification.json"]}
+    ]
+  },
+  "reviews": {"standards": "history://BatchStandardsReview", "standards_followup": "BatchStandardsReview.txt", "specification": "BatchSpecReview.txt", "reviewers_ran_checks": false},
+  "reproduced_findings": [
+    {"id": "A1", "priority": "P1", "behavior": "keep_manual rework saves a manual Prompt lacking compiled.rework; generation's reread predicate cannot match it", "evidence": "owner-gap-observations.json", "boundary": "Actual prompt owner saved v3 with unchanged manual text and basis.rework, but compiled.rework null; generation predicate inspected in generation.ts:933-938. Full submit path not exercised by this audit."},
+    {"id": "A2", "priority": "P1", "behavior": "Manual edit of an edit-candidate rework Prompt compiles ordinary references while retaining edit lineage; write rejected for missing candidate first source", "evidence": "owner-gap-observations.json", "observed_writes_on_error": 0},
+    {"id": "A3", "priority": "P1", "behavior": "Legal existing v1 ShotSpec plus explicit per-shot reference selection is not upgraded and is rejected for reference_sha256s", "evidence": "owner-gap-observations.json", "boundary": "Seeded legal published v1 record in isolated repository; archived honey main shot had no spec and was not itself proof of this case. Do not claim all v2 fields always fail on v1.", "observed_writes_on_error": 0},
+    {"id": "A4", "priority": "P1", "behavior": "Evidence-supported top viewpoint passes compile but actual text is identical to inherited viewpoint and still says eye-level", "evidence": "expression-gap-observations.json"},
+    {"id": "A5", "priority": "P1", "behavior": "edit_candidate and regenerate_original freeze different reference arrays/modes but compile identical actual text with no image-role paragraph", "evidence": "expression-gap-observations.json"}
+  ],
+  "other_review_points": ["Explicit empty references are blocked with a misleading capacity/edit-source message instead of missing-product-evidence guidance (P2, static).", "Confirmation/Attempt payload versions differ from design §13.8; reconcile actual needed contract cutover before acceptance, not by blindly bumping constants."],
+  "executed_audit_checks": [
+    {"command": "uv run --locked pytest tests/dev/test_selfcheck_matrix.py -q", "rc": 0, "result": "33 passed in 8.06s; does not cover the five business failures"},
+    {"command": "node _stage-amz-control/resume-audit-20261019/reproduce-owner-gaps.mjs", "rc": 0, "result": "Three isolated actual-owner findings reproduced with explicit boundaries", "initial_fixture_result": "First run rc1: keep_manual mismatch observed; rework edit stopped earlier at fact quote validation; archived project lacked v1 spec. First observations preserved in owner-gap-observations-first.json; corrected fixture uses previously valid manual text and explicitly seeds published v1."},
+    {"command": "node _stage-amz-control/resume-audit-20261019/reproduce-expression-gaps.mjs", "rc": 0, "result": "Two prompt consumer gaps reproduced; no persistence or HTTP", "initial_fixture_result": "First run rc1 because cloned core_fixed slot used a new slot ID; corrected to product's actual user_custom reference-observation shape. Not a product failure or fix."}
+  ],
+  "verification_accounting_corrected": {
+    "adoption_sweep": "21 entries, all rc0, not 20",
+    "latest_occ_affected_sweep": "26 entries: 25 rc0, manual-edit reload navigation hidden timeout rc1",
+    "latest_summary": "_stage-amz-control/copy-adoption-contract-20261019/affected-sweep-summary-3_8.txt",
+    "wrapper_exit": "Loop scripts end with printf and do not aggregate failures; wrapper rc0 is not all-green proof",
+    "manual_reload_diagnostic": "Instrumentation-only later run passed (evals/product-v2/v2.3.6-prompt-manual-edit-20261019-074824.json); no failing-state capture, root cause or fix. Original failure remains unresolved.",
+    "earlier_rc1_with_pass_text": "Unsupported collection-issue explanation retracted; exit code remains failure",
+    "premature_full_regression": "WIP first round failed; second round not run; not B6 evidence"
+  },
+  "remaining_scope": {"B1_B3": "Implemented plumbing plus local successes, but five reproduced consumer failures and 2-adapter by 2-mode actual-transport proof missing", "B4": "Current surface still six stages; four-stage and actual long-content UX unaccepted", "B5": "Historical five adopted real images/two ZIPs retained; not evidence of new program prompt quality", "B6_B7": "Final same-candidate two full rounds and current-product protected release/recovery unaccepted"},
+  "adjustments": ["Existing state frontier changed from already-proven copy chain to actual owner/compiler failures; no new parallel plan", "Batch count 0 retracted and four actual iterations accounted", "Three existing verification records corrected without deleting original failures", "Plan's obsolete PR18-unmerged description corrected", "Existing issues 8/9 startup-gate and PR18-delivery paragraphs corrected only; no acceptance boxes checked"],
+  "resource_closeout": {"new_service": "current-batch-smoke-20261019 stopped", "new_browser_pid": 18808, "native_matching_processes_after_close": 0, "new_tabs": "Both released; spawning tab closed with kill:true", "preexisting_baseline_resources": "Unchanged; not claimed absent", "user_data": "No original project/asset/budget mutated; isolated profile retained"},
+  "paid_allowance_activated": false,
+  "new_paid_model_calls": 0,
+  "current_batch_commit_push_deploy": false,
+  "audit_product_fixes": "None; five findings are reproduced, not fixed",
+  "authority_validation": {"command": "uv run --locked python tools/check_docs.py --no-run && uv run --locked python tools/refactor_resume.py --json", "rc": 0, "output": "artifact://1145", "observed": "58/58 managed docs; cold recovery active/R4.4, same goal ID/objective SHA, read_only=true, blockers=[]; no claim that documentation examples were executed"},
+  "issue_exact_readback": {"evidence": "issue-readback.json", "8": true, "9": true, "acceptance_boxes_unchanged": true}
+}

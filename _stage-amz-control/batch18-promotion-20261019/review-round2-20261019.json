@@ -1,0 +1,256 @@
+{
+  "generated_at": "2026-10-19T23:07:11+0800",
+  "scope": "独立复核后的修复轮：V2.7.3 走查脚本判据改为用户可见优先；陈旧走查证据整批替换",
+  "independent_reviews": [
+    {
+      "agent": "RehearsalMigrationReview",
+      "verdict": "incorrect",
+      "blocking": [
+        "VLM 步骤只靠 IndexedDB 谓词、可见结果从未断言（旧读数 after_version=1/outcome=null 与截图矛盾）",
+        "已提交的走查证据不能代表已提交脚本"
+      ],
+      "minor": [
+        "整套检查跳转按钮未断言（V2.6.11 的历史红灯正是这条）",
+        "「跳转按钮=0」摘要行含义被误读为没有入口",
+        "timeline 把分析+36 轮确认都算进 plan",
+        "导出只做存在性检查（has_manifest 恒真），丢弃 digests/checks/broken",
+        "390px 只记录不断言；attempt_states 只记录不断言",
+        "confirm_slots 之后没有清零断言",
+        "返工候选未走采用/交付"
+      ]
+    },
+    {
+      "agent": "VerifyIntegrityReview",
+      "verdict": "correct（无阻断）",
+      "confirmed": [
+        "8 个验证器在 d0462ea→8eaecc6 之间没有任何 check id 消失（lost=[]），只新增 V2.4.4-03a",
+        "V2.2.2 的系统提示断言确实读的是真实出站 body（role=system 含身份回显与 60 字符规则），独立的 ReplayTransport 运行 echo=True"
+      ],
+      "caveats": [
+        "记录口径：这两条断言在 d0462ea 就已存在，本次提交对 2_2_2 的净效果只是补了说明注释（工作树草稿曾删掉，提交前恢复）——PR/状态里不再写「restored」",
+        "副条件 \"60\" 同时被内嵌 schema 的 maxLength 满足，真正有区分力的是身份回显那一句"
+      ],
+      "minors_fixed": [
+        {
+          "id": "MINOR-1",
+          "where": "tools/verify_v2_4_4_candidate_blob.py:966-988",
+          "issue": "-03a 只看第一张图，分不开「跟随正看图」与「固定第一张」",
+          "fix": "先切到第二张再读摘要，断言 viewed==[second_shot] 且单张范围就是它，随后切回第一张（-04/-05 读行投影需要正看）",
+          "rerun": "final4-verify_v2_4_4_candidate_blob.out rc=0 pass=15"
+        },
+        {
+          "id": "MINOR-2",
+          "where": "tools/verify_v2_2_3_intake_understanding.py:146-158,317-325",
+          "issue": "模型 id 泄漏判据在能力缺 model_id 时静默空转；主行文本包含按设计带 provider/model 的 .copy-proposals 行",
+          "fix": "-02 增断言 model_id 必须是非空字符串；主行克隆里剔除 .copy-proposals",
+          "rerun": "final3-verify_v2_2_3_intake_understanding.out rc=0 pass=26"
+        },
+        {
+          "id": "MINOR-3",
+          "where": "docs/product-v2-ui-contract.md:178",
+          "issue": "文档说范围行列「未选数量与原因」，产品行只列数量并指向发送摘要",
+          "fix": "改为「如实列出未选数量、并指明实发与排除原因见发送摘要」"
+        },
+        {
+          "id": "MINOR-4",
+          "where": "tools/verify_v2_5_4_rework_loop.py:323-324",
+          "issue": "注释仍说从产品模块读合同版本，与改后的字面量判据矛盾",
+          "fix": "注释改为「按登记字面量判、产品值只做交叉核对」"
+        }
+      ],
+      "not_changed": [
+        "MINOR-2 的第二半（-22 依赖 -23 之前的场景顺序）已按建议把 .copy-proposals 剔除，不再依赖顺序"
+      ]
+    }
+  ],
+  "fixes": [
+    {
+      "file": "tools/rehearse_v273_walkthrough.py",
+      "changes": [
+        "VLM 步骤改为用户可见优先：先等本图执行区主行出现「VLM 已检查」，再断言比较面板 [data-compare-vlm]=checked，库里的报告只作辅助核对",
+        "review_report 只在有 vlm 的行里取最新（旧实现会把确定性报告 vlm=null 当成复核结果）",
+        "整套检查入口断言 count==1 + 文案含「整套检查」+ 点击后 #suite-review-run 聚焦",
+        "导出解包逐条比对 manifest 声明 sha256/byte_size 与实际字节，broken 非空即失败",
+        "390px 四个阶段断言无横向溢出；批量提交后断言四张 attempt_states 全为 succeeded",
+        "事实确认后按产品自己的口径断言「必须确认的槽位 X / Y 已确认」并把剩余非必填槽位如实入证",
+        "返工后显式选新候选再采用，并断言交付包里的确是那张返工候选",
+        "timeline 把「资料与事实」与「方案」拆开；摘要行改名「逐图跳转按钮」并打印整套检查入口",
+        "首页建项目改为 fill + 点「新建项目」（盲打字实测被 lit 重渲染吞掉过一次）"
+      ]
+    }
+  ],
+  "own_rerun_findings": [
+    "旧证据的 after_version=1 与本次同过滤+同排序返回 [1,2]→2 矛盾：最可能是旧实现先过库谓词再读、读到了新报告落库前的行集合（竞态），不是脚本版本不一致（脚本 mtime 22:15 早于证据 22:19）",
+    "首轮失败 1：首页盲打字被重渲染吞键（输入框仍空）→ 改为 fill+点击",
+    "首轮失败 2：把「待处理 0 项」当成产品要求是错的——产品只拦关键槽位（必须确认的槽位 3 / 3 已确认），非必填 5 项可留空推进",
+    "首轮失败 3：把 [data-review-vlm] 当 VLM 结果也是错的——行上的 data-review-* 是确定性报告视图，outcome 挂在比较面板披露区"
+  ],
+  "evidence": {
+    "stamp": "v273-rehearsal-20261019-230004",
+    "json": "evals/product-v2/v273-rehearsal-20261019-230004.json",
+    "md": "evals/product-v2/v273-rehearsal-20261019-230004.md",
+    "screenshots": 21,
+    "timeline": [
+      {
+        "node": "home",
+        "seconds": 0.5
+      },
+      {
+        "node": "intake",
+        "seconds": 0.6
+      },
+      {
+        "node": "facts",
+        "seconds": 9.2,
+        "confirm_rounds": 36
+      },
+      {
+        "node": "plan",
+        "seconds": 0.9
+      },
+      {
+        "node": "make",
+        "seconds": 9.7
+      },
+      {
+        "node": "vlm-review",
+        "seconds": 0.5
+      },
+      {
+        "node": "rework",
+        "seconds": 1.1
+      },
+      {
+        "node": "adopt",
+        "seconds": 1.1
+      },
+      {
+        "node": "deliver",
+        "seconds": 2.3
+      }
+    ],
+    "vlm_review": {
+      "shot": "shot_main_clean",
+      "before_version": 1,
+      "after_version": 2,
+      "last_versions": [
+        1,
+        2
+      ],
+      "vlm_versions": [
+        2
+      ],
+      "compare_vlm_attr": "checked",
+      "compare_vlm_text": "视觉复核（按需发起）：已完成 · fake-qwen-vl-max",
+      "outcome": "checked",
+      "before_text": "自动检查 v2.5.2：阻断 0 · 高风险 0 · 提醒 1 · 未知 0 · VLM 未检查 · 先看：推荐长边 1600px — 最长边 1024px 低于推荐值 1600px（不阻断；需要最佳缩放时可提高生成尺寸）。",
+      "after_text": "自动检查 v2.5.2：阻断 0 · 高风险 2 · 提醒 1 · 未知 0 · VLM 已检查 · 先看：明显畸形 — 假数据（9e76d2b0）：杯口边缘出现第二道不自然的弧线。"
+    },
+    "intake_progress_text": "必须确认的槽位 3 / 3 已确认 · 待处理 5 项 · 共 11 项",
+    "intake_pending_rows": [
+      {
+        "slot": "color_summary",
+        "critical": "0",
+        "status": "missing"
+      },
+      {
+        "slot": "key_material",
+        "critical": "0",
+        "status": "missing"
+      },
+      {
+        "slot": "package_contents",
+        "critical": "0",
+        "status": "missing"
+      },
+      {
+        "slot": "size_dimensions",
+        "critical": "0",
+        "status": "missing"
+      },
+      {
+        "slot": "size_summary",
+        "critical": "0",
+        "status": "missing"
+      }
+    ],
+    "suite_jump": {
+      "text": "去运行整套检查",
+      "focused": "suite-review-run"
+    },
+    "export": {
+      "bytes": 43970,
+      "sha256": "79ebc0b1bb70fa3cbdbcfb7e1a61a35b840071b9c7c9d30d467fd20a34bb0c63",
+      "images": [
+        "images/shot_detail_material-act-03e9ebf240664dbc8ea3a25ab37ceef2.png",
+        "images/shot_infographic_benefits-act-67b9f11741ab483da1b828c4bfa26b3b.png",
+        "images/shot_main_clean-act-4b101d07e14e4ace827293831705e612.png",
+        "images/shot_scene_lifestyle-act-24743c11bf2244ff8b0fa085526407c4.png"
+      ],
+      "adopted_rework_image": "images/shot_main_clean-act-4b101d07e14e4ace827293831705e612.png",
+      "manifest_image_count": 4
+    },
+    "overflow": {
+      "overflow_intake_390": {
+        "scroll": 390,
+        "client": 390,
+        "current_visible": true
+      },
+      "overflow_plan_390": {
+        "scroll": 390,
+        "client": 390,
+        "current_visible": true
+      },
+      "overflow_make_390": {
+        "scroll": 390,
+        "client": 390,
+        "current_visible": true
+      },
+      "overflow_deliver_390": {
+        "scroll": 390,
+        "client": 390,
+        "current_visible": true
+      }
+    },
+    "errors": {
+      "console": [],
+      "page": [],
+      "http": []
+    },
+    "reference": {
+      "path": "../amz-listing-kit/_working/amz-listing-kit-product-demo/real-run-lamp/lamp-3m.jpg",
+      "sha256": "30c6042a7f7bdee442dda53659cc889ac8ce093d94d2924877e51aa491dc8092"
+    }
+  },
+  "replaced_evidence": {
+    "stamp": "v273-rehearsal-20261019-221928",
+    "reason": "该批证据的 vlm_review 读数与截图/脚本语义矛盾（见 own_rerun_findings 第一条），已从仓库删除并由 20261019-230004 取代",
+    "former_commit": "8eaecc6"
+  },
+  "known_gaps": [
+    "confirm_slots 仍会留下非必填槽位（本次 5 项），走查只断言关键槽位已确认",
+    "390px 只做布局快照、不做 390px 下的点击交互",
+    "项目包导入/导出、刷新恢复、比较面板左栏一次一图、单个必填图未采用的逐图门、Unknown 人工确认门仍未覆盖",
+    "走查仍是开发者自跑的内部预演（fake 通道、零模型调用），不构成 C15/C17 人工证据"
+  ],
+  "round3_reruns": [
+    {
+      "cmd": "uv run --locked python tools/verify_v2_4_4_candidate_blob.py",
+      "rc": 0,
+      "pass": 15,
+      "log": "_stage-amz-control/batch18-promotion-20261019/final4-verify_v2_4_4_candidate_blob.out"
+    },
+    {
+      "cmd": "uv run --locked python tools/verify_v2_2_3_intake_understanding.py",
+      "rc": 0,
+      "pass": 26,
+      "log": "_stage-amz-control/batch18-promotion-20261019/final3-verify_v2_2_3_intake_understanding.out"
+    },
+    {
+      "cmd": "uv run --locked python tools/verify_v2_5_4_rework_loop.py",
+      "rc": 0,
+      "pass": 30,
+      "log": "_stage-amz-control/batch18-promotion-20261019/final3-verify_v2_5_4_rework_loop.out"
+    }
+  ]
+}

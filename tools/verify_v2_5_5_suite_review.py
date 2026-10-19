@@ -38,6 +38,7 @@ MIME = {
     ".json": "application/json; charset=utf-8",
 }
 
+import v2_stage_nav as stage_nav  # noqa: E402  （B4 四段工作台导航）
 import v2_verify_shared as shared  # noqa: E402  （正式 server/夹具/共同业务操作）
 from v2_verify_shared import walk_to_adoption  # noqa: E402
 from v2_verify_shared import read_suite, start_product_server  # noqa: E402
@@ -137,6 +138,8 @@ def main() -> int:
             try:
                 page.goto(f"http://127.0.0.1:{port}/", wait_until="domcontentloaded")
                 shots = walk_to_adoption(page, "V255 一致性品", reference)
+                # 整套检查卡在交付阶段（B4）：先显式进交付再跑 AI/本地检查。
+                stage_nav.goto(page, "deliver")
                 # 新流程本地检查与 AI 复核分开（§14.8 按需）：先跑 AI（drift 场景 fake），再跑本地确定性检查。
                 page.click("#suite-ai-review-run")
                 page.wait_for_function(
@@ -211,16 +214,16 @@ def main() -> int:
                          stage: (document.querySelector('#stage-nav [data-stage-nav].is-current')
                            || {dataset:{}}).dataset.stageNav,
                          visible: !!document.querySelector(
-                           '#review-list .review-card[data-shot-id="' + shotId + '"]') })""",
+                           '#task-list-mount [data-task-shot="' + shotId + '"]') })""",
                     target_shot)
-                check("V2.5.5-06", "发现可跳转到对应图行",
-                      focused["stage"] == "review" and focused["visible"] is True,
+                check("V2.5.5-06", "发现可跳转到制作与审图的对应图行",
+                      focused["stage"] == "make" and focused["visible"] is True,
                       {"shot": target_shot, "focused": focused})
-                page.click('[data-stage-nav="plan"]')
+                stage_nav.goto(page, "plan")
                 first_shot = shots[0]
                 page.click(f'#shot-list .shot-row[data-shot-id="{first_shot}"] button:has-text("复制")')
                 page.wait_for_timeout(300)
-                page.click('[data-stage-nav="review"]')
+                stage_nav.goto(page, "deliver")
                 page.wait_for_timeout(300)
                 stale_status = page.evaluate(SUITE_STATUS)
                 page.click("#suite-review-run")
@@ -237,7 +240,7 @@ def main() -> int:
                       {"stale": stale_status, "rerun": rerun_status})
                 page.reload(wait_until="networkidle")
                 page.wait_for_selector("#project-view:not([hidden])", timeout=20_000)
-                page.click('[data-stage-nav="review"]')
+                stage_nav.goto(page, "deliver")
                 page.wait_for_timeout(500)
                 reload_status = page.evaluate(SUITE_STATUS)
                 reload_findings = page.evaluate(SUITE_FINDINGS)
@@ -266,6 +269,7 @@ def main() -> int:
             try:
                 page2.goto(f"http://127.0.0.1:{port2}/", wait_until="domcontentloaded")
                 walk_to_adoption(page2, "V255 失败演练品", reference)
+                stage_nav.goto(page2, "deliver")
                 # unknown 场景同样先跑 AI（落 UNKNOWN），再跑本地确定性检查。
                 page2.click("#suite-ai-review-run")
                 page2.wait_for_function(

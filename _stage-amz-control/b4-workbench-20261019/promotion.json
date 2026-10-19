@@ -1,0 +1,143 @@
+{
+  "authority": "NOT-AUTHORITY: which untracked evidence files this commit promotes and their exact bytes.",
+  "selected_by": "_working/amz-listing-kit-product-v2/state.md pointers + evals/product-v2/refactor/b1-b3-consumer-closure-20261019.json references; no whole-directory or -A add.",
+  "files": [
+    {
+      "path": "_stage-amz-control/full-product-start-20261018T140710Z/verification.json",
+      "crlf_normalized_cr_before": 0,
+      "sha256": "9ad04cd4dc4c6a770af3ce236798661ca5558eac40a0c70741749832d522f178"
+    },
+    {
+      "path": "_stage-amz-control/full-product-start-20261018T140710Z/pr18-merge-admission.json",
+      "crlf_normalized_cr_before": 0,
+      "sha256": "91c1a56f0670076357c849aa29f3f65959b857179308c15c99e173ce3136fa82"
+    },
+    {
+      "path": "_stage-amz-control/full-product-start-20261018T140710Z/pr18-merge-receipt.json",
+      "crlf_normalized_cr_before": 0,
+      "sha256": "98bd68d51a3b5a3036e93cc4207e9b2063850fd6884aa147ed4e158a43c7376e"
+    },
+    {
+      "path": "_stage-amz-control/full-product-start-20261018T140710Z/pr18-merged-main-run.json",
+      "crlf_normalized_cr_before": 0,
+      "sha256": "0382e14362709126148e5f1ad751643d97656487097527cd09d522fbd8fe227a"
+    },
+    {
+      "path": "_stage-amz-control/full-product-start-20261018T140710Z/pr18-main-release.json",
+      "crlf_normalized_cr_before": 0,
+      "sha256": "9fd1fa7db0c755d0a1897b53b382567dbe4cf5a3b25263be01a2909315cc82eb"
+    },
+    {
+      "path": "_stage-amz-control/full-product-start-20261018T140710Z/state-probe.json",
+      "crlf_normalized_cr_before": 0,
+      "sha256": "66e259fcabdc8340534fec1b8cbccbd6dbd40c330db91014dc3add6a23691a60"
+    },
+    {
+      "path": "_stage-amz-control/full-product-start-20261018T140710Z/binding-consumer-output.json",
+      "crlf_normalized_cr_before": 0,
+      "sha256": "af3db56430f3bbb7997b75619bb12a7abe14f189ed381d456643ddab6f973195"
+    },
+    {
+      "path": "_stage-amz-control/complete-product-authorization-20261018T114240Z/authorization.json",
+      "crlf_normalized_cr_before": 0,
+      "sha256": "460063f9561224682f063b8250d439e183ad25894e979f80b68afe640b9d5419"
+    },
+    {
+      "path": "_stage-amz-control/complete-product-authorization-20261018T114240Z/pr18-review-closeout.json",
+      "crlf_normalized_cr_before": 0,
+      "sha256": "3367e635fd19a1f0a545d89dfe4c3f76f4347960efe17ec3e8b3513378380360"
+    },
+    {
+      "path": "_stage-amz-control/main-merge-release-20261019/release.json",
+      "crlf_normalized_cr_before": 0,
+      "sha256": "9a4aa6d26c473eb56907e09d73d3ee8731ff2086a56320bb1f1b326a3d5baa51"
+    },
+    {
+      "path": "_stage-amz-control/main-merge-release-20261019/image.txt",
+      "crlf_normalized_cr_before": 0,
+      "sha256": "466c562722b01f10cae80a96d5e3e0d590d5963e9ba0b21315c4e2dc691f2136"
+    },
+    {
+      "path": "_stage-amz-control/main-merge-release-20261019/runtime-fingerprint.json",
+      "crlf_normalized_cr_before": 0,
+      "sha256": "bf74176d86bd31003ea7799e71e5a713e8d330103292eb090cf998f614325ef2"
+    },
+    {
+      "path": "_stage-amz-control/resume-audit-20261019/verification.json",
+      "crlf_normalized_cr_before": 0,
+      "sha256": "9c7d777724b3f124a8a461bb227313229d14ec1795a0591dd8ff11fd0d41701c"
+    },
+    {
+      "path": "_stage-amz-control/contract-consumer-fix-20261019/verification.json",
+      "crlf_normalized_cr_before": 0,
+      "sha256": "feec4f17e98be7a5f485b91b94fe533217e5b1abc192fc9d961458dbd0b57a93"
+    },
+    {
+      "path": "_stage-amz-control/consumer-cutover-20261019/verification.json",
+      "crlf_normalized_cr_before": 0,
+      "sha256": "7d138608d3ced41e9526ca9be2edc66f92f33207516c80c8aecefb50cf108951"
+    },
+    {
+      "path": "_stage-amz-control/handoff-hardening-20261018T132906Z/verification.json",
+      "crlf_normalized_cr_before": 0,
+      "sha256": "9aeee1a9717653852d5be2a0bdce3c16c4ee96cef5f4820248f382be49dee3d1"
+    },
+    {
+      "path": "_stage-amz-control/b1-b3-vertical-20261019/draft-pr-receipt.json",
+      "crlf_normalized_cr_before": 0,
+      "sha256": "50402f60c5c8c2ccf10ab12b68101f3ebf8387e9fc75fb440aacffe643051e42"
+    },
+    {
+      "path": "_stage-amz-control/b1-b3-vertical-20261019/eol-publication.json",
+      "crlf_normalized_cr_before": 0,
+      "sha256": "c7eb5d98e0913822f87d77e3cce70129af7cc52b6436499d24bf4dd6ab3500ca"
+    },
+    {
+      "path": "_stage-amz-control/b1-b3-vertical-20261019/overflow/causality.json",
+      "crlf_normalized_cr_before": 0,
+      "sha256": "a7df843082dafd25bf2d10d46bc1d9b1beb65c3a3c25e8074175607fe2954113"
+    },
+    {
+      "path": "_stage-amz-control/b1-b3-vertical-20261019/dimension-vertical/dimension-vertical-evidence.json",
+      "crlf_normalized_cr_before": 501,
+      "sha256_before": "b7de393a6274945571c119359a255165f5736c297748ada506e6e8cea386a349",
+      "sha256_after": "5ac70532480901526453ceddd8bd51b33c5cc55cd46eefd64744f8931a84ce65"
+    },
+    {
+      "path": "_stage-amz-control/b1-b3-vertical-20261019/adapter-mode-vertical/adapter-mode-smoke-20261019-132800.json",
+      "crlf_normalized_cr_before": 366,
+      "sha256_before": "18ed0f4c6c160c2cba219d8a9ad24feffd5b46feeb1b348a98611489c88656ae",
+      "sha256_after": "a3d2b18a0e45041c2371f6e8a719ac1ceaaec0cde0ef1ca65b648bce81132e7f"
+    },
+    {
+      "path": "_stage-amz-control/b1-b3-vertical-20261019/package-after.json",
+      "crlf_normalized_cr_before": 0,
+      "sha256": "4ae8309f21f388ae813468f53d4d80e954f53c8427378812107e482ef0baee8b"
+    },
+    {
+      "path": "_stage-amz-control/b1-b3-vertical-20261019/bearing-history-after.json",
+      "crlf_normalized_cr_before": 0,
+      "sha256": "cda1565fb0d251a3a8e48ef3084f0e2efec80b1c250f6a88ab66cc01426e9daa"
+    },
+    {
+      "path": "_stage-amz-control/b4-workbench-20261019/budget-activation.json",
+      "crlf_normalized_cr_before": 0,
+      "sha256": "6bd9e3dc24cb3f4e3bcde6099f97194ba43544cb3e8631cc2c45f04b8c017114"
+    },
+    {
+      "path": "_stage-amz-control/b4-workbench-20261019/sealed-budget-ledger.json",
+      "crlf_normalized_cr_before": 0,
+      "sha256": "4aa0f8b585395986b85d013a6acf63e70f6035eb8254ea94483c275eac1820dc"
+    },
+    {
+      "path": "_stage-amz-control/b4-workbench-20261019/before/budget-ledger-working-pre-activation.json",
+      "crlf_normalized_cr_before": 0,
+      "sha256": "f01a7f44e7ca82b9f81a53de515608b2dfbf50348dd911621eb878df9cb5d3f6"
+    },
+    {
+      "path": "evals/product-v2/v2.7.1-regression-20261019-121022-final.json",
+      "crlf_normalized_cr_before": 0,
+      "sha256": "b794d99314bd08ea58c033c0641c23283b9da94955be4e36729167d704170563"
+    }
+  ]
+}

@@ -193,6 +193,43 @@ def dimension_list_problem(value: Any) -> str | None:
             seen.add(key)
     return None
 
+class CopyProposalTarget(BaseModel):
+    """文案提议目标：精确到某个已确认事实槽位的版本（版本变了提议即过期）。
+
+    请求里只带槽位身份与该版本的值快照：服务端不读项目库，拿到什么字就为这版字提议。
+    客户端有责任只从 confirmed 且版本一致的槽位取快照；版本/值对不上时服务端拒绝，
+    更不允许模型输出里改写 slot_id/version（那是归一化字段，只能原样回显请求）。"""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    slot_id: str = Field(pattern=SLOT_ID_PATTERN.pattern)
+    version: int = Field(ge=1)
+    label: str = Field(min_length=1, max_length=60)
+    value_type: Literal["text", "text_list"]
+    value: str | list[str]
+
+    @field_validator("value")
+    @classmethod
+    def _value_shape(cls, value: str | list[str], info: Any) -> str | list[str]:
+        value_type = (info.data or {}).get("value_type")
+        if value_type == "text":
+            if not isinstance(value, str) or value.strip() == "" \
+                    or len(value) > MAX_TEXT_VALUE_LENGTH:
+                raise ValueError(f"text 快照必须是非空字符串（≤{MAX_TEXT_VALUE_LENGTH} 字符）。")
+            return value
+        if value_type == "text_list":
+            if not isinstance(value, list) or not value:
+                raise ValueError("text_list 快照必须是非空数组。")
+            for item in value:
+                if not isinstance(item, str) or item.strip() == "" \
+                        or len(item) > MAX_TEXT_VALUE_LENGTH:
+                    raise ValueError(f"text_list 元素必须是非空字符串（≤{MAX_TEXT_VALUE_LENGTH} 字符）。")
+            return value
+        raise ValueError("value_type 只接受 text / text_list（文案提议不碰数字与结构化尺寸）。")
+
+
+MAX_COPY_TARGETS = 4
+
 
 class ReferencedAsset(BaseModel):
     """调用方明确告知的一张参考图（只带元数据，不带本机路径）。"""
@@ -214,6 +251,7 @@ MAX_VISION_BASE64_CHARS = 6 * 1024 * 1024
 VISION_IMAGE_ROLES = ("primary", "detail", "packaging", "scene", "competitor", "other")
 ANALYZE_BASE_FIELDS = ("product_name", "description", "selling_points", "focus", "references",
                         "locale", "platform", "max_slots", "existing_slot_ids")
+ANALYZE_COPY_FIELDS = ANALYZE_BASE_FIELDS + ("copy_targets",)
 
 class VisionReferenceImage(BaseModel):
     """一次看图理解送模型的参考图：内容身份（sha256）+ 严格 base64 字节；服务端解码后复算哈希。"""
@@ -290,11 +328,13 @@ class SemanticRequest(BaseModel):
     description: str = Field(default="", max_length=MAX_DESCRIPTION_LENGTH)
     selling_points: tuple[str, ...] = Field(default=(), max_length=MAX_LIST_ITEMS)
     focus: str = Field(default="", max_length=MAX_FOCUS_LENGTH)
-    references: tuple[ReferencedAsset, ...] = Field(min_length=1, max_length=MAX_REFERENCES)
+    # 事实理解至少需要一张参考图；文案提议只看文字，允许为空（见 _copy_targets_unique）。
+    references: tuple[ReferencedAsset, ...] = Field(default=(), max_length=MAX_REFERENCES)
     locale: str = Field(default="zh-CN", min_length=2, max_length=35)
     platform: str = Field(default="amazon_us", min_length=2, max_length=40)
     max_slots: int = Field(default=12, ge=1, le=MAX_SLOTS)
     existing_slot_ids: tuple[str, ...] = Field(default=(), max_length=MAX_SLOTS)
+    copy_targets: tuple[CopyProposalTarget, ...] = Field(default=(), max_length=MAX_COPY_TARGETS)
 
     @field_validator("product_name")
     @classmethod
@@ -318,6 +358,19 @@ class SemanticRequest(BaseModel):
             if not SLOT_ID_PATTERN.match(item):
                 raise ValueError("existing_slot_ids 项必须是合法 slot_id。")
         return value
+
+    @model_validator(mode="after")
+    def _copy_targets_unique(self) -> Self:
+        seen: set[str] = set()
+        for target in self.copy_targets:
+            if target.slot_id in seen:
+                raise ValueError("copy_targets 里同一个 slot_id 只能出现一次。")
+            seen.add(target.slot_id)
+        # 文案提议只看已确认的中文值（服务端另行拒绝携带图片字节）：这类请求不带参考图元数据，
+        # 因此 references 可以为空；事实理解仍必须至少有一张参考图。
+        if not self.copy_targets and not self.references:
+            raise ValueError("事实理解至少需要一张参考图（references 至少 1 项）。")
+        return self
 
 
 # ---------------------------------------------------------- 模型原始输出（RawProposal）
@@ -413,6 +466,38 @@ class RawProposal(BaseModel):
         return value
 
 
+MAX_COPY_TEXT_LENGTH = 60
+
+
+class RawCopyProposal(BaseModel):
+    """模型为单个事实槽位给出的英文上图候选。
+
+    slot_id/version 只能原样回显请求里的 copy_targets：模型不许改身份、不许增目标。
+    text 只是提议：浏览器侧仍要人工逐条确认后才可能写入 on_image_texts。"""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    text: str = Field(min_length=1, max_length=MAX_COPY_TEXT_LENGTH)
+    slot_id: str = Field(pattern=SLOT_ID_PATTERN.pattern)
+    version: int = Field(ge=1)
+
+    @field_validator("text")
+    @classmethod
+    def _text_not_blank(cls, value: str) -> str:
+        if value.strip() == "":
+            raise ValueError("候选文案不能只有空白字符。")
+        return value
+
+
+class RawCopyResponse(BaseModel):
+    """文案提议模式的全部原始输出。这是第二种结构化输出目标，与 RawProposal 二选一。"""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    summary: str = Field(default="", max_length=300)
+    copy_proposals: tuple[RawCopyProposal, ...] = Field(min_length=1, max_length=MAX_COPY_TARGETS)
+
+
 # ------------------------------------------------------- 校验错误 → 分类失败
 
 def _loc_path(loc: Sequence[Any]) -> str:
@@ -492,6 +577,55 @@ def parse_proposal(payload: RawProposal | Mapping[str, Any] | str | bytes) -> Ra
                                details={"problems": problems_from_validation(error)}) from None
 
 
+def parse_copy_response(payload: RawCopyResponse | Mapping[str, Any] | str | bytes) -> RawCopyResponse:
+    """把文案提议模式的模型输出变成已校验的原始响应；失败即 INVALID_RESPONSE，整包拒绝。"""
+
+    if isinstance(payload, RawCopyResponse):
+        payload = payload.model_dump()
+    if isinstance(payload, (str, bytes)):
+        text = payload.decode("utf-8", "replace") if isinstance(payload, bytes) else payload
+        try:
+            payload = json.loads(text)
+        except ValueError as error:
+            raise invalid_response("模型输出不是合法 JSON；整包拒绝。",
+                                   details={"problems": problems_from_validation(error),
+                                            "chars": len(text)}) from None
+    if not isinstance(payload, Mapping):
+        raise invalid_response("模型输出的顶层不是对象；整包拒绝。")
+    try:
+        return RawCopyResponse.model_validate(dict(payload))
+    except ValidationError as error:
+        raise invalid_response("模型输出未通过文案结构契约；整包拒绝。",
+                               details={"problems": problems_from_validation(error)}) from None
+
+
+def to_copy_proposals(response: RawCopyResponse, request: SemanticRequest) -> tuple[dict[str, Any], ...]:
+    """文案响应 → CopyProposal 形状：只回显请求里真实出现过的 (slot_id, version)。
+
+    模型不许改身份、不许增目标、不许一槽多候选：任何越界即整包拒绝，绝不截断或清洗。"""
+
+    wanted = {(target.slot_id, target.version) for target in request.copy_targets}
+    if not wanted:
+        raise invalid_response("本次请求没有文案提议目标；拒绝凭空产生的候选文案。")
+    seen: set[tuple[str, int]] = set()
+    proposals: list[dict[str, Any]] = []
+    for index, raw in enumerate(response.copy_proposals):
+        identity = (raw.slot_id, raw.version)
+        if identity not in wanted:
+            raise invalid_response("候选文案的来源身份不在本次请求目标内；整包拒绝。",
+                                   details={"slot_id": raw.slot_id, "index": index})
+        if identity in seen:
+            raise invalid_response("同一个来源只能有一条候选文案；整包拒绝。",
+                                   details={"slot_id": raw.slot_id, "index": index})
+        seen.add(identity)
+        proposals.append({
+            "text": raw.text,
+            "source_slot_id": raw.slot_id,
+            "source_slot_version": raw.version,
+        })
+    return tuple(proposals)
+
+
 def to_fact_slots(proposal: RawProposal, request: SemanticRequest, *,
                   model_id: str) -> tuple[dict[str, Any], ...]:
     """提案 → FactSlot 形状；超上限/重复身份直接失败，绝不截断或去重掩盖。"""
@@ -534,7 +668,10 @@ def to_fact_slots(proposal: RawProposal, request: SemanticRequest, *,
 
 @dataclass(frozen=True)
 class SemanticProposal:
-    """已通过结构校验的提案包；写入项目仍由浏览器侧 domain 契约决定。"""
+    """已通过结构校验的提案包；写入项目仍由浏览器侧 domain 契约决定。
+
+    事实提案与文案提议二选一：copy_proposals 非空时 slots 必须为空，反之亦然；
+    两种产出不混装，调用方按请求里有没有 copy_targets 决定走哪条结构化输出。"""
 
     slots: tuple[dict[str, Any], ...]
     questions: tuple[str, ...]
@@ -547,24 +684,32 @@ class SemanticProposal:
     inputs_used: tuple[str, ...] = ("product_input",)
     reference_images_sent: bool = False
     attempts: int = 1
+    copy_proposals: tuple[dict[str, Any], ...] = ()
+
+    def __post_init__(self) -> None:
+        if self.copy_proposals and self.slots:
+            raise ValueError("事实提案与文案提议不能混装在一次响应里。")
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        payload: dict[str, Any] = {
             "semantic_contract": SEMANTIC_CONTRACT_VERSION,
             "slots": [dict(slot) for slot in self.slots],
             "questions": list(self.questions),
             "summary": self.summary,
-            "meta": {
-                "provider_id": self.provider_id,
-                "model_id": self.model_id,
-                "request_id": self.request_id,
-                "usage": dict(self.usage),
-                "latency_ms": self.latency_ms,
-                "inputs_used": list(self.inputs_used),
-                "reference_images_sent": self.reference_images_sent,
-                "attempts": self.attempts,
-            },
         }
+        if self.copy_proposals:
+            payload["copy_proposals"] = [dict(item) for item in self.copy_proposals]
+        payload["meta"] = {
+            "provider_id": self.provider_id,
+            "model_id": self.model_id,
+            "request_id": self.request_id,
+            "usage": dict(self.usage),
+            "latency_ms": self.latency_ms,
+            "inputs_used": list(self.inputs_used),
+            "reference_images_sent": self.reference_images_sent,
+            "attempts": self.attempts,
+        }
+        return payload
 
 
 # ------------------------------------------------------------ 错误分类
@@ -826,6 +971,47 @@ def check_proposal(slots: Sequence[Mapping[str, Any]], *,
                 _problem(problems, f"$.slots[{index}].slot_id",
                          "同一个 slot_id 不能在一次提案里出现两次。")
             seen.add(slot_id)
+    return problems
+
+def check_copy_proposal(item: Mapping[str, Any]) -> list[dict[str, Any]]:
+    """单条候选文案的消费侧形状：浏览器侧 readProposal 的 Python 镜像。"""
+
+    problems: list[dict[str, Any]] = []
+    if not isinstance(item, Mapping):
+        _problem(problems, "$", "候选文案必须是对象。")
+        return problems
+    text = item.get("text")
+    if not _is_non_empty_str(text) or len(str(text)) > MAX_COPY_TEXT_LENGTH:
+        _problem(problems, "$.text", f"候选文案必须是非空字符串（≤{MAX_COPY_TEXT_LENGTH} 字符）。")
+    slot_id = item.get("source_slot_id")
+    if not isinstance(slot_id, str) or not SLOT_ID_PATTERN.match(slot_id):
+        _problem(problems, "$.source_slot_id", "来源槽位标识不合法。")
+    version = item.get("source_slot_version")
+    if not isinstance(version, int) or isinstance(version, bool) or version < 1:
+        _problem(problems, "$.source_slot_version", "来源版本必须是正整数。")
+    return problems
+
+
+def check_copy_proposals(proposals: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    """整包候选文案的集合级校验：数量上限、来源不重复。"""
+
+    problems: list[dict[str, Any]] = []
+    if not isinstance(proposals, (list, tuple)):
+        _problem(problems, "$.copy_proposals", "copy_proposals 必须是数组。")
+        return problems
+    if len(proposals) > MAX_COPY_TARGETS:
+        _problem(problems, "$.copy_proposals", f"候选文案最多 {MAX_COPY_TARGETS} 条。")
+    seen: set[tuple[str, int]] = set()
+    for index, item in enumerate(proposals):
+        for entry in check_copy_proposal(item if isinstance(item, Mapping) else {}):
+            problems.append({"path": f"$.copy_proposals[{index}]{entry['path'][1:]}",
+                             "message": entry["message"]})
+        if isinstance(item, Mapping):
+            identity = (str(item.get("source_slot_id")), item.get("source_slot_version"))
+            if identity in seen:
+                _problem(problems, f"$.copy_proposals[{index}].source_slot_id",
+                         "同一个来源只能有一条候选文案。")
+            seen.add(identity)
     return problems
 
 

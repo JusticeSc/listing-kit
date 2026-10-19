@@ -1,0 +1,167 @@
+{
+  "action_id": "act-acf1252b310b48348519cf07d981cfab",
+  "submit_count": 1,
+  "submit_http_statuses": [
+    200
+  ],
+  "attempt_states": [
+    "pending_submit",
+    "submitted",
+    "succeeded"
+  ],
+  "attempt_versions": [
+    7,
+    8,
+    9
+  ],
+  "final_attempt": {
+    "document_key": "e1a71503-a3db-4035-96b1-b9cd292459b5:generation_attempt:shot_main_clean:9",
+    "project_id": "e1a71503-a3db-4035-96b1-b9cd292459b5",
+    "kind": "generation_attempt",
+    "document_id": "shot_main_clean",
+    "version": 9,
+    "schema_version": 1,
+    "payload": {
+      "schema_version": 2,
+      "action_id": "act-acf1252b310b48348519cf07d981cfab",
+      "shot_id": "shot_main_clean",
+      "state": "succeeded",
+      "prompt": {
+        "version": 5,
+        "hash": "f5754b976c6d9ddcb27ca29f4e054beb942e3ef804dfaff953e70ba06f4f6a3f"
+      },
+      "references": [
+        {
+          "role": "other",
+          "sha256": "aacabc44f2d0a8de265b8f1e0a0ff05cd9c70285cd4ed704fc04fb7a9f0e00db"
+        },
+        {
+          "role": "primary",
+          "sha256": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461"
+        }
+      ],
+      "provider": {
+        "provider_id": "fake-qwen-image",
+        "model_id": "qwen-image-3.0"
+      },
+      "execution_identity": {
+        "schema_version": 1,
+        "protocol": "v2.4.1",
+        "capability_version": 3,
+        "credential_reference": {
+          "source": "test_double"
+        },
+        "sync": false
+      },
+      "authorization": {
+        "document_id": "rework:shot_main_clean",
+        "version": 2,
+        "hash": "5e8cfe05810a560bf9151d4bc9946ea52fc7c7ebee9997e98454b45efb861046"
+      },
+      "parameters": {
+        "size": "1344*1344",
+        "n": 1,
+        "prompt_extend": false,
+        "watermark": false
+      },
+      "task_id": "fake-cda2c0127b4f8c32",
+      "request_id": null,
+      "error": null,
+      "created_at": "2026-10-19T01:32:01.251Z",
+      "updated_at": "2026-10-19T01:32:01.698Z",
+      "change_log": [
+        {
+          "at": "2026-10-19T01:32:01.251Z",
+          "via": "user",
+          "from": null,
+          "to": "pending_submit",
+          "note": "用户一次授权的原队列提交"
+        },
+        {
+          "at": "2026-10-19T01:32:01.680Z",
+          "via": "submit",
+          "from": "pending_submit",
+          "to": "submitted",
+          "note": "上游已受理（RUNNING）"
+        },
+        {
+          "at": "2026-10-19T01:32:01.698Z",
+          "via": "query",
+          "from": "submitted",
+          "to": "succeeded",
+          "note": "上游已完成"
+        }
+      ]
+    },
+    "created_at": "2026-10-19T01:32:01.698Z",
+    "updated_at": "2026-10-19T01:32:01.698Z"
+  },
+  "candidate": {
+    "document_key": "e1a71503-a3db-4035-96b1-b9cd292459b5:candidate:shot_main_clean:3",
+    "project_id": "e1a71503-a3db-4035-96b1-b9cd292459b5",
+    "kind": "candidate",
+    "document_id": "shot_main_clean",
+    "version": 3,
+    "schema_version": 1,
+    "payload": {
+      "schema_version": 1,
+      "candidate_id": "act-acf1252b310b48348519cf07d981cfab",
+      "shot_id": "shot_main_clean",
+      "action_id": "act-acf1252b310b48348519cf07d981cfab",
+      "task_id": "fake-cda2c0127b4f8c32",
+      "sync": false,
+      "asset_sha256": "7da2cff2b2c2a6f084dcd13783d53f24ffeeb8e26103d8d2a51e5a5323d44dc5",
+      "media_type": "image/png",
+      "byte_size": 6851,
+      "width": 1200,
+      "height": 1200,
+      "provider": {
+        "provider_id": "fake-qwen-image",
+        "model_id": "qwen-image-3.0"
+      },
+      "created_at": "2026-10-19T01:32:01.733Z"
+    },
+    "created_at": "2026-10-19T01:32:01.734Z",
+    "updated_at": "2026-10-19T01:32:01.734Z"
+  },
+  "prompt_version": 5,
+  "prompt_origin": "manual_edit",
+  "prompt_hash": "f5754b976c6d9ddcb27ca29f4e054beb942e3ef804dfaff953e70ba06f4f6a3f",
+  "manual_text_preserved": true,
+  "preview_and_wire_text_match": true,
+  "frozen_mode": "edit_candidate",
+  "frozen_references": [
+    {
+      "role": "other",
+      "sha256": "aacabc44f2d0a8de265b8f1e0a0ff05cd9c70285cd4ed704fc04fb7a9f0e00db",
+      "uses": [
+        "edit_source"
+      ],
+      "sources": [
+        {
+          "kind": "candidate",
+          "document_id": "shot_main_clean",
+          "version": 2,
+          "asset_sha256": "aacabc44f2d0a8de265b8f1e0a0ff05cd9c70285cd4ed704fc04fb7a9f0e00db"
+        }
+      ]
+    },
+    {
+      "role": "primary",
+      "sha256": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461",
+      "uses": [
+        "product_truth"
+      ],
+      "sources": [
+        {
+          "kind": "product_input",
+          "document_id": "intake",
+          "version": 2,
+          "asset_sha256": "c024b7cf2b04d39601a5146664879a5aff8d3fe4cb98b4990bda4c3ae6594461"
+        }
+      ]
+    }
+  ],
+  "instrumentation_error": "Waiting failed: 20000ms exceeded",
+  "instrumentation_explanation": "The wait compared data-compare-action, which is the stable shot ID, not an action ID. No resubmission; the correlated persisted attempt and candidate prove the terminal result."
+}

@@ -1,0 +1,21 @@
+Read-only review complete — findings below (no builds/tests run; none claimed).
+
+Finding: Compile the explicitly chosen viewpoint into the prompt text
+Spec §13.4.2 defines `viewpoint` as a presentation decision ("单图显式选择正/侧/顶视时逐图检查支持依据"), and §13.5 says `compile/compileAndSave/requestSnapshotOf` consume structure decisions. Implementation: prompt.js:263-272 only validates evidence for a non-default viewpoint; nothing else consumes it. The text block at prompt.js:1041-1062 emits lines solely for `appearance_state`/`contents_state`, and the only view sentence is the static role brief injected at 1104-1106 (main, line 291: "视角：沿用商品依据里可见的视角平视拍摄，不虚构背面、内部或未见的部件。"). Trigger: user selects 顶视 with a supporting photo; the gate passes, the compiled text is byte-identical to 沿用可见视角 — for main it still says 平视拍摄 — while basis/snapshot record the decision. The model returns the original view; frozen records claim otherwi…
+Priority 1, confidence 0.85 — app/product_v2/domain/prompt.js:263-272
+
+Finding: Compile per-image roles/order for the two rework modes
+B3 claims "实际图序用于编译"; design §13.6 and §13.14.5 require the body to name roles ("图1是本次要修的候选…图2是商品原照"，不得在原正文后叠一句"修改图1"). Implementation: compilePrompt consumes `input.references` only for the viewpoint gate (prompt.js:1030-1032). The rework section 1137-1140 is mode-agnostic, and fidelity (line 1037) calls every image "提供的商品参考图…保持…不变". For one directive, edit_candidate and regenerate_original compile identical text; the model receives [candidate, originals] with no statement of which image is the fix target, while snapshot/basis assert the mode. Edit requests degrade; fidelity line 1037 also contradicts the requested change. Fix seam: in the rework section compile an image-role paragraph from the frozen order for edit_candidate (and no candidate language for …
+Priority 1, confidence 0.8 — app/product_v2/domain/prompt.js:1030-1032
+
+Finding: Report missing product evidence when a shot explicitly selects no references
+The comment at prompt.js:1422-1423 says explicit `reference_sha256s: []` is left for the compile/consume gate to block as "缺商品原照依据", but selectReferences returns the empty list at 1428, skipping the product_truth check at 1431-1433. The block then comes from requestSnapshotOf (1619-1620) using the capacity message (1325-1326: "实际参考图必须是 1..3 张；编辑源占一张…"). The UI "明确不选" path (input-view.ts:2786-2787) therefore shows a misleading over-capacity/edit-source hint; regenerate_original with no selected evidence hits the same path, while edit mode gets the correct message. Fix seam: when explicitEmpty, invalid with the missing-product-evidence message instead of returning [].
+Priority 2, confidence 0.8 — app/product_v2/domain/prompt.js:1420-1429
+
+Reviewed scope (read-only): diff vs 72c33df for domain/{specs,prompt,rework,confirm}.js, type-contracts.d.ts, semantic-analysis.ts, prompts.ts, generation rework/confirm/submit paths, storage/{package-schema,repository}.js, input-view/compare-view wiring; design §13.4–13.9/13.13–13.16; plan §17 B1–B3. Seen as implemented but unexecuted by me: v2 on_image_texts source/status/currentness gates + measurement index/object/axis/value/unit/source_basis equality and canonical text; main-image print block (prompt.js:191-198); schema bumps with v1 read branches and import gate rejecting only declared>max or attempt<2; mode/lineage plumbing (generation.ts:718-728, 805-810; repository.js:494-536). Unproven in batch evidence (parent-inspected, not me): two-mode × two-ad…
+
+overall_correctness: incorrect
+explanation: B1–B3 plumbing is largely present, but two P1 consumption gaps mean user decisions (viewpoint; edit vs regenerate) do not reach the model text while records claim they did, plus one P2 misattributed block message.
+confidence: 0.8
+
+[Some lines truncated to 768 chars. Use agent://BatchSpecReview:raw:4-4 to read line 4 whole; cut lines run to line 15, each read the same way]

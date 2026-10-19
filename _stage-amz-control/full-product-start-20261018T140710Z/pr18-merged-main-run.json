@@ -1,0 +1,25 @@
+{
+  "observed_at": "2026-10-18T14:29:56.794Z",
+  "pr": {
+    "headRefOid": "0ae7df59ff8e41e776195169ce8814f2699db45b",
+    "mergeCommit": {
+      "oid": "72c33df03514eaedd6f3e6efdf57236f26ada9f6"
+    },
+    "mergedAt": "2026-10-18T14:29:26Z",
+    "state": "MERGED",
+    "url": "https://github.com/JusticeSc/listing-kit/pull/18"
+  },
+  "runs": [
+    {
+      "conclusion": "",
+      "databaseId": 39136220536,
+      "event": "push",
+      "headSha": "72c33df03514eaedd6f3e6efdf57236f26ada9f6",
+      "status": "in_progress",
+      "url": "https://github.com/JusticeSc/listing-kit/actions/runs/39136220536",
+      "workflowName": "Product V2 CI and Docker CD"
+    }
+  ],
+  "run_query_exit": 0,
+  "run_query_stderr": ""
+}

@@ -1,0 +1,46 @@
+{
+  "authority": "NOT-AUTHORITY; scoped implementation handoff, authoritative requirements remain design section 13 and issues 8/9",
+  "root": "E:/workbuddy_workspace/2026-09-20-16-38-19/amz-listing-kit-complete-product-15ab22",
+  "goal": "Complete Product V2, native Goal 15ab22bf3386b9cf; B4 is not product completion",
+  "batch": "7/12 only when implementation actually starts; prior 6 occupied are preserved",
+  "navigation": {
+    "ids": ["intake", "plan", "make", "deliver"],
+    "labels": ["资料与事实", "方案", "制作与审图", "交付"],
+    "cutover": "Migrate every live caller and current verifier. Remove old understand/generate/review stage ids, old next-review transition and duplicate review list. No aliases/shims. Domain states such as understanding/generation/review retain their actual business meaning."
+  },
+  "ownership": {
+    "FourStageWorkspace": ["index.html", "ui/stage-shell.js", "workspace.js", "ui/input-view.ts stage calls only", "ui/delivery-view.ts stage calls only", "ui/generation-view.ts", "generation.ts selected initial scope only", "affected existing Node tests owned by this slice"],
+    "CompareWorkbench": ["ui/compare-view.ts", "styles.css", "affected existing compare Node tests owned by this slice"],
+    "StageConsumers": ["tools/v2_stage_nav.py", "current registered verifier and harness stage navigation/selectors", "no product source or Node test behavior owned by other slices"],
+    "parent": ["authority docs/state", "integration", "actual browser evidence", "commits and PR"]
+  },
+  "dom": {
+    "workbench": "Keep .review-workbench grid, .review-task-list aside and .review-detail main classes to provide one stable layout seam. Aside contains #task-list-mount exclusively owned by generation-view; delete #review-list-mount and old review-card list.",
+    "single_detail": "Main contains existing #compare-panel, existing #rework-panel, plus #shot-execution for generation-view's selected-shot execution/Unknown/reconcile/diagnostics only, and nearby error mount. No duplicate full-shot cards.",
+    "batch": "Existing #attempt-editor remains the global batch/status/queue root, not a second task list. Prompt advanced details and actual sending summary remain reachable in make; ordinary default actions do not require advanced prompt editing.",
+    "narrow": "At <=900px use labeled native single-shot selector instead of stacked full task cards; same selection/detail state. Preserve explicit batch checkboxes/range while changing viewed shot.",
+    "scope_controls": "Use #make-mode-single and #make-mode-batch for explicit mode; input[data-batch-shot] value=shotId for batch range; #make-shot-select for narrow viewed-shot selection; [data-view-shot] value=shotId (or data attribute containing exact id) for desktop task selection. #generation-scope-count reports actual chosen count. These are UI seams for current real consumer walkthroughs, not alternate submission APIs."
+  },
+  "view_contract": {
+    "compare": "CompareView continues openCompare(shotId, options), isComparing(shotId), renderCompare() but supports planned ungenerated shots with honest empty detail. Add currentShotId(): string|null and hasUnsavedDrafts(): boolean. Add required deps.onViewedShotChanged(shotId) signal only when actual viewed shot changes, including first stable choice; workspace wires to GenerationView.onViewedShotChanged(shotId). Delete renderReviewList(), reviewList element and old duplicate card machinery; delete public renderSelectionProgress() if obsolete and migrate callers. Adoption progress/status/error live in detail, not another list. On first valid plan choose a stable first viewed shot; later result arrivals never choose a different viewed shot/candidate.",
+    "generation": "GenerationView is the unique task-list owner. Add taskList and shotExecution elements and onViewedShotChanged(shotId). Use deps.viewedShotId() and existing deps.openCompare() for selection. Remove old renderSelectionProgress callback. Task row shows one thumbnail, human label/purpose and only current high-priority execution/selection state; single/multi scope explicitly independent of viewed item. No old full attempt cards for every shot.",
+    "scope": "Default single-image sending scope tracks the explicitly viewed shot, not all planned images. Explicit batch mode shows checkboxes and counts. Add only a narrow owner command setInitialScope(shotIds: readonly string[]) to set initial chosen shot ids; actual initial eligible queue intersection and prepare/confirm/revalidate/reserve/submit stay in generation owner. Keep failed_retry and explicit_new semantics unchanged; routine rerenders must not reset their mode. Only explicit viewed-shot changes in single mode or explicit range/mode changes choose a new initial scope. Empty chosen range never falls back to all. Summary must show chosen/blocked/excluded truth and current count; no POST from mode/range changes.",
+    "refresh": "Workspace beforeunload protection combines actual unsaved compare drafts with existing genuinely dirty prompt/fact drafts. Never compare old DOM against newly persisted system text. Project switch and close preserve current explicit confirmation behavior. Keyboard selection must not nest interactive controls inside another button.",
+    "coordination": "Workspace owner wires the specified API. If a seam needs change, message the other owner and parent before using a different signature; only the assigned owner edits a shared file."
+  },
+  "compare_behavior": [
+    "Default left is product reference, right is exactly the viewed candidate. History changes left only and does not replace right, adopted image, problem candidate or actual model input. Do not reserve a permanently empty third image column.",
+    "Adjacent rework modifies the fixed candidate reference and has explicit edit_candidate(default) versus regenerate_original choice, truthful source/order and manual-wholetext choice. Do not derive source from selected adoption, latest candidate, history baseline or candidate id alone.",
+    "Draft key includes project, shot, exact candidate version/hash and mode. Explicit restore selector identifies the owning candidate/mode. Typed problems/direction retain insertion point, focus and values while late results/report updates rerender. Cancellation returns to original visible trigger without stealing later focus.",
+    "No fresh model calls, storage migrations or new persistence abstraction. Use existing compare/selection/generation owners and plain private view state."
+  ],
+  "layout": {
+    "desktop": ">1100px max width 1440, 24px page margins, 244px task list, 16px gap, detail minmax(0,1fr)",
+    "medium": "901-1100px task list 210px",
+    "narrow": "<=900px single-column same detail with labeled shot selector",
+    "readability": "16px body and principal controls >=44px; long text wraps without clipping/cropping or hiding root overflow",
+    "causal_asset": "Existing .confirm-risk and .prompt-warning wrap rules are the actual reversible overflow fix; preserve both. Historical reproduction 5720->1440->5720 is in overflow/causality.json; old 5712 measurement remains distinct."
+  },
+  "verification": "All child tasks skip build/lint/tests/formatters mid-flight. Parent runs one integrated build and real Fake-only browser paths after edits settle, then actual 1440/1366/1024/390 and native 125%/200% interaction evidence with real bearing data. Do not claim fake images prove image quality or local UI proves HTTPS delivery.",
+  "boundaries": "Do not modify ledger, activate quota, call real models, commit/push/deploy, add dependencies, restore sealed WIP wholesale, delete unrelated user governance edits or original assets."
+}

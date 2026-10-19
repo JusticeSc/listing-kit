@@ -1,0 +1,46 @@
+{
+  "authority": "Current user decisions, not a native Goal lifecycle observation",
+  "recorded_with_snapshot_at": "2026-10-18T11:42:40Z",
+  "user_choices": {
+    "delivery_authority": "完整交付，含受保护发布",
+    "incremental_model_budget": "新增最多 5 元"
+  },
+  "delivery": {
+    "scope": "Complete original product outcome; ordinary inputs, four-stage workflow, human factors, prompt enhancement, real dual-mode image inputs, adopted image suite, recoverable project, protected HTTPS release",
+    "allow": ["remaining product development", "related branch commits and pushes", "reviewed and protected PR merge", "existing-environment protected release"],
+    "engineering_limit": "Preserve historical batch records; this new authority continues to complete delivery rather than being limited by the old remaining batches. No repetition of the same blocked path without new facts or an effective change.",
+    "unchanged_boundaries": ["no unapproved new model or major dependency", "no unauthorized irreversible data change", "preserve user work and history", "no bypassing review or branch protection", "no claimed human C15/C17 acceptance by automation"]
+  },
+  "incremental_model_allowance": {
+    "amount_cap_cny": 5,
+    "image_calls_max": 12,
+    "images_per_call": 1,
+    "understanding_creative_assistance_review_calls_combined_max": 4,
+    "models": "Existing approved models only",
+    "rule": "Verify official maximum cost and allowed asset/credential channels before each request; reserve before sending. Failed and Unknown requests count. Stop at the first amount or count cap. No promise of acceptance within this allowance; no clearing or reactivating historical allowances.",
+    "activation": "authorized_not_activated_pending_native_product_Goal_binding_and_preflight"
+  },
+  "native_goal": {
+    "attempt": "tool.goal({op:'get'})",
+    "observed_result": "ToolError: Unknown tool from js runtime: goal",
+    "conclusion": "Native Goal capability is unavailable on this session's exposed tool surface; no actual Goal state was obtained or changed.",
+    "slice_goal_last_saved_id": "15aacf5fbdd7001f",
+    "slice_goal_last_saved_status": "active",
+    "slice_goal_closeout": "Check final review coverage against this slice's own acceptance criteria; complete only through an available native tool and retain its actual return. Historical active is not claimed to be a live observation.",
+    "full_product_goal_historical_id": "15a42a4b52b70942",
+    "full_product_goal": "Do not fabricate restoration or create a duplicate without reading the native state. Product construction and model calls remain gated until required binding is possible. Authorized read-only review and preparation continue."
+  },
+  "pr18_observed": {
+    "url": "https://github.com/JusticeSc/listing-kit/pull/18",
+    "head": "3dc0018689dad39fb81294a9c76c99c97dc15e8f",
+    "state": "OPEN",
+    "is_draft": true,
+    "commits_current_total": 8,
+    "checks": "All three PR checks completed SUCCESS",
+    "run": "https://github.com/JusticeSc/listing-kit/actions/runs/39121148778",
+    "deploy_and_finalize": "skipped on pull_request",
+    "review_coverage": "Existing review covered the earlier product/test delta; final evidence and E3/E4 delta is being checked separately."
+  },
+  "snapshot": "before.zip",
+  "prior_sealed_ledger": "_stage-amz-control/status-audit-20261018/sealed-budget-ledger.json"
+}

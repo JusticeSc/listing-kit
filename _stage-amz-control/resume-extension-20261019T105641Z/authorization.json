@@ -1,0 +1,20 @@
+{
+  "authority": "NOT-AUTHORITY: exact approval observation; execution permissions and frontier are in state",
+  "observed_at": "2026-10-19T10:56:41.114Z",
+  "goal_id": "15ab22bf3386b9cf",
+  "goal_status": "active",
+  "approval": {
+    "selection": "追加最多6批，按审计方案恢复",
+    "user_note": "同意",
+    "counter": "continue 13-18; prior 12 preserved",
+    "first_two_batches": "zero-paid; no real model outbound",
+    "model_budget": "unchanged: existing once-activated 5 CNY,12 image n1,4 combined auxiliary; no reset",
+    "scope": "remaining full product, existing protected branch/review/CI/merge/deploy permissions after gates; C15/C17 unchanged external"
+  },
+  "before_sha256": {
+    "_working/amz-listing-kit-product-v2/state.md": "77d3d31d1f73ed5b89a9655b3e85389c8c5ae2d83f0df24341b395e9f1bbf3ad",
+    "docs/product-v2-refactor-plan.md": "b8a63176fdde1d79ff048edd45aff37bfef4c180da41c14e8f7464d0ce159fa7",
+    "_working/amz-listing-kit-product-v2/budget-ledger.json": "eb6c6d30e2438e7baef81ae611f270df94a03c227916eb1e7dca5088027f5978"
+  },
+  "native_goal_objective_unchanged": true
+}

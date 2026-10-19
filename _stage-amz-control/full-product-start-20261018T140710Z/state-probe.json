@@ -1,0 +1,10 @@
+{
+  "evidence_type": "Observed tool completion message extract, not a recovered raw process log",
+  "job": "bg_13",
+  "command": "uv run --locked python evals/probes/project_state.py",
+  "exit_code": 0,
+  "actual_cases": 63,
+  "summary": "OK：63 向全部与预期一致。",
+  "isolation": "独立副本已恢复 _working/amz-listing-kit-product-v2/state.md；权威 state/观察证据从未写入",
+  "receipt_limit": "The completed process endpoint expired before retrieval (Background job or service not found: bg_13). No verification rerun was performed to recreate a log."
+}

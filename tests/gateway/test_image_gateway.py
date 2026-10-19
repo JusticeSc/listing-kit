@@ -737,3 +737,61 @@ def test_v241_xx_unknown_provider_header_rejected_before_any_call(start_server) 
     assert status == 400
     assert payload["error"]["family"] == "input_rejected"
     assert built == []
+
+
+# Batch13 image pricing: effective provider + exact request shape decide the quote.
+def test_pricing_default_beijing_qwen_quotes_signed_official_units(start_server) -> None:
+    """默认北京 Qwen 端点报出官方 2/18 分价，且零外呼、不发送提交。"""
+
+    from src.providers.v2_dashscope_image import create_default_image_provider
+
+    recorded = RecordingTransport([])
+    client = Client(start_server(image_provider_factory=lambda: create_default_image_provider(
+        environ={}, transport=recorded)))
+    status, payload = client.json("GET", CAPABILITIES_PATH)
+    images = payload.get("images") or {}
+    pricing = images.get("pricing") or {}
+    assert status == 200
+    assert pricing.get("kind") == "official"
+    assert pricing.get("provider_id") == "dashscope-qwen-image"
+    assert pricing.get("model_id") == "qwen-image-3.0"
+    assert pricing.get("size") == "1344*1344" and pricing.get("n") == 1
+    assert pricing.get("output_format") == "png" and pricing.get("currency") == "CNY"
+    assert pricing.get("input_image_fen") == 2 and pricing.get("output_image_fen") == 18
+    assert pricing.get("region") == "cn-beijing"
+    assert len(recorded.calls) == 0
+
+
+def test_pricing_custom_endpoint_cannot_inherit_beijing_rates(start_server) -> None:
+    """自定义端点即使模型名一致也不继承北京价，且零外呼。"""
+
+    from src.providers.v2_dashscope_image import create_default_image_provider
+
+    recorded = RecordingTransport([])
+    client = Client(start_server(image_provider_factory=lambda: create_default_image_provider(
+        environ={"AMZ_V2_IMAGE_BASE_URL": "https://custom.aliyuncs.com/api/v1"},
+        transport=recorded)))
+    status, payload = client.json("GET", CAPABILITIES_PATH)
+    images = payload.get("images") or {}
+    provider = images.get("provider") or {}
+    assert status == 200
+    assert provider.get("model_id") == "qwen-image-3.0"
+    assert images.get("pricing") is None
+    assert len(recorded.calls) == 0
+
+
+def test_pricing_fake_seam_quotes_explicit_zero_only(start_server) -> None:
+    """显式注入的图像替身只报本地零价，不冒充真实供应商计费。"""
+
+    from src.providers.v2_fake_image import FakeImageProvider
+
+    client = Client(start_server(image_provider_factory=lambda: FakeImageProvider("ok")))
+    status, payload = client.json("GET", CAPABILITIES_PATH)
+    images = payload.get("images") or {}
+    pricing = images.get("pricing") or {}
+    assert status == 200
+    assert pricing.get("kind") == "test_double"
+    assert pricing.get("provider_id") == "fake-qwen-image"
+    assert pricing.get("input_image_fen") == 0 and pricing.get("output_image_fen") == 0
+    assert pricing.get("verified_on") is None and pricing.get("source_url") is None
+    assert pricing.get("region") == "local-test"

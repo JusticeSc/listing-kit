@@ -138,6 +138,7 @@ def main() -> int:
     base = server.base_url
 
     submit_requests: list[dict] = []
+    submit_gate: dict = {"authorized": False, "forwarded": 0, "blocked": []}
     status_requests: list[str] = []
     result_requests: list[dict] = []
     ui: dict = {}
@@ -170,6 +171,29 @@ def main() -> int:
                         return json.loads(request.post_data or "{}")
                     except ValueError:
                         return {}
+
+                def guard_submit(route) -> None:
+                    request = route.request
+                    if request.method != "POST":
+                        route.continue_()
+                        return
+                    body = payload_of(request)
+                    reason = (
+                        "尚未完成单张确认" if not submit_gate["authorized"]
+                        else "本验证器只准转发一次生成请求" if submit_gate["forwarded"] >= 1
+                        else "生成数量不是单张" if body.get("n") != 1
+                        else None
+                    )
+                    if reason:
+                        submit_gate["blocked"].append({
+                            "action_id": body.get("action_id"), "reason": reason,
+                        })
+                        route.abort("blockedbyclient")
+                        return
+                    submit_gate["forwarded"] += 1
+                    route.continue_()
+
+                page.route("**/api/v2/images/submit", guard_submit)
 
                 def on_request(request) -> None:
                     if request.method != "POST":
@@ -215,41 +239,78 @@ def main() -> int:
                     return page.evaluate(PROBE)
 
                 def row(shot_id: str):
+                    shared.select_make_shot(page, shot_id)
                     return page.locator(
-                        f'#attempt-list .attempt-row[data-shot-id="{shot_id}"]')
+                        f'#shot-execution [data-shot-id="{shot_id}"]')
 
                 def wait_state(shot_id: str, state: str, timeout: int = 30_000) -> None:
-                    expect(row(shot_id)).to_have_attribute(
+                    expect(page.locator(
+                        f'#task-list-mount [data-task-shot="{shot_id}"]')).to_have_attribute(
                         "data-attempt-state", state, timeout=timeout)
 
                 def wait_preview(shot_id: str, timeout: int = 60_000) -> None:
+                    shared.select_make_shot(page, shot_id)
                     page.locator(
-                        f'#attempt-list .attempt-row[data-shot-id="{shot_id}"]'
+                        f'#shot-execution [data-shot-id="{shot_id}"]'
                         " .attempt-preview img"
                     ).scroll_into_view_if_needed(timeout=timeout)
                     page.wait_for_function(
                         """(shot) => {
                             const node = document.querySelector(
-                                '#attempt-list .attempt-row[data-shot-id="' + shot + '"]');
+                                '#shot-execution [data-shot-id="' + shot + '"]');
                             const img = node && node.querySelector('.attempt-preview img');
                             return Boolean(img && img.complete && img.naturalWidth > 0);
                         }""", arg=shot_id, timeout=timeout)
 
-                def confirm_generation() -> None:
-                    expect(page.locator("#confirm-action")).to_be_enabled()
-                    page.click("#confirm-action")
-                    # 确认即提交（confirmAndRun 一次保存授权并直接整套提交）：
-                    # 等 attempt 行出现（行为判据），不再钉 #confirm-record 实现文案。
-                    page.wait_for_function(
-                        """() => document.querySelectorAll(
-                            '#attempt-list .attempt-row[data-attempt-state]').length > 0""",
-                        timeout=30_000)
+                def confirm_single_shot(target_shot: str) -> dict:
+                    # 单张范围先行：批量勾选只含目标一张，摘要必须同步为 1 张；
+                    # 确认即提交（confirmAndRun 一次保存授权并直接提交），全程只点一次确认，
+                    # 不再点任何行内生成按钮（无第二次生成动作）。
+                    if not target_shot:
+                        raise AssertionError("单张确认必须给出非空 target_shot")
+                    if submit_requests:
+                        raise AssertionError(
+                            "确认前已观察到外发（submit=%d）：不再点击确认，避免追加预算外调用。"
+                            % len(submit_requests))
+                    picked = shared.choose_make_batch(page, [target_shot])
+                    if picked != 1:
+                        raise AssertionError("单张确认的批量计数必须为 1，实际=%r。" % (picked,))
+                    scope_text = page.locator("#generation-scope-count").inner_text(timeout=10_000)
+                    action_label = page.locator("#confirm-action").inner_text(timeout=10_000)
+                    summary_status = page.locator("#confirm-status").inner_text(timeout=10_000)
+                    summary_text = page.locator("#confirm-summary").inner_text(timeout=10_000)
+                    ui["confirm_scope"] = {"target": target_shot, "picked": picked,
+                                           "scope_text": scope_text, "action_label": action_label}
+                    ui["confirm_summary"] = {"status": summary_status, "summary": summary_text}
+                    if "1" not in scope_text.split("张", 1)[0] or "1 张" not in action_label:
+                        raise AssertionError("确认摘要不是单张范围：不点击确认（零外发）。")
+                    if "1 张" not in summary_status:
+                        raise AssertionError("确认状态不是单张范围：不点击确认（零外发）。")
+                    expect(page.locator("#confirm-action")).to_be_enabled(timeout=10_000)
+                    submit_gate["authorized"] = True
+                    try:
+                        gate = shared.confirm_and_submit(
+                            page, expect, probe, submit_requests,
+                            shot_ids=[target_shot], settle=False)
+                    finally:
+                        submit_gate["authorized"] = False
+                    ui["confirm_gate"] = {"new_shots": gate.get("new_shots"),
+                                          "captured_actions": gate.get("captured_actions"),
+                                          "ok": gate.get("ok")}
+                    if not gate.get("ok"):
+                        raise AssertionError(
+                            "单张确认消费未落定（实际外发=%d）：记录保持原样，不自动重提。"
+                            % len(submit_requests))
+                    return gate
 
                 def click_row_button(shot_id: str, text: str) -> None:
                     row(shot_id).locator(f'button:has-text("{text}")').first.click()
 
                 def compile_all(shot_ids: list) -> None:
-                    stage_nav.goto(page, "generate")
+                    stage_nav.goto(page, "make")
+                    # Prompt 卡片住在 #prompt-details 折叠区里（默认收起）：
+                    # 先展开再点编译按钮，否则 Playwright 会等到不可见按钮超时。
+                    stage_nav.reveal(page, "#prompt-editor")
                     for shot_id in shot_ids:
                         card = f'#prompt-list .shot-spec[data-shot-id="{shot_id}"]'
                         page.locator(card + " .toolbar button").scroll_into_view_if_needed(timeout=10_000)
@@ -289,13 +350,19 @@ def main() -> int:
                 expect(page.locator("#shot-list .shot-row")).to_have_count(4)
                 # Issue #9：编译前先做普通决定（用户真实路径）；choices 进 ui 证据。
                 ui["decisions"] = shared.decide_for_compile(page, probe()["shot_ids"])
-                stage_nav.goto(page, "generate")
+                stage_nav.goto(page, "make")
                 expect(page.locator("#prompt-list .shot-spec")).to_have_count(4)
                 shot_ids = probe()["shot_ids"]
+                if args.shot_index < 0 or args.shot_index >= len(shot_ids):
+                    raise AssertionError(
+                        "shot_index 越界：不点击确认（零外发）。"
+                        + " index=%r shots=%r" % (args.shot_index, shot_ids))
+                target = list(shot_ids)[args.shot_index]
+                ui["target_shot"] = target
                 compile_all(shot_ids)
-                confirm_generation()
-                ready = probe()
-                provider_text = ready["ui"]["provider"]
+                # 先读身份、后提交：未配置时零外发直接中断，不点击确认。
+                pre = probe()
+                provider_text = pre["ui"]["provider"]
                 ui["provider"] = provider_text
                 ui["image_provider_id"] = args.image_provider.strip() or "dashscope-image"
                 configured = "未配置" not in provider_text
@@ -309,12 +376,10 @@ def main() -> int:
                           "图像 provider 是真实 dashscope-image 且 configured=true（fake-image 切替不算）",
                           configured and "dashscope" in provider_text,
                           {"provider": provider_text})
-                if not configured:
-                    raise RuntimeError("图像 provider 未配置：不提交任何真实请求（预算未花）。")
-
-                target = list(shot_ids)[args.shot_index]
-                ui["target_shot"] = target
-                click_row_button(target, "生成这张图")
+                if not checks[-1]["ok"]:
+                    raise RuntimeError("图像 provider 身份或配置不符合本次真实验证：不提交任何请求。")
+                # 唯一一次生成动作：按目标单张范围确认并提交；行内按钮不再点击。
+                confirm_single_shot(target)
                 if want_volc:
                     # 同步协议：提交信封一步到终态，不经过 submitted 中间态；直接等 succeeded。
                     wait_state(target, "succeeded")
@@ -454,6 +519,17 @@ def main() -> int:
             pass
 
     if interrupted:
+        # 中断也要留下实际观察到的外发计数与已有 ui 证据：只报浏览器 POST 观察数，
+        # 不编造上游计费；terminal/action/task/candidate 以 ui 里已采集到的为准。
+        ui["interrupted"] = interrupted
+        ui["observed_outbound"] = {
+            "browser_submits": len(submit_requests),
+            "submit_action_ids": [item.get("action_id") for item in submit_requests],
+            "status_requests": len(status_requests),
+            "result_requests": len(result_requests),
+            "forwarded_to_gateway": submit_gate["forwarded"],
+            "blocked_browser_submits": submit_gate["blocked"],
+        }
         check("V2.4.5-99", "真实闭环在完成前中断（记录保持原样，不自动重提）", False, interrupted)
 
     expected_noise = ("Failed to load resource: the server responded with a status of 504",
@@ -468,7 +544,8 @@ def main() -> int:
     failed = [item for item in checks if not item["ok"]]
     status = "passed" if not failed else "failed"
     finished_at = datetime.now().strftime("%Y-%m-%dT%H:%M:%S%z")
-    if want_volc:
+    observed_submits = len(submit_requests)
+    if status == "passed" and want_volc:
         boundary = (
             "证明一笔预算内的真实参考图闭环：图像 provider 是 volcengine-ark（configured=true），"
             "一次真实同步 submit 携带真实商品参考图（sha256 " + reference_sha[:12] + "…，"
@@ -477,7 +554,7 @@ def main() -> int:
             "尺寸等于请求尺寸。语义槽位由验证器直接播种（0 次语义调用），"
             "所以本证据不证明商品理解质量、出图审美质量、跨品类通用性、审核与返工（Phase 5）。"
         )
-    else:
+    elif status == "passed":
         boundary = (
             "证明一笔预算内的真实参考图闭环：图像 provider 是注册表默认的 dashscope-image（configured=true），"
             "一次真实 submit 携带真实商品参考图（sha256 " + reference_sha[:12] + "…，"
@@ -486,17 +563,35 @@ def main() -> int:
             "服务端 X-Image-Sha256），尺寸等于请求尺寸。语义槽位由验证器直接播种（0 次语义调用），"
             "所以本证据不证明商品理解质量、出图审美质量、跨品类通用性、审核与返工（Phase 5）。"
         )
+    else:
+        # 失败/中断不套成功模板：只报实际观察到的浏览器外发数，不编造上游计费归属。
+        boundary = (
+            "未证明真实参考图闭环（status=" + status + "）："
+            "浏览器观察到 submit POST " + str(observed_submits) + " 次、"
+            "status 查询 " + str(len(status_requests)) + " 次、result 取回 "
+            + str(len(result_requests)) + " 次；"
+            + ("中断原因：" + str(interrupted) + "；" if interrupted else "")
+            + "浏览器 POST 数不等于上游计费次数，不做计费断言；"
+            "terminal/action/task/candidate 以 ui_flow 已有记录为准，记录保持原样，不自动重提。"
+        )
     report = {
         "task": "V2.4.5",
         "suite_id": "v2.4.5-live-reference",
         "status": status,
         "finished_at": finished_at,
+        "interrupted": interrupted,
         "reference": {"path": str(reference), "sha256": reference_sha,
                       "byte_size": reference_size},
-        "model_calls": 1 if submit_requests else 0,
-        "image_submit_requests": len(submit_requests),
+        "model_calls": submit_gate["forwarded"],
+        "model_calls_basis": "保守按已转发到图像网关的请求计潜在收费；不声称供应商已受理或已结算。",
+        "provider_admitted_calls": None,
+        "forwarded_image_submit_requests": submit_gate["forwarded"],
+        "blocked_browser_submits": submit_gate["blocked"],
+        "browser_submit_requests": observed_submits,
+        "image_submit_requests": observed_submits,
         "image_status_requests": len(status_requests),
         "image_result_requests": len(result_requests),
+        "browser_submit_action_ids": [item.get("action_id") for item in submit_requests],
         "checks": checks,
         "ui_flow": ui,
         "console_errors": console_errors,
@@ -584,10 +679,12 @@ async () => {
   const plans = documents.filter((item) => item.kind === "suite_plan")
     .sort((left, right) => left.version - right.version);
   const plan = plans.length ? plans[plans.length - 1] : null;
-  const rows = [...document.querySelectorAll("#attempt-list .attempt-row")].map((node) => {
-    const img = node.querySelector(".attempt-preview img");
+  const rows = [...document.querySelectorAll("#task-list-mount [data-task-shot]")].map((node) => {
+    const detail = document.querySelector(
+      '#shot-execution [data-shot-id="' + node.getAttribute("data-task-shot") + '"]');
+    const img = detail ? detail.querySelector(".attempt-preview img") : null;
     return {
-      shot_id: node.getAttribute("data-shot-id"),
+      shot_id: node.getAttribute("data-task-shot"),
       state: node.getAttribute("data-attempt-state"),
       preview: img ? { complete: img.complete, natural_width: img.naturalWidth } : null,
     };

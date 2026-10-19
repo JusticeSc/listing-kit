@@ -37,8 +37,7 @@ import {
 } from "/domain/index.js";
 
 import { sha256Hex } from "/storage/db.js";
-import { IMAGE_PROMPT_PROFILE, expect, expectCode, serializeError } from "./harness-api.js";
-
+import { IMAGE_PRICING, IMAGE_PROMPT_PROFILE, expect, expectCode, serializeError } from "./harness-api.js";
 const cases = [];
 
 function test(id, title, run) {
@@ -162,23 +161,25 @@ function chosenPrintSpec(shot, overrides = {}) {
     on_image_texts: [{
       text_id: "t1",
       text: "12小时保温",
-      source_slot_id: "signature_features",
-      source_slot_version: 1,
+      source: { kind: "fact_slot", document_id: "signature_features", version: 1 },
       status: "confirmed",
       origin: "user",
     }],
     ...overrides,
   };
 }
+// 已保存的商品资料版本（冻结参考图来源的精确版本；与产品调用方同一快照概念）。
+const INTAKE_VERSION = 1;
 
 /** 编译 + 快照 + hash + 版本记录：与 workspace.js 的真实链路同一套调用。 */
 async function compiledEntry(shot, options = {}) {
   const context = options.context || contextFixture();
+  const shotSpec = options.shotSpec || emptyShotSpecFromShot(shot);
   const compiled = compilePrompt({
     brief: briefFixture(),
     shot: shot,
     styleSpec: options.styleSpec || styleFixture(),
-    shotSpec: options.shotSpec || emptyShotSpecFromShot(shot),
+    shotSpec: shotSpec,
     context: context,
     providerProfile: IMAGE_PROMPT_PROFILE,
     versions: {
@@ -187,7 +188,8 @@ async function compiledEntry(shot, options = {}) {
       shot_spec_version: null,
     },
   });
-  const references = selectReferences(shot, context.assets);
+  const references = selectReferences(shot, context.assets,
+    { intakeVersion: INTAKE_VERSION, shotSpec: shotSpec });
   const snapshot = requestSnapshotOf(compiled, { references: references });
   const hash = await promptHash(snapshot, DIGEST);
   return {
@@ -222,6 +224,7 @@ function sheetOf(record, shot, options = {}) {
     context: options.context || contextFixture(),
     currentBasisByShot: basisByShot,
     providerProfile: IMAGE_PROMPT_PROFILE,
+    pricing: options.pricing === undefined ? IMAGE_PRICING : options.pricing,
   });
 }
 
@@ -475,6 +478,75 @@ test("M11", "过期与确认联动：编辑不改依据，但改变确认指纹�
   await expectCode(() => { discardManualEdit(entry.record, history); },
     DOMAIN_ERROR_CODES.CONTRACT_INVALID, "系统编译版本");
   return { fields: fields };
+});
+
+test("M13", "现行编译产物作引用基准：系统文本自带的引用仍授权，已失据的旧引用仍阻断", async () => {
+  // 生产路径（prompts.ts）把「当前编译产物」交给引用授权判定。编译产物是文本形状（text 在顶层），
+  // 规则基准要的是记录形状（compiled.text / role_id）：这里用同一形状调用，防止把编译产物直接
+  // 当记录时授权基准悄悄退化成空文本，把系统文本自带的引用全判成未授权（人工编辑整体不可用）。
+  const shot = mainShot();
+  const entry = await compiledEntry(shot);
+  const current = entry.record.compiled;
+  const editedText = current.text + "\n\n补充约束：商品标志必须位于正面中心，颜色与参考图保持逐字一致。";
+  const record = await buildEditedPromptRecord({
+    base: entry.record, baseVersion: entry.version, text: editedText, reason: "补充布局与配色约束",
+    editedAt: BASE_TIME, context: contextFixture(), currentCompiled: current, digest: sha256Hex,
+  });
+  expect(checkPromptRecord(record).length === 0, "系统文本自带的平台背景引用必须继续授权。");
+  expect(record.compiled.text === editedText, "人工全文必须逐字生效。");
+  expect(record.compiled.text.includes("「RGB(255,255,255)」"), "平台背景引用必须逐字保留。");
+  // 同一调用形状下真正的新引用仍必须阻断，且报错指向新引用本身。
+  const unknown = await expectDomainError(async () => {
+    await buildEditedPromptRecord({
+      base: entry.record, baseVersion: entry.version,
+      text: current.text + "\n\n补充：画面里写「限时特惠」。", reason: "越权引用",
+      editedAt: BASE_TIME, context: contextFixture(), currentCompiled: current, digest: sha256Hex,
+    });
+  }, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "现行基准下未授权新增引用必须阻断");
+  expect(unknown.details && unknown.details.reason_code === MANUAL_EDIT_REASON_CODES.UNKNOWN_QUOTE,
+    "未授权引用必须是引用原因码，实际 " + JSON.stringify(unknown.details));
+  expect(unknown.message.includes("「限时特惠」") && !unknown.message.includes("RGB"),
+    "报错必须指向新增引用而不是系统文本自带的引用：" + unknown.message);
+  // 非主图：系统文本里的风格引用同样按现行文本授权。
+  const infoShot = infographicShot();
+  const info = await compiledEntry(infoShot, { shotSpec: noPrintSpec(infoShot) });
+  const infoText = info.record.compiled.text + "\n补充约束：图中文字排版保持整齐。";
+  const infoEdited = await buildEditedPromptRecord({
+    base: info.record, baseVersion: info.version, text: infoText, reason: "补充排版约束",
+    editedAt: BASE_TIME, context: contextFixture(), currentCompiled: info.record.compiled, digest: sha256Hex,
+  });
+  expect(checkPromptRecord(infoEdited).length === 0, "非主图系统文本里的风格引用必须授权。");
+  expect(infoEdited.compiled.text.includes("「浅灰无缝背景」"), "风格引用必须逐字保留。");
+  // 反方向：现行表达不再支持的旧引用不得靠「旧文本里有」续期。
+  const restyled = await compiledEntry(infoShot, {
+    shotSpec: noPrintSpec(infoShot), styleSpec: styleFixture({ background: "纯白无缝背景" }),
+  });
+  const stale = await expectDomainError(async () => {
+    await buildEditedPromptRecord({
+      base: info.record, baseVersion: info.version, text: infoText + "\n补充约束：留白保持充足。",
+      reason: "沿用旧表述", editedAt: BASE_TIME, context: contextFixture(),
+      currentCompiled: restyled.record.compiled, digest: sha256Hex,
+    });
+  }, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "现行表达不支持的旧引用必须阻断");
+  expect(stale.details && stale.details.reason_code === MANUAL_EDIT_REASON_CODES.UNKNOWN_QUOTE,
+    "旧引用必须是引用原因码，实际 " + JSON.stringify(stale.details));
+  expect(stale.message.includes("「浅灰无缝背景」") && !stale.message.includes("「纯白无缝背景」"),
+    "报错必须指向失据的旧引用：" + stale.message);
+  // 同一形状的第二条入口（重新确认）也按现行文本授权，不能只有编辑入口被修好。
+  const reconfirmed = await reconfirmEditedPrompt({
+    base: record, baseVersion: 2, reason: "文本仍适用，依据未变", at: BASE_TIME,
+    basis: {
+      briefBasis: record.basis.brief, shot_signature: record.basis.shot_signature,
+      suite_version: 1, style_version: 1, shot_spec_version: null,
+      platform: { version: PLATFORM_PROFILES[PLATFORM_ID].version },
+      provider: IMAGE_PROMPT_PROFILE,
+    },
+    context: contextFixture(), currentCompiled: current, digest: sha256Hex,
+  });
+  expect(reconfirmed.reconfirmed === true && checkPromptRecord(reconfirmed).length === 0,
+    "重新确认入口必须按同一基准判引用：" + JSON.stringify(checkPromptRecord(reconfirmed)[0] || null));
+  expect(reconfirmed.compiled.text === record.compiled.text, "重新确认必须逐字保留人工文本。");
+  return { quotes: (record.compiled.text.match(/「[^」]*」/g) || []) };
 });
 
 /* ---------------------------------------------------------------- 反向探针 */

@@ -156,11 +156,24 @@ export type ProductInput = {
   references: ProductReference[];
 };
 
+/** 文案提议目标：精确到某个已确认事实槽位的版本（版本变了提议即过期）。 */
+export type CopyProposalTarget = { slot_id: string; version: number };
+/** 提议请求：只针对目标槽位生成英文上图候选；不写入任何事实或规格。 */
+export type CopyProposalRequest = { targets: CopyProposalTarget[]; language: "en" };
+/** 候选文案：仍只是提议，必须人工确认后才可能成为 on_image_texts 条目。 */
+export type CopyProposal = {
+  text: string;
+  source_slot_id: string;
+  source_slot_version: number;
+};
+
 /** A model proposal stays source-bound and never carries confirmation authority. */
 export type SemanticProposal = {
   slots: (FactSlot & { model_id?: string })[];
   summary: string;
   questions: string[];
+  /** 本次请求了候选文案时才有；未请求时必须缺席，两种产出不混装。 */
+  copy_proposals?: CopyProposal[];
   meta: {
     provider_id: string;
     model_id: string;
@@ -280,13 +293,39 @@ export type OnImageTextOrigin = "user" | "model" | "reuse";
 export type AppearanceState = "as_shown" | "clean_display" | "undecided";
 /** 内容物状态：原样保持／已倒空／不适用（不看内容物的用途）／未决定。 */
 export type ContentsState = "as_shown" | "empty" | "not_applicable" | "undecided";
-/** 展示决定：StyleSpec 提供共用默认，ShotSpec 只存明确单图覆盖；缺失=未决定。 */
+export type Viewpoint = "reference_visible" | "front" | "side" | "top";
+/** 单图字段缺失才继承；显式 undecided 不是继承。 */
 export type Presentation = {
   appearance_state?: AppearanceState;
   contents_state?: ContentsState;
+  viewpoint?: Viewpoint;
 };
-/** 明确选择的图中文字：原文 + 精确来源事实版本与确认状态；编译器只消费 confirmed 且来源当前者。 */
+export type ImageTextSource = { kind: "fact_slot"; document_id: string; version: number };
+export type MeasurementSourceKind = "nominal" | "measured";
+/** 英文映射与来源分类须人工核对；数值与物理含义仍取精确 measurement。 */
+export type MeasurementBinding = DimensionMeasurement & {
+  index: number;
+  object_label: string;
+  axis_label: string;
+  source_kind: MeasurementSourceKind;
+};
+export type MeasurementSourceBinding = {
+  indices: number[];
+  measurements: DimensionMeasurement[];
+  source_kind: MeasurementSourceKind;
+};
+/** 当前写入的文案；模型只能 proposed，人工确认后才可编译。 */
 export type OnImageText = {
+  text_id: string;
+  text: string;
+  source: ImageTextSource;
+  status: OnImageTextStatus;
+  origin: OnImageTextOrigin;
+  measurement?: MeasurementBinding;
+  measurement_source?: MeasurementSourceBinding;
+};
+/** 已发布 schema1 的只读形状；新命令不再写 flat 来源。 */
+export type LegacyOnImageText = {
   text_id: string;
   text: string;
   source_slot_id: string;
@@ -294,6 +333,7 @@ export type OnImageText = {
   status: OnImageTextStatus;
   origin: OnImageTextOrigin;
 };
+export type StoredOnImageText = OnImageText | LegacyOnImageText;
 export type ShotSpec = {
   schema_version: number;
   purpose: string;
@@ -303,9 +343,11 @@ export type ShotSpec = {
   /** 印字决定；只在需要该决定的角色上存在，缺失表示按该角色既有合同。 */
   print_intent?: ShotPrintIntent;
   layout?: ShotLayout;
-  on_image_texts?: OnImageText[];
+  on_image_texts?: StoredOnImageText[];
   /** 单图展示决定覆盖；未覆盖则继承 StyleSpec.presentation。 */
   presentation?: Presentation;
+  /** 未出现使用本图角色依据；空数组是明确无依据，不能回退全部原图。 */
+  reference_sha256s?: Sha256Hex[];
 };
 export type StyleSpecField = { key: string; label: string; kind: "text" | "list" };
 export type SpecDiffItem = {
@@ -473,12 +515,18 @@ export type PromptSection = {
 };
 export type PromptWarning = { code: string; message: string; source_refs: string[] };
 export type PromptBasis = {
+  /** 历史记录可缺失；当前编译器每次新写入都冻结此版本。 */
+  compiler_rule_version?: number;
   brief: BriefBasisItem[];
   consumed_slot_ids: string[];
   shot_signature: string | null;
   suite_version: number | null;
   style_version: number | null;
+  /** 本图消费的共用风格签名；历史记录可缺失（退回 style_version 比较）。 */
+  style_signature?: string | null;
   shot_spec_version: number | null;
+  /** 商品资料版本：冻结引用里嵌了它；历史记录可缺失（缺失即按当前资料重新准备）。 */
+  intake_version?: number | null;
   platform: { platform_id: string; version: number };
   provider: ImagePromptProfile;
   rework?: {
@@ -486,6 +534,8 @@ export type PromptBasis = {
     candidate_id: string;
     candidate_sha256: string;
     problems: string[];
+    mode?: ReworkMode;
+    problem_candidate?: ReworkProblemCandidate;
   };
 };
 export type CompiledPrompt = {
@@ -508,6 +558,8 @@ export type CompiledPrompt = {
     candidate_sha256: string;
     problems: string[];
     direction: string;
+    mode?: ReworkMode;
+    problem_candidate?: ReworkProblemCandidate;
   } | null;
   origin?: string;
 };
@@ -518,7 +570,7 @@ export type RequestSnapshot = {
   prompt_extend: boolean;
   watermark: boolean;
   output_format: string;
-  references: { role: string; sha256: Sha256Hex }[];
+  references: PromptReferenceSelection[];
   prompt: string;
   target: {
     provider_id: string;
@@ -543,7 +595,19 @@ export type PromptRecord = {
   invalidation?: InvalidationResult;
   reconfirmed?: boolean;
 };
-export type PromptReferenceSelection = { role: string; sha256: Sha256Hex };
+/** 商品来源投影不伪造冻结元数据；当前请求只使用下方完整选择。 */
+export type PromptReferenceIdentity = { role: string; sha256: Sha256Hex };
+export type PromptReferenceUse = "edit_source" | "product_truth" | "style_reference";
+export type PromptReferenceSource = {
+  kind: "candidate" | "product_input";
+  document_id: string;
+  version: number;
+  asset_sha256: Sha256Hex;
+};
+export type PromptReferenceSelection = PromptReferenceIdentity & {
+  uses: PromptReferenceUse[];
+  sources: PromptReferenceSource[];
+};
 export type PromptStaleness = {
   stale: boolean;
   reasons: { field: string; stored: unknown; current: unknown; reason: string }[];
@@ -589,7 +653,14 @@ export type AttemptRecord = {
   shot_id: string;
   state: AttemptState;
   prompt: { version: number; hash: Sha256Hex };
-  references: { role: string; sha256: Sha256Hex }[];
+  /**
+   * schema 3：完整冻结引用（身份+用途+来源，与请求快照同形状）；
+   * schema ≤2 旧记录为身份形状 {role, sha256}（只读核对）。
+   */
+  references: (PromptReferenceIdentity & {
+    uses?: PromptReferenceUse[];
+    sources?: PromptReferenceSource[];
+  })[];
   provider: { provider_id: string; model_id: string };
   execution_identity: AttemptExecutionIdentity;
   parameters: { size: string; n: number; prompt_extend: boolean; watermark: boolean };
@@ -612,9 +683,39 @@ export type ConfirmationExecutionTarget = {
   credential_source: string;
   sync: boolean;
 };
+
+/** 公共定价事实只绑定已核模型/地区/参数；凭据不进入费用或确认记录。 */
+export type ImagePricing = {
+  version: 1;
+  kind: "official" | "test_double";
+  provider_id: string;
+  model_id: string;
+  size: string;
+  n: 1;
+  output_format: string;
+  currency: "CNY";
+  input_image_fen: number;
+  output_image_fen: number;
+  verified_on: string | null;
+  source_url: string | null;
+  region: "cn-beijing" | "local-test";
+};
+export type ConfirmationCost = {
+  currency: "CNY";
+  upper_fen: number | null;
+  pricing: ImagePricing | null;
+  per_shot: { shot_id: string; input_images: number; upper_fen: number }[];
+  message: string;
+};
+export type ConfirmationSelection = {
+  selected_shot_ids: string[];
+  excluded: { shot_id: string; label: string; reasons: { code: string; message: string }[] }[];
+};
 export type ConfirmationSnapshot = {
   schema_version: number;
   scope_shot_ids?: string[];
+  /** schema 4 起必带；历史只读记录不补造所选范围或排除理由。 */
+  selection?: ConfirmationSelection;
   platform: { platform_id: string; version: number };
   provider: { model_id: string; version: number };
   can_submit: boolean;
@@ -623,7 +724,14 @@ export type ConfirmationSnapshot = {
     prompt_version: number | null;
     prompt_hash: string | null;
     prompt_chars?: number | null;
-    reference_roles: string[];
+    /**
+     * schema 3：该图新请求快照的冻结引用（身份+用途+来源）。
+     * 历史1仅角色、历史2含图身份，不迁移改写或补造用途/来源。
+     */
+    references?: (PromptReferenceIdentity & {
+      uses?: PromptReferenceUse[];
+      sources?: PromptReferenceSource[];
+    })[];
     blocked: string[];
   }[];
   external_summary: Record<string, unknown>;
@@ -635,7 +743,9 @@ export type ConfirmationShotEntry = {
   label: string;
   prompt_version: number | null;
   prompt_hash: Sha256Hex;
-  references: { role: string; sha256_prefix: string }[];
+  /** 冻结引用的只读展示投影：完整身份+前缀 + 用途/来源（schema 3 起必带）；历史保留原投影。 */
+  references: { role: string; sha256: Sha256Hex; sha256_prefix: string; uses?: string[];
+    sources?: { kind?: string; document_id?: string; version?: number; asset_sha256?: string }[] }[];
   risks: string[];
 };
 export type ConfirmationRecord = {
@@ -930,6 +1040,13 @@ export type BatchState = {
 export type ReworkProblemId =
   | "product_fidelity" | "part_error" | "scene" | "composition"
   | "selling_point" | "text" | "style" | "platform_risk" | "other";
+export type ReworkMode = "edit_candidate" | "regenerate_original";
+export type ReworkProblemCandidate = {
+  candidate_id: string;
+  document_id: string;
+  version: number;
+  asset_sha256: Sha256Hex;
+};
 export type ReworkDirective = {
   schema_version: number;
   contract_version: string;
@@ -937,6 +1054,9 @@ export type ReworkDirective = {
   shot_id: string;
   candidate_id: string;
   candidate_sha256: Sha256Hex;
+  /** schema1 历史不补造模式或来源；当前 schema2 写入必须明确给出。 */
+  mode?: ReworkMode;
+  problem_candidate?: ReworkProblemCandidate;
   problems: string[];
   direction: string;
   source: {

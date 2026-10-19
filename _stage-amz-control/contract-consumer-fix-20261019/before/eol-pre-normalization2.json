@@ -1,0 +1,23 @@
+[
+  {
+    "path": "app/product_v2/ui/generation-view.ts",
+    "bytes": 99421,
+    "sha256": "820325e274dea9400b409e2550551cea4cf7baab52fcdabc8da921366e620de0",
+    "cr_bytes": 2022,
+    "normalized_lf_sha256": "3753828a85d6c9c8f3bd4f464e280b0905e53360c59941f0b4704e53fb9342b1"
+  },
+  {
+    "path": "app/product_v2/domain/type-contracts.d.ts",
+    "bytes": 37597,
+    "sha256": "74860ccd12c78ca09affd7811a0af72855db5f67aacdc6c048c1d5c17762b730",
+    "cr_bytes": 1172,
+    "normalized_lf_sha256": "cabc5a0ed3f19b410ab1960d55c1da1a0c016560f5199892892512de9dafc50a"
+  },
+  {
+    "path": "app/product_v2/semantic-analysis.ts",
+    "bytes": 19257,
+    "sha256": "3d6938b8a174a60a62b5ec13ebfac905d2c5e2ec42d2af5b0161ccd521ea0281",
+    "cr_bytes": 326,
+    "normalized_lf_sha256": "e348c07c74be3fa8e877b47c6e395322a3bac394f45405aad93bc6e4a4da99b8"
+  }
+]

@@ -165,8 +165,8 @@ export function anyOfRequirement(requirements) {
 export const IMAGE_ROLES = Object.freeze([
   Object.freeze({ role_id: "main", label: "主图",
     purpose: "干净背景下的商品主体，突出整体外观", custom: false }),
-  Object.freeze({ role_id: "infographic", label: "卖点信息图",
-    purpose: "用简短标注呈现已确认卖点，不写未确认参数", custom: false }),
+  Object.freeze({ role_id: "infographic", label: "信息图",
+    purpose: "表达所选有据信息，具体任务由该图目标与模板决定", custom: false }),
   Object.freeze({ role_id: "scene", label: "场景图",
     purpose: "商品在真实使用场景中的样子，场景不改变商品外观", custom: false }),
   Object.freeze({ role_id: "detail", label: "细节图",

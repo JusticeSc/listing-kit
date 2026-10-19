@@ -1,18 +1,19 @@
 /**
- * 审核视图（设计 §10.1 的第三个视图）：「审核」阶段的逐图审核列表、候选比较面板、
- * 单图返工闭环与人工采用。
+ * 审图视图（设计 §13 的常驻精看）：单图比较细节、单图返工闭环与人工采用。
  *
- * 边界（设计 §10.1）：这里只持比较/返工/采用三区的就地 UI 状态（当前查看的图与候选、
+ * 边界（设计 §13.3/§13.5）：这里只持比较/返工/采用三区的就地 UI 状态（当前查看的图与候选、
  * 跨项目记忆、按候选归属的返工草稿、在飞标识），不写库、不发网络、不重算业务判定。
  * 候选链与尝试链的唯一所有者是 generation，采用记录与单图报告的唯一所有者是
  * selectionAdoption；返工意图的编译/落版/确认收归 generation（它向 prompts 借窄能力）。
  * 落库/派生/跨区渲染都经 deps 回到工作区。比较排序与默认目标由 domain/compare.js 决定，这里只投影。
+ * 逐图任务列表的唯一所有者是生成视图（`#task-list-mount`）；本视图只持一个常驻精看细节
+ * （当前查看的图 + 固定查看候选 + 邻接修改入口），不渲染第二份逐图列表。
  *
- * P5（#10 前端渲染迁移）：本视图**全部**内容都是 lit-html 声明式模板 —— 审核卡列表、比较面板
- * （表头动作、两张大图、候选页签、审核清单、参考图、状态行）、返工面板（问题勾选、方向、
- * 预览、状态与错误）与放大对话框，都按业务身份 keyed 由状态投影。index.html 只留空壳挂载点
- * （<section>/<div>/<dialog>，共四个：比较面板、返工面板、放大对话框、审核列表挂载点）；命令式写入只剩外壳根的
- * hidden 与合同/图号元数据；没有重绘前
+ * 本视图**全部**内容都是 lit-html 声明式模板 —— 比较面板（表头动作、两张大图、
+ * 候选页签、审核清单、参考图、状态行、采用进度与就地反馈）、返工面板（问题勾选、
+ * 方向、预览、状态与错误）与放大对话框，都按业务身份 keyed 由状态投影。
+ * index.html 只留空壳挂载点（<section>/<dialog>，共三个：比较面板、返工面板、
+ * 放大对话框）；命令式写入只剩外壳根的 hidden 与合同/图号元数据；没有重绘前
  * querySelector 抓取/恢复，没有每次渲染重复挂监听，也没有散落的 hidden/innerHTML 写法。
  * 草稿是唯一 UI 状态，按 project/shot/candidate 精确归属，切换候选不会把一条候选的编辑状态带到另一条。
  *
@@ -28,6 +29,7 @@ import {
   COMPARE_SEVERITY_TEXT,
   COMPARE_STATE_TEXT,
   REWORK_CONTRACT_VERSION,
+  REWORK_MODES,
   REWORK_PROBLEMS,
   attemptStateLabel,
   compareCounts,
@@ -38,6 +40,7 @@ import {
   reviewChecklist,
   reviewIsCurrent,
   reviewSummaryText,
+  reworkModeLabel,
   selectionSetText,
   sortFindings,
   suggestReworkProblems,
@@ -58,6 +61,7 @@ import type {
   PlanShot,
   ReviewFinding,
   ReviewReport,
+  ReworkMode,
   SelectionState,
   SuitePlanSummary,
 } from "../domain/type-contracts.js";
@@ -69,12 +73,14 @@ import type {
 import type {
   GenerationModule,
   ReworkIntent,
+  ReworkPromptChoice,
 } from "../generation.js";
 
 /**
- * 本视图负责的 DOM 句柄：只剩四个**空壳挂载点**。面板/对话框/审核列表里的内容
- * —— 表头按钮、选择器、两张大图、状态行、返工区、放大对话框内容、逐图审核卡、
- * 采用进度与就地反馈 —— 全部由本文件的 lit 模板渲染，工作区不再逐个传 id 句柄。
+ * 本视图负责的 DOM 句柄：三个**空壳挂载点**（比较面板、返工面板、放大对话框）。
+ * 面板/对话框里的内容 —— 表头按钮、选择器、两张大图、状态行、候选页签、审核清单、
+ * 返工区、放大内容、采用进度与就地反馈 —— 全部由本文件的 lit 模板渲染，工作区不再逐个传 id 句柄。
+ * 逐图任务列表归生成视图（`#task-list-mount`），本视图只持常驻精看细节。
  */
 export type CompareElements = {
   /** 比较面板根（index 空壳）：只写 hidden 与合同/图号元数据，内容全归模板。 */
@@ -83,8 +89,6 @@ export type CompareElements = {
   reworkPanel: HTMLElement;
   /** 放大对话框根（index 空壳）：内容归模板；showModal/close 与 cancel 属对话框外壳生命周期。 */
   imageZoomDialog: HTMLDialogElement;
-  /** 审核阶段逐图列表挂载点（index 空壳 `#review-list-mount`）：卡片、空占位与采用反馈全归模板。 */
-  reviewList: HTMLElement;
 };
 
 /**
@@ -103,10 +107,12 @@ export type CompareViewDeps = {
   /** 时间戳短格式：唯一实现在生成视图。 */
   shortTime(iso: unknown): string;
   ensurePreviewUrl(shotId: string, actionId: string, assetSha256: string): Promise<string | null>;
-  /** 阶段切换（打开比较即停靠审核阶段）；外壳归工作区。 */
+  /** 阶段切换（打开比较即停靠制作与审图阶段）；外壳归工作区。 */
   selectStage(stageId: string): void;
-  /** 收起后把焦点还给用户看得见的审阅入口（跨阶段 DOM 归工作区）。 */
+  /** 收起/取消后把焦点还给用户看得见的任务入口（任务列表 DOM 归生成视图/工作区）。 */
   focusReviewEntry(shotId: string | null): void;
+  /** 当前查看的图实际变化时通知任务列表（只在图号变化时触发，含首次稳定选择）。 */
+  onViewedShotChanged(shotId: string): void;
   /** 采用/返工提交后的尝试链刷新（生成视图）。 */
   renderAttempts(): void;
   /** 生成阶段错误位写入（唯一所有者在生成视图：同时写 #generateError/#attemptError；比较区不自持第二份错误 DOM）。 */
@@ -130,24 +136,28 @@ export type CompareView = {
    * keydown-cancel 等外壳行为；面板内部的按钮、选择器、文本框一律由模板 @event 持有。
    */
   bind(): void;
-  /** 审核阶段的逐图入口（工作区 refreshDerived 的一环）。 */
-  renderReviewList(): void;
-  /** 比较面板同轮刷新（生成区收尾经此回调）。 */
+  /** 常驻精看细节的同轮刷新（生成区收尾/任务选择经此回调；首次有效计划时稳定选定第一张图）。 */
   renderCompare(): void;
-  /** 采用进度行（生成区收尾经此回调）。 */
-  renderSelectionProgress(): void;
-  /** 比较区入口（生成区尝试行与审核卡共用）。 */
+  /** 比较区入口（任务列表与尝试行共用）。 */
   openCompare(shotId: string, options?: { candidateId?: string | null; focus?: boolean }): void;
   closeCompare(): void;
   isComparing(shotId: string): boolean;
+  /** 当前正看着的图（未查看任何图时为 null）。 */
+  currentShotId(): string | null;
+  /** 是否有与呈现基线真正不同的未保存返工草稿（系统建议原文不算脏）。 */
+  hasUnsavedDrafts(): boolean;
   handleCompareKeydown(event: KeyboardEvent): void;
+  /** 左栏选择（reference:sha/history:id/空值）：只换左栏，不换右栏查看对象。 */
+  handleLeftChange(value: string | null): void;
   handleBaselineChange(value: string | null): void;
   handleCompareReview(): Promise<void>;
   zoomViewed(): void;
-  zoomBaseline(): void;
+  zoomLeft(): void;
   closeImageZoom(): void;
   toggleZoomNative(): void;
-  openReworkPanel(options?: { shotId?: string | null; candidateId?: string | null }): void;
+  openReworkPanel(options?: { shotId?: string | null; candidateId?: string | null; trigger?: HTMLElement | null }): void;
+  /** 本图其它返工草稿的显式恢复：只接受精确 draftKey，切换前校验版本/字节。 */
+  openReworkDraftChoice(key: string | null): void;
   previewRework(): Promise<void>;
   editRework(): Promise<void>;
   submitRework(): Promise<void>;
@@ -155,6 +165,8 @@ export type CompareView = {
   cancelRework(): void;
   handleReworkKeydown(event: KeyboardEvent): void;
   handleReworkDirectionInput(value: string): void;
+  handleReworkModeInput(value: ReworkMode): void;
+  handleReworkPromptChoiceInput(value: ReworkPromptChoice | null): void;
   /** 人工采用/取消采用：默认对当前正看着的候选操作（与旧签名一致）。 */
   adoptCandidate(kind: "select" | "clear", shotId?: string | null, candidateId?: string | null): Promise<void>;
   /** 采用记录只读投影（阶段外壳与交付视图经同一入口读）。 */
@@ -167,11 +179,17 @@ export type CompareView = {
   resetViewState(): void;
 };
 
-/** 返工草稿（按候选内存态；意图只在显式预览后产生，视图原样持有并交回，不重算）。 */
+/** 返工草稿（按候选内存态；意图只在显式预览后产生，视图原样持有并交回，不重算）。
+ * mode 默认改这条候选；promptChoice 只在人工全文时由用户明确给出。
+ * baseline 是打开面板时呈现给用户的系统建议原文：只有键入了与它不同的文本才算脏，
+ * 新持久文本本身不算脏（设计 §13.3「系统原文基线识别真脏稿」）。 */
 export type CompareReworkDraft = {
+  mode: ReworkMode;
   problems: string[];
   direction: string;
+  promptChoice: ReworkPromptChoice | null;
   intent?: ReworkIntent | null;
+  baseline?: { problems: string[]; direction: string };
 };
 
 /** 套图方案摘要里的单图形状（视图只读 shot_id/label/required，不重算方案）。 */
@@ -187,50 +205,31 @@ type ReferenceEntryView = {
   url: string | null;
 };
 
-/** 审核卡上的检查摘要（报告/补建失败/未检查三态如实区分）。 */
-type ReviewCheckView = {
-  reviewState: string;
-  candidateId: string;
-  badgeClass: string;
-  stateLabel: string;
-  summary: string | null;
-  ai: { status: string; text: string } | null;
-  reportFailure: string | null;
-  headline: string | null;
-  hint: string | null;
+/** 左栏模式：默认商品依据；用户显式选历史对照后才切到对照候选，可切回。 */
+type CompareLeftMode = "reference" | "history";
+
+/** 左栏投影：默认商品依据（一次看一张，可切换多张）；历史对照只换左栏，不换右栏查看对象。 */
+type CompareLeftView = {
+  mode: CompareLeftMode;
+  caption: string;
+  url: string | null;
+  missing: boolean;
 };
 
-/** 逐图审核卡投影：所有字段都来自 owner 只读投影，模板不重算。 */
-type ReviewCardView = {
-  shotId: string;
-  label: string;
-  state: SelectionState;
-  chainCount: number;
-  badgeClass: string;
-  badgeText: string;
-  adoptedCandidateId: string;
-  storedCandidateId: string | null;
-  previewUrl: string | null;
-  message: string | null;
-  check: ReviewCheckView | null;
-  displayedIsAdopted: boolean;
-  stored: boolean;
-  canRework: boolean;
-  canAdopt: boolean;
-  adoptTitle: string | null;
-};
-
-/** 比较区就地投影：面板模板与审核卡共用的唯一来源（视图不重算业务判定）。 */
+/** 比较区就地投影：常驻精看细节的唯一来源（视图不重算业务判定）。 */
 type CompareUiState = {
   shotId: string | null;
   shot: PlanShot | null;
   candidateId: string | null;
   baselineId: string | null;
+  leftMode: CompareLeftMode;
+  leftReferenceSha: string | null;
   subject: string;
   status: string;
   jumpTarget: string | null;
   rows: CompareRow[];
   references: ReferenceEntryView[];
+  left: CompareLeftView;
   basisTitle: string;
   viewedCaption: string;
   viewedUrl: string | null;
@@ -239,17 +238,20 @@ type CompareUiState = {
   adoptSelectEnabled: boolean;
   adoptClearEnabled: boolean;
   reworkEntry: { shotId: string; candidateId: string; sha256: string } | null;
+  /** 未生成占位：有计划但无候选时如实显示准备/缺证/提交状态，不摆空候选框。 */
+  emptyNote: string;
   /** 放大对话框内容（模板投影；showModal/close 才是对话框外壳生命周期）。 */
   zoomSrc: string | null;
   zoomLabel: string;
   zoomNative: boolean;
-  /** 审核区就地反馈（采用进度、采用结果行、就地错误）：全部由模板投影，不再直接写节点。 */
+  /** 精看细节里的就地反馈（采用进度、采用结果行、就地错误）：全部由模板投影，不再直接写节点。 */
   adoptProgress: string;
   adoptStatus: string;
   adoptError: string;
 };
 
-/** 返工区就地投影：draftKey 精确到 project/shot/candidate，草稿不跨候选复用。 */
+/** 返工区就地投影：draftKey 精确到 project/shot/candidate 文档版本/字节，草稿不跨候选复用。
+ * 同一候选的多个模式各有独立草稿，由用户显式选择，不做 find-first 静默代选。 */
 type ReworkUiState = {
   shotId: string | null;
   candidateId: string | null;
@@ -293,20 +295,27 @@ export function createCompareView(
 ): CompareView {
   const { inputs, generation, selectionAdoption } = deps;
 
-  // 比较区就地状态：当前打开的图与候选、异步图片请求的代次、跨项目记忆、放大关闭后恢复焦点。
+  // 比较区就地状态：当前查看的图与候选、异步图片请求的代次、跨项目记忆、放大关闭后恢复焦点。
+  // 左栏模式与商品依据选择也按项目+图记忆：晚到结果只补候选选项，不改左/右查看对象。
+  // explicitClosed 只记住用户这一次的显式收起：它阻止投影自动重选第一张图，
+  // 但用户下一次显式 openCompare（含下一个待处理）会清除它。
+  let explicitClosed = false;
   let compareToken = 0;
   let compareImageToken = 0;
-  const compareViews = new Map<string, { candidateId: string | null; baselineId: string | null }>();
+  const compareViews = new Map<string, {
+    candidateId: string | null; baselineId: string | null;
+    leftMode: CompareLeftMode; leftReferenceSha: string | null;
+  }>();
   let imageZoomReturnFocus: HTMLElement | null = null;
+  // 返工打开时的原始触发器：取消只回到它，不抢占用户后来自己点的焦点。
+  let reworkReturnFocus: HTMLElement | null = null;
 
   // 返工草稿按 project/shot/candidate 归属：切换候选不会把 A 的编辑带到 B。
   let reworkDrafts = new Map<string, CompareReworkDraft>();
 
   const compareImageUrls: UrlCache = new Map();
   const candidatePreviewUrls: UrlCache = new Map();
-  const reviewPreviewUrls: UrlCache = new Map();
   const candidatePreviewPending = new Set<string>();
-  const reviewPreviewPending = new Set<string>();
 
   let bound = false;
 
@@ -315,11 +324,14 @@ export function createCompareView(
     shot: null,
     candidateId: null,
     baselineId: null,
+    leftMode: "reference",
+    leftReferenceSha: null,
     subject: "",
     status: "",
     jumpTarget: null,
     rows: [],
     references: [],
+    left: { mode: "reference", caption: "商品依据", url: null, missing: false },
     basisTitle: "",
     viewedCaption: "",
     viewedUrl: null,
@@ -328,6 +340,7 @@ export function createCompareView(
     adoptSelectEnabled: false,
     adoptClearEnabled: false,
     reworkEntry: null,
+    emptyNote: "",
     zoomSrc: null,
     zoomLabel: ZOOM_DEFAULT_TITLE,
     zoomNative: false,
@@ -527,24 +540,25 @@ export function createCompareView(
     `;
   }
 
-  function referencesTemplate() {
-    return repeat(state.references, (entry) => entry.sha256 + "|" + entry.role, (entry) => html`
-      <li data-reference-sha256=${entry.sha256}>
-        ${entry.url
-          ? html`
-              <img src=${entry.url} alt=${"参考图 " + entry.role} loading="lazy">
-              <button type="button" @click=${() => openImageZoom(entry.url || "", "参考原图 · " + (ROLE_TEXT[entry.role] || entry.role))}>放大参考原图</button>
-            `
-          : html`<span class="meta">资产缺失</span>`}
-        <span class="meta">${ROLE_TEXT[entry.role] || entry.role}</span>
-        <details class="tech-details">
-          <summary>技术详情</summary>
-          <p class="meta tech-body">${"sha256 " + String(entry.sha256).slice(0, 8) + "…"}</p>
-        </details>
-      </li>
-    `);
+  /** 左栏：默认商品依据（一次看一张，用选择器切换多张）；对照只换左栏，右栏查看对象不变。 */
+  function leftColumnTemplate() {
+    const left = state.left;
+    const optionValue = left.mode === "history" ? ("history:" + (state.baselineId || "")) : ("reference:" + (state.leftReferenceSha || ""));
+    return html`
+      <figure>
+        <figcaption>
+          <label for="compare-left-select">${left.mode === "history" ? "左侧：历史对照（右图不变）" : "左侧：商品依据（默认）"}</label>
+          <select id="compare-left-select" .value=${live(optionValue)}
+            @change=${(event: Event) => { handleLeftChange((event.target as HTMLSelectElement).value); }}>
+            ${leftReferenceOptionsTemplate()}${historyOptionsTemplate()}
+          </select>
+        </figcaption>
+        <ul id="compare-references" class="compare-references" data-left-mode=${left.mode}>${leftFigureTemplate()}</ul>
+      </figure>
+    `;
   }
 
+  /** 候选项区下面的按需对照下拉：与左栏历史对照同一语义（清空即回到商品依据）。 */
   function baselineOptionsTemplate() {
     return html`
       <option value="">不指定对照</option>
@@ -555,6 +569,62 @@ export function createCompareView(
           const suffix = adopted && adopted.candidate_id === row.candidate_id ? " · 已采用" : "";
           return html`<option value=${row.candidate_id}>${"候选 v" + row.version + suffix}</option>`;
         })}
+    `;
+  }
+
+  function leftReferenceOptionsTemplate() {
+    if (!state.references.length) return html`<option value="reference:" disabled>商品依据：暂无可用原图</option>`;
+    return html`
+      <optgroup label="商品依据">
+        ${repeat(state.references, (entry) => entry.sha256 + "|" + entry.role, (entry) => html`
+          <option value=${"reference:" + entry.sha256}>${(ROLE_TEXT[entry.role] || entry.role) + (entry.missing ? "（资产缺失）" : "")}</option>`)}
+      </optgroup>
+    `;
+  }
+
+  function historyOptionsTemplate() {
+    const others = state.rows.filter((row) => row.candidate_id !== state.candidateId);
+    if (!others.length) return nothing;
+    return html`
+      <optgroup label="历史对照（只换左栏）">
+        ${repeat(others, (row) => row.candidate_id, (row) => {
+          const adopted = state.shotId ? adoptedMarkOf(state.shotId) : null;
+          const suffix = adopted && adopted.candidate_id === row.candidate_id ? " · 已采用" : "";
+          return html`<option value=${"history:" + row.candidate_id}>${"候选 v" + row.version + suffix}</option>`;
+        })}
+      </optgroup>
+    `;
+  }
+
+  /** 左栏唯一真相：商品依据或显式历史对照二选一，常驻单图，无空第三列。 */
+  function leftFigureTemplate() {
+    const left = state.left;
+    const comparison = state.baselineId
+      ? (state.rows.find((row) => row.candidate_id === state.baselineId) || null)
+      : null;
+    if (left.mode === "history") {
+      return html`
+        <li data-reference-sha256=${comparison ? comparison.asset_sha256 : ""} data-history-candidate=${comparison ? comparison.candidate_id : ""}>
+          ${left.url
+            ? html`<img id="compare-left-image" src=${left.url} alt="左侧历史对照候选" loading="lazy"
+                data-candidate-id=${ifDefined(comparison ? comparison.candidate_id : undefined)}>`
+            : html`<span class="meta">历史候选字节缺失；请恢复项目包，不会用另一张图片替代。</span>`}
+          <span class="meta">${left.caption}</span>
+          <button id="compare-left-zoom" type="button" ?disabled=${!left.url}
+            @click=${() => { zoomLeft(); }}>放大左侧对照</button>
+        </li>
+      `;
+    }
+    const entry = state.references.find((item) => item.sha256 === state.leftReferenceSha) || state.references[0] || null;
+    return html`
+      <li data-reference-sha256=${entry ? entry.sha256 : ""}>
+        ${left.url
+          ? html`<img id="compare-left-image" src=${left.url} alt=${"商品依据 " + (entry ? (ROLE_TEXT[entry.role] || entry.role) : "")} loading="lazy">`
+          : html`<span class="meta">${entry && entry.missing ? "商品依据资产缺失；请恢复项目包，不会用另一张图片替代。" : "商品依据暂无可用原图；不会用候选冒充依据。"}</span>`}
+        <span class="meta">${left.caption}</span>
+        <button id="compare-left-zoom" type="button" ?disabled=${!left.url}
+          @click=${() => { zoomLeft(); }}>放大商品依据</button>
+      </li>
     `;
   }
 
@@ -577,18 +647,18 @@ export function createCompareView(
   }
 
   /**
-   * 比较面板整块内容：index 只留 <section> 空壳，这里的模板按状态投影全部子节点
+   * 常驻精看细节：index 只留 <section> 空壳，这里的模板按状态投影全部子节点
    * （结构不变时就地 patch ⇒ 焦点、details 展开态、半截输入都不会被重画抹掉）。
+   * 左默认商品依据、右固定当前候选；历史对照只换左栏，不设常驻空第三列。
+   * 采用进度/状态/错误住在细节里，不再另起逐图列表。
    */
   function comparePanelTemplate() {
     const viewed = state.rows.find((row) => row.candidate_id === state.candidateId) || null;
-    const comparison = state.baselineId
-      ? (state.rows.find((row) => row.candidate_id === state.baselineId) || null)
-      : null;
     const entry = state.reworkEntry;
+    const hasCandidates = state.rows.length > 0;
     return html`
       <div class="compare-head">
-        <h4 id="compare-title">候选比较与审核清单</h4>
+        <h4 id="compare-title">审图细节</h4>
         <span id="compare-subject" class="meta">${state.subject}</span>
         <span class="compare-head-actions">
           <button id="adopt-open" class="primary" type="button" ?disabled=${!state.adoptSelectEnabled}
@@ -597,7 +667,12 @@ export function createCompareView(
             @click=${() => { void adoptCandidate("clear"); }}>取消这张图的采用</button>
           <button id="rework-open" type="button" ?disabled=${!entry}
             data-shot-id=${entry ? entry.shotId : ""} data-candidate-id=${entry ? entry.candidateId : ""} data-candidate-sha256=${entry ? entry.sha256 : ""}
-            @click=${() => { if (entry) openReworkPanel({ shotId: entry.shotId, candidateId: entry.candidateId }); }}>返工当前候选</button>
+            @click=${(event: Event) => {
+              if (entry) openReworkPanel({
+                shotId: entry.shotId, candidateId: entry.candidateId,
+                trigger: event.currentTarget instanceof HTMLElement ? event.currentTarget : null,
+              });
+            }}>返工当前候选</button>
           <button id="compare-review" type="button" ?disabled=${!state.reviewEnabled}
             title="只在你点这一下时才调用 AI 复核；查看、切换、采用都不会触发。未复核不阻断人工采用。"
             @click=${() => { void handleCompareReview(); }}>AI 复核当前查看候选（按需发起，可选）</button>
@@ -608,61 +683,145 @@ export function createCompareView(
         </span>
       </div>
       <p class="meta" id="compare-basis-title">${state.basisTitle}</p>
-      <div class="compare-image-grid">
-        <figure>
-          <figcaption>原任务参考图</figcaption>
-          <ul id="compare-references" class="compare-references">${referencesTemplate()}</ul>
-        </figure>
-        <figure>
-          <figcaption>
-            <label for="compare-baseline-select">对照候选</label>
-            <select id="compare-baseline-select" .value=${live(state.baselineId || "")}
-              @change=${(event: Event) => { handleBaselineChange((event.target as HTMLSelectElement).value); }}>${baselineOptionsTemplate()}</select>
-          <img id="compare-baseline-image" alt="所指定的对照候选" ?hidden=${!state.baselineUrl}
-            src=${ifDefined(state.baselineUrl ?? undefined)}
-            data-candidate-id=${ifDefined(comparison ? comparison.candidate_id : undefined)}>
-          <button id="compare-baseline-zoom" type="button" ?disabled=${!state.baselineUrl}
-            @click=${() => { zoomBaseline(); }}>放大对照候选</button>
-        </figure>
-        <figure>
-          <figcaption id="compare-viewed-caption">${state.viewedCaption}</figcaption>
-          <img id="compare-viewed-image" alt="当前查看候选" ?hidden=${!state.viewedUrl}
-            src=${ifDefined(state.viewedUrl ?? undefined)}
-            data-candidate-id=${ifDefined(viewed ? viewed.candidate_id : undefined)}>
-          <button id="compare-viewed-zoom" type="button" ?disabled=${!state.viewedUrl}
-            @click=${() => { zoomViewed(); }}>放大当前候选</button>
-        </figure>
-      </div>
-      <div class="compare-body">
-        <div class="compare-column">
-          <p class="meta">候选（异常优先，同档新到旧）</p>
-          <div id="compare-candidates" class="compare-candidates" role="tablist" aria-label="候选"
-            @keydown=${(event: KeyboardEvent) => { handleCompareKeydown(event); }}>
-            ${repeat(state.rows, (row) => row.candidate_id,
-              (row) => candidateCardTemplate(row, state.candidateId))}
+      ${hasCandidates ? html`
+        <div class="compare-image-grid">
+          ${leftColumnTemplate()}
+          <figure>
+            <figcaption id="compare-viewed-caption">${state.viewedCaption}</figcaption>
+            <img id="compare-viewed-image" alt="当前查看候选" ?hidden=${!state.viewedUrl}
+              src=${ifDefined(state.viewedUrl ?? undefined)}
+              data-candidate-id=${ifDefined(viewed ? viewed.candidate_id : undefined)}>
+            <button id="compare-viewed-zoom" type="button" ?disabled=${!state.viewedUrl}
+              @click=${() => { zoomViewed(); }}>放大当前候选</button>
+          </figure>
+        </div>
+        <div class="compare-body">
+          <div class="compare-column">
+            <p class="meta">候选（异常优先，同档新到旧）</p>
+            <div id="compare-candidates" class="compare-candidates" role="tablist" aria-label="候选"
+              @keydown=${(event: KeyboardEvent) => { handleCompareKeydown(event); }}>
+              ${repeat(state.rows, (row) => row.candidate_id,
+                (row) => candidateCardTemplate(row, state.candidateId))}
+            </div>
+            <details class="compare-history">
+              <summary>按需历史对照（只换左栏，右图不变）</summary>
+              <label class="meta" for="compare-baseline-select">对照候选（清空即回到商品依据）</label>
+              <select id="compare-baseline-select" .value=${live(state.baselineId || "")}
+                @change=${(event: Event) => { handleBaselineChange((event.target as HTMLSelectElement).value); }}>${baselineOptionsTemplate()}</select>
+            </details>
+          </div>
+          <div class="compare-column">
+            <div id="compare-checklist" role="tabpanel" tabindex="0" aria-label="审核清单"
+              aria-labelledby=${state.candidateId ? compareTabId(state.candidateId) : "compare-title"}
+              data-candidate-id=${ifDefined(viewed ? viewed.candidate_id : undefined)}
+              data-compare-state=${ifDefined(viewed ? viewed.review_state : undefined)}>
+              ${checklistTemplate()}
+            </div>
           </div>
         </div>
-        <div class="compare-column">
-          <div id="compare-checklist" role="tabpanel" tabindex="0" aria-label="审核清单"
-            aria-labelledby=${state.candidateId ? compareTabId(state.candidateId) : "compare-title"}
-            data-candidate-id=${ifDefined(viewed ? viewed.candidate_id : undefined)}
-            data-compare-state=${ifDefined(viewed ? viewed.review_state : undefined)}>
-            ${checklistTemplate()}
-          </div>
-        </div>
-      </div>
+      ` : html`
+        <p id="compare-empty" class="empty">${state.emptyNote || "这张图还没有候选。"}</p>
+        <ul id="compare-references" class="compare-references" data-left-mode="reference" hidden></ul>
+        <div id="compare-candidates" class="compare-candidates" role="tablist" aria-label="候选"></div>
+        <div id="compare-checklist" role="tabpanel" tabindex="0" aria-label="审核清单" aria-labelledby="compare-title"></div>
+      `}
+      <p id="adopt-progress" class="meta" role="status">${state.adoptProgress}</p>
       <p id="compare-status" class="meta" role="status">${state.status}</p>
+      <p id="adopt-status" class="status" role="status" ?hidden=${state.adoptStatus.length === 0}>${state.adoptStatus}</p>
+      <p id="adopt-error" class="error" role="alert" ?hidden=${state.adoptError.length === 0}>${state.adoptError}</p>
     `;
   }
 
-  /** 预览就绪时的一行元信息（与旧投影逐字一致：参考图张数 + 全文长度）。 */
+  /** 预览就绪时的一行元信息：改法 + 实际发送顺序/张数 + 全文长度。
+   * 编辑源（问题候选）在首位时明确标出；重画只列商品原照依据。 */
   function reworkPreviewMetaOf(intent: ReworkIntent): string {
-    return "将保存为 Prompt 新版本（旧版本保留）并只重新生成这张图 · 参考图 "
-      + intent.preview.references + " 张 · 全文 " + intent.preview.text.length + " 字";
+    const order = intent.seenReferences.map((item, index) => {
+      const tag = item.uses.includes("edit_source") ? "编辑源" : (ROLE_TEXT[item.role] || item.role);
+      return "图" + (index + 1) + tag;
+    }).join("、");
+    return reworkModeLabel(intent.mode) + " · 将保存为 Prompt 新版本（旧版本保留）并只重新生成这张图"
+      + " · 参考图 " + intent.preview.references + " 张（" + order + "）"
+      + " · 全文 " + intent.preview.text.length + " 字";
+  }
+
+  /** 返工改法选择：模板按草稿投影；切换改法即切到该改法的独立草稿（问题/方向/意图不混用）。 */
+  function reworkModeTemplate() {
+    const draft = rework.draft;
+    if (!rework.shotId || !draft) return nothing;
+    return repeat(REWORK_MODES, (mode) => mode, (mode) => html`
+      <label class="check rework-mode" data-mode=${mode}>
+        <input
+          id=${"rework-mode-" + mode}
+          type="radio"
+          name="rework-mode"
+          value=${mode}
+          .checked=${live(draft.mode === mode)}
+          @change=${() => handleReworkModeInput(mode as ReworkMode)}
+        >
+        ${mode === "edit_candidate"
+          ? "改这条候选：把问题候选原图放首位当编辑源，再按商品原照改"
+          : "按原资料重画：只发商品原照依据，不发问题候选"}
+      </label>
+    `);
+  }
+
+  /** 本图其它返工草稿：有未确认内容的多草稿必须由用户显式选择，不静默代选。 */
+  function reworkDraftChoiceTemplate() {
+    if (!rework.shotId || !rework.draftKey) return nothing;
+    const projectId = deps.currentProjectId() || "";
+    const prefix = projectId + "::" + rework.shotId + "::";
+    const others: { key: string; label: string }[] = [];
+    for (const [key, value] of reworkDrafts) {
+      if (key === rework.draftKey || !key.startsWith(prefix)) continue;
+      const nonEmpty = value.problems.length > 0 || String(value.direction || "").trim().length > 0
+        || Boolean(value.intent);
+      if (!nonEmpty) continue;
+      const parts = key.slice(prefix.length).split("::");
+      const candidateId = parts[0] || "?";
+      const version = parts[1] || "?";
+      const row = reworkShotRow(rework.shotId, candidateId);
+      const versionText = row && row.version !== null && row.version !== undefined
+        ? "v" + row.version : "v" + version;
+      others.push({ key, label: "候选 " + versionText + " · " + reworkModeLabel(value.mode) });
+    }
+    if (!others.length) return nothing;
+    return html`
+      <div class="field">
+        <label for="rework-draft-choice">本图其它返工草稿（不会自动代入当前面板）</label>
+        <select id="rework-draft-choice" .value=${live("")}
+          @change=${(event: Event) => { openReworkDraftChoice((event.target as HTMLSelectElement).value); }}>
+          <option value="">不切换，继续当前草稿</option>
+          ${repeat(others, (item) => item.key, (item) => html`
+            <option value=${item.key}>${item.label}</option>`)}
+        </select>
+      </div>
+    `;
+  }
+
+  /** 人工全文被覆盖前的显式选择：系统模板/人工文本二选其一，无默认，不静默覆盖。 */
+  function reworkPromptChoiceTemplate() {
+    const draft = rework.draft;
+    const intent = draft && draft.intent ? draft.intent : null;
+    if (!rework.shotId || !draft
+      || (intent?.seenPromptOrigin !== "manual_edit" && draft.promptChoice === null)) return nothing;
+    return html`
+      <div class="field">
+        <label for="rework-prompt-choice">当前 Prompt 是人工全文：返工落版时如何处理人工文本</label>
+        <select id="rework-prompt-choice" .value=${live(draft.promptChoice || "")}
+          @change=${(event: Event) => {
+            const value = (event.target as HTMLSelectElement).value;
+            handleReworkPromptChoiceInput(value === "" ? null : (value as ReworkPromptChoice));
+          }}>
+          <option value="">先选一种处理方式再确认</option>
+          <option value="rebuild_system">重编系统模板：人工文本不带入新版本</option>
+          <option value="keep_manual">保留人工文本：以人工全文为新版本当前内容</option>
+        </select>
+      </div>
+    `;
   }
 
   /**
-   * 返工面板整块内容：草稿（问题/方向/意图）是唯一状态，勾选、方向、预览、状态与错误都按它投影。
+   * 返工面板整块内容：草稿（改法/问题/方向/意图）是唯一状态，勾选、方向、预览、状态与错误都按它投影。
    * 外墙 <section> 的 hidden 属外壳生命周期（见 projectRoots），这里只投影内部。
    */
   function reworkPanelTemplate() {
@@ -685,6 +844,11 @@ export function createCompareView(
         <summary>技术详情</summary>
         <p id="rework-tech-body" class="meta">${rework.tech}</p>
       </details>
+      ${reworkDraftChoiceTemplate()}
+      <fieldset id="rework-mode" class="rework-mode">
+        <legend class="meta">返工改法（默认改这条候选；切换后用该改法的独立草稿重新预览）</legend>
+        <div class="rework-mode-options">${reworkModeTemplate()}</div>
+      </fieldset>
       <fieldset id="rework-problems" class="rework-problems">
         <legend class="meta">问题分类（可多选；至少要选一类或写一句方向）</legend>
         <div class="rework-problem-options">${reworkProblemsTemplate()}</div>
@@ -693,17 +857,26 @@ export function createCompareView(
         <label for="rework-direction">改进方向（可改写）</label>
         <textarea id="rework-direction" rows="2" maxlength="300" .value=${live(draft ? draft.direction : "")}
           @input=${(event: Event) => { handleReworkDirectionInput((event.target as HTMLTextAreaElement).value); }}></textarea>
+      ${reworkPromptChoiceTemplate()}
       <div class="toolbar">
         <button id="rework-preview" type="button" ?disabled=${rework.inFlight || !hasReason}
           @click=${() => { void previewRework(); }}>预览返工 Prompt</button>
         <button id="rework-edit" type="button" disabled
           @click=${() => { void editRework(); }}>查看/编辑完整 Prompt</button>
-        <button id="rework-submit" type="button" class="primary" ?disabled=${rework.inFlight || !intent}
+        <button id="rework-submit" type="button" class="primary"
+          ?disabled=${rework.inFlight || !intent || intent.preview.cost.upper_fen === null}
           @click=${() => { void submitRework(); }}>确认并生成这张图</button>
       </div>
       <div id="rework-preview-box" class="rework-preview" ?hidden=${!intent}>
         <p id="rework-preview-meta" class="meta">${intent ? reworkPreviewMetaOf(intent) : ""}</p>
-        <pre id="rework-preview-text" class="prompt-text">${intent ? intent.preview.text : ""}</pre>
+        <p id="rework-cost" class="meta">${intent?.preview.cost.message || ""}</p>
+        ${intent?.preview.cost.pricing?.kind === "official" && intent.preview.cost.pricing.source_url ? html`
+          <p class="meta">
+            <a href=${intent.preview.cost.pricing.source_url} target="_blank" rel="noopener noreferrer">官方定价依据</a>
+            · 输入图 ¥${(intent.preview.cost.pricing.input_image_fen / 100).toFixed(2)}/张，
+            输出图 ¥${(intent.preview.cost.pricing.output_image_fen / 100).toFixed(2)}/张
+          </p>` : nothing}
+        <pre id="rework-preview-text" class="prompt-text" tabindex="0" aria-label="返工 Prompt 预览">${intent ? intent.preview.text : ""}</pre>
       </div>
       <p id="rework-summary" class="meta">${rework.shotId ? reworkSummaryOf(draft) : ""}</p>
       <p id="rework-status" class="status" role="status" ?hidden=${rework.status.length === 0}>${rework.status}</p>
@@ -757,17 +930,21 @@ export function createCompareView(
   /**
    * 本视图唯一的命令式写入口：<section>/<dialog> 外壳根不属于模板内容，这里只写它们的
    * 生命周期 hidden 与合同/图号元数据（面板内部一切一律由模板投影）。
+   * 比较面板是常驻精看：只要选中了一张计划里的图就展示（含未生成的诚实占位）。
    */
   function projectRoots(): void {
     const panel = elements.comparePanel;
-    const open = state.shotId !== null && state.rows.length > 0;
+    const open = state.shotId !== null;
     panel.hidden = !open;
     if (open && state.shotId) {
       panel.dataset.compareContract = COMPARE_CONTRACT_VERSION;
       panel.dataset.shotId = state.shotId;
+      if (state.candidateId) panel.dataset.candidateId = state.candidateId;
+      else delete panel.dataset.candidateId;
     } else {
       delete panel.dataset.compareContract;
       delete panel.dataset.shotId;
+      delete panel.dataset.candidateId;
     }
     const reworkOpen = rework.shotId !== null;
     elements.reworkPanel.hidden = !reworkOpen;
@@ -797,10 +974,13 @@ export function createCompareView(
     state.shot = null;
     state.candidateId = null;
     state.baselineId = null;
+    state.leftMode = "reference";
+    state.leftReferenceSha = null;
     state.subject = "";
     state.jumpTarget = null;
     state.rows = [];
     state.references = [];
+    state.left = { mode: "reference", caption: "商品依据", url: null, missing: false };
     state.basisTitle = "";
     state.viewedCaption = "";
     state.viewedUrl = null;
@@ -809,78 +989,210 @@ export function createCompareView(
     state.adoptSelectEnabled = false;
     state.adoptClearEnabled = false;
     state.reworkEntry = null;
+    state.emptyNote = "";
     closeReworkPanel({ focusCandidate: false });
   }
 
-  /** 从 owner 只读投影重算比较区状态；不读写记录、不改判定。 */
+  /** 首次有效计划的稳定默认图：计划顺序第一张；晚到结果永不改这个选择。 */
+  function firstPlannedShotId(shots: SuiteShotSummary[]): string | null {
+    const first = shots.find((item) => item && typeof item.shot_id === "string");
+    return first ? first.shot_id : null;
+  }
+
+  /** 实际查看的图变化时通知任务列表（首次稳定选择也通知；候选/对照/晚到结果不通知）。 */
+  function notifyViewedShotChanged(previousShotId: string | null, nextShotId: string | null): void {
+    if (!nextShotId || previousShotId === nextShotId) return;
+    try {
+      deps.onViewedShotChanged(nextShotId);
+    } catch (error) {
+      deps.reportError(error);
+    }
+  }
+
+  function currentShotId(): string | null {
+    return state.shotId;
+  }
+
+  function rememberCompareView(): void {
+    const projectId = deps.currentProjectId();
+    if (projectId && state.shotId) compareViews.set(projectId + ":" + state.shotId, {
+      candidateId: state.candidateId, baselineId: state.baselineId,
+      leftMode: state.leftMode, leftReferenceSha: state.leftReferenceSha,
+    });
+  }
+
+  function restoreCompareView(shotId: string): void {
+    const previous = compareViews.get(deps.currentProjectId() + ":" + shotId);
+    state.candidateId = previous?.candidateId || null;
+    state.baselineId = previous?.baselineId || null;
+    state.leftMode = previous?.leftMode || "reference";
+    state.leftReferenceSha = previous?.leftReferenceSha || null;
+  }
+
+  /** 采用进度行：只读投影，写进细节状态后由精看模板一次投影（不再直接写节点）。 */
+  function projectAdoptProgress(): void {
+    if (!inputs.suitePlan()) {
+      state.adoptProgress = "";
+    } else {
+      const set = selectionAdoption.projection(inputs.sources()).set;
+      state.adoptProgress = set.summary.required_total > 0
+        ? selectionSetText(set) + "采用只引用候选（candidate_id + sha256），不复制图片。"
+        : "";
+    }
+  }
+
+  /** 从 owner 只读投影重算精看细节状态；不读写记录、不改判定。
+   * 未生成计划图保持诚实占位（准备/缺证/提交状态），细节不消失；晚到结果只补选项，不改图/候选。 */
   function projectCompare(): void {
     const plan = inputs.suitePlan();
-    if (!plan || !state.shotId) {
-      clearCompareState();
-      return;
-    }
-    const shot = (plan.shots || []).find((item) => item && item.shot_id === state.shotId) || null;
-    if (!shot) {
-      state.shotId = null;
-      clearCompareState();
-      return;
-    }
     const inventory = compareInventory();
-    const shotId = shot.shot_id;
-    const rows = inventory.rowsByShotId[shotId] || [];
-    if (!rows.length) {
-      state.shotId = null;
+    if (!plan || !inventory.shots.length) {
       clearCompareState();
+      projectAdoptProgress();
       return;
     }
-    const candidateId = rows.some((row) => row.candidate_id === state.candidateId)
-      ? state.candidateId : defaultCompareTargetId(rows);
-    state.candidateId = candidateId;
-    state.shotId = shotId;
-    state.shot = shot;
+    const previousShotId = state.shotId;
+    let shotId = state.shotId;
+    const stillPlanned = shotId !== null && inventory.shots.some((item) => item.shot_id === shotId);
+    // 显式收起后保持空细节，直到用户下一次显式选图；晚到结果/刷新不自动重选。
+    if (!stillPlanned && explicitClosed) {
+      clearCompareState();
+      projectAdoptProgress();
+      return;
+    }
+    if (!stillPlanned) shotId = firstPlannedShotId(inventory.shots);
+    if (shotId === null) {
+      clearCompareState();
+      projectAdoptProgress();
+      return;
+    }
+    const shot = (plan.shots || []).find((item) => item && item.shot_id === shotId) || null;
+    const rows = inventory.rowsByShotId[shotId] || [];
+    // 晚到保护：已固定的查看候选只要还在就不动；只有它消失了才按异常优先重选。
+    const candidateId = rows.length
+      ? (rows.some((row) => row.candidate_id === state.candidateId)
+        ? state.candidateId : defaultCompareTargetId(rows))
+      : null;
     let baselineId = state.baselineId;
     if (!baselineId || baselineId === candidateId
       || !rows.some((row) => row.candidate_id === baselineId)) baselineId = null;
+    const leftMode: CompareLeftMode = baselineId ? "history" : "reference";
+    const references = projectReferenceEntries(shotId, rows, candidateId);
+    let leftReferenceSha = state.leftReferenceSha;
+    if (!references.some((entry) => entry.sha256 === leftReferenceSha)) {
+      leftReferenceSha = references.length ? references[0].sha256 : null;
+    }
+    state.shotId = shotId;
+    state.shot = shot;
+    state.candidateId = candidateId;
     state.baselineId = baselineId;
+    state.leftMode = leftMode;
+    state.leftReferenceSha = leftReferenceSha;
     state.rows = rows;
-
-    const counts = compareCounts(rows);
-    const parts = ["候选 " + counts.total];
-    if (counts.pending) parts.push("待处理 " + counts.pending);
-    if (counts.unknown) parts.push("未知 " + counts.unknown);
-    if (counts.unchecked) parts.push("未检查 " + counts.unchecked);
-    state.subject = deps.shotLabelOf(shotId) + " · " + parts.join(" · ");
-
+    state.references = references;
+    if (rows.length) {
+      const counts = compareCounts(rows);
+      const parts = ["候选 " + counts.total];
+      if (counts.pending) parts.push("待处理 " + counts.pending);
+      if (counts.unknown) parts.push("未知 " + counts.unknown);
+      if (counts.unchecked) parts.push("未检查 " + counts.unchecked);
+      state.subject = deps.shotLabelOf(shotId) + " · " + parts.join(" · ");
+      state.emptyNote = "";
+    } else {
+      state.subject = deps.shotLabelOf(shotId) + " · 尚无候选";
+      state.emptyNote = emptyNoteFor(shotId);
+    }
     state.jumpTarget = nextPendingShotId({
       rowsByShotId: inventory.rowsByShotId,
       shotOrder: inventory.shots.map((item) => item.shot_id),
       currentShotId: shotId,
     }) || null;
-
     rememberCompareView();
-
     const targetRow = rows.find((row) => row.candidate_id === candidateId) || null;
     const candidate = targetRow && targetRow.record ? targetRow.record : null;
     const sha256 = targetRow ? targetRow.asset_sha256 : null;
     state.reworkEntry = (targetRow && candidate && sha256)
       ? { shotId, candidateId: targetRow.candidate_id, sha256 }
       : null;
-
     const selected = selectionAdoption.entryOf(shotId)?.record || null;
     const already = Boolean(selected && selected.action === "select" && targetRow
       && selected.candidate_id === targetRow.candidate_id
       && selectionAdoption.stateOf(shotId) === "current");
     state.adoptSelectEnabled = Boolean(targetRow && targetRow.record && targetRow.record.asset_sha256) && !already;
     state.adoptClearEnabled = Boolean(selected && selected.action === "select");
-
     const adopted = adoptedMarkOf(shotId);
     state.reviewEnabled = Boolean(targetRow && !selectionAdoption.isReviewInFlight(shotId));
-    state.viewedCaption = "当前查看：候选 v" + (targetRow?.version || "?")
-      + (adopted?.candidate_id === candidateId ? " · 已采用" : " · 未采用此候选")
-      + "；查看和对照不会改选。";
+    state.viewedCaption = targetRow
+      ? ("当前查看：候选 v" + (targetRow.version || "?")
+        + (adopted?.candidate_id === candidateId ? " · 已采用" : " · 未采用此候选")
+        + "；查看和对照不会改选。")
+      : "当前查看：尚无候选；对照与采用等生成成功后再操作。";
     state.viewedUrl = urlOf(compareImageUrls, targetRow);
     const comparison = baselineId ? (rows.find((row) => row.candidate_id === baselineId) || null) : null;
     state.baselineUrl = urlOf(compareImageUrls, comparison);
+    projectLeftColumn();
+    projectAdoptProgress();
+    notifyViewedShotChanged(previousShotId, shotId);
+  }
+
+  /** 未生成占位文案：准备/缺证/提交状态三态如实区分，不摆空候选框。 */
+  function emptyNoteFor(shotId: string): string {
+    const summary = shotSummaries().find((item) => item.shot_id === shotId) || null;
+    const latest = generation.latestAttemptOf(shotId);
+    const stateName = latest ? latest.record.state : null;
+    if (stateName === ATTEMPT_STATES.failed) {
+      return "这张图最近一次生成明确失败，尚无可用候选；失败原因在任务执行区查看，不影响其它图。";
+    }
+    if (stateName === ATTEMPT_STATES.unknown) {
+      return "这张图最近一次提交结果未知，尚无可用候选；先按任务编号核对，不要重复提交。";
+    }
+    if (stateName === ATTEMPT_STATES.pending_submit || stateName === ATTEMPT_STATES.submitted
+      || stateName === ATTEMPT_STATES.running) {
+      return "这张图正在生成（" + attemptStateLabel(stateName) + "）；成功后候选会出现在这里，不用等整批结束。";
+    }
+    if (summary && summary.satisfied !== true) {
+      const reasons = (summary.blocking || []).map((item) => item.reason || "").filter(Boolean);
+      return "这张图还没准备好生成" + (reasons.length ? "（缺：" + reasons.join("；") + "）" : "")
+        + "；补足依据后提交，成功后在这里审图。";
+    }
+    return "这张图还没有生成；提交后成功候选会出现在这里。";
+  }
+
+  /** 左栏商品依据条目：来自当前查看候选的原任务动作观察（与提交时同一来源链），不猜不替代。 */
+  function projectReferenceEntries(shotId: string, rows: CompareRow[], candidateId: string | null): ReferenceEntryView[] {
+    const targetRow = rows.find((row) => row.candidate_id === candidateId) || null;
+    const source = targetRow ? adoptSourceOf(shotId, targetRow.candidate_id) : null;
+    const origin = source ? attemptsByActionId()[source.candidate.action_id] : null;
+    const references = origin?.references || [];
+    return references.map((reference) => {
+      const previous = state.references.find((entry) => entry.sha256 === reference.sha256) || null;
+      return { sha256: reference.sha256, role: reference.role, missing: false, url: previous ? previous.url : null };
+    });
+  }
+
+  /** 左栏唯一真相：历史对照显式存在时显示对照候选，否则默认商品依据；无空第三列。 */
+  function projectLeftColumn(): void {
+    if (state.leftMode === "history" && state.baselineId) {
+      const comparison = state.rows.find((row) => row.candidate_id === state.baselineId) || null;
+      state.left = {
+        mode: "history",
+        caption: "历史对照：候选 v" + (comparison?.version || "?") + "；右图当前查看不变。",
+        url: state.baselineUrl,
+        missing: !state.baselineUrl,
+      };
+      return;
+    }
+    const entry = state.references.find((item) => item.sha256 === state.leftReferenceSha)
+      || state.references[0] || null;
+    state.left = {
+      mode: "reference",
+      caption: entry
+        ? ("商品依据：" + (ROLE_TEXT[entry.role] || entry.role)
+          + (state.references.length > 1 ? "（" + state.references.length + " 张，用选择器切换）" : ""))
+        : "商品依据：暂无可用原图",
+      url: entry ? entry.url : null,
+      missing: entry ? entry.missing : false,
+    };
   }
 
   function renderCompare(): void {
@@ -905,35 +1217,13 @@ export function createCompareView(
         if (!url) return;
         candidatePreviewUrls.set(key, url);
         if (state.shotId === row.shot_id && state.rows.some((item) => item.candidate_id === row.candidate_id)) {
+          // 晚到缩略图只补当前仍在看的图/候选：不改查看对象，不抢焦点。
           renderComparePanel();
         }
       })
       .catch(() => { candidatePreviewPending.delete(key); });
   }
 
-  function ensureReviewPreview(shotId: string, actionId: string, sha256: string): string | null {
-    const key = shotId + ":" + actionId + ":" + sha256;
-    const cached = reviewPreviewUrls.get(key);
-    if (cached) return cached;
-    if (reviewPreviewPending.has(key)) return null;
-    reviewPreviewPending.add(key);
-    deps.ensurePreviewUrl(shotId, actionId, sha256)
-      .then((url) => {
-        reviewPreviewPending.delete(key);
-        if (!url) return;
-        reviewPreviewUrls.set(key, url);
-        renderReviewList();
-      })
-      .catch(() => { reviewPreviewPending.delete(key); });
-    return null;
-  }
-
-  function rememberCompareView(): void {
-    const projectId = deps.currentProjectId();
-    if (projectId && state.shotId) compareViews.set(projectId + ":" + state.shotId, {
-      candidateId: state.candidateId, baselineId: state.baselineId,
-    });
-  }
 
   /** 当前查看/对照两张大图：代次守卫，晚到的旧请求不改当前投影。 */
   async function loadCompareImages(): Promise<void> {
@@ -955,15 +1245,17 @@ export function createCompareView(
     if (token !== compareImageToken) return;
     state.viewedUrl = urlOf(compareImageUrls, viewed);
     state.baselineUrl = urlOf(compareImageUrls, comparison);
+    projectLeftColumn();
     if (missing) state.status = "候选字节缺失；请恢复项目包，不会用另一张图片替代。";
     renderComparePanel();
   }
 
-  /** 这张图实际会发送的参考图（与提交时同一选择函数），用作比较的左边一栏。 */
+  /** 左栏商品依据的存在性与预览：与提交时同一来源链；晚到只补图，不改左右查看对象。 */
   async function refreshCompareReferences(shot: PlanShot): Promise<void> {
     const token = ++compareToken;
     const pid = deps.currentProjectId();
-    const viewed = adoptSourceOf(shot.shot_id, state.candidateId)?.candidate;
+    const shotId = shot.shot_id;
+    const viewed = state.candidateId ? adoptSourceOf(shotId, state.candidateId)?.candidate : null;
     const origin = viewed ? attemptsByActionId()[viewed.action_id] : null;
     const references = origin?.references || [];
     const entries: ReferenceEntryView[] = [];
@@ -972,19 +1264,26 @@ export function createCompareView(
       const asset = await deps.readAsset(pid, reference.sha256);
       entries.push({ sha256: reference.sha256, role: reference.role, missing: !asset, url: null });
     }
-    if (token !== compareToken || pid !== deps.currentProjectId()) return;
+    if (token !== compareToken || pid !== deps.currentProjectId() || state.shotId !== shotId) return;
     for (const entry of entries) {
       entry.url = await deps.ensurePreviewUrl("参考图", entry.sha256, entry.sha256);
-      if (token !== compareToken) return;
+      if (token !== compareToken || state.shotId !== shotId) return;
     }
-    if (token !== compareToken) return;
+    if (token !== compareToken || state.shotId !== shotId) return;
+    // 只合入仍在看的同一张图：换图后晚到的旧依据不覆盖新图。
     state.references = entries;
+    if (!entries.some((entry) => entry.sha256 === state.leftReferenceSha)) {
+      state.leftReferenceSha = entries.length ? entries[0].sha256 : null;
+    }
     if (!entries.length) {
-      state.basisTitle = "找不到当前候选的原参考图来源链；不会用当前新资料冒充原图。";
+      state.basisTitle = state.rows.length
+        ? "找不到当前候选的原参考图来源链；不会用当前新资料冒充原图。"
+        : "这张图尚无候选，原参考图来源链等生成成功后确定；不会用其它图冒充。";
     } else {
       state.basisTitle = "当前候选原任务参考图（" + entries.length + " 张）；均按原比例展示。";
     }
-    if (!state.shotId) return;
+    projectLeftColumn();
+    rememberCompareView();
     renderComparePanel();
   }
 
@@ -1014,8 +1313,8 @@ export function createCompareView(
     openImageZoom(state.viewedUrl || "", state.viewedCaption);
   }
 
-  function zoomBaseline(): void {
-    openImageZoom(state.baselineUrl || "", "对照候选（不改变采用）");
+  function zoomLeft(): void {
+    openImageZoom(state.left.url || "", state.left.caption || "左侧对照");
   }
 
   function toggleZoomNative(): void {
@@ -1033,32 +1332,45 @@ export function createCompareView(
   }
 
   function openCompare(shotId: string, options: { candidateId?: string | null; focus?: boolean } = {}): void {
+    const previousShotId = state.shotId;
+    explicitClosed = false;
     state.shotId = shotId;
     state.status = "";
     const requested = options.candidateId;
     if (requested !== undefined) {
-      // 卡片动作显式交给哪条候选就看哪条：无效目标不静默回退，面板保持可解释的空选择。
+      // 显式交给哪条候选就看哪条：无效目标不静默回退，细节保持可解释的空选择。
       const rows = compareInventory().rowsByShotId[shotId] || [];
       const exists = requested === null || rows.some((row) => row.candidate_id === requested);
       state.candidateId = exists ? requested : null;
       state.baselineId = null;
-      deps.selectStage("review");
+      state.leftMode = "reference";
+      restoreCompareLeftReference(shotId);
+      deps.selectStage("make");
       renderCompare();
       if (!exists) setCompareStatus("这条候选已经不在了，先重新选择候选。");
     } else {
-      const previous = compareViews.get(deps.currentProjectId() + ":" + shotId);
-      state.candidateId = previous?.candidateId || null;
-      state.baselineId = previous?.baselineId || null;
-      deps.selectStage("review");
+      restoreCompareView(shotId);
+      deps.selectStage("make");
       renderCompare();
     }
+    // 显式选图：renderCompare 内部投影读到的已是新图，真正的切换信号在这里按调用前旧图补发。
+    notifyViewedShotChanged(previousShotId, state.shotId);
     if (options.focus === true) focusCandidateTab(state.candidateId);
   }
 
+  /** 显式候选入口不碰左栏历史对照以外的记忆：商品依据选择沿用本图记忆。 */
+  function restoreCompareLeftReference(shotId: string): void {
+    const previous = compareViews.get(deps.currentProjectId() + ":" + shotId);
+    state.leftReferenceSha = previous?.leftReferenceSha || null;
+  }
+
   function closeCompare(): void {
+    explicitClosed = true;
     state.shotId = null;
     state.candidateId = null;
+    state.baselineId = null;
     renderCompare();
+    deps.focusReviewEntry(null);
   }
 
   function isComparing(shotId: string): boolean {
@@ -1070,7 +1382,7 @@ export function createCompareView(
     renderComparePanel();
   }
 
-  /** 「下一个待处理」：按 domain 给的目标换图，换图即换到审核阶段并把焦点交给默认候选页签。 */
+  /** 「下一个待处理」：按 domain 给的目标换图，并把焦点交给目标图的默认候选页签。 */
   function jumpToNextPending(): void {
     const target = state.jumpTarget;
     if (!target) return;
@@ -1112,9 +1424,42 @@ export function createCompareView(
     selectCompareCandidate(rows[next].candidate_id, { focus: true });
   }
 
+  /** 左栏选择：reference:sha 切商品依据；history:id 只换左栏对照；空值回到商品依据。右栏不动。 */
+  function handleLeftChange(value: string | null): void {
+    const picked = value || "";
+    if (picked.startsWith("history:")) {
+      const candidateId = picked.slice("history:".length) || null;
+      state.baselineId = candidateId && state.rows.some((row) => row.candidate_id === candidateId)
+        ? candidateId : null;
+      state.leftMode = state.baselineId ? "history" : "reference";
+    } else if (picked.startsWith("reference:")) {
+      const sha = picked.slice("reference:".length) || null;
+      state.baselineId = null;
+      state.leftMode = "reference";
+      if (sha && state.references.some((entry) => entry.sha256 === sha)) state.leftReferenceSha = sha;
+    } else {
+      state.baselineId = null;
+      state.leftMode = "reference";
+    }
+    state.baselineUrl = state.baselineId
+      ? urlOf(compareImageUrls, state.rows.find((row) => row.candidate_id === state.baselineId) || null)
+      : null;
+    projectLeftColumn();
+    rememberCompareView();
+    renderComparePanel();
+    void loadCompareImages();
+  }
+
   function handleBaselineChange(value: string | null): void {
     const picked = value || null;
-    state.baselineId = picked && state.rows.some((row) => row.candidate_id === picked) ? picked : null;
+    const valid = picked && picked !== state.candidateId
+      && state.rows.some((row) => row.candidate_id === picked) ? picked : null;
+    state.baselineId = valid;
+    state.leftMode = valid ? "history" : "reference";
+    state.baselineUrl = valid
+      ? urlOf(compareImageUrls, state.rows.find((row) => row.candidate_id === valid) || null)
+      : null;
+    projectLeftColumn();
     rememberCompareView();
     renderComparePanel();
     void loadCompareImages();
@@ -1134,29 +1479,77 @@ export function createCompareView(
     }
   }
 
-  /* --------------------------------------------- 单图返工闭环（V2.5.4） */
+  /* --------------------------------------------- 单图返工闭环（V2.5.4 返工域 + 双改法） */
 
   /**
    * 返工区与比较区相邻但独立：比较区只投影、只读；这里才写 Prompt 版本、
-   * 单图确认与新的生成尝试。草稿按 project/shot/candidate 留在内存，预览只有用户确认时才落成版本。
+   * 单图确认与新的生成尝试。草稿按 project/shot/候选/文档版本/字节/改法留在内存，
+   * 预览只有用户确认时才落成版本；同一候选的两种改法互不混用草稿。
    */
-  function draftKeyOf(shotId: string, candidateId: string): string {
+  function draftKeyOf(shotId: string, candidateId: string, row: CompareRow | null, mode: ReworkMode): string {
     const projectId = deps.currentProjectId() || "";
-    return projectId + "::" + shotId + "::" + candidateId;
+    const version = row && row.version !== null && row.version !== undefined ? String(row.version) : "?";
+    const sha = row ? row.asset_sha256 : "";
+    return projectId + "::" + shotId + "::" + candidateId + "::" + version + "::" + sha + "::" + mode;
   }
 
-  function reworkDraftOf(shotId: string, candidateId: string, row: CompareRow | null): CompareReworkDraft {
-    const key = draftKeyOf(shotId, candidateId);
+  function reworkDraftOf(
+    shotId: string, candidateId: string, row: CompareRow | null, mode: ReworkMode = "edit_candidate",
+  ): CompareReworkDraft {
+    const key = draftKeyOf(shotId, candidateId, row, mode);
     let draft = reworkDrafts.get(key);
     if (!draft) {
+      const problems = suggestReworkProblems(row ? row.report : null);
+      const direction = suggestedReworkDirection(row ? row.report : null);
       draft = {
-        problems: suggestReworkProblems(row ? row.report : null),
-        direction: suggestedReworkDirection(row ? row.report : null),
+        mode,
+        problems: [...problems],
+        direction,
+        promptChoice: null,
         intent: null,
+        baseline: { problems: [...problems], direction },
       };
       reworkDrafts.set(key, draft);
     }
+    if (!draft.baseline) {
+      draft.baseline = { problems: [...draft.problems], direction: draft.direction };
+    }
     return draft;
+  }
+
+  /** 真脏判据：只比较本次呈现基线与用户键入，不拿新持久文本当脏（设计 §13.3）。 */
+  function isReworkDraftDirty(draft: CompareReworkDraft | null): boolean {
+    if (!draft || !draft.baseline) return false;
+    if (draft.direction !== draft.baseline.direction) return true;
+    const left = [...draft.problems].sort().join("|");
+    const right = [...draft.baseline.problems].sort().join("|");
+    if (left !== right) return true;
+    return draft.promptChoice !== null || draft.intent !== null;
+  }
+
+  function hasUnsavedDrafts(): boolean {
+    const currentProjectId = deps.currentProjectId() || "";
+    for (const [key, draft] of reworkDrafts) {
+      if (!key.startsWith(currentProjectId + "::")) continue;
+      if (isReworkDraftDirty(draft)) return true;
+    }
+    return false;
+  }
+
+  /** 方向输入只重画返工区：保留文本、插入点与焦点，晚到结果不抢。 */
+  function renderReworkDirectionOnly(): void {
+    const active = elements.reworkPanel.querySelector<HTMLTextAreaElement>("#rework-direction");
+    const focused = active && document.activeElement === active;
+    const start = active && focused ? active.selectionStart : null;
+    const end = active && focused ? active.selectionEnd : null;
+    renderReworkPanel();
+    if (!focused) return;
+    const next = elements.reworkPanel.querySelector<HTMLTextAreaElement>("#rework-direction");
+    if (!next) return;
+    next.focus({ preventScroll: true });
+    if (start !== null && end !== null) {
+      try { next.setSelectionRange(start, end); } catch { /* 插入点恢复失败不影响文本 */ }
+    }
   }
 
   function reworkShotRow(shotId: string, candidateId: string | null): CompareRow | null {
@@ -1169,10 +1562,10 @@ export function createCompareView(
 
   function reworkSummaryOf(draft: CompareReworkDraft | null): string {
     if (draft && draft.intent) {
-      return "预览已就绪：确认并生成会把它保存为 Prompt 新版本（旧版本保留），"
-        + "只重新生成这张图；改过问题或方向后需要重新预览。";
+      return reworkModeLabel(draft.intent.mode) + "预览已就绪：确认并生成会把它保存为 Prompt 新版本（旧版本保留），"
+        + "只重新生成这张图；改过改法、问题或方向后需要重新预览。";
     }
-    return "选好问题或写下方向 → 预览返工 Prompt → 确认并生成这张图。";
+    return "选好改法 → 选好问题或写下方向 → 预览返工 Prompt → 确认并生成这张图。";
   }
 
   /** 输入变了：旧意图不再代表将要发送的内容，必须重新预览。 */
@@ -1194,8 +1587,11 @@ export function createCompareView(
     renderReworkPanel();
   }
 
-  /** 入口：只接受显式候选身份；缺失时可见阻断，不回退到另一条候选。 */
-  function openReworkPanel(options: { shotId?: string | null; candidateId?: string | null } = {}): void {
+  /** 入口：只接受显式候选身份；缺失时可见阻断，不回退到另一条候选。
+   * 固定问题候选：打开那一刻的候选身份就是返工源，之后切查看候选不改源。 */
+  function openReworkPanel(options: {
+    shotId?: string | null; candidateId?: string | null; trigger?: HTMLElement | null;
+  } = {}): void {
     const shotId = options.shotId !== undefined ? options.shotId : state.shotId;
     const candidateId = options.candidateId !== undefined ? options.candidateId : state.candidateId;
     if (!shotId || !candidateId || rework.inFlight) return;
@@ -1204,35 +1600,92 @@ export function createCompareView(
       setCompareStatus("这条候选已经不在了，先重新选择候选。");
       return;
     }
+    // 记住打开时的原始触发器：取消只回到它，不抢占用户后来自己点的焦点。
+    reworkReturnFocus = options.trigger
+      || (document.activeElement instanceof HTMLElement ? document.activeElement : null);
     // 同一意图不跨候选复用：来源变化时旧候选的意图作废，必须重新预览。
     if (rework.shotId !== null && (rework.shotId !== shotId || rework.candidateId !== row.candidate_id)) {
       const stale = rework.draftKey ? reworkDrafts.get(rework.draftKey) : null;
       if (stale) stale.intent = null;
     }
+    const sameTarget = rework.shotId === shotId && rework.candidateId === row.candidate_id;
+    const mode: ReworkMode = sameTarget && rework.draft ? rework.draft.mode : "edit_candidate";
     rework.shotId = shotId;
     rework.candidateId = row.candidate_id;
     rework.assetSha256 = row.asset_sha256;
     rework.version = row.version === null || row.version === undefined ? null : row.version;
-    rework.draftKey = draftKeyOf(shotId, row.candidate_id);
-    rework.draft = reworkDraftOf(shotId, row.candidate_id, row);
+    rework.draftKey = draftKeyOf(shotId, row.candidate_id, row, mode);
+    rework.draft = reworkDraftOf(shotId, row.candidate_id, row, mode);
     rework.status = "";
     rework.error = "";
-    const basis = ["返工依据：候选 v" + (rework.version === null ? "?" : rework.version)];
+    const basis = ["返工依据：候选 v" + (rework.version === null ? "?" : rework.version)
+      + "（" + reworkModeLabel(mode) + "）"];
     if (row.top_finding) basis.push("先看：" + row.top_finding.title);
     rework.basis = basis.join(" · ");
     rework.tech = "sha256 " + String(rework.assetSha256).slice(0, 12) + "… · candidate " + row.candidate_id;
-    // 问题勾选、方向文本、预览与状态全部随模板投影（方向是草稿的投影，不在这里回写节点）。
+    // 改法、问题勾选、方向文本、预览与状态全部随模板投影（方向是草稿的投影，不在这里回写节点）。
     renderComparePanels();
     const first = elements.reworkPanel
-      .querySelector<HTMLInputElement>("#rework-problems input[type=\"checkbox\"]");
+      .querySelector<HTMLInputElement>("#rework-mode input[type=\"radio\"]");
     if (first) first.focus();
     elements.reworkPanel.scrollIntoView({ block: "nearest" });
+  }
+
+  /** 本图其它返工草稿的显式切换：只接受精确 draftKey；空值或未知键不切换、不清当前草稿。 */
+  function openReworkDraftChoice(key: string | null): void {
+    if (rework.inFlight) return;
+    if (!key) {
+      renderReworkPanel();
+      return;
+    }
+    const target = reworkDrafts.get(key);
+    const shotId = rework.shotId;
+    if (!target || !shotId) {
+      renderReworkPanel();
+      return;
+    }
+    const projectId = deps.currentProjectId() || "";
+    if (!key.startsWith(projectId + "::" + shotId + "::")) {
+      setReworkError("这份草稿不属于当前图，不切换。");
+      renderReworkPanel();
+      return;
+    }
+    const parts = key.slice((projectId + "::" + shotId + "::").length).split("::");
+    const candidateId = parts[0] || "";
+    const row = reworkShotRow(shotId, candidateId);
+    if (!row || !row.record || row.candidate_id !== candidateId) {
+      setReworkError("这份草稿的候选已经不在，先回到比较区重新选择候选。");
+      renderReworkPanel();
+      return;
+    }
+    // 精确键必须与当前候选文档版本/字节一致：版本或字节变了就是另一份草稿，不静默代入。
+    const expectedKey = draftKeyOf(shotId, row.candidate_id, row, target.mode);
+    if (expectedKey !== key) {
+      setReworkError("这份草稿的候选版本已变化，请重新打开返工面板。");
+      renderReworkPanel();
+      return;
+    }
+    rework.shotId = shotId;
+    rework.candidateId = row.candidate_id;
+    rework.assetSha256 = row.asset_sha256;
+    rework.version = row.version === null || row.version === undefined ? null : row.version;
+    rework.draftKey = key;
+    rework.draft = target;
+    rework.status = "";
+    rework.error = "";
+    const basis = ["返工依据：候选 v" + (rework.version === null ? "?" : rework.version)
+      + "（" + reworkModeLabel(target.mode) + "）"];
+    if (row.top_finding) basis.push("先看：" + row.top_finding.title);
+    rework.basis = basis.join(" · ");
+    rework.tech = "sha256 " + String(rework.assetSha256).slice(0, 12) + "… · candidate " + row.candidate_id;
+    renderComparePanels();
   }
 
   /** 收起返工区：清掉未确认的意图；草稿（问题与方向）按候选保留。 */
   function closeReworkPanel({ focusCandidate = false }: { focusCandidate?: boolean } = {}): void {
     const shotId = rework.shotId;
-    const candidateId = rework.candidateId;
+    const trigger = reworkReturnFocus;
+    reworkReturnFocus = null;
     const draft = rework.draftKey ? reworkDrafts.get(rework.draftKey) : null;
     if (draft) draft.intent = null;
     rework.shotId = null;
@@ -1246,10 +1699,17 @@ export function createCompareView(
     rework.status = "";
     rework.error = "";
     renderComparePanels();
-    if (focusCandidate && shotId) focusCompareCandidate(shotId, candidateId);
+    // 取消只回到打开时的原始触发器；它不在了才回任务入口。不抢用户后来点的焦点。
+    if (focusCandidate) {
+      if (trigger && trigger.isConnected && trigger.offsetParent !== null) {
+        trigger.focus();
+        return;
+      }
+      deps.focusReviewEntry(shotId);
+    }
   }
 
-  /** 收起后把焦点还给原候选：比较区还在就回到候选页签，否则回到该图的比较入口。 */
+  /** 提交成功后把焦点还给细节里的查看候选页签（仍在才回），否则回任务入口。 */
   function focusCompareCandidate(shotId: string, candidateId: string | null): void {
     const tab = candidateId ? elements.comparePanel.querySelector<HTMLButtonElement>(
       '[role="tab"][data-candidate-id="' + candidateId + '"]') : null;
@@ -1260,14 +1720,16 @@ export function createCompareView(
     deps.focusReviewEntry(shotId);
   }
 
-  /** 按建议重填：问题与方向回到报告先看项的默认值，预览作废。 */
+  /** 按建议重填：当前改法的草稿回到报告先看项的默认值，预览作废；另一改法的草稿不动。 */
   function resetRework(): void {
     const shotId = rework.shotId;
     if (!shotId || !rework.candidateId || rework.inFlight) return;
     const row = reworkShotRow(shotId, rework.candidateId);
+    const mode: ReworkMode = rework.draft ? rework.draft.mode : "edit_candidate";
     const key = rework.draftKey;
     if (key) reworkDrafts.delete(key);
-    rework.draft = reworkDraftOf(shotId, rework.candidateId, row);
+    rework.draft = reworkDraftOf(shotId, rework.candidateId, row, mode);
+    rework.draftKey = draftKeyOf(shotId, rework.candidateId, row, mode);
     rework.status = "";
     rework.error = "";
     renderComparePanels();
@@ -1290,6 +1752,39 @@ export function createCompareView(
     if (!draft) return;
     draft.direction = value;
     dirtyReworkDraft(draft);
+    renderReworkDirectionOnly();
+  }
+
+  /** 切换改法：切到该改法的独立草稿；两个草稿的意图互不复用，必须各自重新预览。 */
+  function handleReworkModeInput(value: ReworkMode): void {
+    const shotId = rework.shotId;
+    const candidateId = rework.candidateId;
+    if (!shotId || !candidateId || rework.inFlight) return;
+    if (rework.draft && rework.draft.mode === value) return;
+    const row = reworkShotRow(shotId, candidateId);
+    if (!row || !row.record || row.candidate_id !== candidateId) {
+      setReworkError("返工依据已经不在，先回到比较区重新选择候选。");
+      return;
+    }
+    rework.draftKey = draftKeyOf(shotId, candidateId, row, value);
+    rework.draft = reworkDraftOf(shotId, candidateId, row, value);
+    rework.status = "";
+    rework.error = "";
+    const basis = ["返工依据：候选 v" + (rework.version === null ? "?" : rework.version)
+      + "（" + reworkModeLabel(value) + "）"];
+    if (row.top_finding) basis.push("先看：" + row.top_finding.title);
+    rework.basis = basis.join(" · ");
+    renderReworkPanel();
+  }
+
+  /** 人工全文处理方式决定实际发送全文；切换后旧预览作废，不沿用另一种处理方式的摘要。 */
+  function handleReworkPromptChoiceInput(value: ReworkPromptChoice | null): void {
+    const draft = rework.draft;
+    if (!draft || draft.promptChoice === value) return;
+    draft.promptChoice = value;
+    draft.intent = null;
+    rework.status = "人工全文处理方式已变化，请重新预览实际发送全文。";
+    rework.error = "";
     renderReworkPanel();
   }
 
@@ -1309,22 +1804,27 @@ export function createCompareView(
       setReworkError("返工依据已经不在，先回到比较区重新选择候选。");
       return;
     }
+    const mode = draft.mode;
+    const draftKey = draftKeyOf(shotId, sourceCandidateId, row, mode);
     // 预览前不再从 DOM 现读方向：方向已在每次键入时由模板事件写入草稿。
     rework.inFlight = true;
     renderReworkPanel();
     try {
       draft.intent = await generation.prepareRework({
-        shotId, candidateId: sourceCandidateId, problems: [...draft.problems], direction: draft.direction,
+        shotId, candidateId: sourceCandidateId, mode,
+        problems: [...draft.problems], direction: draft.direction,
+        promptChoice: draft.promptChoice,
         report: row.report || null,
       });
-      rework.status = "预览已就绪：确认并生成时会先把它保存为新版本，"
+      if (draft.intent.seenPromptOrigin !== "manual_edit") draft.promptChoice = null;
+      rework.status = reworkModeLabel(mode) + "预览已就绪：确认并生成时会先把它保存为新版本，"
         + "再只提交这一张图；预览本身没有写入任何记录。";
     } catch (error) {
       draft.intent = null;
       setReworkError(deps.suffixedErrorMessage(error, "预览没有生成，旧版本与输入保留。", "（预览未生成，旧版本与输入保留）"));
     } finally {
       rework.inFlight = false;
-      if (rework.draftKey === draftKeyOf(shotId, sourceCandidateId)) renderReworkPanel();
+      if (rework.draftKey === draftKey) renderReworkPanel();
     }
   }
 
@@ -1340,7 +1840,7 @@ export function createCompareView(
   }
 
   /**
-   * 确认并生成这张图：只把预览时 owner 给的意图原样交回确认。
+   * 确认并生成这张图：只把预览时 owner 给的意图与显式人工全文选择原样交回确认。
    * 当前性、Prompt 落版、确认/预约/提交都在 owner 内部；视图不重算、不猜版本。
    */
   async function submitRework(): Promise<void> {
@@ -1361,11 +1861,16 @@ export function createCompareView(
       setReworkError("返工依据已经不在，先回到比较区重新选择候选。");
       return;
     }
+    if (draft.intent.seenPromptOrigin === "manual_edit" && !draft.promptChoice) {
+      setReworkError("当前 Prompt 是人工全文：先选一种处理方式（重编或保留），再确认生成。");
+      return;
+    }
     rework.inFlight = true;
     renderReworkPanel();
     try {
       const intent = draft.intent;
-      const result = await generation.confirmRework({ intent });
+      const promptChoice = draft.promptChoice;
+      const result = await generation.confirmRework(promptChoice ? { intent, promptChoice } : { intent });
       if (!action.alive()) return;
       if (result.stale) {
         // owner 已判过期且零外发：只呈现，不自动确认、不自动重提；旧意图作废。
@@ -1428,23 +1933,11 @@ export function createCompareView(
     return selectionAdoption.stateOf(shotId);
   }
 
-  /** 某张图当前采用的候选（含过期标记）：只读投影，供比较列表做徽标。 */
+  /** 某张图当前采用的候选（含过期标记）：只读投影，供细节里的候选徽标与查看行使用。 */
   function adoptedMarkOf(shotId: string | null): { candidate_id: string | null; state: SelectionState } | null {
     return selectionAdoption.adoptedMark(shotId);
   }
 
-  /** 采用进度行：只读投影，写进 UI 状态后由审核区模板一次投影（不再直接写节点）。 */
-  function renderSelectionProgress(): void {
-    if (!inputs.suitePlan()) {
-      state.adoptProgress = "";
-    } else {
-      const set = selectionAdoption.projection(inputs.sources()).set;
-      state.adoptProgress = set.summary.required_total > 0
-        ? selectionSetText(set) + "采用只引用候选（candidate_id + sha256），不复制图片。"
-        : "";
-    }
-    renderReviewList();
-  }
 
   /** 采用目标：把「正看着的候选」解析成候选记录 + 文档版本 + 当前审核报告。 */
   function adoptSourceOf(shotId: string | null, candidateId: string | null): AdoptionSource | null {
@@ -1457,13 +1950,13 @@ export function createCompareView(
 
   function setAdoptStatus(text: string): void {
     state.adoptStatus = text;
-    renderReviewList();
+    renderComparePanel();
   }
 
-  /** 就地错误：文案归 UI 状态随模板投影，重画不会把上一次的错误悄悄抹掉。 */
+  /** 就地错误：文案归细节状态随模板投影，重画不会把上一次的错误悄悄抹掉。 */
   function setAdoptError(text: string): void {
     state.adoptError = text;
-    renderReviewList();
+    renderComparePanel();
   }
 
   /** One explicit human action. Identity freezes before any byte read; selection is append-only/OCC. */
@@ -1484,221 +1977,36 @@ export function createCompareView(
       setAdoptStatus("人工选择没有保存；原采用保留。");
       setAdoptError(errorMessageOf(error, "存储失败，请重试。"));
     } finally {
-      // 行内采用后立即重画审核卡：data-selection-state 与已采用按钮都来自重画，
+      // 采用后立即重画精看细节：候选徽标、查看行与采用按钮都来自重画，
       // 走查里“等待 current”才有稳定的可观测终态；只读投影，不写库不发请求。
-      if (action.alive()) { deps.renderAttempts(); renderReviewList(); renderCompare(); }
+      if (action.alive()) { deps.renderAttempts(); renderCompare(); }
     }
   }
 
-  /* ------------------------------------------------------- 逐图审核列表 */
-
-  /**
-   * 审核阶段的逐图入口：图片 + 候选数 + 采用状态 + 逐图检查摘要 + 比较/返工/采用。
-   * 卡片只复读同一份当前报告（compareInventory 已按 reviewIsCurrent 过滤）；
-   * 不新增第二套规则，也不改变任何选择语义。
-   */
-  function reviewCards(): ReviewCardView[] {
-    const shots = shotSummaries();
-    const reviewable = shots.filter((shot) => generation.candidateChainOf(shot.shot_id).length > 0);
-    if (!reviewable.length) return [];
-    const inventory = compareInventory();
-    const cards: ReviewCardView[] = [];
-    for (const shot of reviewable) {
-      const chain = generation.candidateChainOf(shot.shot_id);
-      // 卡片显示最新 Attempt 的已保存候选（latestStoredCandidateOf）：只有它才满足
-      // 采用前置（计划§14.5：确定性合法 + 当前采用依据 + 明确 actor=user）。
-      const stored = generation.latestStoredCandidateOf(shot.shot_id);
-      const stateName = selectionStateOf(shot.shot_id);
-      const adopted = adoptedMarkOf(shot.shot_id);
-      const shownCandidateId = stored ? stored.record.candidate_id : null;
-      const displayedIsAdopted = Boolean(shownCandidateId && adopted
-        && adopted.candidate_id === shownCandidateId && adopted.state === "current");
-      const rows = inventory.rowsByShotId[shot.shot_id] || [];
-      const shownRow = stored
-        ? (rows.find((row) => row.candidate_id === stored.record.candidate_id) || null)
-        : null;
-      const badgeClass = displayedIsAdopted
-        ? "is-adopted"
-        : (stateName === "stale" && adopted ? "is-review-warn" : "is-empty");
-      const badgeText = displayedIsAdopted
-        ? "已采用"
-        : (adopted && adopted.state === "stale" && adopted.candidate_id === shownCandidateId
-          ? "已采用（已过期）" : "未采用此候选");
-      const previewKey = stored
-        ? shot.shot_id + ":" + stored.record.action_id + ":" + stored.record.asset_sha256
-        : "";
-      const card: ReviewCardView = {
-        shotId: shot.shot_id,
-        label: shot.label,
-        state: stateName,
-        chainCount: chain.length,
-        badgeClass,
-        badgeText,
-        adoptedCandidateId: adopted?.candidate_id || "",
-        storedCandidateId: shownCandidateId,
-        previewUrl: previewKey ? (reviewPreviewUrls.get(previewKey) || null) : null,
-        message: stored
-          ? null
-          : (chain.length
-            ? "这条候选缺少原动作观察，暂不能采用；到「生成」里用已有动作重新生成后再采用。"
-            : "这张图还没有已保存的候选；到「生成」里生成后再比较。"),
-        check: stored ? reviewCheckOf(shownRow) : null,
-        displayedIsAdopted,
-        stored: Boolean(stored),
-        canRework: Boolean(stored && shownCandidateId),
-        canAdopt: Boolean(stored && shownCandidateId) && !displayedIsAdopted,
-        adoptTitle: displayedIsAdopted ? "已采用这条候选；换用其他候选请点「比较候选」。" : null,
-      };
-      cards.push(card);
-      if (stored) ensureReviewPreview(shot.shot_id, stored.record.action_id, stored.record.asset_sha256);
-    }
-    return cards;
-  }
-
-  function reviewCheckOf(shownRow: CompareRow | null): ReviewCheckView {
-    if (!shownRow) {
-      return {
-        reviewState: "unchecked",
-        candidateId: "",
-        badgeClass: "is-review-unchecked",
-        stateLabel: COMPARE_STATE_TEXT.unchecked,
-        summary: null,
-        ai: null,
-        reportFailure: null,
-        headline: null,
-        hint: "这张图还没有当前审核报告；打开「比较候选」可查看或补建。",
-      };
-    }
-    let ai: { status: string; text: string } | null = null;
-    let reportFailure: string | null = null;
-    if (shownRow.report) {
-      const aiStatus = selectionAdoption.reviewStatusOf(shownRow.candidate_id);
-      ai = {
-        status: aiStatus.status,
-        text: aiStatus.status === "reviewed" ? "AI 复核：已完成（只提示，不自动采纳）"
-          : aiStatus.status === "unknown" ? "AI 复核：未完成（结果未知，不阻断人工采用）"
-            : "AI 复核：未复核（未运行，按需发起才会调用；不阻断人工采用）",
-      };
-    } else {
-      // 只在真的补建失败时多一行：确定性报告缺失 ≠ AI 未复核，失败原因必须如实显示。
-      const failure = selectionAdoption.reportBuildFailure(shownRow.candidate_id);
-      if (failure) {
-        reportFailure = "自动检查报告补建失败：" + failure
-          + "（候选与本地图片保留，采用会被挡住；重新打开或再次采用会补建，不需要 AI）";
-      }
-    }
-    return {
-      reviewState: shownRow.review_state,
-      candidateId: shownRow.candidate_id,
-      badgeClass: COMPARE_STATE_BADGE[shownRow.review_state] || "is-review-unchecked",
-      stateLabel: compareStateLabel(shownRow),
-      summary: shownRow.report ? reviewSummaryText(shownRow.report) : null,
-      ai,
-      reportFailure,
-      headline: compareRowHeadline(shownRow),
-      hint: null,
-    };
-  }
-
-  function reviewCardTemplate(card: ReviewCardView) {
-    return html`
-      <div class="review-card" data-shot-id=${card.shotId} data-selection-state=${card.state}>
-        <div class="review-card-head">
-          <span class="name">${card.label}</span>
-          <span class="badge ${card.badgeClass}" data-adopted-candidate-id=${card.adoptedCandidateId}>${card.badgeText}</span>
-          <span class="meta">${"候选 " + card.chainCount + " 个"}</span>
-        </div>
-        ${card.stored
-          ? html`
-              <div class="review-preview">
-                ${card.previewUrl
-                  ? html`<img src=${card.previewUrl} alt=${card.label + " 的最新候选"} loading="lazy">`
-                  : html`<img alt=${card.label + " 的最新候选"} loading="lazy">`}
-              </div>
-              ${card.check ? reviewCheckTemplate(card) : nothing}
-              <div class="review-card-actions">
-                <button type="button" @click=${() => openCompare(card.shotId, { focus: true })}>${"比较候选（" + card.chainCount + "）"}</button>
-                <button type="button" ?disabled=${!card.canRework} @click=${() => {
-                  // 点击时捕获本卡实际显示的候选身份：晚到候选不得改目标，缺失时阻断不回退。
-                  if (!card.storedCandidateId) return;
-                  openCompare(card.shotId, { candidateId: card.storedCandidateId });
-                  openReworkPanel({ shotId: card.shotId, candidateId: card.storedCandidateId });
-                }}>按问题返工</button>
-                <button
-                  type="button"
-                  class=${card.displayedIsAdopted ? "" : "primary"}
-                  title=${ifDefined(card.adoptTitle || undefined)}
-                  ?disabled=${!card.canAdopt}
-                  @click=${() => {
-                    if (card.storedCandidateId) void adoptCandidate("select", card.shotId, card.storedCandidateId);
-                  }}
-                >${card.displayedIsAdopted ? "已采用" : "采用候选"}</button>
-              </div>
-            `
-          : html`<p class="meta">${card.message || ""}</p>`}
-      </div>
-    `;
-  }
-
-  function reviewCheckTemplate(card: ReviewCardView) {
-    const check = card.check;
-    if (!check) return nothing;
-    return html`
-      <div
-        class="review-card-check"
-        data-shot-id=${card.shotId}
-        data-review-state=${check.reviewState}
-        data-candidate-id=${check.candidateId}
-      >
-        <span class="badge ${check.badgeClass}">${check.stateLabel}</span>
-        ${check.reportFailure ? html`<p class="meta review-check-report" data-review-report="failed">${check.reportFailure}</p>` : nothing}
-        <details class="review-check-details">
-          <summary>检查摘要</summary>
-          ${check.summary ? html`<p class="meta review-check-summary">${check.summary}</p>` : nothing}
-          ${check.ai ? html`<p class="meta review-check-ai" data-review-ai=${check.ai.status}>${check.ai.text}</p>` : nothing}
-          ${check.headline ? html`<p class="meta review-check-headline">${check.headline}</p>` : nothing}
-          ${check.hint ? html`<p class="meta">${check.hint}</p>` : nothing}
-        </details>
-      </div>
-    `;
-  }
-
-  /**
-   * 审核区整块投影（index 只留 `#review-list-mount` 空壳）：采用进度、空占位、逐图卡、
-   * 采用状态与就地错误同属一份 UI 状态；卡片按 shot_id keyed，重画只 patch 变化的行。
-   */
-  function reviewAreaTemplate(cards: ReviewCardView[]) {
-    return html`
-      <p id="adopt-progress" class="meta" role="status">${state.adoptProgress}</p>
-      <p id="review-empty" class="empty" ?hidden=${cards.length > 0}>还没有生成成功的候选；先在「生成」里整套生成或逐张提交。</p>
-      <div id="review-list" class="review-list">
-        ${repeat(cards, (card) => card.shotId, (card) => reviewCardTemplate(card))}
-      </div>
-      <p id="adopt-status" class="status" role="status" ?hidden=${state.adoptStatus.length === 0}>${state.adoptStatus}</p>
-      <p id="adopt-error" class="error" role="alert" ?hidden=${state.adoptError.length === 0}>${state.adoptError}</p>
-    `;
-  }
-
-  function renderReviewList(): void {
-    if (!elements.reviewList) return;
-    renderLit(reviewAreaTemplate(reviewCards()), elements.reviewList);
-  }
 
   /** 重开项目时的就地状态归零：与原 loadWorkspace 重置项一一对应。 */
   function resetViewState(): void {
+    const notifyShotClose = state.shotId;
+    explicitClosed = false;
     state.shotId = null;
     state.candidateId = null;
     state.baselineId = null;
+    state.leftMode = "reference";
+    state.leftReferenceSha = null;
+    state.left = { mode: "reference", caption: "商品依据", url: null, missing: false };
     state.status = "";
     state.rows = [];
     state.references = [];
+    state.viewedUrl = null;
+    state.baselineUrl = null;
+    state.jumpTarget = null;
     compareToken += 1;
     compareImageToken += 1;
     compareImageUrls.clear();
     candidatePreviewUrls.clear();
-    reviewPreviewUrls.clear();
     candidatePreviewPending.clear();
-    reviewPreviewPending.clear();
+    imageZoomReturnFocus = null;
+    reworkReturnFocus = null;
     reworkDrafts = new Map();
     rework.shotId = null;
     rework.candidateId = null;
@@ -1715,10 +2023,10 @@ export function createCompareView(
     state.zoomNative = false;
     state.zoomLabel = ZOOM_DEFAULT_TITLE;
     state.adoptProgress = "";
+    state.adoptStatus = "";
     state.adoptError = "";
-    setAdoptStatus("");
+    notifyViewedShotChanged(notifyShotClose, null);
     renderCompare();
-    renderReviewList();
   }
 
   /* ------------------------------------------------------- 外壳监听装配 */
@@ -1742,25 +2050,25 @@ export function createCompareView(
   // 装配期先成形一次：模板自带的选择器/输入框在第一个业务渲染之前就有确定初值
   //（例如对照下拉在选项插入前不会先被赋一次值），此后所有投影都是就地 patch。
   renderComparePanels();
-  // 审核区同理：进度/空占位/列表/采用反馈的空壳在第一个业务渲染前就位（无项目时是空态）。
-  renderReviewList();
 
   return {
     bind,
-    renderReviewList,
     renderCompare,
-    renderSelectionProgress,
+    currentShotId,
+    hasUnsavedDrafts,
     openCompare,
     closeCompare,
     isComparing,
     handleCompareKeydown,
+    handleLeftChange,
     handleBaselineChange,
     handleCompareReview,
     zoomViewed,
-    zoomBaseline,
+    zoomLeft,
     closeImageZoom,
     toggleZoomNative,
     openReworkPanel,
+    openReworkDraftChoice,
     previewRework,
     editRework,
     submitRework,
@@ -1768,6 +2076,8 @@ export function createCompareView(
     cancelRework,
     handleReworkKeydown,
     handleReworkDirectionInput,
+    handleReworkModeInput,
+    handleReworkPromptChoiceInput,
     adoptCandidate,
     selectionEntryOf,
     selectionStateOf,

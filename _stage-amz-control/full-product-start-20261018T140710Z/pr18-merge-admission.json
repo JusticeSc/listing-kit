@@ -1,0 +1,114 @@
+{
+  "goal_id": "15ab22bf3386b9cf",
+  "checked_at": "2026-10-18T14:29:21.615Z",
+  "pr": {
+    "baseRefName": "main",
+    "headRefOid": "0ae7df59ff8e41e776195169ce8814f2699db45b",
+    "isDraft": true,
+    "mergeStateStatus": "CLEAN",
+    "mergeable": "MERGEABLE",
+    "number": 18,
+    "reviewDecision": "",
+    "state": "OPEN",
+    "statusCheckRollup": [
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-10-18T14:15:08Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/JusticeSc/listing-kit/actions/runs/39135130842/job/117697994678",
+        "name": "Classify changed paths",
+        "startedAt": "2026-10-18T14:14:59Z",
+        "status": "COMPLETED",
+        "workflowName": "Product V2 CI and Docker CD"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-10-18T14:26:04Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/JusticeSc/listing-kit/actions/runs/39135130842/job/117698038795",
+        "name": "Control plane and Product V2",
+        "startedAt": "2026-10-18T14:15:10Z",
+        "status": "COMPLETED",
+        "workflowName": "Product V2 CI and Docker CD"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-10-18T14:28:23Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/JusticeSc/listing-kit/actions/runs/39135130842/job/117700413303",
+        "name": "Docker image, smoke test, and main deploy",
+        "startedAt": "2026-10-18T14:26:06Z",
+        "status": "COMPLETED",
+        "workflowName": "Product V2 CI and Docker CD"
+      }
+    ],
+    "url": "https://github.com/JusticeSc/listing-kit/pull/18"
+  },
+  "protection": {
+    "url": "https://api.github.com/repos/JusticeSc/listing-kit/branches/main/protection",
+    "required_status_checks": {
+      "url": "https://api.github.com/repos/JusticeSc/listing-kit/branches/main/protection/required_status_checks",
+      "strict": true,
+      "contexts": [
+        "Control plane and Product V2",
+        "Docker image, smoke test, and main deploy"
+      ],
+      "contexts_url": "https://api.github.com/repos/JusticeSc/listing-kit/branches/main/protection/required_status_checks/contexts",
+      "checks": [
+        {
+          "context": "Control plane and Product V2",
+          "app_id": 15368
+        },
+        {
+          "context": "Docker image, smoke test, and main deploy",
+          "app_id": 15368
+        }
+      ]
+    },
+    "required_pull_request_reviews": {
+      "url": "https://api.github.com/repos/JusticeSc/listing-kit/branches/main/protection/required_pull_request_reviews",
+      "dismiss_stale_reviews": true,
+      "require_code_owner_reviews": false,
+      "require_last_push_approval": false,
+      "required_approving_review_count": 0
+    },
+    "required_signatures": {
+      "url": "https://api.github.com/repos/JusticeSc/listing-kit/branches/main/protection/required_signatures",
+      "enabled": false
+    },
+    "enforce_admins": {
+      "url": "https://api.github.com/repos/JusticeSc/listing-kit/branches/main/protection/enforce_admins",
+      "enabled": true
+    },
+    "required_linear_history": {
+      "enabled": false
+    },
+    "allow_force_pushes": {
+      "enabled": false
+    },
+    "allow_deletions": {
+      "enabled": false
+    },
+    "block_creations": {
+      "enabled": false
+    },
+    "required_conversation_resolution": {
+      "enabled": true
+    },
+    "lock_branch": {
+      "enabled": false
+    },
+    "allow_fork_syncing": {
+      "enabled": false
+    }
+  },
+  "required_contexts": [
+    "Control plane and Product V2",
+    "Docker image, smoke test, and main deploy"
+  ],
+  "admitted": true,
+  "independent_review": "Existing code/final delta dual review through3dc0018 plus exact3-file factual documentation correction verified against API/logs; no new product delta",
+  "prior_review_evidence": "_stage-amz-control/complete-product-authorization-20261018T114240Z/pr18-review-closeout.json",
+  "ci_run": "https://github.com/JusticeSc/listing-kit/actions/runs/39135130842",
+  "scope": "Authorized stage merge; main push deploys, not B7 or complete product"
+}

@@ -28,7 +28,7 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(ROOT / "tools"))
 
-import v2_stage_nav as stage_nav  # noqa: E402  （V2.UI.2 六阶段工作台导航）
+import v2_stage_nav as stage_nav  # noqa: E402  （B4 四段工作台导航）
 from console import enable_utf8  # noqa: E402
 enable_utf8()
 
@@ -40,7 +40,9 @@ PRODUCT_DIR = ROOT / "app" / "product_v2"
 HARNESS_DIR = ROOT / "evals" / "product-v2" / "harness"
 EVIDENCE_DIR = ROOT / "evals" / "product-v2"
 EVIDENCE_IMAGE_DIR = EVIDENCE_DIR / "evidence"
-REWORK_CONTRACT_VERSION = "v2.5.4"
+# 返工合同版本不再在这里写死：UI 会话里从产品模块读 REWORK_CONTRACT_VERSION（单一权威），
+# 只给静态登记/摘要用的字面量保留同值。
+REWORK_CONTRACT_VERSION = "v2.5.5"
 REWORK_PROBLEM_IDS = ["product_fidelity", "part_error", "scene", "composition",
                       "selling_point", "text", "style", "platform_risk", "other"]
 EXPECTED_REWORK_CASES = [f"RW-{index:02d}" for index in range(1, 16)]
@@ -132,10 +134,11 @@ REWORK_PROBE = """
     problems: [...panel.querySelectorAll("input[type=checkbox]")].map((node) =>
       ({ id: node.id, value: node.value, checked: node.checked })),
     direction: (document.getElementById("rework-direction") || {}).value || "",
-    legend: (panel.querySelector("legend") || {}).textContent || "",
+    legends: [...panel.querySelectorAll("legend")].map((node) => node.textContent || ""),
     direction_label: (document.querySelector('label[for="rework-direction"]') || {}).textContent || "",
     focus_id: active ? (active.id || null) : null,
     focus_is_checkbox: Boolean(active && active.type === "checkbox"),
+    focus_in_panel: Boolean(active && panel.contains(active)),
     entry: {
       in_compare: Boolean(entry && comparePanel && comparePanel.contains(entry)),
       disabled: entry ? entry.disabled : null,
@@ -238,7 +241,7 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                     return page.evaluate(STORAGE_DIGEST)
 
                 def row(shot_id: str):
-                    return page.locator(f'#attempt-list .attempt-row[data-shot-id="{shot_id}"]')
+                    return page.locator(f'#shot-execution [data-shot-id="{shot_id}"]')
 
                 def wait_state(shot_id: str, state: str, timeout: int = 30_000) -> None:
                     expect(row(shot_id)).to_have_attribute("data-attempt-state", state, timeout=timeout)
@@ -247,30 +250,32 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                     page.wait_for_function(
                         """(shot) => {
                             const node = document.querySelector(
-                                '#attempt-list .attempt-row[data-shot-id="' + shot + '"]');
+                                '#shot-execution [data-shot-id="' + shot + '"]');
                             return Boolean(node && node.querySelector('.attempt-candidate'));
                         }""", arg=shot_id, timeout=timeout)
 
                 def click_row_button(shot_id: str, text: str) -> None:
-                    stage_nav.goto(page, "generate")
+                    shared.select_make_shot(page, shot_id)
                     row(shot_id).locator(f'button:has-text("{text}")').first.click()
 
                 def wait_terminal(shot_id: str, timeout: int = 120_000) -> None:
-                    # 确认即整套提交：runBatch 自动提交并核对，只等终态与候选。
+                    # B4 执行区只渲染当前查看的一张图：等终态前先切正看对象，
+                    # 否则行的 data-attempt-state 不在 DOM 里会超时。行级断言
+                    # 由 task-list 的 data-attempt-state 兜底时仍按单图语义切回。
+                    shared.select_make_shot(page, shot_id)
+                    # 确认即整套提交：runBatch 自动提交并核对只等终态与候选。
                     page.wait_for_function(
                         """(shot) => {
                             const node = document.querySelector(
-                                '#attempt-list .attempt-row[data-shot-id="' + shot + '"]');
+                                '#shot-execution [data-shot-id="' + shot + '"]');
                             const state = node && node.getAttribute('data-attempt-state');
                             return state === 'succeeded' || state === 'failed' || state === 'unknown';
                           }""", arg=shot_id, timeout=timeout)
                     wait_candidate_ui(shot_id)
 
                 def open_panel(shot_id: str, card_count: int, references: int = 1) -> None:
-                    stage_nav.goto(page, "generate")
-                    row(shot_id).locator('button[data-compare-action]').first.click()
-                    stage_nav.goto(page, "review")
-                    expect(page.locator("#compare-panel")).to_be_visible()
+                    shared.select_make_shot(page, shot_id)
+                    stage_nav.goto(page, "make")
                     page.wait_for_function(
                         """(payload) => {
                             const panel = document.getElementById("compare-panel");
@@ -315,6 +320,16 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                     return rework_probe()
 
                 page.goto(base + "/", wait_until="networkidle")
+                # 返工合同版本按本验证器登记的字面量判（不拿产品模块值自我印证）；
+                # 产品模块值只做交叉核对——改了产品值就红在这里。
+                module_version = page.evaluate(
+                    "async () => (await import('/app/product_v2/domain/rework.js'))"
+                    ".REWORK_CONTRACT_VERSION")
+                if module_version != REWORK_CONTRACT_VERSION:
+                    raise AssertionError(
+                        "产品模块返工合同版本 " + str(module_version)
+                        + " 与本验证器登记值 " + REWORK_CONTRACT_VERSION + " 不一致")
+                contract_version = REWORK_CONTRACT_VERSION
                 page.fill("#new-project-name", "审计商品 · 单图返工")
                 page.click("#create-project")
                 expect(page.locator("#project-view")).to_be_visible()
@@ -342,9 +357,10 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 # Issue #9：编译前先做普通决定（用户真实路径）；choices 进 ui 证据。
                 ui["decisions"] = shared.decide_for_compile(page, shot_ids)
                 shared.compile_all(page, shot_ids)
+                shared.choose_make_batch(page, shot_ids)
                 expect(page.locator("#confirm-action")).to_be_enabled()
                 page.click("#confirm-action")
-                expect(page.locator("#attempt-list .attempt-row")).to_have_count(4, timeout=30_000)
+                expect(page.locator("#attempt-editor")).to_be_visible(timeout=30_000)
                 wait_terminal(first_shot)
                 wait_terminal(second_shot)
                 for shot_id in shot_ids[2:]:
@@ -379,17 +395,27 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 opened = open_rework()
                 checks.append({
                     "id": "V2.5.4-09",
-                    "title": "返工表单：独立面板、九类问题 fieldset、显式 label、焦点从入口进入第一个问题",
-                    "ok": opened["visible"] and opened["contract"] == REWORK_CONTRACT_VERSION
+                    "title": "返工表单：独立面板、九类问题 fieldset、显式 label、焦点从入口进入表单第一个控件（改法）",
+                    "ok": opened["visible"] and opened["contract"] == contract_version
                           and opened["shot_id"] == first_shot
                           and opened["candidate_id"] == expected_candidate_id
                           and opened["candidate_id"] == entry["entry"]["candidate_id"]
                           and len(opened["problems"]) == 9
                           and [item["value"] for item in opened["problems"]] == REWORK_PROBLEM_IDS
-                          and "问题分类" in opened["legend"] and "改进方向" in opened["direction_label"]
-                          and opened["focus_is_checkbox"],
+                          # 面板现在有两个 fieldset（改法、问题分类）：两个 legend 都要在。
+                          and any("问题分类" in text for text in opened["legends"])
+                          and any("返工改法" in text for text in opened["legends"])
+                          and "改进方向" in opened["direction_label"]
+                          # 本批新增改法单选，是面板的第一个决策控件；焦点进面板即落在改法上。
+                          and opened["focus_in_panel"]
+                          and (opened["focus_id"] or "").startswith("rework-mode-"),
                     "detail": {"contract": opened["contract"], "problems": len(opened["problems"]),
-                               "legend": opened["legend"], "focus": opened["focus_id"]},
+                               "legends": opened["legends"], "focus": opened["focus_id"],
+                               "focus_in_panel": opened["focus_in_panel"], "visible": opened["visible"],
+                               "shot": opened["shot_id"], "candidate": opened["candidate_id"],
+                               "entry_candidate": entry["entry"]["candidate_id"],
+                               "problems_values": [item["value"] for item in opened["problems"]],
+                               "direction_label": opened["direction_label"]},
                 })
 
                 page.click('label[data-problem-id="product_fidelity"]')
@@ -401,17 +427,18 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 tab_focus = "compare-tab-" + expected_candidate_id
                 checks.append({
                     "id": "V2.5.4-10",
-                    "title": "比较区保持只读：勾选、填写、取消全程业务记录逐字不变，焦点回到原候选",
+                    "title": "比较区保持只读：勾选、填写、取消全程业务记录逐字不变，焦点回到原触发入口",
                     "ok": any(item["value"] == "product_fidelity" and item["checked"]
                               for item in toggled["problems"])
                           and toggled["preview_disabled"] is False
                           and cancelled["visible"] is False
-                          and cancelled["focus_id"] == tab_focus
+                          # B4 合同：取消只回打开时的原始触发器（返工入口），
+                          # 不抢后来焦点；旧回候选 tab 是旧面板行为。
+                          and cancelled["focus_id"] == "rework-open"
                           and storage_after_cancel == seeded_storage,
                     "detail": {"checked": [item["value"] for item in toggled["problems"]
                                             if item["checked"]],
                                "focus_after_cancel": cancelled["focus_id"],
-                               "expected_focus": tab_focus,
                                "records_unchanged": storage_after_cancel == seeded_storage},
                 })
 
@@ -423,11 +450,13 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 restored = preview_rework(["product_fidelity"], direction_text)
                 checks.append({
                     "id": "V2.5.4-11",
-                    "title": "预览：显示将发送的全文（参考图 1 张）且不写任何记录；改动输入后必须重新预览",
+                    "title": "预览：显示将发送的全文（参考图 2 张，编辑源在首位）且不写任何记录；改动输入后必须重新预览",
                     "ok": previewed["preview_visible"]
                           and "本次返工要求" in previewed["preview_text"]
                           and "纯白" in previewed["preview_text"]
-                          and "参考图 1 张" in previewed["preview_meta"]
+                          # 改这条候选（edit_candidate）按当前合同把固定问题候选放第一位、后接商品依据。
+                          and "参考图 2 张" in previewed["preview_meta"]
+                          and "图1编辑源" in previewed["preview_meta"]
                           and previewed["submit_disabled"] is False
                           and previewed["edit_disabled"] is True
                           and storage_after_preview == seeded_storage
@@ -499,8 +528,12 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                           and new_candidate is not None and len(new_reviews) >= 1
                           and len(submit_requests) == 1
                           and submit_requests[0]["payload"]["prompt"] == preview_text
-                          and len(submit_requests[0]["payload"]["references"]) == 1
-                          and submit_requests[0]["payload"]["references"][0]["sha256"] == reference_sha
+                          # 改这条候选：固定问题候选在第一位（编辑源，出站 role=other），商品依据在后；顺序即实际发送顺序。
+                          and len(submit_requests[0]["payload"]["references"]) == 2
+                          and submit_requests[0]["payload"]["references"][0]["sha256"] == expected_candidate_sha
+                          and submit_requests[0]["payload"]["references"][0]["role"] == "other"
+                          and submit_requests[0]["payload"]["references"][1]["sha256"] == reference_sha
+                          and submit_requests[0]["payload"]["references"][1]["role"] == "primary"
                           and latest_prompt is not None and latest_prompt["has_rework"] is True
                           and latest_prompt["prompt_hash"] == new_attempt["prompt"]["hash"]
                           and latest_prompt["text_chars"] == len(preview_text)
@@ -637,6 +670,7 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
 
                 page.reload(wait_until="networkidle")
                 expect(page.locator("#project-view")).to_be_visible()
+                shared.select_make_shot(page, first_shot)
                 expect(row(first_shot)).to_have_attribute("data-attempt-state", "unknown",
                                                           timeout=30_000)
                 reloaded = probe()
@@ -661,7 +695,7 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                           and digest_newest(reloaded_storage, "generation_confirm",
                                             "rework:" + first_shot) is not None
                           and reloaded_panel["visible"]
-                          and reloaded_panel["contract"] == REWORK_CONTRACT_VERSION
+                          and reloaded_panel["contract"] == contract_version
                           and len(reloaded_panel["problems"]) == 9
                           and all(path.is_file() and path.stat().st_size > 0
                                   for path in screenshot_paths),
@@ -677,6 +711,7 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 ui["screenshot_detail"] = detail_rel
                 ui["preview_chars"] = len(preview_text)
                 ui["checks"] = [item["id"] for item in checks]
+                ui["contract_version"] = contract_version
             finally:
                 context.close()
     finally:
@@ -770,6 +805,8 @@ def main() -> int:
     failed = [item["id"] for item in checks if not item["ok"]]
     observed_at = datetime.now().isoformat(timespec="seconds")
     label = args.label
+    # 合同版本取工作实际观察值（页面里产品模块的值），字面量只是兜底。
+    contract_label = ui.get("contract_version") or REWORK_CONTRACT_VERSION
     txt_path = EVIDENCE_DIR / f"v2.5.4-rework-loop-{stamp}{label}.txt"
     json_path = EVIDENCE_DIR / f"v2.5.4-rework-loop-{stamp}{label}.json"
 
@@ -786,7 +823,7 @@ def main() -> int:
         "-" * 76,
         f"observed_at: {observed_at}",
         f"status: {'passed' if passed == len(checks) else 'failed'}",
-        f"contract: {REWORK_CONTRACT_VERSION}（返工）· v2.5.3（比较面板）· v2.5.2（复核报告）",
+        f"contract: {contract_label}（返工）· v2.5.3（比较面板）· v2.5.2（复核报告）",
         "model_calls: 0 · external_network_calls: 0（fake providers + 本地静态服务器）",
         f"json: {json_path.relative_to(ROOT).as_posix()}",
         "",
@@ -809,7 +846,7 @@ def main() -> int:
         "suite_id": "v2.5.4-rework-loop",
         "status": "passed" if passed == len(checks) else "failed",
         "observed_at": observed_at,
-        "contract": REWORK_CONTRACT_VERSION,
+        "contract": contract_label,
         "model_calls": 0,
         "external_network_calls": 0,
         "checks": checks,

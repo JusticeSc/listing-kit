@@ -1,0 +1,37 @@
+[
+  {
+    "path": "app/product_v2/prompts.ts",
+    "bytes": 24802,
+    "sha256": "c04a3b6ccb56596c03683da7a5a40bce59850b10d0715a23452caae571e83897",
+    "cr_bytes": 398,
+    "normalized_lf_sha256": "bc07173fa9fbaa711592f45e879540e0267d696c3c797f629c27809cbe66db9b"
+  },
+  {
+    "path": "app/product_v2/generation.ts",
+    "bytes": 102756,
+    "sha256": "3bcc9868f5f1aabc70f2b716c7b906b8cd8679348ed0ac0c7dc26260f82c6f3f",
+    "cr_bytes": 1954,
+    "normalized_lf_sha256": "dc790f819d10b72fb4df42a00de39d168891d187e251ee43d627719e6b8d6f9f"
+  },
+  {
+    "path": "app/product_v2/ui/input-view.ts",
+    "bytes": 159437,
+    "sha256": "fc67c4c2b98a0f29d5ec6f0c2e634f00ad5c9339073efa45735f135232667da8",
+    "cr_bytes": 3170,
+    "normalized_lf_sha256": "a5e33a51d49d0b4c242e98955e6c9596507d24009dc70f5839ac7255d850dcc7"
+  },
+  {
+    "path": "app/product_v2/ui/compare-view.ts",
+    "bytes": 90649,
+    "sha256": "90cc3e1b9e2ebc4359ec17563539097548fa7ef4364b612eaa72acd96fb54ca9",
+    "cr_bytes": 1979,
+    "normalized_lf_sha256": "b561cb5acab386bce2c72e15b803eeece2cfec37b3b2119220f4bb39fce25c77"
+  },
+  {
+    "path": ".gitattributes",
+    "bytes": 937,
+    "sha256": "faa6f99948cf00b780c10dc7eaa4dff9430ef983a40a8a898644b6dd2f90e3ef",
+    "cr_bytes": 31,
+    "normalized_lf_sha256": "3e6d90f09c2aec84771638fdb097d00abf999d4d576605387b3ddb273eac12ea"
+  }
+]

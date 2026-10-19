@@ -1,0 +1,17 @@
+{
+  "observed_at": "2026-10-19T05:51:01.407Z",
+  "commit": "4acfc92049e0bf388b8ed9dfc2467db3bdea6753",
+  "branch": "feat/complete-product-20261018",
+  "base": "main",
+  "url": "https://github.com/JusticeSc/listing-kit/pull/19",
+  "number": 19,
+  "state": "OPEN",
+  "isDraft": true,
+  "body_read_back": true,
+  "publication_output": "artifact://2225",
+  "readback_output": "artifact://2227",
+  "merge": false,
+  "production_release": false,
+  "paid_calls": 0,
+  "scope": "Verified B1–B3 engineering snapshot; full Goal remains active; B4 onward pending."
+}

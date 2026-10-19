@@ -196,11 +196,6 @@ async () => {
   const plans = documents.filter((item) => item.kind === "suite_plan")
     .sort((left, right) => left.version - right.version);
   const plan = plans.length ? plans[plans.length - 1] : null;
-  const rows = [...document.querySelectorAll("#attempt-list .attempt-row")].map((node) => ({
-    shot_id: node.getAttribute("data-shot-id"),
-    state: node.getAttribute("data-attempt-state"),
-    candidate_text: (node.querySelector(".attempt-candidate") || {}).textContent || null,
-  }));
   return {
     shot_ids: plan ? plan.payload.shots.map((shot) => shot.shot_id) : [],
     attempt_chains: chains,
@@ -209,7 +204,6 @@ async () => {
     prompt_history: promptHistory,
     confirmations: confirmations,
     assets: assets.map((item) => ({ sha256: item.sha256, byte_size: item.byte_size })),
-    ui_rows: rows,
   };
 }
 """
@@ -235,6 +229,8 @@ async ({projectId}) => {
       // 但 createGenerationModule 现在要求该依赖存在（generation.ts:366）。
       fenceReader: () => null,
       referenceSourceReader: () => [],
+      intakeVersionReader: () => 1,
+      shotSpecReader: () => null,
       promptsSheet: () => null,
       imageEnvironment: () => null,
       repository,
@@ -244,10 +240,13 @@ async ({projectId}) => {
     // 记录形状由 domain 构造函数收口（schema 演进时本探针不复制字段）：
     // pending_submit 落库 → 按提交响应一步到 succeeded（同步协议没有 task id）。
     const attemptDomain = await import("/domain/attempt.js");
+    // schema 3：引用带完整冻结元数据（身份+用途+来源，§13.8 一次切换）。
     const built = attemptDomain.buildAttemptRecord({
       actionId, shotId: "shot_probe",
       prompt: { version: 1, hash: "a".repeat(64) },
-      references: [{ role: "primary", sha256: "a".repeat(64) }],
+      references: [{ role: "primary", sha256: "a".repeat(64), uses: ["product_truth"],
+        sources: [{ kind: "product_input", document_id: "intake", version: 1,
+                    asset_sha256: "a".repeat(64) }] }],
       provider: { provider_id: "volcengine-ark",
                   model_id: "doubao-seedream-5-0-flash-260915" },
       parameters: { size: "1344*1344", n: 1, prompt_extend: false, watermark: false },
@@ -755,7 +754,7 @@ def browser_e2e_checks(check, screenshots: list[str], console_errors: list,
         expect(page.locator("#shot-list .shot-row")).to_have_count(4)
         # Issue #9：编译前先做普通决定（用户真实路径）。
         shared.decide_for_compile(page, page.evaluate(shared.SHOT_IDS))
-        stage_nav.goto(page, "generate")
+        stage_nav.goto(page, "make")
         # Prompt 编辑区在「查看／编辑完整 Prompt（高级）」折叠块里：默认收起，需按真实入口展开。
         if page.evaluate("() => !document.getElementById('prompt-details').open"):
             page.click("#prompt-title")
@@ -767,10 +766,11 @@ def browser_e2e_checks(check, screenshots: list[str], console_errors: list,
         # 确认即提交：先备齐 4 次同步响应再点确认，确认后直接等 attempt 终态，不再点已删除的旧整套按钮。
         for _ in range(4):
             transport.script_success(reference)
+        shared.choose_make_batch(page, shot_ids)
         page.click("#confirm-action")
         for shot_id in shot_ids:
             page.wait_for_selector(
-                f'#attempt-list .attempt-row[data-shot-id="{shot_id}"]'
+                f'#task-list-mount [data-task-shot="{shot_id}"]'
                 '[data-attempt-state="succeeded"]', timeout=60_000)
         page.wait_for_timeout(1000)
         after = page.evaluate(ID_DB_PROBE)
@@ -790,6 +790,7 @@ def browser_e2e_checks(check, screenshots: list[str], console_errors: list,
                 "sync": item["execution_identity"]["sync"]} for item in latest_records])
         prompt_rows = after["prompts"]
         request_matches = []
+        request_clauses: dict[str, dict[str, bool]] = {}
         for shot_id, attempt, call in zip(shot_ids, latest_records, transport.calls):
             prompt = prompt_rows[shot_id]["payload"]
             snapshot = prompt["request_snapshot"]
@@ -797,23 +798,46 @@ def browser_e2e_checks(check, screenshots: list[str], console_errors: list,
                 snapshot, ensure_ascii=False, sort_keys=True,
                 separators=(",", ":")).encode("utf-8")).hexdigest()
             external = call["json"]
-            request_matches.append(
-                prompt["compiled"]["provider"]["model_id"] == VOLCENGINE_MODEL_ID
-                and snapshot["model"] == external["model"] == VOLCENGINE_MODEL_ID
-                and snapshot["prompt"] == external["prompt"] == prompt["compiled"]["text"]
-                and snapshot["size"].replace("*", "x") == external["size"]
-                and snapshot["output_format"] == external["output_format"] == "png"
-                and snapshot["watermark"] == external["watermark"] is False
-                and digest == prompt["hash"] == attempt["prompt"]["hash"]
-                and snapshot["target"]["provider_id"] == attempt["provider"]["provider_id"]
-                and snapshot["target"]["capability_version"]
-                    == attempt["execution_identity"]["capability_version"]
-                and snapshot["references"] == attempt["references"]
-                and hashlib.sha256(base64.b64decode(
-                    external["image"][0].split(",", 1)[1])).hexdigest()
-                    == snapshot["references"][0]["sha256"])
+            # attempt schema 3 保存完整冻结引用（身份+用途+来源），与请求快照逐字一致
+            # （§13.8 一次切换）；不再是 {role, sha256} 身份投影。
+            # 逐条子句留证：失败时能指出具体不一致项，而不是只给一个 false。
+            clauses = {
+                "compiled_model": prompt["compiled"]["provider"]["model_id"]
+                    == VOLCENGINE_MODEL_ID,
+                "model": snapshot["model"] == external["model"] == VOLCENGINE_MODEL_ID,
+                "prompt_text": snapshot["prompt"] == external["prompt"]
+                    == prompt["compiled"]["text"],
+                "size": snapshot["size"].replace("*", "x") == external["size"],
+                "output_format": snapshot["output_format"] == external["output_format"] == "png",
+                "watermark": snapshot["watermark"] is external["watermark"] is False,
+                "hash_chain": digest == prompt["hash"] == attempt["prompt"]["hash"],
+                "provider_id": snapshot["target"]["provider_id"]
+                    == attempt["provider"]["provider_id"],
+                "capability_version": snapshot["target"]["capability_version"]
+                    == attempt["execution_identity"]["capability_version"],
+                "references": attempt["references"] == snapshot["references"],
+                # 快照里的参考图必须带冻结元数据，且来源资产哈希与实际外发的字节一致。
+                "reference_metadata": all(
+                    item.get("uses") and item.get("sources")
+                    and all(source.get("asset_sha256") == item["sha256"]
+                            for source in item["sources"])
+                    for item in snapshot["references"]),
+                "reference_bytes": isinstance(external.get("image"), list)
+                    and len(external["image"]) == len(snapshot["references"])
+                    and all(hashlib.sha256(base64.b64decode(
+                        payload.split(",", 1)[1])).hexdigest() == item["sha256"]
+                        for payload, item in zip(external["image"], snapshot["references"])),
+            }
+            request_clauses[shot_id] = clauses
+            request_matches.append(all(
+                ok for name, ok in clauses.items() if not name.startswith("_")))
         check("R53-E01", "实际火山请求与 Prompt、hash、参考图和冻结执行身份一致（非 qwen 编译冒充）",
-              all(request_matches), {"matches_by_shot": dict(zip(shot_ids, request_matches))})
+              all(request_matches),
+              {"matches_by_shot": dict(zip(shot_ids, request_matches)),
+               "failed_clauses": {shot_id: [name for name, ok in clauses.items() if not ok]
+                                  for shot_id, clauses in request_clauses.items()
+                                  if not all(ok for name, ok in clauses.items()
+                                             if not name.startswith("_"))}})
         candidate_rows = after["candidates"]
         asset_shas = {row["sha256"] for row in after["assets"]}
         check("R52-E03", "每张图候选入库；asset sha256 与 transport 字节一致",
@@ -821,10 +845,25 @@ def browser_e2e_checks(check, screenshots: list[str], console_errors: list,
               and hashlib.sha256(reference).hexdigest() in asset_shas,
               {"candidates": {key: len(value) for key, value in candidate_rows.items()},
                "asset_shas": len(asset_shas)})
+        # B4：制作与审图的执行区一次只渲染「正看着的那张图」，任务行只给状态徽标。
+        # 所以逐图切过去核对每张的候选行（切图用的是登记验证器同一路径）。
+        candidate_lines = []
+        for shot_id in shot_ids:
+            shared.select_make_shot(page, shot_id)
+            candidate_lines.append({
+                "shot_id": shot_id,
+                "candidate_text": page.evaluate(
+                    """(shot) => {
+                      const node = document.querySelector(
+                        '#shot-execution .attempt-row[data-shot-id="' + shot + '"]');
+                      const meta = node ? node.querySelector('.attempt-candidate') : null;
+                      return meta ? meta.textContent : null;
+                    }""", arg=shot_id),
+            })
         check("R52-E04", "UI 行显示候选已保存（真实字节预览口径）",
               all(row["candidate_text"] and "候选已保存到本地" in row["candidate_text"]
-                  for row in after["ui_rows"]),
-              after["ui_rows"])
+                  for row in candidate_lines),
+              candidate_lines)
         first_actions = {record["action_id"] for record in latest_records}
         target_shot = shot_ids[1]
         target_index = shot_ids.index(target_shot)
@@ -835,8 +874,8 @@ def browser_e2e_checks(check, screenshots: list[str], console_errors: list,
 
         # 刷新：字节面为空了，IndexedDB 仍是权威；记录与候选仍然可见。
         page.reload(wait_until="networkidle")
-        stage_nav.goto(page, "generate")
-        page.wait_for_selector("#attempt-list .attempt-row", timeout=30_000)
+        stage_nav.goto(page, "make")
+        page.wait_for_selector("#task-list-mount [data-task-shot]", timeout=30_000)
         refreshed = page.evaluate(ID_DB_PROBE)
         check("R52-E05", "刷新后：4 条 succeeded 记录 + 候选仍在（IndexedDB 权威）",
               len(refreshed["attempt_chains"]) == 4
@@ -849,7 +888,8 @@ def browser_e2e_checks(check, screenshots: list[str], console_errors: list,
 
         # 显式新建 action：同步协议再成功一次（新的第五次 transport 提交）。
         transport.script_success(reference, request_id="req-ark-second")
-        row_selector = f'#attempt-list .attempt-row[data-shot-id="{target_shot}"]'
+        shared.select_make_shot(page, target_shot)
+        row_selector = f'#shot-execution [data-shot-id="{target_shot}"]'
         page.click(row_selector + ' button:has-text("再生成一张")')
         shared.confirm_and_submit(page, expect, shot_ids=[target_shot])
         page.wait_for_selector(row_selector + '[data-attempt-state="succeeded"]',
@@ -883,7 +923,7 @@ def browser_e2e_checks(check, screenshots: list[str], console_errors: list,
         prompts_before_rotation = after_second["prompts"]
         mode["credential_source"] = "env"
         page.reload(wait_until="networkidle")
-        stage_nav.goto(page, "generate")
+        stage_nav.goto(page, "make")
         expect(page.locator("#prompt-list .shot-spec")).to_have_count(4)
         rotated = page.evaluate(ID_DB_PROBE)
         check("R53-E02", "纯凭据轮换保留 Prompt/确认且零新增外呼",
@@ -897,7 +937,7 @@ def browser_e2e_checks(check, screenshots: list[str], console_errors: list,
         # （plan §439/§870、ui-contract:39/167-176：自动准备缺失/过期系统文本，历史不被静默覆盖）。
         mode["provider"] = "dashscope"
         page.reload(wait_until="networkidle")
-        stage_nav.goto(page, "generate")
+        stage_nav.goto(page, "make")
         # 自动准备是异步本地动作：等它落定，再断言（不拿瞬时 stale 当终态）。
         expect(page.locator('#prompt-list [data-prompt-state="saved"]')).to_have_count(4)
         changed = page.evaluate(ID_DB_PROBE)

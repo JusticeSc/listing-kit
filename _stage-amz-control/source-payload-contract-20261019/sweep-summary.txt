@@ -1,0 +1,12 @@
+verify_v2_3_3_spec_versions                      rc=0 9s
+verify_v2_3_4_prompt_compiler                    rc=0 10s
+verify_v2_3_5_pre_generation_confirm             rc=0 13s
+verify_v2_3_6_prompt_manual_edit                 rc=0 19s
+verify_v2_4_2_generation_attempt                 rc=0 16s
+verify_v2_4_3_batch_execution                    rc=0 27s
+verify_v2_4_4_candidate_blob                     rc=0 20s
+verify_v2_5_1_deterministic_review               rc=0 10s
+verify_v2_5_3_compare_panel                      rc=0 12s
+verify_v2_5_4_rework_loop                        rc=0 11s
+verify_v2_r5_2_two_adapters                      rc=0 17s
+verify_v2_6_3_project_transfer                   rc=0 19s

@@ -25,6 +25,7 @@ import {
   promptHash,
   promptStaleness,
   requestSnapshotOf,
+  selectReferences,
 } from "/domain/index.js";
 
 import { sha256Hex } from "/storage/db.js";
@@ -43,7 +44,19 @@ function json(value) {
 const SHA_PRIMARY = "a".repeat(64);
 const SHA_COMPETITOR = "b".repeat(64);
 const DIGEST = { digest: sha256Hex };
+// 已保存的商品资料版本（冻结参考图来源的精确版本；与产品调用方同一快照概念）。
+const INTAKE_VERSION = 1;
 
+/** 冻结参考图：走产品自己的选择器，不手写最小引用，保证冻结元数据与产品一致。 */
+function frozenRefs(shot, context, shotSpec, options = {}) {
+  return selectReferences(shot, context.assets,
+    { intakeVersion: INTAKE_VERSION, shotSpec: shotSpec || emptyShotSpecFromShot(shot), ...options });
+}
+
+/** 所选文案的 schema2 来源引用：指向本套件 briefFixture() 的已确认事实（slot + 精确版本）。 */
+function textSource(slotId, version) {
+  return { kind: "fact_slot", document_id: slotId, version: version };
+}
 function fact(slotId, label, value, overrides = {}) {
   return { slot_id: slotId, label: label, value: value, source: "user_input", ...overrides };
 }
@@ -256,7 +269,7 @@ test("G15", "画面简报按用途正向表达且不冒充事实：删段/串味
       layout: "product_left_text_right",
       on_image_texts: [{
         text_id: "t_sig_1", text: "304不锈钢内胆",
-        source_slot_id: "signature_features", source_slot_version: 1,
+        source: textSource("signature_features", 1),
         status: "confirmed", origin: "user",
       }],
     },
@@ -299,8 +312,9 @@ test("G03", "hash 稳定：同输入同 hash；改一个字段即变化；不修
     providerProfile: IMAGE_PROMPT_PROFILE,
   });
   expect(first.text === second.text, "同输入必须产生逐字相同的文本。");
-  const snapA = requestSnapshotOf(first, { references: [{ role: "primary", sha256: SHA_PRIMARY }] });
-  const snapB = requestSnapshotOf(second, { references: [{ role: "primary", sha256: SHA_PRIMARY }] });
+  const refs = frozenRefs(shot, context, emptyShotSpecFromShot(shot));
+  const snapA = requestSnapshotOf(first, { references: refs });
+  const snapB = requestSnapshotOf(second, { references: refs });
   const [hashA, hashB] = [await promptHash(snapA, DIGEST), await promptHash(snapB, DIGEST)];
   expect(hashA === hashB, "同输入必须得到稳定 hash。");
   const changed = compilePrompt({
@@ -309,8 +323,7 @@ test("G03", "hash 稳定：同输入同 hash；改一个字段即变化；不修
     versions: { suite_version: 3, style_version: 1, shot_spec_version: 1 },
     providerProfile: IMAGE_PROMPT_PROFILE,
   });
-  const hashC = await promptHash(
-    requestSnapshotOf(changed, { references: [{ role: "primary", sha256: SHA_PRIMARY }] }), DIGEST);
+  const hashC = await promptHash(requestSnapshotOf(changed, { references: refs }), DIGEST);
   expect(hashC !== hashA, "改变风格后 hash 必须变化。");
   const keyOrderA = await promptHash({ b: 2, a: 1 }, DIGEST);
   const keyOrderB = await promptHash({ a: 1, b: 2 }, DIGEST);
@@ -443,7 +456,7 @@ test("G10", "图中文字：逐字引用、语言警告、非逐字必被抓住"
     layout: "product_left_text_right",
     on_image_texts: [{
       text_id: "t_sig_1", text: "304不锈钢内胆",
-      source_slot_id: "signature_features", source_slot_version: 1,
+      source: textSource("signature_features", 1),
       status: "confirmed", origin: "user",
     }],
   };
@@ -483,20 +496,22 @@ test("G10", "图中文字：逐字引用、语言警告、非逐字必被抓住"
   // 反向探针：来源版本与依据不一致必须阻断。
   const staleError = await expectCode(() => compilePrompt({
     brief: brief, shot: shot, styleSpec: styleFixture(),
-    shotSpec: { ...shotSpec, on_image_texts: [{ ...shotSpec.on_image_texts[0], source_slot_version: 2 }] },
+    shotSpec: { ...shotSpec, on_image_texts: [{ ...shotSpec.on_image_texts[0],
+      source: textSource("signature_features", 2) }] },
     context: contextFixture(),
     versions: { suite_version: 3, style_version: 1, shot_spec_version: 1 },
     providerProfile: IMAGE_PROMPT_PROFILE,
   }), DOMAIN_ERROR_CODES.CONTRACT_INVALID, "来源版本不一致");
-  expect(/版本/.test(staleError.message), "阻断消息必须说明版本不一致：" + staleError.message);
+  expect(/版本|改变|重新确认/.test(staleError.message), "阻断消息必须说明版本不一致：" + staleError.message);
   return { items: literal.items, warnings: compiled.warnings.map((item) => item.code) };
 });
 
 test("G11", "请求快照与版本记录：prompt 逐字一致、参考图越界报红、记录可机检", async () => {
+  const shot = mainShot();
+  const context = contextFixture();
   const compiled = compileMain();
-  const snapshot = requestSnapshotOf(compiled, {
-    references: [{ role: "primary", sha256: SHA_PRIMARY }],
-  });
+  const snapshot = requestSnapshotOf(compiled,
+    { references: frozenRefs(shot, context, emptyShotSpecFromShot(shot)) });
   expect(snapshot.prompt === compiled.text, "快照 prompt 必须逐字等于编译文本。");
   expect(snapshot.model === "qwen-image-3.0" && snapshot.size === "1344*1344", "快照必须带模型与尺寸。");
   expect(snapshot.prompt_extend === false && snapshot.watermark === false, "必须禁用 Provider 改写与水印。");
@@ -505,16 +520,22 @@ test("G11", "请求快照与版本记录：prompt 逐字一致、参考图越界
   expect(checkPromptRecord(record).length === 0, "记录必须通过机检：" + json(checkPromptRecord(record)));
   const broken = { ...record, request_snapshot: { ...snapshot, prompt: snapshot.prompt + " " } };
   expect(checkPromptRecord(broken).length > 0, "快照与文本不一致必须报红。");
-  const tooMany = await expectCode(() => requestSnapshotOf(compiled, {
-    references: [1, 2, 3, 4].map((index) => ({ role: "other", sha256: String(index).repeat(64) })),
-  }), DOMAIN_ERROR_CODES.CONTRACT_INVALID, "参考图数量越界");
+  // 越界探针：四张合法冻结引用（容量放宽到 4 才冻得住）送进请求快照，
+  // 快照按冻结档上限 3 拒绝；错误必须说明参考图上限。
+  const crowded = { ...context, assets: [1, 2, 3, 4].map((index) =>
+    ({ role: "primary", sha256: String(index).repeat(64) })) };
+  const overLimit = frozenRefs(shot, crowded, emptyShotSpecFromShot(shot), { maxReferences: 4 });
+  const tooMany = await expectCode(() => requestSnapshotOf(compiled, { references: overLimit }),
+    DOMAIN_ERROR_CODES.CONTRACT_INVALID, "参考图数量越界");
   expect(/1\.\.3|参考图/.test(tooMany.message), "错误必须说明参考图上限：" + tooMany.message);
   return { hash: hash, snapshot_size: snapshot.size };
 });
 
 test("G12", "过期机检：只认这张图实际消费的依据；无关槽位不使这张图过期", async () => {
+  const main = mainShot();
   const compiled = compileMain();
-  const snapshot = requestSnapshotOf(compiled, { references: [{ role: "primary", sha256: SHA_PRIMARY }] });
+  const snapshot = requestSnapshotOf(compiled,
+    { references: frozenRefs(main, contextFixture(), emptyShotSpecFromShot(main)) });
   const record = buildPromptRecord({
     compiled: compiled, snapshot: snapshot, hash: await promptHash(snapshot, DIGEST),
   });
@@ -562,13 +583,33 @@ test("G12", "过期机检：只认这张图实际消费的依据；无关槽位�
   });
   expect(missingField.stale && missingField.reasons[0].field === "provider",
     "当前档缺字段必须过期：" + json(missingField));
+  // 商品资料版本：编译时冻结、调用方给同一版 → 不过期；前进 → 过期（确认单与提交门同一判据，
+  // 修复「确认单说可提交 → 提交被拒」的分裂）；没有冻结该字段的记录按当前资料重新准备。
+  const intakeCompiled = compileMain({
+    versions: { suite_version: 3, style_version: 1, shot_spec_version: 1, intake_version: 5 } });
+  const intakeSnapshot = requestSnapshotOf(intakeCompiled,
+    { references: frozenRefs(main, contextFixture(), emptyShotSpecFromShot(main)) });
+  const intakeRecord = buildPromptRecord({
+    compiled: intakeCompiled, snapshot: intakeSnapshot, hash: await promptHash(intakeSnapshot, DIGEST),
+  });
+  expect(intakeCompiled.basis.intake_version === 5,
+    "编译必须冻结商品资料版本：" + json(intakeCompiled.basis.intake_version));
+  expect(promptStaleness(intakeRecord, { ...current, intake_version: 5 }).stale === false,
+    "同一商品资料版本不应过期。");
+  const intakeBumped = promptStaleness(intakeRecord, { ...current, intake_version: 6 });
+  expect(intakeBumped.stale && intakeBumped.reasons.some((item) => item.field === "intake_version"),
+    "商品资料版本前进必须过期：" + json(intakeBumped));
+  const legacyIntake = promptStaleness(record, { ...current, intake_version: 5 });
+  expect(legacyIntake.stale && legacyIntake.reasons.some((item) => item.field === "intake_version"),
+    "没有冻结商品资料版本的记录必须按当前资料重新准备：" + json(legacyIntake));
   // 消费该槽位的图：它消费的槽位版本前进 → 过期；它没消费的槽位前进 → 不过期。
   const infoShot = infographicShot();
   // 只测过期机检：显式不印新增文字，避免被「未决定」门阻断；原断言不变。
   const infoCompiled = compileMain({
     shot: infoShot, shotSpec: { ...emptyShotSpecFromShot(infoShot), print_intent: "none" } });
   const infoSnapshot = requestSnapshotOf(infoCompiled,
-    { references: [{ role: "primary", sha256: SHA_PRIMARY }] });
+    { references: frozenRefs(infoShot, contextFixture(),
+      { ...emptyShotSpecFromShot(infoShot), print_intent: "none" }) });
   const infoRecord = buildPromptRecord({
     compiled: infoCompiled, snapshot: infoSnapshot, hash: await promptHash(infoSnapshot, DIGEST),
   });

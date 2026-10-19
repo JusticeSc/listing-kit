@@ -1,0 +1,84 @@
+{
+  "observed_at": "2026-10-19T05:51:01.407Z",
+  "scope": "Prerequisite only: genuine old-version project plus photo exported through trusted existing HTTPS page; not an actual image rollback or five-image delivery proof.",
+  "origin": "https://47.115.172.233:8080/",
+  "project_name": "旧镜像同源恢复基线 · NSK 608Z",
+  "package": {
+    "file": "old-image-native.project.zip",
+    "bytes": 76468,
+    "sha256": "0f9787f6e92d675f65035040ccf7d32e713048a989a2f0c5790746c88a3a430f"
+  },
+  "documents": [
+    {
+      "kind": "product_input",
+      "document_id": "intake",
+      "version": 1,
+      "schema_version": 1,
+      "created_at": "2026-10-19T05:34:30.727Z",
+      "updated_at": "2026-10-19T05:34:30.727Z",
+      "payload": {
+        "schema_version": 1,
+        "product_name": "NSK 608Z 轴承（参考图标",
+        "description": "",
+        "selling_points": [],
+        "focus": "",
+        "references": [
+          {
+            "asset_sha256": "4c4ed76c61c959ace082f8f3698f1b10bf0e1c942c2b1e524b1e62086d4df1e1",
+            "role": "primary"
+          }
+        ]
+      }
+    },
+    {
+      "kind": "product_input",
+      "document_id": "intake",
+      "version": 2,
+      "schema_version": 1,
+      "created_at": "2026-10-19T05:34:30.884Z",
+      "updated_at": "2026-10-19T05:34:30.884Z",
+      "payload": {
+        "schema_version": 1,
+        "product_name": "NSK 608Z 轴承（参考图标识）",
+        "description": "仅按已有商品参考图描述可见外观：银色金属外观、圆环形轮廓、608Z / NSK / INDONESIA 可见标识。未确认材质牌号、未见内部结构，不推断尺寸或包装配件。此项目为旧版本同源恢复资料基线，不生成图片。",
+        "selling_points": [],
+        "focus": "保持原图轮廓、永久标识和外观；不添加尺寸、配件或新卖点。",
+        "references": [
+          {
+            "asset_sha256": "4c4ed76c61c959ace082f8f3698f1b10bf0e1c942c2b1e524b1e62086d4df1e1",
+            "role": "primary"
+          }
+        ]
+      }
+    }
+  ],
+  "asset": {
+    "count": 1,
+    "bytes": 73681,
+    "sha256": "4c4ed76c61c959ace082f8f3698f1b10bf0e1c942c2b1e524b1e62086d4df1e1"
+  },
+  "network": {
+    "requests_observed_at_export": 72,
+    "non_get_requests": [],
+    "raw_observation": "artifact://2217"
+  },
+  "surface": {
+    "name": "NSK 608Z 轴承（参考图标识）",
+    "reference_rows": 1,
+    "saved": true,
+    "viewport_width": 1440,
+    "scroll_width": 1440,
+    "screenshot": "old-image-native.webp"
+  },
+  "isolation": {
+    "native_pid_at_launch": 24076,
+    "profile": "C:/Users/31368/AppData/Local/Temp/amz-old-image-native-1792387939822",
+    "headless_flag_verified": true
+  },
+  "limits": [
+    "Serving image identity not yet directly inspected with SSH.",
+    "No actual rollback occurred.",
+    "No paid or model call.",
+    "Not a current-product quality or final release acceptance."
+  ]
+}

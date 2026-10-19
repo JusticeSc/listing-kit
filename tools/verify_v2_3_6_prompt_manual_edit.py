@@ -3,7 +3,7 @@
 
 检查：
   1) domain / workspace / harness 全部通过 node --check（ESM 语法门）。
-  2) 契约套件 M01..M12 在真实 Chromium 全过（记录形状、逐字一致、hash 重算、版本链、
+  2) 契约套件 M01..M13 在真实 Chromium 全过（记录形状、逐字一致、hash 重算、版本链、引用授权基准、
      语言降级提示、失效投影、过期与确认联动、篡改与非法输入反向探针）。
   3) 正式入口：套图就绪后 4 张图缺 Prompt 被阻断；编译全部后可确认，确认写 generation_confirm v1。
   4) 人工编辑主图：保存人工版本 v2，逐字生效、hash 与请求快照一致、失效投影只指向主图、
@@ -38,7 +38,7 @@ sys.path.insert(0, str(ROOT / "tools"))
 from v2_test_server import start_static  # noqa: E402
 sys.path.insert(0, str(ROOT / "tools"))
 
-import v2_stage_nav as stage_nav  # noqa: E402  （V2.UI.2 六阶段工作台导航）
+import v2_stage_nav as stage_nav  # noqa: E402  （B4 四段工作台导航）
 import v2_verify_shared as shared  # noqa: E402  （Issue #9 普通决定共用函数）
 
 PRODUCT_DIR = ROOT / "app" / "product_v2"
@@ -69,7 +69,7 @@ DOMAIN_FILES = [
     "evals/product-v2/harness/prompt-edit-contract.js",
 ]
 
-EXPECTED_CASES = [f"M{index:02d}" for index in range(1, 13)]
+EXPECTED_CASES = [f"M{index:02d}" for index in range(1, 14)]
 NEGATIVE_CASES = ["M03", "M04", "M05", "M07", "M08", "M09", "M11", "M12"]
 
 SEED_SLOTS = """
@@ -169,6 +169,8 @@ async () => {
       },
       currentBasisByShot: basisByShot,
       providerProfile: imageProfile,
+      // 有效报价与服务端能力块同形状：缺失或失配即费用未知不可提交不猜其它模型或地区的价格。
+      pricing: capabilities.images ? capabilities.images.pricing : null,
       shotIds: scopeIds,
     });
   }
@@ -379,7 +381,7 @@ def main() -> int:
     case_ids = [item["id"] for item in suite.get("cases", [])]
     missing = [case for case in EXPECTED_CASES if case not in case_ids]
     failed_cases = [item for item in suite.get("cases", []) if not item.get("ok")]
-    check("V2.3.6-01", "M01–M12 契约套件全过且用例齐全",
+    check("V2.3.6-01", "M01–M13 契约套件全过且用例齐全",
           suite.get("status") == "passed" and not missing and not failed_cases,
           {"status": suite.get("status"), "missing": missing,
            "failed": [{"id": item["id"], "error": item.get("error")} for item in failed_cases[:3]]})
@@ -429,8 +431,8 @@ def main() -> int:
             page.fill("#new-project-name", "审计商品 · 人工编辑")
             page.click("#create-project")
             expect(page.locator("#project-view")).to_be_visible()
-            # Prompt 区在生成阶段面板内：先切到生成区再判空态（阶段条始终可达）。
-            stage_nav.goto(page, "generate")
+            # Prompt 区在制作阶段面板内：先切到制作区再判空态（阶段条始终可达）。
+            stage_nav.goto(page, "make")
             expect(page.locator("#prompt-editor")).to_be_hidden()
             # 参考图与商品资料在资料阶段面板内：切回资料区再操作。
             stage_nav.goto(page, "intake")
@@ -454,7 +456,7 @@ def main() -> int:
             expect(page.locator("#shot-list .shot-row")).to_have_count(4)
             # Issue #9：编译前先做普通决定（用户真实路径）；choices 进 ui 证据。
             ui["decisions"] = shared.decide_for_compile(page, page.evaluate(shared.SHOT_IDS))
-            stage_nav.goto(page, "generate")
+            stage_nav.goto(page, "make")
             stage_nav.reveal(page, "#prompt-editor")
             expect(page.locator("#prompt-editor")).to_be_visible()
             expect(page.locator("#prompt-list .shot-spec")).to_have_count(4)
@@ -464,7 +466,7 @@ def main() -> int:
                         || document.getElementById("local-preparation-status").textContent.includes("部分任务尚未准备"))""",
                 timeout=30_000)
             locked = page.evaluate(EDIT_PROBE)
-            # 切到生成区会触发异步自动本地准备：-03 只断言“Prompt 区解锁可见”，
+            # 切到制作区会触发异步自动本地准备：-03 只断言“Prompt 区解锁可见”，
             # 确认门状态以 -04/-05 的相对口径为准（只改到达路径，不断言含义）。
             check("V2.3.6-03", "套图就绪后 Prompt 区解锁",
                   page.locator("#prompt-editor").is_visible()
@@ -482,8 +484,10 @@ def main() -> int:
                   and ready["main"]["origin"] is None,
                   {"state": ready["project_state"], "hash": ready["main"]["hash"][:12],
                    "main_version": ready["main"]["version"]})
-            # 自动准备/此前动作可能已写好确认：已确认（stale=False）就不再点，
-            # 否则点一次（幂等到达，不断言“必须点一次才有确认”）。
+            # B4 默认只送正看图：-05 要求整套 4 张确认，本轮必须先显式选批量范围。
+            # 选范围会改摘要 scope：重读探针后再决定是否需要点确认（幂等到达）。
+            shared.choose_make_batch(page, page.evaluate(shared.SHOT_IDS))
+            ready = page.evaluate(EDIT_PROBE)
             if ready["staleness"] is not None and ready["staleness"]["stale"] is False:
                 confirmed = ready
             else:
@@ -502,9 +506,10 @@ def main() -> int:
             save_edit(page, "shot_main_clean", edit_text, "补充标志位置约束")
             # 人工编辑后状态派生也是异步回写：等 PLAN_REVIEW 再读（只等到达，不断言）。
             page.wait_for_function(
-                """() => (document.getElementById("confirm-status") || {}).textContent
-                    && document.getElementById("confirm-status").textContent.includes("本次明确发送 0 张")""",
-                timeout=15_000)
+                """() => {
+                  const node = document.getElementById("confirm-status");
+                  return node && node.dataset.sendingCount === "0";
+                }""", timeout=15_000)
             page.wait_for_timeout(1500)
             edited = page.evaluate(EDIT_PROBE)
             main_card = card_of(edited, "shot_main_clean")
@@ -595,7 +600,7 @@ def main() -> int:
             screenshots.append(screenshot_rel)
 
             page.reload(wait_until="networkidle")
-            stage_nav.goto(page, "generate")
+            stage_nav.goto(page, "make")
             stage_nav.reveal(page, "#prompt-editor")
             page.wait_for_selector(
                 '#prompt-list .shot-spec[data-shot-id="shot_main_clean"] textarea.prompt-edit-text',

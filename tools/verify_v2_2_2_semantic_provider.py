@@ -12,6 +12,7 @@
   J7 错误消息与 details 不回显密钥。
   J8 fake provider 全场景分类正确，且每次 analyze 只调用一次（无隐藏重提）。
   J9 归一化输出形状 + assert_proposal_legal 反向探针。
+  J10 文案提议：能力声明、只带文字快照的消息装配、身份原样回显；凭空身份/一槽两候选/超长文本整包拒绝。
 真实调用（--live，按计划 §12.2 计费纪律，只做 Q4 允许的 2 次）：
   L1 真实正例 1 次；L2 无效密钥负例 1 次。
 
@@ -471,6 +472,99 @@ def check_normalization(check: Any) -> None:
           ok and reverse["ok"], {"fact": fact, "meta": blob["meta"], "reverse": reverse})
 
 
+def check_copy_proposals(check: Any) -> None:
+    """文案提议（Issue #9 增强）：能力声明、只带文字快照的消息、身份原样回显、越界整包拒绝。"""
+
+    from src.providers.v2_dashscope_vision_semantic import (
+        DashScopeVisionSemanticProvider,
+    )
+
+    semantic = ReplayTransport().provider()
+    vision = DashScopeVisionSemanticProvider(api_key=VERIFY_API_KEY)
+    semantic_caps = semantic.capabilities()
+    vision_caps = vision.capabilities()
+    copies_caps = (
+        semantic_caps.get("copy_proposals") is True
+        and vision_caps.get("copy_proposals") is True
+        and list(semantic_caps.get("analyze_fields") or []) == list(contract.ANALYZE_COPY_FIELDS)
+        and list(vision_caps.get("analyze_fields") or [])
+        == [*contract.ANALYZE_COPY_FIELDS, "reference_images"]
+    )
+
+    transport = ReplayTransport()
+    transport.canned = {
+        "content": json.dumps({"copy_proposals": [
+            {"slot_id": "product_name", "version": 3, "text": "Portable Vacuum Cup"}]},
+            ensure_ascii=False),
+        "finish_reason": "stop",
+    }
+    provider = transport.provider()
+    request = contract.parse_request(base_input(copy_targets=[
+        {"slot_id": "product_name", "version": 3, "label": "商品名称",
+         "value_type": "text", "value": "不锈钢真空保温杯 500ml"}]))
+    proposal = provider.analyze(request)
+    body = transport.requests[-1]
+    messages = body["messages"]
+    user_text = "\n".join(str(item.get("content")) for item in messages
+                          if item.get("role") == "user")
+    # 硬规则必须真的到达模型（message role=system）：身份原样回显与 60 字符上限都写在系统提示里。
+    # 这条断言直接读实际出站正文，不靠产品模块自证。
+    system_text = "\n".join(str(item.get("content")) for item in messages
+                            if item.get("role") == "system")
+    echo = (
+        body["response_format"] == {"type": "json_object"}
+        and body.get("max_tokens") == DEFAULT_MAX_TOKENS
+        and "product_name@v3" in user_text
+        and "不锈钢真空保温杯 500ml" in user_text
+        # 文案提议只看已确认文字：商品介绍原文与参考图元数据都不进消息。
+        and "316 不锈钢内胆" not in user_text
+        and "内容哈希" not in user_text
+        and "slot_id/version 必须原样回显" in system_text
+        and "60" in system_text
+    )
+    normalized = (
+        proposal.slots == ()
+        and len(proposal.copy_proposals) == 1
+        and proposal.copy_proposals[0] == {
+            "text": "Portable Vacuum Cup", "source_slot_id": "product_name",
+            "source_slot_version": 3}
+        and proposal.reference_images_sent is False
+        and "confirmed_slots" in proposal.inputs_used
+        and "copy_proposals" in proposal.to_dict()
+        and "slots" in proposal.to_dict()
+    )
+
+    invented = contract.parse_copy_response({"copy_proposals": [
+        {"slot_id": "key_material", "version": 1, "text": "316 Stainless Steel"}]})
+    invented_probe = expect_failure(lambda: contract.to_copy_proposals(invented, request),
+                                    codes=("INVALID_RESPONSE",))
+    doubled = contract.parse_copy_response({"copy_proposals": [
+        {"slot_id": "product_name", "version": 3, "text": "Cup"},
+        {"slot_id": "product_name", "version": 3, "text": "VACUUM CUP"}]})
+    doubled_probe = expect_failure(lambda: contract.to_copy_proposals(doubled, request),
+                                   codes=("INVALID_RESPONSE",))
+    overlong_probe = expect_failure(lambda: contract.parse_copy_response(
+        {"copy_proposals": [{"slot_id": "product_name", "version": 3, "text": "x" * 61}]}),
+        codes=("INVALID_RESPONSE",))
+    consumption = contract.check_copy_proposals([
+        {"text": "", "source_slot_id": "product_name", "source_slot_version": 3}])
+    duplicates = contract.check_copy_proposals([
+        {"text": "Cup", "source_slot_id": "product_name", "source_slot_version": 3},
+        {"text": "VACUUM CUP", "source_slot_id": "product_name", "source_slot_version": 3}])
+    consumption_ok = bool(consumption) and bool(duplicates)
+
+    ok = bool(copies_caps) and bool(echo) and bool(normalized) and bool(consumption_ok) \
+        and invented_probe["ok"] and doubled_probe["ok"] and overlong_probe["ok"]
+    check("V2.2.2-11",
+          "文案提议：能力声明、只带文字快照的消息装配、身份原样回显；凭空身份/一槽两候选/超长文本整包拒绝",
+          ok, {"caps": {"semantic": semantic_caps.get("analyze_fields"),
+                        "vision": vision_caps.get("analyze_fields"),
+                        "copy_proposals": semantic_caps.get("copy_proposals")},
+               "echo": echo, "normalized": normalized,
+               "invented": invented_probe, "doubled": doubled_probe,
+               "overlong": overlong_probe, "consumption": consumption[:2] + duplicates[:2]})
+
+
 # ------------------------------------------------------------- 真实调用（--live）
 
 def check_provider_registry(check: Any) -> None:
@@ -586,6 +680,7 @@ def main() -> int:
     check_redaction(check)
     check_fake_provider(check)
     check_normalization(check)
+    check_copy_proposals(check)
     check_provider_registry(check)
     if args.live:
         check_live_positive(check)
@@ -599,7 +694,8 @@ def main() -> int:
         "证明语义 Provider 的离线契约与装配：跨语言核心注册表一致、输入越界分类（input_rejected/fatal）、"
         "json_mode 与 extra_body.max_tokens 与 max_retries=0 的真实请求体、三条静默清洗负例"
         "（缺证据 / 非对象槽位 / 超上限不截断）、截断与内容策略拒绝与空可见文本的归口、SDK 异常映射矩阵、"
-        "密钥遮蔽、fake 全场景与无隐藏重提、归一化形状与消费侧反向探针。--live 只证明 1 次真实正例与 "
+        "密钥遮蔽、fake 全场景与无隐藏重提、归一化形状与消费侧反向探针、文案提议的能力/装配/身份回显与越界拒绝。"
+        "--live 只证明 1 次真实正例与 "
         "1 次无效密钥负例；不证明模型输出质量、界面投影、套图规划、图片生成与交付闭环。"
     )
     report = {

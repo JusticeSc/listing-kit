@@ -1,0 +1,7 @@
+{
+  "image": "fake-qwen-image",
+  "credential_source": "test_double",
+  "test_double": true,
+  "semantic": "fake-semantic",
+  "review": "fake-review"
+}

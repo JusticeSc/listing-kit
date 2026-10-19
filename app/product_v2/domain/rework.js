@@ -1,5 +1,5 @@
 /**
- * V2.5.4 返工：固定问题分类、改进方向与返工指令（唯一权威）。
+ * V2.5.5 返工：固定问题分类、改进方向与返工指令（唯一权威）。
  *
  * 返工不是「重新生成整张图」的自由文本，而是把「这次要改什么」固化成一条绑定
  * 候选字节 + 复核报告 + 用户方向的 ReworkDirective，再交给 Prompt 编译器作为独立段落。
@@ -10,10 +10,17 @@ import { REVIEW_CONTRACT_VERSION, topFinding } from "./review.js";
 import { isIsoTimestamp, isNonEmptyString, isPlainObject, isSha256Hex,
          pushProblem } from "./shared.js";
 
-export const REWORK_CONTRACT_VERSION = "v2.5.4";
-export const REWORK_SCHEMA_VERSION = 1;
+export const REWORK_CONTRACT_VERSION = "v2.5.5";
+export const LEGACY_REWORK_CONTRACT_VERSION = "v2.5.4";
+export const REWORK_SCHEMA_VERSION = 2;
+export const LEGACY_REWORK_SCHEMA_VERSION = 1;
 export const REWORK_DIRECTION_MIN = 4;
 export const REWORK_DIRECTION_MAX = 300;
+export const REWORK_MODES = Object.freeze(["edit_candidate", "regenerate_original"]);
+export const REWORK_MODE_LABELS = Object.freeze({
+  edit_candidate: "改这条候选",
+  regenerate_original: "按原资料重画",
+});
 
 /**
  * 固定问题分类（计划 §8.3）：问题是对现象的分类，改进方向是本次要改变什么。
@@ -116,21 +123,35 @@ export function normalizeReworkDirection(direction) {
 }
 
 /**
- * 返工指令：绑定「哪一张图、哪一条候选、因为什么、要改成什么」。
+ * 返工指令：绑定「哪一张图、哪一种改法、哪一条候选、因为什么、要改成什么」。
+ * mode 与 problem_candidate 是当前 schema2 写入的必填项：edit_candidate 把固定问题候选的
+ * 原图字节放在首位当编辑源，regenerate_original 只发商品原照依据。历史 schema1 指令没有
+ * mode，读取时不补造，运行时也不从历史推测模式。
  * problems 与 direction 至少要有一个；两者都留空等于没有返工理由，直接拒绝。
- * @param {{directiveId?: unknown, shotId?: unknown, candidate?: unknown, report?: unknown,
- *          problems?: unknown, direction?: unknown, at?: unknown}} [args]
+ * @param {{directiveId?: unknown, shotId?: unknown, mode?: unknown, candidate?: unknown,
+ *          candidateDocument?: unknown, report?: unknown, problems?: unknown,
+ *          direction?: unknown, at?: unknown}} [args]
  * @returns {import("./type-contracts.js").ReworkDirective}
  */
-export function buildReworkDirective({ directiveId, shotId, candidate, report, problems,
-                                       direction, at } = {}) {
+export function buildReworkDirective({ directiveId, shotId, mode, candidate, candidateDocument,
+                                       report, problems, direction, at } = {}) {
   if (!isNonEmptyString(directiveId)) invalid("返工指令需要唯一 ID。");
   if (!isNonEmptyString(shotId)) invalid("返工指令需要 shot_id。");
+  if (mode !== "edit_candidate" && mode !== "regenerate_original") {
+    invalid("返工必须明确选择改这条候选或按原资料重画，不能留空。");
+  }
   if (!isPlainObject(candidate) || !isNonEmptyString(candidate.candidate_id)
       || !isSha256Hex(candidate.asset_sha256)) {
     invalid("返工指令必须绑定一条候选（candidate_id + sha256）。");
   }
   if (candidate.shot_id !== shotId) invalid("这条候选不属于这张图，不能用它做返工依据。");
+  const document = isPlainObject(candidateDocument) ? candidateDocument : {};
+  const documentId = typeof document.document_id === "string" ? document.document_id : shotId;
+  const documentVersion = Number.isInteger(document.version) ? document.version : 0;
+  if (documentId !== shotId) invalid("问题候选的文档归属必须是本图。");
+  if (!Number.isInteger(documentVersion) || documentVersion < 1) {
+    invalid("问题候选必须引用已保存的确切版本，不能引用未保存或未知版本。");
+  }
   const list = Array.isArray(problems)
     ? [...new Set(problems.filter((item) => isNonEmptyString(item)))] : [];
   const unknown = list.filter((id) => REWORK_PROBLEM_IDS.indexOf(id) === -1);
@@ -151,6 +172,13 @@ export function buildReworkDirective({ directiveId, shotId, candidate, report, p
     shot_id: shotId,
     candidate_id: candidate.candidate_id,
     candidate_sha256: candidate.asset_sha256,
+    mode: mode,
+    problem_candidate: Object.freeze({
+      candidate_id: candidate.candidate_id,
+      document_id: documentId,
+      version: documentVersion,
+      asset_sha256: candidate.asset_sha256,
+    }),
     problems: Object.freeze(list),
     direction: text,
     source: Object.freeze({
@@ -166,6 +194,8 @@ export function buildReworkDirective({ directiveId, shotId, candidate, report, p
 }
 
 /** 返工指令形状检查；返回问题清单（空数组 = 合法）。
+ * schema2（当前）要求 mode 与 problem_candidate；schema1 历史（v2.5.4）只读接受，
+ * 不补造模式，reworkIsCurrent 永远判它过期。未知版本一律拒绝。
  * @param {unknown} directive
  * @returns {import("./type-contracts.js").DomainProblem[]}
  */
@@ -176,11 +206,14 @@ export function checkReworkDirective(directive) {
     pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$", "返工指令必须是对象。");
     return problems;
   }
-  if (directive.schema_version !== REWORK_SCHEMA_VERSION) {
+  const schema = directive.schema_version;
+  const historical = schema === LEGACY_REWORK_SCHEMA_VERSION
+    && directive.contract_version === LEGACY_REWORK_CONTRACT_VERSION;
+  if (schema !== REWORK_SCHEMA_VERSION && !historical) {
     pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.schema_version",
-      "返工指令版本不认识：" + String(directive.schema_version));
+      "返工指令版本不认识：" + String(schema));
   }
-  if (directive.contract_version !== REWORK_CONTRACT_VERSION) {
+  if (!historical && directive.contract_version !== REWORK_CONTRACT_VERSION) {
     pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.contract_version",
       "返工指令合同版本不是当前版本。");
   }
@@ -193,6 +226,23 @@ export function checkReworkDirective(directive) {
   if (!isNonEmptyString(directive.candidate_id) || !isSha256Hex(directive.candidate_sha256)) {
     pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.candidate_id",
       "返工指令必须绑定候选身份。");
+  }
+  if (!historical) {
+    if (directive.mode !== "edit_candidate" && directive.mode !== "regenerate_original") {
+      pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.mode",
+        "返工指令必须明确改这条候选或按原资料重画。");
+    }
+    const fixed = directive.problem_candidate;
+    if (!isPlainObject(fixed) || fixed.candidate_id !== directive.candidate_id
+        || fixed.document_id !== directive.shot_id
+        || !Number.isInteger(fixed.version) || fixed.version < 1
+        || !isSha256Hex(fixed.asset_sha256) || fixed.asset_sha256 !== directive.candidate_sha256) {
+      pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.problem_candidate",
+        "问题候选必须绑定本图候选的确切文档版本与原图字节。");
+    }
+  } else if (directive.mode !== undefined || directive.problem_candidate !== undefined) {
+    pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.mode",
+      "历史返工指令不带模式；新返工请重新发起。");
   }
   const list = Array.isArray(directive.problems) ? directive.problems : null;
   if (!list) {
@@ -235,20 +285,40 @@ export function assertReworkDirective(directive) {
   return directive;
 }
 
-/** 指令是否仍对这条候选有效：候选换了或复核合同升级了，就必须重新发起返工。
+/** 指令是否仍对这条候选有效：历史指令、模式缺失、候选换了都要重新发起返工。
+ * candidateDocument 是候选在文档库里的版本（{document_id, version}）；不给则无法确认固定来源。
  * @param {unknown} directive
  * @param {unknown} candidate
+ * @param {unknown} [candidateDocument]
  * @returns {boolean}
  */
-export function reworkIsCurrent(directive, candidate) {
+export function reworkIsCurrent(directive, candidate, candidateDocument = null) {
   if (!isPlainObject(directive) || !isPlainObject(candidate)) return false;
-  return directive.contract_version === REWORK_CONTRACT_VERSION
-    && directive.candidate_id === candidate.candidate_id
+  if (directive.schema_version !== REWORK_SCHEMA_VERSION
+      || directive.contract_version !== REWORK_CONTRACT_VERSION) return false;
+  if (directive.mode !== "edit_candidate" && directive.mode !== "regenerate_original") return false;
+  const fixed = directive.problem_candidate;
+  if (!isPlainObject(fixed)) return false;
+  const document = isPlainObject(candidateDocument) ? candidateDocument : null;
+  if (!document || document.document_id !== directive.shot_id
+      || document.version !== fixed.version) return false;
+  return directive.candidate_id === candidate.candidate_id
     && directive.shot_id === candidate.shot_id
-    && directive.candidate_sha256 === candidate.asset_sha256;
+    && directive.candidate_sha256 === candidate.asset_sha256
+    && fixed.candidate_id === candidate.candidate_id
+    && fixed.document_id === directive.shot_id
+    && fixed.asset_sha256 === candidate.asset_sha256;
 }
 
-/** 界面一行摘要：问题分类 + 方向；不含命令，也不暗示已经采纳。
+/** 模式一行文案（界面/确认单投影用；未知模式原样返回，不猜测）。
+ * @param {unknown} mode
+ * @returns {string}
+ */
+export function reworkModeLabel(mode) {
+  return REWORK_MODE_LABELS[mode] || String(mode || "");
+}
+
+/** 界面一行摘要：改法 + 问题分类 + 方向；不含命令，也不暗示已经采纳。
  * @param {unknown} directive
  * @returns {string}
  */
@@ -258,6 +328,8 @@ export function reworkSummaryText(directive) {
     .map(reworkProblemLabel);
   /** @type {string[]} */
   const parts = [];
+  const mode = reworkModeLabel(directive.mode);
+  if (mode) parts.push(mode);
   if (labels.length > 0) parts.push(labels.join("、"));
   if (isNonEmptyString(directive.direction)) parts.push("方向：" + directive.direction);
   return parts.join(" · ");

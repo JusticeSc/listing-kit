@@ -1,0 +1,18 @@
+  [PASS] V2.6.3-03 契约套件 P01–P08 全过（真实 Chromium）
+  [PASS] V2.6.3-04 A 导出项目包：格式 2、记录自描述、完整性计数与逐资产哈希（Python 独立核对）
+  [PASS] V2.6.3-05 B 全新 profile 导入：逐文档 payload 哈希与资产 sha256 与 A 包一致（crypto 独立重算）
+  [PASS] V2.6.3-06 B 导入后按问题返工：新增候选与 Attempt（迁移后的项目可继续生产）
+  [PASS] V2.6.3-06a 新候选不自动改选：旧采用保持 current、仍需人工显式采用最新
+  [PASS] V2.6.3-07 B 返工后门禁重新就绪并生成交付包（迁移后的完整闭环）
+  [PASS] V2.6.3-08 B 再导出项目包：A 的记录逐条原样保留，新增返工/交付记录
+  [PASS] V2.6.3-09 旧格式 UI 导入拒绝，已有项目和候选不变
+  [PASS] V2.6.3-10 浏览器 A 主链零意外 console / page / HTTP 错误
+  [PASS] V2.6.3-11 浏览器 B 主链零意外 console / page / HTTP 错误
+  [PASS] V2.6.3-12 正式入口自检全过
+- evals/product-v2/evidence/v2.6.3-transfer-20261019-021555-a-gate.png
+- evals/product-v2/evidence/v2.6.3-transfer-20261019-021555-a-exported.png
+- evals/product-v2/evidence/v2.6.3-transfer-20261019-021555-b-imported.png
+- evals/product-v2/evidence/v2.6.3-transfer-20261019-021555-b-opened.png
+- evals/product-v2/evidence/v2.6.3-transfer-20261019-021555-b-rework-form.png
+- evals/product-v2/evidence/v2.6.3-transfer-20261019-021555-b-deliver.png
+证据：evals/product-v2/v2.6.3-transfer-20261019-021555.txt

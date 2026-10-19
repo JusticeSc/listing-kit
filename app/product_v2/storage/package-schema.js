@@ -18,11 +18,11 @@ export const PAYLOAD_SCHEMA_VERSIONS = Object.freeze({
   fact_slot: 1,
   product_brief: 1,
   suite_plan: 1,
-  style_spec: 1,
-  shot_spec: 1,
-  prompt_version: 1,
-  generation_confirm: 1,
-  generation_attempt: 2,
+  style_spec: 2,
+  shot_spec: 2,
+  prompt_version: 2,
+  generation_confirm: 4,
+  generation_attempt: 3,
   candidate: 1,
   review_report: 1,
   selection: 1,
@@ -32,8 +32,9 @@ export const PAYLOAD_SCHEMA_VERSIONS = Object.freeze({
 });
 
 /**
- * 低于该值就必须整体拒绝的 kind（V2.R4.4）：generation_attempt 自 schema 2 起要求
- * 冻结执行身份；旧 schema 1 记录不做 legacy 映射（计划 §2.3），导出的旧包按精确条目拒绝。
+ * schema 2 已含冻结执行身份，仍由领域解析器按历史分支读取；schema 3 的新引用元数据
+ * 不得倒灌旧动作。当前格式包必须能保留同一项目的这些历史记录（设计 §13.8）。
+ * Attempt schema 1 缺执行身份，仍整包拒绝，不补造、不迁写；新 Attempt 写 3，新确认授权写 4。
  */
 /** @type {PayloadSchemaVersionMap} */
 export const MIN_PAYLOAD_SCHEMA_VERSIONS = Object.freeze({
@@ -78,7 +79,7 @@ export function assertPayloadSchemaSupported(record) {
     throw new StorageError(
       STORAGE_ERROR_CODES.PACKAGE_UNSUPPORTED_VERSION,
       "无法导入：文档 " + entryLabel(record) + " 声明的 payload schema_version=" + declared
-        + " 低于当前要求的 " + min + "（该记录缺少冻结执行身份，不做 legacy 映射、"
+        + " 低于仍支持的 " + min + "（该记录缺少冻结执行身份，不做 legacy 映射、"
         + "不部分写入）；按计划 §2.3 整包拒绝。",
     );
   }

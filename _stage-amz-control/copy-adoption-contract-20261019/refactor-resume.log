@@ -1,0 +1,14 @@
+[PASS] 冷恢复：8 阶段 / 27 任务；状态 active
+目标：docs/product-v2-refactor-plan.md；状态：_working/amz-listing-kit-product-v2/state.md
+唯一下一动作：V2.R4.4
+任务卡：docs/product-v2-refactor-plan.md:417
+Goal 原文：计划 §2.1；sha256=6c1f59d0df5c6c867dac5aa090bb32ff915c7dfae2140494c653aab7598bf870
+仓库保存的最近 Goal 观察：active；绑定：required；goal_id=15ab22bf3386b9cf；证据：evals/product-v2/refactor/goal-observation-full-product-20261018T140710Z.json
+本脚本不查询系统 Goal；恢复会话仍须读取真实当前 Goal 核对。
+### V2.R4.4 · 同版本执行身份/项目包合同
+
+输入：现Attempt/Prompt/basis/ZIP/schema与新有效配置。
+动作：冻结非secret协议/目标/模型/能力版本/credential reference；旧task按原身份核对，不为无身份旧qwen补造legacy映射。当前信封与payload先完整验证再单事务写入；新payload/真实references所有读写/冻结/报告/导出消费者同组迁移，已保留的同信封旧payload按设计§13.8严格分支读且原字节不重写。未支持的旧信封/身份/未知版本仍按§2.3整包拒绝，不把历史读取扩成万能格式兼容。配置导出不含secret。
+输出：当前执行身份/包校验与fixtures、`refactor/execution-identity-package-<timestamp>.md`。
+验收：换设置后已提交task不走新目标，同task不同target不串；同版本包对象/hash/候选保持；缺原key明确可恢复，密钥轮换不使无关Prompt过期。
+失败：拒绝不支持包不部分写入，恢复备份而非降级覆库。

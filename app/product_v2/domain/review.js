@@ -13,9 +13,9 @@
  */
 
 import { candidateMatchesAttempt, checkCandidateRecord, parsePngHeader } from "./candidate.js";
-import { CONFIRM_BLOCKER_CODES } from "./confirm.js";
 import { DOMAIN_ERROR_CODES, invalid } from "./errors.js";
 import {
+  CONFIRM_BLOCKER_CODES,
   DOMAIN_DOCUMENT_KINDS, checkSchemaVersion, isIsoTimestamp, isNonEmptyString,
   isPlainObject, isSha256Hex, pushProblem,
 } from "./shared.js";

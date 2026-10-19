@@ -1,0 +1,28 @@
+{
+  "id": "ci22-panel-assertion-20261019",
+  "question": "run 39228244927 的 V2.2.3-22 失败(CI head 9aedd30),工作树删掉面板级断言是否为掩盖缺陷?",
+  "method": "临时探针(已删除): 与 verify_v2_2_3 同一 boot(create_product_v2_server + FakeSemanticProvider) + 无头 Chromium;上传参考图、填资料、跑一次分析后,列出 intake 面板中『删掉 details 后的可见文本』内含 'fake-deepseek'/'product_input' 的最内层元素,并导出全部事实卡片主行与技术详情开关状态。",
+  "findings": [
+    {
+      "element": "#analyze-gate",
+      "inside_details": false,
+      "text": "将发给 fake-deepseek-v4.1-flash:当前名称、介绍、卖点与重点,仅参考图元数据,不发送图片字节。供应商按实际调用计费;不能据元数据宣称已经看图。",
+      "kind": "designed_user_facing"
+    },
+    {
+      "element": "#analyze-result",
+      "inside_details": false,
+      "text": "最近一次分析:4 个提案,写入 4 个槽位 · fake-semantic(fake-deepseek-v4.1-flash) · 原资料 v2 · 未发送图片字节 · ...",
+      "kind": "designed_user_facing"
+    },
+    {
+      "element": "p.meta.tech-body",
+      "inside_details": true,
+      "text": "标识 product_category · 版本 v2 · 来源引用 fake-deepseek-v4.1-flash、product_input:intake@v2",
+      "kind": "engineering_id_inside_tech_details"
+    }
+  ],
+  "row_level_assertions": "全部 11 个事实卡片:tech 存在且全部 closed;slot_id 只出现在技术详情 body;主行不含 slot_id / '版本 v' / sha256 / 12+ hex。",
+  "conclusion": "原面板级断言 'product_input' or 'fake-deepseek' in panel_excl_details 过宽:它会命中两条设计上就要人读的模型身份行(#analyze-gate 将发给谁、#analyze-result 分析记录),而 V2.2.3-22 的意图(V2.6.16)是事实卡片主行不收工程标识。逐行断言完整保留,故删除面板级断言是修正判据而非掩盖缺陷;CI 变红只说明 head 9aedd30 未含该修正。",
+  "evidence": "probe-panel.out(本目录), verify_v2_2_3_intake_understanding.py:443-461 保留的逐行断言, evals/product-v2/v2.2.3-intake-understanding-20261019-211559.json 的 V2.2.3-22 detail。"
+}

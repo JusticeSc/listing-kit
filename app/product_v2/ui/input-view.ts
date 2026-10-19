@@ -27,6 +27,7 @@ import {
   MAX_REFERENCES,
   PRODUCT_INPUT_SCHEMA_VERSION,
   REFERENCE_ROLES,
+  REFERENCE_VIEWPOINTS,
   SHOT_LAYOUTS,
   SHOT_TEMPLATES,
   SLOT_VALUE_TYPES,
@@ -42,16 +43,22 @@ import {
   coreSlotDefinition,
   emptyShotSpecFromShot,
   emptyStyleSpec,
+  formatMeasurementText,
+  imageTextSourceOf,
   intakeReadiness,
   isPlainObject,
   layoutLabelOf,
   moveShot,
+  MEASUREMENT_SOURCE_KINDS,
+  MEASUREMENT_SOURCE_LABEL,
   PRESENTATION_CONSUMERS,
   PRESENTATION_FIELDS,
+  presentationHasOwn,
   presentationStateOf,
   printDecisionRoleOf,
   printIntentLabelOf,
   recommendPlan,
+  referenceViewpointEvidence,
   removeShot,
   seedSuitePlan,
   setShotFactBindings,
@@ -89,6 +96,8 @@ import type {
   DomainProblem,
   FactSlot,
   FactSlotValue,
+  MeasurementBinding,
+  MeasurementSourceKind,
   PlanRecommendation,
   ReferenceRole,
   ShotSpec,
@@ -182,14 +191,56 @@ type SlotEditorDraft = {
 };
 /** 单图事实绑定草稿：baseline 是上次从计划采纳的值，用于判断用户是否改过。 */
 type BindingDraft = { values: string[]; baseline: string[] };
-/** 勾选过的图中文案：记用户勾选当时看到的逐字值（列表按元素）与来源版本，保存时按这份写。 */
-type SelectedText = { slot_id: string; texts: string[]; version: number };
-/** 单图规格草稿（原文）+ 采纳基线。印字决定与版面空串=未选；selected 存勾选当时的槽位/逐字值/版本。 */
+/** 勾选过的图中文案：记用户勾选当时看到的逐字值（列表按元素）与来源版本，保存时按这份写。
+ *  origin 记这条文案的来路：用户从事实值勾选=user；采用 AI 候选文案=model（保存时逐字写入，不改写）。 */
+type SelectedText = { slot_id: string; texts: string[]; version: number; origin?: "user" | "model" };
+/** 单条测量的绑定草稿：raw 五元是勾选当时从来源值逐字抄的快照（绝不手填数字），
+ * 标签与来源分类是人工逐项确认的映射。保存时快照与标签一起写入 measurement。
+ * 轴向/单位/分类在人工确认前是空串，保持草稿可表达「还没填完」，由保存门与预览统一收口。 */
+type MeasurementPick = {
+  slot_id: string; version: number; index: number;
+  object: string; axis: DimensionAxis | ""; value: number; unit: DimensionUnit | ""; source_basis: string;
+  object_label: string; axis_label: string; source_kind: MeasurementSourceKind | "";
+};
+/** 分组来源标签草稿：覆盖的测量项必须全部同一来源分类（逐项确认过）；快照逐项抄来源值。 */
+type MeasurementGroupPick = {
+  slot_id: string; version: number; indices: number[];
+  measurements: DimensionMeasurement[]; source_kind: MeasurementSourceKind;
+};
+
+/** 草稿 → 领域绑定：四类人工映射齐全且属于领域词表时才构成合法 MeasurementBinding。
+ * 合法性只在这里判断一次（对照 domain 的同一组常量），调用方拿到的是已收窄的类型。 */
+function measurementBindingOf(pick: MeasurementPick): MeasurementBinding | null {
+  if (!MEASUREMENT_SOURCE_KINDS.includes(pick.source_kind)) return null;
+  if (!(DIMENSION_AXES as readonly string[]).includes(pick.axis)) return null;
+  if (!(DIMENSION_UNITS as readonly string[]).includes(pick.unit)) return null;
+  return {
+    object: pick.object, axis: pick.axis as DimensionAxis, value: pick.value,
+    unit: pick.unit as DimensionUnit, source_basis: pick.source_basis,
+    index: pick.index, object_label: pick.object_label, axis_label: pick.axis_label,
+    source_kind: pick.source_kind as MeasurementSourceKind,
+  };
+}
+/** 单图规格草稿（原文）+ 采纳基线。印字决定与版面空串=未选；selected 存勾选当时的槽位/逐字值/版本。
+ * 视角：空串=沿用可见视角（不写单图覆盖）；显式 front/side/top 才写覆盖。
+ * 参考选择：null=沿用角色默认；数组=明确选择（空数组=明确不选）。基线存同一形状用于判脏。
+ * 测量绑定：measurements 存逐项确认的绑定（含来源快照与英文标签映射），
+ * groups 存分组来源标签；两者都按槽位+版本+索引键，保存时与 selected 合流成 on_image_texts。 */
+type ShotRefsDraft = { mode: "inherit" | "none" | "select"; shas: string[] };
 type ShotSpecDraft = {
   purpose: string; keep: string; change_allowed: string;
   print_intent: string; layout: string; selected: SelectedText[];
+  measurements: MeasurementPick[]; groups: MeasurementGroupPick[];
+  viewpoint: string; refs: ShotRefsDraft;
   baseline: { purpose: string; keep: string; change_allowed: string;
-    print_intent: string; layout: string; selected: SelectedText[] };
+    print_intent: string; layout: string; selected: SelectedText[];
+    measurements: MeasurementPick[]; groups: MeasurementGroupPick[];
+    viewpoint: string; refs: ShotRefsDraft };
+};
+/** 候选文案行：展示用的只读摘要（提议正文在 semantic_analysis 记录里）；stale 由来源版本复核得出。 */
+type CopyRowDraft = {
+  slot_id: string; version: number; text: string;
+  provider: string; model: string | null; requestedAt: string;
 };
 /** 错误文案按分区持有：渲染是唯一写 DOM 的一侧，命令侧只改状态。 */
 type RegionKey = "refs" | "intake" | "analyze" | "slots" | "suite" | "style" | "specs";
@@ -206,14 +257,24 @@ type ViewDraft = {
   slot: SlotEditorDraft | null;
   bindings: Record<string, BindingDraft>;
   shotSpecs: Record<string, ShotSpecDraft>;
+  /** 候选文案行（按 slot_id 键）：只读展示，不进保存 payload；采用=人工逐条写入规格草稿。 */
+  copyRows: Record<string, CopyRowDraft[]>;
   customShot: { label: string; intent: string };
   customShotStatus: string;
   customPanelOpen: boolean;
   templateId: string;
   styleStatus: string;
   conflictPicks: Record<string, "mine" | "theirs">;
+  /**
+   * 保存撞上另一个标签页/窗口写入的新版本（OCC）：按区域键（"style" / "spec:<shotId>"）
+   * 保留用户能看见的冲突与恢复入口；草稿不动，保存成功或重试时清除。
+   */
+  saveConflicts: Record<string, SaveConflict>;
   errors: Record<RegionKey, string>;
 };
+
+/** 一次保存撞版本时的可见状态；reloaded=true 表示已按最新版本重读、只等用户再保存。 */
+type SaveConflict = { message: string; version: number; reloaded?: boolean };
 
 /** 参考图行的只读呈现：字节与 object URL 都由本视图持有。 */
 type ReferenceRow = {
@@ -248,11 +309,13 @@ function createDraft(scope: string | null): ViewDraft {
     slotAddStatus: "",
     slot: null,
     bindings: {}, shotSpecs: {},
+    copyRows: {},
     customShot: { label: "", intent: "" }, customShotStatus: "",
     customPanelOpen: false,
     templateId: SHOT_TEMPLATES[0] ? SHOT_TEMPLATES[0].template_id : "",
     styleStatus: "",
     conflictPicks: {},
+    saveConflicts: {},
     errors: { refs: "", intake: "", analyze: "", slots: "", suite: "", style: "", specs: "" },
   };
 }
@@ -293,40 +356,133 @@ function selectedTextsKey(items: SelectedText[]): string {
   return items.map((item) => item.slot_id + "\u0000" + item.version + "\u0000" + item.texts.join("\u0002"))
     .join("\u0001");
 }
+/** 测量绑定的同一性：槽位/版本/索引/快照五元/标签映射/来源分类全一致才算没改。 */
+function measurementPicksKey(items: MeasurementPick[]): string {
+  return items.map((item) => [item.slot_id, item.version, item.index, item.object, item.axis,
+    String(item.value), item.unit, item.source_basis,
+    item.object_label, item.axis_label, item.source_kind].join("\u0000")).join("\u0001");
+}
+/** 分组标签的同一性：槽位/版本/索引集/快照/来源分类全一致才算没改。 */
+function measurementGroupsKey(items: MeasurementGroupPick[]): string {
+  return items.map((item) => [item.slot_id, item.version, item.indices.join(","),
+    item.measurements.map((row) => [row.object, row.axis, String(row.value),
+      row.unit, row.source_basis].join("\u0002")).join("\u0003"),
+    item.source_kind].join("\u0000")).join("\u0001");
+}
+/**
+ * 存储层版本冲突（OCC，设计 §13.4）：只按稳定错误码识别，不匹配错误文案；
+ * details 带期望/实际版本，界面据此说清「已被保存为哪一版」，不把冲突混进普通失败。
+ */
+function revisionConflictOf(error: unknown): { expected: number; actual: number } | null {
+  if (!isPlainObject(error)) return null;
+  if ((error as { code?: unknown }).code !== "REVISION_CONFLICT") return null;
+  const details = isPlainObject((error as { details?: unknown }).details)
+    ? (error as { details: Record<string, unknown> }).details : {};
+  return { expected: Number(details.expected ?? 0), actual: Number(details.actual ?? 0) };
+}
+function refsDraftKey(refs: ShotRefsDraft): string {
+  return refs.mode + "\u0000" + refs.shas.join("\u0002");
+}
 function equalShotSpec(left: ShotSpecDraft["baseline"], right: ShotSpecDraft["baseline"]): boolean {
   return left.purpose === right.purpose && left.keep === right.keep
     && left.change_allowed === right.change_allowed
     && left.print_intent === right.print_intent && left.layout === right.layout
-    && selectedTextsKey(left.selected) === selectedTextsKey(right.selected);
+    && left.viewpoint === right.viewpoint
+    && refsDraftKey(left.refs) === refsDraftKey(right.refs)
+    && selectedTextsKey(left.selected) === selectedTextsKey(right.selected)
+    && measurementPicksKey(left.measurements) === measurementPicksKey(right.measurements)
+    && measurementGroupsKey(left.groups) === measurementGroupsKey(right.groups);
+}
+function refsDraftFrom(spec: ShotSpec): ShotRefsDraft {
+  // reference_sha256s 缺失=沿用角色默认；显式 []=明确不选；非空=显式勾选（顺序即用户所选）。
+  if (!Object.prototype.hasOwnProperty.call(spec, "reference_sha256s")) {
+    return { mode: "inherit", shas: [] };
+  }
+  const stored = Array.isArray(spec.reference_sha256s) ? spec.reference_sha256s : [];
+  if (stored.length === 0) return { mode: "none", shas: [] };
+  return { mode: "select", shas: [...stored] };
 }
 function shotSpecDraftFrom(spec: ShotSpec): ShotSpecDraft {
   // print_intent "undecided" 与缺失都表示未决定：草稿归一为空串，界面不预选；
   // 所选文案回填的是「用户当初确认过的那一版」（逐字值 + 来源版本），
   // 不按当前事实重取——来源前进时要让用户重新勾选确认，而不是静默换值。
+  // 来源形状走 domain 唯一读口 imageTextSourceOf：V1 flat 与 V2 对象都理解，不在视图里复刻形状判断。
   const printIntent = typeof spec.print_intent === "string" && spec.print_intent !== "undecided" ? spec.print_intent : "";
   const selected: SelectedText[] = [];
+  const measurements: MeasurementPick[] = [];
+  const groups: MeasurementGroupPick[] = [];
   if (Array.isArray(spec.on_image_texts)) {
     for (const item of spec.on_image_texts) {
       if (!isPlainObject(item)) continue;
-      const record: Record<string, unknown> = item as Record<string, unknown>;
-      if (typeof record.source_slot_id !== "string" || record.source_slot_id.length === 0
-        || typeof record.text !== "string"
-        || typeof record.source_slot_version !== "number" || !Number.isInteger(record.source_slot_version)) {
-        continue;
+      const record = item as { text?: unknown; measurement?: unknown; measurement_source?: unknown };
+      const source = imageTextSourceOf(item);
+      if (!source || typeof record.text !== "string") continue;
+      // 带测量绑定的条目回填绑定草稿（快照+标签映射原样回填，不按当前事实重取）；
+      // 无绑定条目走 plain 文案通道。同一槽位的多条 plain 在草稿里合成一项。
+      if (isPlainObject(record.measurement)) {
+        const binding = record.measurement as Record<string, unknown>;
+        if (typeof binding.index === "number" && typeof binding.value === "number") {
+          // 读取时按领域词表收窄（只回填合法值；非法值不冒充已确认映射）。
+          measurements.push({
+            slot_id: source.document_id, version: source.version, index: binding.index,
+            object: typeof binding.object === "string" ? binding.object : "",
+            axis: typeof binding.axis === "string"
+              && (DIMENSION_AXES as readonly string[]).includes(binding.axis)
+              ? binding.axis as DimensionAxis : "",
+            value: binding.value,
+            unit: typeof binding.unit === "string"
+              && (DIMENSION_UNITS as readonly string[]).includes(binding.unit)
+              ? binding.unit as DimensionUnit : "",
+            source_basis: typeof binding.source_basis === "string" ? binding.source_basis : "",
+            object_label: typeof binding.object_label === "string" ? binding.object_label : "",
+            axis_label: typeof binding.axis_label === "string" ? binding.axis_label : "",
+            source_kind: typeof binding.source_kind === "string"
+              && MEASUREMENT_SOURCE_KINDS.includes(binding.source_kind)
+              ? binding.source_kind as MeasurementSourceKind : "",
+          });
+          continue;
+        }
       }
-      // 同一槽位的多条（列表按元素各一条）在草稿里合成一项，勾选状态才是「这一个来源」。
-      const existing = selected.find((entry) => entry.slot_id === record.source_slot_id
-        && entry.version === record.source_slot_version);
+      if (isPlainObject(record.measurement_source)) {
+        const binding = record.measurement_source as Record<string, unknown>;
+        const kind = typeof binding.source_kind === "string"
+          && MEASUREMENT_SOURCE_KINDS.includes(binding.source_kind)
+          ? binding.source_kind as MeasurementSourceKind : null;
+        if (kind && Array.isArray(binding.indices) && Array.isArray(binding.measurements)) {
+          groups.push({
+            slot_id: source.document_id, version: source.version,
+            indices: (binding.indices as unknown[]).filter(
+              (entry): entry is number => typeof entry === "number"),
+            measurements: (binding.measurements as unknown[]).filter(isPlainObject)
+              .map((row) => ({ ...(row as object) }) as DimensionMeasurement),
+            source_kind: kind,
+          });
+          continue;
+        }
+      }
+      const existing = selected.find((entry) => entry.slot_id === source.document_id
+        && entry.version === source.version);
       if (existing) {
         existing.texts.push(record.text);
       } else {
         selected.push({
-          slot_id: record.source_slot_id, texts: [record.text],
-          version: record.source_slot_version,
+          slot_id: source.document_id, texts: [record.text],
+          version: source.version,
+          // 来源记回草稿：采用 AI 候选的条目再次保存时不降级成 user。
+          origin: (item as { origin?: unknown }).origin === "model" ? "model" : "user",
         });
       }
     }
   }
+  // 视角：只有单图自有显式 front/side/top 才回填为覆盖；缺失或 reference_visible 都归一为空串
+  // （=沿用可见视角，不写覆盖）。显式 undecided 是阻断态，草稿同样置空并由保存时重写。
+  const ownViewpoint = presentationHasOwn(spec, "viewpoint")
+    && isPlainObject(spec.presentation)
+    && typeof (spec.presentation as { viewpoint?: unknown }).viewpoint === "string"
+    ? String((spec.presentation as { viewpoint: string }).viewpoint) : "";
+  const viewpoint = ownViewpoint === "front" || ownViewpoint === "side" || ownViewpoint === "top"
+    ? ownViewpoint : "";
+  const refs = refsDraftFrom(spec);
   const baseline = {
     purpose: spec.purpose || "",
     keep: Array.isArray(spec.keep) ? spec.keep.join("\n") : "",
@@ -334,8 +490,21 @@ function shotSpecDraftFrom(spec: ShotSpec): ShotSpecDraft {
     print_intent: printIntent,
     layout: typeof spec.layout === "string" ? spec.layout : "",
     selected: selected,
+    measurements: measurements,
+    groups: groups,
+    viewpoint: viewpoint,
+    refs: refs,
   };
-  return { ...baseline, selected: [...selected], baseline: { ...baseline, selected: [...selected] } };
+  return { ...baseline, selected: [...selected],
+    measurements: measurements.map((item) => ({ ...item })),
+    groups: groups.map((item) => ({ ...item, indices: [...item.indices],
+      measurements: item.measurements.map((row) => ({ ...row })) })),
+    refs: { mode: refs.mode, shas: [...refs.shas] },
+    baseline: { ...baseline, selected: [...selected],
+      measurements: measurements.map((item) => ({ ...item })),
+      groups: groups.map((item) => ({ ...item, indices: [...item.indices],
+        measurements: item.measurements.map((row) => ({ ...row })) })),
+      refs: { mode: refs.mode, shas: [...refs.shas] } } };
 }
 function measurementToDraft(measurement: DimensionMeasurement | Record<string, unknown>): DimensionDraft {
   const fields = measurement as Record<string, unknown>;
@@ -1076,6 +1245,116 @@ export function createInputView(
     `;
   }
 
+  /** 该槽位是否可提议英文上图候选：已确认的文本/文本列表，且有可改写的中文值。 */
+  function copyEligible(entry: InputSlotEntry): boolean {
+    const slot = entry.slot;
+    if (slot.status !== "confirmed") return false;
+    if (slot.value_type === "text") {
+      return typeof slot.value === "string" && slot.value.trim().length > 0;
+    }
+    if (slot.value_type === "text_list") {
+      return Array.isArray(slot.value) && slot.value.length > 0
+        && slot.value.every((item) => typeof item === "string" && item.trim().length > 0);
+    }
+    return false;
+  }
+
+  /**
+   * 候选文案区（设计 §13.4.4）：明确点击才外发；提议只是提议，采用=人工把该条英文
+   * 写进规格草稿的勾选（仍要保存规格才生效）。来源版本移动后提议标 stale，不可采用。
+   */
+  function copyProposalTemplate(entry: InputSlotEntry): TemplateResult | typeof nothing {
+    if (!copyEligible(entry) && !(draft.copyRows[entry.slot.slot_id] || []).length) return nothing;
+    const slot = entry.slot;
+    const rows = draft.copyRows[slot.slot_id] || [];
+    const running = inputs.isCopyRunning();
+    return html`
+      <div class="copy-proposals">
+        <button type="button" id=${"slot-copy-" + slot.slot_id} ?disabled=${running}
+          @click=${() => void handleRunCopy([slot.slot_id])}>提议英文上图候选</button>
+        ${rows.map((row, index) => {
+          const stale = row.version !== entry.version;
+          return html`<div class="copy-row" id=${"slot-copy-result-" + slot.slot_id + "-" + index}>
+            <span class="copy-text">${row.text}</span>
+            <span class="meta">来源 v${row.version} · ${row.provider}${row.model ? "（" + row.model + "）" : ""}</span>
+            ${stale ? html`<span class="meta" id=${"slot-copy-stale-" + slot.slot_id + "-" + index}
+              >来源已变化：这条提议已过期，请重新提议。</span>` : nothing}
+            <button type="button" id=${"slot-copy-adopt-" + slot.slot_id + "-" + index}
+              ?disabled=${stale} @click=${() => adoptCopyRow(slot.slot_id, index)}>采用这条</button>
+          </div>`;
+        })}
+      </div>
+    `;
+  }
+
+  /**
+   * 采用一条候选文案：人工把该条英文写进「所有单图规格草稿」的待选（不直接落库）。
+   * 用户仍要在规格区看到该条、勾选并保存规格后才生效；保存走同一 on_image_texts 通道。
+   */
+  function adoptCopyRow(slotId: string, index: number): void {
+    const rows = draft.copyRows[slotId] || [];
+    const row = rows[index];
+    if (!row) return;
+    const entry = inputs.slotEntries().find((item) => item.slot.slot_id === slotId);
+    if (!entry || entry.slot.status !== "confirmed" || entry.version !== row.version) return;
+    // 采用即人工确认该条英文对应当前确认值：写入各单图草稿的勾选时仍记来源版本，
+    // 保存时编译门按同一版本门复核。
+    for (const shotId of Object.keys(draft.shotSpecs)) {
+      const spec = draft.shotSpecs[shotId];
+      if (!spec) continue;
+      const existing = spec.selected.find((item) => item.slot_id === slotId && item.version === row.version);
+      if (existing) {
+        if (!existing.texts.includes(row.text)) existing.texts.push(row.text);
+        existing.origin = "model";
+      } else {
+        // 采用的是模型写的英文候选：来源记 model，保存后交付/恢复都能看出这条不是用户原文。
+        spec.selected.push({ slot_id: slotId, texts: [row.text], version: row.version, origin: "model" });
+      }
+    }
+    renderSpecsCard();
+  }
+
+  async function handleRunCopy(slotIds: string[]): Promise<void> {
+    const action = beginAction();
+    if (!action.projectId) return;
+    draft.errors.slots = "";
+    renderSlotsCard();
+    const targets = slotIds
+      .map((slotId) => inputs.slotEntries().find((item) => item.slot.slot_id === slotId))
+      .filter((item): item is InputSlotEntry => Boolean(item) && copyEligible(item as InputSlotEntry))
+      .map((item) => ({ slot_id: item.slot.slot_id, version: item.version }));
+    if (targets.length === 0) {
+      failRegion("slots", "没有可提议的目标：只有已确认的文本类事实才能提议英文上图候选。");
+      return;
+    }
+    try {
+      const outcome = await inputs.runCopyProposals(targets);
+      if (!action.alive()) return;
+      if (outcome.kind === "proposed") {
+        for (const proposal of outcome.proposals) {
+          const rows = draft.copyRows[proposal.source_slot_id] || [];
+          draft.copyRows[proposal.source_slot_id] = [...rows, {
+            slot_id: proposal.source_slot_id, version: proposal.source_slot_version,
+            text: proposal.text, provider: proposal.provider,
+            model: proposal.model, requestedAt: proposal.requestedAt,
+          }];
+        }
+      } else if (outcome.kind === "not_sent" || outcome.kind === "failed" || outcome.kind === "unknown") {
+        const message = outcome.kind === "not_sent" ? outcome.message : outcome.error.message;
+        failRegion("slots", message);
+        return;
+      } else if (outcome.kind === "stale") {
+        failRegion("slots", "目标事实已变化；旧提议没有展示，请核对后重新提议。");
+        return;
+      }
+      renderSlotsCard();
+    } catch (error) {
+      if (action.alive()) {
+        failRegion("slots", errorMessageOf(error, "提议没有完成，请重试。"));
+      }
+    }
+  }
+
   function slotRowTemplate(entry: InputSlotEntry): TemplateResult {
     const slot = entry.slot;
     const status = slot.status;
@@ -1100,6 +1379,7 @@ export function createInputView(
         ${evidenceTemplate(slot)}
         ${editing ? slotEditorTemplate(entry, draft.slot ? draft.slot.mode : "edit") : nothing}
         ${slotActionsTemplate(entry)}
+        ${copyProposalTemplate(entry)}
         ${techDetailsTemplate(slotTechLines(entry))}
       </li>
     `;
@@ -1124,6 +1404,12 @@ export function createInputView(
       if (byRank !== 0) return byRank;
       return left.slot.slot_id.localeCompare(right.slot.slot_id);
     });
+    const copy = inputs.copyState();
+    const copyStatus = copy.last.length > 0
+      ? "最近一次提议：" + copy.last.length + " 条候选（" + copy.last[0].provider + "）。"
+        + (copy.problems.length > 0 ? copy.problems.join("；") : "")
+      : (copy.problems.length > 0 ? copy.problems.join("；") : "");
+    const eligibleAll = entries.filter(copyEligible).slice(0, 4).map((entry) => entry.slot.slot_id);
     return html`
       <div class="card-head">
         <h4 id="slots-title">事实槽位</h4>
@@ -1133,7 +1419,11 @@ export function createInputView(
         <span id="slots-progress" class="meta" role="status">${progress}</span>
         <button id="slots-toggle" type="button" aria-expanded=${showAll ? "true" : "false"}
           @click=${() => toggleAllSlots()}>${showAll ? "只看待处理项" : "显示全部事实"}</button>
+        <button id="copy-run-all" type="button" ?disabled=${inputs.isCopyRunning() || eligibleAll.length === 0}
+          @click=${() => void handleRunCopy(eligibleAll)}>为已确认文本一次提议候选</button>
       </div>
+      <p id="copy-status" class="status" role="status" ?hidden=${!copyStatus}>${copyStatus}</p>
+      <p id="copy-error" class="error" role="alert" ?hidden=${!copy.error}>${copy.error}</p>
       <p id="slots-empty" class="empty" ?hidden=${entries.length > 0}>正在准备核心事实输入；不需要调用模型。</p>
       <ul id="slot-list" class="slot-list">
         ${repeat(list, (entry) => entry.slot.slot_id, (entry) => slotRowTemplate(entry))}
@@ -1333,7 +1623,7 @@ export function createInputView(
                 draft.slotAdd.id = slotId;
                 draft.slotAdd.label = slotId;
               }
-              selectStage("understand");
+              selectStage("intake");
               renderSlotsCard();
             }}>填写／确认：${(slotById.get(slotId)?.label) || (definition?.label) || slotId}</button>`;
           })}${readiness.missing_asset_roles.map((role) => html`<button type="button"
@@ -1574,8 +1864,34 @@ export function createInputView(
   }
 
   /**
+   * 可绑定的结构化尺寸：只取已确认、绑到这张图、值是 dimension_list 的事实，
+   * 逐项展开（索引即该版本的稳定位置）。不枚举全局事实，不猜标签与来源分类。
+   */
+  function measurableCandidatesOf(shotId: string): {
+    entry: InputSlotEntry; index: number; measurement: DimensionMeasurement }[] {
+    const plan = inputs.suitePlan();
+    const shot = plan ? plan.shots.find((item) => item.shot_id === shotId) : null;
+    const bound = new Set(Array.isArray(shot?.fact_slot_ids) ? shot.fact_slot_ids : []);
+    const candidates: {
+      entry: InputSlotEntry; index: number; measurement: DimensionMeasurement }[] = [];
+    for (const entry of inputs.slotEntries()) {
+      if (entry.slot.status !== "confirmed" || !bound.has(entry.slot.slot_id)) continue;
+      if (entry.slot.value_type !== "dimension_list" || !Array.isArray(entry.slot.value)) continue;
+      (entry.slot.value as DimensionMeasurement[]).forEach((row, index) => {
+        if (!isPlainObject(row)) return;
+        candidates.push({ entry: entry, index: index, measurement: row });
+      });
+    }
+    return candidates;
+  }
+
+  /**
    * 保存 payload：逐字写用户勾选当时看到的值与版本，不按当前事实重写
    * （来源前进时由编译门要求重新确认）。列表值按元素各成一条。
+   * 新写入一律用对象 source（schema2）；不写 flat 来源字段。元素粒度与 text_id 方案与 #18 一致。
+   * 测量条目：原文由绑定经 formatMeasurementText 唯一构造逐字生成（不是手填文本），
+   * 快照/标签/来源分类随条目保存；缺标签或缺分类的绑定不写入（保存前由界面拦下）。
+   * 分组标签：原文为统一来源标签（Nominal/Measured），绑定所选测量项快照。
    */
   function onImageTextsFromDraft(spec: ShotSpecDraft): ShotSpec["on_image_texts"] {
     const items: ShotSpec["on_image_texts"] = [];
@@ -1587,12 +1903,45 @@ export function createInputView(
           // 稳定条目 id：同一选择重复保存不变（序号按勾选顺序重算）。
           text_id: "t_" + item.slot_id + "_" + String(index),
           text: text,
-          source_slot_id: item.slot_id,
-          source_slot_version: item.version,
+          source: { kind: "fact_slot", document_id: item.slot_id, version: item.version },
           status: "confirmed",
-          origin: "user",
+          // 采用的 AI 候选文案按 model 记来源：这是唯一能区分「模型写的英文」与「用户原文」的地方。
+          origin: item.origin === "model" ? "model" : "user",
         });
       }
+    }
+    for (const pick of spec.measurements) {
+      const binding = measurementBindingOf(pick);
+      const canonical = binding ? formatMeasurementText(binding) : null;
+      if (!binding || !canonical) continue;
+      index += 1;
+      items.push({
+        text_id: "t_" + pick.slot_id + "_" + String(index),
+        text: canonical,
+        source: { kind: "fact_slot", document_id: pick.slot_id, version: pick.version },
+        status: "confirmed",
+        origin: "user",
+        measurement: binding,
+      });
+    }
+    for (const group of spec.groups) {
+      const label = group.source_kind === "nominal" || group.source_kind === "measured"
+        ? MEASUREMENT_SOURCE_LABEL[group.source_kind] : "";
+      if (!label || group.indices.length === 0
+        || group.measurements.length !== group.indices.length) continue;
+      index += 1;
+      items.push({
+        text_id: "t_" + group.slot_id + "_" + String(index),
+        text: label,
+        source: { kind: "fact_slot", document_id: group.slot_id, version: group.version },
+        status: "confirmed",
+        origin: "user",
+        measurement_source: {
+          indices: [...group.indices],
+          measurements: group.measurements.map((row) => ({ ...row })),
+          source_kind: group.source_kind as "nominal" | "measured",
+        },
+      });
     }
     return items;
   }
@@ -1602,13 +1951,16 @@ export function createInputView(
     const decided = spec.print_intent === "none" || spec.print_intent === "selected";
     const showTexts = spec.print_intent === "selected";
     const wanted = new Map(spec.selected.map((item) => [item.slot_id, item]));
-    const selectedCount = spec.selected.reduce((total, item) => total + item.texts.length, 0);
+    // max4 按条目计：plain 文案条数 + 测量绑定条数 + 分组标签条数。
+    const selectedCount = spec.selected.reduce((total, item) => total + item.texts.length, 0)
+      + spec.measurements.length + spec.groups.length;
     const layouts: readonly string[] = SHOT_LAYOUTS;
     // 已勾选但来源槽位已经不在这张图的绑定里的条目：界面上必须仍然可见、可移除，
     // 否则用户看不见「还在印的文案」，编译门也只会给出一条指不到控件的消息。
     const boundSlotIds = new Set(candidates.map((item) => item.entry.slot.slot_id));
     const orphans = spec.selected.filter((item) => !boundSlotIds.has(item.slot_id));
-    const textWillPrint = spec.print_intent === "selected" && spec.selected.length > 0;
+    const textWillPrint = spec.print_intent === "selected"
+      && (spec.selected.length > 0 || spec.measurements.length > 0 || spec.groups.length > 0);
     const layoutNeedsText = TEXT_LAYOUTS.includes(spec.layout) && !textWillPrint;
     return html`
       <div class="field" id=${"spec-print-" + shotId} role="radiogroup" aria-label="要不要在图上印文字">
@@ -1629,9 +1981,12 @@ export function createInputView(
           ${candidates.map(({ entry, texts }) => {
             const captured: SelectedText | undefined = wanted.get(entry.slot.slot_id);
             const currentText = texts.join("；");
-            const advanced: SelectedText | null = captured
-              && (captured.version !== entry.version || captured.texts.join("；") !== currentText)
+            // 两种情况必须分开说：来源版本前进（旧版，需按新值重新确认）与
+            // 采用了 AI 候选文案（同一版本、文案就是模型写的那条；重勾会把英文换成事实原文）。
+            const advanced: SelectedText | null = captured && captured.version !== entry.version
               ? captured : null;
+            const adopted: SelectedText | null = captured && captured.version === entry.version
+              && captured.texts.join("；") !== currentText ? captured : null;
             return html`<label class="choice">
               <input type="checkbox" id=${"spec-text-" + shotId + "-" + entry.slot.slot_id}
                 value=${entry.slot.slot_id}
@@ -1642,6 +1997,9 @@ export function createInputView(
               ${advanced ? html`<span class="meta" id=${"spec-text-advanced-" + shotId + "-" + entry.slot.slot_id}
                 >已选的是旧版「${advanced.texts.join("；")}」（v${advanced.version}），
                 当前事实已是 v${entry.version}：重新勾选这条即按新值重新确认。</span>` : nothing}
+              ${adopted ? html`<span class="meta" id=${"spec-text-adopted-" + shotId + "-" + entry.slot.slot_id}
+                >已采用候选文案「${adopted.texts.join("；")}」（来源 v${adopted.version}）：保存后按这条逐字印上图；
+                勾掉即不印这条。</span>` : nothing}
             </label>`;
           })}
           ${orphans.map((item) => html`<label class="choice">
@@ -1654,7 +2012,8 @@ export function createInputView(
           </label>`)}
           ${candidates.length === 0 && orphans.length === 0
             ? html`<p class="meta">这张图还没有绑定可印的已确认事实：先去「图片任务」里绑定；文字类事实才能上图。</p>` : nothing}
-        </div>` : nothing}
+        </div>
+        ${measurementBindingTemplate(shotId, spec, selectedCount)}` : nothing}
       <div class="field" id=${"spec-layout-" + shotId} role="radiogroup" aria-label="版面">
         <span class="label">版面</span>
         ${layouts.map((layout) => html`<label class="choice"><input type="radio"
@@ -1668,6 +2027,227 @@ export function createInputView(
         ${spec.layout ? nothing : html`<p class="meta">还没决定：选一个版面，保存后才生效。</p>`}
       </div>
     `;
+  }
+
+  /**
+   * 结构化尺寸绑定（设计 §13.13.1/§13.14.4）：每项=勾选该版本该索引的测量 +
+   * 人工填写英文对象/轴向标签 + 人工对照 source_basis 确认来源分类。
+   * 数字/单位/对象/轴向/source_basis 只从来源值抄快照展示，界面不提供手填数字的控件；
+   * 上图原文由 formatMeasurementText 唯一构造预览，保存写同一构造的逐字结果。
+   * 分组标签：同一事实内已选绑定全同分类时可加一条统一标签（Nominal/Measured 各占一条 max4 名额）。
+   */
+  function measurementBindingTemplate(
+    shotId: string, spec: ShotSpecDraft, selectedCount: number,
+  ): TemplateResult {
+    const rows = measurableCandidatesOf(shotId);
+    const pickKey = (slotId: string, version: number, index: number): string =>
+      slotId + "\u0000" + version + "\u0000" + index;
+    const picks = new Map(spec.measurements.map((item) => [pickKey(item.slot_id, item.version, item.index), item]));
+    const stalePicks = spec.measurements.filter((item) => {
+      const entry = inputs.slotEntries().find((row) => row.slot.slot_id === item.slot_id);
+      if (!entry || entry.slot.status !== "confirmed" || entry.version !== item.version) return true;
+      const list = Array.isArray(entry.slot.value) ? entry.slot.value : [];
+      const current = list[item.index] as DimensionMeasurement | undefined;
+      return !current || !isPlainObject(current)
+        || current.object !== item.object || current.axis !== item.axis
+        || current.value !== item.value || current.unit !== item.unit
+        || current.source_basis !== item.source_basis;
+    });
+    return html`
+      <div class="field" id=${"spec-measurements-" + shotId}>
+        <span class="label">尺寸标注（逐项绑定已确认的结构化尺寸，每项各占一条文案名额）</span>
+        ${rows.map(({ entry, index, measurement }) => {
+          const key = pickKey(entry.slot.slot_id, entry.version, index);
+          const pick = picks.get(key);
+          const rowId = "spec-measure-" + shotId + "-" + entry.slot.slot_id + "-" + index;
+          const binding = pick ? measurementBindingOf(pick) : null;
+          const preview = binding ? formatMeasurementText(binding) : null;
+          const capped = !pick && selectedCount >= MAX_ON_IMAGE_TEXTS;
+          return html`<fieldset class="measurement-row" id=${rowId}>
+            <legend>${entry.slot.label} · 第 ${index + 1} 项（来源 v${entry.version}）</legend>
+            <p class="meta">来源值：${measurement.object} / ${measurement.axis} /
+              ${String(measurement.value)} ${measurement.unit}（依据：${measurement.source_basis}）</p>
+            <label class="choice"><input type="checkbox" id=${rowId + "-pick"}
+              .checked=${live(Boolean(pick))} ?disabled=${capped}
+              @change=${measurementPickToggle(shotId, entry, index)}>
+              标注这一项</label>
+            ${pick ? html`
+              <label>对象英文标签（人工确认）<input type="text" id=${rowId + "-object"}
+                maxlength="60" .value=${live(pick.object_label)}
+                @input=${measurementPickInput(shotId, pick, "object_label")}></label>
+              <label>轴向英文标签（人工确认，必填）<input type="text" id=${rowId + "-axis"}
+                maxlength="60" .value=${live(pick.axis_label)}
+                @input=${measurementPickInput(shotId, pick, "axis_label")}></label>
+              <div role="radiogroup" aria-label="来源分类（对照上面来源依据确认）">
+                <span class="label">来源分类（对照上面来源依据确认，必选）</span>
+                <label class="choice"><input type="radio" name=${rowId + "-kind"}
+                  id=${rowId + "-nominal"} value="nominal"
+                  .checked=${live(pick.source_kind === "nominal")}
+                  @change=${measurementPickInput(shotId, pick, "source_kind")}>公称（Nominal）</label>
+                <label class="choice"><input type="radio" name=${rowId + "-kind"}
+                  id=${rowId + "-measured"} value="measured"
+                  .checked=${live(pick.source_kind === "measured")}
+                  @change=${measurementPickInput(shotId, pick, "source_kind")}>实测（Measured）</label>
+              </div>
+              ${preview ? html`<p class="meta" id=${rowId + "-preview"}>上图原文：${preview}</p>`
+                : html`<p class="meta" id=${rowId + "-preview"}
+                  >标签/分类还没填完：补齐后才能保存这条（不会用半成品保存）。</p>`}` : nothing}
+          </fieldset>`;
+        })}
+        ${rows.length === 0 ? html`<p class="meta">这张图没有绑定已确认的结构化尺寸：
+          尺寸图先去「图片任务」里绑定尺寸事实。</p>` : nothing}
+        ${stalePicks.map((item) => html`<p class="meta"
+          id=${"spec-measure-stale-" + shotId + "-" + item.slot_id + "-" + item.index}
+          >「${slotLabelOfId(item.slot_id)}」第 ${item.index + 1} 项的来源已变化（绑定的是 v${item.version}）：
+          请取消该绑定后按新值重新确认；保存时会拦下过期绑定。</p>`)}
+        ${measurementGroupTemplate(shotId, spec, selectedCount)}
+      </div>
+    `;
+  }
+
+  /**
+   * 分组来源标签：同一事实内「已选且分类一致」的绑定可共用一条统一标签。
+   * 混合来源不提供统一标签（须逐项标注）；分组快照在勾选时从来源值逐项抄写。
+   */
+  function measurementGroupTemplate(
+    shotId: string, spec: ShotSpecDraft, selectedCount: number,
+  ): TemplateResult | typeof nothing {
+    const bySlot = new Map<string, MeasurementPick[]>();
+    for (const pick of spec.measurements) {
+      const list = bySlot.get(pick.slot_id) || [];
+      list.push(pick);
+      bySlot.set(pick.slot_id, list);
+    }
+    const options: { slot_id: string; version: number; kind: MeasurementSourceKind; picks: MeasurementPick[] }[] = [];
+    for (const [slotId, list] of bySlot) {
+      const kinds = new Set(list.map((item) => item.source_kind));
+      if (kinds.size !== 1) continue;
+      const kind = list[0].source_kind;
+      if (kind !== "nominal" && kind !== "measured") continue;
+      const versions = new Set(list.map((item) => item.version));
+      if (versions.size !== 1) continue;
+      // 统一标签只在各项绑定都确认完整时提供：半成品不能借分组绕开逐项确认。
+      if (!list.every((item) => measurementBindingOf(item) !== null)) continue;
+      options.push({ slot_id: slotId, version: list[0].version, kind, picks: list });
+    }
+    if (options.length === 0) return nothing;
+    return html`
+      <div class="field" id=${"spec-measure-groups-" + shotId}>
+        <span class="label">统一来源标签（可选：所选测量全同分类时可加一条，各占一条文案名额）</span>
+        ${options.map((option) => {
+          const rowId = "spec-group-" + shotId + "-" + option.slot_id;
+          const existing = spec.groups.find((item) => item.slot_id === option.slot_id
+            && item.version === option.version);
+          const capped = !existing && selectedCount >= MAX_ON_IMAGE_TEXTS;
+          const label = MEASUREMENT_SOURCE_LABEL[option.kind];
+          return html`<label class="choice"><input type="checkbox" id=${rowId}
+            .checked=${live(Boolean(existing))} ?disabled=${capped}
+            @change=${measurementGroupToggle(shotId, option)}>${slotLabelOfId(option.slot_id)}：
+            ${option.picks.length} 项全为${option.kind === "measured" ? "实测" : "公称"}，
+            加一条统一标签「${label}」</label>`;
+        })}
+      </div>
+    `;
+  }
+
+  function measurementPickToggle(
+    shotId: string, entry: InputSlotEntry, index: number,
+  ): (event: Event) => void {
+    return (event: Event) => {
+      const node = event.currentTarget as HTMLInputElement;
+      const spec = draft.shotSpecs[shotId];
+      if (!spec) return;
+      const list = Array.isArray(entry.slot.value) ? entry.slot.value : [];
+      const current = list[index] as DimensionMeasurement | undefined;
+      if (node.checked) {
+        // 勾选=按当前确认值抄快照：数字/单位/对象/轴向/依据逐字抄，不手填；
+        // 标签与分类留空，必须人工逐项确认后才能保存。
+        if (!current || !isPlainObject(current) || typeof current.value !== "number") return;
+        if (spec.measurements.some((item) => item.slot_id === entry.slot.slot_id
+          && item.version === entry.version && item.index === index)) return;
+        spec.measurements.push({
+          slot_id: entry.slot.slot_id, version: entry.version, index,
+          object: typeof current.object === "string" ? current.object : "",
+          axis: typeof current.axis === "string" ? current.axis : "",
+          value: current.value, unit: typeof current.unit === "string" ? current.unit : "",
+          source_basis: typeof current.source_basis === "string" ? current.source_basis : "",
+          object_label: "", axis_label: "", source_kind: "",
+        });
+      } else {
+        spec.measurements = spec.measurements.filter((item) => !(item.slot_id === entry.slot.slot_id
+          && item.version === entry.version && item.index === index));
+        // 取消某项绑定后，覆盖它的分组标签一并失效（分组快照不再与所选一致）。
+        spec.groups = spec.groups.filter((item) => item.slot_id !== entry.slot.slot_id
+          || item.version !== entry.version);
+      }
+      renderSpecsCard();
+    };
+  }
+
+  function measurementPickInput(
+    shotId: string, pick: MeasurementPick, key: "object_label" | "axis_label" | "source_kind",
+  ): (event: Event) => void {
+    return (event: Event) => {
+      const node = event.currentTarget as HTMLInputElement;
+      const spec = draft.shotSpecs[shotId];
+      if (!spec) return;
+      const live = spec.measurements.find((item) => item.slot_id === pick.slot_id
+        && item.version === pick.version && item.index === pick.index);
+      if (!live) return;
+      if (key === "source_kind") {
+        live.source_kind = node.value === "nominal" || node.value === "measured" ? node.value : "";
+      } else {
+        live[key] = node.value;
+      }
+      // 来源分类变化后，已有分组标签可能不再「全同分类」：失效的分组直接移除，
+      // 用户确认新的分类组合后可重新勾选统一标签。
+      if (key === "source_kind") {
+        spec.groups = spec.groups.filter((item) => {
+          if (item.slot_id !== live.slot_id || item.version !== live.version) return true;
+          const kinds = new Set(spec.measurements
+            .filter((row) => row.slot_id === item.slot_id && row.version === item.version)
+            .map((row) => row.source_kind));
+          return kinds.size === 1 && kinds.has(item.source_kind);
+        });
+        renderSpecsCard();
+      }
+    };
+  }
+
+  function measurementGroupToggle(
+    shotId: string, option: { slot_id: string; version: number; kind: MeasurementSourceKind; picks: MeasurementPick[] },
+  ): (event: Event) => void {
+    return (event: Event) => {
+      const node = event.currentTarget as HTMLInputElement;
+      const spec = draft.shotSpecs[shotId];
+      if (!spec) return;
+      if (node.checked) {
+        if (spec.groups.some((item) => item.slot_id === option.slot_id
+          && item.version === option.version)) return;
+        // 分组快照=各绑定当时的来源快照（逐项抄，不按当前事实重取）；
+        // 索引排序，保证同一选择重复保存的快照顺序一致。
+        const ordered = [...option.picks].sort((left, right) => left.index - right.index);
+        const measurements: DimensionMeasurement[] = [];
+        for (const item of ordered) {
+          const binding = measurementBindingOf(item);
+          if (!binding) return;  // 选项只收完整绑定；这里再兜一次，不吞半成品。
+          measurements.push({
+            object: binding.object, axis: binding.axis, value: binding.value,
+            unit: binding.unit, source_basis: binding.source_basis,
+          });
+        }
+        spec.groups.push({
+          slot_id: option.slot_id, version: option.version,
+          indices: ordered.map((item) => item.index),
+          measurements: measurements,
+          source_kind: option.kind,
+        });
+      } else {
+        spec.groups = spec.groups.filter((item) => !(item.slot_id === option.slot_id
+          && item.version === option.version));
+      }
+      renderSpecsCard();
+    };
   }
 
   function shotDecisionInput(shotId: string, key: "print_intent" | "layout", value: string): (event: Event) => void {
@@ -1705,7 +2285,7 @@ export function createInputView(
             : (typeof value === "string" || typeof value === "number" ? [String(value).trim()] : []);
           if (texts.length === 0) return;
           spec.selected.push({
-            slot_id: entry.slot.slot_id, texts: texts, version: entry.version,
+            slot_id: entry.slot.slot_id, texts: texts, version: entry.version, origin: "user",
           });
         }
       } else {
@@ -1716,6 +2296,129 @@ export function createInputView(
   }
 
 
+
+  /**
+   * 单图视角覆盖（设计 §13.4.2）：选项走 PRESENTATION_FIELDS 的 viewpoint 定义，不另写词表。
+   * 空串=沿用可见视角（不写覆盖）；显式 front/side/top 才在保存时写单图覆盖。
+   * 共用区不渲染视角控件（共用默认恒为沿用可见视角）。
+   */
+  function shotViewpointTemplate(shotId: string, spec: ShotSpecDraft): TemplateResult {
+    const field = PRESENTATION_FIELDS.find((item) => item.key === "viewpoint");
+    const options = field ? field.options : [];
+    return html`
+      <div class="field" id=${"spec-presentation-viewpoint-" + shotId}
+        role="radiogroup" aria-label="本图视角">
+        <span class="label">本图视角</span>
+        ${options.map((option) => {
+          const selected = option.value === "reference_visible" ? spec.viewpoint === "" : spec.viewpoint === option.value;
+          return html`<label class="choice"><input type="radio"
+            name=${"spec-viewpoint-" + shotId} id=${"spec-viewpoint-" + option.value + "-" + shotId}
+            value=${option.value} .checked=${live(selected)}
+            @change=${shotViewpointInput(shotId, option.value)}>${option.label}
+            <span class="meta">${option.hint}</span></label>`;
+        })}
+        ${spec.viewpoint ? html`<p class="meta">已选单图视角覆盖：需要有能看到该角度的参考图依据（在参考图行确认），
+          否则编译会被拦下；改回「沿用照片里能看到的角度」即删除本图覆盖。</p>` : nothing}
+      </div>
+    `;
+  }
+
+  function shotViewpointInput(shotId: string, value: string): (event: Event) => void {
+    return () => {
+      const spec = draft.shotSpecs[shotId];
+      if (!spec) return;
+      // reference_visible = 不写覆盖（草稿归一为空串）；显式视角才记覆盖值。
+      spec.viewpoint = value === "reference_visible" ? "" : value;
+      renderSpecsCard();
+    };
+  }
+
+  /**
+   * 单图参考选择（设计 §13.6.2）：用户明确本图消费哪几张照片。
+   * inherit=沿用角色默认；none=明确不选（编译阻断该图）；select=显式勾选（顺序=勾选顺序）。
+   * 说明文本只描述「这张图用哪几张照片」，不出现角色/用途术语。
+   */
+  function shotReferencesTemplate(shotId: string, spec: ShotSpecDraft): TemplateResult {
+    const references = inputs.references();
+    const liveShas = new Set(references.map((item) => item.asset_sha256));
+    const stale = spec.refs.mode === "select" ? spec.refs.shas.filter((sha) => !liveShas.has(sha)) : [];
+    return html`
+      <div class="field" id=${"spec-references-" + shotId}>
+        <span class="label">本图用的照片</span>
+        <label class="choice"><input type="radio" name=${"spec-refs-" + shotId}
+          id=${"spec-refs-inherit-" + shotId} value="inherit"
+          .checked=${live(spec.refs.mode === "inherit")}
+          @change=${shotRefsModeInput(shotId, "inherit")}>沿用默认照片</label>
+        <label class="choice"><input type="radio" name=${"spec-refs-" + shotId}
+          id=${"spec-refs-none-" + shotId} value="none"
+          .checked=${live(spec.refs.mode === "none")}
+          @change=${shotRefsModeInput(shotId, "none")}>明确不选（这张图暂不做）</label>
+        <label class="choice"><input type="radio" name=${"spec-refs-" + shotId}
+          id=${"spec-refs-select-" + shotId} value="select"
+          .checked=${live(spec.refs.mode === "select")}
+          @change=${shotRefsModeInput(shotId, "select")}>显式勾选需要的照片</label>
+        ${spec.refs.mode === "select" ? html`
+          <div class="choice-list">
+            ${references.map((item, index) => {
+              const id = "spec-ref-" + item.asset_sha256.slice(0, 12) + "-" + shotId;
+              const checked = spec.refs.shas.includes(item.asset_sha256);
+              return html`<label class="choice"><input type="checkbox" id=${id}
+                value=${item.asset_sha256} .checked=${live(checked)}
+                @change=${shotRefsToggle(shotId, item.asset_sha256)}>第 ${index + 1} 张照片</label>`;
+            })}
+            ${references.length === 0 ? html`<p class="meta">还没有参考图：先去资料区添加照片。</p>` : nothing}
+          </div>` : nothing}
+        ${spec.refs.mode === "none" ? html`<p class="meta" id=${"spec-refs-note-" + shotId}
+          >已明确不选任何照片：保存后这张图会被拦下，直到重新选择照片。</p>` : nothing}
+        ${stale.length > 0 ? html`<p class="meta" id=${"spec-refs-note-" + shotId}
+          >选中的 ${stale.length} 张照片已不在项目内：请重新勾选，保存时会复核。</p>` : nothing}
+      </div>
+    `;
+  }
+
+  function shotRefsModeInput(shotId: string, mode: "inherit" | "none" | "select"): (event: Event) => void {
+    return () => {
+      const spec = draft.shotSpecs[shotId];
+      if (!spec) return;
+      spec.refs.mode = mode;
+      if (mode !== "select") spec.refs.shas = [];
+      renderSpecsCard();
+    };
+  }
+
+  function shotRefsToggle(shotId: string, sha256: string): (event: Event) => void {
+    return (event: Event) => {
+      const node = event.currentTarget as HTMLInputElement;
+      const spec = draft.shotSpecs[shotId];
+      if (!spec || spec.refs.mode !== "select") return;
+      spec.refs.shas = node.checked
+        ? [...spec.refs.shas, sha256]
+        : spec.refs.shas.filter((sha) => sha !== sha256);
+      renderSpecsCard();
+    };
+  }
+
+  /**
+   * 保存冲突条（OCC）：说清「已被保存成哪一版、你的修改还在草稿里、再保存会追加」，
+   * 并给恢复入口；恢复后同一位置变成状态行（role=status），保存成功后整条消失。
+   */
+  function saveConflictTemplate(key: string, scope: "style" | "spec", shotId?: string):
+  TemplateResult | typeof nothing {
+    const conflict = draft.saveConflicts[key];
+    if (!conflict) return nothing;
+    const elementId = scope === "style" ? "style-save-conflict" : "spec-save-conflict-" + shotId;
+    const suffix = scope === "style" ? "" : "-" + shotId;
+    return html`
+      <p id=${elementId} class=${conflict.reloaded ? "meta" : "error"}
+        role=${conflict.reloaded ? "status" : "alert"}>${conflict.message}</p>
+      ${conflict.reloaded ? nothing : html`<div class="toolbar">
+        <button id=${(scope === "style" ? "style-reload-latest" : "spec-reload-latest") + suffix}
+          type="button"
+          @click=${() => void (scope === "style"
+            ? handleReloadStyle() : handleReloadShotSpec(String(shotId)))}>重新载入最新版本（保留我的修改）</button>
+      </div>`}
+    `;
+  }
 
   function shotSpecCardTemplate(
     item: { shot_id: string | null; label: string; checklist: { sections: { label: string; items: string[] }[] } },
@@ -1732,6 +2435,7 @@ export function createInputView(
           <span class="name">${(index + 1) + ". " + item.label}</span>
           <span class="meta">${entry ? "规格 v" + entry.version : "默认（未保存）"}</span>
         </div>
+        ${saveConflictTemplate("spec:" + shotId, "spec", shotId)}
         <div class="field">
           <label for=${"spec-purpose-" + shotId}>目的</label>
           <input id=${"spec-purpose-" + shotId} maxlength="200" .value=${live(spec.purpose)}
@@ -1748,6 +2452,8 @@ export function createInputView(
             @input=${shotSpecInput(shotId, "change_allowed")}></textarea>
         </div>
         ${printDecisionRoleOf(shot) ? printDecisionTemplate(shotId, spec) : nothing}
+        ${shotViewpointTemplate(shotId, spec)}
+        ${shotReferencesTemplate(shotId, spec)}
         <div class="toolbar">
           <button type="button" @click=${() => void handleSaveShotSpec(shotId)}>保存</button>
           <button type="button" ?disabled=${!entry || entry.version <= 1}
@@ -1825,6 +2531,7 @@ export function createInputView(
             + "；保留：" + projection.preserves_text + "。" : ""}</p>
         <p id="style-status" class="status" role="status" ?hidden=${!draft.styleStatus}>${draft.styleStatus}</p>
         <p id="style-error" class="error" role="alert" ?hidden=${!draft.errors.style}>${draft.errors.style}</p>
+        ${saveConflictTemplate("style", "style")}
         <h5 class="sub-title">单图规格与审核清单</h5>
         <p id="shot-specs-empty" class="empty" ?hidden=${Boolean(plan && plan.shots.length > 0)}>套图方案里还没有图片。</p>
         <div id="shot-spec-list">${digest && plan
@@ -1891,6 +2598,7 @@ export function createInputView(
     if (!deps.currentProjectId() || !plan) return;
     const action = beginAction();
     if (!action.projectId) return;
+    delete draft.saveConflicts.style;
     draft.errors.style = "";
     draft.styleStatus = "";
     renderSpecsCard();
@@ -1911,8 +2619,41 @@ export function createInputView(
       renderSpecsCard();
     } catch (error) {
       if (action.alive()) {
-        failRegion("style", errorMessageOf(error, "保存没有完成，请重试。"));
+        const conflict = revisionConflictOf(error);
+        if (conflict) {
+          // OCC：另一标签页/窗口已保存更新的公共风格。不覆盖、不丢草稿；重读后由用户决定再保存。
+          draft.saveConflicts.style = {
+            message: "公共风格已被另一个标签页或窗口保存为 v" + conflict.actual
+              + "：你的修改还在草稿里，没有保存，也没有覆盖它。点「重新载入最新版本」把它读进来，"
+              + "你的草稿保持不变；再点保存会按 v" + (conflict.actual + 1) + " 追加。",
+            version: conflict.actual,
+          };
+          renderSpecsCard();
+        } else {
+          failRegion("style", errorMessageOf(error, "保存没有完成，请重试。"));
+        }
       }
+    }
+  }
+
+  /** 公共风格的 OCC 恢复入口：只换 owner 投影与基版本，用户草稿不动；保存即按新版本追加。 */
+  async function handleReloadStyle(): Promise<void> {
+    if (!deps.currentProjectId()) return;
+    const action = beginAction();
+    if (!action.projectId) return;
+    try {
+      const version = await inputs.reloadStyle();
+      if (!action.alive()) return;
+      draft.styleBaseline = styleDraftFrom(inputs.styleSpec());
+      draft.saveConflicts.style = {
+        message: "已按最新版本" + (version > 0 ? " v" + version : "") + " 重新载入：你的修改还在草稿里；"
+          + "点「保存风格」会按新版本追加，不覆盖已有历史。",
+        version,
+        reloaded: true,
+      };
+      renderSpecsCard();
+    } catch (error) {
+      if (action.alive()) failRegion("style", errorMessageOf(error, "重新载入没有完成，请重试。"));
     }
   }
 
@@ -1941,16 +2682,71 @@ export function createInputView(
     }
   }
 
+  /**
+   * 测量绑定保存门：逐项复核「标签/分类已确认」与「快照仍等于来源当前值」。
+   * 任一失败即抛错（保存中止、草稿保留）；错误指到具体槽位与项序号。
+   */
+  function assertMeasurementDraftsCurrent(shotId: string, spec: ShotSpecDraft): void {
+    void shotId;
+    for (const pick of spec.measurements) {
+      const where = "「" + slotLabelOfId(pick.slot_id) + "」第 " + (pick.index + 1) + " 项";
+      if (pick.axis_label.trim().length === 0) {
+        throw new Error(where + "的轴向英文标签还没填：补齐后才能保存。");
+      }
+      if (pick.source_kind !== "nominal" && pick.source_kind !== "measured") {
+        throw new Error(where + "的来源分类还没确认：对照来源依据选择公称或实测后才能保存。");
+      }
+      const entry = inputs.slotEntries().find((row) => row.slot.slot_id === pick.slot_id);
+      const list = entry && Array.isArray(entry.slot.value) ? entry.slot.value : [];
+      const current = list[pick.index] as DimensionMeasurement | undefined;
+      if (!entry || entry.slot.status !== "confirmed" || entry.version !== pick.version
+        || !current || !isPlainObject(current)
+        || current.object !== pick.object || current.axis !== pick.axis
+        || current.value !== pick.value || current.unit !== pick.unit
+        || current.source_basis !== pick.source_basis) {
+        throw new Error(where + "的来源已变化（绑定的是 v" + pick.version + "）：请取消后按新值重新确认。");
+      }
+    }
+    for (const group of spec.groups) {
+      const where = "「" + slotLabelOfId(group.slot_id) + "」统一标签";
+      const covered = spec.measurements.filter((item) => item.slot_id === group.slot_id
+        && item.version === group.version);
+      const kinds = new Set(covered.map((item) => item.source_kind));
+      if (kinds.size !== 1 || !kinds.has(group.source_kind)) {
+        throw new Error(where + "已失效（所选测量不再全同分类）：请重新勾选统一标签。");
+      }
+      const entry = inputs.slotEntries().find((row) => row.slot.slot_id === group.slot_id);
+      const list = entry && Array.isArray(entry.slot.value) ? entry.slot.value : [];
+      if (!entry || entry.slot.status !== "confirmed" || entry.version !== group.version) {
+        throw new Error(where + "的来源已变化（绑定的是 v" + group.version + "）：请重新确认。");
+      }
+      for (let position = 0; position < group.indices.length; position += 1) {
+        const current = list[group.indices[position]] as DimensionMeasurement | undefined;
+        const frozen = group.measurements[position];
+        if (!current || !frozen || current.object !== frozen.object || current.axis !== frozen.axis
+          || current.value !== frozen.value || current.unit !== frozen.unit
+          || current.source_basis !== frozen.source_basis) {
+          throw new Error(where + "的来源已变化：请重新确认分组。");
+        }
+      }
+    }
+  }
+
   async function handleSaveShotSpec(shotId: string): Promise<void> {
     if (!deps.currentProjectId()) return;
     const spec = draft.shotSpecs[shotId];
     if (!spec) return;
     const action = beginAction();
     if (!action.projectId) return;
+    const conflictKey = "spec:" + shotId;
+    delete draft.saveConflicts[conflictKey];
     draft.errors.specs = "";
     renderSpecsCard();
     try {
       // 新字段与旧字段一次性保存：选了就带上，没选的不写键（不写 "none"/"undecided" 占位，不静默丢已选字段）。
+      const entry = inputs.shotSpecEntry(shotId);
+      const currentPresentation = entry && isPlainObject(entry.spec.presentation)
+        ? { ...(entry.spec.presentation as Record<string, unknown>) } : {};
       const changes: Partial<ShotSpec> = {
         purpose: spec.purpose.trim(),
         keep: splitLines(spec.keep),
@@ -1962,9 +2758,40 @@ export function createInputView(
       if (spec.layout === "product_only" || spec.layout === "product_left_text_right"
         || spec.layout === "product_right_text_left") changes.layout = spec.layout;
       if (spec.print_intent === "selected") {
+        // 测量绑定完整性门：缺轴向标签/缺来源分类/来源过期/快照不一致的绑定不落库，
+        // 留在草稿并指到具体条目；绝不静默丢弃半成品绑定。
+        assertMeasurementDraftsCurrent(shotId, spec);
         changes.on_image_texts = onImageTextsFromDraft(spec);
       } else if (spec.print_intent === "none") {
         changes.on_image_texts = [];
+      }
+      // 视角单图覆盖：显式 front/side/top 才写；沿用可见视角=删除该键（回到共用安全默认），
+      // 不持久化 "reference_visible" 覆盖。其它已存覆盖键（外观/内容物）原样保留。
+      // owner 只接受 reference_sha256s 的 undefined 删键：presentation 为空时传 {}，
+      // 由领域校验把“空对象=未决定”当合法形状保存，不用 undefined 绕开检查。
+      if (spec.viewpoint === "front" || spec.viewpoint === "side" || spec.viewpoint === "top") {
+        currentPresentation.viewpoint = spec.viewpoint;
+        changes.presentation = currentPresentation as ShotSpec["presentation"];
+      } else if ("viewpoint" in currentPresentation) {
+        delete currentPresentation.viewpoint;
+        changes.presentation = currentPresentation as ShotSpec["presentation"];
+      }
+      // 参考选择：inherit=删除键（沿用角色默认）；none=显式 []；select=用户所选顺序。
+      // 显式选择的 SHA 必须仍在当前项目内，否则留在草稿并报错，不落库、不清空用户勾选。
+      // 一次点击只做一次 owner 保存：删键与其他改动同属一笔追加，冲突时不产生部分写入。
+      const liveShas = new Set(inputs.references().map((item) => item.asset_sha256));
+      if (spec.refs.mode === "inherit") {
+        if (entry && Object.prototype.hasOwnProperty.call(entry.spec, "reference_sha256s")) {
+          changes.reference_sha256s = undefined;
+        }
+      } else if (spec.refs.mode === "none") {
+        changes.reference_sha256s = [];
+      } else {
+        const missing = spec.refs.shas.filter((sha) => !liveShas.has(sha));
+        if (missing.length > 0) {
+          throw new Error("选中的 " + missing.length + " 张参考图已不在项目内：请重新勾选本图依据。");
+        }
+        changes.reference_sha256s = [...spec.refs.shas];
       }
       await inputs.saveShotSpec(shotId, changes);
       if (!action.alive()) return;
@@ -1973,8 +2800,51 @@ export function createInputView(
       await deriveAndApplyState();
     } catch (error) {
       if (action.alive()) {
-        failRegion("specs", errorMessageOf(error, "保存没有完成，请重试。"));
+        const conflict = revisionConflictOf(error);
+        if (conflict) {
+          // OCC：另一个标签页/窗口已写入更新版本。不覆盖它，也不丢用户的草稿；给可恢复动作而非死胡同。
+          draft.saveConflicts[conflictKey] = {
+            message: "这张图的规格已被另一个标签页或窗口保存为 v" + conflict.actual
+              + "：你的修改还在草稿里，没有保存，也没有覆盖它。点「重新载入最新版本」把它读进来，"
+              + "你的草稿保持不变；再点保存会按 v" + (conflict.actual + 1) + " 追加。",
+            version: conflict.actual,
+          };
+          renderSpecsCard();
+        } else {
+          // 编译门/owner 的视角/参考/文案报错必须留在规格区可见，不吞掉。
+          failRegion("specs", errorMessageOf(error, "保存没有完成，请重试。"));
+        }
       }
+    }
+  }
+
+  /**
+   * OCC 冲突后的恢复入口：按最新记录重读（只换 owner 投影与基版本，不写库），
+   * 用户草稿原样保留；下一次保存按新版本追加，历史不覆盖。
+   */
+  async function handleReloadShotSpec(shotId: string): Promise<void> {
+    if (!deps.currentProjectId()) return;
+    const key = "spec:" + shotId;
+    const action = beginAction();
+    if (!action.projectId) return;
+    try {
+      const version = await inputs.reloadShotSpec(shotId);
+      if (!action.alive()) return;
+      const entry = inputs.shotSpecEntry(shotId);
+      const spec = draft.shotSpecs[shotId];
+      if (spec && entry) {
+        // 只换基线：用户已改的字段原样保留，保存时按读到的版本追加。
+        spec.baseline = shotSpecDraftFrom(entry.spec).baseline;
+      }
+      draft.saveConflicts[key] = {
+        message: "已按最新版本" + (version > 0 ? " v" + version : "") + " 重新载入：你的修改还在草稿里；"
+          + "点「保存」会按新版本追加，不覆盖已有历史。",
+        version,
+        reloaded: true,
+      };
+      renderSpecsCard();
+    } catch (error) {
+      if (action.alive()) failRegion("specs", errorMessageOf(error, "重新载入没有完成，请重试。"));
     }
   }
 
@@ -2049,6 +2919,54 @@ export function createInputView(
     renderReferencesCard();
   }
 
+  /** 某张参考图当前已确认的可支持视角：只读 domain 唯一判据，不在视图里复刻规则。 */
+  function supportedViewpointsOf(sha256: string): string[] {
+    const proof = referenceViewpointEvidence(inputs.slotEntries(), [sha256]);
+    return proof.viewpoints;
+  }
+
+  /**
+   * 每张照片的视角支持确认（设计 §13.4.2）：普通措辞，不要求摄影术语。
+   * 勾选=人确认这张照片能看到该角度；经 inputs.setViewpointSupport 写 reference_observation FactSlot。
+   */
+  function viewpointSupportTemplate(row: ReferenceRow): TemplateResult | typeof nothing {
+    if (!row.url) return nothing;
+    const supported = supportedViewpointsOf(row.sha256);
+    const labels: Record<string, string> = { front: "能看到正面", side: "能看到侧面", top: "能看到顶面" };
+    return html`
+      <div class="ref-viewpoints" id=${"ref-viewpoint-" + row.index}>
+        <span class="label">这张照片能看到的角度（确认后才能作为视角依据）</span>
+        ${(REFERENCE_VIEWPOINTS as readonly string[]).map((viewpoint) => html`
+          <label class="choice"><input type="checkbox"
+            id=${"ref-viewpoint-" + row.index + "-" + viewpoint} value=${viewpoint}
+            .checked=${live(supported.includes(viewpoint))}
+            @change=${(event: Event) => void handleViewpointSupport(
+              row.sha256, viewpoint, (event.currentTarget as HTMLInputElement).checked)}>
+            ${labels[viewpoint] || viewpoint}</label>`)}
+      </div>
+    `;
+  }
+
+  async function handleViewpointSupport(sha256: string, viewpoint: string, checked: boolean): Promise<void> {
+    const action = beginAction();
+    if (!action.projectId) return;
+    draft.errors.refs = "";
+    renderReferencesCard();
+    try {
+      const current = supportedViewpointsOf(sha256);
+      const next = checked
+        ? [...new Set([...current, viewpoint])]
+        : current.filter((item) => item !== viewpoint);
+      await inputs.setViewpointSupport(next, [sha256]);
+      if (!action.alive()) return;
+      renderAll();
+    } catch (error) {
+      if (action.alive()) {
+        failRegion("refs", errorMessageOf(error, "视角确认没有保存，请重试。"));
+      }
+    }
+  }
+
   function referenceRowTemplate(row: ReferenceRow): TemplateResult {
     return html`
       <li class="ref-row" data-sha=${row.sha256}>
@@ -2058,6 +2976,7 @@ export function createInputView(
         <div class="ref-main">
           <span class="name">${row.name}</span>
           <span class="meta">${row.info}</span>
+          ${viewpointSupportTemplate(row)}
           <details class="tech-details"><summary>技术详情</summary>
             <p class="meta tech-body">${"sha256 " + row.sha256.slice(0, 12) + "…"}</p></details>
         </div>
@@ -2190,14 +3109,14 @@ export function createInputView(
     }
   }
 
-  /** 「人工填写事实」：先落库资料，再准备核心槽位，最后停靠理解阶段。 */
+  /** 「人工填写事实」：先落库资料，再准备核心槽位，最后停靠资料与事实阶段（事实与资料同屏）。 */
   async function handleManualFacts(): Promise<void> {
     const action = beginAction();
     try {
       await saveIntakeNow();
       if (!action.alive()) return;
       await prepareManualFacts();
-      if (action.alive()) selectStage("understand", { focusHeading: true });
+      if (action.alive()) selectStage("intake", { focusHeading: true });
     } catch (error) { if (action.alive()) handleInternalError(error); }
   }
 

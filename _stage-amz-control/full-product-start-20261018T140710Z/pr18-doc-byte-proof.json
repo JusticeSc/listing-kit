@@ -1,0 +1,17 @@
+{
+  "_stage-amz-control/issue9-expression-20261018T080410Z/issue9-status-draft.md": {
+    "sha256": "bc57fa8d2f1d3c97078a36ed7f11bd91a3b1833b2264b27d4678f95ad49a6d86",
+    "bytes": 8198,
+    "cr_bytes": 0
+  },
+  "_stage-amz-control/issue9-expression-20261018T080410Z/pr-body-issue9.md": {
+    "sha256": "040bd2d81f651e574c49b77bc224c92aaf808097d9f6df0920fb4755cc8063ed",
+    "bytes": 8276,
+    "cr_bytes": 0
+  },
+  "evals/product-v2/refactor/program-expression-20261018.md": {
+    "sha256": "5d94a0d31dcccfb14801a3ff2993a3ce5ca63880201b5f6d811e7e86d373a5c4",
+    "bytes": 24844,
+    "cr_bytes": 0
+  }
+}

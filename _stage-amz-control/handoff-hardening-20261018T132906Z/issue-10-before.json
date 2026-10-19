@@ -1,0 +1,144 @@
+{
+  "body": "## 当前范围与授权（2026-10-17；替代旧 P1–P6 排程）\n用户本轮明确选择：**先收敛远程 main 现有能力**；允许更新既有 #10／#7 及本地权威入口。可信基线必须实质降低活系统、重复规则、变更放大和认知负担；V1 清退纳入本次基线，不再作为基线成立后的可选优化。\n\n本轮仅制定计划和同步工单／文档：不恢复产品施工，不安装依赖、运行产品／模型、删除旧链／用户材料、提交推送、合并或部署。原产品 Goal 保持 paused；其四段工作流、普通决定和双模式返工等封存 WIP 不混入本次 main 基线，未来按原产品合同接入，本工单完成不等于原产品 Goal 完成。没有取消 #8／#9、原适用 RC、最终产品两轮与真人门。\n\n详细工作包唯一在本工单，测试删留与运行细项唯一在 #7；产品终点／正式任务表取计划，选型取 context，权限／恢复取 state。旧工单正文及本地权威原字节保存于 `_stage-amz-control/main-baseline-plan-20261017T012746Z/`，不层层叠加旧方案。\n\n## 起点：复用已取得事实，不从全库重审开始\n- 远程 main：`4bf6d037e516d6f0a0c2c85df2d9a1e350056ef7`。PR #11／#12 已合并；该候选的验证树与 main 相同。当前仍是六入口 V2、现有单模式返工，不把 stash 当已发布功能。\n- 可复用：[同树验证 run 38984977644](https://github.com/JusticeSc/listing-kit/actions/runs/38984977644)、[main 发布／恢复 run 38986192730](https://github.com/JusticeSc/listing-kit/actions/runs/38986192730)。发布工件 85 个运行文件与 main 摘要已逐项匹配；现有项目两包、独立导入、受控不同镜像同 origin 恢复各保留其范围。它们不证明未来替换代码正确。\n- 已有部分清理：退役死检查／旧 producer 初始化分离、Git UTF-8 清单、UI3 同条件重复退出；生命周期验证改为相对版本和真实数据后置；packet08 修复假绿并补真实 DOM 凭据入口。除前提变化，不重复这些工作。\n- 尚缺：V1 活链仍在；H09 两处 12 位断言仍在；纯文档 PR 容器链未分流；完整回归首红仍开次轮；真实长内容 UI 因果证据和 packet08 冻结原目标／大 Blob／服务器日志证明不足；state／README／candidate 有旧事实／旧证据指针。\n- 已知失败：[run 38926529848](https://github.com/JusticeSc/listing-kit/actions/runs/38926529848) 的 V2.3.5-07 先红，同树重跑绿，根因未闭合。不得据此断言只是 runner 慢、超时或不是产品问题。\n- 已验证的小回归：槽卡内容一致但 71 行的内存负例，生成器 --check 返回 0 且文档守卫未报，70 行上限漏迁；若 P1 删除整个退役生产链，不先为待删能力补新测试。若确需保留，必须同包恢复必要约束。\n\n## 交付合同：main 基线要什么／不要什么\n**要交付**：一套当前 V2；V1 活入口／业务／专属验证／失效配置和依赖真实退出；通用 HTTP／构建／渲染／验证能力由标准工具或成熟依赖承担；必要业务 Module 的所有权和 Interface 清楚；有意义的测试稳定且按影响运行；同版本数据／冻结动作／秘密／费用安全保留；源码、构建产物、配置、锁、说明和恢复材料能互相对应。\n\n**不顺带交付**：下一版四段工作流／双模式返工、新产品布局、程序 Prompt 品质提升、模型换型或新收费结果、账户／云项目库、旧包兼容、通用插件／调度／重试／遥测平台、C15／C17 真人验收。修复现有真实内容主动作阻断属于本基线；#8 完整体验和 #9 品质仍独立。\n\n**保持的业务行为**：当前 main 的项目生命周期、纯人工及可选辅助、事实权限、用途依赖、Prompt／确认／实际请求一致、单张／批量／当前返工、Unknown 原任务核对、人工采用、确定性硬门与可选 AI、两类 ZIP、当前格式刷新和独立导入恢复。不得用“重构”减少这些用途，亦不将原 WIP 更强能力误当 main 已有合同。\n\n## 目标结构与第三方选择\n保留 Python 无状态网关＋静态浏览器应用＋IndexedDB；部署仍沿现有 Actions／Docker／Caddy／可信 origin。生产不引入 Node 服务或服务器业务状态。\n- Python：入口只装配／启动；HTTP Module 负责路由与政策映射，协议 Adapter 负责真实上游；registry／credentials／outbound 保留唯一所有者。优先 FastAPI＋Uvicorn，Pydantic 明确为直接依赖；不引入新聊天 SDK 或自动重试层。\n- 浏览器：session／inputs／prompts／generation／selection-adoption／review-delivery 继续持有业务；视图消费可渲染状态并发业务命令，workspace 只装配和管理生命周期。优先 lit-html 负责模板和更新；不同时引入 React／Vue／第二个全局 store。\n- 构建：标准 TypeScript 严格检查；标准 tsc 足够则不造转译器。采用浏览器依赖时优先 Vite 统一输出静态产物，生产网关只服务该产物；不用 CDN／运行时编译器。源码／产物分离后删除已替代的同目录 emit／新鲜度脚本，不把 TS／生成 JS 错判两套业务。\n- 协议：先区分模型 Raw 输出、HTTP 归一化响应和本地业务记录；对真正共享的 wire shape／词表选一个权威，再评估 JSON Schema＋Ajv standalone。Pydantic 自定义 validator 不能自动假定被 Schema 完整表达；元数据身份／陈旧性／授权仍是业务规则。不能用 Zod 再造第三份形状。\n- 测试：继续 node:test／Playwright；Python 重复断言、fixture、参数化优先交 pytest。采纳时一起替换对应旧 runner／stdout 反解析，不把 pytest 包进永久兼容 CLI。付费／远程／人工门保持独立。\n- 暂不采用 idb／Dexie／XState／通用 DI／重试库：repository 的主体是 OCC、追加历史和跨记录原子约束，不能以换库名义搬动风险而不减认知负担。真实新证据改变判断才重开。\n\n上述是**规划推荐，不是已安装／已验证／已获依赖落地批准**。每项在所属包内一次核版本、近一年维护、许可、传递依赖、安全公告和移除成本；完成最小实际 PoC 后，将精确选型在 context 落定并集中请用户确认。若不能删除对应自研复杂性，就不引入该库；没有选型结论不以临时 shim 悄悄落地。\n\n## 实施包、依赖与完成条件\nP0–P8 是本工单工作包，不新增产品任务 ID、Goal 或自动新增批次。正式任务表表示整项完成依赖；本轮仅交付与 main 范围相符的差量，不提前签原 G6／R7.x 整项 done。\n\n| 包 | 依赖 | 可观察交付 |\n|---|---|---|\n| P0 定界与必要恢复材料 | 明确恢复、独立工程批次／协作权限明确 | 从准确 main 开始，不混 WIP；保全与实际删除闭包匹配 |\n| P1 V1 退出与当前入口收敛 | P0；用途与消费者处置成立 | 仓库不再有可执行 V1，默认 V2／工具不间接依赖旧产品 |\n| P2 测试与反馈治理 | P1 对应入口稳定；可与 P3 设计并行 | 无效断言／真重复退出；已知红项因果闭环；调度与失败传播可信 |\n| P3 HTTP 基础设施替换 | P1；该选型 PoC／确认；P2 对应验收可用 | ASGI 网关替换旧 HTTP 实现，所有消费者同包切换 |\n| P4 标准前端构建 | P1；该选型 PoC／确认 | 唯一标准构建产物进入真实 Python 静态入口／镜像 |\n| P5 视图和工作区减负 | P4；P2 对应消费者 | 声明式渲染替换手工 DOM／草稿恢复；业务状态仍唯一 |\n| P6 协议与必要内部 Module 收口 | P3、P4；可与 P5 无共享编辑部分并行 | 真共享结构单一权威，移除镜像／薄转发，不改变业务合同 |\n| P7 当前上下文与工程材料收敛 | P1–P6 各包随改维护后汇总 | main 自解释，不靠旧会话／隐藏 WIP，日常入口不载入整部历史 |\n| P8 集成、冻结与交付 | P1–P7 | 清理后的确切候选可运行／开发／恢复；未解释必要失败为零 |\n\n### P0 — 只补删除所需的前置，不重做旧审计\n1. 一次核对 main 是否仍为上述 SHA、真实工作树／WIP／远程授权及实际 Goal；新差异按用户材料保留，不 reset／pop 全部 stash。若 main 变更，只分析新差量。\n2. 复用已保存 stash `2b7a82171c324e75bd2d910f5ae1343799659df5`、seal、历史源码包和现有两包；已封存的下一版功能列为本轮范围外，不把它们当零价值垃圾或悄悄合入。\n3. 复用 state 已登记的 2026-10-08 V1 用途／消费者摘要及本轮静态闭包发现，只核 main 下仍存部分。旧日落报告未在当前目录找到，不虚构路径或当作当前删除证明；若必要原实物不可达，只补实际删除所需输入。对私有图／包只保存本地身份与稳定原字节，不上传工单。\n4. 对本轮会删除的源码／配置／工具，保全可重建的精确 commit＋必要未跟踪输入；对当前格式项目采用对应版本的包和隔离 profile。旧材料所属 WIP／main／不同 schema 分清，不把别版五图包当本版恢复证据。\n**通过**：可指出该组从何处还原，原材料未改；缺必要恢复输入就停该删除，不用再加一个全仓备份平台。\n\n### P1 — 先让 V1 真正退出，再整理 V2\n1. 消费者分为产品入口、源码 import、构建／镜像、CLI、测试／CI、当前规约六类；历史文本引用不等于活消费者。对 V1 独有用途与已退役 M 系列用途，先核是否属于 main 当前用途；属于则迁其必要能力，不属于则明确退出；无法由合同决定的真实用途及时请用户裁定。\n2. 同一删除组处理 `app/server.py --legacy-v1` 分支、`app/product_v1_server.py`、V1 前端、`src/application_service.py`／`workspace_store.py`／V1 product_*、非 v2 Provider 及旧 renderer／orchestrator 链；按真实闭包决定，不按文件名前缀批删。`web/`／`demo/`／`run.py`／旧槽卡生产链逐组处理，不保留另一条可执行旧产品当回退。\n3. 同包移除 `verify_v2_1_2_project_home.py:check_v1_route` 和 V1 专属验证入口／CI 登记。迁出当前 check_docs／check_project_state 对旧 schema、registry、卡片与 superseded 证据的活依赖；历史证据按原版本解释，不为当前路径检查留下可执行旧源码。\n4. 清点直接／可选依赖：jsonschema、numpy、cutout 组为退役候选，按实际引用删除；PyYAML、Pillow、requests 按当前产品／开发消费者决定保留或移 dev。Pydantic 作为直接使用能力显式声明。同步 manifest／lock／context／CI／Docker，不以镜像不 COPY 旧源码冒充依赖已清退。\n5. 用户原件、许可证、失败／账本、选中恢复包不删除；未跟踪未知材料不按“清理”擅删。已有 Git 历史可承接旧代码追溯，不维持活入口。\n**验收**：实际启动唯一 V2；旧入口明确不再支持且不会启动旧产品；受影响现有 domain／页面项目生命周期／当前格式恢复真实成立；源码、打包输入、默认工具、测试／CI 均无 V1 活消费者；保留能力说明清楚。零 import 本身不等于用途覆盖成立。\n\n### P2 — 测试先成为可靠反馈，而非变化检测器\n具体删留／命令迁移／选择反例唯一看 #7。本包必须处理 H09 两处格式断言、真正重复视口检查、纯文档容器分流、分类故障保守行为、首轮红不进次轮、旧结果信号指纹误作候选身份等问题。\nV2.3.5-07 直接复用已知失败作为 red：同步观察请求／Attempt 终态、派生项目状态与采样时点；区分真实状态回退、异步派生未完和测试采样错误。只针对明确假设作诊断；产品错修业务 owner，oracle 错改稳定后置；不能先加 sleep／延长 timeout 或拿同树重跑绿结案。\npytest 的首个迁移组须同时转换真实消费者及对应 CI／登记／聚合命令；删除退役 check-list／stdout 解析，而非保留两套 runner。尚有价值且未受影响的脚本不为统一形式机械迁移。\n**验收**：测试能独立判错，旧已知失败有因果处置；完整离线集合仍可枚举，付费／远程／manual 不被自动发现；两个 required check 名称及必要失败传播保留。不得为减负更改保护规则。\n\n### P3 — FastAPI／Uvicorn 替换 HTTP，自研只留产品政策\n1. 在隔离、零外网 PoC 中以现有 Pydantic 合同接一个真实状态／图像路由；保留同步 Provider 为同步执行，不能在 async handler 内直接阻塞事件循环。验证实际 Chrome fetch、错误和较大正文，而非仅 ASGI 内存 client。\n2. 产品启动 Interface 为 host／port＋注入 Provider factories 的 app 装配；生产 CLI、测试服务器／harness、所有验证消费者同组切换。旧 ThreadingHTTPServer 类型、server_address 等实现依赖消失，不留旧 HTTP fallback 或双服务器。\n3. 路由、静态文件、响应和 HTTP 连接处理交给框架／服务器；产品保留逐路由真实读入上限、错误分类、出站白名单、默认 closed、请求级 BYOK／冻结目标、超时 Unknown／零隐藏重试。默认 validation 错误／日志须脱敏，不能泄漏 key 或整份正文。\n4. 正常／超限／不完整／未知路由／断连场景验证用户可读失败、防请求串帧和后续连接可用；保留这些结果约束，不原样移植旧 drain 代码或钉 Content-Length 私有实现。只有原机制前提受改动影响的 RC19 证据局部重建，不重刷全部历史。\n5. 将完整 `run_self_check` 场景迁入开发验证，生产只留必要健康／轻量自检；更新 app/server.py --check 的实际行为和文档。Fake Provider／完整测试依赖退出生产工件；Pillow 若仅测试使用则归 dev，不假称功能需要。\n**验收**：正式 CLI＋真实 TCP＋Chrome 页面与真实 registry／注入 Transport 消费成立；静态路径逃逸／TS 源码拒绝、正文限制、秘密／Unknown 语义、并发和退出清理保留。构建／容器消费者同步，不以 TestClient 通过代替实际服务。\n\n### P4 — 一份源码、一条标准构建、一份生产产物\n1. 核实 tsc 标准 emit 能否满足现有混合 JS／TS；若足够，不保留自编译器。浏览器依赖落地时选择 Vite，保留独立 `tsc --noEmit` 严格检查；不添加一堆插件或第二份锁。\n2. 前端手工源与生成产物分离，应用 import 仍由构建处理；产物不再逐个手写／在源码旁提交。只有等价构建产物实际接入后才删除旧 generated JS／build_product_v2_ts.mjs／check:generated 的旧实现和保护；当前纯 JS 手写 Module 不是生成物，不误删。\n3. 生产 Python 静态入口仅指向唯一构建输出，禁止悄悄回退源码目录；缺构建产物明确失败。Docker 多阶段在构建阶段 npm ci --ignore-scripts／编译，最终仅 Python＋静态产物；Node／编译器／测试／TS 源不进最终运行时。\n4. 依赖精确锁定、许可随附。fflate 已复用，不再自造 ZIP；可转受锁构建消费并去掉重复 vendor／自制声明，但 CRC／尺寸／重复路径／完整性等产品保护不得丢。axe 仍仅测试侧。\n5. 同步 Actions、静态 MIME／缓存、运行指纹与 release 资源枚举；指纹从真实产物得出，覆盖所有被发布资源，不只首页／两条固定脚本。开发 Vite origin 不冒充生产 IndexedDB origin 或最终验收环境。\n**验收**：从干净 checkout＋锁可重建；正式 Python 入口真实加载构建后脚本／样式；类型、当前行为和包导入导出保留；最终镜像无生产 Node、源目录 fallback 或旧产物链。\n\n### P5 — 声明式视图，而不是再拆几个大文件\n1. 选 `generation-view` 的一次真实编辑／确认／候选更新任务作代表，冻结现有用户结果和错误／焦点判据；先统一现有 subscribe 与 changed 回调的通知责任，不增加第二个全局事件系统。\n2. lit-html 模板只消费现有业务 Module 的状态；草稿进入唯一 UI 状态，按 project／shot／candidate 精确归属。删除重绘前 querySelector 抓取和恢复草稿、重复监听器装配、分散 hidden 切换，不把它们包成新 helper 后继续存在。\n3. 依次迁 input／generation／compare／delivery，各包完整迁命令和调用者；workspace 收回到装配、生命周期、导航与跨 Module 协调，引用图呈现归输入视图；app 的首页／导入导出／设置 UI 同原则处理。允许沿实际职责拆 Module，但不按固定行数机械切割。\n4. 不改变六入口和当前 main 的返工含义，不混入 WIP 四段／双模式；不为保持旧 DOM 钉死 ids／类名。测试保留可达角色、用户结果、对象身份和必要诊断标记，删实现绑定断言。\n5. 用现有 main 格式真实长内容副本重现／定位溢出；若历史五图包为 WIP 格式，仅复用其已授权文本／原图作为长内容输入，不把它冒充 main 格式恢复。不重生成付费图。\n**验收**：同内容主动作 Before／After；1440／1366／1024，受影响的 390 与原生 125%／200%／键盘路径按 #8；图片可判读、操作对象正确、切图切候选草稿不串、异步不抢焦点／插入点、取消回触发点、重绘不吞人工编辑。纯布局不重查全库或收费模型；业务命令变化才验证实际事务／请求。\n\n### P6 — 只消除真实重复，不建设万能合同框架\n1. 对一个真实修改的 HTTP 请求／归一化响应选权威，列出其 Python model、实际响应、浏览器类型／结构校验和词表。模型 RawProposal 不直接等同浏览器 SemanticProposal；身份／来源／当前性规则不强行生成。\n2. PoC 证明 Schema 表达与消费者一致、严格数值／额外字段／缺字段边界正确、错误不含秘密；Ajv 只在构建期生成／打包必要 ESM 校验器，浏览器不动态 eval／下载 schema。没有净收益就明确不采纳，不另留半成品。\n3. 采纳时删除对应手写形状／重复词表／镜像比对脚本，同包迁两端；拒绝保留“新生成＋旧守卫”两套权威。26 类业务 validators／本地 Blob 与 JSON 安全约束不因 Schema 库而删除。\n4. generation／prompt／review／repository 按实际所有权和变化原因收口；合并 base64／文件名等已确认同义小重复，不为三行代码引库。repository 的 OCC、追加历史、授权原子消费、候选／报告／采用／交付 fence 仍在同一事务。\n5. 通过一次代表变更说明收益：改一个协议结构不再两端手抄；改普通呈现不再改持久化／模型逻辑；变更扩散若未改善，不以文件更小宣称完成。\n**验收**：形状与业务语义权威明确；有能拒绝非法实际输入的消费者证明；调用方只需理解必要 Interface，无新增通用 facade／插件框架／并行 store。\n\n### P7 — 当前上下文和材料清理，不制造第 N 套“最新计划”\n1. 各包随改维护 README 实现命令、context 选型／依赖、INDEX 身份和 #7／#10 进展；本包只汇总漏项，不把文档留到结束才修。\n2. 删除过时当前指令、失效工单／candidate 证据指针和源码注释；main、封存 WIP、旧发布、当前候选分别说明，不能再把已合并发布写成未提交。state 的旧机器历史明确原产品范围，不把它当本轮 main 进度表。\n3. 收缩日常读取入口：规则留 AGENTS、当前产品／工程边界留计划、设计留 design、工单留细节；旧长排程／重复规则／退役文档从默认当前读取集合退出，经确切历史 commit／选中快照追溯。保护原生 Goal 观察全文和必要引用，不为减字改写历史事实。\n4. 旧日志／大型过程输出／临时脚本／生成文件逐项按仍用、可生成、历史证据、用户材料分类；只删除本轮明确可再生成或已退役材料。私有素材／未知未跟踪输入先保全或请用户决定，不以扩大 .gitignore 代替清理。\n**验收**：新维护者只凭 main 入口可找到当前启动／构建／验证／恢复方式、未完能力和唯一下一动作；不需要读所有历史／恢复 stash 才能工作。没有新增规则／状态／依赖多权威。\n\n### P8 — 集成冻结；基线通过与发布分开签\n1. 各包受影响行为已经运行后，只补跨包失效连接：正式启动→人工资料／事实→方案／Prompt→确认→替身生成→比较／当前返工→人工采用→交付包＋项目包→独立导入／刷新，复用现有 walk，不再造第二套。补原任务凭据／秘密扫描按 #7。\n2. 固定源码 SHA／锁／配置／构建资源，运行一次清理后完整必要离线集合及当前格式恢复；原产品最终 R7.1 两轮留到该产品最终候选，不为本基线预刷再刷。若此次另获授权同时承担最终产品验收，才应用其两轮门，不偷减原门。\n3. 原状态失败／间歇没有因果闭环、V1 活入口／依赖残留、关键数据／授权／外发／秘密缺证、生产用旧产物或说明不实，均阻断基线验收；不能只列已知问题继续签通过。\n4. 有协作授权才按小而完整的依赖链 Draft PR、独立审查和实际适用 CI 推进；不直推 main、不绕 required checks、不混私有材料。main push 当前会触发部署，**没有部署授权不得靠合并“顺便发布”**；未授权时交付分支候选并明确 main 尚未更新。\n5. 实际上线另获权限后沿原发布事务：构建资源／实际 image／可信 HTTPS／代表页面主链／不同 image 同 origin 数据恢复；保留前版直至验收／finalize。若未来选择新开发格式，回退到对应旧代码＋旧库／旧包，不宣称旧 image 能读取新格式。\n**交付物**：每包实际保留／删除／合并／替换和理由；精确候选／PR／CI 链接；唯一启动／构建／检查命令；选中代码／当前格式两包及恢复方法；必要画面／请求／数据证明；仍范围外能力。没有实际发生的 CI／部署不伪称通过。\n\n## 并行、回退与停止\n- 父集成者拥有工单／文档／锁／CI 的整合；P3 与 P4 可在共同入口／harness／静态目录约定后并行设计，生产切换有唯一所有者。P5 与 P6 只有无共享编辑的真实切片才并行；不把互相依赖的半成品先合 main。\n- 每个最小完整组有对应前版代码／配置／同版本数据；只回退自己的组，不覆盖用户 WIP。私有数据故障用副本，原库不清除；开发期不承担旧格式迁移，但同一格式刷新／导出／导入必须可靠。\n- 选型 PoC 失败则不引入，记录失败原因和最小替代决定；不能装完库再留自研 fallback。发现 V1 独有且属于本轮用途、数据格式必须破坏、许可不兼容、需新增收费／外发或发布权限，及时提出具体取舍。\n- 原 7/10 批与 52/52 生图和全部账本不清零，本轮规划不消耗／新增额度。正式恢复前须明确本轮独立离线工程的批次边界／是否追加原工程额度；不把 P0–P8解释成已获九批，不硬塞旧剩余三批。新增付费为零；真实模型能力或下一版成品不以替身签收。\n- 必要 red 保留并定位；同一阻塞连续两次无新事实／有效修改就停重复路径，提出最小区分动作。基础设施不可达只阻其对应验证，不能换条不相关路径刷活动；缺必要证据不签通过。\n\n## 本次基线验收清单（实施后才勾选）\n- [ ] V1 及旧产品可执行闭包、专属测试／配置／依赖真实退出，必要用途已迁移或明确不属当前产品；当前工具无旧链活依赖。\n- [ ] 通用能力实际替换且旧路径删除；没有“新库＋自研 fallback”、重复 runner／构建／协议权威。\n- [ ] main 范围内必要行为、当前格式数据、冻结任务、授权／费用／秘密安全未丢；已知必要红项因果闭合。\n- [ ] 测试删留与运行减负按 #7 成立，静态实现断言不重钉；未知范围保守、失败传播有效，无隐藏付费／人工测试。\n- [ ] 真实长内容主动作／编辑草稿／异步对象与焦点可用；框架换皮或截图数量不是通过依据。\n- [ ] 候选可从锁重建、正式启动／产物／包恢复身份一致，README／state／context／工单事实准确，不依赖封存 WIP。\n- [ ] 若声明 main／线上已交付，有该候选真实合并／CI／发布／HTTPS／恢复证据；没有权限时明确仅分支／本地候选，不能提前关闭本工单。\n\n关联：#7 工程／测试，#8 完整界面与人因，#9 程序 Prompt。原产品任务与用户权限仍取计划／state。本轮计划完成只代表可执行方案与入口已同步，以上实施验收全部保持未勾选。\n",
+  "comments": [
+    {
+      "id": "IC_kwDOUyayfc8AAAABc4wUYQ",
+      "author": {
+        "login": "JusticeSc"
+      },
+      "authorAssociation": "OWNER",
+      "body": "本轮用户已明确授权全权收口既定可信基线：必要实现、独立干净检出验证、独立审查、提交推送 PR #13 和 CI；不含合并/部署、收费/供应商调用或封存下一版 WIP。纠正此前完成声明：PR #13 仅含部分配套，CI 39029656862 文档首红且容器跳过，本地全绿不能外推提交。当前正在补齐源码/锁/构建/ASGI入口/旧链清退/CI与文档闭包；将以可从锁重建的独立候选及真实 CI 交付，不重做旧模型与五图。C15/C17 仍在本次工程基线范围外，原产品 Goal/账本不变。",
+      "createdAt": "2026-10-17T11:48:46Z",
+      "includesCreatedEdit": false,
+      "isMinimized": false,
+      "minimizedReason": "",
+      "reactionGroups": [],
+      "url": "https://github.com/JusticeSc/listing-kit/issues/10#issuecomment-6233527393",
+      "viewerDidAuthor": true
+    },
+    {
+      "id": "IC_kwDOUyayfc8AAAABc5MPng",
+      "author": {
+        "login": "JusticeSc"
+      },
+      "authorAssociation": "OWNER",
+      "body": "可信基线收口的精确候选已连续推进到 8f1ea7c（PR #13 同分支）：c751ee3 补齐源码/锁/网关/两类测试消费者并清退 V1 可执行链；f839212 把构建静态产物移到真实信封契约检查之前；8f1ea7c 声明根 ESM，避免已发射 Node 树逐个被按 CJS 重解析。本地同一干净检出已验证信封/Vite/232 领域/79 网关入口/正式 CLI、原生两浏览器链、离线真实回退。旧信封顺序红和 c751 的 CI 红保留，不洗绿。当前远端 CI 39033126782 仍是唯一待签证据；合并/部署/收费/真实模型/供应商外发都不在本轮授权内，不提前关闭本工单。",
+      "createdAt": "2026-10-17T12:40:03Z",
+      "includesCreatedEdit": false,
+      "isMinimized": false,
+      "minimizedReason": "",
+      "reactionGroups": [],
+      "url": "https://github.com/JusticeSc/listing-kit/issues/10#issuecomment-6233984926",
+      "viewerDidAuthor": true
+    },
+    {
+      "id": "IC_kwDOUyayfc8AAAABc5TrVg",
+      "author": {
+        "login": "JusticeSc"
+      },
+      "authorAssociation": "OWNER",
+      "body": "可信基线候选已推进到 eb706a4（PR #13 同分支）。8f1ea7c 的远端 CI 39033126782 已定论：verify 全绿、Docker 构建红（Vite 解析不到 gitignored 的生成校验器，旧 frontend 阶段只跑 vite build；另有 node:22/缺 --ignore-scripts 与运行时带整份 app/ 源码问题）。两项都在 b4f5b6b 修复：镜像内从 ImageWire* 权威导出 schema 并生成 Ajv 独立校验器后再 vite 构建，node:24.19.0 + --ignore-scripts，运行时只取 4 个入口文件与 src/config 白名单。独立标准审查另抓到 P1：lit-html 迁移后静态只剩 #boot-pending，模块加载失败会静默空白，已在 eb706a4 恢复 boot-mount 内静态三节点（本地 vite/正式 CLI/V2.1.2/V2.3.3 绿）。当前远端 CI 39034200274 是唯一待签证据；旧红保留不洗绿。合并/部署/收费/真实模型/供应商外发/真人验收都不在本轮授权内，不提前关闭本工单。",
+      "createdAt": "2026-10-17T12:52:41Z",
+      "includesCreatedEdit": false,
+      "isMinimized": false,
+      "minimizedReason": "",
+      "reactionGroups": [],
+      "url": "https://github.com/JusticeSc/listing-kit/issues/10#issuecomment-6234106710",
+      "viewerDidAuthor": true
+    },
+    {
+      "id": "IC_kwDOUyayfc8AAAABc5bKAQ",
+      "author": {
+        "login": "JusticeSc"
+      },
+      "authorAssociation": "OWNER",
+      "body": "候选已到 a278044（PR #13 同分支）。8df7ace 的远端 CI 39034753449 定论为红：control-plane J3——文档清理误改了 §2.1 围栏内 Verification 行，objective_sha256 对不上。这是守卫按设计拦截，旧红保留；a278044 已把围栏内 Goal 原文逐字节恢复（本地守卫绿），退役命令清理只保留在围栏外。另 7132843 修了选择器 Finding 4（未解析名 exit 2）。两份独立审查（标准/spec）全部 findings 均已落实。当前 a278044 的远端 CI 是唯一待签证据；合并/部署/收费/真实模型/供应商外发/真人验收都不在本轮授权内，不提前关闭本工单。",
+      "createdAt": "2026-10-17T13:05:53Z",
+      "includesCreatedEdit": false,
+      "isMinimized": false,
+      "minimizedReason": "",
+      "reactionGroups": [],
+      "url": "https://github.com/JusticeSc/listing-kit/issues/10#issuecomment-6234229249",
+      "viewerDidAuthor": true
+    },
+    {
+      "id": "IC_kwDOUyayfc8AAAABc5kOuw",
+      "author": {
+        "login": "JusticeSc"
+      },
+      "authorAssociation": "OWNER",
+      "body": "可信基线精确候选 a278044 的远端 CI 39035149699 已 success：control plane + Product V2 全绿、Docker 不可变构建 + 容器冒烟 + 发布自测 + 失败分类全绿，远端 v2 运行时指纹已上传（schema amz-runtime-fingerprint/v2，runtime a1e73bdc…，4 入口 + src/config 白名单 + 镜像内 dist，default_trial closed）。此前两红保留：39033126782（Docker 缺生成校验器，b4f5b6b 修）、39034753449（J3 围栏指纹，a278044 修）。两份独立审查 findings 已全部落实。PR #13 仍为 Draft，未合并；远端 main 仍 4bf6d03。合并/部署/收费/真实模型/供应商外发/真人验收都不在本轮授权内，本工单验收清单仍按实施后勾选，不提前关闭。",
+      "createdAt": "2026-10-17T13:21:09Z",
+      "includesCreatedEdit": false,
+      "isMinimized": false,
+      "minimizedReason": "",
+      "reactionGroups": [],
+      "url": "https://github.com/JusticeSc/listing-kit/issues/10#issuecomment-6234377915",
+      "viewerDidAuthor": true
+    },
+    {
+      "id": "IC_kwDOUyayfc8AAAABc51wDQ",
+      "author": {
+        "login": "JusticeSc"
+      },
+      "authorAssociation": "OWNER",
+      "body": "用户触发器已选（2026-10-17）：PR #13 转正合并 + 部署链跟到 finalize（失败回滚）、范围仅本轮基线、真人门用户稍后亲自走。当前分支头 a06bd34（a278044 + 77c84aa 授权指针 + 清理提交：dev 残留/过期文档/V2.3.5-07 收口）。77c84aa 的远端 CI 39036915488 已 success（容器链 infra 403 重跑后绿，非产品回归）；a06bd34 的 CI 39038112521 在跑，绿后转正合并。PR 正文已同步到新候选与新授权。",
+      "createdAt": "2026-10-17T13:49:33Z",
+      "includesCreatedEdit": false,
+      "isMinimized": false,
+      "minimizedReason": "",
+      "reactionGroups": [],
+      "url": "https://github.com/JusticeSc/listing-kit/issues/10#issuecomment-6234664973",
+      "viewerDidAuthor": true
+    },
+    {
+      "id": "IC_kwDOUyayfc8AAAABc6YXcQ",
+      "author": {
+        "login": "JusticeSc"
+      },
+      "authorAssociation": "OWNER",
+      "body": "## 基线验收（前6项，用户已确认勾选）\n\n候选链：a278044（CI 39035149699 success）→ 77c84aa（CI 39036915488 success）→ a06bd34（CI 39038112521 success）→ main 82dc0ff（已合并）。\n\n- [x] V1 及旧产品可执行闭包、专属测试／配置／依赖真实退出，必要用途已迁移或明确不属当前产品；当前工具无旧链活依赖。\n  177项删除（v1-retirement/deletion-record.json）；manifest+lock双层退出；用户原件许可失败账本恢复包保留；过期文档行已修（a06bd34）。\n- [x] 通用能力实际替换且旧路径删除；没有新库＋自研 fallback、重复 runner／构建／协议权威。\n  FastAPI+Uvicorn/Vite单产物/lit-html唯一/pytest首组迁移；3处dev/harness残留已清（a06bd34）。\n- [x] main 范围内必要行为、当前格式数据、冻结任务、授权／费用／秘密安全未丢；已知必要红项因果闭合。\n  六入口+单模式返工全链绿；秘密/BYOK/closed/白名单；账本零新增；V2.3.5-07已因果闭合（v235-07-causal-20261017.json）。\n- [x] 测试删留与运行减负按 #7 成立，静态实现断言不重钉；未知范围保守、失败传播有效，无隐藏付费／人工测试。\n  H09/文案钉/源码扫描/重复视口/容器分流/保守分类/首红门/指纹分离；保护live读strict+2 contexts+0审批。\n- [x] 真实长内容主动作／编辑草稿／异步对象与焦点可用；框架换皮或截图数量不是通过依据。\n  同内容Before/After（1440/1366/1024/390+原生125/200+焦点插入点+取消回触发点）；GAP-5a/5b/5c如实保留；#8的5712溢出同内容夹具未复现（根因未定位）。\n- [x] 候选可从锁重建、正式启动／产物／包恢复身份一致，README／state／context／工单事实准确，不依赖封存 WIP。\n  干净检出+锁重建；v2指纹78资产逐字节；文档GAP已清；state机器块历史指针为原产品paused任务历史，不改。\n- [ ] 若声明 main／线上已交付，有该候选真实合并／CI／发布／HTTPS／恢复证据。\n  合并已真实发生（82dc0ff）；发布进行中——main部署run 39039525655远端构建超时取消（deploy未开始，线上4bf6d03未动）；现正按事务脚本手动分步走完deploy/acceptance/fingerprint/finalize，完成后勾此项。C15/C17真人门待用户亲自走。",
+      "createdAt": "2026-10-17T14:42:43Z",
+      "includesCreatedEdit": false,
+      "isMinimized": false,
+      "minimizedReason": "",
+      "reactionGroups": [],
+      "url": "https://github.com/JusticeSc/listing-kit/issues/10#issuecomment-6235232113",
+      "viewerDidAuthor": true
+    },
+    {
+      "id": "IC_kwDOUyayfc8AAAABc7Aanw",
+      "author": {
+        "login": "JusticeSc"
+      },
+      "authorAssociation": "OWNER",
+      "body": "## 第7项勾选（发布完成）\n\n- [x] 若声明 main／线上已交付，有该候选真实合并／CI／发布／HTTPS／恢复证据。\n  合并：PR#13（82dc0ff）+ PR#14 行尾（9c835dc）+ PR#15 state同步（2c4a33a），均为真实合并，分支保护全程生效（strict+2 required+conversation resolve）。\n  CI：39035149699/39036915488/39038112521/39042866724/39045331117 全 success；旧红 39033126782/39034753449 保留。\n  发布：main 9c835dc，acceptance 12/12，运行时指纹与CI候选逐字节全等（runtime a1e73bdc，93文件+69 served+pubconf+closed），finalize完成，previous已清，线上 healthy 服务中。途中一次CRLF污染指纹不同按事务rollback、一次远端构建超时取消，均如实处置，未洗绿。\n  恢复：previous机制两次真实生效（rollback恢复4bf6d03+Caddy配置恢复）；回退缺口已验证存在且可用。\n\n#10 基线验收 7/7 完成（工程侧）。C15/C17 真人门待用户亲自走，不代签。本轮零新增付费调用；原产品paused/7-10批/52-52/账本不变。",
+      "createdAt": "2026-10-17T15:37:42Z",
+      "includesCreatedEdit": false,
+      "isMinimized": false,
+      "minimizedReason": "",
+      "reactionGroups": [],
+      "url": "https://github.com/JusticeSc/listing-kit/issues/10#issuecomment-6235888287",
+      "viewerDidAuthor": true
+    },
+    {
+      "id": "IC_kwDOUyayfc8AAAABdDcsHQ",
+      "author": {
+        "login": "JusticeSc"
+      },
+      "authorAssociation": "OWNER",
+      "body": "更正上一条（6235888287）：C15 按计划合同保持 open——C15 须首次参与的独立用户无干预走完，sponsor 亲验不等同 C15。用户 2026-10-17 亲自走完的亲验记为强通过信号（C17 同）。#10 基线 7/7 工程侧完成项不变；发布证据已入库 evals/product-v2/refactor/baseline-release-20261017T154245Z/；state 线上身份已统一为 main 2c4a33a→f9b5b4e。以上经 codex bot P1/P2 复核后修正。",
+      "createdAt": "2026-10-18T02:30:08Z",
+      "includesCreatedEdit": false,
+      "isMinimized": false,
+      "minimizedReason": "",
+      "reactionGroups": [],
+      "url": "https://github.com/JusticeSc/listing-kit/issues/10#issuecomment-6244740125",
+      "viewerDidAuthor": true
+    }
+  ],
+  "number": 10,
+  "state": "OPEN",
+  "title": "[工程基线与改造] 收敛可信开发基线，治理结构与测试维护成本",
+  "url": "https://github.com/JusticeSc/listing-kit/issues/10"
+}

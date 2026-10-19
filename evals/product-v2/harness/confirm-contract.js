@@ -10,6 +10,8 @@
 
 import {
   CONFIRM_BLOCKER_CODES,
+  CONFIRM_SCHEMA_VERSIONS_LEGACY,
+  canonicalJson,
   DOMAIN_ERROR_CODES,
   PLATFORM_PROFILES,
   buildConfirmationRecord,
@@ -29,7 +31,8 @@ import {
 } from "/domain/index.js";
 
 import { sha256Hex } from "/storage/db.js";
-import { IMAGE_PROMPT_PROFILE, expect, expectCode, serializeError } from "./harness-api.js";
+
+import { IMAGE_PRICING, IMAGE_PROMPT_PROFILE, expect, expectCode, serializeError } from "./harness-api.js";
 
 const cases = [];
 
@@ -152,6 +155,8 @@ function basisFixture(options = {}) {
     suite_version: options.suiteVersion === undefined ? 1 : options.suiteVersion,
     style_version: options.styleVersion === undefined ? 1 : options.styleVersion,
     shot_spec_version: options.shotSpecVersion === undefined ? null : options.shotSpecVersion,
+    // 只有显式给出时才带商品资料版本：其余用例的口径不变（调用方不给就是不比这一项）。
+    ...(options.intakeVersion === undefined ? {} : { intake_version: options.intakeVersion }),
     platform: { version: PLATFORM_PROFILES[PLATFORM_ID].version },
     provider: options.providerProfile || IMAGE_PROMPT_PROFILE,
   };
@@ -173,8 +178,7 @@ function chosenPrintSpec(shot, overrides = {}) {
       {
         text_id: "t_sig_1",
         text: "304不锈钢内胆",
-        source_slot_id: "signature_features",
-        source_slot_version: 1,
+        source: { kind: "fact_slot", document_id: "signature_features", version: 1 },
         status: "confirmed",
         origin: "user",
       },
@@ -183,23 +187,29 @@ function chosenPrintSpec(shot, overrides = {}) {
   };
 }
 
+/** 已保存的商品资料版本（冻结参考图来源的精确版本；与产品调用方同一快照概念）。 */
+const INTAKE_VERSION = 1;
+
 /** 编译 + 快照 + hash + 版本记录：与 workspace.js 的真实链路同一套调用。 */
 async function compileEntry(shot, options = {}) {
   const context = options.context || contextFixture();
+  const shotSpec = options.shotSpec || emptyShotSpecFromShot(shot);
   const compiled = compilePrompt({
     brief: briefFixture(),
     shot: shot,
     styleSpec: options.styleSpec || styleFixture(),
-    shotSpec: options.shotSpec || emptyShotSpecFromShot(shot),
+    shotSpec: shotSpec,
     context: context,
     providerProfile: IMAGE_PROMPT_PROFILE,
     versions: {
       suite_version: options.suiteVersion === undefined ? 1 : options.suiteVersion,
       style_version: options.styleVersion === undefined ? 1 : options.styleVersion,
       shot_spec_version: options.shotSpecVersion === undefined ? null : options.shotSpecVersion,
+      intake_version: options.intakeVersion,
     },
   });
-  const references = selectReferences(shot, context.assets);
+  const references = selectReferences(shot, context.assets,
+    { intakeVersion: INTAKE_VERSION, shotSpec: shotSpec });
   const snapshot = requestSnapshotOf(compiled, { references: references });
   const hash = await promptHash(snapshot, DIGEST);
   return {
@@ -218,10 +228,14 @@ function sheetOf(options = {}) {
       styleVersion: options.styleVersion,
       suiteVersion: options.suiteVersion,
       shotSpecVersion: (options.shotSpecVersions || {})[shot.shot_id],
+      intakeVersion: options.intakeVersion,
       providerProfile: providerProfile,
     });
   }
   if (options.basisOverride) Object.assign(basisByShot, options.basisOverride);
+  // 报价由调用方按目标档显式给：缺省给 canonical dashscope 官方组合；
+  // provider 换档/失配意图的用例由各 case 用 pricing:null 明确表达缺失。
+  const providerIsCanonical = canonicalJson(providerProfile) === canonicalJson(IMAGE_PROMPT_PROFILE);
   return buildConfirmationSheet({
     suitePlan: plan,
     promptEntries: options.entries || [],
@@ -229,6 +243,9 @@ function sheetOf(options = {}) {
     currentBasisByShot: basisByShot,
     platformId: options.platformId || PLATFORM_ID,
     providerProfile: providerProfile,
+    pricing: options.pricing === undefined
+      ? (providerIsCanonical ? IMAGE_PRICING : null) : options.pricing,
+    ...(options.referencesByShot ? { referencesByShot: options.referencesByShot } : {}),
   });
 }
 
@@ -263,7 +280,8 @@ test("H01", "全部就绪：can_submit、计数与外发摘要与请求快照一
   expect(sheet.external_summary.reference_count === expectedRefs, "参考图数量必须等于快照合计。");
   expect(sheet.external_summary.prompt_chars === expectedChars, "提示词字符数必须等于记录文本合计。");
   expect(sheet.external_summary.model === PROVIDER_ID, "外发摘要必须写真实模型。");
-  expect(sheet.external_summary.statement.includes(PROVIDER_ID), "摘要句必须写明模型。");
+  expect(sheet.external_summary.cost.upper_fen === 40,
+    "两次请求即使复用同一原照，也各计一次输入费和输出费，不能跨请求去重。");
   expect(sheet.shots.every((item) => item.prompt.version === 1 && item.prompt.hash.length === 64), "每图必须带版本与 hash。");
   return { summary: sheet.external_summary };
 });
@@ -315,16 +333,43 @@ test("H04", "Prompt 过期：风格前进后阻断并定位到风格区", async 
   return { fix: fix };
 });
 
+test("H13", "商品资料前进：确认单与提交门同一判据，阻断并指到 Prompt 区", async () => {
+  const plan = planFixture();
+  // 只测资料版本过期：信息图用不印新增文字显式决定，避免未决定门干扰。
+  const entries = [
+    await compileEntry(plan.shots[0], { intakeVersion: INTAKE_VERSION }),
+    await compileEntry(plan.shots[1], { shotSpec: noPrintSpec(plan.shots[1]), intakeVersion: INTAKE_VERSION }),
+  ];
+  const fresh = sheetOf({ plan: plan, entries: entries, intakeVersion: INTAKE_VERSION });
+  expect(fresh.can_submit === true,
+    "前置条件：资料版本一致时可提交：" + JSON.stringify(fresh.blockers.slice(0, 2)));
+  // 用户改了商品资料并保存（版本 +1）：提交门按冻结引用全等比较会拒绝；
+  // 确认单必须用同一条判据如实阻断，不能让用户走到「确认单说可提交 → 提交被拒」。
+  const advanced = sheetOf({ plan: plan, entries: entries, intakeVersion: INTAKE_VERSION + 1 });
+  expect(advanced.can_submit === false && advanced.blocked === 2,
+    "商品资料前进必须让两张图都待重新编译：" + JSON.stringify(advanced.blockers.slice(0, 2)));
+  expect(codesOfShot(advanced, "shot_main_clean").includes(CONFIRM_BLOCKER_CODES.PROMPT_STALE),
+    "必须是 PROMPT_STALE：" + JSON.stringify(codesOfShot(advanced, "shot_main_clean")));
+  const fix = fixesOf(advanced, "shot_main_clean")[0];
+  expect(fix.region === "prompt" && fix.shot_id === "shot_main_clean" && /商品资料/.test(String(fix.action || "")),
+    "fix 必须指到 Prompt 区并说明是商品资料前进，实际 " + JSON.stringify(fix));
+  return { fix: fix };
+});
+
 test("H05", "缺依赖：对比图没有竞品素材时阻断并定位到套图规划", async () => {
   const plan = planFixture([mainShot(), infographicShot(), comparisonShot()]);
   const fullContext = contextFixture({
     assets: [{ role: "primary", sha256: SHA_PRIMARY }, { role: "competitor", sha256: SHA_COMPETITOR }],
   });
-  // 只测缺依赖阻断，不关心印字：信息图用不印新增文字显式决定。
+  // 只测缺依赖阻断，不关心印字：信息图/对比图都用不印新增文字显式决定。
+  // 对比图显式选中「主图商品依据 + 竞品」：确认单要的是缺依赖阻断，
+  // 不能让参考选择先因缺主图依据而失败。
+  const comparisonSpec = noPrintSpec(plan.shots[2],
+    { reference_sha256s: [SHA_PRIMARY, SHA_COMPETITOR] });
   const entries = [
     await compileEntry(plan.shots[0], { context: fullContext }),
     await compileEntry(plan.shots[1], { shotSpec: noPrintSpec(plan.shots[1]) }),
-    await compileEntry(plan.shots[2], { context: fullContext }),
+    await compileEntry(plan.shots[2], { context: fullContext, shotSpec: comparisonSpec }),
   ];
   const sheet = sheetOf({ plan: plan, entries: entries });
   expect(sheet.blocked === 1 && sheet.total === 3, "只有缺依赖的对比图应被阻断。");
@@ -340,11 +385,12 @@ test("H06", "Provider 或平台不符：记录被改后不能提交", async () =
   const plan = planFixture([mainShot()]);
   const entry = await compileEntry(plan.shots[0]);
   // 当前有效档前进（能力版本不同）→ 冻结档与当前档不符
+  // 换档同时报价缺失：仍是 PROVIDER_MISMATCH 阻断，费用门不掩盖真正的不一致。
   const bumpedProfile = { ...IMAGE_PROMPT_PROFILE, version: IMAGE_PROMPT_PROFILE.version + 1 };
-  const providerSheet = sheetOf({ plan: plan, entries: [entry], providerProfile: bumpedProfile });
+  const providerSheet = sheetOf({ plan: plan, entries: [entry], providerProfile: bumpedProfile, pricing: null });
   expect(codesOfShot(providerSheet, "shot_main_clean").includes(CONFIRM_BLOCKER_CODES.PROVIDER_MISMATCH), "Provider 版本不符必须阻断。");
-  // 请求参数不同（同版本）同样必须阻断，而不是只看版本号
-  const paramSheet = sheetOf({ plan: plan, entries: [entry], providerProfile: { ...IMAGE_PROMPT_PROFILE, size: "2048*2048" } });
+  // 请求参数不同（同版本）同样必须阻断而不是只看版本号
+  const paramSheet = sheetOf({ plan: plan, entries: [entry], providerProfile: { ...IMAGE_PROMPT_PROFILE, size: "2048*2048" }, pricing: null });
   expect(codesOfShot(paramSheet, "shot_main_clean").includes(CONFIRM_BLOCKER_CODES.PROVIDER_MISMATCH), "请求参数不符必须阻断。");
   // 冻结档被改但快照 target 未同步 → 记录自检必须判红（先于确认单比较）
   const tampered = copyRecord(entry, (record) => { record.compiled.provider.version = 2; });
@@ -353,16 +399,19 @@ test("H06", "Provider 或平台不符：记录被改后不能提交", async () =
   const platformChanged = copyRecord(entry, (record) => { record.compiled.platform.platform_id = "amazon_de"; });
   const platformSheet = sheetOf({ plan: plan, entries: [platformChanged] });
   expect(codesOfShot(platformSheet, "shot_main_clean").includes(CONFIRM_BLOCKER_CODES.PLATFORM_MISMATCH), "平台不符必须阻断。");
-  return { provider: providerSheet.blocked, platform: platformSheet.blocked };
 });
 
 test("H07", "参考图越界：0 张与 4 张都不能提交", async () => {
   const plan = planFixture([mainShot()]);
   const entry = await compileEntry(plan.shots[0]);
-  const emptyRefs = copyRecord(entry, (record) => { record.request_snapshot.references = []; });
-  const tooMany = copyRecord(entry, (record) => {
-    record.request_snapshot.references = ["a", "b", "c", "d"].map((letter) => ({ role: "primary", sha256: letter.repeat(64) }));
+  // 历史只读记录（schema1：简单引用、无冻结元数据）只走确认单自己的计数门，
+  // 不走新记录的冻结自检：0 张与 4 张都在这里被 REFERENCE_COUNT_INVALID 拦截。
+  const legacyOf = (references) => copyRecord(entry, (record) => {
+    record.schema_version = 1;
+    record.request_snapshot.references = references;
   });
+  const emptyRefs = legacyOf([]);
+  const tooMany = legacyOf(["a", "b", "c", "d"].map((letter) => ({ role: "primary", sha256: letter.repeat(64) })));
   const emptySheet = sheetOf({ plan: plan, entries: [emptyRefs] });
   const manySheet = sheetOf({ plan: plan, entries: [tooMany] });
   expect(codesOfShot(emptySheet, "shot_main_clean").includes(CONFIRM_BLOCKER_CODES.REFERENCE_COUNT_INVALID), "0 张参考图必须阻断。");
@@ -400,10 +449,16 @@ test("H09", "外发摘要只列角色与 hash 前缀，且与每条请求快照�
       expect(ref.role === snapshot.references[index].role, "参考图角色必须与快照一致。");
     });
   }
-  const text = JSON.stringify(sheet);
+  // 新确认单携带完整 sha256（快照投影同源），但人读字段
+  // （statement/label）与界面渲染只出现 12 位前缀；完整 hash 不进人读文案。
+  const readable = JSON.stringify([sheet.external_summary.statement,
+    ...sheet.shots.map((item) => item.label)]);
   for (const entry of entries) {
-    expect(!text.includes(entry.record.request_snapshot.references[0].sha256), "完整参考图 hash 不得出现在人读确认单。");
+    expect(!readable.includes(entry.record.request_snapshot.references[0].sha256), "完整参考图 hash 不得出现在人读确认单。");
   }
+  sheet.shots.forEach((item) => item.references.forEach((ref) => {
+    expect(ref.sha256_prefix === String(ref.sha256).slice(0, 12), "展示前缀必须与完整身份一致。");
+  }));
   return { roles: sheet.external_summary.reference_roles };
 });
 
@@ -425,6 +480,47 @@ test("H10", "确认记录：只在可提交清单上建立，且形状可机检"
   const broken = JSON.parse(JSON.stringify(record));
   delete broken.fingerprint;
   expect(checkConfirmationRecord(broken).length > 0, "缺指纹的记录必须不自检通过。");
+  // 新记录逐图引用被改成与指纹快照不一致（用途/来源篡改或缺失）必须变红。
+  const tamperedUses = JSON.parse(JSON.stringify(record));
+  tamperedUses.shots[0].references[0].uses = ["style_reference"];
+  expect(checkConfirmationRecord(tamperedUses).length > 0, "用途与快照不一致必须不自检通过。");
+  const droppedMetadata = JSON.parse(JSON.stringify(record));
+  delete droppedMetadata.shots[0].references[0].uses;
+  delete droppedMetadata.shots[0].references[0].sources;
+  expect(checkConfirmationRecord(droppedMetadata).length > 0, "缺冻结元数据必须不自检通过。");
+  const tamperedSnapshot = JSON.parse(JSON.stringify(record));
+  delete tamperedSnapshot.fingerprint.snapshot.shots[0].references[0].uses;
+  expect(checkConfirmationRecord(tamperedSnapshot).length > 0, "快照引用缺冻结元数据必须不自检通过。");
+  for (const version of CONFIRM_SCHEMA_VERSIONS_LEGACY) {
+    const legacy = structuredClone(record);
+    legacy.schema_version = version;
+    legacy.fingerprint.snapshot.schema_version = version;
+    delete legacy.fingerprint.snapshot.selection;
+    delete legacy.fingerprint.snapshot.external_summary.cost;
+    delete legacy.external_summary.cost;
+    for (const shot of legacy.fingerprint.snapshot.shots) {
+      if (version === 1) {
+        shot.reference_roles = shot.references.map(ref => ref.role);
+        delete shot.references;
+      } else if (version === 2) {
+        shot.references = shot.references.map(ref => ({ role: ref.role, sha256: ref.sha256 }));
+      }
+    }
+    if (version < 3) for (const shot of legacy.shots) {
+      shot.references = shot.references.map(ref => ({ role: ref.role,
+        sha256_prefix: ref.sha256_prefix, ...(version === 2 ? { sha256: ref.sha256 } : {}) }));
+    }
+    legacy.fingerprint.hash = await promptHash(legacy.fingerprint.snapshot, DIGEST);
+    const frozen = canonicalJson(legacy);
+    expect(checkConfirmationRecord(legacy).length === 0,
+      "既有角色/身份快照必须仍可只读恢复：" + JSON.stringify(checkConfirmationRecord(legacy)));
+    expect(canonicalJson(legacy) === frozen, "读取不得回填用途/来源或改写历史指纹。");
+    expect(confirmationStaleness(legacy, confirmationSnapshot(sheet)).stale,
+      "旧授权不能替代新请求完整冻结来源的明确确认。");
+  }
+  const oldSnapshot = structuredClone(record);
+  oldSnapshot.fingerprint.snapshot.schema_version = 2;
+  expect(checkConfirmationRecord(oldSnapshot).length > 0, "新记录不能绑定旧格式指纹快照。");
   return { version: 1, hash: record.fingerprint.hash };
 });
 
@@ -438,6 +534,14 @@ test("H11", "确认失效：上游变化或 Prompt 前进后必须重新确认",
   const record = buildConfirmationRecord({ sheet: sheet, hash: hash, confirmedAt: new Date().toISOString() });
   const same = confirmationStaleness(record, confirmationSnapshot(sheetOf({ plan: plan, entries: entries })));
   expect(same.stale === false, "同一清单必须判定为未失效。");
+  for (const pricing of [
+    { ...IMAGE_PRICING, output_image_fen: IMAGE_PRICING.output_image_fen + 1 },
+    { ...IMAGE_PRICING, source_url: IMAGE_PRICING.source_url + "?revision=2" },
+  ]) {
+    const changed = sheetOf({ plan, entries, pricing });
+    expect(changed.can_submit && confirmationStaleness(record, confirmationSnapshot(changed)).stale,
+      "已核单价或依据来源变化都必须重新确认。");
+  }
   const bumped = confirmationStaleness(record, confirmationSnapshot(sheetOf({ plan: plan, entries: entries, styleVersion: 2 })));
   expect(bumped.stale === true, "风格前进后确认必须失效。");
   const fields = bumped.reasons.map((reason) => reason.field);
@@ -472,10 +576,21 @@ test("H12", "反向探针：计数、fix、摘要与输入错误都必须变红"
   const badSummary = JSON.parse(JSON.stringify(sheet));
   badSummary.external_summary.prompt_chars = badSummary.external_summary.prompt_chars + 1;
   expect(checkConfirmationSheet(badSummary).length > 0, "摘要与逐图不一致必须被机检发现。");
+  const badCost = structuredClone(sheet);
+  badCost.external_summary.cost.upper_fen += 1;
+  expect(checkConfirmationSheet(badCost).length > 0, "手填费用合计必须被重算拒绝。");
+  const badPartition = structuredClone(sheet);
+  badPartition.selection.selected_shot_ids.push("shot_not_accounted_for");
+  expect(checkConfirmationSheet(badPartition).length > 0, "所选图漏出发送/排除分区必须拒绝。");
+  for (const pricing of [null, { ...IMAGE_PRICING, provider_id: "unquoted-provider" }]) {
+    const unquoted = sheetOf({ plan, entries, pricing });
+    expect(!unquoted.can_submit && unquoted.external_summary.cost.upper_fen === null,
+      "缺少报价或报价不属于实际供应商时，不能确认发送。");
+  }
   await expectCode(async () => { buildConfirmationSheet({}); }, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "缺套图计划必须拒绝");
   const noBasis = buildConfirmationSheet({
     suitePlan: plan, promptEntries: entries, context: contextFixture(), currentBasisByShot: {},
-    providerProfile: IMAGE_PROMPT_PROFILE,
+    providerProfile: IMAGE_PROMPT_PROFILE, pricing: IMAGE_PRICING,
   });
   expect(noBasis.can_submit === false, "没有当前依据时不能提交。");
   expect(codesOfShot(noBasis, "shot_main_clean").includes(CONFIRM_BLOCKER_CODES.PROMPT_STALE), "缺依据必须按过期处理。");

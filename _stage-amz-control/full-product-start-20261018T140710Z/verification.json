@@ -1,0 +1,37 @@
+{
+  "authority": "NOT-AUTHORITY: actual native startup and slice handover evidence; not product completion",
+  "status": "native_binding_verified_pr18_required_checks_running",
+  "goal_id": "15ab22bf3386b9cf",
+  "observed_at": "2026-10-18T14:07:10.335Z",
+  "observation": "evals/product-v2/refactor/goal-observation-full-product-20261018T140710Z.json",
+  "source_snapshot": "before-manifest.json",
+  "current_batch_cap": 12,
+  "completed_batches": 0,
+  "history_preserved": true,
+  "new_allowance_activated": false,
+  "product_provider_calls": 0,
+  "checks": [
+    {
+      "command": "uv run --locked python tools/check_docs.py --no-run && uv run --locked python tools/refactor_resume.py --json",
+      "exit_code": 0,
+      "receipt": "binding-consumer-output.json",
+      "actual_observation": "active, required, exact native ID and objective sha, next R4.4 active, blockers[]; recovery helper itself read-only"
+    },
+    {
+      "command": "uv run --locked python evals/probes/project_state.py",
+      "exit_code": 0,
+      "actual_cases": 63,
+      "receipt": "state-probe.json",
+      "raw_log_retrieval_limit": "Expired process endpoint, preserved observed completion extract; no rerun"
+    }
+  ],
+  "pr18": {
+    "metadata_corrections_committed_and_pushed": "0ae7df5",
+    "receipt": "pr18-commit-push.json",
+    "required_checks_pending": true,
+    "merged": false,
+    "deployed": false
+  },
+  "current_next": "PR18 exact final-head required checks/protection → stage merge/release transaction; R4.4 remaining source/payload contract before R5.1. Read-only contract mapping while CI runs.",
+  "updated_at": "2026-10-18T14:17:19.348Z"
+}

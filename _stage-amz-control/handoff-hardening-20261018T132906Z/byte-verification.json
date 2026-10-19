@@ -1,0 +1,59 @@
+{
+  "exit_code": 0,
+  "before_zip_crc_and_hashes_valid": true,
+  "native_goal_fence_unchanged": true,
+  "native_goal_sha256": "d01d2f8c90b0278b80824d1e8766946b7d2813d6b60944b8e9848db697a03411",
+  "formal_sections_6_9_10_unchanged": true,
+  "state_machine_changed_keys": [
+    "latest_audit",
+    "updated_at"
+  ],
+  "lifecycle_progress_blockers_and_binding_unchanged": true,
+  "after": {
+    "AGENTS.md": {
+      "sha256": "188eb550193a47dfbb82e80df58a8e0b00bf3b34b95a829953dd1e3c5a3aa11d",
+      "bytes": 26597,
+      "cr_bytes": 0
+    },
+    "docs/INDEX.md": {
+      "sha256": "495bde2f4016790f9f3359e1a7e94292255fc297a481c64afb745b35b9299441",
+      "bytes": 24285,
+      "cr_bytes": 0
+    },
+    "docs/product-v2-refactor-plan.md": {
+      "sha256": "6fe05f65c2c14b170df9d291469c33e0792c3efb5e0854b0753a59a387f57801",
+      "bytes": 221018,
+      "cr_bytes": 0
+    },
+    "docs/product-v2-refactor-design.md": {
+      "sha256": "1145cf2d8afed0612e6aae0896ec9561b609dda1708c10a7567c3d32b0d303e0",
+      "bytes": 186035,
+      "cr_bytes": 0
+    },
+    "_working/amz-listing-kit-product-v2/state.md": {
+      "sha256": "06cb1d371b4fde244755975bc2f895a65789c81408d987c9d3c4f2642ef3d452",
+      "bytes": 55588,
+      "cr_bytes": 0
+    },
+    "_stage-amz-control\\handoff-hardening-20261018T132906Z\\issue-7-after.md": {
+      "sha256": "cb2b340c67b6e8834cf99b31157ad400c4fe3732a6592efd5c112a6ef1b6edef",
+      "bytes": 10065,
+      "cr_bytes": 0
+    },
+    "_stage-amz-control\\handoff-hardening-20261018T132906Z\\issue-8-after.md": {
+      "sha256": "a310f3ac643d674224ce36ee6b2446e0ab829688519c60463459ebff1dc0d7a3",
+      "bytes": 7361,
+      "cr_bytes": 0
+    },
+    "_stage-amz-control\\handoff-hardening-20261018T132906Z\\issue-9-after.md": {
+      "sha256": "d9572f410dbc078a5f51ae3593560591323d5cc69ef3cb075dfa82577e10df74",
+      "bytes": 10292,
+      "cr_bytes": 0
+    },
+    "_stage-amz-control\\handoff-hardening-20261018T132906Z\\issue-10-after.md": {
+      "sha256": "3669a3372782ebd73bed6d98611f2fff16384bec042984d4a513190550bfca96",
+      "bytes": 11931,
+      "cr_bytes": 0
+    }
+  }
+}

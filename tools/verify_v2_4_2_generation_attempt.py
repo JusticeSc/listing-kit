@@ -50,7 +50,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 
-import v2_stage_nav as stage_nav  # noqa: E402  （V2.UI.2 六阶段工作台导航）
+import v2_stage_nav as stage_nav  # noqa: E402  （B4 四段工作台导航）
 import v2_verify_shared as shared  # noqa: E402  （正式 server/夹具/共同业务操作）
 from v2_verify_shared import (  # noqa: E402
     png_bytes, run_entry, read_suite, compile_all,
@@ -171,14 +171,24 @@ async () => {
   const plan = plans.length ? plans[plans.length - 1] : null;
   const project = projects.slice().sort((left, right) =>
     String(right.updated_at || "").localeCompare(String(left.updated_at || "")))[0] || null;
-  const rows = [...document.querySelectorAll("#attempt-list .attempt-row")].map((node) => ({
-    shot_id: node.getAttribute("data-shot-id"),
+  const rows = [...document.querySelectorAll("#task-list-mount [data-task-shot]")].map((node) => {
+    const detail = document.querySelector(
+      '#shot-execution [data-shot-id="' + node.getAttribute("data-task-shot") + '"]');
+    const buttons = [...node.querySelectorAll("button")]
+      .concat(detail ? [...detail.querySelectorAll(".attempt-actions button")] : [])
+      .filter((item, index, all) => all.indexOf(item) === index)
+      .map((item) => ({ text: item.textContent, disabled: item.disabled }));
+    return {
+    shot_id: node.getAttribute("data-task-shot"),
     state: node.getAttribute("data-attempt-state"),
-    badges: [...node.querySelectorAll(".badge")].map((item) => item.textContent),
-    meta: [...node.querySelectorAll("p.meta")].map((item) => item.textContent).join(" | "),
-    buttons: [...node.querySelectorAll("button")].map((item) =>
-      ({ text: item.textContent, disabled: item.disabled })),
-  }));
+    badges: [...node.querySelectorAll(".badge")].map((item) => item.textContent)
+      .concat(detail ? [...detail.querySelectorAll(".badge")].map((item) => item.textContent) : []),
+    meta: [...node.querySelectorAll("p.meta")].map((item) => item.textContent)
+      .concat(detail ? [...detail.querySelectorAll("p.meta")].map((item) => item.textContent) : [])
+      .join(" | "),
+    buttons: buttons,
+    };
+  });
   const errorNode = document.getElementById("attempt-error");
   const statusNode = document.getElementById("attempt-status");
   const providerNode = document.getElementById("attempt-provider");
@@ -437,18 +447,23 @@ def main() -> int:
                     return page.evaluate(ATTEMPT_PROBE)
 
                 def row(shot_id: str):
+                    shared.select_make_shot(page, shot_id)
                     return page.locator(
-                        f'#attempt-list .attempt-row[data-shot-id="{shot_id}"]')
+                        f'#shot-execution [data-shot-id="{shot_id}"]')
+
+                def task_row(shot_id: str):
+                    return page.locator(
+                        f'#task-list-mount [data-task-shot="{shot_id}"]')
 
                 def wait_state(shot_id: str, state: str, timeout: int = 20_000) -> None:
-                    expect(row(shot_id)).to_have_attribute(
+                    expect(task_row(shot_id)).to_have_attribute(
                         "data-attempt-state", state, timeout=timeout)
 
                 def wait_states(shot_id: str, states: list, timeout: int = 20_000) -> str:
                     deadline = time.monotonic() + timeout / 1000.0
                     current = ""
                     while time.monotonic() < deadline:
-                        current = row(shot_id).get_attribute("data-attempt-state") or ""
+                        current = task_row(shot_id).get_attribute("data-attempt-state") or ""
                         if current in states:
                             return current
                         page.wait_for_timeout(100)
@@ -482,9 +497,10 @@ def main() -> int:
                 shot_ids = initial["shot_ids"]
                 # Issue #9：编译前先做普通决定（用户真实路径）；choices 进 ui 证据。
                 ui["decisions"] = shared.decide_for_compile(page, shot_ids)
-                stage_nav.goto(page, "generate")
+                stage_nav.goto(page, "make")
                 page.evaluate("() => { document.getElementById('prompt-details').open = true; }")
                 compile_all(page, shot_ids)
+                shared.choose_make_batch(page, shot_ids)
                 gate = shared.confirm_and_submit(page, expect, probe, submit_requests, shot_ids=shot_ids)
                 check("V2.4.2-02b", "确认即提交：本次授权产生新增 attempt 消费并到达上游（非旧行存在）",
                       gate["ok"], {"new_shots": gate["new_shots"],
@@ -543,7 +559,9 @@ def main() -> int:
                 prompt_text = submitted["prompts"][shot_main]["text"]
                 request_ok = bool(captured) and (
                     captured[0]["prompt"] == prompt_text
-                    and captured[0]["references"] == final["references"]
+                    and captured[0]["references"] == [
+                        {"role": ref.get("role"), "sha256": ref.get("sha256")}
+                        for ref in final["references"]]
                     and captured[0]["size"] == final["parameters"]["size"])
                 check("V2.4.2-06",
                       "提交信封 → submitted：task id 保存；请求里的 Prompt / 引用 / 尺寸与记录一致",
@@ -633,7 +651,7 @@ def main() -> int:
                        "identity": final_r["execution_identity"]})
 
                 page.reload(wait_until="networkidle")
-                stage_nav.goto(page, "generate")
+                stage_nav.goto(page, "make")
                 expect(page.locator("#attempt-status")).to_be_visible()
                 wait_state(shot_main, "succeeded", timeout=20_000)
                 reloaded = probe()
@@ -848,7 +866,7 @@ def main() -> int:
                     page.reload(wait_until="networkidle")
                     mode["gate"] = None
                     mode["delay"] = 0.0
-                    stage_nav.goto(page, "generate")
+                    stage_nav.goto(page, "make")
                     expect(page.locator("#attempt-editor")).to_be_visible()
                     wait_state(shot_fourth, "pending_submit", timeout=20_000)
                     recovered = probe()
@@ -891,7 +909,7 @@ def main() -> int:
                            "old_versions": [item[0] for item in before_pending]})
 
                 # ---- 14 Prompt 前进后过期标记 ----
-                stage_nav.goto(page, "generate")
+                stage_nav.goto(page, "make")
                 page.evaluate("() => { document.getElementById('prompt-details').open = true; }")
                 before_stale = probe()
                 chain_before = json.dumps(chain_of(before_stale, shot_main),
@@ -933,14 +951,14 @@ def main() -> int:
                 mode["identity_drift"] = True
                 restart_server()
                 page.reload(wait_until="networkidle")
-                stage_nav.goto(page, "generate")
+                stage_nav.goto(page, "make")
                 expect(page.locator("#attempt-editor")).to_be_visible()
                 wait_states(shot_third, ["submitted", "succeeded"], timeout=20_000)
                 drift_current = probe()
                 drift_state = (chain_of(drift_current, shot_third)[-1]["payload"] or {}).get("state")
                 if drift_state == "submitted":
                     row(shot_third).locator('button:has-text("核对任务")').click()
-                    # 生成阶段：错误就近显示在 generate 面板（#attempt-error 在复核阶段面板）。
+                    # 制作阶段：错误就近显示在 make 面板（#generate-error 由本图执行区挂载）。
                     expect(page.locator("#generate-error")).to_be_visible()
                     drift_error = (page.locator("#generate-error").inner_text() or "")
                     page.wait_for_timeout(800)
@@ -966,7 +984,7 @@ def main() -> int:
                 mode["identity_drift"] = False
                 restart_server()
                 page.reload(wait_until="networkidle")
-                stage_nav.goto(page, "generate")
+                stage_nav.goto(page, "make")
                 expect(page.locator("#attempt-editor")).to_be_visible()
                 wait_state(shot_third, "succeeded", timeout=20_000)
                 restored = probe()

@@ -1,0 +1,367 @@
+diff --git a/evals/product-v2/node/confirm-contract.test.mjs b/evals/product-v2/node/confirm-contract.test.mjs
+index 7acccf8..c86c27c 100644
+--- a/evals/product-v2/node/confirm-contract.test.mjs
++++ b/evals/product-v2/node/confirm-contract.test.mjs
+@@ -15,6 +15,7 @@ import {
+   buildConfirmationRecord,
+   buildConfirmationSheet,
+   buildPromptRecord,
++  canonicalJson,
+   checkConfirmationRecord,
+   checkConfirmationSheet,
+   compilePrompt,
+@@ -29,7 +30,7 @@ import {
+ } from "../../../build/frontend-node/app/product_v2/domain/index.js";
+ 
+ import { sha256Hex } from "../../../build/frontend-node/app/product_v2/storage/db.js";
+-import { IMAGE_PROMPT_PROFILE, expect, expectCode, serializeError } from "./harness-core.mjs";
++import { IMAGE_PROMPT_PROFILE, IMAGE_PRICING, expect, expectCode, serializeError } from "./harness-core.mjs";
+ 
+ const cases = [];
+ 
+@@ -159,13 +160,14 @@ function basisFixture(options = {}) {
+ /** 编译 + 快照 + hash + 版本记录：与 workspace.js 的真实链路同一套调用。 */
+ async function compileEntry(shot, options = {}) {
+   const context = options.context || contextFixture();
++  const providerProfile = options.providerProfile || IMAGE_PROMPT_PROFILE;
+   const compiled = compilePrompt({
+     brief: briefFixture(),
+     shot: shot,
+     styleSpec: options.styleSpec || styleFixture(),
+     shotSpec: emptyShotSpecFromShot(shot),
+     context: context,
+-    providerProfile: IMAGE_PROMPT_PROFILE,
++    providerProfile: providerProfile,
+     versions: {
+       suite_version: options.suiteVersion === undefined ? 1 : options.suiteVersion,
+       style_version: options.styleVersion === undefined ? 1 : options.styleVersion,
+@@ -182,9 +184,34 @@ async function compileEntry(shot, options = {}) {
+   };
+ }
+ 
++const ARK_PROMPT_PROFILE = Object.freeze({
++  ...IMAGE_PROMPT_PROFILE,
++  provider_id: "volcengine-ark",
++  model_id: "doubao-seedream-5-0-flash-260915",
++});
++
++const ARK_PRICING = Object.freeze({
++  version: 1,
++  kind: "official",
++  provider_id: "volcengine-ark",
++  model_id: "doubao-seedream-5-0-flash-260915",
++  size: "1344*1344",
++  n: 1,
++  output_format: "png",
++  currency: "CNY",
++  input_image_fen: 0,
++  output_image_fen: 12,
++  verified_on: "2026-10-19",
++  source_url: "https://www.volcengine.com/docs/ark/model-pricing",
++  region: "cn-beijing",
++});
++
+ function sheetOf(options = {}) {
+   const plan = options.plan || planFixture();
+   const providerProfile = options.providerProfile || IMAGE_PROMPT_PROFILE;
++  const pricing = options.pricing === undefined
++    ? (providerProfile === ARK_PROMPT_PROFILE ? ARK_PRICING : IMAGE_PRICING)
++    : options.pricing;
+   const basisByShot = {};
+   for (const shot of plan.shots) {
+     basisByShot[shot.shot_id] = basisFixture({
+@@ -202,6 +229,9 @@ function sheetOf(options = {}) {
+     currentBasisByShot: basisByShot,
+     platformId: options.platformId || PLATFORM_ID,
+     providerProfile: providerProfile,
++    pricing: pricing,
++    ...(options.shotIds ? { shotIds: options.shotIds } : {}),
++    ...(options.selection !== undefined ? { selection: options.selection } : {}),
+   });
+ }
+ 
+@@ -313,7 +343,9 @@ test("H06", "Provider 或平台不符：记录被改后不能提交", async () =
+   const providerSheet = sheetOf({ plan: plan, entries: [entry], providerProfile: bumpedProfile });
+   expect(codesOfShot(providerSheet, "shot_main_clean").includes(CONFIRM_BLOCKER_CODES.PROVIDER_MISMATCH), "Provider 版本不符必须阻断。");
+   // 请求参数不同（同版本）同样必须阻断，而不是只看版本号
+-  const paramSheet = sheetOf({ plan: plan, entries: [entry], providerProfile: { ...IMAGE_PROMPT_PROFILE, size: "2048*2048" } });
++  const paramProfile = { ...IMAGE_PROMPT_PROFILE, size: "2048*2048" };
++  const paramPricing = { ...IMAGE_PRICING, size: "2048*2048" };
++  const paramSheet = sheetOf({ plan: plan, entries: [entry], providerProfile: paramProfile, pricing: paramPricing });
+   expect(codesOfShot(paramSheet, "shot_main_clean").includes(CONFIRM_BLOCKER_CODES.PROVIDER_MISMATCH), "请求参数不符必须阻断。");
+   // 冻结档被改但快照 target 未同步 → 记录自检必须判红（先于确认单比较）
+   const tampered = copyRecord(entry, (record) => { record.compiled.provider.version = 2; });
+@@ -420,31 +452,227 @@ test("H11", "确认失效：上游变化或 Prompt 前进后必须重新确认",
+   return { fields: fields };
+ });
+ 
+-/* ---------------------------------------------------------------- 反向探针 */
++/* ------------------------------------------------- 报价与选择范围（schema4） */
++
++test("H13", "单图费用：主图单参考 Qwen2 分输入 +18 分输出 =20 分", async () => {
++  const plan = planFixture([mainShot()]);
++  const entries = [await compileEntry(plan.shots[0])];
++  const sheet = sheetOf({ plan: plan, entries: entries });
++  expect(sheet.can_submit === true, "前置条件：费用就绪的单图必须可提交。");
++  expect(sheet.external_summary.cost.currency === "CNY", "费用币种必须是 CNY。");
++  expect(sheet.external_summary.cost.upper_fen === 20, "单参考 Qwen 上限必须是 20 分，实际 " + sheet.external_summary.cost.upper_fen);
++  expect(sheet.external_summary.cost.pricing.version === 1, "必须冻结报价版本。");
++  expect(sheet.external_summary.cost.per_shot.length === 1
++    && sheet.external_summary.cost.per_shot[0].shot_id === "shot_main_clean"
++    && sheet.external_summary.cost.per_shot[0].input_images === 1
++    && sheet.external_summary.cost.per_shot[0].upper_fen === 20, "逐图费用必须是单参考 20 分。");
++  expect(checkConfirmationSheet(sheet).length === 0, "合法费用清单必须自检通过。");
++  return { upper: sheet.external_summary.cost.upper_fen };
++});
+ 
+-test("H12", "反向探针：计数、fix、摘要与输入错误都必须变红", async () => {
++test("H14", "两图费用：两张单参考 =40 分，逐图各 20 分", async () => {
+   const plan = planFixture();
+   const entries = [await compileEntry(plan.shots[0]), await compileEntry(plan.shots[1])];
+   const sheet = sheetOf({ plan: plan, entries: entries });
+-  const badCount = JSON.parse(JSON.stringify(sheet));
+-  badCount.total = 5;
+-  expect(checkConfirmationSheet(badCount).length > 0, "计数篡改必须被机检发现。");
+-  const badFix = JSON.parse(JSON.stringify(sheet));
+-  badFix.shots[0].blockers.push({ code: "X", message: "x" });
+-  expect(checkConfirmationSheet(badFix).length > 0, "阻断缺 fix 必须被机检发现。");
+-  const badSummary = JSON.parse(JSON.stringify(sheet));
+-  badSummary.external_summary.prompt_chars = badSummary.external_summary.prompt_chars + 1;
+-  expect(checkConfirmationSheet(badSummary).length > 0, "摘要与逐图不一致必须被机检发现。");
+-  await expectCode(async () => { buildConfirmationSheet({}); }, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "缺套图计划必须拒绝");
+-  const noBasis = buildConfirmationSheet({
+-    suitePlan: plan, promptEntries: entries, context: contextFixture(), currentBasisByShot: {},
++  expect(sheet.can_submit === true, "前置条件：两图费用就绪必须可提交。");
++  expect(sheet.external_summary.cost.upper_fen === 40, "两张单参考上限必须是 40 分，实际 " + sheet.external_summary.cost.upper_fen);
++  expect(sheet.external_summary.cost.per_shot.length === 2
++    && sheet.external_summary.cost.per_shot.every((item) => item.input_images === 1 && item.upper_fen === 20),
++    "每张图必须各记 1 参考 20 分。");
++  expect(checkConfirmationSheet(sheet).length === 0, "合法费用清单必须自检通过。");
++  return { upper: sheet.external_summary.cost.upper_fen };
++});
++
++test("H15", "火山官方 0 输入 +12 输出：单参考 =12 分", async () => {
++  const plan = planFixture([mainShot()]);
++  const entry = await compileEntry(plan.shots[0], { providerProfile: ARK_PROMPT_PROFILE });
++  const sheet = sheetOf({ plan: plan, entries: [entry], providerProfile: ARK_PROMPT_PROFILE });
++  expect(sheet.can_submit === true, "前置条件：火山费用就绪必须可提交。");
++  expect(sheet.external_summary.cost.upper_fen === 12, "火山单参考上限必须是 12 分，实际 " + sheet.external_summary.cost.upper_fen);
++  expect(sheet.external_summary.cost.pricing.provider_id === "volcengine-ark", "必须冻结火山报价档。");
++  expect(checkConfirmationSheet(sheet).length === 0, "合法火山费用清单必须自检通过。");
++  return { upper: sheet.external_summary.cost.upper_fen };
++});
++
++test("H16", "报价缺失或不匹配：费用 null 且不能提交", async () => {
++  const plan = planFixture([mainShot()]);
++  const entries = [await compileEntry(plan.shots[0])];
++  const nullSheet = sheetOf({ plan: plan, entries: entries, pricing: null });
++  expect(nullSheet.external_summary.cost.upper_fen === null, "报价 null 时上限必须 null。");
++  expect(nullSheet.can_submit === false, "报价 null 时不能提交。");
++  expect(checkConfirmationSheet(nullSheet).length === 0, "报价缺失的费用 null 形状本身必须合法。");
++  const omitted = buildConfirmationSheet({
++    suitePlan: plan,
++    promptEntries: entries,
++    context: contextFixture(),
++    currentBasisByShot: { [plan.shots[0].shot_id]: basisFixture({}) },
++    platformId: PLATFORM_ID,
+     providerProfile: IMAGE_PROMPT_PROFILE,
+   });
+-  expect(noBasis.can_submit === false, "没有当前依据时不能提交。");
+-  expect(codesOfShot(noBasis, "shot_main_clean").includes(CONFIRM_BLOCKER_CODES.PROMPT_STALE), "缺依据必须按过期处理。");
+-  return { probes: 5 };
++  expect(omitted.external_summary.cost.upper_fen === null, "省略报价输入时上限必须 null。");
++  expect(omitted.can_submit === false, "省略报价输入时不能提交。");
++  const mismatched = { ...IMAGE_PRICING, model_id: "other-model" };
++  const mismatchSheet = sheetOf({ plan: plan, entries: entries, pricing: mismatched });
++  expect(mismatchSheet.external_summary.cost.upper_fen === null, "模型不匹配时上限必须 null。");
++  expect(mismatchSheet.can_submit === false, "模型不匹配时不能提交。");
++  const sizeMismatch = sheetOf({ plan: plan, entries: entries, pricing: { ...IMAGE_PRICING, size: "2048*2048" } });
++  expect(sizeMismatch.external_summary.cost.upper_fen === null, "尺寸不匹配时上限必须 null。");
++  expect(sizeMismatch.can_submit === false, "尺寸不匹配时不能提交。");
++  return { probes: 4 };
++});
++
++test("H17", "费用篡改：总额、逐图、参考张数不一致都变红", async () => {
++  const plan = planFixture([mainShot()]);
++  const entries = [await compileEntry(plan.shots[0])];
++  const sheet = sheetOf({ plan: plan, entries: entries });
++  expect(checkConfirmationSheet(sheet).length === 0, "前置条件：合法费用清单必须自检通过。");
++  const badTotal = JSON.parse(JSON.stringify(sheet));
++  badTotal.external_summary.cost.upper_fen = badTotal.external_summary.cost.upper_fen + 1;
++  expect(checkConfirmationSheet(badTotal).length > 0, "费用总额篡改必须被机检发现。");
++  const badPerShot = JSON.parse(JSON.stringify(sheet));
++  badPerShot.external_summary.cost.per_shot[0].upper_fen += 1;
++  expect(checkConfirmationSheet(badPerShot).length > 0, "逐图费用篡改必须被机检发现。");
++  const badCount = JSON.parse(JSON.stringify(sheet));
++  badCount.external_summary.cost.per_shot[0].input_images += 1;
++  expect(checkConfirmationSheet(badCount).length > 0, "参考张数篡改必须被机检发现。");
++  return { probes: 3 };
++});
++
++test("H18", "报价来源变化：费率或出处变化让旧确认失效", async () => {
++  const plan = planFixture([mainShot()]);
++  const entries = [await compileEntry(plan.shots[0])];
++  const sheet = sheetOf({ plan: plan, entries: entries });
++  const record = buildConfirmationRecord({
++    sheet: sheet, hash: await promptHash(confirmationSnapshot(sheet), DIGEST),
++    confirmedAt: new Date().toISOString(),
++  });
++  const changedRate = sheetOf({
++    plan: plan, entries: entries,
++    pricing: { ...IMAGE_PRICING, output_image_fen: IMAGE_PRICING.output_image_fen + 1 },
++  });
++  const staleRate = confirmationStaleness(record, confirmationSnapshot(changedRate));
++  expect(staleRate.stale === true, "费率变化必须让旧确认失效。");
++  const changedSource = sheetOf({
++    plan: plan, entries: entries,
++    pricing: { ...IMAGE_PRICING, source_url: "https://example.invalid/price" },
++  });
++  const staleSource = confirmationStaleness(record, confirmationSnapshot(changedSource));
++  expect(staleSource.stale === true, "报价出处变化必须让旧确认失效。");
++  const same = confirmationStaleness(record, confirmationSnapshot(sheetOf({ plan: plan, entries: entries })));
++  expect(same.stale === false, "同一报价必须判定为未失效。");
++  return { fields: staleRate.reasons.map((item) => item.field) };
++});
++
++test("H19", "默认选择：不传 selection 即选中实际 sheet 全图", async () => {
++  const plan = planFixture();
++  const entries = [await compileEntry(plan.shots[0]), await compileEntry(plan.shots[1])];
++  const sheet = sheetOf({ plan: plan, entries: entries });
++  expect(canonicalJson(sheet.selection.selected_shot_ids)
++    === canonicalJson(["shot_main_clean", "shot_infographic_benefits"]), "默认选择必须是实际两图。");
++  expect(sheet.selection.excluded.length === 0, "默认 excluded 必须为空。");
++  expect(checkConfirmationSheet(sheet).length === 0, "默认选择的合法清单必须自检通过。");
++  return { selected: sheet.selection.selected_shot_ids };
++});
++
++test("H20", "有效过滤选择：原范围两图，就绪子集主图 + 信息图被排除并记原因", async () => {
++  const plan = planFixture();
++  const entries = [await compileEntry(plan.shots[0]), await compileEntry(plan.shots[1])];
++  const fullSheet = sheetOf({ plan: plan, entries: entries });
++  expect(fullSheet.can_submit === true, "前置条件：原范围两图必须可提交。");
++  const subsetPlan = planFixture([mainShot()]);
++  const subset = sheetOf({
++    plan: subsetPlan,
++    entries: [entries[0]],
++    selection: {
++      selected_shot_ids: ["shot_main_clean", "shot_infographic_benefits"],
++      excluded: [{
++        shot_id: "shot_infographic_benefits",
++        label: "卖点信息图",
++        reasons: [{ code: "PROMPT_MISSING", message: "该图未编译，不进入本批。" }],
++      }],
++    },
++  });
++  expect(subset.can_submit === true, "就绪主图子集必须可提交。");
++  expect(subset.external_summary.cost.upper_fen === 20, "费用只算实际主图：20 分，实际 " + subset.external_summary.cost.upper_fen);
++  expect(subset.external_summary.cost.per_shot.length === 1
++    && subset.external_summary.cost.per_shot[0].shot_id === "shot_main_clean", "逐图费用只含实际主图。");
++  expect(checkConfirmationSheet(subset).length === 0, "附完整原范围选择的有效过滤子集必须自检通过。");
++  return { cost: subset.external_summary.cost.upper_fen };
++});
++
++test("H21", "选择非法：重复、重叠、无理由排除都变红", async () => {
++  const plan = planFixture([mainShot()]);
++  const entries = [await compileEntry(plan.shots[0])];
++  const dup = sheetOf({
++    plan: plan, entries: entries,
++    selection: { selected_shot_ids: ["shot_main_clean", "shot_main_clean"], excluded: [] },
++  });
++  expect(checkConfirmationSheet(dup).length > 0, "重复选中必须变红。");
++  const overlap = sheetOf({
++    plan: plan, entries: entries,
++    selection: {
++      selected_shot_ids: ["shot_main_clean"],
++      excluded: [{ shot_id: "shot_main_clean", label: "主图", reasons: [{ code: "X", message: "x" }] }],
++    },
++  });
++  expect(checkConfirmationSheet(overlap).length > 0, "选中与排除重叠必须变红。");
++  const noReason = sheetOf({
++    plan: plan, entries: entries,
++    selection: {
++      selected_shot_ids: ["shot_main_clean", "shot_infographic_benefits"],
++      excluded: [{ shot_id: "shot_infographic_benefits", label: "卖点信息图", reasons: [] }],
++    },
++  });
++  expect(checkConfirmationSheet(noReason).length > 0, "无理由排除必须变红。");
++  return { probes: 3 };
++});
++
++test("H22", "记录绑定：现行 schema4 拒绝缺失或偏离的费用与选择", async () => {
++  const plan = planFixture([mainShot()]);
++  const entries = [await compileEntry(plan.shots[0])];
++  const sheet = sheetOf({ plan: plan, entries: entries });
++  const record = buildConfirmationRecord({
++    sheet: sheet, hash: await promptHash(confirmationSnapshot(sheet), DIGEST),
++    confirmedAt: new Date().toISOString(),
++  });
++  expect(checkConfirmationRecord(record).length === 0, "合法现行记录必须自检通过。");
++  const frozen = JSON.parse(JSON.stringify(record.fingerprint.snapshot));
++  const tamperedCost = JSON.parse(JSON.stringify(record));
++  tamperedCost.fingerprint.snapshot = { ...frozen, external_summary: { ...frozen.external_summary, cost: null } };
++  expect(checkConfirmationRecord(tamperedCost).length > 0, "缺失冻结费用必须变红。");
++  const driftedCost = JSON.parse(JSON.stringify(record));
++  driftedCost.fingerprint.snapshot = { ...frozen,
++    external_summary: { ...frozen.external_summary,
++      cost: { ...frozen.external_summary.cost, upper_fen: frozen.external_summary.cost.upper_fen + 1 } } };
++  expect(checkConfirmationRecord(driftedCost).length > 0, "费用偏离冻结值必须变红。");
++  const missingSelection = JSON.parse(JSON.stringify(record));
++  missingSelection.fingerprint.snapshot = { ...frozen };
++  delete missingSelection.fingerprint.snapshot.selection;
++  expect(checkConfirmationRecord(missingSelection).length > 0, "缺失冻结选择必须变红。");
++  return { probes: 3 };
+ });
+ 
++test("H23", "历史 schema3：保留完整 refs，不编造成本与选择", async () => {
++  const plan = planFixture([mainShot()]);
++  const entries = [await compileEntry(plan.shots[0])];
++  const sheet = sheetOf({ plan: plan, entries: entries });
++  const record = buildConfirmationRecord({
++    sheet: sheet, hash: await promptHash(confirmationSnapshot(sheet), DIGEST),
++    confirmedAt: new Date().toISOString(),
++  });
++  const history = JSON.parse(JSON.stringify(record));
++  history.schema_version = 3;
++  history.fingerprint.snapshot.schema_version = 3;
++  delete history.fingerprint.snapshot.external_summary.cost;
++  delete history.fingerprint.snapshot.selection;
++  delete history.external_summary.cost;
++  expect(history.shots[0].references.length
++    === entries[0].record.request_snapshot.references.length, "历史 schema3 必须保留完整参考图。");
++  expect(checkConfirmationRecord(history).length === 0, "剥离新字段的历史 schema3 必须只读通过。");
++  return { refs: history.shots[0].references.length };
++});
++
++
+ /* ---------------------------------------------------------------- 运行器 */
+ 
+ function render(results) {
+diff --git a/evals/product-v2/node/harness-core.mjs b/evals/product-v2/node/harness-core.mjs
+index 4661a82..5a0b58d 100644
+--- a/evals/product-v2/node/harness-core.mjs
++++ b/evals/product-v2/node/harness-core.mjs
+@@ -75,3 +75,24 @@ export const IMAGE_PROMPT_PROFILE = Object.freeze({
+   max_ratio: 8,
+   max_prompt_chars: 4000,
+ });
++
++/**
++ * V2.3.5 生成前确认的共享官方报价 fixture（纯领域常量，不调用模型、不读服务端）。
++ * 与 canonical dashscope 档配套：qwen-image-3.0 北京区，输入图 2 分/张、输出图 18 分/张；
++ * 单参考 n=1 上限 20 分。价格来源 2026-10-19 公开页正文，不替代服务端 capabilities。
++ */
++export const IMAGE_PRICING = Object.freeze({
++  version: 1,
++  kind: "official",
++  provider_id: "dashscope-qwen-image",
++  model_id: "qwen-image-3.0",
++  size: "1344*1344",
++  n: 1,
++  output_format: "png",
++  currency: "CNY",
++  input_image_fen: 2,
++  output_image_fen: 18,
++  verified_on: "2026-10-19",
++  source_url: "https://help.aliyun.com/zh/model-studio/qwen-image-3.0",
++  region: "cn-beijing",
++});

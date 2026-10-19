@@ -39,7 +39,7 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "src"))          # 只为取 console（见 src/console.py）
 sys.path.insert(0, str(ROOT / "tools"))
 
-import v2_stage_nav as stage_nav  # noqa: E402  （V2.UI.2 六阶段工作台导航）
+import v2_stage_nav as stage_nav  # noqa: E402  （B4 四段工作台导航）
 from console import enable_utf8  # noqa: E402
 enable_utf8()
 
@@ -397,42 +397,50 @@ def run_browser_checks(stamp: str, screenshots: list[str], console_errors: list[
                     return page.evaluate(shared.PROBE)
 
                 def row(shot_id: str):
+                    shared.select_make_shot(page, shot_id)
                     return page.locator(
-                        f'#attempt-list .attempt-row[data-shot-id="{shot_id}"]')
+                        f'#shot-execution [data-shot-id="{shot_id}"]')
 
                 def wait_state(shot_id: str, state: str, timeout: int = 30_000) -> None:
+                    task = page.locator(
+                        f'#task-list-mount [data-task-shot="{shot_id}"]')
                     if state == "submitted":
                         page.wait_for_function(
                             """(shot) => {
                                 const node = document.querySelector(
-                                    '#attempt-list .attempt-row[data-shot-id="' + shot + '"]');
+                                    '#task-list-mount [data-task-shot="' + shot + '"]');
                                 const value = node && node.getAttribute("data-attempt-state");
                                 return value === "submitted" || value === "succeeded"
                                     || value === "reconciling";
                             }""", arg=shot_id, timeout=timeout)
                         return
-                    expect(row(shot_id)).to_have_attribute(
+                    expect(task).to_have_attribute(
                         "data-attempt-state", state, timeout=timeout)
 
                 def wait_candidate_ui(shot_id: str, timeout: int = 30_000) -> None:
                     page.wait_for_function(
                         """(shot) => {
                             const node = document.querySelector(
-                                '#attempt-list .attempt-row[data-shot-id="' + shot + '"]');
-                            return Boolean(node && node.querySelector('.attempt-candidate'));
+                                '#task-list-mount [data-task-shot="' + shot + '"]');
+                            if (!node) return false;
+                            if (node.querySelector('.attempt-candidate')) return true;
+                            const detail = document.querySelector(
+                                '#shot-execution [data-shot-id="' + shot + '"]');
+                            return Boolean(detail && detail.querySelector('.attempt-candidate'));
                         }""", arg=shot_id, timeout=timeout)
 
                 def wait_review_text(shot_id: str, needle: str, timeout: int = 30_000) -> None:
                     page.wait_for_function(
                         """(payload) => {
                             const node = document.querySelector(
-                                '#attempt-list .attempt-row[data-shot-id="' + payload.shot + '"]');
+                                '#shot-execution [data-shot-id="' + payload.shot + '"]')
+                              || document.querySelector(
+                                '#task-list-mount [data-task-shot="' + payload.shot + '"]');
                             const line = node && node.querySelector('.attempt-review');
                             return Boolean(line && (line.textContent || '').indexOf(payload.needle) >= 0);
                         }""", arg={"shot": shot_id, "needle": needle}, timeout=timeout)
 
                 def click_row_button(shot_id: str, text: str) -> None:
-                    stage_nav.goto(page, "generate")
                     row(shot_id).locator(f'button:has-text("{text}")').first.click()
 
                 def generate_and_settle(shot_id: str) -> None:
@@ -480,14 +488,18 @@ def run_browser_checks(stamp: str, screenshots: list[str], console_errors: list[
                 ui["decisions"] = shared.decide_for_compile(page, shot_ids)
                 shared.compile_all(page, shot_ids)
                 ok_shot = shot_ids[0]
-                stage_nav.goto(page, "generate")
+                stage_nav.goto(page, "make")
+                # B4 默认只送正看图：本轮需要在首图上做 VLM，走诚实单张路径
+                # （先明确选中首图，再确认；单张范围跟随正看图）。
+                shared.select_make_shot(page, ok_shot)
                 expect(page.locator("#confirm-action")).to_be_enabled()
                 page.click("#confirm-action")
                 page.wait_for_function(
                     """() => document.querySelectorAll(
-                        '#attempt-list .attempt-row[data-attempt-state]').length > 0""",
+                        '#task-list-mount [data-task-shot][data-attempt-state]').length > 0""",
                     timeout=30_000)
                 wait_candidate_ui(ok_shot)
+                shared.select_make_shot(page, ok_shot)
                 wait_review_text(ok_shot, "自动检查 " + REVIEW_CONTRACT_VERSION)
                 before = probe()
                 candidate_before = shared.candidate_json(before, ok_shot)
@@ -495,7 +507,7 @@ def run_browser_checks(stamp: str, screenshots: list[str], console_errors: list[
                 page.wait_for_function(
                     """(shot) => {
                         const node = document.querySelector(
-                            '#attempt-list .attempt-row[data-shot-id="' + shot + '"]'
+                            '#shot-execution [data-shot-id="' + shot + '"]'
                             + ' button[data-review-action]');
                         if (!node || node.disabled) return false;
                         node.scrollIntoView({ block: "center" });
@@ -553,10 +565,11 @@ def run_browser_checks(stamp: str, screenshots: list[str], console_errors: list[
                 })
 
                 holder["scenario"] = "unknown"
+                shared.select_make_shot(page, ok_shot)
                 page.wait_for_function(
                     """(shot) => {
                         const node = document.querySelector(
-                            '#attempt-list .attempt-row[data-shot-id="' + shot + '"]'
+                            '#shot-execution [data-shot-id="' + shot + '"]'
                             + ' button[data-review-action]');
                         if (!node || node.disabled) return false;
                         node.scrollIntoView({ block: "center" });

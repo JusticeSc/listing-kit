@@ -1,0 +1,724 @@
+{
+  "label": "b3-semantic-lifecycle",
+  "at": "2026-10-19T05:39:41.820307+00:00",
+  "reference_sha256": "7af577c6699c88fb4d28c4ea992237dd9dbd17026beec0b37b2ac18351d34419",
+  "checks": [
+    {
+      "code": "P08-08a",
+      "title": "较大资产与负例夹具是真实有效 PNG、超过旧扫掠跳过线且在产品单图上限内",
+      "ok": true,
+      "detail": {
+        "large_bytes": 9724949,
+        "leak_bytes": 9725008,
+        "skip_line": 8388608,
+        "product_limit": 10485760
+      }
+    },
+    {
+      "code": "P08-08b",
+      "title": "非 API 未知路由明确 404（不猜测业务、不回退应用入口）",
+      "ok": true,
+      "detail": {
+        "status": 404,
+        "looks_like_app": false
+      }
+    },
+    {
+      "code": "P08-01a",
+      "title": "能力投影露出 fake-vision 看图档（注入接缝无头直调即保留实例）",
+      "ok": true,
+      "detail": {
+        "provider_id": "fake-vision-semantic",
+        "model_id": "fake-qwen-vl-max",
+        "configured": true,
+        "credential_source": "test_double",
+        "vision": true,
+        "reference_images": true,
+        "choices": [
+          "dashscope-semantic",
+          "dashscope-vision",
+          "fake-vision-semantic"
+        ]
+      }
+    },
+    {
+      "code": "P08-01b",
+      "title": "设置面板三用途有效配置行可见（含缺 key 提示语）",
+      "ok": true,
+      "detail": {
+        "semantic": "商品理解有效配置：fake-vision-semantic · fake-qwen-vl-max · 已配置 · 凭据 test_double · 密钥仅当前标签页内存，请求级发送。",
+        "image": "图片生成有效配置：fake-qwen-image · qwen-image-3.0 · 已配置 · 凭据 test_double · 密钥仅当前标签页内存，请求级发送。",
+        "review": "AI 图片复核（按需）有效配置：fake-review · fake-qwen-vl-max · 已配置 · 凭据 test_double · 密钥仅当前标签页内存，请求级发送。"
+      }
+    },
+    {
+      "code": "P08-01c",
+      "title": "面板文案声明密钥仅标签页内存/请求级（非 secret）",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "code": "P08-02in",
+      "title": "非秘密哨兵确实键入设置 DOM 的三用途密码框（值只在输入框内存里，未落盘）",
+      "ok": true,
+      "detail": {
+        "semantic": 23,
+        "image": 23,
+        "review": 23
+      }
+    },
+    {
+      "code": "P08-02a",
+      "title": "应用设置后正式消费者投影出三用途来源身份 byok（面板文案 + capabilities 响应同源）",
+      "ok": true,
+      "detail": {
+        "panel": {
+          "semantic": true,
+          "image": true,
+          "review": true
+        },
+        "semantic": "byok",
+        "image": "byok",
+        "review": "byok"
+      }
+    },
+    {
+      "code": "P08-01e",
+      "title": "应用设置不丢未落盘的商品资料草稿：DOM 保留、已落盘、分析入口未锁",
+      "ok": true,
+      "detail": {
+        "gate": "将发给 fake-qwen-vl-max：当前名称、介绍、卖点与重点，1 张实际图片（按列表顺序，主图优先，最多 3 张）。供应商按实际调用计费；不能据元数据宣称已经看图。",
+        "draft": {
+          "name": "P08 设置贯通",
+          "description": "316ml 不锈钢保温杯，旋盖密封，杯身哑光。",
+          "points": "12小时保温\n304不锈钢内胆",
+          "disabled": false
+        },
+        "description_persisted": true
+      }
+    },
+    {
+      "code": "P08-01d",
+      "title": "注入看图档后理解区声明将发送实际图片（页面所示配置）",
+      "ok": true,
+      "detail": "将发给 fake-qwen-vl-max：当前名称、介绍、卖点与重点，1 张实际图片（按列表顺序，主图优先，最多 3 张）。供应商按实际调用计费；不能据元数据宣称已经看图。"
+    },
+    {
+      "code": "P08-04b",
+      "title": "页面分析按钮可用（注入替身已配置，不锁人工主链）",
+      "ok": true,
+      "detail": {
+        "gate": "将发给 fake-qwen-vl-max：当前名称、介绍、卖点与重点，1 张实际图片（按列表顺序，主图优先，最多 3 张）。供应商按实际调用计费；不能据元数据宣称已经看图。"
+      }
+    },
+    {
+      "code": "P08-03pre",
+      "title": "点击分析前页面仍声明将发送实际图片（与看图档一致）",
+      "ok": true,
+      "detail": "将发给 fake-qwen-vl-max：当前名称、介绍、卖点与重点，1 张实际图片（按列表顺序，主图优先，最多 3 张）。供应商按实际调用计费；不能据元数据宣称已经看图。"
+    },
+    {
+      "code": "P08-03a",
+      "title": "看图替身收到 exactly 1 张真实图片字节（非空 + sha 与上传原图一致）",
+      "ok": true,
+      "detail": [
+        {
+          "scenario": "ok",
+          "product_name": "P08 设置贯通",
+          "vision_images": 1,
+          "images": [
+            {
+              "role": "primary",
+              "media_type": "image/png",
+              "sha256": "7af577c6699c88fb4d28c4ea992237dd9dbd17026beec0b37b2ac18351d34419",
+              "byte_size": 3126
+            }
+          ],
+          "copy_targets": []
+        }
+      ]
+    },
+    {
+      "code": "P08-02b",
+      "title": "正式语义消费者的用途、Provider与本次密钥原文精确一致",
+      "ok": true,
+      "detail": {
+        "path": "http://127.0.0.1:62738/api/v2/semantic/analyze",
+        "headers": {
+          "x-amz-listing-key-semantic": "<len:23>",
+          "x-amz-listing-provider-semantic": "fake-vision-semantic",
+          "content-type": "application/json"
+        }
+      }
+    },
+    {
+      "code": "P08-03b",
+      "title": "页面所示配置与实际请求一致（模型行 + 已发送图片行含 role/sha 前缀）",
+      "ok": true,
+      "detail": {
+        "result": "最近一次分析：4 个提案，写入 4 个槽位 · fake-vision-semantic（fake-qwen-vl-max） · 原资料 v2 · 已发送实际图片（primary/7af577c6699c…） · 2026/10/19 13:37:29 · 假看图 Provider 提案：已收到实际图片字节，仅用于有效配置贯通验证。",
+        "gate": "将发给 fake-qwen-vl-max：当前名称、介绍、卖点与重点，1 张实际图片（按列表顺序，主图优先，最多 3 张）。供应商按实际调用计费；不能据元数据宣称已经看图。"
+      }
+    },
+    {
+      "code": "P08-03c",
+      "title": "分析记录写真实图片来源（role/media/sha256，无字节原文）",
+      "ok": true,
+      "detail": [
+        {
+          "role": "primary",
+          "media_type": "image/png",
+          "sha256": "7af577c6699c88fb4d28c4ea992237dd9dbd17026beec0b37b2ac18351d34419"
+        }
+      ]
+    },
+    {
+      "code": "P08-02c",
+      "title": "正式生成消费者的用途、Provider与本次密钥原文精确一致",
+      "ok": true,
+      "detail": {
+        "path": "http://127.0.0.1:62738/api/v2/images/submit",
+        "headers": {
+          "x-amz-listing-provider-image": "fake-qwen-image",
+          "content-type": "application/json",
+          "x-amz-listing-key-image": "<len:23>"
+        },
+        "exact_key": true
+      }
+    },
+    {
+      "code": "P08-02c-swap",
+      "title": "实际图像请求的密钥不能被同长度语义密钥冒充",
+      "ok": true,
+      "detail": {
+        "actual_image_equals_semantic": false
+      }
+    },
+    {
+      "code": "P08-02d",
+      "title": "正式单图复核消费者的用途、Provider与本次密钥原文精确一致",
+      "ok": true,
+      "detail": {
+        "path": "http://127.0.0.1:62738/api/v2/review/candidate",
+        "headers": {
+          "x-amz-listing-provider-review": "fake-review",
+          "x-amz-listing-key-review": "<len:23>",
+          "content-type": "application/json"
+        }
+      }
+    },
+    {
+      "code": "P08-02e",
+      "title": "正式整套复核消费者的用途、Provider与本次密钥原文精确一致",
+      "ok": true,
+      "detail": {
+        "path": "http://127.0.0.1:62738/api/v2/review/suite",
+        "headers": {
+          "x-amz-listing-provider-review": "fake-review",
+          "x-amz-listing-key-review": "<len:23>",
+          "content-type": "application/json"
+        }
+      }
+    },
+    {
+      "code": "P08-06a",
+      "title": "取消/关闭不应用草稿：对话框关闭、输入清空、供应商零外呼、存储与文档不变",
+      "ok": true,
+      "detail": {
+        "cancel": {
+          "open": false,
+          "values": 0
+        },
+        "close": {
+          "open": false,
+          "values": 0
+        },
+        "suppliers_before": {
+          "vision": 1,
+          "image": {
+            "submit": 4,
+            "status": 4,
+            "result": 4
+          },
+          "review": 1,
+          "suite": 1
+        },
+        "suppliers_after": {
+          "vision": 1,
+          "image": {
+            "submit": 4,
+            "status": 4,
+            "result": 4
+          },
+          "review": 1,
+          "suite": 1
+        },
+        "idb_unchanged": true
+      }
+    },
+    {
+      "code": "P08-05a",
+      "title": "image 用途 key 已清除（面板清除入口真实可用）",
+      "ok": true,
+      "detail": {
+        "cleared": "image-section:true"
+      }
+    },
+    {
+      "code": "P08-05b",
+      "title": "凭据缺失时核对被阻：出现补原凭据入口、核对按钮禁用",
+      "ok": true,
+      "detail": {
+        "cred_visible": true,
+        "reconcile_disabled": true
+      }
+    },
+    {
+      "code": "P08-05e",
+      "title": "当前设置已切到另一个图像 provider，原任务仍按冻结目标判「凭据未就绪」而不外发",
+      "ok": true,
+      "detail": {
+        "switch": {
+          "ok": true,
+          "before": "fake-qwen-image",
+          "chosen": "dashscope-qwen-image"
+        },
+        "current_provider": "dashscope-qwen-image",
+        "frozen_provider": "fake-qwen-image",
+        "frozen_source": "byok",
+        "reconcile_blocked": true,
+        "suppliers_unchanged": true,
+        "submit_delta": 0
+      }
+    },
+    {
+      "code": "P08-05c",
+      "title": "补原凭据后核对恢复可用",
+      "ok": true,
+      "detail": {
+        "reconcile_enabled": true
+      }
+    },
+    {
+      "code": "P08-05c2",
+      "title": "用户核对不重提：零新 submit",
+      "ok": true,
+      "detail": {
+        "submit_delta": 0
+      }
+    },
+    {
+      "code": "P08-05f",
+      "title": "原任务核对只按冻结目标/来源外发：Provider=原目标、密钥原文精确、target 逐字段一致；当前动作选择与冻结 action/task 不变",
+      "ok": true,
+      "detail": {
+        "status_headers": {
+          "x-amz-listing-provider-image": "fake-qwen-image",
+          "content-type": "application/json",
+          "x-amz-listing-key-image": "<len:23>"
+        },
+        "status_target": {
+          "provider_id": "fake-qwen-image",
+          "model_id": "qwen-image-3.0",
+          "protocol": "v2.4.1",
+          "capability_version": 3,
+          "credential_source": "byok"
+        },
+        "status_task_id": "fake-6413cea25fe7d934",
+        "frozen_target": {
+          "provider_id": "fake-qwen-image",
+          "model_id": "qwen-image-3.0",
+          "task_id": "fake-6413cea25fe7d934",
+          "action_id": "act-3244162bb78345718a4007615affc655",
+          "credential_source": "byok"
+        },
+        "current_provider": "dashscope-qwen-image",
+        "current_provider_after": "dashscope-qwen-image",
+        "frozen_now": {
+          "action_id": "act-3244162bb78345718a4007615affc655",
+          "task_id": "fake-6413cea25fe7d934"
+        }
+      }
+    },
+    {
+      "code": "P08-05d",
+      "title": "切回 ok 后同 task 达终态 succeeded 且零新 submit",
+      "ok": true,
+      "detail": {
+        "state": "succeeded",
+        "submit_delta": 0
+      }
+    },
+    {
+      "code": "P08-05g",
+      "title": "原任务达终态后当前动作模型选择仍未被切回（新动作照旧用当前设置）",
+      "ok": true,
+      "detail": {
+        "current_provider": "dashscope-qwen-image",
+        "after": "dashscope-qwen-image",
+        "frozen_provider": "fake-qwen-image"
+      }
+    },
+    {
+      "code": "P08-02f",
+      "title": "哨兵不出现在 DOM/响应体/服务器错误面/文档与资产payload/资产原字节/local/session/两包解压成员/控制台与服务器输出，且三用途出站密钥原文精确",
+      "ok": true,
+      "detail": {
+        "hits": {},
+        "lengths": {
+          "dom": 119536,
+          "response_bodies": 226676,
+          "server_error_response": 403,
+          "error_surfaces": 28,
+          "idb_dump": 184341,
+          "local_storage": 286,
+          "session_storage": 2,
+          "document_payloads": 149143,
+          "asset_payloads": 906,
+          "asset_blobs": 9765461,
+          "delivery_entries": 126242,
+          "project_entries": 237688,
+          "console_logs": 418,
+          "server_stdout": 1380,
+          "server_stderr": 0
+        },
+        "transmitted_keys_exact": {
+          "semantic": true,
+          "image": true,
+          "review": true
+        },
+        "largest_reference_bytes": 9724949,
+        "asset_bytes": {
+          "assets": 8,
+          "viewed": 8,
+          "reads_every_asset": true,
+          "largest_bytes": 9724949,
+          "largest_head_is_png": true
+        },
+        "server_error_status": 400,
+        "draft_headers_seen": 0,
+        "zip_members": {
+          "project": 64,
+          "delivery": 7
+        }
+      }
+    },
+    {
+      "code": "P08-06b",
+      "title": "本次运行没有任何出站请求携带取消/关闭时的草稿哨兵",
+      "ok": true,
+      "detail": {
+        "draft_requests": 0
+      }
+    },
+    {
+      "code": "P08-02f-negative",
+      "title": "正式上传的故意泄漏大图使同一字节扫描器判红（非秘密负例），且同一扫描器对无泄漏的最大资产不报",
+      "ok": true,
+      "detail": {
+        "detected": {
+          "asset_blobs": [
+            "image"
+          ]
+        },
+        "fixture_bytes": 9725008,
+        "read_bytes": 9725008,
+        "clean_large_blobs": 1
+      }
+    },
+    {
+      "code": "P08-04f",
+      "title": "旧包工件是真实旧格式（format 不变、format_version=1）",
+      "ok": true,
+      "detail": {
+        "format": "amz-listing-kit-project",
+        "format_version": 1
+      }
+    },
+    {
+      "code": "P08-04a",
+      "title": "旧格式包经正式 UI 导入被拒绝，且无半份项目/文档/资产新增",
+      "ok": true,
+      "detail": {
+        "rejection": "项目包版本高于当前页面支持的版本，请用较新版本打开。",
+        "before": {
+          "projects": 2,
+          "documents": 98,
+          "assets": 9
+        },
+        "after": {
+          "projects": 2,
+          "documents": 98,
+          "assets": 9
+        },
+        "rows": [
+          2,
+          2
+        ]
+      }
+    },
+    {
+      "code": "P08-04d",
+      "title": "默认档关闭且环境存在部署密钥：解析 source=none、适配器不持密钥、合法提交被拒且零上游",
+      "ok": true,
+      "detail": {
+        "source": "byok",
+        "has_key": false,
+        "key_len": 23,
+        "credential_source": "none",
+        "configured": false,
+        "denied_code": "PROVIDER_NOT_CONFIGURED",
+        "upstream_calls": 0
+      }
+    },
+    {
+      "code": "P08-02i",
+      "title": "生产图像适配器精确收到本次图像哨兵原文，同长度语义哨兵不等",
+      "ok": true,
+      "detail": {
+        "expected_len": 23,
+        "received_len": 23,
+        "received_exact": true,
+        "swapped_exact": false,
+        "received_source": "byok"
+      }
+    },
+    {
+      "code": "P08-04c",
+      "title": "生产看图适配器收到真实图片字节但无凭据 → PROVIDER_NOT_CONFIGURED（不是 VISION_BYTES_REQUIRED）且零上游",
+      "ok": true,
+      "detail": {
+        "code": "PROVIDER_NOT_CONFIGURED",
+        "images": 1,
+        "llm_builds": 0
+      }
+    },
+    {
+      "code": "P08-02g",
+      "title": "生产适配器 BYOK：图像出站鉴权只带本次密钥、语义档来源身份 byok 且错误面不回显密钥",
+      "ok": true,
+      "detail": {
+        "credential_source": "byok",
+        "upstream_calls": 1,
+        "authorization_len": 30,
+        "expected_len": 30,
+        "has_authorization": true,
+        "vision_credential_source": "byok",
+        "vision_key_len": 23,
+        "vision_expected_len": 23
+      }
+    },
+    {
+      "code": "P08-04e",
+      "title": "生产网关合法看图请求（真实字节、无 BYOK）→ 503 PROVIDER_NOT_CONFIGURED，非校验短路",
+      "ok": true,
+      "detail": {
+        "status": 503,
+        "code": "PROVIDER_NOT_CONFIGURED",
+        "unknown": false,
+        "configured": false,
+        "credential_source": "none"
+      }
+    }
+  ],
+  "captures": {
+    "capabilities": {
+      "provider_id": "fake-vision-semantic",
+      "model_id": "fake-qwen-vl-max",
+      "configured": true,
+      "credential_source": "test_double",
+      "vision": true,
+      "reference_images": true,
+      "choices": [
+        "dashscope-semantic",
+        "dashscope-vision",
+        "fake-vision-semantic"
+      ]
+    },
+    "byok_sources": {
+      "panel": {
+        "semantic": true,
+        "image": true,
+        "review": true
+      },
+      "semantic": "byok",
+      "image": "byok",
+      "review": "byok"
+    },
+    "sentinel_sweep": {
+      "hits": {},
+      "lengths": {
+        "dom": 119536,
+        "response_bodies": 226676,
+        "server_error_response": 403,
+        "error_surfaces": 28,
+        "idb_dump": 184341,
+        "local_storage": 286,
+        "session_storage": 2,
+        "document_payloads": 149143,
+        "asset_payloads": 906,
+        "asset_blobs": 9765461,
+        "delivery_entries": 126242,
+        "project_entries": 237688,
+        "console_logs": 418,
+        "server_stdout": 1380,
+        "server_stderr": 0
+      },
+      "transmitted_keys_exact": {
+        "semantic": true,
+        "image": true,
+        "review": true
+      },
+      "largest_reference_bytes": 9724949,
+      "asset_bytes": {
+        "assets": 8,
+        "viewed": 8,
+        "reads_every_asset": true,
+        "largest_bytes": 9724949,
+        "largest_head_is_png": true
+      },
+      "server_error_status": 400,
+      "draft_headers_seen": 0,
+      "zip_members": {
+        "project": 64,
+        "delivery": 7
+      }
+    },
+    "production": {
+      "resolver_closed": {
+        "source": "none",
+        "has_key": false
+      },
+      "resolver_byok": {
+        "source": "byok",
+        "key_len": 23
+      },
+      "closed_image": {
+        "credential_source": "none",
+        "configured": false,
+        "denied_code": "PROVIDER_NOT_CONFIGURED",
+        "upstream_calls": 0
+      },
+      "image_byok_exact": {
+        "expected_len": 23,
+        "received_len": 23,
+        "received_exact": true,
+        "swapped_exact": false,
+        "received_source": "byok"
+      },
+      "vision_denied": {
+        "code": "PROVIDER_NOT_CONFIGURED",
+        "images": 1,
+        "llm_builds": 0
+      },
+      "image_byok": {
+        "credential_source": "byok",
+        "upstream_calls": 1,
+        "authorization_len": 30,
+        "expected_len": 30,
+        "has_authorization": true,
+        "vision_credential_source": "byok",
+        "vision_key_len": 23,
+        "vision_expected_len": 23
+      },
+      "gateway_denied": {
+        "status": 503,
+        "code": "PROVIDER_NOT_CONFIGURED",
+        "unknown": false,
+        "configured": false,
+        "credential_source": "none"
+      }
+    },
+    "import_rejection": "项目包版本高于当前页面支持的版本，请用较新版本打开。",
+    "vision_calls": [
+      {
+        "scenario": "ok",
+        "product_name": "P08 设置贯通",
+        "vision_images": 1,
+        "images": [
+          {
+            "role": "primary",
+            "media_type": "image/png",
+            "sha256": "7af577c6699c88fb4d28c4ea992237dd9dbd17026beec0b37b2ac18351d34419",
+            "byte_size": 3126
+          }
+        ],
+        "copy_targets": []
+      }
+    ],
+    "request_headers_observed": [
+      {
+        "path": "http://127.0.0.1:62738/api/v2/capabilities",
+        "headers": {
+          "x-amz-listing-key-semantic": "<len:23>",
+          "x-amz-listing-provider-review": "fake-review",
+          "x-amz-listing-key-review": "<len:23>",
+          "x-amz-listing-provider-image": "fake-qwen-image",
+          "x-amz-listing-provider-semantic": "fake-vision-semantic",
+          "x-amz-listing-key-image": "<len:23>"
+        }
+      },
+      {
+        "path": "http://127.0.0.1:62738/api/v2/capabilities",
+        "headers": {
+          "x-amz-listing-key-semantic": "<len:23>",
+          "x-amz-listing-provider-review": "fake-review",
+          "x-amz-listing-key-review": "<len:23>",
+          "x-amz-listing-provider-image": "fake-qwen-image",
+          "x-amz-listing-provider-semantic": "fake-vision-semantic"
+        }
+      },
+      {
+        "path": "http://127.0.0.1:62738/api/v2/capabilities",
+        "headers": {
+          "x-amz-listing-key-semantic": "<len:23>",
+          "x-amz-listing-provider-review": "fake-review",
+          "x-amz-listing-key-review": "<len:23>",
+          "x-amz-listing-provider-image": "volcengine-ark",
+          "x-amz-listing-provider-semantic": "fake-vision-semantic"
+        }
+      },
+      {
+        "path": "http://127.0.0.1:62738/api/v2/images/status",
+        "headers": {
+          "x-amz-listing-provider-image": "fake-qwen-image",
+          "content-type": "application/json",
+          "x-amz-listing-key-image": "<len:23>"
+        }
+      },
+      {
+        "path": "http://127.0.0.1:62738/api/v2/images/status",
+        "headers": {
+          "x-amz-listing-provider-image": "fake-qwen-image",
+          "content-type": "application/json",
+          "x-amz-listing-key-image": "<len:23>"
+        }
+      },
+      {
+        "path": "http://127.0.0.1:62738/api/v2/images/status",
+        "headers": {
+          "x-amz-listing-provider-image": "fake-qwen-image",
+          "content-type": "application/json",
+          "x-amz-listing-key-image": "<len:23>"
+        }
+      },
+      {
+        "path": "http://127.0.0.1:62738/api/v2/images/status",
+        "headers": {
+          "x-amz-listing-provider-image": "fake-qwen-image",
+          "content-type": "application/json",
+          "x-amz-listing-key-image": "<len:23>"
+        }
+      },
+      {
+        "path": "http://127.0.0.1:62738/api/v2/images/result",
+        "headers": {
+          "x-amz-listing-provider-image": "fake-qwen-image",
+          "content-type": "application/json",
+          "x-amz-listing-key-image": "<len:23>"
+        }
+      }
+    ]
+  },
+  "note": "test-only：fake-vision/fake-image/fake-review 替身经显式注入接缝；生产凭据 fail-closed 用生产适配器 + 假 transport（零上游）证明。非秘密哨兵只出现在输入框内存与本次出站头，证据只记精确匹配布尔值、计数与长度；服务器正常/失败输出与验证器共用同一进程流。生产注册表未改（config/product-v2/providers.json 无 diff）。"
+}

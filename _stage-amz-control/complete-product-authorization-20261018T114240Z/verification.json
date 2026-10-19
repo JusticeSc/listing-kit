@@ -1,0 +1,86 @@
+{
+  "authority": "NOT-AUTHORITY: authorization preparation and final-delta review evidence; not product or native Goal completion",
+  "status": "preparation_verified_native_goal_blocked",
+  "authorization": "authorization.json",
+  "before_manifest": "before-manifest.json",
+  "snapshot": "before.zip",
+  "prior_governance_audit": "_stage-amz-control/issue-tracking-20261016T025000Z/verification.json",
+  "scope": "Record newly granted complete delivery and 5 CNY allowance; correct stale PR/Goal recovery pointers and targeted design/UI contract conflicts; review the final PR18 evidence delta and correct its public delivery metadata with readback. No product code, provider requests, merge or deployment.",
+  "native_goal": {
+    "attempt": "tool.goal({op:'get'})",
+    "result": "Unknown tool from js runtime: goal",
+    "live_goal_observed": false,
+    "lifecycle_changed": false,
+    "slice_last_saved_id": "15aacf5fbdd7001f",
+    "slice_last_saved_status": "active",
+    "reason_not_closed": "Both final review axes found no blocking scoped acceptance issue; stale delivery metadata and verifier-round wording were corrected and checked. Native tool remains unavailable, so these records cannot substitute for the actual complete return.",
+    "product_binding": "pending_native_tool",
+    "product_construction": "blocked"
+  },
+  "pr18": {
+    "head": "3dc0018689dad39fb81294a9c76c99c97dc15e8f",
+    "commits": 8,
+    "state": "OPEN",
+    "draft": true,
+    "checks": "3 completed SUCCESS",
+    "run_url": "https://github.com/JusticeSc/listing-kit/actions/runs/39121148778",
+    "deployment": "skipped",
+    "finalize": "skipped",
+    "earlier_review_through": "bcd987e88baafe447beff182c06eeb7c96243555",
+    "final_delta": "23 files +1371 -16, no product source delta",
+    "standards_review": "Completed through 3dc0018; no blocking findings; transient-probe sensitivity and editorial limitations recorded",
+    "spec_review": "Completed through 3dc0018; no blocking findings; commit-count and final verifier-round accuracy corrections applied",
+    "final_review_evidence": "pr18-review-closeout.json"
+  },
+  "design_changes": [
+    "Keep main six-stage navigation distinct from the pending four-stage #8 delivery",
+    "Use default product-reference versus current-candidate two-image comparison; explicit historical baseline replaces the left comparison slot without changing adoption, rework source or sent reference set",
+    "Link per-shot print intent, layout and presentation exceptions to existing business contracts without requiring professional user input",
+    "Resolve stale three-column UI draft wording by deferring new delivery to design 13.3 and plan 17.13"
+  ],
+  "new_allowance": {
+    "authorized_amount_cny": 5,
+    "image_calls_max": 12,
+    "images_per_call": 1,
+    "understanding_creative_assistance_review_combined_max": 4,
+    "activated": false,
+    "new_calls": 0,
+    "historical_ledger": "preserved; use sealed-budget-ledger.json before activation, not the old main ledger"
+  },
+  "checks": [
+    {
+      "command": "uv run --locked python tools/check_docs.py --no-run",
+      "exit_code": 0,
+      "observed": "58 registered docs, dependency/selection/template mappings passed. --no-run does not execute commands embedded in documentation."
+    },
+    {
+      "command": "uv run --locked python tools/refactor_resume.py --json",
+      "exit_code": 0,
+      "observed": {"status":"paused","read_only":true,"next_action_task":"V2.R5.1","next_action_status":"blocked","blocker":"native_Goal_tool_unavailable"},
+      "scope": "Real cold-recovery consumer identifies the new native-tool blocker, not a missing user authorization; historical Goal lifecycle is not changed."
+    },
+    {
+      "command": "Inline byte/archive/Goal-history comparison using uv Python",
+      "exit_code": 0,
+      "evidence": "byte-verification.json",
+      "observed": "Snapshot CRC/member hashes valid; historical native Goal text unchanged; machine changes only blockers/latest_audit/updated_at; all five changed main records contain zero CR bytes."
+    },
+    {
+      "command": "gh pr edit 18 --repo JusticeSc/listing-kit --body-file _stage-amz-control/issue9-expression-20261018T080410Z/pr-body-issue9.md",
+      "exit_code": 0,
+      "scope": "PR metadata only; no merge or new commit."
+    },
+    {
+      "command": "Actual gh pr view readback compared with local body and pinned head/counts",
+      "exit_code": 0,
+      "evidence": "pr18-review-closeout.json",
+      "observed": "Remote body equals corrected local body, both local delivery paragraphs agree, head remains 3dc0018, OPEN/Draft, 8 commits/186 files/+9146-161; local corrections remain uncommitted."
+    }
+  ],
+  "unverified": [
+    "Native #9 Goal closeout and complete-product Goal binding",
+    "Full product implementation, actual UI behavior, new program-output pixel quality and final release",
+    "C15/C17 human acceptance"
+  ],
+  "next_action": "Restore actual native Goal capability, get live state, settle the #9 slice on its own proven criteria and retain the return, bind the complete product Goal, then reconcile the sealed ledger and activate the newly granted allowance once."
+}

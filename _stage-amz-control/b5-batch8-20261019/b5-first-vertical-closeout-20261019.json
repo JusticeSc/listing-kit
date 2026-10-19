@@ -1,0 +1,85 @@
+{
+ "observed_at": "2026-10-19T10:00:37.156687+00:00",
+ "authority": "NOT-AUTHORITY: batch-8 first-vertical closeout; preflight + reservation + six zero-call interrupts; no pixel or release claim",
+ "authorization_id": "complete-product-authorization-20261018T114240Z",
+ "goal_id": "15ab22bf3386b9cf",
+ "reservation": {
+  "row_id": "b5-batch8-main-regenerate-ark-01",
+  "status": "reserved_pending_send",
+  "executed_image_calls": 0,
+  "spent_cny": 2.69,
+  "spent_calls": {
+   "image": 8,
+   "semantic_vlm": 5
+  },
+  "total_reserved_cny": 11.2,
+  "reservations": 54
+ },
+ "live_attempts": [
+  {
+   "file": "v2.4.5-live-reference-20261019-175009-b5-batch8-main-regenerate-ark-01.json",
+   "sha256": "9ce4db16cf295861e0c3a6f43fc0ac907763795c0b84b6c7b42780891350dade",
+   "status": "failed",
+   "submits": 0,
+   "status_reqs": 0,
+   "result_reqs": 0,
+   "fail_kind": "compile-button-hidden",
+   "detail_head": "TimeoutError: Page.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\"#prompt-list .shot-spec[data-shot-id=\\\"shot_main_clean\\\"] .toolbar button\")\n    - locator resolved to <button class=\"\" type=\"button\">…</button>\n  - attempting click action\n    2 × waiting for element to be visible"
+  },
+  {
+   "file": "v2.4.5-live-reference-20261019-175244-b5-batch8-main-regenerate-ark-01.json",
+   "sha256": "713c4062e163d9d398dcefa941ce4ca1bf0edef52979baa9ec0bab1f4cf12e19",
+   "status": "failed",
+   "submits": 0,
+   "status_reqs": 0,
+   "result_reqs": 0,
+   "fail_kind": "confirm-disabled-no-credential",
+   "detail_head": "AssertionError: Locator expected to be enabled\nActual value: disabled \nCall log:\n  - Expect \"to_be_enabled\" locator(\"#confirm-action\") with timeout 5000ms\n  - waiting for locator(\"#confirm-action\")\n    14 × locator resolved to <button disabled type=\"button\" class=\"primary\" id=\"confirm-action\">…</but"
+  },
+  {
+   "file": "v2.4.5-live-reference-20261019-175429-b5-batch8-main-regenerate-ark-01.json",
+   "sha256": "23e6107e64239deba4649df759cfe644eb419e6e965d00bba1c26bbc268c1968",
+   "status": "failed",
+   "submits": 0,
+   "status_reqs": 0,
+   "result_reqs": 0,
+   "fail_kind": "confirm-disabled-no-credential",
+   "detail_head": "AssertionError: Locator expected to be enabled\nActual value: disabled \nCall log:\n  - Expect \"to_be_enabled\" locator(\"#confirm-action\") with timeout 5000ms\n  - waiting for locator(\"#confirm-action\")\n    14 × locator resolved to <button disabled type=\"button\" class=\"primary\" id=\"confirm-action\">…</but"
+  },
+  {
+   "file": "v2.4.5-live-reference-20261019-175807-b5-batch8-main-regenerate-ark-01.json",
+   "sha256": "520e7725591ac899cbf08315cb6a2236025d7b947fba3bd16bef38d3715da0d8",
+   "status": "failed",
+   "submits": 0,
+   "status_reqs": 0,
+   "result_reqs": 0,
+   "fail_kind": "confirm-disabled-no-credential",
+   "detail_head": "AssertionError: Locator expected to be enabled\nActual value: disabled \nCall log:\n  - Expect \"to_be_enabled\" locator(\"#confirm-action\") with timeout 5000ms\n  - waiting for locator(\"#confirm-action\")\n    14 × locator resolved to <button disabled type=\"button\" class=\"primary\" id=\"confirm-action\">…</but"
+  },
+  {
+   "file": "v2.4.5-live-reference-20261019-175844-b5-batch8-main-regenerate-ark-01.json",
+   "sha256": "31771050eb40b655350ffea8db4cd2735a2b9dafec32e069b80c1f64d0093b38",
+   "status": "failed",
+   "submits": 0,
+   "status_reqs": 0,
+   "result_reqs": 0,
+   "fail_kind": "confirm-disabled-no-credential",
+   "detail_head": "AssertionError: Locator expected to be enabled\nActual value: disabled \nCall log:\n  - Expect \"to_be_enabled\" locator(\"#confirm-action\") with timeout 5000ms\n  - waiting for locator(\"#confirm-action\")\n    14 × locator resolved to <button disabled type=\"button\" class=\"primary\" id=\"confirm-action\">…</but"
+  },
+  {
+   "file": "v2.4.5-live-reference-20261019-175917-b5-batch8-main-regenerate-ark-01.json",
+   "sha256": "2669b4425d36ab654f70fcd450c413b333e13b52e7de6f716a8057a5ea45bf82",
+   "status": "failed",
+   "submits": 0,
+   "status_reqs": 0,
+   "result_reqs": 0,
+   "fail_kind": "confirm-disabled-no-credential",
+   "detail_head": "AssertionError: Locator expected to be enabled\nActual value: disabled \nCall log:\n  - Expect \"to_be_enabled\" locator(\"#confirm-action\") with timeout 5000ms\n  - waiting for locator(\"#confirm-action\")\n    14 × locator resolved to <button disabled type=\"button\" class=\"primary\" id=\"confirm-action\">…</but"
+  }
+ ],
+ "root_causes": {
+  "attempt_175009": "compile button hidden: Prompt cards live in collapsed #prompt-details; verifier clicked without reveal (fixed in worktree, not yet run green)",
+  "attempts_175244_175429_175807_175844_175917": "confirm disabled by fail-closed credential gate: ARK_API_KEY present but AMZ_V2_DEFAULT_TRIAL unset -> volcengine-ark configured=false; product-correct block, zero calls, zero spend"
+ },
+ "next_action": "Open the default-trial gate (or BYOK path) per authorization, then send the single reserved call exactly once; do not re-reserve or retry on Unknown."
+}

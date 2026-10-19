@@ -19,33 +19,30 @@ import {
   isPlainObject,
   isSha256Hex,
   pushProblem,
+  canonicalJson,
 } from "./shared.js";
 import {
   PLATFORM_PROFILES,
-  canonicalJson,
+  checkFrozenReferences,
   checkImagePromptProfile,
   checkPromptRecord,
   decisionProblems,
+  dependencyAssetsOf,
   promptStaleness,
 } from "./prompt.js";
 import { evaluateShot, roleDefinition } from "./suite-plan.js";
+import { frozenImageCost, imageCostMatches, imageCostOf } from "./image-cost.js";
 
-export const CONFIRM_SCHEMA_VERSION = 1;
+export const CONFIRM_SCHEMA_VERSION = 4;
+/** 历史1仅角色、2含图身份、3含完整引用；原载荷只读，不补造费用或所选范围。 */
+export const CONFIRM_SCHEMA_VERSIONS_LEGACY = Object.freeze([1, 2, 3]);
 export const CONFIRM_DOCUMENT_ID = "generation";
 const SUBMISSION_MODES = Object.freeze(["initial", "failed_retry", "rework", "explicit_new"]);
 
-export const CONFIRM_BLOCKER_CODES = Object.freeze({
-  PROMPT_MISSING: "PROMPT_MISSING",
-  PROMPT_RECORD_INVALID: "PROMPT_RECORD_INVALID",
-  PROMPT_TEXT_MISMATCH: "PROMPT_TEXT_MISMATCH",
-  PROMPT_STALE: "PROMPT_STALE",
-  DEPENDENCY_UNSATISFIED: "DEPENDENCY_UNSATISFIED",
-  PLATFORM_MISMATCH: "PLATFORM_MISMATCH",
-  PROVIDER_MISMATCH: "PROVIDER_MISMATCH",
-  REFERENCE_COUNT_INVALID: "REFERENCE_COUNT_INVALID",
-  /** 普通决定（印字/展示）没做完：编译不出 Prompt，必须先让用户做一次明确选择。 */
-  DECISION_REQUIRED: "DECISION_REQUIRED",
-});
+// 阻断码词表上移 shared.js（review.js 在模块初始化期读取；词表是叶子常量，
+// 不允许把确认单模块拖进跨模块循环初始化）。此处按原路径再导出，既有导入不变。
+export { CONFIRM_BLOCKER_CODES } from "./shared.js";
+import { CONFIRM_BLOCKER_CODES } from "./shared.js";
 
 /** 精确修改位置：阻断必须能指回一个可操作区域。 */
 export const FIX_REGIONS = Object.freeze([
@@ -54,7 +51,7 @@ export const FIX_REGIONS = Object.freeze([
 
 const SUMMARY_FIELDS = Object.freeze([
   "model", "size", "n", "prompt_extend", "watermark", "output_format",
-  "reference_count", "reference_roles", "prompt_chars",
+  "reference_count", "reference_roles", "prompt_chars", "cost",
 ]);
 
 function fixTarget(region, shotId, label, action) {
@@ -74,8 +71,19 @@ function fixForStaleReason(reason, shotId, label) {
     return fixTarget("understanding", shotId, label,
       "到「商品理解」确认或修改槽位 " + field.slice("brief.".length) + "，再重新编译这张图的 Prompt。");
   }
-  if (field === "style_version") {
+  if (field === "style_version" || field === "style_signature") {
     return fixTarget("style", shotId, label, "到「风格与单图规格」复核公共风格，再重新编译这张图的 Prompt。");
+  }
+  if (field === "shot_signature") {
+    return fixTarget("suite", shotId, label, "这张图自己的定义（用途/绑定/依赖）已变化，到「套图规划」复核后重新编译。");
+  }
+  if (field === "compiler_rule_version") {
+    return fixTarget("prompt", shotId, label,
+      "程序提示词规则已更新：重新编译这张图的系统全文（人工全文由人确认，不静默覆盖）。");
+  }
+  if (field === "intake_version") {
+    return fixTarget("prompt", shotId, label,
+      "商品资料版本已前进：按当前商品资料重新编译这张图的 Prompt，再确认（不会拿旧资料直接提交）。");
   }
   if (field === "shot_spec_version") {
     return fixTarget("shot_spec", shotId, label, "到「风格与单图规格」复核这张图的单图规格，再重新编译。");
@@ -90,6 +98,36 @@ function fixForStaleReason(reason, shotId, label) {
     return fixTarget("prompt", shotId, label, "有效 Provider 档或请求参数已更新，重新编译这张图的 Prompt。");
   }
   return fixTarget("prompt", shotId, label, "到「Prompt 预览与版本」重新编译这张图（原因：" + (field || "未知") + "）。");
+}
+/** 显式动作类型的准入在摘要、队列及原子预留共用；不把已有结果悄悄变成新请求。 */
+export function submissionModeAllows(mode, latest) {
+  if (mode === "initial") return !latest;
+  if (mode === "failed_retry") return latest?.state === "failed";
+  if (mode === "rework") return latest?.state === "succeeded" || latest?.state === "failed";
+  return mode === "explicit_new"
+    && (latest?.state === "unknown" || (latest?.state === "pending_submit" && !latest.task_id));
+}
+
+/** 所选范围完整分为实发与有理由的排除项：重复、交叠、漏项都不能冻结。 */
+function selectionMatches(selection, shots) {
+  if (!isPlainObject(selection) || !Array.isArray(selection.selected_shot_ids)
+      || !Array.isArray(selection.excluded)
+      || selection.selected_shot_ids.some(id => !isNonEmptyString(id))) return false;
+  const selected = new Set(selection.selected_shot_ids);
+  if (!selected.size || selected.size !== selection.selected_shot_ids.length) return false;
+  const partition = new Set();
+  for (const shot of shots) {
+    if (!isNonEmptyString(shot.shot_id) || !selected.has(shot.shot_id) || partition.has(shot.shot_id)) return false;
+    partition.add(shot.shot_id);
+  }
+  for (const item of selection.excluded) {
+    if (!isPlainObject(item) || !selected.has(item.shot_id) || partition.has(item.shot_id)
+        || !isNonEmptyString(item.label) || !Array.isArray(item.reasons) || !item.reasons.length
+        || item.reasons.some(reason => !isPlainObject(reason)
+          || !isNonEmptyString(reason.code) || !isNonEmptyString(reason.message))) return false;
+    partition.add(item.shot_id);
+  }
+  return partition.size === selected.size;
 }
 
 /**
@@ -129,7 +167,12 @@ export function buildConfirmationSheet(input = {}) {
     const role = roleDefinition(shot.role_id);
     const blockers = [];
     const risks = [];
-    const dependency = evaluateShot(shot, context);
+    // 依赖求值按「本图实际会外发的商品依据」判，与提交门共用 dependencyAssetsOf：
+    // 调用方给出本图参考选择时按实际冻结顺序判（竞品图以 style_reference 发货仍算
+    // competitor 角色），未给出时保持既有 intake 上下文（旧调用方兼容）。
+    const selection = isPlainObject(input.referencesByShot) ? input.referencesByShot[shotId] : undefined;
+    const dependency = evaluateShot(shot, Array.isArray(selection)
+      ? { ...context, assets: dependencyAssetsOf(selection) } : context);
     if (!dependency.satisfied) {
       blockers.push({
         code: CONFIRM_BLOCKER_CODES.DEPENDENCY_UNSATISFIED,
@@ -139,7 +182,7 @@ export function buildConfirmationSheet(input = {}) {
       });
     }
 
-    const prompt = { version: null, hash: null, chars: null };
+    const prompt = { version: null, hash: null, chars: null, text: null };
     let references = [];
     const entry = entries.get(shotId) || null;
     // 普通决定没做完时，编译必然失败：直接说清「缺哪个决定」并指向对应控件，
@@ -152,6 +195,9 @@ export function buildConfirmationSheet(input = {}) {
       ? decisionProblems({
         shot: shot, shotSpec: shotSpec, styleSpec: input.styleSpec, brief: input.brief,
         platformId: input.platformId,
+        // 视角决定要看本图实际冻结的商品依据：调用方给出时按真实证据判，不给时保持 fail-closed。
+        references: isPlainObject(input.referencesByShot) ? input.referencesByShot[shotId] : undefined,
+        slotEntries: input.slotEntries,
       })
       : [];
     if (decisions.length > 0) {
@@ -187,6 +233,7 @@ export function buildConfirmationSheet(input = {}) {
         prompt.version = typeof entry.version === "number" ? entry.version : null;
         prompt.hash = record.hash;
         prompt.chars = record.compiled.text.length;
+        prompt.text = record.request_snapshot.prompt;
         const snapshot = record.request_snapshot;
         if (snapshot.prompt !== record.compiled.text) {
           blockers.push({
@@ -226,9 +273,21 @@ export function buildConfirmationSheet(input = {}) {
             fix: fixTarget("intake", shotId, label, "到「商品资料」补齐参考图（至少一张主图）。"),
           });
         }
+        // 冻结用途/来源按实际发送顺序投影到确认单（设计 §13.6/§13.8）：确认页必须说清
+        // 每张图的职责与来源，编辑源与商品原照不能只靠 role 区分；schema 3 起携带完整
+        // 身份（sha256）与来源（含 asset_sha256），确认记录快照按同形状写入。历史简单
+        // 引用不带冻结元数据时不补造，按缺少处理；界面上只见前缀，不外发完整 hash 文案。
         references = snapshotRefs.map((item) => ({
           role: item.role,
+          sha256: item.sha256,
           sha256_prefix: String(item.sha256 || "").slice(0, 12),
+          ...(Array.isArray(item.uses) ? { uses: [...item.uses] } : {}),
+          ...(Array.isArray(item.sources)
+            ? { sources: item.sources.map((source) => (isPlainObject(source)
+              ? { kind: source.kind, document_id: source.document_id, version: source.version,
+                ...(isSha256Hex(source.asset_sha256) ? { asset_sha256: source.asset_sha256 } : {}) }
+              : source)) }
+            : {}),
         }));
         const basis = currentBasisByShot[shotId];
         if (!isPlainObject(basis)) {
@@ -298,6 +357,7 @@ export function buildConfirmationSheet(input = {}) {
       + " / watermark=" + String(provider.watermark) + " / 输出格式 " + provider.output_format
       + "；图中文字语言 " + platform.on_image_text_language + "。",
   };
+  externalSummary.cost = imageCostOf(provider, shots, input.pricing);
 
   return {
     schema_version: CONFIRM_SCHEMA_VERSION,
@@ -316,10 +376,11 @@ export function buildConfirmationSheet(input = {}) {
     total: shots.length,
     ready: shots.length - blockedShots.length,
     blocked: blockedShots.length,
-    can_submit: shots.length > 0 && blockedShots.length === 0,
+    can_submit: shots.length > 0 && blockedShots.length === 0 && externalSummary.cost.upper_fen !== null,
     shots: shots,
     external_summary: externalSummary,
     ...(scopeShotIds ? { scope_shot_ids: scopeShotIds } : {}),
+    selection: input.selection ?? { selected_shot_ids: shots.map(shot => shot.shot_id), excluded: [] },
     blockers: shots.flatMap((item) => item.blockers.map((blocker) => ({
       shot_id: item.shot_id,
       label: item.label,
@@ -331,6 +392,7 @@ export function buildConfirmationSheet(input = {}) {
     risks: shots.flatMap((item) => item.risks),
   };
 }
+
 
 /** 确认单自检：计数、聚合与外发摘要必须彼此一致。 */
 export function checkConfirmationSheet(sheet) {
@@ -370,9 +432,15 @@ export function checkConfirmationSheet(sheet) {
     pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.total",
       "确认单计数与实际图片不一致。");
   }
-  if (sheet.can_submit !== (shots.length > 0 && blockedCount === 0)) {
+  if (sheet.can_submit !== (shots.length > 0 && blockedCount === 0
+      && sheet.external_summary?.cost?.upper_fen !== null
+      && sheet.external_summary?.cost?.upper_fen !== undefined)) {
     pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.can_submit",
-      "can_submit 必须等于「至少一张图且没有阻断」。");
+      "can_submit 必须同时满足至少一张图、没有阻断及当次费用上界已核实。");
+  }
+  if (!selectionMatches(sheet.selection, shots)) {
+    pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.selection",
+      "所选范围必须完整分为实际发送与逐图有理由的排除项，不允许重复、交叠或漏项。");
   }
   let referenceCount = 0;
   let promptChars = 0;
@@ -422,6 +490,10 @@ export function checkConfirmationSheet(sheet) {
       pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.external_summary.reference_count",
         "外发摘要必须等于各图参考图与提示词字符的合计。");
     }
+    if (!imageCostMatches(summary.cost, sheet.provider, shots)) {
+      pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.external_summary.cost",
+        "费用上界必须按当前模型、参数、定价来源与逐图真实参考图数计算。");
+    }
   }
   return problems;
 }
@@ -457,7 +529,30 @@ function confirmationExecutionTarget(identity, provider) {
 }
 
 /**
+ * 确认快照的逐图引用：schema 3 起 = 该图新请求的冻结引用（身份+用途+来源），
+ * 与编译产物 request_snapshot.references 同形状（可过 checkFrozenReferences）。
+ * 历史简单引用（旧 Prompt）只有身份，不补造冻结元数据——这只出现在失效比较的临时
+ * 快照里；可提交清单上的记录快照全部来自当前 Prompt，必然带完整元数据。
+ * @param {unknown} ref 确认单上的引用投影
+ * @returns {Record<string, unknown>}
+ */
+function frozenReferenceOf(ref) {
+  if (!isPlainObject(ref)) return ref;
+  const base = { role: ref.role, sha256: ref.sha256 };
+  if (!Array.isArray(ref.uses) || !Array.isArray(ref.sources)) return base;
+  return {
+    ...base,
+    uses: [...ref.uses],
+    sources: ref.sources.map((source) => (isPlainObject(source) ? {
+      kind: source.kind, document_id: source.document_id, version: source.version,
+      ...(isSha256Hex(source.asset_sha256) ? { asset_sha256: source.asset_sha256 } : {}),
+    } : source)),
+  };
+}
+
+/**
  * 指纹输入：覆盖“这一批将要提交的东西”，不包含展示文案。
+ * schema 4：完整引用、所选范围/排除理由及当次已核费用共同冻结。
  * execution_target/submission_mode 只在给出 executionIdentity 时写入，历史记录可缺。
  * @param {unknown} sheet
  * @param {{executionIdentity?: unknown, submissionMode?: unknown}} [options]
@@ -474,6 +569,13 @@ export function confirmationSnapshot(sheet, { executionIdentity = null, submissi
     } : {}),
     ...(Array.isArray(sheet.scope_shot_ids) && sheet.scope_shot_ids.length > 0
       ? { scope_shot_ids: [...sheet.scope_shot_ids] } : {}),
+    selection: {
+      selected_shot_ids: [...sheet.selection.selected_shot_ids],
+      excluded: sheet.selection.excluded.map(item => ({
+        shot_id: item.shot_id, label: item.label,
+        reasons: item.reasons.map(reason => ({ code: reason.code, message: reason.message })),
+      })),
+    },
     platform: { platform_id: sheet.platform.platform_id, version: sheet.platform.version },
     provider: { model_id: sheet.provider.model_id, version: sheet.provider.version },
     can_submit: sheet.can_submit === true,
@@ -482,7 +584,7 @@ export function confirmationSnapshot(sheet, { executionIdentity = null, submissi
       prompt_version: item.prompt.version,
       prompt_hash: item.prompt.hash,
       prompt_chars: item.prompt.chars,
-      reference_roles: item.references.map((ref) => ref.role),
+      references: item.references.map((ref) => frozenReferenceOf(ref)),
       blocked: item.blockers.map((blocker) => blocker.code),
     })),
     external_summary: {
@@ -495,6 +597,7 @@ export function confirmationSnapshot(sheet, { executionIdentity = null, submissi
       reference_count: sheet.external_summary.reference_count,
       reference_roles: [...sheet.external_summary.reference_roles],
       prompt_chars: sheet.external_summary.prompt_chars,
+      cost: frozenImageCost(sheet.external_summary.cost),
     },
   };
 }
@@ -527,6 +630,10 @@ export function confirmationStaleness(record, currentSnapshot) {
     reasons.push({ field: "provider", stored: (stored.provider || {}).version ?? null,
                    current: (now.provider || {}).version ?? null, reason: "Provider 档版本前进" });
   }
+  if (canonicalJson(stored.selection) !== canonicalJson(now.selection)) {
+    reasons.push({ field: "selection", stored: stored.selection ?? null, current: now.selection ?? null,
+      reason: "所选范围或排除理由变化" });
+  }
   const storedShots = new Map((Array.isArray(stored.shots) ? stored.shots : []).map((item) => [item.shot_id, item]));
   const nowShots = new Map((Array.isArray(now.shots) ? now.shots : []).map((item) => [item.shot_id, item]));
   for (const [shotId, item] of nowShots) {
@@ -552,8 +659,8 @@ export function confirmationStaleness(record, currentSnapshot) {
   const beforeSummary = stored.external_summary || {};
   const nowSummary = now.external_summary || {};
   for (const key of SUMMARY_FIELDS) {
-    const before = key === "reference_roles" ? canonicalJson(beforeSummary[key] || []) : beforeSummary[key];
-    const after = key === "reference_roles" ? canonicalJson(nowSummary[key] || []) : nowSummary[key];
+    const before = ["reference_roles", "cost"].includes(key) ? canonicalJson(beforeSummary[key] ?? null) : beforeSummary[key];
+    const after = ["reference_roles", "cost"].includes(key) ? canonicalJson(nowSummary[key] ?? null) : nowSummary[key];
     if (before !== after) {
       reasons.push({ field: "external_summary." + key, stored: before, current: after, reason: "外发摘要变化" });
     }
@@ -576,6 +683,7 @@ export function confirmationStaleness(record, currentSnapshot) {
 export function buildConfirmationRecord({ sheet, hash, confirmedAt, executionIdentity = null, submissionMode = "initial" } = {}) {
   assertConfirmationSheet(sheet);
   if (sheet.can_submit !== true) {
+    if (sheet.external_summary.cost.upper_fen === null) invalid(sheet.external_summary.cost.message);
     invalid("还有 " + sheet.blocked + " 张图未就绪，不能确认生成。");
   }
   if (!isSha256Hex(hash)) invalid("确认记录缺少有效 fingerprint hash。");
@@ -602,15 +710,36 @@ export function buildConfirmationRecord({ sheet, hash, confirmedAt, executionIde
   };
 }
 
+/**
+ * schema 3：记录逐图引用必须是指纹快照冻结引用的展示投影——
+ * 同一 role/sha256/用途/来源，另带 sha256_prefix 供界面展示；不存在第二套事实。
+ * @param {unknown} refs 记录里的展示投影
+ * @param {unknown} frozenRefs 快照里的冻结引用（已过 checkFrozenReferences）
+ * @returns {boolean}
+ */
+function recordReferencesMatchSnapshot(refs, frozenRefs) {
+  if (!Array.isArray(refs) || !Array.isArray(frozenRefs) || refs.length !== frozenRefs.length) return false;
+  return refs.every((ref, index) => {
+    const base = frozenRefs[index];
+    return isPlainObject(ref) && isPlainObject(base)
+      && ref.role === base.role && ref.sha256 === base.sha256
+      && ref.sha256_prefix === String(base.sha256).slice(0, 12)
+      && canonicalJson(ref.uses) === canonicalJson(base.uses)
+      && canonicalJson(ref.sources) === canonicalJson(base.sources);
+  });
+}
+
 export function checkConfirmationRecord(record) {
   const problems = [];
   if (!isPlainObject(record)) {
     pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$", "确认记录必须是对象。");
     return problems;
   }
-  if (record.schema_version !== CONFIRM_SCHEMA_VERSION) {
-    pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.schema_version",
-      "确认记录版本不认识：" + String(record.schema_version));
+  const legacy = CONFIRM_SCHEMA_VERSIONS_LEGACY.includes(record.schema_version);
+  if (record.schema_version !== CONFIRM_SCHEMA_VERSION && !legacy) {
+    pushProblem(problems, record.schema_version > CONFIRM_SCHEMA_VERSION
+      ? DOMAIN_ERROR_CODES.CONTRACT_SCHEMA_TOO_NEW : DOMAIN_ERROR_CODES.CONTRACT_INVALID,
+    "$.schema_version", "确认记录版本不认识：" + String(record.schema_version));
   }
   if (typeof record.confirmed_at !== "string" || Number.isNaN(Date.parse(record.confirmed_at))) {
     pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.confirmed_at", "确认记录缺少 ISO 时间戳。");
@@ -623,6 +752,10 @@ export function checkConfirmationRecord(record) {
     const expected = canonicalJson(record.fingerprint.snapshot);
     if (!isNonEmptyString(expected)) {
       pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.fingerprint.snapshot", "指纹快照不可序列化。");
+    }
+    if (record.schema_version >= 3 && record.fingerprint.snapshot.schema_version !== record.schema_version) {
+      pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.fingerprint.snapshot.schema_version",
+        "完整引用确认记录必须绑定同版本的冻结快照。");
     }
     if (record.fingerprint.snapshot.can_submit !== true) {
       pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.fingerprint.snapshot.can_submit",
@@ -637,6 +770,35 @@ export function checkConfirmationRecord(record) {
           error.message);
       }
     }
+    // schema 3 起已有完整冻结引用：即使只读历史，也不能放宽成简单身份投影。
+    if (record.schema_version >= 3 && Array.isArray(record.fingerprint.snapshot.shots)) {
+      record.fingerprint.snapshot.shots.forEach((shot, index) => {
+        if (!isPlainObject(shot)) return;
+        for (const problem of checkFrozenReferences(shot.references)) {
+          pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID,
+            "$.fingerprint.snapshot.shots[" + index + "]" + problem.path, problem.message);
+        }
+      });
+    }
+    if (!legacy) {
+      const snapshot = record.fingerprint.snapshot;
+      const shots = Array.isArray(snapshot.shots) ? snapshot.shots : [];
+      const summary = isPlainObject(snapshot.external_summary) ? snapshot.external_summary : {};
+      const pricing = isPlainObject(summary.cost) ? summary.cost.pricing : null;
+      const provider = {
+        ...summary, model_id: snapshot.provider?.model_id,
+        provider_id: snapshot.execution_target?.provider_id || pricing?.provider_id,
+      };
+      if (!selectionMatches(snapshot.selection, shots)) {
+        pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.fingerprint.snapshot.selection",
+          "新授权必须冻结完整所选范围与逐图排除理由。");
+      }
+      if (!imageCostMatches(summary.cost, provider, shots) || summary.cost?.upper_fen == null
+          || canonicalJson(frozenImageCost(record.external_summary?.cost)) !== canonicalJson(summary.cost)) {
+        pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.external_summary.cost",
+          "新授权必须绑定已核费用，展示摘要与指纹逐图计价必须一致。");
+      }
+    }
   }
   if (!Array.isArray(record.shots) || record.shots.length === 0) {
     pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.shots", "确认记录必须包含每图指纹。");
@@ -645,6 +807,18 @@ export function checkConfirmationRecord(record) {
       if (!isPlainObject(item) || !isNonEmptyString(item.shot_id) || !isSha256Hex(item.prompt_hash)) {
         pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID, "$.shots[" + index + "]",
           "每图指纹需要 shot_id 与 prompt_hash。");
+      }
+      // schema 3 起逐图引用与指纹同源；历史1/2保留原形状。
+      if (record.schema_version >= 3 && isPlainObject(item)) {
+        const snapshotShots = isPlainObject(record.fingerprint)
+          && Array.isArray(record.fingerprint.snapshot.shots) ? record.fingerprint.snapshot.shots : null;
+        const snapshotShot = Array.isArray(snapshotShots) ? snapshotShots[index] : null;
+        if (!isPlainObject(snapshotShot) || snapshotShot.shot_id !== item.shot_id
+          || !recordReferencesMatchSnapshot(item.references, snapshotShot.references)) {
+          pushProblem(problems, DOMAIN_ERROR_CODES.CONTRACT_INVALID,
+            "$.shots[" + index + "].references",
+            "记录引用必须是指纹快照冻结引用的展示投影（role/sha256/用途/来源一致，另带展示前缀）。");
+        }
       }
     });
   }

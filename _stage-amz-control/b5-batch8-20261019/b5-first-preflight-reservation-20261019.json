@@ -1,0 +1,50 @@
+{
+ "observed_at": "2026-10-19T09:50:01.559227+00:00",
+ "authority": "NOT-AUTHORITY: batch-8 preflight + reservation evidence only; no provider call, no pixel or release claim",
+ "authorization_id": "complete-product-authorization-20261018T114240Z",
+ "goal_id": "15ab22bf3386b9cf",
+ "ledger_before_sha256": "aad55541e880236ed10b2b09cf2642f0bc92b54dbc1d82238f54901771f6a55d",
+ "ledger_before_bytes": 71635,
+ "ledger_after_sha256": "5015d8348d2da57036c2cfa54710f0a802d02bfa6452c73cb5818edd64b51a05",
+ "ledger_after_bytes": 74436,
+ "reservations_before": 53,
+ "reservations_after": 54,
+ "row_id": "b5-batch8-main-regenerate-ark-01",
+ "row": {
+  "id": "b5-batch8-main-regenerate-ark-01",
+  "wire_observer": "b5-batch8-20261019",
+  "goal_id": "15ab22bf3386b9cf",
+  "authorization_id": "complete-product-authorization-20261018T114240Z",
+  "project_id": "17b6b29f-6e74-405a-804c-696b746c7c00",
+  "shot_id": "shot_main_clean",
+  "provider": "volcengine-ark",
+  "platform": "volcengine",
+  "model_id": "doubao-seedream-5-0-flash-260915",
+  "region": "cn-beijing",
+  "mode": "regenerate_original",
+  "source_candidate_id": null,
+  "calls": 1,
+  "executed_image_calls": 0,
+  "input_images": 1,
+  "output_images": 1,
+  "reserve_cny": 0.12,
+  "price_basis": "official flash output 0.12/call, inputs free; complete-product-price-readiness-20261019 §2",
+  "asset_sha256": "4c4ed76c61c959ace082f8f3698f1b10bf0e1c942c2b1e524b1e62086d4df1e1",
+  "reference_sha256": [
+   "4c4ed76c61c959ace082f8f3698f1b10bf0e1c942c2b1e524b1e62086d4df1e1"
+  ],
+  "reference_bytes": 73681,
+  "license": "User-provided screenshot original; right-lower brand text illegible excluded from on-image text; product truth = user file sha 90de3c61 (state plan 17.12.2/17.6 gate; no public-license claim)",
+  "status": "reserved_pending_send",
+  "reserved_at": "2026-10-19T09:50:01.559227+00:00",
+  "note": "B8 first vertical: main/regenerate_original only; shot_main_clean proves new program draft through formal compile path; infographic/size/edit modes wait for this result.",
+  "preflight": {
+   "necessary_gap": "New program-draft real pixel quality for current code (B1-B3 closures prove engineering, not pixels)",
+   "official_price": "flash single image 0.12 CNY; refs free; n=1; current price-readiness 20261019 §2",
+   "exact_inputs": "1 product original, 73681B, sha 4c4ed76c; 1344x1344 inside flash [921600,4624220] px and ratio [1/16,16]",
+   "credential_channel": "existing approved channel presence only (DASHSCOPE/ARK present); no secret read/log/hash",
+   "layer_gate": "lane 12img/4aux/5CNY; cumulative 64img/22aux/86total/21CNY; this row 1img/0aux/0.12CNY",
+   "goal_binding": "15ab22bf3386b9cf active"
+  }
+ }
+}

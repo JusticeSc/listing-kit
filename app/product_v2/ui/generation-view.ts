@@ -1,12 +1,21 @@
 /**
  * 生成视图（设计 §10.1 的第二个视图）：Prompt 准备/编译与人工编辑、生成前确认单、
- * 尝试与批次三区的渲染与命令。
+ * 尝试与批次三区的渲染与命令；B4 四段重组后它是「制作与审图」阶段的唯一任务列表所有者。
  *
  * 边界（设计 §10.1）：这里只持 DOM（句柄由工作区装配一次传入，不做第二次 getElementById
  * 分发）；不写库、不发网络、不重算业务判定。Prompt 版本/依据的唯一所有者是
  * prompts，确认队列/scope/mode 与尝试/候选链的唯一所有者是 generation；落库/派生/
  * 跨视图刷新都经 deps 回到工作区。确认单投影归 prompts，当前性/环境匹配的唯一判据
  * 在 generation，这里只转发，不重建规则。
+ *
+ * B4（四段导航 + 唯一任务列表）：左栏 `#task-list-mount` 是本视图独占的逐图任务列表
+ * （每行一张缩略图 + 人读图名 + 当前最高优先级执行/采用状态；键盘可聚焦的查看入口
+ * 不与勾选框互相嵌套），窄屏（<=900px）用带 label 的原生单图选择器替代堆叠行。
+ * 发送范围只有两种显式选择：单张跟随「正在查看的图」（比较视图是查看对象的唯一所有者，
+ * 经 onViewedShotChanged 回报），多张为显式勾选集合；范围变化只更新摘要，不发任何请求。
+ * 初始范围经 generation.setInitialScope 登记，可发队列交集/确认/重验/外发仍在 owner 内部。
+ * `#shot-execution` 只渲染当前查看这一张图的执行/Unknown/核对/诊断/显式新建动作，
+ * 不再为每张图复制完整执行卡。
  *
  * P5（#10 前端渲染迁移）：三区动态 UI（Prompt 卡片与人工编辑、确认单、尝试行与批次条）与
  * 四个错误位全部由 lit-html 模板拥有，按 shot/prompt 业务身份 keyed；草稿是唯一 UI 状态，按当前项目
@@ -38,6 +47,7 @@ import {
   promptStaleness,
   reviewIsCurrent,
   reviewSummaryText,
+  reworkModeLabel,
   selectionSummaryText,
   suitePlanSummary,
   topFinding,
@@ -49,7 +59,7 @@ import {
 import type { ActionSnapshot } from "../session.js";
 import type { EffectiveCapabilities, ModelSettings, ProviderCapability } from "../model-settings.js";
 import type { InputsModule } from "../project-inputs.js";
-import type { ConfirmationSheet, PromptCurrentBasis, PromptModule } from "../prompts.js";
+import type { PromptCurrentBasis, PromptModule } from "../prompts.js";
 import type {
   ConfirmationQueue,
   GenerationIntent,
@@ -65,6 +75,7 @@ import type { SelectionAdoptionModule } from "../selection-adoption.js";
 import type {
   DependencyBlocking,
   ImagePromptProfile,
+  PromptRecord,
   PromptStaleness,
   SuitePlanSummary,
 } from "../domain/type-contracts.js";
@@ -93,6 +104,10 @@ export type GenerationElements = {
   attemptEditor: HTMLElement;
   /** `#attempt-error` 的挂载点（空容器；与生成位共用同一份文本）。 */
   attemptError: HTMLElement;
+  /** `#task-list-mount`（制作阶段左栏）：本视图独占的逐图任务列表与发送范围控件。 */
+  taskList: HTMLElement;
+  /** `#shot-execution`（制作阶段精看列）：只渲染当前查看的一张图的执行/未知/核对/诊断。 */
+  shotExecution: HTMLElement;
 };
 
 /**
@@ -118,12 +133,13 @@ export type GenerationViewDeps = {
   shotLabelOf(shotId: string): string;
   /** 候选预览 URL 缓存归工作区（比较/返工/尝试共用一份 object URL，关闭项目统一撤销）。 */
   ensurePreviewUrl(shotId: string, actionId: string, assetSha256: string): Promise<string | null>;
-  /** 比较区入口状态：本片只读判断，比较面板本身下一片迁移。 */
+  /** 比较视图当前的查看对象（比较视图是唯一所有者；null＝还没有稳定选择）。 */
+  viewedShotId(): string | null;
+  /** 比较区入口状态（本视图只读判断）。 */
   isComparing(shotId: string): boolean;
   openCompare(shotId: string, options?: { focus?: boolean }): void;
-  /** 跨区收尾：比较面板 / 采用进度 / 派生投影仍由工作区渲染（下一片比较视图）。 */
+  /** 跨区收尾：比较面板与派生投影由工作区经 compare/delivery 渲染。 */
   renderCompare(): void;
-  renderSelectionProgress(): void;
   refreshDerived(): void;
   /** 槽位标识与状态词的中文投影；与输入视图共用工作区同一实现。 */
   localizeSlotTerms(message: unknown): string;
@@ -157,6 +173,10 @@ export type GenerationView = {
   renderAttempts(): void;
   /** 应用 owner 只读文案投影（状态行/错误位）；由工作区订阅 generation 后调用，视图不退订。 */
   applyNotice(): void;
+  /** 比较视图“实际查看对象变化（含首次稳定选择）”信号：单张范围跟随，批量范围不动。 */
+  onViewedShotChanged(shotId: string): void;
+  /** 本视图真实脏稿（Prompt 全文键入且与呈现基线不同）：工作区 beforeunload 保护用。 */
+  hasUnsavedDrafts(): boolean;
   /** 生成与尝试两处错误位的就近写入（比较视图经工作区复用同一实现）。 */
   showAttemptError(message?: string): void;
   /** 时间戳短格式：尝试历史与比较区共用同一实现。 */
@@ -166,16 +186,17 @@ export type GenerationView = {
 };
 
 /** 确认单缺项的返回停靠：region → 阶段外壳 id（字面量映射；region 的唯一权威是 prompts 的 fix）。
- * 规格与风格的控件住在计划阶段的 `#specs-section`（输入视图渲染），
- * 因此 `style` / `shot_spec` 必须停靠 `plan`，不能把人送到生成页的 Prompt 预览。
- * 旧映射曾把两者指向 `generate`，DECISION_REQUIRED 会走错地方。 */
+ * 规格与风格的控件住在方案阶段的 `#specs-section`（输入视图渲染），
+ * 因此 `style` / `shot_spec` 必须停靠 `plan`，不能把人送到制作阶段的 Prompt 预览。
+ * B4 四段重组：understanding 并入 intake，prompt 的控件住在 make 的 `#prompt-details`；
+ * 旧映射曾把规格指向已删除的 generate，DECISION_REQUIRED 会走错地方。 */
 const BLOCKER_STAGE_BY_REGION: Record<string, string> = {
   intake: "intake",
-  understanding: "understand",
+  understanding: "intake",
   suite: "plan",
   style: "plan",
   shot_spec: "plan",
-  prompt: "generate",
+  prompt: "make",
 };
 
 /**
@@ -234,6 +255,7 @@ function decisionAnchorOf(blocker: { code: string }, shotId: string | null): str
   }
   if (first.indexOf("$.presentation.appearance_state") === 0) return "style-presentation-appearance_state";
   if (first.indexOf("$.presentation.contents_state") === 0) return "style-presentation-contents_state";
+  if (first.indexOf("$.presentation.viewpoint") === 0) return "style-presentation-viewpoint";
   if (first.indexOf("$.shot_spec.print_intent") === 0) return "spec-print-" + shotId;
   if (first.indexOf("$.shot_spec.on_image_texts") === 0) return "spec-texts-" + shotId;
   if (first.indexOf("$.shot_spec.layout") === 0 || first.indexOf("$.layout") === 0) {
@@ -313,11 +335,18 @@ type ConfirmShotView = {
   risksText: string | null;
   risksTitle: string;
   blockerLines: ConfirmShotBlockerLine[];
+  exclusionText: string | null;
+  costLine: string | null;
+  promptText: string | null;
 };
 
 type ConfirmView = {
   status: string;
+  selectedCount: number;
+  sendingCount: number;
+  excludedCount: number;
   summary: ConfirmLineView[];
+  costSource: { url: string; detail: string } | null;
   blockers: ConfirmBlockerView[];
   risks: ConfirmLineView[];
   shots: ConfirmShotView[];
@@ -456,6 +485,19 @@ export function createGenerationView(
   const previewUrls = new Map<string, string>();
   const previewPending = new Set<string>();
 
+  /* ------------------------------------------- 任务列表与发送范围（视图状态） */
+  /** 发送范围模式：single＝跟随正在查看的图；batch＝显式勾选集合。
+   *  这是“初始范围”的选择方式，不覆盖 owner 的 failed_retry/explicit_new 语义。 */
+  let scopeMode: "single" | "batch" = "single";
+  /** 批量勾选（跨模式保留）。空集合就是明确空范围，绝不回退成全部。 */
+  let batchSelection = new Set<string>();
+  /** 最近一次由比较视图回报的查看目标：只用于本视图投影与单张范围，不反向改比较视图。 */
+  let knownViewedShotId: string | null = null;
+  /** 窄屏（<=900px）用带 label 的原生单图选择器替代堆叠行；同一选择/详情状态。 */
+  const narrowQuery = typeof window !== "undefined" && typeof window.matchMedia === "function"
+    ? window.matchMedia("(max-width: 900px)") : null;
+  let isNarrow = Boolean(narrowQuery && narrowQuery.matches);
+
   // ---- 四个错误位各一份 UI 状态：空串＝无错误（模板用 ?hidden 收起），非空即当前文案 ----
   /** Prompt 区错误（自动准备等整区命令的汇总；逐图错误见 promptCardErrors）。 */
   let promptErrorText = "";
@@ -470,7 +512,8 @@ export function createGenerationView(
 
   function emptyConfirmView(): ConfirmView {
     return {
-      status: "", summary: [], blockers: [], risks: [], shots: [],
+      status: "", summary: [], costSource: null, blockers: [], risks: [], shots: [],
+      selectedCount: 0, sendingCount: 0, excludedCount: 0,
       actionLabel: "确认并生成 0 张", actionDisabled: true,
       record: "",
     };
@@ -580,6 +623,44 @@ export function createGenerationView(
     return drafts;
   }
 
+  /** 确认单参考图行的人读标签（设计 §13.6/§13.13.3）：先按冻结用途说明这张图的职责
+   * （编辑源/商品原照/风格参考），编辑源再带上固定问题候选版本；用途缺失的历史记录退回
+   * 现有角色词表，不猜职责。用途词表与 domain 冻结值同字面，本视图不另造一套。 */
+  function referenceLabelOf(ref: { role: string; uses?: string[]; sources?: readonly unknown[] }): string {
+    const uses = Array.isArray(ref.uses) ? ref.uses : [];
+    const isEdit = uses.includes("edit_source");
+    const isProduct = uses.includes("product_truth");
+    const isStyle = uses.includes("style_reference");
+    if (!isEdit && !isProduct && !isStyle) return ROLE_TEXT[ref.role] || ref.role;
+    const candidate = (Array.isArray(ref.sources) ? ref.sources : [])
+      .find((source) => source !== null && typeof source === "object"
+        && (source as { kind?: unknown }).kind === "candidate"
+        && Number.isInteger((source as { version?: unknown }).version));
+    const editLabel = isEdit
+      ? "编辑源" + (candidate
+        ? "（问题候选 v" + String((candidate as { version: number }).version) + "）" : "")
+      : "";
+    if (isProduct || isStyle) {
+      const rest = [isProduct ? "商品原照" : null, isStyle ? "风格参考" : null].filter(Boolean).join("、");
+      // 同字节多职责必须合并成一行（设计 §13.6）：合并后的图只能有一个图号，两种职责都要说清。
+      return isEdit ? "编辑源与" + rest + "合并" + (candidate
+        ? "（问题候选 v" + String((candidate as { version: number }).version) + "）" : "")
+        : rest;
+    }
+    return editLabel;
+  }
+
+  /** 返工派生的版本在来源行标明改法与固定问题候选（唯一权威是 basis.rework；
+   * 无 mode 的历史记录不猜模式、不标编辑源）。 */
+  function reworkLineOf(record: PromptRecord): string {
+    const frozen = record.basis ? record.basis.rework : null;
+    if (!frozen) return "";
+    if (frozen.mode !== "edit_candidate" && frozen.mode !== "regenerate_original") return "";
+    const fixed = frozen.problem_candidate;
+    return " · " + reworkModeLabel(frozen.mode)
+      + (fixed ? "，问题候选 v" + fixed.version + "（" + String(fixed.asset_sha256).slice(0, 12) + "…）" : "");
+  }
+
   /** Prompt 行投影：模板只读这里算好的字段，不重算业务判定。 */
   function projectPromptRows(summary: SuitePlanSummary): PromptRowView[] {
     const running = inputs.isAnalysisRunning();
@@ -612,6 +693,7 @@ export function createGenerationView(
         sourceLine: entry
           ? "来源 " + (entry.record.compiled.source_refs || []).length + " 条 · "
             + entry.record.compiled.text.length + " 字 · hash " + entry.record.hash.slice(0, 12) + "…"
+            + reworkLineOf(entry.record)
           : "",
         hashText: entry ? entry.record.hash : "",
         warningTexts: entry
@@ -646,7 +728,7 @@ export function createGenerationView(
         </div>
         <p id=${"prompt-card-error-" + row.shotId} class="error prompt-card-error" role="alert" ?hidden=${!row.compileError}>${row.compileError}</p>
         ${entry ? html`
-          <pre class="prompt-text">${entry.record.compiled.text}</pre>
+          <pre class="prompt-text" tabindex="0" aria-label=${"Prompt 全文：" + row.label}>${entry.record.compiled.text}</pre>
           <p class="meta">${row.requestLine}</p>
           <p class="meta prompt-meta">${row.sourceLine}</p>
           <p class="meta prompt-hash">${row.hashText}</p>
@@ -967,17 +1049,15 @@ export function createGenerationView(
 
   /** 确认单投影：所见摘要由 generation 准备，这里只呈现，不重算、不猜版本。 */
   function projectConfirm(): ConfirmView {
-    let sheet: ConfirmationSheet | null = null;
     try {
       // 所见摘要由 generation 准备：视图只保存并原样交回，不重算、不猜版本。
       displayedGenerationIntent = generation.prepareSummary();
-      sheet = displayedGenerationIntent ? displayedGenerationIntent.all : null;
     } catch (error) {
       setConfirmError(
         "生成前确认投影失败：" + errorMessageOf(error, "未知错误"));
       return emptyConfirmView();
     }
-    if (!sheet || !displayedGenerationIntent) {
+    if (!displayedGenerationIntent) {
       return {
         ...emptyConfirmView(),
         status: "尚未取得有效图像能力；恢复服务后再确认，不会提交未经核对的请求。",
@@ -985,11 +1065,25 @@ export function createGenerationView(
     }
     const intent = displayedGenerationIntent;
     const sending = intent.sheet;
-    const sendingIds = new Set(sending ? sending.shots.map((item) => item.shot_id) : []);
-    const summary: ConfirmLineView[] = [{
-      className: "confirm-summary",
-      text: sending ? sending.external_summary.statement : "当前没有可新增发送的已就绪图片任务。",
+    const selectedIds = new Set(intent.selection.selected_shot_ids);
+    const selected = (intent.all?.shots || []).filter(shot => selectedIds.has(shot.shot_id));
+    const excluded = new Map(intent.selection.excluded.map(shot => [shot.shot_id, shot]));
+    const sendingIds = new Set((sending?.shots || []).map(item => item.shot_id));
+    const costs = new Map((sending?.external_summary.cost.per_shot || []).map(item => [item.shot_id, item]));
+    const summary: ConfirmLineView[] = sending ? [{
+      className: "confirm-summary", text: sending.external_summary.statement,
+    }, {
+      className: sending.external_summary.cost.upper_fen === null ? "confirm-blocker" : "meta",
+      text: sending.external_summary.cost.message,
+    }] : [{
+      className: "meta", text: "本次没有可新增发送的图片；所选缺项、已有动作及未知结果均不会自动重提。",
     }];
+    for (const item of intent.selection.excluded) {
+      if (!selected.some(shot => shot.shot_id === item.shot_id)) {
+        summary.push({ className: "confirm-blocker", text: item.label + "："
+          + item.reasons.map(reason => localizeSlotTerms(reason.message)).join("；") });
+      }
+    }
     if (intent.mode === "explicit_new") {
       summary.push({
         className: "prompt-warning",
@@ -998,26 +1092,26 @@ export function createGenerationView(
     }
     summary.push({
       className: "meta",
-      text: "每张图发送自己的 Prompt 文本与上列参考图；不发送本地文件本身、历史候选或其他项目数据。",
+      text: "只发送下列每张图的提示词与明确列出的参考图；未选候选、其他项目及本地文件名不外发。",
     });
-    const blockers: ConfirmBlockerView[] = sheet.blockers.map((blocker) => ({
-      order: blocker.order,
-      label: blocker.label,
+    const blockers: ConfirmBlockerView[] = selected.flatMap(shot => shot.blockers.map((blocker) => ({
+      order: shot.order,
+      label: shot.label,
       code: blocker.code,
       message: localizeSlotTerms(blocker.message),
-      shotId: blocker.shot_id,
+      shotId: shot.shot_id,
       region: blocker.fix.region,
       regionLabel: blocker.fix.region,
       action: blocker.fix.action,
       stage: BLOCKER_STAGE_BY_REGION[blocker.fix.region],
       openPromptDetails: blocker.fix.region === "prompt",
-      decisionAnchorId: decisionAnchorOf(blocker, blocker.shot_id),
-    }));
-    const risks: ConfirmLineView[] = sheet.risks.map((risk) => ({
+      decisionAnchorId: decisionAnchorOf(blocker, shot.shot_id),
+    })));
+    const risks: ConfirmLineView[] = (sending?.risks || []).map((risk) => ({
       className: "confirm-risk",
       text: risk.label + " · " + risk.code + "：" + localizeSlotTerms(risk.message),
     }));
-    const shots: ConfirmShotView[] = sheet.shots.map((item) => {
+    const shots: ConfirmShotView[] = selected.map((item) => {
       // 逐图阻断行：文案就是确认单上该图的 blocker.message（domain 可操作消息），
       // 这里只投影、不重写，避免第二套判断/词表。
       const blockerLines: ConfirmShotBlockerLine[] = item.blockers.map((blocker) => ({
@@ -1029,48 +1123,68 @@ export function createGenerationView(
         decisionAnchorId: decisionAnchorOf(blocker, item.shot_id),
       }));
       const hasDecisionBlock = item.blockers.some((blocker) => blocker.code === "DECISION_REQUIRED");
+      const exclusion = excluded.get(item.shot_id);
+      const cost = costs.get(item.shot_id);
       return {
         shotId: item.shot_id,
         order: item.order,
         label: item.label,
         roleText: (item.role_label || item.role_id || "未分类") + (item.required ? " · 必需" : " · 可选"),
-        blocked: item.blockers.length > 0,
+        blocked: excluded.has(item.shot_id),
         hasDecisionBlock,
-        stateClass: item.blockers.length > 0 ? "badge is-critical" : "badge is-confirmed",
-        stateText: sendingIds.has(item.shot_id) ? "本次发送"
-          : hasDecisionBlock ? "还没决定印字／展示：先去规格区选一次"
-          : item.blockers.length ? "本次不发送：缺项／过期" : "本次不重复提交",
+        stateClass: sendingIds.has(item.shot_id) ? "badge is-confirmed" : "badge is-critical",
+        stateText: sendingIds.has(item.shot_id) ? "本次发送" : "本次排除",
         promptLine: item.prompt.version === null
           ? "未编译"
           : "Prompt v" + item.prompt.version + " · " + String(item.prompt.hash).slice(0, 12) + "…",
         intent: item.intent,
-        referencesLine: "参考图 " + item.references.length + " 张（"
-          + (item.references.map((ref) => ROLE_TEXT[ref.role] || ref.role).join("、") || "无") + "）"
-          + (item.prompt.chars === null ? "" : " · 提示词 " + item.prompt.chars + " 字"),
-        techLines: item.references.map((ref) => (ROLE_TEXT[ref.role] || ref.role) + " sha256 " + ref.sha256_prefix),
+        referencesLine: sendingIds.has(item.shot_id)
+          ? "参考图 " + item.references.length + " 张 · 发送顺序："
+            + (item.references.map((ref, index) => (index + 1) + "." + referenceLabelOf(ref)).join("、") || "无")
+            + (item.prompt.chars === null ? "" : " · 提示词 " + item.prompt.chars + " 字")
+          : "本次不外发这张图的提示词或参考图。",
+        techLines: item.references.map((ref) => referenceLabelOf(ref)
+          + " sha256 " + ref.sha256_prefix),
         risksText: item.risks.length > 0
           ? "风险：" + item.risks.map((risk) => localizeSlotTerms(risk.message || risk.code)).join("；")
           : null,
         risksTitle: item.risks.map((risk) => risk.code).join("、"),
         blockerLines,
+        exclusionText: exclusion && !blockerLines.length
+          ? exclusion.reasons.map(reason => localizeSlotTerms(reason.message)).join("；") : null,
+        costLine: cost ? "本图费用上界 ¥" + (cost.upper_fen / 100).toFixed(2)
+          + "（" + cost.input_images + " 张输入图 + 1 张输出）" : null,
+        promptText: sendingIds.has(item.shot_id) ? item.prompt.text : null,
       };
     });
     const identity = intent.identity;
+    const pricing = sending?.external_summary.cost.pricing;
+    const selectedCount = intent.selection.selected_shot_ids.length;
+    const sendingCount = sending?.total || 0;
+    const excludedCount = intent.selection.excluded.length;
     return {
-      status: "本次明确发送 " + (sending ? sending.total : 0) + " 张；"
-        + "用途缺项／过期任务不外发；已有成功、进行中或 Unknown 不自动重提。",
+      status: "本次选择 " + selectedCount + " 张，明确发送 " + sendingCount
+        + " 张，排除 " + excludedCount + " 张；排除项只影响本图，已有结果不会自动重提。",
+      selectedCount, sendingCount, excludedCount,
       summary,
+      costSource: pricing?.kind === "official" && pricing.source_url ? {
+        url: pricing.source_url,
+        detail: pricing.model_id + " · 北京；输入图 ¥"
+          + (pricing.input_image_fen / 100).toFixed(2) + "/张，输出图 ¥"
+          + (pricing.output_image_fen / 100).toFixed(2) + "/张。",
+      } : null,
       blockers,
       risks,
       shots,
       actionLabel: (intent.mode === "explicit_new" ? "确认并另发 " : "确认并生成 ")
-        + (sending ? sending.total : 0) + " 张",
-      actionDisabled: !(sending && sending.can_submit) || !(identity && identity.configured)
+        + (sending?.total || 0) + " 张",
+      actionDisabled: !sending?.can_submit || !(identity && identity.configured)
         || inputs.isAnalysisRunning() || prompts.isPreparing() || submissionInFlight
         || modelSettings.refreshing || Boolean(generation.batchStateReader()?.active),
-      record: identity && identity.configured
-        ? "一次点击先保存这份授权，再按摘要外发；不会要求第二次提交。"
-        : "原目标凭据未就绪。打开模型设置补凭据；本地事实、Prompt、采用和导出不受影响。",
+      record: !identity?.configured
+        ? "原目标凭据未就绪。打开模型设置补凭据；本地事实、Prompt、采用和导出不受影响。"
+        : !sending?.can_submit ? "摘要未满足发送门，不会写入授权或外发。"
+        : "一次点击先保存这份范围和费用授权，再按摘要外发；不需要第二次提交。",
     };
   }
 
@@ -1093,9 +1207,14 @@ export function createGenerationView(
   function confirmRegionTemplate(): TemplateResult {
     const view = confirmView;
     return html`
-      <p id="confirm-status" class="meta" role="status">${view.status}</p>
+      <p id="confirm-status" class="meta" role="status"
+        data-selected-count=${view.selectedCount} data-sending-count=${view.sendingCount}
+        data-excluded-count=${view.excludedCount}>${view.status}</p>
       <div id="confirm-summary">
         ${view.summary.map((line) => html`<p class=${line.className}>${line.text}</p>`)}
+        ${view.costSource ? html`<p class="meta">${view.costSource.detail}
+          <a href=${view.costSource.url} target="_blank" rel="noopener noreferrer">官方定价依据</a>
+        </p>` : nothing}
       </div>
       <div id="confirm-blockers">
         ${view.blockers.map((blocker) => html`
@@ -1128,6 +1247,13 @@ export function createGenerationView(
             </div>
             ${row.intent ? html`<p class="meta">${"任务：" + row.intent}</p>` : nothing}
             <p class="meta">${row.referencesLine}</p>
+            ${row.exclusionText ? html`<p class="confirm-blocker">${row.exclusionText}</p>` : nothing}
+            ${row.costLine ? html`<p class="meta">${row.costLine}</p>` : nothing}
+            ${row.promptText ? html`
+              <details>
+                <summary>实际发送提示词（逐字）</summary>
+                <pre class="prompt-text">${row.promptText}</pre>
+              </details>` : nothing}
             ${row.blockerLines.map((line) => html`
               <p class="confirm-shot-blocker" data-shot-id=${line.shotId} data-region=${line.region}>
                 <span class="meta">${line.code + "：" + line.message}</span>
@@ -1202,11 +1328,288 @@ export function createGenerationView(
       if (action.alive()) setConfirmError(errorMessageOf(error, "生成没有完成；授权与历史保留。"));
     } finally {
       submissionInFlight = false;
+      // 提交完成不重登记范围：owner 在记住新确认时已清掉初始 scope；下一次摘要走批次队列
+      // （已消费的不在 queue 里，所见 0 张、按钮禁用，不自动重提）。只有用户明确改查看/
+      // 模式/勾选时才由那些显式入口登记新范围；这里重登记会把已消费的勾选又写回 owner。
       // 确认写库后派生项目状态（PLAN_REVIEW → READY_TO_GENERATE）：与编译保存同一语义，
       // 否则确认存在但状态不前进，-05 类“确认存在且状态前进”断言永远红。
       try { if (action.alive()) await deps.deriveState(); } catch { /* 状态派生失败不吞确认结果 */ }
       if (action.alive()) { renderConfirm(); renderAttempts(); }
      }
+  }
+
+  /* ----------------------------------------------- 任务列表与发送范围（唯一所有者） */
+
+  /** 计划摘要：任务列表、范围计数与本图执行共用一份只读投影。 */
+  function planSummary(): SuitePlanSummary | null {
+    const plan = inputs.suitePlan();
+    return plan ? suitePlanSummary(plan, inputs.suiteContext()) : null;
+  }
+
+  /** 当前查看目标：比较视图是唯一所有者；回报过的 id 只做渲染兜底。 */
+  function viewedShotIdNow(): string | null {
+    return deps.viewedShotId() || knownViewedShotId;
+  }
+
+  /** 用户明确的初始范围（按计划顺序投影）：单张＝正在查看的一张，批量＝勾选集合。
+   *  为空就是空范围；绝不用“全部”兜底。 */
+  function chosenScopeIds(shots: SuitePlanSummary["shots"]): string[] {
+    if (scopeMode === "batch") {
+      return shots.map((shot) => shot.shot_id).filter((shotId) => batchSelection.has(shotId));
+    }
+    const viewed = viewedShotIdNow();
+    return viewed && shots.some((shot) => shot.shot_id === viewed) ? [viewed] : [];
+  }
+
+  /** 把用户明确范围交给 owner 的窄命令：只登记范围；可发交集/确认/重验/外发仍在 generation。 */
+  function syncScopeToOwner(): void {
+    const summary = planSummary();
+    generation.setInitialScope(summary ? chosenScopeIds(summary.shots) : []);
+  }
+
+  /** 明确切换范围模式：单张跟随查看目标；批量从当前范围开始（不替用户全选）。 */
+  function handleScopeModeChange(mode: "single" | "batch"): void {
+    if (mode === scopeMode) return;
+    if (mode === "batch" && batchSelection.size === 0) {
+      const viewed = viewedShotIdNow();
+      if (viewed) batchSelection.add(viewed);
+    }
+    scopeMode = mode;
+    syncScopeToOwner();
+    renderTasks();
+    renderConfirm();
+  }
+
+  /** 明确勾选/取消一张：只改初始范围与摘要，不发任何请求。 */
+  function handleBatchToggle(shotId: string, checked: boolean): void {
+    if (checked) batchSelection.add(shotId);
+    else batchSelection.delete(shotId);
+    syncScopeToOwner();
+    renderTasks();
+    renderConfirm();
+  }
+
+  /** 任务行/窄屏选择器：只把“查看对象”交给比较视图（它回报实际变化），不自己改范围。 */
+  function handleTaskSelect(shotId: string, options: { keyboard?: boolean } = {}): void {
+    if (!shotId) return;
+    deps.openCompare(shotId, { focus: options.keyboard === true });
+  }
+
+  /** 比较视图只在“实际查看对象变化（含首次稳定选择）”时调用：单张范围跟随，
+   *  批量范围与采用/返工源不动；晚到结果不会触发这里。 */
+  function onViewedShotChanged(shotId: string): void {
+    if (typeof shotId !== "string" || shotId.length === 0 || shotId === knownViewedShotId) return;
+    knownViewedShotId = shotId;
+    if (scopeMode === "single") syncScopeToOwner();
+    renderTasks();
+    renderShotExecution();
+    renderConfirm();
+  }
+
+  /** 行状态投影：每行只回答“这张图现在最需要知道的一件事”，细节留在 #shot-execution。 */
+  function taskStateOf(shot: SuitePlanSummary["shots"][number]): {
+    attemptState: string;
+    badgeClass: string;
+    badgeText: string;
+    stateText: string;
+    selectionState: string;
+    preview: { key: string; shotId: string; actionId: string; sha256: string; alt: string } | null;
+  } {
+    const latest = generation.latestAttemptOf(shot.shot_id);
+    const record = latest ? latest.record : null;
+    const attemptState = record ? record.state : "none";
+    const candidate = generation.latestStoredCandidateOf(shot.shot_id);
+    const selectionState = selectionAdoption.stateOf(shot.shot_id);
+    let badgeClass = "is-missing";
+    let badgeText = "尚未生成";
+    let stateText = shot.satisfied
+      ? "尚未生成；核对下方摘要后执行。"
+      : "缺依据：" + suiteBlockingText(shot.blocking);
+    if (record) {
+      badgeText = attemptStateLabel(record.state);
+      if (record.state === ATTEMPT_STATES.unknown) {
+        badgeClass = "is-attempt-unknown";
+        stateText = "结果未知：先核对原任务，不要自动重提。";
+      } else if (ATTEMPT_ACTIVE_STATES.includes(record.state)) {
+        badgeClass = "is-attempt-active";
+        stateText = "上游处理中；晚到结果不会改你正在看的图。";
+      } else if (record.state === ATTEMPT_STATES.failed) {
+        badgeClass = "is-attempt-failed";
+        stateText = "上次明确失败：可在本图执行里重试（新建 action）。";
+      } else if (record.state === ATTEMPT_STATES.succeeded) {
+        badgeClass = "is-attempt-done";
+        stateText = candidate
+          ? (selectionState === "current" ? "已采用，候选字节在本地。" : "有候选尚未采用。")
+          : "上游已完成，候选还没保存到本地。";
+      } else {
+        badgeClass = "is-attempt-active";
+      }
+    }
+    const preview = candidate && latest
+      ? {
+        key: shot.shot_id + ":" + latest.record.action_id + ":" + candidate.record.asset_sha256,
+        shotId: shot.shot_id,
+        actionId: latest.record.action_id,
+        sha256: candidate.record.asset_sha256,
+        alt: shot.label + " 的候选缩略图",
+      }
+      : null;
+    return { attemptState, badgeClass, badgeText, stateText, selectionState, preview };
+  }
+
+  /** 范围行：显式单张/批量 + 实际选择数量（选择变化只更新摘要，不发请求）。 */
+  function scopeRowTemplate(shots: SuitePlanSummary["shots"]): TemplateResult {
+    const chosen = chosenScopeIds(shots);
+    const excluded = shots.length - chosen.length;
+    const countText = "本次范围 " + chosen.length + " 张（未选 " + excluded + "）；实发与排除原因见发送摘要。";
+    return html`
+      <div class="task-scope" role="group" aria-label="发送范围">
+        <label class="choice"><input type="radio" id="make-mode-single" name="make-mode" value="single"
+          .checked=${scopeMode === "single"}
+          @change=${() => handleScopeModeChange("single")}>单张（跟随正在查看的图）</label>
+        <label class="choice"><input type="radio" id="make-mode-batch" name="make-mode" value="batch"
+          .checked=${scopeMode === "batch"}
+          @change=${() => handleScopeModeChange("batch")}>多张（勾选待发送范围）</label>
+        <p id="generation-scope-count" class="meta" role="status">${countText}</p>
+      </div>`;
+  }
+
+  /** 批量模式下的紧凑勾选行（窄屏保留同一显式范围能力）：checkbox 与查看入口互不嵌套。 */
+  function batchRowTemplate(
+    shot: SuitePlanSummary["shots"][number], chosenSet: Set<string>,
+  ): TemplateResult {
+    const view = taskStateOf(shot);
+    return html`
+      <li class="task-row" data-task-shot=${shot.shot_id} data-attempt-state=${view.attemptState}
+        data-selection-state=${view.selectionState}>
+        <label class="task-batch">
+          <input type="checkbox" data-batch-shot=${shot.shot_id} .checked=${chosenSet.has(shot.shot_id)}
+            @change=${(event: Event) => handleBatchToggle(
+              shot.shot_id, (event.currentTarget as HTMLInputElement).checked)}>
+          <span class="name">${shot.label}</span>
+        </label>
+        <p class="meta task-state">${view.stateText}</p>
+      </li>`;
+  }
+
+  /** 桌面任务行：一张缩略图 + 人读图名/用途 + 当前最高优先级状态；查看按钮不包住勾选框。 */
+  function taskRowTemplate(
+    shot: SuitePlanSummary["shots"][number], chosenSet: Set<string>,
+  ): TemplateResult {
+    const view = taskStateOf(shot);
+    const previewUrl = view.preview ? previewUrls.get(view.preview.key) || null : null;
+    const viewed = shot.shot_id === viewedShotIdNow();
+    return html`
+      <li class="task-row" data-task-shot=${shot.shot_id} data-attempt-state=${view.attemptState}
+        data-selection-state=${view.selectionState} data-viewed=${String(viewed)}>
+        ${previewUrl === null
+          ? html`<span class="task-thumb is-empty" aria-hidden="true"></span>`
+          : html`<img class="task-thumb" src=${previewUrl} alt=${shot.label + " 的候选缩略图"} loading="lazy">`}
+        <div class="task-row-main">
+          <button type="button" class="task-view" data-view-shot=${shot.shot_id}
+            aria-current=${viewed ? "true" : "false"}
+            @click=${(event: Event) => handleTaskSelect(
+              shot.shot_id, { keyboard: (event as MouseEvent).detail === 0 })}
+          >${shot.label}</button>
+          <span class=${"badge " + view.badgeClass}>${view.badgeText}</span>
+          <span class="badge">${shot.role_label || shot.role_id || "未分类"}</span>
+          ${view.selectionState === "current" ? html`<span class="badge is-confirmed">已采用</span>` : nothing}
+          <p class="meta task-state">${view.stateText}</p>
+        </div>
+        ${scopeMode === "batch" ? html`
+          <label class="task-batch">
+            <input type="checkbox" data-batch-shot=${shot.shot_id} .checked=${chosenSet.has(shot.shot_id)}
+              @change=${(event: Event) => handleBatchToggle(
+                shot.shot_id, (event.currentTarget as HTMLInputElement).checked)}>待发送</label>` : nothing}
+      </li>`;
+  }
+
+  /** 任务列表模板：空计划给明确入口提示；窄屏用带 label 的原生单图选择器替代堆叠行。 */
+  function taskListTemplate(shots: SuitePlanSummary["shots"]): TemplateResult {
+    if (!shots.length) {
+      return html`<p class="empty">先在方案里添加图片任务；系统只在本地准备，不调用模型。</p>`;
+    }
+    const chosenSet = new Set(chosenScopeIds(shots));
+    if (isNarrow) {
+      const viewed = viewedShotIdNow();
+      return html`
+        ${scopeRowTemplate(shots)}
+        <label class="task-shot-label" for="make-shot-select">正在查看</label>
+        <select id="make-shot-select" class="task-shot-select"
+          @change=${(event: Event) => handleTaskSelect((event.currentTarget as HTMLSelectElement).value)}>
+          ${shots.map((shot) => html`<option value=${shot.shot_id} .selected=${shot.shot_id === viewed}>${shot.label}</option>`)}
+        </select>
+        ${scopeMode === "batch"
+          ? html`<ul class="task-list is-compact">${repeat(shots, (shot) => shot.shot_id, (shot) => batchRowTemplate(shot, chosenSet))}</ul>`
+          : nothing}`;
+    }
+    return html`
+      ${scopeRowTemplate(shots)}
+      <ul class="task-list">${repeat(shots, (shot) => shot.shot_id, (shot) => taskRowTemplate(shot, chosenSet))}</ul>`;
+  }
+
+  /** 任务列表渲染：计划变化后先收缩勾选（不扩范围），再按业务身份 keyed 重画。 */
+  function renderTasks(): void {
+    const summary = planSummary();
+    const shots = summary ? summary.shots : [];
+    const planned = new Set(shots.map((shot) => shot.shot_id));
+    for (const shotId of [...batchSelection]) {
+      if (!planned.has(shotId)) batchSelection.delete(shotId);
+    }
+    renderLit(taskListTemplate(shots), elements.taskList);
+    hydrateTaskThumbs();
+  }
+
+  /** 行缩略图只请求一次；URL 到位后重绘任务列表（keyed 行不重建、不重复请求）。 */
+  function hydrateTaskThumbs(): void {
+    const summary = planSummary();
+    if (!summary) return;
+    for (const shot of summary.shots) {
+      const preview = taskStateOf(shot).preview;
+      if (!preview || previewUrls.has(preview.key) || previewPending.has(preview.key)) continue;
+      previewPending.add(preview.key);
+      deps.ensurePreviewUrl(preview.shotId, preview.actionId, preview.sha256)
+        .then((url) => {
+          previewPending.delete(preview.key);
+          if (!url) return;
+          previewUrls.set(preview.key, url);
+          renderTasks();
+        })
+        .catch(() => { previewPending.delete(preview.key); });
+    }
+  }
+
+  /** 本图执行区：只放当前查看的一张图；晚到结果不改这里的查看对象。 */
+  function shotExecutionTemplate(
+    shot: SuitePlanSummary["shots"][number], row: AttemptRowView | null,
+  ): TemplateResult {
+    return html`
+      <div class="card-head">
+        <h4 id="shot-execution-title">${"本图执行：" + shot.label}</h4>
+        <p class="meta">执行、核对与诊断只针对正在查看的这一张；查看对象不会被晚到结果替换。</p>
+      </div>
+      ${row === null
+        ? html`<p class="empty">这张图还没有执行记录。</p>`
+        : attemptRowTemplate(row)}`;
+  }
+
+  function renderShotExecution(): void {
+    const summary = planSummary();
+    const shotId = viewedShotIdNow();
+    const shot = summary && shotId
+      ? summary.shots.find((item) => item.shot_id === shotId) || null
+      : null;
+    elements.shotExecution.hidden = !shot;
+    if (!shot || !summary) {
+      renderLit(nothing, elements.shotExecution);
+      delete elements.shotExecution.dataset.shotId;
+      return;
+    }
+    elements.shotExecution.dataset.shotId = shot.shot_id;
+    const counts: AttemptCounts = { total: 0, none: 0, active: 0, succeeded: 0, failed: 0, unknown: 0 };
+    const row = projectAttemptRows(summary, counts).find((item) => item.shotId === shot.shot_id) || null;
+    renderLit(shotExecutionTemplate(shot, row), elements.shotExecution);
+    hydrateAttemptPreview(row);
   }
 
   /* ------------------------------------------------------------ 生成执行 */
@@ -1476,7 +1879,7 @@ export function createGenerationView(
       if (!shotConfirmed) {
         actions.push({
           tag: "span", className: "meta",
-          text: "这张图还没有有效的生成前确认：先在「生成前确认」确认整套，或在候选比较面板里走一次返工确认。",
+          text: "这张图还没有有效的生成前确认：先在「实际发送摘要」确认整套，或在候选比较面板里走一次返工确认。",
         });
       } else if (!entry) {
         actions.push({ tag: "span", className: "meta", text: "先编译并保存这张图的 Prompt。" });
@@ -1525,10 +1928,10 @@ export function createGenerationView(
     return rows;
   }
 
-  /** 失败图重试摘要：进入失败重试 scope 后回到生成页并刷新确认单（原工作区监听同一语义）。 */
+  /** 失败图重试摘要：进入失败重试 scope 后回到制作页并刷新确认单（原工作区监听同一语义）。 */
   function onBatchRetry(): void {
     generation.enterFailedRetry(generation.deriveBatch().retry_queue);
-    deps.selectStage("generate");
+    deps.selectStage("make");
     renderConfirm();
   }
 
@@ -1679,30 +2082,27 @@ export function createGenerationView(
             </div>`)}
         </div>
       </div>
-      <div id="attempt-list">${repeat(attemptRows, (row) => row.shotId, (row) => attemptRowTemplate(row))}</div>
     `;
   }
 
+  /** 全局执行位只留状态/批次/队列根；逐图执行行归 #shot-execution，不再在这里重复。 */
   function renderAttemptRegion(): void {
     renderLit(attemptRegionTemplate(), elements.attemptEditor);
-    hydrateAttemptPreviews();
   }
 
-  /** 预览缩略图只请求一次；URL 到位后重绘尝试区（keyed 行不重建、不重复请求）。 */
-  function hydrateAttemptPreviews(): void {
-    for (const row of attemptRows) {
-      const preview = row.preview;
-      if (!preview || previewUrls.has(preview.key) || previewPending.has(preview.key)) continue;
-      previewPending.add(preview.key);
-      deps.ensurePreviewUrl(preview.shotId, preview.actionId, preview.sha256)
-        .then((url) => {
-          previewPending.delete(preview.key);
-          if (!url) return;
-          previewUrls.set(preview.key, url);
-          renderAttemptRegion();
-        })
-        .catch(() => { previewPending.delete(preview.key); });
-    }
+  /** 本图执行区的预览缩略图只请求一次；URL 到位后重绘该区（查看对象不变）。 */
+  function hydrateAttemptPreview(row: AttemptRowView | null): void {
+    const preview = row ? row.preview : null;
+    if (!preview || previewUrls.has(preview.key) || previewPending.has(preview.key)) return;
+    previewPending.add(preview.key);
+    deps.ensurePreviewUrl(preview.shotId, preview.actionId, preview.sha256)
+      .then((url) => {
+        previewPending.delete(preview.key);
+        if (!url) return;
+        previewUrls.set(preview.key, url);
+        renderShotExecution();
+      })
+      .catch(() => { previewPending.delete(preview.key); });
   }
 
   /** 批次投影（进度/提示/原队列/三个批次按钮）与尝试行同轮渲染，不重算判据。 */
@@ -1798,8 +2198,9 @@ export function createGenerationView(
     }
     attemptBatch = projectBatch();
     renderAttemptRegion();
+    renderTasks();
+    renderShotExecution();
     deps.renderCompare();
-    deps.renderSelectionProgress();
     deps.refreshDerived();
   }
 
@@ -1811,7 +2212,7 @@ export function createGenerationView(
     const action = options.action || beginAction();
     if (options.explicitNew) {
       generation.enterExplicitNew(shotId);
-      deps.selectStage("generate");
+      deps.selectStage("make");
       renderConfirm();
       confirmActionRef.value?.focus();
       return;
@@ -1944,6 +2345,23 @@ export function createGenerationView(
     // 工作区在重开项目时撤销全部预览 object URL，视图侧缓存必须一起清，否则会留下失效地址。
     previewUrls.clear();
     previewPending.clear();
+    // 任务列表与本图执行区按项目归属回收：范围模式、勾选与查看目标一起归零（重开时重建）。
+    scopeMode = "single";
+    batchSelection = new Set<string>();
+    knownViewedShotId = null;
+    renderLit(nothing, elements.taskList);
+    elements.shotExecution.hidden = true;
+    delete elements.shotExecution.dataset.shotId;
+    renderLit(nothing, elements.shotExecution);
+  }
+
+  /** 本视图真实脏稿（Prompt 全文键入且与呈现基线不同）；工作区 beforeunload 只认这个，
+   *  不拿 DOM 与刚持久化的系统文本比对。 */
+  function hasUnsavedDrafts(): boolean {
+    for (const shotId of promptDrafts.keys()) {
+      if (isPromptDirty(shotId)) return true;
+    }
+    return false;
   }
 
   // 装配完成即把四个错误位渲染成模板（空文本＋hidden），
@@ -1952,6 +2370,14 @@ export function createGenerationView(
   renderConfirmError();
   renderGenerateError();
   renderAttemptError();
+
+  // 窄屏/宽屏只在“窄屏选择器 ↔ 堆叠任务行”之间换呈现（同一选择与详情状态）。
+  if (narrowQuery && typeof narrowQuery.addEventListener === "function") {
+    narrowQuery.addEventListener("change", (event) => {
+      isNarrow = event.matches;
+      renderTasks();
+    });
+  }
 
   return {
     renderPrompts,
@@ -1972,6 +2398,8 @@ export function createGenerationView(
     render,
     renderAttempts,
     applyNotice,
+    onViewedShotChanged,
+    hasUnsavedDrafts,
     showAttemptError,
     shortTime,
     resetViewState,

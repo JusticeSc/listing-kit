@@ -1,0 +1,18 @@
+{
+  "source": "https://docs.volcengine.com/docs/ark/image-generation-api?lang=zh",
+  "title": "图片生成 API - 火山方舟 - 火山引擎",
+  "observed_at": "2026-10-18T14:20:39.280Z",
+  "approved_exact_model": "doubao-seedream-5-0-flash-260915",
+  "exact_model_found": false,
+  "matched_context": [
+    "多图生图：输入多张参考图片（2-10）+ 文本提示词，生成单张图片。​",
+    "单图生图：输入单张参考图片 + 文本提示词，生成单张图片。​",
+    "多图生组图：输入多张参考图片（2-14）+ 文本提示词，生成一组内容关联的图片（输入的参考图数量 + 最终生成的图片数量 ≤ 15 张）。​",
+    "单图生组图：输入单张参考图片 + 文本提示词，生成一组内容关联的图片（最多生成 14 张图片）。​",
+    "多图生图：输入多张参考图片（2-14）+ 文本提示词，生成单张图片。​",
+    "单图生图：输入单张参考图片 + 文本提示词，生成单张图片。​",
+    "image string / string[]  |  参考图片​",
+    "多参考图生组图"
+  ],
+  "limit": "Public documentation, no product/model request; per-call parameters and safe asset/credential prerequisites still required."
+}

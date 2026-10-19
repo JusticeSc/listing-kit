@@ -91,38 +91,6 @@ import {
  */
 
 /**
- * 生成前确认单：domain/confirm.js `buildConfirmationSheet` 的确定性输出。领域层不导出该结构
- * 类型，工作区按实际消费的字段在本地收窄。
- * @typedef {{
- *   schema_version: number, total: number, ready: number, blocked: number, can_submit: boolean,
- *   platform: {platform_id: string, version: string, label?: string},
- *   provider: {provider_id: string, model_id: string, version: string, protocol: string, size: string,
- *              n: number, prompt_extend: boolean, watermark: boolean, output_format: string},
- *   external_summary: {model: string, size: string, n: number, prompt_extend: boolean, watermark: boolean,
- *                      output_format: string, reference_count: number, reference_roles: string[],
- *                      prompt_chars: number, on_image_text_language?: string, statement: string},
- *   shots: Array<ConfirmationSheetShot>,
- *   scope_shot_ids?: string[],
- *   blockers: Array<{shot_id: string, label: string, order: number, code: string, message: string,
- *                    fix: {region: string, shot_id: string|null, label: string, action: string}}>,
- *   risks: Array<{code: string, message: string, shot_id?: string, label?: string}>,
- * }} ConfirmationSheetView
- */
-
-/**
- * 确认单中的单张图片行（字段与 confirm.js 输出逐项对应）。
- * @typedef {{
- *   shot_id: string, order: number, label: string, role_id: string|null, role_label: string|null,
- *   intent: string|null, template_id: string|null, required: boolean, satisfied: boolean,
- *   prompt: {version: number|null, hash: string|null, chars: number|null},
- *   references: Array<{role: string, sha256_prefix: string}>,
- *   risks: Array<{code: string, message: string, shot_id: string, label: string}>,
- *   blockers: Array<{code: string, message: string,
- *                    fix: {region: string, shot_id: string|null, label: string, action: string}}>,
- * }} ConfirmationSheetShot
- */
-
-/**
  * 当前编辑中的商品资料：保存/出站前各字段都已落成具体值（不再是可选项）。
  * @typedef {{schema_version: number, product_name: string, description: string, selling_points: string[], focus: string, references: ProductReference[]}} CompleteProductInput
  */
@@ -157,20 +125,19 @@ import {
  * @property {HTMLElement} stageNav
  * @property {HTMLElement} stagePanels
  * @property {HTMLElement} stageSummary
- * @property {HTMLButtonElement} stageNextUnderstand
- * @property {HTMLElement} stageNextUnderstandNote
  * @property {HTMLButtonElement} stageNextPlan
  * @property {HTMLElement} stageNextPlanNote
- * @property {HTMLButtonElement} stageNextReview
- * @property {HTMLElement} stageNextReviewNote
+ * @property {HTMLButtonElement} stageNextMake
+ * @property {HTMLElement} stageNextMakeNote
  * @property {HTMLButtonElement} stageNextDeliver
  * @property {HTMLElement} stageNextDeliverNote
- * @property {HTMLElement} reviewList
+ * @property {HTMLElement} taskList
+ * @property {HTMLElement} shotExecution
  * @property {HTMLElement} suiteReviewCard
  * @property {HTMLElement} deliveryCard
  */
 
-const SCOPE_TEXT = "商品资料 → 商品理解 → 套图规划与规格 → 生成前确认 → 审核与单图返工 → 人工采用与交付；外发由你明确确认，交付仍需通过当前门禁。";
+const SCOPE_TEXT = "资料与事实 → 方案 → 制作与审图 → 交付；外发由你明确确认，交付仍需通过当前门禁。";
 
 /**
  * 工作区工厂：会话提供 repository/session/onProjectChanged；模型设置由外层装配透传。
@@ -210,15 +177,14 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
     stageNav: /** @type {HTMLElement} */ (document.getElementById("stage-nav")),
     stagePanels: /** @type {HTMLElement} */ (document.getElementById("stage-panels")),
     stageSummary: /** @type {HTMLElement} */ (document.getElementById("stage-summary")),
-    stageNextUnderstand: /** @type {HTMLButtonElement} */ (document.getElementById("stage-next-understand")),
-    stageNextUnderstandNote: /** @type {HTMLElement} */ (document.getElementById("stage-next-understand-note")),
     stageNextPlan: /** @type {HTMLButtonElement} */ (document.getElementById("stage-next-plan")),
     stageNextPlanNote: /** @type {HTMLElement} */ (document.getElementById("stage-next-plan-note")),
-    stageNextReview: /** @type {HTMLButtonElement} */ (document.getElementById("stage-next-review")),
-    stageNextReviewNote: /** @type {HTMLElement} */ (document.getElementById("stage-next-review-note")),
+    stageNextMake: /** @type {HTMLButtonElement} */ (document.getElementById("stage-next-make")),
+    stageNextMakeNote: /** @type {HTMLElement} */ (document.getElementById("stage-next-make-note")),
     stageNextDeliver: /** @type {HTMLButtonElement} */ (document.getElementById("stage-next-deliver")),
     stageNextDeliverNote: /** @type {HTMLElement} */ (document.getElementById("stage-next-deliver-note")),
-    reviewList: /** @type {HTMLElement} */ (document.getElementById("review-list-mount")),
+    taskList: /** @type {HTMLElement} */ (document.getElementById("task-list-mount")),
+    shotExecution: /** @type {HTMLElement} */ (document.getElementById("shot-execution")),
     suiteReviewCard: /** @type {HTMLElement} */ (document.getElementById("suite-review-card")),
     deliveryCard: /** @type {HTMLElement} */ (document.getElementById("delivery-card")),
   };
@@ -243,8 +209,9 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
     summary: /** @type {HTMLElement} */ (elements.stageSummary),
     onSelect: (/** @type {string} */ id) => {
       if (id === "deliver") deliveryView?.requestGateRefresh();
-      if (id === "understand" && projectId) void inputView?.prepareManualFacts();
-      if (id === "generate" && projectId) void generationView?.prepareSystemPrompts();
+      // intake 是默认停靠阶段，进入它不等于用户要求建槽位：核心事实的建立仍由
+      // 「人工填写事实」或槽位卡片的显式按钮触发（与本轮之前进入 intake 的语义一致）。
+      if (id === "make" && projectId) void generationView?.prepareSystemPrompts();
     },
   });
 
@@ -315,11 +282,15 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
     referenceSourceReader: () => inputs.references().map((item) => ({
       role: item.role, sha256: item.asset_sha256,
     })),
+    intakeVersionReader: () => projectSources().intakeVersion,
+    shotSpecReader: (shotId) => projectSources().shotSpecs[shotId] || null,
     promptsSheet: (ids) => prompts.sheet(ids ?? null),
     imageEnvironment: (saved) => /** @type {unknown} */ (saved ?? modelSettings.imageEnvironment()),
     promptAbility: {
       compile: (shotId, options) => prompts.compile(shotId, options),
+      previewManualForRework: (shotId, options) => prompts.previewManualForRework(shotId, options),
       compileAndSave: (shotId, options) => prompts.compileAndSave(shotId, options),
+      rebaseManualForRework: (shotId, options) => prompts.rebaseManualForRework(shotId, options),
     },
   });
   const selectionAdoption = createSelectionAdoptionModule({
@@ -415,6 +386,8 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
       attemptLocked: elements.attemptLocked,
       attemptEditor: elements.attemptEditor,
       attemptError: elements.attemptError,
+      taskList: elements.taskList,
+      shotExecution: elements.shotExecution,
     },
     deps: {
       prompts,
@@ -430,10 +403,10 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
       selectStage: (stageId) => stageShell.select(stageId),
       shotLabelOf,
       ensurePreviewUrl,
+      viewedShotId: () => compareView?.currentShotId() ?? null,
       isComparing: (/** @type {string} */ shotId) => compareView?.isComparing(shotId) ?? false,
       openCompare: (/** @type {string} */ shotId, /** @type {{focus?: boolean}|undefined} */ options) => compareView?.openCompare(shotId, options),
       renderCompare: () => compareView?.renderCompare(),
-      renderSelectionProgress: () => compareView?.renderSelectionProgress(),
       refreshDerived,
       localizeSlotTerms,
       suiteBlockingText,
@@ -448,7 +421,6 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
       comparePanel: elements.comparePanel,
       reworkPanel: elements.reworkPanel,
       imageZoomDialog: elements.imageZoomDialog,
-      reviewList: elements.reviewList,
     },
     deps: {
       inputs,
@@ -465,6 +437,10 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
       showAttemptError: (/** @type {string} */ message) => { generationView?.showAttemptError(message); },
       renderPrompts: () => generationView?.renderPrompts(),
       renderConfirm: () => generationView?.renderConfirm(),
+      onViewedShotChanged: (/** @type {string|null} */ shotId) => {
+        if (!shotId) return;
+        generationView?.onViewedShotChanged(shotId);
+      },
       readAsset: (/** @type {string} */ pid, /** @type {string} */ sha256) => repository.assets.get(pid, sha256),
       deriveState: deriveAndApplyState,
       reportError: handleInternalError,
@@ -484,7 +460,6 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
   selectionAdoption.subscribe(() => {
     deliveryView?.render();
     generationView?.renderAttempts();
-    compareView?.renderReviewList();
   });
   reviewDelivery.subscribe(() => { deliveryView?.render(); });
   // Prompt 版本/历史/准备状态 → prompts Module；确认队列/scope/mode → generation Module；
@@ -576,7 +551,6 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
 
   /* ------------------------------------------------------------ 生成执行 */
 
-  /** 预览 URL 缓存：每个候选一个 object URL，关闭项目时统一撤销。 */
   /** 预览 URL 缓存：每个候选一个 object URL，关闭项目时统一撤销。
    * @param {string} shotId
    * @param {string} actionId
@@ -628,26 +602,24 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
   }
 
   /**
-   * 焦点只能落到用户当前看得见的比较入口。
-   * V2.UI.2 起阶段分屏：尝试行在「生成」、审核卡在「审核返工」，跨阶段的入口是隐藏的，
-   * 直接 focus 会被浏览器丢成 body。顺序：审核卡入口 → 尝试行入口 → 阶段条当前阶段。
-   */
-  /** 收起后把焦点还给原候选：比较区还在就回到候选页签，否则回到该图的比较入口。
+   * 焦点只能落到用户当前看得见的入口。B4 四段分屏：比较/审核区住在「制作与审图」,
+   * 任务行与查看对象在同屏左侧。顺序：任务行查看按钮 → 本图执行区入口 →
+   * 阶段条当前阶段（始终可见）。B4 起比较面板不再输出 `.review-card` 列表,
+   * 因此旧的面板内卡片入口分支已删除；比较区打开时由比较视图自己管候选页签焦点。
    * @param {string|null} shotId
    * @returns {void}
    */
   function focusCompareEntry(shotId) {
     const isVisible = (/** @type {HTMLElement|null|undefined} */ node) => Boolean(node && node.offsetParent !== null);
-    const reviewCard = elements.reviewList
-      ? /** @type {HTMLElement|null} */ (elements.reviewList.querySelector('.review-card[data-shot-id="' + shotId + '"]'))
+    const taskEntry = shotId && elements.taskList
+      ? /** @type {HTMLButtonElement|null} */ (elements.taskList.querySelector(
+        'button[data-view-shot="' + shotId + '"]'))
       : null;
-    if (reviewCard) {
-      reviewCard.scrollIntoView({ block: "center" });
-      const reviewEntry = /** @type {HTMLButtonElement|null} */ (reviewCard.querySelector("button"));
-      if (reviewEntry && isVisible(reviewEntry)) { reviewEntry.focus(); return; }
-    }
-    const attemptEntry = /** @type {HTMLButtonElement|null} */ (elements.attemptEditor.querySelector(
-      'button[data-compare-action="' + shotId + '"]'));
+    if (taskEntry && isVisible(taskEntry)) { taskEntry.focus(); return; }
+    const attemptEntry = shotId && elements.shotExecution
+      ? /** @type {HTMLButtonElement|null} */ (elements.shotExecution.querySelector(
+        'button[data-compare-action="' + shotId + '"]'))
+      : null;
     const stageButton = /** @type {HTMLButtonElement|null} */ (elements.stageNav.querySelector("[data-stage-nav].is-current"));
     const target = [attemptEntry, stageButton]
       .find(isVisible);
@@ -712,7 +684,7 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
     if (action.alive()) renderHeaderText(project);
   }
 
-  /* ---------------------------------------------------------- 六阶段投影与交付门禁（V2.UI.2） */
+  /* ---------------------------------------------------------- 四阶段投影与交付门禁（B4） */
 
   /**
    * @returns {import("./domain/type-contracts.js").SuitePlanSummary["shots"]}
@@ -724,8 +696,7 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
   /**
    * 每个阶段的完成 / 可用 / 摘要只在这里派生一次；外壳只负责画出来。
    * available=false 表示阶段条上的入口不可用（前置未完成），不是错误。
-   */
-  /**
+   * B4 四段：资料与事实（资料+理解合并）、方案、制作与审图（生成+审核返工合并）、交付。
    * @returns {Record<string, {status?: string, summary?: string, hint?: string, available?: boolean}>}
    */
   function computeStageStates() {
@@ -733,7 +704,7 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
     const entries = inputs.slotEntries();
     const confirmed = entries.filter((item) => item.slot.status === "confirmed").length;
     const unknownSlots = entries.filter((item) => item.slot.status === "unknown").length;
-    const hasSlots = inputs.slotEntries().length > 0;
+    const hasSlots = entries.length > 0;
     const withCandidate = shots.filter((shot) =>
       Boolean(generation.latestStoredCandidateOf(shot.shot_id)));
     const settled = shots.filter((shot) => {
@@ -752,44 +723,32 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
     const referenceCount = inputs.references().length;
     const intakeSummary = [projectName, referenceCount ? "参考图 " + referenceCount + " 张" : ""]
       .filter(Boolean).join(" · ");
+    const factsSummary = understandingReady
+      ? "已确认 " + confirmed + " 项" + (unknownSlots ? " · 未知 " + unknownSlots + " 项" : "")
+      : "事实待确认";
 
     return {
       intake: {
         available: true,
         status: hasSlots ? "complete" : "current",
         hint: hasSlots ? "" : "上传参考图，自己填写商品事实；AI 理解是可选辅助。",
-        summary: hasSlots ? intakeSummary : "",
-      },
-      understand: {
-        available: hasSlots,
-        status: understandingReady ? "complete" : "current",
-        hint: hasSlots ? "" : "可直接填写并确认核心事实，不需要先调用模型。",
-        summary: understandingReady
-          ? "已确认 " + confirmed + " 项" + (unknownSlots ? " · 未知 " + unknownSlots + " 项" : "")
-          : "",
+        summary: hasSlots ? [intakeSummary, factsSummary].filter(Boolean).join(" · ") : "",
       },
       plan: {
         available: understandingReady,
         status: shots.length ? "complete" : "current",
-        hint: understandingReady ? "" : "先完成商品理解。",
+        hint: understandingReady ? "" : "先确认核心事实。",
         summary: shots.length ? shots.length + " 张图片任务" : "",
       },
-      generate: {
+      make: {
         available: shots.length > 0,
-        status: (shots.length > 0 && settled.length === shots.length) ? "complete" : "current",
+        status: (shots.length > 0 && shots.length === settled.length && selectedShots.length === shots.length)
+          ? "complete" : "current",
         hint: shots.length ? "" : "先生成套图方案。",
         summary: shots.length
-          ? withCandidate.length + "/" + shots.length + " 张有候选"
+          ? "候选 " + withCandidate.length + "/" + shots.length
+            + " · 已采用 " + selectedShots.length + "/" + shots.length
             + (unknownAttempts.length ? " · " + unknownAttempts.length + " 张待核对" : "")
-          : "",
-      },
-      review: {
-        available: withCandidate.length > 0,
-        status: (shots.length > 0 && selectedShots.length === shots.length) ? "complete" : "current",
-        hint: withCandidate.length ? "" : "先生成至少一张候选。",
-        summary: shots.length
-          ? "已采用 " + selectedShots.length + "/" + shots.length
-            + " · 必需图 " + requiredSelected.length + "/" + requiredShots.length
           : "",
       },
       deliver: {
@@ -803,35 +762,30 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
     };
   }
 
-  /** 默认停靠：最靠后的“可用且未完成”的阶段；全部完成则停在交付。 */
   /** 默认停靠：最靠后的“可用且未完成”的阶段；全部完成则停在交付。
    * @param {Record<string, {status?: string, summary?: string, hint?: string, available?: boolean}>|null} [states]
    * @returns {string}
    */
   function defaultStageId(states = null) {
     const map = states || computeStageStates();
-    for (const id of ["intake", "understand", "plan", "generate", "review", "deliver"]) {
+    for (const id of ["intake", "plan", "make", "deliver"]) {
       if (map[id] && map[id].available !== false && map[id].status !== "complete") return id;
     }
     return "deliver";
   }
 
-  /** 阶段底部的推进按钮：禁用时说明缺什么；不改变任何数据。 */
   /** 阶段底部的推进按钮：禁用时说明缺什么；不改变任何数据。
    * @param {Record<string, {status?: string, summary?: string, hint?: string, available?: boolean}>} states
    * @returns {void}
    */
   function renderStageFoot(states) {
     const shots = shotSummariesNow();
-    elements.stageNextUnderstand.disabled = false;
-    elements.stageNextUnderstandNote.textContent = understandingReady
-      ? "" : "可以先规划图片任务；缺失的核心事实只阻断生成。";
     elements.stageNextPlan.disabled = false;
     elements.stageNextPlanNote.textContent = shots.length
-      ? "" : "先生成或添加至少一张图片。";
-    const candidates = states && states.review ? states.review.available : false;
-    elements.stageNextReview.disabled = false;
-    elements.stageNextReviewNote.textContent = candidates ? "" : "先产生至少一张候选。";
+      ? "" : "先生成或添加至少一张图片任务。";
+    const candidates = states && states.make ? states.make.available : false;
+    elements.stageNextMake.disabled = false;
+    elements.stageNextMakeNote.textContent = candidates ? "" : "先产生至少一张候选。";
     const requiredShots = shots.filter((shot) => shot.required === true);
     const pending = requiredShots.filter((shot) => (compareView?.selectionStateOf(shot.shot_id) ?? "none") !== "current");
     elements.stageNextDeliver.disabled = false;
@@ -859,7 +813,6 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
    * @returns {Record<string, {status?: string, summary?: string, hint?: string, available?: boolean}>}
    */
   function refreshDerived() {
-    compareView?.renderReviewList();
     deliveryView?.render();
     deliveryView?.requestGateRefresh();
     return refreshStageShell();
@@ -893,18 +846,45 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "hidden") inputView?.saveIntakeNow().catch(() => {});
     });
-    elements.stageNextUnderstand.addEventListener("click", () => {
-      stageShell.select("plan", { focusHeading: true });
+    // 真脏草稿才拦截刷新：Prompt 全文键入（与呈现基线不同）＋资料草稿（与已保存内容不同）
+    // ＋比较区返工草稿；绝不拿 DOM 文本与刚落库的系统文本比对。
+    window.addEventListener("beforeunload", (event) => {
+      if (!hasUnsavedDraftsNow()) return;
+      event.preventDefault();
+      // 兼容旧浏览器：returnValue 非空才弹确认框。
+      event.returnValue = "";
     });
     elements.stageNextPlan.addEventListener("click", () => {
-      stageShell.select("generate", { focusHeading: true });
+      stageShell.select("plan", { focusHeading: true });
     });
-    elements.stageNextReview.addEventListener("click", () => {
-      stageShell.select("review", { focusHeading: true });
+    elements.stageNextMake.addEventListener("click", () => {
+      stageShell.select("make", { focusHeading: true });
     });
     elements.stageNextDeliver.addEventListener("click", () => {
       stageShell.select("deliver", { focusHeading: true });
     });
+  }
+
+  /** 刷新保护判据：各视图/owner 自己的脏判据之和，工作区不重建规则。
+   * @returns {boolean}
+   */
+  function hasUnsavedDraftsNow() {
+    if (generationView?.hasUnsavedDrafts()) return true;
+    if (compareView?.hasUnsavedDrafts()) return true;
+    return hasUnsavedFactDrafts();
+  }
+
+  /** 资料草稿是否真的与已保存内容不同：草稿读侧（唯一权威）对 owner 投影，不碰 DOM。
+   * @returns {boolean}
+   */
+  function hasUnsavedFactDrafts() {
+    if (!inputView) return false;
+    try {
+      return JSON.stringify(inputView.draftInputPayload())
+        !== JSON.stringify(inputs.intakeSnapshot());
+    } catch {
+      return false;
+    }
   }
 
   /**
@@ -952,7 +932,7 @@ export function createWorkspace({ repository, session = null, modelSettings, onP
     // 确认有效性依赖 capabilities 投影的有效档：能力到位后再做唯一一次状态派生；
     // 在能力到位前不派生，避免中间态先回写 PLAN_REVIEW、能力到位后又写回 READY_TO_GENERATE
     //（reload 路径两次生效写入，UI2-17 整库逐字判据必红）。
-    // 阶段停靠必须在派生之后：understandingReady 等派生结论先就绪，否则重开必停在 understand。
+    // 阶段停靠必须在派生之后：understandingReady 等派生结论先就绪，否则重开必停在 intake。
     await deriveAndApplyState();
     refreshStageShell({ reset: true });
     renderAll();

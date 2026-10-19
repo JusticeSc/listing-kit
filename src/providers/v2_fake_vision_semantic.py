@@ -35,8 +35,7 @@ from src.providers.v2_semantic import (
     output_truncated,
     refused,
 )
-from src.providers.v2_semantic import ANALYZE_BASE_FIELDS
-from src.providers.v2_dashscope_semantic import DEFAULT_MAX_TOKENS
+from src.providers.v2_semantic import ANALYZE_COPY_FIELDS
 
 FAKE_VISION_PROVIDER_ID = "fake-vision-semantic"
 FAKE_VISION_MODEL_ID = "fake-qwen-vl-max"
@@ -59,7 +58,8 @@ class FakeVisionSemanticProvider:
             "vision": True,
             "max_reference_images": 3,
             "max_reference_bytes": 4 * 1024 * 1024,
-            "analyze_fields": [*list(ANALYZE_BASE_FIELDS), "reference_images"],
+            "analyze_fields": [*list(ANALYZE_COPY_FIELDS), "reference_images"],
+            "copy_proposals": True,
             "structured_output": "local",
             "stateless": True,
             "test_double": True,
@@ -102,10 +102,31 @@ class FakeVisionSemanticProvider:
                 "byte_size": len(data) if isinstance(data, (bytes, bytearray)) else None,
             })
         self.calls.append({"scenario": scenario, "product_name": request.product_name,
-                           "vision_images": len(received), "images": received})
+                           "vision_images": len(received), "images": received,
+                           "copy_targets": [target.slot_id for target in request.copy_targets]})
         if scenario not in FAKE_SCENARIOS:
             raise invalid_response(f"未知假场景 {scenario!r}。",
                                    details={"allowed": list(FAKE_SCENARIOS)})
+        # 文案提议模式不看图：与真实看图适配器同一口径，图片字节一律不消费。
+        if request.copy_targets:
+            copies = [{
+                "text": "FAKE " + target.slot_id.upper().replace("_", " ")[:54],
+                "source_slot_id": target.slot_id,
+                "source_slot_version": target.version,
+            } for target in request.copy_targets]
+            return SemanticProposal(
+                slots=(),
+                questions=(),
+                summary="假看图 Provider 文案提议：未消费图片字节，仅用于契约测试。",
+                provider_id=FAKE_VISION_PROVIDER_ID,
+                model_id=FAKE_VISION_MODEL_ID,
+                request_id="fake-vision-" + str(len(self.calls)),
+                usage={"prompt_tokens": 0, "completion_tokens": 0},
+                latency_ms=self.latency_ms,
+                inputs_used=("confirmed_slots",),
+                reference_images_sent=False,
+                copy_proposals=tuple(copies),
+            )
         if not received:
             raise SemanticFailure("input_rejected", "VISION_BYTES_REQUIRED",
                                   "看图理解需要至少一张已校验的参考图字节（reference_images 1..3 张）；"

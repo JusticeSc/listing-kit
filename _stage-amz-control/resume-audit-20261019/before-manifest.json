@@ -1,0 +1,27 @@
+[
+  {
+    "path": "_working/amz-listing-kit-product-v2/state.md",
+    "bytes": 59536,
+    "sha256": "2e50119a3e4a94f6eb0ee3a20f3f33498f8951712d9bcfad03b809119b59f5ea"
+  },
+  {
+    "path": "_stage-amz-control/spec-save-occ-20261019/verification.json",
+    "bytes": 4845,
+    "sha256": "6060c1bd76cccca58479d8dc37f4d1ab6224f5670b0ec2f9dab7f2f406e4791c"
+  },
+  {
+    "path": "_stage-amz-control/copy-adoption-contract-20261019/verification.json",
+    "bytes": 4689,
+    "sha256": "c8d8d9a398a9c038ea06b9d20b064c0bbb716ef9d19724f7b325a3cc5ad5d699"
+  },
+  {
+    "path": "_stage-amz-control/copy-request-contract-20261019/verification.json",
+    "bytes": 5893,
+    "sha256": "869d4a81f815d02c874762aa7e30d3353a928f4f00a4c95d1c3e5e4405041039"
+  },
+  {
+    "path": "docs/product-v2-refactor-plan.md",
+    "bytes": 223389,
+    "sha256": "5f508a6aede7bb645d0de96a18da5a410374156a4d577cd8d4063e3c50feb94d"
+  }
+]

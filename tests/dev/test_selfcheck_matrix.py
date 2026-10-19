@@ -112,14 +112,135 @@ def broken_factory(kind: str):
     return _factory
 
 
+def copy_targets_payload(**overrides) -> dict:
+    """文案提议请求：只带已确认中文值槽位的精确版本快照（不送图）。"""
+    payload = analyze_payload(copy_targets=[
+        {"slot_id": "signature_features", "version": 3, "label": "必须保持的商品特征",
+         "value_type": "text_list", "value": ["304不锈钢内胆", "12小时保温"]},
+        {"slot_id": "product_name", "version": 1, "label": "商品名称",
+         "value_type": "text", "value": "便携保温杯"},
+    ])
+    payload.update(overrides)
+    return payload
+
+
 def test_capabilities_expose_semantic_provider_and_contracts(client: Client) -> None:
     status, payload = client.json("GET", CAPABILITIES_PATH)
     assert status == 200 and payload["ok"] is True
     assert payload["provider"]["configured"] is True
     assert payload["analyze_fields"] == list(
         ("product_name", "description", "selling_points", "focus", "references",
-         "locale", "platform", "max_slots", "existing_slot_ids"))
+         "locale", "platform", "max_slots", "existing_slot_ids", "copy_targets"))
+    # 文案提议是独立能力：界面据此决定是否显示「提议文案」，不能凭型号猜。
+    assert payload["provider"]["capabilities"]["copy_proposals"] is True
     assert bool(payload["semantic_contract"])
+
+
+def test_copy_proposals_echo_requested_identity_only(client: Client) -> None:
+    status, payload = client.json("POST", ANALYZE_PATH, copy_targets_payload())
+    proposal = payload.get("proposal") or {}
+    copies = proposal.get("copy_proposals") or []
+    assert status == 200 and payload["ok"] is True and payload["unknown"] is False
+    # 两种产出不混装：文案模式下没有事实提案。
+    assert proposal.get("slots") == []
+    assert [(item["source_slot_id"], item["source_slot_version"]) for item in copies] == [
+        ("signature_features", 3), ("product_name", 1)]
+    assert all(item["text"] for item in copies)
+    assert proposal.get("meta", {}).get("reference_images_sent") is False
+
+
+def test_copy_mode_without_references_is_accepted(client: Client) -> None:
+    """页面实况：文案提议只看已确认文字，请求不带参考图元数据（回归：曾被 references≥1 拒绝）。"""
+
+    status, payload = client.json("POST", ANALYZE_PATH, copy_targets_payload(references=[]))
+    proposal = payload.get("proposal") or {}
+    copies = proposal.get("copy_proposals") or []
+    assert status == 200 and payload["ok"] is True, payload
+    assert [(item["source_slot_id"], item["source_slot_version"]) for item in copies] == [
+        ("signature_features", 3), ("product_name", 1)]
+    assert proposal.get("slots") == []
+    assert proposal.get("meta", {}).get("reference_images_sent") is False
+
+
+def test_analyze_still_requires_a_reference(client: Client) -> None:
+    """同一条 references 规则不能被放宽：事实理解没有参考图仍然拒在模型之前。"""
+
+    status, payload = client.json("POST", ANALYZE_PATH, analyze_payload(references=[]))
+    assert status == 400 and payload["error"]["family"] == "input_rejected", payload
+
+
+def test_copy_mode_rejects_vision_bytes_without_model_call(start_server) -> None:
+    from src.providers.v2_fake_vision_semantic import FakeVisionSemanticProvider
+
+    calls = {"count": 0}
+
+    class CountingVision(FakeVisionSemanticProvider):
+        def analyze(self, request, images=None, **kwargs):
+            calls["count"] += 1
+            return super().analyze(request, images)
+
+    client = Client(start_server(provider_factory=lambda: CountingVision(scenario="ok")))
+    image = png_1x1()
+    metadata = {"sha256": hashlib.sha256(image).hexdigest(),
+                "media_type": "image/png", "role": "primary"}
+    payload = copy_targets_payload(references=[metadata],
+                                   reference_images=[{**metadata,
+                                                      "data_base64": base64.b64encode(image).decode("ascii")}])
+    status, decoded = client.json("POST", ANALYZE_PATH, payload)
+    assert status == 400 and decoded["error"]["family"] == "input_rejected"
+    assert calls["count"] == 0, calls  # 文案提议只看已确认文字，拒在模型之前
+
+
+def test_copy_targets_contract_rejected_before_model_call(start_server) -> None:
+    calls = {"count": 0}
+
+    def counting_factory():
+        calls["count"] += 1
+        return FakeSemanticProvider(scenario="ok")
+
+    client = Client(start_server(provider_factory=counting_factory))
+    target = {"slot_id": "product_name", "version": 1, "label": "商品名称",
+              "value_type": "text", "value": "便携保温杯"}
+    duplicate = copy_targets_payload(copy_targets=[target, {**target, "version": 2}])
+    status, payload = client.json("POST", ANALYZE_PATH, duplicate)
+    assert status == 400 and payload["error"]["family"] == "input_rejected"
+    structured = copy_targets_payload(copy_targets=[
+        {**target, "value_type": "number", "value": 95}])
+    status, payload = client.json("POST", ANALYZE_PATH, structured)
+    assert status == 400 and payload["error"]["family"] == "input_rejected"
+    too_many = copy_targets_payload(copy_targets=[
+        {**target, "slot_id": "slot_" + letter} for letter in "abcde"])
+    status, payload = client.json("POST", ANALYZE_PATH, too_many)
+    assert status == 400 and payload["error"]["family"] == "input_rejected"
+    assert calls["count"] == 0, calls  # 契约校验在 provider 构造之前
+
+
+def test_copy_response_identity_is_echo_only() -> None:
+    from src.providers.v2_semantic import (
+        SemanticFailure,
+        parse_copy_response,
+        parse_request,
+        to_copy_proposals,
+    )
+
+    request = parse_request(analyze_payload(copy_targets=[
+        {"slot_id": "product_name", "version": 1, "label": "商品名称",
+         "value_type": "text", "value": "便携保温杯"}]))
+    good = parse_copy_response({"copy_proposals": [
+        {"slot_id": "product_name", "version": 1, "text": "便携保温杯（假文案）"}]})
+    assert to_copy_proposals(good, request) == (
+        {"text": "便携保温杯（假文案）", "source_slot_id": "product_name", "source_slot_version": 1},)
+    invented = parse_copy_response({"copy_proposals": [
+        {"slot_id": "signature_features", "version": 1, "text": "凭空出现的文案"}]})
+    with pytest.raises(SemanticFailure) as error:
+        to_copy_proposals(invented, request)
+    assert (error.value.family, error.value.code) == ("provider_failed", "INVALID_RESPONSE")
+    doubled = parse_copy_response({"copy_proposals": [
+        {"slot_id": "product_name", "version": 1, "text": "第一条"},
+        {"slot_id": "product_name", "version": 1, "text": "第二条"}]})
+    with pytest.raises(SemanticFailure) as error:
+        to_copy_proposals(doubled, request)
+    assert (error.value.family, error.value.code) == ("provider_failed", "INVALID_RESPONSE")
 
 
 def test_capabilities_expose_image_gateway_block(client: Client) -> None:

@@ -1,0 +1,48 @@
+{
+  "phase": "verified",
+  "issues": [
+    {
+      "number": 7,
+      "url": "https://github.com/JusticeSc/listing-kit/issues/7",
+      "edit_exit": 0,
+      "readback_exit": 0,
+      "body_matches_local": true,
+      "state": "OPEN",
+      "title_unchanged": true,
+      "body_bytes": 10065
+    },
+    {
+      "number": 8,
+      "url": "https://github.com/JusticeSc/listing-kit/issues/8",
+      "edit_exit": 0,
+      "readback_exit": 0,
+      "body_matches_local": true,
+      "state": "OPEN",
+      "title_unchanged": true,
+      "body_bytes": 7361
+    },
+    {
+      "number": 9,
+      "url": "https://github.com/JusticeSc/listing-kit/issues/9",
+      "edit_exit": 0,
+      "readback_exit": 0,
+      "body_matches_local": true,
+      "state": "OPEN",
+      "title_unchanged": true,
+      "body_bytes": 10292
+    },
+    {
+      "number": 10,
+      "url": "https://github.com/JusticeSc/listing-kit/issues/10",
+      "edit_exit": 0,
+      "readback_exit": 0,
+      "body_matches_local": true,
+      "state": "OPEN",
+      "title_unchanged": true,
+      "body_bytes": 11931
+    }
+  ],
+  "product_code_changed": false,
+  "commit_push_merge_deploy": false,
+  "observed_at": "2026-10-18T13:44:53.642Z"
+}

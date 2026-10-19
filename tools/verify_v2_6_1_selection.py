@@ -29,7 +29,7 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(ROOT / "tools"))
 
-import v2_stage_nav as stage_nav  # noqa: E402  （V2.UI.2 六阶段工作台导航）
+import v2_stage_nav as stage_nav  # noqa: E402  （B4 四段工作台导航）
 from console import enable_utf8  # noqa: E402
 enable_utf8()
 
@@ -157,13 +157,19 @@ SELECTION_PROBE = """
   const clearButton = document.getElementById("adopt-clear");
   const comparePanel = document.getElementById("compare-panel");
   const active = document.activeElement;
-  const rows = [...document.querySelectorAll("#attempt-list .attempt-row")].map((node) => {
-    const summary = node.querySelector(".attempt-selection");
+  const rows = [...document.querySelectorAll("#task-list-mount [data-task-shot]")].map((node) => {
+    const viewed = document.querySelector(
+      '#shot-execution [data-shot-id="' + node.getAttribute("data-task-shot") + '"]'
+      + ' .attempt-selection');
+    const adopted = [...node.querySelectorAll('.badge')]
+      .some((item) => (item.textContent || '').includes('已采用'));
     return {
-      shot_id: node.getAttribute("data-shot-id"),
+      shot_id: node.getAttribute("data-task-shot"),
       attempt_state: node.getAttribute("data-attempt-state"),
-      selection_state: summary ? summary.getAttribute("data-selection-state") : null,
-      selection_text: summary ? summary.textContent : null,
+      selection_state: viewed ? viewed.getAttribute("data-selection-state")
+        : (node.getAttribute("data-selection-state") || (adopted ? "current" : "none")),
+      selection_text: viewed ? viewed.textContent
+        : ((node.querySelector('.task-state') || {}).textContent || null),
     };
   });
   const badges = [...document.querySelectorAll("#compare-candidates [data-adopted]")].map((node) => {
@@ -290,14 +296,19 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                     return page.evaluate(v251.PROBE)
 
                 def row(shot_id: str):
-                    return page.locator(f'#attempt-list .attempt-row[data-shot-id="{shot_id}"]')
+                    shared.select_make_shot(page, shot_id)
+                    return page.locator(
+                        f'#shot-execution [data-shot-id="{shot_id}"]')
 
 
                 def wait_candidate_ui(shot_id: str, timeout: int = 30_000) -> None:
+                    # B4：执行区一次只渲染「正看着的那张图」；先切到该图再等它的候选行，
+                    # 否则非正看图的等待必然超时（那不是产品没保存候选）。
+                    shared.select_make_shot(page, shot_id, timeout=timeout)
                     page.wait_for_function(
                         """(shot) => {
                             const node = document.querySelector(
-                                '#attempt-list .attempt-row[data-shot-id="' + shot + '"]');
+                                '#shot-execution [data-shot-id="' + shot + '"]');
                             return Boolean(node && node.querySelector('.attempt-candidate'));
                         }""", arg=shot_id, timeout=timeout)
 
@@ -314,32 +325,112 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                     return page.evaluate(
                         """() => {
                             const panel = document.getElementById("compare-panel");
+                            const selected = panel
+                              ? panel.querySelector('#compare-candidates [role="tab"][aria-selected="true"]')
+                              : null;
+                            const list = panel ? panel.querySelector("#compare-references") : null;
                             return {
                                 visible: Boolean(panel && !panel.hidden),
                                 shot: panel ? (panel.dataset.shotId || null) : null,
                                 cards: panel ? panel.querySelectorAll('#compare-candidates [role="tab"]').length : 0,
                                 references: panel ? panel.querySelectorAll("#compare-references li").length : 0,
+                                selected_candidate_id: selected
+                                  ? (selected.dataset.candidateId || null) : null,
+                                reference_shas: list
+                                  ? [...list.querySelectorAll("li")]
+                                      .map((node) => node.dataset.referenceSha256 || null)
+                                  : [],
                             };
                         }""")
 
-                def open_panel(shot_id: str, card_count: int, references: int = 1) -> None:
+                def frozen_reference_shas(shot_id: str, candidate_id: str | None) -> list | None:
+                    """正看着的候选在原任务里冻结的参考图顺序（只读 IDB 原记录，不重算选择）。
+
+                    编辑源模式（改这条候选）的返工任务合法地有两张：候选原字节在第一位，
+                    商品依据随后。所以这里比对的是身份与顺序，不是写死的张数。
+                    """
+                    if not candidate_id:
+                        return None
+                    data = attempt_probe()
+                    action_id = None
+                    for entry in data["candidate_chains"].get(shot_id, []):
+                        if entry["payload"].get("candidate_id") == candidate_id:
+                            action_id = entry["payload"].get("action_id")
+                    if action_id is None:
+                        return None
+                    newest = None
+                    for entry in data["attempt_chains"].get(shot_id, []):
+                        if entry["payload"].get("action_id") == action_id:
+                            newest = entry  # 链按版本升序：最后一条即当前冻结内容
+                    if newest is None:
+                        return None
+                    return [item["sha256"] for item in (newest["payload"].get("references") or [])]
+
+                def open_panel(shot_id: str, card_count: int) -> None:
                     state = compare_state()
                     if not (state["visible"] and state["shot"] == shot_id):
-                        stage_nav.goto(page, "generate")
-                        row(shot_id).locator('button[data-compare-action]').first.click()
-                    stage_nav.goto(page, "review")
-                    page.wait_for_function(
-                        """(payload) => {
-                            const panel = document.getElementById("compare-panel");
-                            if (!panel || panel.hidden) return false;
-                            if (panel.dataset.shotId !== payload.shot) return false;
-                            const cards = panel.querySelectorAll('#compare-candidates [role="tab"]');
-                            if (cards.length !== payload.cards) return false;
-                            return panel.querySelectorAll("#compare-references li").length
-                              === payload.references;
-                        }""",
-                        arg={"shot": shot_id, "cards": card_count, "references": references},
-                        timeout=20_000)
+                        shared.select_make_shot(page, shot_id)
+                    stage_nav.goto(page, "make")
+                    try:
+                        page.wait_for_function(
+                            """(payload) => {
+                                const panel = document.getElementById("compare-panel");
+                                if (!panel || panel.hidden) return false;
+                                if (panel.dataset.shotId !== payload.shot) return false;
+                                const cards = panel.querySelectorAll('#compare-candidates [role="tab"]');
+                                return cards.length === payload.cards;
+                            }""",
+                            arg={"shot": shot_id, "cards": card_count},
+                            timeout=20_000)
+                    except Exception as error:
+                        # 超时要留下"实际看到什么"：候选数不符是检查本身要抓的事实，
+                        # 不能只报一句 wait_for_function 超时。
+                        observed = page.evaluate(
+                            """() => {
+                                const panel = document.getElementById("compare-panel");
+                                return {
+                                  panel: panel ? { hidden: panel.hidden,
+                                                   shot: panel.dataset.shotId } : null,
+                                  tabs: [...document.querySelectorAll(
+                                    '#compare-candidates [role="tab"]')]
+                                    .map((node) => node.getAttribute("data-candidate-id")),
+                                };
+                            }""")
+                        raise AssertionError(
+                            "比较面板候选数未达预期 " + str(card_count)
+                            + "（shot=" + shot_id + "）：" + json.dumps(observed, ensure_ascii=False)
+                        ) from error
+                    expected = frozen_reference_shas(shot_id, compare_state()["selected_candidate_id"])
+                    if expected is None:
+                        raise AssertionError("比较面板正看着的候选没有可核对的原任务参考图记录")
+                    try:
+                        page.wait_for_function(
+                            """(payload) => {
+                                const panel = document.getElementById("compare-panel");
+                                if (!panel || panel.hidden) return false;
+                                const select = panel.querySelector("#compare-left-select");
+                                if (!select) return false;
+                                const shas = [...select.querySelectorAll("option")]
+                                  .map((node) => node.value)
+                                  .filter((value) => value.startsWith("reference:"))
+                                  .map((value) => value.slice("reference:".length));
+                                if (JSON.stringify(shas) !== JSON.stringify(payload)) return false;
+                                const shown = [...panel.querySelectorAll("#compare-references li")]
+                                  .map((node) => node.dataset.referenceSha256 || null);
+                                return shown.length === 1 && payload.includes(shown[0]);
+                            }""",
+                            arg=expected,
+                            timeout=20_000)
+                    except Exception as error:
+                        # 顺序/身份不符要留下两侧原值：只报超时不构成可定位的失败原因。
+                        raised = compare_state()
+                        raise AssertionError(
+                            "比较面板参考图与冻结身份不一致（shot=" + shot_id
+                            + " 面板=" + json.dumps(raised["reference_shas"], ensure_ascii=False)
+                            + " 冻结=" + json.dumps(expected, ensure_ascii=False)
+                            + " 正看候选=" + str(raised["selected_candidate_id"])
+                            + " 候选数=" + str(raised["cards"])
+                        ) from error
 
                 def select_candidate(candidate_id: str) -> dict:
                     page.click('#compare-candidates [role="tab"][data-candidate-id="'
@@ -422,7 +513,7 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                         page.wait_for_function(
                             """(payload) => {
                                 const rows = document.querySelectorAll(
-                                    '#attempt-list .attempt-row[data-shot-id="' + payload.shot + '"]'
+                                    '#shot-execution [data-shot-id="' + payload.shot + '"]'
                                     + ' .attempt-candidate');
                                 return rows.length > 0;
                             }""", arg={"shot": shot_id}, timeout=40_000)
@@ -435,6 +526,10 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                     wait_candidate_ui(shot_id)
 
                 page.goto(base + "/", wait_until="networkidle")
+                # 返工合同版本以产品模块为唯一权威（报告标签不另立字面量）。
+                ui["rework_contract"] = page.evaluate(
+                    "async () => (await import('/app/product_v2/domain/rework.js'))"
+                    ".REWORK_CONTRACT_VERSION")
                 page.wait_for_selector("#empty-state:not([hidden])", timeout=60_000)
                 page.fill("#new-project-name", "审计商品 · 人工选择")
                 page.click("#create-project")
@@ -463,6 +558,7 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 # Issue #9：编译前先做普通决定（用户真实路径）；choices 进 ui 证据。
                 ui["decisions"] = shared.decide_for_compile(page, shot_ids)
                 shared.compile_all(page, shot_ids)
+                shared.choose_make_batch(page, shot_ids)
                 gate = shared.confirm_and_submit(
                     page, expect, lambda: attempt_probe(), shot_ids=shot_ids)
                 assert gate["ok"], f"确认必须产生本次授权的新消费：{gate['after_actions']}"
@@ -473,7 +569,7 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 if not confirmed_rows or confirmed_rows[-1]["version"] < 1:
                     raise AssertionError("一次点击没有先落授权记录：" + repr(confirmed_rows))
                 wait_terminal_all(shot_ids)
-                open_panel(first_shot, 1, references=1)
+                open_panel(first_shot, 1)
                 rework_once(first_shot, "scene", "把背景换成纯白，商品保持不变，不要改标识。")
 
                 seeded = attempt_probe()
@@ -508,7 +604,7 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                                "row": initial_rows[0] if initial_rows else None},
                 })
 
-                open_panel(first_shot, 2, references=1)
+                open_panel(first_shot, 2)
                 opened_compare = probe()
                 default_id = opened_compare["selected_candidate_id"]
                 other_id = [item for item in candidate_ids if item != default_id][0]
@@ -621,7 +717,7 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 rework_once(first_shot, "scene", "把背景换成纯白，商品保持不变，不要改标识。",
                             known_candidates=len(candidate_ids))
                 wait_candidate_ui(first_shot)
-                open_panel(first_shot, 3, references=1)
+                open_panel(first_shot, 3)
                 after_rework = attempt_probe()
                 chain_after = after_rework["candidate_chains"].get(first_shot, [])
                 newest_candidate_id = chain_after[-1]["payload"]["candidate_id"]
@@ -774,7 +870,7 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                 expect(page.locator("#project-view")).to_be_visible()
                 reloaded = probe()
                 reloaded_storage = storage()
-                open_panel(first_shot, 3, references=1)
+                open_panel(first_shot, 3)
                 reloaded_open = probe()
                 reloaded_rows = [item for item in reloaded["rows"] if item["shot_id"] == first_shot]
                 checks.append({
@@ -930,7 +1026,8 @@ def main() -> int:
         "-" * 76,
         f"observed_at: {observed_at}",
         f"status: {'passed' if passed == len(checks) else 'failed'}",
-        f"contract: {SELECTION_CONTRACT_VERSION}（人工选择）· v2.5.4（返工）· v2.5.3（比较）· v2.5.2（复核）",
+        f"contract: {SELECTION_CONTRACT_VERSION}（人工选择）· "
+        f"{ui.get('rework_contract') or 'v2.5.5'}（返工，页面读值）· v2.5.3（比较）· v2.5.2（复核）",
         "model_calls: 0 · external_network_calls: 0（fake providers + 本地静态服务器）",
         f"json: {json_path.relative_to(ROOT).as_posix()}",
         "",

@@ -5,9 +5,9 @@
   B) 浏览器（真实 Chromium + 正式入口 + fake provider）：
      - 空白首页 axe WCAG A/AA 扫描 0 violations；键盘 Tab 序列可达主操作且焦点可见；
      - 纯键盘创建项目（Tab + 输入 + Enter）；
-     - 生成阶段：空态（尚未生成）→ 忙态（整套生成中）→ 终态；
+     - 制作与审图：空态（尚未生成）→ 忙态（整套生成中）→ 终态；
      - 技术详情默认收起：attempt 行 / compare 卡片 / 交付结果，主行不含 sha256/action/task；
-     - 审核与交付阶段 axe 扫描 0 violations；可见按钮都有可访问名；
+     - 制作与审图、交付阶段 axe 扫描 0 violations；可见按钮都有可访问名；
      - 交付阶段（含交付包）后 390px 与 200% 等效视口无横向溢出、当前阶段可见；
      - 演练：成功/失败/Unknown 三态可见且每态有下一步动作（重试 / 新建 action），不自动重提；
      - 主链零意外 console / page / HTTP 错误。
@@ -48,7 +48,7 @@ AXE_BYTES = 580491
 
 sys.path.insert(0, str(ROOT / "tools"))
 import v2_verify_shared as shared  # noqa: E402
-import v2_stage_nav as stage_nav  # noqa: E402  （六阶段导航：分析后必须先进入商品理解面板）
+import v2_stage_nav as stage_nav  # noqa: E402  （B4 四段工作台导航）
 from walkthrough_server import WalkthroughImageProvider  # noqa: E402
 
 from app.product_v2_server import create_product_v2_server  # noqa: E402
@@ -103,13 +103,12 @@ TECH_PROBE = """(scope) => {
     main_text: clone.textContent,
   };
 }"""
-
 BATCH_STATE = """() => ({
-  started_rows: [...document.querySelectorAll('#attempt-list .attempt-row')].filter((row) => {
+  started_rows: [...document.querySelectorAll('#task-list-mount [data-task-shot]')].filter((row) => {
     const state = row.getAttribute('data-attempt-state');
     return state !== null && state !== 'none';
   }).length,
-  active_rows: [...document.querySelectorAll('#attempt-list .attempt-row')].filter((row) => {
+  active_rows: [...document.querySelectorAll('#task-list-mount [data-task-shot]')].filter((row) => {
     const state = row.getAttribute('data-attempt-state');
     return state !== null && state !== 'none' && state !== 'succeeded'
       && state !== 'failed' && state !== 'unknown';
@@ -123,7 +122,7 @@ BATCH_STATE = """() => ({
 })"""
 
 EMPTY_STATE = """() => {
-  const rows = [...document.querySelectorAll('#attempt-list .attempt-row')];
+  const rows = [...document.querySelectorAll('#task-list-mount [data-task-shot]')];
   return {
     rows: rows.length,
     missing: rows.filter((row) =>
@@ -299,13 +298,13 @@ def main() -> int:
                 squeeze["intake"] = page.evaluate(TECH_SQUEEZE)
                 shot(page, "ref-card-1440")
                 page.click("#analyze-run")
-                stage_nav.goto(page, "understand")
+                stage_nav.goto(page, "intake")
                 page.wait_for_selector("#slot-list .slot-row:not([hidden])", timeout=30_000)
                 shared.confirm_slots(page)
-                page.click("#stage-next-understand")
+                page.click("#stage-next-plan")
                 page.click("#suite-seed")
                 page.wait_for_selector("#shot-list .shot-row", timeout=20_000)
-                page.click("#stage-next-plan")
+                page.click("#stage-next-make")
                 shots = page.evaluate(shared.SHOT_IDS)
                 # Issue #9：编译前先做普通决定（用户真实路径）。
                 shared.decide_for_compile(page, shots)
@@ -313,26 +312,29 @@ def main() -> int:
                 empty = page.evaluate(EMPTY_STATE)
                 import v2_verify_shared as _shared
                 from playwright.sync_api import expect as _expect
+                shared.choose_make_batch(page, shots)
                 gate = _shared.confirm_and_submit(page, _expect, lambda: page.evaluate(shared.PROBE),
                                                   shot_ids=shots)
                 assert gate["ok"], f"确认必须产生本次授权的新消费：{gate['after_actions']}"
 
-                # 生成阶段：忙态采样（确认即提交：点确认后批次已在跑，直接采忙态）
+                # 制作与审图：忙态采样（确认即提交：点确认后批次已在跑，直接采忙态）
                 page.wait_for_timeout(120)
                 busy = page.evaluate(BATCH_STATE)
                 shot(page, "busy")
                 busy_ok = (busy["started_rows"] > 0 or busy["active_rows"] > 0
                            or busy["stop_visible"] or "进行中" in busy["progress"])
                 shared.wait_terminal(page, shots, timeout=120_000)
-                check("V2.6.4-06", "生成阶段四态之空/忙：未生成可见、整套生成中可观察",
+                check("V2.6.4-06", "制作与审图四态之空/忙：未生成可见、整套生成中可观察",
                       empty["rows"] == len(shots) and empty["missing"] == len(shots)
                       and "尚未生成" in empty["badge"] and busy_ok,
                       {"empty": empty, "busy": busy})
 
-                attempt_tech = page.evaluate(TECH_PROBE, "#attempt-list")
+                attempt_tech = page.evaluate(TECH_PROBE, "#shot-execution")
                 attempt_main = (attempt_tech or {}).get("main_text", "")
-                check("V2.6.4-07", "生成阶段技术详情：attempt 行默认收起且主行不含 sha256/action/task",
-                      attempt_tech is not None and attempt_tech["total"] >= len(shots)
+                # B4 执行区是单图详情（只渲染当前查看一张）：details≥1 全收起即正确；
+                # 旧“≥张数”是每图一卡时代的阈值。
+                check("V2.6.4-07", "制作与审图技术详情：attempt 行默认收起且主行不含 sha256/action/task",
+                      attempt_tech is not None and attempt_tech["total"] >= 1
                       and attempt_tech["open"] == 0
                       and all("技术详情" in item for item in attempt_tech["summaries"])
                       and "sha256" not in attempt_main.lower()
@@ -345,31 +347,35 @@ def main() -> int:
                        "has_action": "action " in attempt_main.lower(),
                        "main_tail": attempt_main[-200:],
                        "main_sample": attempt_main[:160]})
-
-                # 审核阶段：比较面板 → axe → 技术详情 → 采用 → 整套检查
-                page.click("#stage-next-review")
+                # 制作与审图：常驻精看 → axe → 技术详情 → 采用 → 整套检查
+                stage_nav.goto(page, "make")
                 first_shot = shots[0]
-                # V2.6.6：审核卡片此前完全没有样式，候选图被渲染成容器全宽
-                # （1440px 下一屏只看得见图的左上角）。这里量它是否受限。
+                # B4 常驻精看是左右两图大布局：旧卡片 460px 上限已随旧卡片退出；
+                # 这里断精看图不撑破所在列（宽≤列宽）且展示框高度受限（≤480px），
+                # 1200px 原图仍原比例 contain 显示不裁剪。
                 page.wait_for_function(
                     """() => { const img = document.querySelector(
-                         '#review-list .review-card .review-preview img');
+                         '#compare-panel #compare-viewed-image');
                        return img && img.src && img.naturalWidth > 0; }""", timeout=15_000)
                 review_preview = page.evaluate(
                     """() => { const img = document.querySelector(
-                         '#review-list .review-card .review-preview img');
+                         '#compare-panel #compare-viewed-image');
                        const box = img.getBoundingClientRect();
+                       const figure = img.closest('figure');
+                       const col = figure ? figure.getBoundingClientRect() : box;
                        return {width: Math.round(box.width), height: Math.round(box.height),
+                               col_width: Math.round(col.width),
                                natural: img.naturalWidth}; }""")
-                check("V2.6.4-17", "审核卡片候选预览受限（宽 ≤460px、高 ≤480px）",
-                      bool(review_preview) and review_preview["width"] <= 460
-                      and review_preview["height"] <= 480, review_preview)
+                check("V2.6.4-17", "常驻精看候选预览受限（宽不超所在列、高 ≤480px、原比例不裁）",
+                      bool(review_preview) and review_preview["width"] <= review_preview["col_width"] + 1
+                      and review_preview["height"] <= 480 and review_preview["natural"] == 1200,
+                      review_preview)
                 page.set_viewport_size({"width": 390, "height": 844})
                 page.wait_for_timeout(250)
                 review_narrow = page.evaluate(
                     """() => { const img = document.querySelector(
-                         '#review-list .review-card .review-preview img');
-                       const actions = document.querySelector('#review-list .review-card-actions');
+                         '#compare-panel #compare-viewed-image');
+                       const actions = document.querySelector('#compare-panel #adopt-open');
                        const box = img ? img.getBoundingClientRect() : null;
                        return {preview: box ? Math.round(box.width) : null,
                                actions_visible: Boolean(actions && actions.offsetParent !== null),
@@ -383,15 +389,14 @@ def main() -> int:
                       review_narrow)
                 page.set_viewport_size({"width": 1440, "height": 950})
                 page.wait_for_timeout(250)
-                page.click(f'#review-list .review-card[data-shot-id="{first_shot}"] '
-                           'button:has-text("比较候选")')
+                shared.select_make_shot(page, first_shot)
                 page.wait_for_selector("#compare-panel:not([hidden])", timeout=15_000)
                 compare_tech = page.evaluate(TECH_PROBE, "#compare-checklist")
                 violations_review = axe_scan(page)
                 buttons_review = page.evaluate(BUTTON_NAMES, "#compare-panel")
                 squeeze["review"] = page.evaluate(TECH_SQUEEZE)
                 shot(page, "review")
-                check("V2.6.4-08", "审核阶段：axe 0 violations、可见按钮都有可访问名、比较清单技术详情默认收起",
+                check("V2.6.4-08", "制作与审图：axe 0 violations、可见按钮都有可访问名、比较清单技术详情默认收起",
                       violations_review == [] and buttons_review["unnamed"] == 0
                       and compare_tech is not None and compare_tech["total"] >= 1
                       and compare_tech["open"] == 0,
@@ -400,27 +405,19 @@ def main() -> int:
                                 "open": (compare_tech or {}).get("open")}})
 
                 for shot_id in shots:
-                    # 「采用候选」直接落库（review 卡级直接采用），「采用当前候选」
-                    # （#adopt-open，比较区内单击即采用）是同一 Module.select 的第二入口：
-                    # 旧 #adopt-submit 元素已不存在，继续等它只会超时。
-                    page.click(f'#review-list .review-card[data-shot-id="{shot_id}"] '
-                               'button:has-text("采用候选")')
-                    page.wait_for_function(
-                        """(shot) => document.querySelector(
-                            '#review-list .review-card[data-shot-id="' + shot
-                            + '"][data-selection-state="current"]') !== null""",
-                        arg=shot_id, timeout=15_000)
+                    # B4 只有常驻精看一个采用入口（#adopt-open 单击即采用）；
+                    # 任务行只读投影 current，不再有点卡即采用。
+                    shared.adopt_make_shot(page, shot_id)
                     page.wait_for_timeout(120)
                 adopt_tech = page.evaluate(TECH_PROBE, "#compare-checklist")
                 squeeze["review-adopted"] = page.evaluate(TECH_SQUEEZE)
+                stage_nav.goto(page, "deliver")
                 page.click("#suite-review-run")
                 page.wait_for_function(
                     "() => { const node = document.getElementById('suite-review-status');"
                     " return node && node.textContent.indexOf('整套检查 v') >= 0; }",
                     timeout=60_000)
-
-                # 交付阶段：门禁 → 交付包 → 技术详情 → axe
-                page.click('[data-stage-nav="deliver"]')
+                # 交付阶段：门禁 → 交付包 → 技术详情 → axe（已在交付，无需重进）。
                 gate = shared.wait_gate(page)
                 shared.download_delivery(page, temp_root / "delivery.zip")
                 page.wait_for_timeout(300)
@@ -495,10 +492,10 @@ def main() -> int:
                     " return node && node.disabled === false; }", timeout=15_000)
                 shared.create_project(page2, "V264 演练品", reference)
                 page2.click("#analyze-run")
-                stage_nav.goto(page2, "understand")
+                stage_nav.goto(page2, "intake")
                 page2.wait_for_selector("#slot-list .slot-row:not([hidden])", timeout=30_000)
                 shared.confirm_slots(page2)
-                page2.click("#stage-next-understand")
+                page2.click("#stage-next-plan")
                 page2.click("#suite-seed")
                 page2.wait_for_selector("#shot-list .shot-row", timeout=20_000)
                 guard = 0
@@ -508,11 +505,12 @@ def main() -> int:
                                 'button:has-text("删除")')
                     page2.wait_for_timeout(250)
                     guard += 1
-                page2.click("#stage-next-plan")
+                page2.click("#stage-next-make")
                 drill_ids = page2.evaluate(shared.SHOT_IDS)
                 # Issue #9：编译前先做普通决定（用户真实路径）。
                 shared.decide_for_compile(page2, drill_ids)
                 shared.compile_all(page2, drill_ids)
+                shared.choose_make_batch(page2, drill_ids)
                 gate2 = _shared.confirm_and_submit(page2, _expect,
                                                    lambda: page2.evaluate(shared.PROBE),
                                                    shot_ids=drill_ids)
@@ -520,17 +518,23 @@ def main() -> int:
                 shared.wait_terminal(page2, drill_ids, timeout=120_000)
                 page2.wait_for_timeout(4000)
                 states = page2.evaluate("""() => Object.fromEntries(
-                  [...document.querySelectorAll('#attempt-list .attempt-row')]
-                    .map((row) => [row.getAttribute('data-shot-id'),
+                  [...document.querySelectorAll('#task-list-mount [data-task-shot]')]
+                    .map((row) => [row.getAttribute('data-task-shot'),
                                    row.getAttribute('data-attempt-state')]))""")
+                failed_shot = next((shot for shot, state in states.items() if state == "failed"), None)
+                unknown_shot = next((shot for shot, state in states.items() if state == "unknown"), None)
+                if failed_shot:
+                    shared.select_make_shot(page2, failed_shot)
                 failed_button = page2.locator(
-                    '#attempt-list .attempt-row[data-attempt-state="failed"] '
+                    '#shot-execution [data-attempt-state="failed"] '
                     'button:has-text("重试（新建 action）")').count()
+                if unknown_shot:
+                    shared.select_make_shot(page2, unknown_shot)
                 unknown_button = page2.locator(
-                    '#attempt-list .attempt-row[data-attempt-state="unknown"] '
+                    '#shot-execution [data-attempt-state="unknown"] '
                     'button:has-text("新建 action（放弃核对）")').count()
                 page2.wait_for_timeout(2500)
-                rows_after = page2.locator("#attempt-list .attempt-row").count()
+                rows_after = page2.locator("#task-list-mount [data-task-shot]").count()
                 shot(page2, "drill")
                 check("V2.6.4-13", "演练三态：成功/失败/Unknown 可见且各有下一步动作，不自动重提",
                       set(states.values()) == {"succeeded", "failed", "unknown"}

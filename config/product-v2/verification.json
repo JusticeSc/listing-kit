@@ -248,6 +248,14 @@
         "reason": "离线浏览器套件：人工Prompt编辑归属与确认，零模型调用。"
       }
     ],
+    "tools/verify_v2_3_7_copy_adoption_chain.py": [
+      {
+        "args": [],
+        "category": "browser",
+        "ci": true,
+        "reason": "离线浏览器套件：AI提议文案→采用→保存规格→编译逐字链，零模型调用。"
+      }
+    ],
     "pytest:tests/gateway": [
       {
         "args": [
@@ -255,7 +263,7 @@
         ],
         "category": "gateway",
         "ci": true,
-        "reason": "网关 pytest 组（tests/gateway/test_server_contract.py + test_image_gateway.py 共52项，真实TCP、假provider、零真实调用）。工具旧 verify_v2_4_1_image_gateway.py 已随 P3 迁移删除。"
+        "reason": "网关 pytest 组（tests/gateway/test_server_contract.py + test_image_gateway.py：真实TCP、替身Provider、有效端点计价及零真实调用）。工具旧 verify_v2_4_1_image_gateway.py 已随 P3 迁移删除。"
       }
     ],
     "pytest:tests/dev": [
@@ -444,20 +452,12 @@
         "reason": "离线 fake provider 浏览器套件（包08 切片：交付与整套复核）；无密钥、零外呼。"
       }
     ],
-    "tools/verify_v2_volc_adopt_export.py": [
+    "tools/verify_v2_3_8_spec_save_occ.py": [
       {
         "args": [],
-        "category": "paid",
-        "ci": false,
-        "reason": "火山真实采用导出闭环：默认零外呼自检；--live 按预算门走一次同步生图并采用导出，绝不接 CI。"
-      },
-      {
-        "args": [
-          "--live"
-        ],
-        "category": "paid",
-        "ci": false,
-        "reason": "真实外发与计费必须另外取得模型、材料、地区及预算授权；绝不接 CI。"
+        "category": "browser",
+        "ci": true,
+        "reason": "离线浏览器套件：规格保存的版本冲突（保留草稿/精确报冲突/可重读恢复），零模型调用。"
       }
     ]
   },

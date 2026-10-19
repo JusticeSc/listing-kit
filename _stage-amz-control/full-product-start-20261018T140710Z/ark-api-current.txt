@@ -1,0 +1,224 @@
+火山方舟 Agent Plan
+火山方舟 Coding Plan
+火山方舟
+节省计划
+火山方舟 Agent Plan
+火山方舟 Coding Plan
+火山方舟
+节省计划
+火山方舟
+文档指南
+订阅 [Agent/Coding Plan]
+API参考
+资源
+AI 套件
+
+火山方舟
+
+图片生成 API
+图片生成 API
+复制全文
+下载 pdf
+我的收藏
+POST https://ark.cn-beijing.volces.com/api/v3/images/generations​
+本文介绍 Doubao Seedream 5.0 pro、Doubao Seedream 5.0 flash、Doubao Seedream 5.0 lite、Doubao Seedream 4.5 及 Doubao Seedream 4.0 图片生成模型的调用 API，包括输入输出参数、取值范围、注意事项等信息，供您使用接口时查阅字段含义。​
+模型能力​
+Seedream 5.0 pronew、Seedream 5.0 flashnew​
+图层拆分：支持将单张图片拆解为底图（1 张）+ 多个图层输出（最多 16 个图层）。​
+交互编辑：支持通过坐标、框选、箭头等多种方式指定编辑位置，精准编辑图片。​
+生成单图（不支持配置 sequential_image_generation）​
+多图生图：输入多张参考图片（2-10）+ 文本提示词，生成单张图片。​
+单图生图：输入单张参考图片 + 文本提示词，生成单张图片。​
+文生图：输入文本提示词，生成单张图片。​
+暂不支持组图生成、联网搜索、流式输出。​
+Seedream 5.0 lite、Seedream 4.5 / 4.0​
+生成组图（组图：基于您输入的内容，生成的一组内容关联的图片；需配置 sequential_image_generation 为 auto）​
+多图生组图：输入多张参考图片（2-14）+ 文本提示词，生成一组内容关联的图片（输入的参考图数量 + 最终生成的图片数量 ≤ 15 张）。​
+单图生组图：输入单张参考图片 + 文本提示词，生成一组内容关联的图片（最多生成 14 张图片）。​
+文生组图：输入文本提示词，生成一组内容关联的图片（最多生成 15 张图片）。​
+生成单图（配置 sequential_image_generation 为 disabled）​
+多图生图：输入多张参考图片（2-14）+ 文本提示词，生成单张图片。​
+单图生图：输入单张参考图片 + 文本提示词，生成单张图片。​
+文生图：输入文本提示词，生成单张图片。​
+​
+​
+鉴权​
+本接口支持鉴权方式如下，详情请参见 Base URL 及鉴权。​
+API Key 鉴权，请在 API Key 管理 页面，获取长效 API Key。​
+​
+​
+请求参数​
+Body 参数​
+prompt string  |  提示词​
+​
+image string / string[]  |  参考图片​
+​
+layer_decompositionnew boolean 默认值 false  |  图层拆分开关​
+​
+size string  |  图像尺寸​
+​
+optimize_prompt_options object  |  提示词优化配置​
+​
+output_format string 默认值 jpeg  |  图像格式​
+​
+backgroundnew string 默认值 opaque  |  图片透明通道​
+​
+response_format string 默认值 url  |  返回格式​
+​
+sequential_image_generation string 默认值 disabled  |  组图模式​
+​
+sequential_image_generation_options object  |  组图配置​
+​
+stream boolean 默认值 false  |  流式输出开关​
+​
+tools object[]  |  工具配置​
+​
+watermark boolean 默认值 true  |  水印开关​
+​
+model string 必选  |  模型 ID​
+​
+​
+响应参数​
+非流式调用响应​
+created integer  |  创建时间​
+​
+model string  |  模型 ID​
+​
+data object[]  |  图像数据​
+​
+error object  |  错误信息​
+​
+tools object[]  |  工具调用列表​
+​
+usage object  |  用量信息​
+​
+​
+流式调用响应​
+字段结构详见 图片生成流式响应事件。​
+​
+图层拆分
+交互编辑
+文生图
+图生图
+多图融合
+多参考图生组图
+流式输出
+联网搜索
+发起调试等同于请求真实调用，可能产生云产品费用，请谨慎操作！
+
+Request
+
+cURL
+curl https://ark.cn-beijing.volces.com/api/v3/images/generations \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $ARK_API_KEY" \
+  -d '{
+    "model": "doubao-seedream-5-0-pro-260628",
+    "prompt": "将图片进行精确图层分离，需分离的文字坐标为<bbox>180 64 812 198</bbox>、<bbox>757 210 939 280</bbox>、<bbox>63 212 320 282</bbox>、<bbox>178 714 826 810</bbox>、<bbox>814 819 949 894</bbox>、<bbox>326 824 669 930</bbox>；鹦鹉的坐标为<bbox>347 305 642 997</bbox>。",
+    "image": "https://arkdocs.tos-cn-beijing.volces.com/images/image-generation/seedream_50_pro_layer_input.png",
+    "layer_decomposition": true,
+    "size": "2K",
+    "output_format": "jpeg",
+    "response_format": "url",
+    "watermark": true
+}'
+立即调试
+
+Response
+
+{
+    "model": "doubao-seedream-5-0-pro-260628",
+    "created": 1784696685,
+    "data": [
+        {
+            "url": "https://...",
+            "size": "2048x2048",
+            "output_format": "jpeg",
+            "z_index": 0
+        },
+        {
+            "url": "https://...",
+            "size": "1273x265",
+            "output_format": "png",
+            "z_index": 1,
+            "bounding_box": {
+                "absolute": [383, 120, 1655, 384],
+                "normalized": [187, 59, 808, 188]
+            },
+            "name": "Seedream标题文字",
+            "description": "黄色大号衬线字体的Seedream标题文字"
+        }
+    ],
+    "usage": {
+        "input_images": 1,
+        "generated_images": 8,
+        "output_tokens": 23107,
+        "total_tokens": 23107
+    }
+}
+最近更新时间：2026.10.14 15:35:19
+这个页面对您有帮助吗？
+有用
+无用
+上一篇
+下一篇
+火山助手
+购买咨询
+全天候售后服务
+极速服务应答
+客户价值为先
+全方位安全保障
+关于我们
+为什么选火山
+文档中心
+联系我们
+人才招聘
+云信任中心
+友情链接
+产品
+云服务器
+GPU云服务器
+机器学习平台
+客户数据平台 VeCDP
+飞连
+视频直播
+全部产品
+解决方案
+汽车行业
+金融行业
+文娱行业
+医疗健康行业
+传媒行业
+智慧文旅
+大消费
+服务与支持
+备案服务
+服务咨询
+建议与反馈
+廉洁舞弊举报
+举报平台
+联系我们
+业务咨询：
+service@volcengine.com
+市场合作：
+marketing@volcengine.com
+电话：
+400-034-7888
+地址：
+北京市海淀区北三环西路甲18号院大钟寺广场1号楼
+微信公众号
+抖音号
+视频号
+技术交流群
+服务条款
+隐私政策
+更多协议
+© 北京火山引擎科技有限公司 2026 版权所有
+代理域名注册服务机构：新网数码 商中在线
+京公网安备11010802032137号
+京ICP备20018813号-3
+营业执照
+增值电信业务经营许可证京B2-20202418，A2.B1.B2-20202637
+网络文化经营许可证：京网文（2023）4872-140号
+域名注册服务机构许可：京D3-20250002
+rangeDom

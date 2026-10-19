@@ -323,7 +323,7 @@ def main() -> int:
                       {"result": reload_state["result"][:160], "status": reload_state["status"]})
 
                 dropped = page.evaluate(DROP_ONE_ASSET)
-                stage_nav.goto(page, "review")
+                stage_nav.goto(page, "make")
                 stage_nav.goto(page, "deliver")
                 broken_state = wait_gate(page)
                 records3 = page.evaluate(READ_DOCS, "export_record")
@@ -346,7 +346,7 @@ def main() -> int:
                 jump_text = jump.first.inner_text() if jump.count() else ""
                 shot(page, "suite-missing")
                 jump.click()
-                page.wait_for_selector('[data-stage-panel="review"]:not([hidden])', timeout=10_000)
+                page.wait_for_selector('[data-stage-panel="deliver"]:not([hidden])', timeout=10_000)
                 focus_id = page.evaluate(
                     "() => (document.activeElement && document.activeElement.id) || ''")
                 check("V2.6.2-12",

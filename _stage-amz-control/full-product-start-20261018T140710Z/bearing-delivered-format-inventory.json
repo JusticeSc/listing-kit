@@ -1,0 +1,127 @@
+{
+  "path": "_stage-amz-control\\formal-resume-20261015T125651Z\\real-wire\\bearing-main-final.project.zip",
+  "documents": 232,
+  "payload_versions": {
+    "candidate:1": 18,
+    "export_record:1": 1,
+    "fact_slot:1": 18,
+    "generation_attempt:3": 54,
+    "generation_confirm:2": 16,
+    "product_input:1": 4,
+    "prompt_version:2": 64,
+    "review_report:1": 18,
+    "selection:1": 5,
+    "shot_spec:2": 26,
+    "style_spec:2": 5,
+    "suite_plan:1": 2,
+    "suite_review:1": 1
+  },
+  "examples": {
+    "generation_attempt": {
+      "document_id": "shot_detail_material",
+      "version": 1,
+      "schema_version": 3,
+      "keys": [
+        "schema_version",
+        "action_id",
+        "shot_id",
+        "state",
+        "prompt",
+        "references",
+        "provider",
+        "execution_identity",
+        "authorization",
+        "parameters",
+        "task_id",
+        "request_id",
+        "error",
+        "created_at",
+        "updated_at",
+        "change_log"
+      ],
+      "rework": null,
+      "snapshot_keys": [],
+      "reference_example": []
+    },
+    "prompt_version": {
+      "document_id": "shot_detail_material",
+      "version": 1,
+      "schema_version": 2,
+      "keys": [
+        "schema_version",
+        "shot_id",
+        "role_id",
+        "label",
+        "compiled",
+        "request_snapshot",
+        "hash",
+        "basis"
+      ],
+      "rework": null,
+      "snapshot_keys": [
+        "model",
+        "size",
+        "n",
+        "prompt_extend",
+        "watermark",
+        "output_format",
+        "references",
+        "prompt",
+        "target"
+      ],
+      "reference_example": [
+        {
+          "role": "primary",
+          "sha256": "4c4ed76c61c959ace082f8f3698f1b10bf0e1c942c2b1e524b1e62086d4df1e1",
+          "uses": [
+            "product_truth"
+          ],
+          "sources": [
+            {
+              "kind": "product_input",
+              "document_id": "intake",
+              "version": 2,
+              "asset_sha256": "4c4ed76c61c959ace082f8f3698f1b10bf0e1c942c2b1e524b1e62086d4df1e1"
+            }
+          ]
+        }
+      ]
+    },
+    "shot_spec": {
+      "document_id": "shot_detail_material",
+      "version": 1,
+      "schema_version": 2,
+      "keys": [
+        "schema_version",
+        "purpose",
+        "keep",
+        "change_allowed",
+        "notes",
+        "presentation",
+        "on_image_texts"
+      ],
+      "rework": null,
+      "snapshot_keys": [],
+      "reference_example": []
+    },
+    "style_spec": {
+      "document_id": "style",
+      "version": 1,
+      "schema_version": 2,
+      "keys": [
+        "schema_version",
+        "background",
+        "lighting",
+        "color_tone",
+        "composition",
+        "avoid",
+        "presentation"
+      ],
+      "rework": null,
+      "snapshot_keys": [],
+      "reference_example": []
+    }
+  },
+  "archive_crc_ok": true,
+  "scope": "Read-only format inventory, not present-main import or outbound proof"
+}

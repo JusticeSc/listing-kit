@@ -21,14 +21,14 @@
 | 哪份文档有效、历史还是待删 | 本文件 | 各文件只声明自己的 CONTROL-STATUS，不建立另一张总表 |
 | 某次检查或实验实际发生了什么 | `evals/` 下对应原始产物和时点报告 | 只作证据，不发布后续计划、当前状态或新规范 |
 
-恢复只按此顺序：**本文件 → AGENTS.md → 当前state与真实Goal → 项目上下文 → 计划§17.13及state指向的任务卡 → 关联Issue/PR与选中证据 → 受影响设计§13/代码**。2026-10-17用户明确启动独立main基线本地工程，V1清退纳入基线；P0–P8实施包唯一取[Issue #10](https://github.com/JusticeSc/listing-kit/issues/10)，测试与反馈细项取#7。封存下一版WIP不混入本轮，原产品仍paused且终点未取消；精确额度、权限与恢复点只取state，不从旧停工或旧启动记录推导本次许可。只读必要证据，不重审全库或重做已成立资产。
+恢复只按此顺序：**本文件 → AGENTS.md → 当前state头部与真实Goal → 计划§17.13 → state的唯一下一动作及关联Issue/PR → 当前包所需context/设计/代码与选中证据**。先判当前门，再读取实施细节，不通读历史排程。首次接手核项目边界用context§1–4；当前产品执行包用计划§17.2–17.5，具体验收在#8（界面/人因）、#9（程序表达）、#7（验证/安全）、#10（工程闭包/发布）。旧P0–P8、旧预算、历史active/paused及封存WIP都不是新施工指令；完成资产、最新权限和下一动作只从state定向承接，不恢复整包WIP或重做已成立基线。
 
-`prepared`时按计划§2完成绑定，未绑定不施工；`paused`/用户停工时只做本次明确另行授权的工作。运行`uv run --locked python tools/refactor_resume.py`取得只读前沿，不把命令成功、旧启动记录、skill的publish指令或一个含糊“继续”当作扩大当前授权。明确恢复产品后，仍逐项遵守费用、素材、秘密、不可逆数据、提交/推送、清退与发布门。
+先运行`uv run --locked python tools/refactor_resume.py --json`，取得只读恢复前沿；命令成功不解除门。原生Goal不可用时保留真实错误与历史观察，只做已明确授权的只读/设计/交接工作，待能力恢复再实时核对并完成真实绑定；原生门未解除前不施工、调用模型或合并发布。最新用户已经明确授权的操作不重复索取许可；绑定及费用、素材、秘密、数据和实时保护条件仍逐项成立才执行。
 
 当前目标以计划为准，计划准备完成不等于重构完成，也不自动改变旧系统 Goal 生命周期。
 普通准备不创建产品Goal。当前正式Goal绑定、原生观察与恢复点只取state，目标/授权与实施合同只取计划§2.1/§17；早期独立规划Goal和历史启动记录保留其原证明范围，不替代当前验收或成为重复启动依据。
 
-下一版本规格定向读 `docs/product-v2-refactor-design.md` §13；准备和必要本地基线实验的历史见 `_working/amz-listing-kit-next-version-design/discussion.md`，不是第二份原工程执行状态。正式启动后的实施与权限只取计划§2.1/§17，进度与恢复只取state；历史准备的权限边界不冒充当前授权，也不豁免当前依赖、准出或真人门。
+下一版本规格定向读 `docs/product-v2-refactor-design.md` §13；本轮生图业务语义/核心合同候选、三个纸面实例与源码差量见§13.13–15，普通输入到简报的建议规则与首个实施切片见§13.16，设计准备协作取[Issue #17](https://github.com/JusticeSc/listing-kit/issues/17)，不替代#9程序品质或#8交互验收。准备和必要本地基线实验的历史见 `_working/amz-listing-kit-next-version-design/discussion.md`，不是第二份原工程执行状态。正式启动后的实施与权限只取计划§2.1/§17，进度与恢复只取state；历史准备的权限边界不冒充当前授权，也不豁免当前依赖、准出或真人门。
 
 ---
 
@@ -50,7 +50,7 @@
 | `_working/amz-listing-kit-product-demo/state.md` | Product V1 v2.6 | `历史证据` | `superseded` | 被 `_working/amz-listing-kit-product-v2/state.md` 取代；保留 D-1 至 D4.12 的完成证据，不据此继续 D4.13 |
 | `docs/product-v2-project-context.md` | Product V2 | `架构设计` | `current` | Product V2 项目身份、运行边界、数据所有权、技术栈、目录地图和质量门槛的唯一上下文入口 |
 | `docs/product-v2-goal-and-implementation-plan.md` | Product V2 重构前基线 | `历史证据` | `superseded` | 被 `docs/product-v2-refactor-plan.md` 接管未来目标与任务；保留旧合同、C1–C17 和旧 Goal 原文，不据此继续 V2.7.3 |
-| `docs/product-v2-refactor-plan.md` | Product V2定向重构 | `产品目标` | `current` | §2.1原生Goal观察正文；§17.13当前main基线范围/权限修订，具体P0–P8只取#10、测试只取#7；§6/§9/§10原产品正式任务/依赖/准出保留，规划不签原Goal完成 |
+| `docs/product-v2-refactor-plan.md` | Product V2定向重构 | `产品目标` | `current` | §2.1保留真实原生Goal观察全文；§17.13最新完整交付授权/差量；§17.2–17.5执行包与复用合同；§6/§9/§10正式依赖和最终准出不被局部工单完成替代 |
 | `docs/product-v2-refactor-design.md` | Product V2联合结构重构 | `架构设计` | `current` | 当前§13普通决定/两模式及视觉简报/人因验收；§12仅作当前路由，§10–11旧算法/实施差距按未变前提复用。规格不冒称实现、Goal或当前权限 |
 | `_working/amz-listing-kit-product-v2-baseline/state.md` | Product V2 重构前基线 | `历史证据` | `superseded` | 被 current state 接管；保留旧进度与旧 Goal 的最近实际读数，不发布下一动作 |
 | `docs/product-v2-ui-contract.md` | Product V2 V2.UI.2 | `设计草案` | `draft` | 人工/辅助共享任务及有限设置投影；§8区分设计范围、工程与C17/C15，业务合同取计划§14。转current需产品发起人实际走查，之后转 `架构设计` 并补§1路由；工程自审不冒充签署 |
@@ -97,7 +97,7 @@
 | `docs/agents/issue-tracker.md` | 工程技能操作参考 | `设计草案` | `draft` | 只提供GitHub/gh及可选wayfinder操作；生效条件：AGENTS当前流程需要该操作且授权允许时核对采用，不再要求用户先启用技能；不独立授权或禁止产品Issue |
 | `docs/agents/triage-labels.md` | 工程技能 | `设计草案` | `draft` | 可选triage角色映射；生效条件：实际任务需要且可用的triage技能被匹配、对应远程操作已获授权时采用，不要求用户先手工启用 |
 | `docs/agents/domain.md` | 工程技能 | `设计草案` | `draft` | 单上下文术语/ADR的条件参考；实际需要且创建后才采用。当前决策仍取项目上下文SEL行，不为使用技能另建目录 |
-| `docs/agents/ai-coding-loop.md` | 工程技能操作参考 | `设计草案` | `draft` | 用户亲授AI协作六环（选→说→切→验→因→学）；AGENTS一行指针引用，六环切法为用户归纳、四条定律有据可查，不独立授权 |
+| `docs/agents/ai-coding-loop.md` | 工程技能操作参考 | `设计草案` | `draft` | 用户提供的AI协作六环之本项目适配版；按任务与风险使用，研究线索未逐项核验，不作为普适定律；AGENTS为执行规则权威，不独立授权 |
 
 ---
 

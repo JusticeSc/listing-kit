@@ -1,0 +1,38 @@
+{
+  "reload": {
+    "versions": [
+      1,
+      2
+    ],
+    "draft": "A 的草稿：柔和均匀布光"
+  },
+  "versions": [
+    1,
+    2,
+    3
+  ],
+  "saved": {
+    "document_key": "e1a71503-a3db-4035-96b1-b9cd292459b5:style_spec:style:3",
+    "project_id": "e1a71503-a3db-4035-96b1-b9cd292459b5",
+    "kind": "style_spec",
+    "document_id": "style",
+    "version": 3,
+    "schema_version": 1,
+    "payload": {
+      "schema_version": 2,
+      "background": "",
+      "lighting": "A 的草稿：柔和均匀布光",
+      "color_tone": "",
+      "composition": "",
+      "avoid": [],
+      "presentation": {
+        "appearance_state": "as_shown",
+        "contents_state": "as_shown"
+      }
+    },
+    "created_at": "2026-10-19T01:48:27.636Z",
+    "updated_at": "2026-10-19T01:48:27.636Z"
+  },
+  "previous_rows_unchanged": true,
+  "writes_after_retry": 1
+}

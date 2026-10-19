@@ -105,6 +105,52 @@ export function pushProblem(problems, code, path, message) {
 }
 
 /**
+ * 生成前确认的阻断码词表：confirm.js 的阻断、review.js 的确定性规则共用这一份。
+ * 定义在叶子模块（shared.js）：review.js 在模块初始化期读取，不能反向拖入 confirm.js。
+ * @type {Record<string, string>}
+ */
+export const CONFIRM_BLOCKER_CODES = Object.freeze({
+  PROMPT_MISSING: "PROMPT_MISSING",
+  PROMPT_RECORD_INVALID: "PROMPT_RECORD_INVALID",
+  PROMPT_TEXT_MISMATCH: "PROMPT_TEXT_MISMATCH",
+  PROMPT_STALE: "PROMPT_STALE",
+  DEPENDENCY_UNSATISFIED: "DEPENDENCY_UNSATISFIED",
+  PLATFORM_MISMATCH: "PLATFORM_MISMATCH",
+  PROVIDER_MISMATCH: "PROVIDER_MISMATCH",
+  REFERENCE_COUNT_INVALID: "REFERENCE_COUNT_INVALID",
+  /** 普通决定（印字/展示）没做完：编译不出 Prompt，必须先让用户做一次明确选择。 */
+  DECISION_REQUIRED: "DECISION_REQUIRED",
+});
+
+/**
+ * 稳定序列化：对象键排序、数组保持顺序；hash 与快照比较共用这一份。
+ * @param {unknown} value
+ * @returns {string}
+ */
+export function canonicalJson(value) {
+  return JSON.stringify(canonicalize(value));
+}
+
+/** @param {unknown} value @returns {unknown} */
+function canonicalize(value) {
+  if (Array.isArray(value)) return value.map(canonicalize);
+  if (value && typeof value === "object") {
+    const out = {};
+    for (const key of Object.keys(value).sort()) out[key] = canonicalize(value[key]);
+    return out;
+  }
+  return value === undefined ? null : value;
+}
+
+/**
+ * @param {unknown} value
+ * @returns {boolean}
+ */
+export function isPositiveInteger(value) {
+  return Number.isInteger(value) && value > 0;
+}
+
+/**
  * @param {unknown} record
  * @param {number} expected
  * @param {import("./type-contracts.js").DomainProblem[]} problems
