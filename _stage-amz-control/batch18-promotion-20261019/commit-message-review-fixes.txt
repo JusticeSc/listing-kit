@@ -1,0 +1,13 @@
+chore(v2): address the Codex review on #20 - batch 18 stays open, raw baseline bytes
+
+- Batch 18 is recorded as a completed *promotion* (protected merge + release to
+  finalize), not a completed batch: the plan's batch-18 postconditions (online
+  real five-image/two-package flow, different-old-image + old-package
+  same-origin recovery) did not run in this zero-fee round, and B1-B7 remain
+  unverified. The machine pointer stays at V2.R5.1 and batch 18 stays open.
+- The pre-merge HTML snapshot is now stored as the raw served bytes (12,471 B,
+  sha256 5174a01b...); the earlier text-mode write had turned it into 12,712 B
+  with 241 CRLFs, so it could not verify the claimed live baseline.
+- Stale "current frontier / next step" prose about PR #19 (lines 11, 31, 33) is
+  marked as historical and superseded by the new promotion entry, so a cold
+  resume no longer receives contradictory instructions.
