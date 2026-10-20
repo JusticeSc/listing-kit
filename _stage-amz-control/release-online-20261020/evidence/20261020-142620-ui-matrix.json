@@ -1,0 +1,711 @@
+{
+  "schema": "amz-release-ui-matrix/v1",
+  "status": "passed",
+  "finished_at": "2026-10-20T14:26:31",
+  "base": "https://47.115.172.233:8080",
+  "source_package": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit-complete-product-15ab22\\_stage-amz-control\\staleness-diagnosis-20261020\\b19-exports\\b19-project-post-suite.zip",
+  "passed": 6,
+  "total": 6,
+  "checks": [
+    {
+      "id": "UI-01",
+      "title": "六个宽度四段可切换且无根横向溢出",
+      "ok": true,
+      "detail": {
+        "widths": [
+          1440,
+          1366,
+          1024,
+          390,
+          5712,
+          5720
+        ],
+        "problems": []
+      }
+    },
+    {
+      "id": "UI-02",
+      "title": "长英文警告/风险文本折行且元素无横向溢出",
+      "ok": true,
+      "detail": {
+        "measured": 6,
+        "bad": []
+      }
+    },
+    {
+      "id": "UI-03",
+      "title": "390 单列＋选图器、1440 双栏",
+      "ok": true,
+      "detail": {
+        "narrow": [
+          true,
+          "362px"
+        ],
+        "wide": "244px 1132px"
+      }
+    },
+    {
+      "id": "UI-04",
+      "title": "返工取消回焦触发点，比较面板可收起",
+      "ok": true,
+      "detail": {
+        "focus": "rework-open"
+      }
+    },
+    {
+      "id": "UI-05",
+      "title": "键盘 Enter 切段、Tab 移动焦点",
+      "ok": true,
+      "detail": {
+        "panel": "deliver",
+        "active": "deliver"
+      }
+    },
+    {
+      "id": "UI-06",
+      "title": "全程零 console/page error",
+      "ok": true,
+      "detail": {
+        "console": [],
+        "page": []
+      }
+    }
+  ],
+  "matrix": [
+    {
+      "width": 1440,
+      "height": 900,
+      "stage": "intake",
+      "clientWidth": 1440,
+      "rootScrollWidth": 1440,
+      "bodyScrollWidth": 1440,
+      "currentStage": "intake",
+      "panel": "intake",
+      "offenders": [],
+      "promptWarnings": [],
+      "confirmRisks": [],
+      "workbenchColumns": "244px minmax(0px, 1fr)",
+      "shotSelectVisible": false
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "stage": "plan",
+      "clientWidth": 1440,
+      "rootScrollWidth": 1440,
+      "bodyScrollWidth": 1440,
+      "currentStage": "plan",
+      "panel": "plan",
+      "offenders": [],
+      "promptWarnings": [],
+      "confirmRisks": [],
+      "workbenchColumns": "244px minmax(0px, 1fr)",
+      "shotSelectVisible": false
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "stage": "make",
+      "clientWidth": 1440,
+      "rootScrollWidth": 1440,
+      "bodyScrollWidth": 1440,
+      "currentStage": "make",
+      "panel": "make",
+      "offenders": [],
+      "promptWarnings": [
+        {
+          "overflowWrap": "anywhere",
+          "wordBreak": "break-word",
+          "scrollWidth": 1328,
+          "clientWidth": 1328,
+          "text": "风险：公共风格背景「白底商品图」被主图平台规则覆"
+        },
+        {
+          "overflowWrap": "anywhere",
+          "wordBreak": "break-word",
+          "scrollWidth": 1324,
+          "clientWidth": 1324,
+          "text": "提示：公共风格背景「白底商品图」被主图平台规则覆"
+        },
+        {
+          "overflowWrap": "anywhere",
+          "wordBreak": "break-word",
+          "scrollWidth": 1324,
+          "clientWidth": 1324,
+          "text": "提示：指令段出现未引用的非中文内容：Create"
+        },
+        {
+          "overflowWrap": "anywhere",
+          "wordBreak": "break-word",
+          "scrollWidth": 1324,
+          "clientWidth": 1324,
+          "text": "提示：尺寸图选择不印新增文字：本图不排标注版面，"
+        },
+        {
+          "overflowWrap": "anywhere",
+          "wordBreak": "break-word",
+          "scrollWidth": 1324,
+          "clientWidth": 1324,
+          "text": "提示：这张图选择不印新增文字：绑定的 1 条商品"
+        }
+      ],
+      "confirmRisks": [],
+      "workbenchColumns": "244px 1132px",
+      "shotSelectVisible": false
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "stage": "deliver",
+      "clientWidth": 1440,
+      "rootScrollWidth": 1440,
+      "bodyScrollWidth": 1440,
+      "currentStage": "deliver",
+      "panel": "deliver",
+      "offenders": [],
+      "promptWarnings": [],
+      "confirmRisks": [],
+      "workbenchColumns": "244px minmax(0px, 1fr)",
+      "shotSelectVisible": false
+    },
+    {
+      "width": 1366,
+      "height": 900,
+      "stage": "intake",
+      "clientWidth": 1366,
+      "rootScrollWidth": 1366,
+      "bodyScrollWidth": 1366,
+      "currentStage": "intake",
+      "panel": "intake",
+      "offenders": [],
+      "promptWarnings": [],
+      "confirmRisks": [],
+      "workbenchColumns": "244px minmax(0px, 1fr)",
+      "shotSelectVisible": false
+    },
+    {
+      "width": 1366,
+      "height": 900,
+      "stage": "plan",
+      "clientWidth": 1366,
+      "rootScrollWidth": 1366,
+      "bodyScrollWidth": 1366,
+      "currentStage": "plan",
+      "panel": "plan",
+      "offenders": [],
+      "promptWarnings": [],
+      "confirmRisks": [],
+      "workbenchColumns": "244px minmax(0px, 1fr)",
+      "shotSelectVisible": false
+    },
+    {
+      "width": 1366,
+      "height": 900,
+      "stage": "make",
+      "clientWidth": 1366,
+      "rootScrollWidth": 1366,
+      "bodyScrollWidth": 1366,
+      "currentStage": "make",
+      "panel": "make",
+      "offenders": [],
+      "promptWarnings": [
+        {
+          "overflowWrap": "anywhere",
+          "wordBreak": "break-word",
+          "scrollWidth": 1254,
+          "clientWidth": 1254,
+          "text": "风险：公共风格背景「白底商品图」被主图平台规则覆"
+        },
+        {
+          "overflowWrap": "anywhere",
+          "wordBreak": "break-word",
+          "scrollWidth": 1250,
+          "clientWidth": 1250,
+          "text": "提示：公共风格背景「白底商品图」被主图平台规则覆"
+        },
+        {
+          "overflowWrap": "anywhere",
+          "wordBreak": "break-word",
+          "scrollWidth": 1250,
+          "clientWidth": 1250,
+          "text": "提示：指令段出现未引用的非中文内容：Create"
+        },
+        {
+          "overflowWrap": "anywhere",
+          "wordBreak": "break-word",
+          "scrollWidth": 1250,
+          "clientWidth": 1250,
+          "text": "提示：尺寸图选择不印新增文字：本图不排标注版面，"
+        },
+        {
+          "overflowWrap": "anywhere",
+          "wordBreak": "break-word",
+          "scrollWidth": 1250,
+          "clientWidth": 1250,
+          "text": "提示：这张图选择不印新增文字：绑定的 1 条商品"
+        }
+      ],
+      "confirmRisks": [],
+      "workbenchColumns": "244px 1058px",
+      "shotSelectVisible": false
+    },
+    {
+      "width": 1366,
+      "height": 900,
+      "stage": "deliver",
+      "clientWidth": 1366,
+      "rootScrollWidth": 1366,
+      "bodyScrollWidth": 1366,
+      "currentStage": "deliver",
+      "panel": "deliver",
+      "offenders": [],
+      "promptWarnings": [],
+      "confirmRisks": [],
+      "workbenchColumns": "244px minmax(0px, 1fr)",
+      "shotSelectVisible": false
+    },
+    {
+      "width": 1024,
+      "height": 900,
+      "stage": "intake",
+      "clientWidth": 1024,
+      "rootScrollWidth": 1024,
+      "bodyScrollWidth": 1024,
+      "currentStage": "intake",
+      "panel": "intake",
+      "offenders": [],
+      "promptWarnings": [],
+      "confirmRisks": [],
+      "workbenchColumns": "210px minmax(0px, 1fr)",
+      "shotSelectVisible": false
+    },
+    {
+      "width": 1024,
+      "height": 900,
+      "stage": "plan",
+      "clientWidth": 1024,
+      "rootScrollWidth": 1024,
+      "bodyScrollWidth": 1024,
+      "currentStage": "plan",
+      "panel": "plan",
+      "offenders": [],
+      "promptWarnings": [],
+      "confirmRisks": [],
+      "workbenchColumns": "210px minmax(0px, 1fr)",
+      "shotSelectVisible": false
+    },
+    {
+      "width": 1024,
+      "height": 900,
+      "stage": "make",
+      "clientWidth": 1024,
+      "rootScrollWidth": 1024,
+      "bodyScrollWidth": 1024,
+      "currentStage": "make",
+      "panel": "make",
+      "offenders": [],
+      "promptWarnings": [
+        {
+          "overflowWrap": "anywhere",
+          "wordBreak": "break-word",
+          "scrollWidth": 912,
+          "clientWidth": 912,
+          "text": "风险：公共风格背景「白底商品图」被主图平台规则覆"
+        },
+        {
+          "overflowWrap": "anywhere",
+          "wordBreak": "break-word",
+          "scrollWidth": 908,
+          "clientWidth": 908,
+          "text": "提示：公共风格背景「白底商品图」被主图平台规则覆"
+        },
+        {
+          "overflowWrap": "anywhere",
+          "wordBreak": "break-word",
+          "scrollWidth": 908,
+          "clientWidth": 908,
+          "text": "提示：指令段出现未引用的非中文内容：Create"
+        },
+        {
+          "overflowWrap": "anywhere",
+          "wordBreak": "break-word",
+          "scrollWidth": 908,
+          "clientWidth": 908,
+          "text": "提示：尺寸图选择不印新增文字：本图不排标注版面，"
+        },
+        {
+          "overflowWrap": "anywhere",
+          "wordBreak": "break-word",
+          "scrollWidth": 908,
+          "clientWidth": 908,
+          "text": "提示：这张图选择不印新增文字：绑定的 1 条商品"
+        }
+      ],
+      "confirmRisks": [],
+      "workbenchColumns": "210px 750px",
+      "shotSelectVisible": false
+    },
+    {
+      "width": 1024,
+      "height": 900,
+      "stage": "deliver",
+      "clientWidth": 1024,
+      "rootScrollWidth": 1024,
+      "bodyScrollWidth": 1024,
+      "currentStage": "deliver",
+      "panel": "deliver",
+      "offenders": [],
+      "promptWarnings": [],
+      "confirmRisks": [],
+      "workbenchColumns": "210px minmax(0px, 1fr)",
+      "shotSelectVisible": false
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "stage": "intake",
+      "clientWidth": 390,
+      "rootScrollWidth": 390,
+      "bodyScrollWidth": 390,
+      "currentStage": "intake",
+      "panel": "intake",
+      "offenders": [
+        {
+          "tag": "button",
+          "cls": "stage",
+          "right": 465,
+          "text": "4交付"
+        },
+        {
+          "tag": "span",
+          "cls": "stage-index",
+          "right": 413,
+          "text": "4"
+        },
+        {
+          "tag": "span",
+          "cls": "stage-label",
+          "right": 453,
+          "text": "交付"
+        }
+      ],
+      "promptWarnings": [],
+      "confirmRisks": [],
+      "workbenchColumns": "minmax(0px, 1fr)",
+      "shotSelectVisible": false
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "stage": "plan",
+      "clientWidth": 390,
+      "rootScrollWidth": 390,
+      "bodyScrollWidth": 390,
+      "currentStage": "plan",
+      "panel": "plan",
+      "offenders": [
+        {
+          "tag": "button",
+          "cls": "stage",
+          "right": 465,
+          "text": "4交付"
+        },
+        {
+          "tag": "span",
+          "cls": "stage-index",
+          "right": 413,
+          "text": "4"
+        },
+        {
+          "tag": "span",
+          "cls": "stage-label",
+          "right": 453,
+          "text": "交付"
+        }
+      ],
+      "promptWarnings": [],
+      "confirmRisks": [],
+      "workbenchColumns": "minmax(0px, 1fr)",
+      "shotSelectVisible": false
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "stage": "make",
+      "clientWidth": 390,
+      "rootScrollWidth": 390,
+      "bodyScrollWidth": 390,
+      "currentStage": "make",
+      "panel": "make",
+      "offenders": [
+        {
+          "tag": "button",
+          "cls": "stage",
+          "right": 465,
+          "text": "4交付"
+        },
+        {
+          "tag": "span",
+          "cls": "stage-index",
+          "right": 413,
+          "text": "4"
+        },
+        {
+          "tag": "span",
+          "cls": "stage-label",
+          "right": 453,
+          "text": "交付"
+        }
+      ],
+      "promptWarnings": [
+        {
+          "overflowWrap": "anywhere",
+          "wordBreak": "break-word",
+          "scrollWidth": 298,
+          "clientWidth": 298,
+          "text": "风险：公共风格背景「白底商品图」被主图平台规则覆"
+        },
+        {
+          "overflowWrap": "anywhere",
+          "wordBreak": "break-word",
+          "scrollWidth": 294,
+          "clientWidth": 294,
+          "text": "提示：公共风格背景「白底商品图」被主图平台规则覆"
+        },
+        {
+          "overflowWrap": "anywhere",
+          "wordBreak": "break-word",
+          "scrollWidth": 294,
+          "clientWidth": 294,
+          "text": "提示：指令段出现未引用的非中文内容：Create"
+        },
+        {
+          "overflowWrap": "anywhere",
+          "wordBreak": "break-word",
+          "scrollWidth": 294,
+          "clientWidth": 294,
+          "text": "提示：尺寸图选择不印新增文字：本图不排标注版面，"
+        },
+        {
+          "overflowWrap": "anywhere",
+          "wordBreak": "break-word",
+          "scrollWidth": 294,
+          "clientWidth": 294,
+          "text": "提示：这张图选择不印新增文字：绑定的 1 条商品"
+        }
+      ],
+      "confirmRisks": [],
+      "workbenchColumns": "362px",
+      "shotSelectVisible": true
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "stage": "deliver",
+      "clientWidth": 390,
+      "rootScrollWidth": 390,
+      "bodyScrollWidth": 390,
+      "currentStage": "deliver",
+      "panel": "deliver",
+      "offenders": [],
+      "promptWarnings": [],
+      "confirmRisks": [],
+      "workbenchColumns": "minmax(0px, 1fr)",
+      "shotSelectVisible": false
+    },
+    {
+      "width": 5712,
+      "height": 1000,
+      "stage": "intake",
+      "clientWidth": 5712,
+      "rootScrollWidth": 5712,
+      "bodyScrollWidth": 5712,
+      "currentStage": "intake",
+      "panel": "intake",
+      "offenders": [],
+      "promptWarnings": [],
+      "confirmRisks": [],
+      "workbenchColumns": "244px minmax(0px, 1fr)",
+      "shotSelectVisible": false
+    },
+    {
+      "width": 5712,
+      "height": 1000,
+      "stage": "plan",
+      "clientWidth": 5712,
+      "rootScrollWidth": 5712,
+      "bodyScrollWidth": 5712,
+      "currentStage": "plan",
+      "panel": "plan",
+      "offenders": [],
+      "promptWarnings": [],
+      "confirmRisks": [],
+      "workbenchColumns": "244px minmax(0px, 1fr)",
+      "shotSelectVisible": false
+    },
+    {
+      "width": 5712,
+      "height": 1000,
+      "stage": "make",
+      "clientWidth": 5712,
+      "rootScrollWidth": 5712,
+      "bodyScrollWidth": 5712,
+      "currentStage": "make",
+      "panel": "make",
+      "offenders": [],
+      "promptWarnings": [
+        {
+          "overflowWrap": "anywhere",
+          "wordBreak": "break-word",
+          "scrollWidth": 1376,
+          "clientWidth": 1376,
+          "text": "风险：公共风格背景「白底商品图」被主图平台规则覆"
+        },
+        {
+          "overflowWrap": "anywhere",
+          "wordBreak": "break-word",
+          "scrollWidth": 1372,
+          "clientWidth": 1372,
+          "text": "提示：公共风格背景「白底商品图」被主图平台规则覆"
+        },
+        {
+          "overflowWrap": "anywhere",
+          "wordBreak": "break-word",
+          "scrollWidth": 1372,
+          "clientWidth": 1372,
+          "text": "提示：指令段出现未引用的非中文内容：Create"
+        },
+        {
+          "overflowWrap": "anywhere",
+          "wordBreak": "break-word",
+          "scrollWidth": 1372,
+          "clientWidth": 1372,
+          "text": "提示：尺寸图选择不印新增文字：本图不排标注版面，"
+        },
+        {
+          "overflowWrap": "anywhere",
+          "wordBreak": "break-word",
+          "scrollWidth": 1372,
+          "clientWidth": 1372,
+          "text": "提示：这张图选择不印新增文字：绑定的 1 条商品"
+        }
+      ],
+      "confirmRisks": [],
+      "workbenchColumns": "244px 1180px",
+      "shotSelectVisible": false
+    },
+    {
+      "width": 5712,
+      "height": 1000,
+      "stage": "deliver",
+      "clientWidth": 5712,
+      "rootScrollWidth": 5712,
+      "bodyScrollWidth": 5712,
+      "currentStage": "deliver",
+      "panel": "deliver",
+      "offenders": [],
+      "promptWarnings": [],
+      "confirmRisks": [],
+      "workbenchColumns": "244px minmax(0px, 1fr)",
+      "shotSelectVisible": false
+    },
+    {
+      "width": 5720,
+      "height": 1000,
+      "stage": "intake",
+      "clientWidth": 5720,
+      "rootScrollWidth": 5720,
+      "bodyScrollWidth": 5720,
+      "currentStage": "intake",
+      "panel": "intake",
+      "offenders": [],
+      "promptWarnings": [],
+      "confirmRisks": [],
+      "workbenchColumns": "244px minmax(0px, 1fr)",
+      "shotSelectVisible": false
+    },
+    {
+      "width": 5720,
+      "height": 1000,
+      "stage": "plan",
+      "clientWidth": 5720,
+      "rootScrollWidth": 5720,
+      "bodyScrollWidth": 5720,
+      "currentStage": "plan",
+      "panel": "plan",
+      "offenders": [],
+      "promptWarnings": [],
+      "confirmRisks": [],
+      "workbenchColumns": "244px minmax(0px, 1fr)",
+      "shotSelectVisible": false
+    },
+    {
+      "width": 5720,
+      "height": 1000,
+      "stage": "make",
+      "clientWidth": 5720,
+      "rootScrollWidth": 5720,
+      "bodyScrollWidth": 5720,
+      "currentStage": "make",
+      "panel": "make",
+      "offenders": [],
+      "promptWarnings": [
+        {
+          "overflowWrap": "anywhere",
+          "wordBreak": "break-word",
+          "scrollWidth": 1376,
+          "clientWidth": 1376,
+          "text": "风险：公共风格背景「白底商品图」被主图平台规则覆"
+        },
+        {
+          "overflowWrap": "anywhere",
+          "wordBreak": "break-word",
+          "scrollWidth": 1372,
+          "clientWidth": 1372,
+          "text": "提示：公共风格背景「白底商品图」被主图平台规则覆"
+        },
+        {
+          "overflowWrap": "anywhere",
+          "wordBreak": "break-word",
+          "scrollWidth": 1372,
+          "clientWidth": 1372,
+          "text": "提示：指令段出现未引用的非中文内容：Create"
+        },
+        {
+          "overflowWrap": "anywhere",
+          "wordBreak": "break-word",
+          "scrollWidth": 1372,
+          "clientWidth": 1372,
+          "text": "提示：尺寸图选择不印新增文字：本图不排标注版面，"
+        },
+        {
+          "overflowWrap": "anywhere",
+          "wordBreak": "break-word",
+          "scrollWidth": 1372,
+          "clientWidth": 1372,
+          "text": "提示：这张图选择不印新增文字：绑定的 1 条商品"
+        }
+      ],
+      "confirmRisks": [],
+      "workbenchColumns": "244px 1180px",
+      "shotSelectVisible": false
+    },
+    {
+      "width": 5720,
+      "height": 1000,
+      "stage": "deliver",
+      "clientWidth": 5720,
+      "rootScrollWidth": 5720,
+      "bodyScrollWidth": 5720,
+      "currentStage": "deliver",
+      "panel": "deliver",
+      "offenders": [],
+      "promptWarnings": [],
+      "confirmRisks": [],
+      "workbenchColumns": "244px minmax(0px, 1fr)",
+      "shotSelectVisible": false
+    }
+  ],
+  "console_errors": [],
+  "page_errors": []
+}
