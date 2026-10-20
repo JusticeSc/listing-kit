@@ -1,0 +1,5 @@
+chore(v2): keep the stop handoff byte-identical to the LF policy
+
+_stage-amz-control/** is declared -text in .gitattributes, so no normalization
+happens on add; the previous edit wrote the closeout note through a text-mode
+writer and turned every line into CRLF. Rewritten as pure LF; content unchanged.
