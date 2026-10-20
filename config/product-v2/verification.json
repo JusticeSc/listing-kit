@@ -404,6 +404,14 @@
         "reason": "读取 CI 运行两轮；接入自身会递归，不在 CI 再执行。"
       }
     ],
+    "tools/rehearse_v273_walkthrough.py": [
+      {
+        "args": [],
+        "category": "browser",
+        "ci": false,
+        "reason": "人工预演依赖 _working 真实参考图与独立 Chrome；登记为非 CI 维护入口，变更不自动执行，也不冒充走查已验。"
+      }
+    ],
     "tools/verify_v2_ui_1_remote_entry.py": [
       {
         "args": [],

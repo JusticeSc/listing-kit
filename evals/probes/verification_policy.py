@@ -206,10 +206,25 @@ def main() -> int:
           mixed_result.returncode == 0 and bool(mixed) and bool(ui) and bool(proof)
           and set(mixed["selected"]) == set(proof["selected"]) | set(ui["selected"]),
           f"rc={mixed_result.returncode} selected={mixed and mixed['selected_count']}")
-    rehearsal_result, _ = selector_json(["tools/rehearse_v273_walkthrough.py"])
+    rehearsal_registered, rehearsal_plan = selector_json(["tools/rehearse_v273_walkthrough.py"])
+    judge("T5-REHEARSAL-MAINTENANCE",
+          rehearsal_registered.returncode == 0 and bool(rehearsal_plan)
+          and set(rehearsal_plan["selected"]) == {"tools/check_verification.py",
+                                                  "evals/probes/verification_policy.py"}
+          and not rehearsal_plan["browser"],
+          f"rc={rehearsal_registered.returncode} selected={rehearsal_plan and rehearsal_plan['selected']}")
+    missing_registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
+    missing_registry["entrypoints"].pop("tools/rehearse_v273_walkthrough.py", None)
+    missing_registry_path = FIXTURE_ROOT / "verification-registry-without-rehearsal.json"
+    missing_registry_path.parent.mkdir(parents=True, exist_ok=True)
+    missing_registry_path.write_text(json.dumps(missing_registry, ensure_ascii=False),
+                                     encoding="utf-8", newline="\n")
+    rehearsal_result, _ = selector_json(["tools/rehearse_v273_walkthrough.py"],
+                                        "--registry", str(missing_registry_path))
+    missing_registry_path.unlink()
     judge("T5-REHEARSAL-NEEDS-INPUT",
           rehearsal_result.returncode == 2 and "SELECT-INPUT" in rehearsal_result.stdout,
-          f"rc={rehearsal_result.returncode} 缺素材/批准模式不冒充走查已验")
+          f"rc={rehearsal_result.returncode} 未登记/缺素材时不冒充走查已验")
     plan_result, plan = selector_json(["docs/product-v2-refactor-plan.md"])
     judge("T5-PLAN-STATE-CONSISTENCY",
           plan_result.returncode == 0 and bool(plan)
