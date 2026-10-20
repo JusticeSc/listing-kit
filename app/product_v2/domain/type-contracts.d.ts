@@ -534,6 +534,8 @@ export type PromptBasis = {
     candidate_id: string;
     candidate_sha256: string;
     problems: string[];
+    /** 当前写者冻结原方向；较早记录可缺席，读取时不从人工全文猜测。 */
+    direction?: string;
     mode?: ReworkMode;
     problem_candidate?: ReworkProblemCandidate;
   };

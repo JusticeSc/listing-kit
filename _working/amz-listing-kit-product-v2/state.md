@@ -5,7 +5,10 @@
 > prepared 是未绑定新 Goal 的本地准备态,不是系统 paused。旧读数与完成记录只见 superseded 基线。
 ## 当前恢复边界
 
-- **2026-10-20T06:27:22Z 当前线上构建四段界面矩阵实测：1440/1366/1024/390 与 5712/5720 宽全部无根横向溢出，长英文警告折行、窄屏单列选图器、返工取消回焦、键盘切段均 6/6 通过。** 在既有 HTTPS origin 的独立无头 profile 导入真实 b19 项目，逐宽度逐阶段读 `documentElement.scrollWidth/clientWidth` 与元素级溢出：5712 与 5720 均为 0 溢出（当前 `.prompt-warning`/`.confirm-risk` 已 `overflow-wrap:anywhere;word-break:break-word`，5 条真实长警告元素自身 `scrollWidth==clientWidth`）；390 工作台单列且 `#make-shot-select` 可见，1440 双栏；制作区选中图→返工面板→取消焦点回到 `#rework-open`，比较面板可收起；阶段按钮键盘 Enter 切段、Tab 移动焦点；零 console/page error。截图 24 张与 JSON 在 `_stage-amz-control/release-online-20261020/evidence/*ui-matrix*`。**原生浏览器 125%/200% 缩放仍无法在无头环境产生**：向持久 profile 预置 `partition.default_zoom_level`（origin/host 两种键、整数与对数 double 两种取值、带完整 `profile` 段、分别用 Playwright 自带 Chromium 与完整 Chrome 155）全部无效，`innerWidth` 仍 1440、DPR 1——无头 Chrome 不加载该缩放控制器，CDP 也没有浏览器级 zoom 入口；因此该条维持“未验”，等价视口证据不冒充原生缩放，需用户在本机浏览器实际操作或另行授权有头会话。
+- **2026-10-20审计后，用户在追加批次选择题中明确选择“批准有限收口”：最多再追加4个完整实施＋验收批次，沿已发生记录继续20–23，原1–19批、失败和Unknown不清零。** 原生Goal实时get仍为`15ab22bf3386b9cf / active`、原文不变。授权观察、启动前原字节及本轮结果入口为`_stage-amz-control/b20-b23-closeout-20261020/`；完整审计见`evals/product-v2/refactor/status-audit-20261020.md`。本次恢复必要产品修改、对应验证、原有审查/受保护CI/CD及既有环境发布，不新增资金、模型、依赖或平台；达到批次、金额或类别门即停，不承诺4批必成。已有线上`3195192`、image=`sha256:4abc01be…`、runtime=`48002dc4…`与两包/常规宽度/可逆溢出因果/两轮及恢复证据按各自未变范围复用，不重做基线/V1退出/PR18。C15/C17仍为独立外部门，不新增工程发布前置。
+- **唯一下一动作：第22批已用尽图次数门（16/16），信息图已合格采用，主图仍不合格，需用户明确决定“追加额度”或“保留缺口”。** 第22批用剩余 2 次改做明确候选编辑（各自实际失败候选在前、授权原照在后，2 输入 0.22 元/次），HTTP 200 且任务 succeeded：信息图新增乱码与黑框已消除、商品与自身 608Z/NSK/INDONESIA 保留，经独立复核合格并已通过产品“采用当前候选”落为 selection v5（=`b20fe753…`）；主图实际主体 984px=73.2%，仍低于原 85% 下限且左右各 1px 非白线，判不合格、未采用。失败、费用与原错误结果全部保留，未降标准、未裁剪冒充、未换模型、未借辅助额度生图。
+- **图次数门已到，外发宿主已停，未经新授权不再生图。** 账本 lane 16/16 图、0/4 辅助、3.06/5 元控制上界，累计 14.26/21 元；余 1.94 元但图次数为 0，金额余量不是新授权。交付门实测：必需主图仍是早先的 79.1% 候选且已显示过期，整套一致性报告因选择变化过期，两包导出不能当作合格交付；最终候选规定两轮与第23批受保护发布都依赖“最终五图固定”，现不能进入，也不提前空跑两轮。缺口与三种可选做法见`b22-outcome-and-decision.md`；第22批计入已用批次，现余第23批。
+- 第21批两次、第22批主图这次的实际像素失败，与第22批信息图这次的合格采用，都按真实结果记录；最终五图、两包实际Blob、固定候选两轮、受保护发布与原生缩放准出标准均不缩减。原生125%/200%仍待适用候选固定后由用户本机一次最小走查；C15/C17不新增工程发布前置。
 
 - **2026-10-20T05:56:49Z 线上真实采用闭环实测 7/7：导入旧包→切换并采用另一候选→整套检查过期阻断→重跑放行→两包导出→独立导入刷新相等。** 在既有 HTTPS origin 的独立无头 profile 中导入 `b19-project-post-suite.zip`，打开项目后把其中一张已采用图切到另一条候选并点击采用（新 selection 版本，候选改写）；选择变化立即使整套检查过期、交付门禁阻断（`export.suite_review_current`），点击整套检查后门禁放行；交付包 5 图、该图 `candidate_id/asset_sha256` 等于刚采用候选，逐图哈希与 manifest 相等；项目包导出后由第二个独立 profile 导入，文档/资产快照与刷新相等，全程零 console/page error。首个探针版本在 AD-04 从错误的候选列表取期望 sha（StopIteration）已修正后重跑，产品未改，失败证据保留。证据 `_stage-amz-control/release-online-20261020/online_adoption_probe.py` 与 `evidence/*online-adopt-main*.json|png`。
 
@@ -68,7 +71,7 @@ goal_binding_evidence: evals/product-v2/refactor/goal-observation-resume-2026102
 system_goal_observed_status: active
 system_goal_observed_at: '2026-10-20T05:19:04Z'
 plan_ref: docs/product-v2-refactor-plan.md
-latest_audit: _stage-amz-control/status-audit-20261019T103737Z/observations.json
+latest_audit: evals/product-v2/refactor/status-audit-20261020.md
 phase_progress:
   '0':
     status: done
@@ -294,7 +297,7 @@ task_progress:
     - evals/product-v2/v2.6.3-transfer-20261019-133339-b3-integrated-confirm3.json
     - evals/product-v2/refactor/b3-semantic-lifecycle.json
   V2.R5.1:
-    status: blocked
+    status: active
     evidence:
     - _stage-amz-control/formal-resume-20261015T125651Z/real-wire/remaining-pixel-review.json
     - _stage-amz-control/formal-resume-20261015T125651Z/real-wire/five-adopted-pixel-proof.json
@@ -460,7 +463,7 @@ task_progress:
     - tools/build_product_v2_ts.mjs
 next_action_task: V2.R5.1
 blockers:
-- "V2.R5.1_第18批晋升已发布，但验收未闭合：C15/C17真人门未签、原生浏览器缩放未验（仅等价视口）、五图人审未做；线上旧包/两包/独立导入刷新、同origin旧版本恢复与最终两轮已由本轮证据证明，新格式保全仅由事务自测双镜像证明，不据此关闭批次或Goal"
+- "V2.R5.1_第22批已用尽图次数门16/16：信息图乱码/黑框已消除并经独立复核合格，已落为selection v5；主图实际主体73.2%<85%判不合格未采用，且已采用主图仍是过期79.1%候选，整套一致性报告因选择变化过期。两包/固定候选两轮/第23批发布因此不能进入。需用户明确决定追加图次数(超16图/5元lane，需新授权)或保留缺口；金额余1.94元不构成新授权，不得换模型、降标准、裁剪冒充或借辅助额度生图。见_stage-amz-control/b20-b23-closeout-20261020/b22-outcome-and-decision.md"
 unknowns:
   - current_20261019_Goal_15ab22bf3386b9cf_active_user_explicit_approved_six_additional_batches_continue13to18_first_two_zero_fee_original_budget_and_scope_preserved_R51_active_batch13_send_scope_exclusions_cost_reservation_POST_frontier_approval_stage_resume_extension_20261019T105641Z_no_new_provider_submit
   - historical_20261019_batch12of12_stop_obeyed_then_audit_and_explicit_user_extension_granted_no_reset_B11_three_browser_submits_cny0p36_preserved_no_signed_results_no_retry_remaining_program_pixels_dual_mode_five_current_adoptions_two_rounds_release_C15_C17
@@ -555,5 +558,5 @@ unknowns:
   - current_20261017_tip77c84aa_state_auth_only_CI39036915488_rerun_infra_httpx403_pending_v23507_closed_by_causal_doc_dev_residues_cleaned_walkthrough_packet08_prototype_deleted_doc_gaps_fixed_pending_push
   - current_20261017_baseline_finalized_main_9c835dc_PR13_PR14_merged_deploy_acceptance12of12_fingerprint_a1e73bdc_equal_finalize_done_previous_cleaned_CRLF_rollback_rebuild_lesson_git_archive_plus_attributes_zero_new_paid_calls
   - current_20261018_baseline_closeout_main_2c4a33a_CI39045865774_success_autodeploy_acceptance12of12_fingerprint_a1e73bdc_equal_finalize_previous_cleaned_evidence_stage_baseline_release_20261017T154245Z_artifact12105698120_human_gates_C15_C17_user_confirmed_pass_no_new_paid_calls
-updated_at: '2026-10-20T06:27:22.000Z'
+updated_at: '2026-10-20T11:42:00.000Z'
 ```

@@ -49,7 +49,12 @@ import {
 
 export const PROMPT_SCHEMA_VERSION = 2;
 export const LEGACY_PROMPT_SCHEMA_VERSION = 1;
-export const PROMPT_COMPILER_RULE_VERSION = 3;
+/** 信息图旧规则要求标题，须重新准备；其他用途不受本次修复影响。
+ * @param {unknown} roleId
+ * @returns {number} */
+export function promptCompilerRuleVersionOf(roleId) {
+  return roleId === "infographic" ? 4 : 3;
+}
 export const PROMPT_LANGUAGE_POLICY_ID = "zh-instruction-v1";
 export const MAX_PROMPT_CHARS = 4000;
 
@@ -311,6 +316,11 @@ export const ROLE_VISUAL_BRIEF = Object.freeze({
     "主体：商品完整入画、位置突出；文案区放在留白一侧，与商品之间留出干净空隙。",
     "文字层级：一行标题加若干要点，字号按层级递减、行距清晰，与背景对比充分，不压在商品细节上。",
     "排版：对齐一致、边距统一，文字水平排布，不使用旋转、变形或装饰性字体。",
+  ]),
+  infographic_no_text: Object.freeze([
+    "画面概念：以商品本身和可见细节说明商品特征，不添加标题、参数或说明文字。",
+    "主体：商品完整入画、位置突出，保持轮廓比例、材质纹理和商品上原有的永久标识。",
+    "光线与背景：柔和均匀的布光，背景干净，商品与背景有清晰层次。",
   ]),
   scene: Object.freeze([
     "画面概念：商品在真实使用环境里的样子；环境只交代使用语境，不抢商品焦点。",
@@ -934,7 +944,7 @@ export function promptBasisOf(input, platform, provider) {
     .filter((item) => isPlainObject(item) && consumedSet.has(item.slot_id))
     .map((item) => ({ slot_id: item.slot_id, version: item.version }));
   return {
-    compiler_rule_version: PROMPT_COMPILER_RULE_VERSION,
+    compiler_rule_version: promptCompilerRuleVersionOf(shot?.role_id),
     brief: consumedBasis,
     consumed_slot_ids: consumed,
     // 这张图自己的确定性签名（与整份套图文档版本无关）；改别的图不让这张图过期。
@@ -1105,6 +1115,7 @@ export function compilePrompt(input) {
   const allowsText = platform.on_image_text_roles.includes(shot.role_id);
   const isMain = shot.role_id === "main";
   const printing = effectivePrinting(shotSpec, shot);
+  const infographicPrintsNothing = shot.role_id === "infographic" && printing.intent === "none";
   problems.push(...decisionProblems({
     shot: shot, shotSpec: shotSpec, styleSpec: styleSpec, brief: brief,
     platformId: input.platformId,
@@ -1125,36 +1136,37 @@ export function compilePrompt(input) {
   let fidelity = fidelityLead + "：保持商品的轮廓、比例、颜色、材质、标识与现有部件不变；不要添加、删除、复制、换色或重新设计商品特征。";
   // 展示决定（#9）：把「干净展示／原样保持、倒空／保留内容物」写成正向的表面状态陈述；
   // 选择干净展示时才给出去污例外，避免与「保持商品不变」互相矛盾。
-  const presentationRefs = [];
+  const fidelityRefs = [];
   const presentationLines = [];
   if (presentation.consumes.appearance_state) {
-    presentationRefs.push(presentation.appearance_state.source === "shot"
+    fidelityRefs.push(presentation.appearance_state.source === "shot"
       ? "shot_spec.presentation.appearance_state" : "style_spec.presentation.appearance_state");
     presentationLines.push(presentation.appearance_state.state === "clean_display"
       ? "商品按干净展示状态呈现：允许去掉临时使用痕迹（水渍、指纹、残留），但材质、结构、标识与颜色仍与商品依据一致。"
       : "商品按商品依据里的原样状态呈现：可见的使用痕迹也照原样保留，不做清洁或去污。");
   }
   if (presentation.consumes.contents_state) {
-    presentationRefs.push(presentation.contents_state.source === "shot"
+    fidelityRefs.push(presentation.contents_state.source === "shot"
       ? "shot_spec.presentation.contents_state" : "style_spec.presentation.contents_state");
     if (presentation.contents_state.state === "empty") {
       presentationLines.push("内容物为空：内腔与瓶口干净、无残留，也不添加资料里没有的内容物。");
     } else if (presentation.contents_state.state === "as_shown") {
       presentationLines.push("内容物保持原样：保留商品依据里可见的内容物，不倒空也不添加。");
     } else {
-      presentationRefs.pop();
+      fidelityRefs.pop();
     }
   }
   if (presentationLines.length > 0) {
     fidelity += presentationLines.join("");
   }
-  if (allowsText && boundFacts.length > 0) {
+  if (allowsText && !infographicPrintsNothing && boundFacts.length > 0) {
     fidelity += "图中如需出现文字，只能逐字使用后面列出的已确认文案。";
-  } else if (!allowsText) {
+  } else if (!allowsText || infographicPrintsNothing) {
     fidelity += "不要在图片上叠加文字、参数、徽标或水印。";
   }
+  if (infographicPrintsNothing) fidelityRefs.push("shot_spec.print_intent");
   sections.push(section("product_fidelity", "商品一致性", "instruction", fidelity,
-    ["intake.references", shotRef, shotRef + ".role", platformRef].concat(presentationRefs)));
+    ["intake.references", shotRef, shotRef + ".role", platformRef].concat(fidelityRefs)));
 
   const styleLines = [];
   const styleRefs = [];
@@ -1197,7 +1209,9 @@ export function compilePrompt(input) {
   const sizePrintsNothing = shot.role_id === "size" && printing.intent === "none";
   const roleBrief = sizePrintsNothing
     ? ROLE_VISUAL_BRIEF.size_no_annotation
-    : (ROLE_VISUAL_BRIEF[shot.role_id] || ROLE_VISUAL_BRIEF.custom);
+    : infographicPrintsNothing
+      ? ROLE_VISUAL_BRIEF.infographic_no_text
+      : (ROLE_VISUAL_BRIEF[shot.role_id] || ROLE_VISUAL_BRIEF.custom);
   const viewpointSentence = presentation.viewpoint.state !== "reference_visible"
     ? VIEWPOINT_SENTENCES[presentation.viewpoint.state] || "" : "";
   const briefLines = viewpointSentence
@@ -1212,6 +1226,7 @@ export function compilePrompt(input) {
       source_refs: ["shot_spec.print_intent", shotRef],
     });
   }
+  if (infographicPrintsNothing) briefRefs.push("shot_spec.print_intent");
   if (viewpointSentence) {
     briefRefs.push(presentation.viewpoint.source === "shot"
       ? "shot_spec.presentation.viewpoint" : "style_spec.presentation.viewpoint");
@@ -1333,10 +1348,14 @@ export function compilePrompt(input) {
     "水印", "文字错乱或文字变形",
     "商品变形、多出部件或与参考图不符的颜色和标识",
   ];
-  if (!allowsText) avoidList.push("任何叠加文字、参数徽标或边框");
+  const avoidRefs = ["style_spec.avoid", platformRef, providerRef, "shot_spec.keep"];
+  if (!allowsText || infographicPrintsNothing) {
+    avoidList.push("任何叠加文字、参数徽标或边框");
+    if (infographicPrintsNothing) avoidRefs.push("shot_spec.print_intent");
+  }
   sections.push(section("negative_constraints", "必须避免", "instruction",
     "必须避免：" + avoidList.map(quoteLiteral).join("、") + "。",
-    ["style_spec.avoid", platformRef, providerRef, "shot_spec.keep"]));
+    avoidRefs));
 
   const text = sections.map((item) => item.text).join("\n\n");
   const compiled = {
@@ -1769,7 +1788,7 @@ export function buildPromptRecord({ compiled, snapshot, hash } = {}) {
     maxReferences: compiled.provider.max_reference_images,
   });
   if (frozenProblems.length) invalid(frozenProblems[0].message, { problems: frozenProblems });
-  if (compiled.basis?.compiler_rule_version !== PROMPT_COMPILER_RULE_VERSION) {
+  if (compiled.basis?.compiler_rule_version !== promptCompilerRuleVersionOf(compiled.role_id)) {
     invalid("新 Prompt 必须由当前编译规则产生；历史原记录只能读取，不能冒充新写入。");
   }
   const lineage = (compiled.basis && isPlainObject(compiled.basis.rework))

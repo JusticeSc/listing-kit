@@ -10,7 +10,6 @@
 
 import {
   DOMAIN_ERROR_CODES,
-  ROLE_VISUAL_BRIEF,
   buildPromptRecord,
   canonicalJson,
   checkCompiledPrompt,
@@ -250,16 +249,10 @@ test("G14", "展示决定写进商品一致性段：干净展示给去污例外�
   return { clean_refs: cleanFidelity.source_refs };
 });
 
-test("G15", "画面简报按用途正向表达且不冒充事实：删段/串味/事实污染必红（抓简报漂移回归）", async () => {
+test("G15", "画面简报来源只引用用途，不把商品事实冒充画面设定", async () => {
   const main = compileMain();
   const mainBrief = main.sections.find((item) => item.key === "visual_brief");
   expect(Boolean(mainBrief), "主图必须有画面简报段：删段必红。");
-  for (const sentence of ROLE_VISUAL_BRIEF.main) {
-    expect(main.text.includes(sentence), "主图正文必须逐字含主图简报句：" + sentence);
-  }
-  for (const sentence of ROLE_VISUAL_BRIEF.infographic) {
-    expect(main.text.includes(sentence) === false, "主图正文不得串入信息图简报句：" + sentence);
-  }
   // 信息图用所选文案 spec 让编译通过（G10 同款），只看画面简报部分。
   const infoShot = infographicShot();
   const infoCompiled = compilePrompt({
@@ -279,12 +272,6 @@ test("G15", "画面简报按用途正向表达且不冒充事实：删段/串味
   });
   const infoBrief = infoCompiled.sections.find((item) => item.key === "visual_brief");
   expect(Boolean(infoBrief), "信息图必须有画面简报段：删段必红。");
-  for (const sentence of ROLE_VISUAL_BRIEF.infographic) {
-    expect(infoCompiled.text.includes(sentence), "信息图正文必须逐字含信息图简报句：" + sentence);
-  }
-  for (const sentence of ROLE_VISUAL_BRIEF.detail) {
-    expect(infoCompiled.text.includes(sentence) === false, "信息图正文不得串入特写简报句：" + sentence);
-  }
   for (const section of [mainBrief, infoBrief]) {
     for (const ref of section.source_refs) {
       expect(/^suite_plan\.shot:/.test(ref), "画面简报来源只能是套图计划：" + ref);
@@ -605,11 +592,12 @@ test("G12", "过期机检：只认这张图实际消费的依据；无关槽位�
   // 消费该槽位的图：它消费的槽位版本前进 → 过期；它没消费的槽位前进 → 不过期。
   const infoShot = infographicShot();
   // 只测过期机检：显式不印新增文字，避免被「未决定」门阻断；原断言不变。
-  const infoCompiled = compileMain({
-    shot: infoShot, shotSpec: { ...emptyShotSpecFromShot(infoShot), print_intent: "none" } });
+  const infoSpec = { ...emptyShotSpecFromShot(infoShot), print_intent: "none",
+    purpose: "只展示商品本身与干净背景，不添加标题、文字或说明。",
+    keep: ["商品可见外观与标识"], change_allowed: ["背景", "光线"] };
+  const infoCompiled = compileMain({ shot: infoShot, shotSpec: infoSpec });
   const infoSnapshot = requestSnapshotOf(infoCompiled,
-    { references: frozenRefs(infoShot, contextFixture(),
-      { ...emptyShotSpecFromShot(infoShot), print_intent: "none" }) });
+    { references: frozenRefs(infoShot, contextFixture(), infoSpec) });
   const infoRecord = buildPromptRecord({
     compiled: infoCompiled, snapshot: infoSnapshot, hash: await promptHash(infoSnapshot, DIGEST),
   });

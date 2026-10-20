@@ -1,10 +1,10 @@
 /** Prompt 版本、编译、人工覆盖和确认单的业务所有权；浏览器只加载生成的 .js。 */
 import {
-  DOMAIN_DOCUMENT_KINDS, PLATFORM_PROFILES, PROMPT_COMPILER_RULE_VERSION,
+  DOMAIN_DOCUMENT_KINDS, PLATFORM_PROFILES,
   assertConfirmationSheet, briefReadiness,
-  buildConfirmationSheet, buildEditedPromptRecord, buildProductBrief, buildPromptRecord,
+  buildConfirmationSheet, buildEditedPromptRecord, buildProductBrief, buildPromptRecord, buildReworkDirective,
   canonicalJson, checkPromptRecord, compilePrompt, discardManualEdit, imagePromptProfile,
-  promptHash, promptStaleness, reconfirmEditedPrompt, requestSnapshotOf, selectReferences,
+  promptCompilerRuleVersionOf, promptHash, promptStaleness, reconfirmEditedPrompt, requestSnapshotOf, selectReferences,
   shotSignatureOf, styleSignatureOf, suitePlanSummary,
 } from "./domain/index.js";
 import { sha256Hex } from "./storage/db.js";
@@ -109,23 +109,38 @@ export function sourceContext(source: ProjectSources) {
   };
 }
 
+type FrozenRework = NonNullable<PromptBasis["rework"]>;
+
 /** 记录的冻结返工血缘（唯一来源 base.basis.rework）：只有明确模式才回传；
  * 无 mode 历史（v2.5.4）既不猜编辑源，也不把它喂进新写入端。 */
-function reworkLineageOf(record: PromptRecord | null): ReworkDirective | null {
+function reworkLineageOf(record: PromptRecord | null): FrozenRework | null {
   const frozen = record && record.basis ? record.basis.rework : null;
   if (!frozen) return null;
   if (frozen.mode !== "edit_candidate" && frozen.mode !== "regenerate_original") return null;
   const fixed = frozen.problem_candidate;
   if (!fixed || typeof fixed.candidate_id !== "string" || typeof fixed.document_id !== "string"
       || !Number.isInteger(fixed.version) || typeof fixed.asset_sha256 !== "string") return null;
-  // 冻结血缘按原字节原样回传：写入门（basis.rework）与选择器读同一份形状，不重建、不补造。
-  return frozen as unknown as ReworkDirective;
+  return frozen;
+}
+
+/** 冻结血缘不是完整编译指令；为本次准备重建，不冒充旧报告或原返工时间。 */
+function reworkDirectiveOf(record: PromptRecord | null): ReworkDirective | null {
+  const lineage = reworkLineageOf(record);
+  if (!lineage || !record) return null;
+  return buildReworkDirective({
+    directiveId: lineage.directive_id, shotId: record.shot_id, mode: lineage.mode,
+    candidate: { candidate_id: lineage.candidate_id, shot_id: record.shot_id,
+      asset_sha256: lineage.candidate_sha256 },
+    candidateDocument: lineage.problem_candidate, problems: lineage.problems,
+    direction: lineage.direction ?? record.compiled.rework?.direction ?? "",
+    at: new Date().toISOString(),
+  });
 }
 
 /** 返工派生版本的人工续写：用同一冻结血缘重算参考图顺序（编辑源在首位），
  * 与写入门、事务核对调用同一选择器、同一选项；模式未声明的历史血缘不在此路径。 */
 function lineageReferencesOf(source: ProjectSources, shotId: string,
-  provider: ImagePromptProfile, lineage: ReworkDirective): PromptReferenceSelection[] {
+  provider: ImagePromptProfile, lineage: FrozenRework): PromptReferenceSelection[] {
   const shot = source.suitePlan?.shots.find((item) => item.shot_id === shotId);
   if (!shot) throw new Error("找不到这张图，可能已被删除。");
   const spec = source.shotSpecs[shotId];
@@ -136,9 +151,8 @@ function lineageReferencesOf(source: ProjectSources, shotId: string,
 }
 
 /** 记录依据 + 冻结返工血缘：血缘字段原样保留（含 problems 与 problem_candidate 的独立副本）。 */
-function basisWithLineage(basis: PromptBasis, lineage: ReworkDirective): PromptBasis {
-  const frozen = lineage as unknown as NonNullable<PromptBasis["rework"]>;
-  return { ...basis, rework: { ...frozen, problems: [...frozen.problems] } };
+function basisWithLineage(basis: PromptBasis, lineage: FrozenRework): PromptBasis {
+  return { ...basis, rework: { ...lineage, problems: [...lineage.problems] } };
 }
 /** 复核请求用已确认事实投影：只按服务端 FactItem 契约送 {label, value}；
  * slot_id/source 是本地溯源字段，服务端 extra=forbid 会 400（input_rejected，不调用模型）。
@@ -152,7 +166,7 @@ export function confirmedFacts(source: ProjectSources) {
 
 /** 只读当前依据投影（沿用既有 R6.2 算法，不引入第二套 currentness 约定）：
  * 活动输入实例与“已读快照”消费者共用同一份实现，避免各自重算。
- * compiler_rule_version 每次都盖当前编译器版本（parent 导出的唯一常量）；
+ * compiler_rule_version 按本图用途取当前规则；未改动用途不因别图模板调整而过期；
  * intake_version 封印商品资料版本（冻结引用里嵌了它）；style_signature 只封印本图
  * 实际消费的共用风格字段（被单图覆盖的字段变化不使本图过期）。 */
 export function promptCurrentBasisOf(source: ProjectSources, shotId: string | null,
@@ -162,7 +176,7 @@ export function promptCurrentBasisOf(source: ProjectSources, shotId: string | nu
   const shot = source.suitePlan?.shots.find(item => item.shot_id === shotId);
   const spec = shotId ? source.shotSpecs[shotId]?.spec || null : null;
   return {
-    compiler_rule_version: PROMPT_COMPILER_RULE_VERSION,
+    compiler_rule_version: promptCompilerRuleVersionOf(shot?.role_id),
     briefBasis, shot_signature: shot ? shotSignatureOf(shot) : null,
     suite_version: source.suiteVersion || null, style_version: source.styleVersion || null,
     style_signature: shot ? styleSignatureOf(source.styleSpec, spec, shot) : null,
@@ -268,8 +282,10 @@ export function createPromptModule(deps: PromptDependencies): PromptModule {
   }
   async function compileAndSave(shotId: string, options: { action?: ActionSnapshot | null; rework?: ReworkDirective } = {}): Promise<SavedPromptResult> {
     const action = options.action || deps.beginAction();
-    const previous = entryOf(shotId)?.version || 0;
-    const result = await compile(shotId, options);
+    const entry = entryOf(shotId);
+    const previous = entry?.version || 0;
+    const rework = options.rework || reworkDirectiveOf(entry?.record || null);
+    const result = await compile(shotId, rework ? { rework } : options);
     const saved = await save(shotId, result.payload, action, previous);
     return { ...result, saved };
   }
@@ -298,7 +314,10 @@ export function createPromptModule(deps: PromptDependencies): PromptModule {
         const entry = entryOf(item.shot_id), draft = drafts.get(item.shot_id);
         if (entry?.record.origin === "manual_edit" || (draft && entry && draft.text !== entry.record.compiled.text)) continue;
         if (entry && !promptStaleness(entry.record, basis(item.shot_id)).stale) continue;
-        try { await compileAndSave(item.shot_id, { action }); prepared += 1; }
+        try {
+          await compileAndSave(item.shot_id, { action });
+          prepared += 1;
+        }
         catch (error) { errors.push(item.label + "：" + (error instanceof Error ? error.message : "本地准备失败")); }
       }
       if (action.alive() && !errors.length) lastPreparationInputs = stamp;
@@ -379,7 +398,11 @@ export function createPromptModule(deps: PromptDependencies): PromptModule {
     const discarded = discardManualEdit(entry.record, [...(history.get(shotId)?.values() || [])]);
     const raw = discarded.target?.record;
     const candidate = raw && !checkPromptRecord(raw).length ? raw as PromptRecord : null;
-    const payload = candidate && !promptStaleness(candidate, basis(shotId)).stale ? candidate : (await compile(shotId)).payload;
+    let payload = candidate;
+    if (!payload || promptStaleness(payload, basis(shotId)).stale) {
+      const rework = reworkDirectiveOf(payload);
+      payload = (await compile(shotId, rework ? { rework } : undefined)).payload;
+    }
     await save(shotId, payload, action, entry.version);
     return payload;
   }
