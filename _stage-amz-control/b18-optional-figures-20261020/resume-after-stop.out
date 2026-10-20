@@ -1,0 +1,16 @@
+[PASS] 冷恢复：8 阶段 / 27 任务；状态 active
+目标：docs/product-v2-refactor-plan.md；状态：_working/amz-listing-kit-product-v2/state.md
+唯一下一动作：V2.R5.1
+任务卡：docs/product-v2-refactor-plan.md:425
+Goal 原文：计划 §2.1；sha256=6c1f59d0df5c6c867dac5aa090bb32ff915c7dfae2140494c653aab7598bf870
+仓库保存的最近 Goal 观察：active；绑定：required；goal_id=15ab22bf3386b9cf；证据：evals/product-v2/refactor/goal-observation-full-product-20261018T140710Z.json
+本脚本不查询系统 Goal；恢复会话仍须读取真实当前 Goal 核对。
+### V2.R5.1 · 生成执行Module
+
+当前恢复入口：先读state与§17.13审计后明确追加授权，再读关联Issue。原12批不清零，用户已批准最多追加6批、沿13–18计数，前两批严格零收费；R5.1现恢复active，第13批闭合发送范围/逐图排除理由/确认费用上界/预留/实际POST一致性，第14批处置当前CI和真实内容人因。B1–B3工程合同及B4已交部分按对应证据复用，不按旧R4.4/B1起点重做；后续仍须新程序稿真实品质、最终两轮和受保护发布。新增5元已一次激活，余量与Unknown按账本逐笔核计，禁止再次激活。§2.1保留原生正文，最新用户追加修订取§17.13，不以局部恢复缩减完整生成合同。
+
+输入：G4、workspace提交/批量/核对/执行身份、domain状态机。触发后离线实现的前置为 R4.4，不以未实测 R4.2 的 G4 停工；最终通过仍需 G4/G5/G6 及两模型真实证明。
+动作：按 `product-v2-refactor-design.md` §2–4合并生成授权队列及消费到执行Module，统一单张/批量/返工Interface；跨标签原子登记本次授权+Shot消费后外发，冻结动作归属、核对/下载/容量处理；UI不拼持久化顺序；全部调用方/JS/恢复同步迁移并删除独立授权层、旧执行路径和pass-through别名。
+输出：执行Module及全部调用方、`refactor/generation-module-<timestamp>.md`。
+验收：双击/跨标签同授权、partial、停止新增、刷新、超时/Unknown、服务重启、配额失败均保留正确身份/历史；当前性按实际消费版本核对，旧attempt不充当新授权消费；停止观察不被当上游取消。按详细设计§9.1同时证明业务所有权和调用方时序收口，不以移文件或语法绿灯准出。
+失败：切片原子回退，不丢在途任务或保存的候选。

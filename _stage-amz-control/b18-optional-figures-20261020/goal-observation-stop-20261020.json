@@ -1,0 +1,17 @@
+{
+  "captured_at": "2026-10-20T01:27:41.826Z",
+  "source": "eval tool.goal(op=get) structured result",
+  "exit": null,
+  "goal_present": true,
+  "goal_id": "15ab22bf3386b9cf",
+  "status": "paused",
+  "objective_head": "## Objective\n在 amz-listing-kit 已交付的 FastAPI/Uvicorn、Vite 单产物、lit-html、渐进 TypeScript、IndexedDB 本地项目及无业务项目持久化 Python 网关基线上，按现有产品计划 §17、设计 §13 和 Issue #7/#8/#9/#10，完成“普通决定驱动可信整图”的完整产品交付：普通输入与程序提示词增强、资料与事",
+  "objective_chars": 5049,
+  "remaining_tokens": null,
+  "raw_keys": [
+    "completionBudgetReport",
+    "goal",
+    "op",
+    "remainingTokens"
+  ]
+}
