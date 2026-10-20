@@ -5,6 +5,8 @@
 > prepared 是未绑定新 Goal 的本地准备态,不是系统 paused。旧读数与完成记录只见 superseded 基线。
 ## 当前恢复边界
 
+- **2026-10-20T05:18:29Z PR #21 受保护合并并沿既有 HTTPS 事务发布到 finalize；线上旧包/两包/独立导入刷新实测通过，但生产环境「不同旧 image 受控回滚」未实跑，「旧 image 同 origin」只由发布前现场基线＋事务自测双镜像机制证明。** PR head `48bfe17` 的 run `39369471721` 三作业 success（changes 28s、verify 15m31s、container 2m31s；PR 事件部署 skip）；2026-10-20T04:44:54Z 以 merge commit `3195192e4a1d29e374ea6d15fa8b4c7256dd42bf` 合并，树 `ae785366…` 与 `48bfe17` 完全相同。main push run `39371208596`：changes+container success、verify 按设计 skip；镜像构建/容器冒烟/事务自测/失败类/密钥同步/远程部署/静态与主链验收/清理前指纹/finalize 全 success，回滚 skip（未触发）。发布身份：tag `amz-listing-kit:3195192e…`、image ID `sha256:4abc01be655c9554534bb2804bcd60f711716a37e89c5ae649c351b5604b29cd`、runtime `48002dc42f05…`（与上一发布相同，本轮无产品运行时代码变更）、public config `652b1201…`、Caddy `e375655d…` 未变、default_trial closed；工件在 `_stage-amz-control/release-online-20261020/run-artifact/`。线上验收用新增 `_stage-amz-control/release-online-20261020/online_release_probe.py`：发布前旧 image 基线与发布后各 8/8——导入 b19 旧项目包、五用途采用保留、交付门禁无 BLOCK 且导出五图与 `b19-delivery-final.zip` 逐图 sha 相同、项目包再导出、独立第二 profile 导入后文档/资产快照相等、刷新持久、零 console/page error；证据 `evidence/*-pre-release-baseline2.json` 与 `*-post-release-main-3195192.json`。最终两轮在合并树相同字节上实跑：`verify_v2_7_1_regression.py --rounds 2` 两轮全绿、指纹同为 `290ee1bd…`，源码身份 `48bfe17`，证据 `evals/product-v2/v2.7.1-regression-20261020-125146-final.txt/.json`。发布后线上 `/api/health` 不含 runtime sha，版本身份只取发布工件，不据健康响应推断。**未做/不签**：生产环境受控回滚未实跑（`release_transaction_probe --selftest` 已用两真实镜像+同 origin 数据保全证明机制）、原生 Chrome zoom 仍未验（仅等价视口）、C15/C17 真人门、五图人像素人审、B1–B7 验收；本发布不等于第18批或原完整产品 Goal 完成。
+
 - **2026-10-20T02:59Z 用户恢复正式开发并以选择题推进；两张 stale 图已按预留额度刷新并重新采用。** 用户原话「有什么需要我做的，全部转成问题让我选择，随后就是正式开发」；本轮选择题的回答落为：信息图「不印新增文字」、两张 stale 图在当前模型下各重生成一张再采用。实际执行 2 次 DashScope `qwen-image-3.0` 调用（HTTP 200，各 1 张输入＝商品原照、`1344*1344`、`n=1`、`prompt_extend=false`），分别新增细节图候选 `act-021de106…`（v3，sha `ea50b044…`）与信息图候选 `act-893b00e5…`（v8，sha `2fa38cd6…`）。两张新候选**显式选中后**采用，五张门禁全部 `current`；本地确定性整套检查重跑为「阻断 0/高风险 0/提醒 0/未知 0（视觉复核未运行）」；交付包 `_stage-amz-control/staleness-diagnosis-20261020/b19-exports/b19-delivery-final.zip`（5 图，manifest 逐图 sha/字节实测相等，`gate_status=ready`）；项目包 `b19-project-post-suite.zip` 导入全新 origin 后 340 文档/28 资产逐条相等、刷新不变，再导出仅 `manifest.exported_at` 不同（369 成员逐个比）。**未做**：新像素的人审、PR#21 转正合并/部署、批次18线上五图/同源恢复（线上仍是 `689c6b08` 发布）——原完整产品 Goal 仍未完成。两个候选的像素只过了确定性门与形状核对，不宣称品质合格。
 - **刷新过程中的界面合同（已实测，不是缺陷写死）**：返工提交后比较面板仍停留在旧候选，「采用」作用于**当前正在看的那张**；必须先把查看切到新候选再采用，否则写出的是旧候选的新选择版本、门禁仍显示过期。人工全文的返工必须显式选 `keep_manual`，否则预览不出现该选择框（首个预览后才出现）。
 - **2026-10-20 用户「即刻停止当前工作，做好收尾准备」——已被上一条 02:59 恢复取代（原文保留）。** 停工时点：PR#21 复核修复已推送（`f5e1e17`）但**未合并**、已转回 Draft；用户先前选定的「先花额度刷新两张 stale 图」**未执行：0 次真实调用、0 元新增**（当时占额 10/12 图、0/4 辅助、1.82/5 元控制上界；本行此前手抄的 4/12 图、0.56/5 元是第16批中途过时数，已作废）；收工时 `f5e1e17` 的 CI 运行 `39352437953` 仍 `in_progress`；收尾提交 `4321ed0` 又触发一次新运行。两者的结论都没有被观察，**都不得当作通过**。清理已核对：两个后台任务取消、`5516` 无 LISTENING、无遗留记录 host/Chrome、5 个临时 profile 删除。两张图在真实项目门禁里仍是 `stale`（快照只直接证明信息图为 DECISION_REQUIRED 缺印字决定；细节图 stale 原因单独未证，见收尾文件）；批次18要求的当前完整五图/线上恢复仍不成立，但 316/26 两包本身存在且有往返记录（见 L20）。恢复需用户明确 resume；恢复点与最短路径见 `_stage-amz-control/b18-optional-figures-20261020/closeout-stop-20261020.md`。
@@ -52,13 +54,13 @@
 ```yaml
 state_schema: amz-project-state/v2
 task_id: amz-listing-kit-product-v2-refactor
-status: paused
+status: active
 goal_binding: required
 goal_id: "15ab22bf3386b9cf"
 goal_pending_reason: null
-goal_binding_evidence: evals/product-v2/refactor/goal-observation-stop-20261020T012741Z.json
-system_goal_observed_status: paused
-system_goal_observed_at: '2026-10-20T01:28:24.826000Z'
+goal_binding_evidence: evals/product-v2/refactor/goal-observation-resume-20261020T051904Z.json
+system_goal_observed_status: active
+system_goal_observed_at: '2026-10-20T05:19:04Z'
 plan_ref: docs/product-v2-refactor-plan.md
 latest_audit: _stage-amz-control/status-audit-20261019T103737Z/observations.json
 phase_progress:
@@ -88,7 +90,7 @@ phase_progress:
     - evals/product-v2/refactor/home-read-recovery-20261003.md
     - evals/product-v2/v2.3.3-session-lifecycle-20261003-025221-home-read-recovery-shutdown.json
   '4':
-    status: blocked
+    status: active
     evidence:
     - evals/product-v2/refactor/effective-config-byok-20261003.md
     - evals/product-v2/refactor/execution-identity-package-20261003-072854.md
@@ -452,7 +454,7 @@ task_progress:
     - tools/build_product_v2_ts.mjs
 next_action_task: V2.R5.1
 blockers:
-- "V2.R5.1_用户2026-10-20「即刻停止当前工作，做好收尾准备」：恢复需用户明确 resume，并先核 state／_stage-amz-control/b18-optional-figures-20261020/closeout-stop-20261020.md／实时仓库；批次18五图两包与模式B证据仍未闭合"
+- "V2.R5.1_第18批晋升已发布，但验收未闭合：C15/C17真人门未签、原生浏览器缩放未验（仅等价视口）、五图人审未做、生产环境不同旧image受控回滚未实跑；线上旧包/两包/独立导入刷新与最终两轮已由本轮证据证明，不据此关闭批次或Goal"
 unknowns:
   - current_20261019_Goal_15ab22bf3386b9cf_active_user_explicit_approved_six_additional_batches_continue13to18_first_two_zero_fee_original_budget_and_scope_preserved_R51_active_batch13_send_scope_exclusions_cost_reservation_POST_frontier_approval_stage_resume_extension_20261019T105641Z_no_new_provider_submit
   - historical_20261019_batch12of12_stop_obeyed_then_audit_and_explicit_user_extension_granted_no_reset_B11_three_browser_submits_cny0p36_preserved_no_signed_results_no_retry_remaining_program_pixels_dual_mode_five_current_adoptions_two_rounds_release_C15_C17
@@ -547,5 +549,5 @@ unknowns:
   - current_20261017_tip77c84aa_state_auth_only_CI39036915488_rerun_infra_httpx403_pending_v23507_closed_by_causal_doc_dev_residues_cleaned_walkthrough_packet08_prototype_deleted_doc_gaps_fixed_pending_push
   - current_20261017_baseline_finalized_main_9c835dc_PR13_PR14_merged_deploy_acceptance12of12_fingerprint_a1e73bdc_equal_finalize_done_previous_cleaned_CRLF_rollback_rebuild_lesson_git_archive_plus_attributes_zero_new_paid_calls
   - current_20261018_baseline_closeout_main_2c4a33a_CI39045865774_success_autodeploy_acceptance12of12_fingerprint_a1e73bdc_equal_finalize_previous_cleaned_evidence_stage_baseline_release_20261017T154245Z_artifact12105698120_human_gates_C15_C17_user_confirmed_pass_no_new_paid_calls
-updated_at: '2026-10-20T01:28:24.826000Z'
+updated_at: '2026-10-20T05:18:29.000Z'
 ```

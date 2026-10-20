@@ -1,0 +1,8 @@
+{
+  "caddy_configuration_sha256": "e375655dcf81ada9a4ac315ceaf1791bbdf1c9ba3bb0aab0f529fc6eae4de176",
+  "commit": "3195192e4a1d29e374ea6d15fa8b4c7256dd42bf",
+  "image_id": "sha256:4abc01be655c9554534bb2804bcd60f711716a37e89c5ae649c351b5604b29cd",
+  "image_tag": "amz-listing-kit:3195192e4a1d29e374ea6d15fa8b4c7256dd42bf",
+  "public_configuration_sha256": "652b120166ae07d8d3e89d1fbb53c414272d243701a4fb27cd0cc22feab3ced2",
+  "runtime_sha256": "48002dc42f054e4d90d1699ed5844a85a464fd3f792fc12719f8e9d671350714"
+}
