@@ -1,0 +1,113 @@
+{
+  "schema": "amz-release-online/v1",
+  "status": "passed",
+  "finished_at": "2026-10-20T13:45:40",
+  "base": "https://47.115.172.233:8080",
+  "source_package": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit-complete-product-15ab22\\_stage-amz-control\\staleness-diagnosis-20261020\\b19-exports\\b19-project-post-suite.zip",
+  "passed": 8,
+  "total": 8,
+  "checks": [
+    {
+      "id": "ONL-01",
+      "title": "线上健康且版本可读",
+      "ok": true,
+      "detail": {
+        "app": "amz-listing-kit",
+        "product": "v2",
+        "server_state": "none",
+        "user_data": "browser-indexeddb"
+      }
+    },
+    {
+      "id": "ONL-03",
+      "title": "上一版 image 产出的项目包可在线导入",
+      "ok": true,
+      "detail": {
+        "package": "b19-project-post-suite.zip",
+        "bytes": 39555718
+      }
+    },
+    {
+      "id": "ONL-04",
+      "title": "导入项目保留五用途采用结果",
+      "ok": true,
+      "detail": {
+        "adopted": 16
+      }
+    },
+    {
+      "id": "ONL-05",
+      "title": "线上交付门禁可导出且 ZIP 独立核对",
+      "ok": true,
+      "detail": {
+        "download": {
+          "filename": "真实闭环-·-参考图-交付包-20261020-0545.zip",
+          "bytes": 5817832,
+          "sha256": "87487e2cc404f9bc26d9fa85f3bdb01bc1b0938ea9eb64056d4f76ce6c81e01d"
+        },
+        "images": 5,
+        "gate_states": [
+          "current",
+          "current",
+          "current",
+          "current",
+          "current"
+        ],
+        "checks": 5,
+        "expected_delivery": {
+          "produced": [
+            "1655f53cc27c1b6ad430cc970c7abab088a3dd9d2329e24c8f74fc80cb7e7536",
+            "2fa38cd63646def9ea895c2076153960ed396d6480301e78921a08ee159cdf57",
+            "4c8c68cf7a0ab0497f71d389e275498fbe3e764520a125731c77d2f28b134435",
+            "5e0f06aff41b7afa0be03da3bf394656edb2aa19366af0a0108acaa7e448459c",
+            "ea50b044b790993817eb033b903b62d0ef0b7361ffa066e0276c1c8e165eb4c4"
+          ],
+          "expected": [
+            "1655f53cc27c1b6ad430cc970c7abab088a3dd9d2329e24c8f74fc80cb7e7536",
+            "2fa38cd63646def9ea895c2076153960ed396d6480301e78921a08ee159cdf57",
+            "4c8c68cf7a0ab0497f71d389e275498fbe3e764520a125731c77d2f28b134435",
+            "5e0f06aff41b7afa0be03da3bf394656edb2aa19366af0a0108acaa7e448459c",
+            "ea50b044b790993817eb033b903b62d0ef0b7361ffa066e0276c1c8e165eb4c4"
+          ]
+        }
+      }
+    },
+    {
+      "id": "ONL-06",
+      "title": "线上可再导出项目包且 manifest/资产一致",
+      "ok": true,
+      "detail": {
+        "documents": 341,
+        "assets": 28
+      }
+    },
+    {
+      "id": "ONL-08",
+      "title": "刷新后项目与记录仍在",
+      "ok": true,
+      "detail": {
+        "projects": 1
+      }
+    },
+    {
+      "id": "ONL-07",
+      "title": "独立 profile 导入新导出包：文档/资产快照一致",
+      "ok": true,
+      "detail": {
+        "documents": 341,
+        "assets": 28
+      }
+    },
+    {
+      "id": "ONL-02",
+      "title": "线上页面零 console/page error",
+      "ok": true,
+      "detail": {
+        "console": [],
+        "page": []
+      }
+    }
+  ],
+  "console_errors": [],
+  "page_errors": []
+}

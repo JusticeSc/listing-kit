@@ -1,0 +1,9 @@
+bind [127.0.0.1]:3306: Permission denied
+channel_setup_fwd_listener_tcpip: cannot listen to port: 3306
+2026-10-20T05:44:16Z release-transaction rolling back open release: controlled_same_origin_restore_test
+2026-10-20T05:44:16Z release-transaction removing failed new container amz-listing-kit
+2026-10-20T05:44:17Z release-transaction restoring previous amz-listing-kit-previous to amz-listing-kit
+2026-10-20T05:44:23Z release-transaction previous restored and healthy: amz-listing-kit
+2026-10-20T05:44:23Z release-transaction restoring Caddyfile from backup
+2026-10-20T05:44:23Z release-transaction restarting previous TLS container amz-listing-kit-tls
+2026-10-20T05:44:26Z release-transaction rolled back (controlled_same_origin_restore_test); previous serving again behind https://47.115.172.233:8080/api/health
