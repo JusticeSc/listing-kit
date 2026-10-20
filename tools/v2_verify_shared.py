@@ -440,8 +440,9 @@ def adopt_make_shot(page, shot_id: str, timeout: int = 30_000) -> None:
           if (row && row.getAttribute("data-selection-state") === "current") return true;
           const panel = document.getElementById("compare-panel");
           if (panel && !panel.hidden && panel.dataset.shotId === shot) {
-            return [...panel.querySelectorAll(".badge")]
-              .some((node) => (node.textContent || "").includes("已采用"));
+            // badge 同时有「已采用」与「已采用（已过期）」；后者不能算落定。
+            return [...panel.querySelectorAll(".badge.is-adopted")]
+              .some((node) => node.getAttribute("data-adopted") === "current");
           }
           return false;
         }""", arg=shot_id, timeout=timeout)

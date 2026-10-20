@@ -1,0 +1,63 @@
+{
+  "profile": "C:\\Users\\31368\\AppData\\Local\\Temp\\b19-refresh-9t4p6dsx",
+  "detail_state_before": {
+    "attempt": "succeeded",
+    "selection": "stale"
+  },
+  "detail_confirm": {
+    "status": "本次选择 1 张，明确发送 0 张，排除 1 张；排除项只影响本图，已有结果不会自动重提。",
+    "summary": "本次没有可新增发送的图片；所选缺项、已有动作及未知结果均不会自动重提。\n\n只发送下列每张图的提示词与明确列出的参考图；未选候选、其他项目及本地文件名不外发。",
+    "blockers": "\n        \n      ",
+    "list": "4. 细节图·材质工艺\n细节图 · 可选\n本次排除\nPrompt v13 · 2f9176f7f750…\n\n任务：近距离呈现材质、做工或结构细节，颜色与标识与参考图一致\n\n本次不外发这张图的提示词或参考图。\n\n已有成功结果：请明确选择修改或重新生成，不会重复提交。\n\n技术详情",
+    "selection_chip": ""
+  },
+  "preview_before_choice": {
+    "meta": "按原资料重画 · 将保存为 Prompt 新版本（旧版本保留）并只重新生成这张图 · 参考图 1 张（图1商品主图） · 全文 948 字",
+    "cost": "本次费用上界 ¥0.20（供应商原价，非实际结算；核价日期 2026-10-19）。",
+    "choice_present": true,
+    "error": ""
+  },
+  "preview_after_choice": {
+    "meta": "按原资料重画 · 将保存为 Prompt 新版本（旧版本保留）并只重新生成这张图 · 参考图 1 张（图1商品主图） · 全文 959 字",
+    "cost": "本次费用上界 ¥0.20（供应商原价，非实际结算；核价日期 2026-10-19）。",
+    "error": "",
+    "submit_disabled": false
+  },
+  "preview_text_len": 959,
+  "info_state_after_submit": {
+    "attempt": "succeeded",
+    "selection": "stale"
+  },
+  "info_state_after_adopt": {
+    "attempt": "succeeded",
+    "selection": "stale"
+  },
+  "gate_rows": [
+    {
+      "shot": "shot_main_clean",
+      "state": "current",
+      "text": "主图·干净背景\n          已采用\n          必需图"
+    },
+    {
+      "shot": "shot_infographic_benefits",
+      "state": "stale",
+      "text": "卖点信息图\n          已采用（已过期）\n          可选图\n          去审核"
+    },
+    {
+      "shot": "shot_scene_lifestyle",
+      "state": "current",
+      "text": "场景图·使用中\n          已采用\n          可选图"
+    },
+    {
+      "shot": "shot_detail_material",
+      "state": "stale",
+      "text": "细节图·材质工艺\n          已采用（已过期）\n          可选图\n          去审核"
+    },
+    {
+      "shot": "shot_size_dimensions",
+      "state": "current",
+      "text": "尺寸图\n          已采用\n          可选图"
+    }
+  ],
+  "export_enabled": false
+}

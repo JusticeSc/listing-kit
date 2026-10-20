@@ -1,0 +1,34 @@
+{
+  "source": {
+    "path": "_stage-amz-control/staleness-diagnosis-20261020/b19-exports/b19-project-post-suite.zip",
+    "bytes": 39555718,
+    "sha256": "f2be0aa7a6e62158e0daecd18e262b7096e716b722a8beae45d0f35964e11b15"
+  },
+  "reexport": {
+    "path": "_stage-amz-control/staleness-diagnosis-20261020/b19-exports/b19-project-reexported.zip",
+    "bytes": 39555718,
+    "sha256": "fde1c09240ae998a9c91d6ef6640139ba85809c3c86538656593706c2e066de9"
+  },
+  "members": {
+    "source": 369,
+    "reexport": 369,
+    "only_in_one": []
+  },
+  "differing_members": [
+    "manifest.json"
+  ],
+  "manifest_differences": {
+    "exported_at": {
+      "source": "2026-10-20T03:55:39.467Z",
+      "reexport": "2026-10-20T04:05:07.873Z"
+    }
+  },
+  "conclusion": "imported library equals the source package doc-for-doc; re-export differs only in manifest.exported_at",
+  "adopted_images": [
+    "shot_detail_material-act-021de106771a476681ffd399565d4ab0.png",
+    "shot_infographic_benefits-act-893b00e5ab0a4679b026d4aac1a70ca8.png",
+    "shot_main_clean-act-02f239357376473d9aa7ff9c8e419cb7.png",
+    "shot_scene_lifestyle-act-46bd1c08babc460f84f202a546fd8921.png",
+    "shot_size_dimensions-act-d2f33b438dac4a9b806035a4a298bf97.png"
+  ]
+}

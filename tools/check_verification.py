@@ -17,11 +17,18 @@ RESTRICTED = {"paid", "remote", "aggregate"}
 
 
 def ci_commands(workflow: Path = WORKFLOW) -> list[tuple[str, list[str]]]:
-    """只读 verify job；命令权威仍是工作流，不在登记复制可执行清单。"""
+    """只读 verify job；命令权威仍是工作流，不在登记复制可执行清单。
+
+    存在影响选择（changes.outputs.selected）时，每个可执行步骤必须只持一个精确
+    模式，且 if 条件按该模式逐字生成——否则所选命令会被 skip 成绿，这是选择式
+    CI 最危险的静默少跑，所以这里直接判输入错误。
+    """
     document = yaml.safe_load(workflow.read_text(encoding="utf-8"))
     steps = document["jobs"]["verify"]["steps"]
+    routed = "selected" in document["jobs"].get("changes", {}).get("outputs", {})
     commands = []
     for step in steps:
+        step_commands = []
         for line in str(step.get("run", "")).splitlines():
             tokens = shlex.split(line.strip(), comments=True)
             if tokens[:2] == ["uv", "run"]:
@@ -29,19 +36,28 @@ def ci_commands(workflow: Path = WORKFLOW) -> list[tuple[str, list[str]]]:
                 if rest[:1] == ["--locked"]:
                     rest = rest[1:]
                 if len(rest) >= 2 and rest[0] == "python" and rest[1].endswith(".py"):
-                    commands.append((rest[1], rest[2:]))
+                    step_commands.append((rest[1], rest[2:]))
                 elif rest[:3] == ["python", "-m", "pytest"] and len(rest) >= 4:
                     # pytest 组级登记：collection 参数（tests/…）各自登记，共享其余旗标。
                     rest_args = rest[3:]
                     suites = [token for token in rest_args if token.startswith("tests/")]
                     flags = tuple(token for token in rest_args if token not in suites)
                     for suite in suites:
-                        commands.append(("pytest:" + suite, list(flags)))
+                        step_commands.append(("pytest:" + suite, list(flags)))
             elif len(tokens) >= 3 and tokens[:2] == ["npm", "run"]:
                 args = tokens[3:]
                 if args[:1] == ["--"]:
                     args = args[1:]
-                commands.append(("npm:" + tokens[2], args))
+                step_commands.append(("npm:" + tokens[2], args))
+        if routed and step_commands:
+            if len(step_commands) != 1:
+                raise ValueError("CI_ROUTING：选择式步骤必须各持有一个精确模式")
+            entrypoint, args = step_commands[0]
+            identity = f"{entrypoint} {' '.join(args)}".strip().replace("'", "''")
+            expected = f"contains(fromJSON(needs.changes.outputs.selected), '{identity}')"
+            if step.get("if") != expected:
+                raise ValueError(f"CI_ROUTING：{entrypoint} 的选择条件与实际命令不一致")
+        commands.extend(step_commands)
     return commands
 
 

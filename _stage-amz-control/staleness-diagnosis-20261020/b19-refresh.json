@@ -1,0 +1,62 @@
+{
+  "package": "真实闭环-·-参考图-20261019-1307.zip",
+  "shots": [
+    "shot_detail_material",
+    "shot_infographic_benefits"
+  ],
+  "provider_model": "qwen-image-3.0",
+  "spec": {
+    "before": "2. 卖点信息图\n规格 v9",
+    "after": "2. 卖点信息图\n规格 v10",
+    "error": ""
+  },
+  "cards_before": {
+    "shot_detail_material": {
+      "head": "4. 细节图·材质工艺\n版本 v12\n可编译",
+      "stale": false,
+      "hash": "a445acb30908f1335e86db6121ad5fb80eaf1f8b7c4c9b9be77dc63942525705",
+      "text_len": 691,
+      "buttons": [
+        "重新本地准备"
+      ]
+    },
+    "shot_infographic_benefits": {
+      "head": "2. 卖点信息图\n版本 v17\n可编译\n已过期\n人工编辑",
+      "stale": true,
+      "hash": "6301137656e19beda4c1666d2fd39f8a7aa2d93166602b8d56a621349be1ce73",
+      "text_len": 959,
+      "buttons": [
+        "丢弃人工全文并重新准备",
+        "按当前依据确认此人工全文"
+      ]
+    }
+  },
+  "cards_ready": {
+    "shot_detail_material": {
+      "head": "4. 细节图·材质工艺\n版本 v12\n可编译",
+      "stale": false,
+      "hash": "a445acb30908f1335e86db6121ad5fb80eaf1f8b7c4c9b9be77dc63942525705",
+      "text_len": 691,
+      "buttons": [
+        "重新本地准备"
+      ]
+    },
+    "shot_infographic_benefits": {
+      "head": "2. 卖点信息图\n版本 v18\n可编译\n人工编辑",
+      "stale": false,
+      "hash": "d4603ff8bcd3c9b384a304778b10dd7c81f6ca6f48bc64c6a145c230dd81fd0b",
+      "text_len": 959,
+      "buttons": [
+        "丢弃人工全文并重新准备"
+      ]
+    }
+  },
+  "submissions": {
+    "shot_detail_material": {
+      "preview_meta": "按原资料重画 · 将保存为 Prompt 新版本（旧版本保留）并只重新生成这张图 · 参考图 1 张（图1商品主图） · 全文 847 字",
+      "preview_cost": "本次费用上界 ¥0.20（供应商原价，非实际结算；核价日期 2026-10-19）。",
+      "state": "succeeded",
+      "selection": "stale"
+    }
+  }
+}

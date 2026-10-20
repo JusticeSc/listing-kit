@@ -1,0 +1,67 @@
+选择理由：按影响选择：验证策略
+完整离线集合 50 条，本次选择 2 条（受限 paid/remote/aggregate 模式 7 条已排除）
+
+$ uv run --locked python tools/check_verification.py
+[PASS] VERIFICATION-POLICY 56 入口 / 50 CI 模式；付费、远程、人审独立
+
+$ uv run --locked python evals/probes/verification_policy.py
+[OK  ] T5-FULL-BASELINE rc=0 full=50
+[OK  ] T5-DOC-PROSE rc=0 selected=1/50
+[OK  ] T5-FULL-app_product_v2_session-ts rc=0 selected=50/50
+[OK  ] T5-FULL-app_server-py rc=0 selected=50/50
+[OK  ] T5-FULL-src_providers_v2_image-py rc=0 selected=50/50
+[OK  ] T5-FULL-uv-lock rc=0 selected=50/50
+[OK  ] T5-FULL-package-json rc=0 selected=50/50
+[OK  ] T5-FULL-some_random_path-xyz rc=0 selected=50/50
+[OK  ] T5-PROOF-ONLY rc=0 selected=['tools/check_docs.py --no-run']
+[OK  ] T5-GENERATION-CONSUMERS rc=0 selected=24 required=18 missing=[]
+[OK  ] T5-VERIFIER-OWN-CONSUMER rc=0 selected=7
+[OK  ] T5-MIXED-UNION rc=0 selected=25
+[OK  ] T5-REHEARSAL-NEEDS-INPUT rc=2 缺素材/批准模式不冒充走查已验
+[OK  ] T5-PLAN-STATE-CONSISTENCY rc=0 selected=['tools/check_docs.py --no-run', 'tools/check_project_state.py', 'evals/probes/project_state.py']
+[OK  ] T5-VERIFIER-MAINTENANCE-verify_v2_7_1_regression rc=0 maintenance_only=['tools/check_verification.py', 'evals/probes/verification_policy.py']
+[OK  ] T5-VERIFIER-MAINTENANCE-verify_v2_removed_fixture rc=0 maintenance_only=['tools/check_verification.py', 'evals/probes/verification_policy.py']
+[OK  ] T5-RELEASE-IMPACT-config_product-v2_verification.json rc=0 container=False
+[OK  ] T5-RELEASE-IMPACT-tools_select_v2_checks.py rc=0 container=False
+[OK  ] T5-RELEASE-IMPACT-.github_workflows_ci-cd.yml rc=0 container=True
+[OK  ] T5-RELEASE-IMPACT-tools_export_image_envelope_schema.py rc=0 container=True
+[OK  ] T5-RELEASE-IMPACT-tools_generate_image_envelope_validator.mjs rc=0 container=True
+[OK  ] T5-RELEASE-IMPACT-.dockerignore rc=0 container=True
+[OK  ] T5-RELEASE-IMPACT-config_product-v2_providers.json rc=0 container=True
+[OK  ] T5-RELEASE-IMPACT-deploy_release-transaction.sh rc=0 container=True
+[OK  ] T5-RELEASE-IMPACT-tools_release_transaction_probe.py rc=0 container=True
+[OK  ] T5-BAD-GIT-BASE rc=2 坏差量不能按证据-only跳过
+[OK  ] T5-RESTRICTED-EXCLUDED restricted_in_full=[]
+[OK  ] T5-BAD-REGISTRY-SCHEMA rc=2 markers={'ran-ok.marker': False, 'ran-paid.marker': False, 'ran-first.marker': False, 'ran-second.marker': False}
+[OK  ] T5-BAD-REGISTRY-CATEGORY rc=2 markers={'ran-ok.marker': False, 'ran-paid.marker': False, 'ran-first.marker': False, 'ran-second.marker': False}
+[OK  ] T5-UNPARSED-COMMAND rc=2
+[OK  ] T5-ROUTING-REFUSES-SILENT-SKIP rc=2 markers={'ran-ok.marker': False, 'ran-paid.marker': False, 'ran-first.marker': False, 'ran-second.marker': False}
+[OK  ] T5-FIXTURE-EXECUTES rc=0 marker_ok=True
+[OK  ] T5-FIRST-FAIL-STOPS rc=3 first=True second=False
+[OK  ] T5-PAID-MODE-EXCLUDED rc=0 selected=['evals/.tmp/v2-select-fixture-psn0b214/fixture_ok.py']
+[OK  ] T5-PAID-NOT-EXECUTED rc=0 ok=True paid=False
+[OK  ] T5-EXACT-UNKNOWN-ENTRY rc=2 unapproved_executed=False
+[OK  ] T5-EXACT-UNKNOWN-ARGS rc=2 unapproved_executed=False
+[OK  ] T5-EXACT-NOT-APPROVED rc=2 unapproved_executed=False
+[OK  ] T5-EXACT-DUPLICATE-MODE rc=2 unapproved_executed=False
+[OK  ] T5-EXACT-RESTRICTED-APPROVED rc=2 unapproved_executed=False
+[OK  ] T5-EXACT-INVALID-CI rc=2 unapproved_executed=False
+[OK  ] T5-EXACT-MIXED-PLAN rc=2 unapproved_executed=False
+[OK  ] T5-EXACT-DUPLICATE-PLAN rc=2 unapproved_executed=False
+[OK  ] T5-GITHUB-OUTPUT rc=0 container=false
+[OK] VPC01 rc=0 tags=[]
+[OK] VPC02 rc=1 tags=['CI_UNCLASSIFIED', 'VCLASS_MISSING']
+[OK] VPC03 rc=1 tags=['CI_MISSING']
+[OK] VPC04 rc=1 tags=['CI_MISSING']
+[OK] VPC05 rc=1 tags=['CI_MISSING']
+[OK] VPC06 rc=1 tags=['CI_UNCLASSIFIED']
+[OK] VPC07 rc=1 tags=['CI_RESTRICTED', 'CI_UNCLASSIFIED']
+[OK] VPC08 rc=1 tags=['CI_RESTRICTED', 'CI_UNCLASSIFIED']
+[OK] VPC09 rc=1 tags=['CI_RESTRICTED', 'CI_UNCLASSIFIED']
+[OK] VPC10 rc=1 tags=['VCLASS_HUMAN']
+[OK] VPC11 rc=1 tags=['VCLASS_HUMAN']
+[OK] VPC12 rc=1 tags=['CI_DUPLICATE']
+[OK] VPC13 rc=1 tags=['CI_UNCLASSIFIED', 'VCLASS_SCHEMA']
+[OK] VPC14 rc=1 tags=['VCLASS_GHOST']
+[PASS] VERIFICATION-PROBES 14 组 + T5 选择/执行后果 44 项；真实 CLI 拒绝遗漏/受限接线，未修改权威文件
+所选命令全部通过。

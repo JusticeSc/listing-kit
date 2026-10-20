@@ -18,18 +18,18 @@
 | 键盘逐步遮挡检查、两包各自对照门禁已采用集合、报告 JSON 不再截断、每段关键操作可命中 | 同上（八项关键操作在 1.25×/2× 均 found+visible+in_view+hit_self） |
 | 第17批冻结两轮回归 | `evals/product-v2/v2.7.1-regression-20261020-v271-frozen-6e692a4c-final.{json,txt}` |
 | 真实项目包的 stale 事实被实测确认 | `gate-snapshot.json`（只读快照：`b16_import_host.py` 的 refusing provider，0 次调用）：`shot_infographic_benefits`、`shot_detail_material` 在交付门禁为 `stale`（已采用（已过期）），其余三张 `current` |
-| stale 根因定位 | `gate-snapshot.json` 的 `confirm_parts.blockers` 原文：「#2 卖点信息图 · DECISION_REQUIRED 这张图还没有决定要不要印文字…返回：shot_spec」——#9 印字决定上线后这两张图缺这一步决定，因此 Prompt 无法编译、采用过期 |
+| stale 原因（信息图已证 / 细节图未证，分开写） | `gate-snapshot.json` 的 `confirm_parts.blockers` 原文只点名「#2 卖点信息图 · DECISION_REQUIRED 这张图还没有决定要不要印文字…返回：shot_spec」——**只直接证明信息图**缺 #9 印字决定、Prompt 无法编译。细节图同样显示 `stale`，但本快照未收录它的 blocker/确认行，**原因单独未证**；恢复时先按产品入口实查该图自己的确认状态，不得沿用信息图原因直接下单重生成 |
 | 交付门禁与导出的实际关系 | 同一快照 `export_enabled=true`：两张 `stale` 不阻断交付导出本身（不是产品 bug，`stale` 是采用当前性问题）；但「五张不同用途的可用图」不成立，不能用这次导出冒充批次18 成品 |
 
 ## 未开始 / 未完成（恢复时的起点）
 
 1. **没有发生任何真实模型调用**：`record_host.py` 只记录出站形状并在进程内拒绝外发，
-   0 次付费、账本未变动（仍 4/12 图、0/4 辅助、0.56/5 元）。
+   0 次付费、账本本轮未变动（当前占额只看账本 `current_control_15ab22bf3386b9cf`；本条此前手抄的 4/12 图、0.56/5 元是第16批中途过时数，已作废）。
 2. **没有产生新的出站形状记录**：`recorded-shapes.json` 不存在——计划阶段的选择器在停工前
    刚修正到 `#shot-spec-list .shot-spec[data-shot-id]`，最后一轮探针被停工打断。
    早前一轮留下的 `capture-result.json` 被下一轮脚本开头的 unlink 清掉、随后进程被杀，
    **原始文件已不存在**；同一事实改用只读的 `gate-snapshot.json` 重新取证，未按记忆回填。
-3. **两张图仍未刷新**：交付门禁仍是 2 `stale`；批次18「线上真实五图/两包」不成立。
+3. **两张图仍未刷新**：交付门禁仍是 2 `stale`；批次18要求的当前完整五图/线上恢复不成立（316 文档/26 资产两包本身存在且有本地往返记录，缺的是刷新后的当前成品，不是包文件）。
 4. **PR #21 未合并**（已转回 Draft），main 未因此变化；收工时 `f5e1e17` 的 CI 运行
    `39352437953` 仍 `in_progress`，而收尾提交 `4321ed0` 又触发一次新运行。
    **两个运行的结论都没有被观察，都不得当作通过。**

@@ -1,0 +1,12 @@
+{
+ "shot_detail_material": {
+  "compiled_ok": false,
+  "error": "返工指令不合法：缺少来源绑定。",
+  "problems": null
+ },
+ "shot_infographic_benefits": {
+  "compiled_ok": false,
+  "error": "返工指令不合法：缺少来源绑定。",
+  "problems": null
+ }
+}

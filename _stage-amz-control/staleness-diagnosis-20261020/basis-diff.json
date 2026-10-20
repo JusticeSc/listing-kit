@@ -1,0 +1,92 @@
+{
+ "shot_detail_material": {
+  "adopted": {
+   "candidate_id": "act-e03c2644480d449182a7f0001cc1a8be",
+   "prompt_version": 4,
+   "prompt_hash": "499899461776d2f81cec3984b447fb602f6b336c4c477fd35feb24187f4f66b5",
+   "chosen_at": "2026-10-19T13:03:14.984Z"
+  },
+  "stored_fields": {
+   "compiler_rule_version": null,
+   "intake_version": null,
+   "suite_version": 2,
+   "style_version": 5,
+   "style_signature": null,
+   "shot_spec_version": 3,
+   "shot_signature_equal": true,
+   "provider_equal": true,
+   "origin": "system"
+  },
+  "current_fields": {
+   "compiler_rule_version": 3,
+   "intake_version": 4,
+   "suite_version": 2,
+   "style_version": 5,
+   "shot_spec_version": 3
+  },
+  "verdict": {
+   "stale": true,
+   "reasons": [
+    {
+     "field": "compiler_rule_version",
+     "stored": null,
+     "current": 3,
+     "reason": "编译器规则版本不同；系统稿需按当前规则准备，人工全文由人确认。"
+    },
+    {
+     "field": "intake_version",
+     "stored": null,
+     "current": 4,
+     "reason": "记录没有冻结商品资料版本；系统稿需按当前商品资料重新准备。"
+    }
+   ]
+  },
+  "compiled_text_len": 1098,
+  "compiled_provider": "frozen"
+ },
+ "shot_infographic_benefits": {
+  "adopted": {
+   "candidate_id": "act-490a5961ab94432e8bb84cd0fbd2b4b1",
+   "prompt_version": 17,
+   "prompt_hash": "6301137656e19beda4c1666d2fd39f8a7aa2d93166602b8d56a621349be1ce73",
+   "chosen_at": "2026-10-19T13:03:11.166Z"
+  },
+  "stored_fields": {
+   "compiler_rule_version": null,
+   "intake_version": null,
+   "suite_version": 2,
+   "style_version": 5,
+   "style_signature": null,
+   "shot_spec_version": 9,
+   "shot_signature_equal": true,
+   "provider_equal": true,
+   "origin": "manual_edit"
+  },
+  "current_fields": {
+   "compiler_rule_version": 3,
+   "intake_version": 4,
+   "suite_version": 2,
+   "style_version": 5,
+   "shot_spec_version": 9
+  },
+  "verdict": {
+   "stale": true,
+   "reasons": [
+    {
+     "field": "compiler_rule_version",
+     "stored": null,
+     "current": 3,
+     "reason": "编译器规则版本不同；系统稿需按当前规则准备，人工全文由人确认。"
+    },
+    {
+     "field": "intake_version",
+     "stored": null,
+     "current": 4,
+     "reason": "记录没有冻结商品资料版本；系统稿需按当前商品资料重新准备。"
+    }
+   ]
+  },
+  "compiled_text_len": 959,
+  "compiled_provider": "frozen"
+ }
+}

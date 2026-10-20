@@ -1,0 +1,32 @@
+{
+  "package": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit-complete-product-15ab22\\_stage-amz-control\\staleness-diagnosis-20261020\\b19-exports\\b19-project-post-suite.zip",
+  "package_bytes": 39555718,
+  "projects_before": 0,
+  "import_status": "已导入「真实闭环 · 参考图」",
+  "import_error": "",
+  "rows_after_import": 1,
+  "imported_project": null,
+  "library_vs_package": {
+    "package_docs": 340,
+    "library_docs": 340,
+    "missing": [],
+    "extra": [],
+    "payload_diff": [],
+    "package_assets": 28,
+    "library_assets": 28,
+    "asset_sha_set_equal": true,
+    "asset_digest_self_consistent": true
+  },
+  "reload_stable": true,
+  "reexport": {
+    "path": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit-complete-product-15ab22\\_stage-amz-control\\staleness-diagnosis-20261020\\b19-exports\\b19-project-reexported.zip",
+    "bytes": 39555718
+  },
+  "reexport_vs_source": {
+    "docs": 340,
+    "added_kinds": [],
+    "added": [],
+    "removed": [],
+    "assets_equal": true
+  }
+}

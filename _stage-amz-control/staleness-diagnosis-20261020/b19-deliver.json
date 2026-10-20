@@ -1,0 +1,34 @@
+{
+  "profile": "C:\\Users\\31368\\AppData\\Local\\Temp\\b19-refresh-9t4p6dsx",
+  "suite_before": "整套检查已过期：选择或输入在报告之后发生了变化，请重新运行。 上一版：整套检查 v2.5.5：阻断 0 · 高风险 0 · 提醒 0 · 未知 0 · 视觉复核未运行（可选）",
+  "suite_after": "整套检查 v2.5.5：阻断 0 · 高风险 0 · 提醒 0 · 未知 0 · 视觉复核未运行（可选）",
+  "suite_error": "",
+  "delivery_suite": "整套检查 v2.5.5：阻断 0 · 高风险 0 · 提醒 0 · 未知 0 · 视觉复核未运行（可选）",
+  "export_enabled": true,
+  "gate_rows": [
+    {
+      "shot": "shot_main_clean",
+      "state": "current"
+    },
+    {
+      "shot": "shot_infographic_benefits",
+      "state": "current"
+    },
+    {
+      "shot": "shot_scene_lifestyle",
+      "state": "current"
+    },
+    {
+      "shot": "shot_detail_material",
+      "state": "current"
+    },
+    {
+      "shot": "shot_size_dimensions",
+      "state": "current"
+    }
+  ],
+  "exports": {
+    "b19-delivery-final.zip": 5817832,
+    "b19-project-final.zip": 39532273
+  }
+}

@@ -1,0 +1,44 @@
+[
+  {
+    "observed_at": "2026-10-20T03:42:44.776710+00:00",
+    "model": "qwen-image-3.0",
+    "parameters": {
+      "size": "1344*1344",
+      "n": 1,
+      "prompt_extend": false,
+      "watermark": false
+    },
+    "prompt": "以提供的商品参考图为唯一外观依据：保持商品的轮廓、比例、颜色、材质、标识与现有部件不变；不要添加、删除、复制、换色或重新设计商品特征。商品按商品依据里的原样状态呈现：可见的使用痕迹也照原样保留，不做清洁或去污。不要在图片上叠加文字、参数、徽标或水印。\n\n公共风格（整套一致）：背景「白底商品图」；光线「柔和顶光」；色调「自然金属色」；构图「单品居中，留白充足」。\n\n画面概念：近距离特写，让材质、工艺或关键部件的细节看得清。主体：特写区域占画面主要部分，边缘不切断关键结构。光线：侧向或斜上方柔和光线，突出纹理与层次，避免过曝和死黑。清晰度：焦点落在细节上，背景自然虚化。\n\n本图任务「细节图·材质工艺」，目的「近距离呈现原图可见的防尘盖刻字和金属外观，不判断材料牌号。」。必须保持：「防尘盖刻字608Z、NSK、INDONESIA的位置和内容」、「单面可见防尘盖、同心内外圈」、「颜色与标识与参考图一致」。允许变化：「背景」、「光线」、「分辨率」。\n\n输入依据（按实际发送顺序）：图1是商品原照，提供真实商品的外形、比例、材质、颜色与标识依据。本次按商品原照重新生成完整目标，不发送历史候选图；问题候选只作为问题记录，不作为本次模型输入。\n\n本次返工要求（只改这张图，其它段落保持不变）：这次的问题属于「平台风险」；改进方向「按商品原照重画这张细节图：保持材质、结构与刻字标识真实，不新增部件、文字或包装。」；不要重复出现上一条候选里已经被指出的同类问题。\n\n平台规则「亚马逊美国站」：整套图片不得出现水印、边框、联系方式或与商品无关的叠加元素。只能使用已确认的商品事实，不添加未确认的参数、功效或承诺。\n\n输出规格：一张「1344*1344」的「png」格式高清商品图，不添加水印。\n\n必须避免：「包装」、「配件」、「其他型号」、「其他品牌」、「场景人物」、「文字水印」、「水印」、「文字错乱或文字变形」、「商品变形、多出部件或与参考图不符的颜色和标识」、「任何叠加文字、参数徽标或边框」。",
+    "prompt_sha256": "e55b58a7d26899da1ba632cd55fda5da46166eabf8f78693995a3980a5dc1a83",
+    "images": [
+      {
+        "sha256": "4c4ed76c61c959ace082f8f3698f1b10bf0e1c942c2b1e524b1e62086d4df1e1",
+        "bytes": 73681,
+        "media_type": "image/jpeg"
+      }
+    ],
+    "upstream_outcome": "HTTP response received; product must verify task/result",
+    "http_status": 200
+  },
+  {
+    "observed_at": "2026-10-20T03:48:03.940309+00:00",
+    "model": "qwen-image-3.0",
+    "parameters": {
+      "size": "1344*1344",
+      "n": 1,
+      "prompt_extend": false,
+      "watermark": false
+    },
+    "prompt": "Create one square product identification image using image 1 as the sole product reference. Preserve this exact bearing, its original oblique viewing angle, visible shape, shield, finish and existing engravings: 608Z, NSK, INDONESIA. Do not invent hidden parts, material grades, compatibility or performance.\n\nUse a clean, continuous white canvas extending all the way to every outer edge and every corner. Place one complete, uncropped bearing on the right. On the left place exactly three separate, unboxed, dark text lines, in this order:\nNSK\n608Z\nINDONESIA\n\nKeep at least 40 pixels of white space between all content and the canvas edges. Use an open layout with no outline around the canvas or text. No frame, border, separator, arrows, leader lines, watermark, title or additional text. Keep the original product engravings in addition to the three approved labels. The final image must look like a single clean product information image, not a collage.",
+    "prompt_sha256": "71a0c5312815d77eabb5bdaae9873d9470746dd6364f814bd611a14e579c40dc",
+    "images": [
+      {
+        "sha256": "4c4ed76c61c959ace082f8f3698f1b10bf0e1c942c2b1e524b1e62086d4df1e1",
+        "bytes": 73681,
+        "media_type": "image/jpeg"
+      }
+    ],
+    "upstream_outcome": "HTTP response received; product must verify task/result",
+    "http_status": 200
+  }
+]
