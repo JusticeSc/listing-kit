@@ -1,0 +1,95 @@
+Refreshing run status every 15 seconds. Press Ctrl+C to quit.
+
+* main Product V2 CI and Docker CD · 39375844458
+Triggered via push less than a minute ago
+
+JOBS
+* Classify changed paths (ID 118473674326)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Set up Python
+  * Install locked selection dependencies
+  * Select affected checks and release closure
+  * Post Set up Python
+  * Post Check out repository
+Refreshing run status every 15 seconds. Press Ctrl+C to quit.
+
+* main Product V2 CI and Docker CD · 39375844458
+Triggered via push less than a minute ago
+
+JOBS
+✓ Classify changed paths in 34s (ID 118473674326)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Set up Python
+  ✓ Install locked selection dependencies
+  ✓ Select affected checks and release closure
+  ✓ Post Set up Python
+  ✓ Post Check out repository
+  ✓ Complete job
+* Docker image, smoke test, and main deploy (ID 118473844117)
+  ✓ Set up job
+  * Check out repository
+  * Set up release acceptance tooling
+  * Install locked acceptance dependencies
+  * Report unchanged runtime and release closure
+  * Build immutable image
+  * Smoke-test container health
+  * Remove smoke container
+  * Release transaction selftest (real disposable containers)
+  * Release failure classes (real script, no containers)
+  * Prepare SSH
+  * Sync provider secrets to server env file
+  * Build on remote Docker and deploy (full release transaction)
+  * Release acceptance (static assets and page main chain)
+  * Verify runtime and configuration fingerprints before cleanup
+  * Finalize release (cleanup previous only after all acceptance)
+  * Upload candidate and release fingerprints
+  * Roll back to previous known working state
+  * Post Check out repository
+- Control plane and Product V2 in 0s (ID 118473845297)
+
+ANNOTATIONS
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+Classify changed paths: .github#1
+
+✓ main Product V2 CI and Docker CD · 39375844458
+Triggered via push about 1 minute ago
+
+JOBS
+✓ Classify changed paths in 34s (ID 118473674326)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Set up Python
+  ✓ Install locked selection dependencies
+  ✓ Select affected checks and release closure
+  ✓ Post Set up Python
+  ✓ Post Check out repository
+  ✓ Complete job
+✓ Docker image, smoke test, and main deploy in 14s (ID 118473844117)
+  ✓ Set up job
+  ✓ Check out repository
+  - Set up release acceptance tooling
+  - Install locked acceptance dependencies
+  ✓ Report unchanged runtime and release closure
+  - Build immutable image
+  - Smoke-test container health
+  - Remove smoke container
+  - Release transaction selftest (real disposable containers)
+  - Release failure classes (real script, no containers)
+  - Prepare SSH
+  - Sync provider secrets to server env file
+  - Build on remote Docker and deploy (full release transaction)
+  - Release acceptance (static assets and page main chain)
+  - Verify runtime and configuration fingerprints before cleanup
+  - Finalize release (cleanup previous only after all acceptance)
+  - Upload candidate and release fingerprints
+  - Roll back to previous known working state
+  ✓ Post Check out repository
+  ✓ Complete job
+- Control plane and Product V2 in 0s (ID 118473845297)
+
+ANNOTATIONS
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+Classify changed paths: .github#1
+

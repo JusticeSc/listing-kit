@@ -1,0 +1,218 @@
+bind [127.0.0.1]:3306: Permission denied
+channel_setup_fwd_listener_tcpip: cannot listen to port: 3306
+2026-10-20T05:41:48Z release-transaction installing release-transaction.sh for later finalize/rollback sessions
+2026-10-20T05:41:48Z release-transaction building image=amz-listing-kit:6e692a4c2f7c7db083a012c23f0285bf505a2ba7
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 4.24kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/node:24.19.0-bookworm-slim
+#2 ...
+
+#3 [internal] load metadata for docker.io/library/python:3.13-slim-bookworm
+#3 DONE 1.2s
+
+#2 [internal] load metadata for docker.io/library/node:24.19.0-bookworm-slim
+#2 DONE 1.3s
+
+#4 [internal] load metadata for ghcr.io/astral-sh/uv:0.9.18
+#4 DONE 1.5s
+
+#5 [internal] load .dockerignore
+#5 transferring context: 3.61kB done
+#5 DONE 0.0s
+
+#6 [internal] load build context
+#6 DONE 0.0s
+
+#7 [frontend 1/9] FROM docker.io/library/node:24.19.0-bookworm-slim@sha256:a9f5f7c91a432850b2a8a7797adf5eadb6c733ceed61167806cee7ea7fbc29df
+#7 resolve docker.io/library/node:24.19.0-bookworm-slim@sha256:a9f5f7c91a432850b2a8a7797adf5eadb6c733ceed61167806cee7ea7fbc29df 0.1s done
+#7 DONE 0.1s
+
+#8 FROM ghcr.io/astral-sh/uv:0.9.18@sha256:5713fa8217f92b80223bc83aac7db36ec80a84437dbc0d04bbc659cae030d8c9
+#8 resolve ghcr.io/astral-sh/uv:0.9.18@sha256:5713fa8217f92b80223bc83aac7db36ec80a84437dbc0d04bbc659cae030d8c9
+#8 resolve ghcr.io/astral-sh/uv:0.9.18@sha256:5713fa8217f92b80223bc83aac7db36ec80a84437dbc0d04bbc659cae030d8c9 0.1s done
+#8 DONE 0.1s
+
+#9 [python-deps 1/5] FROM docker.io/library/python:3.13-slim-bookworm@sha256:a1165e272e578941b84abc79e4ab38a0305cd12803a5c4247979ac7655f4d641
+#9 resolve docker.io/library/python:3.13-slim-bookworm@sha256:a1165e272e578941b84abc79e4ab38a0305cd12803a5c4247979ac7655f4d641 0.1s done
+#9 DONE 0.2s
+
+#6 [internal] load build context
+#6 transferring context: 2.47MB 0.3s done
+#6 DONE 0.3s
+
+#10 [python-deps 4/5] COPY pyproject.toml uv.lock ./
+#10 CACHED
+
+#11 [python-deps 2/5] COPY --from=ghcr.io/astral-sh/uv:0.9.18 /uv /uvx /bin/
+#11 CACHED
+
+#12 [python-deps 3/5] WORKDIR /opt/amz-listing-kit
+#12 CACHED
+
+#13 [python-deps 5/5] RUN uv sync --locked --no-dev --no-install-project
+#13 CACHED
+
+#14 [frontend 2/9] WORKDIR /build
+#14 CACHED
+
+#15 [frontend 3/9] COPY package.json package-lock.json ./
+#15 CACHED
+
+#16 [frontend 4/9] RUN npm install --global "npm@$(node -p 'require("./package.json").engines.npm')" --ignore-scripts --no-audit --no-fund     && npm ci --ignore-scripts --no-audit --no-fund
+#16 CACHED
+
+#17 [frontend 5/9] COPY app/product_v2/ ./app/product_v2/
+#17 ...
+
+#18 [runtime 1/6] WORKDIR /opt/amz-listing-kit
+#18 CACHED
+
+#19 [envelope-schema 1/3] COPY src/ ./src/
+#19 DONE 0.2s
+
+#20 [runtime 2/6] COPY app/__init__.py app/server.py app/product_v2_server.py app/product_v2_http.py ./app/
+#20 DONE 0.2s
+
+#17 [frontend 5/9] COPY app/product_v2/ ./app/product_v2/
+#17 DONE 0.2s
+
+#21 [envelope-schema 2/3] COPY tools/export_image_envelope_schema.py ./tools/export_image_envelope_schema.py
+#21 DONE 0.1s
+
+#22 [runtime 3/6] COPY src/ ./src/
+#22 DONE 0.1s
+
+#23 [frontend 6/9] COPY vite.config.mjs tsconfig.json ./
+#23 DONE 0.1s
+
+#24 [runtime 4/6] COPY config/ ./config/
+#24 DONE 0.1s
+
+#25 [frontend 7/9] COPY tools/generate_image_envelope_validator.mjs ./tools/generate_image_envelope_validator.mjs
+#25 DONE 0.1s
+
+#26 [envelope-schema 3/3] RUN python tools/export_image_envelope_schema.py --out /out/image-task-envelope.schema.json
+#26 1.403 [envelope-schema] /out/image-task-envelope.schema.json · $id=https://amz-listing-kit.local/schemas/v2/image-envelope.json · definitions=5
+#26 DONE 1.5s
+
+#27 [frontend 8/9] COPY --from=envelope-schema /out/image-task-envelope.schema.json ./app/product_v2/domain/generated/image-task-envelope.schema.json
+#27 DONE 0.1s
+
+#28 [frontend 9/9] RUN npm run build:envelope-validator && npm run build:frontend
+#28 1.100 
+#28 1.100 > build:envelope-validator
+#28 1.100 > node tools/generate_image_envelope_validator.mjs
+#28 1.100 
+#28 1.407 [envelope-codegen] app/product_v2/domain/generated/image-task-envelope.validate.js · export=validateImageEnvelope · bytes=32379
+#28 1.610 
+#28 1.610 > build:frontend
+#28 1.610 > vite build
+#28 1.610 
+#28 2.141 vite v8.3.4 building client environment for production...
+#28 2.164 transforming...
+#28 2.436 ✓ 70 modules transformed.
+#28 2.603 rendering chunks...
+#28 2.735 computing gzip size...
+#28 2.749 dist/product-v2/index.html                                                       11.46 kB │ gzip:  3.73 kB
+#28 2.749 dist/product-v2/.vite/manifest.json                                              23.29 kB │ gzip:  2.16 kB
+#28 2.749 dist/product-v2/app/product_v2/styles.css                                        23.86 kB │ gzip:  4.89 kB
+#28 2.749 dist/product-v2/node_modules/lit-html/directives/if-defined.js                    0.07 kB │ gzip:  0.09 kB
+#28 2.749 dist/product-v2/app/product_v2/domain/image-envelope.js                           0.15 kB │ gzip:  0.12 kB
+#28 2.749 dist/product-v2/node_modules/lit-html/directive.js                                0.35 kB │ gzip:  0.25 kB
+#28 2.749 dist/product-v2/app/product_v2/domain/errors.js                                   0.66 kB │ gzip:  0.32 kB
+#28 2.749 dist/product-v2/_virtual/_vite/modulepreload-polyfill.js                          0.67 kB │ gzip:  0.38 kB
+#28 2.749 dist/product-v2/node_modules/lit-html/directive-helpers.js                        0.71 kB │ gzip:  0.42 kB
+#28 2.749 dist/product-v2/node_modules/lit-html/directives/live.js                          0.79 kB │ gzip:  0.43 kB
+#28 2.749 dist/product-v2/node_modules/lit-html/directives/ref.js                           0.86 kB │ gzip:  0.43 kB
+#28 2.749 dist/product-v2/app/product_v2/storage/pointer.js                                 0.90 kB │ gzip:  0.48 kB
+#28 2.749 dist/product-v2/app/product_v2/storage/migrations.js                              1.02 kB │ gzip:  0.68 kB
+#28 2.749 dist/product-v2/node_modules/lit-html/async-directive.js                          1.20 kB │ gzip:  0.62 kB
+#28 2.749 dist/product-v2/app/product_v2/storage/package-schema.js                          1.40 kB │ gzip:  0.85 kB
+#28 2.749 dist/product-v2/node_modules/lit-html/directives/repeat.js                        1.45 kB │ gzip:  0.74 kB
+#28 2.749 dist/product-v2/app/product_v2/session.js                                         1.53 kB │ gzip:  0.81 kB
+#28 2.749 dist/product-v2/app/product_v2/ui/stage-shell.js                                  1.54 kB │ gzip:  0.84 kB
+#28 2.749 dist/product-v2/_virtual/_vite/preload-helper.js                                  1.54 kB │ gzip:  0.80 kB
+#28 2.749 dist/product-v2/app/product_v2/storage/capabilities.js                            1.66 kB │ gzip:  0.92 kB
+#28 2.749 dist/product-v2/app/product_v2/ui/dom.js                                          1.69 kB │ gzip:  0.99 kB
+#28 2.749 dist/product-v2/app/product_v2/domain/frozen-reference.js                         2.16 kB │ gzip:  1.17 kB
+#28 2.749 dist/product-v2/app/product_v2/storage/transfer.js                                2.21 kB │ gzip:  0.92 kB
+#28 2.749 dist/product-v2/app/product_v2/domain/image-cost.js                               2.30 kB │ gzip:  1.20 kB
+#28 2.749 dist/product-v2/app/product_v2/storage/errors.js                                  2.35 kB │ gzip:  1.14 kB
+#28 2.749 dist/product-v2/app/product_v2/domain/invalidation.js                             2.47 kB │ gzip:  0.82 kB
+#28 2.749 dist/product-v2/app/product_v2/entry.js                                           2.56 kB │ gzip:  1.04 kB
+#28 2.749 dist/product-v2/storage/zip.js                                                    2.63 kB │ gzip:  1.42 kB
+#28 2.749 dist/product-v2/storage/schema.js                                                 2.81 kB │ gzip:  1.13 kB
+#28 2.749 dist/product-v2/storage/db.js                                                     2.87 kB │ gzip:  1.55 kB
+#28 2.749 dist/product-v2/app/product_v2/domain/intake.js                                   3.22 kB │ gzip:  1.39 kB
+#28 2.749 dist/product-v2/app/product_v2/domain/batch.js                                    3.33 kB │ gzip:  1.66 kB
+#28 2.749 dist/product-v2/storage/index.js                                                  3.43 kB │ gzip:  1.26 kB
+#28 2.749 dist/product-v2/app/product_v2/storage/validate.js                                4.14 kB │ gzip:  1.80 kB
+#28 2.749 dist/product-v2/app/product_v2/domain/config-export.js                            4.20 kB │ gzip:  1.89 kB
+#28 2.749 dist/product-v2/app/product_v2/domain/compare.js                                  4.32 kB │ gzip:  2.11 kB
+#28 2.749 dist/product-v2/app/product_v2/domain/candidate.js                                4.76 kB │ gzip:  2.18 kB
+#28 2.749 dist/product-v2/app/product_v2/domain/shared.js                                   6.10 kB │ gzip:  2.62 kB
+#28 2.749 dist/product-v2/app/product_v2/storage/package.js                                 6.11 kB │ gzip:  2.29 kB
+#28 2.749 dist/product-v2/app/product_v2/domain/selection.js                                6.18 kB │ gzip:  2.55 kB
+#28 2.749 dist/product-v2/app/product_v2/domain/brief.js                                    6.25 kB │ gzip:  2.31 kB
+#28 2.749 dist/product-v2/app/product_v2/domain/suite.js                                    6.85 kB │ gzip:  2.69 kB
+#28 2.749 dist/product-v2/node_modules/lit-html/lit-html.js                                 7.07 kB │ gzip:  3.12 kB
+#28 2.749 dist/product-v2/app/product_v2/domain/rework.js                                   7.63 kB │ gzip:  3.28 kB
+#28 2.749 dist/product-v2/app/product_v2/semantic-analysis.js                               8.01 kB │ gzip:  3.01 kB
+#28 2.749 dist/product-v2/app/product_v2/domain/export-gate.js                              8.13 kB │ gzip:  3.33 kB
+#28 2.749 dist/product-v2/app/product_v2/model-settings.js                                  8.31 kB │ gzip:  3.62 kB
+#28 2.749 dist/product-v2/app/product_v2/prompts.js                                         8.90 kB │ gzip:  3.47 kB
+#28 2.749 dist/product-v2/app/product_v2/domain/slots.js                                   12.00 kB │ gzip:  4.21 kB
+#28 2.749 dist/product-v2/app/product_v2/vendor/fflate.browser.js                          12.44 kB │ gzip:  6.14 kB
+#28 2.749 dist/product-v2/app/product_v2/selection-adoption.js                             12.50 kB │ gzip:  4.69 kB
+#28 2.749 dist/product-v2/app/product_v2/ui/delivery-view.js                               13.16 kB │ gzip:  4.72 kB
+#28 2.749 dist/product-v2/app/product_v2/workspace.js                                      14.52 kB │ gzip:  5.36 kB
+#28 2.749 dist/product-v2/app/product_v2/app.js                                            15.53 kB │ gzip:  5.90 kB
+#28 2.749 dist/product-v2/app/product_v2/review-delivery.js                                16.70 kB │ gzip:  6.36 kB
+#28 2.749 dist/product-v2/app/product_v2/domain/suite-plan.js                              18.69 kB │ gzip:  6.06 kB
+#28 2.749 dist/product-v2/app/product_v2/domain/generated/image-task-envelope.validate.js  19.65 kB │ gzip:  2.92 kB
+#28 2.749 dist/product-v2/app/product_v2/domain/suite-review.js                            19.80 kB │ gzip:  6.96 kB
+#28 2.749 dist/product-v2/app/product_v2/domain/confirm.js                                 22.11 kB │ gzip:  7.60 kB
+#28 2.749 dist/product-v2/app/product_v2/storage/repository.js                             23.92 kB │ gzip:  7.71 kB
+#28 2.749 dist/product-v2/domain/attempt.js                                                24.01 kB │ gzip:  7.54 kB
+#28 2.749 dist/product-v2/domain/index.js                                                  24.09 kB │ gzip:  6.99 kB
+#28 2.749 dist/product-v2/app/product_v2/domain/specs.js                                   27.65 kB │ gzip:  8.90 kB
+#28 2.749 dist/product-v2/app/product_v2/project-inputs.js                                 27.68 kB │ gzip:  9.65 kB
+#28 2.749 dist/product-v2/app/product_v2/domain/review.js                                  31.24 kB │ gzip:  9.59 kB
+#28 2.749 dist/product-v2/generation.js                                                    39.66 kB │ gzip: 12.83 kB
+#28 2.749 dist/product-v2/app/product_v2/ui/compare-view.js                                42.13 kB │ gzip: 13.34 kB
+#28 2.749 dist/product-v2/app/product_v2/ui/generation-view.js                             48.67 kB │ gzip: 16.52 kB
+#28 2.749 dist/product-v2/app/product_v2/domain/prompt.js                                  59.09 kB │ gzip: 20.01 kB
+#28 2.749 dist/product-v2/app/product_v2/ui/input-view.js                                  75.46 kB │ gzip: 22.81 kB
+#28 2.749 
+#28 2.753 ✓ built in 610ms
+#28 DONE 2.8s
+
+#29 [runtime 5/6] COPY --from=frontend /build/dist/product-v2/ ./dist/product-v2/
+#29 DONE 0.1s
+
+#30 [runtime 6/6] RUN useradd --create-home --uid 10001 appuser     && chown -R appuser:appuser /opt/amz-listing-kit
+#30 DONE 13.5s
+
+#31 exporting to image
+#31 exporting layers
+#31 exporting layers 6.7s done
+#31 exporting manifest sha256:3271db8cd751de181bae8ddf502707659ddb2e4eab7e4b9e678399909a3b4d73 0.0s done
+#31 exporting config sha256:044be7d54cbdba111e45b65922c5299f2f305d3f24231727cb7b53c9ea2f1d50 0.0s done
+#31 exporting attestation manifest sha256:ac058f5ff12b2a576120e13f1e519bc7fc9c4088c7efb8589f78d7cde85444b1 0.0s done
+#31 exporting manifest list sha256:7fdb4a983218d697e627da9a7d3b441a38fbe3c61460ad080f728133d1fa25e6 0.0s done
+#31 naming to docker.io/library/amz-listing-kit:6e692a4c2f7c7db083a012c23f0285bf505a2ba7 done
+#31 unpacking to docker.io/library/amz-listing-kit:6e692a4c2f7c7db083a012c23f0285bf505a2ba7
+#31 unpacking to docker.io/library/amz-listing-kit:6e692a4c2f7c7db083a012c23f0285bf505a2ba7 1.4s done
+#31 DONE 8.3s
+2026-10-20T05:42:18Z release-transaction parking serving container amz-listing-kit (image=amz-listing-kit:3195192e4a1d29e374ea6d15fa8b4c7256dd42bf) as amz-listing-kit-previous
+2026-10-20T05:42:19Z release-transaction starting new container amz-listing-kit from amz-listing-kit:6e692a4c2f7c7db083a012c23f0285bf505a2ba7
+2026-10-20T05:42:25Z release-transaction caddy config changed; backing up live config
+2026-10-20T05:42:26Z release-transaction restarting TLS container amz-listing-kit-tls for new config
+2026-10-20T05:42:28Z release-transaction waiting for trusted HTTPS entry https://47.115.172.233:8080/api/health
+2026-10-20T05:42:29Z release-transaction deployed_image=amz-listing-kit:6e692a4c2f7c7db083a012c23f0285bf505a2ba7 host_port=8780 health=healthy
+2026-10-20T05:42:29Z release-transaction deployed_tls=https://47.115.172.233:8080/api/health caddy_container=amz-listing-kit-tls
+2026-10-20T05:42:29Z release-transaction release_transaction=open previous_retained=amz-listing-kit-previous backup=/root/.config/amz-listing-kit/tls/Caddyfile.release-backup backed_up=true
