@@ -49,11 +49,13 @@ import {
 
 export const PROMPT_SCHEMA_VERSION = 2;
 export const LEGACY_PROMPT_SCHEMA_VERSION = 1;
-/** 信息图旧规则要求标题，须重新准备；其他用途不受本次修复影响。
+/** 只有「信息图 + 不印新增文字」需要新的无字简报与来源；其他组合逐字保持旧实现，
+ * 所以规则版本也只在那一组合上升，避免把正文完全相同的历史稿误判过期。
  * @param {unknown} roleId
+ * @param {unknown} intent 本图有效印字决定（effectivePrinting().intent）
  * @returns {number} */
-export function promptCompilerRuleVersionOf(roleId) {
-  return roleId === "infographic" ? 4 : 3;
+export function promptCompilerRuleVersionOf(roleId, intent) {
+  return roleId === "infographic" && intent === "none" ? 4 : 3;
 }
 export const PROMPT_LANGUAGE_POLICY_ID = "zh-instruction-v1";
 export const MAX_PROMPT_CHARS = 4000;
@@ -944,7 +946,9 @@ export function promptBasisOf(input, platform, provider) {
     .filter((item) => isPlainObject(item) && consumedSet.has(item.slot_id))
     .map((item) => ({ slot_id: item.slot_id, version: item.version }));
   return {
-    compiler_rule_version: promptCompilerRuleVersionOf(shot?.role_id),
+    compiler_rule_version: promptCompilerRuleVersionOf(shot?.role_id, printing.intent),
+    // 规则版本依赖印字决定，冻结本值让写入门能按同一判据复核，历史记录缺省即按旧规则。
+    print_intent: printing.intent,
     brief: consumedBasis,
     consumed_slot_ids: consumed,
     // 这张图自己的确定性签名（与整份套图文档版本无关）；改别的图不让这张图过期。
@@ -1788,7 +1792,8 @@ export function buildPromptRecord({ compiled, snapshot, hash } = {}) {
     maxReferences: compiled.provider.max_reference_images,
   });
   if (frozenProblems.length) invalid(frozenProblems[0].message, { problems: frozenProblems });
-  if (compiled.basis?.compiler_rule_version !== promptCompilerRuleVersionOf(compiled.role_id)) {
+  if (compiled.basis?.compiler_rule_version !== promptCompilerRuleVersionOf(compiled.role_id,
+    compiled.basis?.print_intent)) {
     invalid("新 Prompt 必须由当前编译规则产生；历史原记录只能读取，不能冒充新写入。");
   }
   const lineage = (compiled.basis && isPlainObject(compiled.basis.rework))

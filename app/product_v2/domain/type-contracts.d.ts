@@ -517,6 +517,8 @@ export type PromptWarning = { code: string; message: string; source_refs: string
 export type PromptBasis = {
   /** 历史记录可缺失；当前编译器每次新写入都冻结此版本。 */
   compiler_rule_version?: number;
+  /** 规则版本依赖的有效印字决定；历史记录可缺失（按旧规则解释）。 */
+  print_intent?: string;
   brief: BriefBasisItem[];
   consumed_slot_ids: string[];
   shot_signature: string | null;

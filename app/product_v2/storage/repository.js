@@ -28,6 +28,7 @@ import {
   checkConfirmationRecord, checkPromptRecord, promptStaleness, canonicalJson, isPlainObject,
   shotSignatureOf, styleSignatureOf, evaluateShot, selectReferences, dependencyAssetsOf, PLATFORM_PROFILES,
   CONFIRM_SCHEMA_VERSION, promptCompilerRuleVersionOf, PROMPT_SCHEMA_VERSION,
+  effectivePrinting,
   submissionModeAllows,
   checkCandidateRecord, candidateMatchesAttempt,
   assertSelectionRecord, reviewIsCurrent, selectionReviewFingerprint, checkReviewReport, checkSuiteReviewReport,
@@ -495,7 +496,8 @@ export function createRepository({
     }
     const provider = prompt.compiled.provider;
     const current = {
-      compiler_rule_version: promptCompilerRuleVersionOf(shot.role_id),
+      compiler_rule_version: promptCompilerRuleVersionOf(shot.role_id,
+        effectivePrinting(spec?.payload || null, shot).intent),
       briefBasis: slots.map(item => ({ slot_id: item.slot.slot_id, version: item.version })),
       shot_signature: shotSignatureOf(shot), suite_version: suite?.version || null,
       style_version: style?.version || null,

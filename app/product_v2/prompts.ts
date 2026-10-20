@@ -3,7 +3,7 @@ import {
   DOMAIN_DOCUMENT_KINDS, PLATFORM_PROFILES,
   assertConfirmationSheet, briefReadiness,
   buildConfirmationSheet, buildEditedPromptRecord, buildProductBrief, buildPromptRecord, buildReworkDirective,
-  canonicalJson, checkPromptRecord, compilePrompt, discardManualEdit, imagePromptProfile,
+  canonicalJson, checkPromptRecord, compilePrompt, discardManualEdit, effectivePrinting, imagePromptProfile,
   promptCompilerRuleVersionOf, promptHash, promptStaleness, reconfirmEditedPrompt, requestSnapshotOf, selectReferences,
   shotSignatureOf, styleSignatureOf, suitePlanSummary,
 } from "./domain/index.js";
@@ -176,7 +176,8 @@ export function promptCurrentBasisOf(source: ProjectSources, shotId: string | nu
   const shot = source.suitePlan?.shots.find(item => item.shot_id === shotId);
   const spec = shotId ? source.shotSpecs[shotId]?.spec || null : null;
   return {
-    compiler_rule_version: promptCompilerRuleVersionOf(shot?.role_id),
+    compiler_rule_version: promptCompilerRuleVersionOf(shot?.role_id,
+      effectivePrinting(spec, shot).intent),
     briefBasis, shot_signature: shot ? shotSignatureOf(shot) : null,
     suite_version: source.suiteVersion || null, style_version: source.styleVersion || null,
     style_signature: shot ? styleSignatureOf(source.styleSpec, spec, shot) : null,

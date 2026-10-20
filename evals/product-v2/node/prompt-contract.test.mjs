@@ -625,6 +625,16 @@ test("G12", "过期机检：只认这张图实际消费的依据；无关槽位�
   await expectCode(() => buildPromptRecord({
     compiled: { ...infoCompiled, basis: historicalInfo.basis }, snapshot: infoSnapshot, hash: infoRecord.hash,
   }), DOMAIN_ERROR_CODES.CONTRACT_INVALID, "历史信息图编译结果不得冒充新写入");
+  const selectedInfoSpec = { ...emptyShotSpecFromShot(infoShot), print_intent: "selected",
+    layout: "product_left_text_right",
+    on_image_texts: [{ text_id: "t_sig_1", text: "304不锈钢内胆",
+      source: textSource("signature_features", 1), status: "confirmed", origin: "user" }] };
+  const selectedCompiled = compileMain({ shot: infoShot, shotSpec: selectedInfoSpec });
+  expect(selectedCompiled.basis.compiler_rule_version === 3,
+    "信息图印字（非 none）正文不变，规则版本必须仍为 3：" + json(selectedCompiled.basis.compiler_rule_version));
+  const selectedCurrent = { ...infoCurrent, compiler_rule_version: 3, briefBasis: selectedCompiled.basis.brief };
+  expect(promptStaleness(selectedCompiled, selectedCurrent).stale === false,
+    "印字信息图的规则版本不得被误判过期：" + json(promptStaleness(selectedCompiled, selectedCurrent)));
   const consumedBumped = promptStaleness(infoRecord, {
     ...infoCurrent,
     briefBasis: infoCurrent.briefBasis.map((item) =>
