@@ -1,9 +1,11 @@
-[PASS] 冷恢复：8 阶段 / 27 任务；状态 active
+[PASS] 冷恢复：8 阶段 / 27 任务；状态 paused
 目标：docs/product-v2-refactor-plan.md；状态：_working/amz-listing-kit-product-v2/state.md
 唯一下一动作：V2.R5.1
+下一任务被阻塞；只可解决以下权限/输入门，不得开始该任务的受限执行：
+  V2.R5.1_用户2026-10-20「即刻停止当前工作，做好收尾准备」：恢复需用户明确 resume，并先核 state／_stage-amz-control/b18-optional-figures-20261020/closeout-stop-20261020.md／实时仓库；批次18五图两包与模式B证据仍未闭合
 任务卡：docs/product-v2-refactor-plan.md:425
 Goal 原文：计划 §2.1；sha256=6c1f59d0df5c6c867dac5aa090bb32ff915c7dfae2140494c653aab7598bf870
-仓库保存的最近 Goal 观察：active；绑定：required；goal_id=15ab22bf3386b9cf；证据：evals/product-v2/refactor/goal-observation-full-product-20261018T140710Z.json
+仓库保存的最近 Goal 观察：paused；绑定：required；goal_id=15ab22bf3386b9cf；证据：evals/product-v2/refactor/goal-observation-stop-20261020T012741Z.json
 本脚本不查询系统 Goal；恢复会话仍须读取真实当前 Goal 核对。
 ### V2.R5.1 · 生成执行Module
 
