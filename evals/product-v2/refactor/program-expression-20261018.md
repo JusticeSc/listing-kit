@@ -233,4 +233,6 @@ npm run test:domain                              # 域套件（含 P 系列：�
 - 浏览器契约读的是构建产物 `dist/product-v2`，改完源码必须先 `npm run build:frontend` 再跑浏览器验证器；本轮验证器第一次跑红就是这个原因，不是产品 bug。
 - 提交 `e38ab61` 之后按要求重做两轮全回归：`verify_v2_7_1_regression.py --rounds 2 --stamp final_v2` → 50 条命令 × 2 轮全绿、指纹一致 `290ee1bddc2b3a6b`、源码身份 `e38ab6149aa8`（证据 `evals/product-v2/v2.7.1-regression-final_v2-final.txt`）。
 
+- 推送后 CI [run 39428551617](https://github.com/JusticeSc/listing-kit/actions/runs/39428551617) 在 `68bcade` 上三项检查全 pass（分类、控制面+Product V2 13m16s、镜像与冒烟，PR 不部署）；PR #26 仍是 Draft。
+
 仍未证：本修复不改变「是否真的把文案画进像素」，真实出图品质依旧未验收；`print_intent` 只是编译依据里的新增字段，页面不展示它，也没有对应人工门。

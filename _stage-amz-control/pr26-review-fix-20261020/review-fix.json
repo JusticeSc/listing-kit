@@ -1,0 +1,54 @@
+{
+  "observed_at": "2026-10-20T20:50:00Z",
+  "scope": "PR #26 (fix/9-reprepare-source-program-intent) 独立审查阻断项修复",
+  "authority": "point-in-time evidence only; 仓库代码与 PR 状态优先",
+  "reviewer": "PROr26Review",
+  "findings": [
+    {
+      "id": "P1-rule-version-always-4",
+      "severity": "blocking",
+      "claim": "promptCompilerRuleVersionOf 对全部信息图返回 4，而正文只在「信息图 + print_intent=none」变了；印字信息图被误判过期，「不印字」组合因准备门/编译器同算 4 而永远 consumed_sources_changed。",
+      "evidence": "app/product_v2/domain/prompt.js:47-50 (before); repository.js 当前依据投影只传 role_id",
+      "disposition": "fixed",
+      "change": [
+        "promptCompilerRuleVersionOf(roleId, intent) = (infographic && none) ? 4 : 3",
+        "basis 冻结 print_intent；buildPromptRecord 按冻结值复核",
+        "prompts.ts / repository.js 按 effectivePrinting(...).intent 取当前规则"
+      ],
+      "verification": {
+        "npm_run_test_domain": "292/292 rc=0",
+        "verify_v2_3_4_prompt_compiler": "15/15 rc=0 (v2.3.4-prompt-compiler-20261020-204412.txt)",
+        "verify_v2_3_5_pre_generation_confirm": "13/13 rc=0",
+        "verify_v2_3_6_prompt_manual_edit": "13/13 rc=0"
+      }
+    },
+    {
+      "id": "P2-fixture-mismatch",
+      "severity": "minor",
+      "claim": "harness 与 node 副本对「信息图印字」的夹具不同判据，会继续编译矛盾的无字 Prompt。",
+      "disposition": "already-fixed-before-this-round",
+      "note": "harness/prompt-contract.js 的信息图夹具已显式 print_intent=none；本轮新增的 selected 夹具两副本使用完全相同字段。"
+    },
+    {
+      "id": "P3-generator-drops-new-assertions",
+      "severity": "minor",
+      "claim": "evals/product-v2/node/_gen.mjs 从 harness 重新生成 node 副本，只写在 node 侧的断言会在重生成时丢失。",
+      "disposition": "mitigated",
+      "not_fixed": "生成器本身在本分支不可运行：执行至 brief C28/C29 锚点处抛 'brief C28 边界失败'（与本节改动无关）。未在本切片修。",
+      "mitigation": "同一批断言同时写入 harness/prompt-contract.js 与 node 副本；重生成时 harness 作为源仍带有它们。"
+    }
+  ],
+  "two_round_regression": {
+    "candidate": "e38ab6149aa8ac57592b3cac2586ba9f0c72a623",
+    "command": "uv run --locked python tools/verify_v2_7_1_regression.py --rounds 2 --stamp final_v2",
+    "result": "50 命令 × 2 轮全绿，指纹 290ee1bddc2b3a6b 两轮一致",
+    "evidence": "evals/product-v2/v2.7.1-regression-final_v2-final.txt / .json",
+    "note": "0bafc82 的两轮绿早于规则版本修复，不作本 PR 最终候选证据。"
+  },
+  "unverified": [
+    "真实出图品质与文案是否落进像素（需真实模型与人工看图）",
+    "print_intent 字段不在页面展示，无对应人工门",
+    "两生产 Adapter 的真实外呼四组合"
+  ],
+  "limits": "全部本地、替身 provider、零付费；未合并、未部署。"
+}
