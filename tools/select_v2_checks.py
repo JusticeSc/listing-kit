@@ -1,46 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""V2 按影响选择验证：普通批次只跑受影响边界，完整集合仍可枚举。
+"""按实际变更选择必要离线检查；命令目录唯一来自 CI verify job。
 
-为什么需要它
-------------
-CI verify job 与本地完整回归此前对所有变更跑同一套完整命令：
-说明/纯布局的小改也要等全部浏览器，失败信息与真实风险不对齐。
-本脚本不复制第二份命令清单：完整集合仍唯一由工作流 verify job 持有，
-这里只按变更路径选择其中一个子集；选择失败/不可分类时走完整离线集合，
-不允许静默空选通过。
+说明/过程证据只跑管理检查，单验证器选择自身，已知 UI owner 选择其业务消费者。
+混合变化取并集；公共合同、依赖或未知影响保守扩大。没有批准离线模式的走查
+明确报输入缺口，不能用跑完整产品集合代替验证走查本身。
 
-选择规则（保守：宁可多跑，不漏风险）
-----------------------------------
-- 普通说明（`docs/**`、`_working/**`、根目录 `.md`）：控制面守卫
-  （文档登记 / 项目状态 / 分类登记反例），状态与索引语义仍由这些守卫真跑；
-  **只有**这类普通说明才算「不必跑浏览器」。`.md` 长在别处（`app/`、`src/`、
-  `tools/`、`evals/`）不是说明文档，按未识别路径处理。
-- 纯样式/布局（`.css` / `.html`）：受影响的真实页面消费者（UI2/UI3/6.4）。
-- 领域规则/契约（`app/product_v2/domain/**`、`evals/product-v2/node/**`）：
-  `npm test:domain`（速度快且是稳定行为资产）。
-- TS/构建/产物：types + generated 全链；只改产物不同步时必须先 build 再提交。
-- 前端业务（`app/product_v2/**` 的 js/ts、`workspace.js`、`storage/**`）、
-  HTTP 入口（`app/server.py`、`app/product_v2_server.py`）、网关/Provider
-  （`src/**`）、锁与依赖（`uv.lock`、`pyproject.toml`、`package*.json`）、
-  验证策略（`.github/workflows/**`、`config/product-v2/verification.json`）：
-  一律走**完整必要离线集合**。这些改动会改变真实用户结果或验证判据，
-  挑一个小子集就是在用「少跑」换「假绿」。
-- 跨组、未知路径、基线不可得：完整适用离线集合（paid/remote/manual 除外）。
-- 容器/Dockerfile/发布链变更：container 相关行为仍按实际影响选择，不在本脚本静默跳过。
-
-为什么执行前先验登记与命令清单
---------------------------
-选择器只把登记当作「哪些模式属于付费/远程/聚合」的权威。登记读坏、schema 不对或
-分类取值非法时，受限集合会静默变空 —— 于是付费模式会被当普通模式**跑起来**。
-所以这里先验登记，再动手；验不过就明确失败（退出码 2），不拿「完整集合」兜底当没事。
-同理，verify job 里出现命令解析器（`tools/check_verification.ci_commands`）还不认识的
-新命令形态（例如 pytest 入口）时，选择器不静默少跑，而是明确失败并要求先扩展解析器。
-
-退出码
-----
-0 = 选择成功（未 --run 时只打印）；2 = 登记/命令清单校验失败，或选择名在当前命令清单里
-找不到（fail-closed：重命名/退出 CI 后不静默少跑）；
+执行前先验证整份命令目录的精确入口、参数与批准状态；paid/remote/aggregate
+永不进入普通执行。登记不是用户授权，也不能拦截绕过本入口的动作。
+无路径时枚举完整集合；--base/--head 按真实 Git 差量选择，坏基线退出 2。
+--emit-github 只预览；--github-output 写 CI 路由；--run 首个失败即停。
 """
 from __future__ import annotations
 
@@ -48,6 +17,7 @@ import argparse
 import json
 import shlex
 import subprocess
+import re
 import sys
 from pathlib import Path
 
@@ -69,90 +39,167 @@ RESTRICTED_CATEGORIES = {"paid", "remote", "aggregate"}
 
 INPUT_EXIT = 2
 
-CONTROL = {
-    "tools/check_docs.py",
-    "tools/check_project_state.py",
-    "tools/check_verification.py",
-    "evals/probes/project_state.py",
-    "evals/probes/docs_index.py",
-    "evals/probes/verification_policy.py",
-    "npm:check:versions",
-}
+DOCS = {"tools/check_docs.py"}
+POLICY = {"tools/check_verification.py", "evals/probes/verification_policy.py"}
+STATE = DOCS | {"tools/check_project_state.py", "evals/probes/project_state.py"}
 LAYOUT = {
     "tools/verify_v2_ui_2_interaction_visual.py",
     "tools/verify_v2_ui_3_frontend.py",
     "tools/verify_v2_6_4_accessibility.py",
 }
-TYPES = {"npm:check:types", "npm:build:frontend"}
-# 注：旧自研 emit 链（build_product_v2_ts.mjs / check:generated / jsconfig.json）已随 P4
-# 标准 Vite 构建退役，当前权威（package.json/CI/tsconfig.json）不再有这些命令名；选择器
-# 与真实命令清单一一对应，不保留退役名。
-
-# 路径分类表（顺序即优先级，见 classify）。
-LOCK_NAMES = {"uv.lock", "pyproject.toml", "package.json", "package-lock.json", ".python-version"}
-POLICY_NAMES = {".github/workflows/ci-cd.yml", "tsconfig.json", "vite.config.mjs"}
-CONTROL_NAMES = {
-    "tools/check_docs.py",
-    "tools/check_project_state.py",
-    "tools/check_verification.py",
-    "tools/refactor_resume.py",
-    "tools/select_v2_checks.py",
+FRONTEND = {
+    "npm:check:versions", "npm:build:envelope", "npm:check:types",
+    "npm:build:frontend", "npm:check:envelope", "npm:build:frontend-node",
 }
-DOC_PREFIXES = ("docs/", "_working/")
-LAYOUT_SUFFIXES = (".css", ".html")
-DOMAIN_PREFIXES = ("app/product_v2/domain/", "evals/product-v2/node/")
-BUSINESS_PREFIXES = ("app/", "src/", "deploy/")
-VERIFIER_PREFIXES = ("tools/", "evals/")
+UI_CONSUMERS = {
+    "generation-view.ts": {
+        # generation-view 独占 #task-list-mount 与 #shot-execution：凡通过这两个根
+        # 读行状态/执行区动作的验证器都在这条依赖上，缺一个就是静默漏选。
+        "tools/verify_v2_3_5_pre_generation_confirm.py",
+        "tools/verify_v2_3_6_prompt_manual_edit.py",
+        "tools/verify_v2_4_2_generation_attempt.py",
+        "tools/verify_v2_4_3_batch_execution.py",
+        "tools/verify_v2_4_4_candidate_blob.py",
+        "tools/verify_v2_5_1_deterministic_review.py",
+        "tools/verify_v2_5_2_vlm_review.py",
+        "tools/verify_v2_5_3_compare_panel.py",
+        "tools/verify_v2_5_4_rework_loop.py",
+        "tools/verify_v2_5_5_suite_review.py",
+        "tools/verify_v2_6_1_selection.py",
+        "tools/verify_v2_6_3_project_transfer.py",
+        "tools/verify_v2_packet08_adoption_ai.py",
+        "tools/verify_v2_packet08_settings_vision.py",
+        "tools/verify_v2_r5_2_two_adapters.py",
+    },
+    "compare-view.ts": {
+        "tools/verify_v2_5_1_deterministic_review.py",
+        "tools/verify_v2_5_2_vlm_review.py",
+        "tools/verify_v2_5_3_compare_panel.py",
+        "tools/verify_v2_5_4_rework_loop.py",
+        "tools/verify_v2_6_1_selection.py",
+    },
+    "delivery-view.ts": {
+        "tools/verify_v2_6_2_delivery.py",
+        "tools/verify_v2_6_3_project_transfer.py",
+        "tools/verify_v2_packet08_delivery_ai.py",
+    },
+    "input-view.ts": {
+        "tools/verify_v2_2_1_product_contracts.py",
+        "tools/verify_v2_2_3_intake_understanding.py",
+        "tools/verify_v2_packet08_settings_vision.py",
+    },
+}
+LOCK_NAMES = {"uv.lock", "pyproject.toml", "package.json", "package-lock.json", ".python-version"}
+POLICY_NAMES = {
+    ".github/workflows/ci-cd.yml", "config/product-v2/verification.json",
+    "tools/select_v2_checks.py", "tools/check_verification.py",
+    "evals/probes/verification_policy.py",
+}
+BUILD_NAMES = {
+    "Dockerfile", ".dockerignore", "vite.config.mjs", "tsconfig.json",
+    "tools/export_image_envelope_schema.py", "tools/generate_image_envelope_validator.mjs",
+}
+PROOF_SUFFIXES = {".md", ".json", ".png", ".jpg", ".jpeg", ".webp", ".zip", ".log", ".txt", ".out"}
 
 
 class SelectInputError(ValueError):
     """选择依赖（分类登记 / 命令清单）不可用：必须明确失败，不能静默全跑或空跑。"""
 
 
-def classify(paths: list[str]) -> tuple[set[str], str]:
-    """返回（所选命令的 entrypoint 前缀集合，选择理由）。空集 = 完整离线集合。"""
+def classify(paths: list[str], available: set[str], registered: set[str]) -> tuple[set[str], str]:
+    """空集表示完整离线集合；已知局部影响取并集，不因跨组自动全选。"""
     if not paths:
-        return set(), "没有可识别的变更路径：走完整离线集合"
-    kinds: set[str] = set()
-    for path in paths:
-        name = path.replace("\\", "/")
-        if name in LOCK_NAMES or name in POLICY_NAMES or name.startswith("config/product-v2/"):
-            kinds.add("full")        # 依赖锁与验证策略：判据本身变了，必须全跑
-        elif name.endswith(".md"):
-            # 只有说明类路径才算「不必跑浏览器」；别处的 .md 不是文档。
-            kinds.add("docs" if name.startswith(DOC_PREFIXES) or "/" not in name else "full")
-        elif name.endswith(LAYOUT_SUFFIXES):
-            kinds.add("layout")      # 纯呈现
-        elif name.startswith(DOMAIN_PREFIXES):
-            kinds.add("domain")      # 领域规则：受影响 node 用例
-        elif name.startswith(BUSINESS_PREFIXES):
-            kinds.add("full")        # 前端业务 / HTTP 入口 / 网关 Provider / 构建（含业务 .ts，不只跑 types）
-        elif name in CONTROL_NAMES:
-            kinds.add("control")
-        elif name.startswith(VERIFIER_PREFIXES):
-            kinds.add("full")        # 验证器/探针自身：完整离线集合
-        elif name.endswith(".ts"):
-            kinds.add("types")       # 非业务 TS/构建/产物：types 全链
+        return set(), "未指定差量：完整离线集合"
+    wanted: set[str] = set()
+    reasons: set[str] = set()
+    broad = False
+    for name in paths:
+        if name in POLICY_NAMES:
+            wanted |= POLICY
+            reasons.add("验证策略")
+        elif name in LOCK_NAMES or name in BUILD_NAMES or name.startswith("config/product-v2/"):
+            broad = True
+            reasons.add("公共构建/配置合同")
+        elif name == "docs/INDEX.md" or name == "tools/check_docs.py":
+            wanted |= DOCS | {"evals/probes/docs_index.py"}
+            reasons.add("文档索引")
+        elif name.endswith("/state.md") or name in {"docs/product-v2-refactor-plan.md", "tools/check_project_state.py", "tools/refactor_resume.py", "evals/probes/project_state.py"}:
+            wanted |= STATE
+            reasons.add("状态语义")
+        elif name.startswith("docs/") and name.endswith(".md") or "/" not in name and name.endswith(".md"):
+            wanted |= DOCS
+            reasons.add("普通说明")
+        elif name.startswith("_working/") and Path(name).suffix in PROOF_SUFFIXES:
+            wanted |= DOCS
+            reasons.add("工作记录")
+        elif name.startswith(("evals/product-v2/node/", "app/product_v2/domain/")):
+            wanted |= FRONTEND | {"npm:test:domain"}
+            # 公共类型/序列化/聚合出口影响所有读写者，不能只用 Node 证明浏览器合同。
+            broad |= Path(name).stem in {"index", "shared", "type-contracts", "types"}
+            reasons.add("领域合同")
+        elif name.startswith("app/product_v2/ui/") and Path(name).name in UI_CONSUMERS:
+            # 任何视图改动都先过真实页面外观/交互/可达性三门，再叠加该视图的业务消费者。
+            wanted |= FRONTEND | LAYOUT | UI_CONSUMERS[Path(name).name]
+            reasons.add("页面业务消费者")
+        elif name.startswith("app/product_v2/") and name.endswith((".css", ".html")):
+            wanted |= FRONTEND | LAYOUT
+            reasons.add("页面布局")
+        elif name.startswith(("app/", "src/", "deploy/")):
+            broad = True
+            reasons.add("公共读写/出站消费者")
+        elif name.startswith("tests/gateway/"):
+            wanted.add("pytest:tests/gateway")
+            reasons.add("网关测试")
+        elif name.startswith("tests/dev/"):
+            wanted |= FRONTEND | {"pytest:tests/dev"}
+            reasons.add("开发工具测试")
+        elif name in available:
+            wanted.add(name)
+            reasons.add("验证器自身")
+        elif name.startswith("tools/verify_v2") or name.startswith("tools/rehearse_"):
+            if name in registered or not (ROOT / name).exists():
+                wanted |= POLICY
+                reasons.add("受限/退役验证器登记维护（不执行该入口）")
+            else:
+                raise SelectInputError(f"{name} 没有登记的离线验证依据；需补齐素材/参数，不能用完整产品回归代替")
+        elif (name.startswith(("_stage-amz-control/", "evals/product-v2/"))
+              and not name.startswith(("evals/product-v2/harness/", "evals/product-v2/fixtures/"))
+              and Path(name).suffix in PROOF_SUFFIXES):
+            wanted |= DOCS
+            reasons.add("不可执行过程证据")
         else:
-            kinds.add("unknown")
+            broad = True
+            reasons.add("公共消费者或未知影响")
+    return (set() if broad else wanted), "按影响选择：" + "、".join(sorted(reasons))
 
-    if kinds <= {"docs"}:
-        return set(CONTROL), "仅普通说明变更：控制面守卫（状态/索引语义仍跑对应检查）"
-    if kinds <= {"docs", "layout"}:
-        return set(CONTROL) | LAYOUT, "纯说明/布局变更：控制面 + 真实页面布局消费者"
-    if "full" in kinds or "unknown" in kinds or len(kinds - {"docs", "layout"}) > 2:
-        return set(), "业务/HTTP/网关/锁/验证策略/跨组或未知变更：走完整适用离线集合"
 
-    selected: set[str] = set(CONTROL)
-    if "types" in kinds:
-        selected |= TYPES
-    if "domain" in kinds:
-        selected |= {"npm:test:domain"}
-    if "control" in kinds:
-        selected |= CONTROL
-    if "layout" in kinds:
-        selected |= LAYOUT
-    return selected, "按变更影响选择：" + "、".join(sorted(kinds))
+def container_affected(paths: list[str]) -> bool:
+    """依据当前 Docker/发布闭包；codegen 与发布探针先于普通 tools 排除。"""
+    for name in paths:
+        if (name in LOCK_NAMES | BUILD_NAMES or name == ".github/workflows/ci-cd.yml"
+                or name == "tools/release_transaction_probe.py"
+                or name.startswith(("app/", "src/", "deploy/"))
+                or name == "config/product-v2/providers.json"):
+            return True
+        if name == "config/product-v2/verification.json":
+            continue
+        if name.startswith(("docs/", "_working/", "_stage-amz-control/", "tools/", "evals/", "tests/")):
+            continue
+        if "/" not in name and name.endswith(".md"):
+            continue
+        return True  # 新的构建/发布输入尚未分类，不能误按证据-only 放行。
+    return False
+
+
+def changed_paths(base: str, head: str) -> list[str]:
+    """只接受完整提交 SHA，读取新增/删除/重命名两端；坏基线不能变成空变更。"""
+    if any(not re.fullmatch(r"(?:[0-9a-fA-F]{40}|[0-9a-fA-F]{64})", value) for value in (base, head)):
+        raise SelectInputError("--base/--head 必须是可读取的完整提交 SHA")
+    result = subprocess.run(["git", "diff", "--name-only", "--no-renames", "-z", base, head, "--"],
+                            cwd=ROOT, capture_output=True)
+    if result.returncode:
+        raise SelectInputError("Git 差量基线不可读取：" + result.stderr.decode("utf-8", "replace").strip())
+    return [name for name in result.stdout.decode("utf-8").split("\0") if name]
 
 
 def load_commands(workflow: Path) -> list[tuple[str, list[str]]]:
@@ -161,19 +208,15 @@ def load_commands(workflow: Path) -> list[tuple[str, list[str]]]:
         commands = ci_commands(workflow)
     except OSError as error:
         raise SelectInputError(f"命令清单权威读不到：{workflow}（{type(error).__name__}: {error}）") from error
-    except (ValueError, KeyError, TypeError) as error:
+    except (ValueError, KeyError, TypeError, yaml.YAMLError) as error:
         raise SelectInputError(f"命令清单权威解析失败：{workflow}（{type(error).__name__}: {error}）") from error
     if not commands:
         raise SelectInputError(f"命令清单为空：{workflow} 的 verify job 里没有可执行命令 —— 空集合不是通过")
     return commands
 
 
-def load_restricted(registry: Path) -> set[tuple[str, tuple[str, ...]]]:
-    """读分类登记并校验形状，返回 (入口, args) 的受限模式集合。
-
-    登记坏掉时受限集合会静默为空，付费/远程模式于是被当成普通模式执行 ——
-    所以这里宁可明确失败，也不返回一个「看起来正常」的空集合。
-    """
+def load_modes(registry: Path) -> dict[tuple[str, tuple[str, ...]], tuple[str, bool]]:
+    """读取精确模式与批准状态；未知模式不能按「非受限」放行。"""
     try:
         document = json.loads(registry.read_text(encoding="utf-8"))
     except OSError as error:
@@ -185,21 +228,27 @@ def load_restricted(registry: Path) -> set[tuple[str, tuple[str, ...]]]:
     entries = document.get("entrypoints")
     if not isinstance(entries, dict) or not entries:
         raise SelectInputError(f"分类登记没有 entrypoints：{registry}")
-    restricted: set[tuple[str, tuple[str, ...]]] = set()
+    modes_by_identity: dict[tuple[str, tuple[str, ...]], tuple[str, bool]] = {}
     for entrypoint, modes in entries.items():
         if not isinstance(modes, list) or not modes:
             raise SelectInputError(f"分类登记里入口没有模式：{entrypoint}")
         for mode in modes:
             if not isinstance(mode, dict):
                 raise SelectInputError(f"分类登记里模式不是对象：{entrypoint}")
-            args, category = mode.get("args"), mode.get("category")
+            args, category, ci = mode.get("args"), mode.get("category"), mode.get("ci")
             if not isinstance(args, list) or any(not isinstance(arg, str) for arg in args):
                 raise SelectInputError(f"分类登记里模式 args 不是字符串列表：{entrypoint}")
-            if category not in CATEGORIES:
+            if not isinstance(category, str) or category not in CATEGORIES:
                 raise SelectInputError(f"分类登记里模式分类取值非法：{entrypoint} category={category!r}")
-            if category in RESTRICTED_CATEGORIES:
-                restricted.add((entrypoint, tuple(args)))
-    return restricted
+            if not isinstance(ci, bool):
+                raise SelectInputError(f"分类登记里模式 ci 不是布尔值：{entrypoint}")
+            identity = (entrypoint, tuple(args))
+            if identity in modes_by_identity:
+                raise SelectInputError(f"分类登记里精确模式重复：{identity}")
+            if ci and category in RESTRICTED_CATEGORIES:
+                raise SelectInputError(f"受限模式不得批准进入 CI：{identity}")
+            modes_by_identity[identity] = (category, ci)
+    return modes_by_identity
 
 
 def unparsed_verify_commands(workflow: Path, commands: list[tuple[str, list[str]]]) -> list[str]:
@@ -216,7 +265,7 @@ def unparsed_verify_commands(workflow: Path, commands: list[tuple[str, list[str]
     try:
         document = yaml.safe_load(workflow.read_text(encoding="utf-8"))
         steps = document["jobs"]["verify"]["steps"]
-    except (OSError, ValueError, KeyError, TypeError) as error:
+    except (OSError, ValueError, KeyError, TypeError, yaml.YAMLError) as error:
         raise SelectInputError(f"命令清单权威解析失败：{workflow}（{type(error).__name__}: {error}）") from error
     for step in steps:
         for raw in str(step.get("run", "")).splitlines():
@@ -237,13 +286,22 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("paths", nargs="*", help="变更路径（为空则走完整集合）")
     ap.add_argument("--run", action="store_true", help="实际执行所选命令，首个失败即停")
     ap.add_argument("--emit-github", action="store_true", help="输出 GitHub 可读的选择结果")
+    ap.add_argument("--base", help="差量起点完整提交 SHA（与 --head 配对）")
+    ap.add_argument("--head", help="差量终点完整提交 SHA")
+    ap.add_argument("--github-output", type=Path, help="写入 GitHub job outputs（不执行检查）")
     ap.add_argument("--workflow", type=Path, default=WORKFLOW, help="命令清单权威（反例/烟测可换成夹具）")
     ap.add_argument("--registry", type=Path, default=REGISTRY, help="分类登记（反例/烟测可换成夹具）")
     args = ap.parse_args(argv)
 
     try:
+        if bool(args.base) != bool(args.head) or args.base and args.paths:
+            raise SelectInputError("--base/--head 必须配对，且不能同时指定 paths")
+        paths = changed_paths(args.base, args.head) if args.base else args.paths
+        paths = [path.replace("\\", "/").removeprefix("./") for path in paths]
+        if any(not path or path.startswith("/") or ".." in Path(path).parts or ":" in path for path in paths):
+            raise SelectInputError("变更路径必须是仓库相对路径")
         commands = load_commands(args.workflow)
-        restricted = load_restricted(args.registry)
+        modes = load_modes(args.registry)
         flagged = unparsed_verify_commands(args.workflow, commands)
     except SelectInputError as error:
         print(f"[FAIL] SELECT-INPUT {error}")
@@ -254,6 +312,17 @@ def main(argv: list[str] | None = None) -> int:
             print(f"       {line}")
         print("       先扩展命令解析器与登记，再选择 —— 静默跳过新命令等于少跑还判绿。")
         return INPUT_EXIT
+    unapproved = [
+        (script, extra) for script, extra in commands
+        if (script, tuple(extra)) not in modes
+        or (modes[(script, tuple(extra))][0] not in RESTRICTED_CATEGORIES
+            and not modes[(script, tuple(extra))][1])
+    ]
+    if unapproved or len({(script, tuple(extra)) for script, extra in commands}) != len(commands):
+        print(f"[FAIL] SELECT-INPUT 命令清单有未登记/未批准的精确模式或重复项：{unapproved}")
+        return INPUT_EXIT
+    restricted = {identity for identity, (category, _ci) in modes.items()
+                  if category in RESTRICTED_CATEGORIES}
 
     full = [(script, extra) for script, extra in commands
             if (script, tuple(extra)) not in restricted]
@@ -261,13 +330,18 @@ def main(argv: list[str] | None = None) -> int:
         print("[FAIL] SELECT-INPUT 完整离线集合为空（命令清单里全是受限模式）—— 不静默判绿。")
         return INPUT_EXIT
 
-    wanted, reason = classify(args.paths)
+    try:
+        wanted, reason = classify(paths, {script for script, _ in full}, {script for script, _ in modes})
+    except SelectInputError as error:
+        print(f"[FAIL] SELECT-INPUT {error}")
+        return INPUT_EXIT
+    if args.base and not paths:
+        wanted, reason = DOCS, "已核对差量为空：仅必要管理检查"
+    if wanted and any(script.startswith("tools/verify_v2") for script in wanted):
+        wanted |= FRONTEND
+    if "npm:test:domain" in wanted:
+        wanted |= FRONTEND
     selected = full if not wanted else [item for item in full if item[0] in wanted]
-    # 防呆：选择器永远不允许输出空集合；分类失败/无命中时回到完整集合。
-    if not selected:
-        selected = full
-        if wanted:
-            reason += "；所选集合为空，已回退到完整离线集合"
     # 选择名在当前命令清单里找不到时，必须显式说出来（重命名/退出 CI 后不能静默少跑）。
     unresolved = sorted(wanted - {script for script, _ in full})
     if unresolved:
@@ -276,15 +350,24 @@ def main(argv: list[str] | None = None) -> int:
               .encode("utf-8", "replace").decode("utf-8"))
         return INPUT_EXIT
 
-    if args.emit_github:
-        print(json.dumps({
-            "reason": reason,
-            "selected": [f"{script} {' '.join(extra)}".strip() for script, extra in selected],
-            "full_count": len(full),
-            "selected_count": len(selected),
-            "unresolved": unresolved,
-            "input_ok": True,
-        }, ensure_ascii=False))
+    if not selected:
+        print("[FAIL] SELECT-INPUT 没有适用命令，空集合不是通过")
+        return INPUT_EXIT
+    payload = {
+        "reason": reason,
+        "selected": [f"{script} {' '.join(extra)}".strip() for script, extra in selected],
+        "full_count": len(full), "selected_count": len(selected),
+        "unresolved": unresolved, "input_ok": True,
+        "frontend": any(script.startswith("npm:") for script, _ in selected),
+        "browser": any(script.startswith("tools/verify_v2") for script, _ in selected),
+        "container": container_affected(paths) if args.base or paths else True,
+    }
+    if args.github_output:
+        with args.github_output.open("a", encoding="utf-8", newline="\n") as output:
+            for name in ("selected", "frontend", "browser", "container"):
+                output.write(f"{name}={json.dumps(payload[name], ensure_ascii=False)}\n")
+    if args.emit_github or args.github_output:
+        print(json.dumps(payload, ensure_ascii=False))
         return 0
     print(f"选择理由：{reason}".encode("utf-8", "replace").decode("utf-8"))
     print(f"完整离线集合 {len(full)} 条，本次选择 {len(selected)} 条"

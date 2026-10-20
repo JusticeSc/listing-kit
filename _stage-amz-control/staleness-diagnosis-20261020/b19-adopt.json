@@ -1,0 +1,218 @@
+{
+  "profile": "C:\\Users\\31368\\AppData\\Local\\Temp\\b19-refresh-9t4p6dsx",
+  "adoptions": [
+    {
+      "shot": "shot_infographic_benefits",
+      "newest": {
+        "id": "act-893b00e5ab0a4679b026d4aac1a70ca8",
+        "version": 8,
+        "selected": "true",
+        "adopted": false
+      },
+      "before": [
+        {
+          "id": "act-893b00e5ab0a4679b026d4aac1a70ca8",
+          "version": 8,
+          "selected": "true",
+          "adopted": false
+        },
+        {
+          "id": "act-490a5961ab94432e8bb84cd0fbd2b4b1",
+          "version": 7,
+          "selected": "false",
+          "adopted": true
+        },
+        {
+          "id": "act-2a9a72f046274e078a68b18af966fe9c",
+          "version": 6,
+          "selected": "false",
+          "adopted": false
+        },
+        {
+          "id": "act-56cfb30357904351bf337165f618fa48",
+          "version": 5,
+          "selected": "false",
+          "adopted": false
+        },
+        {
+          "id": "act-6565ebe17c144ab1b8c52af264aa3da2",
+          "version": 4,
+          "selected": "false",
+          "adopted": false
+        },
+        {
+          "id": "act-06ab48061f424efdb97cd87f4a3d504a",
+          "version": 3,
+          "selected": "false",
+          "adopted": false
+        },
+        {
+          "id": "act-0f1fc5d882694cc3b7ed8d025a49a987",
+          "version": 2,
+          "selected": "false",
+          "adopted": false
+        },
+        {
+          "id": "act-33e59858814144f592a89e8af72a5320",
+          "version": 1,
+          "selected": "false",
+          "adopted": false
+        }
+      ],
+      "after": [
+        {
+          "id": "act-893b00e5ab0a4679b026d4aac1a70ca8",
+          "version": 8,
+          "selected": "true",
+          "adopted": true
+        },
+        {
+          "id": "act-490a5961ab94432e8bb84cd0fbd2b4b1",
+          "version": 7,
+          "selected": "false",
+          "adopted": false
+        },
+        {
+          "id": "act-2a9a72f046274e078a68b18af966fe9c",
+          "version": 6,
+          "selected": "false",
+          "adopted": false
+        },
+        {
+          "id": "act-56cfb30357904351bf337165f618fa48",
+          "version": 5,
+          "selected": "false",
+          "adopted": false
+        },
+        {
+          "id": "act-6565ebe17c144ab1b8c52af264aa3da2",
+          "version": 4,
+          "selected": "false",
+          "adopted": false
+        },
+        {
+          "id": "act-06ab48061f424efdb97cd87f4a3d504a",
+          "version": 3,
+          "selected": "false",
+          "adopted": false
+        },
+        {
+          "id": "act-0f1fc5d882694cc3b7ed8d025a49a987",
+          "version": 2,
+          "selected": "false",
+          "adopted": false
+        },
+        {
+          "id": "act-33e59858814144f592a89e8af72a5320",
+          "version": 1,
+          "selected": "false",
+          "adopted": false
+        }
+      ],
+      "row": {
+        "attempt": "succeeded",
+        "selection": "current"
+      },
+      "shots_listed": [
+        "shot_main_clean",
+        "shot_infographic_benefits",
+        "shot_scene_lifestyle",
+        "shot_detail_material",
+        "shot_size_dimensions"
+      ]
+    },
+    {
+      "shot": "shot_detail_material",
+      "newest": {
+        "id": "act-021de106771a476681ffd399565d4ab0",
+        "version": 3,
+        "selected": "true",
+        "adopted": false
+      },
+      "before": [
+        {
+          "id": "act-021de106771a476681ffd399565d4ab0",
+          "version": 3,
+          "selected": "true",
+          "adopted": false
+        },
+        {
+          "id": "act-e03c2644480d449182a7f0001cc1a8be",
+          "version": 2,
+          "selected": "false",
+          "adopted": true
+        },
+        {
+          "id": "act-e07d68870dbe4262be3310f181b68fd6",
+          "version": 1,
+          "selected": "false",
+          "adopted": false
+        }
+      ],
+      "after": [
+        {
+          "id": "act-021de106771a476681ffd399565d4ab0",
+          "version": 3,
+          "selected": "true",
+          "adopted": true
+        },
+        {
+          "id": "act-e03c2644480d449182a7f0001cc1a8be",
+          "version": 2,
+          "selected": "false",
+          "adopted": false
+        },
+        {
+          "id": "act-e07d68870dbe4262be3310f181b68fd6",
+          "version": 1,
+          "selected": "false",
+          "adopted": false
+        }
+      ],
+      "row": {
+        "attempt": "succeeded",
+        "selection": "current"
+      },
+      "shots_listed": [
+        "shot_main_clean",
+        "shot_infographic_benefits",
+        "shot_scene_lifestyle",
+        "shot_detail_material",
+        "shot_size_dimensions"
+      ]
+    }
+  ],
+  "gate_rows": [
+    {
+      "shot": "shot_main_clean",
+      "state": "current",
+      "text": "主图·干净背景\n          已采用\n          必需图"
+    },
+    {
+      "shot": "shot_infographic_benefits",
+      "state": "current",
+      "text": "卖点信息图\n          已采用\n          可选图"
+    },
+    {
+      "shot": "shot_scene_lifestyle",
+      "state": "current",
+      "text": "场景图·使用中\n          已采用\n          可选图"
+    },
+    {
+      "shot": "shot_detail_material",
+      "state": "current",
+      "text": "细节图·材质工艺\n          已采用\n          可选图"
+    },
+    {
+      "shot": "shot_size_dimensions",
+      "state": "current",
+      "text": "尺寸图\n          已采用\n          可选图"
+    }
+  ],
+  "suite_status": "整套检查已过期：选择或输入在报告之后发生了变化，请回交付阶段的整套检查重新运行。上一版：整套检查 v2.5.5：阻断 0 · 高风险 0 · 提醒 0 · 未知 0 · 视觉复核未运行（可选）",
+  "findings": "没有需要人工处理的整套发现。\n\n另 10 项确定性检查通过（细节在候选审核清单里）。",
+  "export_enabled": false,
+  "exports": {
+    "b19-project-final.zip": 39532273
+  }
+}

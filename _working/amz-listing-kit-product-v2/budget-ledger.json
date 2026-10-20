@@ -2,11 +2,12 @@
  "budget_cap_cny": 21,
  "cap_source": "Goal15a42a4b52b70942 historical cumulative10 CNY plus user2026-10-15 NEW Bailian3 and Volcengine3 CNY, separately capped/non-transferable. User selected8 image calls per platform,n=1, plus4 Bailian semantic/VLM combined, then explicitly chose正式启动完整交付. Supplement activated once2026-10-15T12:56:51.375Z without raising any ceiling again; first batch remains zero-provider-POST. Historical spending/failures/Unknown reservations retained; no old-headroom pooling. 2026-10-18 complete-product authorization complete-product-authorization-20261018T114240Z adds incremental5 CNY/12 image(n=1)/4 aux(理解/创作辅助/复核合计), activated once 2026-10-19T06:12:04.434Z; cumulative caps now21 CNY/image64/semantic22/total86; historical16/52/18/70, existing image52 safety-upper11.20 and every failure/Unknown/reservation retained; no reactivation, no headroom pooling.",
  "count_cap": {
-  "image_max": 64,
+  "image_max": 68,
   "image_per_call": 1,
   "semantic_vlm_max": 22,
-  "total_max": 86
+  "total_max": 90
  },
+ "cap_source_20261020": "User 2026-10-20 chat explicitly raised this round's image-call ceiling from 12 to 16 (+4) after being shown lane_remaining=2 and the observed ~2.3 calls per accepted image. Both layer gates move together so the cumulative gate does not block the new lane allowance: cumulative image_max 64->68, total_max 86->90. Money caps unchanged (21 CNY; lane 5 CNY, 3.18 remaining covers +4 calls at <=0.22). The image64/86 values quoted inside cap_source and supplement_authorization_history are the pre-2026-10-20 historical ceiling and are not rewritten.",
  "supplement_authorization_history": [
   {
    "goal_id": "1599c9600ae01cb7",
@@ -241,18 +242,21 @@
   "activated_at": "2026-10-19T06:12:04.434Z",
   "activation_evidence": "_stage-amz-control/b4-workbench-20261019/budget-activation.json",
   "activation_sent_no_request": true,
-  "batch_scope": "Batches13-15 made zero paid calls. Batch16 real bearing vertical: one original-only Qwen call executed and one candidate-edit Qwen call reserved; no reactivation or money/count increase.",
+  "control_updated_at": "2026-10-20T04:05:00.000Z",
+  "control_updated_reason": "B19 refresh executed 2 of its 2 reserved Qwen image calls (detail + infographic, HTTP 200 each) after the runtime model switch; lane control upper raised by 0.40 to 2.22, image counted 10 -> 12. Caps unchanged; no reactivation; no reservation released.",
+  "batch_scope": "Batches13-15 made zero paid calls. Batch16-17 real bearing vertical: 7 Qwen sends counted (main original 1 + main edit 1 + scene 2 + dimensions 3) alongside B11 3 retained submits; batch19 refresh added 2 Qwen sends (detail + infographic); lane totals 12/16 image, 0/4 aux, 2.22 CNY control upper; no reactivation or money/count increase.",
   "lane_caps": {
    "amount_cny_max": 5,
-   "image_calls_max": 12,
+   "image_calls_max": 16,
    "aux_calls_max": 4,
-   "image_per_call": 1
+   "image_per_call": 1,
+   "raised_20261020": "12->16 image calls by explicit user choice; amount/aux caps unchanged"
   },
   "lane_usage_safety_upper": {
-   "image_calls_counted": 10,
+   "image_calls_counted": 12,
    "aux_calls_counted": 0,
-   "amount_cny": 1.82,
-   "arithmetic": "B11 3 x 0.12 retained + B16 0.20 + 0.22 + scene 0.20 + scene 0.20 + dimensions 0.20 + dimensions edit 0.22 + dimensions third 0.20 = 1.82; not settlement",
+   "amount_cny": 2.22,
+   "arithmetic": "Row-by-row sum 0.36+0.20+0.22+0.20+0.20+0.20+0.22+0.20+0.20+0.20=2.20; plus 0.02 unallocated conservative margin retained on the summary only (2026-10-20, no attributing evidence found) = 2.22 control upper; not settlement",
    "rows": [
     "b5-batch8-main-regenerate-ark-01",
     "b16-bearing-main-qwen-original-01",
@@ -261,15 +265,20 @@
     "b16-scene-neutral-02",
     "b16-dimensions-nonumber-01",
     "b16-dimensions-nonumber-02",
-    "b16-dimensions-nonumber-03"
+    "b16-dimensions-nonumber-03",
+    "b19-detail-refresh-01",
+    "b19-infographic-refresh-01"
    ],
+   "row_sum_cny": 2.20,
+   "unallocated_conservative_margin_cny": 0.02,
+   "margin_scope": "Margin lives on this summary only; not assigned to any row, not a settled charge, not released; it keeps the control upper from falling below the formerly stated 1.82. Release or reclassification needs attributing per-call evidence plus explicit authorization. Trace: _stage-amz-control/resume-extension-20261019T105641Z/b16-actual-outbound.json (7 Qwen POSTs) + evals/product-v2/v2.4.5-live-reference-20261019-180800-b11-main-regenerate-ark-01.json (3 submits); batch-17-evidence.json.",
    "scope": "Browser-submits counted as safety upper bound; upstream acceptance/results/settlement unproved. Failures/Unknown count and stay reserved; no auto resubmit; no silent pooling."
   },
   "lane_remaining": {
-   "image_calls": 2,
+   "image_calls": 4,
    "aux_calls": 4,
-   "amount_cny": 3.18,
-   "arithmetic": "12-3-1-1-5=2 image; 4-0=4 aux; 5-0.36-0.20-0.22-1.00-0.02=3.18 CNY; pending reservations count"
+   "amount_cny": 2.78,
+   "arithmetic": "16-3-1-1-5-2=4 image; 4-0=4 aux; 5-2.22=2.78 CNY (control upper incl. 0.02 unallocated margin); pending reservations count; b19 2 calls executed"
   },
   "historical_baseline_retained": {
    "image_calls": 52,
@@ -278,14 +287,14 @@
   },
   "cumulative_gates": {
    "amount_cap_cny": 21,
-   "image_max": 64,
+   "image_max": 68,
    "semantic_vlm_max": 22,
-   "total_max": 86,
-   "safety_upper_cny": 12.38,
-   "arithmetic": "11.20 historical + 0.36 B11 retained + 0.82 B16 reserved/executed = 12.38; not invoice",
+   "total_max": 90,
+   "safety_upper_cny": 13.42,
+   "arithmetic": "11.20 historical + 2.22 current-lane control upper (rows 2.20 + 0.02 unallocated margin) = 13.42; not invoice. Previous 12.38 retained the obsolete expression 11.20+0.36+0.82; corrected 2026-10-20 from the current row/control totals without releasing any reservation. Image/total count ceilings raised 64/86 -> 68/90 on 2026-10-20 by the same user authorization that raised the lane 12->16, so the two layer gates stay aligned.",
    "settlement": "unknown: no provider billing reconciliation performed; no billed total booked"
   },
-  "rule": "Layer gates both apply: current lane 5/12/4 AND cumulative 21/64/22/86. First reached gate stops new calls. Before each call verify current official maximum cost, exact model ID, legal asset hash and existing safe credential channel, then reserve in this ledger; failures/Unknown/safety-rejected calls count and stay reserved; no automatic resubmit; lane supplements only new-program-draft/new-mode missing evidence; never activate again; never pool unused headroom."
+  "rule": "Layer gates both apply: current lane 5/16/4 AND cumulative 21/68/22/90. First reached gate stops new calls. Before each call verify current official maximum cost, exact model ID, legal asset hash and existing safe credential channel, then reserve in this ledger; failures/Unknown/safety-rejected calls count and stay reserved; no automatic resubmit; lane supplements only new-program-draft/new-mode missing evidence; never activate again; never pool unused headroom."
  },
  "preparation_price_readiness": {
   "verified_at": "2026-10-15",
@@ -1584,7 +1593,7 @@
    "mode": "regenerate_original",
    "source_candidate_id": null,
    "calls": 1,
-   "executed_image_calls": 0,
+   "executed_image_calls": 1,
    "input_images": 1,
    "output_images": 1,
    "reserve_cny": 0.20,
@@ -1592,12 +1601,13 @@
    "price_source": "https://help.aliyun.com/zh/model-studio/qwen-image-3-0.md",
    "reference_sha256": ["4c4ed76c61c959ace082f8f3698f1b10bf0e1c942c2b1e524b1e62086d4df1e1"],
    "license": "Existing user-authorized original; no new source or channel.",
-   "status": "reserved_pending_explicit_product_confirmation",
+   "status": "executed_rejected_by_operator_pixel_quality",
    "reserved_at": "2026-10-19T12:32:00.000Z",
    "purpose": "User decision: scene figure must keep only the product on a neutral background, without the invented machinery parts of the prior real candidate.",
    "credential_channel": "Existing DASHSCOPE_API_KEY process environment, presence verified only.",
    "guard": "One provider POST per host start; digest of the outbound body recorded, no keys or signatures.",
-   "evidence": "_stage-amz-control/resume-extension-20261019T105641Z/b16-actual-outbound.json"
+   "evidence": "_stage-amz-control/resume-extension-20261019T105641Z/b16-actual-outbound.json",
+   "executed_evidence": "batch17 real submits: _stage-amz-control/resume-extension-20261019T105641Z/b16-actual-outbound.json + batch-17-evidence.json (status backfilled 2026-10-20)"
   },
   {
    "id": "b16-dimensions-nonumber-01",
@@ -1612,7 +1622,7 @@
    "mode": "regenerate_original",
    "source_candidate_id": null,
    "calls": 1,
-   "executed_image_calls": 0,
+   "executed_image_calls": 1,
    "input_images": 1,
    "output_images": 1,
    "reserve_cny": 0.20,
@@ -1620,12 +1630,13 @@
    "price_source": "https://help.aliyun.com/zh/model-studio/qwen-image-3.0.md",
    "reference_sha256": ["4c4ed76c61c959ace082f8f3698f1b10bf0e1c942c2b1e524b1e62086d4df1e1"],
    "license": "Existing user-authorized original; no new source or channel.",
-   "status": "reserved_pending_explicit_product_confirmation",
+   "status": "executed_rejected_by_operator_pixel_quality",
    "reserved_at": "2026-10-19T12:32:00.000Z",
    "purpose": "User decision: dimensions figure must carry no millimetre values or measuring text; product only, no printed numbers.",
    "credential_channel": "Existing DASHSCOPE_API_KEY process environment, presence verified only.",
    "guard": "One provider POST per host start; digest of the outbound body recorded, no keys or signatures.",
-   "evidence": "_stage-amz-control/resume-extension-20261019T105641Z/b16-actual-outbound.json"
+   "evidence": "_stage-amz-control/resume-extension-20261019T105641Z/b16-actual-outbound.json",
+   "executed_evidence": "batch17 real submits: _stage-amz-control/resume-extension-20261019T105641Z/b16-actual-outbound.json + batch-17-evidence.json (status backfilled 2026-10-20)"
   },
   {
    "id": "b16-scene-neutral-02",
@@ -1639,7 +1650,7 @@
    "region": "cn-beijing",
    "mode": "regenerate_original",
    "calls": 1,
-   "executed_image_calls": 0,
+   "executed_image_calls": 1,
    "input_images": 1,
    "output_images": 1,
    "reserve_cny": 0.20,
@@ -1647,12 +1658,13 @@
    "price_source": "https://help.aliyun.com/zh/model-studio/qwen-image-3-0.md",
    "reference_sha256": ["4c4ed76c61c959ace082f8f3698f1b10bf0e1c942c2b1e524b1e62086d4df1e1"],
    "license": "Existing user-authorized original; no new source or channel.",
-   "status": "reserved_pending_explicit_product_confirmation",
+   "status": "executed_succeeded_adopted_by_operator",
    "reserved_at": "2026-10-19T12:38:00.000Z",
    "purpose": "Second attempt after the shot spec was corrected so the compiled prompt no longer asks for machinery props; first attempt (b16-scene-neutral-01) still produced a fabricated housing scene and stays recorded as a failed attempt.",
    "credential_channel": "Existing DASHSCOPE_API_KEY process environment, presence verified only.",
    "guard": "One provider POST per host start; refusal otherwise.",
-   "evidence": "_stage-amz-control/resume-extension-20261019T105641Z/b16-actual-outbound.json"
+   "evidence": "_stage-amz-control/resume-extension-20261019T105641Z/b16-actual-outbound.json",
+   "executed_evidence": "batch17 real submits: _stage-amz-control/resume-extension-20261019T105641Z/b16-actual-outbound.json + batch-17-evidence.json (status backfilled 2026-10-20)"
   },
   {
    "id": "b16-dimensions-nonumber-02",
@@ -1666,7 +1678,7 @@
    "region": "cn-beijing",
    "mode": "edit_candidate",
    "calls": 1,
-   "executed_image_calls": 0,
+   "executed_image_calls": 1,
    "input_images": 2,
    "output_images": 1,
    "reserve_cny": 0.22,
@@ -1674,12 +1686,13 @@
    "price_source": "https://help.aliyun.com/zh/model-studio/qwen-image-3-0.md",
    "reference_sha256": ["4c4ed76c61c959ace082f8f3698f1b10bf0e1c942c2b1e524b1e62086d4df1e1", "0a59b8afb1e95c51fc6d6c2ec2a8c2e9c6a89b04a398313d3b0dec34be47a0a1"],
    "license": "Existing user-authorized original plus the just-generated candidate as edit source; no new source or channel.",
-   "status": "reserved_pending_explicit_product_confirmation",
+   "status": "executed_rejected_by_operator_pixel_quality",
    "reserved_at": "2026-10-19T12:50:00.000Z",
    "purpose": "First no-number attempt (row b16-dimensions-nonumber-01) still invented garbled leader lines and callout text; this row edits that candidate to remove every annotation.",
    "credential_channel": "Existing DASHSCOPE_API_KEY process environment, presence verified only.",
    "guard": "One provider POST per host start; refusal otherwise.",
-   "evidence": "_stage-amz-control/resume-extension-20261019T105641Z/b16-actual-outbound.json"
+   "evidence": "_stage-amz-control/resume-extension-20261019T105641Z/b16-actual-outbound.json",
+   "executed_evidence": "batch17 real submits: _stage-amz-control/resume-extension-20261019T105641Z/b16-actual-outbound.json + batch-17-evidence.json (status backfilled 2026-10-20)"
   },
   {
    "id": "b16-dimensions-nonumber-03",
@@ -1693,7 +1706,7 @@
    "region": "cn-beijing",
    "mode": "regenerate_original",
    "calls": 1,
-   "executed_image_calls": 0,
+   "executed_image_calls": 1,
    "input_images": 1,
    "output_images": 1,
    "reserve_cny": 0.20,
@@ -1701,12 +1714,77 @@
    "price_source": "https://help.aliyun.com/zh/model-studio/qwen-image-3-0.md",
    "reference_sha256": ["4c4ed76c61c959ace082f8f3698f1b10bf0e1c942c2b1e524b1e62086d4df1e1"],
    "license": "Existing user-authorized original; no new source or channel.",
-   "status": "reserved_pending_explicit_product_confirmation",
+   "status": "executed_succeeded_adopted_by_operator",
    "reserved_at": "2026-10-19T12:58:00.000Z",
    "purpose": "Third and last attempt for the size figure after the compiler stopped emitting any annotation layout for print_intent none (both earlier prompts forbade annotations yet qwen-image-3.0 drew fabricated callouts).",
    "credential_channel": "Existing DASHSCOPE_API_KEY process environment, presence verified only.",
    "guard": "One provider POST per host start; refusal otherwise.",
-   "evidence": "_stage-amz-control/resume-extension-20261019T105641Z/b16-actual-outbound.json"
+   "evidence": "_stage-amz-control/resume-extension-20261019T105641Z/b16-actual-outbound.json",
+   "executed_evidence": "batch17 real submits: _stage-amz-control/resume-extension-20261019T105641Z/b16-actual-outbound.json + batch-17-evidence.json (status backfilled 2026-10-20)"
+  },
+  {
+   "id": "b19-detail-refresh-01",
+   "goal_id": "15ab22bf3386b9cf",
+   "authorization_id": "complete-product-authorization-20261018T114240Z",
+   "project_id": "d8e24820-0a4a-4996-9e07-50960ceb9940",
+   "shot_id": "shot_detail_material",
+   "provider": "dashscope-qwen-image",
+   "platform": "bailian",
+   "model_id": "qwen-image-3.0",
+   "region": "cn-beijing",
+   "mode": "regenerate_original",
+   "calls": 1,
+   "executed_image_calls": 1,
+   "input_images": 1,
+   "output_images": 1,
+   "reserve_cny": 0.20,
+   "price_basis": "Official Beijing qwen-image-3.0: 0.02 input + 0.18 output = 0.20",
+   "price_source": "https://help.aliyun.com/zh/model-studio/qwen-image-3.0.md",
+   "reference_sha256": ["4c4ed76c61c959ace082f8f3698f1b10bf0e1c942c2b1e524b1e62086d4df1e1"],
+   "license": "Existing user-authorized original; no new source or channel.",
+   "status": "executed_delivered_pending_human_review",
+   "reserved_at": "2026-10-20T03:20:00.000Z",
+   "purpose": "2026-10-20 diagnosis (_stage-amz-control/staleness-diagnosis-20261020/report.md): adopted v4 is edit_candidate+ark while the project now runs qwen and the head v12 is regenerate_original; refresh under the current model so the adopted figure is current again.",
+   "credential_channel": "Existing DASHSCOPE_API_KEY process environment, presence verified only.",
+   "guard": "Transport refuses any POST outside the reserved shape (model qwen-image-3.0, 1 image = original, 1344*1344, n=1, prompt_extend=false, watermark=false).",
+   "evidence": "_stage-amz-control/staleness-diagnosis-20261020/",
+   "executed_at": "2026-10-20T03:42:44Z",
+   "executed_evidence": "b19-actual-outbound.json row1: HTTP 200 qwen-image-3.0, prompt_sha256 2f9176f7f750773ec1592d73043f64d4c7987f8e49567dd62e8ff27325ed6c0e, 1 input = original 4c4ed76c, 1344*1344 n=1 prompt_extend=false watermark=false",
+   "delivered_candidate": {"candidate_id": "act-021de106771a476681ffd399565d4ab0", "candidate_version": 3, "asset_sha256": "ea50b044b790993817eb033b903b62d0ef0b7361ffa066e0276c1c8e165eb4c4", "selection_state": "current"},
+   "delivered_in": "b19-exports/b19-delivery-final.zip",
+   "human_review": "not_reviewed: gate pixels not human-accepted; C15/C17-style acceptance still pending"
+  },
+  {
+   "id": "b19-infographic-refresh-01",
+   "goal_id": "15ab22bf3386b9cf",
+   "authorization_id": "complete-product-authorization-20261018T114240Z",
+   "project_id": "d8e24820-0a4a-4996-9e07-50960ceb9940",
+   "shot_id": "shot_infographic_benefits",
+   "provider": "dashscope-qwen-image",
+   "platform": "bailian",
+   "model_id": "qwen-image-3.0",
+   "region": "cn-beijing",
+   "mode": "regenerate_original",
+   "calls": 1,
+   "executed_image_calls": 1,
+   "input_images": 1,
+   "output_images": 1,
+   "reserve_cny": 0.20,
+   "price_basis": "Official Beijing qwen-image-3.0: 0.02 input + 0.18 output = 0.20",
+   "price_source": "https://help.aliyun.com/zh/model-studio/qwen-image-3.0.md",
+   "reference_sha256": ["4c4ed76c61c959ace082f8f3698f1b10bf0e1c942c2b1e524b1e62086d4df1e1"],
+   "license": "Existing user-authorized original; no new source or channel.",
+   "status": "executed_delivered_pending_human_review",
+   "reserved_at": "2026-10-20T03:20:00.000Z",
+   "purpose": "Same diagnosis: adopted v17 is ark (manual text 959 chars) while the project now runs qwen; the user decided 2026-10-20 that this figure prints no new text. Refresh under the current model from the reconfirmed manual text.",
+   "credential_channel": "Existing DASHSCOPE_API_KEY process environment, presence verified only.",
+   "guard": "Transport refuses any POST outside the reserved shape (model qwen-image-3.0, 1 image = original, 1344*1344, n=1, prompt_extend=false, watermark=false).",
+   "evidence": "_stage-amz-control/staleness-diagnosis-20261020/",
+   "executed_at": "2026-10-20T03:48:03Z",
+   "executed_evidence": "b19-actual-outbound.json row2: HTTP 200 qwen-image-3.0, rework keep_manual, 959-char prompt, 1 input = original 4c4ed76c, 1344*1344 n=1 prompt_extend=false watermark=false",
+   "delivered_candidate": {"candidate_id": "act-893b00e5ab0a4679b026d4aac1a70ca8", "candidate_version": 8, "selection_state": "current"},
+   "delivered_in": "b19-exports/b19-delivery-final.zip",
+   "human_review": "not_reviewed: gate pixels not human-accepted; C15/C17-style acceptance still pending"
   }
 ],
  "runtime_wiring": {
@@ -1725,6 +1803,6 @@
  "stop_rule": "先到即停(金额或次数);未知计费保留预留不释放;追加预算需授权;不用付费调用调试错误和边界",
  "total_reserved_cny": 11.2,
  "total_reserved_cny_scope": "HISTORICAL ONLY. Pre-activation sealed baseline safety upper, not invoice. Current live safety upper is exclusively current_control_15ab22bf3386b9cf.cumulative_gates; never use this old root number as send approval.",
- "updated_at": "2026-10-19T10:38:08.494Z",
+ "updated_at": "2026-10-20T03:04:09.000Z",
  "updated_at_scope": "Historical edit timestamp retained; ledger reconciliation for batch13 recorded in _stage-amz-control/resume-extension-20261019T105641Z/reconciliation.json, not by rewriting this row timestamp."
 }

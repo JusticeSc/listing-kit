@@ -26,35 +26,39 @@ jobs:
   changes:
     name: Classify changed paths
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 15
     outputs:
-      docs-only: ${{ steps.filter.outputs.docs-only }}
+      selected: ${{ steps.filter.outputs.selected }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+      browser: ${{ steps.filter.outputs.browser }}
+      container: ${{ steps.filter.outputs.container }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
-      - name: Classify changed paths
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - name: Install locked selection dependencies
+        run: |
+          python -m pip install uv==0.9.18
+          uv sync --locked
+      - name: Select affected checks and release closure
         id: filter
         shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
         run: |
           set -Eeuo pipefail
-          if [ "${{ github.event_name }}" != "pull_request" ]; then
-            echo "docs-only=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          base="${{ github.event.pull_request.base.sha }}"
-          head="${{ github.event.pull_request.head.sha }}"
-          changed="$(git diff --name-only "$base" "$head" --)"
-          if [ -z "$changed" ]; then
-            echo "docs-only=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          rest="$(echo "$changed" | grep -vE '^((docs|_working)/.*\.md|[^/]+\.md)$' || true)"
-          if [ -z "$rest" ]; then
-            echo "docs-only=true" >> "$GITHUB_OUTPUT"
+          if [ "$EVENT_NAME" = workflow_dispatch ]; then
+            uv run --locked python tools/select_v2_checks.py --emit-github --github-output "$GITHUB_OUTPUT"
           else
-            echo "docs-only=false" >> "$GITHUB_OUTPUT"
+            uv run --locked python tools/select_v2_checks.py --base "$BASE_SHA" --head "$HEAD_SHA" \
+              --emit-github --github-output "$GITHUB_OUTPUT"
           fi
 
   verify:
@@ -62,10 +66,18 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     needs: [changes]
-    # verify 全量门在 PR 与手动触发跑：main push 的树与已绿分支头一致，重跑不产生新信息；
-    # main 只做构建+冒烟+部署（container）。docs-only 分流保留给 PR。
-    if: (github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch') && (needs.changes.result == 'success' || needs.changes.result == 'skipped')
+    # PR/手动入口消费同一本地选择结果；main 复用已验PR，只按运行闭包构建发布。
+    # changes 失败不能变成跳过验证后的部署许可。
+    if: always() && (github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch')
     steps:
+      - name: Fail required check when selection is unavailable
+        if: always() && needs.changes.result != 'success'
+        env:
+          SELECTION_RESULT: ${{ needs.changes.result }}
+        run: |
+          echo "Impact selection did not succeed (${SELECTION_RESULT}); no verification or release is approved."
+          exit 1
+
       - name: Check out repository
         uses: actions/checkout@v6
 
@@ -75,12 +87,14 @@ jobs:
           python-version: "3.13"
 
       - name: Set up locked frontend tools
+        if: needs.changes.outputs.frontend == 'true'
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0, MIT
         with:
           node-version-file: package.json
           package-manager-cache: false
 
       - name: Install approved frontend checker
+        if: needs.changes.outputs.frontend == 'true'
         run: |
           npm install --global "npm@$(node -p 'require("./package.json").engines.npm')" --ignore-scripts
           npm ci --ignore-scripts
@@ -90,66 +104,164 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install uv==0.9.18
           uv sync --locked
-          uv run playwright install --with-deps chromium
 
-      - name: Check control plane
-        run: |
-          uv run python tools/check_docs.py --no-run
-          uv run python tools/check_project_state.py
-          uv run python evals/probes/project_state.py
-          uv run python evals/probes/docs_index.py
-          uv run python tools/check_verification.py
-          uv run python evals/probes/verification_policy.py
+      - name: Install browser only for affected consumers
+        if: needs.changes.outputs.browser == 'true'
+        run: uv run --locked playwright install --with-deps chromium
 
-      - name: Check frontend versions types and direct behavior
-        run: |
-          npm run check:versions
-          npm run build:envelope
-          npm run check:types
-          npm run build:frontend
-          npm run check:envelope
-          npm run build:frontend-node
-          npm run test:domain
+      # 完整命令目录仍由本job唯一持有；选择器与最终两轮读取全部字面命令。
+      - name: Check documentation
+        if: contains(fromJSON(needs.changes.outputs.selected), 'tools/check_docs.py --no-run')
+        run: uv run --locked python tools/check_docs.py --no-run
+      - name: Check project state
+        if: contains(fromJSON(needs.changes.outputs.selected), 'tools/check_project_state.py')
+        run: uv run --locked python tools/check_project_state.py
+      - name: Probe project state
+        if: contains(fromJSON(needs.changes.outputs.selected), 'evals/probes/project_state.py')
+        run: uv run --locked python evals/probes/project_state.py
+      - name: Probe documentation routing
+        if: contains(fromJSON(needs.changes.outputs.selected), 'evals/probes/docs_index.py')
+        run: uv run --locked python evals/probes/docs_index.py
+      - name: Check verification policy
+        if: contains(fromJSON(needs.changes.outputs.selected), 'tools/check_verification.py')
+        run: uv run --locked python tools/check_verification.py
+      - name: Probe verification policy
+        if: contains(fromJSON(needs.changes.outputs.selected), 'evals/probes/verification_policy.py')
+        run: uv run --locked python evals/probes/verification_policy.py
 
-      - name: Check formal entry and browser contracts
-        if: needs.changes.result == 'skipped' || needs.changes.outputs.docs-only != 'true'
-        run: |
-          uv run python app/server.py --check
-          uv run python tools/verify_v2_1_1_indexeddb.py
-          uv run python tools/verify_v2_1_2_project_home.py
-          uv run python tools/verify_v2_1_3_project_package.py
-          uv run python tools/verify_v2_1_4_formal_entry.py
-          uv run python tools/verify_v2_2_1_product_contracts.py
-          uv run python tools/verify_v2_2_2_semantic_provider.py
-          uv run python tools/verify_v2_2_3_intake_understanding.py
-          uv run python tools/verify_v2_3_1_suite_registry.py
-          uv run python tools/verify_v2_3_2_suite_editor.py
-          uv run python tools/verify_v2_3_3_session_lifecycle.py
-          uv run python tools/verify_v2_3_3_spec_versions.py
-          uv run python tools/verify_v2_3_4_prompt_compiler.py
-          uv run python tools/verify_v2_3_5_pre_generation_confirm.py
-          uv run python tools/verify_v2_3_6_prompt_manual_edit.py
-          uv run python tools/verify_v2_3_7_copy_adoption_chain.py
-          uv run python tools/verify_v2_3_8_spec_save_occ.py
-          uv run --locked python -m pytest tests/gateway tests/dev -q
-          uv run python tools/verify_v2_4_2_generation_attempt.py
-          uv run python tools/verify_v2_4_3_batch_execution.py
-          uv run python tools/verify_v2_4_4_candidate_blob.py
-          uv run python tools/verify_v2_5_1_deterministic_review.py
-          uv run python tools/verify_v2_5_2_vlm_review.py
-          uv run python tools/verify_v2_r5_2_two_adapters.py
-          uv run python tools/verify_v2_5_3_compare_panel.py
-          uv run python tools/verify_v2_5_4_rework_loop.py
-          uv run python tools/verify_v2_5_5_suite_review.py
-          uv run python tools/verify_v2_6_1_selection.py
-          uv run python tools/verify_v2_6_2_delivery.py
-          uv run python tools/verify_v2_6_3_project_transfer.py
-          uv run python tools/verify_v2_6_4_accessibility.py
-          uv run python tools/verify_v2_ui_2_interaction_visual.py
-          uv run python tools/verify_v2_ui_3_frontend.py
-          uv run python tools/verify_v2_packet08_settings_vision.py
-          uv run python tools/verify_v2_packet08_adoption_ai.py
-          uv run python tools/verify_v2_packet08_delivery_ai.py
+      - name: Check frontend versions
+        if: contains(fromJSON(needs.changes.outputs.selected), 'npm:check:versions')
+        run: npm run check:versions
+      - name: Build image envelope
+        if: contains(fromJSON(needs.changes.outputs.selected), 'npm:build:envelope')
+        run: npm run build:envelope
+      - name: Check frontend types
+        if: contains(fromJSON(needs.changes.outputs.selected), 'npm:check:types')
+        run: npm run check:types
+      - name: Build frontend
+        if: contains(fromJSON(needs.changes.outputs.selected), 'npm:build:frontend')
+        run: npm run build:frontend
+      - name: Check image envelope
+        if: contains(fromJSON(needs.changes.outputs.selected), 'npm:check:envelope')
+        run: npm run check:envelope
+      - name: Build Node consumers
+        if: contains(fromJSON(needs.changes.outputs.selected), 'npm:build:frontend-node')
+        run: npm run build:frontend-node
+      - name: Check domain behavior
+        if: contains(fromJSON(needs.changes.outputs.selected), 'npm:test:domain')
+        run: npm run test:domain
+
+      - name: Check formal entry
+        if: contains(fromJSON(needs.changes.outputs.selected), 'app/server.py --check')
+        run: uv run --locked python app/server.py --check
+      - name: Check IndexedDB
+        if: contains(fromJSON(needs.changes.outputs.selected), 'tools/verify_v2_1_1_indexeddb.py')
+        run: uv run --locked python tools/verify_v2_1_1_indexeddb.py
+      - name: Check project home
+        if: contains(fromJSON(needs.changes.outputs.selected), 'tools/verify_v2_1_2_project_home.py')
+        run: uv run --locked python tools/verify_v2_1_2_project_home.py
+      - name: Check project package
+        if: contains(fromJSON(needs.changes.outputs.selected), 'tools/verify_v2_1_3_project_package.py')
+        run: uv run --locked python tools/verify_v2_1_3_project_package.py
+      - name: Check formal entry consumers
+        if: contains(fromJSON(needs.changes.outputs.selected), 'tools/verify_v2_1_4_formal_entry.py')
+        run: uv run --locked python tools/verify_v2_1_4_formal_entry.py
+      - name: Check product contracts
+        if: contains(fromJSON(needs.changes.outputs.selected), 'tools/verify_v2_2_1_product_contracts.py')
+        run: uv run --locked python tools/verify_v2_2_1_product_contracts.py
+      - name: Check semantic provider
+        if: contains(fromJSON(needs.changes.outputs.selected), 'tools/verify_v2_2_2_semantic_provider.py')
+        run: uv run --locked python tools/verify_v2_2_2_semantic_provider.py
+      - name: Check intake understanding
+        if: contains(fromJSON(needs.changes.outputs.selected), 'tools/verify_v2_2_3_intake_understanding.py')
+        run: uv run --locked python tools/verify_v2_2_3_intake_understanding.py
+      - name: Check suite registry
+        if: contains(fromJSON(needs.changes.outputs.selected), 'tools/verify_v2_3_1_suite_registry.py')
+        run: uv run --locked python tools/verify_v2_3_1_suite_registry.py
+      - name: Check suite editor
+        if: contains(fromJSON(needs.changes.outputs.selected), 'tools/verify_v2_3_2_suite_editor.py')
+        run: uv run --locked python tools/verify_v2_3_2_suite_editor.py
+      - name: Check session lifecycle
+        if: contains(fromJSON(needs.changes.outputs.selected), 'tools/verify_v2_3_3_session_lifecycle.py')
+        run: uv run --locked python tools/verify_v2_3_3_session_lifecycle.py
+      - name: Check specification versions
+        if: contains(fromJSON(needs.changes.outputs.selected), 'tools/verify_v2_3_3_spec_versions.py')
+        run: uv run --locked python tools/verify_v2_3_3_spec_versions.py
+      - name: Check prompt compiler
+        if: contains(fromJSON(needs.changes.outputs.selected), 'tools/verify_v2_3_4_prompt_compiler.py')
+        run: uv run --locked python tools/verify_v2_3_4_prompt_compiler.py
+      - name: Check pre-generation confirmation
+        if: contains(fromJSON(needs.changes.outputs.selected), 'tools/verify_v2_3_5_pre_generation_confirm.py')
+        run: uv run --locked python tools/verify_v2_3_5_pre_generation_confirm.py
+      - name: Check manual prompt editing
+        if: contains(fromJSON(needs.changes.outputs.selected), 'tools/verify_v2_3_6_prompt_manual_edit.py')
+        run: uv run --locked python tools/verify_v2_3_6_prompt_manual_edit.py
+      - name: Check copy adoption
+        if: contains(fromJSON(needs.changes.outputs.selected), 'tools/verify_v2_3_7_copy_adoption_chain.py')
+        run: uv run --locked python tools/verify_v2_3_7_copy_adoption_chain.py
+      - name: Check specification OCC
+        if: contains(fromJSON(needs.changes.outputs.selected), 'tools/verify_v2_3_8_spec_save_occ.py')
+        run: uv run --locked python tools/verify_v2_3_8_spec_save_occ.py
+      - name: Check gateway behavior
+        if: contains(fromJSON(needs.changes.outputs.selected), 'pytest:tests/gateway -q')
+        run: uv run --locked python -m pytest tests/gateway -q
+      - name: Check developer commands
+        if: contains(fromJSON(needs.changes.outputs.selected), 'pytest:tests/dev -q')
+        run: uv run --locked python -m pytest tests/dev -q
+      - name: Check generation attempts
+        if: contains(fromJSON(needs.changes.outputs.selected), 'tools/verify_v2_4_2_generation_attempt.py')
+        run: uv run --locked python tools/verify_v2_4_2_generation_attempt.py
+      - name: Check batch execution
+        if: contains(fromJSON(needs.changes.outputs.selected), 'tools/verify_v2_4_3_batch_execution.py')
+        run: uv run --locked python tools/verify_v2_4_3_batch_execution.py
+      - name: Check candidate bytes
+        if: contains(fromJSON(needs.changes.outputs.selected), 'tools/verify_v2_4_4_candidate_blob.py')
+        run: uv run --locked python tools/verify_v2_4_4_candidate_blob.py
+      - name: Check deterministic review
+        if: contains(fromJSON(needs.changes.outputs.selected), 'tools/verify_v2_5_1_deterministic_review.py')
+        run: uv run --locked python tools/verify_v2_5_1_deterministic_review.py
+      - name: Check VLM review
+        if: contains(fromJSON(needs.changes.outputs.selected), 'tools/verify_v2_5_2_vlm_review.py')
+        run: uv run --locked python tools/verify_v2_5_2_vlm_review.py
+      - name: Check image adapters
+        if: contains(fromJSON(needs.changes.outputs.selected), 'tools/verify_v2_r5_2_two_adapters.py')
+        run: uv run --locked python tools/verify_v2_r5_2_two_adapters.py
+      - name: Check comparison
+        if: contains(fromJSON(needs.changes.outputs.selected), 'tools/verify_v2_5_3_compare_panel.py')
+        run: uv run --locked python tools/verify_v2_5_3_compare_panel.py
+      - name: Check rework
+        if: contains(fromJSON(needs.changes.outputs.selected), 'tools/verify_v2_5_4_rework_loop.py')
+        run: uv run --locked python tools/verify_v2_5_4_rework_loop.py
+      - name: Check suite review
+        if: contains(fromJSON(needs.changes.outputs.selected), 'tools/verify_v2_5_5_suite_review.py')
+        run: uv run --locked python tools/verify_v2_5_5_suite_review.py
+      - name: Check selection
+        if: contains(fromJSON(needs.changes.outputs.selected), 'tools/verify_v2_6_1_selection.py')
+        run: uv run --locked python tools/verify_v2_6_1_selection.py
+      - name: Check delivery
+        if: contains(fromJSON(needs.changes.outputs.selected), 'tools/verify_v2_6_2_delivery.py')
+        run: uv run --locked python tools/verify_v2_6_2_delivery.py
+      - name: Check project transfer
+        if: contains(fromJSON(needs.changes.outputs.selected), 'tools/verify_v2_6_3_project_transfer.py')
+        run: uv run --locked python tools/verify_v2_6_3_project_transfer.py
+      - name: Check accessibility
+        if: contains(fromJSON(needs.changes.outputs.selected), 'tools/verify_v2_6_4_accessibility.py')
+        run: uv run --locked python tools/verify_v2_6_4_accessibility.py
+      - name: Check interaction and visual behavior
+        if: contains(fromJSON(needs.changes.outputs.selected), 'tools/verify_v2_ui_2_interaction_visual.py')
+        run: uv run --locked python tools/verify_v2_ui_2_interaction_visual.py
+      - name: Check frontend behavior
+        if: contains(fromJSON(needs.changes.outputs.selected), 'tools/verify_v2_ui_3_frontend.py')
+        run: uv run --locked python tools/verify_v2_ui_3_frontend.py
+      - name: Check settings and vision
+        if: contains(fromJSON(needs.changes.outputs.selected), 'tools/verify_v2_packet08_settings_vision.py')
+        run: uv run --locked python tools/verify_v2_packet08_settings_vision.py
+      - name: Check AI adoption
+        if: contains(fromJSON(needs.changes.outputs.selected), 'tools/verify_v2_packet08_adoption_ai.py')
+        run: uv run --locked python tools/verify_v2_packet08_adoption_ai.py
+      - name: Check AI delivery
+        if: contains(fromJSON(needs.changes.outputs.selected), 'tools/verify_v2_packet08_delivery_ai.py')
+        run: uv run --locked python tools/verify_v2_packet08_delivery_ai.py
 
       - name: Reject verification side effects
         run: |
@@ -163,9 +275,9 @@ jobs:
   container:
     name: Docker image, smoke test, and main deploy
     needs: [verify, changes]
-    # changes 炸则不跑（fail-closed，不部署）：skipped 只接受 verify 的 main-push/手动外有意跳过，
-    # 不接受上游失败的连带跳过。main push 时 verify 被事件守卫跳过，构建+冒烟+部署照常跑。
-    if: always() && needs.changes.result == 'success' && (needs.verify.result == 'success' || needs.verify.result == 'skipped')
+    # 只有成功选择及成功验证可继续；仅main push接受verify按事件有意跳过。
+    # job保留required上下文，步骤再按运行/构建/发布闭包决定执行或如实记不适用。
+    if: always() && needs.changes.result == 'success' && (needs.verify.result == 'success' || (github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.verify.result == 'skipped'))
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
@@ -180,25 +292,27 @@ jobs:
 
       - name: Set up release acceptance tooling
         uses: actions/setup-python@v6
+        if: needs.changes.outputs.container == 'true'
         with:
           python-version: "3.13"
 
       - name: Install locked acceptance dependencies
+        if: needs.changes.outputs.container == 'true'
         run: |
           python -m pip install uv==0.9.18
           uv sync --locked
           uv run playwright install --with-deps chromium
 
-      - name: Skip container chain for docs-only PR
-        if: github.event_name == 'pull_request' && needs.changes.outputs.docs-only == 'true'
-        run: echo "docs-only PR：构建/冒烟/事务探针不适用，未执行容器链（非容器已验）。"
+      - name: Report unchanged runtime and release closure
+        if: needs.changes.outputs.container == 'false'
+        run: echo "无运行/构建/发布闭包变化：容器链与部署不适用，未执行（非容器已验）。"
 
       - name: Build immutable image
-        if: github.event_name != 'pull_request' || needs.changes.outputs.docs-only != 'true'
+        if: needs.changes.outputs.container == 'true'
         run: docker build --pull --tag "${IMAGE_NAME}:${GITHUB_SHA}" .
 
       - name: Smoke-test container health
-        if: github.event_name != 'pull_request' || needs.changes.outputs.docs-only != 'true'
+        if: needs.changes.outputs.container == 'true'
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -230,11 +344,11 @@ jobs:
           exit 1
 
       - name: Remove smoke container
-        if: always()
+        if: always() && needs.changes.outputs.container == 'true'
         run: docker rm --force amz-listing-kit-smoke >/dev/null 2>&1 || true
 
       - name: Release transaction selftest (real disposable containers)
-        if: github.event_name != 'pull_request' || needs.changes.outputs.docs-only != 'true'
+        if: needs.changes.outputs.container == 'true'
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -244,7 +358,7 @@ jobs:
           uv run --locked python tools/release_transaction_probe.py --selftest
 
       - name: Release failure classes (real script, no containers)
-        if: github.event_name != 'pull_request' || needs.changes.outputs.docs-only != 'true'
+        if: needs.changes.outputs.container == 'true'
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -257,7 +371,7 @@ jobs:
           uv run --locked python tools/release_transaction_probe.py --offline-rollback
 
       - name: Prepare SSH
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: needs.changes.outputs.container == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
         shell: bash
         env:
           SSH_HOST: ${{ secrets.SSH_HOST }}
@@ -270,7 +384,7 @@ jobs:
           ssh-keyscan -H "$SSH_HOST" >> "$HOME/.ssh/known_hosts"
 
       - name: Sync provider secrets to server env file
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: needs.changes.outputs.container == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
         shell: bash
         env:
           SSH_HOST: ${{ secrets.SSH_HOST }}
@@ -311,7 +425,7 @@ jobs:
 
       - name: Build on remote Docker and deploy (full release transaction)
         id: release_deploy
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: needs.changes.outputs.container == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
         shell: bash
         env:
           SSH_HOST: ${{ secrets.SSH_HOST }}
@@ -358,7 +472,7 @@ jobs:
 
       - name: Release acceptance (static assets and page main chain)
         id: release_acceptance
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: needs.changes.outputs.container == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -371,7 +485,7 @@ jobs:
 
       - name: Verify runtime and configuration fingerprints before cleanup
         id: release_fingerprint
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: needs.changes.outputs.container == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
         shell: bash
         env:
           SSH_HOST: ${{ secrets.SSH_HOST }}
@@ -446,7 +560,7 @@ jobs:
 
       - name: Finalize release (cleanup previous only after all acceptance)
         id: release_finalize
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: needs.changes.outputs.container == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
         shell: bash
         env:
           SSH_HOST: ${{ secrets.SSH_HOST }}
@@ -485,7 +599,7 @@ jobs:
           if-no-files-found: error
 
       - name: Roll back to previous known working state
-        if: failure() && github.event_name == 'push' && github.ref == 'refs/heads/main' && (steps.release_deploy.outcome == 'failure' || steps.release_acceptance.outcome == 'failure' || steps.release_fingerprint.outcome == 'failure' || (steps.release_finalize.outcome == 'failure' && steps.release_finalize.outputs.recoverable == 'true'))
+        if: failure() && needs.changes.outputs.container == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main' && (steps.release_deploy.outcome == 'failure' || steps.release_acceptance.outcome == 'failure' || steps.release_fingerprint.outcome == 'failure' || (steps.release_finalize.outcome == 'failure' && steps.release_finalize.outputs.recoverable == 'true'))
         shell: bash
         env:
           SSH_HOST: ${{ secrets.SSH_HOST }}

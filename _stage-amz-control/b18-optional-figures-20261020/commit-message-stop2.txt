@@ -1,0 +1,5 @@
+docs(v2): record both CI runs as unobserved at the stop point
+
+The stop record named only the run for f5e1e17 as in-progress; the wrap-up commit
+4321ed0 starts another run. Neither conclusion was observed, so neither may be read
+as green. No product source or evidence payload changes.

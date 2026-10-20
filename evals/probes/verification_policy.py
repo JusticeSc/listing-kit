@@ -77,8 +77,11 @@ def remove_ci(workflow: dict, entrypoint: str) -> None:
         raise RuntimeError(f"反例未改动 CI：{entrypoint}")
 
 
-def add_ci(workflow: dict, command: str) -> None:
-    workflow["jobs"]["verify"]["steps"].append({"name": "独立反例", "run": command})
+def add_ci(workflow: dict, command: str, identity: str) -> None:
+    workflow["jobs"]["verify"]["steps"].append({
+        "name": "独立反例", "run": command,
+        "if": f"contains(fromJSON(needs.changes.outputs.selected), '{identity}')",
+    })
 
 
 def main() -> int:
@@ -102,18 +105,18 @@ def main() -> int:
     case("VPC04", lambda _r, w: remove_ci(w, "npm run check:types"), {"CI_MISSING"})
     case("VPC05", lambda _r, w: remove_ci(w, "npm run test:domain"), {"CI_MISSING"})
     live = "tools/verify_v2_2_2_semantic_provider.py"
-    case("VPC06", lambda _r, w: add_ci(w, f"uv run python {live} --live"), {"CI_UNCLASSIFIED"})
+    case("VPC06", lambda _r, w: add_ci(w, f"uv run python {live} --live", f"{live} --live"), {"CI_UNCLASSIFIED"})
 
     def enable_paid(registry, wf):
         registry["entrypoints"][live][1]["ci"] = True
-        add_ci(wf, f"uv run python {live} --live")
+        add_ci(wf, f"uv run python {live} --live", f"{live} --live")
 
     case("VPC07", enable_paid, {"CI_RESTRICTED", "CI_UNCLASSIFIED"})
 
     def enable_restricted(entrypoint: str):
         def mutate(registry, wf):
             registry["entrypoints"][entrypoint][0]["ci"] = True
-            add_ci(wf, f"uv run python {entrypoint}")
+            add_ci(wf, f"uv run python {entrypoint}", entrypoint)
         return mutate
 
     case("VPC08", enable_restricted("tools/verify_v2_ui_1_remote_entry.py"),
@@ -122,7 +125,7 @@ def main() -> int:
          {"CI_RESTRICTED", "CI_UNCLASSIFIED"})
     case("VPC10", lambda r, _w: r["human_gates"]["C17"].update(category="browser"), {"VCLASS_HUMAN"})
     case("VPC11", lambda r, _w: r["human_gates"].pop("C15"), {"VCLASS_HUMAN"})
-    case("VPC12", lambda _r, w: add_ci(w, f"uv run python {TARGET}"), {"CI_DUPLICATE"})
+    case("VPC12", lambda _r, w: add_ci(w, f"uv run python {TARGET}", TARGET), {"CI_DUPLICATE"})
     case("VPC13", lambda r, _w: r["entrypoints"][TARGET][0].update(category="unknown"),
          {"VCLASS_SCHEMA", "CI_UNCLASSIFIED"})
     case("VPC14", lambda r, _w: r["entrypoints"].update({"tools/verify_v2_ghost.py": [
@@ -155,16 +158,105 @@ def main() -> int:
           f"rc={docs_result.returncode} selected={docs and docs['selected_count']}/"
           f"{docs and docs['full_count']}")
 
-    # 2) 业务/HTTP/网关/锁/UI/验证策略/未知路径：后果都必须是完整离线集合
-    # P4 第2阶段后产品权威是 TS 源（生成兄弟 .js 已删）；fixture 同步指当前真实文件。
-    for path in ("app/product_v2/session.ts", "app/product_v2/ui/generation-view.ts",
-                 "app/server.py", "src/providers/v2_image.py", "uv.lock", "package.json",
-                 "config/product-v2/verification.json", ".github/workflows/ci-cd.yml",
-                 "some/random/path.xyz"):
+    # 公共读写/出站合同、锁与未知影响仍保守扩大；不是所有业务/策略变化都必须全选。
+    for path in ("app/product_v2/session.ts", "app/server.py", "src/providers/v2_image.py",
+                 "uv.lock", "package.json", "some/random/path.xyz"):
         result, data = selector_json([path])
         judge("T5-FULL-" + path.replace("/", "_").replace(".", "-"),
               result.returncode == 0 and bool(data) and set(data["selected"]) == full_selection,
               f"rc={result.returncode} selected={data and data['selected_count']}/{data and data['full_count']}")
+    proof_path = "_stage-amz-control/b18-optional-figures-20261020/closeout-stop-20261020.md"
+    proof_result, proof = selector_json([proof_path])
+    judge("T5-PROOF-ONLY",
+          proof_result.returncode == 0 and bool(proof)
+          and proof["selected"] == ["tools/check_docs.py --no-run"]
+          and not proof["container"] and not proof["browser"],
+          f"rc={proof_result.returncode} selected={proof and proof['selected']}")
+    ui_path = "app/product_v2/ui/generation-view.ts"
+    ui_result, ui = selector_json([ui_path])
+    # generation-view 独占 #task-list-mount / #shot-execution：凡真实读取这两个根的工具都在
+    # 同一条依赖上。要求集从源码派生，避免手写名单再次静默漏掉新的验证器。
+    paid_readers = {"tools/verify_v2_4_5_live_reference.py"}  # 付费/直连，离线集合不选它
+    generation_readers = {
+        "tools/" + path.name
+        for path in (ROOT / "tools").glob("verify_v2*.py")
+        if any(sel in path.read_text(encoding="utf-8")
+               for sel in ("#task-list-mount", "#shot-execution"))
+    } - paid_readers
+    ui_required = ({"npm:check:types", "npm:build:frontend"}
+                   | generation_readers
+                   | {"tools/verify_v2_ui_2_interaction_visual.py",
+                      "tools/verify_v2_ui_3_frontend.py",
+                      "tools/verify_v2_6_4_accessibility.py"})
+    judge("T5-GENERATION-CONSUMERS",
+          ui_result.returncode == 0 and bool(ui) and ui_required <= set(ui["selected"])
+          and "tools/verify_v2_1_3_project_package.py" not in ui["selected"]
+          and ui["container"] and ui["browser"] and ui["frontend"],
+          f"rc={ui_result.returncode} selected={ui and ui['selected_count']} "
+          f"required={len(ui_required)} missing={sorted(ui_required - set(ui['selected'])) if ui else '?'}")
+    verifier_result, verifier = selector_json(["tools/verify_v2_4_4_candidate_blob.py"])
+    judge("T5-VERIFIER-OWN-CONSUMER",
+          verifier_result.returncode == 0 and bool(verifier)
+          and "tools/verify_v2_4_4_candidate_blob.py" in verifier["selected"]
+          and "tools/verify_v2_1_3_project_package.py" not in verifier["selected"]
+          and verifier["browser"] and not verifier["container"],
+          f"rc={verifier_result.returncode} selected={verifier and verifier['selected_count']}")
+    mixed_result, mixed = selector_json([proof_path, ui_path])
+    judge("T5-MIXED-UNION",
+          mixed_result.returncode == 0 and bool(mixed) and bool(ui) and bool(proof)
+          and set(mixed["selected"]) == set(proof["selected"]) | set(ui["selected"]),
+          f"rc={mixed_result.returncode} selected={mixed and mixed['selected_count']}")
+    rehearsal_registered, rehearsal_plan = selector_json(["tools/rehearse_v273_walkthrough.py"])
+    judge("T5-REHEARSAL-MAINTENANCE",
+          rehearsal_registered.returncode == 0 and bool(rehearsal_plan)
+          and set(rehearsal_plan["selected"]) == {"tools/check_verification.py",
+                                                  "evals/probes/verification_policy.py"}
+          and not rehearsal_plan["browser"],
+          f"rc={rehearsal_registered.returncode} selected={rehearsal_plan and rehearsal_plan['selected']}")
+    missing_registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
+    missing_registry["entrypoints"].pop("tools/rehearse_v273_walkthrough.py", None)
+    missing_registry_path = FIXTURE_ROOT / "verification-registry-without-rehearsal.json"
+    missing_registry_path.parent.mkdir(parents=True, exist_ok=True)
+    missing_registry_path.write_text(json.dumps(missing_registry, ensure_ascii=False),
+                                     encoding="utf-8", newline="\n")
+    rehearsal_result, _ = selector_json(["tools/rehearse_v273_walkthrough.py"],
+                                        "--registry", str(missing_registry_path))
+    missing_registry_path.unlink()
+    judge("T5-REHEARSAL-NEEDS-INPUT",
+          rehearsal_result.returncode == 2 and "SELECT-INPUT" in rehearsal_result.stdout,
+          f"rc={rehearsal_result.returncode} 未登记/缺素材时不冒充走查已验")
+    plan_result, plan = selector_json(["docs/product-v2-refactor-plan.md"])
+    judge("T5-PLAN-STATE-CONSISTENCY",
+          plan_result.returncode == 0 and bool(plan)
+          and "evals/probes/project_state.py" in plan["selected"]
+          and "tools/check_project_state.py" in plan["selected"] and not plan["container"],
+          f"rc={plan_result.returncode} selected={plan and plan['selected']}")
+    for path in ("tools/verify_v2_7_1_regression.py", "tools/verify_v2_removed_fixture.py"):
+        result, data = selector_json([path])
+        judge("T5-VERIFIER-MAINTENANCE-" + Path(path).stem,
+              result.returncode == 0 and bool(data)
+              and set(data["selected"]) == {"tools/check_verification.py", "evals/probes/verification_policy.py"}
+              and path not in data["selected"] and not data["container"],
+              f"rc={result.returncode} maintenance_only={data and data['selected']}")
+    for path, expected_container in (
+        ("config/product-v2/verification.json", False),
+        ("tools/select_v2_checks.py", False),
+        (".github/workflows/ci-cd.yml", True),
+        ("tools/export_image_envelope_schema.py", True),
+        ("tools/generate_image_envelope_validator.mjs", True),
+        (".dockerignore", True),
+        ("config/product-v2/providers.json", True),
+        ("deploy/release-transaction.sh", True),
+        ("tools/release_transaction_probe.py", True),
+    ):
+        result, data = selector_json([path])
+        judge("T5-RELEASE-IMPACT-" + path.replace("/", "_"),
+              result.returncode == 0 and bool(data) and data["container"] is expected_container,
+              f"rc={result.returncode} container={data and data['container']}")
+    invalid_base, _ = selector_json([], "--base", "0" * 40, "--head", "f" * 40)
+    judge("T5-BAD-GIT-BASE",
+          invalid_base.returncode == 2 and "SELECT-INPUT" in invalid_base.stdout,
+          f"rc={invalid_base.returncode} 坏差量不能按证据-only跳过")
     # 受限模式不得被普通批次选中
     judge("T5-RESTRICTED-EXCLUDED",
           bool(base) and not any("--live" in item for item in base["selected"]),
@@ -247,6 +339,17 @@ def main() -> int:
         judge("T5-UNPARSED-COMMAND",
               unparsed.returncode == 2 and "SELECT-INPUT" in unparsed.stdout and marker_state() == before,
               f"rc={unparsed.returncode}")
+        # 同一条可执行夹具，实际模式未变而选择条件拼错：必须拒绝，不能被skip洗成绿。
+        wrong_route = yaml.safe_load(okay_workflow)
+        wrong_route["jobs"]["changes"] = {"outputs": {"selected": "fixture"}}
+        wrong_route["jobs"]["verify"]["steps"][0]["if"] = "contains(fromJSON(needs.changes.outputs.selected), 'wrong-mode')"
+        wf_route, reg_route = fixture_files(
+            "badroute", yaml.safe_dump(wrong_route), valid_registry)
+        route_rejected = run_with(["some/unknown/path.xyz", "--workflow", wf_route, "--registry", reg_route])
+        judge("T5-ROUTING-REFUSES-SILENT-SKIP",
+              route_rejected.returncode == 2 and "CI_ROUTING" in route_rejected.stdout
+              and marker_state() == before,
+              f"rc={route_rejected.returncode} markers={marker_state()}")
         # (d) 正常夹具真跑：确认夹具本身有效（否则后面几条会假绿）
         good = run_with(["some/unknown/path.xyz", "--workflow", wf_ok, "--registry", reg_ok])
         judge("T5-FIXTURE-EXECUTES",
@@ -267,6 +370,62 @@ def main() -> int:
         judge("T5-PAID-NOT-EXECUTED",
               paid_run.returncode == 0 and marker_ok.exists() and not marker_paid.exists(),
               f"rc={paid_run.returncode} ok={marker_ok.exists()} paid={marker_paid.exists()}")
+        # 精确模式准入：复用既有本地试验的独立 marker；坏项在后也不能先执行好项。
+        for name in ("unknown-entry", "unknown-args", "not-approved", "duplicate-mode",
+                     "restricted-approved", "invalid-ci", "mixed-plan", "duplicate-plan"):
+            marker = workdir / f"{name}.marker"
+            prefix_marker = workdir / f"{name}-prefix.marker"
+            script = workdir / f"{name}.py"
+            script.write_text(fixture_script(marker, 0, name), encoding="utf-8")
+            entry = rel(script)
+            approved = {"args": [], "category": "control", "ci": True}
+            modes = [approved]
+            command = f"uv run --locked python {entry}"
+            entries = {ok_entry: [{"args": [], "category": "control", "ci": True}]}
+            lines = [command]
+            if name == "unknown-entry":
+                modes = None
+            elif name == "unknown-args":
+                lines = [command + " --live"]
+            elif name == "not-approved":
+                modes = [{"args": [], "category": "control", "ci": False,
+                          "reason": "独立反例：未批准执行"}]
+            elif name == "duplicate-mode":
+                modes = [approved, {"args": [], "category": "paid", "ci": False,
+                                    "reason": "独立反例：同一模式分类冲突"}]
+            elif name == "restricted-approved":
+                modes = [{"args": [], "category": "paid", "ci": True}]
+            elif name == "invalid-ci":
+                modes = [{"args": [], "category": "control", "ci": "true"}]
+            elif name == "mixed-plan":
+                modes = None
+                prefix_script = workdir / f"{name}-prefix.py"
+                prefix_script.write_text(fixture_script(prefix_marker, 0, "PREFIX"), encoding="utf-8")
+                prefix_entry = rel(prefix_script)
+                entries[prefix_entry] = [approved]
+                lines.insert(0, f"uv run --locked python {prefix_entry}")
+            elif name == "duplicate-plan":
+                lines.append(command)
+            if modes is not None:
+                entries[entry] = modes
+            wf, reg = fixture_files(name, fixture_workflow(lines), fixture_registry(entries))
+            before_markers = marker_state()
+            rejected = run_with(["some/unknown/path.xyz", "--workflow", wf, "--registry", reg])
+            judge("T5-EXACT-" + name.upper(),
+                  rejected.returncode == 2 and "SELECT-INPUT" in rejected.stdout
+                  and not marker.exists() and not prefix_marker.exists()
+                  and marker_state() == before_markers,
+                  f"rc={rejected.returncode} unapproved_executed={marker.exists()}")
+        output_path = workdir / "github-output.txt"
+        output_result, output_data = selector_json(
+            [proof_path], "--github-output", str(output_path))
+        outputs = dict(line.split("=", 1) for line in output_path.read_text(encoding="utf-8").splitlines())
+        judge("T5-GITHUB-OUTPUT",
+              output_result.returncode == 0 and bool(output_data)
+              and json.loads(outputs["selected"]) == ["tools/check_docs.py --no-run"]
+              and json.loads(outputs["container"]) is False
+              and json.loads(outputs["browser"]) is False,
+              f"rc={output_result.returncode} container={outputs.get('container')}")
     finally:
         shutil.rmtree(workdir, ignore_errors=True)
 

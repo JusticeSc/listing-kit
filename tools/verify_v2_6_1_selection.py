@@ -328,19 +328,35 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                             const selected = panel
                               ? panel.querySelector('#compare-candidates [role="tab"][aria-selected="true"]')
                               : null;
-                            const list = panel ? panel.querySelector("#compare-references") : null;
+                            const shown = panel ? panel.querySelector("#compare-left-image") : null;
+                            const host = shown ? shown.closest("[data-reference-sha256]") : null;
                             return {
                                 visible: Boolean(panel && !panel.hidden),
                                 shot: panel ? (panel.dataset.shotId || null) : null,
                                 cards: panel ? panel.querySelectorAll('#compare-candidates [role="tab"]').length : 0,
-                                references: panel ? panel.querySelectorAll("#compare-references li").length : 0,
                                 selected_candidate_id: selected
                                   ? (selected.dataset.candidateId || null) : null,
-                                reference_shas: list
-                                  ? [...list.querySelectorAll("li")]
-                                      .map((node) => node.dataset.referenceSha256 || null)
-                                  : [],
+                                shown_reference_sha: host
+                                  ? (host.dataset.referenceSha256 || null) : null,
                             };
+                        }""")
+
+                def frozen_reference_order() -> list | None:
+                    """左栏下拉的商品依据顺序（候选冻结集合的界面投影，不读左栏 li 个数）。
+
+                    P3：旧 compare_state 同时数「#compare-references li」个数与
+                    全量 sha 列表，常驻单图语义下该个数恒为 0/1 且无业务含义，已删除；
+                    左栏身份只剩「当前展示图 ∈ 冻结集合」一条，由 open_panel 断言。
+                    """
+                    return page.evaluate(
+                        """() => {
+                            const panel = document.getElementById("compare-panel");
+                            const select = panel ? panel.querySelector("#compare-left-select") : null;
+                            if (!select) return null;
+                            return [...select.querySelectorAll("option")]
+                              .map((node) => node.value)
+                              .filter((value) => value.startsWith("reference:"))
+                              .map((value) => value.slice("reference:".length));
                         }""")
 
                 def frozen_reference_shas(shot_id: str, candidate_id: str | None) -> list | None:
@@ -414,19 +430,22 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
                                   .map((node) => node.value)
                                   .filter((value) => value.startsWith("reference:"))
                                   .map((value) => value.slice("reference:".length));
-                                if (JSON.stringify(shas) !== JSON.stringify(payload)) return false;
-                                const shown = [...panel.querySelectorAll("#compare-references li")]
-                                  .map((node) => node.dataset.referenceSha256 || null);
-                                return shown.length === 1 && payload.includes(shown[0]);
+                                if (JSON.stringify(shas) !== JSON.stringify(payload.expected)) return false;
+                                // 常驻单图：左栏当前展示图必须属于冻结集合；不数 li 个数。
+                                const shown = panel.querySelector("#compare-left-image");
+                                const host = shown ? shown.closest("[data-reference-sha256]") : null;
+                                const sha = host ? (host.dataset.referenceSha256 || null) : null;
+                                return sha !== null && payload.expected.includes(sha);
                             }""",
-                            arg=expected,
+                            arg={"expected": expected},
                             timeout=20_000)
                     except Exception as error:
                         # 顺序/身份不符要留下两侧原值：只报超时不构成可定位的失败原因。
                         raised = compare_state()
                         raise AssertionError(
                             "比较面板参考图与冻结身份不一致（shot=" + shot_id
-                            + " 面板=" + json.dumps(raised["reference_shas"], ensure_ascii=False)
+                            + " 下拉=" + json.dumps(frozen_reference_order(), ensure_ascii=False)
+                            + " 当前展示=" + json.dumps(raised["shown_reference_sha"], ensure_ascii=False)
                             + " 冻结=" + json.dumps(expected, ensure_ascii=False)
                             + " 正看候选=" + str(raised["selected_candidate_id"])
                             + " 候选数=" + str(raised["cards"])

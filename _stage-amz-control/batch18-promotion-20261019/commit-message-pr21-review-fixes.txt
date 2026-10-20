@@ -1,0 +1,22 @@
+fix(v2): answer the Codex review on #21; zoom stays an equivalent-viewport claim
+
+- Zoom wording: CDP has no native-zoom entry point, so the new section is recorded as a
+  zoom-equivalent viewport (CSS viewport = 1440x900 / factor, physical capture still
+  1440 px wide) and the contract's "actual browser zoom" item is explicitly left open in
+  the report, the docstring and the state.
+- Every keyboard stop must now be visible, outlined, in view and hit-testable at its
+  centre - previously only the final export button was checked, so an obscured
+  intermediate stop could pass.
+- Both delivery ZIPs (click and keyboard) are now reconciled against the deliver gate's
+  adopted shot set, so two identically incomplete packages can no longer confirm each
+  other.
+- Each zoomed stage must locate and hit-test its critical controls after scrolling them
+  into view (#analyze-run, #suite-seed, #stage-next-make, #confirm-action,
+  #deliver-export, #suite-review-run).
+- The Markdown report no longer slices the probe JSON by character count; the complete
+  object (including zoom_and_keyboard) is embedded and valid.
+
+Evidence replaced: v273-rehearsal-20261020-091407.{json,md} + 29 screenshots (1.25x dpr
+1.25 / inner 1152, 2x dpr 2 / inner 720, both capturing 1440 px; eight critical controls
+reachable at both zooms; keyboard 10 stops; keyboard ZIP matches the click export image
+for image; 0 console/page/http errors).

@@ -1,0 +1,34 @@
+feat(v2): close the keyboard/zoom gap in the V2.7.3 rehearsals; freeze the two-round gate
+
+Walkthrough (tools/rehearse_v273_walkthrough.py):
+- Real browser zoom at 125%/200% via CDP Emulation.setDeviceMetricsOverride (CSS viewport
+  = 1440x900 / factor). Screenshots go through Page.captureScreenshot because
+  page.screenshot() re-applies the context viewport and silently dropped the emulation
+  (measured: the layout fell back to 1440). The physical capture must stay 1440 px wide,
+  which is what distinguishes zoom from merely using a narrower window.
+- Per stage at both zooms: no horizontal overflow (scroll == client), and every deliver
+  gate row must read data-selection-state="current" and stay inside the viewport width.
+  The previous substring check over the panel text was tautological (the panel's static
+  sentence contains "已采用"), so it is gone.
+- Keyboard at 200%: body gets tabindex=-1 and is focused to reset the sequential start
+  point, then Tab (<=160) must reach #deliver-export with every stop visibly focused;
+  Enter must download a ZIP whose per-image file name/sha/bytes equal the click-driven
+  export's, with manifest declared values matching the packed bytes.
+- Report and print output now state the zoom + keyboard coverage.
+
+Independent review (ZoomKeyboardReview) raised 1 BLOCKING + 3 MINOR; all fixed:
+tautological adoption check, no-op body.focus() (proved only adjacent reachability),
+count-only ZIP comparison, and a 30s vs 120s download-timeout mismatch.
+
+Evidence: evals/product-v2/v273-rehearsal-20261020-014125.{json,md} + 29 screenshots -
+1.25x: dpr 1.25 / inner 1152; 2x: dpr 2 / inner 720; both capture 1440 px wide; four
+stages clean; keyboard reaches the export in 10 Tabs; the keyboard ZIP (43,969 B) matches
+the click export image for image; 0 console/page/http errors.
+
+Frozen gate: tools/verify_v2_7_1_regression.py --rounds 2 --stamp 20261020-v271-frozen-6e692a4c
+on main 6e692a4c (tracked clean) -> 2 rounds x 50 commands all rc=0, identical fingerprints
+(290ee1bddc2b3a6b). Only tools/ changed here, so the product source identity is unchanged.
+
+Still open and recorded in state: the two optional figures (卖点信息图/细节图) carry stale
+adoptions and need paid regeneration; batch 18's online five-image flow and old-image
+same-origin recovery also need paid calls. Batch 18 stays open.

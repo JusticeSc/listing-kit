@@ -1,0 +1,25 @@
+chore(v2): stop work and formalize the pause for handoff
+
+User: "即刻停止当前工作，做好收尾准备" (stop now, prepare the wrap-up).
+
+State machine now matches the observed Goal: record paused, phase 4 blocked,
+V2.R5.1 blocked with an explicit blocker naming the user's stop order and the
+resume precondition. The new observation
+evals/product-v2/refactor/goal-observation-stop-20261020T012741Z.json records the
+live goal read (15ab22bf3386b9cf, status paused; objective bytes identical to the
+2026-10-18 observation). check_docs --no-run: exit 0; refactor_resume: PASS /
+paused / "only resolve the permission gate, no restricted execution".
+
+Handoff (_stage-amz-control/b18-optional-figures-20261020/):
+- closeout-stop-20261020.md - what ran, what did not (0 paid calls, 0 new outbound
+  shapes), the exact resume path through the product UI, and the cleanup check.
+- gate-snapshot.json - read-only re-capture (refusing provider) of the real imported
+  project: infographic and detail figures are `stale`, the confirm sheet's own
+  DECISION_REQUIRED text is the root cause, and export itself is not blocked.
+- record_host.py / capture_shapes.py / snapshot_gate.py - throwaway control-plane
+  tools, never part of product source and never in the ledger.
+- The earlier capture-result.json was deleted by the next run's unlink before that
+  run was killed, so it is gone; the same fact was re-captured instead of rebuilt.
+
+No product source changed here; PR #21 stays an open draft and its CI run for
+f5e1e17 was still in progress when work stopped (conclusion unknown).

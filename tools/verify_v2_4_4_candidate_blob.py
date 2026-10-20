@@ -957,38 +957,46 @@ def main() -> int:
                 # 切到批量范围——与 verify_v2_4_3 的 -03a/-03 同口径。这里刻意切到「第二张」
                 # 再看摘要：否则「跟随正看图」与「固定第一张」两种实现都绿。
                 def confirm_scope_now() -> list:
+                    # P3：范围只核 data-shot-id 身份集合；徽标措辞/计数文案不是业务合同，
+                    # 另由 -03a 的单集合与本次实际消费（后续 confirm_and_submit 的新 action
+                    # 与捕获请求）证明，不在这里钉文案。
                     return page.evaluate(
                         """() => [...document.querySelectorAll('#confirm-list .confirm-shot')]
-                             .map((node) => ({shot: node.getAttribute('data-shot-id'),
-                                              badges: [...node.querySelectorAll('.badge')]
-                                                .map((item) => item.textContent)}))""")
+                             .map((node) => node.getAttribute('data-shot-id'))""")
+
+                def confirm_counts_now() -> dict:
+                    return page.evaluate(
+                        """() => { const node = document.getElementById('confirm-status');
+                            return { selected: node ? node.getAttribute('data-selected-count') : null,
+                                     sending: node ? node.getAttribute('data-sending-count') : null,
+                                     excluded: node ? node.getAttribute('data-excluded-count') : null }; }""")
 
                 second_shot = shot_ids[1]
                 shared.select_make_shot(page, second_shot)
                 ready_single = probe()
                 single_scope = confirm_scope_now()
-                single_status = page.locator("#confirm-status").inner_text()
+                single_counts = confirm_counts_now()
                 viewed = [item["shot_id"] for item in ready_single["ui"]["rows"] if item["viewed"]]
-                check("V2.4.4-03a", "B4单默认：确认前只送正看1张（换一张仍跟随），范围行如实列出未选图",
+                check("V2.4.4-03a", "B4单默认：确认前只送正看1张（换一张仍跟随），范围身份与计数一致",
                       len(ready_single["ui"]["rows"]) == 4
                       and all(item["state"] == "none" for item in ready_single["ui"]["rows"])
                       and len(ready_single["asset_rows"]) == 1
                       and ready_single["candidate_chains"] == {}
                       and viewed == [second_shot]
-                      and len(single_scope) == 1 and single_scope[0]["shot"] == second_shot
-                      and "本次选择 1 张，明确发送 1 张" in single_status,
+                      and single_scope == [second_shot]
+                      and single_counts == {"selected": "1", "sending": "1", "excluded": "0"},
                       {"rows": len(ready_single["ui"]["rows"]),
                        "viewed": viewed,
-                       "scope": [item["shot"] for item in single_scope],
+                       "scope": single_scope,
                        "expected": second_shot,
-                       "status": single_status})
+                       "counts": single_counts})
                 # 后面的 -04/-05 读的是 ok_shot 的行投影（#shot-execution 只渲染正看图），
                 # 所以把正看切回第一张再选批量范围；批量勾选由 choose_make_batch 显式设置。
                 shared.select_make_shot(page, ok_shot)
                 shared.choose_make_batch(page, shot_ids)
                 ready = probe()
                 confirm_scope = confirm_scope_now()
-                confirm_status = page.locator("#confirm-status").inner_text()
+                confirm_counts = confirm_counts_now()
                 confirm_generation(shot_ids)
                 ui["base_shots"] = shot_ids
                 ui["boot_retries"] = list(boot_retries)
@@ -1017,13 +1025,12 @@ def main() -> int:
                       and all(item["preview"] is None for item in ready["ui"]["rows"])
                       and len(ready["asset_rows"]) == 1
                       and ready["candidate_chains"] == {}
-                      and [item["shot"] for item in confirm_scope] == shot_ids
-                      and all("本次发送" in item["badges"] for item in confirm_scope)
-                      and "发送 4 张" in confirm_status,
+                      and confirm_scope == shot_ids
+                      and confirm_counts == {"selected": "4", "sending": "4", "excluded": "0"},
                       {"rows": len(ready["ui"]["rows"]),
                        "assets": len(ready["asset_rows"]),
-                       "scope": [item["shot"] for item in confirm_scope],
-                       "status": confirm_status})
+                       "scope": confirm_scope,
+                       "counts": confirm_counts})
                 # ---------------- 单张成功：候选自动入库，三方 sha256 一致 ----------------
                 stage = "check04-single"
                 # 首批摘要已提交 ok 单张：confirm_and_submit 内 settle 已等到终态；
