@@ -1,0 +1,87 @@
+{
+  "schema": "amz-release-online-adoption/v1",
+  "status": "passed",
+  "finished_at": "2026-10-20T13:56:38",
+  "base": "https://47.115.172.233:8080",
+  "source_package": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit-complete-product-15ab22\\_stage-amz-control\\staleness-diagnosis-20261020\\b19-exports\\b19-project-post-suite.zip",
+  "passed": 7,
+  "total": 7,
+  "checks": [
+    {
+      "id": "AD-01",
+      "title": "导入项目五用途均已采用",
+      "ok": true,
+      "detail": {
+        "adopted": 16
+      }
+    },
+    {
+      "id": "AD-02",
+      "title": "线上采用另一候选并写新 selection 版本",
+      "ok": true,
+      "detail": {
+        "shot": "shot_detail_material",
+        "candidate": "act-e03c2644480d449182a7f0001cc1a8be",
+        "version": [
+          4,
+          5
+        ]
+      }
+    },
+    {
+      "id": "AD-03a",
+      "title": "选择变化后整套检查过期并阻断交付",
+      "ok": true,
+      "detail": {
+        "status": "交付门禁未通过：1 条阻断，逐条处理后才能生成。",
+        "rules": [
+          "export.suite_review_current"
+        ]
+      }
+    },
+    {
+      "id": "AD-03b",
+      "title": "重跑整套检查后门禁放行",
+      "ok": true,
+      "detail": {
+        "status": "交付门禁通过：可以生成交付包（只包含已采用的候选）。",
+        "blocking": []
+      }
+    },
+    {
+      "id": "AD-04",
+      "title": "交付包含 5 图且该图等于刚采用的候选",
+      "ok": true,
+      "detail": {
+        "download": {
+          "filename": "真实闭环-·-参考图-交付包-20261020-0556.zip",
+          "bytes": 6401791,
+          "sha256": "20eeb90d2e2ceb64d2de50fb4c717e8aa51c5b3a5b3d2d3184df190df2957b39"
+        },
+        "shot": "shot_detail_material",
+        "candidate": "act-e03c2644480d449182a7f0001cc1a8be",
+        "expected_sha": "e8ca9875a774"
+      }
+    },
+    {
+      "id": "AD-05",
+      "title": "项目包再导入与刷新后文档/资产相等",
+      "ok": true,
+      "detail": {
+        "documents": 343,
+        "assets": 28
+      }
+    },
+    {
+      "id": "AD-06",
+      "title": "全程零 console/page error",
+      "ok": true,
+      "detail": {
+        "console": [],
+        "page": []
+      }
+    }
+  ],
+  "console_errors": [],
+  "page_errors": []
+}

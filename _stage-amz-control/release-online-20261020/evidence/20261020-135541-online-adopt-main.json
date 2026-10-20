@@ -1,0 +1,60 @@
+{
+  "schema": "amz-release-online-adoption/v1",
+  "status": "failed",
+  "finished_at": "2026-10-20T13:55:48",
+  "base": "https://47.115.172.233:8080",
+  "source_package": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit-complete-product-15ab22\\_stage-amz-control\\staleness-diagnosis-20261020\\b19-exports\\b19-project-post-suite.zip",
+  "passed": 4,
+  "total": 5,
+  "checks": [
+    {
+      "id": "AD-01",
+      "title": "导入项目五用途均已采用",
+      "ok": true,
+      "detail": {
+        "adopted": 16
+      }
+    },
+    {
+      "id": "AD-02",
+      "title": "线上采用另一候选并写新 selection 版本",
+      "ok": true,
+      "detail": {
+        "shot": "shot_detail_material",
+        "candidate": "act-e03c2644480d449182a7f0001cc1a8be",
+        "version": [
+          4,
+          5
+        ]
+      }
+    },
+    {
+      "id": "AD-03a",
+      "title": "选择变化后整套检查过期并阻断交付",
+      "ok": true,
+      "detail": {
+        "status": "交付门禁未通过：1 条阻断，逐条处理后才能生成。",
+        "rules": [
+          "export.suite_review_current"
+        ]
+      }
+    },
+    {
+      "id": "AD-03b",
+      "title": "重跑整套检查后门禁放行",
+      "ok": true,
+      "detail": {
+        "status": "交付门禁通过：可以生成交付包（只包含已采用的候选）。",
+        "blocking": []
+      }
+    },
+    {
+      "id": "AD-EXC",
+      "title": "执行异常",
+      "ok": false,
+      "detail": "StopIteration: "
+    }
+  ],
+  "console_errors": [],
+  "page_errors": []
+}
