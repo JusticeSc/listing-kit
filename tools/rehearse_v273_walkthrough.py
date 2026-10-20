@@ -11,7 +11,7 @@
 逐图采用、整套检查跳转、导出与独立解包），不在这里另写一套选择器。
 
 判据以「用户看得见的东西」为准：VLM 复核等状态读主行文本/行属性（库只作辅助核对），
-整套检查入口必须真的存在并聚焦、390px 与 125%/200% 实际缩放无横向溢出、200% 下键盘
+整套检查入口必须真的存在并聚焦、390px 与 125%/200% 缩放等价视口无横向溢出、200% 下键盘
 可达导出、交付包 manifest 声明与解包字节逐条
 相等，返工后显式选新候选再采用、并核对交付包里的确是那张候选。
 
@@ -471,9 +471,10 @@ def main() -> int:
                 # 先把窗口恢复成 1440×900，否则缩放覆盖会被 390 宽的窗口钳住（实测 390 宽）。
                 page.set_viewport_size({"width": 1440, "height": 900})
 
-                # 实际浏览器缩放（125%/200%）：合同要求「实际缩放」，只缩 viewport 不算 zoom。
-                # 用 CDP deviceScaleFactor 让 CSS 视口 = 物理 1440×900 ÷ 倍数，截图的物理宽度
-                # 必须仍是 1440 —— 那才证明是缩放而不是换了个更窄的窗口。
+                # 缩放等价视口（125%/200%）：CDP deviceScaleFactor 让 CSS 视口 = 物理 1440×900 ÷
+                # 倍数，截图物理宽必须仍是 1440 —— 这能区分「缩放」与「换窄窗口」，但它不是
+                # Chrome 原生 zoom（CDP 没有原生 zoom 入口）。合同要求的「实际浏览器缩放」因此
+                # 仍算未验，本段只提供等价视口 + 原像素渲染的证据。
                 zoom_session = context.new_cdp_session(page)
 
                 def apply_zoom(factor: float) -> dict:
@@ -505,6 +506,30 @@ def main() -> int:
                                 && rect.bottom <= innerHeight + 1 && rect.right <= innerWidth + 1,
                               hit_self: !!hit && (hit === el || el.contains(hit))};
                     }""")
+
+                STAGE_CONTROLS = {
+                    "intake": ["#analyze-run"],
+                    "plan": ["#suite-seed", "#stage-next-make"],
+                    "make": ["#confirm-action"],
+                    "deliver": ["#deliver-export", "#suite-review-run"],
+                }
+                # 关键操作在缩放后仍要可定位、可见、且中心点命中自己（固定栏不得盖住它）。
+                # 纵向滚动是允许的，所以先把控件滚到视口中间再量。
+                CONTROL_PROBE = """(selectors) => selectors.map((selector) => {
+                    const el = document.querySelector(selector);
+                    if (!el) return {selector, found: false};
+                    el.scrollIntoView({block: 'center', inline: 'nearest'});
+                    const rect = el.getBoundingClientRect();
+                    const cx = rect.left + rect.width / 2;
+                    const cy = rect.top + rect.height / 2;
+                    const hit = document.elementFromPoint(cx, cy);
+                    return {selector, found: true,
+                            visible: el.getClientRects().length > 0
+                              && rect.width > 0 && rect.height > 0,
+                            in_view: rect.top >= -1 && rect.bottom <= innerHeight + 1
+                              && rect.left >= -1 && rect.right <= innerWidth + 1,
+                            hit_self: !!hit && (hit === el || el.contains(hit))};
+                })"""
 
                 def png_width(raw: bytes) -> int:
                     return struct.unpack(">I", raw[16:20])[0]
@@ -540,9 +565,17 @@ def main() -> int:
                             raise AssertionError(
                                 f"{int(factor * 100)}% 缩放在 {stage} 被重置：{live}")
                         stage_overflow = page.evaluate(shared.OVERFLOW_PROBE)
+                        controls = page.evaluate(CONTROL_PROBE, STAGE_CONTROLS[stage])
                         per_stage[stage] = {"overflow": stage_overflow, "focus": focus_probe(),
-                                            "metrics": live}
+                                            "metrics": live, "controls": controls}
                         snap_zoom(f"{stage}-zoom{int(round(factor * 100))}")
+                        unusable = [item for item in controls if not (
+                            item.get("found") and item.get("visible")
+                            and item.get("in_view") and item.get("hit_self"))]
+                        if unusable:
+                            raise AssertionError(
+                                f"{int(factor * 100)}% 缩放下 {stage} 的关键操作不可用："
+                                + repr(unusable))
                         if (stage_overflow.get("scroll") or 0) > (stage_overflow.get("client") or 0):
                             raise AssertionError(
                                 f"{int(factor * 100)}% 缩放在 {stage} 出现横向溢出："
@@ -596,8 +629,11 @@ def main() -> int:
                 if len(key_path) < 6:
                     raise AssertionError(
                         "键盘路径过短，像没从文档头开始：" + repr([item.get("id") for item in key_path]))
+                # 每一步都必须可见、有轮廓、在视口内、中心点命中自己：只查末步会漏掉
+                # 中途被固定栏盖住/滚出视口的停靠点。
                 blocked = [item for item in key_path
-                           if not item.get("visible") or not item.get("outline")]
+                           if not (item.get("visible") and item.get("outline")
+                                   and item.get("in_view") and item.get("hit_self"))]
                 last_focus = key_path[-1]
                 if blocked:
                     raise AssertionError(
@@ -625,6 +661,20 @@ def main() -> int:
                 def digest_map(source: dict) -> dict:
                     return {name: [info["sha256"], info["byte_size"]]
                             for name, info in source.items()}
+                # 两个包都不能只是「彼此相同」：各自都必须覆盖交付门禁里全部已采用图，
+                # 否则同一张图在两次导出里都被漏掉也会一起通过。
+                gate_shots = {row["shot"] for row in gate_rows}
+
+                def zip_shots(digests: dict) -> set:
+                    return {name.split("/", 1)[1].rsplit("-act-", 1)[0]
+                            for name in digests}
+
+                for origin_label, digests in (("鼠标导出", probes["export"]["digests"]),
+                                              ("键盘导出", keyboard_zip["digests"])):
+                    if zip_shots(digests) != gate_shots:
+                        raise AssertionError(
+                            origin_label + "的图集与交付门禁的已采用集合不一致："
+                            + repr(sorted(zip_shots(digests) ^ gate_shots)))
                 if digest_map(keyboard_zip["digests"]) != digest_map(
                         probes["export"]["digests"]):
                     raise AssertionError(
@@ -677,7 +727,8 @@ def main() -> int:
         "- 剧本（四段工作台）：新建项目 → 资料与事实（上传/填写/分析/逐条确认）→ 方案（推荐套图）→",
         "  制作与审图（默认单张范围 → 显式全量批量 → 一次明确提交 → 单图 VLM 复核 →",
         "  单图返工 → 返工图显式选新候选后逐图采用）→ 交付（整套检查 → 导出 ZIP）→ 390px 四阶段复核 →",
-        "  实际 125%/200% 缩放（CDP deviceScaleFactor，物理宽仍 1440）与 200% 下键盘导出",
+        "  缩放等价视口 125%/200%（CDP deviceScaleFactor，物理宽仍 1440；原生浏览器 zoom 未验）",
+        "  与 200% 下键盘导出",
         "",
         "## 节点耗时",
         "",
@@ -687,7 +738,7 @@ def main() -> int:
     for item in timeline:
         lines.append(f"| {item['node']} | {item['seconds']} |")
     lines += ["", "## 采集探针", "", "```json",
-              json.dumps(probes, ensure_ascii=False, indent=2)[:6000], "```", "",
+              json.dumps(probes, ensure_ascii=False, indent=2), "```", "",
               "## 截图", ""]
     for name in shots:
         lines.append(f"- evals/product-v2/evidence/{name}")

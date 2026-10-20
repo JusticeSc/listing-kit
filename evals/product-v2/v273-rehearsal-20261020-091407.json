@@ -1,11 +1,11 @@
 {
   "status": "ok",
-  "finished_at": "2026-10-20T01:41:52",
+  "finished_at": "2026-10-20T09:14:37",
   "reference": "E:\\workbuddy_workspace\\2026-09-20-16-38-19\\amz-listing-kit\\_working\\amz-listing-kit-product-demo\\real-run-lamp\\lamp-3m.jpg",
   "timeline": [
     {
       "node": "home",
-      "seconds": 0.4
+      "seconds": 0.7
     },
     {
       "node": "intake",
@@ -13,12 +13,12 @@
     },
     {
       "node": "facts",
-      "seconds": 9.3,
+      "seconds": 9.5,
       "confirm_rounds": 36
     },
     {
       "node": "plan",
-      "seconds": 0.4
+      "seconds": 0.5
     },
     {
       "node": "make",
@@ -26,7 +26,7 @@
     },
     {
       "node": "vlm-review",
-      "seconds": 0.3
+      "seconds": 0.4
     },
     {
       "node": "rework",
@@ -34,18 +34,18 @@
     },
     {
       "node": "adopt",
-      "seconds": 1.0
+      "seconds": 1.1
     },
     {
       "node": "deliver",
-      "seconds": 2.2
+      "seconds": 2.4
     }
   ],
   "probes": {
     "home_empty_text": "这台浏览器还没有项目。填写名称后点“新建项目”开始。",
     "intake_gate": "将发给 fake-deepseek-v4.1-flash：当前名称、介绍、卖点与重点，仅参考图元数据，不发送图片字节。供应商按实际调用计费；不能据元数据宣称已经看图。",
     "slot_rows": 11,
-    "intake_panel_text": "资料与事实\n\n上传参考图并填写商品信息；先处理冲突、未知与必须确认的槽位，已确认的事实默认折叠。\n\n参考图\n\n至少一张“商品主图（primary）”；内容相同的图不会重复登记；最多 20 张。\n\n添加参考图…\n1 / 20 张\nlamp-3m.jpg\nimage/jpeg · 679383 字节 · 1920×2560\n这张照片能看到的角度（确认后才能作为视角依据）  能看到正面  能看到侧面  能看到顶面\n技术详情\n商品主图\n细节图\n包装图\n场景参考\n竞品参考\n其他\n删除\n商品资料\n\n只有你填写的内容进这里；模型推断写在“商品理解”，不覆盖这里。\n\n商品名称（必填）\n商品介绍\n卖点（一行一条）\n本次重点\n保存草稿\n草稿已保存 · 版本 2\n确认商品事实\n\n可以直接人工填写。AI 理解只提出待确认的建议，不自动确认事实；仅在你明确点击时外发资料。\n\n自己填写商品事实\n再次仅文字理解（可选）\n将发给 fake-deepseek-v4.1-flash：当前名称、介绍、卖点与重点，仅参考图元数据，不发送图片字节。供应商按实际调用计费；不能据元数据宣称已经看图。\n\n最近一次分析：5 个提案，写入 5 个槽位 · fake-semantic（fake-deepseek-v4.1-flash） · 原资料 v2 · 未发送图片字节 · 2026/10/20 01:41:27 · 假 Provider 提案：仅用于契约测试与界面开发。\n\n事实槽位\n\n模型只能提议；确认、修改、标未知与移除都由你决定，历史版本保留。\n\n必须确认的槽位 0 / 3 已确认 · 待处理 11 项 · 共 11 项 ",
+    "intake_panel_text": "资料与事实\n\n上传参考图并填写商品信息；先处理冲突、未知与必须确认的槽位，已确认的事实默认折叠。\n\n参考图\n\n至少一张“商品主图（primary）”；内容相同的图不会重复登记；最多 20 张。\n\n添加参考图…\n1 / 20 张\nlamp-3m.jpg\nimage/jpeg · 679383 字节 · 1920×2560\n这张照片能看到的角度（确认后才能作为视角依据）  能看到正面  能看到侧面  能看到顶面\n技术详情\n商品主图\n细节图\n包装图\n场景参考\n竞品参考\n其他\n删除\n商品资料\n\n只有你填写的内容进这里；模型推断写在“商品理解”，不覆盖这里。\n\n商品名称（必填）\n商品介绍\n卖点（一行一条）\n本次重点\n保存草稿\n草稿已保存 · 版本 2\n确认商品事实\n\n可以直接人工填写。AI 理解只提出待确认的建议，不自动确认事实；仅在你明确点击时外发资料。\n\n自己填写商品事实\n再次仅文字理解（可选）\n将发给 fake-deepseek-v4.1-flash：当前名称、介绍、卖点与重点，仅参考图元数据，不发送图片字节。供应商按实际调用计费；不能据元数据宣称已经看图。\n\n最近一次分析：5 个提案，写入 5 个槽位 · fake-semantic（fake-deepseek-v4.1-flash） · 原资料 v2 · 未发送图片字节 · 2026/10/20 09:14:11 · 假 Provider 提案：仅用于契约测试与界面开发。\n\n事实槽位\n\n模型只能提议；确认、修改、标未知与移除都由你决定，历史版本保留。\n\n必须确认的槽位 0 / 3 已确认 · 待处理 11 项 · 共 11 项 ",
     "confirm_rounds": 36,
     "intake_progress_text": "必须确认的槽位 3 / 3 已确认 · 待处理 5 项 · 共 11 项",
     "intake_pending_rows": [
@@ -107,10 +107,10 @@
         "shot_scene_lifestyle"
       ],
       "captured_actions": [
-        "act-d9c8dfb937714a62bc94ffac1d1e3eb6",
-        "act-ace96b8d95704ea3a32c27758befb194",
-        "act-b61ae5ed4a774d9baf507b3ed29807e8",
-        "act-72e148e85d9d421e97f1ca4e3adbf581"
+        "act-5894bd4e483046c6af7b592748ee6752",
+        "act-cee58a28dacb47ff864e242f1a302d5e",
+        "act-58c76c69365d4f90bcf74356a81e4f25",
+        "act-a9fc768cd98e4ecb8d31ee157f3ea4fd"
       ]
     },
     "attempt_states": {
@@ -161,14 +161,14 @@
       "compare_vlm_text": "视觉复核（按需发起）：已完成 · fake-qwen-vl-max",
       "outcome": "checked",
       "before_text": "自动检查 v2.5.2：阻断 0 · 高风险 0 · 提醒 1 · 未知 0 · VLM 未检查 · 先看：推荐长边 1600px — 最长边 1024px 低于推荐值 1600px（不阻断；需要最佳缩放时可提高生成尺寸）。",
-      "after_text": "自动检查 v2.5.2：阻断 0 · 高风险 2 · 提醒 1 · 未知 0 · VLM 已检查 · 先看：明显畸形 — 假数据（2b131c36）：杯口边缘出现第二道不自然的弧线。"
+      "after_text": "自动检查 v2.5.2：阻断 0 · 高风险 2 · 提醒 1 · 未知 0 · VLM 已检查 · 先看：明显畸形 — 假数据（dc1f5cd0）：杯口边缘出现第二道不自然的弧线。"
     },
     "rework": {
       "shot": "shot_main_clean",
       "candidates_before": 1,
       "candidates_after": 2,
       "attempt_state": "succeeded",
-      "adopted_candidate": "act-10fd6fe8f76440f184bbdcab029825fa"
+      "adopted_candidate": "act-684fdf4cc8e04eac9bb61f46f83018be"
     },
     "selection_states_after": [
       {
@@ -198,57 +198,57 @@
     "suite_findings_text": "没有需要人工处理的整套发现。\n\n另 10 项确定性检查通过（细节在候选审核清单里）。",
     "deliver_export_after_suite": true,
     "export": {
-      "file_name": "V273-夹式-LED-阅读灯-交付包-20261019-1741.zip",
-      "bytes": 43969,
-      "sha256": "d03a20029b77956552148f7302d7be18bd5e0766f47442844719d034fadd4831",
+      "file_name": "V273-夹式-LED-阅读灯-交付包-20261020-0114.zip",
+      "bytes": 43972,
+      "sha256": "b3f23c91faa37cbac9bc3f0e578fb98da85b34666ab5fd0901ce527535c1048d",
       "entries": [
         "README.txt",
         "checks.json",
-        "images/shot_detail_material-act-72e148e85d9d421e97f1ca4e3adbf581.png",
-        "images/shot_infographic_benefits-act-ace96b8d95704ea3a32c27758befb194.png",
-        "images/shot_main_clean-act-10fd6fe8f76440f184bbdcab029825fa.png",
-        "images/shot_scene_lifestyle-act-b61ae5ed4a774d9baf507b3ed29807e8.png",
+        "images/shot_detail_material-act-a9fc768cd98e4ecb8d31ee157f3ea4fd.png",
+        "images/shot_infographic_benefits-act-cee58a28dacb47ff864e242f1a302d5e.png",
+        "images/shot_main_clean-act-684fdf4cc8e04eac9bb61f46f83018be.png",
+        "images/shot_scene_lifestyle-act-58c76c69365d4f90bcf74356a81e4f25.png",
         "manifest.json"
       ],
       "has_manifest": true,
       "broken": null,
       "manifest_image_count": 4,
       "digests": {
-        "images/shot_main_clean-act-10fd6fe8f76440f184bbdcab029825fa.png": {
-          "sha256": "87d370d5e6d0a184bfe27dd40586d3996b5836fe8ab7addea180584b8661787e",
-          "declared": "87d370d5e6d0a184bfe27dd40586d3996b5836fe8ab7addea180584b8661787e",
+        "images/shot_main_clean-act-684fdf4cc8e04eac9bb61f46f83018be.png": {
+          "sha256": "de6c00639efbf342da7e2d94788add11997dddf0334138adde97f3400b0fd85f",
+          "declared": "de6c00639efbf342da7e2d94788add11997dddf0334138adde97f3400b0fd85f",
           "byte_size": 5337,
           "declared_size": 5337
         },
-        "images/shot_infographic_benefits-act-ace96b8d95704ea3a32c27758befb194.png": {
-          "sha256": "eb85b0c7ff2e7f5c19ce31901649df82410634e4cf403f124691a663dd22e53e",
-          "declared": "eb85b0c7ff2e7f5c19ce31901649df82410634e4cf403f124691a663dd22e53e",
-          "byte_size": 5336,
-          "declared_size": 5336
+        "images/shot_infographic_benefits-act-cee58a28dacb47ff864e242f1a302d5e.png": {
+          "sha256": "bfe3cf21ad8253c865151da99ff9f52a6622e3d8d7b022b19efdafad4ff118b9",
+          "declared": "bfe3cf21ad8253c865151da99ff9f52a6622e3d8d7b022b19efdafad4ff118b9",
+          "byte_size": 5338,
+          "declared_size": 5338
         },
-        "images/shot_scene_lifestyle-act-b61ae5ed4a774d9baf507b3ed29807e8.png": {
-          "sha256": "b5568e1cf7528881f6cb949a61011470d2a651988917829ca0da9c4db6902820",
-          "declared": "b5568e1cf7528881f6cb949a61011470d2a651988917829ca0da9c4db6902820",
-          "byte_size": 5336,
-          "declared_size": 5336
+        "images/shot_scene_lifestyle-act-58c76c69365d4f90bcf74356a81e4f25.png": {
+          "sha256": "be3086b42e054c85216a9c1325612788bd4336ff6adb6c975ca7cc9359248e3b",
+          "declared": "be3086b42e054c85216a9c1325612788bd4336ff6adb6c975ca7cc9359248e3b",
+          "byte_size": 5337,
+          "declared_size": 5337
         },
-        "images/shot_detail_material-act-72e148e85d9d421e97f1ca4e3adbf581.png": {
-          "sha256": "f5d34d32ad2b840ec89de280261a06a946b8a1c6cf832b8e230b5cc1678b0d69",
-          "declared": "f5d34d32ad2b840ec89de280261a06a946b8a1c6cf832b8e230b5cc1678b0d69",
+        "images/shot_detail_material-act-a9fc768cd98e4ecb8d31ee157f3ea4fd.png": {
+          "sha256": "81c4322e9a92828187a4eab11c7c53aaa20e9f932d286c67b6746e1eb782e83a",
+          "declared": "81c4322e9a92828187a4eab11c7c53aaa20e9f932d286c67b6746e1eb782e83a",
           "byte_size": 5337,
           "declared_size": 5337
         }
       },
       "images": [
-        "images/shot_detail_material-act-72e148e85d9d421e97f1ca4e3adbf581.png",
-        "images/shot_infographic_benefits-act-ace96b8d95704ea3a32c27758befb194.png",
-        "images/shot_main_clean-act-10fd6fe8f76440f184bbdcab029825fa.png",
-        "images/shot_scene_lifestyle-act-b61ae5ed4a774d9baf507b3ed29807e8.png"
+        "images/shot_detail_material-act-a9fc768cd98e4ecb8d31ee157f3ea4fd.png",
+        "images/shot_infographic_benefits-act-cee58a28dacb47ff864e242f1a302d5e.png",
+        "images/shot_main_clean-act-684fdf4cc8e04eac9bb61f46f83018be.png",
+        "images/shot_scene_lifestyle-act-58c76c69365d4f90bcf74356a81e4f25.png"
       ],
-      "saved_to": "_working\\amz-listing-kit-product-v2\\rehearsal-exports\\20261020-014125-lamp-delivery.zip",
-      "adopted_rework_image": "images/shot_main_clean-act-10fd6fe8f76440f184bbdcab029825fa.png"
+      "saved_to": "_working\\amz-listing-kit-product-v2\\rehearsal-exports\\20261020-091407-lamp-delivery.zip",
+      "adopted_rework_image": "images/shot_main_clean-act-684fdf4cc8e04eac9bb61f46f83018be.png"
     },
-    "deliver_result_text": "最近一次交付包：V273-夹式-LED-阅读灯-交付包-20261019-1741.zip（43 KB）\n\n技术详情\n下载交付包",
+    "deliver_result_text": "最近一次交付包：V273-夹式-LED-阅读灯-交付包-20261020-0114.zip（43 KB）\n\n技术详情\n下载交付包",
     "overflow_intake_390": {
       "scroll": 390,
       "client": 390,
@@ -288,13 +288,22 @@
               "id": "BUTTON",
               "visible": true,
               "outline": false,
-              "in_view": true,
-              "hit_self": true
+              "in_view": false,
+              "hit_self": false
             },
             "metrics": {
               "dpr": 1.25,
               "w": 1152
-            }
+            },
+            "controls": [
+              {
+                "selector": "#analyze-run",
+                "found": true,
+                "visible": true,
+                "in_view": true,
+                "hit_self": true
+              }
+            ]
           },
           "plan": {
             "overflow": {
@@ -306,13 +315,29 @@
               "id": "BUTTON",
               "visible": true,
               "outline": false,
-              "in_view": true,
-              "hit_self": true
+              "in_view": false,
+              "hit_self": false
             },
             "metrics": {
               "dpr": 1.25,
               "w": 1152
-            }
+            },
+            "controls": [
+              {
+                "selector": "#suite-seed",
+                "found": true,
+                "visible": true,
+                "in_view": true,
+                "hit_self": true
+              },
+              {
+                "selector": "#stage-next-make",
+                "found": true,
+                "visible": true,
+                "in_view": true,
+                "hit_self": true
+              }
+            ]
           },
           "make": {
             "overflow": {
@@ -324,13 +349,22 @@
               "id": "BUTTON",
               "visible": true,
               "outline": false,
-              "in_view": true,
-              "hit_self": true
+              "in_view": false,
+              "hit_self": false
             },
             "metrics": {
               "dpr": 1.25,
               "w": 1152
-            }
+            },
+            "controls": [
+              {
+                "selector": "#confirm-action",
+                "found": true,
+                "visible": true,
+                "in_view": true,
+                "hit_self": true
+              }
+            ]
           },
           "deliver": {
             "overflow": {
@@ -348,7 +382,23 @@
             "metrics": {
               "dpr": 1.25,
               "w": 1152
-            }
+            },
+            "controls": [
+              {
+                "selector": "#deliver-export",
+                "found": true,
+                "visible": true,
+                "in_view": true,
+                "hit_self": true
+              },
+              {
+                "selector": "#suite-review-run",
+                "found": true,
+                "visible": true,
+                "in_view": true,
+                "hit_self": true
+              }
+            ]
           }
         },
         "gate_rows": [
@@ -392,13 +442,22 @@
               "id": "BUTTON",
               "visible": true,
               "outline": false,
-              "in_view": true,
-              "hit_self": true
+              "in_view": false,
+              "hit_self": false
             },
             "metrics": {
               "dpr": 2,
               "w": 720
-            }
+            },
+            "controls": [
+              {
+                "selector": "#analyze-run",
+                "found": true,
+                "visible": true,
+                "in_view": true,
+                "hit_self": true
+              }
+            ]
           },
           "plan": {
             "overflow": {
@@ -410,13 +469,29 @@
               "id": "BUTTON",
               "visible": true,
               "outline": false,
-              "in_view": true,
-              "hit_self": true
+              "in_view": false,
+              "hit_self": false
             },
             "metrics": {
               "dpr": 2,
               "w": 720
-            }
+            },
+            "controls": [
+              {
+                "selector": "#suite-seed",
+                "found": true,
+                "visible": true,
+                "in_view": true,
+                "hit_self": true
+              },
+              {
+                "selector": "#stage-next-make",
+                "found": true,
+                "visible": true,
+                "in_view": true,
+                "hit_self": true
+              }
+            ]
           },
           "make": {
             "overflow": {
@@ -428,13 +503,22 @@
               "id": "BUTTON",
               "visible": true,
               "outline": false,
-              "in_view": true,
-              "hit_self": true
+              "in_view": false,
+              "hit_self": false
             },
             "metrics": {
               "dpr": 2,
               "w": 720
-            }
+            },
+            "controls": [
+              {
+                "selector": "#confirm-action",
+                "found": true,
+                "visible": true,
+                "in_view": true,
+                "hit_self": true
+              }
+            ]
           },
           "deliver": {
             "overflow": {
@@ -446,13 +530,29 @@
               "id": "BUTTON",
               "visible": true,
               "outline": false,
-              "in_view": true,
-              "hit_self": true
+              "in_view": false,
+              "hit_self": false
             },
             "metrics": {
               "dpr": 2,
               "w": 720
-            }
+            },
+            "controls": [
+              {
+                "selector": "#deliver-export",
+                "found": true,
+                "visible": true,
+                "in_view": true,
+                "hit_self": true
+              },
+              {
+                "selector": "#suite-review-run",
+                "found": true,
+                "visible": true,
+                "in_view": true,
+                "hit_self": true
+              }
+            ]
           }
         },
         "gate_rows": [
@@ -495,10 +595,10 @@
           "in_view": true,
           "hit_self": true
         },
-        "file_name": "V273-夹式-LED-阅读灯-交付包-20261019-1741.zip",
-        "bytes": 43969,
+        "file_name": "V273-夹式-LED-阅读灯-交付包-20261020-0114.zip",
+        "bytes": 43972,
         "has_manifest": true,
-        "saved_to": "_working\\amz-listing-kit-product-v2\\rehearsal-exports\\20261020-014125-lamp-keyboard.zip"
+        "saved_to": "_working\\amz-listing-kit-product-v2\\rehearsal-exports\\20261020-091407-lamp-keyboard.zip"
       }
     },
     "console_errors": [],
@@ -506,34 +606,34 @@
     "http_errors": []
   },
   "screenshots": [
-    "v273-rehearsal-20261020-014125-home.png",
-    "v273-rehearsal-20261020-014125-intake.png",
-    "v273-rehearsal-20261020-014125-intake-full.png",
-    "v273-rehearsal-20261020-014125-facts.png",
-    "v273-rehearsal-20261020-014125-facts-full.png",
-    "v273-rehearsal-20261020-014125-plan.png",
-    "v273-rehearsal-20261020-014125-make-confirm.png",
-    "v273-rehearsal-20261020-014125-make-done.png",
-    "v273-rehearsal-20261020-014125-make-done-full.png",
-    "v273-rehearsal-20261020-014125-vlm-review.png",
-    "v273-rehearsal-20261020-014125-rework-preview.png",
-    "v273-rehearsal-20261020-014125-rework-compare.png",
-    "v273-rehearsal-20261020-014125-make-adopted.png",
-    "v273-rehearsal-20261020-014125-deliver.png",
-    "v273-rehearsal-20261020-014125-deliver-full.png",
-    "v273-rehearsal-20261020-014125-deliver-ready.png",
-    "v273-rehearsal-20261020-014125-deliver-exported.png",
-    "v273-rehearsal-20261020-014125-intake-390.png",
-    "v273-rehearsal-20261020-014125-plan-390.png",
-    "v273-rehearsal-20261020-014125-make-390.png",
-    "v273-rehearsal-20261020-014125-deliver-390.png",
-    "v273-rehearsal-20261020-014125-intake-zoom125.png",
-    "v273-rehearsal-20261020-014125-plan-zoom125.png",
-    "v273-rehearsal-20261020-014125-make-zoom125.png",
-    "v273-rehearsal-20261020-014125-deliver-zoom125.png",
-    "v273-rehearsal-20261020-014125-intake-zoom200.png",
-    "v273-rehearsal-20261020-014125-plan-zoom200.png",
-    "v273-rehearsal-20261020-014125-make-zoom200.png",
-    "v273-rehearsal-20261020-014125-deliver-zoom200.png"
+    "v273-rehearsal-20261020-091407-home.png",
+    "v273-rehearsal-20261020-091407-intake.png",
+    "v273-rehearsal-20261020-091407-intake-full.png",
+    "v273-rehearsal-20261020-091407-facts.png",
+    "v273-rehearsal-20261020-091407-facts-full.png",
+    "v273-rehearsal-20261020-091407-plan.png",
+    "v273-rehearsal-20261020-091407-make-confirm.png",
+    "v273-rehearsal-20261020-091407-make-done.png",
+    "v273-rehearsal-20261020-091407-make-done-full.png",
+    "v273-rehearsal-20261020-091407-vlm-review.png",
+    "v273-rehearsal-20261020-091407-rework-preview.png",
+    "v273-rehearsal-20261020-091407-rework-compare.png",
+    "v273-rehearsal-20261020-091407-make-adopted.png",
+    "v273-rehearsal-20261020-091407-deliver.png",
+    "v273-rehearsal-20261020-091407-deliver-full.png",
+    "v273-rehearsal-20261020-091407-deliver-ready.png",
+    "v273-rehearsal-20261020-091407-deliver-exported.png",
+    "v273-rehearsal-20261020-091407-intake-390.png",
+    "v273-rehearsal-20261020-091407-plan-390.png",
+    "v273-rehearsal-20261020-091407-make-390.png",
+    "v273-rehearsal-20261020-091407-deliver-390.png",
+    "v273-rehearsal-20261020-091407-intake-zoom125.png",
+    "v273-rehearsal-20261020-091407-plan-zoom125.png",
+    "v273-rehearsal-20261020-091407-make-zoom125.png",
+    "v273-rehearsal-20261020-091407-deliver-zoom125.png",
+    "v273-rehearsal-20261020-091407-intake-zoom200.png",
+    "v273-rehearsal-20261020-091407-plan-zoom200.png",
+    "v273-rehearsal-20261020-091407-make-zoom200.png",
+    "v273-rehearsal-20261020-091407-deliver-zoom200.png"
   ]
 }
