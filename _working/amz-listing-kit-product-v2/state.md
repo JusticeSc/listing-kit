@@ -5,11 +5,30 @@
 > prepared 是未绑定新 Goal 的本地准备态,不是系统 paused。旧读数与完成记录只见 superseded 基线。
 ## 当前恢复边界
 
-- **2026-10-20审计后，用户在追加批次选择题中明确选择“批准有限收口”：最多再追加4个完整实施＋验收批次，沿已发生记录继续20–23，原1–19批、失败和Unknown不清零。** 原生Goal实时get仍为`15ab22bf3386b9cf / active`、原文不变。授权观察、启动前原字节及本轮结果入口为`_stage-amz-control/b20-b23-closeout-20261020/`；完整审计见`evals/product-v2/refactor/status-audit-20261020.md`。本次恢复必要产品修改、对应验证、原有审查/受保护CI/CD及既有环境发布，不新增资金、模型、依赖或平台；达到批次、金额或类别门即停，不承诺4批必成。已有线上`3195192`、image=`sha256:4abc01be…`、runtime=`48002dc4…`与两包/常规宽度/可逆溢出因果/两轮及恢复证据按各自未变范围复用，不重做基线/V1退出/PR18。C15/C17仍为独立外部门，不新增工程发布前置。
-- **唯一下一动作：第22批已用尽图次数门（16/16），信息图已合格采用，主图仍不合格，需用户明确决定“追加额度”或“保留缺口”。** 第22批用剩余 2 次改做明确候选编辑（各自实际失败候选在前、授权原照在后，2 输入 0.22 元/次），HTTP 200 且任务 succeeded：信息图新增乱码与黑框已消除、商品与自身 608Z/NSK/INDONESIA 保留，经独立复核合格并已通过产品“采用当前候选”落为 selection v5（=`b20fe753…`）；主图实际主体 984px=73.2%，仍低于原 85% 下限且左右各 1px 非白线，判不合格、未采用。失败、费用与原错误结果全部保留，未降标准、未裁剪冒充、未换模型、未借辅助额度生图。
-- **图次数门已到，外发宿主已停，未经新授权不再生图。** 账本 lane 16/16 图、0/4 辅助、3.06/5 元控制上界，累计 14.26/21 元；余 1.94 元但图次数为 0，金额余量不是新授权。交付门实测：必需主图仍是早先的 79.1% 候选且已显示过期，整套一致性报告因选择变化过期，两包导出不能当作合格交付；最终候选规定两轮与第23批受保护发布都依赖“最终五图固定”，现不能进入，也不提前空跑两轮。缺口与三种可选做法见`b22-outcome-and-decision.md`；第22批计入已用批次，现余第23批。
-- 第21批两次、第22批主图这次的实际像素失败，与第22批信息图这次的合格采用，都按真实结果记录；最终五图、两包实际Blob、固定候选两轮、受保护发布与原生缩放准出标准均不缩减。原生125%/200%仍待适用候选固定后由用户本机一次最小走查；C15/C17不新增工程发布前置。
+- **2026-10-21最新明确恢复：工程交付，最多追加第27–28批。** 用户在测试工具整改完成后的实际选择题中选择“恢复工程交付，最多追加2批”，允许适用审查、最终验证及保护成立后的提交、CI和既有环境发布；到限停止，不新增模型调用，不重置旧1–26批、失败、预算或93条Unknown。原始选择、恢复前字节及真实Goal观察见`_stage-amz-control/engineering-delivery-resume-20261021T105905Z/`。本条在上述范围内取代旧停工及测试整改专用权限，不自动授权依赖、模型、平台或原始profile写入。
+- **当前前沿：V2.R5.1 active，按Issue #31收口当前候选。** 第27批先做实际差量独审、冻结及必要离线准出；第28批用于获准且保护成立的工程收口、CI/既有HTTPS发布与受影响线上恢复核对。实际失败后修复及重验仍另计，不把同一失败藏回原批次；用满仍未完成即保全停止。#33/#34本地工具修复已通过定向验证，但尚未提交或获远程CI；不把19秒局部比较证明当作最终连续两轮。
+- **已成立结果按范围复用。** #28的387文档/32资产交接已关闭；#27正式派生并显式采用主图v8（1146²，主体85.8639%，裁区RGB与原图全等、四边纯白）；#30最终五图/两包独立导入刷新392文档/33资产全等，再导出仅manifest时点变化。五图、原生两包及逐图资格在`_stage-amz-control/zero-fee-development-20261021T052937Z/delivery/`，原387文档/32资产及主图原件保留，不重做已成立基线或模型调用。
+- **失败与未证范围不抹除。** 第24批类型失败、第25批4个夹具/字面断言失败及第26批最终首轮49/50、第二轮未运行的原结果全部保留。第26批缺陷归#33，不是裁剪/导出失败。两轴旧独审与审后2个语义修复分开保留；当前差量复审、当前冻结两轮、受保护发布及受影响线上保全仍待完成。本地schema2两包不冒充线上已经支持。
+- **人工与权限边界。** #29原生Chrome125%/200%由用户本机手动观察，不以CSS/CDP等价视口或可见自动化代签；助手继续其他已授权可达工程。C15/C17仍为独立真人外部门，不新增工程发布前置。最终完整Goal不因本地修复、CI或发布单独完成。
+- **数据与资源保全。** 原始profile从未打开/写入；38个原profile状态文件、预算账本、原96份产品/测试源码冻结及旧证据保留。图16/16、lane3.06/5元、累计14.26/21元及费用/预留均不释放，本轮新增模型调用为零。旧宿主已关闭；本次已另起零模型查看宿主`delivery-native-zoom-27`（http://127.0.0.1:5505/），在独立副本实查392文档/33资产与五图采用/交付门后关闭了自有准备Chrome，原生匹配进程0。用户手动专用profile/命令与100%准备截图见本次stage的`native-zoom-human-handoff.json`及`native-zoom-entry-100.webp`；125%/200%仍未验，不重开或自动控制交给用户的profile。
+- **真实Goal仍是原完整产品目标。** 本次真实get观察为`15ab22bf3386b9cf / active`，未新建、缩减、伪造resume或标记完成；§2.1原文hash仍为`6c1f59d0df5c6c867dac5aa090bb32ff915c7dfae2140494c653aab7598bf870`。此前停工、测试整改与保全原始记录分别保留在`zero-fee-development-20261021T052937Z/`和`testing-rectification-20261021T100549Z/`，不以原生active代替本次明确授权。
 
+## 历史停止与准备边界（仅保留原时点，不覆盖上述最新授权）
+
+- **2026-10-21用户要求“还有什么问题或需要澄清的吗，没有的话就做好开发准备吧”：本轮新增授权仅为开发准备。** 允许只读核对现有产品代码/保留现场、完善既有Issue的最小实施方案及维护必要恢复记录，并运行对应管理守卫；不恢复产品修改、构建/测试/回归、宿主/浏览器、生图、提交推送/合并部署，不追加图次数/实施批次/金额或改变原生Goal。准备后的首个交接执行入口为[Issue #28](https://github.com/JusticeSc/listing-kit/issues/28)，不等主图合格；该交接只需定向的“克隆隔离profile＋本地查看宿主＋正式导出”授权，不改原profile、不生图、不恢复产品施工（与#31“当前停工状态查看交接可独立进行”一致），仍不得据此改产品代码或部署。主图确定性派生方案归[#27](https://github.com/JusticeSc/listing-kit/issues/27)，其零模型调用路径不要求追加生图次数，但产品施工及已到上限的实施批次仍须另行明确恢复，发布另取对应授权。具体验收/代码入口只在各Issue维护，不复制新工单表或改写下方机器进度。准备前原字节、产品源码hash与工单正文保存在`_stage-amz-control/development-prep-20261021T043449Z/before.json`；本条不将“准备完成”冒充开工或产品完成。
+
+- **2026-10-20 用户明确“记录在案，开始实施自我改造”，随后要求“多用issue管理任务”，并纠正把独立问题塞入旧Issue评论的做法：本轮仅恢复开发方法、现有执行工具、必要事实记录维护和Issue/PR管理（含新建及关联独立Issue），允许对应的定向离线验证；不恢复 Product V2 产品施工、产品回归、生图、提交推送、合并或部署。** 已有方法改造验收保留在 [Issue #7](https://github.com/JusticeSc/listing-kit/issues/7)；主图确定性修正由独立 [Issue #27](https://github.com/JusticeSc/listing-kit/issues/27) 跟踪，原生父单为 #9，建单不代表恢复实施。本地 `_working/ai-coding-bootstrap/work.md` 只保留权限、基线、证据和恢复指针。本轮不追加产品批次/额度，不改变原生 Goal 观察、16/16 图次数、20–23 已用尽、预留或 Unknown；`unknowns`/`blockers` 原文完整保留。只有能指向具体取代记录且完整覆盖原约束的条目才可另行历史化，首轮不归档或过滤机器记录。原字节与约束基线：`_stage-amz-control/self-reform-20261020T144442Z/before.zip`、`before.json`；本次工单纠偏前原字节另存同目录 `issue-management-before.json`。
+
+- **此前产品停工边界（由本节2026-10-21零收费恢复在明确范围内取代）**：用户先选择“停止，保留当前成果”，随后再次要求“停止当期工作，做好收尾准备”；当时仅允许停工收尾与保全。原图/独立profile/项目数据/旧两包/账本/失败与Unknown继续保留，不清库、不删除历史、不降验收；PR26仍Draft，本轮未授权提交推送/合并部署。决定原文见`_stage-amz-control/pr26-review-fix-20261020/stop-decision.json`，完整旧state已随本轮授权快照保留；旧“未调用暂停接口/最近active”仅是当时观察，不覆盖本次真实paused→resume→active。
+- **既有上限与本轮新增范围分开**：原20–23四批已经用满，不能把后续e38ab61修复与重验藏回第21批。本轮用户明确新增24–26最多3批，不清零旧计数；图16/16没有追加，所有新外部模型请求仍禁止。原边界在`_stage-amz-control/pr26-review-fix-20261020/boundary-before.zip`及本轮`authorization-before.json`中保留。
+- **工程差量有证，但不是完整成品验收。** PR [#26](https://github.com/JusticeSc/listing-kit/pull/26)当前head `71bf77232650d4ca595c1dbd7d6dae8a852edefe`、OPEN Draft；[CI run 39430927648](https://github.com/JusticeSc/listing-kit/actions/runs/39430927648)三项SUCCESS，未合并/部署。源码候选`e38ab6149aa8`的现有完整两轮各50命令全绿、同结果指纹`290ee1bddc2b3a6b`，证据`evals/product-v2/v2.7.1-regression-final_v2-final.{txt,json}`；后续提交为证据说明。该代码范围可按未变前提复用，不为日期或文档HEAD重跑，也不以代码全绿代签最终五图。
+- **第22批历史像素结果与仍有效额度门。** 当时信息图乱码/黑框已消除、商品自身608Z/NSK/INDONESIA保留，经独立复核合格并正式采用为selection v5（`b20fe753…`）；原主图主体984px=73.2%<85%，左右各1px非白线，不合格且未采用，当时采用仍是过期79.1%候选、整套报告也已过期。这些原失败不删除；今日正式派生/采用与最终两包结果以上方新证据为准。图16/16、辅助0/4、lane保守金额3.06/5元、累计14.26/21元不变；余1.94元不是新次数授权，失败/Unknown不释放、不借辅助额度。
+- 原主图缺口与额度历史证据仍见`_stage-amz-control/b20-b23-closeout-20261020/b22-outcome-and-decision.md`，其中“余第23批/尚未执行两轮”只属其当时时点，不覆盖当前第26批未通过的最终准出。
+
+## 历史执行与证据（保留原范围）
+
+
+- **2026-10-20审计后，用户在追加批次选择题中明确选择“批准有限收口”：最多再追加4个完整实施＋验收批次，沿已发生记录继续20–23，原1–19批、失败和Unknown不清零。** 原生Goal实时get仍为`15ab22bf3386b9cf / active`、原文不变。授权观察、启动前原字节及本轮结果入口为`_stage-amz-control/b20-b23-closeout-20261020/`；完整审计见`evals/product-v2/refactor/status-audit-20261020.md`。本次恢复必要产品修改、对应验证、原有审查/受保护CI/CD及既有环境发布，不新增资金、模型、依赖或平台；达到批次、金额或类别门即停，不承诺4批必成。已有线上`3195192`、image=`sha256:4abc01be…`、runtime=`48002dc4…`与两包/常规宽度/可逆溢出因果/两轮及恢复证据按各自未变范围复用，不重做基线/V1退出/PR18。C15/C17仍为独立外部门，不新增工程发布前置。
 - **2026-10-20T05:56:49Z 线上真实采用闭环实测 7/7：导入旧包→切换并采用另一候选→整套检查过期阻断→重跑放行→两包导出→独立导入刷新相等。** 在既有 HTTPS origin 的独立无头 profile 中导入 `b19-project-post-suite.zip`，打开项目后把其中一张已采用图切到另一条候选并点击采用（新 selection 版本，候选改写）；选择变化立即使整套检查过期、交付门禁阻断（`export.suite_review_current`），点击整套检查后门禁放行；交付包 5 图、该图 `candidate_id/asset_sha256` 等于刚采用候选，逐图哈希与 manifest 相等；项目包导出后由第二个独立 profile 导入，文档/资产快照与刷新相等，全程零 console/page error。首个探针版本在 AD-04 从错误的候选列表取期望 sha（StopIteration）已修正后重跑，产品未改，失败证据保留。证据 `_stage-amz-control/release-online-20261020/online_adoption_probe.py` 与 `evidence/*online-adopt-main*.json|png`。
 
 - **2026-10-20T05:45Z 生产同 origin 受控恢复实测完成：把上一发布 6e692a4 的源码重建为旧版本 image 部署到同一 HTTPS origin，旧包 8/8；随后按同一事务 rollback 恢复当前 3195192，清理事务与 TLS 备份，恢复后 8/8。** 过程：`git archive 6e692a4` 上传 `/tmp/amz-listing-kit-6e692a4…`，`release-transaction.sh deploy` 构建并部署 image `sha256:7fdb4a98…`（旧源码；与 3195192 构建输入仅 verification.json 8 行差异，runtime 同为 `48002dc4…`；重建覆盖了 `amz-listing-kit:6e692a4…` tag 原指向 `d6d60423…`），当前 3195192 容器停为 `amz-listing-kit-previous`；因 6e692a4 的 Caddyfile 与线上不同，事务备份并替换 TLS 配置后重启 tls。部署后线上探针 8/8（label `restored-old-6e692a4`：旧包导入、五图交付身份、两包导出、独立 profile 再导入、刷新、零错误）。随后 `rollback`（首个调用因请求 image 与事务 image 不匹配被拒 rc=1，未动现场，保留为失败证据；第二个调用 rc=1 属既定「已回退」类）删除旧容器、恢复 3195192 healthy、从备份恢复 Caddyfile（`e375655d…`）、清理事务文件且无 `-previous` 容器；恢复后探针 8/8（label `post-restore-rollback-3195192`），宿主核对容器 image 4abc01be…、tls 哈希 e375655d…。证据 `_stage-amz-control/release-online-20261020/{restore-deploy-old.log,restore-rollback.log,restore-rollback2.log}` 与 `evidence/*restored-old-6e692a4*.json|png`、`evidence/*post-restore-rollback-3195192*.json|png`。这是真实同 origin 恢复与对应旧包可用；**新格式/新数据保全**仍由事务自测的双镜像跨版本包往返证明——本轮 runtime 未变，线上无法制造真实格式差异，不据此扩大结论。
@@ -67,9 +86,9 @@ status: active
 goal_binding: required
 goal_id: "15ab22bf3386b9cf"
 goal_pending_reason: null
-goal_binding_evidence: evals/product-v2/refactor/goal-observation-resume-20261020T051904Z.json
+goal_binding_evidence: _stage-amz-control/engineering-delivery-resume-20261021T105905Z/goal-observation.json
 system_goal_observed_status: active
-system_goal_observed_at: '2026-10-20T05:19:04Z'
+system_goal_observed_at: '2026-10-21T11:02:04.352Z'
 plan_ref: docs/product-v2-refactor-plan.md
 latest_audit: evals/product-v2/refactor/status-audit-20261020.md
 phase_progress:
@@ -341,6 +360,12 @@ task_progress:
     - evals/product-v2/refactor/next-version-b1b3-20261015.json
     - evals/product-v2/refactor/next-version-b4-20261015.json
     - evals/product-v2/refactor/next-version-b5-20261015.json
+    - _stage-amz-control/zero-fee-development-20261021T052937Z/stop-decision.json
+    - _stage-amz-control/zero-fee-development-20261021T052937Z/pixel-verification.json
+    - _stage-amz-control/zero-fee-development-20261021T052937Z/package-verification.json
+    - _stage-amz-control/zero-fee-development-20261021T052937Z/independent-reviews.json
+    - _stage-amz-control/zero-fee-development-20261021T052937Z/stop-preservation.json
+    - evals/product-v2/v2.7.1-regression-zero-fee-b26-20261021-final.json
   V2.R5.2:
     status: pending
     evidence:
@@ -462,8 +487,7 @@ task_progress:
     - app/product_v2/domain/config-export.ts
     - tools/build_product_v2_ts.mjs
 next_action_task: V2.R5.1
-blockers:
-- "V2.R5.1_第22批已用尽图次数门16/16：信息图乱码/黑框已消除并经独立复核合格，已落为selection v5；主图实际主体73.2%<85%判不合格未采用，且已采用主图仍是过期79.1%候选，整套一致性报告因选择变化过期。两包/固定候选两轮/第23批发布因此不能进入。需用户明确决定追加图次数(超16图/5元lane，需新授权)或保留缺口；金额余1.94元不构成新授权，不得换模型、降标准、裁剪冒充或借辅助额度生图。见_stage-amz-control/b20-b23-closeout-20261020/b22-outcome-and-decision.md"
+blockers: []
 unknowns:
   - current_20261019_Goal_15ab22bf3386b9cf_active_user_explicit_approved_six_additional_batches_continue13to18_first_two_zero_fee_original_budget_and_scope_preserved_R51_active_batch13_send_scope_exclusions_cost_reservation_POST_frontier_approval_stage_resume_extension_20261019T105641Z_no_new_provider_submit
   - historical_20261019_batch12of12_stop_obeyed_then_audit_and_explicit_user_extension_granted_no_reset_B11_three_browser_submits_cny0p36_preserved_no_signed_results_no_retry_remaining_program_pixels_dual_mode_five_current_adoptions_two_rounds_release_C15_C17
@@ -558,5 +582,5 @@ unknowns:
   - current_20261017_tip77c84aa_state_auth_only_CI39036915488_rerun_infra_httpx403_pending_v23507_closed_by_causal_doc_dev_residues_cleaned_walkthrough_packet08_prototype_deleted_doc_gaps_fixed_pending_push
   - current_20261017_baseline_finalized_main_9c835dc_PR13_PR14_merged_deploy_acceptance12of12_fingerprint_a1e73bdc_equal_finalize_done_previous_cleaned_CRLF_rollback_rebuild_lesson_git_archive_plus_attributes_zero_new_paid_calls
   - current_20261018_baseline_closeout_main_2c4a33a_CI39045865774_success_autodeploy_acceptance12of12_fingerprint_a1e73bdc_equal_finalize_previous_cleaned_evidence_stage_baseline_release_20261017T154245Z_artifact12105698120_human_gates_C15_C17_user_confirmed_pass_no_new_paid_calls
-updated_at: '2026-10-20T11:42:00.000Z'
+updated_at: '2026-10-21T11:02:04.352Z'
 ```

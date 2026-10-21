@@ -28,7 +28,7 @@ FIXTURE_ROOT = ROOT / "evals" / ".tmp"
 
 
 def selector_run(argv: list[str], timeout: int = 180) -> subprocess.CompletedProcess:
-    return subprocess.run([sys.executable, "-B", str(SELECTOR), *argv], cwd=ROOT,
+    return subprocess.run([sys.executable, "-X", "utf8", "-B", str(SELECTOR), *argv], cwd=ROOT,
                           text=True, capture_output=True, encoding="utf-8", timeout=timeout)
 
 
@@ -61,6 +61,69 @@ def fixture_script(marker: Path, rc: int, tag: str) -> str:
             f"print('[OK  ] FIXTURE {tag}')\n"
             f"sys.exit({rc})\n")
 
+
+def read_result(path: Path):
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+
+
+def receipt_argv_ok(entry: dict, script: str, extra: list[str]) -> bool:
+    """凭据 argv 必须逐字等于所选模式的真实启动命令，不接受等价改写。"""
+    return entry.get("argv") == ["uv", "run", "--locked", "python", script, *extra]
+
+
+def _receipt_authority_cases(work: Path) -> dict:
+    """在独立根目录跑真实CLI，错误保护也只能覆盖自有哨兵文件。"""
+    for name in ("tools/select_v2_checks.py", "tools/check_verification.py", "src/console.py"):
+        target = work / name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(ROOT / name, target)
+    marker = work / "started.marker"
+    action = work / "tools" / "fixture_action.py"
+    action.write_text(fixture_script(marker, 0, "AUTHORITY"), encoding="utf-8")
+    workflow, registry = work / "workflow.yml", work / "registry.json"
+    workflow.write_text(fixture_workflow(["uv run --locked python tools/fixture_action.py"]), encoding="utf-8")
+    registry.write_text(fixture_registry({
+        "tools/fixture_action.py": [{"args": [], "category": "control", "ci": True}]
+    }), encoding="utf-8")
+
+    def run(result: str) -> subprocess.CompletedProcess:
+        return subprocess.run([
+            sys.executable, "-X", "utf8", "-B", str(work / "tools" / "select_v2_checks.py"),
+            "some/unknown/path.xyz", "--workflow", str(workflow), "--registry", str(registry),
+            "--run", "--result-json", result,
+        ], cwd=work, text=True, capture_output=True, encoding="utf-8", timeout=30)
+
+    normal_path = work / "receipts" / "normal.json"
+    positive = run(str(normal_path))
+    normal = read_result(normal_path)
+    positive_ok = (positive.returncode == 0 and marker.exists()
+                   and isinstance(normal, dict) and normal.get("status") == "passed")
+    paths = [
+        "_working/amz-listing-kit-product-v2/state.md",
+        "_working/amz-listing-kit-product-v2/budget-ledger.json",
+        "docs/product-v2-refactor-plan.md", ".github/workflows/authority-guard.yml",
+        "AGENTS.md", "README.md", ".gitattributes", ".gitignore",
+        "receipts/../docs/product-v2-refactor-plan.md",
+    ]
+    if sys.platform == "win32":
+        paths.append("_WORKING/AMZ-LISTING-KIT-PRODUCT-V2/STATE.MD")
+    rows = []
+    for name in paths:
+        target = work / name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        original = ("authority sentinel: " + name + "\n").encode("utf-8")
+        target.write_bytes(original)
+        marker.unlink(missing_ok=True)
+        result = run(name)
+        rows.append({"target": name, "returncode": result.returncode,
+                     "started": marker.exists(), "preserved": target.read_bytes() == original,
+                     "stdout": result.stdout, "stderr": result.stderr})
+    return {"positive_ok": positive_ok, "positive_returncode": positive.returncode,
+            "positive_stderr": positive.stderr, "protected": rows,
+            "selector_sha256": hashlib.sha256((work / "tools/select_v2_checks.py").read_bytes()).hexdigest()}
 
 
 def remove_ci(workflow: dict, entrypoint: str) -> None:
@@ -201,6 +264,35 @@ def main() -> int:
           and "tools/verify_v2_1_3_project_package.py" not in verifier["selected"]
           and verifier["browser"] and not verifier["container"],
           f"rc={verifier_result.returncode} selected={verifier and verifier['selected_count']}")
+    for path in ("evals/product-v2/harness/compare-panel.js",
+                 "evals/product-v2/harness/compare-panel.html",
+                 "config/product-v2/compare-contract.json",
+                 "tools/verify_v2_5_3_compare_panel.py"):
+        result, data = selector_json([path])
+        judge("T5-COMPARE-OWN-CONSUMER-" + Path(path).name,
+              result.returncode == 0 and bool(data)
+              and {item for item in data["selected"] if item.startswith("tools/verify_v2")}
+              == {"tools/verify_v2_5_3_compare_panel.py"}
+              and {"npm:check:types", "npm:build:frontend"} <= set(data["selected"])
+              and any(item.split()[0] == "pytest:tests/dev" for item in data["selected"])
+              and next(index for index, item in enumerate(data["selected"])
+                       if item.split()[0] == "pytest:tests/dev")
+              < data["selected"].index("tools/verify_v2_5_3_compare_panel.py")
+              and data["browser"] and data["frontend"] and not data["container"],
+              f"rc={result.returncode} selected={data and data['selected']}")
+    for path in ("evals/product-v2/harness/harness-api.js",
+                 "evals/product-v2/harness/unknown-owner.js"):
+        result, data = selector_json([path])
+        judge("T5-HARNESS-CONSERVATIVE-" + Path(path).name,
+              result.returncode == 0 and bool(data) and set(data["selected"]) == full_selection,
+              f"rc={result.returncode} selected={data and data['selected_count']}/{data and data['full_count']}")
+    compare_result, compare = selector_json(["evals/product-v2/harness/compare-panel.js"])
+    compare_mixed_result, compare_mixed = selector_json([proof_path, "evals/product-v2/harness/compare-panel.js"])
+    judge("T5-COMPARE-MIXED-UNION",
+          compare_result.returncode == 0 and compare_mixed_result.returncode == 0
+          and bool(compare) and bool(compare_mixed) and bool(proof)
+          and set(compare_mixed["selected"]) == set(compare["selected"]) | set(proof["selected"]),
+          f"rc={compare_mixed_result.returncode} selected={compare_mixed and compare_mixed['selected']}")
     mixed_result, mixed = selector_json([proof_path, ui_path])
     judge("T5-MIXED-UNION",
           mixed_result.returncode == 0 and bool(mixed) and bool(ui) and bool(proof)
@@ -265,6 +357,7 @@ def main() -> int:
     # 3) 分类依赖 fail-closed：登记坏、命令清单坏 → 明确失败且一条命令都不执行
     FIXTURE_ROOT.mkdir(parents=True, exist_ok=True)
     workdir = Path(tempfile.mkdtemp(prefix="v2-select-fixture-", dir=str(FIXTURE_ROOT)))
+    protected_result = ROOT / "tools" / ".tmp" / (workdir.name + "-receipt.json")
     try:
         def rel(path: Path) -> str:
             return path.relative_to(ROOT).as_posix()
@@ -426,7 +519,159 @@ def main() -> int:
               and json.loads(outputs["container"]) is False
               and json.loads(outputs["browser"]) is False,
               f"rc={output_result.returncode} container={outputs.get('container')}")
+        # ---- T5 执行凭据：成功/首失败/准入失败的原始结果与受测工作树身份 ----
+        ok_result_path = workdir / "receipt-ok.json"
+        ok_run = run_with(["some/unknown/path.xyz", "--workflow", wf_ok, "--registry", reg_ok,
+                           "--result-json", str(ok_result_path)])
+        ok_receipt = read_result(ok_result_path)
+        judge("T5-RECEIPT-PASSED",
+              ok_run.returncode == 0 and isinstance(ok_receipt, dict)
+              and ok_receipt.get("schema") == "amz-selector-result/v1"
+              and ok_receipt.get("status") == "passed" and ok_receipt.get("first_failure_returncode") is None
+              and ok_receipt.get("selection") == [ok_entry] and ok_receipt.get("not_executed") == []
+              and len(ok_receipt.get("executed", [])) == 1
+              and ok_receipt["executed"][0].get("returncode") == 0
+              and ok_receipt["executed"][0].get("status") == "ok"
+              and receipt_argv_ok(ok_receipt["executed"][0], ok_entry, [])
+              and str(ok_receipt.get("started_at", "")).endswith("Z")
+              and str(ok_receipt.get("finished_at", "")).endswith("Z")
+              and str(ok_receipt["executed"][0].get("started_at", "")).endswith("Z"),
+              f"rc={ok_run.returncode} status={ok_receipt and ok_receipt.get('status')}")
+        fail7_marker_first = workdir / "ran-rc7-first.marker"
+        fail7_marker_second = workdir / "ran-rc7-second.marker"
+        fail7_first = workdir / "fixture_rc7_first.py"
+        fail7_second = workdir / "fixture_rc7_second.py"
+        fail7_first.write_text(fixture_script(fail7_marker_first, 7, "RC7-FIRST"), encoding="utf-8")
+        fail7_second.write_text(fixture_script(fail7_marker_second, 0, "RC7-SECOND"), encoding="utf-8")
+        wf_fail7, reg_fail7 = fixture_files(
+            "rc7fail", fixture_workflow([f"uv run --locked python {rel(fail7_first)}",
+                                         f"uv run --locked python {rel(fail7_second)}"]),
+            fixture_registry({rel(fail7_first): [{"args": [], "category": "browser", "ci": True}],
+                              rel(fail7_second): [{"args": [], "category": "browser", "ci": True}]}))
+        fail7_result_path = workdir / "receipt-rc7.json"
+        fail7 = run_with(["some/unknown/path.xyz", "--workflow", wf_fail7, "--registry", reg_fail7,
+                          "--result-json", str(fail7_result_path)])
+        fail7_receipt = read_result(fail7_result_path)
+        judge("T5-RECEIPT-FIRST-FAIL-RC7",
+              fail7.returncode == 7 and isinstance(fail7_receipt, dict)
+              and fail7_receipt.get("status") == "failed"
+              and fail7_receipt.get("first_failure_returncode") == 7
+              and fail7_marker_first.exists() and not fail7_marker_second.exists()
+              and len(fail7_receipt.get("executed", [])) == 1
+              and fail7_receipt["executed"][0].get("returncode") == 7
+              and fail7_receipt["executed"][0].get("status") == "failed"
+              and receipt_argv_ok(fail7_receipt["executed"][0], rel(fail7_first), [])
+              and fail7_receipt.get("not_executed") == [rel(fail7_second)]
+              and str(fail7_receipt.get("started_at", "")).endswith("Z")
+              and str(fail7_receipt.get("finished_at", "")).endswith("Z"),
+              f"rc={fail7.returncode} second={fail7_marker_second.exists()}")
+        trailing_marker = workdir / "trailing-good.marker"
+        trailing_script = workdir / "trailing_good.py"
+        trailing_script.write_text(fixture_script(trailing_marker, 0, "TRAILING"), encoding="utf-8")
+        trailing_entry = rel(trailing_script)
+        unapproved_entry = "tools/receipt_trailing_unapproved_probe.py"
+        wf_trailing, reg_trailing = fixture_files(
+            "trailing-unapproved",
+            fixture_workflow([f"uv run --locked python {trailing_entry}",
+                              f"uv run --locked python {unapproved_entry} --extra"]),
+            fixture_registry({trailing_entry: [{"args": [], "category": "control", "ci": True}]}))
+        trailing_result_path = workdir / "receipt-trailing.json"
+        trailing = run_with(["some/unknown/path.xyz", "--workflow", wf_trailing, "--registry", reg_trailing,
+                             "--result-json", str(trailing_result_path)])
+        judge("T5-RECEIPT-UNAPPROVED-TRAILING",
+              trailing.returncode == 2 and "SELECT-INPUT" in trailing.stdout
+              and not trailing_marker.exists() and not trailing_result_path.exists(),
+              f"rc={trailing.returncode} started={trailing_marker.exists()}")
+        preview_result_path = workdir / "receipt-preview.json"
+        marker_ok.unlink(missing_ok=True)
+        preview_run = selector_run(["some/unknown/path.xyz", "--workflow", wf_ok, "--registry", reg_ok,
+                                    "--run", "--emit-github", "--result-json", str(preview_result_path)])
+        preview_output_path = workdir / "preview-output.txt"
+        github_run = selector_run(["some/unknown/path.xyz", "--workflow", wf_ok, "--registry", reg_ok,
+                                   "--run", "--github-output", str(preview_output_path),
+                                   "--result-json", str(preview_result_path)])
+        lone = selector_run(["some/unknown/path.xyz", "--workflow", wf_ok, "--registry", reg_ok,
+                             "--result-json", str(preview_result_path)])
+        preview_reran = marker_ok.exists()
+        marker_ok.write_text("ran", encoding="utf-8")
+        judge("T5-RECEIPT-PREVIEW-AMBIGUITY",
+              preview_run.returncode == 2 and "SELECT-INPUT" in preview_run.stdout
+              and github_run.returncode == 2 and "SELECT-INPUT" in github_run.stdout
+              and lone.returncode == 2 and "SELECT-INPUT" in lone.stdout
+              and not preview_result_path.exists() and not preview_output_path.exists()
+              and not preview_reran,
+              f"rc={preview_run.returncode}/{github_run.returncode}/{lone.returncode}")
+        marker_ok.unlink(missing_ok=True)
+        overwrite_registry = run_with(["some/unknown/path.xyz", "--workflow", wf_ok, "--registry", reg_ok,
+                                       "--result-json", reg_ok])
+        overwrite_workflow = run_with(["some/unknown/path.xyz", "--workflow", wf_ok, "--registry", reg_ok,
+                                       "--result-json", wf_ok])
+        protected_arg = rel(protected_result)
+        if sys.platform == "win32":
+            protected_arg = protected_arg.upper()
+        overwrite_source = run_with(["some/unknown/path.xyz", "--workflow", wf_ok, "--registry", reg_ok,
+                                     "--result-json", protected_arg])
+        authority_cases = _receipt_authority_cases(workdir / "authority-root")
+        authority_ok = authority_cases["positive_ok"] and all(
+            row["returncode"] == 2 and not row["started"] and row["preserved"]
+            for row in authority_cases["protected"])
+        overwrite_reran = marker_ok.exists()
+        marker_ok.write_text("ran", encoding="utf-8")
+        judge("T5-RECEIPT-NO-OVERWRITE-AUTHORITY",
+              overwrite_registry.returncode == 2 and "SELECT-INPUT" in overwrite_registry.stdout
+              and overwrite_workflow.returncode == 2 and "SELECT-INPUT" in overwrite_workflow.stdout
+              and overwrite_source.returncode == 2 and "SELECT-INPUT" in overwrite_source.stdout
+              and not overwrite_reran and not protected_result.exists() and authority_ok,
+              f"rc={overwrite_registry.returncode}/{overwrite_workflow.returncode}/{overwrite_source.returncode} "
+              f"project_authorities={authority_ok}")
+        write_fail_dir = workdir / "receipt-is-dir"
+        write_fail_dir.mkdir(exist_ok=True)
+        write_fail = run_with(["some/unknown/path.xyz", "--workflow", wf_ok, "--registry", reg_ok,
+                               "--result-json", str(write_fail_dir)])
+        judge("T5-RECEIPT-WRITE-FAIL-NOT-PASSED",
+              write_fail.returncode == 1 and "SELECT-RESULT" in write_fail.stdout
+              and "所选命令全部通过" not in write_fail.stdout,
+              f"rc={write_fail.returncode}")
+        write_fail7 = run_with(["some/unknown/path.xyz", "--workflow", wf_fail7, "--registry", reg_fail7,
+                                "--result-json", str(write_fail_dir)])
+        judge("T5-RECEIPT-WRITE-FAIL-KEEPS-RC7",
+              write_fail7.returncode == 7 and fail7_marker_first.exists()
+              and not fail7_marker_second.exists(),
+              f"rc={write_fail7.returncode} second={fail7_marker_second.exists()}")
+        snapshot = ok_receipt.get("source_before") if isinstance(ok_receipt, dict) else None
+        after = ok_receipt.get("source_after") if isinstance(ok_receipt, dict) else None
+        judge("T5-RECEIPT-SNAPSHOT-IDENTITY",
+              isinstance(snapshot, dict) and snapshot.get("schema") == "amz-source-snapshot/v1"
+              and isinstance(after, dict) and after.get("schema") == "amz-source-snapshot/v1"
+              and snapshot.get("digest") and snapshot.get("files", 0) > 0
+              and snapshot.get("scope", {}).get("dirs") and snapshot.get("scope", {}).get("root_files")
+              and "tools/select_v2_checks.py" in snapshot.get("entries", {})
+              and not any(name.startswith(("evals/product-v2/refactor/", "_working/", "_stage-amz-control/"))
+                          for name in snapshot.get("entries", {}))
+              and not any("/.tmp/" in name or name.endswith((".pyc", ".env")) for name in snapshot.get("entries", {})),
+              f"files={snapshot and snapshot.get('files')}")
+        sys.path.insert(0, str(ROOT / "tools"))
+        from select_v2_checks import snapshot_source as real_snapshot_source
+        snapshot_target = workdir / "source-root" / "tools" / "probe_source.py"
+        snapshot_target.parent.mkdir(parents=True, exist_ok=True)
+        snapshot_target.write_text("print('probe')\n", encoding="utf-8")
+        snapshot_root = workdir / "source-root"
+        first = real_snapshot_source(snapshot_root)
+        proof_only = snapshot_root / "evals" / "product-v2" / "refactor" / "proof-only-probe.md"
+        proof_only.parent.mkdir(parents=True, exist_ok=True)
+        proof_only.write_text("receipt fixture\n", encoding="utf-8")
+        second = real_snapshot_source(snapshot_root)
+        snapshot_target.write_text("print('probe dirty')\n", encoding="utf-8")
+        third = real_snapshot_source(snapshot_root)
+        judge("T5-RECEIPT-DIRTY-SOURCE-VISIBLE",
+              first.get("digest") == second.get("digest")
+              and third.get("digest") != first.get("digest")
+              and "tools/probe_source.py" in third.get("entries", {})
+              and not any(name.startswith("evals/product-v2/refactor/") for name in second.get("entries", {})),
+              f"proof_same={first.get('digest') == second.get('digest')} "
+              f"dirty_changed={third.get('digest') != first.get('digest')}")
     finally:
+        protected_result.unlink(missing_ok=True)
         shutil.rmtree(workdir, ignore_errors=True)
 
 
@@ -437,7 +682,7 @@ def main() -> int:
         for code, registry, wf, expected in cases:
             registry_path.write_text(json.dumps(registry, ensure_ascii=False), encoding="utf-8")
             workflow_path.write_text(yaml.safe_dump(wf, allow_unicode=True, sort_keys=False), encoding="utf-8")
-            result = subprocess.run([sys.executable, "-B", str(GUARD), "--registry", str(registry_path),
+            result = subprocess.run([sys.executable, "-X", "utf8", "-B", str(GUARD), "--registry", str(registry_path),
                                      "--workflow", str(workflow_path)], cwd=ROOT,
                                     text=True, capture_output=True, encoding="utf-8", timeout=30)
             tags = set(TAG.findall(result.stdout))
