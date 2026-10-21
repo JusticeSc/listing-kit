@@ -455,7 +455,7 @@ test('confirmRework refuses an intent whose frozen head is not this preview byte
     mode: 'edit_candidate',
     candidate: { candidate_id: first.payload.candidate_id, shot_id: 'shot_main_clean',
       asset_sha256: first.payload.asset_sha256, media_type: first.payload.media_type,
-      width: 1, height: 1, attempt_action_id: first.payload.attempt_action_id, created_at: '2026-10-08T10:00:00Z' },
+      width: 1, height: 1, action_id: first.payload.action_id, created_at: '2026-10-08T10:00:00Z' },
     candidateDocument: { document_id: 'shot_main_clean', version: 3 },
     problems: ['scene'], direction: '只把背景换成纯白，其余保持不变。', at: '2026-10-08T10:00:00Z' });
   assert.deepEqual(selectReferences({ shot_id: 'shot_main_clean', role_id: 'main' }, REFERENCE_SOURCES,

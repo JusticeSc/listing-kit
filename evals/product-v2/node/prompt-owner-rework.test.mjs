@@ -35,7 +35,7 @@ function fixture() {
     model_id:IMAGE_PROMPT_PROFILE.model_id,capability_version:1,capabilities:{request_profile:IMAGE_PROMPT_PROFILE}}};
   const owner=createPromptModule({repository,beginAction:()=>action,sources:()=>source,imageEnvironment:()=>environment});
   const candidate={candidate_id:'candidate-to-edit',shot_id:shot.shot_id,asset_sha256:CANDIDATE_SHA,
-    media_type:'image/png',width:1600,height:1600,attempt_action_id:'action-original-image',created_at:AT};
+    media_type:'image/png',width:1600,height:1600,created_at:AT};
   const directive=(mode,id='directive-owner-rework')=>buildReworkDirective({directiveId:id,
     shotId:shot.shot_id,mode,candidate,candidateDocument:{document_id:shot.shot_id,version:3},
     problems:['composition'],direction:'保持商品不变，仅把主体居中。',at:AT});

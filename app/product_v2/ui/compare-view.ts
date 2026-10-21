@@ -32,6 +32,7 @@ import {
   REWORK_MODES,
   REWORK_PROBLEMS,
   attemptStateLabel,
+  candidateOriginOf,
   compareCounts,
   compareRowHeadline,
   compareRows,
@@ -71,6 +72,7 @@ import type {
   SelectionEntry,
 } from "../selection-adoption.js";
 import type {
+  CropPreview,
   GenerationModule,
   ReworkIntent,
   ReworkPromptChoice,
@@ -244,10 +246,26 @@ type CompareUiState = {
   zoomSrc: string | null;
   zoomLabel: string;
   zoomNative: boolean;
-  /** 精看细节里的就地反馈（采用进度、采用结果行、就地错误）：全部由模板投影，不再直接写节点。 */
   adoptProgress: string;
   adoptStatus: string;
   adoptError: string;
+};
+
+/** 主图裁剪修正就地状态：意图只在显式预览后产生，视图原样持有并交回，不重算字节。
+ * 确认只把预览时 owner 给的同一意图原样交回；取消/切候选/切项目/reset/dispose 时释放 URL 并 cancelCrop。
+ * 迟到回调（准备/确认）只在同一 project/shot/源候选仍在看时合入，不改当前视图/对象。 */
+type CropUiState = {
+  /** 预览来源快照：project/shot/源候选 id/版本/字节，迟到回调按此核对当前性。 */
+  shotId: string | null;
+  candidateId: string | null;
+  assetSha256: string | null;
+  version: number | null;
+  intent: CropPreview | null;
+  previewUrl: string | null;
+  inFlight: boolean;
+  status: string;
+  /** 就地错误文案（归模板投影，不再由命令式写节点）。 */
+  error: string;
 };
 
 /** 返工区就地投影：draftKey 精确到 project/shot/candidate 文档版本/字节，草稿不跨候选复用。
@@ -266,7 +284,6 @@ type ReworkUiState = {
   /** 就地错误文案（归模板投影，不再由 showError 直接写节点）。 */
   error: string;
 };
-
 /** 预览 URL 的视图侧缓存：工作区已有同一份缓存，这里只避免同一代渲染重复重建节点。 */
 type UrlCache = Map<string, string>;
 
@@ -363,6 +380,22 @@ export function createCompareView(
     error: "",
   };
 
+  const crop: CropUiState = {
+    shotId: null,
+    candidateId: null,
+    assetSha256: null,
+    version: null,
+    intent: null,
+    previewUrl: null,
+    inFlight: false,
+    status: "",
+    error: "",
+  };
+  // 裁剪迟到回调代次：准备/确认晚到只在同代同源时合入，不改当前视图/对象。
+  let cropToken = 0;
+  // 裁剪入口按钮的原始触发器：取消只回到它，不抢用户后来自己点的焦点。
+  let cropReturnFocus: HTMLElement | null = null;
+
   /** 套图摘要快照：审核列表与阶段无关的本地投影入口，不重算方案。 */
   function shotSummaries(): SuiteShotSummary[] {
     const plan = inputs.suitePlan();
@@ -434,6 +467,98 @@ export function createCompareView(
     `;
   }
 
+  /** 候选血缘徽标：derived=本地裁剪派生（不能冒充上游输出）。
+   * 历史 attempt_action_id 读法问题交给另切片（domain/compare.js），这里不造别名，只读 record。 */
+  function candidateOriginBadge(row: CompareRow) {
+    const record = row.record;
+    const origin = candidateOriginOf(record);
+    if (origin === "derived") {
+      return html`<span class="badge is-proposed" data-origin="derived">本地裁剪派生</span>`;
+    }
+    return nothing;
+  }
+
+  /** 派生候选只读血缘行：来源父候选/尺寸/算法，全部来自记录已有字段，不猜不替代。 */
+  function candidateDerivationNote(row: CompareRow) {
+    const record = row.record;
+    if (candidateOriginOf(record) !== "derived") return nothing;
+    const derivation = record.derivation;
+    if (!derivation) return html`<span class="meta">本地裁剪派生（血缘记录缺失，不冒充上游输出）。</span>`;
+    const parent = "来源父候选 " + String(derivation.parent_candidate_id).slice(0, 8)
+      + " v" + derivation.parent_version;
+    const size = "实际 " + row.width + "×" + row.height;
+    return html`<span class="meta">${parent + " · " + size + " · 无重采样 · 本地派生，非上游输出"}</span>`;
+  }
+
+  /** 裁剪入口可达性：仅白底生成父支持（role main 且非 derived）。视图不判像素，只读角色与血缘。 */
+  function cropEntryOf(row: CompareRow | null): { eligible: boolean; reason: string } {
+    if (!row || !row.record) return { eligible: false, reason: "先选择一个候选。" };
+    if (!state.shot || state.shot.role_id !== "main") {
+      return { eligible: false, reason: "裁剪修正只支持主图；其它角色不提供入口。" };
+    }
+    if (candidateOriginOf(row.record) === "derived") {
+      return { eligible: false, reason: "这是本地裁剪派生，不能再以它为父裁剪；请选择上游生成原件。" };
+    }
+    return { eligible: true, reason: "" };
+  }
+
+  /** 裁剪修正区：与返工区相邻但独立的同一比较面板内联区块，不新增 modal/编辑器。 */
+  function cropPanelTemplate() {
+    if (state.shot?.role_id !== "main") return nothing;
+    const row = state.rows.find((item) => item.candidate_id === state.candidateId) || null;
+    const entry = cropEntryOf(row);
+    const active = crop.shotId !== null && crop.intent !== null
+      && crop.shotId === state.shotId && crop.candidateId === state.candidateId;
+    const plan = crop.intent ? crop.intent.plan : null;
+    // plan 用万分点（basis points）：展示只做只读换算，不重算判定。
+    const beforeText = plan ? (plan.before_basis_points / 100).toFixed(1) + "%" : "";
+    const afterText = plan ? (plan.after_basis_points / 100).toFixed(1) + "%" : "";
+    const sourceSize = plan ? plan.source_width + "×" + plan.source_height : "";
+    const targetSide = plan ? Math.min(plan.rect.width, plan.rect.height) : 0;
+    const versionText = crop.version === null || crop.version === undefined ? "?" : String(crop.version);
+    return html`
+      <div class="crop-box" data-crop-state=${crop.intent ? "preview" : "idle"}>
+        <h5>主图裁剪修正（本地，不启模型）</h5>
+        ${entry.eligible ? html`
+          <p class="meta">对当前主图生成原件做白底方形裁剪：仅 RGB8 非隔行无 alpha，不放大、不补边，输出记录实际尺寸。</p>
+          <div class="toolbar">
+            <button id="crop-open" type="button" ?disabled=${crop.inFlight}
+              @click=${() => { void previewCrop(); }}>裁剪修正…</button>
+          </div>
+        ` : html`
+          <p class="meta">${entry.reason}</p>
+        `}
+        ${crop.intent || crop.inFlight || crop.status || crop.error ? html`
+          <div class="crop-preview" ?hidden=${!active && !crop.status && !crop.error}>
+            ${plan && crop.intent ? html`
+              <p class="meta">${"来源：候选 v" + versionText + "（上游生成原件保留，不改动源 PNG）"}</p>
+              <p class="meta">${"原尺寸 " + sourceSize + " → 裁后 " + targetSide + "×" + targetSide
+                + " · 估计占比 " + beforeText + " → " + afterText + " · 无重采样"}</p>
+              <figure>
+                ${crop.previewUrl
+                  ? html`<img id="crop-preview-image" src=${crop.previewUrl}
+                      width=${plan.rect.width} height=${plan.rect.height}
+                      alt=${"裁剪预览：候选 v" + versionText + " 原 " + sourceSize + " 裁后 "
+                        + targetSide + "×" + targetSide + "，占比约 " + afterText + "，无重采样本地派生"}>`
+                  : html`<span class="meta">裁剪预览准备中…</span>`}
+                <figcaption class="meta">这是本地裁剪预览，不是模型新生成。原件保留；请检查主体完整及细节后再保存。</figcaption>
+              </figure>
+            ` : nothing}
+            <div class="toolbar">
+              <button id="crop-save" type="button" class="primary"
+                ?disabled=${crop.inFlight || !crop.intent || !active}
+                @click=${() => { void confirmCropSave(); }}>保存为派生候选</button>
+              <button id="crop-cancel" type="button" ?disabled=${crop.inFlight}
+                @click=${() => { cancelCropPreview(true); }}>取消</button>
+            </div>
+            <p id="crop-status" class="status" role="status" ?hidden=${crop.status.length === 0}>${crop.status}</p>
+            <p id="crop-error" class="error" role="alert" ?hidden=${crop.error.length === 0}>${crop.error}</p>
+          </div>
+        ` : nothing}
+      </div>
+    `;
+  }
+
   /** 候选页签：tablist 的直接子节点必须是 tab；点击只换查看目标，不写存储。 */
   function candidateCardTemplate(row: CompareRow, selectedCandidateId: string | null) {
     const selected = row.candidate_id === selectedCandidateId;
@@ -463,11 +588,13 @@ export function createCompareView(
           <div class="compare-card-head">
             <span class="name">${"候选 v" + (row.version === null ? "?" : row.version)}</span>
             <span class="badge ${COMPARE_STATE_BADGE[row.review_state] || "is-review-unchecked"}">${compareStateLabel(row)}</span>
+            ${candidateOriginBadge(row)}
             ${isAdopted && adopted
               ? html`<span class="badge is-adopted" data-adopted=${adopted.state}>${adopted.state === "current" ? "已采用" : "已采用（已过期）"}</span>`
               : nothing}
           </div>
           <span class="meta">${business.join(" · ")}</span>
+          ${candidateDerivationNote(row)}
           <p class="compare-headline">${compareRowHeadline(row)}</p>
         </div>
       </button>
@@ -717,8 +844,8 @@ export function createCompareView(
               data-compare-state=${ifDefined(viewed ? viewed.review_state : undefined)}>
               ${checklistTemplate()}
             </div>
+            ${cropPanelTemplate()}
           </div>
-        </div>
       ` : html`
         <p id="compare-empty" class="empty">${state.emptyNote || "这张图还没有候选。"}</p>
         <ul id="compare-references" class="compare-references" data-left-mode="reference" hidden></ul>
@@ -1090,6 +1217,15 @@ export function createCompareView(
     state.leftReferenceSha = leftReferenceSha;
     state.rows = rows;
     state.references = references;
+    // 自动重选换了查看候选：已有裁剪预览不再代表当前对象，标过期而不静默改源。
+    if (crop.shotId === shotId && crop.candidateId !== null && crop.candidateId !== candidateId && crop.intent) {
+      crop.error = "查看候选已变化，旧裁剪预览已过期；请对当前候选重新预览。";
+      releaseCropIntent();
+      crop.shotId = shotId;
+      crop.candidateId = candidateId;
+      crop.assetSha256 = null;
+      crop.version = null;
+    }
     if (rows.length) {
       const counts = compareCounts(rows);
       const parts = ["候选 " + counts.total];
@@ -1332,11 +1468,16 @@ export function createCompareView(
   }
 
   function openCompare(shotId: string, options: { candidateId?: string | null; focus?: boolean } = {}): void {
+    const requested = options.candidateId;
     const previousShotId = state.shotId;
     explicitClosed = false;
+    // 切图即丢弃旧裁剪意图：旧回调按快照核对丢弃，不套到新对象。
+    if (crop.shotId !== null && shotId !== state.shotId) {
+      discardCropPreview();
+      cropReturnFocus = null;
+    }
     state.shotId = shotId;
     state.status = "";
-    const requested = options.candidateId;
     if (requested !== undefined) {
       // 显式交给哪条候选就看哪条：无效目标不静默回退，细节保持可解释的空选择。
       const rows = compareInventory().rowsByShotId[shotId] || [];
@@ -1366,6 +1507,8 @@ export function createCompareView(
 
   function closeCompare(): void {
     explicitClosed = true;
+    discardCropPreview();
+    cropReturnFocus = null;
     state.shotId = null;
     state.candidateId = null;
     state.baselineId = null;
@@ -1394,6 +1537,11 @@ export function createCompareView(
     // 换一条候选时收起返工区（它绑定打开那一刻的候选身份），该候选自己的草稿保留。
     if (rework.shotId !== null && candidateId !== state.candidateId) {
       closeReworkPanel({ focusCandidate: false });
+    }
+    // 裁剪预览绑定打开那一刻的源候选：切候选即丢弃旧意图，不套到新对象。
+    if (crop.shotId !== null && candidateId !== state.candidateId) {
+      discardCropPreview();
+      cropReturnFocus = null;
     }
     state.candidateId = candidateId;
     state.status = "";
@@ -1921,6 +2069,193 @@ export function createCompareView(
     }
   }
 
+  /* --------------------------------------------- 主图裁剪修正（本地，不启模型） */
+
+  /** 裁剪就地报错：文案进裁剪 UI 状态随模板投影，重画不会把它抹掉。 */
+  function setCropError(message: string): void {
+    crop.error = message;
+    renderComparePanel();
+  }
+
+  /** 释放裁剪预览 URL 并请 owner 撤销意图：取消/切候选/切项目/reset/dispose 共用。 */
+  function releaseCropIntent(): void {
+    const intent = crop.intent;
+    crop.intent = null;
+    if (crop.previewUrl) {
+      try { URL.revokeObjectURL(crop.previewUrl); } catch { /* 释放失败不影响状态 */ }
+      crop.previewUrl = null;
+    }
+    if (intent) {
+      try { generation.cancelCrop(intent); } catch (error) { deps.reportError(error); }
+    }
+  }
+
+  /** 切候选/切项目/收起时丢弃旧意图：不把旧回调套到当前对象，迟到结果按快照核对丢弃。 */
+  function discardCropPreview(): void {
+    cropToken += 1;
+    crop.shotId = null;
+    crop.candidateId = null;
+    crop.assetSha256 = null;
+    crop.version = null;
+    crop.inFlight = false;
+    crop.status = "";
+    crop.error = "";
+    releaseCropIntent();
+  }
+
+  /** 取消按钮/切走时的显式取消：释放 URL + cancelCrop，焦点回到入口触发器。 */
+  function cancelCropPreview(restoreFocus: boolean): void {
+    if (crop.inFlight) return;
+    const trigger = cropReturnFocus;
+    cropReturnFocus = null;
+    discardCropPreview();
+    renderComparePanel();
+    if (restoreFocus) {
+      if (trigger && trigger.isConnected && trigger.offsetParent !== null) {
+        trigger.focus();
+        return;
+      }
+      focusCandidateTab(state.candidateId);
+    }
+  }
+
+  /**
+   * 预览：owner 按源候选字节做本地裁剪意图（prepare 零写库零外发）。
+   * 双击抑制：inFlight 中不发第二次；迟到回调只在同项目/同图/同源候选/同字节时合入。
+   */
+  async function previewCrop(): Promise<void> {
+    const shotId = state.shotId, candidateId = state.candidateId;
+    if (!deps.currentProjectId() || !shotId || !candidateId || crop.inFlight) return;
+    const row = state.rows.find((item) => item.candidate_id === candidateId) || null;
+    if (!row || !row.record || row.candidate_id !== candidateId) {
+      setCropError("这条候选已经不在了，先重新选择候选。");
+      return;
+    }
+    const entry = cropEntryOf(row);
+    if (!entry.eligible) {
+      setCropError(entry.reason || "当前候选不支持裁剪修正。");
+      return;
+    }
+    cropReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    // 同一源重开预览：旧意图先释放，不让两个意图同时挂在 owner 私有表里。
+    releaseCropIntent();
+    const token = ++cropToken;
+    const projectId = deps.currentProjectId() || "";
+    crop.shotId = shotId;
+    crop.candidateId = candidateId;
+    crop.assetSha256 = row.asset_sha256;
+    crop.version = row.version === null || row.version === undefined ? null : row.version;
+    crop.error = "";
+    crop.status = "正在本地准备裁剪预览…（不启模型，不写库）";
+    crop.inFlight = true;
+    renderComparePanel();
+    try {
+      const intent = await generation.prepareCrop({ shotId, candidateId });
+      if (token !== cropToken || projectId !== deps.currentProjectId()
+        || crop.shotId !== shotId || crop.candidateId !== candidateId
+        || crop.assetSha256 !== row.asset_sha256) {
+        try { generation.cancelCrop(intent); } catch { /* 迟到意图直接撤销 */ }
+        return;
+      }
+      releaseCropIntent();
+      crop.intent = intent;
+      crop.shotId = intent.shotId;
+      crop.candidateId = intent.source.candidateId;
+      try {
+        crop.previewUrl = URL.createObjectURL(intent.blob);
+      } catch (error) {
+        try { generation.cancelCrop(intent); } catch { /* 撤销失败走上报 */ }
+        crop.intent = null;
+        crop.status = "";
+        setCropError(errorMessageOf(error, "预览 URL 创建失败；原件不受影响。"));
+        return;
+      }
+      crop.status = "裁剪预览已就绪：确认保存才会生成派生候选；预览本身没有写入任何记录。";
+    } catch (error) {
+      if (token !== cropToken) return;
+      crop.status = "";
+      setCropError(deps.suffixedErrorMessage(error, "裁剪预览没有生成，原件不受影响。", "（预览未生成，原件不受影响）"));
+      return;
+    } finally {
+      if (token === cropToken) {
+        crop.inFlight = false;
+        renderComparePanel();
+      }
+    }
+  }
+
+  /**
+   * 保存为派生候选：只把预览时 owner 给的同一意图原样交回确认。
+   * 不改变当前查看对象或采用；成功后复用既有刷新模式更新候选列表/报告，
+   * 提示用户显式选择派生再采用（不自动采用、不自动导出）。
+   */
+  async function confirmCropSave(): Promise<void> {
+    const shotId = crop.shotId, candidateId = crop.candidateId;
+    const intent = crop.intent;
+    if (!deps.currentProjectId() || !shotId || !intent || crop.inFlight) return;
+    const action = deps.beginAction();
+    const token = ++cropToken;
+    const projectId = deps.currentProjectId() || "";
+    crop.error = "";
+    crop.status = "正在保存派生候选…（原件保留，不改当前查看与采用）";
+    crop.inFlight = true;
+    renderComparePanel();
+    try {
+      const result = await generation.confirmCrop({ intent });
+      if (!action.alive()) return;
+      if (token !== cropToken || projectId !== deps.currentProjectId()
+        || state.shotId !== shotId || crop.candidateId !== candidateId) {
+        return;
+      }
+      if (result.stale) {
+        releaseCropIntent();
+        crop.shotId = null;
+        crop.candidateId = null;
+        crop.assetSha256 = null;
+        crop.version = null;
+        crop.status = "";
+        renderComparePanel();
+        setCropError(result.message || "裁剪意图已过期；请重新预览后再保存。");
+        return;
+      }
+      if (result.skipped) {
+        crop.status = "";
+        renderComparePanel();
+        setCropError(result.message || "派生候选没有保存；原件与旧候选不受影响。");
+        return;
+      }
+      if (!result.candidate) throw new Error("未取得已保存的派生候选，请刷新核对后再决定。");
+      const saved = result.candidate.record;
+      const savedId = saved.candidate_id;
+      releaseCropIntent();
+      crop.shotId = null;
+      crop.candidateId = null;
+      crop.assetSha256 = null;
+      crop.version = null;
+      crop.status = "";
+      crop.error = "";
+      deps.renderAttempts();
+      renderCompare();
+      // 新派生缩略图只补这一行：列表经 renderCompare 就地 patch，不 reload、不重复渲染整套列表。
+      if (savedId) {
+        const savedRow = state.rows.find((item) => item.candidate_id === savedId && item.shot_id === shotId) || null;
+        if (savedRow) ensureCandidatePreview(savedRow);
+      }
+      setCompareStatus("派生候选已保存（candidate " + savedId.slice(0, 8)
+        + " · 本地派生，非上游输出；原件保留）。请在候选列表里显式选择这条派生，再按需采用；没有自动采用、没有自动导出。");
+      focusCandidateTab(state.candidateId);
+    } catch (error) {
+      if (!action.alive() || token !== cropToken) return;
+      crop.status = "";
+      setCropError(errorMessageOf(error, "派生候选没有保存；原件与旧候选不受影响。"));
+    } finally {
+      if (action.alive() && token === cropToken) {
+        crop.inFlight = false;
+        renderComparePanel();
+      }
+    }
+  }
+
   /* ----------------------------------------------- 人工选择与失效（V2.6.1） */
 
   // 人工选择与采用：记录所有权在 selectionAdoption Module；这里只做视图装配
@@ -2007,6 +2342,8 @@ export function createCompareView(
     candidatePreviewPending.clear();
     imageZoomReturnFocus = null;
     reworkReturnFocus = null;
+    cropReturnFocus = null;
+    discardCropPreview();
     reworkDrafts = new Map();
     rework.shotId = null;
     rework.candidateId = null;
@@ -2019,7 +2356,6 @@ export function createCompareView(
     rework.inFlight = false;
     rework.status = "";
     rework.error = "";
-    state.zoomSrc = null;
     state.zoomNative = false;
     state.zoomLabel = ZOOM_DEFAULT_TITLE;
     state.adoptProgress = "";

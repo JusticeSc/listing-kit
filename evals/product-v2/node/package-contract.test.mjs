@@ -8,6 +8,7 @@
 import { expect, expectCode, serializeError, utf8Bytes } from "./harness-core.mjs";
 
 import { buildZip, crc32, readZip } from "../../../build/frontend-node/app/product_v2/storage/zip.js";
+import { assertPayloadSchemaSupported } from "../../../build/frontend-node/app/product_v2/storage/package-schema.js";
 
 const cases = [];
 
@@ -108,6 +109,20 @@ test("Z03", "能读别的工具用 deflate 压缩的 ZIP", async () => {
 });
 
 
+
+test("Z12", "载荷版本边界：候选 v1/v2 均可读，v3 与无身份的旧 Attempt 整包拒绝", async () => {
+  const supported = (kind, schemaVersion) => assertPayloadSchemaSupported({
+    kind, document_id: kind + "-fixture", version: 1,
+    payload: { schema_version: schemaVersion },
+  });
+  expect(supported("candidate", 1) === undefined, "schema 1 历史候选必须继续可读（读入即视为 generation）");
+  expect(supported("candidate", 2) === undefined, "schema 2 生成/派生候选必须可读");
+  await expectCode(() => supported("candidate", 3), "PACKAGE_UNSUPPORTED_VERSION", "候选 schema 3");
+  await expectCode(() => supported("generation_attempt", 1), "PACKAGE_UNSUPPORTED_VERSION",
+    "缺冻结执行身份的旧 Attempt 必须整包拒绝");
+  expect(supported("product_input", 1) === undefined, "其它种类维持原边界");
+  return { probed: 5 };
+});
 
 /* Node 原生运行器：与原浏览器版同一批 cases，断言不改写。 */
 import nodeTest from "node:test";

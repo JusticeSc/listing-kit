@@ -187,7 +187,6 @@ function candidateFixture(shot, overrides = {}) {
     media_type: "image/png",
     width: 1600,
     height: 1600,
-    attempt_action_id: "act-fixture",
     created_at: BASE_TIME,
     ...overrides,
   };

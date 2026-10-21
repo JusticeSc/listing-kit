@@ -942,7 +942,7 @@ function reworkDirective(shot, mode, overrides = {}) {
       candidate_id: "cand_expr_1", shot_id: shot.shot_id,
       asset_sha256: overrides.candidateSha || SHA_CANDIDATE_EXPR,
       media_type: "image/png", width: 1600, height: 1600,
-      attempt_action_id: "act_expr_1", created_at: "2026-10-19T08:00:00Z",
+      created_at: "2026-10-19T08:00:00Z",
     },
     candidateDocument: { document_id: shot.shot_id, version: 1 },
     problems: ["composition"],

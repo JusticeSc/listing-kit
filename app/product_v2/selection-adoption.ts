@@ -2,6 +2,7 @@
 import {
   DOMAIN_DOCUMENT_KINDS, REVIEW_REPORT_DOCUMENT_KIND, acknowledgementDocumentIdOf, assertSelectionRecord,
   buildAcknowledgement, buildReviewReport, buildSelectionRecord, buildSelectionSet, candidateMatchesAttempt,
+  candidateOriginOf,
   deriveSelectionState, emptyShotSpecFromShot, evaluateCandidateFindings,
   mergeVlmReview,
   newActionId, promptStaleness, reviewIsCurrent, reviewStatusOf, reviewSummaryText, selectionSummaryText,
@@ -116,7 +117,9 @@ export function createSelectionAdoptionModule(deps: SelectionDependencies): Sele
     for (const shot of shots) {
       if (!action.alive()) return;
       const shotId = typeof shot.shot_id === "string" ? shot.shot_id : null;
-      const candidate = shotId ? deps.generation.latestStoredCandidateOf(shotId)?.record : null;
+      const newest = shotId ? deps.generation.candidateChainOf(shotId).at(-1) : null;
+      const candidate = newest && candidateOriginOf(newest.record) === "derived"
+        ? newest.record : shotId ? deps.generation.latestStoredCandidateOf(shotId)?.record : null;
       if (!shotId || !candidate) continue;
       const stored = reviewReports.get(candidate.candidate_id) || null;
       // 已有当前报告即跳过：避免 review_report 版本无意义 +1。

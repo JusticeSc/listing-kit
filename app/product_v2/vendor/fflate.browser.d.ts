@@ -1,6 +1,7 @@
 /**
- * Vendored fflate 0.8.3 browser build — accurate boundary for the two
- * synchronous ZIP functions actually used by storage/zip.js.
+ * Vendored fflate 0.8.3 browser build — accurate boundary for the synchronous
+ * functions actually used (zipSync/unzipSync by storage/zip.js,
+ * zlibSync by image-crop.ts).
  * Do not edit the vendored JS; extend this file only if new fflate
  * entry points become used, keeping byte/options/result contracts exact.
  */
@@ -53,3 +54,16 @@ export function zipSync(data: FflateZipInput, opts?: FflateZipOptions): Uint8Arr
  * Synchronously decompress a ZIP archive into path-keyed raw bytes.
  */
 export function unzipSync(data: Uint8Array, opts?: FflateUnzipOptions): Record<string, Uint8Array>;
+
+/**
+ * Compression options accepted by zlibSync (image-crop.ts passes none and
+ * takes fflate defaults; level kept for contract exactness).
+ */
+export interface FflateZlibOptions {
+  level?: number;
+}
+
+/**
+ * Synchronously compress raw bytes with zlib (RFC 1950) wrapping.
+ */
+export function zlibSync(data: Uint8Array, opts?: FflateZlibOptions): Uint8Array;

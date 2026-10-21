@@ -30,6 +30,7 @@
     "app/product_v2/domain/attempt.ts",
     "app/product_v2/domain/image-envelope.ts",
     "app/product_v2/domain/config-export.ts",
+    "app/product_v2/image-crop.ts",
     "app/product_v2/project-inputs.ts",
     "app/product_v2/semantic-analysis.ts",
     "app/product_v2/session.ts",

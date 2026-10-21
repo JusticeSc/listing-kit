@@ -23,7 +23,7 @@ export const PAYLOAD_SCHEMA_VERSIONS = Object.freeze({
   prompt_version: 2,
   generation_confirm: 4,
   generation_attempt: 3,
-  candidate: 1,
+  candidate: 2,
   review_report: 1,
   selection: 1,
   suite_review: 1,
@@ -35,10 +35,13 @@ export const PAYLOAD_SCHEMA_VERSIONS = Object.freeze({
  * schema 2 已含冻结执行身份，仍由领域解析器按历史分支读取；schema 3 的新引用元数据
  * 不得倒灌旧动作。当前格式包必须能保留同一项目的这些历史记录（设计 §13.8）。
  * Attempt schema 1 缺执行身份，仍整包拒绝，不补造、不迁写；新 Attempt 写 3，新确认授权写 4。
+ * 候选 schema 1 是无 origin 的历史生成记录，继续可读（读入即视为 generation）；
+ * 新生成/派生一律写 schema 2，派生必须声明完整 derivation 血缘。
  */
 /** @type {PayloadSchemaVersionMap} */
 export const MIN_PAYLOAD_SCHEMA_VERSIONS = Object.freeze({
   generation_attempt: 2,
+  candidate: 1,
 });
 
 /**

@@ -12,7 +12,7 @@
  * 测量的规则不能拿到 BLOCK / HIGH_RISK。
  */
 
-import { candidateMatchesAttempt, checkCandidateRecord, parsePngHeader } from "./candidate.js";
+import { candidateById, candidateMatchesAttempt, checkCandidateRecord, parsePngHeader } from "./candidate.js";
 import { DOMAIN_ERROR_CODES, invalid } from "./errors.js";
 import {
   CONFIRM_BLOCKER_CODES,
@@ -717,14 +717,14 @@ export function evaluateExportReadiness({ shots, selections, candidatesByShot,
     checked += 1;
     const chain = candidatesByShot && Array.isArray(candidatesByShot[shotId])
       ? candidatesByShot[shotId] : [];
-    const candidate = findRecordByAction(chain, candidateId);
+    const candidate = recordOf(candidateById(chain, candidateId));
     if (!candidate) {
       chainIssues.push(shotId + " 的选择指向不存在的候选");
       return;
     }
     const attemptChain = attemptsByShot && Array.isArray(attemptsByShot[shotId])
       ? attemptsByShot[shotId] : [];
-    const attempt = findRecordByAction(attemptChain, candidateId);
+    const attempt = findRecordByAction(attemptChain, candidate.action_id);
     if (!attempt || !candidateMatchesAttempt(candidate, attempt)) {
       chainIssues.push(shotId + "：" + (attempt ? "候选与来源 Attempt 不一致" : "来源 Attempt 缺失"));
     }
@@ -793,7 +793,7 @@ export async function verifyAssetHashes({ selections, candidatesByShot, readByte
     if (!isNonEmptyString(candidateId)) continue;
     const chain = candidatesByShot && Array.isArray(candidatesByShot[shotId])
       ? candidatesByShot[shotId] : [];
-    const candidate = findRecordByAction(chain, candidateId);
+    const candidate = recordOf(candidateById(chain, candidateId));
     if (!candidate) {
       missing.push(shotId + "：候选记录缺失");
       continue;
