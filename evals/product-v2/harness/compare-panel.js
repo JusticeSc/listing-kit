@@ -39,7 +39,7 @@ function candidateRecord(id, sha, overrides = {}) {
     media_type: "image/png",
     width: 1024,
     height: 1024,
-    attempt_action_id: "act-" + id,
+    action_id: "act-" + id,
     created_at: "2026-09-30T00:00:00Z",
     ...overrides,
   };
@@ -252,6 +252,38 @@ test("CP-15", "过期报告降级为未检查：不拿旧结论冒充当前结�
   expect(compareStateOf(stale, { current: false }) === "unchecked",
     "报告与当前候选/合同不一致时必须降级为未检查");
   expect(compareStateOf(null) === "unchecked", "没有报告就是未检查");
+});
+
+test("CP-16", "派生候选行按 canonical action 找父 Attempt：共享动作但身份独立", () => {
+  const parent = candidateRecord("act-main-row", SHA.a);
+  const derived = {
+    ...parent,
+    candidate_id: "crop-main-row",
+    asset_sha256: SHA.b,
+    schema_version: 2,
+    origin: "derived",
+    derivation: {
+      kind: "crop", parent_candidate_id: parent.candidate_id, parent_version: 1,
+      parent_asset_sha256: parent.asset_sha256, source_width: 1024, source_height: 1024,
+      rect: { x: 0, y: 0, width: 1024, height: 1024 },
+      subject_bbox: { x: 10, y: 10, width: 900, height: 900 },
+      algorithm: "white-background-square-v1", resample: "none", pixel_preserving: true,
+      before_basis_points: 8790, after_basis_points: 8790,
+    },
+  };
+  const rows = compareRows({
+    candidates: [{ record: parent, version: 1 }, { record: derived, version: 2 }],
+    reportsByCandidateId: {},
+    attemptsByActionId: { [parent.action_id]: { action_id: parent.action_id, task_id: "task-parent-row" } },
+  });
+  const row = rowOf(rows, "crop-main-row");
+  expect(row !== null, "派生候选必须有自己的比较行");
+  expect(row.attempt_action_id === parent.action_id,
+    "派生行必须经 canonical action_id 指向父 Attempt，而不是候选自身身份");
+  expect(row.task_id === "task-parent-row", "父 Attempt 在场时必须带出 task id");
+  expect(rows.every((item) => item.candidate_id !== parent.candidate_id
+      || item.attempt_action_id === parent.action_id),
+  "原候选行同样按 canonical action 解析来源");
 });
 
 async function runSuite() {

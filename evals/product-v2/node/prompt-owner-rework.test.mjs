@@ -35,11 +35,11 @@ function fixture() {
     model_id:IMAGE_PROMPT_PROFILE.model_id,capability_version:1,capabilities:{request_profile:IMAGE_PROMPT_PROFILE}}};
   const owner=createPromptModule({repository,beginAction:()=>action,sources:()=>source,imageEnvironment:()=>environment});
   const candidate={candidate_id:'candidate-to-edit',shot_id:shot.shot_id,asset_sha256:CANDIDATE_SHA,
-    media_type:'image/png',width:1600,height:1600,attempt_action_id:'action-original-image',created_at:AT};
+    media_type:'image/png',width:1600,height:1600,created_at:AT};
   const directive=(mode,id='directive-owner-rework')=>buildReworkDirective({directiveId:id,
     shotId:shot.shot_id,mode,candidate,candidateDocument:{document_id:shot.shot_id,version:3},
     problems:['composition'],direction:'保持商品不变，仅把主体居中。',at:AT});
-  return {owner,shot,rows,directive};
+  return {owner,shot,rows,directive,source};
 }
 
 test('manual editing and reconfirming a rework prompt retains the fixed candidate before product evidence',async()=>{
@@ -90,3 +90,47 @@ test('explicit keep-manual rework freezes each selected mode without rewriting t
   assert.deepEqual(rows[1],manual);
   assert.deepEqual(rows[2].payload,edit);
 });
+
+for (const mode of ['edit_candidate', 'regenerate_original']) {
+  test(`repreparing and discarding a manual override preserves the fixed ${mode} source`, async () => {
+    const {owner,shot,rows,directive,source}=fixture();
+    const rework=directive(mode);
+    await owner.compileAndSave(shot.shot_id,{rework});
+    // 真实历史系统稿只有 compiled.rework.direction；当前 writer 会回填 basis 的同一方向。
+    delete owner.entryOf(shot.shot_id).record.basis.rework.direction;
+    delete rows[0].payload.basis.rework.direction;
+    const original=structuredClone(rows[0]);
+    const expectedLineage={...original.payload.basis.rework,direction:rework.direction};
+    source.styleSpec.lighting='左侧柔和漫射光';
+    source.styleVersion+=1;
+
+    const result=await owner.prepare(new Map());
+    assert.deepEqual(result,{prepared:1,errors:[]});
+    const refreshed=owner.entryOf(shot.shot_id).record;
+    assert.deepEqual(refreshed.basis.rework,expectedLineage);
+    assert.deepEqual(refreshed.request_snapshot.references.map(item=>item.sha256),
+      mode==='edit_candidate'?[CANDIDATE_SHA,PRODUCT_SHA]:[PRODUCT_SHA]);
+    assert.equal(refreshed.request_snapshot.prompt,refreshed.compiled.text);
+    assert.match(refreshed.compiled.text,/左侧柔和漫射光/);
+    await owner.compileAndSave(shot.shot_id);
+    const explicit=owner.entryOf(shot.shot_id).record;
+    assert.deepEqual(explicit.basis.rework,expectedLineage,
+      'the explicit local-prepare button must preserve the same source as automatic preparation');
+    assert.deepEqual(explicit.request_snapshot.references,refreshed.request_snapshot.references);
+
+    const manualText=explicit.compiled.text+'\n保留完整商品轮廓。';
+    await owner.edit(shot.shot_id,manualText,'只补充商品边界要求');
+    const manual=structuredClone(rows.at(-1));
+    source.styleSpec.lighting='右侧柔和漫射光';
+    source.styleVersion+=1;
+    const discarded=await owner.discard(shot.shot_id);
+    assert.notEqual(discarded.origin,'manual_edit');
+    assert.deepEqual(discarded.basis.rework,expectedLineage,
+      'discarding manual wording must not discard the restored system prompt source');
+    assert.deepEqual(discarded.request_snapshot.references,explicit.request_snapshot.references);
+    assert.match(discarded.compiled.text,/右侧柔和漫射光/);
+    assert.equal(discarded.compiled.text.endsWith('\n保留完整商品轮廓。'),false);
+    assert.deepEqual(rows.at(-2),manual,'discard must preserve the prior manual version');
+    assert.deepEqual(rows[0],original,'refresh must preserve the original frozen prompt');
+  });
+}

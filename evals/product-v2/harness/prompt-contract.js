@@ -10,7 +10,6 @@
 
 import {
   DOMAIN_ERROR_CODES,
-  ROLE_VISUAL_BRIEF,
   buildPromptRecord,
   canonicalJson,
   checkCompiledPrompt,
@@ -250,16 +249,10 @@ test("G14", "展示决定写进商品一致性段：干净展示给去污例外�
   return { clean_refs: cleanFidelity.source_refs };
 });
 
-test("G15", "画面简报按用途正向表达且不冒充事实：删段/串味/事实污染必红（抓简报漂移回归）", async () => {
+test("G15", "画面简报来源只引用用途，不把商品事实冒充画面设定", async () => {
   const main = compileMain();
   const mainBrief = main.sections.find((item) => item.key === "visual_brief");
   expect(Boolean(mainBrief), "主图必须有画面简报段：删段必红。");
-  for (const sentence of ROLE_VISUAL_BRIEF.main) {
-    expect(main.text.includes(sentence), "主图正文必须逐字含主图简报句：" + sentence);
-  }
-  for (const sentence of ROLE_VISUAL_BRIEF.infographic) {
-    expect(main.text.includes(sentence) === false, "主图正文不得串入信息图简报句：" + sentence);
-  }
   // 信息图用所选文案 spec 让编译通过（G10 同款），只看画面简报部分。
   const infoShot = infographicShot();
   const infoCompiled = compilePrompt({
@@ -279,12 +272,6 @@ test("G15", "画面简报按用途正向表达且不冒充事实：删段/串味
   });
   const infoBrief = infoCompiled.sections.find((item) => item.key === "visual_brief");
   expect(Boolean(infoBrief), "信息图必须有画面简报段：删段必红。");
-  for (const sentence of ROLE_VISUAL_BRIEF.infographic) {
-    expect(infoCompiled.text.includes(sentence), "信息图正文必须逐字含信息图简报句：" + sentence);
-  }
-  for (const sentence of ROLE_VISUAL_BRIEF.detail) {
-    expect(infoCompiled.text.includes(sentence) === false, "信息图正文不得串入特写简报句：" + sentence);
-  }
   for (const section of [mainBrief, infoBrief]) {
     for (const ref of section.source_refs) {
       expect(/^suite_plan\.shot:/.test(ref), "画面简报来源只能是套图计划：" + ref);
@@ -605,22 +592,52 @@ test("G12", "过期机检：只认这张图实际消费的依据；无关槽位�
   // 消费该槽位的图：它消费的槽位版本前进 → 过期；它没消费的槽位前进 → 不过期。
   const infoShot = infographicShot();
   // 只测过期机检：显式不印新增文字，避免被「未决定」门阻断；原断言不变。
-  const infoCompiled = compileMain({
-    shot: infoShot, shotSpec: { ...emptyShotSpecFromShot(infoShot), print_intent: "none" } });
+  const infoSpec = { ...emptyShotSpecFromShot(infoShot), print_intent: "none",
+    purpose: "只展示商品本身与干净背景，不添加标题、文字或说明。",
+    keep: ["商品可见外观与标识"], change_allowed: ["背景", "光线"] };
+  const infoCompiled = compileMain({ shot: infoShot, shotSpec: infoSpec });
   const infoSnapshot = requestSnapshotOf(infoCompiled,
-    { references: frozenRefs(infoShot, contextFixture(),
-      { ...emptyShotSpecFromShot(infoShot), print_intent: "none" }) });
+    { references: frozenRefs(infoShot, contextFixture(), infoSpec) });
   const infoRecord = buildPromptRecord({
     compiled: infoCompiled, snapshot: infoSnapshot, hash: await promptHash(infoSnapshot, DIGEST),
   });
   expect(json(infoCompiled.basis.brief) === json([{ slot_id: "signature_features", version: 1 }]),
     "信息图只消费它用到的已确认事实：" + json(infoCompiled.basis.brief));
   const infoCurrent = {
+    compiler_rule_version: infoCompiled.basis.compiler_rule_version,
     briefBasis: infoCompiled.basis.brief,
     shot_signature: infoCompiled.basis.shot_signature,
     suite_version: 3, style_version: 1, shot_spec_version: 1,
     platform: { version: 1 }, provider: IMAGE_PROMPT_PROFILE,
   };
+  // 规则版本只随「信息图 + 不印新增文字」上升：历史稿可读但须重备，别的组合正文不变、不得误判过期。
+  const historicalInfo = structuredClone(infoRecord);
+  historicalInfo.basis.compiler_rule_version = 3;
+  expect(checkPromptRecord(historicalInfo).length === 0,
+    "历史信息图原记录仍必须可读，不能靠拒绝导入冒充规则迁移。");
+  const compilerBumped = promptStaleness(historicalInfo, infoCurrent);
+  expect(compilerBumped.stale && compilerBumped.reasons.some((item) => item.field === "compiler_rule_version"),
+    "旧信息图程序稿必须按当前规则重新准备：" + json(compilerBumped));
+  await expectCode(() => buildPromptRecord({
+    compiled: { ...infoCompiled, basis: historicalInfo.basis }, snapshot: infoSnapshot, hash: infoRecord.hash,
+  }), DOMAIN_ERROR_CODES.CONTRACT_INVALID, "历史信息图编译结果不得冒充新写入");
+  const historicalMain = structuredClone(record);
+  historicalMain.basis.compiler_rule_version = 3;
+  expect(compiled.basis.compiler_rule_version === 3,
+    "主图规则版本必须保持 3，既有成品不得因本次修复作废。");
+  expect(promptStaleness(historicalMain, current).stale === false,
+    "主图历史稿在规则 3 下仍是当前：" + json(promptStaleness(historicalMain, current)));
+  const selectedInfoSpec = { ...emptyShotSpecFromShot(infoShot), print_intent: "selected",
+    layout: "product_left_text_right",
+    on_image_texts: [{ text_id: "t_sig_1", text: "304不锈钢内胆",
+      source: textSource("signature_features", 1), status: "confirmed", origin: "user" }] };
+  const selectedCompiled = compileMain({ shot: infoShot, shotSpec: selectedInfoSpec });
+  expect(selectedCompiled.basis.compiler_rule_version === 3,
+    "信息图印字（非 none）正文不变，规则版本必须仍为 3：" + json(selectedCompiled.basis.compiler_rule_version));
+  const selectedCurrent = { ...infoCurrent, compiler_rule_version: 3,
+    shot_spec_version: 1, briefBasis: selectedCompiled.basis.brief };
+  expect(promptStaleness(selectedCompiled, selectedCurrent).stale === false,
+    "印字信息图的规则版本不得被误判过期：" + json(promptStaleness(selectedCompiled, selectedCurrent)));
   const consumedBumped = promptStaleness(infoRecord, {
     ...infoCurrent,
     briefBasis: infoCurrent.briefBasis.map((item) =>

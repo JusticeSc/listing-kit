@@ -152,6 +152,16 @@ function shotSpec(shot, overrides = {}) {
   return { ...emptyShotSpecFromShot(shot), ...overrides };
 }
 
+function noPrintInfographicSpec(shot, overrides = {}) {
+  return shotSpec(shot, {
+    print_intent: "none",
+    purpose: "只展示商品本身与干净背景，不添加标题、文字或说明。",
+    keep: ["商品可见外观与标识"],
+    change_allowed: ["背景", "光线"],
+    ...overrides,
+  });
+}
+
 function compile(shot, spec, overrides = {}) {
   return compilePrompt({
     brief: briefFixture(),
@@ -233,11 +243,25 @@ test("P01", "信息图默认未决定：绑定事实不自动印上图，而是�
 
 test("P02", "明确无新增文字：不产生图中文字段，绑定事实不再被当成印字", async () => {
   const shot = infographicShot();
-  const compiled = compile(shot, shotSpec(shot, { print_intent: "none" }));
+  const compiled = compile(shot, noPrintInfographicSpec(shot));
   expect(literalTexts(compiled).length === 0,
     "选择不印新增文字时不得出现文字条目：" + json(literalTexts(compiled)));
   expect(!allText(compiled).includes("304不锈钢内胆"),
     "绑定事实不得再被自动印上图：" + allText(compiled));
+  const visualBrief = sectionText(compiled, "visual_brief");
+  expect(!/一行标题加若干要点|文案区放在|文字水平排布/.test(visualBrief),
+    "不印字的程序简报不能仍要求标题、要点或文案版面：" + visualBrief);
+  const fidelity = sectionText(compiled, "product_fidelity");
+  expect(!/如需出现文字|后面列出的已确认文案/.test(fidelity),
+    "不印字的最终程序稿不得再邀请文字或指向不存在的文案清单：" + fidelity);
+  expect(/不要.*叠加文字/.test(fidelity),
+    "不印字的商品一致性约束必须明确禁止额外文字：" + fidelity);
+  const negative = sectionText(compiled, "negative_constraints");
+  expect(/叠加文字/.test(negative),
+    "不印字的最终负面约束不得只禁止错字而仍许可加字：" + negative);
+  const task = sectionText(compiled, "shot_task");
+  expect(task.includes("商品可见外观与标识") && !/卖点文字|标注排版/.test(task),
+    "不印字任务必须消费普通商品保持要求，不能残留印字模板默认值：" + task);
   const explained = (compiled.warnings || []).some((item) => /不.*印|不会印|未选择/.test(item.message));
   expect(explained, "不印字必须给出人读说明，而不是静默丢弃：" + json(compiled.warnings));
   return { warnings: compiled.warnings.map((item) => item.code) };
@@ -552,7 +576,7 @@ test("P16", "只印所选不能配只放商品版面：消息含「不能选」�
 
 test("P17", "不印新增文字不点版面也不阻断：正文不含版面段（抓不印字被版面门误拦回归）", async () => {
   const shot = infographicShot();
-  const compiled = compile(shot, shotSpec(shot, { print_intent: "none" }));
+  const compiled = compile(shot, noPrintInfographicSpec(shot));
   const keys = compiled.sections.map((item) => item.key);
   expect(!keys.includes("shot_layout"), "不印字且没选版面时不得出现版面段：" + json(keys));
   expect(!allText(compiled).includes("版面"), "不印字正文不得提版面：" + allText(compiled));
@@ -568,15 +592,14 @@ test("P17", "不印新增文字不点版面也不阻断：正文不含版面段�
 test("P18", "文字版面必须真的有文字：不印字却选文字版面被拦（另一个方向也不许自相矛盾）", async () => {
   const shot = infographicShot();
   // (a) 明确不印新增文字，却留着「商品在左，文字在右」版面：正文会为文字留位置而没有任何文案。
-  const orphanLayout = errorOf(() => compile(shot, shotSpec(shot, {
-    print_intent: "none", layout: "product_left_text_right",
-  })));
+  const orphanLayout = errorOf(() => compile(shot,
+    noPrintInfographicSpec(shot, { layout: "product_left_text_right" })));
   expect(orphanLayout !== null, "不印字配文字版面必须阻断，不能排出「放置下方给定的文字」：" + json(orphanLayout));
   expect(/不会有图上文字|没有文案可放|不能选/.test(orphanLayout.message),
     "阻断消息要说清为什么：" + json(orphanLayout));
   expect(/只放商品/.test(orphanLayout.message), "阻断消息要给出可执行的改法：" + json(orphanLayout));
   // (b) 同一张图改成「只放商品」就能编译，且正文里没有文字段。
-  const fixed = compile(shot, shotSpec(shot, { print_intent: "none", layout: "product_only" }));
+  const fixed = compile(shot, noPrintInfographicSpec(shot, { layout: "product_only" }));
   expect(!fixed.sections.some((item) => item.key === "on_image_text"),
     "改对版面后不得再出现文字段：" + json(fixed.sections.map((item) => item.key)));
   // (c) 尺寸图是印字决定角色：导入数据写成文字版面、但印字决定还没做时，
@@ -919,7 +942,7 @@ function reworkDirective(shot, mode, overrides = {}) {
       candidate_id: "cand_expr_1", shot_id: shot.shot_id,
       asset_sha256: overrides.candidateSha || SHA_CANDIDATE_EXPR,
       media_type: "image/png", width: 1600, height: 1600,
-      attempt_action_id: "act_expr_1", created_at: "2026-10-19T08:00:00Z",
+      created_at: "2026-10-19T08:00:00Z",
     },
     candidateDocument: { document_id: shot.shot_id, version: 1 },
     problems: ["composition"],

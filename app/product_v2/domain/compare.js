@@ -126,15 +126,16 @@ export function compareRows({ candidates, reportsByCandidateId, attemptsByAction
     const record = isPlainObject(entry) && isPlainObject(entry.record) ? entry.record : entry;
     if (!isPlainObject(record) || !isNonEmptyString(record.candidate_id)) return null;
     const report = isPlainObject(reports[record.candidate_id]) ? reports[record.candidate_id] : null;
-    const attempt = isPlainObject(attempts[record.attempt_action_id])
-      ? attempts[record.attempt_action_id] : null;
+    // 来源动作只读候选记录的 canonical 字段：派生候选与父共享同一个 action，不需要别名字段。
+    const actionId = isNonEmptyString(record.action_id) ? record.action_id : null;
+    const attempt = actionId && isPlainObject(attempts[actionId]) ? attempts[actionId] : null;
     return Object.freeze({
       candidate_id: record.candidate_id,
       shot_id: record.shot_id,
       asset_sha256: record.asset_sha256,
       version: isPlainObject(entry) && Number.isInteger(entry.version) ? entry.version : null,
       created_at: record.created_at,
-      attempt_action_id: record.attempt_action_id || null,
+      attempt_action_id: actionId,
       task_id: attempt && isNonEmptyString(attempt.task_id) ? attempt.task_id : null,
       width: Number.isInteger(record.width) ? record.width : null,
       height: Number.isInteger(record.height) ? record.height : null,

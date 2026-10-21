@@ -42,9 +42,6 @@ HARNESS_DIR = ROOT / "evals" / "product-v2" / "harness"
 EVIDENCE_DIR = ROOT / "evals" / "product-v2"
 EVIDENCE_IMAGE_DIR = EVIDENCE_DIR / "evidence"
 COMPARE_CONTRACT_VERSION = "v2.5.3"
-EXPECTED_COMPARE_CASES = [f"CP-{index:02d}" for index in range(1, 16)]
-EXPECTED_REVIEW_CASES = [f"R{index}" for index in range(1, 14)]
-EXPECTED_PROVIDER_CASES = [f"R{index}" for index in range(14, 22)]
 
 
 import v2_verify_shared as shared  # noqa: E402
@@ -672,6 +669,28 @@ def run_workbench_checks(stamp: str, console_errors: list[str],
     return checks, ui
 
 
+def compare_suite_check(compare_suite: dict) -> dict:
+    """必需行为取独立合同；套件可扩展，缺项或任何实际失败仍阻断。"""
+    contract_path = ROOT / "config/product-v2/compare-contract.json"
+    required = json.loads(contract_path.read_text(encoding="utf-8")).get("required_cases")
+    if not isinstance(required, dict) or not required:
+        raise ValueError("比较必需行为合同必须是非空的用例ID映射")
+    cases = compare_suite.get("cases", [])
+    executed = {case["id"] for case in cases}
+    missing = sorted(required.keys() - executed)
+    failed = sorted(set(compare_suite.get("failed_ids") or []) | {
+        case["id"] for case in cases if case.get("ok") is not True
+    })
+    return {
+        "id": "V2.5.3-05",
+        "title": "比较合同套件：必需行为全覆盖，所有实际用例通过",
+        "ok": compare_suite.get("status") == "passed" and not missing and not failed,
+        "detail": {"status": compare_suite.get("status"),
+                   "failed": failed, "cases": len(cases), "missing": missing,
+                   "required_contract": contract_path.relative_to(ROOT).as_posix()},
+    }
+
+
 def run_harness_suites(console_errors: list[str], page_errors: list[str]) -> list[dict]:
     from playwright.sync_api import sync_playwright  # noqa: PLC0415
 
@@ -693,16 +712,7 @@ def run_harness_suites(console_errors: list[str], page_errors: list[str]) -> lis
             static_server.stop()
             browser.close()
 
-    checks.append({
-        "id": "V2.5.3-05",
-        "title": "CP-01–CP-15 比较契约套件：异常优先、默认目标、清单排序与反向探针全部通过",
-        "ok": compare_suite.get("status") == "passed"
-              and sorted(item["id"] for item in compare_suite.get("cases", []))
-              == EXPECTED_COMPARE_CASES,
-        "detail": {"status": compare_suite.get("status"),
-                   "failed": compare_suite.get("failed_ids"),
-                   "cases": len(compare_suite.get("cases", []))},
-    })
+    checks.append(compare_suite_check(compare_suite))
     checks.append({
         "id": "V2.5.3-06",
         "title": "复核契约回归：R01–R13 与 R14–R21 在比较面板落地后仍全过",
@@ -727,18 +737,22 @@ def main() -> int:
     page_errors: list[str] = []
 
     checks.extend(run_harness_suites(console_errors, page_errors))
-    workbench_checks, ui = run_workbench_checks(stamp, console_errors, page_errors)
-    checks.extend(workbench_checks)
-
-    entry = shared.run_entry(["--check"])
-    checks.append({
-        "id": "V2.5.3-18",
-        "title": "正式入口 --check 全过（比较面板没有破坏既有自检）",
-        # 自检条目会随批次增加：断言只看「全过」这一语义，不写死条数。
-        "ok": entry["rc"] == 0 and any(
-            re.search(r"V2 正式入口(轻量)?自检：\d+/\d+ 通过", line) for line in entry["tail"]),
-        "detail": {"rc": entry["rc"], "tail": entry["tail"][-3:]},
-    })
+    not_executed: list[str] = []
+    ui: dict = {}
+    if all(item["ok"] for item in checks) and not console_errors and not page_errors:
+        workbench_checks, ui = run_workbench_checks(stamp, console_errors, page_errors)
+        checks.extend(workbench_checks)
+        entry = shared.run_entry(["--check"])
+        checks.append({
+            "id": "V2.5.3-18",
+            "title": "正式入口 --check 全过（比较面板没有破坏既有自检）",
+            # 自检条目会随批次增加：断言只看「全过」这一语义，不写死条数。
+            "ok": entry["rc"] == 0 and any(
+                re.search(r"V2 正式入口(轻量)?自检：\d+/\d+ 通过", line) for line in entry["tail"]),
+            "detail": {"rc": entry["rc"], "tail": entry["tail"][-3:]},
+        })
+    else:
+        not_executed = ["workbench", "entry --check"]
     checks.append({
         "id": "V2.5.3-19",
         "title": "零意外 console error / page error",
@@ -768,6 +782,7 @@ def main() -> int:
         f"status: {'passed' if passed == len(checks) else 'failed'}",
         f"contract: {COMPARE_CONTRACT_VERSION}（面板）· {shared.current_review_contract()}（审核报告）",
         "model_calls: 0 · external_network_calls: 0（fake providers + 本地静态服务器）",
+        f"not_executed: {', '.join(not_executed) or 'none'}",
         f"json: {json_path.relative_to(ROOT).as_posix()}",
         "",
         "边界：本套件 0 次真实模型调用；比较面板只消费既有候选与审核报告，",
@@ -794,6 +809,7 @@ def main() -> int:
         "external_network_calls": 0,
         "checks": checks,
         "ui": ui,
+        "not_executed": not_executed,
         "console_errors": console_errors,
         "page_errors": page_errors,
     }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

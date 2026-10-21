@@ -635,6 +635,7 @@ input:disabled, textarea:disabled, select:disabled { background: var(--surface-s
 
 .compare-body { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 16px; }
 .compare-column { min-width: 0; }
+.crop-preview img { width: 100%; height: auto; max-height: 60dvh; object-fit: contain; }
 .compare-candidates { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
 .compare-card {
   border: 1px solid var(--border);

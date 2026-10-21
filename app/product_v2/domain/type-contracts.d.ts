@@ -517,6 +517,8 @@ export type PromptWarning = { code: string; message: string; source_refs: string
 export type PromptBasis = {
   /** 历史记录可缺失；当前编译器每次新写入都冻结此版本。 */
   compiler_rule_version?: number;
+  /** 规则版本依赖的有效印字决定；历史记录可缺失（按旧规则解释）。 */
+  print_intent?: string;
   brief: BriefBasisItem[];
   consumed_slot_ids: string[];
   shot_signature: string | null;
@@ -534,6 +536,8 @@ export type PromptBasis = {
     candidate_id: string;
     candidate_sha256: string;
     problems: string[];
+    /** 当前写者冻结原方向；较早记录可缺席，读取时不从人工全文猜测。 */
+    direction?: string;
     mode?: ReworkMode;
     problem_candidate?: ReworkProblemCandidate;
   };
@@ -821,10 +825,33 @@ export type AssetHashCheck = { ok: boolean; findings: ReviewFinding[] };
 
 /* ---------------------------------------------------------------- candidate */
 
+export type CandidateOrigin = "generation" | "derived";
+export type CandidateCropRect = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+export type CandidateDerivation = {
+  kind: "crop";
+  parent_candidate_id: string;
+  parent_version: number;
+  parent_asset_sha256: Sha256Hex;
+  source_width: number;
+  source_height: number;
+  rect: CandidateCropRect;
+  subject_bbox: CandidateCropRect;
+  algorithm: "white-background-square-v1";
+  resample: "none";
+  pixel_preserving: true;
+  before_basis_points: number;
+  after_basis_points: number;
+};
 export type CandidateRecord = {
   schema_version: number;
   candidate_id: string;
   shot_id: string;
+  /** 来源 Attempt 的 action_id；派生候选复用父候选的原 action（复核/导出按此找父 Attempt）。 */
   action_id: string;
   task_id: string | null;
   sync: boolean;
@@ -835,6 +862,10 @@ export type CandidateRecord = {
   height: number;
   provider: { provider_id: string | null; model_id: string | null };
   created_at: IsoTimestamp;
+  /** schema 1 历史记录无此字段，读入时视为 generation。 */
+  origin?: CandidateOrigin;
+  /** generation 候选为 null；derived 候选携带完整裁剪血缘。 */
+  derivation?: CandidateDerivation | null;
 };
 export type PngHeader = {
   width: number;

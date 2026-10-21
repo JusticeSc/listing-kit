@@ -27,9 +27,11 @@ import {
   canAttemptTransition, nextFromSubmitEnvelope, nextFromStatusEnvelope,
   checkConfirmationRecord, checkPromptRecord, promptStaleness, canonicalJson, isPlainObject,
   shotSignatureOf, styleSignatureOf, evaluateShot, selectReferences, dependencyAssetsOf, PLATFORM_PROFILES,
-  CONFIRM_SCHEMA_VERSION, PROMPT_COMPILER_RULE_VERSION, PROMPT_SCHEMA_VERSION,
+  CONFIRM_SCHEMA_VERSION, promptCompilerRuleVersionOf, PROMPT_SCHEMA_VERSION,
+  effectivePrinting,
   submissionModeAllows,
   checkCandidateRecord, candidateMatchesAttempt,
+  candidateOriginOf, candidateSameGenerationContent, checkDerivedParentLink, parsePngHeader,
   assertSelectionRecord, reviewIsCurrent, selectionReviewFingerprint, checkReviewReport, checkSuiteReviewReport,
 } from "../domain/index.js";
 
@@ -37,6 +39,58 @@ import {
 function transactionConflict(reason, details = {}) {
   throw new StorageError(STORAGE_ERROR_CODES.REVISION_CONFLICT,
     "业务来源或所见版本已变化；请刷新后明确决定。", { reason, ...details });
+}
+
+/**
+ * 派生输出/父原件的真实 PNG 身份是否与记录、血缘一致（保存与交付共用同一判据）。
+ * evidence 来自不可变 Blob（事务外测量），只用测量值比较，不信任 asset metadata 声明。
+ * @param {import("../domain/type-contracts.js").CandidateRecord} candidate
+ * @param {{width:number,height:number,byte_size:number}} output
+ * @param {{width:number,height:number,byte_size:number}} source
+ * @returns {boolean} true = 有不一致
+ */
+function derivedPngMismatch(candidate, output, source) {
+  const derivation = candidate.derivation;
+  return output.width !== candidate.width || output.height !== candidate.height
+    || output.width !== derivation.rect.width || output.height !== derivation.rect.height
+    || output.byte_size !== candidate.byte_size
+    || source.width !== derivation.source_width || source.height !== derivation.source_height;
+}
+
+/**
+ * 派生候选的父血缘复核（saveCandidate 与 commitDeliveryRecord 共用这一份，避免两处判据漂移）：
+ * 同一 Shot 内按精确 parent_version 取父文档，必须是真实生成候选；
+ * 再核对 candidate/action/task/sync/sha/尺寸血缘，以及父资产在场且字节数一致。
+ * @param {IDBTransaction} tx
+ * @param {IDBObjectStore} store
+ * @param {string} projectId
+ * @param {string} shotId
+ * @param {import("../domain/type-contracts.js").CandidateRecord} candidate
+ * @param {ReadonlyArray<{payload:unknown, version:number}>|null} [chain] 已读的候选链（缺省时现读）
+ * @returns {Promise<import("../domain/type-contracts.js").CandidateRecord>}
+ */
+async function requireDerivedParent(tx, store, projectId, shotId, candidate, chain = null) {
+  const derivation = candidate.derivation;
+  const rows = chain || await requestToPromise(
+    store.index("by_project_document").getAll([projectId, "candidate", shotId]));
+  const parentRow = rows.find(row => isPlainObject(row.payload)
+    && row.payload.candidate_id === derivation.parent_candidate_id
+    && row.version === derivation.parent_version);
+  const parent = parentRow
+    ? /** @type {import("../domain/type-contracts.js").CandidateRecord} */ (parentRow.payload)
+    : null;
+  if (!parent || candidateOriginOf(parent) !== "generation" || parent.shot_id !== shotId) {
+    transactionConflict("candidate_parent_missing");
+  }
+  if (checkDerivedParentLink(candidate, parent).length) {
+    transactionConflict("candidate_parent_mismatch");
+  }
+  const parentAsset = await requestToPromise(
+    tx.objectStore("assets").get(assetKeyOf(projectId, parent.asset_sha256)));
+  if (!parentAsset || parentAsset.byte_size !== parent.byte_size) {
+    transactionConflict("candidate_parent_asset_missing");
+  }
+  return parent;
 }
 
 /** @param {unknown} version */
@@ -495,7 +549,8 @@ export function createRepository({
     }
     const provider = prompt.compiled.provider;
     const current = {
-      compiler_rule_version: PROMPT_COMPILER_RULE_VERSION,
+      compiler_rule_version: promptCompilerRuleVersionOf(shot.role_id,
+        effectivePrinting(spec?.payload || null, shot).intent),
       briefBasis: slots.map(item => ({ slot_id: item.slot.slot_id, version: item.version })),
       shot_signature: shotSignatureOf(shot), suite_version: suite?.version || null,
       style_version: style?.version || null,
@@ -689,13 +744,74 @@ export function createRepository({
     });
   }
 
-  /** 候选属于原 action；较新的预约不取消旧动作的合法结果。
+  /**
+   * 读不可变 Blob 的真实 PNG 身份：内容寻址键先核哈希，再解析 IHDR 宽高。
+   * 事务内只取记录，arrayBuffer/digest 在事务外完成——不把外部异步留在一个活的 IDB 事务里。
+   * @param {string} projectId @param {string} sha256
+   * @returns {Promise<{sha256:string, width:number, height:number, byte_size:number}|null>}
+   */
+  async function readPngEvidence(projectId, sha256) {
+    const asset = await withTransaction(db, ["assets"], "readonly",
+      tx => requestToPromise(tx.objectStore("assets").get(assetKeyOf(projectId, sha256))));
+    if (!asset || !(asset.blob instanceof Blob)) return null;
+    const buffer = await asset.blob.arrayBuffer();
+    if (await digest(buffer) !== sha256) return null;
+    let header;
+    try {
+      header = parsePngHeader(new Uint8Array(buffer));
+    } catch {
+      return null;
+    }
+    return { sha256: sha256, width: header.width, height: header.height, byte_size: buffer.byteLength };
+  }
+
+  /**
+   * 派生候选保存前的字节证据：输出与父原件的真实 PNG 宽高/字节数必须与记录、血缘一致，
+   * 不只相信可伪造的 asset metadata。写事务随后只复核身份（父文档内容不变、资产在场）。
+   * @param {string} projectId @param {string} shotId
+   * @param {import("../domain/type-contracts.js").CandidateRecord} candidate
+   * @returns {Promise<{parentJson:string, byte_size:number, parent_byte_size:number}>}
+   */
+  async function derivedCropEvidence(projectId, shotId, candidate) {
+    const derivation = candidate.derivation;
+    const parentRow = await withTransaction(db, ["documents"], "readonly",
+      tx => requestToPromise(tx.objectStore("documents").get(
+        documentKeyOf(projectId, "candidate", shotId, derivation.parent_version))));
+    const parent = parentRow ? parentRow.payload : null;
+    if (!isPlainObject(parent) || parent.candidate_id !== derivation.parent_candidate_id) {
+      transactionConflict("candidate_parent_missing");
+    }
+    if (checkDerivedParentLink(candidate, parent).length) {
+      transactionConflict("candidate_parent_mismatch");
+    }
+    const output = await readPngEvidence(projectId, candidate.asset_sha256);
+    if (!output) {
+      throw new StorageError(STORAGE_ERROR_CODES.NOT_FOUND,
+        "派生候选字节缺失、哈希不符或不是可解析的 PNG。");
+    }
+    const source = await readPngEvidence(projectId, parent.asset_sha256);
+    if (!source) {
+      throw new StorageError(STORAGE_ERROR_CODES.NOT_FOUND,
+        "派生父候选原件缺失、哈希不符或不是可解析的 PNG。");
+    }
+    if (derivedPngMismatch(candidate, output, source) || source.byte_size !== parent.byte_size) {
+      transactionConflict("candidate_bytes_conflict");
+    }
+    return { parentJson: canonicalJson(parent), byte_size: output.byte_size,
+      parent_byte_size: source.byte_size };
+  }
+
+  /** 候选按 candidate_id 幂等；生成候选仍归属原 action，较新的预约不取消旧动作的合法结果。
+   * 派生候选的父身份由 requireDerivedParent 在同一事务内复核（与交付共用同一判据）；
+   * 真实 PNG 宽高/字节数在事务外读不可变 Blob 后核对，事务内只复核身份。
    * @param {string} projectId @param {string} shotId
    * @param {import("../domain/type-contracts.js").CandidateRecord} candidate */
   async function saveCandidate(projectId, shotId, candidate) {
     if (checkCandidateRecord(candidate).length || candidate.shot_id !== shotId) {
       throw new StorageError(STORAGE_ERROR_CODES.SCHEMA_INVALID, "候选身份不合法。");
     }
+    const origin = candidateOriginOf(candidate);
+    const evidence = origin === "derived" ? await derivedCropEvidence(projectId, shotId, candidate) : null;
     return withTransaction(db, ["projects", "documents", "assets"], "readwrite", async tx => {
       await requireTransactionProject(tx, projectId);
       const store = tx.objectStore("documents");
@@ -705,13 +821,27 @@ export function createRepository({
         transactionConflict("candidate_attempt_mismatch");
       }
       const asset = await requestToPromise(tx.objectStore("assets").get(assetKeyOf(projectId, candidate.asset_sha256)));
-      if (!asset || asset.byte_size !== candidate.byte_size) {
+      if (!asset || asset.byte_size !== candidate.byte_size
+          || (evidence !== null && asset.byte_size !== evidence.byte_size)) {
         throw new StorageError(STORAGE_ERROR_CODES.NOT_FOUND, "候选字节缺失或不匹配。");
       }
       const rows = await requestToPromise(store.index("by_project_document").getAll([projectId, "candidate", shotId]));
-      const existing = rows.find(row => row.payload.action_id === candidate.action_id);
+      if (origin === "derived") {
+        const parent = await requireDerivedParent(tx, store, projectId, shotId, candidate, rows);
+        if (evidence === null || canonicalJson(parent) !== evidence.parentJson
+            || parent.byte_size !== evidence.parent_byte_size) {
+          transactionConflict("candidate_parent_mismatch");
+        }
+      }
+      const existing = rows.filter(row => isPlainObject(row.payload)
+        && row.payload.candidate_id === candidate.candidate_id).sort((left, right) => right.version - left.version)[0];
       if (existing) {
-        if (existing.payload.asset_sha256 !== candidate.asset_sha256) transactionConflict("candidate_bytes_conflict");
+        const sameContent = origin === "generation"
+          ? candidateSameGenerationContent(existing.payload, candidate)
+          : canonicalJson(existing.payload) === canonicalJson(candidate);
+        if (existing.payload.asset_sha256 !== candidate.asset_sha256 || !sameContent) {
+          transactionConflict("candidate_bytes_conflict");
+        }
         return /** @type {import("./validate.js").StoredDocumentRecord<import("../domain/type-contracts.js").CandidateRecord>} */ (existing);
       }
       const version = rows.reduce((max, row) => Math.max(max, row.version), 0) + 1;
@@ -855,6 +985,41 @@ export function createRepository({
         || input.suiteReport.kind !== "suite_review") {
       throw new StorageError(STORAGE_ERROR_CODES.SCHEMA_INVALID, "交付缺少完整的已采用来源集合。");
     }
+    // 同一交付记录已存在时按幂等返回（不因后来清理字节把重复提交变成错误）。
+    const stored = await withTransaction(db, ["documents"], "readonly",
+      tx => readDocumentHead(tx.objectStore("documents"), projectId, "export_record", exportDocumentId));
+    if (stored) {
+      if (canonicalJson(stored.payload) !== canonicalJson(payload)) transactionConflict("export_identity_conflict");
+      return /** @type {import("./validate.js").StoredDocumentRecord<import("../domain/type-contracts.js").ExportRecordPayload>} */ (stored);
+    }
+    // 派生交付的字节证据：事务外读不可变 Blob 核对真实 PNG；写事务只复核身份与父链，
+    // 不在活的 IDB 事务里等待 arrayBuffer/digest（那会让事务自动提交）。
+    /** @type {Map<string, {output_bytes:number, parent_bytes:number, candidateJson:string}>} */
+    const derivedEvidence = new Map();
+    for (const ref of input.candidates) {
+      if (ref.kind !== "candidate") continue;
+      const row = await withTransaction(db, ["documents"], "readonly",
+        tx => requestToPromise(tx.objectStore("documents").get(
+          documentKeyOf(projectId, "candidate", ref.documentId, ref.version))));
+      const candidate = row ? row.payload : null;
+      if (!isPlainObject(candidate) || candidateOriginOf(candidate) !== "derived"
+          || !isPlainObject(candidate.derivation)) continue;
+      const output = await readPngEvidence(projectId, candidate.asset_sha256);
+      if (!output) {
+        throw new StorageError(STORAGE_ERROR_CODES.NOT_FOUND,
+          "派生交付候选字节缺失、哈希不符或不是可解析的 PNG。");
+      }
+      const source = await readPngEvidence(projectId, candidate.derivation.parent_asset_sha256);
+      if (!source) {
+        throw new StorageError(STORAGE_ERROR_CODES.NOT_FOUND,
+          "派生交付的父原件缺失、哈希不符或不是可解析的 PNG。");
+      }
+      if (derivedPngMismatch(candidate, output, source)) transactionConflict("candidate_bytes_conflict");
+      derivedEvidence.set(ref.documentId + "/" + ref.version, {
+        output_bytes: output.byte_size, parent_bytes: source.byte_size,
+        candidateJson: canonicalJson(candidate),
+      });
+    }
     return withTransaction(db, ["projects", "documents", "assets"], "readwrite", async tx => {
       await requireTransactionProject(tx, projectId);
       const store = tx.objectStore("documents");
@@ -880,6 +1045,7 @@ export function createRepository({
         const selectedRef = input.selections.find(item => item.kind === "selection" && item.documentId === ref.documentId);
         const reportRef = input.reports.find(item => item.kind === "review_report" && item.documentId === candidate.candidate_id);
         if (!selectedRef || !reportRef) transactionConflict("delivery_selection_missing");
+        if (checkCandidateRecord(candidate).length) transactionConflict("delivery_candidate_invalid");
         const selected = assertSelectionRecord((await exactDocument(store, projectId, selectedRef)).payload);
         const report = (await exactDocument(store, projectId, reportRef)).payload;
         if (selected.action !== "select" || selected.candidate_id !== candidate.candidate_id
@@ -891,6 +1057,17 @@ export function createRepository({
           .find(item => item.version === action.version && item.record.action_id === action.actionId);
         if (!observation || observation.record.state !== "succeeded" || !candidateMatchesAttempt(candidate, observation.record)) {
           transactionConflict("delivery_attempt_mismatch");
+        }
+        // 派生候选与保存时同一份判据：同 Shot 精确父版本、父生成身份、action/task/sync、
+        // 父 sha/尺寸，以及父资产在场。原候选不需要这一层（没有衍生的父）。
+        if (candidateOriginOf(candidate) === "derived") {
+          const parent = await requireDerivedParent(tx, store, projectId, ref.documentId, candidate);
+          const evidence = derivedEvidence.get(ref.documentId + "/" + ref.version) || null;
+          if (!evidence || evidence.candidateJson !== canonicalJson(candidate)
+              || evidence.output_bytes !== candidate.byte_size
+              || evidence.parent_bytes !== parent.byte_size) {
+            transactionConflict("delivery_candidate_changed");
+          }
         }
         const promptRef = input.originalPrompts.find(item => item.kind === "prompt_version"
           && item.documentId === ref.documentId && item.version === observation.record.prompt.version);

@@ -1,0 +1,87 @@
+{
+  "corrected_at": "2026-10-20T15:01:26Z",
+  "correction_note": "2026-10-20T15:01:26Z纠正（真实UTC）。旧observed_at 2026-10-20T20:50:00Z已撤回，不再作为可信观察。旧错误字节保留在../self-reform-20261020T144442Z/before.zip（本文件旧sha256 1bf9a386be6a9577a3eabc3e65195c5d7301673b4d348681a21bd8b93b2580e1）。",
+  "scope": "PR #26 (fix/9-reprepare-source-program-intent) 原始独立审查纠正摘要；后续 e38ab61 修复超出原审查范围",
+  "authority": "point-in-time evidence only; 仓库代码与 PR 状态优先",
+  "reviewer": "PR26Review",
+  "source_scope": "9793845..0bafc82 只读审查；无编辑/构建/测试/供应商调用",
+  "source_archive": "../self-reform-20261020T144442Z/original-review.txt (31行, sha256 19f28f2034b4c6c42c1e0d2cc8b6bbf594cdf5f88135bcffd274e2f6637a7121); 工具返回 ../self-reform-20261020T144442Z/original-review-tool-result.json; 公开读回见PR #26评论",
+  "reviewer_verdict": {
+    "overall_correctness": "correct",
+    "explanation": "The product changes are correct and minimal for the claimed no-print infographic path, rework-lineage preservation, and discard/history/OCC behavior; no blocking defect was found.",
+    "confidence": 0.85
+  },
+  "findings": [
+    {
+      "id": "P3-rule-version-selected-expired",
+      "original_finding": 2,
+      "original_severity": "P3",
+      "original_confidence": 0.8,
+      "source": "_stage-amz-control/self-reform-20261020T144442Z/original-review.txt (Ver Finding 2); 工具返回 original-review-tool-result.json",
+      "claim": "promptCompilerRuleVersionOf 只按 roleId==infographic 返回 4；印字信息图（print_intent=selected）正文逐字未变，历史稿仍被判 compiler_rule_version 过期（PROMPT_STALE/consumed_sources_changed），重备后正文不变。",
+      "evidence": "app/product_v2/domain/prompt.js（原审查行52-57）；promptBasisOf/promptCurrentBasisOf/repository.checkGenerationSources 供规则；e38ab61 改动超出原审查范围，原审查不覆盖后续代码",
+      "disposition": "fixed-in-e38ab61-beyond-review-scope",
+      "change": [
+        "promptCompilerRuleVersionOf(roleId, intent) = (infographic && none) ? 4 : 3",
+        "basis 冻结 print_intent；buildPromptRecord 按冻结值复核",
+        "prompts.ts / repository.js 按 effectivePrinting(...).intent 取当前规则"
+      ],
+      "verification": {
+        "npm_run_test_domain": "292/292 rc=0",
+        "verify_v2_3_4_prompt_compiler": "15/15 rc=0 (v2.3.4-prompt-compiler-20261020-204412.txt)",
+        "verify_v2_3_5_pre_generation_confirm": "13/13 rc=0",
+        "verify_v2_3_6_prompt_manual_edit": "13/13 rc=0"
+      }
+    },
+    {
+      "id": "P3-generator-drops-new-assertions",
+      "original_finding": 1,
+      "original_severity": "P3",
+      "original_confidence": 0.85,
+      "source": "_stage-amz-control/self-reform-20261020T144442Z/original-review.txt (Ver Finding 1); 工具返回 original-review-tool-result.json",
+      "claim": "只写在 node 副本的 G12 规则版本断言（compiler_rule_version、historicalMain、historicalInfo、compilerBumped、buildPromptRecord 拒绝）会被 _gen.mjs 从 harness 经 pureRewrite 重生成时删掉；verify_v2_3_4_prompt_compiler.py 因读 harness 而不覆盖该规则。",
+      "disposition": "mitigated",
+      "not_fixed": "生成器本身在本分支不可运行：执行至 brief C28 锚点处抛 'brief C28 边界失败'，本切片未修。旧稿“与本节改动无关”属未证归因，已撤回：本切片未做该失败与本改动的隔离对照。",
+      "mitigation": "同一批断言同时写入 harness/prompt-contract.js 与 node 副本；重生成时 harness 作为源仍带有它们。"
+    }
+  ],
+  "retracted": [
+    {
+      "original": "severity=blocking / P1阻断（review-fix.json 旧 P1-rule-version-always-4）",
+      "corrected": "原审查结论为 overall_correctness=correct、无阻断缺陷，两项发现均为P3；后续修复不改变原严重度。"
+    },
+    {
+      "original": "reviewer=PROr26Review（错名）；报告§10旧稿错归PR #18",
+      "corrected": "审查者为 PR26Review；范围为 9793845..0bafc82 只读审查，原文见 original-review.txt。"
+    },
+    {
+      "original": "“不印字组合永远consumed_sources_changed/无稿可写”（无据因果）",
+      "corrected": "印字信息图逐字未变却被判过期、被迫无意义重备（原finding 2）；不印字写入问题是旧稿自己的无据推断，不归原审查。"
+    },
+    {
+      "original": "P2-fixture-mismatch（harness/node 夹具矛盾，会编译矛盾无字Prompt）",
+      "corrected": "原审查(e)确认 G12 无字 infoSpec 两副本已一致（早前P2已修）；剩余分歧只是规则版本断言（即原finding 1），不另立P2。"
+    },
+    {
+      "original": "“首次跑红就是旧dist原因、不是产品bug”（无原始证明的全归因）",
+      "corrected": "已观察事实：本轮验证器第一次跑红，重建产物后通过；现有汇总没有提供从首红到重建的逐条因果对照，不能一概归因旧 dist，也不拿后续绿灯洗证据。"
+    },
+    {
+      "original": "“生成器失败与本节改动无关”（无原始证明）",
+      "corrected": "已观察事实：生成器执行到 brief C28 锚点抛错，本切片未修；未做隔离对照，不声称已证无关。"
+    }
+  ],
+  "two_round_regression": {
+    "candidate": "e38ab6149aa8ac57592b3cac2586ba9f0c72a623",
+    "command": "uv run --locked python tools/verify_v2_7_1_regression.py --rounds 2 --stamp final_v2",
+    "result": "50 命令 × 2 轮全绿，指纹 290ee1bddc2b3a6b 两轮一致",
+    "evidence": "evals/product-v2/v2.7.1-regression-final_v2-final.txt / .json",
+    "note": "0bafc82 的两轮绿早于规则版本修复，不作本 PR 最终候选证据。后续两轮绿只证明 e38ab61 代码范围，不洗掉原审查范围内的旧观察，也不代签像素/人因/发布。"
+  },
+  "unverified": [
+    "真实出图品质与文案是否落进像素（需真实模型与人工看图）",
+    "页面已有印字决定单选（ui/input-view.ts:printDecisionTemplate）；新增basis.print_intent只是冻结有效决定，不新增二次确认。本次代码回归不代签该交互的最终人因验收。",
+    "本切片零真实外呼；两个Adapter×两模式真实四组合按2026-10-15真实证据在未变条件下复用（相邻主工作树 _stage-amz-control/formal-resume-20261015T125651Z/real-wire/four-mode-proof.json：volcengine-ark与dashscope-qwen-image各edit/regenerate一例succeeded；本树state机器块同登记该路径），不要求重买"
+  ],
+  "limits": "全部本地、替身 provider、零付费；未合并、未部署。本切片零真实外呼。"
+}

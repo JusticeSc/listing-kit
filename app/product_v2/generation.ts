@@ -36,15 +36,18 @@ import {
   nextFromSubmitEnvelope,
   selectReferences,
   CANDIDATE_DOCUMENT_KIND,
+  CANDIDATE_CROP_ALGORITHM,
   CONFIRM_DOCUMENT_ID,
   CONFIRM_SCHEMA_VERSION,
   MAX_CANDIDATE_BYTES,
+  PROMPT_SCHEMA_VERSION,
   buildCandidateRecord,
+  buildDerivedCandidateRecord,
   candidateForAttempt,
+  candidateOriginOf,
   candidateStoreDecision,
   checkCandidateRecord,
   parsePngDimensions,
-  PROMPT_SCHEMA_VERSION,
  imagePromptProfile,
  canonicalJson,
  checkPromptRecord,
@@ -58,15 +61,16 @@ import {
  batchSubmitHalts,
  deriveBatchState,
  isNonEmptyString,
- reworkModeLabel,
+  reworkModeLabel,
   frozenImageCost,
   imageCostOf,
   submissionModeAllows,
 } from "./domain/index.js";
 import { sha256Hex } from "./storage/db.js";
+import { cropMainPng, type MainCropPlan } from "./image-crop.js";
+import type { ProjectRepository, ConsumptionFence } from "./storage/validate.js";
 import type { CompiledPromptResult, ConfirmationSheet, ProjectSources } from "./prompts.js";
 import type { AttemptReconcileResult } from "./domain/attempt.js";
-import type { ConsumptionFence, ProjectRepository } from "./storage/validate.js";
 import type {
   AttemptCurrentEnvironmentIdentity,
   AttemptError,
@@ -335,6 +339,28 @@ export type ConfirmReworkResult = {
   confirmation?: ConfirmationQueue;
 };
 
+/** 主图裁剪预览只提供不可变 Blob；待保存字节与来源证明由 owner 私有保存。 */
+export type PrepareCropInput = {
+  readonly shotId: string;
+  readonly candidateId: string;
+  readonly targetPercent?: number;
+};
+export type CropPreview = {
+  readonly projectId: string;
+  readonly generation: number;
+  readonly shotId: string;
+  readonly source: { readonly candidateId: string; readonly assetSha256: string; readonly version: number };
+  readonly intent: string;
+  readonly candidateId: string;
+  readonly blob: Blob;
+  readonly plan: MainCropPlan;
+};
+export type ConfirmCropInput = { intent: CropPreview };
+export type ConfirmCropResult = {
+  skipped?: true; stale?: true; reason?: string; message?: string;
+  candidate?: CandidateEntry | null;
+};
+
 /** owner 只读状态投影：旁路动作的用户可见文案，不参与任何业务判定。 */
 export type GenerationNotice = { readonly status: string; readonly error: string };
 
@@ -378,6 +404,9 @@ export type GenerationModule = {
   /** 单图返工：准备只读意图（编译预览），确认拥有当前性与提交；预览/取消零持久化零外发。 */
   prepareRework(input: PrepareReworkInput): Promise<ReworkIntent>;
   confirmRework(input: ConfirmReworkInput): Promise<ConfirmReworkResult>;
+  prepareCrop(input: PrepareCropInput): Promise<CropPreview>;
+  confirmCrop(input: ConfirmCropInput): Promise<ConfirmCropResult>;
+  cancelCrop(intent: CropPreview): void;
   isAttemptInFlight(shotId: string): boolean;
   isCandidateInFlight(shotId: string): boolean;
   attemptChainsNow(): [string, AttemptEntry[]][];
@@ -477,6 +506,16 @@ export function createGenerationModule(deps: GenerationDependencies): Generation
   // V2.R5.2 同步协议：提交信封里的结果字节暂存（action_id → {buffer, expectSha}）。
   // 明确不落盘：页面刷新/关闭即失效，候选保存走显式补救路径。取走即删。
   let pendingSyncBytes = new Map<string, SyncBytesEntry>();
+  type CropState = {
+    action: ActionSnapshot;
+    parent: CandidateEntry;
+    record: CandidateRecord;
+    bytes: Uint8Array<ArrayBuffer>;
+    cancelled: boolean;
+    flight: Promise<ConfirmCropResult> | null;
+    saved: CandidateEntry | null;
+  };
+  let cropIntents = new WeakMap<CropPreview, CropState>();
   // owner 只读文案投影 + 唯一投影变化通知出口：视图订阅读投影，不注入 DOM 回调。
   // 文案只是旁路动作的呈现结果，不参与任何业务判定（设计 §11.5.2）。
   let noticeStatus = "";
@@ -566,10 +605,131 @@ export function createGenerationModule(deps: GenerationDependencies): Generation
     authorizationScope = null;
     authorizationMode = "initial";
     pendingSyncBytes = new Map<string, SyncBytesEntry>();
+    cropIntents = new WeakMap<CropPreview, CropState>();
     batchState = null;
     // 换项目只清旁路文案；订阅者（视图）生命周期归 workspace 装配，不在 reset 里退订。
     noticeStatus = "";
     noticeError = "";
+  }
+
+  function requireMainCropSource(shotId: string, candidateId: string): CandidateEntry {
+    const shot = deps.suitePlanReader()?.shots.find(item => item.shot_id === shotId);
+    const parent = candidateChainOf(shotId).find(item => item.record.candidate_id === candidateId);
+    if (shot?.role_id !== "main" || !parent || candidateOriginOf(parent.record) !== "generation"
+      || checkCandidateRecord(parent.record).length) {
+      throw new Error("只支持对主图的完整生成原件裁剪；请明确选择一条生成候选。");
+    }
+    return structuredClone(parent);
+  }
+
+  async function readCropSource(projectId: string, parent: CandidateEntry): Promise<Uint8Array<ArrayBuffer>> {
+    const record = parent.record;
+    const row = await repository.documents.get(projectId, CANDIDATE_DOCUMENT_KIND, record.shot_id, parent.version);
+    if (!row || canonicalJson(row.payload) !== canonicalJson(record)) {
+      throw new Error("裁剪来源候选的精确版本已缺失或变化，请重新打开预览。");
+    }
+    const asset = await repository.assets.get(projectId, record.asset_sha256);
+    if (!(asset?.blob instanceof Blob) || asset.blob.size !== record.byte_size
+      || asset.blob.size > MAX_CANDIDATE_BYTES) {
+      throw new Error("裁剪原件缺失、大小不符或超过图片护栏；没有创建派生候选。");
+    }
+    const buffer = await asset.blob.arrayBuffer();
+    if (await sha256Hex(buffer) !== record.asset_sha256) {
+      throw new Error("裁剪原件哈希与来源记录不符；没有创建派生候选。");
+    }
+    const bytes = new Uint8Array(buffer);
+    const dimensions = parsePngDimensions(bytes);
+    if (dimensions.width !== record.width || dimensions.height !== record.height) {
+      throw new Error("裁剪原件的实际尺寸与来源记录不符；没有创建派生候选。");
+    }
+    return bytes;
+  }
+
+  async function prepareCrop(input: PrepareCropInput): Promise<CropPreview> {
+    const action = deps.beginAction();
+    if (!action.projectId || !action.alive()) throw new Error("项目尚未就绪，不能准备裁剪。");
+    const parent = requireMainCropSource(input.shotId, input.candidateId);
+    const source = await readCropSource(action.projectId, parent);
+    if (!action.alive()) throw new Error("项目已切换，裁剪预览已取消。");
+    const cropped = await cropMainPng(source, input.targetPercent);
+    if (!action.alive()) throw new Error("项目已切换，裁剪预览已取消。");
+    if (cropped.bytes.byteLength > MAX_CANDIDATE_BYTES) throw new Error("裁剪结果超过图片护栏，没有保存。");
+    const sha = await sha256Hex(cropped.bytes);
+    if (!action.alive()) throw new Error("项目已切换，裁剪预览已取消。");
+    const dimensions = parsePngDimensions(cropped.bytes);
+    const token = crypto.randomUUID();
+    const candidateId = "crop-" + token;
+    const plan = cropped.plan;
+    const record = buildDerivedCandidateRecord({
+      candidateId, parent: parent.record, parentVersion: parent.version,
+      assetSha256: sha, byteSize: cropped.bytes.byteLength,
+      width: dimensions.width, height: dimensions.height, at: new Date().toISOString(),
+      derivation: {
+        kind: "crop", parent_candidate_id: parent.record.candidate_id, parent_version: parent.version,
+        parent_asset_sha256: parent.record.asset_sha256,
+        source_width: plan.source_width, source_height: plan.source_height,
+        rect: plan.rect, subject_bbox: plan.subject_bbox, algorithm: CANDIDATE_CROP_ALGORITHM,
+        resample: "none", pixel_preserving: true,
+        before_basis_points: plan.before_basis_points, after_basis_points: plan.after_basis_points,
+      },
+    });
+    const intent: CropPreview = Object.freeze({
+      projectId: action.projectId, generation: action.generation, shotId: input.shotId,
+      source: Object.freeze({
+        candidateId: parent.record.candidate_id, assetSha256: parent.record.asset_sha256, version: parent.version,
+      }),
+      intent: token, candidateId, blob: new Blob([cropped.bytes], { type: "image/png" }), plan,
+    });
+    cropIntents.set(intent, { action, parent, record, bytes: cropped.bytes, cancelled: false, flight: null, saved: null });
+    return intent;
+  }
+
+  function cancelCrop(intent: CropPreview): void {
+    const state = cropIntents.get(intent);
+    if (state) state.cancelled = true;
+    cropIntents.delete(intent);
+  }
+
+  async function persistCrop(state: CropState): Promise<ConfirmCropResult> {
+    const { action, parent, record } = state;
+    if (!action.projectId) return { skipped: true, stale: true, reason: "stale_session" };
+    requireMainCropSource(record.shot_id, parent.record.candidate_id);
+    await readCropSource(action.projectId, parent);
+    if (!action.alive() || state.cancelled) {
+      return { skipped: true, stale: true, reason: "stale_session", message: "预览已取消或项目已切换，未新增候选。" };
+    }
+    const asset = await repository.assets.put(action.projectId, {
+      bytes: state.bytes.buffer, mediaType: "image/png", originalName: record.shot_id + "-" + record.candidate_id + ".png",
+      role: "candidate", width: record.width, height: record.height,
+    });
+    if (asset.sha256 !== record.asset_sha256 || asset.byte_size !== record.byte_size) {
+      throw new Error("裁剪结果入库后的字节身份不一致，未保存候选。");
+    }
+    if (!action.alive() || state.cancelled) {
+      return { skipped: true, stale: true, reason: "stale_session", message: "项目已切换，未继续新增裁剪候选。" };
+    }
+    const saved = await repository.saveCandidate(action.projectId, record.shot_id, record);
+    const entry = { record, version: saved.version };
+    state.saved = entry;
+    if (action.alive() && !state.cancelled) {
+      rememberCandidate(record.shot_id, entry);
+      setStatus("已保存裁剪派生候选，原件与原采用不变；请明确查看新候选后再采用。");
+    }
+    return { candidate: entry };
+  }
+
+  async function confirmCrop({ intent }: ConfirmCropInput): Promise<ConfirmCropResult> {
+    const state = cropIntents.get(intent);
+    const action = deps.beginAction();
+    if (!state || state.cancelled || !state.action.alive() || !action.alive()
+      || action.projectId !== intent.projectId || action.generation !== intent.generation) {
+      return { skipped: true, stale: true, reason: "stale_session", message: "这份裁剪预览已失效，请重新打开。" };
+    }
+    if (state.saved) return { candidate: state.saved };
+    if (state.flight) return state.flight;
+    state.flight = persistCrop(state);
+    try { return await state.flight; }
+    finally { state.flight = null; }
   }
   // 授权面：confirmedQueues/confirmed/reworkQueues/authorizationScope/authorizationMode 的
   // 唯一所有者（设计§2.1：显示摘要→明确提交→登记→执行的完整动作归 generation）。
@@ -2024,6 +2184,7 @@ export function createGenerationModule(deps: GenerationDependencies): Generation
     queues: queuesView,
     prepareSummary,
     prepareRework, confirmRework,
+    prepareCrop, confirmCrop, cancelCrop,
     // 只读文案投影与投影变化通知（视图订阅；不注入 DOM 回调）
     notice: () => ({ status: noticeStatus, error: noticeError }),
     subscribe: (listener) => {

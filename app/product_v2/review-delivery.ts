@@ -6,7 +6,7 @@ import {
   evaluateDeliveryGate, exportRecordDocumentIdOf, inputsFingerprintOf, reviewStatusOf, selectionFingerprintOf,
   suitePlanSummary, suiteReviewIsCurrent, suiteReviewStatusOf, suiteReviewSummaryText,
   buildSelectionSet, assertSelectionRecord, promptStaleness, checkPromptRecord, checkReviewReport,
-  checkAttemptRecord, checkCandidateRecord, attemptActions,
+  checkAttemptRecord, checkCandidateRecord, candidateOriginOf, attemptActions,
 } from "./domain/index.js";
 import { sha256Hex } from "./storage/db.js";
 import { buildZip, exportProjectPackage } from "./storage/index.js";
@@ -77,6 +77,8 @@ type DeliveryFile = {
   path: string; shot_id: string; shot_label: string; candidate_id: string; attempt_action_id: string;
   attempt_state: string; asset_sha256: string; media_type: string; byte_size: number;
   prompt_version: number; prompt_hash: string;
+  origin: string; provider_id: string | null; model_id: string | null;
+  derivation: CandidateRecord["derivation"];
 };
 
 /** 导出的领域投影全部来自同一 IDB 快照，不能混用当前页面 Map 与另一个事务的字节。 */
@@ -369,9 +371,16 @@ export function createReviewDeliveryModule(deps: ReviewDeliveryDependencies): Re
         const mediaType = candidate.media_type || "image/png";
         images.push({ shot_id: shot.shot_id, candidate_id: id, media_type: mediaType, bytes });
         // 原 action 冻结的 Prompt 指针是交付来源，绝不读当前编辑头。
+        // 派生候选在 manifest 显式记录血缘；provider 置空区分本地修正与上游生成。
+        // 来源口径只读 domain 的 candidateOriginOf（schema 1 历史缺省即 generation）。
+        const origin = candidateOriginOf(candidate) === "derived" ? "derived" : "generation";
         files.push({ shot_id: shot.shot_id, shot_label: shot.label, candidate_id: id,
           attempt_action_id: candidate.action_id, attempt_state: attempt.state, asset_sha256: candidate.asset_sha256,
           media_type: mediaType, byte_size: bytes.length, prompt_version: attempt.prompt.version, prompt_hash: attempt.prompt.hash,
+          origin,
+          provider_id: candidate.provider ? candidate.provider.provider_id || null : null,
+          model_id: candidate.provider ? candidate.provider.model_id || null : null,
+          derivation: origin === "derived" ? candidate.derivation ?? null : null,
           path: deliveryImagePathOf({ shotId: shot.shot_id, candidateId: id, mediaType }) });
       }
       if (!images.length) throw new Error("没有可交付的已采用候选。");
@@ -397,8 +406,10 @@ export function createReviewDeliveryModule(deps: ReviewDeliveryDependencies): Re
           target_kind: ack.target_kind, shot_ids: ack.shot_ids, acknowledged_at: ack.acknowledged_at })) };
       const readme = ["商品套图交付包", "", "项目：" + (projectName || "(未命名)"), "生成时间：" + at,
         "包含图片：" + files.length + " 张（每张一个已采用候选）", "", "清单：",
-        ...files.map(file => "- " + file.shot_label + "：" + file.path + "（candidate " + file.candidate_id + " · sha256 " + file.asset_sha256.slice(0, 12) + "…）"),
-        "", "manifest.json 记录每张图的来源与指纹；checks.json 记录门禁与审核发现。",
+        ...files.map(file => "- " + file.shot_label + "：" + file.path + "（candidate " + file.candidate_id
+          + (file.origin === "derived" ? " · 本地裁剪派生" : " · 上游生成")
+          + " · sha256 " + file.asset_sha256.slice(0, 12) + "…）"),
+        "", "manifest.json 记录每张图的来源与指纹（含派生血缘 derivation）；checks.json 记录门禁与审核发现。",
         "本包只包含已采用的候选；未采用候选与完整历史请用「导出项目包」。"].join("\n");
       const entries = buildDeliveryEntries({ images, manifest, checks, readme });
       const bytes = buildZip(entries, { modifiedAt: new Date(at) }), sha = await sha256Hex(bytes);

@@ -51,6 +51,9 @@ from check_project_state import (  # noqa: E402
     GOAL_BINDING_SESSION, _goal_display_norm, _goal_plan_text,
     _plan_tasks, PHASE_HEAD,
 )
+from refactor_resume import (  # noqa: E402
+    _current_boundary_section, _format_default, packet as resume_packet,
+)
 
 GUARD = ROOT / "tools" / "check_project_state.py"
 CODE_ROOT = ROOT
@@ -695,7 +698,63 @@ CASES = [
     ("BL", "active 阻塞恢复点具有对应阻塞记录 · 合法", 0, set()),
     ("BM", "active 阻塞恢复点没有对应阻塞记录", 1, {"J7"}),
     ("BN", "可恢复状态的未知格式必须拒绝", 1, {"J0"}),
+    ("BO", "恢复边界投影保留空行分隔的多段门与blocker", 0, set()),
+    ("BP", "无current边界时恢复仍保留blocker且不清可施工", 0, set()),
+    ("BQ", "旧current_未知在未证取代时完整保留", 0, set()),
+    ("BR", "默认恢复输出不打印整张历史任务卡", 0, set()),
 ]
+
+
+def _check_resume_projection(code: str) -> list[str]:
+    """验证多段提取、缺失边界、真实恢复包保全与默认阅读边界。"""
+    problems: list[str] = []
+    try:
+        if code == "BO":
+            first = "方法维护获准；产品继续停止。"
+            second = "额度与Unknown不释放。"
+            fixture = ("# 状态\n\n## 当前恢复边界\n\n" + first + "\n\n"
+                       + second + "\n\n## 历史执行\n旧产品授权\n")
+            expected = (first + "\n\n" + second, 3, 7)
+            if _current_boundary_section(fixture) != expected:
+                problems.append("跨空行的当前边界未完整保留，或混入后续历史授权")
+            fenced = "## 当前恢复边界\n\n" + first + "\n\n```yaml\nstatus: active\n```\n"
+            if _current_boundary_section(fenced) != (first, 1, 3):
+                problems.append("边界提取跨入机器块，或丢失末段")
+        elif code == "BP":
+            if _current_boundary_section("## 历史执行\n旧授权保留\n") != (None, None, None):
+                problems.append("缺少当前边界时伪造了摘要")
+            data = resume_packet()
+            data.update(has_current_boundary=False, recovery_boundary_text=None,
+                        recovery_boundary_start_line=None, recovery_boundary_end_line=None,
+                        recovery_boundary_sha256=None)
+            # 无摘要不等于无门；含不匹配下一任务的门，防止只显示matched而漏约束。
+            extra = "UNRELATED_BLOCKER_仍需独立授权"
+            data["blockers"] = [*data["blockers"], extra]
+            rendered = _format_default(data)
+            if any(blocker not in rendered for blocker in data["blockers"]):
+                problems.append("缺失摘要时默认输出丢失登记blocker")
+        elif code == "BQ":
+            data = resume_packet()
+            if data["unknowns"] != ORIG_DATA.get("unknowns", []):
+                problems.append("实际恢复包改写、重排或过滤了unknowns")
+            if data["blockers"] != ORIG_DATA.get("blockers", []):
+                problems.append("实际恢复包改写、重排或过滤了blockers")
+        elif code == "BR":
+            data = resume_packet()
+            rendered = _format_default(data)
+            if data["task_card"] in rendered:
+                problems.append("默认输出仍打印完整旧任务卡，遮盖当前恢复边界")
+            if data["recovery_boundary_text"] and data["recovery_boundary_text"] not in rendered:
+                problems.append("默认输出未完整显示当前恢复边界")
+            if any(blocker not in rendered for blocker in data["blockers"]):
+                problems.append("默认输出丢失登记blocker")
+            if f"{data['plan']}:{data['task_card_line']}" not in rendered:
+                problems.append("默认输出无法定位完整任务卡")
+        else:
+            problems.append(f"未知恢复对照 {code}")
+    except Exception as error:
+        problems.append(f"恢复对照内部失败：{error}")
+    return problems
 
 
 def main() -> int:
@@ -706,6 +765,15 @@ def main() -> int:
     bad = 0
     try:
         for code, name, want_rc, want_tags in CASES:
+            if code in ("BO", "BP", "BQ", "BR"):
+                _restore()
+                resume_problems = _check_resume_projection(code)
+                mark = "OK  " if not resume_problems else "FAIL"
+                print(f"[{mark}] {code} {name} -> resume-projection")
+                for problem in resume_problems:
+                    print(f"         {problem}")
+                bad += bool(resume_problems)
+                continue
             _restore()
             problems, changed = _mutate(code)
             if code != "A" and not changed:

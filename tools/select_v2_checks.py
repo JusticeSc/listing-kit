@@ -10,10 +10,14 @@
 永不进入普通执行。登记不是用户授权，也不能拦截绕过本入口的动作。
 无路径时枚举完整集合；--base/--head 按真实 Git 差量选择，坏基线退出 2。
 --emit-github 只预览；--github-output 写 CI 路由；--run 首个失败即停。
+--result-json 供 --run 输出机器可读原始执行凭据（实际argv/真实退出码/UTC时间/
+选中与执行范围/源码快照）；只与 --run 配对，不与预览同用，不代签业务/像素。
 """
 from __future__ import annotations
 
 import argparse
+import datetime
+import hashlib
 import json
 import shlex
 import subprocess
@@ -89,6 +93,12 @@ UI_CONSUMERS = {
         "tools/verify_v2_packet08_settings_vision.py",
     },
 }
+COMPARE_CONTRACT_INPUTS = {
+    "config/product-v2/compare-contract.json",
+    "evals/product-v2/harness/compare-panel.html",
+    "evals/product-v2/harness/compare-panel.js",
+    "tools/verify_v2_5_3_compare_panel.py",
+}
 LOCK_NAMES = {"uv.lock", "pyproject.toml", "package.json", "package-lock.json", ".python-version"}
 POLICY_NAMES = {
     ".github/workflows/ci-cd.yml", "config/product-v2/verification.json",
@@ -100,6 +110,89 @@ BUILD_NAMES = {
     "tools/export_image_envelope_schema.py", "tools/generate_image_envelope_validator.mjs",
 }
 PROOF_SUFFIXES = {".md", ".json", ".png", ".jpg", ".jpeg", ".webp", ".zip", ".log", ".txt", ".out"}
+RESULT_SCHEMA = "amz-selector-result/v1"
+# 快照只标识「测了哪棵树」，不证明语义正确/合格/可复用。
+SNAPSHOT_DIRS = ("app", "src", "config", "tools", "tests", "deploy",
+                 "evals/probes", "evals/product-v2/harness", "evals/product-v2/node",
+                 "evals/product-v2/fixtures", "evals/product-v2/vendor", "dist/product-v2")
+SNAPSHOT_ROOT_FILES = ("uv.lock", "pyproject.toml", "package.json", "package-lock.json",
+                       ".python-version", "Dockerfile", ".dockerignore", "vite.config.mjs",
+                       "tsconfig.json")
+# 结果输出保护覆盖权威记录；不能把「源码快照范围」误当全部受保护文件。
+RESULT_PROTECTED_DIRS = SNAPSHOT_DIRS + ("_working", "docs", ".github", ".git")
+RESULT_PROTECTED_FILES = SNAPSHOT_ROOT_FILES + ("AGENTS.md", "README.md", ".gitattributes", ".gitignore")
+SNAPSHOT_SKIP_DIRS = {"__pycache__", ".tmp", "node_modules", ".venv"}
+SNAPSHOT_SKIP_SUFFIXES = (".pyc", ".pyo")
+
+
+def snapshot_source(root: Path = ROOT) -> dict:
+    """采集源码/构建输入快照：未提交改动可见，历史证据与临时夹具不计入。
+
+    只在 --result-json 启用时调用；正常选择/预览/普通 --run 不走整树扫描。
+    dist 只收 dist/product-v2 实际构建产物；其它 dist 输出一律不计入。
+    """
+    digests: dict[str, str] = {}
+    for name in SNAPSHOT_ROOT_FILES:
+        path = root / name
+        if path.is_file():
+            digests[name] = hashlib.sha256(path.read_bytes()).hexdigest()
+    for name in SNAPSHOT_DIRS:
+        base = root / name
+        if not base.is_dir():
+            continue
+        for path in sorted(base.rglob("*")):
+            if path.is_dir():
+                continue
+            parts = path.relative_to(root).parts
+            if any(part in SNAPSHOT_SKIP_DIRS for part in parts[:-1]):
+                continue
+            if path.suffix in SNAPSHOT_SKIP_SUFFIXES or path.name.startswith(".env"):
+                continue
+            if path.name.endswith(".local"):
+                continue
+            digests[path.relative_to(root).as_posix()] = hashlib.sha256(path.read_bytes()).hexdigest()
+    digest_body = "".join(f"{name}\0{digests[name]}\0" for name in sorted(digests))
+    return {
+        "schema": "amz-source-snapshot/v1",
+        "scope": {"dirs": list(SNAPSHOT_DIRS), "root_files": list(SNAPSHOT_ROOT_FILES)},
+        "files": len(digests),
+        "digest": hashlib.sha256(digest_body.encode("utf-8")).hexdigest(),
+        "entries": digests,
+    }
+
+
+def utc_now() -> str:
+    return datetime.datetime.now(datetime.timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def build_argv(script: str, extra: list[str]) -> list[str]:
+    """所选模式的真实启动命令；与既有 --run 分支同一构造，不另建形态。"""
+    if script.startswith("npm:"):
+        npm = "npm.cmd" if sys.platform == "win32" else "npm"
+        return [npm, "run", script[4:], *(["--", *extra] if extra else [])]
+    if script.startswith("pytest:"):
+        return ["uv", "run", "--locked", "python", "-m", "pytest", script[len("pytest:"):], *extra]
+    return ["uv", "run", "--locked", "python", script, *extra]
+
+
+def result_path_forbidden(result: Path, workflow: Path, registry: Path) -> str | None:
+    """凭据不能覆盖源码、项目权威或仓库控制文件；无法确认路径安全也拒绝。"""
+    try:
+        resolved = result.resolve()
+        workflow_resolved = workflow.resolve()
+        registry_resolved = registry.resolve()
+        root_resolved = ROOT.resolve()
+    except OSError as error:
+        return f"凭据路径无法安全解析：{result}（{error}）"
+    if resolved == workflow_resolved:
+        return f"凭据输出不能覆盖命令清单：{result}"
+    if resolved == registry_resolved:
+        return f"凭据输出不能覆盖分类登记：{result}"
+    if any(resolved == root_resolved / name for name in RESULT_PROTECTED_FILES):
+        return f"凭据输出不能覆盖源码或项目权威：{result}"
+    if any(resolved.is_relative_to(root_resolved / name) for name in RESULT_PROTECTED_DIRS):
+        return f"凭据输出不能覆盖源码或项目权威：{result}"
+    return None
 
 
 class SelectInputError(ValueError):
@@ -117,6 +210,9 @@ def classify(paths: list[str], available: set[str], registered: set[str]) -> tup
         if name in POLICY_NAMES:
             wanted |= POLICY
             reasons.add("验证策略")
+        elif name in COMPARE_CONTRACT_INPUTS:
+            wanted |= {"pytest:tests/dev", "tools/verify_v2_5_3_compare_panel.py"}
+            reasons.add("比较合同及套件消费者")
         elif name in LOCK_NAMES or name in BUILD_NAMES or name.startswith("config/product-v2/"):
             broad = True
             reasons.add("公共构建/配置合同")
@@ -181,7 +277,7 @@ def container_affected(paths: list[str]) -> bool:
                 or name.startswith(("app/", "src/", "deploy/"))
                 or name == "config/product-v2/providers.json"):
             return True
-        if name == "config/product-v2/verification.json":
+        if name == "config/product-v2/verification.json" or name in COMPARE_CONTRACT_INPUTS:
             continue
         if name.startswith(("docs/", "_working/", "_stage-amz-control/", "tools/", "evals/", "tests/")):
             continue
@@ -291,7 +387,33 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--github-output", type=Path, help="写入 GitHub job outputs（不执行检查）")
     ap.add_argument("--workflow", type=Path, default=WORKFLOW, help="命令清单权威（反例/烟测可换成夹具）")
     ap.add_argument("--registry", type=Path, default=REGISTRY, help="分类登记（反例/烟测可换成夹具）")
+    ap.add_argument("--result-json", type=Path, default=None,
+                    help="--run 的机器可读执行凭据输出路径（实际argv/真实退出码/UTC时间/范围/源码快照）")
     args = ap.parse_args(argv)
+    if args.result_json is not None:
+        if not args.run:
+            print("[FAIL] SELECT-INPUT --result-json 只与 --run 配对：预览不产生执行凭据")
+            return INPUT_EXIT
+        if args.emit_github or args.github_output:
+            print("[FAIL] SELECT-INPUT --result-json 不与预览同用：预览未执行，不能写执行凭据")
+            return INPUT_EXIT
+        forbidden_reason = result_path_forbidden(args.result_json, args.workflow, args.registry)
+        if forbidden_reason is not None:
+            print(f"[FAIL] SELECT-INPUT {forbidden_reason}")
+            return INPUT_EXIT
+
+    def write_result(document: dict) -> int | None:
+        assert args.result_json is not None
+        try:
+            if args.result_json.exists() and args.result_json.is_dir():
+                raise IsADirectoryError(f"凭据路径是目录：{args.result_json}")
+            args.result_json.parent.mkdir(parents=True, exist_ok=True)
+            args.result_json.write_text(json.dumps(document, ensure_ascii=False, indent=2) + "\n",
+                                        encoding="utf-8", newline="\n")
+        except OSError as error:
+            print(f"[FAIL] SELECT-RESULT 凭据写失败：{args.result_json}（{error}）")
+            return 1
+        return None
 
     try:
         if bool(args.base) != bool(args.head) or args.base and args.paths:
@@ -375,20 +497,66 @@ def main(argv: list[str] | None = None) -> int:
           .encode("utf-8", "replace").decode("utf-8"))
     if not args.run:
         return 0
-    for script, extra in selected:
-        if script.startswith("npm:"):
-            npm = "npm.cmd" if sys.platform == "win32" else "npm"
-            argv_cmd = [npm, "run", script[4:], *(["--", *extra] if extra else [])]
-        elif script.startswith("pytest:"):
-            argv_cmd = ["uv", "run", "--locked", "python", "-m", "pytest",
-                        script[len("pytest:"):], *extra]
-        else:
-            argv_cmd = ["uv", "run", "--locked", "python", script, *extra]
+    snapshot_before = snapshot_source() if args.result_json is not None else None
+    started_at = utc_now() if args.result_json is not None else None
+    executed: list[dict] = []
+    for index, (script, extra) in enumerate(selected):
+        argv_cmd = build_argv(script, extra)
         print(f"\n$ {' '.join(argv_cmd)}".encode("utf-8", "replace").decode("utf-8"))
-        proc = subprocess.run(argv_cmd, cwd=str(ROOT))
+        launched_at = utc_now() if args.result_json is not None else None
+        try:
+            proc = subprocess.run(argv_cmd, cwd=str(ROOT))
+        except OSError as error:
+            print(f"首个失败即停：{script} 启动失败（{type(error).__name__}: {error}），不继续后续命令")
+            if args.result_json is not None:
+                executed.append({"identity": f"{script} {' '.join(extra)}".strip(), "argv": argv_cmd,
+                                 "started_at": launched_at, "finished_at": utc_now(), "status": "launch_failed",
+                                 "returncode": None,
+                                 "error": f"{type(error).__name__}: {error}"})
+                remaining = [f"{item[0]} {' '.join(item[1])}".strip() for item in selected[index + 1:]]
+                snapshot_after = snapshot_source()
+                failure = write_result({
+                    "schema": RESULT_SCHEMA, "status": "failed", "reason": reason,
+                    "started_at": started_at, "finished_at": utc_now(),
+                    "selection": payload["selected"], "executed": executed, "not_executed": remaining,
+                    "first_failure_returncode": None, "input_ok": True, "notes": "命令启动失败：无进程退出码",
+                    "source_before": snapshot_before, "source_after": snapshot_after,
+                    "source_changed": snapshot_before != snapshot_after,
+                })
+                if failure is not None:
+                    return failure
+            return 1
+        if args.result_json is not None:
+            executed.append({"identity": f"{script} {' '.join(extra)}".strip(), "argv": argv_cmd,
+                             "started_at": launched_at, "finished_at": utc_now(),
+                             "status": "ok" if proc.returncode == 0 else "failed",
+                             "returncode": proc.returncode})
         if proc.returncode != 0:
             print(f"首个失败即停：{script} 退出码 {proc.returncode}，不继续后续命令")
+            if args.result_json is not None:
+                remaining = [f"{item[0]} {' '.join(item[1])}".strip() for item in selected[index + 1:]]
+                snapshot_after = snapshot_source()
+                write_result({
+                    "schema": RESULT_SCHEMA, "status": "failed", "reason": reason,
+                    "started_at": started_at, "finished_at": utc_now(),
+                    "selection": payload["selected"], "executed": executed, "not_executed": remaining,
+                    "first_failure_returncode": proc.returncode, "input_ok": True,
+                    "source_before": snapshot_before, "source_after": snapshot_after,
+                    "source_changed": snapshot_before != snapshot_after,
+                })
             return proc.returncode
+    if args.result_json is not None:
+        snapshot_after = snapshot_source()
+        failure = write_result({
+            "schema": RESULT_SCHEMA, "status": "passed", "reason": reason,
+            "started_at": started_at, "finished_at": utc_now(),
+            "selection": payload["selected"], "executed": executed, "not_executed": [],
+            "first_failure_returncode": None, "input_ok": True,
+            "source_before": snapshot_before, "source_after": snapshot_after,
+            "source_changed": snapshot_before != snapshot_after,
+        })
+        if failure is not None:
+            return failure
     print("所选命令全部通过。")
     return 0
 
