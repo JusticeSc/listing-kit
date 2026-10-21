@@ -88,7 +88,7 @@ status: active
 goal_binding: required
 goal_id: "15ab22bf3386b9cf"
 goal_pending_reason: null
-goal_binding_evidence: _stage-amz-control/engineering-delivery-resume-20261021T105905Z/goal-observation.json
+goal_binding_evidence: evals/product-v2/refactor/goal-observation-delivery-20261021.json
 system_goal_observed_status: active
 system_goal_observed_at: '2026-10-21T11:02:04.352Z'
 plan_ref: docs/product-v2-refactor-plan.md
