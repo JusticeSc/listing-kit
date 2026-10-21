@@ -11,7 +11,7 @@
 十一条判据，每条带一个稳定 tag（`evals/probes/project_state.py` 据此断言「只报该报的」）：
 
     [J0] 工作记录读得出来（有 ```yaml 块、能解析、顶层是映射）
-    [J1] 活动工作记录唯一：`_working/*/state.md` 里 status=active 的恰好一份
+    [J1] 活动工作记录最多一份：`_working/*/state.md` 不得出现多个 status=active
     [J2] 状态取值闭集合（记录 / 阶段 / 任务三处都算）
     [J3] Goal 绑定：required 持真实 ID，当前 v2 同时持有匹配的观察证据；
          optional 时必须写明 goal_pending_reason；prepared 只能 optional、无 Goal ID；
@@ -40,15 +40,14 @@ superseded 记录只保留可读身份，不重新解释旧产品阶段、证据
 为什么 J5 要「前置必须 done」：计划写着「任一时刻最多一个阶段处于 active；只有阶段
 门禁取得权威证据后，下一阶段才能开始」。跳着来等于没门。
 
-为什么 J9 要「记录与阶段一致」：`status: paused` 与「某一相 active」单独看都合法，
-合起来是谎。开工那一刻要同时改三处（系统 Goal / 执行记录 / Phase 1），只改一处
-不会有任何东西响 —— 而「记录说停了、阶段在跑」（或反过来「记录说在跑、没有一相在
-动」）正是接手的人会照着做错判断的那种漂移。原始证据见 `evals/start_rehearsal.txt`。
+为什么 J9 要「记录与阶段一致」：项目记录说暂停时，不能仍有活动工作；记录说在跑，
+也必须有活动阶段。原始漂移证据见 `evals/start_rehearsal.txt`。
 
-Goal 控件把目标标为 `blocked`（等外部输入、AI 无法推进）时，同一事实写满三处：
-执行记录 `status: paused`、受影响 Phase `status: blocked`、`system_goal_observed_status: blocked`。
-J9 因此允许 paused 记录读 blocked 或 paused；只要 Goal 一处变而记录没变（或反过来），
-比对仍会响。首次映射与其校准读数见
+项目执行状态与原生 Goal 生命周期分别记录，不能为了暂停项目伪造工具观察。active
+项目仍要求 active 观察；paused 项目可对应真实 paused/blocked 观察。原生工具仍为
+active 时，仅当下一任务 blocked、有对应具体阻塞且没有 active 阶段/任务，项目才可
+如实记为 paused。J3 继续严格比对观察证据与 state 的身份、正文、状态和时刻，不因
+执行暂停放松真实性。早期 blocked→paused 映射的历史校准见
 `evals/product-demo/control-plane-recalibration-2026-09-27c.md`。
 
 用法：
@@ -384,9 +383,6 @@ def _check_goal_evidence(rep: Report, rel: str, d: dict, plan_ref: str,
         rep.problem(f"[J3] {rel} 的 goal_binding_evidence.observed_status="
                     f"{observed_status!r} 不在 Goal 生命周期取值域。")
         return
-    allowed_statuses = {"paused", "blocked"} if d.get("status") == "paused" else {d.get("status")}
-    if observed_status not in allowed_statuses:
-        rep.problem(f"[J9] {rel} 记录 status={d.get('status')!r}，但 Goal 观察是 {observed_status!r}。")
     plan_goal = _goal_plan_text(plan_text)
     if plan_goal is None:
         rep.problem(f"[J8] {plan_ref} 的 2.1 没有 text 围栏 —— 计划必须承载唯一的拟建 Goal 原文。")
@@ -522,17 +518,35 @@ def _check_v2(rep: Report, rel: str, d: dict, plan_ref: str, plan_text: str,
                 rep.problem(f"[J7] {rel} 的 next_action_task={na!r} 依赖 {undone} 未完成。")
 
     observed = d.get("system_goal_observed_status")
-    allowed_observed = {"active": {"active"}, "paused": {"paused", "blocked"}}.get(record_status)
-    if allowed_observed is not None and observed not in allowed_observed:
-        rep.problem(f"[J9] {rel} 记录 status={record_status!r}，但最近系统 Goal 读数是 {observed!r}。")
+    if record_status == "active":
+        if observed != "active":
+            rep.problem(f"[J9] {rel} 记录 status='active'，但最近系统 Goal 读数是 {observed!r}。")
+    elif record_status == "paused":
+        if observed in ("paused", "blocked"):
+            pass
+        elif observed == "active":
+            # 真实停止可保留原生 active 观察：仅当下一动作已阻塞、有 J7 同款匹配
+            # 条目且无任何 active 阶段/任务时接受；复用 J7 前缀规则，不另建授权。
+            na_name = d.get("next_action_task")
+            nst = task_status.get(str(na_name), "pending") if isinstance(na_name, str) else "pending"
+            prefix = str(na_name) + "_" if isinstance(na_name, str) else ""
+            has_match = (isinstance(na_name, str) and nst == "blocked" and any(
+                isinstance(item, str) and item.startswith(prefix) and len(item) > len(prefix)
+                for item in (d.get("blockers") or [])))
+            if not (has_match and not active_phases):
+                rep.problem(f"[J9] {rel} 记录 status='paused'，但最近系统 Goal 读数是 'active' —— "
+                            f"仅当 next 任务阻塞且有匹配阻塞条目、无 active 阶段/任务时可保留真实观察。")
+        else:
+            rep.problem(f"[J9] {rel} 记录 status='paused'，但最近系统 Goal 读数是 {observed!r}。")
     if record_status == "active" and not active_phases:
         rep.problem(f"[J9] {rel} 记录 active，但 phase_progress 没有 active 阶段。")
     if record_status in RECORD_STATUSES and record_status != "active" and active_phases:
         rep.problem(f"[J9] {rel} 记录 {record_status!r}，却有 active 阶段 {active_phases}。")
-    if record_status == "prepared":
+    if record_status in ("prepared", "paused"):
         active_tasks = [tid for tid, st in task_status.items() if st == "active"]
         if active_tasks:
-            rep.problem(f"[J9] {rel} 记录 prepared，却有 active 任务 {active_tasks}。")
+            rep.problem(f"[J9] {rel} 记录 {record_status!r}，却有 active 任务 {active_tasks}。")
+    if record_status == "prepared":
         if observed not in (None, "") or d.get("system_goal_observed_at") not in (None, ""):
             rep.problem(f"[J9] {rel} 记录 prepared，却保存了系统 Goal 读数；未绑定不能冒充已观察。")
     if record_status == "completed":
@@ -678,7 +692,7 @@ def main(argv: list[str] | None = None) -> int:
     print("=" * 72)
     print("判据：J0 记录可读 / J1 活动记录唯一 / J2 取值闭集合 / J3 Goal 绑定")
     print("      J4 状态 ID 引用计划 / J5 阶段门与顺序 / J6 任务进度与证据")
-    print("      J7 next_action 按计划可执行 / J8 单一权威不重抄 / J9 Goal 读数与记录一致")
+    print("      J7 next_action 按计划可执行 / J8 单一权威不重抄 / J9 执行状态与阶段/任务一致")
     print("      J10 updated_at 不许写在未来、不许缺时区")
     print()
     for n in rep.notes:
