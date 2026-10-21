@@ -5,6 +5,15 @@
 > prepared 是未绑定新 Goal 的本地准备态,不是系统 paused。旧读数与完成记录只见 superseded 基线。
 ## 当前恢复边界
 
+- **2026-10-21用户明确“开始自我改进”，仅恢复方法整改。** 本轮允许现有开发管理工具、对应定向离线验证、必要上下文及相关Issue管理；具体复发问题分别在[#37](https://github.com/JusticeSc/listing-kit/issues/37)（项目暂停与Goal观察/冷恢复）、[#38](https://github.com/JusticeSc/listing-kit/issues/38)（Python快测误带前端构建），方法实施记录见`_working/ai-coding-bootstrap/work.md`。不恢复Product V2产品施工/产品回归、宿主或浏览器操作、模型调用、提交推送、合并部署或生产切换；不追加产品批次、次数或金额。当前方法的原反例和修改前字节见`_stage-amz-control/self-improvement-20261021T145105Z/`，不把方法工具通过当产品准出。
+- **2026-10-21用户再次重申SEL-018早已记录的成品边界：“以最终成品为准不用考虑历史数据兼容，该删就删”。** 原设计要求继续读取旧schema/显示旧项目历史，已经违背既有用户决定，不是本次才缺少澄清。本地SEL-018、计划§17.13及设计§13.8已对齐：最终成品只维护唯一现行合同，被替代活路径随必要消费者切换清退；不因正式发布或出现旧数据自动重开兼容承诺。当前产品代码仍有旧候选/Attempt等读取分支，尚未执行产品清退，不冒称清理或重构完成；用户原件、许可、费用/失败/Unknown的非运行保全不构成兼容理由。
+- **2026-10-21先前“保持停止”对产品操作继续有效。** 不追加产品验收、模型调用、产品修改、提交推送、合并部署或生产同源镜像切换；上方新授权只放行方法工具、对应定向离线验证与相关Issue管理，不放行其他远程产品操作。原选择及停止前state原字节见`_stage-amz-control/status-audit-stop-20261021T135524Z/stop-decision.json`、同目录`state-before.md`；不以Goal active自动续工或重复追问恢复。
+- **产品恢复动作仍被阻塞；方法整改不等于产品复工。** 只有用户新的明确产品恢复授权才可执行V2.R5.1及剩余成品施工。机器块按真实产品执行状态记录`paused / Phase4 blocked / V2.R5.1 blocked`并提供具体停止原因；原生Goal最近观察仍为`active`，不伪造系统暂停。原生缩放仍不由助手启动可见浏览器或以CDP代签；正式产品恢复前须按实际发生记录校正失败修复回合，不清零历史、不凭旧28批摘要推断可用额度。
+- **审计范围与当前要求分开。** 核心实现、当前发布、两轮各50命令、实际五图/两包和392原文档/33资产保全按已证范围保留；跨标签同时确认与晚到草稿焦点、新裁剪面板受影响窄屏/原生缩放、当前HTTPS独立导入刷新等直接证据缺口仍按其原范围记录，不自动当作新产品故障或全部追加测试任务。新数据须保全，但不以维持旧schema读取或要求旧image消费新格式实现；最终成品只验当前格式恢复及适用发布事务。C15/C17仍是独立外部门，不新增本工程发布前置。审计只读结果见本会话`AuditFlowEvidence`和`AuditDeliveryEvidence`，最终主图内容复核在本次审计补上，原模型73.2%失败与确定性裁剪后85.8639%区分保留。
+- **保全不变。** 当前线上已观察为`70bb50e / sha256:12f48dda… / healthy`，本次不重新发布或回退；原profile、五图、两包、费用/预留/失败/Unknown不改写。保留交给用户的零模型查看宿主`delivery-native-zoom-27`及专用profile，不自动重开/控制该profile。完整Goal未完成，不伪称系统paused或complete；本次未取得暂停接口。
+
+## 上次恢复与发布记录（审计前历史范围，不再授权继续执行）
+
 - **2026-10-21最新明确恢复：工程交付，最多追加第27–28批。** 用户在测试工具整改完成后的实际选择题中选择“恢复工程交付，最多追加2批”，允许适用审查、最终验证及保护成立后的提交、CI和既有环境发布；到限停止，不新增模型调用，不重置旧1–26批、失败、预算或93条Unknown。原始选择、恢复前字节及真实Goal观察见`_stage-amz-control/engineering-delivery-resume-20261021T105905Z/`。本条在上述范围内取代旧停工及测试整改专用权限，不自动授权依赖、模型、平台或原始profile写入。
 - **当前前沿：V2.R5.1 active，按Issue #31收口当前候选。** 第27批先做实际差量独审、冻结及必要离线准出；第28批用于获准且保护成立的工程收口、CI/既有HTTPS发布与受影响线上恢复核对。实际失败后修复及重验仍另计，不把同一失败藏回原批次；用满仍未完成即保全停止。#33/#34本地工具修复已通过定向验证，但尚未提交或获远程CI；不把19秒局部比较证明当作最终连续两轮。
 - **已成立结果按范围复用。** #28的387文档/32资产交接已关闭；#27正式派生并显式采用主图v8（1146²，主体85.8639%，裁区RGB与原图全等、四边纯白）；#30最终五图/两包独立导入刷新392文档/33资产全等，再导出仅manifest时点变化。五图、原生两包及逐图资格在`_stage-amz-control/zero-fee-development-20261021T052937Z/delivery/`，原387文档/32资产及主图原件保留，不重做已成立基线或模型调用。
@@ -81,12 +90,12 @@
 - **报告采用硬门实际负例已留存，故障副本不可充当正式项目。**只在独立导入副本删除一条历史Qwen候选报告，再点实际“采用当前候选”，正式事务拒绝“精确来源版本缺失”，旧采用记录完整不变，见 `real-wire/report-loss-adoption-proof.json`。刷新补建本地报告后，该历史候选被一次技术性采用且正确标为已过期v2；等待文案误用未过期形式而超时，并非产品故障。未生成技术QA交付包；用户停工后不再继续该路径。原profile五合格采用及此前两组恢复包未受故障操作影响。
 - **程序稿品质仍缺直接证明，旧图不作废。** 尺寸专家稿原出站在相邻主工作树上述`real-wire/formal-bearing-ark-size-expert-09/outbound.json`，不代签自动增强。5712px旧读数保留；后来同原件5720→1440→5720可逆因果证明见本页L17所指资产，不再写“根因尚未定位”，也不据此签当前四段完整人因。实际缩放/长内容关键操作及当前程序稿→请求→原像素→采用仍按#8/#9补证。
 
-原长篇时点叙事保留于 `_stage-amz-control/next-version-design-20261012/baseline/before/_working/amz-listing-kit-product-v2/state.md`（SHA256 `af524be0793d16a41d7eb843fe85fef9bfe4b61bccc59d42d1a36d6c1e8dc9cb`）；本次启动前完整机器字节见新启动快照。下方是按计划§7.5重判后的当前机器块，旧证据与历史unknowns保留，不另建当前状态。
+原长篇时点叙事保留于 `_stage-amz-control/next-version-design-20261012/baseline/before/_working/amz-listing-kit-product-v2/state.md`（SHA256 `af524be0793d16a41d7eb843fe85fef9bfe4b61bccc59d42d1a36d6c1e8dc9cb`）。下方是当前产品执行记录，不再把停止前active快照充当现状；项目执行状态与原生Goal最近观察分列，全部历史unknowns及费用约束保留，不另建当前状态。
 
 ```yaml
 state_schema: amz-project-state/v2
 task_id: amz-listing-kit-product-v2-refactor
-status: active
+status: paused
 goal_binding: required
 goal_id: "15ab22bf3386b9cf"
 goal_pending_reason: null
@@ -122,7 +131,7 @@ phase_progress:
     - evals/product-v2/refactor/home-read-recovery-20261003.md
     - evals/product-v2/v2.3.3-session-lifecycle-20261003-025221-home-read-recovery-shutdown.json
   '4':
-    status: active
+    status: blocked
     evidence:
     - evals/product-v2/refactor/effective-config-byok-20261003.md
     - evals/product-v2/refactor/execution-identity-package-20261003-072854.md
@@ -320,7 +329,7 @@ task_progress:
     - evals/product-v2/v2.6.3-transfer-20261019-133339-b3-integrated-confirm3.json
     - evals/product-v2/refactor/b3-semantic-lifecycle.json
   V2.R5.1:
-    status: active
+    status: blocked
     evidence:
     - _stage-amz-control/formal-resume-20261015T125651Z/real-wire/remaining-pixel-review.json
     - _stage-amz-control/formal-resume-20261015T125651Z/real-wire/five-adopted-pixel-proof.json
@@ -491,7 +500,8 @@ task_progress:
     - app/product_v2/domain/config-export.ts
     - tools/build_product_v2_ts.mjs
 next_action_task: V2.R5.1
-blockers: []
+blockers:
+  - V2.R5.1_user_stopped_product_only_method_tools_context_issue_management_and_targeted_offline_checks_authorized_no_product_work_models_commits_push_or_deploy
 unknowns:
   - current_20261019_Goal_15ab22bf3386b9cf_active_user_explicit_approved_six_additional_batches_continue13to18_first_two_zero_fee_original_budget_and_scope_preserved_R51_active_batch13_send_scope_exclusions_cost_reservation_POST_frontier_approval_stage_resume_extension_20261019T105641Z_no_new_provider_submit
   - historical_20261019_batch12of12_stop_obeyed_then_audit_and_explicit_user_extension_granted_no_reset_B11_three_browser_submits_cny0p36_preserved_no_signed_results_no_retry_remaining_program_pixels_dual_mode_five_current_adoptions_two_rounds_release_C15_C17
@@ -586,5 +596,5 @@ unknowns:
   - current_20261017_tip77c84aa_state_auth_only_CI39036915488_rerun_infra_httpx403_pending_v23507_closed_by_causal_doc_dev_residues_cleaned_walkthrough_packet08_prototype_deleted_doc_gaps_fixed_pending_push
   - current_20261017_baseline_finalized_main_9c835dc_PR13_PR14_merged_deploy_acceptance12of12_fingerprint_a1e73bdc_equal_finalize_done_previous_cleaned_CRLF_rollback_rebuild_lesson_git_archive_plus_attributes_zero_new_paid_calls
   - current_20261018_baseline_closeout_main_2c4a33a_CI39045865774_success_autodeploy_acceptance12of12_fingerprint_a1e73bdc_equal_finalize_previous_cleaned_evidence_stage_baseline_release_20261017T154245Z_artifact12105698120_human_gates_C15_C17_user_confirmed_pass_no_new_paid_calls
-updated_at: '2026-10-21T11:02:04.352Z'
+updated_at: '2026-10-21T14:53:47.613Z'
 ```

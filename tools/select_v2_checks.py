@@ -247,7 +247,7 @@ def classify(paths: list[str], available: set[str], registered: set[str]) -> tup
             wanted.add("pytest:tests/gateway")
             reasons.add("网关测试")
         elif name.startswith("tests/dev/"):
-            wanted |= FRONTEND | {"pytest:tests/dev"}
+            wanted.add("pytest:tests/dev")
             reasons.add("开发工具测试")
         elif name in available:
             wanted.add(name)

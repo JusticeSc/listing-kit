@@ -143,6 +143,8 @@ def packet() -> dict:
             "goal_source_line": text[:goal.start()].count("\n") + 1,
             "goal_pending_reason": state.get("goal_pending_reason"),
             "goal_binding_evidence": state.get("goal_binding_evidence"),
+            "system_goal_observed_status": state.get("system_goal_observed_status"),
+            "system_goal_observed_at": state.get("system_goal_observed_at"),
             "unknowns": state.get("unknowns", []),
             "task_card": card.group(0).strip(), "goal_text": goal.group(1).strip(),
             "goal_sha256": hashlib.sha256(goal.group(1).strip().encode("utf-8")).hexdigest(),
@@ -189,8 +191,9 @@ def _format_default(data: dict) -> str:
     out.append("Goal 原文来源：计划 §2.1；sha256=" + str(data["goal_sha256"]) + "（完整原文请用 --json/--goal-text 获取）")
     if data.get("goal_binding") in ("session", "required"):
         out.append("仓库保存的最近 Goal 观察（历史性质，非当前系统Goal）："
-                   + str(data["status"]) + "；绑定：" + str(data["goal_binding"])
-                   + "；goal_id=" + str(data.get("goal_id")) + "；证据：" + str(data.get("goal_binding_evidence")))
+                   + str(data.get("system_goal_observed_status")) + "（记录 status=" + str(data.get("status"))
+                   + "；绑定：" + str(data.get("goal_binding"))
+                   + "；goal_id=" + str(data.get("goal_id")) + "；证据：" + str(data.get("goal_binding_evidence")) + ")")
         out.append("本脚本不查询系统 Goal；恢复会话仍须读取真实当前 Goal 核对。")
     if data.get("prepared_gate"):
         out.append("权限门：" + str(data["prepared_gate"]))

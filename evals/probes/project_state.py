@@ -624,6 +624,48 @@ def _mutate(case: str) -> tuple[list[str], bool]:
         data.setdefault("task_progress", {})[tid] = {"status": "blocked", "evidence": []}
         data["blockers"] = ([tid + "_awaits_owner_permission"] if case == "BL"
                             else ["another_task_awaits_owner_permission"])
+    elif case == "BX":
+        # 暂停记录配阻塞恢复点，但证据观察被改成 paused（state 读数 active）：
+        # J3 必须先拦证据失真；J9 只看 state 真读数，不连带。
+        data = _make_active(data)
+        data["status"] = "paused"
+        data["phase_progress"] = copy.deepcopy(BASE.get("phase_progress") or {})
+        tid = str(data["next_action_task"])
+        data.setdefault("task_progress", {})[tid] = {"status": "blocked", "evidence": []}
+        data["blockers"] = [tid + "_user_stopped_product_only_method_work_authorized"]
+        data["goal_binding_evidence"] = _write_tmp_evidence(
+            goal_id=data["goal_id"], id_unavailable=False,
+            observed_at=data["system_goal_observed_at"], observed_status="paused")
+    elif case == "BY":
+        # 真实停止形态：记录 paused、原生观察仍 active，下一动作已阻塞且有
+        # J7 同款匹配条目、无 active 阶段/任务 —— J9 接受，不报。
+        data = _make_active(data)
+        data["status"] = "paused"
+        data["phase_progress"] = copy.deepcopy(BASE.get("phase_progress") or {})
+        tid = str(data["next_action_task"])
+        data.setdefault("task_progress", {})[tid] = {"status": "blocked", "evidence": []}
+        data["blockers"] = [tid + "_user_stopped_product_only_method_work_authorized"]
+    elif case == "BZ":
+        # 同 BY，但阻塞条目与下一任务无关：J7 缺匹配条目，J9 也不接受保留观察。
+        data = _make_active(data)
+        data["status"] = "paused"
+        data["phase_progress"] = copy.deepcopy(BASE.get("phase_progress") or {})
+        tid = str(data["next_action_task"])
+        data.setdefault("task_progress", {})[tid] = {"status": "blocked", "evidence": []}
+        data["blockers"] = ["another_task_awaits_owner_permission"]
+    elif case in ("CA", "CB", "CC", "CD"):
+        data = _make_active(data)
+        data["status"] = "paused"
+        data["phase_progress"] = copy.deepcopy(BASE.get("phase_progress") or {})
+        observed = "paused" if case in ("CA", "CC") else "blocked"
+        data["system_goal_observed_status"] = observed
+        data["goal_binding_evidence"] = _write_tmp_evidence(
+            goal_id=data["goal_id"], id_unavailable=False,
+            observed_at=data["system_goal_observed_at"], observed_status=observed)
+        tid = str(data["next_action_task"])
+        task_state = "active" if case in ("CA", "CB") else "blocked"
+        data.setdefault("task_progress", {})[tid] = {"status": task_state, "evidence": []}
+        data["blockers"] = [tid + "_user_stopped_product_only_method_work_authorized"]
     elif case == "BN":
         data["state_schema"] = "amz-project-state/unsupported"
     else:
@@ -665,7 +707,7 @@ CASES = [
     ("AB", "prepared next_action 已 blocked", 1, {"J7"}),
     ("AD", "prepared next_action 已 done", 1, {"J7"}),
     ("AE", "active 与系统 blocked 读数不匹配", 1, {"J9"}),
-    ("AF", "paused 与系统 active 读数不匹配", 1, {"J9"}),
+    ("AF", "paused 与系统 active 读数不一致且无阻塞恢复点", 1, {"J9"}),
     ("AG", "paused 与系统 blocked 合法映射", 0, set()),
     ("AH", "session active 观察与终端展示归一 · 合法", 0, set()),
     ("AI", "session 绑定 + paused 观察 · 合法暂停", 0, set()),
@@ -698,6 +740,13 @@ CASES = [
     ("BL", "active 阻塞恢复点具有对应阻塞记录 · 合法", 0, set()),
     ("BM", "active 阻塞恢复点没有对应阻塞记录", 1, {"J7"}),
     ("BN", "可恢复状态的未知格式必须拒绝", 1, {"J0"}),
+    ("BX", "暂停阻塞恢复点存在但证据观察被改成 paused", 1, {"J3"}),
+    ("BY", "paused 配 active 真实观察、阻塞恢复点匹配且无活动工作 · 合法", 0, set()),
+    ("BZ", "paused 配 active 真实观察但阻塞恢复点无匹配条目", 1, {"J7", "J9"}),
+    ("CA", "paused 配 paused 真实观察但仍有 active 任务", 1, {"J9"}),
+    ("CB", "paused 配 blocked 真实观察但仍有 active 任务", 1, {"J9"}),
+    ("CC", "paused 配 paused 真实观察且无活动工作 · 合法", 0, set()),
+    ("CD", "paused 配 blocked 真实观察且无活动工作 · 合法", 0, set()),
     ("BO", "恢复边界投影保留空行分隔的多段门与blocker", 0, set()),
     ("BP", "无current边界时恢复仍保留blocker且不清可施工", 0, set()),
     ("BQ", "旧current_未知在未证取代时完整保留", 0, set()),

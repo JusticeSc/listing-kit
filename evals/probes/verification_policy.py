@@ -286,6 +286,12 @@ def main() -> int:
         judge("T5-HARNESS-CONSERVATIVE-" + Path(path).name,
               result.returncode == 0 and bool(data) and set(data["selected"]) == full_selection,
               f"rc={result.returncode} selected={data and data['selected_count']}/{data and data['full_count']}")
+    dev_result, dev = selector_json(["tests/dev/test_compare_coverage.py"])
+    judge("T5-DEV-PYTHON-ONLY",
+          dev_result.returncode == 0 and bool(dev)
+          and any(item.split()[0] == "pytest:tests/dev" for item in dev["selected"])
+          and not dev["frontend"] and not dev["browser"] and not dev["container"],
+          f"rc={dev_result.returncode} selected={dev and dev['selected']}")
     compare_result, compare = selector_json(["evals/product-v2/harness/compare-panel.js"])
     compare_mixed_result, compare_mixed = selector_json([proof_path, "evals/product-v2/harness/compare-panel.js"])
     judge("T5-COMPARE-MIXED-UNION",
@@ -293,6 +299,13 @@ def main() -> int:
           and bool(compare) and bool(compare_mixed) and bool(proof)
           and set(compare_mixed["selected"]) == set(compare["selected"]) | set(proof["selected"]),
           f"rc={compare_mixed_result.returncode} selected={compare_mixed and compare_mixed['selected']}")
+    dev_compare_result, dev_compare = selector_json(
+        ["tests/dev/test_compare_coverage.py", "evals/product-v2/harness/compare-panel.js"])
+    judge("T5-DEV-COMPARE-MIXED-UNION",
+          dev_compare_result.returncode == 0 and bool(dev_compare) and bool(dev) and bool(compare)
+          and set(dev_compare["selected"]) == set(dev["selected"]) | set(compare["selected"])
+          and dev_compare["frontend"] and dev_compare["browser"],
+          f"rc={dev_compare_result.returncode} selected={dev_compare and dev_compare['selected']}")
     mixed_result, mixed = selector_json([proof_path, ui_path])
     judge("T5-MIXED-UNION",
           mixed_result.returncode == 0 and bool(mixed) and bool(ui) and bool(proof)
