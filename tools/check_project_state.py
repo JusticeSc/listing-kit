@@ -133,9 +133,117 @@ def _rel(p: Path) -> str:
         return p.as_posix()
 
 
-def _exists(rel: str) -> bool:
-    return (ROOT / rel).exists()
+def _safe_relative_path(value: object, label: str, base: Path) -> str:
+    if not isinstance(value, str) or not value or "\\" in value or ":" in value or "\0" in value:
+        raise ValueError(f"{label}: 必须是仓库内相对路径")
+    parsed = PurePosixPath(value)
+    if parsed.is_absolute() or any(part in {"", ".", ".."} for part in value.split("/")):
+        raise ValueError(f"{label}: 必须是仓库内相对路径")
+    resolved_base = base.resolve()
+    if not (resolved_base / value).resolve().is_relative_to(resolved_base):
+        raise ValueError(f"{label}: 解析后路径超出仓库根")
+    return value
 
+
+def _exists(rel: str) -> bool:
+    try:
+        safe = _safe_relative_path(rel, "路径", ROOT)
+    except (OSError, ValueError):
+        return False
+    return (ROOT / safe).exists()
+
+
+def _read_document_text(rel: str, *, root: Path | None = None) -> str:
+    """读取当前入口及登记的有序正文；路径和登记形状均须安全有效。"""
+    base = (ROOT if root is None else root).resolve()
+    relative = _safe_relative_path(rel, "文档路径", base)
+    text = (base / relative).read_text(encoding="utf-8")
+    registry_path = base / "config/document-splits.json"
+    if registry_path.is_symlink():
+        raise ValueError("document-splits.json: 登记文件不得是符号链接")
+    if not registry_path.resolve().is_relative_to(base):
+        raise ValueError("document-splits.json: 登记文件必须位于仓库内")
+    if not registry_path.exists():
+        return text
+    if not registry_path.is_file():
+        raise ValueError("document-splits.json: 登记文件不是普通文件")
+    registry = json.loads(registry_path.read_text(encoding="utf-8"))
+    entries = registry.get("splits") if isinstance(registry, dict) else None
+    if not isinstance(entries, list):
+        raise ValueError("document-splits.json 的 splits 不是列表")
+    normalized: list[tuple[str, dict, list[tuple[dict, str]]]] = []
+    for index, raw_entry in enumerate(entries):
+        if not isinstance(raw_entry, dict):
+            raise ValueError(f"document-splits.json 的第 {index} 项必须是对象")
+        entry_path = _safe_relative_path(raw_entry.get("path"), f"拆分登记[{index}].path", base)
+        raw_parts = raw_entry.get("parts", [])
+        if not isinstance(raw_parts, list):
+            raise ValueError(f"拆分登记[{index}] 的 parts 必须是列表")
+        parts: list[tuple[dict, str]] = []
+        for part_index, raw_part in enumerate(raw_parts):
+            if not isinstance(raw_part, dict):
+                raise ValueError(f"拆分登记[{index}] 的第 {part_index} 个 part 必须是对象")
+            part_path = _safe_relative_path(
+                raw_part.get("path"), f"拆分登记[{index}].parts[{part_index}].path", base
+            )
+            parts.append((raw_part, part_path))
+        normalized.append((entry_path, raw_entry, parts))
+    matches = [item for item in normalized if item[0] == relative]
+    if not matches:
+        return text
+    if len(matches) != 1:
+        raise ValueError(f"拆分登记不唯一：{relative}")
+    entry_path, entry, parts = matches[0]
+    if not parts:
+        raise ValueError(f"拆分登记缺有序 parts：{entry_path}")
+    pieces = [text]
+    for part, part_path in parts:
+        body = (base / part_path).read_text(encoding="utf-8")
+        if entry.get("mode") != "raw-parts":
+            lines = body.splitlines(keepends=True)
+            if len(lines) < 4 or not lines[0].startswith("<!-- 拆分件"):
+                raise ValueError(f"拆分件缺四行导航头：{part_path}")
+            body = "".join(lines[4:])
+        prefix, suffix = part.get("remove_prefix"), part.get("remove_suffix")
+        if prefix is not None:
+            if not isinstance(prefix, str) or not prefix or not body.startswith(prefix):
+                raise ValueError(f"拆分件续接前缀不匹配：{part_path}")
+            body = body[len(prefix):]
+        if suffix is not None:
+            if not isinstance(suffix, str) or not suffix or not body.endswith(suffix):
+                raise ValueError(f"拆分件续接后缀不匹配：{part_path}")
+            body = body[:-len(suffix)]
+        pieces.append(body)
+    return "".join(pieces)
+
+
+
+def _read_state_data(path: Path, *, root: Path | None = None) -> dict:
+    """同目录 state.yaml 为机器权威；旧状态继续读取 Markdown YAML。"""
+    import yaml
+
+    project_root = (ROOT if root is None else root).resolve()
+    if path.is_symlink() or not path.resolve().is_relative_to(project_root):
+        raise ValueError("state.md: 状态文件必须位于仓库内且不得是符号链接")
+    machine_path = path.with_suffix(".yaml")
+    if machine_path.is_symlink():
+        raise ValueError("state.yaml: 机器状态文件不得是符号链接")
+    if not machine_path.resolve().is_relative_to(project_root):
+        raise ValueError("state.yaml: 机器状态文件必须位于仓库内")
+    if machine_path.exists():
+        if not machine_path.is_file():
+            raise ValueError("state.yaml: 机器状态文件不是普通文件")
+        body = machine_path.read_text(encoding="utf-8")
+    else:
+        match = YAML_BLOCK.search(path.read_text(encoding="utf-8"))
+        if not match:
+            raise ValueError("没有 state.yaml 或 ```yaml 围栏块")
+        body = match.group(1)
+    data = yaml.safe_load(body)
+    if not isinstance(data, dict):
+        raise ValueError("YAML 顶层不是映射")
+
+    return data
 
 _TRACKED: set[str] | bool | None = None  # None=还没问过 git；False=不是 git 工作树
 
@@ -555,20 +663,14 @@ def _records(rep: Report):
                     f"这是环境问题，必须显式报出来，不许静默跳过。")
         return out
     for p in sorted(WORKING.glob("*/state.md")):
-        text = p.read_text(encoding="utf-8")
-        m = YAML_BLOCK.search(text)
-        if not m:
-            out.append((p, None, "没有 ```yaml 围栏块"))
-            continue
+        machine_path = p.with_suffix(".yaml")
+        source = machine_path if machine_path.exists() else p
         try:
-            data = yaml.safe_load(m.group(1))
-        except yaml.YAMLError as exc:
-            out.append((p, None, f"YAML 解析失败：{exc}"))
+            data = _read_state_data(p, root=ROOT)
+        except (OSError, ValueError, UnicodeError, yaml.YAMLError) as exc:
+            out.append((source, None, f"状态解析失败：{exc}"))
             continue
-        if not isinstance(data, dict):
-            out.append((p, None, "YAML 顶层不是映射"))
-            continue
-        out.append((p, data, None))
+        out.append((source, data, None))
     return out
 
 
@@ -620,7 +722,10 @@ def _check(rep: Report) -> None:
         elif not _exists(str(ref)):
             rep.problem(f"[J8] {rel} 的 plan_ref={ref!r} 指向的文件不存在。")
         else:
-            plan_text = (ROOT / str(ref)).read_text(encoding="utf-8")
+            try:
+                plan_text = _read_document_text(str(ref))
+            except (OSError, ValueError, UnicodeError) as exc:
+                rep.problem(f"[J8] {rel} 的计划正文读取失败：{exc}")
         plan_phases = PHASE_HEAD.findall(plan_text)
         plan_gates = set(GATE_DECL.findall(plan_text))
 

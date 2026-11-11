@@ -1,0 +1,2268 @@
+{
+  "schema": "amz-retired-documents/v1",
+  "recovery": {
+    "command": "git show <commit>:<path>",
+    "destination": "先恢复到隔离目录，核对 Git blob、字节数与 SHA-256；历史材料不自动成为当前权威。"
+  },
+  "documents": [
+    {
+      "path": "_stage-amz-control/asset-continuation-20261008T054352Z/README.md",
+      "generation": "asset-continuation-20261008T054352Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "ff66e40169ccbc8a27c063cfbccc7f7ce2eca6c0",
+      "sha256": "98988b8d238f9b73f086dee6e748ce10ff2c9f422c5ce5be60df88baffc90bd2",
+      "bytes": 21365
+    },
+    {
+      "path": "_stage-amz-control/asset-continuation-20261008T054352Z/_working/amz-listing-kit-product-v2/state.md",
+      "generation": "asset-continuation-20261008T054352Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "382a65bc75351767e407db7e968f32f83973cc79",
+      "sha256": "4b88acc2f3cb7fe06ed32755a507e81e8e17c4907095d32a3e07ed4442250f20",
+      "bytes": 56219
+    },
+    {
+      "path": "_stage-amz-control/batch18-promotion-20261019/pr19-body-round2.md",
+      "generation": "batch18-promotion-20261019",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "ae26e32af027ffa62765738428694d5d7b749621",
+      "sha256": "a278502f613a32536e203ef91302be7429e71ddc8e4e3732f8ce0b3b9db68963",
+      "bytes": 10981
+    },
+    {
+      "path": "_stage-amz-control/batch18-promotion-20261019/pr19-body-round3.md",
+      "generation": "batch18-promotion-20261019",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "31c0526dc9e8884f5f9d2b9e6f389689a0526690",
+      "sha256": "b7d01277715e46e42442189b5adf06dd75f0e3e092800204bcd72ec33f1e9578",
+      "bytes": 13821
+    },
+    {
+      "path": "_stage-amz-control/batch18-promotion-20261019/pr19-body-round4.md",
+      "generation": "batch18-promotion-20261019",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "3474d3118b0f0d912d7240ea76934fef9fdc1694",
+      "sha256": "f86ce236b71847e263d09789dcdc89de12d4000b00b1acbb5e8f13d0afdb2c1e",
+      "bytes": 15406
+    },
+    {
+      "path": "_stage-amz-control/batch18-promotion-20261019/pr19-body-round5.md",
+      "generation": "batch18-promotion-20261019",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "83bbeef256dd4054100c9654acea6cf8469e1b16",
+      "sha256": "aedcc52cc44cff6d7041f3350fd0ed61d65c44d0fa394a9033c13d3de4772f70",
+      "bytes": 15556
+    },
+    {
+      "path": "_stage-amz-control/calib-v117-20260926-2221/docs/product-demo-goal-and-implementation-plan.md",
+      "generation": "calib-v117-20260926-2221",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "4024935b551095f1fccf7d9156efe1331264fc46",
+      "sha256": "bbe412d3f6bda4a5b97ce53033e2381e33a7cc029b4467d62ee5edd23cdff059",
+      "bytes": 131157
+    },
+    {
+      "path": "_stage-amz-control/calib-v119-20260927-0015/README.md",
+      "generation": "calib-v119-20260927-0015",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "81fec64a912e232d0c4786eacddac82b09a4e486",
+      "sha256": "7c0115659cab9a26c9bd74958f03362de6e16a8512f0c07344cc1c9451fc8618",
+      "bytes": 58542
+    },
+    {
+      "path": "_stage-amz-control/calib-v119-20260927-0015/docs__product-demo-goal-and-implementation-plan.md",
+      "generation": "calib-v119-20260927-0015",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "0c3e8c527518d1250a99f719c7cf453e30a17a62",
+      "sha256": "e95d09829517826388b0f37970a2a6a57b307c68846e761e3e948d16f23f27f9",
+      "bytes": 147982
+    },
+    {
+      "path": "_stage-amz-control/calib-v119-20260927-0015/evals__product-demo__d2-r1c__mock-product-2026-09-26.md",
+      "generation": "calib-v119-20260927-0015",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "36acbafbc3a23d6d46de932431f61a8ea5aac7e8",
+      "sha256": "bcc05dcc84592418e5b1447b70d52ae44e125020ec0f628b48d7caa5b4569809",
+      "bytes": 16385
+    },
+    {
+      "path": "_stage-amz-control/calib-v120-20260927-0100/README.md",
+      "generation": "calib-v120-20260927-0100",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "ba728e03cc5b18b7b2d0d336b90141f535bacec0",
+      "sha256": "d4e17daa31cfb22772e6ef29f0a8be1e4221bca612a6488f684c48939a1821e4",
+      "bytes": 58693
+    },
+    {
+      "path": "_stage-amz-control/calib-v120-20260927-0100/docs_product-demo-goal-and-implementation-plan.md",
+      "generation": "calib-v120-20260927-0100",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "6c17722c7db99c0793a1e04bed8357e0b4c8fb8d",
+      "sha256": "873a939af6437681ad813e7697ee302d90012a8b36824cc19bb313e7003603ce",
+      "bytes": 149845
+    },
+    {
+      "path": "_stage-amz-control/calib-v120-20260927-0157/docs__product-demo-goal-and-implementation-plan.md",
+      "generation": "calib-v120-20260927-0157",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "6c17722c7db99c0793a1e04bed8357e0b4c8fb8d",
+      "sha256": "873a939af6437681ad813e7697ee302d90012a8b36824cc19bb313e7003603ce",
+      "bytes": 149845
+    },
+    {
+      "path": "_stage-amz-control/calib-v120-20260927-0157/evals__product-demo__d2-r1c__mock-product-2026-09-26.md",
+      "generation": "calib-v120-20260927-0157",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "2a84f3634e76f9df71f928ce670fd2662b5aec5f",
+      "sha256": "63924614ca83b94482533c838b3d355f711742404fe2666f7857c68091ccd666",
+      "bytes": 22969
+    },
+    {
+      "path": "_stage-amz-control/calib-v121-20260927-092421/docs__product-demo-goal-and-implementation-plan.md",
+      "generation": "calib-v121-20260927-092421",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "65bb7d050d7b5865761db75f9c488303938c97f7",
+      "sha256": "a66ff78d84a851e5df9d1c736725ba2fe6658c7cb77c18f84af48ddf53d9c4eb",
+      "bytes": 152700
+    },
+    {
+      "path": "_stage-amz-control/clean-runner-evidence-20260929-232743/_working/amz-listing-kit-product-demo/state.md",
+      "generation": "clean-runner-evidence-20260929-232743",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "5ed03a2c432e3a2d1e70c8e8a67fe514dc29e2e7",
+      "sha256": "1e0ef9e3f6b227c14ecb8a2f6759e4ea4718a1fd189bc8408fd16eb68fc72a77",
+      "bytes": 14593
+    },
+    {
+      "path": "_stage-amz-control/combined-refactor-2026-10-05T18-44-47-076Z/AGENTS.md",
+      "generation": "combined-refactor-2026-10-05T18-44-47-076Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "a1f654d6856bf15fbc41148a6d233bd1dd4f259f",
+      "sha256": "c7fee74709e29de670c0b9a3448c8ef1cb2566b1fc0ae1344d70afe3b90b6f3f",
+      "bytes": 13292
+    },
+    {
+      "path": "_stage-amz-control/combined-refactor-2026-10-05T18-44-47-076Z/README.md",
+      "generation": "combined-refactor-2026-10-05T18-44-47-076Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "99be56749768a324a20ed38b0fbb9d2a650a6d01",
+      "sha256": "474080726ce7b4be6e88fa248305d38818b66e85ca9531a4a611e531cd0aaa5d",
+      "bytes": 20625
+    },
+    {
+      "path": "_stage-amz-control/combined-refactor-2026-10-05T18-44-47-076Z/_working/amz-listing-kit-product-v2/state.md",
+      "generation": "combined-refactor-2026-10-05T18-44-47-076Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "5f07e2331d8f86aeff8cfd81a57200886176e8a8",
+      "sha256": "405ee8036d47de5bba469679c877e8f2989ff6fc364de156109f93fa53bfece7",
+      "bytes": 23726
+    },
+    {
+      "path": "_stage-amz-control/combined-refactor-2026-10-05T18-44-47-076Z/docs/AI生图可控性与验证设计.md",
+      "generation": "combined-refactor-2026-10-05T18-44-47-076Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "7424561128f701be23c086a5d7607c92d26fe381",
+      "sha256": "be28dbf82f5c7cacf368461381a53af287f43d41aa56632766ccff3bcd212efa",
+      "bytes": 16059
+    },
+    {
+      "path": "_stage-amz-control/combined-refactor-2026-10-05T18-44-47-076Z/docs/INDEX.md",
+      "generation": "combined-refactor-2026-10-05T18-44-47-076Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "c2e89e9879bc35fb09b70713f80bd6b9d8fb546a",
+      "sha256": "d2d38dd16287bb944c357d7b72f157ff03c490f5c40404afbae495d85e8ed2e5",
+      "bytes": 21382
+    },
+    {
+      "path": "_stage-amz-control/combined-refactor-2026-10-05T18-44-47-076Z/docs/drafts/adr-0001-骨架选型.md",
+      "generation": "combined-refactor-2026-10-05T18-44-47-076Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "e88f5fcb8c57334f9b864447641fa90e004f187f",
+      "sha256": "a1e0e23c4788eaef882b48f629c72f9b3d0daaf98017cfa6a15a99adc3896325",
+      "bytes": 11724
+    },
+    {
+      "path": "_stage-amz-control/combined-refactor-2026-10-05T18-44-47-076Z/docs/drafts/arch-v4-骨架.md",
+      "generation": "combined-refactor-2026-10-05T18-44-47-076Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "48a0960c4a65229e6d9b14849b93c67bd3d158d0",
+      "sha256": "130212ebf857d41bbb20bfbbf1c0011d8825b904e0f778c96354fdc76a4e1c6b",
+      "bytes": 12123
+    },
+    {
+      "path": "_stage-amz-control/combined-refactor-2026-10-05T18-44-47-076Z/docs/drafts/devplan-v4.md",
+      "generation": "combined-refactor-2026-10-05T18-44-47-076Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "7f85075b3d394cb4f65ebbfe5276e007da899575",
+      "sha256": "59df389f16c0c9d7cdcf87fabfb779f9a89c54cd286fe29217ce65f291fd4077",
+      "bytes": 10821
+    },
+    {
+      "path": "_stage-amz-control/combined-refactor-2026-10-05T18-44-47-076Z/docs/drafts/ref-mining-ecom-2026-09-23.md",
+      "generation": "combined-refactor-2026-10-05T18-44-47-076Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "efd9ffb315cddb353b1797b3c7d7c4494b74c6d3",
+      "sha256": "fcaac38e4e847b2c5bf78dc9694d3ff893fd2c9d1e8fd0582920f0ef68ec9b79",
+      "bytes": 24000
+    },
+    {
+      "path": "_stage-amz-control/combined-refactor-2026-10-05T18-44-47-076Z/docs/drafts/requirements-analysis-2026-09-24.md",
+      "generation": "combined-refactor-2026-10-05T18-44-47-076Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "d171e5e3e5f39e5cba22c32236a5eca5119678a7",
+      "sha256": "5d31995526b54525543575f7b0e21703ae132eff42d71c05751af1667c1c2355",
+      "bytes": 39650
+    },
+    {
+      "path": "_stage-amz-control/combined-refactor-2026-10-05T18-44-47-076Z/docs/drafts/slots-v3-proposal.md",
+      "generation": "combined-refactor-2026-10-05T18-44-47-076Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "a5ad5916af4753e3353d52c64ecedabed6689819",
+      "sha256": "dcc467b5dc2b1402f4a6e8d63fdc009c75bc253f64671098d2b4e0e0e1b4e86a",
+      "bytes": 14946
+    },
+    {
+      "path": "_stage-amz-control/combined-refactor-2026-10-05T18-44-47-076Z/docs/drafts/slots-v4-generation-first.md",
+      "generation": "combined-refactor-2026-10-05T18-44-47-076Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "e47ed0d8ee33b280bcca12425e95b882c8f9f19f",
+      "sha256": "c5b3882bc3bd6adc418d45e755e87dcdebbf487e67cbf6dc5915ded0bc349e18",
+      "bytes": 79556
+    },
+    {
+      "path": "_stage-amz-control/combined-refactor-2026-10-05T18-44-47-076Z/docs/product-demo-goal-and-implementation-plan.md",
+      "generation": "combined-refactor-2026-10-05T18-44-47-076Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "7f042ad96037477dbebff9706385a362a61cbb17",
+      "sha256": "65a027ef37e21b13f2ad8ceb95c61632968bb14009adb6b631394ed27a5a5297",
+      "bytes": 81051
+    },
+    {
+      "path": "_stage-amz-control/combined-refactor-2026-10-05T18-44-47-076Z/docs/product-v1-goal-and-implementation-plan.md",
+      "generation": "combined-refactor-2026-10-05T18-44-47-076Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "aa53355af8e95081f992c11e55e84ada7f545106",
+      "sha256": "e80b13fcfda55997b2f562ca9e2cd7b79a37791ef0e940c7315187e79a7e878f",
+      "bytes": 63739
+    },
+    {
+      "path": "_stage-amz-control/combined-refactor-2026-10-05T18-44-47-076Z/docs/product-v2-goal-and-implementation-plan.md",
+      "generation": "combined-refactor-2026-10-05T18-44-47-076Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "f536f9bf115f036d46b7d143498ed9c9a0c99a7f",
+      "sha256": "d62b5fe1718eb17b6334b9c54f062606ec2541d0adbaa544feb7ad1d96b2e374",
+      "bytes": 175588
+    },
+    {
+      "path": "_stage-amz-control/combined-refactor-2026-10-05T18-44-47-076Z/docs/product-v2-project-context.md",
+      "generation": "combined-refactor-2026-10-05T18-44-47-076Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "8eaa78f3fb56650ead9646d9ffc3fa9d16d8375c",
+      "sha256": "d4a4342d4752927bd765cedc1f9fe6f4f96cae27ded2e4f62e9a4a70b2edb202",
+      "bytes": 42141
+    },
+    {
+      "path": "_stage-amz-control/combined-refactor-2026-10-05T18-44-47-076Z/docs/product-v2-refactor-plan.md",
+      "generation": "combined-refactor-2026-10-05T18-44-47-076Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "d8e99a2a7a8e284f92563a729464ae5eda68a868",
+      "sha256": "bc282767a90e4417cc62983794daa742c088b42d5ec895d7ddabc0095f45cf23",
+      "bytes": 149625
+    },
+    {
+      "path": "_stage-amz-control/combined-refactor-2026-10-05T18-44-47-076Z/docs/product-v2-ui-contract.md",
+      "generation": "combined-refactor-2026-10-05T18-44-47-076Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "3a9d7c6f40c5ae99990eb68d1fd03f8c25644f9f",
+      "sha256": "875c7b3f041019ea1c53730f18b55a08e1f63555a288f3bf72a2b5ac28a91869",
+      "bytes": 40564
+    },
+    {
+      "path": "_stage-amz-control/combined-refactor-2026-10-05T18-44-47-076Z/docs/业务流程与提效设计.md",
+      "generation": "combined-refactor-2026-10-05T18-44-47-076Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "f4830e6eea21fa9efb8b75fe03f34bee6dc42e78",
+      "sha256": "373830d5db696c9a6506da728ff23d22ddf90c076d185d967e4cb6852d26333a",
+      "bytes": 32109
+    },
+    {
+      "path": "_stage-amz-control/combined-refactor-2026-10-05T18-44-47-076Z/docs/业务逻辑.md",
+      "generation": "combined-refactor-2026-10-05T18-44-47-076Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "818c2efdd361f1950d73cbdbd3ca6730b91578a7",
+      "sha256": "7e28a99508f320e19fc27962dec188f8dcb56366eda5f2c3365690d1470b2ab3",
+      "bytes": 17205
+    },
+    {
+      "path": "_stage-amz-control/combined-refactor-2026-10-05T18-44-47-076Z/docs/使用形态.md",
+      "generation": "combined-refactor-2026-10-05T18-44-47-076Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "7416042996efec99de1acd204bcaa43da561f546",
+      "sha256": "ea1514945b4fa3e902bbcd423eb269dd3f2a5e33f17462ef56ca8808ff8a5bcd",
+      "bytes": 16806
+    },
+    {
+      "path": "_stage-amz-control/combined-refactor-2026-10-05T18-44-47-076Z/docs/实施计划.md",
+      "generation": "combined-refactor-2026-10-05T18-44-47-076Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "4b3b37612d3fac8a857daf36943507aa0677878c",
+      "sha256": "79901289008d2c9faa4b34a4ff8f2bedb89400f41246511f6d06a3cd3ab99799",
+      "bytes": 58388
+    },
+    {
+      "path": "_stage-amz-control/combined-refactor-2026-10-05T18-44-47-076Z/docs/最小可行设计.md",
+      "generation": "combined-refactor-2026-10-05T18-44-47-076Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "c68e1ed90d8776e7c8f3036d1c78598e0444649b",
+      "sha256": "01a0da33377f864c6c93e4afa68ca122aebffdf520d8355293cba8d0b430c0d9",
+      "bytes": 29538
+    },
+    {
+      "path": "_stage-amz-control/combined-refactor-2026-10-05T18-44-47-076Z/docs/架构设计.md",
+      "generation": "combined-refactor-2026-10-05T18-44-47-076Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "57ac6595db6052438b89df9aa5ea6dc3d0143c41",
+      "sha256": "fe7a4e8cc218b9c1a3994a6a5639771d67a9cc8b5323b0db4ae7cd11ccadfdde",
+      "bytes": 25409
+    },
+    {
+      "path": "_stage-amz-control/combined-refactor-2026-10-05T18-44-47-076Z/docs/系统设计方案.md",
+      "generation": "combined-refactor-2026-10-05T18-44-47-076Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "7c65c3dd1960e18eb09a11fe523562d1141fd645",
+      "sha256": "7ab30410ab7417de25e8ca91b5acb24cc67d74dc3e9375faba070743b374fa1b",
+      "bytes": 61225
+    },
+    {
+      "path": "_stage-amz-control/combined-refactor-2026-10-05T18-44-47-076Z/docs/设计复审.md",
+      "generation": "combined-refactor-2026-10-05T18-44-47-076Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "5a10fb860f653d77f57f52e90daea1d0f5fdf656",
+      "sha256": "cea8025ea107e2c9a22c737451b16e9209a13f382db041f6135a2a121c4cdf9c",
+      "bytes": 18056
+    },
+    {
+      "path": "_stage-amz-control/context-reorg-20260929-224708/README.md",
+      "generation": "context-reorg-20260929-224708",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "4d89be3f5f324d1385f4847572a525a15c3f4b93",
+      "sha256": "716d843e49e5abf722255979073df84e878c9865b0092198b1fb45e9f104ff5b",
+      "bytes": 61002
+    },
+    {
+      "path": "_stage-amz-control/context-reorg-20260929-224708/docs__AI生图可控性与验证设计.md",
+      "generation": "context-reorg-20260929-224708",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "010e8be87fa0c782f414f4a6c1c0c64959634e86",
+      "sha256": "30175c80147ade63cc2f2b53a478fe87f683c38d2715ee32a728ca6708294079",
+      "bytes": 16060
+    },
+    {
+      "path": "_stage-amz-control/context-reorg-20260929-224708/docs__INDEX.md",
+      "generation": "context-reorg-20260929-224708",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "cba5ade285aec70e4e02b8c311107ee6ba9c5079",
+      "sha256": "e6f8de2ff7326e62a6f2fad30dde3aa843eee772547639832496bfe548ae4b44",
+      "bytes": 18258
+    },
+    {
+      "path": "_stage-amz-control/context-reorg-20260929-224708/docs__product-v2-goal-and-implementation-plan.md",
+      "generation": "context-reorg-20260929-224708",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "54571a0be1b83c55bd1b09193988cecaeae38f47",
+      "sha256": "4b3186796ddab4922ddf452d2165185029d27ae1b6651cb7bb96eaaf1b5a66ae",
+      "bytes": 37500
+    },
+    {
+      "path": "_stage-amz-control/context-reorg-20260929-224708/docs__product-v2-project-context.md",
+      "generation": "context-reorg-20260929-224708",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "b1ced5f44f28b915efca04a56f7c3bf4b4c54f90",
+      "sha256": "93a61e460ea7a2d9f0e055451ff0cf0693af8a727096febb6821b5a4f35f1c23",
+      "bytes": 15502
+    },
+    {
+      "path": "_stage-amz-control/context-reorg-20260929-224708/docs__业务流程与提效设计.md",
+      "generation": "context-reorg-20260929-224708",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "85cc580a449bdf65566a0f8995e1388e22ff7827",
+      "sha256": "40a1a7d6d1a27ea1f96d047349c35a7e7ef35c08277698f6985f08e1362292cd",
+      "bytes": 32110
+    },
+    {
+      "path": "_stage-amz-control/context-reorg-20260929-224708/docs__业务逻辑.md",
+      "generation": "context-reorg-20260929-224708",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "367bf7f7f00b7517e2df2a88091504cc9f5278f7",
+      "sha256": "d66737c7662036147b09becfb57e91be1dc551a9540a2f6bdc3d4ccc54cdcbfe",
+      "bytes": 17206
+    },
+    {
+      "path": "_stage-amz-control/context-reorg-20260929-224708/docs__使用形态.md",
+      "generation": "context-reorg-20260929-224708",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "2e4534d6439f333ef03c8244604826dea6be9d27",
+      "sha256": "284a15274bf931120f13d1a812071c57f4202b38d0cb5a85b6efb6bf02f5746d",
+      "bytes": 16807
+    },
+    {
+      "path": "_stage-amz-control/context-reorg-20260929-224708/docs__实施计划.md",
+      "generation": "context-reorg-20260929-224708",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "f0abffa1b03171b239529dcb123341829118359c",
+      "sha256": "badcdc5fb1416ceffe38f271adc6881c79a839174fc26ee702efe0883bbfa1bb",
+      "bytes": 58389
+    },
+    {
+      "path": "_stage-amz-control/context-reorg-20260929-224708/docs__最小可行设计.md",
+      "generation": "context-reorg-20260929-224708",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "c47768ae0797d0aac9cb2e04637d30a161e13ac4",
+      "sha256": "34ed719064b8fcbbd06bb4ea19ac338cbe0582d021a6e5093b070cfaa4c23377",
+      "bytes": 29539
+    },
+    {
+      "path": "_stage-amz-control/context-reorg-20260929-224708/docs__系统设计方案.md",
+      "generation": "context-reorg-20260929-224708",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "92c54a6d638a2f0d31a05f92569b5dbb55b53cc4",
+      "sha256": "71693fd4c44af683f7d26db5052ef2d14e6600025cb575fb5a20eb7b8da0bfaf",
+      "bytes": 61226
+    },
+    {
+      "path": "_stage-amz-control/context-reorg-20260929-224708/docs__设计复审.md",
+      "generation": "context-reorg-20260929-224708",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "a88ea656fde2439b1adb9da94c8e2c5e8db53a87",
+      "sha256": "953958b50f2cd111926aaf471e312f85087c84416074d51a89bceb707b43d441",
+      "bytes": 18057
+    },
+    {
+      "path": "_stage-amz-control/context-routing-20260929-2235/product-v2-project-context.md",
+      "generation": "context-routing-20260929-2235",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "f0010bfc9479abdde86ccb7e6ac545603b377519",
+      "sha256": "097ae689401f05b638016678208b1113af30dc75cb02d1f7ed3ac319592aaa64",
+      "bytes": 15501
+    },
+    {
+      "path": "_stage-amz-control/contract-consumer-fix-20261019/before/_working/amz-listing-kit-product-v2/state.md",
+      "generation": "contract-consumer-fix-20261019",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "5d3bfa2b7062c6260fb898f799aa2d0ab9febd26",
+      "sha256": "bc8700304d4b7eb8a35686ecef0798c331a9040fc1788d37f38c328b63ae40b5",
+      "bytes": 58736
+    },
+    {
+      "path": "_stage-amz-control/control-plane-pre-sync-v2.3-20260928-1346/docs__INDEX.md",
+      "generation": "control-plane-pre-sync-v2.3-20260928-1346",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "079035cdf60bedbfecdf819791beb575a6fef665",
+      "sha256": "18c6f74f019e06f24a146b69f56d6e4925dbe1c56a50fd90c672adebc7a90241",
+      "bytes": 12582
+    },
+    {
+      "path": "_stage-amz-control/control-plane-pre-sync-v2.3-20260928-1346/docs__product-demo-goal-and-implementation-plan.md",
+      "generation": "control-plane-pre-sync-v2.3-20260928-1346",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "a7f628f60b15ff54b231c3f19b0ce06d30bcfb13",
+      "sha256": "a26908b02d7029e7c646dafa5ca7e2e9ef772bc5f3f9a41dcba5c6169568b003",
+      "bytes": 53196
+    },
+    {
+      "path": "_stage-amz-control/control-plane-sync-20260928-124552/docs/INDEX.md",
+      "generation": "control-plane-sync-20260928-124552",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "3f48ba2c5ceb9458031a88ab98c10855224e50d0",
+      "sha256": "0d201638bc6854501f6ab88006245f53229e564ebce9bb552804adcc59d94e28",
+      "bytes": 12582
+    },
+    {
+      "path": "_stage-amz-control/control-plane-sync-20260928-124552/docs/product-demo-goal-and-implementation-plan.md",
+      "generation": "control-plane-sync-20260928-124552",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "ca0c3778da74eb81f291d72c565c07a1634f2d18",
+      "sha256": "18d7788648c276ca1814ae463c260130b0ce9f674b275bfc85fc711eb127f5b3",
+      "bytes": 39018
+    },
+    {
+      "path": "_stage-amz-control/control-plane-sync-20260928-131557/docs/INDEX.md",
+      "generation": "control-plane-sync-20260928-131557",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "3f48ba2c5ceb9458031a88ab98c10855224e50d0",
+      "sha256": "0d201638bc6854501f6ab88006245f53229e564ebce9bb552804adcc59d94e28",
+      "bytes": 12582
+    },
+    {
+      "path": "_stage-amz-control/control-plane-sync-20260928-131557/docs/product-demo-goal-and-implementation-plan.md",
+      "generation": "control-plane-sync-20260928-131557",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "4cea5efa9abc84f6e06d64293ae33d310a44e9c8",
+      "sha256": "ae2fc9b010150c85566cf97b5c3fff9730d0cc442cd5e531813425a2bfb8ff16",
+      "bytes": 44855
+    },
+    {
+      "path": "_stage-amz-control/control-plane-v2.3-20260928-133554/docs__INDEX.md",
+      "generation": "control-plane-v2.3-20260928-133554",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "079035cdf60bedbfecdf819791beb575a6fef665",
+      "sha256": "18c6f74f019e06f24a146b69f56d6e4925dbe1c56a50fd90c672adebc7a90241",
+      "bytes": 12582
+    },
+    {
+      "path": "_stage-amz-control/control-plane-v2.3-20260928-133554/docs__product-demo-goal-and-implementation-plan.md",
+      "generation": "control-plane-v2.3-20260928-133554",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "bfc77d2a5006ef04c4d173c66fca68a4dec3ff8f",
+      "sha256": "13213aa37d469433a88718bb44bfd3185275dbf678cd13c8bb7fb2b84e8958ae",
+      "bytes": 44855
+    },
+    {
+      "path": "_stage-amz-control/d0.1-close-pre-v2.4-20260928-141522/docs__INDEX.md",
+      "generation": "d0.1-close-pre-v2.4-20260928-141522",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "7e60b9a5597a0e2dc6d1709e5fc6b0db06a2ef48",
+      "sha256": "b1704b82e36202994cf32af9943204123eb286407d8bee8c02a675bd6954c01a",
+      "bytes": 12648
+    },
+    {
+      "path": "_stage-amz-control/d0.1-close-pre-v2.4-20260928-141522/docs__product-demo-goal-and-implementation-plan.md",
+      "generation": "d0.1-close-pre-v2.4-20260928-141522",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "f4d2b304ce35438ed32d05d2d24c01dea4a9a10d",
+      "sha256": "f6580c02c418bd50f0342493ef321ba24fa7f05ca0f3272d6734bb00ca82afc7",
+      "bytes": 55059
+    },
+    {
+      "path": "_stage-amz-control/d2-r1b-contract-20260926-2241/docs/product-demo-goal-and-implementation-plan.md",
+      "generation": "d2-r1b-contract-20260926-2241",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "92632b2bd2c0164f62dd1262c59a251e582a54d6",
+      "sha256": "f5f5deabbbbf5195e4b95a75505a820ea45b068bbd8f530d57efedfae32a7c02",
+      "bytes": 129853
+    },
+    {
+      "path": "_stage-amz-control/d4.12-state-before-20260929-142815/state.md",
+      "generation": "d4.12-state-before-20260929-142815",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "5099b142e16f20aae88a903327ae21997adfea7f",
+      "sha256": "9e0ca412f3cf8d5540d23122ee9def30346e1057ce684393d3a1e2524fbb1b8a",
+      "bytes": 13138
+    },
+    {
+      "path": "_stage-amz-control/d4.6-before-20260929-1050/README.md",
+      "generation": "d4.6-before-20260929-1050",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "6e3851f7010599a0bb156931557d5f18ef37481c",
+      "sha256": "5c526e28c935e667ebc2914b7ac27596dac235337b3c56911078f18034d1de97",
+      "bytes": 58911
+    },
+    {
+      "path": "_stage-amz-control/design-choices-20261004/product-v2-refactor-plan.md",
+      "generation": "design-choices-20261004",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "1bc23402c25412b14bc6d3317a75ca4528ae5d14",
+      "sha256": "c772035f08e47c8d3065fb6e97109acd771ba68881e57436a69d8d7c0326ee19",
+      "bytes": 91007
+    },
+    {
+      "path": "_stage-amz-control/design-choices-20261004/product-v2-ui-contract.md",
+      "generation": "design-choices-20261004",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "143611c1c6881dcdd8455bee7cd52622b90b804e",
+      "sha256": "f38c6e76581580770eb40ea1416f23552c2ddd51ee196581018ef29d403bb0a0",
+      "bytes": 36217
+    },
+    {
+      "path": "_stage-amz-control/design-choices-20261004/state.md",
+      "generation": "design-choices-20261004",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "5c9c5952e6bd04ebbfeddf39218c528ea3649c3b",
+      "sha256": "41f52fd6cc7427d9093e452e935433f0560697588406e547311afc6eeb64b37f",
+      "bytes": 18487
+    },
+    {
+      "path": "_stage-amz-control/design-convergence-20261004/product-v2-refactor-plan.md",
+      "generation": "design-convergence-20261004",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "da8cc470e7566d950127c8649e86f96468486f9c",
+      "sha256": "58144696e01aace5aeb4c223ec44442a35c7eb58e0c870ad0ed2ddad0d00b15a",
+      "bytes": 87634
+    },
+    {
+      "path": "_stage-amz-control/design-convergence-20261004/product-v2-ui-contract.md",
+      "generation": "design-convergence-20261004",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "9df88ae78d081ebe1e77a76f4dcf42ef2857b3da",
+      "sha256": "6b6671e3543286a750dbaeb37984d47c33b2b7fbdd3a254b2b740af1d5545d09",
+      "bytes": 24515
+    },
+    {
+      "path": "_stage-amz-control/design-convergence-20261004/state.md",
+      "generation": "design-convergence-20261004",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "551e8294a5dc34ec046163e11ada6d91c728bffd",
+      "sha256": "241cc6c829f6b2f58d0a428d60e70e13261a180ec5b6611dffd558d9471e6926",
+      "bytes": 17375
+    },
+    {
+      "path": "_stage-amz-control/development-cutover-20261001-143954/docs/product-v2-project-context.md",
+      "generation": "development-cutover-20261001-143954",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "652ef37ad1c62b8ac18277926a50952a91a6143d",
+      "sha256": "6dd71a27a3c181f1b4405dae18350f461a98a38273c91507c7a6926e91652738",
+      "bytes": 31148
+    },
+    {
+      "path": "_stage-amz-control/development-cutover-20261001-143954/docs/product-v2-refactor-plan.md",
+      "generation": "development-cutover-20261001-143954",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "706d3f4dc88f0f92dce59eb2163daf2328f5abbc",
+      "sha256": "642236956440b70e4fa1f08a2b594d5bb4ee2ccaf468d26e257dcf843c861071",
+      "bytes": 50962
+    },
+    {
+      "path": "_stage-amz-control/development-preparation-20261004T053317Z/AGENTS.md",
+      "generation": "development-preparation-20261004T053317Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "6df75cdbec9273510920963ff07b11fb86021ab1",
+      "sha256": "ecce9403dd75707c513d4b13cd52a7995ed331e670e89c217c61f07439875222",
+      "bytes": 12216
+    },
+    {
+      "path": "_stage-amz-control/development-preparation-20261004T053317Z/_working/amz-listing-kit-product-v2/state.md",
+      "generation": "development-preparation-20261004T053317Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "57074593e988cc4559e7392babdbb5c026f08687",
+      "sha256": "036e73bdaaf3866e75ddd55ca990dd2fa1f98620dab44d808d9ef0eabc19b180",
+      "bytes": 20048
+    },
+    {
+      "path": "_stage-amz-control/development-preparation-20261004T053317Z/docs/INDEX.md",
+      "generation": "development-preparation-20261004T053317Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "a8a391fa6e006d247d6e2bffee2c0c327b170e25",
+      "sha256": "d0bd8e4de532a7da97f6f7598e60b0a7818703820da54cfdc7c64c93ab3e335e",
+      "bytes": 21154
+    },
+    {
+      "path": "_stage-amz-control/development-preparation-20261004T053317Z/docs/product-v2-project-context.md",
+      "generation": "development-preparation-20261004T053317Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "ab16149db45fff2184cafdc22d1559284618ea0c",
+      "sha256": "e793f0c8730b25d4db32edb0355e00636430a392c189462e04457668c133f77a",
+      "bytes": 40184
+    },
+    {
+      "path": "_stage-amz-control/development-preparation-20261004T053317Z/docs/product-v2-refactor-plan.md",
+      "generation": "development-preparation-20261004T053317Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "535e6b89c5a5199ebe3f091ec9d93a132be6bb5c",
+      "sha256": "68b26a72473d3287e848137341b4a24ab6e3a0efdf86e80fbb698de1cf82e8da",
+      "bytes": 135765
+    },
+    {
+      "path": "_stage-amz-control/development-preparation-20261004T053317Z/docs/product-v2-ui-contract.md",
+      "generation": "development-preparation-20261004T053317Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "955cac0c15fd00f476222dc71106abe61a250dbd",
+      "sha256": "3b47ec3c5c7355c158c2e4ad7713370d3ef09759fe98f655b0533bb2232f7411",
+      "bytes": 39939
+    },
+    {
+      "path": "_stage-amz-control/docker-cicd-20260929-231804/AGENTS.md",
+      "generation": "docker-cicd-20260929-231804",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "c1ec3a4cb253fd60cc764d642d23961d9f16cd53",
+      "sha256": "e1efa3241ad8740b5e4d9773b4aeaf3cd573215d17651d59c531434d22e63847",
+      "bytes": 10120
+    },
+    {
+      "path": "_stage-amz-control/docker-cicd-20260929-231804/docs/INDEX.md",
+      "generation": "docker-cicd-20260929-231804",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "84c8c26df79da50f0192f65713f624f25a8e2472",
+      "sha256": "612b0c048d18b84efe79d88ff2fd82ec90ed8a4708e4d38b46aa86cce0d070fd",
+      "bytes": 18399
+    },
+    {
+      "path": "_stage-amz-control/docker-cicd-20260929-231804/docs/product-v2-goal-and-implementation-plan.md",
+      "generation": "docker-cicd-20260929-231804",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "a1c60540bfef9b6a021acc366b7d01aa604cd722",
+      "sha256": "06c05e70ced9f0281bb2688ce15dfe8e01b317500362a6ed4e6eb4ee63175d1f",
+      "bytes": 37743
+    },
+    {
+      "path": "_stage-amz-control/docker-cicd-20260929-231804/docs/product-v2-project-context.md",
+      "generation": "docker-cicd-20260929-231804",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "9ccf0895a7dab140740be5d96a7e018e10a7c064",
+      "sha256": "5007ed9a4302b5219ae2dfc759e261b8e959b7c184e3a75fda44a051d6cf21d9",
+      "bytes": 15312
+    },
+    {
+      "path": "_stage-amz-control/final-delivery-start-20261007T145602Z/AGENTS.md",
+      "generation": "final-delivery-start-20261007T145602Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "b5527e74e93c34ebc670dac07966264a3b09066c",
+      "sha256": "20ea848c17a6d40fa8d03c93be6d56d58607b8e9a4fe96a4ae157d9da9823682",
+      "bytes": 16056
+    },
+    {
+      "path": "_stage-amz-control/final-delivery-start-20261007T145602Z/README.md",
+      "generation": "final-delivery-start-20261007T145602Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "52828be1354617ea3634d68f85786f3fb5120fab",
+      "sha256": "bb53f79df69b093e05e4a7ecad92f7aa13bc5532a124803e35599dd9e59dbfe7",
+      "bytes": 21161
+    },
+    {
+      "path": "_stage-amz-control/final-delivery-start-20261007T145602Z/_working/amz-listing-kit-product-v2/state.md",
+      "generation": "final-delivery-start-20261007T145602Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "0d486843ccdbb072e0d6cb9282a768f06148b320",
+      "sha256": "07fd4a839688584268e868509dbeba49d7159318fae06e56d4a01cee80d8b3d6",
+      "bytes": 45785
+    },
+    {
+      "path": "_stage-amz-control/final-delivery-start-20261007T145602Z/docs/INDEX.md",
+      "generation": "final-delivery-start-20261007T145602Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "b3d2e11445e59a49924818912f303166061101cd",
+      "sha256": "85eb0fed4d71ac9c301b26469afa242aa6a8b54324d43c1828a792f78502280d",
+      "bytes": 22897
+    },
+    {
+      "path": "_stage-amz-control/final-delivery-start-20261007T145602Z/docs/product-v2-project-context.md",
+      "generation": "final-delivery-start-20261007T145602Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "b6b9b18200b727bf31743cd2f6c897aa49041c5a",
+      "sha256": "8bd54dd57d77b16013a8a8f7054a839a8f58278886dabd927b844047da0d36ad",
+      "bytes": 42811
+    },
+    {
+      "path": "_stage-amz-control/final-delivery-start-20261007T145602Z/docs/product-v2-refactor-design.md",
+      "generation": "final-delivery-start-20261007T145602Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "b2f2ad62af343cc1e6bc3204d61717d202031ef2",
+      "sha256": "e5764ae95cc9d0136b9118fb00d34b611e9080c4a2f3f8f9990f0bf5e352a4df",
+      "bytes": 86655
+    },
+    {
+      "path": "_stage-amz-control/final-delivery-start-20261007T145602Z/docs/product-v2-refactor-plan.md",
+      "generation": "final-delivery-start-20261007T145602Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "8bb849ea65d99b8af69a2e73e392f685d909d876",
+      "sha256": "c64bda9e7a26e9e66de4e7d9368e2b699ca1f17a0729fd9b0f31e43700d8ac8c",
+      "bytes": 164927
+    },
+    {
+      "path": "_stage-amz-control/final-delivery-start-20261007T145602Z/evals/probes/prompt_enhance/meta_compiler_v1.md",
+      "generation": "final-delivery-start-20261007T145602Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "5ac32a6055cf493c9396a8b26bc1509296d020ce",
+      "sha256": "a602f23b0c123d3e6e901614ab79b21eb86af4002898748fc24848c8d5bb535f",
+      "bytes": 10334
+    },
+    {
+      "path": "_stage-amz-control/formal-development-20261005/state-before-vision-integration.md",
+      "generation": "formal-development-20261005",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "f60ef2173d9007c979e32c5962d037c7a25c728c",
+      "sha256": "813cd9a4292070145eb36e359c797e9b93c0b471ba0e929a668693563a453e0b",
+      "bytes": 22623
+    },
+    {
+      "path": "_stage-amz-control/formal-start-20261005T024433Z/AGENTS.md",
+      "generation": "formal-start-20261005T024433Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "42a644b787a82e4ebc98961971d77af75c792d27",
+      "sha256": "286f7e1593895faa0be09fa7760b50240c0a36635efd72a7d315abf6781598cd",
+      "bytes": 13211
+    },
+    {
+      "path": "_stage-amz-control/formal-start-20261005T024433Z/README.md",
+      "generation": "formal-start-20261005T024433Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "1a111a8667bed39fb0220f6737b7bdb3b306db28",
+      "sha256": "144480ee90da6b10547aad64acb2db94c9b891a9d8554ee8527bd5087da30e0e",
+      "bytes": 20109
+    },
+    {
+      "path": "_stage-amz-control/formal-start-20261005T024433Z/_working/amz-listing-kit-product-v2/state.md",
+      "generation": "formal-start-20261005T024433Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "74c8c9cae30662555d2f0e7bc7452c48a1548172",
+      "sha256": "da80f0e66639f638662c6c619d7972168851fda57b283caef8caff525a7a53fe",
+      "bytes": 21208
+    },
+    {
+      "path": "_stage-amz-control/formal-start-20261005T024433Z/docs/INDEX.md",
+      "generation": "formal-start-20261005T024433Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "30cd1989babd3ce65f00e0e9d3cbb22e15b3aace",
+      "sha256": "88ab20a0e0aba1221bd06650c8b5b09e0326d94fb6d44ebbfca226714559c81c",
+      "bytes": 21388
+    },
+    {
+      "path": "_stage-amz-control/formal-start-20261005T024433Z/docs/product-v2-project-context.md",
+      "generation": "formal-start-20261005T024433Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "258672332d2bd9c737bd93a6eea4e056aaa2897a",
+      "sha256": "d3b77d3fdd7368fb90f35d8a11d6c376de253e2709918362900f6fbe6da5e102",
+      "bytes": 40341
+    },
+    {
+      "path": "_stage-amz-control/formal-start-20261005T024433Z/docs/product-v2-refactor-plan.md",
+      "generation": "formal-start-20261005T024433Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "5b4d77cb076d60b3e793806429446b489f8b5c40",
+      "sha256": "efe2d0d92d848434af55f7d6c68e617b23e4291b45da618bd0a1ac82825b6c23",
+      "bytes": 146458
+    },
+    {
+      "path": "_stage-amz-control/formal-start-20261005T024433Z/docs/product-v2-ui-contract.md",
+      "generation": "formal-start-20261005T024433Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "1594ae67e72e11d91ddf1ba4c8bdae9ed27ff29c",
+      "sha256": "1582b2d0c5e00da28f4dd7ac0c3d604ba654eb56275dce335b2aaf09ff447eb9",
+      "bytes": 40528
+    },
+    {
+      "path": "_stage-amz-control/frontend-tools-20261002-20261002-025220820/AGENTS.md",
+      "generation": "frontend-tools-20261002-20261002-025220820",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "406af38536d993f7307503ddb779eba38f17f612",
+      "sha256": "291aca00e5d8d46ebc0dbcc868e9dace27e654cea41ae0da4a8edcbd3ccbb6ab",
+      "bytes": 11909
+    },
+    {
+      "path": "_stage-amz-control/frontend-tools-20261002-20261002-025220820/README.md",
+      "generation": "frontend-tools-20261002-20261002-025220820",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "1110228985c191d1bbc198f675c36d92a2a9cf23",
+      "sha256": "f7f77716c42e1577e3156feaf4009daa4c9242802ed8193527a1142362c5d2b8",
+      "bytes": 18485
+    },
+    {
+      "path": "_stage-amz-control/frontend-tools-20261002-20261002-025220820/docs/product-v2-project-context.md",
+      "generation": "frontend-tools-20261002-20261002-025220820",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "f8524701a3b85ecf5563b867a8153d2e30bb9218",
+      "sha256": "08283a4ddc1a015c3bc419d53da5fbbf43bad3a94a2588a815352ddb81d4e127",
+      "bytes": 34312
+    },
+    {
+      "path": "_stage-amz-control/frontend-tools-20261002-20261002-025220820/docs/product-v2-refactor-plan.md",
+      "generation": "frontend-tools-20261002-20261002-025220820",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "137fdd0404c6dfd90a8b574e03ed96b35cedfc39",
+      "sha256": "a1c94bdf17dc2272bd3635940bd0aaf6a4b7a55cd4eea528fc193fd2168be41e",
+      "bytes": 54670
+    },
+    {
+      "path": "_stage-amz-control/goal-rebind-20261002-20261002-023013139/AGENTS.md",
+      "generation": "goal-rebind-20261002-20261002-023013139",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "406af38536d993f7307503ddb779eba38f17f612",
+      "sha256": "291aca00e5d8d46ebc0dbcc868e9dace27e654cea41ae0da4a8edcbd3ccbb6ab",
+      "bytes": 11909
+    },
+    {
+      "path": "_stage-amz-control/goal-rebind-20261002-20261002-023013139/README.md",
+      "generation": "goal-rebind-20261002-20261002-023013139",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "1694f3a5adea27f08d7bbaa8317c3a074d8b4bae",
+      "sha256": "767581637d1f46c81d2ffc5c77195890df1e18d719de05e6dc3b07c2951341a1",
+      "bytes": 18123
+    },
+    {
+      "path": "_stage-amz-control/goal-rebind-20261002-20261002-023013139/docs/INDEX.md",
+      "generation": "goal-rebind-20261002-20261002-023013139",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "907970ade33cf6d06bfbfb134ef36f07e23e9d1b",
+      "sha256": "cc4ac48d48af74f52105c8ece8aad559a3eabcd64d90e627801d6e74fbd3b70c",
+      "bytes": 20801
+    },
+    {
+      "path": "_stage-amz-control/goal-rebind-20261002-20261002-023013139/docs/product-v2-project-context.md",
+      "generation": "goal-rebind-20261002-20261002-023013139",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "8f644a694c7f32cbe1cf6ca5318fc9d9c13e00f5",
+      "sha256": "f69d533321c6edbe9d64e37d837e3a316c70833efbd6d9dfb1445674471dd1cb",
+      "bytes": 34500
+    },
+    {
+      "path": "_stage-amz-control/goal-rebind-20261002-20261002-023013139/docs/product-v2-refactor-plan.md",
+      "generation": "goal-rebind-20261002-20261002-023013139",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "6cee725f1e393df85ce26b3e19f5818cb3d69d1c",
+      "sha256": "e1518204b207553778b0aa0d80a6685dd5f55c7f29c12aa87ebbe258cbdae678",
+      "bytes": 53945
+    },
+    {
+      "path": "_stage-amz-control/goal-rebind-20261002-20261002-023013139/docs/product-v2-ui-contract.md",
+      "generation": "goal-rebind-20261002-20261002-023013139",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "9df88ae78d081ebe1e77a76f4dcf42ef2857b3da",
+      "sha256": "6b6671e3543286a750dbaeb37984d47c33b2b7fbdd3a254b2b740af1d5545d09",
+      "bytes": 24515
+    },
+    {
+      "path": "_stage-amz-control/goal-resume-20261001-142140/state.md",
+      "generation": "goal-resume-20261001-142140",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "f41368d2b4766589e19504e35fcee8fe842cfe72",
+      "sha256": "e83fafacf1edefe86735dee20d1904f83964fae6d338fd2c9f7fb131eb3e8466",
+      "bytes": 53896
+    },
+    {
+      "path": "_stage-amz-control/goal-session-unblock-20261001T121249Z/files/AGENTS.md",
+      "generation": "goal-session-unblock-20261001T121249Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "313e291c5142438557ef07b38d8d3d7ff2674186",
+      "sha256": "5931f0789ad7e6f9037e85ae2f5ad16c94768dae74069b11703bd6fbf1fefee7",
+      "bytes": 11652
+    },
+    {
+      "path": "_stage-amz-control/goal-session-unblock-20261001T121249Z/files/README.md",
+      "generation": "goal-session-unblock-20261001T121249Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "1694f3a5adea27f08d7bbaa8317c3a074d8b4bae",
+      "sha256": "767581637d1f46c81d2ffc5c77195890df1e18d719de05e6dc3b07c2951341a1",
+      "bytes": 18123
+    },
+    {
+      "path": "_stage-amz-control/goal-session-unblock-20261001T121249Z/files/docs/INDEX.md",
+      "generation": "goal-session-unblock-20261001T121249Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "4dd8e4258c32392789b3727809ef63c050243a9e",
+      "sha256": "89c160be2b540a8a06ccac3ddcee9a067043103b9c389797ad0e7e9daf0aa3a6",
+      "bytes": 20481
+    },
+    {
+      "path": "_stage-amz-control/goal-session-unblock-20261001T121249Z/files/docs/product-v2-project-context.md",
+      "generation": "goal-session-unblock-20261001T121249Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "0dd872829548e7d38bdad8201dead814bd657a0b",
+      "sha256": "8a2c8f1e519fccf69d0348cdaf0a9e38922864288f32c36b02363c812fcc1b85",
+      "bytes": 30736
+    },
+    {
+      "path": "_stage-amz-control/goal-session-unblock-20261001T121249Z/files/docs/product-v2-refactor-plan.md",
+      "generation": "goal-session-unblock-20261001T121249Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "eb800340a57856f31bc9c5129f44aff876594584",
+      "sha256": "0cee3290196ac8869a14d1c215a1e646eba9f49c52d56b5e6e3023d9d925f591",
+      "bytes": 48859
+    },
+    {
+      "path": "_stage-amz-control/goal-start-blocked-20261005T023847Z/_working/amz-listing-kit-product-v2/state.md",
+      "generation": "goal-start-blocked-20261005T023847Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "66fd161af2eb72b13f8e9a97e6d500b4e1e2a3dd",
+      "sha256": "5aa7dc7f53a083333ffef44c256d9e8972ac17b0894c526f0bfed614eb49301b",
+      "bytes": 20773
+    },
+    {
+      "path": "_stage-amz-control/goal-start-blocked-20261005T023847Z/docs/product-v2-refactor-plan.md",
+      "generation": "goal-start-blocked-20261005T023847Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "5b4d77cb076d60b3e793806429446b489f8b5c40",
+      "sha256": "efe2d0d92d848434af55f7d6c68e617b23e4291b45da618bd0a1ac82825b6c23",
+      "bytes": 146458
+    },
+    {
+      "path": "_stage-amz-control/handoff-hardening-20261018T132906Z/issue-10-after.md",
+      "generation": "handoff-hardening-20261018T132906Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "d30233eb8d0ced171341c16c7e173541aec72393",
+      "sha256": "3669a3372782ebd73bed6d98611f2fff16384bec042984d4a513190550bfca96",
+      "bytes": 11931
+    },
+    {
+      "path": "_stage-amz-control/handoff-hardening-20261018T132906Z/issue-7-after.md",
+      "generation": "handoff-hardening-20261018T132906Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "0d026ef1c30e06ba07d2ba00ca7c803b7672c1db",
+      "sha256": "cb2b340c67b6e8834cf99b31157ad400c4fe3732a6592efd5c112a6ef1b6edef",
+      "bytes": 10065
+    },
+    {
+      "path": "_stage-amz-control/handoff-hardening-20261018T132906Z/issue-9-after.md",
+      "generation": "handoff-hardening-20261018T132906Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "3358783fffda2f315c538949d02fc73bf345bb8b",
+      "sha256": "d9572f410dbc078a5f51ae3593560591323d5cc69ef3cb075dfa82577e10df74",
+      "bytes": 10292
+    },
+    {
+      "path": "_stage-amz-control/implementation-batches-20261004/product-v2-refactor-plan.md",
+      "generation": "implementation-batches-20261004",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "509d9d4ccaea5764c5d463522320c972ac185c73",
+      "sha256": "e3f60af0c88335914b3b73aa86578b587a047a2fca9d5cd1bcbf6a67a198ff19",
+      "bytes": 122158
+    },
+    {
+      "path": "_stage-amz-control/implementation-batches-20261004/state.md",
+      "generation": "implementation-batches-20261004",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "33009aaf475990af697e5cabbf00287f4ae1626e",
+      "sha256": "1c4ae33d983be9a21bc61d2c1d61f85b4c3c3bb25bbd904e26e15cb9fd157c9f",
+      "bytes": 19870
+    },
+    {
+      "path": "_stage-amz-control/pre-goal-ui-rebaseline-20260930-201513/AGENTS.md",
+      "generation": "pre-goal-ui-rebaseline-20260930-201513",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "418bb5bfa2359e51efad2102ba8d57bc506801b3",
+      "sha256": "9b98a3d4d7c6d1afbad4ca264a9d4f49d1ab1ab16974010327a6b3f57b3fb738",
+      "bytes": 10399
+    },
+    {
+      "path": "_stage-amz-control/pre-goal-ui-rebaseline-20260930-201513/README.md",
+      "generation": "pre-goal-ui-rebaseline-20260930-201513",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "5347403cd2e48af06b0542727142867f231c06e9",
+      "sha256": "ce32c184ced364623c05038265a15bc6fabaace6d5757832199f417b8eb2a31f",
+      "bytes": 15169
+    },
+    {
+      "path": "_stage-amz-control/pre-goal-ui-rebaseline-20260930-201513/_working/amz-listing-kit-product-v2/state.md",
+      "generation": "pre-goal-ui-rebaseline-20260930-201513",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "a177a17505fdca458a55f12a944c8bb249fe1d79",
+      "sha256": "21aecf2ecce28ea7a958001f5c3f536b8296cb44d9595d2dc2e38d67738937d0",
+      "bytes": 28221
+    },
+    {
+      "path": "_stage-amz-control/pre-goal-ui-rebaseline-20260930-201513/docs/INDEX.md",
+      "generation": "pre-goal-ui-rebaseline-20260930-201513",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "97544802235fcd0a8a5246b45d642daca4388684",
+      "sha256": "3bdeadf1315f5f6465f9fb6c3d1e4317bbeffb2a8d41cfc47c1e7a17b4631781",
+      "bytes": 18899
+    },
+    {
+      "path": "_stage-amz-control/pre-goal-ui-rebaseline-20260930-201513/docs/product-v2-goal-and-implementation-plan.md",
+      "generation": "pre-goal-ui-rebaseline-20260930-201513",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "1d137a93b90ad1316c2cfe85ba72dd090317ad4c",
+      "sha256": "68ec3a4f804073d0e544616eb530ba2615e69b5a280f7274a8c2f919cd18aecf",
+      "bytes": 118734
+    },
+    {
+      "path": "_stage-amz-control/pre-goal-ui-rebaseline-20260930-201513/docs/product-v2-project-context.md",
+      "generation": "pre-goal-ui-rebaseline-20260930-201513",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "c0753d0c3090cf42bcd4d7d7b555dc201e4f62fb",
+      "sha256": "e9a2ee17eb9c38a3482a7b6819187814bedb399046f31ec5e31904b84e40694b",
+      "bytes": 25106
+    },
+    {
+      "path": "_stage-amz-control/pre-goal-v2.6-20260929-1040/INDEX.md",
+      "generation": "pre-goal-v2.6-20260929-1040",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "d5c303052db0a161ea594ae2ee857fb0a1aa2372",
+      "sha256": "fc409f4673f4f69bf4879de752bc83ecc2b7bca9cfa84434617ff6f7f8e4b9a8",
+      "bytes": 12672
+    },
+    {
+      "path": "_stage-amz-control/pre-goal-v2.6-20260929-1040/product-demo-goal-and-implementation-plan.md",
+      "generation": "pre-goal-v2.6-20260929-1040",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "df05f2146030660f9f106d2e1355999130d601cc",
+      "sha256": "bad13c4016c1c067c0608526b1d4e2ad9ffbe07c13c7befbb9e51132f5c10cb4",
+      "bytes": 74301
+    },
+    {
+      "path": "_stage-amz-control/product-v2-plan-20260928/README.md",
+      "generation": "product-v2-plan-20260928",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "7d2c5b01ca37dbe539863f967f55de679373257e",
+      "sha256": "baf35865697cef8612fff3791d312c9ec5281004b46cbf53d3fb347eecb4e167",
+      "bytes": 58917
+    },
+    {
+      "path": "_stage-amz-control/product-v2-plan-20260928/docs__INDEX.md",
+      "generation": "product-v2-plan-20260928",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "53405738632fd074a2658b34afd41e1d4ff12fb2",
+      "sha256": "d4156c5e052c6ba33faac162f8c5b33714e4e42bedfdffa1df10c608f28aecce",
+      "bytes": 12538
+    },
+    {
+      "path": "_stage-amz-control/product-v2-plan-20260928/docs__product-demo-goal-and-implementation-plan.md",
+      "generation": "product-v2-plan-20260928",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "44f70a46d6983b6ed9f2f38f772209ea9e33f3c5",
+      "sha256": "6418b537315095aa0d159b30b0e05bc6ebe94017ad9169758f46907fe9b87d39",
+      "bytes": 175177
+    },
+    {
+      "path": "_stage-amz-control/r22-freeze-20261002/context.before.md",
+      "generation": "r22-freeze-20261002",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "db0c2ebeb0f893370fa97f47c608511df203fed8",
+      "sha256": "fd1f6baba2ec840c480cbe8c223492204e73244631759e27c85f706f58947494",
+      "bytes": 33155
+    },
+    {
+      "path": "_stage-amz-control/r22-freeze-20261002/ui-contract.before.md",
+      "generation": "r22-freeze-20261002",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "9f8c6e80d77b3bf5834cdca8ec2f7797a6ab16ab",
+      "sha256": "a2d26387136ecaf261dc4f02b0eb24117ec4cfaab2abc447c918ab65966fa800",
+      "bytes": 21696
+    },
+    {
+      "path": "_stage-amz-control/r44-close-20261005/state-after.md",
+      "generation": "r44-close-20261005",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "b4fcfce33feb5c6b0f19d2c7c22c954aa3b90e27",
+      "sha256": "a8ac74f76a39bb6d1a74cfbe24bbfb55a84c4d680a9540d168ad8a15b836d785",
+      "bytes": 21662
+    },
+    {
+      "path": "_stage-amz-control/r44-close-20261005/state-before.md",
+      "generation": "r44-close-20261005",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "80d46933d872b80d07c60a02d90622b72c2ba70e",
+      "sha256": "99dbcdd1dbf742fa61013b8059c6bbdb2d136e0c2a8364c5afddd33bf5bf647d",
+      "bytes": 21426
+    },
+    {
+      "path": "_stage-amz-control/r52-helper-fix-20261003/state.md",
+      "generation": "r52-helper-fix-20261003",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "35302933b7e7b23614ae52115afefaf20ffae06a",
+      "sha256": "dd4e6c47e43c4636d03c812fff03b64f2a6a1cd4e6b46098a5b6b0a38ecb6825",
+      "bytes": 12702
+    },
+    {
+      "path": "_stage-amz-control/r53-profile-cutover-20261003/state.md",
+      "generation": "r53-profile-cutover-20261003",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "3ed20ffab2ba2708b1bc05cc283aa143fe43bed9",
+      "sha256": "937fe3b74a900c09fb81dd7c492a8070e89b0a9214717c750ca557dccba5bcd5",
+      "bytes": 12924
+    },
+    {
+      "path": "_stage-amz-control/r74-closeout-20261003/README.md",
+      "generation": "r74-closeout-20261003",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "e0210742420e1c8a4ab4c57c6be793b991192f39",
+      "sha256": "a06d4dbd238e79ff66b0d7140c6c36f331f312a7b3fe0f578d74266a55e3488d",
+      "bytes": 19532
+    },
+    {
+      "path": "_stage-amz-control/r74-closeout-20261003/product-v2-project-context.md",
+      "generation": "r74-closeout-20261003",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "26271937075975d391abab58c8f985513d7f1d94",
+      "sha256": "7f975a290cc983b28cabec2ef11a07eb26d54384caca1fb1aec42937a240c01d",
+      "bytes": 36320
+    },
+    {
+      "path": "_stage-amz-control/r74-closeout-20261003/state.md",
+      "generation": "r74-closeout-20261003",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "c3cf0f597041a1b12a1ea2851102982b3f5d1dcf",
+      "sha256": "c41c4224790392c61538ab9e903833396cb01267cf6b9f58a79deb97934f7f20",
+      "bytes": 17079
+    },
+    {
+      "path": "_stage-amz-control/r74-closeout-sync-20261003-154629/AFTER-README.md",
+      "generation": "r74-closeout-sync-20261003-154629",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "1a111a8667bed39fb0220f6737b7bdb3b306db28",
+      "sha256": "144480ee90da6b10547aad64acb2db94c9b891a9d8554ee8527bd5087da30e0e",
+      "bytes": 20109
+    },
+    {
+      "path": "_stage-amz-control/r74-closeout-sync-20261003-154629/AFTER-_working_amz-listing-kit-product-v2_state.md",
+      "generation": "r74-closeout-sync-20261003-154629",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "e5d571833956a6ac90747b3e8e02ec750928f727",
+      "sha256": "d46f836044862eb7df82952343af76f217eb7ee98937101e2fd508c122c6fbbc",
+      "bytes": 17375
+    },
+    {
+      "path": "_stage-amz-control/r74-closeout-sync-20261003-154629/AFTER-docs_product-v2-project-context.md",
+      "generation": "r74-closeout-sync-20261003-154629",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "dc2dea6af15a79a76a6b15a93f2dc565c672abe6",
+      "sha256": "8b3392eaaed0e577a6379594762406fd4df2cbfb17dac4680afca667211a9569",
+      "bytes": 36456
+    },
+    {
+      "path": "_stage-amz-control/r74-closeout-sync-20261003-154629/HEAD-README.md",
+      "generation": "r74-closeout-sync-20261003-154629",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "e0210742420e1c8a4ab4c57c6be793b991192f39",
+      "sha256": "a06d4dbd238e79ff66b0d7140c6c36f331f312a7b3fe0f578d74266a55e3488d",
+      "bytes": 19532
+    },
+    {
+      "path": "_stage-amz-control/r74-closeout-sync-20261003-154629/HEAD-_working_amz-listing-kit-product-v2_state.md",
+      "generation": "r74-closeout-sync-20261003-154629",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "4b80296cbeb1b46254fafbc73b37000a7e701a7f",
+      "sha256": "fb936f425a6e766cfba4fe687b5dfe518b7b13cb5a786e7eb0c79fbafe708fa7",
+      "bytes": 17476
+    },
+    {
+      "path": "_stage-amz-control/r74-closeout-sync-20261003-154629/HEAD-docs_product-v2-project-context.md",
+      "generation": "r74-closeout-sync-20261003-154629",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "26271937075975d391abab58c8f985513d7f1d94",
+      "sha256": "7f975a290cc983b28cabec2ef11a07eb26d54384caca1fb1aec42937a240c01d",
+      "bytes": 36320
+    },
+    {
+      "path": "_stage-amz-control/r75-integration-docs-20261005/AGENTS.md",
+      "generation": "r75-integration-docs-20261005",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "306446e411fb7df3a4002b0f414437675e939cb5",
+      "sha256": "5491c20f592d9c470c154e4d6a8b5152d895de9d64620b1f3223b788d1869eb7",
+      "bytes": 13203
+    },
+    {
+      "path": "_stage-amz-control/r75-integration-docs-20261005/README.md",
+      "generation": "r75-integration-docs-20261005",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "25fa2bafbbd922ddabd3fd4b419693efd831d733",
+      "sha256": "c695de6fb2370ec13a9e85867b19297c8ca1e67053224665baadefe490c7c651",
+      "bytes": 21593
+    },
+    {
+      "path": "_stage-amz-control/r75-integration-docs-20261005/product-v2-project-context.md",
+      "generation": "r75-integration-docs-20261005",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "dfd3cf20024c7e375dc9bcbf1bae2fd8a216099b",
+      "sha256": "b69f38a1b52b1132aafffb76bc9d4df512512f2e5133ca20a13290dcb744d12e",
+      "bytes": 42123
+    },
+    {
+      "path": "_stage-amz-control/r75-integration-docs-20261005/state.md",
+      "generation": "r75-integration-docs-20261005",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "f60ef2173d9007c979e32c5962d037c7a25c728c",
+      "sha256": "813cd9a4292070145eb36e359c797e9b93c0b471ba0e929a668693563a453e0b",
+      "bytes": 22623
+    },
+    {
+      "path": "_stage-amz-control/remote-docker-build-20260929-234211/AGENTS.md",
+      "generation": "remote-docker-build-20260929-234211",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "b3878a62f5a55ef4a6f4247371d2c47f18d490b5",
+      "sha256": "c545ec5237904de317f39a1d1724ff177cf922108b10e7af78d59ece6fd97e55",
+      "bytes": 10331
+    },
+    {
+      "path": "_stage-amz-control/remote-docker-build-20260929-234211/docs/product-v2-project-context.md",
+      "generation": "remote-docker-build-20260929-234211",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "660c5fd42dcbc61efd3db88ff8904129db4130c4",
+      "sha256": "b42a8d3c52ac91ba8329cf5a4fe37330266e9c7da0020cb102032dc410a05f35",
+      "bytes": 16567
+    },
+    {
+      "path": "_stage-amz-control/resume-audit-20261019/before/_working/amz-listing-kit-product-v2/state.md",
+      "generation": "resume-audit-20261019",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "dee1540f14f683806c7799e76f23f412293bc354",
+      "sha256": "2e50119a3e4a94f6eb0ee3a20f3f33498f8951712d9bcfad03b809119b59f5ea",
+      "bytes": 59536
+    },
+    {
+      "path": "_stage-amz-control/resume-audit-20261019/before/docs/product-v2-refactor-plan.md",
+      "generation": "resume-audit-20261019",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "7e9b4435d324da0e9d532c5b20cd860e7a700bb1",
+      "sha256": "5f508a6aede7bb645d0de96a18da5a410374156a4d577cd8d4063e3c50feb94d",
+      "bytes": 223389
+    },
+    {
+      "path": "_stage-amz-control/resume-audit-20261019/before/issue-9.md",
+      "generation": "resume-audit-20261019",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "cc0efb086868b33eb71562f2c0fe4e607dec5fa4",
+      "sha256": "922be386ed432800699bbd6ab42a1d848fb8b0c556040d002905e64f971ccfb3",
+      "bytes": 10291
+    },
+    {
+      "path": "_stage-amz-control/resume-audit-20261019/issue-9-body.md",
+      "generation": "resume-audit-20261019",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "e0313a31c14af8f4b1c2cf5557d85a6f117d423a",
+      "sha256": "38e9abaafe15e5660a3b9cda7fefd1fe12f781ee8d04274c7371f5d9efde6ac7",
+      "bytes": 10482
+    },
+    {
+      "path": "_stage-amz-control/sel003-report-20260929-2239/product-v2-project-context.md",
+      "generation": "sel003-report-20260929-2239",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "bcfe9d7b2dc55a20c648edfd6cf4a04fe25b4b8e",
+      "sha256": "61e315e1c0a4a34c6246b2cc60f579d85230d567a1ad223c50baa84f56b77f25",
+      "bytes": 15275
+    },
+    {
+      "path": "_stage-amz-control/sel009-depmig-sync-20260930-010414/AGENTS.md",
+      "generation": "sel009-depmig-sync-20260930-010414",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "5672886f6eef60e38aaaf59a5ed5aa6786d8bd4f",
+      "sha256": "4fbe083b9a0b11a6e452210ba8b4399f66a8241d19db695510f1e8bb0982e678",
+      "bytes": 10361
+    },
+    {
+      "path": "_stage-amz-control/sel009-depmig-sync-20260930-010414/docs/product-v2-goal-and-implementation-plan.md",
+      "generation": "sel009-depmig-sync-20260930-010414",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "c4e987d5651f1714a1b50e2a99b4fa87e91330da",
+      "sha256": "b0eb021f2a8994f70df514b39f1871db6ef4c024837ecfde9b2da4754736631a",
+      "bytes": 38138
+    },
+    {
+      "path": "_stage-amz-control/sel009-depmig-sync-20260930-010414/docs/product-v2-project-context.md",
+      "generation": "sel009-depmig-sync-20260930-010414",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "c268d2e374f73809c742b753015d681efcecf862",
+      "sha256": "4182d062502e3f60fb9e1dbc59b075d4f1a67a37a5cc540da6a57d588b21cca7",
+      "bytes": 20322
+    },
+    {
+      "path": "_stage-amz-control/setup-matt-pocock-skills-20261006T120734Z/AGENTS.md",
+      "generation": "setup-matt-pocock-skills-20261006T120734Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "1446992795060980a6e2584deb344ec39d261ef6",
+      "sha256": "0b270e001c1d1da72545ea93c9d98b63f72e27f4826770178b36629dfc62398f",
+      "bytes": 15517
+    },
+    {
+      "path": "_stage-amz-control/setup-matt-pocock-skills-20261006T120734Z/INDEX.md",
+      "generation": "setup-matt-pocock-skills-20261006T120734Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "c7576b5a2b8027bb6379730518901b0327a56b85",
+      "sha256": "36d7960570b1a8132cafb2c811da8d828ade6f0187d5cda8e8f18941a05f83d8",
+      "bytes": 22116
+    },
+    {
+      "path": "_stage-amz-control/spec-consolidation-20261004/INDEX.md",
+      "generation": "spec-consolidation-20261004",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "6893938df25e00f9979687ab064741a50664ec92",
+      "sha256": "0c0f07668718c42d662cd221fd3f09f0d123cc8fb42cbdd8219b1ad371572d88",
+      "bytes": 21104
+    },
+    {
+      "path": "_stage-amz-control/spec-consolidation-20261004/product-v2-project-context.md",
+      "generation": "spec-consolidation-20261004",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "dc2dea6af15a79a76a6b15a93f2dc565c672abe6",
+      "sha256": "8b3392eaaed0e577a6379594762406fd4df2cbfb17dac4680afca667211a9569",
+      "bytes": 36456
+    },
+    {
+      "path": "_stage-amz-control/spec-consolidation-20261004/product-v2-refactor-plan.md",
+      "generation": "spec-consolidation-20261004",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "c1531122e8bd5d96953097f71f8d67125553440d",
+      "sha256": "f62a7e8618c2f79170424a6a958d5040cb3e326f6dff356dc1950390d4c07c82",
+      "bytes": 91491
+    },
+    {
+      "path": "_stage-amz-control/spec-consolidation-20261004/product-v2-ui-contract.md",
+      "generation": "spec-consolidation-20261004",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "c69584e1f253bceb402afde047f12a6f479c7640",
+      "sha256": "4536027041793e6c86dc1b7ea3777a5f53ce69105738b5ee169efd29f8dcc1b4",
+      "bytes": 36408
+    },
+    {
+      "path": "_stage-amz-control/spec-consolidation-20261004/state.md",
+      "generation": "spec-consolidation-20261004",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "5c28eff6aa01acca1775972244c7ed76d7fdb6aa",
+      "sha256": "9c17fd46273183d7b5708de7efc87b52e62f1c6cd866ab00a7cffeacae419707",
+      "bytes": 18635
+    },
+    {
+      "path": "_stage-amz-control/standards-conformance-20260929-2209/INDEX.md",
+      "generation": "standards-conformance-20260929-2209",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "662df32f760840a8e6be71718a0961ba61399345",
+      "sha256": "7d68cbaabd1897cd58a44367dcb021d521cd3116b5ca2783011cfe5479e587d3",
+      "bytes": 17885
+    },
+    {
+      "path": "_stage-amz-control/standards-conformance-20260929-2209/product-v2-project-context.md",
+      "generation": "standards-conformance-20260929-2209",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "b27d98cb2248345f5330fa90e13c1a5c56eff506",
+      "sha256": "ea3184c1e90d4ffe70bc1435335204b5303085a2b2d65a2d02d01dc2ddc405ce",
+      "bytes": 15382
+    },
+    {
+      "path": "_stage-amz-control/ts-slice-20261005/README.md",
+      "generation": "ts-slice-20261005",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "4b33085a27db2a1c09c1b5958e6f4909ba9a98a4",
+      "sha256": "8cdc092feb65201ac6b657849c1dc90ee6b87db87ab4dc24328f9648014b3f98",
+      "bytes": 20347
+    },
+    {
+      "path": "_stage-amz-control/ts-slice-20261005/docs/product-v2-project-context.md",
+      "generation": "ts-slice-20261005",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "cf23d7cea9136f14ffbd745ce0fd795d745040fe",
+      "sha256": "9f280655700bf6ac75c180b4214ed85a72ff207e55de512b000843a9bd9086e8",
+      "bytes": 41009
+    },
+    {
+      "path": "_stage-amz-control/ts-task-20261005/_working/amz-listing-kit-product-v2-baseline/state.md",
+      "generation": "ts-task-20261005",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "dd9d4deef089a3e709969d670b98a5702a66f3b7",
+      "sha256": "47b3a6343725f16dd6513e6a2553dc88d2e3382651c90a52f2821c78d6077d37",
+      "bytes": 53808
+    },
+    {
+      "path": "_stage-amz-control/ts-task-20261005/_working/amz-listing-kit-product-v2/state.md",
+      "generation": "ts-task-20261005",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "e6d074d6a78cdea3ae4fa7dac2592e245d34ed9d",
+      "sha256": "566c8228513765e7f45143bcdf67df37add754f965c618d2516daf71da74ac48",
+      "bytes": 21374
+    },
+    {
+      "path": "_stage-amz-control/ts-task-20261005/docs/product-v2-project-context.md",
+      "generation": "ts-task-20261005",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "7e11f47e7b59399ff54202d3ea67ac8f6e062083",
+      "sha256": "5f4f7ef8b8e385abdb3be67261a89ae521efb1c1725fbdcb952a6549a64b0cbb",
+      "bytes": 40778
+    },
+    {
+      "path": "_stage-amz-control/ts-task-20261005/docs/product-v2-refactor-plan.md",
+      "generation": "ts-task-20261005",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "4d041cec834701f6e699d1d43c4a935313ed4ae8",
+      "sha256": "4f38b111a6930fde3a07b72b2669176fc81382c411a56a8c50bafcba6fdff783",
+      "bytes": 145324
+    },
+    {
+      "path": "_stage-amz-control/unattended-plan-20261003-before/docs/product-v2-refactor-plan.md",
+      "generation": "unattended-plan-20261003-before",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "d5f3a4a128917c03414d4ff9d06e87a2daf601fa",
+      "sha256": "045aea3c6e1a843290ac1e96dd2123120d9095bde19eb171bcd28be376f5e5a3",
+      "bytes": 57765
+    },
+    {
+      "path": "_stage-amz-control/unattended-trigger-20261003-trigger-before/docs/product-v2-refactor-plan.md",
+      "generation": "unattended-trigger-20261003-trigger-before",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "efd60c5c883d9f7e804eb4d54bb5205accf83564",
+      "sha256": "3d0cfbcf2a932890be6e53027d92cd1d6188636f081ff77866852311d8cb0877",
+      "bytes": 78502
+    },
+    {
+      "path": "_stage-amz-control/uv-langchain-selection-20260930-001349/AGENTS.md",
+      "generation": "uv-langchain-selection-20260930-001349",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "5672886f6eef60e38aaaf59a5ed5aa6786d8bd4f",
+      "sha256": "4fbe083b9a0b11a6e452210ba8b4399f66a8241d19db695510f1e8bb0982e678",
+      "bytes": 10361
+    },
+    {
+      "path": "_stage-amz-control/uv-langchain-selection-20260930-001349/docs/product-v2-project-context.md",
+      "generation": "uv-langchain-selection-20260930-001349",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "7f344e7560389b2a194c156cd5cbbdeb10046018",
+      "sha256": "02f1db6cf842698e55db0f89175cc53f52d45f6a02cdb25dde2794e7643c2076",
+      "bytes": 16690
+    },
+    {
+      "path": "_stage-amz-control/v2.5.4-before-20260930-163419/README.md",
+      "generation": "v2.5.4-before-20260930-163419",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "d2ec5c9c8e97f65cbe5ef58fabe6c09dfdd78584",
+      "sha256": "2a0348370b4c99a6a3258c60951b584f6340f9a59cf3109563d74126ebd5e0bc",
+      "bytes": 13506
+    },
+    {
+      "path": "_stage-amz-control/v2.5.4-before-20260930-163419/_working/amz-listing-kit-product-v2/state.md",
+      "generation": "v2.5.4-before-20260930-163419",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "c2e25a9f52ab24bb87200d9bc7a9fddbc9fc43b0",
+      "sha256": "cf5e184eae17d6cd236a41e21bf33ad6e98687f34eeace4ab9c6b413f4329da2",
+      "bytes": 25413
+    },
+    {
+      "path": "_stage-amz-control/v2.5.4-before-20260930-163419/docs/product-v2-goal-and-implementation-plan.md",
+      "generation": "v2.5.4-before-20260930-163419",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "6f18be5d31bbca420faaebdcfee47d9eaf140648",
+      "sha256": "6e565e9aebb088b87558c22f9a5bc5ca3628e53e6261d12c6a384a035c95a97c",
+      "bytes": 105749
+    },
+    {
+      "path": "_stage-amz-control/v2.5.4-before-20260930-163419/docs/product-v2-project-context.md",
+      "generation": "v2.5.4-before-20260930-163419",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "686238beafeda2d57d151d1a42f61f4de8f13620",
+      "sha256": "87b52f0222b2a2e6f4746c95296fe4a37b0ad74285e6b7d64c18351d4caef4c1",
+      "bytes": 24842
+    },
+    {
+      "path": "_stage-amz-control/v2.5.5-before-20260930-190446/README.md",
+      "generation": "v2.5.5-before-20260930-190446",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "5347403cd2e48af06b0542727142867f231c06e9",
+      "sha256": "ce32c184ced364623c05038265a15bc6fabaace6d5757832199f417b8eb2a31f",
+      "bytes": 15169
+    },
+    {
+      "path": "_stage-amz-control/v2.5.5-before-20260930-190446/_working/amz-listing-kit-product-v2/state.md",
+      "generation": "v2.5.5-before-20260930-190446",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "4d5e943973dfcd3d02933597c1aae36407252c4a",
+      "sha256": "a71fa2707b7ac5f6a78bcc45283ef4540ba8835d5f56e126096d87dfc2971681",
+      "bytes": 28222
+    },
+    {
+      "path": "_stage-amz-control/v2.5.5-before-20260930-190446/docs/product-v2-goal-and-implementation-plan.md",
+      "generation": "v2.5.5-before-20260930-190446",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "b0b470acb4fd8ddfff605222e31b4693cbc9e869",
+      "sha256": "279a4dc918305fdeb08c2b4850b7512d22491432053854ed8446090836967cff",
+      "bytes": 114652
+    },
+    {
+      "path": "_stage-amz-control/v2.5.5-before-20260930-190446/docs/product-v2-project-context.md",
+      "generation": "v2.5.5-before-20260930-190446",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "c0753d0c3090cf42bcd4d7d7b555dc201e4f62fb",
+      "sha256": "e9a2ee17eb9c38a3482a7b6819187814bedb399046f31ec5e31904b84e40694b",
+      "bytes": 25106
+    },
+    {
+      "path": "_stage-amz-control/v2.6.1-before-20260930-182137/README.md",
+      "generation": "v2.6.1-before-20260930-182137",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "95bd9072bb1610e2a3ad0881f2035a44b48dd140",
+      "sha256": "7b20bde237f4788c55df8c713e89523c6eb6a3f7e85002a92f26c6cda8bf841c",
+      "bytes": 14436
+    },
+    {
+      "path": "_stage-amz-control/v2.6.1-before-20260930-182137/_working/amz-listing-kit-product-v2/state.md",
+      "generation": "v2.6.1-before-20260930-182137",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "0dfb992558fd3e7b182d5403cf4fd71cd927c0aa",
+      "sha256": "62f61e7c90058ff91eeab3b554b37dc0c84507a303027f0c2bb511c93837f9be",
+      "bytes": 26718
+    },
+    {
+      "path": "_stage-amz-control/v2.6.1-before-20260930-182137/docs/product-v2-goal-and-implementation-plan.md",
+      "generation": "v2.6.1-before-20260930-182137",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "f3c0fb25fcefa9e6dd6a4d77f0386fa1f612be4d",
+      "sha256": "cf7165cb9587ad4bd84c16c376d9dcf5e49f541b9e78603381132a1f40afbef4",
+      "bytes": 111723
+    },
+    {
+      "path": "_stage-amz-control/v2.6.1-before-20260930-182137/docs/product-v2-project-context.md",
+      "generation": "v2.6.1-before-20260930-182137",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "ad67430ceebd9ed9b2dee750a561a13236790631",
+      "sha256": "342ad41050f885f5f17579c1887017704dc1e82dbf40044d21c003b4a15e6f9e",
+      "bytes": 24972
+    },
+    {
+      "path": "_stage-amz-control/v2.6.2-before-20260930-193339/README.md",
+      "generation": "v2.6.2-before-20260930-193339",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "5347403cd2e48af06b0542727142867f231c06e9",
+      "sha256": "ce32c184ced364623c05038265a15bc6fabaace6d5757832199f417b8eb2a31f",
+      "bytes": 15169
+    },
+    {
+      "path": "_stage-amz-control/v2.6.2-before-20260930-193339/_working/amz-listing-kit-product-v2/state.md",
+      "generation": "v2.6.2-before-20260930-193339",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "4d5e943973dfcd3d02933597c1aae36407252c4a",
+      "sha256": "a71fa2707b7ac5f6a78bcc45283ef4540ba8835d5f56e126096d87dfc2971681",
+      "bytes": 28222
+    },
+    {
+      "path": "_stage-amz-control/v2.6.2-before-20260930-193339/docs/INDEX.md",
+      "generation": "v2.6.2-before-20260930-193339",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "0fb223d78676924759e70f48d9ecabf501dffa59",
+      "sha256": "7f5a307424eb41aead4af0ac86d6f724ac30b698586fbae0d94f4068aa14c0d9",
+      "bytes": 18343
+    },
+    {
+      "path": "_stage-amz-control/v2.6.2-before-20260930-193339/docs/product-v2-goal-and-implementation-plan.md",
+      "generation": "v2.6.2-before-20260930-193339",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "b0b470acb4fd8ddfff605222e31b4693cbc9e869",
+      "sha256": "279a4dc918305fdeb08c2b4850b7512d22491432053854ed8446090836967cff",
+      "bytes": 114652
+    },
+    {
+      "path": "_stage-amz-control/v2.6.2-before-20260930-193339/docs/product-v2-project-context.md",
+      "generation": "v2.6.2-before-20260930-193339",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "c0753d0c3090cf42bcd4d7d7b555dc201e4f62fb",
+      "sha256": "e9a2ee17eb9c38a3482a7b6819187814bedb399046f31ec5e31904b84e40694b",
+      "bytes": 25106
+    },
+    {
+      "path": "_stage-amz-control/v2ui2-before-20260930-213855/README.md",
+      "generation": "v2ui2-before-20260930-213855",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "137119c12d9c9c1a31b8b47b102d0ddb3666010d",
+      "sha256": "7782366f54ad3c6cd7299a36db121cffc97c23b44dbb9512b43d1ae8e5d4fa71",
+      "bytes": 16232
+    },
+    {
+      "path": "_stage-amz-control/v2ui2-before-20260930-213855/_working/amz-listing-kit-product-v2/state.md",
+      "generation": "v2ui2-before-20260930-213855",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "a8b69ec716c85ce60dbc523c69ecfccb332369a3",
+      "sha256": "2bd5a8234524be259bc658fbf3204d786f2df80f17bc427e280b7cba33bb71b5",
+      "bytes": 29658
+    },
+    {
+      "path": "_stage-amz-control/v2ui2-before-20260930-213855/docs/INDEX.md",
+      "generation": "v2ui2-before-20260930-213855",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "97544802235fcd0a8a5246b45d642daca4388684",
+      "sha256": "3bdeadf1315f5f6465f9fb6c3d1e4317bbeffb2a8d41cfc47c1e7a17b4631781",
+      "bytes": 18899
+    },
+    {
+      "path": "_stage-amz-control/v2ui2-before-20260930-213855/docs/product-v2-goal-and-implementation-plan.md",
+      "generation": "v2ui2-before-20260930-213855",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "58c2b7ff51c463cece04319dd1861c14117ca471",
+      "sha256": "94112c1e88793574fc85732ca5139abeeeb24f5d5204522603a13793d9d89dc2",
+      "bytes": 130517
+    },
+    {
+      "path": "_stage-amz-control/v2ui2-before-20260930-213855/docs/product-v2-project-context.md",
+      "generation": "v2ui2-before-20260930-213855",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "8c3a0ee320ac6736cb029250eee27bca79fa7011",
+      "sha256": "63bc620ba84b77c9c73be7a084e973f020ff2039baf8ab46d78305bced7dd307",
+      "bytes": 27120
+    },
+    {
+      "path": "_stage-amz-control/verification-adjustment-20261020/reconcile-budget-handoff-state-orig.md",
+      "generation": "verification-adjustment-20261020",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "c0f0d0cca7bfd9b29dfe5b7e688cb308995a349d",
+      "sha256": "167475d6cc82190f12d9c0acb29c3d170c8f87db2756b62f95bb825af45b9580",
+      "bytes": 74917
+    },
+    {
+      "path": "_stage-amz-control/version-convergence-plan-20261007T135918Z/AGENTS.md",
+      "generation": "version-convergence-plan-20261007T135918Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "a8797a6232148c47035777afab5912fb5d35f533",
+      "sha256": "a819964f98e4a656e17c18391fd13ebc4731ad68abbe3c859a1e9614f49d6598",
+      "bytes": 16086
+    },
+    {
+      "path": "_stage-amz-control/version-convergence-plan-20261007T135918Z/README.md",
+      "generation": "version-convergence-plan-20261007T135918Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "99be56749768a324a20ed38b0fbb9d2a650a6d01",
+      "sha256": "474080726ce7b4be6e88fa248305d38818b66e85ca9531a4a611e531cd0aaa5d",
+      "bytes": 20625
+    },
+    {
+      "path": "_stage-amz-control/version-convergence-plan-20261007T135918Z/_working/amz-listing-kit-product-v2/state.md",
+      "generation": "version-convergence-plan-20261007T135918Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "c0894feff4ea47e60fab6eeef37c6824bf6b7c70",
+      "sha256": "e5f4c4cba16f7c07e5e9062ffb9bf77d231be9f16ecd5cede073da691409b53c",
+      "bytes": 43702
+    },
+    {
+      "path": "_stage-amz-control/version-convergence-plan-20261007T135918Z/docs/INDEX.md",
+      "generation": "version-convergence-plan-20261007T135918Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "f6a7e74b41814c2f98b9152e7e3f1bbce640442a",
+      "sha256": "521f7dc67d97916f6b3a72caef947b7e6e369c541db6496899045b21fe95d229",
+      "bytes": 22763
+    },
+    {
+      "path": "_stage-amz-control/version-convergence-plan-20261007T135918Z/docs/product-v2-project-context.md",
+      "generation": "version-convergence-plan-20261007T135918Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "7490ad77b11438c1696117ebf089def4fbfef912",
+      "sha256": "19b8b6487b71c0423b99b080164d53d1894375c5d8e58a262dd0950cd20dff54",
+      "bytes": 42393
+    },
+    {
+      "path": "_stage-amz-control/version-convergence-plan-20261007T135918Z/docs/product-v2-refactor-design.md",
+      "generation": "version-convergence-plan-20261007T135918Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "e78a24953e563a1bb951ed76d226b56c2bbd5998",
+      "sha256": "ad57b8e9b28536cdd0e60b6ae3cbcc1927761eadf4b879e687f6d6c602221005",
+      "bytes": 71139
+    },
+    {
+      "path": "_stage-amz-control/version-convergence-plan-20261007T135918Z/docs/product-v2-refactor-plan.md",
+      "generation": "version-convergence-plan-20261007T135918Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "9e45787c7e93995189d3cfe4cfa130b87715c113",
+      "sha256": "7e1bc063c5a56febde416b12ee3e010d05a324c0cf1c300838334a5b9662434d",
+      "bytes": 155583
+    },
+    {
+      "path": "_stage-amz-control/work-audit-20261001-103825/files/AGENTS.md",
+      "generation": "work-audit-20261001-103825",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "313e291c5142438557ef07b38d8d3d7ff2674186",
+      "sha256": "5931f0789ad7e6f9037e85ae2f5ad16c94768dae74069b11703bd6fbf1fefee7",
+      "bytes": 11652
+    },
+    {
+      "path": "_stage-amz-control/work-audit-20261001-103825/files/README.md",
+      "generation": "work-audit-20261001-103825",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "1694f3a5adea27f08d7bbaa8317c3a074d8b4bae",
+      "sha256": "767581637d1f46c81d2ffc5c77195890df1e18d719de05e6dc3b07c2951341a1",
+      "bytes": 18123
+    },
+    {
+      "path": "_stage-amz-control/work-audit-20261001-103825/files/_working/amz-listing-kit-product-v2-baseline/state.md",
+      "generation": "work-audit-20261001-103825",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "dd9d4deef089a3e709969d670b98a5702a66f3b7",
+      "sha256": "47b3a6343725f16dd6513e6a2553dc88d2e3382651c90a52f2821c78d6077d37",
+      "bytes": 53808
+    },
+    {
+      "path": "_stage-amz-control/work-audit-20261001-103825/files/docs/INDEX.md",
+      "generation": "work-audit-20261001-103825",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "4dd8e4258c32392789b3727809ef63c050243a9e",
+      "sha256": "89c160be2b540a8a06ccac3ddcee9a067043103b9c389797ad0e7e9daf0aa3a6",
+      "bytes": 20481
+    },
+    {
+      "path": "_stage-amz-control/work-audit-20261001-103825/files/docs/product-v2-goal-and-implementation-plan.md",
+      "generation": "work-audit-20261001-103825",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "f536f9bf115f036d46b7d143498ed9c9a0c99a7f",
+      "sha256": "d62b5fe1718eb17b6334b9c54f062606ec2541d0adbaa544feb7ad1d96b2e374",
+      "bytes": 175588
+    },
+    {
+      "path": "_stage-amz-control/work-audit-20261001-103825/files/docs/product-v2-project-context.md",
+      "generation": "work-audit-20261001-103825",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "0dd872829548e7d38bdad8201dead814bd657a0b",
+      "sha256": "8a2c8f1e519fccf69d0348cdaf0a9e38922864288f32c36b02363c812fcc1b85",
+      "bytes": 30736
+    },
+    {
+      "path": "_stage-amz-control/work-audit-20261001-103825/files/docs/product-v2-refactor-plan.md",
+      "generation": "work-audit-20261001-103825",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "eb800340a57856f31bc9c5129f44aff876594584",
+      "sha256": "0cee3290196ac8869a14d1c215a1e646eba9f49c52d56b5e6e3023d9d925f591",
+      "bytes": 48859
+    },
+    {
+      "path": "_stage-amz-control/work-audit-20261001-103825/files/docs/product-v2-ui-contract.md",
+      "generation": "work-audit-20261001-103825",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "e2d91b818312a07575c70f9f0d59944376ec6c60",
+      "sha256": "e9aa6a75bdfc72b8f036591f44f60b3d69cf5c819eb7684ab5101efb4ddef62f",
+      "bytes": 20395
+    },
+    {
+      "path": "_stage-amz-control/work-audit-20261001-103825/files/evals/product-v2/refactor/control-preparation-20261001.md",
+      "generation": "work-audit-20261001-103825",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "d737eb7e409793b473e0537fb171ba1a3a7252ec",
+      "sha256": "ad85280e7f55b2b46d583d59df7d413c309ec56e3e79e61bc3936f8864cb760f",
+      "bytes": 10076
+    },
+    {
+      "path": "_stage-amz-control/work-audit-20261003-2026-10-02T17-55-22-190Z/docs/product-v2-refactor-plan.md",
+      "generation": "work-audit-20261003-2026-10-02T17-55-22-190Z",
+      "reason": "Point-in-time control-round copy of a working document; content preserved in Git history at the retirement commit, so the oversized snapshot is retired from the current tree",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "ad8b77f9c8d47b00404e3d4729d026f03ea15ef0",
+      "sha256": "dbdbf61acb8a2c3f5eb6d2891d80d5ec971db9be83a79bac44d53185b3861355",
+      "bytes": 35077
+    },
+    {
+      "path": "evals/product-v2/v273-rehearsal-20261020-091407.md",
+      "generation": "Product V2 v2.7.3 内部预演（20261020）",
+      "reason": "历史内部预演；单个 fenced JSON 超过 10000 字节且无安全拆分点，按公开主线 Git 原件登记后退役，恢复路径见本登记。",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "be8d524798125f214a648d61332db10bf34303d7",
+      "sha256": "41a8caffdd369c87537b67e42c16be8aae2901ac8dd28e237a29a2b0c3050ba3",
+      "bytes": 22171
+    },
+    {
+      "path": "_stage-amz-control/ts-task-20261005/pre-ts-slice/product-v2-project-context.md.txt",
+      "generation": "2026-10-05 TypeScript 迁移前原文快照",
+      "reason": "历史计划或上下文的早期快照；现行正文已有明确权威，原件逐字节复制并可按提交恢复。扩展名虽为 .txt，内容仍是 Markdown 文档。",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "cf23d7cea9136f14ffbd745ce0fd795d745040fe",
+      "sha256": "9f280655700bf6ac75c180b4214ed85a72ff207e55de512b000843a9bd9086e8",
+      "bytes": 41009
+    },
+    {
+      "path": "_stage-amz-control/ts-task-20261005/pre-ts-slice/product-v2-refactor-plan.md.txt",
+      "generation": "2026-10-05 TypeScript 迁移前原文快照",
+      "reason": "历史计划或上下文的早期快照；现行正文已有明确权威，原件逐字节复制并可按提交恢复。扩展名虽为 .txt，内容仍是 Markdown 文档。",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "7228e006a0e5c5ad49b8e54ea493d30b855e00b5",
+      "sha256": "fe38c0da78a3ef7a6aeaa717ed85122e6e6df6f3a891b293826f19a59c71daa4",
+      "bytes": 148798
+    },
+    {
+      "path": "_stage-amz-control/copy-request-contract-20261019/refactor_resume.out",
+      "generation": "历史命令输出快照",
+      "reason": "旧恢复命令 JSON 回读包含超过上限的单行原始正文，当前路径无现行消费者；保留完整 Git 原件及隔离副本以备追溯。",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "443a557a07cf33f1b999a9df24279640d3aa16c0",
+      "sha256": "d8ad91904985da31f9f3fd99ff64c1b699ef123686d5b3c4830da12089061f4a",
+      "bytes": 35472
+    },
+    {
+      "path": "_stage-amz-control/batch18-promotion-20261019/final-guard-resume.out",
+      "generation": "历史命令输出快照",
+      "reason": "旧恢复命令 JSON 回读包含超过上限的单行原始正文，当前路径无现行消费者；保留完整 Git 原件及隔离副本以备追溯。",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "c65998c48bbfa8add6afc579fbfe31a295aa3242",
+      "sha256": "e89795f4279e1d485e5ae197a5bcd425f9c79aa6541249ff80bf1d1cfabb71f3",
+      "bytes": 36627
+    },
+    {
+      "path": "docs/product-v1-goal-and-implementation-plan.md",
+      "generation": "Product V1",
+      "reason": "被 `docs/product-demo-goal-and-implementation-plan.md` 取代；真实试点假设不再作为当前完成标准",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "aa53355af8e95081f992c11e55e84ada7f545106",
+      "sha256": "e80b13fcfda55997b2f562ca9e2cd7b79a37791ef0e940c7315187e79a7e878f",
+      "bytes": 63739
+    },
+    {
+      "path": "docs/drafts/requirements-analysis-2026-09-24.md",
+      "generation": "演示产品需求发现",
+      "reason": "结论已并入 `docs/product-demo-goal-and-implementation-plan.md`；保留面试证据、推导过程与未知项来源",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "d171e5e3e5f39e5cba22c32236a5eca5119678a7",
+      "sha256": "5d31995526b54525543575f7b0e21703ae132eff42d71c05751af1667c1c2355",
+      "bytes": 39650
+    },
+    {
+      "path": "docs/product-demo-goal-and-implementation-plan.md",
+      "generation": "Product V1 v2.6",
+      "reason": "被 `docs/product-v2-goal-and-implementation-plan.md` 取代；服务器文件夹工作空间与 D4.13/D4.14 不再驱动当前开发",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "7f042ad96037477dbebff9706385a362a61cbb17",
+      "sha256": "65a027ef37e21b13f2ad8ceb95c61632968bb14009adb6b631394ed27a5a5297",
+      "bytes": 81051
+    },
+    {
+      "path": "docs/product-v2-goal-and-implementation-plan.md",
+      "generation": "Product V2 重构前基线",
+      "reason": "被 `docs/product-v2-refactor-plan.md` 接管未来目标与任务；保留旧合同、C1–C17 和旧 Goal 原文，不据此继续 V2.7.3",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "f536f9bf115f036d46b7d143498ed9c9a0c99a7f",
+      "sha256": "d62b5fe1718eb17b6334b9c54f062606ec2541d0adbaa544feb7ad1d96b2e374",
+      "bytes": 175588
+    },
+    {
+      "path": "docs/架构设计.md",
+      "generation": "v2",
+      "reason": "被 `docs/product-demo-goal-and-implementation-plan.md` 的目标架构取代；当前 v2 实现以 README 和代码为准",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "57ac6595db6052438b89df9aa5ea6dc3d0143c41",
+      "sha256": "fe7a4e8cc218b9c1a3994a6a5639771d67a9cc8b5323b0db4ae7cd11ccadfdde",
+      "bytes": 25409
+    },
+    {
+      "path": "docs/系统设计方案.md",
+      "generation": "legacy renderer v2",
+      "reason": "被 Product V2 计划取代；其中“主体抠图 + 固定图位 + 单格生成”只解释旧路线，不是当前架构",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "7c65c3dd1960e18eb09a11fe523562d1141fd645",
+      "sha256": "7ab30410ab7417de25e8ca91b5acb24cc67d74dc3e9375faba070743b374fa1b",
+      "bytes": 61225
+    },
+    {
+      "path": "docs/设计复审.md",
+      "generation": "legacy renderer v2",
+      "reason": "被 Product V2 计划取代；保留旧路线矛盾与收敛过程，不据此开工",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "5a10fb860f653d77f57f52e90daea1d0f5fdf656",
+      "sha256": "cea8025ea107e2c9a22c737451b16e9209a13f382db041f6135a2a121c4cdf9c",
+      "bytes": 18056
+    },
+    {
+      "path": "docs/业务流程与提效设计.md",
+      "generation": "legacy renderer v2",
+      "reason": "被 Product V2 产品合同与用户工作流取代；固定七图和单次模型调用不再有效",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "f4830e6eea21fa9efb8b75fe03f34bee6dc42e78",
+      "sha256": "373830d5db696c9a6506da728ff23d22ddf90c076d185d967e4cb6852d26333a",
+      "bytes": 32109
+    },
+    {
+      "path": "docs/AI生图可控性与验证设计.md",
+      "generation": "legacy renderer v2",
+      "reason": "被 Product V2 Prompt、Provider 与分层校验合同取代；“模型只生成背景”不是当前边界",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "7424561128f701be23c086a5d7607c92d26fe381",
+      "sha256": "be28dbf82f5c7cacf368461381a53af287f43d41aa56632766ccff3bcd212efa",
+      "bytes": 16059
+    },
+    {
+      "path": "docs/实施计划.md",
+      "generation": "legacy renderer v2",
+      "reason": "M0–M7 是旧表驱动渲染器的已完成轨迹；当前施工只按 Product V2 唯一任务表",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "4b3b37612d3fac8a857daf36943507aa0677878c",
+      "sha256": "79901289008d2c9faa4b34a4ff8f2bedb89400f41246511f6d06a3cd3ab99799",
+      "bytes": 58388
+    },
+    {
+      "path": "docs/最小可行设计.md",
+      "generation": "legacy renderer v2",
+      "reason": "被 Product V2 计划取代；固定七坑位、主体抠图和旧返工成本口径均不再有效",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "c68e1ed90d8776e7c8f3036d1c78598e0444649b",
+      "sha256": "01a0da33377f864c6c93e4afa68ca122aebffdf520d8355293cba8d0b430c0d9",
+      "bytes": 29538
+    },
+    {
+      "path": "docs/使用形态.md",
+      "generation": "legacy renderer v2",
+      "reason": "被 Product V2 用户可见工作流取代；旧五步页只作历史交互证据",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "7416042996efec99de1acd204bcaa43da561f546",
+      "sha256": "ea1514945b4fa3e902bbcd423eb269dd3f2a5e33f17462ef56ca8808ff8a5bcd",
+      "bytes": 16806
+    },
+    {
+      "path": "docs/业务逻辑.md",
+      "generation": "legacy renderer v2",
+      "reason": "被 Product V2 对象、状态与人工采纳合同取代；旧坑位业务模型不再驱动当前产品",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "818c2efdd361f1950d73cbdbd3ca6730b91578a7",
+      "sha256": "7e28a99508f320e19fc27962dec188f8dcb56366eda5f2c3365690d1470b2ab3",
+      "bytes": 17205
+    },
+    {
+      "path": "docs/drafts/slots-v4-generation-first.md",
+      "generation": "v4",
+      "reason": "被完整演示产品计划取代；固定七格与旧切换顺序不得作为当前任务来源",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "e47ed0d8ee33b280bcca12425e95b882c8f9f19f",
+      "sha256": "c5b3882bc3bd6adc418d45e755e87dcdebbf487e67cbf6dc5915ded0bc349e18",
+      "bytes": 79556
+    },
+    {
+      "path": "docs/drafts/arch-v4-骨架.md",
+      "generation": "v4",
+      "reason": "被完整演示产品计划的目标架构取代；保留当时取舍证据",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "48a0960c4a65229e6d9b14849b93c67bd3d158d0",
+      "sha256": "130212ebf857d41bbb20bfbbf1c0011d8825b904e0f778c96354fdc76a4e1c6b",
+      "bytes": 12123
+    },
+    {
+      "path": "docs/drafts/adr-0001-骨架选型.md",
+      "generation": "v4",
+      "reason": "结论已被完整演示产品计划重新裁定；不再是当前 ADR",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "e88f5fcb8c57334f9b864447641fa90e004f187f",
+      "sha256": "a1e0e23c4788eaef882b48f629c72f9b3d0daaf98017cfa6a15a99adc3896325",
+      "bytes": 11724
+    },
+    {
+      "path": "docs/drafts/ref-mining-ecom-2026-09-23.md",
+      "generation": "Product V1",
+      "reason": "已采纳内容进入完整演示产品计划；范例挖掘只保留为来源记录，不作判据或任务卡",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "efd9ffb315cddb353b1797b3c7d7c4494b74c6d3",
+      "sha256": "fcaac38e4e847b2c5bf78dc9694d3ff893fd2c9d1e8fd0582920f0ef68ec9b79",
+      "bytes": 24000
+    },
+    {
+      "path": "docs/drafts/devplan-v4.md",
+      "generation": "v4",
+      "reason": "早期由 Product V1 计划替代，最终由当前 `docs/product-demo-goal-and-implementation-plan.md` v2.6 接管；保留为生成优先路线的历史设计证据，不再作为开工顺序",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "7f85075b3d394cb4f65ebbfe5276e007da899575",
+      "sha256": "59df389f16c0c9d7cdcf87fabfb779f9a89c54cd286fe29217ce65f291fd4077",
+      "bytes": 10821
+    },
+    {
+      "path": "docs/drafts/slots-v3-proposal.md",
+      "generation": "v3",
+      "reason": "被 `docs/drafts/slots-v4-generation-first.md` 取代",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "a5ad5916af4753e3353d52c64ecedabed6689819",
+      "sha256": "dcc467b5dc2b1402f4a6e8d63fdc009c75bc253f64671098d2b4e0e0e1b4e86a",
+      "bytes": 14946
+    },
+    {
+      "path": "_working/amz-listing-kit-product-v2-baseline/state.md",
+      "generation": "amz-listing-kit-product-v2-baseline",
+      "reason": "Superseded historical execution state replaced by _working/amz-listing-kit-product-v2/state.md; its single YAML machine block cannot be split without rewriting content. Byte-identical external copy preserves the complete baseline blob.",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "5e1bf8548d607fc8dab9d1b0be67a2cbfa546532",
+      "sha256": "d9bd8bea7058781526ffa0aae9af42040f27838ab5f6ccd6e89b8f9fbb849922",
+      "bytes": 53857
+    },
+    {
+      "path": "_working/amz-listing-kit-product-demo/state.md",
+      "generation": "amz-listing-kit-product-demo",
+      "reason": "Superseded historical execution state replaced by _working/amz-listing-kit-product-v2/state.md; its single YAML machine block cannot be split without rewriting content. Byte-identical external copy preserves the complete baseline blob.",
+      "commit": "11902b32651f4690f7367624377dcde6652e0a97",
+      "git_blob": "6fc0b498ef09e7e49f9d078dbbd8492955e27938",
+      "sha256": "d85dcd107cf7fc7628de9ba9f421f0cc99d75c4b683af1fd9412efd5583b6b58",
+      "bytes": 13879
+    }
+  ]
+}

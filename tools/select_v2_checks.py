@@ -43,7 +43,18 @@ RESTRICTED_CATEGORIES = {"paid", "remote", "aggregate"}
 
 INPUT_EXIT = 2
 
-DOCS = {"tools/check_docs.py"}
+DOCUMENT_GOVERNANCE = {
+    "tools/check_doc_budgets.py", "tools/check_document_splits.py", "tools/check_retired_documents.py",
+    "evals/probes/doc_budgets.py", "evals/probes/document_splits.py", "evals/probes/retired_documents.py",
+}
+DOCS = {"tools/check_docs.py"} | DOCUMENT_GOVERNANCE
+DOCUMENT_REGISTRIES = {"config/document-splits.json", "config/retired-documents.json"}
+DOCUMENT_SUFFIXES = {
+    ".md", ".mdx", ".markdown", ".mdown", ".mkd", ".rst", ".adoc", ".asciidoc",
+    ".org", ".tex", ".rtf", ".txt", ".text", ".log", ".out", ".pdf", ".doc",
+    ".docx", ".odt", ".ppt", ".pptx", ".odp",
+}
+DOCUMENT_NAMES = {"readme", "license", "notice", "copying"}
 POLICY = {"tools/check_verification.py", "evals/probes/verification_policy.py"}
 STATE = DOCS | {"tools/check_project_state.py", "evals/probes/project_state.py"}
 LAYOUT = {
@@ -190,6 +201,9 @@ def result_path_forbidden(result: Path, workflow: Path, registry: Path) -> str |
         return f"凭据输出不能覆盖分类登记：{result}"
     if any(resolved == root_resolved / name for name in RESULT_PROTECTED_FILES):
         return f"凭据输出不能覆盖源码或项目权威：{result}"
+    if (resolved.parent == root_resolved and resolved.suffix.casefold() == ".md"
+            and resolved.name.casefold().startswith(("agents.", "readme."))):
+        return f"凭据输出不能覆盖源码或项目权威：{result}"
     if any(resolved.is_relative_to(root_resolved / name) for name in RESULT_PROTECTED_DIRS):
         return f"凭据输出不能覆盖源码或项目权威：{result}"
     return None
@@ -197,6 +211,13 @@ def result_path_forbidden(result: Path, workflow: Path, registry: Path) -> str |
 
 class SelectInputError(ValueError):
     """选择依赖（分类登记 / 命令清单）不可用：必须明确失败，不能静默全跑或空跑。"""
+
+
+def _is_document_path(name: str) -> bool:
+    path = Path(name)
+    suffix = path.suffix.casefold()
+    return (suffix in DOCUMENT_SUFFIXES or path.name.casefold() in DOCUMENT_NAMES
+            or name.startswith("docs/") and suffix in {".html", ".htm"})
 
 
 def classify(paths: list[str], available: set[str], registered: set[str]) -> tuple[set[str], str]:
@@ -207,9 +228,23 @@ def classify(paths: list[str], available: set[str], registered: set[str]) -> tup
     reasons: set[str] = set()
     broad = False
     for name in paths:
+        is_document = _is_document_path(name)
+        # 文档门叠加到原有消费者，不能让文档后缀截断业务路由。
+        if is_document:
+            wanted |= DOCS
+            reasons.add("文档预算与原件")
         if name in POLICY_NAMES:
             wanted |= POLICY
             reasons.add("验证策略")
+        elif name in DOCUMENT_REGISTRIES or name in DOCUMENT_GOVERNANCE:
+            wanted |= DOCS
+            if name == "config/document-splits.json":
+                wanted |= STATE | {"evals/probes/docs_index.py"}
+                reasons.add("拆分登记影响状态与目录语义")
+            reasons.add("文档预算与原件登记")
+        elif name.startswith("docs/catalog/"):
+            wanted |= {"evals/probes/docs_index.py"}
+            reasons.add("目录分片影响目录语义")
         elif name in COMPARE_CONTRACT_INPUTS:
             wanted |= {"pytest:tests/dev", "tools/verify_v2_5_3_compare_panel.py"}
             reasons.add("比较合同及套件消费者")
@@ -219,7 +254,10 @@ def classify(paths: list[str], available: set[str], registered: set[str]) -> tup
         elif name == "docs/INDEX.md" or name == "tools/check_docs.py":
             wanted |= DOCS | {"evals/probes/docs_index.py"}
             reasons.add("文档索引")
-        elif name.endswith("/state.md") or name in {"docs/product-v2-refactor-plan.md", "tools/check_project_state.py", "tools/refactor_resume.py", "evals/probes/project_state.py"}:
+        elif (name.endswith(("/state.md", "/state.yaml"))
+              or name == "docs/product-v2-refactor-plan.md"
+              or name.startswith("docs/product-v2-refactor-plan.") and name.endswith(".md")
+              or name in {"tools/check_project_state.py", "tools/refactor_resume.py", "evals/probes/project_state.py"}):
             wanted |= STATE
             reasons.add("状态语义")
         elif name.startswith("docs/") and name.endswith(".md") or "/" not in name and name.endswith(".md"):
@@ -263,6 +301,8 @@ def classify(paths: list[str], available: set[str], registered: set[str]) -> tup
               and Path(name).suffix in PROOF_SUFFIXES):
             wanted |= DOCS
             reasons.add("不可执行过程证据")
+        elif is_document:
+            reasons.add("其他目录文档")
         else:
             broad = True
             reasons.add("公共消费者或未知影响")
@@ -277,6 +317,8 @@ def container_affected(paths: list[str]) -> bool:
                 or name.startswith(("app/", "src/", "deploy/"))
                 or name == "config/product-v2/providers.json"):
             return True
+        if name in DOCUMENT_REGISTRIES or _is_document_path(name):
+            continue
         if name == "config/product-v2/verification.json" or name in COMPARE_CONTRACT_INPUTS:
             continue
         if name.startswith(("docs/", "_working/", "_stage-amz-control/", "tools/", "evals/", "tests/")):

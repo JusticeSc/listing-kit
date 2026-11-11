@@ -11,9 +11,9 @@
 
 | 要回答的问题 | 唯一权威 | 其他地方只允许 |
 |---|---|---|
-| Goal 现在运行、暂停还是完成 | 真实系统Goal；产品绑定与观察指针在 `_working/amz-listing-kit-product-v2/state.md` | 历史active不替代实时读数；独立设计Goal不覆盖产品停工；原生全文取计划§2.1，用户修订另见§17.13，不伪称原生正文已更新 |
+| 当前方向、权限及历史 Goal 观察 | 最新用户指令与 `_working/amz-listing-kit-product-v2/state.md` | 旧 Goal 原文只作历史观察，实时状态未知；不以旧绑定作为新重构前提 |
 | 项目是什么、运行边界、数据与目录归谁 | `docs/product-v2-project-context.md` | 计划和 README 只链接，不复制项目身份、目标运行时或数据所有权 |
-| 产品终点、正式任务/阶段依赖、准出是什么 | `docs/product-v2-refactor-plan.md` | 按ID引用；具体Issue验收承接产品终点，不复制完整Goal或另立一张总任务图 |
+| 产品方向、正式任务和验收是什么 | 最新用户指令及 `docs/product-v2-refactor-plan.md` | 先核对计划§17.14；旧任务和授权保留为历史合同，不自动构成当前施工命令 |
 | Module/事务设计与交互/Prompt质量如何实现 | `docs/product-v2-refactor-design.md` | 当前规格§13，界面读2026-10-16修订§13.3；旧§10–11仅追溯经当前证据确认仍适用的差量，不能据旧owner清单重做；不由设计推导施工许可 |
 | 产品门、权限、阻塞和唯一恢复前沿是什么 | `_working/amz-listing-kit-product-v2/state.md` | 不另建产品机器状态；历史审计或独立设计记录不能发布当前状态 |
 | 具体问题、验收与改动审查进展是什么 | GitHub Issue及关联PR；工作流只取`AGENTS.md` | plan/state只保留正式任务关联、权限、恢复与证据指针，不复制工单明细；远程写入须在当次授权内 |
@@ -21,172 +21,34 @@
 | 哪份文档有效、历史还是待删 | 本文件 | 各文件只声明自己的 CONTROL-STATUS，不建立另一张总表 |
 | 某次检查或实验实际发生了什么 | `evals/` 下对应原始产物和时点报告 | 只作证据，不发布后续计划、当前状态或新规范 |
 
-恢复只按此顺序：**本文件 → AGENTS.md → 当前state头部与真实Goal → 计划§17.13 → state的唯一下一动作及关联Issue/PR → 当前包所需context/设计/代码与选中证据**。先判当前门，再读取实施细节，不通读历史排程。首次接手核项目边界用context§1–4；当前产品执行包用计划§17.2–17.5，具体验收在#8（界面/人因）、#9（程序表达）、#7（验证/安全）、#10（工程闭包/发布）。旧P0–P8、旧预算、历史active/paused及封存WIP都不是新施工指令；完成资产、最新权限和下一动作只从state定向承接，不恢复整包WIP或重做已成立基线。
+进入项目按此顺序：**本文件 → AGENTS.md 及其规则分片 → 当前 state → 计划§17.14 → 本轮任务所需 context、设计、代码与证据**。当前为文档治理，产品实施暂停；旧任务卡、批次、历史状态和授权不自动恢复。
 
-先运行`uv run --locked python tools/refactor_resume.py`查看当前恢复边界与阻塞；需要机器处理或完整任务卡/unknowns/blockers时用`--json`，原Goal可用`--goal-text`按需读取。摘要不替代相关动作的全量约束核对，命令成功及`read_only`不解除权限门；后者仅表示脚本自身只读。原生Goal不可用时保留真实错误与历史观察，只做已明确授权的工作，不据历史active恢复产品。最新用户已明确授权的操作不重复索取许可；绑定、费用、素材、秘密、数据和实时保护仍逐项成立才执行。
+`uv run --locked python tools/refactor_resume.py` 是只读恢复入口；当前策略会阻断旧任务恢复。脚本输出不替代当次授权，历史 Goal 读数不代表实时状态。最新用户已明确授权的操作不重复索取许可；收费、素材、秘密、数据及远程写入分别核对。
 
-当前目标以计划为准，计划准备完成不等于重构完成，也不自动改变旧系统 Goal 生命周期。
-普通准备不创建产品Goal。当前正式Goal绑定、原生观察与恢复点只取state，目标/授权与实施合同只取计划§2.1/§17；早期独立规划Goal和历史启动记录保留其原证明范围，不替代当前验收或成为重复启动依据。
+产品目标与验收按最新用户方向和有效合同核对；计划的旧 Goal 正文、历史执行包和授权保留原始证据，不作为新重构的施工前提。
 
-下一版本规格定向读 `docs/product-v2-refactor-design.md` §13；本轮生图业务语义/核心合同候选、三个纸面实例与源码差量见§13.13–15，普通输入到简报的建议规则与首个实施切片见§13.16，设计准备协作取[Issue #17](https://github.com/JusticeSc/listing-kit/issues/17)，不替代#9程序品质或#8交互验收。准备和必要本地基线实验的历史见 `_working/amz-listing-kit-next-version-design/discussion.md`，不是第二份原工程执行状态。正式启动后的实施与权限只取计划§2.1/§17，进度与恢复只取state；历史准备的权限边界不冒充当前授权，也不豁免当前依赖、准出或真人门。
-
----
-
-## 2. 登记表
-
-> 受管范围：根目录（`README.md`、`AGENTS.md`）+ `docs/` + `_working/` 下的全部 `.md`——每份都在本表登记，
-> 非生成文档顶部必须有与登记一致的 `CONTROL-STATUS`（`tools/check_docs.py` 双向比对 + 唯一权威校验）。
-> `evals/` 与 `_stage-amz-control/` 是证据与快照产物，不参与“哪一份有效”的登记。
-
-| 路径 | 世代 | 管辖事实 | 状态 | 说明 |
-|---|---|---|---|---|
-| `README.md` | Product V2 | `实现` | `current` | 当前实现的人读入口：唯一V2、锁定构建/启动/验证及同版本恢复；main/分支/发布身份只取state和实际PR证据 |
-| `AGENTS.md` | Product V2 | `项目规则` | `current` | Agent 工作规则与选型门禁（Reuse-first）的唯一权威；目标、技术栈、状态分别链接到各自权威，不复制正文 |
-| `docs/product-v1-goal-and-implementation-plan.md` | Product V1 | `历史证据` | `superseded` | 被 `docs/product-demo-goal-and-implementation-plan.md` 取代；真实试点假设不再作为当前完成标准 |
-| `_working/amz-listing-kit-product-v1/state.md` | Product V1 | `历史证据` | `superseded` | 被 `_working/amz-listing-kit-product-demo/state.md` 取代；保留上一轮执行位置，不据以继续开工 |
-| `docs/drafts/requirements-analysis-2026-09-24.md` | 演示产品需求发现 | `历史证据` | `superseded` | 结论已并入 `docs/product-demo-goal-and-implementation-plan.md`；保留面试证据、推导过程与未知项来源 |
-| `_working/amz-listing-kit-requirements/state.md` | 演示产品需求发现 | `历史证据` | `superseded` | 被 `_working/amz-listing-kit-product-demo/state.md` 取代；保留需求阶段完成轨迹 |
-| `docs/product-demo-goal-and-implementation-plan.md` | Product V1 v2.6 | `历史证据` | `superseded` | 被 `docs/product-v2-goal-and-implementation-plan.md` 取代；服务器文件夹工作空间与 D4.13/D4.14 不再驱动当前开发 |
-| `_working/amz-listing-kit-product-demo/state.md` | Product V1 v2.6 | `历史证据` | `superseded` | 被 `_working/amz-listing-kit-product-v2/state.md` 取代；保留 D-1 至 D4.12 的完成证据，不据此继续 D4.13 |
-| `docs/product-v2-project-context.md` | Product V2 | `架构设计` | `current` | Product V2 项目身份、运行边界、数据所有权、技术栈、目录地图和质量门槛的唯一上下文入口 |
-| `docs/product-v2-goal-and-implementation-plan.md` | Product V2 重构前基线 | `历史证据` | `superseded` | 被 `docs/product-v2-refactor-plan.md` 接管未来目标与任务；保留旧合同、C1–C17 和旧 Goal 原文，不据此继续 V2.7.3 |
-| `docs/product-v2-refactor-plan.md` | Product V2定向重构 | `产品目标` | `current` | §2.1保留真实原生Goal观察全文；§17.13最新完整交付授权/差量；§17.2–17.5执行包与复用合同；§6/§9/§10正式依赖和最终准出不被局部工单完成替代 |
-| `docs/product-v2-refactor-design.md` | Product V2联合结构重构 | `架构设计` | `current` | 当前§13普通决定/两模式及视觉简报/人因验收；§12仅作当前路由，§10–11旧算法/实施差距按未变前提复用。规格不冒称实现、Goal或当前权限 |
-| `_working/amz-listing-kit-product-v2-baseline/state.md` | Product V2 重构前基线 | `历史证据` | `superseded` | 被 current state 接管；保留旧进度与旧 Goal 的最近实际读数，不发布下一动作 |
-| `docs/product-v2-ui-contract.md` | Product V2 V2.UI.2 | `设计草案` | `draft` | 人工/辅助共享任务及有限设置投影；§8区分设计范围、工程与C17/C15，业务合同取计划§14。转current需产品发起人实际走查，之后转 `架构设计` 并补§1路由；工程自审不冒充签署 |
-| `_working/amz-listing-kit-product-v2/state.md` | Product V2 定向重构 | `执行状态` | `current` | 唯一进度、证据、真实 Goal 绑定与下一动作；prepared 仅表示真正未观察/未确认，不冒充系统状态；旧观察不等于本会话重读 |
-| `_working/amz-listing-kit-product-v2/tasks/r42-r52-volcengine-closure-20261003.md` | Product V2 R4.2/R5.2 火山真实链 | `历史证据` | `superseded` | R4.2/R5.2 已完成并记录进 current state；笔记保留本轮付费/修复/验证事实与证据指针，不据此执行 |
-| `_working/amz-listing-kit-product-v2/tasks/v255-server.md` | Product V2 V2.5.5 | `历史证据` | `superseded` | V2.5.5 已完成；任务书只保留当时的服务端施工边界，不再据此执行 |
-| `_working/amz-listing-kit-product-v2/tasks/v255-verifier.md` | Product V2 V2.5.5 | `历史证据` | `superseded` | V2.5.5 已完成；任务书只保留当时的验证施工边界，不再据此执行 |
-| `_working/amz-listing-kit-product-v2/tasks/v2ui2-interaction-visual.md` | Product V2 V2.UI.2 | `历史证据` | `superseded` | V2.UI.2 已完成；任务书只保留当时的交互与视觉施工边界，不再据此执行 |
-| `_working/amz-listing-kit-product-v2/tasks/v273-walkthrough-kit.md` | Product V2 V2.7.3 基线 | `历史证据` | `superseded` | 被重构计划 V2.R7.2 最终人审任务接管；旧脚本仅供任务参考，旧人审未完成、不转为通过 |
-| `_working/amz-listing-kit-product-demo/tasks/brief-d42-usability-a11y.md` | Product V1 D4.2 | `历史证据` | `superseded` | D4.2 已完成；任务书只保留当时边界和执行约束，不再驱动当前施工 |
-| `_working/amz-listing-kit-product-demo/tasks/brief-d43-backup-restore.md` | Product V1 D4.3 | `历史证据` | `superseded` | D4.3 已完成；任务书只保留当时边界和执行约束，不再驱动当前施工 |
-| `_working/amz-listing-kit-product-demo/tasks/d4.13-first-user-walkthrough-kit.md` | Product V1 D4.13 | `历史证据` | `superseded` | 被 Product V2 的 V2.7.3 首次使用者走查取代；旧工具包只保留任务设计参考 |
-| `_working/amz-listing-kit-product-demo/tasks/d4.14-completion-matrix-draft.md` | Product V1 D4.14 | `历史证据` | `superseded` | 被 Product V2 完成证据矩阵与 V2.7.4 发布审计取代；旧盘点不作当前完成依据 |
-| `_working/amz-listing-kit-product-demo/implementation-plan-2026-09-26.md` | 完整演示产品 v1.14 | `历史证据` | `superseded` | 旧执行细节快照；已被 Product V1 v2.3 工作空间与动态编译计划取代，不据此继续开工 |
-| `docs/架构设计.md` | v2 | `历史证据` | `superseded` | 被 `docs/product-demo-goal-and-implementation-plan.md` 的目标架构取代；当前 v2 实现以 README 和代码为准 |
-| `docs/系统设计方案.md` | legacy renderer v2 | `历史证据` | `superseded` | 被 Product V2 计划取代；其中“主体抠图 + 固定图位 + 单格生成”只解释旧路线，不是当前架构 |
-| `docs/设计复审.md` | legacy renderer v2 | `历史证据` | `superseded` | 被 Product V2 计划取代；保留旧路线矛盾与收敛过程，不据此开工 |
-| `docs/业务流程与提效设计.md` | legacy renderer v2 | `历史证据` | `superseded` | 被 Product V2 产品合同与用户工作流取代；固定七图和单次模型调用不再有效 |
-| `docs/AI生图可控性与验证设计.md` | legacy renderer v2 | `历史证据` | `superseded` | 被 Product V2 Prompt、Provider 与分层校验合同取代；“模型只生成背景”不是当前边界 |
-| `docs/实施计划.md` | legacy renderer v2 | `历史证据` | `superseded` | M0–M7 是旧表驱动渲染器的已完成轨迹；当前施工只按 Product V2 唯一任务表 |
-| `docs/最小可行设计.md` | legacy renderer v2 | `历史证据` | `superseded` | 被 Product V2 计划取代；固定七坑位、主体抠图和旧返工成本口径均不再有效 |
-| `docs/使用形态.md` | legacy renderer v2 | `历史证据` | `superseded` | 被 Product V2 用户可见工作流取代；旧五步页只作历史交互证据 |
-| `docs/业务逻辑.md` | legacy renderer v2 | `历史证据` | `superseded` | 被 Product V2 对象、状态与人工采纳合同取代；旧坑位业务模型不再驱动当前产品 |
-| `docs/drafts/slots-v4-generation-first.md` | v4 | `历史证据` | `superseded` | 被完整演示产品计划取代；固定七格与旧切换顺序不得作为当前任务来源 |
-| `docs/drafts/arch-v4-骨架.md` | v4 | `历史证据` | `superseded` | 被完整演示产品计划的目标架构取代；保留当时取舍证据 |
-| `docs/drafts/adr-0001-骨架选型.md` | v4 | `历史证据` | `superseded` | 结论已被完整演示产品计划重新裁定；不再是当前 ADR |
-| `docs/drafts/ref-mining-ecom-2026-09-23.md` | Product V1 | `历史证据` | `superseded` | 已采纳内容进入完整演示产品计划；范例挖掘只保留为来源记录，不作判据或任务卡 |
-| `docs/drafts/devplan-v4.md` | v4 | `历史证据` | `superseded` | 早期由 Product V1 计划替代，最终由当前 `docs/product-demo-goal-and-implementation-plan.md` v2.6 接管；保留为生成优先路线的历史设计证据，不再作为开工顺序 |
-| `docs/drafts/slots-v3-proposal.md` | v3 | `历史证据` | `superseded` | 被 `docs/drafts/slots-v4-generation-first.md` 取代 |
-| `docs/standards-template/README.md` | 外部参考模板 | `设计草案` | `draft` | 外部课程模板原样副本；本项目按 `AGENTS.md` §Standards Mapping 适配其要求，模板自身只作参考 |
-| `docs/standards-template/00-project-context.md` | 外部参考模板 | `设计草案` | `draft` | 项目身份与技术栈模板；对应权威为 `docs/product-v2-project-context.md`（已含选型记录与依赖登记） |
-| `docs/standards-template/01-requirements.md` | 外部参考模板 | `设计草案` | `draft` | 活PRD与验收写法模板；对应计划§14业务合同、§6/§9任务和§10完成矩阵 |
-| `docs/standards-template/02-coding-standards.md` | 外部参考模板 | `设计草案` | `draft` | 编码标准；已适配进 `AGENTS.md` 的 Coding Style；未采用 ruff，理由与替代写在项目上下文 §7 质量门槛 |
-| `docs/standards-template/03-testing-standards.md` | 外部参考模板 | `设计草案` | `draft` | 测试模板；按计划§7.3/§15.3及AGENTS风险导向验证适配，不设覆盖率阈值 |
-| `docs/standards-template/04-git-workflow.md` | 外部参考模板 | `设计草案` | `draft` | Git/PR模板；现有分支和CI/保护要求、获批合并方式只读AGENTS对应章节 |
-| `docs/standards-template/05-cicd-standards.md` | 外部参考模板 | `设计草案` | `draft` | CI/CD 标准；Docker + GitHub Actions + SSH 部署的采纳差异与 SEL-005 映射在 `AGENTS.md` §Standards Mapping |
-| `docs/standards-template/06-ai-collab-protocol.md` | 外部参考模板 | `设计草案` | `draft` | AI协作协议；选型/确认门的采纳差异只取AGENTS的Standards Mapping与Selection Gate，不再解释成每到state下一动作都等待用户确认 |
-| `docs/standards-template/07-dependency-standards.md` | 外部参考模板 | `设计草案` | `draft` | 依赖与复用阶梯；已适配进 `AGENTS.md` §Selection Gate 与项目上下文 §4.2 依赖登记（版本锁定 + 许可证） |
-| `docs/standards-template/PROGRESS.md` | 外部参考模板 | `设计草案` | `draft` | 状态机与决策记录模板；对应权威为 `_working/amz-listing-kit-product-v2/state.md`，决策在项目上下文 §4.1 |
-| `docs/standards-template/templates/ISSUE_TEMPLATE.md` | 外部参考模板 | `设计草案` | `draft` | 内容要求已采纳到`AGENTS.md`提交/PR规则；生效条件：按当前工作流开具体Issue，不复制外部表单为第二份任务权威 |
-| `docs/standards-template/templates/PR_TEMPLATE.md` | 外部参考模板 | `设计草案` | `draft` | 内容要求已采纳到`AGENTS.md`；生效条件：最小完整改动即Draft PR，用当前可用的`pr` skill组织证据，不要求另安装/启用技能 |
-| `docs/standards-template/templates/TECH_SELECTION.md` | 外部参考模板 | `设计草案` | `draft` | 选型报告模板；本项目用 `AGENTS.md` 的字段清单 + 项目上下文 §4.1 决策行承载，不单独立文件 |
-| `docs/standards-template/templates/ADR_TEMPLATE.md` | 外部参考模板 | `设计草案` | `draft` | ADR 模板；本项目以项目上下文 §4.1 的 SEL 行（含复访条件）代替独立 `docs/adr/` 目录 |
-| `docs/agents/issue-tracker.md` | 工程技能操作参考 | `设计草案` | `draft` | 只提供GitHub/gh及可选wayfinder操作；生效条件：AGENTS当前流程需要该操作且授权允许时核对采用，不再要求用户先启用技能；不独立授权或禁止产品Issue |
-| `docs/agents/triage-labels.md` | 工程技能 | `设计草案` | `draft` | 可选triage角色映射；生效条件：实际任务需要且可用的triage技能被匹配、对应远程操作已获授权时采用，不要求用户先手工启用 |
-| `docs/agents/domain.md` | 工程技能 | `设计草案` | `draft` | 单上下文术语/ADR的条件参考；实际需要且创建后才采用。当前决策仍取项目上下文SEL行，不为使用技能另建目录 |
-| `docs/agents/ai-coding-loop.md` | 工程技能操作参考 | `设计草案` | `draft` | 用户提供的AI协作六环之本项目适配版；按任务与风险使用，研究线索未逐项核验，不作为普适定律；AGENTS为执行规则权威，不独立授权 |
+下一版本规格定向读 `docs/product-v2-refactor-design.md` §13；生图业务语义、纸面实例与源码差量见§13.13–15，普通输入到简报的建议规则与首个实施切片见§13.16。设计准备协作见 [Issue #17](https://github.com/JusticeSc/listing-kit/issues/17)，不替代#9程序品质或#8交互验收；实际实施及权限按最新用户指令和 state 核对。
 
 ---
 
-## 3. 状态取值（closed set，守卫会校验）
+## 目录分片
 
-| 状态 | 含义 | 额外要求 |
-|---|---|---|
-| `current` | 当前有效，读者据此行事 | —— |
-| `generated` | 由脚本生成 | 说明列必须写明**生成器** |
-| `draft` | 设计草案，**未进控制面** | 说明列必须写明**生效条件** |
-| `superseded` | 已被取代，保留为证据 | 说明列必须写明**被谁取代** |
-| `to-delete` | 待删 | 说明列必须写明**删除前置条件** |
+以下分片共同组成本登记；当前职责、在场登记、状态取值、反例和写入规则按问题定向读取。分片不建立第二份权威，守卫按登记顺序读取正文。
 
-### 3.1 管辖事实取值（closed set，守卫会校验）
-
-「状态」回答**这份文件还算不算数**；「管辖事实」回答**这份文件对哪一类事实说了算**。
-两个都要有 —— 一份文件可以既有效（`current`）又只对某一类事实有权威。
-
-| 管辖事实 | 含义 | 唯一性 |
-|---|---|---|
-| `实现` | 代码**当前真做什么** | **全表唯一** |
-| `产品目标` | 要做到什么、什么算完成 | **全表唯一** |
-| `执行状态` | 当前推进到哪、下一步做什么 | **全表唯一** |
-| `架构设计` | 目标架构与技术选型 | 可多份 |
-| `设计草案` | 未进控制面的设计前沿 | 可多份 |
-| `历史证据` | 保留作证据，不据以行事 | 可多份 |
-| `生成产物` | 由脚本生成，不手改 | 可多份 |
-| `待处置` | 待删 / 待落点核对 | 可多份 |
-
-**为什么前三类必须唯一**：本仓库真实并存过「README 说 v2 是当前实现」与
-「`docs/架构设计.md` 写着已被 v4 取代」。它们其实回答的是**不同的问题** ——
-写出管辖事实之后，那种并存是分工，不是矛盾；而**同一个问题上出现两个出处**，
-守卫直接报红（`tools/check_docs.py` 的 `SINGLETON_KINDS`）。
-
-**为什么 `_working/` 也在受管范围内**：执行状态和"哪份文档有效"一样，
-是读者要据以行事的事实。它此前不在扫描范围里，于是"下一步做什么"
-没有任何机器可查的权威登记 —— 这正是本次校准要堵的洞。
-
-旧横切文档不再处于无限期的“待删”状态：它们包含旧架构的第一手设计与故障轨迹，统一保留为
-`superseded / 历史证据`。读者默认不读；只有追溯 Product V1/legacy renderer 决策时才从本表进入。
-未来若要物理删除，删除本身另立任务并以 Git 历史或归档包为恢复手段，不把它混入当前产品开发。
-
----
-
-## 4. 这份登记自己也要能被证伪
-
-不是"写了就有用"。两个动作应当让它变红，且**只在该红的地方红**：
-
-| 动作 | 期望 |
+| 分片 | 内容 |
 |---|---|
-| 在 `docs/` 或根目录新建一个 `.md` 而不登记 | 报「未登记」，退出码 1 |
-| 从本表删掉某一行、而那份文件还在 | 报「未登记」 |
-| 登记一份不存在的文件 | 报「登记了但文件不在」 |
-| 把状态写成 `done` / `OK` / 任意自由文本 | 报「状态不在取值域」 |
-| 给 `draft` / `superseded` / `to-delete` 写空说明 | 报「说明列为空」 |
-| 管辖事实列写成自由文本（如 `参考`） | 报「管辖事实不在取值域」 |
-| 给「实现 / 产品目标 / 执行状态」任一类写第二个出处 | 报「只能有一个权威」 |
-| 某一类事实在表里一个出处都没有 | 报「没有任何出处」 |
-| 非生成文档没有在顶部声明 `CONTROL-STATUS` | 报「单看文件无法知道是否有效」 |
-| 文件顶部 `CONTROL-STATUS` 与本表登记不一致 | 报「两处身份不一致」 |
-| 在 `_working/` 新建 `.md` 而不登记 | 报「未登记」 |
+| [登记：项目入口与早期记录](catalog/product-entries.md) | 项目入口、目标与设计 |
+| [登记：状态、任务书与旧设计](catalog/state-and-history.md) | 状态、任务书与保留历史 |
+| [登记：模板与协作参考](catalog/references.md) | 外部模板与协作参考 |
+| [状态取值与登记反例](catalog/status-and-checks.md) | 身份闭集与双向登记判据 |
+| [写入路由与修改前快照](catalog/write-routing.md) | 事实所有者与原件保护 |
 
-**本表正文不写死份数**（不写"仓库里共 N 份"）。份数是本表的**派生值** —— 表就是清单，
-数一遍就有；写进正文则多出一个**没人守的声明**，下次新增文档它立刻变成假情报。
-（同型事故上一轮刚在 README 抓到一个：写着「回归 12 项」而实际 13 项。
-两处处置不同，判据是**有没有读者真的需要这个数**：README 的"回归 N 项"是操作信息
-⇒ 加判据守住它；本表正文的份数是装饰 ⇒ 消除它。**加判据与消除声明都能修好漂移，
-选哪个看这个数是不是真的有人读。**）
+公开 main 原登记中已退役的 21 条 `superseded / 历史证据` 行已退出在场目录，其身份、替代说明和原件只从 [原件恢复登记](../config/retired-documents.json) 定向查询；不存在的旧路径不作为当前文件入口或施工指令。`docs/product-v2-refactor-design.md` 仍是 `current / 架构设计`，按上方职责路由读取。
 
-新增文档时的规矩只有一条：**先在本表登记，再写文件**（顺序反了守卫也会拦住，只是晚一步）。
+拆分来源与正文顺序见 [拆分登记](../config/document-splits.json)。公开 main 原件的 commit/path/SHA256/字节数与拆分时外部快照可完整复原旧目录；当前目录移除退役行并修正其引用。原件恢复证明不冻结后续正文或机器状态。
 
----
+## 文档体积与恢复
 
-## 5. 写入路由：改哪里，不改哪里
+被 Git 跟踪或未忽略的新文档逐份不得超过 10,000 字节；文件范围包括常见 Markdown、文本、日志、办公文档及 `docs/` 下 HTML，具体枚举见 `tools/check_doc_budgets.py`。不设冻结或大小豁免；结构化机器数据按自身合同管理。
 
-| 发生的变化 | 只修改 | 禁止顺手复制到 |
-|---|---|---|
-| Goal 生命周期变化 | 系统 Goal；随后把读数写入 current state | 产品计划、审计报告 |
-| 产品目标、范围、完成条件或正式任务依赖变化 | 产品计划；原生Goal正文只记录真实观察，差量与冲突明确标出 | state、README、eval报告里的第二份目标 |
-| 工作方式/Issue与PR/skill执行规则变化 | `AGENTS.md`；本INDEX及技能参考只调整指针 | 产品任务卡、聊天里的另一套流程 |
-| 技术选型、所有权或实现设计变化 | 项目上下文§4或详细设计相应节；产品边界受影响时再修计划 | AGENTS里的第二份架构/产品目标 |
-| 产品门、阻塞、证据或恢复动作变化 | current state；具体问题进展更新对应Issue/PR | 产品计划正文、历史审计或本地工单明细副本 |
-| 代码已经实现的新行为 | 代码/配置/测试，并同步 README 的实现说明 | 旧架构、旧计划或 draft |
-| 一次实验、回归或审计结果 | `evals/` 对应时点证据，并由 state 引用 | 当前状态、未来计划 |
-| 文档身份变化 | 本 INDEX，并同步目标文件顶端 CONTROL-STATUS | 另一份索引或聊天记忆 |
-
-`config/slots.yaml` 已随 main 基线 P1 删除（旧 legacy 坑位行为退出）；当前坑位/用途权威在前端 domain。
-
-**改权威文档之前先留一份快照。** `docs/`、`_working/` 与 `README.md` 是读者据以行事的事实，
-一旦被覆盖，上一版就只存在于记忆里。这不是假设：2026-09-26 想把计划 v1.6 与 v1.7 逐行对比时，
-仓库里已经没有 v1.6 的副本，只能靠改它的那段脚本反推。所以定一条规矩：改这几份文件之前，
-先在工作区外留一份快照（`_stage-amz-control/<用途>-<时间戳>/`），改完把前后哈希写进证据。
+运行 `uv run --locked python tools/check_doc_budgets.py` 检查实际文件和暂存内容，运行 `uv run --locked python tools/check_document_splits.py` 核对原件来源；拆分时另做一次重组证明，后续编辑不受旧分片 hash 冻结。退役原件按恢复登记先恢复到隔离目录并核对字节。

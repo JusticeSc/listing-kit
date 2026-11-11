@@ -13,8 +13,8 @@ import yaml
 
 from check_docs import Report as DocReport, _check_docs_index
 from check_project_state import (
-    ROOT, GATE_DECL, PHASE_HEAD, TASK_ID_RE, YAML_BLOCK,
-    Report as StateReport, _check, _plan_tasks,
+    ROOT, GATE_DECL, PHASE_HEAD, TASK_ID_RE,
+    Report as StateReport, _check, _plan_tasks, _read_document_text, _read_state_data,
 )
 
 
@@ -64,6 +64,14 @@ def _current_boundary_section(state_text: str) -> tuple[str | None, int | None, 
     return text, head + 1, end + 1
 
 
+def _require_resume_policy(plan_text: str) -> None:
+    policies = re.findall(r"(?m)^<!-- refactor-resume-policy: ([a-z-]+) -->$", plan_text)
+    if policies != ["blocked"]:
+        raise ValueError("恢复策略缺失、重复或未知；不能恢复旧任务。请核对当前计划与授权。")
+    raise ValueError("当前仅文档治理与目标重设准备；旧产品任务不可恢复。"
+                     "请读计划§17.14并核对真实Goal与当前授权。")
+
+
 def packet() -> dict:
     docs, states = DocReport(), StateReport()
     _check_docs_index(docs)
@@ -71,7 +79,7 @@ def packet() -> dict:
     errors = docs.problems + states.problems
     if errors:
         raise ValueError("\n".join(errors))
-    index = (ROOT / "docs/INDEX.md").read_text(encoding="utf-8")
+    index = _read_document_text("docs/INDEX.md")
     owners = {}
     for line in index.splitlines():
         cells = [c.strip().strip("`") for c in line.strip().strip("|").split("|")]
@@ -82,12 +90,12 @@ def packet() -> dict:
     paths = {kind: (ROOT / rel).resolve() for kind, rel in owners.items()}
     if set(paths) != {"产品目标", "执行状态"} or any(not p.is_relative_to(ROOT) for p in paths.values()):
         raise ValueError("缺唯一目标/状态或路径越出仓库")
-    state_text = paths["执行状态"].read_text(encoding="utf-8")
-    state_match = YAML_BLOCK.search(state_text)
-    state = yaml.safe_load(state_match.group(1))
+    state_text = _read_document_text(owners["执行状态"])
+    state = _read_state_data(paths["执行状态"], root=ROOT)
     if state["plan_ref"] != owners["产品目标"]:
         raise ValueError("state.plan_ref 与 INDEX 目标不一致")
-    text = paths["产品目标"].read_text(encoding="utf-8")
+    text = _read_document_text(owners["产品目标"])
+    _require_resume_policy(text)
     ids, deps = _plan_tasks(text)
     phases, gates = PHASE_HEAD.findall(text), set(GATE_DECL.findall(text))
     membership = {}

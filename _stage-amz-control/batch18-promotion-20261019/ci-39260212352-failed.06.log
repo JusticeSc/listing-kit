@@ -1,0 +1,46 @@
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:53.8342342Z   [PASS] V2.3.4-02 反向探针确实执行（冲突、缺依据、泄漏、越界、过期等守卫）
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:53.8342765Z   [PASS] V2.3.4-02b 既有契约套件回归：规格 / 套图编辑器 / 套图注册表全过
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:53.8343193Z   [PASS] V2.3.4-03 套图就绪后 Prompt 区解锁；模板图按依赖自动绑定已确认事实
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:53.8343686Z   [PASS] V2.3.4-04 编译主图（相对自动准备基线 +1）：界面文本 = 记录文本 = 快照 prompt，hash 三者一致
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:53.8344166Z   [PASS] V2.3.4-05 卖点信息图按元素印出所选列表槽位的全部元素且逐字（未选不印、语言警告仍可见）
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:53.8344886Z   [PASS] V2.3.4-06 改风格使 Prompt 过期；重新编译写新版本、hash 变化、历史保留
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:53.8345299Z   [PASS] V2.3.4-07 冲突编译失败：给出精确原因，旧版本文本与版本号保留
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:53.8345713Z   [PASS] V2.3.4-08 刷新恢复：Prompt 文本 / hash / 版本与存储一致，其他图版本不变
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:53.8346132Z   [PASS] V2.3.4-09 契约会话与 UI 会话零 console error / page error
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:53.8346538Z   [PASS] V2.3.4-10 正式入口自检仍全过（V2.3.4 不破坏既有入口）
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:53.8346831Z 套件用例：15 条，失败 0 条
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:53.8347253Z 证据：evals/product-v2/v2.3.4-prompt-compiler-20261019-132945.txt
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:53.8347612Z 结果：全过（退出码 0）
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:06.3389796Z ========================================================================
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:06.3390925Z V2.3.5 生成前确认验证
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:06.3391577Z ========================================================================
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:06.3392755Z   [PASS] V2.3.5-00 domain / workspace / harness 通过 node --check（ESM 语法门）
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:06.3393817Z   [PASS] V2.3.5-01 H01–H12 契约套件全过且用例齐全
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:06.3395113Z   [PASS] V2.3.5-02 反向探针确实执行（缺 Prompt / 过期 / 缺依赖 / 参数不符 / 越界 / 失效）
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:06.3396182Z   [PASS] V2.3.5-02b 既有契约套件回归：Prompt / 规格 / 套图编辑器全过
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:06.3397196Z   [PASS] V2.3.5-03 套图就绪后确认区解锁：默认只发送正看的 1 张（未选 3 由范围行如实列出）
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:06.3398051Z   [PASS] V2.3.5-04 缺依赖的对比图被精确阻断并定位到套图规划
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:06.3398838Z   [PASS] V2.3.5-05 所见摘要即本次授权集合：4 张就绪、外发摘要与所见一致
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:06.3399656Z   [PASS] V2.3.5-06 可确认态：所见 4 张可发送、无阻断、风险仍可见、无确认记录
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:06.3400677Z   [PASS] V2.3.5-14 风险提示中文可读：逐图与 Prompt 卡不出现裸规则码，槽位 id 已本地化；规则码只留在汇总区与悬浮标题
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:06.3401730Z   [PASS] V2.3.5-15 所选文案的语言风险按条目去重：信息图共 2 条且指向所选 2 个条目（不按事实自动枚举）
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:06.3402686Z   [PASS] V2.3.5-16 语言风险只出现在允许图中文字的角色（所选条目带可操作确认指引，无文字角色不误报）
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:06.3403680Z   [PASS] V2.3.5-07 点击确认写入 generation_confirm v1 并整套提交：授权逐图消费、各提交一次
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:06.3404793Z   [PASS] V2.3.5-08 改公共风格使确认失效并回落 PLAN_REVIEW：所见 0 张、零新外发
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:06.3405669Z   [PASS] V2.3.5-09 重新编译后全量单恢复可提交形状但所见摘要拒绝复发旧图
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:06.3407017Z   [PASS] V2.3.5-10 重编译后不自动重提：按钮禁用并标注发送 0 张，确认记录不伪造新版本、零新外发
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:06.3407882Z   [PASS] V2.3.5-11 刷新保留首张范围并可见排除：授权历史不变、按钮禁用、零新外发
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:06.3408764Z   [PASS] V2.3.5-12 契约会话与 UI 会话零 console error / page error
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:06.3409618Z   [PASS] V2.3.5-13 正式入口自检仍全过（V2.3.5 不破坏既有入口）
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:06.3410460Z 套件用例：13 条，失败 0 条
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:06.3411423Z 证据：evals/product-v2/v2.3.5-pre-generation-confirm-20261019-132954.txt
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:06.3412260Z 结果：全过（退出码 0）
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:24.4414880Z ========================================================================
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:24.4416196Z V2.3.6 Prompt 人工编辑验证
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:24.4416993Z ========================================================================
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:24.4418187Z   [PASS] V2.3.6-00 domain / workspace / harness 通过 node --check（ESM 语法门）
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:24.4419163Z   [PASS] V2.3.6-01 M01–M13 契约套件全过且用例齐全
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:24.4420140Z   [PASS] V2.3.6-02 反向探针确实执行（非法输入 / 未授权引用 / 平台文字 / 篡改 / 失效）
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:24.4421245Z   [PASS] V2.3.6-02b 既有契约套件回归：Prompt / 确认单 / 规格 / 套图编辑器全过
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:24.4422134Z   [PASS] V2.3.6-03 套图就绪后 Prompt 区解锁
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:24.4422957Z   [PASS] V2.3.6-04 编译全部 4 张：可提交、编辑区与理由输入出现、尚无人工编辑标记

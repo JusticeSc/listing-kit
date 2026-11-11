@@ -1,0 +1,35 @@
+V2.6.1 人工 Selection 与失效判断验证（选择契约套件 + 真实工作台走查 + 视觉证据）
+NOT-AUTHORITY: point-in-time verification evidence only
+============================================================================
+  [PASS] V2.6.1-01 语法门：selection / shared / workspace / 选择契约套件与本工具全部可解析
+         {"files": [{"file": "app/product_v2/domain/selection.js", "rc": 0, "stderr": ""}, {"file": "app/product_v2/domain/shared.js", "rc": 0, "stderr": ""}, {"file": "app/product_v2/workspace.js", "rc": 0, "stderr": ""}, {"file": "evals/product-v2/harness/selection-contract.js", "rc": 0, "stderr": ""}, {"file": "tools/verify_v2_6_1_selection.py", "rc": 0, "stderr":
+  [PASS] V2.6.1-02 单一权威：选择记录形状、词表与合同版本只在 domain/selection.js 定义，工作台只引用
+         {"duplicated_in_workspace": [], "imports_contract": true}
+  [PASS] V2.6.1-03 界面责任：比较区只放入口，采用面板是相邻的独立 #adopt-panel 并绑定候选身份
+         {"entry_in_compare_head": true, "panel_sibling": true, "buttons": true, "panel_fields": true, "progress_line": true, "panel_binding": true}
+  [PASS] V2.6.1-04 写路径唯一：采用只经仓储追加选择记录，先落盘再更新内存，失败走错误提示
+         {"forbidden_tokens": [], "saves_selection": true, "memory_after_save": true, "error_path_kept": true, "no_auto_select": true, "negative_probe": {"selections_save_guard_red": true, "compare_purity_guard_red": true, "rework_purity_guard_red": true, "ok": true}, "section_chars": 8749}
+  [PASS] V2.6.1-05 不回退：比较区仍是纯投影、返工区未被采用逻辑污染（V2.5.3 / V2.5.4 判据保持）
+         {"compare_forbidden": [], "rework_forbidden": []}
+  [PASS] V2.6.1-06 SL-01–SL-18 选择契约套件：跨图候选、缺身份、非法 sha、过高 schema 版本、过期投影全部守住
+         {"status": "passed", "failed": [], "cases": 18}
+  [PASS] V2.6.1-07 既有套件回归：RW-01–RW-15、CP-01–CP-15、R01–R13 与复核 provider 在采用落地后仍全过
+         {"rework": "passed", "compare": "passed", "review": "passed", "provider": "passed"}
+  [PASS] V2.6.1-08 自动审核只提供依据：种子阶段已有候选与报告，但没有任何选择记录，行内摘要仍是「尚未采用」
+         {"selection_rows": 0, "progress": {"current": 0, "required": 1, "stale": 0, "missing": 1}, "candidates": ["act-3a91ca31a43d4194a1dcf782eea9bdd7", "act-ba6954a7005347d28429c12efef9e96a"], "row": {"shot_id": "shot_main_clean", "attempt_state": "succeeded", "selection_state": "none", "selection_text": "尚未采用候选：在候选比较里选一条，点「采用此候选」。"}}
+  [PASS] V2.6.1-09 入口：比较区把「正看着的候选」交给采用面板，换卡后入口同步换身份
+         {"default": "act-3a91ca31a43d4194a1dcf782eea9bdd7", "switched": "act-ba6954a7005347d28429c12efef9e96a", "entry": {"in_compare": true, "disabled": false, "shot_id": "shot_main_clean", "candidate_id": "act-ba6954a7005347d28429c12efef9e96a", "candidate_sha256": "55012598db4a71b9b7f5c22537db9d6ca3a37e74f44b8c791003d5cf632ea022"}, "selected": "act-ba6954a7005347d
+  [PASS] V2.6.1-10 采用面板：独立面板绑定候选身份与合同版本，显示将绑定的当前审核报告与这套图的采用要求
+         {"contract": "v2.6.1", "basis": "主图·干净背景 · 当前尚未采用候选 · 候选 v2", "fingerprint": "将绑定当前审核报告：自动检查 v2.5.2：阻断 1 · 高风险 0 · 提醒 1 · 未知 0 · VLM 未检查（审核合同 v2.5.2）", "readiness": "这张图是必需图：导出前必须有当前有效的选择。", "focus": "adopt-submit"}
+  [PASS] V2.6.1-11 打开与关闭采用面板不写任何记录，关闭后焦点回到原候选卡
+         {"focus_after_close": "compare-tab-act-ba6954a7005347d28429c12efef9e96a", "expected_focus": "compare-tab-act-ba6954a7005347d28429c12efef9e96a", "records_unchanged": true}
+  [PASS] V2.6.1-12 采用：追加一条选择记录（绑定候选身份/版本/审核指纹），行摘要、候选徽标与整套进度同步更新
+         {"selection": {"kind": "selection", "document_id": "shot_main_clean", "version": 1, "payload_sha256": "3220dbf576e311ebd01953f722736caca958fe7fa9de0223ba36a1245c35080e", "action": "select", "candidate_id": "act-ba6954a7005347d28429c12efef9e96a", "candidate_version": 2, "candidate_sha256": "55012598db4a71b9b7f5c22537db9d6ca3a37e74f44b8c791003d5cf632ea022", "s
+  [PASS] V2.6.1-13 采用只写选择：Prompt/Attempt/Candidate/Review/确认与图片资产逐字不变，无关图零变化
+         {"others_untouched": true, "second_shot_untouched": true, "assets": 4}
+  [PASS] V2.6.1-14 改选：追加新版本而不是覆盖，旧记录逐字保留，徽标与摘要随之移动
+         {"version": 2, "kept_prefix": true, "badges": [{"state": "current", "text": "已采用", "candidate_id": "act-3a91ca31a43d4194a1dcf782eea9bdd7"}], "progress": {"current": 1, "required": 1, "stale": 0, "missing": 0}}
+  [PASS] V2.6.1-15 返工后失效：新的成功候选只把旧选择标成过期，不覆盖、不自动改选、不自动取消
+         {"newest_candidate": "act-c3f50c85bdfd4129a8af72ac5f514e8d", "row": {"shot_id": "shot_main_clean", "attempt_state": "succeeded", "selection_state": "stale", "selection_text": "已采用候选 v1（选择记录 act-cf70c26fa2d84525933b7b6e889b49be）；已过期：之后出现了新候选，请重新采用（新候选或旧候选都行）。"}, "progress": {"current": 0, "required": 1, "stale": 1, "missing": 0}, "badges": {"act-3a91ca31a43d4
+  [PASS] V2.6.1-16 返工后重选旧候选：过期选择重新变 current，徽标回到旧候选，历史全部保留
+         {"selection": {"kind": "selection", "document_id": "shot_main_clean", "version": 3, "payload_sha256": "70c62a9132907611d2594b65bb1632b6c9af0ccc98dbf69c72401d6b07f1d4e8", "action": "select", "candidate_id": "act-ba6954a7005347d28429c12efef9e96a", "candidate_version": 2, "candidate_sha256": "55012598db4a71b9b7f5c22537db9d6ca3a37e74f44b8c791003d5cf632ea022", "s

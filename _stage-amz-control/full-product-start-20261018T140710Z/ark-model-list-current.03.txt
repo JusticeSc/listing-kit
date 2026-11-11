@@ -1,0 +1,757 @@
+doubao-seed-2-0-pro-260215 即将下线​
+	
+深度思考​
+文本生成​
+多模态理解​
+GUI 任务处理​
+工具调用​
+结构化输出​
+	
+上下文窗口: 256k​
+最大输入: 224k​
+最大回答(默认 4k): 128k​
+最大思维链: 128k​
+	
+最大 RPM: 30000​
+最大 TPM: 5000000​
+
+
+doubao-seed-2-0-lite-260215 即将下线​
+	
+深度思考​
+文本生成​
+多模态理解​
+GUI 任务处理​
+工具调用​
+结构化输出​
+	
+上下文窗口: 256k​
+最大输入: 224k​
+最大回答(默认 4k): 128k​
+最大思维链: 128k​
+	
+最大 RPM: 30000​
+最大 TPM: 5000000​
+
+
+doubao-seed-2-0-mini-260215 即将下线​
+	
+深度思考​
+文本生成​
+多模态理解​
+GUI 任务处理​
+工具调用​
+结构化输出​
+	
+上下文窗口: 256k​
+最大输入: 224k​
+最大回答(默认 4k): 128k​
+最大思维链: 128k​
+	
+最大 RPM: 30000​
+最大 TPM: 5000000​
+
+
+​
+工具调用能力​
+​
+模型 ID（Model ID）​
+	
+函数调用​
+Responses API & Chat API​
+	
+知识库​
+Responses API​
+	
+MCP​
+Responses API​
+	
+联网内容插件​
+Responses API​
+	
+图像处理​
+Responses API​
+	
+豆包助手​
+Responses API​
+
+
+doubao-seed-evolving​
+快速迭代模型​
+	
+✓​
+	
+✓​
+	
+✓​
+	
+✓​
+	
+✓​
+	
+✓​
+
+
+doubao-seed-2-1-pro-260915​
+	
+✓​
+	
+✓​
+	
+✓​
+	
+✓​
+	
+✓​
+	
+✓​
+
+
+doubao-seed-2-1-lite-260915​
+	
+✓​
+	
+✓​
+	
+✓​
+	
+✓​
+	
+✓​
+	
+✓​
+
+
+doubao-seed-2-1-pro-260628​
+	
+✓​
+	
+✓​
+	
+✓​
+	
+✓​
+	
+✓​
+	
+✓​
+
+
+doubao-seed-2-1-turbo-260628​
+	
+✓​
+	
+✓​
+	
+✓​
+	
+✓​
+	
+✓​
+	
+✓​
+
+
+doubao-seed-2-0-lite-260428​
+	
+✓​
+	
+✓​
+	
+✓​
+	
+✓​
+	
+✓​
+	
+✓​
+
+
+doubao-seed-2-0-mini-260428​
+	
+✓​
+	
+✓​
+	
+✓​
+	
+✓​
+	
+✓​
+	
+✓​
+
+
+doubao-seed-2-0-pro-260215 即将下线​
+	
+✓​
+	
+✓​
+	
+✓​
+	
+✓​
+	
+✓​
+	
+✓​
+
+
+doubao-seed-2-0-lite-260215 即将下线​
+	
+✓​
+	
+✓​
+	
+✓​
+	
+✓​
+	
+✓​
+	
+✓​
+
+
+doubao-seed-2-0-mini-260215 即将下线​
+	
+✓​
+	
+✓​
+	
+✓​
+	
+✓​
+	
+✓​
+	
+✓​
+
+
+doubao-seed-2-0-code-preview-260215 即将下线​
+	
+✓​
+	
+✓​
+	
+✓​
+	
+✓​
+	
+✓​
+	
+✓​
+
+
+doubao-seed-character-260628​
+	
+✓​
+	
+✓​
+	
+✓​
+	
+✓​
+	
+✓​
+	
+✓​
+
+
+doubao-seed-character-251128​
+	
+✓​
+	
+✗​
+	
+✗​
+	
+✗​
+	
+✗​
+	
+✗​
+
+
+glm-5-3-flash-260828​
+	
+✓​
+	
+✓​
+	
+✓​
+	
+✓​
+	
+✗​
+	
+✗​
+
+
+glm-5-2-260617​
+	
+✓​
+	
+✓​
+	
+✓​
+	
+✓​
+	
+✗​
+	
+✗​
+
+
+deepseek-v4-1-flash-261017​
+	
+✓​
+	
+✓​
+	
+✓​
+	
+✓​
+	
+✗​
+	
+✗​
+
+
+deepseek-v4-1-flash-260910​
+	
+✓​
+	
+✓​
+	
+✓​
+	
+✓​
+	
+✗​
+	
+✗​
+
+
+deepseek-v4-pro-ga-260813​
+	
+✓​
+	
+✓​
+	
+✓​
+	
+✓​
+	
+✗​
+	
+✗​
+
+
+deepseek-v4-flash-ga-260731​
+	
+✓​
+	
+✓​
+	
+✓​
+	
+✓​
+	
+✗​
+	
+✗​
+
+
+deepseek-v4-pro-260425 即将下线​
+	
+✓​
+	
+✓​
+	
+✓​
+	
+✓​
+	
+✗​
+	
+✗​
+
+
+​
+相关教程：​
+Function Calling（函数调用）​
+私域知识库搜索 Knowledge Search​
+云部署 MCP / Remote MCP​
+联网搜索工具​
+图像处理 Image Process​
+豆包助手 API（Beta）​
+ ​
+上下文缓存能力​
+介绍: 上下文缓存 | API: Responses API 、 Context Create API、Chat API、Batch API​
+推荐模型​
+​
+模型ID（Model ID）​
+	
+隐式缓存​
+	
+显式缓存​
+
+
+doubao-seed-evolving​
+快速迭代模型​
+	
+Responses API​
+Chat API​
+	
+Responses API​
+前缀缓存​
+Session缓存​
+
+
+doubao-seed-2-1-pro-260915​
+	
+Responses API​
+Chat API​
+	
+Responses API​
+前缀缓存​
+Session缓存​
+
+
+doubao-seed-2-1-lite-260915​
+	
+Responses API​
+Chat API​
+	
+Responses API​
+前缀缓存​
+Session缓存​
+
+
+doubao-seed-2-1-turbo-260628​
+	
+Responses API​
+Chat API​
+	
+Responses API​
+前缀缓存​
+Session缓存​
+
+
+​
+其他模型​
+​
+模型ID（Model ID）​
+	
+隐式缓存​
+	
+显式缓存​
+
+
+doubao-seed-2-1-pro-260628​
+	
+Responses API​
+Chat API​
+	
+Responses API​
+前缀缓存​
+Session缓存​
+
+
+doubao-seed-2-0-lite-260428​
+	
+Responses API​
+Chat API​
+	
+Responses API​
+前缀缓存​
+Session缓存​
+
+
+doubao-seed-2-0-mini-260428​
+	
+Responses API​
+Chat API​
+	
+Responses API​
+前缀缓存​
+Session缓存​
+
+
+doubao-seed-2-0-pro-260215 即将下线​
+	
+Responses API​
+Chat API​
+	
+Responses API​
+前缀缓存​
+Session缓存​
+
+
+doubao-seed-2-0-lite-260215 即将下线​
+	
+Responses API​
+Chat API​
+	
+Responses API​
+前缀缓存​
+Session缓存​
+
+
+doubao-seed-2-0-mini-260215 即将下线​
+	
+Responses API​
+Chat API​
+	
+Responses API​
+前缀缓存​
+Session缓存​
+
+
+doubao-seed-2-0-code-preview-260215 即将下线​
+	
+Responses API​
+Chat API​
+	
+Responses API​
+前缀缓存​
+Session缓存​
+
+
+doubao-seed-character-260628​
+	
+Responses API​
+Chat API​
+	
+Responses API​
+前缀缓存​
+Session缓存​
+
+
+doubao-seed-character-251128​
+	
+–​
+	
+Responses API​
+前缀缓存​
+Session缓存​
+
+
+glm-5-3-flash-260828​
+	
+Responses API​
+Chat API​
+	
+Responses API​
+前缀缓存​
+Session缓存​
+
+
+glm-5-2-260617​
+	
+Responses API​
+Chat API​
+	
+Responses API​
+前缀缓存​
+Session缓存​
+
+
+deepseek-v4-1-flash-261017​
+	
+Responses API​
+Chat API​
+	
+Responses API​
+前缀缓存​
+Session缓存​
+
+
+deepseek-v4-1-flash-260910​
+	
+Responses API​
+Chat API​
+	
+Responses API​
+前缀缓存​
+Session缓存​
+
+
+deepseek-v4-pro-ga-260813​
+	
+Responses API​
+Chat API​
+	
+Responses API​
+前缀缓存​
+Session缓存​
+
+
+deepseek-v4-flash-ga-260731​
+	
+Responses API​
+Chat API​
+	
+Responses API​
+前缀缓存​
+Session缓存​
+
+
+deepseek-v4-pro-260425 即将下线​
+	
+Responses API​
+Chat API​
+	
+Responses API​
+前缀缓存​
+Session缓存​
+
+
+​
+结构化输出能力（beta）​
+介绍: 结构化输出(beta) | API: Responses API、Chat API​
+推荐模型​
+​
+模型 ID (Model ID)​
+	
+能力支持​
+	
+长度限制（token）​
+	
+限流​
+非刚性保障，受平台负载/调用方式影响，详见 文档​
+
+
+doubao-seed-evolving​
+快速迭代模型​
+	
+深度思考​
+文本生成​
+多模态理解​
+工具调用​
+结构化输出​
+	
+上下文窗口: 1024k​
+最大输入: 1024k​
+最大回答(默认 4k): 256k​
+最大思维链: 256k​
+	
+最大 RPM: 500​
+最大 TPM: 1000000​
+
+
+doubao-seed-2-1-pro-260915​
+	
+深度思考​
+文本生成​
+多模态理解​
+工具调用​
+结构化输出​
+	
+上下文窗口: 1024k​
+最大输入: 1024k​
+最大回答(默认 4k): 256k​
+最大思维链: 256k​
+	
+最大 RPM: 500​
+最大 TPM: 1000000​
+
+
+doubao-seed-2-1-lite-260915​
+	
+深度思考​
+文本生成​
+多模态理解​
+工具调用​
+结构化输出​
+	
+上下文窗口: 1024k​
+最大输入: 1024k​
+最大回答(默认 4k): 256k​
+最大思维链: 256k​
+	
+最大 RPM: 30000​
+最大 TPM: 5000000​
+
+
+doubao-seed-2-1-turbo-260628​
+	
+深度思考​
+文本生成​
+多模态理解​
+工具调用​
+结构化输出​
+	
+上下文窗口: 256k​
+最大输入: 256k​
+最大回答(默认 4k): 256k​
+最大思维链: 256k​
+	
+最大 RPM: 500​
+最大 TPM: 1000000​
+
+
+​
+其他模型​
+​
+模型 ID (Model ID)​
+	
+能力支持​
+	
+长度限制（token）​
+	
+限流​
+非刚性保障，受平台负载/调用方式影响，详见 文档​
+
+
+doubao-seed-2-1-pro-260628​
+	
+深度思考​
+文本生成​
+多模态理解​
+工具调用​
+结构化输出（推荐使用 json_schema 模式）​
+	
+上下文窗口: 256k​
+最大输入: 256k​
+最大回答(默认 4k): 256k​
+最大思维链: 256k​
+	
+最大 RPM: 500​
+最大 TPM: 1000000​
+
+
+doubao-seed-2-0-lite-260428​
+	
+深度思考​
+文本生成​
+多模态理解​
+工具调用​
+结构化输出（推荐使用 json_schema 模式）​
+	
+上下文窗口: 256k​
+最大输入: 224k​
+最大回答(默认 4k): 128k​
+最大思维链: 128k​
+	
+最大 RPM: 30000​
+最大 TPM: 5000000​
+
+
+doubao-seed-2-0-mini-260428​
+	
+深度思考​
+文本生成​
+多模态理解​
+工具调用​
+结构化输出​
+	
+上下文窗口: 256k​
+最大输入: 224k​
+最大回答(默认 4k): 128k​
+最大思维链: 128k​
+	
+最大 RPM: 30000​
+最大 TPM: 5000000​
+
+

@@ -1,0 +1,68 @@
+app/product_v2/workspace.js(3572,36): error TS2322: Type '{ platform: { platform_id: any; version: any; }; provider: { model_id: any; version: any; }; can_submit: boolean; shots: any; external_summary: { model: any; size: any; n: any; prompt_extend: any; watermark: any; output_format: any; reference_count: any; reference_roles: any[]; prompt_chars: any; }; scope_shot_ids?:...' is not assignable to type 'ConfirmationSnapshot | null'.
+app/product_v2/workspace.js(3584,51): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+app/product_v2/workspace.js(3585,41): error TS18048: 'saved' is possibly 'undefined'.
+app/product_v2/workspace.js(3604,70): error TS2345: Argument of type '(ConfirmationQueue & { documentId: string; }) | null' is not assignable to parameter of type 'ConfirmationQueue'.
+app/product_v2/workspace.js(3650,42): error TS2339: Property 'all' does not exist on type 'GenerationIntent'.
+app/product_v2/workspace.js(3660,21): error TS18047: 'displayedGenerationIntent' is possibly 'null'.
+app/product_v2/workspace.js(3661,41): error TS2339: Property 'shots' does not exist on type '{}'.
+app/product_v2/workspace.js(3661,51): error TS7006: Parameter 'item' implicitly has an 'any' type.
+app/product_v2/workspace.js(3662,64): error TS2339: Property 'total' does not exist on type '{}'.
+app/product_v2/workspace.js(3665,61): error TS2339: Property 'external_summary' does not exist on type '{}'.
+app/product_v2/workspace.js(3686,22): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ intake: string; understanding: string; suite: string; style: string; shot_spec: string; prompt: string; }'.
+app/product_v2/workspace.js(3726,35): error TS7006: Parameter 'ref' implicitly has an 'any' type.
+app/product_v2/workspace.js(3730,10): error TS7006: Parameter 'ref' implicitly has an 'any' type.
+app/product_v2/workspace.js(3735,43): error TS7006: Parameter 'risk' implicitly has an 'any' type.
+app/product_v2/workspace.js(3737,19): error TS7006: Parameter 'risk' implicitly has an 'any' type.
+app/product_v2/workspace.js(3742,22): error TS18047: 'displayedGenerationIntent' is possibly 'null'.
+app/product_v2/workspace.js(3743,49): error TS2339: Property 'can_submit' does not exist on type '{}'.
+app/product_v2/workspace.js(3747,19): error TS2339: Property 'total' does not exist on type '{}'.
+app/product_v2/workspace.js(3814,23): error TS2769: No overload matches this call.
+app/product_v2/workspace.js(3830,49): error TS2345: Argument of type 'Uint8Array<ArrayBuffer>' is not assignable to parameter of type 'number[]'.
+app/product_v2/workspace.js(3874,38): error TS2339: Property 'role_label' does not exist on type 'ShotDraft'.
+app/product_v2/workspace.js(3897,25): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+app/product_v2/workspace.js(3907,5): error TS2322: Type 'StoreCandidateResult' is not assignable to type 'void'.
+app/product_v2/workspace.js(3919,31): error TS2322: Type 'string | undefined' is not assignable to type 'string | null'.
+app/product_v2/workspace.js(3921,47): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+app/product_v2/workspace.js(3940,59): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{}'.
+app/product_v2/workspace.js(3942,5): error TS2322: Type '{}' is not assignable to type 'Record<string, AttemptRecord>'.
+app/product_v2/workspace.js(3954,49): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+app/product_v2/workspace.js(3958,44): error TS2339: Property 'candidate_id' does not exist on type 'CandidateRecord | CandidateEntry'.
+app/product_v2/workspace.js(3959,62): error TS2339: Property 'candidate_id' does not exist on type 'CandidateRecord | CandidateEntry'.
+app/product_v2/workspace.js(3961,11): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{}'.
+app/product_v2/workspace.js(3961,29): error TS2339: Property 'candidate_id' does not exist on type 'CandidateRecord | CandidateEntry'.
+app/product_v2/workspace.js(3964,20): error TS2538: Type 'null' cannot be used as an index type.
+app/product_v2/workspace.js(3968,21): error TS2322: Type '{}' is not assignable to type 'Record<string, CompareInventoryRow[]>'.
+app/product_v2/workspace.js(4000,44): error TS18047: 'shot' is possibly 'null'.
+app/product_v2/workspace.js(4001,49): error TS18047: 'row' is possibly 'null'.
+app/product_v2/workspace.js(4002,53): error TS18047: 'row' is possibly 'null'.
+app/product_v2/workspace.js(4042,28): error TS2339: Property 'dataset' does not exist on type 'Element'.
+app/product_v2/workspace.js(4044,11): error TS2339: Property 'tabIndex' does not exist on type 'Element'.
+app/product_v2/workspace.js(4045,51): error TS2339: Property 'focus' does not exist on type 'Element'.
+app/product_v2/workspace.js(4048,41): error TS2538: Type 'null' cannot be used as an index type.
+app/product_v2/workspace.js(4051,30): error TS7006: Parameter 'item' implicitly has an 'any' type.
+app/product_v2/workspace.js(4052,30): error TS2345: Argument of type 'ShotDraft | null' is not assignable to parameter of type '{ shot_id: string; } | null'.
+app/product_v2/workspace.js(4053,23): error TS2345: Argument of type 'ShotDraft | null' is not assignable to parameter of type '{ shot_id: string; } | null'.
+app/product_v2/workspace.js(4054,22): error TS2345: Argument of type 'ShotDraft | null' is not assignable to parameter of type '{ shot_id: string; } | null'.
+app/product_v2/workspace.js(4057,45): error TS2345: Argument of type 'ShotDraft' is not assignable to parameter of type '{ shot_id: string; }'.
+app/product_v2/workspace.js(4104,28): error TS2339: Property 'shots' does not exist on type '{ rowsByShotId: Record<string, CompareInventoryRow[]>; }'.
+app/product_v2/workspace.js(4104,39): error TS7006: Parameter 'item' implicitly has an 'any' type.
+app/product_v2/workspace.js(4112,28): error TS2345: Argument of type 'ShotDraft' is not assignable to parameter of type '{ shot_id: string; }'.
+app/product_v2/workspace.js(4113,23): error TS2345: Argument of type 'ShotDraft' is not assignable to parameter of type '{ shot_id: string; }'.
+app/product_v2/workspace.js(4115,22): error TS2345: Argument of type 'ShotDraft' is not assignable to parameter of type '{ shot_id: string; }'.
+app/product_v2/workspace.js(4116,30): error TS2345: Argument of type 'ShotDraft' is not assignable to parameter of type '{ shot_id: string; }'.
+app/product_v2/workspace.js(4142,53): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+app/product_v2/workspace.js(4148,35): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+app/product_v2/workspace.js(4152,78): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+app/product_v2/workspace.js(4191,65): error TS2339: Property 'focus' does not exist on type 'Element'.
+app/product_v2/workspace.js(4337,37): error TS18047: 'shot' is possibly 'null'.
+app/product_v2/workspace.js(4376,34): error TS18047: 'shot' is possibly 'null'.
+app/product_v2/workspace.js(4381,49): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+app/product_v2/workspace.js(4431,25): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+app/product_v2/workspace.js(4437,28): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string | null'.
+app/product_v2/workspace.js(4459,47): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+app/product_v2/workspace.js(4463,36): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+app/product_v2/workspace.js(4464,82): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+app/product_v2/workspace.js(4480,59): error TS2345: Argument of type 'AttemptState | null' is not assignable to parameter of type 'AttemptState'.
+app/product_v2/workspace.js(4517,59): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+app/product_v2/workspace.js(4526,30): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+app/product_v2/workspace.js(4559,49): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.

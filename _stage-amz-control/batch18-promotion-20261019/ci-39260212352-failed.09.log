@@ -1,0 +1,31 @@
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:31:34.8964058Z - [PASS] V2.4.2-21 capabilities 图像块暴露 capability_version 与契约版本（身份冻结数据源）
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:31:34.8965407Z - [PASS] V2.4.2-15 零意外 console error / page error（预期内的 504 与刷新中断除外）
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:31:34.8966353Z - [PASS] V2.4.2-16 正式入口自检仍全过（V2.4.2 不破坏既有入口）
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:31:34.8967281Z - [PASS] V2.4.2-22 可分享配置导出契约（Node）：只含白名单字段、secret 混入被拒
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:31:34.8967736Z 
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:31:34.8967925Z BOUNDARY
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:31:34.8976243Z 证明「一次生成」在真实浏览器与真实 HTTP 上可核对：发起提交之前先把 pending_submit 身份写进 IndexedDB（服务端已收到请求时记录已在库里），双击与重入只产生一条 Attempt；提交信封按网关四类归口推进状态，task id / request id / 错误语义原样保存；核对只按已保存的 task id 查询，服务端重启（无任务表）后结论不变；没有 task id 的 Unknown 不允许自动重提，界面只提供显式新建 action，且旧记录逐字保留；刷新打断提交时 pending 身份仍在、不产生第二次提交；Prompt 前进后旧 Attempt 标「基于旧版本 v1」且记录零改写。请求体里的 Prompt 文本、参考图与尺寸与记录和页面一致。V2.R4.4：pending_submit 起就冻结执行身份（协议/能力版本/凭据引用，无 secret），提交与核对请求都按冻结身份带 target；环境身份漂移（provider 换目标）阻塞核对——不发请求、记录零改写、给恢复条件，环境恢复后同 task 按原身份核对成功；直发网关对 target 不符返回 400 EXECUTION_IDENTITY_MISMATCH，target 一致放行；capabilities 暴露 capability_version 作为冻结数据源；可分享配置导出（不含 secret、凭据声明为重新提供）契约在 Node 套件全过。本批不保存候选字节（V2.4.4）、不做整套批量与部分失败（V2.4.3）、不做审核与返工（Phase 5）；全程 0 次真实模型调用、0 次外部网络；图像 provider 是注入的假替身，只证明身份与状态机，不证明真实出图质量。
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:31:34.8981118Z 
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:31:34.8981397Z 证据文件：
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:31:34.8982097Z  - evals/product-v2/v2.4.2-generation-attempt-20261019-133119.json
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:31:34.8983159Z  - evals/product-v2/v2.4.2-generation-attempt-20261019-133119.txt
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:31:34.8984184Z  - evals/product-v2/v2.4.2-generation-attempt-20261019-133119.png
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:32:04.5447334Z amz-listing-kit Product V2 V2.4.3 整套批次执行、逐图进度与部分失败
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:32:04.5448564Z NOT-AUTHORITY: point-in-time verification evidence only
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:32:04.5449449Z observed_at: 2026-10-19T13:32:04
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:32:04.5450032Z status: passed
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:32:04.5451200Z model_calls: 0 · external_network_calls: 0 (fake image provider + 本机服务)
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:32:04.5452389Z json: evals/product-v2/v2.4.3-batch-suite-20261019-133135.json
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:32:04.5453002Z 
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:32:04.5453194Z CHECKS
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:32:04.5454196Z - [PASS] V2.4.3-00 domain / workspace / harness 通过 node --check（ESM 语法门）
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:32:04.5456577Z - [PASS] V2.4.3-01 B01–B09 契约套件全过且用例齐全
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:32:04.5457509Z - [PASS] V2.4.3-02 反向探针确实执行（非法输入 / 无身份记录不许自动重提）
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:32:04.5458640Z - [PASS] V2.4.3-02b 既有契约套件回归：Attempt / 确认单 / Prompt 编辑 / 套图编辑器全过
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:32:04.5459700Z - [PASS] V2.4.3-03a B4单默认：确认前只送正看1张（未选3由范围行如实列出）
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:32:04.5460636Z - [PASS] V2.4.3-03 确认前就绪：显式批量4张待提交、确认按钮可用且标注4张
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:32:04.5461649Z - [PASS] V2.4.3-04 正常批次：一次确认即整套提交、各提交一次并核对到全部成功，确认后状态前进
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:32:04.5462690Z - [PASS] V2.4.3-05 部分失败：失败不阻塞批次（两张都提交）、成功结果保留、已完成的图零改写
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:32:04.5463747Z - [PASS] V2.4.3-06 失败重试：单张重试成功；旧失败记录与无关记录逐字保留；新 action 是新身份
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:32:04.5465046Z - [PASS] V2.4.3-07 未知：无任务编号、只提交一次、观察窗口内零改写、只提供显式新建 action
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:32:04.5466143Z - [PASS] V2.4.3-08 未知显式新建 action 后成功；旧未知记录逐字保留；摘要按不自动重提拒绝发送

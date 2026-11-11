@@ -1,0 +1,37 @@
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:31:01.2450125Z   [PASS] V2.3.8-07 整套流程零 console error / page error
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:31:01.2450698Z 证据：evals/product-v2/v2.3.8-spec-save-occ-20261019-133055.txt
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:31:01.2451130Z 结果：全过（退出码 0）
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:31:15.5314460Z ........................................................................ [ 81%]
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:31:19.1126967Z ................                                                         [100%]
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:31:19.1127521Z 88 passed in 16.15s
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:31:34.8930593Z amz-listing-kit Product V2 V2.4.2 浏览器 Attempt、action ID、task ID 与 Unknown 恢复
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:31:34.8932049Z NOT-AUTHORITY: point-in-time verification evidence only
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:31:34.8932952Z observed_at: 2026-10-19T13:31:34
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:31:34.8933523Z status: passed
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:31:34.8934759Z model_calls: 0 · external_network_calls: 0 (fake image provider + 本机服务)
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:31:34.8936125Z json: evals/product-v2/v2.4.2-generation-attempt-20261019-133119.json
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:31:34.8936791Z 
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:31:34.8936983Z CHECKS
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:31:34.8938020Z - [PASS] V2.4.2-00 domain / workspace / harness 通过 node --check（ESM 语法门）
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:31:34.8939058Z - [PASS] V2.4.2-01 A01–A13 契约套件全过且用例齐全
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:31:34.8940022Z - [PASS] V2.4.2-02 反向探针确实执行（非法输入 / 非法迁移 / 篡改 / 回退 / 无身份恢复）
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:31:34.8941017Z - [PASS] V2.4.2-02b 既有契约套件回归：确认单 / Prompt 编辑 / 套图编辑器全过
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:31:34.8942047Z - [PASS] V2.4.2-02b 确认即提交：本次授权产生新增 attempt 消费并到达上游（非旧行存在）
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:31:34.8943092Z - [PASS] V2.4.2-03 授权前生成准备：4 张图尚未生成、provider 身份可见、执行区可达
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:31:34.8944277Z - [PASS] V2.4.2-04 提交前落库：服务端已收到提交时，IndexedDB 已是 pending_submit 且 Prompt 版本一致
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:31:34.8945564Z - [PASS] V2.4.2-05 双击只产生一条 Attempt：只发生一次提交，且迁移链只有一个 action id
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:31:34.8946753Z - [PASS] V2.4.2-06 提交信封 → submitted：task id 保存；请求里的 Prompt / 引用 / 尺寸与记录一致
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:31:34.8948519Z - [PASS] V2.4.2-17 冻结执行身份：记录带协议/能力版本/凭据引用（无 secret），提交请求 target 与之一致
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:31:34.8949594Z - [PASS] V2.4.2-07 按 task id 核对推进 succeeded：迁移链完整、没有重新提交
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:31:34.8950709Z - [PASS] V2.4.2-18 核对请求按冻结身份带 target：协议/目标/模型/能力版本与记录一致（不偷用当前设置）
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:31:34.8951717Z - [PASS] V2.4.2-08 刷新恢复：succeeded 身份、task id 与 UI 徽标一致
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:31:34.8952882Z - [PASS] V2.4.2-09 服务端重启后按已保存 task id 核对成功（服务端无任务表）
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:31:34.8954102Z - [PASS] V2.4.2-10 Unknown 不自动重提：unknown / 无 task id / requires_review，界面只给显式新建
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:31:34.8955443Z - [PASS] V2.4.2-11 显式新建 action：旧记录逐字保留，新 action 可提交且不复用旧身份
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:31:34.8956419Z - [PASS] V2.4.2-11 显式新建 action：新身份生效，旧 unknown 记录逐字保留
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:31:34.8957427Z - [PASS] V2.4.2-12 刷新打断提交：pending 身份保留、不自动重提、界面可显式新建 action
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:31:34.8958440Z - [PASS] V2.4.2-13 刷新后显式新建 action：旧 pending 记录原样保留、新身份可提交
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:31:34.8959454Z - [PASS] V2.4.2-14 Prompt 前进后旧 Attempt 标「基于旧版本 v1」，记录零改写
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:31:34.8960433Z - [PASS] V2.4.2-19 环境身份漂移阻塞核对：不发请求、记录零改写、给出原身份与恢复条件
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:31:34.8961398Z - [PASS] V2.4.2-19b 环境恢复后同 task 仍按原身份核对成功（不新建、不换目标）
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:31:34.8962680Z - [PASS] V2.4.2-20 同 task 不同 target 直发网关：400 EXECUTION_IDENTITY_MISMATCH（不转发）；target 一致时放行

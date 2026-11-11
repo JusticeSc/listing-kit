@@ -1,0 +1,67 @@
+app/product_v2/workspace.js(5375,41): error TS18048: 'target' is possibly 'undefined'.
+app/product_v2/workspace.js(5375,41): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type 'ConfirmationExecutionTarget'.
+app/product_v2/workspace.js(5379,68): error TS18048: 'target' is possibly 'undefined'.
+app/product_v2/workspace.js(5380,13): error TS18048: 'target' is possibly 'undefined'.
+app/product_v2/workspace.js(5380,42): error TS18048: 'target' is possibly 'undefined'.
+app/product_v2/workspace.js(5383,58): error TS2322: Type 'unknown' is not assignable to type 'string | undefined'.
+app/product_v2/workspace.js(5388,79): error TS18048: 'target' is possibly 'undefined'.
+app/product_v2/workspace.js(5449,47): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{}'.
+app/product_v2/workspace.js(5451,50): error TS2538: Type 'null' cannot be used as an index type.
+app/product_v2/workspace.js(5451,86): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+app/product_v2/workspace.js(5482,27): error TS18047: 'shot' is possibly 'null'.
+app/product_v2/workspace.js(5488,43): error TS18047: 'shot' is possibly 'null'.
+app/product_v2/workspace.js(5489,48): error TS18047: 'row' is possibly 'null'.
+app/product_v2/workspace.js(5490,52): error TS18047: 'row' is possibly 'null'.
+app/product_v2/workspace.js(5544,51): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+app/product_v2/workspace.js(5557,40): error TS18047: 'source' is possibly 'null'.
+app/product_v2/workspace.js(5558,47): error TS18047: 'source' is possibly 'null'.
+app/product_v2/workspace.js(5559,37): error TS18047: 'source' is possibly 'null'.
+app/product_v2/workspace.js(5563,53): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+app/product_v2/workspace.js(5570,24): error TS18047: 'source' is possibly 'null'.
+app/product_v2/workspace.js(5643,24): error TS2322: Type '{ shot_id: string | null; template_id: string | null; label: string; role_id: string; role_label: string | null; required: boolean; custom: boolean; satisfied: boolean; blocking: DependencyBlocking[]; }[]' is not assignable to type '{ shot_id: string; template_id: string | null; label: string; role_id: string; role_label: string | null; required: boolean; custom: boolean; satisfied: boolean; blocking: DependencyBlocking[]; }[]'.
+app/product_v2/workspace.js(5774,5): error TS2322: Type 'Record<string, { status?: string | undefined; summary?: string | undefined; hint?: string | undefined; available?: boolean | undefined; }>' is not assignable to type 'void'.
+app/product_v2/workspace.js(5918,5): error TS2322: Type '{ label: string; value: string; }[]' is not assignable to type '{ slot_id: string; label: string; value: unknown; source: string; }[]'.
+app/product_v2/workspace.js(5934,32): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{}'.
+app/product_v2/workspace.js(5936,5): error TS2322: Type '{}' is not assignable to type 'Record<string, ShotSpec>'.
+app/product_v2/workspace.js(5947,34): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{}'.
+app/product_v2/workspace.js(5949,5): error TS2322: Type '{}' is not assignable to type 'Record<string, ReviewReport>'.
+app/product_v2/workspace.js(5959,9): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{}'.
+app/product_v2/workspace.js(5962,5): error TS2322: Type '{}' is not assignable to type 'Record<string, SelectionRecord>'.
+app/product_v2/workspace.js(5970,44): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{}'.
+app/product_v2/workspace.js(5971,5): error TS2322: Type '{}' is not assignable to type 'Record<string, CandidateRecord[]>'.
+app/product_v2/workspace.js(5980,7): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{}'.
+app/product_v2/workspace.js(5982,5): error TS2322: Type '{}' is not assignable to type 'Record<string, AttemptRecord[]>'.
+app/product_v2/workspace.js(5991,32): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{}'.
+app/product_v2/workspace.js(5993,5): error TS2322: Type '{}' is not assignable to type 'Record<string, FactSlot>'.
+app/product_v2/workspace.js(6010,14): error TS2353: Object literal may only specify known properties, and 'selectionSet' does not exist in type '{ selectionFingerprint: string; inputsFingerprint: string; }'.
+app/product_v2/workspace.js(6039,26): error TS18046: 'snapshot' is of type 'unknown'.
+app/product_v2/workspace.js(6040,23): error TS18046: 'snapshot' is of type 'unknown'.
+app/product_v2/workspace.js(6040,45): error TS7006: Parameter 'shot' implicitly has an 'any' type.
+app/product_v2/workspace.js(6040,53): error TS18046: 'snapshot' is of type 'unknown'.
+app/product_v2/workspace.js(6041,12): error TS7006: Parameter 'shot' implicitly has an 'any' type.
+app/product_v2/workspace.js(6051,23): error TS18046: 'snapshot' is of type 'unknown'.
+app/product_v2/workspace.js(6054,21): error TS18046: 'snapshot' is of type 'unknown'.
+app/product_v2/workspace.js(6055,37): error TS7006: Parameter 'item' implicitly has an 'any' type.
+app/product_v2/workspace.js(6071,36): error TS7006: Parameter 'item' implicitly has an 'any' type.
+app/product_v2/workspace.js(6072,20): error TS18046: 'snapshot' is of type 'unknown'.
+app/product_v2/workspace.js(6074,7): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{}'.
+app/product_v2/workspace.js(6094,24): error TS18046: 'snapshot' is of type 'unknown'.
+app/product_v2/workspace.js(6095,24): error TS18046: 'snapshot' is of type 'unknown'.
+app/product_v2/workspace.js(6109,63): error TS2353: Object literal may only specify known properties, and 'message' does not exist in type '{ skipped?: boolean | undefined; reason?: string | undefined; failed?: boolean | undefined; }'.
+app/product_v2/workspace.js(6136,20): error TS18046: 'prepared' is of type 'unknown'.
+app/product_v2/workspace.js(6137,11): error TS18046: 'prepared' is of type 'unknown'.
+app/product_v2/workspace.js(6142,34): error TS18046: 'prepared' is of type 'unknown'.
+app/product_v2/workspace.js(6154,29): error TS18046: 'prepared' is of type 'unknown'.
+app/product_v2/workspace.js(6155,29): error TS18046: 'prepared' is of type 'unknown'.
+app/product_v2/workspace.js(6155,52): error TS18046: 'prepared' is of type 'unknown'.
+app/product_v2/workspace.js(6156,31): error TS18046: 'prepared' is of type 'unknown'.
+app/product_v2/workspace.js(6156,54): error TS18046: 'prepared' is of type 'unknown'.
+app/product_v2/workspace.js(6159,36): error TS2339: Property 'selectionSet' does not exist on type '{ selectionFingerprint: string; inputsFingerprint: string; }'.
+app/product_v2/workspace.js(6172,27): error TS7006: Parameter 'sha' implicitly has an 'any' type.
+app/product_v2/workspace.js(6173,53): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+app/product_v2/workspace.js(6189,9): error TS2353: Object literal may only specify known properties, and 'ok' does not exist in type '{ skipped?: boolean | undefined; reason?: string | undefined; failed?: boolean | undefined; }'.
+app/product_v2/workspace.js(6198,9): error TS2353: Object literal may only specify known properties, and 'message' does not exist in type '{ skipped?: boolean | undefined; reason?: string | undefined; failed?: boolean | undefined; }'.
+app/product_v2/workspace.js(6334,47): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+app/product_v2/workspace.js(6357,19): error TS7006: Parameter 'sha' implicitly has an 'any' type.
+app/product_v2/workspace.js(6367,18): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number | undefined'.
+app/product_v2/workspace.js(6390,41): error TS2345: Argument of type 'unknown' is not assignable to parameter of type '{ shots?: unknown; selections?: unknown; candidatesByShot?: unknown; reportsByCandidate?: unknown; attemptsByShot?: unknown; readBytes?: unknown; digest?: unknown; suiteReport?: unknown; suiteFingerprints?: unknown; acknowledgements?: unknown; } | undefined'.

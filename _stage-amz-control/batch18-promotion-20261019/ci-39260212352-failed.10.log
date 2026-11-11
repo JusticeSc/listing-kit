@@ -1,0 +1,35 @@
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:32:04.5467136Z - [PASS] V2.4.3-09 停止：只提交了已开始的一张；停止后不再新增提交；已提交身份仍核对出结论
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:32:04.5468099Z - [PASS] V2.4.3-10 刷新恢复：被中断的提交保留身份、不自动重提；未提交队列按记录重算剩余
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:32:04.5469084Z - [PASS] V2.4.3-11 继续生成剩余：补交剩余图并核对在途身份，全部图（10 张）最终成功
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:32:04.5470172Z - [PASS] V2.4.3-12 零意外 console error / page error（预期内的 504 与刷新中断除外）
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:32:04.5471150Z - [PASS] V2.4.3-13 正式入口自检仍全过（V2.4.3 不破坏既有入口）
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:32:04.5471551Z 
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:32:04.5471738Z BOUNDARY
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:32:04.5475353Z 证明「整套生成」在真实浏览器与真实 HTTP 上是可停止、可恢复、可隔离的：批次按套图顺序逐张提交，每张先落 pending_submit、只提交一次；批次自动按已保存 task id 核对到终态；一张明确失败不阻塞其余图片，成功记录逐字保留；失败图可单独重试，旧失败记录与无关记录零改写；结果未知（无任务编号）不自动重提，只提供显式新建 action；停止只停新增提交，已提交身份仍核对出结论；批次中途刷新后身份保留、不产生第二次提交，剩余图片可继续生成。本批不保存候选字节（V2.4.4）、不做审核与返工（Phase 5）；全程 0 次真实模型调用、0 次外部网络；图像 provider 是注入的假替身（按 Prompt 标记决定场景），只证明批次与状态语义，不证明真实出图质量。
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:32:04.5477709Z 
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:32:04.5477948Z 证据文件：
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:32:04.5478564Z  - evals/product-v2/v2.4.3-batch-suite-20261019-133135.json
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:32:04.5479466Z  - evals/product-v2/v2.4.3-batch-suite-20261019-133135.txt
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:32:04.5480335Z  - evals/product-v2/v2.4.3-batch-suite-20261019-133135.png
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:32:55.0746861Z amz-listing-kit Product V2 V2.4.4 候选字节流、Blob 持久化与容量管理
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:32:55.0747643Z NOT-AUTHORITY: point-in-time verification evidence only
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:32:55.0748098Z observed_at: 2026-10-19T13:32:55
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:32:55.0748448Z status: failed
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:32:55.0749084Z model_calls: 0 · external_network_calls: 0 (fake image provider + 本机服务)
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:32:55.0749824Z json: evals/product-v2/v2.4.4-candidate-blob-20261019-133205.json
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:32:55.0750215Z 
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:32:55.0750326Z CHECKS
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:32:55.0750969Z - [PASS] V2.4.4-00 domain / workspace / harness 通过 node --check（ESM 语法门）
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:32:55.0751578Z - [PASS] V2.4.4-01 C01–C10 契约套件全过且用例齐全
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:32:55.0752049Z - [PASS] V2.4.4-02 反向探针确实执行（坏 PNG / 非法身份 / 兼容性参数）
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:32:55.0752560Z - [PASS] V2.4.4-02b 既有契约套件回归：Attempt / 批次 / 确认单 / Prompt 编辑 / 套图编辑器全过
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:32:55.0753111Z - [PASS] V2.4.4-03b 启动诊断：首次加载失败不可被重试成功掩盖（首失败保留因果分支）
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:32:55.0753632Z - [FAIL] V2.4.4-03 就绪：首批摘要范围=未提交全集（4 张）、候选栏为空且只有参考图字节
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:32:55.0754234Z - [PASS] V2.4.4-04 单张成功：候选自动入库；记录 sha = 重算 sha = 响应头 sha；64×64 预览可见
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:32:55.0755197Z - [PASS] V2.4.4-05 刷新恢复：候选记录与字节保留、不重复保存、零新增取回请求、预览仍可见
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:32:55.0755774Z - [PASS] V2.4.4-06 取回失败：提交结论不受掩盖、原因与下一步可见、无半份记录、停止后手动保存 sha 与响应头一致
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:32:55.0756356Z - [PASS] V2.4.4-07 配额异常：批次停而不空转、不留半份记录、提示含原因与下一步；解除后同一 action 保存成功
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:32:55.0756795Z - [FAIL] V2.4.4-99 浏览器闭环在完成前中断
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:32:55.0757282Z - [PASS] V2.4.4-03c 启动诊断终核：整轮任一次加载失败都保留并判红（observer 证明，非因果修复）
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:32:55.0757879Z - [PASS] V2.4.4-09 零意外 console error / page error（预期内的取回 502 与刷新中断除外）
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:32:55.0758356Z - [PASS] V2.4.4-10 正式入口自检仍全过（V2.4.4 不破坏既有入口）

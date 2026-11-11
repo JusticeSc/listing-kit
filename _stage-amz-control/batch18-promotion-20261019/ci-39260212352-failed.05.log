@@ -1,0 +1,49 @@
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:24.7608826Z   [PASS] V2.3.2-08 刷新恢复：行顺序、数量与存储版本原样恢复
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:24.7609561Z   [PASS] V2.3.2-09 契约会话与 UI 会话零 console error / page error
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:24.7609973Z   [PASS] V2.3.2-10 正式入口自检仍全过（V2.3.2 不破坏既有入口）
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:24.7610291Z 套件用例：12 条，失败 0 条
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:24.7610702Z 证据：evals/product-v2/v2.3.2-suite-editor-20261019-132918.txt
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:24.7611048Z 结果：全过（退出码 0）
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:37.3696816Z ========================================================================
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:37.3697656Z V2.R3.3 会话生命周期验证
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:37.3698036Z ========================================================================
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:37.3698696Z   [PASS] V2.3.3-00 workspace/app/session（session 取标准 tsc emit 树）通过 node --check
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:37.3699289Z   [PASS] V2.3.3-01 正常启动零延迟：控件只解锁一次且解锁时 data-ready=1
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:37.3699777Z   [PASS] V2.3.3-02 模块加载延迟：解锁时刻即 data-ready=1（无早解锁窗口）
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:37.3700222Z   [PASS] V2.3.3-03 工作区装载延迟：视图出现时工作区已完成装载
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:37.3700670Z   [PASS] V2.3.3-04 boot 失败：控件保持禁用、boot-retry 显示、错误信息可见
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:37.3701119Z   [PASS] V2.3.3-05 打开 A → 打开 B：旧回调不重置 B 的视图/项目名
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:37.3701694Z   [PASS] V2.3.3-06 A 的陈旧 intake 输入已按 A 的 project_id 落库，没有写进 B（B 的 intake 为空或属于 B 自己）
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:37.3702161Z   [PASS] V2.3.3-07 双标签陈旧编辑：冲突编辑器可见且三方不同字段逐项展示
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:37.3702530Z   [PASS] V2.3.3-08 冲突解决后：三字段落库、版本追加、A 的输入未被静默覆盖
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:37.3702912Z   [PASS] V2.3.3-09 浏览器重启后项目、草稿与首页列表完整恢复
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:37.3703260Z   [PASS] V2.3.3-11 首页读取失败保留项目列表且显示就地重试
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:37.3703592Z   [PASS] V2.3.3-12 键盘重试恢复同一项目且无未处理拒绝
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:37.3703927Z   [PASS] V2.3.3-13 慢读取有忙碌反馈且保留已有项目，不假称空库
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:37.3704268Z   [PASS] V2.3.3-14 启动列表失败保持禁用，重试后恢复项目和完整首页
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:37.3704887Z   [PASS] V2.3.3-10 全程零 console error / page error
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:37.3705417Z 证据：evals/product-v2/v2.3.3-session-lifecycle-20261019-132925.json
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:37.3705789Z 结果：全过（退出码 0）
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:44.8726121Z ========================================================================
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:44.8727303Z V2.3.3 规格版本验证
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:44.8728130Z ========================================================================
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:44.8729346Z   [PASS] V2.3.3-00 domain / workspace / harness 通过 node --check（ESM 语法门）
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:44.8730447Z   [PASS] V2.3.3-01 契约套件全部通过且用例清单完整（F01..F12）
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:44.8731435Z   [PASS] V2.3.3-02 反向探针确实被执行（风格/单图校验、缺失 shotId、非法版本号）
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:44.8732416Z   [PASS] V2.3.3-03 套图方案就绪后规格区解锁；保存前就说明影响范围
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:44.8733290Z   [PASS] V2.3.3-04 保存公共风格 v1：版本推进，全部图片的审核清单出现风格行
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:44.8734116Z   [PASS] V2.3.3-05 保存单图规格 v1：只有目标图变成 v1，其他图仍是默认
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:44.8735163Z   [PASS] V2.3.3-06 再次保存风格 v2：单图规格版本不受影响（两套文档彼此独立）
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:44.8736031Z   [PASS] V2.3.3-07 恢复风格上一版本：写为新版本 v3、内容回到 v1、历史只增不删
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:44.8736860Z   [PASS] V2.3.3-08 单图规格恢复：v3 payload 等于 v1，历史三条
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:44.8737647Z   [PASS] V2.3.3-09 刷新恢复：风格 v3、单图规格 v3、清单与历史原样
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:44.8738528Z   [PASS] V2.3.3-10 契约会话与 UI 会话零 console error / page error
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:44.8739382Z   [PASS] V2.3.3-11 正式入口自检仍全过（V2.3.3 不破坏既有入口）
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:44.8740439Z 套件用例：12 条，失败 0 条
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:44.8741308Z 证据：evals/product-v2/v2.3.3-spec-versions-20261019-132937.txt
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:44.8742086Z 结果：全过（退出码 0）
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:53.8339244Z ========================================================================
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:53.8340530Z V2.3.4 Prompt 编译器验证
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:53.8340901Z ========================================================================
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:53.8341456Z   [PASS] V2.3.4-00 domain / workspace / harness 通过 node --check（ESM 语法门）
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:29:53.8341925Z   [PASS] V2.3.4-01 G01–G12 契约套件全过且用例齐全
