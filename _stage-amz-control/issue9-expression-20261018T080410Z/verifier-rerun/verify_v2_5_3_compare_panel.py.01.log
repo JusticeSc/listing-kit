@@ -1,0 +1,29 @@
+V2.5.3 候选比较与审核清单面板验证（比较契约套件 + 真实工作台走查 + 视觉证据）
+NOT-AUTHORITY: point-in-time verification evidence only
+============================================================================
+  [PASS] V2.5.3-05 CP-01–CP-15 比较契约套件：异常优先、默认目标、清单排序与反向探针全部通过
+         {"status": "passed", "failed": [], "cases": 15}
+  [PASS] V2.5.3-06 复核契约回归：R01–R13 与 R14–R21 在比较面板落地后仍全过
+         {"review": "passed", "provider": "passed", "review_failed": [], "provider_failed": []}
+  [PASS] V2.5.3-07 入口：每张有候选的图都有「比较候选」，点开即投影该图（无第二套状态）
+         {"contract": "v2.5.3", "shot": "shot_main_clean", "subject": "主图·干净背景 · 候选 3 · 待处理 2", "visible": true}
+  [PASS] V2.5.3-08 参考图栏 = 这张图实际发送的参考图（与提交选择一致，不是全部参考图）
+         {"references": [{"sha256": "88bcc17af574e50d447d09bc06d9636033a215d738a8a13768ba63dd0d1a38d2", "has_image": true, "text": "\n        \n              \n              放大参考原图\n            \n        商品主图\n        "}], "title": "当前候选原任务参考图（1 张）；均按原比例展示。", "expected_sha256": "88bcc17af574e50d"}
+  [PASS] V2.5.3-09 候选卡与 IndexedDB 一致：两次生成 + 一个合规夹具 = 三张，按版本可追溯
+         {"cards": [["act-6ff79bea295e4ed196675eb6e9771fc4", "候选 v2", "pending"], ["act-d24b4e47e0544a83a340efbbf7c181c0", "候选 v1", "pending"], ["act-fixture-compliant", "候选 v3", "clean"]], "db_versions": [1, 2, 3]}
+  [PASS] V2.5.3-10 异常优先：有阻断的两个候选排在无发现的夹具之前，默认看排在最前的那一个
+         {"order": ["act-6ff79bea295e4ed196675eb6e9771fc4", "act-d24b4e47e0544a83a340efbbf7c181c0", "act-fixture-compliant"], "states": ["pending", "pending", "clean"], "selected": "act-6ff79bea295e4ed196675eb6e9771fc4", "fixture_severities": ["PASS", "PASS", "PASS", "PASS", "PASS", "PASS", "PASS"]}
+  [PASS] V2.5.3-11 键盘路径：方向键/Home/End 在候选间移动并保持焦点，Escape 回到该图当前可见的比较入口
+         {"right": "act-d24b4e47e0544a83a340efbbf7c181c0", "end": "act-fixture-compliant", "home": "act-6ff79bea295e4ed196675eb6e9771fc4", "escape_focus": null, "expected": ["act-6ff79bea295e4ed196675eb6e9771fc4", "act-d24b4e47e0544a83a340efbbf7c181c0", "act-fixture-compliant"]}
+  [PASS] V2.5.3-12 完整报告按需展开：默认收起，展开后含合同版本、通过项与视觉复核状态
+         {"collapsed": false, "summary": "完整报告（合同 v2.5.2 · 7 条）", "pass_rows": 5, "vlm": "视觉复核（按需发起）：未复核（未运行，未发起 AI 复核；不阻断人工采用）", "findings": 9, "criteria": ["目的：完整展示商品主体，背景干净，不添加资料里没有的部件", "必须保持：商品外观、颜色与比例；标识与文字"]}
+  [PASS] V2.5.3-13 面板不改业务状态：候选字节、Attempt 与审核报告在交互前后完全一致
+         {"candidates_first": 3, "reports_before": 6, "reports_after": 6}
+  [PASS] V2.5.3-13b 卡片返工精确绑定显示的最新候选，不沿用比较区上次查看对象
+         {"expected": "act-fixture-compliant", "last_viewed": "act-6ff79bea295e4ed196675eb6e9771fc4", "actual": {"shot_id": "shot_main_clean", "candidate_id": "act-fixture-compliant", "source": "sha256 0b2be9cdbac9… · candidate act-fixture-compliant", "viewed": null}}
+  [PASS] V2.5.3-14 刷新后一致：候选、默认目标与清单来自 IndexedDB，不依赖内存状态
+         {"order": ["act-6ff79bea295e4ed196675eb6e9771fc4", "act-d24b4e47e0544a83a340efbbf7c181c0", "act-fixture-compliant"], "selected": "act-6ff79bea295e4ed196675eb6e9771fc4", "contract": "v2.5.3", "references": 1}
+  [PASS] V2.5.3-15 单候选回退与「下一个待处理」：一张图一个候选照常比较，跳转落到期望的下一张待处理图
+         {"second_shot": "shot_infographic_benefits", "cards": 1, "pending_by_shot": {"shot_main_clean": true, "shot_infographic_benefits": true, "shot_scene_lifestyle": true, "shot_detail_material": true}, "cards_by_shot": {"shot_main_clean": 3, "shot_infographic_benefits": 1, "shot_scene_lifestyle": 1, "shot_detail_material": 1}, "expected": "shot_scene_lifestyle",
+  [PASS] V2.5.3-16 边界：面板不承担采纳与导出，只有比较所需的动作
+         {"buttons": ["\n        \n        \n          \n            候选 v1\n            待处理\n            \n          \n          64×64 · 2026/10/18 17:44:43\n          阻断 · 最小长边 1000px：最长边 64px 低于平台缩放下限 1000px，交付后无法启用缩放。\n        \n      ", "\n        \n        \n          \n            候选 v2\n            待处理\n            \n          \n          64×64 · 2026/10/18 17

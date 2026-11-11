@@ -1,0 +1,51 @@
+      "main_text": "缺失 主要材质 系统固定 还没有值。 填值并确认 修改 标记未知",
+      "tech": [
+        {
+          "open": false,
+          "summary": "技术详情",
+          "body": "技术详情 标识 key_material · 版本 v1"
+        }
+      ]
+    },
+    {
+      "main_text": "缺失 包装内容物 系统固定 还没有值。 填值并确认 修改 标记未知",
+      "tech": [
+        {
+          "open": false,
+          "summary": "技术详情",
+          "body": "技术详情 标识 package_contents · 版本 v1"
+        }
+      ]
+    },
+    {
+      "main_text": "缺失 尺寸规格（对象/轴向/数值/单位） 系统固定 还没有值。 填值并确认 修改 标记未知",
+      "tech": [
+        {
+          "open": false,
+          "summary": "技术详情",
+          "body": "技术详情 标识 size_dimensions · 版本 v1"
+        }
+      ]
+    },
+    {
+      "main_text": "缺失 尺寸概览 系统固定 还没有值。 填值并确认 修改 标记未知",
+      "tech": [
+        {
+          "open": false,
+          "summary": "技术详情",
+          "body": "技术详情 标识 size_summary · 版本 v1"
+        }
+      ]
+    },
+    {
+      "main_text": "模型提案 介绍摘要 品类动态 · 置信 0.90 350ml 便携榨汁杯，USB-C 充电，可整杯冲洗。 模型：来自商品介绍。模型：本次提案使用的原资料快照；不是人工确认。 确认 修改 标记未知 删除（保留历史）",
+      "tech": [
+        {
+          "open": false,
+          "summary": "技术详情",
+          "body": "技术详情 标识 description_digest · 版本 v1 · 依赖 商品品类 · 来源引用 fake-deepseek-v4.1-flash、product_input:intake@v2"
+        }
+      ]
+    }
+  ]
+}

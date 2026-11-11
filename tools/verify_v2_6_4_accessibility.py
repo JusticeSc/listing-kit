@@ -39,6 +39,10 @@ EVIDENCE_DIR = ROOT / "evals" / "product-v2"
 EVIDENCE_IMAGE_DIR = EVIDENCE_DIR / "evidence"
 AXE_PATH = EVIDENCE_DIR / "vendor" / "axe-core.min.js"
 AXE_LICENSE = EVIDENCE_DIR / "vendor" / "axe-core.LICENSE.txt"
+AXE_LICENSE_PARTS = (
+    AXE_LICENSE.with_name("axe-core.LICENSE.01-definitions-grants-and-responsibilities.txt"),
+    AXE_LICENSE.with_name("axe-core.LICENSE.02-compliance-and-notices.txt"),
+)
 
 # 与 docs/product-v2-project-context.md §4.2 vendor 登记逐字一致（漂移即红）。
 AXE_SHA256 = "C24F097BD2F451D4F933E8BC7D8D539F8672A2EBCB5CC9F9F3EEC8CA9470A0C1"
@@ -155,6 +159,15 @@ def sha256_of(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest().upper()
 
 
+def sha256_of_parts(paths: tuple[Path, ...]) -> str | None:
+    if not all(path.is_file() for path in paths):
+        return None
+    digest = hashlib.sha256()
+    for path in paths:
+        digest.update(path.read_bytes())
+    return digest.hexdigest().upper()
+
+
 def start_server(host: str, port: int, *, image_factory=None):
     """正式入口 + fake provider（含整套复核），与 V2.6.2 走查同一装配。"""
     suite = shared.FakeSuiteReviewProvider(scenario="drift")
@@ -232,13 +245,16 @@ def main() -> int:
 
 
 
+    license_sha256 = sha256_of_parts(AXE_LICENSE_PARTS)
     axe_ok = (AXE_PATH.exists() and AXE_PATH.is_file() and AXE_PATH.stat().st_size == AXE_BYTES
               and sha256_of(AXE_PATH) == AXE_SHA256
-              and AXE_LICENSE.exists() and sha256_of(AXE_LICENSE) == AXE_LICENSE_SHA256)
+              and AXE_LICENSE.is_file() and license_sha256 == AXE_LICENSE_SHA256)
     check("V2.6.4-02", "axe-core vendor 文件完整可执行（字节/sha/许可证）",
           axe_ok, {"exists": AXE_PATH.exists(),
                    "bytes": AXE_PATH.stat().st_size if AXE_PATH.exists() else None,
-                   "sha_match": AXE_PATH.exists() and sha256_of(AXE_PATH) == AXE_SHA256})
+                   "sha_match": AXE_PATH.exists() and sha256_of(AXE_PATH) == AXE_SHA256,
+                   "license_parts_present": license_sha256 is not None,
+                   "license_sha_match": license_sha256 == AXE_LICENSE_SHA256})
 
 
     # ---------------- 浏览器主链 ----------------

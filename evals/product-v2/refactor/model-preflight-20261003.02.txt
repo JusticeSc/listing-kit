@@ -1,0 +1,8 @@
+2026-10-03 本轮追加：下列观察更新此前“大陆正文不可达/币种未证/凭据通道未证”的历史缺口，不改变此前未执行真实调用的事实。
+- 大陆官方 API 正文：https://www.volcengine.com/docs/ark/image-generation-api，经 https://r.jina.ai/https://www.volcengine.com/docs/ark/image-generation-api 取得。精确 flash 显式输出像素范围 [921600,4624220]、宽高比 [1/16,16]；1344*1344 合法。PNG、b64_json、参考图 data URL；不发送 flash 不支持的 stream/sequential/tools。原始正文见本轮 artifact://625；不得以海外型号代替。
+- 大陆官方价格：https://www.volcengine.com/docs/ark/model-pricing，经公开正文转读取得（原始 artifact://620）。图片生成表列 flash 输入图免费、输出图 0.12 元/张。预算估算不扣免费额度或优惠。
+- 百炼官方北京价格：https://help.aliyun.com/zh/model-studio/qwen-image-3-0.md。1K/2K 输入均为 0.02 元/张、输出均为 0.18 元/张；单参考、n=1 每次保守预留 0.20 元。火山单参考、n=1 每次预留 0.12 元。两次必要生图请求合计预留 0.32 元；该数字不含未选择的语义/VLM调用，不构成已消费金额。超时或计费未知时不释放对应预留。
+- gh secret list --repo JusticeSc/listing-kit 仅列名称：DASHSCOPE_API_KEY、VOLCENGINE_API_KEY、SSH_HOST、SSH_USER、SSH_PRIVATE_KEY。ARK_API_KEY Secret 不存在；CD 已把 VOLCENGINE_API_KEY 映射至进程变量 ARK_API_KEY。未读取或导出 Secret 值，未证明实际供应商账户余额、请求成功或运行环境已更新。
+- 公开参考图许可重新核实：https://commons.wikimedia.org/wiki/File:Antique_Glass_Honey_Jar_With_Rusted_Metal_Cap_(31009798197).jpg，作者 Cindy Shebley，CC BY 2.0（https://creativecommons.org/licenses/by/2.0/），允许改编并要求署名、许可链接与修改说明。已有 walkthrough-assets/food/honey-jar-antique.jpg 为 3840×2560 商品照片。生成验收若采用该图，须保留署名及生成/缩放修改说明，不上传私有素材。
+- 已有可信 HTTPS origin 的免费只读核查：Chrome headless 在 https://47.115.172.233:8080/ 打开页面，isSecureContext=true，/api/health HTTP 200（product=v2、server_state=none、user_data=browser-indexeddb），/api/v2/capabilities HTTP 200，当前线上图片模型为 dashscope-qwen-image / qwen-image-3.0、configured=true。未新建项目、未触发模型、未修改浏览器业务数据。此为发布前环境读数，不证明本地修改已部署；当前线上响应未返回 default_trial，最终版本须重新核查公共默认档关闭。
+- 本追加不证明两模型真实闭环，不证明最终运行版本或付费预算已结算；准确进度仍只看 state。

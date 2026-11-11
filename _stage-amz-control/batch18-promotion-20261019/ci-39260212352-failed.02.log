@@ -1,0 +1,51 @@
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:38.2056237Z V2.1.1 IndexedDB 存储契约验证
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:38.2056744Z ========================================================================
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:38.2057461Z   [PASS] V2.1.1-00 storage 模块通过 node --check（ESM 语法门）
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:38.2058041Z   [PASS] V2.1.1-01 契约套件全部通过且用例清单完整
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:38.2058673Z   [PASS] V2.1.1-02 运行期无 console error / page error
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:38.2059296Z   [PASS] V2.1.1-03 默认库名与版本取自代码，结构为 projects/assets/documents
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:38.2059779Z   [PASS] V2.1.1-04 两个独立浏览器配置文件的项目列表互不可见
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:38.2060282Z   [PASS] V2.1.1-05 浏览器关闭重开后项目与当前指针仍在（IndexedDB 持久化）
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:38.2060684Z 套件用例：30 条，失败 0 条
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:38.2061503Z 证据：evals/product-v2/v2.1.1-indexeddb-20261019-132833.txt
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:38.2061972Z 结果：全过（退出码 0）
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:45.1517178Z ========================================================================
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:45.1518377Z V2.1.2 项目首页验证
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:45.1519187Z ========================================================================
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:45.1519989Z   [PASS] V2.1.2-00 app.js 通过 node --check
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:45.1520675Z   [PASS] V2.1.2-01 空白启动：无项目、无指针、无预填内容
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:45.1521277Z   [PASS] V2.1.2-02 新建即打开：IndexedDB 恰有一条记录且当前指针已写入
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:45.1521846Z   [PASS] V2.1.2-03 打开写入当前指针，刷新后仍在该项目且没有复制出第二个项目
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:45.1522467Z   [PASS] V2.1.2-04 重命名：界面与 IndexedDB 一致且 revision 递增
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:45.1523074Z   [PASS] V2.1.2-05 复制：文档版本与资产在新 project_id 下各一份，原项目不变
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:45.1523551Z   [PASS] V2.1.2-06 删除：记录、文档与资产一起消失，当前指针被清除
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:45.1524008Z   [PASS] V2.1.2-07 390px 视口无横向溢出
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:45.1524455Z   [PASS] V2.1.2-08 两个独立浏览器配置文件的项目列表互不可见
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:45.1525337Z   [PASS] V2.1.2-09 全程无 console error / page error
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:45.1525945Z 证据：evals/product-v2/v2.1.2-project-home-20261019-132838.txt
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:45.1526369Z 结果：全过（退出码 0）
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:49.5913074Z ========================================================================
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:49.5914106Z V2.1.3 项目包导入导出验证
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:49.5914757Z ========================================================================
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:49.5915463Z   [PASS] V2.1.3-00 storage 模块与 app.js 通过 node --check
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:49.5916099Z   [PASS] V2.1.3-01 包契约套件全部通过且用例清单完整
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:49.5916569Z   [PASS] V2.1.3-02 界面导出产生下载文件且给出结果提示
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:49.5917168Z   [PASS] V2.1.3-03 导出包是标准 ZIP：CRC 全过、manifest 与资产哈希一致
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:49.5917723Z   [PASS] V2.1.3-04 清空状态后导入：业务记录、文档与资产哈希与导出前一致
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:49.5918216Z   [PASS] V2.1.3-05 重复导入分配新 project_id，两份内容一致且互不覆盖
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:49.5918714Z   [PASS] V2.1.3-06 损坏包被拒绝：界面报错且项目数量不变
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:49.5919207Z   [PASS] V2.1.3-07 全程无 console error / page error
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:49.5919649Z 套件用例：8 条，失败 0 条
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:49.5920210Z 证据：evals/product-v2/v2.1.3-project-package-20261019-132845.txt
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:49.5920663Z 结果：全过（退出码 0）
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:58.1738851Z ========================================================================
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:58.1740041Z V2.1.4 正式入口验证
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:58.1740790Z ========================================================================
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:58.1741894Z   [PASS] V2.1.4-00 server.py 与 product_v2_server.py 通过语法自检
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:58.1743057Z   [PASS] V2.1.4-01 正式入口自检全过（静态资源 / health / 无状态 API / 拒绝旧 API 与目录逃逸）
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:58.1744000Z   [PASS] V2.1.4-03 V2 体检通过且声明服务器无用户状态
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:58.1745556Z   [PASS] V2.1.4-04 正式进程 HTTP 契约：产品资源可取，旧工作空间 API / harness / 写接口不可达
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:58.1746467Z   [PASS] V2.1.4-05 正式入口空白启动：无项目、无指针、无预填内容
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:58.1747307Z   [PASS] V2.1.4-06 新建项目并写入文档与资产（正式入口下走产品 storage 代码）
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:58.1748559Z   [PASS] V2.1.4-07 关浏览器重开后项目与资产 hash 恢复（IndexedDB 持久化）
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:58.1749625Z   [PASS] V2.1.4-08 重启服务器后刷新：项目与资产 hash 仍一致

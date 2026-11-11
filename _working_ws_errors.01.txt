@@ -1,0 +1,53 @@
+app/product_v2/workspace.js(832,31): error TS2322: Type '{ total: number; satisfiable: number; blocked: number; required_blocked: (string | null)[]; shots: { shot_id: string | null; template_id: string | null; label: string; role_id: string; role_label: string | null; required: boolean; custom: boolean; satisfied: boolean; blocking: DependencyBlocking[]; }[]; } | null' is not assignable to type 'SuitePlanSummary | null'.
+app/product_v2/workspace.js(1131,49): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+app/product_v2/workspace.js(1169,73): error TS2345: Argument of type 'string' is not assignable to parameter of type 'ReferenceRole'.
+app/product_v2/workspace.js(1316,18): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number | undefined'.
+app/product_v2/workspace.js(1622,39): error TS2339: Property 'capabilities' does not exist on type '{}'.
+app/product_v2/workspace.js(1622,63): error TS2339: Property 'capabilities' does not exist on type '{}'.
+app/product_v2/workspace.js(1687,49): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+app/product_v2/workspace.js(1721,40): error TS2339: Property 'capabilities' does not exist on type '{}'.
+app/product_v2/workspace.js(1724,53): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{}'.
+app/product_v2/workspace.js(1724,71): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ locale: string; platform: string; max_slots: number; existing_slot_ids: never[]; reference_images?: { role: ReferenceRole; media_type: string; sha256: string; data_base64: string; }[] | undefined; ... 4 more ...; references: { ...; }[]; }'.
+app/product_v2/workspace.js(1725,5): error TS2322: Type '{}' is not assignable to type 'Record<string, unknown>'.
+app/product_v2/workspace.js(1743,33): error TS2322: Type 'AttemptRecord | SemanticAnalysisRecord | FactSlot | ProductBrief | SuitePlan | SelectionRecord | ... 9 more ... | AcknowledgementRecord' is not assignable to type 'FactSlot'.
+app/product_v2/workspace.js(1785,29): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+app/product_v2/workspace.js(1819,12): error TS2339: Property 'enum_values' does not exist on type '{ schema_version: number; slot_id: string; label: string; authority: SlotAuthority; value_type: SlotValueType; value: null; source: string; status: string; confidence: null; evidence: never[]; depends_on: string[]; critical: boolean; }'.
+app/product_v2/workspace.js(1821,48): error TS2339: Property 'allow_model_proposal' does not exist on type '{ schema_version: number; slot_id: string; label: string; authority: SlotAuthority; value_type: SlotValueType; value: null; source: string; status: string; confidence: null; evidence: never[]; depends_on: string[]; critical: boolean; }'.
+app/product_v2/workspace.js(1822,5): error TS2322: Type '{ schema_version: number; slot_id: string; label: string; authority: SlotAuthority; value_type: SlotValueType; value: null; source: string; status: string; confidence: null; evidence: never[]; depends_on: string[]; critical: boolean; }' is not assignable to type 'FactSlot'.
+app/product_v2/workspace.js(1853,52): error TS2339: Property 'model_id' does not exist on type 'FactSlot'.
+app/product_v2/workspace.js(1874,57): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+app/product_v2/workspace.js(1876,47): error TS18047: 'stored' is possibly 'null'.
+app/product_v2/workspace.js(1897,27): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+app/product_v2/workspace.js(1900,19): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+app/product_v2/workspace.js(1900,54): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+app/product_v2/workspace.js(1902,7): error TS2740: Type 'Record<string, unknown>' is missing the following properties from type 'SemanticRequestBody': product_name, description, selling_points, focus, and 5 more.
+app/product_v2/workspace.js(1976,41): error TS2339: Property 'family' does not exist on type '{}'.
+app/product_v2/workspace.js(1977,34): error TS2339: Property 'code' does not exist on type '{}'.
+app/product_v2/workspace.js(1978,24): error TS2339: Property 'retry_policy' does not exist on type '{}'.
+app/product_v2/workspace.js(1978,65): error TS2339: Property 'retry_policy' does not exist on type '{}'.
+app/product_v2/workspace.js(2134,75): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+app/product_v2/workspace.js(2228,60): error TS7053: Element implicitly has an 'any' type because expression of type 'DimensionAxis | DimensionUnit' can't be used to index type '{ height: string; width: string; length: string; depth: string; diameter: string; weight: string; volume: string; thickness: string; }'.
+app/product_v2/workspace.js(2231,25): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type 'Record<string, unknown> | DimensionMeasurement'.
+app/product_v2/workspace.js(2231,64): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type 'Record<string, unknown> | DimensionMeasurement'.
+app/product_v2/workspace.js(2352,31): error TS2339: Property 'dataset' does not exist on type 'Element'.
+app/product_v2/workspace.js(2353,11): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{}'.
+app/product_v2/workspace.js(2353,57): error TS2339: Property 'value' does not exist on type 'Element'.
+app/product_v2/workspace.js(2353,74): error TS2339: Property 'value' does not exist on type 'Element'.
+app/product_v2/workspace.js(2358,7): error TS2322: Type '{}[]' is not assignable to type 'FactSlotValue'.
+app/product_v2/workspace.js(2360,22): error TS2339: Property 'value' does not exist on type 'HTMLElement'.
+app/product_v2/workspace.js(2389,31): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+app/product_v2/workspace.js(2456,25): error TS2345: Argument of type '{ schema_version: number; slot_id: string; label: string; authority: string; value_type: string; value: string | number | boolean | string[]; source: string; status: string; confidence: null; evidence: { ...; }[]; depends_on: never[]; critical: boolean; allow_model_proposal: boolean; }' is not assignable to parameter of type 'FactSlot'.
+app/product_v2/workspace.js(2561,23): error TS18047: 'suitePlan' is possibly 'null'.
+app/product_v2/workspace.js(2592,13): error TS7034: Variable 'checks' implicitly has type 'any[]' in some locations where its type cannot be determined.
+app/product_v2/workspace.js(2596,25): error TS18048: 'planned' is possibly 'undefined'.
+app/product_v2/workspace.js(2607,21): error TS7005: Variable 'checks' implicitly has an 'any[]' type.
+app/product_v2/workspace.js(2608,34): error TS2322: Type '{ plan: PlanRecord; shot: ShotRecord; }' is not assignable to type 'SuitePlanChange'.
+app/product_v2/workspace.js(2608,65): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+app/product_v2/workspace.js(2616,29): error TS2322: Type '{ plan: PlanRecord; moved: boolean; }' is not assignable to type 'SuitePlanChange'.
+app/product_v2/workspace.js(2616,49): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+app/product_v2/workspace.js(2621,29): error TS2322: Type '{ plan: PlanRecord; moved: boolean; }' is not assignable to type 'SuitePlanChange'.
+app/product_v2/workspace.js(2621,49): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+app/product_v2/workspace.js(2625,29): error TS2322: Type '{ plan: PlanRecord; shot: ShotRecord; }' is not assignable to type 'SuitePlanChange'.
+app/product_v2/workspace.js(2625,49): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+app/product_v2/workspace.js(2631,29): error TS2322: Type '{ plan: PlanRecord; removed: ShotRecord; }' is not assignable to type 'SuitePlanChange'.
+app/product_v2/workspace.js(2631,51): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.

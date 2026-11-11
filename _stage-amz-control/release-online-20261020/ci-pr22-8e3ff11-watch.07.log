@@ -1,0 +1,249 @@
+Refreshing run status every 20 seconds. Press Ctrl+C to quit.
+
+* docs/release-closeout-20261020 Product V2 CI and Docker CD JusticeSc/listing-kit#22 · 39374502267
+Triggered via pull_request about 7 minutes ago
+
+JOBS
+✓ Classify changed paths in 28s (ID 118469486854)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Set up Python
+  ✓ Install locked selection dependencies
+  ✓ Select affected checks and release closure
+  ✓ Post Set up Python
+  ✓ Post Check out repository
+  ✓ Complete job
+* Control plane and Product V2 (ID 118469630771)
+  ✓ Set up job
+  - Fail required check when selection is unavailable
+  ✓ Check out repository
+  ✓ Set up Python
+  ✓ Set up locked frontend tools
+  ✓ Install approved frontend checker
+  ✓ Install uv and locked dependencies
+  ✓ Install browser only for affected consumers
+  ✓ Check documentation
+  ✓ Check project state
+  ✓ Probe project state
+  ✓ Probe documentation routing
+  ✓ Check verification policy
+  ✓ Probe verification policy
+  ✓ Check frontend versions
+  ✓ Build image envelope
+  ✓ Check frontend types
+  ✓ Build frontend
+  ✓ Check image envelope
+  ✓ Build Node consumers
+  ✓ Check domain behavior
+  ✓ Check formal entry
+  ✓ Check IndexedDB
+  ✓ Check project home
+  ✓ Check project package
+  ✓ Check formal entry consumers
+  ✓ Check product contracts
+  ✓ Check semantic provider
+  ✓ Check intake understanding
+  ✓ Check suite registry
+  ✓ Check suite editor
+  ✓ Check session lifecycle
+  ✓ Check specification versions
+  ✓ Check prompt compiler
+  ✓ Check pre-generation confirmation
+  ✓ Check manual prompt editing
+  ✓ Check copy adoption
+  ✓ Check specification OCC
+  ✓ Check gateway behavior
+  ✓ Check developer commands
+  ✓ Check generation attempts
+  ✓ Check batch execution
+  ✓ Check candidate bytes
+  ✓ Check deterministic review
+  ✓ Check VLM review
+  ✓ Check image adapters
+  ✓ Check comparison
+  ✓ Check rework
+  ✓ Check suite review
+  * Check selection
+  * Check delivery
+  * Check project transfer
+  * Check accessibility
+  * Check interaction and visual behavior
+  * Check frontend behavior
+  * Check settings and vision
+  * Check AI adoption
+  * Check AI delivery
+  * Reject verification side effects
+  * Post Set up locked frontend tools
+  * Post Set up Python
+  * Post Check out repository
+
+ANNOTATIONS
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+Classify changed paths: .github#1
+
+Refreshing run status every 20 seconds. Press Ctrl+C to quit.
+
+* docs/release-closeout-20261020 Product V2 CI and Docker CD JusticeSc/listing-kit#22 · 39374502267
+Triggered via pull_request about 7 minutes ago
+
+JOBS
+✓ Classify changed paths in 28s (ID 118469486854)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Set up Python
+  ✓ Install locked selection dependencies
+  ✓ Select affected checks and release closure
+  ✓ Post Set up Python
+  ✓ Post Check out repository
+  ✓ Complete job
+* Control plane and Product V2 (ID 118469630771)
+  ✓ Set up job
+  - Fail required check when selection is unavailable
+  ✓ Check out repository
+  ✓ Set up Python
+  ✓ Set up locked frontend tools
+  ✓ Install approved frontend checker
+  ✓ Install uv and locked dependencies
+  ✓ Install browser only for affected consumers
+  ✓ Check documentation
+  ✓ Check project state
+  ✓ Probe project state
+  ✓ Probe documentation routing
+  ✓ Check verification policy
+  ✓ Probe verification policy
+  ✓ Check frontend versions
+  ✓ Build image envelope
+  ✓ Check frontend types
+  ✓ Build frontend
+  ✓ Check image envelope
+  ✓ Build Node consumers
+  ✓ Check domain behavior
+  ✓ Check formal entry
+  ✓ Check IndexedDB
+  ✓ Check project home
+  ✓ Check project package
+  ✓ Check formal entry consumers
+  ✓ Check product contracts
+  ✓ Check semantic provider
+  ✓ Check intake understanding
+  ✓ Check suite registry
+  ✓ Check suite editor
+  ✓ Check session lifecycle
+  ✓ Check specification versions
+  ✓ Check prompt compiler
+  ✓ Check pre-generation confirmation
+  ✓ Check manual prompt editing
+  ✓ Check copy adoption
+  ✓ Check specification OCC
+  ✓ Check gateway behavior
+  ✓ Check developer commands
+  ✓ Check generation attempts
+  ✓ Check batch execution
+  ✓ Check candidate bytes
+  ✓ Check deterministic review
+  ✓ Check VLM review
+  ✓ Check image adapters
+  ✓ Check comparison
+  ✓ Check rework
+  ✓ Check suite review
+  * Check selection
+  * Check delivery
+  * Check project transfer
+  * Check accessibility
+  * Check interaction and visual behavior
+  * Check frontend behavior
+  * Check settings and vision
+  * Check AI adoption
+  * Check AI delivery
+  * Reject verification side effects
+  * Post Set up locked frontend tools
+  * Post Set up Python
+  * Post Check out repository
+
+ANNOTATIONS
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+Classify changed paths: .github#1
+
+Refreshing run status every 20 seconds. Press Ctrl+C to quit.
+
+* docs/release-closeout-20261020 Product V2 CI and Docker CD JusticeSc/listing-kit#22 · 39374502267
+Triggered via pull_request about 7 minutes ago
+
+JOBS
+✓ Classify changed paths in 28s (ID 118469486854)
+  ✓ Set up job
+  ✓ Check out repository
+  ✓ Set up Python
+  ✓ Install locked selection dependencies
+  ✓ Select affected checks and release closure
+  ✓ Post Set up Python
+  ✓ Post Check out repository
+  ✓ Complete job
+* Control plane and Product V2 (ID 118469630771)
+  ✓ Set up job
+  - Fail required check when selection is unavailable
+  ✓ Check out repository
+  ✓ Set up Python
+  ✓ Set up locked frontend tools
+  ✓ Install approved frontend checker
+  ✓ Install uv and locked dependencies
+  ✓ Install browser only for affected consumers
+  ✓ Check documentation
+  ✓ Check project state
+  ✓ Probe project state
+  ✓ Probe documentation routing
+  ✓ Check verification policy
+  ✓ Probe verification policy
+  ✓ Check frontend versions
+  ✓ Build image envelope
+  ✓ Check frontend types
+  ✓ Build frontend
+  ✓ Check image envelope
+  ✓ Build Node consumers
+  ✓ Check domain behavior
+  ✓ Check formal entry
+  ✓ Check IndexedDB
+  ✓ Check project home
+  ✓ Check project package
+  ✓ Check formal entry consumers
+  ✓ Check product contracts
+  ✓ Check semantic provider
+  ✓ Check intake understanding
+  ✓ Check suite registry
+  ✓ Check suite editor
+  ✓ Check session lifecycle
+  ✓ Check specification versions
+  ✓ Check prompt compiler
+  ✓ Check pre-generation confirmation
+  ✓ Check manual prompt editing
+  ✓ Check copy adoption
+  ✓ Check specification OCC
+  ✓ Check gateway behavior
+  ✓ Check developer commands
+  ✓ Check generation attempts
+  ✓ Check batch execution
+  ✓ Check candidate bytes
+  ✓ Check deterministic review
+  ✓ Check VLM review
+  ✓ Check image adapters
+  ✓ Check comparison
+  ✓ Check rework
+  ✓ Check suite review
+  ✓ Check selection
+  * Check delivery
+  * Check project transfer
+  * Check accessibility
+  * Check interaction and visual behavior
+  * Check frontend behavior
+  * Check settings and vision
+  * Check AI adoption
+  * Check AI delivery
+  * Reject verification side effects
+  * Post Set up locked frontend tools
+  * Post Set up Python
+  * Post Check out repository
+
+ANNOTATIONS
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+Classify changed paths: .github#1
+

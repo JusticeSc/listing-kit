@@ -1,0 +1,35 @@
+V2.5.3 候选比较与审核清单面板验证（比较契约套件 + 真实工作台走查 + 视觉证据）
+NOT-AUTHORITY: point-in-time verification evidence only
+============================================================================
+  [PASS] V2.5.3-01 语法门：compare / review / workspace / 契约套件与本工具全部可解析
+         {"files": [{"file": "app/product_v2/domain/compare.js", "rc": 0, "stderr": ""}, {"file": "app/product_v2/domain/review.js", "rc": 0, "stderr": ""}, {"file": "app/product_v2/domain/index.js", "rc": 0, "stderr": ""}, {"file": "app/product_v2/workspace.js", "rc": 0, "stderr": ""}, {"file": "evals/product-v2/harness/compare-panel.js", "rc": 0, "stderr": ""}, {"f
+  [PASS] V2.5.3-02 单一权威：先看顺序只在 domain/review.js 定义，比较模块与工作台只引用
+         {"order_in_review": true, "duplicated_in": []}
+  [PASS] V2.5.3-03 比较面板是纯投影：不写文档、不写资产、不产生选择
+         {"forbidden_tokens": [], "section_chars": 15970}
+  [PASS] V2.5.3-04 面板接线：HTML 的 tablist/tabpanel 与合同版本贯穿领域层与工作台
+         {"panel": true, "tablist": true, "tabpanel": true, "contract_constant": true, "contract_used": true, "default_projection": true}
+  [PASS] V2.5.3-05 CP-01–CP-15 比较契约套件：异常优先、默认目标、清单排序与反向探针全部通过
+         {"status": "passed", "failed": [], "cases": 15}
+  [PASS] V2.5.3-06 复核契约回归：R01–R13 与 R14–R21 在比较面板落地后仍全过
+         {"review": "passed", "provider": "passed", "review_failed": [], "provider_failed": []}
+  [PASS] V2.5.3-07 入口：每张有候选的图都有「比较候选」，点开即投影该图（无第二套状态）
+         {"contract": "v2.5.3", "shot": "shot_main_clean", "subject": "主图·干净背景 · 候选 3 · 待处理 2", "visible": true}
+  [PASS] V2.5.3-08 参考图栏 = 这张图实际发送的参考图（与提交选择一致，不是全部参考图）
+         {"references": [{"sha256": "88bcc17af574e50d447d09bc06d9636033a215d738a8a13768ba63dd0d1a38d2", "has_image": true, "text": "商品主图技术详情sha256 88bcc17a…"}], "title": "这张图实际发送的参考图（1 张）", "expected_sha256": "88bcc17af574e50d"}
+  [PASS] V2.5.3-09 候选卡与 IndexedDB 一致：两次生成 + 一个合规夹具 = 三张，按版本可追溯
+         {"cards": [["act-4c55aef4771a4c6b9d3f78982e722ac3", "候选 v2", "pending"], ["act-204c78af08d948d78ce21ec9fc0102f2", "候选 v1", "pending"], ["act-fixture-compliant", "候选 v3", "clean"]], "db_versions": [1, 2, 3]}
+  [PASS] V2.5.3-10 异常优先：有阻断的两个候选排在无发现的夹具之前，默认看排在最前的那一个
+         {"order": ["act-4c55aef4771a4c6b9d3f78982e722ac3", "act-204c78af08d948d78ce21ec9fc0102f2", "act-fixture-compliant"], "states": ["pending", "pending", "clean"], "selected": "act-4c55aef4771a4c6b9d3f78982e722ac3", "fixture_severities": ["PASS", "PASS", "PASS", "PASS", "PASS", "PASS", "PASS"]}
+  [PASS] V2.5.3-11 键盘路径：方向键/Home/End 在候选间移动并保持焦点，Escape 回到该图当前可见的比较入口
+         {"right": "act-204c78af08d948d78ce21ec9fc0102f2", "end": "act-fixture-compliant", "home": "act-4c55aef4771a4c6b9d3f78982e722ac3", "escape_focus": null, "expected": ["act-4c55aef4771a4c6b9d3f78982e722ac3", "act-204c78af08d948d78ce21ec9fc0102f2", "act-fixture-compliant"]}
+  [PASS] V2.5.3-12 完整报告按需展开：默认收起，展开后含合同版本、通过项与视觉复核状态
+         {"collapsed": false, "summary": "完整报告（合同 v2.5.2 · 7 条）", "pass_rows": 5, "vlm": "视觉复核：未检查", "findings": 9, "criteria": ["目的：完整展示商品主体，背景干净，不添加资料里没有的部件", "必须保持：商品外观、颜色与比例；标识与文字"]}
+  [PASS] V2.5.3-13 面板不改业务状态：候选字节、Attempt 与审核报告在交互前后完全一致
+         {"candidates_first": 3, "reports_before": 4, "reports_after": 4}
+  [PASS] V2.5.3-14 刷新后一致：候选、默认目标与清单来自 IndexedDB，不依赖内存状态
+         {"order": ["act-4c55aef4771a4c6b9d3f78982e722ac3", "act-204c78af08d948d78ce21ec9fc0102f2", "act-fixture-compliant"], "selected": "act-4c55aef4771a4c6b9d3f78982e722ac3", "contract": "v2.5.3", "references": 1}
+  [PASS] V2.5.3-15 单候选回退与「下一个待处理」：一张图一个候选照常比较，跳转落到有问题的图
+         {"second_shot": "shot_infographic_benefits", "cards": 1, "jump_target": "shot_main_clean", "landed": "shot_main_clean", "focus": "compare-tab-act-4c55aef4771a4c6b9d3f78982e722ac3"}
+  [PASS] V2.5.3-16 边界：面板不承担采纳与导出，只有比较所需的动作
+         {"buttons": ["下一个待处理", "候选 v1待处理64×64 · 2026/10/3 12:30:15阻断 · 最小长边 1000px：最长边 64px 低于平台缩放下限 1000px，交付后无法启用缩放。", "候选 v2待处理64×64 · 2026/10/3 12:30:15阻断 · 最小长边 1000px：最长边 64px 低于平台缩放下限 1000px，交付后无法启用缩放。", "候选 v3无发现1600×1600 · 2026/10/3 12:30:15自动检查没有发现问题（机器结论，人工确认仍然必要）。", "收起", "用此候选发起返工", "采用此候选"], "forbidden": []}

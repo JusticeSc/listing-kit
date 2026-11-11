@@ -1,0 +1,11 @@
+✔ S04 :: 完整装配：确定性零 BLOCK、视觉 checked、报告当前；指纹变化即过期 (2.2578ms)
+✔ S05 :: 视觉漂移：check 映射到登记规则；越界 shot_id 必须落 UNKNOWN（protocol） (3.7206ms)
+✔ S06 :: 视觉失败落 UNKNOWN、没发起落 not_run：确定性部分都不受影响 (1.8671ms)
+ℹ tests 281
+ℹ suites 0
+ℹ pass 281
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 713.1405

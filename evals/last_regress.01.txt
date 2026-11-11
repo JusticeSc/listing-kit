@@ -1,0 +1,101 @@
+五级验收回归
+==========================================================================
+时间 2026-09-26 01:13:29 · 根目录 <workspace-root>
+模式 复用现有 out/
+内存余量：可用物理 6,291 MB · 可用提交 10,335 MB（门槛 5,000 / 9,000）
+
+验收对象：B0FULLSET01_20260923-125218-258886　（out/ 下共 1 轮产物）
+M6 写入隔离：<workspace-root>\evals\.tmp\regress-m6-p9l0gnc0\B0FULLSET01_20260923-125218-258886（冻结 run 只读核对）
+冻结 run 守卫通过：B0FULLSET01_20260923-125218-258886 的文件集合与逐文件哈希前后一致
+
+
+==========================================================================
+[OK  ] M3 验收   rc=0   0.5s   (tools/verify_m3.py)
+    C. 主体来源一致（数据级）
+       ✓ 位置 1  subject_sha256 250c7f786e2e…
+       ✓ 位置 2  subject_sha256 250c7f786e2e…
+       ✓ 位置 3  subject_sha256 250c7f786e2e…
+    D. 主体四边留白（不得贴边）
+       ✓ 位置 2  留白 {'left': 646, 'top': 56, 'right': 647}
+       ✓ 位置 3  留白 {'left': 661, 'top': 56, 'right': 661}
+    E. 位置 2/3 的重出代价（叠字是本地确定性合成）
+       ✓ 位置 2  flat_overlay  耗时 0.118s  声明调模型=False
+       ✓ 位置 3  flat_overlay  耗时 0.077s  声明调模型=False
+    ========================================================================
+    全部通过：位置 1/2/3 的像素确实来自同一份 subject.png（且留白合格、重出代价可忽略），位置 1 的强制性校验真的跑过。
+
+==========================================================================
+[OK  ] M4 验收   rc=0   0.7s   (tools/verify_m4.py)
+       ✓ 空池 → 报错
+       真实类目连挑 3 次：简洁的办公室桌面一角，浅灰墙面，柔和自然光，画面中央干净无物
+       ✓ 确定性（同一坑位不换场景）
+    I. 没有 key 时自报 placeholder（不冒充真实场景图）
+       mode=mock   warning=未配置 DASHSCOPE_API_KEY，使用占位图（链路可验证，画面不可用）…
+       ✓ 降级为 mock 且带 warning，渲染器据此把 placeholder 置真
+    J. 贴图框四边不贴边（与位置 1/2/3 同一套留白规则）
+       四边留白 {'上': 432, '下': 432, '左': 667, '右': 667}   单边下限 56（3.5%）
+       ✓ 没有一边小于下限
+    ========================================================================
+    全部通过：位置 4 的提示词无条件排除了产品本体，成品里的主体是贴上去的（贴图区外与生成底逐像素一致），背景铺满是裁切而非补边。
+    人工目视项：看一眼 raw/slotNN_gen.jpg，确认背景里没有被偷画的产品或文字。
+
+==========================================================================
+[OK  ] M5 验收   rc=0   0.4s   (tools/verify_m5.py)
+    F. 全链路只有一台渲染器声明调模型
+       run_start 记录的 model_calls=1（doable=[1, 2, 3, 4, 5, 6, 7]）
+       本批里确实调模型的渲染器：['gen_bg_paste']
+       ✓ 恰好 1 次，且只有 gen_bg_paste
+    G. 抠图产物一轮一份，渲染器只读不抠
+       渲染器声明的素材 ['competitor', 'contents']  →  run.jsonl 里的 cutout 记录 ['competitor', 'contents']
+       ✓ contents   cut_contents.png  mode=rembg  sha=6d69fbae2937…  耗时 13.333s
+       ✓ competitor cut_competitor.png  mode=rembg  sha=6279f762ebcf…  耗时 9.399s
+       ✓ 位置 6 报告指回 contents 抠图产物  报告=6d69fbae2937…  产物=6d69fbae2937…
+       ✓ 位置 7 报告指回 competitor 抠图产物  报告=6279f762ebcf…  产物=6279f762ebcf…
+    ========================================================================
+    全部通过：位置 5/6/7 各自读自己的素材，位置 7 与位置 1 共用同一份主体，要抠的素材一轮只抠一份、渲染器只读不抠，全链路仍只有位置 4 调模型。
+
+==========================================================================
+[OK  ] M6 验收   rc=0   104.7s   (tools/verify_m6.py <workspace-root>\evals\.tmp\regress-m6-p9l0gnc0\B0FULLSET01_20260923-125218-258886 examples/product_fullset.json)
+       位置 4 第 37 版  0.052s  复用底 <workspace-root>\evals\.tmp\regress-m6-p9l0gnc0\B0FULLSET01_20260923-125218-258886\raw\slot04_gen.jpg
+       本次模型调用 0 次
+       ✓ 「位置或大小不对 = 免费」这句话是事实，不是文案
+    K. 抠图推理失败：重试，仍失败则报错（不静默换路降级）
+       第 1 次抛错 → 第 2 次成功：mode=rembg 推理次数=2 留痕=True
+       ✓ 偶发失败被重试吸收，并在报告里留了痕
+       重试时新建会话 ⇒ 旧会话是否仍在内存里：[False]（期望 [False]）
+       ✓ 重试前旧会话已回收（新旧 arena 不并存）
+       连续失败 → SubjectError（rembg 推理连续失败（第 1/3 次 RuntimeError: [ONNXRuntimeError] : 1 : FAIL : bad allocatio…）
+       ✓ 报错且**没有**产出 subject.png （没有拿一张降级图冒充主体）
+    ========================================================================
+    全部通过：重做只是「重放一条」；文字层是秒级零模型；重抠主体会按表里的 needs 波及所有读主体的坑位、且不重生成背景；新版本落在同一目录，旧版本一个字节都没动。
+
+==========================================================================
+[OK  ] M7 验收   rc=0   57.8s   (tools/verify_m7.py)
+       ✓ 不存在的 run → 404
+       ✓ 非法 layer → 400：layer='nope' 非法，可选：text/placement/bg/cut…
+       ✓ only=[] → 400（空列表会被当成“全部”，所以显式拒绝，不猜）
+       ✓ 投递目录之外的包 → 403
+       ✓ 日志原文可读：12 行，坏行单独列（0 条）
+    ========================================================================
+    全部通过。M7 的验收点是四条：
+      · 界面上的每个数都来自接口（张数/跳过/成本/版本/采纳），没有第二份真相源；
+      · 只有位置 4 是模型格 —— 它是“橙色那条独自走满全程”的数据级判据；
+      · 采纳与重做写进 run.jsonl，旧版永不覆盖，交付的是被采纳的那一版；
+      · 只读项目目录内的文件，参数错误有明确返回码。
+    · 沙箱保留在 out_verify_m7\20260926-011518/（默认不删；要清就加 --clean，或直接删这个目录 —— 删不掉也不影响结论）
+
+==========================================================================
+[OK  ] 表守卫   rc=0   0.7s   (tools/check_table_guards.py)
+    [renderer 名写错] 报错 1 条
+        config/slots.yaml:116  坑位 2 的 renderer='flat_oveylay' 未登记；可用：closeup_crop、compare_side、compose_white、contents_compose、flat_overlay、gen_bg_paste
+    [background 与 renderer 不匹配] 报错 1 条
+        config/slots.yaml:120  坑位 2 的 renderer=flat_overlay 只能产出 palette 底，但 background='pure_white' —— 两者必须一致（换渲染器时 background 要跟着改）
+    [未实现的校验规则名] 报错 1 条
+        config/slots.yaml:125  坑位 2 声明了 'no_watermark'，但 validators.py 未实现该规则 —— 这是「声称校验、实际静默跳过」。已实现：aspect_ratio、edge_clean、file_size、filename_has_upc、has_text_block、long_side_px、product_fill、text_present、white_bg_purity
+    [没登记过的字段] 报错 1 条
+        config/slots.yaml:123  坑位 2 出现未登记字段 'retry_times' —— 没有消费方的字段不许进表（新增字段需先在 src/schema.py 的 SLOT_REQUIRED_KEYS / SLOT_OPTIONAL_KEYS 里登记消费方）
+    [cuts 声明的素材不在 needs 里] 报错 1 条
+        config/slots.yaml:193  坑位 7 的 renderer=compare_side 声明要抠 competitor，但 needs 里没有它 —— 齐套判定就不会拦住缺料。needs 必须包含 competitor
+    已还原 config/slots.yaml（字节一致）
+    OK：5 道守卫全部拦住，且报错都指到了具体的行/字段。
+

@@ -10,6 +10,20 @@
         "ci": true
       }
     ],
+    "evals/probes/doc_budgets.py": [
+      {
+        "args": [],
+        "category": "control",
+        "ci": true
+      }
+    ],
+    "evals/probes/document_splits.py": [
+      {
+        "args": [],
+        "category": "control",
+        "ci": true
+      }
+    ],
     "evals/probes/docs_index.py": [
       {
         "args": [],
@@ -93,6 +107,34 @@
       {
         "args": [],
         "category": "domain",
+        "ci": true
+      }
+    ],
+    "tools/check_doc_budgets.py": [
+      {
+        "args": [],
+        "category": "control",
+        "ci": true
+      }
+    ],
+    "tools/check_document_splits.py": [
+      {
+        "args": [],
+        "category": "control",
+        "ci": true
+      }
+    ],
+    "tools/check_retired_documents.py": [
+      {
+        "args": [],
+        "category": "control",
+        "ci": true
+      }
+    ],
+    "evals/probes/retired_documents.py": [
+      {
+        "args": [],
+        "category": "control",
         "ci": true
       }
     ],

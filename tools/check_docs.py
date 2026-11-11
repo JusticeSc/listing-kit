@@ -24,6 +24,7 @@ sys.path.insert(0, str(ROOT / "src"))
 from console import enable_utf8  # noqa: E402  （控制台编码归一：见 src/console.py）
 enable_utf8()
 sys.path.insert(0, str(ROOT / "tools"))
+from check_project_state import _read_document_text, _read_state_data  # noqa: E402
 
 
 README = ROOT / "README.md"
@@ -48,6 +49,10 @@ class Report:
         self.detail.append(msg)
 
 
+def _read_managed_text(path: Path) -> str:
+    return _read_document_text(path.relative_to(ROOT).as_posix(), root=ROOT)
+
+
 # ---------------------------------------------------------------- 围栏解析
 
 FENCE_RE = re.compile(r"^```([A-Za-z0-9_+-]*)[ \t]*\n(.*?)^```[ \t]*$",
@@ -68,7 +73,7 @@ SKIP_RULES: list[tuple[str, str]] = [
 
 def _iter_bash_commands(path: Path):
     """产出 (行号, 原始命令行)。只取 ```bash 围栏里的、非注释非赋值的行。"""
-    text = path.read_text(encoding="utf-8")
+    text = _read_managed_text(path)
     for m in FENCE_RE.finditer(text):
         lang, body = m.group(1), m.group(2)
         if lang not in EXEC_LANGS:
@@ -198,7 +203,7 @@ def _check_commands(rep: Report) -> None:
 
 def _check_readme_scope(rep: Report) -> None:
     """README 只描述当前实现，不复制执行状态和一次性检查数字。"""
-    text = README.read_text(encoding="utf-8")
+    text = _read_managed_text(README)
     forbidden = {
         r"^\s*(?:[-*>]\s*)?(?:next_action_task|下一任务|下一动作)\s*[：:]\s*`?"
         r"(?:V2\.[0-9A-Za-z.-]+|D[-0-9A-Za-z.]+)\b":
@@ -251,8 +256,57 @@ INDEX = ROOT / "docs" / "INDEX.md"
 CURRENT_STATE = ROOT / "_working" / "amz-listing-kit-product-v2" / "state.md"
 
 
+def _split_claims(rep: Report, declared: dict) -> dict[str, str]:
+    """分片继承已登记父文档的身份；初始字节 hash 不作为正文冻结门。"""
+    registry_path = ROOT / "config/document-splits.json"
+    if not registry_path.exists():
+        return {}
+    registry = json.loads(registry_path.read_text(encoding="utf-8"))
+    if not isinstance(registry, dict) or not isinstance(registry.get("splits"), list):
+        raise ValueError("document-splits.json 的 splits 必须为数组")
+    claims: dict[str, str] = {}
+    parents: set[str] = set()
+    for entry in registry["splits"]:
+        if not isinstance(entry, dict) or not isinstance(entry.get("path"), str):
+            raise ValueError("拆分登记缺少父文档 path")
+        parent = entry["path"]
+        if parent in parents:
+            rep.problem(f"拆分父文档重复登记：{parent}")
+        parents.add(parent)
+        managed = parent.endswith(".md") and (
+            "/" not in parent or parent.startswith(("docs/", "_working/")))
+        if not managed:
+            continue
+        if parent != "docs/INDEX.md" and parent not in declared:
+            rep.problem(f"拆分父文档没登记：{parent}")
+            continue
+        if not (ROOT / parent).is_file():
+            rep.problem(f"拆分父文档不存在：{parent}")
+        parts = entry.get("parts")
+        if not isinstance(parts, list) or not parts:
+            raise ValueError(f"拆分登记缺少有序 parts：{parent}")
+        for part in parts:
+            rel = part.get("path") if isinstance(part, dict) else None
+            if (not isinstance(rel, str) or not rel or "\\" in rel
+                    or Path(rel).is_absolute() or ".." in Path(rel).parts):
+                raise ValueError(f"拆分路径不是仓库相对路径：{rel!r}")
+            if rel == parent or rel in declared:
+                rep.problem(f"拆分件不能同时拥有独立登记身份：{rel}")
+            if rel in claims:
+                rep.problem(f"拆分件重复认领：{rel}（{claims[rel]} / {parent}）")
+            claims[rel] = parent
+            path = ROOT / rel
+            if not path.is_file():
+                rep.problem(f"拆分件不存在：{rel}（父文档 {parent}）")
+            elif rel.endswith(".md") and entry.get("mode") != "raw-parts":
+                header = path.read_text(encoding="utf-8").splitlines()
+                if len(header) < 4 or not header[0].startswith("<!-- 拆分件"):
+                    rep.problem(f"拆分件缺四行导航头：{rel}")
+    return claims
+
+
 def _check_docs_index(rep: Report) -> None:
-    """⑦ 仓库里每一份 Markdown 都必须在 docs/INDEX.md 里登记，且状态合法。
+    """⑦ 在场文档登记与父文档认领双向一致，身份状态合法。
 
     为什么单独立这一项：上面六项全部是**单向**的（卡 vs 生成器、文档 vs 表、
     文档 vs 真算出来的值）。没有一项能发现「两份文档互相矛盾」—— 那不是一个
@@ -269,7 +323,20 @@ def _check_docs_index(rep: Report) -> None:
                     "没有它，仓库里可以同时躺着三代文档而没人知道该信哪一份。")
         return
 
-    text = INDEX.read_text(encoding="utf-8")
+    try:
+        text = _read_managed_text(INDEX)
+    except FileNotFoundError as error:
+        missing = str(error.filename or error)
+        try:
+            missing = Path(missing).resolve().relative_to(ROOT).as_posix()
+        except (OSError, ValueError):
+            pass
+        rep.problem(f"拆分件不存在或不可读：{missing}"
+                    "（docs/INDEX.md 的登记分片，见 config/document-splits.json）")
+        return
+    except (OSError, ValueError) as error:
+        rep.problem(f"docs/INDEX.md 的分片登记不可用：{error}")
+        return
     declared: dict[str, tuple[str, str, str, str]] = {}
     for raw in text.splitlines():
         ln = raw.strip()
@@ -279,9 +346,12 @@ def _check_docs_index(rep: Report) -> None:
         if len(cells) != 5:
             continue
         path = cells[0]
-        if not path.endswith(".md"):
+        if not (path.endswith(".md") or Path(path).name == "state.yaml"):
             continue          # 表头行与 |---|---| 分隔行在这里被自然排除
+        if path in declared:
+            rep.problem(f"docs/INDEX.md 重复登记同一路径：{path}")
         declared[path] = (cells[1], cells[2], cells[3], cells[4])
+    claims = _split_claims(rep, declared)
 
     # 受管范围：根目录 + docs/ + _working/。
     # 为什么把 _working/ 纳进来：它是**执行状态**的家，而"当前推进到哪"
@@ -293,27 +363,31 @@ def _check_docs_index(rep: Report) -> None:
         d = ROOT / sub
         if d.exists():
             actual |= {p.relative_to(ROOT).as_posix() for p in d.rglob("*.md")}
+            actual |= {p.relative_to(ROOT).as_posix() for p in d.rglob("state.yaml")}
     # Workspace export README files are user-facing business artifacts generated
     # by ExportVersion, not governance documents.  They live below _working only
     # because evaluation workspaces are retained there.  Registering every
     # immutable export would make the control index depend on runtime output.
-    # gitignored 的本地历史（未跟踪）不进登记比对：登记表只管仓库里的文档；
-    # 否则本地与 CI 看到不同文件集，同一份表两边互斥变红。
+    # 保留 gitignored 本地历史的排除规则，同时让未提交的新文档和分片进入检查。
     try:
-        import subprocess as _sp
-        _out = _sp.run(["git", "-c", "core.quotepath=false", "ls-files", "-z",
-                        "--", "*.md", "docs/*.md", "_working/*.md"],
-                       capture_output=True, cwd=str(ROOT), timeout=30).stdout.decode("utf-8")
-        _tracked = set(_out.split("\0")) - {""}
-        if _tracked:
-            actual &= _tracked
-    except Exception:
+        listing = subprocess.run(
+            ["git", "-c", "core.quotepath=false", "ls-files", "-z",
+             "--cached", "--others", "--exclude-standard"],
+            capture_output=True, cwd=str(ROOT), timeout=30)
+        if listing.returncode == 0:
+            actual &= set(listing.stdout.decode("utf-8").split("\0")) - {""}
+    except (OSError, subprocess.TimeoutExpired):
         pass
     actual = {
         path for path in actual
         if not (path.startswith("_working/") and "/exports/" in path and path.endswith("/README.md"))
     }
     actual.discard("docs/INDEX.md")        # 登记表自己不需要被登记
+    actual -= set(claims)
+    # state.yaml 是同目录状态页的机器数据，不建立第二个执行状态权威。
+    actual -= {path for path in actual if Path(path).name == "state.yaml"
+               and str(Path(path).with_suffix(".md")).replace("\\", "/") in declared
+               and path not in declared}
 
     missing = sorted(actual - set(declared))
     ghost = sorted(set(declared) - actual)
@@ -347,8 +421,11 @@ def _check_docs_index(rep: Report) -> None:
 #      给它加我们的 CONTROL-STATUS 会让下一次同步丢标记，也会把一份参考模板伪装成项目文档。
 #      它的身份与状态只由 INDEX 这一处登记；被本项目采纳的结论写进 AGENTS.md 的 Standards Mapping。
         imported_reference = path.startswith("docs/standards-template/")
-        if path in actual and state != "generated" and not imported_reference:
-            head = "\n".join((ROOT / path).read_text(encoding="utf-8").splitlines()[:12])
+        machine_state = Path(path).name == "state.yaml"
+        if path in actual and machine_state:
+            _read_state_data(ROOT / path, root=ROOT)
+        if path in actual and state != "generated" and not imported_reference and not machine_state:
+            head = "\n".join(_read_managed_text(ROOT / path).splitlines()[:12])
             marker = CONTROL_STATUS_RE.search(head)
             if not marker:
                 rep.problem(f"{path} 顶部 12 行没有 CONTROL-STATUS —— 单看文件无法知道"
@@ -372,12 +449,13 @@ def _check_docs_index(rep: Report) -> None:
     # 任务结束后，施工任务书仍标 draft 会邀请后来者再次执行。任务身份只从 INDEX 的
     # 世代列读取，任务状态只从 current state 读取，不另建第三张映射表。
     task_statuses: dict[str, str] = {}
-    if CURRENT_STATE.exists():
-        state_text = CURRENT_STATE.read_text(encoding="utf-8")
-        task_statuses = dict(re.findall(
-            r"(?m)^  (V2(?:\.[0-9A-Za-z-]+)+):\r?\n    status: ([a-z]+)$",
-            state_text,
-        ))
+    if CURRENT_STATE.exists() or CURRENT_STATE.with_suffix(".yaml").exists():
+        state_data = _read_state_data(CURRENT_STATE, root=ROOT)
+        progress = state_data.get("task_progress", {})
+        if not isinstance(progress, dict):
+            raise ValueError("current state 的 task_progress 必须为映射")
+        task_statuses = {task: item.get("status", "") for task, item in progress.items()
+                         if isinstance(item, dict)}
     for path, (generation, _kind, state, _note) in sorted(declared.items()):
         if not path.startswith("_working/amz-listing-kit-product-v2/tasks/"):
             continue
@@ -593,7 +671,7 @@ def _check_reuse_first_gate(rep: Report) -> None:
         rep.problem("AGENTS.md 不存在 —— 选型门禁（Reuse-first）没有任何仓库级落点，"
                     "下一个 Agent 会继续『需求 → 直接实现』。")
     else:
-        agents = AGENTS_FILE.read_text(encoding="utf-8")
+        agents = _read_managed_text(AGENTS_FILE)
         if REUSE_BEGIN not in agents or REUSE_END not in agents:
             rep.problem("AGENTS.md 缺少 reuse-first 标记块（" + REUSE_BEGIN + " / "
                         + REUSE_END + "）—— 门禁正文必须可被机器定位。")
@@ -609,7 +687,7 @@ def _check_reuse_first_gate(rep: Report) -> None:
         rep.problem("docs/product-v2-project-context.md 不存在 —— 选型决策与依赖登记"
                     "没有权威落点。")
         return
-    context = CONTEXT_FILE.read_text(encoding="utf-8")
+    context = _read_managed_text(CONTEXT_FILE)
 
     if not PYPROJECT_FILE.exists() or not UV_LOCK_FILE.exists():
         rep.problem("缺少 pyproject.toml 或 uv.lock —— 依赖权威文件必须同时在位"
@@ -691,7 +769,7 @@ def _check_no_abs_interpreter(rep: Report) -> None:
 
     为什么单列一项：这条不是"风格偏好"，是**换台机器就废**。README 曾经写着
 
-        PY="C:/Users/31368/.workbuddy/binaries/python/envs/default/Scripts/python.exe"
+        PY="<user-home>/.workbuddy/binaries/python/envs/default/Scripts/python.exe"
 
     —— 那是**开发机的一次快照**，被放在「怎么跑」的位置上，读者会以为那就是
     运行方式。对「2–5 名运营人员独立使用」这个目标来说，这一行等于装不上。
@@ -701,7 +779,7 @@ def _check_no_abs_interpreter(rep: Report) -> None:
     """
     for path in MANAGED_HAND:
         rel = path.relative_to(ROOT).as_posix()
-        for i, ln in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+        for i, ln in enumerate(_read_managed_text(path).splitlines(), 1):
             m = ABS_INTERP.search(ln)
             if m:
                 rep.problem(f"{rel}:{i} 写着解释器的绝对路径 {m.group(0)!r} —— "
@@ -730,13 +808,13 @@ def _check_standards_mapping(rep: Report) -> None:
         rep.problem("docs/standards-template/ 不存在 —— 采纳映射失去比对对象；"
                     "模板被移动或删除时，必须同步本项与 AGENTS.md 的映射章节。")
         return
-    text = AGENTS_FILE.read_text(encoding="utf-8") if AGENTS_FILE.exists() else ""
-    m = STANDARDS_SECTION_RE.search(text)
-    if not m:
+    text = _read_managed_text(AGENTS_FILE) if AGENTS_FILE.exists() else ""
+    sections = list(STANDARDS_SECTION_RE.finditer(text))
+    if not sections:
         rep.problem("AGENTS.md 缺少 `## Standards Mapping (standards-template)` 章节"
                     "（或它后面没有下一个 `##` 标题）—— 模板的采纳判定没有机器可定位的落点。")
         return
-    section = m.group(1)
+    section = "\n".join(match.group(1) for match in sections)
     files = sorted(STANDARDS_DIR.rglob("*.md"))
     unmapped = [p.relative_to(STANDARDS_DIR).as_posix() for p in files if p.name not in section]
     if unmapped:
@@ -748,6 +826,19 @@ def _check_standards_mapping(rep: Report) -> None:
 
 
 # ---------------------------------------------------------------- 入口
+
+def _guarded(rep: Report, check) -> None:
+    """判据自己读不懂数据时（拆分登记/状态 YAML 形状不对）也要给可读结论。
+
+    没有这一层，畸形登记会以 traceback 结束：看起来像「工具坏了」，
+    而不是「仓库坏了」，而守卫要回答的正是后者 —— 且退出码仍须是 1，
+    不能让调用方把崩溃当成没报红。
+    """
+    try:
+        check(rep)
+    except (ValueError, OSError) as error:
+        rep.problem(f"{check.__name__} 读不懂它要验的数据：{error}")
+
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="文档守卫：让文档里的话有人守")
@@ -774,13 +865,11 @@ def main(argv: list[str] | None = None) -> int:
     STANDARDS_DIR = ROOT / "docs" / "standards-template"
 
     rep = Report()
-    _check_readme_scope(rep)
-    _check_docs_index(rep)
-    _check_reuse_first_gate(rep)
-    _check_standards_mapping(rep)
-    _check_no_abs_interpreter(rep)
+    for check in (_check_readme_scope, _check_docs_index, _check_reuse_first_gate,
+                  _check_standards_mapping, _check_no_abs_interpreter):
+        _guarded(rep, check)
     if not args.no_run:
-        _check_commands(rep)
+        _guarded(rep, _check_commands)
 
     print("=" * 72)
     print("文档守卫")
@@ -788,6 +877,8 @@ def main(argv: list[str] | None = None) -> int:
     print("受管：README.md（当前实现边界与命令）")
     print("　　　+ 文档权威登记（docs/INDEX.md：双向比对 + 管辖事实唯一）"
           "—— 回答「哪一份有效」和「哪一类事实归谁」")
+    print("　　　+ 分片认领（config/document-splits.json ↔ 父文档/分片）："
+          "父文档须已登记、分片不得重领或另立身份、md 分片须有导航头")
     print("　　　+ 选型门禁（AGENTS.md ↔ 项目上下文 §4 依赖/vendor 登记）"
           "—— 回答「实现之前先找过现成能力没有」")
     print("　　　+ 模板映射（AGENTS.md §Standards Mapping ↔ docs/standards-template/）"

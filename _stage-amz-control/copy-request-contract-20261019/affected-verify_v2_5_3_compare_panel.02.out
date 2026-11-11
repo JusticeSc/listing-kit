@@ -1,0 +1,10 @@
+- [PASS] V2.5.3-17 视觉证据：面板在真实工作台里可见（整页 + 面板特写截图留档）
+- [PASS] V2.5.3-20 审核卡逐图检查摘要：显示所展示候选的当前报告状态（含 VLM 状态），未采用时保留可用入口
+- [PASS] V2.5.3-21 采用后按钮反映状态：目标卡为「已采用」且禁用，未采用的卡仍保留「采用候选」
+- [PASS] V2.5.3-18 正式入口 --check 全过（比较面板没有破坏既有自检）
+- [PASS] V2.5.3-19 零意外 console error / page error
+
+证据文件：
+ - evals/product-v2/v2.5.3-compare-panel-20261019-034302.txt
+ - evals/product-v2/v2.5.3-compare-panel-20261019-034302.json
+ - evals/product-v2/evidence/v2.5.3-compare-panel-20261019-034302.png

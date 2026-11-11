@@ -30,13 +30,16 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
+import os
 import re
 import shutil
 import subprocess
 import tempfile
 import sys
+from contextlib import nullcontext
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from unittest.mock import patch
 
 import yaml
 
@@ -49,24 +52,46 @@ enable_utf8()
 
 from check_project_state import (  # noqa: E402
     GOAL_BINDING_SESSION, _goal_display_norm, _goal_plan_text,
-    _plan_tasks, PHASE_HEAD,
+    _plan_tasks, PHASE_HEAD, _read_document_text, _read_state_data,
 )
 from refactor_resume import (  # noqa: E402
-    _current_boundary_section, _format_default, packet as resume_packet,
+    _current_boundary_section, _format_default,
 )
+import check_project_state as state_guard  # noqa: E402
+import refactor_resume as resume  # noqa: E402
 
 GUARD = ROOT / "tools" / "check_project_state.py"
 CODE_ROOT = ROOT
 _fixture = tempfile.TemporaryDirectory(prefix="amz-state-probe-")
 ROOT = Path(_fixture.name)
+state_guard.ROOT = ROOT
+for relative in ("config/document-splits.json", "config/retired-documents.json"):
+    source = CODE_ROOT / relative
+    if source.is_file():
+        target = ROOT / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, target)
+registry_path = ROOT / "config/document-splits.json"
+SPLITS = (json.loads(registry_path.read_text(encoding="utf-8"))["splits"]
+          if registry_path.exists() else [])
+
+
+def _copy_document(relative: str) -> None:
+    paths = [relative]
+    for entry in SPLITS:
+        if entry["path"] == relative:
+            paths.extend(part["path"] for part in entry["parts"])
+    source = CODE_ROOT / relative
+    if source.name == "state.md" and source.with_suffix(".yaml").is_file():
+        paths.append(source.with_suffix(".yaml").relative_to(CODE_ROOT).as_posix())
+    for path in paths:
+        target = ROOT / path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(CODE_ROOT / path, target)
+
+
 for source in (CODE_ROOT / "_working").glob("*/state.md"):
-    target = ROOT / source.relative_to(CODE_ROOT)
-    target.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(source, target)
-    match = YAML_BLOCK.search(source.read_text(encoding="utf-8")) if "YAML_BLOCK" in globals() else re.search(
-        r"```yaml\r?\n(.*?)```", source.read_text(encoding="utf-8"), re.S)
-    if not match:
-        continue
+    _copy_document(source.relative_to(CODE_ROOT).as_posix())
     def _kind(path: Path) -> str | None:
         """这句话是文件/目录吗；不是路径就返回 None。
 
@@ -97,16 +122,14 @@ for source in (CODE_ROOT / "_working").glob("*/state.md"):
             if kind is None or CODE_ROOT not in original.parents:
                 return
             if kind == "file":
-                copied = ROOT / original.relative_to(CODE_ROOT)
-                copied.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copy2(original, copied)
+                _copy_document(original.relative_to(CODE_ROOT).as_posix())
             else:
                 # evidence 也可以是目录（如 evals/product-v2/fixtures/v2.5.2/ 这类夹具集）；
                 # 守卫用 exists() 判存在，临时副本必须复制整棵目录，否则真库里存在的
                 # 引用会在副本里变成 J6「指向不存在」，把受控基线和每个反例都污染成假红。
                 shutil.copytree(original, ROOT / original.relative_to(CODE_ROOT),
                                 dirs_exist_ok=True)
-    record = yaml.safe_load(match.group(1))
+    record = _read_state_data(source, root=CODE_ROOT)
     if isinstance(record, dict) and record.get("status") != "superseded":
         copy_references(record)
 YAML_BLOCK = re.compile(r"```yaml\r?\n(.*?)```", re.S)
@@ -116,9 +139,9 @@ TAG = re.compile(r"\[J(\d+)\]")
 def _current_state() -> Path:
     candidates = []
     for path in sorted((ROOT / "_working").glob("*/state.md")):
-        text = path.read_text(encoding="utf-8")
-        if ("state_schema: amz-project-state/v2" in text
-                and re.search(r"^status: (?:prepared|active|paused)$", text, re.M)):
+        data = _read_state_data(path)
+        if (data.get("state_schema") == "amz-project-state/v2"
+                and data.get("status") in {"prepared", "active", "paused"}):
             candidates.append(path)
     if len(candidates) != 1:
         raise RuntimeError(f"需要恰好一份 current v2 状态，实际 {len(candidates)}：{candidates}")
@@ -127,14 +150,18 @@ def _current_state() -> Path:
 
 STATE = _current_state()
 ORIG_BYTES = STATE.read_bytes()
+MACHINE = STATE.with_suffix(".yaml") if STATE.with_suffix(".yaml").exists() else STATE
+ORIG_MACHINE_BYTES = MACHINE.read_bytes()
 ORIG_TEXT = ORIG_BYTES.decode("utf-8")
-MATCH = YAML_BLOCK.search(ORIG_TEXT)
-if not MATCH:
-    raise RuntimeError("当前状态没有 yaml 围栏")
-ORIG_DATA = yaml.safe_load(MATCH.group(1))
-PREFIX = ORIG_TEXT[:MATCH.start(1)]
-SUFFIX = ORIG_TEXT[MATCH.end(1):]
-PLAN_TEXT = (ROOT / str(ORIG_DATA["plan_ref"])).read_text(encoding="utf-8")
+ORIG_DATA = _read_state_data(STATE)
+if MACHINE == STATE:
+    MATCH = YAML_BLOCK.search(ORIG_TEXT)
+    if not MATCH:
+        raise RuntimeError("当前状态没有 yaml 围栏")
+    PREFIX, SUFFIX = ORIG_TEXT[:MATCH.start(1)], ORIG_TEXT[MATCH.end(1):]
+else:
+    PREFIX = SUFFIX = ""
+PLAN_TEXT = _read_document_text(str(ORIG_DATA["plan_ref"]), root=ROOT)
 PLAN_TASKS, PLAN_DEPS = _plan_tasks(PLAN_TEXT)
 
 DUP_DIRS = [ROOT / "_working" / "_probe_dup_1",
@@ -192,7 +219,7 @@ def _serialize(data: dict) -> str:
 
 
 def _write(data: dict) -> None:
-    STATE.write_text(_serialize(data), encoding="utf-8", newline="\n")
+    MACHINE.write_text(_serialize(data), encoding="utf-8", newline="\n")
 
 
 def _make_active(data: dict) -> dict:
@@ -311,6 +338,7 @@ def _run_guard() -> tuple[int, str]:
 
 def _restore() -> None:
     STATE.write_bytes(ORIG_BYTES)
+    MACHINE.write_bytes(ORIG_MACHINE_BYTES)
     TMP_EVIDENCE.unlink(missing_ok=True)
     for directory in DUP_DIRS:
         if directory.exists():
@@ -384,6 +412,8 @@ def _mutate(case: str) -> tuple[list[str], bool]:
     if case == "B":
         active = _make_active(data)
         text = _serialize(active)
+        if MACHINE != STATE:
+            text = "```yaml\n" + text + "```\n"
         for directory in DUP_DIRS:
             directory.mkdir(parents=True, exist_ok=True)
             (directory / "state.md").write_text(text, encoding="utf-8", newline="\n")
@@ -432,7 +462,7 @@ def _mutate(case: str) -> tuple[list[str], bool]:
                         count=1, flags=re.M)
         if broken == _serialize(BASE):
             problems.append("探针没能把 YAML 改坏（替换目标没命中）")
-        STATE.write_text(broken, encoding="utf-8", newline="\n")
+        MACHINE.write_text(broken, encoding="utf-8", newline="\n")
         return problems, True
     elif case == "N":
         data = _make_active(data)
@@ -629,9 +659,9 @@ def _mutate(case: str) -> tuple[list[str], bool]:
     else:
         problems.append(f"未知 case {case}")
 
-    before = STATE.read_bytes()
+    before = MACHINE.read_bytes()
     _write(data)
-    return problems, STATE.read_bytes() != before
+    return problems, MACHINE.read_bytes() != before
 
 
 CASES = [
@@ -702,7 +732,137 @@ CASES = [
     ("BP", "无current边界时恢复仍保留blocker且不清可施工", 0, set()),
     ("BQ", "旧current_未知在未证取代时完整保留", 0, set()),
     ("BR", "默认恢复输出不打印整张历史任务卡", 0, set()),
+    ("BS", "停工策略与标题无关且缺失重复未知均拒绝", 0, set()),
+    ("BT", "机器YAML优先、旧状态兼容、解析失败与真实mtime", 0, set()),
+    ("BU", "有序拆分去导航围栏且断裂续接显式失败", 0, set()),
 ]
+
+
+def _fixture_packet(plan_text: str, *, historical: bool = False) -> dict:
+    """只隔离目录/状态守卫；历史显示投影单独绕过现行停工门。"""
+    with tempfile.TemporaryDirectory(prefix="amz-resume-projection-") as temporary:
+        fixture = Path(temporary)
+        state_rel = STATE.relative_to(ROOT).as_posix()
+        plan_rel = str(ORIG_DATA["plan_ref"])
+        for relative, text in ((state_rel, ORIG_TEXT), (plan_rel, plan_text),
+                               ("docs/INDEX.md",
+                                f"| `{plan_rel}` | plan | 产品目标 | current | owner |\n"
+                                f"| `{state_rel}` | state | 执行状态 | current | owner |\n")):
+            target = fixture / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(text, encoding="utf-8", newline="\n")
+        if MACHINE != STATE:
+            (fixture / state_rel).with_suffix(".yaml").write_bytes(ORIG_MACHINE_BYTES)
+        policy = (patch.object(resume, "_require_resume_policy", lambda text: None)
+                  if historical else nullcontext())
+        with patch.object(resume, "ROOT", fixture), patch.object(state_guard, "ROOT", fixture), \
+                patch.object(resume, "_check_docs_index", lambda report: None), \
+                patch.object(resume, "_check", lambda report: None), policy:
+            return resume.packet()
+
+
+def _check_resume_policy() -> list[str]:
+    marker = "<!-- refactor-resume-policy: blocked -->"
+    variants = (("blocked", marker, "当前仅文档治理与目标重设准备"),
+                ("renamed-heading", "## 任意标题\n" + marker, "当前仅文档治理与目标重设准备"),
+                ("missing", "", "恢复策略缺失、重复或未知"),
+                ("unknown", marker.replace("blocked", "allow"), "恢复策略缺失、重复或未知"),
+                ("duplicate", marker + "\n" + marker, "恢复策略缺失、重复或未知"),
+                ("renamed-marker", marker.replace("resume-policy", "resume-rule"), "恢复策略缺失、重复或未知"))
+    problems = []
+    for label, text, expected in variants:
+        try:
+            _fixture_packet(text + "\n")
+        except ValueError as error:
+            if not str(error).startswith(expected):
+                problems.append(f"{label} 未在策略门拒绝：{error}")
+        except Exception as error:
+            problems.append(f"{label} 绕过策略后在别处失败：{error}")
+        else:
+            problems.append(f"{label} 允许恢复了旧任务")
+    return problems
+
+
+def _check_machine_reader() -> list[str]:
+    problems = []
+    with tempfile.TemporaryDirectory(prefix="amz-machine-state-") as temporary:
+        fixture = Path(temporary)
+        path = fixture / "_working/current/state.md"
+        path.parent.mkdir(parents=True)
+        path.write_text("```yaml\nmarker: legacy\n```\n", encoding="utf-8")
+        machine = path.with_suffix(".yaml")
+        stamp = datetime.now(timezone.utc) - timedelta(hours=1)
+        body = f"marker: machine\nupdated_at: '{stamp.isoformat()}'\n"
+        machine.write_text(body, encoding="utf-8")
+        if _read_state_data(path, root=fixture).get("marker") != "machine":
+            problems.append("存在state.yaml时仍读取旧Markdown机器块")
+        machine.write_text("marker: [\n", encoding="utf-8")
+        with patch.object(state_guard, "WORKING", fixture / "_working"), \
+             patch.object(state_guard, "ROOT", fixture):
+            broken = state_guard._records(state_guard.Report())
+        if len(broken) != 1 or broken[0][1] is not None or not broken[0][2]:
+            problems.append("失效机器YAML被回退、遗漏或当作成功")
+        machine.unlink()
+        if _read_state_data(path, root=fixture).get("marker") != "legacy":
+            problems.append("无state.yaml的旧Markdown状态失去兼容")
+        machine.write_text(body, encoding="utf-8")
+        earlier = (stamp - timedelta(hours=1)).timestamp()
+        os.utime(machine, (earlier, earlier))
+        with patch.object(state_guard, "WORKING", fixture / "_working"), \
+             patch.object(state_guard, "ROOT", fixture):
+            records = state_guard._records(state_guard.Report())
+        source, data, error = records[0]
+        report = state_guard.Report()
+        state_guard._check_updated_at(report, "state", source, data)
+        if error or source != machine or not any("[J10]" in item for item in report.problems):
+            problems.append("J10没有以真实state.yaml的mtime拒绝未来读数")
+    return problems
+
+
+def _check_split_reader() -> list[str]:
+    problems = []
+    with tempfile.TemporaryDirectory(prefix="amz-state-splits-") as temporary:
+        fixture = Path(temporary)
+        (fixture / "config").mkdir()
+        (fixture / "plan.md").write_text("current route\n", encoding="utf-8")
+        header = "<!-- 拆分件 fixture -->\nnav\nnav\n\n"
+        (fixture / "a.md").write_text(header + "```md\nsecond\n```\n", encoding="utf-8")
+        (fixture / "b.md").write_text(header + "first\n", encoding="utf-8")
+        registry = {"splits": [{"path": "plan.md", "mode": "byte-exact", "parts": [
+            {"path": "b.md"}, {"path": "a.md", "remove_prefix": "```md\n", "remove_suffix": "```\n"}]}]}
+        registry_path = fixture / "config/document-splits.json"
+        registry_path.write_text(json.dumps(registry), encoding="utf-8")
+        if _read_document_text("plan.md", root=fixture) != "current route\nfirst\nsecond\n":
+            problems.append("父页路由、parts顺序或四行导航/续接围栏处理错误")
+        (fixture / "a.md").write_text(header + "second\n```\n", encoding="utf-8")
+        try:
+            _read_document_text("plan.md", root=fixture)
+        except ValueError:
+            pass
+        else:
+            problems.append("缺失登记的续接围栏仍静默成功")
+        (fixture / "b.md").unlink()
+        try:
+            _read_document_text("plan.md", root=fixture)
+        except OSError:
+            pass
+        else:
+            problems.append("缺失正文拆分件仍静默成功")
+        (fixture / "b.md").write_text(header + "first\n", encoding="utf-8")
+        for label, malformed in (
+            ("parts 非对象", {"splits": [{"path": "plan.md", "parts": ["bad"]}]}),
+            ("part 越界路径", {"splits": [{"path": "plan.md", "parts": [{"path": "../outside.md"}]}]}),
+        ):
+            registry_path.write_text(json.dumps(malformed), encoding="utf-8")
+            try:
+                _read_document_text("plan.md", root=fixture)
+            except ValueError:
+                pass
+            except Exception as error:
+                problems.append(f"{label}抛出非预期异常：{type(error).__name__}: {error}")
+            else:
+                problems.append(f"{label}未被安全拒绝")
+    return problems
 
 
 def _check_resume_projection(code: str) -> list[str]:
@@ -723,7 +883,7 @@ def _check_resume_projection(code: str) -> list[str]:
         elif code == "BP":
             if _current_boundary_section("## 历史执行\n旧授权保留\n") != (None, None, None):
                 problems.append("缺少当前边界时伪造了摘要")
-            data = resume_packet()
+            data = _fixture_packet(PLAN_TEXT, historical=True)
             data.update(has_current_boundary=False, recovery_boundary_text=None,
                         recovery_boundary_start_line=None, recovery_boundary_end_line=None,
                         recovery_boundary_sha256=None)
@@ -734,13 +894,13 @@ def _check_resume_projection(code: str) -> list[str]:
             if any(blocker not in rendered for blocker in data["blockers"]):
                 problems.append("缺失摘要时默认输出丢失登记blocker")
         elif code == "BQ":
-            data = resume_packet()
+            data = _fixture_packet(PLAN_TEXT, historical=True)
             if data["unknowns"] != ORIG_DATA.get("unknowns", []):
                 problems.append("实际恢复包改写、重排或过滤了unknowns")
             if data["blockers"] != ORIG_DATA.get("blockers", []):
                 problems.append("实际恢复包改写、重排或过滤了blockers")
         elif code == "BR":
-            data = resume_packet()
+            data = _fixture_packet(PLAN_TEXT, historical=True)
             rendered = _format_default(data)
             if data["task_card"] in rendered:
                 problems.append("默认输出仍打印完整旧任务卡，遮盖当前恢复边界")
@@ -750,6 +910,12 @@ def _check_resume_projection(code: str) -> list[str]:
                 problems.append("默认输出丢失登记blocker")
             if f"{data['plan']}:{data['task_card_line']}" not in rendered:
                 problems.append("默认输出无法定位完整任务卡")
+        elif code == "BS":
+            problems.extend(_check_resume_policy())
+        elif code == "BT":
+            problems.extend(_check_machine_reader())
+        elif code == "BU":
+            problems.extend(_check_split_reader())
         else:
             problems.append(f"未知恢复对照 {code}")
     except Exception as error:
@@ -765,7 +931,7 @@ def main() -> int:
     bad = 0
     try:
         for code, name, want_rc, want_tags in CASES:
-            if code in ("BO", "BP", "BQ", "BR"):
+            if code in ("BO", "BP", "BQ", "BR", "BS", "BT", "BU"):
                 _restore()
                 resume_problems = _check_resume_projection(code)
                 mark = "OK  " if not resume_problems else "FAIL"
@@ -794,14 +960,15 @@ def main() -> int:
             bad += bool(problems)
     finally:
         _restore()
-        if STATE.read_bytes() != ORIG_BYTES:
+        if STATE.read_bytes() != ORIG_BYTES or MACHINE.read_bytes() != ORIG_MACHINE_BYTES:
             print("✗ 还原后与原始字节不一致")
             bad += 1
         if TMP_EVIDENCE.exists():
             print(f"✗ 探针临时证据未被清理：{TMP_EVIDENCE_REL}")
             bad += 1
-        if STATE.read_bytes() == ORIG_BYTES and not TMP_EVIDENCE.exists():
-            print(f"独立副本已恢复 {STATE.relative_to(ROOT).as_posix()}；权威 state/观察证据从未写入")
+        if (STATE.read_bytes() == ORIG_BYTES and MACHINE.read_bytes() == ORIG_MACHINE_BYTES
+                and not TMP_EVIDENCE.exists()):
+            print(f"独立副本已恢复 {STATE.relative_to(ROOT).as_posix()} 与机器数据；权威 state/观察证据从未写入")
 
     if bad:
         print(f"✗ {bad}/{len(CASES)} 向与预期不符")

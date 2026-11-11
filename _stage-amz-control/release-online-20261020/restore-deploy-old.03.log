@@ -1,0 +1,25 @@
+#29 [runtime 5/6] COPY --from=frontend /build/dist/product-v2/ ./dist/product-v2/
+#29 DONE 0.1s
+
+#30 [runtime 6/6] RUN useradd --create-home --uid 10001 appuser     && chown -R appuser:appuser /opt/amz-listing-kit
+#30 DONE 13.5s
+
+#31 exporting to image
+#31 exporting layers
+#31 exporting layers 6.7s done
+#31 exporting manifest sha256:3271db8cd751de181bae8ddf502707659ddb2e4eab7e4b9e678399909a3b4d73 0.0s done
+#31 exporting config sha256:044be7d54cbdba111e45b65922c5299f2f305d3f24231727cb7b53c9ea2f1d50 0.0s done
+#31 exporting attestation manifest sha256:ac058f5ff12b2a576120e13f1e519bc7fc9c4088c7efb8589f78d7cde85444b1 0.0s done
+#31 exporting manifest list sha256:7fdb4a983218d697e627da9a7d3b441a38fbe3c61460ad080f728133d1fa25e6 0.0s done
+#31 naming to docker.io/library/amz-listing-kit:6e692a4c2f7c7db083a012c23f0285bf505a2ba7 done
+#31 unpacking to docker.io/library/amz-listing-kit:6e692a4c2f7c7db083a012c23f0285bf505a2ba7
+#31 unpacking to docker.io/library/amz-listing-kit:6e692a4c2f7c7db083a012c23f0285bf505a2ba7 1.4s done
+#31 DONE 8.3s
+2026-10-20T05:42:18Z release-transaction parking serving container amz-listing-kit (image=amz-listing-kit:3195192e4a1d29e374ea6d15fa8b4c7256dd42bf) as amz-listing-kit-previous
+2026-10-20T05:42:19Z release-transaction starting new container amz-listing-kit from amz-listing-kit:6e692a4c2f7c7db083a012c23f0285bf505a2ba7
+2026-10-20T05:42:25Z release-transaction caddy config changed; backing up live config
+2026-10-20T05:42:26Z release-transaction restarting TLS container amz-listing-kit-tls for new config
+2026-10-20T05:42:28Z release-transaction waiting for trusted HTTPS entry https://47.115.172.233:8080/api/health
+2026-10-20T05:42:29Z release-transaction deployed_image=amz-listing-kit:6e692a4c2f7c7db083a012c23f0285bf505a2ba7 host_port=8780 health=healthy
+2026-10-20T05:42:29Z release-transaction deployed_tls=https://47.115.172.233:8080/api/health caddy_container=amz-listing-kit-tls
+2026-10-20T05:42:29Z release-transaction release_transaction=open previous_retained=amz-listing-kit-previous backup=/root/.config/amz-listing-kit/tls/Caddyfile.release-backup backed_up=true

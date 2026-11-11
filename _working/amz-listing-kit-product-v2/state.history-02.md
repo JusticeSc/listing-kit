@@ -1,0 +1,18 @@
+<!-- 拆分件 · 公开 main 历史原文 · 2/7 -->
+> 原件：`_working/amz-listing-kit-product-v2/state.md`，公开 main `11902b32651f4690f7367624377dcde6652e0a97`。
+> 当前边界与机器数据：[state.md](state.md) · 本页保留原时点，不构成恢复授权。
+
+- **此前产品停工边界（由本节2026-10-21零收费恢复在明确范围内取代）**：用户先选择“停止，保留当前成果”，随后再次要求“停止当期工作，做好收尾准备”；当时仅允许停工收尾与保全。原图/独立profile/项目数据/旧两包/账本/失败与Unknown继续保留，不清库、不删除历史、不降验收；PR26仍Draft，本轮未授权提交推送/合并部署。决定原文见`_stage-amz-control/pr26-review-fix-20261020/stop-decision.json`，完整旧state已随本轮授权快照保留；旧“未调用暂停接口/最近active”仅是当时观察，不覆盖本次真实paused→resume→active。
+- **既有上限与本轮新增范围分开**：原20–23四批已经用满，不能把后续e38ab61修复与重验藏回第21批。本轮用户明确新增24–26最多3批，不清零旧计数；图16/16没有追加，所有新外部模型请求仍禁止。原边界在`_stage-amz-control/pr26-review-fix-20261020/boundary-before.zip`及本轮`authorization-before.json`中保留。
+- **工程差量有证，但不是完整成品验收。** PR [#26](https://github.com/JusticeSc/listing-kit/pull/26)当前head `71bf77232650d4ca595c1dbd7d6dae8a852edefe`、OPEN Draft；[CI run 39430927648](https://github.com/JusticeSc/listing-kit/actions/runs/39430927648)三项SUCCESS，未合并/部署。源码候选`e38ab6149aa8`的现有完整两轮各50命令全绿、同结果指纹`290ee1bddc2b3a6b`，证据`evals/product-v2/v2.7.1-regression-final_v2-final.{txt,json}`；后续提交为证据说明。该代码范围可按未变前提复用，不为日期或文档HEAD重跑，也不以代码全绿代签最终五图。
+- **第22批历史像素结果与仍有效额度门。** 当时信息图乱码/黑框已消除、商品自身608Z/NSK/INDONESIA保留，经独立复核合格并正式采用为selection v5（`b20fe753…`）；原主图主体984px=73.2%<85%，左右各1px非白线，不合格且未采用，当时采用仍是过期79.1%候选、整套报告也已过期。这些原失败不删除；今日正式派生/采用与最终两包结果以上方新证据为准。图16/16、辅助0/4、lane保守金额3.06/5元、累计14.26/21元不变；余1.94元不是新次数授权，失败/Unknown不释放、不借辅助额度。
+- 原主图缺口与额度历史证据仍见`_stage-amz-control/b20-b23-closeout-20261020/b22-outcome-and-decision.md`，其中“余第23批/尚未执行两轮”只属其当时时点，不覆盖当前第26批未通过的最终准出。
+
+## 历史执行与证据（保留原范围）
+
+
+- **2026-10-20审计后，用户在追加批次选择题中明确选择“批准有限收口”：最多再追加4个完整实施＋验收批次，沿已发生记录继续20–23，原1–19批、失败和Unknown不清零。** 原生Goal实时get仍为`15ab22bf3386b9cf / active`、原文不变。授权观察、启动前原字节及本轮结果入口为`_stage-amz-control/b20-b23-closeout-20261020/`；完整审计见`evals/product-v2/refactor/status-audit-20261020.md`。本次恢复必要产品修改、对应验证、原有审查/受保护CI/CD及既有环境发布，不新增资金、模型、依赖或平台；达到批次、金额或类别门即停，不承诺4批必成。已有线上`3195192`、image=`sha256:4abc01be…`、runtime=`48002dc4…`与两包/常规宽度/可逆溢出因果/两轮及恢复证据按各自未变范围复用，不重做基线/V1退出/PR18。C15/C17仍为独立外部门，不新增工程发布前置。
+- **2026-10-20T05:56:49Z 线上真实采用闭环实测 7/7：导入旧包→切换并采用另一候选→整套检查过期阻断→重跑放行→两包导出→独立导入刷新相等。** 在既有 HTTPS origin 的独立无头 profile 中导入 `b19-project-post-suite.zip`，打开项目后把其中一张已采用图切到另一条候选并点击采用（新 selection 版本，候选改写）；选择变化立即使整套检查过期、交付门禁阻断（`export.suite_review_current`），点击整套检查后门禁放行；交付包 5 图、该图 `candidate_id/asset_sha256` 等于刚采用候选，逐图哈希与 manifest 相等；项目包导出后由第二个独立 profile 导入，文档/资产快照与刷新相等，全程零 console/page error。首个探针版本在 AD-04 从错误的候选列表取期望 sha（StopIteration）已修正后重跑，产品未改，失败证据保留。证据 `_stage-amz-control/release-online-20261020/online_adoption_probe.py` 与 `evidence/*online-adopt-main*.json|png`。
+
+- **2026-10-20T05:45Z 生产同 origin 受控恢复实测完成：把上一发布 6e692a4 的源码重建为旧版本 image 部署到同一 HTTPS origin，旧包 8/8；随后按同一事务 rollback 恢复当前 3195192，清理事务与 TLS 备份，恢复后 8/8。** 过程：`git archive 6e692a4` 上传 `/tmp/amz-listing-kit-6e692a4…`，`release-transaction.sh deploy` 构建并部署 image `sha256:7fdb4a98…`（旧源码；与 3195192 构建输入仅 verification.json 8 行差异，runtime 同为 `48002dc4…`；重建覆盖了 `amz-listing-kit:6e692a4…` tag 原指向 `d6d60423…`），当前 3195192 容器停为 `amz-listing-kit-previous`；因 6e692a4 的 Caddyfile 与线上不同，事务备份并替换 TLS 配置后重启 tls。部署后线上探针 8/8（label `restored-old-6e692a4`：旧包导入、五图交付身份、两包导出、独立 profile 再导入、刷新、零错误）。随后 `rollback`（首个调用因请求 image 与事务 image 不匹配被拒 rc=1，未动现场，保留为失败证据；第二个调用 rc=1 属既定「已回退」类）删除旧容器、恢复 3195192 healthy、从备份恢复 Caddyfile（`e375655d…`）、清理事务文件且无 `-previous` 容器；恢复后探针 8/8（label `post-restore-rollback-3195192`），宿主核对容器 image 4abc01be…、tls 哈希 e375655d…。证据 `_stage-amz-control/release-online-20261020/{restore-deploy-old.log,restore-rollback.log,restore-rollback2.log}` 与 `evidence/*restored-old-6e692a4*.json|png`、`evidence/*post-restore-rollback-3195192*.json|png`。这是真实同 origin 恢复与对应旧包可用；**新格式/新数据保全**仍由事务自测的双镜像跨版本包往返证明——本轮 runtime 未变，线上无法制造真实格式差异，不据此扩大结论。
+

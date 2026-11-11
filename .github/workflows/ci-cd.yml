@@ -80,6 +80,8 @@ jobs:
 
       - name: Check out repository
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -113,6 +115,24 @@ jobs:
       - name: Check documentation
         if: contains(fromJSON(needs.changes.outputs.selected), 'tools/check_docs.py --no-run')
         run: uv run --locked python tools/check_docs.py --no-run
+      - name: Check document byte budgets
+        if: contains(fromJSON(needs.changes.outputs.selected), 'tools/check_doc_budgets.py')
+        run: uv run --locked python tools/check_doc_budgets.py
+      - name: Check document originals and split registry
+        if: contains(fromJSON(needs.changes.outputs.selected), 'tools/check_document_splits.py')
+        run: uv run --locked python tools/check_document_splits.py
+      - name: Check retired document recovery
+        if: contains(fromJSON(needs.changes.outputs.selected), 'tools/check_retired_documents.py')
+        run: uv run --locked python tools/check_retired_documents.py
+      - name: Probe retired document recovery
+        if: contains(fromJSON(needs.changes.outputs.selected), 'evals/probes/retired_documents.py')
+        run: uv run --locked python evals/probes/retired_documents.py
+      - name: Probe document byte budgets
+        if: contains(fromJSON(needs.changes.outputs.selected), 'evals/probes/doc_budgets.py')
+        run: uv run --locked python evals/probes/doc_budgets.py
+      - name: Probe document originals and split registry
+        if: contains(fromJSON(needs.changes.outputs.selected), 'evals/probes/document_splits.py')
+        run: uv run --locked python evals/probes/document_splits.py
       - name: Check project state
         if: contains(fromJSON(needs.changes.outputs.selected), 'tools/check_project_state.py')
         run: uv run --locked python tools/check_project_state.py

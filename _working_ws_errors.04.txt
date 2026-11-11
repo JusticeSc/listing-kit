@@ -1,0 +1,72 @@
+app/product_v2/workspace.js(4566,65): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+app/product_v2/workspace.js(4569,64): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+app/product_v2/workspace.js(4589,41): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+app/product_v2/workspace.js(4591,57): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+app/product_v2/workspace.js(4600,25): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+app/product_v2/workspace.js(4604,47): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+app/product_v2/workspace.js(4606,39): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+app/product_v2/workspace.js(4607,59): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+app/product_v2/workspace.js(4635,53): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+app/product_v2/workspace.js(4636,58): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+app/product_v2/workspace.js(4639,72): error TS18047: 'record' is possibly 'null'.
+app/product_v2/workspace.js(4642,11): error TS18047: 'record' is possibly 'null'.
+app/product_v2/workspace.js(4642,40): error TS18047: 'record' is possibly 'null'.
+app/product_v2/workspace.js(4649,19): error TS18047: 'record' is possibly 'null'.
+app/product_v2/workspace.js(4654,13): error TS18047: 'record' is possibly 'null'.
+app/product_v2/workspace.js(4655,17): error TS18047: 'record' is possibly 'null'.
+app/product_v2/workspace.js(4660,73): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+app/product_v2/workspace.js(4668,70): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+app/product_v2/workspace.js(4676,31): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+app/product_v2/workspace.js(4685,31): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+app/product_v2/workspace.js(4689,57): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+app/product_v2/workspace.js(4694,70): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+app/product_v2/workspace.js(4695,71): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+app/product_v2/workspace.js(4703,31): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+app/product_v2/workspace.js(4706,49): error TS2345: Argument of type 'AttemptState | null' is not assignable to parameter of type 'AttemptState'.
+app/product_v2/workspace.js(4766,31): error TS18048: 'blocking' is possibly 'undefined'.
+app/product_v2/workspace.js(4766,62): error TS18048: 'blocking' is possibly 'undefined'.
+app/product_v2/workspace.js(4775,27): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+app/product_v2/workspace.js(4783,25): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+app/product_v2/workspace.js(4787,54): error TS18048: 'record' is possibly 'undefined'.
+app/product_v2/workspace.js(4787,97): error TS18048: 'record' is possibly 'undefined'.
+app/product_v2/workspace.js(4788,10): error TS18048: 'record' is possibly 'undefined'.
+app/product_v2/workspace.js(4788,38): error TS18048: 'record' is possibly 'undefined'.
+app/product_v2/workspace.js(4789,9): error TS18048: 'record' is possibly 'undefined'.
+app/product_v2/workspace.js(4791,12): error TS18048: 'record' is possibly 'undefined'.
+app/product_v2/workspace.js(4792,16): error TS18048: 'record' is possibly 'undefined'.
+app/product_v2/workspace.js(4793,39): error TS18048: 'record' is possibly 'undefined'.
+app/product_v2/workspace.js(4793,39): error TS18047: 'record.error' is possibly 'null'.
+app/product_v2/workspace.js(4794,22): error TS18048: 'record' is possibly 'undefined'.
+app/product_v2/workspace.js(4794,22): error TS18047: 'record.error' is possibly 'null'.
+app/product_v2/workspace.js(4797,25): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+app/product_v2/workspace.js(4800,11): error TS18048: 'outcome.candidate.sha256' is possibly 'undefined'.
+app/product_v2/workspace.js(4827,25): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+app/product_v2/workspace.js(4834,27): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+app/product_v2/workspace.js(4837,13): error TS18048: 'result.candidate.sha256' is possibly 'undefined'.
+app/product_v2/workspace.js(4947,23): error TS2339: Property 'references' does not exist on type '{}'.
+app/product_v2/workspace.js(4947,63): error TS2339: Property 'text' does not exist on type '{}'.
+app/product_v2/workspace.js(4948,60): error TS2339: Property 'text' does not exist on type '{}'.
+app/product_v2/workspace.js(4999,5): error TS2740: Type '{ shot_id: string; candidate_id: string; asset_sha256: string; version: number | null; }' is missing the following properties from type 'CompareInventoryRow': review_state, pending, top_finding, report, and 6 more.
+app/product_v2/workspace.js(5009,35): error TS18047: 'reworkSource' is possibly 'null'.
+app/product_v2/workspace.js(5009,73): error TS18047: 'reworkSource' is possibly 'null'.
+app/product_v2/workspace.js(5016,18): error TS18047: 'reworkSource' is possibly 'null'.
+app/product_v2/workspace.js(5146,56): error TS2353: Object literal may only specify known properties, and 'rework' does not exist in type '{ action?: ActionSnapshot | null | undefined; }'.
+app/product_v2/workspace.js(5151,28): error TS2339: Property 'references' does not exist on type '{ payload: PromptRecord; }'.
+app/product_v2/workspace.js(5185,59): error TS2339: Property 'rework' does not exist on type 'PromptRecord'.
+app/product_v2/workspace.js(5186,26): error TS2339: Property 'rework' does not exist on type 'PromptRecord'.
+app/product_v2/workspace.js(5186,64): error TS2339: Property 'directive_id' does not exist on type '{}'.
+app/product_v2/workspace.js(5188,69): error TS2339: Property 'payload' does not exist on type '{}'.
+app/product_v2/workspace.js(5217,17): error TS2339: Property 'can_submit' does not exist on type '{}'.
+app/product_v2/workspace.js(5221,7): error TS2322: Type '{ platform: { platform_id: any; version: any; }; provider: { model_id: any; version: any; }; can_submit: boolean; shots: any; external_summary: { model: any; size: any; n: any; prompt_extend: any; watermark: any; output_format: any; reference_count: any; reference_roles: any[]; prompt_chars: any; }; scope_shot_ids?:...' is not assignable to type 'ConfirmationSnapshot'.
+app/product_v2/workspace.js(5221,47): error TS2322: Type 'AttemptCurrentEnvironmentIdentity | null' is not assignable to type 'null | undefined'.
+app/product_v2/workspace.js(5247,59): error TS2339: Property 'rework' does not exist on type 'PromptRecord'.
+app/product_v2/workspace.js(5248,26): error TS2339: Property 'rework' does not exist on type 'PromptRecord'.
+app/product_v2/workspace.js(5248,64): error TS2339: Property 'directive_id' does not exist on type '{}'.
+app/product_v2/workspace.js(5250,69): error TS2339: Property 'payload' does not exist on type '{}'.
+app/product_v2/workspace.js(5255,38): error TS2345: Argument of type '{ intent: GenerationIntent; readIntent: () => GenerationIntent; documentId: string; action: ActionSnapshot; }' is not assignable to parameter of type 'ConfirmAndRunInput'.
+app/product_v2/workspace.js(5333,11): error TS18047: 'batchState' is possibly 'null'.
+app/product_v2/workspace.js(5336,23): error TS18047: 'batchState' is possibly 'null'.
+app/product_v2/workspace.js(5337,41): error TS18047: 'batchState' is possibly 'null'.
+app/product_v2/workspace.js(5373,89): error TS18048: 'target' is possibly 'undefined'.
+app/product_v2/workspace.js(5373,109): error TS18048: 'target' is possibly 'undefined'.
+app/product_v2/workspace.js(5375,23): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type 'AttemptCurrentEnvironmentIdentity'.

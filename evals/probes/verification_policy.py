@@ -106,6 +106,10 @@ def _receipt_authority_cases(work: Path) -> dict:
         "_working/amz-listing-kit-product-v2/budget-ledger.json",
         "docs/product-v2-refactor-plan.md", ".github/workflows/authority-guard.yml",
         "AGENTS.md", "README.md", ".gitattributes", ".gitignore",
+        "AGENTS.intent-and-execution.md", "AGENTS.standards-and-development.md",
+        "AGENTS.refactor-and-testing.md", "AGENTS.delivery-and-security.md",
+        "README.behavior.md", "README.startup.md", "README.validation-and-delivery.md",
+        "AGENTS.future-rule.md", "README.future-guide.md",
         "receipts/../docs/product-v2-refactor-plan.md",
     ]
     if sys.platform == "win32":
@@ -194,6 +198,16 @@ def main() -> int:
     case("VPC14", lambda r, _w: r["entrypoints"].update({"tools/verify_v2_ghost.py": [
         {"args": [], "category": "browser", "ci": False, "reason": "仅临时幽灵登记反例"}]}),
          {"VCLASS_GHOST"})
+    for entrypoint in (
+        "tools/check_doc_budgets.py", "tools/check_document_splits.py",
+        "tools/check_retired_documents.py",
+        "evals/probes/doc_budgets.py", "evals/probes/document_splits.py",
+        "evals/probes/retired_documents.py",
+    ):
+        case("VPC-DOCUMENT-CI-" + Path(entrypoint).stem,
+             lambda _r, w, path=entrypoint: remove_ci(w, path), {"CI_MISSING"})
+        case("VPC-DOCUMENT-REGISTRY-" + Path(entrypoint).stem,
+             lambda r, _w, path=entrypoint: r["entrypoints"].pop(path), {"CI_UNCLASSIFIED"})
     # ---- T5 选择器：只验真实选择/执行/跳过的后果，不做源文本自匹配绿灯 ----
     failed = 0
     t5_count = 0
@@ -204,6 +218,13 @@ def main() -> int:
         print(f"[{'OK  ' if condition else 'FAIL'}] {code} {detail}")
         if not condition:
             failed += 1
+
+    verify_checkouts = [step for step in workflow["jobs"]["verify"]["steps"]
+                        if str(step.get("uses", "")).startswith("actions/checkout@")]
+    judge("T5-DOCUMENT-ORIGINAL-GIT-HISTORY",
+          bool(verify_checkouts)
+          and all(str(step.get("with", {}).get("fetch-depth")) == "0" for step in verify_checkouts),
+          "verify checkout 必须读取登记原件的完整 Git 历史")
 
     base_result, base = selector_json([])
     judge("T5-FULL-BASELINE", base_result.returncode == 0 and bool(base),
@@ -232,9 +253,75 @@ def main() -> int:
     proof_result, proof = selector_json([proof_path])
     judge("T5-PROOF-ONLY",
           proof_result.returncode == 0 and bool(proof)
-          and proof["selected"] == ["tools/check_docs.py --no-run"]
+          and set(proof["selected"]) == {
+              "tools/check_docs.py --no-run", "tools/check_doc_budgets.py",
+              "tools/check_document_splits.py", "evals/probes/doc_budgets.py",
+              "tools/check_retired_documents.py",
+              "evals/probes/document_splits.py",
+              "evals/probes/retired_documents.py",
+          }
           and not proof["container"] and not proof["browser"],
           f"rc={proof_result.returncode} selected={proof and proof['selected']}")
+
+    document_checks = {
+        "tools/check_docs.py --no-run", "tools/check_doc_budgets.py",
+        "tools/check_document_splits.py", "evals/probes/doc_budgets.py",
+        "tools/check_retired_documents.py",
+        "evals/probes/document_splits.py",
+        "evals/probes/retired_documents.py",
+    }
+    document_paths = (
+        "README.md", "docs/INDEX.md", "docs/new-area/guide.md",
+        "docs/new-area/page.HTML", "new-area/nested/guide.MDX",
+        "new-area/nested/recovery.txt", "new-area/nested/proof.LOG",
+        "new-area/nested/original.PDF", "new-area/nested/README",
+        "new-area/nested/LICENSE", "evals/new-area/evidence.out",
+        "_working/new-area/notes.rst", "_stage-amz-control/new-area/report.docx",
+    )
+    for path in document_paths:
+        result, data = selector_json([path])
+        judge("T5-DOCUMENT-GOVERNANCE-" + path.replace("/", "_"),
+              result.returncode == 0 and bool(data)
+              and document_checks <= set(data["selected"])
+              and 0 < data["selected_count"] < data["full_count"]
+              and not data["browser"] and not data["frontend"] and not data["container"],
+              f"rc={result.returncode} selected={data and data['selected']}")
+    for path in (
+        "config/document-splits.json", "config/retired-documents.json",
+        "tools/check_docs.py", "tools/check_doc_budgets.py", "tools/check_document_splits.py",
+        "tools/check_retired_documents.py",
+        "evals/probes/doc_budgets.py", "evals/probes/document_splits.py",
+        "evals/probes/retired_documents.py",
+    ):
+        result, data = selector_json([path])
+        judge("T5-DOCUMENT-GUARD-" + path.replace("/", "_"),
+              result.returncode == 0 and bool(data)
+              and document_checks <= set(data["selected"])
+              and 0 < data["selected_count"] < data["full_count"]
+              and not data["browser"] and not data["frontend"] and not data["container"],
+              f"rc={result.returncode} selected={data and data['selected']}")
+    split_result, split_plan = selector_json(["config/document-splits.json"])
+    judge("T5-DOCUMENT-SPLITS-STATE",
+          split_result.returncode == 0 and bool(split_plan)
+          and {"tools/check_project_state.py", "evals/probes/project_state.py",
+               "evals/probes/docs_index.py"}
+          <= set(split_plan["selected"])
+          and not split_plan["browser"] and not split_plan["frontend"]
+          and not split_plan["container"],
+          f"rc={split_result.returncode} selected={split_plan and split_plan['selected']}")
+
+
+    for path, required in (
+        ("tests/gateway/new-area/README.md", {"pytest:tests/gateway -q"}),
+        ("tests/dev/new-area/notes.txt", {"pytest:tests/dev -q", "npm:check:types"}),
+        ("evals/product-v2/node/new-area/notes.md", {"npm:test:domain", "npm:check:types"}),
+        ("app/product_v2/new-area/README.md", full_selection),
+    ):
+        result, data = selector_json([path])
+        judge("T5-DOCUMENT-ADDS-BUSINESS-CONSUMERS-" + path.replace("/", "_"),
+              result.returncode == 0 and bool(data)
+              and document_checks | required <= set(data["selected"]),
+              f"rc={result.returncode} selected={data and data['selected']}")
     ui_path = "app/product_v2/ui/generation-view.ts"
     ui_result, ui = selector_json([ui_path])
     # generation-view 独占 #task-list-mount / #shot-execution：凡真实读取这两个根的工具都在
@@ -317,12 +404,21 @@ def main() -> int:
     judge("T5-REHEARSAL-NEEDS-INPUT",
           rehearsal_result.returncode == 2 and "SELECT-INPUT" in rehearsal_result.stdout,
           f"rc={rehearsal_result.returncode} 未登记/缺素材时不冒充走查已验")
-    plan_result, plan = selector_json(["docs/product-v2-refactor-plan.md"])
-    judge("T5-PLAN-STATE-CONSISTENCY",
-          plan_result.returncode == 0 and bool(plan)
-          and "evals/probes/project_state.py" in plan["selected"]
-          and "tools/check_project_state.py" in plan["selected"] and not plan["container"],
-          f"rc={plan_result.returncode} selected={plan and plan['selected']}")
+    for path in (
+        "docs/product-v2-refactor-plan.md",
+        "docs/product-v2-refactor-plan.01-goal.md",
+        "docs/product-v2-refactor-plan.99-new-section.md",
+        "_working/amz-listing-kit-product-v2/state.md",
+        "_working/amz-listing-kit-product-v2/state.yaml",
+    ):
+        plan_result, plan = selector_json([path])
+        judge("T5-PLAN-STATE-CONSISTENCY-" + Path(path).name,
+              plan_result.returncode == 0 and bool(plan)
+              and document_checks | {"evals/probes/project_state.py", "tools/check_project_state.py"}
+              <= set(plan["selected"])
+              and 0 < plan["selected_count"] < plan["full_count"]
+              and not plan["container"] and not plan["browser"] and not plan["frontend"],
+              f"rc={plan_result.returncode} selected={plan and plan['selected']}")
     for path in ("tools/verify_v2_7_1_regression.py", "tools/verify_v2_removed_fixture.py"):
         result, data = selector_json([path])
         judge("T5-VERIFIER-MAINTENANCE-" + Path(path).stem,
@@ -515,9 +611,11 @@ def main() -> int:
         outputs = dict(line.split("=", 1) for line in output_path.read_text(encoding="utf-8").splitlines())
         judge("T5-GITHUB-OUTPUT",
               output_result.returncode == 0 and bool(output_data)
-              and json.loads(outputs["selected"]) == ["tools/check_docs.py --no-run"]
-              and json.loads(outputs["container"]) is False
-              and json.loads(outputs["browser"]) is False,
+              and json.loads(outputs["selected"]) == output_data["selected"]
+              and json.loads(outputs["frontend"]) == output_data["frontend"]
+              and json.loads(outputs["browser"]) == output_data["browser"]
+              and json.loads(outputs["container"]) == output_data["container"]
+              and output_data["selected"][0] == "tools/check_docs.py --no-run",
               f"rc={output_result.returncode} container={outputs.get('container')}")
         # ---- T5 执行凭据：成功/首失败/准入失败的原始结果与受测工作树身份 ----
         ok_result_path = workdir / "receipt-ok.json"

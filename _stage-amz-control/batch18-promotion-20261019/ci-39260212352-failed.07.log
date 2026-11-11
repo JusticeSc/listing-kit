@@ -1,0 +1,38 @@
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:24.4423779Z   [PASS] V2.3.6-05 确认存在且状态前进 READY_TO_GENERATE
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:24.4424884Z   [PASS] V2.3.6-06 人工编辑保存新版本：逐字生效、hash 重算一致、旧版本保留、确认失效回落
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:24.4425744Z   [PASS] V2.3.6-07 空文本被拒：不产新版本、旧版本保留、错误可见
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:24.4426482Z   [PASS] V2.3.6-08 未授权引用被拒：提示指回商品理解、旧版本保留
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:24.4427223Z   [PASS] V2.3.6-09 主图新增文案被拒：平台文字规则、旧版本保留
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:24.4427972Z   [PASS] V2.3.6-10 编译另一张图触发重渲染后，未保存的草稿与理由仍在
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:24.4428773Z   [PASS] V2.3.6-11 链式编辑新版本：指向上一版、来源可追溯、hash 再次变化
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:24.4429624Z   [PASS] V2.3.6-12 链式编辑后如实停在未确认态：按钮 disabled，不自动重提
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:24.4430484Z   [PASS] V2.3.6-13 刷新恢复：人工版本、理由、hash 与存储一致（未确认态保留）
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:24.4431396Z   [PASS] V2.3.6-14 契约会话与 UI 会话零 console error / page error
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:24.4432306Z   [PASS] V2.3.6-15 正式入口自检仍全过（V2.3.6 不破坏既有入口）
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:24.4432939Z 套件用例：13 条，失败 0 条
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:24.4433872Z 证据：evals/product-v2/v2.3.6-prompt-manual-edit-20261019-133006.txt
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:24.4434850Z 结果：全过（退出码 0）
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:54.7301106Z ========================================================================
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:54.7303048Z V2.3.7 文案提议采用链验证
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:54.7303579Z ========================================================================
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:54.7304248Z   [PASS] V2.3.7-01 提议：明确点一次只发一次请求（零图片外发），候选行可见且可采用
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:54.7305051Z   [PASS] V2.3.7-02 采用只写规格草稿：卡片显示「已采用候选文案」（不是「旧版」）且已勾选，持久化规格未变
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:54.7305651Z   [PASS] V2.3.7-03 未保存不生效：该图仍被印字决定拦下，没有任何包含该文案的 Prompt；其余图也不印
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:54.7306180Z   [PASS] V2.3.7-04 保存规格：条目逐字等于候选文案、来源=该槽位+当前版本、status=confirmed、origin=model
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:54.7306643Z   [PASS] V2.3.7-05 刷新后仍是「已采用候选文案」：origin 往返不降级成 user
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:54.7307125Z   [PASS] V2.3.7-06 编译/预览逐字：界面=记录=快照且含该候选，source_ref 指向该 text_id，正文声明不翻译不改写
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:54.7307875Z   [PASS] V2.3.7-07 来源前进：卡片改口为「旧版」提醒，编译被拦且给精确原因，旧记录保留不换值
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:54.7308222Z   [PASS] V2.3.7-99 整套流程未异常中断
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:54.7308583Z   [PASS] V2.3.7-08 整套流程零 console error / page error
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:54.7309108Z 证据：evals/product-v2/v2.3.7-copy-adoption-chain-20261019-133025.txt
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:30:54.7309648Z 结果：全过（退出码 0）
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:31:01.2444681Z ========================================================================
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:31:01.2445696Z V2.3.8 规格保存 OCC 冲突验证
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:31:01.2446255Z ========================================================================
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:31:01.2446875Z   [PASS] V2.3.8-01 准备：A 页改好草稿（目的/印字/版面），该图还没有任何规格记录
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:31:01.2447341Z   [PASS] V2.3.8-02 第二标签页保存同一张图：v1 落库，目的=B
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:31:01.2447873Z   [PASS] V2.3.8-03 A 页保存被版本冲突拦下：可见冲突说清「已保存为 v1、草稿还在、没有覆盖」，不静默覆盖
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:31:01.2448363Z   [PASS] V2.3.8-04 重新载入最新版本：冲突条变状态行、草稿不动、重读不写库
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:31:01.2448828Z   [PASS] V2.3.8-05 再保存按新版本追加 v2（值=A），v1 历史仍是 B，冲突条消失
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:31:01.2449359Z   [PASS] V2.3.8-06 无关图隔离：另一张图没有规格记录、卡片仍是「默认（未保存）」
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:31:01.2449722Z   [PASS] V2.3.8-99 整套流程未异常中断

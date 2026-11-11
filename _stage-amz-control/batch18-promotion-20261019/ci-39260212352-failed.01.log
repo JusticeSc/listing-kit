@@ -1,0 +1,54 @@
+Control plane and Product V2	Check formal entry and browser contracts	﻿2026-10-19T13:28:32.0778815Z ##[group]Run uv run python app/server.py --check
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:32.0779365Z ^[[36;1muv run python app/server.py --check^[[0m
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:32.0779851Z ^[[36;1muv run python tools/verify_v2_1_1_indexeddb.py^[[0m
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:32.0780287Z ^[[36;1muv run python tools/verify_v2_1_2_project_home.py^[[0m
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:32.0780753Z ^[[36;1muv run python tools/verify_v2_1_3_project_package.py^[[0m
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:32.0781231Z ^[[36;1muv run python tools/verify_v2_1_4_formal_entry.py^[[0m
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:32.0781675Z ^[[36;1muv run python tools/verify_v2_2_1_product_contracts.py^[[0m
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:32.0782157Z ^[[36;1muv run python tools/verify_v2_2_2_semantic_provider.py^[[0m
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:32.0782629Z ^[[36;1muv run python tools/verify_v2_2_3_intake_understanding.py^[[0m
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:32.0783096Z ^[[36;1muv run python tools/verify_v2_3_1_suite_registry.py^[[0m
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:32.0783573Z ^[[36;1muv run python tools/verify_v2_3_2_suite_editor.py^[[0m
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:32.0783996Z ^[[36;1muv run python tools/verify_v2_3_3_session_lifecycle.py^[[0m
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:32.0784716Z ^[[36;1muv run python tools/verify_v2_3_3_spec_versions.py^[[0m
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:32.0785166Z ^[[36;1muv run python tools/verify_v2_3_4_prompt_compiler.py^[[0m
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:32.0785631Z ^[[36;1muv run python tools/verify_v2_3_5_pre_generation_confirm.py^[[0m
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:32.0786227Z ^[[36;1muv run python tools/verify_v2_3_6_prompt_manual_edit.py^[[0m
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:32.0786712Z ^[[36;1muv run python tools/verify_v2_3_7_copy_adoption_chain.py^[[0m
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:32.0787174Z ^[[36;1muv run python tools/verify_v2_3_8_spec_save_occ.py^[[0m
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:32.0787674Z ^[[36;1muv run --locked python -m pytest tests/gateway tests/dev -q^[[0m
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:32.0788153Z ^[[36;1muv run python tools/verify_v2_4_2_generation_attempt.py^[[0m
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:32.0788614Z ^[[36;1muv run python tools/verify_v2_4_3_batch_execution.py^[[0m
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:32.0789073Z ^[[36;1muv run python tools/verify_v2_4_4_candidate_blob.py^[[0m
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:32.0789532Z ^[[36;1muv run python tools/verify_v2_5_1_deterministic_review.py^[[0m
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:32.0789979Z ^[[36;1muv run python tools/verify_v2_5_2_vlm_review.py^[[0m
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:32.0790387Z ^[[36;1muv run python tools/verify_v2_r5_2_two_adapters.py^[[0m
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:32.0790867Z ^[[36;1muv run python tools/verify_v2_5_3_compare_panel.py^[[0m
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:32.0791315Z ^[[36;1muv run python tools/verify_v2_5_4_rework_loop.py^[[0m
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:32.0791750Z ^[[36;1muv run python tools/verify_v2_5_5_suite_review.py^[[0m
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:32.0792170Z ^[[36;1muv run python tools/verify_v2_6_1_selection.py^[[0m
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:32.0792565Z ^[[36;1muv run python tools/verify_v2_6_2_delivery.py^[[0m
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:32.0793018Z ^[[36;1muv run python tools/verify_v2_6_3_project_transfer.py^[[0m
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:32.0793484Z ^[[36;1muv run python tools/verify_v2_6_4_accessibility.py^[[0m
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:32.0793971Z ^[[36;1muv run python tools/verify_v2_ui_2_interaction_visual.py^[[0m
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:32.0794400Z ^[[36;1muv run python tools/verify_v2_ui_3_frontend.py^[[0m
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:32.0794920Z ^[[36;1muv run python tools/verify_v2_packet08_settings_vision.py^[[0m
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:32.0795417Z ^[[36;1muv run python tools/verify_v2_packet08_adoption_ai.py^[[0m
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:32.0795879Z ^[[36;1muv run python tools/verify_v2_packet08_delivery_ai.py^[[0m
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:32.0836018Z shell: /usr/bin/bash -e {0}
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:32.0836463Z env:
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:32.0836794Z   UV_HTTP_TIMEOUT: 300
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:32.0837113Z   UV_HTTP_RETRIES: 5
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:32.0837500Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.16/x64
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:32.0838000Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.16/x64/lib/pkgconfig
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:32.0838472Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.16/x64
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:32.0838946Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.16/x64
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:32.0839418Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.16/x64
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:32.0839915Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.16/x64/lib
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:32.0840482Z ##[endgroup]
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:32.7096656Z Product V2 轻量自检：无状态正式入口（真实 TCP 健康检查 + 唯一构建产物）
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:32.7098708Z   PASS  健康检查表明服务器无业务状态        status=200 body={'app': 'amz-listing-kit', 'product': 'v2', 'server_state': 'none', 'user_data': 'browser-indexeddb'}
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:32.7100493Z   PASS  唯一静态产物首页可取            status=200 type=text/html; charset=utf-8
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:32.7101564Z   PASS  未知 API 路由 404（不猜测业务）  status=404
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:32.7102609Z V2 正式入口轻量自检：3/3 通过。（完整场景矩阵在 tests/dev 与 tests/gateway）
+Control plane and Product V2	Check formal entry and browser contracts	2026-10-19T13:28:38.2055186Z ========================================================================
